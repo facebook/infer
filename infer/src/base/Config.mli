@@ -15,7 +15,6 @@ type os_type = Unix | Win32 | Cygwin
 
 type build_system =
   | BAnt
-  | BBuck
   | BBuck2
   | BClang
   | BErlc
@@ -138,8 +137,6 @@ val annotation_reachability_no_allocation : bool
 
 val annotation_reachability_report_source_and_sink : bool
 
-val append_buck_flavors : string list
-
 val attributes_lru_max_size : int
 
 val biabduction_abs_struct : int
@@ -219,27 +216,11 @@ val buck2_query_deps : bool
 
 val buck2_root : string
 
-val buck_block_list : string list
-
-val buck_build_args : string list
-
-val buck_build_args_no_inline : string list
-
 val buck_cache_mode : bool
-
-val buck_clang_use_toolchain_config : bool
 
 val buck_dependency_depth : int option
 
-val buck_java_heap_size_gb : int option
-
-val buck_java_suppress_config : bool
-
-val buck_merge_all_deps : bool
-
 val buck_mode : BuckMode.t option
-
-val buck_out : string
 
 val buck_out_gen : string
 
@@ -459,9 +440,6 @@ val inclusive_cost : bool
 
 val incremental_analysis : bool
 
-val infer_binary : string
-(** absolute canonicalized path to the current executable *)
-
 val infer_is_clang : bool
 
 val infer_is_javac : bool
@@ -543,8 +521,6 @@ val liveness_dangerous_classes : Yojson.Safe.t
 val liveness_ignored_constant : string list
 
 val llair_source_file : string option
-
-val load_average : float option
 
 val lock_model : Yojson.Safe.t
 
@@ -635,8 +611,6 @@ val procedures_summary : bool
 val procedures_summary_json : bool
 
 val procedures_summary_skip_empty : bool
-
-val process_clang_ast : bool
 
 val procs_to_analyze_index : string option
 
@@ -963,8 +937,6 @@ val write_html : bool
 val write_html_allow_list_regex : string list
 
 val write_website : string option
-
-val xcode_developer_dir : string option
 
 val xcode_isysroot_suffix : string option
 

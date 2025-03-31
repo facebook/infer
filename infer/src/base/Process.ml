@@ -7,19 +7,8 @@
 
 open! IStd
 module L = Logging
-module F = Format
 
 [@@@warning "+missing-record-field-pattern"]
-
-(** Prints an error message to a log file, prints a message saying that the error can be found in
-    that file, and exits, with default code 1 or a given code. *)
-let print_error_and_exit ?(exit_code = 1) fmt =
-  F.kfprintf
-    (fun _ ->
-      L.external_error "%s" (F.flush_str_formatter ()) ;
-      L.exit exit_code )
-    F.str_formatter fmt
-
 
 type action = ReadStdout | ReadStderr
 

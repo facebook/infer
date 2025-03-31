@@ -28,7 +28,6 @@ type os_type = Unix | Win32 | Cygwin
 
 type build_system =
   | BAnt
-  | BBuck
   | BBuck2
   | BClang
   | BErlc
@@ -77,8 +76,7 @@ type pulse_hack_builder_patterns = pulse_hack_builder_pattern list [@@deriving o
    infer is running. *)
 let build_system_exe_assoc =
   [ (BAnt, "ant")
-  ; (BBuck, "buck1")
-  ; (BBuck, "buck")
+  ; (BBuck2, "buck")
   ; (BBuck2, "buck2")
   ; (BGradle, "gradle")
   ; (BGradle, "gradlew")
@@ -666,13 +664,6 @@ and annotation_reachability_report_source_and_sink =
     "Reports methods that are marked as both a source and a sink at the same time." ~default:false
 
 
-and append_buck_flavors =
-  CLOpt.mk_string_list ~long:"append-buck-flavors"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Additional Buck flavors to append to targets discovered by the \
-     $(b,--buck-compilation-database) option."
-
-
 and attributes_lru_max_size =
   CLOpt.mk_int ~long:"attributes-lru-max-size" ~meta:"int" ~default:500
     "Specify size of procedure attribute LRU cache. Relevant only to multicore mode. Defaults to \
@@ -1074,36 +1065,6 @@ and buck2_root =
     "Specify the parent directory of $(b, buck-out) (used only for $(b, buck2))."
 
 
-and buck_block_list =
-  CLOpt.mk_string_list ~long:"buck-block-list"
-    ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
-    ~meta:"regex"
-    "Skip capture of files matched by the specified regular expression. Only the clang, \
-     non-compilation-database\n\
-    \     Buck integration is supported, not Java."
-
-
-and buck_build_args =
-  CLOpt.mk_string_list ~long:"Xbuck"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Pass values as command-line arguments to invocations of $(i,`buck build`). Only valid for \
-     $(b,--buck-clang)."
-
-
-and buck_build_args_no_inline_rev =
-  CLOpt.mk_string_list ~long:"Xbuck-no-inline"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Pass values as command-line arguments to invocations of $(i,`buck build`), don't inline any \
-     args starting with '@'. Only valid for $(b,--buck-clang)."
-
-
-and buck_clang_use_toolchain_config =
-  CLOpt.mk_bool ~long:"buck-clang-use-toolchain-config" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Suppress setting buck config values for the infer binary and other values in the \
-     buck-clang-flavor integration and instead rely on buck toolchain configuration options."
-
-
 and buck_compilation_database_depth =
   CLOpt.mk_int_opt ~long:"buck-compilation-database-depth"
     ~in_help:InferCommand.[(Capture, manual_buck)]
@@ -1118,26 +1079,6 @@ and buck_dependency_depth =
     "Capture dependencies only if they are at most the depth provided, or all transitive \
      dependencies if depth is not provided (the default). In particular, depth zero means capture \
      exactly the targets provided and nothing else."
-
-
-and buck_java_heap_size_gb =
-  CLOpt.mk_int_opt ~long:"buck-java-heap-size-gb"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Explicitly set the size of the Java heap of Buck processes, in gigabytes." ~meta:"int"
-
-
-and buck_java_suppress_config =
-  CLOpt.mk_bool ~long:"buck-java-suppress-config" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Suppress setting buck config values for the infer binary and its version in the buck-java \
-     integration."
-
-
-and buck_merge_all_deps =
-  CLOpt.mk_bool ~long:"buck-merge-all-deps" ~default:false
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    "Find and merge all infer dependencies produced by buck. Use this flag if infer doesn't find \
-     any files to analyze after a successful capture. Only valid for $(b,--buck-clang)."
 
 
 and buck_mode =
@@ -2149,14 +2090,6 @@ and llair_source_file =
      $(b,--capture-llair)."
 
 
-and load_average =
-  CLOpt.mk_float_opt ~long:"load-average" ~short:'l'
-    ~in_help:InferCommand.[(Capture, manual_generic)]
-    ~meta:"float"
-    "Do not start new parallel jobs if the load average is greater than that specified (Buck and \
-     make only)"
-
-
 and lock_model =
   CLOpt.mk_json ~long:"lock-model"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -2447,12 +2380,6 @@ and procedures_summary_skip_empty =
     "Completely skip procedures that do not have summaries. Useful when analyzing a small part of \
      a big project. (To use in conjunction with $(b,--procedures-summary) or \
      $(b,--procedures-summary-json). See also $(b,--changed-files-index).)"
-
-
-and process_clang_ast =
-  CLOpt.mk_bool ~long:"process-clang-ast" ~default:false
-    "process the ast to emit some info about the file with $(b,--test-determinator) or \
-     $(b,--export-changed-functions) (Not available for Java)"
 
 
 and procs_to_analyze_index =
@@ -3717,13 +3644,6 @@ and write_website =
      website at $(i,fbinfer.com) at $(i,website/)."
 
 
-and xcode_developer_dir =
-  CLOpt.mk_path_opt ~long:"xcode-developer-dir"
-    ~in_help:InferCommand.[(Capture, manual_buck)]
-    ~meta:"XCODE_DEVELOPER_DIR"
-    "Specify the path to Xcode developer directory, to use for Buck clang targets"
-
-
 and xcode_isysroot_suffix =
   CLOpt.mk_string_opt ~long:"xcode-isysroot-suffix"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3968,8 +3888,6 @@ and annotation_reachability_no_allocation = !annotation_reachability_no_allocati
 
 and annotation_reachability_report_source_and_sink = !annotation_reachability_report_source_and_sink
 
-and append_buck_flavors = RevList.to_list !append_buck_flavors
-
 and attributes_lru_max_size = !attributes_lru_max_size
 
 and biabduction_abs_struct = !biabduction_abs_struct
@@ -4048,23 +3966,9 @@ and buck2_query_deps = !buck2_query_deps
 
 and buck2_root = match !buck2_root with Some root -> root | None -> !project_root
 
-and buck_block_list = RevList.to_list !buck_block_list
-
-and buck_build_args = RevList.to_list !buck_build_args
-
-and buck_build_args_no_inline = RevList.to_list !buck_build_args_no_inline_rev
-
 and buck_cache_mode = (!buck || !genrule_mode) && not !debug
 
-and buck_clang_use_toolchain_config = !buck_clang_use_toolchain_config
-
 and buck_dependency_depth = !buck_dependency_depth
-
-and buck_java_heap_size_gb = !buck_java_heap_size_gb
-
-and buck_java_suppress_config = !buck_java_suppress_config
-
-and buck_merge_all_deps = !buck_merge_all_deps
 
 and buck_mode : BuckMode.t option =
   match (!buck_mode, !buck_compilation_database_depth) with
@@ -4449,10 +4353,6 @@ and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 
 and llair_source_file = !llair_source_file
 
-and load_average =
-  match !load_average with None when !buck -> Some (float_of_int Utils.cpus) | _ -> !load_average
-
-
 and lock_model = !lock_model
 
 and log_pulse_disjunct_increase_after_model_call = !log_pulse_disjunct_increase_after_model_call
@@ -4542,8 +4442,6 @@ and procedures_summary = !procedures_summary
 and procedures_summary_json = !procedures_summary_json
 
 and procedures_summary_skip_empty = !procedures_summary_skip_empty
-
-and process_clang_ast = !process_clang_ast
 
 and procs_to_analyze_index = !procs_to_analyze_index
 
@@ -5001,8 +4899,6 @@ and write_html = !write_html
 and write_html_allow_list_regex = RevList.to_list !write_html_allow_list_regex
 
 and write_website = !write_website
-
-and xcode_developer_dir = !xcode_developer_dir
 
 and xcode_isysroot_suffix = !xcode_isysroot_suffix
 

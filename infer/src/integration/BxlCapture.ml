@@ -52,7 +52,7 @@ let run_capture buck2_build_cmd =
   L.debug Capture Quiet "Processed buck2 bxl command '%a'@\n" (Pp.seq F.pp_print_string)
     buck2_build_cmd ;
   let infer_deps_lines =
-    Buck.wrap_buck_call ~extend_env:[] V2 ~label:"build" ("buck2" :: buck2_build_cmd)
+    Buck.wrap_buck_call ~label:"build" ("buck2" :: buck2_build_cmd)
     |> List.fold ~init:[] ~f:(traverse ~root:Config.buck2_root (Visited.create 11))
     |> List.dedup_and_sort ~compare:String.compare
   in
@@ -70,7 +70,7 @@ let capture build_cmd =
         target
   in
   let _prog, buck2_args = (List.hd_exn build_cmd, List.tl_exn build_cmd) in
-  let _command, rev_not_targets, targets = Buck.parse_command_and_targets Clang V2 buck2_args in
+  let _command, rev_not_targets, targets = Buck.parse_command_and_targets Clang buck2_args in
   let buck2_root_relative_paths = get_buck2_root_relative_changed_files () in
   if List.is_empty targets && List.is_empty buck2_root_relative_paths then (
     L.user_warning "No targets nor files found to capture.@\n" ;

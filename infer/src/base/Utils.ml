@@ -28,11 +28,6 @@ let fold_file_tree ~init ~f_dir ~f_reg ~path =
   traverse_dir_aux init path
 
 
-let fold_folders ~init ~f ~path =
-  let f_reg acc _ignore_reg = acc in
-  fold_file_tree ~init ~f_dir:f ~f_reg ~path
-
-
 let fold_files ~init ~f ~path =
   let f_dir acc _ignore_dir = acc in
   fold_file_tree ~init ~f_dir ~f_reg:f ~path

@@ -76,10 +76,10 @@ OPTIONS
 
        --force-integration command
            Proceed as if the first argument after -- was command. Possible
-           values: ant, buck1, buck, buck2, gradle, gradlew, java, javac,
-           kotlinc, cc, clang, gcc, clang++, c++, g++, hackc, make,
-           configure, cmake, waf, mvn, mvnw, ndk-build, python3, rebar3,
-           swiftc, erlc, xcodebuild.
+           values: ant, buck, buck2, gradle, gradlew, java, javac, kotlinc,
+           cc, clang, gcc, clang++, c++, g++, hackc, make, configure, cmake,
+           waf, mvn, mvnw, ndk-build, python3, rebar3, swiftc, erlc,
+           xcodebuild.
 
        --help
            Show this manual
@@ -198,11 +198,6 @@ OPTIONS
            command
 
 BUCK OPTIONS
-       --buck-block-list +regex
-           Skip capture of files matched by the specified regular expression.
-           Only the clang, non-compilation-database
-                Buck integration is supported, not Java.
-
        --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
            expression.

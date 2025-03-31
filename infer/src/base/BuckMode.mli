@@ -11,8 +11,6 @@ module F = Format
 (** dependencies to include in the compilation database *)
 type clang_compilation_db_deps = NoDependencies | DepsUpToDepth of int | DepsAllDepths
 
-val pp_clang_compilation_db_deps : F.formatter -> clang_compilation_db_deps -> unit
-
 type t = ClangCompilationDB of clang_compilation_db_deps | Clang | Erlang | Java | Python
 
 val pp : F.formatter -> t -> unit

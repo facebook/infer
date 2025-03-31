@@ -14,11 +14,8 @@ open! IStd
 type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
-  | BuckClangFlavor of {build_cmd: string list}
-  | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
   | BuckGenrule of {prog: string}
-  | BuckJavaFlavor of {build_cmd: string list}
   | BxlClang of {build_cmd: string list}
   | BxlJava of {build_cmd: string list}
   | BxlPython of {build_cmd: string list}

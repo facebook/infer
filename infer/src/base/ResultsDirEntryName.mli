@@ -67,7 +67,3 @@ val to_keep_before_caching_capture : results_dir:string -> string list
 
 val to_keep_before_new_capture : results_dir:string -> string list
 (** utility for {!ResultsDir.remove_results_dir}, you probably want to use that instead *)
-
-val infer_deps_file_name : string
-(** sad that we have to have this here but some code path is looking for all files with that name in
-    buck-out/ *)

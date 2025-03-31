@@ -15,11 +15,8 @@ module F = Format
 type mode =
   | Analyze
   | Ant of {prog: string; args: string list}
-  | BuckClangFlavor of {build_cmd: string list}
-  | BuckCompilationDB of {deps: BuckMode.clang_compilation_db_deps; prog: string; args: string list}
   | BuckErlang of {prog: string; args: string list}
   | BuckGenrule of {prog: string}
-  | BuckJavaFlavor of {build_cmd: string list}
   | BxlClang of {build_cmd: string list}
   | BxlJava of {build_cmd: string list}
   | BxlPython of {build_cmd: string list}
@@ -56,17 +53,10 @@ let pp_mode fmt = function
       F.fprintf fmt "Analyze driver mode"
   | Ant {prog; args} ->
       F.fprintf fmt "Ant driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
-  | BuckClangFlavor {build_cmd} ->
-      F.fprintf fmt "BuckClangFlavor driver mode: build_cmd = %a" Pp.cli_args build_cmd
-  | BuckCompilationDB {deps; prog; args} ->
-      F.fprintf fmt "BuckCompilationDB driver mode:@\nprog = '%s'@\nargs = %a@\ndeps = %a" prog
-        Pp.cli_args args BuckMode.pp_clang_compilation_db_deps deps
   | BuckErlang {prog; args} ->
       F.fprintf fmt "BuckErlang driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | BuckGenrule {prog} ->
       F.fprintf fmt "BuckGenRule driver mode:@\nprog = '%s'" prog
-  | BuckJavaFlavor {build_cmd} ->
-      F.fprintf fmt "BuckJavaFlavor driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BxlClang {build_cmd} ->
       F.fprintf fmt "BxlClang driver mode:@\nbuild command = %a" Pp.cli_args build_cmd
   | BxlJava {build_cmd} ->
@@ -120,7 +110,7 @@ let pp_mode fmt = function
    in case nothing got captured. *)
 let clean_compilation_command mode =
   match mode with
-  | BuckCompilationDB {prog} | Clang {prog} ->
+  | Clang {prog} ->
       Some (prog ^ " clean")
   | XcodeXcpretty {prog; args} ->
       Some (String.concat ~sep:" " (List.append (prog :: args) ["clean"]))
@@ -162,24 +152,12 @@ let capture ~changed_files mode =
       | Ant {prog; args} ->
           L.progress "Capturing in ant mode...@." ;
           Ant.capture ~prog ~args
-      | BuckClangFlavor {build_cmd} ->
-          L.progress "Capturing in buck mode...@." ;
-          BuckFlavors.capture build_cmd
-      | BuckCompilationDB {deps; prog; args} ->
-          L.progress "Capturing using Buck's compilation database...@." ;
-          let db_files =
-            CaptureCompilationDatabase.get_compilation_database_files_buck deps ~prog ~args
-          in
-          CaptureCompilationDatabase.capture ~changed_files ~db_files
       | BuckErlang {prog; args} ->
           L.progress "Capturing Erlang using Buck...@." ;
           Erlang.capture_buck ~command:prog ~args
       | BuckGenrule {prog} ->
           L.progress "Capturing for Buck genrule compatibility...@." ;
           JMain.from_arguments prog ~sources:Config.sources
-      | BuckJavaFlavor {build_cmd} ->
-          L.progress "Capturing for BuckJavaFlavor integration...@." ;
-          BuckJavaFlavor.capture build_cmd
       | BxlClang {build_cmd} ->
           L.progress "Capturing in bxl/clang mode...@." ;
           BxlCapture.capture build_cmd
@@ -249,7 +227,7 @@ let capture ~changed_files mode =
           CaptureCompilationDatabase.capture ~changed_files ~db_files ) ;
   let should_merge =
     match mode with
-    | BuckClangFlavor _ | BuckJavaFlavor _ | BxlClang _ | BxlJava _ | BxlPython _ | Gradle _ ->
+    | BxlClang _ | BxlJava _ | BxlPython _ | Gradle _ ->
         true
     | _ ->
         not (List.is_empty Config.merge_capture)
@@ -343,9 +321,6 @@ let error_nothing_to_analyze mode =
 
 let analyze_and_report ~changed_files mode =
   match (Config.command, mode) with
-  | _, BuckClangFlavor _ when not (Option.exists ~f:BuckMode.is_clang Config.buck_mode) ->
-      (* In Buck mode when compilation db is not used, analysis is invoked from capture if buck flavors are not used *)
-      ()
   | _ when Config.infer_is_clang || Config.infer_is_javac ->
       (* Called from another integration to do capture only. *) ()
   | (Capture | Compile | Debug | Explore | Help | Report | ReportDiff), _ ->
@@ -451,21 +426,6 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Python
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
-  | BBuck ->
-      let analyzer, build_string =
-        match Config.buck_mode with
-        | None ->
-            error_no_buck_mode_specified ()
-        | Some Clang ->
-            (`Clang, "buck with flavors")
-        | Some (ClangCompilationDB _) ->
-            (`Clang, "buck compilation database")
-        | Some Java ->
-            (`Java, Config.string_of_build_system build_system)
-        | Some Erlang | Some Python ->
-            L.die UserError "Unsupported buck integration."
-      in
-      assert_supported_mode analyzer build_string
   | BBuck2 ->
       let analyzer, build_string =
         match Config.buck_mode with
@@ -528,23 +488,6 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       match (build_system : Config.build_system) with
       | BAnt ->
           Ant {prog; args}
-      | BBuck -> (
-        match buck_mode with
-        | None ->
-            error_no_buck_mode_specified ()
-        | Some (ClangCompilationDB deps) ->
-            BuckCompilationDB {deps; prog; args= List.append args Config.buck_build_args}
-        | Some Clang when Config.process_clang_ast ->
-            L.user_warning
-              "WARNING: the clang AST can only be processed when --buck-compilation-database is \
-               set.@ Alternatively, set --no-process-clang-ast to disable this warning.@." ;
-            BuckClangFlavor {build_cmd}
-        | Some Java ->
-            BuckJavaFlavor {build_cmd}
-        | Some Clang ->
-            BuckClangFlavor {build_cmd}
-        | Some buck_mode ->
-            L.die UserError "%a not supported in buck1.@." BuckMode.pp buck_mode )
       | BBuck2 -> (
         match buck_mode with
         | None ->
