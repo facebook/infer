@@ -7,6 +7,7 @@
 
 open! IStd
 open! Llair
+module ProcState = Llair2TextualProcState
 
 type structMap = Textual.Struct.t Textual.TypeName.Map.t
 
@@ -61,3 +62,27 @@ and to_textual_typ (typ : Llair.Typ.t) =
 let to_annotated_textual_typ llair_typ =
   let typ = to_textual_typ llair_typ in
   {typ; Textual.Typ.attributes= []}
+
+
+let type_inference ~proc_state instrs =
+  let type_inference instr =
+    match (instr : Textual.Instr.t) with
+    | Load {id; exp} -> (
+      match ProcState.get_local_or_formal_type ~proc_state (Var id) with
+      | Some typ_annot ->
+          ProcState.update_local_or_formal_type ~typ_modif:PtrModif ~proc_state exp typ_annot.typ
+      | _ ->
+          () )
+    | Store {exp1; exp2} -> (
+      match ProcState.get_local_or_formal_type ~proc_state exp1 with
+      | Some typ_annot ->
+          let typ_modif : ProcState.typ_modif =
+            match exp1 with Var _ -> PtrModif | _ -> NoModif
+          in
+          ProcState.update_local_or_formal_type ~typ_modif ~proc_state exp2 typ_annot.typ
+      | _ ->
+          () )
+    | _ ->
+        ()
+  in
+  List.iter ~f:type_inference (List.rev instrs)

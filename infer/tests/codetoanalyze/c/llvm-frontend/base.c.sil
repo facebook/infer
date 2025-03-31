@@ -13,7 +13,7 @@ declare foo() : *ptr_elt
 define main() : int {
   local var1: int
   #: @[11:0]
-      store &var1 <- 0:int @[11:0]
+      store &var1 <- 0 @[11:0]
       ret 0 @[13:3]
       
 } @?
@@ -27,12 +27,12 @@ define test() : *int {
 define test1(var0: int, var1: int) : int {
   local var4: int, var3: int
   #: @[22:0]
-      n9:int = load &var0 @[22:0]
-      store &var3 <- n9:int @[22:0]
-      n10:int = load &var1 @[22:0]
-      store &var4 <- n10:int @[22:0]
-      n19:int = load &var3 @[24:10]
-      n20:int = load &var4 @[24:15]
+      n9 = load &var0 @[22:0]
+      store &var3 <- n9 @[22:0]
+      n10 = load &var1 @[22:0]
+      store &var4 <- n10 @[22:0]
+      n19 = load &var3 @[24:10]
+      n20 = load &var4 @[24:15]
       ret __sil_plusa_int(n19, n20) @[24:3]
       
 } @?
@@ -40,19 +40,19 @@ define test1(var0: int, var1: int) : int {
 define test2() : int {
   local var2: int, var1: int
   #: @[32:10]
-      n33:int = load &var1 @[32:10]
-      n34:int = load &var2 @[32:15]
+      n33 = load &var1 @[32:10]
+      n34 = load &var2 @[32:15]
       ret __sil_plusa_int(n33, n34) @[32:3]
       
 } @?
 
-define test3(var0: *ptr_elt) : int {
-  local var2: *ptr_elt
+define test3(var0: *int) : int {
+  local var2: *int
   #: @[36:0]
-      n37:*ptr_elt = load &var0 @[36:0]
-      store &var2 <- n37:*ptr_elt @[36:0]
-      n43:*ptr_elt = load &var2 @[38:11]
-      n44:int = load n43 @[38:10]
+      n37 = load &var0 @[36:0]
+      store &var2 <- n37 @[36:0]
+      n43 = load &var2 @[38:11]
+      n44 = load n43 @[38:10]
       ret n44 @[38:3]
       
 } @?

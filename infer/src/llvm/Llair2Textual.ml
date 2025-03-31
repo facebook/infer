@@ -244,8 +244,8 @@ let cmnd_to_instrs ~proc_state block =
         let reg_typ = to_textual_typ (Reg.typ reg) in
         ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
         let exp, _ = to_textual_exp ~proc_state ptr in
-        ProcState.update_local_or_formal_type ~proc_state exp reg_typ ;
-        let textual_instr = Textual.Instr.Load {id; exp; typ= Some reg_typ; loc} in
+        ProcState.update_local_or_formal_type ~typ_modif:PtrModif ~proc_state exp reg_typ ;
+        let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
         textual_instr :: textual_instrs
     | Store {ptr; exp; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
@@ -257,20 +257,19 @@ let cmnd_to_instrs ~proc_state block =
               let new_exp2 = Textual.Exp.Var id in
               let reg_typ = to_textual_typ typ in
               ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
-              let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= Some reg_typ; loc} in
+              let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= None; loc} in
               (new_exp2, [exp2_instr])
           | _ ->
               (exp2, [])
         in
         let exp1, _ = to_textual_exp ~proc_state ptr in
-        let typ_exp2 =
-          Option.map
-            ~f:(fun typ_exp2 ->
-              ProcState.update_local_or_formal_type ~proc_state exp1 typ_exp2 ;
-              typ_exp2 )
-            typ_exp2
-        in
-        let textual_instr = Textual.Instr.Store {exp1; typ= typ_exp2; exp2; loc} in
+        Option.map
+          ~f:(fun typ_exp2 ->
+            ProcState.update_local_or_formal_type ~typ_modif:PtrModif ~proc_state exp1 typ_exp2 ;
+            typ_exp2 )
+          typ_exp2
+        |> ignore ;
+        let textual_instr = Textual.Instr.Store {exp1; typ= None; exp2; loc} in
         (textual_instr :: exp2_instrs) @ textual_instrs
     | Alloc {reg} ->
         let reg_var_name = reg_to_var_name reg in
@@ -389,6 +388,7 @@ and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) :
       block.term
   in
   let instrs, first_loc, last_loc = cmnd_to_instrs ~proc_state block in
+  Llair2TextualType.type_inference ~proc_state instrs ;
   let last_loc =
     match term_loc_opt with
     | Some loc ->

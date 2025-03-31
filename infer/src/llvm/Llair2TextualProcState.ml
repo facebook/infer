@@ -23,6 +23,19 @@ let pp_ids fmt current_ids =
     (IdentMap.bindings current_ids)
 
 
+let pp_vars fmt vars =
+  F.fprintf fmt "%a"
+    (Pp.comma_seq (Pp.pair ~fst:Textual.VarName.pp ~snd:Textual.Typ.pp_annotated))
+    (VarMap.bindings vars)
+
+
+let pp fmt proc_state =
+  F.fprintf fmt
+    "@[<v>@[<v>qualified_name: %a@]@;@[loc: %a@]@;@[locals: %a@]@;@[formals: %a@]@;@[ids: %a@]@]@]"
+    Textual.QualifiedProcName.pp proc_state.qualified_name Textual.Location.pp proc_state.loc
+    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids
+
+
 let update_locals ~proc_state varname typ =
   proc_state.locals <- VarMap.add varname typ proc_state.locals
 
@@ -33,7 +46,9 @@ let update_formals ~proc_state varname typ =
 
 let update_ids ~proc_state id typ = proc_state.ids <- IdentMap.add id typ proc_state.ids
 
-let update_local_or_formal_type ~(proc_state : t) exp typ =
+type typ_modif = NoModif | PtrModif | RemovePtrModif
+
+let update_local_or_formal_type ~(proc_state : t) ~typ_modif exp typ =
   match exp with
   | Textual.Exp.Lvar var_name when VarMap.mem var_name proc_state.locals ->
       let typ = Textual.Typ.mk_without_attributes typ in
@@ -42,7 +57,29 @@ let update_local_or_formal_type ~(proc_state : t) exp typ =
       let typ = Textual.Typ.mk_without_attributes typ in
       update_formals ~proc_state var_name typ
   | Textual.Exp.Var id when IdentMap.mem id proc_state.ids ->
-      let new_ptr_typ = Textual.Typ.Ptr typ in
-      update_ids ~proc_state id (Textual.Typ.mk_without_attributes new_ptr_typ)
+      let new_typ =
+        match typ_modif with
+        | NoModif ->
+            typ
+        | PtrModif ->
+            Textual.Typ.Ptr typ
+        | RemovePtrModif -> (
+          match typ with Textual.Typ.Ptr typ -> typ | _ -> typ )
+      in
+      update_ids ~proc_state id (Textual.Typ.mk_without_attributes new_typ)
   | _ ->
       ()
+
+
+let get_local_or_formal_type ~(proc_state : t) exp =
+  match exp with
+  | Textual.Exp.Lvar var_name -> (
+    match VarMap.find_opt var_name proc_state.locals with
+    | Some typ ->
+        Some typ
+    | None ->
+        VarMap.find_opt var_name proc_state.formals )
+  | Textual.Exp.Var id ->
+      IdentMap.find_opt id proc_state.ids
+  | _ ->
+      None
