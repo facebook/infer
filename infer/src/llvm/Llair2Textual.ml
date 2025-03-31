@@ -206,7 +206,13 @@ let to_textual_bool_exp ~proc_state exp =
 
 let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp args loc =
   let loc = to_textual_loc_instr ~proc_state loc in
-  let id = Option.map return ~f:(fun reg -> reg_to_id reg) in
+  let id =
+    Option.map return ~f:(fun reg ->
+        let reg_typ = to_textual_typ (Reg.typ reg) in
+        let id = reg_to_id reg in
+        ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
+        id )
+  in
   let args =
     List.map ~f:(fun exp -> to_textual_exp ~proc_state ?generate_typ_exp exp |> fst) args
   in
@@ -331,15 +337,15 @@ let cmnd_to_instrs ~proc_state block =
 let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =
   let block = jump.dst in
   let node_label = block_to_node_name block in
-  let node_label, succs =
+  let node_label, typ_opt, succs =
     (* If we've seen this node, stop the recursion *)
-    if Textual.NodeName.Set.mem node_label seen_nodes then (node_label, Textual.Node.Set.empty)
+    if Textual.NodeName.Set.mem node_label seen_nodes then (node_label, None, Textual.Node.Set.empty)
     else
-      let node, _, nodes = block_to_node_and_succs ~proc_state ~seen_nodes jump.dst in
-      (node.label, nodes)
+      let node, typ_opt, nodes = block_to_node_and_succs ~proc_state ~seen_nodes jump.dst in
+      (node.label, typ_opt, nodes)
   in
   let node_call = Textual.Terminator.{label= node_label; ssa_args= []} in
-  (Textual.Terminator.Jump [node_call], None, succs)
+  (Textual.Terminator.Jump [node_call], typ_opt, succs)
 
 
 and to_terminator_and_succs ~proc_state ~seen_nodes term :
@@ -351,6 +357,12 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
       (to_textual_jump_and_succs ~proc_state ~seen_nodes return, Some loc)
   | Return {exp= Some exp; loc} ->
       let textual_exp, textual_typ_opt = to_textual_exp ~proc_state exp in
+      let inferred_textual_typ_opt = ProcState.get_local_or_formal_type ~proc_state textual_exp in
+      let textual_typ_opt =
+        Option.value_map
+          ~f:(fun typ -> Some typ.Textual.Typ.typ)
+          inferred_textual_typ_opt ~default:textual_typ_opt
+      in
       let loc = to_textual_loc_instr ~proc_state loc in
       ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc)
   | Return {exp= None; loc} ->

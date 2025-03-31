@@ -6,7 +6,30 @@
 
 .source_language = "C" @?
 
+define add(var0: int, var1: int) : int {
+  local var4: int, var3: int
+  #: @[13:0]
+      n9 = load &var0 @[13:0]
+      store &var3 <- n9 @[13:0]
+      n10 = load &var1 @[13:0]
+      store &var4 <- n10 @[13:0]
+      n19 = load &var3 @[13:34]
+      n20 = load &var4 @[13:39]
+      ret __sil_plusa_int(n19, n20) @[13:27]
+      
+} @?
+
 declare bar() : *ptr_elt
+
+define call_add() : int {
+  #: @[29:25]
+      n58 = add(1, 2) @[29:25]
+      jmp 1::ret @[29:25]
+      
+  #1::ret: @[29:18]
+      ret n58 @[29:18]
+      
+} @?
 
 declare foo() : *ptr_elt
 
@@ -21,19 +44,6 @@ define main() : int {
 define test() : *int {
   #: @[11:15]
       ret null @[11:15]
-      
-} @?
-
-define test1(var0: int, var1: int) : int {
-  local var4: int, var3: int
-  #: @[13:0]
-      n9 = load &var0 @[13:0]
-      store &var3 <- n9 @[13:0]
-      n10 = load &var1 @[13:0]
-      store &var4 <- n10 @[13:0]
-      n19 = load &var3 @[13:36]
-      n20 = load &var4 @[13:41]
-      ret __sil_plusa_int(n19, n20) @[13:29]
       
 } @?
 
@@ -57,7 +67,7 @@ define test3(var0: *int) : int {
       
 } @?
 
-define test4() : *ptr_elt {
+define test4() : int {
   #: @[25:22]
       n48 = foo() @[25:22]
       jmp 1::ret @[25:22]
@@ -67,7 +77,7 @@ define test4() : *ptr_elt {
       
 } @?
 
-define test5() : *ptr_elt {
+define test5() : int {
   #: @[27:22]
       n53 = bar() @[27:22]
       jmp 1::ret @[27:22]

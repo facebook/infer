@@ -10,7 +10,7 @@
 int main() { return 0; }
 int* test() { return NULL; }
 
-int test1(int n1, int n2) { return n1 + n2; }
+int add(int n1, int n2) { return n1 + n2; }
 
 int test2() {
   int n1;
@@ -25,3 +25,5 @@ int foo();
 int test4() { return foo(); }
 
 int test5() { return bar(); }
+
+int call_add() { return add(1, 2); }
