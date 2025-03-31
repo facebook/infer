@@ -12,68 +12,68 @@ declare foo() : *ptr_elt
 
 define main() : int {
   local var1: int
-  #: @[11:0]
-      store &var1 <- 0 @[11:0]
-      ret 0 @[13:3]
+  #: @[10:0]
+      store &var1 <- 0 @[10:0]
+      ret 0 @[10:14]
       
 } @?
 
 define test() : *int {
-  #: @[18:3]
-      ret null @[18:3]
+  #: @[11:15]
+      ret null @[11:15]
       
 } @?
 
 define test1(var0: int, var1: int) : int {
   local var4: int, var3: int
-  #: @[22:0]
-      n9 = load &var0 @[22:0]
-      store &var3 <- n9 @[22:0]
-      n10 = load &var1 @[22:0]
-      store &var4 <- n10 @[22:0]
-      n19 = load &var3 @[24:10]
-      n20 = load &var4 @[24:15]
-      ret __sil_plusa_int(n19, n20) @[24:3]
+  #: @[13:0]
+      n9 = load &var0 @[13:0]
+      store &var3 <- n9 @[13:0]
+      n10 = load &var1 @[13:0]
+      store &var4 <- n10 @[13:0]
+      n19 = load &var3 @[13:36]
+      n20 = load &var4 @[13:41]
+      ret __sil_plusa_int(n19, n20) @[13:29]
       
 } @?
 
 define test2() : int {
   local var2: int, var1: int
-  #: @[32:10]
-      n33 = load &var1 @[32:10]
-      n34 = load &var2 @[32:15]
-      ret __sil_plusa_int(n33, n34) @[32:3]
+  #: @[18:10]
+      n33 = load &var1 @[18:10]
+      n34 = load &var2 @[18:15]
+      ret __sil_plusa_int(n33, n34) @[18:3]
       
 } @?
 
 define test3(var0: *int) : int {
   local var2: *int
-  #: @[36:0]
-      n37 = load &var0 @[36:0]
-      store &var2 <- n37 @[36:0]
-      n43 = load &var2 @[38:11]
-      n44 = load n43 @[38:10]
-      ret n44 @[38:3]
+  #: @[21:0]
+      n37 = load &var0 @[21:0]
+      store &var2 <- n37 @[21:0]
+      n43 = load &var2 @[21:31]
+      n44 = load n43 @[21:30]
+      ret n44 @[21:23]
       
 } @?
 
 define test4() : *ptr_elt {
-  #: @[46:10]
-      n48 = foo() @[46:10]
-      jmp 1::ret @[46:10]
+  #: @[25:22]
+      n48 = foo() @[25:22]
+      jmp 1::ret @[25:22]
       
-  #1::ret: @[46:3]
-      ret n48 @[46:3]
+  #1::ret: @[25:15]
+      ret n48 @[25:15]
       
 } @?
 
 define test5() : *ptr_elt {
-  #: @[52:10]
-      n53 = bar() @[52:10]
-      jmp 1::ret @[52:10]
+  #: @[27:22]
+      n53 = bar() @[27:22]
+      jmp 1::ret @[27:22]
       
-  #1::ret: @[52:3]
-      ret n53 @[52:3]
+  #1::ret: @[27:15]
+      ret n53 @[27:15]
       
 } @?
 
