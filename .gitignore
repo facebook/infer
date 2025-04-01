@@ -17,6 +17,7 @@
 /_build
 /_build_logs
 /infer/lib/erlang/infer_parse_transform/_build
+/infer/src/sledge/llvm-config_ldflags.sexp
 /infer/tests/codetoanalyze/java/*/codetoanalyze
 _build_infer
 *.exp.test*
@@ -202,8 +203,10 @@ rebar3.crashdump
 /infer/src/clang/dune
 /infer/src/integration/dune
 /infer/src/java/dune
+/infer/src/llvm/dune
 /infer/src/opensource/dune
 /infer/src/python/unit/dune
+/infer/src/sledge/dune
 /infer/src/unit/dune
 .merlin
 

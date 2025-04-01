@@ -158,6 +158,9 @@ AC_ARG_ENABLE(swift-analyzers,
 BUILD_SWIFT_ANALYZERS=$enable_swift_analyzers
 AC_SUBST([BUILD_SWIFT_ANALYZERS])
 
+AC_ARG_VAR([LLVM_LDFLAGS], [Extra link flags to build against the LLVM libraries])
+AC_SUBST([LLVM_LDFLAGS])
+
 AC_ARG_WITH(fcp-clang,
   AS_HELP_STRING([--with-fcp-clang],
     [use $CLANG_PREFIX/bin/clang to override the default compiler (default is not to override)]),
@@ -359,6 +362,7 @@ AS_IF([$HACKC --version >/dev/null 2>/dev/null],
    AC_MSG_RESULT([no])])
 
 if test "x$enable_swift_analyzers" = "xyes"; then
+  AC_CHECK_TOOL([LLVM_CONFIG], [llvm-config], [no])
   AC_CHECK_TOOL([SWIFTC], [swiftc], [no])
 fi
 

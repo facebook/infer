@@ -1,0 +1,46 @@
+(* -*- tuareg -*- *)
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+(* NOTE: prepend dune.common to this file! *)
+
+let sledge_llvm_libs =
+  "ctypes ctypes.foreign dbg llvm llvm.debuginfo llvm.analysis llvm.bitwriter llvm.irreader \
+   llvm.target"
+
+;;
+
+Printf.sprintf
+  {|(library
+ (name ppx_sledge)
+ (kind ppx_rewriter)
+ (modules)
+ (libraries ppx_compare ppx_enumerate ppx_expect ppx_here ppx_inline_test
+    ppx_let ppx_sexp_conv ppx_sexp_value)
+ (preprocess no_preprocessing))
+
+(library
+ (name LlvmSledge)
+ (public_name infer.LlvmSledge)
+ (modules %s)
+ (libraries %s NS Llair unix)
+  (flags
+   (:standard
+    -w
+    -no-cmx-file
+    -w -not-principal
+    -w -unused-value-declaration
+    -w -unused-var-strict
+    -open
+    NS
+    -open
+    Llair
+    (:include llvm-config_ldflags.sexp)))
+  (preprocess
+   (pps ppx_sledge ppx_dbg)))|}
+  (if swift then "LlvmSledgeFrontend" else "LlvmSledgeFrontendStubs")
+  (if swift then sledge_llvm_libs else "")
+|> Jbuild_plugin.V1.send

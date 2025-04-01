@@ -57,12 +57,14 @@ GENERATED_FROM_AUTOCONF = dune.common ../dune-workspace base/Version.ml
 dune-workspace: ../dune-workspace
 
 GENERATED_DUNES += \
-  dune clang/dune integration/dune java/dune opensource/dune python/unit/dune unit/dune
+  dune clang/dune integration/dune java/dune llvm/dune opensource/dune python/unit/dune sledge/dune unit/dune
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_DUNES) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 SRC_BUILD_COMMON += $(CLANG_BINIOU_DICT)
 endif
+
+SRC_BUILD_COMMON += sledge/llvm-config_ldflags.sexp
 
 .PHONY: src_build_common
 src_build_common: $(SRC_BUILD_COMMON)
@@ -212,6 +214,27 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
+LLVM_OCAML_SRC:=$(shell git ls-files -- sledge/vendor/llvm-dune)
+
+# file to use as a sentinel indicating llvm ocaml bindings are up-to-date
+LLVM_OCAML_SENTINEL=sledge/vendor/llvm-dune/src/llvm/common/dune
+
+$(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC) $(MAKEFILE_LIST)
+	cd sledge/vendor/llvm-dune; EXTRA_LDFLAGS='$(LLVM_LDFLAGS)' ./setup.sh $(LLVM_CONFIG)
+
+# Generate an empty file if we don't need to link against LLVM
+sledge/llvm-config_ldflags.sexp: $(MAKEFILE_LIST)
+	printf "(" > $@
+ifeq ($(BUILD_SWIFT_ANALYZERS),yes)
+	$(LLVM_CONFIG) --ldflags | xargs -n 1 printf "-ccopt '%s' " >> $@
+endif
+	printf ")\n" >> $@
+
+ifeq ($(BUILD_SWIFT_ANALYZERS),yes)
+sledge/llvm-config_ldflags.sexp: $(LLVM_OCAML_SENTINEL)
+endif
+
+
 $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	TMPFILE=$$(mktemp $@.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
@@ -253,8 +276,10 @@ dune: dune.in
 clang/dune: clang/dune.in
 integration/dune: integration/dune.in
 java/dune: java/dune.in
+llvm/dune: llvm/dune.in
 opensource/dune: opensource/dune.in
 python/unit/dune: python/unit/dune.in
+sledge/dune: sledge/dune.in
 unit/dune: unit/dune.in
 
 .PHONY: clean
@@ -273,6 +298,7 @@ clean:
 	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_ast_*
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
+	$(REMOVE_DIR) sledge/vendor/llvm-dune/{src,llvm_*.opam}
 	cd .. && dune clean
 
 .PHONY: fmt

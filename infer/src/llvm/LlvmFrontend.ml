@@ -59,10 +59,11 @@ let to_module source_file llair_program =
   module_
 
 
-let capture source_file _llvm_bitcode =
-  let dummy_program = Llair.Program.mk ~globals:[] ~functions:[] in
+let capture source_file llvm_bitcode_in =
+  let llvm_program = In_channel.input_all llvm_bitcode_in in
+  let program = LlvmSledgeFrontend.translate llvm_program in
   (* TODO: make generic and add language for Swift *)
-  let module_ = to_module source_file dummy_program C in
+  let module_ = to_module source_file program C in
   if should_dump_textual () then dump_textual_file ~show_location:true source_file module_
 
 

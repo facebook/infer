@@ -51,7 +51,7 @@ endif
 # sources from subfolders to src/ folder to avoid duplicates we use
 # $(DEPTH_ONE) and iteration over main and library folders.
 LIBRARY_FOLDERS = . ./IR  ./textual ./python ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./checkers ./clang ./clang/unit ./concurrency ./cost ./erlang ./integration ./istd ./java ./labs ./sledge/llair ./sledge/nonstdlib ./sledge/nonstdlib/iter ./sledge/nonstdlib/ocaml ./dotnet ./pulse ./scripts ./topl ./unit ./llvm
-INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I sledge/llair -I sledge/nonstdlib -I sledge/nonstdlib/iter -I sledge/nonstdlib/ocaml -I pulse -I scripts -I topl -I unit -I llvm
+INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I sledge -I sledge/llair -I sledge/nonstdlib -I sledge/nonstdlib/iter -I sledge/nonstdlib/ocaml -I pulse -I scripts -I topl -I unit -I llvm
 
 ml_src_files = $(shell \
   cd $(INFER_BUILD_DIR); \
@@ -60,12 +60,16 @@ ml_src_files = $(shell \
                 | sed 's/^\.\///'); \
   done)
 
+ml_src_files += sledge/LlvmSledgeFrontendStubs.ml
+
 mli_src_files = $(shell \
   cd $(INFER_BUILD_DIR); \
   for d in $(LIBRARY_FOLDERS); do \
   [ -d $$d ] && echo $$(find $$d $(DEPTH_ONE) -regex '\./[a-zA-Z].*\.mli' \( -not -regex '.*\.pp\.mli' \) \
                 | sed 's/^\.\///'); \
   done)
+
+mli_src_files += sledge/LlvmSledgeFrontendStubs.mli
 
 ml_src_files_without_mli:=$(shell \
   cd $(INFER_BUILD_DIR); \
@@ -74,7 +78,7 @@ ml_src_files_without_mli:=$(shell \
 .PHONY: depend
 depend:
 	cd $(INFER_BUILD_DIR) && \
-	ocamldep -native -one-line \
+	ocamldep -native -one-line -open LlvmSledgeFrontendStubs \
 	  $(INCLUDE_FOLDERS) \
 	  $(ml_src_files) $(mli_src_files) > $(DEADCODE_DIR)/.depend
 #	For each module foo, union the dependencies of foo.cmx and foo.cmi together. This is because
@@ -87,6 +91,14 @@ depend:
 	$(GNU_SED) -i .depend \
 	  -e 's/^\([^ :]\+\)\.cmx[ ]*: \(.*\)\1\.cmi/\1.cmx: \2/' \
 	  -e 's/\.cmi\b/.cmx/g'
+
+# due to a bug in ocamldep, it will detect LlvmSledgeFrontend as a dependency even when told to open
+# LlvmSledgeFrontendStubs (which redefines LlvmSledgeFrontend), because it finds
+# sledge/LlvmSledgeFrontend.ml. We could also move the frontend and stubs to different directories
+# to solve this another way. We don't want to include the code of LlvmSledgeFrontend.ml since it
+# requires more dependencies that we don't deal with yet.
+sledge/LlvmSledgeFrontend.cmx:
+	$(QUIET)echo "(* SKIPPING $@ *)" >> $(ALL_INFER_IN_ONE_FILE_ML)
 
 %.cmx:
 #	deal with the .ml *and* the .mli at the same time: when all the modules are inlined in one
@@ -125,6 +137,8 @@ depend:
 	$(QUIET)echo "  : " >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo $(shell basename $*) | $(GNU_SED) -e "s/\b\(.\)/  \u\1/g" >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  = struct " >> $(ALL_INFER_IN_ONE_FILE_ML)
+#	HACK to open the LLVM stubs in the only module that needs them
+	$(QUIET)if [[ $@ = llvm/LlvmFrontend.cmx ]]; then echo '  open LlvmSledgeFrontendStubs ' >> $(ALL_INFER_IN_ONE_FILE_ML); fi
 	$(QUIET)echo '# 1 "$*.ml"' >> $(ALL_INFER_IN_ONE_FILE_ML)
 	cat $(INFER_BUILD_DIR)/$*.ml >> $(ALL_INFER_IN_ONE_FILE_ML)
 	$(QUIET)echo "  end end" >> $(ALL_INFER_IN_ONE_FILE_ML)

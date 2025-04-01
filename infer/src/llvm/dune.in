@@ -1,0 +1,20 @@
+(* -*- tuareg -*- *)
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+(* NOTE: prepend dune.common to this file! *)
+
+Printf.sprintf
+  {|(library
+ (name LlvmFrontend)
+ (public_name infer.LlvmFrontend)
+ (flags
+  (:standard
+   -open Core -open IStdlib -open IStd -open IBase -open IR -open Textuallib -open LlvmSledge %s))
+ (libraries core zarith IStdlib IBase IR Textuallib Llair LlvmSledge NS ppx_show.runtime)
+ (preprocess (pps ppx_compare ppx_enumerate ppx_hash ppx_show)))|}
+  (if swift then "" else "-open LlvmSledgeFrontendStubs")
+|> Jbuild_plugin.V1.send
