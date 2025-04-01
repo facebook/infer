@@ -133,7 +133,7 @@ while [[ $# -gt 0 ]]; do
      ;;
     --)
       shift
-      CONFIGURE_OPTS+=("$*")
+      CONFIGURE_OPTS+=( "$@" )
       shift $#
       continue
      ;;
