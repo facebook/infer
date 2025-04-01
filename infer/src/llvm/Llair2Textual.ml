@@ -371,21 +371,22 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
   | Throw {exc; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
       ((Textual.Terminator.Throw (to_textual_exp ~proc_state exc |> fst), None, no_succs), Some loc)
-  | Switch {key; tbl; els} -> (
-    match StdUtils.iarray_to_list tbl with
-    | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
-        (* if then else *)
-        let bexp = to_textual_bool_exp ~proc_state key |> fst in
-        let else_, _, zero_nodes = to_textual_jump_and_succs ~proc_state ~seen_nodes zero_jump in
-        let then_, _, els_nodes = to_textual_jump_and_succs ~proc_state ~seen_nodes els in
-        let term = Textual.Terminator.If {bexp; then_; else_} in
-        let nodes = Textual.Node.Set.union zero_nodes els_nodes in
-        ((term, None, nodes), None)
-    | [] when Exp.equal key Exp.false_ ->
-        (* goto *)
-        (to_textual_jump_and_succs ~proc_state ~seen_nodes els, None)
-    | _ ->
-        ((Textual.Terminator.Unreachable, None, no_succs), None (* TODO translate Switch *)) )
+  | Switch {key; tbl; els; loc} -> (
+      let loc = to_textual_loc_instr ~proc_state loc in
+      match StdUtils.iarray_to_list tbl with
+      | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
+          (* if then else *)
+          let bexp = to_textual_bool_exp ~proc_state key |> fst in
+          let else_, _, zero_nodes = to_textual_jump_and_succs ~proc_state ~seen_nodes zero_jump in
+          let then_, _, els_nodes = to_textual_jump_and_succs ~proc_state ~seen_nodes els in
+          let term = Textual.Terminator.If {bexp; then_; else_} in
+          let nodes = Textual.Node.Set.union zero_nodes els_nodes in
+          ((term, None, nodes), Some loc)
+      | [] when Exp.equal key Exp.false_ ->
+          (* goto *)
+          (to_textual_jump_and_succs ~proc_state ~seen_nodes els, Some loc)
+      | _ ->
+          ((Textual.Terminator.Unreachable, None, no_succs), None (* TODO translate Switch *)) )
   | Iswitch _ | Abort _ | Unreachable ->
       ((Textual.Terminator.Unreachable, None, no_succs), None)
 

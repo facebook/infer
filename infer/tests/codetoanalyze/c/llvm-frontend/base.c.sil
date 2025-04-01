@@ -87,3 +87,29 @@ define test5() : int {
       
 } @?
 
+define test6() : *ptr_elt {
+  local var2: *int, var1: *ptr_elt
+  #: @[32:8]
+      store &var2 <- null @[32:8]
+      n66 = call_add() @[33:7]
+      jmp 3::ret @[33:7]
+      
+  #3::ret: @[33:7]
+      if __sil_eq(n66, 3) then jmp 5 else jmp 8 @[33:7]
+      
+  #5: @[34:13]
+      n70 = load n63 @[34:13]
+      n71 = load n70 @[34:12]
+      store n62 <- n71 @[34:5]
+      jmp 9 @[34:5]
+      
+  #8: @[36:5]
+      store n62 <- 0 @[36:5]
+      jmp 9 @[36:5]
+      
+  #9: @[37:1]
+      n78 = load n62 @[37:1]
+      ret n78 @[37:1]
+      
+} @?
+

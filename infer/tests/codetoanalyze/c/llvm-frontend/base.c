@@ -27,3 +27,11 @@ int test4() { return foo(); }
 int test5() { return bar(); }
 
 int call_add() { return add(1, 2); }
+
+int test6() {
+  int* ptr = NULL;
+  if (call_add() == 3) {
+    return *ptr;
+  } else
+    return 0;
+}
