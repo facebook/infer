@@ -208,7 +208,7 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
-LLVM_OCAML_SRC:=$(shell git ls-files -- sledge/vendor/llvm-dune)
+LLVM_OCAML_SRC:=$(shell git ls-files -- $(ROOT_DIR)/sledge/vendor/llvm-dune)
 
 # file to use as a sentinel indicating llvm ocaml bindings are up-to-date
 LLVM_OCAML_SENTINEL=sledge/vendor/llvm-dune/src/llvm/common/dune
