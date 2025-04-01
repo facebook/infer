@@ -395,13 +395,13 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
 and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) :
     Textual.Node.t * Textual.Typ.t option * Textual.Node.Set.t =
   let node_name = block_to_node_name block in
+  let instrs, first_loc, last_loc = cmnd_to_instrs ~proc_state block in
+  Llair2TextualType.type_inference ~proc_state instrs ;
   let (terminator, typ_opt, succs), term_loc_opt =
     to_terminator_and_succs ~proc_state
       ~seen_nodes:(Textual.NodeName.Set.add node_name seen_nodes)
       block.term
   in
-  let instrs, first_loc, last_loc = cmnd_to_instrs ~proc_state block in
-  Llair2TextualType.type_inference ~proc_state instrs ;
   let last_loc =
     match term_loc_opt with
     | Some loc ->
