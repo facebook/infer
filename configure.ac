@@ -151,10 +151,10 @@ BUILD_PYTHON_ANALYZERS=$enable_python_analyzers
 AC_SUBST([BUILD_PYTHON_ANALYZERS])
 
 AC_ARG_ENABLE(swift-analyzers,
-  AS_HELP_STRING([--disable-swift-analyzers],
-    [do not build the Swift analyzers (default is to build them)]),
+  AS_HELP_STRING([--enable-swift-analyzers],
+    [build the Swift analyzers (default is not to build them)]),
   ,
-  enable_swift_analyzers=yes)
+  enable_swift_analyzers=no)
 BUILD_SWIFT_ANALYZERS=$enable_swift_analyzers
 AC_SUBST([BUILD_SWIFT_ANALYZERS])
 

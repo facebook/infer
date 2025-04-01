@@ -29,12 +29,13 @@ function usage() {
   echo "Usage: $0 [options] [targets] [-- options for ./configure]"
   echo
   echo " targets:"
-  echo "   all      build everything (default)"
+  echo "   all      build everything except swift (default)"
   echo "   clang    build C and Objective-C analyzer"
   echo "   erlang   build Erlang analyzer"
   echo "   hack     build Hack analyzer"
   echo "   java     build Java analyzer"
-  echo "   python   build Python analyzer"
+  echo "   python   build Python analyzer (experimental)"
+  echo "   swift    build swift analyzer (experimental)"
   echo
   echo " options:"
   echo "   -h,--help             show this message"
@@ -58,6 +59,7 @@ BUILD_ERLANG=${BUILD_ERLANG:-no}
 BUILD_HACK=${BUILD_HACK:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
 BUILD_PYTHON=${BUILD_PYTHON:-no}
+BUILD_SWIFT=${BUILD_SWIFT:-no}
 INTERACTIVE=${INTERACTIVE:-yes}
 JOBS=${JOBS:-$NCPU}
 ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
@@ -72,6 +74,7 @@ function build_all() {
   BUILD_HACK=yes
   BUILD_JAVA=yes
   BUILD_PYTHON=yes
+  BUILD_SWIFT=no
 }
 
 while [[ $# -gt 0 ]]; do
@@ -104,6 +107,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     python)
       BUILD_PYTHON=yes
+      shift
+      continue
+      ;;
+    swift)
+      BUILD_SWIFT=yes
       shift
       continue
       ;;
@@ -146,7 +154,7 @@ done
 
 if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && \
    [ "$BUILD_HACK" == "no" ] && [ "$BUILD_JAVA" == "no" ] && \
-   [ "$BUILD_PYTHON" == "no" ]; then
+   [ "$BUILD_PYTHON" == "no" ] && [ "$BUILD_SWIFT" == "no" ]; then
   build_all
 fi
 
@@ -210,6 +218,9 @@ if [ "$BUILD_JAVA" == "no" ]; then
 fi
 if [ "$BUILD_PYTHON" == "no" ]; then
   CONFIGURE_PREPEND_OPTS+=" --disable-python-analyzers"
+fi
+if [ "$BUILD_SWIFT" == "yes" ]; then
+  CONFIGURE_PREPEND_OPTS+=" --enable-swift-analyzers"
 fi
 
 set -x
