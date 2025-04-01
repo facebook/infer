@@ -9,57 +9,62 @@ open! IStd
 module F = Format
 module L = Logging
 
-let run_swift_frontend source_file llvm_bitcode = LlvmFrontend.capture source_file llvm_bitcode
+type compiler = Clang | Swiftc
 
-let run_swift_frontend source_file llvm_bitcode =
+let run_llvm_frontend source_file llvm_bitcode = LlvmFrontend.capture source_file llvm_bitcode
+
+let run_llvm_frontend source_file llvm_bitcode =
   PerfEvent.(
     log (fun logger ->
-        PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"swiftc frontend" () ) ) ;
-  run_swift_frontend source_file llvm_bitcode ;
+        PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"llvm frontend" () ) ) ;
+  run_llvm_frontend source_file llvm_bitcode ;
   PerfEvent.(log (fun logger -> PerfEvent.log_end_event logger ()))
 
 
-let run_swiftc swiftc_cmd read =
+let run_cmd cmd read =
   let exit_with_error exit_code =
-    L.external_error "Error: the following swiftc command did not run successfully:@\n  %s@."
-      swiftc_cmd ;
+    L.external_error "Error: the following command did not run successfully:@\n  %s@." cmd ;
     L.exit exit_code
   in
-  match Utils.with_process_in swiftc_cmd read with
+  match Utils.with_process_in cmd read with
   | res, Ok () ->
       res
   | _, Error (`Exit_non_zero n) ->
-      (* exit with the same error code as swiftc in case of compilation failure *)
+      (* exit with the same error code as the compiler in case of compilation failure *)
       exit_with_error n
   | _ ->
       exit_with_error 1
 
 
-let run_swiftc swiftc_cmd frontend =
+let run_cmd cmd frontend =
   PerfEvent.(
-    log (fun logger -> PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"swiftc" ()) ) ;
-  let result = run_swiftc swiftc_cmd frontend in
+    log (fun logger -> PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"llvm" ()) ) ;
+  let result = run_cmd cmd frontend in
   PerfEvent.(log (fun logger -> PerfEvent.log_end_event logger ())) ;
   result
 
 
-let llvm_capture command args =
-  let swiftc_cmd = (command :: args) @ ["-emit-bc"; "-o"; "-"] in
+let llvm_capture ~compiler command args =
+  let cmd =
+    match compiler with
+    | Swiftc ->
+        (command :: args) @ ["-emit-bc"; "-o"; "-"]
+    | Clang ->
+        (command :: args) @ ["-emit-llvm"; "-o"; "-"]
+  in
   let source_path =
-    let swiftc_cmd =
-      List.filter swiftc_cmd ~f:(fun arg -> not (String.is_prefix ~prefix:"-" arg))
-    in
-    List.last_exn swiftc_cmd
+    let cmd = List.filter cmd ~f:(fun arg -> not (String.is_prefix ~prefix:"-" arg)) in
+    List.last_exn cmd
   in
   L.debug Capture Quiet "@\n*** Beginning capture of file %s ***@\n" source_path ;
-  let swiftc_cmd = String.concat ~sep:" " swiftc_cmd in
-  run_swiftc swiftc_cmd (fun chan_in -> run_swift_frontend source_path chan_in)
+  let cmd = String.concat ~sep:" " cmd in
+  run_cmd cmd (fun chan_in -> run_llvm_frontend source_path chan_in)
 
 
-let capture ~command ~args =
-  L.debug Capture Quiet "processed swiftc command is %s, args are %a@\n" command
+let capture compiler ~command ~args =
+  L.debug Capture Quiet "processed command is %s, args are %a@\n" command
     (Pp.comma_seq F.pp_print_string) args ;
-  llvm_capture command args
+  llvm_capture ~compiler command args
 
 
 let capture_llair ~source_file ~llair_file =

@@ -167,6 +167,9 @@ let capture ~changed_files mode =
       | BxlPython {build_cmd} ->
           L.progress "Capturing in bxl/python mode...@." ;
           BxlCapture.capture build_cmd
+      | Clang {prog; args} when Config.bitcode_capture ->
+          if Config.is_originator then L.progress "Capturing in clang (llvm) mode...@." ;
+          Bitcode.capture Clang ~command:prog ~args
       | Clang {compiler; prog; args} ->
           if Config.is_originator then L.progress "Capturing in make/cc mode...@." ;
           Clang.capture compiler ~prog ~args
@@ -205,7 +208,7 @@ let capture ~changed_files mode =
           Erlang.capture ~command:"rebar3" ~args
       | Swiftc {prog; args} ->
           L.progress "Capturing in swift mode...@." ;
-          Bitcode.capture ~command:prog ~args
+          Bitcode.capture Swiftc ~command:prog ~args
       | Erlc {args} ->
           L.progress "Capturing in erlc mode...@." ;
           Erlang.capture ~command:"erlc" ~args

@@ -178,6 +178,8 @@ val biabduction_worklist_mode : int
 
 val biabduction_write_dotty : bool
 
+val bitcode_capture : bool
+
 val bo_assume_void : bool
 
 val bo_bottom_as_default : bool

@@ -161,6 +161,11 @@ OPTIONS
            in infer-out/captured. (Conversely: --no-biabduction-write-dotty)
            See also infer-analyze(1).
 
+       --bitcode-capture
+           Activates: [EXPERIMENTAL] Use llvm frontend to capture files
+           compiled with clang (Conversely: --no-bitcode-capture)
+           See also infer-capture(1).
+
        --no-bo-assume-void
            Deactivates: Assume void type as a type of record fields not in
            type environment. (Conversely: --bo-assume-void)

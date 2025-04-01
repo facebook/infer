@@ -953,6 +953,12 @@ and ( biabduction_write_dotty
   , write_html )
 
 
+and bitcode_capture =
+  CLOpt.mk_bool ~long:"bitcode-capture"
+    "[EXPERIMENTAL] Use llvm frontend to capture files compiled with clang"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+
+
 and bo_assume_void =
   CLOpt.mk_bool ~default:true ~long:"bo-assume-void"
     ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
@@ -3927,6 +3933,8 @@ and biabduction_unsafe_malloc = !biabduction_unsafe_malloc
 and biabduction_worklist_mode = !biabduction_worklist_mode
 
 and biabduction_write_dotty = !biabduction_write_dotty
+
+and bitcode_capture = !bitcode_capture
 
 and bo_assume_void = !bo_assume_void
 
