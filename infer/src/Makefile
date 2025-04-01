@@ -31,13 +31,7 @@ FCP_CLANG_AST_PROJ = $(addprefix $(FCP_CLANG_OCAML_BUILD_DIR)/, \
 FCP_CLANG_AST_MAIN = $(addprefix $(FCP_CLANG_OCAML_DIR)/, clang_ast_visit.ml clang_ast_types.ml)
 FCP_FILES_TO_MIRROR = $(FCP_CLANG_AST_PROJ) $(FCP_CLANG_AST_MAIN)
 CLANG_PLUGIN_MIRRORED_FILES = $(addprefix $(CLANG_PLUGIN_MIRROR)/, $(notdir $(FCP_FILES_TO_MIRROR)))
-
 CLANG_BINIOU_DICT = $(ETC_DIR)/clang_ast.dict
-
-ifeq ($(ENABLE_OCAMLOPT_CUSTOM_CC),yes)
-EXTRA_CFLAGS += -cc,$(CC)
-endif
-
 OCAML_GENERATED_SOURCES = base/Version.ml
 
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -240,7 +234,6 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
 	INFER_GIT_BRANCH=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --abbrev-ref HEAD || printf "unknown"); \
 	sed \
-	  -e 's|@EXTRA_CFLAGS[@]|$(EXTRA_CFLAGS)|g' \
 	  -e 's|@INFER_MAJOR[@]|$(INFER_MAJOR)|g' \
 	  -e 's|@INFER_MINOR[@]|$(INFER_MINOR)|g' \
 	  -e 's|@INFER_PATCH[@]|$(INFER_PATCH)|g' \
