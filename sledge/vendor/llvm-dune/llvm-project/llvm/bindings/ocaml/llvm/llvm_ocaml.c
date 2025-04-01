@@ -1039,7 +1039,7 @@ CAMLprim value llvm_get_debug_loc_directory(value v) {
   CAMLparam0();
   CAMLlocal1(Option);
   unsigned Length = 0;
-  const char *Chars;
+  const char *Chars = NULL;
   LLVMMetadataRef File = get_debug_file(Val);
   if (File) {
     Chars = LLVMDIFileGetDirectory(File, &Length);
@@ -1054,7 +1054,7 @@ CAMLprim value llvm_get_debug_loc_filename(value v) {
   CAMLparam0();
   CAMLlocal1(Option);
   unsigned Length = 0;
-  const char *Chars;
+  const char *Chars = NULL;
   LLVMMetadataRef File = get_debug_file(Val);
   if (File) {
     Chars = LLVMDIFileGetFilename(File, &Length);
