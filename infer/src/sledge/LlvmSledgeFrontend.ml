@@ -907,7 +907,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
                        the getelementptr instruction itself if possible *)
                     Llvm.i64_type x.llcontext
                 | _ ->
-                    fail "xlate_opcode: %i %a" i pp_llvalue llv ()
+                    fail "xlate_opcode %a not a Pointer: %i %a" pp_lltype lltyp i pp_llvalue llv ()
               in
               (* translate [gep t*, iN M] as [gep [1 x t]*, iN M] *)
               ((pre_0 @ pre_i, ptr_idx x ~ptr:base ~idx ~llelt), llelt)
@@ -919,19 +919,19 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
                   ((pre_i1 @ pre_i, ptr_idx x ~ptr ~idx ~llelt), llelt)
               | Struct ->
                   let fld =
-                    match
-                      Option.bind ~f:Int64.unsigned_to_int
-                        (Llvm.int64_of_const (Llvm.operand llv i))
-                    with
+                    let op = Llvm.operand llv i in
+                    match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op) with
                     | Some n ->
                         n
                     | None ->
-                        fail "xlate_opcode: %i %a" i pp_llvalue llv ()
+                        fail "xlate_opcode field offset %a not an int: %i %a" pp_llvalue op i
+                          pp_llvalue llv ()
                   in
                   let llelt = (Llvm.struct_element_types lltyp).(fld) in
                   ((pre_i1 @ pre_i, ptr_fld x ~ptr ~fld ~lltyp), llelt)
               | _ ->
-                  fail "xlate_opcode: %i %a" i pp_llvalue llv () )
+                  fail "xlate_opcode unhandled type %a: %i %a" pp_lltype lltyp i pp_llvalue llv ()
+          )
           |>
           [%Dbg.retn fun {pf} (pre_exp, llt) -> pf "%a %a" pp_prefix_exp pre_exp pp_lltype llt]
         in
