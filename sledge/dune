@@ -121,8 +121,6 @@
 
 (dirs :standard \ test)
 
-(vendored_dirs vendor)
-
 (rule
  (targets sledge-help.txt)
  (deps
