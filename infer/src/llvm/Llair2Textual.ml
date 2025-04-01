@@ -416,7 +416,7 @@ and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) :
     match first_loc with
     | Some loc ->
         loc
-    | None when List.is_empty (StdUtils.iarray_to_list block.cmnd) ->
+    | None when List.is_empty instrs ->
         last_loc
     | _ ->
         Textual.Location.Unknown

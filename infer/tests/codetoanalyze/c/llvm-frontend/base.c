@@ -35,3 +35,23 @@ int test6() {
   } else
     return 0;
 }
+
+int test7() {
+  int* ptr = NULL;
+  if (call_add() == 5) {
+    return *ptr;
+  } else
+    return 0;
+}
+
+int call_add1(int* ptr, int y) { return add(*ptr, y); }
+
+int test8(int* ptr) {
+  *ptr = 1;
+  int* null_ptr = NULL;
+  int ret = call_add1(ptr, 2);
+  if (ret == 3) {
+    return *null_ptr;
+  } else
+    return 0;
+}

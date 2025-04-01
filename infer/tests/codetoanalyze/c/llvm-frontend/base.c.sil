@@ -22,12 +22,30 @@ define add(var0: int, var1: int) : int {
 declare bar() : *ptr_elt
 
 define call_add() : int {
-  #: @[29:25]
+  #: @?
       n58 = add(1, 2) @[29:25]
       jmp 1::ret @[29:25]
       
   #1::ret: @[29:18]
       ret n58 @[29:18]
+      
+} @?
+
+define call_add1(var0: *int, var1: int) : int {
+  local var4: int, var3: *int
+  #: @[47:0]
+      n100 = load &var0 @[47:0]
+      store &var3 <- n100 @[47:0]
+      n101 = load &var1 @[47:0]
+      store &var4 <- n101 @[47:0]
+      n110 = load &var3 @[47:46]
+      n111 = load n110 @[47:45]
+      n112 = load &var4 @[47:51]
+      n113 = add(n111, n112) @[47:41]
+      jmp 8::ret @[47:41]
+      
+  #8::ret: @[47:34]
+      ret n113 @[47:34]
       
 } @?
 
@@ -68,7 +86,7 @@ define test3(var0: *int) : int {
 } @?
 
 define test4() : int {
-  #: @[25:22]
+  #: @?
       n48 = foo() @[25:22]
       jmp 1::ret @[25:22]
       
@@ -78,7 +96,7 @@ define test4() : int {
 } @?
 
 define test5() : int {
-  #: @[27:22]
+  #: @?
       n53 = bar() @[27:22]
       jmp 1::ret @[27:22]
       
@@ -110,6 +128,65 @@ define test6() : int {
   #9: @[37:1]
       n78 = load &var1 @[37:1]
       ret n78 @[37:1]
+      
+} @?
+
+define test7() : int {
+  local var2: *int, var1: int
+  #: @[40:8]
+      store &var2 <- null @[40:8]
+      n86 = call_add() @[41:7]
+      jmp 3::ret @[41:7]
+      
+  #3::ret: @[41:7]
+      if __sil_eq(n86, 5) then jmp 5 else jmp 8 @[41:7]
+      
+  #5: @[42:13]
+      n90 = load &var2 @[42:13]
+      n91 = load n90 @[42:12]
+      store &var1 <- n91 @[42:5]
+      jmp 9 @[42:5]
+      
+  #8: @[44:5]
+      store &var1 <- 0 @[44:5]
+      jmp 9 @[44:5]
+      
+  #9: @[45:1]
+      n98 = load &var1 @[45:1]
+      ret n98 @[45:1]
+      
+} @?
+
+define test8(var0: *int) : int {
+  local var5: int, var4: *int, var3: *int, var2: int
+  #: @[49:0]
+      n115 = load &var0 @[49:0]
+      store &var3 <- n115 @[49:0]
+      n124 = load &var3 @[50:4]
+      store n124 <- 1 @[50:8]
+      store &var4 <- null @[51:8]
+      n129 = load &var3 @[52:23]
+      n130 = call_add1(n129, 2) @[52:13]
+      jmp 8::ret @[52:13]
+      
+  #11: @[54:13]
+      n136 = load &var4 @[54:13]
+      n137 = load n136 @[54:12]
+      store &var2 <- n137 @[54:5]
+      jmp 15 @[54:5]
+      
+  #14: @[56:5]
+      store &var2 <- 0 @[56:5]
+      jmp 15 @[56:5]
+      
+  #15: @[57:1]
+      n144 = load &var2 @[57:1]
+      ret n144 @[57:1]
+      
+  #8::ret: @[52:7]
+      store &var5 <- n130 @[52:7]
+      n132 = load &var5 @[53:7]
+      if __sil_eq(n132, 3) then jmp 11 else jmp 14 @[53:7]
       
 } @?
 
