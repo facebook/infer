@@ -44,7 +44,7 @@ let run_swiftc swiftc_cmd frontend =
 
 
 let llvm_capture command args =
-  let swiftc_cmd = command :: "-emit-bc" :: "-o" :: "-" :: args in
+  let swiftc_cmd = (command :: args) @ ["-emit-bc"; "-o"; "-"] in
   let source_path =
     let swiftc_cmd =
       List.filter swiftc_cmd ~f:(fun arg -> not (String.is_prefix ~prefix:"-" arg))
@@ -65,5 +65,4 @@ let capture ~command ~args =
 let capture_llair ~source_file ~llair_file =
   Utils.with_file_in llair_file ~f:(fun llair_in ->
       let llair_program : Llair.program = Marshal.from_channel llair_in in
-      L.progress "did not crash yet!@\n" ;
       LlvmFrontend.capture_llair source_file llair_program )
