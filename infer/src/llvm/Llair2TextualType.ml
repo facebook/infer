@@ -86,3 +86,41 @@ let type_inference ~proc_state instrs =
         ()
   in
   List.iter ~f:type_inference (List.rev instrs)
+
+
+let rec join (typ1 : Textual.Typ.t) (typ2 : Textual.Typ.t) : Textual.Typ.t =
+  match (typ1, typ2) with
+  | Int, Int ->
+      Int
+  | Float, Float ->
+      Float
+  | Ptr typ1, Ptr typ2 ->
+      Ptr (join typ1 typ2)
+  | Array typ1, Array typ2 ->
+      Array (join typ1 typ2)
+  | Textual.Typ.Struct name1, Textual.Typ.Struct name2 ->
+      if Textual.TypeName.equal name1 name2 then Textual.Typ.Struct name1 else assert false
+  | ( Textual.Typ.Fun (Some {params_type= params_type1; return_type= return_type1})
+    , Textual.Typ.Fun (Some {params_type= params_type2; return_type= return_type2}) ) ->
+      Textual.Typ.Fun
+        (Some
+           { params_type= List.map2_exn ~f:join params_type1 params_type2
+           ; return_type= join return_type1 return_type2 } )
+  | Null, Null ->
+      Null
+  | Void, Void ->
+      Void
+  | _ ->
+      assert false
+
+
+let join_typ typ1_opt typ2_opt =
+  match (typ1_opt, typ2_opt) with
+  | Some typ1, Some typ2 ->
+      Some (join typ1 typ2)
+  | Some typ1, None ->
+      Some typ1
+  | None, Some typ2 ->
+      Some typ2
+  | None, None ->
+      None

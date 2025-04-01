@@ -20,3 +20,5 @@ type structMap = Textual.Struct.t Textual.TypeName.Map.t
 val structMap : structMap ref
 
 val type_inference : proc_state:ProcState.t -> Textual.Instr.t list -> unit
+
+val join_typ : Textual.Typ.t option -> Textual.Typ.t option -> Textual.Typ.t option

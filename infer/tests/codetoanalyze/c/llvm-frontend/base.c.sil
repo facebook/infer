@@ -87,7 +87,7 @@ define test5() : int {
       
 } @?
 
-define test6() : *ptr_elt {
+define test6() : int {
   local var2: *int, var1: int
   #: @[32:8]
       store &var2 <- null @[32:8]
