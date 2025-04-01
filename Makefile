@@ -61,7 +61,6 @@ DIRECT_TESTS += \
   c_purity \
   c_starvation \
   c_topl \
-  cpp_biabduction \
   cpp_bufferoverrun \
   cpp_frontend \
   cpp_frontend-17 \
@@ -81,7 +80,6 @@ DIRECT_TESTS += \
 
 ifeq ($(BUILD_CPU),x86_64)
 DIRECT_TESTS += \
-  c_biabduction \
   c_frontend \
   c_llvm-frontend \
 
@@ -135,7 +133,6 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   objc_bufferoverrun \
-  objc_biabduction \
   objc_frontend \
   objc_liveness \
   objc_parameter-not-null-checked \
@@ -144,7 +141,6 @@ DIRECT_TESTS += \
   objc_pulse-data-lineage \
   objc_self-in-block \
   objc_static-constructor-stall \
-  objcpp_biabduction \
   objcpp_frontend \
   objcpp_liveness \
   objcpp_pulse \
@@ -248,7 +244,6 @@ BUILD_SYSTEMS_TESTS += \
 DIRECT_TESTS += \
   java_annotreach \
   java_annotreach-nosuperclass \
-  java_biabduction \
   java_bufferoverrun \
   java_dependencies \
   java_fragment-retains-view \
