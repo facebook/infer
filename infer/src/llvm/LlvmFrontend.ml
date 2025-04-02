@@ -59,16 +59,10 @@ let to_module source_file llair_program =
   module_
 
 
-let capture source_file llvm_bitcode_in =
-  let llvm_program = In_channel.input_all llvm_bitcode_in in
-  let program = LlvmSledgeFrontend.translate llvm_program in
-  (* TODO: make generic and add language for Swift *)
-  let module_ = to_module source_file program C in
-  if should_dump_textual () then dump_textual_file ~show_location:true source_file module_
-
-
 let language_of_source_file source_file =
   if String.is_suffix source_file ~suffix:".c" then Textual.Lang.C
+    (* TODO: add language for Swift *)
+  else if String.is_suffix source_file ~suffix:".swift" then Textual.Lang.C
   else L.die UserError "Currently the llvm frontend is only enabled for C programs@."
 
 
@@ -98,3 +92,9 @@ let capture_llair source_file llair_program =
   | Error err ->
       Error.format_error err ;
       ()
+
+
+let capture source_file llvm_bitcode_in =
+  let llvm_program = In_channel.input_all llvm_bitcode_in in
+  let llair_program = LlvmSledgeFrontend.translate llvm_program in
+  capture_llair source_file llair_program
