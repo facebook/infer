@@ -20,8 +20,9 @@ let pp ppf {name; init; loc} =
 let invariant g =
   let@ () = Invariant.invariant [%here] g [%sexp_of: t] in
   match Global.typ g.name with
-  | Pointer {elt} ->
-      assert (Option.is_none g.init || LlairTyp.is_sized elt)
+  | Pointer _ ->
+      (* pre-llvm17 check: assert (Option.is_none g.init || LlairTyp.is_sized elt) *)
+      ()
   | _ ->
       assert false
 

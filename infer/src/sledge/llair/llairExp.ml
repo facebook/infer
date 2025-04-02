@@ -225,7 +225,7 @@ let rec invariant exp =
   | FuncName {typ= Pointer {elt= Function _}} ->
       ()
   | FuncName _ ->
-      assert false
+      (* pre-llvm17 check: assert false *) ()
   | Integer {data; typ} -> (
     match typ with
     | Integer {bits} ->

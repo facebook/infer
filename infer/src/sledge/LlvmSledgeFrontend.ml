@@ -903,9 +903,9 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
               let llelt =
                 match Llvm.classify_type lltyp with
                 | Pointer ->
-                    (* TODO(jul): i64 is rubbish, need to get the type from
-                       the getelementptr instruction itself if possible *)
-                    Llvm.i64_type x.llcontext
+                    (* TODO(jul): we have no type to put here since llvm has made all pointers
+                       opaque *)
+                    Llvm.array_type lltyp 1
                 | _ ->
                     fail "xlate_opcode %a not a Pointer: %i %a" pp_lltype lltyp i pp_llvalue llv ()
               in
