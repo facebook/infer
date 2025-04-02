@@ -1864,14 +1864,7 @@ let translate ?dump_bitcode : string -> Llair.program =
   check_datalayout llcontext lldatalayout ;
   let x = {llcontext; lldatalayout} in
   let globals =
-    Llvm.fold_left_globals
-      (fun globals llg ->
-        if
-          Poly.equal (Llvm.linkage llg) Appending
-          && Llvm.(array_length (element_type (type_of llg))) = 0
-        then globals
-        else xlate_global x llg :: globals )
-      [] llmodule
+    Llvm.fold_left_globals (fun globals llg -> xlate_global x llg :: globals) [] llmodule
   in
   let functions =
     Llvm.fold_left_functions
