@@ -8,6 +8,7 @@
 open! IStd
 open Llair
 module Type = Llair2TextualType
+module L = Logging
 module ProcState = Llair2TextualProcState
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
@@ -85,23 +86,26 @@ let block_to_node_name block =
   Textual.NodeName.of_string name
 
 
-let to_textual_arith_exp_builtin (op : Llair.Exp.op2) typ =
-  let sil_binop =
+let to_textual_arith_exp_builtin (op : Llair.Exp.op2) (typ : Llair.Typ.t) =
+  let sil_binop : Binop.t =
     match (op, typ) with
-    | Add, Llair.Typ.Integer _ ->
-        Binop.PlusA (Some IInt)
-    | Sub, Llair.Typ.Integer _ ->
-        Binop.MinusA (Some IInt)
-    | Mul, Llair.Typ.Integer _ ->
-        Binop.Mult (Some IInt)
-    | Div, Llair.Typ.Integer _ ->
-        Binop.DivI
-    | Div, Llair.Typ.Float _ ->
-        Binop.DivF
-    | Rem, Llair.Typ.Integer _ ->
-        Binop.Mod
+    | Add, Integer _ ->
+        PlusA (Some IInt)
+    | Add, Pointer _ ->
+        PlusPI
+    | Sub, Integer _ ->
+        MinusA (Some IInt)
+    | Mul, Integer _ ->
+        Mult (Some IInt)
+    | Div, Integer _ ->
+        DivI
+    | Div, Float _ ->
+        DivF
+    | Rem, Integer _ ->
+        Mod
     | _ ->
-        assert false
+        L.die InternalError "unsupported llair binop %a:%a@\n" Sexp.pp (Llair.Exp.sexp_of_op2 op)
+          Llair.Typ.pp typ
   in
   Textual.ProcDecl.of_binop sil_binop
 
@@ -196,7 +200,10 @@ let rec to_textual_exp ~proc_state ?generate_typ_exp (exp : Llair.Exp.t) :
       let exp2, _ = to_textual_exp ~proc_state e2 in
       (Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}, typ1)
   | _ ->
-      assert false
+      L.internal_error "unsupported llair exp %a@\n" Llair.Exp.pp exp ;
+      let proc = builtin_qual_proc_name "llvm_nondet" in
+      (* TODO: should include the arguments here too *)
+      (Call {proc; args= []; kind= NonVirtual}, None)
 
 
 let to_textual_bool_exp ~proc_state exp =
