@@ -46,6 +46,18 @@ void deref_nullptr_bad() {
   *p = 42;
 }
 
+int* maybe_dangerous();
+void deref_maybe_dangerous_ok() {
+  int* p = maybe_dangerous();
+  *p = 42;
+}
+
+int* dangerous();
+void deref_dangerous_bad() {
+  int* p = dangerous();
+  *p = 42;
+}
+
 void guarded_nullptr_ok() {
   int* p = nullptr;
   if (p != nullptr) {

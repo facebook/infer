@@ -903,6 +903,19 @@ let folly_co_yield_co_error : model =
   start_named_model "folly::coro::detail::*::yield_value(folly::coro::co_error)" @@ fun () -> throw
 
 
+let nullable_model _args : model =
+  let open PulseModelsDSL.Syntax in
+  start_model
+  @@ fun () ->
+  L.d_printfln ~color:Orange "model for matching nullable functions" ;
+  disj
+    [ (let* res = null in
+       assign_ret res )
+    ; (let* res = fresh_nonneg () in
+       let* () = prune_positive res in
+       assign_ret res ) ]
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ +BuiltinDecl.(match_builtin __delete) <>$ capt_arg $--> delete
@@ -1108,6 +1121,11 @@ let thrift_matchers =
 
 let simple_matchers =
   let open ProcnameDispatcher.Call in
+  let match_nullable_fn (_tenv, proc_name) _ =
+    Option.exists Config.pulse_model_return_nullable ~f:(fun r ->
+        let s = Procname.to_string proc_name in
+        Str.string_match r s 0 )
+  in
   map_matchers @ thrift_matchers
   @ [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
       <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
@@ -1261,7 +1279,8 @@ let simple_matchers =
       |> with_non_disj
     ; -"folly" &:: "detail" &:: "SingletonHolder" &:: "try_get_fast"
       &++> Basic.unknown_call "folly::detail::SingletonHolder::try_get_fast"
-      |> with_non_disj ]
+      |> with_non_disj
+    ; +match_nullable_fn &::.*+++> nullable_model ]
 
 
 let matchers =
