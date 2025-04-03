@@ -189,6 +189,18 @@ module DisjunctiveMetadata = struct
      update it whenever a relevant action is taken (eg dropping a disjunct). *)
   let proc_metadata = AnalysisGlobalState.make_dls ~init:(fun () -> empty)
 
+  let infinite_loop_node =
+    AnalysisGlobalState.make_dls ~init:(fun () -> Procdesc.Node.dummy Procname.empty_block)
+
+
+  let record_infinite_node (infinitenode : Procdesc.Node.t) =
+    Utils.with_dls infinite_loop_node ~f:(fun infinite_loop_node ->
+        let _ = infinite_loop_node in
+        infinitenode )
+
+
+  let get_infinite_node () = DLS.get infinite_loop_node
+
   let add_dropped_disjuncts dropped_disjuncts =
     Utils.with_dls proc_metadata ~f:(fun proc_metadata ->
         {proc_metadata with dropped_disjuncts= proc_metadata.dropped_disjuncts + dropped_disjuncts} )
@@ -253,7 +265,7 @@ struct
                disjuncts are already deduplicated *)
             if has_geq_disj ~leq ~than:hd into then
               (* [hd] implies one of the states in [into]; skip it
-                 ([(a=>b) => (a\/b <=> b)]) *)
+                    ([(a=>b) => (a\/b <=> b)]) *)
               aux acc n_acc tl
             else aux (hd :: acc) (n_acc + 1) tl
         | _ ->
@@ -314,14 +326,23 @@ struct
       let max_iter =
         match DConfig.widen_policy with UnderApproximateAfterNumIterations max_iter -> max_iter
       in
-      if phys_equal prev next then prev
-      else if num_iters > max_iter then (
-        L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
+      if num_iters > max_iter then (
         DisjunctiveMetadata.incr_interrupted_loops () ;
         prev )
       else
+        let back_edges (prev : T.DisjDomain.t list) (next : T.DisjDomain.t list) (num_iters : int) :
+            T.DisjDomain.t list * int =
+          T.back_edge prev next num_iters
+        in
+        let fp = fst prev in
+        let fn = fst next in
+        let dbe, _ = back_edges fp fn num_iters in
+        let hasnew = not (phys_equal (fst prev) dbe) in
         let post_disj, _, dropped =
-          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
+          if hasnew then
+            join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:dbe (fst next)
+          else
+            join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
         in
         let next_non_disj = T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters in
         if leq ~lhs:(post_disj, next_non_disj) ~rhs:prev then prev

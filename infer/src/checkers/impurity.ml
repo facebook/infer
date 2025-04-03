@@ -171,7 +171,7 @@ let extract_impurity tenv pname formals (exec_state : ExecutionDomain.summary) :
     match exec_state with
     | ExitProgram astate ->
         (astate, true)
-    | ContinueProgram astate | ExceptionRaised astate ->
+    | ContinueProgram astate | ExceptionRaised astate | InfiniteProgram astate ->
         (astate, false)
     | AbortProgram astate
     | LatentAbortProgram {astate}

@@ -78,6 +78,10 @@ module DisjunctiveMetadata : sig
   type t
 
   val pp : F.formatter -> t -> unit
+
+  val record_infinite_node : Procdesc.Node.t -> unit
+
+  val get_infinite_node : unit -> Procdesc.Node.t
 end
 
 (** In the disjunctive interpreter, the domain is a set of abstract states representing a

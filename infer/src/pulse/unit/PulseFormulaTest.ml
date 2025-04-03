@@ -319,7 +319,11 @@ let%test_module "normalization" =
       [%expect
         {|
         conditions: (empty)
-        phi: var_eqs: x=v6 && linear_eqs: x = 0 ∧ y = 1 && term_eqs: 0=x∧1=y && intervals: x=0 ∧ y=1|}]
+        phi: var_eqs: x=v6
+             && linear_eqs: x = 0 ∧ y = 1
+             && term_eqs: 0=x∧1=y
+             && intervals: x=0 ∧ y=1
+             && raw_atom_conds: {[x -y] ≠ 0}∧{[-y] ≠ 0}|}]
 
 
     let%expect_test _ =
@@ -364,7 +368,8 @@ let%test_module "normalization" =
              && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3
                              ∧ v7 = -1 ∧ v8 = 0
              && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
-             && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0|}]
+             && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0
+             && raw_atom_conds: {[3·y -v6] = 0}∧{[12·v8 -v9] = 0}|}]
 
 
     (* expected: [is_int(x)] and [is_int(y)] get simplified away, [is_int(z)] is kept around *)
@@ -504,7 +509,8 @@ let%test_module "non-linear simplifications" =
           phi: var_eqs: z=v8 ∧ w=v7
                && linear_eqs: x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
                && term_eqs: 2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
-               && intervals: y=2|}]
+               && intervals: y=2
+               && raw_atom_conds: {[2·x -z] = 0}|}]
   end )
 
 
@@ -565,7 +571,9 @@ let%test_module "inequalities" =
          phi: var_eqs: a1=v6
               && linear_eqs: a1 = 0 ∧ x = 2
               && term_eqs: 0=a1∧2=x
-              && intervals: a1=0 ∧ x=2 |}]
+              && intervals: a1=0 ∧ x=2
+              && raw_atom_conds: {2 ≤ x}
+              && raw_term_conds: {x=2} |}]
   end )
 
 
@@ -588,6 +596,7 @@ let%test_module "intervals" =
                && linear_eqs: a2 = 0 ∧ a1 = 2
                && term_eqs: 0=a2∧2=a1
                && intervals: a2=0 ∧ a1=2
+               && raw_atom_conds: {[-a1 -a2 +2] = 0}
         Result: changed
           conditions: (empty) phi: term_eqs: 2=x|}]
 
@@ -600,7 +609,8 @@ let%test_module "intervals" =
         phi: var_eqs: a3=a2 ∧ a1=x=y
              && linear_eqs: a4 = 7 ∧ a3 = 0 ∧ a1 = 2
              && term_eqs: 0=a3∧2=a1∧7=a4
-             && intervals: a3=0 ∧ a1=2 |}]
+             && intervals: a3=0 ∧ a1=2
+             && raw_atom_conds: {[-a1 -a2 +2] = 0} |}]
   end )
 
 
@@ -626,7 +636,8 @@ let%test_module "conjunctive normal form" =
                && linear_eqs: x = 0 ∧ v7 = 1
                && term_eqs: 0=x∧1=v7∧(y≠0)=v7
                && intervals: x=0 ∧ v7=1
-               && atoms: {y ≠ 0} |}]
+               && atoms: {y ≠ 0}
+               && raw_atom_conds: {y ≠ 0} |}]
 
 
     let%expect_test "x = 0 && (x ≠ 0 ∨ y ≠ 0)  => y ≠ 0" =
@@ -638,7 +649,8 @@ let%test_module "conjunctive normal form" =
                && linear_eqs: x = 0 ∧ v7 = 1
                && term_eqs: 0=x∧1=v7∧(y≠0)=v7
                && intervals: x=0 ∧ v7=1
-               && atoms: {y ≠ 0} |}]
+               && atoms: {y ≠ 0}
+               && raw_atom_conds: {y ≠ 0} |}]
 
 
     let%expect_test "¬ (x ≠ 0 ∨ x > 0 ∨ x < 0) <=> x = 0" =
@@ -646,7 +658,11 @@ let%test_module "conjunctive normal form" =
       [%expect
         {|
           conditions: (empty)
-          phi: var_eqs: x=v6=v7=v8=v9=v10 && linear_eqs: x = 0 && term_eqs: 0=x && intervals: x=0 |}]
+          phi: var_eqs: x=v6=v7=v8=v9=v10
+               && linear_eqs: x = 0
+               && term_eqs: 0=x
+               && intervals: x=0
+               && raw_atom_conds: {x = 0}∧{v6 = 0}∧{v7 = 0}∧{v8 = 0}∧{v9 = 0} |}]
 
 
     let%expect_test "UNSAT: ¬ (x = 0 ∨ x > 0 ∨ x < 0)" =
@@ -663,7 +679,8 @@ let%test_module "conjunctive normal form" =
                && linear_eqs: x = a1 +1 ∧ v6 = 1
                && term_eqs: 1=v6∧[a1 +1]=x∧(0<x)=v6∧(0≤x)=v6
                && intervals: v8≠0
-               && atoms: {v8 ≠ 0}|}]
+               && atoms: {v8 ≠ 0}
+               && raw_atom_conds: {0 ≤ x}∧{0 < x}∧{v6 = 1}∧{v7 = 1}|}]
   end )
 
 
@@ -738,55 +755,58 @@ let%test_module "join" =
       test (x =. i 42 || x =. i 42) ;
       [%expect
         {|
-        conditions: {x = 42} phi: linear_eqs: x = 42 && term_eqs: 42=x && intervals: x=42 |}]
+        conditions: {x = 42}
+        phi: linear_eqs: x = 42 && term_eqs: 42=x && intervals: x=42 && raw_term_conds: {x=42} |}]
 
 
     let%expect_test _ =
       test (x =. i 42 || x <>. i 42) ;
       [%expect {|
-        conditions: (empty) phi: (empty) |}]
+        conditions: (empty) phi: raw_term_conds: {x=42} |}]
 
 
     let%expect_test _ =
       test (x =. y + i 1 || x =. y + i 1) ;
-      [%expect {|
-        conditions: (empty) phi: linear_eqs: x = y +1 && term_eqs: [y +1]=x |}]
+      [%expect
+        {|
+        conditions: (empty) phi: linear_eqs: x = y +1 && term_eqs: [y +1]=x && raw_term_conds: {x=v6} |}]
 
 
     let%expect_test _ =
       test (z = y + i 1 && (x =. z || x <>. z)) ;
       [%expect {|
-        conditions: (empty) phi: var_eqs: x=v6 |}]
+        conditions: (empty) phi: var_eqs: x=v6 && raw_term_conds: {x=z} |}]
 
 
     let%expect_test _ =
       test (x =. i 42 || x =. y) ;
       [%expect {|
-        conditions: (empty) phi: (empty) |}]
+        conditions: (empty) phi: raw_term_conds: {x=42} |}]
 
 
     let%expect_test _ =
       test (x =. i 42 || (x <>. i 42 && x =. y)) ;
       [%expect {|
-        conditions: (empty) phi: (empty) |}]
+        conditions: (empty) phi: raw_term_conds: {x=42} |}]
 
 
     let%expect_test _ =
       test ((x =. i 42 && y =. w) || (x =. z && y =. i 42)) ;
       [%expect {|
-        conditions: (empty) phi: (empty) |}]
+        conditions: (empty) phi: raw_term_conds: {x=42}∧{y=w} |}]
 
 
     let%expect_test _ =
       test (x =. y * z || i 0 = i 0) ;
       [%expect {|
-        conditions: (empty) phi: (empty) |}]
+        conditions: (empty) phi: raw_term_conds: {x=v6} |}]
 
 
     let%expect_test _ =
       test (w = y * z && (x =. w || x =. w)) ;
-      [%expect {|
-        conditions: {[x -w] = 0} phi: var_eqs: x=w=v6 && term_eqs: (y×z)=x |}]
+      [%expect
+        {|
+        conditions: {[x -w] = 0} phi: var_eqs: x=w=v6 && term_eqs: (y×z)=x && raw_term_conds: {x=w} |}]
 
 
     (* doesn't work as well as the previous test when the non-linear term is evaluated (twice)
@@ -794,7 +814,7 @@ let%test_module "join" =
     let%expect_test _ =
       test (x =. y * z || x =. y * z) ;
       [%expect {|
-        conditions: (empty) phi: (empty) |}]
+        conditions: (empty) phi: raw_term_conds: {x=v6} |}]
 
 
     let%expect_test _ =
@@ -804,7 +824,8 @@ let%test_module "join" =
         conditions: {[-x +w] < 0}
         phi: var_eqs: w=v7
              && linear_eqs: x = v6 +a1 -3 ∧ y = -z +v6 ∧ w = v6 -4
-             && term_eqs: [v6 -4]=w∧[v6 +a1 -3]=x∧[-z +v6]=y |}]
+             && term_eqs: [v6 -4]=w∧[v6 +a1 -3]=x∧[-z +v6]=y
+             && raw_term_conds: {w<x} |}]
 
 
     (* doesn't work as well as the previous test when the term is evaluated (twice) inside the
@@ -814,18 +835,21 @@ let%test_module "join" =
       [%expect
         {|
         conditions: (empty)
-        phi: linear_eqs: y = -z +v7 +4 ∧ v6 = v7 +4 && term_eqs: [-z +v7 +4]=y∧[v7 +4]=v6 |}]
+        phi: linear_eqs: y = -z +v7 +4 ∧ v6 = v7 +4
+             && term_eqs: [-z +v7 +4]=y∧[v7 +4]=v6
+             && raw_term_conds: {v7<x} |}]
 
 
     let%expect_test _ =
       test (x =. s "toto" || x =. s "toto") ;
       [%expect
         {|
-        conditions: {x = "toto"} phi: const_eqs: x="toto" && term_eqs: "toto"=x |}]
+        conditions: {x = "toto"}
+        phi: const_eqs: x="toto" && term_eqs: "toto"=x && raw_term_conds: {x="toto"} |}]
 
 
     let%expect_test _ =
       test (x =. s "toto" || x =. s "titi") ;
       [%expect {|
-        conditions: (empty) phi: (empty) |}]
+        conditions: (empty) phi: raw_term_conds: {x="toto"} |}]
   end )
