@@ -51,6 +51,8 @@ define call_add1(var0: *int, var1: int) : int {
 
 declare foo() : *ptr_elt
 
+declare free(*ptr_elt) : *ptr_elt
+
 define main() : int {
   local var1: int
   #: @[10:0]
@@ -58,6 +60,8 @@ define main() : int {
       ret 0 @[10:14]
       
 } @?
+
+declare malloc(int) : *ptr_elt
 
 define test() : *int {
   #: @[11:15]
@@ -187,6 +191,22 @@ define test8(var0: *int) : int {
       store &var5 <- n130 @[52:7]
       n132 = load &var5 @[53:7]
       if __sil_eq(n132, 3) then jmp 11 else jmp 14 @[53:7]
+      
+} @?
+
+define test9() : int {
+  local var2: int, var1: *int
+  #: @[60:14]
+      n151 = __sil_malloc(<int>) @[60:14]
+      store &var1 <- n151 @[60:8]
+      n153 = load &var1 @[61:4]
+      store n153 <- 42 @[61:8]
+      n156 = load &var1 @[62:14]
+      n157 = load n156 @[62:13]
+      store &var2 <- n157 @[62:7]
+      n159 = load &var1 @[63:8]
+      n161 = load &var2 @[64:10]
+      ret n161 @[64:3]
       
 } @?
 

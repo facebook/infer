@@ -55,3 +55,11 @@ int test8(int* ptr) {
   } else
     return 0;
 }
+
+int test9() {
+  int* ptr = malloc(sizeof(int));
+  *ptr = 42;
+  int ret = *ptr;
+  free(ptr);
+  return ret;
+}
