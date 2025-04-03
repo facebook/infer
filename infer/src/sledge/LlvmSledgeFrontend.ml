@@ -1006,13 +1006,6 @@ type pop_thunk = Loc.t -> Llair.inst list
 
 let pop_stack_frame_of_function : x -> Llvm.llvalue -> Llvm.llbasicblock -> pop_thunk =
  fun x func entry_blk ->
-  let append_stack_regs blk regs =
-    Llvm.fold_right_instrs
-      (fun instr regs ->
-        match Llvm.instr_opcode instr with Alloca -> xlate_name x instr :: regs | _ -> regs )
-      blk regs
-  in
-  let entry_regs = append_stack_regs entry_blk [] in
   Llvm.iter_blocks
     (fun blk ->
       if not (Poly.equal entry_blk blk) then
@@ -1025,9 +1018,7 @@ let pop_stack_frame_of_function : x -> Llvm.llvalue -> Llvm.llbasicblock -> pop_
                 () )
           blk )
     func ;
-  let pop retn_loc =
-    List.map entry_regs ~f:(fun reg -> Inst.free ~ptr:(Exp.reg reg) ~loc:retn_loc)
-  in
+  let pop retn_loc = [] in
   pop
 
 

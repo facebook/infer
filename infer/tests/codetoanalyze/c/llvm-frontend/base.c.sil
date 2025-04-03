@@ -205,6 +205,7 @@ define test9() : int {
       n157 = load n156 @[62:13]
       store &var2 <- n157 @[62:7]
       n159 = load &var1 @[63:8]
+      _ = __sil_free(n159) @[63:3]
       n161 = load &var2 @[64:10]
       ret n161 @[64:3]
       
