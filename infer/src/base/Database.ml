@@ -109,22 +109,6 @@ let create_tables ?(prefix = "") db = function
       create_specs_tables ~prefix db
 
 
-let load_model_specs db = function
-  | AnalysisDatabase
-    when Config.is_checker_enabled Biabduction && not Config.biabduction_models_mode -> (
-    try
-      let time0 = Mtime_clock.counter () in
-      SqliteUtils.exec db ~log:"begin transaction" ~stmt:"BEGIN IMMEDIATE TRANSACTION" ;
-      Utils.with_file_in Config.biabduction_models_sql
-        ~f:(In_channel.iter_lines ~f:(fun stmt -> SqliteUtils.exec db ~log:"load models" ~stmt)) ;
-      SqliteUtils.exec db ~log:"commit transaction" ~stmt:"COMMIT" ;
-      L.debug Capture Quiet "Loading models took %a@." Mtime.Span.pp (Mtime_clock.count time0)
-    with Sys_error _ ->
-      L.die ExternalError "Could not load model file %s@." Config.biabduction_models_sql )
-  | _ ->
-      ()
-
-
 let get_db_entry = function
   | AnalysisDatabase ->
       ResultsDirEntryName.AnalysisDB
@@ -172,8 +156,6 @@ let create_db location id =
   | Some _ ->
       (* Can't use WAL with custom VFS *)
       () ) ;
-  (* load biabduction models *)
-  load_model_specs db id ;
   SqliteUtils.db_close db ;
   try Stdlib.Sys.rename temp_db_path final_db_path
   with Sys_error _ -> (* lost the race, doesn't matter *) ()

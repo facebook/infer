@@ -373,9 +373,6 @@ let etc_dir = bin_dir ^/ Filename.parent_dir_name ^/ "etc"
 
 let config_dir = bin_dir ^/ Filename.parent_dir_name ^/ "config"
 
-(** Path to the database dump with model summaries *)
-let biabduction_models_sql = lib_dir ^/ "models.sql"
-
 (** Path to the textual file with Hack models *)
 let default_hack_builtin_models = lib_dir ^/ "hack" ^/ "models.sil"
 
