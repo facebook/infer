@@ -2779,6 +2779,15 @@ INTERNAL OPTIONS
            Deactivates: Print the cfg of the code coming from the libraries
            (Conversely: --dotty-cfg-libs)
 
+       --dump-llair
+           Activates: Output a llair program from the captured file. To be
+           used with the llvm frontend (Conversely: --no-dump-llair)
+
+       --dump-llair-text
+           Activates: Output a llair program in text from the captured file.
+           To be used with the llvm frontend (Conversely:
+           --no-dump-llair-text)
+
        --dump-textual
            Activates: Generate a SIL program from the captured target. A
            filename.sil file is generated for each filename.java file in the

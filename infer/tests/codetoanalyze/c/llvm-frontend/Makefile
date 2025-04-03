@@ -19,7 +19,7 @@ default: test
 
 %.c.test.sil: %.c $(LLAIR_DEPS) $(HEADERS)
 	$(QUIET)$(call silent_on_success,Testing the infer/llvm frontend in $(TEST_REL_DIR),\
-	  $(INFER_BIN) capture --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) --capture-llair $*.llair --llair-source-file $<)
+	  $(INFER_BIN) capture --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) --capture-llair $*.c.llair --llair-source-file $<)
 
 capture: $(SOURCES:.c=.c.test.sil)
 

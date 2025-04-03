@@ -1547,6 +1547,16 @@ and dump_duplicate_symbols =
     "Dump all symbols with the same name that are defined in more than one file."
 
 
+and dump_llair =
+  CLOpt.mk_bool ~long:"dump-llair"
+    "Output a llair program from the captured file. To be used with the llvm frontend"
+
+
+and dump_llair_text =
+  CLOpt.mk_bool ~long:"dump-llair-text"
+    "Output a llair program in text from the captured file. To be used with the llvm frontend"
+
+
 and dump_textual =
   CLOpt.mk_bool ~long:"dump-textual"
     "Generate a SIL program from the captured target. A $(i,filename.sil) file is generated for \
@@ -4161,6 +4171,10 @@ and differential_filter_set = !differential_filter_set
 and dotty_cfg_libs = !dotty_cfg_libs
 
 and dump_duplicate_symbols = !dump_duplicate_symbols
+
+and dump_llair = !dump_llair
+
+and dump_llair_text = !dump_llair_text
 
 and dump_textual = !dump_textual
 
