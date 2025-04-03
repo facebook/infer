@@ -132,15 +132,6 @@ let do_all_files classpath program =
 
 (* loads the source files and translates them *)
 let main load_sources_and_classes =
-  ( match (Config.biabduction_models_mode, ISys.file_exists Config.biabduction_models_jar) with
-  | true, false ->
-      ()
-  | false, false ->
-      L.(die UserError) "Java model file is required"
-  | true, true ->
-      L.(die UserError) "Not expecting model file when analyzing the models"
-  | false, true ->
-      () ) ;
   JBasics.set_permissive true ;
   JClasspath.with_classpath load_sources_and_classes ~f:(fun classpath ->
       let program = JProgramDesc.load classpath in

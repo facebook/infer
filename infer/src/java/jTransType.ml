@@ -165,45 +165,6 @@ let collect_interface_field cn inf l =
   field :: l
 
 
-let collect_models_class_fields classpath_field_map cn cf fields =
-  let static, nonstatic = fields in
-  let {Struct.name= field_name; typ= field_type; annot= annotation} =
-    create_sil_class_field cn cf
-  in
-  match Fieldname.Map.find_opt field_name classpath_field_map with
-  | Some classpath_ft when Typ.equal classpath_ft field_type ->
-      fields
-  | Some classpath_ft ->
-      (* TODO (#6711750): fix type equality for arrays before failing here *)
-      L.internal_error "Found inconsistent types for %s@\n\tclasspath: %a@\n\tmodels: %a@\n@."
-        (Fieldname.to_string field_name) (Typ.pp_full Pp.text) classpath_ft (Typ.pp_full Pp.text)
-        field_type ;
-      fields
-  | None when Javalib.is_static_field (Javalib.ClassField cf) ->
-      let field = Struct.mk_field field_name field_type ~annot:annotation in
-      (field :: static, nonstatic)
-  | None ->
-      let field = Struct.mk_field field_name field_type ~annot:annotation in
-      (static, field :: nonstatic)
-
-
-let add_model_fields classpath_fields cn =
-  let statics, nonstatics = classpath_fields in
-  let classpath_field_map =
-    let collect_fields map =
-      List.fold ~f:(fun map {Struct.name= fn; typ= ft} -> Fieldname.Map.add fn ft map) ~init:map
-    in
-    collect_fields (collect_fields Fieldname.Map.empty statics) nonstatics
-  in
-  try
-    match JBasics.ClassMap.find cn (JModels.get_classmap ()) with
-    | Javalib.JClass _ as jclass ->
-        Javalib.cf_fold (collect_models_class_fields classpath_field_map cn) jclass classpath_fields
-    | _ ->
-        classpath_fields
-  with Stdlib.Not_found -> classpath_fields
-
-
 let get_method_kind m =
   if Javalib.is_static_method m then Procname.Java.Static else Procname.Java.Non_Static
 
@@ -301,10 +262,7 @@ and get_class_struct_typ =
             make_struct program tenv node supers ~fields:[] ~statics annots
               ~java_class_kind:Struct.Interface name
         | Some (Javalib.JClass jclass as node) ->
-            let statics, fields =
-              let classpath_static, classpath_nonstatic = get_all_fields program tenv cn in
-              add_model_fields (classpath_static, classpath_nonstatic) cn
-            in
+            let statics, fields = get_all_fields program tenv cn in
             let annots = JAnnotation.translate_item jclass.Javalib.c_annotations in
             let interface_list = create_super_list program tenv jclass.Javalib.c_interfaces in
             let supers =

@@ -50,8 +50,6 @@ val allow_listed_cpp_methods : string list
 
 val anonymous_block_prefix : string
 
-val biabduction_models_jar : string
-
 val biabduction_models_sql : string
 
 val bin_dir : string
