@@ -10,6 +10,7 @@ open! IStd
 open Javalib_pack
 
 val load_models : jar_filename:string -> unit
+[@@warning "-unused-value-declaration"]
 (** Sets the procnames in the given jar file as models *)
 
 val get_classmap : unit -> JCode.jcode Javalib.interface_or_class JBasics.ClassMap.t
