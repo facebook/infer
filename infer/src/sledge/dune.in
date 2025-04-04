@@ -26,7 +26,7 @@ Printf.sprintf
  (name LlvmSledge)
  (public_name infer.LlvmSledge)
  (modules %s)
- (libraries %s NS Llair unix)
+ (libraries %s NS Llair unix IBase)
   (flags
    (:standard
     -w
@@ -36,6 +36,7 @@ Printf.sprintf
     -w -unused-var-strict
     -open
     NS
+    -open IBase
     -open
     Llair
     (:include llvm-config_ldflags.sexp)))
