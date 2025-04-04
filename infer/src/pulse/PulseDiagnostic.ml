@@ -375,6 +375,8 @@ let get_location = function
   | ErlangError (Try_clause {calling_context= (_, location) :: _})
   | ReadUninitialized {calling_context= (_, location) :: _} ->
       (* report at the call site that triggers the bug *) location
+  | ResourceLeak {resource= Awaitable; allocation_trace} ->
+      Trace.get_outer_location allocation_trace
   | ConfigUsage {location}
   | ConstRefableParameter {location}
   | MutualRecursionCycle {location}
