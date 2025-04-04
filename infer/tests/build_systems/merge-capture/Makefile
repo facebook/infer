@@ -7,7 +7,6 @@ TESTS_DIR = ../..
 
 INFER_OPTIONS = --pulse-only --debug-exceptions
 INFERPRINT_OPTIONS = --issues-tests
-TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 
 SOURCES = A.java B.java
 ARGSFILE = argsfile

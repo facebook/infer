@@ -9,7 +9,6 @@ ROOT_DIR = $(TESTS_DIR)/../..
 SOURCES_DIR = $(ROOT_DIR)/examples/java_hello
 SOURCES = $(wildcard $(SOURCES_DIR)/*.java)
 INFERPRINT_OPTIONS = --issues-tests
-TEST_CLASSPATH = $(JAVA_BUILTINS_DIR)
 
 include $(TESTS_DIR)/java.make
 include $(TESTS_DIR)/infer.make

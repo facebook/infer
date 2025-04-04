@@ -25,18 +25,18 @@ make devsetup
   warnings, you can build in "dev-noerror" mode with `make BUILD_MODE=dev-noerror`.
 
 - Faster edit/build cycle when working on OCaml code inside infer/src/: build inside infer/src/
-  (skips building the models after infer has been built), and build only what is needed for type
-  checking with `make -j -C infer/src check`. You need to have run `make -j` at some point before.
+  and build only what is needed for type checking with `make -j -C infer/src check`. You need to
+  have run `make -j` at some point before.
 
 - Alternatively, if you want to test your changes on a small example, build in bytecode mode:
   `make -j -C infer/src byte`.
 
 - In general, `make` commands from the root of the repository make sure that dependencies are in a
-  consistent and up-to-date state (e.g., they rebuild infer and the models before running steps that
+  consistent and up-to-date state (e.g., they rebuild infer before running steps that
   use infer), while running `make` commands from within subdirectories generally assumes that
   dependencies are already up-to-date.
 
-  For instance, running `make direct_java_biabduction_test` will rebuild infer and the models if
+  For instance, running `make direct_java_biabduction_test` will rebuild infer if
   necessary before running the test, but running `make -C infer/tests/codetoanalyze/java/biabduction/ test`
   will just execute the test.
 

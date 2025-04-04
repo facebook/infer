@@ -139,19 +139,6 @@ buck-out/
 /infer/man/man1/*.1.gz
 
 /infer/src/base/Version.ml
-/infer/models/java/models/
-/infer/models/models.jar
-/infer/lib/java/models.jar
-/infer/lib/models.sql
-/infer/models/java/bootclasspath
-/infer/models/c/out/
-/infer/models/cpp/out/
-/infer/models/objc/out/
-/infer/lib/specs/c_models
-/infer/lib/specs/clang_models
-/infer/lib/specs/cpp_models
-/infer/lib/specs/objc_models
-/infer/lib/specs/clean_models
 /infer/etc/clang_ast.dict
 /infer/src/toplevel.mlpack
 

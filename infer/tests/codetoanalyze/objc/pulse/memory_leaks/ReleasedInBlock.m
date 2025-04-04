@@ -13,8 +13,7 @@
 void allocAndReleaseInBlockNoLeakOk() {
   void (^callback)(CFRunLoopObserverRef obs, CFRunLoopActivity activity) =
       ^(CFRunLoopObserverRef obs, CFRunLoopActivity activity) {
-        // We should check if the object is released properly, see
-        // infer/models/objc/src/CoreFoundation.c
+        // We should check if the object is released properly
         CFRelease(obs);
       };
 

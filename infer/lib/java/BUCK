@@ -1,7 +1,0 @@
-prebuilt_jar(
-    name = 'models',
-    binary_jar = 'models.jar',
-    visibility = [
-        'PUBLIC'
-    ]
-)

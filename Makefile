@@ -227,6 +227,8 @@ endif
 endif # BUILD_PYTHON_ANALYZERS
 
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
+ANNOTATIONS_TARGET += annotations_target
+
 BUILD_SYSTEMS_TESTS += \
   differential_interesting_paths_filter \
   differential_of_costs_report_java \
@@ -480,17 +482,12 @@ manuals:
 	$(QUIET)$(call silent_on_success,Building Infer manuals,\
 	$(MAKE) $(INFER_MANUALS))
 
-infer_models: src_build
-ifeq ($(BUILD_JAVA_ANALYZERS),yes)
-	$(QUIET)$(call silent_on_success,Building infer annotations,\
-	$(MAKE) -C $(ANNOTATIONS_DIR))
-endif
-	$(QUIET)$(call silent_on_success,Building infer models,\
-	$(MAKE) -C $(MODELS_DIR) all)
-
 .PHONY: infer byte_infer
-infer byte_infer: infer_models
 infer: src_build
+ifeq ($(BUILD_JAVA_ANALYZERS),yes)
+infer: annotations_target
+byte_infer: annotations_target
+endif
 byte_infer: byte
 
 .PHONY: opt
@@ -586,7 +583,7 @@ clang_plugin_test_replace: clang_setup
 	)
 
 .PHONY: ocaml_unit_test
-ocaml_unit_test: src_build_common infer_models
+ocaml_unit_test: src_build_common
 	$(QUIET)$(call silent_on_success,Running OCaml unit tests,\
 	$(MAKE_SOURCE) unit)
 
@@ -597,6 +594,10 @@ define silence_make
     false; \
   }; )
 endef
+
+annotations_target:
+	$(QUIET)$(call silent_on_success,Running test: $(subst _, ,$@),\
+	$(call silence_make, $(MAKE) -C $(ANNOTATIONS_DIR) all))
 
 .PHONY: $(DIRECT_TESTS:%=direct_%_test)
 $(DIRECT_TESTS:%=direct_%_test): infer
@@ -790,9 +791,6 @@ endif
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/lib/wrappers/'
 	test -d      '$(DESTDIR)$(libdir)/infer/infer/bin/' || \
 	  $(MKDIR_P) '$(DESTDIR)$(libdir)/infer/infer/bin/'
-# copy files
-	$(INSTALL_DATA) -C          'infer/lib/models.sql' \
-	  '$(DESTDIR)$(libdir)/infer/infer/lib/models.sql'
 ifeq ($(BUILD_HACK_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          'infer/lib/hack/models.sil' \
 	  '$(DESTDIR)$(libdir)/infer/infer/lib/hack/models.sil'
@@ -820,8 +818,6 @@ endif
 ifeq ($(BUILD_JAVA_ANALYZERS),yes)
 	$(INSTALL_DATA) -C          'infer/annotations/annotations.jar' \
 	  '$(DESTDIR)$(libdir)/infer/infer/annotations/annotations.jar'
-	find infer/lib/java/*.jar -print0 | xargs -0 -I \{\} \
-	  $(INSTALL_DATA) -C \{\} '$(DESTDIR)$(libdir)'/infer/\{\}
 	$(INSTALL_PROGRAM) -C      '$(LIB_DIR)'/wrappers/javac \
 	  '$(DESTDIR)$(libdir)'/infer/infer/lib/wrappers/
 endif
@@ -905,8 +901,6 @@ ifeq ($(BUILD_C_ANALYZERS),yes)
 endif
 	$(QUIET)$(call silent_on_success,Cleaning Java annotations,\
 	$(MAKE) -C $(ANNOTATIONS_DIR) clean)
-	$(QUIET)$(call silent_on_success,Cleaning infer models,\
-	$(MAKE) -C $(MODELS_DIR) clean)
 ifeq ($(IS_FACEBOOK_TREE),yes)
 	$(QUIET)$(call silent_on_success,Cleaning facebook/,\
 	$(MAKE) -C facebook clean)
@@ -927,10 +921,6 @@ conf-clean: clean
 	$(REMOVE) config.log
 	$(REMOVE) config.status
 	$(REMOVE) configure
-	$(REMOVE_DIR) $(MODELS_DIR)/c/out/
-	$(REMOVE_DIR) $(MODELS_DIR)/cpp/out/
-	$(REMOVE_DIR) $(MODELS_DIR)/java/infer-out/
-	$(REMOVE_DIR) $(MODELS_DIR)/objc/out/
 
 OPAM_DEV_DEPS = ocp-indent merlin utop webbrowser
 
