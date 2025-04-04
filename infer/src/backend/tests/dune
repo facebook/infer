@@ -27,8 +27,6 @@
    -open
    Absint
    -open
-   Biabduction
-   -open
    BO
    -open
    Pulselib
@@ -55,7 +53,6 @@
   IR
   Absint
   Backend
-  Biabduction
   BO
   Checkers
   Costlib
