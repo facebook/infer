@@ -50,8 +50,8 @@ endif
 # Note that we run find under _build directory. Since we copy some
 # sources from subfolders to src/ folder to avoid duplicates we use
 # $(DEPTH_ONE) and iteration over main and library folders.
-LIBRARY_FOLDERS = . ./IR  ./textual ./python ./absint ./atd ./backend ./base ./biabduction ./bufferoverrun ./checkers ./clang ./clang/unit ./concurrency ./cost ./erlang ./integration ./istd ./java ./labs ./sledge/llair ./sledge/nonstdlib ./sledge/nonstdlib/iter ./sledge/nonstdlib/ocaml ./dotnet ./pulse ./scripts ./topl ./unit ./llvm
-INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I biabduction -I bufferoverrun -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I sledge -I sledge/llair -I sledge/nonstdlib -I sledge/nonstdlib/iter -I sledge/nonstdlib/ocaml -I pulse -I scripts -I topl -I unit -I llvm
+LIBRARY_FOLDERS = . ./IR  ./textual ./python ./absint ./atd ./backend ./base ./bufferoverrun ./checkers ./clang ./clang/unit ./concurrency ./cost ./erlang ./integration ./istd ./java ./labs ./sledge/llair ./sledge/nonstdlib ./sledge/nonstdlib/iter ./sledge/nonstdlib/ocaml ./dotnet ./pulse ./scripts ./topl ./unit ./llvm
+INCLUDE_FOLDERS = -I IR -I textual -I textual/unit -I python -I python/unit -I absint -I atd -I backend -I base -I bufferoverrun -I checkers -I clang -I clang/unit -I concurrency -I cost -I erlang -I integration -I istd -I java -I labs -I sledge -I sledge/llair -I sledge/nonstdlib -I sledge/nonstdlib/iter -I sledge/nonstdlib/ocaml -I pulse -I scripts -I topl -I unit -I llvm
 
 ml_src_files = $(shell \
   cd $(INFER_BUILD_DIR); \
