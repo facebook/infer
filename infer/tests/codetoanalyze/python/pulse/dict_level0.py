@@ -143,57 +143,33 @@ def fp_dict_missing_int_key_in_op_ok():
         return 0
 
 
-class DictField:
-
-    def get_key_bad(self):
-        self.d = {"name": "Alice", "city": "New York"}
-        return self.d["bla"]
-
-
-class D:
-    class_property1 = "key1"
-
-    def __init__(self):
-        self.key = "instance_key"
+def fp_test_dict_kwargs_ok():
+    key_dict = {
+        "key1": 1,
+        **({}),
+        "key2": 2,
+    }
+    return key_dict["key2"]
 
 
-def read_class_companion_property_bad():
-    my_dict = {"key2": 0, "key": 1}
-    return my_dict[D.class_property1]
+def fn_test_str_key_access_with_loop_bad():
+    d = {"a": 1, "b": 2}
+    keys = ["a", "b", "c"]
+    for key in keys:
+        print(d[key])
 
 
-def read_class_companion_property_ok():
-    my_dict = {"key1": 0, "key": 1}
-    return my_dict[D.class_property1]
+def get_val(d, key):
+    return d[key]
 
 
-def instance_attribute_from_class_companion_bad():
-    my_dict = {"key2": 0, "key": 1}
-    d = D()
-    return my_dict[d.class_property1]
+def fn_test_str_key_param_bad():
+    d = {"a": 1, "b": 2}
+    print(get_val(d, "c"))
 
 
-def instance_attribute_from_class_companion_ok():
-    my_dict = {"key1": 0, "key": 1}
-    d = D()
-    return my_dict[d.class_property1]
-
-
-def instance_attribute_bad():
-    my_dict = {"key2": 0, "key": 1}
-    d = D()
-    return my_dict[d.key]
-
-
-def instance_attribute_ok():
-    my_dict = {"key1": 0, "instance_key": 1}
-    d = D()
-    return my_dict[d.key]
-
-
-# TODO: implement missing-attribute logic
-# (we will need to make sure the capture is deep enough regarding inherited class)
-# TODO: decide if missing-attribute deserves a specific signal, distinct from dict-missing-key
-def fn_neither_instance_nor_class_attribute_bad():
-    d = D()
-    return d.unknown
+def fp_with_exec_ok():
+    ns = {}
+    code = "ns['inner'] = 1"
+    exec(code)
+    return ns["inner"]
