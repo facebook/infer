@@ -385,13 +385,19 @@ module Topl = struct
       let arguments = mk_arguments arity in
       let pattern = mk_pattern language pattern in
       let condition = mk_side_condition language arguments condition in
-      let action = mk_save arguments position in
-      let label = Some {ToplAst.arguments= Some arguments; condition; action; pattern} in
-      let transition_odd = {ToplAst.source= start_state; target= stateA; label} in
-      let action = [] in
-      let condition = mk_check arguments position @ condition in
-      let label = Some {ToplAst.arguments= Some arguments; condition; action; pattern} in
-      let transition_even = {ToplAst.source= stateB; target= error_state; label} in
+      let transition_odd =
+        let action = mk_save arguments position in
+        let label = Some {ToplAst.arguments= Some arguments; condition; action; pattern} in
+        let pos_range = (Lexing.dummy_pos, Lexing.dummy_pos) in
+        {ToplAst.source= start_state; target= stateA; label; pos_range}
+      in
+      let transition_even =
+        let action = [] in
+        let condition = mk_check arguments position @ condition in
+        let label = Some {ToplAst.arguments= Some arguments; condition; action; pattern} in
+        let pos_range = (Lexing.dummy_pos, Lexing.dummy_pos) in
+        {ToplAst.source= stateB; target= error_state; label; pos_range}
+      in
       [transition_odd; transition_even]
     in
     if String.(tag = source) then mk_transitions tracking_state leaked_state
@@ -403,7 +409,8 @@ module Topl = struct
     let name = Filename.basename path in
     let message = Some (Printf.sprintf "Flow query from %s" path) in
     let transitions =
-      {ToplAst.source= start_state; target= start_state; label= None}
+      let pos_range = (Lexing.dummy_pos, Lexing.dummy_pos) in
+      {ToplAst.source= start_state; target= start_state; label= None; pos_range}
       :: List.concat_map ~f:(from_matcher language source sink) matchers
     in
     {ToplAst.name; message; prefixes= []; transitions}

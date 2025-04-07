@@ -1,2 +1,2 @@
-codetoanalyze/erlang/topl/atom-name/atom_name.erl, test_1_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to atom_name:source/0,call to atom_name:sink/2]
-codetoanalyze/erlang/topl/atom-name/atom_name.erl, test_2_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [call to atom_name:source/0,call to atom_name:sink/2]
+codetoanalyze/erlang/topl/atom-name/atom_name.erl, test_1_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [[0] call to atom_name:source/0 (codetoanalyze/erlang/topl/atom-name/property.topl:4:3-62),[0] call to atom_name:sink/2 (codetoanalyze/erlang/topl/atom-name/property.topl:5:3-103)]
+codetoanalyze/erlang/topl/atom-name/atom_name.erl, test_2_Bad/0, 0, TOPL_ERROR, no_bucket, ERROR, [[0] call to atom_name:source/0 (codetoanalyze/erlang/topl/atom-name/property.topl:4:3-62),[0] call to atom_name:sink/2 (codetoanalyze/erlang/topl/atom-name/property.topl:5:3-103)]

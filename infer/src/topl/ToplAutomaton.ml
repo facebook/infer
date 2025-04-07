@@ -33,7 +33,8 @@ type vindex = int [@@deriving compare, equal]
 
 type tindex = int
 
-type transition = {source: vindex; target: vindex; label: ToplAst.label option}
+type transition =
+  {source: vindex; target: vindex; label: ToplAst.label option; loc_range: Location.t * Location.t}
 
 (** - INV1: Array.length transitions = Array.length skips
     - INV2: each index of [transitions] occurs exactly once in one of [outgoing]'s lists
@@ -49,6 +50,11 @@ type t =
   ; skips: bool array (* redundant *)
   ; outgoing: tindex list array
   ; vindex: vname -> vindex (* redundant *) }
+
+let location_of_position ({pos_fname; pos_lnum; pos_bol; pos_cnum} : Lexing.position) : Location.t =
+  let file = SourceFile.create pos_fname in
+  {Location.file; line= pos_lnum; col= pos_cnum - pos_bol + 1; macro_file_opt= None; macro_line= -1}
+
 
 (** [index_in H a] returns a pair of functions [(opt, err)] that lookup the (last) index of an
     element in [a]. The difference is that [opt x] returns an option, while [err msg x] makes Infer
@@ -111,11 +117,12 @@ let make properties =
             label_pattern
       in
       let prefix_label label = ToplAst.{label with pattern= prefix_pattern label.pattern} in
-      let f {ToplAst.source; target; label} =
+      let f {ToplAst.source; target; label; pos_range} =
         let source = vindex (pindex, source) in
         let target = vindex (pindex, target) in
         let label = Option.map ~f:prefix_label label in
-        {source; target; label}
+        let loc_range = Tuple2.map ~f:location_of_position pos_range in
+        {source; target; label; loc_range}
       in
       List.map ~f p.ToplAst.transitions
     in

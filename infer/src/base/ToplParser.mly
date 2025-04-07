@@ -60,7 +60,8 @@ prefix: PREFIX s=STRING { s }
 
 transition:
     source=state ARROW target=state COLON label=label
-    { ToplAst.{source; target; label} }
+    { let pos_range = $loc in
+      ToplAst.{source; target; label; pos_range} }
 
 state: i=identifier { i }
 

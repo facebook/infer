@@ -1,1 +1,1 @@
-codetoanalyze/erlang/topl/file/topl_file.erl, bad/1, 0, TOPL_ERROR, no_bucket, ERROR, [call to topl_file:op/1,call to file:close/1,call to file:write/2]
+codetoanalyze/erlang/topl/file/topl_file.erl, bad/1, 0, TOPL_ERROR, no_bucket, ERROR, [[0] call to topl_file:op/1 (WriteAfterClose.start[2]~~>WriteAfterClose.closed[0]),[1] call to file:close/1 (codetoanalyze/erlang/topl/file/property.topl:3:3-47),[0] call to file:write/2 (codetoanalyze/erlang/topl/file/property.topl:4:3-51)]

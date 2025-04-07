@@ -64,7 +64,12 @@ type label =
 
 type vertex = string [@@deriving compare, hash, sexp, show, equal]
 
-type transition = {source: vertex; target: vertex; label: label option} [@@deriving show]
+type transition =
+  { source: vertex
+  ; target: vertex
+  ; label: label option
+  ; pos_range: (Lexing.position * Lexing.position[@show.opaque]) }
+[@@deriving show]
 
 (* TODO(rgrigore): Check that registers are read only after being initialized *)
 type t =

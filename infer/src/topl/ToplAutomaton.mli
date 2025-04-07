@@ -26,7 +26,8 @@ type vindex = int [@@deriving compare, equal]
 (** from 0 to tcount()-1, inclusive *)
 type tindex = int
 
-type transition = {source: vindex; target: vindex; label: ToplAst.label option}
+type transition =
+  {source: vindex; target: vindex; label: ToplAst.label option; loc_range: Location.t * Location.t}
 
 val make : ToplAst.t list -> t
 
@@ -47,6 +48,8 @@ val error_name : string
 val is_start : t -> vindex -> bool
 
 val is_error : t -> vindex -> bool
+
+val pp_vertex : t -> Format.formatter -> vindex -> unit
 
 val pp_transition : t -> Format.formatter -> transition -> unit
 

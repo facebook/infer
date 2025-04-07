@@ -517,7 +517,7 @@ type step =
   ; step_data: step_data }
 
 and step_data =
-  | SmallStep of event
+  | SmallStep of {event: event; automaton_location: Location.t * Location.t}
   | LargeStep of
       {procname: Procname.t; post: simple_state; pulse_is_manifest: bool; topl_is_manifest: bool}
 
@@ -962,7 +962,10 @@ let small_step tenv loc pulse_state event simple_states =
     let mk ?(memory = old.post.memory) ?(pruned = Constraint.true_) significant =
       let last_step =
         if significant then
-          Some {step_location= loc; step_predecessor= old; step_data= SmallStep event}
+          let step_data =
+            SmallStep {event; automaton_location= transition.ToplAutomaton.loc_range}
+          in
+          Some {step_location= loc; step_predecessor= old; step_data}
         else old.last_step
       in
       (* NOTE: old pruned is discarded, because evolve_simple_state needs to see only new prunes
@@ -1080,12 +1083,29 @@ let filter_for_summary pulse_state state =
   state
 
 
-let description_of_step_data step_data =
-  ( match step_data with
-  | SmallStep (Call {procname}) | LargeStep {procname} ->
-      F.fprintf (F.get_str_formatter ()) "@[call to %a@]" Procname.pp_verbose procname
-  | SmallStep (ArrayWrite _) ->
-      F.fprintf (F.get_str_formatter ()) "@[write to array@]" ) ;
+let describe_event f event =
+  match event with
+  | ArrayWrite {aw_array= _; aw_index= _} ->
+      F.fprintf f "write to array"
+  | Call {return= _; arguments= _; procname} ->
+      F.fprintf f "call to %a" Procname.pp_verbose procname
+
+
+let describe_step_data f step_data =
+  match step_data with
+  | SmallStep {event; automaton_location} ->
+      F.fprintf f "%a (%a)" describe_event event Location.pp_range automaton_location
+  | LargeStep {procname; post; pulse_is_manifest= _; topl_is_manifest= _} ->
+      let {pre; post} = post in
+      let pp_conf f configuration =
+        ToplAutomaton.pp_vertex (Topl.automaton ()) f configuration.vertex
+      in
+      F.fprintf f "call to %a (%a~~>%a)" Procname.pp_verbose procname pp_conf pre pp_conf post
+
+
+let description_of_step_data nesting step_data =
+  let f = F.get_str_formatter () in
+  F.fprintf f "[%d] %a" nesting describe_step_data step_data ;
   F.flush_str_formatter ()
 
 
@@ -1106,7 +1126,7 @@ let report_errors proc_desc err_log ~pulse_is_manifest state =
     | None ->
         trace
     | Some {step_location; step_predecessor; step_data} ->
-        let description = description_of_step_data step_data in
+        let description = description_of_step_data nesting step_data in
         let trace =
           let trace_element = Errlog.make_trace_element nesting step_location description [] in
           match step_data with

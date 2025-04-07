@@ -4902,6 +4902,7 @@ and topl_properties =
   let parse topl_file =
     let f ch =
       let lexbuf = Lexing.from_channel ch in
+      Lexing.set_filename lexbuf topl_file ;
       try ToplParser.properties (ToplLexer.token ()) lexbuf
       with ToplParser.Error ->
         let Lexing.{pos_lnum; pos_bol; pos_cnum; _} = Lexing.lexeme_start_p lexbuf in
