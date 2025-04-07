@@ -41,8 +41,6 @@ let no_allocation = "NoAllocation"
 
 let nullable = "Nullable"
 
-let nullable_decl = "NullableDecl"
-
 let nullsafe_strict = "NullsafeStrict"
 
 let nullsafe = "Nullsafe"
@@ -69,8 +67,6 @@ let performance_critical = "PerformanceCritical"
 
 let prop = "Prop"
 
-let propagates_nullable = "PropagatesNullable"
-
 let returns_ownership = "ReturnsOwnership"
 
 let synchronized_collection = "SynchronizedCollection"
@@ -78,8 +74,6 @@ let synchronized_collection = "SynchronizedCollection"
 let suppress_lint = "SuppressLint"
 
 let recently_nonnull = "RecentlyNonNull"
-
-let recently_nullable = "RecentlyNullable"
 
 let thread_confined = "ThreadConfined"
 
@@ -152,22 +146,6 @@ let field_has_annot fieldname (struct_typ : Struct.t) predicate =
 let struct_typ_has_annot (struct_typ : Struct.t) predicate = predicate struct_typ.annots
 
 let ia_is_not_thread_safe ia = ia_ends_with ia not_thread_safe
-
-let ia_is_nullable ia =
-  List.exists ~f:(ia_ends_with ia)
-    [ nullable
-    ; nullable_decl
-      (* From org.checkerframework.checker.nullness.compatqual package. Extensively used in Guava library.
-         Identical to {@code @Nullable}, but can only be written at declaration locations. *)
-    ; propagates_nullable (* @PropagatesNullable is implicitly nullable *)
-    ; recently_nullable
-      (* @RecentlyNullable is a special annotation that was added to solve backward compatibility issues
-         for Android SDK migration.
-         See https://android-developers.googleblog.com/2018/08/android-pie-sdk-is-now-more-kotlin.html for details.
-         From nullsafe point of view, such annotations should be treated exactly as normal @Nullable annotation.
-         (Actually, it might even be shown as @Nullable in IDE/source code)
-      *) ]
-
 
 let ia_is_nonnull ia =
   List.exists ~f:(ia_ends_with ia)

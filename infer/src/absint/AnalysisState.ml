@@ -22,11 +22,7 @@ let initial () = {last_instr= None; last_node= None; last_session= 0; remaining_
 (** Global state *)
 let gs = AnalysisGlobalState.make_dls ~init:initial
 
-let get_instr () = (DLS.get gs).last_instr
-
 let set_instr instr = (DLS.get gs).last_instr <- Some instr
-
-let get_node_exn () = Option.value_exn (DLS.get gs).last_node
 
 let get_node () = (DLS.get gs).last_node
 
@@ -36,25 +32,7 @@ let set_node (node : Procdesc.Node.t) =
   gs.last_node <- Some node
 
 
-let get_session () = (DLS.get gs).last_session
-
 let set_session (session : int) = (DLS.get gs).last_session <- session
-
-let get_loc_exn () =
-  match (DLS.get gs).last_instr with
-  | Some instr ->
-      Sil.location_of_instr instr
-  | None ->
-      get_node_exn () |> Procdesc.Node.get_loc
-
-
-let get_loc () =
-  match (DLS.get gs).last_instr with
-  | Some instr ->
-      Some (Sil.location_of_instr instr)
-  | None ->
-      None
-
 
 let get_remaining_disjuncts () = (DLS.get gs).remaining_disjuncts
 

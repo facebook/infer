@@ -49,6 +49,3 @@ val is_underscore : t -> bool
 
 (** Set of Mangled. *)
 module Set : PrettyPrintable.PPSet with type elt = t
-
-(** Map with Mangled as key *)
-module Map : PrettyPrintable.PPMap with type key = t

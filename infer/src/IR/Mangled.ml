@@ -54,9 +54,3 @@ module Set = PrettyPrintable.MakePPSet (struct
 
   let pp = pp
 end)
-
-module Map = PrettyPrintable.MakePPMap (struct
-  type nonrec t = t [@@deriving compare]
-
-  let pp = pp
-end)

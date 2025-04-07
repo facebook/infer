@@ -69,19 +69,6 @@ let extend_colormap pe (x : Obj.t) (c : color) =
   {pe with cmap_norm= colormap}
 
 
-(** Set the object substitution, which is supposed to preserve the type. Currently only used for a
-    map from (identifier) expressions to the program var containing them *)
-let set_obj_sub pe (sub : 'a -> 'a) =
-  let new_obj_sub x =
-    let x' = Obj.repr (sub (Obj.obj x)) in
-    match pe.obj_sub with None -> x' | Some sub' -> sub' x'
-  in
-  {pe with obj_sub= Some new_obj_sub}
-
-
-(** Reset the object substitution, so that no substitution takes place *)
-let reset_obj_sub pe = {pe with obj_sub= None}
-
 (** string representation of colors *)
 let color_string = function
   | Black ->
@@ -162,20 +149,6 @@ let seq ?(print_env = text) ?sep:(sep_text = " ") ?(sep_html = sep_text) pp =
 let comma_seq ?print_env pp f l = seq ?print_env ~sep:"," pp f l
 
 let semicolon_seq ?print_env pp f l = seq ?print_env ~sep:"; " pp f l
-
-let comma_seq_diff pp pe0 f =
-  let rec doit = function
-    | [] ->
-        ()
-    | [x] ->
-        color_wrapper pe0 f x ~f:(fun _pe -> pp)
-    | x :: l ->
-        color_wrapper pe0 f x ~f:(fun _pe -> pp) ;
-        F.pp_print_string f ", " ;
-        doit l
-  in
-  doit
-
 
 let option pp fmt = function
   | None ->

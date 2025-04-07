@@ -113,17 +113,9 @@ module type S = sig
 
   val free : t
 
-  val fscanf : t
-
-  val fwscanf : t
-
   val malloc : t
 
   val malloc_no_fail : t
-
-  val nsArray_arrayWithObjects : t
-
-  val nsArray_arrayWithObjectsCount : t
 
   val objc_insert_key : t
 
@@ -134,28 +126,6 @@ module type S = sig
   val objc_autorelease_pool_push : t
 
   val objc_cpp_throw : t
-
-  val pthread_create : t
-
-  val scanf : t
-
-  val sscanf : t
-
-  val swscanf : t
-
-  val vfscanf : t
-
-  val vfwscanf : t
-
-  val vscanf : t
-
-  val vsscanf : t
-
-  val vswscanf : t
-
-  val vwscanf : t
-
-  val wscanf : t
 
   val zero_initialization : t
 end

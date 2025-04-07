@@ -69,9 +69,6 @@ val debug_dev : ('a, Format.formatter, unit) format -> 'a
 (** Type of location in ml source: __POS__ *)
 type ocaml_pos = string * int * int * int
 
-val ocaml_pos_to_string : ocaml_pos -> string
-(** Convert an ocaml position to a string *)
-
 val pp_ocaml_pos_opt : F.formatter -> ocaml_pos option -> unit
 (** Pretty print a position in ocaml source *)
 
@@ -90,10 +87,6 @@ val reset_formatters : unit -> unit
 
 type delayed_prints
 
-val d_pp : (F.formatter -> 'a -> unit) -> 'a -> unit
-
-val d_pp_with_pe : ?color:Pp.color -> (Pp.env -> F.formatter -> 'a -> unit) -> 'a -> unit
-
 val force_and_reset_delayed_prints : F.formatter -> unit
 
 val get_and_reset_delayed_prints : unit -> delayed_prints
@@ -104,12 +97,6 @@ val set_delayed_prints : delayed_prints -> unit
 
 val reset_delayed_prints : unit -> unit
 (** reset the delayed print actions *)
-
-val d_str : ?color:Pp.color -> string -> unit
-(** dump a string *)
-
-val d_strln : ?color:Pp.color -> string -> unit
-(** dump a string plus newline *)
 
 val d_ln : unit -> unit
 (** dump a newline *)
@@ -128,17 +115,6 @@ val d_warning : string -> unit
 
 val d_info : string -> unit
 (** dump an info string *)
-
-val d_indent : int -> unit
-(** dump an indentation *)
-
-val d_increase_indent : unit -> unit
-(** dump command to increase the indentation level. NOTE: most likely, you need [d_with_indent]
-    instead *)
-
-val d_decrease_indent : unit -> unit
-(** dump command to decrease the indentation level NOTE: most likely, you need [d_with_indent]
-    instead. *)
 
 val with_indent :
      ?name_color:Pp.color

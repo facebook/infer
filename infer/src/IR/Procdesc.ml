@@ -245,8 +245,6 @@ module Node = struct
     fun start_node ~f -> find ~f NodeSet.empty [start_node]
 
 
-  let get_distance_to_exit node = node.dist_exit
-
   let get_wto_index node = node.wto_index
 
   (** Append the instructions to the list of instructions to execute *)
@@ -408,12 +406,6 @@ module Node = struct
       node
 
 
-  let d_instrs ~highlight (node : t) =
-    L.d_pp_with_pe ~color:Green
-      (fun pe fmt node -> F.fprintf fmt "@\n%a" (pp_instrs ~highlight pe) node)
-      node
-
-
   let string_of_prune_node_kind = function
     | PruneNodeKind_ExceptionHandler ->
         "exception handler"
@@ -513,25 +505,6 @@ let from_proc_attributes attributes =
   let start_node = Node.dummy pname in
   let exit_node = Node.dummy pname in
   {attributes; nodes= []; nodes_num= 0; start_node; exit_node; loop_heads= None; wto= None}
-
-
-(** Compute the distance of each node to the exit node, if not computed already *)
-let compute_distance_to_exit_node pdesc =
-  let exit_node = pdesc.exit_node in
-  let rec mark_distance dist nodes =
-    let next_nodes = ref [] in
-    let do_node (node : Node.t) =
-      match node.dist_exit with
-      | Some _ ->
-          ()
-      | None ->
-          node.dist_exit <- Some dist ;
-          next_nodes := node.preds @ !next_nodes
-    in
-    List.iter ~f:do_node nodes ;
-    if not (List.is_empty !next_nodes) then mark_distance (dist + 1) !next_nodes
-  in
-  mark_distance 0 [exit_node]
 
 
 let get_attributes pdesc = pdesc.attributes

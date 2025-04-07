@@ -57,14 +57,6 @@ let area {signedness; i} =
       (* negative unsigned *) 3
 
 
-let to_signed intlit =
-  match intlit with
-  | {signedness= Signed} ->
-      Some intlit
-  | {signedness= Unsigned; i} ->
-      if Z.(lt i zero) then None else Some {intlit with signedness= Signed}
-
-
 let compare_value intlit1 intlit2 =
   [%compare: int * Z.t] (area intlit1, intlit1.i) (area intlit2, intlit2.i)
 

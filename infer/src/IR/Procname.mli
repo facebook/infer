@@ -27,12 +27,6 @@ module CSharp : sig
   val get_method : t -> string
   (** Return the method name of a csharp procedure name. *)
 
-  val get_class_type_name : t -> Typ.Name.t
-  (** Return the class name as a typename of a java procedure name. *)
-
-  val get_return_typ : t -> Typ.t
-  (** Return the return type of [pname_csharp]. return Tvoid if there's no return type *)
-
   val get_class_name : t -> string
   (** Return the class name of a java procedure name. *)
 
@@ -144,8 +138,6 @@ module ObjC_Cpp : sig
 
   val get_class_type_name : t -> Typ.Name.t [@@warning "-unused-value-declaration"]
 
-  val get_class_qualifiers : t -> QualifiedCppName.t
-
   val objc_method_kind_of_bool : bool -> kind
   (** Create ObjC method type from a bool is_instance. *)
 
@@ -222,10 +214,6 @@ val get_class_type_name : t -> Typ.Name.t option
 val get_class_name : t -> string option
 
 val get_parameters : t -> Parameter.t list
-
-val replace_parameters : Parameter.t list -> t -> t
-
-val parameter_of_name : t -> Typ.Name.t -> Parameter.t
 
 val is_cpp_assignment_operator : t -> bool
 
@@ -375,9 +363,6 @@ val is_python : t -> bool
 
 val objc_cpp_replace_method_name : t -> string -> t
 
-val is_infer_undefined : t -> bool
-(** Check if this is a special Infer undefined procedure. *)
-
 val is_static : t -> bool option
 (** Check if a procedure is a static class method or not. If the procedure is not a class method or
     is unknown to be static, it returns [None]. For now, this checking does not work on C++ methods. *)
@@ -407,8 +392,6 @@ val describe : Format.formatter -> t -> unit
 val replace_class : t -> ?arity_incr:int -> Typ.Name.t -> t
 (** Replace the class name component of a procedure name. In case of Java, replace package and class
     name. *)
-
-val is_method_in_objc_protocol : t -> bool
 
 val pp_simplified_string : ?withclass:bool -> F.formatter -> t -> unit
 (** Pretty print a proc name as an easy string for the user to see in an IDE. *)

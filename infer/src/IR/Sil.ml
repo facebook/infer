@@ -8,7 +8,6 @@
 
 open! IStd
 module F = Format
-module L = Logging
 
 type if_kind =
   | Ik_bexp
@@ -168,8 +167,6 @@ let pp_instr ~print_types pe0 f instr =
       | Metadata metadata ->
           pp_instr_metadata pe0 f metadata )
 
-
-let d_instr (i : instr) = L.d_pp_with_pe ~color:Pp.Green (pp_instr ~print_types:true) i
 
 (** Shorthands to carry expression maps through chained structural equalities below*)
 let ( &&* ) (equality, exp_map) f = if equality then f exp_map else (false, exp_map)

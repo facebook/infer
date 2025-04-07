@@ -25,9 +25,6 @@ val equal_name : name -> name -> bool
 (** Kind of identifiers. *)
 type kind [@@deriving compare]
 
-val equal_kind : kind -> kind -> bool
-(** Equality for kind. *)
-
 (** Set for identifiers. *)
 module Set : Stdlib.Set.S with type elt = t
 
@@ -49,9 +46,6 @@ module NameGenerator : sig
   (** Set the current name generator. *)
 end
 
-val idlist_to_idset : t list -> Set.t
-(** Convert an identifier list to an identifier set *)
-
 val kprimed : kind
 
 val knormal : kind
@@ -59,9 +53,6 @@ val knormal : kind
 val kfootprint : kind
 
 val knone : kind
-
-val name_spec : name
-(** Name used for spec variables *)
 
 val name_return : Mangled.t
 (** Name used for the return variable *)
@@ -71,9 +62,6 @@ val string_to_name : string -> name
 
 val name_to_string : name -> string
 (** Convert a name to a string. *)
-
-val get_name : t -> name
-(** Name of the identifier. *)
 
 val create_with_stamp : kind -> name -> int -> t
 
@@ -92,29 +80,17 @@ val update_name_generator : t list -> unit
 val create_fresh : kind -> t
 (** Create a fresh identifier with default name for the given kind. *)
 
-val create_path : string -> t
-(** Generate a normal identifier whose name encodes a path given as a string. *)
-
-val is_primed : t -> bool
-(** Check whether an identifier is primed or not. *)
-
 val is_normal : t -> bool
 (** Check whether an identifier is normal or not. *)
 
 val is_footprint : t -> bool
 (** Check whether an identifier is footprint or not. *)
 
-val is_path : t -> bool
-(** Check whether an identifier represents a path or not. *)
-
 val is_none : t -> bool
 (** Check whether an identifier is the special "none" identifier *)
 
 val get_stamp : t -> int
 (** Get the stamp of the identifier *)
-
-val set_stamp : t -> int -> t
-(** Set the stamp of the identifier *)
 
 (** {2 Pretty Printing} *)
 
@@ -128,7 +104,3 @@ val to_string : t -> string
 (** Convert an identifier to a string. *)
 
 val hashqueue_of_sequence : ?init:unit HashQueue.t -> t Sequence.t -> unit HashQueue.t
-
-val set_of_sequence : ?init:Set.t -> t Sequence.t -> Set.t
-
-val counts_of_sequence : t Sequence.t -> t -> int

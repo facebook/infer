@@ -91,22 +91,8 @@ let get_simplified_name pv =
       s
 
 
-(** Check if the pvar is an abducted return var or param passed by ref *)
-let is_abduced pv =
-  match pv.pv_kind with Abduced_retvar _ | Abduced_ref_param _ -> true | _ -> false
-
-
-(** Turn a pvar into a seed pvar (which stored the initial value) *)
-let to_seed pv = {pv with pv_kind= Seed_var}
-
 (** Check if the pvar is a local var *)
 let is_local pv = match pv.pv_kind with Local_var _ -> true | _ -> false
-
-(** Check if the pvar is a callee var *)
-let is_callee pv = match pv.pv_kind with Callee_var _ -> true | _ -> false
-
-(** Check if the pvar is a seed var *)
-let is_seed pv = match pv.pv_kind with Seed_var -> true | _ -> false
 
 (** Check if the pvar is a global var *)
 let is_global pv = match pv.pv_kind with Global_var _ -> true | _ -> false
@@ -242,25 +228,6 @@ let pp pe f pv =
 
 let equal = [%compare.equal: t]
 
-(** Dump a program variable. *)
-let d (pvar : t) = L.d_pp_with_pe pp pvar
-
-(** Turn an ordinary program variable into a callee program variable *)
-let to_callee pname pvar =
-  match pvar.pv_kind with
-  | Local_var _ ->
-      {pvar with pv_kind= Callee_var pname}
-  | Global_var _ ->
-      pvar
-  | Callee_var _ ->
-      pvar
-  | Abduced_retvar _ | Abduced_ref_param _ | Seed_var ->
-      L.d_str "Cannot convert pvar to callee: " ;
-      d pvar ;
-      L.d_ln () ;
-      assert false
-
-
 let name_hash (name : Mangled.t) = Mangled.hash name
 
 (** [mk name proc_name] creates a program var with the given function name *)
@@ -318,25 +285,6 @@ let mk_tmp name pname =
   mk_with_tmp_id ~tmp_id:(Some tmp_id) pvar_mangled pname
 
 
-(** create an abduced return variable for a call to [proc_name] at [loc] *)
-let mk_abduced_ret (proc_name : Procname.t) (loc : Location.t) : t =
-  let name = Mangled.from_string (F.asprintf "$RET_%a" Procname.pp_unique_id proc_name) in
-  { pv_hash= name_hash name
-  ; pv_name= name
-  ; pv_kind= Abduced_retvar (proc_name, loc)
-  ; pv_tmp_id= None
-  ; pv_is_syntactic= false }
-
-
-let mk_abduced_ref_param (proc_name : Procname.t) (index : int) (loc : Location.t) : t =
-  let name = Mangled.from_string (F.asprintf "$REF_PARAM_VAL_%a" Procname.pp_unique_id proc_name) in
-  { pv_hash= name_hash name
-  ; pv_name= name
-  ; pv_kind= Abduced_ref_param (proc_name, index, loc)
-  ; pv_tmp_id= None
-  ; pv_is_syntactic= false }
-
-
 let get_translation_unit pvar =
   match pvar.pv_kind with
   | Global_var {translation_unit} ->
@@ -380,15 +328,6 @@ let get_initializer_pname {pv_name; pv_kind} =
 
 let get_template_args pvar =
   match pvar.pv_kind with Global_var {template_args} -> template_args | _ -> Typ.NoTemplate
-
-
-let is_objc_static_local_of_proc_name pname pvar =
-  (* local static name is of the form procname_varname *)
-  String.is_prefix (Mangled.to_string (get_name pvar)) ~prefix:pname
-
-
-let is_block_pvar pvar =
-  String.is_prefix (Mangled.to_string (get_name pvar)) ~prefix:Config.anonymous_block_prefix
 
 
 let is_syntactic pvar = pvar.pv_is_syntactic

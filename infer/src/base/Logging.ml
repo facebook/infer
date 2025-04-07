@@ -452,16 +452,6 @@ let k_force_newline f = F.pp_force_newline f ()
 
 let d_printfln ?color fmt = d_kprintf ?color k_force_newline fmt
 
-let d_pp pp x = d_printf "%a" pp x
-
-let d_pp_with_pe ?color pp x =
-  let pe = if Config.write_html then Pp.html (Option.value ~default:Pp.Black color) else Pp.text in
-  d_printf ?color "%a" (pp pe) x
-
-
-(** dump a string *)
-let d_str ?color s = d_printf ?color "%s" s
-
 (** dump an error string *)
 let d_error s = d_printf ~color:Pp.Red "ERROR: %s" s
 
@@ -474,9 +464,6 @@ let d_info s = d_printf ~color:Pp.Blue "INFO: %s" s
 (** dump a newline *)
 let d_ln () = d_printf "@\n"
 
-(** dump a string plus newline *)
-let d_strln ?color s = d_kprintf ?color k_force_newline "%s" s
-
 let d_printf_escaped ?color fmt =
   d_kasprintf (fun f s -> d_kfprintf ?color ignore f "%s" (Escape.escape_xml s)) fmt
 
@@ -484,17 +471,6 @@ let d_printf_escaped ?color fmt =
 let d_printfln_escaped ?color fmt =
   d_kasprintf (fun f s -> d_kfprintf ?color k_force_newline f "%s" (Escape.escape_xml s)) fmt
 
-
-(** dump an indentation *)
-let d_indent indent =
-  if indent <> 0 then
-    let s = String.make (2 * indent) ' ' in
-    d_str s
-
-
-let d_increase_indent () = d_printf "  @["
-
-let d_decrease_indent () = d_printf "@]"
 
 let with_indent ?name_color ?(collapsible = false) ?(escape_result = true) ?pp_result ~f name_fmt =
   if not Config.write_html then F.ikfprintf (fun _ -> f ()) (F.get_std_formatter ()) name_fmt

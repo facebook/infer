@@ -51,8 +51,6 @@ type ptr_kind =
   | Pk_objc_nonnull_block  (** Obj-C block annotated with nonnull *)
 [@@deriving compare]
 
-val equal_ptr_kind : ptr_kind -> ptr_kind -> bool
-
 type type_quals [@@deriving compare, equal]
 
 val mk_type_quals :
@@ -176,10 +174,8 @@ module Name : sig
   (** [is_class name] holds if [name] names CPP/Objc/Java class *)
 
   val is_union : t -> bool
+  [@@warning "-unused-value-declaration"]
   (** [is_union name] holds if [name] names C/CPP union *)
-
-  val is_same_type : t -> t -> bool
-  (** [is_class name1 name2] holds if [name1] and [name2] name same kind of type *)
 
   val name_without_templates : t -> string
   (** name of the c++ typename without qualifier *)
@@ -194,7 +190,7 @@ module Name : sig
 
   val get_template_spec_info : t -> template_spec_info option
 
-  val is_objc_protocol : t -> bool
+  val is_objc_protocol : t -> bool [@@warning "-unused-value-declaration"]
 
   val is_objc_class : t -> bool
 
@@ -210,8 +206,6 @@ module Name : sig
 
   module CSharp : sig
     val from_string : string -> t
-
-    val is_class : t -> bool
   end
 
   module Hack : sig
@@ -324,12 +318,6 @@ val to_string : t -> string
 
 val desc_to_string : desc -> string
 
-val d_full : t -> unit
-(** Dump a type with all the details. *)
-
-val d_list : t list -> unit
-(** Dump a list of types. *)
-
 val name : t -> Name.t option
 (** The name of a type *)
 
@@ -342,13 +330,9 @@ val is_ptr_to_ignore_quals : t -> ptr:t -> bool
 val is_ptr_to_const : t -> bool
 (** check if typ is a pointer type to const *)
 
-val array_elem : t option -> t -> t
-(** If an array type, return the type of the element. If not, return the default type if given,
-    otherwise raise an exception *)
-
 val is_objc_class : t -> bool
 
-val is_cpp_class : t -> bool
+val is_cpp_class : t -> bool [@@warning "-unused-value-declaration"]
 
 val is_pointer_to_cpp_class : t -> bool
 
@@ -401,5 +385,3 @@ val is_csharp_type : t -> bool
 
 val is_java_type : t -> bool
 (** is [t] a type produced by the Java frontend? *)
-
-val unsome : string -> t option -> t

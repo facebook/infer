@@ -20,9 +20,6 @@ type t =
   | Cclass of Ident.name  (** class constant *)
 [@@deriving compare, hash, equal, normalize]
 
-val kind_equal : t -> t -> bool
-(** Return true if the constants have the same kind (both integers, ...) *)
-
 val pp : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a const *)
 

@@ -63,10 +63,6 @@ module CSharp = struct
 
   let get_method cs = cs.method_name
 
-  let get_return_typ pname_csharp = Option.value ~default:StdTyp.void pname_csharp.return_type
-
-  let replace_parameters parameters cs = {cs with parameters}
-
   let get_parameters cs = cs.parameters
 
   let is_generated {method_name} = String.is_prefix ~prefix:"$" method_name
@@ -163,8 +159,6 @@ module Java = struct
   let get_package j = JavaClassName.package (get_java_class_name_exn j)
 
   let get_method j = j.method_name
-
-  let replace_parameters parameters j = {j with parameters}
 
   let get_parameters j = j.parameters
 
@@ -409,8 +403,6 @@ module ObjC_Cpp = struct
 
 
   let get_parameters osig = osig.parameters
-
-  let replace_parameters new_parameters osig = {osig with parameters= new_parameters}
 end
 
 module C = struct
@@ -484,8 +476,6 @@ module Erlang = struct
     let function_name = sanitize function_name in
     pp_general '#' Verbose fmt {module_name; function_name; arity}
 
-
-  let set_arity arity name = {name with arity}
 
   let call_unqualified_function_name = "__call_unqualified"
 
@@ -861,10 +851,6 @@ let get_class_name t =
       None
 
 
-let is_method_in_objc_protocol t =
-  match t with ObjC_Cpp osig -> Typ.Name.is_objc_protocol osig.class_name | _ -> false
-
-
 let objc_cpp_replace_method_name t (new_method_name : string) =
   match t with
   | ObjC_Cpp osig ->
@@ -941,15 +927,6 @@ let is_constructor t =
   | ObjC_Cpp {kind; method_name} when ObjC_Cpp.is_objc_kind kind ->
       ObjC_Cpp.is_objc_constructor method_name
   | _ ->
-      false
-
-
-(** [is_infer_undefined pn] returns true if [pn] is a special Infer undefined proc *)
-let is_infer_undefined = function
-  | Java j ->
-      String.equal "com.facebook.infer.builtins.InferUndefined" (Java.get_class_name j)
-  | _ ->
-      (* TODO: add cases for obj-c, c, c++ *)
       false
 
 
@@ -1246,82 +1223,6 @@ let get_parameters procname =
   | Python _ ->
       (* TODO(vsiles) get inspiration from Hack :D *)
       []
-
-
-let replace_parameters new_parameters procname =
-  let params_to_java_params params =
-    List.map
-      ~f:(fun param ->
-        match param with
-        | Parameter.JavaParameter par ->
-            par
-        | _ ->
-            Logging.(die InternalError)
-              "Expected Java parameters in Java procname, but got Clang parameters" params )
-      params
-  in
-  let params_to_clang_params params =
-    List.map
-      ~f:(fun param ->
-        match param with
-        | Parameter.ClangParameter par ->
-            par
-        | _ ->
-            Logging.(die InternalError)
-              "Expected Clang parameters in Clang procname, but got Java parameters" params )
-      params
-  in
-  let params_to_csharp_params params =
-    List.map
-      ~f:(fun param ->
-        match param with
-        | Parameter.CSharpParameter par ->
-            par
-        | _ ->
-            Logging.(die InternalError)
-              "Expected CSharp parameters in CSharp procname, but got parameters of another \
-               language"
-              params )
-      params
-  in
-  let params_to_erlang_arity params =
-    let check = function
-      | Parameter.ErlangParameter ->
-          ()
-      | _ ->
-          L.die InternalError
-            "Expected Erlang parameters in Erlang procname, but got parameters of another language"
-    in
-    List.iter ~f:check params ;
-    List.length params
-  in
-  match procname with
-  | Java j ->
-      Java (Java.replace_parameters (params_to_java_params new_parameters) j)
-  | CSharp cs ->
-      CSharp (CSharp.replace_parameters (params_to_csharp_params new_parameters) cs)
-  | C _ ->
-      procname
-  | Erlang e ->
-      Erlang (Erlang.set_arity (params_to_erlang_arity new_parameters) e)
-  | Hack _ ->
-      procname
-  | ObjC_Cpp osig ->
-      ObjC_Cpp (ObjC_Cpp.replace_parameters (params_to_clang_params new_parameters) osig)
-  | Block _ ->
-      procname
-  | Python _ ->
-      procname
-
-
-let parameter_of_name procname class_name =
-  match procname with
-  | Java _ ->
-      Parameter.JavaParameter Typ.(mk_ptr (mk_struct class_name))
-  | CSharp _ ->
-      Parameter.CSharpParameter Typ.(mk_ptr (mk_struct class_name))
-  | _ ->
-      Parameter.ClangParameter (Parameter.clang_param_of_name class_name)
 
 
 let describe f pn =

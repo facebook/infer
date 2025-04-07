@@ -19,10 +19,6 @@ val add : t -> t -> t
 val compare : t -> t -> int
 (** compare integers ignoring the distinction between pointers and non-pointers *)
 
-val compare_value : t -> t -> int
-(** compare the value of the integers, notice this is different from const compare, which
-    distinguished between signed and unsigned +1 *)
-
 val div : t -> t -> t
 
 val eq : t -> t -> bool
@@ -105,8 +101,6 @@ val to_int_exn : t -> int
 val to_big_int : t -> Z.t
 
 val to_float : t -> float
-
-val to_signed : t -> t option
 
 val to_string : t -> string
 (** convert to signed if the value is representable *)

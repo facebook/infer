@@ -123,9 +123,6 @@ module Node : sig
   val prepend_instrs : t -> Sil.instr list -> unit
   (** Prepend the instructions to the list of instructions to execute *)
 
-  val d_instrs : highlight:Sil.instr option -> t -> unit
-  (** Dump instructions for the node, highlighting the given subinstruction if present *)
-
   val dummy : Procname.t -> t
   (** Create a dummy node *)
 
@@ -134,9 +131,6 @@ module Node : sig
 
   val get_description : Pp.env -> t -> string
   (** Return a description of the node *)
-
-  val get_distance_to_exit : t -> int option
-  (** Get the distance to the exit node, if it has been computed *)
 
   val get_exn : t -> t list
   (** Get the exception nodes from the current node *)
@@ -218,15 +212,9 @@ type t
 val append_locals : t -> ProcAttributes.var_data list -> unit
 (** append a list of new local variables to the existing list of local variables *)
 
-val compute_distance_to_exit_node : t -> unit
-(** Compute the distance of each node to the exit node, if not computed already *)
-
 val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
 (** Create a new cfg node with the given location, kind, list of instructions, and add it to the
     procdesc. *)
-
-val create_node_from_not_reversed :
-  t -> Location.t -> Node.nodekind -> Instrs.not_reversed_t -> Node.t
 
 val remove_node : t -> Node.t -> unit
 (** Remove a node from a cfg *)

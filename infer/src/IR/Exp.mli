@@ -55,9 +55,6 @@ module Set : Stdlib.Set.S with type elt = t
 (** Map with expression keys. *)
 module Map : Stdlib.Map.S with type key = t
 
-(** Hashtable with expression keys. *)
-module Hash : Stdlib.Hashtbl.S with type key = t
-
 val is_null_literal : t -> bool
 
 val is_this : t -> bool
@@ -69,23 +66,9 @@ val is_const : t -> bool
 
 (** {2 Utility Functions for Expressions} *)
 
-val texp_to_typ : Typ.t option -> t -> Typ.t
-(** Turn an expression representing a type into the type it represents If not a sizeof, return the
-    default type if given, otherwise raise an exception *)
-
-val root_of_lexp : t -> t
-(** Return the root of [lexp]. *)
-
 val get_undefined : bool -> t
 (** Get an expression "undefined", the boolean indicates whether the undefined value goest into the
     footprint *)
-
-val pointer_arith : t -> bool
-(** Checks whether an expression denotes a location using pointer arithmetic. Currently, catches
-    array - indexing expressions such as a[i] only. *)
-
-val has_local_addr : t -> bool
-(** returns true if the expression operates on address of local variable *)
 
 val zero : t
 (** Integer constant 0 *)
@@ -95,9 +78,6 @@ val null : t
 
 val one : t
 (** Integer constant 1 *)
-
-val minus_one : t
-(** Integer constant -1 *)
 
 val int : IntLit.t -> t
 (** Create integer constant *)
@@ -123,11 +103,6 @@ val lt : t -> t -> t
 val free_vars : t -> Ident.t Sequence.t
 (** all the idents appearing in the expression *)
 
-val gen_free_vars : t -> (unit, Ident.t) Sequence.Generator.t
-
-val ident_mem : t -> Ident.t -> bool
-(** true if the identifier appears in the expression *)
-
 val program_vars : t -> Pvar.t Sequence.t
 (** all the program variables appearing in the expression *)
 
@@ -144,21 +119,6 @@ val pp : F.formatter -> t -> unit
 val pp_closure : F.formatter -> closure -> unit
 
 val to_string : t -> string
-
-val d_exp : t -> unit
-(** dump an expression. *)
-
-val pp_texp : Pp.env -> F.formatter -> t -> unit
-(** Pretty print a type. *)
-
-val pp_texp_full : Pp.env -> F.formatter -> t -> unit
-(** Pretty print a type with all the details. *)
-
-val d_texp_full : t -> unit
-(** Dump a type expression with all the details. *)
-
-val d_list : t list -> unit
-(** Dump a list of expressions. *)
 
 val is_cpp_closure : t -> bool
 

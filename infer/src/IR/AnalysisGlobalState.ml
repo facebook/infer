@@ -25,19 +25,6 @@ let register ~init ~save ~restore =
   register_with_proc_desc_and_tenv ~save ~restore ~init:(fun _proc_desc _tenv -> init ())
 
 
-let register_ref_with_proc_desc_and_tenv ~init ref_ =
-  stores :=
-    StateManager
-      { save= (fun () -> !ref_)
-      ; restore= (fun x -> ref_ := x)
-      ; init= (fun proc_desc tenv -> ref_ := init proc_desc tenv) }
-    :: !stores
-
-
-let register_ref ~init ref_ =
-  register_ref_with_proc_desc_and_tenv ref_ ~init:(fun _proc_desc _tenv -> init ())
-
-
 let register_dls_with_proc_desc_and_tenv ~init key =
   stores :=
     StateManager

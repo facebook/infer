@@ -29,8 +29,6 @@ val prepend_list : not_reversed t -> Sil.instr list -> not_reversed t
 
 val of_list : Sil.instr list -> not_reversed t
 
-val filter_map : not_reversed t -> f:(Sil.instr -> Sil.instr option) -> not_reversed t
-
 val map : not_reversed t -> f:(Sil.instr -> Sil.instr) -> not_reversed t
 (** replace every instruction [instr] with [f instr]. Preserve physical equality. **)
 

@@ -14,8 +14,6 @@ module F = Format
 (** Colors supported in printing *)
 type color = Black | Blue | Green | Orange | Red [@@deriving compare]
 
-val equal_color : color -> color -> bool
-
 (** map subexpressions (as Obj.t element compared by physical equality) to colors *)
 type colormap = Obj.t -> color
 
@@ -37,13 +35,6 @@ type env =
   ; cmap_foot: colormap  (** Current colormap for the footprint part *)
   ; color: color  (** Current color *)
   ; obj_sub: (Obj.t -> Obj.t) option  (** generic object substitution *) }
-
-val reset_obj_sub : env -> env
-(** Reset the object substitution, so that no substitution takes place *)
-
-val set_obj_sub : env -> ('a -> 'a) -> env
-(** Set the object substitution, which is supposed to preserve the type. Currently only used for a
-    map from (identifier) expressions to the program var containing them *)
 
 val extend_colormap : env -> Obj.t -> color -> env
 (** Extend the normal colormap for the given object with the given color *)
@@ -95,8 +86,6 @@ val seq :
 
 val comma_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a comma-separated sequence. *)
-
-val comma_seq_diff : (F.formatter -> 'a -> unit) -> env -> F.formatter -> 'a list -> unit
 
 val semicolon_seq : ?print_env:env -> (F.formatter -> 'a -> unit) -> F.formatter -> 'a list -> unit
 (** Pretty print a ;-separated sequence *)

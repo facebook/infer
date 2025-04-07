@@ -96,6 +96,3 @@ val pp_instr_metadata : Pp.env -> F.formatter -> instr_metadata -> unit
 
 val pp_instr : print_types:bool -> Pp.env -> F.formatter -> instr -> unit
 (** Pretty print an instruction. *)
-
-val d_instr : instr -> unit
-(** Dump an instruction. *)

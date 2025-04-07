@@ -52,7 +52,7 @@ val anonymous_block_prefix : string
 
 val bin_dir : string
 
-val bound_error_allowed_in_procedure_call : bool
+val bound_error_allowed_in_procedure_call : bool [@@warning "-unused-value-declaration"]
 
 val clang_exe_aliases : string list
 
@@ -72,7 +72,7 @@ val fail_on_issue_exit_code : int
 
 val fcp_dir : string
 
-val idempotent_getters : bool
+val idempotent_getters : bool [@@warning "-unused-value-declaration"]
 
 val initial_analysis_time : float
 
@@ -93,17 +93,17 @@ val max_narrows : int
 
 val max_widens : int
 
-val meet_level : int
+val meet_level : int [@@warning "-unused-value-declaration"]
 
-val nsnotification_center_checker_backend : bool
+val nsnotification_center_checker_backend : bool [@@warning "-unused-value-declaration"]
 
-val os_type : os_type
+val os_type : os_type [@@warning "-unused-value-declaration"]
 
 val pp_version : Format.formatter -> unit -> unit
 
-val report_nullable_inconsistency : bool
+val report_nullable_inconsistency : bool [@@warning "-unused-value-declaration"]
 
-val save_compact_summaries : bool
+val save_compact_summaries : bool [@@warning "-unused-value-declaration"]
 
 val smt_output : bool
 
@@ -135,44 +135,45 @@ val annotation_reachability_report_source_and_sink : bool
 
 val attributes_lru_max_size : int
 
-val biabduction_abs_struct : int
+val biabduction_abs_struct : int [@@warning "-unused-value-declaration"]
 
-val biabduction_abs_val : int
+val biabduction_abs_val : int [@@warning "-unused-value-declaration"]
 
-val biabduction_allow_leak : bool
+val biabduction_allow_leak : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_array_level : int
+val biabduction_array_level : int [@@warning "-unused-value-declaration"]
 
-val biabduction_iterations : int
+val biabduction_iterations : int [@@warning "-unused-value-declaration"]
 
-val biabduction_join_cond : int
+val biabduction_join_cond : int [@@warning "-unused-value-declaration"]
 
 val biabduction_memleak_buckets :
   [`MLeak_all | `MLeak_arc | `MLeak_cf | `MLeak_cpp | `MLeak_no_arc | `MLeak_unknown] list
+[@@warning "-unused-value-declaration"]
 
-val biabduction_models_mode : bool
+val biabduction_models_mode : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_monitor_prop_size : bool
+val biabduction_monitor_prop_size : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_nelseg : bool
+val biabduction_nelseg : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_only_footprint : bool
+val biabduction_only_footprint : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_seconds_per_iteration : float option
+val biabduction_seconds_per_iteration : float option [@@warning "-unused-value-declaration"]
 
-val biabduction_symops_per_iteration : int option
+val biabduction_symops_per_iteration : int option [@@warning "-unused-value-declaration"]
 
-val biabduction_trace_join : bool
+val biabduction_trace_join : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_trace_rearrange : bool
+val biabduction_trace_rearrange : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_type_size : bool
+val biabduction_type_size : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_unsafe_malloc : bool
+val biabduction_unsafe_malloc : bool [@@warning "-unused-value-declaration"]
 
-val biabduction_worklist_mode : int
+val biabduction_worklist_mode : int [@@warning "-unused-value-declaration"]
 
-val biabduction_write_dotty : bool
+val biabduction_write_dotty : bool [@@warning "-unused-value-declaration"]
 
 val bitcode_capture : bool
 
@@ -562,7 +563,7 @@ val no_censor_report : Str.regexp list
 
 val no_translate_libs : bool
 
-val nullable_annotation : string option
+val nullable_annotation : string option [@@warning "-unused-value-declaration"]
 
 val objc_block_execution_macro : string option
 
@@ -816,7 +817,7 @@ val scope_leakage_config : Yojson.Safe.t
 
 val select : [`All | `Select of int] option
 
-val show_buckets : bool
+val show_buckets : bool [@@warning "-unused-value-declaration"]
 
 val shrink_analysis_db : bool
 
@@ -888,7 +889,7 @@ val struct_as_cpp_class : bool
 
 val store_analysis_schedule : bool
 
-val subtype_multirange : bool
+val subtype_multirange : bool [@@warning "-unused-value-declaration"]
 
 val suffix_match_changed_files : bool
 
@@ -920,9 +921,9 @@ val topl_properties : ToplAst.t list
 
 val topl_report_latent_issues : bool
 
-val trace_absarray : bool
+val trace_absarray : bool [@@warning "-unused-value-declaration"]
 
-val trace_error : bool
+val trace_error : bool [@@warning "-unused-value-declaration"]
 
 val trace_events : bool
 

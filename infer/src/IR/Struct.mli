@@ -25,8 +25,6 @@ val mk_field :
   -> Typ.t
   -> field
 
-val field_has_weak : field -> bool
-
 type java_class_kind = Interface | AbstractClass | NormalClass [@@deriving equal]
 
 type hack_class_kind = Class | AbstractClass | Interface | Trait | Alias

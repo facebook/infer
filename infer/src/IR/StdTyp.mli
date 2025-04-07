@@ -34,13 +34,13 @@ module Name : sig
   module Java : sig
     val java_io_serializable : t
 
-    val java_lang_class : t
+    val java_lang_class : t [@@warning "-unused-value-declaration"]
 
     val java_lang_cloneable : t
 
     val java_lang_object : t
 
-    val java_lang_string : t
+    val java_lang_string : t [@@warning "-unused-value-declaration"]
 
     val kotlin_coroutines_jvm_internal_restrictedsuspendlambda : t
   end

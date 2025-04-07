@@ -94,11 +94,6 @@ let prepend_list t list =
 
 let of_list l = NotReversed (Array.of_list l)
 
-let filter_map t ~f =
-  let instrs = get_underlying_not_reversed t in
-  NotReversed (Array.filter_map instrs ~f)
-
-
 let map_and_fold =
   let rec aux_changed arr ~f current i =
     if i >= Array.length arr then arr

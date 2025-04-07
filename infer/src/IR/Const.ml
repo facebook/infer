@@ -19,22 +19,6 @@ type t =
   | Cclass of Ident.name  (** class constant *)
 [@@deriving compare, equal, hash, normalize]
 
-let kind_equal c1 c2 =
-  let const_kind_number = function
-    | Cint _ ->
-        1
-    | Cfun _ ->
-        2
-    | Cstr _ ->
-        3
-    | Cfloat _ ->
-        4
-    | Cclass _ ->
-        5
-  in
-  Int.equal (const_kind_number c1) (const_kind_number c2)
-
-
 let pp pe f = function
   | Cint i ->
       IntLit.pp f i

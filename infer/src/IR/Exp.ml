@@ -9,9 +9,7 @@
 (** The Smallfoot Intermediate Language: Expressions *)
 
 open! IStd
-module Hashtbl = Stdlib.Hashtbl
 module F = Format
-module L = Logging
 
 (* reverse the natural order on Var *)
 type ident_ = Ident.t [@@deriving equal, hash, normalize]
@@ -61,10 +59,6 @@ module Map = Stdlib.Map.Make (struct
   type nonrec t = t [@@deriving compare]
 end)
 
-module Hash = Hashtbl.Make (struct
-  type nonrec t = t [@@deriving equal, hash]
-end)
-
 let is_null_literal = function Const (Cint n) -> IntLit.isnull n | _ -> false
 
 let is_this = function Lvar pvar -> Pvar.is_this pvar | _ -> false
@@ -75,62 +69,8 @@ let rec is_const = function Const _ -> true | Cast (_, x) -> is_const x | _ -> f
 
 (** {2 Utility Functions for Expressions} *)
 
-(** Turn an expression representing a type into the type it represents If not a sizeof, return the
-    default type if given, otherwise raise an exception *)
-let texp_to_typ default_opt = function
-  | Sizeof {typ} ->
-      typ
-  | _ ->
-      Typ.unsome "texp_to_typ" default_opt
-
-
-(** Return the root of [lexp]. *)
-let rec root_of_lexp lexp =
-  match (lexp : t) with
-  | Var _ ->
-      lexp
-  | Const _ ->
-      lexp
-  | Cast (_, e) ->
-      root_of_lexp e
-  | UnOp _ | BinOp _ | Exn _ | Closure _ ->
-      lexp
-  | Lvar _ ->
-      lexp
-  | Lfield (e, _, _) ->
-      root_of_lexp e.exp
-  | Lindex (e, _) ->
-      root_of_lexp e
-  | Sizeof _ ->
-      lexp
-
-
-(** Checks whether an expression denotes a location by pointer arithmetic. Currently, catches
-    array-indexing expressions such as a[i] only. *)
-let rec pointer_arith = function
-  | Lfield (e, _, _) ->
-      pointer_arith e.exp
-  | Lindex _ ->
-      true
-  | _ ->
-      false
-
-
 let get_undefined footprint =
   Var (Ident.create_fresh (if footprint then Ident.kfootprint else Ident.kprimed))
-
-
-(** returns true if the express operates on address of local variable *)
-let rec has_local_addr e =
-  match (e : t) with
-  | Lvar pv ->
-      Pvar.is_local pv
-  | UnOp (_, e', _) | Cast (_, e') | Lfield ({exp= e'}, _, _) ->
-      has_local_addr e'
-  | BinOp (_, e0, e1) | Lindex (e0, e1) ->
-      has_local_addr e0 || has_local_addr e1
-  | _ ->
-      false
 
 
 (** Create integer constant *)
@@ -147,9 +87,6 @@ let null = int IntLit.null
 
 (** Integer constant 1 *)
 let one = int IntLit.one
-
-(** Integer constant -1 *)
-let minus_one = int IntLit.minus_one
 
 (** Create integer constant corresponding to the boolean value *)
 let bool b = if b then one else zero
@@ -285,38 +222,6 @@ let pp_diff ?(print_types = false) =
       else pp_printenv ~print_types pe f e )
 
 
-(** dump an expression. *)
-let d_exp (e : t) = L.d_pp_with_pe pp_diff e
-
-(** Pretty print a list of expressions. *)
-let pp_list pe f expl = Pp.seq (pp_diff pe) f expl
-
-(** dump a list of expressions. *)
-let d_list (el : t list) = L.d_pp_with_pe pp_list el
-
-let pp_texp pe f = function
-  | Sizeof {typ; nbytes; dynamic_length; subtype} ->
-      let pp_len f l = Option.iter ~f:(F.fprintf f "[%a]" (pp_diff pe)) l in
-      let pp_size f size = Option.iter ~f:(Int.pp f) size in
-      F.fprintf f "%a%a%a%a" (Typ.pp pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp subtype
-  | e ->
-      pp_diff pe f e
-
-
-(** Pretty print a type with all the details. *)
-let pp_texp_full pe f = function
-  | Sizeof {typ; nbytes; dynamic_length; subtype} ->
-      let pp_len f l = Option.iter ~f:(F.fprintf f "[%a]" (pp_diff pe)) l in
-      let pp_size f size = Option.iter ~f:(Int.pp f) size in
-      F.fprintf f "%a%a%a%a" (Typ.pp_full pe) typ pp_size nbytes pp_len dynamic_length Subtype.pp
-        subtype
-  | e ->
-      pp_diff ~print_types:true pe f e
-
-
-(** Dump a type expression with all the details. *)
-let d_texp_full (te : t) = L.d_pp_with_pe pp_texp_full te
-
 let is_cpp_closure = function Closure {name} -> Procname.is_cpp_lambda name | _ -> false
 
 let rec gen_free_vars =
@@ -337,8 +242,6 @@ let rec gen_free_vars =
 
 
 let free_vars e = Sequence.Generator.run (gen_free_vars e)
-
-let ident_mem e id = free_vars e |> Sequence.exists ~f:(Ident.equal id)
 
 let rec gen_program_vars =
   let open Sequence.Generator in

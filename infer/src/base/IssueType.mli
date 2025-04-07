@@ -82,21 +82,21 @@ val checker_can_report : Checker.t -> t -> bool
 
 val set_enabled : t -> bool -> unit
 
-val abduction_case_not_implemented : t
+val abduction_case_not_implemented : t [@@warning "-unused-value-declaration"]
 
 val arbitrary_code_execution_under_lock : t
 
-val array_of_pointsto : t
+val array_of_pointsto : t [@@warning "-unused-value-declaration"]
 
-val array_out_of_bounds_l1 : t
+val array_out_of_bounds_l1 : t [@@warning "-unused-value-declaration"]
 
-val array_out_of_bounds_l2 : t
+val array_out_of_bounds_l2 : t [@@warning "-unused-value-declaration"]
 
-val array_out_of_bounds_l3 : t
+val array_out_of_bounds_l3 : t [@@warning "-unused-value-declaration"]
 
-val assert_failure : t
+val assert_failure : t [@@warning "-unused-value-declaration"]
 
-val bad_footprint : t
+val bad_footprint : t [@@warning "-unused-value-declaration"]
 
 val bad_arg : latent:bool -> t
 
@@ -110,9 +110,9 @@ val bad_record : latent:bool -> t
 
 val bad_return : latent:bool -> t
 
-val biabduction_analysis_stops : t
+val biabduction_analysis_stops : t [@@warning "-unused-value-declaration"]
 
-val biabduction_retain_cycle : t
+val biabduction_retain_cycle : t [@@warning "-unused-value-declaration"]
 
 val block_parameter_not_null_checked : t
 
@@ -130,7 +130,7 @@ val buffer_overrun_s2 : t
 
 val buffer_overrun_u5 : t
 
-val cannot_star : t
+val cannot_star : t [@@warning "-unused-value-declaration"]
 
 val captured_strong_self : t
 
@@ -150,7 +150,7 @@ val checkers_expensive_overrides_unexpensive : t
 
 val checkers_fragment_retain_view : t
 
-val class_cast_exception : t
+val class_cast_exception : t [@@warning "-unused-value-declaration"]
 
 val compared_to_null_and_dereferenced : t
 
@@ -174,9 +174,9 @@ val cxx_string_captured_in_block : t
 
 val cxx_ref_captured_in_block : t
 
-val dangling_pointer_dereference : t
+val dangling_pointer_dereference : t [@@warning "-unused-value-declaration"]
 
-val dangling_pointer_dereference_maybe : t
+val dangling_pointer_dereference_maybe : t [@@warning "-unused-value-declaration"]
 
 val data_flow_to_sink : t
 
@@ -186,7 +186,7 @@ val deadlock : t
 
 val static_constructor_stall : t
 
-val divide_by_zero : t
+val divide_by_zero : t [@@warning "-unused-value-declaration"]
 
 val do_not_report : t
 (** an issue type that should never be reported *)
@@ -195,7 +195,7 @@ val empty_vector_access : t
 
 val expensive_cost_call : kind:CostKind.t -> t
 
-val failure_exe : t
+val failure_exe : t [@@warning "-unused-value-declaration"]
 
 val guardedby_violation : t
 
@@ -217,7 +217,7 @@ val infinite_cost_call : kind:CostKind.t -> t
 
 val infinite_recursion : t
 
-val inherently_dangerous_function : t
+val inherently_dangerous_function : t [@@warning "-unused-value-declaration"]
 
 val integer_overflow_l1 : t
 
@@ -229,7 +229,7 @@ val integer_overflow_u5 : t
 
 val interface_not_thread_safe : t
 
-val internal_error : t
+val internal_error : t [@@warning "-unused-value-declaration"]
 
 val invalid_sil : t
 
@@ -239,11 +239,11 @@ val ipc_on_ui_thread : t
 
 val lab_resource_leak : t
 
-val leak_after_array_abstraction : t
+val leak_after_array_abstraction : t [@@warning "-unused-value-declaration"]
 
-val leak_in_footprint : t
+val leak_in_footprint : t [@@warning "-unused-value-declaration"]
 
-val leak_unknown_origin : t
+val leak_unknown_origin : t [@@warning "-unused-value-declaration"]
 
 val lockless_violation : t
 
@@ -253,9 +253,9 @@ val lock_on_ui_thread : t
 
 val expensive_loop_invariant_call : t
 
-val memory_leak : t
+val memory_leak : t [@@warning "-unused-value-declaration"]
 
-val missing_fld : t
+val missing_fld : t [@@warning "-unused-value-declaration"]
 
 val missing_required_prop : t
 
@@ -297,9 +297,9 @@ val nullptr_dereference_in_nullsafe_class : latent:bool -> t
 
 val optional_empty_access : latent:bool -> t
 
-val precondition_not_found : t
+val precondition_not_found : t [@@warning "-unused-value-declaration"]
 
-val precondition_not_met : t
+val precondition_not_met : t [@@warning "-unused-value-declaration"]
 
 val premature_nil_termination : t
 
@@ -357,7 +357,7 @@ val strict_mode_violation : t
 
 val strong_self_not_checked : t
 
-val symexec_memory_error : t
+val symexec_memory_error : t [@@warning "-unused-value-declaration"]
 
 val taint_error : t
 
@@ -403,7 +403,7 @@ val pulse_reference_stability : t
 
 val weak_self_in_noescape_block : t
 
-val wrong_argument_number : t
+val wrong_argument_number : t [@@warning "-unused-value-declaration"]
 
 val unreachable_cost_call : kind:CostKind.t -> t
 

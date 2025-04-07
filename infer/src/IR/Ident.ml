@@ -41,8 +41,6 @@ end
 
 type name = Name.t [@@deriving compare, equal, sexp, hash, normalize]
 
-let name_spec = Name.Spec
-
 type kind =
   | KNone
       (** special kind of "null ident" (basically, a more compact way of implementing an ident
@@ -61,9 +59,6 @@ let kprimed = KPrimed
 
 let knone = KNone
 
-(* timestamp for a path identifier *)
-let path_ident_stamp = -3
-
 type t = {kind: kind; name: Name.t; stamp: int}
 [@@deriving compare, yojson_of, sexp, hash, equal, normalize]
 
@@ -81,12 +76,6 @@ module Map = Stdlib.Map.Make (struct
   type nonrec t = t [@@deriving compare]
 end)
 
-module Hash = Hashtbl.Make (struct
-  type nonrec t = t [@@deriving equal, hash]
-end)
-
-let idlist_to_idset ids = List.fold ~f:(fun set id -> Set.add id set) ~init:Set.empty ids
-
 (** {2 Conversion between Names and Strings} *)
 module NameHash = Hashtbl.Make (struct
   type t = name [@@deriving equal, hash]
@@ -99,9 +88,6 @@ let string_to_name = Name.from_string
 let name_to_string = Name.to_string
 
 (** {2 Functions and Hash Tables for Managing Stamps} *)
-
-(** Set the stamp of the identifier *)
-let set_stamp i stamp = {i with stamp}
 
 (** Get the stamp of the identifier *)
 let get_stamp i = i.stamp
@@ -173,12 +159,7 @@ let create_none () = create_fresh KNone
 
 (** {2 Functions for Identifiers} *)
 
-(** Get a name of an identifier *)
-let get_name id = id.name
-
 let has_kind id kind = equal_kind id.kind kind
-
-let is_primed (id : t) = has_kind id KPrimed
 
 let is_normal (id : t) = has_kind id KNormal || has_kind id KNone
 
@@ -186,16 +167,11 @@ let is_footprint (id : t) = has_kind id KFootprint
 
 let is_none (id : t) = has_kind id KNone
 
-let is_path (id : t) = has_kind id KNormal && Int.equal id.stamp path_ident_stamp
-
 (** Update the name generator so that the given id's are not generated again *)
 let update_name_generator ids =
   let upd id = ignore (create_with_stamp id.kind id.name id.stamp) in
   List.iter ~f:upd ids
 
-
-(** Generate a normal identifier whose name encodes a path given as a string. *)
-let create_path pathstring = create_normal (string_to_name ("%path%" ^ pathstring)) path_ident_stamp
 
 (** {2 Pretty Printing} *)
 
@@ -226,13 +202,3 @@ let hashqueue_of_sequence ?init s =
       let (_ : [`Key_already_present | `Ok]) = HashQueue.enqueue_back q id () in
       () ) ;
   q
-
-
-let set_of_sequence ?(init = Set.empty) s = Sequence.fold s ~init ~f:(fun ids id -> Set.add id ids)
-
-let counts_of_sequence seq =
-  let h = Hash.create (Sequence.length seq) in
-  let get id = Option.value (Hash.find_opt h id) ~default:0 in
-  let bump id = Hash.replace h id (1 + get id) in
-  Sequence.iter ~f:bump seq ;
-  get

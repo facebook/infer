@@ -242,22 +242,9 @@ let exit = create_procname "exit"
 
 let free = create_procname "free"
 
-let fscanf = create_procname "fscanf"
-
-let fwscanf = create_procname "fwscanf"
-
 let malloc = create_procname "malloc"
 
 let malloc_no_fail = create_procname "malloc_no_fail"
-
-let nsArray_arrayWithObjects =
-  let objc_object = Typ.Name.C.from_string "objc_object" in
-  create_objc_class_method "NSArray" "arrayWithObjects:" [Some objc_object]
-
-
-let nsArray_arrayWithObjectsCount =
-  create_objc_class_method "NSArray" "arrayWithObjects:count:" [None; None]
-
 
 let objc_insert_key = create_procname "_objc_insertKey"
 
@@ -268,28 +255,6 @@ let objc_autorelease_pool_pop = create_procname "_objc_autoreleasePoolPop"
 let objc_autorelease_pool_push = create_procname "_objc_autoreleasePoolPush"
 
 let objc_cpp_throw = create_procname "__infer_objc_cpp_throw"
-
-let pthread_create = create_procname "pthread_create"
-
-let scanf = create_procname "scanf"
-
-let sscanf = create_procname "sscanf"
-
-let swscanf = create_procname "swscanf"
-
-let vfscanf = create_procname "vfscanf"
-
-let vfwscanf = create_procname "vfwscanf"
-
-let vscanf = create_procname "vscanf"
-
-let vsscanf = create_procname "vsscanf"
-
-let vswscanf = create_procname "vswscanf"
-
-let vwscanf = create_procname "vwscanf"
-
-let wscanf = create_procname "wscanf"
 
 let zero_initialization = create_procname "__infer_zero_initialization"
 

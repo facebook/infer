@@ -593,22 +593,6 @@ module Name = struct
 
   let is_objc_block name = match name with ObjcBlock _ -> true | _ -> false
 
-  let is_same_type t1 t2 =
-    match (t1, t2) with
-    | CStruct _, CStruct _
-    | CUnion _, CUnion _
-    | CppClass _, CppClass _
-    | JavaClass _, JavaClass _
-    | HackClass _, HackClass _
-    | PythonClass _, PythonClass _
-    | ObjcClass _, ObjcClass _
-    | ObjcProtocol _, ObjcProtocol _
-    | CSharpClass _, CSharpClass _ ->
-        true
-    | _ ->
-        false
-
-
   module C = struct
     let from_qual_name qual_name =
       if Config.struct_as_cpp_class then
@@ -623,8 +607,6 @@ module Name = struct
 
   module CSharp = struct
     let from_string name_str = CSharpClass (CSharpClassName.from_string name_str)
-
-    let is_class = function CSharpClass _ -> true | _ -> false
   end
 
   module Hack = struct
@@ -764,24 +746,7 @@ module Name = struct
   end)
 end
 
-(** dump a type with all the details. *)
-let d_full (t : t) = L.d_pp_with_pe pp_full t
-
-(** dump a list of types. *)
-let d_list (tl : t list) =
-  let pp pe = Pp.seq (pp pe) in
-  L.d_pp_with_pe pp tl
-
-
 let name typ = match typ.desc with Tstruct name -> Some name | _ -> None
-
-let unsome s = function
-  | Some default_typ ->
-      default_typ
-  | None ->
-      L.internal_error "No default typ in %s@." s ;
-      assert false
-
 
 (** turn a *T into a T. fails if [typ] is not a pointer type *)
 let strip_ptr typ = match typ.desc with Tptr (t, _) -> t | _ -> assert false
@@ -791,12 +756,6 @@ let is_ptr_to_ignore_quals t ~ptr =
 
 
 let is_ptr_to_const typ = match typ.desc with Tptr (t, _) -> is_const t.quals | _ -> false
-
-(** If an array type, return the type of the element. If not, return the default type if given,
-    otherwise raise an exception *)
-let array_elem default_opt typ =
-  match typ.desc with Tarray {elt} -> elt | _ -> unsome "array_elem" default_opt
-
 
 let is_class_of_kind check_fun typ =
   match typ.desc with Tstruct tname -> check_fun tname | _ -> false

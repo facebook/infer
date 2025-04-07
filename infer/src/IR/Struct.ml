@@ -21,11 +21,6 @@ let mk_field ?(annot = Annot.Item.empty) ?(objc_property_attributes = []) name t
   {name; typ; annot; objc_property_attributes}
 
 
-let field_has_weak field =
-  List.exists field.objc_property_attributes ~f:(fun attr ->
-      equal_objc_property_attribute attr Weak )
-
-
 type java_class_kind = Interface | AbstractClass | NormalClass
 [@@deriving equal, compare, hash, show {with_path= false}, normalize]
 

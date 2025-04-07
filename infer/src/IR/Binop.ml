@@ -36,14 +36,6 @@ type t =
   | LOr  (** logical or. Does not always evaluate both operands. *)
 [@@deriving compare, equal, hash, normalize]
 
-(** This function returns true if the operation is injective wrt. each argument: op(e,-) and op(-,
-    e) is injective for all e. The return value false means "don't know". *)
-let injective = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
-
-(** This function returns true if 0 is the right unit of [binop]. The return value false means
-    "don't know". *)
-let is_zero_runit = function PlusA _ | PlusPI | MinusA _ | MinusPI | MinusPP -> true | _ -> false
-
 let to_string = function
   | PlusA _ ->
       "+"

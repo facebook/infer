@@ -20,20 +20,6 @@ type log_t =
   -> string
   -> unit
 
-val log_issue_from_summary :
-     ?severity_override:IssueType.severity
-  -> Procdesc.t
-  -> Errlog.t
-  -> node:Errlog.node
-  -> session:int
-  -> loc:Location.t
-  -> ltr:Errlog.loc_trace
-  -> ?extras:Jsonbug_t.extra
-  -> ?autofix:Jsonbug_t.autofix list
-  -> Checker.t
-  -> IssueToReport.t
-  -> unit
-
 val log_issue : Procdesc.t -> Errlog.t -> loc:Location.t -> log_t
 (** Add an issue to the given error log. *)
 
