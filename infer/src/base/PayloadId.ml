@@ -9,7 +9,6 @@ open! IStd
 
 type t =
   | AnnotMap
-  | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
   | ConfigImpactAnalysis
@@ -34,8 +33,6 @@ let to_checker payload_id : Checker.t =
   match payload_id with
   | AnnotMap ->
       AnnotationReachability
-  | Biabduction ->
-      Biabduction
   | BufferOverrunAnalysis ->
       BufferOverrunAnalysis
   | BufferOverrunChecker ->

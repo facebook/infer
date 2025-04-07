@@ -2298,7 +2298,10 @@ and print_active_checkers =
     "Print the active checkers before starting the analysis"
 
 
-and print_builtins = CLOpt.mk_bool ~long:"print-builtins" "Print the builtin functions and exit"
+and _print_builtins =
+  CLOpt.mk_bool ~deprecated:["print-builtins"] ~deprecated_no:["no-print-builtins"] ~long:""
+    "DEPRECATED Print the builtin functions and exit"
+
 
 and print_using_diff =
   CLOpt.mk_bool ~long:"print-using-diff" ~default:true
@@ -4437,8 +4440,6 @@ and pmd_xml = !pmd_xml
 and preanalysis_html = !preanalysis_html
 
 and print_active_checkers = !print_active_checkers
-
-and print_builtins = !print_builtins
 
 and print_jbir = !print_jbir
 

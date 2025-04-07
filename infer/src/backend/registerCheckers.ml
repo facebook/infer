@@ -16,7 +16,6 @@ type callback_fun =
   | ProcedureWithSpecialization of
       { procedure_cb: Callbacks.proc_callback_with_specialization_t
       ; is_already_specialized: Specialization.t -> Summary.t -> bool }
-  | DynamicDispatch of Callbacks.proc_callback_t
   | File of Callbacks.file_callback_t
 
 let interprocedural payload_field checker =
@@ -29,10 +28,6 @@ let interprocedural_with_specialization payload_field checker is_already_special
         CallbackOfChecker.interprocedural_with_field_and_specialization payload_field checker
     ; is_already_specialized=
         CallbackOfChecker.make_is_already_specialized_test payload_field is_already_specialized }
-
-
-let dynamic_dispatch payload_field checker =
-  DynamicDispatch (CallbackOfChecker.interprocedural_with_field payload_field checker)
 
 
 let interprocedural_with_field_dependency ~dep_field payload_field checker =
@@ -196,12 +191,6 @@ let all_checkers =
   ; { checker= FragmentRetainsView
     ; callbacks= [(intraprocedural FragmentRetainsViewChecker.callback_fragment_retains_view, Java)]
     }
-  ; { checker= Biabduction
-    ; callbacks=
-        (let biabduction =
-           dynamic_dispatch Payloads.Fields.biabduction Interproc.analyze_procedure
-         in
-         [(biabduction, Clang); (biabduction, Java); (biabduction, CIL)] ) }
   ; { checker= AnnotationReachability
     ; callbacks=
         (let annot_reach =
@@ -254,8 +243,6 @@ let register checkers =
       | ProcedureWithSpecialization {procedure_cb; is_already_specialized} ->
           Callbacks.register_procedure_callback_with_specialization checker language procedure_cb
             ~is_already_specialized
-      | DynamicDispatch procedure_cb ->
-          Callbacks.register_procedure_callback checker ~dynamic_dispatch:true language procedure_cb
       | File callback ->
           Callbacks.register_file_callback checker language callback
     in

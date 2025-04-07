@@ -30,6 +30,3 @@ val register : Procname.t -> t -> registered
 
 val get : Procname.t -> t option
 (** Get the symbolic execution handler associated to the builtin function name *)
-
-val print_and_exit : unit -> 'a
-(** Print the builtin functions and exit *)

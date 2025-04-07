@@ -118,7 +118,6 @@ let () =
           Version.versionString
   | None ->
       () ) ;
-  if Config.print_builtins then Builtin.print_and_exit () ;
   let has_results_dir = setup () in
   if has_results_dir && Config.is_originator then log_environment_info () ;
   if has_results_dir && Config.debug_mode && Config.is_originator then

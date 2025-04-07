@@ -20,7 +20,6 @@ include sig
       This type has to be in sync with PayloadId.t *)
   type t =
     { annot_map: AnnotationReachabilityDomain.t SafeLazy.t option
-    ; biabduction: BiabductionSummary.t SafeLazy.t option
     ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t SafeLazy.t option
     ; buffer_overrun_checker: BufferOverrunCheckerSummary.t SafeLazy.t option
     ; config_impact_analysis: ConfigImpactAnalysis.Summary.t SafeLazy.t option

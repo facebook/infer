@@ -11,7 +11,6 @@ module F = Format
 
 type t =
   { annot_map: AnnotationReachabilityDomain.t SafeLazy.t option
-  ; biabduction: BiabductionSummary.t SafeLazy.t option
   ; buffer_overrun_analysis: BufferOverrunAnalysisSummary.t SafeLazy.t option
   ; buffer_overrun_checker: BufferOverrunCheckerSummary.t SafeLazy.t option
   ; config_impact_analysis: ConfigImpactAnalysis.Summary.t SafeLazy.t option
@@ -59,7 +58,6 @@ let all_fields =
   in
   Fields.to_list
     ~annot_map:(fun f -> mk f AnnotMap AnnotationReachabilityDomain.pp)
-    ~biabduction:(fun f -> mk_pe f Biabduction BiabductionSummary.pp)
     ~buffer_overrun_analysis:(fun f -> mk f BufferOverrunAnalysis BufferOverrunAnalysisSummary.pp)
     ~buffer_overrun_checker:(fun f -> mk f BufferOverrunChecker BufferOverrunCheckerSummary.pp)
     ~config_impact_analysis:(fun f -> mk f ConfigImpactAnalysis ConfigImpactAnalysis.Summary.pp)
@@ -105,7 +103,6 @@ let pp pe proc_name fmt payloads =
 
 let empty =
   { annot_map= None
-  ; biabduction= None
   ; buffer_overrun_analysis= None
   ; buffer_overrun_checker= None
   ; config_impact_analysis= None
@@ -128,7 +125,6 @@ let empty =
 let freeze t =
   let freeze v = Option.map v ~f:SafeLazy.freeze in
   { annot_map= freeze t.annot_map
-  ; biabduction= freeze t.biabduction
   ; buffer_overrun_analysis= freeze t.buffer_overrun_analysis
   ; buffer_overrun_checker= freeze t.buffer_overrun_checker
   ; config_impact_analysis= freeze t.config_impact_analysis
@@ -233,7 +229,7 @@ module SQLite = struct
           deserialize_payload_opt ~eager:true sqlite_data )
       , column + 1 )
     in
-    Fields.make_creator ~annot_map:data_of_sqlite_column ~biabduction:data_of_sqlite_column
+    Fields.make_creator ~annot_map:data_of_sqlite_column
       ~buffer_overrun_analysis:data_of_sqlite_column ~buffer_overrun_checker:data_of_sqlite_column
       ~config_impact_analysis:data_of_sqlite_column ~cost:data_of_sqlite_column
       ~disjunctive_demo:data_of_sqlite_column
@@ -283,7 +279,6 @@ module SQLite = struct
 
   let lazy_load table ~proc_uid =
     { annot_map= load table ~proc_uid AnnotMap
-    ; biabduction= load table ~proc_uid Biabduction
     ; buffer_overrun_analysis= load table ~proc_uid BufferOverrunAnalysis
     ; buffer_overrun_checker= load table ~proc_uid BufferOverrunChecker
     ; config_impact_analysis= load table ~proc_uid ConfigImpactAnalysis

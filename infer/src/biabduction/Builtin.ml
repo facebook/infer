@@ -47,20 +47,3 @@ let get name : t option =
 let register proc_name sym_exe_fun : registered =
   Procname.Hash.replace builtin_functions proc_name sym_exe_fun ;
   sym_exe_fun
-
-
-(** print the functions registered *)
-let pp_registered fmt () =
-  let builtin_names = ref [] in
-  Procname.Hash.iter (fun name _ -> builtin_names := name :: !builtin_names) builtin_functions ;
-  builtin_names := List.sort ~compare:Procname.compare !builtin_names ;
-  let pp pname = Format.fprintf fmt "%a@\n" Procname.pp pname in
-  Format.fprintf fmt "Registered builtins:@\n  @[" ;
-  List.iter ~f:pp !builtin_names ;
-  Format.fprintf fmt "@]@."
-
-
-(** print the builtin functions and exit *)
-let print_and_exit () =
-  pp_registered Format.std_formatter () ;
-  L.exit 0

@@ -242,19 +242,9 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
     log_elapsed_time () ;
     summary
   in
-  let log_error_and_continue exn ({Summary.err_log; payloads; stats} as summary) kind =
-    BiabductionReporting.log_issue_using_state callee_pdesc err_log exn ;
+  let log_error_and_continue _exn ({Summary.stats} as summary) kind =
     let stats = Summary.Stats.update stats ~failure_kind:kind in
-    let payloads =
-      let biabduction =
-        Some
-          (SafeLazy.from_val
-             BiabductionSummary.
-               {preposts= []; phase= payloads.biabduction |> SafeLazy.force_option |> opt_get_phase} )
-      in
-      {payloads with biabduction}
-    in
-    let new_summary = {summary with stats; payloads} in
+    let new_summary = {summary with stats} in
     let new_summary = Summary.OnDisk.store analysis_req new_summary in
     ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
     log_elapsed_time () ;

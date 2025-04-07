@@ -3044,10 +3044,6 @@ INTERNAL OPTIONS
            Activates: Show the internal bucket of Infer reports in their
            textual description (Conversely: --no-print-buckets)
 
-       --print-builtins
-           Activates: Print the builtin functions and exit (Conversely:
-           --no-print-builtins)
-
        --print-jbir
            Activates: Print JBir translation of Java bytecode in logs
            (Conversely: --no-print-jbir)

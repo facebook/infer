@@ -83,9 +83,9 @@ let infer_exe_stanza =
  (modules Infer)
  (flags (:standard
      -open Core -open IStdlib -open IStd -open IBase -open IR -open Textuallib -open Backend -open Integration
-     -open Biabduction -open ClangFrontend
+     -open ClangFrontend
      %s -open JavaFrontend %s %s))
- (libraries %s core pyml IStdlib IBase IR Textuallib Backend Integration Biabduction ClangFrontend)
+ (libraries %s core pyml IStdlib IBase IR Textuallib Backend Integration ClangFrontend)
  (link_flags %s)
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
@@ -124,7 +124,7 @@ let infertop_stanza =
  (modes byte_complete)
  (modules Infertop)
  (flags (:standard -open Core -open IStdlib -open IStd -open Textuallib %s))
- (libraries %s utop Absint ATDGenerated Backend IBase Biabduction BO Checkers Concurrency Costlib IR Textuallib IStdlib Labs Pulselib PythonFrontend Integration Topllib UnitTests)
+ (libraries %s utop Absint ATDGenerated Backend IBase BO Checkers Concurrency Costlib IR Textuallib IStdlib Labs Pulselib PythonFrontend Integration Topllib UnitTests)
  (link_flags (-linkall -warn-error -31))
  (preprocess (pps ppx_compare))
  (promote (until-clean) (into ../bin))
