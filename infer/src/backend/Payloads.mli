@@ -51,7 +51,7 @@ module SQLite : sig
   val serialize : t -> old_pulse_payload:Sqlite3.Data.t option -> Sqlite3.Data.t list
   (** serialize payloads, but gets an old Pulse's payload to merge, which was pre-existing in DB *)
 
-  val lazy_load : Database.analysis_table -> proc_uid:string -> t
+  val lazy_load : proc_uid:string -> t
   (** load each payload lazily *)
 
   val eager_load : Sqlite3.stmt -> first_column:int -> t

@@ -246,29 +246,27 @@ module SQLite = struct
   (** {3 code for lazily loading payloads} *)
 
   (** SQLite statements to load a payload from either analysis table *)
-  type load_statements =
-    {specs: Database.registered_stmt; model_specs: Database.registered_stmt; name: string}
+  type load_statements = {specs: Database.registered_stmt; name: string}
 
   (** all possible load statements for each payload type and analysis table, in a rank-indexed array *)
   let all_load_statements =
     let mk_load_statements payload_id =
-      let for_table table =
+      let specs =
         Database.register_statement AnalysisDatabase "SELECT %s FROM %s WHERE proc_uid = :k"
-          payload_id
-          (Database.string_of_analysis_table table)
+          payload_id "specs"
       in
-      {specs= for_table Specs; model_specs= for_table BiabductionModelsSpecs; name= payload_id}
+      {specs; name= payload_id}
     in
     List.map PayloadId.database_fields ~f:mk_load_statements |> Array.of_list
 
 
-  let get_load_statement (table : Database.analysis_table) payload_id =
-    let {specs; model_specs} = all_load_statements.(PayloadId.Variants.to_rank payload_id) in
-    match table with Specs -> specs | BiabductionModelsSpecs -> model_specs
+  let get_load_statement payload_id =
+    let {specs} = all_load_statements.(PayloadId.Variants.to_rank payload_id) in
+    specs
 
 
-  let load table ~proc_uid payload_id =
-    let load_statement = get_load_statement table payload_id in
+  let load ~proc_uid payload_id =
+    let load_statement = get_load_statement payload_id in
     Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
         Sqlite3.bind_text load_stmt 1 proc_uid
         |> SqliteUtils.check_result_code db ~log:"load payloads bind proc_uid" ;
@@ -277,22 +275,22 @@ module SQLite = struct
     |> Option.join
 
 
-  let lazy_load table ~proc_uid =
-    { annot_map= load table ~proc_uid AnnotMap
-    ; buffer_overrun_analysis= load table ~proc_uid BufferOverrunAnalysis
-    ; buffer_overrun_checker= load table ~proc_uid BufferOverrunChecker
-    ; config_impact_analysis= load table ~proc_uid ConfigImpactAnalysis
-    ; cost= load table ~proc_uid Cost
-    ; disjunctive_demo= load table ~proc_uid DisjunctiveDemo
-    ; static_constructor_stall_checker= load table ~proc_uid StaticConstructorStallChecker
-    ; lab_resource_leaks= load table ~proc_uid LabResourceLeaks
-    ; litho_required_props= load table ~proc_uid LithoRequiredProps
-    ; pulse= load table ~proc_uid Pulse
-    ; purity= load table ~proc_uid Purity
-    ; racerd= load table ~proc_uid RacerD
-    ; scope_leakage= load table ~proc_uid ScopeLeakage
-    ; siof= load table ~proc_uid SIOF
-    ; lineage= load table ~proc_uid Lineage
-    ; lineage_shape= load table ~proc_uid LineageShape
-    ; starvation= load table ~proc_uid Starvation }
+  let lazy_load ~proc_uid =
+    { annot_map= load ~proc_uid AnnotMap
+    ; buffer_overrun_analysis= load ~proc_uid BufferOverrunAnalysis
+    ; buffer_overrun_checker= load ~proc_uid BufferOverrunChecker
+    ; config_impact_analysis= load ~proc_uid ConfigImpactAnalysis
+    ; cost= load ~proc_uid Cost
+    ; disjunctive_demo= load ~proc_uid DisjunctiveDemo
+    ; static_constructor_stall_checker= load ~proc_uid StaticConstructorStallChecker
+    ; lab_resource_leaks= load ~proc_uid LabResourceLeaks
+    ; litho_required_props= load ~proc_uid LithoRequiredProps
+    ; pulse= load ~proc_uid Pulse
+    ; purity= load ~proc_uid Purity
+    ; racerd= load ~proc_uid RacerD
+    ; scope_leakage= load ~proc_uid ScopeLeakage
+    ; siof= load ~proc_uid SIOF
+    ; lineage= load ~proc_uid Lineage
+    ; lineage_shape= load ~proc_uid LineageShape
+    ; starvation= load ~proc_uid Starvation }
 end

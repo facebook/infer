@@ -15,10 +15,6 @@ type location =
   | Primary  (** primary location under [Config.results_dir] *)
   | Secondary of string  (** secondary location in the specified path *)
 
-type analysis_table = Specs | BiabductionModelsSpecs
-
-val string_of_analysis_table : analysis_table -> string
-
 val schema_hum : string
 (** some human-readable string describing the tables *)
 

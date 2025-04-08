@@ -203,18 +203,16 @@ module OnDisk = struct
 
 
   let spec_of_procname =
-    let mk_lazy_load_stmt table =
+    let lazy_load_statement =
       Database.register_statement AnalysisDatabase
-        "SELECT report_summary, summary_metadata FROM %s WHERE proc_uid = :k"
-        (Database.string_of_analysis_table table)
+        "SELECT report_summary, summary_metadata FROM specs WHERE proc_uid = :k"
     in
-    let mk_eager_load_stmt table =
+    let eager_load_statement =
       Database.register_statement AnalysisDatabase
-        "SELECT report_summary, summary_metadata, %s FROM %s WHERE proc_uid = :k"
+        "SELECT report_summary, summary_metadata, %s FROM specs WHERE proc_uid = :k"
         (F.asprintf "%a" (Pp.seq ~sep:", " F.pp_print_string) PayloadId.database_fields)
-        (Database.string_of_analysis_table table)
     in
-    let load_spec ~lazy_payloads ~load_statement table proc_name =
+    let load_spec ~lazy_payloads ~load_statement proc_name =
       Database.with_registered_statement load_statement ~f:(fun db load_stmt ->
           let proc_uid = Procname.to_unique_id proc_name in
           Sqlite3.bind load_stmt 1 (Sqlite3.Data.TEXT proc_uid)
@@ -224,17 +222,15 @@ module OnDisk = struct
               let report_summary = Sqlite3.column stmt 0 |> ReportSummary.SQLite.deserialize in
               let summary_metadata = Sqlite3.column stmt 1 |> SummaryMetadata.SQLite.deserialize in
               let payloads =
-                if lazy_payloads then Payloads.SQLite.lazy_load table ~proc_uid
+                if lazy_payloads then Payloads.SQLite.lazy_load ~proc_uid
                 else Payloads.SQLite.eager_load ~first_column:2 stmt
               in
               mk_full_summary payloads report_summary summary_metadata ) )
     in
-    let lazy_load_statement = mk_lazy_load_stmt Specs in
-    let eager_load_statement = mk_eager_load_stmt Specs in
     fun ~lazy_payloads proc_name ->
       BStats.incr_summary_file_try_load () ;
       let load_statement = if lazy_payloads then lazy_load_statement else eager_load_statement in
-      let opt = load_spec ~lazy_payloads ~load_statement Specs proc_name in
+      let opt = load_spec ~lazy_payloads ~load_statement proc_name in
       if Option.is_some opt then BStats.incr_summary_read_from_disk () ;
       opt
 
@@ -331,7 +327,7 @@ module OnDisk = struct
              let proc_uid = Sqlite3.column_text stmt 0 in
              let report_summary = Sqlite3.column stmt 2 |> ReportSummary.SQLite.deserialize in
              let summary_metadata = Sqlite3.column stmt 3 |> SummaryMetadata.SQLite.deserialize in
-             let payloads = Payloads.SQLite.lazy_load Specs ~proc_uid in
+             let payloads = Payloads.SQLite.lazy_load ~proc_uid in
              let spec = mk_full_summary payloads report_summary summary_metadata in
              f spec )
 
