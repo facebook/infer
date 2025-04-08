@@ -15,15 +15,6 @@ module F = Format
 module CLOpt = CommandLineOption
 module L = Die
 
-let ml_bucket_symbols =
-  [ ("all", `MLeak_all)
-  ; ("cf", `MLeak_cf)
-  ; ("arc", `MLeak_arc)
-  ; ("narc", `MLeak_no_arc)
-  ; ("cpp", `MLeak_cpp)
-  ; ("unknown_origin", `MLeak_unknown) ]
-
-
 type os_type = Unix | Win32 | Cygwin
 
 type build_system =
@@ -129,9 +120,7 @@ let progress_bar_style_symbols = [("auto", `Auto); ("plain", `Plain); ("multilin
 
 let anonymous_block_prefix = "objc_block_"
 
-(** If true, a procedure call succeeds even when there is a bound error this mimics what happens
-    with a direct array access where an error is produced and the analysis continues *)
-let bound_error_allowed_in_procedure_call = true
+let biabduction_models_mode = false
 
 let buck_out = "buck-out"
 
@@ -150,9 +139,6 @@ let dotty_frontend_output = "proc_cfgs_frontend.dot"
 
 (** exit code to use for the --fail-on-issue option *)
 let fail_on_issue_exit_code = 2
-
-(** If true, treat calls to no-arg getters as idempotent w.r.t non-nullness *)
-let idempotent_getters = true
 
 let java_lambda_marker_infix_generated_by_javalib = "$Lambda$"
 
@@ -199,26 +185,7 @@ let max_narrows = 5
     operator *)
 let max_widens = 10000
 
-(** Flag to tune the level of applying the meet operator for preconditions during the footprint
-    analysis: 0 = do not use the meet 1 = use the meet to generate new preconditions *)
-let meet_level = 1
-
-let nsnotification_center_checker_backend = false
-
-(** If true, sanity-check inferred preconditions against Nullable annotations and report
-    inconsistencies *)
-let report_nullable_inconsistency = true
-
-(** If true, compact summaries before saving *)
-let save_compact_summaries = true
-
-(** If true enables printing proposition compatible for the SMT project *)
-let smt_output = false
-
 let kotlin_source_extension = ".kt"
-
-(** Enable detailed tracing information during array abstraction *)
-let trace_absarray = false
 
 (* Allow lists for C++ library functions *)
 
@@ -665,119 +632,7 @@ and attributes_lru_max_size =
      500"
 
 
-and biabduction_abs_struct =
-  CLOpt.mk_int ~long:"biabduction-abs-struct" ~default:1 ~meta:"int"
-    {|Specify abstraction level for fields of structs:
-- 0 = no
-- 1 = forget some fields during matching (and so lseg abstraction)
-|}
-
-
-and biabduction_abs_val =
-  CLOpt.mk_int ~long:"biabduction-abs-val" ~default:2 ~meta:"int"
-    {|Specify abstraction level for expressions:
-- 0 = no abstraction
-- 1 = evaluate all expressions abstractly
-- 2 = 1 + abstract constant integer values during join
-|}
-
-
-and biabduction_allow_leak =
-  CLOpt.mk_bool ~long:"biabduction-allow-leak" "Forget leaked memory during abstraction"
-
-
-and biabduction_array_level =
-  CLOpt.mk_int ~long:"biabduction-array-level" ~default:0 ~meta:"int"
-    {|Level of treating the array indexing and pointer arithmetic:
-- 0 = treats both features soundly
-- 1 = assumes that the size of every array is infinite
-- 2 = assumes that all heap dereferences via array indexing and pointer arithmetic are correct
-|}
-
-
-and biabduction_iterations =
-  CLOpt.mk_int ~long:"biabduction-iterations" ~default:1 ~meta:"int"
-    "Specify the maximum number of operations for each function, expressed as a multiple of \
-     symbolic operations and a multiple of seconds of elapsed time"
-
-
-and biabduction_join_cond =
-  CLOpt.mk_int ~long:"biabduction-join-cond" ~default:1 ~meta:"int"
-    {|Set the strength of the final information-loss check used by the join:
-- 0 = use the most aggressive join for preconditions
-- 1 = use the least aggressive join for preconditions
-|}
-
-
-and biabduction_memleak_buckets =
-  CLOpt.mk_symbol_seq ~long:"biabduction-memleak-buckets" ~default:[`MLeak_cf]
-    ~symbols:ml_bucket_symbols ~eq:PolyVariantEqual.( = )
-    "Specify the memory leak buckets to be checked in C++."
-
-
-and biabduction_models_mode =
-  CLOpt.mk_bool ~long:"biabduction-models-mode" "Analysis of the biabduction models"
-
-
-and biabduction_monitor_prop_size =
-  CLOpt.mk_bool ~long:"biabduction-monitor-prop-size"
-    "Monitor size of props, and print every time the current max is exceeded"
-
-
-and biabduction_nelseg = CLOpt.mk_bool ~long:"biabduction-nelseg" "Use only nonempty lsegs"
-
-and biabduction_only_footprint =
-  CLOpt.mk_bool ~long:"biabduction-only-footprint" "Skip the re-execution phase"
-
-
-and biabduction_seconds_per_iteration =
-  CLOpt.mk_float_opt ~long:"biabduction-seconds-per-iteration" ~meta:"float"
-    "Set the number of seconds per iteration (see $(b,--biabduction-iterations))"
-
-
-and biabduction_symops_per_iteration =
-  CLOpt.mk_int_opt ~long:"biabduction-symops-per-iteration" ~meta:"int"
-    "Set the number of symbolic operations per iteration (see $(b,--biabduction-iterations))"
-
-
-and biabduction_trace_join =
-  CLOpt.mk_bool ~long:"biabduction-trace-join"
-    "Detailed tracing information during prop join operations"
-
-
-and biabduction_trace_rearrange =
-  CLOpt.mk_bool ~long:"biabduction-trace-rearrange"
-    "Detailed tracing information during prop re-arrangement operations"
-
-
-and biabduction_type_size =
-  CLOpt.mk_bool ~long:"biabduction-type-size"
-    "Consider the size of types during analysis, e.g. cannot use an int pointer to write to a char"
-
-
-and biabduction_unsafe_malloc =
-  CLOpt.mk_bool ~long:"biabduction-unsafe-malloc"
-    ~in_help:InferCommand.[(Analyze, manual_clang)]
-    "Assume that malloc(3) never returns null."
-
-
-(** visit mode for the worklist:
-
-    - 0 depth - fist visit
-    - 1 bias towards exit node
-    - 2 least visited first *)
-and biabduction_worklist_mode =
-  let var = ref 0 in
-  CLOpt.mk_set var 2 ~long:"biabduction-coverage"
-    "analysis mode to maximize coverage (can take longer)" ;
-  CLOpt.mk_set var 1 ~long:"biabduction-exit-node-bias"
-    "nodes nearest the exit node are analyzed first" ;
-  CLOpt.mk_set var 2 ~long:"biabduction-visits-bias" "nodes visited fewer times are analyzed first" ;
-  var
-
-
-and ( biabduction_write_dotty
-    , bo_debug
+and ( bo_debug
     , debug
     , debug_exceptions
     , debug_level_analysis
@@ -790,12 +645,10 @@ and ( biabduction_write_dotty
     , frontend_tests
     , keep_going
     , only_cheap_debug
-    , print_buckets
     , print_jbir
     , print_logs
     , print_types
     , reports_include_ml_loc
-    , trace_error
     , write_html ) =
   let all_generic_manuals =
     List.filter_map InferCommand.all_commands ~f:(fun (command : InferCommand.t) ->
@@ -805,12 +658,7 @@ and ( biabduction_write_dotty
         | (Analyze | Capture | Compile | Report | ReportDiff | Run) as command ->
             Some (command, manual_generic) )
   in
-  let biabduction_write_dotty =
-    CLOpt.mk_bool ~long:"biabduction-write-dotty"
-      ~in_help:InferCommand.[(Analyze, manual_generic)]
-      (Printf.sprintf "Produce dotty files for specs and retain cycles reports in %s."
-         (ResultsDirEntryName.get_path ~results_dir:"infer-out" Debug) )
-  and bo_debug =
+  let bo_debug =
     CLOpt.mk_int ~default:0 ~long:"bo-debug"
       ~in_help:InferCommand.[(Analyze, manual_buffer_overrun)]
       "Debug level for buffer-overrun checker (0-4)"
@@ -849,9 +697,6 @@ and ( biabduction_write_dotty
       "Do not show the experimental and block listed issue types"
   and only_cheap_debug =
     CLOpt.mk_bool ~long:"only-cheap-debug" ~default:true "Disable expensive debugging output"
-  and print_buckets =
-    CLOpt.mk_bool ~long:"print-buckets"
-      "Show the internal bucket of Infer reports in their textual description"
   and print_jbir =
     CLOpt.mk_bool ~long:"print-jbir" "Print JBir translation of Java bytecode in logs"
   and print_types = CLOpt.mk_bool ~long:"print-types" ~default:false "Print types in symbolic heaps"
@@ -862,8 +707,6 @@ and ( biabduction_write_dotty
   and reports_include_ml_loc =
     CLOpt.mk_bool ~long:"reports-include-ml-loc"
       "Include the location in the Infer source code from where reports are generated"
-  and trace_error =
-    CLOpt.mk_bool ~long:"trace-error" "Detailed tracing information during error explanation"
   and write_html =
     CLOpt.mk_bool ~long:"write-html"
       ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -891,7 +734,7 @@ and ( biabduction_write_dotty
         if debug then set_debug_level 2 else set_debug_level 0 ;
         CommandLineOption.keep_args_file := debug ;
         debug )
-      [developer_mode; print_buckets; print_types; reports_include_ml_loc; trace_error; write_html]
+      [developer_mode; print_types; reports_include_ml_loc; write_html]
       [only_cheap_debug]
   and (_ : int option ref) =
     CLOpt.mk_int_opt ~long:"debug-level" ~in_help:all_generic_manuals ~meta:"level"
@@ -907,7 +750,7 @@ and ( biabduction_write_dotty
       "Generate lightweight debugging information: just print the internal exceptions during \
        analysis (also sets $(b,--developer-mode), $(b,--no-filtering), $(b,--no-deduplicate), \
        $(b,--print-buckets), $(b,--reports-include-ml-loc))"
-      [developer_mode; print_buckets; reports_include_ml_loc]
+      [developer_mode; reports_include_ml_loc]
       [filtering; keep_going; deduplicate]
   and frontend_tests =
     CLOpt.mk_bool_group ~long:"frontend-tests"
@@ -925,8 +768,7 @@ and ( biabduction_write_dotty
           ; (Report, manual_generic) ]
       "Also log messages to stdout and stderr"
   in
-  ( biabduction_write_dotty
-  , bo_debug
+  ( bo_debug
   , debug
   , debug_exceptions
   , debug_level_analysis
@@ -939,12 +781,10 @@ and ( biabduction_write_dotty
   , frontend_tests
   , keep_going
   , only_cheap_debug
-  , print_buckets
   , print_jbir
   , print_logs
   , print_types
   , reports_include_ml_loc
-  , trace_error
   , write_html )
 
 
@@ -2243,10 +2083,6 @@ and no_censor_report =
     "For debugging/experimentation only: Specify issues not to be censored by $(b,--censor-report)."
 
 
-and nullable_annotation =
-  CLOpt.mk_string_opt ~long:"nullable-annotation-name" "Specify a custom nullable annotation name."
-
-
 and objc_block_execution_macro =
   CLOpt.mk_string_opt ~long:"objc-block-execution-macro" ~meta:"string"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -3517,11 +3353,6 @@ and store_analysis_schedule =
      read the previous results database successfully as fewer datatypes are involved."
 
 
-and subtype_multirange =
-  CLOpt.mk_bool ~long:"subtype-multirange" ~default:true
-    "Use the multirange subtyping domain. Used in the Java frontend and in biabduction."
-
-
 and suffix_match_changed_files =
   CLOpt.mk_bool ~long:"suffix-match-changed-files" ~default:false
     "When computing the set of files to analyze using $(b,--changed-files-index), a file will be \
@@ -3854,17 +3685,6 @@ let post_parsing_initialization command_opt =
   Stdlib.Printexc.set_uncaught_exception_handler uncaught_exception_handler ;
   F.set_margin !margin ;
   set_gc_params () ;
-  let biabd_symops_timeout, biabd_seconds_timeout =
-    let default_symops_timeout = 1100 in
-    let default_seconds_timeout = 10.0 in
-    if !biabduction_models_mode then (* disable timeouts when analyzing models *)
-      (None, None)
-    else (Some default_symops_timeout, Some default_seconds_timeout)
-  in
-  if is_none !biabduction_symops_per_iteration then
-    biabduction_symops_per_iteration := biabd_symops_timeout ;
-  if is_none !biabduction_seconds_per_iteration then
-    biabduction_seconds_per_iteration := biabd_seconds_timeout ;
   clang_compilation_dbs :=
     RevList.rev_map ~f:(fun x -> `Raw x) !compilation_database
     |> RevList.rev_map_append ~f:(fun x -> `Escaped x) !compilation_database_escaped ;
@@ -3915,44 +3735,6 @@ and annotation_reachability_no_allocation = !annotation_reachability_no_allocati
 and annotation_reachability_report_source_and_sink = !annotation_reachability_report_source_and_sink
 
 and attributes_lru_max_size = !attributes_lru_max_size
-
-and biabduction_abs_struct = !biabduction_abs_struct
-
-and biabduction_abs_val = !biabduction_abs_val
-
-and biabduction_allow_leak = !biabduction_allow_leak
-
-and biabduction_array_level = !biabduction_array_level
-
-and biabduction_iterations = !biabduction_iterations
-
-and biabduction_join_cond = !biabduction_join_cond
-
-and biabduction_memleak_buckets = !biabduction_memleak_buckets
-
-and biabduction_models_mode = !biabduction_models_mode
-
-and biabduction_monitor_prop_size = !biabduction_monitor_prop_size
-
-and biabduction_nelseg = !biabduction_nelseg
-
-and biabduction_only_footprint = !biabduction_only_footprint
-
-and biabduction_seconds_per_iteration = !biabduction_seconds_per_iteration
-
-and biabduction_symops_per_iteration = !biabduction_symops_per_iteration
-
-and biabduction_trace_join = !biabduction_trace_join
-
-and biabduction_trace_rearrange = !biabduction_trace_rearrange
-
-and biabduction_type_size = !biabduction_type_size
-
-and biabduction_unsafe_malloc = !biabduction_unsafe_malloc
-
-and biabduction_worklist_mode = !biabduction_worklist_mode
-
-and biabduction_write_dotty = !biabduction_write_dotty
 
 and bitcode_capture = !bitcode_capture
 
@@ -4423,8 +4205,6 @@ and no_censor_report = RevList.rev_map !no_censor_report ~f:Str.regexp
 
 and no_translate_libs = not !headers
 
-and nullable_annotation = !nullable_annotation
-
 and objc_block_execution_macro = !objc_block_execution_macro
 
 and objc_synthesize_dealloc = !objc_synthesize_dealloc
@@ -4799,8 +4579,6 @@ and select =
       L.die UserError "Wrong argument for --select: expected an integer or \"all\" but got '%s'" n )
 
 
-and show_buckets = !print_buckets
-
 and shrink_analysis_db = !shrink_analysis_db
 
 and siof_check_iostreams = !siof_check_iostreams
@@ -4871,8 +4649,6 @@ and struct_as_cpp_class = !struct_as_cpp_class
 
 and store_analysis_schedule = !store_analysis_schedule
 
-and subtype_multirange = !subtype_multirange
-
 and suffix_match_changed_files = !suffix_match_changed_files
 
 and summaries_lru_max_size = !summaries_lru_max_size
@@ -4917,8 +4693,6 @@ and topl_properties =
 
 
 and topl_report_latent_issues = !topl_report_latent_issues
-
-and trace_error = !trace_error
 
 and trace_events = !trace_events
 

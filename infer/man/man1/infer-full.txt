@@ -151,16 +151,6 @@ OPTIONS
            (Conversely: --no-biabduction-only)
            See also infer-analyze(1).
 
-       --biabduction-unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-biabduction-unsafe-malloc)
-           See also infer-analyze(1).
-
-       --biabduction-write-dotty
-           Activates: Produce dotty files for specs and retain cycles reports
-           in infer-out/captured. (Conversely: --no-biabduction-write-dotty)
-           See also infer-analyze(1).
-
        --bitcode-capture
            Activates: [EXPERIMENTAL] Use llvm frontend to capture files
            compiled with clang (Conversely: --no-bitcode-capture)
@@ -2406,100 +2396,6 @@ INTERNAL OPTIONS
            /my/source/File.java with project root /my/root into
            ../source/File.java
 
-       --biabduction-abs-struct int
-           Specify abstraction level for fields of structs:
-           - 0 = no
-           - 1 = forget some fields during matching (and so lseg
-           abstraction)
-           
-
-       --biabduction-abs-val int
-           Specify abstraction level for expressions:
-           - 0 = no abstraction
-           - 1 = evaluate all expressions abstractly
-           - 2 = 1 + abstract constant integer values during join
-           
-
-       --biabduction-allow-leak
-           Activates: Forget leaked memory during abstraction (Conversely:
-           --no-biabduction-allow-leak)
-
-       --biabduction-array-level int
-           Level of treating the array indexing and pointer arithmetic:
-           - 0 = treats both features soundly
-           - 1 = assumes that the size of every array is infinite
-           - 2 = assumes that all heap dereferences via array indexing and
-           pointer arithmetic are correct
-           
-
-       --biabduction-coverage
-           analysis mode to maximize coverage (can take longer)
-
-       --biabduction-exit-node-bias
-           nodes nearest the exit node are analyzed first
-
-       --biabduction-iterations int
-           Specify the maximum number of operations for each function,
-           expressed as a multiple of symbolic operations and a multiple of
-           seconds of elapsed time
-
-       --biabduction-join-cond int
-           Set the strength of the final information-loss check used by the
-           join:
-           - 0 = use the most aggressive join for preconditions
-           - 1 = use the least aggressive join for preconditions
-           
-
-       --biabduction-memleak-buckets ,-separated sequence of { all | cf | arc
-       | narc | cpp | unknown_origin }
-           Specify the memory leak buckets to be checked in C++.
-
-       --biabduction-models-mode
-           Activates: Analysis of the biabduction models (Conversely:
-           --no-biabduction-models-mode)
-
-       --biabduction-monitor-prop-size
-           Activates: Monitor size of props, and print every time the current
-           max is exceeded (Conversely: --no-biabduction-monitor-prop-size)
-
-       --biabduction-nelseg
-           Activates: Use only nonempty lsegs (Conversely:
-           --no-biabduction-nelseg)
-
-       --biabduction-only-footprint
-           Activates: Skip the re-execution phase (Conversely:
-           --no-biabduction-only-footprint)
-
-       --biabduction-seconds-per-iteration float
-           Set the number of seconds per iteration (see
-           --biabduction-iterations)
-
-       --biabduction-seconds-per-iteration-reset
-           Cancel the effect of --biabduction-seconds-per-iteration.
-
-       --biabduction-symops-per-iteration int
-           Set the number of symbolic operations per iteration (see
-           --biabduction-iterations)
-
-       --biabduction-symops-per-iteration-reset
-           Cancel the effect of --biabduction-symops-per-iteration.
-
-       --biabduction-trace-join
-           Activates: Detailed tracing information during prop join
-           operations (Conversely: --no-biabduction-trace-join)
-
-       --biabduction-trace-rearrange
-           Activates: Detailed tracing information during prop re-arrangement
-           operations (Conversely: --no-biabduction-trace-rearrange)
-
-       --biabduction-type-size
-           Activates: Consider the size of types during analysis, e.g. cannot
-           use an int pointer to write to a char (Conversely:
-           --no-biabduction-type-size)
-
-       --biabduction-visits-bias
-           nodes visited fewer times are analyzed first
-
        --bo-field-depth-limit-reset
            Cancel the effect of --bo-field-depth-limit.
 
@@ -3020,12 +2916,6 @@ INTERNAL OPTIONS
        --noescaping-function-list-reset
            Set --noescaping-function-list to the empty list.
 
-       --nullable-annotation-name string
-           Specify a custom nullable annotation name.
-
-       --nullable-annotation-name-reset
-           Cancel the effect of --nullable-annotation-name.
-
        --objc-block-execution-macro-reset
            Cancel the effect of --objc-block-execution-macro.
 
@@ -3039,10 +2929,6 @@ INTERNAL OPTIONS
 
        --oom-threshold-reset
            Cancel the effect of --oom-threshold.
-
-       --print-buckets
-           Activates: Show the internal bucket of Infer reports in their
-           textual description (Conversely: --no-print-buckets)
 
        --print-jbir
            Activates: Print JBir translation of Java bytecode in logs
@@ -3441,10 +3327,6 @@ INTERNAL OPTIONS
        --stats-dir-previous-reset
            Cancel the effect of --stats-dir-previous.
 
-       --no-subtype-multirange
-           Deactivates: Use the multirange subtyping domain. Used in the Java
-           frontend and in biabduction. (Conversely: --subtype-multirange)
-
        --suffix-match-changed-files
            Activates: When computing the set of files to analyze using
            --changed-files-index, a file will be analyzed if a name in the
@@ -3509,10 +3391,6 @@ INTERNAL OPTIONS
            become manifest, when the latent issue itself is enabled. (Similar
            to --pulse-report-latent-issues.) (Conversely:
            --topl-report-latent-issues)
-
-       --trace-error
-           Activates: Detailed tracing information during error explanation
-           (Conversely: --no-trace-error)
 
        --trace-events
            Activates: Emit Chrome performance trace events in

@@ -9,6 +9,4 @@ open! IStd
 
 (** This module handles buckets of memory leaks *)
 
-val should_raise_leak_unknown_origin : bool
-
 val ml_bucket_unknown_origin : string

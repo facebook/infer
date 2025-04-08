@@ -39,10 +39,6 @@ OPTIONS
            Activates: Enable biabduction and disable all other checkers
            (Conversely: --no-biabduction-only)
 
-       --biabduction-write-dotty
-           Activates: Produce dotty files for specs and retain cycles reports
-           in infer-out/captured. (Conversely: --no-biabduction-write-dotty)
-
        --bufferoverrun
            Activates: bufferoverrun checker: InferBO is a detector for
            out-of-bounds array accesses. (Conversely: --no-bufferoverrun)
@@ -563,10 +559,6 @@ BUFFER OVERRUN OPTIONS
            --no-bo-sound-unknown-sets-join)
 
 CLANG OPTIONS
-       --biabduction-unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-biabduction-unsafe-malloc)
-
        --clang-compound-literal-init-limit int
            Limit after which initialization of compound types (structs and
            arrays) is not done element by element but using a builtin

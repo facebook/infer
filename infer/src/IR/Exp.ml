@@ -127,21 +127,6 @@ let fold_captured ~f exp acc =
 (** Pretty print an expression. *)
 let rec pp_ pe pp_t f e =
   let pp_exp = pp_ pe pp_t in
-  let print_binop_stm_output e1 op e2 =
-    match (op : Binop.t) with
-    | Eq | Ne | PlusA _ | Mult _ ->
-        F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe op) pp_exp e1
-    | Lt ->
-        F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Gt) pp_exp e1
-    | Gt ->
-        F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Lt) pp_exp e1
-    | Le ->
-        F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Ge) pp_exp e1
-    | Ge ->
-        F.fprintf f "(%a %s %a)" pp_exp e2 (Binop.str pe Le) pp_exp e1
-    | _ ->
-        F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
-  in
   match (e : t) with
   | Var id ->
       Ident.pp f id
@@ -151,8 +136,6 @@ let rec pp_ pe pp_t f e =
       F.fprintf f "(%a)%a" pp_t typ pp_exp e
   | UnOp (op, e, _) ->
       F.fprintf f "%s%a" (Unop.to_string op) pp_exp e
-  | BinOp (op, Const c, e2) when Config.smt_output ->
-      print_binop_stm_output (Const c) op e2
   | BinOp (op, e1, e2) ->
       F.fprintf f "(%a %s %a)" pp_exp e1 (Binop.str pe op) pp_exp e2
   | Exn e ->

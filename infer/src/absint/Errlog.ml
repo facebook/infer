@@ -226,7 +226,7 @@ let log_issue ?severity_override err_log ~loc ~node ~session ~ltr ~access ~extra
   let hide_memory_error =
     match Localise.error_desc_get_bucket error.description with
     | Some bucket when String.equal bucket Mleak_buckets.ml_bucket_unknown_origin ->
-        not Mleak_buckets.should_raise_leak_unknown_origin
+        true
     | _ ->
         false
   in

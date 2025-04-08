@@ -151,16 +151,6 @@ OPTIONS
            (Conversely: --no-biabduction-only)
            See also infer-analyze(1).
 
-       --biabduction-unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-biabduction-unsafe-malloc)
-           See also infer-analyze(1).
-
-       --biabduction-write-dotty
-           Activates: Produce dotty files for specs and retain cycles reports
-           in infer-out/captured. (Conversely: --no-biabduction-write-dotty)
-           See also infer-analyze(1).
-
        --bitcode-capture
            Activates: [EXPERIMENTAL] Use llvm frontend to capture files
            compiled with clang (Conversely: --no-bitcode-capture)
