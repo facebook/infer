@@ -29,13 +29,6 @@ let pp_loc_trace_elem fmt {lt_level; lt_loc} = F.fprintf fmt "%d %a" lt_level Lo
 
 let pp_loc_trace fmt l = PrettyPrintable.pp_collection ~pp_item:pp_loc_trace_elem fmt l
 
-let contains_exception loc_trace_elem =
-  let pred nt =
-    match nt with Exception _ -> true | Condition _ | Procedure_start _ | Procedure_end _ -> false
-  in
-  List.exists ~f:pred loc_trace_elem.lt_node_tags
-
-
 let make_trace_element lt_level lt_loc lt_description lt_node_tags =
   {lt_level; lt_loc; lt_description; lt_node_tags}
 
@@ -52,21 +45,6 @@ let concat_traces labelled_traces =
           trace @ res
       | label, ({lt_loc} :: _ as trace) ->
           (make_trace_element 0 lt_loc label [] :: trace) @ res )
-
-
-let compute_local_exception_line loc_trace =
-  let open Base.Continue_or_stop in
-  let compute_local_exception_line (last_known_step_at_level_zero_opt, line_opt) step =
-    let last_known_step_at_level_zero_opt' =
-      if Int.equal step.lt_level 0 then Some step else last_known_step_at_level_zero_opt
-    in
-    match last_known_step_at_level_zero_opt' with
-    | Some step_zero when contains_exception step ->
-        Stop (Some step_zero.lt_loc.line)
-    | _ ->
-        Continue (last_known_step_at_level_zero_opt', line_opt)
-  in
-  List.fold_until ~init:(None, None) ~f:compute_local_exception_line ~finish:snd loc_trace
 
 
 type node =

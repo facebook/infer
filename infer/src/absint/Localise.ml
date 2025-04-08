@@ -55,21 +55,8 @@ let pp_error_desc fmt err_desc =
 
 let error_desc_get_dotty err_desc = err_desc.dotty
 
-module BucketLevel = struct
-  (** highest likelihood *)
-  let b1 = "B1"
-
-  let b2 = "B2"
-end
-
 (** get the bucket value of an error_desc, if any *)
 let error_desc_get_bucket err_desc = Tags.get err_desc.tags Tags.bucket
-
-let error_desc_is_reportable_bucket err_desc =
-  let issue_bucket = error_desc_get_bucket err_desc in
-  let high_buckets = BucketLevel.[b1; b2] in
-  Option.exists issue_bucket ~f:(fun b -> List.mem ~equal:String.equal high_buckets b)
-
 
 (** get the value tag, if any *)
 let get_value_line_tag tags =

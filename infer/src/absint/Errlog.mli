@@ -30,11 +30,6 @@ type loc_trace = loc_trace_elem list
 
 val concat_traces : (string * loc_trace) list -> loc_trace
 
-val compute_local_exception_line : loc_trace -> int option
-(** Look at all the trace steps and find those that are arising any exception, then bind them to the
-    closest step at level 0. This extra information adds value to the report itself, and may avoid
-    digging into the trace to understand the cause of the report. *)
-
 type node =
   | UnknownNode
   | FrontendNode of {node_key: Procdesc.NodeKey.t}

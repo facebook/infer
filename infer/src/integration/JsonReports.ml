@@ -100,17 +100,9 @@ let loc_trace_to_jsonbug_record trace_list =
   record_list
 
 
-let should_report proc_name issue_type error_desc =
+let should_report proc_name =
   if (not Config.filtering) || Language.equal (Procname.get_language proc_name) CIL then true
-  else
-    let issue_type_is_null_deref =
-      let null_deref_issue_types =
-        let open IssueType in
-        [null_dereference; premature_nil_termination; empty_vector_access]
-      in
-      List.mem ~equal:IssueType.equal null_deref_issue_types issue_type
-    in
-    if issue_type_is_null_deref then Localise.error_desc_is_reportable_bucket error_desc else true
+  else true
 
 
 let should_not_censor ~issue_id =
@@ -305,9 +297,9 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
     if
       error_filter source_file err_key.issue_type
-      && should_report proc_name err_key.issue_type err_key.err_desc
+      && should_report proc_name
       && (not (is_in_clang_header source_file))
-      && should_report proc_name err_key.issue_type err_key.err_desc
+      && should_report proc_name
       && not
            (issue_in_report_block_list_specs ~file:source_file ~issue:err_key.issue_type
               ~proc:proc_name )
@@ -331,20 +323,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         | _ ->
             None
       in
-      let qualifier =
-        let base_qualifier = error_desc_to_qualifier_string err_key.err_desc in
-        if IssueType.(equal resource_leak) err_key.issue_type then
-          match Errlog.compute_local_exception_line err_data.loc_trace with
-          | None ->
-              base_qualifier
-          | Some line ->
-              let potential_exception_message =
-                Format.asprintf "%a: %s %d" MarkupFormatter.pp_bold "Note"
-                  potential_exception_message line
-              in
-              Format.sprintf "%s@\n%s" base_qualifier potential_exception_message
-        else base_qualifier
-      in
+      let qualifier = error_desc_to_qualifier_string err_key.err_desc in
       let suggestion = error_desc_to_suggestion_string err_key.err_desc in
       let autofix, autofixes, autofix_candidates = get_autofixes err_data proc_name in
       let suppressed =
@@ -476,8 +455,7 @@ let is_in_files_to_analyze {Location.file} =
 
 
 let mk_error_filter filters proc_name file error_name =
-  (Config.write_html || not (IssueType.(equal skip_function) error_name))
-  && filters.Inferconfig.path_filter file
+  filters.Inferconfig.path_filter file
   && filters.Inferconfig.error_filter error_name
   && filters.Inferconfig.proc_filter proc_name
 

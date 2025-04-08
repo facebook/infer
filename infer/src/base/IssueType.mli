@@ -163,8 +163,6 @@ val static_constructor_stall : t
 val do_not_report : t
 (** an issue type that should never be reported *)
 
-val empty_vector_access : t
-
 val expensive_cost_call : kind:CostKind.t -> t
 
 val guardedby_violation : t
@@ -245,15 +243,11 @@ val ns_string_captured_in_block : t
 
 val null_argument : latent:bool -> t
 
-val null_dereference : t
-
 val nullptr_dereference : latent:bool -> t
 
 val nullptr_dereference_in_nullsafe_class : latent:bool -> t
 
 val optional_empty_access : latent:bool -> t
-
-val premature_nil_termination : t
 
 val pulse_assertion_error : t
 
@@ -285,8 +279,6 @@ val readonly_shared_ptr_param : t
 
 val regex_op_on_ui_thread : t
 
-val resource_leak : t
-
 val retain_cycle : t
 
 val retain_cycle_no_weak_info : t
@@ -296,8 +288,6 @@ val scope_leakage : t
 val self_in_block_passed_to_init : t
 
 val sensitive_data_flow : t
-
-val skip_function : t
 
 val stack_variable_address_escape : t
 

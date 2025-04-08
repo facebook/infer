@@ -191,7 +191,7 @@ end = struct
   (** keep track of the list of all declared issue types *)
   let all_issues = ref IssueSet.empty
 
-  let checker_names_to_remove = ["BIABDUCTION"; "CHECKERS"; "INFERBO"; "PULSE"]
+  let checker_names_to_remove = ["CHECKERS"; "INFERBO"; "PULSE"]
 
   let remove_leading_checker_name = function
     | first :: rest when List.mem ~equal:String.equal checker_names_to_remove first ->
@@ -535,11 +535,6 @@ let static_constructor_stall =
 
 let do_not_report = register_hidden ~id:"DO_NOT_REPORT" Error SIOF
 
-let empty_vector_access =
-  register ~category:NoCategory ~id:"EMPTY_VECTOR_ACCESS" Error Biabduction
-    ~user_documentation:[%blob "./documentation/issues/EMPTY_VECTOR_ACCESS.md"]
-
-
 let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kind
 
 let guardedby_violation =
@@ -756,11 +751,6 @@ let null_argument =
     ~user_documentation:[%blob "./documentation/issues/NULL_ARGUMENT.md"]
 
 
-let null_dereference =
-  register ~category:NullPointerDereference ~id:"NULL_DEREFERENCE" Error Biabduction
-    ~user_documentation:"See [NULLPTR_DEREFERENCE](#nullptr_dereference)."
-
-
 let nullptr_dereference =
   register_with_latent ~category:NullPointerDereference ~id:"NULLPTR_DEREFERENCE"
     ~hum:"Null Dereference" Error Pulse
@@ -776,11 +766,6 @@ let nullptr_dereference_in_nullsafe_class =
 let optional_empty_access =
   register_with_latent ~category:RuntimeException ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
-
-
-let premature_nil_termination =
-  register ~category:NoCategory ~id:"PREMATURE_NIL_TERMINATION_ARGUMENT" Warning Biabduction
-    ~user_documentation:[%blob "./documentation/issues/PREMATURE_NIL_TERMINATION_ARGUMENT.md"]
 
 
 let pulse_assertion_error =
@@ -882,11 +867,6 @@ let regex_op_on_ui_thread =
       "A potentially costly operation on a regular expression occurs on the UI thread."
 
 
-let resource_leak =
-  register ~category:ResourceLeak ~id:"RESOURCE_LEAK" Error Biabduction
-    ~user_documentation:[%blob "./documentation/issues/RESOURCE_LEAK.md"]
-
-
 let retain_cycle =
   register ~enabled:true ~category:ResourceLeak ~id:"RETAIN_CYCLE" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
@@ -906,8 +886,6 @@ let self_in_block_passed_to_init =
   register ~category:ResourceLeak ~enabled:true ~id:"SELF_IN_BLOCK_PASSED_TO_INIT" Error SelfInBlock
     ~user_documentation:[%blob "./documentation/issues/SELF_IN_BLOCK_PASSED_TO_INIT.md"]
 
-
-let skip_function = register_hidden ~enabled:false ~id:"SKIP_FUNCTION" Info Biabduction
 
 let stack_variable_address_escape =
   register ~category:MemoryError ~id:"STACK_VARIABLE_ADDRESS_ESCAPE" Error Pulse
