@@ -83,7 +83,8 @@ let create_decl_ref pointer ni qual_type =
 
 
 let create_decl_ref_expr stmt_info pointer ni qual_type =
-  Clang_ast_t.DeclRefExpr
+  let open Clang_ast_t in
+  `DeclRefExpr
     ( stmt_info
     , []
     , {ei_qual_type= qual_type; ei_value_kind= `LValue; ei_object_kind= `Ordinary}
@@ -96,7 +97,7 @@ let create_integer_literal n =
     {Clang_ast_t.ei_qual_type= create_int_type; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
   in
   let integer_literal_info = {Clang_ast_t.ili_is_signed= true; ili_bitwidth= 32; ili_value= n} in
-  Clang_ast_t.IntegerLiteral (stmt_info, [], expr_info, integer_literal_info)
+  `IntegerLiteral (stmt_info, [], expr_info, integer_literal_info)
 
 
 let create_cstyle_cast_expr stmt_info stmts qt =
@@ -106,7 +107,7 @@ let create_cstyle_cast_expr stmt_info stmts qt =
     ; ei_object_kind= `Ordinary }
   in
   let cast_expr = {Clang_ast_t.cei_cast_kind= `NullToPointer; cei_base_path= []} in
-  Clang_ast_t.CStyleCastExpr (stmt_info, stmts, expr_info, cast_expr, qt)
+  `CStyleCastExpr (stmt_info, stmts, expr_info, cast_expr, qt)
 
 
 let create_parent_expr stmt_info stmts =
@@ -115,7 +116,7 @@ let create_parent_expr stmt_info stmts =
     ; ei_value_kind= `RValue
     ; ei_object_kind= `Ordinary }
   in
-  Clang_ast_t.ParenExpr (stmt_info, stmts, expr_info)
+  `ParenExpr (stmt_info, stmts, expr_info)
 
 
 let create_implicit_cast_expr stmt_info stmts typ cast_kind =
@@ -123,7 +124,7 @@ let create_implicit_cast_expr stmt_info stmts typ cast_kind =
     {Clang_ast_t.ei_qual_type= typ; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
   in
   let cast_expr_info = {Clang_ast_t.cei_cast_kind= cast_kind; cei_base_path= []} in
-  Clang_ast_t.ImplicitCastExpr (stmt_info, stmts, expr_info, cast_expr_info, false)
+  `ImplicitCastExpr (stmt_info, stmts, expr_info, cast_expr_info, false)
 
 
 let create_nil stmt_info =
@@ -141,7 +142,8 @@ let make_obj_c_message_expr_info_class selector tname pointer =
 
 
 let create_obj_c_message_expr stmt_info qual_type selector args =
-  Clang_ast_t.ObjCMessageExpr
+  let open Clang_ast_t in
+  `ObjCMessageExpr
     ( stmt_info
     , args
     , {ei_qual_type= qual_type; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
@@ -155,11 +157,11 @@ let create_obj_c_message_expr stmt_info qual_type selector args =
 (* x <=> x?1:0 *)
 let trans_with_conditional stmt_info expr_info stmt_list =
   let stmt_list_cond = stmt_list @ [create_integer_literal "1"] @ [create_integer_literal "0"] in
-  Clang_ast_t.ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
+  `ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
 
 
 (* We translate the logical negation of an expression with a conditional*)
 (* !x <=> x?0:1 *)
 let trans_negation_with_conditional stmt_info expr_info stmt_list =
   let stmt_list_cond = stmt_list @ [create_integer_literal "0"] @ [create_integer_literal "1"] in
-  Clang_ast_t.ConditionalOperator (stmt_info, stmt_list_cond, expr_info)
+  `ConditionalOperator (stmt_info, stmt_list_cond, expr_info)

@@ -55,7 +55,7 @@ let collect_until kind scope =
 
 
 let breaks_control_flow = function
-  | Clang_ast_t.(ReturnStmt _ | BreakStmt _ | ContinueStmt _) ->
+  | `ReturnStmt _ | `BreakStmt _ | `ContinueStmt _ ->
       true
   | _ ->
       false
@@ -68,26 +68,26 @@ module CXXTemporaries = struct
   let rec visit_stmt_aux ~bound_to_decl (context : CContext.t) (stmt : Clang_ast_t.stmt) ~marker
       temporaries =
     match stmt with
-    | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _)
-    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
+    | `MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _)
+    | `CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         (* whether we want to count this temporary or not *)
         let should_accumulate =
           match (bound_to_decl, stmt) with
           (* looking for a temporary bound to a decl, keeping only those bound to that particular
              decl *)
           | ( Some var_decl_pointer
-            , MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= Some {dr_decl_pointer}}) ) ->
+            , `MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= Some {dr_decl_pointer}}) ) ->
               Int.equal var_decl_pointer dr_decl_pointer
           (* looking for a temporary bound to a decl, skipping those not bound to a decl *)
-          | Some _, MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= None})
-          | Some _, CXXBindTemporaryExpr _
+          | Some _, `MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= None})
+          | Some _, `CXXBindTemporaryExpr _
           (* not looking for a temporary bound to a decl, skipping those bound to a decl *)
-          | None, MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= Some _}) ->
+          | None, `MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= Some _}) ->
               false
           (* not looking for a temporary bound to a decl, keeping those not bound to a decl *)
           | ( None
-            , (MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= None}) | CXXBindTemporaryExpr _) )
-            ->
+            , (`MaterializeTemporaryExpr (_, _, _, {mtei_decl_ref= None}) | `CXXBindTemporaryExpr _)
+            ) ->
               true
           | _ ->
               L.die InternalError "Impossible: got bound_to_decl:%a and decl=%a" (Pp.option Int.pp)
@@ -122,27 +122,27 @@ module CXXTemporaries = struct
           else temporaries
         in
         visit_stmt_list ~bound_to_decl context stmt_list ~marker temporaries
-    | ConditionalOperator (_, [cond; then_; else_], _) ->
+    | `ConditionalOperator (_, [cond; then_; else_], _) ->
         (* temporaries created in branches need instrumentation markers to remember if they have
            been created or not during the evaluation of the expression *)
         visit_stmt ~bound_to_decl context cond ~marker temporaries
         |> visit_stmt ~bound_to_decl context then_ ~marker:(Some Sil.Ik_bexp)
         |> visit_stmt ~bound_to_decl context else_ ~marker:(Some Sil.Ik_bexp)
-    | BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
+    | `BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
         (* similarly to above, due to possible short-circuiting we are not sure that the RHS of [a
            && b] and [a || b] will be executed *)
         visit_stmt ~bound_to_decl context lhs ~marker temporaries
         |> visit_stmt ~bound_to_decl context rhs ~marker:(Some Sil.Ik_land_lor)
-    | LambdaExpr _ ->
+    | `LambdaExpr _ ->
         (* do not analyze the code of another function *) temporaries
-    | ExprWithCleanups _ when Option.is_none bound_to_decl ->
+    | `ExprWithCleanups _ when Option.is_none bound_to_decl ->
         (* huho, we're stepping on someone else's toes (eg, a lambda literal); stop here unless we
            are looking for the temporary bound to a specific lvalue [bound_to_decl] (because then we
            are not already in the [ExprWithCleanups _] that might contain the temporary, and we will
            check the ref the temporary is bound to so there is no chance of destroying the wrong C++
            temporary that way) *)
         temporaries
-    | CoroutineBodyStmt _ | CoawaitExpr _ | CoreturnStmt _ ->
+    | `CoroutineBodyStmt _ | `CoawaitExpr _ | `CoreturnStmt _ ->
         (* ignore coroutines stuff for the moment *)
         temporaries
     | _ ->
@@ -198,18 +198,18 @@ module Variables = struct
   let get_scopes stmt =
     let is_compound_stmt_ending_in_control_flow_break stmt =
       match (stmt : Clang_ast_t.stmt) with
-      | CompoundStmt (_, stmt_list) ->
+      | `CompoundStmt (_, stmt_list) ->
           List.last stmt_list |> Option.exists ~f:breaks_control_flow
       | _ ->
           false
     in
     match (stmt : Clang_ast_t.stmt) with
-    | CompoundStmt (_, stmt_list) | IfStmt (_, stmt_list, _) ->
+    | `CompoundStmt (_, stmt_list) | `IfStmt (_, stmt_list, _) ->
         Some
           { outer_scope= stmt_list
           ; breakable_scope= []
           ; swallow_destructors= is_compound_stmt_ending_in_control_flow_break stmt }
-    | CXXForRangeStmt
+    | `CXXForRangeStmt
         ( _
         , [ _init (* TODO: ignored here because ignored in [CTrans] *)
           ; iterator_decl
@@ -223,18 +223,18 @@ module Variables = struct
           { outer_scope= [iterator_decl; begin_stmt; end_stmt; exit_cond; increment]
           ; breakable_scope= [assign_current_index; loop_body]
           ; swallow_destructors= false }
-    | ObjCForCollectionStmt (_, [item; items; body]) ->
+    | `ObjCForCollectionStmt (_, [item; items; body]) ->
         Some {outer_scope= [item; items]; breakable_scope= [body]; swallow_destructors= false}
-    | ForStmt (_stmt_info, [init; decl_stmt; condition; increment; body]) ->
+    | `ForStmt (_stmt_info, [init; decl_stmt; condition; increment; body]) ->
         Some
           { outer_scope= [init; decl_stmt; condition; increment]
           ; breakable_scope= [body]
           ; swallow_destructors= false }
-    | DoStmt (_, [body; condition]) | WhileStmt (_, [condition; body]) ->
+    | `DoStmt (_, [body; condition]) | `WhileStmt (_, [condition; body]) ->
         Some {outer_scope= [condition]; breakable_scope= [body]; swallow_destructors= false}
-    | WhileStmt (_, [decls; condition; body]) ->
+    | `WhileStmt (_, [decls; condition; body]) ->
         Some {outer_scope= [decls; condition]; breakable_scope= [body]; swallow_destructors= false}
-    | SwitchStmt (stmt_info, _stmt_list, switch_stmt_info) ->
+    | `SwitchStmt (stmt_info, _stmt_list, switch_stmt_info) ->
         let condition =
           CAst_utils.get_stmt_exn switch_stmt_info.Clang_ast_t.ssi_cond
             stmt_info.Clang_ast_t.si_source_range
@@ -259,19 +259,17 @@ module Variables = struct
       (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
       scope.current ;
     match (stmt : Clang_ast_t.stmt) with
-    | ReturnStmt (stmt_info, _)
-    | BreakStmt (stmt_info, _)
-    | ContinueStmt (stmt_info, _) (* TODO: GotoStmt *) ->
-        let break_until =
-          match stmt with Clang_ast_t.ReturnStmt _ -> InitialScope | _ -> Breakable
-        in
+    | `ReturnStmt (stmt_info, _)
+    | `BreakStmt (stmt_info, _)
+    | `ContinueStmt (stmt_info, _) (* TODO: GotoStmt *) ->
+        let break_until = match stmt with `ReturnStmt _ -> InitialScope | _ -> Breakable in
         let vars_to_destroy = collect_until break_until scope in
         L.debug Capture Verbose "~[%d:%a]" stmt_info.Clang_ast_t.si_pointer
           (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
           vars_to_destroy ;
         let map = ClangPointers.Map.add stmt_info.Clang_ast_t.si_pointer vars_to_destroy map in
         (scope, map)
-    | DeclStmt (_, stmts, decl_list) ->
+    | `DeclStmt (_, stmts, decl_list) ->
         let to_destroy =
           List.concat_map decl_list ~f:(function
             | Clang_ast_t.VarDecl (({di_pointer}, _, _, {vdi_is_static_local= false}) as var_decl)

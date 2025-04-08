@@ -103,7 +103,7 @@ let () =
   assert_equal "update_var_decl_tuple"
     (get_var_decl_tuple updated_var_decl)
     (Some (di, name_info "fooey-mod", qt, var_decl_info ~is_global:false)) ;
-  let stmt = DoStmt (stmt_info 0, []) in
+  let stmt = `DoStmt (stmt_info 0, []) in
   assert_equal "get_cxx_construct_expr_tuple_from_stmt" (get_cxx_construct_expr_tuple stmt) None ;
   let ei = expr_info qt in
   let dr =
@@ -115,7 +115,7 @@ let () =
   in
   let xcei = cxx_construct_expr_info dr true in
   let xcei2 = cxx_construct_expr_info dr false in
-  let cxx_ctor_expr = CXXConstructExpr (stmt_info 1, [], ei, xcei) in
+  let cxx_ctor_expr = `CXXConstructExpr (stmt_info 1, [], ei, xcei) in
   assert_equal "get_cxx_construct_expr_tuple"
     (get_cxx_construct_expr_tuple cxx_ctor_expr)
     (Some (stmt_info 1, [], ei, xcei)) ;

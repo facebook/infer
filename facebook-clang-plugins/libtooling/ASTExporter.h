@@ -4593,7 +4593,7 @@ void ASTExporter<ATDWriter>::VisitObjCDictionaryLiteral(
 #define STMT(CLASS, PARENT) //@atd   | CLASS of (@CLASS@_tuple)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
-//@atd ] <ocaml repr="classic" validator="Clang_ast_visit.visit_stmt">
+//@atd ] <ocaml validator="Clang_ast_visit.visit_stmt">
 
 //===----------------------------------------------------------------------===//
 // Comments

@@ -69,12 +69,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   let rec is_block_expr s =
-    let open Clang_ast_t in
     match s with
-    | BlockExpr _ ->
+    | `BlockExpr _ ->
         true
     (* the block can be wrapped in ExprWithCleanups  or ImplicitCastExpr*)
-    | ImplicitCastExpr (_, [s'], _, _, _) | ExprWithCleanups (_, [s'], _, _) ->
+    | `ImplicitCastExpr (_, [s'], _, _, _) | `ExprWithCleanups (_, [s'], _, _) ->
         is_block_expr s'
     | _ ->
         false
@@ -82,7 +81,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
-    | Clang_ast_t.ImplicitCastExpr (_, _, ei, _, _) | Clang_ast_t.PseudoObjectExpr (_, _, ei) ->
+    | `ImplicitCastExpr (_, _, ei, _, _) | `PseudoObjectExpr (_, _, ei) ->
         CType.is_block_type ei.Clang_ast_t.ei_qual_type
     | _ ->
         false
@@ -1081,9 +1080,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CType_decl.qual_type_to_sil_type context.CContext.tenv expr_info.Clang_ast_t.ei_qual_type
     in
     match (stmt_list, res_typ.desc, binary_operator_info.Clang_ast_t.boi_kind) with
-    | ( [s1; Clang_ast_t.ImplicitCastExpr (_, [s2], _, _, _)]
-      , Tstruct (CStruct _ as struct_name)
-      , `Assign ) ->
+    | [s1; `ImplicitCastExpr (_, [s2], _, _, _)], Tstruct (CStruct _ as struct_name), `Assign ->
         let res_trans_e1, res_trans_e2 =
           (instruction trans_state' s1, instruction trans_state' s2)
         in
@@ -1196,19 +1193,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `AO__hip_atomic_compare_exchange_weak
     | `AO__hip_atomic_exchange
     | `AO__hip_atomic_fetch_add
-    | `AO__hip_atomic_fetch_sub
     | `AO__hip_atomic_fetch_and
     | `AO__hip_atomic_fetch_max
     | `AO__hip_atomic_fetch_min
     | `AO__hip_atomic_fetch_or
+    | `AO__hip_atomic_fetch_sub
     | `AO__hip_atomic_fetch_xor
     | `AO__hip_atomic_load
     | `AO__hip_atomic_store
     | `AO__opencl_atomic_fetch_add
+    | `AO__opencl_atomic_fetch_and
     | `AO__opencl_atomic_fetch_or
     | `AO__opencl_atomic_fetch_sub
     | `AO__opencl_atomic_fetch_xor
-    | `AO__opencl_atomic_fetch_and
     | `AO__scoped_atomic_add_fetch
     | `AO__scoped_atomic_and_fetch
     | `AO__scoped_atomic_fetch_add
@@ -2306,7 +2303,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         if is_null_stmt cond then mk_trans_result (Exp.one, Typ.mk (Tint IBool)) empty_control
           (* Assumption: If it's a null_stmt, it is a loop with no bound, so we set condition to 1 *)
         else if is_cmp then
-          let open Clang_ast_t in
           (* If we have a comparison here, do not dispatch it to [instruction] function, which
              invokes binaryOperator_trans_with_cond -> conditionalOperator_trans -> cond_trans.
              This will throw the translation process into an infinite loop immediately.  Instead,
@@ -2315,8 +2311,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
              she need to change both the codes here and the [match] in
              binaryOperator_trans_with_cond *)
           match cond with
-          | BinaryOperator (si, ss, ei, boi)
-          | ExprWithCleanups (_, [BinaryOperator (si, ss, ei, boi)], _, _) ->
+          | `BinaryOperator (si, ss, ei, boi)
+          | `ExprWithCleanups (_, [`BinaryOperator (si, ss, ei, boi)], _, _) ->
               binaryOperator_trans trans_state boi si ei ss
           | _ ->
               instruction trans_state cond
@@ -2384,8 +2380,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     L.debug Capture Verbose "Translating Condition for If-then-else/Loop/Conditional Operator@\n" ;
     let open Clang_ast_t in
     match cond with
-    | BinaryOperator (_, [s1; s2], _, boi)
-    | ExprWithCleanups (_, [BinaryOperator (_, [s1; s2], _, boi)], _, _) -> (
+    | `BinaryOperator (_, [s1; s2], _, boi)
+    | `ExprWithCleanups (_, [`BinaryOperator (_, [s1; s2], _, boi)], _, _) -> (
       match boi.boi_kind with
       | `LAnd ->
           short_circuit (if negate_cond then Binop.LOr else Binop.LAnd) s1 s2
@@ -2395,12 +2391,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           no_short_circuit_cond ~is_cmp:true cond
       | _ ->
           no_short_circuit_cond ~is_cmp:false cond )
-    | ParenExpr (_, [s], _) ->
+    | `ParenExpr (_, [s], _) ->
         (* condition can be wrapped in parentheses *)
         cond_trans ~if_kind ~negate_cond trans_state s
-    | UnaryOperator (_, [s], _, {uoi_kind= `LNot}) ->
+    | `UnaryOperator (_, [s], _, {uoi_kind= `LNot}) ->
         cond_trans ~if_kind ~negate_cond:(not negate_cond) trans_state s
-    | ExprWithCleanups (_, [s], _, _)
+    | `ExprWithCleanups (_, [s], _, _)
     (* Skip destructors of temporaries inside conditionals otherwise
        we would destroy them before dereferencing them in the prune
        nodes. A better fix probably exists. *)
@@ -2410,7 +2406,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and declStmt_in_condition_trans trans_state decl_stmt res_trans_cond =
     match decl_stmt with
-    | Clang_ast_t.DeclStmt (stmt_info, _, decl_list) ->
+    | `DeclStmt (stmt_info, _, decl_list) ->
         let trans_state_decl = {trans_state with succ_nodes= res_trans_cond.control.root_nodes} in
         declStmt_trans trans_state_decl decl_list stmt_info
     | _ ->
@@ -2464,7 +2460,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let else_body =
       match if_stmt_info.isi_else with
       | None ->
-          Clang_ast_t.NullStmt ({stmt_info with si_pointer= CAst_utils.get_fresh_pointer ()}, [])
+          `NullStmt ({stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}, [])
       | Some (else_body_ptr, _) ->
           CAst_utils.get_stmt_exn else_body_ptr source_range
     in
@@ -2648,9 +2644,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and tryStmt_trans ({context= {procdesc; translation_unit_context= {source_file}}} as trans_state)
       ({Clang_ast_t.si_pointer= try_id; si_source_range} as stmt_info) stmts =
-    let open Clang_ast_t in
     let translate_catch catch_root_nodes_acc = function
-      | CXXCatchStmt (_, catch_body_stmts, _) ->
+      | `CXXCatchStmt (_, catch_body_stmts, _) ->
           let catch_trans_result = compoundStmt_trans trans_state catch_body_stmts in
           (* no risk of duplicates because two catch blocks should never have the same root nodes
              (they have to be in different syntactic locations, after all!) *)
@@ -2855,13 +2850,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
            variables to destruct to each statement and so re-using pointers can be problematic and
            lead to multiple destructions of the same variables *)
         let stmt_info = {stmt_info with si_pointer= CAst_utils.get_fresh_pointer ()} in
-        let loop_body' = CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
-        let null_stmt = NullStmt (stmt_info, []) in
-        let beginend_stmt = CompoundStmt (stmt_info, [begin_stmt; end_stmt]) in
+        let loop_body' = `CompoundStmt (stmt_info, [assign_current_index; loop_body]) in
+        let null_stmt = `NullStmt (stmt_info, []) in
+        let beginend_stmt = `CompoundStmt (stmt_info, [begin_stmt; end_stmt]) in
         let for_loop =
-          ForStmt (stmt_info, [beginend_stmt; null_stmt; exit_cond; increment; loop_body'])
+          `ForStmt (stmt_info, [beginend_stmt; null_stmt; exit_cond; increment; loop_body'])
         in
-        instruction trans_state (CompoundStmt (stmt_info, [iterator_decl; for_loop]))
+        instruction trans_state (`CompoundStmt (stmt_info, [iterator_decl; for_loop]))
     | _ ->
         assert false
 
@@ -2876,8 +2871,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         while (item = [enumerator nextObject]) { body }
       ]} *)
   and objCForCollectionStmt_trans ({context= {procdesc}} as trans_state) item items body stmt_info =
+    let open Clang_ast_t in
     match item with
-    | Clang_ast_t.DeclRefExpr
+    | `DeclRefExpr
         ( _
         , _
         , _
@@ -2886,8 +2882,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 { dr_decl_pointer= item_pointer
                 ; dr_name= Some item_ni
                 ; dr_qual_type= Some item_qual_type } } )
-    | Clang_ast_t.DeclStmt (_, _, [VarDecl ({di_pointer= item_pointer}, item_ni, item_qual_type, _)])
-      ->
+    | `DeclStmt (_, _, [VarDecl ({di_pointer= item_pointer}, item_ni, item_qual_type, _)]) ->
         let enumerator_type =
           Ast_expressions.create_class_pointer_qual_type
             (Typ.Name.Objc.from_string CFrontend_config.nsenumerator_cl)
@@ -2903,14 +2898,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               CFrontend_config.object_enumerator [items]
           in
           let var_decl =
-            Clang_ast_t.VarDecl
+            VarDecl
               ( Ast_expressions.create_decl_info stmt_info enumerator_pointer
               , enumerator_ni
               , enumerator_type
               , { Ast_expressions.default_var_decl_info with
                   vdi_init_expr= Some object_enumerator_objc_message_expr } )
           in
-          Clang_ast_t.DeclStmt (stmt_info, [object_enumerator_objc_message_expr], [var_decl])
+          `DeclStmt (stmt_info, [object_enumerator_objc_message_expr], [var_decl])
         in
         let while_stmt =
           let item_expr =
@@ -2929,16 +2924,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               CFrontend_config.next_object [enumerator_expr]
           in
           let cond =
-            Clang_ast_t.BinaryOperator
+            `BinaryOperator
               ( stmt_info
               , [item_expr; next_object_call]
               , {ei_qual_type= item_qual_type; ei_value_kind= `RValue; ei_object_kind= `Ordinary}
               , {boi_kind= `Assign} )
           in
-          Clang_ast_t.WhileStmt (stmt_info, [cond; body])
+          `WhileStmt (stmt_info, [cond; body])
         in
-        instruction trans_state
-          (Clang_ast_t.CompoundStmt (stmt_info, [enumerator_decl; item; while_stmt]))
+        instruction trans_state (`CompoundStmt (stmt_info, [enumerator_decl; item; while_stmt]))
     | _ ->
         L.debug Capture Medium "Couldn't translate ObjCForCollectionStmt properly: %s@\n"
           (Clang_ast_j.string_of_stmt_info stmt_info) ;
@@ -3131,8 +3125,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let instruction' = exec_with_glvalue_as_reference instruction in
       let init_expr =
         match init_expr with
-        | Clang_ast_t.ImplicitCastExpr (_, [init_expr], _, _, _)
-          when Option.is_some cstruct_name_opt ->
+        | `ImplicitCastExpr (_, [init_expr], _, _, _) when Option.is_some cstruct_name_opt ->
             init_expr
         | _ ->
             init_expr
@@ -3383,11 +3376,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let recognize_syntactic_element (syntactic_element : Clang_ast_t.stmt) trans_state =
       match syntactic_element with
       (* getters look like this *)
-      | ObjCPropertyRefExpr (_, _, _, {oprei_is_messaging_getter; oprei_is_messaging_setter})
+      | `ObjCPropertyRefExpr (_, _, _, {oprei_is_messaging_getter; oprei_is_messaging_setter})
       (* setters look like that *)
-      | BinaryOperator
+      | `BinaryOperator
           ( _
-          , [ ObjCPropertyRefExpr (_, _, _, {oprei_is_messaging_getter; oprei_is_messaging_setter})
+          , [ `ObjCPropertyRefExpr (_, _, _, {oprei_is_messaging_getter; oprei_is_messaging_setter})
             ; _ ]
           , _
           , _ ) ->
@@ -3397,9 +3390,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           trans_state
     in
     let rec do_semantic_elements trans_state el =
-      let open Clang_ast_t in
       match el with
-      | OpaqueValueExpr _ :: el' ->
+      | `OpaqueValueExpr _ :: el' ->
           do_semantic_elements trans_state el'
       | stmt :: _ ->
           instruction trans_state stmt
@@ -3427,14 +3419,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let stmt =
       match stmt with
-      | ImplicitCastExpr
+      | `ImplicitCastExpr
           ( inner_stmt_info
           , inner_stmt_list
           , inner_expr_info
           , inner_cast_expr_info
           , part_of_explicit_cast )
         when part_of_explicit_cast ->
-          Clang_ast_t.ImplicitCastExpr
+          `ImplicitCastExpr
             ( inner_stmt_info
             , inner_stmt_list
             , {inner_expr_info with ei_qual_type= expr_info.Clang_ast_t.ei_qual_type}
@@ -3448,7 +3440,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       match cast_kind with
       | `LValueToRValue -> (
         match stmt with
-        | CompoundLiteralExpr _ ->
+        | `CompoundLiteralExpr _ ->
             (* HACK: we don't want to apply the reasoning below in the specific case where the
                sub-expression is a struct literal, for reasons unknown but probably "SIL is weird with
                structs-as-values" *)
@@ -3639,7 +3631,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       |> mk_trans_result res_trans_stmt.return
     in
     match (stmt_list, context.CContext.return_param_typ) with
-    | ( ([Clang_ast_t.ImplicitCastExpr (_, [stmt], _, _, _)] | [stmt])
+    | ( ([`ImplicitCastExpr (_, [stmt], _, _, _)] | [stmt])
       , Some {desc= Tptr ({desc= Tstruct (CStruct _ as struct_name)}, _)} ) ->
         (* return (exp:struct); *)
         return_stmt stmt ~mk_ret_instrs:(fun ret_exp ret_typ res_trans_stmt ->
@@ -3674,9 +3666,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         info.Clang_ast_t.ei_qual_type
     in
     let obj_c_message_expr_info = Ast_expressions.make_obj_c_message_expr_info_class sel typ None in
-    let message_stmt =
-      Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info)
-    in
+    let message_stmt = `ObjCMessageExpr (stmt_info, stmts, info, obj_c_message_expr_info) in
     instruction trans_state message_stmt
 
 
@@ -3691,9 +3681,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ; omei_is_definition_found= true
           ; omei_decl_pointer= method_pointer }
         in
-        let message_stmt =
-          Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, expr_info, obj_c_mes_expr_info)
-        in
+        let message_stmt = `ObjCMessageExpr (stmt_info, stmts, expr_info, obj_c_mes_expr_info) in
         instruction trans_state message_stmt
     | _ ->
         Logging.die InternalError
@@ -3954,7 +3942,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let meth = CFrontend_config.string_with_utf8_m in
     let obj_c_mess_expr_info = Ast_expressions.make_obj_c_message_expr_info_class meth typ None in
-    let message_stmt = Clang_ast_t.ObjCMessageExpr (stmt_info, stmts, info, obj_c_mess_expr_info) in
+    let message_stmt = `ObjCMessageExpr (stmt_info, stmts, info, obj_c_mess_expr_info) in
     instruction trans_state message_stmt
 
 
@@ -4218,7 +4206,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr source_range
       in
       match stmt_opt with
-      | Some (InitListExpr _) ->
+      | Some (`InitListExpr _) ->
           init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt
       | _ when is_dyn_array && Typ.is_pointer_to_cpp_class typ ->
           (* NOTE: this is heuristic to initialize C++ objects when the size of dynamic
@@ -4518,7 +4506,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         (* For LAnd/LOr/comparison operators we compiles a binary expression bo into an semantic
            equivalent conditional operator 'bo ? 1:0'.
            The conditional operator takes care of shortcircuit when/where needed *)
-        let bo = BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) in
+        let bo = `BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) in
         let cond = Ast_expressions.trans_with_conditional stmt_info expr_info [bo] in
         instruction trans_state cond
     | _ ->
@@ -4526,11 +4514,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and attributedStmt_trans trans_state stmt_info stmts attrs =
-    let open Clang_ast_t in
     match (stmts, attrs) with
     | [stmt], [attr] -> (
       match (stmt, attr) with
-      | NullStmt _, `FallThroughAttr _ ->
+      | `NullStmt _, `FallThroughAttr _ ->
           no_op_trans trans_state.succ_nodes
       | _ ->
           CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
@@ -4797,7 +4784,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let body = CAst_utils.get_stmt_exn body_ptr source_range in
     let promise = CAst_utils.get_stmt_exn promise_ptr source_range in
     exec_with_node_creation Procdesc.Node.DefineBody trans_state ~f:instruction
-      (CompoundStmt (stmt_info, [promise; body; Clang_ast_t.ReturnStmt (stmt_info, [return_value])]))
+      (`CompoundStmt (stmt_info, [promise; body; `ReturnStmt (stmt_info, [return_value])]))
 
 
   and coreturnStmt_trans trans_state stmt_info operand_opt promise_call_opt =
@@ -4812,7 +4799,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (call_function_with_args Procdesc.Node.ReturnStmt BuiltinDecl.__builtin_cxx_co_return
              trans_state stmt_info StdTyp.void args ) )
       ~mk_second:(fun trans_state stmt_info ->
-        returnStmt_trans trans_state stmt_info [Clang_ast_t.ReturnStmt (stmt_info, [])] )
+        returnStmt_trans trans_state stmt_info [`ReturnStmt (stmt_info, [])] )
       ~mk_return:(fun ~fst ~snd:_ -> fst.return)
 
 
@@ -4992,121 +4979,121 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and instruction_translate trans_state (instr : Clang_ast_t.stmt) =
     match instr with
-    | GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label= label_name; _}) ->
+    | `GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label= label_name; _}) ->
         gotoStmt_trans trans_state stmt_info label_name
-    | LabelStmt (stmt_info, stmt_list, label_name) ->
+    | `LabelStmt (stmt_info, stmt_list, label_name) ->
         labelStmt_trans trans_state stmt_info stmt_list label_name
-    | ArraySubscriptExpr (_, stmt_list, expr_info) ->
+    | `ArraySubscriptExpr (_, stmt_list, expr_info) ->
         arraySubscriptExpr_trans trans_state expr_info stmt_list
-    | BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->
+    | `BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->
         binaryOperator_trans_with_cond trans_state stmt_info stmt_list expr_info binop_info
-    | AtomicExpr (stmt_info, stmt_list, expr_info, atomic_info) ->
+    | `AtomicExpr (stmt_info, stmt_list, expr_info, atomic_info) ->
         atomicExpr_trans trans_state atomic_info stmt_info expr_info stmt_list
-    | CallExpr (stmt_info, stmt_list, ei) | UserDefinedLiteral (stmt_info, stmt_list, ei) ->
+    | `CallExpr (stmt_info, stmt_list, ei) | `UserDefinedLiteral (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
-    | ConstantExpr (_, stmt_list, _) -> (
+    | `ConstantExpr (_, stmt_list, _) -> (
       match stmt_list with
       | [stmt] ->
           instruction_translate trans_state stmt
       | stmts ->
           L.die InternalError "Expected exactly one statement in ConstantExpr, got %d"
             (List.length stmts) )
-    | CXXMemberCallExpr (stmt_info, stmt_list, ei) ->
+    | `CXXMemberCallExpr (stmt_info, stmt_list, ei) ->
         cxxMemberCallExpr_trans trans_state stmt_info stmt_list ei
-    | CXXOperatorCallExpr (stmt_info, stmt_list, ei) ->
+    | `CXXOperatorCallExpr (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
-    | CXXConstructExpr (stmt_info, stmt_list, expr_info, cxx_constr_info)
-    | CXXTemporaryObjectExpr (stmt_info, stmt_list, expr_info, cxx_constr_info) ->
+    | `CXXConstructExpr (stmt_info, stmt_list, expr_info, cxx_constr_info)
+    | `CXXTemporaryObjectExpr (stmt_info, stmt_list, expr_info, cxx_constr_info) ->
         cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info cxx_constr_info
           ~is_inherited_ctor:false
-    | CXXInheritedCtorInitExpr (stmt_info, stmt_list, expr_info, cxx_construct_inherited_expr_info)
+    | `CXXInheritedCtorInitExpr (stmt_info, stmt_list, expr_info, cxx_construct_inherited_expr_info)
       ->
         cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info
           cxx_construct_inherited_expr_info ~is_inherited_ctor:true
-    | ObjCMessageExpr (stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
+    | `ObjCMessageExpr (stmt_info, stmt_list, expr_info, obj_c_message_expr_info) ->
         objCMessageExpr_trans trans_state stmt_info obj_c_message_expr_info stmt_list expr_info
-    | CompoundStmt (_, stmt_list) ->
+    | `CompoundStmt (_, stmt_list) ->
         (* No node for this statement. We just collect its statement list*)
         compoundStmt_trans trans_state stmt_list
-    | ConditionalOperator (stmt_info, stmt_list, expr_info) ->
+    | `ConditionalOperator (stmt_info, stmt_list, expr_info) ->
         (* Ternary operator "cond ? exp1 : exp2" *)
         conditionalOperator_trans trans_state stmt_info stmt_list expr_info
-    | IfStmt (stmt_info, _, if_stmt_info) ->
+    | `IfStmt (stmt_info, _, if_stmt_info) ->
         ifStmt_trans trans_state stmt_info if_stmt_info
-    | SwitchStmt (stmt_info, _, switch_stmt_info) ->
+    | `SwitchStmt (stmt_info, _, switch_stmt_info) ->
         switchStmt_trans trans_state stmt_info switch_stmt_info
-    | CaseStmt (stmt_info, stmt_list) ->
+    | `CaseStmt (stmt_info, stmt_list) ->
         caseStmt_trans trans_state stmt_info stmt_list
-    | DefaultStmt (stmt_info, stmt_list) ->
+    | `DefaultStmt (stmt_info, stmt_list) ->
         defaultStmt_trans trans_state stmt_info stmt_list
-    | StmtExpr ({si_source_range}, stmt_list, _)
-    | CXXRewrittenBinaryOperator ({si_source_range}, stmt_list, _) ->
+    | `StmtExpr ({si_source_range}, stmt_list, _)
+    | `CXXRewrittenBinaryOperator ({si_source_range}, stmt_list, _) ->
         stmtExpr_trans trans_state si_source_range stmt_list
-    | ForStmt (stmt_info, [init; decl_stmt; condition; increment; body]) ->
+    | `ForStmt (stmt_info, [init; decl_stmt; condition; increment; body]) ->
         forStmt_trans trans_state ~init ~decl_stmt ~condition ~increment ~body stmt_info
-    | WhileStmt (stmt_info, [condition; body]) ->
+    | `WhileStmt (stmt_info, [condition; body]) ->
         whileStmt_trans trans_state ~decl_stmt:None ~condition ~body stmt_info
-    | WhileStmt (stmt_info, [decl_stmt; condition; body]) ->
+    | `WhileStmt (stmt_info, [decl_stmt; condition; body]) ->
         whileStmt_trans trans_state ~decl_stmt:(Some decl_stmt) ~condition ~body stmt_info
-    | DoStmt (stmt_info, [body; condition]) ->
+    | `DoStmt (stmt_info, [body; condition]) ->
         doStmt_trans trans_state ~condition ~body stmt_info
-    | CXXForRangeStmt (stmt_info, stmt_list) ->
+    | `CXXForRangeStmt (stmt_info, stmt_list) ->
         cxxForRangeStmt_trans trans_state stmt_info stmt_list
-    | ObjCForCollectionStmt (stmt_info, [item; items; body]) ->
+    | `ObjCForCollectionStmt (stmt_info, [item; items; body]) ->
         objCForCollectionStmt_trans trans_state item items body stmt_info
-    | NullStmt _ ->
+    | `NullStmt _ ->
         no_op_trans trans_state.succ_nodes
-    | CompoundAssignOperator (stmt_info, stmt_list, expr_info, binary_operator_info, _) ->
+    | `CompoundAssignOperator (stmt_info, stmt_list, expr_info, binary_operator_info, _) ->
         binaryOperator_trans trans_state binary_operator_info stmt_info expr_info stmt_list
-    | DeclStmt (stmt_info, _, decl_list) ->
+    | `DeclStmt (stmt_info, _, decl_list) ->
         declStmt_trans trans_state decl_list stmt_info
-    | DeclRefExpr (stmt_info, _, _, decl_ref_expr_info) ->
+    | `DeclRefExpr (stmt_info, _, _, decl_ref_expr_info) ->
         declRefExpr_trans trans_state stmt_info decl_ref_expr_info
-    | ObjCPropertyRefExpr (_, stmt_list, _, property_ref_expr) ->
+    | `ObjCPropertyRefExpr (_, stmt_list, _, property_ref_expr) ->
         objCPropertyRefExpr_trans trans_state stmt_list property_ref_expr
-    | CXXThisExpr (stmt_info, _, expr_info) ->
+    | `CXXThisExpr (stmt_info, _, expr_info) ->
         cxxThisExpr_trans trans_state stmt_info expr_info
-    | OpaqueValueExpr (stmt_info, _, _, opaque_value_expr_info) ->
+    | `OpaqueValueExpr (stmt_info, _, _, opaque_value_expr_info) ->
         opaqueValueExpr_trans trans_state opaque_value_expr_info
           stmt_info.Clang_ast_t.si_source_range
-    | PseudoObjectExpr (_, stmt_list, _) ->
+    | `PseudoObjectExpr (_, stmt_list, _) ->
         pseudoObjectExpr_trans trans_state stmt_list
-    | UnaryExprOrTypeTraitExpr (_, _, _, unary_expr_or_type_trait_expr_info) ->
+    | `UnaryExprOrTypeTraitExpr (_, _, _, unary_expr_or_type_trait_expr_info) ->
         unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info
-    | ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
-    | BuiltinBitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
-    | CStyleCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
-    | CXXReinterpretCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
-    | CXXConstCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
-    | CXXFunctionalCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _) ->
+    | `ImplicitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
+    | `BuiltinBitCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
+    | `CStyleCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _)
+    | `CXXReinterpretCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
+    | `CXXConstCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, _)
+    | `CXXFunctionalCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _) ->
         cast_exprs_trans trans_state stmt_info stmt_list expr_info cast_kind
-    | CXXStaticCastExpr (stmt_info, stmt_list, expr_info, cast_kind, qual_type, _) ->
+    | `CXXStaticCastExpr (stmt_info, stmt_list, expr_info, cast_kind, qual_type, _) ->
         cast_exprs_trans trans_state ~cxx_static_cast:qual_type stmt_info stmt_list expr_info
           cast_kind
-    | ObjCBridgedCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, objc_bridge_cast_ei) ->
+    | `ObjCBridgedCastExpr (stmt_info, stmt_list, expr_info, cast_kind, _, objc_bridge_cast_ei) ->
         let objc_bridge_cast_kind = objc_bridge_cast_ei.Clang_ast_t.obcei_cast_kind in
         cast_exprs_trans trans_state stmt_info stmt_list expr_info ~objc_bridge_cast_kind cast_kind
-    | IntegerLiteral (_, _, expr_info, integer_literal_info) ->
+    | `IntegerLiteral (_, _, expr_info, integer_literal_info) ->
         integerLiteral_trans trans_state expr_info integer_literal_info
-    | OffsetOfExpr (stmt_info, _, expr_info, offset_of_expr_info) ->
+    | `OffsetOfExpr (stmt_info, _, expr_info, offset_of_expr_info) ->
         offsetOf_trans trans_state expr_info offset_of_expr_info stmt_info
-    | StringLiteral (_, _, expr_info, str_list) ->
+    | `StringLiteral (_, _, expr_info, str_list) ->
         stringLiteral_trans trans_state expr_info (String.concat ~sep:"" str_list)
-    | GNUNullExpr (_, _, expr_info) ->
+    | `GNUNullExpr (_, _, expr_info) ->
         gNUNullExpr_trans trans_state expr_info
-    | CXXNullPtrLiteralExpr (_, _, expr_info) ->
+    | `CXXNullPtrLiteralExpr (_, _, expr_info) ->
         nullPtrExpr_trans trans_state expr_info
-    | ObjCSelectorExpr (_, _, expr_info, selector) ->
+    | `ObjCSelectorExpr (_, _, expr_info, selector) ->
         objCSelectorExpr_trans trans_state expr_info selector
-    | ObjCEncodeExpr (_, _, expr_info, objc_encode_expr_info) ->
+    | `ObjCEncodeExpr (_, _, expr_info, objc_encode_expr_info) ->
         objCEncodeExpr_trans trans_state expr_info objc_encode_expr_info
-    | ObjCProtocolExpr (_, _, expr_info, decl_ref) ->
+    | `ObjCProtocolExpr (_, _, expr_info, decl_ref) ->
         objCProtocolExpr_trans trans_state expr_info decl_ref
-    | ObjCIvarRefExpr (stmt_info, stmt_list, _, obj_c_ivar_ref_expr_info) ->
+    | `ObjCIvarRefExpr (stmt_info, stmt_list, _, obj_c_ivar_ref_expr_info) ->
         objCIvarRefExpr_trans trans_state stmt_info stmt_list obj_c_ivar_ref_expr_info
-    | MemberExpr (stmt_info, stmt_list, expr_info, member_expr_info) ->
+    | `MemberExpr (stmt_info, stmt_list, expr_info, member_expr_info) ->
         memberExpr_trans trans_state stmt_info stmt_list expr_info member_expr_info
-    | UnaryOperator (stmt_info, stmt_list, expr_info, unary_operator_info) ->
+    | `UnaryOperator (stmt_info, stmt_list, expr_info, unary_operator_info) ->
         if
           is_logical_negation_of_int trans_state.context.CContext.tenv expr_info unary_operator_info
         then
@@ -5115,22 +5102,22 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           in
           instruction trans_state conditional
         else unaryOperator_trans trans_state stmt_info expr_info stmt_list unary_operator_info
-    | ReturnStmt (stmt_info, stmt_list) ->
+    | `ReturnStmt (stmt_info, stmt_list) ->
         returnStmt_trans trans_state stmt_info stmt_list
-    | ExprWithCleanups (stmt_info, stmt_list, _, _) ->
+    | `ExprWithCleanups (stmt_info, stmt_list, _, _) ->
         exprWithCleanups_trans trans_state stmt_info stmt_list
-    | ParenExpr ({Clang_ast_t.si_source_range}, stmt_list, _) ->
+    | `ParenExpr ({Clang_ast_t.si_source_range}, stmt_list, _) ->
         parenExpr_trans trans_state si_source_range stmt_list
-    | ObjCBoolLiteralExpr (_, _, expr_info, n)
-    | CharacterLiteral (_, _, expr_info, n)
-    | CXXBoolLiteralExpr (_, _, expr_info, n) ->
+    | `ObjCBoolLiteralExpr (_, _, expr_info, n)
+    | `CharacterLiteral (_, _, expr_info, n)
+    | `CXXBoolLiteralExpr (_, _, expr_info, n) ->
         characterLiteral_trans trans_state expr_info n
-    | FixedPointLiteral (_, _, expr_info, float_string)
-    | FloatingLiteral (_, _, expr_info, float_string) ->
+    | `FixedPointLiteral (_, _, expr_info, float_string)
+    | `FloatingLiteral (_, _, expr_info, float_string) ->
         floatingLiteral_trans trans_state expr_info float_string
-    | CXXScalarValueInitExpr (_, _, expr_info) ->
+    | `CXXScalarValueInitExpr (_, _, expr_info) ->
         cxxScalarValueInitExpr_trans trans_state expr_info
-    | ObjCBoxedExpr (stmt_info, stmts, info, boxed_expr_info) ->
+    | `ObjCBoxedExpr (stmt_info, stmts, info, boxed_expr_info) ->
         (* Sometimes clang does not return a boxing method (a name of function to apply), e.g.,
            [@("str")].  In that case, it uses "unknownSelector:" instead of giving up the
            translation. *)
@@ -5138,254 +5125,255 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           Option.value boxed_expr_info.Clang_ast_t.obei_boxing_method ~default:"unknownSelector:"
         in
         objCBoxedExpr_trans trans_state info sel stmt_info stmts
-    | ObjCArrayLiteral (stmt_info, stmts, expr_info, array_literal_info) ->
+    | `ObjCArrayLiteral (stmt_info, stmts, expr_info, array_literal_info) ->
         objCArrayLiteral_trans trans_state expr_info stmt_info stmts array_literal_info
-    | ObjCDictionaryLiteral (stmt_info, stmts, expr_info, dict_literal_info) ->
+    | `ObjCDictionaryLiteral (stmt_info, stmts, expr_info, dict_literal_info) ->
         objCDictionaryLiteral_trans trans_state expr_info stmt_info stmts dict_literal_info
-    | ObjCStringLiteral (stmt_info, stmts, info) ->
+    | `ObjCStringLiteral (stmt_info, stmts, info) ->
         objCStringLiteral_trans trans_state stmt_info stmts info
-    | BreakStmt (stmt_info, _) ->
+    | `BreakStmt (stmt_info, _) ->
         breakStmt_trans trans_state stmt_info
-    | ContinueStmt (stmt_info, _) ->
+    | `ContinueStmt (stmt_info, _) ->
         continueStmt_trans trans_state stmt_info
-    | ObjCAtSynchronizedStmt (_, stmt_list) ->
+    | `ObjCAtSynchronizedStmt (_, stmt_list) ->
         objCAtSynchronizedStmt_trans trans_state stmt_list
-    | ObjCIndirectCopyRestoreExpr (_, stmt_list, _) ->
+    | `ObjCIndirectCopyRestoreExpr (_, stmt_list, _) ->
         let control, returns =
           instructions Procdesc.Node.ObjCIndirectCopyRestoreExpr trans_state stmt_list
         in
         mk_trans_result (last_or_mk_fresh_void_exp_typ returns) control
-    | BlockExpr (stmt_info, _, expr_info, decl) ->
+    | `BlockExpr (stmt_info, _, expr_info, decl) ->
         blockExpr_trans trans_state stmt_info expr_info decl
-    | ObjCAutoreleasePoolStmt (stmt_info, stmts) ->
+    | `ObjCAutoreleasePoolStmt (stmt_info, stmts) ->
         objCAutoreleasePoolStmt_trans trans_state stmt_info stmts
-    | ObjCAtTryStmt (_, stmts) ->
+    | `ObjCAtTryStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts
-    | CXXTryStmt (stmt_info, try_stmts) ->
+    | `CXXTryStmt (stmt_info, try_stmts) ->
         tryStmt_trans trans_state stmt_info try_stmts
-    | CXXCatchStmt _ ->
+    | `CXXCatchStmt _ ->
         (* should by handled by try statement *)
         assert false
-    | ObjCAtThrowStmt (stmt_info, stmts) | CXXThrowExpr (stmt_info, stmts, _) ->
+    | `ObjCAtThrowStmt (stmt_info, stmts) | `CXXThrowExpr (stmt_info, stmts, _) ->
         objc_cxx_throw_trans trans_state stmt_info stmts
-    | ObjCAtFinallyStmt (_, stmts) ->
+    | `ObjCAtFinallyStmt (_, stmts) ->
         compoundStmt_trans trans_state stmts
-    | ObjCAtCatchStmt _ ->
+    | `ObjCAtCatchStmt _ ->
         compoundStmt_trans trans_state []
-    | PredefinedExpr (_, _, expr_info, _) ->
+    | `PredefinedExpr (_, _, expr_info, _) ->
         stringLiteral_trans trans_state expr_info ""
-    | BinaryConditionalOperator (stmt_info, stmts, expr_info) ->
+    | `BinaryConditionalOperator (stmt_info, stmts, expr_info) ->
         binaryConditionalOperator_trans trans_state stmt_info stmts expr_info
-    | CXXNewExpr (stmt_info, _, expr_info, cxx_new_expr_info) ->
+    | `CXXNewExpr (stmt_info, _, expr_info, cxx_new_expr_info) ->
         cxxNewExpr_trans trans_state stmt_info expr_info cxx_new_expr_info
-    | CXXDeleteExpr (stmt_info, stmt_list, _, delete_expr_info) ->
+    | `CXXDeleteExpr (stmt_info, stmt_list, _, delete_expr_info) ->
         cxxDeleteExpr_trans trans_state stmt_info stmt_list delete_expr_info
-    | MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
+    | `MaterializeTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         materializeTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
-    | CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
+    | `CXXBindTemporaryExpr (stmt_info, stmt_list, expr_info, _) ->
         cxxBindTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
-    | CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
+    | `CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
         compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info
-    | InitListExpr (stmt_info, stmts, expr_info) ->
+    | `InitListExpr (stmt_info, stmts, expr_info) ->
         initListExpr_trans trans_state stmt_info expr_info stmts
-    | CXXDynamicCastExpr (stmt_info, stmts, _, _, qual_type, _) ->
+    | `CXXDynamicCastExpr (stmt_info, stmts, _, _, qual_type, _) ->
         cxxDynamicCastExpr_trans trans_state stmt_info stmts qual_type
-    | CXXDefaultArgExpr (_, _, _, default_expr_info)
-    | CXXDefaultInitExpr (_, _, _, default_expr_info) ->
+    | `CXXDefaultArgExpr (_, _, _, default_expr_info)
+    | `CXXDefaultInitExpr (_, _, _, default_expr_info) ->
         cxxDefaultExpr_trans trans_state default_expr_info
-    | ImplicitValueInitExpr (stmt_info, _, _) ->
+    | `ImplicitValueInitExpr (stmt_info, _, _) ->
         implicitValueInitExpr_trans trans_state stmt_info
-    | GenericSelectionExpr (stmt_info, stmts, _, gse_info) -> (
+    | `GenericSelectionExpr (stmt_info, stmts, _, gse_info) -> (
       match gse_info.gse_value with
       | Some value ->
           instruction trans_state value
       | None ->
           genericSelectionExprUnknown_trans trans_state stmt_info stmts )
-    | SizeOfPackExpr _ ->
+    | `SizeOfPackExpr _ ->
         mk_trans_result (Exp.get_undefined false, StdTyp.void) empty_control
-    | GCCAsmStmt (stmt_info, stmts) ->
+    | `GCCAsmStmt (stmt_info, stmts) ->
         gccAsmStmt_trans trans_state stmt_info stmts
-    | CXXPseudoDestructorExpr _ ->
+    | `CXXPseudoDestructorExpr _ ->
         cxxPseudoDestructorExpr_trans ()
-    | CXXTypeidExpr (stmt_info, stmts, expr_info) ->
+    | `CXXTypeidExpr (stmt_info, stmts, expr_info) ->
         cxxTypeidExpr_trans trans_state stmt_info stmts expr_info
-    | CXXStdInitializerListExpr (stmt_info, stmts, expr_info) ->
+    | `CXXStdInitializerListExpr (stmt_info, stmts, expr_info) ->
         cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info
-    | LambdaExpr (stmt_info, _, expr_info, lambda_expr_info) ->
+    | `LambdaExpr (stmt_info, _, expr_info, lambda_expr_info) ->
         let trans_state' = {trans_state with priority= Free} in
         lambdaExpr_trans trans_state' stmt_info expr_info lambda_expr_info
-    | AttributedStmt (stmt_info, stmts, attrs) ->
+    | `AttributedStmt (stmt_info, stmts, attrs) ->
         attributedStmt_trans trans_state stmt_info stmts attrs
-    | TypeTraitExpr (_, _, expr_info, type_trait_info) ->
+    | `TypeTraitExpr (_, _, expr_info, type_trait_info) ->
         booleanValue_trans trans_state expr_info type_trait_info.Clang_ast_t.xtti_value
-    | CXXNoexceptExpr (_, _, expr_info, cxx_noexcept_expr_info) ->
+    | `CXXNoexceptExpr (_, _, expr_info, cxx_noexcept_expr_info) ->
         booleanValue_trans trans_state expr_info cxx_noexcept_expr_info.Clang_ast_t.xnee_value
-    | VAArgExpr (_, [], expr_info) ->
+    | `VAArgExpr (_, [], expr_info) ->
         undefined_expr trans_state expr_info
-    | VAArgExpr (stmt_info, stmt :: _, ei) ->
+    | `VAArgExpr (stmt_info, stmt :: _, ei) ->
         va_arg_trans trans_state stmt_info stmt ei
-    | ArrayInitIndexExpr _ | ArrayInitLoopExpr _ ->
+    | `ArrayInitIndexExpr _ | `ArrayInitLoopExpr _ ->
         no_op_trans trans_state.succ_nodes
     (* vector instructions for OpenCL etc. we basically ignore these for now; just translate the
        sub-expressions *)
-    | ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->
+    | `ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->
         undefined_expr trans_state expr_info
-    | SubstNonTypeTemplateParmExpr (_, stmts, _) | SubstNonTypeTemplateParmPackExpr (_, stmts, _) ->
+    | `SubstNonTypeTemplateParmExpr (_, stmts, _) | `SubstNonTypeTemplateParmPackExpr (_, stmts, _)
+      ->
         let[@warning "-partial-match"] [expr] = stmts in
         instruction trans_state expr
     (* Infer somehow ended up in templated non instantiated code - right now
        it's not supported and failure in those cases is expected. *)
-    | CXXDependentScopeMemberExpr ({Clang_ast_t.si_source_range}, _, _) ->
+    | `CXXDependentScopeMemberExpr ({Clang_ast_t.si_source_range}, _, _) ->
         CFrontend_errors.unimplemented __POS__ si_source_range
           ~ast_node:(Clang_ast_proj.get_stmt_kind_string instr)
           "Translation of templated code is unsupported: %a"
           (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
           instr
-    | ForStmt ({Clang_ast_t.si_source_range}, _)
-    | WhileStmt ({Clang_ast_t.si_source_range}, _)
-    | DoStmt ({Clang_ast_t.si_source_range}, _)
-    | ObjCForCollectionStmt ({Clang_ast_t.si_source_range}, _) ->
+    | `ForStmt ({Clang_ast_t.si_source_range}, _)
+    | `WhileStmt ({Clang_ast_t.si_source_range}, _)
+    | `DoStmt ({Clang_ast_t.si_source_range}, _)
+    | `ObjCForCollectionStmt ({Clang_ast_t.si_source_range}, _) ->
         CFrontend_errors.incorrect_assumption __POS__ si_source_range "Unexpected shape for %a: %a"
           (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
           instr
           (Pp.of_string ~f:Clang_ast_j.string_of_stmt)
           instr
-    | CoroutineBodyStmt (stmt_info, _, {cbs_body; cbs_promise_decl_stmt; cbs_return_value}) ->
+    | `CoroutineBodyStmt (stmt_info, _, {cbs_body; cbs_promise_decl_stmt; cbs_return_value}) ->
         coroutineBodyStmt_trans trans_state stmt_info cbs_body cbs_promise_decl_stmt
           cbs_return_value
-    | CoreturnStmt (stmt_info, _, {coret_operand; coret_promise_call}) ->
+    | `CoreturnStmt (stmt_info, _, {coret_operand; coret_promise_call}) ->
         coreturnStmt_trans trans_state stmt_info coret_operand coret_promise_call
-    | CoawaitExpr (stmt_info, operand :: _, expr_info)
-    | CoyieldExpr (stmt_info, operand :: _, expr_info) ->
+    | `CoawaitExpr (stmt_info, operand :: _, expr_info)
+    | `CoyieldExpr (stmt_info, operand :: _, expr_info) ->
         coroutineSuspendExpr_trans trans_state stmt_info expr_info operand
-    | AddrLabelExpr _
-    | ArraySectionExpr _
-    | ArrayTypeTraitExpr _
-    | AsTypeExpr _
-    | CapturedStmt _
-    | ChooseExpr _
-    | CoawaitExpr (_, [], _)
-    | ConceptSpecializationExpr _
-    | ConvertVectorExpr _
-    | CoyieldExpr (_, [], _)
-    | CUDAKernelCallExpr _
-    | CXXAddrspaceCastExpr _
-    | CXXFoldExpr _
-    | CXXParenListInitExpr _
-    | CXXUnresolvedConstructExpr _
-    | CXXUuidofExpr _
-    | DependentCoawaitExpr _
-    | DependentScopeDeclRefExpr _
-    | DesignatedInitExpr _
-    | DesignatedInitUpdateExpr _
-    | EmbedExpr _
-    | ExpressionTraitExpr _
-    | ExtVectorElementExpr _
-    | FunctionParmPackExpr _
-    | ImaginaryLiteral _
-    | IndirectGotoStmt _
-    | MatrixSubscriptExpr _
-    | MSAsmStmt _
-    | MSDependentExistsStmt _
-    | MSPropertyRefExpr _
-    | MSPropertySubscriptExpr _
-    | NoInitExpr _
-    | ObjCIsaExpr _
-    | ObjCSubscriptRefExpr _
-    | OMPArrayShapingExpr _
-    | OMPAtomicDirective _
-    | OMPBarrierDirective _
-    | OMPCancelDirective _
-    | OMPCancellationPointDirective _
-    | OMPCanonicalLoop _
-    | OMPCriticalDirective _
-    | OMPDepobjDirective _
-    | OMPDispatchDirective _
-    | OMPDistributeDirective _
-    | OMPDistributeParallelForDirective _
-    | OMPDistributeParallelForSimdDirective _
-    | OMPDistributeSimdDirective _
-    | OMPErrorDirective _
-    | OMPFlushDirective _
-    | OMPForDirective _
-    | OMPForSimdDirective _
-    | OMPGenericLoopDirective _
-    | OMPInterchangeDirective _
-    | OMPInteropDirective _
-    | OMPIteratorExpr _
-    | OMPMaskedDirective _
-    | OMPMaskedTaskLoopDirective _
-    | OMPMaskedTaskLoopSimdDirective _
-    | OMPMasterDirective _
-    | OMPMasterTaskLoopDirective _
-    | OMPMasterTaskLoopSimdDirective _
-    | OMPMetaDirective _
-    | OMPOrderedDirective _
-    | OMPParallelDirective _
-    | OMPParallelForDirective _
-    | OMPParallelForSimdDirective _
-    | OMPParallelGenericLoopDirective _
-    | OMPParallelMaskedDirective _
-    | OMPParallelMaskedTaskLoopDirective _
-    | OMPParallelMaskedTaskLoopSimdDirective _
-    | OMPParallelMasterDirective _
-    | OMPParallelMasterTaskLoopDirective _
-    | OMPParallelMasterTaskLoopSimdDirective _
-    | OMPParallelSectionsDirective _
-    | OMPReverseDirective _
-    | OMPScanDirective _
-    | OMPScopeDirective _
-    | OMPSectionDirective _
-    | OMPSectionsDirective _
-    | OMPSimdDirective _
-    | OMPSingleDirective _
-    | OMPTargetDataDirective _
-    | OMPTargetDirective _
-    | OMPTargetEnterDataDirective _
-    | OMPTargetExitDataDirective _
-    | OMPTargetParallelDirective _
-    | OMPTargetParallelForDirective _
-    | OMPTargetParallelForSimdDirective _
-    | OMPTargetParallelGenericLoopDirective _
-    | OMPTargetSimdDirective _
-    | OMPTargetTeamsDirective _
-    | OMPTargetTeamsDistributeDirective _
-    | OMPTargetTeamsDistributeParallelForDirective _
-    | OMPTargetTeamsDistributeParallelForSimdDirective _
-    | OMPTargetTeamsDistributeSimdDirective _
-    | OMPTargetTeamsGenericLoopDirective _
-    | OMPTargetUpdateDirective _
-    | OMPTaskDirective _
-    | OMPTaskgroupDirective _
-    | OMPTaskLoopDirective _
-    | OMPTaskLoopSimdDirective _
-    | OMPTaskwaitDirective _
-    | OMPTaskyieldDirective _
-    | OMPTeamsDirective _
-    | OMPTeamsDistributeDirective _
-    | OMPTeamsDistributeParallelForDirective _
-    | OMPTeamsDistributeParallelForSimdDirective _
-    | OMPTeamsDistributeSimdDirective _
-    | OMPTeamsGenericLoopDirective _
-    | OMPTileDirective _
-    | OMPUnrollDirective _
-    | OpenACCComputeConstruct _
-    | OpenACCLoopConstruct _
-    | PackExpansionExpr _
-    | PackIndexingExpr _
-    | ParenListExpr _
-    | RecoveryExpr _
-    | RequiresExpr _
-    | SEHExceptStmt _
-    | SEHFinallyStmt _
-    | SEHLeaveStmt _
-    | SEHTryStmt _
-    | ShuffleVectorExpr _
-    | SourceLocExpr _
-    | SYCLUniqueStableNameExpr _
-    | TypoExpr _
-    | UnresolvedLookupExpr _
-    | UnresolvedMemberExpr _ ->
+    | `AddrLabelExpr _
+    | `ArraySectionExpr _
+    | `ArrayTypeTraitExpr _
+    | `AsTypeExpr _
+    | `CapturedStmt _
+    | `ChooseExpr _
+    | `CoawaitExpr (_, [], _)
+    | `ConceptSpecializationExpr _
+    | `ConvertVectorExpr _
+    | `CoyieldExpr (_, [], _)
+    | `CUDAKernelCallExpr _
+    | `CXXAddrspaceCastExpr _
+    | `CXXFoldExpr _
+    | `CXXParenListInitExpr _
+    | `CXXUnresolvedConstructExpr _
+    | `CXXUuidofExpr _
+    | `DependentCoawaitExpr _
+    | `DependentScopeDeclRefExpr _
+    | `DesignatedInitExpr _
+    | `DesignatedInitUpdateExpr _
+    | `EmbedExpr _
+    | `ExpressionTraitExpr _
+    | `ExtVectorElementExpr _
+    | `FunctionParmPackExpr _
+    | `ImaginaryLiteral _
+    | `IndirectGotoStmt _
+    | `MatrixSubscriptExpr _
+    | `MSAsmStmt _
+    | `MSDependentExistsStmt _
+    | `MSPropertyRefExpr _
+    | `MSPropertySubscriptExpr _
+    | `NoInitExpr _
+    | `ObjCIsaExpr _
+    | `ObjCSubscriptRefExpr _
+    | `OMPArrayShapingExpr _
+    | `OMPAtomicDirective _
+    | `OMPBarrierDirective _
+    | `OMPCancelDirective _
+    | `OMPCancellationPointDirective _
+    | `OMPCanonicalLoop _
+    | `OMPCriticalDirective _
+    | `OMPDepobjDirective _
+    | `OMPDispatchDirective _
+    | `OMPDistributeDirective _
+    | `OMPDistributeParallelForDirective _
+    | `OMPDistributeParallelForSimdDirective _
+    | `OMPDistributeSimdDirective _
+    | `OMPErrorDirective _
+    | `OMPFlushDirective _
+    | `OMPForDirective _
+    | `OMPForSimdDirective _
+    | `OMPGenericLoopDirective _
+    | `OMPInterchangeDirective _
+    | `OMPInteropDirective _
+    | `OMPIteratorExpr _
+    | `OMPMaskedDirective _
+    | `OMPMaskedTaskLoopDirective _
+    | `OMPMaskedTaskLoopSimdDirective _
+    | `OMPMasterDirective _
+    | `OMPMasterTaskLoopDirective _
+    | `OMPMasterTaskLoopSimdDirective _
+    | `OMPMetaDirective _
+    | `OMPOrderedDirective _
+    | `OMPParallelDirective _
+    | `OMPParallelForDirective _
+    | `OMPParallelForSimdDirective _
+    | `OMPParallelGenericLoopDirective _
+    | `OMPParallelMaskedDirective _
+    | `OMPParallelMaskedTaskLoopDirective _
+    | `OMPParallelMaskedTaskLoopSimdDirective _
+    | `OMPParallelMasterDirective _
+    | `OMPParallelMasterTaskLoopDirective _
+    | `OMPParallelMasterTaskLoopSimdDirective _
+    | `OMPParallelSectionsDirective _
+    | `OMPReverseDirective _
+    | `OMPScanDirective _
+    | `OMPScopeDirective _
+    | `OMPSectionDirective _
+    | `OMPSectionsDirective _
+    | `OMPSimdDirective _
+    | `OMPSingleDirective _
+    | `OMPTargetDataDirective _
+    | `OMPTargetDirective _
+    | `OMPTargetEnterDataDirective _
+    | `OMPTargetExitDataDirective _
+    | `OMPTargetParallelDirective _
+    | `OMPTargetParallelForDirective _
+    | `OMPTargetParallelForSimdDirective _
+    | `OMPTargetParallelGenericLoopDirective _
+    | `OMPTargetSimdDirective _
+    | `OMPTargetTeamsDirective _
+    | `OMPTargetTeamsDistributeDirective _
+    | `OMPTargetTeamsDistributeParallelForDirective _
+    | `OMPTargetTeamsDistributeParallelForSimdDirective _
+    | `OMPTargetTeamsDistributeSimdDirective _
+    | `OMPTargetTeamsGenericLoopDirective _
+    | `OMPTargetUpdateDirective _
+    | `OMPTaskDirective _
+    | `OMPTaskgroupDirective _
+    | `OMPTaskLoopDirective _
+    | `OMPTaskLoopSimdDirective _
+    | `OMPTaskwaitDirective _
+    | `OMPTaskyieldDirective _
+    | `OMPTeamsDirective _
+    | `OMPTeamsDistributeDirective _
+    | `OMPTeamsDistributeParallelForDirective _
+    | `OMPTeamsDistributeParallelForSimdDirective _
+    | `OMPTeamsDistributeSimdDirective _
+    | `OMPTeamsGenericLoopDirective _
+    | `OMPTileDirective _
+    | `OMPUnrollDirective _
+    | `OpenACCComputeConstruct _
+    | `OpenACCLoopConstruct _
+    | `PackExpansionExpr _
+    | `PackIndexingExpr _
+    | `ParenListExpr _
+    | `RecoveryExpr _
+    | `RequiresExpr _
+    | `SEHExceptStmt _
+    | `SEHFinallyStmt _
+    | `SEHLeaveStmt _
+    | `SEHTryStmt _
+    | `ShuffleVectorExpr _
+    | `SourceLocExpr _
+    | `SYCLUniqueStableNameExpr _
+    | `TypoExpr _
+    | `UnresolvedLookupExpr _
+    | `UnresolvedMemberExpr _ ->
         let (stmt_info, stmts), ret_typ =
           match Clang_ast_proj.get_expr_tuple instr with
           | Some (stmt_info, stmts, expr_info) ->
@@ -5524,7 +5512,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let stmt_info' = {stmt_info with si_pointer= CAst_utils.get_fresh_pointer ()} in
         ( cxx_inject_virtual_base_class_destructors trans_state stmt_info'
           (* destructor wrapper only have calls to virtual base class destructors in its body *)
-        , Clang_ast_t.CompoundStmt (stmt_info', []) )
+        , `CompoundStmt (stmt_info', []) )
       else if is_destructor then
         (* Injecting destructor call nodes of fields at the end of the body *)
         (cxx_inject_field_destructors_in_destructor_body trans_state stmt_info, body)

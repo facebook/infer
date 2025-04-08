@@ -130,48 +130,48 @@ let update_var_decl_tuple __f = function
 
 
 let get_stmt_kind_string = function
-#define STMT(CLASS, PARENT) | CLASS (@CLASS@_tuple) -> s(CLASS)
+#define STMT(CLASS, PARENT) | `CLASS (@CLASS@_tuple) -> s(CLASS)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
 
 let get_stmt_tuple = function
-#define STMT(CLASS, PARENT) | CLASS (@CLASS@_tuple) -> (stmt_tuple)
+#define STMT(CLASS, PARENT) | `CLASS (@CLASS@_tuple) -> (stmt_tuple)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
 
 let update_stmt_tuple __f = function
-#define STMT(CLASS, PARENT) | CLASS (@CLASS@_tuple) -> \
-    let (stmt_tuple) = __f (stmt_tuple) in CLASS (@CLASS@_tuple)
+#define STMT(CLASS, PARENT) | `CLASS (@CLASS@_tuple) -> \
+    let (stmt_tuple) = __f (stmt_tuple) in `CLASS (@CLASS@_tuple)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
 
 
 let get_expr_tuple = function
 #define STMT(CLASS, PARENT)
-#define EXPR(CLASS, PARENT) | CLASS (@CLASS@_tuple) -> Some (expr_tuple)
+#define EXPR(CLASS, PARENT) | `CLASS (@CLASS@_tuple) -> Some (expr_tuple)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
 | _ -> None
 
 let update_expr_tuple __f = function
 #define STMT(CLASS, PARENT)
-#define EXPR(CLASS, PARENT) | CLASS (@CLASS@_tuple) -> \
-    let (expr_tuple) = __f (expr_tuple) in CLASS (@CLASS@_tuple)
+#define EXPR(CLASS, PARENT) | `CLASS (@CLASS@_tuple) -> \
+    let (expr_tuple) = __f (expr_tuple) in `CLASS (@CLASS@_tuple)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
 | x -> x
 
 let get_cxx_construct_expr_tuple = function
 #define STMT(CLASS, PARENT)
-#define CXXCONSTRUCTEXPR(CLASS, PARENT) | CLASS (@CLASS@_tuple) -> Some (cxx_construct_expr_tuple)
+#define CXXCONSTRUCTEXPR(CLASS, PARENT) | `CLASS (@CLASS@_tuple) -> Some (cxx_construct_expr_tuple)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
 | _ -> None
 
 let update_cxx_construct_expr_tuple __f = function
 #define STMT(CLASS, PARENT)
-#define CXXCONSTRUCTEXPR(CLASS, PARENT) | CLASS (@CLASS@_tuple) -> \
-    let (cxx_construct_expr_tuple) = __f (cxx_construct_expr_tuple) in CLASS (@CLASS@_tuple)
+#define CXXCONSTRUCTEXPR(CLASS, PARENT) | `CLASS (@CLASS@_tuple) -> \
+    let (cxx_construct_expr_tuple) = __f (cxx_construct_expr_tuple) in `CLASS (@CLASS@_tuple)
 #define ABSTRACT_STMT(STMT)
 #include <clang/AST/StmtNodes.inc>
 | x -> x
@@ -216,11 +216,11 @@ let string_of_cast_kind = function
 let get_cast_kind = function
 #define STMT(CLASS, PARENT)
 #define ABSTRACT_STMT(TYPE)
-#define CASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info)
-#define EXPLICITCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _)
-#define IMPLICITCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _)
-#define CXXNAMEDCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _, _)
-#define OBJCBRIDGEDCASTEXPR(Type, Base) | Type (_, _, _, cast_expr_info, _, _)
+#define CASTEXPR(Type, Base) | `Type (_, _, _, cast_expr_info)
+#define EXPLICITCASTEXPR(Type, Base) | `Type (_, _, _, cast_expr_info, _)
+#define IMPLICITCASTEXPR(Type, Base) | `Type (_, _, _, cast_expr_info, _)
+#define CXXNAMEDCASTEXPR(Type, Base) | `Type (_, _, _, cast_expr_info, _, _)
+#define OBJCBRIDGEDCASTEXPR(Type, Base) | `Type (_, _, _, cast_expr_info, _, _)
 #include<clang/AST/StmtNodes.inc>
 -> Some cast_expr_info.cei_cast_kind
 | _ -> None

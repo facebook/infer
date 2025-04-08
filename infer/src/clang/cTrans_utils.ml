@@ -709,7 +709,7 @@ let is_superinstance mei =
   match mei.Clang_ast_t.omei_receiver_kind with `SuperInstance -> true | _ -> false
 
 
-let is_null_stmt s = match s with Clang_ast_t.NullStmt _ -> true | _ -> false
+let is_null_stmt s = match s with `NullStmt _ -> true | _ -> false
 
 let extract_stmt_from_singleton stmt_list source_range warning_string =
   extract_item_from_singleton stmt_list
@@ -743,7 +743,7 @@ end
 
 let rec contains_opaque_value_expr s =
   match s with
-  | Clang_ast_t.OpaqueValueExpr _ ->
+  | `OpaqueValueExpr _ ->
       true
   | _ -> (
     match snd (Clang_ast_proj.get_stmt_tuple s) with
@@ -786,9 +786,9 @@ let should_remove_first_param {context= {tenv} as context; is_fst_arg_objc_insta
     stmt =
   let some_class_name stmt_info = Some (CContext.get_curr_class_typename stmt_info context) in
   match (stmt : Clang_ast_t.stmt) with
-  | ImplicitCastExpr
+  | `ImplicitCastExpr
       ( _
-      , [ DeclRefExpr
+      , [ `DeclRefExpr
             ( stmt_info
             , _
             , _
@@ -800,10 +800,10 @@ let should_remove_first_param {context= {tenv} as context; is_fst_arg_objc_insta
     when is_fst_arg_objc_instance_method_call && String.equal name "self"
          && CType.is_class (CType_decl.qual_type_to_sil_type tenv qual_type) ->
       some_class_name stmt_info
-  | ObjCMessageExpr
+  | `ObjCMessageExpr
       ( _
-      , [ ImplicitCastExpr
-            (_, [DeclRefExpr (stmt_info, _, _, _)], _, {cei_cast_kind= `LValueToRValue}, _) ]
+      , [ `ImplicitCastExpr
+            (_, [`DeclRefExpr (stmt_info, _, _, _)], _, {cei_cast_kind= `LValueToRValue}, _) ]
       , _
       , {omei_selector= selector} )
     when is_fst_arg_objc_instance_method_call && String.equal selector CFrontend_config.class_method

@@ -315,7 +315,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
         ; omdi_is_variadic= false
         ; omdi_is_overriding= true
         ; omdi_is_optional= false
-        ; omdi_body= Some (Clang_ast_t.CompoundStmt (CAst_utils.dummy_stmt_info (), []))
+        ; omdi_body= Some (`CompoundStmt (CAst_utils.dummy_stmt_info (), []))
         ; omdi_mangled_name= CFrontend_config.dealloc }
       in
       let method_decl = ObjCMethodDecl (decl_info, name_info, obj_c_method_decl_info) in
@@ -558,7 +558,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
               { si_pointer= CAst_utils.get_fresh_pointer ()
               ; si_source_range= decl_info.di_source_range }
             in
-            let body = Clang_ast_t.DeclStmt (stmt_info, [], [dec]) in
+            let body = `DeclStmt (stmt_info, [], [dec]) in
             ignore (CMethod_trans.create_local_procdesc trans_unit_ctx cfg tenv ms [body] []) ;
             add_method trans_unit_ctx tenv cfg CContext.ContextNoCls procname body ms None None [] )
       (* Note that C and C++ records are treated the same way
