@@ -120,8 +120,6 @@ let progress_bar_style_symbols = [("auto", `Auto); ("plain", `Plain); ("multilin
 
 let anonymous_block_prefix = "objc_block_"
 
-let biabduction_models_mode = false
-
 let buck_out = "buck-out"
 
 let buck_out_gen = buck_out ^/ "gen"

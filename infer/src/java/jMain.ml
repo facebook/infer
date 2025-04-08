@@ -61,16 +61,7 @@ let capture_libs program tenv =
 
 
 (* load a stored global tenv if the file is found, and create a new one otherwise *)
-let load_tenv () =
-  match Tenv.Global.load () with
-  | None ->
-      Tenv.create ()
-  | Some _ when Config.biabduction_models_mode ->
-      L.die InternalError "Unexpected global tenv file found in '%s' while generating the models"
-        (ResultsDir.get_path GlobalTypeEnvironment)
-  | Some tenv ->
-      tenv
-
+let load_tenv () = match Tenv.Global.load () with None -> Tenv.create () | Some tenv -> tenv
 
 (** Store to a file the type environment containing all the types required to perform the analysis *)
 let save_tenv tenv =

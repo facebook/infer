@@ -202,7 +202,7 @@ module OnDisk = struct
     (clear_cache, remove_from_cache, add, find_opt, set_lru_limit)
 
 
-  let spec_of_procname, spec_of_model =
+  let spec_of_procname =
     let mk_lazy_load_stmt table =
       Database.register_statement AnalysisDatabase
         "SELECT report_summary, summary_metadata FROM %s WHERE proc_uid = :k"
@@ -229,33 +229,19 @@ module OnDisk = struct
               in
               mk_full_summary payloads report_summary summary_metadata ) )
     in
-    let mk_load_spec (table : Database.analysis_table) =
-      let is_specs_table = match table with Specs -> true | BiabductionModelsSpecs -> false in
-      let lazy_load_statement = mk_lazy_load_stmt table in
-      let eager_load_statement = mk_eager_load_stmt table in
-      fun ~lazy_payloads proc_name ->
-        if is_specs_table then BStats.incr_summary_file_try_load () ;
-        let load_statement = if lazy_payloads then lazy_load_statement else eager_load_statement in
-        let opt = load_spec ~lazy_payloads ~load_statement table proc_name in
-        if is_specs_table && Option.is_some opt then BStats.incr_summary_read_from_disk () ;
-        opt
-    in
-    let spec_of_procname = mk_load_spec Specs in
-    let spec_of_model = mk_load_spec BiabductionModelsSpecs in
-    (spec_of_procname, spec_of_model)
+    let lazy_load_statement = mk_lazy_load_stmt Specs in
+    let eager_load_statement = mk_eager_load_stmt Specs in
+    fun ~lazy_payloads proc_name ->
+      BStats.incr_summary_file_try_load () ;
+      let load_statement = if lazy_payloads then lazy_load_statement else eager_load_statement in
+      let opt = load_spec ~lazy_payloads ~load_statement Specs proc_name in
+      if Option.is_some opt then BStats.incr_summary_read_from_disk () ;
+      opt
 
 
   (** Load procedure summary for the given procedure name and update spec table *)
   let load_summary_to_spec_table ~lazy_payloads analysis_req proc_name =
-    let summ_opt =
-      match spec_of_procname ~lazy_payloads proc_name with
-      | None when (not Config.multicore) && BiabductionModels.mem proc_name ->
-          (* most of the time we don't run biabduction and it's the only analysis with non-NULL
-             specs in these models, so load lazily *)
-          spec_of_model ~lazy_payloads:true proc_name
-      | summ_opt ->
-          summ_opt
-    in
+    let summ_opt = spec_of_procname ~lazy_payloads proc_name in
     Option.iter ~f:(add_to_cache proc_name analysis_req) summ_opt ;
     summ_opt
 

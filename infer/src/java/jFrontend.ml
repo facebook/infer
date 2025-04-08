@@ -148,23 +148,19 @@ let create_icfg source_file program tenv icfg cn node =
   let translate m =
     let proc_name = JTransType.translate_method_name program tenv m in
     JProgramDesc.set_callee_translated program proc_name ;
-    if BiabductionModels.mem proc_name then
-      (* do not translate the method if there is a model for it *)
-      L.debug Capture Verbose "Skipping method with a model: %a@." Procname.pp proc_name
-    else
-      try
-        (* each procedure has different scope: start names from id 0 *)
-        Ident.NameGenerator.reset () ;
-        match m with
-        | Javalib.AbstractMethod am ->
-            ignore (JTrans.create_am_procdesc source_file program icfg am proc_name)
-        | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
-            ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
-        | Javalib.ConcreteMethod cm ->
-            add_cmethod source_file program icfg cm proc_name
-      with JBasics.Class_structure_error error ->
-        L.internal_error "create_icfg raised JBasics.Class_structure_error %s on %a@." error
-          Procname.pp proc_name
+    try
+      (* each procedure has different scope: start names from id 0 *)
+      Ident.NameGenerator.reset () ;
+      match m with
+      | Javalib.AbstractMethod am ->
+          ignore (JTrans.create_am_procdesc source_file program icfg am proc_name)
+      | Javalib.ConcreteMethod cm when JTrans.is_java_native cm ->
+          ignore (JTrans.create_native_procdesc source_file program icfg cm proc_name)
+      | Javalib.ConcreteMethod cm ->
+          add_cmethod source_file program icfg cm proc_name
+    with JBasics.Class_structure_error error ->
+      L.internal_error "create_icfg raised JBasics.Class_structure_error %s on %a@." error
+        Procname.pp proc_name
   in
   Javalib.m_iter translate node
 

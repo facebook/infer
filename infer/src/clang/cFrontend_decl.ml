@@ -31,7 +31,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     in
     let f () =
       match Procname.Hash.find_opt cfg procname with
-      | Some procdesc when Procdesc.is_defined procdesc && not (BiabductionModels.mem procname) ->
+      | Some procdesc when Procdesc.is_defined procdesc ->
           L.(debug Capture Verbose)
             "@\n@\n>>---------- Start translating body of function: '%s' ---------<<@\n@."
             (Procname.to_string procname) ;

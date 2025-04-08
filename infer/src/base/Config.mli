@@ -121,8 +121,6 @@ val annotation_reachability_report_source_and_sink : bool
 
 val attributes_lru_max_size : int
 
-val biabduction_models_mode : bool
-
 val bitcode_capture : bool
 
 val bo_assume_void : bool
