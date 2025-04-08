@@ -342,33 +342,11 @@ let checker_can_report reporting_checker {checker= allowed_checker} =
   Checker.equal reporting_checker allowed_checker
 
 
-let abduction_case_not_implemented =
-  register_hidden ~id:"Abduction_case_not_implemented" Error Biabduction
-
-
 let arbitrary_code_execution_under_lock =
   register ~category:NoCategory ~id:"ARBITRARY_CODE_EXECUTION_UNDER_LOCK"
     ~hum:"Arbitrary Code Execution Under lock" Error Starvation
     ~user_documentation:[%blob "./documentation/issues/ARBITRARY_CODE_EXECUTION_UNDER_LOCK.md"]
 
-
-let array_of_pointsto = register_hidden ~id:"Array_of_pointsto" Error Biabduction
-
-let array_out_of_bounds_l1 =
-  register_hidden ~enabled:false ~id:"ARRAY_OUT_OF_BOUNDS_L1" Error Biabduction
-
-
-let array_out_of_bounds_l2 =
-  register_hidden ~enabled:false ~id:"ARRAY_OUT_OF_BOUNDS_L2" Warning Biabduction
-
-
-let array_out_of_bounds_l3 =
-  register_hidden ~enabled:false ~id:"ARRAY_OUT_OF_BOUNDS_L3" Warning Biabduction
-
-
-let assert_failure = register_hidden ~id:"Assert_failure" Error Biabduction
-
-let bad_footprint = register_hidden ~id:"Bad_footprint" Error Biabduction
 
 let bad_arg =
   register_with_latent ~category:RuntimeException ~id:"BAD_ARG" Error Pulse
@@ -406,15 +384,6 @@ let block_parameter_not_null_checked =
     ~user_documentation:[%blob "./documentation/issues/BLOCK_PARAMETER_NOT_NULL_CHECKED.md"]
 
 
-let biabduction_analysis_stops =
-  register_hidden ~enabled:false ~id:"BIABDUCTION_ANALYSIS_STOPS" Warning Biabduction
-
-
-let biabduction_retain_cycle =
-  register ~enabled:true ~category:ResourceLeak ~id:"BIABDUCTION_RETAIN_CYCLE" Error Biabduction
-    ~user_documentation:"See [RETAIN_CYCLE](#retain_cycle)."
-
-
 let buffer_overrun_l1 =
   register ~category:NoCategory ~id:"BUFFER_OVERRUN_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "./documentation/issues/BUFFER_OVERRUN.md"]
@@ -450,8 +419,6 @@ let buffer_overrun_u5 =
     ~user_documentation:"See [BUFFER_OVERRUN_L1](#buffer_overrun_l1)"
 
 
-let cannot_star = register_hidden ~id:"Cannot_star" Error Biabduction
-
 let captured_strong_self =
   register ~category:ResourceLeak ~id:"CAPTURED_STRONG_SELF" ~hum:"Captured strongSelf" Error
     SelfInBlock ~user_documentation:[%blob "./documentation/issues/CAPTURED_STRONG_SELF.md"]
@@ -485,10 +452,6 @@ let checkers_fragment_retain_view =
   register ~category:ResourceLeak ~id:"CHECKERS_FRAGMENT_RETAINS_VIEW" ~hum:"Fragment Retains View"
     Warning FragmentRetainsView
     ~user_documentation:[%blob "./documentation/issues/CHECKERS_FRAGMENT_RETAINS_VIEW.md"]
-
-
-let class_cast_exception =
-  register_hidden ~enabled:false ~id:"CLASS_CAST_EXCEPTION" Error Biabduction
 
 
 let compared_to_null_and_dereferenced =
@@ -551,16 +514,6 @@ let cxx_ref_captured_in_block =
     ~user_documentation:[%blob "./documentation/issues/CXX_REF_CAPTURED_IN_BLOCK.md"]
 
 
-let dangling_pointer_dereference =
-  register ~category:NoCategory ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE" Error
-    Biabduction (* TODO *)
-    ~user_documentation:""
-
-
-let dangling_pointer_dereference_maybe =
-  register_hidden ~enabled:false ~id:"DANGLING_POINTER_DEREFERENCE_MAYBE" Warning Biabduction
-
-
 let dead_store =
   register ~id:"DEAD_STORE" ~category:LogicError Error Liveness
     ~user_documentation:[%blob "./documentation/issues/DEAD_STORE.md"]
@@ -580,11 +533,6 @@ let static_constructor_stall =
        initialized yet."
 
 
-let divide_by_zero =
-  register ~category:NoCategory ~enabled:false ~id:"DIVIDE_BY_ZERO" Error Biabduction (* TODO *)
-    ~user_documentation:""
-
-
 let do_not_report = register_hidden ~id:"DO_NOT_REPORT" Error SIOF
 
 let empty_vector_access =
@@ -593,8 +541,6 @@ let empty_vector_access =
 
 
 let expensive_cost_call ~kind = register_cost ~enabled:false "EXPENSIVE_%s" ~kind
-
-let failure_exe = register_hidden ~is_silent:true ~id:"Failure_exe" Info Biabduction
 
 let guardedby_violation =
   register Warning ~id:"GUARDEDBY_VIOLATION" ~category:Concurrency ~hum:"GuardedBy Violation" RacerD
@@ -663,10 +609,6 @@ let infinite_recursion =
        recursion."
 
 
-let inherently_dangerous_function =
-  register_hidden ~id:"INHERENTLY_DANGEROUS_FUNCTION" Warning Biabduction
-
-
 let integer_overflow_l1 =
   register ~category:NoCategory ~id:"INTEGER_OVERFLOW_L1" Error BufferOverrunChecker
     ~user_documentation:[%blob "./documentation/issues/INTEGER_OVERFLOW.md"]
@@ -692,8 +634,6 @@ let interface_not_thread_safe =
     ~user_documentation:[%blob "./documentation/issues/INTERFACE_NOT_THREAD_SAFE.md"]
 
 
-let internal_error = register_hidden ~id:"Internal_error" Error Biabduction
-
 let invalid_sil =
   register ~category:NoCategory ~enabled:true ~id:"INVALID_SIL" Error SILValidation
     ~user_documentation:[%blob "./documentation/issues/INVALID_SIL.md"]
@@ -714,14 +654,6 @@ let lab_resource_leak =
     ~user_documentation:"Toy issue."
 
 
-let leak_after_array_abstraction =
-  register_hidden ~id:"Leak_after_array_abstraction" Error Biabduction
-
-
-let leak_in_footprint = register_hidden ~id:"Leak_in_footprint" Error Biabduction
-
-let leak_unknown_origin = register_hidden ~enabled:false ~id:"Leak_unknown_origin" Error Biabduction
-
 let lock_consistency_violation =
   register Warning ~id:"LOCK_CONSISTENCY_VIOLATION" ~category:Concurrency RacerD
     ~user_documentation:[%blob "./documentation/issues/LOCK_CONSISTENCY_VIOLATION.md"]
@@ -741,13 +673,6 @@ let expensive_loop_invariant_call =
   register ~category:NoCategory ~id:"EXPENSIVE_LOOP_INVARIANT_CALL" Error LoopHoisting
     ~user_documentation:[%blob "./documentation/issues/EXPENSIVE_LOOP_INVARIANT_CALL.md"]
 
-
-let memory_leak =
-  register ~enabled:false ~category:ResourceLeak ~id:"BIABDUCTION_MEMORY_LEAK" ~hum:"Memory Leak"
-    Error Biabduction ~user_documentation:"See [MEMORY_LEAK_C](#memory_leak_c)."
-
-
-let missing_fld = register_hidden ~id:"Missing_fld" ~hum:"Missing Field" Error Biabduction
 
 let missing_required_prop =
   register ~category:RuntimeException ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error
@@ -852,10 +777,6 @@ let optional_empty_access =
   register_with_latent ~category:RuntimeException ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]
 
-
-let precondition_not_found = register_hidden ~id:"PRECONDITION_NOT_FOUND" Error Biabduction
-
-let precondition_not_met = register_hidden ~id:"PRECONDITION_NOT_MET" Warning Biabduction
 
 let premature_nil_termination =
   register ~category:NoCategory ~id:"PREMATURE_NIL_TERMINATION_ARGUMENT" Warning Biabduction
@@ -1013,11 +934,6 @@ let strong_self_not_checked =
     SelfInBlock ~user_documentation:[%blob "./documentation/issues/STRONG_SELF_NOT_CHECKED.md"]
 
 
-let symexec_memory_error =
-  register_hidden ~id:"Symexec_memory_error" ~hum:"Symbolic Execution Memory Error" Error
-    Biabduction
-
-
 let thread_safety_violation =
   register Warning ~category:Concurrency ~id:"THREAD_SAFETY_VIOLATION" RacerD
     ~user_documentation:[%blob "./documentation/issues/THREAD_SAFETY_VIOLATION.md"]
@@ -1134,10 +1050,6 @@ let weak_self_in_noescape_block =
 let lineage_flow =
   register ~category:SensitiveDataFlow ~id:"LINEAGE_FLOW" Error Lineage ~hum:"Lineage Flow"
     ~user_documentation:[%blob "./documentation/issues/LINEAGE_FLOW.md"]
-
-
-let wrong_argument_number =
-  register_hidden ~id:"Wrong_argument_number" ~hum:"Wrong Argument Number" Error Biabduction
 
 
 let unreachable_cost_call ~kind = register_cost ~enabled:false ~kind "%s_UNREACHABLE_AT_EXIT"
