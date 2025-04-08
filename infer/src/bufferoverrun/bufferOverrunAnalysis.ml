@@ -343,7 +343,6 @@ module TransferFunctions = struct
             instantiate_mem ~is_args_ref integer_type_widths id callee_formals callee_pname args
               captured_vars mem callee_exit_mem location
         | _, _ ->
-            (* This may happen for procedures with a biabduction model too. *)
             L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp_without_templates
               callee_pname ;
             if Config.cost_log_unknown_calls then

@@ -192,12 +192,7 @@ let analyze replay_call_graph source_files_to_analyze =
     in
     (* Prepare tasks one file at a time while executing in parallel *)
     let allocation_traces_dir = ResultsDir.get_path AllocationTraces in
-    if Config.memtrace_analysis then (
-      Utils.create_dir allocation_traces_dir ;
-      if Config.is_checker_enabled Biabduction then
-        L.user_warning
-          "Memtrace and biabduction are incompatible \
-           (https://github.com/janestreet/memtrace/issues/2)@\n" ) ;
+    if Config.memtrace_analysis then Utils.create_dir allocation_traces_dir ;
     let runner =
       (* use a ref to pass data from prologue to epilogue without too much machinery *)
       let gc_stats_pre_fork = ref None in

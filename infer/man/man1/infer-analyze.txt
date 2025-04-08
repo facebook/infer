@@ -27,18 +27,6 @@ OPTIONS
            Activates: Enable annotation-reachability and disable all other
            checkers (Conversely: --no-annotation-reachability-only)
 
-       --biabduction
-           Activates: biabduction checker: This analysis deals with a range
-           of issues, many linked to memory safety.
-           
-           DEPRECATED: This has been replaced by Pulse and will be removed
-           in the next release.
-            (Conversely: --no-biabduction)
-
-       --biabduction-only
-           Activates: Enable biabduction and disable all other checkers
-           (Conversely: --no-biabduction-only)
-
        --bufferoverrun
            Activates: bufferoverrun checker: InferBO is a detector for
            out-of-bounds array accesses. (Conversely: --no-bufferoverrun)
@@ -448,9 +436,8 @@ OPTIONS
            --no-static-constructor-stall-checker-only)
 
        --timeout float
-           Time after which any checker (except biabduction) should give up
-           analysing the current function or method, in seconds. Not
-           implemented for multicore mode
+           Time after which any checker should give up analysing the current
+           function or method, in seconds. Not implemented for multicore mode
 
        --top-longest-proc-duration-size int
            Number of procedures for which we track longest analysis duration

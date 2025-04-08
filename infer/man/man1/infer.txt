@@ -137,20 +137,6 @@ OPTIONS
            --no-annotation-reachability-report-source-and-sink)
            See also infer-analyze(1).
 
-       --biabduction
-           Activates: biabduction checker: This analysis deals with a range
-           of issues, many linked to memory safety.
-           
-           DEPRECATED: This has been replaced by Pulse and will be removed
-           in the next release.
-            (Conversely: --no-biabduction)
-           See also infer-analyze(1).
-
-       --biabduction-only
-           Activates: Enable biabduction and disable all other checkers
-           (Conversely: --no-biabduction-only)
-           See also infer-analyze(1).
-
        --bitcode-capture
            Activates: [EXPERIMENTAL] Use llvm frontend to capture files
            compiled with clang (Conversely: --no-bitcode-capture)
@@ -867,8 +853,8 @@ OPTIONS
            infer-reportdiff(1), and infer-run(1).
 
        --help-checker +checker-id
-           Show information about a checker, for example biabduction. To see
-           the list of all checkers, see --list-checkers.
+           Show information about a checker, for example pulse. To see the
+           list of all checkers, see --list-checkers.
            See also infer-help(1).
 
        --help-format { auto | groff | pager | plain }
@@ -2255,9 +2241,8 @@ OPTIONS
            See also infer-analyze(1).
 
        --timeout float
-           Time after which any checker (except biabduction) should give up
-           analysing the current function or method, in seconds. Not
-           implemented for multicore mode
+           Time after which any checker should give up analysing the current
+           function or method, in seconds. Not implemented for multicore mode
            See also infer-analyze(1) and infer-run(1).
 
        --top-longest-proc-duration-size int

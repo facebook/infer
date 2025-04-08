@@ -1335,7 +1335,7 @@ and () =
                 issue
             | None ->
                 (* unknown issue type: assume it will be defined dynamically *)
-                IssueType.register_dynamic ~id:issue_id Warning Biabduction
+                IssueType.register_dynamic ~id:issue_id Warning Pulse
           in
           IssueType.set_enabled issue b ;
           issue_id )
@@ -1609,8 +1609,8 @@ and help =
 and help_checker =
   CLOpt.mk_string_list ~long:"help-checker" ~meta:"checker-id"
     ~in_help:InferCommand.[(Help, manual_generic)]
-    "Show information about a checker, for example $(i,biabduction). To see the list of all \
-     checkers, see $(b,--list-checkers)."
+    "Show information about a checker, for example $(i,pulse). To see the list of all checkers, \
+     see $(b,--list-checkers)."
 
 
 and help_format =
@@ -3402,8 +3402,8 @@ and timeout =
   CLOpt.mk_float_opt ~long:"timeout"
     ?default:(if is_running_unit_test then None else Some 120.0)
     ~in_help:[(Analyze, manual_generic); (Run, manual_generic)]
-    "Time after which any checker (except biabduction) should give up analysing the current \
-     function or method, in seconds. Not implemented for multicore mode"
+    "Time after which any checker should give up analysing the current function or method, in \
+     seconds. Not implemented for multicore mode"
 
 
 and top_longest_proc_duration_size =

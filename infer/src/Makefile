@@ -150,7 +150,7 @@ $(INFER_BIN_ALIASES): Makefile $(BIN_DIR)/$(INFER_MAIN)
 	$(QUIET)touch $@
 
 roots:=Infer
-clusters:=absint al atd backend base biabduction bufferoverrun checkers clang clang_stubs concurrency cost deadcode integration IR istd java labs dotnet llvm opensource pulse python scripts topl unit
+clusters:=absint al atd backend base bufferoverrun checkers clang clang_stubs concurrency cost deadcode integration IR istd java labs dotnet llvm opensource pulse python scripts topl unit
 
 ml_src_files:=$(shell find . -not -path "./*stubs*" -regex '\./[a-zA-Z].*\.ml\(i\)*')
 inc_flags:=$(foreach dir,$(shell find . -not -path './_build*' -type d),-I $(dir))

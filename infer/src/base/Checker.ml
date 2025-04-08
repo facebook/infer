@@ -11,7 +11,6 @@ module L = Die
 
 type t =
   | AnnotationReachability
-  | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
   | ConfigImpactAnalysis
@@ -94,22 +93,6 @@ let config_unsafe checker =
            `@NoAllocation` reaching `new`. It is also possible to model methods as if they were \
            annotated, using regular expressions. This should also work in languages where there \
            are no annotations. See flags starting with `--annotation-reachability`."
-      ; cli_flags= Some {deprecated= []; show_in_help= true}
-      ; enabled_by_default= false
-      ; activates= [] }
-  | Biabduction ->
-      { id= "biabduction"
-      ; kind=
-          UserFacingDeprecated
-            { title= "Biabduction"
-            ; markdown_body=
-                "Read more about its foundations in the [Separation Logic and Biabduction \
-                 page](separation-logic-and-bi-abduction)."
-            ; deprecation_message=
-                "This has been replaced by Pulse and will be removed in the next release." }
-      ; support= mk_support_func ~clang:Support ~java:Support ~csharp:Support ()
-      ; short_documentation=
-          "This analysis deals with a range of issues, many linked to memory safety."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [] }

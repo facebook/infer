@@ -184,9 +184,8 @@ OPTIONS
            65536.
 
        --timeout float
-           Time after which any checker (except biabduction) should give up
-           analysing the current function or method, in seconds. Not
-           implemented for multicore mode
+           Time after which any checker should give up analysing the current
+           function or method, in seconds. Not implemented for multicore mode
 
        --version
            Print version information and exit

@@ -1,5 +1,4 @@
 {
-    "biabduction": false,
     "fragment-retains-view": false,
     "inefficient-keyset-iterator": false,
     "starvation": false,

@@ -23,7 +23,6 @@ open ATDGenerated;;
 open IBase;;
 open IR;;
 open Absint;;
-open Biabduction;;
 open BO;;
 open Pulselib;;
 open Checkers;;

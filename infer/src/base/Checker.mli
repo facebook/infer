@@ -10,7 +10,6 @@ module F = Format
 
 type t =
   | AnnotationReachability
-  | Biabduction
   | BufferOverrunAnalysis
   | BufferOverrunChecker
   | ConfigImpactAnalysis

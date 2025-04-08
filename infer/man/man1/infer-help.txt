@@ -28,8 +28,8 @@ OPTIONS
            Show this manual
 
        --help-checker +checker-id
-           Show information about a checker, for example biabduction. To see
-           the list of all checkers, see --list-checkers.
+           Show information about a checker, for example pulse. To see the
+           list of all checkers, see --list-checkers.
 
        --help-format { auto | groff | pager | plain }
            Show this help in the specified format. auto sets the format to
