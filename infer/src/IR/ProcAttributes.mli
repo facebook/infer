@@ -46,7 +46,6 @@ type t =
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
   ; reference_formals: int list  (** list of indices of formals that are passed by reference *)
   ; is_abstract: bool  (** the procedure is abstract *)
-  ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_cpp_const_member_fun: bool  (** true if the procedure is a const function *)
   ; is_cpp_copy_assignment: bool  (** true if the procedure is a copy assignment *)

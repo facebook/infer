@@ -89,7 +89,6 @@ type t =
   ; const_formals: int list  (** list of indices of formals that are const-qualified *)
   ; reference_formals: int list  (** list of indices of formals that are passed by reference *)
   ; is_abstract: bool  (** the procedure is abstract *)
-  ; is_biabduction_model: bool  (** the procedure is a model for the biabduction analysis *)
   ; is_bridge_method: bool  (** the procedure is a bridge method *)
   ; is_cpp_const_member_fun: bool  (** true if the procedure is a const function *)
   ; is_cpp_copy_assignment: bool  (** true if the procedure is a copy assignment *)
@@ -182,7 +181,6 @@ let default translation_unit proc_name =
   ; const_formals= []
   ; reference_formals= []
   ; is_abstract= false
-  ; is_biabduction_model= false
   ; is_bridge_method= false
   ; is_cpp_const_member_fun= false
   ; is_cpp_copy_assignment= false
@@ -236,7 +234,6 @@ let pp f
      ; const_formals
      ; reference_formals
      ; is_abstract
-     ; is_biabduction_model
      ; is_bridge_method
      ; is_cpp_const_member_fun
      ; is_cpp_copy_assignment
@@ -299,7 +296,6 @@ let pp f
       (Pp.semicolon_seq ~print_env:Pp.text_break F.pp_print_int)
       reference_formals ;
   pp_bool_default ~default:default.is_abstract "is_abstract" is_abstract f () ;
-  pp_bool_default ~default:default.is_biabduction_model "is_model" is_biabduction_model f () ;
   pp_bool_default ~default:default.is_bridge_method "is_bridge_method" is_bridge_method f () ;
   pp_bool_default ~default:default.is_cpp_const_member_fun "is_cpp_const_member_fun "
     is_cpp_const_member_fun f () ;

@@ -444,7 +444,6 @@ let create_am_procdesc source_file program icfg am proc_name : Procdesc.t =
       ; exceptions= List.map ~f:JBasics.cn_name am.Javalib.am_exceptions
       ; formals
       ; is_abstract= true
-      ; is_biabduction_model= false
       ; is_bridge_method= am.Javalib.am_bridge
       ; is_synthetic_method= am.Javalib.am_synthetic
       ; ret_type= JTransType.return_type program tenv ms
@@ -472,7 +471,6 @@ let create_native_procdesc source_file program icfg cm proc_name =
         ProcAttributes.access= trans_access cm.Javalib.cm_access
       ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
       ; formals
-      ; is_biabduction_model= false
       ; is_bridge_method= cm.Javalib.cm_bridge
       ; is_synthetic_method= cm.Javalib.cm_synthetic
       ; ret_type= JTransType.return_type program tenv ms
@@ -501,7 +499,6 @@ let create_empty_procdesc source_file program icfg cm proc_name =
       ProcAttributes.access= trans_access cm.Javalib.cm_access
     ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
     ; formals
-    ; is_biabduction_model= false
     ; is_bridge_method= cm.Javalib.cm_bridge
     ; is_synthetic_method= cm.Javalib.cm_synthetic
     ; is_java_synchronized_method= cm.Javalib.cm_synchronized
@@ -548,7 +545,6 @@ let create_cm_procdesc source_file program icfg cm proc_name =
         ProcAttributes.access= trans_access cm.Javalib.cm_access
       ; exceptions= List.map ~f:JBasics.cn_name cm.Javalib.cm_exceptions
       ; formals
-      ; is_biabduction_model= false
       ; is_bridge_method= cm.Javalib.cm_bridge
       ; is_defined= true
       ; is_synthetic_method= cm.Javalib.cm_synthetic
