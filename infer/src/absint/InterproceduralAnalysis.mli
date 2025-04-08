@@ -22,9 +22,7 @@ type 'payload t =
             summary will be improved with a specialized version. *)
   ; add_errlog: Procname.t -> Errlog.t -> unit
         (** {!Summary.OnDisk.add_errlog}: add to the issue log of a foreign procedure (otherwise
-            just use [err_log] above) *)
-  ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit
-        (** update the [Summary.Stats.t] of the summary of the current procedure *) }
+            just use [err_log] above) *) }
 
 val for_procedure : Procdesc.t -> Errlog.t -> 'a t -> 'a t
 

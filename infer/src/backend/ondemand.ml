@@ -242,10 +242,8 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
     log_elapsed_time () ;
     summary
   in
-  let log_error_and_continue _exn ({Summary.stats} as summary) kind =
-    let stats = Summary.Stats.update stats ~failure_kind:kind in
-    let new_summary = {summary with stats} in
-    let new_summary = Summary.OnDisk.store analysis_req new_summary in
+  let log_error_and_continue summary =
+    let new_summary = Summary.OnDisk.store analysis_req summary in
     ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
     log_elapsed_time () ;
     new_summary
@@ -261,7 +259,7 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
     (* don't forget to reset this so we output messages for future errors too *)
     DLS.set logged_error false ;
     final_callee_summary
-  with exn -> (
+  with exn ->
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->
         match exn with
@@ -282,14 +280,7 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
             not Config.keep_going ) ;
     L.internal_error "@\nERROR RUNNING BACKEND: %a %s@\n@\nBACK TRACE@\n%s@?" Procname.pp
       callee_pname (Exn.to_string exn) backtrace ;
-    match exn with
-    | Exception.Analysis_failure_exe kind ->
-        (* in production mode, log the timeout/crash and continue with the summary we had before
-           the failure occurred *)
-        log_error_and_continue exn initial_callee_summary kind
-    | _ ->
-        (* this happens with assert false or some other unrecognized exception *)
-        log_error_and_continue exn initial_callee_summary (FKcrash (Exn.to_string exn)) )
+    log_error_and_continue initial_callee_summary
 
 
 (* shadowed for tracing *)

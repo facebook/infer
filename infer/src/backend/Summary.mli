@@ -18,8 +18,6 @@ module Stats : sig
   val add_visited : t -> int -> unit
 
   val is_visited : t -> int -> bool
-
-  val update : ?add_symops:int -> ?failure_kind:Exception.failure_kind -> t -> t
 end
 
 (** summary of a procedure name *)

@@ -12,8 +12,7 @@ type 'payload t =
   ; tenv: Tenv.t
   ; err_log: Errlog.t
   ; analyze_dependency: ?specialization:Specialization.t -> Procname.t -> 'payload AnalysisResult.t
-  ; add_errlog: Procname.t -> Errlog.t -> unit
-  ; update_stats: ?add_symops:int -> ?failure_kind:Exception.failure_kind -> unit -> unit }
+  ; add_errlog: Procname.t -> Errlog.t -> unit }
 
 let for_procedure proc_desc err_log data = {data with proc_desc; err_log}
 

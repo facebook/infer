@@ -12,34 +12,13 @@ module L = Logging
 module BStats = Stats
 
 module Stats = struct
-  type t =
-    { failure_kind: Exception.failure_kind option
-          (** what type of failure stopped the analysis (if any) *)
-    ; symops: int  (** Number of SymOp's throughout the whole analysis of the function *)
-    ; mutable nodes_visited: IInt.Set.t  (** Nodes visited *) }
+  type t = {mutable nodes_visited: IInt.Set.t  (** Nodes visited *)}
 
-  let empty = {failure_kind= None; symops= 0; nodes_visited= IInt.Set.empty}
+  let empty = {nodes_visited= IInt.Set.empty}
 
   let is_visited stats node_id = IInt.Set.mem node_id stats.nodes_visited
 
   let add_visited stats node_id = stats.nodes_visited <- IInt.Set.add node_id stats.nodes_visited
-
-  let update ?(add_symops = 0) ?failure_kind stats =
-    let symops = stats.symops + add_symops in
-    let failure_kind = match failure_kind with None -> stats.failure_kind | some -> some in
-    {stats with symops; failure_kind}
-
-
-  let pp_failure_kind_opt fmt failure_kind_opt =
-    match failure_kind_opt with
-    | Some failure_kind ->
-        Exception.pp_failure_kind fmt failure_kind
-    | None ->
-        F.pp_print_string fmt "NONE"
-
-
-  let pp fmt {failure_kind; symops} =
-    F.fprintf fmt "FAILURE:%a SYMOPS:%d@\n" pp_failure_kind_opt failure_kind symops
 end
 
 type t =
@@ -69,17 +48,16 @@ let pp_signature fmt {proc_name} =
 
 let pp_no_stats_specs fmt summary = F.fprintf fmt "%a@\n" pp_signature summary
 
-let pp_text fmt ({proc_name; err_log; payloads; stats; dependencies} as summary) =
+let pp_text fmt ({proc_name; err_log; payloads; dependencies} as summary) =
   pp_no_stats_specs fmt summary ;
-  F.fprintf fmt "%a@\n%a%a%a" pp_errlog err_log Stats.pp stats (Payloads.pp Pp.text proc_name)
-    payloads Dependencies.pp dependencies
+  F.fprintf fmt "%a@\n%a%a" pp_errlog err_log (Payloads.pp Pp.text proc_name) payloads
+    Dependencies.pp dependencies
 
 
-let pp_html source fmt ({proc_name; err_log; payloads; stats} as summary) =
+let pp_html source fmt ({proc_name; err_log; payloads} as summary) =
   let pp_escaped pp fmt x = F.fprintf fmt "%s" (Escape.escape_xml (F.asprintf "%a" pp x)) in
   F.pp_force_newline fmt () ;
   Pp.html_with_color Black (pp_escaped pp_no_stats_specs) fmt summary ;
-  F.fprintf fmt "<br />%a<br />@\n" Stats.pp stats ;
   Errlog.pp_html source [] fmt err_log ;
   Io_infer.Html.pp_hline fmt () ;
   F.fprintf fmt "<button type='button' onclick='toggleDetailsBlock()'>Toggle details</button>" ;

@@ -20,14 +20,10 @@ let mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload
            f_analyze_dep (get_payload payloads) |> AnalysisResult.of_option )
   in
   let stats = ref stats in
-  let update_stats ?add_symops ?failure_kind () =
-    stats := Summary.Stats.update ?add_symops ?failure_kind !stats
-  in
   ( { InterproceduralAnalysis.proc_desc
     ; tenv
     ; err_log
     ; analyze_dependency
-    ; update_stats
     ; add_errlog= Summary.OnDisk.add_errlog }
   , stats )
 
