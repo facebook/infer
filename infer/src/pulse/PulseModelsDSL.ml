@@ -305,6 +305,13 @@ module Syntax = struct
         res )
 
 
+  let is_known_field (v, _) field : bool model_monad =
+    (* [false] could be a [maybe true] if we don't know all fields *)
+    exec_pure_operation (fun astate ->
+        AbductiveDomain.Memory.exists_edge v astate ~f:(fun (access, _) ->
+            PulseAccess.equal (PulseAccess.FieldAccess field) access ) )
+
+
   let assign_ret aval : unit model_monad =
     let* {ret= ret_id, _} = get_data in
     PulseOperations.write_id ret_id aval |> exec_command
@@ -523,6 +530,14 @@ module Syntax = struct
    fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
     let is_defined = Tenv.lookup tenv typ_name |> Option.is_some in
     ret is_defined data astate
+
+
+  let tenv_get_supers typ_name : Typ.Name.t list model_monad =
+   fun ((_desc, {analysis_data= {tenv}}) as data) astate ->
+    let supers =
+      Tenv.lookup tenv typ_name |> Option.value_map ~default:[] ~f:(fun {Struct.supers} -> supers)
+    in
+    ret supers data astate
 
 
   let tenv_resolve_field_info typ_name field_name : Struct.field_info option model_monad =

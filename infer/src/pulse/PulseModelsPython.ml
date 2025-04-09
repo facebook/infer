@@ -483,11 +483,21 @@ let build_tuple args : model =
   assign_ret tuple
 
 
-let build_class closure _name _args : model =
+let super_attribute_name = "__infer_single_super"
+
+let build_class closure _name base_classes : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* class_ = Dict.make [] [] ~const_strings_only:true in
+  (* Note: we only deal with single inheritance for now *)
+  let super_keys, super_values =
+    match base_classes with
+    | [] ->
+        ([], [])
+    | base_class :: _ignored_for_now ->
+        ([super_attribute_name], [base_class])
+  in
+  let* class_ = Dict.make super_keys super_values ~const_strings_only:true in
   let gen_closure_args _ = ret [class_] in
   let* _ = apply_python_closure closure gen_closure_args in
   assign_ret class_
@@ -758,14 +768,56 @@ let lookup_module module_name =
           ret (module_, Some proc_name) )
 
 
-let initialize_class_companion ~module_name ~class_name class_companion_object =
+let get_supers_class_names ~module_name ~class_name =
+  let open DSL.Syntax in
+  let type_name : Typ.name = PythonClass (ClassCompanion {module_name; class_name}) in
+  let* supers = tenv_get_supers type_name in
+  List.filter_map supers ~f:(function
+    | Typ.PythonClass (ClassCompanion {class_name}) ->
+        Some class_name
+    | _ ->
+        None )
+  |> ret
+
+
+let initialize_class_companion_and_supers ~module_name ~class_name class_companion_object =
   let open DSL.Syntax in
   let* module_, _ = lookup_module module_name in
-  let module_tname = PythonClassName.Filename module_name in
-  let class_initializer =
-    Procname.make_python ~class_name:(Some module_tname) ~function_name:class_name
+  let call_class_initializer class_name class_companion_object =
+    let module_tname = PythonClassName.Filename module_name in
+    let class_initializer =
+      Procname.make_python ~class_name:(Some module_tname) ~function_name:class_name
+    in
+    python_call class_initializer [("globals", module_); ("locals", class_companion_object)]
+    |> ignore
   in
-  python_call class_initializer [("globals", module_); ("locals", class_companion_object)] |> ignore
+  let seen, marked_as_seen =
+    let set = ref IString.Set.empty in
+    let seen name = IString.Set.mem name !set in
+    let marked_as_seen name = set := IString.Set.add name !set in
+    (seen, marked_as_seen)
+  in
+  let rec initialize class_name class_companion_object =
+    if seen class_name then (* should not happen but you can never be too cautious *)
+      ret ()
+    else (
+      marked_as_seen class_name ;
+      let* supers = get_supers_class_names ~module_name ~class_name in
+      if List.is_empty supers then (
+        L.d_printfln ~color:Orange "initializing class %s" class_name ;
+        call_class_initializer class_name class_companion_object )
+      else (
+        L.d_printfln ~color:Orange "initializing class %s and its super classe(s) %a" class_name
+          (Pp.comma_seq F.pp_print_string) supers ;
+        let single_super_class_name = List.hd_exn supers in
+        (* we dont deal with multi-inheritance yet *)
+        let* parent_class_companion =
+          Dict.get_str_key ~propagate_static_type:true class_companion_object super_attribute_name
+        in
+        let* () = initialize single_super_class_name parent_class_companion in
+        call_class_initializer class_name class_companion_object ) )
+  in
+  initialize class_name class_companion_object
 
 
 let get_class_companion aval =
@@ -782,8 +834,8 @@ let initialize_if_class_companion value : unit DSL.model_monad =
   let open DSL.Syntax in
   let* opt_class_companion = get_class_companion value in
   option_iter opt_class_companion ~f:(fun (module_name, class_name) ->
-      L.d_printfln ~color:Orange "initializing companion class %s" class_name ;
-      initialize_class_companion ~module_name ~class_name value )
+      L.d_printfln ~color:Orange "initializing class companion %s" class_name ;
+      initialize_class_companion_and_supers ~module_name ~class_name value )
 
 
 let get_class_instance aval =
@@ -797,6 +849,28 @@ let get_class_instance aval =
       ret (Some (module_name, class_name))
   | _ ->
       ret None
+
+
+type attribute_search_result =
+  | Found of {result: DSL.aval; class_object: DSL.aval}
+  | NotFoundMayBeMissing
+(* TODO add NotFoundMustBeMissing *)
+
+let rec get_attr_class_object_dsl class_object attr : attribute_search_result DSL.model_monad =
+  let open DSL.Syntax in
+  let* key_in_current_class = Dict.contains_str_key class_object attr in
+  if ThreeValuedLogic.is_true key_in_current_class then
+    let* result = Dict.get_str_key ~propagate_static_type:true class_object attr in
+    ret (Found {result; class_object})
+  else
+    let* must_have_super =
+      is_known_field class_object (Fieldname.make dict_tname super_attribute_name)
+    in
+    if must_have_super then
+      let* super = Dict.get_str_key ~propagate_static_type:true class_object super_attribute_name in
+      get_attr_class_object_dsl super attr
+    else
+      ret NotFoundMayBeMissing (* refine the logic to return NotFoundMustBeMissing when possible *)
 
 
 let get_attr_dsl obj attr : DSL.aval DSL.model_monad =
@@ -814,19 +888,24 @@ let get_attr_dsl obj attr : DSL.aval DSL.model_monad =
              be to mark this case as unreachable. We may come back later if specialization gives us
              some dynamic type for [obj]. *)
           Dict.get_str_key ~propagate_static_type:true obj attr
-      | Some (module_name, class_name) ->
+      | Some (module_name, class_name) -> (
           let* class_companion_object = Dict.make ~const_strings_only:true [] [] in
-          let* () = initialize_class_companion ~module_name ~class_name class_companion_object in
+          let* () =
+            initialize_class_companion_and_supers ~module_name ~class_name class_companion_object
+          in
           L.d_printfln ~color:Orange
             "checking if the attribute %s belongs to the companion class %s.%s (in value %a)...@;"
             attr module_name class_name AbstractValue.pp (fst class_companion_object) ;
-          let* key_in_companion = Dict.contains_str_key class_companion_object attr in
-          if ThreeValuedLogic.is_true key_in_companion then
-            Dict.get_str_key ~propagate_static_type:true class_companion_object attr
-          else
-            (* for now, we assume in such a situation that the attribute is in the instance. It would
-               be great to 'record' such an assumption to make sure the caller context agrees *)
-            Dict.get_str_key ~propagate_static_type:true obj attr
+          let* try_get_attribute_from_companion =
+            get_attr_class_object_dsl class_companion_object attr
+          in
+          match try_get_attribute_from_companion with
+          | Found {result; class_object} ->
+              L.d_printfln ~color:Orange "attribute was find in %a@;" AbstractValue.pp
+                (fst class_object) ;
+              ret result
+          | _ ->
+              Dict.get_str_key ~propagate_static_type:true obj attr )
   in
   let* () = initialize_if_class_companion res in
   ret res

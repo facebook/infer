@@ -65,7 +65,7 @@ def inherited_class_attribute_A_bad():
     assert b.class_attrA_false
 
 
-def FP_inherited_class_attribute_A_ok():
+def inherited_class_attribute_A_ok():
     b = B()
     assert b.class_attrA_true
 
@@ -76,7 +76,7 @@ def inherited_method_bad():
     assert b.get_attrA()
 
 
-def FP_inherited_method_ok():
+def inherited_method_ok():
     b = B()
     b.set_attrA(True)
     assert b.get_attrA()

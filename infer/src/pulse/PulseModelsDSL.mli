@@ -203,6 +203,10 @@ module Syntax : sig
   val get_known_fields : aval -> Access.t list model_monad
   (** Return the fields we know about. There may be more, so use with caution *)
 
+  val is_known_field : aval -> Fieldname.t -> bool model_monad
+  (** Return true if the given field appears for sure. Otherwise (missing or if we don't know),
+      return false *)
+
   (** {2 PulseFormula operations} *)
 
   val prune_eq : aval -> aval -> unit model_monad
@@ -256,6 +260,8 @@ module Syntax : sig
   val null : aval model_monad
 
   (** {2 Tenv operations} *)
+
+  val tenv_get_supers : Typ.name -> Typ.name list model_monad
 
   val tenv_resolve_field_info : Typ.name -> Fieldname.t -> Struct.field_info option model_monad
 
