@@ -82,25 +82,25 @@ def inherited_method_ok():
     assert b.get_attrA()
 
 
-def FN_inherited_class_modified_attribute_B_1_bad():
+def inherited_class_modified_attribute_B_1_bad():
     B.class_attrB_true = False
     b = B()
     assert b.class_attrB_true
 
 
-def FP_inherited_class_modified_attribute_B_1_ok():
+def inherited_class_modified_attribute_B_1_ok():
     B.class_attrB_false = True
     b = B()
     assert b.class_attrB_false
 
 
-def FN_inherited_class_modified_attribute_B_2_bad():
+def inherited_class_modified_attribute_B_2_bad():
     b = B()
     B.class_attrB_true = False
     assert b.class_attrB_true
 
 
-def FP_inherited_class_modified_attribute_B_2_ok():
+def inherited_class_modified_attribute_B_2_ok():
     b = B()
     B.class_attrB_false = True
     assert b.class_attrB_false
