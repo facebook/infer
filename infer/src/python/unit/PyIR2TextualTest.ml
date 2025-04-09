@@ -8,11 +8,11 @@
 open! IStd
 module F = Format
 
-let run module_ =
+let run pyir =
   let show module_ = F.printf "%a" (Textual.Module.pp ~show_location:true) module_ in
   let result =
     let open IResult.Let_syntax in
-    let textual = PyIR2Textual.mk_module module_ in
+    let textual = PyIR2Textual.mk_module pyir in
     F.printf "TRANSFORMATION PyIR -> Textual@\n" ;
     show textual ;
     let+ verified_textual =
@@ -21,7 +21,12 @@ let run module_ =
     F.printf "TYPE INFERENCE@\n" ;
     show verified_textual ;
     let transformed_textual, _ = TextualTransform.run Python verified_textual in
-    let transformed_textual = PyIR2Textual.add_module_default_type transformed_textual in
+    let {PyIR.Module.name= module_name} = pyir in
+    let transformed_textual =
+      PyIRTypeInference.gen_module_default_type pyir
+      |> Option.value_map ~default:transformed_textual ~f:(fun pyir_type ->
+             PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
+    in
     F.printf "FINAL TRANSFORMATIONS@\n" ;
     show transformed_textual
   in

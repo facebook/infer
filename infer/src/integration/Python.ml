@@ -115,9 +115,12 @@ let process_file ~is_binary file =
   in
   if Config.debug_mode then dump_textual_file ~version:1 file verified_textual ;
   let transformed_textual, decls = TextualTransform.run Python verified_textual in
-  let _ = PyIRTypeInference.gen_module_default_type pyir in
-  (* temporary hack to please deadcode tool *)
-  let transformed_textual = PyIR2Textual.add_module_default_type transformed_textual in
+  let {PyIR.Module.name= module_name} = pyir in
+  let transformed_textual =
+    PyIRTypeInference.gen_module_default_type pyir
+    |> Option.value_map ~default:transformed_textual ~f:(fun pyir_type ->
+           PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
+  in
   if Config.debug_mode then dump_textual_file ~version:2 file transformed_textual ;
   let* cfg, tenv =
     let f = Error.textual_transformation sourcefile in

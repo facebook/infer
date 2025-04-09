@@ -621,410 +621,53 @@ let mk_module {Module.name; toplevel; functions} =
   {Textual.Module.attrs; decls; sourcefile}
 
 
-module DefaultType : sig
-  type decl =
-    | Class of {name: string; target: string}
-    | Import of {name: string; target: string}
-    | ImportFrom of {module_name: string; attr_name: string; target: string}
-    | Fundef of {typ: Textual.Typ.t; target: string}
-
-  val pp_decl : F.formatter -> decl -> unit
-
-  type acc
-
-  val empty : acc
-
-  val add_decl : decl -> acc -> acc
-
-  val add_allocate : Textual.Ident.t -> Textual.Typ.t -> acc -> acc
-
-  val add_class_body : Textual.Ident.t -> string -> acc -> acc
-
-  val add_fun_ptr : Textual.Ident.t -> Textual.Typ.t -> acc -> acc
-
-  val add_import : Textual.Ident.t -> string -> acc -> acc
-
-  val add_import_from : Textual.Ident.t -> module_name:string -> attr_name:string -> acc -> acc
-
-  val add_string_constant : Textual.Ident.t -> string -> acc -> acc
-
-  val add_tuple : Textual.Ident.t -> acc -> acc
-
-  val get_allocate : Textual.Ident.t -> acc -> Textual.Typ.t option
-
-  val get_class_body : Textual.Ident.t -> acc -> string option
-
-  val get_fun_ptr : Textual.Ident.t -> acc -> Textual.Typ.t option
-
-  val get_import : Textual.Ident.t -> acc -> string option
-
-  val get_import_from : Textual.Ident.t -> acc -> (string * string) option
-
-  val get_string_constant : Textual.Ident.t -> acc -> string option
-
-  val is_allocate : Textual.Ident.t -> acc -> bool
-
-  val is_class_body : Textual.Ident.t -> acc -> bool
-
-  val is_fun_ptr : Textual.Ident.t -> acc -> bool
-
-  val is_import : Textual.Ident.t -> acc -> bool
-
-  val is_import_from : Textual.Ident.t -> acc -> bool
-
-  val is_string_constant : Textual.Ident.t -> acc -> bool
-
-  val is_tuple : Textual.Ident.t -> acc -> bool
-
-  val export : acc -> decl list
-end = struct
-  type decl =
-    | Class of {name: string; target: string}
-    | Import of {name: string; target: string}
-    | ImportFrom of {module_name: string; attr_name: string; target: string}
-    | Fundef of {typ: Textual.Typ.t; target: string}
-
-  let pp_decl fmt = function
-    | Class {name; target} ->
-        F.fprintf fmt "%s: Class[%s]" target name
-    | Import {name; target} ->
-        F.fprintf fmt "%s: Import[%s]" target name
-    | ImportFrom {module_name; attr_name; target} ->
-        F.fprintf fmt "%s: ImportFrom[%s, %s]" target module_name attr_name
-    | Fundef {typ; target} ->
-        F.fprintf fmt "%s: %a" target Textual.Typ.pp typ
-
-
-  type exp =
-    | Tuple (* we just need to remember if a value must-be a tuple *)
-    | Allocate of Textual.Typ.t
-    | ClassBody of string
-    | FuncPtr of Textual.Typ.t
-    | Import of string
-    | ImportFrom of {module_name: string; attr_name: string}
-    | StringConstant of string
-
-  type acc = {default_type: decl list; exps: exp Textual.Ident.Map.t}
-
-  let empty = {default_type= []; exps= Textual.Ident.Map.empty}
-
-  let add_decl decl ({default_type} as acc) = {acc with default_type= decl :: default_type}
-
-  let add_allocate ident typ ({exps} as acc) =
-    {acc with exps= Textual.Ident.Map.add ident (Allocate typ) exps}
-
-
-  let add_fun_ptr ident typ ({exps} as acc) =
-    {acc with exps= Textual.Ident.Map.add ident (FuncPtr typ) exps}
-
-
-  let add_import ident str ({exps} as acc) =
-    {acc with exps= Textual.Ident.Map.add ident (Import str) exps}
-
-
-  let add_import_from ident ~module_name ~attr_name ({exps} as acc) =
-    {acc with exps= Textual.Ident.Map.add ident (ImportFrom {module_name; attr_name}) exps}
-
-
-  let add_class_body ident str ({exps} as acc) =
-    {acc with exps= Textual.Ident.Map.add ident (ClassBody str) exps}
-
-
-  let add_string_constant ident str ({exps} as acc) =
-    {acc with exps= Textual.Ident.Map.add ident (StringConstant str) exps}
-
-
-  let add_tuple ident ({exps} as acc) = {acc with exps= Textual.Ident.Map.add ident Tuple exps}
-
-  let is_allocate ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (Allocate _) -> true | _ -> false
-
-
-  let is_class_body ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (ClassBody _) -> true | _ -> false
-
-
-  let is_fun_ptr ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (FuncPtr _) -> true | _ -> false
-
-
-  let is_import ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (Import _) -> true | _ -> false
-
-
-  let is_import_from ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (ImportFrom _) -> true | _ -> false
-
-
-  let is_string_constant ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (StringConstant _) -> true | _ -> false
-
-
-  let is_tuple ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some Tuple -> true | _ -> false
-
-
-  let get_allocate ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (Allocate typ) -> Some typ | _ -> None
-
-
-  let get_class_body ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (ClassBody str) -> Some str | _ -> None
-
-
-  let get_fun_ptr ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (FuncPtr typ) -> Some typ | _ -> None
-
-
-  let get_import ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with Some (Import str) -> Some str | _ -> None
-
-
-  let get_import_from ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with
-    | Some (ImportFrom {module_name; attr_name}) ->
-        Some (module_name, attr_name)
-    | _ ->
-        None
-
-
-  let get_string_constant ident {exps} =
-    match Textual.Ident.Map.find_opt ident exps with
-    | Some (StringConstant str) ->
-        Some str
-    | _ ->
-        None
-
-
-  let export {default_type} = List.rev default_type
-end
-
-let py_import_name = builtin_qual_proc_name str_py_import_name
-
-let py_import_from = builtin_qual_proc_name str_py_import_from
-
-let py_build_class = builtin_qual_proc_name str_py_build_class
-
-let py_build_tuple = builtin_qual_proc_name "py_build_tuple"
-
-let py_call = builtin_qual_proc_name str_py_call
-
-let py_store_name = builtin_qual_proc_name str_py_store_name
-
-let py_make_function = builtin_qual_proc_name str_py_make_function
-
-let py_make_string = builtin_qual_proc_name str_py_make_string
-
-let sil_allocate : Textual.QualifiedProcName.t =
-  {enclosing_class= TopLevel; name= Textual.ProcName.of_string "__sil_allocate"}
-
-
-let root_of_name str =
-  String.substr_index str ~pattern:"::"
-  |> Option.value_map ~default:str ~f:(fun pos ->
-         let package_name = String.sub ~pos:0 ~len:pos str in
-         package_name ^ "::__init__" )
-
-
-type default_type = {name: Textual.TypeName.t; fields: DefaultType.decl list}
-
-let gen_type ~allow_classes name procdesc =
-  let open Textual in
-  let rec find_next_declaration acc = function
-    | Instr.Let {id= Some ident; exp= Call {proc}} :: instrs
-      when QualifiedProcName.equal py_build_tuple proc ->
-        let acc = DefaultType.add_tuple ident acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= _ :: Const (Str name) :: Var id_from :: _}}
-      :: instrs
-      when QualifiedProcName.equal py_import_name proc ->
-        let is_from_import = DefaultType.is_tuple id_from acc in
-        let name = if is_from_import then name else root_of_name name in
-        let acc = DefaultType.add_import ident name acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str attr_name); Var id_module]}}
-      :: instrs
-      when QualifiedProcName.equal py_import_from proc && DefaultType.is_import id_module acc ->
-        let module_name = DefaultType.get_import id_module acc |> Option.value_exn in
-        let acc = DefaultType.add_import_from ident ~module_name ~attr_name acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str attr_name); Var id_from]}}
-      :: instrs
-      when QualifiedProcName.equal py_import_from proc && DefaultType.is_import_from id_from acc ->
-        let module_name, attr_name0 = DefaultType.get_import_from id_from acc |> Option.value_exn in
-        let acc =
-          String.chop_suffix module_name ~suffix:"__init__"
-          |> Option.value_map ~default:acc ~f:(fun module_name ->
-                 let module_name = module_name ^ attr_name0 in
-                 DefaultType.add_import_from ident ~module_name ~attr_name acc )
-        in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [Typ typ]}} :: instrs
-      when QualifiedProcName.equal sil_allocate proc ->
-        let acc = DefaultType.add_allocate ident typ acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= Var ident_allocate :: _}} :: instrs
-      when QualifiedProcName.equal py_make_function proc
-           && DefaultType.is_allocate ident_allocate acc ->
-        let typ = DefaultType.get_allocate ident_allocate acc |> Option.value_exn in
-        let acc = DefaultType.add_fun_ptr ident typ acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [Const (Str str)]}} :: instrs
-      when QualifiedProcName.equal py_make_string proc ->
-        let acc = DefaultType.add_string_constant ident str acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [_; Var ident_str_const]}} :: instrs
-      when QualifiedProcName.equal py_build_class proc
-           && DefaultType.is_string_constant ident_str_const acc ->
-        let name = DefaultType.get_string_constant ident_str_const acc |> Option.value_exn in
-        let acc = DefaultType.add_class_body ident name acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [Var _id_decorator; _; Var id_fun_ptr]}}
-      :: instrs
-      when QualifiedProcName.equal py_call proc && DefaultType.is_fun_ptr id_fun_ptr acc ->
-        (* note: we could filter the decorator in id_decorator if needed *)
-        let typ = DefaultType.get_fun_ptr id_fun_ptr acc |> Option.value_exn in
-        let acc = DefaultType.add_fun_ptr ident typ acc in
-        find_next_declaration acc instrs
-    | Instr.Let {id= Some ident; exp= Call {proc; args= [Var _id_decorator; _; Var id_class]}}
-      :: instrs
-      when QualifiedProcName.equal py_call proc && DefaultType.is_class_body id_class acc ->
-        (* note: we could filter the decorator in id_decorator if needed *)
-        let name = DefaultType.get_class_body id_class acc |> Option.value_exn in
-        let acc = DefaultType.add_class_body ident name acc in
-        find_next_declaration acc instrs
-    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
-      when QualifiedProcName.equal py_store_name proc && DefaultType.is_fun_ptr ident acc ->
-        let typ = DefaultType.get_fun_ptr ident acc |> Option.value_exn in
-        let acc = DefaultType.add_decl (Fundef {typ; target}) acc in
-        find_next_declaration acc instrs
-    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
-      when QualifiedProcName.equal py_store_name proc && DefaultType.is_import ident acc ->
-        let name = DefaultType.get_import ident acc |> Option.value_exn in
-        let acc = DefaultType.add_decl (Import {name; target}) acc in
-        find_next_declaration acc instrs
-    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
-      when QualifiedProcName.equal py_store_name proc && DefaultType.is_import_from ident acc ->
-        let module_name, attr_name = DefaultType.get_import_from ident acc |> Option.value_exn in
-        let acc = DefaultType.add_decl (ImportFrom {module_name; attr_name; target}) acc in
-        find_next_declaration acc instrs
-    | Instr.Let {exp= Call {proc; args= [Const (Str target); _; _; Var ident]}} :: instrs
-      when QualifiedProcName.equal py_store_name proc && DefaultType.is_class_body ident acc ->
-        let name = DefaultType.get_class_body ident acc |> Option.value_exn in
-        let acc = DefaultType.add_decl (Class {name; target}) acc in
-        find_next_declaration acc instrs
-    | _ :: instrs ->
-        find_next_declaration acc instrs
-    | [] ->
-        acc
+let pyir_type_to_textual module_name struct_types =
+  let mk_global_typename str =
+    let open Textual in
+    let name = TypeName.of_string str in
+    {TypeName.name= BaseTypeName.of_string "PyGlobals"; args= [name]}
   in
-  let rec find_declarations acc nodes_map nodename =
-    NodeName.Map.find_opt nodename nodes_map
-    |> Option.value_map ~default:acc ~f:(fun {Node.instrs; last} ->
-           let acc = find_next_declaration acc instrs in
-           match last with
-           | Terminator.Jump [{label}] ->
-               find_declarations acc nodes_map label
-           | _ ->
-               acc )
+  let mk_closure_typename str =
+    let open Textual in
+    let typename = TypeName.of_string_no_dot_escape str in
+    Typ.(Ptr (Struct {TypeName.name= BaseTypeName.of_string "PyClosure"; args= [typename]}))
   in
-  let {ProcDesc.nodes; start} = procdesc in
-  let nodes_map =
-    List.fold nodes ~init:NodeName.Map.empty ~f:(fun map node ->
-        NodeName.Map.add node.Node.label node map )
-  in
-  let decls = find_declarations DefaultType.empty nodes_map start |> DefaultType.export in
-  let fields =
-    List.filter decls ~f:(fun (decl : DefaultType.decl) ->
-        match decl with Class _ -> allow_classes | Import _ | ImportFrom _ | Fundef _ -> true )
-  in
-  let classes =
-    List.filter_map decls ~f:(fun (decl : DefaultType.decl) ->
-        match decl with Class {name} -> Some name | _ -> None )
-  in
-  ({name; fields}, classes)
-
-
-let pp {name; fields} =
-  F.printf "type %a = {@;<0 4>@[<v>" Textual.TypeName.pp name ;
-  let first_line = ref true in
-  let pp_decl decl =
-    F.printf "%t%a"
-      (fun _fmt -> if !first_line then first_line := false else F.print_break 0 0)
-      DefaultType.pp_decl decl
-  in
-  List.iter fields ~f:pp_decl ;
-  F.printf "@]@.}@.@."
-
-
-let gen_module_default_type {Textual.Module.decls} =
-  let open IOption.Let_syntax in
-  let module_body_name = Textual.ProcName.of_string str_module_body in
-  let opt_module_name, implem_map =
-    List.fold decls ~init:(None, Textual.ProcName.Map.empty) ~f:(fun (opt, map) decl ->
-        match decl with
-        | Textual.Module.Proc
-            ( {procdecl= {qualified_name= {enclosing_class= Enclosing module_name; name}}} as
-              procdesc ) ->
-            let opt =
-              if Textual.ProcName.equal name module_body_name then Some module_name else opt
-            in
-            (opt, Textual.ProcName.Map.add name procdesc map)
-        | _ ->
-            (opt, map) )
-  in
-  let* module_name = opt_module_name in
-  let name = Textual.{TypeName.name= BaseTypeName.of_string "PyGlobals"; args= [module_name]} in
-  let* module_body_procdesc = Textual.ProcName.Map.find_opt module_body_name implem_map in
-  let default_type, classes = gen_type ~allow_classes:true name module_body_procdesc in
-  let* other_type_decls =
-    List.fold classes ~init:(Some []) ~f:(fun decls name ->
-        let* decls in
-        let proc_name = Textual.ProcName.of_string name in
-        let+ class_body_procdesc = Textual.ProcName.Map.find_opt proc_name implem_map in
-        let type_name = Typ.class_companion_name module_name name in
-        let type_decl, _ = gen_type ~allow_classes:false type_name class_body_procdesc in
-        type_decl :: decls )
-  in
-  Some (module_name, default_type :: other_type_decls)
-
-
-let default_types_to_textual module_name decls =
-  let mk_class_companion str = Typ.class_companion module_name str in
+  let module_name = F.asprintf "%a" PyIR.Ident.pp module_name |> Textual.TypeName.of_string in
   let mk_module_attribute_name module_name attr_name = Typ.module_attribute module_name attr_name in
-  List.map decls ~f:(fun {name; fields} ->
-      let open Textual in
+  List.map struct_types ~f:(fun {PyIRTypeInference.name; kind; fields} ->
+      let name =
+        match kind with
+        | Global ->
+            mk_global_typename name
+        | ClassCompanion ->
+            Typ.class_companion_name module_name name
+      in
       let mk_fieldname str : Textual.qualified_fieldname =
-        {enclosing_class= name; name= FieldName.of_string str}
+        Textual.{enclosing_class= name; name= FieldName.of_string str}
       in
       let fields =
-        List.map fields ~f:(fun (decl : DefaultType.decl) ->
-            match decl with
-            | Class {name; target} ->
-                { FieldDecl.qualified_name= mk_fieldname target
-                ; typ= mk_class_companion name
+        List.map fields ~f:(fun {PyIRTypeInference.name; typ} : Textual.FieldDecl.t ->
+            match typ with
+            | Class {class_name} ->
+                { qualified_name= mk_fieldname class_name
+                ; typ= Typ.class_companion module_name class_name
                 ; attributes= [] }
-            | Import {name; target} ->
-                { FieldDecl.qualified_name= mk_fieldname target
-                ; typ= global_type_of_str name
+            | Import {module_name} ->
+                { qualified_name= mk_fieldname name
+                ; typ= global_type_of_str module_name
                 ; attributes= [] }
-            | ImportFrom {module_name; attr_name; target} ->
-                { FieldDecl.qualified_name= mk_fieldname target
+            | ImportFrom {module_name; attr_name} ->
+                { qualified_name= mk_fieldname name
                 ; typ= mk_module_attribute_name module_name attr_name
                 ; attributes= [] }
-            | Fundef {typ; target} ->
-                {FieldDecl.qualified_name= mk_fieldname target; typ= Typ.Ptr typ; attributes= []} )
+            | Fundef {qual_name} ->
+                let typ = mk_closure_typename qual_name in
+                {qualified_name= mk_fieldname name; typ; attributes= []} )
       in
-      Textual.Module.Struct {Struct.name; supers= []; fields; attributes= []} )
+      Textual.(Module.Struct {name; supers= []; fields; attributes= []}) )
 
 
-let gen_module_default_type_debug textual =
-  gen_module_default_type textual |> Option.iter ~f:(fun (_, decls) -> List.iter decls ~f:pp)
-
-
-let add_module_default_type textual =
+let add_pyir_type types ~module_name ({Textual.Module.decls} as textual) =
   let open Textual.Module in
-  gen_module_default_type textual
-  |> Option.value_map ~default:textual ~f:(fun (module_name, types) ->
-         let extra_type_decls = default_types_to_textual module_name types in
-         {textual with decls= extra_type_decls @ textual.decls} )
+  let extra_type_decls = pyir_type_to_textual module_name types in
+  {textual with decls= extra_type_decls @ decls}

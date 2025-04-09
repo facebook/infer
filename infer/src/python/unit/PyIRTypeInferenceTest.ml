@@ -8,29 +8,7 @@
 open! IStd
 module F = Format
 
-let run module_ =
-  let result =
-    let open IResult.Let_syntax in
-    F.printf "@[<v>-- PyIR type --@." ;
-    PyIRTypeInference.gen_module_default_type_debug module_ ;
-    F.printf "@]" ;
-    let textual = PyIR2Textual.mk_module module_ in
-    let+ verified_textual =
-      TextualVerification.verify textual |> Result.map_error ~f:(fun err -> `VerificationError err)
-    in
-    let transformed_textual, _ = TextualTransform.run Python verified_textual in
-    F.printf "@[<v>-- Textual type --@." ;
-    PyIR2Textual.gen_module_default_type_debug transformed_textual
-  in
-  match result with
-  | Ok _ ->
-      ()
-  | Error (`VerificationError errs) ->
-      List.iter errs ~f:(F.printf "%a@\n" TextualVerification.pp_error)
-  | Error (`TransformationError errs) ->
-      let sourcefile = Textual.SourceFile.create "dummy.sil" in
-      List.iter errs ~f:(F.printf "%a@\n" (Textual.pp_transform_error sourcefile))
-
+let run module_ = PyIRTypeInference.gen_module_default_type_debug module_
 
 let%expect_test _ =
   let source =
@@ -70,7 +48,6 @@ class C:
   PyIR.test ~run source ;
   [%expect
     {|
-    -- PyIR type --
     type dummy = {
         dir: Import[dir.__init__]
         a: ImportFrom[dir.__init__, asyncio]
@@ -89,25 +66,4 @@ class C:
 
     type D = {
         foo: Closure[dummy.D.foo]
-    }
-
-    -- Textual type --
-    type PyGlobals<dummy> = {
-        dir: Import[dir::__init__]
-        a: ImportFrom[dir::__init__, asyncio]
-        y: ImportFrom[dir1::dir2::mod, x]
-        mod: ImportFrom[dir1::dir2, mod]
-        f: PyClosure<dummy.f>
-        g: PyClosure<dummy.g>
-        h: PyClosure<dummy.h>
-        D: Class[D]
-        C: Class[C]
-    }
-
-    type PyClassCompanion<dummy,C> = {
-        foo: PyClosure<dummy.C.foo>
-    }
-
-    type PyClassCompanion<dummy,D> = {
-        foo: PyClosure<dummy.D.foo>
     } |}]

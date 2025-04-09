@@ -70,6 +70,8 @@ module TypeName : sig
   val of_string : ?loc:Location.t -> string -> t
   (** we replace any dot in the string by '::' because dot is a reserved separator in Textual *)
 
+  val of_string_no_dot_escape : string -> t
+
   val pp : F.formatter -> t -> unit
 
   module Hashtbl : Hashtbl.S with type key = t

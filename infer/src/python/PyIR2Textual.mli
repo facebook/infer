@@ -8,6 +8,5 @@ open! IStd
 
 val mk_module : PyIR.Module.t -> Textual.Module.t
 
-val add_module_default_type : Textual.Module.t -> Textual.Module.t
-
-val gen_module_default_type_debug : Textual.Module.t -> unit [@@warning "-unused-value-declaration"]
+val add_pyir_type :
+  PyIRTypeInference.t -> module_name:PyIR.Ident.t -> Textual.Module.t -> Textual.Module.t

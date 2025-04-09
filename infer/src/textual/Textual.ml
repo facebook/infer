@@ -187,6 +187,8 @@ module TypeName : sig
 
   val of_string : ?loc:Location.t -> string -> t
 
+  val of_string_no_dot_escape : string -> t
+
   val pp : F.formatter -> t -> unit
 
   module Hashtbl : Hashtbl.S with type key = t
@@ -216,6 +218,10 @@ end = struct
   let from_basename name = {name; args= []}
 
   let of_string ?loc str = BaseTypeName.of_string ?loc str |> from_basename
+
+  let of_string_no_dot_escape str =
+    {BaseTypeName.value= str; loc= Location.Unknown} |> from_basename
+
 
   let rec pp fmt {name; args} =
     if List.is_empty args then BaseTypeName.pp fmt name

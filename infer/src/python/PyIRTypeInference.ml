@@ -192,17 +192,19 @@ let gen_type ~is_global name procdesc =
   ({name; kind; fields}, classes)
 
 
-let pp {name; fields} =
-  F.printf "type %s = {@;<0 4>@[<v>" name ;
+let pp_struct_type fmt {name; fields} =
+  F.fprintf fmt "type %s = {@;<0 4>@[<v>" name ;
   let first_line = ref true in
   let pp_decl decl =
-    F.printf "%t%a"
+    F.fprintf fmt "%t%a"
       (fun _fmt -> if !first_line then first_line := false else F.print_break 0 0)
       pp_decl decl
   in
   List.iter fields ~f:pp_decl ;
-  F.printf "@]@.}@.@."
+  F.fprintf fmt "@]@.}@.@."
 
+
+let pp fmt l = List.iter l ~f:(pp_struct_type fmt)
 
 let gen_module_default_type {Module.name; toplevel; functions} =
   let open IOption.Let_syntax in
@@ -221,4 +223,4 @@ let gen_module_default_type {Module.name; toplevel; functions} =
 
 
 let gen_module_default_type_debug module_ =
-  gen_module_default_type module_ |> Option.iter ~f:(fun decls -> List.iter decls ~f:pp)
+  gen_module_default_type module_ |> Option.iter ~f:(pp F.std_formatter)

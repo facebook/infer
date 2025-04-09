@@ -6,7 +6,21 @@
  *)
 open! IStd
 
-type t
+type field_type =
+  | Class of {class_name: string}
+  | Fundef of {qual_name: string}
+  | Import of {module_name: string}
+  | ImportFrom of {module_name: string; attr_name: string}
+
+type field_decl = {name: string; typ: field_type}
+
+type struct_kind = Global | ClassCompanion
+
+type struct_type = {name: string; kind: struct_kind; fields: field_decl list}
+
+type t = struct_type list
+
+val pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 
 val gen_module_default_type : PyIR.Module.t -> t option
 
