@@ -1,0 +1,5 @@
+property Latent
+  prefix "Latent"
+  start -> start: *
+  start -> error: f(This, Arg, Ret) when Arg != 0
+  start -> error: g(This, Ret) when Ret != 0
