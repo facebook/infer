@@ -11,11 +11,8 @@ public abstract class Latent {
     f(x);
   }
 
-  // This is currently a latent issue that gets discarded. It's latent because it depends on whether
-  // g() returns null; it gets discarded because the caller has no say in whether g() returns null
-  // or not. Ideally, we'd like this to be a manifest issue, because the condition "something is
-  // nonnull" should be optimistically considered to be true (unless proven otherwise).
-  void fn_test_Bad() {
+  // Found only if --topl-nonnull-soft given.
+  void test_Bad() {
     g();
   }
 

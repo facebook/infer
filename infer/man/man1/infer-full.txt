@@ -3333,6 +3333,15 @@ INTERNAL OPTIONS
        --topl-max-disjuncts int
            Under-approximate after int disjunctions in the domain
 
+       --topl-nonnull-soft
+           Activates: Normally Topl tries to prove the constraints specified
+           in the user-defined property. If it fails, then it does not report
+           corresponding issues. For 'soft' predicates though, it does report
+           corresponding issues. Thus, a soft predicate only filters out
+           cases where its negation can be proved. This flag makes
+           constraints of the form 'X!=0' be treated as 'soft'. (Conversely:
+           --no-topl-nonnull-soft)
+
        --topl-properties +path
            [EXPERIMENTAL] Specify a file containing a temporal property
            definition (e.g., jdk.topl).

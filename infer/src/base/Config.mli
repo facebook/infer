@@ -857,6 +857,8 @@ val topl_max_conjuncts : int
 
 val topl_max_disjuncts : int
 
+val topl_nonnull_soft : bool
+
 val topl_properties : ToplAst.t list
 
 val topl_report_latent_issues : bool

@@ -124,6 +124,8 @@ module Constraint : sig
 
   val false_ : t
 
+  val is_soft : predicate -> bool
+
   val and_predicate : predicate -> t -> t
 
   val and_constr : t -> t -> t
@@ -142,7 +144,9 @@ module Constraint : sig
   val simplify : pulse_state -> t -> t
   (** Drop constraints implied by Pulse state. Detect infeasible constraints. *)
 
-  val fold_values : t -> init:'acc -> f:('acc -> value -> 'acc) -> 'acc
+  val fold_predicate_values : predicate -> init:'acc -> f:('acc -> value -> 'acc) -> 'acc
+
+  val fold_predicates : t -> init:'acc -> f:('acc -> predicate -> 'acc) -> 'acc
 
   val pp : F.formatter -> t -> unit
 end = struct
@@ -172,6 +176,18 @@ end = struct
 
   let is_trivially_false (predicate : predicate) (constr : predicate list) =
     match predicate with False -> true | _ -> ( match constr with [False] -> true | _ -> false )
+
+
+  (* Ideally the user should be able to specify what is "soft". For now, we use a heuristic,
+     which says that nonnullness checks are soft. This is similar to how Pulse has special cases for
+     nonnullness checks when deciding latent/manifest. *)
+  let is_soft p =
+    match p with
+    | Binary (Builtin Ne, AbstractValueOperand _, ConstOperand (Cint x))
+    | Binary (Builtin Ne, ConstOperand (Cint x), AbstractValueOperand _) ->
+        Config.topl_nonnull_soft && IntLit.iszero x
+    | _ ->
+        false
 
 
   let and_predicate predicate constr =
@@ -493,7 +509,7 @@ end = struct
         [False]
 
 
-  let fold_values (constr : t) ~init ~f =
+  let fold_predicate_values (p : predicate) ~init ~f =
     let fold_operand (op : Formula.operand) acc =
       match op with
       | AbstractValueOperand v ->
@@ -501,14 +517,14 @@ end = struct
       | ConstOperand _ | FunctionApplicationOperand _ ->
           acc
     in
-    let fold_predicate acc p =
-      match p with
-      | Binary (_op, l, r) ->
-          acc |> fold_operand l |> fold_operand r
-      | True | False ->
-          acc
-    in
-    List.fold constr ~init ~f:fold_predicate
+    match p with
+    | Binary (_op, l, r) ->
+        init |> fold_operand l |> fold_operand r
+    | True | False ->
+        init
+
+
+  let fold_predicates (constr : t) ~init ~f = List.fold constr ~init ~f
 end
 
 type step =
@@ -886,19 +902,40 @@ let drop_garbage ~keep state =
   List.filter ~f:should_keep state
 
 
-(* Drop the simple states that mention in the pruned part other variables except those in
-   [pulse_vals_pre] and those in the registers of the pre-simple-state. This is necessary before
-   extracting summaries, so that we don't mentions local values. And it under-approximates if applied
-   in the middle of the symbolic execution. *)
-let drop_ambiguous pulse_state state =
+(* For a simple state, say that a variable is nonlocal if it occurs in pulse_state.pulse_pre or in
+   pre.memory (of the simple state). This function evaluates predicates that contain local variables:
+   to false for "hard" predicates and to true for "soft" predicates. *)
+let eval_local pulse_state state =
   let pulse_vals_pre = vals_of_basedomain pulse_state.pulse_pre in
-  let should_keep {pre; pruned; post= _} =
+  let eval_simple_state ({pre; pruned} as simple_state) =
     let add_register values (_register, v) = AbstractValue.Set.add v values in
-    let ok = List.fold ~f:add_register ~init:pulse_vals_pre pre.memory in
-    let is_ok b v = b && AbstractValue.Set.mem v ok in
-    Constraint.fold_values pruned ~init:true ~f:is_ok
+    let nonlocal = List.fold ~f:add_register ~init:pulse_vals_pre pre.memory in
+    let is_local p =
+      Constraint.fold_predicate_values ~init:false
+        ~f:(fun acc v -> acc || not (AbstractValue.Set.mem v nonlocal))
+        p
+    in
+    let classify kind p =
+      match kind with
+      | `False ->
+          `False
+      | kind when not (is_local p) ->
+          kind
+      | _ when Constraint.is_soft p ->
+          `Change
+      | _ ->
+          `False
+    in
+    match Constraint.fold_predicates ~init:`NoChange ~f:classify pruned with
+    | `False ->
+        {simple_state with pruned= Constraint.false_}
+    | `NoChange ->
+        simple_state (* optimization *)
+    | `Change ->
+        let and_p pruned p = if is_local p then pruned else Constraint.and_predicate p pruned in
+        {simple_state with pruned= Constraint.fold_predicates ~init:Constraint.true_ ~f:and_p pruned}
   in
-  List.filter ~f:should_keep state
+  List.map ~f:eval_simple_state state
 
 
 let simplify pulse_state state =
@@ -1077,9 +1114,8 @@ let large_step ~call_location ~callee_proc_name ~substitution pulse_state ~calle
 
 
 let filter_for_summary pulse_state state =
-  (* NOTE: [drop_infeasible] is likely a nop, but it's cheap. *)
+  let state = eval_local pulse_state state in
   let state = drop_infeasible pulse_state state in
-  let state = drop_ambiguous pulse_state state in
   state
 
 

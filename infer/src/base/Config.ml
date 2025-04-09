@@ -3433,6 +3433,14 @@ and topl_max_disjuncts =
     "Under-approximate after $(i,int) disjunctions in the domain"
 
 
+and topl_nonnull_soft =
+  CLOpt.mk_bool ~long:"topl-nonnull-soft"
+    "Normally Topl tries to prove the constraints specified in the user-defined property. If it \
+     fails, then it does not report corresponding issues. For 'soft' predicates though, it does \
+     report corresponding issues. Thus, a soft predicate only filters out cases where its negation \
+     can be proved. This flag makes constraints of the form 'X!=0' be treated as 'soft'."
+
+
 and topl_properties =
   CLOpt.mk_path_list ~default:[] ~long:"topl-properties"
     "[EXPERIMENTAL] Specify a file containing a temporal property definition (e.g., jdk.topl)."
@@ -4672,6 +4680,8 @@ and topl_filter_unsure = !topl_filter_unsure
 and topl_max_conjuncts = !topl_max_conjuncts
 
 and topl_max_disjuncts = !topl_max_disjuncts
+
+and topl_nonnull_soft = !topl_nonnull_soft
 
 and topl_properties =
   let parse topl_file =

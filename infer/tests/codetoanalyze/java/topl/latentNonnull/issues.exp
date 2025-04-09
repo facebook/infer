@@ -1,1 +1,2 @@
 codetoanalyze/java/topl/latentNonnull/Latent.java, Latent.test_Latent(java.lang.Object):void, 0, TOPL_ERROR_LATENT, no_bucket, ERROR, [[0] call to Latent.f(java.lang.Object):void (codetoanalyze/java/topl/latentNonnull/Latent.topl:4:3-50)]
+codetoanalyze/java/topl/latentNonnull/Latent.java, Latent.test_Bad():void, 0, TOPL_ERROR, no_bucket, ERROR, [[0] call to Latent.g():java.lang.Object (codetoanalyze/java/topl/latentNonnull/Latent.topl:5:3-45)]

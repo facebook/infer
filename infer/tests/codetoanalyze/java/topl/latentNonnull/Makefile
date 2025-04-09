@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../../..
 
-INFER_OPTIONS = --topl-properties Latent.topl --topl-only --topl-max-disjuncts 1000 -F
+INFER_OPTIONS = --topl-properties Latent.topl --topl-only --topl-max-disjuncts 1000 -F --topl-nonnull-soft
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.java)
