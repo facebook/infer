@@ -14,9 +14,9 @@ type field_type =
   | Import of {module_name: string}
   | ImportFrom of {module_name: string; attr_name: string}
 
-type field_decl = {name: string; typ: field_type}
-
 type struct_kind = Global | ClassCompanion
+
+type field_decl = {name: string; typ: field_type}
 
 type struct_type = {name: string; kind: struct_kind; fields: field_decl list}
 
@@ -35,11 +35,25 @@ let pp_field_typ fmt = function
 
 let pp_decl fmt {name; typ} = F.fprintf fmt "%s: %a" name pp_field_typ typ
 
-type acc = {default_type: field_decl list; exps: field_type SSA.Map.t}
+let pp_struct_type fmt {name; fields} =
+  F.fprintf fmt "type %s = {@;<0 4>@[<v>" name ;
+  let first_line = ref true in
+  let pp_decl decl =
+    F.fprintf fmt "%t%a"
+      (fun _fmt -> if !first_line then first_line := false else F.print_break 0 0)
+      pp_decl decl
+  in
+  List.iter fields ~f:pp_decl ;
+  F.fprintf fmt "@]@.}@.@."
 
-let empty = {default_type= []; exps= SSA.Map.empty}
 
-let add_decl decl ({default_type} as acc) = {acc with default_type= decl :: default_type}
+let pp fmt l = List.iter l ~f:(pp_struct_type fmt)
+
+type acc = {var_types: field_type IString.Map.t; exps: field_type SSA.Map.t}
+
+let empty = {var_types= IString.Map.empty; exps= SSA.Map.empty}
+
+let add_decl name typ ({var_types} as acc) = {acc with var_types= IString.Map.add name typ var_types}
 
 let add_fundef id qual_name ({exps} as acc) =
   {acc with exps= SSA.Map.add id (Fundef {qual_name}) exps}
@@ -86,8 +100,6 @@ let get_import_from id {exps} =
   | _ ->
       None
 
-
-let export {default_type} = List.rev default_type
 
 let root_of_name str =
   match String.split str ~on:'.' with first :: _ :: _ -> first ^ ".__init__" | _ -> str
@@ -146,24 +158,24 @@ let gen_type ~is_global name procdesc =
       | Store {lhs= {scope= Name; ident}; rhs= Temp ident_fun} when is_fundef ident_fun acc ->
           let qual_name = get_fundef ident_fun acc |> Option.value_exn in
           let name = str_of_ident ident in
-          let acc = add_decl {name; typ= Fundef {qual_name}} acc in
+          let acc = add_decl name (Fundef {qual_name}) acc in
           find_next_declaration acc instrs
       | Store {lhs= {scope= Name; ident}; rhs= Temp ident_import} when is_import ident_import acc ->
           let module_name = get_import ident_import acc |> Option.value_exn in
           let name = str_of_ident ident in
-          let acc = add_decl {name; typ= Import {module_name}} acc in
+          let acc = add_decl name (Import {module_name}) acc in
           find_next_declaration acc instrs
       | Store {lhs= {scope= Name; ident}; rhs= Temp ident_import_from}
         when is_import_from ident_import_from acc ->
           let module_name, attr_name = get_import_from ident_import_from acc |> Option.value_exn in
           let name = str_of_ident ident in
-          let acc = add_decl {name; typ= ImportFrom {module_name; attr_name}} acc in
+          let acc = add_decl name (ImportFrom {module_name; attr_name}) acc in
           find_next_declaration acc instrs
       | Store {lhs= {scope= Name; ident}; rhs= Temp ident_class_body}
         when is_class ident_class_body acc ->
           let class_name = get_class ident_class_body acc |> Option.value_exn in
           let name = str_of_ident ident in
-          let acc = add_decl {name; typ= Class {class_name}} acc in
+          let acc = add_decl name (Class {class_name}) acc in
           find_next_declaration acc instrs
       | _ ->
           find_next_declaration acc instrs )
@@ -179,32 +191,22 @@ let gen_type ~is_global name procdesc =
                acc )
   in
   let {CFG.nodes; entry} = procdesc in
-  let decls = find_declarations empty nodes entry |> export in
-  let fields =
-    List.filter decls ~f:(fun {typ} ->
-        match typ with Class _ -> is_global | Import _ | ImportFrom _ | Fundef _ -> true )
-  in
-  let classes =
-    List.filter_map decls ~f:(fun {typ} ->
-        match typ with Class {class_name} -> Some class_name | _ -> None )
+  let {var_types} = find_declarations empty nodes entry in
+  let fields, classes =
+    IString.Map.fold
+      (fun name typ (fields, classes) ->
+        match typ with
+        | Class {class_name} when is_global ->
+            ({name; typ} :: fields, class_name :: classes)
+        | Class {class_name} ->
+            (fields, class_name :: classes)
+        | Import _ | ImportFrom _ | Fundef _ ->
+            ({name; typ} :: fields, classes) )
+      var_types ([], [])
   in
   let kind = if is_global then Global else ClassCompanion in
   ({name; kind; fields}, classes)
 
-
-let pp_struct_type fmt {name; fields} =
-  F.fprintf fmt "type %s = {@;<0 4>@[<v>" name ;
-  let first_line = ref true in
-  let pp_decl decl =
-    F.fprintf fmt "%t%a"
-      (fun _fmt -> if !first_line then first_line := false else F.print_break 0 0)
-      pp_decl decl
-  in
-  List.iter fields ~f:pp_decl ;
-  F.fprintf fmt "@]@.}@.@."
-
-
-let pp fmt l = List.iter l ~f:(pp_struct_type fmt)
 
 let gen_module_default_type {Module.name; toplevel; functions} =
   let open IOption.Let_syntax in

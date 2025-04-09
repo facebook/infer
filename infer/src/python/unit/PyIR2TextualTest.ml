@@ -418,9 +418,9 @@ class C:
     FINAL TRANSFORMATIONS
     .source_language = "python" @?
 
-    type PyGlobals<dummy> = {random: *PyGlobals<random>; a: *PyGlobals<asyncio>;
-                             y: *PyModuleAttr<dir1::dir2::mod,x>; mod: *PyModuleAttr<dir1::dir2,mod>;
-                             f: *PyClosure<dummy.f>; g: *PyClosure<dummy.g>;
+    type PyGlobals<dummy> = {y: *PyModuleAttr<dir1::dir2::mod,x>; random: *PyGlobals<random>;
+                             mod: *PyModuleAttr<dir1::dir2,mod>; g: *PyClosure<dummy.g>;
+                             f: *PyClosure<dummy.f>; a: *PyGlobals<asyncio>;
                              D: *PyClassCompanion<dummy,D>; C: *PyClassCompanion<dummy,C>}
 
     type PyClassCompanion<dummy,C> = {foo: *PyClosure<dummy.C.foo>}

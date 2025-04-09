@@ -49,13 +49,13 @@ class C:
   [%expect
     {|
     type dummy = {
-        dir: Import[dir.__init__]
-        a: ImportFrom[dir.__init__, asyncio]
         y: ImportFrom[dir1.dir2.mod, x]
         mod: ImportFrom[dir1.dir2, mod]
-        f: Closure[dummy.f]
-        g: Closure[dummy.g]
         h: Closure[dummy.h]
+        g: Closure[dummy.g]
+        f: Closure[dummy.f]
+        dir: Import[dir.__init__]
+        a: ImportFrom[dir.__init__, asyncio]
         D: Class[D]
         C: Class[C]
     }
