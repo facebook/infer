@@ -1,1 +1,0 @@
-include Stdcompat__array_s.S

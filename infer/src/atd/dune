@@ -8,7 +8,7 @@
  (public_name infer.ATDGenerated)
  (flags
   (:standard -w -27-32-34-35-39))
- (libraries atdgen core)
+ (libraries atd atdgen-runtime core)
  (preprocess
   (pps ppx_compare)))
 

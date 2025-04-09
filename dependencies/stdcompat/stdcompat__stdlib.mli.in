@@ -1,1 +1,0 @@
-include Stdcompat__stdlib_s.S

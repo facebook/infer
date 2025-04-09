@@ -1,1 +1,0 @@
-include Stdcompat__float_s.S

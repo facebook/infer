@@ -10,7 +10,7 @@ dev-repo: "git://github.com/facebook/infer.git"
 license: "MIT"
 depends: [
   "ANSITerminal" {>="0.7"}
-  "atdgen" {>="2.0.0"}
+  "atdgen" {>="2.15.0"}
   "base64" {>="3.0.0"}
   "bheap"
   "cmdliner" {>="1.0.0"}
@@ -47,6 +47,7 @@ depends: [
   "sedlex" {>="3.0"}
   "spawn" {>= "v0.17.0"}
   "sqlite3"
+  "stdcompat" {>="20.1"}
   "tdigest" {>="2.0.0"}
   "utop" {with-test}
   "xmlm" {>="1.2.0"}

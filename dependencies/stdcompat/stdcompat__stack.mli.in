@@ -1,1 +1,0 @@
-include Stdcompat__stack_s.S

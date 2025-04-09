@@ -1,1 +1,0 @@
-include Stdcompat__moreLabels_s.S

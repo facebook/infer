@@ -1,1 +1,0 @@
-include Stdcompat__buffer_s.S

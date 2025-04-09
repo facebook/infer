@@ -1,1 +1,0 @@
-include Stdcompat__uchar_s.S

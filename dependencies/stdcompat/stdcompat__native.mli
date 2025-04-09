@@ -1,1 +1,0 @@
-val native : bool

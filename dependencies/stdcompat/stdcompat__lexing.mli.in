@@ -1,1 +1,0 @@
-include Stdcompat__lexing_s.S

@@ -1,1 +1,0 @@
-include Stdcompat__stringLabels_s.S

@@ -1,1 +1,0 @@
-include Stdcompat__atomic_s.S

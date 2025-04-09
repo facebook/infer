@@ -179,7 +179,6 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=.locked
     fi
-    opam pin add --no-action stdcompat "$INFER_ROOT"/dependencies/stdcompat
     opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked
 }
 
