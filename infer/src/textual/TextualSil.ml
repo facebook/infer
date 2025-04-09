@@ -408,9 +408,9 @@ module ProcDeclBridge = struct
 
   let python_class_name_to_sil = function
     | QualifiedProcName.TopLevel ->
-        None
+        L.die InternalError "Python frontend does not allow toplevel definitions"
     | QualifiedProcName.Enclosing {name= {value}; args} ->
-        Some (TypeNameBridge.to_python_class_name value args)
+        TypeNameBridge.to_python_class_name value args
 
 
   let to_sil lang t : SilProcname.t =
@@ -446,8 +446,8 @@ module ProcDeclBridge = struct
         let arity = Option.map t.formals_types ~f:List.length in
         SilProcname.make_hack ~class_name ~function_name:method_name ~arity
     | Python ->
-        let class_name = python_class_name_to_sil t.qualified_name.enclosing_class in
-        SilProcname.make_python ~class_name ~function_name:method_name
+        let module_name = python_class_name_to_sil t.qualified_name.enclosing_class in
+        SilProcname.make_python ~module_name ~function_name:method_name
     | C ->
         SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
 

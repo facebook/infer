@@ -594,19 +594,14 @@ module Hack = struct
 end
 
 module Python = struct
-  type t = {class_name: PythonClassName.t option; function_name: string}
+  type t = {module_name: PythonClassName.t; function_name: string}
   [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-  let get_class_type_name {class_name} = Option.map class_name ~f:(fun cn -> Typ.PythonClass cn)
+  let get_module_type_name {module_name} = Typ.PythonClass module_name
 
-  let get_class_name_as_a_string {class_name} = Option.map class_name ~f:PythonClassName.classname
+  let get_module_name_as_a_string {module_name} = PythonClassName.classname module_name
 
-  let pp fmt t =
-    match t.class_name with
-    | Some class_name ->
-        F.fprintf fmt "%a.%s" PythonClassName.pp class_name t.function_name
-    | _ ->
-        F.fprintf fmt "%s" t.function_name
+  let pp fmt t = F.fprintf fmt "%a.%s" PythonClassName.pp t.module_name t.function_name
 end
 
 (** Type of procedure names. *)
@@ -803,14 +798,14 @@ let replace_class t ?(arity_incr = 0) (new_class : Typ.Name.t) =
       in
       Hack {h with class_name= Some name; arity}
   | Python p ->
-      let name =
+      let module_name =
         match new_class with
         | PythonClass name ->
             name
         | _ ->
             L.die InternalError "replace_class on ill-formed Python type"
       in
-      Python {p with class_name= Some name}
+      Python {p with module_name}
   | C _ | Block _ | Erlang _ ->
       t
 
@@ -828,7 +823,7 @@ let get_class_type_name t =
   | Hack hack ->
       Hack.get_class_type_name hack
   | Python python ->
-      Python.get_class_type_name python
+      Some (Python.get_module_type_name python)
   | C _ | Erlang _ ->
       None
 
@@ -846,7 +841,7 @@ let get_class_name t =
   | Hack hack_pname ->
       Hack.get_class_name_as_a_string hack_pname
   | Python py_pname ->
-      Python.get_class_name_as_a_string py_pname
+      Some (Python.get_module_name_as_a_string py_pname)
   | C _ | Erlang _ ->
       None
 
@@ -1251,7 +1246,7 @@ let make_objc_copy name = ObjC_Cpp (ObjC_Cpp.make_copy name)
 
 let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZone ~is_mutable name)
 
-let make_python ~class_name ~function_name = Python {class_name; function_name}
+let make_python ~module_name ~function_name = Python {module_name; function_name}
 
 let erlang_call_unqualified ~arity = Erlang (Erlang.call_unqualified arity)
 

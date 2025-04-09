@@ -709,8 +709,8 @@ let gen_start_coroutine : model =
 
 let is_module_captured module_name =
   let function_name = "__module_body__" in
-  let class_name = PythonClassName.Filename module_name in
-  let proc_name = Procname.make_python ~class_name:(Some class_name) ~function_name in
+  let module_name = PythonClassName.Filename module_name in
+  let proc_name = Procname.make_python ~module_name ~function_name in
   IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
 
 
@@ -752,10 +752,8 @@ let initialize_class_companion_and_supers ~module_name ~class_name class_compani
   let open DSL.Syntax in
   let* module_, _ = lookup_module module_name in
   let call_class_initializer class_name class_companion_object =
-    let module_tname = PythonClassName.Filename module_name in
-    let class_initializer =
-      Procname.make_python ~class_name:(Some module_tname) ~function_name:class_name
-    in
+    let module_name = PythonClassName.Filename module_name in
+    let class_initializer = Procname.make_python ~module_name ~function_name:class_name in
     python_call class_initializer [("globals", module_); ("locals", class_companion_object)]
     |> ignore
   in

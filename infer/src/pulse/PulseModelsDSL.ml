@@ -973,7 +973,7 @@ module Syntax = struct
 
   let apply_python_closure closure gen_closure_args =
     let unresolved_pname =
-      Procname.make_python ~class_name:(Some PythonClassName.Wildcard) ~function_name:"call"
+      Procname.make_python ~module_name:PythonClassName.Wildcard ~function_name:"call"
     in
     apply_closure Python closure unresolved_pname (FromAttributes gen_closure_args)
 

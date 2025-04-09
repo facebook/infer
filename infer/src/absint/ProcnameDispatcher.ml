@@ -78,9 +78,9 @@ let templated_name_of_hack hack =
 
 
 let templated_name_of_python python =
-  Option.map (Procname.Python.get_class_name_as_a_string python) ~f:(fun class_name ->
-      let qual_name = QualifiedCppName.of_list [class_name; python.Procname.Python.function_name] in
-      (qual_name, []) )
+  let class_name = Procname.Python.get_module_name_as_a_string python in
+  let qual_name = QualifiedCppName.of_list [class_name; python.Procname.Python.function_name] in
+  (qual_name, [])
 
 
 let templated_name_of_java java =
@@ -608,8 +608,7 @@ module Call = struct
           ~f:(on_templated_name context f)
       in
       let on_python context f (python : python) =
-        Option.value_map (templated_name_of_python python) ~default:None
-          ~f:(on_templated_name context f)
+        templated_name_of_python python |> on_templated_name context f
       in
       let on_erlang context f (erlang : erlang) =
         on_templated_name context f (templated_name_of_erlang erlang)

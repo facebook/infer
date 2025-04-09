@@ -189,9 +189,9 @@ module Hack : sig
 end
 
 module Python : sig
-  type t = private {class_name: PythonClassName.t option; function_name: string}
+  type t = private {module_name: PythonClassName.t; function_name: string}
 
-  val get_class_name_as_a_string : t -> string option
+  val get_module_name_as_a_string : t -> string
 end
 
 (** Type of procedure names. *)
@@ -313,7 +313,7 @@ val make_objc_copy : Typ.Name.t -> t
 val make_objc_copyWithZone : is_mutable:bool -> Typ.Name.t -> t
 (** Create an Objective-C method for copyWithZone: or mutableCopyWithZone: according to is_mutable. *)
 
-val make_python : class_name:PythonClassName.t option -> function_name:string -> t
+val make_python : module_name:PythonClassName.t -> function_name:string -> t
 (** Create a Python procedure name. *)
 
 val empty_block : t
