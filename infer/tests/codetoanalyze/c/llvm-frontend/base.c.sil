@@ -7,14 +7,14 @@
 .source_language = "C" @?
 
 define add(var0: int, var1: int) : int {
-  local var4: int, var3: int
+  local n2: int, n1: int
   #: @[13:0]
       n9 = load &var0 @[13:0]
-      store &var3 <- n9 @[13:0]
+      store &n1 <- n9 @[13:0]
       n10 = load &var1 @[13:0]
-      store &var4 <- n10 @[13:0]
-      n19 = load &var3 @[13:34]
-      n20 = load &var4 @[13:39]
+      store &n2 <- n10 @[13:0]
+      n19 = load &n1 @[13:34]
+      n20 = load &n2 @[13:39]
       ret __sil_plusa_int(n19, n20) @[13:27]
       
 } @?
@@ -32,15 +32,15 @@ define call_add() : int {
 } @?
 
 define call_add1(var0: *int, var1: int) : int {
-  local var4: int, var3: *int
+  local y: int, ptr: *int
   #: @[47:0]
       n100 = load &var0 @[47:0]
-      store &var3 <- n100 @[47:0]
+      store &ptr <- n100 @[47:0]
       n101 = load &var1 @[47:0]
-      store &var4 <- n101 @[47:0]
-      n110 = load &var3 @[47:46]
+      store &y <- n101 @[47:0]
+      n110 = load &ptr @[47:46]
       n111 = load n110 @[47:45]
-      n112 = load &var4 @[47:51]
+      n112 = load &y @[47:51]
       n113 = add(n111, n112) @[47:41]
       jmp 8::ret @[47:41]
       
@@ -70,20 +70,20 @@ define test() : *int {
 } @?
 
 define test2() : int {
-  local var2: int, var1: int
+  local n2: int, n1: int
   #: @[18:10]
-      n33 = load &var1 @[18:10]
-      n34 = load &var2 @[18:15]
+      n33 = load &n1 @[18:10]
+      n34 = load &n2 @[18:15]
       ret __sil_plusa_int(n33, n34) @[18:3]
       
 } @?
 
 define test3(var0: *int) : int {
-  local var2: *int
+  local ptr: *int
   #: @[21:0]
       n37 = load &var0 @[21:0]
-      store &var2 <- n37 @[21:0]
-      n43 = load &var2 @[21:31]
+      store &ptr <- n37 @[21:0]
+      n43 = load &ptr @[21:31]
       n44 = load n43 @[21:30]
       ret n44 @[21:23]
       
@@ -110,9 +110,9 @@ define test5() : int {
 } @?
 
 define test6() : int {
-  local var2: *int, var1: int
+  local var1: int, ptr: *int
   #: @[32:8]
-      store &var2 <- null @[32:8]
+      store &ptr <- null @[32:8]
       n66 = call_add() @[33:7]
       jmp 3::ret @[33:7]
       
@@ -120,7 +120,7 @@ define test6() : int {
       if __sil_eq(n66, 3) then jmp 5 else jmp 8 @[33:7]
       
   #5: @[34:13]
-      n70 = load &var2 @[34:13]
+      n70 = load &ptr @[34:13]
       n71 = load n70 @[34:12]
       store &var1 <- n71 @[34:5]
       jmp 9 @[34:5]
@@ -136,9 +136,9 @@ define test6() : int {
 } @?
 
 define test7() : int {
-  local var2: *int, var1: int
+  local var1: int, ptr: *int
   #: @[40:8]
-      store &var2 <- null @[40:8]
+      store &ptr <- null @[40:8]
       n86 = call_add() @[41:7]
       jmp 3::ret @[41:7]
       
@@ -146,7 +146,7 @@ define test7() : int {
       if __sil_eq(n86, 5) then jmp 5 else jmp 8 @[41:7]
       
   #5: @[42:13]
-      n90 = load &var2 @[42:13]
+      n90 = load &ptr @[42:13]
       n91 = load n90 @[42:12]
       store &var1 <- n91 @[42:5]
       jmp 9 @[42:5]
@@ -162,19 +162,19 @@ define test7() : int {
 } @?
 
 define test8(var0: *int) : int {
-  local var5: int, var4: *int, var3: *int, var2: int
+  local var2: int, ret: int, ptr: *int, null_ptr: *int
   #: @[49:0]
       n115 = load &var0 @[49:0]
-      store &var3 <- n115 @[49:0]
-      n124 = load &var3 @[50:4]
+      store &ptr <- n115 @[49:0]
+      n124 = load &ptr @[50:4]
       store n124 <- 1 @[50:8]
-      store &var4 <- null @[51:8]
-      n129 = load &var3 @[52:23]
+      store &null_ptr <- null @[51:8]
+      n129 = load &ptr @[52:23]
       n130 = call_add1(n129, 2) @[52:13]
       jmp 8::ret @[52:13]
       
   #11: @[54:13]
-      n136 = load &var4 @[54:13]
+      n136 = load &null_ptr @[54:13]
       n137 = load n136 @[54:12]
       store &var2 <- n137 @[54:5]
       jmp 15 @[54:5]
@@ -188,25 +188,25 @@ define test8(var0: *int) : int {
       ret n144 @[57:1]
       
   #8::ret: @[52:7]
-      store &var5 <- n130 @[52:7]
-      n132 = load &var5 @[53:7]
+      store &ret <- n130 @[52:7]
+      n132 = load &ret @[53:7]
       if __sil_eq(n132, 3) then jmp 11 else jmp 14 @[53:7]
       
 } @?
 
 define test9() : int {
-  local var2: int, var1: *int
+  local ret: int, ptr: *int
   #: @[60:14]
       n151 = __sil_malloc(<int>) @[60:14]
-      store &var1 <- n151 @[60:8]
-      n153 = load &var1 @[61:4]
+      store &ptr <- n151 @[60:8]
+      n153 = load &ptr @[61:4]
       store n153 <- 42 @[61:8]
-      n156 = load &var1 @[62:14]
+      n156 = load &ptr @[62:14]
       n157 = load n156 @[62:13]
-      store &var2 <- n157 @[62:7]
-      n159 = load &var1 @[63:8]
+      store &ret <- n157 @[62:7]
+      n159 = load &ptr @[63:8]
       _ = __sil_free(n159) @[63:3]
-      n161 = load &var2 @[64:10]
+      n161 = load &ret @[64:10]
       ret n161 @[64:3]
       
 } @?

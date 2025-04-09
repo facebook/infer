@@ -69,6 +69,17 @@ module SymTbl = LlvalueTbl
 
 let sym_tbl : (string * int * Loc.t) SymTbl.t = SymTbl.create ~size:4_194_304 ()
 
+let pp_sym_tbl fmt tbl =
+  let pp fmt (name, id, loc) =
+    Format.fprintf fmt "@[<2>name=%s@ id=%d@ loc=%a@]@ " name id Loc.pp loc
+  in
+  SymTbl.iter
+    (fun llv value ->
+      Format.fprintf fmt "@[<2>%a (name=%s)@ ->@ %a@]@. " pp_llvalue llv (Llvm.value_name llv) pp
+        value )
+    tbl
+
+
 module ScopeTbl = HashTable.Make (struct
   type t = [`Fun of Llvm.llvalue | `Mod of Llvm.llmodule]
 
@@ -114,9 +125,10 @@ open struct
           (ref 0, lazy (String.Tbl.create ())) )
 
 
-    let add_sym scope llv loc =
+    let add_sym ?orig_name scope llv loc =
       match SymTbl.find sym_tbl llv with
       | Some (name, id, loc0) ->
+          let name = Option.value orig_name ~default:name in
           if Loc.equal loc0 Loc.none then SymTbl.set sym_tbl ~key:llv ~data:(name, id, loc)
       | None ->
           let name =
@@ -176,7 +188,17 @@ open struct
         match Llvm.(value_name (operand i (num_arg_operands i))) with
         | "llvm.dbg.declare" ->
             let md = Llvm.(get_mdnode_operands (operand i 0)) in
-            if not (Array.is_empty md) then add_sym scope md.(0) loc
+            if not (Array.is_empty md) then
+              let metadata_llv = Llvm.operand i 1 in
+              let orig_name = Llvm.operand metadata_llv 1 |> Llvm.string_of_llvalue in
+              let orig_name =
+                match String.chop_prefix orig_name ~pre:"!\"" with
+                | None ->
+                    orig_name
+                | Some name ->
+                    Option.value (String.chop_suffix ~suf:"\"" name) ~default:orig_name
+              in
+              add_sym ~orig_name scope md.(0) loc
             else
               warn "could not find variable for debug info at %a with metadata %a" Loc.pp loc
                 (List.pp ", " pp_llvalue) (Array.to_list md) ()

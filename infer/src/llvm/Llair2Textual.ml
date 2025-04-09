@@ -18,7 +18,10 @@ let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
   ; name= Textual.ProcName.of_string name }
 
 
-let string_name_of_reg reg = Format.sprintf "var%s" (Reg.name reg)
+let string_name_of_reg reg =
+  let name = Reg.name reg in
+  if Option.is_some (Int.of_string_opt name) then Format.sprintf "var%s" name else name
+
 
 let reg_to_var_name reg = Textual.VarName.of_string (string_name_of_reg reg)
 
