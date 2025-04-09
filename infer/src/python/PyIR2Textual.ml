@@ -826,9 +826,9 @@ let root_of_name str =
          package_name ^ "::__init__" )
 
 
-let gen_type ~debug module_name ~allow_classes name procdesc =
-  let mk_class_companion str = Typ.class_companion module_name str in
-  let mk_module_attribute_name module_name attr_name = Typ.module_attribute module_name attr_name in
+type default_type = {name: Textual.TypeName.t; fields: DefaultType.decl list}
+
+let gen_type ~allow_classes name procdesc =
   let open Textual in
   let rec find_next_declaration acc = function
     | Instr.Let {id= Some ident; exp= Call {proc}} :: instrs
@@ -934,53 +934,30 @@ let gen_type ~debug module_name ~allow_classes name procdesc =
         NodeName.Map.add node.Node.label node map )
   in
   let decls = find_declarations DefaultType.empty nodes_map start |> DefaultType.export in
-  let mk_fieldname str : qualified_fieldname =
-    {enclosing_class= name; name= FieldName.of_string str}
-  in
-  if debug then F.printf "type %a = {@;<0 4>@[<v>" Textual.TypeName.pp name ;
-  let first_line = ref true in
-  let pp_decl decl =
-    if debug then
-      F.printf "%t%a"
-        (fun _fmt -> if !first_line then first_line := false else F.print_break 0 0)
-        DefaultType.pp_decl decl
-  in
   let fields =
-    List.filter_map decls ~f:(fun (decl : DefaultType.decl) ->
-        match decl with
-        | Class {name; target} when allow_classes ->
-            pp_decl decl ;
-            Some
-              { FieldDecl.qualified_name= mk_fieldname target
-              ; typ= mk_class_companion name
-              ; attributes= [] }
-        | Class _ ->
-            None
-        | Import {name; target} ->
-            pp_decl decl ;
-            Some
-              { FieldDecl.qualified_name= mk_fieldname target
-              ; typ= global_type_of_str name
-              ; attributes= [] }
-        | ImportFrom {module_name; attr_name; target} ->
-            pp_decl decl ;
-            Some
-              { FieldDecl.qualified_name= mk_fieldname target
-              ; typ= mk_module_attribute_name module_name attr_name
-              ; attributes= [] }
-        | Fundef {typ; target} ->
-            pp_decl decl ;
-            Some {FieldDecl.qualified_name= mk_fieldname target; typ= Typ.Ptr typ; attributes= []} )
+    List.filter decls ~f:(fun (decl : DefaultType.decl) ->
+        match decl with Class _ -> allow_classes | Import _ | ImportFrom _ | Fundef _ -> true )
   in
-  if debug then F.printf "@]@.}@.@." ;
   let classes =
     List.filter_map decls ~f:(fun (decl : DefaultType.decl) ->
         match decl with Class {name} -> Some name | _ -> None )
   in
-  ({Struct.name; supers= []; fields; attributes= []}, classes)
+  ({name; fields}, classes)
 
 
-let gen_module_default_type ~debug {Textual.Module.decls} =
+let pp {name; fields} =
+  F.printf "type %a = {@;<0 4>@[<v>" Textual.TypeName.pp name ;
+  let first_line = ref true in
+  let pp_decl decl =
+    F.printf "%t%a"
+      (fun _fmt -> if !first_line then first_line := false else F.print_break 0 0)
+      DefaultType.pp_decl decl
+  in
+  List.iter fields ~f:pp_decl ;
+  F.printf "@]@.}@.@."
+
+
+let gen_module_default_type {Textual.Module.decls} =
   let open IOption.Let_syntax in
   let module_body_name = Textual.ProcName.of_string str_module_body in
   let opt_module_name, implem_map =
@@ -999,27 +976,55 @@ let gen_module_default_type ~debug {Textual.Module.decls} =
   let* module_name = opt_module_name in
   let name = Textual.{TypeName.name= BaseTypeName.of_string "PyGlobals"; args= [module_name]} in
   let* module_body_procdesc = Textual.ProcName.Map.find_opt module_body_name implem_map in
-  let default_type, classes =
-    gen_type ~debug module_name ~allow_classes:true name module_body_procdesc
-  in
+  let default_type, classes = gen_type ~allow_classes:true name module_body_procdesc in
   let* other_type_decls =
     List.fold classes ~init:(Some []) ~f:(fun decls name ->
         let* decls in
         let proc_name = Textual.ProcName.of_string name in
         let+ class_body_procdesc = Textual.ProcName.Map.find_opt proc_name implem_map in
         let type_name = Typ.class_companion_name module_name name in
-        let type_decl, _ =
-          gen_type ~debug module_name ~allow_classes:false type_name class_body_procdesc
-        in
-        Textual.Module.Struct type_decl :: decls )
+        let type_decl, _ = gen_type ~allow_classes:false type_name class_body_procdesc in
+        type_decl :: decls )
   in
-  Some (Textual.Module.Struct default_type :: other_type_decls)
+  Some (module_name, default_type :: other_type_decls)
 
 
-let gen_module_default_type_debug textual = gen_module_default_type ~debug:true textual |> ignore
+let default_types_to_textual module_name decls =
+  let mk_class_companion str = Typ.class_companion module_name str in
+  let mk_module_attribute_name module_name attr_name = Typ.module_attribute module_name attr_name in
+  List.map decls ~f:(fun {name; fields} ->
+      let open Textual in
+      let mk_fieldname str : Textual.qualified_fieldname =
+        {enclosing_class= name; name= FieldName.of_string str}
+      in
+      let fields =
+        List.map fields ~f:(fun (decl : DefaultType.decl) ->
+            match decl with
+            | Class {name; target} ->
+                { FieldDecl.qualified_name= mk_fieldname target
+                ; typ= mk_class_companion name
+                ; attributes= [] }
+            | Import {name; target} ->
+                { FieldDecl.qualified_name= mk_fieldname target
+                ; typ= global_type_of_str name
+                ; attributes= [] }
+            | ImportFrom {module_name; attr_name; target} ->
+                { FieldDecl.qualified_name= mk_fieldname target
+                ; typ= mk_module_attribute_name module_name attr_name
+                ; attributes= [] }
+            | Fundef {typ; target} ->
+                {FieldDecl.qualified_name= mk_fieldname target; typ= Typ.Ptr typ; attributes= []} )
+      in
+      Textual.Module.Struct {Struct.name; supers= []; fields; attributes= []} )
+
+
+let gen_module_default_type_debug textual =
+  gen_module_default_type textual |> Option.iter ~f:(fun (_, decls) -> List.iter decls ~f:pp)
+
 
 let add_module_default_type textual =
   let open Textual.Module in
-  gen_module_default_type ~debug:false textual
-  |> Option.value_map ~default:textual ~f:(fun extra_type_decls ->
+  gen_module_default_type textual
+  |> Option.value_map ~default:textual ~f:(fun (module_name, types) ->
+         let extra_type_decls = default_types_to_textual module_name types in
          {textual with decls= extra_type_decls @ textual.decls} )

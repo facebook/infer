@@ -72,10 +72,10 @@ class C:
         C: Class[C]
     }
 
-    type PyClassCompanion<dummy,D> = {
-        foo: PyClosure<dummy.D.foo>
-    }
-
     type PyClassCompanion<dummy,C> = {
         foo: PyClosure<dummy.C.foo>
+    }
+
+    type PyClassCompanion<dummy,D> = {
+        foo: PyClosure<dummy.D.foo>
     } |}]
