@@ -653,12 +653,38 @@
           "pointer" : 79
         },
         {
+          "type_ptr" : 17
+        }
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 80
+        },
+        81
+      ]],
+      ["ConstantArrayType" , [
+        {
+          "pointer" : 82
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 80
+          },
+          "stride" : 24
+        },
+        1
+      ]],
+      ["PointerType" , [
+        {
+          "pointer" : 83
+        },
+        {
           "type_ptr" : 74
         }
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 80
+          "pointer" : 84
         },
         {
           "base_type" : 72
@@ -666,15 +692,15 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 81
+          "pointer" : 85
         },
         {
-          "type_ptr" : 80
+          "type_ptr" : 84
         }
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 82
+          "pointer" : 86
         },
         {
           "base_type" : 73
@@ -682,27 +708,27 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 83
+          "pointer" : 87
         },
         {
-          "type_ptr" : 82
+          "type_ptr" : 86
         }
       ]],
       ["ObjCInterfaceType" , [
         {
-          "pointer" : 84
+          "pointer" : 88
         },
         8
       ]],
       ["RecordType" , [
         {
-          "pointer" : 85
+          "pointer" : 89
         },
-        86
+        90
       ]],
       ["PointerType" , [
         {
-          "pointer" : 87
+          "pointer" : 91
         },
         {
           "type_ptr" : 20,
@@ -711,38 +737,12 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 88
+          "pointer" : 92
         },
         {
           "type_ptr" : 17,
           "is_const" : true
         }
-      ]],
-      ["PointerType" , [
-        {
-          "pointer" : 89
-        },
-        {
-          "type_ptr" : 17
-        }
-      ]],
-      ["RecordType" , [
-        {
-          "pointer" : 90
-        },
-        91
-      ]],
-      ["ConstantArrayType" , [
-        {
-          "pointer" : 92
-        },
-        {
-          "element_type" : {
-            "type_ptr" : 90
-          },
-          "stride" : 24
-        },
-        1
       ]],
       ["TemplateTypeParmType" , [
         {
@@ -791,11 +791,11 @@
       ["TypedefType" , [
         {
           "pointer" : 6,
-          "desugared_type" : 81
+          "desugared_type" : 85
         },
         {
           "child_type" : {
-            "type_ptr" : 81
+            "type_ptr" : 85
           },
           "decl_ptr" : 5
         }
@@ -803,7 +803,7 @@
       ["TypedefType" , [
         {
           "pointer" : 14,
-          "desugared_type" : 81
+          "desugared_type" : 85
         },
         {
           "child_type" : {

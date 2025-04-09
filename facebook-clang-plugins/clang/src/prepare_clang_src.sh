@@ -13,14 +13,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHASUM=${SHASUM:-shasum -a 256}
 PATCH=${PATCH:-patch}
 
-LLVM_VER="19.1.1"
+LLVM_VER="20.1.1"
 LLVM_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VER}/llvm-project-${LLVM_VER}.src.tar.xz"
-LLVM_SHA="d40e933e2a208ee142898f85d886423a217e991abbcd42dd8211f507c93e1266"
+LLVM_SHA="4d5ebbd40ce1e984a650818a4bb5ae86fc70644dec2e6d54e78b4176db3332e0"
 LLVM_FILE="llvm-project.src.tar.xz"
 CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/err_ret_local_block.patch"
     "$SCRIPT_DIR/mangle_suppress_errors.patch"
-    "$SCRIPT_DIR/AArch64SVEACLETypes.patch"
+    "$SCRIPT_DIR/objc_method_decl.patch"
 )
 
 mkdir -p "${SCRIPT_DIR}/download"

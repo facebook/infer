@@ -473,7 +473,7 @@ if test x"$NDKBUILD" = x"no"; then
 # ndk-build not in $PATH, look into potential android NDK install paths and record the absolute path
 # to ndk-build
   AC_PATH_PROG([NDKBUILD], [ndk-build], [no],
-    [$PATH$PATH_SEPARATOR$ANDROID_NDK$PATH_SEPARATOR/opt/android_ndk/r20])
+    [$PATH$PATH_SEPARATOR$ANDROID_NDK$PATH_SEPARATOR/opt/android_ndk/r25c])
 fi
 
 AC_CHECK_TOOL([NINJA], [ninja], [no])

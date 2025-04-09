@@ -1307,9 +1307,6 @@ void ASTExporter<ATDWriter>::dumpInputKind(InputKind kind) {
   case Language::CUDA:
     OF.emitSimpleVariant("IK_CUDA");
     break;
-  case Language::RenderScript:
-    OF.emitSimpleVariant("IK_RenderScript");
-    break;
   case Language::LLVM_IR:
     OF.emitSimpleVariant("IK_LLVM_IR");
     break;
@@ -2394,12 +2391,7 @@ void ASTExporter<ATDWriter>::VisitObjCMethodDecl(const ObjCMethodDecl *D) {
   // We purposedly do not call VisitDeclContext(D).
   bool IsInstanceMethod = D->isInstanceMethod();
   bool IsPropertyAccessor = D->isPropertyAccessor();
-  const ObjCPropertyDecl *PropertyDecl = nullptr;
-  std::string selectorName = D->getSelector().getAsString();
-  // work around bug in clang
-  if (selectorName != ".cxx_construct" && selectorName != ".cxx_destruct") {
-    PropertyDecl = D->findPropertyDecl();
-  }
+  const ObjCPropertyDecl *PropertyDecl = D->findPropertyDecl();
   ObjCMethodDecl::param_const_iterator I = D->param_begin(), E = D->param_end();
   bool HasParameters = I != E;
   std::vector<ImplicitParamDecl *> ImplicitParams;
@@ -4050,12 +4042,12 @@ void ASTExporter<ATDWriter>::VisitExprWithCleanups(
     OF.emitTag("decl_refs");
     unsigned int ctr = 0;
     for (unsigned i = 0, e = Node->getNumObjects(); i != e; ++i)
-      if (Node->getObject(i).is<clang::BlockDecl *>())
+      if (isa<clang::BlockDecl *>(Node->getObject(i)))
         ++ctr;
     ArrayScope Scope(OF, ctr);
     for (unsigned i = 0, e = Node->getNumObjects(); i != e; ++i) {
       auto p = Node->getObject(i);
-      if (p.is<clang::BlockDecl *>()) {
+      if (isa<clang::BlockDecl *>(p)) {
         dumpDeclRef(**p.getAddrOfPtr1());
       }
     }
@@ -5005,18 +4997,10 @@ int ASTExporter<ATDWriter>::BuiltinTypeTupleSize() {
 //@atd type builtin_type_kind = [
 #define BUILTIN_TYPE(TYPE, ID) //@atd   | TYPE
 #include <clang/AST/BuiltinTypes.def>
-#define SVE_PREDICATE_TYPE( \
-    Name, MangledName, Id, SingletonId, NumEls) //@atd   | Id
-#define SVE_VECTOR_TYPE(Name,        \
-                        MangledName, \
-                        Id,          \
-                        SingletonId, \
-                        NumEls,      \
-                        ElBits,      \
-                        IsSigned,    \
-                        IsFP,        \
-                        IsBF) //@atd   | Id
+#define SVE_PREDICATE_TYPE(Name, MangledName, Id, SingletonId) //@atd   | Id
+#define SVE_VECTOR_TYPE(Name, MangledName, Id, SingletonId) //@atd   | Id
 #define SVE_OPAQUE_TYPE(Name, MangledName, Id, SingletonId) //@atd   | Id
+#define SVE_SCALAR_TYPE(Name, MangledName, Id, SingletonId, Bits) //@atd   | Id
 #include <clang/Basic/AArch64SVEACLETypes.def>
 //@atd ]
 template <class ATDWriter>
@@ -5030,21 +5014,25 @@ void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
     break;                     \
   }
 #include <clang/AST/BuiltinTypes.def>
-#define SVE_PREDICATE_TYPE(Name, MangeldName, Id, SingletonId, NumEls) \
-  case BuiltinType::Id: {                                              \
-    type_name = #Id;                                                   \
-    break;                                                             \
+#define SVE_PREDICATE_TYPE(Name, MangeldName, Id, SingletonId) \
+  case BuiltinType::Id: {                                      \
+    type_name = #Id;                                           \
+    break;                                                     \
   }
-#define SVE_VECTOR_TYPE(                                                      \
-    Name, MangledName, Id, SingletonId, NumEls, ElBits, IsSigned, IsFP, IsBF) \
-  case BuiltinType::Id: {                                                     \
-    type_name = #Id;                                                          \
-    break;                                                                    \
+#define SVE_VECTOR_TYPE(Name, MangledName, Id, SingletonId) \
+  case BuiltinType::Id: {                                   \
+    type_name = #Id;                                        \
+    break;                                                  \
   }
 #define SVE_OPAQUE_TYPE(Name, MangledName, Id, SingletonId) \
   case BuiltinType::Id: {                                   \
     type_name = #Id;                                        \
     break;                                                  \
+  }
+#define SVE_SCALAR_TYPE(Name, MangledName, Id, SingletonId, Bits) \
+  case BuiltinType::Id: {                                         \
+    type_name = #Id;                                              \
+    break;                                                        \
   }
 #include <clang/Basic/AArch64SVEACLETypes.def>
 #define IMAGE_TYPE(ImgType, ID, SingletonId, Access, Suffix) \

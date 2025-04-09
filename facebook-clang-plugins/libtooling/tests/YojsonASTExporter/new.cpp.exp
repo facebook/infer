@@ -1,3 +1,4 @@
+clang: warning: argument unused during compilation: '-c' [-Wunused-command-line-argument]
 <"TranslationUnitDecl" : (
   {
     "pointer" : 1,
@@ -6263,15 +6264,41 @@
         },
         <"BFloat16">
       )>,
-      <"RecordType" : (
+      <"PointerType" : (
         {
           "pointer" : 271
         },
-        272
+        {
+          "type_ptr" : 212
+        }
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 272
+        },
+        273
+      )>,
+      <"ConstantArrayType" : (
+        {
+          "pointer" : 274
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 272
+          },
+          "stride" : 24
+        },
+        1
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 275
+        },
+        276
       )>,
       <"PointerType" : (
         {
-          "pointer" : 273
+          "pointer" : 277
         },
         {
           "type_ptr" : 11,
@@ -6280,38 +6307,12 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 274
+          "pointer" : 278
         },
         {
           "type_ptr" : 212,
           "is_const" : true
         }
-      )>,
-      <"PointerType" : (
-        {
-          "pointer" : 275
-        },
-        {
-          "type_ptr" : 212
-        }
-      )>,
-      <"RecordType" : (
-        {
-          "pointer" : 276
-        },
-        277
-      )>,
-      <"ConstantArrayType" : (
-        {
-          "pointer" : 278
-        },
-        {
-          "element_type" : {
-            "type_ptr" : 276
-          },
-          "stride" : 24
-        },
-        1
       )>,
       <"RecordType" : (
         {

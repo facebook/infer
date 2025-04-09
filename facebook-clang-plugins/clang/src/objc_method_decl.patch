@@ -1,0 +1,23 @@
+--- a/llvm-project/clang/lib/AST/DeclObjC.cpp
++++ b/llvm-project/clang/lib/AST/DeclObjC.cpp
+@@ -1424,7 +1424,10 @@ ObjCMethodDecl::findPropertyDecl(bool CheckOverrides) const {
+         return Found;
+     } else {
+       // Determine whether the container is a class.
+-      ClassDecl = cast<ObjCInterfaceDecl>(Container);
++      ClassDecl = dyn_cast<ObjCInterfaceDecl>(Container);
++      if (ClassDecl == nullptr) {
++        return nullptr;
++      }
+     }
+     assert(ClassDecl && "Failed to find main class");
+
+@@ -1444,8 +1447,6 @@ ObjCMethodDecl::findPropertyDecl(bool CheckOverrides) const {
+       if (const auto *Found = findMatchingProperty(Cat))
+         return Found;
+     }
+-
+-    llvm_unreachable("Marked as a property accessor but no property found!");
+   }
+
+   if (!CheckOverrides)

@@ -1,3 +1,4 @@
+clang: warning: argument unused during compilation: '-c' [-Wunused-command-line-argument]
 <"TranslationUnitDecl" : (
   {
     "pointer" : 1,
@@ -1533,15 +1534,41 @@
         },
         <"BFloat16">
       )>,
-      <"RecordType" : (
+      <"PointerType" : (
         {
           "pointer" : 124
         },
-        125
+        {
+          "type_ptr" : 63
+        }
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 125
+        },
+        126
+      )>,
+      <"ConstantArrayType" : (
+        {
+          "pointer" : 127
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 125
+          },
+          "stride" : 24
+        },
+        1
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 128
+        },
+        129
       )>,
       <"PointerType" : (
         {
-          "pointer" : 126
+          "pointer" : 130
         },
         {
           "type_ptr" : 13,
@@ -1550,38 +1577,12 @@
       )>,
       <"PointerType" : (
         {
-          "pointer" : 127
+          "pointer" : 131
         },
         {
           "type_ptr" : 63,
           "is_const" : true
         }
-      )>,
-      <"PointerType" : (
-        {
-          "pointer" : 128
-        },
-        {
-          "type_ptr" : 63
-        }
-      )>,
-      <"RecordType" : (
-        {
-          "pointer" : 129
-        },
-        130
-      )>,
-      <"ConstantArrayType" : (
-        {
-          "pointer" : 131
-        },
-        {
-          "element_type" : {
-            "type_ptr" : 129
-          },
-          "stride" : 24
-        },
-        1
       )>,
       <"RecordType" : (
         {
@@ -1889,7 +1890,7 @@
           "pointer" : 141
         },
         {
-          "type_ptr" : 128
+          "type_ptr" : 124
         }
       )>,
       <"LValueReferenceType" : (

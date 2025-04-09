@@ -1,3 +1,4 @@
+clang: warning: argument unused during compilation: '-c' [-Wunused-command-line-argument]
 ["TranslationUnitDecl" , [
   {
     "pointer" : 1,
@@ -5732,15 +5733,41 @@
         },
         "BFloat16"
       ]],
-      ["RecordType" , [
+      ["PointerType" , [
         {
           "pointer" : 184
         },
-        185
+        {
+          "type_ptr" : 123
+        }
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 185
+        },
+        186
+      ]],
+      ["ConstantArrayType" , [
+        {
+          "pointer" : 187
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 185
+          },
+          "stride" : 24
+        },
+        1
+      ]],
+      ["RecordType" , [
+        {
+          "pointer" : 188
+        },
+        189
       ]],
       ["PointerType" , [
         {
-          "pointer" : 186
+          "pointer" : 190
         },
         {
           "type_ptr" : 12,
@@ -5749,38 +5776,12 @@
       ]],
       ["PointerType" , [
         {
-          "pointer" : 187
+          "pointer" : 191
         },
         {
           "type_ptr" : 123,
           "is_const" : true
         }
-      ]],
-      ["PointerType" , [
-        {
-          "pointer" : 188
-        },
-        {
-          "type_ptr" : 123
-        }
-      ]],
-      ["RecordType" , [
-        {
-          "pointer" : 189
-        },
-        190
-      ]],
-      ["ConstantArrayType" , [
-        {
-          "pointer" : 191
-        },
-        {
-          "element_type" : {
-            "type_ptr" : 189
-          },
-          "stride" : 24
-        },
-        1
       ]],
       ["FunctionProtoType" , [
         {
@@ -5799,7 +5800,7 @@
           "pointer" : 192
         },
         {
-          "type_ptr" : 188
+          "type_ptr" : 184
         }
       ]],
       ["RecordType" , [

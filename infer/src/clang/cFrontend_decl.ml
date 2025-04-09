@@ -232,6 +232,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | OMPDeclareReductionDecl _
     | OMPRequiresDecl _
     | OMPThreadPrivateDecl _
+    | OutlinedFunctionDecl _
     | ParmVarDecl _
     | PragmaCommentDecl _
     | PragmaDetectMismatchDecl _

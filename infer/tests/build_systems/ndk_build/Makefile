@@ -11,6 +11,7 @@ INFERPRINT_OPTIONS = --issues-tests
 CLEAN_EXTRA = $(PROJECT_ROOT)/libs $(PROJECT_ROOT)/obj $(PROJECT_ROOT)/hello.o
 NDKROOT = $(dir $(NDKBUILD))
 NDKTOOLCHAIN = $(NDKROOT)/toolchains/llvm/prebuilt/linux-x86_64
+LIBGCC_DIR = $(shell dirname $(shell gcc -print-libgcc-file-name))
 
 include $(TESTS_DIR)/infer.make
 
@@ -19,7 +20,7 @@ infer-out/report.json: $(CLANG_DEPS) $(SOURCES)
 	$(call silent_on_success,Testing ndk-build clang integration,\
 	  $(INFER_BIN) --Xclang --rtlib=libgcc --results-dir $(CURDIR)/infer-out \
             --Xclang --sysroot=$(NDKTOOLCHAIN)/sysroot \
-            --Xclang -L$(NDKTOOLCHAIN)/lib/gcc/i686-linux-android/4.9.x \
-            --Xclang -L$(NDKTOOLCHAIN)/i686-linux-android/lib \
-	    --Xclang -fuse-ld=bfd \
-	    -- $(NDKBUILD) -B APP_ABI=x86 NDK_LIBS_OUT=./libs NDK_OUT=./obj V=1)
+            --Xclang -L$(NDKTOOLCHAIN)/lib64/clang/14.0.7/lib/linux/x86_64 \
+            --Xclang -L$(LIBGCC_DIR) \
+            --Xclang -fuse-ld=$(NDKTOOLCHAIN)/bin/ld \
+            -- $(NDKBUILD) -B APP_ABI=x86 NDK_LIBS_OUT=./libs NDK_OUT=./obj V=1)

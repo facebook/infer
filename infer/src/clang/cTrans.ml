@@ -1175,6 +1175,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     match atomic_expr_info.Clang_ast_t.aei_kind with
     | `AO__atomic_add_fetch
     | `AO__atomic_and_fetch
+    | `AO__atomic_clear
     | `AO__atomic_fetch_add
     | `AO__atomic_fetch_and
     | `AO__atomic_fetch_or
@@ -1182,6 +1183,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `AO__atomic_fetch_xor
     | `AO__atomic_or_fetch
     | `AO__atomic_sub_fetch
+    | `AO__atomic_test_and_set
     | `AO__atomic_xor_fetch
     | `AO__c11_atomic_fetch_add
     | `AO__c11_atomic_fetch_and
@@ -5270,6 +5272,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `ExpressionTraitExpr _
     | `ExtVectorElementExpr _
     | `FunctionParmPackExpr _
+    | `HLSLOutArgExpr _
     | `ImaginaryLiteral _
     | `IndirectGotoStmt _
     | `MatrixSubscriptExpr _
@@ -5281,6 +5284,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `ObjCIsaExpr _
     | `ObjCSubscriptRefExpr _
     | `OMPArrayShapingExpr _
+    | `OMPAssumeDirective _
     | `OMPAtomicDirective _
     | `OMPBarrierDirective _
     | `OMPCancelDirective _
@@ -5357,8 +5361,19 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `OMPTeamsGenericLoopDirective _
     | `OMPTileDirective _
     | `OMPUnrollDirective _
+    | `OpenACCAsteriskSizeExpr _
+    | `OpenACCCombinedConstruct _
     | `OpenACCComputeConstruct _
+    | `OpenACCDataConstruct _
+    | `OpenACCEnterDataConstruct _
+    | `OpenACCExitDataConstruct _
+    | `OpenACCHostDataConstruct _
+    | `OpenACCInitConstruct _
     | `OpenACCLoopConstruct _
+    | `OpenACCSetConstruct _
+    | `OpenACCShutdownConstruct _
+    | `OpenACCUpdateConstruct _
+    | `OpenACCWaitConstruct _
     | `PackExpansionExpr _
     | `PackIndexingExpr _
     | `ParenListExpr _
@@ -5370,6 +5385,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `SEHTryStmt _
     | `ShuffleVectorExpr _
     | `SourceLocExpr _
+    | `SYCLKernelCallStmt _
     | `SYCLUniqueStableNameExpr _
     | `TypoExpr _
     | `UnresolvedLookupExpr _
