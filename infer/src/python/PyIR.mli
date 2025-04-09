@@ -38,6 +38,8 @@ module SSA : sig
   val pp : Format.formatter -> t -> unit
 
   module Hashtbl : Stdlib.Hashtbl.S with type key = t
+
+  module Map : Stdlib.Map.S with type key = t
 end
 
 module Ident : sig

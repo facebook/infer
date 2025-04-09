@@ -190,6 +190,8 @@ module SSA = struct
 
     let hash = hash
   end)
+
+  module Map = IMap
 end
 
 module CompareOp = struct

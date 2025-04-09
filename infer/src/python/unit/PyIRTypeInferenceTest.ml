@@ -11,11 +11,15 @@ module F = Format
 let run module_ =
   let result =
     let open IResult.Let_syntax in
+    F.printf "@[<v>-- PyIR type --@." ;
+    PyIRTypeInference.gen_module_default_type_debug module_ ;
+    F.printf "@]" ;
     let textual = PyIR2Textual.mk_module module_ in
     let+ verified_textual =
       TextualVerification.verify textual |> Result.map_error ~f:(fun err -> `VerificationError err)
     in
     let transformed_textual, _ = TextualTransform.run Python verified_textual in
+    F.printf "@[<v>-- Textual type --@." ;
     PyIR2Textual.gen_module_default_type_debug transformed_textual
   in
   match result with
@@ -31,8 +35,8 @@ let run module_ =
 let%expect_test _ =
   let source =
     {|
-import random
-import asyncio as a
+import dir.random
+import dir.asyncio as a
 from dir1.dir2.mod import x as y
 from dir1.dir2 import mod
 
@@ -49,6 +53,11 @@ def f(y, l):
 async def g():
     await sleep(1)
 
+@decofun
+def h():
+    pass
+
+@decoclass
 class D:
     def foo():
         pass
@@ -61,13 +70,36 @@ class C:
   PyIR.test ~run source ;
   [%expect
     {|
+    -- PyIR type --
+    type dummy = {
+        dir: Import[dir.__init__]
+        a: ImportFrom[dir.__init__, asyncio]
+        y: ImportFrom[dir1.dir2.mod, x]
+        mod: ImportFrom[dir1.dir2, mod]
+        f: Closure[dummy.f]
+        g: Closure[dummy.g]
+        h: Closure[dummy.h]
+        D: Class[D]
+        C: Class[C]
+    }
+
+    type C = {
+        foo: Closure[dummy.C.foo]
+    }
+
+    type D = {
+        foo: Closure[dummy.D.foo]
+    }
+
+    -- Textual type --
     type PyGlobals<dummy> = {
-        random: Import[random]
-        a: Import[asyncio]
+        dir: Import[dir::__init__]
+        a: ImportFrom[dir::__init__, asyncio]
         y: ImportFrom[dir1::dir2::mod, x]
         mod: ImportFrom[dir1::dir2, mod]
         f: PyClosure<dummy.f>
         g: PyClosure<dummy.g>
+        h: PyClosure<dummy.h>
         D: Class[D]
         C: Class[C]
     }
