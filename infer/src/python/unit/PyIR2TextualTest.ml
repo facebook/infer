@@ -68,6 +68,12 @@ class D:
 class C:
     def foo():
         pass
+
+from foo import E
+
+#type inference will currently skip E because it is imported
+class B(C, D, E):
+    pass
 |}
   in
   PyIR.test ~run source ;
@@ -91,6 +97,15 @@ class C:
           n4 = $builtins.py_import_name(n2, "asyncio", n0, $builtins.py_make_int(0)) @3
           _ = $builtins.py_store_name("a", n1, n2, n4) @3
           jmp b2 @3
+
+      #b10: @31
+          n17 = $builtins.py_make_function(.name = "dummy.B"fun (locals) -> dummy.B(n2, locals), n0, n0, n0, n0) @31
+          n18 = $builtins.py_load_name("C", n1, n2) @31
+          n19 = $builtins.py_load_name("D", n1, n2) @31
+          n20 = $builtins.py_load_name("E", n1, n2) @31
+          n21 = $builtins.py_build_class(n17, $builtins.py_make_string("B"), n18, n19, n20) @31
+          _ = $builtins.py_store_name("B", n1, n2, n21) @31
+          ret n0 @31
 
       #b2: @4
           n5 = $builtins.py_import_name(n2, "dir1::dir2::mod", $builtins.py_build_tuple($builtins.py_make_string("x")), $builtins.py_make_int(0)) @4
@@ -128,9 +143,30 @@ class C:
           n13 = $builtins.py_make_function(.name = "dummy.C"fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0) @24
           n14 = $builtins.py_build_class(n13, $builtins.py_make_string("C")) @24
           _ = $builtins.py_store_name("C", n1, n2, n14) @24
-          ret n0 @24
+          jmp b9 @24
 
-    } @24
+      #b9: @28
+          n15 = $builtins.py_import_name(n2, "foo", $builtins.py_build_tuple($builtins.py_make_string("E")), $builtins.py_make_int(0)) @28
+          n16 = $builtins.py_import_from("E", n15) @28
+          _ = $builtins.py_store_name("E", n1, n2, n16) @28
+          jmp b10 @28
+
+    } @31
+
+    define dummy.B(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
+      #b0: @31
+          n2 = globals @31
+          n1 = locals @31
+          n0 = $builtins.py_make_none() @31
+          n3 = $builtins.py_load_name("__name__", n1, n2) @31
+          _ = $builtins.py_store_name("__module__", n1, n2, n3) @31
+          _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("B")) @31
+          jmp b1 @31
+
+      #b1: @32
+          ret n0 @32
+
+    } @32
 
     define dummy.C(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0: @24
@@ -263,6 +299,15 @@ class C:
           _ = $builtins.py_store_name("a", n1, n2, n4) @3
           jmp b2 @3
 
+      #b10: @31
+          n17 = $builtins.py_make_function(.name = "dummy.B"fun (locals) -> dummy.B(n2, locals), n0, n0, n0, n0) @31
+          n18 = $builtins.py_load_name("C", n1, n2) @31
+          n19 = $builtins.py_load_name("D", n1, n2) @31
+          n20 = $builtins.py_load_name("E", n1, n2) @31
+          n21 = $builtins.py_build_class(n17, $builtins.py_make_string("B"), n18, n19, n20) @31
+          _ = $builtins.py_store_name("B", n1, n2, n21) @31
+          ret n0 @31
+
       #b2: @4
           n5 = $builtins.py_import_name(n2, "dir1::dir2::mod", $builtins.py_build_tuple($builtins.py_make_string("x")), $builtins.py_make_int(0)) @4
           n6 = $builtins.py_import_from("x", n5) @4
@@ -299,9 +344,30 @@ class C:
           n13 = $builtins.py_make_function(.name = "dummy.C"fun (locals) -> dummy.C(n2, locals), n0, n0, n0, n0) @24
           n14 = $builtins.py_build_class(n13, $builtins.py_make_string("C")) @24
           _ = $builtins.py_store_name("C", n1, n2, n14) @24
-          ret n0 @24
+          jmp b9 @24
 
-    } @24
+      #b9: @28
+          n15 = $builtins.py_import_name(n2, "foo", $builtins.py_build_tuple($builtins.py_make_string("E")), $builtins.py_make_int(0)) @28
+          n16 = $builtins.py_import_from("E", n15) @28
+          _ = $builtins.py_store_name("E", n1, n2, n16) @28
+          jmp b10 @28
+
+    } @31
+
+    define dummy.B(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
+      #b0: @31
+          n2 = [&globals:*PyGlobals<dummy>] @31
+          n1 = [&locals:*PyLocals] @31
+          n0 = $builtins.py_make_none() @31
+          n3 = $builtins.py_load_name("__name__", n1, n2) @31
+          _ = $builtins.py_store_name("__module__", n1, n2, n3) @31
+          _ = $builtins.py_store_name("__qualname__", n1, n2, $builtins.py_make_string("B")) @31
+          jmp b1 @31
+
+      #b1: @32
+          ret n0 @32
+
+    } @32
 
     define dummy.C(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0: @24
@@ -420,8 +486,12 @@ class C:
 
     type PyGlobals<dummy> = {y: *PyModuleAttr<dir1::dir2::mod,x>; random: *PyGlobals<random>;
                              mod: *PyModuleAttr<dir1::dir2,mod>; g: *PyClosure<dummy.g>;
-                             f: *PyClosure<dummy.f>; a: *PyGlobals<asyncio>;
-                             D: *PyClassCompanion<dummy,D>; C: *PyClassCompanion<dummy,C>}
+                             f: *PyClosure<dummy.f>; a: *PyGlobals<asyncio>; E: *PyModuleAttr<foo,E>;
+                             D: *PyClassCompanion<dummy,D>; C: *PyClassCompanion<dummy,C>;
+                             B: *PyClassCompanion<dummy,B>}
+
+    type PyClassCompanion<dummy,B> extends PyClassCompanion<dummy,C>, PyClassCompanion<dummy,D> = {
+    }
 
     type PyClassCompanion<dummy,C> = {foo: *PyClosure<dummy.C.foo>}
 
@@ -499,80 +569,129 @@ class C:
 
     } @8
 
+    type .final PyClosure<dummy.B> = {globals: *PyGlobals<dummy>}
+
+    define .closure_wrapper PyClosure<dummy.B>.call(__this: *PyClosure<dummy.B>, locals: *PyLocals) : *PyObject {
+      #entry: @30
+          n0:*PyClosure<dummy.B> = load &__this @30
+          n1:*PyGlobals<dummy> = load n0.?.globals @30
+          n2:*PyLocals = load &locals @30
+          n3 = dummy.B(n1, n2) @30
+          ret n3 @30
+
+    } @30
+
     define dummy.__module_body__(globals: *PyGlobals<dummy>) : *PyObject {
       local locals: *PyLocals
       #b0: @2
-          n15:*PyGlobals<dummy> = load &globals @2
-          store &locals <- n15:*PyGlobals<dummy> @2
-          n16:*PyLocals = load &locals @2
+          n22:*PyGlobals<dummy> = load &globals @2
+          store &locals <- n22:*PyGlobals<dummy> @2
+          n23:*PyLocals = load &locals @2
           n0 = $builtins.py_make_none() @2
-          n17 = $builtins.py_make_int(0) @2
-          n3 = $builtins.py_import_name(n15, "random", n0, n17) @2
-          n18 = $builtins.py_store_name("random", n16, n15, n3) @2
+          n24 = $builtins.py_make_int(0) @2
+          n3 = $builtins.py_import_name(n22, "random", n0, n24) @2
+          n25 = $builtins.py_store_name("random", n23, n22, n3) @2
           jmp b1 @2
 
       #b1: @3
-          n19 = $builtins.py_make_int(0) @3
-          n4 = $builtins.py_import_name(n15, "asyncio", n0, n19) @3
-          n20 = $builtins.py_store_name("a", n16, n15, n4) @3
+          n26 = $builtins.py_make_int(0) @3
+          n4 = $builtins.py_import_name(n22, "asyncio", n0, n26) @3
+          n27 = $builtins.py_store_name("a", n23, n22, n4) @3
           jmp b2 @3
 
+      #b10: @31
+          n28 = __sil_allocate(<PyClosure<dummy.B>>) @31
+          store n28.?.globals <- n22:*PyGlobals<dummy> @31
+          n17 = $builtins.py_make_function(n28, n0, n0, n0, n0) @31
+          n18 = $builtins.py_load_name("C", n23, n22) @31
+          n19 = $builtins.py_load_name("D", n23, n22) @31
+          n20 = $builtins.py_load_name("E", n23, n22) @31
+          n30 = $builtins.py_make_string("B") @31
+          n21 = $builtins.py_build_class(n17, n30, n18, n19, n20) @31
+          n31 = $builtins.py_store_name("B", n23, n22, n21) @31
+          ret n0 @31
+
       #b2: @4
-          n21 = $builtins.py_make_string("x") @4
-          n22 = $builtins.py_build_tuple(n21) @4
-          n23 = $builtins.py_make_int(0) @4
-          n5 = $builtins.py_import_name(n15, "dir1::dir2::mod", n22, n23) @4
+          n32 = $builtins.py_make_string("x") @4
+          n33 = $builtins.py_build_tuple(n32) @4
+          n34 = $builtins.py_make_int(0) @4
+          n5 = $builtins.py_import_name(n22, "dir1::dir2::mod", n33, n34) @4
           n6 = $builtins.py_import_from("x", n5) @4
-          n24 = $builtins.py_store_name("y", n16, n15, n6) @4
+          n35 = $builtins.py_store_name("y", n23, n22, n6) @4
           jmp b3 @4
 
       #b3: @5
-          n25 = $builtins.py_make_string("mod") @5
-          n26 = $builtins.py_build_tuple(n25) @5
-          n27 = $builtins.py_make_int(0) @5
-          n7 = $builtins.py_import_name(n15, "dir1::dir2", n26, n27) @5
+          n36 = $builtins.py_make_string("mod") @5
+          n37 = $builtins.py_build_tuple(n36) @5
+          n38 = $builtins.py_make_int(0) @5
+          n7 = $builtins.py_import_name(n22, "dir1::dir2", n37, n38) @5
           n8 = $builtins.py_import_from("mod", n7) @5
-          n28 = $builtins.py_store_name("mod", n16, n15, n8) @5
+          n39 = $builtins.py_store_name("mod", n23, n22, n8) @5
           jmp b4 @5
 
       #b4: @7
-          n29 = $builtins.py_make_int(0) @7
-          n30 = $builtins.py_store_name("x", n16, n15, n29) @7
+          n40 = $builtins.py_make_int(0) @7
+          n41 = $builtins.py_store_name("x", n23, n22, n40) @7
           jmp b5 @7
 
       #b5: @9
-          n31 = __sil_allocate(<PyClosure<dummy.f>>) @9
-          store n31.?.globals <- n15:*PyGlobals<dummy> @9
-          n9 = $builtins.py_make_function(n31, n0, n0, n0, n0) @9
-          n33 = $builtins.py_store_name("f", n16, n15, n9) @9
+          n42 = __sil_allocate(<PyClosure<dummy.f>>) @9
+          store n42.?.globals <- n22:*PyGlobals<dummy> @9
+          n9 = $builtins.py_make_function(n42, n0, n0, n0, n0) @9
+          n44 = $builtins.py_store_name("f", n23, n22, n9) @9
           jmp b6 @9
 
       #b6: @17
-          n34 = __sil_allocate(<PyClosure<dummy.g>>) @17
-          store n34.?.globals <- n15:*PyGlobals<dummy> @17
-          n10 = $builtins.py_make_function(n34, n0, n0, n0, n0) @17
-          n36 = $builtins.py_store_name("g", n16, n15, n10) @17
+          n45 = __sil_allocate(<PyClosure<dummy.g>>) @17
+          store n45.?.globals <- n22:*PyGlobals<dummy> @17
+          n10 = $builtins.py_make_function(n45, n0, n0, n0, n0) @17
+          n47 = $builtins.py_store_name("g", n23, n22, n10) @17
           jmp b7 @17
 
       #b7: @20
-          n37 = __sil_allocate(<PyClosure<dummy.D>>) @20
-          store n37.?.globals <- n15:*PyGlobals<dummy> @20
-          n11 = $builtins.py_make_function(n37, n0, n0, n0, n0) @20
-          n39 = $builtins.py_make_string("D") @20
-          n12 = $builtins.py_build_class(n11, n39) @20
-          n40 = $builtins.py_store_name("D", n16, n15, n12) @20
+          n48 = __sil_allocate(<PyClosure<dummy.D>>) @20
+          store n48.?.globals <- n22:*PyGlobals<dummy> @20
+          n11 = $builtins.py_make_function(n48, n0, n0, n0, n0) @20
+          n50 = $builtins.py_make_string("D") @20
+          n12 = $builtins.py_build_class(n11, n50) @20
+          n51 = $builtins.py_store_name("D", n23, n22, n12) @20
           jmp b8 @20
 
       #b8: @24
-          n41 = __sil_allocate(<PyClosure<dummy.C>>) @24
-          store n41.?.globals <- n15:*PyGlobals<dummy> @24
-          n13 = $builtins.py_make_function(n41, n0, n0, n0, n0) @24
-          n43 = $builtins.py_make_string("C") @24
-          n14 = $builtins.py_build_class(n13, n43) @24
-          n44 = $builtins.py_store_name("C", n16, n15, n14) @24
-          ret n0 @24
+          n52 = __sil_allocate(<PyClosure<dummy.C>>) @24
+          store n52.?.globals <- n22:*PyGlobals<dummy> @24
+          n13 = $builtins.py_make_function(n52, n0, n0, n0, n0) @24
+          n54 = $builtins.py_make_string("C") @24
+          n14 = $builtins.py_build_class(n13, n54) @24
+          n55 = $builtins.py_store_name("C", n23, n22, n14) @24
+          jmp b9 @24
 
-    } @24
+      #b9: @28
+          n56 = $builtins.py_make_string("E") @28
+          n57 = $builtins.py_build_tuple(n56) @28
+          n58 = $builtins.py_make_int(0) @28
+          n15 = $builtins.py_import_name(n22, "foo", n57, n58) @28
+          n16 = $builtins.py_import_from("E", n15) @28
+          n59 = $builtins.py_store_name("E", n23, n22, n16) @28
+          jmp b10 @28
+
+    } @31
+
+    define dummy.B(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
+      #b0: @31
+          n4:*PyGlobals<dummy> = load &globals @31
+          n5:*PyLocals = load &locals @31
+          n0 = $builtins.py_make_none() @31
+          n3 = $builtins.py_load_name("__name__", n5, n4) @31
+          n6 = $builtins.py_store_name("__module__", n5, n4, n3) @31
+          n7 = $builtins.py_make_string("B") @31
+          n8 = $builtins.py_store_name("__qualname__", n5, n4, n7) @31
+          jmp b1 @31
+
+      #b1: @32
+          ret n0 @32
+
+    } @32
 
     define dummy.C(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
       #b0: @24

@@ -627,44 +627,40 @@ let pyir_type_to_textual module_name struct_types =
     let name = TypeName.of_string str in
     {TypeName.name= BaseTypeName.of_string "PyGlobals"; args= [name]}
   in
+  let module_name = F.asprintf "%a" PyIR.Ident.pp module_name |> Textual.TypeName.of_string in
   let mk_closure_typename str =
     let open Textual in
     let typename = TypeName.of_string_no_dot_escape str in
     Typ.(Ptr (Struct {TypeName.name= BaseTypeName.of_string "PyClosure"; args= [typename]}))
   in
-  let module_name = F.asprintf "%a" PyIR.Ident.pp module_name |> Textual.TypeName.of_string in
-  let mk_module_attribute_name module_name attr_name = Typ.module_attribute module_name attr_name in
+  let field_typ_to_textual typ =
+    match (typ : PyIRTypeInference.field_type) with
+    | Class {class_name} ->
+        Typ.class_companion module_name class_name
+    | Import {module_name} ->
+        global_type_of_str module_name
+    | ImportFrom {module_name; attr_name} ->
+        Typ.module_attribute module_name attr_name
+    | Fundef {qual_name} ->
+        mk_closure_typename qual_name
+  in
   List.map struct_types ~f:(fun {PyIRTypeInference.name; kind; fields} ->
-      let name =
+      let name, supers =
         match kind with
         | Global ->
-            mk_global_typename name
-        | ClassCompanion ->
-            Typ.class_companion_name module_name name
+            (mk_global_typename name, [])
+        | ClassCompanion {supers} ->
+            (Typ.class_companion_name module_name name, supers)
       in
       let mk_fieldname str : Textual.qualified_fieldname =
         Textual.{enclosing_class= name; name= FieldName.of_string str}
       in
       let fields =
         List.map fields ~f:(fun {PyIRTypeInference.name; typ} : Textual.FieldDecl.t ->
-            match typ with
-            | Class {class_name} ->
-                { qualified_name= mk_fieldname class_name
-                ; typ= Typ.class_companion module_name class_name
-                ; attributes= [] }
-            | Import {module_name} ->
-                { qualified_name= mk_fieldname name
-                ; typ= global_type_of_str module_name
-                ; attributes= [] }
-            | ImportFrom {module_name; attr_name} ->
-                { qualified_name= mk_fieldname name
-                ; typ= mk_module_attribute_name module_name attr_name
-                ; attributes= [] }
-            | Fundef {qual_name} ->
-                let typ = mk_closure_typename qual_name in
-                {qualified_name= mk_fieldname name; typ; attributes= []} )
+            {qualified_name= mk_fieldname name; typ= field_typ_to_textual typ; attributes= []} )
       in
-      Textual.(Module.Struct {name; supers= []; fields; attributes= []}) )
+      let supers = List.map ~f:(Typ.class_companion_name module_name) supers in
+      Textual.(Module.Struct {name; supers; fields; attributes= []}) )
 
 
 let add_pyir_type types ~module_name ({Textual.Module.decls} as textual) =

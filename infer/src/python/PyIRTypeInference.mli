@@ -7,14 +7,14 @@
 open! IStd
 
 type field_type =
-  | Class of {class_name: string}
+  | Class of {class_name: string; supers: string list}
   | Fundef of {qual_name: string}
   | Import of {module_name: string}
   | ImportFrom of {module_name: string; attr_name: string}
 
 type field_decl = {name: string; typ: field_type}
 
-type struct_kind = Global | ClassCompanion
+type struct_kind = Global | ClassCompanion of {supers: string list}
 
 type struct_type = {name: string; kind: struct_kind; fields: field_decl list}
 
