@@ -2,9 +2,9 @@
   "README": "This is a @generated file, run `make doc-publish` from the root of the infer repository to generate it",
   "doc_entries": [
     "all-checkers", "all-categories", "all-issue-types",
-    "checker-annotation-reachability", "checker-biabduction",
-    "checker-bufferoverrun", "checker-config-impact-analysis",
-    "checker-cost", "checker-static-constructor-stall-checker",
+    "checker-annotation-reachability", "checker-bufferoverrun",
+    "checker-config-impact-analysis", "checker-cost",
+    "checker-static-constructor-stall-checker",
     "checker-fragment-retains-view", "checker-impurity",
     "checker-inefficient-keyset-iterator", "checker-lineage",
     "checker-litho-required-props", "checker-liveness",

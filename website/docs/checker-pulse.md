@@ -182,6 +182,7 @@ The following issue types are reported by this checker:
 - [NULL_ARGUMENT_LATENT](/docs/next/all-issue-types#null_argument_latent)
 - [OPTIONAL_EMPTY_ACCESS](/docs/next/all-issue-types#optional_empty_access)
 - [OPTIONAL_EMPTY_ACCESS_LATENT](/docs/next/all-issue-types#optional_empty_access_latent)
+- [PULSE_ASSERTION_ERROR](/docs/next/all-issue-types#pulse_assertion_error)
 - [PULSE_CANNOT_INSTANTIATE_ABSTRACT_CLASS](/docs/next/all-issue-types#pulse_cannot_instantiate_abstract_class)
 - [PULSE_CONST_REFABLE](/docs/next/all-issue-types#pulse_const_refable)
 - [PULSE_DICT_MISSING_KEY](/docs/next/all-issue-types#pulse_dict_missing_key)

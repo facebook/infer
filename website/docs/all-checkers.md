@@ -11,14 +11,6 @@ Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker wil
 
 [Visit here for more information.](/docs/next/checker-annotation-reachability)
 
-## Biabduction
-
-This analysis deals with a range of issues, many linked to memory safety.
-
-**\*\*\*DEPRECATED\*\*\*** This has been replaced by Pulse and will be removed in the next release.
-
-[Visit here for more information.](/docs/next/checker-biabduction)
-
 ## Buffer Overrun Analysis (InferBO)
 
 InferBO is a detector for out-of-bounds array accesses.
