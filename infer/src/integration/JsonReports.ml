@@ -100,11 +100,6 @@ let loc_trace_to_jsonbug_record trace_list =
   record_list
 
 
-let should_report proc_name =
-  if (not Config.filtering) || Language.equal (Procname.get_language proc_name) CIL then true
-  else true
-
-
 let should_not_censor ~issue_id =
   List.exists Config.no_censor_report ~f:(fun issue_type_re ->
       Str.string_match issue_type_re issue_id 0 )
@@ -297,9 +292,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         Localise.pp_error_desc err_key.err_desc Errlog.pp_loc_trace err_data.loc_trace ;
     if
       error_filter source_file err_key.issue_type
-      && should_report proc_name
       && (not (is_in_clang_header source_file))
-      && should_report proc_name
       && not
            (issue_in_report_block_list_specs ~file:source_file ~issue:err_key.issue_type
               ~proc:proc_name )
