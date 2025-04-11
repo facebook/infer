@@ -12,6 +12,7 @@ from async_utils import (
     C
 )
 from not_captured import unknown
+from await_sync_lib import await_sync_decorator
 
 async def with_import_bad():
     await utils.dont_await_it(sleep())
@@ -61,3 +62,10 @@ async def make_awaitables_dict(cond):
 
 def unknown_call():
     unknown(asyncio.sleep(1))
+
+
+@await_sync_decorator
+async def FP_main_ok(x, y ):
+    pass
+
+FP_main_ok(x, y)
