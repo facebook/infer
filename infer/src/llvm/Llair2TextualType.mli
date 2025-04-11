@@ -11,14 +11,12 @@ module ProcState = Llair2TextualProcState
 
 val field_of_pos : int -> label
 
-val to_annotated_textual_typ : Typ.t -> Textual.Typ.annotated
+val to_annotated_textual_typ : struct_map:'a -> Typ.t -> Textual.Typ.annotated
 
-val to_textual_typ : Typ.t -> Textual.Typ.t
-
-type structMap = Textual.Struct.t Textual.TypeName.Map.t
-
-val structMap : structMap ref
+val to_textual_typ : ?struct_map:'a -> Typ.t -> Textual.Typ.t
 
 val type_inference : proc_state:ProcState.t -> Textual.Instr.t list -> unit
 
 val join_typ : Textual.Typ.t option -> Textual.Typ.t option -> Textual.Typ.t option
+
+val translate_types_env : Llair.Typ.t list -> Textual.Struct.t Textual.TypeName.Map.t

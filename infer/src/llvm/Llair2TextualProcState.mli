@@ -10,12 +10,15 @@ module F = Format
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
 
+type structMap = Textual.Struct.t Textual.TypeName.Map.t
+
 type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: Textual.Typ.annotated VarMap.t
-  ; mutable ids: Textual.Typ.annotated IdentMap.t }
+  ; mutable ids: Textual.Typ.annotated IdentMap.t
+  ; struct_map: structMap }
 
 val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
 

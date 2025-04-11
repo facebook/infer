@@ -10,12 +10,15 @@ module F = Format
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
 
+type structMap = Textual.Struct.t Textual.TypeName.Map.t
+
 type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: Textual.Typ.annotated VarMap.t
-  ; mutable ids: Textual.Typ.annotated IdentMap.t }
+  ; mutable ids: Textual.Typ.annotated IdentMap.t
+  ; struct_map: structMap }
 
 let pp_ids fmt current_ids =
   F.fprintf fmt "%a"
@@ -29,11 +32,23 @@ let pp_vars fmt vars =
     (VarMap.bindings vars)
 
 
+let pp_struct_map fmt struct_map =
+  F.fprintf fmt "%a"
+    (Pp.comma_seq (Pp.pair ~fst:Textual.TypeName.pp ~snd:Textual.Struct.pp))
+    (Textual.TypeName.Map.bindings struct_map)
+
+
 let pp fmt proc_state =
   F.fprintf fmt
-    "@[<v>@[<v>qualified_name: %a@]@;@[loc: %a@]@;@[locals: %a@]@;@[formals: %a@]@;@[ids: %a@]@]@]"
+    "@[<v>@[<v>qualified_name: %a@]@;\
+     @[loc: %a@]@;\
+     @[locals: %a@]@;\
+     @[formals: %a@]@;\
+     @[ids: %a@]@@[types: %a@]@;\
+     ]@]"
     Textual.QualifiedProcName.pp proc_state.qualified_name Textual.Location.pp proc_state.loc
-    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids
+    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids pp_struct_map
+    proc_state.struct_map
 
 
 let update_locals ~proc_state varname typ =

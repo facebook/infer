@@ -433,6 +433,8 @@ end
 module Struct : sig
   type t =
     {name: TypeName.t; supers: TypeName.t list; fields: FieldDecl.t list; attributes: Attr.t list}
+
+  val pp : F.formatter -> t -> unit
 end
 
 module SsaVerification : sig
