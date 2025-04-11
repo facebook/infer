@@ -579,6 +579,123 @@ let make_str_internal arg : DSL.aval DSL.model_monad =
       ret res
 
 
+let is_module_captured module_name =
+  let function_name = "__module_body__" in
+  let module_name = PythonClassName.Filename module_name in
+  let proc_name = Procname.make_python ~module_name ~function_name in
+  IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
+
+
+let lookup_module module_name =
+  let open DSL.Syntax in
+  match is_module_captured module_name with
+  | Some proc_name ->
+      let* module_ = PyModule.make module_name in
+      ret (module_, Some proc_name)
+  | None -> (
+      (* it is not a capture module name *)
+      let module_name_init = module_name ^ init_method_name_suffix in
+      match is_module_captured module_name_init with
+      | None ->
+          (* neither it is a captured package name *)
+          if not (IString.Set.mem module_name stdlib_modules) then
+            StatsLogging.log_message ~label:"python_missing_module" ~message:module_name ;
+          let* module_ = PyModule.make module_name in
+          ret (module_, None)
+      | Some proc_name ->
+          (* it is a captured package name *)
+          let* module_ = PyModule.make module_name_init in
+          ret (module_, Some proc_name) )
+
+
+let get_supers_class_names ~module_name ~class_name =
+  let open DSL.Syntax in
+  let type_name : Typ.name = PythonClass (ClassCompanion {module_name; class_name}) in
+  let* supers = tenv_get_supers type_name in
+  List.filter_map supers ~f:(function
+    | Typ.PythonClass (ClassCompanion {class_name}) ->
+        Some class_name
+    | _ ->
+        None )
+  |> ret
+
+
+let initialize_class_companion_and_supers ~module_name ~class_name class_companion_object =
+  let open DSL.Syntax in
+  let* module_, _ = lookup_module module_name in
+  let call_class_initializer class_name class_companion_object =
+    let module_name = PythonClassName.Filename module_name in
+    let class_initializer = Procname.make_python ~module_name ~function_name:class_name in
+    python_call class_initializer [("globals", module_); ("locals", class_companion_object)]
+    |> ignore
+  in
+  let seen, marked_as_seen =
+    let set = ref IString.Set.empty in
+    let seen name = IString.Set.mem name !set in
+    let marked_as_seen name = set := IString.Set.add name !set in
+    (seen, marked_as_seen)
+  in
+  let rec initialize class_name class_companion_object =
+    if seen class_name then (* should not happen but you can never be too cautious *)
+      ret ()
+    else (
+      marked_as_seen class_name ;
+      let* supers = get_supers_class_names ~module_name ~class_name in
+      if List.is_empty supers then (
+        L.d_printfln ~color:Orange "initializing class %s" class_name ;
+        call_class_initializer class_name class_companion_object )
+      else (
+        L.d_printfln ~color:Orange "initializing class %s and its super classe(s) %a" class_name
+          (Pp.comma_seq F.pp_print_string) supers ;
+        let single_super_class_name = List.hd_exn supers in
+        (* we dont deal with multi-inheritance yet *)
+        let* parent_class_companion =
+          Dict.get_str_key ~propagate_static_type:true class_companion_object super_attribute_name
+        in
+        let* () = initialize single_super_class_name parent_class_companion in
+        call_class_initializer class_name class_companion_object ) )
+  in
+  initialize class_name class_companion_object
+
+
+let get_class_companion aval =
+  let open DSL.Syntax in
+  let* opt_static_type = get_static_type aval in
+  match opt_static_type with
+  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
+      ret (Some (module_name, class_name))
+  | _ ->
+      ret None
+
+
+let initialize_if_class_companion value : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_class_companion = get_class_companion value in
+  option_iter opt_class_companion ~f:(fun (module_name, class_name) ->
+      let* already_initialized = Dict.contains_str_key value "__name__" in
+      if ThreeValuedLogic.is_true already_initialized then ret ()
+      else (
+        L.d_printfln ~color:Orange "initializing class companion %s" class_name ;
+        initialize_class_companion_and_supers ~module_name ~class_name value ) )
+
+
+let call_dsl ~callable ~arg_names ~args =
+  let open DSL.Syntax in
+  let* opt_static_type = get_static_type callable in
+  match opt_static_type with
+  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
+      let instance_type = Typ.PythonClass (ClassInstance {module_name; class_name}) in
+      L.d_printfln ~color:Orange "calling a constructor for type %a" Typ.Name.pp instance_type ;
+      let* () = initialize_if_class_companion callable in
+      let* self = constructor ~deref:false instance_type [] in
+      let* () = Dict.set_str_key self class_companion_attribute_name callable in
+      let* () = try_run_constructor ~class_companion:callable ~self args in
+      ret self
+  | _ ->
+      L.d_printfln ~color:Orange "calling closure %a" AbstractValue.pp (fst callable) ;
+      call_closure_dsl ~closure:callable ~arg_names ~args
+
+
 module LibModel = struct
   let match_pattern ~pattern ~module_name ~name =
     Option.exists pattern ~f:(fun regexp ->
@@ -707,106 +824,6 @@ let gen_start_coroutine : model =
   start_model @@ fun () -> ret ()
 
 
-let is_module_captured module_name =
-  let function_name = "__module_body__" in
-  let module_name = PythonClassName.Filename module_name in
-  let proc_name = Procname.make_python ~module_name ~function_name in
-  IRAttributes.load proc_name |> Option.map ~f:(fun _ -> proc_name)
-
-
-let lookup_module module_name =
-  let open DSL.Syntax in
-  match is_module_captured module_name with
-  | Some proc_name ->
-      let* module_ = PyModule.make module_name in
-      ret (module_, Some proc_name)
-  | None -> (
-      (* it is not a capture module name *)
-      let module_name_init = module_name ^ init_method_name_suffix in
-      match is_module_captured module_name_init with
-      | None ->
-          (* neither it is a captured package name *)
-          if not (IString.Set.mem module_name stdlib_modules) then
-            StatsLogging.log_message ~label:"python_missing_module" ~message:module_name ;
-          let* module_ = PyModule.make module_name in
-          ret (module_, None)
-      | Some proc_name ->
-          (* it is a captured package name *)
-          let* module_ = PyModule.make module_name_init in
-          ret (module_, Some proc_name) )
-
-
-let get_supers_class_names ~module_name ~class_name =
-  let open DSL.Syntax in
-  let type_name : Typ.name = PythonClass (ClassCompanion {module_name; class_name}) in
-  let* supers = tenv_get_supers type_name in
-  List.filter_map supers ~f:(function
-    | Typ.PythonClass (ClassCompanion {class_name}) ->
-        Some class_name
-    | _ ->
-        None )
-  |> ret
-
-
-let initialize_class_companion_and_supers ~module_name ~class_name class_companion_object =
-  let open DSL.Syntax in
-  let* module_, _ = lookup_module module_name in
-  let call_class_initializer class_name class_companion_object =
-    let module_name = PythonClassName.Filename module_name in
-    let class_initializer = Procname.make_python ~module_name ~function_name:class_name in
-    python_call class_initializer [("globals", module_); ("locals", class_companion_object)]
-    |> ignore
-  in
-  let seen, marked_as_seen =
-    let set = ref IString.Set.empty in
-    let seen name = IString.Set.mem name !set in
-    let marked_as_seen name = set := IString.Set.add name !set in
-    (seen, marked_as_seen)
-  in
-  let rec initialize class_name class_companion_object =
-    if seen class_name then (* should not happen but you can never be too cautious *)
-      ret ()
-    else (
-      marked_as_seen class_name ;
-      let* supers = get_supers_class_names ~module_name ~class_name in
-      if List.is_empty supers then (
-        L.d_printfln ~color:Orange "initializing class %s" class_name ;
-        call_class_initializer class_name class_companion_object )
-      else (
-        L.d_printfln ~color:Orange "initializing class %s and its super classe(s) %a" class_name
-          (Pp.comma_seq F.pp_print_string) supers ;
-        let single_super_class_name = List.hd_exn supers in
-        (* we dont deal with multi-inheritance yet *)
-        let* parent_class_companion =
-          Dict.get_str_key ~propagate_static_type:true class_companion_object super_attribute_name
-        in
-        let* () = initialize single_super_class_name parent_class_companion in
-        call_class_initializer class_name class_companion_object ) )
-  in
-  initialize class_name class_companion_object
-
-
-let get_class_companion aval =
-  let open DSL.Syntax in
-  let* opt_static_type = get_static_type aval in
-  match opt_static_type with
-  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
-      ret (Some (module_name, class_name))
-  | _ ->
-      ret None
-
-
-let initialize_if_class_companion value : unit DSL.model_monad =
-  let open DSL.Syntax in
-  let* opt_class_companion = get_class_companion value in
-  option_iter opt_class_companion ~f:(fun (module_name, class_name) ->
-      let* already_initialized = Dict.contains_str_key value "__name__" in
-      if ThreeValuedLogic.is_true already_initialized then ret ()
-      else (
-        L.d_printfln ~color:Orange "initializing class companion %s" class_name ;
-        initialize_class_companion_and_supers ~module_name ~class_name value ) )
-
-
 let get_class_instance aval =
   (* For now we just try to catch instances using static types. This is a bit limited in
      case of interprocedural propagation *)
@@ -897,23 +914,6 @@ let get_attr obj attr : model =
   @@ fun () ->
   let* res = get_attr_dsl obj attr in
   assign_ret res
-
-
-let call_dsl ~callable ~arg_names ~args =
-  let open DSL.Syntax in
-  let* opt_static_type = get_static_type callable in
-  match opt_static_type with
-  | Some (Typ.PythonClass (ClassCompanion {module_name; class_name})) ->
-      let instance_type = Typ.PythonClass (ClassInstance {module_name; class_name}) in
-      L.d_printfln ~color:Orange "calling a constructor for type %a" Typ.Name.pp instance_type ;
-      let* () = initialize_if_class_companion callable in
-      let* self = constructor ~deref:false instance_type [] in
-      let* () = Dict.set_str_key self class_companion_attribute_name callable in
-      let* () = try_run_constructor ~class_companion:callable ~self args in
-      ret self
-  | _ ->
-      L.d_printfln ~color:Orange "calling closure %a" AbstractValue.pp (fst callable) ;
-      call_closure_dsl ~closure:callable ~arg_names ~args
 
 
 let call callable arg_names args : model =
