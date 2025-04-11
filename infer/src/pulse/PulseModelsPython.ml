@@ -712,11 +712,7 @@ module LibModel = struct
 
 
   let is_await_sync_decorator ~module_name ~name =
-    let decorator_sets = Config.python_decorator_modelled_as_await_async in
-    if IString.Set.is_empty decorator_sets then (* fast path *) false
-    else
-      let str = module_name ^ "::" ^ name in
-      IString.Set.mem str decorator_sets
+    IString.PairSet.mem (module_name, name) Config.python_decorator_modelled_as_await_async
 
 
   let gen_awaitable _args =

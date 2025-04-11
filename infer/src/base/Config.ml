@@ -4509,7 +4509,16 @@ and pure_by_default = !pure_by_default
 and pyc_file = RevList.to_list !pyc_file
 
 and python_decorator_modelled_as_await_async =
-  RevList.to_list !python_decorator_modelled_as_await_async |> IString.Set.of_list
+  RevList.to_list !python_decorator_modelled_as_await_async
+  |> List.fold ~init:IString.PairSet.empty ~f:(fun set str ->
+         match String.substr_index_all str ~may_overlap:false ~pattern:"::" |> List.last with
+         | None ->
+             set
+         | Some last_pos ->
+             let length = String.length str in
+             let attribute_name = String.sub str ~pos:(last_pos + 2) ~len:(length - last_pos - 2) in
+             let module_name = String.sub str ~pos:0 ~len:last_pos in
+             IString.PairSet.add (module_name, attribute_name) set )
 
 
 and python_files_index = !python_files_index

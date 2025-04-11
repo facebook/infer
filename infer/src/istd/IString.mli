@@ -10,3 +10,5 @@ module Map : PrettyPrintable.HashSexpPPMap with type key = string
 module Set : PrettyPrintable.HashSexpPPSet with type elt = string
 
 module Hash : Stdlib.Hashtbl.S with type key = string
+
+module PairSet : PrettyPrintable.HashSexpPPSet with type elt = string * string
