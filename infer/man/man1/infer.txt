@@ -1817,6 +1817,11 @@ OPTIONS
            (Conversely: --no-purity-only)
            See also infer-analyze(1).
 
+       --python-decorator-modelled-as-await-async +string
+           Any decorator that should be modelled as the await_async
+           decorator.
+           See also infer-analyze(1).
+
        --python-exe path
            A filepath to a python interpreter. It will bypass the interpreter
            set by PYTHON variable

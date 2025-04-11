@@ -1071,6 +1071,10 @@ PULSE CHECKER OPTIONS
        --pulse-widen-threshold int
            Stop exploring new paths after int loop iterations
 
+       --python-decorator-modelled-as-await-async +string
+           Any decorator that should be modelled as the await_async
+           decorator.
+
 RACERD CHECKER OPTIONS
        --racerd-always-report-java
            Activates: Every Java class analysed is treated as if it were

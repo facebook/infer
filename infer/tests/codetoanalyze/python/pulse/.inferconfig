@@ -11,6 +11,7 @@
       "taint_target": ["ArgumentPositions", [1]]
     }
   ],
+  "python-decorator-modelled-as-await-async": ["await_sync_lib::await_sync_decorator"],
   "pulse-model-release-pattern": "dir1::dir3::testmod::wait\\|not_captured::helper::not_captured_wait",
   "pulse-model-deep-release-pattern": "dir1::dir3::testmod::deep_wait\\|not_captured::helper::not_captured_deep_wait"
 }

@@ -15,7 +15,7 @@ module F = Format
 type builtin_type = PyBool | PyDict | PyInt | PyNone | PyObject | PyString | PyTuple
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, show]
 
-type builtin_closure = DictFun | IntFun | StrFun | TypeFun
+type builtin_closure = AwaitAsyncDecorator | DictFun | IntFun | StrFun | TypeFun
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 type t =
@@ -34,6 +34,8 @@ type t =
 let builtin_type_to_string = show_builtin_type
 
 let builtin_closure_to_string = function
+  | AwaitAsyncDecorator ->
+      "await_async_decorator"
   | DictFun ->
       "dict"
   | IntFun ->

@@ -2830,6 +2830,12 @@ and pure_by_default =
 
 and pyc_file = CLOpt.mk_path_list ~long:"pyc-file" "Collection of compiled Python files (byte-code)"
 
+and python_decorator_modelled_as_await_async =
+  CLOpt.mk_string_list ~long:"python-decorator-modelled-as-await-async"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Any decorator that should be modelled as the await_async decorator."
+
+
 and python_files_index =
   CLOpt.mk_path_opt ~long:"python-files-index" ~meta:"path"
     ~in_help:InferCommand.[(Capture, manual_generic)]
@@ -4501,6 +4507,10 @@ and pulse_widen_threshold = !pulse_widen_threshold
 and pure_by_default = !pure_by_default
 
 and pyc_file = RevList.to_list !pyc_file
+
+and python_decorator_modelled_as_await_async =
+  RevList.to_list !python_decorator_modelled_as_await_async |> IString.Set.of_list
+
 
 and python_files_index = !python_files_index
 

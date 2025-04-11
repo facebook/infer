@@ -241,6 +241,7 @@ def foo(n):
 
 let%expect_test _ =
   let source = {|
+@deco
 def foo(n):
     assert(n>0)
 |} in

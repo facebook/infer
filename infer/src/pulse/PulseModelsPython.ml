@@ -711,11 +711,38 @@ module LibModel = struct
     match_pattern ~pattern:Config.pulse_model_deep_release_pattern ~module_name ~name
 
 
+  let is_await_sync_decorator ~module_name ~name =
+    let decorator_sets = Config.python_decorator_modelled_as_await_async in
+    if IString.Set.is_empty decorator_sets then (* fast path *) false
+    else
+      let str = module_name ^ "::" ^ name in
+      IString.Set.mem str decorator_sets
+
+
   let gen_awaitable _args =
     let open DSL.Syntax in
     let* res = fresh () in
     let* () = allocation Attribute.Awaitable res in
     ret (Some res)
+
+
+  let await_sync_decorator_registered args =
+    (* this is executed when the decorated function is registered *)
+    let open DSL.Syntax in
+    let* res =
+      match args with
+      | [registered_closure] ->
+          let typ = Typ.PythonClass (BuiltinClosure AwaitAsyncDecorator) in
+          constructor ~deref:false typ [("fun", registered_closure)]
+      | _ ->
+          fresh ()
+    in
+    ret (Some res)
+
+
+  let await_sync_decorator_called callable args =
+    (* this is executed when the decorated function is called *)
+    call_dsl ~callable ~arg_names:None ~args
 
 
   let deep_release args =
@@ -738,7 +765,8 @@ type pymodel =
 
 (* Only Python frontend builtins ($builtins.py_) have a C-style syntax, so we
    must catch other specific calls here *)
-let modelled_python_call model args : DSL.aval option DSL.model_monad =
+
+let modelled_python_call model closure args : DSL.aval option DSL.model_monad =
   let open DSL.Syntax in
   match (model, args) with
   | PyLib {module_name= "asyncio"; name= "run"}, _ ->
@@ -751,6 +779,11 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       LibModel.deep_release args
   | PyLib {module_name= "asyncio"; name= "sleep"}, _ ->
       LibModel.gen_awaitable args
+  | PyLib {module_name; name}, _ when LibModel.is_await_sync_decorator ~module_name ~name ->
+      LibModel.await_sync_decorator_registered args
+  | PyBuiltin AwaitAsyncDecorator, args ->
+      let* res = LibModel.await_sync_decorator_called closure args in
+      ret (Some res)
   | PyBuiltin DictFun, args ->
       let* dict = Dict.builtin args in
       ret (Some dict)
@@ -769,11 +802,11 @@ let modelled_python_call model args : DSL.aval option DSL.model_monad =
       ret None
 
 
-let try_catch_lib_model type_name args =
+let try_catch_lib_model type_name closure args =
   let open DSL.Syntax in
   match Typ.Name.Python.split_module_attr type_name with
   | Some (module_name, name) ->
-      modelled_python_call (PyLib {module_name; name}) args
+      modelled_python_call (PyLib {module_name; name}) closure args
   | _ ->
       ret None
 
@@ -783,7 +816,7 @@ let try_catch_lib_model_using_static_type ~default closure args =
   let* opt_static_type = get_static_type closure in
   match opt_static_type with
   | Some (Typ.PythonClass (ModuleAttribute {module_name; attr_name= name}) as type_name) -> (
-      let* opt_special_call = modelled_python_call (PyLib {module_name; name}) args in
+      let* opt_special_call = modelled_python_call (PyLib {module_name; name}) closure args in
       match opt_special_call with
       | None ->
           default ()
@@ -806,7 +839,7 @@ let call_function_ex closure tuple dict : model =
     | None ->
         try_catch_lib_model_using_static_type ~default:fresh closure args
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
-        let* opt_catched_lib_model_res = try_catch_lib_model type_name args in
+        let* opt_catched_lib_model_res = try_catch_lib_model type_name closure args in
         match opt_catched_lib_model_res with
         | Some res ->
             L.d_printfln "catching reserved lib call using dynamic type %a" Typ.Name.pp type_name ;
@@ -925,7 +958,7 @@ let call callable arg_names args : model =
   let* res =
     match opt_dynamic_type_data with
     | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (BuiltinClosure builtin))}} -> (
-        let* opt_special_call = modelled_python_call (PyBuiltin builtin) args in
+        let* opt_special_call = modelled_python_call (PyBuiltin builtin) callable args in
         match opt_special_call with
         | None ->
             L.die InternalError "builtin %s was not successfully recognized"
@@ -935,7 +968,7 @@ let call callable arg_names args : model =
               (PythonClassName.to_string (BuiltinClosure builtin)) ;
             ret res )
     | Some {Formula.typ= {Typ.desc= Tstruct type_name}} -> (
-        let* opt_catched_lib_model_res = try_catch_lib_model type_name args in
+        let* opt_catched_lib_model_res = try_catch_lib_model type_name callable args in
         match opt_catched_lib_model_res with
         | Some res ->
             L.d_printfln "catching reserved lib call using dynamic type %a" Typ.Name.pp type_name ;
@@ -960,7 +993,9 @@ let call_method name obj arg_names args : model =
     | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (Globals module_name))}} -> (
         (* since module types are final, static type will save us most of the time *)
         let* str_name = as_constant_string_exn name in
-        let* opt_special_call = modelled_python_call (PyLib {module_name; name= str_name}) args in
+        let* opt_special_call =
+          modelled_python_call (PyLib {module_name; name= str_name}) obj args
+        in
         match opt_special_call with
         | None ->
             L.d_printfln "calling method %s on module object %s" str_name module_name ;

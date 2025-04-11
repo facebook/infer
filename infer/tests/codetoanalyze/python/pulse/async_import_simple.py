@@ -65,7 +65,7 @@ def unknown_call():
 
 
 @await_sync_decorator
-async def FP_main_ok(x, y ):
+async def main_ok(x, y ):
     pass
 
-FP_main_ok(x, y)
+main_ok(x, y)
