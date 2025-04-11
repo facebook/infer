@@ -233,7 +233,8 @@ let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
 
 type functions = func FuncName.Map.t [@@deriving sexp_of]
 
-type program = {globals: GlobalDefn.t iarray; functions: functions} [@@deriving sexp_of]
+type program = {globals: GlobalDefn.t iarray; functions: functions; typ_defns: Typ.t list}
+[@@deriving sexp_of]
 
 (* pp *)
 
@@ -899,15 +900,16 @@ module Program = struct
              Global.compare g1.GlobalDefn.name g2.GlobalDefn.name ) ) )
 
 
-  let mk ~globals ~functions =
-    {globals= IArray.of_list_rev globals; functions= set_derived_metadata functions}
+  let mk ~globals ~functions ~typ_defns =
+    {globals= IArray.of_list_rev globals; functions= set_derived_metadata functions; typ_defns}
     |> check invariant
 
 
-  let pp fs {globals; functions} =
-    Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@]"
+  let pp fs {globals; functions; typ_defns} =
+    Format.fprintf fs "@[<v>@[%a@]@ @ @ @[%a@]@ @ @ @[%a@]@]"
       (IArray.pp "@\n@\n" GlobalDefn.pp)
       globals (List.pp "@\n@\n" Func.pp)
       ( FuncName.Map.values functions |> Iter.to_list
       |> List.sort ~cmp:(fun x y -> compare_block x.entry y.entry) )
+      (List.pp "@\n@\n" Typ.pp) typ_defns
 end

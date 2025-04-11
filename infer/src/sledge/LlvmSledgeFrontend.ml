@@ -1901,9 +1901,18 @@ let translate ?dump_bitcode : string -> Llair.program =
           func :: functions )
       [] llmodule
   in
+  let typ_defns =
+    let by_name x y =
+      let name = function[@warning "p"] Typ.Struct {name} | Opaque {name} -> name in
+      String.compare (name x) (name y)
+    in
+    LltypeTbl.fold memo_type [] ~f:(fun ~key:_ ~data defns ->
+        match data with Typ.Struct _ | Opaque _ -> data :: defns | _ -> defns )
+    |> List.sort ~cmp:by_name
+  in
   backpatch_calls x ;
   cleanup llmodule ;
-  Llair.Program.mk ~globals ~functions
+  Llair.Program.mk ~globals ~functions ~typ_defns
   |>
   [%Dbg.retn fun {pf} _ ->
     pf "number of globals %d, number of functions %d" (List.length globals) (List.length functions)]

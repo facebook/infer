@@ -146,7 +146,8 @@ type functions = func FuncName.Map.t
 
 type program = private
   { globals: GlobalDefn.t iarray  (** Global definitions. *)
-  ; functions: functions  (** (Global) function definitions. *) }
+  ; functions: functions  (** (Global) function definitions. *)
+  ; typ_defns: Typ.t list  (** Type definitions. *) }
 
 module Inst : sig
   type t = inst [@@deriving compare, equal]
@@ -331,5 +332,5 @@ module Program : sig
 
   include Invariant.S with type t := t
 
-  val mk : globals:GlobalDefn.t list -> functions:func list -> t
+  val mk : globals:GlobalDefn.t list -> functions:func list -> typ_defns:Typ.t list -> t
 end
