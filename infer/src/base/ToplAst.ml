@@ -72,6 +72,8 @@ type transition =
 [@@deriving show]
 
 (* TODO(rgrigore): Check that registers are read only after being initialized *)
-type t =
+type ast =
   {name: property_name; message: string option; prefixes: string list; transitions: transition list}
 [@@deriving show]
+
+type t = Ast of ast | Ignored of {ignored_file: string; ignored_reason: string} [@@deriving show]

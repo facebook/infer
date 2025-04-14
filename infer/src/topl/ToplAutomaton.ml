@@ -76,6 +76,17 @@ let index_in (type k) (module H : Stdlib.Hashtbl.S with type key = k) (a : k arr
 
 
 let make properties =
+  let properties =
+    let f (p : ToplAst.t) =
+      match p with
+      | Ast ast ->
+          Some ast
+      | Ignored {ignored_file; ignored_reason} ->
+          L.user_error "@[<v>@[Ignored '%s'. Reason: %s@]@;@]" ignored_file ignored_reason ;
+          None
+    in
+    List.filter_map ~f properties
+  in
   let names : pname array =
     let f {ToplAst.name} = name in
     Array.of_list (List.map ~f properties)

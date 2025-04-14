@@ -413,7 +413,7 @@ module Topl = struct
       {ToplAst.source= start_state; target= start_state; label= None; pos_range}
       :: List.concat_map ~f:(from_matcher language source sink) matchers
     in
-    {ToplAst.name; message; prefixes= []; transitions}
+    ToplAst.Ast {name; message; prefixes= []; transitions}
 end
 
 let convert_one_to_topl path =

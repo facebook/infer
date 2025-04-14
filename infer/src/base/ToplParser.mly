@@ -52,7 +52,7 @@ properties: ps=one_property* EOF { ps }
 one_property:
     PROPERTY name=identifier LC message=message? prefixes=prefix*
       transitions=transition* RC
-    { ToplAst.{name; message; prefixes; transitions} }
+    { ToplAst.(Ast {name; message; prefixes; transitions}) }
 
 message: MESSAGE s=STRING { s }
 

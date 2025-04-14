@@ -4714,7 +4714,7 @@ and topl_properties =
         L.die UserError "@[%s:%d:%d: topl parse error@]@\n@?" topl_file pos_lnum col
     in
     try In_channel.with_file topl_file ~f
-    with Sys_error msg -> L.die UserError "@[topl:%s: %s@]@\n@?" topl_file msg
+    with Sys_error msg -> [ToplAst.Ignored {ignored_file= topl_file; ignored_reason= msg}]
   in
   List.concat_map ~f:parse (RevList.to_list !topl_properties)
 
