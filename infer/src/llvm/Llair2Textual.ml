@@ -343,6 +343,7 @@ let cmnd_to_instrs ~proc_state block =
     match block.term with Call call -> Some (to_textual_call ~proc_state call) | _ -> None
   in
   let rev_instrs = List.fold ~init:[] ~f:to_instr (StdUtils.iarray_to_list block.cmnd) in
+  let rev_instrs = List.append (Option.to_list call_instr_opt) rev_instrs in
   let instrs = List.rev rev_instrs in
   let first_loc, last_loc =
     match (instrs, rev_instrs) with
@@ -351,7 +352,7 @@ let cmnd_to_instrs ~proc_state block =
     | _ ->
         (None, None)
   in
-  (List.append instrs (Option.to_list call_instr_opt), first_loc, last_loc)
+  (instrs, first_loc, last_loc)
 
 
 let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =

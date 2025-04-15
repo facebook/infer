@@ -22,7 +22,7 @@ define add(var0: int, var1: int) : int {
 declare bar() : *ptr_elt
 
 define call_add() : int {
-  #: @?
+  #: @[29:25]
       n58 = add(1, 2) @[29:25]
       jmp 1::ret @[29:25]
       
@@ -100,6 +100,16 @@ define test10(var0: int) : int {
       
 } @?
 
+define test11() : int {
+  #: @[75:23]
+      n201 = test10(10) @[75:23]
+      jmp 1::ret @[75:23]
+      
+  #1::ret: @[75:16]
+      ret n201 @[75:16]
+      
+} @?
+
 define test2() : int {
   local n2: int, n1: int
   #: @[18:10]
@@ -121,7 +131,7 @@ define test3(var0: *int) : int {
 } @?
 
 define test4() : int {
-  #: @?
+  #: @[25:22]
       n48 = foo() @[25:22]
       jmp 1::ret @[25:22]
       
@@ -131,7 +141,7 @@ define test4() : int {
 } @?
 
 define test5() : int {
-  #: @?
+  #: @[27:22]
       n53 = bar() @[27:22]
       jmp 1::ret @[27:22]
       

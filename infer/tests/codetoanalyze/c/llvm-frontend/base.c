@@ -71,3 +71,5 @@ int test10(int n) {
   }
   return sum;
 }
+
+int test11() { return test10(10); }
