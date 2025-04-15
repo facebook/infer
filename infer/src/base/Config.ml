@@ -2754,6 +2754,7 @@ and pulse_taint_sources =
       match all fields marked by specified annotation with specified values
   - "allocation": $(i,\(for taint sources only\))
       match allocations of the exact class name supplied
+  - "builtin": match a substring of the builtin name (currently only for Hack)
   - "block_passed_to": $(i,\(for taint sources only\))
      match a substring of the procedure name that the block is passed to
   - "block_passed_to_regex": $(i,\(for taint sources only\))

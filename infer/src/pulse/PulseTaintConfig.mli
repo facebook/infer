@@ -69,6 +69,7 @@ module Unit : sig
     | Block of {name: string}
     | BlockNameRegex of {name_regex: Str.regexp; exclude_in: string list option}
     | Allocation of {class_name: string}
+    | BuiltinName of {name: string}
 
   type field_matcher =
     | FieldRegex of

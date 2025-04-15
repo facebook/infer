@@ -48,6 +48,16 @@ class IntraFileFlow {
     $x = await KnownClass::genTaintSource();
   }
 
+  public static function getKeyTaint(): string {
+    return "tainted";
+  }
+
+  public static function taintSourceBuiltinSinkBad(): void {
+    $x = self::getKeyTaint();
+    $d = dict[$x => 'a'];
+    $z = $d[$x];
+  }
+
   // Helpers
 
   private function callExplicitSinkAllArgs(int $data): void {

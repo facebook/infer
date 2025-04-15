@@ -148,6 +148,7 @@ let check_class_annotation tenv class_name_opt annotation annotation_values =
 
 let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
   let open TaintConfig.Unit in
+  let is_hack_builtin = Procname.is_hack_builtins proc_name in
   List.filter_map matchers ~f:(fun matcher ->
       let class_name = Procname.get_class_type_name proc_name in
       let proc_name_s = get_proc_name_s proc_name in
@@ -156,71 +157,81 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
             type_matches tenv attrs.ProcAttributes.ret_type method_return_type_names )
       in
       let procedure_name_matches =
-        match matcher.procedure_matcher with
-        | ProcedureName {name} ->
-            String.is_substring ~substring:name (get_proc_name_s proc_name)
-        | ProcedureNameRegex {name_regex; exclude_in; exclude_names} ->
-            let source_file =
-              Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
-            in
-            let proc_name_s =
-              if Procname.is_objc_method proc_name then
-                match String.split proc_name_s ~on:':' with fst :: _ -> fst | _ -> proc_name_s
-              else proc_name_s
-            in
-            check_regex name_regex proc_name_s ?source_file exclude_in exclude_names
-        | ClassNameRegex {name_regex; exclude_in; exclude_names} ->
-            check_regex_class tenv class_name name_regex exclude_in exclude_names proc_attributes
-        | ClassAndMethodNames {class_names; method_names} ->
-            class_names_match tenv class_names class_name
-            && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
-        | ClassNameAndMethodRegex {class_names; method_name_regex; exclude_in; exclude_names} ->
-            class_names_match tenv class_names class_name
-            && check_regex method_name_regex proc_name_s exclude_in exclude_names
-        | ClassRegexAndMethodRegex {class_name_regex; method_name_regex; exclude_in; exclude_names}
-          ->
-            check_regex_class tenv class_name class_name_regex exclude_in exclude_names
-              proc_attributes
-            && check_regex method_name_regex proc_name_s exclude_in exclude_names
-        | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
-            class_names_match tenv class_names class_name
-            && procedure_return_type_match method_return_type_names
-        | ClassRegexAndMethodReturnTypeNames
-            {class_name_regex; method_return_type_names; exclude_in; exclude_names} ->
-            check_regex_class tenv class_name class_name_regex exclude_in exclude_names
-              proc_attributes
-            && procedure_return_type_match method_return_type_names
-        | ClassWithAnnotation {annotation; annotation_values} ->
-            check_class_annotation tenv class_name annotation annotation_values
-        | ClassWithAnnotationAndRegexAndMethodRegex
-            { annotation
-            ; annotation_values
-            ; class_name_regex
-            ; method_name_regex
-            ; exclude_in
-            ; exclude_names } ->
-            check_class_annotation tenv class_name annotation annotation_values
-            && check_regex_class tenv class_name class_name_regex exclude_in exclude_names
-                 proc_attributes
-            && check_regex method_name_regex proc_name_s exclude_in exclude_names
-        | OverridesOfClassWithAnnotation {annotation} ->
-            Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
-                let method_name = Procname.get_method proc_name in
-                PatternMatch.supertype_exists tenv
-                  (fun class_name _ ->
-                    Option.exists (Tenv.lookup tenv class_name) ~f:(fun procedure_superclass_type ->
-                        Annotations.struct_typ_has_annot procedure_superclass_type
-                          (fun annot_item -> Annotations.ia_ends_with annot_item annotation )
-                        && PatternMatch.override_exists ~check_current_type:false
-                             (fun superclass_pname ->
-                               String.equal (Procname.get_method superclass_pname) method_name )
-                             tenv proc_name ) )
-                  procedure_class_name )
-        | MethodWithAnnotation {annotation; annotation_values} ->
-            Annotations.pname_has_return_annot proc_name (fun annot_item ->
-                match_annotation_with_values annot_item annotation annotation_values )
-        | Allocation _ | Block _ | BlockNameRegex _ ->
-            false
+        (* We handle builtins separately as in general we do not intend to report on builtin calls
+           Usually those errors would not be actionable *)
+        if is_hack_builtin then
+          match matcher.procedure_matcher with
+          | BuiltinName {name} ->
+              String.equal name proc_name_s
+          | _ ->
+              false
+        else
+          match matcher.procedure_matcher with
+          | ProcedureName {name} ->
+              String.is_substring ~substring:name proc_name_s
+          | ProcedureNameRegex {name_regex; exclude_in; exclude_names} ->
+              let source_file =
+                Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
+              in
+              let proc_name_s =
+                if Procname.is_objc_method proc_name then
+                  match String.split proc_name_s ~on:':' with fst :: _ -> fst | _ -> proc_name_s
+                else proc_name_s
+              in
+              check_regex name_regex proc_name_s ?source_file exclude_in exclude_names
+          | ClassNameRegex {name_regex; exclude_in; exclude_names} ->
+              check_regex_class tenv class_name name_regex exclude_in exclude_names proc_attributes
+          | ClassAndMethodNames {class_names; method_names} ->
+              class_names_match tenv class_names class_name
+              && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
+          | ClassNameAndMethodRegex {class_names; method_name_regex; exclude_in; exclude_names} ->
+              class_names_match tenv class_names class_name
+              && check_regex method_name_regex proc_name_s exclude_in exclude_names
+          | ClassRegexAndMethodRegex {class_name_regex; method_name_regex; exclude_in; exclude_names}
+            ->
+              check_regex_class tenv class_name class_name_regex exclude_in exclude_names
+                proc_attributes
+              && check_regex method_name_regex proc_name_s exclude_in exclude_names
+          | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
+              class_names_match tenv class_names class_name
+              && procedure_return_type_match method_return_type_names
+          | ClassRegexAndMethodReturnTypeNames
+              {class_name_regex; method_return_type_names; exclude_in; exclude_names} ->
+              check_regex_class tenv class_name class_name_regex exclude_in exclude_names
+                proc_attributes
+              && procedure_return_type_match method_return_type_names
+          | ClassWithAnnotation {annotation; annotation_values} ->
+              check_class_annotation tenv class_name annotation annotation_values
+          | ClassWithAnnotationAndRegexAndMethodRegex
+              { annotation
+              ; annotation_values
+              ; class_name_regex
+              ; method_name_regex
+              ; exclude_in
+              ; exclude_names } ->
+              check_class_annotation tenv class_name annotation annotation_values
+              && check_regex_class tenv class_name class_name_regex exclude_in exclude_names
+                   proc_attributes
+              && check_regex method_name_regex proc_name_s exclude_in exclude_names
+          | OverridesOfClassWithAnnotation {annotation} ->
+              Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
+                  let method_name = Procname.get_method proc_name in
+                  PatternMatch.supertype_exists tenv
+                    (fun class_name _ ->
+                      Option.exists (Tenv.lookup tenv class_name)
+                        ~f:(fun procedure_superclass_type ->
+                          Annotations.struct_typ_has_annot procedure_superclass_type
+                            (fun annot_item -> Annotations.ia_ends_with annot_item annotation )
+                          && PatternMatch.override_exists ~check_current_type:false
+                               (fun superclass_pname ->
+                                 String.equal (Procname.get_method superclass_pname) method_name )
+                               tenv proc_name ) )
+                    procedure_class_name )
+          | MethodWithAnnotation {annotation; annotation_values} ->
+              Annotations.pname_has_return_annot proc_name (fun annot_item ->
+                  match_annotation_with_values annot_item annotation annotation_values )
+          | Allocation _ | Block _ | BlockNameRegex _ | BuiltinName _ ->
+              false
       in
       let block_passed_to_matches =
         match (matcher.procedure_matcher, block_passed_to) with
@@ -523,13 +534,11 @@ let split_args procname args =
 
 let match_procedure_impl tenv path location ?proc_attributes ~has_added_return_param procname
     actuals return_opt matchers astate : AbductiveDomain.t * taint_match list =
-  if Procname.is_hack_builtins procname then (astate, [])
-  else
-    let instance_reference, actuals = split_args procname actuals in
-    let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
-    if not (List.is_empty matches) then L.d_printfln "taint matches" ;
-    match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
-      actuals ~instance_reference (TaintItem.TaintProcedure procname)
+  let instance_reference, actuals = split_args procname actuals in
+  let matches = procedure_matches tenv matchers ?proc_attributes procname actuals in
+  if not (List.is_empty matches) then L.d_printfln "taint matches" ;
+  match_procedure_target tenv astate matches path location return_opt ~has_added_return_param
+    actuals ~instance_reference (TaintItem.TaintProcedure procname)
 
 
 let match_procedure_call tenv path location ?proc_attributes ~has_added_return_param procname

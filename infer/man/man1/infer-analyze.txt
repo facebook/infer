@@ -1027,6 +1027,8 @@ PULSE CHECKER OPTIONS
            specified values
              - "allocation": (for taint sources only)
                  match allocations of the exact class name supplied
+             - "builtin": match a substring of the builtin name (currently
+           only for Hack)
              - "block_passed_to": (for taint sources only)
                 match a substring of the procedure name that the block is
            passed to

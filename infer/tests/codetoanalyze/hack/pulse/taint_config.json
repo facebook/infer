@@ -22,7 +22,8 @@
     { "class_names": ["CustomTaintIssueType::Source"], "method_names": ["get"], "kinds": ["CustomTaintIssueType"]},
     { "class_name_regex": ".*",
       "method_return_type_names": ["ReturnTypeMatcher::Sensitive"],
-      "kinds":["ReturnTypeMatcher"]}
+      "kinds":["ReturnTypeMatcher"]},
+    { "procedure_regex": ".*getKeyTaint", "kinds": ["BuiltinDict"]}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
@@ -45,7 +46,8 @@
       "kinds": ["Exclusions"]
     },
     { "class_names": ["CustomTaintIssueType::Sink"], "method_names": ["process"], "kinds": ["CustomTaintIssueType"]},
-    { "class_names": ["ReturnTypeMatcher::Sink"], "method_names": ["process"], "kinds": ["ReturnTypeMatcher"]}
+    { "class_names": ["ReturnTypeMatcher::Sink"], "method_names": ["process"], "kinds": ["ReturnTypeMatcher"]},
+    { "builtin": "$builtins.hack_array_get#2", "taint_target": ["ArgumentPositions", [1]], "kinds": ["BuiltinDict"]}
   ],
   "pulse-taint-sanitizers": [
     { "class_names": ["Sanitizers::San"], "procedure_regex": ".*", "kinds": ["Sanitizers"] }
@@ -57,6 +59,10 @@
     {
       "short_description": "Taint flow where a sink is any procedure",
       "taint_flows": [{"source_kinds": ["IntraFile"], "sink_kinds": ["BuiltinCatchAll"]}]
+    },
+    {
+      "short_description": "Taint flow where a sink is the dict get builtin",
+      "taint_flows": [{"source_kinds": ["BuiltinDict"], "sink_kinds": ["BuiltinDict"]}]
     },
     {
       "short_description": "Taint flow with a sanitizer and specific sink",
