@@ -69,6 +69,37 @@ define test() : *int {
       
 } @?
 
+define test10(var0: int) : int {
+  local sum: int, n: int, i: int
+  #: @[67:0]
+      n167 = load &var0 @[67:0]
+      store &n <- n167 @[67:0]
+      store &sum <- 0 @[68:7]
+      store &i <- 0 @[69:12]
+      jmp 5 @[69:8]
+      
+  #13: @[69:27]
+      n192 = load &i @[69:27]
+      store &i <- __sil_plusa_int(n192, 1) @[69:27]
+      jmp 5 @[69:3]
+      
+  #16: @[72:10]
+      n197 = load &sum @[72:10]
+      ret n197 @[72:3]
+      
+  #5: @[69:19]
+      n181 = load &i @[69:19]
+      n182 = load &n @[69:23]
+      if __sil_lt(n181, n182) then jmp 9 else jmp 16 @[69:3]
+      
+  #9: @[70:12]
+      n186 = load &i @[70:12]
+      n187 = load &sum @[70:9]
+      store &sum <- __sil_plusa_int(n187, n186) @[70:9]
+      jmp 13 @[71:3]
+      
+} @?
+
 define test2() : int {
   local n2: int, n1: int
   #: @[18:10]

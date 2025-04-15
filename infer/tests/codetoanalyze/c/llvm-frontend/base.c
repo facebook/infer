@@ -63,3 +63,11 @@ int test9() {
   free(ptr);
   return ret;
 }
+
+int test10(int n) {
+  int sum = 0;
+  for (int i = 0; i < n; i++) {
+    sum += i;
+  }
+  return sum;
+}

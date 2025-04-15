@@ -126,6 +126,8 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
         Binop.Ge
     | Le ->
         Binop.Le
+    | Lt ->
+        Binop.Lt
     | And ->
         Binop.LAnd
     | Or ->
@@ -199,7 +201,7 @@ let rec to_textual_exp ~proc_state ?generate_typ_exp (exp : Llair.Exp.t) :
       let exp1, typ1 = to_textual_exp ~proc_state e1 in
       let exp2, _ = to_textual_exp ~proc_state e2 in
       (Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}, typ1)
-  | Ap2 (((Eq | Dq | Gt | Ge | Le | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2) ->
+  | Ap2 (((Eq | Dq | Gt | Ge | Le | Lt | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2) ->
       let proc = to_textual_bool_exp_builtin op in
       let exp1, typ1 = to_textual_exp ~proc_state e1 in
       let exp2, _ = to_textual_exp ~proc_state e2 in
