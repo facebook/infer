@@ -133,7 +133,14 @@ let process_file ~is_binary file =
     Ok (Some tenv) )
 
 
+let is_file_block_listed file =
+  Option.exists Config.python_skip_capture_path_regex ~f:(fun regexp ->
+      Str.string_match regexp file 0 )
+
+
 let capture_file ~is_binary file = process_file ~is_binary file
+
+type not_captured_reason = Skipped | Error
 
 let capture_files ~is_binary files =
   let n_files = List.length files in
@@ -141,15 +148,17 @@ let capture_files ~is_binary files =
   let child_action, child_prologue, child_epilogue =
     let child_tenv = Tenv.create () in
     let child_action file =
-      let t0 = Mtime_clock.now () in
-      !WorkerPoolState.update_status (Some t0) file ;
-      match capture_file ~is_binary file with
-      | Ok file_tenv ->
-          Option.iter file_tenv ~f:(fun file_tenv -> Tenv.merge ~src:file_tenv ~dst:child_tenv) ;
-          None
-      | Error err ->
-          Error.format_error file err ;
-          Some ()
+      if is_file_block_listed file then Some Skipped
+      else
+        let t0 = Mtime_clock.now () in
+        !WorkerPoolState.update_status (Some t0) file ;
+        match capture_file ~is_binary file with
+        | Ok file_tenv ->
+            Option.iter file_tenv ~f:(fun file_tenv -> Tenv.merge ~src:file_tenv ~dst:child_tenv) ;
+            None
+        | Error err ->
+            Error.format_error file err ;
+            Some Error
     in
     let child_prologue _ = Py.initialize ~interpreter () in
     let child_epilogue worker_id =
@@ -165,12 +174,15 @@ let capture_files ~is_binary files =
   in
   L.progress "Expecting to capture %d files@\n" n_files ;
   (* TODO(vsiles) keep track of the number of success / failures like Hack *)
-  let n_captured, n_error = (ref 0, ref 0) in
+  let n_captured, n_error, n_skipped = (ref 0, ref 0, ref 0) in
   let tasks () =
     TaskGenerator.of_list files ~finish:(fun result _ ->
         match result with
-        | Some () ->
+        | Some Error ->
             incr n_error ;
+            None
+        | Some Skipped ->
+            incr n_skipped ;
             None
         | None ->
             incr n_captured ;
@@ -184,6 +196,7 @@ let capture_files ~is_binary files =
   let runner = ProcessPool.create ~jobs ~child_prologue ~f:child_action ~child_epilogue ~tasks () in
   let child_tenv_paths = ProcessPool.run runner in
   L.progress "Success: %d files@\n" !n_captured ;
+  L.progress "Skipped: %d files@\n" !n_skipped ;
   L.progress "Failure: %d files@\n" !n_error ;
   L.progress "Merging type environments...@\n%!" ;
   (* Merge worker tenvs into a global tenv *)

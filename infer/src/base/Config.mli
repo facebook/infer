@@ -695,6 +695,8 @@ val python_files_index : string option
 
 val python_trim_source_paths : bool
 
+val python_skip_capture_path_regex : Str.regexp option
+
 val python_skip_db : bool
 
 val python_exe : string option

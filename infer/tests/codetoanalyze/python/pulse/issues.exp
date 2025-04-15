@@ -1,3 +1,8 @@
+assert_capture.py, assert_capture.FP_assert_true_with_id_not_captured_ok, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+assert_capture.py, assert_capture.assert_false_with_id_not_captured_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+assert_capture.py, assert_capture.assert_false_with_id_captured_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+assert_capture.py, assert_capture.FP_assert_true_with_id_skipped_ok, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+assert_capture.py, assert_capture.assert_false_with_id_skipped_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 assert_level0.py, assert_level0.assert_true_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 assert_level0.py, assert_level0.run_assert_latent_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 assert_oo_basic.py, assert_oo_basic.get_attr_after_init_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []

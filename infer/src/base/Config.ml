@@ -2849,6 +2849,11 @@ and python_trim_source_paths =
      $(b,--project-root) from captured source paths."
 
 
+and python_skip_capture_path_regex_list =
+  CLOpt.mk_string_list ~long:"python-skip-capture-path-regex-list" ~meta:"path_regex"
+    "Do not capture files whose path matches any of these regex."
+
+
 and python_skip_db =
   CLOpt.mk_bool ~long:"python-skip-db" ~default:false "Skip the DB writing during Python capture"
 
@@ -4524,6 +4529,10 @@ and python_decorator_modelled_as_await_async =
 and python_files_index = !python_files_index
 
 and python_trim_source_paths = !python_trim_source_paths
+
+and python_skip_capture_path_regex =
+  join_patterns_list (RevList.to_list !python_skip_capture_path_regex_list)
+
 
 and python_skip_db = !python_skip_db
 

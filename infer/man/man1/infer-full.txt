@@ -3123,6 +3123,12 @@ INTERNAL OPTIONS
        --python-files-index-reset
            Cancel the effect of --python-files-index.
 
+       --python-skip-capture-path-regex-list +path_regex
+           Do not capture files whose path matches any of these regex.
+
+       --python-skip-capture-path-regex-list-reset
+           Set --python-skip-capture-path-regex-list to the empty list.
+
        --python-skip-db
            Activates: Skip the DB writing during Python capture (Conversely:
            --no-python-skip-db)
