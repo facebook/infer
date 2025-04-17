@@ -23,6 +23,10 @@ public class InferTaint {
     return o;
   }
 
+  public static String inferSecretStringSource() {
+    return "secret";
+  }
+
   public static void inferSensitiveSink(Object iMightBeTainted) {}
 
   public static Object inferUniversalSanitizer(Object iMightBeTainted) {

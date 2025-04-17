@@ -28,7 +28,7 @@ public abstract class UnknownCode {
   }
 
   static void propagateViaUnknownConstructorBad() {
-    String source = (String) InferTaint.inferSecretSource();
+    String source = InferTaint.inferSecretStringSource();
     // we don't analyze the code for the core Java libraries, so this constructor will be unknown
     String unknownConstructor = new String(source);
     InferTaint.inferSensitiveSink(unknownConstructor);
@@ -55,7 +55,7 @@ public abstract class UnknownCode {
   }
 
   void propagateEmptyBad() {
-    String source = (String) InferTaint.inferSecretSource();
+    String source = InferTaint.inferSecretStringSource();
     StringBuffer buffer = new StringBuffer();
     buffer.append(source); // buffer is now tainted
     // even though "" is not tainted, buffer and alias should still be tainted
@@ -71,7 +71,7 @@ public abstract class UnknownCode {
   }
 
   void callPropagateFootprintBad() {
-    propagateFootprint((String) InferTaint.inferSecretSource());
+    propagateFootprint(InferTaint.inferSecretStringSource());
   }
 
   static native Object nativeMethod2(Object o, int i);
@@ -83,7 +83,7 @@ public abstract class UnknownCode {
   }
 
   void callPropagateThenPropagateFootprintBad() {
-    String source = (String) InferTaint.inferSecretSource();
+    String source = InferTaint.inferSecretStringSource();
     propagateFootprint(propagateTaint(source));
   }
 
