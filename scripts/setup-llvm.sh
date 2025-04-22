@@ -14,36 +14,22 @@ set -x
 
 PLATFORM=$(uname)
 INFER_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
-llvm_opam_version="18-shared"
-srcdir="$INFER_ROOT"/dependencies/llvm/src
-patches=(
-    add-debug-info.patch
-    add-LLVMGetAtomicRMWBinOp.patch
-    fix-null-global_initializer.patch
-)
-
+llvm_opam_version="18-shared-2"
 
 clean_slate () {
-    rm -fr "$srcdir"
     opam remove llvm --yes
     opam pin remove llvm --no-action
-}
-
-download_and_patch_opam_llvm_src () {
-    opam source --dir="$srcdir" llvm."$llvm_opam_version"
-    pushd "$srcdir"
-    patch -p1 < "$INFER_ROOT"/dependencies/llvm/add-sledge-patches-opam.patch
-    for patch in "${patches[@]}"; do
-        ln -s "$INFER_ROOT"/dependencies/llvm/patches/"$patch" .
-    done
-    popd
+    opam repo remove local-llvm --all
 }
 
 install_opam_llvm () {
-    opam pin add llvm."$llvm_opam_version" "$srcdir" --no-action
+    opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
+    # cd to the root of the infer repo so that opam can find the infer-specific patches listed in
+    # the opam file as paths relative to the infer repo root
+    pushd "$INFER_ROOT"
     opam install llvm."$llvm_opam_version" --yes
+    popd
 }
 
 clean_slate
-download_and_patch_opam_llvm_src
 install_opam_llvm
