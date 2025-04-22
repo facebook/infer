@@ -1,0 +1,79 @@
+opam-version: "2.0"
+maintainer: "Alan <ahulambda@gmail.com>"
+authors: [
+  "whitequark <whitequark@whitequark.org>"
+  "The LLVM team"
+]
+license: "MIT"
+bug-reports: "http://llvm.org/bugs/"
+dev-repo: "git+http://llvm.org/git/llvm.git"
+doc: "http://llvm.org"
+homepage: "http://llvm.org"
+build: [
+  ["bash" "-ex" "install.sh" "build"
+   "--llvm-config" "%{conf-llvm-static:config}%"
+   "--libdir" lib
+   "--cmake" "%{conf-cmake:cmd}%"
+   "--make" make
+   "--link-mode" "static"
+   "--use-homebrew" {os-distribution = "homebrew"}
+  ]
+]
+install: [
+  ["bash" "-ex" "install.sh" "install"
+   "--llvm-config" "%{conf-llvm-static:config}%"
+   "--libdir" lib
+   "--cmake" "%{conf-cmake:cmd}%"
+   "--make" make
+   "--link-mode" "static"
+   "--use-homebrew" {os-distribution = "homebrew"}
+  ]
+]
+depends: [
+  "ocaml" {>= "4.00.0"}
+  "ctypes" {>= "0.4"}
+  "ocamlfind" {build}
+  "conf-llvm-static" {build & = "20"}
+  "conf-cmake" {build}
+]
+patches: [
+  "AddOCaml.cmake.patch"
+  "add-debug-info.patch"
+  "add-LLVMGetAtomicRMWBinOp.patch"
+  "fix-null-global_initializer.patch"
+]
+synopsis: "The OCaml bindings distributed with LLVM"
+description: "Note: LLVM should be installed first."
+url {
+  src:
+    "https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.1/llvm-project-20.1.1.src.tar.xz"
+  checksum: [
+    "sha256=4d5ebbd40ce1e984a650818a4bb5ae86fc70644dec2e6d54e78b4176db3332e0"
+    "md5=459eae14901ab6553dedce9c9f30184e"
+  ]
+}
+extra-source "install.sh" {
+  src:
+    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/install.sh.18"
+  checksum: [
+    "sha256=c1f95d0c7ae539fcbe97327c4ed64e7a86009143c34f7e721319407975965bae"
+    "md5=6e458426d1008d4696662cf7d3432d8b"
+  ]
+}
+extra-source "AddOCaml.cmake.patch" {
+  src:
+    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
+    checksum: [
+  "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
+  "md5=432ec376b6ffbac44e640c8fb659a7df"
+]
+}
+extra-source "add-debug-info.patch" {
+  src: "dependencies/llvm/patches/add-debug-info.patch"
+}
+extra-source "add-LLVMGetAtomicRMWBinOp.patch" {
+  src: "dependencies/llvm/patches/add-LLVMGetAtomicRMWBinOp.patch"
+}
+extra-source "fix-null-global_initializer.patch" {
+  src: "dependencies/llvm/patches/fix-null-global_initializer.patch"
+}

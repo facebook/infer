@@ -54,6 +54,11 @@ AS_IF([test "x$CLANG_INCLUDES" = "x"], [
   CLANG_INCLUDES="$CLANG_PREFIX/include"
 ])
 
+AC_ARG_VAR([LLVM_CONFIG], [which llvm-config to use to build the LLVM frontend (defaults=$CLANG_PREFIX/bin/llvm-config)])
+AS_IF([test "x$LLVM_CONFIG" = "x"], [
+  LLVM_CONFIG="$CLANG_PREFIX"/bin/llvm-config
+])
+
 BUILD_PLATFORM=unknown
 WINDOWS_BUILD=no
 AC_MSG_CHECKING([for build platform])
@@ -356,7 +361,6 @@ AS_IF([$HACKC --version >/dev/null 2>/dev/null],
    AC_MSG_RESULT([no])])
 
 if test "x$enable_swift_analyzers" = "xyes"; then
-  AC_CHECK_TOOL([LLVM_CONFIG], [llvm-config], [no])
   AC_CHECK_TOOL([SWIFTC], [swiftc], [no])
 fi
 

@@ -1307,14 +1307,34 @@ let xlate_instr :
             Exp.or_ ~typ old arg
         | Xor ->
             Exp.xor ~typ old arg
-        | Max ->
+        | Max | FMax ->
             choose Exp.gt
-        | Min ->
+        | Min | FMin ->
             choose Exp.lt
         | UMax ->
             choose Exp.ugt
         | UMin ->
             choose Exp.ult
+        | UInc_Wrap ->
+            (* [*ptr = ( *ptr u>= val) ? 0 : ( *ptr + 1)] (increment value with wraparound to zero
+               when incremented above input value) *)
+            Exp.conditional typ ~cnd:(Exp.uge ~typ old arg) ~thn:(Exp.integer typ Z.zero)
+              ~els:(Exp.add ~typ old (Exp.integer typ Z.one))
+        | UDec_Wrap ->
+            (* [*ptr = (( *ptr == 0) || ( *ptr u> val)) ? val : ( *ptr - 1)] (decrement with
+               wraparound to input value when decremented below zero) *)
+            Exp.conditional typ
+              ~cnd:(Exp.or_ ~typ (Exp.ugt ~typ old arg) (Exp.eq ~typ old (Exp.integer typ Z.zero)))
+              ~thn:arg
+              ~els:(Exp.sub ~typ old (Exp.integer typ Z.one))
+        | USub_Cond ->
+            (* [*ptr = ( *ptr u>= val) ? *ptr - val : *ptr] (subtract only if no unsigned
+               overflow). *)
+            Exp.conditional typ ~cnd:(Exp.uge ~typ old arg) ~thn:(Exp.sub ~typ old arg) ~els:old
+        | USub_Sat ->
+            (* [*ptr = ( *ptr u>= val) ? *ptr - val : 0] (subtract with clamping to zero) *)
+            Exp.conditional typ ~cnd:(Exp.uge ~typ old arg) ~thn:(Exp.sub ~typ old arg)
+              ~els:(Exp.integer typ Z.zero)
       in
       emit_inst ~prefix (Inst.atomic_rmw ~reg ~ptr ~exp ~len ~loc)
   | AtomicCmpXchg ->
@@ -1872,6 +1892,8 @@ let translate ?dump_bitcode : string -> Llair.program =
   let llmodule = read_and_parse llcontext input in
   assert (Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm) ;
   Option.for_all ~f:(Llvm_bitwriter.write_bitcode_file llmodule) dump_bitcode |> ignore ;
+  (* TODO: migrate to the new dbg records: https://llvm.org/docs/RemoveDIsDebugInfo.html *)
+  Llvm_debuginfo.set_is_new_dbg_info_format llmodule false ;
   scan_names_and_locs llmodule ;
   let lldatalayout = Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule) in
   check_datalayout llcontext lldatalayout ;

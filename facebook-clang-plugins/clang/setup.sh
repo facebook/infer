@@ -280,6 +280,9 @@ if [[ "$PLATFORM" = "Linux" ]] && [[ -f "$CONFIG_SITE" ]]; then
     cp -f "$CONFIG_SITE" "$CLANG_PREFIX/include/c++/v1/__config_site"
 fi
 
+# copy llvm-config by hand because I cannot find how to make ninja install it...
+cp -f "$TMP/build/bin/llvm-config" "$CLANG_PREFIX/bin/"
+
 # delete libs not needed by Infer
 if [ "$KEEP_LIBS" != "yes" ]; then
     rm -v "$CLANG_PREFIX"/lib/libclang*

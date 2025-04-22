@@ -14,11 +14,14 @@ set -x
 
 PLATFORM=$(uname)
 INFER_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
-llvm_opam_version="18-shared-2"
+CLANG_INSTALL=$(realpath "$INFER_ROOT"/facebook-clang-plugins/clang/install)
+llvm_opam_version="20-static-infer"
 
 clean_slate () {
     opam remove llvm --yes
+    opam remove conf-llvm --yes
     opam pin remove llvm --no-action
+    opam pin remove conf-llvm --no-action
     opam repo remove local-llvm --all
 }
 
@@ -27,7 +30,7 @@ install_opam_llvm () {
     # cd to the root of the infer repo so that opam can find the infer-specific patches listed in
     # the opam file as paths relative to the infer repo root
     pushd "$INFER_ROOT"
-    opam install llvm."$llvm_opam_version" --yes
+    PATH="$CLANG_INSTALL/bin:$PATH" OPAM_USER_PATH_RO="$CLANG_INSTALL" opam install llvm."$llvm_opam_version" --yes --assume-depext
     popd
 }
 
