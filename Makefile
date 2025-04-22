@@ -116,7 +116,9 @@ ifneq ($(CMAKE),no)
 BUILD_SYSTEMS_TESTS += clang_compilation_db cmake inferconfig inferconfig_not_strict
 endif
 ifneq ($(NDKBUILD),no)
+ifeq ($(BUILD_PLATFORM),Linux)
 BUILD_SYSTEMS_TESTS += ndk_build
+endif
 endif
 ifeq ($(HAS_OBJC),yes)
 BUILD_SYSTEMS_TESTS += \
