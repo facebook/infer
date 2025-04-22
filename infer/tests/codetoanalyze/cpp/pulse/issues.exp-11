@@ -21,6 +21,7 @@ codetoanalyze/cpp/pulse/call_lambdas.cpp, call_lambda_through_function_test_good
 codetoanalyze/cpp/pulse/call_lambdas.cpp, call_lambda_directly_test_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/call_lambdas.cpp, call_std_fun_constructor_test_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/call_lambdas.cpp, call_std_fun_constructor_test_good, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/cpp/pulse/call_lambdas.cpp, deref_dangerous_lambda_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `lambda_call_lambdas.cpp:75_a9dada4d::operator()`,in call to `dangerous` (modelled),is assigned to the null pointer,returned,return from call to `lambda_call_lambdas.cpp:75_a9dada4d::operator()`,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/call_lambdas.cpp, call_lambda_after_copy_test_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/call_lambdas.cpp, call_lambda_after_copy_test_good, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/cpp/pulse/call_lambdas.cpp, closure_as_arg, 0, PULSE_CONST_REFABLE, no_bucket, ERROR, [Parameter closure with type `std::function<_fn_>`]

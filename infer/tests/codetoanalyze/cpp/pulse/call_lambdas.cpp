@@ -70,6 +70,40 @@ int call_std_fun_constructor_test_good() {
   }
 }
 
+int* dangerous();
+void deref_dangerous_lambda_bad() {
+  auto l_dangerous = []() { return dangerous(); };
+  int* p = l_dangerous();
+  *p = 42;
+
+}
+
+void deref_dangerous_lambda_function_bad() {
+  std::function<int*()> fl_dangerous = []() { return dangerous(); };
+  int* p = fl_dangerous();
+  *p = 42;
+}
+
+class A {
+public:
+    std::function<int*()> f;
+
+    A(std::function<int*()> func) : f(std::move(func)) {}
+};
+
+void defer_dangerous_member_ok_FN() {
+  A a([]() { return dangerous(); });
+  int *p = a.f();
+  *p = 42;
+}
+
+int* maybe_dangerous();
+void deref_maybe_dangerous_lambda_function_ok() {
+  std::function<int*()> fl_maybe_dangerous = []() { return maybe_dangerous(); };
+  int* p = fl_maybe_dangerous();
+  *p = 42;
+}
+
 int call_lambda_after_copy() {
   int c = 41;
   int d = 1;
