@@ -29,7 +29,7 @@ all: build/FacebookClangPlugin.dylib
 
 include $(LEVEL)/Makefile.rules
 
-CLANG_FRONTEND=$(CLANG) -fsyntax-only -Xpreprocessor -detailed-preprocessing-record -Xclang -load -Xclang $(shell pwd)/build/FacebookClangPlugin.dylib
+CLANG_FRONTEND=$(CLANG) -fsyntax-only -Wno-unused-command-line-argument -Xpreprocessor -detailed-preprocessing-record -Xclang -load -Xclang $(shell pwd)/build/FacebookClangPlugin.dylib
 
 build/FacebookClangPlugin.dylib: $(OBJS:%=build/%) $(HEADERS)
 	@mkdir -p build

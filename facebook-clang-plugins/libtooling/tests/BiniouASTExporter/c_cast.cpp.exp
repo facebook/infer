@@ -1,4 +1,3 @@
-clang: warning: argument unused during compilation: '-c' [-Wunused-command-line-argument]
 <#032016ff:
    ({ #d121c0bd: 1, #21793419: ({ }, { }) },
     [
