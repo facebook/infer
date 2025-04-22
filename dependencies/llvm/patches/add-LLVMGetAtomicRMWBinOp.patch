@@ -1,0 +1,47 @@
+diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.ml b/llvm/bindings/ocaml/llvm/llvm.ml
+--- a/llvm/bindings/ocaml/llvm/llvm.ml	2025-04-11 07:46:28.360861571 -0700
++++ b/llvm/bindings/ocaml/llvm/llvm.ml	2025-04-11 07:45:58.343665651 -0700
+@@ -995,6 +995,7 @@
+ external instr_opcode : llvalue -> Opcode.t = "llvm_instr_get_opcode"
+ external icmp_predicate : llvalue -> Icmp.t option = "llvm_instr_icmp_predicate"
+ external fcmp_predicate : llvalue -> Fcmp.t option = "llvm_instr_fcmp_predicate"
++external atomicrmw_binop : llvalue -> AtomicRMWBinOp.t = "llvm_instr_get_atomicrmw_binop"
+ external instr_clone : llvalue -> llvalue = "llvm_instr_clone"
+ 
+ let rec iter_instrs_range f i e =
+diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.mli b/llvm/bindings/ocaml/llvm/llvm.mli
+--- a/llvm/bindings/ocaml/llvm/llvm.mli	2025-04-11 07:46:28.842864717 -0700
++++ b/llvm/bindings/ocaml/llvm/llvm.mli	2025-04-11 07:45:58.343665651 -0700
+@@ -1743,6 +1743,11 @@
+     instruction [i]. *)
+ val fcmp_predicate : llvalue -> Fcmp.t option
+ 
++(** [atomicrmw_binop i] returns the [AtomicRMWBinOp.t] of [AtomicRMW]
++    instruction [i].
++    See the method [llvm::AtomicRMWInst::getOperation].*)
++val atomicrmw_binop : llvalue -> AtomicRMWBinOp.t
++
+ (** [inst_clone i] returns a copy of instruction [i],
+     The instruction has no parent, and no name.
+     See the method [llvm::Instruction::clone]. *)
+diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/llvm/llvm_ocaml.c
+--- a/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 07:46:41.875949783 -0700
++++ b/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 07:45:58.343665651 -0700
+@@ -1927,6 +1927,17 @@
+   return caml_alloc_some(Val_int(x - LLVMRealPredicateFalse));
+ }
+ 
++/* llvalue -> AtomicRMWBinOp.t */
++value llvm_instr_get_atomicrmw_binop(value v) {
++  LLVMValueRef Inst = Value_val(v);
++  LLVMAtomicRMWBinOp o;
++  if (!LLVMIsAInstruction(Inst))
++    caml_failwith("Not an instruction");
++  o = LLVMGetAtomicRMWBinOp(Inst);
++  assert(o <= LLVMAtomicRMWBinOpFSub);
++  return Val_int(o);
++}
++
+ /* llvalue -> llvalue */
+ value llvm_instr_clone(value Inst) {
+   if (!LLVMIsAInstruction(Value_val(Inst)))

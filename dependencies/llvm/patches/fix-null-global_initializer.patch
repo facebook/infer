@@ -1,0 +1,22 @@
+diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/llvm/llvm_ocaml.c
+--- a/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 07:48:25.722627583 -0700
++++ b/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 07:48:34.004681639 -0700
+@@ -1612,8 +1612,16 @@
+ }
+ 
+ /* llvalue -> llvalue option */
+-value llvm_global_initializer(value GlobalVar) {
+-  return ptr_to_option(LLVMGetInitializer(Value_val(GlobalVar)));
++CAMLprim value llvm_global_initializer(value v) {
++  LLVMValueRef GlobalVar = Value_val(v);
++  CAMLparam0();
++  LLVMValueRef Init;
++  if ((Init = LLVMGetInitializer(GlobalVar))) {
++    value Option = caml_alloc(1, 0);
++    Field(Option, 0) = to_val(Init);
++    CAMLreturn(Option);
++  }
++  CAMLreturn(Val_none);
+ }
+ 
+ /* llvalue -> llvalue -> unit */

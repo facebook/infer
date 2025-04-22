@@ -1,0 +1,15 @@
+diff -wbBdu -Nru a/opam b/opam
+--- a/opam	2025-04-11 07:42:06.208150488 -0700
++++ b/opam	2025-04-11 07:42:02.327125156 -0700
+@@ -16,6 +16,11 @@
+   "conf-llvm-shared" {build & = "18"}
+   "conf-cmake" {build}
+ ]
++patches: [
++  "add-debug-info.patch"
++  "add-LLVMGetAtomicRMWBinOp.patch"
++  "fix-null-global_initializer.patch"
++]
+ build: [
+   "bash"
+   "-ex"

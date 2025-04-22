@@ -208,14 +208,6 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 	  | sort | uniq  \
 	  > $@
 
-LLVM_OCAML_SRC:=$(shell git ls-files -- $(ROOT_DIR)/sledge/vendor/llvm-dune)
-
-# file to use as a sentinel indicating llvm ocaml bindings are up-to-date
-LLVM_OCAML_SENTINEL=sledge/vendor/llvm-dune/src/llvm/common/dune
-
-$(LLVM_OCAML_SENTINEL): $(LLVM_OCAML_SRC) $(MAKEFILE_LIST)
-	cd sledge/vendor/llvm-dune; EXTRA_LDFLAGS='$(LLVM_LDFLAGS)' ./setup.sh $(LLVM_CONFIG)
-
 # Generate an empty file if we don't need to link against LLVM
 sledge/llvm-config_ldflags.sexp: $(MAKEFILE_LIST)
 	printf "(" > $@
@@ -291,7 +283,6 @@ clean:
 	$(REMOVE) atd/*_{j,t,v}.ml{,i} atd/clang_ast_*
 	$(REMOVE) mod_dep.dot
 	$(REMOVE) mod_dep.pdf
-	$(REMOVE_DIR) sledge/vendor/llvm-dune/{src,llvm_*.opam}
 	cd .. && dune clean
 
 .PHONY: fmt

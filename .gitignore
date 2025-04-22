@@ -67,6 +67,7 @@ infer/tests/codetoanalyze/objcpp/fb-pulse/issues.exp
 /_release
 /infer-source
 META-INF
+/dependencies/llvm/src
 /facebook/dependencies/kotlin/lib
 /facebook/dependencies/bin/kotlinc
 
