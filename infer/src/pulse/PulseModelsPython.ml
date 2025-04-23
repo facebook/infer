@@ -475,10 +475,8 @@ module PyModule = struct
     constructor ~deref:false (module_tname name) []
 end
 
-let build_tuple args : model =
+let build_tuple args () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* tuple = Tuple.make args in
   assign_ret tuple
 
@@ -491,10 +489,8 @@ let super_attribute_name = "__infer_single_super"
 
 let class_companion_attribute_name = "__infer_class_companion"
 
-let build_class closure _name base_classes : model =
+let build_class closure _name base_classes () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   (* Note: we only deal with single inheritance for now *)
   let super_keys, super_values =
     match base_classes with
@@ -823,11 +819,9 @@ let try_catch_lib_model_using_static_type ~default closure args =
       default ()
 
 
-let call_function_ex closure tuple dict : model =
+let call_function_ex closure tuple dict () : unit DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true closure in
   let args = [tuple; dict] in
   let* res =
@@ -848,9 +842,9 @@ let call_function_ex closure tuple dict : model =
   assign_ret res
 
 
-let gen_start_coroutine : model =
+let gen_start_coroutine () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model @@ fun () -> ret ()
+  ret ()
 
 
 let get_class_instance aval =
@@ -937,19 +931,15 @@ let get_attr_dsl obj attr : DSL.aval DSL.model_monad =
   ret res
 
 
-let get_attr obj attr : model =
+let get_attr obj attr () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res = get_attr_dsl obj attr in
   assign_ret res
 
 
-let call callable arg_names args : model =
+let call callable arg_names args () : unit DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true callable in
   let* res =
     match opt_dynamic_type_data with
@@ -978,11 +968,9 @@ let call callable arg_names args : model =
   assign_ret res
 
 
-let call_method name obj arg_names args : model =
+let call_method name obj arg_names args () : unit DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true obj in
   let* res =
     match opt_dynamic_type_data with
@@ -1008,18 +996,13 @@ let call_method name obj arg_names args : model =
   assign_ret res
 
 
-let get_awaitable arg : model =
+let get_awaitable arg () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* () = await_awaitable arg in
   assign_ret arg
 
 
-let dict_set_item _dict _key value : model =
-  let open DSL.Syntax in
-  start_model
-  @@ fun () ->
+let dict_set_item _dict _key value () : unit DSL.model_monad =
   (* TODO: when the dict is a constant, we could just update it *)
   await_awaitable value
 
@@ -1084,10 +1067,8 @@ let rec import_chain parents ?root_parent ?path chain : DSL.aval DSL.model_monad
       L.die InternalError "import_chain should never be called on an empty parents list"
 
 
-let import_from name module_ : model =
+let import_from name module_ () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* opt_is_package = is_package module_ in
   let* name = as_constant_string_exn name in
   let* () =
@@ -1128,10 +1109,8 @@ let split_module_path path =
   loop [] (-2 :: positions)
 
 
-let import_name globals name fromlist _level : model =
+let import_name globals name fromlist _level () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* module_name = as_constant_string_exn name in
   let* fromlist_is_tuple = is_tuple fromlist in
   let names = split_module_path module_name in
@@ -1149,15 +1128,10 @@ let import_name globals name fromlist _level : model =
     assign_ret first_parent
 
 
-let list_append list arg : model =
-  let open DSL.Syntax in
-  start_model @@ fun () -> Tuple.append list arg
+let list_append list arg () : unit DSL.model_monad = Tuple.append list arg
 
-
-let load_fast name locals : model =
+let load_fast name locals () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* value = Dict.get_exn locals name in
   assign_ret value
 
@@ -1185,10 +1159,8 @@ let tag_if_builtin name aval : unit DSL.model_monad =
       ret ()
 
 
-let load_global name globals : model =
+let load_global name globals () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* name = as_constant_string_exn name in
   let* value = Dict.get_str_key ~propagate_static_type:true globals name in
   let* () = tag_if_builtin name value in
@@ -1196,10 +1168,8 @@ let load_global name globals : model =
   assign_ret value
 
 
-let load_name name locals _globals : model =
+let load_name name locals _globals () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* value = Dict.get_exn locals name in
   (* TODO: decide what we do if the binding is missing in locals *)
   assign_ret value
@@ -1215,10 +1185,8 @@ let is_dynamic_type_maybe_string addr : bool DSL.model_monad =
       ret false
 
 
-let build_map (args : DSL.aval list) : model =
+let build_map (args : DSL.aval list) () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   if List.length args mod 2 <> 0 then
     L.die InternalError "py_build_map expects even number of arguments" ;
   let key_val_pairs = List.chunks_of args ~length:2 in
@@ -1243,24 +1211,20 @@ let build_map (args : DSL.aval list) : model =
   assign_ret dict
 
 
-let make_function closure _default_values _default_values_kw _annotations _cells_for_closure : model
-    =
+let make_function closure _default_values _default_values_kw _annotations _cells_for_closure () :
+    unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model @@ fun () -> assign_ret closure
+  assign_ret closure
 
 
-let make_int arg : model =
+let make_int arg () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res = Integer.make arg in
   assign_ret res
 
 
-let binary_add arg1 arg2 : model =
+let binary_add arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res = fresh () in
   (* lists and tuples share the same type for now *)
   let* arg1_is_tuple = is_tuple arg1 in
@@ -1270,10 +1234,8 @@ let binary_add arg1 arg2 : model =
   assign_ret res
 
 
-let bool arg : model =
+let bool arg () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* is_awaitable = is_allocated arg in
   let* res =
     if is_awaitable then Bool.make true
@@ -1285,70 +1247,49 @@ let bool arg : model =
   assign_ret res
 
 
-let bool_false : model =
+let bool_false () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res = Bool.make false in
   assign_ret res
 
 
-let bool_true : model =
+let bool_true () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res = Bool.make true in
   assign_ret res
 
 
-let load_assertion_error : model =
+let load_assertion_error () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model @@ fun () -> report_assert_error
+  report_assert_error
 
 
-let make_string arg : model =
+let make_string arg () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res = make_str_internal arg in
   assign_ret res
 
 
-let make_none : model =
+let make_none () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* none = constructor ~deref:false none_tname [] in
   assign_ret none
 
 
-let nullify_locals locals names : model =
+let nullify_locals locals names () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* zero = null in
   list_iter names ~f:(fun name -> Dict.set locals name zero)
 
 
-let store_fast name locals value : model =
+let store_fast name locals value () : unit DSL.model_monad = Dict.set locals name value
+
+let store_global name globals value () : unit DSL.model_monad = Dict.set globals name value
+
+let store_name name locals _globals value () : unit DSL.model_monad = Dict.set locals name value
+
+let store_subscript dict key value () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model @@ fun () -> Dict.set locals name value
-
-
-let store_global name globals value : model =
-  let open DSL.Syntax in
-  start_model @@ fun () -> Dict.set globals name value
-
-
-let store_name name locals _globals value : model =
-  let open DSL.Syntax in
-  start_model @@ fun () -> Dict.set locals name value
-
-
-let store_subscript dict key value =
-  let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* key_str = as_constant_string key in
   match key_str with
   | None ->
@@ -1360,10 +1301,8 @@ let store_subscript dict key value =
       Dict.set_str_key dict key value @@> ret ()
 
 
-let subscript seq idx : model =
+let subscript seq idx () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res =
     dynamic_dispatch seq
       ~cases:[(tuple_tname, fun () -> Tuple.get seq idx); (dict_tname, fun () -> Dict.get seq idx)]
@@ -1373,23 +1312,21 @@ let subscript seq idx : model =
   assign_ret res
 
 
-let yield_from _ _ : model =
+let yield_from _ _ () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model @@ fun () -> ret ()
+  ret ()
 
 
-let unknown ~deep_release args : model =
+let unknown ~deep_release args () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* res = fresh () in
   let* () = if deep_release then remove_allocation_attr_transitively args else ret () in
   assign_ret res
 
 
-let yield value : model =
+let yield value () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model @@ fun () -> remove_allocation_attr_transitively [value]
+  remove_allocation_attr_transitively [value]
 
 
 let die_if_other_builtin (_, proc_name) _ =
@@ -1400,10 +1337,8 @@ let die_if_other_builtin (_, proc_name) _ =
   false
 
 
-let compare_eq arg1 arg2 : model =
+let compare_eq arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
   let* arg2_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg2 in
   let* res =
@@ -1420,10 +1355,8 @@ let compare_eq arg1 arg2 : model =
   assign_ret res
 
 
-let compare_in arg1 arg2 : model =
+let compare_in arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   let* arg1_str = as_constant_string arg1 in
   match arg1_str with
   | Some s -> (
@@ -1589,3 +1522,4 @@ let matchers : matcher list =
   ; -"$builtins" &:: "py_yield_from" <>$ arg $+ arg $--> yield_from
   ; +die_if_other_builtin &::.*+++> unknown ~deep_release:false ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+  |> List.map ~f:(map_matcher ~f:DSL.Syntax.start_model)
