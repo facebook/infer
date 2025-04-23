@@ -310,6 +310,9 @@ val make_objc_copyWithZone : is_mutable:bool -> Typ.Name.t -> t
 val make_python : module_name:PythonClassName.t -> function_name:string -> t
 (** Create a Python procedure name. *)
 
+val make_python_builtin : PythonProcname.builtin -> t
+(** Create a Python builtin name. *)
+
 val empty_block : t
 (** Empty block name. *)
 

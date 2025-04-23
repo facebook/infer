@@ -1237,6 +1237,8 @@ let make_objc_copyWithZone ~is_mutable name = ObjC_Cpp (ObjC_Cpp.make_copyWithZo
 
 let make_python ~module_name ~function_name = Python (Regular {module_name; function_name})
 
+let make_python_builtin builtin = Python (Builtin builtin)
+
 let erlang_call_unqualified ~arity = Erlang (Erlang.call_unqualified arity)
 
 let erlang_call_qualified ~arity = Erlang (Erlang.call_qualified arity)

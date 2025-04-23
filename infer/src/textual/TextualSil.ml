@@ -409,8 +409,10 @@ module ProcDeclBridge = struct
   let python_class_name_to_sil = function
     | QualifiedProcName.TopLevel ->
         L.die InternalError "Python frontend does not allow toplevel definitions"
+    | QualifiedProcName.Enclosing {name= {value}} when String.equal "$builtins" value ->
+        `Builtin
     | QualifiedProcName.Enclosing {name= {value}; args} ->
-        TypeNameBridge.to_python_class_name value args
+        `Regular (TypeNameBridge.to_python_class_name value args)
 
 
   let to_sil lang t : SilProcname.t =
@@ -445,9 +447,17 @@ module ProcDeclBridge = struct
         let class_name = hack_class_name_to_sil t.qualified_name.enclosing_class in
         let arity = Option.map t.formals_types ~f:List.length in
         SilProcname.make_hack ~class_name ~function_name:method_name ~arity
-    | Python ->
-        let module_name = python_class_name_to_sil t.qualified_name.enclosing_class in
-        SilProcname.make_python ~module_name ~function_name:method_name
+    | Python -> (
+      match python_class_name_to_sil t.qualified_name.enclosing_class with
+      | `Regular module_name ->
+          SilProcname.make_python ~module_name ~function_name:method_name
+      | `Builtin ->
+          let builtin =
+            PythonProcname.builtin_from_string method_name
+            |> Option.value_or_thunk ~default:(fun () ->
+                   L.die InternalError "unknown python builtin name %s" method_name )
+          in
+          SilProcname.make_python_builtin builtin )
     | C ->
         SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
 

@@ -149,7 +149,7 @@ type builtin =
   | UnpackEx
   | Yield
   | YieldFrom
-[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 let show_builtin = function
   | AsyncGenValueWrapperNew ->
@@ -432,6 +432,12 @@ let show_builtin = function
       "py_yield"
   | YieldFrom ->
       "py_yield_from"
+
+
+let builtin_from_string =
+  let tbl = IString.Hash.create 100 in
+  List.iter all_of_builtin ~f:(fun builtin -> IString.Hash.add tbl (show_builtin builtin) builtin) ;
+  fun str -> IString.Hash.find_opt tbl str
 
 
 type t = Builtin of builtin | Regular of {module_name: PythonClassName.t; function_name: string}

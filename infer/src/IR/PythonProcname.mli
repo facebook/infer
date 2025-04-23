@@ -150,6 +150,8 @@ type builtin =
   | Yield
   | YieldFrom
 
+val builtin_from_string : string -> builtin option
+
 type t = Builtin of builtin | Regular of {module_name: PythonClassName.t; function_name: string}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
