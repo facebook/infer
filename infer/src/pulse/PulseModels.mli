@@ -11,3 +11,8 @@ open PulseModelsImport
 
 val dispatch :
   Tenv.t -> Procname.t -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list -> model option
+
+val dispatch_builtins :
+     Procname.t
+  -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
+  -> (unit -> unit PulseModelsDSL.model_monad) option

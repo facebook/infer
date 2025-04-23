@@ -1381,7 +1381,6 @@ let matchers : matcher list =
   let arg = capt_arg_payload in
   [ -"$builtins" &:: "py_async_gen_value_wrapper_new" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_attributes_of_match_class" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_add" <>$ arg $+ arg $--> binary_add
   ; -"$builtins" &:: "py_binary_and" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_binary_floor_divide" &::.*+++> unknown ~deep_release:false
   ; -"$builtins" &:: "py_binary_lshift" &::.*+++> unknown ~deep_release:false
@@ -1523,3 +1522,21 @@ let matchers : matcher list =
   ; +die_if_other_builtin &::.*+++> unknown ~deep_release:false ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
   |> List.map ~f:(map_matcher ~f:DSL.Syntax.start_model)
+
+
+let builtins_matcher builtin args =
+  let expect_2_args () =
+    match args with
+    | [arg1; arg2] ->
+        (arg1, arg2)
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while 2 were expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
+  match (builtin : PythonProcname.builtin) with
+  | BinaryAdd ->
+      let arg1, arg2 = expect_2_args () in
+      Some (binary_add arg1 arg2)
+  | _ ->
+      None

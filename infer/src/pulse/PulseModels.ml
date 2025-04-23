@@ -27,3 +27,17 @@ let dispatch tenv proc_name args =
       PulseModelsErlang.get_model_from_db proc_name args |> Option.map ~f:lift_model
   | m ->
       m
+
+
+let dispatch_builtins proc_name args =
+  match proc_name with
+  | Procname.Python (PythonProcname.Builtin builtin) ->
+      let args =
+        List.map
+          ~f:(fun func_arg ->
+            ProcnameDispatcher.Call.FuncArg.arg_payload func_arg |> ValueOrigin.addr_hist )
+          args
+      in
+      PulseModelsPython.builtins_matcher builtin args
+  | _ ->
+      None

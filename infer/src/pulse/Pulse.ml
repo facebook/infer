@@ -843,10 +843,15 @@ module PulseTransferFunctions = struct
         match is_hack_abstract_class_being_initialized tenv astate callee_pname func_args with
         | Some specialized_type ->
             InvalidSpecializedCall specialized_type
-        | None ->
-            PulseModels.dispatch tenv callee_pname func_args
-            |> Option.value_map ~default:NoModel ~f:(fun model -> OCamlModel (model, callee_pname))
-        )
+        | None -> (
+          match PulseModels.dispatch_builtins callee_pname func_args with
+          | Some monadic_dsl ->
+              let model = PulseModelsDSL.Syntax.start_model monadic_dsl in
+              OCamlModel (model, callee_pname)
+          | None ->
+              PulseModels.dispatch tenv callee_pname func_args
+              |> Option.value_map ~default:NoModel ~f:(fun model ->
+                     OCamlModel (model, callee_pname) ) ) )
       | None ->
           (* unresolved function pointer, etc.: skip *)
           NoModel
