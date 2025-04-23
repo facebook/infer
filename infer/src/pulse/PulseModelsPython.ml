@@ -11,7 +11,6 @@ module L = Logging
 module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
-open PulseModelsImport
 module DSL = PulseModelsDSL
 
 let bool_tname = TextualSil.python_bool_type_name
@@ -1325,14 +1324,6 @@ let yield value () : unit DSL.model_monad =
   remove_allocation_attr_transitively [value]
 
 
-let die_if_other_builtin (_, proc_name) _ =
-  if
-    Language.curr_language_is Python
-    && Procname.get_class_name proc_name |> Option.exists ~f:(String.equal "$builtins")
-  then L.die InternalError "unknown builtin %a" Procname.pp proc_name ;
-  false
-
-
 let compare_eq arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
@@ -1649,10 +1640,3 @@ let builtins_matcher builtin args =
       yield arg
   | YieldFrom ->
       unknown ~deep_release:true args
-
-
-let matchers : matcher list =
-  let open ProcnameDispatcher.Call in
-  [+die_if_other_builtin &::.*+++> unknown ~deep_release:false]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
-  |> List.map ~f:(map_matcher ~f:DSL.Syntax.start_model)

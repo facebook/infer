@@ -6,9 +6,6 @@
  *)
 
 open! IStd
-open PulseModelsImport
-
-val matchers : matcher list
 
 val builtins_matcher :
   PythonProcname.builtin -> PulseModelsDSL.aval list -> unit -> unit PulseModelsDSL.model_monad
