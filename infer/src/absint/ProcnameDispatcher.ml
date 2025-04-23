@@ -31,7 +31,7 @@ type erlang = Procname.Erlang.t
 
 type hack = Procname.Hack.t
 
-type python = Procname.Python.t
+type python = PythonProcname.t
 
 type java = Procname.Java.t
 
@@ -78,8 +78,8 @@ let templated_name_of_hack hack =
 
 
 let templated_name_of_python python =
-  let module_name = Procname.Python.get_module_name_as_a_string python in
-  let function_name = Procname.Python.get_method python in
+  let module_name = PythonProcname.get_module_name_as_a_string python in
+  let function_name = PythonProcname.get_method python in
   let qual_name = QualifiedCppName.of_list [module_name; function_name] in
   (qual_name, [])
 
