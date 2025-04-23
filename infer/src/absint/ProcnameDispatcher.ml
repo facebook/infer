@@ -78,8 +78,9 @@ let templated_name_of_hack hack =
 
 
 let templated_name_of_python python =
-  let class_name = Procname.Python.get_module_name_as_a_string python in
-  let qual_name = QualifiedCppName.of_list [class_name; python.Procname.Python.function_name] in
+  let module_name = Procname.Python.get_module_name_as_a_string python in
+  let function_name = Procname.Python.get_method python in
+  let qual_name = QualifiedCppName.of_list [module_name; function_name] in
   (qual_name, [])
 
 
