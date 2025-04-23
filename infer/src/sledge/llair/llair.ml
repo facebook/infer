@@ -83,7 +83,7 @@ and term =
   | Return of {exp: Exp.t option; loc: Loc.t}
   | Throw of {exc: Exp.t; loc: Loc.t}
   | Abort of {loc: Loc.t}
-  | Unreachable
+  | Unreachable of {loc: Loc.t}
 
 and block =
   { lbl: label
@@ -156,7 +156,7 @@ with type jump := jump
     | Return of {exp: Exp.t option; loc: Loc.t}
     | Throw of {exc: Exp.t; loc: Loc.t}
     | Abort of {loc: Loc.t}
-    | Unreachable
+    | Unreachable of {loc: Loc.t}
   [@@deriving compare, equal]
 end
 
@@ -206,8 +206,8 @@ let sexp_of_term = function
       sexp_ctor "Throw" [%sexp {exc: Exp.t; loc: Loc.t}]
   | Abort {loc} ->
       sexp_ctor "Abort" [%sexp {loc: Loc.t}]
-  | Unreachable ->
-      Sexp.Atom "Unreachable"
+  | Unreachable {loc} ->
+      sexp_ctor "Unreachable" [%sexp {loc: Loc.t}]
 
 
 let sexp_of_block {lbl; cmnd; term; parent; sort_index; goal_distance} =
@@ -323,8 +323,8 @@ let pp_term fs term =
       pf "@[<2>throw %a@]\t%a" Exp.pp exc Loc.pp loc
   | Abort {loc} ->
       pf "@[<2>abort@]\t%a" Loc.pp loc
-  | Unreachable ->
-      pf "unreachable"
+  | Unreachable {loc} ->
+      pf "@[<2>unreachable@]\t%a" Loc.pp loc
 
 
 let pp_cmnd = IArray.pp "@ " pp_inst
@@ -340,7 +340,7 @@ let pp_block fs {lbl; cmnd; term; parent= _; sort_index; goal_distance= _} =
 let rec dummy_block =
   { lbl= "dummy"
   ; cmnd= IArray.empty
-  ; term= Unreachable
+  ; term= Unreachable {loc= Loc.none}
   ; parent= dummy_func
   ; sort_index= 0
   ; goal_distance= Int.max_int }
@@ -488,7 +488,7 @@ module Term = struct
           assert (Bool.equal (Option.is_some exp) (Option.is_some parent.freturn))
       | None ->
           assert true )
-    | Throw _ | Abort _ | Unreachable ->
+    | Throw _ | Abort _ | Unreachable _ ->
         assert true
 
 
@@ -530,7 +530,12 @@ module Term = struct
 
   let abort ~loc = Abort {loc} |> check invariant
 
-  let unreachable = Unreachable |> check invariant
+  let unreachable ?loc () =
+    let unreachable =
+      match loc with Some loc -> Unreachable {loc} | None -> Unreachable {loc= Loc.none}
+    in
+    check invariant unreachable
+
 
   let loc = function
     | Switch {loc; _}
@@ -538,17 +543,16 @@ module Term = struct
     | Call {loc; _}
     | Return {loc; _}
     | Throw {loc; _}
-    | Abort {loc; _} ->
+    | Abort {loc; _}
+    | Unreachable {loc} ->
         loc
-    | Unreachable ->
-        Loc.none
 
 
   let union_locals term vs =
     match term with
     | Call {areturn; _} ->
         Reg.Set.add_option areturn vs
-    | Switch _ | Iswitch _ | Return _ | Throw _ | Abort _ | Unreachable ->
+    | Switch _ | Iswitch _ | Return _ | Throw _ | Abort _ | Unreachable _ ->
         vs
 end
 
@@ -679,7 +683,7 @@ module Func = struct
 
   let hash f = Poly.hash f.name
 
-  let undefined_entry = Block.mk ~lbl:"undefined" ~cmnd:IArray.empty ~term:Term.unreachable
+  let undefined_entry = Block.mk ~lbl:"undefined" ~cmnd:IArray.empty ~term:(Term.unreachable ())
 
   let mk_undefined ~name ~formals ~freturn ~fthrow ~loc =
     let locals = Reg.Set.empty in
@@ -703,7 +707,7 @@ module Func = struct
               IArray.fold ~f tbl s
           | Call {return; throw; _} ->
               Option.fold ~f throw (f return s)
-          | Return _ | Throw _ | Abort _ | Unreachable ->
+          | Return _ | Throw _ | Abort _ | Unreachable _ ->
               s
         in
         f blk s
@@ -816,7 +820,7 @@ module Func = struct
           jump' return ;
           Option.iter ~f:jump' throw ;
           None
-      | Return _ | Throw _ | Abort _ | Unreachable ->
+      | Return _ | Throw _ | Abort _ | Unreachable _ ->
           None
     in
     resolve_parent_and_jumps Block_label.Set.empty entry |> ignore ;
@@ -866,7 +870,7 @@ let set_derived_metadata functions =
                 () ) ;
             jump return ;
             Option.iter ~f:jump throw
-        | Return _ | Throw _ | Abort _ | Unreachable ->
+        | Return _ | Throw _ | Abort _ | Unreachable _ ->
             () ) ;
         BlockQ.enqueue_back_exn tips_to_roots src ()
     in

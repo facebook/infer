@@ -6,6 +6,7 @@
  */
 #include "my_lib.h"
 #include <stdlib.h>
+#include <assert.h>
 
 int main() { return 0; }
 int* test() { return NULL; }
@@ -64,12 +65,11 @@ int test9() {
   return ret;
 }
 
-int test10(int n) {
+int test10() {
   int sum = 0;
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < 3; i++) {
     sum += i;
   }
+  assert(sum == 3);
   return sum;
 }
-
-int test11() { return test10(10); }

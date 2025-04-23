@@ -116,7 +116,7 @@ and term = private
   | Throw of {exc: Exp.t; loc: Loc.t}
       (** Invoke [throw] of the dynamically most recent [Call] with [throw] not [None]. *)
   | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
-  | Unreachable  (** Halt as control is assumed to never reach [Unreachable]. *)
+  | Unreachable of {loc: Loc.t}  (** Halt as control is assumed to never reach [Unreachable]. *)
 
 (** A block is a destination of a jump with arguments, contains code. *)
 and block = private
@@ -241,7 +241,7 @@ module Term : sig
 
   val throw : exc:Exp.t -> loc:Loc.t -> term
 
-  val unreachable : term
+  val unreachable : ?loc:Loc.t -> unit -> term
 
   val abort : loc:Loc.t -> term
 

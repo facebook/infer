@@ -411,8 +411,9 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
           (to_textual_jump_and_succs ~proc_state ~seen_nodes els, Some loc)
       | _ ->
           ((Textual.Terminator.Unreachable, None, no_succs), None (* TODO translate Switch *)) )
-  | Iswitch _ | Abort _ | Unreachable ->
-      ((Textual.Terminator.Unreachable, None, no_succs), None)
+  | Iswitch {loc} | Abort {loc} | Unreachable {loc} ->
+      let loc = to_textual_loc_instr ~proc_state loc in
+      ((Textual.Terminator.Unreachable, None, no_succs), Some loc)
 
 
 (* TODO still various parts of the node left to be translated *)
@@ -466,7 +467,7 @@ let func_to_nodes ~proc_state func =
 let is_undefined func =
   let entry = func.Llair.entry in
   match entry.term with
-  | Unreachable ->
+  | Unreachable _ ->
       String.equal entry.lbl "undefined" && List.is_empty (StdUtils.iarray_to_list entry.cmnd)
   | _ ->
       false

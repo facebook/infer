@@ -1138,7 +1138,7 @@ let pp_code fs (insts, term, blocks) =
   Format.fprintf fs "@[<hv>@,@[%a%t@]%t@[<hv>%a@]@]" (List.pp "@ " Inst.pp) insts
     (fun fs ->
       match term with
-      | Unreachable ->
+      | Unreachable _ ->
           ()
       | _ ->
           Format.fprintf fs "%t%a"
@@ -1388,7 +1388,7 @@ let xlate_instr :
               let pre, exc = xlate_value x (Llvm.operand instr 0) in
               emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
           | ["__llair_unreachable"] ->
-              emit_term Term.unreachable
+              emit_term (Term.unreachable ())
           (* dropped / handled elsewhere *)
           | ["llvm"; "dbg"; ("declare" | "label" | "value")]
           | "llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
@@ -1453,7 +1453,7 @@ let xlate_instr :
                 let prefix, dst, blocks = xlate_jump x instr unwind_blk loc [] in
                 emit_term ~prefix (Term.goto ~dst ~loc) ~blocks
             | ["__llair_unreachable"] ->
-                emit_term Term.unreachable
+                emit_term (Term.unreachable ())
             (* unimplemented *)
             | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
                 todo "statepoints:@ %a" pp_llvalue instr ()
@@ -1622,7 +1622,7 @@ let xlate_instr :
               let pre_i, term, z = xlate_clause i z in
               let pre, blks = rev_blocks (i + 1) (block i term :: z) in
               (pre_i @ pre, blks)
-            else ([], block i Term.unreachable :: z)
+            else ([], block i (Term.unreachable ()) :: z)
           in
           let pre1, rev_blks = rev_blocks 1 [] in
           let pre0, term, blks = xlate_clause 0 rev_blks in
@@ -1641,7 +1641,7 @@ let xlate_instr :
       let exc = Exp.select typ rcd 0 in
       emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
   | Unreachable ->
-      emit_term Term.unreachable
+      emit_term (Term.unreachable ~loc ())
   | Fence ->
       nop ()
   | Trunc
