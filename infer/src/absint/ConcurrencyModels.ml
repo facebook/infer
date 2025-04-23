@@ -158,8 +158,8 @@ end = struct
     let qname_str = QualifiedCppName.to_qual_string qname in
     match List.find lock_models ~f:(fun mdl -> String.equal qname_str mdl.classname) with
     | None ->
-        L.internal_error "is_recursive_lock_type: Could not find lock type %a@\n"
-          QualifiedCppName.pp qname ;
+        L.internal_error
+          "is_recursive_lock_type: Could not find lock type %s, will assume recursive@\n" qname_str ;
         true
     | Some mdl ->
         mdl.recursive
