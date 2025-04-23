@@ -91,8 +91,11 @@ module Basic = struct
     ContinueProgram astate
 
 
-  let shallow_copy_value path location event ret_id dest_pointer_hist src_value_hist astate =
-    let<*> astate, obj_copy = PulseOperations.shallow_copy path location src_value_hist astate in
+  let shallow_copy_value ?(ask_specialization = false) path location event ret_id dest_pointer_hist
+      src_value_hist astate =
+    let<*> astate, obj_copy =
+      PulseOperations.shallow_copy ~ask_specialization path location src_value_hist astate
+    in
     let<+> astate =
       PulseOperations.write_deref path location ~ref:dest_pointer_hist
         ~obj:(fst obj_copy, Hist.add_event event (snd obj_copy))
@@ -101,11 +104,12 @@ module Basic = struct
     PulseOperations.havoc_id ret_id (Hist.single_event event) astate
 
 
-  let shallow_copy path location event ret_id dest_pointer_hist src_pointer_hist astate =
+  let shallow_copy ?(ask_specialization = false) path location event ret_id dest_pointer_hist
+      src_pointer_hist astate =
     let<*> astate, obj =
       PulseOperations.eval_access path Read location src_pointer_hist Dereference astate
     in
-    shallow_copy_value path location event ret_id dest_pointer_hist obj astate
+    shallow_copy_value ~ask_specialization path location event ret_id dest_pointer_hist obj astate
 
 
   let shallow_copy_model model_desc dest_pointer_hist src_pointer_hist : model_no_non_disj =

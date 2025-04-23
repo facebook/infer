@@ -453,11 +453,14 @@ module Function = struct
       in
       PulseOperations.havoc_id ret_id (Hist.single_event event) astate
     else
+      (* with ask_specialization:true we make sure we will copy the dynamic type of the closure object *)
+      (* TODO: why do we realloc a closure here? Looks useless since closure are immuable values *)
       match src_typ.Typ.desc with
       | Tptr (_, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
-          Basic.shallow_copy path location event ret_id dest src astate
+          Basic.shallow_copy ~ask_specialization:true path location event ret_id dest src astate
       | _ ->
-          Basic.shallow_copy_value path location event ret_id dest src astate
+          Basic.shallow_copy_value ~ask_specialization:true path location event ret_id dest src
+            astate
 end
 
 module Std = struct

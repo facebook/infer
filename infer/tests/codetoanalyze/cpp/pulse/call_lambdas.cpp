@@ -91,7 +91,7 @@ public:
     A(std::function<int*()> func) : f(std::move(func)) {}
 };
 
-void defer_dangerous_member_ok_FN() {
+void defer_dangerous_member_bad() {
   A a([]() { return dangerous(); });
   int *p = a.f();
   *p = 42;

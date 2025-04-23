@@ -738,10 +738,19 @@ let invalidate_array_elements path location cause addr_trace astate =
           astate )
 
 
-let shallow_copy path location addr_hist astate =
+let ask_dynamic_type_specialization astate (addr, _) =
+  if PulseArithmetic.get_dynamic_type addr astate |> Option.is_none then
+    AbductiveDomain.add_need_dynamic_type_specialization addr astate
+  else astate
+
+
+let shallow_copy ?(ask_specialization = false) path location addr_hist astate =
   let+ astate = check_addr_access path Read location addr_hist astate in
   let cell_opt = AbductiveDomain.find_post_cell_opt (fst addr_hist) astate in
   let copy = (AbstractValue.mk_fresh (), snd addr_hist) in
+  let astate =
+    if ask_specialization then ask_dynamic_type_specialization astate addr_hist else astate
+  in
   ( Option.value_map cell_opt ~default:astate ~f:(fun cell ->
         let astate = AbductiveDomain.set_post_cell path copy cell location astate in
         PulseArithmetic.copy_type_constraints (fst addr_hist) (fst copy) astate )

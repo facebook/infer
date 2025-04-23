@@ -90,7 +90,8 @@ module Basic : sig
   val map_continue : ('a, 'b) pulse_result -> ('a execution_domain_base_t, 'b) pulse_result
 
   val shallow_copy_value :
-       PathContext.t
+       ?ask_specialization:bool
+    -> PathContext.t
     -> Location.t
     -> ValueHistory.event
     -> Ident.t
@@ -100,7 +101,8 @@ module Basic : sig
     -> AbductiveDomain.t execution_domain_base_t AccessResult.t list
 
   val shallow_copy :
-       PathContext.t
+       ?ask_specialization:bool
+    -> PathContext.t
     -> Location.t
     -> ValueHistory.event
     -> Ident.t

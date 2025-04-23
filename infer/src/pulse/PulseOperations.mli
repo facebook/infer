@@ -291,7 +291,8 @@ val invalidate_array_elements :
 (** record that all the array elements that address points to is invalid *)
 
 val shallow_copy :
-     PathContext.t
+     ?ask_specialization:bool
+  -> PathContext.t
   -> Location.t
   -> AbstractValue.t * ValueHistory.t
   -> t
