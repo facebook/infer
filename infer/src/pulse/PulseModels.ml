@@ -38,6 +38,6 @@ let dispatch_builtins proc_name args =
             ProcnameDispatcher.Call.FuncArg.arg_payload func_arg |> ValueOrigin.addr_hist )
           args
       in
-      PulseModelsPython.builtins_matcher builtin args
+      Some (PulseModelsPython.builtins_matcher builtin args)
   | _ ->
       None

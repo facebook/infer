@@ -18,12 +18,48 @@ let%expect_test _ =
 
 
 let%expect_test _ =
-  let source = {|
-x = 42
-print(x)
-      |} in
-  PyIR.test source ;
-  [%expect {| |}]
+  let source =
+    {|
+async def str_key_access_bad():
+    d = {"ABC": asyncio.sleep(), 123: 456, "DEF": await asyncio.sleep(1)}
+    return d["DEF"]
+      |}
+  in
+  PyIR.test ~show:true source ;
+  [%expect
+    {|
+    module dummy:
+
+      function toplevel():
+        b0: @2
+          n0 <- None @2
+          n3 <- $MakeFunction["dummy.str_key_access_bad", n0, n0, n0, n0] @2
+          TOPLEVEL[str_key_access_bad] <- n3 @2
+          return n0
+           @2
+
+      async function dummy.str_key_access_bad(d):
+        b0: @?
+          n0 <- None @?
+          $GenStartCoroutine() @?
+          jmp b1
+           @?
+        b1: @3
+          n3 <- GLOBAL[asyncio] @3
+          n4 <- $CallMethod[sleep](n3, n0) @3
+          n5 <- GLOBAL[asyncio] @3
+          n6 <- $CallMethod[sleep](n5, 1, n0) @3
+          n7 <- $GetAwaitable(n6, n0) @3
+          n8 <- $YieldFrom(n7, n0, n0) @3
+          n9 <- $BuildMap("ABC", n4, 123, 456, "DEF", n7) @3
+          LOCAL[d] <- n9 @3
+          jmp b2
+           @3
+        b2: @4
+          n10 <- LOCAL[d] @4
+          n11 <- n10["DEF"] @4
+          return n11
+           @4 |}]
 
 
 let%expect_test _ =

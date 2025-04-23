@@ -971,6 +971,7 @@ let call callable arg_names args () : unit DSL.model_monad =
 let call_method name obj arg_names args () : unit DSL.model_monad =
   (* TODO: take into account named args *)
   let open DSL.Syntax in
+  L.d_printfln "call_method model" ;
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true obj in
   let* res =
     match opt_dynamic_type_data with
@@ -1312,11 +1313,6 @@ let subscript seq idx () : unit DSL.model_monad =
   assign_ret res
 
 
-let yield_from _ _ () : unit DSL.model_monad =
-  let open DSL.Syntax in
-  ret ()
-
-
 let unknown ~deep_release args () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* res = fresh () in
@@ -1376,155 +1372,16 @@ let compare_in arg1 arg2 () : unit DSL.model_monad =
       assign_ret res
 
 
-let matchers : matcher list =
-  let open ProcnameDispatcher.Call in
-  let arg = capt_arg_payload in
-  [ -"$builtins" &:: "py_async_gen_value_wrapper_new" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_attributes_of_match_class" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_and" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_floor_divide" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_lshift" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_matrix_multiply" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_modulo" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_multiply" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_or" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_power" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_rshift" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_slice" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_substract" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_true_divide" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_binary_xor" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_bool_false" <>--> bool_false
-  ; -"$builtins" &:: "py_bool_of_match_class" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_bool" <>$ arg $--> bool
-  ; -"$builtins" &:: "py_bool_true" <>--> bool_true
-  ; -"$builtins" &:: "py_build_class" <>$ arg $+ arg $+++$--> build_class
-  ; -"$builtins" &:: "py_build_frozen_set" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_build_list" &::.*+++> build_tuple
-  ; -"$builtins" &:: "py_build_map" &::.*+++> build_map
-  ; -"$builtins" &:: "py_build_set" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_build_slice" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_build_string" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_build_tuple" &::.*+++> build_tuple
-  ; -"$builtins" &:: "py_build_unpack_list" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_build_unpack_map" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_build_unpack_set" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_build_unpack_tuple" &::.*+++> build_tuple
-  ; -"$builtins" &:: "py_call" <>$ arg $+ arg $+++$--> call
-  ; -"$builtins" &:: "py_call_function_ex" <>$ arg $+ arg $+ arg $--> call_function_ex
-  ; -"$builtins" &:: "py_call_method" <>$ arg $+ arg $+ arg $+++$--> call_method
-  ; -"$builtins" &:: "py_compare_bad" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_eq" <>$ arg $+ arg $--> compare_eq
-  ; -"$builtins" &:: "py_compare_exception" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_ge" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_gt" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_in" <>$ arg $+ arg $--> compare_in
-  ; -"$builtins" &:: "py_compare_is" <>$ arg $+ arg $--> compare_eq
-  ; -"$builtins" &:: "py_compare_is_not" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_le" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_lt" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_neq" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_compare_not_in" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_copy_free_vars" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_delete_attr" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_delete_deref" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_delete_fast" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_delete_global" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_delete_name" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_delete_subscr" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_dict_merge" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_dict_set_item" <>$ arg $+ arg $+ arg $--> dict_set_item
-  ; -"$builtins" &:: "py_dict_update" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_format" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_format_fn_ascii" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_format_fn_repr" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_format_fn_str" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_gen_start_async_generator" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_gen_start_coroutine" <>--> gen_start_coroutine
-  ; -"$builtins" &:: "py_gen_start_generator" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_get_aiter" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_get_attr" <>$ arg $+ arg $--> get_attr
-  ; -"$builtins" &:: "py_get_awaitable" <>$ arg $--> get_awaitable
-  ; -"$builtins" &:: "py_get_iter" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_get_len" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_get_previous_exception" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_get_yield_from_iter" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_has_next_iter" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_import_from" <>$ arg $+ arg $--> import_from
-  ; -"$builtins" &:: "py_import_name" <>$ arg $+ arg $+ arg $+ arg $--> import_name
-  ; -"$builtins" &:: "py_import_star" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_inplace_add" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_and" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_floor_divide" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_lshift" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_matrix_multiply" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_modulo" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_multiply" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_or" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_power" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_rshift" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_substract" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_true_divide" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_inplace_xor" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_invalid_unicode" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_iter_data" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_list_append" <>$ arg $+ arg $--> list_append
-  ; -"$builtins" &:: "py_list_extend" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_list_to_tuple" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_load_assertion_error" <>--> load_assertion_error
-  ; -"$builtins" &:: "py_load_class_deref" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_load_closure" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_load_deref" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_load_fast" <>$ arg $+ arg $--> load_fast
-  ; -"$builtins" &:: "py_load_fast_and_clear" <>$ arg $+ arg $--> load_fast
-  ; -"$builtins" &:: "py_load_fast_check" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_load_from_dict_or_deref" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_load_global" <>$ arg $+ arg $--> load_global
-  ; -"$builtins" &:: "py_load_name" <>$ arg $+ arg $+ arg $--> load_name
-  ; -"$builtins" &:: "py_load_locals" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_load_super_attr" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_make_bytes" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_make_complex" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_make_cell" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_make_float" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_make_function" <>$ arg $+ arg $+ arg $+ arg $+ arg $--> make_function
-  ; -"$builtins" &:: "py_make_int" <>$ arg $--> make_int
-  ; -"$builtins" &:: "py_make_none" <>--> make_none
-  ; -"$builtins" &:: "py_make_string" <>$ arg $--> make_string
-  ; -"$builtins" &:: "py_match_class" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_match_sequence" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_next_iter" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_nullify_locals" <>$ arg $+++$--> nullify_locals
-  ; -"$builtins" &:: "py_prep_reraise_star" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_set_add" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_set_attr" <>$ arg $+ arg $+ arg $--> store_subscript
-  ; -"$builtins" &:: "py_set_update" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_setup_annotations" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_store_deref" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_store_fast" <>$ arg $+ arg $+ arg $--> store_fast
-  ; -"$builtins" &:: "py_store_global" <>$ arg $+ arg $+ arg $--> store_global
-  ; -"$builtins" &:: "py_store_name" <>$ arg $+ arg $+ arg $+ arg $--> store_name
-  ; -"$builtins" &:: "py_store_slice" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_store_subscript" <>$ arg $+ arg $+ arg $--> store_subscript
-  ; -"$builtins" &:: "py_subscript" <>$ arg $+ arg $--> subscript
-  ; -"$builtins" &:: "py_set_function_type_params" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_typevar_with_bound" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_typevar_with_constraints" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_unary_invert" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_unary_negative" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_unary_not" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_unary_pos" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_unary_positive" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_unpack_ex" &::.*+++> unknown ~deep_release:false
-  ; -"$builtins" &:: "py_yield" <>$ arg $--> yield
-  ; -"$builtins" &:: "py_yield_from" &::.*+++> unknown ~deep_release:true
-  ; -"$builtins" &:: "py_yield_from" <>$ arg $+ arg $--> yield_from
-  ; +die_if_other_builtin &::.*+++> unknown ~deep_release:false ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
-  |> List.map ~f:(map_matcher ~f:DSL.Syntax.start_model)
-
-
 let builtins_matcher builtin args =
+  let expect_1_arg () =
+    match args with
+    | [arg] ->
+        arg
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while 1 was expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
   let expect_2_args () =
     match args with
     | [arg1; arg2] ->
@@ -1534,9 +1391,268 @@ let builtins_matcher builtin args =
           (PythonProcname.show_builtin builtin)
           (List.length args)
   in
+  let expect_3_args () =
+    match args with
+    | [arg1; arg2; arg3] ->
+        (arg1, arg2, arg3)
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while 3 were expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
+  let expect_4_args () =
+    match args with
+    | [arg1; arg2; arg3; arg4] ->
+        (arg1, arg2, arg3, arg4)
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while 4 were expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
+  let expect_5_args () =
+    match args with
+    | [arg1; arg2; arg3; arg4; arg5] ->
+        (arg1, arg2, arg3, arg4, arg5)
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while 5 were expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
+  let expect_at_least_1_arg () =
+    match args with
+    | arg1 :: args ->
+        (arg1, args)
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while at least 1 were expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
+  let expect_at_least_2_args () =
+    match args with
+    | arg1 :: arg2 :: args ->
+        (arg1, arg2, args)
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while at least 2 were expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
+  let expect_at_least_3_args () =
+    match args with
+    | arg1 :: arg2 :: arg3 :: args ->
+        (arg1, arg2, arg3, args)
+    | _ ->
+        L.die InternalError "builtin %s was given %d arguments while at least 3 were expected"
+          (PythonProcname.show_builtin builtin)
+          (List.length args)
+  in
   match (builtin : PythonProcname.builtin) with
+  | AsyncGenValueWrapperNew | AttributesOfMatchClass ->
+      (unknown ~deep_release:false) args
   | BinaryAdd ->
       let arg1, arg2 = expect_2_args () in
-      Some (binary_add arg1 arg2)
-  | _ ->
-      None
+      binary_add arg1 arg2
+  | BinaryAnd
+  | BinaryFloorDivide
+  | BinaryLshift
+  | BinaryMatrixMultiply
+  | BinaryModulo
+  | BinaryMultiply
+  | BinaryOr
+  | BinaryPower
+  | BinaryRshift
+  | BinarySlice
+  | BinarySubstract
+  | BinaryTrueDivide
+  | BinaryXor ->
+      (unknown ~deep_release:false) args
+  | BoolFalse ->
+      bool_false
+  | BoolOfMatchClass ->
+      (unknown ~deep_release:false) args
+  | Bool ->
+      bool (expect_1_arg ())
+  | BoolTrue ->
+      bool_true
+  | BuildClass ->
+      let arg1, arg2, args = expect_at_least_2_args () in
+      build_class arg1 arg2 args
+  | BuildFrozenSet ->
+      (unknown ~deep_release:true) args
+  | BuildList ->
+      build_tuple args
+  | BuildMap ->
+      build_map args
+  | BuildSet | BuildSlice ->
+      (unknown ~deep_release:true) args
+  | BuildString ->
+      (unknown ~deep_release:false) args
+  | BuildTuple ->
+      build_tuple args
+  | BuildUnpackList | BuildUnpackMap | BuildUnpackSet ->
+      (unknown ~deep_release:true) args
+  | BuildUnpackTuple ->
+      build_tuple args
+  | Call ->
+      let arg1, arg2, args = expect_at_least_2_args () in
+      call arg1 arg2 args
+  | CallFunctionEx ->
+      let arg1, arg2, arg3 = expect_3_args () in
+      call_function_ex arg1 arg2 arg3
+  | CallMethod ->
+      let arg1, arg2, arg3, args = expect_at_least_3_args () in
+      call_method arg1 arg2 arg3 args
+  | CompareBad ->
+      unknown ~deep_release:false args
+  | CompareEq ->
+      let arg1, arg2 = expect_2_args () in
+      compare_eq arg1 arg2
+  | CompareException | CompareGe | CompareGt ->
+      unknown ~deep_release:false args
+  | CompareIn ->
+      let arg1, arg2 = expect_2_args () in
+      compare_in arg1 arg2
+  | CompareIs ->
+      let arg1, arg2 = expect_2_args () in
+      compare_eq arg1 arg2
+  | CompareIsNot | CompareLe | CompareLt | CompareNeq | CompareNotIn | CopyFreeVars ->
+      unknown ~deep_release:false args
+  | DeleteAttr | DeleteDeref | DeleteFast | DeleteGlobal | DeleteName | DeleteSubscr | DictMerge ->
+      unknown ~deep_release:true args
+  | DictSetItem ->
+      let arg1, arg2, arg3 = expect_3_args () in
+      dict_set_item arg1 arg2 arg3
+  | DictUpdate ->
+      unknown ~deep_release:true args
+  | Format | FormatFnAscii | FormatFnRepr | FormatFnStr | GenStartAsyncGenerator ->
+      unknown ~deep_release:false args
+  | GenStartCoroutine ->
+      gen_start_coroutine
+  | GenStartGenerator ->
+      unknown ~deep_release:false args
+  | GetAiter ->
+      unknown ~deep_release:true args
+  | GetAttr ->
+      let arg1, arg2 = expect_2_args () in
+      get_attr arg1 arg2
+  | GetAwaitable ->
+      let arg1 = expect_1_arg () in
+      get_awaitable arg1
+  | GetIter | GetLen | GetPreviousException ->
+      unknown ~deep_release:false args
+  | GetYieldFromIter | HasNextIter ->
+      unknown ~deep_release:true args
+  | ImportFrom ->
+      let arg1, arg2 = expect_2_args () in
+      import_from arg1 arg2
+  | ImportName ->
+      let arg1, arg2, arg3, arg4 = expect_4_args () in
+      import_name arg1 arg2 arg3 arg4
+  | ImportStar ->
+      unknown ~deep_release:true args
+  | InplaceAdd
+  | InplaceAnd
+  | InplaceFloorDivide
+  | InplaceLshift
+  | InplaceMatrixMultiply
+  | InplaceModulo
+  | InplaceMultiply
+  | InplaceOr
+  | InplacePower
+  | InplaceRshift
+  | InplaceSubstract
+  | InplaceTrueDivide
+  | InplaceXor
+  | InvalidUnicode ->
+      unknown ~deep_release:false args
+  | IterData ->
+      unknown ~deep_release:true args
+  | ListAppend ->
+      let arg1, arg2 = expect_2_args () in
+      list_append arg1 arg2
+  | ListExtend | ListToTuple ->
+      unknown ~deep_release:true args
+  | LoadAssertionError ->
+      load_assertion_error
+  | LoadClassDeref | LoadClosure | LoadDeref ->
+      unknown ~deep_release:false args
+  | LoadFast | LoadFastAndClear ->
+      let arg1, arg2 = expect_2_args () in
+      load_fast arg1 arg2
+  | LoadFastCheck | LoadFromDictOrDeref ->
+      unknown ~deep_release:false args
+  | LoadGlobal ->
+      let arg1, arg2 = expect_2_args () in
+      load_global arg1 arg2
+  | LoadName ->
+      let arg1, arg2, arg3 = expect_3_args () in
+      load_name arg1 arg2 arg3
+  | LoadLocals | LoadSuperAttr | MakeBytes | MakeComplex | MakeCell | MakeFloat ->
+      unknown ~deep_release:false args
+  | MakeFunction ->
+      let arg1, arg2, arg3, arg4, arg5 = expect_5_args () in
+      make_function arg1 arg2 arg3 arg4 arg5
+  | MakeInt ->
+      let arg = expect_1_arg () in
+      make_int arg
+  | MakeNone ->
+      make_none
+  | MakeString ->
+      let arg = expect_1_arg () in
+      make_string arg
+  | MatchClass | MatchSequence | NextIter ->
+      unknown ~deep_release:false args
+  | NullifyLocals ->
+      let arg1, args = expect_at_least_1_arg () in
+      nullify_locals arg1 args
+  | PrepReraiseStar ->
+      unknown ~deep_release:false args
+  | SetAdd ->
+      unknown ~deep_release:true args
+  | SetAttr ->
+      let arg1, arg2, arg3 = expect_3_args () in
+      store_subscript arg1 arg2 arg3
+  | SetUpdate ->
+      unknown ~deep_release:true args
+  | SetupAnnotations ->
+      unknown ~deep_release:false args
+  | StoreDeref ->
+      unknown ~deep_release:true args
+  | StoreFast ->
+      let arg1, arg2, arg3 = expect_3_args () in
+      store_fast arg1 arg2 arg3
+  | StoreGlobal ->
+      let arg1, arg2, arg3 = expect_3_args () in
+      store_global arg1 arg2 arg3
+  | StoreName ->
+      let arg1, arg2, arg3, arg4 = expect_4_args () in
+      store_name arg1 arg2 arg3 arg4
+  | StoreSlice ->
+      unknown ~deep_release:true args
+  | StoreSubscript ->
+      let arg1, arg2, arg3 = expect_3_args () in
+      store_subscript arg1 arg2 arg3
+  | Subscript ->
+      let arg1, arg2 = expect_2_args () in
+      subscript arg1 arg2
+  | SetFunctionTypeParams
+  | TypevarWithBound
+  | TypevarWithConstraints
+  | UnaryInvert
+  | UnaryNegative
+  | UnaryNot
+  | UnaryPos
+  | UnaryPositive
+  | UnpackEx ->
+      unknown ~deep_release:false args
+  | Yield ->
+      let arg = expect_1_arg () in
+      yield arg
+  | YieldFrom ->
+      unknown ~deep_release:true args
+
+
+let matchers : matcher list =
+  let open ProcnameDispatcher.Call in
+  [+die_if_other_builtin &::.*+++> unknown ~deep_release:false]
+  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+  |> List.map ~f:(map_matcher ~f:DSL.Syntax.start_model)
