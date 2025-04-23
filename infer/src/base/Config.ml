@@ -2277,6 +2277,12 @@ and pulse_cut_to_one_path_procedures_pattern =
      large procedures to prevent too-big states from being produced."
 
 
+and pulse_final_types_are_exact =
+  CLOpt.mk_bool ~long:"pulse-final-types-are-exact" ~default:true
+    "Make Pulse understand that final types are exact (i.e. static type is equal to the exact \
+     runtime type)."
+
+
 and pulse_force_continue =
   CLOpt.mk_bool ~long:"pulse-force-continue" ~default:true
     "The code coming after a function call is not analyzed if the callee has no summary of type \
@@ -4308,6 +4314,8 @@ and pulse_balanced_disjuncts_strategy = !pulse_balanced_disjuncts_strategy
 and pulse_cut_to_one_path_procedures_pattern =
   Option.map ~f:Str.regexp !pulse_cut_to_one_path_procedures_pattern
 
+
+and pulse_final_types_are_exact = !pulse_final_types_are_exact
 
 and pulse_force_continue = !pulse_force_continue
 

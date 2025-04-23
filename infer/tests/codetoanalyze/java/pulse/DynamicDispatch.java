@@ -20,6 +20,8 @@ public class DynamicDispatch {
     }
   }
 
+  static final class FinalImpl extends Impl {}
+
   static void interfaceShouldNotCauseFalseNegativeEasyBad() {
     Interface i = new Impl();
     // should be a warning since Impl's implementation of foo returns null
@@ -31,6 +33,10 @@ public class DynamicDispatch {
   }
 
   static void callWithBadImplementationBad_FN(Impl impl) {
+    FN_interfaceShouldNotCauseFalseNegativeHardOK(impl);
+  }
+
+  static void callWithBadFinalImplementationBad(FinalImpl impl) {
     FN_interfaceShouldNotCauseFalseNegativeHardOK(impl);
   }
 

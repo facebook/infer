@@ -1,1 +1,4 @@
-{"pulse-model-return-this": ".*ImmutableIntHashMap.duplicate\\(\\)\\|.*IntHashMap.moveToImmutable\\(\\)"}
+{
+  "pulse-model-return-this": ".*ImmutableIntHashMap.duplicate\\(\\)\\|.*IntHashMap.moveToImmutable\\(\\)",
+  "pulse-final-types-are-exact": false
+}

@@ -1685,6 +1685,34 @@ let assume_notnull_params {ProcAttributes.proc_name; formals} astate =
       else astate )
 
 
+let add_dynamic_type_on_params_with_final_type tenv {ProcAttributes.proc_name; formals; loc} astate
+    =
+  if Language.curr_language_is Java && Config.pulse_final_types_are_exact then
+    let is_final typ_name =
+      Tenv.lookup tenv typ_name
+      |> Option.exists ~f:(fun {Struct.annots} -> Annot.Item.is_final annots)
+    in
+    let add_dynamic_type astate addr typ_name =
+      let phi' =
+        PulseFormula.add_dynamic_type_unsafe addr (Typ.mk_struct typ_name) loc
+          astate.AbductiveDomain.path_condition
+      in
+      AbductiveDomain.set_path_condition phi' astate
+    in
+    List.fold formals ~init:astate ~f:(fun astate (mangled, typ, _anno) ->
+        match typ with
+        | {Typ.desc= Tptr ({desc= Tstruct typ_name}, _)} when is_final typ_name ->
+            (let open IOption.Let_syntax in
+             let var = Pvar.mk mangled proc_name |> Var.of_pvar in
+             let+ addr_var = Stack.find_opt var astate >>| ValueOrigin.addr_hist in
+             let astate, (addr, _) = Memory.eval_edge addr_var Dereference astate in
+             add_dynamic_type astate addr typ_name )
+            |> Option.value ~default:astate
+        | _ ->
+            astate )
+  else astate
+
+
 let initial tenv proc_attrs specialization location =
   let path = PathContext.initial in
   let initial_astate =
@@ -1695,6 +1723,7 @@ let initial tenv proc_attrs specialization location =
     |> PulseTaintOperations.taint_initial tenv proc_attrs
     |> set_uninitialize_prop path tenv proc_attrs
     |> assume_notnull_params proc_attrs
+    |> add_dynamic_type_on_params_with_final_type tenv proc_attrs
   in
   [(ContinueProgram initial_astate, path)]
 

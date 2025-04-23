@@ -567,6 +567,8 @@ val pulse_balanced_disjuncts_strategy : bool
 
 val pulse_cut_to_one_path_procedures_pattern : Str.regexp option
 
+val pulse_final_types_are_exact : bool
+
 val pulse_force_continue : bool
 
 val pulse_havoc_arguments : bool

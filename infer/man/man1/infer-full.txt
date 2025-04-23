@@ -2918,6 +2918,11 @@ INTERNAL OPTIONS
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
 
+       --no-pulse-final-types-are-exact
+           Deactivates: Make Pulse understand that final types are exact
+           (i.e. static type is equal to the exact runtime type).
+           (Conversely: --pulse-final-types-are-exact)
+
        --no-pulse-force-continue
            Deactivates: The code coming after a function call is not analyzed
            if the callee has no summary of type ContinueProgram, which may
