@@ -6,7 +6,7 @@
 
 .source_language = "C" @?
 
-declare __assert_fail(*ptr_elt, *ptr_elt, int, *ptr_elt) : *ptr_elt
+declare __assert_fail(*ptr_elt, *ptr_elt, int, *ptr_elt) : void
 
 define add(var0: int, var1: int) : int {
   local n2: int, n1: int
@@ -21,7 +21,7 @@ define add(var0: int, var1: int) : int {
       
 } @?
 
-declare bar() : *ptr_elt
+declare bar() : void
 
 define call_add() : int {
   #: @[30:25]
@@ -51,9 +51,9 @@ define call_add1(var0: *int, var1: int) : int {
       
 } @?
 
-declare foo() : *ptr_elt
+declare foo() : void
 
-declare free(*ptr_elt) : *ptr_elt
+declare free(*ptr_elt) : void
 
 define main() : int {
   local var1: int
@@ -63,7 +63,7 @@ define main() : int {
       
 } @?
 
-declare malloc(int) : *ptr_elt
+declare malloc(int) : void
 
 define test() : *int {
   #: @[12:15]
@@ -107,6 +107,12 @@ define test10() : int {
       
   #__assert_fail::void::ret: @[73:3]
       unreachable @[73:3]
+      
+} @?
+
+define test11() : void {
+  #: @[77:16]
+      ret null @[77:16]
       
 } @?
 

@@ -73,3 +73,5 @@ int test10() {
   assert(sum == 3);
   return sum;
 }
+
+void test11() {}

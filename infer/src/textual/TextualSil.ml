@@ -703,7 +703,9 @@ module ExpBridge = struct
                 QualifiedProcName.pp proc
           (* FIXME: transform instruction to put call at head of expressions *) )
       | Typ _ ->
-          L.die InternalError "Internal error: type expressions should not appear outside builtins"
+          L.die InternalError
+            "Internal error: type expressions should not appear outside builtins, proc: %a, exp: %a"
+            ProcDecl.pp procname Exp.pp exp
       | Closure _ | Apply _ ->
           L.die InternalError "Internal error: closures should not appear inside sub-expressions"
     in

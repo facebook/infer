@@ -70,9 +70,13 @@ let to_qualified_proc_name ?loc func_name =
     {enclosing_class= TopLevel; name= Textual.ProcName.of_string ?loc func_name}
 
 
-let to_result_type ~struct_map func_name =
-  let typ = FuncName.typ func_name in
-  Type.to_annotated_textual_typ ~struct_map typ
+let to_result_type ~struct_map freturn =
+  Option.value_map
+    ~f:(fun reg ->
+      let typ = Reg.typ reg in
+      Type.to_annotated_textual_typ ~struct_map typ )
+    freturn
+    ~default:(Textual.Typ.mk_without_attributes Textual.Typ.Void)
 
 
 let to_formals ~struct_map func =
@@ -388,7 +392,7 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
       ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc)
   | Return {exp= None; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
-      ((Textual.Terminator.Ret (Textual.Exp.Typ Textual.Typ.Void), None, no_succs), Some loc)
+      ((Textual.Terminator.Ret (Textual.Exp.Const Null), None, no_succs), Some loc)
   | Throw {exc; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
       ((Textual.Terminator.Throw (to_textual_exp ~proc_state exc |> fst), None, no_succs), Some loc)
@@ -497,9 +501,9 @@ let translate_llair_functions struct_map functions =
     let result_type =
       match typ_opt with
       | Some typ ->
-          {typ; Textual.Typ.attributes= []}
+          Textual.Typ.mk_without_attributes typ
       | None ->
-          to_result_type ~struct_map func_name
+          to_result_type ~struct_map func.Llair.freturn
     in
     let formals_types =
       List.map ~f:(fun formal -> VarMap.find formal proc_state.formals) formals_list
