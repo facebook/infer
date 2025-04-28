@@ -90,8 +90,9 @@ module T = struct
                 raise_notrace (Invalid_argument "not a string") )
       with
       | str ->
-          (*TODO: remove the \000 suffix*)
-          Some str
+          let len = String.length str - 1 in
+          let new_str = String.sub str ~pos:0 ~len in
+          Some new_str
       | exception _ ->
           None )
     | _ ->
