@@ -72,7 +72,7 @@ type opN = Record  (** Record (array / struct) constant *) [@@deriving compare, 
 
 type t = private
   | Reg of {id: int; name: string; typ: LlairTyp.t}  (** Virtual register *)
-  | Global of {name: string; typ: LlairTyp.t [@ignore]}  (** Global constant *)
+  | Global of {name: string; is_constant: bool; typ: LlairTyp.t [@ignore]}  (** Global constant *)
   | FuncName of {name: string; typ: LlairTyp.t [@ignore]}  (** Function name *)
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
@@ -85,6 +85,8 @@ type t = private
 [@@deriving compare, equal, sexp]
 
 val pp : t pp
+
+val string_of_exp : t -> string option
 
 include Invariant.S with type t := t
 
@@ -151,7 +153,7 @@ module Global : sig
 
   val of_exp : exp -> t option
 
-  val mk : LlairTyp.t -> string -> t
+  val mk : LlairTyp.t -> string -> bool -> t
 
   val name : t -> string
 

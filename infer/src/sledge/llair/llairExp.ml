@@ -63,7 +63,7 @@ module T = struct
 
   type t =
     | Reg of {id: int; name: string; typ: LlairTyp.t}
-    | Global of {name: string; typ: LlairTyp.t [@ignore]}
+    | Global of {name: string; is_constant: bool; typ: LlairTyp.t [@ignore]}
     | FuncName of {name: string; typ: LlairTyp.t [@ignore]}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: LlairTyp.t}
@@ -77,6 +77,26 @@ module T = struct
   let hash = Poly.hash
 
   let demangle = ref (fun _ -> None)
+
+  let string_of_exp exp =
+    match exp with
+    | ApN (Record, _, elts) -> (
+      match
+        String.init (IArray.length elts) ~f:(fun i ->
+            match IArray.get elts i with
+            | Integer {data; typ= Integer {byts= 1; _}} ->
+                Char.of_int_exn (Z.to_int data)
+            | _ ->
+                raise_notrace (Invalid_argument "not a string") )
+      with
+      | str ->
+          (*TODO: remove the \000 suffix*)
+          Some str
+      | exception _ ->
+          None )
+    | _ ->
+        None
+
 
   let pp_demangled ppf name =
     match !demangle name with
@@ -183,24 +203,21 @@ module T = struct
         pf "(%a@ %a %a)" pp x pp_op2 op pp y
     | Ap3 (Conditional, _, cnd, thn, els) ->
         pf "(%a@ ? %a@ : %a)" pp cnd pp thn pp els
-    | ApN (Record, _, elts) ->
-        pf "{%a}" pp_record elts
+    | ApN (Record, _, _) ->
+        pf "{%a}" pp_record exp
   [@@warning "-missing-record-field-pattern"]
 
 
-  and pp_record fs elts =
-    match
-      String.init (IArray.length elts) ~f:(fun i ->
-          match IArray.get elts i with
-          | Integer {data; typ= Integer {byts= 1; _}} ->
-              Char.of_int_exn (Z.to_int data)
-          | _ ->
-              raise_notrace (Invalid_argument "not a string") )
-    with
-    | s ->
-        Format.fprintf fs "@[<h>%s@]" (String.escaped s)
-    | exception _ ->
-        Format.fprintf fs "@[<hv>%a@]" (IArray.pp ",@ " pp) elts
+  and pp_record fs exp =
+    match exp with
+    | ApN (Record, _, elts) -> (
+      match string_of_exp exp with
+      | Some s ->
+          Format.fprintf fs "@[<h>%s@]" (String.escaped s)
+      | None ->
+          Format.fprintf fs "@[<hv>%a@]" (IArray.pp ",@ " pp) elts )
+    | _ ->
+        assert false
 end
 
 include T
@@ -406,7 +423,7 @@ module Global = struct
 
   let of_exp = function Global _ as e -> Some (e |> check invariant) | _ -> None
 
-  let mk typ name = Global {name; typ} |> check invariant
+  let mk typ name is_constant = Global {name; typ; is_constant} |> check invariant
 end
 
 (** Function names are the expressions constructed by [FuncName] *)

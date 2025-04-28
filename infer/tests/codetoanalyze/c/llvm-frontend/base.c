@@ -75,3 +75,11 @@ int test10() {
 }
 
 void test11() {}
+
+void my_fun(const char* str);
+
+void test12() {
+  my_fun("hello");
+  const char* str;
+  my_fun(str);
+}

@@ -999,7 +999,8 @@ and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
   GlobTbl.find_or_add memo_global llg ~default:(fun () ->
       [%Dbg.call fun {pf} -> pf "@ %a" pp_llvalue llg]
       ;
-      let g = Global.mk (xlate_type x (Llvm.type_of llg)) (fst (find_name llg)) in
+      let is_constant = Llvm.is_constant llg in
+      let g = Global.mk (xlate_type x (Llvm.type_of llg)) (fst (find_name llg)) is_constant in
       let loc = find_loc llg in
       (* add to tbl without initializer in case of recursive occurrences in
          its own initializer *)

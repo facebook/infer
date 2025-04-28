@@ -12,13 +12,16 @@ module IdentMap = Textual.Ident.Map
 
 type structMap = Textual.Struct.t Textual.TypeName.Map.t
 
+type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
+
 type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: Textual.Typ.annotated VarMap.t
   ; mutable ids: Textual.Typ.annotated IdentMap.t
-  ; struct_map: structMap }
+  ; struct_map: structMap
+  ; globals: globalMap }
 
 let pp_ids fmt current_ids =
   F.fprintf fmt "%a"
