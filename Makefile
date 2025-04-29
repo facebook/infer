@@ -81,7 +81,6 @@ DIRECT_TESTS += \
 ifeq ($(BUILD_CPU),x86_64)
 DIRECT_TESTS += \
   c_frontend \
-  c_llvm-frontend \
 
 endif
 
@@ -131,7 +130,7 @@ BUILD_SYSTEMS_TESTS += \
   pulse_taint_regex_objc \
   pulse_taint_sanitize_objc \
   pulse_taint_exclude_in_objc \
-	pulse_taint_exclude_matching_objc
+  pulse_taint_exclude_matching_objc
 
 DIRECT_TESTS += \
   objc_bufferoverrun \
@@ -174,8 +173,10 @@ endif # HAS_OBJC
 endif # BUILD_C_ANALYZERS
 
 ifneq ($(BUILD_SWIFT_ANALYZERS),no)
+DIRECT_TESTS += \
+  c_llvm-frontend \
+
 # disabled for now
-#DIRECT_TESTS += \
 #  swift_frontend \
 
 endif
@@ -186,10 +187,10 @@ ifneq ($(ESCRIPT),no)
 DIRECT_TESTS += \
   erlang_flowquery \
   erlang_pulse \
-	erlang_pulse-taint \
+  erlang_pulse-taint \
   erlang_topl \
   erlang_compiler \
-	# TODO: Disabled to avoid timeouts on CI
+  # TODO: Disabled to avoid timeouts on CI
   # erlang_pulse-otp \
 
 
@@ -204,14 +205,14 @@ endif # BUILD_ERLANG_ANALYZERS
 ifneq ($(HACKC),no)
 DIRECT_TESTS += \
   hack_capture \
-	hack_impurity \
+  hack_impurity \
   hack_pulse \
   hack_performance \
 
 BUILD_SYSTEMS_TESTS += \
   differential_hack \
   pulse_messages_hack \
-	pulse_taint_hack_no_follow_field_accesses \
+  pulse_taint_hack_no_follow_field_accesses \
 
 endif
 
@@ -311,10 +312,10 @@ endif
 # endif
 ifneq ($(MVN),no)
 BUILD_SYSTEMS_TESTS += \
-	mvn \
-	jar \
+  mvn \
+  jar \
 # Temporarily(?) disabled due to CI errors
-#	jar_without_sources \
+#  jar_without_sources \
 
 endif
 endif # BUILD_JAVA_ANALYZERS

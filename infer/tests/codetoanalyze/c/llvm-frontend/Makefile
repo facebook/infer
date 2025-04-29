@@ -7,19 +7,19 @@ TESTS_DIR=../../..
 
 
 INFER_OPTIONS =
-
 SOURCES = $(wildcard *.c)
-
-CLEAN_EXTRA = $(foreach source,$(SOURCES),$(basename $(notdir $(source))).o)
+HEADERS = $(wildcard *.h)
 
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/clang-base.make
 
 default: test
 
-%.c.test.sil: %.c $(LLAIR_DEPS) $(HEADERS)
+%.c.test.sil: %.c $(HEADERS) $(CLANG_DEPS) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing the infer/llvm frontend in $(TEST_REL_DIR),\
-	  $(INFER_BIN) capture --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) --capture-llair $*.c.llair --llair-source-file $<)
+	  $(INFER_BIN) capture --bitcode-capture \
+	               --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) \
+	               -- $(CLANG_PREFIX)/bin/clang -g -c $<)
 
 capture: $(SOURCES:.c=.c.test.sil)
 
@@ -41,4 +41,4 @@ replace: capture
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) infer-out */*.test.sil */*/*.test.sil $(CLEAN_EXTRA)
+	$(REMOVE_DIR) infer-out *.test.sil $(CLEAN_EXTRA)
