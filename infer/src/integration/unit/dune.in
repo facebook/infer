@@ -1,0 +1,23 @@
+(* -*- tuareg -*- *)
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+(* NOTE: prepend dune.common to this file! *)
+
+Printf.sprintf
+  {|(library
+ (name IntegrationTest)
+ (flags
+  (:standard -open IStdlib -open IStd -open IBase -open IR -open Integration))
+ (libraries IStdlib IBase IR Integration)
+ (preprocess
+  (pps ppx_expect))
+ (inline_tests
+  (executable
+   (link_flags %s %s))))|}
+  (if_platform_env "-linkall -cclib -lppx_inline_test_runner_lib_stubs")
+  platform_linking_flags
+|> Jbuild_plugin.V1.send

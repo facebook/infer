@@ -29,8 +29,8 @@ function usage() {
   echo "Usage: $0 [options] [targets] [-- options for ./configure]"
   echo
   echo " targets:"
-  echo "   all      build everything except swift (default)"
-  echo "   clang    build C and Objective-C analyzer"
+  echo "   all      build everything (default)"
+  echo "   clang    build C, C++, and Objective-C analyzer"
   echo "   erlang   build Erlang analyzer"
   echo "   hack     build Hack analyzer"
   echo "   java     build Java analyzer"
@@ -74,7 +74,7 @@ function build_all() {
   BUILD_HACK=yes
   BUILD_JAVA=yes
   BUILD_PYTHON=yes
-  BUILD_SWIFT=no
+  BUILD_SWIFT=yes
 }
 
 while [[ $# -gt 0 ]]; do
@@ -182,6 +182,13 @@ install_opam_deps () {
     opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked
 }
 
+# regardless of the LLVM toolchain used to provide the LLVM libraries, we need our own LLVM OCaml
+# bindings to be installed
+setup_local_opam_repo () {
+    opam repo list -s | grep -q local-llvm \
+    || opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
+}
+
 echo "initializing opam... " >&2
 . "$INFER_ROOT"/scripts/opam_utils.sh
 if [ "$USER_OPAM_SWITCH" == "no" ]; then
@@ -191,7 +198,7 @@ eval $(SHELL=bash opam env)
 echo >&2
 echo "installing infer dependencies; this can take up to 30 minutes... " >&2
 opam_retry install_opam_deps
-
+setup_local_opam_repo
 if [ "$ONLY_SETUP_OPAM" == "yes" ]; then
   exit 0
 fi
@@ -218,8 +225,8 @@ fi
 if [ "$BUILD_PYTHON" == "no" ]; then
   CONFIGURE_PREPEND_OPTS+=" --disable-python-analyzers"
 fi
-if [ "$BUILD_SWIFT" == "yes" ]; then
-  CONFIGURE_PREPEND_OPTS+=" --enable-swift-analyzers"
+if [ "$BUILD_SWIFT" == "no" ]; then
+  CONFIGURE_PREPEND_OPTS+=" --disable-swift-analyzers"
 fi
 
 set -x

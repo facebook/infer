@@ -35,4 +35,11 @@ let if_platform_env s =
 
 let platform_linking_flags =
   if windows then "(:standard -cclib -lgcc_s -cclib -lole32)"
-  else if_platform_env "(:include %{project_root}/src/linking-flags.sexp)"
+  else
+    if_platform_env
+      ( "-noautolink "
+      ^ ( if swift then
+            "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) (:include \
+             %{project_root}/src/linking-flags-llvm.sexp) "
+          else "" )
+      ^ "(:include %{project_root}/src/linking-flags.sexp)" )

@@ -1,0 +1,111 @@
+opam-version: "2.0"
+name: "llvm"
+version: "20-static-infer"
+synopsis: "The OCaml bindings distributed with LLVM"
+description: "Note: LLVM should be installed first."
+maintainer: "Alan <ahulambda@gmail.com>"
+authors: ["whitequark <whitequark@whitequark.org>" "The LLVM team"]
+license: "MIT"
+homepage: "http://llvm.org"
+doc: "http://llvm.org"
+bug-reports: "http://llvm.org/bugs/"
+depends: [
+  "base-bigarray" {= "base"}
+  "base-domains" {= "base"}
+  "base-nnp" {= "base"}
+  "base-threads" {= "base"}
+  "base-unix" {= "base"}
+  "bigarray-compat" {= "1.1.0"}
+  "conf-bash" {= "1"}
+  "conf-cmake" {= "1"}
+  "conf-libffi" {= "2.0.0"}
+  "conf-llvm-static" {= "20"}
+  "conf-pkg-config" {= "4"}
+  "csexp" {= "1.5.2"}
+  "ctypes" {= "0.23.0"}
+  "ctypes-foreign" {= "0.23.0"}
+  "dune" {= "3.17.2"}
+  "dune-configurator" {= "3.17.2"}
+  "integers" {= "0.7.0"}
+  "ocaml" {= "5.2.1"}
+  "ocaml-config" {= "3"}
+  "ocaml-option-flambda" {= "1"}
+  "ocaml-variants" {= "5.2.1+options"}
+  "ocamlfind" {= "1.9.8"}
+  "stdlib-shims" {= "0.3.0"}
+]
+build: [
+  "bash"
+  "-ex"
+  "install.sh"
+  "build"
+  "--llvm-config"
+  "%{conf-llvm-static:config}%"
+  "--libdir"
+  lib
+  "--cmake"
+  "%{conf-cmake:cmd}%"
+  "--make"
+  make
+  "--link-mode"
+  "static"
+  "--use-homebrew" {os-distribution = "homebrew"}
+]
+install: [
+  "bash"
+  "-ex"
+  "install.sh"
+  "install"
+  "--llvm-config"
+  "%{conf-llvm-static:config}%"
+  "--libdir"
+  lib
+  "--cmake"
+  "%{conf-cmake:cmd}%"
+  "--make"
+  make
+  "--link-mode"
+  "static"
+  "--use-homebrew" {os-distribution = "homebrew"}
+]
+patches: [
+  "AddOCaml.cmake.patch"
+  "add-debug-info.patch"
+  "add-LLVMGetAtomicRMWBinOp.patch"
+  "fix-null-global_initializer.patch"
+]
+dev-repo: "git+http://llvm.org/git/llvm.git"
+extra-source "AddOCaml.cmake.patch" {
+  src:
+    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
+  checksum: [
+    "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
+    "md5=432ec376b6ffbac44e640c8fb659a7df"
+  ]
+}
+extra-source "add-LLVMGetAtomicRMWBinOp.patch" {
+  src:
+    "dependencies/llvm/patches/add-LLVMGetAtomicRMWBinOp.patch"
+  checksum:
+    "sha256=072b1a1e2d004887126da762e8cc04eca86a89d11eda5ffeec88c0f8e431a1df"
+}
+extra-source "add-debug-info.patch" {
+  src:
+    "dependencies/llvm/patches/add-debug-info.patch"
+  checksum:
+    "sha256=25b13e4e61f52c404338909866291b8fb045b4c5aa4e81eafa1901f65cd2bd97"
+}
+extra-source "fix-null-global_initializer.patch" {
+  src:
+    "dependencies/llvm/patches/fix-null-global_initializer.patch"
+  checksum:
+    "sha256=18c65e1036a4466e2db4082f1da4b5a08c725d0670a3e0518f14dba5c88d3192"
+}
+extra-source "install.sh" {
+  src:
+    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/install.sh.18"
+  checksum: [
+    "sha256=c1f95d0c7ae539fcbe97327c4ed64e7a86009143c34f7e721319407975965bae"
+    "md5=6e458426d1008d4696662cf7d3432d8b"
+  ]
+}

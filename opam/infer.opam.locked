@@ -147,7 +147,7 @@ depends: [
   "trie" {= "1.0.0"}
   "typerep" {= "v0.16.0"}
   "uchar" {= "0.0.2"}
-  "utop" {= "2.15.0-1" & with-test}
+  "utop" {= "2.15.0" & with-test}
   "uucp" {= "16.0.0"}
   "uuseg" {= "16.0.0"}
   "uutf" {= "1.0.3"}

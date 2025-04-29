@@ -55,9 +55,13 @@ AS_IF([test "x$CLANG_INCLUDES" = "x"], [
 ])
 
 AC_ARG_VAR([LLVM_CONFIG], [which llvm-config to use to build the LLVM frontend (defaults=$CLANG_PREFIX/bin/llvm-config)])
+USER_LLVM=no
 AS_IF([test "x$LLVM_CONFIG" = "x"], [
   LLVM_CONFIG="$CLANG_PREFIX"/bin/llvm-config
+], [
+  USER_LLVM=yes
 ])
+AC_SUBST([USER_LLVM])
 
 BUILD_PLATFORM=unknown
 WINDOWS_BUILD=no
@@ -156,10 +160,10 @@ BUILD_PYTHON_ANALYZERS=$enable_python_analyzers
 AC_SUBST([BUILD_PYTHON_ANALYZERS])
 
 AC_ARG_ENABLE(swift-analyzers,
-  AS_HELP_STRING([--enable-swift-analyzers],
-    [build the Swift analyzers (default is not to build them)]),
+  AS_HELP_STRING([--disable-swift-analyzers],
+    [do not build the Swift analyzers (default is to build them)]),
   ,
-  enable_swift_analyzers=no)
+  enable_swift_analyzers=yes)
 BUILD_SWIFT_ANALYZERS=$enable_swift_analyzers
 AC_SUBST([BUILD_SWIFT_ANALYZERS])
 

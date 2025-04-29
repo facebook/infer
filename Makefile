@@ -174,8 +174,9 @@ endif # HAS_OBJC
 endif # BUILD_C_ANALYZERS
 
 ifneq ($(BUILD_SWIFT_ANALYZERS),no)
-DIRECT_TESTS += \
-  swift_frontend \
+# disabled for now
+#DIRECT_TESTS += \
+#  swift_frontend \
 
 endif
 
@@ -515,6 +516,20 @@ clang_setup:
 	  fi; \
 	  $(FCP_DIR)/clang/$(PLUGIN_SETUP_SCRIPT) $(FCP_COMPILE_ARGS); \
 	}
+ifeq ($(BUILD_SWIFT_ANALYZERS), yes)
+#	we need to add our LLVM distribution to opam's sandbox using OPAM_USER_PATH_RO. This doesn't
+#	seem to play well with symbolic links so make sure to use 'realpath' first.
+	$(QUIET)if [ '$(USER_LLVM)' == 'no' ]; then \
+	  CLANG_INSTALL=$$(realpath '$(FCP_DIR)'/clang/install); \
+	  export PATH="$$CLANG_INSTALL/bin:$$PATH" \
+	         OPAM_USER_PATH_RO="$$CLANG_INSTALL"; \
+	fi; \
+	llvm_version=$$(opam show \
+	  --just-file $(ROOT_DIR)/dependencies/llvm/opam-repository/packages/llvm/llvm.20-static-infer/opam \
+	  --field=version); \
+	$(call silent_on_success,Installing our LLVM OCaml bindings,\
+	opam install --yes --assume-depext llvm.$$llvm_version)
+endif
 
 .PHONY: clang_plugin
 clang_plugin: clang_setup

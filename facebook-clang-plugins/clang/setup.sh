@@ -286,7 +286,6 @@ cp -f "$TMP/build/bin/llvm-config" "$CLANG_PREFIX/bin/"
 # delete libs not needed by Infer
 if [ "$KEEP_LIBS" != "yes" ]; then
     rm -v "$CLANG_PREFIX"/lib/libclang*
-    rm -v "$CLANG_PREFIX"/lib/libLLVM*
 fi
 
 # brutally strip everything, ignore errors

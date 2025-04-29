@@ -51,7 +51,8 @@ GENERATED_FROM_AUTOCONF = dune.common ../dune-workspace base/Version.ml
 dune-workspace: ../dune-workspace
 
 GENERATED_DUNES += \
-  dune clang/dune integration/dune java/dune llvm/dune opensource/dune python/unit/dune sledge/dune unit/dune
+  dune clang/dune integration/dune integration/unit/dune java/dune llvm/dune opensource/dune \
+  python/unit/dune sledge/dune unit/dune
 
 SRC_BUILD_COMMON = $(GENERATED_FROM_AUTOCONF) $(GENERATED_DUNES) $(OCAML_SOURCES)
 ifeq ($(BUILD_C_ANALYZERS),yes)
@@ -261,6 +262,7 @@ $(GENERATED_DUNES): dune.common
 dune: dune.in
 clang/dune: clang/dune.in
 integration/dune: integration/dune.in
+integration/unit/dune: integration/unit/dune.in
 java/dune: java/dune.in
 llvm/dune: llvm/dune.in
 opensource/dune: opensource/dune.in

@@ -26,7 +26,7 @@ depends: [
   "conf-bash" {= "1"}
   "csexp" {= "1.5.2"}
   "dune" {= "3.17.2"}
-  "dune-build-info" {= "3.17.2"}
+  "dune-build-info" {= "3.16.1"}
   "dune-configurator" {= "3.17.2"}
   "either" {= "1.0.0"}
   "fix" {= "20230505"}
@@ -39,11 +39,10 @@ depends: [
   "ocaml-config" {= "3"}
   "ocaml-option-flambda" {= "1"}
   "ocaml-variants" {= "5.2.1+options"}
-  "ocaml-version" {= "3.7.3"}
+  "ocaml-version" {= "3.6.4"}
   "ocamlbuild" {= "0.15.0"}
   "ocamlfind" {= "1.9.8"}
   "ocamlformat-lib" {= "0.26.2"}
-  "ocamlformat-rpc-lib" {= "0.27.0" & with-test}
   "ocp-indent" {= "1.8.1"}
   "re" {= "1.12.0"}
   "result" {= "1.5"}
