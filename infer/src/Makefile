@@ -246,6 +246,7 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	  -e "s|@INFER_MAN_LAST_MODIFIED[@]|$(INFER_MAN_LAST_MODIFIED)|g" \
 	  -e "s|@PYTHON[@]|$(PYTHON)|g" \
 	  -e "s|@PYTHONNEXT[@]|$(PYTHONNEXT)|g" \
+	  -e "s|@WINDOWS_BUILD[@]|$(WINDOWS_BUILD)|g" \
 	  $@.in > "$$TMPFILE"; \
 	cat "$$TMPFILE" > $@; \
 	echo -e "\n;;" >> $@; \
