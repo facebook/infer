@@ -27,6 +27,6 @@ include $(TESTS_DIR)/clang-base.make
 
 infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCE) $(HEADERS) $(TESTS_DIR)/.inferconfig $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/clang in $(TEST_REL_DIR)$(TEST_SUB_TITLE),\
-	  $(INFER_BIN) --results-dir $(@D) --capture-llair $(basename $(SOURCE)).llair --llair-source-file $(SOURCE) --dump-duplicate-symbols \
+	  $(INFER_BIN) --results-dir $(@D) --bitcode-capture --dump-duplicate-symbols \
 	    $(INFER_OPTIONS) -- \
 	    clang $(CLANG_OPTIONS) $(SOURCE))

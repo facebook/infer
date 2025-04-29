@@ -175,6 +175,7 @@ endif # BUILD_C_ANALYZERS
 ifneq ($(BUILD_SWIFT_ANALYZERS),no)
 DIRECT_TESTS += \
   c_llvm-frontend \
+  c_pulse-llvm \
 
 # disabled for now
 #  swift_frontend \
