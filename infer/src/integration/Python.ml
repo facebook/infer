@@ -140,6 +140,14 @@ let is_file_block_listed file =
 
 let capture_file ~is_binary file = process_file ~is_binary file
 
+let write_infer_deps out_dirs =
+  ResultsDir.get_path CaptureDependencies
+  |> Utils.with_file_out ~f:(fun out_channel ->
+         Array.iter out_dirs ~f:(fun out_dir_opt ->
+             Option.iter out_dir_opt ~f:(fun out_dir ->
+                 Out_channel.output_string out_channel (Printf.sprintf "-\t-\t%s\n" out_dir) ) ) )
+
+
 type not_captured_reason = Skipped | Error
 
 let capture_files ~is_binary files =
@@ -160,15 +168,29 @@ let capture_files ~is_binary files =
             Error.format_error file err ;
             Some Error
     in
-    let child_prologue _ = Py.initialize ~interpreter () in
+    let worker_out_dir_name id = Format.asprintf "worker-%a-out" ProcessPool.Worker.pp_id id in
+    let child_prologue id =
+      let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name id in
+      Utils.create_dir worker_out_dir_abspath ;
+      let capture_db_abspath =
+        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath CaptureDB
+      in
+      let capture_db = Database.Secondary capture_db_abspath in
+      DBWriterProcess.override_use_daemon false ;
+      Database.create_db capture_db CaptureDatabase ;
+      Database.new_database_connection capture_db CaptureDatabase ;
+      Py.initialize ~interpreter ()
+    in
     let child_epilogue worker_id =
-      let tenv_path = ResultsDir.get_path Temporary ^/ "child.tenv" |> DB.filename_from_string in
-      let tenv_path = DB.filename_add_suffix tenv_path (ProcessPool.Worker.show_id worker_id) in
+      let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name worker_id in
+      let tenv_path =
+        ResultsDirEntryName.get_path ~results_dir:worker_out_dir_abspath GlobalTypeEnvironment
+      in
       L.debug Capture Quiet "Epilogue: writing child %a tenv to %s@\n" ProcessPool.Worker.pp_id
-        worker_id (DB.filename_to_string tenv_path) ;
-      Tenv.write child_tenv tenv_path ;
+        worker_id tenv_path ;
+      Tenv.write child_tenv (DB.filename_from_string tenv_path) ;
       Py.finalize () ;
-      tenv_path
+      worker_out_dir_abspath
     in
     (child_action, child_prologue, child_epilogue)
   in
@@ -188,29 +210,19 @@ let capture_files ~is_binary files =
             incr n_captured ;
             None )
   in
-  let jobs =
-    let per_worker = 100 in
-    min ((per_worker + n_files) / per_worker) Config.jobs
-  in
+  let jobs = min n_files Config.jobs in
   L.debug Capture Quiet "Preparing to capture with %d workers@\n" jobs ;
-  let runner = ProcessPool.create ~jobs ~child_prologue ~f:child_action ~child_epilogue ~tasks () in
-  let child_tenv_paths = ProcessPool.run runner in
+  let runner =
+    ProcessPool.create ~with_primary_db:false ~jobs ~child_prologue ~f:child_action ~child_epilogue
+      ~tasks ()
+  in
+  let child_out_dirs = ProcessPool.run runner in
+  write_infer_deps child_out_dirs ;
   L.progress "Success: %d files@\n" !n_captured ;
   L.progress "Skipped: %d files@\n" !n_skipped ;
   L.progress "Failure: %d files@\n" !n_error ;
   L.progress "Merging type environments...@\n%!" ;
-  (* Merge worker tenvs into a global tenv *)
-  let child_tenv_paths =
-    Array.foldi child_tenv_paths ~init:[] ~f:(fun child_num acc tenv_path ->
-        match tenv_path with
-        | Some tenv_path ->
-            tenv_path :: acc
-        | None ->
-            Error.log L.ExternalError "Child %d did't return a path to its tenv" child_num ;
-            acc )
-  in
-  if not Config.python_skip_db then MergeCapture.merge_global_tenv ~normalize:true child_tenv_paths ;
-  List.iter child_tenv_paths ~f:(fun filename -> DB.filename_to_string filename |> Unix.unlink)
+  if not Config.python_skip_db then MergeCapture.merge_captured_targets ~root:Config.results_dir
 
 
 let capture input =

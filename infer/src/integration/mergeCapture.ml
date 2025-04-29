@@ -85,8 +85,6 @@ module TenvMerger = struct
           Tenv.Global.force_load () |> ignore )
 end
 
-let merge_global_tenv = TenvMerger.merge_into_global
-
 let merge_captured_targets ~root =
   let time0 = Mtime_clock.counter () in
   L.progress "Merging captured targets...@\n%!" ;
