@@ -70,20 +70,20 @@ endif
 
 .PHONY: fmt_dune
 fmt_dune:
-	BYTE_MODE=true $(DUNE_BUILD) @fmt --auto-promote
+	$(DUNE_BUILD) @fmt --auto-promote
 
 .PHONY: runtest
 runtest: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	BYTE_MODE=true LD_LIBRARY_PATH=$(LDPATH) $(DUNE_BUILD) @runtest --auto-promote
+	LD_LIBRARY_PATH=$(LDPATH) $(DUNE_BUILD) @runtest --auto-promote
 
 # we want dune to format test files *after* having promoted them
 .PHONY: runtest_formatted
 runtest_formatted: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest
-	BYTE_MODE=true $(DUNE_BUILD) @fmt --auto-promote
+	$(DUNE_BUILD) @fmt --auto-promote
 
 .PHONY: test
 test: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST) runtest_formatted
-	BYTE_MODE=true $(DUNE_BUILD) \
+	$(DUNE_BUILD) \
 	  $(INFER_MAIN).bc.exe scripts/$(CHECKCOPYRIGHT_MAIN).bc.exe $(INFERUNIT_MAIN).bc.exe $(INFERTOP_MAIN).bc.exe
 
 .PHONY: unit
@@ -93,7 +93,7 @@ unit: runtest test
 
 .PHONY: build_all
 build_all: $(SRC_BUILD_COMMON)
-	BYTE_MODE=true $(DUNE_BUILD) @all
+	$(DUNE_BUILD) @all
 
 .PHONY: doc
 doc: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
@@ -121,11 +121,11 @@ $(INFER_BIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 
 .PHONY: $(INFER_BIN).bc.exe
 $(INFER_BIN).bc.exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	$(QUIET)BYTE_MODE=true $(DUNE_BUILD) $(INFER_MAIN).bc.exe
+	$(QUIET)$(DUNE_BUILD) $(INFER_MAIN).bc.exe
 
 .PHONY: $(INFERTOP_BIN) toplevel
 $(INFERTOP_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
-	BYTE_MODE=true $(DUNE_BUILD) $(INFERTOP_MAIN).bc.exe
+	$(DUNE_BUILD) $(INFERTOP_MAIN).bc.exe
 toplevel: $(INFERTOP_BIN)
 
 .PHONY: $(CHECKCOPYRIGHT_BIN) checkCopyright

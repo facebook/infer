@@ -65,14 +65,6 @@ let env_stanza =
     new dependency in the clang-only build. *)
 let extlib_if_java = if java then "extlib" else ""
 
-let if_platform_env_and_not_byte_mode s =
-  match (Sys.getenv_opt "PLATFORM_ENV", Sys.getenv_opt "BYTE_MODE") with
-  | Some pe, None when String.length pe > 0 ->
-      s
-  | _ ->
-      ""
-
-
 let verbose = match Sys.getenv_opt "VERBOSE" with Some "1" -> "-verbose" | _ -> ""
 
 let infer_exe_stanza =
@@ -92,9 +84,7 @@ let infer_exe_stanza =
      )|}
     (if clang then "" else "-open ClangFrontendStubs")
     (if java then "" else "-open JavaFrontendStubs")
-    verbose extlib_if_java
-    ( if windows then "(:standard -cclib -lgcc_s -cclib -lole32)"
-      else if_platform_env_and_not_byte_mode "(:include linking-flags.sexp)" )
+    verbose extlib_if_java platform_linking_flags
 
 
 let inferunit_stanza =
@@ -114,7 +104,7 @@ let inferunit_stanza =
     (if clang then "-open ClangUnitTests" else "-open ClangFrontendStubs")
     verbose extlib_if_java
     (if clang then "ClangUnitTests" else "")
-    (if_platform_env_and_not_byte_mode "(:include linking-flags.sexp)")
+    platform_linking_flags
 
 
 let infertop_stanza =
