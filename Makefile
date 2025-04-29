@@ -527,10 +527,10 @@ ifeq ($(BUILD_SWIFT_ANALYZERS), yes)
 	         OPAM_USER_PATH_RO="$$CLANG_INSTALL"; \
 	fi; \
 	llvm_version=$$(opam show \
-	  --just-file $(ROOT_DIR)/dependencies/llvm/opam-repository/packages/llvm/llvm.20-static-infer/opam \
+	  --just-file $(ROOT_DIR)/dependencies/llvm/opam-repository/packages/llvm/llvm.*-infer/opam \
 	  --field=version); \
 	$(call silent_on_success,Installing our LLVM OCaml bindings,\
-	opam install --yes --assume-depext llvm.$$llvm_version)
+	opam install --yes --no-depext llvm.$$llvm_version)
 endif
 
 .PHONY: clang_plugin

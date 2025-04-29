@@ -213,7 +213,9 @@ $(CLANG_BINIOU_DICT): $(CLANG_ATDGEN_STUB_ATD)
 sledge/llvm-config_ldflags.sexp: $(MAKEFILE_LIST)
 	printf "(" > $@
 ifeq ($(BUILD_SWIFT_ANALYZERS),yes)
-	$(LLVM_CONFIG) --ldflags | xargs -n 1 printf "-ccopt '%s' " >> $@
+#	some versions of printf don't like when the format string starts with - so make it start
+#	with "-ccopt" instead
+	$(LLVM_CONFIG) --ldflags | xargs -n 1 printf "\"-ccopt\" '%s' " >> $@
 endif
 	printf ")\n" >> $@
 
