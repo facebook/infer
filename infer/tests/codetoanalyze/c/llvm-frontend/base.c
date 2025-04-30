@@ -83,3 +83,12 @@ void test12() {
   const char* str;
   my_fun(str);
 }
+
+int test13() {
+  int i = 10;
+  while (i >= 8) {
+    i--;
+  }
+  assert(i != 7);
+  return i;
+}
