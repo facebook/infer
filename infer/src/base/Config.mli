@@ -641,6 +641,8 @@ val pulse_prevent_non_disj_top : bool
 
 val pulse_recency_limit : int
 
+val pulse_report_assert : bool
+
 val pulse_report_flows_from_taint_source : string option
 
 val pulse_report_flows_to_taint_sink : string option

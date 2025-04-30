@@ -395,6 +395,11 @@ include struct
 
   let fwrite ptr size stream =
     start_model @@ fun () -> check_valid stream @@> (write stream ptr size |> lift_to_monad)
+
+
+  let assertion_error _ : model = start_model @@ fun () -> report_assert_error
+
+  let unreachable_path _ : model = start_model @@ fun () -> unreachable
 end
 
 (** Reference: https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
@@ -558,6 +563,8 @@ let matchers : matcher list =
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"asctime" <>$ capt_arg_payload
     $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
+  ; ( -"__assert_fail" <>$ capt_arg
+    $--> if Config.pulse_report_assert then assertion_error else unreachable_path )
   ; -"__atomic_load_n" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_load_n
   ; -"__atomic_load" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> Atomic.atomic_load
   ; -"__atomic_store_n" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg

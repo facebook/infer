@@ -3,4 +3,5 @@
 ../llvm-frontend/base.c, test6, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 ../llvm-frontend/base.c, test8, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 ../llvm-frontend/base.c, test9, 2, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `malloc (null case)` (modelled),is assigned to the null pointer,assigned,invalid access occurs here]
+../llvm-frontend/base.c, test10, 5, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 ../llvm-frontend/base.c, test12, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `str` declared here,read to uninitialized value occurs here]

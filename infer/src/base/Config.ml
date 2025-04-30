@@ -2584,6 +2584,12 @@ and pulse_recency_limit =
     "Maximum number of array elements and structure fields to keep track of for a given address."
 
 
+and pulse_report_assert =
+  CLOpt.mk_bool ~long:"pulse-report-assert" ~default:false
+    ~in_help:InferCommand.[(Report, manual_pulse)]
+    "Reports Assertion Error in a failed assertion. Used in C code."
+
+
 and pulse_report_flows_from_taint_source =
   CLOpt.mk_string_opt ~long:"pulse-report-flows-from-taint-source"
     ~in_help:InferCommand.[(Report, manual_pulse)]
@@ -4418,6 +4424,8 @@ and pulse_over_approximate_reasoning = !pulse_over_approximate_reasoning
 and pulse_prevent_non_disj_top = !pulse_prevent_non_disj_top
 
 and pulse_recency_limit = !pulse_recency_limit
+
+and pulse_report_assert = !pulse_report_assert
 
 and pulse_report_flows_from_taint_source = !pulse_report_flows_from_taint_source
 

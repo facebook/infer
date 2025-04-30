@@ -70,7 +70,7 @@ int test10() {
   for (int i = 0; i < 3; i++) {
     sum += i;
   }
-  assert(sum == 3);
+  assert(sum != 3);
   return sum;
 }
 

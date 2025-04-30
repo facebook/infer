@@ -411,6 +411,10 @@ LINEAGE OPTIONS
            See --lineage-sink for additional documentation.
 
 PULSE CHECKER OPTIONS
+       --pulse-report-assert
+           Activates: Reports Assertion Error in a failed assertion. Used in
+           C code. (Conversely: --no-pulse-report-assert)
+
        --pulse-report-flows-from-taint-source procname
            Report data flows which originate at taint source procname
 

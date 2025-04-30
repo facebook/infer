@@ -9,7 +9,7 @@ TESTS_DIR = ../../..
 CLANG_OPTIONS = -c -g
 INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
-  --pulse-report-issues-for-tests --jobs 1 \
+  --pulse-report-issues-for-tests --jobs 1 --pulse-report-assert --enable-issue-type PULSE_ASSERTION_ERROR \
 
 INFERPRINT_OPTIONS = --issues-tests
 

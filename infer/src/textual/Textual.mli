@@ -290,6 +290,10 @@ module ProcDecl : sig
 
   val free_name : QualifiedProcName.t [@@warning "-unused-value-declaration"]
 
+  val assert_fail_name : QualifiedProcName.t
+
+  val is_assert_fail_builtin : QualifiedProcName.t -> bool
+
   val cast_name : QualifiedProcName.t
 
   val is_free_builtin : QualifiedProcName.t -> bool

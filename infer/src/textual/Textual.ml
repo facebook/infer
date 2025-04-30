@@ -144,6 +144,8 @@ let builtin_malloc = "__sil_malloc"
 
 let builtin_free = "__sil_free"
 
+let builtin_assert_fail = "__sil_assert_fail"
+
 let builtin_allocate_array = "__sil_allocate_array"
 
 let builtin_lazy_class_initialize = "__sil_lazy_class_initialize"
@@ -575,6 +577,8 @@ module ProcDecl = struct
 
   let free_name = make_toplevel_name builtin_free Location.Unknown
 
+  let assert_fail_name = make_toplevel_name builtin_assert_fail Location.Unknown
+
   let allocate_array_name = make_toplevel_name builtin_allocate_array Location.Unknown
 
   let lazy_class_initialize_name = make_toplevel_name builtin_lazy_class_initialize Location.Unknown
@@ -696,6 +700,10 @@ module ProcDecl = struct
 
   let is_free_builtin qualified_name = QualifiedProcName.equal free_name qualified_name
 
+  let is_assert_fail_builtin qualified_name =
+    QualifiedProcName.equal assert_fail_name qualified_name
+
+
   let is_allocate_array_builtin qualified_name =
     QualifiedProcName.equal allocate_array_name qualified_name
 
@@ -753,6 +761,7 @@ module ProcDecl = struct
   let builtins =
     let builtins =
       [ builtin_allocate
+      ; builtin_assert_fail
       ; builtin_malloc
       ; builtin_free
       ; builtin_allocate_array

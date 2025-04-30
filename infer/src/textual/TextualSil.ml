@@ -816,6 +816,18 @@ module InstrBridge = struct
           , [(e, SilTyp.mk SilTyp.Tvoid)]
           , loc
           , CallFlags.default )
+    | Let {id= Some id; exp= Call {proc; args= exp :: _}; loc}
+      when ProcDecl.is_assert_fail_builtin proc ->
+        let ret = IdentBridge.to_sil id in
+        let e = ExpBridge.to_sil lang decls_env procname exp in
+        let loc = LocationBridge.to_sil sourcefile loc in
+        let builtin_assert_fail = SilExp.Const (SilConst.Cfun BuiltinDecl.__assert_fail) in
+        Call
+          ( (ret, SilTyp.mk SilTyp.Tvoid)
+          , builtin_assert_fail
+          , [(e, SilTyp.mk SilTyp.Tvoid)]
+          , loc
+          , CallFlags.default )
     | Let {id= Some id; exp= Call {proc; args= target :: Typ typ :: rest}; loc}
       when ProcDecl.is_instanceof_builtin proc ->
         let typ = TypBridge.to_sil lang typ in

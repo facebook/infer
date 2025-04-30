@@ -267,7 +267,14 @@ let to_textual_call ~proc_state (call : 'a Llair.call) =
   let proc, kind, exp_opt =
     match call.callee with
     | Direct {func} ->
-        (to_qualified_proc_name func.Llair.name, Textual.Exp.NonVirtual, None)
+        let proc =
+          if
+            String.equal (FuncName.name func.Llair.name)
+              (Procname.get_method BuiltinDecl.__assert_fail)
+          then Textual.ProcDecl.assert_fail_name
+          else to_qualified_proc_name func.Llair.name
+        in
+        (proc, Textual.Exp.NonVirtual, None)
     | Indirect {ptr} ->
         let proc = builtin_qual_proc_name "llvm_dynamic_call" in
         (proc, Textual.Exp.NonVirtual, Some (to_textual_exp ~proc_state ptr |> fst))

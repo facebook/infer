@@ -87,10 +87,10 @@ define test10() : int {
       
   #13: @[73:3]
       n192 = load &sum @[73:3]
-      if __sil_eq(n192, 3) then jmp 18 else jmp 17 @[73:3]
+      if __sil_ne(n192, 3) then jmp 18 else jmp 17 @[73:3]
       
   #17: @[73:3]
-      _ = __assert_fail("sum == 3", "base.c", 73, "int test10()") @[73:3]
+      _ = __sil_assert_fail("sum != 3", "base.c", 73, "int test10()") @[73:3]
       jmp __assert_fail::void::ret @[73:3]
       
   #18: @[74:10]
