@@ -28,7 +28,7 @@ JOBS="${JOBS:-$(($NCPUS>=8?$NCPUS/4:2))}"
 SHASUM=${SHASUM:-shasum -a 256}
 
 usage () {
-    echo "Usage: $0 [-chr]"
+    echo "Usage: $0 [-chnprs]"
     echo
     echo " options:"
     echo "    -c,--only-check-install    check if recompiling clang is needed"
@@ -40,15 +40,16 @@ usage () {
 }
 
 clang_hash () {
+    pushd "$SCRIPT_DIR" > /dev/null
     if [ "$CLANG_HASH_USE_GIT" = "yes" ]; then
-        HASH=$(git -C "$CLANG_SRC" rev-parse HEAD)
-        echo "$HASH"
+        HASH=$({ git -C "$CLANG_SRC" rev-parse HEAD; \
+                 $SHASUM setup.sh src/prepare_clang_src.sh; \
+               } | $SHASUM)
     else
-        pushd "$SCRIPT_DIR" > /dev/null
         HASH=$($SHASUM setup.sh src/prepare_clang_src.sh | $SHASUM)
-        printf "%s" "$HASH" | cut -d ' ' -f 1
-        popd > /dev/null
     fi
+    popd > /dev/null
+    printf '%s\n' "$HASH" | cut -d ' ' -f 1
 }
 
 check_installed () {

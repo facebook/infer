@@ -186,6 +186,7 @@ install_opam_deps () {
 # bindings to be installed
 setup_local_opam_repo () {
     opam repo list -s | grep -q local-llvm \
+    && opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository \
     || opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
 }
 

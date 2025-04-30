@@ -530,6 +530,7 @@ ifeq ($(BUILD_SWIFT_ANALYZERS), yes)
 	  --just-file $(ROOT_DIR)/dependencies/llvm/opam-repository/packages/llvm/llvm.*-infer/opam \
 	  --field=version); \
 	$(call silent_on_success,Installing our LLVM OCaml bindings,\
+	opam update local-llvm && \
 	opam install --yes --no-depext llvm.$$llvm_version)
 endif
 
