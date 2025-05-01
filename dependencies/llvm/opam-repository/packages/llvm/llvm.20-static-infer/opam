@@ -42,6 +42,7 @@ patches: [
   "add-debug-info.patch"
   "add-LLVMGetAtomicRMWBinOp.patch"
   "fix-null-global_initializer.patch"
+  "LLVMGetGEPSourceElementType.patch"
 ]
 synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
@@ -80,4 +81,8 @@ extra-source "add-debug-info.patch" {
 extra-source "fix-null-global_initializer.patch" {
   src: "dependencies/llvm/patches/fix-null-global_initializer.patch"
   checksum: [ "sha256=18c65e1036a4466e2db4082f1da4b5a08c725d0670a3e0518f14dba5c88d3192" ]
+}
+extra-source "LLVMGetGEPSourceElementType.patch" {
+  src: "dependencies/llvm/patches/LLVMGetGEPSourceElementType.patch"
+  checksum: [ "sha256=632d24a7bea8076c959f171055d161c7b589b1d961cb5cffda5ebe32602cd85c" ]
 }

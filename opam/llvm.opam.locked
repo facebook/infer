@@ -68,12 +68,6 @@ install: [
   "static"
   "--use-homebrew" {os-distribution = "homebrew"}
 ]
-patches: [
-  "AddOCaml.cmake.patch"
-  "add-debug-info.patch"
-  "add-LLVMGetAtomicRMWBinOp.patch"
-  "fix-null-global_initializer.patch"
-]
 dev-repo: "git+http://llvm.org/git/llvm.git"
 extra-source "AddOCaml.cmake.patch" {
   src:
@@ -108,4 +102,17 @@ extra-source "install.sh" {
     "sha256=c1f95d0c7ae539fcbe97327c4ed64e7a86009143c34f7e721319407975965bae"
     "md5=6e458426d1008d4696662cf7d3432d8b"
   ]
+}
+patches: [
+  "AddOCaml.cmake.patch"
+  "add-debug-info.patch"
+  "add-LLVMGetAtomicRMWBinOp.patch"
+  "fix-null-global_initializer.patch"
+  "LLVMGetGEPSourceElementType.patch"
+]
+extra-source "LLVMGetGEPSourceElementType.patch" {
+  src:
+    "opam/dependencies/llvm/patches/LLVMGetGEPSourceElementType.patch"
+  checksum:
+    "sha256=632d24a7bea8076c959f171055d161c7b589b1d961cb5cffda5ebe32602cd85c"
 }
