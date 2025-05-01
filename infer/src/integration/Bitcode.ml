@@ -26,6 +26,7 @@ let run_cmd cmd read =
     L.external_error "Error: the following command did not run successfully:@\n  %s@." cmd ;
     L.exit exit_code
   in
+  L.debug Capture Quiet "Running command '%s'@\n" cmd ;
   match Utils.with_process_in cmd read with
   | res, Ok () ->
       res
