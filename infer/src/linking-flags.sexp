@@ -33,7 +33,7 @@
 ; internally where they might not be available. Other libraries are fine to remain dynamically
 ; linked.
 
-(-verbose
+(
  -cclib -Wl,-Bstatic
  -cclib -lzarith -cclib -lgmp -cclib -lsqlite3_stubs -cclib -lsqlite3
  -cclib -Wl,-Bdynamic
