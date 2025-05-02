@@ -26,14 +26,14 @@ let rec translate_struct ?struct_map name elements =
 
 
 and to_textual_field_decls ?struct_map struct_name fields =
-  let to_textual_field_decl (pos, typ) =
+  let to_textual_field_decl pos (_, typ) =
     let name = field_of_pos pos in
     let qualified_name = Textual.{enclosing_class= struct_name; name= FieldName.of_string name} in
     let textual_typ = to_textual_typ ?struct_map typ in
     Textual.FieldDecl.{qualified_name; typ= textual_typ; attributes= []}
   in
   let fields = StdUtils.iarray_to_list fields in
-  List.map ~f:to_textual_field_decl fields
+  List.mapi ~f:to_textual_field_decl fields
 
 
 and to_textual_typ ?struct_map (typ : Llair.Typ.t) =
