@@ -92,3 +92,10 @@ int test13() {
   assert(i != 7);
   return i;
 }
+
+struct Person {
+  char* name;
+  int age;
+};
+
+int test14(struct Person* person) { return person->age; }

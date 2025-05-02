@@ -913,6 +913,22 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
       let len = Llvm.num_operands llv in
       assert (len > 0 || invalid_llvm (Llvm.string_of_llvalue llv)) ;
       if len = 1 then convert BitCast
+      else if
+        Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
+        && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Struct
+      then
+        let lltyp1 = Llvm.get_gep_source_element_type llv in
+        let op2 = Llvm.operand llv 2 in
+        let _, ptr = xlate_value x (Llvm.operand llv 0) in
+        let typ = xlate_type x lltyp1 in
+        let fld =
+          match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op2) with
+          | Some n ->
+              n
+          | None ->
+              fail "field offset %a not an int: %a" pp_llvalue op2 pp_llvalue llv ()
+        in
+        ([], Llair.Exp.select typ ptr fld)
       else
         let rec xlate_indices i =
           [%Dbg.call fun {pf} -> pf "@ %i %a" i pp_llvalue (Llvm.operand llv i)]

@@ -166,6 +166,17 @@ define test13() : int {
       
 } @?
 
+define test14(var0: *ptr_elt) : int {
+  local person: *ptr_elt
+  #: @[101:0]
+      n250 = load &var0 @[101:0]
+      store &person <- n250 @[101:0]
+      n256 = load &person @[101:44]
+      n258 = load n256.struct::Person.field_1 @[101:52]
+      ret n258 @[101:37]
+      
+} @?
+
 define test2() : int {
   local n2: int, n1: int
   #: @[19:10]
@@ -319,4 +330,6 @@ global ::str::2: *ptr_elt
 global ::str::1: *ptr_elt
 
 global ::str: *ptr_elt
+
+type struct::Person = {field_0: *ptr_elt; field_8: int}
 

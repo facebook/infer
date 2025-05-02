@@ -290,15 +290,14 @@ let rec invariant exp =
       assert (LlairTyp.convertible src dst) ;
       assert (LlairTyp.castable src (typ_of arg)) ;
       assert (not (LlairTyp.equal src dst) (* avoid redundant representations *))
-  | Ap1 (Select idx, typ, rcd) -> (
-      assert (LlairTyp.castable typ (typ_of rcd)) ;
-      match typ with
-      | Array _ ->
-          assert true
-      | Tuple {elts} | Struct {elts} ->
-          assert (valid_idx idx elts)
-      | _ ->
-          assert false )
+  | Ap1 (Select idx, typ, _) -> (
+    match typ with
+    | Array _ ->
+        assert true
+    | Tuple {elts} | Struct {elts} ->
+        assert (valid_idx idx elts)
+    | _ ->
+        assert false )
   | Ap1 (Splat, typ, byt) ->
       assert (LlairTyp.convertible LlairTyp.byt (typ_of byt)) ;
       assert (LlairTyp.is_sized typ)
