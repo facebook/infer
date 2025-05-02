@@ -95,7 +95,22 @@ int test13() {
 
 struct Person {
   char* name;
+  char* address;
   int age;
+  int height;
 };
 
-int test14(struct Person* person) { return person->age; }
+int get_age(struct Person* person) { return person->age; }
+
+int test14() {
+  struct Person* person = malloc(sizeof(struct Person));
+  if (person) {
+    person->age = 30;
+    person->name = "John";
+    int age = get_age(person);
+    free(person);
+    assert(age != 30);
+    return age;
+  }
+  return 0;
+}

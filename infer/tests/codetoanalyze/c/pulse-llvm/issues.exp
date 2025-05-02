@@ -6,3 +6,4 @@
 ../llvm-frontend/base.c, test10, 5, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 ../llvm-frontend/base.c, test12, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `str` declared here,read to uninitialized value occurs here]
 ../llvm-frontend/base.c, test13, 5, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+../llvm-frontend/base.c, test14, 7, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
