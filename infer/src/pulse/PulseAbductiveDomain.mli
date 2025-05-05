@@ -374,6 +374,8 @@ val add_recursive_calls : PulseMutualRecursion.Set.t -> t -> t
 
 val add_skipped_call : Procname.t -> Trace.t -> t -> t
 
+val get_path_condition : t -> Formula.t
+
 val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val add_missed_captures : Typ.Name.Set.t -> t -> t
