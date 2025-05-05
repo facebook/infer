@@ -275,7 +275,9 @@ module CFG : sig
 end
 
 module Module : sig
-  type t = {name: Ident.t; toplevel: CFG.t; functions: CFG.t QualName.Map.t}
+  type stats = {count_imported_modules: int}
+
+  type t = {name: Ident.t; toplevel: CFG.t; functions: CFG.t QualName.Map.t; stats: stats}
 
   val pp : Format.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end

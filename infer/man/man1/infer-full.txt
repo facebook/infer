@@ -1840,6 +1840,11 @@ OPTIONS
            file2.py but not with --pyc-file.
            See also infer-capture(1).
 
+       --python-skip-capture-imports-threshold int
+           Maximum number of imports allowed in a file (we skip capture
+           otherwise).
+           See also infer-capture(1).
+
        --qualified-cpp-name-block-list +string
            Skip analyzing the procedures under the qualified cpp type name.
            See also infer-analyze(1).
@@ -3134,6 +3139,9 @@ INTERNAL OPTIONS
 
        --python-files-index-reset
            Cancel the effect of --python-files-index.
+
+       --python-skip-capture-imports-threshold-reset
+           Cancel the effect of --python-skip-capture-imports-threshold.
 
        --python-skip-capture-path-regex-list +path_regex
            Do not capture files whose path matches any of these regex.

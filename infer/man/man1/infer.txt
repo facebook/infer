@@ -1840,6 +1840,11 @@ OPTIONS
            file2.py but not with --pyc-file.
            See also infer-capture(1).
 
+       --python-skip-capture-imports-threshold int
+           Maximum number of imports allowed in a file (we skip capture
+           otherwise).
+           See also infer-capture(1).
+
        --qualified-cpp-name-block-list +string
            Skip analyzing the procedures under the qualified cpp type name.
            See also infer-analyze(1).

@@ -2862,6 +2862,12 @@ and python_trim_source_paths =
      $(b,--project-root) from captured source paths."
 
 
+and python_skip_capture_imports_threshold =
+  CLOpt.mk_int_opt ~long:"python-skip-capture-imports-threshold"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Maximum number of imports allowed in a file (we skip capture otherwise)."
+
+
 and python_skip_capture_path_regex_list =
   CLOpt.mk_string_list ~long:"python-skip-capture-path-regex-list" ~meta:"path_regex"
     "Do not capture files whose path matches any of these regex."
@@ -4546,6 +4552,8 @@ and python_decorator_modelled_as_await_async =
 and python_files_index = !python_files_index
 
 and python_trim_source_paths = !python_trim_source_paths
+
+and python_skip_capture_imports_threshold = !python_skip_capture_imports_threshold
 
 and python_skip_capture_path_regex =
   join_patterns_list (RevList.to_list !python_skip_capture_path_regex_list)

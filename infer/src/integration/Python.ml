@@ -86,6 +86,8 @@ let dump_textual_file ~version pyc module_ =
   TextualSil.dump_module ~show_location:true ~filename module_
 
 
+type process_file_output = CapturedTenv of Tenv.t | CapturedSkipDb | NotCapturedTooManyImports
+
 let process_file ~is_binary file =
   let open IResult.Let_syntax in
   let project_root_prefix =
@@ -107,30 +109,36 @@ let process_file ~is_binary file =
   let* pyir =
     PyIR.mk ~debug:false ~path_prefix:project_root_prefix code |> Result.map_error ~f:Error.ir
   in
-  let textual = PyIR2Textual.mk_module pyir in
-  if Config.debug_mode then dump_textual_file ~version:0 file textual ;
-  let* verified_textual =
-    let f = Error.textual_verification sourcefile in
-    TextualVerification.verify textual |> Result.map_error ~f
-  in
-  if Config.debug_mode then dump_textual_file ~version:1 file verified_textual ;
-  let transformed_textual, decls = TextualTransform.run Python verified_textual in
-  let {PyIR.Module.name= module_name} = pyir in
-  let transformed_textual =
-    PyIRTypeInference.gen_module_default_type pyir
-    |> Option.value_map ~default:transformed_textual ~f:(fun pyir_type ->
-           PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
-  in
-  if Config.debug_mode then dump_textual_file ~version:2 file transformed_textual ;
-  let* cfg, tenv =
-    let f = Error.textual_transformation sourcefile in
-    TextualSil.module_to_sil Python transformed_textual decls |> Result.map_error ~f
-  in
-  let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
-  if Config.python_skip_db then Ok None
-  else (
-    TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
-    Ok (Some tenv) )
+  if
+    Option.is_some Config.python_skip_capture_imports_threshold
+    && pyir.PyIR.Module.stats.count_imported_modules
+       > Option.value_exn Config.python_skip_capture_imports_threshold
+  then Ok NotCapturedTooManyImports
+  else
+    let textual = PyIR2Textual.mk_module pyir in
+    if Config.debug_mode then dump_textual_file ~version:0 file textual ;
+    let* verified_textual =
+      let f = Error.textual_verification sourcefile in
+      TextualVerification.verify textual |> Result.map_error ~f
+    in
+    if Config.debug_mode then dump_textual_file ~version:1 file verified_textual ;
+    let transformed_textual, decls = TextualTransform.run Python verified_textual in
+    let {PyIR.Module.name= module_name} = pyir in
+    let transformed_textual =
+      PyIRTypeInference.gen_module_default_type pyir
+      |> Option.value_map ~default:transformed_textual ~f:(fun pyir_type ->
+             PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
+    in
+    if Config.debug_mode then dump_textual_file ~version:2 file transformed_textual ;
+    let* cfg, tenv =
+      let f = Error.textual_transformation sourcefile in
+      TextualSil.module_to_sil Python transformed_textual decls |> Result.map_error ~f
+    in
+    let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
+    if Config.python_skip_db then Ok CapturedSkipDb
+    else (
+      TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+      Ok (CapturedTenv tenv) )
 
 
 let is_file_block_listed file =
@@ -148,7 +156,7 @@ let write_infer_deps out_dirs =
                  Out_channel.output_string out_channel (Printf.sprintf "-\t-\t%s\n" out_dir) ) ) )
 
 
-type not_captured_reason = Skipped | Error
+type not_captured_reason = SkippedBlocked | SkippedTooManyImports | Error
 
 let capture_files ~is_binary files =
   let n_files = List.length files in
@@ -156,14 +164,18 @@ let capture_files ~is_binary files =
   let child_action, child_prologue, child_epilogue =
     let child_tenv = Tenv.create () in
     let child_action file =
-      if is_file_block_listed file then Some Skipped
+      if is_file_block_listed file then Some SkippedBlocked
       else
         let t0 = Mtime_clock.now () in
         !WorkerPoolState.update_status (Some t0) file ;
         match capture_file ~is_binary file with
-        | Ok file_tenv ->
-            Option.iter file_tenv ~f:(fun file_tenv -> Tenv.merge ~src:file_tenv ~dst:child_tenv) ;
+        | Ok (CapturedTenv file_tenv) ->
+            Tenv.merge ~src:file_tenv ~dst:child_tenv ;
             None
+        | Ok CapturedSkipDb ->
+            None
+        | Ok NotCapturedTooManyImports ->
+            Some SkippedTooManyImports
         | Error err ->
             Error.format_error file err ;
             Some Error
@@ -196,15 +208,20 @@ let capture_files ~is_binary files =
   in
   L.progress "Expecting to capture %d files@\n" n_files ;
   (* TODO(vsiles) keep track of the number of success / failures like Hack *)
-  let n_captured, n_error, n_skipped = (ref 0, ref 0, ref 0) in
+  let n_captured, n_error, n_skipped_blocked, n_skipped_too_many_imports =
+    (ref 0, ref 0, ref 0, ref 0)
+  in
   let tasks () =
     TaskGenerator.of_list files ~finish:(fun result _ ->
         match result with
         | Some Error ->
             incr n_error ;
             None
-        | Some Skipped ->
-            incr n_skipped ;
+        | Some SkippedBlocked ->
+            incr n_skipped_blocked ;
+            None
+        | Some SkippedTooManyImports ->
+            incr n_skipped_too_many_imports ;
             None
         | None ->
             incr n_captured ;
@@ -219,7 +236,8 @@ let capture_files ~is_binary files =
   let child_out_dirs = ProcessPool.run runner in
   write_infer_deps child_out_dirs ;
   L.progress "Success: %d files@\n" !n_captured ;
-  L.progress "Skipped: %d files@\n" !n_skipped ;
+  L.progress "Skipped: %d blocked files@\n" !n_skipped_blocked ;
+  L.progress "Skipped: %d files with too many imports@\n" !n_skipped_too_many_imports ;
   L.progress "Failure: %d files@\n" !n_error ;
   L.progress "Merging type environments...@\n%!" ;
   if not Config.python_skip_db then MergeCapture.merge_captured_targets ~root:Config.results_dir

@@ -131,6 +131,10 @@ OPTIONS
            capture. Compatible with infer capture -- python3 file1.py
            file2.py but not with --pyc-file.
 
+       --python-skip-capture-imports-threshold int
+           Maximum number of imports allowed in a file (we skip capture
+           otherwise).
+
        --results-dir,-o dir
            Write results and internal files in the specified directory
 

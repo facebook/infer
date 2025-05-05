@@ -1781,6 +1781,8 @@ let jump_absolute st arg next_offset =
   Ok (st, Some jump)
 
 
+let count_imported_modules_ref = ref 0
+
 let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as code)
     ({FFI.Instruction.opname; starts_line; arg; argval} as instr) next_offset_opt =
   let open IResult.Let_syntax in
@@ -2115,6 +2117,7 @@ let parse_bytecode st ({FFI.Code.co_consts; co_names; co_varnames; version} as c
         let* fromlist, st = State.pop_and_cast st in
         let* level, st = State.pop_and_cast st in
         let lhs, st = State.fresh_id st in
+        incr count_imported_modules_ref ;
         let rhs = Exp.ImportName {name; fromlist; level} in
         let stmt = Stmt.Let {lhs; rhs} in
         let st = State.push_stmt st stmt in
@@ -3064,7 +3067,9 @@ let build_cfg ~debug ~code_qual_name code =
 
 
 module Module = struct
-  type t = {name: Ident.t; toplevel: CFG.t; functions: CFG.t QualName.Map.t}
+  type stats = {count_imported_modules: int}
+
+  type t = {name: Ident.t; toplevel: CFG.t; functions: CFG.t QualName.Map.t; stats: stats}
 
   let pp fmt {name; toplevel; functions} =
     F.fprintf fmt "@[<hv2>module %a:@\n@\n" Ident.pp name ;
@@ -3173,6 +3178,7 @@ let module_name ~path_prefixes {FFI.Code.co_filename} =
 
 let mk ~debug ~path_prefix code =
   let open IResult.Let_syntax in
+  count_imported_modules_ref := 0 ;
   let module_name =
     module_name ~path_prefixes:(List.concat [["./"]; Option.to_list path_prefix]) code
   in
@@ -3181,7 +3187,8 @@ let mk ~debug ~path_prefix code =
   let f = build_cfg ~debug ~code_qual_name in
   let* toplevel = f code in
   let* functions = fold_all_inner_codes_and_build_map code ~code_qual_name ~f in
-  Ok {Module.name; toplevel; functions}
+  let stats = {Module.count_imported_modules= !count_imported_modules_ref} in
+  Ok {Module.name; toplevel; functions; stats}
 
 
 let initialize ?(next_version = false) () =
