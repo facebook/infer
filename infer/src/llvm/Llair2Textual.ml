@@ -374,10 +374,10 @@ let cmnd_to_instrs ~proc_state block =
         in
         textual_instr :: textual_instrs
   in
+  let rev_instrs = List.fold ~init:[] ~f:to_instr (StdUtils.iarray_to_list block.cmnd) in
   let call_instr_opt =
     match block.term with Call call -> Some (to_textual_call ~proc_state call) | _ -> None
   in
-  let rev_instrs = List.fold ~init:[] ~f:to_instr (StdUtils.iarray_to_list block.cmnd) in
   let rev_instrs = List.append (Option.to_list call_instr_opt) rev_instrs in
   let instrs = List.rev rev_instrs in
   let first_loc, last_loc =

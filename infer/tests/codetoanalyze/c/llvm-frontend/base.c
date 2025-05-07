@@ -114,3 +114,10 @@ int test14() {
   }
   return 0;
 }
+
+int test15() {
+  struct Person person = {.age = 30, .name = "John"};
+  int age = get_age(&person);
+  assert(age != 30);
+  return age;
+}

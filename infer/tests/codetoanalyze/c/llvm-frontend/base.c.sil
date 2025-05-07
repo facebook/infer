@@ -11,13 +11,13 @@ declare __assert_fail(*ptr_elt, *ptr_elt, int, *ptr_elt) : void
 define add(var0: int, var1: int) : int {
   local n2: int, n1: int
   #: @[14:0]
-      n18 = load &var0 @[14:0]
-      store &n1 <- n18 @[14:0]
-      n19 = load &var1 @[14:0]
-      store &n2 <- n19 @[14:0]
-      n28 = load &n1 @[14:34]
-      n29 = load &n2 @[14:39]
-      ret __sil_plusa_int(n28, n29) @[14:27]
+      n20 = load &var0 @[14:0]
+      store &n1 <- n20 @[14:0]
+      n21 = load &var1 @[14:0]
+      store &n2 <- n21 @[14:0]
+      n30 = load &n1 @[14:34]
+      n31 = load &n2 @[14:39]
+      ret __sil_plusa_int(n30, n31) @[14:27]
       
 } @?
 
@@ -25,29 +25,29 @@ declare bar() : void
 
 define call_add() : int {
   #: @[30:25]
-      n63 = add(1, 2) @[30:25]
+      n65 = add(1, 2) @[30:25]
       jmp 1::ret @[30:25]
       
   #1::ret: @[30:18]
-      ret n63 @[30:18]
+      ret n65 @[30:18]
       
 } @?
 
 define call_add1(var0: *int, var1: int) : int {
   local y: int, ptr: *int
   #: @[48:0]
-      n105 = load &var0 @[48:0]
-      store &ptr <- n105 @[48:0]
-      n106 = load &var1 @[48:0]
-      store &y <- n106 @[48:0]
-      n115 = load &ptr @[48:46]
-      n116 = load n115 @[48:45]
-      n117 = load &y @[48:51]
-      n118 = add(n116, n117) @[48:41]
+      n107 = load &var0 @[48:0]
+      store &ptr <- n107 @[48:0]
+      n108 = load &var1 @[48:0]
+      store &y <- n108 @[48:0]
+      n117 = load &ptr @[48:46]
+      n118 = load n117 @[48:45]
+      n119 = load &y @[48:51]
+      n120 = add(n118, n119) @[48:41]
       jmp 8::ret @[48:41]
       
   #8::ret: @[48:34]
-      ret n118 @[48:34]
+      ret n120 @[48:34]
       
 } @?
 
@@ -58,11 +58,11 @@ declare free(*ptr_elt) : void
 define get_age(var0: *ptr_elt) : int {
   local person: *ptr_elt
   #: @[103:0]
-      n253 = load &var0 @[103:0]
-      store &person <- n253 @[103:0]
-      n259 = load &person @[103:45]
-      n261 = load n259.struct::Person.field_2 @[103:53]
-      ret n261 @[103:38]
+      n255 = load &var0 @[103:0]
+      store &person <- n255 @[103:0]
+      n261 = load &person @[103:45]
+      n263 = load n261.struct::Person.field_2 @[103:53]
+      ret n263 @[103:38]
       
 } @?
 
@@ -92,30 +92,30 @@ define test10() : int {
       jmp 3 @[70:8]
       
   #10: @[70:27]
-      n192 = load &i @[70:27]
-      store &i <- __sil_plusa_int(n192, 1) @[70:27]
+      n194 = load &i @[70:27]
+      store &i <- __sil_plusa_int(n194, 1) @[70:27]
       jmp 3 @[70:3]
       
   #13: @[73:3]
-      n197 = load &sum @[73:3]
-      if __sil_ne(n197, 3) then jmp 18 else jmp 17 @[73:3]
+      n199 = load &sum @[73:3]
+      if __sil_ne(n199, 3) then jmp 18 else jmp 17 @[73:3]
       
   #17: @[73:3]
       _ = __sil_assert_fail("sum != 3", "base.c", 73, "int test10()") @[73:3]
       jmp __assert_fail::void::ret @[73:3]
       
   #18: @[74:10]
-      n206 = load &sum @[74:10]
-      ret n206 @[74:3]
+      n208 = load &sum @[74:10]
+      ret n208 @[74:3]
       
   #3: @[70:19]
-      n182 = load &i @[70:19]
-      if __sil_lt(n182, 3) then jmp 6 else jmp 13 @[70:3]
+      n184 = load &i @[70:19]
+      if __sil_lt(n184, 3) then jmp 6 else jmp 13 @[70:3]
       
   #6: @[71:12]
-      n186 = load &i @[71:12]
-      n187 = load &sum @[71:9]
-      store &sum <- __sil_plusa_int(n187, n186) @[71:9]
+      n188 = load &i @[71:12]
+      n189 = load &sum @[71:9]
+      store &sum <- __sil_plusa_int(n189, n188) @[71:9]
       jmp 10 @[72:3]
       
   #__assert_fail::void::ret: @[73:3]
@@ -139,8 +139,8 @@ define test12() : void {
       ret null @[85:1]
       
   #my_fun::void::ret: @[84:10]
-      n221 = load &str @[84:10]
-      _ = my_fun(n221) @[84:3]
+      n223 = load &str @[84:10]
+      _ = my_fun(n223) @[84:3]
       jmp my_fun::void::1::ret @[84:3]
       
 } @?
@@ -156,21 +156,21 @@ define test13() : int {
       jmp __assert_fail::void::ret @[92:3]
       
   #13: @[93:10]
-      n251 = load &i @[93:10]
-      ret n251 @[93:3]
+      n253 = load &i @[93:10]
+      ret n253 @[93:3]
       
   #2: @[89:10]
-      n233 = load &i @[89:10]
-      if __sil_ge(n233, 8) then jmp 5 else jmp 8 @[89:3]
+      n235 = load &i @[89:10]
+      if __sil_ge(n235, 8) then jmp 5 else jmp 8 @[89:3]
       
   #5: @[90:6]
-      n237 = load &i @[90:6]
-      store &i <- __sil_plusa_int(n237, -1) @[90:6]
+      n239 = load &i @[90:6]
+      store &i <- __sil_plusa_int(n239, -1) @[90:6]
       jmp 2 @[89:3]
       
   #8: @[92:3]
-      n242 = load &i @[92:3]
-      if __sil_ne(n242, 7) then jmp 13 else jmp 12 @[92:3]
+      n244 = load &i @[92:3]
+      if __sil_ne(n244, 7) then jmp 13 else jmp 12 @[92:3]
       
   #__assert_fail::void::ret: @[92:3]
       unreachable @[92:3]
@@ -180,25 +180,25 @@ define test13() : int {
 define test14() : int {
   local var1: int, person: *ptr_elt, age: int
   #: @[106:27]
-      n269 = __sil_malloc(<int>) @[106:27]
-      store &person <- n269 @[106:18]
-      n271 = load &person @[107:7]
-      if __sil_ne(n271, null) then jmp 7 else jmp 21 @[107:7]
+      n271 = __sil_malloc(<int>) @[106:27]
+      store &person <- n271 @[106:18]
+      n273 = load &person @[107:7]
+      if __sil_ne(n273, null) then jmp 7 else jmp 21 @[107:7]
       
   #13::ret: @[110:9]
-      store &age <- n283 @[110:9]
-      n285 = load &person @[111:10]
-      _ = __sil_free(n285) @[111:5]
-      n287 = load &age @[112:5]
-      if __sil_ne(n287, 30) then jmp 19 else jmp 18 @[112:5]
+      store &age <- n285 @[110:9]
+      n287 = load &person @[111:10]
+      _ = __sil_free(n287) @[111:5]
+      n289 = load &age @[112:5]
+      if __sil_ne(n289, 30) then jmp 19 else jmp 18 @[112:5]
       
   #18: @[112:5]
       _ = __sil_assert_fail("age != 30", "base.c", 112, "int test14()") @[112:5]
       jmp __assert_fail::void::ret @[112:5]
       
   #19: @[113:12]
-      n296 = load &age @[113:12]
-      store &var1 <- n296 @[113:5]
+      n298 = load &age @[113:12]
+      store &var1 <- n298 @[113:5]
       jmp 22 @[113:5]
       
   #21: @[115:3]
@@ -206,16 +206,16 @@ define test14() : int {
       jmp 22 @[115:3]
       
   #22: @[116:1]
-      n303 = load &var1 @[116:1]
-      ret n303 @[116:1]
+      n305 = load &var1 @[116:1]
+      ret n305 @[116:1]
       
   #7: @[108:5]
-      n275 = load &person @[108:5]
-      store n275.struct::Person.field_2 <- 30 @[108:17]
-      n278 = load &person @[109:5]
-      store n278.struct::Person.field_0 <- "John" @[109:18]
-      n282 = load &person @[110:23]
-      n283 = get_age(n282) @[110:15]
+      n277 = load &person @[108:5]
+      store n277.struct::Person.field_2 <- 30 @[108:17]
+      n280 = load &person @[109:5]
+      store n280.struct::Person.field_0 <- "John" @[109:18]
+      n284 = load &person @[110:23]
+      n285 = get_age(n284) @[110:15]
       jmp 13::ret @[110:15]
       
   #__assert_fail::void::ret: @[112:5]
@@ -223,43 +223,68 @@ define test14() : int {
       
 } @?
 
+define test15() : int {
+  local person: *ptr_elt, age: int
+  #: @[119:17]
+      _ = $builtins.memcpy(&person, &__const::test15::person, 24, 0) @[119:17]
+      n314 = get_age(&person) @[120:13]
+      jmp 3::ret @[120:13]
+      
+  #3::ret: @[120:7]
+      store &age <- n314 @[120:7]
+      n316 = load &age @[121:3]
+      if __sil_ne(n316, 30) then jmp 8 else jmp 7 @[121:3]
+      
+  #7: @[121:3]
+      _ = __sil_assert_fail("age != 30", "base.c", 121, "int test15()") @[121:3]
+      jmp __assert_fail::void::ret @[121:3]
+      
+  #8: @[122:10]
+      n325 = load &age @[122:10]
+      ret n325 @[122:3]
+      
+  #__assert_fail::void::ret: @[121:3]
+      unreachable @[121:3]
+      
+} @?
+
 define test2() : int {
   local n2: int, n1: int
   #: @[19:10]
-      n38 = load &n1 @[19:10]
-      n39 = load &n2 @[19:15]
-      ret __sil_plusa_int(n38, n39) @[19:3]
+      n40 = load &n1 @[19:10]
+      n41 = load &n2 @[19:15]
+      ret __sil_plusa_int(n40, n41) @[19:3]
       
 } @?
 
 define test3(var0: *int) : int {
   local ptr: *int
   #: @[22:0]
-      n42 = load &var0 @[22:0]
-      store &ptr <- n42 @[22:0]
-      n48 = load &ptr @[22:31]
-      n49 = load n48 @[22:30]
-      ret n49 @[22:23]
+      n44 = load &var0 @[22:0]
+      store &ptr <- n44 @[22:0]
+      n50 = load &ptr @[22:31]
+      n51 = load n50 @[22:30]
+      ret n51 @[22:23]
       
 } @?
 
 define test4() : int {
   #: @[26:22]
-      n53 = foo() @[26:22]
+      n55 = foo() @[26:22]
       jmp 1::ret @[26:22]
       
   #1::ret: @[26:15]
-      ret n53 @[26:15]
+      ret n55 @[26:15]
       
 } @?
 
 define test5() : int {
   #: @[28:22]
-      n58 = bar() @[28:22]
+      n60 = bar() @[28:22]
       jmp 1::ret @[28:22]
       
   #1::ret: @[28:15]
-      ret n58 @[28:15]
+      ret n60 @[28:15]
       
 } @?
 
@@ -267,16 +292,16 @@ define test6() : int {
   local var1: int, ptr: *int
   #: @[33:8]
       store &ptr <- null @[33:8]
-      n71 = call_add() @[34:7]
+      n73 = call_add() @[34:7]
       jmp 3::ret @[34:7]
       
   #3::ret: @[34:18]
-      if __sil_eq(n71, 3) then jmp 5 else jmp 8 @[34:18]
+      if __sil_eq(n73, 3) then jmp 5 else jmp 8 @[34:18]
       
   #5: @[35:13]
-      n75 = load &ptr @[35:13]
-      n76 = load n75 @[35:12]
-      store &var1 <- n76 @[35:5]
+      n77 = load &ptr @[35:13]
+      n78 = load n77 @[35:12]
+      store &var1 <- n78 @[35:5]
       jmp 9 @[35:5]
       
   #8: @[37:5]
@@ -284,8 +309,8 @@ define test6() : int {
       jmp 9 @[37:5]
       
   #9: @[38:1]
-      n83 = load &var1 @[38:1]
-      ret n83 @[38:1]
+      n85 = load &var1 @[38:1]
+      ret n85 @[38:1]
       
 } @?
 
@@ -293,16 +318,16 @@ define test7() : int {
   local var1: int, ptr: *int
   #: @[41:8]
       store &ptr <- null @[41:8]
-      n91 = call_add() @[42:7]
+      n93 = call_add() @[42:7]
       jmp 3::ret @[42:7]
       
   #3::ret: @[42:18]
-      if __sil_eq(n91, 5) then jmp 5 else jmp 8 @[42:18]
+      if __sil_eq(n93, 5) then jmp 5 else jmp 8 @[42:18]
       
   #5: @[43:13]
-      n95 = load &ptr @[43:13]
-      n96 = load n95 @[43:12]
-      store &var1 <- n96 @[43:5]
+      n97 = load &ptr @[43:13]
+      n98 = load n97 @[43:12]
+      store &var1 <- n98 @[43:5]
       jmp 9 @[43:5]
       
   #8: @[45:5]
@@ -310,27 +335,27 @@ define test7() : int {
       jmp 9 @[45:5]
       
   #9: @[46:1]
-      n103 = load &var1 @[46:1]
-      ret n103 @[46:1]
+      n105 = load &var1 @[46:1]
+      ret n105 @[46:1]
       
 } @?
 
 define test8(var0: *int) : int {
   local var2: int, ret: int, ptr: *int, null_ptr: *int
   #: @[50:0]
-      n120 = load &var0 @[50:0]
-      store &ptr <- n120 @[50:0]
-      n129 = load &ptr @[51:4]
-      store n129 <- 1 @[51:8]
+      n122 = load &var0 @[50:0]
+      store &ptr <- n122 @[50:0]
+      n131 = load &ptr @[51:4]
+      store n131 <- 1 @[51:8]
       store &null_ptr <- null @[52:8]
-      n134 = load &ptr @[53:23]
-      n135 = call_add1(n134, 2) @[53:13]
+      n136 = load &ptr @[53:23]
+      n137 = call_add1(n136, 2) @[53:13]
       jmp 8::ret @[53:13]
       
   #11: @[55:13]
-      n141 = load &null_ptr @[55:13]
-      n142 = load n141 @[55:12]
-      store &var2 <- n142 @[55:5]
+      n143 = load &null_ptr @[55:13]
+      n144 = load n143 @[55:12]
+      store &var2 <- n144 @[55:5]
       jmp 15 @[55:5]
       
   #14: @[57:5]
@@ -338,32 +363,36 @@ define test8(var0: *int) : int {
       jmp 15 @[57:5]
       
   #15: @[58:1]
-      n149 = load &var2 @[58:1]
-      ret n149 @[58:1]
+      n151 = load &var2 @[58:1]
+      ret n151 @[58:1]
       
   #8::ret: @[53:7]
-      store &ret <- n135 @[53:7]
-      n137 = load &ret @[54:7]
-      if __sil_eq(n137, 3) then jmp 11 else jmp 14 @[54:11]
+      store &ret <- n137 @[53:7]
+      n139 = load &ret @[54:7]
+      if __sil_eq(n139, 3) then jmp 11 else jmp 14 @[54:11]
       
 } @?
 
 define test9() : int {
   local ret: int, ptr: *int
   #: @[61:14]
-      n156 = __sil_malloc(<int>) @[61:14]
-      store &ptr <- n156 @[61:8]
-      n158 = load &ptr @[62:4]
-      store n158 <- 42 @[62:8]
-      n161 = load &ptr @[63:14]
-      n162 = load n161 @[63:13]
-      store &ret <- n162 @[63:7]
-      n164 = load &ptr @[64:8]
-      _ = __sil_free(n164) @[64:3]
-      n166 = load &ret @[65:10]
-      ret n166 @[65:3]
+      n158 = __sil_malloc(<int>) @[61:14]
+      store &ptr <- n158 @[61:8]
+      n160 = load &ptr @[62:4]
+      store n160 <- 42 @[62:8]
+      n163 = load &ptr @[63:14]
+      n164 = load n163 @[63:13]
+      store &ret <- n164 @[63:7]
+      n166 = load &ptr @[64:8]
+      _ = __sil_free(n166) @[64:3]
+      n168 = load &ret @[65:10]
+      ret n168 @[65:3]
       
 } @?
+
+global __const::test15::person: *ptr_elt
+
+global __PRETTY_FUNCTION__::test15: *ptr_elt
 
 global __PRETTY_FUNCTION__::test14: *ptr_elt
 
