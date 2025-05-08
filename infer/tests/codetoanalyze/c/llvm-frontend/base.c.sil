@@ -224,7 +224,7 @@ define test14() : int {
 } @?
 
 define test15() : int {
-  local person: *ptr_elt, age: int
+  local person: struct::Person, age: int
   #: @[119:17]
       _ = $builtins.memcpy(&person, &__const::test15::person, 24, 0) @[119:17]
       n314 = get_age(&person) @[120:13]

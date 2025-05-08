@@ -1,0 +1,58 @@
+commit 0b1df72c486b577f88485504d49b2d5a57b751d9
+Author: Dulma Churchill <dulmarod@meta.com>
+Date:   Wed May 7 08:13:51 2025 -0700
+
+    new binding
+
+diff --git a/llvm/bindings/ocaml/llvm/llvm.ml b/llvm/bindings/ocaml/llvm/llvm.ml
+index 727fa2312..c3e756198 100644
+--- a/llvm/bindings/ocaml/llvm/llvm.ml
++++ b/llvm/bindings/ocaml/llvm/llvm.ml
+@@ -534,6 +534,7 @@ external classify_value : llvalue -> ValueKind.t = "llvm_classify_value"
+ (*===-- Values ------------------------------------------------------------===*)
+ external type_of : llvalue -> lltype = "llvm_type_of"
+ external get_gep_source_element_type : llvalue -> lltype = "llvm_get_gep_source_element_type"
++external get_allocated_type : llvalue -> lltype = "llvm_get_allocated_type"
+ external value_name : llvalue -> string = "llvm_value_name"
+ external set_value_name : string -> llvalue -> unit = "llvm_set_value_name"
+ external dump_value : llvalue -> unit = "llvm_dump_value"
+diff --git a/llvm/bindings/ocaml/llvm/llvm.mli b/llvm/bindings/ocaml/llvm/llvm.mli
+index 099c323e9..1d9de425f 100644
+--- a/llvm/bindings/ocaml/llvm/llvm.mli
++++ b/llvm/bindings/ocaml/llvm/llvm.mli
+@@ -566,7 +566,7 @@ val set_module_identifer : llmodule -> string -> unit
+ val get_module_flag : llmodule -> string -> llmetadata option
+ 
+ (** [add_module_flag m b k v] Add a module-level flag b, with key [k] and
+-    value [v] to the flags metadata of module [m]. It will create the 
++    value [v] to the flags metadata of module [m]. It will create the
+     module-level flags named metadata if it doesn't already exist. *)
+ val add_module_flag : llmodule -> ModuleFlagBehavior.t ->
+                         string -> llmetadata -> unit
+@@ -794,6 +794,10 @@ val type_of : llvalue -> lltype
+     See the method [llvm::GetElementPtrInst::getSourceElementType]. *)
+ val get_gep_source_element_type : llvalue -> lltype
+ 
++(** [get_allocated_type v] return the type that is being allocated by the instruction.
++    See the method [llvm::AllocaInst::getAllocatedType]. *)
++val get_allocated_type : llvalue -> lltype
++
+ (** [classify_value v] returns the kind of the value [v]. *)
+ val classify_value : llvalue -> ValueKind.t
+ 
+diff --git a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/llvm/llvm_ocaml.c
+index 99089f073..619460250 100644
+--- a/llvm/bindings/ocaml/llvm/llvm_ocaml.c
++++ b/llvm/bindings/ocaml/llvm/llvm_ocaml.c
+@@ -717,6 +717,11 @@ value llvm_get_gep_source_element_type(value Val) {
+   return to_val(LLVMGetGEPSourceElementType(Value_val(Val)));
+ }
+ 
++/* llvalue -> lltype */                                                                                                                 
++value llvm_get_allocated_type(value Val) {                                                                                     
++  return to_val(LLVMGetAllocatedType(Value_val(Val)));                                                                           
++}                                                                                                                                      
++
+ /* keep in sync with ValueKind.t */
+ enum ValueKind {
+   NullValue = 0,
