@@ -93,11 +93,17 @@ int test13() {
   return i;
 }
 
+struct Cat {
+  char* name;
+  int age;
+};
+
 struct Person {
   char* name;
   char* address;
   int age;
   int height;
+  struct Cat* cat;
 };
 
 int get_age(struct Person* person) { return person->age; }
@@ -119,5 +125,15 @@ int test15() {
   struct Person person = {.age = 30, .name = "John"};
   int age = get_age(&person);
   assert(age != 30);
+  return age;
+}
+
+int test16(struct Person* person, struct Cat* cat) {
+  cat->age = 10;
+  person->age = 30;
+  person->name = "John";
+  person->cat = cat;
+  int age = person->cat->age;
+  assert(age != 10);
   return age;
 }
