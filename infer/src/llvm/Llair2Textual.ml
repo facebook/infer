@@ -25,7 +25,13 @@ let string_name_of_reg reg =
 
 let reg_to_var_name reg = Textual.VarName.of_string (string_name_of_reg reg)
 
-let reg_to_id reg = Textual.Ident.of_int (Reg.id reg)
+let reg_to_id reg =
+  match Int.of_string_opt (Reg.name reg) with
+  | Some id ->
+      Textual.Ident.of_int id
+  | None ->
+      assert false
+
 
 let reg_to_textual_var ~(proc_state : ProcState.t) reg =
   let reg_var_name = reg_to_var_name reg in
