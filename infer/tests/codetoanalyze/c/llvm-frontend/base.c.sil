@@ -284,6 +284,19 @@ define test16(var0: *ptr_elt, var1: *ptr_elt) : int {
       
 } @?
 
+define test17(var0: int) : int {
+  local z: int, b: int
+  #: @[141:0]
+      n376 = load &var0 @[141:0]
+      store &b <- n376 @[141:0]
+      n4 = load &b @[142:11]
+      n5 = __sil_ne(n4, 0) @[142:11]
+      store &z <- $builtins.llvm_nondet() @[142:7]
+      n8 = load &z @[143:10]
+      ret n8 @[143:3]
+      
+} @?
+
 define test2() : int {
   local n2: int, n1: int
   #: @[19:10]

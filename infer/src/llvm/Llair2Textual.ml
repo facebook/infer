@@ -366,9 +366,16 @@ let cmnd_to_instrs ~proc_state block =
         textual_instr :: textual_instrs
     | Move {reg_exps: (Reg.t * Exp.t) NS.iarray; loc} ->
         let reg_exps = StdUtils.iarray_to_list reg_exps in
-        let exps = List.concat_map ~f:(fun (reg, exp) -> [Reg.to_exp reg; exp]) reg_exps in
-        let textual_instr = to_textual_builtin ~proc_state None "llvm_move" exps loc in
-        textual_instr :: textual_instrs
+        let loc = to_textual_loc_instr ~proc_state loc in
+        let instrs =
+          List.map
+            ~f:(fun (reg, exp) ->
+              let id = Some (reg_to_id reg) in
+              let exp = to_textual_exp ~proc_state exp |> fst in
+              Textual.Instr.Let {id; exp; loc} )
+            reg_exps
+        in
+        List.append instrs textual_instrs
     | AtomicRMW {reg; ptr; exp; loc} ->
         let textual_instr =
           to_textual_builtin ~proc_state (Some reg) "llvm_atomicRMW" [ptr; exp] loc

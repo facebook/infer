@@ -137,3 +137,8 @@ int test16(struct Person* person, struct Cat* cat) {
   assert(age != 10);
   return age;
 }
+
+int test17(int b) {
+  int z = b ? 1 : 0;
+  return z;
+}
