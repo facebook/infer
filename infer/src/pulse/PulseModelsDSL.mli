@@ -117,6 +117,8 @@ module Syntax : sig
 
   val is_allocated : aval -> bool model_monad
 
+  val is_unawaited_awaitable : aval -> bool model_monad
+
   val data_dependency : ValueOrigin.t -> ValueOrigin.t list -> unit model_monad
 
   val data_dependency_to_ret : ValueOrigin.t list -> unit model_monad

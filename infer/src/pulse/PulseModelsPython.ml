@@ -1236,9 +1236,9 @@ let binary_add arg1 arg2 () : unit DSL.model_monad =
 
 let bool arg () : unit DSL.model_monad =
   let open DSL.Syntax in
-  let* is_awaitable = is_allocated arg in
+  let* is_allocated = is_allocated arg in
   let* res =
-    if is_awaitable then Bool.make true
+    if is_allocated then Bool.make true
     else
       dynamic_dispatch arg
         ~cases:[(bool_tname, fun () -> ret arg); (none_tname, fun () -> Bool.make false)]
@@ -1326,18 +1326,22 @@ let yield value () : unit DSL.model_monad =
 
 let compare_eq arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
-  let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
-  let* arg2_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg2 in
   let* res =
-    match (arg1_dynamic_type_data, arg2_dynamic_type_data) with
-    | ( Some {Formula.typ= {desc= Tstruct arg1_type_name}}
-      , Some {Formula.typ= {desc= Tstruct arg2_type_name}} )
-      when Typ.Name.Python.is_singleton arg1_type_name
-           || Typ.Name.Python.is_singleton arg2_type_name ->
-        Bool.make (Typ.Name.equal arg1_type_name arg2_type_name)
-    | _ ->
-        L.d_printfln "py_compare_eq: at least one unknown dynamic type: unknown result" ;
-        Bool.make_random ()
+    let* arg1_is_unawaited_awaitable = is_unawaited_awaitable arg1 in
+    let* arg2_is_unawaited_awaitable = is_unawaited_awaitable arg2 in
+    if not (phys_equal arg1_is_unawaited_awaitable arg2_is_unawaited_awaitable) then Bool.make false
+    else
+      let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
+      let* arg2_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg2 in
+      match (arg1_dynamic_type_data, arg2_dynamic_type_data) with
+      | ( Some {Formula.typ= {desc= Tstruct arg1_type_name}}
+        , Some {Formula.typ= {desc= Tstruct arg2_type_name}} )
+        when Typ.Name.Python.is_singleton arg1_type_name
+             || Typ.Name.Python.is_singleton arg2_type_name ->
+          Bool.make (Typ.Name.equal arg1_type_name arg2_type_name)
+      | _ ->
+          L.d_printfln "py_compare_eq: at least one unknown dynamic type: unknown result" ;
+          Bool.make_random ()
   in
   assign_ret res
 

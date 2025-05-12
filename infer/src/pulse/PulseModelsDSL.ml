@@ -601,6 +601,13 @@ module Syntax = struct
     PulseOperations.is_allocated addr |> exec_pure_operation
 
 
+  let is_unawaited_awaitable (addr, _) : bool model_monad =
+    (fun astate ->
+      PulseOperations.is_allocated_with_awaitable addr astate
+      && not (PulseOperations.is_awaited_awaitable addr astate) )
+    |> exec_pure_operation
+
+
   let fresh_ var_type ?more () : aval model_monad =
     let addr =
       match var_type with
