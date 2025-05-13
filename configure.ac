@@ -159,6 +159,14 @@ AC_ARG_ENABLE(python-analyzers,
 BUILD_PYTHON_ANALYZERS=$enable_python_analyzers
 AC_SUBST([BUILD_PYTHON_ANALYZERS])
 
+AC_ARG_ENABLE(rust-analyzers,
+  AS_HELP_STRING([--disable-rust-analyzers],
+    [do not build the Rust analyzers (default is to build them)]),
+  ,
+  enable_rust_analyzers=$enable_rust_analyzers_default)
+BUILD_RUST_ANALYZERS=$enable_rust_analyzers
+AC_SUBST([BUILD_RUST_ANALYZERS])
+
 AC_ARG_ENABLE(swift-analyzers,
   AS_HELP_STRING([--disable-swift-analyzers],
     [do not build the Swift analyzers (default is to build them)]),
@@ -542,6 +550,7 @@ AC_CLASSIFY_FRONTEND_SUPPORT([erlang], [$BUILD_ERLANG_ANALYZERS])
 AC_CLASSIFY_FRONTEND_SUPPORT([hack], [$BUILD_HACK_ANALYZERS])
 AC_CLASSIFY_FRONTEND_SUPPORT([java], [$BUILD_JAVA_ANALYZERS])
 AC_CLASSIFY_FRONTEND_SUPPORT([python], [$BUILD_PYTHON_ANALYZERS])
+AC_CLASSIFY_FRONTEND_SUPPORT([rust], [$BUILD_RUST_ANALYZERS])
 AC_CLASSIFY_FRONTEND_SUPPORT([swift], [$BUILD_SWIFT_ANALYZERS])
 
 AC_MSG_NOTICE([enabled language frontends:  $enabled_languages])

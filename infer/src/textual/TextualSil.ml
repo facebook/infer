@@ -56,7 +56,7 @@ module VarNameBridge = struct
     match lang with
     | Java ->
         SilPvar.get_name pvar |> Mangled.to_string |> of_string
-    | Hack | Python | C ->
+    | Hack | Python | C | Rust ->
         L.die UserError "of_pvar conversion is not supported in %s mode"
           (Textual.Lang.to_string lang)
 end
@@ -76,7 +76,7 @@ module TypeNameBridge = struct
     match lang with
     | Java ->
         SilPvar.get_name pvar |> Mangled.to_string |> of_string
-    | Hack | Python | C ->
+    | Hack | Python | C | Rust ->
         L.die UserError "of_global_pvar conversion is not supported in %s mode"
           (Textual.Lang.to_string lang)
 
@@ -124,6 +124,8 @@ module TypeNameBridge = struct
         SilTyp.Name.C.from_string value
     | C, _ ->
         L.die InternalError "to_sil conversion failed on C type name with non-empty args"
+    | Rust, _ ->
+        L.die InternalError "to_stil conversion error <NOT YET SUPPORTED>"
 
 
   let java_lang_object = of_string "java.lang.Object"
@@ -251,6 +253,8 @@ let wildcard_sil_fieldname lang name =
       SilFieldname.make (HackClass HackClassName.wildcard) name
   | Python ->
       SilFieldname.make (PythonClass PythonClassName.Wildcard) name
+  | Rust ->
+     L.die InternalError "<NOT YET SUPPORTED>"
 
 
 module TypBridge = struct
@@ -460,6 +464,8 @@ module ProcDeclBridge = struct
           SilProcname.make_python_builtin builtin )
     | C ->
         SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
+    | Rust ->
+        L.die InternalError "<NOT YET SUPPORTED>"
 
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
@@ -483,6 +489,9 @@ module ProcDeclBridge = struct
         improved_match hack_class_name_to_sil Procname.make_hack
     | Python | C ->
         to_sil lang t
+    | Rust ->
+        L.die InternalError "<NOT YET SUPPORTED>"
+
 end
 
 module GlobalBridge = struct

@@ -97,6 +97,8 @@ module Exec = struct
             L.die InternalError "Hack not supported"
         | Language.Python ->
             L.die InternalError "Python not supported"
+        | Language.Rust ->
+            L.die InternalError "Rust not supported"
       in
       if Int.equal dimension 1 then Dom.Mem.add_stack ~represents_multiple_values loc arr mem
       else Dom.Mem.add_heap ~represents_multiple_values loc arr mem

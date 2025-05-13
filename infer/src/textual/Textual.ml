@@ -11,7 +11,7 @@ module L = Logging
 module Hashtbl = Stdlib.Hashtbl
 
 module Lang = struct
-  type t = C | Hack | Java | Python [@@deriving equal]
+  type t = C | Hack | Java | Python | Rust [@@deriving equal]
 
   let of_string s =
     match String.lowercase s with
@@ -27,7 +27,7 @@ module Lang = struct
         None
 
 
-  let to_string = function Java -> "java" | Hack -> "hack" | Python -> "python" | C -> "C"
+  let to_string = function Java -> "java" | Hack -> "hack" | Python -> "python" | C -> "C" | Rust -> "Rust"
 end
 
 module Location = struct
@@ -543,7 +543,7 @@ module ProcDecl = struct
   let to_sig {qualified_name; formals_types} = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Option.map formals_types ~f:List.length}
-    | Some Lang.Python | Some Lang.Java | Some Lang.C | None ->
+    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Rust | None ->
         ProcSig.Other {qualified_name}
 
 
@@ -847,7 +847,7 @@ module Exp = struct
   let call_sig qualified_name nb_args = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Some nb_args}
-    | Some Lang.Python | Some Lang.Java | Some Lang.C | None ->
+    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Rust | None ->
         ProcSig.Other {qualified_name}
 
 

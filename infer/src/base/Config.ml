@@ -32,6 +32,7 @@ type build_system =
   | BNdk
   | BPython
   | BRebar3
+  | BRust
   | BSwiftc
   | BXcode
 [@@deriving compare, equal]
@@ -90,6 +91,7 @@ let build_system_exe_assoc =
   ; (BNdk, "ndk-build")
   ; (BPython, "python3")
   ; (BRebar3, "rebar3")
+  ; (BRust, "rustc")
   ; (BSwiftc, "swiftc")
   ; (BErlc, "erlc")
   ; (BXcode, "xcodebuild") ]

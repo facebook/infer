@@ -35,6 +35,7 @@ function usage() {
   echo "   hack     build Hack analyzer"
   echo "   java     build Java analyzer"
   echo "   python   build Python analyzer (experimental)"
+  echo "   rust     build Rust analyzer (experimental)"
   echo "   swift    build swift analyzer (experimental)"
   echo
   echo " options:"
@@ -59,6 +60,7 @@ BUILD_ERLANG=${BUILD_ERLANG:-no}
 BUILD_HACK=${BUILD_HACK:-no}
 BUILD_JAVA=${BUILD_JAVA:-no}
 BUILD_PYTHON=${BUILD_PYTHON:-no}
+BUILD_RUST=${BUILD_RUST:-no}
 BUILD_SWIFT=${BUILD_SWIFT:-no}
 INTERACTIVE=${INTERACTIVE:-yes}
 JOBS=${JOBS:-$NCPU}
@@ -74,6 +76,7 @@ function build_all() {
   BUILD_HACK=yes
   BUILD_JAVA=yes
   BUILD_PYTHON=yes
+  BUILD_RUST=yes
   BUILD_SWIFT=yes
 }
 
@@ -107,6 +110,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     python)
       BUILD_PYTHON=yes
+      shift
+      continue
+      ;;
+    rust)
+      BUILD_RUST=yes
       shift
       continue
       ;;
@@ -154,7 +162,8 @@ done
 
 if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && \
    [ "$BUILD_HACK" == "no" ] && [ "$BUILD_JAVA" == "no" ] && \
-   [ "$BUILD_PYTHON" == "no" ] && [ "$BUILD_SWIFT" == "no" ]; then
+   [ "$BUILD_PYTHON" == "no" ] && [ "$BUILD_SWIFT" == "no" ] && \
+   [ "$BUILD_RUST" == "no" ]; then
   build_all
 fi
 
@@ -225,6 +234,9 @@ if [ "$BUILD_JAVA" == "no" ]; then
 fi
 if [ "$BUILD_PYTHON" == "no" ]; then
   CONFIGURE_PREPEND_OPTS+=" --disable-python-analyzers"
+fi
+if [ "$BUILD_RUST" == "no" ]; then
+  CONFIGURE_PREPEND_OPTS+=" --disable-rust-analyzers"
 fi
 if [ "$BUILD_SWIFT" == "no" ]; then
   CONFIGURE_PREPEND_OPTS+=" --disable-swift-analyzers"
