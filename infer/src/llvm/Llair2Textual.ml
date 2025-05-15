@@ -30,7 +30,7 @@ let reg_to_id reg =
   | Some id ->
       Textual.Ident.of_int id
   | None ->
-      assert false
+      Textual.Ident.of_int (Reg.id reg)
 
 
 let reg_to_textual_var ~(proc_state : ProcState.t) reg =
