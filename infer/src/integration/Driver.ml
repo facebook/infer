@@ -211,7 +211,7 @@ let capture ~changed_files mode =
           Erlang.capture ~command:"rebar3" ~args
       | Rust {prog; args} ->
           L.progress "Capturing in rust mode...@." ;
-          Rust.capture (prog, args)
+          Rust.capture prog args
       | Swiftc {prog; args} ->
           L.progress "Capturing in swift mode...@." ;
           Bitcode.capture Swiftc ~command:prog ~args
