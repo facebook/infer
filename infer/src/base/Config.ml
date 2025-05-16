@@ -2095,6 +2095,12 @@ and objc_synthesize_dealloc =
      classes corresponding to what the compiler does."
 
 
+and ondemand_callchain_limit =
+  CLOpt.mk_int_opt ~long:"ondemand-callchain-limit"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "If enabled, the number of consecutive recursive ondemand call is bounded"
+
+
 and ondemand_recursion_restart_limit =
   CLOpt.mk_int ~long:"ondemand-recursion-restart-limit" ~default:100
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4244,6 +4250,8 @@ and no_translate_libs = not !headers
 and objc_block_execution_macro = !objc_block_execution_macro
 
 and objc_synthesize_dealloc = !objc_synthesize_dealloc
+
+and ondemand_callchain_limit = !ondemand_callchain_limit
 
 and ondemand_recursion_restart_limit = !ondemand_recursion_restart_limit
 

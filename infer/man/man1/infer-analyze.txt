@@ -259,6 +259,10 @@ OPTIONS
        --objc-block-execution-macro string
            Macro for executing Objective-C blocks safely.
 
+       --ondemand-callchain-limit int
+           If enabled, the number of consecutive recursive ondemand call is
+           bounded
+
        --ondemand-recursion-restart-limit int
            In order to make the analysis of mutual recursion cycles
            deterministic in their output, the analysis of a cycle of mutually
