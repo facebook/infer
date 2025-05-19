@@ -208,7 +208,8 @@ module Term : sig
   val iswitch : ptr:Exp.t -> tbl:jump iarray -> loc:Loc.t -> term
 
   val call :
-       name:string
+       unmangled_name:string option
+    -> name:string
     -> typ:Typ.t
     -> actuals:Exp.t iarray
     -> areturn:Reg.t option

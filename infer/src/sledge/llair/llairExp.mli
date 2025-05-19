@@ -73,7 +73,7 @@ type opN = Record  (** Record (array / struct) constant *) [@@deriving compare, 
 type t = private
   | Reg of {id: int; name: string; typ: LlairTyp.t}  (** Virtual register *)
   | Global of {name: string; is_constant: bool; typ: LlairTyp.t [@ignore]}  (** Global constant *)
-  | FuncName of {name: string; typ: LlairTyp.t [@ignore]}  (** Function name *)
+  | FuncName of {name: string; typ: LlairTyp.t [@ignore]; unmangled_name: string option [@ignore]}
   | Label of {parent: string; name: string}
       (** Address of named code block within parent function *)
   | Integer of {data: Z.t; typ: LlairTyp.t}  (** Integer constant *)
@@ -176,13 +176,15 @@ module FuncName : sig
 
   val of_exp : exp -> t option
 
-  val mk : LlairTyp.t -> string -> t
+  val mk : unmangled_name:string option -> LlairTyp.t -> string -> t
 
   val counterfeit : string -> t
   (** [compare] ignores [FuncName.typ], so it is possible to construct [FuncName]s using a dummy
       type that compare equal to their genuine counterparts. *)
 
   val name : t -> string
+
+  val unmangled_name : t -> string option
 
   val typ : t -> LlairTyp.t
 end

@@ -75,7 +75,13 @@ let translate_llair_globals globals =
 
 
 let to_qualified_proc_name ?loc func_name =
-  let func_name = FuncName.name func_name in
+  let func_name =
+    match FuncName.unmangled_name func_name with
+    | Some name ->
+        name
+    | None ->
+        FuncName.name func_name
+  in
   let loc = Option.map ~f:to_textual_loc loc in
   Textual.QualifiedProcName.
     {enclosing_class= TopLevel; name= Textual.ProcName.of_string ?loc func_name}

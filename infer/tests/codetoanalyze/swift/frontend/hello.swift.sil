@@ -6,111 +6,9 @@
 
 .source_language = "C" @?
 
-define $s5Hello4mainyyF() : void {
-  #: @[3:0]
-      n1 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, &$sypN.swift::full_existential_type.field_1) @[3:0]
-      jmp 1::ret @[3:0]
-      
-  #$ss5print_9separator10terminatoryypd_S2StF::void::ret: @[5:1]
-      _ = swift_bridgeObjectRelease(n21) @[5:1]
-      jmp swift_bridgeObjectRelease::void::ret @[5:1]
-      
-  #15::ret: @[3:0]
-      n16 = $ss5print_9separator10terminatoryypd_S2StFfA0_() @[3:0]
-      jmp 16::ret @[3:0]
-      
-  #16::ret: @[3:0]
-      n18 = $builtins.llvm_nondet() @[3:0]
-      n19 = $ss5print_9separator10terminatoryypd_S2StFfA1_() @[3:0]
-      jmp 19::ret @[3:0]
-      
-  #19::ret: @[3:0]
-      n21 = $builtins.llvm_nondet() @[3:0]
-      _ = $ss5print_9separator10terminatoryypd_S2StF(n15, $builtins.llvm_nondet(), n18, $builtins.llvm_nondet(), n21) @[4:5]
-      jmp $ss5print_9separator10terminatoryypd_S2StF::void::ret @[4:5]
-      
-  #1::ret: @[3:0]
-      n3 = $builtins.llvm_nondet() @[3:0]
-      n4 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("Hello, World!", 13, -1) @[4:11]
-      jmp 4::ret @[4:11]
-      
-  #4::ret: @[4:11]
-      store n3.Any.field_1 <- &$sSSN @[4:11]
-      n11 = n3.Any.field_0.TSS.field_0.Ts11_StringGutsV.field_0 @[4:11]
-      store n11.Ts13_StringObjectV.field_0.Ts6UInt64V.field_0 <- $builtins.llvm_nondet() @[4:11]
-      store n11.Ts13_StringObjectV.field_1 <- $builtins.llvm_nondet() @[4:11]
-      n15 = $ss27_finalizeUninitializedArrayySayxGABnlF($builtins.llvm_nondet(), &$sypN.swift::full_existential_type.field_1) @[3:0]
-      jmp 15::ret @[3:0]
-      
-  #swift_bridgeObjectRelease::void::1::ret: @[5:1]
-      _ = swift_bridgeObjectRelease(n15) @[5:1]
-      jmp swift_bridgeObjectRelease::void::2::ret @[5:1]
-      
-  #swift_bridgeObjectRelease::void::2::ret: @[5:1]
+define main() : void {
+  #: @[5:1]
       ret null @[5:1]
-      
-  #swift_bridgeObjectRelease::void::ret: @[5:1]
-      _ = swift_bridgeObjectRelease(n18) @[5:1]
-      jmp swift_bridgeObjectRelease::void::1::ret @[5:1]
-      
-} @?
-
-declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*ptr_elt, int, int) : void
-
-define $sSa12_endMutationyyF(var0: *ptr_elt, var1: *ptr_elt) : void {
-  #: @[0:0]
-      n6 = load &var1.TSa.field_0.Ts12_ArrayBufferV.field_0.Ts14_BridgeStorageV.field_0 @[0:0]
-      store &var1.TSa.field_0.Ts12_ArrayBufferV.field_0.Ts14_BridgeStorageV.field_0 <- n6 @[0:0]
-      ret null @[0:0]
-      
-} @?
-
-declare $sSaMa(int, *ptr_elt) : void
-
-declare $ss27_allocateUninitializedArrayySayxG_BptBwlF(int, *ptr_elt) : void
-
-define $ss27_finalizeUninitializedArrayySayxGABnlF(var0: *ptr_elt, var1: *ptr_elt) : *ptr_elt {
-  local var4: TSa, $\CF\84_0_0: *ptr_elt
-  #: @[0:0]
-      n62 = load &var1 @[0:0]
-      store &$\CF\84_0_0 <- n62 @[0:0]
-      n61 = load &var0 @[0:0]
-      store &var4.TSa.field_0.Ts12_ArrayBufferV.field_0.Ts14_BridgeStorageV.field_0 <- n61 @[0:0]
-      n8 = $sSaMa(0, &var1) @[0:0]
-      jmp 8::ret @[0:0]
-      
-  #$sSa12_endMutationyyF::void::ret: @[0:0]
-      n13 = load &var4.TSa.field_0.Ts12_ArrayBufferV.field_0.Ts14_BridgeStorageV.field_0 @[0:0]
-      ret n13 @[0:0]
-      
-  #8::ret: @[0:0]
-      _ = $sSa12_endMutationyyF(n8.swift::metadata_response.field_0, &var4) @[0:0]
-      jmp $sSa12_endMutationyyF::void::ret @[0:0]
-      
-} @?
-
-declare $ss5print_9separator10terminatoryypd_S2StF(*ptr_elt, int, *ptr_elt, int, *ptr_elt) : void
-
-define $ss5print_9separator10terminatoryypd_S2StFfA0_() : void {
-  #: @[0:0]
-      n1 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(" ", 1, -1) @[0:0]
-      jmp 1::ret @[0:0]
-      
-  #1::ret: @[0:0]
-      n149 = $builtins.llvm_nondet() @[0:0]
-      ret $builtins.llvm_nondet() @[0:0]
-      
-} @?
-
-define $ss5print_9separator10terminatoryypd_S2StFfA1_() : void {
-  #: @[0:0]
-      n1 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("
-", 1, -1) @[0:0]
-      jmp 1::ret @[0:0]
-      
-  #1::ret: @[0:0]
-      n149 = $builtins.llvm_nondet() @[0:0]
-      ret $builtins.llvm_nondet() @[0:0]
       
 } @?
 
@@ -143,8 +41,6 @@ declare _swift_FORCE_LOAD_$_swift_time() : void
 declare _swift_FORCE_LOAD_$_swiftsys_time() : void
 
 declare _swift_FORCE_LOAD_$_swiftunistd() : void
-
-declare swift_bridgeObjectRelease(*ptr_elt) : void
 
 global llvm::used: *ptr_elt
 
@@ -179,37 +75,4 @@ global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello: *ptr_elt
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
 
 global __swift_reflection_version: *ptr_elt
-
-global ::str::1:: : *ptr_elt
-
-global ::str::1::
-: *ptr_elt
-
-global ::str::13::Hello, World!: *ptr_elt
-
-global $sypN: *ptr_elt
-
-global $sSSN: *ptr_elt
-
-type Any = {field_0: int[]; field_1: *ptr_elt}
-
-type TSS = {field_0: Ts11_StringGutsV}
-
-type TSa = {field_0: Ts12_ArrayBufferV}
-
-type Ts11_StringGutsV = {field_0: Ts13_StringObjectV}
-
-type Ts12_ArrayBufferV = {field_0: Ts14_BridgeStorageV}
-
-type Ts13_StringObjectV = {field_0: Ts6UInt64V; field_1: *ptr_elt}
-
-type Ts14_BridgeStorageV = {field_0: *ptr_elt}
-
-type Ts6UInt64V = {field_0: int}
-
-type swift::full_existential_type = {field_0: *ptr_elt; field_1: swift::type}
-
-type swift::metadata_response = {field_0: *ptr_elt; field_1: int}
-
-type swift::type = {field_0: int}
 
