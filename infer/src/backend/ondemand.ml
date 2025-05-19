@@ -257,7 +257,9 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
     if
       Option.exists Config.ondemand_callchain_limit ~f:(fun limit ->
           ActiveProcedures.size () >= limit )
-    then postprocess initial_callee_summary
+    then (
+      Stats.incr_ondemand_callchain_limit_hit () ;
+      postprocess initial_callee_summary )
     else
       let callee_summary =
         if callee_attributes.ProcAttributes.is_defined then
