@@ -58,25 +58,25 @@ end
 module MakeHashtbl (H : Stdlib.Hashtbl.S) : Hashtbl with type key = H.key with module Hash = H
 
 module type CacheS = sig
-  module HQ : Hash_queue.S
+  type key
 
   type 'a t
 
   val create : name:string -> 'a t
 
-  val lookup : 'a t -> HQ.key -> 'a option
+  val lookup : 'a t -> key -> 'a option
 
-  val add : 'a t -> HQ.key -> 'a -> unit
+  val add : 'a t -> key -> 'a -> unit
 
-  val remove : 'a t -> HQ.key -> unit
+  val remove : 'a t -> key -> unit
 
   val clear : 'a t -> unit
 
   val set_lru_mode : 'a t -> lru_limit:int option -> unit
 
-  val with_hashqueue : ('a HQ.t -> unit) -> 'a t -> unit
+  val update : f:('a option -> 'a option) -> 'a t -> key -> unit
 end
 
 module MakeCache (Key : sig
   type t [@@deriving compare, equal, hash, show, sexp]
-end) : CacheS with type HQ.key = Key.t
+end) : CacheS with type key = Key.t

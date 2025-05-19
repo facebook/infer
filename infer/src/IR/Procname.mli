@@ -256,7 +256,7 @@ module HashQueue : Hash_queue.S with type key = t
 
 module HashSet : HashSet.S with type elt = t
 
-module Cache : Concurrent.CacheS with type HQ.key = t
+module Cache : Concurrent.CacheS with type key = t
 
 (** Maps from proc names. *)
 module Map : PrettyPrintable.PPMap with type key = t

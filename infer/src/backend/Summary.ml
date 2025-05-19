@@ -165,13 +165,10 @@ module OnDisk = struct
     let clear_cache () = Cache.clear cache in
     let remove_from_cache pname = Cache.remove cache pname in
     let add proc_name analysis_req summary =
-      Cache.with_hashqueue
-        (fun hq ->
-          Cache.HQ.lookup_and_remove hq proc_name
-          |> Option.value ~default:AnalysisRequest.Map.empty
+      Cache.update cache proc_name ~f:(fun map_opt ->
+          Option.value map_opt ~default:AnalysisRequest.Map.empty
           |> AnalysisRequest.Map.add analysis_req summary
-          |> Cache.HQ.enqueue_front_exn hq proc_name )
-        cache
+          |> Option.some )
     in
     let find_opt (proc_name, analysis_req) =
       Cache.lookup cache proc_name |> Option.bind ~f:(AnalysisRequest.Map.find_opt analysis_req)
