@@ -123,24 +123,44 @@ let empty =
 
 (* Force lazy payloads and allow marshalling of the resulting value *)
 let freeze t =
-  let freeze v = Option.map v ~f:SafeLazy.freeze in
-  { annot_map= freeze t.annot_map
-  ; buffer_overrun_analysis= freeze t.buffer_overrun_analysis
-  ; buffer_overrun_checker= freeze t.buffer_overrun_checker
-  ; config_impact_analysis= freeze t.config_impact_analysis
-  ; cost= freeze t.cost
-  ; disjunctive_demo= freeze t.disjunctive_demo
-  ; static_constructor_stall_checker= freeze t.static_constructor_stall_checker
-  ; lab_resource_leaks= freeze t.lab_resource_leaks
-  ; litho_required_props= freeze t.litho_required_props
-  ; pulse= freeze t.pulse
-  ; purity= freeze t.purity
-  ; racerd= freeze t.racerd
-  ; scope_leakage= freeze t.scope_leakage
-  ; siof= freeze t.siof
-  ; lineage= freeze t.lineage
-  ; lineage_shape= freeze t.lineage_shape
-  ; starvation= freeze t.starvation }
+  let ({ annot_map
+       ; buffer_overrun_analysis
+       ; buffer_overrun_checker
+       ; config_impact_analysis
+       ; cost
+       ; disjunctive_demo
+       ; static_constructor_stall_checker
+       ; lab_resource_leaks
+       ; litho_required_props
+       ; pulse
+       ; purity
+       ; racerd
+       ; scope_leakage
+       ; siof
+       ; lineage
+       ; lineage_shape
+       ; starvation } [@warning "+missing-record-field-pattern"] ) =
+    t
+  in
+  let freeze v_opt = Option.iter v_opt ~f:(fun v -> ignore @@ SafeLazy.force v) in
+  freeze annot_map ;
+  freeze buffer_overrun_analysis ;
+  freeze buffer_overrun_checker ;
+  freeze config_impact_analysis ;
+  freeze cost ;
+  freeze disjunctive_demo ;
+  freeze static_constructor_stall_checker ;
+  freeze lab_resource_leaks ;
+  freeze litho_required_props ;
+  freeze pulse ;
+  freeze purity ;
+  freeze racerd ;
+  freeze scope_leakage ;
+  freeze siof ;
+  freeze lineage ;
+  freeze lineage_shape ;
+  freeze starvation ;
+  ()
 
 
 module PayloadIdToField =
@@ -202,8 +222,8 @@ module SQLite = struct
     List.map all_fields ~f:(fun (F {field}) -> Field.get field payloads |> serialize_payload_opt)
 
 
-  let serialize payloads =
-    let ({pulse} as payloads) = freeze payloads in
+  let serialize ({pulse} as payloads) =
+    freeze payloads ;
     let default = serialize payloads in
     fun ~old_pulse_payload ->
       (* All payloads must be null or blob. *)
