@@ -509,7 +509,7 @@ module Term = struct
 
   let call ~unmangled_name ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
     let target =
-      {func= {dummy_func with name= FuncName.mk ?unmangled_name typ name}; recursive= false}
+      {func= {dummy_func with name= FuncName.mk ~unmangled_name typ name}; recursive= false}
     in
     let cal = {callee= Direct target; typ; actuals; areturn; return; throw; loc} in
     let k = Call cal in

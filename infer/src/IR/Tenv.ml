@@ -412,17 +412,11 @@ module MethodInfo = struct
 
   type t = HackInfo of Hack.t | DefaultInfo of Default.t [@@deriving show {with_path= false}]
 
-  let return ~kind proc_name =
+  let return ~kind (proc_name : Procname.t) =
     match proc_name with
-    | Procname.Hack _ ->
+    | Hack _ ->
         HackInfo (Hack.mk_class ~kind proc_name)
-    | Procname.Block _
-    | Procname.C _
-    | Procname.CSharp _
-    | Procname.Erlang _
-    | Procname.Java _
-    | Procname.ObjC_Cpp _
-    | Procname.Python _ ->
+    | Block _ | C _ | CSharp _ | Erlang _ | Java _ | ObjC_Cpp _ | Python _ | Swift _ ->
         DefaultInfo (Default.mk_class proc_name)
 
 

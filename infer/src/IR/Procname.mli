@@ -188,6 +188,17 @@ module Hack : sig
   val belongs_to_static_companion : t -> bool
 end
 
+module Swift : sig
+  type t =
+    | ClassMethod of {class_name: Typ.Name.t; method_name: Mangled.t}
+    | Function of {function_name: Mangled.t}
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
+  val mk_function : Mangled.t -> t [@@warning "-unused-value-declaration"]
+
+  val mk_class_method : Typ.Name.t -> Mangled.t -> t [@@warning "-unused-value-declaration"]
+end
+
 (** Type of procedure names. *)
 type t =
   | Block of Block.t
@@ -198,6 +209,7 @@ type t =
   | Java of Java.t
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of PythonProcname.t
+  | Swift of Swift.t
 [@@deriving compare, yojson_of, sexp, hash, normalize]
 
 val compare_name : t -> t -> int
