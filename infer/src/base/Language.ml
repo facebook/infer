@@ -6,7 +6,8 @@
  *)
 open! IStd
 
-type t = Clang | CIL | Erlang | Hack | Java | Python [@@deriving compare, enumerate, equal]
+type t = Clang | CIL | Erlang | Hack | Java | Python | Swift
+[@@deriving compare, enumerate, equal]
 
 let language_to_string =
   [ (Clang, "C/C++/ObjC")
@@ -14,7 +15,8 @@ let language_to_string =
   ; (Hack, "Hack")
   ; (Java, "Java")
   ; (CIL, "C#/.Net")
-  ; (Python, "Python") ]
+  ; (Python, "Python")
+  ; (Swift, "Swift") ]
 
 
 let to_string lang = List.Assoc.find_exn language_to_string ~equal lang
@@ -33,5 +35,5 @@ let supports_pointer_arithmetic = function
   (* https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/pointer-related-operators *)
   | CIL ->
       true
-  | Erlang | Hack | Java | Python ->
+  | Erlang | Hack | Java | Python | Swift ->
       false

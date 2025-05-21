@@ -41,6 +41,8 @@ let pp_exp fmt exp =
       L.die InternalError "Hack not supported"
   | Python ->
       L.die InternalError "Python not supported"
+  | Swift ->
+      L.die InternalError "Swift not supported"
 
 
 let rec should_keep_exp formals (exp : AccessExpression.t) =

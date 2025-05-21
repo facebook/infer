@@ -365,7 +365,7 @@ let get_this attributes =
     | Clang -> (
         if Procname.is_objc_instance_method attributes.proc_name then Some Mangled.self
         else match attributes.clang_method_kind with CPP_INSTANCE -> Some Mangled.this | _ -> None )
-    | CIL | Erlang | Hack | Python ->
+    | CIL | Erlang | Hack | Python | Swift ->
         None
   in
   Pvar.mk name attributes.proc_name
