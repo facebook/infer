@@ -194,9 +194,9 @@ module Swift : sig
     | Function of {function_name: Mangled.t}
   [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-  val mk_function : Mangled.t -> t [@@warning "-unused-value-declaration"]
+  val mk_function : Mangled.t -> t
 
-  val mk_class_method : Typ.Name.t -> Mangled.t -> t [@@warning "-unused-value-declaration"]
+  val mk_class_method : Typ.Name.t -> Mangled.t -> t
 end
 
 (** Type of procedure names. *)

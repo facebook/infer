@@ -56,7 +56,7 @@ module VarNameBridge = struct
     match lang with
     | Java ->
         SilPvar.get_name pvar |> Mangled.to_string |> of_string
-    | Hack | Python | C ->
+    | Hack | Python | C | Swift ->
         L.die UserError "of_pvar conversion is not supported in %s mode"
           (Textual.Lang.to_string lang)
 end
@@ -76,7 +76,7 @@ module TypeNameBridge = struct
     match lang with
     | Java ->
         SilPvar.get_name pvar |> Mangled.to_string |> of_string
-    | Hack | Python | C ->
+    | Hack | Python | C | Swift ->
         L.die UserError "of_global_pvar conversion is not supported in %s mode"
           (Textual.Lang.to_string lang)
 
@@ -124,6 +124,10 @@ module TypeNameBridge = struct
         SilTyp.Name.C.from_string value
     | C, _ ->
         L.die InternalError "to_sil conversion failed on C type name with non-empty args"
+    | Swift, [] ->
+        SilTyp.Name.C.from_string value
+    | Swift, _ ->
+        L.die InternalError "to_sil conversion failed on Swift type name with non-empty args"
 
 
   let java_lang_object = of_string "java.lang.Object"
@@ -178,7 +182,9 @@ let mk_python_mixed_type_textual loc =
   Typ.Struct (TypeName.of_string ~loc PythonClassName.(classname (Builtin PyObject)))
 
 
-let mk_c_mixed_type_textual = Typ.Void
+let c_mixed_type_textual = Typ.Void
+
+let swift_mixed_type_textual = Typ.Void
 
 let default_return_type (lang : Lang.t option) loc =
   match lang with
@@ -187,12 +193,14 @@ let default_return_type (lang : Lang.t option) loc =
   | Some Python ->
       Typ.Ptr (mk_python_mixed_type_textual loc)
   | Some C ->
-      Typ.Ptr mk_c_mixed_type_textual
+      Typ.Ptr c_mixed_type_textual
+  | Some Swift ->
+      Typ.Ptr swift_mixed_type_textual
   | Some other ->
-      L.die InternalError "Unexpected return type outside of Hack/Python/C: %s"
+      L.die InternalError "Unexpected return type outside of Hack/Python/C/Swift: %s"
         (Lang.to_string other)
   | None ->
-      L.die InternalError "Unexpected return type outside of Hack/Python/C: None"
+      L.die InternalError "Unexpected return type outside of Hack/Python/C/Swift: None"
 
 
 let mangle_java_procname jpname =
@@ -245,7 +253,7 @@ let mangle_java_procname jpname =
 
 let wildcard_sil_fieldname lang name =
   match (lang : Lang.t) with
-  | Java | C ->
+  | Java | C | Swift ->
       L.die InternalError "a wildcard fieldname is only supported in Hack or Python"
   | Hack ->
       SilFieldname.make (HackClass HackClassName.wildcard) name
@@ -320,6 +328,11 @@ module TypBridge = struct
 
 
   let c_mixed =
+    let void = SilTyp.mk SilTyp.Tvoid in
+    SilTyp.mk_ptr void
+
+
+  let swift_mixed =
     let void = SilTyp.mk SilTyp.Tvoid in
     SilTyp.mk_ptr void
 end
@@ -460,6 +473,21 @@ module ProcDeclBridge = struct
           SilProcname.make_python_builtin builtin )
     | C ->
         SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
+    | Swift -> (
+        let plain_name = List.find_map ~f:Attr.get_plain_name t.attributes in
+        let mangled =
+          match plain_name with
+          | Some plain_name ->
+              Mangled.mangled plain_name t.qualified_name.name.value
+          | None ->
+              Mangled.from_string t.qualified_name.name.value
+        in
+        match t.qualified_name.enclosing_class with
+        | TopLevel ->
+            SilProcname.Swift (SilProcname.Swift.mk_function mangled)
+        | Enclosing class_name ->
+            let class_name = TypeNameBridge.to_sil lang class_name in
+            SilProcname.Swift (SilProcname.Swift.mk_class_method class_name mangled) )
 
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
@@ -481,7 +509,7 @@ module ProcDeclBridge = struct
             make ~class_name ~function_name ~arity
         in
         improved_match hack_class_name_to_sil Procname.make_hack
-    | Python | C ->
+    | Python | C | Swift ->
         to_sil lang t
 end
 
@@ -941,8 +969,13 @@ module InstrBridge = struct
                     (* Declarations with unknown formals are expected in C. Assume that unknown
                        formal types are *void. *)
                     TypBridge.c_mixed
+                | Lang.Swift ->
+                    (* Declarations with unknown formals are expected in Swift. Assume that unknown
+                       formal types are *void. *)
+                    TypBridge.swift_mixed
                 | other ->
-                    L.die InternalError "Unexpected unknown formals outside of Hack/Python/C: %s"
+                    L.die InternalError
+                      "Unexpected unknown formals outside of Hack/Python/C/Swift: %s"
                       (Lang.to_string other)
               in
               List.map args ~f:(fun arg -> (arg, default_typ))

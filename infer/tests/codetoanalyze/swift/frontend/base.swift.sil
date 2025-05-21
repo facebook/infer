@@ -4,9 +4,9 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "C" @?
+.source_language = "Swift" @?
 
-define returnOne() : int {
+define .plain_name = "returnOne" $s5Hello9returnOneSiyF() : int {
   #: @[3:5]
       ret 1 @[3:5]
       

@@ -75,16 +75,13 @@ let translate_llair_globals globals =
 
 
 let to_qualified_proc_name ?loc func_name =
-  let func_name =
-    match FuncName.unmangled_name func_name with
-    | Some name ->
-        name
-    | None ->
-        FuncName.name func_name
-  in
-  let loc = Option.map ~f:to_textual_loc loc in
+  let func_name = FuncName.name func_name in
   Textual.QualifiedProcName.
     {enclosing_class= TopLevel; name= Textual.ProcName.of_string ?loc func_name}
+
+
+let to_name_attr func_name =
+  Option.map ~f:Textual.Attr.mk_plain_name (FuncName.unmangled_name func_name)
 
 
 let to_result_type ~struct_map freturn =
@@ -529,10 +526,12 @@ let is_undefined func =
 
 type textual_proc = ProcDecl of Textual.ProcDecl.t | ProcDesc of Textual.ProcDesc.t
 
-let translate_llair_functions struct_map globals functions =
+let translate_llair_functions lang struct_map globals functions =
   let function_to_formal proc_descs (func_name, func) =
     let formals_list, formals_types = to_formals ~struct_map func in
-    let qualified_name = to_qualified_proc_name func_name ~loc:func.Llair.loc in
+    let loc = to_textual_loc func.Llair.loc in
+    let qualified_name = to_qualified_proc_name ~loc func_name in
+    let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
     let proc_loc = to_textual_loc func.Llair.loc in
     let formals_ =
       List.fold2_exn
@@ -561,7 +560,10 @@ let translate_llair_functions struct_map globals functions =
     in
     let procdecl =
       Textual.ProcDecl.
-        {qualified_name; result_type; attributes= []; formals_types= Some formals_types}
+        { qualified_name
+        ; result_type
+        ; attributes= Option.to_list plain_name
+        ; formals_types= Some formals_types }
     in
     if is_undefined func then ProcDecl procdecl :: proc_descs
     else
@@ -585,7 +587,7 @@ let translate_llair_functions struct_map globals functions =
 let translate sourcefile (llair_program : Llair.Program.t) lang : Textual.Module.t =
   let struct_map = Llair2TextualType.translate_types_env llair_program.typ_defns in
   let globals_map = translate_llair_globals llair_program.Llair.globals in
-  let procs = translate_llair_functions struct_map globals_map llair_program.Llair.functions in
+  let procs = translate_llair_functions lang struct_map globals_map llair_program.Llair.functions in
   let procs =
     List.fold
       ~f:(fun procs proc ->

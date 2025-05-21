@@ -899,8 +899,8 @@ module Syntax = struct
         TextualSil.hack_mixed_type_name
     | Python ->
         TextualSil.python_mixed_type_name
-    | Java | C ->
-        L.die InternalError "DSL.call not supported on Java"
+    | Java | C | Swift ->
+        L.die InternalError "DSL.call not supported on Java/C/Swift"
 
 
   let call lang proc_name named_args =

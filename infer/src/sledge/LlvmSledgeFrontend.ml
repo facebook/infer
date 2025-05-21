@@ -539,7 +539,7 @@ let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
 let get_unmangled_name llfunc =
   let subprogram = Llvm_debuginfo.get_subprogram llfunc in
   let name = Option.map ~f:Llvm_debuginfo.di_type_get_name subprogram |> Option.value ~default:"" in
-  if String.is_empty name then Some (Llvm.value_name llfunc) else Some name
+  if String.is_empty name then None else Some name
 
 
 let mk_func_name llv typ =

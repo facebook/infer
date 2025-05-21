@@ -4,9 +4,9 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "C" @?
+.source_language = "Swift" @?
 
-define main() : void {
+define .plain_name = "main" $s5Hello4mainyyF() : void {
   #: @[5:1]
       ret null @[5:1]
       
