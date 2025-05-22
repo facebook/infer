@@ -6,12 +6,35 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "test1" $s5Hello5test11nS2i_tF(var0: int) : int {
+define .plain_name = "test1" $s5Hello5test1yS2iF(var0: int) : int {
   local n: int
   #: @[6:0]
       n7 = load &var0 @[6:0]
       store &n <- n7 @[6:0]
       ret &var0 @[7:5]
+      
+} @?
+
+define .plain_name = "test2" $s5Hello5test2SiyF() : int {
+  #: @[11:12]
+      n1 = $s5Hello9returnOneSiyF() @[11:12]
+      jmp 1::ret @[11:12]
+      
+  #1::ret: @[11:5]
+      ret n1 @[11:5]
+      
+} @?
+
+define .plain_name = "test3" $s5Hello5test3yS2iF(var0: int) : int {
+  local n: int
+  #: @[14:0]
+      n24 = load &var0 @[14:0]
+      store &n <- n24 @[14:0]
+      n3 = $s5Hello5test1yS2iF(&var0) @[15:12]
+      jmp 3::ret @[15:12]
+      
+  #3::ret: @[15:5]
+      ret n3 @[15:5]
       
 } @?
 
