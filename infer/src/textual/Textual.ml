@@ -38,6 +38,9 @@ module Lang = struct
         "C"
     | Swift ->
         "Swift"
+
+
+  let is_swift lang = match lang with Swift -> true | _ -> false
 end
 
 module Location = struct
@@ -872,6 +875,8 @@ module Exp = struct
   let not exp = call_non_virtual (ProcDecl.of_unop Unop.LNot) [exp]
 
   let cast typ exp = call_non_virtual ProcDecl.cast_name [Typ typ; exp]
+
+  let is_zero_exp exp = match exp with Const (Int i) -> Z.equal i Z.zero | _ -> false
 
   let allocate_object typename =
     Call {proc= ProcDecl.allocate_object_name; args= [Typ (Typ.Struct typename)]; kind= NonVirtual}

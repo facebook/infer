@@ -15,6 +15,8 @@ module Lang : sig
   val of_string : string -> t option [@@warning "-unused-value-declaration"]
 
   val to_string : t -> string
+
+  val is_swift : t -> bool
 end
 
 module Location : sig
@@ -362,6 +364,8 @@ module Exp : sig
   val cast : Typ.t -> t -> t
 
   val vars : t -> Ident.Set.t
+
+  val is_zero_exp : t -> bool
 
   val pp : F.formatter -> t -> unit
 end

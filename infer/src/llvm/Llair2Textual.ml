@@ -362,6 +362,16 @@ let cmnd_to_instrs ~proc_state block =
             textual_instr :: textual_instrs
         | _ ->
             assert false )
+    | Builtin {reg; name; args; loc}
+      when Textual.Lang.is_swift proc_state.ProcState.lang && Llair.Builtin.equal name `memset -> (
+        let args = StdUtils.iarray_to_list args in
+        match args with
+        | [_; arg2; _; _] when Textual.Exp.is_zero_exp (fst (to_textual_exp ~proc_state arg2)) ->
+            textual_instrs
+        | _ ->
+            let name = Llair.Builtin.to_name name in
+            let textual_instr = to_textual_builtin ~proc_state reg name args loc in
+            textual_instr :: textual_instrs )
     | Builtin {reg; name; args; loc} ->
         let name = Llair.Builtin.to_name name in
         let args = StdUtils.iarray_to_list args in
@@ -545,7 +555,8 @@ let translate_llair_functions lang struct_map globals functions =
       ; locals= VarMap.empty
       ; ids= IdentMap.empty
       ; struct_map
-      ; globals }
+      ; globals
+      ; lang }
     in
     let typ_opt, nodes = func_to_nodes ~proc_state func in
     let result_type =

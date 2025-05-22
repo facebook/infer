@@ -21,7 +21,8 @@ type t =
   ; mutable formals: Textual.Typ.annotated VarMap.t
   ; mutable ids: Textual.Typ.annotated IdentMap.t
   ; struct_map: structMap
-  ; globals: globalMap }
+  ; globals: globalMap
+  ; lang: Textual.Lang.t }
 
 let pp_ids fmt current_ids =
   F.fprintf fmt "%a"

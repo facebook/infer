@@ -21,7 +21,8 @@ type t =
   ; mutable formals: Textual.Typ.annotated VarMap.t
   ; mutable ids: Textual.Typ.annotated IdentMap.t
   ; struct_map: structMap
-  ; globals: globalMap }
+  ; globals: globalMap
+  ; lang: Textual.Lang.t }
 
 val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
 
