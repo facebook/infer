@@ -839,7 +839,8 @@ let hack_array_get this args : model =
       ~default
   in
   let* value = list_fold args ~init:this ~f:hack_array_get_one_dim in
-  assign_ret value
+  let* value_with_taint = propagate_taint_attribute this value in
+  assign_ret value_with_taint
 
 
 let hack_array_idx this key default_val : model =

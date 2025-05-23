@@ -388,6 +388,19 @@ module Syntax = struct
     AddressAttributes.is_dict_contain_const_keys addr |> exec_pure_operation
 
 
+  let propagate_taint_attribute (source_addr, _) (dest_addr, dest_hist) : aval model_monad =
+    let* {path; location} = get_data in
+    let* taints, _ =
+      AddressAttributes.get_taint_sources_and_sanitizers source_addr |> exec_pure_operation
+    in
+    if Attribute.TaintedSet.is_empty taints then ret (dest_addr, dest_hist)
+    else
+      let propagation_event = ValueHistory.TaintPropagated (location, path.timestamp) in
+      let* () = AddressAttributes.add_tainted dest_addr taints |> exec_command in
+      let new_hist = ValueHistory.sequence propagation_event dest_hist in
+      ret (dest_addr, new_hist)
+
+
   let find_decompiler_expr addr : DecompilerExpr.t model_monad =
     (fun {decompiler} -> PulseDecompiler.find addr decompiler) |> exec_pure_operation
 

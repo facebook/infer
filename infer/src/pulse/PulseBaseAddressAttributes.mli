@@ -75,6 +75,8 @@ module type S = sig
 
   val get_must_not_be_tainted : key -> t -> Attribute.TaintSink.t Attribute.TaintSinkMap.t
 
+  val add_tainted : key -> Attribute.TaintedSet.t -> t -> t
+
   val get_returned_from_unknown : key -> t -> AbstractValue.t list option
 
   val get_must_be_initialized : key -> t -> (Timestamp.t * Trace.t) option

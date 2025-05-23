@@ -13,6 +13,10 @@ class SensitiveClass {
   }
 }
 
+type SensitiveShape = shape(
+  'field' => string,
+);
+
 class ShapeLogger {
   const type TSchemaShape = shape(
     'msg' => string,
@@ -27,6 +31,15 @@ class ShapeLogger {
 }
 
 class C1 {
+
+  public function taintShapeSource(): SensitiveShape {
+    return shape('field' => '42');
+  }
+
+  public function callSink(mixed $args): void {
+    \Level1\taintSink($args);
+  }
+
   public function passViaShapeBad(SensitiveClass $sc): void {
     ShapeLogger::logData(
       shape('msg' => 'Oh-oh', 'debug_data' => $sc->sensitiveField),
@@ -85,5 +98,30 @@ class C1 {
     if ($t2 is null) {
       ShapeLogger::logMixed(false);
     }
+  }
+
+  public function testShapeTaintedBasicBad(SensitiveShape $tainted): void {
+    \Level1\taintSink($tainted);
+  }
+
+  public function testShapeTaintedWithDictAccessDirectBad(
+    SensitiveShape $tainted,
+  ): void {
+    $result = $tainted['field'];
+    \Level1\taintSink($result);
+  }
+
+  public function testShapeTaintedWithDictAccessIndirectBad(
+    SensitiveShape $tainted,
+  ): void {
+    $result = dict[];
+    $result['field'] = $tainted['field'];
+    $this->callSink($result);
+  }
+
+  public function testShapeTaintedFromFunCallWithDictAccessIndirectBad(): void {
+    $tainted = $this->taintShapeSource();
+    $result = $tainted['field'];
+    $this->callSink($result);
   }
 }

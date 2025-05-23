@@ -447,6 +447,10 @@ module Internal = struct
       abduce_one addr (MustNotBeTainted map) astate
 
 
+    let add_tainted address tainted astate =
+      map_post_attrs astate ~f:(BaseAddressAttributes.add_tainted address tainted)
+
+
     let get_taint_sources_and_sanitizers addr astate =
       let attrs = (astate.post :> base_domain).attrs in
       match BaseAddressAttributes.find_opt addr attrs with
@@ -2583,6 +2587,10 @@ module AddressAttributes = struct
 
   let add_taint_sink path taint trace v astate =
     SafeAttributes.add_taint_sink path taint trace (CanonValue.canon' astate v) astate
+
+
+  let add_tainted v taint astate =
+    SafeAttributes.add_tainted (CanonValue.canon' astate v) taint astate
 
 
   let invalidate addr_hist invalidation location astate =

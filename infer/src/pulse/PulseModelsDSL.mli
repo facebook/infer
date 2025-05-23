@@ -129,6 +129,8 @@ module Syntax : sig
 
   val remove_dict_contain_const_keys : aval -> unit model_monad
 
+  val propagate_taint_attribute : aval -> aval -> aval model_monad
+
   val is_hack_constinit_called : aval -> bool model_monad
 
   val set_hack_constinit_called : aval -> unit model_monad

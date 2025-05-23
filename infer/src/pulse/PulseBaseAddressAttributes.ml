@@ -267,6 +267,8 @@ let get_must_not_be_tainted address memory =
       Attributes.get_must_not_be_tainted attrs
 
 
+let add_tainted address tainted memory = add_one address (Tainted tainted) memory
+
 let get_must_be_initialized = get_attribute Attributes.get_must_be_initialized
 
 let get_written_to = get_attribute Attributes.get_written_to
@@ -445,6 +447,8 @@ module type S = sig
     key -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
   val get_must_not_be_tainted : key -> t -> Attribute.TaintSink.t Attribute.TaintSinkMap.t
+
+  val add_tainted : key -> Attribute.TaintedSet.t -> t -> t
 
   val get_returned_from_unknown : key -> t -> AbstractValue.t list option
 

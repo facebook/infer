@@ -283,6 +283,8 @@ module AddressAttributes : sig
   val get_taint_sources_and_sanitizers :
     AbstractValue.t -> t -> Attribute.TaintedSet.t * Attribute.TaintSanitizedSet.t
 
+  val add_tainted : AbstractValue.t -> Attribute.TaintedSet.t -> t -> t
+
   val get_propagate_taint_from :
     AbstractValue.t -> t -> (Attribute.taint_propagation_reason * Attribute.taint_in list) option
 

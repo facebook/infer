@@ -10,7 +10,7 @@
       "taint_target": [
         "ArgumentsMatchingTypes",
         [
-          "SensitiveClass"
+          "SensitiveClass", "SensitiveShape"
         ]
       ]
     },
@@ -23,7 +23,8 @@
     { "class_name_regex": ".*",
       "method_return_type_names": ["ReturnTypeMatcher::Sensitive"],
       "kinds":["ReturnTypeMatcher"]},
-    { "procedure_regex": ".*getKeyTaint", "kinds": ["BuiltinDict"]}
+    { "procedure_regex": ".*getKeyTaint", "kinds": ["BuiltinDict"]},
+    {"procedure_regex": ".*taintShapeSource"}
   ],
   "pulse-taint-sinks": [
     { "procedure": "explicitSinkAllArgs" },
