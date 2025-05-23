@@ -71,6 +71,7 @@ val prune_binop :
      ?depth:int
   -> negated:bool
   -> Binop.t
+  -> ?ifkind:bool
   -> operand
   -> operand
   -> AbductiveDomain.t
