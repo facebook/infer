@@ -1,0 +1,30 @@
+(lang dune 2.8)
+
+(name pyml)
+
+(license BSD-2-Clause)
+
+(maintainers "Thierry Martinez <martinez@nsup.org>")
+
+(authors "Thierry Martinez <martinez@nsup.org>")
+
+(source
+ (github thierry-martinez/pyml))
+
+(bug_reports "http://github.com/thierry-martinez/pyml/issues")
+
+(homepage "http://github.com/thierry-martinez/pyml")
+
+(documentation "http://github.com/thierry-martinez/pyml")
+
+(generate_opam_files true)
+
+(package
+ (name pyml)
+ (synopsis "OCaml bindings for Python")
+ (description "OCaml bindings for Python 2 and Python 3")
+ (depends
+  (ocaml (>= 3.12.1))
+  (ocamlfind :build)
+  (conf-python-3-dev :with-test))
+ (depopts utop))

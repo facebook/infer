@@ -1,0 +1,7 @@
+(library
+  (public_name ppx_show)
+  (kind ppx_rewriter)
+  (preprocess (pps ppxlib.metaquot))
+; -warning 40: Constructor or label name used out of scope. (OCaml <=4.06.0)
+  (flags -w -40)
+  (libraries ppxlib))

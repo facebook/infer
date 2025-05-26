@@ -179,6 +179,8 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=.locked
     fi
+    opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
+    opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
     opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked
 }
 

@@ -9,6 +9,18 @@ description: """\
 - **Configurable:** Users can change the formatting profile and configure every option in their `.ocamlformat` configuration file.
 - **Format Comments:** ocamlformat can format comments, docstrings, and even code blocks in your comments.
 - **RPC:** ocamlformat provides an RPC server that can be used by other tools to easily format OCaml Code."""
+maintainer: [
+  "Guillaume Petiot <guillaume@tarides.com>"
+  "Jules Aguillon <jules@j3s.fr>"
+  "Emile Trotignon <emile@tarides.com>"
+]
+authors: [
+  "Josh Berdine <jjb@fb.com>"
+  "Hugo Heuzard <hugo.heuzard@gmail.com>"
+  "Etienne Millon <etienne@tarides.com>"
+  "Guillaume Petiot <guillaume@tarides.com>"
+  "Jules Aguillon <jules@j3s.fr>"
+]
 license: ["MIT" "LGPL-2.1-only WITH OCaml-LGPL-linking-exception"]
 homepage: "https://github.com/ocaml-ppx/ocamlformat"
 bug-reports: "https://github.com/ocaml-ppx/ocamlformat/issues"
@@ -69,17 +81,4 @@ build: [
   ]
 ]
 dev-repo: "git+https://github.com/ocaml-ppx/ocamlformat.git"
-
-x-commit-hash: "651f767b48e14ba6b24db9421306942d9e51adcc"
-maintainer: [
-  "Guillaume Petiot <guillaume@tarides.com>"
-  "Jules Aguillon <jules@j3s.fr>"
-  "Emile Trotignon <emile@tarides.com>"
-]
-authors: [
-  "Josh Berdine <jjb@fb.com>"
-  "Hugo Heuzard <hugo.heuzard@gmail.com>"
-  "Etienne Millon <etienne@tarides.com>"
-  "Guillaume Petiot <guillaume@tarides.com>"
-  "Jules Aguillon <jules@j3s.fr>"
-]
+x-commit-hash: "f5727b32127730a2722f86c7119eb6d8f884e26d"

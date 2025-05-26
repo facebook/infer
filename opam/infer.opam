@@ -47,7 +47,6 @@ depends: [
   "sedlex" {>="3.0"}
   "spawn" {>= "v0.17.0"}
   "sqlite3"
-  "stdcompat" {>="20.1"}
   "tdigest" {>="2.0.0"}
   "utop" {with-test}
   "xmlm" {>="1.2.0"}

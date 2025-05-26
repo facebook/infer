@@ -9,7 +9,7 @@
 ; 2. Check the dune logs in infer/_build/log. At the very end is the linking command, which
 ;    contains linking directives starting with `-l`, e.g.
 ;
-; '-lcamlstrnat' '-lcomprmarsh' '-lzarith' '-lgmp' '-lcamlzip' '-lz' '-lsqlite3_stubs' '-lsqlite3' '-lparmap_stubs' '-lmtime_clock_stubs' '-lrt' '-lfilename_unix_stubs' '-lsys_unix_stubs' '-lcore_unix_stubs' '-lspawn_stubs' '-lsignal_unix_stubs' '-lerror_checking_mutex_stubs' '-lthreadsnat' '-lANSITerminal_stubs' '-lpyml_stubs' '-lstdcompat_stubs' '-lunixnat' '-lcore_stubs' '-lheap_block_stubs' '-lbase_bigstring_stubs' '-lexpect_test_collector_stubs' '-ltime_now_stubs' '-lbin_prot_stubs' '-lbase_stubs' '-lbase_internalhash_types_stubs'
+; '-lcamlstrnat' '-lcomprmarsh' '-lzarith' '-lgmp' '-lcamlzip' '-lz' '-lsqlite3_stubs' '-lsqlite3' '-lparmap_stubs' '-lmtime_clock_stubs' '-lrt' '-lfilename_unix_stubs' '-lsys_unix_stubs' '-lcore_unix_stubs' '-lspawn_stubs' '-lsignal_unix_stubs' '-lerror_checking_mutex_stubs' '-lthreadsnat' '-lANSITerminal_stubs' '-lpyml_stubs' '-lunixnat' '-lcore_stubs' '-lheap_block_stubs' '-lbase_bigstring_stubs' '-lexpect_test_collector_stubs' '-ltime_now_stubs' '-lbin_prot_stubs' '-lbase_stubs' '-lbase_internalhash_types_stubs'
 ;
 ;  3. Copy those below as follows: Keep the flags the same until the dynamic section after `-cclib
 ;     -Wl,-Bdynamic`. The flags already included are for static libraries; we want to keep these the
@@ -39,7 +39,7 @@
  -cclib -Wl,-Bdynamic
  -cclib -lcomprmarsh -cclib -lcamlzip -cclib -lz -cclib -lparmap_stubs
  -cclib -lmtime_clock_stubs -cclib -lrt -cclib -lcamlstrnat -cclib -lspawn_stubs -cclib -lthreadsnat -cclib -lpthread
- -cclib -lANSITerminal_stubs -cclib -lpyml_stubs -cclib -lstdcompat_stubs -cclib -lcore_stubs -cclib -lheap_block_stubs
+ -cclib -lANSITerminal_stubs -cclib -lpyml_stubs -cclib -lcore_stubs -cclib -lheap_block_stubs
  -cclib -lbase_bigstring_stubs -cclib -lexpect_test_collector_stubs -cclib -ltime_now_stubs
  -cclib -lbin_prot_stubs -cclib -lunixnat -cclib -lbase_stubs -cclib -lbase_internalhash_types_stubs
  -cclib -lm -cclib -ldl

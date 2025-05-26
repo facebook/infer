@@ -1,0 +1,19 @@
+(lang dune 1.11)
+
+(generate_opam_files true)
+
+(license "BSD-2-Clause")
+(maintainers "Thierry Martinez <thierry.martinez@inria.fr>")
+(authors "Thierry Martinez <thierry.martinez@inria.fr>")
+(source (uri "git+https://github.com/thierry-martinez/ppx_show.git"))
+(homepage "https://github.com/thierry-martinez/ppx_show")
+(bug_reports "https://github.com/thierry-martinez/ppx_show")
+(documentation "https://github.com/thierry-martinez/ppx_show")
+(version "0.2.0")
+
+(package
+ (name ppx_show)
+ (synopsis "OCaml PPX deriver for deriving show based on ppxlib")
+ (depends
+  (dune (>= 1.11.0))
+  (ppxlib (>= 0.9.0))))

@@ -116,7 +116,7 @@ depends: [
   "ppx_sexp_conv" {= "v0.16.0"}
   "ppx_sexp_message" {= "v0.16.0"}
   "ppx_sexp_value" {= "v0.16.0"}
-  "ppx_show" {= "0.2.1"}
+  "ppx_show" {= "0.2.0"}
   "ppx_stable" {= "v0.16.0"}
   "ppx_stable_witness" {= "v0.16.0"}
   "ppx_string" {= "v0.16.0"}
@@ -138,7 +138,6 @@ depends: [
   "spawn" {= "v0.17.0"}
   "splittable_random" {= "v0.16.0"}
   "sqlite3" {= "5.3.1"}
-  "stdcompat" {= "20.1"}
   "stdio" {= "v0.16.0"}
   "stdlib-shims" {= "0.3.0"}
   "tdigest" {= "2.2.0"}
@@ -158,11 +157,6 @@ depends: [
   "zarith" {= "1.14"}
   "zed" {= "3.2.3"}
 ]
-depexts: [
-  ["default-jdk"] {"ubuntu"}
-  ["default-jdk"] {"debian"}
-]
-dev-repo: "git://github.com/facebook/infer.git"
 build: [
   ["./autogen.sh"]
   ["./configure" "--prefix=%{prefix}%"]
@@ -170,3 +164,8 @@ build: [
   [make "-j" jobs "config_tests"]
 ]
 install: [make "install"]
+depexts: [
+  ["default-jdk"] {"ubuntu"}
+  ["default-jdk"] {"debian"}
+]
+dev-repo: "git://github.com/facebook/infer.git"
