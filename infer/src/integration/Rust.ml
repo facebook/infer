@@ -7,7 +7,6 @@
 open! IStd
 module L = Logging
 module F = Format
-module Worker = ProcessPool.Worker
 
 let start_rustc _compiler args =
   let stderr_log = IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "rustc" "stderr" in
