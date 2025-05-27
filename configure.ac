@@ -159,7 +159,7 @@ AC_ARG_ENABLE(python-analyzers,
 BUILD_PYTHON_ANALYZERS=$enable_python_analyzers
 AC_SUBST([BUILD_PYTHON_ANALYZERS])
 
-enable_rust_analyzers_default=yes
+enable_rust_analyzers_default=no
 AC_ARG_ENABLE(rust-analyzers,
   AS_HELP_STRING([--disable-rust-analyzers],
     [do not build the Rust analyzers (default is to build them)]),

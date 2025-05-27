@@ -23,11 +23,13 @@ module Lang = struct
         Some Python
     | "c" ->
         Some C
+    | "rust" ->
+       Some Rust
     | _ ->
         None
 
 
-  let to_string = function Java -> "java" | Hack -> "hack" | Python -> "python" | C -> "C" | Rust -> "Rust"
+  let to_string = function Java -> "java" | Hack -> "hack" | Python -> "python" | C -> "C" | Rust -> "rust"
 end
 
 module Location = struct
