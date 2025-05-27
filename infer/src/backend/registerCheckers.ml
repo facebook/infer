@@ -178,7 +178,8 @@ let all_checkers =
          ; (pulse, Hack)
          ; (pulse, Java)
          ; (pulse, CIL)
-         ; (pulse, Python) ] ) }
+         ; (pulse, Python)
+         ; (pulse, Rust) ] ) }
   ; { checker= Impurity
     ; callbacks=
         (let impurity =

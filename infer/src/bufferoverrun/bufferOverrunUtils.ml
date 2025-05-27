@@ -97,6 +97,8 @@ module Exec = struct
             L.die InternalError "Hack not supported"
         | Language.Python ->
             L.die InternalError "Python not supported"
+        | Language.Rust ->
+            L.die InternalError "Rust not supported"
         | Language.Swift ->
             L.die InternalError "Swift not supported"
       in

@@ -21,6 +21,8 @@ let java = is_yes "@BUILD_JAVA_ANALYZERS@"
 
 let python = is_yes "@BUILD_PYTHON_ANALYZERS@"
 
+let rust = is_yes "@BUILD_RUST_ANALYZERS@"
+
 let swift = is_yes "@BUILD_SWIFT_ANALYZERS@"
 
 let facebook = is_yes "@IS_FACEBOOK_TREE@"

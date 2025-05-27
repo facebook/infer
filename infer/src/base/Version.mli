@@ -44,3 +44,5 @@ val python_next_exe : string [@@warning "-unused-value-declaration"] (* used in 
 val python_enabled : bool
 
 val swift_enabled : bool
+
+val rust_enabled : bool

@@ -59,6 +59,8 @@ let pp_with_base pp_base fmt (base, accesses) =
         L.internal_error "Hack not supported@\n"
     | _, Python ->
         L.internal_error "Python not supported@\n"
+    | _, Rust ->
+        L.internal_error "Rust not supported@\n"
     | _, Swift ->
         L.internal_error "Swift not supported@\n"
     | [], _ ->
@@ -80,6 +82,8 @@ let pp_with_base pp_base fmt (base, accesses) =
               L.die InternalError "Hack not supported"
           | Python ->
               L.die InternalError "Python not supported"
+          | Rust ->
+              L.die InternalError "Rust not supported"
           | Swift ->
               L.die InternalError "Swift not supported"
         in
