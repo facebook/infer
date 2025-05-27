@@ -61,6 +61,8 @@ let pp_with_base pp_base fmt (base, accesses) =
         L.internal_error "Python not supported@\n"
     | _, Rust ->
         L.internal_error "Rust not supported@\n"
+    | _, Swift ->
+        L.internal_error "Swift not supported@\n"
     | [], _ ->
         pp_base fmt base
     | ArrayAccess _ :: rest, _ ->
@@ -82,6 +84,8 @@ let pp_with_base pp_base fmt (base, accesses) =
               L.die InternalError "Python not supported"
           | Rust ->
               L.die InternalError "Rust not supported"
+          | Swift ->
+              L.die InternalError "Swift not supported"
         in
         F.fprintf fmt "%a%s%a" pp_rev_accesses rest op Fieldname.pp field_name
     | FieldAccess field_name :: rest, _ ->

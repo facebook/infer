@@ -347,7 +347,10 @@ let rec dummy_block =
 
 
 and dummy_func =
-  { name= FuncName.mk (Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None)) "dummy"
+  { name=
+      FuncName.mk
+        (Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None))
+        "dummy" ~unmangled_name:None
   ; formals= IArray.empty
   ; freturn= None
   ; fthrow= Reg.mk Typ.ptr 0 "dummy"
@@ -504,8 +507,10 @@ module Term = struct
 
   let iswitch ~ptr ~tbl ~loc = Iswitch {ptr; tbl; loc} |> check invariant
 
-  let call ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
-    let target = {func= {dummy_func with name= FuncName.mk typ name}; recursive= false} in
+  let call ~unmangled_name ~name ~typ ~actuals ~areturn ~return ~throw ~loc =
+    let target =
+      {func= {dummy_func with name= FuncName.mk ~unmangled_name typ name}; recursive= false}
+    in
     let cal = {callee= Direct target; typ; actuals; areturn; return; throw; loc} in
     let k = Call cal in
     (k |> check invariant, fun ~callee -> target.func <- callee)

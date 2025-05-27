@@ -102,35 +102,37 @@ struct
 end
 
 module type CacheS = sig
-  module HQ : Hash_queue.S
+  type key
 
   type 'a t
 
   val create : name:string -> 'a t
 
-  val lookup : 'a t -> HQ.key -> 'a option
+  val lookup : 'a t -> key -> 'a option
 
-  val add : 'a t -> HQ.key -> 'a -> unit
+  val add : 'a t -> key -> 'a -> unit
 
-  val remove : 'a t -> HQ.key -> unit
+  val remove : 'a t -> key -> unit
 
   val clear : 'a t -> unit
 
   val set_lru_mode : 'a t -> lru_limit:int option -> unit
 
-  val with_hashqueue : ('a HQ.t -> unit) -> 'a t -> unit
+  val update : f:('a option -> 'a option) -> 'a t -> key -> unit
 end
 
 module MakeCache (Key : sig
   type t [@@deriving compare, equal, hash, show, sexp]
-end) : CacheS with type HQ.key = Key.t = struct
+end) : CacheS with type key = Key.t = struct
   module HQ = Hash_queue.Make (Key)
+
+  type key = HQ.key
 
   type 'a t = {mutex: IMutex.t; name: string; hq: 'a HQ.t; mutable lru_limit: int option}
 
   let create ~name = {name; mutex= IMutex.create (); hq= HQ.create (); lru_limit= None}
 
-  let in_mutex {mutex; hq} ~f = IMutex.critical_section mutex ~f:(fun () -> f hq)
+  let in_mutex {mutex: _; hq} ~f = IMutex.critical_section mutex ~f:(fun () -> f hq)
 
   let add t k v =
     in_mutex t ~f:(fun hq ->
@@ -162,5 +164,7 @@ end) : CacheS with type HQ.key = Key.t = struct
         HQ.clear hq )
 
 
-  let with_hashqueue f t = in_mutex t ~f
+  let update ~f t key =
+    in_mutex t ~f:(fun hq ->
+        HQ.lookup_and_remove hq key |> f |> Option.iter ~f:(HQ.enqueue_front_exn hq key) )
 end

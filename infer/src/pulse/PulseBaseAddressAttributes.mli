@@ -97,6 +97,8 @@ module type S = sig
 
   val std_vector_reserve : key -> t -> t
 
+  val is_awaited_awaitable : key -> t -> bool
+
   val is_java_resource_released : key -> t -> bool
 
   val is_csharp_resource_released : key -> t -> bool

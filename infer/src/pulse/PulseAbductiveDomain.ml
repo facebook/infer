@@ -581,6 +581,10 @@ module Internal = struct
       map_post_attrs astate ~f:(BaseAddressAttributes.std_vector_reserve addr)
 
 
+    let is_awaited_awaitable addr astate =
+      BaseAddressAttributes.is_awaited_awaitable addr (astate.post :> base_domain).attrs
+
+
     let is_java_resource_released addr astate =
       BaseAddressAttributes.is_java_resource_released addr (astate.post :> base_domain).attrs
 
@@ -2617,6 +2621,10 @@ module AddressAttributes = struct
 
   let get_hack_builder v astate =
     SafeAttributes.get_hack_builder (CanonValue.canon' astate v) astate
+
+
+  let is_awaited_awaitable v astate =
+    SafeAttributes.is_awaited_awaitable (CanonValue.canon' astate v) astate
 
 
   let is_java_resource_released v astate =

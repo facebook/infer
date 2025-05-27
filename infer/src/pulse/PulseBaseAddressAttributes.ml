@@ -309,6 +309,10 @@ let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection
 
 
+let is_awaited_awaitable adress attrs =
+  Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_awaited_awaitable
+
+
 let is_java_resource_released adress attrs =
   Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_java_resource_released
 
@@ -463,6 +467,8 @@ module type S = sig
   val get_written_to : key -> t -> (Timestamp.t * Trace.t) option
 
   val std_vector_reserve : key -> t -> t
+
+  val is_awaited_awaitable : key -> t -> bool
 
   val is_java_resource_released : key -> t -> bool
 

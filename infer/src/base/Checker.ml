@@ -42,9 +42,9 @@ type t =
 type support = NoSupport | ExperimentalSupport | Support
 
 let mk_support_func ?(clang = NoSupport) ?(java = NoSupport) ?(csharp = NoSupport)
-    ?(erlang = NoSupport) ?(hack = NoSupport) ?(python = NoSupport) ?(rust = NoSupport) () 
-    : Language.t -> support =
-  function
+    ?(erlang = NoSupport) ?(hack = NoSupport) ?(python = NoSupport) ?(rust = NoSupport) ?(swift = NoSupport) () 
+    :
+    Language.t -> support = function
   | Clang ->
       clang
   | Java ->
@@ -59,6 +59,8 @@ let mk_support_func ?(clang = NoSupport) ?(java = NoSupport) ?(csharp = NoSuppor
       python
   | Rust ->
       rust
+  | Swift ->
+      swift
 
 
 (** see .mli for how to fill these *)

@@ -109,10 +109,17 @@ patches: [
   "add-LLVMGetAtomicRMWBinOp.patch"
   "fix-null-global_initializer.patch"
   "LLVMGetGEPSourceElementType.patch"
+  "getAllocatedType.patch"
 ]
 extra-source "LLVMGetGEPSourceElementType.patch" {
   src:
     "dependencies/llvm/patches/LLVMGetGEPSourceElementType.patch"
   checksum:
     "sha256=632d24a7bea8076c959f171055d161c7b589b1d961cb5cffda5ebe32602cd85c"
+}
+extra-source "getAllocatedType.patch" {
+  src:
+    "dependencies/llvm/patches/getAllocatedType.patch"
+  checksum:
+    "sha256=a94060caf325bb83592d7563584326300c8afe2b7f1e3b3d6b0a93aa28739fa5"
 }

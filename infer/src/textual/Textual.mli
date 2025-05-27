@@ -10,7 +10,7 @@ module F = Format
 module Hashtbl = Stdlib.Hashtbl
 
 module Lang : sig
-  type t = C | Hack | Java | Python | Rust [@@deriving equal]
+  type t = C | Hack | Java | Python | Rust | Swift [@@deriving equal]
 
   val of_string : string -> t option [@@warning "-unused-value-declaration"]
 
@@ -157,6 +157,10 @@ module Attr : sig
   val mk_closure_wrapper : t
 
   val mk_trait : t
+
+  val mk_plain_name : string -> t
+
+  val get_plain_name : t -> string option
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 

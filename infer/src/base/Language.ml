@@ -6,7 +6,8 @@
  *)
 open! IStd
 
-type t = Clang | CIL | Erlang | Hack | Java | Python | Rust [@@deriving compare, enumerate, equal]
+type t = Clang | CIL | Erlang | Hack | Java | Python | Rust | Swift
+[@@deriving compare, enumerate, equal]
 
 let language_to_string =
   [ (Clang, "C/C++/ObjC")
@@ -15,7 +16,8 @@ let language_to_string =
   ; (Java, "Java")
   ; (CIL, "C#/.Net")
   ; (Python, "Python")
-  ; (Rust, "Rust")  ]
+  ; (Rust, "Rust") 
+  ; (Swift, "Swift") ]
 
 
 let to_string lang = List.Assoc.find_exn language_to_string ~equal lang
@@ -36,5 +38,5 @@ let supports_pointer_arithmetic = function
       true
   | Rust ->
       true
-  | Erlang | Hack | Java | Python ->
+  | Erlang | Hack | Java | Python | Swift ->
       false

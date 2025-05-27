@@ -4,113 +4,11 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "C" @?
+.source_language = "Swift" @?
 
-define $s5Hello4mainyyF() : void {
-  #: @[3:0]
-      n25 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, __sil_pluspi(__sil_pluspi(&$sypN, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 1)))) @[3:0]
-      jmp 1::ret @[3:0]
-      
-  #$ss5print_9separator10terminatoryypd_S2StF::void::ret: @[5:1]
-      _ = swift_bridgeObjectRelease(n48) @[5:1]
-      jmp swift_bridgeObjectRelease::void::ret @[5:1]
-      
-  #15::ret: @[3:0]
-      n43 = $ss5print_9separator10terminatoryypd_S2StFfA0_() @[3:0]
-      jmp 16::ret @[3:0]
-      
-  #16::ret: @[3:0]
-      _ = $builtins.llvm_move(n45, $builtins.llvm_nondet()) @[3:0]
-      n46 = $ss5print_9separator10terminatoryypd_S2StFfA1_() @[3:0]
-      jmp 19::ret @[3:0]
-      
-  #19::ret: @[3:0]
-      _ = $builtins.llvm_move(n48, $builtins.llvm_nondet()) @[3:0]
-      _ = $ss5print_9separator10terminatoryypd_S2StF(n42, $builtins.llvm_nondet(), n45, $builtins.llvm_nondet(), n48) @[4:5]
-      jmp $ss5print_9separator10terminatoryypd_S2StF::void::ret @[4:5]
-      
-  #1::ret: @[3:0]
-      _ = $builtins.llvm_move(n27, $builtins.llvm_nondet()) @[3:0]
-      n28 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(&::str::13::Hello, World!, 13, -1) @[4:11]
-      jmp 4::ret @[4:11]
-      
-  #4::ret: @[4:11]
-      store __sil_pluspi(__sil_pluspi(n27, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 1))) <- &$sSSN @[4:11]
-      _ = $builtins.llvm_move(n36, __sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(n27, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0)))) @[4:11]
-      store __sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(n36, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))) <- $builtins.llvm_nondet() @[4:11]
-      store __sil_pluspi(__sil_pluspi(n36, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 1))) <- $builtins.llvm_nondet() @[4:11]
-      n42 = $ss27_finalizeUninitializedArrayySayxGABnlF($builtins.llvm_nondet(), __sil_pluspi(__sil_pluspi(&$sypN, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 1)))) @[3:0]
-      jmp 15::ret @[3:0]
-      
-  #swift_bridgeObjectRelease::void::1::ret: @[5:1]
-      _ = swift_bridgeObjectRelease(n42) @[5:1]
-      jmp swift_bridgeObjectRelease::void::2::ret @[5:1]
-      
-  #swift_bridgeObjectRelease::void::2::ret: @[5:1]
+define .plain_name = "main" $s5Hello4mainyyF() : void {
+  #: @[5:1]
       ret null @[5:1]
-      
-  #swift_bridgeObjectRelease::void::ret: @[5:1]
-      _ = swift_bridgeObjectRelease(n45) @[5:1]
-      jmp swift_bridgeObjectRelease::void::1::ret @[5:1]
-      
-} @?
-
-declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*ptr_elt, int, int) : void
-
-define $sSa12_endMutationyyF(var0: *ptr_elt, var1: *ptr_elt) : void {
-  #: @[0:0]
-      n132 = load __sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(&var1, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))) @[0:0]
-      store __sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(&var1, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))) <- n132 @[0:0]
-      ret null @[0:0]
-      
-} @?
-
-declare $sSaMa(int, *ptr_elt) : void
-
-declare $ss27_allocateUninitializedArrayySayxG_BptBwlF(int, *ptr_elt) : void
-
-define $ss27_finalizeUninitializedArrayySayxGABnlF(var0: *ptr_elt, var1: *ptr_elt) : *ptr_elt {
-  local var4: *ptr_elt, $\CF\84_0_0: *ptr_elt
-  #: @[0:0]
-      n62 = load &var1 @[0:0]
-      store &$\CF\84_0_0 <- n62 @[0:0]
-      n61 = load &var0 @[0:0]
-      store __sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(&var4, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))) <- n61 @[0:0]
-      n74 = $sSaMa(0, &var1) @[0:0]
-      jmp 8::ret @[0:0]
-      
-  #$sSa12_endMutationyyF::void::ret: @[0:0]
-      n80 = load __sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(__sil_pluspi(&var4, __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))), __sil_mult_int(8, __sil_cast(<int>, 0))) @[0:0]
-      ret n80 @[0:0]
-      
-  #8::ret: @[0:0]
-      _ = $sSa12_endMutationyyF(n74.swift::metadata_response.field_0, &var4) @[0:0]
-      jmp $sSa12_endMutationyyF::void::ret @[0:0]
-      
-} @?
-
-declare $ss5print_9separator10terminatoryypd_S2StF(*ptr_elt, int, *ptr_elt, int, *ptr_elt) : void
-
-define $ss5print_9separator10terminatoryypd_S2StFfA0_() : void {
-  #: @[0:0]
-      n85 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(&::str::1:: , 1, -1) @[0:0]
-      jmp 1::ret @[0:0]
-      
-  #1::ret: @[0:0]
-      n149 = $builtins.llvm_nondet() @[0:0]
-      ret $builtins.llvm_nondet() @[0:0]
-      
-} @?
-
-define $ss5print_9separator10terminatoryypd_S2StFfA1_() : void {
-  #: @[0:0]
-      n93 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(&::str::1::
-, 1, -1) @[0:0]
-      jmp 1::ret @[0:0]
-      
-  #1::ret: @[0:0]
-      n149 = $builtins.llvm_nondet() @[0:0]
-      ret $builtins.llvm_nondet() @[0:0]
       
 } @?
 
@@ -144,52 +42,37 @@ declare _swift_FORCE_LOAD_$_swiftsys_time() : void
 
 declare _swift_FORCE_LOAD_$_swiftunistd() : void
 
-declare swift_bridgeObjectRelease(*ptr_elt) : void
+global llvm::used: *ptr_elt
 
-global $sypN: *ptr_elt
-
-global ::str::13::Hello, World!: *ptr_elt
-
-global $sSSN: *ptr_elt
-
-global _swift_FORCE_LOAD_$_swiftFoundation_$_Hello: *ptr_elt
-
-global _swift_FORCE_LOAD_$_swift_errno_$_Hello: *ptr_elt
-
-global _swift_FORCE_LOAD_$_swift_signal_$_Hello: *ptr_elt
+global _swift_FORCE_LOAD_$_swiftunistd_$_Hello: *ptr_elt
 
 global _swift_FORCE_LOAD_$_swiftsys_time_$_Hello: *ptr_elt
 
 global _swift_FORCE_LOAD_$_swift_time_$_Hello: *ptr_elt
 
-global _swift_FORCE_LOAD_$_swiftunistd_$_Hello: *ptr_elt
-
 global _swift_FORCE_LOAD_$_swift_stdio_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swift_signal_$_Hello: *ptr_elt
 
 global _swift_FORCE_LOAD_$_swift_math_$_Hello: *ptr_elt
 
+global _swift_FORCE_LOAD_$_swift_errno_$_Hello: *ptr_elt
+
 global _swift_FORCE_LOAD_$_swift_Builtin_float_$_Hello: *ptr_elt
-
-global _swift_FORCE_LOAD_$_swiftDarwin_$_Hello: *ptr_elt
-
-global _swift_FORCE_LOAD_$_swiftObjectiveC_$_Hello: *ptr_elt
-
-global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello: *ptr_elt
-
-global _swift_FORCE_LOAD_$_swiftDispatch_$_Hello: *ptr_elt
 
 global _swift_FORCE_LOAD_$_swiftXPC_$_Hello: *ptr_elt
 
+global _swift_FORCE_LOAD_$_swiftObjectiveC_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftFoundation_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftDispatch_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftDarwin_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello: *ptr_elt
+
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
 
-global ::str::1::
-: *ptr_elt
-
-global ::str::1:: : *ptr_elt
-
 global __swift_reflection_version: *ptr_elt
-
-global llvm::used: *ptr_elt
-
-type swift::metadata_response = {field_0: *ptr_elt; field_8: int}
 

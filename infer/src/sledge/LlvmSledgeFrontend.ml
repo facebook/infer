@@ -8,6 +8,42 @@
 (** Translate LLVM to LLAIR *)
 
 open Llair
+module F = Format
+
+module Pp = struct
+  let seq ?sep:(sep_text = " ") pp =
+    let rec aux f = function
+      | [] ->
+          ()
+      | [x] ->
+          pp f x
+      | x :: l ->
+          let sep = sep_text in
+          F.fprintf f "%a%s%a" pp x sep aux l
+    in
+    aux
+
+
+  let comma_seq pp f l = seq ~sep:"," pp f l
+
+  let semicolon_seq pp f l = seq ~sep:"; " pp f l
+
+  let option pp fmt = function
+    | None ->
+        F.pp_print_string fmt "[None]"
+    | Some x ->
+        F.fprintf fmt "[Some %a]" pp x
+
+
+  let array pp f array =
+    let list = Array.to_list array in
+    comma_seq pp f list
+
+
+  let iarray pp f iarray =
+    let list = IArray.to_array iarray |> Array.to_list in
+    comma_seq pp f list
+end
 
 let pp_lltype fs t = Format.pp_print_string fs (Llvm.string_of_lltype t)
 
@@ -500,6 +536,17 @@ let xlate_llvm_eh_typeid_for : x -> Typ.t -> Exp.t -> Exp.t =
  fun x typ arg -> Exp.convert typ ~to_:(i32 x) arg
 
 
+let get_unmangled_name llfunc =
+  let subprogram = Llvm_debuginfo.get_subprogram llfunc in
+  let name = Option.map ~f:Llvm_debuginfo.di_type_get_name subprogram |> Option.value ~default:"" in
+  if String.is_empty name then None else Some name
+
+
+let mk_func_name llv typ =
+  let unmangled_name = get_unmangled_name llv in
+  FuncName.mk ~unmangled_name typ (fst (find_name llv))
+
+
 let rec xlate_builtin_exp : string -> (x -> Llvm.llvalue -> Inst.t list * Exp.t) option =
  fun name ->
   match name with
@@ -540,7 +587,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t =
         ([], Exp.reg (xlate_name x llv))
     | Function ->
         let typ = xlate_type x (Llvm.type_of llv) in
-        let fn = FuncName.mk typ (fst (find_name llv)) in
+        let fn = mk_func_name llv typ in
         Typ.Tbl.add_multi rval_fns ~key:typ ~data:fn ;
         ([], Exp.funcname fn)
     | GlobalVariable ->
@@ -1239,7 +1286,7 @@ let xlate_builtin_inst emit_inst x name_segs instr num_actuals loc =
       None
 
 
-let term_call x llcallee name ~typ ~actuals ~areturn ~return ~throw ~loc =
+let term_call x llcallee name ~unmangled_name ~typ ~actuals ~areturn ~return ~throw ~loc =
   match Intrinsic.of_name name with
   | Some callee ->
       let call = Term.intrinsic ~callee ~typ ~actuals ~areturn ~return ~throw ~loc in
@@ -1247,7 +1294,9 @@ let term_call x llcallee name ~typ ~actuals ~areturn ~return ~throw ~loc =
   | None -> (
     match Llvm.classify_value llcallee with
     | Function ->
-        let call, backpatch = Term.call ~name ~typ ~actuals ~areturn ~return ~throw ~loc in
+        let call, backpatch =
+          Term.call ~unmangled_name ~name ~typ ~actuals ~areturn ~return ~throw ~loc
+        in
         calls_to_backpatch := DirectBP {llcallee; typ; backpatch} :: !calls_to_backpatch ;
         ([], call)
     | _ ->
@@ -1369,6 +1418,8 @@ let xlate_instr :
       emit_inst ~prefix (Inst.atomic_cmpxchg ~reg ~ptr ~cmp ~exp ~len ~len1 ~loc)
   | Alloca ->
       let reg = xlate_name x instr in
+      let typ = Llvm.get_allocated_type instr |> xlate_type x in
+      let reg = Reg.mk typ (Reg.id reg) (Reg.name reg) in
       let num_elts = Llvm.operand instr 0 in
       let prefix, num = xlate_value x num_elts in
       let num = convert_to_siz (xlate_type x (Llvm.type_of num_elts)) num in
@@ -1384,6 +1435,7 @@ let xlate_instr :
       let llcallee = norm_callee llcallee in
       let num_actuals = num_actuals instr lltyp llcallee in
       let fname = Llvm.value_name llcallee in
+      let unmangled_name = get_unmangled_name llcallee in
       let name_segs = String.split_on_char fname ~by:'.' in
       let skip msg =
         if StringS.add ignored_callees fname then
@@ -1434,7 +1486,8 @@ let xlate_instr :
               let areturn = xlate_name_opt x instr in
               let return = Jump.mk lbl in
               let pre_0, call =
-                term_call x llcallee fname ~typ ~actuals ~areturn ~return ~throw:None ~loc
+                term_call x llcallee ~unmangled_name fname ~typ ~actuals ~areturn ~return
+                  ~throw:None ~loc
               in
               continue (fun (insts, term) ->
                   let cmnd = IArray.of_list insts in
@@ -1445,6 +1498,7 @@ let xlate_instr :
       let llcallee = norm_callee llcallee in
       let num_actuals = num_actuals instr lltyp llcallee in
       let fname = Llvm.value_name llcallee in
+      let unmangled_name = get_unmangled_name llcallee in
       let name_segs = String.split_on_char fname ~by:'.' in
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
@@ -1484,7 +1538,8 @@ let xlate_instr :
                 let pre_2, return, blocks = xlate_jump x instr return_blk loc [] in
                 let pre_3, throw, blocks = xlate_jump x instr unwind_blk loc blocks in
                 let pre_0, call =
-                  term_call x llcallee fname ~typ ~actuals ~areturn ~return ~throw:(Some throw) ~loc
+                  term_call x llcallee fname ~unmangled_name ~typ ~actuals ~areturn ~return
+                    ~throw:(Some throw) ~loc
                 in
                 let prefix = List.concat [pre_0; pre_1; pre_2; pre_3] in
                 emit_term ~prefix call ~blocks ) ) )
@@ -1761,7 +1816,7 @@ let report_undefined func name =
 
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in
-  let name = FuncName.mk typ (fst (find_name llfunc)) in
+  let name = mk_func_name llfunc typ in
   let formals =
     Iter.from_iter (fun f -> Llvm.iter_params f llfunc)
     |> Iter.map ~f:(xlate_name x)

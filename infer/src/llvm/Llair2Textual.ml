@@ -25,7 +25,13 @@ let string_name_of_reg reg =
 
 let reg_to_var_name reg = Textual.VarName.of_string (string_name_of_reg reg)
 
-let reg_to_id reg = Textual.Ident.of_int (Reg.id reg)
+let reg_to_id reg =
+  match Int.of_string_opt (Reg.name reg) with
+  | Some id ->
+      Textual.Ident.of_int id
+  | None ->
+      Textual.Ident.of_int (Reg.id reg)
+
 
 let reg_to_textual_var ~(proc_state : ProcState.t) reg =
   let reg_var_name = reg_to_var_name reg in
@@ -70,9 +76,12 @@ let translate_llair_globals globals =
 
 let to_qualified_proc_name ?loc func_name =
   let func_name = FuncName.name func_name in
-  let loc = Option.map ~f:to_textual_loc loc in
   Textual.QualifiedProcName.
     {enclosing_class= TopLevel; name= Textual.ProcName.of_string ?loc func_name}
+
+
+let to_name_attr func_name =
+  Option.map ~f:Textual.Attr.mk_plain_name (FuncName.unmangled_name func_name)
 
 
 let to_result_type ~struct_map freturn =
@@ -360,9 +369,16 @@ let cmnd_to_instrs ~proc_state block =
         textual_instr :: textual_instrs
     | Move {reg_exps: (Reg.t * Exp.t) NS.iarray; loc} ->
         let reg_exps = StdUtils.iarray_to_list reg_exps in
-        let exps = List.concat_map ~f:(fun (reg, exp) -> [Reg.to_exp reg; exp]) reg_exps in
-        let textual_instr = to_textual_builtin ~proc_state None "llvm_move" exps loc in
-        textual_instr :: textual_instrs
+        let loc = to_textual_loc_instr ~proc_state loc in
+        let instrs =
+          List.map
+            ~f:(fun (reg, exp) ->
+              let id = Some (reg_to_id reg) in
+              let exp = to_textual_exp ~proc_state exp |> fst in
+              Textual.Instr.Let {id; exp; loc} )
+            reg_exps
+        in
+        List.append instrs textual_instrs
     | AtomicRMW {reg; ptr; exp; loc} ->
         let textual_instr =
           to_textual_builtin ~proc_state (Some reg) "llvm_atomicRMW" [ptr; exp] loc
@@ -374,10 +390,10 @@ let cmnd_to_instrs ~proc_state block =
         in
         textual_instr :: textual_instrs
   in
+  let rev_instrs = List.fold ~init:[] ~f:to_instr (StdUtils.iarray_to_list block.cmnd) in
   let call_instr_opt =
     match block.term with Call call -> Some (to_textual_call ~proc_state call) | _ -> None
   in
-  let rev_instrs = List.fold ~init:[] ~f:to_instr (StdUtils.iarray_to_list block.cmnd) in
   let rev_instrs = List.append (Option.to_list call_instr_opt) rev_instrs in
   let instrs = List.rev rev_instrs in
   let first_loc, last_loc =
@@ -510,10 +526,12 @@ let is_undefined func =
 
 type textual_proc = ProcDecl of Textual.ProcDecl.t | ProcDesc of Textual.ProcDesc.t
 
-let translate_llair_functions struct_map globals functions =
+let translate_llair_functions lang struct_map globals functions =
   let function_to_formal proc_descs (func_name, func) =
     let formals_list, formals_types = to_formals ~struct_map func in
-    let qualified_name = to_qualified_proc_name func_name ~loc:func.Llair.loc in
+    let loc = to_textual_loc func.Llair.loc in
+    let qualified_name = to_qualified_proc_name ~loc func_name in
+    let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
     let proc_loc = to_textual_loc func.Llair.loc in
     let formals_ =
       List.fold2_exn
@@ -542,7 +560,10 @@ let translate_llair_functions struct_map globals functions =
     in
     let procdecl =
       Textual.ProcDecl.
-        {qualified_name; result_type; attributes= []; formals_types= Some formals_types}
+        { qualified_name
+        ; result_type
+        ; attributes= Option.to_list plain_name
+        ; formals_types= Some formals_types }
     in
     if is_undefined func then ProcDecl procdecl :: proc_descs
     else
@@ -566,7 +587,7 @@ let translate_llair_functions struct_map globals functions =
 let translate sourcefile (llair_program : Llair.Program.t) lang : Textual.Module.t =
   let struct_map = Llair2TextualType.translate_types_env llair_program.typ_defns in
   let globals_map = translate_llair_globals llair_program.Llair.globals in
-  let procs = translate_llair_functions struct_map globals_map llair_program.Llair.functions in
+  let procs = translate_llair_functions lang struct_map globals_map llair_program.Llair.functions in
   let procs =
     List.fold
       ~f:(fun procs proc ->

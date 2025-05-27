@@ -24,6 +24,8 @@ val incr_ondemand_double_analysis_prevented : unit -> unit
 
 val incr_ondemand_recursion_cycle_restart_limit_hit : unit -> unit
 
+val incr_ondemand_callchain_limit_hit : unit -> unit
+
 val add_to_proc_locker_lock_time : ExecutionDuration.t -> unit
 
 val add_to_proc_locker_unlock_time : ExecutionDuration.t -> unit

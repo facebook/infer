@@ -593,6 +593,47 @@ module Hack = struct
         false
 end
 
+module Swift = struct
+  type t =
+    | ClassMethod of {class_name: Typ.Name.t; method_name: Mangled.t}
+    | Function of {function_name: Mangled.t}
+  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+
+  let mk_function mangled = Function {function_name= mangled}
+
+  let mk_class_method class_name mangled = ClassMethod {class_name; method_name= mangled}
+
+  let get_function_name osig =
+    match osig with
+    | ClassMethod {method_name} ->
+        method_name
+    | Function {function_name} ->
+        function_name
+
+
+  let pp verbosity fmt osig =
+    let sep = "." in
+    match osig with
+    | ClassMethod osig -> (
+      match verbosity with
+      | Simple ->
+          F.pp_print_string fmt (Mangled.to_string osig.method_name)
+      | Non_verbose | NameOnly ->
+          F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep
+            (Mangled.to_string osig.method_name)
+      | FullNameOnly ->
+          F.fprintf fmt "%a%s%s" Typ.Name.pp osig.class_name sep
+            (Mangled.to_string osig.method_name)
+      | Verbose ->
+          F.fprintf fmt "%a%s%a" Typ.Name.pp osig.class_name sep Mangled.pp osig.method_name )
+    | Function osig -> (
+      match verbosity with
+      | Simple | Non_verbose | NameOnly | FullNameOnly ->
+          F.pp_print_string fmt (Mangled.to_string osig.function_name)
+      | Verbose ->
+          F.fprintf fmt "%a" Mangled.pp osig.function_name )
+end
+
 (** Type of procedure names. *)
 type t =
   | Block of Block.t
@@ -603,6 +644,7 @@ type t =
   | Java of Java.t
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of PythonProcname.t
+  | Swift of Swift.t
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let is_c = function C _ -> true | _ -> false
@@ -682,6 +724,12 @@ let compare_name x y =
       1
   | Python name1, Python name2 ->
       PythonProcname.compare name1 name2
+  | Swift name1, Swift name2 ->
+      Swift.compare name1 name2
+  | Swift _, _ ->
+      -1
+  | _, Swift _ ->
+      1
 
 
 let is_std_move t = match t with C c_pname -> C.is_std_move c_pname | _ -> false
@@ -724,7 +772,7 @@ let is_java_autogen_method = is_java_lift Java.is_autogen_method
 let on_objc_helper ~f ~default = function
   | ObjC_Cpp objc_cpp_pname ->
       f objc_cpp_pname
-  | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Python _ ->
+  | Block _ | C _ | CSharp _ | Erlang _ | Hack _ | Java _ | Python _ | Swift _ ->
       default
 
 
@@ -797,6 +845,10 @@ let replace_class t ?(arity_incr = 0) (new_class : Typ.Name.t) =
       Python (Regular {module_name; function_name})
   | Python (Builtin _) | C _ | Block _ | Erlang _ ->
       t
+  | Swift (ClassMethod osig) ->
+      Swift (ClassMethod {osig with class_name= new_class})
+  | Swift (Function _) ->
+      t
 
 
 let get_class_type_name t =
@@ -813,7 +865,9 @@ let get_class_type_name t =
       Hack.get_class_type_name hack
   | Python python ->
       PythonProcname.get_module_type_name python
-  | C _ | Erlang _ ->
+  | Swift (ClassMethod swift) ->
+      Some swift.class_name
+  | C _ | Erlang _ | Swift (Function _) ->
       None
 
 
@@ -831,7 +885,9 @@ let get_class_name t =
       Hack.get_class_name_as_a_string hack_pname
   | Python py_pname ->
       Some (PythonProcname.get_module_name_as_a_string py_pname)
-  | C _ | Erlang _ ->
+  | Swift (ClassMethod swift) ->
+      Some (Typ.Name.name swift.class_name)
+  | C _ | Erlang _ | Swift (Function _) ->
       None
 
 
@@ -839,7 +895,7 @@ let objc_cpp_replace_method_name t (new_method_name : string) =
   match t with
   | ObjC_Cpp osig ->
       ObjC_Cpp {osig with method_name= new_method_name}
-  | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Java _ | Python _ ->
+  | C _ | CSharp _ | Block _ | Erlang _ | Hack _ | Java _ | Python _ | Swift _ ->
       t
 
 
@@ -861,6 +917,8 @@ let get_method = function
       cs.method_name
   | Python name ->
       PythonProcname.get_method name
+  | Swift osig ->
+      Swift.get_function_name osig |> Mangled.to_string
 
 
 (** Return whether the procname is a block procname. *)
@@ -875,7 +933,7 @@ let is_cpp_method t =
   match t with
   | ObjC_Cpp cpp_pname ->
       ObjC_Cpp.is_cpp_method cpp_pname
-  | C _ | Erlang _ | Hack _ | Block _ | Java _ | CSharp _ | Python _ ->
+  | C _ | Erlang _ | Hack _ | Block _ | Java _ | CSharp _ | Python _ | Swift _ ->
       false
 
 
@@ -897,6 +955,8 @@ let get_language = function
       Language.CIL
   | Python _ ->
       Language.Python
+  | Swift _ ->
+      Language.Swift
 
 
 (** [is_constructor pname] returns true if [pname] is a constructor *)
@@ -924,7 +984,8 @@ let is_static = function
   | Erlang _
   | Hack _
   | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _}
-  | Python _ ->
+  | Python _
+  | Swift _ ->
       None
 
 
@@ -1030,6 +1091,8 @@ let pp_unique_id fmt = function
       Block.pp Verbose fmt bsig
   | Python h ->
       PythonProcname.pp fmt h
+  | Swift osig ->
+      Swift.pp Verbose fmt osig
 
 
 let to_unique_id proc_name = F.asprintf "%a" pp_unique_id proc_name
@@ -1052,6 +1115,8 @@ let pp_with_verbosity verbosity fmt = function
       Block.pp verbosity fmt bsig
   | Python h ->
       PythonProcname.pp fmt h
+  | Swift osig ->
+      Swift.pp verbosity fmt osig
 
 
 let pp = pp_with_verbosity Non_verbose
@@ -1091,6 +1156,8 @@ let pp_fullname_only fmt = function
       Block.pp FullNameOnly fmt bsig
   | Python h ->
       PythonProcname.pp fmt h
+  | Swift osig ->
+      Swift.pp FullNameOnly fmt osig
 
 
 let pp_name_only fmt = function
@@ -1110,6 +1177,8 @@ let pp_name_only fmt = function
       Block.pp NameOnly fmt bsig
   | Python h ->
       PythonProcname.pp fmt h
+  | Swift osig ->
+      Swift.pp NameOnly fmt osig
 
 
 let patterns_match patterns proc_name =
@@ -1135,6 +1204,8 @@ let pp_simplified_string ?(withclass = false) fmt = function
       Block.pp Simple fmt bsig
   | Python h ->
       PythonProcname.pp fmt h
+  | Swift osig ->
+      Swift.pp Simple fmt osig
 
 
 let to_simplified_string ?withclass proc_name =
@@ -1204,14 +1275,14 @@ let get_parameters procname =
       clang_param_to_param (ObjC_Cpp.get_parameters osig)
   | Block _ ->
       []
-  | Python _ ->
+  | Python _ | Swift _ ->
       (* TODO(vsiles) get inspiration from Hack :D *)
       []
 
 
 let describe f pn =
   match pn with
-  | Block _ | C _ | Erlang _ | Hack _ | Python _ | ObjC_Cpp _ ->
+  | Block _ | C _ | Erlang _ | Hack _ | Python _ | ObjC_Cpp _ | Swift _ ->
       F.fprintf f "%a()" pp_without_templates pn
   | CSharp _ | Java _ ->
       F.pp_print_string f (hashable_name pn)

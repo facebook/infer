@@ -239,6 +239,10 @@ val allocate : Attribute.allocator -> Location.t -> AbstractValue.t -> t -> t
 
 val is_allocated : AbstractValue.t -> t -> bool
 
+val is_allocated_with_awaitable : AbstractValue.t -> t -> bool
+
+val is_awaited_awaitable : AbstractValue.t -> t -> bool
+
 val java_resource_release : recursive:bool -> AbstractValue.t -> t -> t
 (** releases the resource of the argument, and recursively calls itself on the delegated resource if
     [recursive==true] *)

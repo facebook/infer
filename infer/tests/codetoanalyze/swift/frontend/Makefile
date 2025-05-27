@@ -15,6 +15,8 @@ CLEAN_EXTRA = $(foreach source,$(SOURCES),$(basename $(notdir $(source))).o)
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/swift-base.make
 
+.NOTPARALLEL:
+
 default: test
 
 %.test.sil: %.swift $(SWIFT_DEPS) $(HEADERS)

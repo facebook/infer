@@ -514,6 +514,8 @@ val objc_block_execution_macro : string option
 
 val objc_synthesize_dealloc : bool
 
+val ondemand_callchain_limit : int option
+
 val ondemand_recursion_restart_limit : int
 
 val only_cheap_debug : bool

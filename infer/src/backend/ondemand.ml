@@ -34,6 +34,8 @@ module ActiveProcedures : sig
 
   val get_all : unit -> active list
 
+  val size : unit -> int
+
   val get_cycle_start : active -> active * int * active
   (** given a target where we detected a recursive call, i.e. that already belongs to the queue,
       return a triple of where the cycle starts, the length of the cycle, and the first procedure we
@@ -71,6 +73,8 @@ end = struct
 
 
   let get_all () = AnalysisTargets.keys @@ DLS.get currently_analyzed
+
+  let size () = AnalysisTargets.length @@ DLS.get currently_analyzed
 
   let get_cycle_start recursive =
     let all = get_all () in
@@ -250,15 +254,22 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
   in
   let initial_callee_summary = preprocess () in
   try
-    let callee_summary =
-      if callee_attributes.ProcAttributes.is_defined then
-        analyze analysis_req specialization initial_callee_summary callee_pdesc
-      else initial_callee_summary
-    in
-    let final_callee_summary = postprocess callee_summary in
-    (* don't forget to reset this so we output messages for future errors too *)
-    DLS.set logged_error false ;
-    final_callee_summary
+    if
+      Option.exists Config.ondemand_callchain_limit ~f:(fun limit ->
+          ActiveProcedures.size () >= limit )
+    then (
+      Stats.incr_ondemand_callchain_limit_hit () ;
+      postprocess initial_callee_summary )
+    else
+      let callee_summary =
+        if callee_attributes.ProcAttributes.is_defined then
+          analyze analysis_req specialization initial_callee_summary callee_pdesc
+        else initial_callee_summary
+      in
+      let final_callee_summary = postprocess callee_summary in
+      (* don't forget to reset this so we output messages for future errors too *)
+      DLS.set logged_error false ;
+      final_callee_summary
   with exn ->
     let backtrace = Printexc.get_backtrace () in
     IExn.reraise_if exn ~f:(fun () ->

@@ -11,7 +11,7 @@ module L = Logging
 module Hashtbl = Stdlib.Hashtbl
 
 module Lang = struct
-  type t = C | Hack | Java | Python | Rust [@@deriving equal]
+  type t = C | Hack | Java | Python | Rust | Swift [@@deriving equal]
 
   let of_string s =
     match String.lowercase s with
@@ -29,7 +29,19 @@ module Lang = struct
         None
 
 
-  let to_string = function Java -> "java" | Hack -> "hack" | Python -> "python" | C -> "C" | Rust -> "rust"
+  let to_string = function
+    | Java ->
+        "java"
+    | Hack ->
+        "hack"
+    | Python ->
+        "python"
+    | C ->
+        "C"
+    | Rust ->
+        "Rust"
+    | Swift ->
+        "Swift"
 end
 
 module Location = struct
@@ -376,6 +388,14 @@ module Attr = struct
 
   let mk_closure_wrapper = {name= "closure_wrapper"; values= []; loc= Location.Unknown}
 
+  let mk_plain_name name = {name= "plain_name"; values= [name]; loc= Location.Unknown}
+
+  let get_plain_name attr =
+    if String.equal attr.name "plain_name" then
+      match attr.values with [name] -> Some name | _ -> None
+    else None
+
+
   let pp fmt {name; values} =
     if List.is_empty values then F.fprintf fmt ".%s" name
     else F.fprintf fmt ".%s = \"%a\"" name (Pp.comma_seq F.pp_print_string) values
@@ -545,7 +565,7 @@ module ProcDecl = struct
   let to_sig {qualified_name; formals_types} = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Option.map formals_types ~f:List.length}
-    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Rust | None ->
+    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Rust | Some Lang.Swift | None ->
         ProcSig.Other {qualified_name}
 
 
@@ -849,7 +869,7 @@ module Exp = struct
   let call_sig qualified_name nb_args = function
     | Some Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Some nb_args}
-    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Rust | None ->
+    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Rust | Some Lang.Swift | None ->
         ProcSig.Other {qualified_name}
 
 

@@ -64,7 +64,7 @@ module T = struct
   type t =
     | Reg of {id: int; name: string; typ: LlairTyp.t}
     | Global of {name: string; is_constant: bool; typ: LlairTyp.t [@ignore]}
-    | FuncName of {name: string; typ: LlairTyp.t [@ignore]}
+    | FuncName of {name: string; typ: LlairTyp.t [@ignore]; unmangled_name: string option [@ignore]}
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: LlairTyp.t}
     | Float of {data: string; typ: LlairTyp.t}
@@ -174,8 +174,8 @@ module T = struct
         pf "%%%s!%i" name id
     | Global {name} ->
         pf "%@%s%a" name pp_demangled name
-    | FuncName {name} ->
-        pf "&%s%a" name pp_demangled name
+    | FuncName {name; unmangled_name} ->
+        pf "&%s%a [%s]" name pp_demangled name (Option.value ~default:"None" unmangled_name)
     | Label {name} ->
         pf "%s" name
     | Integer {data; typ= Pointer _} when Z.equal Z.zero data ->
@@ -434,6 +434,8 @@ module FuncName = struct
 
   let typ = function FuncName x -> x.typ | r -> violates invariant r
 
+  let unmangled_name = function FuncName x -> x.unmangled_name | r -> violates invariant r
+
   let invariant x =
     let@ () = Invariant.invariant [%here] x [%sexp_of: t] in
     match x with FuncName _ -> invariant x | _ -> assert false
@@ -441,13 +443,13 @@ module FuncName = struct
 
   let of_exp = function FuncName _ as e -> Some (e |> check invariant) | _ -> None
 
-  let mk typ name = FuncName {name; typ} |> check invariant
+  let mk ~unmangled_name typ name = FuncName {name; typ; unmangled_name} |> check invariant
 
   let counterfeit =
     let dummy_function_type =
       LlairTyp.pointer ~elt:(LlairTyp.function_ ~args:IArray.empty ~return:None)
     in
-    fun name -> mk dummy_function_type name
+    fun name -> mk dummy_function_type name ~unmangled_name:None
 
 
   module Map = Map

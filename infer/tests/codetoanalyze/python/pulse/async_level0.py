@@ -185,6 +185,26 @@ async def concat_tuple_right_ok(l):
     return l + (sleep(), sleep())
 
 
+def get_option_awaitable(b):
+    if b:
+        return asyncio.sleep(1)
+    else:
+        return None
+
+
+async def call_get_option_awaitable_eq_test_none_ok(b):
+    unawaited = get_option_awaitable(b)
+    if unawaited is None:
+        return None
+    return await unawaited
+
+
+async def call_get_option_awaitable_eq_test_none_bad(b):
+    unawaited = get_option_awaitable(b)
+    if unawaited is None:
+        return await unawaited
+
+
 def main_ok():
     asyncio.run(sleep(10))
 
