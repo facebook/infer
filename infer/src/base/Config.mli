@@ -697,6 +697,8 @@ val pure_by_default : bool
 
 val pyc_file : string list
 
+val python_async_naming_convention : bool
+
 val python_decorator_modelled_as_await_async : IString.PairSet.t
 
 val python_files_index : string option

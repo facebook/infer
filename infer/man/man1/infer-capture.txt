@@ -122,6 +122,11 @@ OPTIONS
        --project-root,-C dir
            Specify the root directory of the project
 
+       --no-python-async-naming-convention
+           Deactivates: Mark any function that starts with 'async' or
+           '_async' as being async (Conversely:
+           --python-async-naming-convention)
+
        --python-exe path
            A filepath to a python interpreter. It will bypass the interpreter
            set by PYTHON variable

@@ -674,6 +674,20 @@ let initialize_if_class_companion value : unit DSL.model_monad =
         initialize_class_companion_and_supers ~module_name ~class_name value ) )
 
 
+let async_regexp = Str.regexp {|.*::\(_\)?async_.*|}
+
+let is_async_function_name function_name = Str.string_match async_regexp function_name 0
+
+let detect_async_call opt_static_typ =
+  Config.python_async_naming_convention
+  &&
+  match opt_static_typ with
+  | Some (Typ.PythonClass (Globals name)) ->
+      is_async_function_name name
+  | _ ->
+      false
+
+
 let call_dsl ~callable ~arg_names ~args =
   let open DSL.Syntax in
   let* opt_static_type = get_static_type callable in
@@ -688,7 +702,11 @@ let call_dsl ~callable ~arg_names ~args =
       ret self
   | _ ->
       L.d_printfln ~color:Orange "calling closure %a" AbstractValue.pp (fst callable) ;
-      call_closure_dsl ~closure:callable ~arg_names ~args
+      let* res = call_closure_dsl ~closure:callable ~arg_names ~args in
+      let* () =
+        if detect_async_call opt_static_type then allocation Attribute.Awaitable res else ret ()
+      in
+      ret res
 
 
 module LibModel = struct

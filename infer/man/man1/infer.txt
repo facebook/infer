@@ -1836,6 +1836,12 @@ OPTIONS
            (Conversely: --no-purity-only)
            See also infer-analyze(1).
 
+       --no-python-async-naming-convention
+           Deactivates: Mark any function that starts with 'async' or
+           '_async' as being async (Conversely:
+           --python-async-naming-convention)
+           See also infer-capture(1).
+
        --python-decorator-modelled-as-await-async +string
            Any decorator that should be modelled as the await_async
            decorator.

@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
-
+from unknown import (_async_fun, async_fun)
 
 async def sleep(i):
     await asyncio.sleep(i)
@@ -203,6 +203,22 @@ async def call_get_option_awaitable_eq_test_none_bad(b):
     unawaited = get_option_awaitable(b)
     if unawaited is None:
         return await unawaited
+
+
+async def async_naming_convention_test1_bad():
+    _async_fun()
+
+
+async def async_naming_convention_test1_ok():
+    await _async_fun()
+
+
+async def async_naming_convention_test2_bad():
+    async_fun()
+
+
+async def async_naming_convention_test2_ok():
+    await async_fun()
 
 
 def main_ok():
