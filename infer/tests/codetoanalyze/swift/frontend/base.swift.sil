@@ -6,6 +6,18 @@
 
 .source_language = "Swift" @?
 
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : void {
+  local height: int, age: int
+  #: @[18:0]
+      n33 = load &var0 @[18:0]
+      store &age <- n33 @[18:0]
+      n34 = load &var1 @[18:0]
+      store &height <- n34 @[18:0]
+      n54 = $builtins.llvm_nondet() @[18:0]
+      ret $builtins.llvm_nondet() @[19:5]
+      
+} @?
+
 define .plain_name = "test1" $s5Hello5test1yS2iF(var0: int) : int {
   local n: int
   #: @[6:0]

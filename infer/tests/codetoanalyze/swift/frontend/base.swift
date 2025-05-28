@@ -14,3 +14,7 @@ func test2() -> Int {
 func test3(_ n : Int) -> Int {
     return test1(n)
 }
+
+func createPerson(age: Int, height : Int) -> (age: Int, height: Int) {
+    return (age, height)
+}

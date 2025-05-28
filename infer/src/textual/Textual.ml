@@ -23,6 +23,8 @@ module Lang = struct
         Some Python
     | "c" ->
         Some C
+    | "swift" ->
+        Some Swift
     | _ ->
         None
 
