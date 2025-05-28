@@ -674,9 +674,13 @@ let initialize_if_class_companion value : unit DSL.model_monad =
         initialize_class_companion_and_supers ~module_name ~class_name value ) )
 
 
-let async_regexp = Str.regexp {|.*::\(_\)?async_.*|}
+let async_function_regexp = Str.regexp {|.*::\(_\)?async_.*|}
 
-let is_async_function_name function_name = Str.string_match async_regexp function_name 0
+let is_async_function_name function_name = Str.string_match async_function_regexp function_name 0
+
+let async_method_regexp = Str.regexp {|.*\(_\)?async_.*|}
+
+let is_async_method_name method_name = Str.string_match async_method_regexp method_name 0
 
 let detect_async_call opt_static_typ =
   Config.python_async_naming_convention
@@ -990,11 +994,11 @@ let call_method name obj arg_names args () : unit DSL.model_monad =
   let open DSL.Syntax in
   L.d_printfln "call_method model" ;
   let* opt_dynamic_type_data = get_dynamic_type ~ask_specialization:true obj in
+  let* str_name = as_constant_string_exn name in
   let* res =
     match opt_dynamic_type_data with
     | Some {Formula.typ= {Typ.desc= Tstruct (PythonClass (Globals module_name))}} -> (
         (* since module types are final, static type will save us most of the time *)
-        let* str_name = as_constant_string_exn name in
         let* opt_special_call =
           modelled_python_call (PyLib {module_name; name= str_name}) obj args
         in
@@ -1007,9 +1011,14 @@ let call_method name obj arg_names args () : unit DSL.model_monad =
             L.d_printfln "catching special call %s on module object %s" str_name module_name ;
             ret res )
     | _ ->
+        L.d_printfln ~color:Orange "can not resolve method call!" ;
         let* callable = get_attr_dsl obj name in
         (* TODO: for OO method, gives self argument *)
-        call_dsl ~callable ~arg_names ~args:(obj :: args)
+        let* res = call_dsl ~callable ~arg_names ~args:(obj :: args) in
+        let* () =
+          if is_async_method_name str_name then allocation Attribute.Awaitable res else ret ()
+        in
+        ret res
   in
   assign_ret res
 

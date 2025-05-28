@@ -220,6 +220,28 @@ async def async_naming_convention_test2_bad():
 async def async_naming_convention_test2_ok():
     await async_fun()
 
+class C:
+    async def async_instance_method(self):
+        pass
+
+    async def async_naming_convention_test3_bad(self):
+        self.async_instance_method()
+
+
+    async def async_naming_convention_test3_ok():
+        await self.async_instance_method()
+
+
+    async def _async_private_instance_method(self):
+        pass
+
+    async def async_naming_convention_test4_bad(self):
+        self._async_private_instance_method()
+
+
+    async def async_naming_convention_test4_ok():
+        await self._async_private_instance_method()
+
 
 def main_ok():
     asyncio.run(sleep(10))
