@@ -2619,6 +2619,14 @@ and pulse_report_latent_issues =
      itself is enabled."
 
 
+and pulse_retain_cycle_blocklist_pattern =
+  CLOpt.mk_string_opt ~long:"pulse-retain-cycle-blocklist-pattern"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Skip reporting retain cycles which include an expression that matches this pattern. It is \
+     useful when developers use naming conventions to signal that certain variables are expected \
+     to be part of a retain cycle."
+
+
 and pulse_sanity_checks =
   CLOpt.mk_bool ~long:"pulse-sanity-checks" ~default:false
     "Enable expensive internal checks/assertions."
@@ -4448,6 +4456,10 @@ and pulse_report_flows_to_taint_sink = !pulse_report_flows_to_taint_sink
 and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
 and pulse_report_latent_issues = !pulse_report_latent_issues
+
+and pulse_retain_cycle_blocklist_pattern =
+  Option.map ~f:Str.regexp !pulse_retain_cycle_blocklist_pattern
+
 
 and pulse_sanity_checks = !pulse_sanity_checks
 

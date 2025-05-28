@@ -61,6 +61,17 @@ int strongcycle_bad() {
   return 0;
 }
 
+int ingored_good() {
+
+  AA* a_obj = [AA alloc];
+  BBStrong* we_can_retain = [BBStrong alloc];
+
+  a_obj.b = we_can_retain;
+  we_can_retain.a = a_obj; // Retain cycle, but ignored via regexp
+
+  return 0;
+}
+
 int unsafeunreainedcycle_good() {
 
   AA* a_obj = [AA alloc];

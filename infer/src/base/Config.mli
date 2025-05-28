@@ -653,6 +653,8 @@ val pulse_report_issues_for_tests : bool
 
 val pulse_report_latent_issues : bool
 
+val pulse_retain_cycle_blocklist_pattern : Str.regexp option
+
 val pulse_sanity_checks : bool
 
 val pulse_skip_procedures : Str.regexp option

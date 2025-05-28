@@ -17,6 +17,7 @@ INFER_OPTIONS = \
   --pulse-model-return-first-arg "release\\|.*release:\\|release_fst\\|ModelClass.bridge:" \
   --pulse-model-return-this "ModelClass.initWith:" \
   --pulse-model-unreachable "handle_failure" \
+  --pulse-retain-cycle-blocklist-pattern ".*can_retain.*"
 
 INFERPRINT_OPTIONS = --issues-tests
 

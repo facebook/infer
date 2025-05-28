@@ -901,6 +901,12 @@ PULSE CHECKER OPTIONS
            Maximum number of array elements and structure fields to keep
            track of for a given address.
 
+       --pulse-retain-cycle-blocklist-pattern string
+           Skip reporting retain cycles which include an expression that
+           matches this pattern. It is useful when developers use naming
+           conventions to signal that certain variables are expected to be
+           part of a retain cycle.
+
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
 

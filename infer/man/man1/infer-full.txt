@@ -1622,6 +1622,13 @@ OPTIONS
            Report data flows which pass through taint sink procname
            See also infer-report(1).
 
+       --pulse-retain-cycle-blocklist-pattern string
+           Skip reporting retain cycles which include an expression that
+           matches this pattern. It is useful when developers use naming
+           conventions to signal that certain variables are expected to be
+           part of a retain cycle.
+           See also infer-analyze(1).
+
        --pulse-skip-procedures regex
            Regex of procedures that should not be analyzed by Pulse.
            See also infer-analyze(1).
@@ -3074,6 +3081,9 @@ INTERNAL OPTIONS
            Deactivates: Report latent issues instead of waiting for them to
            become manifest, when the latent issue itself is enabled.
            (Conversely: --pulse-report-latent-issues)
+
+       --pulse-retain-cycle-blocklist-pattern-reset
+           Cancel the effect of --pulse-retain-cycle-blocklist-pattern.
 
        --pulse-sanity-checks
            Activates: Enable expensive internal checks/assertions.

@@ -106,7 +106,13 @@ let should_report_cycle astate cycle =
     let is_objc_or_block_if_field_access =
       match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> true
     in
+    let blocklisted =
+      Option.value_map Config.pulse_retain_cycle_blocklist_pattern ~default:false ~f:(fun re ->
+          let expr_str = F.asprintf "%a" DecompilerExpr.pp value in
+          Str.string_match re expr_str 0 )
+    in
     not_previously_reported && is_not_null && is_known && is_objc_or_block_if_field_access
+    && not blocklisted
   in
   List.exists ~f:is_objc_or_block cycle && List.for_all ~f:addr_in_retain_cycle cycle
 
