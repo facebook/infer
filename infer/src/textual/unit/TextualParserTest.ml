@@ -33,7 +33,7 @@ let%expect_test _ =
         .source_language = "hack" @[2:7]
         .source_file = "original.hack" @[3:7]
         .source_language = "java" @[5:7] |}] ;
-  let lang = Option.value_exn (Module.lang module_) in
+  let lang = Option.value_exn (Module.lang_opt module_) in
   F.printf "%s" (Lang.to_string lang) ;
   [%expect {| hack |}]
 
@@ -91,6 +91,7 @@ let%expect_test _ =
 
 let text =
   {|
+       .source_language = "hack"
        type A = {f1: int; f2: int}
        type B {f3: bool}
        type C extends A, B {f4: bool}
@@ -102,6 +103,8 @@ let%expect_test _ =
   show m ;
   [%expect
     {|
+        .source_language = "hack" @[2:7]
+
         type A = {f1: int; f2: int}
 
         type B = {f3: bool}
@@ -185,6 +188,7 @@ let%expect_test "numbers lexing" =
 
 let text =
   {|
+       .source_language = "hack"
        define f(declare: int) : int {
        #type:
        jmp type
@@ -198,11 +202,13 @@ let%expect_test "keywords as idents" =
   show module_ ;
   [%expect
     {|
-          define f(declare: int) : int {
-            #type: @[3:7]
-                jmp type @[4:7]
+    .source_language = "hack" @[2:7]
 
-          } @[6:8] |}]
+    define f(declare: int) : int {
+      #type: @[4:7]
+          jmp type @[5:7]
+
+    } @[7:8] |}]
 
 
 let%expect_test "overloaded functions" =

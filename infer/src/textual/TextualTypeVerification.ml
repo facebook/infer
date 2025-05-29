@@ -230,7 +230,7 @@ let set_location loc : unit monad = fun state -> (Value (), {state with loc})
 
 let get_result_type : Typ.t monad = fun state -> (Value state.pdesc.procdecl.result_type.typ, state)
 
-let get_lang : Lang.t option monad = fun state -> (Value (TextualDecls.lang state.decls), state)
+let get_lang : Lang.t monad = fun state -> (Value (TextualDecls.lang state.decls), state)
 
 let rec fold (l : 'a list) ~(init : 'acc) ~(f : 'acc -> 'a -> 'acc monad) : 'acc monad =
  fun astate ->

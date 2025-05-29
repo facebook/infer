@@ -19,6 +19,7 @@ let show module_ = F.printf "%a" (Module.pp ~show_location:true) module_
 *)
 let python_inspired_text =
   {|
+       .source_language = "python"
         define f(x: int, y: int, z: int, t: int) : int {
           #b0:
               n0:int = load &x
@@ -47,6 +48,7 @@ let%test_module "remove_effects_in_subexprs transformation" =
   ( module struct
     let input_text =
       {|
+       .source_language = "python"
         declare g1(int) : int
 
         declare g2(int) : int
@@ -93,6 +95,8 @@ let%test_module "remove_effects_in_subexprs transformation" =
       show module_ ;
       [%expect
         {|
+        .source_language = "python" @[2:7]
+
         declare g1(int) : int
 
         declare g2(int) : int
@@ -104,54 +108,54 @@ let%test_module "remove_effects_in_subexprs transformation" =
         declare m(int, int) : int
 
         define f(x: int, y: int) : int {
-          #entry: @[13:10]
-              n0:int = load &x @[14:14]
-              n1:int = load &y @[15:14]
-              n12 = g3(n0) @[16:14]
-              n13 = g1(n0) @[16:14]
-              n14 = g2(n1) @[16:14]
-              n15 = m(n13, n14) @[16:14]
-              n3 = __sil_mult_int(n12, n15) @[16:14]
-              n16:int = load &x @[17:14]
-              n17:int = load &y @[17:14]
-              n18 = g3(n17) @[17:14]
-              n4 = m(n16, n18) @[17:14]
-              n19 = g1(n3) @[18:14]
-              n20 = g3(n0) @[18:14]
-              n21 = g2(n3) @[18:14]
-              n22 = g3(n0) @[18:14]
-              jmp lab1(n19, n20), lab2(n21, n22) @[18:14]
+          #entry: @[14:10]
+              n0:int = load &x @[15:14]
+              n1:int = load &y @[16:14]
+              n12 = g3(n0) @[17:14]
+              n13 = g1(n0) @[17:14]
+              n14 = g2(n1) @[17:14]
+              n15 = m(n13, n14) @[17:14]
+              n3 = __sil_mult_int(n12, n15) @[17:14]
+              n16:int = load &x @[18:14]
+              n17:int = load &y @[18:14]
+              n18 = g3(n17) @[18:14]
+              n4 = m(n16, n18) @[18:14]
+              n19 = g1(n3) @[19:14]
+              n20 = g3(n0) @[19:14]
+              n21 = g2(n3) @[19:14]
+              n22 = g3(n0) @[19:14]
+              jmp lab1(n19, n20), lab2(n21, n22) @[19:14]
 
-          #lab1(n6: int, n7: int): @[19:10]
-              n8 = __sil_mult_int(n6, n7) @[20:14]
-              jmp lab @[21:14]
+          #lab1(n6: int, n7: int): @[20:10]
+              n8 = __sil_mult_int(n6, n7) @[21:14]
+              jmp lab @[22:14]
 
-          #lab2(n10: int, n11: int): @[22:10]
-              n23 = m(n10, n11) @[23:14]
-              n24 = g3(n23) @[23:14]
-              ret n24 @[23:14]
+          #lab2(n10: int, n11: int): @[23:10]
+              n23 = m(n10, n11) @[24:14]
+              n24 = g3(n23) @[24:14]
+              ret n24 @[24:14]
 
-          #lab: @[24:10]
-              n25 = g4(n8) @[25:14]
-              throw n25 @[25:14]
+          #lab: @[25:10]
+              n25 = g4(n8) @[26:14]
+              throw n25 @[26:14]
 
-        } @[26:9]
+        } @[27:9]
 
         define empty() : void {
-          #entry: @[29:10]
-              ret null @[30:14]
+          #entry: @[30:10]
+              ret null @[31:14]
 
-        } @[31:9]
+        } @[32:9]
 
         type cell = {value: int; next: *cell}
 
         define next(l: *cell) : *cell {
-          #entry: @[36:10]
-              n0:*cell = load &l @[37:13]
-              n1:*cell = load n0.cell.next @[37:13]
-              ret n1 @[37:13]
+          #entry: @[37:10]
+              n0:*cell = load &l @[38:13]
+              n1:*cell = load n0.cell.next @[38:13]
+              ret n1 @[38:13]
 
-        } @[38:9] |}]
+        } @[39:9] |}]
   end )
 
 
@@ -159,6 +163,7 @@ let%test_module "remove_if_terminator transformation" =
   ( module struct
     let input_text =
       {|
+        .source_language = "python"
         define f(b1: int, b2: int, b3: int, b4: int, b5: int) : int {
           #entry:
               n1 : int = load &b1
@@ -225,287 +230,289 @@ let%test_module "remove_if_terminator transformation" =
       show module_ ;
       [%expect
         {|
+        .source_language = "python" @[2:8]
+
         define f(b1: int, b2: int, b3: int, b4: int, b5: int) : int {
-          #entry: @[3:10]
-              n1:int = load &b1 @[4:14]
-              n2:int = load &b2 @[5:14]
-              n3:int = load &b3 @[6:14]
-              n4:int = load &b4 @[7:14]
-              n5:int = load &b5 @[8:14]
-              jmp lab1, if0, if1, if2 @[9:14]
+          #entry: @[4:10]
+              n1:int = load &b1 @[5:14]
+              n2:int = load &b2 @[6:14]
+              n3:int = load &b3 @[7:14]
+              n4:int = load &b4 @[8:14]
+              n5:int = load &b5 @[9:14]
+              jmp lab1, if0, if1, if2 @[10:14]
 
-          #if0: @[9:14]
-              prune __sil_lnot(n1) @[9:14]
-              jmp lab2 @[9:14]
+          #if0: @[10:14]
+              prune __sil_lnot(n1) @[10:14]
+              jmp lab2 @[10:14]
 
-          #if1: @[9:14]
-              prune __sil_lnot(n2) @[9:14]
-              jmp lab2 @[9:14]
+          #if1: @[10:14]
+              prune __sil_lnot(n2) @[10:14]
+              jmp lab2 @[10:14]
 
-          #if2: @[9:14]
-              prune __sil_lnot(n3) @[9:14]
-              jmp lab2 @[9:14]
+          #if2: @[10:14]
+              prune __sil_lnot(n3) @[10:14]
+              jmp lab2 @[10:14]
 
-          #lab1: @[10:10]
-              prune n1 @[9:14]
-              prune n2 @[9:14]
-              prune n3 @[9:14]
-              ret 1 @[11:14]
+          #lab1: @[11:10]
+              prune n1 @[10:14]
+              prune n2 @[10:14]
+              prune n3 @[10:14]
+              ret 1 @[12:14]
 
-          #lab2: @[12:10]
-              jmp if5, if6, if3, if4 @[13:14]
+          #lab2: @[13:10]
+              jmp if5, if6, if3, if4 @[14:14]
 
-          #if5: @[13:14]
-              prune n2 @[13:14]
-              jmp lab3 @[13:14]
+          #if5: @[14:14]
+              prune n2 @[14:14]
+              jmp lab3 @[14:14]
 
-          #if6: @[13:14]
-              prune n1 @[13:14]
-              prune n3 @[13:14]
-              jmp lab3 @[13:14]
+          #if6: @[14:14]
+              prune n1 @[14:14]
+              prune n3 @[14:14]
+              jmp lab3 @[14:14]
 
-          #if3: @[13:14]
-              prune __sil_lnot(n2) @[13:14]
-              prune __sil_lnot(n1) @[13:14]
-              jmp lab4 @[13:14]
+          #if3: @[14:14]
+              prune __sil_lnot(n2) @[14:14]
+              prune __sil_lnot(n1) @[14:14]
+              jmp lab4 @[14:14]
 
-          #if4: @[13:14]
-              prune __sil_lnot(n2) @[13:14]
-              prune __sil_lnot(n3) @[13:14]
-              jmp lab4 @[13:14]
+          #if4: @[14:14]
+              prune __sil_lnot(n2) @[14:14]
+              prune __sil_lnot(n3) @[14:14]
+              jmp lab4 @[14:14]
 
-          #lab3: @[15:10]
-              jmp if10, if11, if12, if7, if8, if9 @[16:14]
+          #lab3: @[16:10]
+              jmp if10, if11, if12, if7, if8, if9 @[17:14]
 
-          #if10: @[16:14]
-              prune n1 @[16:14]
-              prune n2 @[16:14]
-              jmp lab4 @[16:14]
+          #if10: @[17:14]
+              prune n1 @[17:14]
+              prune n2 @[17:14]
+              jmp lab4 @[17:14]
 
-          #if11: @[16:14]
-              prune n1 @[16:14]
-              prune n3 @[16:14]
-              prune n4 @[16:14]
-              jmp lab4 @[16:14]
+          #if11: @[17:14]
+              prune n1 @[17:14]
+              prune n3 @[17:14]
+              prune n4 @[17:14]
+              jmp lab4 @[17:14]
 
-          #if12: @[16:14]
-              prune n1 @[16:14]
-              prune n3 @[16:14]
-              prune n5 @[16:14]
-              jmp lab4 @[16:14]
+          #if12: @[17:14]
+              prune n1 @[17:14]
+              prune n3 @[17:14]
+              prune n5 @[17:14]
+              jmp lab4 @[17:14]
 
-          #if7: @[16:14]
-              prune __sil_lnot(n1) @[16:14]
-              jmp lab5 @[16:14]
+          #if7: @[17:14]
+              prune __sil_lnot(n1) @[17:14]
+              jmp lab5 @[17:14]
 
-          #if8: @[16:14]
-              prune __sil_lnot(n2) @[16:14]
-              prune __sil_lnot(n3) @[16:14]
-              jmp lab5 @[16:14]
+          #if8: @[17:14]
+              prune __sil_lnot(n2) @[17:14]
+              prune __sil_lnot(n3) @[17:14]
+              jmp lab5 @[17:14]
 
-          #if9: @[16:14]
-              prune __sil_lnot(n2) @[16:14]
-              prune __sil_lnot(n4) @[16:14]
-              prune __sil_lnot(n5) @[16:14]
-              jmp lab5 @[16:14]
+          #if9: @[17:14]
+              prune __sil_lnot(n2) @[17:14]
+              prune __sil_lnot(n4) @[17:14]
+              prune __sil_lnot(n5) @[17:14]
+              jmp lab5 @[17:14]
 
-          #lab4: @[17:10]
-              ret 2 @[18:14]
+          #lab4: @[18:10]
+              ret 2 @[19:14]
 
-          #lab5: @[19:10]
-              ret 3 @[20:14]
+          #lab5: @[20:10]
+              ret 3 @[21:14]
 
-        } @[21:9]
+        } @[22:9]
 
         define g(b1: int, b2: int, b3: int) : int {
-          #entry: @[24:10]
-              n1:int = load &b1 @[25:14]
-              n2:int = load &b2 @[26:14]
-              n3:int = load &b3 @[27:14]
-              jmp if3, if4, if0, if1 @[28:14]
+          #entry: @[25:10]
+              n1:int = load &b1 @[26:14]
+              n2:int = load &b2 @[27:14]
+              n3:int = load &b3 @[28:14]
+              jmp if3, if4, if0, if1 @[29:14]
 
-          #if3: @[28:14]
-              prune n1 @[28:14]
-              prune n3 @[28:14]
-              jmp lab1 @[28:14]
+          #if3: @[29:14]
+              prune n1 @[29:14]
+              prune n3 @[29:14]
+              jmp lab1 @[29:14]
 
-          #if4: @[28:14]
-              prune n2 @[28:14]
-              prune n3 @[28:14]
-              jmp lab1 @[28:14]
+          #if4: @[29:14]
+              prune n2 @[29:14]
+              prune n3 @[29:14]
+              jmp lab1 @[29:14]
 
-          #if0: @[28:14]
-              prune __sil_lnot(n1) @[28:14]
-              prune __sil_lnot(n2) @[28:14]
-              jmp if2 @[28:14]
+          #if0: @[29:14]
+              prune __sil_lnot(n1) @[29:14]
+              prune __sil_lnot(n2) @[29:14]
+              jmp if2 @[29:14]
 
-          #if1: @[28:14]
-              prune __sil_lnot(n3) @[28:14]
-              jmp if2 @[28:14]
+          #if1: @[29:14]
+              prune __sil_lnot(n3) @[29:14]
+              jmp if2 @[29:14]
 
-          #lab1: @[29:10]
-              ret 1 @[30:14]
+          #lab1: @[30:10]
+              ret 1 @[31:14]
 
-          #if2: @[31:10]
-              ret 2 @[32:14]
+          #if2: @[32:10]
+              ret 2 @[33:14]
 
-        } @[33:9]
+        } @[34:9]
 
         define h(b1: int, b2: int, b3: int) : int {
-          #entry: @[36:10]
-              n1:int = load &b1 @[37:14]
-              n2:int = load &b2 @[38:14]
-              n3:int = load &b3 @[39:14]
-              jmp if7, if4, if5, if6 @[40:14]
+          #entry: @[37:10]
+              n1:int = load &b1 @[38:14]
+              n2:int = load &b2 @[39:14]
+              n3:int = load &b3 @[40:14]
+              jmp if7, if4, if5, if6 @[41:14]
 
-          #if7: @[40:14]
-              prune n1 @[40:14]
-              prune n2 @[40:14]
-              prune n3 @[40:14]
-              ret 1 @[40:14]
+          #if7: @[41:14]
+              prune n1 @[41:14]
+              prune n2 @[41:14]
+              prune n3 @[41:14]
+              ret 1 @[41:14]
 
-          #if4: @[40:14]
-              prune __sil_lnot(n1) @[40:14]
-              jmp if2, if3, if0, if1 @[40:14]
+          #if4: @[41:14]
+              prune __sil_lnot(n1) @[41:14]
+              jmp if2, if3, if0, if1 @[41:14]
 
-          #if5: @[40:14]
-              prune __sil_lnot(n2) @[40:14]
-              jmp if2, if3, if0, if1 @[40:14]
+          #if5: @[41:14]
+              prune __sil_lnot(n2) @[41:14]
+              jmp if2, if3, if0, if1 @[41:14]
 
-          #if6: @[40:14]
-              prune __sil_lnot(n3) @[40:14]
-              jmp if2, if3, if0, if1 @[40:14]
+          #if6: @[41:14]
+              prune __sil_lnot(n3) @[41:14]
+              jmp if2, if3, if0, if1 @[41:14]
 
-          #if2: @[40:14]
-              prune n2 @[40:14]
-              ret 2 @[40:14]
+          #if2: @[41:14]
+              prune n2 @[41:14]
+              ret 2 @[41:14]
 
-          #if3: @[40:14]
-              prune n1 @[40:14]
-              prune n3 @[40:14]
-              ret 2 @[40:14]
+          #if3: @[41:14]
+              prune n1 @[41:14]
+              prune n3 @[41:14]
+              ret 2 @[41:14]
 
-          #if0: @[40:14]
-              prune __sil_lnot(n2) @[40:14]
-              prune __sil_lnot(n1) @[40:14]
-              ret 3 @[40:14]
+          #if0: @[41:14]
+              prune __sil_lnot(n2) @[41:14]
+              prune __sil_lnot(n1) @[41:14]
+              ret 3 @[41:14]
 
-          #if1: @[40:14]
-              prune __sil_lnot(n2) @[40:14]
-              prune __sil_lnot(n3) @[40:14]
-              ret 3 @[40:14]
+          #if1: @[41:14]
+              prune __sil_lnot(n2) @[41:14]
+              prune __sil_lnot(n3) @[41:14]
+              ret 3 @[41:14]
 
-        } @[43:9]
+        } @[44:9]
 
         define if_lparen_test(b1: int, b2: int) : int {
-          #entry: @[46:10]
-              n1:int = load &b1 @[47:14]
-              n2:int = load &b2 @[48:14]
-              jmp if0, if1, lab1 @[49:14]
+          #entry: @[47:10]
+              n1:int = load &b1 @[48:14]
+              n2:int = load &b2 @[49:14]
+              jmp if0, if1, lab1 @[50:14]
 
-          #if0: @[49:14]
-              prune n1 @[49:14]
-              ret 1 @[49:14]
+          #if0: @[50:14]
+              prune n1 @[50:14]
+              ret 1 @[50:14]
 
-          #if1: @[49:14]
-              prune n2 @[49:14]
-              ret 1 @[49:14]
+          #if1: @[50:14]
+              prune n2 @[50:14]
+              ret 1 @[50:14]
 
-          #lab1: @[50:10]
-              prune __sil_lnot(n1) @[49:14]
-              prune __sil_lnot(n2) @[49:14]
-              jmp if4, if2, if3 @[51:14]
+          #lab1: @[51:10]
+              prune __sil_lnot(n1) @[50:14]
+              prune __sil_lnot(n2) @[50:14]
+              jmp if4, if2, if3 @[52:14]
 
-          #if4: @[51:14]
-              prune n1 @[51:14]
-              prune n2 @[51:14]
-              ret 1 @[51:14]
+          #if4: @[52:14]
+              prune n1 @[52:14]
+              prune n2 @[52:14]
+              ret 1 @[52:14]
 
-          #if2: @[51:14]
-              prune __sil_lnot(n1) @[51:14]
-              jmp lab2 @[51:14]
+          #if2: @[52:14]
+              prune __sil_lnot(n1) @[52:14]
+              jmp lab2 @[52:14]
 
-          #if3: @[51:14]
-              prune __sil_lnot(n2) @[51:14]
-              jmp lab2 @[51:14]
+          #if3: @[52:14]
+              prune __sil_lnot(n2) @[52:14]
+              jmp lab2 @[52:14]
 
-          #lab2: @[52:10]
-              jmp if7, if5, if6 @[53:14]
+          #lab2: @[53:10]
+              jmp if7, if5, if6 @[54:14]
 
-          #if7: @[53:14]
-              prune n1 @[53:14]
-              prune n2 @[53:14]
-              ret 1 @[53:14]
+          #if7: @[54:14]
+              prune n1 @[54:14]
+              prune n2 @[54:14]
+              ret 1 @[54:14]
 
-          #if5: @[53:14]
-              prune __sil_lnot(n1) @[53:14]
-              jmp lab3 @[53:14]
+          #if5: @[54:14]
+              prune __sil_lnot(n1) @[54:14]
+              jmp lab3 @[54:14]
 
-          #if6: @[53:14]
-              prune __sil_lnot(n2) @[53:14]
-              jmp lab3 @[53:14]
+          #if6: @[54:14]
+              prune __sil_lnot(n2) @[54:14]
+              jmp lab3 @[54:14]
 
-          #lab3: @[54:10]
-              jmp if10, if8, if9 @[55:14]
+          #lab3: @[55:10]
+              jmp if10, if8, if9 @[56:14]
 
-          #if10: @[55:14]
-              prune n1 @[55:14]
-              prune n2 @[55:14]
-              ret 1 @[55:14]
+          #if10: @[56:14]
+              prune n1 @[56:14]
+              prune n2 @[56:14]
+              ret 1 @[56:14]
 
-          #if8: @[55:14]
-              prune __sil_lnot(n1) @[55:14]
-              jmp lab4 @[55:14]
+          #if8: @[56:14]
+              prune __sil_lnot(n1) @[56:14]
+              jmp lab4 @[56:14]
 
-          #if9: @[55:14]
-              prune __sil_lnot(n2) @[55:14]
-              jmp lab4 @[55:14]
+          #if9: @[56:14]
+              prune __sil_lnot(n2) @[56:14]
+              jmp lab4 @[56:14]
 
-          #lab4: @[56:10]
-              jmp if13, if14, if11, if12 @[57:14]
+          #lab4: @[57:10]
+              jmp if13, if14, if11, if12 @[58:14]
 
-          #if13: @[57:14]
-              prune n1 @[57:14]
-              prune n2 @[57:14]
-              ret 1 @[57:14]
+          #if13: @[58:14]
+              prune n1 @[58:14]
+              prune n2 @[58:14]
+              ret 1 @[58:14]
 
-          #if14: @[57:14]
-              prune n1 @[57:14]
-              ret 1 @[57:14]
+          #if14: @[58:14]
+              prune n1 @[58:14]
+              ret 1 @[58:14]
 
-          #if11: @[57:14]
-              prune __sil_lnot(n1) @[57:14]
-              prune __sil_lnot(n1) @[57:14]
-              jmp lab5 @[57:14]
+          #if11: @[58:14]
+              prune __sil_lnot(n1) @[58:14]
+              prune __sil_lnot(n1) @[58:14]
+              jmp lab5 @[58:14]
 
-          #if12: @[57:14]
-              prune __sil_lnot(n2) @[57:14]
-              prune __sil_lnot(n1) @[57:14]
-              jmp lab5 @[57:14]
+          #if12: @[58:14]
+              prune __sil_lnot(n2) @[58:14]
+              prune __sil_lnot(n1) @[58:14]
+              jmp lab5 @[58:14]
 
-          #lab5: @[58:10]
-              jmp if17, if18, if15, if16 @[59:14]
+          #lab5: @[59:10]
+              jmp if17, if18, if15, if16 @[60:14]
 
-          #if17: @[59:14]
-              prune n1 @[59:14]
-              prune n1 @[59:14]
-              ret 1 @[59:14]
+          #if17: @[60:14]
+              prune n1 @[60:14]
+              prune n1 @[60:14]
+              ret 1 @[60:14]
 
-          #if18: @[59:14]
-              prune n2 @[59:14]
-              prune n1 @[59:14]
-              ret 1 @[59:14]
+          #if18: @[60:14]
+              prune n2 @[60:14]
+              prune n1 @[60:14]
+              ret 1 @[60:14]
 
-          #if15: @[59:14]
-              prune __sil_lnot(n1) @[59:14]
-              prune __sil_lnot(n2) @[59:14]
-              ret 2 @[59:14]
+          #if15: @[60:14]
+              prune __sil_lnot(n1) @[60:14]
+              prune __sil_lnot(n2) @[60:14]
+              ret 2 @[60:14]
 
-          #if16: @[59:14]
-              prune __sil_lnot(n1) @[59:14]
-              ret 2 @[59:14]
+          #if16: @[60:14]
+              prune __sil_lnot(n1) @[60:14]
+              ret 2 @[60:14]
 
-        } @[60:9] |}]
+        } @[61:9] |}]
 
 
     let%expect_test _ =
@@ -513,45 +520,47 @@ let%test_module "remove_if_terminator transformation" =
       show module_ ;
       [%expect
         {|
-          define f(x: int, y: int, z: int, t: int) : int {
-            #b0: @[3:10]
-                n0:int = load &x @[4:14]
-                jmp b1, if0 @[5:14]
+        .source_language = "python" @[2:7]
 
-            #if0: @[5:14]
-                prune __sil_lnot(n0) @[5:14]
-                jmp b2 @[5:14]
+        define f(x: int, y: int, z: int, t: int) : int {
+          #b0: @[4:10]
+              n0:int = load &x @[5:14]
+              jmp b1, if0 @[6:14]
 
-            #b1: @[7:10]
-                prune n0 @[5:14]
-                n2:int = load &y @[8:14]
-                jmp if2, if1 @[9:14]
+          #if0: @[6:14]
+              prune __sil_lnot(n0) @[6:14]
+              jmp b2 @[6:14]
 
-            #if2: @[9:14]
-                prune n2 @[9:14]
-                jmp b4(n2) @[9:14]
+          #b1: @[8:10]
+              prune n0 @[6:14]
+              n2:int = load &y @[9:14]
+              jmp if2, if1 @[10:14]
 
-            #if1: @[9:14]
-                prune __sil_lnot(n2) @[9:14]
-                jmp b2 @[9:14]
+          #if2: @[10:14]
+              prune n2 @[10:14]
+              jmp b4(n2) @[10:14]
 
-            #b2: @[11:10]
-                n5:int = load &z @[12:14]
-                jmp b5, if3 @[13:14]
+          #if1: @[10:14]
+              prune __sil_lnot(n2) @[10:14]
+              jmp b2 @[10:14]
 
-            #if3: @[13:14]
-                prune __sil_lnot(n5) @[13:14]
-                jmp b4(n5) @[13:14]
+          #b2: @[12:10]
+              n5:int = load &z @[13:14]
+              jmp b5, if3 @[14:14]
 
-            #b5: @[15:10]
-                prune n5 @[13:14]
-                n8:int = load &t @[16:14]
-                jmp b4(n8) @[17:14]
+          #if3: @[14:14]
+              prune __sil_lnot(n5) @[14:14]
+              jmp b4(n5) @[14:14]
 
-            #b4(n9: int): @[19:10]
-                ret n9 @[20:14]
+          #b5: @[16:10]
+              prune n5 @[14:14]
+              n8:int = load &t @[17:14]
+              jmp b4(n8) @[18:14]
 
-          } @[22:9] |}]
+          #b4(n9: int): @[20:10]
+              ret n9 @[21:14]
+
+        } @[23:9] |}]
   end )
 
 
@@ -559,7 +568,7 @@ let%test_module "let_propagation transformation" =
   ( module struct
     let input_text =
       {|
-
+        .source_language = "python"
         define f(x: int, y: int) : int {
           #entry:
               n0:int = load &x
@@ -580,6 +589,8 @@ let%test_module "let_propagation transformation" =
       show module_ ;
       [%expect
         {|
+        .source_language = "python" @[2:8]
+
         define f(x: int, y: int) : int {
           #entry: @[4:10]
               n0:int = load &x @[5:14]
@@ -597,6 +608,7 @@ let%test_module "out-of-ssa transformation" =
   ( module struct
     let input_text =
       {|
+          .source_language = "python"
           define f(x: int, y: int) : int {
             #entry:
                 n0:int = load &x
@@ -620,36 +632,38 @@ let%test_module "out-of-ssa transformation" =
       show module_ ;
       [%expect
         {|
+        .source_language = "python" @[2:10]
+
         define f(x: int, y: int) : int {
-          #entry: @[3:12]
-              n0:int = load &x @[4:16]
-              n1:int = load &y @[5:16]
+          #entry: @[4:12]
+              n0:int = load &x @[5:16]
+              n1:int = load &y @[6:16]
               store &__SSA2 <- n0:int @?
               store &__SSA3 <- n1:int @?
               store &__SSA6 <- n1:int @?
               store &__SSA7 <- __sil_mult_int(n1, n0):int @?
-              jmp lab1, lab3 @[6:16]
+              jmp lab1, lab3 @[7:16]
 
-          #lab1: @[8:12]
+          #lab1: @[9:12]
               n2:int = load &__SSA2 @?
               n3:int = load &__SSA3 @?
               store &__SSA4 <- n3:int @?
               store &__SSA5 <- n2:int @?
-              jmp lab2 @[9:16]
+              jmp lab2 @[10:16]
 
-          #lab2: @[11:12]
+          #lab2: @[12:12]
               n4:int = load &__SSA4 @?
               n5:int = load &__SSA5 @?
-              ret __sil_plusa(n4, n5) @[12:16]
+              ret __sil_plusa(n4, n5) @[13:16]
 
-          #lab3: @[14:12]
+          #lab3: @[15:12]
               n6:int = load &__SSA6 @?
               n7:int = load &__SSA7 @?
               store &__SSA4 <- n6:int @?
               store &__SSA5 <- n7:int @?
-              jmp lab2 @[15:16]
+              jmp lab2 @[16:16]
 
-        } @[17:9] |}]
+        } @[18:9] |}]
 
 
     let%expect_test _ =
@@ -660,49 +674,51 @@ let%test_module "out-of-ssa transformation" =
       show module_ ;
       [%expect
         {|
+        .source_language = "python" @[2:7]
+
         define f(x: int, y: int, z: int, t: int) : int {
-          #b0: @[3:10]
-              n0:int = load &x @[4:14]
-              jmp b1, if0 @[5:14]
+          #b0: @[4:10]
+              n0:int = load &x @[5:14]
+              jmp b1, if0 @[6:14]
 
-          #if0: @[5:14]
-              prune __sil_lnot(n0) @[5:14]
-              jmp b2 @[5:14]
+          #if0: @[6:14]
+              prune __sil_lnot(n0) @[6:14]
+              jmp b2 @[6:14]
 
-          #b1: @[7:10]
-              prune n0 @[5:14]
-              n2:int = load &y @[8:14]
-              jmp if2, if1 @[9:14]
+          #b1: @[8:10]
+              prune n0 @[6:14]
+              n2:int = load &y @[9:14]
+              jmp if2, if1 @[10:14]
 
-          #if2: @[9:14]
-              prune n2 @[9:14]
+          #if2: @[10:14]
+              prune n2 @[10:14]
               store &__SSA9 <- n2:int @?
-              jmp b4 @[9:14]
+              jmp b4 @[10:14]
 
-          #if1: @[9:14]
-              prune __sil_lnot(n2) @[9:14]
-              jmp b2 @[9:14]
+          #if1: @[10:14]
+              prune __sil_lnot(n2) @[10:14]
+              jmp b2 @[10:14]
 
-          #b2: @[11:10]
-              n5:int = load &z @[12:14]
-              jmp b5, if3 @[13:14]
+          #b2: @[12:10]
+              n5:int = load &z @[13:14]
+              jmp b5, if3 @[14:14]
 
-          #if3: @[13:14]
-              prune __sil_lnot(n5) @[13:14]
+          #if3: @[14:14]
+              prune __sil_lnot(n5) @[14:14]
               store &__SSA9 <- n5:int @?
-              jmp b4 @[13:14]
+              jmp b4 @[14:14]
 
-          #b5: @[15:10]
-              prune n5 @[13:14]
-              n8:int = load &t @[16:14]
+          #b5: @[16:10]
+              prune n5 @[14:14]
+              n8:int = load &t @[17:14]
               store &__SSA9 <- n8:int @?
-              jmp b4 @[17:14]
+              jmp b4 @[18:14]
 
-          #b4: @[19:10]
+          #b4: @[20:10]
               n9:int = load &__SSA9 @?
-              ret n9 @[20:14]
+              ret n9 @[21:14]
 
-        } @[22:9] |}]
+        } @[23:9] |}]
   end )
 
 

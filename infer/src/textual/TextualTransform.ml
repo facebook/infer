@@ -389,7 +389,7 @@ module TransformClosures = struct
 
 
   let signature_body lang proc captured params =
-    Exp.call_sig proc (List.length captured + List.length params) (Some lang)
+    Exp.call_sig proc (List.length captured + List.length params) lang
 
 
   let closure_building_instrs id loc typename (closure : ProcDesc.t) captured =

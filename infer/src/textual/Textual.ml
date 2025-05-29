@@ -564,9 +564,9 @@ module ProcDecl = struct
 
 
   let to_sig {qualified_name; formals_types} = function
-    | Some Lang.Hack ->
+    | Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Option.map formals_types ~f:List.length}
-    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Swift | None ->
+    | Lang.Python | Lang.Java | Lang.C | Lang.Swift ->
         ProcSig.Other {qualified_name}
 
 
@@ -799,12 +799,8 @@ module ProcDecl = struct
     builtins @ unop_builtins @ binop_builtins
 
 
-  let is_builtin (proc : QualifiedProcName.t) lang_opt =
-    match lang_opt with
-    | Some lang when Lang.equal lang C ->
-        List.mem builtins ~equal:String.equal proc.name.value
-    | _ ->
-        false
+  let is_builtin (proc : QualifiedProcName.t) lang =
+    match lang with Lang.C -> List.mem builtins ~equal:String.equal proc.name.value | _ -> false
 end
 
 module Global = struct
@@ -868,9 +864,9 @@ module Exp = struct
   let call_virtual proc recv args = Call {proc; args= recv :: args; kind= Virtual}
 
   let call_sig qualified_name nb_args = function
-    | Some Lang.Hack ->
+    | Lang.Hack ->
         ProcSig.Hack {qualified_name; arity= Some nb_args}
-    | Some Lang.Python | Some Lang.Java | Some Lang.C | Some Lang.Swift | None ->
+    | Lang.Python | Lang.Java | Lang.C | Lang.Swift ->
         ProcSig.Other {qualified_name}
 
 
@@ -1245,11 +1241,19 @@ module Module = struct
 
   type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
 
-  let lang {attrs} =
+  let lang_opt {attrs} =
     let lang_attr =
       List.find attrs ~f:(fun (attr : Attr.t) -> String.equal attr.name Attr.source_language)
     in
     lang_attr |> Option.bind ~f:(fun x -> Attr.values x |> List.hd |> Option.bind ~f:Lang.of_string)
+
+
+  let lang module_ =
+    match lang_opt module_ with
+    | Some lang ->
+        lang
+    | None ->
+        L.die InternalError "source_language attribute is either missing or has no value"
 
 
   let pp_attr ~show_location fmt attr =

@@ -186,21 +186,19 @@ let c_mixed_type_textual = Typ.Void
 
 let swift_mixed_type_textual = Typ.Void
 
-let default_return_type (lang : Lang.t option) loc =
+let default_return_type (lang : Lang.t) loc =
   match lang with
-  | Some Hack ->
+  | Hack ->
       Typ.Ptr (mk_hack_mixed_type_textual loc)
-  | Some Python ->
+  | Python ->
       Typ.Ptr (mk_python_mixed_type_textual loc)
-  | Some C ->
+  | C ->
       Typ.Ptr c_mixed_type_textual
-  | Some Swift ->
+  | Swift ->
       Typ.Ptr swift_mixed_type_textual
-  | Some other ->
+  | other ->
       L.die InternalError "Unexpected return type outside of Hack/Python/C/Swift: %s"
         (Lang.to_string other)
-  | None ->
-      L.die InternalError "Unexpected return type outside of Hack/Python/C/Swift: None"
 
 
 let mangle_java_procname jpname =
@@ -926,11 +924,11 @@ module InstrBridge = struct
             when QualifiedProcName.contains_wildcard proc
                  || QualifiedProcName.is_python_builtin proc
                  || QualifiedProcName.is_llvm_builtin proc
-                 || ProcDecl.is_builtin proc (Some lang) ->
+                 || ProcDecl.is_builtin proc lang ->
               let textual_ret_typ =
                 (* Declarations with unknown formals are expected in Hack/Python/C. Assume that unknown
                    return types are *HackMixed/*PyObject/*void respectively. *)
-                default_return_type (Some lang) loc
+                default_return_type lang loc
               in
               ( TextualDecls.NotVariadic
               , { ProcDecl.qualified_name= proc
@@ -1385,7 +1383,7 @@ module ModuleBridge = struct
 
 
   let of_sil ~sourcefile ~lang tenv cfg =
-    let env = TextualDecls.init sourcefile (Some lang) in
+    let env = TextualDecls.init sourcefile lang in
     let decls =
       Cfg.fold_sorted cfg ~init:[] ~f:(fun decls pdesc ->
           let textual_pdesc = ProcDescBridge.of_sil env tenv pdesc in

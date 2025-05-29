@@ -20,11 +20,11 @@ basic.sil, line 88, column 4: textual type error: expression 0 has type int, whi
 basic.sil, line 106, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
 basic.sil, line 108, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
 basic.sil, line 110, column 9: textual type error: expression [&y:float] has type float, while a subtype of int was expected
-error2.sil, line 19, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared
-error2.sil, line 18, column 13: SIL consistency error: field cell.n is not declared
-error2.sil, line 15, column 8: SIL consistency error: label lab2 is not declared in function f
-error_label.sil, line 16, column 8: SIL consistency error: label lab2 is not declared in function B.f
-fun_type.sil, line 12, column 8: textual type error: expression [&f1:(fun () -> void)] has type (fun () -> void), while a subtype of float was expected
+error2.sil, line 20, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared
+error2.sil, line 19, column 13: SIL consistency error: field cell.n is not declared
+error2.sil, line 16, column 8: SIL consistency error: label lab2 is not declared in function f
+error_label.sil, line 17, column 8: SIL consistency error: label lab2 is not declared in function B.f
+fun_type.sil, line 14, column 8: textual type error: expression [&f1:(fun () -> void)] has type (fun () -> void), while a subtype of float was expected
 twice.sil: SIL consistency error: node entry is implemented twice in the same function f
 twice.sil: SIL consistency error: parameter x is declared twice in the same function f
 twice.sil: SIL consistency error: function f is implemented twice in the same file
@@ -37,7 +37,7 @@ variadic.sil, line 50, column 7: SIL consistency error: variadic parameter is no
 variadic.sil, line 40, column 7: SIL consistency error: variadic parameter is not in penultimate position in trait function T.bad
 variadic.sil, line 28, column 7: SIL consistency error: variadic parameter is not in penultimate position in function with_generics_bad which has a reified generics parameter
 variadic.sil, line 18, column 7: SIL consistency error: variadic parameter is not in last position in function f3
-error1.sil, line 12, column 4: SIL syntax error: unexpected token x
+error1.sil, line 14, column 4: SIL syntax error: unexpected token x
 error3.sil, line 4, column 0: SIL syntax error: unexpected token ^
 error_lit_float.sil, line 10, column 13: SIL syntax error: unexpected token d
 error_lit_int.sil, line 10, column 7: SIL syntax error: unexpected token 9b
@@ -48,4 +48,4 @@ syntax_error_closure3.sil, line 15, column 13: SIL syntax error: call inside clo
 syntax_error_node_call.sil, line 10, column 15: SIL syntax error: foo.lab
 syntax_error_procname1.sil, line 8, column 8: SIL syntax error: ?.bar
 syntax_error_procname2.sil, line 8, column 7: SIL syntax error: ?.bar
-type_token_clash.sil, line 7, column 2: SIL syntax error: unexpected token n00b
+type_token_clash.sil, line 9, column 2: SIL syntax error: unexpected token n00b

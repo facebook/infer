@@ -15,7 +15,7 @@ module ProcEntry : sig
   type t = Decl of Textual.ProcDecl.t | Desc of Textual.ProcDesc.t
 end
 
-val init : Textual.SourceFile.t -> Textual.Lang.t option -> t
+val init : Textual.SourceFile.t -> Textual.Lang.t -> t
 
 val declare_global : t -> Textual.Global.t -> unit
 
@@ -59,7 +59,7 @@ val is_trait_method : t -> Textual.ProcSig.t -> bool
 
 val source_file : t -> Textual.SourceFile.t
 
-val lang : t -> Textual.Lang.t option
+val lang : t -> Textual.Lang.t
 
 val get_undefined_types : t -> Textual.TypeName.t Seq.t
 

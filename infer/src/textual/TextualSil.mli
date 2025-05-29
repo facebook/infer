@@ -25,7 +25,7 @@ val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
 val dump_module : show_location:bool -> filename:string -> Textual.Module.t -> unit
 (** generate a .sil file with name [filename] with all the content of the input module *)
 
-val default_return_type : Textual.Lang.t option -> Textual.Location.t -> Textual.Typ.t
+val default_return_type : Textual.Lang.t -> Textual.Location.t -> Textual.Typ.t
 
 val hack_dict_type_name : Typ.name
 

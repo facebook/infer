@@ -101,7 +101,7 @@ module TextualFile = struct
 
 
   let lang sourcefile module_ =
-    match Textual.Module.lang module_ with
+    match Textual.Module.lang_opt module_ with
     | None ->
         Error
           ( sourcefile

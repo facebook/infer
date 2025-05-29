@@ -268,7 +268,7 @@ module ProcDecl : sig
 
   val formals_or_die : ?context:string -> t -> Typ.annotated list
 
-  val to_sig : t -> Lang.t option -> ProcSig.t
+  val to_sig : t -> Lang.t -> ProcSig.t
 
   val pp : F.formatter -> t -> unit
 
@@ -320,7 +320,7 @@ module ProcDecl : sig
 
   val is_variadic : t -> bool
 
-  val is_builtin : QualifiedProcName.t -> Lang.t option -> bool
+  val is_builtin : QualifiedProcName.t -> Lang.t -> bool
 end
 
 module Global : sig
@@ -354,7 +354,7 @@ module Exp : sig
 
   val call_virtual : QualifiedProcName.t -> t -> t list -> t
 
-  val call_sig : QualifiedProcName.t -> int -> Lang.t option -> ProcSig.t
+  val call_sig : QualifiedProcName.t -> int -> Lang.t -> ProcSig.t
 
   val allocate_object : TypeName.t -> t
 
@@ -474,7 +474,9 @@ module Module : sig
 
   type t = {attrs: Attr.t list; decls: decl list; sourcefile: SourceFile.t}
 
-  val lang : t -> Lang.t option
+  val lang : t -> Lang.t
+
+  val lang_opt : t -> Lang.t option
 
   val pp : ?show_location:bool -> F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end

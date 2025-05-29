@@ -33,7 +33,7 @@ type t =
   ; variadic_procs: ProcDesc.t QualifiedProcName.Hashtbl.t
   ; structs: Struct.t TypeName.Hashtbl.t
   ; sourcefile: SourceFile.t
-  ; lang: Lang.t option }
+  ; lang: Lang.t }
 
 let init sourcefile lang =
   { globals= VarName.Hashtbl.create 17
@@ -61,8 +61,7 @@ let pp fmt {globals; procs; variadic_procs; structs; sourcefile; lang} =
     (QualifiedProcName.Hashtbl.to_seq_keys variadic_procs)
     (pp_seq TypeName.pp)
     (TypeName.Hashtbl.to_seq_keys structs)
-    SourceFile.pp sourcefile
-    (Option.value_map lang ~default:"none" ~f:Lang.to_string)
+    SourceFile.pp sourcefile (Lang.to_string lang)
 
 
 type error =
