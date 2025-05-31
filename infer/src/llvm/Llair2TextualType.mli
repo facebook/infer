@@ -11,6 +11,8 @@ module ProcState = Llair2TextualProcState
 
 val field_of_pos : int -> label
 
+val tuple_field_of_pos : int -> Textual.qualified_fieldname
+
 val to_annotated_textual_typ : struct_map:'a -> Typ.t -> Textual.Typ.annotated
 
 val to_textual_typ : ?struct_map:'a -> Typ.t -> Textual.Typ.t

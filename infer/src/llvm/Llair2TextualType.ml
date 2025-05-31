@@ -18,6 +18,13 @@ let add_struct_to_map name struct_ structMap =
 
 let field_of_pos pos = Format.asprintf "field_%s" (Int.to_string pos)
 
+let tuple_class_name = Textual.TypeName.of_string "__infer_tuple_class"
+
+let tuple_field_of_pos pos =
+  let name = Format.asprintf "__infer_tuple_field_%s" (Int.to_string pos) in
+  Textual.{enclosing_class= tuple_class_name; name= FieldName.of_string name}
+
+
 let rec translate_struct ?struct_map name elements =
   let struct_name = Textual.TypeName.of_string name in
   let fields = to_textual_field_decls ?struct_map struct_name elements in
