@@ -62,7 +62,7 @@ let to_module source_file llair_program =
 let language_of_source_file source_file =
   if String.is_suffix source_file ~suffix:".c" then Textual.Lang.C
   else if String.is_suffix source_file ~suffix:".swift" then Textual.Lang.Swift
-  else L.die UserError "Currently the llvm frontend is only enabled for C programs@."
+  else L.die UserError "Currently the llvm frontend is only enabled for C and Swift programs@."
 
 
 let capture_llair source_file llair_program =
