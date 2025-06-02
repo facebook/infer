@@ -2857,10 +2857,18 @@ and pure_by_default =
 
 and pyc_file = CLOpt.mk_path_list ~long:"pyc-file" "Collection of compiled Python files (byte-code)"
 
-and python_async_naming_convention =
-  CLOpt.mk_bool ~long:"python-async-naming-convention" ~default:true
-    ~in_help:InferCommand.[(Capture, manual_generic)]
-    "Mark any function that starts with 'async' or '_async' as being async"
+and python_async_function_naming_convention_regex =
+  CLOpt.mk_string_list ~long:"python-async-function-naming-convention-regex"
+    ~default:[".*::_async_.*"; ".*::async_.*"]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Consider any function call that matches as returning an unawaited value"
+
+
+and python_async_method_naming_convention_regex =
+  CLOpt.mk_string_list ~long:"python-async-method-naming-convention-regex"
+    ~default:["^async_.*"; "^_async_.*"]
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Consider any method call that matches as returning an unawaited value"
 
 
 and python_decorator_modelled_as_await_async =
@@ -4562,7 +4570,13 @@ and pure_by_default = !pure_by_default
 
 and pyc_file = RevList.to_list !pyc_file
 
-and python_async_naming_convention = !python_async_naming_convention
+and python_async_function_naming_convention_regex =
+  join_patterns_list (RevList.to_list !python_async_function_naming_convention_regex)
+
+
+and python_async_method_naming_convention_regex =
+  join_patterns_list (RevList.to_list !python_async_method_naming_convention_regex)
+
 
 and python_decorator_modelled_as_await_async =
   RevList.to_list !python_decorator_modelled_as_await_async

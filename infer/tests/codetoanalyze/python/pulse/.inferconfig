@@ -11,6 +11,8 @@
       "taint_target": ["ArgumentPositions", [1]]
     }
   ],
+  "python-async-function-naming-convention-regex": [".*::_async_.*", ".*::async_.*"],
+  "python-async-method-naming-convention-regex": ["^async_.*", "^_async_.*"],
   "python-skip-capture-path-regex-list": ["dir1/dir4/skipped.py"],
   "python-decorator-modelled-as-await-async": ["await_sync_lib::await_sync_decorator"],
   "pulse-model-release-pattern": "dir1::dir3::testmod::wait\\|not_captured::helper::not_captured_wait",

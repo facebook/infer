@@ -1836,11 +1836,15 @@ OPTIONS
            (Conversely: --no-purity-only)
            See also infer-analyze(1).
 
-       --no-python-async-naming-convention
-           Deactivates: Mark any function that starts with 'async' or
-           '_async' as being async (Conversely:
-           --python-async-naming-convention)
-           See also infer-capture(1).
+       --python-async-function-naming-convention-regex +string
+           Consider any function call that matches as returning an unawaited
+           value
+           See also infer-analyze(1).
+
+       --python-async-method-naming-convention-regex +string
+           Consider any method call that matches as returning an unawaited
+           value
+           See also infer-analyze(1).
 
        --python-decorator-modelled-as-await-async +string
            Any decorator that should be modelled as the await_async
@@ -3154,6 +3158,14 @@ INTERNAL OPTIONS
 
        --pyc-file-reset
            Set --pyc-file to the empty list.
+
+       --python-async-function-naming-convention-regex-reset
+           Set --python-async-function-naming-convention-regex to the empty
+           list.
+
+       --python-async-method-naming-convention-regex-reset
+           Set --python-async-method-naming-convention-regex to the empty
+           list.
 
        --python-decorator-modelled-as-await-async-reset
            Set --python-decorator-modelled-as-await-async to the empty list.

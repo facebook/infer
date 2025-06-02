@@ -697,7 +697,9 @@ val pure_by_default : bool
 
 val pyc_file : string list
 
-val python_async_naming_convention : bool
+val python_async_function_naming_convention_regex : Str.regexp option
+
+val python_async_method_naming_convention_regex : Str.regexp option
 
 val python_decorator_modelled_as_await_async : IString.PairSet.t
 

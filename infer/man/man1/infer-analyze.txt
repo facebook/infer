@@ -1083,6 +1083,14 @@ PULSE CHECKER OPTIONS
        --pulse-widen-threshold int
            Stop exploring new paths after int loop iterations
 
+       --python-async-function-naming-convention-regex +string
+           Consider any function call that matches as returning an unawaited
+           value
+
+       --python-async-method-naming-convention-regex +string
+           Consider any method call that matches as returning an unawaited
+           value
+
        --python-decorator-modelled-as-await-async +string
            Any decorator that should be modelled as the await_async
            decorator.

@@ -674,17 +674,17 @@ let initialize_if_class_companion value : unit DSL.model_monad =
         initialize_class_companion_and_supers ~module_name ~class_name value ) )
 
 
-let async_function_regexp = Str.regexp {|.*::\(_\)?async_.*|}
+let is_async_function_name function_name =
+  Option.exists Config.python_async_function_naming_convention_regex ~f:(fun regexp ->
+      Str.string_match regexp function_name 0 )
 
-let is_async_function_name function_name = Str.string_match async_function_regexp function_name 0
 
-let async_method_regexp = Str.regexp {|.*\(_\)?async_.*|}
+let is_async_method_name method_name =
+  Option.exists Config.python_async_method_naming_convention_regex ~f:(fun regexp ->
+      Str.string_match regexp method_name 0 )
 
-let is_async_method_name method_name = Str.string_match async_method_regexp method_name 0
 
 let detect_async_call opt_static_typ =
-  Config.python_async_naming_convention
-  &&
   match opt_static_typ with
   | Some (Typ.PythonClass (Globals name)) ->
       is_async_function_name name
