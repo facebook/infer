@@ -16,7 +16,8 @@ let run pyir =
     F.printf "TRANSFORMATION PyIR -> Textual@\n" ;
     show textual ;
     let+ verified_textual =
-      TextualVerification.verify textual |> Result.map_error ~f:(fun err -> `VerificationError err)
+      TextualVerification.verify_strict textual
+      |> Result.map_error ~f:(fun err -> `VerificationError err)
     in
     F.printf "TYPE INFERENCE@\n" ;
     show verified_textual ;

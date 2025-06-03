@@ -155,9 +155,11 @@ val pp_error : Format.formatter -> error -> unit
 
 val error_loc : error -> Location.t
 
-(* typechecks all the module and, if no errors, returns a fresh copy where
-   all load/store type annotations are filled now *)
-val run : Module.t -> TextualDecls.t -> (Module.t, error list) Result.t
+(* Typechecks all the module. If no errors, returns a fresh copy where
+   all load/store type annotations are filled now. If some procdecls have type
+   errors, we return an erro, but we still generate a typecked module but
+   without the faulty procdecls. *)
+val run : Module.t -> TextualDecls.t -> (Module.t, error list * Module.t) Result.t
 
 type type_check_result =
   | Ok of Module.t

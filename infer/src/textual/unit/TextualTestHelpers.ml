@@ -13,7 +13,7 @@ let sourcefile = SourceFile.create "dummy.sil"
 let parse_string_and_verify sourcefile text =
   let open IResult.Let_syntax in
   let* parsed = TextualParser.parse_string sourcefile text in
-  TextualVerification.verify parsed
+  TextualVerification.verify_strict parsed
   |> Result.map_error ~f:(fun err -> [TextualParser.VerificationError err])
 
 
@@ -40,7 +40,7 @@ let remove_effects_in_subexprs lang module_ =
 
 
 let type_check module_ =
-  match TextualVerification.verify module_ with
+  match TextualVerification.verify_strict module_ with
   | Ok _ ->
       F.printf "verification succeeded@\n"
   | Error errs ->

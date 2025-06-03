@@ -96,7 +96,7 @@ module TextualFile = struct
 
 
   let verify sourcefile textual =
-    TextualVerification.verify textual
+    TextualVerification.verify_strict textual
     |> Result.map_error ~f:(fun err -> (sourcefile, [VerificationError err]))
 
 

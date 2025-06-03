@@ -13,6 +13,10 @@ val pp_error : Format.formatter -> error -> unit [@@warning "-unused-value-decla
 
 val pp_error_with_sourcefile : Textual.SourceFile.t -> Format.formatter -> error -> unit
 
-val verify : Textual.Module.t -> (Textual.Module.t, error list) result
+val verify_strict : Textual.Module.t -> (Textual.Module.t, error list) result
 (** perform verification (some basic rules, simple type checking, no duplicate declaration) and
     returns a new version (after type inference) *)
+
+val verify_keep_going : Textual.Module.t -> (Textual.Module.t * error list, error list) result
+(** same as [verify_strict], but we try to generate a filtered module that contains a subset of the
+    original input module, but pass the whole verification. *)

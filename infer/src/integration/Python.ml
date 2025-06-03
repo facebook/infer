@@ -119,7 +119,7 @@ let process_file ~is_binary file =
     if Config.debug_mode then dump_textual_file ~version:0 file textual ;
     let* verified_textual =
       let f = Error.textual_verification sourcefile in
-      TextualVerification.verify textual |> Result.map_error ~f
+      TextualVerification.verify_strict textual |> Result.map_error ~f
     in
     if Config.debug_mode then dump_textual_file ~version:1 file verified_textual ;
     let transformed_textual, decls = TextualTransform.run Python verified_textual in

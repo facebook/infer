@@ -854,7 +854,7 @@ let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : ProcDes
   (pdesc, errors)
 
 
-let run (module_ : Module.t) decls_env : (Module.t, error list) Result.t =
+let run (module_ : Module.t) decls_env : (Module.t, error list * Module.t) Result.t =
   let globals_type =
     TextualDecls.fold_globals decls_env ~init:VarName.Map.empty ~f:(fun map varname global ->
         VarName.Map.add varname global.typ map )
@@ -865,13 +865,16 @@ let run (module_ : Module.t) decls_env : (Module.t, error list) Result.t =
         | Global _ | Struct _ | Procdecl _ ->
             (decl :: decls, errors)
         | Proc pdesc ->
-            let pdesc, errors = typecheck_procdesc decls_env globals_type pdesc errors in
-            (Module.Proc pdesc :: decls, errors) )
+            let pdesc, new_errors = typecheck_procdesc decls_env globals_type pdesc errors in
+            let decls =
+              if List.length new_errors > List.length errors then decls
+              else Module.Proc pdesc :: decls
+            in
+            (decls, new_errors) )
   in
-  if List.is_empty errors then
-    let decls = List.rev decls in
-    Ok {module_ with decls}
-  else Error (List.rev errors)
+  let decls = List.rev decls in
+  let module_ = {module_ with decls} in
+  if List.is_empty errors then Ok module_ else Error (List.rev errors, module_)
 
 
 type type_check_result =
@@ -883,4 +886,8 @@ let type_check module_ =
   let decls_errors, decls_env = TextualDecls.make_decls module_ in
   if not (List.is_empty decls_errors) then Decl_errors decls_errors
   else
-    match run module_ decls_env with Ok module_ -> Ok module_ | Error errors -> Type_errors errors
+    match run module_ decls_env with
+    | Ok module_ ->
+        Ok module_
+    | Error (errors, _) ->
+        Type_errors errors
