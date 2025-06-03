@@ -185,6 +185,8 @@ module BaseTypeName : sig
   val hack_generics : t
 
   val wildcard : t
+
+  val swift_tuple_class_name : t
 end = struct
   include Name
 
@@ -197,6 +199,8 @@ end = struct
   let llvm_builtin = {value= "$builtins"; loc= Location.Unknown}
 
   let hack_generics = {value= "HackGenerics"; loc= Location.Unknown}
+
+  let swift_tuple_class_name = {value= "__infer_tuple_class"; loc= Location.Unknown}
 end
 
 module TypeName : sig
@@ -225,6 +229,8 @@ module TypeName : sig
   val hack_generics : t
 
   val wildcard : t
+
+  val swift_tuple_class_name : t
 end = struct
   module T = struct
     type t = {name: BaseTypeName.t; args: t list} [@@deriving compare, equal, hash]
@@ -259,6 +265,8 @@ end = struct
   let llvm_builtin = from_basename BaseTypeName.llvm_builtin
 
   let hack_generics = from_basename BaseTypeName.hack_generics
+
+  let swift_tuple_class_name = from_basename BaseTypeName.swift_tuple_class_name
 end
 
 module QualifiedProcName = struct
@@ -300,6 +308,11 @@ module QualifiedProcName = struct
         TypeName.equal class_name TypeName.llvm_builtin
     | TopLevel ->
         false
+
+
+  let is_llvm_init_tuple {enclosing_class; name} =
+    is_llvm_builtin {enclosing_class; name}
+    && ProcName.equal name (ProcName.of_string "llvm_init_tuple")
 
 
   let name {name} = name

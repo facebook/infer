@@ -72,6 +72,8 @@ let is_sized = function
       true
 
 
+let is_tuple = function Tuple _ -> true | _ -> false
+
 let is_int t = match t with Integer _ -> true | _ -> false
 
 let invariant t =

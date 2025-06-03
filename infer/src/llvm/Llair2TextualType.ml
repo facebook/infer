@@ -18,11 +18,9 @@ let add_struct_to_map name struct_ structMap =
 
 let field_of_pos pos = Format.asprintf "field_%s" (Int.to_string pos)
 
-let tuple_class_name = Textual.TypeName.of_string "__infer_tuple_class"
-
 let tuple_field_of_pos pos =
   let name = Format.asprintf "__infer_tuple_field_%s" (Int.to_string pos) in
-  Textual.{enclosing_class= tuple_class_name; name= FieldName.of_string name}
+  Textual.{enclosing_class= Textual.TypeName.swift_tuple_class_name; name= FieldName.of_string name}
 
 
 let rec translate_struct ?struct_map name elements =
@@ -60,8 +58,7 @@ and to_textual_typ ?struct_map (typ : Llair.Typ.t) =
   | Array {elt} ->
       Textual.Typ.Array (to_textual_typ ?struct_map elt)
   | Tuple _ ->
-      Textual.Typ.Void
-      (* TODO: give this an annonymous name and add this struct to our type definitions *)
+      Textual.Typ.(Ptr (Struct Textual.TypeName.swift_tuple_class_name))
   | Struct {name; elts} ->
       let struct_name =
         if Option.is_none struct_map then fst (translate_struct ?struct_map name elts)

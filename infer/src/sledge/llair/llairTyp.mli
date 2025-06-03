@@ -68,6 +68,8 @@ val is_sized : t -> bool
 
 val is_int : t -> bool
 
+val is_tuple : t -> bool
+
 val bit_size_of : t -> int
 (** The number of bits required to hold a value of the given type. Raises unless [is_sized] holds. *)
 

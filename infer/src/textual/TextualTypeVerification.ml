@@ -302,7 +302,9 @@ let typeof_var var : Typ.t monad =
 let typeof_field field : Typ.t monad =
  fun state ->
   match TextualDecls.get_fielddecl state.decls field with
-  | None when TypeName.equal field.enclosing_class TypeName.wildcard ->
+  | None
+    when TypeName.equal field.enclosing_class TypeName.wildcard
+         || TypeName.equal field.enclosing_class TypeName.swift_tuple_class_name ->
       ret Typ.Void state
   | None ->
       (* such an error should have been caught in TextualVerification *)
@@ -520,7 +522,12 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
             let+ exp, _typ = typeof_exp exp in
             exp )
       in
-      (Exp.Call {proc; args; kind}, TextualSil.default_return_type lang loc)
+      let return_type =
+        if Textual.QualifiedProcName.is_llvm_init_tuple proc then
+          Typ.(Ptr (Struct Textual.TypeName.swift_tuple_class_name))
+        else TextualSil.default_return_type lang loc
+      in
+      (Exp.Call {proc; args; kind}, return_type)
   | Call {proc; args; kind} ->
       let* lang = get_lang in
       let procsig = Exp.call_sig proc (List.length args) lang in

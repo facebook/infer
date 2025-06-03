@@ -6,17 +6,17 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : void {
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : *__infer_tuple_class {
   local height: int, age: int
   #: @[18:0]
       n33 = load &var0 @[18:0]
       store &age <- n33 @[18:0]
       n34 = load &var1 @[18:0]
       store &height <- n34 @[18:0]
-      n54 = $builtins.llvm_nondet() @[18:0]
-      store n54.__infer_tuple_class.__infer_tuple_field_0 <- &var0 @[19:5]
-      store n54.__infer_tuple_class.__infer_tuple_field_1 <- &var1 @[19:5]
-      ret n54 @[19:5]
+      n62 = $builtins.llvm_init_tuple() @[18:0]
+      store n62.__infer_tuple_class.__infer_tuple_field_0 <- &var0 @[19:5]
+      store n62.__infer_tuple_class.__infer_tuple_field_1 <- &var1 @[19:5]
+      ret n62 @[19:5]
       
 } @?
 
@@ -49,6 +49,19 @@ define .plain_name = "test3" $s5Hello5test3yS2iF(var0: int) : int {
       
   #3::ret: @[15:5]
       ret n3 @[15:5]
+      
+} @?
+
+define .plain_name = "test4" $s5Hello5test4Si3age_Si6heighttyF() : *__infer_tuple_class {
+  #: @[23:12]
+      n1 = $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(30, 180) @[23:12]
+      jmp 1::ret @[23:12]
+      
+  #1::ret: @[22:0]
+      n62 = $builtins.llvm_init_tuple() @[22:0]
+      store n62.__infer_tuple_class.__infer_tuple_field_0 <- n1.__infer_tuple_class.__infer_tuple_field_0 @[23:5]
+      store n62.__infer_tuple_class.__infer_tuple_field_1 <- n1.__infer_tuple_class.__infer_tuple_field_1 @[23:5]
+      ret n62 @[23:5]
       
 } @?
 

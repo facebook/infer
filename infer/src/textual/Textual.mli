@@ -87,6 +87,8 @@ module TypeName : sig
   val hack_generics : t
 
   val wildcard : t
+
+  val swift_tuple_class_name : t
 end
 
 module QualifiedProcName : sig
@@ -104,6 +106,8 @@ module QualifiedProcName : sig
   val is_python_builtin : t -> bool
 
   val is_llvm_builtin : t -> bool
+
+  val is_llvm_init_tuple : t -> bool
 
   module Hashtbl : Hashtbl.S with type key = t
 end

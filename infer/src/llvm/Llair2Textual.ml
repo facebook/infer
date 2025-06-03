@@ -164,6 +164,13 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
   Textual.ProcDecl.of_binop sil_bin_op
 
 
+let undef_exp exp =
+  L.internal_error "unsupported llair exp %a@\n" Llair.Exp.pp exp ;
+  let proc = builtin_qual_proc_name "llvm_nondet" in
+  (* TODO: should include the arguments here too *)
+  (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, None, [])
+
+
 let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
     Textual.Exp.t * Textual.Typ.t option * Textual.Instr.t list =
   let struct_map = proc_state.ProcState.struct_map in
@@ -213,16 +220,29 @@ let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
             Textual.Exp.Lvar (Textual.VarName.of_string name)
       in
       (textual_exp, Some textual_typ, [])
-  | Ap1 (Select n, Struct {name}, exp) ->
-      let typ_name = Textual.TypeName.of_string name in
-      let exp, _, exp_instrs = to_textual_exp loc ~proc_state exp in
-      ( Textual.Exp.Field
-          { exp
-          ; field=
-              { enclosing_class= typ_name
-              ; name= Textual.FieldName.of_string (Llair2TextualType.field_of_pos n) } }
-      , None
-      , exp_instrs )
+  | Ap1 (Select n, typ, exp) -> (
+      let textual_typ = Type.to_textual_typ ~struct_map typ in
+      let typ_name =
+        match typ with
+        | Struct {name} ->
+            Some (Textual.TypeName.of_string name)
+        | Tuple _ ->
+            Some Textual.TypeName.swift_tuple_class_name
+        | _ ->
+            None
+      in
+      match typ_name with
+      | None ->
+          undef_exp exp
+      | Some typ_name ->
+          let exp, _, exp_instrs = to_textual_exp loc ~proc_state exp in
+          let field =
+            if Llair.Typ.is_tuple typ then Type.tuple_field_of_pos n
+            else
+              Textual.
+                {enclosing_class= typ_name; name= Textual.FieldName.of_string (Type.field_of_pos n)}
+          in
+          (Textual.Exp.Field {exp; field}, Some textual_typ, exp_instrs) )
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
@@ -259,10 +279,7 @@ let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
       let store_instr = Textual.Instr.Store {exp1= index_exp; exp2= elt_exp; typ= None; loc} in
       (rcd_exp, Some textual_typ, List.append (List.append rcd_instrs elt_instrs) [store_instr])
   | _ ->
-      L.internal_error "unsupported llair exp %a@\n" Llair.Exp.pp exp ;
-      let proc = builtin_qual_proc_name "llvm_nondet" in
-      (* TODO: should include the arguments here too *)
-      (Call {proc; args= []; kind= NonVirtual}, None, [])
+      undef_exp exp
 
 
 let to_textual_bool_exp ~proc_state loc exp =
@@ -370,7 +387,15 @@ let cmnd_to_instrs ~proc_state block =
         in
         List.append call_textual_instrs textual_instrs
     | Nondet {reg; loc} ->
-        let call_textual_instrs = to_textual_builtin ~proc_state reg "llvm_nondet" [] loc in
+        (* llvm_init_tuple is also a nondet builtin but we return the type for tuples in the Textual to Sil translation *)
+        let builtin_name =
+          match reg with
+          | Some reg when Llair.Typ.is_tuple (Reg.typ reg) ->
+              "llvm_init_tuple"
+          | _ ->
+              "llvm_nondet"
+        in
+        let call_textual_instrs = to_textual_builtin ~proc_state reg builtin_name [] loc in
         List.append call_textual_instrs textual_instrs
     | Builtin {reg; name; args; loc} when Llair.Builtin.equal name `malloc -> (
         let proc = Textual.ProcDecl.malloc_name in

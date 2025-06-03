@@ -87,6 +87,7 @@ let verify_decl ~env errors (decl : Module.decl) =
   let verify_field errors field =
     if
       TypeName.equal field.enclosing_class TypeName.wildcard
+      || TypeName.equal field.enclosing_class TypeName.swift_tuple_class_name
       || TextualDecls.is_field_declared env field
     then errors
     else UnknownField field :: errors

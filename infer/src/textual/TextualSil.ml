@@ -692,6 +692,12 @@ module ExpBridge = struct
               ( {exp= aux exp; is_implicit= false}
               , wildcard_sil_fieldname lang field.name.value
               , SilTyp.mk SilTyp.Tvoid )
+        | None when TypeName.equal field.enclosing_class TypeName.swift_tuple_class_name ->
+            Lfield
+              ( {exp= aux exp; is_implicit= false}
+              , FieldDeclBridge.to_sil lang
+                  {FieldDecl.qualified_name= field; typ= Typ.Void; attributes= []}
+              , SilTyp.mk SilTyp.Tvoid )
         | None ->
             L.die InternalError "field %a.%a has not been declared" TypeName.pp
               field.enclosing_class FieldName.pp field.name
