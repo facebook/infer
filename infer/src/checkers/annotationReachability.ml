@@ -148,12 +148,13 @@ let lookup_annotation_calls {InterproceduralAnalysis.analyze_dependency} annot p
   |> Option.value ~default:Domain.SinkMap.empty
 
 
-let str_of_pname ?(withclass = false) pname =
+let str_of_pname ?(withclass = false) ?(full = false) pname =
   if is_dummy_field_pname pname then
     (* Get back the original field from the fake call *)
     let fieldname = fieldname_from_dummy_pname pname in
     if withclass then Fieldname.to_simplified_string fieldname
     else Fieldname.get_field_name fieldname
+  else if full then F.asprintf "%a" Procname.pp_fullname_only pname
   else Procname.to_simplified_string ~withclass pname
 
 
@@ -248,7 +249,7 @@ let start_trace proc_desc annot =
   let description =
     ( if Procname.is_constructor (Procdesc.get_proc_name proc_desc) then "Constructor "
       else "Method " )
-    ^ str_of_pname (Procdesc.get_proc_name proc_desc)
+    ^ str_of_pname (Procdesc.get_proc_name proc_desc) ~full:true
     ^ ", marked as source @" ^ annot.Annot.class_name
   in
   let loc = Procdesc.get_loc proc_desc in
@@ -262,7 +263,7 @@ let add_to_trace (call_site_info : Domain.call_site_info) end_of_stack snk_annot
     if Location.is_dummy loc then trace
     else Errlog.make_trace_element level loc description [] :: trace
   in
-  let callee_str = str_of_pname callee_pname in
+  let callee_str = str_of_pname callee_pname ~full:true in
   let call_description =
     let call_or_access = if is_dummy_field_pname callee_pname then "accesses " else "calls " in
     let inside_loop = if call_site_info.is_in_loop then " (inside a loop)" else "" in
