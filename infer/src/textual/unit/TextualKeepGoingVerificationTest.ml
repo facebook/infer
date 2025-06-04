@@ -104,6 +104,8 @@ let%expect_test _ =
 
     }
 
+    declare test2() : *int
+
 
     Veryfing the filtered module...
-    dummy.sil, line 7, column 15: SIL consistency error: function test2 which can be called with 0 arguments is not declared |}]
+    verification succeeded |}]

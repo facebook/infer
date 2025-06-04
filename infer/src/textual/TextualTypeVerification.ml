@@ -865,9 +865,11 @@ let run (module_ : Module.t) decls_env : (Module.t, error list * Module.t) Resul
         | Global _ | Struct _ | Procdecl _ ->
             (decl :: decls, errors)
         | Proc pdesc ->
-            let pdesc, new_errors = typecheck_procdesc decls_env globals_type pdesc errors in
+            let ({ProcDesc.procdecl} as pdesc), new_errors =
+              typecheck_procdesc decls_env globals_type pdesc errors
+            in
             let decls =
-              if List.length new_errors > List.length errors then decls
+              if List.length new_errors > List.length errors then Module.Procdecl procdecl :: decls
               else Module.Proc pdesc :: decls
             in
             (decls, new_errors) )
