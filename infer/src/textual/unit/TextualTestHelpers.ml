@@ -45,3 +45,28 @@ let type_check module_ =
       F.printf "verification succeeded@\n"
   | Error errs ->
       List.iter errs ~f:(F.printf "%a@\n" (TextualVerification.pp_error_with_sourcefile sourcefile))
+
+
+let parse_string_and_verify_keep_going text =
+  let pp = Textual.Module.pp ~show_location:false in
+  let map_error err = [TextualParser.VerificationError err] in
+  (let open IResult.Let_syntax in
+   let* module_ = TextualParser.parse_string sourcefile text in
+   TextualVerification.verify_keep_going module_ |> Result.map_error ~f:map_error )
+  |> function
+  | Ok (textual, []) ->
+      F.printf "verification succeeded - no warnings@\n------@\n%a@\n" pp textual ;
+      F.printf "Veryfing the transformed module...@\n" ;
+      type_check textual
+  | Ok (textual, errors) ->
+      F.printf "verification succeeded - %d warnings@\n------@\n" (List.length errors) ;
+      List.iter errors
+        ~f:
+          (F.printf "%a@\n"
+             (TextualVerification.pp_error_with_sourcefile textual.Module.sourcefile) ) ;
+      F.printf "------@\n%a@\n" pp textual ;
+      F.printf "Veryfing the filtered module...@\n" ;
+      type_check textual
+  | Error errors ->
+      F.printf "verification failed - %d errors@\n------@\n" (List.length errors) ;
+      List.iter errors ~f:(F.printf "%a@\n" (TextualParser.pp_error sourcefile))
