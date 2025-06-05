@@ -57,6 +57,7 @@ depends: [
   "iter" {= "1.9"}
   "jane-street-headers" {= "v0.16.0"}
   "javalib" {= "3.2.2"}
+  "js_of_ocaml-compiler" {= "5.9.1"}
   "jst-config" {= "v0.16.0"}
   "lambda-term" {= "3.3.2"}
   "logs" {= "0.8.0"}

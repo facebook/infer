@@ -55,6 +55,7 @@ depends: [
   "ocamlbuild" {= "0.15.0"}
   "ocamlfind" {= "1.9.8"}
   "ocamlformat-lib" {= "0.26.2"}
+  "ocamlformat-rpc-lib" {= "0.27.0" & with-test}
   "ocp-indent" {= "1.8.1"}
   "re" {= "1.12.0"}
   "result" {= "1.5"}
