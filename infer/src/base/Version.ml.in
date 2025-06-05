@@ -63,4 +63,6 @@ let python_next_exe = "@PYTHONNEXT@"
 
 let python_enabled = is_yes "@BUILD_PYTHON_ANALYZERS@"
 
+let rust_enabled = is_yes "@BUILD_RUST_ANALYZERS@"
+
 let swift_enabled = is_yes "@BUILD_SWIFT_ANALYZERS@"

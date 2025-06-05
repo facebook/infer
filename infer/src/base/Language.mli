@@ -7,7 +7,8 @@
 
 open! IStd
 
-type t = Clang | CIL | Erlang | Hack | Java | Python | Swift [@@deriving compare, enumerate]
+type t = Clang | CIL | Erlang | Hack | Java | Python | Rust | Swift
+[@@deriving compare, enumerate]
 
 val equal : t -> t -> bool
 

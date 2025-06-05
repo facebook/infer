@@ -35,6 +35,7 @@ type mode =
   | Python of {prog: string; args: string list}
   | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
+  | Rust of {prog: string; args: string list}
   | Swiftc of {prog: string; args: string list}
   | Textual of {textualfiles: string list}
   | XcodeBuild of {prog: string; args: string list}
@@ -43,7 +44,7 @@ type mode =
 let is_analyze_mode = function Analyze -> true | _ -> false
 
 let is_compatible_with_textual_generation = function
-  | Javac _ | Llair _ | Python _ | PythonBytecode _ | LLVMBitcode _ | Swiftc _ ->
+  | Javac _ | Llair _ | Python _ | PythonBytecode _ | LLVMBitcode _ | Rust _ | Swiftc _ ->
       true
   | _ ->
       false
@@ -92,6 +93,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Python driver mode:@\nfiles = '%a'" Pp.cli_args files
   | Rebar3 {args} ->
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
+  | Rust {prog; args} ->
+      F.fprintf fmt "Rust driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | Swiftc {prog; args} ->
       F.fprintf fmt "Swift driver mode:@\nprog = '%s' args = %a" prog Pp.cli_args args
   | Erlc {args} ->
@@ -213,6 +216,9 @@ let capture ~changed_files mode =
       | Rebar3 {args} ->
           L.progress "Capturing in rebar3 mode...@." ;
           Erlang.capture ~command:"rebar3" ~args
+      | Rust {prog; args} ->
+          L.progress "Capturing in rust mode...@." ;
+          Rust.capture prog args
       | Swiftc {prog; args} ->
           L.progress "Capturing in swift mode...@." ;
           Bitcode.capture Swiftc ~command:prog ~args
@@ -380,6 +386,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
         Version.hack_enabled
     | `Python ->
         Version.python_enabled
+    | `Rust ->
+        Version.rust_enabled
     | `Swift ->
         Version.swift_enabled
     | `Xcode ->
@@ -400,6 +408,8 @@ let assert_supported_mode required_analyzer requested_mode_string =
           "hack"
       | `Python ->
           "python"
+      | `Rust ->
+          "rust"
       | `Swift ->
           "swift"
       | `Xcode ->
@@ -434,6 +444,8 @@ let assert_supported_build_system build_system =
       Config.string_of_build_system build_system |> assert_supported_mode `Hack
   | BPython ->
       Config.string_of_build_system build_system |> assert_supported_mode `Python
+  | BRust ->
+      Config.string_of_build_system build_system |> assert_supported_mode `Rust
   | BXcode ->
       Config.string_of_build_system build_system |> assert_supported_mode `Xcode
   | BBuck2 ->
@@ -538,6 +550,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
           Hackc {prog; args}
       | BPython ->
           Python {prog; args}
+      | BRust ->
+          Rust {prog; args}
       | BXcode when Config.xcpretty ->
           XcodeXcpretty {prog; args}
       | BXcode ->

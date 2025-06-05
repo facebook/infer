@@ -41,6 +41,8 @@ let pp_exp fmt exp =
       L.die InternalError "Hack not supported"
   | Python ->
       L.die InternalError "Python not supported"
+  | Rust ->
+      L.die InternalError "Rust not supported"
   | Swift ->
       L.die InternalError "Swift not supported"
 

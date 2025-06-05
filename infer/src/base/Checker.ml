@@ -42,8 +42,8 @@ type t =
 type support = NoSupport | ExperimentalSupport | Support
 
 let mk_support_func ?(clang = NoSupport) ?(java = NoSupport) ?(csharp = NoSupport)
-    ?(erlang = NoSupport) ?(hack = NoSupport) ?(python = NoSupport) ?(swift = NoSupport) () :
-    Language.t -> support = function
+    ?(erlang = NoSupport) ?(hack = NoSupport) ?(python = NoSupport) ?(rust = NoSupport)
+    ?(swift = NoSupport) () : Language.t -> support = function
   | Clang ->
       clang
   | Java ->
@@ -56,6 +56,8 @@ let mk_support_func ?(clang = NoSupport) ?(java = NoSupport) ?(csharp = NoSuppor
       hack
   | Python ->
       python
+  | Rust ->
+      rust
   | Swift ->
       swift
 
@@ -252,7 +254,8 @@ let config_unsafe checker =
       { id= "pulse"
       ; kind= UserFacing {title= "Pulse"; markdown_body= [%blob "./documentation/checkers/Pulse.md"]}
       ; support=
-          mk_support_func ~clang:Support ~java:Support ~erlang:ExperimentalSupport ~hack:Support ()
+          mk_support_func ~clang:Support ~java:Support ~erlang:ExperimentalSupport ~hack:Support
+            ~rust:ExperimentalSupport ()
       ; short_documentation= "General-purpose memory and value analysis engine."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true

@@ -28,6 +28,7 @@ type build_system =
   | BNdk
   | BPython
   | BRebar3
+  | BRust
   | BSwiftc
   | BXcode
 

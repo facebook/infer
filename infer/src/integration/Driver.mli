@@ -34,6 +34,7 @@ type mode =
   | Python of {prog: string; args: string list}
   | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
+  | Rust of {prog: string; args: string list}
   | Swiftc of {prog: string; args: string list}
   | Textual of {textualfiles: string list}
   | XcodeBuild of {prog: string; args: string list}
