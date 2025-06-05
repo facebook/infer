@@ -6,14 +6,14 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : void {
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : *__infer_tuple_class {
   local height: int, age: int
   #: @[18:0]
       n33 = load &var0 @[18:0]
       store &age <- n33 @[18:0]
       n34 = load &var1 @[18:0]
       store &height <- n34 @[18:0]
-      n54 = $builtins.llvm_nondet() @[18:0]
+      n54 = $builtins.llvm_init_tuple() @[18:0]
       store n54.__infer_tuple_class.__infer_tuple_field_0 <- &var0 @[19:5]
       store n54.__infer_tuple_class.__infer_tuple_field_1 <- &var1 @[19:5]
       ret n54 @[19:5]
