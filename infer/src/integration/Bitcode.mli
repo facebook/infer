@@ -12,3 +12,5 @@ type compiler = Clang | Swiftc
 val capture : compiler -> command:string -> args:string list -> unit
 
 val capture_llair : source_file:string -> llair_file:string -> unit
+
+val direct_bitcode_capture : sources:string list -> bitcode:string -> unit

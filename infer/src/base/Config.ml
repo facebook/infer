@@ -1939,6 +1939,18 @@ and llair_source_file =
      $(b,--capture-llair)."
 
 
+and llvm_bitcode_file =
+  CLOpt.mk_string_opt ~long:"llvm-bitcode-file"
+    "[EXPERIMENTAL] Use llvm frontend to directly capture the give bitcode file"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+
+
+and llvm_bitcode_sources =
+  CLOpt.mk_string_list ~long:"llvm-bitcode-source"
+    "[EXPERIMENTAL] Specify source files for llvm bitcode capture"
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+
+
 and lock_model =
   CLOpt.mk_json ~long:"lock-model"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -4230,6 +4242,10 @@ and liveness_dangerous_classes = !liveness_dangerous_classes
 and liveness_ignored_constant = RevList.to_list !liveness_ignored_constant
 
 and llair_source_file = !llair_source_file
+
+and llvm_bitcode_file = !llvm_bitcode_file
+
+and llvm_bitcode_sources = RevList.to_list !llvm_bitcode_sources
 
 and lock_model = !lock_model
 

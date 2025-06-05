@@ -5,12 +5,12 @@
 
 TESTS_DIR=../../..
 
-SWIFT_OPTIONS =
-INFER_OPTIONS =
+SWIFT_OPTIONS = -emit-bc
+INFER_OPTIONS = --frontend-tests --dump-textual --project-root $(TESTS_DIR)
 
 SOURCES = $(wildcard *.swift)
 
-CLEAN_EXTRA = $(foreach source,$(SOURCES),$(basename $(notdir $(source))).o)
+CLEAN_EXTRA = *.o *.test.sil
 
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/swift-base.make
@@ -19,10 +19,10 @@ include $(TESTS_DIR)/swift-base.make
 
 default: test
 
-%.test.sil: %.swift $(SWIFT_DEPS) $(HEADERS)
-	$(QUIET)$(call silent_on_success,Testing the infer/swift frontend in $(TEST_REL_DIR),\
-	  $(INFER_BIN) capture --frontend-tests --dump-textual --project-root $(TESTS_DIR) $(INFER_OPTIONS) -- \
-	    $(SWIFTC) $(SWIFT_OPTIONS) $<)
+%.test.sil: %.swift %.o
+	$(QUIET)$(call silent_on_success,Testing direct bitcode capture in $(TEST_REL_DIR),\
+	  $(INFER_BIN) capture $(INFER_OPTIONS) --llvm-bitcode-file $*.o --llvm-bitcode-source $*.swift )
+
 
 capture: $(SOURCES:.swift=.test.sil)
 

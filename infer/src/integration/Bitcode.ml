@@ -11,13 +11,11 @@ module L = Logging
 
 type compiler = Clang | Swiftc
 
-let run_llvm_frontend source_file llvm_bitcode = LlvmFrontend.capture source_file llvm_bitcode
-
-let run_llvm_frontend source_file llvm_bitcode =
+let run_llvm_frontend ~sources llvm_bitcode_in =
   PerfEvent.(
     log (fun logger ->
         PerfEvent.log_begin_event logger ~categories:["frontend"] ~name:"llvm frontend" () ) ) ;
-  run_llvm_frontend source_file llvm_bitcode ;
+  LlvmFrontend.capture ~sources llvm_bitcode_in ;
   PerfEvent.(log (fun logger -> PerfEvent.log_end_event logger ()))
 
 
@@ -59,7 +57,7 @@ let llvm_capture ~compiler command args =
   in
   L.debug Capture Quiet "@\n*** Beginning capture of file %s ***@\n" source_path ;
   let cmd = String.concat ~sep:" " cmd in
-  run_cmd cmd (fun chan_in -> run_llvm_frontend source_path chan_in)
+  run_cmd cmd (fun chan_in -> run_llvm_frontend ~sources:[source_path] chan_in)
 
 
 let capture compiler ~command ~args =
@@ -72,3 +70,7 @@ let capture_llair ~source_file ~llair_file =
   Utils.with_file_in llair_file ~f:(fun llair_in ->
       let llair_program : Llair.program = Marshal.from_channel llair_in in
       LlvmFrontend.capture_llair source_file llair_program )
+
+
+let direct_bitcode_capture ~sources ~bitcode =
+  Utils.with_file_in bitcode ~f:(fun llvm_bitcode -> LlvmFrontend.capture ~sources llvm_bitcode)

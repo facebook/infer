@@ -28,6 +28,7 @@ type mode =
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Kotlinc of {prog: string; args: string list}
   | Llair of {source_file: string; llair_file: string}
+  | LLVMBitcode of {bitcode: string; sources: string list}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Python of {prog: string; args: string list}

@@ -29,6 +29,7 @@ type mode =
   | JsonSIL of {cfg_json: string; tenv_json: string}
   | Kotlinc of {prog: string; args: string list}
   | Llair of {source_file: string; llair_file: string}
+  | LLVMBitcode of {bitcode: string; sources: string list}
   | Maven of {prog: string; args: string list}
   | NdkBuild of {build_cmd: string list}
   | Python of {prog: string; args: string list}
@@ -42,7 +43,7 @@ type mode =
 let is_analyze_mode = function Analyze -> true | _ -> false
 
 let is_compatible_with_textual_generation = function
-  | Javac _ | Llair _ | Python _ | PythonBytecode _ | Swiftc _ ->
+  | Javac _ | Llair _ | Python _ | PythonBytecode _ | LLVMBitcode _ | Swiftc _ ->
       true
   | _ ->
       false
@@ -76,6 +77,9 @@ let pp_mode fmt = function
   | Llair {source_file; llair_file} ->
       F.fprintf fmt "Llair driver mode:@\nsource_file = '%s'@\nllair_file = '%s'" source_file
         llair_file
+  | LLVMBitcode {bitcode; sources} ->
+      F.fprintf fmt "Swift bitcode driver mode:@\nbitcode = '%s' sources = %a" bitcode Pp.cli_args
+        sources
   | JsonSIL {cfg_json; tenv_json} ->
       F.fprintf fmt "Json driver mode:@\ncfg_json= '%s'@\ntenv_json = %s" cfg_json tenv_json
   | Maven {prog; args} ->
@@ -188,6 +192,9 @@ let capture ~changed_files mode =
       | Llair {source_file; llair_file} ->
           L.progress "Capturing llair program...@." ;
           Bitcode.capture_llair ~source_file ~llair_file
+      | LLVMBitcode {bitcode; sources} ->
+          L.progress "Capturing LLVM bitcode...@." ;
+          Bitcode.direct_bitcode_capture ~bitcode ~sources
       | JsonSIL {cfg_json; tenv_json} ->
           L.progress "Capturing using JSON mode...@." ;
           CaptureSILJson.capture ~cfg_json ~tenv_json
@@ -539,8 +546,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
 
 let mode_from_command_line =
   lazy
-    ( match Config.generated_classes with
-    | _ when Config.infer_is_clang ->
+    ( match (Config.generated_classes, Config.llvm_bitcode_file) with
+    | _, _ when Config.infer_is_clang ->
         let prog, args =
           match Array.to_list (Sys.get_argv ()) with
           | prog :: args ->
@@ -550,15 +557,17 @@ let mode_from_command_line =
           (* Sys.argv is never empty *)
         in
         Clang {compiler= Clang.Clang; prog; args}
-    | _ when Config.infer_is_javac ->
+    | _, _ when Config.infer_is_javac ->
         let build_args =
           match Array.to_list (Sys.get_argv ()) with _ :: args -> args | [] -> []
         in
         Javac {compiler= Javac.Javac; prog= "javac"; args= build_args}
-    | Some path ->
+    | Some path, _ ->
         assert_supported_mode `Java "Buck genrule" ;
         BuckGenrule {prog= path}
-    | None ->
+    | _, Some bitcode ->
+        LLVMBitcode {bitcode; sources= Config.llvm_bitcode_sources}
+    | None, _ ->
         mode_of_build_command Config.rest Config.buck_mode )
 
 

@@ -118,9 +118,10 @@ let dump_llair llair_program source_file =
   marshal llair_program output_file
 
 
-let capture source_file llvm_bitcode_in =
+let capture ~sources llvm_bitcode_in =
   let llvm_program = In_channel.input_all llvm_bitcode_in in
   let llair_program = LlvmSledgeFrontend.translate llvm_program in
-  if Config.dump_llair then dump_llair llair_program source_file ;
-  if Config.dump_llair_text then dump_llair_text llair_program source_file ;
-  capture_llair source_file llair_program
+  List.iter sources ~f:(fun source_file ->
+      if Config.dump_llair then dump_llair llair_program source_file ;
+      if Config.dump_llair_text then dump_llair_text llair_program source_file ;
+      capture_llair source_file llair_program )

@@ -93,6 +93,13 @@ OPTIONS
            Activates: Keep going when the analysis or capture encounter a
            failure (Conversely: --no-keep-going)
 
+       --llvm-bitcode-file string
+           [EXPERIMENTAL] Use llvm frontend to directly capture the give
+           bitcode file
+
+       --llvm-bitcode-source +string
+           [EXPERIMENTAL] Specify source files for llvm bitcode capture
+
        --mark-unchanged-procs
            Activates: Check structural identity of newly-captured procedures
            with previously-captured versions, marking the new procedure as

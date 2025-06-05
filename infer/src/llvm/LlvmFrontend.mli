@@ -7,6 +7,6 @@
 
 open! IStd
 
-val capture : string -> In_channel.t -> unit
+val capture : sources:string list -> In_channel.t -> unit
 
 val capture_llair : string -> Llair.program -> unit

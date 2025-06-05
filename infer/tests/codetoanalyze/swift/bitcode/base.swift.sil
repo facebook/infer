@@ -1,0 +1,68 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : void {
+  local height: int, age: int
+  #: @[18:0]
+      n33 = load &var0 @[18:0]
+      store &age <- n33 @[18:0]
+      n34 = load &var1 @[18:0]
+      store &height <- n34 @[18:0]
+      n54 = $builtins.llvm_nondet() @[18:0]
+      store n54.__infer_tuple_class.__infer_tuple_field_0 <- &var0 @[19:5]
+      store n54.__infer_tuple_class.__infer_tuple_field_1 <- &var1 @[19:5]
+      ret n54 @[19:5]
+      
+} @?
+
+define .plain_name = "test1" $s5Hello5test1yS2iF(var0: int) : int {
+  local n: int
+  #: @[6:0]
+      n7 = load &var0 @[6:0]
+      store &n <- n7 @[6:0]
+      ret &var0 @[7:5]
+      
+} @?
+
+define .plain_name = "test2" $s5Hello5test2SiyF() : int {
+  #: @[11:12]
+      n1 = $s5Hello9returnOneSiyF() @[11:12]
+      jmp 1::ret @[11:12]
+      
+  #1::ret: @[11:5]
+      ret n1 @[11:5]
+      
+} @?
+
+define .plain_name = "test3" $s5Hello5test3yS2iF(var0: int) : int {
+  local n: int
+  #: @[14:0]
+      n24 = load &var0 @[14:0]
+      store &n <- n24 @[14:0]
+      n3 = $s5Hello5test1yS2iF(&var0) @[15:12]
+      jmp 3::ret @[15:12]
+      
+  #3::ret: @[15:5]
+      ret n3 @[15:5]
+      
+} @?
+
+define .plain_name = "returnOne" $s5Hello9returnOneSiyF() : int {
+  #: @[3:5]
+      ret 1 @[3:5]
+      
+} @?
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : void
+
+global llvm::used: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
+
+global __swift_reflection_version: *ptr_elt
+

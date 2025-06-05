@@ -471,6 +471,10 @@ val liveness_ignored_constant : string list
 
 val llair_source_file : string option
 
+val llvm_bitcode_file : string option
+
+val llvm_bitcode_sources : string list
+
 val lock_model : Yojson.Safe.t
 
 val log_pulse_disjunct_increase_after_model_call : bool

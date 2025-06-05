@@ -1,0 +1,78 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+define .plain_name = "main" $s5Hello4mainyyF() : void {
+  #: @[5:1]
+      ret null @[5:1]
+      
+} @?
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : void
+
+declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : void
+
+declare _swift_FORCE_LOAD_$_swiftDarwin() : void
+
+declare _swift_FORCE_LOAD_$_swiftDispatch() : void
+
+declare _swift_FORCE_LOAD_$_swiftFoundation() : void
+
+declare _swift_FORCE_LOAD_$_swiftObjectiveC() : void
+
+declare _swift_FORCE_LOAD_$_swiftXPC() : void
+
+declare _swift_FORCE_LOAD_$_swift_Builtin_float() : void
+
+declare _swift_FORCE_LOAD_$_swift_errno() : void
+
+declare _swift_FORCE_LOAD_$_swift_math() : void
+
+declare _swift_FORCE_LOAD_$_swift_signal() : void
+
+declare _swift_FORCE_LOAD_$_swift_stdio() : void
+
+declare _swift_FORCE_LOAD_$_swift_time() : void
+
+declare _swift_FORCE_LOAD_$_swiftsys_time() : void
+
+declare _swift_FORCE_LOAD_$_swiftunistd() : void
+
+global llvm::used: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftunistd_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftsys_time_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swift_time_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swift_stdio_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swift_signal_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swift_math_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swift_errno_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swift_Builtin_float_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftXPC_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftObjectiveC_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftFoundation_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftDispatch_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftDarwin_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
+
+global __swift_reflection_version: *ptr_elt
+

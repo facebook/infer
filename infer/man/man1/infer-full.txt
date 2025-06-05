@@ -1129,6 +1129,15 @@ OPTIONS
            (Conversely: --no-liveness-only)
            See also infer-analyze(1).
 
+       --llvm-bitcode-file string
+           [EXPERIMENTAL] Use llvm frontend to directly capture the give
+           bitcode file
+           See also infer-capture(1).
+
+       --llvm-bitcode-source +string
+           [EXPERIMENTAL] Specify source files for llvm bitcode capture
+           See also infer-capture(1).
+
        --lock-model json
            Specify custom lock models for starvation analysis.
            Example for pthreads (already included in infer):
@@ -2881,6 +2890,12 @@ INTERNAL OPTIONS
 
        --llair-source-file-reset
            Cancel the effect of --llair-source-file.
+
+       --llvm-bitcode-file-reset
+           Cancel the effect of --llvm-bitcode-file.
+
+       --llvm-bitcode-source-reset
+           Set --llvm-bitcode-source to the empty list.
 
        --margin int
            Set right margin for the pretty printing functions
