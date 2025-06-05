@@ -588,15 +588,7 @@ let allocate allocator location addr astate =
 
 let is_allocated addr astate = AddressAttributes.get_allocation_attr addr astate |> Option.is_some
 
-let is_allocated_with_awaitable addr astate =
-  match AddressAttributes.get_allocation_attr addr astate with
-  | Some (Awaitable, _) ->
-      true
-  | _ ->
-      false
-
-
-let is_awaited_awaitable addr astate = AddressAttributes.is_awaited_awaitable addr astate
+let get_unawaited_awaitable addr astate = AddressAttributes.get_unawaited_awaitable addr astate
 
 let java_resource_release ~recursive address astate =
   let if_valid_access_then_eval addr access astate =

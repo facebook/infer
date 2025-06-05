@@ -37,6 +37,8 @@ module type S = sig
 
   val await_awaitable : key -> t -> t
 
+  val get_unawaited_awaitable : key -> t -> Trace.t option
+
   val remove_hack_builder : key -> t -> t
 
   val set_hack_builder : key -> Attribute.Builder.t -> t -> t
@@ -98,8 +100,6 @@ module type S = sig
   val get_written_to : key -> t -> (Timestamp.t * Trace.t) option
 
   val std_vector_reserve : key -> t -> t
-
-  val is_awaited_awaitable : key -> t -> bool
 
   val is_java_resource_released : key -> t -> bool
 

@@ -239,7 +239,7 @@ module AddressAttributes : sig
   val get_hack_builder : AbstractValue.t -> t -> Attribute.Builder.t option
   [@@warning "-unused-value-declaration"]
 
-  val is_awaited_awaitable : AbstractValue.t -> t -> bool
+  val get_unawaited_awaitable : AbstractValue.t -> t -> Trace.t option
 
   val is_java_resource_released : AbstractValue.t -> t -> bool
 

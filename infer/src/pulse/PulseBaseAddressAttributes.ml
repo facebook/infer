@@ -311,10 +311,6 @@ let is_end_of_collection address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_end_of_collection
 
 
-let is_awaited_awaitable adress attrs =
-  Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_awaited_awaitable
-
-
 let is_java_resource_released adress attrs =
   Graph.find_opt adress attrs |> Option.exists ~f:Attributes.is_java_resource_released
 
@@ -333,6 +329,12 @@ let is_std_moved address attrs =
 
 let is_std_vector_reserved address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_std_vector_reserved
+
+
+let get_unawaited_awaitable address attrs =
+  let open IOption.Let_syntax in
+  let* allocator, trace = get_attribute Attributes.get_allocated_not_freed address attrs in
+  match allocator with Attribute.Awaitable -> Some trace | _ -> None
 
 
 let get_last_lookup address attrs = get_attribute Attributes.get_last_lookup address attrs
@@ -410,6 +412,8 @@ module type S = sig
 
   val await_awaitable : key -> t -> t
 
+  val get_unawaited_awaitable : key -> t -> Trace.t option
+
   val remove_hack_builder : key -> t -> t
 
   val set_hack_builder : key -> Attribute.Builder.t -> t -> t
@@ -471,8 +475,6 @@ module type S = sig
   val get_written_to : key -> t -> (Timestamp.t * Trace.t) option
 
   val std_vector_reserve : key -> t -> t
-
-  val is_awaited_awaitable : key -> t -> bool
 
   val is_java_resource_released : key -> t -> bool
 

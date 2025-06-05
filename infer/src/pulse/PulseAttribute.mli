@@ -219,8 +219,6 @@ module Attributes : sig
 
   val is_java_resource_released : t -> bool
 
-  val is_awaited_awaitable : t -> bool
-
   val get_hack_builder : t -> Builder.t option
 
   val remove_hack_builder : t -> t
