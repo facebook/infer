@@ -243,6 +243,20 @@ class C:
         await self._async_private_instance_method()
 
 
+async def iter_arg_bad(f):
+    iter = async_fun()
+    for i in iter:
+        f(i)
+    return iter
+
+
+async def iter_arg_ok(f):
+    iter = await async_fun()
+    for i in iter:
+        f(i)
+    return iter
+
+
 def main_ok():
     asyncio.run(sleep(10))
 

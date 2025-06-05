@@ -495,6 +495,11 @@ module Syntax = struct
     report (AssertionError {location})
 
 
+  let report_unawaited_awaitable allocation_trace : unit model_monad =
+    let* {location} = get_data in
+    report (ResourceLeak {resource= Awaitable; allocation_trace; location})
+
+
   let and_dynamic_type_is (v, _) t : unit model_monad =
     PulseArithmetic.and_dynamic_type_is v t |> exec_partial_command
 

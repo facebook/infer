@@ -1346,6 +1346,20 @@ let unknown ~deep_release args () : unit DSL.model_monad =
   assign_ret res
 
 
+let get_iter arg () : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* res = fresh () in
+  let* opt_allocation_trace = get_unawaited_awaitable arg in
+  let* () =
+    match opt_allocation_trace with
+    | None ->
+        ret ()
+    | Some allocation_trace ->
+        report_unawaited_awaitable allocation_trace
+  in
+  assign_ret res
+
+
 let yield value () : unit DSL.model_monad =
   let open DSL.Syntax in
   remove_allocation_attr_transitively [value]
@@ -1559,7 +1573,10 @@ let builtins_matcher builtin args =
   | GetAwaitable ->
       let arg1 = expect_1_arg () in
       get_awaitable arg1
-  | GetIter | GetLen | GetPreviousException ->
+  | GetIter ->
+      let arg = expect_1_arg () in
+      get_iter arg
+  | GetLen | GetPreviousException ->
       unknown ~deep_release:false args
   | GetYieldFromIter | HasNextIter ->
       unknown ~deep_release:true args

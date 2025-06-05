@@ -47,6 +47,8 @@ module Syntax : sig
 
   val report_assert_error : unit model_monad
 
+  val report_unawaited_awaitable : Trace.t -> unit model_monad
+
   val list_fold :
     'a list -> init:'accum -> f:('accum -> 'a -> 'accum model_monad) -> 'accum model_monad
 
@@ -118,6 +120,8 @@ module Syntax : sig
   val is_allocated : aval -> bool model_monad
 
   val is_unawaited_awaitable : aval -> bool model_monad
+
+  val get_unawaited_awaitable : aval -> Trace.t option model_monad
 
   val data_dependency : ValueOrigin.t -> ValueOrigin.t list -> unit model_monad
 
