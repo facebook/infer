@@ -20,3 +20,17 @@ function basicFlowBad(): void {
 function basicFlowOk(int $untainted): void {
   taintSink($untainted);
 }
+
+function basicFlowWithStringCastBad(): void {
+  $tainted = taintSource();
+  taintSink((string)$tainted);
+}
+
+function callSinkWithStringCast(mixed $args): void {
+  taintSink((string)$args);
+}
+
+function fnBasicFlowWithStringCastIndirectBad(): void {
+  $tainted = taintSource();
+  callSinkWithStringCast($tainted);
+}

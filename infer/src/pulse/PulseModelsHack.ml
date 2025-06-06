@@ -1556,19 +1556,21 @@ let hhbc_cast_string arg : model =
   start_model
   @@ fun () ->
   let* dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
-  match dynamic_type_data with
-  | Some {Formula.typ= {Typ.desc= Tstruct typ_name}}
-    when Typ.Name.equal typ_name hack_string_type_name ->
-      assign_ret arg
-  | Some _ ->
-      (* note: we do not model precisely the value returned by __toString() *)
-      let* rv = make_hack_string "__infer_hack_generated_from_cast_string" in
-      (* note: we do not model the case where __toString() is not implemented *)
-      assign_ret rv
-  | _ ->
-      (* hopefully we will come back later with a dynamic type thanks to specialization *)
-      let* rv = fresh () in
-      assign_ret rv
+  let* res =
+    match dynamic_type_data with
+    | Some {Formula.typ= {Typ.desc= Tstruct typ_name}}
+      when Typ.Name.equal typ_name hack_string_type_name ->
+        ret arg
+    | Some _ ->
+        (* note: we do not model precisely the value returned by __toString() *)
+        make_hack_string "__infer_hack_generated_from_cast_string"
+        (* note: we do not model the case where __toString() is not implemented *)
+    | _ ->
+        (* hopefully we will come back later with a dynamic type thanks to specialization *)
+        fresh ()
+  in
+  let* res_with_taint_info = propagate_taint_attribute arg res in
+  assign_ret res_with_taint_info
 
 
 let hhbc_concat arg1 arg2 : model =
