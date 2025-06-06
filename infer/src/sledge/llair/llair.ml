@@ -243,8 +243,8 @@ let pp_inst fs inst =
   match inst with
   | Move {reg_exps; loc} ->
       let regs, exps = IArray.split reg_exps in
-      pf "@[<2>@[%a@]@ := @[%a@];@]\t%a" (IArray.pp ",@ " Reg.pp) regs (IArray.pp ",@ " Exp.pp) exps
-        Loc.pp loc
+      pf "@[<2>move @[%a@]@ := @[%a@];@]\t%a" (IArray.pp ",@ " Reg.pp) regs (IArray.pp ",@ " Exp.pp)
+        exps Loc.pp loc
   | Load {reg; ptr; len; loc} ->
       pf "@[<2>%a@ := load %a@ %a;@]\t%a" Reg.pp reg Exp.pp len Exp.pp ptr Loc.pp loc
   | Store {ptr; exp; len; loc} ->

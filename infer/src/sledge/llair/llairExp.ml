@@ -192,8 +192,8 @@ module T = struct
         pf "((%a)(%a)@ %a)" LlairTyp.pp dst LlairTyp.pp src pp arg
     | Ap1 (Splat, _, byt) ->
         pf "%a^" pp byt
-    | Ap1 (Select idx, _, rcd) ->
-        pf "%a[%i]" pp rcd idx
+    | Ap1 (Select idx, typ, rcd) ->
+        pf "%a[%i]:%a" pp rcd idx LlairTyp.pp typ
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Ap2 (Xor, _, Integer {data}, x) when Z.is_true data ->
