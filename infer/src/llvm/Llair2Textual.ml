@@ -166,6 +166,24 @@ let undef_exp exp =
   (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, None, [])
 
 
+let add_deref ~proc_state exp loc =
+  match exp with
+  | Textual.Exp.Lvar _ ->
+      let id = ProcState.mk_fresh_id proc_state in
+      let instr = Textual.Instr.Load {id; exp; typ= None; loc} in
+      ([instr], Textual.Exp.Var id)
+  | _ ->
+      ([], exp)
+
+
+let field_deref_exp exp field =
+  match exp with
+  | Textual.Exp.Lvar _ ->
+      Textual.Exp.(Field {exp= Load {exp; typ= None}; field})
+  | _ ->
+      Textual.Exp.(Field {exp; field})
+
+
 let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
     Textual.Exp.t * Textual.Typ.t option * Textual.Instr.t list =
   let struct_map = proc_state.ProcState.struct_map in
@@ -237,7 +255,8 @@ let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
               Textual.
                 {enclosing_class= typ_name; name= Textual.FieldName.of_string (Type.field_of_pos n)}
           in
-          (Textual.Exp.Field {exp; field}, Some textual_typ, exp_instrs) )
+          let exp = field_deref_exp exp field in
+          (exp, Some textual_typ, exp_instrs) )
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
@@ -269,9 +288,13 @@ let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
   | Ap2 (Update idx, typ, rcd, elt) ->
       let rcd_exp, _, rcd_instrs = to_textual_exp loc ~proc_state rcd in
       let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state elt in
+      let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
+      let elt_instrs = List.append elt_instrs elt_deref_instrs in
       let textual_typ = Type.to_textual_typ ~struct_map typ in
       let index_exp = Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos idx} in
-      let store_instr = Textual.Instr.Store {exp1= index_exp; exp2= elt_exp; typ= None; loc} in
+      let store_instr =
+        Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
+      in
       (rcd_exp, Some textual_typ, List.append (List.append rcd_instrs elt_instrs) [store_instr])
   | _ ->
       undef_exp exp
@@ -359,7 +382,7 @@ let cmnd_to_instrs ~proc_state block =
               let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= None; loc} in
               (new_exp2, exp2_instrs_ @ [exp2_instr])
           | _ ->
-              (exp2, [])
+              (exp2, exp2_instrs_)
         in
         let exp1, _, exp1_instrs = to_textual_exp loc ~proc_state ptr in
         Option.map
@@ -424,12 +447,13 @@ let cmnd_to_instrs ~proc_state block =
         let reg_exps = StdUtils.iarray_to_list reg_exps in
         let loc = to_textual_loc_instr ~proc_state loc in
         let instrs =
-          List.map
-            ~f:(fun (reg, exp) ->
+          List.fold
+            ~f:(fun instrs (reg, exp) ->
               let id = Some (reg_to_id ~proc_state reg) in
-              let exp = to_textual_exp loc ~proc_state exp |> fst3 in
-              Textual.Instr.Let {id; exp; loc} )
-            reg_exps
+              let exp, _, exp_instrs = to_textual_exp loc ~proc_state exp in
+              let instrs = List.append instrs exp_instrs in
+              Textual.Instr.Let {id; exp; loc} :: instrs )
+            ~init:[] reg_exps
         in
         List.append instrs textual_instrs
     | AtomicRMW {reg; ptr; exp; loc} ->
