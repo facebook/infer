@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
+module RegMap = Llair.Exp.Reg.Map
 
 type structMap = Textual.Struct.t Textual.TypeName.Map.t
 
@@ -20,9 +21,13 @@ type t =
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: Textual.Typ.annotated VarMap.t
   ; mutable ids: Textual.Typ.annotated IdentMap.t
+  ; mutable reg_map: Textual.Ident.t RegMap.t
+  ; mutable last_id: Textual.Ident.t
   ; struct_map: structMap
   ; globals: globalMap
   ; lang: Textual.Lang.t }
+
+val mk_fresh_id : ?reg:Llair.Reg.t -> t -> IdentMap.key
 
 val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
 

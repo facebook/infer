@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
+module RegMap = Llair.Exp.Reg.Map
 
 type structMap = Textual.Struct.t Textual.TypeName.Map.t
 
@@ -20,9 +21,28 @@ type t =
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: Textual.Typ.annotated VarMap.t
   ; mutable ids: Textual.Typ.annotated IdentMap.t
+  ; mutable reg_map: Textual.Ident.t RegMap.t
+  ; mutable last_id: Textual.Ident.t
   ; struct_map: structMap
   ; globals: globalMap
   ; lang: Textual.Lang.t }
+
+let mk_fresh_id ?reg proc_state =
+  let fresh_id ?reg () =
+    proc_state.last_id <- Textual.Ident.of_int (Textual.Ident.to_int proc_state.last_id + 1) ;
+    ( match reg with
+    | Some reg ->
+        proc_state.reg_map <- RegMap.add ~key:reg ~data:proc_state.last_id proc_state.reg_map
+    | None ->
+        () ) ;
+    proc_state.last_id
+  in
+  match reg with
+  | Some reg -> (
+    match RegMap.find reg proc_state.reg_map with Some id -> id | None -> fresh_id ~reg () )
+  | None ->
+      fresh_id ()
+
 
 let pp_ids fmt current_ids =
   F.fprintf fmt "%a"

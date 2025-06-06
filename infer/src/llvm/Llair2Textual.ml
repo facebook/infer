@@ -12,6 +12,7 @@ module L = Logging
 module ProcState = Llair2TextualProcState
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
+module RegMap = Llair.Exp.Reg.Map
 
 let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
   { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
@@ -25,19 +26,13 @@ let string_name_of_reg reg =
 
 let reg_to_var_name reg = Textual.VarName.of_string (string_name_of_reg reg)
 
-let reg_to_id reg =
-  match Int.of_string_opt (Reg.name reg) with
-  | Some id ->
-      Textual.Ident.of_int id
-  | None ->
-      Textual.Ident.of_int (Reg.id reg)
-
+let reg_to_id ~proc_state reg = ProcState.mk_fresh_id ~reg proc_state
 
 let reg_to_textual_var ~(proc_state : ProcState.t) reg =
   let reg_var_name = reg_to_var_name reg in
   if VarMap.mem reg_var_name proc_state.formals || VarMap.mem reg_var_name proc_state.locals then
     Textual.Exp.Lvar reg_var_name
-  else Textual.Exp.Var (reg_to_id reg)
+  else Textual.Exp.Var (reg_to_id ~proc_state reg)
 
 
 let reg_to_annot_typ ~struct_map reg = Type.to_annotated_textual_typ ~struct_map (Reg.typ reg)
@@ -293,7 +288,7 @@ let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
   let id =
     Option.map return ~f:(fun reg ->
         let reg_typ = Type.to_textual_typ ~struct_map (Reg.typ reg) in
-        let id = reg_to_id reg in
+        let id = reg_to_id ~proc_state reg in
         ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
         id )
   in
@@ -344,7 +339,7 @@ let cmnd_to_instrs ~proc_state block =
     match inst with
     | Load {reg; ptr; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
-        let id = reg_to_id reg in
+        let id = reg_to_id ~proc_state reg in
         let reg_typ = Type.to_textual_typ ~struct_map (Reg.typ reg) in
         ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
@@ -431,7 +426,7 @@ let cmnd_to_instrs ~proc_state block =
         let instrs =
           List.map
             ~f:(fun (reg, exp) ->
-              let id = Some (reg_to_id reg) in
+              let id = Some (reg_to_id ~proc_state reg) in
               let exp = to_textual_exp loc ~proc_state exp |> fst3 in
               Textual.Instr.Let {id; exp; loc} )
             reg_exps
@@ -607,6 +602,8 @@ let translate_llair_functions lang struct_map globals functions =
       ; formals= formals_
       ; locals= VarMap.empty
       ; ids= IdentMap.empty
+      ; reg_map= RegMap.empty
+      ; last_id= Textual.Ident.of_int 0
       ; struct_map
       ; globals
       ; lang }

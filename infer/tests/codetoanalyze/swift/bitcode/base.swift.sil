@@ -13,10 +13,10 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
       store &age <- n33 @[18:0]
       n34 = load &var1 @[18:0]
       store &height <- n34 @[18:0]
-      n54 = $builtins.llvm_init_tuple() @[18:0]
-      store n54.__infer_tuple_class.__infer_tuple_field_0 <- &var0 @[19:5]
-      store n54.__infer_tuple_class.__infer_tuple_field_1 <- &var1 @[19:5]
-      ret n54 @[19:5]
+      n1 = $builtins.llvm_init_tuple() @[18:0]
+      store n1.__infer_tuple_class.__infer_tuple_field_0 <- &var0 @[19:5]
+      store n1.__infer_tuple_class.__infer_tuple_field_1 <- &var1 @[19:5]
+      ret n1 @[19:5]
       
 } @?
 
@@ -44,11 +44,11 @@ define .plain_name = "test3" $s5Hello5test3yS2iF(var0: int) : int {
   #: @[14:0]
       n24 = load &var0 @[14:0]
       store &n <- n24 @[14:0]
-      n3 = $s5Hello5test1yS2iF(&var0) @[15:12]
+      n1 = $s5Hello5test1yS2iF(&var0) @[15:12]
       jmp 3::ret @[15:12]
       
   #3::ret: @[15:5]
-      ret n3 @[15:5]
+      ret n1 @[15:5]
       
 } @?
 
