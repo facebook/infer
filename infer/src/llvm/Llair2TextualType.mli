@@ -9,9 +9,9 @@ open! IStd
 open! Llair
 module ProcState = Llair2TextualProcState
 
-val field_of_pos : int -> label
+val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
-val tuple_field_of_pos : int -> Textual.qualified_fieldname
+val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
 val to_annotated_textual_typ : struct_map:'a -> Typ.t -> Textual.Typ.annotated
 

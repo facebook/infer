@@ -126,10 +126,9 @@ module TypeNameBridge = struct
         L.die InternalError "to_sil conversion failed on C type name with non-empty args"
     | Rust, _ ->
         L.die InternalError "to_stil conversion error <NOT YET SUPPORTED>"
-    | Swift, [] ->
-        SilTyp.Name.C.from_string value
     | Swift, _ ->
-        L.die InternalError "to_sil conversion failed on Swift type name with non-empty args"
+        (* TODO: translate Swift tuples more precisely *)
+        SilTyp.Name.C.from_string value
 
 
   let java_lang_object = of_string "java.lang.Object"
@@ -699,12 +698,6 @@ module ExpBridge = struct
             Lfield
               ( {exp= aux exp; is_implicit= false}
               , wildcard_sil_fieldname lang field.name.value
-              , SilTyp.mk SilTyp.Tvoid )
-        | None when TypeName.equal field.enclosing_class TypeName.swift_tuple_class_name ->
-            Lfield
-              ( {exp= aux exp; is_implicit= false}
-              , FieldDeclBridge.to_sil lang
-                  {FieldDecl.qualified_name= field; typ= Typ.Void; attributes= []}
               , SilTyp.mk SilTyp.Tvoid )
         | None ->
             L.die InternalError "field %a.%a has not been declared" TypeName.pp

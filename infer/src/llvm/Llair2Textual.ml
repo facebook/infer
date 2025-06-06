@@ -239,8 +239,12 @@ let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
         match typ with
         | Struct {name} ->
             Some (Textual.TypeName.of_string name)
-        | Tuple _ ->
-            Some Textual.TypeName.swift_tuple_class_name
+        | Tuple _ -> (
+          match Type.to_textual_typ ~struct_map typ with
+          | Textual.Typ.(Ptr (Struct name)) ->
+              Some name
+          | _ ->
+              None )
         | _ ->
             None
       in
@@ -250,10 +254,8 @@ let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
       | Some typ_name ->
           let exp, _, exp_instrs = to_textual_exp loc ~proc_state exp in
           let field =
-            if Llair.Typ.is_tuple typ then Type.tuple_field_of_pos n
-            else
-              Textual.
-                {enclosing_class= typ_name; name= Textual.FieldName.of_string (Type.field_of_pos n)}
+            if Llair.Typ.is_tuple typ then Type.tuple_field_of_pos typ_name n
+            else Type.field_of_pos typ_name n
           in
           let exp = field_deref_exp exp field in
           (exp, Some textual_typ, exp_instrs) )
@@ -291,7 +293,12 @@ let rec to_textual_exp ~proc_state loc ?generate_typ_exp (exp : Llair.Exp.t) :
       let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
       let elt_instrs = List.append elt_instrs elt_deref_instrs in
       let textual_typ = Type.to_textual_typ ~struct_map typ in
-      let index_exp = Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos idx} in
+      let type_name =
+        match textual_typ with Textual.Typ.(Ptr (Struct name)) -> name | _ -> assert false
+      in
+      let index_exp =
+        Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos type_name idx}
+      in
       let store_instr =
         Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
       in

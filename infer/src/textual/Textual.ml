@@ -234,7 +234,7 @@ module TypeName : sig
 
   val wildcard : t
 
-  val swift_tuple_class_name : t
+  val mk_swift_tuple_type_name : t list -> t
 end = struct
   module T = struct
     type t = {name: BaseTypeName.t; args: t list} [@@deriving compare, equal, hash]
@@ -249,6 +249,8 @@ end = struct
   let of_string_no_dot_escape str =
     {BaseTypeName.value= str; loc= Location.Unknown} |> from_basename
 
+
+  let mk_swift_tuple_type_name args = {name= BaseTypeName.swift_tuple_class_name; args}
 
   let rec pp fmt {name; args} =
     if List.is_empty args then BaseTypeName.pp fmt name
@@ -269,8 +271,6 @@ end = struct
   let llvm_builtin = from_basename BaseTypeName.llvm_builtin
 
   let hack_generics = from_basename BaseTypeName.hack_generics
-
-  let swift_tuple_class_name = from_basename BaseTypeName.swift_tuple_class_name
 end
 
 module QualifiedProcName = struct

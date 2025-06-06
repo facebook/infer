@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : *__infer_tuple_class {
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : *__infer_tuple_class<int,int> {
   local height: int, age: int
   #: @[18:0]
       n33 = load &var0 @[18:0]
@@ -15,9 +15,9 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
       store &height <- n34 @[18:0]
       n1 = $builtins.llvm_init_tuple() @[18:0]
       n2 = load &var0 @[19:5]
-      store n1.__infer_tuple_class.__infer_tuple_field_0 <- n2 @[19:5]
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n2 @[19:5]
       n3 = load &var1 @[19:5]
-      store n1.__infer_tuple_class.__infer_tuple_field_1 <- n3 @[19:5]
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[19:5]
       ret n1 @[19:5]
       
 } @?
@@ -67,4 +67,7 @@ global llvm::used: *ptr_elt
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
 
 global __swift_reflection_version: *ptr_elt
+
+type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
+                                     __infer_tuple_field_1: int}
 

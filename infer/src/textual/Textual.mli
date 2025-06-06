@@ -74,6 +74,8 @@ module TypeName : sig
 
   val of_string_no_dot_escape : string -> t
 
+  val mk_swift_tuple_type_name : t list -> t
+
   val pp : F.formatter -> t -> unit
 
   module Hashtbl : Hashtbl.S with type key = t
@@ -87,8 +89,6 @@ module TypeName : sig
   val hack_generics : t
 
   val wildcard : t
-
-  val swift_tuple_class_name : t
 end
 
 module QualifiedProcName : sig
