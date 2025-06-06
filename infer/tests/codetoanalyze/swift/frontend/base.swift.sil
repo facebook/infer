@@ -54,16 +54,17 @@ define .plain_name = "test3" $s5Hello5test3yS2iF(var0: int) : int {
       
 } @?
 
-define .plain_name = "test4" $s5Hello5test4Si3age_Si6heighttyF() : *__infer_tuple_class {
-  #: @[23:12]
-      n1 = $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(30, 180) @[23:12]
-      jmp 1::ret @[23:12]
+define .plain_name = "test4" $s5Hello5test4SiyF() : int {
+  local person: *__infer_tuple_class
+  #: @[23:18]
+      n1 = $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(30, 180) @[23:18]
+      jmp 2::ret @[23:18]
       
-  #1::ret: @[22:0]
-      n2 = $builtins.llvm_init_tuple() @[22:0]
-      store n2.__infer_tuple_class.__infer_tuple_field_0 <- n1.__infer_tuple_class.__infer_tuple_field_0 @[23:5]
-      store n2.__infer_tuple_class.__infer_tuple_field_1 <- n1.__infer_tuple_class.__infer_tuple_field_1 @[23:5]
-      ret n2 @[23:5]
+  #2::ret: @[23:18]
+      n2 = n1.__infer_tuple_class.__infer_tuple_field_0 @[23:18]
+      store person.__infer_tuple_class.__infer_tuple_field_0.TSi.field_0 <- n2 @[22:0]
+      store person.__infer_tuple_class.__infer_tuple_field_1.TSi.field_0 <- n1.__infer_tuple_class.__infer_tuple_field_1 @[22:0]
+      ret n2 @[24:5]
       
 } @?
 
@@ -80,4 +81,6 @@ global llvm::used: *ptr_elt
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
 
 global __swift_reflection_version: *ptr_elt
+
+type TSi = {field_0: int}
 

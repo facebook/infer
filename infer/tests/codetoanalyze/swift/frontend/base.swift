@@ -19,6 +19,7 @@ func createPerson(age: Int, height : Int) -> (age: Int, height: Int) {
     return (age, height)
 }
 
-func test4() -> (age: Int, height: Int) {
-    return createPerson(age: 30, height: 180)
+func test4() -> Int {
+    let person = createPerson(age: 30, height: 180)
+    return person.age
 }
