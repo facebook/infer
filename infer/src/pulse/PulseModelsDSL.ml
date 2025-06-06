@@ -384,6 +384,10 @@ module Syntax = struct
     PulseOperations.add_dict_contain_const_keys addr |> exec_command
 
 
+  let abduce_must_be_awaited (addr, _) : unit model_monad =
+    PulseOperations.abduce_must_be_awaited addr |> exec_command
+
+
   let is_dict_contain_const_keys (addr, _) : bool model_monad =
     AddressAttributes.is_dict_contain_const_keys addr |> exec_pure_operation
 

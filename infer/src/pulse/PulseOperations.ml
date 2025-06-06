@@ -644,6 +644,10 @@ let add_dict_contain_const_keys address astate =
   AddressAttributes.add_dict_contain_const_keys address astate
 
 
+let abduce_must_be_awaited address astate =
+  AddressAttributes.abduce_one address MustBeAwaited astate
+
+
 let remove_dict_contain_const_keys address astate =
   AddressAttributes.remove_dict_contain_const_keys address astate
 

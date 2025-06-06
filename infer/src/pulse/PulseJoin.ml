@@ -245,6 +245,7 @@ let join_one_sided_attribute (attr : Attribute.t) =
   | EndOfCollection
   | HackBuilder _
   | Invalid _
+  | MustBeAwaited
   | MustBeInitialized _
   | MustBeValid _
   | MustNotBeTainted _

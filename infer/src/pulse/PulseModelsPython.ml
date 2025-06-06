@@ -1353,7 +1353,7 @@ let get_iter arg () : unit DSL.model_monad =
   let* () =
     match opt_allocation_trace with
     | None ->
-        ret ()
+        abduce_must_be_awaited arg
     | Some allocation_trace ->
         report_unawaited_awaitable allocation_trace
   in

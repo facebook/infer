@@ -257,6 +257,23 @@ async def iter_arg_ok(f):
     return iter
 
 
+def my_iter(f, l):
+    for x in l:
+        f(x)
+
+
+async def my_iter_arg_bad(f):
+    l = async_fun()
+    my_iter(f, l)
+    return l
+
+
+async def my_iter_arg_ok(f):
+    l = await async_fun()
+    my_iter(f, l)
+    return l
+
+
 def main_ok():
     asyncio.run(sleep(10))
 

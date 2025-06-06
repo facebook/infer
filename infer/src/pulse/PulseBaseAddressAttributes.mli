@@ -37,6 +37,8 @@ module type S = sig
 
   val await_awaitable : key -> t -> t
 
+  val add_must_be_awaited : key -> t -> t
+
   val get_unawaited_awaitable : key -> t -> Trace.t option
 
   val remove_hack_builder : key -> t -> t
@@ -71,6 +73,8 @@ module type S = sig
   val get_source_origin_of_copy : key -> t -> AbstractValue.t option
 
   val is_copied_from_const_ref : key -> t -> bool
+
+  val is_must_be_awaited : key -> t -> bool
 
   val get_must_be_valid :
     key -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option

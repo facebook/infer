@@ -251,6 +251,8 @@ val csharp_resource_release : recursive:bool -> AbstractValue.t -> t -> t
 
 val add_dict_contain_const_keys : AbstractValue.t -> t -> t
 
+val abduce_must_be_awaited : AbstractValue.t -> t -> t
+
 val remove_dict_contain_const_keys : AbstractValue.t -> t -> t
 
 val add_dict_read_const_key :

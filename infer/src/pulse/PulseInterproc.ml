@@ -1145,6 +1145,11 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
     to_caller_subst_fold_constant_astate call_state.astate
       (fun addr_pre addr_hist_caller to_check ->
         let to_check =
+          if UnsafeAttributes.is_must_be_awaited addr_pre pre.BaseDomain.attrs then
+            (addr_hist_caller, `MustBeAwaited) :: to_check
+          else to_check
+        in
+        let to_check =
           match UnsafeAttributes.get_must_be_valid addr_pre pre.BaseDomain.attrs with
           | None ->
               to_check
@@ -1161,6 +1166,8 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
   let timestamp_of_check = function
     | `MustBeValid (timestamp, _, _) | `MustBeInitialized (timestamp, _) ->
         timestamp
+    | `MustBeAwaited ->
+        Timestamp.t0
   in
   List.sort addresses_to_check ~compare:(fun (_, check1) (_, check2) ->
       (* smaller timestamp first *)
@@ -1174,6 +1181,16 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
              ; history= hist_caller }
          in
          match check with
+         | `MustBeAwaited -> (
+           match AddressAttributes.get_unawaited_awaitable addr_caller astate with
+           | None ->
+               Ok astate
+           | Some allocation_trace ->
+               Error
+                 (AccessResult.ReportableError
+                    { diagnostic=
+                        ResourceLeak {resource= Awaitable; allocation_trace; location= call_location}
+                    ; astate } ) )
          | `MustBeValid (_timestamp, callee_access_trace, must_be_valid_reason) ->
              let access_trace = mk_access_trace callee_access_trace in
              AddressAttributes.check_valid path access_trace addr_caller astate

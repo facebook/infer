@@ -32,8 +32,12 @@ let pp fmt {heap; stack; attrs} =
     if Language.curr_language_is Python then
       let filter_attribute (attr : Attribute.t) =
         match attr with
-        | Attribute.Allocated _ | AwaitedAwaitable | MustNotBeTainted _ | StaticType _ | Tainted _
-          ->
+        | Attribute.Allocated _
+        | AwaitedAwaitable
+        | MustBeAwaited
+        | MustNotBeTainted _
+        | StaticType _
+        | Tainted _ ->
             true
         | _ ->
             false

@@ -129,6 +129,8 @@ module Syntax : sig
 
   val add_dict_read_const_key : aval -> Fieldname.t -> unit model_monad
 
+  val abduce_must_be_awaited : aval -> unit model_monad
+
   val is_dict_contain_const_keys : aval -> bool model_monad
 
   val remove_dict_contain_const_keys : aval -> unit model_monad
