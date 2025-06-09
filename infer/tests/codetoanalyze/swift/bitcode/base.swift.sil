@@ -27,7 +27,8 @@ define .plain_name = "test1" $s5Hello5test1yS2iF(var0: int) : int {
   #: @[6:0]
       n7 = load &var0 @[6:0]
       store &n <- n7 @[6:0]
-      ret &var0 @[7:5]
+      n1 = load &var0 @[7:5]
+      ret n1 @[7:5]
       
 } @?
 
@@ -46,11 +47,12 @@ define .plain_name = "test3" $s5Hello5test3yS2iF(var0: int) : int {
   #: @[14:0]
       n24 = load &var0 @[14:0]
       store &n <- n24 @[14:0]
-      n1 = $s5Hello5test1yS2iF(&var0) @[15:12]
+      n1 = load &var0 @[15:12]
+      n2 = $s5Hello5test1yS2iF(n1) @[15:12]
       jmp 3::ret @[15:12]
       
   #3::ret: @[15:5]
-      ret n1 @[15:5]
+      ret n2 @[15:5]
       
 } @?
 

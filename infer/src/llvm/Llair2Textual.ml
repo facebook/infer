@@ -315,6 +315,19 @@ let to_textual_bool_exp ~proc_state loc exp =
 let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp args loc =
   let struct_map = proc_state.ProcState.struct_map in
   let loc = to_textual_loc_instr ~proc_state loc in
+  let args_list, args =
+    List.fold_map
+      ~f:(fun acc_instrs exp ->
+        let exp, _, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
+        let deref_instrs, deref_exp =
+          (* So far it looks like for C the load operations are already there when needed. *)
+          if Textual.Lang.is_swift proc_state.ProcState.lang then add_deref ~proc_state exp loc
+          else ([], exp)
+        in
+        (List.append deref_instrs (List.append acc_instrs instrs), deref_exp) )
+      args ~init:[]
+  in
+  let args = List.append (Option.to_list exp_opt) args in
   let id =
     Option.map return ~f:(fun reg ->
         let reg_typ = Type.to_textual_typ ~struct_map (Reg.typ reg) in
@@ -322,16 +335,8 @@ let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
         ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes reg_typ) ;
         id )
   in
-  let args_list, args =
-    List.fold_map
-      ~f:(fun acc_instrs exp ->
-        let exp, _, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
-        (List.append acc_instrs instrs, exp) )
-      args ~init:[]
-  in
-  let args = List.append (Option.to_list exp_opt) args in
   let let_instrs = Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc} in
-  List.append args_list [let_instrs]
+  List.append [let_instrs] args_list
 
 
 let to_textual_call ~proc_state (call : 'a Llair.call) =
@@ -516,12 +521,14 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
   | Return {exp= Some exp; loc= loc_} ->
       let loc = to_textual_loc_instr ~proc_state loc_ in
       let textual_exp, textual_typ_opt, instrs = to_textual_exp loc ~proc_state exp in
+      let exp_deref_instrs, textual_exp = add_deref ~proc_state textual_exp loc in
       let inferred_textual_typ_opt = ProcState.get_local_or_formal_type ~proc_state textual_exp in
       let textual_typ_opt =
         Option.value_map
           ~f:(fun typ -> Some typ.Textual.Typ.typ)
           inferred_textual_typ_opt ~default:textual_typ_opt
       in
+      let instrs = List.append instrs exp_deref_instrs in
       ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc, instrs)
   | Return {exp= None; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
