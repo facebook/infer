@@ -30,7 +30,7 @@ function callSinkWithStringCast(mixed $args): void {
   taintSink((string)$args);
 }
 
-function fnBasicFlowWithStringCastIndirectBad(): void {
+function basicFlowWithStringCastIndirectBad(): void {
   $tainted = taintSource();
   callSinkWithStringCast($tainted);
 }

@@ -1569,8 +1569,15 @@ let hhbc_cast_string arg : model =
         (* hopefully we will come back later with a dynamic type thanks to specialization *)
         fresh ()
   in
-  let* res_with_taint_info = propagate_taint_attribute arg res in
-  assign_ret res_with_taint_info
+  let source_addr, source_hist = arg in
+  let dest_addr, _ = res in
+  let taints_attr = [Attribute.{v= source_addr; history= source_hist}] in
+  let* () =
+    AbductiveDomain.AddressAttributes.add_one dest_addr
+      (PropagateTaintFrom (InternalModel, taints_attr))
+    |> exec_command
+  in
+  assign_ret res
 
 
 let hhbc_concat arg1 arg2 : model =
