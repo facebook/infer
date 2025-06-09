@@ -178,6 +178,7 @@ DIRECT_TESTS += \
   c_pulse-llvm \
   swift_frontend \
   swift_bitcode \
+  swift_pulse \
 
 endif
 
