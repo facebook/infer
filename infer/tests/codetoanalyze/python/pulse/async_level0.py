@@ -164,7 +164,8 @@ async def use_py_get_iter_ok():
     return [a.f for a in x]
 
 
-async def gather_condition_awaitable_ok():
+# we decide that boolification of an unawaited awaitable is too dangerous
+async def gather_condition_awaitable_bad():
     awaitable = sleep()
     asyncio.gather(awaitable if awaitable else sleep())
 
@@ -192,7 +193,7 @@ def get_option_awaitable(b):
         return None
 
 
-async def call_get_option_awaitable_eq_test_none_ok(b):
+async def FP_3_12_call_get_option_awaitable_eq_test_none_ok(b):
     unawaited = get_option_awaitable(b)
     if unawaited is None:
         return None
@@ -272,6 +273,33 @@ async def my_iter_arg_ok(f):
     l = await async_fun()
     my_iter(f, l)
     return l
+
+
+async def FN_3_10_none_test_bad():
+    opt = async_fun()
+    if opt is None:
+        do()
+    return opt
+
+
+async def not_none_test_bad():
+    opt = async_fun()
+    if opt is not None:
+        do()
+    return opt
+
+
+async def none_test_ok():
+    opt = await async_fun()
+    if opt is None:
+        do()
+    return opt
+
+async def not_none_test_ok():
+    opt = await async_fun()
+    if opt is not None:
+        do()
+    return opt
 
 
 def main_ok():

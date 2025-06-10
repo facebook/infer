@@ -543,6 +543,16 @@ let await_awaitable arg : unit DSL.model_monad =
   fst arg |> AddressAttributes.await_awaitable |> DSL.Syntax.exec_command
 
 
+let must_be_awaited arg : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* opt_allocation_trace = get_unawaited_awaitable arg in
+  match opt_allocation_trace with
+  | None ->
+      abduce_must_be_awaited arg
+  | Some allocation_trace ->
+      report_unawaited_awaitable allocation_trace @@> await_awaitable arg
+
+
 let make_type arg : DSL.aval option DSL.model_monad =
   let open DSL.Syntax in
   let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
@@ -1263,6 +1273,8 @@ let binary_add arg1 arg2 () : unit DSL.model_monad =
 
 let bool arg () : unit DSL.model_monad =
   let open DSL.Syntax in
+  must_be_awaited arg
+  @@>
   let* is_allocated = is_allocated arg in
   let* res =
     if is_allocated then Bool.make true
@@ -1339,24 +1351,11 @@ let subscript seq idx () : unit DSL.model_monad =
   assign_ret res
 
 
-let unknown ~deep_release args () : unit DSL.model_monad =
+let unknown ~deep_release ?(must_all_be_awaited = false) args () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* res = fresh () in
   let* () = if deep_release then remove_allocation_attr_transitively args else ret () in
-  assign_ret res
-
-
-let get_iter arg () : unit DSL.model_monad =
-  let open DSL.Syntax in
-  let* res = fresh () in
-  let* opt_allocation_trace = get_unawaited_awaitable arg in
-  let* () =
-    match opt_allocation_trace with
-    | None ->
-        abduce_must_be_awaited arg
-    | Some allocation_trace ->
-        report_unawaited_awaitable allocation_trace
-  in
+  let* () = if must_all_be_awaited then list_iter ~f:must_be_awaited args else ret () in
   assign_ret res
 
 
@@ -1389,6 +1388,8 @@ let compare_eq arg1 arg2 () : unit DSL.model_monad =
 
 let compare_in arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
+  must_be_awaited arg1 @@> must_be_awaited arg2
+  @@>
   let* arg1_str = as_constant_string arg1 in
   match arg1_str with
   | Some s -> (
@@ -1538,12 +1539,12 @@ let builtins_matcher builtin args =
       let arg1, arg2, arg3, args = expect_at_least_3_args () in
       call_method arg1 arg2 arg3 args
   | CompareBad ->
-      unknown ~deep_release:false args
+      unknown ~deep_release:false ~must_all_be_awaited:true args
   | CompareEq ->
       let arg1, arg2 = expect_2_args () in
       compare_eq arg1 arg2
   | CompareException | CompareGe | CompareGt ->
-      unknown ~deep_release:false args
+      unknown ~deep_release:false ~must_all_be_awaited:true args
   | CompareIn ->
       let arg1, arg2 = expect_2_args () in
       compare_in arg1 arg2
@@ -1551,7 +1552,7 @@ let builtins_matcher builtin args =
       let arg1, arg2 = expect_2_args () in
       compare_eq arg1 arg2
   | CompareIsNot | CompareLe | CompareLt | CompareNeq | CompareNotIn | CopyFreeVars ->
-      unknown ~deep_release:false args
+      unknown ~deep_release:false ~must_all_be_awaited:true args
   | DeleteAttr | DeleteDeref | DeleteFast | DeleteGlobal | DeleteName | DeleteSubscr | DictMerge ->
       unknown ~deep_release:true args
   | DictSetItem ->
@@ -1573,11 +1574,8 @@ let builtins_matcher builtin args =
   | GetAwaitable ->
       let arg1 = expect_1_arg () in
       get_awaitable arg1
-  | GetIter ->
-      let arg = expect_1_arg () in
-      get_iter arg
-  | GetLen | GetPreviousException ->
-      unknown ~deep_release:false args
+  | GetIter | GetLen | GetPreviousException ->
+      unknown ~deep_release:false ~must_all_be_awaited:true args
   | GetYieldFromIter | HasNextIter ->
       unknown ~deep_release:true args
   | ImportFrom ->
