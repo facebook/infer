@@ -12,6 +12,7 @@ type t =
     `memset
   | `memcpy
   | `memmove
+  | `expect
   | (* cstdlib - memory management *)
     `malloc
   | `aligned_alloc

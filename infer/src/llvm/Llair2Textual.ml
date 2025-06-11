@@ -461,6 +461,22 @@ let cmnd_to_instrs ~proc_state block =
             let name = Llair.Builtin.to_name name in
             let call_textual_instrs = to_textual_builtin ~proc_state reg name args loc_ in
             List.append call_textual_instrs textual_instrs )
+    | Builtin {reg; name; args; loc= loc_} when Llair.Builtin.equal name `expect -> (
+        let args = StdUtils.iarray_to_list args in
+        let loc = to_textual_loc loc_ in
+        match args with
+        | [arg1; _] ->
+            let exp, _, exp_instrs = to_textual_exp loc ~proc_state arg1 in
+            let id =
+              match reg with
+              | Some reg ->
+                  Some (reg_to_id ~proc_state reg |> fst)
+              | None ->
+                  Some (add_fresh_id ~proc_state ())
+            in
+            Textual.Instr.Let {id; exp; loc} :: exp_instrs
+        | _ ->
+            assert false )
     | Builtin {reg; name; args; loc} ->
         let name = Llair.Builtin.to_name name in
         let args = StdUtils.iarray_to_list args in

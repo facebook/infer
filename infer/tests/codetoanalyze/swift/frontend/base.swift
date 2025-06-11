@@ -23,3 +23,8 @@ func test4() -> Int {
     let person = createPerson(age: 30, height: 180)
     return person.age
 }
+
+func test5() {
+    let person_age = test4()
+    assert(person_age != 30)
+}

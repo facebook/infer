@@ -625,6 +625,7 @@ module IP = struct
         | `_ZN5folly13usingJEMallocEv
         | `aligned_alloc
         | `dallocx
+        | `expect
         | `mallctl
         | `mallctlbymib
         | `mallctlnametomib

@@ -414,11 +414,13 @@ let xlate_int : x -> Llvm.llvalue -> Exp.t =
   let llt = Llvm.type_of llv in
   let typ = xlate_type x llt in
   let data =
-    match Llvm.int64_of_const llv with
-    | Some n ->
-        Z.of_int64 n
-    | None ->
-        Z.of_string (suffix_after_last_space (Llvm.string_of_llvalue llv))
+    if String.equal (suffix_after_last_space (Llvm.string_of_llvalue llv)) "true" then Z.of_int 1
+    else
+      match Llvm.int64_of_const llv with
+      | Some n ->
+          Z.of_int64 n
+      | None ->
+          Z.of_string (suffix_after_last_space (Llvm.string_of_llvalue llv))
   in
   Exp.integer typ data
 
