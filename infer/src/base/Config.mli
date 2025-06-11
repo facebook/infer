@@ -170,6 +170,8 @@ val buck_mode : BuckMode.t option
 
 val buck_out_gen : string
 
+val buck_swift : bool
+
 val buck_targets_block_list : string list
 
 val capture : bool

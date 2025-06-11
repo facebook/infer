@@ -957,6 +957,13 @@ and buck_mode =
   buck_mode
 
 
+and buck_swift =
+  CLOpt.mk_bool ~long:"buck-swift" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "When using the BXL Clang integration, pass $(b, --swift <bool>) to control capture of Swift \
+     files."
+
+
 and buck_targets_block_list =
   CLOpt.mk_string_list ~long:"buck-targets-block-list"
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
@@ -3877,6 +3884,8 @@ and buck_mode : BuckMode.t option =
   | `Python, _ ->
       Some Python
 
+
+and buck_swift = !buck_swift
 
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 

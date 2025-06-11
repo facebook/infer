@@ -225,6 +225,12 @@ OPTIONS
            --no-buck-python)
            See also infer-capture(1).
 
+       --buck-swift
+           Activates: When using the BXL Clang integration, pass --swift
+           <bool> to control capture of Swift files. (Conversely:
+           --no-buck-swift)
+           See also infer-capture(1).
+
        --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
            expression.
