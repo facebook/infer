@@ -110,20 +110,7 @@ define .plain_name = "returnOne" $s5Hello9returnOneSiyF() : int {
 
 declare $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF(int, int, int, int, *ptr_elt, int, int, int, int, int) : void
 
-define $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() : *__infer_tuple_class<int,*ptr_elt> {
-  local var1: *ptr_elt
-  #: @[0:0]
-      store &var1 <- -2305843009213693952 @[0:0]
-      n1 = load &var1 @[0:0]
-      n2 = swift_bridgeObjectRetain(n1) @[0:0]
-      jmp 3::ret @[0:0]
-      
-  #3::ret: @[0:0]
-      n3 = $builtins.llvm_nondet() @[0:0]
-      store $builtins.llvm_nondet().__infer_tuple_class<int,*ptr_elt>.__infer_tuple_field_1 <- n1 @[0:0]
-      ret $builtins.llvm_nondet() @[0:0]
-      
-} @?
+declare $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() : void
 
 declare _swift_FORCE_LOAD_$_swiftCompatibility56() : void
 

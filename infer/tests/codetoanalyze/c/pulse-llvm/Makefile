@@ -13,7 +13,7 @@ INFER_OPTIONS = \
 
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCE = $(wildcard ../llvm-frontend/base.c )
+SOURCE = $(realpath $(wildcard ../llvm-frontend/base.c ))
 
 ROOT_DIR = $(TESTS_DIR)/../..
 

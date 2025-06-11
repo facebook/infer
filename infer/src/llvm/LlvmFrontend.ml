@@ -54,8 +54,7 @@ let dump_textual_file source_file module_ =
 let should_dump_textual () = Config.debug_mode || Config.dump_textual || Config.frontend_tests
 
 let to_module source_file llair_program =
-  let sourcefile = Textual.SourceFile.create source_file in
-  let module_ = Llair2Textual.translate sourcefile llair_program in
+  let module_ = Llair2Textual.translate ~source_file llair_program in
   module_
 
 

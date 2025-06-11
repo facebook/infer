@@ -47,6 +47,8 @@ module Lang = struct
 
 
   let is_swift lang = match lang with Swift -> true | _ -> false
+
+  let is_c lang = match lang with C -> true | _ -> false
 end
 
 module Location = struct

@@ -8,7 +8,7 @@ TESTS_DIR=../../..
 SWIFT_OPTIONS = -emit-bc
 INFER_OPTIONS = --frontend-tests --dump-textual --project-root $(TESTS_DIR)
 
-SOURCES = $(wildcard *.swift)
+SOURCES = $(realpath $(wildcard *.swift))
 
 CLEAN_EXTRA = *.o *.test.sil
 

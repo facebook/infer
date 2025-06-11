@@ -8,7 +8,7 @@ TESTS_DIR=../../..
 SWIFT_OPTIONS =
 INFER_OPTIONS =
 
-SOURCES = $(wildcard *.swift)
+SOURCES = $(realpath $(wildcard *.swift))
 
 CLEAN_EXTRA = $(foreach source,$(SOURCES),$(basename $(notdir $(source))).o)
 

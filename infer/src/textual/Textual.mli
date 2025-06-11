@@ -17,6 +17,8 @@ module Lang : sig
   val to_string : t -> string
 
   val is_swift : t -> bool
+
+  val is_c : t -> bool
 end
 
 module Location : sig

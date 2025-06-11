@@ -101,7 +101,7 @@ define test10() : int {
       if __sil_ne(n2, 3) then jmp 18 else jmp 17 @[73:3]
       
   #17: @[73:3]
-      _ = __sil_assert_fail("sum != 3", "base.c", 73, "int test10()") @[73:3]
+      _ = __sil_assert_fail(null) @[73:3]
       jmp __assert_fail::void::ret @[73:3]
       
   #18: @[74:10]
@@ -152,7 +152,7 @@ define test13() : int {
       jmp 2 @[89:3]
       
   #12: @[92:3]
-      _ = __sil_assert_fail("i != 7", "base.c", 92, "int test13()") @[92:3]
+      _ = __sil_assert_fail(null) @[92:3]
       jmp __assert_fail::void::ret @[92:3]
       
   #13: @[93:10]
@@ -193,7 +193,7 @@ define test14() : int {
       if __sil_ne(n9, 30) then jmp 19 else jmp 18 @[118:5]
       
   #18: @[118:5]
-      _ = __sil_assert_fail("age != 30", "base.c", 118, "int test14()") @[118:5]
+      _ = __sil_assert_fail(null) @[118:5]
       jmp __assert_fail::void::ret @[118:5]
       
   #19: @[119:12]
@@ -236,7 +236,7 @@ define test15() : int {
       if __sil_ne(n2, 30) then jmp 8 else jmp 7 @[127:3]
       
   #7: @[127:3]
-      _ = __sil_assert_fail("age != 30", "base.c", 127, "int test15()") @[127:3]
+      _ = __sil_assert_fail(null) @[127:3]
       jmp __assert_fail::void::ret @[127:3]
       
   #8: @[128:10]
@@ -272,7 +272,7 @@ define test16(var0: *ptr_elt, var1: *ptr_elt) : int {
       if __sil_ne(n11, 10) then jmp 24 else jmp 23 @[137:3]
       
   #23: @[137:3]
-      _ = __sil_assert_fail("age != 10", "base.c", 137, "int test16(struct Person *, struct Cat *)") @[137:3]
+      _ = __sil_assert_fail(null) @[137:3]
       jmp __assert_fail::void::ret @[137:3]
       
   #24: @[138:10]

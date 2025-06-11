@@ -7,7 +7,7 @@ TESTS_DIR=../../..
 
 
 INFER_OPTIONS =
-SOURCES = $(wildcard *.c)
+SOURCES = $(realpath $(wildcard *.c))
 HEADERS = $(wildcard *.h)
 
 include $(TESTS_DIR)/base.make
