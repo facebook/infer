@@ -236,8 +236,9 @@ open struct
               in
               add_sym ~orig_name scope md.(0) loc
             else
-              warn "could not find variable for debug info at %a with metadata %a" Loc.pp loc
-                (List.pp ", " pp_llvalue) (Array.to_list md) ()
+              Logging.debug Capture Verbose
+                "could not find variable for debug info at %a with metadata %a" Loc.pp loc
+                (List.pp ", " pp_llvalue) (Array.to_list md)
         | _ ->
             () )
       | _ ->
@@ -1101,7 +1102,8 @@ let pop_stack_frame_of_function : x -> Llvm.llvalue -> Llvm.llbasicblock -> pop_
           (fun instr ->
             match Llvm.instr_opcode instr with
             | Alloca ->
-                warn "stack allocation after function entry:@ %a" Loc.pp (find_loc instr) ()
+                Logging.debug Capture Verbose "stack allocation after function entry:@ %a" Loc.pp
+                  (find_loc instr)
             | _ ->
                 () )
           blk )
@@ -1441,7 +1443,7 @@ let xlate_instr :
       let name_segs = String.split_on_char fname ~by:'.' in
       let skip msg =
         if StringS.add ignored_callees fname then
-          warn "ignoring uninterpreted %s %s at %a" msg fname Loc.pp loc () ;
+          Logging.debug Capture Verbose "ignoring uninterpreted %s %s at %a" msg fname Loc.pp loc ;
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
@@ -1763,7 +1765,7 @@ let xlate_instr :
       inline_or_move (xlate_value ~inline:true x)
   | VAArg ->
       let reg = xlate_name_opt x instr in
-      warn "variadic function argument: %a" Loc.pp loc () ;
+      Logging.debug Capture Verbose "variadic function argument: %a" Loc.pp loc ;
       emit_inst (Inst.nondet ~reg ~msg:"vaarg" ~loc)
   | CleanupRet | CatchRet | CatchPad | CleanupPad | CatchSwitch ->
       todo "windows exception handling: %a" pp_llvalue instr ()
@@ -1989,7 +1991,7 @@ let translate ?dump_bitcode : string -> Llair.program =
           let func =
             try xlate_function x llf typ
             with Unimplemented feature ->
-              warn "Unimplemented feature %s in %s" feature name () ;
+              Logging.debug Capture Verbose "Unimplemented feature %s in %s" feature name ;
               xlate_function_decl x llf typ Func.mk_undefined
             (* TODO $> Report.unimplemented feature *)
           in
