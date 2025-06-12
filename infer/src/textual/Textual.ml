@@ -818,8 +818,16 @@ module ProcDecl = struct
     builtins @ unop_builtins @ binop_builtins
 
 
+  let builtins_swift = [builtin_assert_fail]
+
   let is_builtin (proc : QualifiedProcName.t) lang =
-    match lang with Lang.C -> List.mem builtins ~equal:String.equal proc.name.value | _ -> false
+    match lang with
+    | Lang.C ->
+        List.mem builtins ~equal:String.equal proc.name.value
+    | Lang.Swift ->
+        List.mem builtins_swift ~equal:String.equal proc.name.value
+    | _ ->
+        false
 end
 
 module Global = struct

@@ -24,7 +24,8 @@ func test4() -> Int {
     return person.age
 }
 
-func test5() {
+func test5_fp() {
     let person_age = test4()
-    assert(person_age != 30)
+    let age : Int = 30
+    assert(person_age == age)
 }

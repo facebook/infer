@@ -75,7 +75,7 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
       
 } @?
 
-define .plain_name = "test5" $s5Hello5test5yyF() : void {
+define .plain_name = "test5_fp" $s5Hello8test5_fpyyF() : void {
   local person_age: int
   #: @[28:22]
       n1 = $s5Hello5test4SiyF() @[28:22]
@@ -84,21 +84,21 @@ define .plain_name = "test5" $s5Hello5test5yyF() : void {
   #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[27:0]
       unreachable @[27:0]
       
-  #10: @[29:5]
-      _ = $builtins.llvm_nondet() @[29:5]
-      ret null @[30:1]
+  #2::ret: @[30:5]
+      n2 = __sil_eq(n1, 30) @[30:5]
+      if n2 then jmp 9 else jmp 5 @[30:5]
       
-  #2::ret: @[29:5]
-      n2 = __sil_bxor(__sil_eq(n1, 30), 1) @[29:5]
-      if n2 then jmp 10 else jmp 6 @[29:5]
+  #5: @[30:5]
+      n3 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[30:5]
+      jmp 6::ret @[30:5]
       
-  #6: @[29:5]
-      n3 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[29:5]
-      jmp 7::ret @[29:5]
+  #6::ret: @[30:5]
+      _ = __sil_assert_fail(null) @[30:5]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[30:5]
       
-  #7::ret: @[29:5]
-      _ = $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF(__sil_cast(<int>, "Assertion failed"), 16, 2, n3.__infer_tuple_class<int,*ptr_elt>.__infer_tuple_field_0, n3.__infer_tuple_class<int,*ptr_elt>.__infer_tuple_field_1, __sil_cast(<int>, "Hello/base.swift"), 16, 2, 29, 0) @[29:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[29:5]
+  #9: @[30:5]
+      _ = $builtins.llvm_nondet() @[30:5]
+      ret null @[31:1]
       
 } @?
 

@@ -366,6 +366,7 @@ let to_textual_call ~proc_state (call : 'a Llair.call) =
           if
             String.equal (FuncName.name func.Llair.name)
               (Procname.get_method BuiltinDecl.__assert_fail)
+            || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
           then Textual.ProcDecl.assert_fail_name
           else to_qualified_proc_name func.Llair.name
         in
