@@ -29,3 +29,16 @@ func test5_fp() {
     let age : Int = 30
     assert(person_age == age)
 }
+
+class Person {
+    let age: Int
+    var spouse: Person?
+    init(age: Int) {
+        self.age = age
+    }
+}
+
+func test6() -> Person {
+    let john = Person(age: 30)
+    return john
+}

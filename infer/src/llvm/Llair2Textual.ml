@@ -707,7 +707,11 @@ let translate_llair_functions source_file lang struct_map globals functions =
         ; attributes= Option.to_list plain_name
         ; formals_types= Some formals_types }
     in
-    if is_undefined func || not should_translate then ProcDecl procdecl :: proc_descs
+    let is_deinit () =
+      Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit")
+    in
+    if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
+    then ProcDecl procdecl :: proc_descs
     else
       let locals =
         VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) proc_state.locals []

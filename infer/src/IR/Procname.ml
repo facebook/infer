@@ -631,7 +631,7 @@ module Swift = struct
       | Simple | Non_verbose | NameOnly | FullNameOnly ->
           F.pp_print_string fmt (Mangled.to_string osig.function_name)
       | Verbose ->
-          F.fprintf fmt "%a" Mangled.pp osig.function_name )
+          F.pp_print_string fmt (Mangled.to_string_full osig.function_name) )
 end
 
 (** Type of procedure names. *)

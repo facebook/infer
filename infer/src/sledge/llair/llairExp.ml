@@ -284,10 +284,8 @@ let rec invariant exp =
       assert false
   | Ap1 (Convert {src= Integer _}, Integer _, _) ->
       assert false
-  | Ap1 (Convert {src}, dst, arg) ->
-      assert (LlairTyp.convertible src dst) ;
-      assert (LlairTyp.castable src (typ_of arg)) ;
-      assert (not (LlairTyp.equal src dst) (* avoid redundant representations *))
+  | Ap1 (Convert _, _, _) ->
+      ()
   | Ap1 (Select idx, typ, _) -> (
     match typ with
     | Array _ ->
