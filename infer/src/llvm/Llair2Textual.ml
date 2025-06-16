@@ -188,7 +188,7 @@ let undef_exp exp =
 
 let add_deref ~proc_state exp ?exp_typ loc =
   match exp with
-  | Textual.Exp.Lvar _ ->
+  | Textual.Exp.Lvar _ | Textual.Exp.Field _ ->
       let typ = match exp_typ with Some (Textual.Typ.Ptr typ) -> Some typ | _ -> None in
       let id = add_fresh_id ~proc_state ?typ () in
       let instr = Textual.Instr.Load {id; exp; typ= None; loc} in
