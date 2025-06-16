@@ -39,6 +39,5 @@ class Person {
 }
 
 func test6() -> Person {
-    let john = Person(age: 30)
-    return john
+    return Person(age: 30)
 }

@@ -76,18 +76,16 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
 } @?
 
 define .plain_name = "test6" $s5Hello5test6AA6PersonCyF() : *ptr_elt {
-  local john: *ptr_elt
-  #: @[42:16]
-      n1 = $s5Hello6PersonCMa(0) @[42:16]
-      jmp 2::ret @[42:16]
+  #: @[42:12]
+      n1 = $s5Hello6PersonCMa(0) @[42:12]
+      jmp 1::ret @[42:12]
       
-  #2::ret: @[42:16]
-      n2 = $s5Hello6PersonC3ageACSi_tcfC(30, n1.swift::metadata_response.field_0) @[42:16]
-      jmp 4::ret @[42:16]
+  #1::ret: @[42:12]
+      n2 = $s5Hello6PersonC3ageACSi_tcfC(30, n1.swift::metadata_response.field_0) @[42:12]
+      jmp 3::ret @[42:12]
       
-  #4::ret: @[41:0]
-      store &john <- n2 @[41:0]
-      ret n2 @[43:5]
+  #3::ret: @[42:5]
+      ret n2 @[42:5]
       
 } @?
 
@@ -114,7 +112,6 @@ define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(var0: int, var1: *ptr_
       store &age <- n1 @[36:0]
       n2 = load &var1 @[36:0]
       store &self <- n2 @[36:0]
-      store var1.T5Hello6PersonC.field_2 <- 0 @[36:0]
       n1 = load &var0 @[37:18]
       store var1.T5Hello6PersonC.field_1.TSi.field_0 <- n1 @[37:18]
       n3 = load &var1 @[38:5]

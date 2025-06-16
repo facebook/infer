@@ -28,30 +28,32 @@ let tuple_field_of_pos type_name pos =
 
 let type_name_of_type typ = Textual.TypeName.of_string (Format.asprintf "%a" Textual.Typ.pp typ)
 
-let rec translate_struct ?struct_map ~tuple struct_name elements =
-  let fields = to_textual_field_decls ~tuple ?struct_map struct_name elements in
+let rec translate_struct lang ?struct_map ~tuple struct_name elements =
+  let fields = to_textual_field_decls lang ~tuple ?struct_map struct_name elements in
   let struct_ = {Textual.Struct.name= struct_name; supers= []; fields; attributes= []} in
   struct_
 
 
-and to_textual_field_decls ?struct_map ~tuple struct_name fields =
+and to_textual_field_decls lang ?struct_map ~tuple struct_name fields =
   let to_textual_field_decl pos (_, typ) =
     let qualified_name =
       if tuple then tuple_field_of_pos struct_name pos else field_of_pos struct_name pos
     in
-    let textual_typ = to_textual_typ ?struct_map typ in
+    let textual_typ = to_textual_typ lang ?struct_map typ in
     Textual.FieldDecl.{qualified_name; typ= textual_typ; attributes= []}
   in
   let fields = StdUtils.iarray_to_list fields in
   List.mapi ~f:to_textual_field_decl fields
 
 
-and to_textual_typ ?struct_map (typ : Llair.Typ.t) =
+and to_textual_typ lang ?struct_map (typ : Llair.Typ.t) =
   match typ with
   | Function {return; args} ->
-      let params_type = StdUtils.iarray_to_list args |> List.map ~f:(to_textual_typ ?struct_map) in
+      let params_type =
+        StdUtils.iarray_to_list args |> List.map ~f:(to_textual_typ lang ?struct_map)
+      in
       let return_type =
-        Option.value_map ~f:(to_textual_typ ?struct_map) return ~default:Textual.Typ.Void
+        Option.value_map ~f:(to_textual_typ lang ?struct_map) return ~default:Textual.Typ.Void
       in
       Textual.Typ.Fun (Some {params_type; return_type})
   | Integer _ ->
@@ -59,11 +61,11 @@ and to_textual_typ ?struct_map (typ : Llair.Typ.t) =
   | Float _ ->
       Textual.Typ.Float
   | Pointer {elt} ->
-      Textual.Typ.Ptr (to_textual_typ ?struct_map elt)
+      Textual.Typ.Ptr (to_textual_typ lang ?struct_map elt)
   | Array {elt} ->
-      Textual.Typ.Array (to_textual_typ ?struct_map elt)
+      Textual.Typ.Array (to_textual_typ lang ?struct_map elt)
   | Tuple {elts} ->
-      let tuple_name = to_textual_tuple_name ?struct_map elts in
+      let tuple_name = to_textual_tuple_name lang ?struct_map elts in
       Textual.Typ.(Ptr (Struct tuple_name))
   | Struct {name} ->
       let struct_name = Textual.TypeName.of_string name in
@@ -74,34 +76,34 @@ and to_textual_typ ?struct_map (typ : Llair.Typ.t) =
       Textual.Typ.Struct struct_name
 
 
-and to_textual_tuple_name ?struct_map elements =
+and to_textual_tuple_name lang ?struct_map elements =
   let elts = StdUtils.iarray_to_list elements in
   let _, typs = List.sort ~compare:(fun (n1, _) (n2, _) -> Int.compare n1 n2) elts |> List.unzip in
   let textual_types =
     List.map
       ~f:(fun typ ->
-        let textual_typ = to_textual_typ ?struct_map typ in
+        let textual_typ = to_textual_typ lang ?struct_map typ in
         type_name_of_type textual_typ )
       typs
   in
   Textual.TypeName.mk_swift_tuple_type_name textual_types
 
 
-let to_annotated_textual_typ ~struct_map llair_typ =
-  let typ = to_textual_typ ~struct_map llair_typ in
+let to_annotated_textual_typ lang ~struct_map llair_typ =
+  let typ = to_textual_typ lang ~struct_map llair_typ in
   {typ; Textual.Typ.attributes= []}
 
 
-let translate_types_env (types_defns : Llair.Typ.t list) =
+let translate_types_env lang (types_defns : Llair.Typ.t list) =
   let translate_types_defn structMap (typ : Llair.Typ.t) =
     match typ with
     | Struct {name: string; elts} ->
         let struct_name = Textual.TypeName.of_string name in
-        let struct_ = translate_struct ~tuple:false struct_name elts in
+        let struct_ = translate_struct lang ~tuple:false struct_name elts in
         add_struct_to_map struct_name struct_ structMap
     | Tuple {elts} ->
-        let tuple_name = to_textual_tuple_name elts in
-        let struct_ = translate_struct ~tuple:true tuple_name elts in
+        let tuple_name = to_textual_tuple_name lang elts in
+        let struct_ = translate_struct lang ~tuple:true tuple_name elts in
         add_struct_to_map tuple_name struct_ structMap
     | Opaque _ ->
         structMap
