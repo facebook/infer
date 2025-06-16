@@ -335,7 +335,7 @@ let to_textual_bool_exp ~proc_state loc exp =
 
 let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp args loc =
   let loc = to_textual_loc_instr ~proc_state loc in
-  let args_list, args =
+  let args_instrs, args =
     List.fold_map
       ~f:(fun acc_instrs exp ->
         let exp, _, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
@@ -348,10 +348,10 @@ let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
       args ~init:[]
   in
   let args = List.append (Option.to_list exp_opt) args in
-  let args =
+  let args, args_instrs =
     if Textual.QualifiedProcName.equal proc Textual.ProcDecl.assert_fail_name then
-      [Textual.Exp.Const Null]
-    else args
+      ([Textual.Exp.Const Null], [])
+    else (args, args_instrs)
   in
   let id =
     Option.map return ~f:(fun reg ->
@@ -359,7 +359,7 @@ let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
         id )
   in
   let let_instrs = Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc} in
-  List.append [let_instrs] args_list
+  List.append [let_instrs] args_instrs
 
 
 let to_textual_call ~proc_state (call : 'a Llair.call) =

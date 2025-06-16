@@ -158,8 +158,6 @@ define .plain_name = "test5_fp" $s5Hello8test5_fpyyF() : void {
       jmp 6::ret @[30:5]
       
   #6::ret: @[30:5]
-      n4 = load n3.__infer_tuple_class<int,*ptr_elt>.__infer_tuple_field_0 @[30:5]
-      n5 = load n3.__infer_tuple_class<int,*ptr_elt>.__infer_tuple_field_1 @[30:5]
       _ = __sil_assert_fail(null) @[30:5]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[30:5]
       
