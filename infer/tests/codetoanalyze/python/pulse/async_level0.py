@@ -222,12 +222,12 @@ async def await_arg2_with_star(arg1, *, arg2):
     await arg2
 
 
-async def FP_use_await_arg2_named_arg_with_star_ok():
+async def use_await_arg2_named_arg_with_star_ok():
     unawaited = async_fun()
     await await_arg2_with_star(None, arg2=unawaited)
 
 
-async def use_do_not_await_arg2_named_arg_with_star_bad():
+async def FN_use_do_not_await_arg2_named_arg_with_star_bad():
     unawaited = async_fun()
     await do_not_await_arg2_with_star(None, arg2=unawaited)
 

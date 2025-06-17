@@ -510,8 +510,7 @@ let call_closure_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
   let gen_closure_args opt_proc_attrs =
     let python_args =
       match opt_proc_attrs with
-      | Some {ProcAttributes.python_args}
-        when Int.equal (List.length python_args) (List.length args) ->
+      | Some {ProcAttributes.python_args} when List.length python_args <= List.length args ->
           python_args
       | Some {ProcAttributes.python_args} ->
           L.d_printfln "[ocaml model] %d argument required but %d were given"
@@ -521,7 +520,9 @@ let call_closure_dsl ~closure ~arg_names:_ ~args : DSL.aval DSL.model_monad =
           L.d_printfln "[ocaml model] Failed to load attributes" ;
           List.mapi args ~f:(fun i _ -> Printf.sprintf "arg_%d" i)
     in
-    let* locals = Dict.make python_args args ~const_strings_only:true in
+    let positional_args, named_args = List.split_n args (List.length python_args) in
+    let* locals = Dict.make python_args positional_args ~const_strings_only:true in
+    let* () = remove_allocation_attr_transitively named_args in
     ret [locals]
   in
   apply_python_closure closure gen_closure_args
