@@ -969,16 +969,21 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
       then
         let lltyp1 = Llvm.get_gep_source_element_type llv in
         let op2 = Llvm.operand llv 2 in
-        let _, ptr = xlate_value x (Llvm.operand llv 0) in
+        let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
         let typ = xlate_type x lltyp1 in
-        let fld =
-          match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op2) with
-          | Some n ->
-              n
-          | None ->
-              fail "field offset %a not an int: %a" pp_llvalue op2 pp_llvalue llv ()
-        in
-        ([], Llair.Exp.select typ ptr fld)
+        match typ with
+        | Typ.Struct {name} when String.equal name "swift.protocol_requirement" ->
+            (* don't know what to do with [swift.protocol_requirement] *)
+            (instrs, ptr)
+        | _ ->
+            let fld =
+              match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op2) with
+              | Some n ->
+                  n
+              | None ->
+                  fail "field offset %a not an int: %a" pp_llvalue op2 pp_llvalue llv ()
+            in
+            ([], Llair.Exp.select typ ptr fld)
       else
         let rec xlate_indices i =
           [%Dbg.call fun {pf} -> pf "@ %i %a" i pp_llvalue (Llvm.operand llv i)]
