@@ -41,3 +41,10 @@ class Person {
 func test6() -> Person {
     return Person(age: 30)
 }
+
+func test_retain_cycle() {
+    let _ = Person(age: 30)
+    let _ = Person(age: 35)
+    //john.spouse = jane
+    //jane.spouse = john
+}

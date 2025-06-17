@@ -1447,55 +1447,57 @@ let xlate_instr :
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
-      (* builtins *)
-      match xlate_builtin_exp fname with
-      | Some builtin ->
-          inline_or_move (builtin x)
-      | None -> (
-        match xlate_builtin_inst emit_inst x name_segs instr num_actuals loc with
-        | Some code ->
-            code
+      if String.equal fname "swift_release" then skip "swift_release"
+      else
+        (* builtins *)
+        match xlate_builtin_exp fname with
+        | Some builtin ->
+            inline_or_move (builtin x)
         | None -> (
-          match name_segs with
-          | ["__llair_throw"] ->
-              let pre, exc = xlate_value x (Llvm.operand instr 0) in
-              emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
-          | ["__llair_unreachable"] ->
-              emit_term (Term.unreachable ())
-          (* dropped / handled elsewhere *)
-          | ["llvm"; "dbg"; ("declare" | "label" | "value")]
-          | "llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
-              nop ()
-          (* unimplemented *)
-          | ["llvm"; ("stacksave" | "stackrestore")] ->
-              skip "dynamic stack deallocation"
-          | "llvm" :: "coro" :: _ ->
-              todo "coroutines:@ %a" pp_llvalue instr ()
-          | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
-              todo "statepoints:@ %a" pp_llvalue instr ()
-          | "llvm" :: "call" :: "preallocated" :: _ ->
-              todo "preallocated operand bundles:@ %a" pp_llvalue instr ()
-          | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
-              skip "variadic function intrinsic"
-          | "llvm" :: _ ->
-              skip "intrinsic"
-          | _ when Poly.equal (Llvm.classify_value llcallee) InlineAsm ->
-              skip "inline asm"
-          (* general function call that may not throw *)
-          | _ ->
-              let typ = xlate_type x lltyp in
-              let name, _ = find_name instr in
-              let lbl = name ^ ".ret" in
-              let pre_1, actuals = xlate_values x num_actuals (Llvm.operand instr) in
-              let areturn = xlate_name_opt x instr in
-              let return = Jump.mk lbl in
-              let pre_0, call =
-                term_call x llcallee ~unmangled_name fname ~typ ~actuals ~areturn ~return
-                  ~throw:None ~loc
-              in
-              continue (fun (insts, term) ->
-                  let cmnd = IArray.of_list insts in
-                  (pre_0 @ pre_1, call, [Block.mk ~lbl ~cmnd ~term]) ) ) ) )
+          match xlate_builtin_inst emit_inst x name_segs instr num_actuals loc with
+          | Some code ->
+              code
+          | None -> (
+            match name_segs with
+            | ["__llair_throw"] ->
+                let pre, exc = xlate_value x (Llvm.operand instr 0) in
+                emit_term ~prefix:(pop loc @ pre) (Term.throw ~exc ~loc)
+            | ["__llair_unreachable"] ->
+                emit_term (Term.unreachable ())
+            (* dropped / handled elsewhere *)
+            | ["llvm"; "dbg"; ("declare" | "label" | "value")]
+            | "llvm" :: ("lifetime" | "invariant") :: ("start" | "end") :: _ ->
+                nop ()
+            (* unimplemented *)
+            | ["llvm"; ("stacksave" | "stackrestore")] ->
+                skip "dynamic stack deallocation"
+            | "llvm" :: "coro" :: _ ->
+                todo "coroutines:@ %a" pp_llvalue instr ()
+            | "llvm" :: "experimental" :: "gc" :: "statepoint" :: _ ->
+                todo "statepoints:@ %a" pp_llvalue instr ()
+            | "llvm" :: "call" :: "preallocated" :: _ ->
+                todo "preallocated operand bundles:@ %a" pp_llvalue instr ()
+            | ["llvm"; ("va_start" | "va_copy" | "va_end")] ->
+                skip "variadic function intrinsic"
+            | "llvm" :: _ ->
+                skip "intrinsic"
+            | _ when Poly.equal (Llvm.classify_value llcallee) InlineAsm ->
+                skip "inline asm"
+            (* general function call that may not throw *)
+            | _ ->
+                let typ = xlate_type x lltyp in
+                let name, _ = find_name instr in
+                let lbl = name ^ ".ret" in
+                let pre_1, actuals = xlate_values x num_actuals (Llvm.operand instr) in
+                let areturn = xlate_name_opt x instr in
+                let return = Jump.mk lbl in
+                let pre_0, call =
+                  term_call x llcallee ~unmangled_name fname ~typ ~actuals ~areturn ~return
+                    ~throw:None ~loc
+                in
+                continue (fun (insts, term) ->
+                    let cmnd = IArray.of_list insts in
+                    (pre_0 @ pre_1, call, [Block.mk ~lbl ~cmnd ~term]) ) ) ) )
   | Invoke -> (
       let llcallee = Llvm.operand instr (Llvm.num_operands instr - 1) in
       let lltyp = Llvm.type_of llcallee in

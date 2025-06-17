@@ -62,17 +62,12 @@ let pp_struct_map fmt struct_map =
     (Textual.TypeName.Map.bindings struct_map)
 
 
-let pp fmt proc_state =
+let pp fmt ~print_types proc_state =
   F.fprintf fmt
-    "@[<v>@[<v>qualified_name: %a@]@;\
-     @[loc: %a@]@;\
-     @[locals: %a@]@;\
-     @[formals: %a@]@;\
-     @[ids: %a@]@@[types: %a@]@;\
-     ]@]"
+    "@[<v>@[<v>qualified_name: %a@]@;@[loc: %a@]@;@[locals: %a@]@;@[formals: %a@]@;@[ids: %a@]@;]@]"
     Textual.QualifiedProcName.pp proc_state.qualified_name Textual.Location.pp proc_state.loc
-    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids pp_struct_map
-    proc_state.struct_map
+    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids ;
+  if print_types then F.fprintf fmt "types: %a@" pp_struct_map proc_state.struct_map
 
 
 let update_locals ~proc_state varname typ =

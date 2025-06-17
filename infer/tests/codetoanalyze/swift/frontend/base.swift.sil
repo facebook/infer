@@ -22,6 +22,25 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
       
 } @?
 
+define .plain_name = "test_retain_cycle" $s5Hello17test_retain_cycleyyF() : void {
+  #: @[46:13]
+      n1 = $s5Hello6PersonCMa(0) @[46:13]
+      jmp 1::ret @[46:13]
+      
+  #1::ret: @[46:13]
+      n2 = n1.swift::metadata_response.field_0 @[46:13]
+      n3 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[46:13]
+      jmp 3::ret @[46:13]
+      
+  #3::ret: @[47:13]
+      n4 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[47:13]
+      jmp 4::ret @[47:13]
+      
+  #4::ret: @[50:1]
+      ret null @[50:1]
+      
+} @?
+
 define .plain_name = "test1" $s5Hello5test1yS2i_SitF(var0: int, var1: int) : int {
   local n2: int, n: int
   #: @[6:0]
@@ -161,8 +180,7 @@ define .plain_name = "test5_fp" $s5Hello8test5_fpyyF() : void {
       _ = __sil_assert_fail(null) @[30:5]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[30:5]
       
-  #9: @[30:5]
-      _ = $builtins.llvm_nondet() @[30:5]
+  #9: @[31:1]
       ret null @[31:1]
       
 } @?

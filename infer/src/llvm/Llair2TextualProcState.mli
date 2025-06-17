@@ -40,4 +40,4 @@ val update_local_or_formal_type :
 
 val get_local_or_formal_type : proc_state:t -> Textual.Exp.t -> Textual.Typ.annotated option
 
-val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+val pp : F.formatter -> print_types:bool -> t -> unit [@@warning "-unused-value-declaration"]

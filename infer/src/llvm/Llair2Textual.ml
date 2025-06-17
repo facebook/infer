@@ -446,14 +446,22 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         List.append call_textual_instrs textual_instrs
     | Nondet {reg; loc} ->
         (* llvm_init_tuple is also a nondet builtin but we return the type for tuples in the Textual to Sil translation *)
-        let builtin_name =
+        let builtin_name_opt =
           match reg with
           | Some reg when Llair.Typ.is_tuple (Reg.typ reg) ->
-              "llvm_init_tuple"
-          | _ ->
-              "llvm_nondet"
+              Some "llvm_init_tuple"
+          | Some _ ->
+              Some "llvm_nondet"
+          | None ->
+              None
         in
-        let call_textual_instrs = to_textual_builtin ~proc_state reg builtin_name [] loc in
+        let call_textual_instrs =
+          match builtin_name_opt with
+          | Some builtin_name ->
+              to_textual_builtin ~proc_state reg builtin_name [] loc
+          | None ->
+              []
+        in
         List.append call_textual_instrs textual_instrs
     | Builtin {reg; name; args; loc} when Llair.Builtin.equal name `malloc -> (
         let proc = Textual.ProcDecl.malloc_name in
