@@ -222,6 +222,11 @@ BUCK OPTIONS
            <bool> to control capture of Swift files. (Conversely:
            --no-buck-swift)
 
+       --buck-swift-keep-going
+           Activates: When using the BXL Clang integration, pass
+           --swift-keep-going <bool>. (Conversely:
+           --no-buck-swift-keep-going)
+
        --buck-targets-block-list +regex
            Skip capture of buck targets matched by the specified regular
            expression.

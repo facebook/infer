@@ -172,6 +172,8 @@ val buck_out_gen : string
 
 val buck_swift : bool
 
+val buck_swift_keep_going : bool
+
 val buck_targets_block_list : string list
 
 val capture : bool

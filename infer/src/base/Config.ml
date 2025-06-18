@@ -964,6 +964,12 @@ and buck_swift =
      files."
 
 
+and buck_swift_keep_going =
+  CLOpt.mk_bool ~long:"buck-swift-keep-going" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_buck)]
+    "When using the BXL Clang integration, pass $(b, --swift-keep-going <bool>)."
+
+
 and buck_targets_block_list =
   CLOpt.mk_string_list ~long:"buck-targets-block-list"
     ~in_help:InferCommand.[(Run, manual_buck); (Capture, manual_buck)]
@@ -3886,6 +3892,8 @@ and buck_mode : BuckMode.t option =
 
 
 and buck_swift = !buck_swift
+
+and buck_swift_keep_going = !buck_swift_keep_going
 
 and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 
