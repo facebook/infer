@@ -68,7 +68,8 @@ and to_textual_typ lang ?struct_map (typ : Llair.Typ.t) =
       Textual.Typ.(Ptr (Struct tuple_name))
   | Struct {name} ->
       let struct_name = Textual.TypeName.of_string name in
-      Textual.Typ.Struct struct_name
+      if Textual.Lang.is_c lang then Textual.Typ.Struct struct_name
+      else Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
   | Opaque {name} ->
       (* From llair's docs: Uniquely named aggregate type whose definition is hidden. *)
       let struct_name = Textual.TypeName.of_string name in

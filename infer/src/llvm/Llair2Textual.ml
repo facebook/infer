@@ -177,23 +177,14 @@ let undef_exp exp =
   (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, None, [])
 
 
-let add_deref ~proc_state exp ?exp_typ loc =
+let add_deref ~proc_state exp loc =
   match exp with
   | Textual.Exp.Lvar _ | Textual.Exp.Field _ ->
-      let typ = match exp_typ with Some (Textual.Typ.Ptr typ) -> Some typ | _ -> None in
-      let id = add_fresh_id ~proc_state ?typ () in
+      let id = add_fresh_id ~proc_state () in
       let instr = Textual.Instr.Load {id; exp; typ= None; loc} in
       ([instr], Textual.Exp.Var id)
   | _ ->
       ([], exp)
-
-
-let field_deref_exp exp field =
-  match exp with
-  | Textual.Exp.Lvar _ ->
-      Textual.Exp.(Field {exp= Load {exp; typ= None}; field})
-  | _ ->
-      Textual.Exp.(Field {exp; field})
 
 
 let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : Llair.Exp.t) :
@@ -246,7 +237,6 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       (textual_exp, Some textual_typ, [])
   | Ap1 (Select n, typ, exp) -> (
-      let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
       let typ_name =
         match typ with
         | Struct {name} ->
@@ -269,8 +259,10 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             if Llair.Typ.is_tuple typ then Type.tuple_field_of_pos typ_name n
             else Type.field_of_pos typ_name n
           in
-          let exp = field_deref_exp exp field in
-          (exp, Some textual_typ, exp_instrs) )
+          let field_instrs, exp = add_deref ~proc_state exp loc in
+          let instrs = List.append field_instrs exp_instrs in
+          let exp = Textual.Exp.Field {exp; field} in
+          (exp, None, instrs) )
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
@@ -500,7 +492,12 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
               let id = Some (reg_to_id ~proc_state reg |> fst) in
               let exp, _, exp_instrs = to_textual_exp loc ~proc_state exp in
               let instrs = List.append instrs exp_instrs in
-              Textual.Instr.Let {id; exp; loc} :: instrs )
+              match exp with
+              | Textual.Exp.Field _ ->
+                  let id = Option.value id ~default:(add_fresh_id ~proc_state ()) in
+                  Textual.Instr.Load {id; exp; typ= None; loc} :: instrs
+              | _ ->
+                  Textual.Instr.Let {id; exp; loc} :: instrs )
             ~init:[] reg_exps
         in
         List.append instrs textual_instrs
