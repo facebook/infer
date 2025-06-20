@@ -25,8 +25,8 @@ let combine_bool ~op ~default exprs =
   match List.reduce exprs ~f with Some expr -> expr | None -> default
 
 
-let rec type_condition_real (env : (_, _) Env.t) constraints ((ident, type_) : Ident.t * Ast.type_)
-    : Block.t * Exp.t =
+let rec type_condition_real (env : (_, _) Env.t) constraints seen_vars
+    ((ident, type_) : Ident.t * Ast.type_) : Block.t * Exp.t =
   let simple_condition typ id =
     let is_typ = mk_fresh_id () in
     let start = Node.make_stmt env [Env.has_type_instr env ~result:is_typ ~value:(Var id) typ] in
@@ -105,14 +105,14 @@ let rec type_condition_real (env : (_, _) Env.t) constraints ((ident, type_) : I
         let id = mk_fresh_id () in
         let load_instr = Env.load_field_from_expr env id (Var ident) field tuple_typ in
         let load_block = Block.make_instruction env [load_instr] in
-        let sub_block, sub_expr = type_condition_real env constraints (id, type_) in
+        let sub_block, sub_expr = type_condition_real env constraints seen_vars (id, type_) in
         (Block.all env [load_block; sub_block], sub_expr)
       in
       let blocks, exprs = List.unzip (List.map ~f fields_and_types) in
       ( Block.all env (is_tuple_block :: blocks)
       , combine_bool ~op:Binop.LAnd ~default:true_const (is_tuple_cond :: exprs) )
   | Union types ->
-      let f t = type_condition_real env constraints (ident, t) in
+      let f t = type_condition_real env constraints seen_vars (ident, t) in
       let blocks, exprs = List.unzip (List.map ~f types) in
       (* Union shouldn't be empty, but if it somehow happens, just return true. *)
       (Block.all env blocks, combine_bool ~op:Binop.LOr ~default:true_const exprs)
@@ -121,21 +121,30 @@ let rec type_condition_real (env : (_, _) Env.t) constraints ((ident, type_) : I
   | Var "_" ->
       succ_true env
   | Var v -> (
-    (* Simple substitution. Can go into infinite loop. For now we assume that the type checker rejects
-       such cases before. TODO: check for cycles in a validation step (T115271156) *)
-    match IString.Map.find_opt v constraints with
-    | Some subtyp ->
-        type_condition_real env constraints (ident, subtyp)
-    | None ->
-        L.debug Capture Verbose
-          "@[No constraint found, or type is not supported for type variable %s, treating as \
-           any()@."
-          v ;
+      if IString.Set.mem v seen_vars then (
+        (* NOTE: eqWAlizer rejects such cases but the Erlang compiler allows them *)
+        L.debug Capture Verbose "@[<v>@[Cycle in types. Treating occurrence of %s as any()@]@;@]" v ;
         succ_true env )
+      else
+        match IString.Map.find_opt v constraints with
+        | Some subtyp ->
+            type_condition_real env constraints (IString.Set.add v seen_vars) (ident, subtyp)
+        | None ->
+            L.debug Capture Verbose
+              "@[No constraint found, or type is not supported for type variable %s, treating as \
+               any()@."
+              v ;
+            succ_true env )
   | t ->
       L.debug Capture Verbose "@[The following type is not supported and is ignored: %s@."
         (Sexp.to_string (Ast.sexp_of_type_ t)) ;
       succ_true env
+
+
+let type_condition_real (env : (_, _) Env.t) constraints (ident_and_type : Ident.t * Ast.type_) :
+    Block.t * Exp.t =
+  let no_vars = IString.Set.empty in
+  type_condition_real env constraints no_vars ident_and_type
 
 
 let type_condition_dummy (env : (_, _) Env.t) _constraints _arg_typ : Block.t * Exp.t =

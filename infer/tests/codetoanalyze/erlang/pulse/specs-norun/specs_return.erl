@@ -16,7 +16,8 @@
     test_userdefined3_Bad/0,
     test_userdefined4_Bad/0,
     test_userdefined5_Ok/1,
-    fnl_test_userdefined6_Bad/1
+    fnl_test_userdefined6_Bad/1,
+    fn_test_userdefined7_Bad/0
 ]).
 
 -type my_atom_type() :: atom().
@@ -55,3 +56,7 @@ test_userdefined5_Ok(X) -> X.
 
 -spec fnl_test_userdefined6_Bad(integer()) -> my_union_type().
 fnl_test_userdefined6_Bad(X) -> X.
+
+% FN because we over-approximate the recursive occurrence of X by any(), to avoid handling cycles.
+-spec fn_test_userdefined7_Bad() -> X when X :: {ok, X}.
+fn_test_userdefined7_Bad() -> {ok, ok}.
