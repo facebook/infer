@@ -99,15 +99,6 @@ let to_name_attr func_name =
   Option.map ~f:Textual.Attr.mk_plain_name (FuncName.unmangled_name func_name)
 
 
-let to_result_type lang ~struct_map freturn =
-  Option.value_map
-    ~f:(fun reg ->
-      let typ = Reg.typ reg in
-      Type.to_annotated_textual_typ lang ~struct_map typ )
-    freturn
-    ~default:(Textual.Typ.mk_without_attributes Textual.Typ.Void)
-
-
 let to_formals lang ~struct_map func =
   let to_textual_formal formal = reg_to_var_name formal in
   let to_textual_formal_type formal = reg_to_annot_typ lang ~struct_map formal in
@@ -398,14 +389,13 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
     match inst with
     | Load {reg; ptr; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
-        let id, reg_typ = reg_to_id ~proc_state reg in
+        let id, _ = reg_to_id ~proc_state reg in
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
-        ProcState.update_local_or_formal_type ~typ_modif:PtrModif ~proc_state exp reg_typ ;
         let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
         List.append ptr_instrs (textual_instr :: textual_instrs)
     | Store {ptr; exp; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
-        let exp2, typ_exp2, exp2_instrs_ = to_textual_exp loc ~proc_state exp in
+        let exp2, _, exp2_instrs_ = to_textual_exp loc ~proc_state exp in
         let exp2, exp2_instrs =
           match (exp, exp2) with
           | Llair.Exp.Reg {name; id; typ}, Textual.Exp.Lvar _ ->
@@ -419,12 +409,6 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
               (exp2, exp2_instrs_)
         in
         let exp1, typ_exp1, exp1_instrs = to_textual_exp loc ~proc_state ptr in
-        Option.map
-          ~f:(fun typ_exp2 ->
-            ProcState.update_local_or_formal_type ~typ_modif:PtrModif ~proc_state exp1 typ_exp2 ;
-            typ_exp2 )
-          typ_exp2
-        |> ignore ;
         let textual_instr_opt =
           match typ_exp1 with
           | Some (Textual.Typ.Struct _) when Textual.Exp.is_zero_exp exp2 ->
@@ -574,12 +558,6 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
       let loc = to_textual_loc_instr ~proc_state loc_ in
       let textual_exp, textual_typ_opt, instrs = to_textual_exp loc ~proc_state exp in
       let exp_deref_instrs, textual_exp = add_deref ~proc_state textual_exp loc in
-      let inferred_textual_typ_opt = ProcState.get_local_or_formal_type ~proc_state textual_exp in
-      let textual_typ_opt =
-        Option.value_map
-          ~f:(fun typ -> Some typ.Textual.Typ.typ)
-          inferred_textual_typ_opt ~default:textual_typ_opt
-      in
       let instrs = List.append instrs exp_deref_instrs in
       ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc, instrs)
   | Return {exp= None; loc} ->
@@ -625,7 +603,6 @@ and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) :
       block.term
   in
   let instrs = List.append instrs term_instrs in
-  Llair2TextualType.type_inference ~proc_state instrs ;
   let last_loc =
     match term_loc_opt with
     | Some loc ->
@@ -708,16 +685,13 @@ let translate_llair_functions source_file lang struct_map globals functions =
       ; globals
       ; lang }
     in
-    let typ_opt, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
+    let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
     let result_type =
-      match typ_opt with
-      | Some typ ->
-          Textual.Typ.mk_without_attributes typ
-      | None ->
-          to_result_type lang ~struct_map func.Llair.freturn
+      Textual.Typ.mk_without_attributes
+        (Type.to_textual_typ lang ~struct_map (FuncName.typ func_name))
     in
-    let formals_types =
-      List.map ~f:(fun formal -> VarMap.find formal proc_state.formals) formals_list
+    let result_type =
+      match ret_typ with Some typ -> Textual.Typ.mk_without_attributes typ | None -> result_type
     in
     let procdecl =
       Textual.ProcDecl.

@@ -33,11 +33,4 @@ val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
 
 val update_ids : proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> unit
 
-type typ_modif = NoModif | PtrModif | RemovePtrModif
-
-val update_local_or_formal_type :
-  proc_state:t -> typ_modif:typ_modif -> Textual.Exp.t -> Textual.Typ.t -> unit
-
-val get_local_or_formal_type : proc_state:t -> Textual.Exp.t -> Textual.Typ.annotated option
-
 val pp : F.formatter -> print_types:bool -> t -> unit [@@warning "-unused-value-declaration"]

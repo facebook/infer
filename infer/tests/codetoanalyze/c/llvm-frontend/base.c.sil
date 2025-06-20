@@ -6,7 +6,7 @@
 
 .source_language = "C" @?
 
-declare __assert_fail(*ptr_elt, *ptr_elt, int, *ptr_elt) : void
+declare __assert_fail(*ptr_elt, *ptr_elt, int, *ptr_elt) : *ptr_elt
 
 define add(var0: int, var1: int) : int {
   local n2: int, n1: int
@@ -21,7 +21,7 @@ define add(var0: int, var1: int) : int {
       
 } @?
 
-declare bar() : void
+declare bar() : *ptr_elt
 
 define call_add() : int {
   #: @[30:25]
@@ -33,8 +33,8 @@ define call_add() : int {
       
 } @?
 
-define call_add1(var0: *int, var1: int) : int {
-  local y: int, ptr: *int
+define call_add1(var0: *ptr_elt, var1: int) : int {
+  local y: int, ptr: *ptr_elt
   #: @[48:0]
       n1 = load &var0 @[48:0]
       store &ptr <- n1 @[48:0]
@@ -51,9 +51,9 @@ define call_add1(var0: *int, var1: int) : int {
       
 } @?
 
-declare foo() : void
+declare foo() : *ptr_elt
 
-declare free(*ptr_elt) : void
+declare free(*ptr_elt) : *ptr_elt
 
 define get_age(var0: *ptr_elt) : int {
   local person: *ptr_elt
@@ -74,9 +74,9 @@ define main() : int {
       
 } @?
 
-declare malloc(int) : void
+declare malloc(int) : *ptr_elt
 
-declare my_fun(*ptr_elt) : void
+declare my_fun(*ptr_elt) : *ptr_elt
 
 define test() : *int {
   #: @[12:15]
@@ -123,13 +123,13 @@ define test10() : int {
       
 } @?
 
-define test11() : void {
+define test11() : *ptr_elt {
   #: @[77:16]
       ret null @[77:16]
       
 } @?
 
-define test12() : void {
+define test12() : *ptr_elt {
   local str: *ptr_elt
   #: @[82:3]
       _ = my_fun("hello") @[82:3]
@@ -306,8 +306,8 @@ define test2() : int {
       
 } @?
 
-define test3(var0: *int) : int {
-  local ptr: *int
+define test3(var0: *ptr_elt) : int {
+  local ptr: *ptr_elt
   #: @[22:0]
       n1 = load &var0 @[22:0]
       store &ptr <- n1 @[22:0]
@@ -338,7 +338,7 @@ define test5() : int {
 } @?
 
 define test6() : int {
-  local var1: int, ptr: *int
+  local var1: int, ptr: *ptr_elt
   #: @[33:8]
       store &ptr <- null @[33:8]
       n1 = call_add() @[34:7]
@@ -364,7 +364,7 @@ define test6() : int {
 } @?
 
 define test7() : int {
-  local var1: int, ptr: *int
+  local var1: int, ptr: *ptr_elt
   #: @[41:8]
       store &ptr <- null @[41:8]
       n1 = call_add() @[42:7]
@@ -389,8 +389,8 @@ define test7() : int {
       
 } @?
 
-define test8(var0: *int) : int {
-  local var2: int, ret: int, ptr: *int, null_ptr: *int
+define test8(var0: *ptr_elt) : int {
+  local var2: int, ret: int, ptr: *ptr_elt, null_ptr: *ptr_elt
   #: @[50:0]
       n1 = load &var0 @[50:0]
       store &ptr <- n1 @[50:0]
@@ -423,7 +423,7 @@ define test8(var0: *int) : int {
 } @?
 
 define test9() : int {
-  local ret: int, ptr: *int
+  local ret: int, ptr: *ptr_elt
   #: @[61:14]
       n1 = __sil_malloc(<int>) @[61:14]
       store &ptr <- n1 @[61:8]

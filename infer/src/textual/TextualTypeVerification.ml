@@ -33,6 +33,8 @@ let rec compat lang ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
   match (t1, t2) with
   | Int, Int ->
       true
+  | (Int, typ | typ, Int) when is_any_type_llvm lang typ ->
+      true
   | Float, Float ->
       true
   | Void, _ ->
@@ -60,7 +62,7 @@ let is_ptr typ = match typ with Typ.Ptr _ -> true | Typ.Void -> true | _ -> fals
 
 let is_ptr_struct typ = match typ with Typ.Ptr (Struct _) | Typ.Void -> true | _ -> false
 
-let is_int lang typ = match typ with Typ.Int -> true | _ -> is_any_type_llvm lang typ
+let is_int _lang typ = match typ with Typ.Int -> true | _ -> false
 
 let sub_int lang = function ty -> compat lang ~assigned:Int ~given:ty
 

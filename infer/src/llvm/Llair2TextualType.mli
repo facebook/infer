@@ -7,7 +7,6 @@
 
 open! IStd
 open! Llair
-module ProcState = Llair2TextualProcState
 
 val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
@@ -16,8 +15,6 @@ val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldnam
 val to_annotated_textual_typ : Textual.Lang.t -> struct_map:'a -> Typ.t -> Textual.Typ.annotated
 
 val to_textual_typ : Textual.Lang.t -> ?struct_map:'a -> Typ.t -> Textual.Typ.t
-
-val type_inference : proc_state:ProcState.t -> Textual.Instr.t list -> unit
 
 val join_typ : Textual.Typ.t option -> Textual.Typ.t option -> Textual.Typ.t option
 

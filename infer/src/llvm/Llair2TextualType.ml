@@ -8,7 +8,6 @@
 open! IStd
 open! Llair
 module L = Logging
-module ProcState = Llair2TextualProcState
 
 let add_struct_to_map name struct_ structMap =
   if Option.is_none (Textual.TypeName.Map.find_opt name structMap) then
@@ -112,30 +111,6 @@ let translate_types_env lang (types_defns : Llair.Typ.t list) =
           typ
   in
   List.fold ~f:translate_types_defn types_defns ~init:Textual.TypeName.Map.empty
-
-
-let type_inference ~proc_state instrs =
-  let type_inference instr =
-    match (instr : Textual.Instr.t) with
-    | Load {id; exp} -> (
-      match ProcState.get_local_or_formal_type ~proc_state (Var id) with
-      | Some typ_annot ->
-          ProcState.update_local_or_formal_type ~typ_modif:PtrModif ~proc_state exp typ_annot.typ
-      | _ ->
-          () )
-    | Store {exp1; exp2} -> (
-      match ProcState.get_local_or_formal_type ~proc_state exp1 with
-      | Some typ_annot ->
-          let typ_modif : ProcState.typ_modif =
-            match exp1 with Var _ -> PtrModif | _ -> NoModif
-          in
-          ProcState.update_local_or_formal_type ~typ_modif ~proc_state exp2 typ_annot.typ
-      | _ ->
-          () )
-    | _ ->
-        ()
-  in
-  List.iter ~f:type_inference (List.rev instrs)
 
 
 let rec join (typ1 : Textual.Typ.t) (typ2 : Textual.Typ.t) : Textual.Typ.t =
