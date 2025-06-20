@@ -170,8 +170,8 @@ module T = struct
       Format.kfprintf (fun fs -> Format.pp_close_box fs ()) fs fmt
     in
     match exp with
-    | Reg {name; id} ->
-        pf "%%%s!%i" name id
+    | Reg {name; id; typ} ->
+        pf "%%%s!%i : %a" name id LlairTyp.pp typ
     | Global {name} ->
         pf "%@%s%a" name pp_demangled name
     | FuncName {name; unmangled_name} ->
