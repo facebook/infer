@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 LABEL maintainer "Infer team"
 
@@ -8,7 +8,7 @@ RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
       curl \
       libc6-dev \
-      openjdk-11-jdk-headless \
+      openjdk-17-jre-headless \
       sqlite3 \
       xz-utils \
       zlib1g-dev && \
