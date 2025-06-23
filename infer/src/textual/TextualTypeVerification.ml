@@ -378,15 +378,29 @@ let typeof_const (const : Const.t) : Typ.t =
       Float
 
 
-let typeof_reserved_proc procsig args =
+let typeof_binop op args procsig =
+  match (op : Binop.t) with
+  | PlusPI | MinusPI -> (
+    match args with
+    | [(_, typ1); (_, _typ2)] ->
+        ret (typ1, Some [typ1; Typ.Int], TextualDecls.NotVariadic, procsig, args)
+    | _ ->
+        abort )
+  | _ ->
+      ret (Typ.Int, Some [Typ.Int; Typ.Int], TextualDecls.NotVariadic, procsig, args)
+
+
+let typeof_reserved_proc procsig typed_args =
   let proc = ProcSig.to_qualified_procname procsig in
-  if ProcDecl.to_binop proc |> Option.is_some then
-    ret (Typ.Int, Some [Typ.Int; Typ.Int], TextualDecls.NotVariadic, procsig, args)
-  else if ProcDecl.to_unop proc |> Option.is_some then
-    ret (Typ.Int, Some [Typ.Int], TextualDecls.NotVariadic, procsig, args)
-  else
-    let* () = add_error (mk_missing_declaration_error procsig) in
-    abort
+  match ProcDecl.to_binop proc with
+  | Some op ->
+      typeof_binop op typed_args procsig
+  | None ->
+      if ProcDecl.to_unop proc |> Option.is_some then
+        ret (Typ.Int, Some [Typ.Int], TextualDecls.NotVariadic, procsig, typed_args)
+      else
+        let* () = add_error (mk_missing_declaration_error procsig) in
+        abort
 
 
 let typeof_generics = Typ.Ptr (Typ.Struct TypeName.hack_generics)
@@ -541,14 +555,15 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       let* lang = get_lang in
       let procsig = Exp.call_sig proc (List.length args) lang in
       let* nb_generics = count_generics_args args in
+      let* typed_args = mapM args ~f:typeof_exp in
       let* result_type, formals_types, is_variadic, procsig, args =
-        typeof_procname procsig args nb_generics
+        typeof_procname procsig typed_args nb_generics
       in
       let* loc = get_location in
       let+ args =
         match formals_types with
         | None ->
-            ret args
+            mapM args ~f:(fun (exp, _) -> ret exp)
         | Some formals_types ->
             let* decls = get_decls in
             let formals_types =
@@ -563,7 +578,7 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
                   List.take formals_types n
                   @ List.init (List.length args - n) ~f:(fun _ -> variadic_typ)
             in
-            mapM2 loc args formals_types ~f:(fun exp assigned ->
+            mapM2 loc args formals_types ~f:(fun (exp, _typ) assigned ->
                 let+ exp =
                   typecheck_exp exp
                     ~check:(fun given -> compat lang ~assigned ~given)
