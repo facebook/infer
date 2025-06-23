@@ -8,7 +8,7 @@ RUN apt-get update && \
     apt-get install --yes --no-install-recommends \
       curl \
       libc6-dev \
-      openjdk-17-jre-headless \
+      openjdk-17-jdk-headless \
       sqlite3 \
       xz-utils \
       zlib1g-dev && \
