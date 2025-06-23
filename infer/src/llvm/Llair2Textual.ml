@@ -262,7 +262,8 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let field_instrs, exp = add_deref ~proc_state exp loc in
           let instrs = List.append field_instrs exp_instrs in
           let exp = Textual.Exp.Field {exp; field} in
-          (exp, None, instrs) )
+          let typ = Type.lookup_field_type ~struct_map typ_name field in
+          (exp, typ, instrs) )
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
@@ -375,6 +376,19 @@ let to_textual_builtin ~proc_state return name args loc =
   to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc return args loc
 
 
+let remove_store_zero_in_class exp1 typ_exp1 exp2 loc =
+  let any_type_llvm_name =
+    match Textual.Typ.any_type_llvm with Textual.Typ.Struct name -> name | _ -> assert false
+  in
+  match typ_exp1 with
+  | Some (Textual.Typ.Ptr (Struct type_name))
+    when Textual.Exp.is_zero_exp exp2 && not (Textual.TypeName.equal type_name any_type_llvm_name)
+    ->
+      None
+  | _ ->
+      Some (Textual.Instr.Store {exp1; typ= None; exp2; loc})
+
+
 let cmnd_to_instrs ~(proc_state : ProcState.t) block =
   let struct_map = proc_state.ProcState.struct_map in
   let to_instr textual_instrs inst =
@@ -401,13 +415,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
               (exp2, exp2_instrs_)
         in
         let exp1, typ_exp1, exp1_instrs = to_textual_exp loc ~proc_state ptr in
-        let textual_instr_opt =
-          match typ_exp1 with
-          | Some (Textual.Typ.Struct _) when Textual.Exp.is_zero_exp exp2 ->
-              None
-          | _ ->
-              Some (Textual.Instr.Store {exp1; typ= None; exp2; loc})
-        in
+        let textual_instr_opt = remove_store_zero_in_class exp1 typ_exp1 exp2 loc in
         (Option.to_list textual_instr_opt @ exp2_instrs) @ exp1_instrs @ textual_instrs
     | Alloc {reg} ->
         let reg_var_name = reg_to_var_name reg in

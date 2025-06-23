@@ -20,12 +20,11 @@ module TypeNameBridge = struct
   let sil_type_of_types = of_string "TYPE"
 end
 
-let any_type_llvm = Typ.Struct (Textual.TypeName.of_string "ptr_elt")
-
 let is_any_type_llvm lang typ =
   match typ with
   | _ ->
-      (Textual.Lang.is_c lang || Textual.Lang.is_swift lang) && Typ.equal typ any_type_llvm
+      (Textual.Lang.is_c lang || Textual.Lang.is_swift lang)
+      && Typ.equal typ Textual.Typ.any_type_llvm
 
 
 (** is it safe to assign a value of type [given] to a variable of type [assigned] *)

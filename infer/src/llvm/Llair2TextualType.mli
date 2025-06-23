@@ -20,3 +20,9 @@ val join_typ : Textual.Typ.t option -> Textual.Typ.t option -> Textual.Typ.t opt
 
 val translate_types_env :
   Textual.Lang.t -> Llair.Typ.t list -> Textual.Struct.t Textual.TypeName.Map.t
+
+val lookup_field_type :
+     struct_map:Textual.Struct.t Textual.TypeName.Map.t
+  -> Textual.TypeName.t
+  -> Textual.qualified_fieldname
+  -> Textual.Typ.t option

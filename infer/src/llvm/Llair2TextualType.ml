@@ -94,6 +94,21 @@ let to_annotated_textual_typ lang ~struct_map llair_typ =
   {typ; Textual.Typ.attributes= []}
 
 
+let lookup_field_type ~struct_map struct_name field_name =
+  let struct_ = Textual.TypeName.Map.find_opt struct_name struct_map in
+  match struct_ with
+  | None ->
+      None
+  | Some struct_ ->
+      let field =
+        List.find
+          ~f:(fun field ->
+            Textual.equal_qualified_fieldname field.Textual.FieldDecl.qualified_name field_name )
+          struct_.Textual.Struct.fields
+      in
+      Option.map ~f:(fun field -> field.Textual.FieldDecl.typ) field
+
+
 let translate_types_env lang (types_defns : Llair.Typ.t list) =
   let translate_types_defn structMap (typ : Llair.Typ.t) =
     match typ with

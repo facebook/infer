@@ -137,7 +137,6 @@ define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(var0: int, var1: *ptr_
       n2 = load &var1 @[36:0]
       store &self <- n2 @[36:0]
       n3 = load &var1 @[36:0]
-      store n3.T5Hello6PersonC.field_2 <- 0 @[36:0]
       n4 = load &var1 @[37:18]
       n5 = load n4.T5Hello6PersonC.field_1 @[37:18]
       n1 = load &var0 @[37:18]
