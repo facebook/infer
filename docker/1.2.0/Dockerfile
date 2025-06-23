@@ -21,7 +21,7 @@ RUN INFER_VERSION=v1.2.0; \
       https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux-x86_64-${INFER_VERSION}.tar.xz | \
     tar xJ && \
     rm -f /infer && \
-    ln -s ${PWD}/infer-linux64-$INFER_VERSION /infer
+    ln -s ${PWD}/infer-linux-x86_64-$INFER_VERSION /infer
 
 # Install infer
 ENV PATH /infer/bin:${PATH}
