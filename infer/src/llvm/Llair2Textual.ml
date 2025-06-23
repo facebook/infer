@@ -342,8 +342,16 @@ let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
         let id = reg_to_id ~proc_state reg |> fst in
         id )
   in
-  let let_instrs = Textual.Instr.Let {id; exp= Call {proc; args; kind}; loc} in
-  List.append [let_instrs] args_instrs
+  let call_exp =
+    if
+      (* skip calls to swift_retain *)
+      Textual.ProcName.equal proc.Textual.QualifiedProcName.name
+        (Textual.ProcName.of_string "swift_retain")
+    then List.hd_exn args
+    else Textual.Exp.Call {proc; args; kind}
+  in
+  let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
+  List.append [let_instr] args_instrs
 
 
 let to_textual_call ~proc_state (call : 'a Llair.call) =
