@@ -18,7 +18,7 @@ RUN apt-get update && \
 RUN INFER_VERSION=v1.2.0; \
     cd /opt && \
     curl -sL \
-      https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux64-${INFER_VERSION}.tar.xz | \
+      https://github.com/facebook/infer/releases/download/${INFER_VERSION}/infer-linux-x86_64-${INFER_VERSION}.tar.xz | \
     tar xJ && \
     rm -f /infer && \
     ln -s ${PWD}/infer-linux64-$INFER_VERSION /infer
