@@ -76,6 +76,16 @@ define unreachable_example(i: int) : void {
     unreachable
 }
 
+define pointer_arithmetic_int_ptr_ok(ptr: *int): *int {
+  #entry:
+    ret __sil_pluspi(ptr, 4)
+}
+
+define pointer_arithmetic_float_ptr_bad(ptr: *int): *float {
+  #entry:
+    ret __sil_pluspi(ptr, 4)
+}
+
 
 define type_as_expr() : void {
   #entry:

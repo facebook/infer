@@ -6,6 +6,41 @@
 
 .source_language = "Swift" @?
 
+define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA6PersonC_ADtF(var0: *ptr_elt, var1: *ptr_elt) : *ptr_elt {
+  local john: *ptr_elt, jane: *ptr_elt
+  #: @[45:0]
+      n1 = load &var0 @[45:0]
+      store &john <- n1 @[45:0]
+      n2 = load &var1 @[45:0]
+      store &jane <- n2 @[45:0]
+      n3 = load &var1 @[46:19]
+      n4 = n3 @[46:19]
+      jmp 5::ret @[46:19]
+      
+  #10::ret: @[47:17]
+      n10 = load &var1 @[47:17]
+      n11 = load __sil_pluspi(n10, __sil_mult_int(8, 13)) @[47:17]
+      n12 = load &var1 @[47:17]
+      _ = $builtins.llvm_dynamic_call(n11, __sil_cast(<int>, &var0), n12) @[47:17]
+      jmp 14::void::ret @[47:17]
+      
+  #14::void::ret: @[48:1]
+      ret null @[48:1]
+      
+  #5::ret: @[46:17]
+      n5 = load &var0 @[46:17]
+      n6 = load __sil_pluspi(n5, __sil_mult_int(8, 13)) @[46:17]
+      n7 = load &var0 @[46:17]
+      _ = $builtins.llvm_dynamic_call(n6, __sil_cast(<int>, &var1), n7) @[46:17]
+      jmp 9::void::ret @[46:17]
+      
+  #9::void::ret: @[47:19]
+      n8 = load &var0 @[47:19]
+      n9 = n8 @[47:19]
+      jmp 10::ret @[47:19]
+      
+} @?
+
 define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : *__infer_tuple_class<int,int> {
   local height: int, age: int
   #: @[18:0]
@@ -23,21 +58,28 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
 } @?
 
 define .plain_name = "test_retain_cycle" $s5Hello17test_retain_cycleyyF() : *ptr_elt {
-  #: @[46:13]
-      n1 = $s5Hello6PersonCMa(0) @[46:13]
-      jmp 1::ret @[46:13]
+  local john: *ptr_elt, jane: *ptr_elt
+  #: @[51:16]
+      n1 = $s5Hello6PersonCMa(0) @[51:16]
+      jmp 3::ret @[51:16]
       
-  #1::ret: @[46:13]
-      n2 = load n1.swift::metadata_response.field_0 @[46:13]
-      n4 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[46:13]
-      jmp 3::ret @[46:13]
+  #$s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret: @[54:1]
+      ret null @[54:1]
       
-  #3::ret: @[47:13]
-      n5 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[47:13]
-      jmp 4::ret @[47:13]
+  #3::ret: @[51:16]
+      n2 = load n1.swift::metadata_response.field_0 @[51:16]
+      n4 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[51:16]
+      jmp 5::ret @[51:16]
       
-  #4::ret: @[50:1]
-      ret null @[50:1]
+  #5::ret: @[50:0]
+      store &john <- n4 @[50:0]
+      n5 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[52:16]
+      jmp 6::ret @[52:16]
+      
+  #6::ret: @[50:0]
+      store &jane <- n5 @[50:0]
+      _ = $s5Hello11set_spousesyyAA6PersonC_ADtF(n4, n5) @[53:5]
+      jmp $s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret @[53:5]
       
 } @?
 
@@ -137,7 +179,6 @@ define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(var0: int, var1: *ptr_
       n2 = load &var1 @[36:0]
       store &self <- n2 @[36:0]
       n3 = load &var1 @[36:0]
-      store n3.T5Hello6PersonC.field_2 <- 0 @[36:0]
       n4 = load &var1 @[37:18]
       n5 = load n4.T5Hello6PersonC.field_1 @[37:18]
       n1 = load &var0 @[37:18]

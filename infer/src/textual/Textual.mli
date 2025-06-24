@@ -114,7 +114,7 @@ module QualifiedProcName : sig
   module Hashtbl : Hashtbl.S with type key = t
 end
 
-type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
+type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t} [@@deriving equal]
 (* field name [name] must be declared in type [enclosing_class] *)
 
 val pp_qualified_fieldname : F.formatter -> qualified_fieldname -> unit
@@ -198,6 +198,8 @@ module Typ : sig
   val pp_annotated : F.formatter -> annotated -> unit
 
   val mk_without_attributes : t -> annotated
+
+  val any_type_llvm : t
 end
 
 module Ident : sig

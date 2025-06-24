@@ -42,9 +42,13 @@ func test6() -> Person {
     return Person(age: 30)
 }
 
+func set_spouses(_ john: Person, _ jane: Person) {
+    john.spouse = jane
+    jane.spouse = john
+}
+
 func test_retain_cycle() {
-    let _ = Person(age: 30)
-    let _ = Person(age: 35)
-    //john.spouse = jane
-    //jane.spouse = john
+    let john = Person(age: 30)
+    let jane = Person(age: 35)
+    set_spouses(john, jane)
 }

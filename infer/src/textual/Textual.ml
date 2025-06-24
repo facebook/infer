@@ -330,7 +330,7 @@ module QualifiedProcName = struct
   end)
 end
 
-type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
+type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t} [@@deriving equal]
 (* field name [name] must be declared in type [enclosing_class] *)
 
 let pp_qualified_fieldname fmt ({enclosing_class; name} : qualified_fieldname) =
@@ -472,6 +472,8 @@ module Typ = struct
 
 
   let mk_without_attributes typ = {typ; attributes= []}
+
+  let any_type_llvm = Struct (TypeName.of_string "ptr_elt")
 end
 
 module Ident : sig
