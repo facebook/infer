@@ -10,6 +10,7 @@ RUN apt-get update && \
       libc6-dev \
       openjdk-17-jdk-headless \
       sqlite3 \
+      make \
       xz-utils \
       zlib1g-dev && \
     rm -rf /var/lib/apt/lists/*
