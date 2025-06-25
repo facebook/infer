@@ -32,9 +32,10 @@ func test5_fp() {
 
 class Person {
     let age: Int
-    var spouse: Person?
+    var spouse: Person
     init(age: Int) {
         self.age = age
+        self.spouse = Person(age: 0)
     }
 }
 
@@ -44,7 +45,7 @@ func test6() -> Person {
 
 func set_spouses(_ john: Person, _ jane: Person) {
     john.spouse = jane
-    jane.spouse = john
+    //jane.spouse = john
 }
 
 func test_retain_cycle() {
