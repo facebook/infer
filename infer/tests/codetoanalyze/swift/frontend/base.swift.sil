@@ -205,22 +205,12 @@ define .plain_name = "spouse.get" $s5Hello6PersonC6spouseACvg(var0: *ptr_elt) : 
   #: @[0:0]
       n2 = load &var0 @[0:0]
       n1 = load n2.T5Hello6PersonC.field_2 @[0:0]
-      n4 = load &var2 @[0:0]
-      _ = swift_beginAccess(n1, n4, 32, null) @[0:0]
-      jmp swift_beginAccess::void::ret @[0:0]
-      
-  #5::ret: @[0:0]
-      n7 = load &var2 @[0:0]
-      _ = swift_endAccess(n7) @[0:0]
-      jmp swift_endAccess::void::ret @[0:0]
-      
-  #swift_beginAccess::void::ret: @[0:0]
-      n5 = load n1 @[0:0]
-      n6 = n5 @[0:0]
+      n4 = load n1 @[0:0]
+      n5 = n4 @[0:0]
       jmp 5::ret @[0:0]
       
-  #swift_endAccess::void::ret: @[0:0]
-      ret n5 @[0:0]
+  #5::ret: @[0:0]
+      ret n4 @[0:0]
       
 } @?
 
@@ -234,19 +224,9 @@ define .plain_name = "spouse.set" $s5Hello6PersonC6spouseACvs(var0: *ptr_elt, va
   #4::ret: @[0:0]
       n4 = load &var1 @[0:0]
       n3 = load n4.T5Hello6PersonC.field_2 @[0:0]
-      n6 = load &var3 @[0:0]
-      _ = swift_beginAccess(n3, n6, 33, null) @[0:0]
-      jmp swift_beginAccess::void::ret @[0:0]
-      
-  #swift_beginAccess::void::ret: @[0:0]
-      n7 = load n3 @[0:0]
-      n8 = load &var0 @[0:0]
-      store n3 <- n8 @[0:0]
-      n9 = load &var3 @[0:0]
-      _ = swift_endAccess(n9) @[0:0]
-      jmp swift_endAccess::void::ret @[0:0]
-      
-  #swift_endAccess::void::ret: @[0:0]
+      n6 = load n3 @[0:0]
+      n7 = load &var0 @[0:0]
+      store n3 <- n7 @[0:0]
       ret null @[0:0]
       
 } @?
