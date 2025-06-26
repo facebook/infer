@@ -610,6 +610,8 @@ module Name = struct
 
   let is_objc_class name = match name with ObjcClass _ -> true | _ -> false
 
+  let is_swift_class name = match name with SwiftClass _ -> true | _ -> false
+
   let is_objc_block name = match name with ObjcBlock _ -> true | _ -> false
 
   module C = struct

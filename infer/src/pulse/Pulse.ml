@@ -1371,7 +1371,7 @@ module PulseTransferFunctions = struct
              let rhs_addr = ValueOrigin.value rhs_vo in
              and_is_int_if_integer_type typ rhs_addr astate
              >>|| PulseOperations.hack_propagates_type_on_load tenv path loc rhs_exp rhs_addr
-             >>|| PulseOperations.add_static_type_objc_class tenv typ rhs_addr loc
+             >>|| PulseOperations.add_static_type_objc_swift_class tenv typ rhs_addr loc
              >>|| PulseOperations.write_load_id lhs_id rhs_vo )
             |> SatUnsat.to_list
             |> PulseReport.report_results analysis_data path loc
