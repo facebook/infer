@@ -394,7 +394,8 @@ let merge typename ~newer ~current =
   | ObjcProtocol _
   | CppClass _
   | ObjcBlock _
-  | CFunction _ ->
+  | CFunction _
+  | SwiftClass _ ->
       if not (is_dummy newer) then newer else current
   | JavaClass _ when is_dummy newer ->
       current

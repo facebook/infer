@@ -163,6 +163,7 @@ and name =
   | PythonClass of PythonClassName.t
   | ObjcBlock of objc_block_sig
   | CFunction of c_function_sig
+  | SwiftClass of SwiftClassName.t
 [@@deriving hash, sexp]
 
 and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
@@ -244,6 +245,8 @@ and pp_name_c_syntax pe f = function
       F.fprintf f "%s" bsig.name
   | CFunction csig ->
       F.fprintf f "%a" QualifiedCppName.pp csig.c_name
+  | SwiftClass name ->
+      SwiftClassName.pp f name
 
 
 and pp_template_spec_info pe f = function
@@ -488,6 +491,10 @@ module Name = struct
         -1
     | _, CFunction _ ->
         1
+    | SwiftClass _, _ ->
+        -1
+    | _, SwiftClass _ ->
+        1
 
 
   let qual_name = function
@@ -502,7 +509,8 @@ module Name = struct
     | HackClass _
     | PythonClass _
     | ObjcBlock _
-    | CFunction _ ->
+    | CFunction _
+    | SwiftClass _ ->
         QualifiedCppName.empty
 
 
@@ -517,7 +525,8 @@ module Name = struct
     | HackClass _
     | PythonClass _
     | ObjcBlock _
-    | CFunction _ ->
+    | CFunction _
+    | SwiftClass _ ->
         QualifiedCppName.empty
 
 
@@ -548,6 +557,8 @@ module Name = struct
         bsig.name
     | CFunction csig ->
         QualifiedCppName.to_qual_string csig.c_name
+    | SwiftClass name ->
+        SwiftClassName.to_string name
 
 
   let pp fmt tname =
@@ -570,6 +581,8 @@ module Name = struct
           ""
       | CFunction _ ->
           "function"
+      | SwiftClass _ ->
+          "swift"
     in
     F.fprintf fmt "%s %a" (prefix tname) (pp_name_c_syntax Pp.text) tname
 
@@ -579,7 +592,13 @@ module Name = struct
   let show = to_string
 
   let is_class = function
-    | CppClass _ | JavaClass _ | HackClass _ | ObjcClass _ | CSharpClass _ | PythonClass _ ->
+    | CppClass _
+    | JavaClass _
+    | HackClass _
+    | ObjcClass _
+    | CSharpClass _
+    | PythonClass _
+    | SwiftClass _ ->
         true
     | CStruct _ | CUnion _ | ErlangType _ | ObjcProtocol _ | ObjcBlock _ | CFunction _ ->
         false

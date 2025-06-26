@@ -106,6 +106,7 @@ and name =
   | PythonClass of PythonClassName.t
   | ObjcBlock of objc_block_sig
   | CFunction of c_function_sig
+  | SwiftClass of SwiftClassName.t
 [@@deriving hash, sexp]
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque
