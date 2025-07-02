@@ -8,25 +8,25 @@
 
 define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA6PersonC_ADtF(var0: *ptr_elt, var1: *ptr_elt) : *ptr_elt {
   local john: *ptr_elt, jane: *ptr_elt
-  #: @[46:0]
-      n1 = load &var0 @[46:0]
-      store &john <- n1 @[46:0]
-      n2 = load &var1 @[46:0]
-      store &jane <- n2 @[46:0]
-      n3 = load &var1 @[47:19]
-      n4 = n3 @[47:19]
-      jmp 5::ret @[47:19]
+  #: @[40:0]
+      n1 = load &var0 @[40:0]
+      store &john <- n1 @[40:0]
+      n2 = load &var1 @[40:0]
+      store &jane <- n2 @[40:0]
+      n3 = load &var1 @[41:19]
+      n4 = n3 @[41:19]
+      jmp 5::ret @[41:19]
       
-  #5::ret: @[47:17]
-      n5 = load &var0 @[47:17]
-      n6 = load __sil_pluspi(n5, __sil_mult_int(8, 13)) @[47:17]
-      n7 = load &var1 @[47:17]
-      n8 = load &var0 @[47:17]
-      _ = $builtins.llvm_dynamic_call(n6, n7, n8) @[47:17]
-      jmp 8::void::ret @[47:17]
+  #5::ret: @[41:17]
+      n5 = load &var0 @[41:17]
+      n6 = load __sil_pluspi(n5, __sil_mult_int(8, 13)) @[41:17]
+      n7 = load &var1 @[41:17]
+      n8 = load &var0 @[41:17]
+      _ = $builtins.llvm_dynamic_call(n6, n7, n8) @[41:17]
+      jmp 8::void::ret @[41:17]
       
-  #8::void::ret: @[49:1]
-      ret null @[49:1]
+  #8::void::ret: @[43:1]
+      ret null @[43:1]
       
 } @?
 
@@ -48,27 +48,27 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
 
 define .plain_name = "test_retain_cycle" $s5Hello17test_retain_cycleyyF() : *ptr_elt {
   local john: *ptr_elt, jane: *ptr_elt
-  #: @[52:16]
-      n1 = $s5Hello6PersonCMa(0) @[52:16]
-      jmp 3::ret @[52:16]
+  #: @[46:16]
+      n1 = $s5Hello6PersonCMa(0) @[46:16]
+      jmp 3::ret @[46:16]
       
-  #$s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret: @[55:1]
-      ret null @[55:1]
+  #$s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret: @[49:1]
+      ret null @[49:1]
       
-  #3::ret: @[52:16]
-      n2 = load n1.swift::metadata_response.field_0 @[52:16]
-      n4 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[52:16]
-      jmp 5::ret @[52:16]
+  #3::ret: @[46:16]
+      n2 = load n1.swift::metadata_response.field_0 @[46:16]
+      n4 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[46:16]
+      jmp 5::ret @[46:16]
       
-  #5::ret: @[51:0]
-      store &john <- n4 @[51:0]
-      n5 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[53:16]
-      jmp 6::ret @[53:16]
+  #5::ret: @[45:0]
+      store &john <- n4 @[45:0]
+      n5 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[47:16]
+      jmp 6::ret @[47:16]
       
-  #6::ret: @[51:0]
-      store &jane <- n5 @[51:0]
-      _ = $s5Hello11set_spousesyyAA6PersonC_ADtF(n4, n5) @[54:5]
-      jmp $s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret @[54:5]
+  #6::ret: @[45:0]
+      store &jane <- n5 @[45:0]
+      _ = $s5Hello11set_spousesyyAA6PersonC_ADtF(n4, n5) @[48:5]
+      jmp $s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret @[48:5]
       
 } @?
 
@@ -130,60 +130,60 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
 } @?
 
 define .plain_name = "test6" $s5Hello5test6AA6PersonCyF() : *ptr_elt {
-  #: @[43:12]
-      n1 = $s5Hello6PersonCMa(0) @[43:12]
-      jmp 1::ret @[43:12]
+  #: @[37:12]
+      n1 = $s5Hello6PersonCMa(0) @[37:12]
+      jmp 1::ret @[37:12]
       
-  #1::ret: @[43:12]
-      n2 = load n1.swift::metadata_response.field_0 @[43:12]
-      n3 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[43:12]
-      jmp 3::ret @[43:12]
+  #1::ret: @[37:12]
+      n2 = load n1.swift::metadata_response.field_0 @[37:12]
+      n3 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[37:12]
+      jmp 3::ret @[37:12]
       
-  #3::ret: @[43:5]
-      ret n3 @[43:5]
+  #3::ret: @[37:5]
+      ret n3 @[37:5]
       
 } @?
 
 define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfC(var0: int, var1: *ptr_elt) : *ptr_elt {
-  #: @[36:0]
-      n1 = load &var1 @[36:0]
-      n2 = swift_allocObject(n1, 32, 7) @[36:0]
-      jmp 3::ret @[36:0]
+  #: @[30:0]
+      n1 = load &var1 @[30:0]
+      n2 = swift_allocObject(n1, 32, 7) @[30:0]
+      jmp 3::ret @[30:0]
       
-  #3::ret: @[36:0]
-      n3 = load &var0 @[36:0]
-      n4 = $s5Hello6PersonC3ageACSi_tcfc(n3, n2) @[36:0]
-      jmp 4::ret @[36:0]
+  #3::ret: @[30:0]
+      n3 = load &var0 @[30:0]
+      n4 = $s5Hello6PersonC3ageACSi_tcfc(n3, n2) @[30:0]
+      jmp 4::ret @[30:0]
       
-  #4::ret: @[36:0]
-      ret n4 @[36:0]
+  #4::ret: @[30:0]
+      ret n4 @[30:0]
       
 } @?
 
 define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(var0: int, var1: *ptr_elt) : *ptr_elt {
   local self: *ptr_elt, age: int
-  #: @[36:0]
-      n1 = load &var0 @[36:0]
-      store &age <- n1 @[36:0]
-      n2 = load &var1 @[36:0]
-      store &self <- n2 @[36:0]
-      n3 = load &var1 @[37:18]
-      n4 = load n3.T5Hello6PersonC.field_1 @[37:18]
-      n1 = load &var0 @[37:18]
-      store n4.TSi.field_0 <- n1 @[37:18]
-      n5 = $s5Hello6PersonCMa(0) @[38:23]
-      jmp 7::ret @[38:23]
+  #: @[30:0]
+      n1 = load &var0 @[30:0]
+      store &age <- n1 @[30:0]
+      n2 = load &var1 @[30:0]
+      store &self <- n2 @[30:0]
+      n3 = load &var1 @[31:18]
+      n4 = load n3.T5Hello6PersonC.field_1 @[31:18]
+      n1 = load &var0 @[31:18]
+      store n4.TSi.field_0 <- n1 @[31:18]
+      n5 = $s5Hello6PersonCMa(0) @[32:23]
+      jmp 7::ret @[32:23]
       
-  #7::ret: @[38:23]
-      n6 = load n5.swift::metadata_response.field_0 @[38:23]
-      n7 = $s5Hello6PersonC3ageACSi_tcfC(0, n6) @[38:23]
-      jmp 9::ret @[38:23]
+  #7::ret: @[32:23]
+      n6 = load n5.swift::metadata_response.field_0 @[32:23]
+      n7 = $s5Hello6PersonC3ageACSi_tcfC(0, n6) @[32:23]
+      jmp 9::ret @[32:23]
       
-  #9::ret: @[38:21]
-      n8 = load &var1 @[38:21]
-      store n8.T5Hello6PersonC.field_2 <- n7 @[38:21]
-      n9 = load &var1 @[39:5]
-      ret n9 @[39:5]
+  #9::ret: @[32:21]
+      n8 = load &var1 @[32:21]
+      store n8.T5Hello6PersonC.field_2 <- n7 @[32:21]
+      n9 = load &var1 @[33:5]
+      ret n9 @[33:5]
       
 } @?
 
@@ -237,41 +237,11 @@ declare .plain_name = "deinit" $s5Hello6PersonCfD(*ptr_elt) : *ptr_elt
 
 declare .plain_name = "deinit" $s5Hello6PersonCfd(*ptr_elt) : *ptr_elt
 
-define .plain_name = "test5_fp" $s5Hello8test5_fpyyF() : *ptr_elt {
-  local person_age: int
-  #: @[28:22]
-      n1 = $s5Hello5test4SiyF() @[28:22]
-      jmp 2::ret @[28:22]
-      
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[27:0]
-      unreachable @[27:0]
-      
-  #2::ret: @[30:5]
-      n2 = __sil_eq(n1, 30) @[30:5]
-      if n2 then jmp 9 else jmp 5 @[30:5]
-      
-  #5: @[30:5]
-      n3 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[30:5]
-      jmp 6::ret @[30:5]
-      
-  #6::ret: @[30:5]
-      _ = __sil_assert_fail(null) @[30:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[30:5]
-      
-  #9: @[31:1]
-      ret null @[31:1]
-      
-} @?
-
 define .plain_name = "returnOne" $s5Hello9returnOneSiyF() : int {
   #: @[3:5]
       ret 1 @[3:5]
       
 } @?
-
-declare $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF(int, int, int, int, *ptr_elt, int, int, int, int, int) : *ptr_elt
-
-declare $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() : *ptr_elt
 
 declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *ptr_elt
 
@@ -280,8 +250,6 @@ declare objc_opt_self(*ptr_elt) : *ptr_elt
 declare swift_allocObject(*ptr_elt, int, int) : *ptr_elt
 
 declare swift_beginAccess(*ptr_elt, *ptr_elt, int, *ptr_elt) : *ptr_elt
-
-declare swift_bridgeObjectRetain(*ptr_elt) : *ptr_elt
 
 declare swift_deallocClassInstance(*ptr_elt, int, int) : *ptr_elt
 
@@ -326,10 +294,6 @@ global ::str::5::Hello: *ptr_elt
 global ::str::3::age: *ptr_elt
 
 global ::str::17::_TtC5Hello6Person: *ptr_elt
-
-global ::str::16::Hello/base::swift: *ptr_elt
-
-global ::str::16::Assertion failed: *ptr_elt
 
 global ::str::0::: *ptr_elt
 
@@ -387,9 +351,6 @@ type __infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int> = {__infer_tuple_fi
                                                                 __infer_tuple_field_2: *ptr_elt;
                                                                 __infer_tuple_field_3: int;
                                                                 __infer_tuple_field_4: int}
-
-type __infer_tuple_class<int,*ptr_elt> = {__infer_tuple_field_0: int;
-                                          __infer_tuple_field_1: *ptr_elt}
 
 type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
                                      __infer_tuple_field_1: int}
