@@ -1,0 +1,81 @@
+Release 1.12:
+- #35, #43: add full support for ZIP64 archives [Jules Villard and Xavier Leroy]
+- #41, #42: fix memory leak when a `Zlib.stream` is finalized and
+  `Zlib.deflate_end` / `Zlib.inflate_end` was not called before
+
+Release 1.11:
+- `Zip.add_entry_generator ~level:0` was missing a CRC update
+- #28: fix build on platforms with no shared libs
+- #33: update META files to use plugin convention
+- Use `Stdlib.xxx` instead of `Pervasives.xxx`.  OCaml >= 4.07 is required.
+- `make all` automatically builds in native-code if supported
+- Added local .opam file
+- Updated tests and added automatic test harness
+- Generate and install .mli, .cmt, and .cmti files
+
+Release 1.10:
+- #25: Fix Gzip.flush_continue [James Owen]
+- Improve compatibility with OCaml 4.09
+
+Release 1.09:
+- #22: Add a Gzip.flush_continue function that allows the user to
+  flush the contents of the zip buffer all the way to disk but then
+  continue writing to the zipped channel  [James Owen]
+
+Release 1.08:
+- ocamlfind is now mandatory as a consequence of #4
+- #4: use ocamlfind and $(EXT_...) configuration variables for better
+  cross-platform support in Makefile [user 'whitequark']
+- Improve Mingw support in Makefile (install .dll files) [Bertrand Jeannet]
+- #5: make sure 'zip' and 'camlzip' packages can be used both in the
+  same executable [Rudi Grinberg]
+- #6: Z_BUF_ERROR is not a fatal error, just a transient condition
+  [Tuukka Korhonen]
+- #13: fix memory leak in Zlib.compress_direct [Alain Frisch]
+- #14: add Zlib.deflate_string and Zlib.inflate_string, using immutable
+  strings as input buffers instead of mutable bytes [Vincent Balat]
+- #16: assertion failure when reading ZIP files with 2^16 entries or more
+  [Einar Lielmanis]
+- #18: in Zip.open_in, properly close channels in case of error
+  [Daniel Weil]
+
+Release 1.07:
+- Allocate Zlib data structures outside the OCaml heap for compatibility
+  with recent versions of Zlib
+  (Github issue #1, pull request #2, report and fix by Einar Lielmanis).
+- Don't pass -L and -I options to the C compiler unless necessary.
+- Compile and install the shared library zip.cmxs.
+  (Contributed by E. Millon.)
+- ocamlfind: install under 'zip' and 'camlzip' package names.
+  (This is what the OPAM package does.)
+
+Release 1.06:
+- Switch to "safe string" mode.  Some API functions that use to take strings
+  now take byte sequences instead.  OCaml 4.02 or up is required.
+- Update for OCaml 4.03.
+- Avoid Zlib error when calling Gzip.output with length = 0.
+- Improve support for ZIP files / ZIP file members greater than 2 Gbytes.
+
+Release 1.05:
+- Added support for findlib (Contributed by E. Friendly)
+
+Release 1.04:
+- Added function Zip.add_entry_generator.  (Contributed by A. Frisch.)
+- The "level" optional argument was sometimes not honored; fixed.
+- Relicensed under LGPL 2.1 or above, with Caml's special exception
+  for static linking.
+
+Release 1.03:
+- Fixed bug in Zlib.uncompress that could cause it to loop infinitely.
+- Documentation comments in .mli files converted to ocamldoc format.
+
+Release 1.02:
+- 64-bit incompatibility fixed.
+- Better support for large ZIP files (> 2 Gb).
+- Added Caml's special exception for static linking to the license.
+
+Release 1.01:
+- Use ocamlmklib to create library and possibly DLL (for OCaml 3.04 and up).
+
+Release 1.00:
+- First public release

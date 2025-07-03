@@ -1,0 +1,33 @@
+#!/bin/sh
+
+here=`pwd`
+
+tempdir="$1"
+if [ -z "$tempdir" ]; then
+  echo "Usage: bigfiles.run <tempdir>" 1>&2
+  echo "<tempdir> must have 10 Gb of free space" 1>&2
+  exit 2
+fi
+
+cd $tempdir
+
+trap "rm -f zeroes" 0 EXIT INT
+
+echo "Creating big file..."
+dd if=/dev/zero of=zeroes bs=1000000 count=5120
+echo "Running the tests..."
+
+runtest() {
+  rm -rf result minizip.zip
+  mkdir result
+  if ($2 ./minizip.zip zeroes > /dev/null && \
+     (cd result && $3 ../minizip.zip > /dev/null) && \
+     cmp result/zeroes zeroes)
+  then rm -rf result minizip.zip; echo "$1: passed"
+  else rm -rf result minizip.zip; echo "$1: FAILED"; exit 2
+  fi
+}
+
+runtest "Big file 1" "$here/minizip c" "$here/minizip x"
+runtest "Big file 2" "zip -r" "$here/minizip x"
+runtest "Big file 3" "$here/minizip c" "unzip"

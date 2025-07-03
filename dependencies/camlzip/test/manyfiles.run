@@ -1,0 +1,44 @@
+#!/bin/sh
+
+here=`pwd`
+
+tempdir="$1"
+if [ -z "$tempdir" ]; then
+  echo "Usage: manyfiles.run <tempdir>" 1>&2
+  echo "<tempdir> must have 10 Gb of free space" 1>&2
+  exit 2
+fi
+
+cd $tempdir
+
+trap "rm -rf hier" 0 EXIT INT
+
+echo "Creating file hierarchy..."
+rm -rf hier
+mkdir hier hier/1
+j=1
+while [ $j -le 300 ]; do
+  dd if=/dev/zero of=hier/1/$j bs=50000 count=1 status=none
+  j=`expr $j + 1`
+done
+i=2
+while [ $i -le 300 ]; do
+  ln -s 1 hier/$i
+  i=`expr $i + 1`
+done
+echo "Running the tests..."
+
+runtest() {
+  rm -rf result minizip.zip
+  mkdir result
+  if ($2 ./minizip.zip hier > /dev/null && \
+     (cd result && $3 ../minizip.zip > /dev/null) && \
+     diff -q -r result/hier hier)
+  then rm -rf result minizip.zip; echo "$1: passed"
+  else rm -rf result minizip.zip; echo "$1: FAILED"; exit 2
+  fi
+}
+
+runtest "Many files 1" "$here/minizip c" "$here/minizip x"
+runtest "Many files 2" "zip -r" "$here/minizip x"
+runtest "Many files 3" "$here/minizip c" "unzip"

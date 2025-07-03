@@ -1,0 +1,7 @@
+zlibstubs.o: zlibstubs.c
+gzip.cmo: zlib.cmi gzip.cmi 
+gzip.cmx: zlib.cmx gzip.cmi 
+zip.cmo: zlib.cmi zip.cmi 
+zip.cmx: zlib.cmx zip.cmi 
+zlib.cmo: zlib.cmi 
+zlib.cmx: zlib.cmi 
