@@ -832,14 +832,6 @@ module ProcDecl = struct
         false
 end
 
-module Global = struct
-  type t = {name: VarName.t; typ: Typ.t; attributes: Attr.t list}
-
-  let pp fmt {name; typ; attributes} =
-    let annotated_typ : Typ.annotated = {typ; attributes} in
-    F.fprintf fmt "%a: %a" VarName.pp name Typ.pp_annotated annotated_typ
-end
-
 module FieldDecl = struct
   type t = {qualified_name: qualified_fieldname; typ: Typ.t; attributes: Attr.t list}
 
@@ -1156,6 +1148,17 @@ module Node = struct
 
 
   module Set = Stdlib.Set.Make (T)
+end
+
+module Global = struct
+  type t = {name: VarName.t; typ: Typ.t; attributes: Attr.t list; init_exp: Exp.t option}
+
+  let pp fmt {name; typ; attributes; init_exp} =
+    let annotated_typ : Typ.annotated = {typ; attributes} in
+    if Option.is_some init_exp then
+      F.fprintf fmt "%a: %a = %a" VarName.pp name Typ.pp_annotated annotated_typ (Pp.option Exp.pp)
+        init_exp
+    else F.fprintf fmt "%a: %a" VarName.pp name Typ.pp_annotated annotated_typ
 end
 
 module ProcDesc = struct

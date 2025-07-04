@@ -241,7 +241,7 @@ declaration:
   | GLOBAL name=vname COLON annotated_typ=annotated_typ
     { let typ = annotated_typ.Typ.typ in
       let attributes = annotated_typ.Typ.attributes in
-      let global : Global.t = {name; typ; attributes} in
+      let global : Global.t = {name; typ; attributes; init_exp= None} in
       Module.Global global }
   | TYPE typ_name=tname supers=extends? ioption(EQ) attributes=annots
          LBRACKET l=separated_list(SEMICOLON, typed_field) RBRACKET

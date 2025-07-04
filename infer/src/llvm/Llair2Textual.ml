@@ -77,7 +77,7 @@ let to_textual_global lang ~struct_map global =
   let global_name = Global.name global in
   let name = Textual.VarName.of_string global_name in
   let typ = Type.to_textual_typ lang ~struct_map (Global.typ global) in
-  Textual.Global.{name; typ; attributes= []}
+  Textual.Global.{name; typ; attributes= []; init_exp= None}
 
 
 let translate_llair_globals globals =
