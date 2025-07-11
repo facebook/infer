@@ -9,7 +9,7 @@
     low-level model of memory. *)
 
 open! NS
-module Loc = Loc
+module Loc = LairLoc
 module Typ = LlairTyp
 module Reg = Reg
 module Exp = LlairExp
@@ -41,33 +41,33 @@ end
 
 (** Instructions for memory manipulation or other non-control effects. *)
 type inst = private
-  | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: Loc.t}
+  | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: LairLoc.t}
       (** Move each value [exp] into corresponding register [reg]. All of the moves take effect
           simultaneously. *)
-  | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: Loc.t}
+  | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: LairLoc.t}
       (** Read a [len]-byte value from the contents of memory at address [ptr] into [reg]. *)
-  | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
+  | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: LairLoc.t}
       (** Write [len]-byte value [exp] into memory at address [ptr]. *)
-  | AtomicRMW of {reg: Reg.t; ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: Loc.t}
+  | AtomicRMW of {reg: Reg.t; ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: LairLoc.t}
       (** Atomically load a [len]-byte value [val] from the contents of memory at address [ptr], set
           [reg] to [val], and store the [len]-byte value of [(λreg. exp) val] into memory at address
           [ptr]. Note that, unlike other instructions and arguments, occurrences of [reg] in [exp]
           refer to the new, not old, value. *)
   | AtomicCmpXchg of
-      {reg: Reg.t; ptr: Exp.t; cmp: Exp.t; exp: Exp.t; len: Exp.t; len1: Exp.t; loc: Loc.t}
+      {reg: Reg.t; ptr: Exp.t; cmp: Exp.t; exp: Exp.t; len: Exp.t; len1: Exp.t; loc: LairLoc.t}
       (** Atomically load a [len]-byte value from the contents of memory at address [ptr], compare
           the value to [cmp], and if equal store [len]-byte value [exp] into memory at address
           [ptr]. Sets [reg] to the loaded value concatenated to a [len1]-byte value [1] if the store
           was performed, otherwise [0]. *)
-  | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: Loc.t}
+  | Alloc of {reg: Reg.t; num: Exp.t; len: int; loc: LairLoc.t}
       (** Allocate a block of memory large enough to store [num] elements of [len] bytes each and
           bind [reg] to the first address. *)
-  | Free of {ptr: Exp.t; loc: Loc.t}
+  | Free of {ptr: Exp.t; loc: LairLoc.t}
       (** Deallocate the previously allocated block at address [ptr]. *)
-  | Nondet of {reg: Reg.t option; msg: string; loc: Loc.t}
+  | Nondet of {reg: Reg.t option; msg: string; loc: LairLoc.t}
       (** Bind [reg] to an arbitrary value, representing non-deterministic approximation of behavior
           described by [msg]. *)
-  | Builtin of {reg: Reg.t option; name: Builtin.t; args: Exp.t iarray; loc: Loc.t}
+  | Builtin of {reg: Reg.t option; name: Builtin.t; args: Exp.t iarray; loc: LairLoc.t}
       (** Bind [reg] to the value of applying builtin [name] to [args]. *)
 
 (** A (straight-line) command is a sequence of instructions. *)
@@ -101,22 +101,22 @@ and 'a call =
   ; areturn: Reg.t option  (** Register to receive return value. *)
   ; return: jump  (** Return destination. *)
   ; throw: jump option  (** Handler destination. *)
-  ; loc: Loc.t }
+  ; loc: LairLoc.t }
 
 (** Block terminators for function call/return or other control transfers. *)
 and term = private
-  | Switch of {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: Loc.t}
+  | Switch of {key: Exp.t; tbl: (Exp.t * jump) iarray; els: jump; loc: LairLoc.t}
       (** Invoke the [jump] in [tbl] associated with the integer expression [case] which is equal to
           [key], if any, otherwise invoke [els]. *)
-  | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: Loc.t}
+  | Iswitch of {ptr: Exp.t; tbl: jump iarray; loc: LairLoc.t}
       (** Invoke the [jump] in [tbl] whose [dst] is equal to [ptr]. *)
   | Call of callee call  (** Call function with arguments. *)
-  | Return of {exp: Exp.t option; loc: Loc.t}
+  | Return of {exp: Exp.t option; loc: LairLoc.t}
       (** Invoke [return] of the dynamically most recent [Call]. *)
-  | Throw of {exc: Exp.t; loc: Loc.t}
+  | Throw of {exc: Exp.t; loc: LairLoc.t}
       (** Invoke [throw] of the dynamically most recent [Call] with [throw] not [None]. *)
-  | Abort of {loc: Loc.t}  (** Trigger abnormal program termination *)
-  | Unreachable of {loc: Loc.t}  (** Halt as control is assumed to never reach [Unreachable]. *)
+  | Abort of {loc: LairLoc.t}  (** Trigger abnormal program termination *)
+  | Unreachable of {loc: LairLoc.t}  (** Halt as control is assumed to never reach [Unreachable]. *)
 
 (** A block is a destination of a jump with arguments, contains code. *)
 and block = private
@@ -138,7 +138,7 @@ and func = private
   ; fthrow: Reg.t
   ; locals: Reg.Set.t  (** Local registers *)
   ; entry: block
-  ; loc: Loc.t }
+  ; loc: LairLoc.t }
 
 type ip
 
@@ -154,26 +154,33 @@ module Inst : sig
 
   val pp : t pp
 
-  val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:Loc.t -> inst
+  val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:LairLoc.t -> inst
 
-  val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:LairLoc.t -> inst
 
-  val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val store : ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:LairLoc.t -> inst
 
-  val atomic_rmw : reg:Reg.t -> ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:Loc.t -> inst
+  val atomic_rmw : reg:Reg.t -> ptr:Exp.t -> exp:Exp.t -> len:Exp.t -> loc:LairLoc.t -> inst
 
   val atomic_cmpxchg :
-    reg:Reg.t -> ptr:Exp.t -> cmp:Exp.t -> exp:Exp.t -> len:Exp.t -> len1:Exp.t -> loc:Loc.t -> inst
+       reg:Reg.t
+    -> ptr:Exp.t
+    -> cmp:Exp.t
+    -> exp:Exp.t
+    -> len:Exp.t
+    -> len1:Exp.t
+    -> loc:LairLoc.t
+    -> inst
 
-  val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:Loc.t -> inst
+  val alloc : reg:Reg.t -> num:Exp.t -> len:int -> loc:LairLoc.t -> inst
 
-  val free : ptr:Exp.t -> loc:Loc.t -> inst
+  val free : ptr:Exp.t -> loc:LairLoc.t -> inst
 
-  val nondet : reg:Reg.t option -> msg:string -> loc:Loc.t -> inst
+  val nondet : reg:Reg.t option -> msg:string -> loc:LairLoc.t -> inst
 
-  val builtin : reg:Reg.t option -> name:Builtin.t -> args:Exp.t iarray -> loc:Loc.t -> t
+  val builtin : reg:Reg.t option -> name:Builtin.t -> args:Exp.t iarray -> loc:LairLoc.t -> t
 
-  val loc : inst -> Loc.t
+  val loc : inst -> LairLoc.t
 
   val locals : inst -> Reg.Set.t
 
@@ -197,15 +204,15 @@ module Term : sig
 
   val invariant : ?parent:func -> t -> unit
 
-  val goto : dst:jump -> loc:Loc.t -> term
+  val goto : dst:jump -> loc:LairLoc.t -> term
   (** Construct a [Switch] representing an unconditional branch. *)
 
-  val branch : key:Exp.t -> nzero:jump -> zero:jump -> loc:Loc.t -> term
+  val branch : key:Exp.t -> nzero:jump -> zero:jump -> loc:LairLoc.t -> term
   (** Construct a [Switch] representing a conditional branch. *)
 
-  val switch : key:Exp.t -> tbl:(Exp.t * jump) iarray -> els:jump -> loc:Loc.t -> term
+  val switch : key:Exp.t -> tbl:(Exp.t * jump) iarray -> els:jump -> loc:LairLoc.t -> term
 
-  val iswitch : ptr:Exp.t -> tbl:jump iarray -> loc:Loc.t -> term
+  val iswitch : ptr:Exp.t -> tbl:jump iarray -> loc:LairLoc.t -> term
 
   val call :
        unmangled_name:string option
@@ -215,7 +222,7 @@ module Term : sig
     -> areturn:Reg.t option
     -> return:jump
     -> throw:jump option
-    -> loc:Loc.t
+    -> loc:LairLoc.t
     -> term * (callee:func -> unit)
 
   val icall :
@@ -225,7 +232,7 @@ module Term : sig
     -> areturn:Reg.t option
     -> return:jump
     -> throw:jump option
-    -> loc:Loc.t
+    -> loc:LairLoc.t
     -> term * (candidates:func iarray -> unit)
 
   val intrinsic :
@@ -235,18 +242,18 @@ module Term : sig
     -> areturn:Reg.t option
     -> return:jump
     -> throw:jump option
-    -> loc:Loc.t
+    -> loc:LairLoc.t
     -> term
 
-  val return : exp:Exp.t option -> loc:Loc.t -> term
+  val return : exp:Exp.t option -> loc:LairLoc.t -> term
 
-  val throw : exc:Exp.t -> loc:Loc.t -> term
+  val throw : exc:Exp.t -> loc:LairLoc.t -> term
 
-  val unreachable : ?loc:Loc.t -> unit -> term
+  val unreachable : ?loc:LairLoc.t -> unit -> term
 
-  val abort : loc:Loc.t -> term
+  val abort : loc:LairLoc.t -> term
 
-  val loc : term -> Loc.t
+  val loc : term -> LairLoc.t
 end
 
 module Block : sig
@@ -280,7 +287,7 @@ module IP : sig
 
   val inst : t -> inst option
 
-  val loc : t -> Loc.t
+  val loc : t -> LairLoc.t
 
   val succ : t -> t
 
@@ -305,7 +312,7 @@ module Func : sig
     -> fthrow:Reg.t
     -> entry:block
     -> cfg:block iarray
-    -> loc:Loc.t
+    -> loc:LairLoc.t
     -> t
 
   val mk_undefined :
@@ -313,7 +320,7 @@ module Func : sig
     -> formals:Reg.t iarray
     -> freturn:Reg.t option
     -> fthrow:Reg.t
-    -> loc:Loc.t
+    -> loc:LairLoc.t
     -> t
 
   val find : string -> functions -> t option
