@@ -41,7 +41,7 @@
              | c -> c
        end
 
-     module PairsSet = Set.Make(IntPairs)
+     module PairsSet = OSet.Make(IntPairs)
 
      let m = PairsSet.(empty |> add (2,3) |> add (5,7) |> add (11,13))
    ]}
@@ -66,7 +66,7 @@ module type OrderedType =
           Example: a suitable ordering function is the generic structural
           comparison function {!Stdlib.compare}. *)
   end
-(** Input signature of the functor {!Set.Make}. *)
+(** Input signature of the functor {!OSet.Make}. *)
 
 module type S =
   sig
@@ -197,7 +197,7 @@ module type S =
     (** Return the list of all elements of the given set.
        The returned list is sorted in increasing order with respect
        to the ordering [Ord.compare], where [Ord] is the argument
-       given to {!Set.Make}. *)
+       given to {!OSet.Make}. *)
 
     val only_elt: t -> elt option
     (** Return the element of a singleton set, or None otherwise. *)
@@ -217,11 +217,11 @@ module type S =
     *)
 
     val max_elt: t -> elt
-    (** Same as {!Set.S.min_elt}, but returns the largest element of the
+    (** Same as {!OSet.S.min_elt}, but returns the largest element of the
        given set. *)
 
     val max_elt_opt: t -> elt option
-    (** Same as {!Set.S.min_elt_opt}, but returns the largest element of the
+    (** Same as {!OSet.S.min_elt_opt}, but returns the largest element of the
         given set.
         @since 4.05
     *)
@@ -344,7 +344,7 @@ module type S =
     end
     with type t := t
   end
-(** Output signature of the functor {!Set.Make}. *)
+(** Output signature of the functor {!OSet.Make}. *)
 
 type ('elt, 'cmp) t [@@deriving compare, equal, sexp]
 

@@ -8,9 +8,9 @@
 open! NS0
 include NSSet_intf
 
-type ('elt, 'compare_elt) t = ('elt, 'compare_elt) Set.t [@@deriving compare, equal, sexp]
+type ('elt, 'compare_elt) t = ('elt, 'compare_elt) OSet.t [@@deriving compare, equal, sexp]
 
-type 'compare_elt compare = 'compare_elt Set.compare [@@deriving compare, equal, sexp]
+type 'compare_elt compare = 'compare_elt OSet.compare [@@deriving compare, equal, sexp]
 
 module Make_from_Comparer (Elt : sig
   type t [@@deriving equal, sexp_of]
@@ -18,7 +18,7 @@ module Make_from_Comparer (Elt : sig
   include NSComparer.S with type t := t
 end) =
 struct
-  module S = Set.Make [@inlined] (Elt)
+  module S = OSet.Make [@inlined] (Elt)
 
   type elt = Elt.t
 
