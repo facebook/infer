@@ -540,6 +540,8 @@ let resolve_method ?(is_virtual = false) ~method_exists tenv class_name proc_nam
               | PythonClass _ ->
                   (* We currently only support single inheritance for Python so this is straightforward *)
                   supers
+              | SwiftClass _ ->
+                  supers
             in
             List.find_map supers_to_search ~f:resolve_name )
   in

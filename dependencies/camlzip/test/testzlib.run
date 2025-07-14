@@ -1,0 +1,8 @@
+#!/bin/sh
+
+t1=`mktemp`
+t2=`mktemp`
+if ./testzlib testzlib.ml $t1 && ./testzlib -d $t1 $t2 && cmp $t2 testzlib.ml
+then rm -f $t1 $t2; echo "Zlib: passed"
+else rm -f $t1 $t2; echo "Zlib: FAILED"; exit 2
+fi

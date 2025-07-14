@@ -357,7 +357,8 @@ let is_android_lifecycle_method tenv pname =
            | ObjcProtocol _
            | PythonClass _
            | ObjcBlock _
-           | CFunction _ ->
+           | CFunction _
+           | SwiftClass _ ->
                false
            | JavaClass java_class_name ->
                JavaClassName.package java_class_name

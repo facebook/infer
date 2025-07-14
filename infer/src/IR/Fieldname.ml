@@ -142,6 +142,8 @@ let to_simplified_string ({class_name; field_name} : t) =
         Some (JavaClassName.classname name)
     | PythonClass name ->
         Some (PythonClassName.classname name)
+    | SwiftClass name ->
+        Some (SwiftClassName.classname name)
   in
   Option.value_map last_class_name ~default:field_name ~f:(fun last_class_name ->
       let sep = match class_name with CppClass _ -> "::" | _ -> "." in

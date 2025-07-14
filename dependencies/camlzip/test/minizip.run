@@ -1,0 +1,23 @@
+#!/bin/sh
+
+here=`pwd`
+
+runtest() {
+  d=/tmp/minizip$$
+  zf=/tmp/minizip$$.zip
+  rm -rf $d $zf
+  mkdir $d
+  if $2 $zf * > /dev/null && \
+    (cd $d && $3 $zf > /dev/null) && \
+    cmp minizip.ml $d/minizip.ml && \
+    cmp minigzip.ml $d/minigzip.ml
+  then rm -rf $d $zf; echo "$1: passed"
+  else rm -rf $d $zf; echo "$1: FAILED"; exit 2
+  fi
+}
+
+runtest "Zip 1" "$here/minizip c" "$here/minizip x"
+runtest "Zip 2" "zip -r" "$here/minizip x"
+runtest "Zip 3" "$here/minizip c" "unzip"
+
+

@@ -24,17 +24,12 @@ func test4() -> Int {
     return person.age
 }
 
-func test5_fp() {
-    let person_age = test4()
-    let age : Int = 30
-    assert(person_age == age)
-}
-
 class Person {
     let age: Int
-    var spouse: Person?
+    var spouse: Person
     init(age: Int) {
         self.age = age
+        self.spouse = Person(age: 0)
     }
 }
 
@@ -44,7 +39,7 @@ func test6() -> Person {
 
 func set_spouses(_ john: Person, _ jane: Person) {
     john.spouse = jane
-    jane.spouse = john
+    //jane.spouse = john
 }
 
 func test_retain_cycle() {

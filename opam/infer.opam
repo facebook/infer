@@ -21,7 +21,7 @@ depends: [
   "containers" {>="3.15"}
   "containers-data" {>="3.15"}
   "ctypes" {>="0.9.2"}
-  "dune" {build & >="3.6"}
+  "dune" {build & >="3.6" & < "3.18.0"}
   "fmt" {>="0.9.0"}
   "fpath" {>="0.7.3"}
   "iter"

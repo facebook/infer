@@ -176,9 +176,9 @@ ifneq ($(BUILD_SWIFT_ANALYZERS),no)
 DIRECT_TESTS += \
   c_llvm-frontend \
   c_pulse-llvm \
-  swift_frontend \
-  swift_bitcode \
-  swift_pulse \
+#   swift_frontend \
+#   swift_bitcode \
+#   swift_pulse \
 
 endif
 

@@ -660,7 +660,7 @@ module ExpBridge = struct
         let name = VarNameBridge.of_pvar Lang.Java pvar in
         ( if SilPvar.is_global pvar then
             let typ : Typ.t = Struct (TypeNameBridge.of_global_pvar Lang.Java pvar) in
-            let global : Global.t = {name; typ; attributes= []} in
+            let global : Global.t = {name; typ; attributes= []; init_exp= None} in
             TextualDecls.declare_global decls global ) ;
         Lvar name
     | Lfield ({exp= e}, f, typ) ->

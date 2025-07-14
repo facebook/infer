@@ -1,0 +1,12 @@
+#!/bin/sh
+
+runtest() {
+  if $2 < minigzip.ml | $3 -d | cmp - minigzip.ml
+  then echo "$1: passed"
+  else echo "$1: FAILED"; exit 2
+  fi
+}
+
+runtest "Gzip 1" ./minigzip ./minigzip
+runtest "Gzip 2" ./minigzip gzip
+runtest "Gzip 3" gzip ./minigzip

@@ -28,6 +28,7 @@ let is_ref_counted_or_block astate addr =
   match PulseArithmetic.get_dynamic_type addr astate with
   | Some {typ= {desc= Tstruct typ_name}} ->
       Typ.Name.is_objc_class typ_name || Typ.Name.is_objc_block typ_name
+      || Typ.Name.is_swift_class typ_name
   | _ ->
       false
 
@@ -53,7 +54,7 @@ let has_static_dynamic_type astate v =
   has_static_type || PulseArithmetic.get_dynamic_type v astate |> Option.is_some
 
 
-let remove_non_objc_objects cycle astate =
+let remove_non_objc_swift_objects cycle astate =
   (* do not remove the object if this will make the cycle length < 2 and make the message unclear *)
   if List.length cycle > 2 then
     List.filter ~f:(fun {addr} -> not (has_static_dynamic_type astate addr)) cycle
@@ -94,7 +95,7 @@ let create_values astate (cycle : cycle_data list) =
 
 
 let should_report_cycle astate cycle =
-  let is_objc_or_block {addr; access} =
+  let is_objc_swift_or_block {addr; access} =
     match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> false
   in
   let addr_in_retain_cycle {addr; access} =
@@ -103,7 +104,7 @@ let should_report_cycle astate cycle =
     let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
     let value = Decompiler.find addr astate in
     let is_known = not (DecompilerExpr.is_unknown value) in
-    let is_objc_or_block_if_field_access =
+    let is_objc_swift_or_block_if_field_access =
       match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> true
     in
     let blocklisted =
@@ -111,10 +112,10 @@ let should_report_cycle astate cycle =
           let expr_str = F.asprintf "%a" DecompilerExpr.pp value in
           Str.string_match re expr_str 0 )
     in
-    not_previously_reported && is_not_null && is_known && is_objc_or_block_if_field_access
+    not_previously_reported && is_not_null && is_known && is_objc_swift_or_block_if_field_access
     && not blocklisted
   in
-  List.exists ~f:is_objc_or_block cycle && List.for_all ~f:addr_in_retain_cycle cycle
+  List.exists ~f:is_objc_swift_or_block cycle && List.for_all ~f:addr_in_retain_cycle cycle
 
 
 let cycle_include_unknown_weak cycle =
@@ -151,7 +152,7 @@ let check_retain_cycles tenv location addresses orig_astate =
         if should_report_cycle astate cycle then (
           Logging.d_printfln "Found cycle:\n \t%a" (Pp.seq ~sep:" -> \n\t" pp_cycle_data) cycle ;
           let unknown_access_type = cycle_include_unknown_weak cycle in
-          let cycle = remove_non_objc_objects cycle astate in
+          let cycle = remove_non_objc_swift_objects cycle astate in
           let values = create_values astate cycle in
           if List.exists ~f:(fun {Diagnostic.trace} -> Option.is_some trace) values then
             match List.rev values with
@@ -210,6 +211,11 @@ let check_retain_cycles tenv location addresses orig_astate =
       match acc with Recoverable _ | FatalError _ -> acc | Ok _ -> check_retain_cycle (addr, hist) )
 
 
+let should_run_retain_cycle_check () =
+  (Language.curr_language_is Language.Clang || Language.curr_language_is Language.Swift)
+  && IssueType.retain_cycle.enabled
+
+
 let check_retain_cycles_call tenv location func_args ret_opt astate =
   let actuals =
     let func_args = ValueOrigin.addr_hist_args func_args in
@@ -217,12 +223,10 @@ let check_retain_cycles_call tenv location func_args ret_opt astate =
         addr_hist )
   in
   let addresses = Option.value_map ~default:actuals ~f:(fun ret -> ret :: actuals) ret_opt in
-  if Language.curr_language_is Language.Clang && IssueType.retain_cycle.enabled then
-    check_retain_cycles tenv location addresses astate
+  if should_run_retain_cycle_check () then check_retain_cycles tenv location addresses astate
   else Ok astate
 
 
 let check_retain_cycles_store tenv location addr astate =
-  if Language.curr_language_is Language.Clang && IssueType.retain_cycle.enabled then
-    check_retain_cycles tenv location [addr] astate
+  if should_run_retain_cycle_check () then check_retain_cycles tenv location [addr] astate
   else Ok astate

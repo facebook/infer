@@ -242,25 +242,25 @@ module Make(Ord: NSComparer.S) =
       let hr = match r with Empty -> 0 | Node {h} -> h in
       if hl > hr + 2 then begin
         match l with
-          Empty -> invalid_arg "Set.bal"
+          Empty -> invalid_arg "OSet.bal"
         | Node{l=ll; v=lv; r=lr} ->
             if height ll >= height lr then
               create ll lv (create lr v r)
             else begin
               match lr with
-                Empty -> invalid_arg "Set.bal"
+                Empty -> invalid_arg "OSet.bal"
               | Node{l=lrl; v=lrv; r=lrr}->
                   create (create ll lv lrl) lrv (create lrr v r)
             end
       end else if hr > hl + 2 then begin
         match r with
-          Empty -> invalid_arg "Set.bal"
+          Empty -> invalid_arg "OSet.bal"
         | Node{l=rl; v=rv; r=rr} ->
             if height rr >= height rl then
               create (create l v rl) rv rr
             else begin
               match rl with
-                Empty -> invalid_arg "Set.bal"
+                Empty -> invalid_arg "OSet.bal"
               | Node{l=rll; v=rlv; r=rlr} ->
                   create (create l v rll) rlv (create rlr rv rr)
             end
@@ -347,7 +347,7 @@ module Make(Ord: NSComparer.S) =
     (* Remove the smallest element of the given set *)
 
     let rec remove_min_elt = function
-        Empty -> invalid_arg "Set.remove_min_elt"
+        Empty -> invalid_arg "OSet.remove_min_elt"
       | Node{l=Empty; r} -> r
       | Node{l; v; r} -> bal (remove_min_elt l) v r
 

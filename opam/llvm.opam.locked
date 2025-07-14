@@ -25,7 +25,7 @@ depends: [
   "ctypes" {= "0.23.0"}
   "ctypes-foreign" {= "0.23.0"}
   "dune" {= "3.17.2"}
-  "dune-configurator" {= "3.17.2"}
+  "dune-configurator" {= "3.18.2"}
   "integers" {= "0.7.0"}
   "ocaml" {= "5.2.1"}
   "ocaml-config" {= "3"}

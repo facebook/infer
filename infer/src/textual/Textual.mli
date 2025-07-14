@@ -331,10 +331,6 @@ module ProcDecl : sig
   val is_builtin : QualifiedProcName.t -> Lang.t -> bool
 end
 
-module Global : sig
-  type t = {name: VarName.t; typ: Typ.t; attributes: Attr.t list}
-end
-
 module FieldDecl : sig
   type t = {qualified_name: qualified_fieldname; typ: Typ.t; attributes: Attr.t list}
 end
@@ -426,6 +422,10 @@ module Node : sig
   [@@deriving equal]
 
   module Set : Stdlib.Set.S with type elt = t
+end
+
+module Global : sig
+  type t = {name: VarName.t; typ: Typ.t; attributes: Attr.t list; init_exp: Exp.t option}
 end
 
 module ProcDesc : sig

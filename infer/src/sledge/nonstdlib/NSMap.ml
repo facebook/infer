@@ -8,9 +8,9 @@
 open! NS0
 include NSMap_intf
 
-type ('key, +'a, 'compare_key) t = ('key, 'a, 'compare_key) Map.t [@@deriving compare, equal, sexp]
+type ('key, +'a, 'compare_key) t = ('key, 'a, 'compare_key) OMap.t [@@deriving compare, equal, sexp]
 
-type ('compare_key, 'compare_a) compare = ('compare_key, 'compare_a) Map.compare
+type ('compare_key, 'compare_a) compare = ('compare_key, 'compare_a) OMap.compare
 [@@deriving compare, equal, sexp]
 
 module Make_from_Comparer (Key : sig
@@ -19,7 +19,7 @@ module Make_from_Comparer (Key : sig
   include NSComparer.S with type t := t
 end) =
 struct
-  module M = Map.Make [@inlined] (Key)
+  module M = OMap.Make [@inlined] (Key)
 
   type key = Key.t
 

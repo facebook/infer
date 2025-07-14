@@ -67,6 +67,8 @@ let templated_name_of_class_name class_name =
       (QualifiedCppName.of_list [bsig.name], [])
   | CFunction csig ->
       (csig.c_name, [])
+  | SwiftClass mangled_name ->
+      (QualifiedCppName.of_list [SwiftClassName.to_string mangled_name], [])
 
 
 let templated_name_of_hack hack =

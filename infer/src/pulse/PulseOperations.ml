@@ -522,10 +522,10 @@ let write_id id addr_hist astate = Stack.add (Var.of_id id) (ValueOrigin.unknown
 
 let read_id id astate = Stack.find_opt (Var.of_id id) astate |> Option.map ~f:ValueOrigin.addr_hist
 
-let add_static_type_objc_class tenv typ address location astate =
+let add_static_type_objc_swift_class tenv typ address location astate =
   match typ with
-  | {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct (ObjcClass class_name)}, _)} ->
-      AddressAttributes.add_static_type tenv (ObjcClass class_name) address location astate
+  | {Typ.desc= Typ.Tptr ({Typ.desc= Tstruct ((ObjcClass _ | SwiftClass _) as class_typ)}, _)} ->
+      AddressAttributes.add_static_type tenv class_typ address location astate
   | _ ->
       astate
 

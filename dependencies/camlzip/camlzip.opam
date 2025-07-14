@@ -1,0 +1,22 @@
+opam-version: "2.0"
+version: "1.12"
+synopsis:
+  "Accessing compressed files in ZIP, GZIP and JAR format."
+description:
+  "The Camlzip library provides easy access to compressed files in ZIP and GZIP format, as well as to Java JAR files.  It provides functions for reading from and writing to compressed files in these formats."
+maintainer: ["Xavier Leroy <xavier.leroy@college-de-france.fr>"]
+authors: ["Xavier Leroy"]
+homepage: "https://github.com/xavierleroy/camlzip"
+bug-reports: "https://github.com/xavierleroy/camlzip/issues"
+dev-repo: "git+https://github.com/xavierleroy/camlzip.git"
+license: "LGPL-2.1-or-later with OCaml-LGPL-linking-exception"
+depends: [
+  "ocaml" {>= "4.07.0"}
+  "ocamlfind" {build}
+  "conf-zlib"
+]
+build: [
+  [make "all"]
+]
+install: [make "install"]
+

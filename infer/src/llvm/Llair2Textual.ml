@@ -77,7 +77,7 @@ let to_textual_global lang ~struct_map global =
   let global_name = Global.name global in
   let name = Textual.VarName.of_string global_name in
   let typ = Type.to_textual_typ lang ~struct_map (Global.typ global) in
-  Textual.Global.{name; typ; attributes= []}
+  Textual.Global.{name; typ; attributes= []; init_exp= None}
 
 
 let translate_llair_globals globals =
@@ -664,20 +664,26 @@ let is_undefined func =
 
 type textual_proc = ProcDecl of Textual.ProcDecl.t | ProcDesc of Textual.ProcDesc.t
 
-let should_translate lang source_file (loc : Llair.Loc.t) =
+let should_translate plain_name lang source_file (loc : Llair.Loc.t) =
   let file =
     if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
     else loc.Llair.Loc.file
   in
   let source_file_loc = SourceFile.create file in
   SourceFile.equal source_file source_file_loc
+  || Option.exists plain_name ~f:(fun plain_name ->
+         (* the loc in these methods is empty but these are getters and setters and we need to translate them *)
+         String.is_substring ~substring:".get" plain_name
+         || String.is_substring ~substring:".set" plain_name )
 
 
 let translate_llair_functions source_file lang struct_map globals functions =
   let function_to_formal proc_descs (func_name, func) =
     let formals_list, formals_types = to_formals lang ~struct_map func in
     let loc = to_textual_loc func.Llair.loc in
-    let should_translate = should_translate lang source_file func.Llair.loc in
+    let should_translate =
+      should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
+    in
     let qualified_name = to_qualified_proc_name ~loc func_name in
     let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
     let proc_loc = to_textual_loc func.Llair.loc in
