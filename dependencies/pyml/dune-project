@@ -19,6 +19,8 @@
 
 (generate_opam_files true)
 
+(version "20220905")
+
 (package
  (name pyml)
  (synopsis "OCaml bindings for Python")

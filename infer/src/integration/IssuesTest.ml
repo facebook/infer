@@ -14,8 +14,8 @@ let pp_taint_extra fmt
   Option.iter taint_source ~f:(fun source -> F.fprintf fmt "source: %s" source) ;
   Option.iter taint_sink ~f:(fun sink -> F.fprintf fmt ", sink: %s" sink) ;
   Option.iter tainted_expression ~f:(fun expr -> F.fprintf fmt ", tainted expression: %s" expr) ;
-  Option.iter taint_policy_privacy_effect ~f:(fun effect ->
-      F.fprintf fmt ", privacy effect: %s" effect )
+  Option.iter taint_policy_privacy_effect ~f:(fun privacy_effect ->
+      F.fprintf fmt ", privacy effect: %s" privacy_effect )
 
 
 let pp_trace fmt trace comma =

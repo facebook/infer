@@ -12,6 +12,7 @@ bug-reports: "http://llvm.org/bugs/"
 depends: [
   "base-bigarray" {= "base"}
   "base-domains" {= "base"}
+  "base-effects" {= "base"}
   "base-nnp" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
@@ -27,10 +28,11 @@ depends: [
   "dune" {= "3.17.2"}
   "dune-configurator" {= "3.18.2"}
   "integers" {= "0.7.0"}
-  "ocaml" {= "5.2.1"}
+  "ocaml" {= "5.3.0"}
+  "ocaml-compiler" {= "5.3.0"}
   "ocaml-config" {= "3"}
   "ocaml-option-flambda" {= "1"}
-  "ocaml-variants" {= "5.2.1+options"}
+  "ocaml-variants" {= "5.3.0+options"}
   "ocamlfind" {= "1.9.8"}
   "stdlib-shims" {= "0.3.0"}
 ]

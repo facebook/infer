@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "ocamlformat"
-version: "0.26.2"
+version: "0.27.0"
 synopsis: "Auto-formatter for OCaml code"
 description: """\
 **ocamlformat** is a code formatter for OCaml. It comes with opinionated default settings but is also fully customizable to suit your coding style.
@@ -26,10 +26,11 @@ homepage: "https://github.com/ocaml-ppx/ocamlformat"
 bug-reports: "https://github.com/ocaml-ppx/ocamlformat/issues"
 depends: [
   "astring" {= "0.8.5"}
-  "base" {= "v0.16.4"}
+  "base" {= "v0.17.2"}
   "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
   "base-domains" {= "base"}
+  "base-effects" {= "base"}
   "base-nnp" {= "base"}
   "base-threads" {= "base"}
   "base-unix" {= "base"}
@@ -46,20 +47,21 @@ depends: [
   "menhirCST" {= "20240715"}
   "menhirLib" {= "20240715"}
   "menhirSdk" {= "20240715"}
-  "ocaml" {= "5.2.1"}
+  "ocaml" {= "5.3.0"}
+  "ocaml-compiler" {= "5.3.0"}
   "ocaml-config" {= "3"}
   "ocaml-option-flambda" {= "1"}
-  "ocaml-variants" {= "5.2.1+options"}
+  "ocaml-variants" {= "5.3.0+options"}
   "ocaml-version" {= "4.0.1"}
+  "ocaml_intrinsics_kernel" {= "v0.17.1"}
   "ocamlbuild" {= "0.16.1"}
   "ocamlfind" {= "1.9.8"}
-  "ocamlformat-lib" {= "0.26.2"}
+  "ocamlformat-lib" {= "0.27.0"}
   "ocp-indent" {= "1.8.1"}
   "re" {= "1.12.0"}
-  "result" {= "1.5"}
   "seq" {= "base"}
-  "sexplib0" {= "v0.16.0"}
-  "stdio" {= "v0.16.0"}
+  "sexplib0" {= "v0.17.0"}
+  "stdio" {= "v0.17.0"}
   "topkg" {= "1.0.8"}
   "uucp" {= "16.0.0"}
   "uuseg" {= "16.0.0"}

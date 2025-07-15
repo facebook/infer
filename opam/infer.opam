@@ -14,7 +14,7 @@ depends: [
   "base64" {>="3.0.0"}
   "bheap"
   "cmdliner" {>="1.0.0"}
-  "core" {>= "v0.16.1" & < "v0.17"}
+  "core" {>= "v0.17.1" & < "v0.18"}
   "conf-autoconf" {build}
   "conf-sqlite3" {build}
   "conf-zlib" {build}
@@ -29,19 +29,19 @@ depends: [
   "memtrace" {>="0.1.2"}
   "menhir" {>= "20220210"}
   "mtime" {>="2"}
-  "ocaml" {>="5.2.1"}
+  "ocaml" {>="5.3.0"}
   "ocamlfind" {build}
   "ocamlgraph"
   "ounit" {>="2.0.5"}
   "parmap" {>="1.0-rc8"}
   "ppx_blob"
-  "ppx_compare" {>= "v0.16.0" & < "v0.17"}
+  "ppx_compare" {>= "v0.17" & < "v0.18"}
   "ppx_deriving" {>="4.1"}
-  "ppx_enumerate" {>= "v0.16.0" & < "v0.17"}
-  "ppx_expect" {>= "v0.16.0" & < "v0.17"}
-  "ppx_fields_conv" {>= "v0.16.0" & < "v0.17"}
+  "ppx_enumerate" {>= "v0.17" & < "v0.18"}
+  "ppx_expect" {>= "v0.17" & < "v0.18"}
+  "ppx_fields_conv" {>= "v0.17" & < "v0.18"}
   "ppx_show"
-  "ppx_yojson_conv" {>= "v0.16.0" & < "v0.17"}
+  "ppx_yojson_conv" {>= "v0.17" & < "v0.18"}
   "pyml" {= "20220905"}
   "sawja" {>="1.5.11"}
   "sedlex" {>="3.0"}
