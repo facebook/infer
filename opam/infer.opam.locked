@@ -13,6 +13,7 @@ depends: [
   "atd" {= "2.16.0"}
   "atdgen" {= "2.16.0"}
   "atdgen-runtime" {= "2.16.0"}
+  "backoff" {= "0.1.1"}
   "base" {= "v0.17.2"}
   "base-bigarray" {= "base"}
   "base-bytes" {= "base"}
@@ -72,12 +73,14 @@ depends: [
   "mew" {= "0.1.0"}
   "mew_vi" {= "0.5.0"}
   "mtime" {= "2.1.0"}
+  "multicore-magic" {= "2.3.1"}
   "num" {= "1.5-1"}
   "ocaml" {= "5.3.0"}
   "ocaml-compiler" {= "5.3.0"}
   "ocaml-compiler-libs" {= "v0.17.0"}
   "ocaml-config" {= "3"}
   "ocaml-option-flambda" {= "1"}
+  "ocaml-option-fp" {= "1"}
   "ocaml-variants" {= "5.3.0+options"}
   "ocaml_intrinsics_kernel" {= "v0.17.1"}
   "ocamlbuild" {= "0.16.1"}
@@ -137,6 +140,7 @@ depends: [
   "re" {= "1.12.0"}
   "react" {= "1.2.2"}
   "result" {= "1.5"}
+  "saturn" {= "1.0.0"}
   "sawja" {= "1.5.12"}
   "sedlex" {= "3.4"}
   "seq" {= "base"}

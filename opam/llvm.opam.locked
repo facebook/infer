@@ -32,6 +32,7 @@ depends: [
   "ocaml-compiler" {= "5.3.0"}
   "ocaml-config" {= "3"}
   "ocaml-option-flambda" {= "1"}
+  "ocaml-option-fp" {= "1"}
   "ocaml-variants" {= "5.3.0+options"}
   "ocamlfind" {= "1.9.8"}
   "stdlib-shims" {= "0.3.0"}

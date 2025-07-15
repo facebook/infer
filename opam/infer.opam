@@ -44,6 +44,7 @@ depends: [
   "ppx_yojson_conv" {>= "v0.17" & < "v0.18"}
   "pyml" {= "20220905"}
   "sawja" {>="1.5.11"}
+  "saturn"
   "sedlex" {>="3.0"}
   "spawn" {>= "v0.17.0"}
   "sqlite3"
