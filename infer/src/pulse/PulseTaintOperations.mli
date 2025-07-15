@@ -16,7 +16,7 @@ val call :
   -> Ident.t * Typ.t
   -> call_was_unknown:bool
   -> (Exp.t, Procname.t) Either.t
-  -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
+  -> ValueOrigin.t FuncArg.t list
   -> AbductiveDomain.t
   -> AbductiveDomain.t AccessResult.t
 (** add sources and sinks coming from a particular call site *)

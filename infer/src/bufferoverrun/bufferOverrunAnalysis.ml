@@ -322,10 +322,7 @@ module TransferFunctions = struct
       {interproc= {proc_desc= pdesc; tenv}; get_summary; get_formals; oenv= {integer_type_widths}}
       node location ((id, _) as ret) callee_pname args captured_vars mem =
     let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-    let fun_arg_list =
-      List.map args ~f:(fun (exp, typ) ->
-          {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
-    in
+    let fun_arg_list = List.map args ~f:(fun (exp, typ) -> {FuncArg.exp; typ; arg_payload= ()}) in
     match Models.Call.dispatch tenv callee_pname fun_arg_list with
     | Some {Models.exec} ->
         let model_env =

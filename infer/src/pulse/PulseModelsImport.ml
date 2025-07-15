@@ -19,7 +19,7 @@ type model_data =
       -> PathContext.t
       -> Ident.t * Typ.t
       -> Exp.t
-      -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
+      -> ValueOrigin.t FuncArg.t list
       -> Location.t
       -> CallFlags.t
       -> AbductiveDomain.t
@@ -208,10 +208,7 @@ module Basic = struct
 
 
   let unknown_call ?(force_pure = false) skip_reason args : model_no_non_disj =
-    let actuals =
-      List.map args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= actual; typ} ->
-          (actual, typ) )
-    in
+    let actuals = List.map args ~f:(fun {FuncArg.arg_payload= actual; typ} -> (actual, typ)) in
     unknown_call_without_formals ~force_pure skip_reason actuals
 
 
@@ -220,12 +217,12 @@ module Basic = struct
     match args with
     | _ :: arg :: _
       when Procname.is_objc_instance_method callee_procname || Procname.is_java callee_procname ->
-        let arg_value, arg_history = arg.ProcnameDispatcher.Call.FuncArg.arg_payload in
+        let arg_value, arg_history = arg.FuncArg.arg_payload in
         let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
         PulseOperations.write_id ret_id ret_value astate |> ok_continue
     | arg :: _ when Procname.is_c callee_procname || Procname.is_objc_class_method callee_procname
       ->
-        let arg_value, arg_history = arg.ProcnameDispatcher.Call.FuncArg.arg_payload in
+        let arg_value, arg_history = arg.FuncArg.arg_payload in
         let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
         PulseOperations.write_id ret_id ret_value astate |> ok_continue
     | _ ->
@@ -237,7 +234,7 @@ module Basic = struct
     match args with
     | arg :: _
       when Procname.is_objc_instance_method callee_procname || Procname.is_java callee_procname ->
-        let arg_value, arg_history = arg.ProcnameDispatcher.Call.FuncArg.arg_payload in
+        let arg_value, arg_history = arg.FuncArg.arg_payload in
         let ret_value = (arg_value, Hist.add_call path location desc arg_history) in
         PulseOperations.write_id ret_id ret_value astate |> ok_continue
     | _ ->
@@ -257,8 +254,7 @@ module Basic = struct
     PulseOperations.write_id ret_id ret_value astate |> ok_continue
 
 
-  let call_destructor ({ProcnameDispatcher.Call.FuncArg.arg_payload= _; exp; typ} as deleted_arg) :
-      model =
+  let call_destructor ({FuncArg.arg_payload= _; exp; typ} as deleted_arg) : model =
    fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate non_disj ->
     (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
     match typ.Typ.desc with
@@ -307,7 +303,7 @@ module Basic = struct
 
 
   let free_or_delete operation invalidation
-      ({ProcnameDispatcher.Call.FuncArg.arg_payload= deleted_access_path} as deleted_arg) : model =
+      ({FuncArg.arg_payload= deleted_access_path} as deleted_arg) : model =
    fun ({path; location} as model_data) astate non_disj ->
     let ((deleted_addr, deleted_hist) as deleted_access) =
       ValueOrigin.addr_hist deleted_access_path
@@ -423,7 +419,7 @@ module Basic = struct
       {PulseOperations.prune} that works better if we know the SIL expression. This just means we're
       discarding some abstract values that were potentially created to evaluate [exp] when the model
       was called. *)
-  let assert_ {ProcnameDispatcher.Call.FuncArg.exp= condition} : model_no_non_disj =
+  let assert_ {FuncArg.exp= condition} : model_no_non_disj =
    fun {analysis_data= {proc_desc}; path; location} astate ->
     let<++> astate, _ = PulseOperations.prune proc_desc path location ~condition astate in
     astate

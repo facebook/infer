@@ -26,7 +26,7 @@ end
 module Function : sig
   val operator_call :
        deref_lambda_ptr:bool
-    -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t
-    -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+    -> (AbstractValue.t * ValueHistory.t) FuncArg.t
+    -> (AbstractValue.t * ValueHistory.t) FuncArg.t list
     -> model
 end

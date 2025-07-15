@@ -190,7 +190,7 @@ module PulseTransferFunctions = struct
   let interprocedural_call disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) path ret
       ~unresolved_reason callee_pname call_exp func_args call_loc call_flags astate non_disj =
     let actuals =
-      List.map func_args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
+      List.map func_args ~f:(fun FuncArg.{arg_payload; typ} ->
           (ValueOrigin.addr_hist arg_payload, typ) )
     in
     let call_kind_of call_exp : PulseOperations.call_kind =
@@ -269,7 +269,7 @@ module PulseTransferFunctions = struct
 
   let topl_small_step tenv loc procname arguments (return, return_type) exec_state_res =
     let arguments =
-      List.map arguments ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload; typ} ->
+      List.map arguments ~f:(fun {FuncArg.arg_payload; typ} ->
           (ValueOrigin.value arg_payload, typ) )
     in
     let return = Var.of_id return in
@@ -533,9 +533,7 @@ module PulseTransferFunctions = struct
         in
         let static_used = Typ.Name.Hack.static_companion in_class in
         let typ = Typ.mk_struct static_used |> Typ.mk_ptr in
-        let self =
-          {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ValueOrigin.unknown arg_payload}
-        in
+        let self = {FuncArg.exp; typ; arg_payload= ValueOrigin.unknown arg_payload} in
         (astate, func_args @ [self])
     | Some IsClass | None ->
         (astate, func_args)
@@ -544,7 +542,7 @@ module PulseTransferFunctions = struct
   let modify_receiver_if_hack_function_reference path location astate callee_pname func_args =
     let open IOption.Let_syntax in
     ( match func_args with
-    | ({ProcnameDispatcher.Call.FuncArg.arg_payload= value} as arg) :: args
+    | ({FuncArg.arg_payload= value} as arg) :: args
       when Option.exists callee_pname ~f:Procname.is_hack_late_binding ->
         let function_addr_hist = ValueOrigin.addr_hist value in
         let* dynamic_type_name, _ = function_addr_hist |> fst |> get_dynamic_type_name astate in
@@ -566,7 +564,7 @@ module PulseTransferFunctions = struct
     let open IOption.Let_syntax in
     let get_receiver_type tenv astate func_args =
       match func_args with
-      | {ProcnameDispatcher.Call.FuncArg.arg_payload= value} :: _ ->
+      | {FuncArg.arg_payload= value} :: _ ->
           let addr, _ = ValueOrigin.addr_hist value in
           let* dynamic_type_name, _ = get_dynamic_type_name astate addr in
           let* tstruct = Tenv.lookup tenv dynamic_type_name in
@@ -644,7 +642,7 @@ module PulseTransferFunctions = struct
     | None ->
         L.internal_error "No receiver on virtual call@\n" ;
         (None, default_info, astate)
-    | Some {ProcnameDispatcher.Call.FuncArg.arg_payload= receiver} -> (
+    | Some {FuncArg.arg_payload= receiver} -> (
       match
         improve_receiver_static_type astate (ValueOrigin.value receiver) callee_pname
         |> resolve_virtual_call tenv astate (ValueOrigin.value receiver)
@@ -709,7 +707,6 @@ module PulseTransferFunctions = struct
   let prepare_args_if_hack_variadic dispatch_call_eval_args analysis_data path ret func_args
       call_loc astate callee_procname =
     (let open IOption.Let_syntax in
-     let module FuncArg = ProcnameDispatcher.Call.FuncArg in
      let* callee_procname in
      let* n, callee_procname = load_is_hack_variadic_attribute callee_procname in
      let func_args, variadic_args = List.split_n func_args n in
@@ -742,9 +739,7 @@ module PulseTransferFunctions = struct
   let rec dispatch_call_eval_args disjunct_limit
       ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) path ret call_exp func_args
       call_loc call_flags astate non_disj callee_pname =
-    let actuals =
-      List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.exp; typ} -> (exp, typ))
-    in
+    let actuals = List.map func_args ~f:(fun {FuncArg.exp; typ} -> (exp, typ)) in
     let unresolved_reason, method_info, ret, actuals, func_args, astate =
       let default_info = Option.map ~f:Tenv.MethodInfo.mk_class callee_pname in
       if call_flags.CallFlags.cf_virtual then
@@ -804,13 +799,13 @@ module PulseTransferFunctions = struct
     let astate =
       if Language.curr_language_is Hack then
         match (callee_pname, func_args) with
-        | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
+        | Some callee_pname, {FuncArg.arg_payload= arg} :: _
           when is_hack_builder_consumer tenv callee_pname
                || is_hack_builder_receiver_consumer tenv astate callee_pname arg ->
             L.d_printfln "**it's a builder consumer" ;
             AddressAttributes.set_hack_builder (ValueOrigin.value arg) Attribute.Builder.Discardable
               astate
-        | Some callee_pname, {ProcnameDispatcher.Call.FuncArg.arg_payload= arg} :: _
+        | Some callee_pname, {FuncArg.arg_payload= arg} :: _
           when is_receiver_hack_builder tenv astate callee_pname arg ->
             L.d_printfln "**builder is called via %a and is non-discardable now" Procname.pp_verbose
               callee_pname ;
@@ -822,15 +817,13 @@ module PulseTransferFunctions = struct
     in
     let astate =
       match (callee_pname, func_args) with
-      | Some callee_pname, [{ProcnameDispatcher.Call.FuncArg.arg_payload= arg}]
-        when Procname.is_std_move callee_pname ->
+      | Some callee_pname, [{FuncArg.arg_payload= arg}] when Procname.is_std_move callee_pname ->
           AddressAttributes.add_one (ValueOrigin.value arg) StdMoved astate
       | _, _ ->
           astate
     in
     let astate =
-      List.fold func_args ~init:astate
-        ~f:(fun acc {ProcnameDispatcher.Call.FuncArg.arg_payload= arg; exp} ->
+      List.fold func_args ~init:astate ~f:(fun acc {FuncArg.arg_payload= arg; exp} ->
           match exp with
           | Cast (typ, _) when Typ.is_rvalue_reference typ ->
               AddressAttributes.add_one (ValueOrigin.value arg) StdMoved acc
@@ -870,8 +863,7 @@ module PulseTransferFunctions = struct
           L.d_printfln "Found ocaml model for call@\n" ;
           let astate =
             let arg_values =
-              List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= value} ->
-                  ValueOrigin.value value )
+              List.map func_args ~f:(fun {FuncArg.arg_payload= value} -> ValueOrigin.value value)
             in
             PulseOperations.conservatively_initialize_args arg_values astate
           in
@@ -1039,9 +1031,8 @@ module PulseTransferFunctions = struct
             PulseOperations.eval_to_value_origin path Read call_loc actual_exp astate
           in
           ( astate
-          , ProcnameDispatcher.Call.FuncArg.
-              {exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ}
-            :: rev_func_args ) )
+          , FuncArg.{exp= actual_exp; arg_payload= actual_evaled; typ= actual_typ} :: rev_func_args
+          ) )
     in
     (astate, call_exp, callee_pname, List.rev rev_actuals)
 

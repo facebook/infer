@@ -29,8 +29,7 @@ let get_modeled_as_returning_copy_opt proc_name =
 
 
 let to_arg_payloads actuals =
-  List.map actuals ~f:(fun (exp, typ) ->
-      {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
+  List.map actuals ~f:(fun (exp, typ) -> {FuncArg.exp; typ; arg_payload= ()})
 
 
 let is_thrift_field_copy_assignment =

@@ -47,8 +47,7 @@ let assign_none history this ~desc : model_no_non_disj =
     location OptionalEmpty value astate
 
 
-let assign_non_empty_value history ProcnameDispatcher.Call.FuncArg.{arg_payload= this} ~desc :
-    model_no_non_disj =
+let assign_non_empty_value history FuncArg.{arg_payload= this} ~desc : model_no_non_disj =
  fun {path; location} astate ->
   (* This model marks the optional object to be non-empty *)
   let<*> astate, (_, value) =
@@ -67,8 +66,8 @@ let get_template_arg typ =
       None
 
 
-let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= this_payload} as this)
-    (ProcnameDispatcher.Call.FuncArg.{arg_payload= other_payload} as other) ~desc : model =
+let assign_precise_value (FuncArg.{typ; arg_payload= this_payload} as this)
+    (FuncArg.{arg_payload= other_payload} as other) ~desc : model =
  (* This model marks the optional object to be non-empty by storing value. *)
  fun ({callee_procname; path; location} as model_data) astate non_disj ->
   let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
@@ -86,7 +85,7 @@ let assign_precise_value (ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= thi
       (* We need an expression corresponding to the value of the argument we pass to
          the constructor. *)
       let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-      let args : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list =
+      let args : ValueOrigin.t FuncArg.t list =
         {typ; exp= fake_exp; arg_payload= ValueOrigin.unknown value_address} :: [other]
       in
       (* create the list of types of the actual arguments of the constructor *)
@@ -124,8 +123,8 @@ let assign_value args ~desc : model =
       Basic.skip |> lift_model
 
 
-let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_payload} as this)
-    ProcnameDispatcher.Call.FuncArg.{typ; arg_payload= other_payload} ~desc : model =
+let copy_assignment (FuncArg.{arg_payload= this_payload} as this)
+    FuncArg.{typ; arg_payload= other_payload} ~desc : model =
  fun ({path; location} as model_data) astate non_disj ->
   let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
   let ( let<**> ) x f = bind_sat_result non_disj x f in
@@ -243,7 +242,7 @@ let value_or_obj optional default return_param ~desc : model_no_non_disj =
  fun ({analysis_data= {tenv}; path; callee_procname; location; ret} as model_data) astate ->
   value_or_common
     ~assign_ret:(fun _value_hist astate ->
-      let {ProcnameDispatcher.Call.FuncArg.typ; arg_payload} = return_param in
+      let {FuncArg.typ; arg_payload} = return_param in
       let addr_hist = ValueOrigin.addr_hist arg_payload in
       (* note: It is ideal to find and run a copy constructor like we do in
          [assign_precise_value]. *)
@@ -254,7 +253,7 @@ let value_or_obj optional default return_param ~desc : model_no_non_disj =
     optional default ~desc model_data astate
 
 
-let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
+let destruct FuncArg.{arg_payload= this; typ} ~desc : model =
  fun ({path; location} as model_data) astate non_disj ->
   let this = ValueOrigin.addr_hist this in
   match get_template_arg typ with
@@ -267,10 +266,9 @@ let destruct ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : mo
       in
       let value_hist = Hist.add_call path location desc value_hist in
       let deleted_arg =
-        ProcnameDispatcher.Call.FuncArg.
-          { arg_payload= ValueOrigin.Unknown (value_addr, value_hist)
-          ; exp= Var (Ident.create_fresh Ident.kprimed)
-          ; typ= {desc= Tptr (typ, Pk_pointer); quals= Typ.mk_type_quals ()} }
+        { FuncArg.arg_payload= ValueOrigin.Unknown (value_addr, value_hist)
+        ; exp= Var (Ident.create_fresh Ident.kprimed)
+        ; typ= {desc= Tptr (typ, Pk_pointer); quals= Typ.mk_type_quals ()} }
       in
       Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
   | None ->

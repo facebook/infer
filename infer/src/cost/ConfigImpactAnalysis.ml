@@ -782,10 +782,7 @@ module Dom = struct
       merge_dispatchers dispatcher FbGKInteraction.ExpensivenessModel.dispatcher
     in
     fun tenv pname args ->
-      let args =
-        List.map args ~f:(fun (exp, typ) ->
-            {ProcnameDispatcher.Call.FuncArg.exp; typ; arg_payload= ()} )
-      in
+      let args = List.map args ~f:(fun (exp, typ) -> {FuncArg.exp; typ; arg_payload= ()}) in
       dispatch tenv pname args
 
 

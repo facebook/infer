@@ -254,8 +254,7 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
         let actuals_match =
           List.for_all matcher.arguments ~f:(fun {Pulse_config_t.index; type_matches= types} ->
               List.nth actuals index
-              |> Option.exists ~f:(fun {ProcnameDispatcher.Call.FuncArg.typ} ->
-                     type_matches tenv typ types ) )
+              |> Option.exists ~f:(fun {FuncArg.typ} -> type_matches tenv typ types) )
         in
         Option.some_if actuals_match matcher
       else None )
@@ -263,7 +262,7 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
 
 let match_field_target matches actual potential_taint_value : taint_match list =
   let open TaintConfig.Target in
-  let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_origin; typ; exp} = actual in
+  let {FuncArg.arg_payload= value_origin; typ; exp} = actual in
   let match_target acc (matcher : TaintConfig.Unit.field_unit) =
     let origin : TaintItem.origin =
       match matcher.field_target with GetField -> GetField | SetField -> SetField
@@ -392,7 +391,7 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
     actuals ~instance_reference potential_taint_value : AbductiveDomain.t * taint_match list =
   let open TaintConfig.Target in
   let actuals =
-    List.map actuals ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist; typ; exp} ->
+    List.map actuals ~f:(fun {FuncArg.arg_payload= addr_hist; typ; exp} ->
         (addr_hist, typ, Some exp) )
   in
   let rec match_target kinds acc procedure_target : AbductiveDomain.t * taint_match list =
@@ -460,9 +459,7 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
         L.d_printf "matching this/self... " ;
         match instance_reference with
         | Some instance_reference ->
-            let {ProcnameDispatcher.Call.FuncArg.arg_payload= value_origin; typ; exp} =
-              instance_reference
-            in
+            let {FuncArg.arg_payload= value_origin; typ; exp} = instance_reference in
             let taint =
               { TaintItem.value_tuple=
                   Basic {value= potential_taint_value; origin= InstanceReference}

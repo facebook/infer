@@ -12,7 +12,6 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open TaintConfig
-module FuncArg = ProcnameDispatcher.Call.FuncArg
 module TaintItemMatcher = PulseTaintItemMatcher
 
 (** {2 Methods for applying taint to relevant values} *)

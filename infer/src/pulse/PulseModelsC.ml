@@ -11,7 +11,6 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 module DSL = PulseModelsDSL
-module FuncArg = ProcnameDispatcher.Call.FuncArg
 
 let free deleted_access : model = Basic.free_or_delete `Free CFree deleted_access
 

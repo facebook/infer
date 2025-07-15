@@ -11,7 +11,6 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
-module FuncArg = ProcnameDispatcher.Call.FuncArg
 
 module CoreFoundation = struct
   let cf_bridging_release access : model_no_non_disj =

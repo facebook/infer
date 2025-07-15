@@ -17,7 +17,7 @@ val procedure_matches :
   -> ?block_passed_to:Procname.t
   -> ?proc_attributes:ProcAttributes.t
   -> Procname.t
-  -> 'a ProcnameDispatcher.Call.FuncArg.t list
+  -> 'a FuncArg.t list
   -> TaintConfig.Unit.procedure_unit list
 
 val procedure_matches_any :
@@ -37,7 +37,7 @@ val match_procedure_call :
   -> ?proc_attributes:ProcAttributes.t
   -> has_added_return_param:bool
   -> Procname.t
-  -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
+  -> ValueOrigin.t FuncArg.t list
   -> Ident.t * Typ.t
   -> TaintConfig.Unit.procedure_unit list
   -> AbductiveDomain.t
@@ -46,7 +46,7 @@ val match_procedure_call :
 val match_procedure :
      Tenv.t
   -> ProcAttributes.t
-  -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
+  -> ValueOrigin.t FuncArg.t list
   -> TaintConfig.Unit.procedure_unit list
   -> AbductiveDomain.t
   -> AbductiveDomain.t * taint_match list
@@ -56,7 +56,7 @@ val match_block :
   -> Location.t
   -> ?proc_attributes:ProcAttributes.t
   -> Procname.t
-  -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
+  -> ValueOrigin.t FuncArg.t list
   -> TaintConfig.Unit.procedure_unit list
   -> AbductiveDomain.t
   -> AbductiveDomain.t * taint_match list
@@ -65,7 +65,7 @@ val match_field :
      Tenv.t
   -> Location.t
   -> Fieldname.t
-  -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t
+  -> ValueOrigin.t FuncArg.t
      (* TODO(arr): FuncArg.t is incidental here (matches the shape of data, but not its semantics
         which is a source/dest of store/load instruction. *)
   -> TaintConfig.Unit.field_unit list

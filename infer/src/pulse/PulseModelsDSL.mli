@@ -79,10 +79,7 @@ module Syntax : sig
     -> 'a model_monad
 
   val dispatch_call :
-       Ident.t * Typ.t
-    -> Procname.t
-    -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
-    -> unit model_monad
+    Ident.t * Typ.t -> Procname.t -> ValueOrigin.t FuncArg.t list -> unit model_monad
 
   val python_call : Procname.t -> (string * aval) list -> aval model_monad
 
@@ -304,7 +301,7 @@ module Syntax : sig
     val return_alloc_not_null :
       Attribute.allocator -> Exp.t option -> initialize:bool -> unit model_monad
 
-    val free : Invalidation.t -> ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t -> unit model_monad
+    val free : Invalidation.t -> ValueOrigin.t FuncArg.t -> unit model_monad
 
     val early_exit : model
   end

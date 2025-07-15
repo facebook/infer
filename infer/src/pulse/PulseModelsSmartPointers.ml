@@ -185,7 +185,7 @@ module SharedPtr = struct
     fun tenv typ -> find_element_type_common matchers tenv typ
 
 
-  let destructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
+  let destructor FuncArg.{arg_payload= this; typ} ~desc : model =
    fun ({analysis_data= {tenv}; path; location} as model_data) astate non_disj ->
     let ( let<*!> ) x f = bind_sat_result non_disj (Sat x) f in
     let<*!> astate, pointer = to_internal_count_deref path Read location this astate in
@@ -218,9 +218,7 @@ module SharedPtr = struct
           (* We need an expression corresponding to the value of the argument we pass to
              the destructor. See e.g. the comment in UniquePtr.destructor as well. *)
           let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-          let deleted_arg =
-            ProcnameDispatcher.Call.FuncArg.{arg_payload= value_addr_hist; exp= fake_exp; typ}
-          in
+          let deleted_arg = {FuncArg.arg_payload= value_addr_hist; exp= fake_exp; typ} in
           Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
       | None ->
           L.die InternalError "Cannot find template arguments"
@@ -256,8 +254,7 @@ module SharedPtr = struct
     SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
-  let copy_constructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this} other ~desc :
-      model_no_non_disj =
+  let copy_constructor FuncArg.{arg_payload= this} other ~desc : model_no_non_disj =
    fun {path; location} astate ->
     (* copy value pointer*)
     let<*> astate, value = to_internal_value_deref path Read location other astate in
@@ -301,8 +298,7 @@ module SharedPtr = struct
     SatUnsat.to_list astate_not_nullptr @ SatUnsat.to_list astate_nullptr
 
 
-  let copy_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc :
-      model =
+  let copy_assignment (FuncArg.{arg_payload= this} as arg) other ~desc : model =
    fun model_data astate non_disj ->
     let ( let<**> ) x f = bind_sat_result non_disj x f in
     let op1 = Formula.AbstractValueOperand (fst this) in
@@ -334,7 +330,7 @@ module SharedPtr = struct
     astate
 
 
-  let reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) value ~desc : model =
+  let reset (FuncArg.{arg_payload= this} as arg) value ~desc : model =
    fun ({path; location} as model_data) astate non_disj ->
     let astates, non_disj = destructor arg ~desc model_data astate non_disj in
     let astates =
@@ -357,16 +353,14 @@ module SharedPtr = struct
     match other_typ with Some {Typ.desc= Tptr (_, Pk_rvalue_reference)} -> true | _ -> false
 
 
-  let copy_move_assignment (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
-      : model =
+  let copy_move_assignment (FuncArg.{arg_payload= this} as arg) other ~desc : model =
    fun ({callee_procname} as model_data) astate non_disj ->
     if is_rvalue callee_procname 1 then
       (move_assignment this other ~desc:(desc ^ " (move)") model_data astate, non_disj)
     else copy_assignment arg other ~desc:(desc ^ " (copy)") model_data astate non_disj
 
 
-  let copy_move_constructor (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) other ~desc
-      : model_no_non_disj =
+  let copy_move_constructor (FuncArg.{arg_payload= this} as arg) other ~desc : model_no_non_disj =
    fun ({callee_procname} as model_data) ->
     if is_rvalue callee_procname 1 then
       move_assignment this other ~desc:(desc ^ " (move)") model_data
@@ -382,7 +376,7 @@ module SharedPtr = struct
     PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
 
 
-  let default_reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) ~desc : model =
+  let default_reset (FuncArg.{arg_payload= this} as arg) ~desc : model =
    fun ({path; location} as model_data) astate non_disj ->
     let astates, non_disj = destructor arg ~desc model_data astate non_disj in
     let astates =
@@ -399,8 +393,7 @@ module SharedPtr = struct
     (astates, non_disj)
 
 
-  let make_shared (args : (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list)
-      ~desc : model =
+  let make_shared (args : (AbstractValue.t * ValueHistory.t) FuncArg.t list) ~desc : model =
    fun ({callee_procname; path; location} as model_data) astate non_disj ->
     let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let ( let<**> ) x f = bind_sat_result non_disj x f in
@@ -436,10 +429,7 @@ module SharedPtr = struct
         *)
         let<*> astate, args_without_this =
           PulseResult.list_fold (List.rev args_without_this) ~init:(astate, [])
-            ~f:(fun
-                (astate, rev_func_args)
-                (ProcnameDispatcher.Call.FuncArg.{exp; typ; arg_payload= value} as arg)
-              ->
+            ~f:(fun (astate, rev_func_args) (FuncArg.{exp; typ; arg_payload= value} as arg) ->
               let+ astate, new_payload =
                 PulseOperations.eval_access path Read location value Dereference astate
               in
@@ -447,20 +437,13 @@ module SharedPtr = struct
               | Tptr ({Typ.desc= Tstruct _}, _) ->
                   (astate, arg :: rev_func_args)
               | _ ->
-                  ( astate
-                  , {ProcnameDispatcher.Call.FuncArg.exp; arg_payload= new_payload; typ}
-                    :: rev_func_args ) )
+                  (astate, {FuncArg.exp; arg_payload= new_payload; typ} :: rev_func_args) )
         in
         (* We need an expression corresponding to the value of the argument we pass to
            the constructor. See e.g. the comment in UniquePtr.destructor as well. *)
         let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-        let args =
-          {ProcnameDispatcher.Call.FuncArg.typ; exp= fake_exp; arg_payload= value_address}
-          :: args_without_this
-        in
-        let args =
-          List.map args ~f:(ProcnameDispatcher.Call.FuncArg.map_payload ~f:ValueOrigin.unknown)
-        in
+        let args = {FuncArg.typ; exp= fake_exp; arg_payload= value_address} :: args_without_this in
+        let args = List.map args ~f:(FuncArg.map_payload ~f:ValueOrigin.unknown) in
         (* create the list of types of the actual arguments of the constructor
            Note that these types are the formal arguments of make_shared *)
         let actuals = typ :: actuals in
@@ -508,7 +491,7 @@ module UniquePtr = struct
     fun tenv typ -> find_element_type_common matchers tenv typ
 
 
-  let destructor ProcnameDispatcher.Call.FuncArg.{arg_payload= this; typ} ~desc : model =
+  let destructor FuncArg.{arg_payload= this; typ} ~desc : model =
    fun ({analysis_data= {tenv}; path; location} as model_data) astate non_disj ->
     let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
     let<*> astate, (value_addr, value_hist) =
@@ -529,16 +512,14 @@ module UniquePtr = struct
             state too so that if something tries to re-evaluate the fake exp they will get the
             right value. *)
         let fake_exp = Exp.Var (Ident.create_fresh Ident.kprimed) in
-        let deleted_arg =
-          ProcnameDispatcher.Call.FuncArg.{arg_payload= value_addr_hist; exp= fake_exp; typ}
-        in
+        let deleted_arg = {FuncArg.arg_payload= value_addr_hist; exp= fake_exp; typ} in
         Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
     | None ->
         L.internal_error "Cannot find template arguments@." ;
         (Basic.ok_continue astate, non_disj)
 
 
-  let default_reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) ~desc : model =
+  let default_reset (FuncArg.{arg_payload= this} as arg) ~desc : model =
    fun ({path; location} as model_data) astate non_disj ->
     let astates, non_disj = destructor arg ~desc model_data astate non_disj in
     ( List.concat_map astates ~f:(fun exec_state_result ->
@@ -552,7 +533,7 @@ module UniquePtr = struct
     , non_disj )
 
 
-  let reset (ProcnameDispatcher.Call.FuncArg.{arg_payload= this} as arg) value ~desc : model =
+  let reset (FuncArg.{arg_payload= this} as arg) value ~desc : model =
    fun ({path; location} as model_data) astate non_disj ->
     let astates, non_disj = destructor arg ~desc model_data astate non_disj in
     ( List.concat_map astates ~f:(fun exec_state_result ->

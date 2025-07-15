@@ -412,8 +412,7 @@ module Collection = struct
   let remove ~desc args : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     match args with
-    | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
-      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] -> (
+    | [{FuncArg.arg_payload= coll_arg}; {FuncArg.arg_payload= elem_arg; typ}] -> (
       match typ.desc with
       | Tint _ ->
           (* Case of remove(int index) *)

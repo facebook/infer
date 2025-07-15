@@ -219,8 +219,7 @@ let should_run_retain_cycle_check () =
 let check_retain_cycles_call tenv location func_args ret_opt astate =
   let actuals =
     let func_args = ValueOrigin.addr_hist_args func_args in
-    List.map func_args ~f:(fun {ProcnameDispatcher.Call.FuncArg.arg_payload= addr_hist} ->
-        addr_hist )
+    List.map func_args ~f:(fun {FuncArg.arg_payload= addr_hist} -> addr_hist)
   in
   let addresses = Option.value_map ~default:actuals ~f:(fun ret -> ret :: actuals) ret_opt in
   if should_run_retain_cycle_check () then check_retain_cycles tenv location addresses astate

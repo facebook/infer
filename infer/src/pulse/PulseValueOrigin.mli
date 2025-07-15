@@ -35,9 +35,7 @@ val map_value : 'value t_ -> f:('value -> 'value') -> 'value' t_
 
 val addr_hist : 'value t_ -> 'value * ValueHistory.t
 
-val addr_hist_args :
-     t ProcnameDispatcher.Call.FuncArg.t list
-  -> (AbstractValue.t * ValueHistory.t) ProcnameDispatcher.Call.FuncArg.t list
+val addr_hist_args : t FuncArg.t list -> (AbstractValue.t * ValueHistory.t) FuncArg.t list
 
 val value : 'value t_ -> 'value
 

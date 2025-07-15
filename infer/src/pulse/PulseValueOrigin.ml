@@ -64,7 +64,7 @@ let value t = addr_hist t |> fst
 
 let hist t = addr_hist t |> snd
 
-let addr_hist_arg = ProcnameDispatcher.Call.FuncArg.map_payload ~f:addr_hist
+let addr_hist_arg = FuncArg.map_payload ~f:addr_hist
 
 let addr_hist_args = List.map ~f:addr_hist_arg
 

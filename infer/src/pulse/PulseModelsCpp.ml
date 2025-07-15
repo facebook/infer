@@ -12,7 +12,6 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
-module FuncArg = ProcnameDispatcher.Call.FuncArg
 
 (* NOTE: The semantic models do not check overflow for now. *)
 let binop_overflow_common binop (x, x_hist) (y, y_hist) res : model_no_non_disj =

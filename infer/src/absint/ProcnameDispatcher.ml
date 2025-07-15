@@ -427,28 +427,6 @@ end
 module Call = struct
   include Common
 
-  (** Little abstraction over arguments: currently actual args, we'll want formal args later *)
-  module FuncArg = struct
-    type 'arg_payload t = {exp: Exp.t; typ: Typ.t; arg_payload: 'arg_payload}
-
-    let typ {typ} = typ
-
-    let exp {exp} = exp
-
-    let arg_payload {arg_payload} = arg_payload
-
-    let is_var {exp} = match exp with Var _ -> true | _ -> false
-
-    let map_payload ~f ({arg_payload} as func_arg) = {func_arg with arg_payload= f arg_payload}
-
-    let get_var_exn {exp; typ} =
-      match exp with
-      | Exp.Var v ->
-          v
-      | e ->
-          Logging.(die InternalError) "Expected Lvar, got %a:%a" Exp.pp e (Typ.pp Pp.text) typ
-  end
-
   type ('context, 'f_in, 'f_out) proc_matcher =
     { on_objc_cpp: 'context -> 'f_in -> objc_cpp -> 'f_out option
     ; on_c: 'context -> 'f_in -> c -> 'f_out option

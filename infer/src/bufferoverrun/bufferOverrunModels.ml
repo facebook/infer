@@ -6,9 +6,9 @@
  *)
 
 open! IStd
+module L = Logging
 open AbsLoc
 open! AbstractDomain.Types
-module L = Logging
 module BoField = BufferOverrunField
 module BoUtils = BufferOverrunUtils
 module Dom = BufferOverrunDomain
@@ -16,7 +16,7 @@ module PO = BufferOverrunProofObligations
 module Sem = BufferOverrunSemantics
 module Trace = BufferOverrunTrace
 open BoUtils.ModelEnv
-open ProcnameDispatcher.Call.FuncArg
+open FuncArg
 
 type exec_fun = model_env -> ret:Ident.t * Typ.t -> Dom.Mem.t -> Dom.Mem.t
 

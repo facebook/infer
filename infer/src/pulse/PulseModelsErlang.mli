@@ -12,10 +12,7 @@ open PulseDomainInterface
 
 val matchers : matcher list
 
-val get_model_from_db :
-     Procname.t
-  -> PulseValueOrigin.t ProcnameDispatcher.Call.FuncArg.t list
-  -> model_no_non_disj option
+val get_model_from_db : Procname.t -> PulseValueOrigin.t FuncArg.t list -> model_no_non_disj option
 
 val get_module_attribute : Tenv.t -> tag:string -> string option
 [@@warning "-unused-value-declaration"]

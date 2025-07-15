@@ -9,7 +9,7 @@ open! IStd
 module BasicCost = CostDomain.BasicCost
 open BufferOverrunUtils.ModelEnv
 open CostUtils.CostModelEnv
-open ProcnameDispatcher.Call.FuncArg
+open FuncArg
 
 let unit_cost_model _model_env ~ret:_ _inferbo_mem = BasicCost.one
 
@@ -84,7 +84,7 @@ module BoundsOf (Container : CostUtils.S) = struct
 end
 
 module IntHashMap = struct
-  let keys {ProcnameDispatcher.Call.FuncArg.exp; typ} {model_env= {location}} ~ret:_ inferbo_mem =
+  let keys {FuncArg.exp; typ} {model_env= {location}} ~ret:_ inferbo_mem =
     let locs = BufferOverrunSemantics.eval_locs exp inferbo_mem in
     match AbsLoc.PowLoc.is_singleton_or_more locs with
     | Singleton this_loc -> (

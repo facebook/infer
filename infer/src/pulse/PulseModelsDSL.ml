@@ -934,7 +934,7 @@ module Syntax = struct
     let typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
     let ret_id = Ident.create_none () in
     let call_args =
-      List.map named_args ~f:(fun (str, arg) : ValueOrigin.t ProcnameDispatcher.Call.FuncArg.t ->
+      List.map named_args ~f:(fun (str, arg) : ValueOrigin.t FuncArg.t ->
           let pvar = Pvar.mk (Mangled.from_string str) proc_name in
           let exp = Exp.Lvar pvar in
           let arg_payload = ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= arg} in

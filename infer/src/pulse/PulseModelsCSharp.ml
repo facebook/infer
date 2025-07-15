@@ -240,8 +240,7 @@ module Collection = struct
   let remove ~desc args : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     match args with
-    | [ {ProcnameDispatcher.Call.FuncArg.arg_payload= coll_arg}
-      ; {ProcnameDispatcher.Call.FuncArg.arg_payload= elem_arg; typ} ] -> (
+    | [{FuncArg.arg_payload= coll_arg}; {FuncArg.arg_payload= elem_arg; typ}] -> (
       match typ.desc with
       | Tint _ ->
           (* Case of remove(int index) *)
@@ -412,10 +411,7 @@ module Resource = struct
 
   let model_with_analysis args {analysis_data; path; callee_procname; location; ret} astate non_disj
       =
-    let actuals =
-      List.map args ~f:(fun ProcnameDispatcher.Call.FuncArg.{arg_payload; typ} ->
-          (arg_payload, typ) )
-    in
+    let actuals = List.map args ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ)) in
     let res, non_disj, _, is_known_call =
       PulseCallOperations.call analysis_data path location callee_procname ~ret ~actuals
         ~formals_opt:None ResolvedCall CallFlags.default astate non_disj
@@ -428,9 +424,8 @@ module Resource = struct
         (Basic.ok_continue astate, non_disj (* is this too generic? *))
 
 
-  let allocate_with_analysis
-      (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_arg_payload} as this_arg) arguments :
-      model =
+  let allocate_with_analysis (FuncArg.{arg_payload= this_arg_payload} as this_arg) arguments : model
+      =
    fun model_data astate non_disj ->
     (* this (probably) marks the this_arg as allocated, and is passed to the calls *)
     let allocated_astate = allocate_state this_arg_payload model_data astate in
@@ -459,8 +454,7 @@ module Resource = struct
     ok_state @ exn_state
 
 
-  let release_with_analysis
-      (ProcnameDispatcher.Call.FuncArg.{arg_payload= this_arg_payload} as this_arg) : model =
+  let release_with_analysis (FuncArg.{arg_payload= this_arg_payload} as this_arg) : model =
    fun model_data astate non_disj ->
     let released_astate =
       PulseOperations.csharp_resource_release ~recursive:true (fst this_arg_payload) astate
@@ -611,4 +605,4 @@ let matchers : matcher list =
        otherwise the allocation of the IDisposable is lost at the call to the Object..ctor *)
   ; +map_context_tenv (fun _ -> String.equal "System.Object")
     &:: ".ctor" <>$ any_arg $--> Basic.skip |> with_non_disj ]
-  |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
+  |> List.map ~f:(contramap_arg_payload ~f:ValueOrigin.addr_hist)
