@@ -2931,7 +2931,8 @@ INTERNAL OPTIONS
            Set --merge-summaries to the empty list.
 
        --minor-heap-size-mb int
-           Set minor heap size (in Mb) for each process/domain. Defaults to 8
+           Set minor heap size (in Mb) for each process/domain. Defaults to
+           8, unless in multicore mode where it defaults to 64.
 
        --noescaping-function-list-reset
            Set --noescaping-function-list to the empty list.
