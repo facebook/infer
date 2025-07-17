@@ -57,7 +57,8 @@ module ThreadDomain = struct
 
   (** given the current thread state [caller_thread] and the thread state under which a critical
       pair occurred, [pair_thread], decide whether to throw away the pair (returning [None]) because
-      it cannot occur within a call from the current state, or adapt its thread state appropriately. *)
+      it cannot occur within a call from the current state, or adapt its thread state appropriately.
+  *)
   let apply_caller_thread ~caller ~callee =
     match (caller, callee) with
     | UnknownThread, _ ->
@@ -817,7 +818,8 @@ module NullLocsCriticalPairs = struct
         if
           (not (CriticalPair.is_balanced still_held_lock pair))
           || CriticalPair.is_blocking_call pair
-             && (* drop a blocking call if it's qualified by a [null] location that was lazily
+             &&
+             (* drop a blocking call if it's qualified by a [null] location that was lazily
                    initialised at some point in this function *)
              NullLocs.exists
                (fun acc_exp -> LazilyInitialized.mem acc_exp lazily_initialized)
@@ -951,10 +953,11 @@ let pp fmt astate =
      var_state= %a;@;\
      null_locs= %a\n\
      lazily_initialized= %a\n\
-    \     @]}" GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state
-    NullLocsCriticalPairs.pp astate.critical_pairs AttributeDomain.pp astate.attributes
-    ThreadDomain.pp astate.thread ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp
-    astate.var_state NullLocs.pp astate.null_locs LazilyInitialized.pp astate.lazily_initalized
+    \     @]}"
+    GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state NullLocsCriticalPairs.pp
+    astate.critical_pairs AttributeDomain.pp astate.attributes ThreadDomain.pp astate.thread
+    ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp astate.var_state NullLocs.pp
+    astate.null_locs LazilyInitialized.pp astate.lazily_initalized
 
 
 let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
@@ -1123,9 +1126,10 @@ let pp_summary fmt (summary : summary) =
      critical_pairs=%a;@;\
      scheduled_work= %a;@;\
      lock_state= %a;@;\
-     attributes= %a@]}" ThreadDomain.pp summary.thread Attribute.pp summary.return_attribute
-    CriticalPairs.pp summary.critical_pairs ScheduledWorkDomain.pp summary.scheduled_work
-    LockState.pp summary.lock_state AttributeDomain.pp summary.attributes
+     attributes= %a@]}"
+    ThreadDomain.pp summary.thread Attribute.pp summary.return_attribute CriticalPairs.pp
+    summary.critical_pairs ScheduledWorkDomain.pp summary.scheduled_work LockState.pp
+    summary.lock_state AttributeDomain.pp summary.attributes
 
 
 let is_heap_loc formals acc_exp =

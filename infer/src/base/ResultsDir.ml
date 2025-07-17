@@ -40,7 +40,8 @@ module RunState = struct
                "'%s' already exists but it is not an empty directory and it does not look like an \
                 infer results directory:\n\
                \  %s\n\
-                Was it created using an older version of infer?" Config.results_dir err_msg ) )
+                Was it created using an older version of infer?"
+               Config.results_dir err_msg ) )
         msg
     in
     if not (ISys.file_exists state_file_path) then
@@ -94,7 +95,8 @@ let remove_results_dir () =
       Result.iter_error (is_results_dir ()) ~f:(fun err ->
           L.(die UserError)
             "ERROR: '%s' exists but does not seem to be an infer results directory: %s@\n\
-             ERROR: Please delete '%s' and try again@." Config.results_dir err Config.results_dir ) ;
+             ERROR: Please delete '%s' and try again@."
+            Config.results_dir err Config.results_dir ) ;
     Utils.rm_all_in_dir Config.results_dir
       ~except:(ResultsDirEntryName.to_keep_before_new_capture ~results_dir:Config.results_dir) ) ;
   RunState.reset ()

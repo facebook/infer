@@ -67,7 +67,8 @@ type 'result worker_message =
       (** [(i, heap_words)]: update [heap_words] for slot [i] in the progress bar. *)
   | Ready of {worker: int; heap_words: int option; result: 'result}
       (** Sent after finishing initializing or after finishing a given task. When received by the
-          orchestrator, this moves the worker state from [Initializing] or [Processing _] to [Idle]. *)
+          orchestrator, this moves the worker state from [Initializing] or [Processing _] to [Idle].
+      *)
   | Crash of int  (** there was an error and the child is no longer receiving messages *)
 
 (** messages from the parent process down to worker processes *)

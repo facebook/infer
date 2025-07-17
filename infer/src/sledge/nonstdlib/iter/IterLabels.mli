@@ -451,7 +451,8 @@ val max_exn : 'a t -> lt:('a -> 'a -> bool) -> 'a
     @since 0.10 *)
 
 val min : 'a t -> lt:('a -> 'a -> bool) -> 'a option
-(** Min element of the iterator, using the given comparison function. see {!max} for more details. *)
+(** Min element of the iterator, using the given comparison function. see {!max} for more details.
+*)
 
 val min_exn : 'a t -> lt:('a -> 'a -> bool) -> 'a
 (** Unsafe version of {!min}
@@ -637,7 +638,8 @@ val int_range : start:int -> stop:int -> int t
 (** Iterator on integers in [start...stop] by steps 1. Also see {!(--)} for an infix version. *)
 
 val int_range_dec : start:int -> stop:int -> int t
-(** Iterator on decreasing integers in [stop...start] by steps -1. See {!(--^)} for an infix version *)
+(** Iterator on decreasing integers in [stop...start] by steps -1. See {!(--^)} for an infix version
+*)
 
 val int_range_by : step:int -> start:int -> stop:int -> int t
 (** [int_range_by ~step ~start:i ~stop:j] is the range starting at [i], including [j], where the

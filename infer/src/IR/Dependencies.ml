@@ -120,7 +120,7 @@ let pp fmt = function
   | Partial ->
       F.pp_print_string fmt "Partial"
   | ((Complete {summary_loads; recursion_edges; other_proc_names; used_tenv_sources})
-  [@warning "+missing-record-field-pattern"] ) ->
+     [@warning "+missing-record-field-pattern"] ) ->
       F.fprintf fmt
         "summary_loads= @[<hv>%a@]@\n\
          recursion_edges= @[<hv>%a@]@\n\

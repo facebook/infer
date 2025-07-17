@@ -13,7 +13,8 @@ module F = Format
 (** max size for the top bar of the multiline task bar *)
 let top_bar_size_default = 100
 
-(** do not attempt to draw the top bar of the multiline task bar unless it can be at least this big *)
+(** do not attempt to draw the top bar of the multiline task bar unless it can be at least this big
+*)
 let min_acceptable_progress_bar = 10
 
 (** infer rulez *)
@@ -78,7 +79,8 @@ let draw_top_bar fmt ~term_width ~total ~finished ~elapsed =
     ++ ( "%s"
        , max (String.length elapsed_string) 9
          (* leave some room for elapsed_string to avoid flicker. 9 characters is "XXhXXmXXs" so it
-            gives some reasonable margin. *) )
+            gives some reasonable margin. *)
+       )
   in
   let top_bar_size = min term_width top_bar_size_default in
   let progress_bar_size = top_bar_size - size_around_progress_bar in
@@ -122,7 +124,13 @@ let draw_job_status fmt ~term_width ~draw_time t ~status ~t0 ~heap_words =
   if term_width > job_prefix_size then (
     F.fprintf fmt "%s" (ANSITerminal.(sprintf [Bold; magenta]) "%s" job_prefix) ;
     length := !length + job_prefix_size ) ;
-  let time_width = 4 + (* actually drawing the time *) 4 (* "[s] " *) in
+  let time_width =
+    4
+    +
+    (* actually drawing the time *)
+    4
+    (* "[s] " *)
+  in
   if draw_time && term_width > time_width + job_prefix_size then (
     let time_running = Mtime.span t0 t |> IMtime.span_to_s_float in
     F.fprintf fmt "[%4.1fs]" time_running ;

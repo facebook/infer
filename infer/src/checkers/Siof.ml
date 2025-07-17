@@ -83,8 +83,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
          [Str.regexp]. *)
       Domain.VarNames.elements initialized |> QualifiedCppName.Match.of_fuzzy_qual_names
     in
-    Staged.stage (fun (* gvar \notin initialized, up to some fuzzing *)
-                        gvar ->
+    Staged.stage
+      (fun
+        (* gvar \notin initialized, up to some fuzzing *)
+          gvar
+      ->
         QualifiedCppName.of_qual_string (Pvar.to_string gvar)
         |> Fn.non (QualifiedCppName.Match.match_qualifiers initialized_matcher) )
 
@@ -204,11 +207,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         in
         add_actuals_globals analysis_data astate loc actuals
         |> Domain.join callee_astate
-        |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
+        |>
+        (* make sure it's not Bottom: we made a function call so this needs initialization *)
         at_least_nonbottom
     | Call (_, _, actuals, loc, _) ->
         add_actuals_globals analysis_data astate loc actuals
-        |> (* make sure it's not Bottom: we made a function call so this needs initialization *)
+        |>
+        (* make sure it's not Bottom: we made a function call so this needs initialization *)
         at_least_nonbottom
     | Metadata _ ->
         astate

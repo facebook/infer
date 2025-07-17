@@ -218,7 +218,11 @@ module ThreadsDomain = struct
   let integrate_summary ~caller_astate ~callee_astate =
     (* if we know the callee runs on the main thread, assume the caller does too. otherwise, keep
        the caller's thread context *)
-    match callee_astate with AnyThreadButSelf -> callee_astate | _ -> caller_astate
+    match callee_astate with
+    | AnyThreadButSelf ->
+        callee_astate
+    | _ ->
+        caller_astate
 
 
   let update_for_lock_use = function AnyThreadButSelf -> AnyThreadButSelf | _ -> AnyThread

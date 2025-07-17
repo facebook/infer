@@ -109,7 +109,8 @@ let build_system_of_exe_name name =
        If this is an alias for another build system that infer supports, you can use@\n\
        `--force-integration <command>` where <command> is one of the following supported build \
        systems:@\n\
-       @[<v2>  %a@]" name
+       @[<v2>  %a@]"
+      name
       (Pp.seq ~print_env:Pp.text_break ~sep:"" F.pp_print_string)
       ( List.map ~f:fst build_system_exe_assoc
       |> List.map ~f:string_of_build_system
@@ -4149,7 +4150,8 @@ and help_checker =
           L.die UserError
             "Wrong argument for --help-checker: '%s' is not a known checker identifier.@\n\
              @\n\
-             See --list-checkers for the list of all checkers." checker_string )
+             See --list-checkers for the list of all checkers."
+            checker_string )
 
 
 and help_issue_type =
@@ -4161,7 +4163,8 @@ and help_issue_type =
           L.die UserError
             "Wrong argument for --help-issue-type: '%s' is not a known issue type identifier.@\n\
              @\n\
-             See --list-issue-types for the list of all known issue types." id )
+             See --list-issue-types for the list of all known issue types."
+            id )
 
 
 and hoisting_report_only_expensive = !hoisting_report_only_expensive

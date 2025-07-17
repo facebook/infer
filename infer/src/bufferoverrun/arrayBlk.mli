@@ -46,7 +46,8 @@ val is_symbolic : t -> bool
 
 val lift_cmp_itv : (Itv.t -> Itv.t -> Boolean.t) -> Boolean.EqualOrder.t -> t -> t -> Boolean.t
 (** Lift a comparison of [Itv.t] and [Loc.t] to that of [t]. The comparison for [Itv.t] is used for
-    integer values such as offset and size, and the comparison for [Loc.t] is used for allocsites. *)
+    integer values such as offset and size, and the comparison for [Loc.t] is used for allocsites.
+*)
 
 val transform_length : f:(Itv.t -> Itv.t) -> t -> t
 (** Apply [f] to all sizes *)

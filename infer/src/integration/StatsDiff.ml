@@ -169,8 +169,11 @@ let compute_diff ~before ~after =
         else
           let extra_before, extra_after, before'', after'' =
             if cmp < 0 then
-              ((* [event1 < event2] *)
-               entry1 :: extra_before, extra_after, before', after)
+              ( (* [event1 < event2] *)
+                entry1 :: extra_before
+              , extra_after
+              , before'
+              , after )
             else ((* [event1 > event2] *) extra_before, entry2 :: extra_after, before, after')
           in
           diff_aux ~extra_before ~extra_after ~unchanged ~diff before'' after''

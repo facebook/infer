@@ -404,7 +404,7 @@ module Resource = struct
           | ContinueProgram astate ->
               ContinueProgram (f astate)
           | result ->
-              result ) )
+              result ))
 
 
   (* I think this function needs to match all the cases *)

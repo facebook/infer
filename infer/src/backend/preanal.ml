@@ -9,7 +9,8 @@
 open! IStd
 module L = Logging
 
-(** add Abstract instructions into the IR to give hints about when abstraction should be performed *)
+(** add Abstract instructions into the IR to give hints about when abstraction should be performed
+*)
 module AddAbstractionInstructions = struct
   let process pdesc =
     let open Procdesc in

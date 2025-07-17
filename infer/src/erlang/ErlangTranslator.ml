@@ -677,7 +677,8 @@ and translate_expression_to_id (env : (_, _) Env.t) id expression : Block.t =
   translate_expression {env with result= Env.Present (Exp.Var id)} expression
 
 
-(** Helper function for translating an expression while creating a fresh identifier for the result. *)
+(** Helper function for translating an expression while creating a fresh identifier for the result.
+*)
 and translate_expression_to_fresh_id (env : (_, _) Env.t) expression : Ident.t * Block.t =
   let id = mk_fresh_id () in
   let block = translate_expression_to_id env id expression in

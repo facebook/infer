@@ -61,7 +61,8 @@ module FileContainsStringMatcher = struct
     let path = SourceFile.to_abs_path source_file in
     let contains_regexp = Utils.with_file_in path ~f:(fun file_in -> loop regexp file_in) in
     contains_regexp
-    && (* [loop] leaves the read position where it found the match,
+    &&
+    (* [loop] leaves the read position where it found the match,
           hence we read the file twice to check if it doesn't contain
           regexp_not *)
     Option.value_map regexp_not_opt ~default:true ~f:(fun regexp_not ->

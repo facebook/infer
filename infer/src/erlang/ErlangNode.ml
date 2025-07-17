@@ -49,7 +49,10 @@ let make_if (env : (_, _) Env.t) branch expr =
 let make_fail (env : (_, _) Env.t) fail_function =
   let any = Env.typ_of_name Any in
   let crash_instruction =
-    let ret_var = Ident.create_fresh Ident.knormal (* not used: nothing returned *) in
+    let ret_var =
+      Ident.create_fresh Ident.knormal
+      (* not used: nothing returned *)
+    in
     let pattern_fail_fun = Exp.Const (Cfun fail_function) in
     Sil.Call ((ret_var, any), pattern_fail_fun, [], env.location, CallFlags.default)
   in

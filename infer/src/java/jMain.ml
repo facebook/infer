@@ -63,7 +63,8 @@ let capture_libs program tenv =
 (* load a stored global tenv if the file is found, and create a new one otherwise *)
 let load_tenv () = match Tenv.Global.load () with None -> Tenv.create () | Some tenv -> tenv
 
-(** Store to a file the type environment containing all the types required to perform the analysis *)
+(** Store to a file the type environment containing all the types required to perform the analysis
+*)
 let save_tenv tenv =
   L.(debug Capture Medium) "writing new global tenv@." ;
   Tenv.Global.store ~normalize:true tenv

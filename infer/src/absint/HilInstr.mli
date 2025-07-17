@@ -17,7 +17,8 @@ type t =
   | Assign of HilExp.AccessExpression.t * HilExp.t * Location.t
       (** LHS access expression, RHS expression *)
   | Assume of HilExp.t * [`Then | `Else] * Sil.if_kind * Location.t
-      (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.) *)
+      (** Assumed expression, true_branch boolean, source of the assume (conditional, ternary, etc.)
+      *)
   | Call of AccessPath.base * call * HilExp.t list * CallFlags.t * Location.t
       (** Var to hold the return, call expression, formals *)
   | Metadata of Sil.instr_metadata  (** see {!IR.Sil.instr_metadata} *)

@@ -282,7 +282,8 @@ module Syntax : sig
 
   (** {2 Escape Hatches}
 
-      if necessary you can convert an operation outside of this module with the following operators *)
+      if necessary you can convert an operation outside of this module with the following operators
+  *)
 
   val exec_command : (astate -> astate) -> unit model_monad
 

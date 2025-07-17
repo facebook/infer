@@ -25,4 +25,5 @@ let%test_module "naming_table" =
           MODULES TEXT
         );
     *)
+  
   end )

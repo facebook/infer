@@ -273,7 +273,8 @@ module Vec = struct
         let* new_vec = new_vec_dsl [v_snd; value] in
         let* size = load_access vec (FieldAccess size_field) in
         store_field ~ref:new_vec size_field size
-        @@> (* overwrite default size of 2 *)
+        @@>
+        (* overwrite default size of 2 *)
         assign_ret new_vec
     | _ ->
         L.d_printfln "vec hack array cow set argument error" ;
@@ -1006,14 +1007,16 @@ let hhbc_cmp_same x y : model =
               L.d_printfln "hhbc_cmp_same: not a known primitive type" ;
               disj
                 [ prune_eq x y
-                  @@> (* CAUTION: Note that the pruning on a pointer may result in incorrect semantics
+                  @@>
+                  (* CAUTION: Note that the pruning on a pointer may result in incorrect semantics
                          if the pointer is given as a parameter. In that case, the pruning may work as
                          a value assignment to the pointer. *)
                   make_hack_bool true
                 ; prune_ne x y
-                  @@> (* TODO(dpichardie) cover the comparisons of vec, keyset, dict and
+                  @@>
+                  (* TODO(dpichardie) cover the comparisons of vec, keyset, dict and
                          shape, taking into account the difference between == and ===. *)
-                      (* TODO(dpichardie) cover the specificities of == that compare objects properties
+                  (* TODO(dpichardie) cover the specificities of == that compare objects properties
                          (structural equality). *)
                   make_hack_random_bool () ] )
         | Some {Formula.typ= x_typ}, Some {Formula.typ= y_typ} when not (Typ.equal x_typ y_typ) ->

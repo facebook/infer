@@ -884,7 +884,7 @@ module Attributes = struct
       | Some kinds_to_remove -> (
           let taint_map =
             get_by_rank Attribute.must_not_be_tainted_rank attrs
-                ~dest:(function [@warning "-partial-match"] MustNotBeTainted map -> map)
+              ~dest:(function [@warning "-partial-match"] MustNotBeTainted map -> map )
           in
           match taint_map with
           | None ->

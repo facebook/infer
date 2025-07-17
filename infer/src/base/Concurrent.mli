@@ -51,7 +51,8 @@ module type Hashtbl = sig
   (** Execute the given function on the underlying hashtable in a critical section *)
 
   val wrap_hashtable : 'a Hash.t -> 'a t
-  (** Put a hashtable into a thread-safe wrapper; original hashtable must not be directly accessed. *)
+  (** Put a hashtable into a thread-safe wrapper; original hashtable must not be directly accessed.
+  *)
 end
 
 (** a thread safe hashtable *)

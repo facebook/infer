@@ -18,7 +18,8 @@ val pp :
 (** A parameterized pretty printer for field appended values *)
 
 val get_type : Fieldname.t -> Typ.t option
-(** Get type of field that is constructed in this module. This does not work in Java at the moment. *)
+(** Get type of field that is constructed in this module. This does not work in Java at the moment.
+*)
 
 val c_strlen : unit -> Fieldname.t
 (** Field for C string's length *)

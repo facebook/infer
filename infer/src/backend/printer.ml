@@ -52,7 +52,8 @@ let pp_node_link_seq =
     Pp.seq pp_one fmt nodes
 
 
-(** Print information into html files for nodes when starting and finishing the processing of a node *)
+(** Print information into html files for nodes when starting and finishing the processing of a node
+*)
 module NodesHtml : sig
   val start_session : pp_name:(Format.formatter -> unit) -> Procdesc.Node.t -> int -> unit
 

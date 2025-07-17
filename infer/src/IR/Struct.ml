@@ -81,7 +81,8 @@ let pp pe name f
      ; annots
      ; class_info
      ; dummy
-     ; source_file } [@warning "+missing-record-field-pattern"] ) =
+     ; source_file }
+     [@warning "+missing-record-field-pattern"] ) =
   let pp_field pe f {name; typ; annot; objc_property_attributes} =
     F.fprintf f "@;<0 2>%a %a %a %a" (Typ.pp_full pe) typ Fieldname.pp name Annot.Item.pp annot
       pp_objc_property_attributes objc_property_attributes
@@ -272,7 +273,8 @@ let merge_dedup_sorted_lists ~compare ~newer ~current =
   let equal a b = Int.equal 0 (compare a b) in
   (* equal elements of [newer] will be first *)
   List.merge ~compare newer current
-  |> (* we keep the last duplicate, thus from [current] *)
+  |>
+  (* we keep the last duplicate, thus from [current] *)
   List.remove_consecutive_duplicates ~which_to_keep:`Last ~equal
 
 

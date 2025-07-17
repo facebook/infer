@@ -163,7 +163,7 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
               when Invalidation.is_same_type trace_invalidation invalidation ->
                 true
             | _ ->
-                false ) )
+                false ))
     | CFree
     | CppDelete
     | CppDeleteArray

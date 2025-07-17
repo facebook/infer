@@ -44,7 +44,8 @@ let pp_access_to_invalid_address fmt
      ; invalidation
      ; invalidation_trace
      ; access_trace
-     ; must_be_valid_reason } [@warning "+missing-record-field-pattern"] ) =
+     ; must_be_valid_reason }
+     [@warning "+missing-record-field-pattern"] ) =
   let pp_immediate fmt = F.pp_print_string fmt "immediate" in
   F.fprintf fmt
     "{@[calling_context=%a;@;\

@@ -29,8 +29,8 @@ type var_data =
   ; has_cleanup_attribute: bool
         (** variable declared with attribute [cleanup], only set in clang frontend *)
   ; tmp_id: Ident.t option
-        (** the tmp id used to build the variable name in case of a temp variable, None otherwise. *)
-  }
+        (** the tmp id used to build the variable name in case of a temp variable, None otherwise.
+        *) }
 
 type block_as_arg_attributes = {passed_to: Procname.t; passed_as_noescape_block: bool}
 [@@deriving compare, equal]

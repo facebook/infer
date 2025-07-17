@@ -237,7 +237,8 @@ module Tree = struct
       to_dotty g "file-call-graph-forest.dot" )
 
 
-  (** given a graph that consists of a set of trees, make a list of [t]s sorted by increasing size *)
+  (** given a graph that consists of a set of trees, make a list of [t]s sorted by increasing size
+  *)
   let get_sorted_tree_list g =
     let roots =
       G.fold_vertex (fun v acc -> if Int.equal 0 (G.in_degree g v) then v :: acc else acc) g []

@@ -64,7 +64,12 @@ struct
 
   let diff m n =
     M.merge m n ~f:(fun _ -> function
-      | `Both (i, j) -> if_nz (Mul.sub i j) | `Left i -> Some i | `Right j -> Some (Mul.neg j) )
+      | `Both (i, j) ->
+          if_nz (Mul.sub i j)
+      | `Left i ->
+          Some i
+      | `Right j ->
+          Some (Mul.neg j) )
 
 
   let partition = M.partition

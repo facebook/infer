@@ -90,7 +90,8 @@ val out_channel_create_with_dir : Filename.t -> Out_channel.t
 val realpath : ?warn_on_error:bool -> string -> string
 (** [realpath warn_on_error path] returns path with all symbolic links resolved. It caches results
     of previous calls to avoid expensive system calls. WARNING: If warn_on_error is false, no
-    warning will be shown whenever an error occurs for the given path (e.g. if it does not exist). *)
+    warning will be shown whenever an error occurs for the given path (e.g. if it does not exist).
+*)
 
 val suppress_stderr2 : ('a -> 'b -> 'c) -> 'a -> 'b -> 'c
 (** wraps a function expecting 2 arguments in another that temporarily redirects stderr to /dev/null

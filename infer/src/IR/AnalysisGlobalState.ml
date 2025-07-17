@@ -40,7 +40,8 @@ let make_dls ~init =
   key
 
 
-(** intermediate datatype to hold saved pieces of state in a heterogenously-typed list, see [save] *)
+(** intermediate datatype to hold saved pieces of state in a heterogenously-typed list, see [save]
+*)
 type saved_state = Saved : 'a * ('a -> unit) -> saved_state
 
 (** for the .mli *)

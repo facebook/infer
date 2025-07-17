@@ -92,7 +92,8 @@ let pp_ ~is_summary f
      ; transitive_info
      ; topl
      ; recursive_calls
-     ; skipped_calls } [@warning "+missing-record-field-pattern"] ) =
+     ; skipped_calls }
+     [@warning "+missing-record-field-pattern"] ) =
   let pp_decompiler f =
     if Config.debug_level_analysis >= 3 then F.fprintf f "decompiler=%a;@;" Decompiler.pp decompiler
   in
@@ -1747,7 +1748,10 @@ let are_same_values_as_pre_formals proc_desc values astate =
           let formal_v = pvar_value `Pre formal astate |> Option.value_exn in
           compatible_sub_heaps astate formal_v v )
     |> function
-    | List.Or_unequal_lengths.Ok b -> b | List.Or_unequal_lengths.Unequal_lengths -> false
+    | List.Or_unequal_lengths.Ok b ->
+        b
+    | List.Or_unequal_lengths.Unequal_lengths ->
+        false
   in
   let same_globals () =
     let formals =
@@ -2208,47 +2212,49 @@ module Summary = struct
       | Error (unreachable_location, JavaResource class_name, trace) ->
           Error
             (`JavaResourceLeak
-              ( astate
-              , astate_before_filter
-              , class_name
-              , trace
-              , Option.value unreachable_location ~default:location ) )
+               ( astate
+               , astate_before_filter
+               , class_name
+               , trace
+               , Option.value unreachable_location ~default:location ) )
       | Error (unreachable_location, Awaitable, trace) ->
           Error
             (`UnawaitedAwaitable
-              ( astate
-              , astate_before_filter
-              , trace
-              , Option.value unreachable_location ~default:location ) )
+               ( astate
+               , astate_before_filter
+               , trace
+               , Option.value unreachable_location ~default:location ) )
       | Error (unreachable_location, HackBuilderResource builder_type, trace) ->
           Error
             (`HackUnfinishedBuilder
-              ( astate
-              , astate_before_filter
-              , trace
-              , Option.value unreachable_location ~default:location
-              , builder_type ) )
+               ( astate
+               , astate_before_filter
+               , trace
+               , Option.value unreachable_location ~default:location
+               , builder_type ) )
       | Error (unreachable_location, CSharpResource class_name, trace) ->
           Error
             (`CSharpResourceLeak
-              ( astate
-              , astate_before_filter
-              , class_name
-              , trace
-              , Option.value unreachable_location ~default:location ) )
+               ( astate
+               , astate_before_filter
+               , class_name
+               , trace
+               , Option.value unreachable_location ~default:location ) )
       | Error (unreachable_location, allocator, trace) ->
           Error
             (`MemoryLeak
-              ( astate
-              , astate_before_filter
-              , allocator
-              , trace
-              , Option.value unreachable_location ~default:location ) ) )
+               ( astate
+               , astate_before_filter
+               , allocator
+               , trace
+               , Option.value unreachable_location ~default:location ) ) )
     | Some (address, must_be_valid) ->
         Error
           (`PotentialInvalidAccessSummary
-            (astate, astate_before_filter, Decompiler.find address astate0.decompiler, must_be_valid)
-            )
+             ( astate
+             , astate_before_filter
+             , Decompiler.find address astate0.decompiler
+             , must_be_valid ) )
 
 
   let of_post proc_attrs location astate0 =

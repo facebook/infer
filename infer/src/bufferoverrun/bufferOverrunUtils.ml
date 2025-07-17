@@ -142,7 +142,10 @@ module Exec = struct
             in
             let offset, size = (Itv.zero, length) in
             let v =
-              let traces = TraceSet.bottom (* TODO: location of field declaration *) in
+              let traces =
+                TraceSet.bottom
+                (* TODO: location of field declaration *)
+              in
               Dom.Val.of_c_array_alloc allocsite ~stride ~offset ~size ~traces
             in
             mem |> Dom.Mem.strong_update field_loc v

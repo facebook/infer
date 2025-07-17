@@ -24,7 +24,10 @@ let get_location source_file impl pc =
 
 
 let get_start_location_heuristics =
-  let lines_to_find = 10 (* This is set by an arbitrary number. *) in
+  let lines_to_find =
+    10
+    (* This is set by an arbitrary number. *)
+  in
   (* [is_proc_line ~name line] checks two conditions:
      - [line] starts with [name] or [line] includes [" " ^ name].
      - The [name] found should be followed by a space, '<', '(', or end of line. *)

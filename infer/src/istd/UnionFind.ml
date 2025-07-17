@@ -146,7 +146,8 @@ struct
               (* [repr] is not a good representative for the class as the substitution prefers it
                  another element. Try to find a better representative. *)
               XSet.to_seq clazz |> Iter.find_pred should_keep
-              |> (* HACK: trick [Repr] into casting [repr'] to a [repr], bypassing the private type
+              |>
+              (* HACK: trick [Repr] into casting [repr'] to a [repr], bypassing the private type
                     *)
               Option.map ~f:(fun x_repr -> UF.find UF.empty x_repr)
           in
@@ -216,8 +217,7 @@ struct
                representative *)
             let new_repr = XSet.min_elt clazz in
             let clazz = XSet.remove new_repr clazz in
-            UF.Map.add ((* HACK: unsafe cast to [repr] *) UF.find UF.empty new_repr) clazz classes
-          )
+            UF.Map.add ((* HACK: unsafe cast to [repr] *) UF.find UF.empty new_repr) clazz classes )
         uf.classes UF.Map.empty
     in
     (* rebuild [reprs] directly from [classes]: does path compression and garbage collection on the

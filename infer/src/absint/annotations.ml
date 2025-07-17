@@ -158,7 +158,8 @@ let ia_is_nonnull ia =
          See https://android-developers.googleblog.com/2018/08/android-pie-sdk-is-now-more-kotlin.html for details.
          From nullsafe point of view, such annotations should be treated exactly as normal @NonNull annotation.
          (Actually, it might even be shown as @NonNull in IDE/source code)
-      *) ]
+      *)
+    ]
 
 
 let ia_is_jetbrains_notnull ia = ia_class_name_matches ia jetbrains_not_null

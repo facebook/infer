@@ -82,7 +82,8 @@ let compare_err_data =
       compare_err_data_by_trace
 
 
-module ErrDataSet = (* set err_data with no repeated loc *)
+module ErrDataSet =
+(* set err_data with no repeated loc *)
 Stdlib.Set.Make (struct
   type t = err_data [@@deriving compare]
 end)

@@ -230,7 +230,8 @@ module ObjectiveC = struct
     fun ~protocol tenv typename ->
       let is_protocol s = String.equal protocol (Typ.Name.name s) in
       protocol_exists tenv is_protocol (Typ.Name.Objc.from_string typename)
-      || (* Corresponds to the case where we look inside protocols in
+      ||
+      (* Corresponds to the case where we look inside protocols in
             ObjCClass<P1,P2...Pn> *)
       Str.string_match protocol_reg typename 0
       &&

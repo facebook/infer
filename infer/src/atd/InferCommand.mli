@@ -9,7 +9,8 @@
 type t =
   | Analyze  (** analyze previously captured source files *)
   | Capture
-      (** capture compilation commands and translate source files into infer's intermediate language *)
+      (** capture compilation commands and translate source files into infer's intermediate language
+      *)
   | Compile
       (** set up the infer environment then run the compilation commands without capturing the
           source files *)

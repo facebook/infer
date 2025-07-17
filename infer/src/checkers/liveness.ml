@@ -220,7 +220,8 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
         in
         Domain.remove (Var.of_id ret_id) astate
         |> exp_add_live call_exp |> add_live_actuals actuals_to_read
-        |> (* assume that all function calls can throw for now *)
+        |>
+        (* assume that all function calls can throw for now *)
         Domain.add_live_in_catch
     | Sil.Metadata (CatchEntry {try_id}) ->
         Domain.catch_entry try_id astate

@@ -81,8 +81,7 @@ let report_matching_get proc_desc err_log tenv pvar loop_nodes : unit =
                         let loc = Procdesc.Node.get_loc node in
                         let ltr = [Errlog.make_trace_element 0 loc "" []] in
                         Reporting.log_issue ~suggestion proc_desc err_log ~loc ~ltr
-                          InefficientKeysetIterator IssueType.inefficient_keyset_iterator exp_desc ) )
-      )
+                          InefficientKeysetIterator IssueType.inefficient_keyset_iterator exp_desc ) ) )
     loop_nodes
 
 

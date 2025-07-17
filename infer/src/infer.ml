@@ -10,7 +10,8 @@ module CLOpt = CommandLineOption
 module L = Logging
 module Cmd = InferCommandImplementation
 
-(** Top-level driver that orchestrates build system integration, frontends, backend, and reporting *)
+(** Top-level driver that orchestrates build system integration, frontends, backend, and reporting
+*)
 
 let setup () =
   ( match Config.command with

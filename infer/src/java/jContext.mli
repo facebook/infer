@@ -61,7 +61,8 @@ val set_pvar : t -> JBir.var -> Typ.t -> Pvar.t
 (** [set_pvar context var type] adds a variable with a type to the context *)
 
 val get_var_type : t -> JBir.var -> Typ.t option
-(** [get_var_type context var] returns the type of the variable, if the variable is in the context *)
+(** [get_var_type context var] returns the type of the variable, if the variable is in the context
+*)
 
 val reset_pvar_type : t -> unit
 (** resets the dynamic type of the variables in the context. *)

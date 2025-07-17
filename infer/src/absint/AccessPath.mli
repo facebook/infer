@@ -72,7 +72,8 @@ module Abs : sig
   (** extract a raw access path from its wrapper *)
 
   val is_exact : t -> bool
-  (** return true if [t] is an exact representation of an access path, false if it's an abstraction *)
+  (** return true if [t] is an exact representation of an access path, false if it's an abstraction
+  *)
 
   val pp : Format.formatter -> t -> unit
 end

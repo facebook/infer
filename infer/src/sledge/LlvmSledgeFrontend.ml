@@ -393,11 +393,11 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       xlate_type_ llt
       |>
       [%Dbg.retn fun {pf} ty ->
-        pf "%a" Typ.pp_defn ty ;
-        assert (
-          (not (Llvm.type_is_sized llt))
-          || (not (Typ.is_sized ty))
-          || Typ.size_of ty = size_of x llt )] )
+         pf "%a" Typ.pp_defn ty ;
+         assert (
+           (not (Llvm.type_is_sized llt))
+           || (not (Typ.is_sized ty))
+           || Typ.size_of ty = size_of x llt )] )
 
 
 and xlate_type_opt : x -> Llvm.lltype -> Typ.t option =
@@ -2026,4 +2026,4 @@ let translate ?dump_bitcode : string -> Llair.program =
   Llair.Program.mk ~globals ~functions ~typ_defns
   |>
   [%Dbg.retn fun {pf} _ ->
-    pf "number of globals %d, number of functions %d" (List.length globals) (List.length functions)]
+     pf "number of globals %d, number of functions %d" (List.length globals) (List.length functions)]

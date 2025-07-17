@@ -155,10 +155,12 @@ val resolve_method :
 
 val resolve_field_info : t -> Typ.Name.t -> Fieldname.t -> Struct.field_info option
 (** [resolve_field_info tenv class_name field] tries to find the first field declaration that
-    matches [field] name (ignoring its enclosing declared type), starting from class [class_name]. *)
+    matches [field] name (ignoring its enclosing declared type), starting from class [class_name].
+*)
 
 val resolve_fieldname : t -> Typ.Name.t -> string -> Fieldname.t option * Typ.Name.Set.t
-(** Similar to [resolve_field_info], but returns the resolved field name and missed capture types. *)
+(** Similar to [resolve_field_info], but returns the resolved field name and missed capture types.
+*)
 
 val find_cpp_destructor : t -> Typ.Name.t -> Procname.t option
 

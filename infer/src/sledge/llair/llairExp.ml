@@ -55,11 +55,15 @@ module T = struct
     | Update of int
   [@@deriving compare, equal, sexp]
 
-  type op3 = (* if-then-else *)
-    | Conditional [@@deriving compare, equal, sexp]
+  type op3 =
+    (* if-then-else *)
+    | Conditional
+  [@@deriving compare, equal, sexp]
 
-  type opN = (* array/struct constants *)
-    | Record [@@deriving compare, equal, sexp]
+  type opN =
+    (* array/struct constants *)
+    | Record
+  [@@deriving compare, equal, sexp]
 
   type t =
     | Reg of {id: int; name: string; typ: LlairTyp.t}

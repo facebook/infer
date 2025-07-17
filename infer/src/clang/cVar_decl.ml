@@ -42,7 +42,11 @@ let mk_sil_global_var tenv {CFrontend_config.source_file} ?(mk_name = fun _ x ->
   let is_const = qt.Clang_ast_t.qt_is_const in
   let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
   let is_constant_array =
-    Option.exists desugared_type ~f:(function Clang_ast_t.ConstantArrayType _ -> true | _ -> false)
+    Option.exists desugared_type ~f:(function
+      | Clang_ast_t.ConstantArrayType _ ->
+          true
+      | _ ->
+          false )
   in
   let template_args =
     match template_args_opt with

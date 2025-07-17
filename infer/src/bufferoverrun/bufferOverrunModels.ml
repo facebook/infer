@@ -462,7 +462,10 @@ let create_copy_array src_exp =
 
 module StdArray = struct
   let constructor _size =
-    let exec _model_env ~ret:_ mem = mem (* initialize? *) in
+    let exec _model_env ~ret:_ mem =
+      mem
+      (* initialize? *)
+    in
     {exec; check= no_check}
 
 

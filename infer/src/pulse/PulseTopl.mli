@@ -45,10 +45,9 @@ val large_step :
   -> state
   -> state
 (** [large_step ~call_location ~callee_proc_name ~substitution pulse_state ~callee_summary 
-    ~callee_is_manifest state]
-    updates [state] according to [callee_summary]. The abstract values in [pulse_state] and [state]
-    are in one scope, and those in [callee_summary] in another scope: the [substitution] maps from
-    the callee scope to the caller scope. *)
+     ~callee_is_manifest state] updates [state] according to [callee_summary]. The abstract values
+    in [pulse_state] and [state] are in one scope, and those in [callee_summary] in another scope:
+    the [substitution] maps from the callee scope to the caller scope. *)
 
 val filter_for_summary : pulse_state -> state -> state
 (** Remove infeasible and ambiguous simple states. *)

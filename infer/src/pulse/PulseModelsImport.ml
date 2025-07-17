@@ -255,7 +255,8 @@ module Basic = struct
 
 
   let call_destructor ({FuncArg.arg_payload= _; exp; typ} as deleted_arg) : model =
-   fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate non_disj ->
+   fun ({analysis_data; dispatch_call_eval_args; path; location; ret} : model_data) astate
+       non_disj ->
     (* TODO: lookup dynamic type; currently not set in C++, should update model of [new] *)
     match typ.Typ.desc with
     | Typ.Tptr ({desc= Tstruct class_name}, _) -> (

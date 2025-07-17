@@ -109,7 +109,8 @@ let list_checkers () =
               ; short_documentation= _ (* only list in [show_checkers] *)
               ; cli_flags= _ (* only list in [show_checkers] *)
               ; enabled_by_default
-              ; activates } [@warning "+missing-record-field-pattern"] ) =
+              ; activates }
+              [@warning "+missing-record-field-pattern"] ) =
            Checker.config checker
          in
          L.result "%s:%s:%s:%s:%b:%a@;" id (string_of_checker_kind kind)
@@ -182,7 +183,8 @@ let list_issue_types () =
                 (* do not show this as this can be a big multi-line string and not tool-friendly *)
             ; default_severity
             ; enabled
-            ; hum } [@warning "+missing-record-field-pattern"] )
+            ; hum }
+            [@warning "+missing-record-field-pattern"] )
          ->
          L.result "%s:%s:%s:%s:%s:%b:%s@;" unique_id hum
            (IssueType.string_of_visibility visibility)
@@ -234,7 +236,7 @@ let all_categories_website ~website_root =
 
 let pp_checker f checker =
   let ({Checker.id; kind; support; short_documentation; cli_flags; enabled_by_default; activates}
-      [@warning "+missing-record-field-pattern"] ) =
+       [@warning "+missing-record-field-pattern"] ) =
     Checker.config checker
   in
   F.fprintf f

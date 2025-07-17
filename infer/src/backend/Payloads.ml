@@ -139,7 +139,8 @@ let freeze t =
        ; siof
        ; lineage
        ; lineage_shape
-       ; starvation } [@warning "+missing-record-field-pattern"] ) =
+       ; starvation }
+       [@warning "+missing-record-field-pattern"] ) =
     t
   in
   let freeze v_opt = Option.iter v_opt ~f:(fun v -> ignore @@ SafeLazy.force v) in
@@ -268,7 +269,8 @@ module SQLite = struct
   (** SQLite statements to load a payload from either analysis table *)
   type load_statements = {specs: Database.registered_stmt; name: string}
 
-  (** all possible load statements for each payload type and analysis table, in a rank-indexed array *)
+  (** all possible load statements for each payload type and analysis table, in a rank-indexed array
+  *)
   let all_load_statements =
     let mk_load_statements payload_id =
       let specs =

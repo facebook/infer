@@ -19,7 +19,8 @@ val incr : t -> t
 val max : t -> t -> t
 
 (** A trace of timestamps: a way of recording evolution of a timestamp over the course of analysis.
-    In particular, this can permit lightweight comparison of histories across interprocedural calls. *)
+    In particular, this can permit lightweight comparison of histories across interprocedural calls.
+*)
 type trace = private t list [@@deriving compare, equal]
 
 val trace0 : t -> trace

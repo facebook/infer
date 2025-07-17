@@ -314,7 +314,8 @@ module AliasTarget : sig
     | Eq  (** The value of alias target is exactly the same to the alias key. *)
     | Le
         (** The value of alias target is less than or equal to the alias key. For example, if there
-            is an alias between [%r] and [size(x)+i] with the [Le] type, it means [size(x)+i <= %r]. *)
+            is an alias between [%r] and [size(x)+i] with the [Le] type, it means [size(x)+i <= %r].
+        *)
 
   (** Relations between values of logical variables(registers) and program variables *)
   type t =
@@ -401,7 +402,8 @@ module PrunedVal : sig
 end
 
 (** [PrunePairs] is a map from abstract locations to abstract values that represents pruned results
-    in the latest pruning. It uses [InvertedMap] because more pruning means smaller abstract states. *)
+    in the latest pruning. It uses [InvertedMap] because more pruning means smaller abstract states.
+*)
 module PrunePairs : sig
   include AbstractDomain.InvertedMapS with type key = AbsLoc.Loc.t and type value = PrunedVal.t
 
@@ -463,7 +465,8 @@ module Mem : sig
   type 'has_oenv t0 =
     | Unreachable  (** Memory of unreachable node *)
     | ExcRaised
-        (** Memory of node that can be reachable only with exception raises that we want to ignore *)
+        (** Memory of node that can be reachable only with exception raises that we want to ignore
+        *)
     | Reachable of 'has_oenv MemReach.t0
 
   (** Memory type without an environment for on-demand symbol evaluation *)
@@ -505,7 +508,8 @@ module Mem : sig
   val unset_first_idx_of_null : AbsLoc.Loc.t -> Val.t -> t -> t
   (** In C string, unset the index of the first null character, i.e., end of string, when called by
       [unset_first_idx_of_null loc_to_string index_value mem]. This is unsound because the index can
-      be assigned as [previous index + 1] that is a heuristic to keep string lengths in some loops. *)
+      be assigned as [previous index + 1] that is a heuristic to keep string lengths in some loops.
+  *)
 
   val get_c_strlen : AbsLoc.PowLoc.t -> _ t0 -> Val.t
   (** Get C string length that is set/unset by [set_first_idex_of_null] and
@@ -602,7 +606,8 @@ module Mem : sig
   (** Add an [AliasTarget.IteratorHasNext] alias when [ident = iterator.hasNext()] is called *)
 
   val add_iterator_next_object_alias : ret_id:Ident.t -> iterator:Ident.t -> t -> t
-  (** Add an [AliasTarget.IteratorNextObject] alias when [ident = iterator.nextObject()] is called *)
+  (** Add an [AliasTarget.IteratorNextObject] alias when [ident = iterator.nextObject()] is called
+  *)
 
   val incr_iterator_simple_alias_on_call : eval_sym_trace -> callee_exit_mem:no_oenv_t -> t -> t
   (** Update [AliasTarget.IteratorSimple] alias at function calls *)

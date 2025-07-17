@@ -88,8 +88,7 @@ end = struct
           PatternMatch.supertype_exists tenv
             (fun class_name _ ->
               let class_name_string = Typ.Name.name class_name in
-              List.exists names ~f:(fun typ -> String.is_substring ~substring:typ class_name_string)
-              )
+              List.exists names ~f:(fun typ -> String.is_substring ~substring:typ class_name_string) )
             class_name )
     in
     let regexp_match regexp name =

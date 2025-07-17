@@ -113,8 +113,10 @@ let debug () =
 
 
 let explore () =
-  if (* explore bug traces *)
-     Config.html then
+  if
+    (* explore bug traces *)
+    Config.html
+  then
     TraceBugs.gen_html_report ~report_json:(ResultsDir.get_path ReportJson)
       ~show_source_context:Config.source_preview ~max_nested_level:Config.max_nesting
       ~report_html_dir:(ResultsDir.get_path ReportHtml)

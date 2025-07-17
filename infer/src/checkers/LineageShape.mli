@@ -34,7 +34,8 @@ end
 module VarPath : sig
   (** A variable path is a pair of a variable and a possibly empty list of subscripted fields. They
       are built from their in-program occurrences. They may semantically have sub-fields themselves:
-      it is the job of the {!Cell} module to determine the final graph nodes constructed from paths. *)
+      it is the job of the {!Cell} module to determine the final graph nodes constructed from paths.
+  *)
 
   (** The type of variable paths: a variable and a possibly empty list of subscripted fields. *)
   type t = Var.t * FieldPath.t

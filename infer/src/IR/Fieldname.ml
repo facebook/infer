@@ -98,7 +98,8 @@ let is_java_synthetic t = is_java t && JConfig.is_synthetic_name (get_field_name
 
 let is_internal {field_name} =
   String.is_prefix field_name ~prefix:"__"
-  || (* NOTE: _M_ is internal field of std::thread::id *)
+  ||
+  (* NOTE: _M_ is internal field of std::thread::id *)
   String.is_prefix field_name ~prefix:"_M_"
 
 

@@ -27,7 +27,8 @@ let pp f
      ; cf_interface
      ; cf_is_objc_block
      ; cf_is_objc_getter_setter
-     ; cf_virtual } [@warning "+missing-record-field-pattern"] ) =
+     ; cf_virtual }
+     [@warning "+missing-record-field-pattern"] ) =
   if cf_assign_last_arg then F.pp_print_string f " assign_last" ;
   if cf_injected_destructor then F.pp_print_string f " injected" ;
   if cf_interface then F.pp_print_string f " interface" ;

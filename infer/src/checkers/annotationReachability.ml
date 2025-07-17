@@ -320,7 +320,8 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
       && method_overrides_annot src spec.models tenv callee_pname
       || Config.annotation_reachability_minimize_sinks
          && method_overrides_annot snk_annot spec.models tenv callee_pname
-    then (* If minimization is enabled and we find a source/sink in the middle, skip this path *)
+    then
+      (* If minimization is enabled and we find a source/sink in the middle, skip this path *)
       ()
     else
       (* Sink not yet reached, thus we have an intermediate step: let's get its summary and recurse *)

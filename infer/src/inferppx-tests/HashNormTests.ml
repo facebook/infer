@@ -96,4 +96,6 @@ let%test "ignored_string_test" =
   equal_ignored_string a b
   (* possible bug in ppx_hash: hashing does not ignores value *)
   (* [Int.equal (hash_ignored_string a) (hash_ignored_string b)] this is false *)
-  && (* normalization does not happen *) not (phys_equal a' b')
+  &&
+  (* normalization does not happen *)
+  not (phys_equal a' b')

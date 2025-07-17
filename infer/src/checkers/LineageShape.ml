@@ -48,7 +48,11 @@ module FieldLabel = struct
   let pp_subscript fmt t =
     (* Invariant: distinct labels should always be distinctly printed (eg. differentiate between
        a field and a map key with the same name). *)
-    match t with BoxedValue -> Fmt.nop fmt () | _ -> Fmt.pf fmt "#%a" pp t
+    match t with
+    | BoxedValue ->
+        Fmt.nop fmt ()
+    | _ ->
+        Fmt.pf fmt "#%a" pp t
 
 
   let yojson_of_t t =
@@ -248,7 +252,8 @@ module Structure : sig
             should raise exceptions. *)
     | Variant of StringSet.t
         (** The shape of values that are statically known to only have as possible values a set of
-            atoms. Invariant: the set should not be empty (or unspecified behaviours may trigger). *)
+            atoms. Invariant: the set should not be empty (or unspecified behaviours may trigger).
+        *)
     | LocalAbstract
         (** A local abstract shape typically comes from a function parameter. Inside the current
             procedure, it cannot be unified with a variant-shape as we cannot make any assumption on
@@ -1207,7 +1212,8 @@ end = struct
           | Some LocalAbstract
           (* Locally abstract shapes from the callee are not introduced in the caller to allow
              their unification with concrete arguments (which might themselves be locally
-             abstract within the caller). *) ->
+             abstract within the caller). *)
+            ->
               ()
           | Some (Variant constructors) ->
               Hashtbl.set state_shape_structures ~key:(Union_find.get state_shape)
@@ -1777,7 +1783,10 @@ struct
     match instr with
     | Call ((ret_id, _typ), fun_exp, args, _location, _flags) -> (
         let ret_var = Var.of_id ret_id in
-        let args = List.map ~f:fst args (* forget SIL types *) in
+        let args =
+          List.map ~f:fst args
+          (* forget SIL types *)
+        in
         match procname_of_exp fun_exp with
         | None ->
             CallModel.unknown_exp fun_exp ret_var args

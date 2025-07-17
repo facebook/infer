@@ -75,7 +75,8 @@ module type S = sig
 
   val mk_fresh : unit -> t
   (** This is just [AbstractValue.mk_fresh] so technically is only guaranteed to produce a canonical
-      representative if the value is not immediately made equal to another one... Use with caution! *)
+      representative if the value is not immediately made equal to another one... Use with caution!
+  *)
 
   val unsafe_cast : AbstractValue.t -> t
   [@@deprecated

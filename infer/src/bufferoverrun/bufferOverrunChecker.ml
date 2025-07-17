@@ -79,9 +79,9 @@ end
 
 module ExitStatement = struct
   (* check that we are the last significant instruction
-     * of a procedure (no more significant instruction)
-     * or of a block (goes directly to a node with multiple predecessors)
-  *)
+   * of a procedure (no more significant instruction)
+   * or of a block (goes directly to a node with multiple predecessors)
+   *)
   let rec is_end_of_block_or_procedure (cfg : CFG.t) node rem_instrs =
     Instrs.for_all rem_instrs ~f:Sil.instr_is_auxiliary
     &&

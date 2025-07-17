@@ -43,7 +43,8 @@ type instr_metadata =
 
 (** An instruction. Syntactic invariants of instructions per-frontend are documented in
     {!Checkers.SilValidation}, where Clang is the most general validator (that is, it properly
-    subsumes all other validators). These invariants are enforced when --sil-validation is passed. *)
+    subsumes all other validators). These invariants are enforced when --sil-validation is passed.
+*)
 type instr =
   | Load of {id: Ident.t; e: Exp.t; typ: Typ.t; loc: Location.t}
       (** Load a value from the heap into an identifier.

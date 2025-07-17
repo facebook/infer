@@ -45,8 +45,7 @@ let output_json type_map =
       (fun typ_name node_set acc ->
         let normalized_type_name = normalize_type_name typ_name in
         let node_set = output_node_set node_set in
-        `Assoc [("type_name", `String normalized_type_name); ("node_set", `String node_set)] :: acc
-        )
+        `Assoc [("type_name", `String normalized_type_name); ("node_set", `String node_set)] :: acc )
       type_map []
   in
   let json = `List (List.rev type_list) in

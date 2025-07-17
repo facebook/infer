@@ -78,7 +78,8 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
     let clang_hashhashhash =
       Printf.sprintf "%s 2>&1"
         ( ClangCommand.prepend_arg "-###" cmd
-        |> (* c++ modules are not supported, so let clang know in case it was passed "-fmodules".
+        |>
+        (* c++ modules are not supported, so let clang know in case it was passed "-fmodules".
               Unfortunately we cannot know accurately if "-fmodules" was passed because we don't go
               into argument files at this point ("clang -### ..." will do that for us), so we also pass
               "-Qunused-arguments" to silence the potential warning that "-fno-cxx-modules" was
@@ -97,7 +98,8 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
           ; "-Qunused-arguments"
           ; "-Wno-ignored-optimization-argument"
           ; "-fno-addrsig" ]
-        |> (* If -fembed-bitcode is passed, it leads to multiple cc1 commands, which try to read .bc
+        |>
+        (* If -fembed-bitcode is passed, it leads to multiple cc1 commands, which try to read .bc
               files that don't get generated, and fail. So pass -fembed-bitcode=off to disable. *)
         ClangCommand.append_args ["-fembed-bitcode=off"]
         |> ClangCommand.command_to_run )
@@ -110,7 +112,8 @@ let clang_driver_action_items : ClangCommand.t -> action_item list =
           (* massage line to remove edge-cases for splitting *)
           ( match
               "\"" ^ line ^ " \""
-              |> (* split by whitespace *)
+              |>
+              (* split by whitespace *)
               Str.split (Lazy.force whitespace_regexp)
             with
           | prog :: args ->
@@ -156,7 +159,8 @@ let exec_action_item ~prog ~args = function
          Error message:@\n\
          %s@\n\
          @\n\
-         *** Infer needs a working compilation command to run." prog Pp.cli_args args error
+         *** Infer needs a working compilation command to run."
+        prog Pp.cli_args args error
   | ClangWarning warning ->
       L.external_warning "%s@\n" warning
   | CanonicalCommand clang_cmd ->

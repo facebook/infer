@@ -317,7 +317,8 @@ val make_objc_copy : Typ.Name.t -> t
 (** Create a Objective-C copy name. *)
 
 val make_objc_copyWithZone : is_mutable:bool -> Typ.Name.t -> t
-(** Create an Objective-C method for copyWithZone: or mutableCopyWithZone: according to is_mutable. *)
+(** Create an Objective-C method for copyWithZone: or mutableCopyWithZone: according to is_mutable.
+*)
 
 val make_python : module_name:PythonClassName.t -> function_name:string -> t
 (** Create a Python procedure name. *)
@@ -374,7 +375,8 @@ val objc_cpp_replace_method_name : t -> string -> t
 
 val is_static : t -> bool option
 (** Check if a procedure is a static class method or not. If the procedure is not a class method or
-    is unknown to be static, it returns [None]. For now, this checking does not work on C++ methods. *)
+    is unknown to be static, it returns [None]. For now, this checking does not work on C++ methods.
+*)
 
 val get_global_name_of_initializer : t -> string option
 (** Return the name of the global for which this procedure is the initializer if this is an
@@ -475,7 +477,8 @@ val erlang_call_unqualified : arity:int -> t
 
 val erlang_call_qualified : arity:int -> t
 (** Same as [erlang_call_unqualified] but is expected to have an erlang module name as the first
-    parameter, and the function name as second. [arity] is (still) the erlang arity of the function. *)
+    parameter, and the function name as second. [arity] is (still) the erlang arity of the function.
+*)
 
 val is_erlang_call_unqualified : t -> bool
 

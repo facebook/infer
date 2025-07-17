@@ -111,7 +111,8 @@ module Java : sig
   (** Check whether class implements a class from Json *)
 
   val implements_pseudo_collection : Tenv.t -> string -> bool
-  (** Check whether class implements a pseudo Collection with support for get() and size() methods *)
+  (** Check whether class implements a pseudo Collection with support for get() and size() methods
+  *)
 
   val implements_psi_element : Tenv.t -> string -> bool
   (** Check whether class implements a class of [com.intellij.psi.PsiElement] *)

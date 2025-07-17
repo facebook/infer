@@ -193,19 +193,20 @@ module Loc = struct
         { prefix=
             Prim
               (Allocsite
-                (Allocsite.Symbol
-                  (BoField.Prim (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p))) )
-                )
+                 (Allocsite.Symbol
+                    (BoField.Prim (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)))
+                   ) )
         ; fn= f }
     | BoField.Field
         { prefix=
             Prim
               (Allocsite
-                (Allocsite.Known
-                  { path=
-                      Some
-                        (BoField.Prim
-                          (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)) ) } ) )
+                 (Allocsite.Known
+                    { path=
+                        Some
+                          (BoField.Prim
+                             (SP.Deref ((SP.Deref_COneValuePointer | SP.Deref_CPointer), p)) ) } )
+                )
         ; fn= f } ->
         BoField.pp ~pp_lhs:(SP.pp_partial_paren ~paren:true) ~sep:"->" fmt p f
     | BoField.Field {prefix= l; fn= f} ->

@@ -320,7 +320,8 @@ let dump_duplicate_procs source_file procs =
             ; loc }
           when (* defined in another file *)
                (not (SourceFile.equal source_file translation_unit))
-               && (* really defined in that file and not in an include *)
+               &&
+               (* really defined in that file and not in an include *)
                SourceFile.equal translation_unit loc.file ->
             Some (pname, translation_unit)
         | _ ->

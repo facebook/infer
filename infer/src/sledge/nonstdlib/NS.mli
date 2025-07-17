@@ -80,7 +80,8 @@ val ( let@ ) : ('a -> 'b) -> 'a -> 'b
 (** [let@ x = e in b] is equivalent to [e @@ fun x -> b], that is, [e (fun x -> b)] *)
 
 val ( >> ) : ('a -> 'b) -> ('b -> 'c) -> 'a -> 'c
-(** Composition of functions: [(f >> g) x] is exactly equivalent to [g (f (x))]. Left associative. *)
+(** Composition of functions: [(f >> g) x] is exactly equivalent to [g (f (x))]. Left associative.
+*)
 
 val ( << ) : ('b -> 'c) -> ('a -> 'b) -> 'a -> 'c
 (** Reverse composition of functions: [(g << f) x] is exactly equivalent to [g (f (x))]. Left
@@ -252,7 +253,8 @@ val violates : ('a -> unit) -> 'a -> _
 (** Assert that function raises on argument. *)
 
 val register_sexp_of_exn : exn -> (exn -> Sexp.t) -> unit
-(** Register a function to convert exceptions with the same constructor as the given one to sexps. *)
+(** Register a function to convert exceptions with the same constructor as the given one to sexps.
+*)
 
 (**)
 

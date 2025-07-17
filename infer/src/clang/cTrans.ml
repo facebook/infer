@@ -2248,7 +2248,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ; cxx_temporary_markers_set }
 
 
-  (** The GNU extension to the conditional operator which allows the middle operand to be omitted. *)
+  (** The GNU extension to the conditional operator which allows the middle operand to be omitted.
+  *)
   and binaryConditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     match stmt_list with
     | [stmt1; ostmt1; ostmt2; stmt2]

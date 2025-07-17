@@ -601,8 +601,7 @@ end = struct
             PatternMatch.supertype_exists tenv
               (fun type_name _ ->
                 let type_name_str = Typ.Name.name type_name in
-                List.exists types ~f:(fun typ -> String.is_substring ~substring:typ type_name_str)
-                )
+                List.exists types ~f:(fun typ -> String.is_substring ~substring:typ type_name_str) )
               actual_name
         | _ ->
             false
@@ -682,7 +681,8 @@ module Aliasing = struct
     match find_opt aliasing var with Some higher -> get_rep aliasing higher | None -> var
 
 
-  (** Infers a pair of aliased variables in case of a direct assignment between pointer variables. *)
+  (** Infers a pair of aliased variables in case of a direct assignment between pointer variables.
+  *)
   let alias_of_instr instr =
     let open Sil in
     let open Exp in

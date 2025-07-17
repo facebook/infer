@@ -347,7 +347,8 @@ let load_previous_schedule_from_file file =
       (fun s ->
         L.internal_error
           "Error loading the previous analysis schedule from '%s': %s@\n\
-           Skipping attempt at replaying the previous analysis.@." file s ;
+           Skipping attempt at replaying the previous analysis.@."
+          file s ;
         None )
       fmt
   in

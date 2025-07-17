@@ -123,7 +123,8 @@ module AttributeMapDomain : sig
     AbstractDomain.InvertedMapS with type key = AccessExpression.t and type value = Attribute.t
 
   val get : AccessExpression.t -> t -> Attribute.t
-  (** find the [Attribute.t] associated with a given access expression or return [Attribute.bottom] *)
+  (** find the [Attribute.t] associated with a given access expression or return [Attribute.bottom]
+  *)
 
   val is_functional : t -> AccessExpression.t -> bool
 

@@ -12,7 +12,8 @@ module type Kind = sig
 
   val get :
     caller_pname:Procname.t -> Procname.t -> HilExp.t list -> Tenv.t -> (t * int option) list
-  (** return Some (kind) if the procedure with the given actuals is a taint source, None otherwise *)
+  (** return Some (kind) if the procedure with the given actuals is a taint source, None otherwise
+  *)
 
   val get_tainted_formals : Procdesc.t -> Tenv.t -> (Mangled.t * Typ.t * t option) list
   (** return each formal of the function paired with either Some(kind) if the formal is a taint

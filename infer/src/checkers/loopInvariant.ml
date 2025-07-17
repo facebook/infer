@@ -61,7 +61,8 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_pure_by_de
            | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
                PurityDomain.is_pure
                  (get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname)
-               && (* check if all params are invariant *)
+               &&
+               (* check if all params are invariant *)
                List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
            | _ ->
                false )

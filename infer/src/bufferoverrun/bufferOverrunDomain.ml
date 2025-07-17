@@ -401,7 +401,8 @@ module Val = struct
       phys_equal itv x.itv
       && phys_equal itv_thresholds x.itv_thresholds
       && phys_equal arrayblk x.arrayblk
-    then (* x hasn't changed, don't join traces *)
+    then
+      (* x hasn't changed, don't join traces *)
       x
     else {x with itv; itv_thresholds; arrayblk; traces= TraceSet.join x.traces y.traces}
 
@@ -1407,9 +1408,7 @@ module AliasMap = struct
     M.find_opt (KeyLhs.of_id iterator) x
     >>= AliasTargets.find_simple_alias
     >>| (fun rhs ->
-          add_alias ~lhs:(KeyLhs.of_id ret_id) ~rhs
-            (AliasTarget.IteratorNextObject {objc_tmp= None})
-            x )
+    add_alias ~lhs:(KeyLhs.of_id ret_id) ~rhs (AliasTarget.IteratorNextObject {objc_tmp= None}) x )
     |> Option.value ~default:x
 end
 

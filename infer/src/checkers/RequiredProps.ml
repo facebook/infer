@@ -18,7 +18,8 @@ let get_required_props typename tenv =
     List.exists
       ~f:(fun ({Annot.parameters} as annot) ->
         Annotations.annot_ends_with annot Annotations.prop
-        && (* Don't count as required if it's @Prop(optional = true) *)
+        &&
+        (* Don't count as required if it's @Prop(optional = true) *)
         not
           (List.exists
              ~f:(fun Annot.{name; value} ->
@@ -91,14 +92,14 @@ let report_missing_required_prop proc_desc err_log prop parent_typename ~create_
 let has_prop prop_set prop =
   let check prop =
     IString.Set.mem prop prop_set
-    || (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), myPropDip(), myPropPx(), myPropRes() or myPropSp().
+    ||
+    (* @Prop(resType = ...) myProp can also be set via myProp(), myPropAttr(), myPropDip(), myPropPx(), myPropRes() or myPropSp().
           Our annotation parameter parsing is too primitive to identify resType, so just assume
           that all @Prop's can be set any of these 6 ways. *)
     IString.Set.exists
       (fun el ->
         String.chop_prefix el ~prefix:prop
-        |> Option.exists ~f:(fun suffix -> List.mem LithoDomain.suffixes suffix ~equal:String.equal)
-        )
+        |> Option.exists ~f:(fun suffix -> List.mem LithoDomain.suffixes suffix ~equal:String.equal) )
       prop_set
   in
   match prop with

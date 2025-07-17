@@ -34,7 +34,8 @@ module PathContext = PulsePathContext
     values in the raw map corresponding to the memory are not necessarily normalized at all times
     but the API allows one to pretend they are by normalizing them on the fly. On the other hand,
     *keys* in the memory map are always normalized so values must be normalized before being looked
-    up in the map and this module takes care of that transparently too. See also [PulseCanonValue]. *)
+    up in the map and this module takes care of that transparently too. See also [PulseCanonValue].
+*)
 
 (** signature common to the "normal" [Domain], representing the post at the current program point,
     and the inverted [PreDomain], representing the inferred pre-condition*)
@@ -222,7 +223,8 @@ module AddressAttributes : sig
     -> Location.t
     -> t
     -> t
-  (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc. *)
+  (** Add "Uninitialized" attributes when a variable is declared or a memory is allocated by malloc.
+  *)
 
   val always_reachable : AbstractValue.t -> t -> t
 

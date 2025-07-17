@@ -663,7 +663,7 @@ let add_need_dynamic_type_specialization needs execution_states =
             LatentInvalidAccess {latent_invalid_access with astate}
         | LatentSpecializedTypeIssue latent_specialized_type_issue ->
             let astate = update_summary latent_specialized_type_issue.astate in
-            LatentSpecializedTypeIssue {latent_specialized_type_issue with astate} ) )
+            LatentSpecializedTypeIssue {latent_specialized_type_issue with astate} ))
 
 
 let maybe_dynamic_type_specialization_is_needed already_specialized contradiction astate =

@@ -83,7 +83,8 @@ module Loc : sig
   val get_path : t -> Symb.SymbolPath.partial option
 
   val get_param_path : t -> Symb.SymbolPath.partial option
-  (** As get_path, but returns None if the path doesn't correspond to parameter passed by reference. *)
+  (** As get_path, but returns None if the path doesn't correspond to parameter passed by reference.
+  *)
 
   val is_trans_field_of : loc:t -> field_loc:t -> bool
   (** Checks if field_loc is a direct or indirect field of loc. *)
@@ -97,7 +98,8 @@ module Loc : sig
       constant array value *)
 
   val is_pretty : t -> bool
-  (** It checks if it is representable with pretty form, e.g., with a path or with a variable name. *)
+  (** It checks if it is representable with pretty form, e.g., with a path or with a variable name.
+  *)
 
   val is_return : t -> bool
 

@@ -780,7 +780,10 @@ module NonNegativePolynomial = struct
 
 
   let compare_by_degree =
-    let cmp _ _ = 0 (* All pairs of Top/Unreachable should be considered equal *) in
+    let cmp _ _ =
+      0
+      (* All pairs of Top/Unreachable should be considered equal *)
+    in
     AbstractDomain.StackedUtils.compare ~cmp_above:cmp
       ~cmp:(fun p1 p2 ->
         Degree.compare

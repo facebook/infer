@@ -32,7 +32,8 @@ val task_progress : f:(unit -> 'a) -> (F.formatter -> 'b -> unit) -> 'b -> 'a
 
 val result : ?style:ANSITerminal.style list -> ('a, F.formatter, unit) format -> 'a
 (** Emit a result to stdout. Use only if the output format is stable and useful enough that it may
-    conceivably get piped to another program, ie, almost never (use [progress] instead otherwise). *)
+    conceivably get piped to another program, ie, almost never (use [progress] instead otherwise).
+*)
 
 val user_error : ('a, F.formatter, unit) format -> 'a
 (** bad input, etc. detected *)

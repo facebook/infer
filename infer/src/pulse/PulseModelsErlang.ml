@@ -469,7 +469,8 @@ module Comparison = struct
         comparison is always true, and when [y] is, the comparison is always false. Otherwise it is
         unknown.
 
-        Reference: {:https://www.erlang.org/doc/reference_manual/expressions.html#term-comparisons}. *)
+        Reference: {:https://www.erlang.org/doc/reference_manual/expressions.html#term-comparisons}.
+    *)
     let incompatible_lt (x, ty_x) (y, ty_y) tenv location path : value_maker =
      fun astate ->
       match (ty_x, ty_y) with
@@ -1097,7 +1098,8 @@ module Strings = struct
     |> value_die "'of_const_string' failed evaluation"
 
 
-  (** recurse character by character of the string and build suitable heap allocated data structure *)
+  (** recurse character by character of the string and build suitable heap allocated data structure
+  *)
   let rec handle_string_content location path value str_lst : sat_maker =
    fun astate ->
     match str_lst with

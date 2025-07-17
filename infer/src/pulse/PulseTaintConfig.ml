@@ -299,9 +299,9 @@ module Unit = struct
         \ \"block_passed_to\": %a, \n\
         \ \"block_passed_to_regex\": %a, \n\
         \ \"allocation\": %a, \n\
-        \ \"builtin\": %a" (Pp.option F.pp_print_string) matcher.procedure
-        (Pp.option F.pp_print_string) matcher.procedure_regex (Pp.option F.pp_print_string)
-        matcher.class_name_regex
+        \ \"builtin\": %a"
+        (Pp.option F.pp_print_string) matcher.procedure (Pp.option F.pp_print_string)
+        matcher.procedure_regex (Pp.option F.pp_print_string) matcher.class_name_regex
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
         matcher.class_names (Pp.option F.pp_print_string) matcher.class_with_annotation
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
@@ -336,7 +336,8 @@ module Unit = struct
        or else \"class_with_annotation\", \"class_name_regex\" and \"procedure_regex\" must be \
        provided, \n\
        but got \n\
-      \ %a." pp_procedure_matcher matcher
+      \ %a."
+      pp_procedure_matcher matcher
 
 
   let pp_field_matcher_error_message f (matcher : Pulse_config_t.matcher) =
@@ -346,7 +347,8 @@ module Unit = struct
         \ \"class_names\": %a, \n\
         \ \"field_names\": %a, \n\
         \ \"field_with_annotation\": %a, \n\
-        \ \"annotation_values\": %a" (Pp.option F.pp_print_string) matcher.field_regex
+        \ \"annotation_values\": %a"
+        (Pp.option F.pp_print_string) matcher.field_regex
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
         matcher.class_names
         (Pp.option (Pp.seq ~sep:"," F.pp_print_string))
@@ -361,7 +363,8 @@ module Unit = struct
        or else \"class_names\" and \"field_names\" must be provided, \n\
        or else \"field_with_annotation\" and \"annotation_values\" must be provided, \n\
        but got \n\
-      \ %a" pp_field_matcher matcher
+      \ %a"
+      pp_field_matcher matcher
 
 
   let procedure_matcher_of_config ~default_taint_target ~option_name

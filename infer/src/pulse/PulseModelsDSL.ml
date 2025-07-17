@@ -167,7 +167,7 @@ module Syntax = struct
             | ExecutionDomain.ContinueProgram astate ->
                 ContinueProgram ((), astate)
             | exec ->
-                Other exec ) )
+                Other exec ))
     , non_disj )
 
 
@@ -180,7 +180,7 @@ module Syntax = struct
             | ContinueProgram ((), astate) ->
                 ExecutionDomain.ContinueProgram astate
             | Other exec ->
-                exec ) )
+                exec ))
     , non_disj )
 
 

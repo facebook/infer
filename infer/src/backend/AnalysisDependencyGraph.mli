@@ -22,4 +22,5 @@ val store_previous_schedule_if_needed : unit -> unit
     existing schedule file or directly from summaries *)
 
 val load_previous_schedule : unit -> CallGraph.t option
-(** load from a file created with [store_previous_schedule] if present or from summaries otherwise *)
+(** load from a file created with [store_previous_schedule] if present or from summaries otherwise
+*)

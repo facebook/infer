@@ -554,7 +554,10 @@ let of_node is_module_body nullify_locals entry
         :: instrs )
     else instrs
   in
-  let exn_succs = [] (* TODO *) in
+  let exn_succs =
+    []
+    (* TODO *)
+  in
   let ssa_parameters = List.map ssa_parameters ~f:(fun ssa -> (mk_ident ssa, Typ.value)) in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 

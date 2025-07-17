@@ -84,7 +84,8 @@ module Unit : sig
   type t = private {source_path: string; content: string}
 
   val extract_units : In_channel.t -> int option * t Seq.t
-  (** Returns the expected number of units and a lazy sequence of units extracted from the channel. *)
+  (** Returns the expected number of units and a lazy sequence of units extracted from the channel.
+  *)
 
   val capture_unit : t -> (Tenv.t, unit) Result.t
 end = struct

@@ -47,7 +47,8 @@ val get_procdesc : t -> Textual.ProcSig.t -> Textual.ProcDesc.t option
 val get_proc_entries_by_enclosing_class :
   t -> ProcEntry.t list Textual.TypeName.Map.t * Textual.TypeName.Set.t
 (** returns 1) in a map, all function implementation and declarations, indexed by the name of their
-    enclosing class 2) the set of all enclosing class that were not introduced by a type declaration *)
+    enclosing class 2) the set of all enclosing class that were not introduced by a type declaration
+*)
 
 val get_struct : t -> Textual.TypeName.t -> Textual.Struct.t option
 

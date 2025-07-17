@@ -513,7 +513,11 @@ let group_succ_by seq ~eq k =
           (* yield group, and start another one *)
           cur := [x] ) ;
   (* last list *)
-  match !cur with [] -> () | _ :: _ as l -> k l
+  match !cur with
+  | [] ->
+      ()
+  | _ :: _ as l ->
+      k l
 
 
 (*$R

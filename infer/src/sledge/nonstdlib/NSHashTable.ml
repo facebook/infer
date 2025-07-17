@@ -20,7 +20,10 @@ module Make (Key : HashedType) = struct
 
   let add_multi tbl ~key ~data =
     update tbl ~k:key ~f:(fun _ -> function
-      | None -> Some [data] | Some datas -> Some (data :: datas) )
+      | None ->
+          Some [data]
+      | Some datas ->
+          Some (data :: datas) )
 
 
   let update tbl key ~f = update tbl ~k:key ~f:(fun _ dat -> f dat)

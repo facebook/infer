@@ -160,7 +160,8 @@ let pp_trans_state fmt
      ; opaque_exp
      ; is_objc_getter_setter_call
      ; is_fst_arg_objc_instance_method_call
-     ; block_as_arg_attributes } [@warning "+missing-record-field-pattern"] ) =
+     ; block_as_arg_attributes }
+     [@warning "+missing-record-field-pattern"] ) =
   F.fprintf fmt
     "{@[succ_nodes=[%a];@;\
      continuation=%a@;\
@@ -654,13 +655,21 @@ let trans_assertion trans_state sil_loc =
 let trans_builtin_expect params_trans_res =
   (* Translate call to __builtin_expect as the first argument *)
   (* for simpler symbolic execution *)
-  match params_trans_res with [_; fst_arg_res; _] -> Some fst_arg_res | _ -> None
+  match params_trans_res with
+  | [_; fst_arg_res; _] ->
+      Some fst_arg_res
+  | _ ->
+      None
 
 
 let trans_std_addressof params_trans_res =
   (* Translate call to std::addressof as the first argument *)
   (* for simpler symbolic execution. *)
-  match params_trans_res with [_; fst_arg_res] -> Some fst_arg_res | _ -> assert false
+  match params_trans_res with
+  | [_; fst_arg_res] ->
+      Some fst_arg_res
+  | _ ->
+      assert false
 
 
 let trans_replace_with_deref_first_arg source_range sil_loc params_trans_res ~cxx_method_call =

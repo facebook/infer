@@ -1029,7 +1029,10 @@ let small_step tenv loc pulse_state event simple_states =
     let skip =
       let nonskip_disjunction = List.map ~f:(fun {pruned} -> pruned) nonskip in
       let skip_disjunction = Constraint.negate nonskip_disjunction in
-      let f pruned = {old with pruned} (* keeps last_step from old *) in
+      let f pruned =
+        {old with pruned}
+        (* keeps last_step from old *)
+      in
       List.map ~f skip_disjunction
     in
     let add_old_pruned s = {s with pruned= Constraint.and_constr s.pruned old.pruned} in

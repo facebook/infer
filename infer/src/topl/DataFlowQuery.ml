@@ -313,7 +313,11 @@ module Topl = struct
 
   let mk_vname arguments position =
     (* TODO: validate, so these don't throw *)
-    match position with Return -> List.last_exn arguments | Argument n -> List.nth_exn arguments n
+    match position with
+    | Return ->
+        List.last_exn arguments
+    | Argument n ->
+        List.nth_exn arguments n
 
 
   let mk_eq_predicate (language : Language.t) arguments (Eq {left; right}) =

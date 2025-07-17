@@ -187,7 +187,8 @@ let clang_cc1_cmd_sanitizer cmd =
   let post_args_rev =
     []
     |> List.rev_append ["-include"; Config.lib_dir ^/ "clang_wrappers" ^/ "global_defines.h"]
-    |> (* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
+    |>
+    (* Never error on warnings. Clang is often more strict than Apple's version.  These arguments
           are appended at the end to override previous opposite settings.  How it's done: suppress
           all the warnings, since there are no warnings, compiler can't elevate them to error
           level. *)
@@ -235,7 +236,8 @@ let with_plugin_args args =
   let plugin_arg_flag = "-plugin-arg-" ^ plugin_name in
   let args_before_rev =
     []
-    |> (* -cc1 has to be the first argument or clang will think it runs in driver mode *)
+    |>
+    (* -cc1 has to be the first argument or clang will think it runs in driver mode *)
     argv_cons "-cc1"
     |> List.rev_append
          [ "-load"

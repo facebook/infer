@@ -339,7 +339,8 @@ module Call : sig
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher
     -> 'f_in
     -> ('context, 'f_out, 'arg_payload) matcher
-  (** After a name, accepts NO template arguments, accepts NO function arguments, binds the function *)
+  (** After a name, accepts NO template arguments, accepts NO function arguments, binds the function
+  *)
 
   val ( &--> ) :
        ('context, 'f_in, 'f_out, 'arg_payload) name_matcher

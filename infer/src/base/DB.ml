@@ -13,7 +13,10 @@ open! IStd
 module L = Logging
 
 let append_crc_cutoff ?(key = "") name =
-  let cutoff_length = 50 - 16 (* crc *) - 1 (* separator *) in
+  let cutoff_length =
+    50 - 16 (* crc *) - 1
+    (* separator *)
+  in
   let name_up_to_cutoff =
     if String.length name <= cutoff_length then name else String.sub name ~pos:0 ~len:cutoff_length
   in

@@ -7,6 +7,9 @@
 
 (** Intrinsic function names *)
 
-type t = [(* threads *)
-          `sledge_thread_create | `sledge_thread_resume | `sledge_thread_join]
+type t =
+  [ (* threads *)
+    `sledge_thread_create
+  | `sledge_thread_resume
+  | `sledge_thread_join ]
 [@@deriving compare, equal, sexp_of, enumerate]

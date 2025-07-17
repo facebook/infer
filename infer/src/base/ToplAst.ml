@@ -26,8 +26,15 @@ type value =
   | FieldAccess of {value: value; class_name: class_name; field_name: field_name}
 [@@deriving show]
 
-type binop = (* all return booleans *)
-  | LeadsTo | OpEq | OpNe | OpGe | OpGt | OpLe | OpLt
+type binop =
+  (* all return booleans *)
+  | LeadsTo
+  | OpEq
+  | OpNe
+  | OpGe
+  | OpGt
+  | OpLe
+  | OpLt
 [@@deriving show]
 
 type predicate = Binop of binop * value * value | Value of (* bool *) value [@@deriving show]

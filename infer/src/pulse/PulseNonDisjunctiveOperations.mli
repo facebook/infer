@@ -41,4 +41,5 @@ val mark_modified_copies_and_parameters :
 
 val mark_modified_copies_and_parameters_on_abductive :
   Var.t list -> AbductiveDomain.t -> NonDisjDomain.t -> NonDisjDomain.t
-(** Similar to [mark_modified_copies_and_parameters], but given by [PulseAbductiveDomain.t] instead *)
+(** Similar to [mark_modified_copies_and_parameters], but given by [PulseAbductiveDomain.t] instead
+*)

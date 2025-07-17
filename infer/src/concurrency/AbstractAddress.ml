@@ -163,7 +163,8 @@ type t =
   | Global of {path: raw_path}  (** root var is included in comparison *)
   | Class of {typename: Typ.Name.t}  (** Java-only class object identified by typename *)
   | Parameter of {index: int; path: unrooted_path}
-      (** method parameter represented by its 0-indexed position, root var is not used in comparison *)
+      (** method parameter represented by its 0-indexed position, root var is not used in comparison
+      *)
 [@@deriving compare, equal]
 
 let get_typ tenv = function

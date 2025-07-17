@@ -22,7 +22,8 @@ module LoopHeadToHoistInstrs = Procdesc.NodeMap
 let is_hoistable_call inv_vars node source_nodes idom ret_id =
   (* Check condition (1); N dominates all loop sources *)
   List.for_all ~f:(fun source -> Dominators.dominates idom node source) source_nodes
-  && (* Check condition (2); id should be invariant already *)
+  &&
+  (* Check condition (2); id should be invariant already *)
   LoopInvariant.InvariantVars.mem (Var.of_id ret_id) inv_vars
 
 

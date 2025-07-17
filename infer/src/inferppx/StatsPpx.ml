@@ -95,7 +95,8 @@ let mk_merge_fun_decl ~loc fields =
       [%stri let merge stats1 stats2 = [%e record_assignment]]
 
 
-(** generate the function call [Fields.to_list ~f1:(of_field FieldTypeModule1.to_log_entries) ...] *)
+(** generate the function call [Fields.to_list ~f1:(of_field FieldTypeModule1.to_log_entries) ...]
+*)
 let mk_fields_to_list_log_call ~loc fields =
   let labelled_arguments =
     List.map fields ~f:(fun {pld_name; pld_type; pld_loc= loc} ->

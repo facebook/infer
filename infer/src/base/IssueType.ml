@@ -224,15 +224,15 @@ end = struct
       ~visibility ~user_documentation ~category default_severity checker =
     match find_from_string ~id:unique_id with
     | ((Some
-         ( { unique_id= _ (* we know it has to be the same *)
-           ; checker= checker_old
-           ; category= _
-           ; visibility= visibility_old
-           ; user_documentation= _ (* new one must be [None] for dynamic issue types *)
-           ; default_severity= _ (* mutable field to update *)
-           ; enabled= _ (* not touching this one since [Config] will have set it *)
-           ; hum= _ (* mutable field to update *) } as issue ) )
-    [@warning "+missing-record-field-pattern"] ) ->
+          ( { unique_id= _ (* we know it has to be the same *)
+            ; checker= checker_old
+            ; category= _
+            ; visibility= visibility_old
+            ; user_documentation= _ (* new one must be [None] for dynamic issue types *)
+            ; default_severity= _ (* mutable field to update *)
+            ; enabled= _ (* not touching this one since [Config] will have set it *)
+            ; hum= _ (* mutable field to update *) } as issue ) )
+       [@warning "+missing-record-field-pattern"] ) ->
         (* update fields that were supplied this time around, but keep the previous values of others
            and assert that the immutable fields are the same (see doc comment) *)
         let die_of_mismatch ~what ~old ~new_ =

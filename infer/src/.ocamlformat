@@ -1,5 +1,5 @@
-ocaml-version = 4.14
-version = 0.26.2
+ocaml-version = 5.3.0
+version = 0.27.0
 profile = ocamlformat
 break-before-in = fit-or-vertical
 break-sequences = true

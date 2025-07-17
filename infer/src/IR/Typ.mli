@@ -300,7 +300,8 @@ val equal_ignore_quals : t -> t -> bool
 (** Equality for types, but ignoring quals in it. *)
 
 val overloading_resolution : (t -> t -> bool) list
-(** [overloading_resolution] is a list of predicates that compare whether a type T1 binds a type T2. *)
+(** [overloading_resolution] is a list of predicates that compare whether a type T1 binds a type T2.
+*)
 
 val pp_full : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a type with all the details. *)

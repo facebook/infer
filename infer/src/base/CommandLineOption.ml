@@ -966,7 +966,9 @@ let decode_inferconfig_to_argv path =
           ~f:(fun {long; short} ->
             String.equal key long || String.equal key short
             (* for deprecated options *)
-            || (* for deprecated options that start with "-" *) String.equal ("-" ^ key) short )
+            ||
+            (* for deprecated options that start with "-" *)
+            String.equal ("-" ^ key) short )
           !desc_list
       in
       decode_json ~inferconfig_dir json_val @ result

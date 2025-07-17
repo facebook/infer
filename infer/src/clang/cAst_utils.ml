@@ -451,7 +451,8 @@ let get_captured_mode ~lci_capture_this ~lci_capture_kind =
     | `LCK_This (* explicit with [this] or implicit with [&] *)
     | `LCK_VLAType
       (* capture a variable-length array by reference. we probably don't handle
-         this correctly elsewhere, but it's definitely not captured by value! *) ->
+         this correctly elsewhere, but it's definitely not captured by value! *)
+      ->
         true
     | `LCK_ByCopy (* explicit with [x] or implicit with [=] *) ->
         (* [=] captures this by reference and everything else by value *)

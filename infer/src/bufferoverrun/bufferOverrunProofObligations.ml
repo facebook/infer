@@ -304,22 +304,28 @@ module ArrayAccessCondition = struct
    fun ~real_idx c ->
     (* basically, alarms involving infinity are filtered *)
     ((not (ItvPure.is_finite real_idx)) || not (ItvPure.is_finite c.size))
-    && (* except the following cases *)
+    &&
+    (* except the following cases *)
     not
       ( Bound.is_not_infty (ItvPure.lb real_idx)
-        && (* idx non-infty lb < 0 *)
+        &&
+        (* idx non-infty lb < 0 *)
         Bound.lt (ItvPure.lb real_idx) Bound.zero
       || Bound.is_not_infty (ItvPure.lb real_idx)
-         && (* idx non-infty lb > size lb *)
+         &&
+         (* idx non-infty lb > size lb *)
          Bound.gt (ItvPure.lb real_idx) (ItvPure.lb c.size)
       || Bound.is_not_infty (ItvPure.lb real_idx)
-         && (* idx non-infty lb > size ub *)
+         &&
+         (* idx non-infty lb > size ub *)
          Bound.gt (ItvPure.lb real_idx) (ItvPure.ub c.size)
       || Bound.is_not_infty (ItvPure.ub real_idx)
-         && (* idx non-infty ub > size lb *)
+         &&
+         (* idx non-infty ub > size lb *)
          Bound.gt (ItvPure.ub real_idx) (ItvPure.lb c.size)
       || Bound.is_not_infty (ItvPure.ub real_idx)
-         && (* idx non-infty ub > size ub *)
+         &&
+         (* idx non-infty ub > size ub *)
          Bound.gt (ItvPure.ub real_idx) (ItvPure.ub c.size) )
 
 

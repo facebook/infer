@@ -277,7 +277,7 @@ let pp_hist_map fmt hist_map =
 
 let pp_call_state fmt
     ({astate; subst; rev_subst; hist_map; visited; array_indices_to_visit; first_error; aliases}
-      [@warning "+missing-record-field-pattern"] ) =
+     [@warning "+missing-record-field-pattern"] ) =
   let pp_value_and_path fmt (value, path) =
     F.fprintf fmt "[value %a from %a]" AbstractValue.pp value LazyHeapPath.pp path
   in
@@ -290,13 +290,14 @@ let pp_call_state fmt
     \ visited=@[%a@]@,\
     \ array_indices_to_visit=@[%a@]@,\
     \ %t@,\
-    \ %a@}@]" AbductiveDomain.pp astate pp_to_caller_subst subst
+    \ %a@}@]"
+    AbductiveDomain.pp astate pp_to_caller_subst subst
     (AddressMap.pp ~pp_value:pp_value_and_path)
     rev_subst pp_hist_map hist_map AddressSet.pp visited
     (Pp.seq (fun _ _ -> ()))
     array_indices_to_visit
     (* only print [first_error] if there is an error *)
-      (fun fmt ->
+    (fun fmt ->
       match first_error with
       | None ->
           ()
@@ -784,7 +785,8 @@ let materialize_pre path callee_proc_name call_location callee_summary ~captured
     >>= materialize_pre_for_captured_vars callee_proc_name call_location ~pre:callee_precondition
           ~captured_formals ~captured_actuals
     >>= materialize_pre_for_globals path callee_proc_name call_location ~pre:callee_precondition
-    >>= (* ...then relational arithmetic constraints in the callee's attributes will make sense in
+    >>=
+    (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
     conjoin_callee_arith (AbductiveDomain.Summary.get_path_condition callee_summary)
     >>= materialize_pre_from_array_indices callee_proc_name call_location ~pre:callee_precondition
@@ -1018,8 +1020,7 @@ let record_skipped_calls callee_proc_name call_loc callee_summary call_state =
     SkippedCalls.map
       (fun trace ->
         Trace.ViaCall
-          {f= Call callee_proc_name; location= call_loc; history= ValueHistory.epoch; in_call= trace}
-        )
+          {f= Call callee_proc_name; location= call_loc; history= ValueHistory.epoch; in_call= trace} )
       (AbductiveDomain.Summary.get_skipped_calls callee_summary)
   in
   let astate = AbductiveDomain.add_skipped_calls callee_skipped_calls call_state.astate in

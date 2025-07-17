@@ -363,7 +363,8 @@ let has_node_been_typechecked (node : Node.t) : bool monad =
 
 let get_node (label : NodeName.t) : Node.t monad =
  (* should never fail because labels have been verified in TextualVerification *)
- fun state -> (Value (NodeName.Map.find label state.nodes_from_label), state)
+ fun state ->
+  (Value (NodeName.Map.find label state.nodes_from_label), state)
 
 
 let typeof_const (const : Const.t) : Typ.t =

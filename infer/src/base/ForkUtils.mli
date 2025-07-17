@@ -8,4 +8,5 @@
 open! IStd
 
 val protect : f:('a -> 'b) -> 'a -> 'b
-(** does the bookkeeping necessary to safely execute an infer function [f] after a call to fork(2) *)
+(** does the bookkeeping necessary to safely execute an infer function [f] after a call to fork(2)
+*)

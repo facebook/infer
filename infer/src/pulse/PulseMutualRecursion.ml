@@ -83,7 +83,8 @@ let iter_rotations cycle ~f =
               ; actuals=
                   []
                   (* HACK: not recording the real actuals but these are not used at the call
-                     sites *) }
+                     sites *)
+              }
           ; chain= chain @ [!rotation.innermost.call] }
   done
 

@@ -14,7 +14,8 @@ module type Element = sig
   type t [@@deriving compare, equal]
 
   val is_simpler_than : t -> t -> bool
-  (** will be used to choose a "simpler" representative for a given equivalence class when possible *)
+  (** will be used to choose a "simpler" representative for a given equivalence class when possible
+  *)
 end
 
 module Make
@@ -46,7 +47,8 @@ module Make
   val reorient : should_keep:(X.t -> bool) -> t -> X.t XMap.t
   (** the relation [x -> x'] derived from the equality relation that relates all [x], [x'] such that
       [¬(should_keep x)], [should_keep x'], and [x=x'], as well as [y -> y'] when no element in the
-      equivalence class of [y] satisfies [should_keep] and [y'] is the representative of the class *)
+      equivalence class of [y] satisfies [should_keep] and [y'] is the representative of the class
+  *)
 
   val apply_subst : _ XMap.t -> t -> t
   (** [apply_subst subst uf] eliminate all variables in the domain of [subst] from [uf], keeping the

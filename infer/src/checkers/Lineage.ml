@@ -2212,7 +2212,10 @@ module TransferFunctions = struct
       (instr : Sil.instr) =
     if not (Int.equal instr_index 0) then
       L.die InternalError "Lineage: INV broken: CFGs should be single instruction@\n" ;
-    let astate = Domain.clear_partial_graph astate (* Don't repeat edges *) in
+    let astate =
+      Domain.clear_partial_graph astate
+      (* Don't repeat edges *)
+    in
     let astate = add_cap_flows shapes node instr astate in
     match instr with
     | Load {id; e; _} ->
