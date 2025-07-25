@@ -1,0 +1,9 @@
+property Nondet
+  message "Undefined ordering used twice"
+  start -> start: *
+  start -> trackOne: "maps:keys"(M, R) => one := R; m := M
+  start -> trackOne: "maps:to_list"(M, R) => one := R; m := M
+  trackOne -> trackTwo: "maps:keys"(M, R) when m == M => two := R
+  trackOne -> trackTwo: "maps:to_list"(M, R) when m == M => two := R
+  trackTwo -> error: ".*:.*"(A1, R) when A1 ~~> one && A1 ~~> two
+  trackTwo -> error: ".*:.*"(A1, A2, R) when A1 ~~> one && A2 ~~> two
