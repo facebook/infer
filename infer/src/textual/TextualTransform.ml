@@ -993,3 +993,152 @@ let run lang module_ =
   in
   let module_ = module_ |> let_propagation |> FixHackWrapper.transform |> out_of_ssa in
   (module_, decls_env)
+
+
+module ClassGetTS = struct
+  let get_class_ts_old_procname = ProcName.of_string "TODO_hhbc_ClassGetTS"
+
+  let get_class_ts_new_procname_str = "hack_get_class_from_type"
+
+  let combine_and_resolve_type_struct_procname =
+    ProcName.of_string "hhbc_combine_and_resolve_type_struct"
+
+
+  let hack_new_dict_procname = ProcName.of_string "hack_new_dict"
+
+  let hhbc_new_vec_procname = ProcName.of_string "hhbc_new_vec"
+
+  let hack_string_procname = ProcName.of_string "hack_string"
+
+  let build_ident_instr_map (instructions : Instr.t list) =
+    List.fold_left ~init:Ident.Map.empty
+      ~f:(fun acc (instruction : Instr.t) ->
+        match instruction with Let {id= Some id; exp} -> Ident.Map.add id exp acc | _ -> acc )
+      instructions
+
+
+  (*
+    This function uses the info from ident_instr_map to inline call exprs,
+    replacing identifiers found in arguments by their corresponding expressions
+    E.g.
+       foo(n$0) becomes
+       foo(bar(...)),
+       assuming that n$0 is previously assigned to bar(...)
+  *)
+  let rec inline_call_expr ident_instr_map (exp : Textual.Exp.t) =
+    match exp with
+    | Apply {closure; args} ->
+        let new_args = List.map ~f:(inline_call_expr ident_instr_map) args in
+        Textual.Exp.Apply {args= new_args; closure}
+    | Var id -> (
+      match Ident.Map.find_opt id ident_instr_map with
+      | Some new_exp ->
+          inline_call_expr ident_instr_map new_exp
+      | None ->
+          exp )
+    | Call {proc; args; kind} ->
+        let new_args = List.map ~f:(inline_call_expr ident_instr_map) args in
+        Textual.Exp.Call {proc; args= new_args; kind}
+    | _ ->
+        exp
+
+
+  (*
+    This function performs the final transformation needed for the TODO_ClassGetTS usecase.
+    For that, it searches for the following pattern:
+    TODO_hhbc_ClassGetTS(
+      $builtins.hhbc_combine_and_resolve_type_struct(
+        $builtins.hack_new_dict(
+          _,
+          _,
+          _,
+          $builtins.hack_string(rootname: str),
+          _,
+          $builtins.hhbc_new_vec($builtins.hack_string(typname: str))
+        )
+      )
+    )
+    in order to replace it by the following: hack_get_class_from_type(rootname, typname)
+  *)
+  let transform_hhbc_class_get_ts_exp (exp : Textual.Exp.t) =
+    match exp with
+    | Call
+        { proc= {name= {loc} as proc_get_class_ts}
+        ; args=
+            [ Textual.Exp.Call
+                { proc= {name= proc_combine_and_resolve_ts}
+                ; args= [Textual.Exp.Call {proc= {name= proc_new_dict}; args}] } ]
+        ; kind }
+      when ProcName.equal proc_get_class_ts get_class_ts_old_procname
+           && ProcName.equal proc_combine_and_resolve_ts combine_and_resolve_type_struct_procname
+           && ProcName.equal proc_new_dict hack_new_dict_procname -> (
+      match List.rev args with
+      | Call
+          { proc= {name= proc_new_vec}
+          ; args= [Textual.Exp.Call {proc= {name= proc_hack_str1}; args= args_type_name}] }
+        :: _
+        :: Call {proc= {name= proc_hack_str2}; args= args_obj}
+        :: _
+        when ProcName.equal proc_new_vec hhbc_new_vec_procname
+             && ProcName.equal proc_hack_str1 hack_string_procname
+             && ProcName.equal proc_hack_str2 hack_string_procname ->
+          Textual.Exp.Call
+            { proc=
+                { name= {value= get_class_ts_new_procname_str; loc}
+                ; enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins") }
+            ; args= args_obj @ args_type_name
+            ; kind }
+      | _ ->
+          exp )
+    | _ ->
+        exp
+
+
+  let transform_hhbc_class_get_ts_instruction instructions =
+    let ident_instr_map = build_ident_instr_map instructions in
+    match instructions with
+    | [] ->
+        instructions
+    | (Let {id; exp; loc} : Instr.t) :: instrs ->
+        Textual.Instr.Let
+          {id; exp= transform_hhbc_class_get_ts_exp (inline_call_expr ident_instr_map exp); loc}
+        :: instrs
+    | _ ->
+        instructions
+
+
+  let rec transform_instructions instructions =
+    match instructions with
+    | [] ->
+        []
+    | (Let {exp= Call {proc= {name}}} as instruction : Instr.t) :: instructions
+      when ProcName.equal name get_class_ts_old_procname ->
+        transform_hhbc_class_get_ts_instruction (instruction :: instructions)
+    | instruction :: instructions ->
+        instruction :: transform_instructions instructions
+
+
+  let transform_nodes ({nodes} : ProcDesc.t) =
+    let new_nodes =
+      List.map
+        ~f:(fun ({instrs} as node : Node.t) ->
+          let instructions = transform_instructions (List.rev instrs) in
+          {node with instrs= List.rev instructions} )
+        nodes
+    in
+    new_nodes
+
+
+  let transform ({decls} as module_ : Module.t) =
+    let new_decls =
+      List.map
+        ~f:(fun (decl : Module.decl) ->
+          match decl with
+          | Proc procdesc ->
+              Module.Proc {procdesc with nodes= transform_nodes procdesc}
+          | _ ->
+              decl )
+        decls
+    in
+    {module_ with decls= new_decls}
+end

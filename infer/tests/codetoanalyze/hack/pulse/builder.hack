@@ -179,6 +179,11 @@ final class BuilderTester2 {
     return new $builder_cls($arg);
   }
 
+  public static function createReified(int $arg): this::TB {
+    $builder_cls = HH\ReifiedGenerics\get_class_from_type<this::TB>();
+    return new $builder_cls($arg);
+  }
+
   public static function testCreateOK(): void {
     $b = static::create(0);
     $b->setA(42);
@@ -187,6 +192,17 @@ final class BuilderTester2 {
 
   public static function testCreateBad(): void {
     $b = static::create(0);
+    $b->setA(42);
+  }
+
+  public static function testCreateReifiedOK(): void {
+    $b = static::createReified(0);
+    $b->setA(42);
+    $b->saveX();
+  }
+
+  public static function fnTestCreateReifiedBad(): void {
+    $b = static::createReified(0);
     $b->setA(42);
   }
 

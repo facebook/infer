@@ -41,3 +41,7 @@ val run : Textual.Lang.t -> Textual.Module.t -> Textual.Module.t * TextualDecls.
    3) let_propagation
    4) out_of_ssa in
 *)
+
+module ClassGetTS : sig
+  val transform : Textual.Module.t -> Textual.Module.t
+end

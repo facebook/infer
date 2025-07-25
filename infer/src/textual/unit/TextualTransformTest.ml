@@ -818,3 +818,47 @@ let%expect_test "closures" =
   type_check module_ ;
   [%expect {|
       verification succeeded |}]
+
+
+let%expect_test "get_class_ts" =
+  let source =
+    {|
+        .source_language = "hack"
+
+        declare TODO_hhbc_ClassGetTS(...) : *HackMixed
+
+        define BuilderTesterSimplified$static.createReifiedSimplified($this: .notnull *BuilderTesterSimplified$static, $arg: .notnull *HackInt) : .const_type = "HH\this::TB" *HackMixed {
+            local $builder_cls: *void, $0: *void, $1: *void, $2: *void
+            #b0:
+                n0 = $builtins.hack_new_dict($builtins.hack_string("kind"), $builtins.hack_int(102), $builtins.hack_string("root_name"), $builtins.hack_string("HH\\this"), $builtins.hack_string("access_list"), $builtins.hhbc_new_vec($builtins.hack_string("TB")))
+                n1 = $builtins.hhbc_new_vec()
+                n2 = $builtins.hhbc_combine_and_resolve_type_struct(n0)
+                n3 = TODO_hhbc_ClassGetTS(n2)
+                store &$builder_cls <- n3:*HackMixed
+                n4:*HackMixed = load &$builder_cls
+                n5 = $builtins.hhbc_class_get_c(n4)
+                ret null
+        }
+    |}
+  in
+  let module_ = parse_module source |> TextualTransform.ClassGetTS.transform in
+  show module_ ;
+  [%expect
+    {|
+    .source_language = "hack" @[2:8]
+
+    declare TODO_hhbc_ClassGetTS(...) : *HackMixed
+
+    define BuilderTesterSimplified$static.createReifiedSimplified($this: .notnull *BuilderTesterSimplified$static, $arg: .notnull *HackInt) : .const_type = "HH\this::TB" *HackMixed {
+      local $builder_cls: *void, $0: *void, $1: *void, $2: *void
+      #b0: @[8:12]
+          n0 = $builtins.hack_new_dict($builtins.hack_string("kind"), $builtins.hack_int(102), $builtins.hack_string("root_name"), $builtins.hack_string("HH\\this"), $builtins.hack_string("access_list"), $builtins.hhbc_new_vec($builtins.hack_string("TB"))) @[9:16]
+          n1 = $builtins.hhbc_new_vec() @[10:16]
+          n2 = $builtins.hhbc_combine_and_resolve_type_struct(n0) @[11:16]
+          n3 = $builtins.hack_get_class_from_type("HH\\this", "TB") @[12:16]
+          store &$builder_cls <- n3:*HackMixed @[13:16]
+          n4:*HackMixed = load &$builder_cls @[14:16]
+          n5 = $builtins.hhbc_class_get_c(n4) @[15:16]
+          ret null @[16:16]
+
+    } @[17:9] |}]
