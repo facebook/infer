@@ -100,3 +100,24 @@ trait InfiniteRecursionInTrait {
     return $this->infinite_same_args_bad($something, $other);
   }
 }
+
+class PingPong {
+  public static function fn_ping_bad(): void {
+    PingPong::fn_pong_bad();
+  }
+
+  public static function fn_pong_bad(): void {
+    PingPong::fn_ping_bad();
+  }
+}
+
+class Ping {
+  public static function fn_run_bad(): void {
+    Pong::fn_run_bad();
+  }
+}
+class Pong {
+  public static function fn_run_bad(): void {
+    Ping::fn_run_bad();
+  }
+}
