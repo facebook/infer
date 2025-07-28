@@ -33,7 +33,7 @@ test2_Bad() ->
 
 test3_Bad() ->
     M = #{1 => 2},
-    K1 = maps:keys(M),
+    K1 = maps:values(M),
     K2 = maps:keys(M),
     T = {K1, K2},
     sink(T).
