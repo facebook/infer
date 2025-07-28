@@ -107,7 +107,11 @@ let detect_mutual_recursion_cycle ~caller_summary ~callee specialization =
       in
       if is_replay_recursive_callee then `ReplayCycleCut else `NotInMutualRecursionCycle
   | None, _ | _, None ->
-      if ActiveProcedures.mem {proc_name= callee; specialization} then `InMutualRecursionCycle
+      if ActiveProcedures.mem {proc_name= callee; specialization} then (
+        if Config.trace_mutual_recursion_cycle_checker then
+          L.progress "@\n{%a; %a} is already in the current callstack !!!" Procname.pp callee
+            (Pp.option Specialization.pp) specialization ;
+        `InMutualRecursionCycle )
       else `NotInMutualRecursionCycle
 
 
@@ -433,6 +437,9 @@ let rec analyze_callee_can_raise_recursion ~lazy_payloads (analysis_req : Analys
         register_callee ~cycle_detected:true ?caller_summary callee_pname ;
         if Config.trace_ondemand then
           L.progress "Closed the cycle finishing in recursive call to %a@." Procname.pp callee_pname ;
+        if Config.trace_mutual_recursion_cycle_checker then
+          L.progress "@\nClosed the cycle finishing in recursive call to %a" Procname.pp
+            callee_pname ;
         if
           DLS.get number_of_recursion_restarts >= Config.ondemand_recursion_restart_limit
           && not (SpecializedProcname.equal cycle_start target)
@@ -445,6 +452,12 @@ let rec analyze_callee_can_raise_recursion ~lazy_payloads (analysis_req : Analys
             cycle_start.proc_name
             (Pp.seq ~sep:"," SpecializedProcname.pp)
             (ActiveProcedures.get_all ()) ;
+        if Config.trace_mutual_recursion_cycle_checker then
+          L.progress "@\nFound cycle at %a, first_active= %a; restarting from %a@\nactives: %a"
+            Procname.pp callee_pname Procname.pp first_active.proc_name Procname.pp
+            cycle_start.proc_name
+            (Pp.seq ~sep:"," SpecializedProcname.pp)
+            (ActiveProcedures.get_all ()) ;
         (* we want the exception to pop back up to the beginning of the cycle, so we set [ttl= cycle_length] *)
         Utils.with_dls number_of_recursion_restarts ~f:(( + ) 1) ;
         raise (RecursiveCycleException.RecursiveCycle {recursive= cycle_start; ttl= cycle_length}) )
@@ -452,6 +465,8 @@ let rec analyze_callee_can_raise_recursion ~lazy_payloads (analysis_req : Analys
       register_callee ~cycle_detected:true ?caller_summary callee_pname ;
       if Config.trace_ondemand then
         L.progress "Closed the cycle finishing in recursive call to %a@." Procname.pp callee_pname ;
+      if Config.trace_mutual_recursion_cycle_checker then
+        L.progress "@\nClosed the cycle finishing in recursive call to %a" Procname.pp callee_pname ;
       Error MutualRecursionCycle
   | `NotInMutualRecursionCycle -> (
       register_callee ~cycle_detected:false ?caller_summary callee_pname ;
@@ -521,8 +536,13 @@ let rec analyze_callee_can_raise_recursion ~lazy_payloads (analysis_req : Analys
 
 and on_recursive_cycle ~lazy_payloads analysis_req ?caller_summary:_ ?from_file_analysis ~ttl
     (cycle_start : SpecializedProcname.t) callee_pname =
-  if ttl > 0 then
-    raise (RecursiveCycleException.RecursiveCycle {recursive= cycle_start; ttl= ttl - 1}) ;
+  if ttl > 0 then (
+    if Config.trace_mutual_recursion_cycle_checker then
+      L.progress "@]@\nDONE with analysing of %a (because exception raised, |callstack|=%d)"
+        SpecializedProcname.pp cycle_start ttl ;
+    raise (RecursiveCycleException.RecursiveCycle {recursive= cycle_start; ttl= ttl - 1}) ) ;
+  if Config.trace_mutual_recursion_cycle_checker then
+    L.progress "@\nNOW we rerun analysis_callee with %a" SpecializedProcname.pp cycle_start ;
   analyze_callee ~lazy_payloads analysis_req ~specialization:cycle_start.specialization
     ?from_file_analysis cycle_start.proc_name
   |> ignore ;
@@ -541,12 +561,22 @@ and analyze_callee ~lazy_payloads analysis_req ~specialization ?caller_summary ?
 
 let analyze_callee ~lazy_payloads analysis_req ~specialization ?caller_summary ?from_file_analysis
     callee_pname =
+  if Config.trace_mutual_recursion_cycle_checker then
+    L.progress "@\n@[<v 4>analysing %a with specialization %a..." Procname.pp callee_pname
+      (Pp.option Specialization.pp) specialization ;
   (* If [caller_summary] is set then we are analyzing a dependency of another procedure, so we
      should keep counting restarts within that dependency chain (or cycle). If it's not set then
      this is a "toplevel" analysis of [callee_pname] so we start fresh. *)
   if Option.is_none caller_summary then DLS.set number_of_recursion_restarts 0 ;
-  analyze_callee ~lazy_payloads analysis_req ~specialization ?caller_summary ?from_file_analysis
-    callee_pname
+  let res =
+    analyze_callee ~lazy_payloads analysis_req ~specialization ?caller_summary ?from_file_analysis
+      callee_pname
+  in
+  if Config.trace_mutual_recursion_cycle_checker then
+    L.progress "@]@\nDONE with analysing %a with specialization %a%s" Procname.pp callee_pname
+      (Pp.option Specialization.pp) specialization
+      (if Result.is_error res then "(with an error)" else "") ;
+  res
 
 
 let analyze_proc_name analysis_req ?specialization ~caller_summary callee_pname =

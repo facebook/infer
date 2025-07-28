@@ -3457,6 +3457,10 @@ INTERNAL OPTIONS
            Activates: Emit Chrome performance trace events in
            infer-out/perf_events.json (Conversely: --no-trace-events)
 
+       --trace-mutual-recursion-cycle-checker
+           Activates: Emit debug information for the mutual recursion cycle
+           checker. (Conversely: --no-trace-mutual-recursion-cycle-checker)
+
        --trace-ondemand
            Activates: Emit debug information for the ondemand analysis
            scheduler. (Conversely: --no-trace-ondemand)

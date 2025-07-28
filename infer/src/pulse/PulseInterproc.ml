@@ -1006,6 +1006,14 @@ let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data
                   AbductiveDomain.are_same_values_as_pre_formals proc_desc actuals_values
                     call_state.astate
                 in
+                if Config.trace_mutual_recursion_cycle_checker then
+                  L.progress
+                    "@\n\
+                     we found a complete cycle from %a to %a@\n\
+                     is_call_with_same_values returned %b"
+                    Procname.pp
+                    (Procdesc.get_proc_name proc_desc)
+                    PulseMutualRecursion.pp cycle is_call_with_same_values ;
                 report_mutual_recursion_cycle ~is_call_with_same_values analysis_data cycle ;
                 None )
               else Some cycle )

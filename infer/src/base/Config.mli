@@ -892,6 +892,8 @@ val topl_report_latent_issues : bool
 
 val trace_events : bool
 
+val trace_mutual_recursion_cycle_checker : bool
+
 val trace_ondemand : bool
 
 val trace_topl : bool

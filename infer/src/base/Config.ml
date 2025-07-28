@@ -3545,6 +3545,11 @@ and trace_events =
        (ResultsDirEntryName.get_path ~results_dir:"infer-out" PerfEvents) )
 
 
+and trace_mutual_recursion_cycle_checker =
+  CLOpt.mk_bool ~long:"trace-mutual-recursion-cycle-checker"
+    "Emit debug information for the mutual recursion cycle checker."
+
+
 and trace_ondemand =
   CLOpt.mk_bool ~long:"trace-ondemand" "Emit debug information for the ondemand analysis scheduler."
 
@@ -4838,6 +4843,8 @@ and topl_properties =
 and topl_report_latent_issues = !topl_report_latent_issues
 
 and trace_events = !trace_events
+
+and trace_mutual_recursion_cycle_checker = !trace_mutual_recursion_cycle_checker
 
 and trace_ondemand = !trace_ondemand
 
