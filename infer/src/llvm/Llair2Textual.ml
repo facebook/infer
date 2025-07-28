@@ -300,6 +300,35 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
       in
       (rcd_exp, Some textual_typ, List.append (List.append rcd_instrs elt_instrs) [store_instr])
+  | ApN (Record, typ, _elements) ->
+      let elements = StdUtils.iarray_to_list _elements in
+      let id = add_fresh_id ~proc_state () in
+      let rcd_exp = Textual.Exp.Var id in
+      let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
+      (* for each element in the record we set the value to a field of the record variable. *)
+      let to_textual_exp_index idx acc_instrs element =
+        let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state element in
+        let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
+        let elt_instrs = List.append elt_instrs elt_deref_instrs in
+        let type_name =
+          match textual_typ with
+          | Textual.Typ.(Ptr (Struct name)) | Textual.Typ.Struct name ->
+              name
+          | Textual.Typ.Array _ ->
+              Textual.TypeName.of_string "array"
+          | _ ->
+              Logging.die InternalError "Unexpected type %a" Llair.Typ.pp typ
+        in
+        let index_exp =
+          Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos type_name idx}
+        in
+        let store_instr =
+          Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
+        in
+        List.append acc_instrs (List.append elt_instrs [store_instr])
+      in
+      let instrs = List.foldi ~f:to_textual_exp_index ~init:[] elements in
+      (rcd_exp, Some textual_typ, instrs)
   | _ ->
       undef_exp exp
 

@@ -42,7 +42,7 @@ declare _swift_FORCE_LOAD_$_swiftsys_time() : *ptr_elt
 
 declare _swift_FORCE_LOAD_$_swiftunistd() : *ptr_elt
 
-global llvm::used: *ptr_elt = [Some $builtins.llvm_nondet()]
+global llvm::used: *ptr_elt = [Some n1]
 
 global _swift_FORCE_LOAD_$_swiftunistd_$_Hello: *ptr_elt = [Some "_swift_FORCE_LOAD_$_swiftunistd"]
 

@@ -126,17 +126,17 @@ declare swift_release(*ptr_elt) : *ptr_elt
 
 declare swift_retain(*ptr_elt) : *ptr_elt
 
-global symbolic _____ 5Hello7VehicleC: *ptr_elt = [Some $builtins.llvm_nondet()]
+global symbolic _____ 5Hello7VehicleC: *ptr_elt = [Some n1]
 
-global symbolic _____ 5Hello5TrainC: *ptr_elt = [Some $builtins.llvm_nondet()]
+global symbolic _____ 5Hello5TrainC: *ptr_elt = [Some n1]
 
 global objc_classes_$s5Hello7VehicleCN: *ptr_elt = [Some n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_3]
 
 global objc_classes_$s5Hello5TrainCN: *ptr_elt = [Some n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_3]
 
-global llvm::used: *ptr_elt = [Some $builtins.llvm_nondet()]
+global llvm::used: *ptr_elt = [Some n1]
 
-global llvm::compiler::used: *ptr_elt = [Some $builtins.llvm_nondet()]
+global llvm::compiler::used: *ptr_elt = [Some n1]
 
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt = [Some "_swift_FORCE_LOAD_$_swiftCompatibility56"]
 
@@ -144,51 +144,51 @@ global _objc_empty_cache: *ptr_elt
 
 global __swift_reflection_version: *ptr_elt = [Some 3]
 
-global _METACLASS_DATA__TtC5Hello7Vehicle: *ptr_elt = [Some $builtins.llvm_nondet()]
+global _METACLASS_DATA__TtC5Hello7Vehicle: *ptr_elt = [Some n1]
 
-global _METACLASS_DATA__TtC5Hello5Train: *ptr_elt = [Some $builtins.llvm_nondet()]
+global _METACLASS_DATA__TtC5Hello5Train: *ptr_elt = [Some n1]
 
-global _DATA__TtC5Hello7Vehicle: *ptr_elt = [Some $builtins.llvm_nondet()]
+global _DATA__TtC5Hello7Vehicle: *ptr_elt = [Some n1]
 
-global _DATA__TtC5Hello5Train: *ptr_elt = [Some $builtins.llvm_nondet()]
+global _DATA__TtC5Hello5Train: *ptr_elt = [Some n1]
 
 global OBJC_METACLASS_$__TtCs12_SwiftObject: *ptr_elt
 
 global OBJC_CLASS_$__TtCs12_SwiftObject: *ptr_elt
 
-global ::str::7::Vehicle: *ptr_elt = [Some $builtins.llvm_nondet()]
+global ::str::7::Vehicle: *ptr_elt = [Some n1]
 
-global ::str::5::Train: *ptr_elt = [Some $builtins.llvm_nondet()]
+global ::str::5::Train: *ptr_elt = [Some n1]
 
-global ::str::5::Hello: *ptr_elt = [Some $builtins.llvm_nondet()]
+global ::str::5::Hello: *ptr_elt = [Some n1]
 
-global ::str::18::_TtC5Hello7Vehicle: *ptr_elt = [Some $builtins.llvm_nondet()]
+global ::str::18::_TtC5Hello7Vehicle: *ptr_elt = [Some n1]
 
-global ::str::16::_TtC5Hello5Train: *ptr_elt = [Some $builtins.llvm_nondet()]
+global ::str::16::_TtC5Hello5Train: *ptr_elt = [Some n1]
 
 global $sBoWV: *ptr_elt
 
-global $s5HelloMXM: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5HelloMXM: *ptr_elt = [Some n1]
 
-global $s5Hello7VehicleCMn: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello7VehicleCMn: *ptr_elt = [Some n1]
 
-global $s5Hello7VehicleCMm: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello7VehicleCMm: *ptr_elt = [Some n1]
 
-global $s5Hello7VehicleCMf: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello7VehicleCMf: *ptr_elt = [Some n1]
 
-global $s5Hello7VehicleCMF: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello7VehicleCMF: *ptr_elt = [Some n1]
 
-global $s5Hello7VehicleCHn: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello7VehicleCHn: *ptr_elt = [Some n1]
 
-global $s5Hello5TrainCMn: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello5TrainCMn: *ptr_elt = [Some n1]
 
-global $s5Hello5TrainCMm: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello5TrainCMm: *ptr_elt = [Some n1]
 
-global $s5Hello5TrainCMf: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello5TrainCMf: *ptr_elt = [Some n1]
 
-global $s5Hello5TrainCMF: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello5TrainCMF: *ptr_elt = [Some n1]
 
-global $s5Hello5TrainCHn: *ptr_elt = [Some $builtins.llvm_nondet()]
+global $s5Hello5TrainCHn: *ptr_elt = [Some n1]
 
 type __infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt> = {
 __infer_tuple_field_0: *ptr_elt; __infer_tuple_field_1: *ptr_elt;
