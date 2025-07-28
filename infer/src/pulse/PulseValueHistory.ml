@@ -40,6 +40,7 @@ type event =
       ; timestamp: Timestamp.t }
   | ConditionPassed of
       {if_kind: Sil.if_kind; is_then_branch: bool; location: Location.t; timestamp: Timestamp.t}
+  | ClassObjectInitialization of Typ.name * Location.t * Timestamp.t
   | CppTemporaryCreated of Location.t * Timestamp.t
   | FormalDeclared of Pvar.t * Location.t * Timestamp.t
   | Invalidated of PulseInvalidation.t * Location.t * Timestamp.t
@@ -90,6 +91,13 @@ let pop_all_cell_ids hists =
   List.fold_map hists ~init:CellId.Set.empty ~f:(fun ids hist ->
       let ids', hist' = pop_cell_ids hist in
       (CellId.Set.union ids ids', hist') )
+
+
+let is_class_object_initialized = function
+  | Sequence (ClassObjectInitialization (tname, _, _), _) ->
+      Some tname
+  | _ ->
+      None
 
 
 let epoch = Epoch
@@ -149,6 +157,7 @@ let location_of_event = function
   | Assignment (location, _)
   | Call {location}
   | Capture {location}
+  | ClassObjectInitialization (_, location, _)
   | ConditionPassed {location}
   | CppTemporaryCreated (location, _)
   | FormalDeclared (_, location, _)
@@ -168,6 +177,7 @@ let timestamp_of_event = function
   | Assignment (_, timestamp)
   | Call {timestamp}
   | Capture {timestamp}
+  | ClassObjectInitialization (_, _, timestamp)
   | ConditionPassed {timestamp}
   | CppTemporaryCreated (_, timestamp)
   | FormalDeclared (_, _, timestamp)
@@ -349,6 +359,8 @@ let pp_event_no_location fmt event =
       | false, (Ik_bexp | Ik_land_lor) ->
           "condition is false" )
       |> F.pp_print_string fmt
+  | ClassObjectInitialization (tname, _, _) ->
+      F.fprintf fmt "initialization of object class %a" Typ.Name.pp tname
   | CppTemporaryCreated _ ->
       F.pp_print_string fmt "C++ temporary created"
   | FormalDeclared (pvar, _, _) ->
@@ -433,6 +445,7 @@ let is_taint_event = function
   | Assignment _
   | Call _
   | Capture _
+  | ClassObjectInitialization _
   | ConditionPassed _
   | CppTemporaryCreated _
   | FormalDeclared _

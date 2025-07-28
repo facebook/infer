@@ -968,7 +968,8 @@ let report_mutual_recursion_cycle
 
 let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) callee_proc_name
     call_loc actuals callee_summary call_state =
-  let actuals_values = List.map actuals ~f:(fun ((actual, _), _) -> actual) in
+  let actuals_addr_hist = List.map actuals ~f:fst in
+  let actuals_values = List.map ~f:fst actuals_addr_hist in
   if Procname.is_hack_xinit (Procdesc.get_proc_name proc_desc) then (
     L.d_printfln "Not recording recursive calls for Hack xinit caller function %a" Procname.pp
       (Procdesc.get_proc_name proc_desc) ;
@@ -1003,7 +1004,7 @@ let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data
                   (Procdesc.get_proc_name proc_desc)
               then (
                 let is_call_with_same_values =
-                  AbductiveDomain.are_same_values_as_pre_formals proc_desc actuals_values
+                  AbductiveDomain.are_same_values_as_pre_formals proc_desc actuals_addr_hist
                     call_state.astate
                 in
                 if Config.trace_mutual_recursion_cycle_checker then

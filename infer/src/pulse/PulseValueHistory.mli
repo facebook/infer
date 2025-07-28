@@ -35,6 +35,7 @@ type event =
       ; timestamp: Timestamp.t }
   | ConditionPassed of
       {if_kind: Sil.if_kind; is_then_branch: bool; location: Location.t; timestamp: Timestamp.t}
+  | ClassObjectInitialization of Typ.name * Location.t * Timestamp.t
   | CppTemporaryCreated of Location.t * Timestamp.t
   | FormalDeclared of Pvar.t * Location.t * Timestamp.t
   | Invalidated of PulseInvalidation.t * Location.t * Timestamp.t
@@ -124,3 +125,5 @@ val add_to_errlog :
 val get_first_event : t -> event option
 
 val exists : t -> f:(event -> bool) -> bool
+
+val is_class_object_initialized : t -> Typ.name option

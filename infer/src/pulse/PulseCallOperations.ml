@@ -709,7 +709,8 @@ let maybe_dynamic_type_specialization_is_needed already_specialized contradictio
 
 let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) call_loc
     (call_flags : CallFlags.t) callee_pname ~actuals ~formals_opt astate =
-  let actuals_values = List.map actuals ~f:(fun ((actual, _), _) -> actual) in
+  let actuals_addr_hist = List.map actuals ~f:fst in
+  let actuals_values = List.map ~f:fst actuals_addr_hist in
   if Procname.equal callee_pname (Procdesc.get_proc_name proc_desc) then (
     ( match formals_opt with
     | Some formals when List.length formals <> List.length actuals ->
@@ -730,7 +731,7 @@ let on_recursive_call ({InterproceduralAnalysis.proc_desc} as analysis_data) cal
             Procname.pp callee_pname
         else
           let is_call_with_same_values =
-            AbductiveDomain.are_same_values_as_pre_formals proc_desc actuals_values astate
+            AbductiveDomain.are_same_values_as_pre_formals proc_desc actuals_addr_hist astate
           in
           PulseReport.report analysis_data ~is_suppressed:false ~latent:false
             (MutualRecursionCycle

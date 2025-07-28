@@ -102,22 +102,22 @@ trait InfiniteRecursionInTrait {
 }
 
 class PingPong {
-  public static function fn_ping_bad(): void {
-    PingPong::fn_pong_bad();
+  public static function ping_bad(): void {
+    PingPong::pong_bad();
   }
 
-  public static function fn_pong_bad(): void {
-    PingPong::fn_ping_bad();
+  public static function pong_bad(): void {
+    PingPong::ping_bad();
   }
 }
 
 class Ping {
-  public static function fn_run_bad(): void {
-    Pong::fn_run_bad();
+  public static function run_bad(): void {
+    Pong::run_bad();
   }
 }
 class Pong {
-  public static function fn_run_bad(): void {
-    Ping::fn_run_bad();
+  public static function run_bad(): void {
+    Ping::run_bad();
   }
 }

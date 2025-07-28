@@ -1731,7 +1731,8 @@ let are_same_values_as_pre_formals proc_desc values astate =
     AbstractValue.equal v_pre v_post && equal_pre_post_heaps visited_ref astate v_pre
   in
   let deref pre_or_post addr astate =
-    SafeMemory.find_edge_opt pre_or_post addr Dereference astate >>| fst >>| downcast
+    let+ aval, hist = SafeMemory.find_edge_opt pre_or_post addr Dereference astate in
+    (downcast aval, hist)
   in
   let pvar_value pre_or_post pvar astate =
     let* pvar_addr =
@@ -1741,12 +1742,15 @@ let are_same_values_as_pre_formals proc_desc values astate =
   in
   let proc_name = Procdesc.get_proc_name proc_desc in
   let same_input_parameters () =
-    List.for_all2 (Procdesc.get_formals proc_desc) values ~f:(fun (mangled_name, _, _) v ->
+    List.for_all2 (Procdesc.get_formals proc_desc) values
+      ~f:(fun (mangled_name, _, _) (addr, hist) ->
         if Language.curr_language_is Hack && Mangled.is_self mangled_name then true
         else
           let formal = Pvar.mk mangled_name proc_name in
-          let formal_v = pvar_value `Pre formal astate |> Option.value_exn in
-          compatible_sub_heaps astate formal_v v )
+          let formal_addr, _ = pvar_value `Pre formal astate |> Option.value_exn in
+          let same_values = compatible_sub_heaps astate formal_addr addr in
+          let is_constant = Option.is_some @@ ValueHistory.is_class_object_initialized hist in
+          same_values || is_constant )
     |> function
     | List.Or_unequal_lengths.Ok b ->
         b
@@ -1769,8 +1773,8 @@ let are_same_values_as_pre_formals proc_desc values astate =
         | ProgramVar pvar ->
             if Pvar.Set.mem pvar formals then (* handled above *) true
             else
-              let v_pre = deref `Pre (ValueOrigin.value vo) astate in
-              let v_curr = pvar_value `Post pvar astate in
+              let v_pre = deref `Pre (ValueOrigin.value vo) astate |> Option.map ~f:fst in
+              let v_curr = Option.map ~f:fst (pvar_value `Post pvar astate) in
               Option.equal (compatible_sub_heaps astate) v_pre v_curr
         | LogicalVar _ ->
             (* should be impossible *)
