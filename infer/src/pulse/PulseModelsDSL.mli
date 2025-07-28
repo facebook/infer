@@ -170,6 +170,8 @@ module Syntax : sig
   val load : aval -> aval model_monad
   (** read the Dereference access from the value *)
 
+  val load_exp : Exp.t -> aval model_monad
+
   val and_dynamic_type_is : aval -> Typ.t -> unit model_monad
 
   val get_dynamic_type :

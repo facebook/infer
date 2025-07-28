@@ -278,6 +278,14 @@ let mk_global ?(is_constexpr = false) ?(is_ice = false) ?(is_pod = true) ?(is_st
         ; is_const } }
 
 
+let mk_local (name : Mangled.t) (proc_name : Procname.t) : t =
+  { pv_hash= name_hash name
+  ; pv_name= name
+  ; pv_tmp_id= None
+  ; pv_is_syntactic= true
+  ; pv_kind= Local_var proc_name }
+
+
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
 let mk_tmp name pname =
   let tmp_id = Ident.create_fresh Ident.knormal in

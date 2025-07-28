@@ -201,7 +201,7 @@ final class BuilderTester2 {
     $b->saveX();
   }
 
-  public static function fnTestCreateReifiedBad(): void {
+  public static function testCreateReifiedBad(): void {
     $b = static::createReified(0);
     $b->setA(42);
   }

@@ -114,6 +114,8 @@ val mk_global :
   -> t
 (** create a global variable with the given name *)
 
+val mk_local : Mangled.t -> Procname.t -> t
+
 val mk_tmp : string -> Procname.t -> t
 (** create a fresh temporary variable local to procedure [pname]. for use in the frontends only! *)
 
