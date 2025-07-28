@@ -72,14 +72,6 @@ let to_textual_loc_instr ~(proc_state : ProcState.t) loc =
   if is_loc_default loc then proc_state.loc else loc
 
 
-let to_textual_global lang ~struct_map global =
-  let global = global.GlobalDefn.name in
-  let global_name = Global.name global in
-  let name = Textual.VarName.of_string global_name in
-  let typ = Type.to_textual_typ lang ~struct_map (Global.typ global) in
-  Textual.Global.{name; typ; attributes= []; init_exp= None}
-
-
 let translate_llair_globals globals =
   let add_global map global =
     let name = global.GlobalDefn.name |> Global.name |> Textual.VarName.of_string in
@@ -740,6 +732,21 @@ let translate_llair_functions source_file lang struct_map globals functions =
   in
   let values = FuncName.Map.to_list functions in
   List.fold values ~f:function_to_formal ~init:[]
+
+
+let to_textual_global lang ~struct_map global =
+  let global_ = global.GlobalDefn.name in
+  let global_name = Global.name global_ in
+  let name = Textual.VarName.of_string global_name in
+  let typ = Type.to_textual_typ lang ~struct_map (Global.typ global_) in
+  let loc = to_textual_loc global.GlobalDefn.loc in
+  let global_proc_state = ProcState.global_proc_state lang loc in
+  let init_exp =
+    Option.map
+      ~f:(fun exp -> to_textual_exp ~proc_state:global_proc_state loc exp |> fst3)
+      global.GlobalDefn.init
+  in
+  Textual.Global.{name; typ; attributes= []; init_exp}
 
 
 let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Module.t =

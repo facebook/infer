@@ -75,3 +75,18 @@ let update_locals ~proc_state varname typ =
 
 
 let update_ids ~proc_state id typ = proc_state.ids <- IdentMap.add id typ proc_state.ids
+
+let global_proc_state lang loc =
+  let qualified_name =
+    Textual.QualifiedProcName.{enclosing_class= TopLevel; name= Textual.ProcName.of_string "global"}
+  in
+  { qualified_name
+  ; loc
+  ; formals= VarMap.empty
+  ; locals= VarMap.empty
+  ; ids= IdentMap.empty
+  ; reg_map= RegMap.empty
+  ; last_id= Textual.Ident.of_int 0
+  ; struct_map= Textual.TypeName.Map.empty
+  ; globals= VarMap.empty
+  ; lang }

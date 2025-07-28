@@ -439,31 +439,31 @@ define test9() : int {
       
 } @?
 
-global __const::test15::person: *ptr_elt
+global __const::test15::person: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global __PRETTY_FUNCTION__::test16: *ptr_elt
+global __PRETTY_FUNCTION__::test16: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global __PRETTY_FUNCTION__::test15: *ptr_elt
+global __PRETTY_FUNCTION__::test15: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global __PRETTY_FUNCTION__::test14: *ptr_elt
+global __PRETTY_FUNCTION__::test14: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global __PRETTY_FUNCTION__::test13: *ptr_elt
+global __PRETTY_FUNCTION__::test13: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global __PRETTY_FUNCTION__::test10: *ptr_elt
+global __PRETTY_FUNCTION__::test10: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global ::str::6: *ptr_elt
+global ::str::6: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global ::str::5: *ptr_elt
+global ::str::5: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global ::str::4: *ptr_elt
+global ::str::4: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global ::str::3: *ptr_elt
+global ::str::3: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global ::str::2: *ptr_elt
+global ::str::2: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global ::str::1: *ptr_elt
+global ::str::1: *ptr_elt = [Some $builtins.llvm_nondet()]
 
-global ::str: *ptr_elt
+global ::str: *ptr_elt = [Some $builtins.llvm_nondet()]
 
 type struct::Cat = {field_0: *ptr_elt; field_1: int}
 
