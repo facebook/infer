@@ -453,4 +453,10 @@ void m3(_Nonnull SelfInBlockTest* obj) {}
   };
 }
 
+- (void)dispatch_async_block_ok:(dispatch_queue_t)queue andB:(NSObject*)obj {
+  dispatch_async(queue, ^() {
+    [self process:obj]; // no report here
+  });
+}
+
 @end
