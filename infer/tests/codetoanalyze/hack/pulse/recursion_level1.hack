@@ -44,3 +44,22 @@ class CycleWithFieldBAD {
     $this->step1();
   }
 }
+
+class FNCycleNameOrderMattersBADV1 {
+  public function foo1(int $i, int $_): void {
+    $this->foo2($i);
+  }
+  public function foo2(int $i): void {
+    $this->foo1($i, 0);
+  }
+}
+
+class CycleNameOrderMattersBADV2 {
+  public function foo2(int $i, int $_): void {
+    $this->foo1($i);
+  }
+  public function foo1(int $i): void {
+    $this->foo2($i, 0);
+  }
+
+}
