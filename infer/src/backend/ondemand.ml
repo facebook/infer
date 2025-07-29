@@ -28,7 +28,7 @@ module ActiveProcedures : sig
 
   val mem : active -> bool
 
-  val add : active -> unit
+  val add : Procdesc.t -> Specialization.t option -> unit
 
   val remove : active -> unit
 
@@ -41,23 +41,37 @@ module ActiveProcedures : sig
       return a triple of where the cycle starts, the length of the cycle, and the first procedure we
       started to analyze *)
 end = struct
-  type active = SpecializedProcname.t
+  type active = SpecializedProcname.t [@@deriving compare, sexp, hash]
 
-  module AnalysisTargets = Hash_queue.Make (SpecializedProcname)
+  module Elt = struct
+    type t = {arity: int [@ignore]; active: active} [@@deriving compare, sexp, hash]
+
+    let compare_using_arity_first elt1 elt2 =
+      let compare_arity = Int.compare elt1.arity elt2.arity in
+      if Int.equal compare_arity 0 then compare elt1 elt2 else compare_arity
+  end
+
+  module AnalysisTargets = Hash_queue.Make (Elt)
 
   let currently_analyzed = DLS.new_key (fun () -> AnalysisTargets.create ())
 
   let pp_actives fmt =
     DLS.get currently_analyzed
     |> AnalysisTargets.iteri ~f:(fun ~key:target ~data:_ ->
-           F.fprintf fmt "%a,@," SpecializedProcname.pp target )
+           F.fprintf fmt "%a,@," SpecializedProcname.pp target.Elt.active )
 
 
-  let mem analysis_target = AnalysisTargets.mem (DLS.get currently_analyzed) analysis_target
+  let mem active =
+    let elt = {Elt.active; arity= 0} in
+    AnalysisTargets.mem (DLS.get currently_analyzed) elt
 
-  let add analysis_target =
-    if Config.trace_ondemand then L.progress "add %a@." SpecializedProcname.pp analysis_target ;
-    AnalysisTargets.enqueue_back_exn (DLS.get currently_analyzed) analysis_target ()
+
+  let add proc_decl specialization =
+    let proc_name = Procdesc.get_proc_name proc_decl in
+    let arity = Procdesc.get_formals proc_decl |> List.length in
+    let active : SpecializedProcname.t = {proc_name; specialization} in
+    if Config.trace_ondemand then L.progress "add %a@." SpecializedProcname.pp active ;
+    AnalysisTargets.enqueue_back_exn (DLS.get currently_analyzed) {Elt.arity; active} ()
 
 
   let remove analysis_target =
@@ -65,28 +79,34 @@ end = struct
     let popped_target, () =
       AnalysisTargets.dequeue_back_with_key_exn (DLS.get currently_analyzed)
     in
-    if not (SpecializedProcname.equal popped_target analysis_target) then
+    if not (SpecializedProcname.equal popped_target.active analysis_target) then
       L.die InternalError
         "Queue structure for ondemand violated: expected to pop %a but got %a instead@\n\
          Active procedures: %t@\n"
-        SpecializedProcname.pp analysis_target SpecializedProcname.pp popped_target pp_actives
+        SpecializedProcname.pp analysis_target SpecializedProcname.pp popped_target.active
+        pp_actives
 
 
-  let get_all () = AnalysisTargets.keys @@ DLS.get currently_analyzed
+  let get_all_with_registered_arity () = AnalysisTargets.keys @@ DLS.get currently_analyzed
+
+  let get_all () = get_all_with_registered_arity () |> List.map ~f:(fun {Elt.active} -> active)
 
   let size () = AnalysisTargets.length @@ DLS.get currently_analyzed
 
   let get_cycle_start recursive =
-    let all = get_all () in
+    let all = get_all_with_registered_arity () in
     (* there is always one target in the queue since [recursive] is in the queue *)
     let first_active = List.hd_exn all in
     let cycle =
-      List.drop_while all ~f:(fun target -> not (SpecializedProcname.equal target recursive))
+      List.drop_while all ~f:(fun target ->
+          not (SpecializedProcname.equal target.Elt.active recursive) )
     in
     let cycle_length = List.length cycle in
     (* there is always one target in the cycle which is the previous call to [recursive] *)
-    let cycle_start = List.min_elt ~compare:SpecializedProcname.compare cycle |> Option.value_exn in
-    (cycle_start, cycle_length, first_active)
+    let cycle_start =
+      List.min_elt ~compare:Elt.compare_using_arity_first cycle |> Option.value_exn
+    in
+    (cycle_start.active, cycle_length, first_active.active)
 end
 
 (** an alternative mean of "cutting" recursion cycles used when replaying a previous analysis: times
@@ -228,7 +248,7 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
       | Some (current_summary, _) ->
           current_summary
     in
-    ActiveProcedures.add {proc_name= callee_pname; specialization} ;
+    ActiveProcedures.add callee_pdesc specialization ;
     initial_callee_summary
   in
   let postprocess summary =

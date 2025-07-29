@@ -45,7 +45,7 @@ class CycleWithFieldBAD {
   }
 }
 
-class FNCycleNameOrderMattersBADV1 {
+class CycleNameOrderMattersBADV1 {
   public function foo1(int $i, int $_): void {
     $this->foo2($i);
   }
