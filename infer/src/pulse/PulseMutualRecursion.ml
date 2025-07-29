@@ -11,13 +11,14 @@ open PulseBasicInterface
 
 type call = {proc_name: Procname.t; location: Location.t} [@@deriving compare, equal]
 
-type inner_call = {call: call; actuals: AbstractValue.t list} [@@deriving compare, equal]
+type inner_call = {call: call; actuals: (AbstractValue.t * ValueHistory.t) list}
+[@@deriving compare, equal]
 
 type t = {chain: call list; innermost: inner_call} [@@deriving compare, equal]
 
 let mk location proc_name actuals = {chain= []; innermost= {call= {proc_name; location}; actuals}}
 
-let get_inner_call cycle = cycle.innermost.call.proc_name
+let get_inner_call {innermost= {call; actuals}} = (call.proc_name, actuals)
 
 let get_outer_location cycle =
   match cycle.chain with [] -> cycle.innermost.call.location | {location} :: _ -> location
@@ -26,12 +27,12 @@ let get_outer_location cycle =
 let add_call subst proc_name location cycle =
   let exception ArgumentValueNotFound in
   match
-    List.map cycle.innermost.actuals ~f:(fun v_callee ->
-        match AbstractValue.Map.find_opt v_callee subst with
+    List.map cycle.innermost.actuals ~f:(fun (addr_callee, hist_callee) ->
+        match AbstractValue.Map.find_opt addr_callee subst with
         | None ->
             raise_notrace ArgumentValueNotFound
-        | Some (v_caller, _) ->
-            v_caller )
+        | Some (addr_caller, _) ->
+            (addr_caller, hist_callee) )
   with
   | exception ArgumentValueNotFound ->
       None

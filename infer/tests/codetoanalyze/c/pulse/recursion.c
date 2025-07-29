@@ -49,10 +49,12 @@ struct data {
   int b;
 };
 
-void recursion_on_field_ok(struct data* x) {
+// TODO: detect some memory updates occured inside the memory reachable from
+// params
+void fp_recursion_on_field_ok(struct data* x) {
   if (x->a > 0) {
     x->a = x->a - 1;
-    recursion_on_field_ok(x);
+    fp_recursion_on_field_ok(x);
   }
 }
 

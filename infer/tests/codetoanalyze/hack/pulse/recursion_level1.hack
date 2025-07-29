@@ -27,7 +27,7 @@ class CycleNoFieldBAD {
   }
 }
 
-class FNCycleWithFieldBAD {
+class CycleWithFieldBAD {
   protected function __construct(protected A $a) {
   }
 

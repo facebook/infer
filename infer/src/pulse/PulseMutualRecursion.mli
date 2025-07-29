@@ -14,11 +14,12 @@ open PulseBasicInterface
     the cyclic call stack until the cycle is closed again *)
 type t [@@deriving equal]
 
-val mk : Location.t -> Procname.t -> AbstractValue.t list -> t
+val mk : Location.t -> Procname.t -> (AbstractValue.t * ValueHistory.t) list -> t
 (** a trace of length 1 *)
 
-val get_inner_call : t -> Procname.t
-(** the "initial", innermost call in the cycle *)
+val get_inner_call : t -> Procname.t * (AbstractValue.t * ValueHistory.t) list
+(** the "initial", innermost call in the cycle, together with its arguments (mapped to the current
+    context) *)
 
 val get_outer_location : t -> Location.t
 (** the location of the first call in the cycle *)

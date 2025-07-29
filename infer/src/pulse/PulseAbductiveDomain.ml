@@ -1689,47 +1689,8 @@ let mk_initial tenv (proc_attrs : ProcAttributes.t) =
   update_pre_for_kotlin_proc astate proc_attrs formals
 
 
-(* work a bit hard: we need to canonicalize abstract values taken out of edges on the fly and
-   compare the two edges maps access per access so we sort their respective accesses first to behave
-   in [n (lg n)] instead of quadratically *)
-let equal_edges astate edges_pre edges_post =
-  let to_sorted astate edges =
-    RawMemory.Edges.to_seq edges
-    |> Stdlib.Seq.map (fun (access, (v, _hist)) ->
-           ( CanonValue.canon_access astate access |> downcast_access
-           , CanonValue.canon' astate v |> downcast ) )
-    |> Stdlib.Seq.fold_left (fun l x -> x :: l) []
-    |> List.sort ~compare:(fun (access1, _) (access2, _) ->
-           RawMemory.Access.compare access1 access2 )
-  in
-  List.equal [%compare.equal: RawMemory.Access.t * AbstractValue.t] (to_sorted astate edges_pre)
-    (to_sorted astate edges_post)
-
-
-let rec equal_pre_post_heaps visited astate v =
-  if AbstractValue.Set.mem v !visited then true
-  else
-    let raw_edges_post_opt = RawMemory.find_opt v (SafeMemory.select `Post astate) in
-    let raw_edges_pre_opt = RawMemory.find_opt v (SafeMemory.select `Pre astate) in
-    (* addresses get "registered" in the pre with empty edges, which doesn't happen in the post and
-       can lead to spuriously considering that the edges are different *)
-    let raw_edges_pre_opt =
-      if Option.exists raw_edges_pre_opt ~f:RawMemory.Edges.is_empty then None
-      else raw_edges_pre_opt
-    in
-    visited := AbstractValue.Set.add v !visited ;
-    Option.equal (equal_edges astate) raw_edges_pre_opt raw_edges_post_opt
-    && Option.for_all raw_edges_pre_opt ~f:(fun raw_edges_pre ->
-           RawMemory.Edges.for_all raw_edges_pre ~f:(fun (_access, (v, _)) ->
-               equal_pre_post_heaps visited astate v ) )
-
-
 let are_same_values_as_pre_formals proc_desc values astate =
   let open IOption.Let_syntax in
-  let visited_ref = ref AbstractValue.Set.empty in
-  let compatible_sub_heaps astate v_pre v_post =
-    AbstractValue.equal v_pre v_post && equal_pre_post_heaps visited_ref astate v_pre
-  in
   let deref pre_or_post addr astate =
     let+ aval, hist = SafeMemory.find_edge_opt pre_or_post addr Dereference astate in
     (downcast aval, hist)
@@ -1748,7 +1709,7 @@ let are_same_values_as_pre_formals proc_desc values astate =
         else
           let formal = Pvar.mk mangled_name proc_name in
           let formal_addr, _ = pvar_value `Pre formal astate |> Option.value_exn in
-          let same_values = compatible_sub_heaps astate formal_addr addr in
+          let same_values = AbstractValue.equal formal_addr addr in
           let is_constant = Option.is_some @@ ValueHistory.is_class_object_initialized hist in
           same_values || is_constant )
     |> function
@@ -1775,7 +1736,7 @@ let are_same_values_as_pre_formals proc_desc values astate =
             else
               let v_pre = deref `Pre (ValueOrigin.value vo) astate |> Option.map ~f:fst in
               let v_curr = Option.map ~f:fst (pvar_value `Post pvar astate) in
-              Option.equal (compatible_sub_heaps astate) v_pre v_curr
+              Option.equal AbstractValue.equal v_pre v_curr
         | LogicalVar _ ->
             (* should be impossible *)
             L.internal_error "Logical variable found in precondition" ;
@@ -2462,34 +2423,6 @@ let reachable_addresses_from ?edge_filter addresses astate pre_or_post =
     (Seq.map (CanonValue.canon' astate) addresses)
     astate pre_or_post
   |> CanonValue.downcast_set
-
-
-let has_reachable_in_inner_pre_heap addresses astate =
-  (* We are looking for one "real" (i.e. in the program text somewhere) dereference from the stack
-     variables in the pre-condition. Since the first dereference is always to access the value of
-     the formal, it is enough to look for access paths with at least two dereferences. *)
-  let has_two_dereferences accesses =
-    let rec has_two_dereferences_aux has_deref (accesses : Access.t list) =
-      match accesses with
-      | [] ->
-          false
-      | Dereference :: accesses' ->
-          has_deref || has_two_dereferences_aux true accesses'
-      | _ :: accesses' ->
-          has_two_dereferences_aux has_deref accesses'
-    in
-    has_two_dereferences_aux false accesses
-  in
-  let addresses =
-    ListLabels.to_seq addresses |> Seq.map (CanonValue.canon' astate) |> CanonValue.Set.of_seq
-  in
-  GraphVisit.fold astate
-    ~var_filter:(fun _ -> true)
-    `Pre ~init:false ~finish:Fn.id
-    ~f:(fun _ found v accesses ->
-      if CanonValue.Set.mem v addresses && has_two_dereferences accesses then Stop true
-      else Continue found )
-  |> snd
 
 
 module Stack = struct
