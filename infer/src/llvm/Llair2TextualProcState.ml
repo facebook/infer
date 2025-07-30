@@ -76,9 +76,11 @@ let update_locals ~proc_state varname typ =
 
 let update_ids ~proc_state id typ = proc_state.ids <- IdentMap.add id typ proc_state.ids
 
-let global_proc_state lang loc =
+let global_proc_state lang loc global_var =
+  let global_init_name = Format.sprintf "global_init_%s" global_var in
   let qualified_name =
-    Textual.QualifiedProcName.{enclosing_class= TopLevel; name= Textual.ProcName.of_string "global"}
+    Textual.QualifiedProcName.
+      {enclosing_class= TopLevel; name= Textual.ProcName.of_string global_init_name}
   in
   { qualified_name
   ; loc

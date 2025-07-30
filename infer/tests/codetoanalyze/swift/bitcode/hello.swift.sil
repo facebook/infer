@@ -42,6 +42,108 @@ declare _swift_FORCE_LOAD_$_swiftsys_time() : *ptr_elt
 
 declare _swift_FORCE_LOAD_$_swiftunistd() : *ptr_elt
 
+define global_init_llvm::used() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftunistd_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftunistd" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftsys_time_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftsys_time" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swift_time_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swift_time" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swift_stdio_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swift_stdio" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swift_signal_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swift_signal" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swift_math_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swift_math" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swift_errno_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swift_errno" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swift_Builtin_float_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swift_Builtin_float" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftXPC_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftXPC" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftObjectiveC_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftObjectiveC" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftFoundation_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftFoundation" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftDispatch_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftDispatch" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftDarwin_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftDarwin" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftCoreFoundation" @?
+      
+} @?
+
+define global_init__swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftCompatibility56" @?
+      
+} @?
+
+define global_init___swift_reflection_version() : void {
+  #start: @?
+      ret 3 @?
+      
+} @?
+
 global llvm::used: *ptr_elt
 
 global _swift_FORCE_LOAD_$_swiftunistd_$_Hello: *ptr_elt

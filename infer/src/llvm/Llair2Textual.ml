@@ -72,7 +72,7 @@ let to_textual_loc_instr ~(proc_state : ProcState.t) loc =
   if is_loc_default loc then proc_state.loc else loc
 
 
-let translate_llair_globals globals =
+let build_globals_map globals =
   let add_global map global =
     let name = global.GlobalDefn.name |> Global.name |> Textual.VarName.of_string in
     Textual.VarName.Map.add name global map
@@ -300,35 +300,38 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
       in
       (rcd_exp, Some textual_typ, List.append (List.append rcd_instrs elt_instrs) [store_instr])
-  | ApN (Record, typ, _elements) ->
-      let elements = StdUtils.iarray_to_list _elements in
-      let id = add_fresh_id ~proc_state () in
-      let rcd_exp = Textual.Exp.Var id in
+  | ApN (Record, typ, _elements) -> (
       let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
-      (* for each element in the record we set the value to a field of the record variable. *)
-      let to_textual_exp_index idx acc_instrs element =
-        let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state element in
-        let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
-        let elt_instrs = List.append elt_instrs elt_deref_instrs in
-        let type_name =
-          match textual_typ with
-          | Textual.Typ.(Ptr (Struct name)) | Textual.Typ.Struct name ->
-              name
-          | Textual.Typ.Array _ ->
-              Textual.TypeName.of_string "array"
-          | _ ->
-              Logging.die InternalError "Unexpected type %a" Llair.Typ.pp typ
-        in
-        let index_exp =
-          Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos type_name idx}
-        in
-        let store_instr =
-          Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
-        in
-        List.append acc_instrs (List.append elt_instrs [store_instr])
+      let type_name_opt =
+        match textual_typ with
+        | Textual.Typ.(Ptr (Struct name)) | Textual.Typ.Struct name ->
+            Some name
+        | _ ->
+            (* skipping arrays for now *)
+            None
       in
-      let instrs = List.foldi ~f:to_textual_exp_index ~init:[] elements in
-      (rcd_exp, Some textual_typ, instrs)
+      match type_name_opt with
+      | None ->
+          undef_exp exp
+      | Some type_name ->
+          let elements = StdUtils.iarray_to_list _elements in
+          let id = add_fresh_id ~proc_state () in
+          let rcd_exp = Textual.Exp.Var id in
+          (* for each element in the record we set the value to a field of the record variable. *)
+          let to_textual_exp_index idx acc_instrs element =
+            let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state element in
+            let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
+            let elt_instrs = List.append elt_instrs elt_deref_instrs in
+            let index_exp =
+              Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos type_name idx}
+            in
+            let store_instr =
+              Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
+            in
+            List.append acc_instrs (List.append elt_instrs [store_instr])
+          in
+          let instrs = List.foldi ~f:to_textual_exp_index ~init:[] elements in
+          (rcd_exp, Some textual_typ, instrs) )
   | _ ->
       undef_exp exp
 
@@ -769,18 +772,49 @@ let to_textual_global lang ~struct_map global =
   let name = Textual.VarName.of_string global_name in
   let typ = Type.to_textual_typ lang ~struct_map (Global.typ global_) in
   let loc = to_textual_loc global.GlobalDefn.loc in
-  let global_proc_state = ProcState.global_proc_state lang loc in
-  let init_exp =
-    Option.map
-      ~f:(fun exp -> to_textual_exp ~proc_state:global_proc_state loc exp |> fst3)
-      global.GlobalDefn.init
+  let global_proc_state = ProcState.global_proc_state lang loc global_name in
+  let proc_desc_opt =
+    match global.GlobalDefn.init with
+    | Some exp ->
+        let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
+        let procdecl =
+          Textual.ProcDecl.
+            { qualified_name= global_proc_state.qualified_name
+            ; formals_types= Some []
+            ; result_type= Textual.Typ.mk_without_attributes Textual.Typ.Void
+            ; attributes= [] }
+        in
+        let start_node =
+          Textual.Node.
+            { label= Textual.NodeName.of_string "start"
+            ; ssa_parameters= []
+            ; exn_succs= []
+            ; last= Textual.Terminator.Ret init_exp
+            ; instrs
+            ; last_loc= Textual.Location.Unknown
+            ; label_loc= Textual.Location.Unknown }
+        in
+        let proc_desc =
+          Textual.ProcDesc.
+            { procdecl
+            ; nodes= [start_node]
+            ; start= start_node.label
+            ; params= []
+            ; locals= []
+            ; exit_loc= Textual.Location.Unknown }
+        in
+        Some proc_desc
+    | None ->
+        None
   in
-  Textual.Global.{name; typ; attributes= []; init_exp}
+  (* The init_exp would need to be a call to the initialiser, to add later. *)
+  let global = Textual.Global.{name; typ; attributes= []; init_exp= None} in
+  (global, proc_desc_opt)
 
 
 let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Module.t =
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
-  let globals_map = translate_llair_globals llair_program.Llair.globals in
+  let globals_map = build_globals_map llair_program.Llair.globals in
   let source_file_ = SourceFile.create source_file in
   let procs =
     translate_llair_functions source_file_ lang struct_map globals_map llair_program.Llair.functions
@@ -795,12 +829,17 @@ let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Modu
             Textual.Module.Proc proc_desc :: procs )
       procs ~init:[]
   in
-  let globals =
+  let globals, proc_descs =
     Textual.VarName.Map.fold
-      (fun _ global globals ->
-        Textual.Module.Global (to_textual_global lang ~struct_map global) :: globals )
-      globals_map []
+      (fun _ global (globals, proc_descs) ->
+        let global, proc_desc_opt = to_textual_global lang ~struct_map global in
+        let proc_desc_opt =
+          Option.map ~f:(fun proc_desc -> Textual.Module.Proc proc_desc) proc_desc_opt
+        in
+        (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
+      globals_map ([], [])
   in
+  let procs = List.append procs proc_descs in
   let structs =
     List.map
       ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)

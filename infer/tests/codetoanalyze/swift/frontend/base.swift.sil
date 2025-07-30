@@ -259,65 +259,330 @@ declare swift_release(*ptr_elt) : *ptr_elt
 
 declare swift_retain(*ptr_elt) : *ptr_elt
 
-global symbolic _____ 5Hello6PersonC: *ptr_elt = [Some n1]
+define global_init_symbolic _____ 5Hello6PersonC() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_0 <- 1 @[0:0]
+      store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello6PersonCMn), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int>.__infer_tuple_field_1))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_2 <- 0 @[0:0]
+      ret n1 @?
+      
+} @?
 
-global symbolic Si: *ptr_elt = [Some n1]
+define global_init_symbolic Si() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int[],int>.__infer_tuple_field_0 <- $builtins.llvm_nondet() @[0:0]
+      store n1.__infer_tuple_class<int[],int>.__infer_tuple_field_1 <- 0 @[0:0]
+      ret n1 @?
+      
+} @?
 
-global objc_classes_$s5Hello6PersonCN: *ptr_elt = [Some n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_3]
+define global_init_objc_classes_$s5Hello6PersonCN() : void {
+  #start: @?
+      n1 = load &$s5Hello6PersonCMf @[0:0]
+      ret n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_3 @?
+      
+} @?
 
-global llvm::used: *ptr_elt = [Some n1]
+define global_init_llvm::used() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
 
-global llvm::compiler::used: *ptr_elt = [Some n1]
+define global_init_llvm::compiler::used() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
 
-global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt = [Some "_swift_FORCE_LOAD_$_swiftCompatibility56"]
+define global_init__swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello() : void {
+  #start: @?
+      ret "_swift_FORCE_LOAD_$_swiftCompatibility56" @?
+      
+} @?
+
+define global_init___swift_reflection_version() : void {
+  #start: @?
+      ret 3 @?
+      
+} @?
+
+define global_init__METACLASS_DATA__TtC5Hello6Person() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_0 <- 129 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_1 <- 40 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_2 <- 40 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_3 <- 0 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_4 <- null @[0:0]
+      n2 = load &::str::17::_TtC5Hello6Person @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_5 <- n2 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_6 <- null @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_7 <- null @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_8 <- null @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_9 <- null @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_10 <- null @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init__IVARS__TtC5Hello6Person() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int,int,(*__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int>)[]>.__infer_tuple_field_0 <- 32 @[0:0]
+      store n1.__infer_tuple_class<int,int,(*__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int>)[]>.__infer_tuple_field_1 <- 2 @[0:0]
+      store n1.__infer_tuple_class<int,int,(*__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int>)[]>.__infer_tuple_field_2 <- $builtins.llvm_nondet() @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init__DATA__TtC5Hello6Person() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_0 <- 128 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_1 <- 16 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_2 <- 32 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_3 <- 0 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_4 <- null @[0:0]
+      n2 = load &::str::17::_TtC5Hello6Person @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_5 <- n2 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_6 <- null @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_7 <- null @[0:0]
+      n3 = load &_IVARS__TtC5Hello6Person @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_8 <- n3 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_9 <- null @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_10 <- null @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init_::str::6::spouse() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_::str::6::Person() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_::str::5::Hello() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_::str::3::age() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_::str::17::_TtC5Hello6Person() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_::str::0::() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_1() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_0() : void {
+  #start: @?
+      ret $builtins.llvm_nondet() @?
+      
+} @?
+
+define global_init_$s5HelloMXM() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_0 <- 0 @[0:0]
+      store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_1 <- 0 @[0:0]
+      store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_2 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &::str::5::Hello), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int>.__infer_tuple_field_2))) @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init_$s5Hello6PersonCMn() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_0 <- -2147483568 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5HelloMXM), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_1))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_2 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &::str::6::Person), __sil_cast(<int>, n3.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_2))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_3 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello6PersonCMa"), __sil_cast(<int>, n4.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_3))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_4 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello6PersonCMF), __sil_cast(<int>, n5.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_4))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_5 <- 0 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_6 <- 3 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_7 <- 16 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_8 <- 6 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_9 <- 2 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_10 <- 10 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_11 <- 12 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_12 <- 4 @[0:0]
+      store n6.swift::method_descriptor.__infer_tuple_field_0 <- 18 @[0:0]
+      store n6.swift::method_descriptor.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello6PersonC6spouseACvg"), __sil_cast(<int>, n7.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_13))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_13 <- n6 @[0:0]
+      store n8.swift::method_descriptor.__infer_tuple_field_0 <- 19 @[0:0]
+      store n8.swift::method_descriptor.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello6PersonC6spouseACvs"), __sil_cast(<int>, n9.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_14))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_14 <- n8 @[0:0]
+      store n10.swift::method_descriptor.__infer_tuple_field_0 <- 20 @[0:0]
+      store n10.swift::method_descriptor.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello6PersonC6spouseACvM"), __sil_cast(<int>, n11.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_15))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_15 <- n10 @[0:0]
+      store n12.swift::method_descriptor.__infer_tuple_field_0 <- 1 @[0:0]
+      store n12.swift::method_descriptor.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello6PersonC3ageACSi_tcfC"), __sil_cast(<int>, n13.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_16))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_16 <- n12 @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init_$s5Hello6PersonCMm() : void {
+  #start: @?
+      n2 = load &OBJC_METACLASS_$__TtCs12_SwiftObject @[0:0]
+      store n1.objc_class.__infer_tuple_field_0 <- n2 @[0:0]
+      n3 = load &OBJC_METACLASS_$__TtCs12_SwiftObject @[0:0]
+      store n1.objc_class.__infer_tuple_field_1 <- n3 @[0:0]
+      n4 = load &_objc_empty_cache @[0:0]
+      store n1.objc_class.__infer_tuple_field_2 <- n4 @[0:0]
+      store n1.objc_class.__infer_tuple_field_3 <- null @[0:0]
+      store n1.objc_class.__infer_tuple_field_4 <- __sil_cast(<int>, &_METACLASS_DATA__TtC5Hello6Person) @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init_$s5Hello6PersonCMf() : void {
+  #start: @?
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_0 <- null @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_1 <- "$s5Hello6PersonCfD" @[0:0]
+      n2 = load &$sBoWV @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_2 <- n2 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_3 <- __sil_cast(<int>, &$s5Hello6PersonCMm) @[0:0]
+      n3 = load &OBJC_CLASS_$__TtCs12_SwiftObject @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_4 <- n3 @[0:0]
+      n4 = load &_objc_empty_cache @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_5 <- n4 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_6 <- null @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_7 <- __sil_plusa_int(__sil_cast(<int>, &_DATA__TtC5Hello6Person), 2) @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_8 <- 2 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_9 <- 0 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_10 <- 32 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_11 <- 7 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_12 <- 0 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_13 <- 152 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_14 <- 24 @[0:0]
+      n5 = load &$s5Hello6PersonCMn @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_15 <- n5 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_16 <- null @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_17 <- 16 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_18 <- 24 @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_19 <- "$s5Hello6PersonC6spouseACvg" @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_20 <- "$s5Hello6PersonC6spouseACvs" @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_21 <- "$s5Hello6PersonC6spouseACvM" @[0:0]
+      store n1.__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt>.__infer_tuple_field_22 <- "$s5Hello6PersonC3ageACSi_tcfC" @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init_$s5Hello6PersonCMF() : void {
+  #start: @?
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_0 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &symbolic _____ 5Hello6PersonC), __sil_cast(<int>, &$s5Hello6PersonCMF))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_1 <- 0 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_2 <- 1 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_3 <- 12 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_4 <- 2 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_5 <- 0 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_6 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &symbolic Si), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_6))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_7 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &0), __sil_cast(<int>, n3.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_7))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_8 <- 2 @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_9 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &symbolic _____ 5Hello6PersonC), __sil_cast(<int>, n4.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_9))) @[0:0]
+      store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_10 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &1), __sil_cast(<int>, n5.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>.__infer_tuple_field_10))) @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init_$s5Hello6PersonCHn() : void {
+  #start: @?
+      store n1.swift::type_metadata_record.__infer_tuple_field_0 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello6PersonCMn), __sil_cast(<int>, &$s5Hello6PersonCHn))) @[0:0]
+      ret n1 @?
+      
+} @?
+
+define global_init_$s5Hello6PersonC6spouseACvpWvd() : void {
+  #start: @?
+      ret 24 @?
+      
+} @?
+
+define global_init_$s5Hello6PersonC3ageSivpWvd() : void {
+  #start: @?
+      ret 16 @?
+      
+} @?
+
+global symbolic _____ 5Hello6PersonC: *ptr_elt
+
+global symbolic Si: *ptr_elt
+
+global objc_classes_$s5Hello6PersonCN: *ptr_elt
+
+global llvm::used: *ptr_elt
+
+global llvm::compiler::used: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
 
 global _objc_empty_cache: *ptr_elt
 
-global __swift_reflection_version: *ptr_elt = [Some 3]
+global __swift_reflection_version: *ptr_elt
 
-global _METACLASS_DATA__TtC5Hello6Person: *ptr_elt = [Some n1]
+global _METACLASS_DATA__TtC5Hello6Person: *ptr_elt
 
-global _IVARS__TtC5Hello6Person: *ptr_elt = [Some n1]
+global _IVARS__TtC5Hello6Person: *ptr_elt
 
-global _DATA__TtC5Hello6Person: *ptr_elt = [Some n1]
+global _DATA__TtC5Hello6Person: *ptr_elt
 
 global OBJC_METACLASS_$__TtCs12_SwiftObject: *ptr_elt
 
 global OBJC_CLASS_$__TtCs12_SwiftObject: *ptr_elt
 
-global ::str::6::spouse: *ptr_elt = [Some n1]
+global ::str::6::spouse: *ptr_elt
 
-global ::str::6::Person: *ptr_elt = [Some n1]
+global ::str::6::Person: *ptr_elt
 
-global ::str::5::Hello: *ptr_elt = [Some n1]
+global ::str::5::Hello: *ptr_elt
 
-global ::str::3::age: *ptr_elt = [Some n1]
+global ::str::3::age: *ptr_elt
 
-global ::str::17::_TtC5Hello6Person: *ptr_elt = [Some n1]
+global ::str::17::_TtC5Hello6Person: *ptr_elt
 
-global ::str::0::: *ptr_elt = [Some $builtins.llvm_nondet()]
+global ::str::0::: *ptr_elt
 
-global 1: *ptr_elt = [Some n1]
+global 1: *ptr_elt
 
-global 0: *ptr_elt = [Some n1]
+global 0: *ptr_elt
 
 global $sBoWV: *ptr_elt
 
-global $s5HelloMXM: *ptr_elt = [Some n1]
+global $s5HelloMXM: *ptr_elt
 
-global $s5Hello6PersonCMn: *ptr_elt = [Some n1]
+global $s5Hello6PersonCMn: *ptr_elt
 
-global $s5Hello6PersonCMm: *ptr_elt = [Some n1]
+global $s5Hello6PersonCMm: *ptr_elt
 
-global $s5Hello6PersonCMf: *ptr_elt = [Some n1]
+global $s5Hello6PersonCMf: *ptr_elt
 
-global $s5Hello6PersonCMF: *ptr_elt = [Some n1]
+global $s5Hello6PersonCMF: *ptr_elt
 
-global $s5Hello6PersonCHn: *ptr_elt = [Some n1]
+global $s5Hello6PersonCHn: *ptr_elt
 
-global $s5Hello6PersonC6spouseACvpWvd: *ptr_elt = [Some 24]
+global $s5Hello6PersonC6spouseACvpWvd: *ptr_elt
 
-global $s5Hello6PersonC3ageSivpWvd: *ptr_elt = [Some 16]
+global $s5Hello6PersonC3ageSivpWvd: *ptr_elt
 
 type $s5Hello6PersonC6spouseACvM::Frame = {field_0: int[]}
 
