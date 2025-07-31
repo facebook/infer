@@ -259,12 +259,12 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
-      let exp = to_textual_exp loc ~proc_state exp |> fst3 in
+      let exp, _, instrs = to_textual_exp loc ~proc_state exp in
       let textual_dst_typ = Type.to_textual_typ proc_state.lang ~struct_map dst_typ in
       let proc = Textual.ProcDecl.cast_name in
       ( Call {proc; args= [Textual.Exp.Typ textual_dst_typ; exp]; kind= Textual.Exp.NonVirtual}
       , None
-      , [] )
+      , instrs )
   | Ap1 (Splat, _, _) ->
       (* [splat exp] initialises every element of an array with the element exp, so to be precise it
          needs to be translated as a loop. We translate here to a non-deterministic value for the array *)

@@ -130,6 +130,7 @@ define global_init_symbolic _____ 5Hello7VehicleC() : void {
   #start: @?
       store n1 <- $builtins.llvm_nondet() @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_0 <- 1 @[0:0]
+      n2 = load &symbolic _____ 5Hello7VehicleC @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello7VehicleCMn), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int>.__infer_tuple_field_1))) @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_2 <- 0 @[0:0]
       ret n1 @?
@@ -140,6 +141,7 @@ define global_init_symbolic _____ 5Hello5TrainC() : void {
   #start: @?
       store n1 <- $builtins.llvm_nondet() @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_0 <- 1 @[0:0]
+      n2 = load &symbolic _____ 5Hello5TrainC @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello5TrainCMn), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int>.__infer_tuple_field_1))) @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_2 <- 0 @[0:0]
       ret n1 @?
@@ -295,6 +297,7 @@ define global_init_$s5HelloMXM() : void {
       store n1 <- $builtins.llvm_nondet() @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_0 <- 0 @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_1 <- 0 @[0:0]
+      n2 = load &$s5HelloMXM @[0:0]
       store n1.__infer_tuple_class<int,int,int>.__infer_tuple_field_2 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &::str::5::Hello), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int>.__infer_tuple_field_2))) @[0:0]
       ret n1 @?
       
@@ -304,9 +307,13 @@ define global_init_$s5Hello7VehicleCMn() : void {
   #start: @?
       store n1 <- $builtins.llvm_nondet() @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_0 <- -2147483568 @[0:0]
+      n2 = load &$s5Hello7VehicleCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5HelloMXM), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_1))) @[0:0]
+      n3 = load &$s5Hello7VehicleCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_2 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &::str::7::Vehicle), __sil_cast(<int>, n3.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_2))) @[0:0]
+      n4 = load &$s5Hello7VehicleCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_3 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello7VehicleCMa"), __sil_cast(<int>, n4.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_3))) @[0:0]
+      n5 = load &$s5Hello7VehicleCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_4 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello7VehicleCMF), __sil_cast(<int>, n5.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_4))) @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_5 <- 0 @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_6 <- 3 @[0:0]
@@ -318,10 +325,12 @@ define global_init_$s5Hello7VehicleCMn() : void {
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_12 <- 2 @[0:0]
       store n6 <- $builtins.llvm_nondet() @[0:0]
       store n6.swift::method_descriptor.field_0 <- 16 @[0:0]
+      n7 = load &$s5Hello7VehicleCMn @[0:0]
       store n6.swift::method_descriptor.field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello7VehicleC9makeNoiseyyF"), __sil_cast(<int>, n7.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_13))) @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_13 <- n6 @[0:0]
       store n8 <- $builtins.llvm_nondet() @[0:0]
       store n8.swift::method_descriptor.field_0 <- 1 @[0:0]
+      n9 = load &$s5Hello7VehicleCMn @[0:0]
       store n8.swift::method_descriptor.field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello7VehicleCACycfC"), __sil_cast(<int>, n9.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_14))) @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_14 <- n8 @[0:0]
       ret n1 @?
@@ -397,10 +406,15 @@ define global_init_$s5Hello5TrainCMn() : void {
   #start: @?
       store n1 <- $builtins.llvm_nondet() @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_0 <- 1073741904 @[0:0]
+      n2 = load &$s5Hello5TrainCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5HelloMXM), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_1))) @[0:0]
+      n3 = load &$s5Hello5TrainCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_2 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &::str::5::Train), __sil_cast(<int>, n3.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_2))) @[0:0]
+      n4 = load &$s5Hello5TrainCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_3 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello5TrainCMa"), __sil_cast(<int>, n4.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_3))) @[0:0]
+      n5 = load &$s5Hello5TrainCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_4 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello5TrainCMF), __sil_cast(<int>, n5.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_4))) @[0:0]
+      n6 = load &$s5Hello5TrainCMn @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_5 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &symbolic _____ 5Hello7VehicleC), __sil_cast(<int>, n6.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_5))) @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_6 <- 3 @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_7 <- 12 @[0:0]
@@ -409,13 +423,21 @@ define global_init_$s5Hello5TrainCMn() : void {
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_10 <- 12 @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_11 <- 2 @[0:0]
       store n7 <- $builtins.llvm_nondet() @[0:0]
+      n8 = load &$s5Hello5TrainCMn @[0:0]
       store n7.swift::method_override_descriptor.field_0 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello7VehicleCMn), __sil_cast(<int>, n8.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_12))) @[0:0]
+      n9 = load &$s5Hello7VehicleCMn @[0:0]
+      n10 = load &$s5Hello5TrainCMn @[0:0]
       store n7.swift::method_override_descriptor.field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, n9.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_13), __sil_cast(<int>, n10.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_12))) @[0:0]
+      n11 = load &$s5Hello5TrainCMn @[0:0]
       store n7.swift::method_override_descriptor.field_2 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello5TrainC9makeNoiseyyF"), __sil_cast(<int>, n11.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_12))) @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_12 <- n7 @[0:0]
       store n12 <- $builtins.llvm_nondet() @[0:0]
+      n13 = load &$s5Hello5TrainCMn @[0:0]
       store n12.swift::method_override_descriptor.field_0 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &$s5Hello7VehicleCMn), __sil_cast(<int>, n13.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_13))) @[0:0]
+      n14 = load &$s5Hello7VehicleCMn @[0:0]
+      n15 = load &$s5Hello5TrainCMn @[0:0]
       store n12.swift::method_override_descriptor.field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, n14.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor>.__infer_tuple_field_14), __sil_cast(<int>, n15.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_13))) @[0:0]
+      n16 = load &$s5Hello5TrainCMn @[0:0]
       store n12.swift::method_override_descriptor.field_2 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, "$s5Hello5TrainCACycfC"), __sil_cast(<int>, n16.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_13))) @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_override_descriptor,*swift::method_override_descriptor>.__infer_tuple_field_13 <- n12 @[0:0]
       ret n1 @?
@@ -472,6 +494,7 @@ define global_init_$s5Hello5TrainCMF() : void {
   #start: @?
       store n1 <- $builtins.llvm_nondet() @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &symbolic _____ 5Hello5TrainC), __sil_cast(<int>, &$s5Hello5TrainCMF))) @[0:0]
+      n2 = load &$s5Hello5TrainCMF @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_minusa_int(__sil_cast(<int>, &symbolic _____ 5Hello7VehicleC), __sil_cast(<int>, n2.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1))) @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 <- 1 @[0:0]
       store n1.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_3 <- 12 @[0:0]
