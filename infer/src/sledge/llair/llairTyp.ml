@@ -46,7 +46,9 @@ let rec pp fs typ =
       pf "[%i x %a]" len pp elt
   | Tuple {elts} ->
       pf "{ @[%a@] }" pp_flds elts
-  | Struct {name} | Opaque {name} ->
+  | Struct {name} ->
+      pf "%%%s" name
+  | Opaque {name} ->
       pf "%%%s" name
 
 

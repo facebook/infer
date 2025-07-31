@@ -317,20 +317,29 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let elements = StdUtils.iarray_to_list _elements in
           let id = add_fresh_id ~proc_state () in
           let rcd_exp = Textual.Exp.Var id in
+          let undef_exp =
+            let proc = builtin_qual_proc_name "llvm_nondet" in
+            Textual.Exp.Call {proc; args= []; kind= NonVirtual}
+          in
+          let rcd_store_instr =
+            Textual.Instr.Store {exp1= rcd_exp; exp2= undef_exp; typ= None; loc}
+          in
           (* for each element in the record we set the value to a field of the record variable. *)
           let to_textual_exp_index idx acc_instrs element =
             let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state element in
             let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
             let elt_instrs = List.append elt_instrs elt_deref_instrs in
-            let index_exp =
-              Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos type_name idx}
+            let field =
+              if Llair.Typ.is_tuple typ then Type.tuple_field_of_pos type_name idx
+              else Type.field_of_pos type_name idx
             in
+            let index_exp = Textual.Exp.Field {exp= rcd_exp; field} in
             let store_instr =
               Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
             in
             List.append acc_instrs (List.append elt_instrs [store_instr])
           in
-          let instrs = List.foldi ~f:to_textual_exp_index ~init:[] elements in
+          let instrs = rcd_store_instr :: List.foldi ~f:to_textual_exp_index ~init:[] elements in
           (rcd_exp, Some textual_typ, instrs) )
   | _ ->
       undef_exp exp
