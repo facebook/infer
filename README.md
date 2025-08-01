@@ -12,6 +12,21 @@ Started](http://fbinfer.com/docs/getting-started) page for
 details on how to install packaged versions of Infer. To build Infer
 from source, see [INSTALL.md](./INSTALL.md).
 
+## Quick Start
+
+Build quickly in 3 easy steps:
+
+```bash
+    # clone the repo on your local machine
+    git clone https://github.com/facebook/infer.git
+
+    # go to the cloned project directory
+    cd infer
+
+    # build it
+    ./build-infer.sh
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
