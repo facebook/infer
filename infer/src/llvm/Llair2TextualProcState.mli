@@ -36,3 +36,5 @@ val update_ids : proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> unit
 val pp : F.formatter -> print_types:bool -> t -> unit [@@warning "-unused-value-declaration"]
 
 val global_proc_state : Textual.Lang.t -> Textual.Location.t -> string -> t
+
+val get_fresh_fake_line : unit -> int

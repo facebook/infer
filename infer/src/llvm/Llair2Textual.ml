@@ -57,7 +57,14 @@ let reg_to_annot_typ lang ~struct_map reg =
   Type.to_annotated_textual_typ lang ~struct_map (Reg.typ reg)
 
 
-let to_textual_loc {Loc.line; col} = Textual.Location.Known {line; col}
+let to_textual_loc {Loc.line; col} =
+  if Int.equal line 0 && Int.equal col 0 then
+    let line =
+      if Config.debug_mode || Config.frontend_tests then ProcState.get_fresh_fake_line () else line
+    in
+    Textual.Location.Known {line; col}
+  else Textual.Location.Known {line; col}
+
 
 let is_loc_default loc =
   match loc with

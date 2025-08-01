@@ -44,6 +44,13 @@ let mk_fresh_id ?reg proc_state =
       fresh_id ()
 
 
+let last_fake_line : int ref = ref 100
+
+let get_fresh_fake_line () =
+  last_fake_line := !last_fake_line + 1 ;
+  !last_fake_line
+
+
 let pp_ids fmt current_ids =
   F.fprintf fmt "%a"
     (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:Textual.Typ.pp_annotated))
