@@ -328,9 +328,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             let proc = builtin_qual_proc_name "llvm_nondet" in
             Textual.Exp.Call {proc; args= []; kind= NonVirtual}
           in
-          let rcd_store_instr =
-            Textual.Instr.Store {exp1= rcd_exp; exp2= undef_exp; typ= None; loc}
-          in
+          let rcd_store_instr = Textual.Instr.Let {id= Some id; exp= undef_exp; loc} in
           (* for each element in the record we set the value to a field of the record variable. *)
           let to_textual_exp_index idx acc_instrs element =
             let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state element in

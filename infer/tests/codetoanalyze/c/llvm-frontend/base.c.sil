@@ -441,7 +441,7 @@ define test9() : int {
 
 define global_init___const::test15::person() : void {
   #start: @?
-      store n1 <- $builtins.llvm_nondet() @[124:0]
+      n1 = $builtins.llvm_nondet() @[124:0]
       n2 = load &::str::4 @[124:0]
       store n1.struct::Person.field_0 <- n2 @[124:0]
       store n1.struct::Person.field_1 <- null @[124:0]
