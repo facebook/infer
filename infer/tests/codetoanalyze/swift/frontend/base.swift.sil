@@ -189,9 +189,9 @@ define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(var0: int, var1: *ptr_
 
 define .plain_name = "age.get" $s5Hello6PersonC3ageSivg(var0: *ptr_elt) : int {
   #: @[0:0]
-      n1 = load n3.TSi.field_0 @[0:0]
       n2 = load &var0 @[0:0]
       n3 = load n2.T5Hello6PersonC.field_1 @[0:0]
+      n1 = load n3.TSi.field_0 @[0:0]
       ret n1 @[0:0]
       
 } @?

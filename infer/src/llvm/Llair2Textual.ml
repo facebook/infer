@@ -439,7 +439,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let id, _ = reg_to_id ~proc_state reg in
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
         let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
-        List.append ptr_instrs (textual_instr :: textual_instrs)
+        textual_instr :: List.append ptr_instrs textual_instrs
     | Store {ptr; exp; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
         let exp2, _, exp2_instrs_ = to_textual_exp loc ~proc_state exp in
