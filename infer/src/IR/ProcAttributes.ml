@@ -72,12 +72,13 @@ let pp_var_data fmt
     is_structured_binding has_cleanup_attribute
 
 
-type block_as_arg_attributes = {passed_to: Procname.t; passed_as_noescape_block: bool}
+type block_as_arg_attributes =
+  {passed_to: Procname.t; passed_as_noescape_block: bool; in_outer_block: bool}
 [@@deriving compare, equal]
 
-let pp_block_as_arg_attributes fmt {passed_to; passed_as_noescape_block} =
-  F.fprintf fmt "@[{ passed_to=%a;passed_as_noescape_block=%b } @]" Procname.pp passed_to
-    passed_as_noescape_block
+let pp_block_as_arg_attributes fmt {passed_to; passed_as_noescape_block; in_outer_block} =
+  F.fprintf fmt "@[{ passed_to=%a;passed_as_noescape_block=%b; in_outer_block:%b } @]" Procname.pp
+    passed_to passed_as_noescape_block in_outer_block
 
 
 type t =

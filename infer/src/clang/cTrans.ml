@@ -766,9 +766,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let block_as_arg_attributes =
           match ms_param_type_i with
           | Some (_, {is_no_escape_block_arg}) ->
+              let procdesc = trans_state_param.context.CContext.procdesc in
+              let procname = Procdesc.get_proc_name procdesc in
               Some
                 { ProcAttributes.passed_to= callee_ms.CMethodSignature.name
-                ; passed_as_noescape_block= is_no_escape_block_arg }
+                ; passed_as_noescape_block= is_no_escape_block_arg
+                ; in_outer_block= Procname.is_objc_block procname }
           | None ->
               None
         in

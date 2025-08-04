@@ -567,12 +567,18 @@ let report_captured_strongself_issue proc_desc err_log domain (capturedStrongSel
       ~f:(fun ({passed_to} : ProcAttributes.block_as_arg_attributes) -> passed_to)
       attributes.block_as_arg_attributes
   in
-  let is_dispatch_async =
-    Option.value_map
-      ~f:(fun procname -> String.equal (Procname.get_method procname) "dispatch_async")
-      ~default:false passed_to
+  let in_outer_block =
+    Option.exists
+      ~f:(fun {ProcAttributes.in_outer_block} -> in_outer_block)
+      attributes.block_as_arg_attributes
   in
-  if (not passed_as_noescape_block) && not is_dispatch_async then
+  let is_dispatch_async_not_in_block =
+    Option.exists
+      ~f:(fun procname ->
+        String.equal (Procname.get_method procname) "dispatch_async" && not in_outer_block )
+      passed_to
+  in
+  if (not passed_as_noescape_block) && not is_dispatch_async_not_in_block then
     let message =
       F.asprintf
         "The variable `%a`, used at `%a`, is a strong pointer to `self` captured in this block. \

@@ -32,7 +32,8 @@ type var_data =
         (** the tmp id used to build the variable name in case of a temp variable, None otherwise.
         *) }
 
-type block_as_arg_attributes = {passed_to: Procname.t; passed_as_noescape_block: bool}
+type block_as_arg_attributes =
+  {passed_to: Procname.t; passed_as_noescape_block: bool; in_outer_block: bool}
 [@@deriving compare, equal]
 
 type t =
