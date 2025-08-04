@@ -325,7 +325,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let id = add_fresh_id ~proc_state () in
           let rcd_exp = Textual.Exp.Var id in
           let undef_exp =
-            let proc = builtin_qual_proc_name "llvm_nondet" in
+            let proc = builtin_qual_proc_name "llvm_init_tuple" in
             Textual.Exp.Call {proc; args= []; kind= NonVirtual}
           in
           let rcd_store_instr = Textual.Instr.Let {id= Some id; exp= undef_exp; loc} in
