@@ -546,12 +546,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
               let id = Some (reg_to_id ~proc_state reg |> fst) in
               let exp, _, exp_instrs = to_textual_exp loc ~proc_state exp in
               let instrs = List.append instrs exp_instrs in
-              match exp with
-              | Textual.Exp.Field _ ->
-                  let id = Option.value id ~default:(add_fresh_id ~proc_state ()) in
-                  Textual.Instr.Load {id; exp; typ= None; loc} :: instrs
-              | _ ->
-                  Textual.Instr.Let {id; exp; loc} :: instrs )
+              Textual.Instr.Let {id; exp; loc} :: instrs )
             ~init:[] reg_exps
         in
         List.append instrs textual_instrs

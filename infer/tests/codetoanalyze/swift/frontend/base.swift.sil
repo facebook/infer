@@ -56,18 +56,18 @@ define .plain_name = "test_retain_cycle" $s5Hello17test_retain_cycleyyF() : *ptr
       ret null @[49:1]
       
   #3::ret: @[46:16]
-      n2 = load n1.swift::metadata_response.field_0 @[46:16]
-      n4 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[46:16]
+      n2 = n1.swift::metadata_response.field_0 @[46:16]
+      n3 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[46:16]
       jmp 5::ret @[46:16]
       
   #5::ret: @[112:0]
-      store &john <- n4 @[112:0]
-      n5 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[47:16]
+      store &john <- n3 @[112:0]
+      n4 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[47:16]
       jmp 6::ret @[47:16]
       
   #6::ret: @[113:0]
-      store &jane <- n5 @[113:0]
-      _ = $s5Hello11set_spousesyyAA6PersonC_ADtF(n4, n5) @[48:5]
+      store &jane <- n4 @[113:0]
+      _ = $s5Hello11set_spousesyyAA6PersonC_ADtF(n3, n4) @[48:5]
       jmp $s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret @[48:5]
       
 } @?
@@ -118,13 +118,13 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
       jmp 2::ret @[23:18]
       
   #2::ret: @[23:18]
-      n2 = load n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[23:18]
-      n4 = load &person @[123:0]
-      n5 = load n4.__infer_tuple_class<*TSi,*TSi>.__infer_tuple_field_0 @[123:0]
-      store n5.TSi.field_0 <- n2 @[123:0]
-      n6 = load &person @[124:0]
-      n7 = load n6.__infer_tuple_class<*TSi,*TSi>.__infer_tuple_field_1 @[124:0]
-      store n7.TSi.field_0 <- n1.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[124:0]
+      n2 = n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[23:18]
+      n3 = load &person @[123:0]
+      n4 = load n3.__infer_tuple_class<*TSi,*TSi>.__infer_tuple_field_0 @[123:0]
+      store n4.TSi.field_0 <- n2 @[123:0]
+      n5 = load &person @[124:0]
+      n6 = load n5.__infer_tuple_class<*TSi,*TSi>.__infer_tuple_field_1 @[124:0]
+      store n6.TSi.field_0 <- n1.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[124:0]
       ret n2 @[24:5]
       
 } @?
@@ -204,13 +204,13 @@ define .plain_name = "spouse.get" $s5Hello6PersonC6spouseACvg(var0: *ptr_elt) : 
   local var2: int[]
   #: @[146:0]
       n2 = load &var0 @[146:0]
-      n1 = load n2.T5Hello6PersonC.field_2 @[146:0]
-      n4 = load n1 @[147:0]
-      n5 = n4 @[149:0]
+      n1 = n2.T5Hello6PersonC.field_2 @[146:0]
+      n3 = load n1 @[147:0]
+      n4 = n3 @[149:0]
       jmp 5::ret @[150:0]
       
   #5::ret: @[151:0]
-      ret n4 @[151:0]
+      ret n3 @[151:0]
       
 } @?
 
@@ -223,10 +223,10 @@ define .plain_name = "spouse.set" $s5Hello6PersonC6spouseACvs(var0: *ptr_elt, va
       
   #4::ret: @[157:0]
       n4 = load &var1 @[157:0]
-      n3 = load n4.T5Hello6PersonC.field_2 @[157:0]
-      n6 = load n3 @[158:0]
-      n7 = load &var0 @[159:0]
-      store n3 <- n7 @[159:0]
+      n3 = n4.T5Hello6PersonC.field_2 @[157:0]
+      n5 = load n3 @[158:0]
+      n6 = load &var0 @[159:0]
+      store n3 <- n6 @[159:0]
       ret null @[160:0]
       
 } @?
