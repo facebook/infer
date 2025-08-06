@@ -55,6 +55,8 @@ let rec compat lang ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       compat lang ~assigned:t1 ~given:t2
   | (Fun _ as fun1), (Fun _ as fun2) ->
       Typ.equal fun1 fun2
+  | (_, Ptr Void | Ptr Void, _) when Textual.Lang.is_c lang || Textual.Lang.is_swift lang ->
+      true
   | _, _ ->
       false
 
