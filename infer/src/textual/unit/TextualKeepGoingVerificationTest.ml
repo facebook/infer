@@ -90,9 +90,7 @@ let%expect_test _ =
   parse_string_and_verify_keep_going text ;
   [%expect
     {|
-    verification succeeded - 1 warnings
-    ------
-    dummy.sil, line 12, column 11: textual type error: expression 0 has type int, while a subtype of *int was expected
+    verification succeeded - no warnings
     ------
     .source_language = "c"
 
@@ -104,8 +102,13 @@ let%expect_test _ =
 
     }
 
-    declare test2() : *int
+    define test2() : *int {
+      #start:
+          ret 0
+
+    }
 
 
-    Veryfing the filtered module...
-    verification succeeded |}]
+    Veryfing the transformed module...
+    verification succeeded
+    |}]

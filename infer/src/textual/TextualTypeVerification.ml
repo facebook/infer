@@ -42,6 +42,8 @@ let rec compat lang ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       true
   | Int, Ptr _ ->
       true
+  | Ptr _, Int when Textual.Lang.is_c lang || Textual.Lang.is_swift lang ->
+      true
   | Ptr t1, Ptr t2 ->
       if is_any_type_llvm lang t1 || is_any_type_llvm lang t2 then true
       else compat lang ~assigned:t1 ~given:t2
@@ -61,7 +63,15 @@ let is_ptr typ = match typ with Typ.Ptr _ -> true | Typ.Void -> true | _ -> fals
 
 let is_ptr_struct typ = match typ with Typ.Ptr (Struct _) | Typ.Void -> true | _ -> false
 
-let is_int _lang typ = match typ with Typ.Int -> true | _ -> false
+let is_int lang typ =
+  match typ with
+  | Typ.Int ->
+      true
+  | Typ.Ptr _ when Textual.Lang.is_c lang || Textual.Lang.is_swift lang ->
+      true
+  | _ ->
+      false
+
 
 let sub_int lang = function ty -> compat lang ~assigned:Int ~given:ty
 
