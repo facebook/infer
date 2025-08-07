@@ -286,4 +286,20 @@ class CallInitStaticField {
       dict_argument(dict['hi' => 42]);
     }
   }
+
+  public function fn_test_dmk_with_shape_bad(): void {
+    $schema = shape(
+      'callsite_identifier' => 1,
+      'extras' => dict['a' => 1],
+    );
+    $b = $schema['extras']['b'];
+  }
+
+  public function test_dmk_with_shape_ok(): void {
+    $schema = shape(
+      'callsite_identifier' => 1,
+      'extras' => dict['a' => 1],
+    );
+    $b = $schema['extras']['a'];
+  }
 }
