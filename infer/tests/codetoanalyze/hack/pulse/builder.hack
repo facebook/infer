@@ -225,6 +225,11 @@ trait MutatorTrait {
     $builder_cls = type_structure(static::class, 'TB')['classname'];
     return new $builder_cls($arg);
   }
+
+  public static function createReified(int $arg): this::TB {
+    $builder_cls = HH\ReifiedGenerics\get_class_from_type<this::TB>();
+    return new $builder_cls($arg);
+  }
 }
 
 final class ConcreteMutator extends MutatorBase {
@@ -241,6 +246,11 @@ final class BuilderTester3 {
 
   public static function testCreateBad(): void {
     $b = ConcreteMutator::create(42);
+    $b->setA(42);
+  }
+
+  public static function testCreateReifiedBad(): void {
+    $b = ConcreteMutator::createReified(42);
     $b->setA(42);
   }
 }

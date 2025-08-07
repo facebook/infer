@@ -1431,9 +1431,9 @@ let read_access_from_ts tdict =
 
 
 (* We handle two cases:
-   (1) rootname is HH\this, in this case it returns static type of companion object
-   (2) rootname is something else, in this case returns corresponding static type *)
-let get_root_static_type (rootname, _) : Typ.name option DSL.model_monad =
+   (1) rootname is HH\this, in this case it returns this object
+   (2) rootname is something else, in this case returns None *)
+let get_cls_obj (rootname, _) : DSL.aval option DSL.model_monad =
   let open DSL.Syntax in
   let* opt_str_rootname = exec_pure_operation (read_string_value rootname) in
   match opt_str_rootname with
@@ -1442,11 +1442,8 @@ let get_root_static_type (rootname, _) : Typ.name option DSL.model_monad =
       let proc_name = Procdesc.get_proc_name proc_desc in
       let this_var = Pvar.mk_local (Mangled.from_string this_localvar_name) proc_name in
       let* this_v = load_exp (Exp.Lvar this_var) in
-      get_static_type this_v
-  | Some rootname ->
-      let typ_name = Typ.HackClass (HackClassName.make rootname) in
-      ret (Some typ_name)
-  | None ->
+      ret (Some this_v)
+  | _ ->
       ret None
 
 
@@ -1454,12 +1451,11 @@ let hack_get_class_from_type rootname constname : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let* root_static_type = get_root_static_type rootname in
-  match root_static_type with
+  let* clsobj = get_cls_obj rootname in
+  match clsobj with
   | None ->
       ret ()
-  | Some typ -> (
-      let* clsobj = get_static_companion_dsl ~model_desc:"hack_get_class_from_type" typ in
+  | Some clsobj -> (
       constinit_existing_class_object clsobj
       @@>
       let* tdict = internal_hack_field_get clsobj constname in
