@@ -8,6 +8,15 @@ open! IStd
 module L = Logging
 module F = Format
 
+let dump_textual_file file module_ =
+  let suffix = Format.asprintf ".sil" in
+  let filename =
+    let textual_filename = TextualSil.to_filename file in
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename suffix
+  in
+  TextualSil.dump_module ~show_location:true ~filename module_
+
+
 let capture prog (args : string list) =
   if not (String.equal prog "rustc") then
     L.die UserError "rustc should be explicitly used instead of %s." prog ;
@@ -20,13 +29,16 @@ let capture prog (args : string list) =
     | Error err ->
         L.die UserError "%s: %s" err (Yojson.Basic.to_string json)
   in
+  if Config.debug_mode || Config.dump_textual then dump_textual_file json_file textual ;
   let sourcefile = Textual.SourceFile.create json_file in
   let verified_textual =
     match TextualVerification.verify_strict textual with
     | Ok vt ->
         vt
     | Error err ->
-        L.die UserError "Textual verification failed:%a" (F.pp_print_list TextualVerification.pp_error) err
+        L.die UserError "Textual verification failed:%a"
+          (F.pp_print_list TextualVerification.pp_error)
+          err
   in
   let transformed_textual, decls = TextualTransform.run Rust verified_textual in
   let cfg, tenv =
@@ -34,7 +46,9 @@ let capture prog (args : string list) =
     | Ok s ->
         s
     | Error err ->
-        L.die UserError "Module to sil failed: %a" (F.pp_print_list (Textual.pp_transform_error sourcefile)) err
+        L.die UserError "Module to sil failed: %a"
+          (F.pp_print_list (Textual.pp_transform_error sourcefile))
+          err
   in
   let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
   TextualParser.TextualFile.capture ~use_global_tenv:true sil ;

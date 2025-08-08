@@ -4,8 +4,7 @@
 ; LICENSE file in the root directory of this source tree.
 
 (library
- (name RustFrontend)
- (public_name infer.RustFrontend)
+ (name RustFrontendTest)
  (flags
   (:standard
    -open
@@ -24,8 +23,9 @@
   zarith
   IStdlib
   IBase
-  pyml
   Textuallib
+  RustFrontend
   ppx_show.runtime)
  (preprocess
-  (pps ppx_compare ppx_enumerate ppx_hash ppx_show ppx_variants_conv)))
+  (pps ppx_expect ppx_inline_test))
+ (inline_tests (deps (glob_files programs/*))))

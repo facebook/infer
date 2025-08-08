@@ -5,8 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *)
 open! IStd
-module F = Format
 module L = Logging
+
+let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
+  let line = span.span.beg_loc.line in
+  let col = span.span.beg_loc.col in
+  Textual.Location.known ~line ~col
+
+
+let location_from_span_end (span : Charon.Generated_Meta.span) : Textual.Location.t =
+  let line = span.span.end_loc.line in
+  let col = span.span.end_loc.col in
+  Textual.Location.known ~line ~col
+
 
 let name_of_path_element (path_element : Charon.Generated_Types.path_elem) : string =
   match path_element with
@@ -53,8 +64,8 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
 
-let mk_instr (_statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t =
-  let loc = Textual.Location.Unknown in
+let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t =
+  let loc = location_from_span statement.span in
   let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string "var_0") in
   let exp2 = Textual.Exp.Const (Textual.Const.Int (Z.of_int 10)) in
   let typ = None in
@@ -68,26 +79,32 @@ let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) : Textual.Node
   let exn_succs = [] in
   let last = mk_terminator block.terminator in
   let instrs = block.statements |> List.map ~f:mk_instr in
-  let last_loc = Textual.Location.Unknown in
+  let last_loc = location_from_span block.terminator.span in
   let label_loc = Textual.Location.Unknown in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
-let mk_procdesc (proc : Charon.LlbcAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
+let mk_procdesc (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
   let _, fun_decl = proc in
   let procdecl = mk_procdecl fun_decl in
-  let nodes =
+  let blocks, _locals =
     match fun_decl.body with
-    | Some {span= _; locals= _; body} ->
-        List.mapi body ~f:mk_node
+    | Some {span= _; locals; body} ->
+        (body, locals.locals)
     | None ->
-        []
+        ([], [])
   in
+  let nodes = List.mapi blocks ~f:mk_node in
   let start = Textual.NodeName.of_string "node_0" in
+  (* TODO *)
   let params = [] in
-  let locals = [(Textual.VarName.of_string "var_0", Textual.Typ.mk_without_attributes Textual.Typ.Int)] in
-  let exit_loc = Textual.Location.Unknown in
+  (* TODO *)
+  let locals =
+    [(Textual.VarName.of_string "var_0", Textual.Typ.mk_without_attributes Textual.Typ.Int)]
+    (* TODO *)
+  in
+  let exit_loc = location_from_span_end fun_decl.item_meta.span in
   {Textual.ProcDesc.procdecl; nodes; start; params; locals; exit_loc}
 
 
@@ -97,8 +114,7 @@ let mk_module (crate : Charon.UllbcAst.crate) json_file : Textual.Module.t =
   let decls =
     Charon.Generated_Types.FunDeclId.Map.bindings fun_decls
     |> List.map ~f:mk_procdesc
-    |> List.map ~f:(fun a -> Textual.Module.Proc a)
+    |> List.map ~f:(fun p -> Textual.Module.Proc p)
   in
   let sourcefile = Textual.SourceFile.create json_file in
   {Textual.Module.attrs; decls; sourcefile}
-(* L.die UserError "TODO: mk_module not yet implemented for Charon.UllbcAst.crate" ; *)
