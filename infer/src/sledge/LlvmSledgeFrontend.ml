@@ -984,6 +984,23 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
                   fail "field offset %a not an int: %a" pp_llvalue op2 pp_llvalue llv ()
             in
             ([], Llair.Exp.select typ ptr fld)
+      else if
+        Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
+        && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Pointer
+        && Int.equal len 2
+      then
+        let lltyp1 = Llvm.get_gep_source_element_type llv in
+        let op1 = Llvm.operand llv 1 in
+        let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
+        let typ = xlate_type x lltyp1 in
+        let fld =
+          match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op1) with
+          | Some n ->
+              n
+          | None ->
+              fail "field offset %a not an int: %a" pp_llvalue op1 pp_llvalue llv ()
+        in
+        ([], Llair.Exp.gep typ ptr fld)
       else
         let rec xlate_indices i =
           [%Dbg.call fun {pf} -> pf "@ %i %a" i pp_llvalue (Llvm.operand llv i)]

@@ -19,7 +19,7 @@ define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA6PersonC_ADtF(var0: 
       
   #5::ret: @[41:17]
       n5 = load &var0 @[41:17]
-      n6 = load __sil_pluspi(n5, __sil_mult_int(8, 13)) @[41:17]
+      n6 = load $builtins.llvm_nondet() @[41:17]
       n7 = load &var1 @[41:17]
       n8 = load &var0 @[41:17]
       _ = $builtins.llvm_dynamic_call(n6, n7, n8) @[41:17]

@@ -20,6 +20,7 @@ module T = struct
     (* array/struct operations *)
     | Splat
     | Select of int
+    | GetElementPtr of int
   [@@deriving compare, equal, sexp]
 
   type op2 =
@@ -198,6 +199,8 @@ module T = struct
         pf "%a^" pp byt
     | Ap1 (Select idx, typ, rcd) ->
         pf "%a[%i]:%a" pp rcd idx LlairTyp.pp typ
+    | Ap1 (GetElementPtr idx, typ, rcd) ->
+        pf "gep %a[%i]:%a" pp rcd idx LlairTyp.pp typ
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Ap2 (Xor, _, Integer {data}, x) when Z.is_true data ->
@@ -298,6 +301,8 @@ let rec invariant exp =
         assert (valid_idx idx elts)
     | _ ->
         assert false )
+  | Ap1 (GetElementPtr _, _, _) ->
+      ()
   | Ap1 (Splat, typ, byt) ->
       assert (LlairTyp.convertible LlairTyp.byt (typ_of byt)) ;
       assert (LlairTyp.is_sized typ)
@@ -352,7 +357,7 @@ and typ_of exp =
       LlairTyp.ptr
   | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) ->
       dst
-  | Ap1 (Select idx, typ, _) -> (
+  | Ap1 (Select idx, typ, _) | Ap1 (GetElementPtr idx, typ, _) -> (
     match typ with
     | Array {elt} ->
         elt
@@ -487,6 +492,8 @@ let float typ data = Float {data; typ} |> check invariant
 let record typ elts = ApN (Record, typ, elts) |> check invariant
 
 let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
+
+let gep typ rcd idx = Ap1 (GetElementPtr idx, typ, rcd)
 
 let update typ ~rcd idx ~elt = Ap2 (Update idx, typ, rcd, elt) |> check invariant
 

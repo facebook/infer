@@ -33,6 +33,7 @@ type op1 =
           must not both be [Integer] types. *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
+  | GetElementPtr of int  (** Get element pointer when the type is a simple pointer *)
 [@@deriving compare, equal, sexp]
 
 type op2 =
@@ -284,6 +285,8 @@ val splat : LlairTyp.t -> t -> t
 val record : LlairTyp.t -> t iarray -> t
 
 val select : LlairTyp.t -> t -> int -> t
+
+val gep : LlairTyp.t -> t -> int -> t
 
 val update : LlairTyp.t -> rcd:t -> int -> elt:t -> t
 

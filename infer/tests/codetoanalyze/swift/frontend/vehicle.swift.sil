@@ -14,7 +14,7 @@ define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(var0: *ptr_el
       n2 = load &var1 @[104:0]
       store &t <- n2 @[104:0]
       n3 = load &var0 @[12:8]
-      n4 = load __sil_pluspi(n3, __sil_mult_int(8, 10)) @[12:8]
+      n4 = load $builtins.llvm_nondet() @[12:8]
       n5 = load &var0 @[12:8]
       _ = $builtins.llvm_dynamic_call(n4, n5) @[12:8]
       jmp 7::void::ret @[12:8]
