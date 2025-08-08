@@ -36,11 +36,11 @@ define .plain_name = "makeNoise" $s5Hello5TrainC9makeNoiseyyF(var0: *ptr_elt) : 
 define .plain_name = "init" $s5Hello5TrainCACycfC(var0: *ptr_elt) : *ptr_elt {
   #: @[108:0]
       n1 = load &var0 @[108:0]
-      n2 = swift_allocObject(n1, 16, 7) @[108:0]
+      n2 = swift_allocObject(n1, 16, 7) @[107:0]
       jmp 2::ret @[109:0]
       
-  #2::ret: @[111:0]
-      n3 = $s5Hello5TrainCACycfc(n2) @[111:0]
+  #2::ret: @[110:0]
+      n3 = $s5Hello5TrainCACycfc(n2) @[110:0]
       jmp 3::ret @[112:0]
       
   #3::ret: @[113:0]
@@ -54,11 +54,11 @@ define .plain_name = "init" $s5Hello5TrainCACycfc(var0: *ptr_elt) : *ptr_elt {
       n1 = load &var0 @[115:0]
       store &self <- n1 @[115:0]
       n2 = load &self @[116:0]
-      n3 = $s5Hello7VehicleCACycfc(n2) @[118:0]
+      n3 = $s5Hello7VehicleCACycfc(n2) @[117:0]
       jmp 4::ret @[119:0]
       
-  #4::ret: @[121:0]
-      n4 = n3 @[121:0]
+  #4::ret: @[120:0]
+      n4 = n3 @[120:0]
       jmp 5::ret @[122:0]
       
   #5::ret: @[123:0]
@@ -86,11 +86,11 @@ define .plain_name = "makeNoise" $s5Hello7VehicleC9makeNoiseyyF(var0: *ptr_elt) 
 define .plain_name = "init" $s5Hello7VehicleCACycfC(var0: *ptr_elt) : *ptr_elt {
   #: @[146:0]
       n1 = load &var0 @[146:0]
-      n2 = swift_allocObject(n1, 16, 7) @[146:0]
+      n2 = swift_allocObject(n1, 16, 7) @[145:0]
       jmp 2::ret @[147:0]
       
-  #2::ret: @[149:0]
-      n3 = $s5Hello7VehicleCACycfc(n2) @[149:0]
+  #2::ret: @[148:0]
+      n3 = $s5Hello7VehicleCACycfc(n2) @[148:0]
       jmp 3::ret @[150:0]
       
   #3::ret: @[151:0]

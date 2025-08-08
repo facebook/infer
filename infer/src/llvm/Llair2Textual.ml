@@ -350,12 +350,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       undef_exp exp
 
 
-let to_textual_bool_exp ~proc_state loc exp =
-  let textual_exp, textual_typ_opt, _ = to_textual_exp loc ~proc_state exp in
-  (Textual.BoolExp.Exp textual_exp, textual_typ_opt)
-
-
-let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp args loc =
+and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp args loc =
   let loc = to_textual_loc_instr ~proc_state loc in
   let args_instrs, args =
     List.fold_map
@@ -388,11 +383,10 @@ let to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
     then List.hd_exn args
     else Textual.Exp.Call {proc; args; kind}
   in
-  let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
-  List.append [let_instr] args_instrs
+  (id, call_exp, args_instrs)
 
 
-let to_textual_call ~proc_state (call : 'a Llair.call) =
+and to_textual_call ~proc_state (call : 'a Llair.call) =
   let loc = to_textual_loc call.loc in
   let proc, kind, exp_opt =
     match call.callee with
@@ -414,12 +408,21 @@ let to_textual_call ~proc_state (call : 'a Llair.call) =
         (proc, Textual.Exp.NonVirtual, None)
   in
   let args = StdUtils.iarray_to_list call.actuals in
-  to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args call.loc
+  let id, call_exp, args_instrs =
+    to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args call.loc
+  in
+  let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
+  let_instr :: args_instrs
 
 
-let to_textual_builtin ~proc_state return name args loc =
+and to_textual_builtin ~proc_state return name args loc =
   let proc = builtin_qual_proc_name name in
-  to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc return args loc
+  let id, call_exp, args_instrs =
+    to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc return args loc
+  in
+  let loc = to_textual_loc_instr ~proc_state loc in
+  let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
+  let_instr :: args_instrs
 
 
 let remove_store_zero_in_class exp1 typ_exp1 exp2 loc =
@@ -470,10 +473,12 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         textual_instrs
     | Free {ptr; loc} ->
         let proc = Textual.ProcDecl.free_name in
-        let call_textual_instrs =
+        let id, call_exp, call_textual_instrs =
           to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc None [ptr] loc
         in
-        List.append call_textual_instrs textual_instrs
+        let loc = to_textual_loc_instr ~proc_state loc in
+        let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
+        List.append (let_instr :: call_textual_instrs) textual_instrs
     | Nondet {reg; loc} ->
         (* llvm_init_tuple is also a nondet builtin but we return the type for tuples in the Textual to Sil translation *)
         let builtin_name_opt =
@@ -497,11 +502,13 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let proc = Textual.ProcDecl.malloc_name in
         match StdUtils.iarray_to_list args with
         | [((Llair.Exp.Integer _ | Llair.Exp.Float _) as exp)] ->
-            let call_textual_instrs =
+            let id, call_exp, args_instrs =
               to_textual_call_aux ~proc_state ~generate_typ_exp:(Some true)
                 ~kind:Textual.Exp.NonVirtual proc reg [exp] loc
             in
-            List.append call_textual_instrs textual_instrs
+            let loc = to_textual_loc_instr ~proc_state loc in
+            let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
+            List.append (List.append [let_instr] args_instrs) textual_instrs
         | _ ->
             assert false )
     | Builtin {reg; name; args; loc= loc_}
@@ -575,6 +582,11 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         (None, None)
   in
   (instrs, first_loc, last_loc)
+
+
+let to_textual_bool_exp ~proc_state loc exp =
+  let textual_exp, textual_typ_opt, _ = to_textual_exp loc ~proc_state exp in
+  (Textual.BoolExp.Exp textual_exp, textual_typ_opt)
 
 
 let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =
