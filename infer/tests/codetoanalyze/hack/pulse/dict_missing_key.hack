@@ -302,4 +302,16 @@ class CallInitStaticField {
     );
     $b = $schema['extras']['a'];
   }
+
+  public function test_dmk_with_map_ok(): void {
+    $flags = Map {'a' => 1};
+    $flags_dict = dict($flags);
+    $b = $flags_dict['a'];
+  }
+
+  public function fn_test_dmk_with_map_bad(): void {
+    $flags = Map {'a' => 1};
+    $flags_dict = dict($flags);
+    $b = $flags_dict['b'];
+  }
 }
