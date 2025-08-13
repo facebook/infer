@@ -117,6 +117,8 @@ module type NAME = sig
 
   val of_string : ?loc:Location.t -> string -> t
 
+  val to_string : t -> string
+
   val pp : F.formatter -> t -> unit
 
   val is_hack_init : t -> bool
@@ -144,6 +146,8 @@ module Name : NAME = struct
     let loc = Option.value loc ~default:Location.Unknown in
     {value= replace_dot_with_2colons str; loc}
 
+
+  let to_string {value} = value
 
   let pp fmt name = F.pp_print_string fmt name.value
 

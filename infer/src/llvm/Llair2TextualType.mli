@@ -26,3 +26,5 @@ val lookup_field_type :
   -> Textual.TypeName.t
   -> Textual.qualified_fieldname
   -> Textual.Typ.t option
+
+val tuple_field_prefix : string

@@ -39,6 +39,8 @@ module type NAME = sig
   val of_string : ?loc:Location.t -> string -> t
   (** we replace any dot in the string by '::' because dot is a reserved separator in Textual *)
 
+  val to_string : t -> string
+
   val pp : F.formatter -> t -> unit
 
   val is_hack_init : t -> bool

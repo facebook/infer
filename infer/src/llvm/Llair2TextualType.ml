@@ -20,8 +20,10 @@ let field_of_pos type_name pos =
   Textual.{enclosing_class= type_name; name= FieldName.of_string name}
 
 
+let tuple_field_prefix = "__infer_tuple_field_"
+
 let tuple_field_of_pos type_name pos =
-  let name = Format.asprintf "__infer_tuple_field_%s" (Int.to_string pos) in
+  let name = Format.sprintf "%s%s" tuple_field_prefix (Int.to_string pos) in
   Textual.{enclosing_class= type_name; name= FieldName.of_string name}
 
 

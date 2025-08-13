@@ -799,6 +799,72 @@ let translate_llair_functions source_file lang struct_map globals functions =
   List.fold values ~f:function_to_formal ~init:[]
 
 
+type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
+
+let class_method_index : classMethodIndex = ref Textual.TypeName.Map.empty
+
+let add_method_to_class_method_index class_name proc_name index =
+  let methods = Textual.TypeName.Map.find_opt class_name !class_method_index in
+  let methods = Option.value methods ~default:[] in
+  let index =
+    Textual.TypeName.Map.add class_name (methods @ [(proc_name, index)]) !class_method_index
+  in
+  class_method_index := index
+
+
+let pp_class_method_index fmt () =
+  let pp class_name index =
+    Format.fprintf fmt "%a: %a@." Textual.TypeName.pp class_name
+      (Pp.comma_seq (Pp.pair ~fst:Textual.QualifiedProcName.pp ~snd:Int.pp))
+      index
+  in
+  Textual.TypeName.Map.iter pp !class_method_index
+[@@warning "-unused-value-declaration"]
+
+
+let class_from_global global_name =
+  let name = String.substr_replace_first global_name ~pattern:"$s" ~with_:"T" in
+  let name = String.chop_suffix_exn name ~suffix:"Mn" in
+  Textual.TypeName.of_string name
+
+
+let collect_class_method_indices global global_init_instrs =
+  let rec process_exp exp =
+    match exp with
+    | Textual.Exp.Call {proc; args= [_; exp2]}
+      when Textual.QualifiedProcName.equal proc Textual.ProcDecl.cast_name ->
+        process_exp exp2
+    | Textual.Exp.Call {proc; args= [exp1; exp2]}
+      when Textual.QualifiedProcName.equal proc
+             (Textual.ProcDecl.of_binop (Binop.MinusA (Some IInt))) -> (
+        let exp1 = process_exp exp1 in
+        let exp2 = process_exp exp2 in
+        match (exp1, exp2) with
+        | Textual.Exp.Const (Str s), Textual.Exp.Field {field} ->
+            let field_name = Textual.FieldName.to_string field.name in
+            if String.is_prefix field_name ~prefix:Type.tuple_field_prefix then (
+              let index =
+                String.chop_prefix_exn field_name ~prefix:Type.tuple_field_prefix |> int_of_string
+              in
+              let class_name = class_from_global global in
+              let proc =
+                Textual.QualifiedProcName.
+                  {enclosing_class= Enclosing class_name; name= Textual.ProcName.of_string s}
+              in
+              add_method_to_class_method_index class_name proc (index - 1) ;
+              exp )
+            else exp
+        | _ ->
+            exp )
+    | _ ->
+        exp
+  in
+  let process_instr instr =
+    match instr with Textual.Instr.Store {exp2} -> ignore (process_exp exp2) | _ -> ()
+  in
+  List.iter ~f:process_instr global_init_instrs
+
+
 let to_textual_global lang ~struct_map global =
   let global_ = global.GlobalDefn.name in
   let global_name = Global.name global_ in
@@ -810,6 +876,8 @@ let to_textual_global lang ~struct_map global =
     match global.GlobalDefn.init with
     | Some exp ->
         let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
+        if String.is_suffix global_name ~suffix:"CMn" then
+          collect_class_method_indices global_name instrs ;
         let procdecl =
           Textual.ProcDecl.
             { qualified_name= global_proc_state.qualified_name
