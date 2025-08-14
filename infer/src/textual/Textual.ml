@@ -282,8 +282,13 @@ end
 module QualifiedProcName = struct
   type enclosing_class = TopLevel | Enclosing of TypeName.t [@@deriving equal, hash, compare]
 
-  type t = {enclosing_class: enclosing_class; name: ProcName.t} [@@deriving compare, equal, hash]
-  (* procedure name [name] is attached to the name space [enclosing_class] *)
+  module T = struct
+    type t = {enclosing_class: enclosing_class; name: ProcName.t} [@@deriving compare, equal, hash]
+    (* procedure name [name] is attached to the name space [enclosing_class] *)
+  end
+
+  include T
+  module Map = Stdlib.Map.Make (T)
 
   let pp_enclosing_class fmt = function
     | TopLevel ->
@@ -414,9 +419,19 @@ module Attr = struct
 
   let mk_plain_name name = {name= "plain_name"; values= [name]; loc= Location.Unknown}
 
+  let mk_method_offset offset =
+    {name= "method_offset"; values= [Int.to_string offset]; loc= Location.Unknown}
+
+
   let get_plain_name attr =
     if String.equal attr.name "plain_name" then
       match attr.values with [name] -> Some name | _ -> None
+    else None
+
+
+  let get_method_offset attr =
+    if String.equal attr.name "method_offset" then
+      match attr.values with [offset] -> Int.of_string_opt offset | _ -> None
     else None
 
 

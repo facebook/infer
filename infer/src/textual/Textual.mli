@@ -101,6 +101,8 @@ module QualifiedProcName : sig
   type t = {enclosing_class: enclosing_class; name: ProcName.t} [@@deriving compare, equal, hash]
   (* procedure name [name] is attached to the name space [enclosing_class] *)
 
+  module Map : Stdlib.Map.S with type key = t
+
   val pp : F.formatter -> t -> unit
 
   val name : t -> ProcName.t
@@ -170,7 +172,11 @@ module Attr : sig
 
   val mk_plain_name : string -> t
 
+  val mk_method_offset : int -> t
+
   val get_plain_name : t -> string option
+
+  val get_method_offset : t -> int option
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 

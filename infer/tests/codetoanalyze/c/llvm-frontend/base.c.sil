@@ -10,11 +10,11 @@ declare __assert_fail(*ptr_elt, *ptr_elt, int, *ptr_elt) : *ptr_elt
 
 define add(var0: int, var1: int) : int {
   local n2: int, n1: int
-  #: @[103:0]
-      n1 = load &var0 @[103:0]
-      store &n1 <- n1 @[103:0]
-      n2 = load &var1 @[104:0]
-      store &n2 <- n2 @[104:0]
+  #: @[104:0]
+      n1 = load &var0 @[104:0]
+      store &n1 <- n1 @[104:0]
+      n2 = load &var1 @[105:0]
+      store &n2 <- n2 @[105:0]
       n3 = load &n1 @[14:34]
       n4 = load &n2 @[14:39]
       ret __sil_plusa_int(n3, n4) @[14:27]
@@ -35,11 +35,11 @@ define call_add() : int {
 
 define call_add1(var0: *ptr_elt, var1: int) : int {
   local y: int, ptr: *ptr_elt
-  #: @[107:0]
-      n1 = load &var0 @[107:0]
-      store &ptr <- n1 @[107:0]
-      n2 = load &var1 @[108:0]
-      store &y <- n2 @[108:0]
+  #: @[108:0]
+      n1 = load &var0 @[108:0]
+      store &ptr <- n1 @[108:0]
+      n2 = load &var1 @[109:0]
+      store &y <- n2 @[109:0]
       n3 = load &ptr @[48:46]
       n4 = load n3 @[48:45]
       n5 = load &y @[48:51]
@@ -57,9 +57,9 @@ declare free(*ptr_elt) : *ptr_elt
 
 define get_age(var0: *ptr_elt) : int {
   local person: *ptr_elt
-  #: @[113:0]
-      n1 = load &var0 @[113:0]
-      store &person <- n1 @[113:0]
+  #: @[114:0]
+      n1 = load &var0 @[114:0]
+      store &person <- n1 @[114:0]
       n2 = load &person @[109:45]
       n3 = load n2.struct::Person.field_2 @[109:53]
       ret n3 @[109:38]
@@ -68,8 +68,8 @@ define get_age(var0: *ptr_elt) : int {
 
 define main() : int {
   local var1: int
-  #: @[114:0]
-      store &var1 <- 0 @[114:0]
+  #: @[115:0]
+      store &var1 <- 0 @[115:0]
       ret 0 @[11:14]
       
 } @?
@@ -250,11 +250,11 @@ define test15() : int {
 
 define test16(var0: *ptr_elt, var1: *ptr_elt) : int {
   local person: *ptr_elt, cat: *ptr_elt, age: int
-  #: @[119:0]
-      n1 = load &var0 @[119:0]
-      store &person <- n1 @[119:0]
-      n2 = load &var1 @[120:0]
-      store &cat <- n2 @[120:0]
+  #: @[120:0]
+      n1 = load &var0 @[120:0]
+      store &person <- n1 @[120:0]
+      n2 = load &var1 @[121:0]
+      store &cat <- n2 @[121:0]
       n3 = load &cat @[132:3]
       store n3.struct::Cat.field_1 <- 10 @[132:12]
       n4 = load &person @[133:3]
@@ -286,9 +286,9 @@ define test16(var0: *ptr_elt, var1: *ptr_elt) : int {
 
 define test17(var0: int) : int {
   local z: int, b: int
-  #: @[121:0]
-      n1 = load &var0 @[121:0]
-      store &b <- n1 @[121:0]
+  #: @[122:0]
+      n1 = load &var0 @[122:0]
+      store &b <- n1 @[122:0]
       n2 = load &b @[142:11]
       n3 = __sil_ne(n2, 0) @[142:11]
       store &z <- $builtins.llvm_nondet() @[142:7]
@@ -308,9 +308,9 @@ define test2() : int {
 
 define test3(var0: *ptr_elt) : int {
   local ptr: *ptr_elt
-  #: @[122:0]
-      n1 = load &var0 @[122:0]
-      store &ptr <- n1 @[122:0]
+  #: @[123:0]
+      n1 = load &var0 @[123:0]
+      store &ptr <- n1 @[123:0]
       n2 = load &ptr @[22:31]
       n3 = load n2 @[22:30]
       ret n3 @[22:23]
@@ -391,9 +391,9 @@ define test7() : int {
 
 define test8(var0: *ptr_elt) : int {
   local var2: int, ret: int, ptr: *ptr_elt, null_ptr: *ptr_elt
-  #: @[123:0]
-      n1 = load &var0 @[123:0]
-      store &ptr <- n1 @[123:0]
+  #: @[124:0]
+      n1 = load &var0 @[124:0]
+      store &ptr <- n1 @[124:0]
       n2 = load &ptr @[51:4]
       store n2 <- 1 @[51:8]
       store &null_ptr <- null @[52:8]
@@ -441,13 +441,13 @@ define test9() : int {
 
 define global_init___const::test15::person() : void {
   #start: @?
-      n1 = $builtins.llvm_init_tuple() @[124:0]
-      n2 = load &::str::4 @[124:0]
-      store n1.struct::Person.field_0 <- n2 @[124:0]
-      store n1.struct::Person.field_1 <- null @[124:0]
-      store n1.struct::Person.field_2 <- 30 @[124:0]
-      store n1.struct::Person.field_3 <- 0 @[124:0]
-      store n1.struct::Person.field_4 <- null @[124:0]
+      n1 = $builtins.llvm_init_tuple() @[101:0]
+      n2 = load &::str::4 @[101:0]
+      store n1.struct::Person.field_0 <- n2 @[101:0]
+      store n1.struct::Person.field_1 <- null @[101:0]
+      store n1.struct::Person.field_2 <- 30 @[101:0]
+      store n1.struct::Person.field_3 <- 0 @[101:0]
+      store n1.struct::Person.field_4 <- null @[101:0]
       ret n1 @?
       
 } @?

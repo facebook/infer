@@ -734,71 +734,6 @@ let should_translate plain_name lang source_file (loc : Llair.Loc.t) =
          || String.is_substring ~substring:".set" plain_name )
 
 
-let translate_llair_functions source_file lang struct_map globals functions =
-  let function_to_formal proc_descs (func_name, func) =
-    let formals_list, formals_types = to_formals lang ~struct_map func in
-    let loc = to_textual_loc func.Llair.loc in
-    let should_translate =
-      should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
-    in
-    let qualified_name = to_qualified_proc_name ~loc func_name in
-    let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
-    let proc_loc = to_textual_loc func.Llair.loc in
-    let formals_ =
-      List.fold2_exn
-        ~f:(fun formals varname typ -> Textual.VarName.Map.add varname typ formals)
-        formals_list formals_types ~init:Textual.VarName.Map.empty
-    in
-    let proc_state : ProcState.t =
-      { qualified_name
-      ; loc= proc_loc
-      ; formals= formals_
-      ; locals= VarMap.empty
-      ; ids= IdentMap.empty
-      ; reg_map= RegMap.empty
-      ; last_id= Textual.Ident.of_int 0
-      ; struct_map
-      ; globals
-      ; lang }
-    in
-    let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
-    let result_type =
-      Textual.Typ.mk_without_attributes
-        (Type.to_textual_typ lang ~struct_map (FuncName.typ func_name))
-    in
-    let result_type =
-      match ret_typ with Some typ -> Textual.Typ.mk_without_attributes typ | None -> result_type
-    in
-    let procdecl =
-      Textual.ProcDecl.
-        { qualified_name
-        ; result_type
-        ; attributes= Option.to_list plain_name
-        ; formals_types= Some formals_types }
-    in
-    let is_deinit () =
-      Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit")
-    in
-    if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
-    then ProcDecl procdecl :: proc_descs
-    else
-      let locals =
-        VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) proc_state.locals []
-      in
-      ProcDesc
-        Textual.ProcDesc.
-          { params= formals_list
-          ; locals
-          ; procdecl
-          ; start= block_to_node_name func.Llair.entry
-          ; nodes
-          ; exit_loc= Unknown (* TODO: get this location *) }
-      :: proc_descs
-  in
-  let values = FuncName.Map.to_list functions in
-  List.fold values ~f:function_to_formal ~init:[]
-
-
 type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
 
 let class_method_index : classMethodIndex = ref Textual.TypeName.Map.empty
@@ -849,7 +784,7 @@ let collect_class_method_indices global global_init_instrs =
               let class_name = class_from_global global in
               let proc =
                 Textual.QualifiedProcName.
-                  {enclosing_class= Enclosing class_name; name= Textual.ProcName.of_string s}
+                  {enclosing_class= TopLevel; name= Textual.ProcName.of_string s}
               in
               add_method_to_class_method_index class_name proc (index - 1) ;
               exp )
@@ -913,10 +848,110 @@ let to_textual_global lang ~struct_map global =
   (global, proc_desc_opt)
 
 
+type attr_map = Textual.Attr.t Textual.QualifiedProcName.Map.t
+
+let pp_attr_map fmt attr_map =
+  let pp qualified_name attr =
+    Format.fprintf fmt "%a: %a@." Textual.QualifiedProcName.pp qualified_name Textual.Attr.pp attr
+  in
+  Textual.QualifiedProcName.Map.iter pp attr_map
+[@@warning "-unused-value-declaration"]
+
+
+let create_offset_attributes class_method_index : attr_map =
+  let process_class _ method_offsets attr_map =
+    let process_method attr_map (method_name, index) =
+      let offset_attr = Textual.Attr.mk_method_offset index in
+      Textual.QualifiedProcName.Map.add method_name offset_attr attr_map
+    in
+    List.fold ~init:attr_map ~f:process_method method_offsets
+  in
+  Textual.TypeName.Map.fold process_class class_method_index Textual.QualifiedProcName.Map.empty
+
+
+let translate_llair_functions source_file lang struct_map globals functions =
+  let offset_attributes = create_offset_attributes !class_method_index in
+  let function_to_formal proc_descs (func_name, func) =
+    let formals_list, formals_types = to_formals lang ~struct_map func in
+    let loc = to_textual_loc func.Llair.loc in
+    let should_translate =
+      should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
+    in
+    let qualified_name = to_qualified_proc_name ~loc func_name in
+    let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
+    let proc_loc = to_textual_loc func.Llair.loc in
+    let formals_ =
+      List.fold2_exn
+        ~f:(fun formals varname typ -> Textual.VarName.Map.add varname typ formals)
+        formals_list formals_types ~init:Textual.VarName.Map.empty
+    in
+    let proc_state : ProcState.t =
+      { qualified_name
+      ; loc= proc_loc
+      ; formals= formals_
+      ; locals= VarMap.empty
+      ; ids= IdentMap.empty
+      ; reg_map= RegMap.empty
+      ; last_id= Textual.Ident.of_int 0
+      ; struct_map
+      ; globals
+      ; lang }
+    in
+    let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
+    let result_type =
+      Textual.Typ.mk_without_attributes
+        (Type.to_textual_typ lang ~struct_map (FuncName.typ func_name))
+    in
+    let result_type =
+      match ret_typ with Some typ -> Textual.Typ.mk_without_attributes typ | None -> result_type
+    in
+    let offset_attribute =
+      Textual.QualifiedProcName.Map.find_opt qualified_name offset_attributes
+    in
+    let procdecl =
+      Textual.ProcDecl.
+        { qualified_name
+        ; result_type
+        ; attributes= Option.to_list plain_name @ Option.to_list offset_attribute
+        ; formals_types= Some formals_types }
+    in
+    let is_deinit () =
+      Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit")
+    in
+    if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
+    then ProcDecl procdecl :: proc_descs
+    else
+      let locals =
+        VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) proc_state.locals []
+      in
+      ProcDesc
+        Textual.ProcDesc.
+          { params= formals_list
+          ; locals
+          ; procdecl
+          ; start= block_to_node_name func.Llair.entry
+          ; nodes
+          ; exit_loc= Unknown (* TODO: get this location *) }
+      :: proc_descs
+  in
+  let values = FuncName.Map.to_list functions in
+  List.fold values ~f:function_to_formal ~init:[]
+
+
 let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Module.t =
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
   let globals_map = build_globals_map llair_program.Llair.globals in
   let source_file_ = SourceFile.create source_file in
+  let globals, proc_descs =
+    Textual.VarName.Map.fold
+      (fun _ global (globals, proc_descs) ->
+        let global, proc_desc_opt = to_textual_global lang ~struct_map global in
+        let proc_desc_opt =
+          Option.map ~f:(fun proc_desc -> Textual.Module.Proc proc_desc) proc_desc_opt
+        in
+        (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
+      globals_map ([], [])
+  in
   let procs =
     translate_llair_functions source_file_ lang struct_map globals_map llair_program.Llair.functions
   in
@@ -929,16 +964,6 @@ let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Modu
         | ProcDesc proc_desc ->
             Textual.Module.Proc proc_desc :: procs )
       procs ~init:[]
-  in
-  let globals, proc_descs =
-    Textual.VarName.Map.fold
-      (fun _ global (globals, proc_descs) ->
-        let global, proc_desc_opt = to_textual_global lang ~struct_map global in
-        let proc_desc_opt =
-          Option.map ~f:(fun proc_desc -> Textual.Module.Proc proc_desc) proc_desc_opt
-        in
-        (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
-      globals_map ([], [])
   in
   let procs = List.append procs proc_descs in
   let structs =
