@@ -54,4 +54,21 @@ class CustomAnnotations {
   fun sourceWithJavaAnnoBad(): Unit {
     sink()
   }
+
+  class EmptyClass {}
+
+  @UserDefinedSink fun EmptyClass.sinkExt(): Unit {}
+
+  // No annotation here, the regexp in .inferconfig will specify this as sink
+  fun EmptyClass.sinkExtWithRegexp(): Unit {}
+
+  @UserDefinedSource
+  fun sourceCallsExtensionBad(): Unit {
+    EmptyClass().sinkExt()
+  }
+
+  @UserDefinedSource
+  fun sourceCallsExtensionRegexpBad(): Unit {
+    EmptyClass().sinkExtWithRegexp()
+  }
 }

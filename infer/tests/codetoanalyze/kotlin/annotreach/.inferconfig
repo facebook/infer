@@ -9,6 +9,9 @@
       "sanitizers": ["UserDefinedSanitizer"]
     }
   ],
+  "annotation-reachability-custom-models": {
+    "UserDefinedSink": ["codetoanalyze\\.kotlin\\.annotreach\\.CustomAnnotations\\.sinkExtWithRegexp"]
+  },
   "annotation-reachability-apply-superclass-annotations": false,
   "annotation-reachability-report-source-and-sink": true
 }
