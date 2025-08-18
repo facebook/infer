@@ -618,14 +618,11 @@ module Swift = struct
       match verbosity with
       | Simple ->
           F.pp_print_string fmt (Mangled.to_string osig.method_name)
-      | Non_verbose | NameOnly ->
+      | Non_verbose | NameOnly | FullNameOnly ->
           F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep
             (Mangled.to_string osig.method_name)
-      | FullNameOnly ->
-          F.fprintf fmt "%a%s%s" Typ.Name.pp osig.class_name sep
-            (Mangled.to_string osig.method_name)
       | Verbose ->
-          F.fprintf fmt "%a%s%a" Typ.Name.pp osig.class_name sep Mangled.pp osig.method_name )
+          F.fprintf fmt "%s%s%a" (Typ.Name.name osig.class_name) sep Mangled.pp osig.method_name )
     | Function osig -> (
       match verbosity with
       | Simple | Non_verbose | NameOnly | FullNameOnly ->
