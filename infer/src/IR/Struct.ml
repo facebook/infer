@@ -66,7 +66,7 @@ let pp_tenv_method f {name; llvm_offset} =
   | None ->
       F.fprintf f "%a" Procname.pp_verbose name
   | Some llvm_offset ->
-      F.fprintf f "%a@%d" Procname.pp_verbose name llvm_offset
+      F.fprintf f "[%d] %a" llvm_offset Procname.pp_verbose name
 
 
 type lookup = Typ.Name.t -> t option
