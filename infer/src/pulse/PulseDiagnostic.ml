@@ -1245,10 +1245,11 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_cpp
     | FileDescriptor ->
         IssueType.pulse_resource_leak
-    | JavaResource _ | CSharpResource _ | HackBuilderResource _ | Awaitable | ObjCAlloc ->
+    | JavaResource _ | CSharpResource _ | HackBuilderResource _ | Awaitable | ObjCAlloc | SwiftAlloc
+      ->
         L.die InternalError
           "Memory leaks should not have a Java resource, Hack async, C sharp, or Objective-C alloc \
-           as allocator" )
+           or Swift alloc  as allocator" )
   | ResourceLeak {resource= CSharpClass _ | JavaClass _}, false ->
       IssueType.pulse_resource_leak
   | ResourceLeak {resource= Awaitable}, false ->

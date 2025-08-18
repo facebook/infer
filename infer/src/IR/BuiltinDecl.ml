@@ -258,4 +258,6 @@ let objc_cpp_throw = create_procname "__infer_objc_cpp_throw"
 
 let zero_initialization = create_procname "__infer_zero_initialization"
 
+let __swift_alloc = create_procname "__swift_alloc"
+
 let match_builtin builtin _ s = String.equal s (Procname.get_method builtin)

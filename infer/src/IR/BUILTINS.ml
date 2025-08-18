@@ -73,6 +73,8 @@ module type S = sig
 
   val __objc_alloc_no_fail : t
 
+  val __swift_alloc : t
+
   val __objc_dictionary_literal : t
 
   val __objc_get_ref_count : t
