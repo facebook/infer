@@ -40,19 +40,24 @@ module ClassInfo = struct
   [@@deriving equal, hash, show {with_path= false}, normalize]
 end
 
+type tenv_method = {name: Procname.t; llvm_offset: int option [@ignore]}
+[@@deriving compare, equal, hash, normalize]
+
 (** Type for a structured value. *)
 type t =
   { fields: field list  (** non-static fields *)
   ; statics: field list  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
   ; objc_protocols: Typ.Name.t list  (** ObjC protocols *)
-  ; methods: Procname.t list  (** methods defined *)
+  ; methods: tenv_method list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
   ; class_info: ClassInfo.t  (** present if and only if the class is C++, Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
   ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
 [@@deriving equal, hash, normalize]
+
+let name_of_tenv_method m = m.name
 
 type lookup = Typ.Name.t -> t option
 
@@ -115,7 +120,7 @@ let pp pe name f
     supers
     (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
     objc_protocols
-    (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
+    (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m.name))
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
     exported_objc_methods Annot.Item.pp annots ClassInfo.pp class_info dummy
@@ -123,12 +128,12 @@ let pp pe name f
     source_file
 
 
-let compare_custom_field {name= fld} {name= fld'} = Fieldname.compare fld fld'
+let compare_custom_field ({name= fld} : field) ({name= fld'} : field) = Fieldname.compare fld fld'
 
 let make_sorted_struct fields' statics' methods' supers' annots' class_info ?source_file dummy =
   let fields = List.dedup_and_sort ~compare:compare_custom_field fields' in
   let statics = List.dedup_and_sort ~compare:compare_custom_field statics' in
-  let methods = List.dedup_and_sort ~compare:Procname.compare methods' in
+  let methods = List.dedup_and_sort ~compare:compare_tenv_method methods' in
   let supers = List.dedup_and_sort ~compare:Typ.Name.compare supers' in
   let annots = List.dedup_and_sort ~compare:Annot.compare annots' in
   { fields
@@ -208,7 +213,7 @@ let fld_typ_opt ~lookup fn (typ : Typ.t) =
   | Tstruct name -> (
     match lookup name with
     | Some {fields} ->
-        List.find ~f:(fun {name= f} -> Fieldname.equal f fn) fields
+        List.find ~f:(fun ({name= f} : field) -> Fieldname.equal f fn) fields
         |> Option.map ~f:(fun {typ} -> typ)
     | None ->
         None )
@@ -294,7 +299,7 @@ let merge_fields ~newer ~current = merge_lists ~compare:compare_custom_field ~ne
 
 let merge_supers ~newer ~current = merge_lists ~compare:Typ.Name.compare ~newer ~current
 
-let merge_methods ~newer ~current = merge_lists ~compare:Procname.compare ~newer ~current
+let merge_methods ~newer ~current = merge_lists ~compare:compare_tenv_method ~newer ~current
 
 let merge_annots ~newer ~current = merge_lists ~compare:Annot.compare ~newer ~current
 

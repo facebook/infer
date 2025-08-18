@@ -751,6 +751,7 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
              |> Option.fold ~init:acc ~f
            else acc )
   in
+  let methods = List.map methods ~f:Struct.name_of_tenv_method in
   List.fold methods ~init ~f
 
 

@@ -399,8 +399,9 @@ let find_override_or_superclass_annotated is_annot tenv proc_name =
         Option.bind struct_opt ~f:(fun ({Struct.methods} as str) ->
             if Annotations.struct_typ_has_annot str is_annot then Some (SuperClass name)
             else
-              List.find_map methods ~f:(fun pn ->
-                  if is_override pn && is_annotated pn then Some (Override pn) else None ) ) )
+              List.find_map methods ~f:(fun (pn : Struct.tenv_method) ->
+                  if is_override pn.name && is_annotated pn.name then Some (Override pn.name)
+                  else None ) ) )
   in
   if is_annotated proc_name then Some DirectlyAnnotated
   else Procname.get_class_type_name proc_name |> Option.bind ~f:find_override_or_superclass_aux

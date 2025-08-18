@@ -77,7 +77,8 @@ let mk pdesc =
           Some ret_typ
     in
     let is_last_field fn (fields : Struct.field list) =
-      Option.exists (List.last fields) ~f:(fun {Struct.name= last_fn} -> Fieldname.equal fn last_fn)
+      Option.exists (List.last fields) ~f:(fun ({Struct.name= last_fn} : Struct.field) ->
+          Fieldname.equal fn last_fn )
     in
     let rec may_last_field = function
       | BoField.Prim (SPath.Pvar _ | SPath.Deref _ | SPath.Callsite _) ->

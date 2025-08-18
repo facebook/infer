@@ -63,7 +63,8 @@ let is_not_implicit_or_copy_ctor_assignment pname =
          || attrs.ProcAttributes.is_cpp_copy_assignment ) )
 
 
-let is_non_deleted_copy pname =
+let is_non_deleted_copy (tenv_method : Struct.tenv_method) =
+  let pname = tenv_method.name in
   (* TODO: Default is set to true for now because we can't get the attributes of library calls right now. *)
   Option.value_map ~default:true (IRAttributes.load pname) ~f:(fun attrs ->
       attrs.ProcAttributes.is_cpp_copy_ctor && not attrs.ProcAttributes.is_cpp_deleted )

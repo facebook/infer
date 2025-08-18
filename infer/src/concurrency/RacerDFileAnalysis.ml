@@ -672,12 +672,13 @@ let get_synchronized_container_fields_of analyze tenv classname =
         acc
   in
   Tenv.lookup tenv classname
-  |> Option.value_map ~default:[] ~f:(fun (tstruct : Struct.t) -> tstruct.methods)
-  |> List.rev_filter ~f:(function
-       | Procname.Java j ->
-           Procname.Java.(is_class_initializer j || is_constructor j)
-       | _ ->
-           false )
+  |> Option.value_map ~default:[] ~f:(fun (tstruct : Struct.t) ->
+         List.map ~f:Struct.name_of_tenv_method tstruct.methods
+         |> List.rev_filter ~f:(function
+              | Procname.Java j ->
+                  Procname.Java.(is_class_initializer j || is_constructor j)
+              | _ ->
+                  false ) )
   |> List.rev_filter_map ~f:(fun proc_name -> analyze proc_name |> AnalysisResult.to_option)
   |> List.rev_map ~f:(fun (summary : summary) -> summary.attributes)
   |> List.fold ~init:Fieldname.Set.empty ~f:(fun acc attributes ->

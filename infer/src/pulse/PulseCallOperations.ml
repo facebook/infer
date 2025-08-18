@@ -37,9 +37,9 @@ let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
   else actuals
 
 
-let is_const_version pname_method other_method =
-  String.equal pname_method (Procname.get_method other_method)
-  && Option.exists (IRAttributes.load other_method) ~f:(fun attr ->
+let is_const_version pname_method (other_method : Struct.tenv_method) =
+  String.equal pname_method (Procname.get_method other_method.name)
+  && Option.exists (IRAttributes.load other_method.name) ~f:(fun attr ->
          attr.ProcAttributes.is_cpp_const_member_fun )
 
 
@@ -763,7 +763,8 @@ let check_uninit_method ({InterproceduralAnalysis.tenv} as analysis_data) call_l
         true
     | Some {Struct.methods} ->
         let callee_name = Procname.get_method callee_pname in
-        List.exists methods ~f:(fun method_name ->
+        List.exists methods ~f:(fun (tenv_method : Struct.tenv_method) ->
+            let method_name = tenv_method.name in
             String.equal callee_name (Procname.get_method method_name) )
   in
   let skip_special_pname pname =

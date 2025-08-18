@@ -42,19 +42,24 @@ module ClassInfo : sig
   [@@deriving equal, hash, show]
 end
 
+type tenv_method = {name: Procname.t; llvm_offset: int option [@ignore]}
+[@@deriving compare, equal, hash, normalize]
+
 (** Type for a structured value. *)
-type t = private
+type t =
   { fields: field list  (** non-static fields *)
   ; statics: field list  (** static fields *)
   ; supers: Typ.Name.t list  (** superclasses *)
   ; objc_protocols: Typ.Name.t list  (** ObjC protocols *)
-  ; methods: Procname.t list  (** methods defined *)
+  ; methods: tenv_method list  (** methods defined *)
   ; exported_objc_methods: Procname.t list  (** methods in ObjC interface, subset of [methods] *)
   ; annots: Annot.Item.t  (** annotations *)
-  ; class_info: ClassInfo.t  (** present if and only if the class is Java or Hack *)
+  ; class_info: ClassInfo.t  (** present if and only if the class is C++, Java or Hack *)
   ; dummy: bool  (** dummy struct for class including static method *)
   ; source_file: SourceFile.t option  (** source file containing this struct's declaration *) }
-[@@deriving normalize]
+[@@deriving equal, hash, normalize]
+
+val name_of_tenv_method : tenv_method -> Procname.t
 
 type lookup = Typ.Name.t -> t option
 
@@ -67,7 +72,7 @@ val internal_mk_struct :
      ?default:t
   -> ?fields:field list
   -> ?statics:field list
-  -> ?methods:Procname.t list
+  -> ?methods:tenv_method list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?objc_protocols:Typ.Name.t list

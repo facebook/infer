@@ -308,7 +308,8 @@ let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.Access
       Fieldname.get_class_name field_name
       |> Tenv.lookup tenv
       |> Option.map ~f:(fun (tstruct : Struct.t) -> tstruct.fields @ tstruct.statics)
-      |> Option.bind ~f:(List.find ~f:(fun {Struct.name= fld} -> Fieldname.equal fld field_name))
+      |> Option.bind
+           ~f:(List.find ~f:(fun (fld : Struct.field) -> Fieldname.equal fld.name field_name))
       |> Option.bind ~f:(fun {Struct.annot} ->
              if Annotations.(ia_ends_with annot for_ui_thread) then Some ForUIThread
              else if Annotations.(ia_ends_with annot for_non_ui_thread) then Some ForNonUIThread
@@ -322,7 +323,8 @@ let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.Access
 (* Given an object, find the [run] method in its class and return the procname, if any *)
 let get_run_method_from_runnable tenv runnable =
   let run_like_methods = ["run"; "call"] in
-  let is_run_method = function
+  let is_run_method (tenv_method : Struct.tenv_method) =
+    match tenv_method.name with
     | Procname.Java pname when Procname.Java.(not (is_static pname)) ->
         (* confusingly, the parameter list in (non-static?) Java procnames does not contain [this] *)
         Procname.Java.(
@@ -339,6 +341,7 @@ let get_run_method_from_runnable tenv runnable =
   |> Option.bind ~f:(Tenv.lookup tenv)
   |> Option.map ~f:(fun (tstruct : Struct.t) -> tstruct.methods)
   |> Option.bind ~f:(List.find ~f:is_run_method)
+  |> Option.map ~f:Struct.name_of_tenv_method
 
 
 (* Syntactically match for certain methods known to return executors. *)

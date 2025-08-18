@@ -172,7 +172,7 @@ let get_objc_property_accessor tenv ms =
           | Some {fields} -> (
               let field_opt =
                 List.find
-                  ~f:(fun {Struct.name} ->
+                  ~f:(fun ({Struct.name} : Struct.field) ->
                     String.equal (Fieldname.get_field_name name) name_decl_info.ni_name )
                   fields
               in

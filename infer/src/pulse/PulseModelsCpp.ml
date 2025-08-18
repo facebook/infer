@@ -409,14 +409,16 @@ module Function = struct
       | Some {typ= {desc= Typ.Tstruct name}} -> (
         match Tenv.lookup analysis_data.tenv name with
         | Some tstruct ->
-            List.find ~f:(fun m -> Procname.is_cpp_lambda m) tstruct.Struct.methods
+            List.find
+              ~f:(fun (m : Struct.tenv_method) -> Procname.is_cpp_lambda m.name)
+              tstruct.Struct.methods
         | None ->
             None )
       | _ ->
           None
     in
     match callee_proc_name_opt with
-    | Some callee_proc_name ->
+    | Some {name= callee_proc_name} ->
         let actuals =
           (lambda_ptr_hist, typ)
           :: List.map actuals ~f:(fun FuncArg.{arg_payload; typ} -> (arg_payload, typ))

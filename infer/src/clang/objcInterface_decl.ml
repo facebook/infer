@@ -85,7 +85,8 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
     match Tenv.lookup tenv interface_name with
     | Some struct_typ ->
         let fields = CGeneral_utils.append_no_duplicates_fields struct_typ.fields new_fields in
-        let methods = CGeneral_utils.append_no_duplicates_methods struct_typ.methods new_methods in
+        let methods = List.map ~f:Struct.name_of_tenv_method struct_typ.methods in
+        let methods = CGeneral_utils.append_no_duplicates_methods methods new_methods in
         let exported_objc_methods =
           CGeneral_utils.append_no_duplicates_methods struct_typ.exported_objc_methods
             new_exported_objc_methods

@@ -524,7 +524,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         | Some {fields} ->
             let fieldname_opt =
               List.find_map
-                ~f:(fun {Struct.name} ->
+                ~f:(fun ({Struct.name} : Struct.field) ->
                   if String.equal (Fieldname.get_field_name name) field_string then Some name
                   else None )
                 fields

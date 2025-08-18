@@ -94,7 +94,7 @@ let get_field_name program static tenv cn fs =
   let {Struct.fields; statics} = JTransType.get_class_struct_typ program tenv cn in
   match
     List.find
-      ~f:(fun {Struct.name= fieldname} ->
+      ~f:(fun ({Struct.name= fieldname} : Struct.field) ->
         String.equal (retrieve_fieldname fieldname) (JBasics.fs_name fs) )
       (if static then statics else fields)
   with
