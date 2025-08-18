@@ -429,7 +429,7 @@ module ProcDeclBridge = struct
         `Regular (TypeNameBridge.to_python_class_name value args)
 
 
-  let to_sil lang t : SilProcname.t =
+  let to_sil_tenv lang t : SilStruct.tenv_method =
     let method_name = t.qualified_name.name.ProcName.value in
     match (lang : Lang.t) with
     | Java ->
@@ -457,27 +457,32 @@ module ProcDeclBridge = struct
               SilProcname.Java.Non_Static
         in
         SilProcname.make_java ~class_name ~return_type ~method_name ~parameters:formals_types ~kind
+        |> SilStruct.mk_tenv_method
     | Hack ->
         let class_name = hack_class_name_to_sil t.qualified_name.enclosing_class in
         let arity = Option.map t.formals_types ~f:List.length in
         SilProcname.make_hack ~class_name ~function_name:method_name ~arity
+        |> SilStruct.mk_tenv_method
     | Python -> (
       match python_class_name_to_sil t.qualified_name.enclosing_class with
       | `Regular module_name ->
           SilProcname.make_python ~module_name ~function_name:method_name
+          |> SilStruct.mk_tenv_method
       | `Builtin ->
           let builtin =
             PythonProcname.builtin_from_string method_name
             |> Option.value_or_thunk ~default:(fun () ->
                    L.die InternalError "unknown python builtin name %s" method_name )
           in
-          SilProcname.make_python_builtin builtin )
+          SilProcname.make_python_builtin builtin |> SilStruct.mk_tenv_method )
     | C ->
         SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
+        |> SilStruct.mk_tenv_method
     | Rust ->
         L.die InternalError "<NOT YET SUPPORTED>"
     | Swift -> (
         let plain_name = List.find_map ~f:Attr.get_plain_name t.attributes in
+        let llvm_offset = List.find_map ~f:Attr.get_method_offset t.attributes in
         let mangled =
           match plain_name with
           | Some plain_name ->
@@ -488,9 +493,16 @@ module ProcDeclBridge = struct
         match t.qualified_name.enclosing_class with
         | TopLevel ->
             SilProcname.Swift (SilProcname.Swift.mk_function mangled)
+            |> SilStruct.mk_tenv_method ?llvm_offset
         | Enclosing class_name ->
             let class_name = TypeNameBridge.to_sil lang class_name in
-            SilProcname.Swift (SilProcname.Swift.mk_class_method class_name mangled) )
+            SilProcname.Swift (SilProcname.Swift.mk_class_method class_name mangled)
+            |> SilStruct.mk_tenv_method ?llvm_offset )
+
+
+  let to_sil lang t : Procname.t =
+    let m = to_sil_tenv lang t in
+    m.name
 
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
@@ -580,8 +592,7 @@ module StructBridge = struct
           | Decl _ ->
               (* TODO: Don't just throw Decls away entirely *)
               None )
-      |> List.map ~f:(ProcDeclBridge.to_sil lang)
-      |> List.map ~f:(fun name -> SilStruct.mk_tenv_method name)
+      |> List.map ~f:(ProcDeclBridge.to_sil_tenv lang)
     in
     let fields =
       List.map fields ~f:(fun ({FieldDecl.typ; attributes} as fdecl) ->

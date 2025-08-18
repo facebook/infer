@@ -61,6 +61,14 @@ let name_of_tenv_method m = m.name
 
 let mk_tenv_method ?llvm_offset name = {name; llvm_offset}
 
+let pp_tenv_method f {name; llvm_offset} =
+  match llvm_offset with
+  | None ->
+      F.fprintf f "%a" Procname.pp_verbose name
+  | Some llvm_offset ->
+      F.fprintf f "%a@%d" Procname.pp_verbose name llvm_offset
+
+
 type lookup = Typ.Name.t -> t option
 
 let pp_objc_property_attribute f attributes =
@@ -122,7 +130,7 @@ let pp pe name f
     supers
     (seq (fun f n -> F.fprintf f "@;<0 2>%a" Typ.Name.pp n))
     objc_protocols
-    (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m.name))
+    (seq (fun f m -> F.fprintf f "@;<0 2>%a" pp_tenv_method m))
     methods
     (seq (fun f m -> F.fprintf f "@;<0 2>%a" Procname.pp_verbose m))
     exported_objc_methods Annot.Item.pp annots ClassInfo.pp class_info dummy
