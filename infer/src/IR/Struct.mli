@@ -61,6 +61,8 @@ type t =
 
 val name_of_tenv_method : tenv_method -> Procname.t
 
+val mk_tenv_method : ?llvm_offset:int -> Procname.t -> tenv_method
+
 type lookup = Typ.Name.t -> t option
 
 val pp_field : Pp.env -> F.formatter -> field -> unit

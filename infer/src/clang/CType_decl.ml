@@ -678,7 +678,9 @@ and add_record tenv decl_info definition_decl record_decl_info ?cxx_record_decl_
         let fields = get_struct_fields tenv ?cxx_record_decl_info definition_decl in
         (* Note: We treat static field same as global variables *)
         let statics = [] in
-        let methods = get_struct_methods definition_decl tenv in
+        let methods =
+          get_struct_methods definition_decl tenv |> List.map ~f:Struct.mk_tenv_method
+        in
         let supers =
           get_superclass_list_cpp tenv definition_decl
           (* Mitigation: Sometimes the list of super classes includes the root type. *)

@@ -86,7 +86,10 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
     | Some struct_typ ->
         let fields = CGeneral_utils.append_no_duplicates_fields struct_typ.fields new_fields in
         let methods = List.map ~f:Struct.name_of_tenv_method struct_typ.methods in
-        let methods = CGeneral_utils.append_no_duplicates_methods methods new_methods in
+        let methods =
+          CGeneral_utils.append_no_duplicates_methods methods new_methods
+          |> List.map ~f:Struct.mk_tenv_method
+        in
         let exported_objc_methods =
           CGeneral_utils.append_no_duplicates_methods struct_typ.exported_objc_methods
             new_exported_objc_methods
@@ -103,6 +106,7 @@ let add_class_to_tenv qual_type_to_sil_type procname_from_decl tenv decl_info na
           (Tenv.mk_struct tenv ~default:struct_typ ~fields ~supers ~objc_protocols ~methods
              ~exported_objc_methods interface_name ?source_file )
     | None ->
+        let new_methods = List.map ~f:Struct.mk_tenv_method new_methods in
         ignore
           (Tenv.mk_struct tenv ~fields:new_fields ~supers:new_supers
              ~objc_protocols:new_objc_protocols ~methods:new_methods ~annots:Annot.Class.objc

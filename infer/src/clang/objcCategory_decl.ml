@@ -74,7 +74,10 @@ let process_category qual_type_to_sil_type procname_from_decl tenv class_name de
   | Some ({fields; methods} as struct_typ) ->
       let new_fields = CGeneral_utils.append_no_duplicates_fields decl_fields fields in
       let method_names = List.map ~f:Struct.name_of_tenv_method methods in
-      let new_methods = CGeneral_utils.append_no_duplicates_methods decl_methods method_names in
+      let new_methods =
+        CGeneral_utils.append_no_duplicates_methods decl_methods method_names
+        |> List.map ~f:Struct.mk_tenv_method
+      in
       ignore
         (Tenv.mk_struct tenv ~default:struct_typ ~fields:new_fields ~methods:new_methods
            class_tn_name ) ;

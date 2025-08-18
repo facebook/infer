@@ -32,9 +32,6 @@ let mk_struct tenv ?default ?fields ?statics ?methods ?exported_objc_methods ?su
   | Typ.ObjcBlock _ | Typ.CFunction _ ->
       L.die InternalError "%a is not allowed as a key in the tenv" Typ.Name.pp name
   | _ ->
-      let methods =
-        Option.map methods ~f:(List.map ~f:(fun m -> Struct.{name= m; llvm_offset= None}))
-      in
       let struct_typ =
         Struct.internal_mk_struct ?default ?fields ?statics ?methods ?exported_objc_methods ?supers
           ?objc_protocols ?annots ?class_info ?dummy ?source_file name

@@ -581,6 +581,7 @@ module StructBridge = struct
               (* TODO: Don't just throw Decls away entirely *)
               None )
       |> List.map ~f:(ProcDeclBridge.to_sil lang)
+      |> List.map ~f:(fun name -> SilStruct.mk_tenv_method name)
     in
     let fields =
       List.map fields ~f:(fun ({FieldDecl.typ; attributes} as fdecl) ->

@@ -51,7 +51,7 @@ val mk_struct :
   -> ?default:Struct.t
   -> ?fields:Struct.field list
   -> ?statics:Struct.field list
-  -> ?methods:Procname.t list
+  -> ?methods:Struct.tenv_method list
   -> ?exported_objc_methods:Procname.t list
   -> ?supers:Typ.Name.t list
   -> ?objc_protocols:Typ.Name.t list

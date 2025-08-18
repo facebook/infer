@@ -229,6 +229,7 @@ and get_class_struct_typ =
   let make_struct program tenv node supers ~fields ~statics annots ~java_class_kind name =
     let methods =
       Javalib.m_fold (fun m procnames -> translate_method_name program tenv m :: procnames) node []
+      |> List.map ~f:Struct.mk_tenv_method
     in
     let node_name = Javalib.get_name node in
     let java_location : Location.t option = JProgramDesc.get_java_location program node_name in

@@ -59,6 +59,8 @@ type t =
 
 let name_of_tenv_method m = m.name
 
+let mk_tenv_method ?llvm_offset name = {name; llvm_offset}
+
 type lookup = Typ.Name.t -> t option
 
 let pp_objc_property_attribute f attributes =

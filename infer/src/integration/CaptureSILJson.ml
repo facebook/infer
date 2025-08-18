@@ -720,6 +720,7 @@ let store cfg =
 let parse_tenv_type (json : Safe.t) tenv =
   let tn = parse_typename (member "type_name" json) in
   let fields, statics, supers, methods, annots = parse_struct (member "type_struct" json) in
+  let methods = List.map ~f:Struct.mk_tenv_method methods in
   ignore (Tenv.mk_struct tenv ~fields ~statics ~methods ~supers ~annots tn)
 
 
