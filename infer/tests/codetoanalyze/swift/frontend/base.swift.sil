@@ -49,7 +49,7 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
 define .plain_name = "test_retain_cycle" $s5Hello17test_retain_cycleyyF() : *ptr_elt {
   local john: *ptr_elt, jane: *ptr_elt
   #: @[46:16]
-      n1 = $s5Hello6PersonCMa(0) @[46:16]
+      n1 = T5Hello6PersonC.$s5Hello6PersonCMa(0) @[46:16]
       jmp 3::ret @[46:16]
       
   #$s5Hello11set_spousesyyAA6PersonC_ADtF::void::ret: @[49:1]
@@ -57,12 +57,12 @@ define .plain_name = "test_retain_cycle" $s5Hello17test_retain_cycleyyF() : *ptr
       
   #3::ret: @[46:16]
       n2 = n1.swift::metadata_response.field_0 @[46:16]
-      n3 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[46:16]
+      n3 = T5Hello6PersonC.$s5Hello6PersonC3ageACSi_tcfC(30, n2) @[46:16]
       jmp 5::ret @[46:16]
       
   #5::ret: @[142:0]
       store &john <- n3 @[142:0]
-      n4 = $s5Hello6PersonC3ageACSi_tcfC(35, n2) @[47:16]
+      n4 = T5Hello6PersonC.$s5Hello6PersonC3ageACSi_tcfC(35, n2) @[47:16]
       jmp 6::ret @[47:16]
       
   #6::ret: @[143:0]
@@ -131,12 +131,12 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
 
 define .plain_name = "test6" $s5Hello5test6AA6PersonCyF() : *ptr_elt {
   #: @[37:12]
-      n1 = $s5Hello6PersonCMa(0) @[37:12]
+      n1 = T5Hello6PersonC.$s5Hello6PersonCMa(0) @[37:12]
       jmp 1::ret @[37:12]
       
   #1::ret: @[37:12]
       n2 = load n1.swift::metadata_response.field_0 @[37:12]
-      n3 = $s5Hello6PersonC3ageACSi_tcfC(30, n2) @[37:12]
+      n3 = T5Hello6PersonC.$s5Hello6PersonC3ageACSi_tcfC(30, n2) @[37:12]
       jmp 3::ret @[37:12]
       
   #3::ret: @[37:5]
@@ -144,7 +144,7 @@ define .plain_name = "test6" $s5Hello5test6AA6PersonCyF() : *ptr_elt {
       
 } @?
 
-define .plain_name = "init" .method_offset = "15" $s5Hello6PersonC3ageACSi_tcfC(var0: int, var1: *ptr_elt) : *ptr_elt {
+define .plain_name = "init" .method_offset = "15" T5Hello6PersonC.$s5Hello6PersonC3ageACSi_tcfC(var0: int, var1: *ptr_elt) : *ptr_elt {
   #: @[156:0]
       n1 = load &var1 @[156:0]
       n2 = swift_allocObject(n1, 32, 7) @[156:0]
@@ -171,12 +171,12 @@ define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(var0: int, var1: *ptr_
       n4 = load n3.T5Hello6PersonC.field_1 @[31:18]
       n1 = load &var0 @[31:18]
       store n4.TSi.field_0 <- n1 @[31:18]
-      n5 = $s5Hello6PersonCMa(0) @[32:23]
+      n5 = T5Hello6PersonC.$s5Hello6PersonCMa(0) @[32:23]
       jmp 7::ret @[32:23]
       
   #7::ret: @[32:23]
       n6 = load n5.swift::metadata_response.field_0 @[32:23]
-      n7 = $s5Hello6PersonC3ageACSi_tcfC(0, n6) @[32:23]
+      n7 = T5Hello6PersonC.$s5Hello6PersonC3ageACSi_tcfC(0, n6) @[32:23]
       jmp 9::ret @[32:23]
       
   #9::ret: @[32:21]
@@ -196,11 +196,11 @@ define .plain_name = "age.get" $s5Hello6PersonC3ageSivg(var0: *ptr_elt) : int {
       
 } @?
 
-declare .plain_name = "spouse.modify" .method_offset = "14" $s5Hello6PersonC6spouseACvM(*ptr_elt, *ptr_elt) : *ptr_elt
+declare .plain_name = "spouse.modify" .method_offset = "14" T5Hello6PersonC.$s5Hello6PersonC6spouseACvM(*ptr_elt, *ptr_elt) : *ptr_elt
 
 declare .plain_name = "spouse.modify" $s5Hello6PersonC6spouseACvM::resume::0(*ptr_elt, int) : *ptr_elt
 
-define .plain_name = "spouse.get" .method_offset = "12" $s5Hello6PersonC6spouseACvg(var0: *ptr_elt) : *ptr_elt {
+define .plain_name = "spouse.get" .method_offset = "12" T5Hello6PersonC.$s5Hello6PersonC6spouseACvg(var0: *ptr_elt) : *ptr_elt {
   local var2: int[]
   #: @[176:0]
       n2 = load &var0 @[176:0]
@@ -214,7 +214,7 @@ define .plain_name = "spouse.get" .method_offset = "12" $s5Hello6PersonC6spouseA
       
 } @?
 
-define .plain_name = "spouse.set" .method_offset = "13" $s5Hello6PersonC6spouseACvs(var0: *ptr_elt, var1: *ptr_elt) : *ptr_elt {
+define .plain_name = "spouse.set" .method_offset = "13" T5Hello6PersonC.$s5Hello6PersonC6spouseACvs(var0: *ptr_elt, var1: *ptr_elt) : *ptr_elt {
   local var3: int[]
   #: @[187:0]
       n1 = load &var0 @[187:0]
@@ -231,7 +231,7 @@ define .plain_name = "spouse.set" .method_offset = "13" $s5Hello6PersonC6spouseA
       
 } @?
 
-declare .method_offset = "2" $s5Hello6PersonCMa(int) : *ptr_elt
+declare .method_offset = "2" T5Hello6PersonC.$s5Hello6PersonCMa(int) : *ptr_elt
 
 declare .plain_name = "deinit" $s5Hello6PersonCfD(*ptr_elt) : *ptr_elt
 

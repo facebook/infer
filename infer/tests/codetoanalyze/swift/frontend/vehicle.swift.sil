@@ -24,7 +24,7 @@ define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(var0: *ptr_el
       
 } @?
 
-define .plain_name = "makeNoise" .method_offset = "11" $s5Hello5TrainC9makeNoiseyyF(var0: *ptr_elt) : *ptr_elt {
+define .plain_name = "makeNoise" .method_offset = "11" T5Hello5TrainC.$s5Hello5TrainC9makeNoiseyyF(var0: *ptr_elt) : *ptr_elt {
   local self: *ptr_elt
   #: @[138:0]
       n1 = load &var0 @[138:0]
@@ -33,7 +33,7 @@ define .plain_name = "makeNoise" .method_offset = "11" $s5Hello5TrainC9makeNoise
       
 } @?
 
-define .plain_name = "init" .method_offset = "12" $s5Hello5TrainCACycfC(var0: *ptr_elt) : *ptr_elt {
+define .plain_name = "init" .method_offset = "12" T5Hello5TrainC.$s5Hello5TrainCACycfC(var0: *ptr_elt) : *ptr_elt {
   #: @[140:0]
       n1 = load &var0 @[140:0]
       n2 = swift_allocObject(n1, 16, 7) @[140:0]
@@ -68,13 +68,13 @@ define .plain_name = "init" $s5Hello5TrainCACycfc(var0: *ptr_elt) : *ptr_elt {
       
 } @?
 
-declare .method_offset = "2" $s5Hello5TrainCMa(int) : *ptr_elt
+declare .method_offset = "2" T5Hello5TrainC.$s5Hello5TrainCMa(int) : *ptr_elt
 
 declare .plain_name = "deinit" $s5Hello5TrainCfD(*ptr_elt) : *ptr_elt
 
 declare .plain_name = "deinit" $s5Hello5TrainCfd(*ptr_elt) : *ptr_elt
 
-define .plain_name = "makeNoise" .method_offset = "12" $s5Hello7VehicleC9makeNoiseyyF(var0: *ptr_elt) : *ptr_elt {
+define .plain_name = "makeNoise" .method_offset = "12" T5Hello7VehicleC.$s5Hello7VehicleC9makeNoiseyyF(var0: *ptr_elt) : *ptr_elt {
   local self: *ptr_elt
   #: @[177:0]
       n1 = load &var0 @[177:0]
@@ -83,7 +83,7 @@ define .plain_name = "makeNoise" .method_offset = "12" $s5Hello7VehicleC9makeNoi
       
 } @?
 
-define .plain_name = "init" .method_offset = "13" $s5Hello7VehicleCACycfC(var0: *ptr_elt) : *ptr_elt {
+define .plain_name = "init" .method_offset = "13" T5Hello7VehicleC.$s5Hello7VehicleCACycfC(var0: *ptr_elt) : *ptr_elt {
   #: @[179:0]
       n1 = load &var0 @[179:0]
       n2 = swift_allocObject(n1, 16, 7) @[179:0]
@@ -108,7 +108,7 @@ define .plain_name = "init" $s5Hello7VehicleCACycfc(var0: *ptr_elt) : *ptr_elt {
       
 } @?
 
-declare .method_offset = "2" $s5Hello7VehicleCMa(int) : *ptr_elt
+declare .method_offset = "2" T5Hello7VehicleC.$s5Hello7VehicleCMa(int) : *ptr_elt
 
 declare .plain_name = "deinit" $s5Hello7VehicleCfD(*ptr_elt) : *ptr_elt
 

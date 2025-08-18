@@ -14,6 +14,14 @@ module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
 module RegMap = Llair.Exp.Reg.Map
 
+type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
+
+let class_method_index : classMethodIndex = ref Textual.TypeName.Map.empty
+
+type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
+
+let method_class_index : methodClassIndex = ref Textual.ProcName.Map.empty
+
 let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
   { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
   ; name= Textual.ProcName.of_string name }
@@ -90,8 +98,15 @@ let build_globals_map globals =
 
 let to_qualified_proc_name ?loc func_name =
   let func_name = FuncName.name func_name in
-  Textual.QualifiedProcName.
-    {enclosing_class= TopLevel; name= Textual.ProcName.of_string ?loc func_name}
+  let proc_name = Textual.ProcName.of_string ?loc func_name in
+  let enclosing_class =
+    match Textual.ProcName.Map.find_opt proc_name !method_class_index with
+    | Some class_name ->
+        Textual.QualifiedProcName.Enclosing class_name
+    | None ->
+        Textual.QualifiedProcName.TopLevel
+  in
+  Textual.QualifiedProcName.{enclosing_class; name= proc_name}
 
 
 let to_name_attr func_name =
@@ -734,10 +749,6 @@ let should_translate plain_name lang source_file (loc : Llair.Loc.t) =
          || String.is_substring ~substring:".set" plain_name )
 
 
-type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
-
-let class_method_index : classMethodIndex = ref Textual.TypeName.Map.empty
-
 let add_method_to_class_method_index class_name proc_name index =
   let methods = Textual.TypeName.Map.find_opt class_name !class_method_index in
   let methods = Option.value methods ~default:[] in
@@ -782,11 +793,13 @@ let collect_class_method_indices global global_init_instrs =
                 String.chop_prefix_exn field_name ~prefix:Type.tuple_field_prefix |> int_of_string
               in
               let class_name = class_from_global global in
+              let proc_name = Textual.ProcName.of_string s in
               let proc =
-                Textual.QualifiedProcName.
-                  {enclosing_class= TopLevel; name= Textual.ProcName.of_string s}
+                Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name}
               in
               add_method_to_class_method_index class_name proc (index - 1) ;
+              method_class_index :=
+                Textual.ProcName.Map.add proc_name class_name !method_class_index ;
               exp )
             else exp
         | _ ->
