@@ -24,7 +24,6 @@ let test json_file =
   with e -> F.printf "%s" (Exn.to_string e)
 
 
-
 let%expect_test "example" =
   test "example.ullbc" ;
   [%expect
