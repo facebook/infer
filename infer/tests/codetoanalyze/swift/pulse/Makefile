@@ -14,7 +14,7 @@ INFER_OPTIONS = \
 
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCE = $(realpath $(wildcard ../frontend/base.swift))
+SOURCE = $(realpath $(wildcard ../frontend/student.swift))
 
 ROOT_DIR = $(TESTS_DIR)/../..
 

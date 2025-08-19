@@ -107,6 +107,8 @@ module QualifiedProcName : sig
 
   val name : t -> ProcName.t
 
+  val get_class_name : t -> TypeName.t option
+
   val contains_wildcard : t -> bool
 
   val is_python_builtin : t -> bool
@@ -308,7 +310,11 @@ module ProcDecl : sig
 
   val malloc_name : QualifiedProcName.t
 
+  val swift_alloc_name : QualifiedProcName.t
+
   val is_malloc_builtin : QualifiedProcName.t -> bool
+
+  val is_swift_alloc_builtin : QualifiedProcName.t -> bool
 
   val free_name : QualifiedProcName.t [@@warning "-unused-value-declaration"]
 

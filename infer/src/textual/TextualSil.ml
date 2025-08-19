@@ -834,7 +834,9 @@ module InstrBridge = struct
         L.die InternalError
           "to_sil should come after type transformation remove_effects_in_subexprs"
     | Let {id= Some id; exp= Call {proc; args= [Typ typ]}; loc}
-      when ProcDecl.is_allocate_object_builtin proc || ProcDecl.is_malloc_builtin proc ->
+      when ProcDecl.is_allocate_object_builtin proc
+           || ProcDecl.is_malloc_builtin proc
+           || ProcDecl.is_swift_alloc_builtin proc ->
         let typ = TypBridge.to_sil lang typ in
         let sizeof =
           SilExp.Sizeof
@@ -847,6 +849,8 @@ module InstrBridge = struct
         let builtin_name =
           if ProcDecl.is_allocate_object_builtin proc then
             SilExp.Const (SilConst.Cfun BuiltinDecl.__new)
+          else if ProcDecl.is_swift_alloc_builtin proc then
+            SilExp.Const (SilConst.Cfun BuiltinDecl.__swift_alloc)
           else SilExp.Const (SilConst.Cfun BuiltinDecl.malloc)
         in
         Call ((ret, class_type), builtin_name, args, loc, CallFlags.default)

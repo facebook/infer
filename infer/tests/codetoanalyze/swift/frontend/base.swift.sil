@@ -147,7 +147,7 @@ define .plain_name = "test6" $s5Hello5test6AA6PersonCyF() : *ptr_elt {
 define .plain_name = "init" .method_offset = "15" T5Hello6PersonC.$s5Hello6PersonC3ageACSi_tcfC(var0: int, var1: *ptr_elt) : *ptr_elt {
   #: @[156:0]
       n1 = load &var1 @[156:0]
-      n2 = swift_allocObject(n1, 32, 7) @[156:0]
+      n2 = __sil_swift_alloc(<T5Hello6PersonC>) @[156:0]
       jmp 3::ret @[157:0]
       
   #3::ret: @[159:0]

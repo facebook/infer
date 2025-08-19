@@ -22,6 +22,14 @@ type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
 
 let method_class_index : methodClassIndex = ref Textual.ProcName.Map.empty
 
+let get_alloc_class_name =
+  let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
+  fun ~proc_state proc_name ->
+    if Textual.ProcName.equal proc_name alloc_object then
+      Textual.QualifiedProcName.get_class_name proc_state.ProcState.qualified_name
+    else None
+
+
 let builtin_qual_proc_name name : Textual.QualifiedProcName.t =
   { enclosing_class= Enclosing (Textual.TypeName.of_string "$builtins")
   ; name= Textual.ProcName.of_string name }
@@ -434,6 +442,19 @@ and to_textual_call ~proc_state (call : 'a Llair.call) =
   let loc = to_textual_loc_instr ~proc_state call.loc in
   let id, call_exp, args_instrs =
     to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args loc
+  in
+  let call_exp =
+    match call_exp with
+    | Textual.Exp.Call {proc} -> (
+      match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) with
+      | Some class_name ->
+          let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
+          Textual.Exp.Call
+            {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
+      | None ->
+          call_exp )
+    | _ ->
+        call_exp
   in
   let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
   let_instr :: args_instrs

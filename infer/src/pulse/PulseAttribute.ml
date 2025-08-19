@@ -678,6 +678,7 @@ module Attribute = struct
     | CppNew, Some (CppDelete, _)
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _
+    | SwiftAlloc, _
     | FileDescriptor, Some (FClose, _) ->
         true
     | JavaResource _, _ | CSharpResource _, _ | HackBuilderResource _, _ | Awaitable, _ ->

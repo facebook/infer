@@ -169,6 +169,8 @@ let builtin_malloc = "__sil_malloc"
 
 let builtin_free = "__sil_free"
 
+let builtin_swift_alloc = "__sil_swift_alloc"
+
 let builtin_assert_fail = "__sil_assert_fail"
 
 let builtin_allocate_array = "__sil_allocate_array"
@@ -331,6 +333,10 @@ module QualifiedProcName = struct
 
 
   let name {name} = name
+
+  let get_class_name name =
+    match name with {enclosing_class= Enclosing class_name} -> Some class_name | _ -> None
+
 
   let is_hack_init {name} = ProcName.is_hack_init name
 
@@ -638,6 +644,8 @@ module ProcDecl = struct
 
   let malloc_name = make_toplevel_name builtin_malloc Location.Unknown
 
+  let swift_alloc_name = make_toplevel_name builtin_swift_alloc Location.Unknown
+
   let free_name = make_toplevel_name builtin_free Location.Unknown
 
   let assert_fail_name = make_toplevel_name builtin_assert_fail Location.Unknown
@@ -763,6 +771,10 @@ module ProcDecl = struct
 
   let is_free_builtin qualified_name = QualifiedProcName.equal free_name qualified_name
 
+  let is_swift_alloc_builtin qualified_name =
+    QualifiedProcName.equal swift_alloc_name qualified_name
+
+
   let is_assert_fail_builtin qualified_name =
     QualifiedProcName.equal assert_fail_name qualified_name
 
@@ -839,7 +851,7 @@ module ProcDecl = struct
     builtins @ unop_builtins @ binop_builtins
 
 
-  let builtins_swift = [builtin_assert_fail]
+  let builtins_swift = [builtin_assert_fail; builtin_swift_alloc]
 
   let is_builtin (proc : QualifiedProcName.t) lang =
     match lang with

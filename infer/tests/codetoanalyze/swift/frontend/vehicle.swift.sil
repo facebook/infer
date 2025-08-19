@@ -36,7 +36,7 @@ define .plain_name = "makeNoise" .method_offset = "11" T5Hello5TrainC.$s5Hello5T
 define .plain_name = "init" .method_offset = "12" T5Hello5TrainC.$s5Hello5TrainCACycfC(var0: *ptr_elt) : *ptr_elt {
   #: @[140:0]
       n1 = load &var0 @[140:0]
-      n2 = swift_allocObject(n1, 16, 7) @[140:0]
+      n2 = __sil_swift_alloc(<T5Hello5TrainC>) @[140:0]
       jmp 2::ret @[141:0]
       
   #2::ret: @[143:0]
@@ -86,7 +86,7 @@ define .plain_name = "makeNoise" .method_offset = "12" T5Hello7VehicleC.$s5Hello
 define .plain_name = "init" .method_offset = "13" T5Hello7VehicleC.$s5Hello7VehicleCACycfC(var0: *ptr_elt) : *ptr_elt {
   #: @[179:0]
       n1 = load &var0 @[179:0]
-      n2 = swift_allocObject(n1, 16, 7) @[179:0]
+      n2 = __sil_swift_alloc(<T5Hello7VehicleC>) @[179:0]
       jmp 2::ret @[180:0]
       
   #2::ret: @[182:0]
