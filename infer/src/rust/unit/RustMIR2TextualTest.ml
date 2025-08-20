@@ -28,14 +28,15 @@ let%expect_test "example" =
   test "example.ullbc" ;
   [%expect
   {|
-  .source_language = "rust"
+  .source_language = "Rust"
 
-  define foo() : void {
+  define example::foo() : void {
     local var_0: void, var_1: int
     #node_0:
-      store &var_1 <- 42
-      store &var_0 <- null
-      n0 = load &var_0
-      ret n0
+        store &var_1 <- 42
+        store &var_0 <- null
+        n0 = load &var_0
+        ret n0
+
   }
 |}]

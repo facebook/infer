@@ -8,6 +8,9 @@
 open! IStd
 module L = Logging
 
+let ident_set = ref Textual.Ident.Set.empty
+
+
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
   let line = span.span.beg_loc.line in
   let col = span.span.beg_loc.col in
@@ -77,6 +80,13 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
       L.die UserError "Not yet supported %a " Charon.Generated_Expressions.pp_binop op
 
 
+let get_textual_typ (rust_ty: Charon.Generated_Types.ty) : Textual.Typ.t = 
+  match rust_ty with 
+   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TInt _) -> Textual.Typ.Int
+   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TFloat _) -> Textual.Typ.Float
+   | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty rust_ty
+
+
 let mk_name (name : Charon.Generated_Types.name) : Textual.ProcName.t =
   let names = List.map name ~f:name_of_path_element in
   let name_str = Stdlib.String.concat "::" names in
@@ -115,11 +125,16 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.
 
 
 let mk_exp_from_operand (operand : Charon.Generated_Expressions.operand) :
-    Textual.Exp.t * Textual.Typ.t =
+    Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   match operand with
-  | Copy _ | Move _ ->
-      (* TODO: Implement copy and move here *)
-      L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_operand operand
+  | Copy place | Move place ->
+      let temp_id = Textual.Ident.fresh !ident_set in
+      let temp_exp = Textual.Exp.Lvar (Textual.VarName.of_string ("n" ^ string_of_int (Textual.Ident.to_int temp_id))) in
+      let temp_typ = get_textual_typ place.ty in
+      let temp_loc = Textual.Location.Unknown in
+      let load_instr = Textual.Instr.Load {id = temp_id; exp = temp_exp; typ = Some temp_typ; loc = temp_loc} in
+      ident_set := Textual.Ident.Set.add temp_id !ident_set;
+      ([load_instr], temp_exp, temp_typ)
   | Constant const_operand -> (
       (* TODO: Add more types *)
       let value = const_operand.value in
@@ -141,42 +156,42 @@ let mk_exp_from_operand (operand : Charon.Generated_Expressions.operand) :
             | _ ->
                 L.die UserError "This literal kind is not yet supported"
           in
-          (exp, typ)
+          ([], exp, typ)
       | _ ->
           L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty ty )
 
 
 let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
-    Textual.Exp.t * Textual.Typ.t =
+    Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   match rvalue with
   | UnaryOp (op, operand) ->
-      let exp, typ = mk_exp_from_operand operand in
+      let instrs, exp, typ = mk_exp_from_operand operand in
       let proc_name = proc_name_from_unop op typ in
       let qualified_proc_name =
         {Textual.QualifiedProcName.enclosing_class= TopLevel; name= proc_name}
       in
       let call = Textual.Exp.call_non_virtual qualified_proc_name [exp] in
-      (call, typ)
+      (instrs, call, typ)
   | BinaryOp (op, operand1, operand2) ->
-      let exp1, typ1 = mk_exp_from_operand operand1 in
-      let exp2, _ = mk_exp_from_operand operand2 in
+      let instrs1, exp1, typ1 = mk_exp_from_operand operand1 in
+      let instrs2, exp2, _ = mk_exp_from_operand operand2 in
       let proc_name = proc_name_from_binop op typ1 in
       let qualified_proc_name =
         {Textual.QualifiedProcName.enclosing_class= TopLevel; name= proc_name}
       in
       let call = Textual.Exp.call_non_virtual qualified_proc_name [exp1; exp2] in
-      (call, typ1)
+      (instrs1 @ instrs2, call, typ1)
   | Aggregate (kind, ops) -> (
-      let exps, _tys =
+      let _, exps, _ =
         List.fold_right
           (List.map ~f:mk_exp_from_operand ops)
-          ~f:(fun (e, t) (es, ts) -> (e :: es, t :: ts))
-          ~init:([], [])
+          ~f:(fun (instrs, exp, typ) (all_instrs, all_exps, all_typs) -> (instrs @ all_instrs, exp :: all_exps, typ :: all_typs))
+          ~init:([], [], [])
       in
       match (kind, exps) with
       | AggregatedAdt (_, None, None), [] ->
           (* unit () *)
-          (Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void)
+          ([], Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void)
       | _ ->
           L.die UserError "Aggregates other than unit() are not yet supported" )
   | Use op ->
@@ -185,23 +200,24 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
       L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_rvalue rvalue
 
 
-let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t option =
+let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t list =
   let loc = location_from_span statement.span in
   match statement.content with
   | Charon.Generated_UllbcAst.Assign (lhs, rhs) -> (
     match lhs.kind with
     | Charon.Generated_Expressions.PlaceLocal var_id ->
         let id = Charon.Generated_Expressions.LocalId.to_string var_id in
-        let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string ("var_" ^ id)) in
-        let exp2, _ = mk_exp_from_rvalue rhs in
         let typ = None in
-        Some (Textual.Instr.Store {exp1; typ; exp2; loc})
+        let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string ("var_" ^ id)) in
+        let instrs, exp2, _ = mk_exp_from_rvalue rhs in
+        let store_instr = Textual.Instr.Store {exp1; typ; exp2; loc} in
+        instrs @ [store_instr]
     | _ ->
         L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place lhs )
   | Charon.Generated_UllbcAst.StorageDead _ ->
-      None
+      []
   | Charon.Generated_UllbcAst.StorageLive _ ->
-      None
+      []
   | s ->
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
@@ -212,7 +228,7 @@ let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) : Textual.Node
   let ssa_parameters = [] in
   let exn_succs = [] in
   let last = mk_terminator block.terminator in
-  let instrs = block.statements |> List.filter_map ~f:mk_instr in
+  let instrs = block.statements |> List.concat_map ~f:mk_instr in
   let last_loc = location_from_span block.terminator.span in
   let label_loc = Textual.Location.Unknown in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
