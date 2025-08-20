@@ -81,9 +81,13 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
 
 
 let get_textual_typ (rust_ty: Charon.Generated_Types.ty) : Textual.Typ.t = 
+  (* TODO: Add support for types other than TLiteral *)
   match rust_ty with 
    | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TInt _) -> Textual.Typ.Int
+   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TUInt _) -> Textual.Typ.Int
    | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TFloat _) -> Textual.Typ.Float
+   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TBool) -> Textual.Typ.Bool
+   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TChar) -> Textual.Typ.Char
    | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty rust_ty
 
 
@@ -140,19 +144,18 @@ let mk_exp_from_operand (operand : Charon.Generated_Expressions.operand) :
       let value = const_operand.value in
       let ty = const_operand.ty in
       match ty with
-      | Charon.Generated_Types.TLiteral literal_kind ->
+      | TLiteral literal_kind ->
           let exp, typ =
             match literal_kind with
-            | Charon.Generated_Values.TInt _ -> (
+            | TInt _ -> (
               match value with
-              | Charon.Generated_Expressions.CLiteral (VScalar (UnsignedScalar (_, n)))
-              | Charon.Generated_Expressions.CLiteral (VScalar (SignedScalar (_, n))) ->
+              | CLiteral (VScalar (UnsignedScalar (_, n)))
+              | CLiteral (VScalar (SignedScalar (_, n))) ->
                   (Textual.Exp.Const (Textual.Const.Int n), Textual.Typ.Int)
               | _ ->
                   L.die UserError "This int literal kind is not yet supported" )
-            | Charon.Generated_Values.TFloat _ ->
-                (* TODO: Add support for float *)
-                L.die UserError "Float type not yet supported"
+            | TFloat _ ->
+                L.die UserError "Float type is not yet supported"
             | _ ->
                 L.die UserError "This literal kind is not yet supported"
           in
@@ -203,9 +206,9 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
 let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t list =
   let loc = location_from_span statement.span in
   match statement.content with
-  | Charon.Generated_UllbcAst.Assign (lhs, rhs) -> (
+  | Assign (lhs, rhs) -> (
     match lhs.kind with
-    | Charon.Generated_Expressions.PlaceLocal var_id ->
+    | PlaceLocal var_id ->
         let id = Charon.Generated_Expressions.LocalId.to_string var_id in
         let typ = None in
         let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string ("var_" ^ id)) in
@@ -214,9 +217,9 @@ let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t
         instrs @ [store_instr]
     | _ ->
         L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place lhs )
-  | Charon.Generated_UllbcAst.StorageDead _ ->
+  | StorageDead _ ->
       []
-  | Charon.Generated_UllbcAst.StorageLive _ ->
+  | StorageLive _ ->
       []
   | s ->
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_statement s
