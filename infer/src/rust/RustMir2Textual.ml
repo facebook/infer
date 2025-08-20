@@ -10,7 +10,6 @@ module L = Logging
 
 let ident_set = ref Textual.Ident.Set.empty
 
-
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
   let line = span.span.beg_loc.line in
   let col = span.span.beg_loc.col in
@@ -80,15 +79,25 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
       L.die UserError "Not yet supported %a " Charon.Generated_Expressions.pp_binop op
 
 
-let get_textual_typ (rust_ty: Charon.Generated_Types.ty) : Textual.Typ.t = 
+let get_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
   (* TODO: Add support for types other than TLiteral *)
-  match rust_ty with 
-   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TInt _) -> Textual.Typ.Int
-   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TUInt _) -> Textual.Typ.Int
-   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TFloat _) -> Textual.Typ.Float
-   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TBool) -> Textual.Typ.Bool
-   | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TChar) -> Textual.Typ.Char
-   | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty rust_ty
+  (* TODO: Consider how to handle bool *)
+  (* TODO: Check the implementation for unit type - empty tuple *)
+  match rust_ty with
+  | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TInt _) ->
+      Textual.Typ.Int
+  | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TUInt _) ->
+      Textual.Typ.Int
+  | Charon.Generated_Types.TLiteral (Charon.Generated_Values.TFloat _) ->
+      Textual.Typ.Float
+  | Charon.Generated_Types.TLiteral Charon.Generated_Values.TBool ->
+      Textual.Typ.Int
+  | Charon.Generated_Types.TLiteral Charon.Generated_Values.TChar ->
+      Textual.Typ.Int
+  | Charon.Generated_Types.TAdt _ ->
+      Textual.Typ.Void
+  | _ ->
+      L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty rust_ty
 
 
 let mk_name (name : Charon.Generated_Types.name) : Textual.ProcName.t =
@@ -128,40 +137,66 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
 
+let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
+    (value : Charon.Generated_Expressions.raw_constant_expr) : Textual.Exp.t =
+  (* TODO: Add support for more types *)
+  match rust_ty with
+  | TLiteral literal_ty -> (
+    match literal_ty with
+    | TInt _ | TUInt _ -> (
+      match value with
+      | CLiteral (VScalar (UnsignedScalar (_, n))) | CLiteral (VScalar (SignedScalar (_, n))) ->
+          Textual.Exp.Const (Textual.Const.Int n)
+      | _ ->
+          L.die UserError "This int type is not yet supported" )
+    | TFloat _ -> (
+      match value with
+      | CLiteral (VFloat {float_value= f; float_ty= _}) ->
+          Textual.Exp.Const (Textual.Const.Float (float_of_string f))
+      | _ ->
+          L.die UserError "This float type is not yet supported" )
+    | TBool -> (
+      match value with
+      | CLiteral (VBool b) ->
+          Textual.Exp.Const (Textual.Const.Int (if b then Z.one else Z.zero))
+      | _ ->
+          L.die UserError "This bool type is not yet supported" )
+    | TChar -> (
+      match value with
+      | CLiteral (VChar c) -> (
+        match Uchar.to_char c with
+        | Some ch ->
+            Textual.Exp.Const (Textual.Const.Int (Z.of_int (int_of_char ch)))
+        | None ->
+            L.die UserError "Cannot convert Unicode character to char" )
+      | _ ->
+          L.die UserError "This char type is not yet supported" ) )
+  | _ ->
+      L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty rust_ty
+
+
 let mk_exp_from_operand (operand : Charon.Generated_Expressions.operand) :
     Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   match operand with
   | Copy place | Move place ->
       let temp_id = Textual.Ident.fresh !ident_set in
-      let temp_exp = Textual.Exp.Lvar (Textual.VarName.of_string ("n" ^ string_of_int (Textual.Ident.to_int temp_id))) in
+      let temp_exp =
+        Textual.Exp.Lvar
+          (Textual.VarName.of_string ("n" ^ string_of_int (Textual.Ident.to_int temp_id)))
+      in
       let temp_typ = get_textual_typ place.ty in
       let temp_loc = Textual.Location.Unknown in
-      let load_instr = Textual.Instr.Load {id = temp_id; exp = temp_exp; typ = Some temp_typ; loc = temp_loc} in
-      ident_set := Textual.Ident.Set.add temp_id !ident_set;
+      let load_instr =
+        Textual.Instr.Load {id= temp_id; exp= temp_exp; typ= Some temp_typ; loc= temp_loc}
+      in
+      ident_set := Textual.Ident.Set.add temp_id !ident_set ;
       ([load_instr], temp_exp, temp_typ)
-  | Constant const_operand -> (
-      (* TODO: Add more types *)
+  | Constant const_operand ->
       let value = const_operand.value in
-      let ty = const_operand.ty in
-      match ty with
-      | TLiteral literal_kind ->
-          let exp, typ =
-            match literal_kind with
-            | TInt _ -> (
-              match value with
-              | CLiteral (VScalar (UnsignedScalar (_, n)))
-              | CLiteral (VScalar (SignedScalar (_, n))) ->
-                  (Textual.Exp.Const (Textual.Const.Int n), Textual.Typ.Int)
-              | _ ->
-                  L.die UserError "This int literal kind is not yet supported" )
-            | TFloat _ ->
-                L.die UserError "Float type is not yet supported"
-            | _ ->
-                L.die UserError "This literal kind is not yet supported"
-          in
-          ([], exp, typ)
-      | _ ->
-          L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty ty )
+      let rust_ty = const_operand.ty in
+      let exp = mk_const_exp rust_ty value in
+      let textual_ty = get_textual_typ rust_ty in
+      ([], exp, textual_ty)
 
 
 let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
@@ -188,12 +223,13 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
       let _, exps, _ =
         List.fold_right
           (List.map ~f:mk_exp_from_operand ops)
-          ~f:(fun (instrs, exp, typ) (all_instrs, all_exps, all_typs) -> (instrs @ all_instrs, exp :: all_exps, typ :: all_typs))
+          ~f:(fun (instrs, exp, typ) (all_instrs, all_exps, all_typs) ->
+            (instrs @ all_instrs, exp :: all_exps, typ :: all_typs) )
           ~init:([], [], [])
       in
       match (kind, exps) with
+      (* Handle other aggregate types other than unit() *)
       | AggregatedAdt (_, None, None), [] ->
-          (* unit () *)
           ([], Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void)
       | _ ->
           L.die UserError "Aggregates other than unit() are not yet supported" )
@@ -210,10 +246,14 @@ let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t
     match lhs.kind with
     | PlaceLocal var_id ->
         let id = Charon.Generated_Expressions.LocalId.to_string var_id in
-        let typ = None in
-        let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string ("var_" ^ id)) in
+        let typ = get_textual_typ lhs.ty in
+        let exp1 =
+          Textual.Exp.Lvar
+            (Textual.VarName.of_string
+               ("var_" ^ id ^ ":" ^ Format.asprintf "%a" Textual.Typ.pp typ) )
+        in
         let instrs, exp2, _ = mk_exp_from_rvalue rhs in
-        let store_instr = Textual.Instr.Store {exp1; typ; exp2; loc} in
+        let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
         instrs @ [store_instr]
     | _ ->
         L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place lhs )

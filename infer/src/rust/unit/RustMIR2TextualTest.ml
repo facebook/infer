@@ -27,7 +27,7 @@ let test json_file =
 let%expect_test "example" =
   test "example.ullbc" ;
   [%expect
-  {|
+    {|
   .source_language = "Rust"
 
   define example::foo() : void {
