@@ -124,6 +124,45 @@ def foo(self) -> None:
   assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
+let fp_test_with_import_good _ =
+  let prog1 = {|
+def greet(name):
+    return f"Hello, {name}!"
+|} in
+  let prog2 =
+    {|
+# pyre-strict
+from typing import Any
+
+def greet(name: Any) -> str:
+    return f"Hello, {name}!"
+|}
+  in
+  assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
+let fp_test_change_third_fun_param_type_good _ =
+  let prog1 = {|
+# pyre-unsafe
+
+async def foo(
+  a: bool, b: bool, c
+) -> bool:
+  return True
+|} in
+  let prog2 =
+    {|
+# pyre-strict
+
+async def foo(
+  a: bool, b: bool, c: bool
+) -> bool:
+  return True
+|}
+  in
+  assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -132,7 +171,9 @@ let suite =
        ; "test_const_type_annot_bad" >:: test_const_type_annot_bad
        ; "test_fun_type_annot_good" >:: test_fun_type_annot_good
        ; "test_fun_type_annot_bad" >:: test_fun_type_annot_bad
-       ; "test_fun_with_assert_bad" >:: test_fun_with_assert_bad ]
+       ; "test_fun_with_assert_bad" >:: test_fun_with_assert_bad
+       ; "fp_test_with_import_good" >:: fp_test_with_import_good
+       ; "fp_test_change_third_fun_param_type_good" >:: fp_test_change_third_fun_param_type_good ]
 
 
 let () = run_test_tt_main suite
