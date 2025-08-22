@@ -40,3 +40,43 @@ let%expect_test "example" =
 
   }
 |}]
+
+let %expect_test "call_and_temp" = 
+  test "call_and_temp.ullbc" ;
+  [%expect
+  {|
+  .source_language = "Rust"
+
+  define calls_and_temp::calls_and_temp() : int {
+    local var_0: void, var_1: int
+
+    #node_0:
+        n0 = calls_and_temp::callee(3)
+        store &var_1 <- n0
+        n1 = load &var_1
+        ret n1
+
+  }
+
+  define calls_and_temp::callee(n: int) : int {
+    local var_0: void, var_1: int
+
+    #node_0:
+        n0 = load &n
+        n1 = __sil_mult_int(n0, 2)
+        ret n1
+
+  }
+
+  define calls_and_temp::main() : void {
+    local var_0: void, var_1: int
+
+    #node_0:
+        n0 = calls_and_temp::calls_and_temp()
+        store &var_1 <- n0
+        store &var_0 <- null
+        ret var_0
+        
+  }
+  |}
+]

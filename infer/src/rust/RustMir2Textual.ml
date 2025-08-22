@@ -10,6 +10,7 @@ module L = Logging
 
 let ident_set = ref Textual.Ident.Set.empty
 
+
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
   let line = span.span.beg_loc.line in
   let col = span.span.beg_loc.col in
@@ -115,26 +116,11 @@ let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
 
 let mk_procdecl (proc : Charon.UllbcAst.fun_decl) : Textual.ProcDecl.t =
   let qualified_name = mk_qualified_proc_name proc.item_meta in
-  let result_type = Textual.Typ.mk_without_attributes Textual.Typ.Void in
-  let formals_types = Some [] in
+  let result_type = Textual.Typ.mk_without_attributes (get_textual_typ proc.signature.output) in
+  let param_types = List.map proc.signature.inputs ~f:get_textual_typ in
+  let formals_types = Some (List.map param_types ~f:Textual.Typ.mk_without_attributes) in
   let attributes = [] in
   {Textual.ProcDecl.qualified_name; formals_types; result_type; attributes}
-
-
-let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.Terminator.t =
-  match terminator.content with
-  | Charon.Generated_UllbcAst.Goto id ->
-      let label =
-        "node_" ^ string_of_int (Charon.Generated_UllbcAst.BlockId.to_int id)
-        |> Textual.NodeName.of_string
-      in
-      let ssa_args = [] in
-      let node_call : Textual.Terminator.node_call = {label; ssa_args} in
-      Textual.Terminator.Jump [node_call]
-  | Charon.Generated_UllbcAst.Return ->
-      Textual.Terminator.Ret (Textual.Exp.Lvar (Textual.VarName.of_string "var_0"))
-  | t ->
-      L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
 
 let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
@@ -206,7 +192,7 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
       let instrs, exp, typ = mk_exp_from_operand operand in
       let proc_name = proc_name_from_unop op typ in
       let qualified_proc_name =
-        {Textual.QualifiedProcName.enclosing_class= TopLevel; name= proc_name}
+        {Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel; name= proc_name}
       in
       let call = Textual.Exp.call_non_virtual qualified_proc_name [exp] in
       (instrs, call, typ)
@@ -215,7 +201,7 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
       let instrs2, exp2, _ = mk_exp_from_operand operand2 in
       let proc_name = proc_name_from_binop op typ1 in
       let qualified_proc_name =
-        {Textual.QualifiedProcName.enclosing_class= TopLevel; name= proc_name}
+        {Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel; name= proc_name}
       in
       let call = Textual.Exp.call_non_virtual qualified_proc_name [exp1; exp2] in
       (instrs1 @ instrs2, call, typ1)
@@ -237,6 +223,66 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
       mk_exp_from_operand op
   | _ ->
       L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_rvalue rvalue
+
+
+let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.Instr.t list * Textual.Terminator.t =
+  (* TODO: Handle the switch_int and unwind_resume *)
+  match terminator.content with
+  | Charon.Generated_UllbcAst.Call (call, block_id_1, _) ->
+    (* Extract arguments from call*)
+    let arg_evals = List.map call.args ~f:mk_exp_from_operand in
+    let arg_instrs = List.concat_map arg_evals ~f:(fun (instrs, _, _) -> instrs) in
+    let arg_exps = List.map arg_evals ~f:(fun (_, exp, _) -> exp) in
+
+    (* TODO: Get the function name here *)
+    let name = "temp_func" in
+    let proc_name = Textual.ProcName.of_string name in
+    let qualified_proc_name = {Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel; name = proc_name} in
+    
+    (* Get the destination of the call *)
+    let dest = match call.dest.kind with
+      | PlaceLocal var_id -> Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
+      | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place call.dest
+    in
+
+    (* Create the expressions *)
+    let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string ("var_" ^ string_of_int (Textual.Ident.to_int dest))) in
+    let exp2 = Textual.Exp.Call {proc= qualified_proc_name; args= arg_exps; kind= Textual.Exp.NonVirtual} in
+
+    (* Create a call instruction like n0 = call temp_func(args) *)
+    let temp_id = Textual.Ident.fresh !ident_set in
+    let call_instr = Textual.Instr.Let {id= Some temp_id; exp= exp2; loc= Textual.Location.Unknown} in
+
+    (* Create the store instruction *)
+    let temp_exp = Textual.Exp.Lvar (Textual.VarName.of_string ("n" ^ string_of_int (Textual.Ident.to_int temp_id))) in
+    let store_instr = Textual.Instr.Store {exp1 = exp1; typ= Some (get_textual_typ call.dest.ty); exp2= temp_exp; loc= Textual.Location.Unknown} in
+    
+    (* Create the jump instruction *)
+    let label =
+        "node_" ^ string_of_int (Charon.Generated_UllbcAst.BlockId.to_int block_id_1)
+        |> Textual.NodeName.of_string
+      in
+    let ssa_args = [] in
+    let node_call : Textual.Terminator.node_call = {label; ssa_args} in
+    
+    (* Update the ident set *)
+    ident_set := Textual.Ident.Set.add temp_id !ident_set ;
+
+    (* Return the instructions *)
+    (arg_instrs @ [call_instr] @ [store_instr], Textual.Terminator.Jump [node_call])
+  | Charon.Generated_UllbcAst.Goto id ->
+      let label =
+        "node_" ^ string_of_int (Charon.Generated_UllbcAst.BlockId.to_int id)
+        |> Textual.NodeName.of_string
+      in
+      let ssa_args = [] in
+      let node_call : Textual.Terminator.node_call = {label; ssa_args} in
+      ([], Textual.Terminator.Jump [node_call])
+  | Charon.Generated_UllbcAst.Return ->
+      ([], Textual.Terminator.Ret (Textual.Exp.Lvar (Textual.VarName.of_string "var_0")))
+  | Charon.Generated_UllbcAst.UnwindResume -> ([], Textual.Terminator.Throw (Textual.Exp.Lvar (Textual.VarName.of_string "var_0")))
+  | t ->
+      L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
 
 let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t list =
@@ -266,12 +312,14 @@ let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t
 
 
 let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) : Textual.Node.t =
+  ident_set := Textual.Ident.Set.empty;
   let label = "node_" ^ string_of_int idx |> Textual.NodeName.of_string in
   (*TODO Should be retrieved from Γ *)
   let ssa_parameters = [] in
   let exn_succs = [] in
-  let last = mk_terminator block.terminator in
-  let instrs = block.statements |> List.concat_map ~f:mk_instr in
+  let instrs1 = block.statements |> List.concat_map ~f:mk_instr in
+  let instrs2, last = mk_terminator block.terminator in
+  let instrs = instrs1 @ instrs2 in
   let last_loc = location_from_span block.terminator.span in
   let label_loc = Textual.Location.Unknown in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
@@ -280,22 +328,35 @@ let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) : Textual.Node
 let mk_procdesc (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
   let _, fun_decl = proc in
-  let procdecl = mk_procdecl fun_decl in
-  let blocks, _locals =
+  let blocks, locals =
     match fun_decl.body with
     | Some {span= _; locals; body} ->
         (body, locals.locals)
     | None ->
         ([], [])
   in
-  let nodes = List.mapi blocks ~f:mk_node in
+  let procdecl = mk_procdecl fun_decl in
+  let nodes = List.mapi blocks ~f:(fun i block -> mk_node i block) in  
   let start = Textual.NodeName.of_string "node_0" in
-  (* TODO *)
-  let params = [] in
-  (* TODO *)
+  let params = 
+    match fun_decl.body with
+    | Some {locals} ->
+        let locals_list = List.tl locals.locals in
+        (match locals_list with 
+        | Some locals_list -> 
+          List.take locals_list locals.arg_count
+          |> List.mapi ~f:(fun i (local: Charon.Generated_GAst.local) -> 
+              (match local.name with 
+              | Some name -> Textual.VarName.of_string name
+              | None -> Textual.VarName.of_string ("param_" ^ string_of_int i))
+              )
+        | None -> [])
+    | None -> []
+  in
   let locals =
-    [(Textual.VarName.of_string "var_0", Textual.Typ.mk_without_attributes Textual.Typ.Int)]
-    (* TODO *)
+    List.map locals ~f:(fun (l: Charon.Generated_GAst.local) ->
+      let id = l.index in
+      (Textual.VarName.of_string ("var_" ^ Charon.Generated_Expressions.LocalId.to_string id), Textual.Typ.mk_without_attributes (get_textual_typ l.var_ty)))
   in
   let exit_loc = location_from_span_end fun_decl.item_meta.span in
   {Textual.ProcDesc.procdecl; nodes; start; params; locals; exit_loc}
