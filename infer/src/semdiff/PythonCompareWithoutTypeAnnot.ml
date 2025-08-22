@@ -38,7 +38,7 @@ let _ = Py.Run.simple_string strip_annotations_code
 
 let strip_func = Py.Module.get main_module "strip_type_annotations"
 
-let dump_func = Py.Module.get ast_module "dump" |> Py.Callable.to_function
+let dump_func = Py.Module.get ast_module "dump" |> Py.Callable.to_function_with_keywords
 
 let parse_and_strip source =
   let parse_func = Py.Module.get ast_module "parse" |> Py.Callable.to_function in
@@ -46,11 +46,12 @@ let parse_and_strip source =
   Py.Callable.to_function strip_func [|tree|]
 
 
-let ast_to_string ast = dump_func [|ast|] |> Py.String.to_string
+let ast_to_string ast = dump_func [|ast|] [("indent", Py.Int.of_int 4)] |> Py.String.to_string
 
-let compare src1 src2 =
+let compare src1 src2 ?(debug = false) () =
   let ast1 = parse_and_strip src1 in
   let ast2 = parse_and_strip src2 in
   let s1 = ast_to_string ast1 in
   let s2 = ast_to_string ast2 in
+  if debug then Printf.printf "\nAST1: %s\nAST2: %s" s1 s2 ;
   String.equal s1 s2

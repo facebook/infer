@@ -17,6 +17,6 @@ let () =
     let file2 = (Sys.get_argv ()).(2) in
     let src1 = read_file file1 in
     let src2 = read_file file2 in
-    if PythonCompareWithoutTypeAnnot.compare src1 src2 then
+    if PythonCompareWithoutTypeAnnot.compare src1 src2 () then
       print_endline "ASTs are equal (ignoring type annotations)."
     else print_endline "ASTs differ."
