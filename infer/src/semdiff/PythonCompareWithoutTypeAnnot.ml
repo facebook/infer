@@ -14,18 +14,24 @@ let strip_annotations_code =
 import ast
 def strip_type_annotations(tree):
     class TypeAnnotationRemover(ast.NodeTransformer):
+        def _remove_arg_annotations(self, args):
+            return [ast.arg(arg=a.arg, annotation=None) for a in args]
         def visit_FunctionDef(self, node):
             node.returns = None
-            node.args.args = [ast.arg(arg=a.arg, annotation=None) for a in node.args.args]
-            node.args.kwonlyargs = [ast.arg(arg=a.arg, annotation=None) for a in node.args.kwonlyargs]
+            node.args.args = self._remove_arg_annotations(node.args.args)
+            node.args.kwonlyargs = self._remove_arg_annotations(node.args.kwonlyargs)
             return self.generic_visit(node)
+        def visit_AsyncFunctionDef(self, node):
+            node.returns = None
+            node.args.args = self._remove_arg_annotations(node.args.args)
+            node.args.kwonlyargs = self._remove_arg_annotations(node.args.kwonlyargs)
         def visit_AnnAssign(self, node):
             # Convert annotated assignment to normal assignment
             return ast.Assign(targets=[node.target], value=node.value)
         def visit_ImportFrom(self, node):
-          return None
+            return None
         def visit_Import(self, node):
-          return None
+            return None
     return TypeAnnotationRemover().visit(tree)
   |}
 

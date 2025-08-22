@@ -234,7 +234,7 @@ print(greet.__annotations__)
   assert (compare_with_debug_mode prog1 prog2)
 
 
-let fp_test_change_third_fun_param_type_good _ =
+let test_change_async_fun_param_type_good _ =
   let prog1 = {|
 # pyre-unsafe
 
@@ -253,7 +253,7 @@ async def foo(
   return True
 |}
   in
-  assert_not (compare_with_debug_mode prog1 prog2)
+  assert (compare_with_debug_mode prog1 prog2)
 
 
 let suite =
@@ -271,8 +271,8 @@ let suite =
        ; "test_import_dir_alias_good" >:: test_import_dir_alias_good
        ; "test_import_from_dir_alias_good" >:: test_import_from_dir_alias_good
        ; "fn_test_with_import_bad" >:: fn_test_with_import_bad
-       ; "fp_test_change_third_fun_param_type_good" >:: fp_test_change_third_fun_param_type_good
-       ; "test_import_from_dir_alias_bad" >:: test_import_from_dir_alias_bad ]
+       ; "test_import_from_dir_alias_bad" >:: test_import_from_dir_alias_bad
+       ; "test_change_async_fun_param_type_good" >:: test_change_async_fun_param_type_good ]
 
 
 let () = run_test_tt_main suite
