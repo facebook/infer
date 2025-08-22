@@ -124,7 +124,7 @@ def foo(self) -> None:
   assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
-let fp_test_with_import_good _ =
+let test_with_import_good _ =
   let prog1 = {|
 def greet(name):
     return f"Hello, {name}!"
@@ -138,7 +138,96 @@ def greet(name: Any) -> str:
     return f"Hello, {name}!"
 |}
   in
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
+let test_with_import_dir_good _ =
+  let prog1 = {|
+def main():
+    print("Hello World!")
+|} in
+  let prog2 = {|
+import urllib.parse
+def main():
+    print("Hello World!")
+|} in
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
+let test_import_dir_alias_good _ =
+  let prog1 = {|
+def main():
+    print("Hello World!")
+|} in
+  let prog2 = {|
+import urllib.parse as parse
+def main():
+    print("Hello World!")
+|} in
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
+let test_import_from_dir_good _ =
+  let prog1 = {|
+def main():
+    print("Hello World!")
+|} in
+  let prog2 = {|
+from urllib.parse import quote
+def main():
+    print("Hello World!")
+|} in
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
+let test_import_from_dir_alias_good _ =
+  let prog1 = {|
+def main():
+    print("Hello World!")
+|} in
+  let prog2 = {|
+from urllib.parse import quote as q
+def main():
+    print("Hello World!")
+|} in
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
+let test_import_from_dir_alias_bad _ =
+  let prog1 = {|
+def main():
+    print("Hello World!")
+|} in
+  let prog2 =
+    {|
+from urllib.parse import quote as q
+def main():
+    print(1)
+    print("Hello World!")
+|}
+  in
   assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
+let fn_test_with_import_bad _ =
+  let prog1 =
+    {|
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+print(greet("Alice"))
+print(greet.__annotations__)
+|}
+  in
+  let prog2 =
+    {|
+from __future__ import annotations
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+print(greet("Alice"))
+print(greet.__annotations__)
+|}
+  in
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let fp_test_change_third_fun_param_type_good _ =
@@ -172,8 +261,14 @@ let suite =
        ; "test_fun_type_annot_good" >:: test_fun_type_annot_good
        ; "test_fun_type_annot_bad" >:: test_fun_type_annot_bad
        ; "test_fun_with_assert_bad" >:: test_fun_with_assert_bad
-       ; "fp_test_with_import_good" >:: fp_test_with_import_good
-       ; "fp_test_change_third_fun_param_type_good" >:: fp_test_change_third_fun_param_type_good ]
+       ; "test_with_import_good" >:: test_with_import_good
+       ; "test_with_import_dir_good" >:: test_with_import_dir_good
+       ; "test_import_from_dir_good" >:: test_import_from_dir_good
+       ; "test_import_dir_alias_good" >:: test_import_dir_alias_good
+       ; "test_import_from_dir_alias_good" >:: test_import_from_dir_alias_good
+       ; "fn_test_with_import_bad" >:: fn_test_with_import_bad
+       ; "fp_test_change_third_fun_param_type_good" >:: fp_test_change_third_fun_param_type_good
+       ; "test_import_from_dir_alias_bad" >:: test_import_from_dir_alias_bad ]
 
 
 let () = run_test_tt_main suite

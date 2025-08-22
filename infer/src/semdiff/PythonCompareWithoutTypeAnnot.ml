@@ -22,6 +22,10 @@ def strip_type_annotations(tree):
         def visit_AnnAssign(self, node):
             # Convert annotated assignment to normal assignment
             return ast.Assign(targets=[node.target], value=node.value)
+        def visit_ImportFrom(self, node):
+          return None
+        def visit_Import(self, node):
+          return None
     return TypeAnnotationRemover().visit(tree)
   |}
 
