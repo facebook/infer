@@ -21,6 +21,8 @@ CLANG_PREBUILD_PATCHES=(
     "$SCRIPT_DIR/err_ret_local_block.patch"
     "$SCRIPT_DIR/mangle_suppress_errors.patch"
     "$SCRIPT_DIR/objc_method_decl.patch"
+    "$SCRIPT_DIR/glibc_2.42_struct_termio_interceptors.patch"
+    "$SCRIPT_DIR/glibc_2.42_struct_termio_references.patch"
 )
 
 mkdir -p "${SCRIPT_DIR}/download"
