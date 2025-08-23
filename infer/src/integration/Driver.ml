@@ -365,6 +365,7 @@ let fail_on_issue_epilogue () =
   match Utils.read_file issues_json with
   | Ok lines ->
       let issues = Jsonbug_j.report_of_string @@ String.concat ~sep:"" lines in
+      let issues = List.filter ~f:(fun (x : Jsonbug_j.jsonbug) -> not x.suppressed) issues in
       if not (List.is_empty issues) then L.exit Config.fail_on_issue_exit_code
   | Error error ->
       L.internal_error "Failed to read report file '%s': %s@." issues_json error ;
