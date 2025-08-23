@@ -1,0 +1,64 @@
+From c99b1bcd505064f2e086e6b1034ce0b0c91ea5b9 Mon Sep 17 00:00:00 2001
+From: Andreas Schwab <schwab@suse.de>
+Date: Wed, 7 May 2025 10:06:10 +0200
+Subject: [PATCH] Remove reference to obsolete termio ioctls
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The termio ioctls are no longer used after commit 59978b21ad9c
+("[sanitizer_common] Remove interceptors for deprecated struct termio
+(#137403)"), remove them.  Fixes this build error:
+
+../../../../libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp:765:27: error: invalid application of ‘sizeof’ to incomplete type ‘__sanitizer::termio’
+  765 |   unsigned IOCTL_TCGETA = TCGETA;
+      |                           ^~~~~~
+../../../../libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp:769:27: error: invalid application of ‘sizeof’ to incomplete type ‘__sanitizer::termio’
+  769 |   unsigned IOCTL_TCSETA = TCSETA;
+      |                           ^~~~~~
+../../../../libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp:770:28: error: invalid application of ‘sizeof’ to incomplete type ‘__sanitizer::termio’
+  770 |   unsigned IOCTL_TCSETAF = TCSETAF;
+      |                            ^~~~~~~
+../../../../libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp:771:28: error: invalid application of ‘sizeof’ to incomplete type ‘__sanitizer::termio’
+  771 |   unsigned IOCTL_TCSETAW = TCSETAW;
+      |                            ^~~~~~~
+Part-of: https://github.com/llvm/llvm-project/pull/138822
+Closes: https://github.com/llvm/llvm-project/pull/138822
+---
+ .../lib/sanitizer_common/sanitizer_platform_limits_posix.cpp  | 4 ----
+ .../lib/sanitizer_common/sanitizer_platform_limits_posix.h    | 4 ----
+ 2 files changed, 8 deletions(-)
+
+diff --git a/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp b/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp
+index ef4b8a85d6634..ea8cc306268cb 100644
+--- a/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp
++++ b/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.cpp
+@@ -764,12 +764,8 @@ unsigned struct_ElfW_Phdr_sz = sizeof(Elf_Phdr);
+   unsigned IOCTL_SOUND_PCM_WRITE_FILTER = SOUND_PCM_WRITE_FILTER;
+ #endif // SOUND_VERSION
+   unsigned IOCTL_TCFLSH = TCFLSH;
+-  unsigned IOCTL_TCGETA = TCGETA;
+   unsigned IOCTL_TCGETS = TCGETS;
+   unsigned IOCTL_TCSBRK = TCSBRK;
+   unsigned IOCTL_TCSBRKP = TCSBRKP;
+-  unsigned IOCTL_TCSETA = TCSETA;
+-  unsigned IOCTL_TCSETAF = TCSETAF;
+-  unsigned IOCTL_TCSETAW = TCSETAW;
+   unsigned IOCTL_TCSETS = TCSETS;
+   unsigned IOCTL_TCSETSF = TCSETSF;
+diff --git a/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.h b/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.h
+index 9e11dd9911d9d..24966523f3a02 100644
+--- a/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.h
++++ b/llvm-project/compiler-rt/lib/sanitizer_common/sanitizer_platform_limits_posix.h
+@@ -1289,11 +1289,7 @@ extern unsigned IOCTL_SNDCTL_COPR_SENDMSG;
+ extern unsigned IOCTL_SNDCTL_COPR_WCODE;
+ extern unsigned IOCTL_SNDCTL_COPR_WDATA;
+ extern unsigned IOCTL_TCFLSH;
+-extern unsigned IOCTL_TCGETA;
+ extern unsigned IOCTL_TCGETS;
+ extern unsigned IOCTL_TCSBRK;
+ extern unsigned IOCTL_TCSBRKP;
+-extern unsigned IOCTL_TCSETA;
+-extern unsigned IOCTL_TCSETAF;
+-extern unsigned IOCTL_TCSETAW;
+ extern unsigned IOCTL_TCSETS;
