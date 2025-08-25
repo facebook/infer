@@ -47,7 +47,7 @@ let %expect_test "call_and_temp" =
   {|
   .source_language = "Rust"
 
-  define calls_and_temp::calls_and_temp() : int {
+  define call_and_temp::calls_and_temp() : int {
     local var_0: void, var_1: int
 
     #node_0:
@@ -58,7 +58,7 @@ let %expect_test "call_and_temp" =
 
   }
 
-  define calls_and_temp::callee(n: int) : int {
+  define call_and_temp::callee(n: int) : int {
     local var_0: void, var_1: int
 
     #node_0:
@@ -68,7 +68,7 @@ let %expect_test "call_and_temp" =
 
   }
 
-  define calls_and_temp::main() : void {
+  define call_and_temp::main() : void {
     local var_0: void, var_1: int
 
     #node_0:

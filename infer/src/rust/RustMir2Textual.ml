@@ -10,7 +10,6 @@ module L = Logging
 
 let ident_set = ref Textual.Ident.Set.empty
 
-
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
   let line = span.span.beg_loc.line in
   let col = span.span.beg_loc.col in
@@ -166,14 +165,16 @@ let mk_exp_from_operand (operand : Charon.Generated_Expressions.operand) :
   match operand with
   | Copy place | Move place ->
       let temp_id = Textual.Ident.fresh !ident_set in
-      let temp_exp =
-        Textual.Exp.Lvar
-          (Textual.VarName.of_string ("n" ^ string_of_int (Textual.Ident.to_int temp_id)))
-      in
+      let temp_exp = Textual.Exp.Var(temp_id) in
       let temp_typ = get_textual_typ place.ty in
       let temp_loc = Textual.Location.Unknown in
+      let place_id = match place.kind with
+        | PlaceLocal var_id -> Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
+        | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place place
+      in
+      let place_exp = Textual.Exp.Lvar (Textual.VarName.of_string ("var_" ^ string_of_int (Textual.Ident.to_int place_id))) in
       let load_instr =
-        Textual.Instr.Load {id= temp_id; exp= temp_exp; typ= Some temp_typ; loc= temp_loc}
+        Textual.Instr.Load {id= temp_id; exp= place_exp; typ= Some temp_typ; loc= temp_loc}
       in
       ident_set := Textual.Ident.Set.add temp_id !ident_set ;
       ([load_instr], temp_exp, temp_typ)
@@ -254,7 +255,7 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.
     let call_instr = Textual.Instr.Let {id= Some temp_id; exp= exp2; loc= Textual.Location.Unknown} in
 
     (* Create the store instruction *)
-    let temp_exp = Textual.Exp.Lvar (Textual.VarName.of_string ("n" ^ string_of_int (Textual.Ident.to_int temp_id))) in
+    let temp_exp = Textual.Exp.Var temp_id in
     let store_instr = Textual.Instr.Store {exp1 = exp1; typ= Some (get_textual_typ call.dest.ty); exp2= temp_exp; loc= Textual.Location.Unknown} in
     
     (* Create the jump instruction *)
@@ -325,6 +326,7 @@ let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) : Textual.Node
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
+
 let mk_procdesc (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
   let _, fun_decl = proc in
@@ -340,8 +342,7 @@ let mk_procdesc (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.
   let start = Textual.NodeName.of_string "node_0" in
   let params = 
     match fun_decl.body with
-    | Some {locals} ->
-        let locals_list = List.tl locals.locals in
+    | Some {locals} -> let locals_list = List.tl locals.locals in
         (match locals_list with 
         | Some locals_list -> 
           List.take locals_list locals.arg_count
