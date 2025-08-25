@@ -31,7 +31,7 @@ let%expect_test "example" =
   .source_language = "Rust"
 
   define example::foo() : void {
-    local var_0: void, var_1: int
+    local var_0: int, var_1: int
     #node_0:
         store &var_1 <- 42
         store &var_0 <- null
@@ -48,10 +48,10 @@ let %expect_test "call_and_temp" =
   .source_language = "Rust"
 
   define call_and_temp::calls_and_temp() : int {
-    local var_0: void, var_1: int
+    local var_0: int, var_1: int
 
     #node_0:
-        n0 = calls_and_temp::callee(3)
+        n0 = callee(3)
         store &var_1 <- n0
         n1 = load &var_1
         ret n1
@@ -59,7 +59,7 @@ let %expect_test "call_and_temp" =
   }
 
   define call_and_temp::callee(n: int) : int {
-    local var_0: void, var_1: int
+    local var_0: int, var_1: int
 
     #node_0:
         n0 = load &n
@@ -72,7 +72,7 @@ let %expect_test "call_and_temp" =
     local var_0: void, var_1: int
 
     #node_0:
-        n0 = calls_and_temp::calls_and_temp()
+        n0 = calls_and_temp()
         store &var_1 <- n0
         store &var_0 <- null
         ret var_0

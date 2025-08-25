@@ -8,6 +8,10 @@
 open! IStd
 module L = Logging
 
+(* TODO: See if there is a better way to access function names *)
+module FunMap = Stdlib.Map.Make(String)
+let fun_map : string FunMap.t ref = ref FunMap.empty
+
 let ident_set = ref Textual.Ident.Set.empty
 
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
@@ -47,33 +51,33 @@ let proc_name_from_unop (op : Charon.Generated_Expressions.unop) (typ : Textual.
 let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textual.Typ.t) :
     Textual.ProcName.t =
   match (op, typ) with
-  | Charon.Generated_Expressions.Add _, Textual.Typ.Int ->
+  | Add _, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_plusa_int"
-  | Charon.Generated_Expressions.Sub _, Textual.Typ.Int ->
+  | Sub _, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_minusa_int"
-  | Charon.Generated_Expressions.Mul _, Textual.Typ.Int ->
+  | Mul _, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_mult_int"
-  | Charon.Generated_Expressions.Div _, Textual.Typ.Int ->
+  | Div _, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_divi"
-  | Charon.Generated_Expressions.Rem _, Textual.Typ.Int ->
+  | Rem _, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_mod"
-  | Charon.Generated_Expressions.BitXor, Textual.Typ.Int ->
+  | BitXor, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_bxor"
-  | Charon.Generated_Expressions.BitAnd, Textual.Typ.Int ->
+  | BitAnd, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_band"
-  | Charon.Generated_Expressions.BitOr, Textual.Typ.Int ->
+  | BitOr, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_bor"
-  | Charon.Generated_Expressions.Eq, Textual.Typ.Int ->
+  | Eq, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_eq"
-  | Charon.Generated_Expressions.Lt, Textual.Typ.Int ->
+  | Lt, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_lt"
-  | Charon.Generated_Expressions.Le, Textual.Typ.Int ->
+  | Le, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_le"
-  | Charon.Generated_Expressions.Ne, Textual.Typ.Int ->
+  | Ne, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_ne"
-  | Charon.Generated_Expressions.Ge, Textual.Typ.Int ->
+  | Ge, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_ge"
-  | Charon.Generated_Expressions.Gt, Textual.Typ.Int ->
+  | Gt, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_gt"
   | _ ->
       L.die UserError "Not yet supported %a " Charon.Generated_Expressions.pp_binop op
@@ -226,6 +230,25 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) :
       L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_rvalue rvalue
 
 
+let func_name_from_operand (operand: Charon.Generated_GAst.fn_operand) : string =
+  let func_name = match operand with
+      | FnOpRegular fn_ptr -> 
+          (match fn_ptr.func with
+            | FunId id ->
+             (match id with 
+               | FRegular fun_decl_id -> 
+                   (match FunMap.find_opt (Charon.GAst.FunDeclId.to_string fun_decl_id) !fun_map with
+                   | Some name -> name
+                   | None -> L.die UserError "Function not found in fun_map: %s" (Charon.GAst.FunDeclId.to_string fun_decl_id))
+               | _ -> L.die UserError "Not yet supported"
+              )
+            | TraitMethod (_) -> L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand
+          )
+      | FnOpMove (_) -> L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand
+    in
+    func_name
+
+
 let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.Instr.t list * Textual.Terminator.t =
   (* TODO: Handle the switch_int and unwind_resume *)
   match terminator.content with
@@ -235,8 +258,8 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator) : Textual.
     let arg_instrs = List.concat_map arg_evals ~f:(fun (instrs, _, _) -> instrs) in
     let arg_exps = List.map arg_evals ~f:(fun (_, exp, _) -> exp) in
 
-    (* TODO: Get the function name here *)
-    let name = "temp_func" in
+    (* Get the function name *)
+    let name = func_name_from_operand call.func in
     let proc_name = Textual.ProcName.of_string name in
     let qualified_proc_name = {Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel; name = proc_name} in
     
@@ -312,7 +335,7 @@ let mk_instr (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
 
-let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) : Textual.Node.t =
+let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block): Textual.Node.t =
   ident_set := Textual.Ident.Set.empty;
   let label = "node_" ^ string_of_int idx |> Textual.NodeName.of_string in
   (*TODO Should be retrieved from Γ *)
@@ -324,7 +347,6 @@ let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) : Textual.Node
   let last_loc = location_from_span block.terminator.span in
   let label_loc = Textual.Location.Unknown in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
-
 
 
 let mk_procdesc (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
@@ -363,8 +385,28 @@ let mk_procdesc (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.
   {Textual.ProcDesc.procdecl; nodes; start; params; locals; exit_loc}
 
 
+(* Extract the function name from a Charon fun_decl *)
+let fun_name_of_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) : string =
+  let open Charon in
+  let name = fun_decl.item_meta.name in
+  match List.tl name with
+  | Some name_list -> (
+      match List.hd name_list with
+      | Some pe -> name_of_path_element pe
+      | None -> L.die UserError "Not yet supported %a" Generated_Types.pp_name name)
+  | None -> L.die UserError "Not yet supported %a" Generated_Types.pp_name name
+
+
+let fun_map_of_decls fun_decls (init : string FunMap.t) : string FunMap.t =
+  let fun_decl_list = Charon.Generated_Types.FunDeclId.Map.bindings fun_decls in
+  List.fold_left fun_decl_list ~init ~f:(fun acc (fun_decl_id, fun_decl) ->
+      let fun_name = fun_name_of_decl fun_decl in
+      FunMap.add (Charon.Generated_Types.FunDeclId.to_string fun_decl_id) fun_name acc)
+
+
 let mk_module (crate : Charon.UllbcAst.crate) json_file : Textual.Module.t =
   let fun_decls = crate.fun_decls in
+  fun_map := fun_map_of_decls fun_decls FunMap.empty;
   let attrs = [Textual.Attr.mk_source_language Rust] in
   let decls =
     Charon.Generated_Types.FunDeclId.Map.bindings fun_decls
