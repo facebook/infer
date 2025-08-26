@@ -320,6 +320,10 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
           L.die UserError "Aggregates other than unit() are not yet supported" )
   | Use op ->
       mk_exp_from_operand place_map op
+  | RawPtr (place, _) | RvRef (place, _) ->
+      let instrs, exp, _ = mk_exp_from_place place_map place in
+      let typ = Textual.Typ.Ptr (get_textual_typ place.ty) in
+      (instrs, exp, typ)
   | _ ->
       L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_rvalue rvalue
 
