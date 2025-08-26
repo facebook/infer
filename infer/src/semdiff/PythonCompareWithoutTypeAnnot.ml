@@ -54,7 +54,7 @@ let parse_and_strip source =
 
 let ast_to_string ast = dump_func [|ast|] [("indent", Py.Int.of_int 4)] |> Py.String.to_string
 
-let compare src1 src2 ?(debug = false) () =
+let compare ?(debug = false) src1 src2 =
   let ast1 = parse_and_strip src1 in
   let ast2 = parse_and_strip src2 in
   let s1 = ast_to_string ast1 in

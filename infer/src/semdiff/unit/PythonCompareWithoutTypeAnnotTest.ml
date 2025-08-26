@@ -10,20 +10,16 @@ open OUnit2
 
 let assert_not expr = assert (Bool.equal expr false)
 
-let compare_with_debug_mode prog1 prog2 : bool =
-  PythonCompareWithoutTypeAnnot.compare prog1 prog2 ~debug:true ()
-
-
 let test_basic_fun_good _ =
   let prog1 = "def f():\n  return 1" in
   let prog2 = "def f():\n  return 1" in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_basic_fun_bad _ =
   let prog1 = "def f():\n  return 1" in
   let prog2 = "def f():\n  return 2" in
-  assert_not (compare_with_debug_mode prog1 prog2)
+  assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_const_type_annot_good _ =
@@ -39,7 +35,7 @@ CATEGORIES_TO_REMOVE = {'a': 1, 'b': 2, 'c': 3}
 CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
 |}
   in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_const_type_annot_bad _ =
@@ -55,7 +51,7 @@ CATEGORIES_TO_REMOVE = {'a': 1, 'b': 2, 'c': 3}
 CATEGORIES_TO_REMOVE_RENAMED: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
 |}
   in
-  assert_not (compare_with_debug_mode prog1 prog2)
+  assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_fun_type_annot_good _ =
@@ -81,7 +77,7 @@ def foo() -> None:
 def write_html(json_file_path:str) -> None: pass
 |}
   in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_fun_type_annot_bad _ =
@@ -107,7 +103,7 @@ def foo() -> None:
 def write_html(json_file_path:str) -> None: pass
 |}
   in
-  assert_not (compare_with_debug_mode prog1 prog2)
+  assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 (* We may want to silent reporting on case below with assertion added *)
@@ -125,7 +121,7 @@ def foo(self) -> None:
     x = obj.prop
 |}
   in
-  assert_not (compare_with_debug_mode prog1 prog2)
+  assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_with_import_good _ =
@@ -142,7 +138,7 @@ def greet(name: Any) -> str:
     return f"Hello, {name}!"
 |}
   in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_with_import_dir_good _ =
@@ -155,7 +151,7 @@ import urllib.parse
 def main():
     print("Hello World!")
 |} in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_import_dir_alias_good _ =
@@ -168,7 +164,7 @@ import urllib.parse as parse
 def main():
     print("Hello World!")
 |} in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_import_from_dir_good _ =
@@ -181,7 +177,7 @@ from urllib.parse import quote
 def main():
     print("Hello World!")
 |} in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_import_from_dir_alias_good _ =
@@ -194,7 +190,7 @@ from urllib.parse import quote as q
 def main():
     print("Hello World!")
 |} in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_import_from_dir_alias_bad _ =
@@ -210,7 +206,7 @@ def main():
     print("Hello World!")
 |}
   in
-  assert_not (compare_with_debug_mode prog1 prog2)
+  assert_not (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let fn_test_with_import_bad _ =
@@ -231,7 +227,7 @@ print(greet("Alice"))
 print(greet.__annotations__)
 |}
   in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let test_change_async_fun_param_type_good _ =
@@ -253,7 +249,7 @@ async def foo(
   return True
 |}
   in
-  assert (compare_with_debug_mode prog1 prog2)
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
 let suite =
