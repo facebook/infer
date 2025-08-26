@@ -41,10 +41,11 @@ let%expect_test "example" =
   }
 |}]
 
-let %expect_test "call_and_temp" = 
+
+let%expect_test "call_and_temp" =
   test "call_and_temp.ullbc" ;
   [%expect
-  {|
+    {|
   .source_language = "Rust"
 
   define call_and_temp::calls_and_temp() : int {
@@ -78,13 +79,13 @@ let %expect_test "call_and_temp" =
         ret var_0
         
   }
-  |}
-]
+  |}]
 
-let %expect_test "int_comparison" = 
+
+let%expect_test "int_comparison" =
   test "int_comparison.ullbc" ;
   [%expect
-  {|
+    {|
   .source_language = "Rust"
 
   define int_comparison::swi_cmp(x: int, y: int) : int {
@@ -119,5 +120,4 @@ let %expect_test "int_comparison" =
         ret var_0
   }
   
-  |}
-]
+  |}]
