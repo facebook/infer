@@ -126,9 +126,8 @@ let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
 
 let rec get_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
   (* TODO: Add support for more types  *)
-  (* TODO: Consider how to handle bool and char *)
-  (* TODO: For arrays, Charon seems to hardcode the type for now *)
   match rust_ty with
+  (* TODO: Consider how to handle bool and char *)
   | TLiteral (TInt _) | TLiteral (TUInt _) | TLiteral (TBool) | TLiteral (TChar)  ->
       Textual.Typ.Int
   | TLiteral (TFloat _) ->
@@ -139,9 +138,17 @@ let rec get_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
       Textual.Typ.Ptr (get_textual_typ ty)
   | TAdt ty_decl_ref -> 
       (match ty_decl_ref.id with
-      | TTuple -> Textual.Typ.Void
+      | TTuple -> 
+          let component_types = ty_decl_ref.generics.types in
+          if List.is_empty component_types then
+            (* Unit type (0-tuple) - represented as void *)
+            Textual.Typ.Void
+          else
+            (* TODO: Implement non-empty tuple*)
+            L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_type_decl_ref ty_decl_ref
       | TBuiltin builtin_ty ->
         (match builtin_ty with
+          (* TODO: Do not harcode as Int, see how to access to type from builtin_ty *)
           | TArray -> Textual.Typ.Array (Textual.Typ.Int)
           | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_type_decl_ref ty_decl_ref
         )
@@ -246,24 +253,29 @@ let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
       L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty rust_ty
 
 
+let mk_exp_from_place (place_map : string PlaceMap.t) (place : Charon.Generated_Expressions.place) :
+    Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
+  let temp_id = Textual.Ident.fresh !ident_set in
+  let temp_exp = Textual.Exp.Var(temp_id) in
+  let temp_typ = get_textual_typ place.ty in
+  let temp_loc = Textual.Location.Unknown in
+  let place_id = match place.kind with
+    | PlaceLocal var_id -> Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
+    | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place place
+  in
+  let place_exp = Textual.Exp.Lvar (Textual.VarName.of_string (PlaceMap.find (Textual.Ident.to_int place_id) place_map)) in
+  let load_instr =
+    Textual.Instr.Load {id= temp_id; exp= place_exp; typ= Some temp_typ; loc= temp_loc}
+  in
+  ident_set := Textual.Ident.Set.add temp_id !ident_set ;
+  ([load_instr], temp_exp, temp_typ)
+
+
 let mk_exp_from_operand (place_map : string PlaceMap.t) (operand : Charon.Generated_Expressions.operand):
     Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   match operand with
   | Copy place | Move place ->
-      let temp_id = Textual.Ident.fresh !ident_set in
-      let temp_exp = Textual.Exp.Var(temp_id) in
-      let temp_typ = get_textual_typ place.ty in
-      let temp_loc = Textual.Location.Unknown in
-      let place_id = match place.kind with
-        | PlaceLocal var_id -> Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
-        | _ -> L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place place
-      in
-      let place_exp = Textual.Exp.Lvar (Textual.VarName.of_string (PlaceMap.find (Textual.Ident.to_int place_id) place_map)) in
-      let load_instr =
-        Textual.Instr.Load {id= temp_id; exp= place_exp; typ= Some temp_typ; loc= temp_loc}
-      in
-      ident_set := Textual.Ident.Set.add temp_id !ident_set ;
-      ([load_instr], temp_exp, temp_typ)
+      mk_exp_from_place place_map place
   | Constant const_operand ->
       let value = const_operand.value in
       let rust_ty = const_operand.ty in
@@ -388,14 +400,13 @@ let mk_instr (place_map : string PlaceMap.t) (statement : Charon.Generated_Ullbc
     match lhs.kind with
     | PlaceLocal var_id ->
         let id = Charon.Generated_Expressions.LocalId.to_int var_id in
-        let typ = get_textual_typ lhs.ty in
         let exp1 =
           Textual.Exp.Lvar
             (Textual.VarName.of_string
                (PlaceMap.find id place_map) )
         in
-        let instrs, exp2, _ = mk_exp_from_rvalue rhs place_map in
-        let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
+        let instrs, exp2, typ = mk_exp_from_rvalue rhs place_map in
+        let store_instr = Textual.Instr.Store {exp1; typ = Some typ; exp2; loc} in
         instrs @ [store_instr]
     | _ ->
         L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place lhs )
@@ -403,6 +414,38 @@ let mk_instr (place_map : string PlaceMap.t) (statement : Charon.Generated_Ullbc
       []
   | StorageLive _ ->
       []
+  | Drop (place, _) ->
+      (* First, evaluate the place to get instructions and expression *)
+      let instrs, exp, typ = mk_exp_from_place place_map place in
+      
+      (* Create a fresh variable to hold the value before freeing *)
+      let fresh_var_id = Textual.Ident.fresh !ident_set in
+      let fresh_var_exp = Textual.Exp.Var fresh_var_id in
+      ident_set := Textual.Ident.Set.add fresh_var_id !ident_set;
+      
+      (* Create assignment instruction: *var <- e *)
+      let assign_instr = Textual.Instr.Store {
+        exp1 = fresh_var_exp; 
+        typ = Some typ; 
+        exp2 = exp; 
+        loc = loc
+      } in
+      
+      (* Create free instruction: free(var) *)
+      let free_proc_name = Textual.ProcName.of_string "__sil_free" in
+      let qualified_free_name = {
+        Textual.QualifiedProcName.enclosing_class = Textual.QualifiedProcName.TopLevel; 
+        name = free_proc_name
+      } in
+      let free_call = Textual.Exp.call_non_virtual qualified_free_name [fresh_var_exp] in
+      let free_instr = Textual.Instr.Let {
+        id = None; 
+        exp = free_call; 
+        loc = loc
+      } in
+      
+      (* Return the concatenated instructions: instrs :: [*var <- e, free(var)] *)
+      instrs @ [assign_instr; free_instr]
   | s ->
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
