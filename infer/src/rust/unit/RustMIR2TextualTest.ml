@@ -80,3 +80,44 @@ let %expect_test "call_and_temp" =
   }
   |}
 ]
+
+let %expect_test "int_comparison" = 
+  test "int_comparison.ullbc" ;
+  [%expect
+  {|
+  .source_language = "Rust"
+
+  define int_comparison::swi_cmp(x: int, y: int) : int {
+    local var_3: bool, var_4: int, var_5: int
+    #node_0:
+        n0 = load &x
+        store &var_4 <- n0
+        n1 = load &y
+        store &var_5 <- n1
+        n2 = __sil_gt(var_4, var_5)
+        if n2 then jmp node_1 else jmp node_2
+
+    #node_1:
+        ret var_4
+
+    #node_2:
+        ret var_5
+
+  }
+
+  define int_comparison::main() : void {
+    local x: int, y: int, var_0: void, var_1: int, var_2: int
+    #node_0:
+        store &x <- 0
+        store &y <- 1
+        n0 = load &x
+        store &var_1 <- n0
+        n1 = load &y
+        store &var_2 <- n1
+        n2 = int_comparison::swi_cmp(var_1, var_2)
+        store &var_0 <- null
+        ret var_0
+  }
+  
+  |}
+]
