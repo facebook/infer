@@ -252,6 +252,22 @@ async def foo(
   assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
 
 
+let test_change_lambda_param_type_good _ =
+  let prog1 = {|
+square = lambda x: x * x
+print(square(5))
+|} in
+  let prog2 =
+    {|
+from typing import Callable
+
+square: Callable[[int], int] = lambda x: x * x
+print(square(5))
+|}
+  in
+  assert (PythonCompareWithoutTypeAnnot.compare prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -268,7 +284,8 @@ let suite =
        ; "test_import_from_dir_alias_good" >:: test_import_from_dir_alias_good
        ; "fn_test_with_import_bad" >:: fn_test_with_import_bad
        ; "test_import_from_dir_alias_bad" >:: test_import_from_dir_alias_bad
-       ; "test_change_async_fun_param_type_good" >:: test_change_async_fun_param_type_good ]
+       ; "test_change_async_fun_param_type_good" >:: test_change_async_fun_param_type_good
+       ; "test_change_lambda_param_type_good" >:: test_change_lambda_param_type_good ]
 
 
 let () = run_test_tt_main suite
