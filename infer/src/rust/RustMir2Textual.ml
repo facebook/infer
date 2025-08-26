@@ -75,14 +75,13 @@ let func_name_from_operand (operand: Charon.Generated_GAst.fn_operand) : string 
 
 let proc_name_from_unop (op : Charon.Generated_Expressions.unop) (typ : Textual.Typ.t) :
     Textual.ProcName.t =
-  (* TODO: Handle bool, Textual.Typ does not have bool *)
   match (op, typ) with
   | Neg _, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_neg"
   | Neg _, Textual.Typ.Float ->
       Textual.ProcName.of_string "__sil_neg"
   | Not, Textual.Typ.Int ->
-      Textual.ProcName.of_string "__sil_bnot"
+      Textual.ProcName.of_string "__sil_lnot"
   | _ ->
       L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_unop op
 
