@@ -35,21 +35,19 @@ let name_of_path_element (path_element : Charon.Generated_Types.path_elem) : str
 
 
 let fun_name_of_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) : string =
-  let name = fun_decl.item_meta.name in
-  match List.tl name with
-  | Some name_list -> (
-    match List.hd name_list with
+  match List.tl fun_decl.item_meta.name with
+  | Some name_list -> 
+    (match List.hd name_list with
     | Some pe ->
         name_of_path_element pe
     | None ->
-        L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_name name )
+        L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_name fun_decl.item_meta.name)
   | None ->
-      L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_name name
+      L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_name fun_decl.item_meta.name
 
 
-let func_name_from_operand (operand : Charon.Generated_GAst.fn_operand) (fun_map : string FunMap.t)
+let fun_name_from_operand (operand : Charon.Generated_GAst.fn_operand) (fun_map : string FunMap.t)
     : string =
-  let func_name =
     match operand with
     | FnOpRegular fn_ptr -> (
       match fn_ptr.func with
@@ -68,8 +66,6 @@ let func_name_from_operand (operand : Charon.Generated_GAst.fn_operand) (fun_map
           L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand )
     | FnOpMove _ ->
         L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand
-  in
-  func_name
 
 
 let proc_name_from_unop (op : Charon.Generated_Expressions.unop) (typ : Textual.Typ.t) :
@@ -133,15 +129,14 @@ let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
   {Textual.QualifiedProcName.enclosing_class; name}
 
 
-let rec get_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
-  (* TODO: Add support for more types  *)
+let rec ty_to_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
   match rust_ty with
   | TLiteral (TInt _) | TLiteral (TUInt _) | TLiteral TBool | TLiteral TChar ->
       Textual.Typ.Int
   | TLiteral (TFloat _) ->
       Textual.Typ.Float
   | TRawPtr (ty, _) | TRef (_, ty, _) ->
-      Textual.Typ.Ptr (get_textual_typ ty)
+      Textual.Typ.Ptr (ty_to_textual_typ ty)
   | TAdt ty_decl_ref -> (
     match ty_decl_ref.id with
     | TTuple ->
@@ -214,13 +209,13 @@ let mk_locals (locals : Charon.Generated_GAst.local list) (arg_count : int)
          let id = l.index in
          ( Textual.VarName.of_string
              (PlaceMap.find (Charon.Generated_Expressions.LocalId.to_int id) place_map)
-         , Textual.Typ.mk_without_attributes (get_textual_typ l.var_ty) ) )
+         , Textual.Typ.mk_without_attributes (ty_to_textual_typ l.var_ty) ) )
 
 
 let mk_procdecl (proc : Charon.UllbcAst.fun_decl) : Textual.ProcDecl.t =
   let qualified_name = mk_qualified_proc_name proc.item_meta in
-  let result_type = Textual.Typ.mk_without_attributes (get_textual_typ proc.signature.output) in
-  let param_types = List.map proc.signature.inputs ~f:get_textual_typ in
+  let result_type = Textual.Typ.mk_without_attributes (ty_to_textual_typ proc.signature.output) in
+  let param_types = List.map proc.signature.inputs ~f:ty_to_textual_typ in
   let formals_types = Some (List.map param_types ~f:Textual.Typ.mk_without_attributes) in
   let attributes = [] in
   {Textual.ProcDecl.qualified_name; formals_types; result_type; attributes}
@@ -268,7 +263,7 @@ let mk_exp_from_place (place_map : string PlaceMap.t) (place : Charon.Generated_
     Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   let temp_id = Textual.Ident.fresh !ident_set in
   let temp_exp = Textual.Exp.Var temp_id in
-  let temp_typ = get_textual_typ place.ty in
+  let temp_typ = ty_to_textual_typ place.ty in
   let temp_loc = Textual.Location.Unknown in
   let place_id =
     match place.kind with
@@ -297,7 +292,7 @@ let mk_exp_from_operand (place_map : string PlaceMap.t)
   | Constant const_operand ->
       let value = const_operand.value in
       let rust_ty = const_operand.ty in
-      let textual_ty = get_textual_typ rust_ty in
+      let textual_ty = ty_to_textual_typ rust_ty in
       let exp = mk_const_exp rust_ty value in
       ([], exp, textual_ty)
 
@@ -342,7 +337,7 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
       mk_exp_from_operand place_map op
   | RawPtr (place, _) | RvRef (place, _) ->
       let instrs, exp, _ = mk_exp_from_place place_map place in
-      let typ = Textual.Typ.Ptr (get_textual_typ place.ty) in
+      let typ = Textual.Typ.Ptr (ty_to_textual_typ place.ty) in
       (instrs, exp, typ)
   | _ ->
       L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_rvalue rvalue
@@ -380,7 +375,7 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
       let arg_instrs = List.concat_map arg_evals ~f:(fun (instrs, _, _) -> instrs) in
       let arg_exps = List.map arg_evals ~f:(fun (_, exp, _) -> exp) in
       (* Get the function name *)
-      let name = func_name_from_operand call.func fun_map in
+      let name = fun_name_from_operand call.func fun_map in
       let proc_name = Textual.ProcName.of_string name in
       let qualified_proc_name =
         { Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel
@@ -412,7 +407,7 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
       let store_instr =
         Textual.Instr.Store
           { exp1
-          ; typ= Some (get_textual_typ call.dest.ty)
+          ; typ= Some (ty_to_textual_typ call.dest.ty)
           ; exp2= temp_exp
           ; loc= Textual.Location.Unknown }
       in

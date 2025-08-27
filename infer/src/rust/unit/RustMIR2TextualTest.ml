@@ -121,3 +121,54 @@ let%expect_test "int_comparison" =
   }
   
   |}]
+
+
+let%expect_test "nested" =
+  test "nested.ullbc" ;
+  [%expect
+    {|
+  .source_language = "Rust"
+
+  define nested::swi_nested(a: int, b: int) : int {
+    local var_3: bool, var_4: int, var_5: bool, var_6: int
+
+    #node_0:
+        n0 = load &a
+        store &var_4 <- n0
+        n1 = __sil_ge(var_4, 0)
+        if n1 then jmp node_1 else jmp node_4
+
+    #node_1:
+        n2 = load &b
+        store &var_6 <- n2
+        n3 = __sil_eq(var_6, 0)
+        if n3 then jmp node_2 else jmp node_3
+
+    #node_2:
+        ret 1
+
+    #node_3:
+        ret 2
+
+    #node_4:
+        ret 3
+
+  }
+
+  define nested::main() : void {
+    local var_0: void, var_1: int, var_2: int, var_3: int, var_4: int
+
+    #node_0:
+        store &var_1 <- 0
+        store &var_2 <- 1
+        n0 = load &var_1
+        store &var_3 <- n0
+        n1 = load &var_2
+        store &var_4 <- n1
+        n2 = nested::swi_nested(var_3, var_4)
+        store &var_0 <- null
+        ret var_0
+
+  }
+  
+  |}]
