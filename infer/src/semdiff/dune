@@ -21,25 +21,3 @@
    -open
    IBase))
  (libraries core IStdlib IBase pyml))
-
-(executable
- (name main)
- (public_name semdiff)
- (modules main)
- (flags
-  (:standard
-   -open
-   Core
-   -open
-   IStdlib
-   -open
-   IStd
-   -open
-   OpenSource
-   -open
-   ATDGenerated
-   -open
-   IBase
-   -open
-   SemDiffLib))
- (libraries core IStdlib IBase pyml SemDiffLib))
