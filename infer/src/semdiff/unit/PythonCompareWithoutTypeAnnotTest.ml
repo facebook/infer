@@ -8,6 +8,8 @@
 open! IStd
 open OUnit2
 
+let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe ()
+
 let assert_not expr = assert (Bool.equal expr false)
 
 let test_basic_fun_good _ =

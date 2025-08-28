@@ -7,10 +7,10 @@
 
 open! IStd
 
-let () = Py.initialize ~interpreter:Version.python_exe ()
-
-let strip_annotations_code =
-  {|
+let init () =
+  let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () in
+  let strip_annotations_code =
+    {|
 import ast
 def strip_type_annotations(tree):
     class TypeAnnotationRemover(ast.NodeTransformer):
@@ -34,30 +34,30 @@ def strip_type_annotations(tree):
             return None
     return TypeAnnotationRemover().visit(tree)
   |}
+  in
+  let ast_module = Py.Import.import_module "ast" in
+  let main_module = Py.Import.import_module "__main__" in
+  let _ = Py.Run.simple_string strip_annotations_code in
+  let strip_func = Py.Module.get main_module "strip_type_annotations" in
+  let dump_func = Py.Module.get ast_module "dump" |> Py.Callable.to_function_with_keywords in
+  (strip_func, ast_module, dump_func)
 
 
-let ast_module = Py.Import.import_module "ast"
-
-let main_module = Py.Import.import_module "__main__"
-
-let _ = Py.Run.simple_string strip_annotations_code
-
-let strip_func = Py.Module.get main_module "strip_type_annotations"
-
-let dump_func = Py.Module.get ast_module "dump" |> Py.Callable.to_function_with_keywords
-
-let parse_and_strip source =
+let parse_and_strip strip_func ast_module source =
   let parse_func = Py.Module.get ast_module "parse" |> Py.Callable.to_function in
   let tree = parse_func [|Py.String.of_string source|] in
   Py.Callable.to_function strip_func [|tree|]
 
 
-let ast_to_string ast = dump_func [|ast|] [("indent", Py.Int.of_int 4)] |> Py.String.to_string
+let ast_to_string dump_func ast =
+  dump_func [|ast|] [("indent", Py.Int.of_int 4)] |> Py.String.to_string
+
 
 let compare ?(debug = false) src1 src2 =
-  let ast1 = parse_and_strip src1 in
-  let ast2 = parse_and_strip src2 in
-  let s1 = ast_to_string ast1 in
-  let s2 = ast_to_string ast2 in
+  let strip_func, ast_module, dump_func = init () in
+  let ast1 = parse_and_strip strip_func ast_module src1 in
+  let ast2 = parse_and_strip strip_func ast_module src2 in
+  let s1 = ast_to_string dump_func ast1 in
+  let s2 = ast_to_string dump_func ast2 in
   if debug then Printf.printf "\nAST1: %s\nAST2: %s" s1 s2 ;
   String.equal s1 s2
