@@ -53,14 +53,32 @@ let ast_to_string dump_func ast =
   dump_func [|ast|] [("indent", Py.Int.of_int 4)] |> Py.String.to_string
 
 
+let rec diff_lines l1 l2 =
+  match (l1, l2) with
+  | [], [] ->
+      []
+  | x :: xs, [] ->
+      ("- " ^ x) :: diff_lines xs []
+  | [], y :: ys ->
+      ("+ " ^ y) :: diff_lines [] ys
+  | x :: xs, y :: ys ->
+      if String.equal x y then diff_lines xs ys else ("- " ^ x) :: ("+ " ^ y) :: diff_lines xs ys
+
+
 let compare ?(debug = false) src1 src2 =
   let strip_func, ast_module, dump_func = init () in
   let ast1 = parse_and_strip strip_func ast_module src1 in
   let ast2 = parse_and_strip strip_func ast_module src2 in
   let s1 = ast_to_string dump_func ast1 in
   let s2 = ast_to_string dump_func ast2 in
-  if debug then Printf.printf "\nAST1: %s\nAST2: %s" s1 s2 ;
-  String.equal s1 s2
+  let lines1 = String.split_on_chars ~on:['\n'] s1 in
+  let lines2 = String.split_on_chars ~on:['\n'] s2 in
+  let asts_equal = String.equal s1 s2 in
+  if debug then (
+    let diffs = if asts_equal then [] else diff_lines lines1 lines2 in
+    Printf.printf "SemDiff:\n" ;
+    List.iter ~f:print_endline diffs ) ;
+  asts_equal
 
 
 let semdiff ?debug previous_file current_file =
