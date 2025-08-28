@@ -43,6 +43,7 @@ type id =
   | ReportXML
   | RetainCycles
   | RunState
+  | SemDiff
   | SourceDebug
   | Stats
   | SyntacticDependencyGraphDot
@@ -156,6 +157,8 @@ let of_id = function
       file ".infer_runstate.json" ~keep_before_incremental_analysis:()
   | Stats ->
       directory "stats"
+  | SemDiff ->
+      file "semdiff.json"
   | SourceDebug ->
       directory "source_debug"
   | SyntacticDependencyGraphDot ->

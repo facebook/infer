@@ -17,7 +17,7 @@ let setup () =
   ( match Config.command with
   | Analyze ->
       ResultsDir.assert_results_dir "have you run capture before?"
-  | Report | ReportDiff ->
+  | Report | ReportDiff | SemDiff ->
       ResultsDir.create_results_dir ()
   | Capture | Compile | Run ->
       let driver_mode = Lazy.force Driver.mode_from_command_line in
@@ -51,8 +51,6 @@ let setup () =
       ResultsDir.create_results_dir ()
   | Debug ->
       ResultsDir.assert_results_dir "please run an infer analysis or capture first"
-  | SemDiff ->
-      ()
   | Help ->
       () ) ;
   let has_result_dir =

@@ -49,9 +49,7 @@ let parse_and_strip strip_func ast_module source =
   Py.Callable.to_function strip_func [|tree|]
 
 
-let ast_to_string dump_func ast =
-  dump_func [|ast|] [("indent", Py.Int.of_int 4)] |> Py.String.to_string
-
+let ast_to_string dump_func ast = dump_func [|ast|] [] |> Py.String.to_string
 
 let rec diff_lines l1 l2 =
   match (l1, l2) with
@@ -65,6 +63,19 @@ let rec diff_lines l1 l2 =
       if String.equal x y then diff_lines xs ys else ("- " ^ x) :: ("+ " ^ y) :: diff_lines xs ys
 
 
+let write_output previous_file current_file diffs =
+  let out_path = ResultsDir.get_path SemDiff in
+  let outcome = if List.is_empty diffs then "equal" else "different" in
+  let json =
+    `Assoc
+      [ ("previous", `String previous_file)
+      ; ("current", `String current_file)
+      ; ("outcome", `String outcome)
+      ; ("diff", `List (List.map ~f:(fun diff -> `String diff) diffs)) ]
+  in
+  Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
+
+
 let compare ?(debug = false) src1 src2 =
   let strip_func, ast_module, dump_func = init () in
   let ast1 = parse_and_strip strip_func ast_module src1 in
@@ -73,17 +84,16 @@ let compare ?(debug = false) src1 src2 =
   let s2 = ast_to_string dump_func ast2 in
   let lines1 = String.split_on_chars ~on:['\n'] s1 in
   let lines2 = String.split_on_chars ~on:['\n'] s2 in
-  let asts_equal = String.equal s1 s2 in
+  let equal = String.equal s1 s2 in
+  let diffs = if equal then [] else diff_lines lines1 lines2 in
   if debug then (
-    let diffs = if asts_equal then [] else diff_lines lines1 lines2 in
     Printf.printf "SemDiff:\n" ;
     List.iter ~f:print_endline diffs ) ;
-  asts_equal
+  diffs
 
 
 let semdiff ?debug previous_file current_file =
   let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
   let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
-  let asts_equal = compare ?debug previous_src current_src in
-  if asts_equal then print_endline "ASTs are equal (ignoring type annotations)."
-  else print_endline "ASTs differ."
+  let diffs = compare ?debug previous_src current_src in
+  write_output previous_file current_file diffs

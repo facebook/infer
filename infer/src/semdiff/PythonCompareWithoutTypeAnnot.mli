@@ -7,6 +7,6 @@
 
 open! IStd
 
-val compare : ?debug:bool -> string -> string -> bool
+val compare : ?debug:bool -> string -> string -> string list
 
 val semdiff : ?debug:bool -> string -> string -> unit
