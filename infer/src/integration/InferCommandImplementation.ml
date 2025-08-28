@@ -346,5 +346,5 @@ let sem_diff () =
   match Option.both semdiff_previous semdiff_current with
   | None ->
       L.die UserError "Expected '--semdiff-current' and '--semdiff-previous' to be specified."
-  | Some (_current, _previous) ->
-      L.die UserError "SemDiff command has not implemented yet."
+  | Some (previous, current) ->
+      PythonCompareWithoutTypeAnnot.semdiff previous current

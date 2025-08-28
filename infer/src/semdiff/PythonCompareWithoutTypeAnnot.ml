@@ -61,3 +61,11 @@ let compare ?(debug = false) src1 src2 =
   let s2 = ast_to_string dump_func ast2 in
   if debug then Printf.printf "\nAST1: %s\nAST2: %s" s1 s2 ;
   String.equal s1 s2
+
+
+let semdiff ?debug previous_file current_file =
+  let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
+  let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
+  let asts_equal = compare ?debug previous_src current_src in
+  if asts_equal then print_endline "ASTs are equal (ignoring type annotations)."
+  else print_endline "ASTs differ."

@@ -8,3 +8,5 @@
 open! IStd
 
 val compare : ?debug:bool -> string -> string -> bool
+
+val semdiff : ?debug:bool -> string -> string -> unit
