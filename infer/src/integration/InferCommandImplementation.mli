@@ -18,3 +18,5 @@ val help : unit -> unit
 val report : unit -> unit
 
 val report_diff : unit -> unit
+
+val sem_diff : unit -> unit

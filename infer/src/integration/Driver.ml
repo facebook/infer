@@ -339,7 +339,7 @@ let analyze_and_report ~changed_files mode =
   match (Config.command, mode) with
   | _ when Config.infer_is_clang || Config.infer_is_javac ->
       (* Called from another integration to do capture only. *) ()
-  | (Capture | Compile | Debug | Explore | Help | Report | ReportDiff), _ ->
+  | (Capture | Compile | Debug | Explore | Help | Report | ReportDiff | SemDiff), _ ->
       ()
   | (Analyze | Run), _ when Config.invalidate_only ->
       ()

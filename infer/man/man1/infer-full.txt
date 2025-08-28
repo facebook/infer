@@ -10,6 +10,7 @@ SYNOPSIS
        infer report [options]
        infer reportdiff [options]
        infer run [options]
+       infer semdiff [options]
        infer --compilation-database[-escaped] file [options]
        infer [options] -- compile command
        infer [options]
@@ -466,7 +467,8 @@ OPTIONS
            --reports-include-ml-loc, --no-only-cheap-debug, --trace-error,
            --write-html) (Conversely: --no-debug | -G)
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           infer-report(1), infer-reportdiff(1), infer-run(1), and
+           infer-semdiff(1).
 
        --debug-level level
            Debug level (sets --bo-debug level, --debug-level-analysis level,
@@ -475,24 +477,28 @@ OPTIONS
              - 1: verbose debugging enabled
              - 2: very verbose debugging enabled
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           infer-report(1), infer-reportdiff(1), infer-run(1), and
+           infer-semdiff(1).
 
        --debug-level-analysis int
            Debug level for the analysis. See --debug-level for accepted
            values.
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           infer-report(1), infer-reportdiff(1), infer-run(1), and
+           infer-semdiff(1).
 
        --debug-level-capture int
            Debug level for the capture. See --debug-level for accepted
            values.
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           infer-report(1), infer-reportdiff(1), infer-run(1), and
+           infer-semdiff(1).
 
        --debug-level-report int
            Debug level for the report. See --debug-level for accepted values.
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
-           infer-report(1), infer-reportdiff(1), and infer-run(1).
+           infer-report(1), infer-reportdiff(1), infer-run(1), and
+           infer-semdiff(1).
 
        --no-deduplicate
            Deactivates: Apply issue-specific deduplication during analysis
@@ -862,7 +868,7 @@ OPTIONS
            Show this manual
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
            infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-reportdiff(1), infer-run(1), and infer-semdiff(1).
 
        --help-checker +checker-id
            Show information about a checker, for example pulse. To see the
@@ -875,14 +881,14 @@ OPTIONS
            to pager otherwise.
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
            infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-reportdiff(1), infer-run(1), and infer-semdiff(1).
 
        --help-full
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
            See also infer-analyze(1), infer-capture(1), infer-compile(1),
            infer-debug(1), infer-explore(1), infer-help(1), infer-report(1),
-           infer-reportdiff(1), and infer-run(1).
+           infer-reportdiff(1), infer-run(1), and infer-semdiff(1).
 
        --help-issue-type +UNIQUE_ID
            Show information about an issue type, for example
@@ -2081,6 +2087,14 @@ OPTIONS
            Activates: Enable self-in-block and disable all other checkers
            (Conversely: --no-self-in-block-only)
            See also infer-analyze(1).
+
+       --semdiff-current path
+           Current python program to be analysed by semdiff
+           See also infer-semdiff(1).
+
+       --semdiff-previous path
+           Previous python program to be analysed by semdiff
+           See also infer-semdiff(1).
 
        --shrink-analysis-db
            Activates: After analysis, delete analysis summaries (but not
@@ -3308,6 +3322,12 @@ INTERNAL OPTIONS
        --select-reset
            Cancel the effect of --select.
 
+       --semdiff-current-reset
+           Cancel the effect of --semdiff-current.
+
+       --semdiff-previous-reset
+           Cancel the effect of --semdiff-previous.
+
        --siof-safe-methods-reset
            Set --siof-safe-methods to the empty list.
 
@@ -3549,5 +3569,5 @@ FILES
 SEE ALSO
        infer-analyze(1), infer-capture(1), infer-compile(1), infer-debug(1),
        infer-explore(1), infer-help(1), infer-report(1), infer-reportdiff(1),
-       infer-run(1)
+       infer-run(1), infer-semdiff(1)
 

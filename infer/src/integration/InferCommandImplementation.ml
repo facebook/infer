@@ -339,3 +339,12 @@ let report_diff () =
           ~config_impact_current ~config_impact_previous ;
       Option.both stats_dir_previous stats_dir_current
       |> Option.iter ~f:(fun (previous, current) -> StatsDiff.diff ~previous ~current)
+
+
+let sem_diff () =
+  let open Config in
+  match Option.both semdiff_previous semdiff_current with
+  | None ->
+      L.die UserError "Expected '--semdiff-current' and '--semdiff-previous' to be specified."
+  | Some (_current, _previous) ->
+      L.die UserError "SemDiff command has not implemented yet."

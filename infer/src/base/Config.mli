@@ -788,6 +788,10 @@ val scope_leakage_config : Yojson.Safe.t
 
 val select : [`All | `Select of int] option
 
+val semdiff_current : string option
+
+val semdiff_previous : string option
+
 val shrink_analysis_db : bool
 
 val siof_check_iostreams : bool

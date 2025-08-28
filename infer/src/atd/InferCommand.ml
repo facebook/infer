@@ -7,7 +7,17 @@
 open Core
 
 (* NOTE: All variants must be also added to [command_to_string] below *)
-type t = Analyze | Capture | Compile | Debug | Explore | Help | Report | ReportDiff | Run
+type t =
+  | Analyze
+  | Capture
+  | Compile
+  | Debug
+  | Explore
+  | Help
+  | Report
+  | ReportDiff
+  | Run
+  | SemDiff
 [@@deriving compare, equal]
 
 let command_to_string =
@@ -19,7 +29,8 @@ let command_to_string =
   ; (Help, "help")
   ; (Report, "report")
   ; (ReportDiff, "reportdiff")
-  ; (Run, "run") ]
+  ; (Run, "run")
+  ; (SemDiff, "semdiff") ]
 
 
 let all_commands = List.map ~f:fst command_to_string

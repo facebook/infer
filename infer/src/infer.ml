@@ -51,11 +51,13 @@ let setup () =
       ResultsDir.create_results_dir ()
   | Debug ->
       ResultsDir.assert_results_dir "please run an infer analysis or capture first"
+  | SemDiff ->
+      ()
   | Help ->
       () ) ;
   let has_result_dir =
     match Config.command with
-    | Analyze | Capture | Compile | Debug | Explore | Report | ReportDiff | Run ->
+    | Analyze | Capture | Compile | Debug | Explore | Report | ReportDiff | Run | SemDiff ->
         true
     | Help ->
         false
@@ -141,6 +143,8 @@ let () =
       Cmd.report ()
   | ReportDiff ->
       Cmd.report_diff ()
+  | SemDiff ->
+      Cmd.sem_diff ()
   | Debug ->
       Cmd.debug ()
   | Explore ->

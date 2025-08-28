@@ -182,6 +182,7 @@ $(b,infer) $(b,explore) $(i,[options])
 $(b,infer) $(b,report) $(i,[options])
 $(b,infer) $(b,reportdiff) $(i,[options])
 $(b,infer) $(b,run) $(i,[options])
+$(b,infer) $(b,semdiff) $(i,[options])
 $(b,infer) $(b,--compilation-database[-escaped]) $(i,file) $(i,[options])
 $(b,infer) $(i,[options]) $(b,--) $(b,compile command)
 $(b,infer) $(i,[options])|}
@@ -340,6 +341,20 @@ $(b,infer) $(b,analyze) $(i,[options])|} ]
     ~see_also:InferCommand.[Analyze; Capture; Report]
 
 
+let semdiff =
+  mk_command_doc ~title:"Infer Semantic Difference"
+    ~short_description:"compute the semantic differences between two Python programs"
+    ~synopsis:
+      "$(b,infer) $(b,semdiff) $(b,--semdiff-previous) $(i,file) $(b,--semdiff-current) $(i,file) \
+       $(i,[options])"
+    ~description:
+      [ `P
+          "Given two python programs $(i,current) and $(i,previous), compute the a report \
+           informing if the programs are semantically equal.  The report is stored in the \
+           \"semdiff.json\" file inside the standard infer output folder" ]
+    ~see_also:InferCommand.[ReportDiff]
+
+
 let command_to_data =
   let mk cmd mk_doc =
     let name = InferCommand.to_string cmd in
@@ -355,7 +370,8 @@ let command_to_data =
   ; mk Help help
   ; mk Report report
   ; mk ReportDiff reportdiff
-  ; mk Run run ]
+  ; mk Run run
+  ; mk SemDiff semdiff ]
 
 
 let data_of_command command =
