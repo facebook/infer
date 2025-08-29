@@ -1361,7 +1361,8 @@ module ProcDescBridge = struct
              (var, Typ.mk_without_attributes typ) )
     in
     let exit_loc = Location.Unknown in
-    {procdecl; nodes; start; params; locals; exit_loc}
+    let fresh_ident = None in
+    {procdecl; nodes; fresh_ident; start; params; locals; exit_loc}
 end
 
 module ModuleBridge = struct

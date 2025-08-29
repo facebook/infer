@@ -447,6 +447,8 @@ module ProcDesc : sig
   type t =
     { procdecl: ProcDecl.t
     ; nodes: Node.t list
+    ; fresh_ident: Ident.t option
+          (* an ident that is never defined in this pdesc (used for some later  transformations) *)
     ; start: NodeName.t
     ; params: VarName.t list
     ; locals: (VarName.t * Typ.annotated) list

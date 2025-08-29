@@ -868,6 +868,7 @@ let to_textual_global lang ~struct_map global =
           Textual.ProcDesc.
             { procdecl
             ; nodes= [start_node]
+            ; fresh_ident= None
             ; start= start_node.label
             ; params= []
             ; locals= []
@@ -965,6 +966,7 @@ let translate_llair_functions source_file lang struct_map globals functions =
           ; procdecl
           ; start= block_to_node_name func.Llair.entry
           ; nodes
+          ; fresh_ident= None
           ; exit_loc= Unknown (* TODO: get this location *) }
       :: proc_descs
   in

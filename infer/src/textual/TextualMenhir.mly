@@ -278,10 +278,11 @@ declaration:
            if HackC changes its translation in the future. *)
         else body in
       let {locals; nodes} : Body.t = body in
+      let fresh_ident = None in
       let start_node = List.hd_exn nodes in
       let params = List.map ~f:fst params in
       let exit_loc = location_of_pos $endpos in
-      Module.Proc { procdecl; nodes; start= start_node.Node.label; params; locals; exit_loc}
+      Module.Proc { procdecl; nodes; fresh_ident; start= start_node.Node.label; params; locals; exit_loc}
     }
 
 declaration_types:

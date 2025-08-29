@@ -1249,6 +1249,7 @@ module ProcDesc = struct
   type t =
     { procdecl: ProcDecl.t
     ; nodes: Node.t list
+    ; fresh_ident: Ident.t option
     ; start: NodeName.t
     ; params: VarName.t list
     ; locals: (VarName.t * Typ.annotated) list

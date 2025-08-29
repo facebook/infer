@@ -607,7 +607,7 @@ let mk_procdesc proc_kind
     in
     location_from_opt_line last_loc
   in
-  {Textual.ProcDesc.procdecl; nodes; start; params; locals; exit_loc}
+  {Textual.ProcDesc.procdecl; nodes; fresh_ident= None; start; params; locals; exit_loc}
 
 
 let mk_module {Module.name; toplevel; functions} =

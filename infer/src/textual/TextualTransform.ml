@@ -9,18 +9,25 @@ open! IStd
 module L = Logging
 open Textual
 
-(* returns all the idents that are defined in the procdesc *)
-let collect_ident_defs ({nodes} : ProcDesc.t) : Ident.Set.t =
-  List.fold nodes ~init:Ident.Set.empty ~f:(fun set (node : Node.t) ->
-      let set =
-        List.fold node.ssa_parameters ~init:set ~f:(fun set (id, _) -> Ident.Set.add id set)
+let get_fresh_ident ({nodes; fresh_ident} : ProcDesc.t) =
+  match fresh_ident with
+  | None ->
+      let idents =
+        (* all the idents that are defined in the procdesc *)
+        List.fold nodes ~init:Ident.Set.empty ~f:(fun set (node : Node.t) ->
+            let set =
+              List.fold node.ssa_parameters ~init:set ~f:(fun set (id, _) -> Ident.Set.add id set)
+            in
+            List.fold node.instrs ~init:set ~f:(fun set (instr : Instr.t) ->
+                match instr with
+                | Load {id} | Let {id= Some id} ->
+                    Ident.Set.add id set
+                | Store _ | Prune _ | Let _ ->
+                    set ) )
       in
-      List.fold node.instrs ~init:set ~f:(fun set (instr : Instr.t) ->
-          match instr with
-          | Load {id} | Let {id= Some id} ->
-              Ident.Set.add id set
-          | Store _ | Prune _ | Let _ ->
-              set ) )
+      Ident.fresh idents
+  | Some fresh_ident ->
+      fresh_ident
 
 
 let module_map_procs ~f (module_ : Module.t) =
@@ -54,6 +61,8 @@ module FixClosureAppExpr = struct
 
   let of_procdesc globals pdesc =
     let open ProcDesc in
+    if Option.is_some pdesc.fresh_ident then
+      L.die InternalError "we assume fresh ident has not been computed yet" ;
     let globals_and_locals =
       List.fold pdesc.locals ~init:globals ~f:(fun set (varname, _) ->
           IString.Set.add varname.VarName.value set )
@@ -195,6 +204,7 @@ module FixHackWrapper = struct
           in
           {last_node with Node.instrs} :: others |> List.rev
     in
+    (* no need to update fresh_ident *)
     {pdesc with nodes}
 
 
@@ -309,6 +319,7 @@ module Subst = struct
 
   let of_procdesc pdesc eqs =
     let open ProcDesc in
+    (* no need to update fresh_ident *)
     {pdesc with nodes= List.map pdesc.nodes ~f:(fun node -> of_node node eqs)}
 end
 
@@ -494,8 +505,9 @@ module TransformClosures = struct
       ; label_loc= loc }
     in
     let params = this_var :: params in
+    let fresh_ident = Some (Ident.next state.fresh_ident) in
     let state = {state with fresh_ident= save_fresh_ident} in
-    (state, {procdecl; nodes= [node]; start; params; locals= []; exit_loc= loc})
+    (state, {procdecl; nodes= [node]; fresh_ident; start; params; locals= []; exit_loc= loc})
 end
 
 let remove_effects_in_subexprs lang decls_env _module =
@@ -631,8 +643,8 @@ let remove_effects_in_subexprs lang decls_env _module =
     ({node with last; instrs= List.rev instrs_rev}, fresh_ident, state.closure_declarations)
   in
   let flatten_pdesc (pdesc : ProcDesc.t) closure_declarations =
-    let fresh = collect_ident_defs pdesc |> Ident.fresh in
-    let _, closure_declarations, rev_nodes =
+    let fresh = get_fresh_ident pdesc in
+    let fresh, closure_declarations, rev_nodes =
       List.fold pdesc.nodes ~init:(fresh, closure_declarations, [])
         ~f:(fun (fresh, closure_declarations, instrs) node ->
           let node, fresh, closure_declarations =
@@ -640,7 +652,7 @@ let remove_effects_in_subexprs lang decls_env _module =
           in
           (fresh, closure_declarations, node :: instrs) )
     in
-    ({pdesc with nodes= List.rev rev_nodes}, closure_declarations)
+    ({pdesc with nodes= List.rev rev_nodes; fresh_ident= Some fresh}, closure_declarations)
   in
   let module_, closure_declarations =
     module_fold_procs ~init:State.ClosureDeclarations.empty ~f:flatten_pdesc _module
@@ -815,6 +827,7 @@ let remove_if_terminator module_ =
             {node with instrs= prelude @ node.instrs} :: nodes
           else node :: nodes )
     in
+    (* no need to update fresh_ident *)
     {pdesc with ProcDesc.nodes}
   in
   module_map_procs ~f:transform module_
@@ -980,6 +993,7 @@ let out_of_ssa module_ =
           in
           ({node with instrs; ssa_parameters; last} : Node.t) )
     in
+    (* no need to update fresh_ident *)
     {pdesc with nodes}
   in
   module_map_procs ~f:transform module_
@@ -1142,6 +1156,7 @@ module ClassGetTS = struct
         ~f:(fun (decl : Module.decl) ->
           match decl with
           | Proc procdesc ->
+              (* no need to update fresh_ident *)
               Module.Proc {procdesc with nodes= transform_nodes procdesc}
           | _ ->
               decl )
