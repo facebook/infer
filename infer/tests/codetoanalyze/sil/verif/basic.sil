@@ -120,6 +120,19 @@ define if_then_else(x: int, y: float) : void {
     if [&y] then ret null else jmp lab2
 }
 
+define if_exp_not_declared(a: int, b: int) : void {
+#b0:
+  n0 = (if b && b0 then x else 0)
+  ret null
+}
+
+define if_exp_typ(a: int, b: int) : float {
+#b0:
+  n0 = (if b then a else 0)
+  n1 = (if b then a else 0.)
+  ret n0
+}
+
 define use_mangled_names(): void {
   #entry:
     n0 = A::foo()

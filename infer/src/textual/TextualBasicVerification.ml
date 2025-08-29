@@ -147,8 +147,8 @@ let verify_decl ~env errors (decl : Module.decl) =
       | Index (e1, e2) ->
           let errors = aux errors e1 in
           aux errors e2
-      | If _ ->
-          Logging.die InternalError "TODO: Textual If statement"
+      | If {then_; else_} ->
+          aux (aux errors then_) else_
       | Call {proc; args} ->
           let errors = List.fold ~f:aux ~init:errors args in
           let nb_generics_args = count_generics_args args generics in

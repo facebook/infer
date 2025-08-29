@@ -21,6 +21,10 @@ basic.sil, line 98, column 4: textual type error: expression 0 has type int, whi
 basic.sil, line 116, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
 basic.sil, line 118, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
 basic.sil, line 120, column 9: textual type error: expression [&y:float] has type float, while a subtype of int was expected
+basic.sil, line 125, column 16: textual type error: variable b0 has not been declared
+basic.sil, line 125, column 24: textual type error: variable x has not been declared
+basic.sil, line 132, column 2: textual type error: branch at location line 132, column 2 is given the type int, but the other branch is given a different type float
+basic.sil, line 133, column 2: textual type error: expression n0 has type int, while a subtype of float was expected
 error2.sil, line 20, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared
 error2.sil, line 19, column 13: SIL consistency error: field cell.n is not declared
 error2.sil, line 16, column 8: SIL consistency error: label lab2 is not declared in function f

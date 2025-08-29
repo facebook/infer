@@ -106,6 +106,7 @@ type error =
       ; loc: Location.t }
   | IdentAssignedTwice of {id: Ident.t; typ1: Typ.t; typ2: Typ.t; loc1: Location.t; loc2: Location.t}
   | IdentReadBeforeWrite of {id: Ident.t; loc: Location.t}
+  | BranchesWithDifferentTypes of {typ1: Typ.t; typ2: Typ.t; loc: Location.t}
   | VarTypeNotDeclared of {var: VarName.t; loc: Location.t}
   | MissingDeclaration of {procsig: ProcSig.t; loc: Location.t}
   | ArityMismatch of {length1: int; length2: int; loc: Location.t}
@@ -118,6 +119,8 @@ let error_loc = function
   | IdentAssignedTwice {loc1; _} ->
       loc1
   | IdentReadBeforeWrite {loc; _} ->
+      loc
+  | BranchesWithDifferentTypes {loc} ->
       loc
   | VarTypeNotDeclared {loc; _} ->
       loc
@@ -140,6 +143,11 @@ let pp_error fmt error =
   | IdentAssignedTwice {id; typ1; typ2; loc2; _} ->
       F.fprintf fmt "ident %a is given the type %a, but it has already been given the type %a at %a"
         Ident.pp id Typ.pp typ1 Typ.pp typ2 Location.pp_line loc2
+  | BranchesWithDifferentTypes {typ1; typ2; loc} ->
+      F.fprintf fmt
+        "branch at location %a is given the type %a, but the other branch is given a different \
+         type %a"
+        Location.pp loc Typ.pp typ1 Typ.pp typ2
   | IdentReadBeforeWrite {id; _} ->
       F.fprintf fmt "ident %a is read before being written" Ident.pp id
   | VarTypeNotDeclared {var; _} ->
@@ -168,14 +176,24 @@ let rec loc_of_exp exp =
       loc_of_exp exp
   | Const _ ->
       None
-  | If _ ->
-      L.die InternalError "TODO: Textual If statement"
+  | If {cond} ->
+      loc_of_bexp cond
   | Call {proc} ->
       Some proc.name.loc
   | Closure {proc} ->
       Some proc.name.loc
   | Typ _ ->
       None
+
+
+and loc_of_bexp bexp =
+  match (bexp : BoolExp.t) with
+  | Exp exp ->
+      loc_of_exp exp
+  | Not bexp ->
+      loc_of_bexp bexp
+  | And (bexp1, _) | Or (bexp1, _) ->
+      loc_of_bexp bexp1
 
 
 let mk_type_mismatch_error expected loc exp typ : error =
@@ -321,6 +339,10 @@ let typeof_var var : Typ.t monad =
        let* () = add_error (VarTypeNotDeclared {var; loc}) in
        abort )
     ~some:ret
+
+
+let check_branches_same_typ loc typ1 typ2 : unit monad =
+  if Typ.equal typ1 typ2 then ret () else add_error (BranchesWithDifferentTypes {loc; typ1; typ2})
 
 
 let typeof_field field : Typ.t monad =
@@ -535,8 +557,13 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       (Exp.Index (exp1, exp2), typ)
   | Const const ->
       ret (exp, typeof_const const)
-  | If _ ->
-      L.die InternalError "TODO: Textual If statement"
+  | If {cond; then_; else_} ->
+      let* loc = get_location in
+      let* cond = typecheck_bool_exp loc cond in
+      let* then_, type_then = typeof_exp then_ in
+      let* else_, type_else = typeof_exp else_ in
+      let+ () = check_branches_same_typ loc type_then type_else in
+      (Exp.If {cond; then_; else_}, type_then)
   | Call {proc; args}
     when ProcDecl.is_allocate_object_builtin proc
          || ProcDecl.is_lazy_class_initialize_builtin proc
@@ -706,6 +733,25 @@ and typeof_instanceof_builtin (proc : QualifiedProcName.t) args =
       abort
 
 
+and typecheck_bool_exp loc (bexp : BoolExp.t) : BoolExp.t monad =
+  let* lang = get_lang in
+  match bexp with
+  | Exp exp ->
+      let+ exp = typecheck_exp exp ~check:(sub_int lang) ~expected:(SubTypeOf Int) ~loc in
+      BoolExp.Exp exp
+  | Not bexp ->
+      let+ bexp = typecheck_bool_exp loc bexp in
+      BoolExp.Not bexp
+  | And (bexp1, bexp2) ->
+      let* bexp1 = typecheck_bool_exp loc bexp1 in
+      let+ bexp2 = typecheck_bool_exp loc bexp2 in
+      BoolExp.And (bexp1, bexp2)
+  | Or (bexp1, bexp2) ->
+      let* bexp1 = typecheck_bool_exp loc bexp1 in
+      let+ bexp2 = typecheck_bool_exp loc bexp2 in
+      BoolExp.Or (bexp1, bexp2)
+
+
 let typecheck_instr (instr : Instr.t) : Instr.t monad =
   let* lang = get_lang in
   match instr with
@@ -769,25 +815,6 @@ let typecheck_node_call loc ({label; ssa_args} : Terminator.node_call) : Termina
           ~expected:(SubTypeOf assigned) ~loc )
   in
   {Terminator.label; ssa_args}
-
-
-let rec typecheck_bool_exp loc (bexp : BoolExp.t) : BoolExp.t monad =
-  let* lang = get_lang in
-  match bexp with
-  | Exp exp ->
-      let+ exp = typecheck_exp exp ~check:(sub_int lang) ~expected:(SubTypeOf Int) ~loc in
-      BoolExp.Exp exp
-  | Not bexp ->
-      let+ bexp = typecheck_bool_exp loc bexp in
-      BoolExp.Not bexp
-  | And (bexp1, bexp2) ->
-      let* bexp1 = typecheck_bool_exp loc bexp1 in
-      let+ bexp2 = typecheck_bool_exp loc bexp2 in
-      BoolExp.And (bexp1, bexp2)
-  | Or (bexp1, bexp2) ->
-      let* bexp1 = typecheck_bool_exp loc bexp1 in
-      let+ bexp2 = typecheck_bool_exp loc bexp2 in
-      BoolExp.Or (bexp1, bexp2)
 
 
 let rec typecheck_terminator loc (term : Terminator.t) : Terminator.t monad =
