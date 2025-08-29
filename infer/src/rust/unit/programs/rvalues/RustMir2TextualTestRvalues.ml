@@ -144,7 +144,7 @@ let%expect_test "arithmetic" =
     define arithmetic::main() : void {
       local var_0: void, var_1: void
       #node_0:
-          n0:void = arithmetic()
+          n0 = arithmetic()
           store &var_1 <- n0:void
           jmp node_1
 
@@ -185,7 +185,7 @@ let%expect_test "bitwise" =
     define bitwise::main() : void {
       local var_0: void, var_1: void
       #node_0:
-          n0:void = bitwise_ops()
+          n0 = bitwise_ops()
           store &var_1 <- n0:void
           jmp node_1
 
@@ -263,7 +263,7 @@ let%expect_test "comparisons" =
     define comparisons::main() : void {
       local var_0: void, var_1: void
       #node_0:
-          n0:void = comparisons()
+          n0 = comparisons()
           store &var_1 <- n0:void
           jmp node_1
 
@@ -345,7 +345,7 @@ let%expect_test "div_modulo" =
     define div_modulo::main() : void {
       local var_0: void, var_1: void
       #node_0:
-          n0:void = div_and_modulo()
+          n0 = div_and_modulo()
           store &var_1 <- n0:void
           jmp node_1
 

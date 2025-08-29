@@ -13,7 +13,6 @@ let program_path = "./programs"
 let test json_file =
   try
     let file_path = Filename.concat program_path json_file in
-    let file_path = Filename.concat (Unix.getcwd ()) file_path in
     let json = Yojson.Basic.from_file file_path in
     match Charon.UllbcOfJson.crate_of_json json with
     | Ok crate ->

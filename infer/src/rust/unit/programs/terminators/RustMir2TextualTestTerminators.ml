@@ -18,7 +18,7 @@ let%expect_test "basic_call" =
     define basic_call::foo() : void {
       local var_0: void
       #node_0:
-          n0:void = bar()
+          n0 = bar()
           store &var_0 <- n0:void
           jmp node_2
 
@@ -42,7 +42,7 @@ let%expect_test "basic_call" =
     define basic_call::main() : void {
       local var_0: void
       #node_0:
-          n0:void = foo()
+          n0 = foo()
           store &var_0 <- n0:void
           jmp node_2
 
@@ -108,7 +108,7 @@ let%expect_test "call_with_args" =
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
-          n4:int = call_with_args(n2, n3)
+          n4 = call_with_args(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
       
@@ -264,7 +264,7 @@ let%expect_test "basic_loop" =
           n0:int = load &x
           store &var_3 <- n0:int
           n1:int = load &var_3
-          n2:int = goto_loop(n1)
+          n2 = goto_loop(n1)
           store &var_2 <- n2:int
           jmp node_1
 

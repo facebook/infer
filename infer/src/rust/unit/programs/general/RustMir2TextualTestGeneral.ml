@@ -8,6 +8,7 @@
 open IStd
 open RustMir2TextualTest
 
+(* TODO: Revisit this test after ptrs and dereferencing are implemented *)
 let%expect_test "after_lifetime" =
   test "./general/after_lifetime.ullbc" ;
   [%expect
