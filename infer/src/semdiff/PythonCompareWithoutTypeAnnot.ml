@@ -76,7 +76,7 @@ let write_output previous_file current_file diffs =
   Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
 
 
-let compare ?(debug = false) src1 src2 =
+let ast_diff ?(debug = false) src1 src2 =
   let strip_func, ast_module, dump_func = init () in
   let ast1 = parse_and_strip strip_func ast_module src1 in
   let ast2 = parse_and_strip strip_func ast_module src2 in
@@ -95,5 +95,5 @@ let compare ?(debug = false) src1 src2 =
 let semdiff ?debug previous_file current_file =
   let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
   let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
-  let diffs = compare ?debug previous_src current_src in
+  let diffs = ast_diff ?debug previous_src current_src in
   write_output previous_file current_file diffs
