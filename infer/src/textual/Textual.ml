@@ -916,7 +916,7 @@ module rec Exp : sig
 
   val call_sig : QualifiedProcName.t -> int -> Lang.t -> ProcSig.t
 
-  val do_not_contain_regular_call : t -> bool
+  val contain_regular_call : t -> bool
 
   val allocate_object : TypeName.t -> t
 
@@ -1018,23 +1018,23 @@ end = struct
 
   and pp_list fmt l = F.fprintf fmt "(%a)" (pp_list_with_comma pp) l
 
-  let rec do_not_contain_regular_call exp =
+  let rec contain_regular_call exp =
     match exp with
     | Var _ | Lvar _ | Const _ | Typ _ ->
-        true
+        false
     | Load {exp} | Field {exp} ->
-        do_not_contain_regular_call exp
+        contain_regular_call exp
     | Index (exp1, exp2) ->
-        do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
+        contain_regular_call exp1 || contain_regular_call exp2
     | If {cond; then_; else_} ->
-        BoolExp.do_not_contain_regular_call cond
-        && do_not_contain_regular_call then_ && do_not_contain_regular_call else_
+        BoolExp.contain_regular_call cond || contain_regular_call then_
+        || contain_regular_call else_
     | Call {proc; args} ->
-        ProcDecl.is_not_regular_proc proc && List.for_all args ~f:do_not_contain_regular_call
+        Stdlib.not (ProcDecl.is_not_regular_proc proc) || List.exists args ~f:contain_regular_call
     | Apply {closure; args} ->
-        do_not_contain_regular_call closure && List.for_all args ~f:do_not_contain_regular_call
+        contain_regular_call closure || List.exists args ~f:contain_regular_call
     | Closure {captured} ->
-        List.for_all captured ~f:do_not_contain_regular_call
+        List.exists captured ~f:contain_regular_call
 
 
   let vars exp =
@@ -1063,7 +1063,7 @@ end
 and BoolExp : sig
   type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
 
-  val do_not_contain_regular_call : t -> bool
+  val contain_regular_call : t -> bool
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
 end = struct
@@ -1081,14 +1081,14 @@ end = struct
         F.fprintf fmt "(%a) || (%a)" pp bexp1 pp bexp2
 
 
-  let rec do_not_contain_regular_call bexp =
+  let rec contain_regular_call bexp =
     match bexp with
     | Exp exp ->
-        Exp.do_not_contain_regular_call exp
+        Exp.contain_regular_call exp
     | Not bexp ->
-        do_not_contain_regular_call bexp
+        contain_regular_call bexp
     | Or (bexp1, bexp2) | And (bexp1, bexp2) ->
-        do_not_contain_regular_call bexp1 && do_not_contain_regular_call bexp2
+        contain_regular_call bexp1 || contain_regular_call bexp2
 end
 
 module Instr = struct
@@ -1131,16 +1131,16 @@ module Instr = struct
   let is_ready_for_to_sil_conversion i =
     match i with
     | Load {exp} ->
-        Exp.do_not_contain_regular_call exp
+        not (Exp.contain_regular_call exp)
     | Store {exp1; exp2} ->
-        Exp.do_not_contain_regular_call exp1 && Exp.do_not_contain_regular_call exp2
+        (not (Exp.contain_regular_call exp1)) && not (Exp.contain_regular_call exp2)
     | Prune {exp} ->
-        Exp.do_not_contain_regular_call exp
+        not (Exp.contain_regular_call exp)
     | Let {exp= Call {proc; args= []}} when ProcDecl.is_type_builtin proc ->
         true
     | Let {exp= Call {proc; args}} ->
         (not (ProcDecl.is_not_regular_proc proc))
-        && List.for_all args ~f:Exp.do_not_contain_regular_call
+        && not (List.exists args ~f:Exp.contain_regular_call)
     | Let {exp= _} ->
         false
 end
@@ -1176,15 +1176,15 @@ module Terminator = struct
         F.pp_print_string fmt "unreachable"
 
 
-  let rec do_not_contain_regular_call t =
+  let rec contain_regular_call t =
     match t with
     | If {bexp; then_; else_} ->
-        BoolExp.do_not_contain_regular_call bexp
-        && do_not_contain_regular_call then_ && do_not_contain_regular_call else_
+        BoolExp.contain_regular_call bexp || contain_regular_call then_
+        || contain_regular_call else_
     | Ret exp | Throw exp ->
-        Exp.do_not_contain_regular_call exp
+        Exp.contain_regular_call exp
     | Jump _ | Unreachable ->
-        true
+        false
 end
 
 module Node = struct
@@ -1207,7 +1207,7 @@ module Node = struct
 
   (* see the specification of Instr.is_ready_for_to_sil_conversion above *)
   let is_ready_for_to_sil_conversion node =
-    Terminator.do_not_contain_regular_call node.last
+    (not (Terminator.contain_regular_call node.last))
     && List.for_all node.instrs ~f:Instr.is_ready_for_to_sil_conversion
 
 
