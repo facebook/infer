@@ -19,7 +19,7 @@ let%expect_test "basic_call" =
       local var_0: void
       #node_0:
           n0:void = bar()
-          store &var_0 <- n0
+          store &var_0 <- n0:void
           jmp node_2
 
       #node_2:
@@ -43,7 +43,7 @@ let%expect_test "basic_call" =
       local var_0: void
       #node_0:
           n0:void = foo()
-          store &var_0 <- n0
+          store &var_0 <- n0:void
           jmp node_2
 
       #node_2:
@@ -65,13 +65,13 @@ let%expect_test "call_with_args" =
       local var_0: int, var_3: int, var_4: int
       #node_0:
           n0:int = load &x
-          store &var_3 <- n0
+          store &var_3 <- n0:int
           n1:int = load &y
-          store &var_4 <- n1
+          store &var_4 <- n1:int
           n2:int = load &var_3
           n3:int = load &var_4
           n4 = add(n2, n3)
-          store &var_0 <- n4
+          store &var_0 <- n4:int
           jmp node_1
         
       #node_1:
@@ -89,9 +89,9 @@ let%expect_test "call_with_args" =
           store &var_4 <- n1:int
           n2:int = load &var_3
           n3:int = load &var_4
-          store &var_5 <- __sil_plusa_int(n2, n3)
+          store &var_5 <- __sil_plusa_int(n2, n3):int
           n4:int = load &var_5
-          store &var_0 <- n4
+          store &var_0 <- n4:int
           n5:int = load &var_0
           ret n5
 
@@ -103,13 +103,13 @@ let%expect_test "call_with_args" =
           store &x <- 0:int
           store &y <- 1:int
           n0:int = load &x
-          store &var_4 <- n0
+          store &var_4 <- n0:int
           n1:int = load &y
-          store &var_5 <- n1
+          store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
-          n4 = call_with_args(n2, n3)
-          store &var_3 <- n4
+          n4:int = call_with_args(n2, n3)
+          store &var_3 <- n4:int
           jmp node_1
       
       #node_1:
@@ -297,13 +297,13 @@ let%expect_test "loop_with_continue" =
           store &var_7 <- n1:int
           n2:int = load &var_6
           n3:int = load &var_7
-          store &var_5 <- __sil_lt(n2, n3)
+          store &var_5 <- __sil_lt(n2, n3):int
           n4:int = load &var_5
           if n4 then jmp node_2 else jmp node_3
 
       #node_2:
           n5:int = load &x
-          store &var_8 <- __sil_plusa_int(n5, 1)
+          store &var_8 <- __sil_plusa_int(n5, 1):int
           n6:int = load &var_8
           store &x <- n6:int
           jmp node_1
@@ -357,7 +357,7 @@ let%expect_test "int_comparison" =
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5
-        store &var_3 <- __sil_gt(n2, n3)
+        store &var_3 <- __sil_gt(n2, n3):int
         n4:int = load &var_3
         if n4 then jmp node_1 else jmp node_2
 
@@ -415,7 +415,7 @@ let%expect_test "nested" =
         n0:int = load &a
         store &var_4 <- n0:int
         n1:int = load &var_4
-        store &var_3 <- __sil_ge(n1, 0)
+        store &var_3 <- __sil_ge(n1, 0):int
         n2:int = load &var_3
         if n2 then jmp node_1 else jmp node_2
 
@@ -423,7 +423,7 @@ let%expect_test "nested" =
         n3:int = load &b
         store &var_6 <- n3:int
         n4:int = load &var_6
-        store &var_5 <- __sil_eq(n4, 0)
+        store &var_5 <- __sil_eq(n4, 0):int
         n5:int = load &var_5
         if n5 then jmp node_3 else jmp node_4
 

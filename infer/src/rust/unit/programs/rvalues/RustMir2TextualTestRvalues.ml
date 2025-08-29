@@ -26,7 +26,7 @@ let%expect_test "arithmetic" =
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
-          store &var_6 <- __sil_plusa_int(n2, n3)
+          store &var_6 <- __sil_plusa_int(n2, n3):int
           n4:int = load &var_6
           store &var_3 <- n4:int
           n5:int = load &a
@@ -35,7 +35,7 @@ let%expect_test "arithmetic" =
           store &var_9 <- n6:int
           n7:int = load &var_8
           n8:int = load &var_9
-          store &var_10 <- __sil_minusa_int(n7, n8)
+          store &var_10 <- __sil_minusa_int(n7, n8):int
           n9:int = load &var_10
           store &var_7 <- n9:int
           n10:int = load &a
@@ -44,7 +44,7 @@ let%expect_test "arithmetic" =
           store &var_13 <- n11:int
           n12:int = load &var_12
           n13:int = load &var_13
-          store &var_14 <- __sil_mult_int(n12, n13)
+          store &var_14 <- __sil_mult_int(n12, n13):int
           n14:int = load &var_14
           store &var_11 <- n14:int
           store &x <- 2:int
@@ -55,16 +55,16 @@ let%expect_test "arithmetic" =
           store &var_19 <- n16:int
           n17:int = load &var_18
           n18:int = load &var_19
-          store &var_20 <- __sil_plusa_int(n17, n18)
+          store &var_20 <- __sil_plusa_int(n17, n18):int
           n19:int = load &var_20
-          store &var_17 <- n19
+          store &var_17 <- n19:int
           n20:int = load &y
           store &var_22 <- n20:int
           n21:int = load &x
           store &var_23 <- n21:int
           n22:int = load &var_22
           n23:int = load &var_23
-          store &var_24 <- __sil_minusa_int(n22, n23)
+          store &var_24 <- __sil_minusa_int(n22, n23):int
           n24:int = load &var_24
           store &var_21 <- n24:int
           n25:int = load &x
@@ -73,7 +73,7 @@ let%expect_test "arithmetic" =
           store &var_27 <- n26:int
           n27:int = load &var_26 
           n28:int = load &var_27
-          store &var_28 <- __sil_mult_int(n27, n28)
+          store &var_28 <- __sil_mult_int(n27, n28):int
           n29:int = load &var_28
           store &var_25 <- n29:int
           store &c <- 1:int
@@ -84,7 +84,7 @@ let%expect_test "arithmetic" =
           store &var_33 <- n31:int
           n32:int = load &var_32
           n33:int = load &var_33
-          store &var_34 <- __sil_plusa_int(n32, n33)
+          store &var_34 <- __sil_plusa_int(n32, n33):int
           n34:int = load &var_34
           store &var_31 <- n34:int
           n35:int = load &c
@@ -93,7 +93,7 @@ let%expect_test "arithmetic" =
           store &var_37 <- n36:int
           n37:int = load &var_36
           n38:int = load &var_37
-          store &var_38 <- __sil_minusa_int(n37, n38)
+          store &var_38 <- __sil_minusa_int(n37, n38):int
           n39:int = load &var_38
           store &var_35 <- n39:int
           n40:int = load &c
@@ -102,7 +102,7 @@ let%expect_test "arithmetic" =
           store &var_41 <- n41:int
           n42:int = load &var_40
           n43:int = load &var_41
-          store &var_42 <- __sil_mult_int(n42, n43)
+          store &var_42 <- __sil_mult_int(n42, n43):int
           n44:int = load &var_42
           store &var_39 <- n44:int
           store &z <- 1:int
@@ -113,7 +113,7 @@ let%expect_test "arithmetic" =
           store &var_47 <- n46:int
           n47:int = load &var_46
           n48:int = load &var_47
-          store &var_48 <- __sil_plusa_int(n47, n48)
+          store &var_48 <- __sil_plusa_int(n47, n48):int
           n49:int = load &var_48
           store &var_45 <- n49:int
           n50:int = load &z
@@ -122,7 +122,7 @@ let%expect_test "arithmetic" =
           store &var_51 <- n51:int
           n52:int = load &var_50
           n53:int = load &var_51
-          store &var_52 <- __sil_minusa_int(n52, n53)
+          store &var_52 <- __sil_minusa_int(n52, n53):int
           n54:int = load &var_52
           store &var_49 <- n54:int
           n55:int = load &z
@@ -131,7 +131,7 @@ let%expect_test "arithmetic" =
           store &var_55 <- n56:int
           n57:int = load &var_54
           n58:int = load &var_55
-          store &var_56 <- __sil_mult_int(n57, n58)
+          store &var_56 <- __sil_mult_int(n57, n58):int
           n59:int = load &var_56
           store &var_53 <- n59:int
           store &var_0 <- null:void
@@ -217,42 +217,42 @@ let%expect_test "comparisons" =
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
-          store &var_3 <- __sil_lt(n2, n3)
+          store &var_3 <- __sil_lt(n2, n3):int
           n4:int = load &a
           store &var_7 <- n4:int
           n5:int = load &b
           store &var_8 <- n5:int
           n6:int = load &var_7
           n7:int = load &var_8
-          store &var_6 <- __sil_ge(n6, n7)
+          store &var_6 <- __sil_ge(n6, n7):int
           n8:int = load &a
           store &var_10 <- n8:int
           n9:int = load &b
           store &var_11 <- n9:int
           n10:int = load &var_10
           n11:int = load &var_11
-          store &var_9 <- __sil_gt(n10, n11)
+          store &var_9 <- __sil_gt(n10, n11):int
           n12:int = load &a
           store &var_13 <- n12:int
           n13:int = load &b
           store &var_14 <- n13:int
           n14:int = load &var_13
           n15:int = load &var_14
-          store &var_12 <- __sil_le(n14, n15)
+          store &var_12 <- __sil_le(n14, n15):int
           n16:int = load &a
           store &var_16 <- n16:int
           n17:int = load &b
           store &var_17 <- n17:int
           n18:int = load &var_16
           n19:int = load &var_17
-          store &var_15 <- __sil_ne(n18, n19)
+          store &var_15 <- __sil_ne(n18, n19):int
           n20:int = load &a
           store &var_19 <- n20:int
           n21:int = load &b
           store &var_20 <- n21:int
           n22:int = load &var_19
           n23:int = load &var_20
-          store &var_18 <- __sil_eq(n22, n23)
+          store &var_18 <- __sil_eq(n22, n23):int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n24:void = load &var_0
@@ -369,13 +369,13 @@ let%expect_test "shifts" =
     define shifts::shifts() : void {
       local var_0: void, var_1: int, var_2: int, x: int, var_4: int, var_5: int
       #node_0:
-          store &var_1 <- __sil_shiftlt(1, 3)
-          store &var_2 <- __sil_shiftrt(128, 7)
+          store &var_1 <- __sil_shiftlt(1, 3):int
+          store &var_2 <- __sil_shiftrt(128, 7):int
           store &x <- -2:int
           n0:int = load &x
           store &var_5 <- n0:int
           n1:int = load &var_5
-          store &var_4 <- __sil_shiftrt(n1, 1)
+          store &var_4 <- __sil_shiftrt(n1, 1):int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n2:void = load &var_0
@@ -509,7 +509,7 @@ let%expect_test "logical_not" =
           n0:int = load &x
           store &var_3 <- n0:int
           n1:int = load &var_3
-          store &y <- __sil_lnot(n1)
+          store &y <- __sil_lnot(n1):int
           store &var_0 <- null:void 
           store &var_0 <- null:void
           n2:void = load &var_0
@@ -532,7 +532,7 @@ let%expect_test "neg_int" =
           n0:int = load &y
           store &var_3 <- n0:int
           n1:int = load &var_3
-          store &x <- __sil_neg(n1)
+          store &x <- __sil_neg(n1):int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n2:void = load &var_0

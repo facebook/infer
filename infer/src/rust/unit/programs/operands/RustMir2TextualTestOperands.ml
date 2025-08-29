@@ -165,7 +165,7 @@ let%expect_test "copy_in_exp" =
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
-          store &var_6 <- __sil_plusa_int(n2, n3)
+          store &var_6 <- __sil_plusa_int(n2, n3):int
           n4:int = load &var_6
           store &c <- n4:int
           store &var_0 <- null:void
@@ -198,7 +198,6 @@ let%expect_test "nested_copy" =
     }
 
     |}]
-
 
 (* Tests for move - TODO: Enable these when the strings are supported *)
 

@@ -18,13 +18,14 @@ let%expect_test "assign_binop" =
     define assign_binop::main() : void {
       local var_0: void, x: int, var_2: int
       #node_0:
-          store &var_2 <- __sil_plusa_int(2, 3)
+          store &var_2 <- __sil_plusa_int(2, 3):int
           n0:int = load &var_2
           store &x <- n0:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
+          
     }
 
   |}]

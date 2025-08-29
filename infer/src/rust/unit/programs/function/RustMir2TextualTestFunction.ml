@@ -111,7 +111,7 @@ let%expect_test "calculate" =
         store &var_3 <- n1:int
         n2:int = load &var_2
         n3:int = load &var_3
-        store &var_4 <- __sil_mult_int(n2, n3)
+        store &var_4 <- __sil_mult_int(n2, n3):int
         n4:int = load &var_4
         store &var_0 <- n4:int
         n5:int = load &var_0
@@ -128,7 +128,7 @@ let%expect_test "calculate" =
         store &var_4 <- n1:int
         n2:int = load &var_3
         n3:int = load &var_4
-        store &var_5 <- __sil_minusa_int(n2, n3)
+        store &var_5 <- __sil_minusa_int(n2, n3):int
         n4:int = load &var_5
         store &var_0 <- n4:int
         n5:int = load &var_0

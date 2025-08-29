@@ -192,11 +192,13 @@ let mk_fun_map fun_decls (init : string FunMap.t) : string FunMap.t =
       FunMap.add (Charon.Generated_Types.FunDeclId.to_int fun_decl_id) fun_name acc )
 
 
-let mk_place_map (locals : Charon.Generated_GAst.local list) : string PlaceMap.t =
+let mk_place_map (locals : Charon.Generated_GAst.local list) :
+    (string * Charon.Generated_Types.ty) PlaceMap.t =
   List.foldi locals ~init:PlaceMap.empty ~f:(fun i acc (local : Charon.Generated_GAst.local) ->
       let id = local.index in
       let name = match local.name with Some name -> name | None -> "var_" ^ string_of_int i in
-      PlaceMap.add (Charon.Generated_Expressions.LocalId.to_int id) name acc )
+      let ty = local.var_ty in
+      PlaceMap.add (Charon.Generated_Expressions.LocalId.to_int id) (name, ty) acc )
 
 
 let mk_label (id : int) : Textual.NodeName.t =
@@ -204,7 +206,8 @@ let mk_label (id : int) : Textual.NodeName.t =
 
 
 let mk_locals (locals : Charon.Generated_GAst.local list) (arg_count : int)
-    (place_map : string PlaceMap.t) : (Textual.VarName.t * Textual.Typ.annotated) list =
+    (place_map : (string * Charon.Generated_Types.ty) PlaceMap.t) :
+    (Textual.VarName.t * Textual.Typ.annotated) list =
   (* 1 - Skips the first local, which is the return value *)
   (* 2 - Skips arg_count number of locals to not include the arguments *)
   locals
@@ -212,8 +215,8 @@ let mk_locals (locals : Charon.Generated_GAst.local list) (arg_count : int)
   List.take lst 1 @ List.drop lst (1 + arg_count)
   |> List.map ~f:(fun (l : Charon.Generated_GAst.local) ->
          let id = l.index in
-         ( Textual.VarName.of_string
-             (PlaceMap.find (Charon.Generated_Expressions.LocalId.to_int id) place_map)
+         let name, _ = PlaceMap.find (Charon.Generated_Expressions.LocalId.to_int id) place_map in
+         ( Textual.VarName.of_string name
          , Textual.Typ.mk_without_attributes (ty_to_textual_typ l.var_ty) ) )
 
 
@@ -264,7 +267,13 @@ let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
       L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_ty rust_ty
 
 
-let mk_exp_from_place (place_map : string PlaceMap.t) (place : Charon.Generated_Expressions.place) :
+let mk_place_from_id (id : int) (ty : Charon.Generated_Types.ty) :
+    Charon.Generated_Expressions.place =
+  {kind= PlaceLocal (Charon.Generated_Expressions.LocalId.of_int id); ty}
+
+
+let mk_exp_from_place (place_map : (string * Charon.Generated_Types.ty) PlaceMap.t)
+    (place : Charon.Generated_Expressions.place) :
     Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   let temp_id = Textual.Ident.fresh !ident_set in
   let temp_exp = Textual.Exp.Var temp_id in
@@ -279,7 +288,7 @@ let mk_exp_from_place (place_map : string PlaceMap.t) (place : Charon.Generated_
   in
   let place_exp =
     Textual.Exp.Lvar
-      (Textual.VarName.of_string (PlaceMap.find (Textual.Ident.to_int place_id) place_map))
+      (Textual.VarName.of_string (fst (PlaceMap.find (Textual.Ident.to_int place_id) place_map)))
   in
   let load_instr =
     Textual.Instr.Load {id= temp_id; exp= place_exp; typ= Some temp_typ; loc= temp_loc}
@@ -288,7 +297,7 @@ let mk_exp_from_place (place_map : string PlaceMap.t) (place : Charon.Generated_
   ([load_instr], temp_exp, temp_typ)
 
 
-let mk_exp_from_operand (place_map : string PlaceMap.t)
+let mk_exp_from_operand (place_map : (string * Charon.Generated_Types.ty) PlaceMap.t)
     (operand : Charon.Generated_Expressions.operand) :
     Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   match operand with
@@ -302,8 +311,9 @@ let mk_exp_from_operand (place_map : string PlaceMap.t)
       ([], exp, textual_ty)
 
 
-let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map : string PlaceMap.t)
-    : Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
+let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue)
+    (place_map : (string * Charon.Generated_Types.ty) PlaceMap.t) :
+    Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   match rvalue with
   | UnaryOp (op, operand) ->
       let instrs, exp, typ = mk_exp_from_operand place_map operand in
@@ -349,7 +359,7 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
 
 
 let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
-    (place_map : string PlaceMap.t) (fun_map : string FunMap.t) :
+    (place_map : (string * Charon.Generated_Types.ty) PlaceMap.t) (fun_map : string FunMap.t) :
     Textual.Instr.t list * Textual.Terminator.t =
   (* TODO: Handle the unwind_resume correctly *)
   match terminator.content with
@@ -359,9 +369,10 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
       let node_call : Textual.Terminator.node_call = {label; ssa_args} in
       ([], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.Return ->
-      (* TODO: Update the place map to map to actual places, then get the first element from the place map *)
-      (* TODO: Next, call mk_exp_from_place to get the exp and typ *)
-      ([], Textual.Terminator.Ret (Textual.Exp.Lvar (Textual.VarName.of_string "var_0")))
+      let _, ty = PlaceMap.find 0 place_map in
+      let place = mk_place_from_id 0 ty in
+      let instrs, exp, _ = mk_exp_from_place place_map place in
+      (instrs, Textual.Terminator.Ret exp)
   | Charon.Generated_UllbcAst.Switch (operand, switch) -> (
     match switch with
     | SwitchInt (_, _, _) ->
@@ -377,18 +388,15 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
         let else_ = Textual.Terminator.Jump [else_node_call] in
         (instrs, Textual.Terminator.If {bexp; then_; else_}) )
   | Charon.Generated_UllbcAst.Call (call, block_id_1, _) ->
-      (* Extract arguments from call*)
       let arg_evals = List.map call.args ~f:(mk_exp_from_operand place_map) in
       let arg_instrs = List.concat_map arg_evals ~f:(fun (instrs, _, _) -> instrs) in
       let arg_exps = List.map arg_evals ~f:(fun (_, exp, _) -> exp) in
-      (* Get the function name *)
       let name = fun_name_from_operand call.func fun_map in
       let proc_name = Textual.ProcName.of_string name in
       let qualified_proc_name =
         { Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel
         ; name= proc_name }
       in
-      (* Get the destination of the call *)
       let dest =
         match call.dest.kind with
         | PlaceLocal var_id ->
@@ -396,20 +404,17 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
         | _ ->
             L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place call.dest
       in
-      (* Create the expressions *)
       let exp1 =
         Textual.Exp.Lvar
-          (Textual.VarName.of_string (PlaceMap.find (Textual.Ident.to_int dest) place_map))
+          (Textual.VarName.of_string (fst (PlaceMap.find (Textual.Ident.to_int dest) place_map)))
       in
       let exp2 =
         Textual.Exp.Call {proc= qualified_proc_name; args= arg_exps; kind= Textual.Exp.NonVirtual}
       in
-      (* Create a call instruction like n0 = call temp_func(args) *)
       let temp_id = Textual.Ident.fresh !ident_set in
       let call_instr =
         Textual.Instr.Let {id= Some temp_id; exp= exp2; loc= Textual.Location.Unknown}
       in
-      (* Create the store instruction *)
       let temp_exp = Textual.Exp.Var temp_id in
       let store_instr =
         Textual.Instr.Store
@@ -418,13 +423,10 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
           ; exp2= temp_exp
           ; loc= Textual.Location.Unknown }
       in
-      (* Create the jump instruction *)
       let label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int block_id_1) in
       let ssa_args = [] in
       let node_call : Textual.Terminator.node_call = {label; ssa_args} in
-      (* Update the ident set *)
       ident_set := Textual.Ident.Set.add temp_id !ident_set ;
-      (* Return the instructions *)
       (arg_instrs @ [call_instr] @ [store_instr], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.UnwindResume ->
       ([], Textual.Terminator.Throw (Textual.Exp.Lvar (Textual.VarName.of_string "var_0")))
@@ -432,15 +434,16 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
 
-let mk_instr (place_map : string PlaceMap.t) (statement : Charon.Generated_UllbcAst.statement) :
-    Textual.Instr.t list =
+let mk_instr (place_map : (string * Charon.Generated_Types.ty) PlaceMap.t)
+    (statement : Charon.Generated_UllbcAst.statement) : Textual.Instr.t list =
   let loc = location_from_span statement.span in
   match statement.content with
   | Assign (lhs, rhs) -> (
     match lhs.kind with
     | PlaceLocal var_id ->
         let id = Charon.Generated_Expressions.LocalId.to_int var_id in
-        let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string (PlaceMap.find id place_map)) in
+        let name, _ = PlaceMap.find id place_map in
+        let exp1 = Textual.Exp.Lvar (Textual.VarName.of_string name) in
         let instrs, exp2, typ = mk_exp_from_rvalue rhs place_map in
         let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
         instrs @ [store_instr]
@@ -468,8 +471,9 @@ let mk_instr (place_map : string PlaceMap.t) (statement : Charon.Generated_Ullbc
       L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
 
-let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) (place_map : string PlaceMap.t)
-    (fun_map : string FunMap.t) : Textual.Node.t =
+let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block)
+    (place_map : (string * Charon.Generated_Types.ty) PlaceMap.t) (fun_map : string FunMap.t) :
+    Textual.Node.t =
   let label = mk_label idx in
   (*TODO Should be retrieved from Γ *)
   let ssa_parameters = [] in
