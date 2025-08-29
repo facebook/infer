@@ -740,6 +740,50 @@ end
 
 let remove_if_exp_and_terminator = RemoveIf.run
 
+let rec exp_needs_flattening (exp : Exp.t) =
+  match exp with
+  | Var _ | Lvar _ | Const _ | Typ _ ->
+      false
+  | Load _ | Closure _ | Apply _ ->
+      true
+  | Field f ->
+      exp_needs_flattening f.exp
+  | Index (exp1, exp2) ->
+      exp_needs_flattening exp1 || exp_needs_flattening exp2
+  | If {cond; then_; else_} ->
+      bexp_needs_flattening cond || exp_needs_flattening then_ || exp_needs_flattening else_
+  | Call {args} ->
+      List.exists ~f:exp_needs_flattening args
+
+
+and bexp_needs_flattening (bexp : BoolExp.t) =
+  match bexp with
+  | Exp exp ->
+      exp_needs_flattening exp
+  | Not bexp ->
+      bexp_needs_flattening bexp
+  | And (bexp1, bexp2) ->
+      bexp_needs_flattening bexp1 || bexp_needs_flattening bexp2
+  | Or (bexp1, bexp2) ->
+      bexp_needs_flattening bexp1 || bexp_needs_flattening bexp2
+
+
+let rec terminator_needs_flattening (last : Terminator.t) =
+  match last with
+  | If {bexp; then_; else_} ->
+      bexp_needs_flattening bexp || terminator_needs_flattening then_
+      || terminator_needs_flattening else_
+  | Ret exp ->
+      exp_needs_flattening exp
+  | Jump node_calls ->
+      List.exists node_calls ~f:(fun {Terminator.ssa_args} ->
+          List.exists ~f:exp_needs_flattening ssa_args )
+  | Throw exp ->
+      exp_needs_flattening exp
+  | Unreachable ->
+      false
+
+
 let remove_effects_in_subexprs lang decls_env module_ =
   let fresh_closure_counter =
     let counter = ref (-1) in
@@ -765,13 +809,15 @@ let remove_effects_in_subexprs lang decls_env module_ =
         (Index (exp1, exp2), state)
     | If {cond; then_; else_} when toplevel ->
         let cond, state = flatten_bexp loc cond state in
-        let state = {state with State.may_need_iteration= true} in
-        (If {cond; then_; else_}, state)
+        let exp = Exp.If {cond; then_; else_} in
+        let state = {state with State.may_need_iteration= exp_needs_flattening exp} in
+        (exp, state)
     | If {cond; then_; else_} ->
         let cond, state = flatten_bexp loc cond state in
         let fresh = state.State.fresh_ident in
-        let new_instr : Instr.t = Let {id= Some fresh; exp= If {cond; then_; else_}; loc} in
-        let state = {state with State.may_need_iteration= true} in
+        let exp = Exp.If {cond; then_; else_} in
+        let new_instr : Instr.t = Let {id= Some fresh; exp; loc} in
+        let state = {state with State.may_need_iteration= exp_needs_flattening exp} in
         (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
     | Call {proc; args; kind} ->
         let args, state = flatten_exp_list loc args state in
@@ -869,8 +915,10 @@ let remove_effects_in_subexprs lang decls_env module_ =
     match last with
     | If {bexp; then_; else_} ->
         let bexp, state = flatten_bexp loc bexp state in
-        let state = {state with State.may_need_iteration= true} in
-        (If {bexp; then_; else_}, state)
+        let last = Terminator.If {bexp; then_; else_} in
+        let may_need_iteration = terminator_needs_flattening last in
+        let state = {state with State.may_need_iteration} in
+        (last, state)
     | Ret exp ->
         let exp, state = flatten_exp loc exp state in
         (Ret exp, state)
