@@ -227,7 +227,7 @@ let%test_module "remove_if_terminator transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> TextualTransform.remove_if_terminator in
+      let module_ = parse_module input_text |> TextualTransform.remove_if_exp_and_terminator in
       show module_ ;
       [%expect
         {|
@@ -517,7 +517,9 @@ let%test_module "remove_if_terminator transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module python_inspired_text |> TextualTransform.remove_if_terminator in
+      let module_ =
+        parse_module python_inspired_text |> TextualTransform.remove_if_exp_and_terminator
+      in
       show module_ ;
       [%expect
         {|
@@ -669,7 +671,7 @@ let%test_module "out-of-ssa transformation" =
 
     let%expect_test _ =
       let module_ =
-        parse_module python_inspired_text |> TextualTransform.remove_if_terminator
+        parse_module python_inspired_text |> TextualTransform.remove_if_exp_and_terminator
         |> TextualTransform.out_of_ssa
       in
       show module_ ;
@@ -865,3 +867,52 @@ let%expect_test "get_class_ts" =
           ret null @[16:16]
 
     } @[17:9] |}]
+
+
+let%expect_test "if expression" =
+  let source =
+    {|
+        .source_language = "hack"
+
+        define main($a: int, $b: int): int {
+            #b0:
+                n0 = (if $b then 0 else $a)
+                n1 = (if $a then 2 else n0)
+                ret n0
+        }
+    |}
+  in
+  let module_ = parse_module source |> TextualTransform.remove_if_exp_and_terminator in
+  show module_ ;
+  [%expect
+    {|
+    .source_language = "hack" @[2:8]
+
+    define main($a: int, $b: int) : int {
+      #b0: @[5:12]
+          jmp if_exp1, if_exp2 @[6:16]
+
+      #if_exp2: @[6:16]
+          prune __sil_lnot([&$b:int]) @[6:16]
+          jmp if_exp0([&$a:int]) @[6:16]
+
+      #if_exp1: @[6:16]
+          prune [&$b:int] @[6:16]
+          jmp if_exp0(0) @[6:16]
+
+      #if_exp0(n0: *void): @[6:16]
+          jmp if_exp4, if_exp5 @[7:16]
+
+      #if_exp5: @[7:16]
+          prune __sil_lnot([&$a:int]) @[7:16]
+          jmp if_exp3(n0) @[7:16]
+
+      #if_exp4: @[7:16]
+          prune [&$a:int] @[7:16]
+          jmp if_exp3(2) @[7:16]
+
+      #if_exp3(n1: *void): @[7:16]
+          ret n0 @[8:16]
+
+    } @[9:9]
+    |}]

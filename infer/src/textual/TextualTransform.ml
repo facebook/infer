@@ -675,7 +675,7 @@ let remove_effects_in_subexprs lang decls_env _module =
   , not (State.ClosureDeclarations.is_empty closure_declarations) )
 
 
-let remove_if_terminator module_ =
+let remove_if_exp_and_terminator module_ =
   (* first transform if conditions into disjunctions of conjunctions of possibly-negated
      atoms (expressions) then use this form to build the CFG by jumping to each disjunct
      non-deterministically and in each of them asserting each conjunct in sequence *)
@@ -726,7 +726,54 @@ let remove_if_terminator module_ =
     in
     dnf bexp
   in
-  let transform pdesc =
+  let transform_exp (pdesc : ProcDesc.t) =
+    let fresh_label = create_fresh_label_generator ~prefix:"if_exp" pdesc in
+    let rec transform_instrs rev_instrs rev_nodes node instrs =
+      match instrs with
+      | Instr.Let {id= Some id; exp= If {cond; then_; else_}; loc} :: instrs ->
+          let next_label = fresh_label () in
+          let mk_branch_node exp : Node.t =
+            { label= fresh_label ()
+            ; ssa_parameters= []
+            ; exn_succs= []
+            ; last= Jump [{label= next_label; ssa_args= [exp]}]
+            ; instrs= []
+            ; last_loc= loc
+            ; label_loc= loc }
+          in
+          let typ =
+            Typ.(Ptr Void)
+            (* TODO find a better type *)
+          in
+          let next_node : Node.t =
+            {node with label= next_label; ssa_parameters= [(id, typ)]; instrs; label_loc= loc}
+          in
+          let then_node = mk_branch_node then_ in
+          let else_node = mk_branch_node else_ in
+          let interrupted_node : Node.t =
+            { node with
+              last=
+                If
+                  { bexp= cond
+                  ; then_= Jump [{label= then_node.label; ssa_args= []}]
+                  ; else_= Jump [{label= else_node.label; ssa_args= []}] }
+            ; instrs= List.rev rev_instrs
+            ; last_loc= loc }
+          in
+          let rev_nodes = then_node :: else_node :: interrupted_node :: rev_nodes in
+          transform_instrs [] rev_nodes next_node instrs
+      | instr :: instrs ->
+          transform_instrs (instr :: rev_instrs) rev_nodes node instrs
+      | [] ->
+          {node with Node.instrs= List.rev rev_instrs} :: rev_nodes
+    in
+    let rev_nodes =
+      List.fold pdesc.nodes ~init:[] ~f:(fun rev_nodes node ->
+          transform_instrs [] rev_nodes node node.Node.instrs )
+    in
+    {pdesc with nodes= List.rev rev_nodes}
+  in
+  let transform_terminator pdesc =
     let fresh_label = create_fresh_label_generator ~prefix:"if" pdesc in
     let predecessors_count : NodeName.t -> int =
       (* we count how many predecessors a node has *)
@@ -832,7 +879,8 @@ let remove_if_terminator module_ =
     (* no need to update fresh_ident *)
     {pdesc with ProcDesc.nodes}
   in
-  module_map_procs ~f:transform module_
+  let f pdesc = transform_exp pdesc |> transform_terminator in
+  module_map_procs ~f module_
 
 
 (* TODO (T131910123): replace with STORE+LOAD transform *)
@@ -1009,7 +1057,7 @@ let run lang module_ =
        errors before." ;
   let module_, new_decls_were_added =
     (* note: because && and || operators are lazy we must remove them before moving calls *)
-    module_ |> remove_if_terminator |> remove_effects_in_subexprs lang decls_env
+    module_ |> remove_if_exp_and_terminator |> remove_effects_in_subexprs lang decls_env
   in
   let decls_env =
     if new_decls_were_added then TextualDecls.make_decls module_ |> snd else decls_env

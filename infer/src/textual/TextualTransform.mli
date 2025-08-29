@@ -27,7 +27,7 @@ val remove_effects_in_subexprs :
    return the new Textual unit and a boolean true iff new decls where introduced during transformation
 *)
 
-val remove_if_terminator : Textual.Module.t -> Textual.Module.t
+val remove_if_exp_and_terminator : Textual.Module.t -> Textual.Module.t
 [@@warning "-unused-value-declaration"]
 
 val let_propagation : Textual.Module.t -> Textual.Module.t [@@warning "-unused-value-declaration"]
