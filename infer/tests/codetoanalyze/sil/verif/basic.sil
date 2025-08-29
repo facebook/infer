@@ -120,7 +120,7 @@ define if_then_else(x: int, y: float) : void {
     if [&y] then ret null else jmp lab2
 }
 
-define if_exp_not_declared(a: int, b: int) : void {
+define if_exp_not_declared(a: int, b: int, n:*node) : void {
 #b0:
   n0 = (if b && b0 then x else 0)
   ret null

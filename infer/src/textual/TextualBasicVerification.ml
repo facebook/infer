@@ -134,36 +134,44 @@ let verify_decl ~env errors (decl : Module.decl) =
       | Some (NotVariadic, _, {formals_types= None}) ->
           errors
   in
-  let verify_exp loc generics errors exp =
-    let rec aux errors (exp : Exp.t) =
-      match exp with
-      | Var _ | Lvar _ | Const _ | Typ _ ->
-          errors
-      | Load {exp} ->
-          aux errors exp
-      | Field {exp; field} ->
-          let errors = verify_field errors field in
-          aux errors exp
-      | Index (e1, e2) ->
-          let errors = aux errors e1 in
-          aux errors e2
-      | If {then_; else_} ->
-          aux (aux errors then_) else_
-      | Call {proc; args} ->
-          let errors = List.fold ~f:aux ~init:errors args in
-          let nb_generics_args = count_generics_args args generics in
-          let nb_args = List.length args in
-          verify_call loc errors proc nb_args nb_generics_args
-      | Closure {proc; captured; params} ->
-          let errors = List.fold ~f:aux ~init:errors captured in
-          let nb_generics_args = count_generics_args captured generics in
-          let nb_args = List.length captured + List.length params in
-          verify_call loc ~must_be_implemented:true errors proc nb_args nb_generics_args
-      | Apply {closure; args} ->
-          let errors = aux errors closure in
-          List.fold ~f:aux ~init:errors args
-    in
-    aux errors exp
+  let rec verify_exp loc generics errors (exp : Exp.t) =
+    match exp with
+    | Var _ | Lvar _ | Const _ | Typ _ ->
+        errors
+    | Load {exp} ->
+        verify_exp loc generics errors exp
+    | Field {exp; field} ->
+        let errors = verify_field errors field in
+        verify_exp loc generics errors exp
+    | Index (e1, e2) ->
+        let errors = verify_exp loc generics errors e1 in
+        verify_exp loc generics errors e2
+    | If {cond; then_; else_} ->
+        let errors = verify_bexp loc generics errors cond in
+        let errors = verify_exp loc generics errors then_ in
+        verify_exp loc generics errors else_
+    | Call {proc; args} ->
+        let errors = List.fold ~f:(verify_exp loc generics) ~init:errors args in
+        let nb_generics_args = count_generics_args args generics in
+        let nb_args = List.length args in
+        verify_call loc errors proc nb_args nb_generics_args
+    | Closure {proc; captured; params} ->
+        let errors = List.fold ~f:(verify_exp loc generics) ~init:errors captured in
+        let nb_generics_args = count_generics_args captured generics in
+        let nb_args = List.length captured + List.length params in
+        verify_call loc ~must_be_implemented:true errors proc nb_args nb_generics_args
+    | Apply {closure; args} ->
+        let errors = verify_exp loc generics errors closure in
+        List.fold ~f:(verify_exp loc generics) ~init:errors args
+  and verify_bexp loc generics errors (bexp : BoolExp.t) =
+    match bexp with
+    | Exp exp ->
+        verify_exp loc generics errors exp
+    | Not bexp ->
+        verify_bexp loc generics errors bexp
+    | And (bexp1, bexp2) | Or (bexp1, bexp2) ->
+        let errors = verify_bexp loc generics errors bexp1 in
+        verify_bexp loc generics errors bexp2
   in
   let verify_instr generics errors (instr : Instr.t) =
     let loc = Instr.loc instr in
@@ -235,7 +243,8 @@ let verify_decl ~env errors (decl : Module.decl) =
     let verify_node_call errors {Terminator.label} = verify_label errors label in
     let rec verify_terminator loc errors (t : Terminator.t) =
       match t with
-      | If {then_; else_} ->
+      | If {bexp; then_; else_} ->
+          let errors = verify_bexp loc generics errors bexp in
           let errors = verify_terminator loc errors then_ in
           verify_terminator loc errors else_
       | Jump l ->
