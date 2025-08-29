@@ -531,7 +531,7 @@ let remove_effects_in_subexprs lang decls_env _module =
       incr counter ;
       !counter
   in
-  let rec flatten_exp loc (exp : Exp.t) state : Exp.t * State.t =
+  let rec flatten_exp loc ?(toplevel = false) (exp : Exp.t) state : Exp.t * State.t =
     match exp with
     | Var _ | Lvar _ | Const _ | Typ _ ->
         (exp, state)
@@ -547,8 +547,14 @@ let remove_effects_in_subexprs lang decls_env _module =
         let exp1, state = flatten_exp loc exp1 state in
         let exp2, state = flatten_exp loc exp2 state in
         (Index (exp1, exp2), state)
-    | If _ ->
-        L.die InternalError "TODO: Textual If statement"
+    | If {cond; then_; else_} when toplevel ->
+        let cond, state = flatten_bexp loc cond state in
+        (If {cond; then_; else_}, state)
+    | If {cond; then_; else_} ->
+        let cond, state = flatten_bexp loc cond state in
+        let fresh = state.State.fresh_ident in
+        let new_instr : Instr.t = Let {id= Some fresh; exp= If {cond; then_; else_}; loc} in
+        (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
     | Call {proc; args; kind} ->
         let args, state = flatten_exp_list loc args state in
         if ProcDecl.is_side_effect_free_sil_expr proc then (Call {proc; args; kind}, state)
@@ -604,6 +610,22 @@ let remove_effects_in_subexprs lang decls_env _module =
           (exp :: args, state) )
     in
     (List.rev exp_list, state)
+  and flatten_bexp loc bexp state =
+    match (bexp : BoolExp.t) with
+    | Exp exp ->
+        let exp, state = flatten_exp loc exp state in
+        (BoolExp.Exp exp, state)
+    | Not bexp ->
+        let bexp, state = flatten_bexp loc bexp state in
+        (BoolExp.Not bexp, state)
+    | And (bexp1, bexp2) ->
+        let bexp1, state = flatten_bexp loc bexp1 state in
+        (* because of lazyness we only transform fst arg *)
+        (BoolExp.And (bexp1, bexp2), state)
+    | Or (bexp1, bexp2) ->
+        let bexp1, state = flatten_bexp loc bexp1 state in
+        (* because of lazyness we only transform fst arg *)
+        (BoolExp.Or (bexp1, bexp2), state)
   in
   let flatten_in_instr (instr : Instr.t) state : State.t =
     match instr with
@@ -622,13 +644,14 @@ let remove_effects_in_subexprs lang decls_env _module =
         let args, state = flatten_exp_list loc args state in
         State.push_instr (Let {id; exp= Call {proc; args; kind}; loc}) state
     | Let {id; exp; loc} ->
-        let exp, state = flatten_exp loc exp state in
+        let exp, state = flatten_exp loc ~toplevel:true exp state in
         State.push_instr (Let {id; exp; loc}) state
   in
   let flatten_in_terminator loc (last : Terminator.t) state : Terminator.t * State.t =
     match last with
-    | If _ ->
-        L.die InternalError "remove_internal_calls should not be called on If terminator"
+    | If {bexp; then_; else_} ->
+        let bexp, state = flatten_bexp loc bexp state in
+        (If {bexp; then_; else_}, state)
     | Ret exp ->
         let exp, state = flatten_exp loc exp state in
         (Ret exp, state)

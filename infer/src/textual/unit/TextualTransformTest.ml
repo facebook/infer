@@ -869,7 +869,7 @@ let%expect_test "get_class_ts" =
     } @[17:9] |}]
 
 
-let%expect_test "if expression" =
+let%expect_test "toplevel if expression" =
   let source =
     {|
         .source_language = "hack"
@@ -915,4 +915,61 @@ let%expect_test "if expression" =
           ret n0 @[8:16]
 
     } @[9:9]
+    |}]
+
+
+let%expect_test "if expression in subexpr" =
+  let source =
+    {|
+        .source_language = "hack"
+
+        declare f(int): void
+
+        declare g(int): int
+
+        define main($a: int, $b: int): void {
+            #b0:
+                n0 = f((if g($b) then g(0) else g($a)))
+                n1 = f((if g($a) then g(2) else g($b)))
+                ret null
+        }
+
+
+        define if_terminal($a: int, $b: int): int {
+            #b0:
+                if g($b) && g($a) then ret 0 else ret 1
+        }
+    |}
+  in
+  let module_, _ = parse_module source |> remove_effects_in_subexprs Hack in
+  show module_ ;
+  [%expect
+    {|
+    .source_language = "hack" @[2:8]
+
+    declare f(int) : void
+
+    declare g(int) : int
+
+    define main($a: int, $b: int) : void {
+      #b0: @[9:12]
+          n2:int = load &$b @[10:16]
+          n3 = g(n2) @[10:16]
+          n4 = (if n3 then g(0) else g([&$a:int])) @[10:16]
+          n0 = f(n4) @[10:16]
+          n5:int = load &$a @[11:16]
+          n6 = g(n5) @[11:16]
+          n7 = (if n6 then g(2) else g([&$b:int])) @[11:16]
+          n1 = f(n7) @[11:16]
+          ret null @[12:16]
+
+    } @[13:9]
+
+    define if_terminal($a: int, $b: int) : int {
+      #b0: @[17:12]
+          n0:int = load &$b @[18:16]
+          n1 = g(n0) @[18:16]
+          if (n1) && (g([&$a:int])) then ret 0 else ret 1 @[18:16]
+
+    } @[19:9]
     |}]
