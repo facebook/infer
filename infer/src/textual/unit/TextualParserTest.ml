@@ -256,3 +256,38 @@ let%expect_test "overloaded functions" =
           ret null @[13:7]
 
     } @[14:6] |}]
+
+
+let%expect_test "conditional expression" =
+  let text =
+    {|
+     .source_language = "hack"
+
+     declare f(int) : void
+
+     define g(a: int, b: bool) : void {
+     #b0:
+       n0 = (if b && b then a else 0)
+       n1 = (if b then n1 else 0)
+       n2 = f(n1)
+       ret null
+     }
+     |}
+  in
+  let m = parse_module text in
+  show m ;
+  [%expect
+    {|
+    .source_language = "hack" @[2:5]
+
+    declare f(int) : void
+
+    define g(a: int, b: bool) : void {
+      #b0: @[7:5]
+          n0 = 0 @[8:7]
+          n1 = 0 @[9:7]
+          n2 = f(n1) @[10:7]
+          ret null @[11:7]
+
+    } @[12:6]
+    |}]

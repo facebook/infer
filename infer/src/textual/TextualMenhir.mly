@@ -470,6 +470,10 @@ expression:
     { Exp.Index (e1, e2) }
   | c=const
     { Exp.Const c }
+  | LPAREN IF bexp=bool_expression THEN then_=expression ELSE else_=expression RPAREN
+    { let _ = bexp in
+      let _ = then_ in
+      else_ }
   | proc=opt_qualified_pname_and_lparen args=separated_list(COMMA, expression) RPAREN
     { Exp.Call {proc; args; kind= Exp.NonVirtual} }
   | closure=expression LPAREN args=separated_list(COMMA, expression) RPAREN
