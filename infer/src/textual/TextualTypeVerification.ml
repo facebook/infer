@@ -168,6 +168,8 @@ let rec loc_of_exp exp =
       loc_of_exp exp
   | Const _ ->
       None
+  | If _ ->
+      L.die InternalError "TODO: Textual If statement"
   | Call {proc} ->
       Some proc.name.loc
   | Closure {proc} ->
@@ -533,6 +535,8 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       (Exp.Index (exp1, exp2), typ)
   | Const const ->
       ret (exp, typeof_const const)
+  | If _ ->
+      L.die InternalError "TODO: Textual If statement"
   | Call {proc; args}
     when ProcDecl.is_allocate_object_builtin proc
          || ProcDecl.is_lazy_class_initialize_builtin proc

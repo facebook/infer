@@ -77,6 +77,8 @@ module FixClosureAppExpr = struct
       match exp with
       | Var _ | Lvar _ | Const _ | Typ _ ->
           exp
+      | If {cond; then_; else_} ->
+          If {cond= of_bexp cond; then_= of_exp then_; else_= of_exp else_}
       | Load l ->
           Load {l with exp= of_exp l.exp}
       | Field f ->
@@ -92,6 +94,17 @@ module FixClosureAppExpr = struct
           Closure {proc; captured= List.map captured ~f:of_exp; params; attributes}
       | Apply {closure; args} ->
           Apply {closure= of_exp closure; args= List.map args ~f:of_exp}
+    and of_bexp bexp =
+      let open BoolExp in
+      match bexp with
+      | Exp exp ->
+          Exp (of_exp exp)
+      | Not bexp ->
+          Not (of_bexp bexp)
+      | And (bexp1, bexp2) ->
+          And (of_bexp bexp1, of_bexp bexp2)
+      | Or (bexp1, bexp2) ->
+          Or (of_bexp bexp1, of_bexp bexp2)
     in
     let of_instr instr =
       let open Instr in
@@ -104,18 +117,6 @@ module FixClosureAppExpr = struct
           Prune {args with exp= of_exp args.exp}
       | Let args ->
           Let {args with exp= of_exp args.exp}
-    in
-    let rec of_bexp bexp =
-      let open BoolExp in
-      match bexp with
-      | Exp exp ->
-          Exp (of_exp exp)
-      | Not bexp ->
-          Not (of_bexp bexp)
-      | And (bexp1, bexp2) ->
-          And (of_bexp bexp1, of_bexp bexp2)
-      | Or (bexp1, bexp2) ->
-          Or (of_bexp bexp1, of_bexp bexp2)
     in
     let rec of_terminator t =
       let open Terminator in
@@ -221,6 +222,8 @@ module Subst = struct
         Field {f with exp= of_exp_one f.exp ~id ~by}
     | Index (exp1, exp2) ->
         Index (of_exp_one exp1 ~id ~by, of_exp_one exp2 ~id ~by)
+    | If _ ->
+        L.die InternalError "TODO: Textual If statement"
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp_one exp ~id ~by)}
     | Closure {proc; captured; params; attributes} ->
@@ -248,6 +251,8 @@ module Subst = struct
         Field {f with exp= of_exp f.exp eqs}
     | Index (exp1, exp2) ->
         Index (of_exp exp1 eqs, of_exp exp2 eqs)
+    | If _ ->
+        L.die InternalError "TODO: Textual If statement"
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp exp eqs)}
     | Closure {proc; captured; params; attributes} ->
@@ -516,6 +521,8 @@ let remove_effects_in_subexprs lang decls_env _module =
         let exp1, state = flatten_exp loc exp1 state in
         let exp2, state = flatten_exp loc exp2 state in
         (Index (exp1, exp2), state)
+    | If _ ->
+        L.die InternalError "TODO: Textual If statement"
     | Call {proc; args; kind} ->
         let args, state = flatten_exp_list loc args state in
         if ProcDecl.is_side_effect_free_sil_expr proc then (Call {proc; args; kind}, state)

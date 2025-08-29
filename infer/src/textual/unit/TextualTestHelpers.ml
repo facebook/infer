@@ -17,8 +17,12 @@ let parse_string_and_verify sourcefile text =
   |> Result.map_error ~f:(fun err -> [TextualParser.VerificationError err])
 
 
-let parse_module text =
-  match parse_string_and_verify sourcefile text with
+let parse_module ?(verify = true) text =
+  let result =
+    if verify then parse_string_and_verify sourcefile text
+    else TextualParser.parse_string sourcefile text
+  in
+  match result with
   | Ok m ->
       m
   | Error es ->

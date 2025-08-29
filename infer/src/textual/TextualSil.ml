@@ -723,6 +723,10 @@ module ExpBridge = struct
           Lindex (aux exp1, aux exp2)
       | Const const ->
           Const (ConstBridge.to_sil const)
+      | If _ ->
+          L.die InternalError
+            "If expression must have been removed by TextualTransform before generating SIL \
+             expression"
       | Call {proc; args= [Typ typ; exp]} when ProcDecl.is_cast_builtin proc ->
           Cast (TypBridge.to_sil lang typ, aux exp)
       | Call {proc; args} -> (

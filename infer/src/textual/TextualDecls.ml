@@ -342,6 +342,10 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
     | Index (base, idx) ->
         from_exp base ;
         from_exp idx
+    | If {cond; then_; else_} ->
+        from_bexp cond ;
+        from_exp then_ ;
+        from_exp else_
     | Call {args} ->
         List.iter args ~f:from_exp
     | Closure {captured} ->

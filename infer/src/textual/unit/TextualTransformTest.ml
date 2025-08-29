@@ -155,7 +155,8 @@ let%test_module "remove_effects_in_subexprs transformation" =
               n1:*cell = load n0.cell.next @[38:13]
               ret n1 @[38:13]
 
-        } @[39:9] |}]
+        } @[39:9]
+        |}]
   end )
 
 
@@ -747,74 +748,76 @@ let%expect_test "closures" =
   show module_ ;
   [%expect
     {|
-      .source_language = "hack" @[2:8]
+    .source_language = "hack" @[2:8]
 
-      define C.add(x: int, y: int, z: int, u: float, v: string) : int {
-        #entry: @[5:10]
-            ret __sil_plusa([&x:int], __sil_plusa([&y:int], [&z:int])) @[6:12]
+    define C.add(x: int, y: int, z: int, u: float, v: string) : int {
+      #entry: @[5:10]
+          ret __sil_plusa([&x:int], __sil_plusa([&y:int], [&z:int])) @[6:12]
 
-      } @[7:9]
+    } @[7:9]
 
-      define D.foo(x: int) : void {
-        local y: *HackMixed
-        #entry: @[11:10]
-            n0 = fun (p1, p2, p3) -> C.add([&x:int], 1, p1, p2, p3) @[12:12]
-            store &y <- n0:*HackMixed @[13:12]
-            n1 = [&y:*HackMixed]([&x:int], 1., null) @[14:12]
-            n2 = n0([&x:int], 2., null) @[15:12]
-            ret __sil_plusa(n1, n2) @[16:12]
+    define D.foo(x: int) : void {
+      local y: *HackMixed
+      #entry: @[11:10]
+          n0 = fun (p1, p2, p3) -> C.add([&x:int], 1, p1, p2, p3) @[12:12]
+          store &y <- n0:*HackMixed @[13:12]
+          n1 = [&y:*HackMixed]([&x:int], 1., null) @[14:12]
+          n2 = n0([&x:int], 2., null) @[15:12]
+          ret __sil_plusa(n1, n2) @[16:12]
 
-      } @[17:9] |}] ;
+    } @[17:9]
+    |}] ;
   let module_, _ = remove_effects_in_subexprs Lang.Hack module_ in
   show module_ ;
   [%expect
     {|
-      .source_language = "hack" @[2:8]
+    .source_language = "hack" @[2:8]
 
-      type .final PyClosure<dummy:0> = {x: int; y: int}
+    type .final PyClosure<dummy:0> = {x: int; y: int}
 
-      define .closure_wrapper PyClosure<dummy:0>.call(__this: *PyClosure<dummy:0>, p1: int, p2: float, p3: string) : int {
-        #entry: @[12:12]
-            n0:*PyClosure<dummy:0> = load &__this @[12:12]
-            n1:int = load n0.?.x @[12:12]
-            n2:*PyClosure<dummy:0> = load &__this @[12:12]
-            n3:int = load n2.?.y @[12:12]
-            n4:int = load &p1 @[12:12]
-            n5:float = load &p2 @[12:12]
-            n6:string = load &p3 @[12:12]
-            n7 = C.add(n1, n3, n4, n5, n6) @[12:12]
-            ret n7 @[12:12]
+    define .closure_wrapper PyClosure<dummy:0>.call(__this: *PyClosure<dummy:0>, p1: int, p2: float, p3: string) : int {
+      #entry: @[12:12]
+          n0:*PyClosure<dummy:0> = load &__this @[12:12]
+          n1:int = load n0.?.x @[12:12]
+          n2:*PyClosure<dummy:0> = load &__this @[12:12]
+          n3:int = load n2.?.y @[12:12]
+          n4:int = load &p1 @[12:12]
+          n5:float = load &p2 @[12:12]
+          n6:string = load &p3 @[12:12]
+          n7 = C.add(n1, n3, n4, n5, n6) @[12:12]
+          ret n7 @[12:12]
 
-      } @[12:12]
+    } @[12:12]
 
-      define C.add(x: int, y: int, z: int, u: float, v: string) : int {
-        #entry: @[5:10]
-            n0:int = load &x @[6:12]
-            n1:int = load &y @[6:12]
-            n2:int = load &z @[6:12]
-            ret __sil_plusa(n0, __sil_plusa(n1, n2)) @[6:12]
+    define C.add(x: int, y: int, z: int, u: float, v: string) : int {
+      #entry: @[5:10]
+          n0:int = load &x @[6:12]
+          n1:int = load &y @[6:12]
+          n2:int = load &z @[6:12]
+          ret __sil_plusa(n0, __sil_plusa(n1, n2)) @[6:12]
 
-      } @[7:9]
+    } @[7:9]
 
-      define D.foo(x: int) : void {
-        local y: *HackMixed
-        #entry: @[11:10]
-            n3:int = load &x @[12:12]
-            n4 = __sil_allocate(<PyClosure<dummy:0>>) @[12:12]
-            store n4.?.x <- n3:int @[12:12]
-            store n4.?.y <- 1:int @[12:12]
-            n0 = n4 @[12:12]
-            store &y <- n0:*HackMixed @[13:12]
-            n6:*HackMixed = load &y @[14:12]
-            n7:int = load &x @[14:12]
-            n8 = n6.?.call(n7, 1., null) @[14:12]
-            n1 = n8 @[14:12]
-            n9:int = load &x @[15:12]
-            n10 = n0.?.call(n9, 2., null) @[15:12]
-            n2 = n10 @[15:12]
-            ret __sil_plusa(n1, n2) @[16:12]
+    define D.foo(x: int) : void {
+      local y: *HackMixed
+      #entry: @[11:10]
+          n3:int = load &x @[12:12]
+          n4 = __sil_allocate(<PyClosure<dummy:0>>) @[12:12]
+          store n4.?.x <- n3:int @[12:12]
+          store n4.?.y <- 1:int @[12:12]
+          n0 = n4 @[12:12]
+          store &y <- n0:*HackMixed @[13:12]
+          n6:*HackMixed = load &y @[14:12]
+          n7:int = load &x @[14:12]
+          n8 = n6.?.call(n7, 1., null) @[14:12]
+          n1 = n8 @[14:12]
+          n9:int = load &x @[15:12]
+          n10 = n0.?.call(n9, 2., null) @[15:12]
+          n2 = n10 @[15:12]
+          ret __sil_plusa(n1, n2) @[16:12]
 
-      } @[17:9] |}] ;
+    } @[17:9]
+    |}] ;
   type_check module_ ;
   [%expect {|
       verification succeeded |}]

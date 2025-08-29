@@ -274,7 +274,7 @@ let%expect_test "conditional expression" =
      }
      |}
   in
-  let m = parse_module text in
+  let m = parse_module ~verify:false text in
   show m ;
   [%expect
     {|
@@ -284,8 +284,8 @@ let%expect_test "conditional expression" =
 
     define g(a: int, b: bool) : void {
       #b0: @[7:5]
-          n0 = 0 @[8:7]
-          n1 = 0 @[9:7]
+          n0 = (if (b) && (b) then a else 0) @[8:7]
+          n1 = (if b then n1 else 0) @[9:7]
           n2 = f(n1) @[10:7]
           ret null @[11:7]
 

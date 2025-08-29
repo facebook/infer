@@ -890,7 +890,46 @@ module Struct = struct
         pp_fields fields
 end
 
-module Exp = struct
+module rec Exp : sig
+  type call_kind = Virtual | NonVirtual [@@deriving equal]
+
+  type t =
+    | Var of Ident.t  (** pure variable: it is not an lvalue *)
+    | Load of {exp: t; typ: Typ.t option}
+    | Lvar of VarName.t  (** the address of a program variable *)
+    | Field of {exp: t; field: qualified_fieldname}  (** field offset *)
+    | Index of t * t  (** an array index offset: [exp1[exp2]] *)
+    | Const of Const.t
+    | If of {cond: BoolExp.t; then_: t; else_: t}
+    | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
+    | Closure of
+        { proc: QualifiedProcName.t
+        ; captured: t list
+        ; params: VarName.t list
+        ; attributes: Attr.t list }
+    | Apply of {closure: t; args: t list}
+    | Typ of Typ.t
+
+  val call_non_virtual : QualifiedProcName.t -> t list -> t
+
+  val call_virtual : QualifiedProcName.t -> t -> t list -> t
+
+  val call_sig : QualifiedProcName.t -> int -> Lang.t -> ProcSig.t
+
+  val do_not_contain_regular_call : t -> bool
+
+  val allocate_object : TypeName.t -> t
+
+  val not : t -> t
+
+  val cast : Typ.t -> t -> t
+
+  val vars : t -> Ident.Set.t
+
+  val is_zero_exp : t -> bool
+
+  val pp : F.formatter -> t -> unit
+end = struct
   (* TODO(T133190934) *)
   type call_kind = Virtual | NonVirtual [@@deriving equal]
 
@@ -902,6 +941,7 @@ module Exp = struct
     | Index of t * t
     (*  | Sizeof of sizeof_data *)
     | Const of Const.t
+    | If of {cond: BoolExp.t; then_: t; else_: t}
     | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
     | Closure of
         { proc: QualifiedProcName.t
@@ -953,6 +993,8 @@ module Exp = struct
         F.fprintf fmt "%a[%a]" pp e1 pp e2
     | Const c ->
         Const.pp fmt c
+    | If {cond; then_; else_} ->
+        F.fprintf fmt "(if %a then %a else %a)" BoolExp.pp cond pp then_ pp else_
     | Call {proc; args; kind} -> (
       match kind with
       | Virtual -> (
@@ -984,6 +1026,9 @@ module Exp = struct
         do_not_contain_regular_call exp
     | Index (exp1, exp2) ->
         do_not_contain_regular_call exp1 && do_not_contain_regular_call exp2
+    | If {cond; then_; else_} ->
+        BoolExp.do_not_contain_regular_call cond
+        && do_not_contain_regular_call then_ && do_not_contain_regular_call else_
     | Call {proc; args} ->
         ProcDecl.is_not_regular_proc proc && List.for_all args ~f:do_not_contain_regular_call
     | Apply {closure; args} ->
@@ -1001,6 +1046,8 @@ module Exp = struct
           acc
       | Load {exp} | Field {exp} ->
           aux acc exp
+      | If _ ->
+          L.die InternalError "TODO: Textual If statement"
       | Index (exp1, exp2) ->
           aux (aux acc exp1) exp2
       | Apply {closure; args} ->
@@ -1013,7 +1060,13 @@ module Exp = struct
     aux Ident.Set.empty exp
 end
 
-module BoolExp = struct
+and BoolExp : sig
+  type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
+
+  val do_not_contain_regular_call : t -> bool
+
+  val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
+end = struct
   type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
 
   let rec pp fmt bexp =

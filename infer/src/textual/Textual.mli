@@ -349,7 +349,7 @@ module FieldDecl : sig
   type t = {qualified_name: qualified_fieldname; typ: Typ.t; attributes: Attr.t list}
 end
 
-module Exp : sig
+module rec Exp : sig
   type call_kind = Virtual | NonVirtual [@@deriving equal]
 
   type t =
@@ -359,6 +359,7 @@ module Exp : sig
     | Field of {exp: t; field: qualified_fieldname}  (** field offset *)
     | Index of t * t  (** an array index offset: [exp1[exp2]] *)
     | Const of Const.t
+    | If of {cond: BoolExp.t; then_: t; else_: t}
     | Call of {proc: QualifiedProcName.t; args: t list; kind: call_kind}
     | Closure of
         { proc: QualifiedProcName.t
@@ -388,7 +389,7 @@ module Exp : sig
   val pp : F.formatter -> t -> unit
 end
 
-module BoolExp : sig
+and BoolExp : sig
   type t = Exp of Exp.t | Not of t | And of t * t | Or of t * t
 
   val pp : F.formatter -> t -> unit [@@warning "-unused-value-declaration"]
