@@ -1,0 +1,75 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: shifts::shifts
+fn shifts()
+{
+    let @0: (); // return
+    let @1: u8; // anonymous local
+    let @2: u32; // anonymous local
+    let @3: bool; // anonymous local
+    let @4: u8; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: bool; // anonymous local
+    let x@7: i8; // local
+    let @8: i8; // anonymous local
+    let @9: i8; // anonymous local
+    let @10: u32; // anonymous local
+    let @11: bool; // anonymous local
+    let @12: (); // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        nop;
+        nop;
+        nop;
+        @1 := const (1 : u8) panic.<< const (3 : i32);
+        storage_dead(@1);
+        storage_live(@4);
+        nop;
+        nop;
+        nop;
+        @4 := const (128 : u8) panic.>> const (7 : i32);
+        storage_dead(@4);
+        storage_live(x@7);
+        x@7 := const (-2 : i8);
+        storage_live(@8);
+        storage_live(@9);
+        @9 := copy (x@7);
+        nop;
+        nop;
+        nop;
+        @8 := move (@9) panic.>> const (1 : i32);
+        storage_dead(@9);
+        storage_dead(@8);
+        nop;
+        @0 := ();
+        storage_dead(x@7);
+        @0 := ();
+        return;
+    }
+}
+
+// Full name: shifts::main
+fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+    let @2: (); // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := shifts() -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_dead(@1);
+        nop;
+        @0 := ();
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}

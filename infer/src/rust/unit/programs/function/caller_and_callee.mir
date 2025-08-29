@@ -1,0 +1,67 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: caller_and_callee::caller
+pub fn caller() -> i32
+{
+    let @0: i32; // return
+    let k@1: i32; // local
+
+    bb0: {
+        storage_live(k@1);
+        k@1 := callee(const (3 : i32)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        @0 := copy (k@1);
+        storage_dead(k@1);
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+// Full name: caller_and_callee::callee
+fn callee(@1: i32) -> i32
+{
+    let @0: i32; // return
+    let n@1: i32; // arg #1
+    let @2: i32; // anonymous local
+    let @3: i32; // anonymous local
+
+    bb0: {
+        storage_live(@2);
+        @2 := copy (n@1);
+        @3 := copy (@2) panic.* const (2 : i32);
+        nop;
+        @0 := move (@3);
+        storage_dead(@2);
+        return;
+    }
+}
+
+// Full name: caller_and_callee::main
+fn main()
+{
+    let @0: (); // return
+    let @1: i32; // anonymous local
+    let @2: (); // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := caller() -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_dead(@1);
+        nop;
+        @0 := ();
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}

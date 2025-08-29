@@ -1,4 +1,4 @@
-pub fn calls_and_temp() -> i32 {
+pub fn caller() -> i32 {
     let k = callee(3);
     k
 }
@@ -6,5 +6,5 @@ pub fn calls_and_temp() -> i32 {
 fn callee(n: i32) -> i32 { n * 2 }
 
 fn main() {
-    let _ = calls_and_temp();
+    let _ = caller();
 }

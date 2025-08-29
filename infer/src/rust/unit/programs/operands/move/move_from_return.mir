@@ -1,0 +1,110 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub opaque type String
+
+// Full name: core::convert::From
+#[lang_item("From")]
+pub trait From<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    fn from = core::convert::From::from<Self, T>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: alloc::string::{impl From<&'_0 (Str)> for String}
+impl<'_0> From<&'_0 (Str)> for String {
+    parent_clause0 = Sized<String>
+    parent_clause1 = Sized<&'_ (Str)>
+    fn from = {impl From<&'_0 (Str)> for String}::from<'_0>
+    non-dyn-compatible
+}
+
+// Full name: alloc::string::String::{impl Drop for String}
+impl Drop for String {
+    parent_clause0 = MetaSized<String>
+    fn drop<'_0> = {impl Drop for String}::drop<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: move_from_return::make_string
+fn make_string() -> String
+{
+    let @0: String; // return
+
+    bb0: {
+        @0 := {impl From<&'_0 (Str)> for String}::from<'_>(const ("hello")) -> bb2 (unwind: bb1);
+    }
+
+    bb1: {
+        unwind_continue;
+    }
+
+    bb2: {
+        return;
+    }
+}
+
+// Full name: move_from_return::main
+fn main()
+{
+    let @0: (); // return
+    let s@1: String; // local
+    let @2: (); // anonymous local
+
+    bb0: {
+        storage_live(s@1);
+        s@1 := make_string() -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        nop;
+        @0 := ();
+        drop[{impl Drop for String}] s@1;
+        storage_dead(s@1);
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+#[lang_item("from_fn")]
+pub fn core::convert::From::from<Self, T>(@1: T) -> Self
+where
+    [@TraitClause0]: From<Self, T>,
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: alloc::string::{impl From<&'_0 (Str)> for String}::from
+pub fn {impl From<&'_0 (Str)> for String}::from<'_0>(@1: &'_0 (Str)) -> String
+
+// Full name: alloc::string::String::{impl Drop for String}::drop
+fn {impl Drop for String}::drop<'_0>(@1: &'_0 mut (String))

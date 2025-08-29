@@ -36,36 +36,37 @@ let name_of_path_element (path_element : Charon.Generated_Types.path_elem) : str
 
 let fun_name_of_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) : string =
   match List.tl fun_decl.item_meta.name with
-  | Some name_list -> 
-    (match List.hd name_list with
+  | Some name_list -> (
+    match List.hd name_list with
     | Some pe ->
         name_of_path_element pe
     | None ->
-        L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_name fun_decl.item_meta.name)
+        L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_name
+          fun_decl.item_meta.name )
   | None ->
       L.die UserError "Not yet supported %a" Charon.Generated_Types.pp_name fun_decl.item_meta.name
 
 
-let fun_name_from_operand (operand : Charon.Generated_GAst.fn_operand) (fun_map : string FunMap.t)
-    : string =
-    match operand with
-    | FnOpRegular fn_ptr -> (
-      match fn_ptr.func with
-      | FunId id -> (
-        match id with
-        | FRegular fun_decl_id -> (
-          match FunMap.find_opt (Charon.GAst.FunDeclId.to_int fun_decl_id) fun_map with
-          | Some name ->
-              name
-          | None ->
-              L.die UserError "Function not found in fun_map: %s"
-                (Charon.GAst.FunDeclId.to_string fun_decl_id) )
-        | _ ->
-            L.die UserError "Not yet supported" )
-      | TraitMethod _ ->
-          L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand )
-    | FnOpMove _ ->
-        L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand
+let fun_name_from_operand (operand : Charon.Generated_GAst.fn_operand) (fun_map : string FunMap.t) :
+    string =
+  match operand with
+  | FnOpRegular fn_ptr -> (
+    match fn_ptr.func with
+    | FunId id -> (
+      match id with
+      | FRegular fun_decl_id -> (
+        match FunMap.find_opt (Charon.GAst.FunDeclId.to_int fun_decl_id) fun_map with
+        | Some name ->
+            name
+        | None ->
+            L.die UserError "Function not found in fun_map: %s"
+              (Charon.GAst.FunDeclId.to_string fun_decl_id) )
+      | FBuiltin _ ->
+          L.die UserError "Not yet supported: FBuiltin" )
+    | TraitMethod _ ->
+        L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand )
+  | FnOpMove _ ->
+      L.die UserError "Not yet supported %a" Charon.Generated_GAst.pp_fn_operand operand
 
 
 let proc_name_from_unop (op : Charon.Generated_Expressions.unop) (typ : Textual.Typ.t) :
@@ -112,6 +113,10 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
       Textual.ProcName.of_string "__sil_ge"
   | Gt, Textual.Typ.Int ->
       Textual.ProcName.of_string "__sil_gt"
+  | Shl _, Textual.Typ.Int ->
+      Textual.ProcName.of_string "__sil_shiftlt"
+  | Shr _, Textual.Typ.Int ->
+      Textual.ProcName.of_string "__sil_shiftrt"
   | _ ->
       L.die UserError "Not yet supported %a " Charon.Generated_Expressions.pp_binop op
 
@@ -354,6 +359,8 @@ let mk_terminator (terminator : Charon.Generated_UllbcAst.terminator)
       let node_call : Textual.Terminator.node_call = {label; ssa_args} in
       ([], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.Return ->
+      (* TODO: Update the place map to map to actual places, then get the first element from the place map *)
+      (* TODO: Next, call mk_exp_from_place to get the exp and typ *)
       ([], Textual.Terminator.Ret (Textual.Exp.Lvar (Textual.VarName.of_string "var_0")))
   | Charon.Generated_UllbcAst.Switch (operand, switch) -> (
     match switch with
@@ -463,7 +470,6 @@ let mk_instr (place_map : string PlaceMap.t) (statement : Charon.Generated_Ullbc
 
 let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) (place_map : string PlaceMap.t)
     (fun_map : string FunMap.t) : Textual.Node.t =
-  ident_set := Textual.Ident.Set.empty ;
   let label = mk_label idx in
   (*TODO Should be retrieved from Γ *)
   let ssa_parameters = [] in
@@ -479,6 +485,7 @@ let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) (place_map : s
 let mk_procdesc (fun_map : string FunMap.t)
     (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
+  ident_set := Textual.Ident.Set.empty ;
   let _, fun_decl = proc in
   let blocks, locals, arg_count =
     match fun_decl.body with

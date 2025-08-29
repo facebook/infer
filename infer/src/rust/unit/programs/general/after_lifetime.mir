@@ -1,0 +1,41 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: after_lifetime::main
+fn main()
+{
+    let @0: (); // return
+    let ptr@1: *const i32; // local
+    let @2: (); // anonymous local
+    let x@3: i32; // local
+    let @4: *const i32; // anonymous local
+    let @5: &'_ (i32); // anonymous local
+    let _z@6: i32; // local
+    let @7: (); // anonymous local
+    let @8: (); // anonymous local
+
+    bb0: {
+        storage_live(ptr@1);
+        storage_live(@2);
+        storage_live(x@3);
+        x@3 := const (50 : i32);
+        storage_live(@4);
+        storage_live(@5);
+        @5 := &x@3;
+        @4 := &raw const *(@5);
+        ptr@1 := move (@4);
+        storage_dead(@4);
+        storage_dead(@5);
+        nop;
+        nop;
+        storage_dead(x@3);
+        storage_dead(@2);
+        storage_live(_z@6);
+        _z@6 := copy (*(ptr@1));
+        nop;
+        @0 := ();
+        storage_dead(_z@6);
+        storage_dead(ptr@1);
+        @0 := ();
+        return;
+    }
+}

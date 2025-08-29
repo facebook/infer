@@ -3,31 +3,25 @@
 ; This source code is licensed under the MIT license found in the
 ; LICENSE file in the root directory of this source tree.
 
+(include_subdirs unqualified)
+
 (library
  (name RustFrontendTest)
  (flags
   (:standard
    -open
-   Core
-   -open
    IStdlib
+   -open
+   Unix
    -open
    IStd
    -open
    IBase
    -open
    Textuallib))
- (libraries
-  core
-  charon
-  zarith
-  IStdlib
-  IBase
-  Textuallib
-  RustFrontend
-  ppx_show.runtime)
+ (libraries charon zarith IStdlib IBase Textuallib RustFrontend yojson)
  (preprocess
-  (pps ppx_expect ppx_inline_test))
+  (pps ppx_expect))
  (inline_tests
   (deps
-   (glob_files programs/*))))
+   (source_tree programs))))
