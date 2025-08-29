@@ -13,7 +13,7 @@ open! IStd
 val fix_closure_app : Textual.Module.t -> Textual.Module.t
 
 val remove_effects_in_subexprs :
-  Textual.Lang.t -> TextualDecls.t -> Textual.Module.t -> Textual.Module.t * bool
+  Textual.Lang.t -> TextualDecls.t -> ?remove_if:bool -> Textual.Module.t -> Textual.Module.t * bool
 [@@warning "-unused-value-declaration"]
 (* generates enough intermediate Let and Load instructions to make the procdesc free
    of side-effect sub-expressions.
@@ -25,6 +25,8 @@ val remove_effects_in_subexprs :
      n2 = m(n0, n3, n4)
 
    return the new Textual unit and a boolean true iff new decls where introduced during transformation
+
+   At the very end, performs a pass of if elimination whenever [remove_if=true] (by default).
 *)
 
 val remove_if_exp_and_terminator : Textual.Module.t -> Textual.Module.t

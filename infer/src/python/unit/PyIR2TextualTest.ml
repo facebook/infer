@@ -758,10 +758,10 @@ class B(C, D, E):
           n17:*PyLocals = load &locals @10
           n0 = $builtins.py_make_none() @10
           n3 = $builtins.py_load_fast("y", n17) @10
+          n18 = $builtins.py_bool(n3) @10
           jmp b1, b2 @10
 
       #b1: @11
-          n18 = $builtins.py_bool(n3) @10
           prune n18 @10
           n13 = $builtins.py_load_global("g", n16) @11
           n14 = $builtins.py_load_fast("y", n17) @11
@@ -771,8 +771,7 @@ class B(C, D, E):
           ret n0 @11
 
       #b2: @13
-          n21 = $builtins.py_bool(n3) @10
-          prune __sil_lnot(n21) @10
+          prune __sil_lnot(n18) @10
           n4 = $builtins.py_load_fast("l", n17) @13
           n5 = $builtins.py_get_iter(n4) @13
           jmp b3 @13
@@ -780,12 +779,12 @@ class B(C, D, E):
       #b3: @13
           n6 = $builtins.py_next_iter(n5) @13
           n7 = $builtins.py_has_next_iter(n5) @13
+          n21 = $builtins.py_bool(n7) @13
           jmp b4, b6 @13
 
       #b4: @13
-          n22 = $builtins.py_bool(n7) @13
-          prune n22 @13
-          n23 = $builtins.py_store_fast("i", n17, n6) @13
+          prune n21 @13
+          n22 = $builtins.py_store_fast("i", n17, n6) @13
           jmp b5 @13
 
       #b5: @14
@@ -795,11 +794,10 @@ class B(C, D, E):
           jmp b3 @14
 
       #b6: @15
-          n24 = $builtins.py_bool(n7) @13
-          prune __sil_lnot(n24) @13
+          prune __sil_lnot(n21) @13
           n8 = $builtins.py_load_global("done", n16) @15
           n9 = $builtins.py_call(n8, n0) @15
-          n25 = $builtins.py_nullify_locals(n17, "i") @15
+          n23 = $builtins.py_nullify_locals(n17, "i") @15
           ret n0 @15
 
     } @15
@@ -820,4 +818,5 @@ class B(C, D, E):
           n6 = $builtins.py_yield_from(n5, n0) @18
           ret n0 @18
 
-    } @18 |}]
+    } @18
+    |}]

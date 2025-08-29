@@ -941,7 +941,7 @@ let%expect_test "if expression in subexpr" =
         }
     |}
   in
-  let module_, _ = parse_module source |> remove_effects_in_subexprs Hack in
+  let module_, _ = parse_module source |> remove_effects_in_subexprs Hack ~remove_if:false in
   show module_ ;
   [%expect
     {|
