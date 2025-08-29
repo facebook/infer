@@ -30,6 +30,20 @@ let get_fresh_ident ({nodes; fresh_ident} : ProcDesc.t) =
       fresh_ident
 
 
+let create_fresh_label_generator ~prefix ({nodes} : ProcDesc.t) =
+  let labels : NodeName.Set.t =
+    List.fold nodes ~init:NodeName.Set.empty ~f:(fun set (node : Node.t) ->
+        NodeName.Set.add node.label set )
+  in
+  let counter = ref 0 in
+  let rec fresh_label () =
+    let name : NodeName.t = {value= Printf.sprintf "%s%d" prefix !counter; loc= Location.Unknown} in
+    incr counter ;
+    if NodeName.Set.mem name labels then fresh_label () else name
+  in
+  fresh_label
+
+
 let module_map_procs ~f (module_ : Module.t) =
   let open Module in
   let decls =
@@ -713,10 +727,7 @@ let remove_if_terminator module_ =
     dnf bexp
   in
   let transform pdesc =
-    let labels : NodeName.Set.t =
-      List.fold pdesc.ProcDesc.nodes ~init:NodeName.Set.empty ~f:(fun set (node : Node.t) ->
-          NodeName.Set.add node.label set )
-    in
+    let fresh_label = create_fresh_label_generator ~prefix:"if" pdesc in
     let predecessors_count : NodeName.t -> int =
       (* we count how many predecessors a node has *)
       let get label map = NodeName.Map.find_opt label map |> Option.value ~default:0 in
@@ -737,15 +748,6 @@ let remove_if_terminator module_ =
                    NodeName.Map.add label (count + 1) map ) )
       in
       fun label -> get label map
-    in
-    let fresh_label =
-      let counter = ref 0 in
-      let rec fresh_label () =
-        let name : NodeName.t = {value= Printf.sprintf "if%d" !counter; loc= Location.Unknown} in
-        incr counter ;
-        if NodeName.Set.mem name labels then fresh_label () else name
-      in
-      fresh_label
     in
     let rec collect_conjuncts bexp conjuncts =
       (* should be called after disjunctive_normal_form and negative_normal_form *)
