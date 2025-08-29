@@ -357,6 +357,7 @@ module State = struct
   type t =
     { instrs_rev: Instr.t list
     ; fresh_ident: Ident.t
+    ; may_need_iteration: bool
     ; pdesc: ProcDesc.t
     ; closure_declarations: ClosureDeclarations.t }
 
@@ -739,7 +740,7 @@ end
 
 let remove_if_exp_and_terminator = RemoveIf.run
 
-let remove_effects_in_subexprs lang decls_env ?(remove_if = true) module_ =
+let remove_effects_in_subexprs lang decls_env module_ =
   let fresh_closure_counter =
     let counter = ref (-1) in
     fun () ->
@@ -764,11 +765,13 @@ let remove_effects_in_subexprs lang decls_env ?(remove_if = true) module_ =
         (Index (exp1, exp2), state)
     | If {cond; then_; else_} when toplevel ->
         let cond, state = flatten_bexp loc cond state in
+        let state = {state with State.may_need_iteration= true} in
         (If {cond; then_; else_}, state)
     | If {cond; then_; else_} ->
         let cond, state = flatten_bexp loc cond state in
         let fresh = state.State.fresh_ident in
         let new_instr : Instr.t = Let {id= Some fresh; exp= If {cond; then_; else_}; loc} in
+        let state = {state with State.may_need_iteration= true} in
         (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
     | Call {proc; args; kind} ->
         let args, state = flatten_exp_list loc args state in
@@ -866,6 +869,7 @@ let remove_effects_in_subexprs lang decls_env ?(remove_if = true) module_ =
     match last with
     | If {bexp; then_; else_} ->
         let bexp, state = flatten_bexp loc bexp state in
+        let state = {state with State.may_need_iteration= true} in
         (If {bexp; then_; else_}, state)
     | Ret exp ->
         let exp, state = flatten_exp loc exp state in
@@ -884,29 +888,30 @@ let remove_effects_in_subexprs lang decls_env ?(remove_if = true) module_ =
     | Unreachable ->
         (last, state)
   in
-  let flatten_node (node : Node.t) pdesc fresh_ident closure_declarations =
+  let flatten_node (node : Node.t) state =
     let state =
-      let init : State.t = {instrs_rev= []; fresh_ident; pdesc; closure_declarations} in
+      let init : State.t = {state with instrs_rev= []} in
       List.fold node.instrs ~init ~f:(fun state instr -> flatten_in_instr instr state)
     in
-    let last, ({instrs_rev; fresh_ident} : State.t) =
+    let last, ({instrs_rev} as state : State.t) =
       flatten_in_terminator node.last_loc node.last state
     in
-    ({node with last; instrs= List.rev instrs_rev}, fresh_ident, state.closure_declarations)
+    ({node with last; instrs= List.rev instrs_rev}, state)
   in
-  let flatten_pdesc (pdesc : ProcDesc.t) closure_declarations =
-    let fresh = get_fresh_ident pdesc in
-    let fresh, closure_declarations, rev_nodes =
-      List.fold pdesc.nodes ~init:(fresh, closure_declarations, [])
-        ~f:(fun (fresh, closure_declarations, instrs) node ->
-          let node, fresh, closure_declarations =
-            flatten_node node pdesc fresh closure_declarations
-          in
-          (fresh, closure_declarations, node :: instrs) )
+  let rec flatten_pdesc (pdesc : ProcDesc.t) closure_declarations =
+    let fresh_ident = get_fresh_ident pdesc in
+    let state : State.t =
+      {pdesc; may_need_iteration= false; instrs_rev= []; fresh_ident; closure_declarations}
     in
-    let pdesc = {pdesc with nodes= List.rev rev_nodes; fresh_ident= Some fresh} in
-    let pdesc = if remove_if then RemoveIf.transform_pdesc pdesc else pdesc in
-    (pdesc, closure_declarations)
+    let rev_nodes, {State.fresh_ident; may_need_iteration; closure_declarations} =
+      List.fold pdesc.nodes ~init:([], state) ~f:(fun (rev_nodes, state) node ->
+          let node, state = flatten_node node state in
+          (node :: rev_nodes, state) )
+    in
+    let pdesc = {pdesc with nodes= List.rev rev_nodes; fresh_ident= Some fresh_ident} in
+    let pdesc = RemoveIf.transform_pdesc pdesc in
+    if may_need_iteration then flatten_pdesc pdesc closure_declarations
+    else (pdesc, closure_declarations)
   in
   let module_, closure_declarations =
     module_fold_procs ~init:State.ClosureDeclarations.empty ~f:flatten_pdesc module_

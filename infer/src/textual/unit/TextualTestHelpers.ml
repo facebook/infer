@@ -38,9 +38,9 @@ let parse_module_print_errors text =
       List.iter es ~f:(fun e -> F.printf "%a" (TextualParser.pp_error sourcefile) e)
 
 
-let remove_effects_in_subexprs lang ?(remove_if = true) module_ =
+let remove_effects_in_subexprs lang module_ =
   let _, decls = TextualDecls.make_decls module_ in
-  TextualTransform.remove_effects_in_subexprs lang decls ~remove_if module_
+  TextualTransform.remove_effects_in_subexprs lang decls module_
 
 
 let type_check module_ =

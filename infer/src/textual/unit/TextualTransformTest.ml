@@ -941,7 +941,7 @@ let%expect_test "if expression in subexpr" =
         }
     |}
   in
-  let module_, _ = parse_module source |> remove_effects_in_subexprs Hack ~remove_if:false in
+  let module_, _ = parse_module source |> remove_effects_in_subexprs Hack in
   show module_ ;
   [%expect
     {|
@@ -955,11 +955,37 @@ let%expect_test "if expression in subexpr" =
       #b0: @[9:12]
           n2:int = load &$b @[10:16]
           n3 = g(n2) @[10:16]
-          n4 = (if n3 then g(0) else g([&$a:int])) @[10:16]
+          jmp if_exp1, if_exp2 @[10:16]
+
+      #if_exp2: @[10:16]
+          prune __sil_lnot(n3) @[10:16]
+          n8:int = load &$a @[10:16]
+          n9 = g(n8) @[10:16]
+          jmp if_exp0(n9) @[10:16]
+
+      #if_exp1: @[10:16]
+          prune n3 @[10:16]
+          n10 = g(0) @[10:16]
+          jmp if_exp0(n10) @[10:16]
+
+      #if_exp0(n4: *void): @[10:16]
           n0 = f(n4) @[10:16]
           n5:int = load &$a @[11:16]
           n6 = g(n5) @[11:16]
-          n7 = (if n6 then g(2) else g([&$b:int])) @[11:16]
+          jmp if_exp4, if_exp5 @[11:16]
+
+      #if_exp5: @[11:16]
+          prune __sil_lnot(n6) @[11:16]
+          n11:int = load &$b @[11:16]
+          n12 = g(n11) @[11:16]
+          jmp if_exp3(n12) @[11:16]
+
+      #if_exp4: @[11:16]
+          prune n6 @[11:16]
+          n13 = g(2) @[11:16]
+          jmp if_exp3(n13) @[11:16]
+
+      #if_exp3(n7: *void): @[11:16]
           n1 = f(n7) @[11:16]
           ret null @[12:16]
 
@@ -969,7 +995,24 @@ let%expect_test "if expression in subexpr" =
       #b0: @[17:12]
           n0:int = load &$b @[18:16]
           n1 = g(n0) @[18:16]
-          if (n1) && (g([&$a:int])) then ret 0 else ret 1 @[18:16]
+          jmp if2, if0, if1 @[18:16]
+
+      #if2: @[18:16]
+          prune n1 @[18:16]
+          n2:int = load &$a @[18:16]
+          n3 = g(n2) @[18:16]
+          prune n3 @[18:16]
+          ret 0 @[18:16]
+
+      #if0: @[18:16]
+          prune __sil_lnot(n1) @[18:16]
+          ret 1 @[18:16]
+
+      #if1: @[18:16]
+          n4:int = load &$a @[18:16]
+          n5 = g(n4) @[18:16]
+          prune __sil_lnot(n5) @[18:16]
+          ret 1 @[18:16]
 
     } @[19:9]
     |}]
