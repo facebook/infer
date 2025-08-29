@@ -22,6 +22,7 @@ let%expect_test "assign_binop" =
           n0:int = load &var_2
           store &x <- n0:int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
     }
@@ -45,6 +46,7 @@ let%expect_test "assign_cast" =
           n0:int = load &var_2
           store &y <- n0:int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
         
@@ -67,6 +69,7 @@ let%expect_test "assign_tuple" =
           store &x.f0 <- 1:int
           store &x.f1 <- 2:int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
         
@@ -87,7 +90,7 @@ let%expect_test "shadowing" =
       #node_0:
           store &var_1 <- 1:int
           store &var_3 <- 2:int
-          store &var_2 <- null:void
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
@@ -127,6 +130,7 @@ let%expect_test "shadowing2" =
           store &var_12 <- __sil_plusa_int(n7, 10):int
           n8:int = load &var_12
           store &var_10 <- n8:int
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n9:void = load &var_0
           ret n9

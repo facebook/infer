@@ -28,6 +28,7 @@ let%expect_test "after_lifetime" =
             n3:int  = load n2
             store &z <- n3:int
             store &var_0 <- null:void
+            store &var_0 <- null:void
             n4:void = load &var_0
             ret n4
 

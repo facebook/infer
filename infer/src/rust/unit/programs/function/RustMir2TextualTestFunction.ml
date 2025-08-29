@@ -52,6 +52,7 @@ let%expect_test "caller_and_callee" =
 
     #node_1:
         store &var_0 <- null:void
+        store &var_0 <- null:void
         n1:void = load &var_0
         ret n1
 
@@ -151,6 +152,7 @@ let%expect_test "calculate" =
         jmp node_1
 
     #node_1:
+        store &var_0 <- null:void
         store &var_0 <- null:void
         n5:void = load &var_0
         ret n5

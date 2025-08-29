@@ -135,6 +135,7 @@ let%expect_test "arithmetic" =
           n59:int = load &var_56
           store &var_53 <- n59:int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n60:void = load &var_0
           ret n60
 
@@ -148,6 +149,7 @@ let%expect_test "arithmetic" =
           jmp node_1
 
       #node_1:
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -174,6 +176,7 @@ let%expect_test "bitwise" =
           n1:int = load &var_6
           store &var_5 <- __sil_band(n1, 15):int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n2:void = load &var_0
           ret n2
 
@@ -187,6 +190,7 @@ let%expect_test "bitwise" =
           jmp node_1
 
       #node_1:
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -250,6 +254,7 @@ let%expect_test "comparisons" =
           n23:int = load &var_20
           store &var_18 <- __sil_eq(n22, n23)
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n24:void = load &var_0
           ret n24
 
@@ -263,6 +268,7 @@ let%expect_test "comparisons" =
           jmp node_1
 
       #node_1:
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -331,7 +337,8 @@ let%expect_test "div_modulo" =
           store &var_22 <- __sil_mod(n22, n23):int
           store &var_0 <- null:void
           store &var_0 <- null:void
-          ret &var_0
+          n24:void = load &var_0
+          ret n24
 
     }
 
@@ -343,6 +350,7 @@ let%expect_test "div_modulo" =
           jmp node_1
 
       #node_1:
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -369,7 +377,8 @@ let%expect_test "shifts" =
           n1:int = load &var_5
           store &var_4 <- __sil_shiftrt(n1, 1)
           store &var_0 <- null:void
-          n2:int = load &var_0
+          store &var_0 <- null:void
+          n2:void = load &var_0
           ret n2
 
     }
@@ -382,6 +391,7 @@ let%expect_test "shifts" =
           jmp node_1
 
       #node_1:
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -403,10 +413,11 @@ let%expect_test "mut_raw_ptr0" =
     define mut_raw_ptr0::main() : void {
       local var_0: void, var_1: int, var_2: *int, var_3: *int
       #node_0:
-          store &var_0 <- 10
+          store &var_0 <- 10:int
           store &var_2 <- &var_1
           store &var_1 <- var_3
-          store &var_0 <- null
+          store &var_0 <- null:void
+          store &var_0 <- null:void
           ret var_0
 
     }
@@ -428,6 +439,7 @@ let%expect_test "mut_ref0" =
           n0:int = load &y
           store &x <- n0:*int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
 
@@ -448,10 +460,11 @@ let%expect_test "raw_ptr0" =
     define raw_ptr0::main() : void {
       local var_0: void, var_1: int, var_2: *int, var_3: *int
       #node_0:
-          store &var_0 <- 10
+          store &var_0 <- 10:int
           store &var_2 <- &var_0
           store &var_1 <- var_2
-          store &var_0 <- null
+          store &var_0 <- null:void
+          store &var_0 <- null:void
           ret var_0
 
     }
@@ -472,6 +485,7 @@ let%expect_test "ref0" =
           store &y <- 10:int
           n0:int = load &y
           store &x <- n0:*int
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -496,6 +510,7 @@ let%expect_test "logical_not" =
           store &var_3 <- n0:int
           n1:int = load &var_3
           store &y <- __sil_lnot(n1)
+          store &var_0 <- null:void 
           store &var_0 <- null:void
           n2:void = load &var_0
           ret n2
@@ -518,6 +533,7 @@ let%expect_test "neg_int" =
           store &var_3 <- n0:int
           n1:int = load &var_3
           store &x <- __sil_neg(n1)
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n2:void = load &var_0
           ret n2

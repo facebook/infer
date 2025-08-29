@@ -20,6 +20,7 @@ let%expect_test "literal_float" =
       #node_0:
           store &var_1 <- 3.14:float
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
 
@@ -38,6 +39,7 @@ let%expect_test "literal_int" =
       local var_0: void, var_1: int
       #node_0:
           store &var_1 <- 42:int
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
@@ -79,6 +81,7 @@ let%expect_test "literal_unit" =
       local var_0: void, var_1: void
       #node_0:
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
         
@@ -100,6 +103,7 @@ let%expect_test "basic_copy" =
           store &x <- 42:int
           n0:int = load &x
           store &y <- n0:int
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -135,6 +139,7 @@ let%expect_test "copy_from_return" =
           n1:int = load &x
           store &y <- n1:int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n2:void = load &var_0
           ret n2
 
@@ -164,6 +169,7 @@ let%expect_test "copy_in_exp" =
           n4:int = load &var_6
           store &c <- n4:int
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
 
@@ -184,6 +190,7 @@ let%expect_test "nested_copy" =
           store &x <- 100:int
           n0:int = load &x    
           store &y <- n0:int
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -209,6 +216,7 @@ let%expect_test "basic_move" =
           n0: *String = load &var_1
           store &var_2 <- n0
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
 
@@ -233,6 +241,7 @@ let%expect_test "move_chain" =
           store &var_3 <- n1
           n2: *String = load &var_3
           n3: void = __sil_free(n2)
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n4:void = load &var_0
           ret n4
@@ -266,6 +275,7 @@ let%expect_test "move_from_return" =
           n1: *String = load &var_1
           n2: void = __sil_free(n1)
 
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3

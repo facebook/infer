@@ -36,6 +36,7 @@ let%expect_test "example" =
     #node_0:
         store &x <- 42:int
         store &var_0 <- null:void
+        store &var_0 <- null:void
         n0:void = load &var_0
         ret n0
   }
@@ -48,6 +49,7 @@ let%expect_test "example" =
         jmp node_1
 
     #node_1:
+        store &var_0 <- null:void
         store &var_0 <- null:void
         n1:void = load &var_0
         ret n1

@@ -32,7 +32,8 @@ let%expect_test "basic_call" =
     define basic_call::bar() : void {
       local var_0: void
       #node_0:
-          store &var_0 <- null
+          store &var_0 <- null:void
+          store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
 
@@ -74,7 +75,7 @@ let%expect_test "call_with_args" =
           jmp node_1
         
       #node_1:
-          n5:void = load &var_0
+          n5:int = load &var_0
           ret n5
 
     }
@@ -112,6 +113,7 @@ let%expect_test "call_with_args" =
           jmp node_1
       
       #node_1:
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
@@ -182,6 +184,7 @@ let%expect_test "call_with_args" =
             store &var_2 <- n0
             n1:int = drop_return_early(n0)
             store &var_0 <- null:void
+            store &var_0 <- null:void
             n2:void = load &var_0
             ret n2
 
@@ -211,6 +214,7 @@ let%expect_test "call_with_args" =
         #node_0:
             n0:int = drop_implicit()
             store &var_1 <- n0:int
+            store &var_0 <- null:void
             store &var_0 <- null:void
             n1:void = load &var_0
             ret n1
@@ -265,6 +269,7 @@ let%expect_test "basic_loop" =
           jmp node_1
 
       #node_1:
+          store &var_0 <- null:void
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3
@@ -328,6 +333,7 @@ let%expect_test "loop_with_continue" =
 
       #node_1:
           store &var_0 <- null:void
+          store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
 
@@ -387,6 +393,7 @@ let%expect_test "int_comparison" =
         jmp node_1
 
     #node_1:
+        store &var_0 <- null:void
         store &var_0 <- null:void
         n5:void = load &var_0
         ret n5
@@ -457,6 +464,7 @@ let%expect_test "nested" =
         jmp node_1
 
     #node_1:
+        store &var_0 <- null:void
         store &var_0 <- null:void
         n5:void = load &var_0
         ret n5
