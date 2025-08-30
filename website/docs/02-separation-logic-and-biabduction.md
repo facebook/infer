@@ -80,7 +80,7 @@ leaving <Math code="\\(r\_2 \mapsto open\\)" /> alone, as described by this trip
 
 ---
 
-What we have here is the that specification (spec) described how
+What we have here is that the specification (spec) described how
 <Math code="\\(closeResource()\\)" /> works by mentioning only one piece of
 state, what is sometimes called a small specification, and in (use) we use that
 specification to update a larger precondition in place.
