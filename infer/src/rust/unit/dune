@@ -10,16 +10,25 @@
  (flags
   (:standard
    -open
-   IStdlib
+   Core
    -open
-   Unix
+   IStdlib
    -open
    IStd
    -open
    IBase
    -open
    Textuallib))
- (libraries charon zarith IStdlib IBase Textuallib RustFrontend yojson)
+ (libraries
+  core
+  charon
+  zarith
+  IStdlib
+  IBase
+  Textuallib
+  RustFrontend
+  yojson
+  ppx_show.runtime)
  (preprocess
   (pps ppx_expect))
  (inline_tests
