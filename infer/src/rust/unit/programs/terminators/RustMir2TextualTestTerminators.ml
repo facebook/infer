@@ -111,7 +111,7 @@ let%expect_test "call_with_args" =
           n4 = call_with_args(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
-      
+
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void

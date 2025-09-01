@@ -30,7 +30,7 @@
   yojson
   ppx_show.runtime)
  (preprocess
-  (pps ppx_expect))
+  (pps ppx_expect ppx_inline_test))
  (inline_tests
   (deps
    (source_tree programs))))
