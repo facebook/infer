@@ -440,9 +440,8 @@ let mk_terminator (place_map : place_map_ty) (fun_map : fun_map_ty)
       ident_set := Textual.Ident.Set.add temp_id !ident_set ;
       (arg_instrs @ [call_instr] @ [store_instr], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.UnwindResume ->
-      (* TODO: Decide how to handle unwind resume, for now throw is used arbitrarily *)
-      let exception_var = Textual.VarName.of_string "unwind_resume" in
-      ([], Textual.Terminator.Throw (Textual.Exp.Lvar exception_var))
+      (* TODO: Decide how to handle unwind resume, for now unreachable is used arbitrarily *)
+      ([], Textual.Terminator.Unreachable)
   | t ->
       L.die UserError "Unsupported terminator: %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
