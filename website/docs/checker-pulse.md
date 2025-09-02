@@ -17,7 +17,7 @@ Supported languages:
 
 ## What is Infer:Pulse?
 
-Pulse is an interprocedural memory safety analysis. Pulse can detect, for instance, [Null dereferences](/docs/next/all-issue-types#nullptr_dereference) in Java. Errors are only reported when all conditions on the erroneous path are true regardless of input. Pulse should gradually replace the original [biabduction](/docs/next/checker-biabduction) analysis of Infer. An example of a Null dereference found by Pulse is given below.
+Pulse is an interprocedural memory safety analysis. Pulse can detect, for instance, [Null dereferences](/docs/next/all-issue-types#nullptr_dereference) in Java. Errors are only reported when all conditions on the erroneous path are true regardless of input. Pulse replaced the original biabduction analysis of Infer. An example of a Null dereference found by Pulse is given below.
 
 ```java
 class Person {
