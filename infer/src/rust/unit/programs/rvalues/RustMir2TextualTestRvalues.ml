@@ -418,7 +418,7 @@ let%expect_test "deref0" =
           store &var_3 <- n1:int
   |}]
 
-  
+
 (* Tests for mutable raw pointers - TODO: Enable this test when we have support for raw ptrs *)
 
 (*

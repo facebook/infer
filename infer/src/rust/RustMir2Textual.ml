@@ -165,7 +165,6 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
 
 let adt_ty_to_textual_typ (ty_decl_ref : Charon.Generated_Types.type_decl_ref) : Textual.Typ.t =
   (* TODO: Implement non-empty tuple and other adt types *)
-  (* TODO: Do not harcode array type as int, see how to access to type from builtin_ty *)
   match ty_decl_ref.id with
   | TTuple ->
       if List.is_empty ty_decl_ref.generics.types then Textual.Typ.Void
@@ -174,6 +173,7 @@ let adt_ty_to_textual_typ (ty_decl_ref : Charon.Generated_Types.type_decl_ref) :
           ty_decl_ref
   | TBuiltin builtin_ty -> (
     match builtin_ty with
+    (* TODO: Charon hardcodes builtin type for now, update this when Charon is updated *)
     | TArray ->
         Textual.Typ.Array Textual.Typ.Int
     | _ ->
@@ -287,28 +287,43 @@ let mk_place_from_id (id : int) (ty : Charon.Generated_Types.ty) :
   {kind= PlaceLocal (Charon.Generated_Expressions.LocalId.of_int id); ty}
 
 
-let mk_exp_from_place (place_map : place_map_ty) (place : Charon.Generated_Expressions.place) :
+let rec id_from_place (place : Charon.Generated_Expressions.place) : Textual.Ident.t =
+  match place.kind with
+  | PlaceLocal var_id ->
+      Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
+  | PlaceProjection (projection_place, _) ->
+      id_from_place projection_place
+  | _ ->
+      L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place
+
+
+let rec mk_exp_from_place (place_map : place_map_ty) (place : Charon.Generated_Expressions.place) :
     Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
   let temp_id = Textual.Ident.fresh !ident_set in
   let temp_exp = Textual.Exp.Var temp_id in
   let temp_typ = ty_to_textual_typ place.ty in
   let temp_loc = Textual.Location.Unknown in
-  let place_id =
-    match place.kind with
-    | PlaceLocal var_id ->
-        Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
-    | _ ->
-        L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place place
-  in
-  let place_exp =
-    Textual.Exp.Lvar
-      (Textual.VarName.of_string (fst (PlaceMap.find (Textual.Ident.to_int place_id) place_map)))
-  in
-  let load_instr =
-    Textual.Instr.Load {id= temp_id; exp= place_exp; typ= Some temp_typ; loc= temp_loc}
-  in
   ident_set := Textual.Ident.Set.add temp_id !ident_set ;
-  ([load_instr], temp_exp, temp_typ)
+  match place.kind with
+  | PlaceLocal var_id ->
+      let id = Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id) in
+      let exp =
+        Textual.Exp.Lvar
+          (Textual.VarName.of_string (fst (PlaceMap.find (Textual.Ident.to_int id) place_map)))
+      in
+      let load_instr = Textual.Instr.Load {id= temp_id; exp; typ= Some temp_typ; loc= temp_loc} in
+      ([load_instr], temp_exp, temp_typ)
+  | PlaceProjection (projection_place, projection_elem) -> (
+    match projection_elem with
+    | Deref ->
+        let instrs, exp, _ = mk_exp_from_place place_map projection_place in
+        let load_instr = Textual.Instr.Load {id= temp_id; exp; typ= Some temp_typ; loc= temp_loc} in
+        (instrs @ [load_instr], temp_exp, temp_typ)
+    | _ ->
+        L.die UserError "Unsupported projection element: %a"
+          Charon.Generated_Expressions.pp_projection_elem projection_elem )
+  | _ ->
+      L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place
 
 
 let mk_exp_from_operand (place_map : place_map_ty) (operand : Charon.Generated_Expressions.operand)
@@ -364,9 +379,13 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
   | Use op ->
       mk_exp_from_operand place_map op
   | RawPtr (place, _) | RvRef (place, _) ->
-      let instrs, exp, _ = mk_exp_from_place place_map place in
+      let id = id_from_place place in
+      let exp =
+        Textual.Exp.Lvar
+          (Textual.VarName.of_string (fst (PlaceMap.find (Textual.Ident.to_int id) place_map)))
+      in
       let typ = Textual.Typ.Ptr (ty_to_textual_typ place.ty) in
-      (instrs, exp, typ)
+      ([], exp, typ)
   | _ ->
       L.die UserError "Unsupported rvalue: %a" Charon.Generated_Expressions.pp_rvalue rvalue
 
@@ -440,7 +459,7 @@ let mk_terminator (place_map : place_map_ty) (fun_map : fun_map_ty)
       ident_set := Textual.Ident.Set.add temp_id !ident_set ;
       (arg_instrs @ [call_instr] @ [store_instr], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.UnwindResume ->
-      (* TODO: Decide how to handle unwind resume, for now unreachable is used arbitrarily *)
+      (* TODO:To be updated when error handling is being implemented *)
       ([], Textual.Terminator.Unreachable)
   | t ->
       L.die UserError "Unsupported terminator: %a" Charon.Generated_UllbcAst.pp_raw_terminator t
@@ -460,27 +479,27 @@ let mk_instr (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.s
         let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
         instrs @ [store_instr]
     | _ ->
-        L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place lhs )
+        L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place lhs )
   | StorageDead _ ->
       []
   | StorageLive _ ->
       []
   | Drop (place, _) ->
       let instrs, exp, typ = mk_exp_from_place place_map place in
-      let fresh_var_id = Textual.Ident.fresh !ident_set in
-      let fresh_var_exp = Textual.Exp.Var fresh_var_id in
-      ident_set := Textual.Ident.Set.add fresh_var_id !ident_set ;
-      let assign_instr = Textual.Instr.Store {exp1= fresh_var_exp; typ= Some typ; exp2= exp; loc} in
+      let temp_id = Textual.Ident.fresh !ident_set in
+      let temp_exp = Textual.Exp.Var temp_id in
+      let assign_instr = Textual.Instr.Store {exp1= temp_exp; typ= Some typ; exp2= exp; loc} in
       let free_proc_name = Textual.ProcName.of_string "__sil_free" in
       let qualified_free_name =
         { Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel
         ; name= free_proc_name }
       in
-      let free_call = Textual.Exp.call_non_virtual qualified_free_name [fresh_var_exp] in
+      let free_call = Textual.Exp.call_non_virtual qualified_free_name [temp_exp] in
       let free_instr = Textual.Instr.Let {id= None; exp= free_call; loc} in
+      ident_set := Textual.Ident.Set.add temp_id !ident_set ;
       instrs @ [assign_instr; free_instr]
   | s ->
-      L.die UserError "Not yet supported %a" Charon.Generated_UllbcAst.pp_raw_statement s
+      L.die UserError "Unsupported statement: %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
 
 let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) (place_map : place_map_ty)
