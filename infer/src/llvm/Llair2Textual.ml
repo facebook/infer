@@ -286,14 +286,17 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let exp = Textual.Exp.Field {exp; field} in
           let typ = Type.lookup_field_type ~struct_map typ_name field in
           (exp, typ, instrs) )
-  | Ap1 (GetElementPtr n, _typ, exp) ->
+  | Ap1 (GetElementPtr n, _typ, _exp) ->
       let n_arg = Llair.Exp.integer (Llair.Typ.integer ~bits:32 ~byts:4) (Z.of_int n) in
-      let args = [exp; n_arg] in
-      let proc = builtin_qual_proc_name "llvm_getelementptr" in
-      let _, call_exp, args_instrs =
-        to_textual_call_aux ~proc_state proc ~kind:Textual.Exp.NonVirtual None args loc
+      let exp, _, instrs = to_textual_exp loc ~proc_state n_arg in
+      let var_name = ProcState.mk_fresh_tmp_var "getelementptr_offset" proc_state in
+      let new_var = Textual.Exp.Lvar var_name in
+      let _ =
+        proc_state.locals <-
+          VarMap.add var_name (Textual.Typ.mk_without_attributes (Ptr Void)) proc_state.locals
       in
-      (call_exp, None, args_instrs)
+      let store_instr = Textual.Instr.Store {exp1= new_var; exp2= exp; typ= None; loc} in
+      (new_var, None, store_instr :: instrs)
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
@@ -928,6 +931,7 @@ let translate_llair_functions source_file lang struct_map globals functions =
       ; ids= IdentMap.empty
       ; reg_map= RegMap.empty
       ; last_id= Textual.Ident.of_int 0
+      ; last_tmp_var= 0
       ; struct_map
       ; globals
       ; lang }

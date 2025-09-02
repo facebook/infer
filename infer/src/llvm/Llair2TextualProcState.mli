@@ -23,11 +23,14 @@ type t =
   ; mutable ids: Textual.Typ.annotated IdentMap.t
   ; mutable reg_map: Textual.Ident.t RegMap.t
   ; mutable last_id: Textual.Ident.t
+  ; mutable last_tmp_var: int
   ; struct_map: structMap
   ; globals: globalMap
   ; lang: Textual.Lang.t }
 
 val mk_fresh_id : ?reg:Llair.Reg.t -> t -> IdentMap.key
+
+val mk_fresh_tmp_var : string -> t -> VarMap.key
 
 val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
 

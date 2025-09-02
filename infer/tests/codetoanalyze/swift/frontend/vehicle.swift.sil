@@ -7,14 +7,15 @@
 .source_language = "Swift" @?
 
 define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(var0: *ptr_elt, var1: *ptr_elt) : *ptr_elt {
-  local v: *ptr_elt, t: *ptr_elt
+  local v: *ptr_elt, t: *ptr_elt, getelementptr_offset_1: *void
   #: @[135:0]
       n1 = load &var0 @[135:0]
       store &v <- n1 @[135:0]
       n2 = load &var1 @[136:0]
       store &t <- n2 @[136:0]
       n3 = load &var0 @[12:8]
-      n4 = load $builtins.llvm_getelementptr(n3, 10) @[12:8]
+      store &getelementptr_offset_1 <- 10 @[12:8]
+      n4 = load &getelementptr_offset_1 @[12:8]
       n5 = load &var0 @[12:8]
       _ = $builtins.llvm_dynamic_call(n4, n5) @[12:8]
       jmp 7::void::ret @[12:8]

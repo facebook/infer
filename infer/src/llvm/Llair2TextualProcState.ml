@@ -23,6 +23,7 @@ type t =
   ; mutable ids: Textual.Typ.annotated IdentMap.t
   ; mutable reg_map: Textual.Ident.t RegMap.t
   ; mutable last_id: Textual.Ident.t
+  ; mutable last_tmp_var: int
   ; struct_map: structMap
   ; globals: globalMap
   ; lang: Textual.Lang.t }
@@ -42,6 +43,11 @@ let mk_fresh_id ?reg proc_state =
     match RegMap.find reg proc_state.reg_map with Some id -> id | None -> fresh_id ~reg () )
   | None ->
       fresh_id ()
+
+
+let mk_fresh_tmp_var name proc_state =
+  proc_state.last_tmp_var <- proc_state.last_tmp_var + 1 ;
+  Textual.VarName.of_string (Format.sprintf "%s_%d" name proc_state.last_tmp_var)
 
 
 let last_fake_line : int ref = ref 100
@@ -96,6 +102,7 @@ let global_proc_state lang loc global_var =
   ; ids= IdentMap.empty
   ; reg_map= RegMap.empty
   ; last_id= Textual.Ident.of_int 0
+  ; last_tmp_var= 0
   ; struct_map= Textual.TypeName.Map.empty
   ; globals= VarMap.empty
   ; lang }
