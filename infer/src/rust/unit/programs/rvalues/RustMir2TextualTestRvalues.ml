@@ -401,6 +401,24 @@ let%expect_test "shifts" =
   |}]
 
 
+(* Tests for dereferencing *)
+let%expect_test "deref0" =
+  test "./rvalues/deref/deref0.ullbc" ;
+  [%expect
+    {|
+    .source_language = "Rust"
+
+    define deref0::main() : void {
+      local var_0: void, x: int, ref_x: *int, var_3: int
+      #node_0:
+          store &x <- 42:int
+          store &ref_x <- &x:*int
+          n0:*int = load &ref_x
+          n1:int = load n0
+          store &var_3 <- n1:int
+  |}]
+
+  
 (* Tests for mutable raw pointers - TODO: Enable this test when we have support for raw ptrs *)
 
 (*
