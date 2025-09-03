@@ -87,10 +87,10 @@ let%expect_test "shadowing" =
     .source_language = "Rust"
 
     define shadowing::main() : void {
-      local var_0: void, var_1: int, var_2: void, var_3: int
+      local var_0: void, x: int, var_2: void, x_2: int
       #node_0:
-          store &var_1 <- 1:int
-          store &var_3 <- 2:int
+          store &x <- 1:int
+          store &x_2 <- 2:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n0:void = load &var_0
@@ -108,29 +108,29 @@ let%expect_test "shadowing2" =
     .source_language = "Rust"
 
     define shadowing2::main() : void {
-      local var_0: void, var_1: int, var_2: void, var_3: int, var_4: int, var_5: int, var_6: int, var_7: int, var_8: int, var_9: int, var_10: int, var_11: int, var_12: int
+      local var_0: void, x: int, var_2: void, x_2: int, t: int, var_5: int, var_6: int, r: int, var_8: int, var_9: int, x_3: int, var_11: int, var_12: int
       #node_0:
-          store &var_1 <- 10:int
-          store &var_3 <- 20:int
-          n0:int = load &var_3
+          store &x <- 10:int
+          store &x_2 <- 20:int
+          n0:int = load &x_2
           store &var_5 <- n0:int
           n1:int = load &var_5
           store &var_6 <- __sil_plusa_int(n1, 5):int
           n2:int = load &var_6
-          store &var_4 <- n2:int
-          n3:int = load &var_1
+          store &t <- n2:int
+          n3:int = load &x
           store &var_8 <- n3:int
           n4:int = load &var_8
           store &var_9 <- __sil_plusa_int(n4, 100):int
           n5:int = load &var_9
-          store &var_7 <- n5:int
-          store &var_10 <- 30:int
-          n6:int = load &var_10
+          store &r <- n5:int
+          store &x_3 <- 30:int
+          n6:int = load &x_3
           store &var_11 <- n6:int
           n7:int = load &var_11
           store &var_12 <- __sil_plusa_int(n7, 10):int
           n8:int = load &var_12
-          store &var_10 <- n8:int
+          store &x_3 <- n8:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n9:void = load &var_0

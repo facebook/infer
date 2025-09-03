@@ -11,6 +11,7 @@ module L = Logging
 (* TODO: See if there is a more direct way to access function names from the function ids *)
 module FunMap = Stdlib.Map.Make (Int)
 module PlaceMap = Stdlib.Map.Make (Int)
+module LocalsNameSet = Stdlib.Set.Make (String)
 
 (* A map from function ids to function names *)
 type fun_map_ty = string FunMap.t
@@ -52,6 +53,17 @@ let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
   let enclosing_class = Textual.QualifiedProcName.TopLevel in
   let name = mk_name item_meta.name in
   {Textual.QualifiedProcName.enclosing_class; name}
+
+
+let find_unique_name (used_names : LocalsNameSet.t) (base_name : string) : string =
+  (* If there are muliple locals with the same name, add a counter to the name to make it unique (e.g. x, x_2, x_3, etc.) *)
+  let rec aux counter =
+    let candidate_name =
+      if Int.equal counter 0 then base_name else base_name ^ "_" ^ string_of_int (counter + 1)
+    in
+    if LocalsNameSet.mem candidate_name used_names then aux (counter + 1) else candidate_name
+  in
+  aux 0
 
 
 let fun_name_from_fun_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) : string =
@@ -206,9 +218,17 @@ let mk_fun_map fun_decls (init : fun_map_ty) : fun_map_ty =
 
 
 let mk_place_map (locals : Charon.Generated_GAst.local list) : place_map_ty =
+  let used_names = ref LocalsNameSet.empty in
   List.foldi locals ~init:PlaceMap.empty ~f:(fun i acc (local : Charon.Generated_GAst.local) ->
       let id = local.index in
-      let name = match local.name with Some name -> name | None -> "var_" ^ string_of_int i in
+      let base_name =
+        match local.name with Some name -> name | None -> "var_" ^ string_of_int i
+      in
+      let name =
+        let unique_name = find_unique_name !used_names base_name in
+        used_names := LocalsNameSet.add unique_name !used_names ;
+        unique_name
+      in
       let ty = local.var_ty in
       PlaceMap.add (Charon.Generated_Expressions.LocalId.to_int id) (name, ty) acc )
 
@@ -432,7 +452,7 @@ let mk_terminator (place_map : place_map_ty) (fun_map : fun_map_ty)
         | PlaceLocal var_id ->
             Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
         | _ ->
-            L.die UserError "Not yet supported %a" Charon.Generated_Expressions.pp_place call.dest
+            L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place call.dest
       in
       let exp1 =
         Textual.Exp.Lvar
@@ -442,10 +462,10 @@ let mk_terminator (place_map : place_map_ty) (fun_map : fun_map_ty)
         Textual.Exp.Call {proc= qualified_proc_name; args= arg_exps; kind= Textual.Exp.NonVirtual}
       in
       let temp_id = Textual.Ident.fresh !ident_set in
+      let temp_exp = Textual.Exp.Var temp_id in
       let call_instr =
         Textual.Instr.Let {id= Some temp_id; exp= exp2; loc= Textual.Location.Unknown}
       in
-      let temp_exp = Textual.Exp.Var temp_id in
       let store_instr =
         Textual.Instr.Store
           { exp1
