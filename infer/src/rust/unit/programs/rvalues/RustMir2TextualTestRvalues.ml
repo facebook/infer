@@ -408,20 +408,42 @@ let%expect_test "deref0" =
     {|
     .source_language = "Rust"
 
-    define deref0::main() : void {
-      local var_0: void, x: int, ref_x: *int, var_3: int
+    define deref0::deref() : void {
+      local var_0: void, x: int, ref_x: *int, y: int
       #node_0:
           store &x <- 42:int
           store &ref_x <- &x:*int
-          n0:*int = load &ref_x
-          n1:int = load n0
-          store &var_3 <- n1:int
+          n1:*int = load &ref_x
+          n0:int = load n1
+          store &y <- n0:int
+          store &var_0 <- null:void
+          store &var_0 <- null:void
+          n2:void = load &var_0
+          ret n2
+
+    }
+
+    define deref0::main() : void {
+      local var_0: void, var_1: void
+      #node_0:
+          n0 = deref()
+          store &var_1 <- n0:void
+          jmp node_1
+
+      #node_1:
+          store &var_0 <- null:void
+          store &var_0 <- null:void
+          n1:void = load &var_0
+          ret n1
+
+      #node_2:
+          unreachable
+
+    }
   |}]
 
 
-(* Tests for mutable raw pointers - TODO: Enable this test when we have support for raw ptrs *)
-
-(*
+(* Tests for mutable raw pointers *)
 let%expect_test "mut_raw_ptr0" =
   test "./rvalues/mut_raw_ptr/mut_raw_ptr0.ullbc" ;
   [%expect
@@ -429,19 +451,20 @@ let%expect_test "mut_raw_ptr0" =
     .source_language = "Rust"
 
     define mut_raw_ptr0::main() : void {
-      local var_0: void, var_1: int, var_2: *int, var_3: *int
+      local var_0: void, y: int, x: *int, var_3: *int
       #node_0:
-          store &var_0 <- 10:int
-          store &var_2 <- &var_1
-          store &var_1 <- var_3
+          store &y <- 10:int
+          store &var_3 <- &y:*int
+          store &x <- var_3:*int
           store &var_0 <- null:void
           store &var_0 <- null:void
-          ret var_0
+          n0:void = load &var_0
+          ret n0
 
     }
-
+    
   |}]
-*)
+
 
 (* Tests for mutable references *)
 let%expect_test "mut_ref0" =
@@ -454,21 +477,18 @@ let%expect_test "mut_ref0" =
       local var_0: void, y: int, x: *int
       #node_0:
           store &y <- 10:int
-          n0:int = load &y
-          store &x <- n0:*int
+          store &x <- &y:*int
           store &var_0 <- null:void
           store &var_0 <- null:void
-          n1:void = load &var_0
-          ret n1
+          n0:void = load &var_0
+          ret n0
 
     }
 
   |}]
 
 
-(* Tests for raw pointers - TODO: Enable this test when we have support for raw ptrs *)
-
-(*
+(* Tests for raw pointers  *)
 let%expect_test "raw_ptr0" =
   test "./rvalues/raw_ptr/raw_ptr0.ullbc" ;
   [%expect
@@ -476,19 +496,20 @@ let%expect_test "raw_ptr0" =
     .source_language = "Rust"
 
     define raw_ptr0::main() : void {
-      local var_0: void, var_1: int, var_2: *int, var_3: *int
+      local var_0: void, y: int, x: *int, var_3: *int
       #node_0:
-          store &var_0 <- 10:int
-          store &var_2 <- &var_0
-          store &var_1 <- var_2
+          store &y <- 10:int
+          store &var_3 <- &y:*int
+          store &x <- var_3:*int
           store &var_0 <- null:void
           store &var_0 <- null:void
-          ret var_0
+          n0:void = load &var_0
+          ret n0
 
     }
 
   |}]
-*)
+
 
 (* Tests for references *)
 let%expect_test "ref0" =
@@ -501,12 +522,11 @@ let%expect_test "ref0" =
       local var_0: void, y: int, x: *int
       #node_0:
           store &y <- 10:int
-          n0:int = load &y
-          store &x <- n0:*int
+          store &x <- &y:*int
           store &var_0 <- null:void
           store &var_0 <- null:void
-          n1:void = load &var_0
-          ret n1
+          n0:void = load &var_0
+          ret n0
 
     }
 
