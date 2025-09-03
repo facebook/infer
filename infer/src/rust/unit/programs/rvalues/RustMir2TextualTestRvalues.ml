@@ -154,6 +154,9 @@ let%expect_test "arithmetic" =
           n1:void = load &var_0
           ret n1
 
+      #node_2:
+          unreachable
+
     }
   |}]
 
@@ -194,6 +197,9 @@ let%expect_test "bitwise" =
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
+
+      #node_2:
+          unreachable
 
     }
 
@@ -272,6 +278,9 @@ let%expect_test "comparisons" =
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
+
+      #node_2:
+          unreachable
 
     }
 
@@ -355,6 +364,9 @@ let%expect_test "div_modulo" =
           n1:void = load &var_0
           ret n1
 
+      #node_2:
+          unreachable
+
     }
 
   |}]
@@ -395,6 +407,9 @@ let%expect_test "shifts" =
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
+
+      #node_2:
+          unreachable
 
     }
 

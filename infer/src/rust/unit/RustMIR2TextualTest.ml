@@ -38,6 +38,7 @@ let%expect_test "example" =
         store &var_0 <- null:void
         n0:void = load &var_0
         ret n0
+
   }
 
   define example::main() : void {
@@ -52,6 +53,9 @@ let%expect_test "example" =
         store &var_0 <- null:void
         n1:void = load &var_0
         ret n1
+
+    #node_2:
+        unreachable
 
   }
 |}]

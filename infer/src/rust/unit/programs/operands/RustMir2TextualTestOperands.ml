@@ -143,6 +143,9 @@ let%expect_test "copy_from_return" =
           n2:void = load &var_0
           ret n2
 
+      #node_2:
+          unreachable
+
     }
 
     |}]

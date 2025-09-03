@@ -27,6 +27,9 @@ let%expect_test "caller_and_callee" =
         n2:int = load &var_0
         ret n2
 
+    #node_2:
+        unreachable
+
   }
 
   define caller_and_callee::callee(n: int) : int {
@@ -56,6 +59,9 @@ let%expect_test "caller_and_callee" =
         n1:void = load &var_0
         ret n1
 
+    #node_2:
+        unreachable
+
   }
 
   |}]
@@ -84,6 +90,9 @@ let%expect_test "calculate" =
         n5 = square(n4)
         store &result2 <- n5:int
         jmp node_3
+
+    #node_2:
+        unreachable
 
     #node_3:
         n6:int = load &result1
@@ -157,6 +166,9 @@ let%expect_test "calculate" =
         n5:void = load &var_0
         ret n5
 
+    #node_2:
+        unreachable
+        
   }
 
 |}]

@@ -22,6 +22,9 @@ let%expect_test "basic_call" =
           store &var_0 <- n0:void
           jmp node_2
 
+      #node_1:
+          unreachable
+
       #node_2:
           store &var_0 <- null:void
           n1:void = load &var_0
@@ -45,6 +48,9 @@ let%expect_test "basic_call" =
           n0 = foo()
           store &var_0 <- n0:void
           jmp node_2
+
+      #node_1:
+          unreachable
 
       #node_2:
           store &var_0 <- null:void
@@ -77,6 +83,9 @@ let%expect_test "call_with_args" =
       #node_1:
           n5:int = load &var_0
           ret n5
+
+      #node_2:
+          unreachable
 
     }
 
@@ -117,6 +126,9 @@ let%expect_test "call_with_args" =
           store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
+
+      #node_2:
+          unreachable
 
     }
 
@@ -273,6 +285,9 @@ let%expect_test "basic_loop" =
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3
+      
+      #node_2:
+          unreachable
 
     }
 
@@ -337,6 +352,9 @@ let%expect_test "loop_with_continue" =
           n5:void = load &var_0
           ret n5
 
+      #node_2:
+          unreachable
+
     }
   |}]
 
@@ -397,6 +415,9 @@ let%expect_test "int_comparison" =
         store &var_0 <- null:void
         n5:void = load &var_0
         ret n5
+
+    #node_2:
+        unreachable
 
   }
   
@@ -468,6 +489,9 @@ let%expect_test "nested" =
         store &var_0 <- null:void
         n5:void = load &var_0
         ret n5
+
+    #node_2:
+        unreachable
 
   }
 
