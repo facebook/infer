@@ -8,13 +8,7 @@
 open! IStd
 module L = Logging
 
-(* TODO: See if there is a more direct way to access function names from the function ids *)
-module FunMap = Stdlib.Map.Make (Int)
 module PlaceMap = Stdlib.Map.Make (Int)
-module LocalsNameSet = Stdlib.Set.Make (String)
-
-(* A map from function ids to function names *)
-type fun_map_ty = string FunMap.t
 
 (* A map from place ids to (place name, type) *)
 type place_map_ty = (string * Charon.Generated_Types.ty) PlaceMap.t
@@ -55,45 +49,22 @@ let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
   {Textual.QualifiedProcName.enclosing_class; name}
 
 
-let find_unique_name (used_names : LocalsNameSet.t) (base_name : string) : string =
-  (* If there are muliple locals with the same name, add a counter to the name to make it unique (e.g. x, x_2, x_3, etc.) *)
-  let rec aux counter =
-    let candidate_name =
-      if Int.equal counter 0 then base_name else base_name ^ "_" ^ string_of_int (counter + 1)
-    in
-    if LocalsNameSet.mem candidate_name used_names then aux (counter + 1) else candidate_name
-  in
-  aux 0
+let item_meta_to_string (item_meta : Charon.Generated_Types.item_meta) : string =
+  let names = List.map item_meta.name ~f:name_of_path_element in
+  let name_str = Stdlib.String.concat "::" names in
+  name_str
 
 
-let fun_name_from_fun_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) : string =
-  match List.tl fun_decl.item_meta.name with
-  | Some name_list -> (
-    match List.hd name_list with
-    | Some pe ->
-        name_of_path_element pe
-    | None ->
-        L.die UserError "Function name not found in %a" Charon.Generated_Types.pp_name
-          fun_decl.item_meta.name )
-  | None ->
-      L.die UserError "Function name not found in %a" Charon.Generated_Types.pp_name
-        fun_decl.item_meta.name
-
-
-let fun_name_from_fun_operand (operand : Charon.Generated_GAst.fn_operand) (fun_map : fun_map_ty) :
+let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate) (operand : Charon.Generated_GAst.fn_operand) :
     string =
   match operand with
-  | FnOpRegular fn_ptr -> (
-    match fn_ptr.func with
-    | FunId id -> (
-      match id with
-      | FRegular fun_decl_id -> (
-        match FunMap.find_opt (Charon.GAst.FunDeclId.to_int fun_decl_id) fun_map with
-        | Some name ->
-            name
-        | None ->
-            L.die UserError "Function not found in fun_map: %s"
-              (Charon.GAst.FunDeclId.to_string fun_decl_id) )
+  | FnOpRegular fn_ptr -> 
+    (match fn_ptr.func with
+    | FunId id -> 
+      (match id with
+      | FRegular fun_decl_id -> 
+          let d = Charon.Types.FunDeclId.Map.find fun_decl_id crate.fun_decls in
+          item_meta_to_string d.item_meta
       | FBuiltin _ ->
           L.die UserError "Unsupported function type: FBuiltin" )
     | TraitMethod _ ->
@@ -210,25 +181,10 @@ let rec ty_to_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t 
       L.die UserError "Unsupported type: %a" Charon.Generated_Types.pp_ty rust_ty
 
 
-let mk_fun_map fun_decls (init : fun_map_ty) : fun_map_ty =
-  let fun_decl_list = Charon.Generated_Types.FunDeclId.Map.bindings fun_decls in
-  List.fold_left fun_decl_list ~init ~f:(fun acc (fun_decl_id, fun_decl) ->
-      let fun_name = fun_name_from_fun_decl fun_decl in
-      FunMap.add (Charon.Generated_Types.FunDeclId.to_int fun_decl_id) fun_name acc )
-
-
 let mk_place_map (locals : Charon.Generated_GAst.local list) : place_map_ty =
-  let used_names = ref LocalsNameSet.empty in
   List.foldi locals ~init:PlaceMap.empty ~f:(fun i acc (local : Charon.Generated_GAst.local) ->
       let id = local.index in
-      let base_name =
-        match local.name with Some name -> name | None -> "var_" ^ string_of_int i
-      in
-      let name =
-        let unique_name = find_unique_name !used_names base_name in
-        used_names := LocalsNameSet.add unique_name !used_names ;
-        unique_name
-      in
+      let name = match local.name with Some name -> name ^ "_" ^ string_of_int i | None -> "var_" ^ string_of_int i in
       let ty = local.var_ty in
       PlaceMap.add (Charon.Generated_Expressions.LocalId.to_int id) (name, ty) acc )
 
@@ -410,7 +366,7 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
       L.die UserError "Unsupported rvalue: %a" Charon.Generated_Expressions.pp_rvalue rvalue
 
 
-let mk_terminator (place_map : place_map_ty) (fun_map : fun_map_ty)
+let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
     (terminator : Charon.Generated_UllbcAst.terminator) :
     Textual.Instr.t list * Textual.Terminator.t =
   match terminator.content with
@@ -442,7 +398,7 @@ let mk_terminator (place_map : place_map_ty) (fun_map : fun_map_ty)
       let arg_evals = List.map call.args ~f:(mk_exp_from_operand place_map) in
       let arg_instrs = List.concat_map arg_evals ~f:(fun (instrs, _, _) -> instrs) in
       let arg_exps = List.map arg_evals ~f:(fun (_, exp, _) -> exp) in
-      let proc_name = Textual.ProcName.of_string (fun_name_from_fun_operand call.func fun_map) in
+      let proc_name = Textual.ProcName.of_string (fun_name_from_fun_operand crate call.func) in
       let qualified_proc_name =
         { Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel
         ; name= proc_name }
@@ -522,22 +478,20 @@ let mk_instr (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.s
       L.die UserError "Unsupported statement: %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
 
-let mk_node (idx : int) (block : Charon.Generated_UllbcAst.block) (place_map : place_map_ty)
-    (fun_map : fun_map_ty) : Textual.Node.t =
+let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generated_UllbcAst.block) (place_map : place_map_ty) : Textual.Node.t =
   let label = mk_label idx in
   (*TODO Should be retrieved from Γ *)
   let ssa_parameters = [] in
   let exn_succs = [] in
   let instrs1 = block.statements |> List.concat_map ~f:(mk_instr place_map) in
-  let instrs2, last = mk_terminator place_map fun_map block.terminator in
+  let instrs2, last = mk_terminator crate place_map block.terminator in
   let instrs = instrs1 @ instrs2 in
   let last_loc = location_from_span block.terminator.span in
   let label_loc = Textual.Location.Unknown in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
-let mk_procdesc (fun_map : fun_map_ty)
-    (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
+let mk_procdesc (crate : Charon.UllbcAst.crate) (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
   ident_set := Textual.Ident.Set.empty ;
   let _, fun_decl = proc in
@@ -550,7 +504,7 @@ let mk_procdesc (fun_map : fun_map_ty)
   in
   let place_map = mk_place_map locals in
   let procdecl = mk_procdecl fun_decl in
-  let nodes = List.mapi blocks ~f:(fun i block -> mk_node i block place_map fun_map) in
+  let nodes = List.mapi blocks ~f:(fun i block -> mk_node crate i block place_map) in
   let start = Textual.NodeName.of_string "node_0" in
   let params = params_from_fun_decl fun_decl arg_count in
   let locals = mk_locals locals arg_count place_map in
@@ -560,11 +514,10 @@ let mk_procdesc (fun_map : fun_map_ty)
 
 let mk_module (crate : Charon.UllbcAst.crate) json_file : Textual.Module.t =
   let fun_decls = crate.fun_decls in
-  let fun_map = mk_fun_map fun_decls FunMap.empty in
   let attrs = [Textual.Attr.mk_source_language Rust] in
   let decls =
     Charon.Generated_Types.FunDeclId.Map.bindings fun_decls
-    |> List.map ~f:(mk_procdesc fun_map)
+    |> List.map ~f:(mk_procdesc crate)
     |> List.map ~f:(fun p -> Textual.Module.Proc p)
   in
   let sourcefile = Textual.SourceFile.create json_file in
