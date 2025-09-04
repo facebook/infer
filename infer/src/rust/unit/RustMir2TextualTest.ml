@@ -31,9 +31,9 @@ let%expect_test "example" =
   .source_language = "Rust"
 
   define example::foo() : void {
-    local var_0: void, x: int
+    local var_0: void, x_1: int
     #node_0:
-        store &x <- 42:int
+        store &x_1 <- 42:int
         store &var_0 <- null:void
         store &var_0 <- null:void
         n0:void = load &var_0

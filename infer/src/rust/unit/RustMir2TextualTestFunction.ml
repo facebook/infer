@@ -15,14 +15,14 @@ let%expect_test "caller_and_callee" =
   .source_language = "Rust"
 
   define caller_and_callee::caller() : int {
-    local var_0: int, k: int
+    local var_0: int, k_1: int
     #node_0:
         n0 = caller_and_callee::callee(3)
-        store &k <- n0:int
+        store &k_1 <- n0:int
         jmp node_1
 
     #node_1:
-        n1:int = load &k
+        n1:int = load &k_1
         store &var_0 <- n1:int
         n2:int = load &var_0
         ret n2
@@ -32,10 +32,10 @@ let%expect_test "caller_and_callee" =
 
   }
 
-  define caller_and_callee::callee(n: int) : int {
+  define caller_and_callee::callee(n_1: int) : int {
     local var_0: int, var_2: int, var_3: int
     #node_0:
-        n0:int = load &n
+        n0:int = load &n_1
         store &var_2 <- n0:int
         n1:int = load &var_2
         store &var_3 <- __sil_mult_int(n1, 2):int
@@ -73,31 +73,31 @@ let%expect_test "calculate" =
     {|
   .source_language = "Rust"
 
-  define calculate::calculate(a: int, b: int) : int {
-    local var_0: int, result1: int, var_4: int, result2: int, var_6: int, var_7: int, var_8: int
+  define calculate::calculate(a_1: int, b_2: int) : int {
+    local var_0: int, result1_3: int, var_4: int, result2_5: int, var_6: int, var_7: int, var_8: int
     #node_0:
-        n0:int = load &a          
+        n0:int = load &a_1          
         store &var_4 <- n0:int
         n1:int = load &var_4
         n2 = calculate::square(n1)
-        store &result1 <- n2:int
+        store &result1_3 <- n2:int
         jmp node_1
 
     #node_1:
-        n3:int = load &result1
+        n3:int = load &result1_3
         store &var_6 <- n3:int
         n4:int = load &var_6
         n5 = calculate::square(n4)
-        store &result2 <- n5:int
+        store &result2_5 <- n5:int
         jmp node_3
 
     #node_2:
         unreachable
 
     #node_3:
-        n6:int = load &result1
+        n6:int = load &result1_3
         store &var_7 <- n6:int
-        n7:int = load &result2
+        n7:int = load &result2_5
         store &var_8 <- n7:int
         n8:int = load &var_7
         n9:int = load &var_8
@@ -111,12 +111,12 @@ let%expect_test "calculate" =
 
   }
 
-  define calculate::square(x: int) : int {
+  define calculate::square(x_1: int) : int {
     local var_0: int, var_2: int, var_3: int, var_4: int
     #node_0:
-        n0:int = load &x
+        n0:int = load &x_1
         store &var_2 <- n0:int
-        n1:int = load &x
+        n1:int = load &x_1
         store &var_3 <- n1:int
         n2:int = load &var_2
         n3:int = load &var_3
@@ -128,12 +128,12 @@ let%expect_test "calculate" =
 
   }
 
-  define calculate::subtract(x: int, y: int) : int {
+  define calculate::subtract(x_1: int, y_2: int) : int {
     local var_0: int, var_3: int, var_4: int, var_5: int
     #node_0:
-        n0:int = load &x
+        n0:int = load &x_1
         store &var_3 <- n0:int
-        n1:int = load &y
+        n1:int = load &y_2
         store &var_4 <- n1:int
         n2:int = load &var_3
         n3:int = load &var_4
@@ -146,18 +146,18 @@ let%expect_test "calculate" =
   }
 
   define calculate::main() : void {
-    local var_0: void, x: int, y: int, result: int, var_4: int, var_5: int
+    local var_0: void, x_1: int, y_2: int, result_3: int, var_4: int, var_5: int
     #node_0:
-        store &x <- 0:int
-        store &y <- 1:int
-        n0:int = load &x
+        store &x_1 <- 0:int
+        store &y_2 <- 1:int
+        n0:int = load &x_1
         store &var_4 <- n0:int
-        n1:int = load &y
+        n1:int = load &y_2
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5
         n4 = calculate::calculate(n2, n3)
-        store &result <- n4:int
+        store &result_3 <- n4:int
         jmp node_1
 
     #node_1:

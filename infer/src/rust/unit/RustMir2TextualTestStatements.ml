@@ -16,11 +16,11 @@ let%expect_test "assign_binop" =
     .source_language = "Rust"
 
     define assign_binop::main() : void {
-      local var_0: void, x: int, var_2: int
+      local var_0: void, x_1: int, var_2: int
       #node_0:
           store &var_2 <- __sil_plusa_int(2, 3):int
           n0:int = load &var_2
-          store &x <- n0:int
+          store &x_1 <- n0:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
@@ -41,11 +41,11 @@ let%expect_test "assign_cast" =
     .source_language = "Rust"
 
     define assign_cast::main() : void {
-      local var_0: void, y: int, var_2: int
+      local var_0: void, y_1: int, var_2: int
       #node_0:
           store &var_2 <- 5:int
           n0:int = load &var_2
-          store &y <- n0:int
+          store &y_1 <- n0:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
@@ -65,10 +65,10 @@ let%expect_test "assign_tuple" =
     type tuple_int = { f0: int, f1: int }
 
     define assign_tuple::main() : void {
-      local var_0: void, x: tuple_int
+      local var_0: void, x_1: tuple_int
       #node_0:
-          store &x.f0 <- 1:int
-          store &x.f1 <- 2:int
+          store &x_1.f0 <- 1:int
+          store &x_1.f1 <- 2:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
@@ -87,10 +87,10 @@ let%expect_test "shadowing" =
     .source_language = "Rust"
 
     define shadowing::main() : void {
-      local var_0: void, x: int, var_2: void, x_2: int
+      local var_0: void, x_1: int, var_2: void, x_3: int
       #node_0:
-          store &x <- 1:int
-          store &x_2 <- 2:int
+          store &x_1 <- 1:int
+          store &x_3 <- 2:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n0:void = load &var_0
@@ -108,29 +108,29 @@ let%expect_test "shadowing2" =
     .source_language = "Rust"
 
     define shadowing2::main() : void {
-      local var_0: void, x: int, var_2: void, x_2: int, t: int, var_5: int, var_6: int, r: int, var_8: int, var_9: int, x_3: int, var_11: int, var_12: int
+      local var_0: void, x_1: int, var_2: void, x_3: int, t_4: int, var_5: int, var_6: int, r_7: int, var_8: int, var_9: int, x_10: int, var_11: int, var_12: int
       #node_0:
-          store &x <- 10:int
-          store &x_2 <- 20:int
-          n0:int = load &x_2
+          store &x_1 <- 10:int
+          store &x_3 <- 20:int
+          n0:int = load &x_3
           store &var_5 <- n0:int
           n1:int = load &var_5
           store &var_6 <- __sil_plusa_int(n1, 5):int
           n2:int = load &var_6
-          store &t <- n2:int
-          n3:int = load &x
+          store &t_4 <- n2:int
+          n3:int = load &x_1
           store &var_8 <- n3:int
           n4:int = load &var_8
           store &var_9 <- __sil_plusa_int(n4, 100):int
           n5:int = load &var_9
-          store &r <- n5:int
-          store &x_3 <- 30:int
-          n6:int = load &x_3
+          store &r_7 <- n5:int
+          store &x_10 <- 30:int
+          n6:int = load &x_10
           store &var_11 <- n6:int
           n7:int = load &var_11
           store &var_12 <- __sil_plusa_int(n7, 10):int
           n8:int = load &var_12
-          store &x_3 <- n8:int
+          store &x_10 <- n8:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n9:void = load &var_0

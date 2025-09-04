@@ -67,12 +67,12 @@ let%expect_test "call_with_args" =
     {|
     .source_language = "Rust"
 
-    define call_with_args::call_with_args(x: int, y: int) : int {
+    define call_with_args::call_with_args(x_1: int, y_2: int) : int {
       local var_0: int, var_3: int, var_4: int
       #node_0:
-          n0:int = load &x
+          n0:int = load &x_1
           store &var_3 <- n0:int
-          n1:int = load &y
+          n1:int = load &y_2
           store &var_4 <- n1:int
           n2:int = load &var_3
           n3:int = load &var_4
@@ -89,12 +89,12 @@ let%expect_test "call_with_args" =
 
     }
 
-    define call_with_args::add(a: int, b: int) : int {
+    define call_with_args::add(a_1: int, b_2: int) : int {
       local var_0: int, var_3: int, var_4: int, var_5: int
       #node_0:
-          n0:int = load &a
+          n0:int = load &a_1
           store &var_3 <- n0:int
-          n1:int = load &b
+          n1:int = load &b_2
           store &var_4 <- n1:int
           n2:int = load &var_3
           n3:int = load &var_4
@@ -107,13 +107,13 @@ let%expect_test "call_with_args" =
     }
 
     define call_with_args::main() : void {
-      local var_0: void, x: int, y: int, var_3: int, var_4: int, var_5: int
+      local var_0: void, x_1: int, y_2: int, var_3: int, var_4: int, var_5: int
       #node_0:
-          store &x <- 0:int
-          store &y <- 1:int
-          n0:int = load &x
+          store &x_1 <- 0:int
+          store &y_2 <- 1:int
+          n0:int = load &x_1
           store &var_4 <- n0:int
-          n1:int = load &y
+          n1:int = load &y_2
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
@@ -144,7 +144,7 @@ let%expect_test "call_with_args" =
     {|
     .source_language = "Rust"
 
-    define drop_return_early(flag: bool) : int {
+    define drop_return_early(flag_1: bool) : int {
         local var_0: int, var_2: *String, var_3: *int, var_4: int, var_5: int
         #node_0:
             store &var_2 <- "A":*String
@@ -152,7 +152,7 @@ let%expect_test "call_with_args" =
             jmp node_1
 
         #node_1:
-            n0:int = load &flag
+            n0:int = load &flag_1
             if n0 then jmp node_2 else jmp node_4
 
         #node_2:
@@ -241,17 +241,17 @@ let%expect_test "basic_loop" =
     {|
     .source_language = "Rust"
 
-    define basic_loop::goto_loop(n: int) : int {
+    define basic_loop::goto_loop(n_1: int) : int {
       local var_0: int, var_2: void, var_3: int, var_4: int, var_5: int
       #node_0:
           jmp node_1
 
       #node_1:
-          n0:int = load &n
+          n0:int = load &n_1
           store &var_3 <- __sil_plusa_int(n0, 1):int
           n1:int = load &var_3
-          store &n <- n1:int
-          n2:int = load &n
+          store &n_1 <- n1:int
+          n2:int = load &n_1
           store &var_5 <- n2:int
           n3:int = load &var_5
           store &var_4 <- __sil_gt(n3, 5):int
@@ -259,7 +259,7 @@ let%expect_test "basic_loop" =
           if n4 then jmp node_2 else jmp node_3
 
       #node_2:
-          n5:int = load &n
+          n5:int = load &n_1
           store &var_0 <- n5:int
           n6:int = load &var_0
           ret n6
@@ -270,10 +270,10 @@ let%expect_test "basic_loop" =
     }
 
     define basic_loop::main() : void {
-      local var_0: void, x: int, var_2: int, var_3: int
+      local var_0: void, x_1: int, var_2: int, var_3: int
       #node_0:
-          store &x <- 0:int
-          n0:int = load &x
+          store &x_1 <- 0:int
+          n0:int = load &x_1
           store &var_3 <- n0:int
           n1:int = load &var_3
           n2 = basic_loop::goto_loop(n1)
@@ -300,15 +300,15 @@ let%expect_test "loop_with_continue" =
     {|
     .source_language = "Rust"
 
-    define loop_with_continue::goto_with_continue(x: int, y: int) : int {
+    define loop_with_continue::goto_with_continue(x_1: int, y_2: int) : int {
       local var_0: int, var_3: void, var_4: void, var_5: int, var_6: int, var_7: int, var_8: int
       #node_0:
           jmp node_1
 
       #node_1:
-          n0:int = load &x
+          n0:int = load &x_1
           store &var_6 <- n0:int
-          n1:int = load &y
+          n1:int = load &y_2
           store &var_7 <- n1:int
           n2:int = load &var_6
           n3:int = load &var_7
@@ -317,14 +317,14 @@ let%expect_test "loop_with_continue" =
           if n4 then jmp node_2 else jmp node_3
 
       #node_2:
-          n5:int = load &x
+          n5:int = load &x_1
           store &var_8 <- __sil_plusa_int(n5, 1):int
           n6:int = load &var_8
-          store &x <- n6:int
+          store &x_1 <- n6:int
           jmp node_1
 
       #node_3:
-          n7:int = load &x
+          n7:int = load &x_1
           store &var_0 <- n7:int
           n8:int = load &var_0
           ret n8
@@ -332,13 +332,13 @@ let%expect_test "loop_with_continue" =
     }
 
     define loop_with_continue::main() : void {
-      local var_0: void, x: int, y: int, var_3: int, var_4: int, var_5: int
+      local var_0: void, x_1: int, y_2: int, var_3: int, var_4: int, var_5: int
       #node_0:
-          store &x <- 0:int
-          store &y <- 1:int
-          n0:int = load &x
+          store &x_1 <- 0:int
+          store &y_2 <- 1:int
+          n0:int = load &x_1
           store &var_4 <- n0:int
-          n1:int = load &y
+          n1:int = load &y_2
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
@@ -366,12 +366,12 @@ let%expect_test "int_comparison" =
     {|
   .source_language = "Rust"
 
-  define int_comparison::compare(x: int, y: int) : int {
+  define int_comparison::compare(x_1: int, y_2: int) : int {
     local var_0: int, var_3: int, var_4: int, var_5: int
     #node_0:
-        n0:int = load &x
+        n0:int = load &x_1
         store &var_4 <- n0:int
-        n1:int = load &y
+        n1:int = load &y_2
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5
@@ -380,12 +380,12 @@ let%expect_test "int_comparison" =
         if n4 then jmp node_1 else jmp node_2
 
     #node_1:
-        n5:int = load &x
+        n5:int = load &x_1
         store &var_0 <- n5:int
         jmp node_3
 
     #node_2:
-        n6:int = load &y
+        n6:int = load &y_2
         store &var_0 <- n6:int
         jmp node_3
 
@@ -396,13 +396,13 @@ let%expect_test "int_comparison" =
   }
 
   define int_comparison::main() : void {
-    local var_0: void, x: int, y: int, var_3: int, var_4: int, var_5: int
+    local var_0: void, x_1: int, y_2: int, var_3: int, var_4: int, var_5: int
     #node_0:
-        store &x <- 0:int
-        store &y <- 1:int
-        n0:int = load &x
+        store &x_1 <- 0:int
+        store &y_2 <- 1:int
+        n0:int = load &x_1
         store &var_4 <- n0:int
-        n1:int = load &y
+        n1:int = load &y_2
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5
@@ -430,10 +430,10 @@ let%expect_test "nested" =
     {|
   .source_language = "Rust"
 
-  define nested::swi_nested(a: int, b: int) : int {
+  define nested::swi_nested(a_1: int, b_2: int) : int {
     local var_0: int, var_3: int, var_4: int, var_5: int, var_6: int
     #node_0:
-        n0:int = load &a
+        n0:int = load &a_1
         store &var_4 <- n0:int
         n1:int = load &var_4
         store &var_3 <- __sil_ge(n1, 0):int
@@ -441,7 +441,7 @@ let%expect_test "nested" =
         if n2 then jmp node_1 else jmp node_2
 
     #node_1:
-        n3:int = load &b
+        n3:int = load &b_2
         store &var_6 <- n3:int
         n4:int = load &var_6
         store &var_5 <- __sil_eq(n4, 0):int
@@ -470,13 +470,13 @@ let%expect_test "nested" =
   }
 
   define nested::main() : void {
-    local var_0: void, x: int, y: int, var_3: int, var_4: int, var_5: int
+    local var_0: void, x_1: int, y_2: int, var_3: int, var_4: int, var_5: int
     #node_0:
-        store &x <- 0:int
-        store &y <- 1:int
-        n0:int = load &x
+        store &x_1 <- 0:int
+        store &y_2 <- 1:int
+        n0:int = load &x_1
         store &var_4 <- n0:int
-        n1:int = load &y
+        n1:int = load &y_2
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5

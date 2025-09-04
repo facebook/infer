@@ -42,17 +42,17 @@ let mk_name (name : Charon.Generated_Types.name) : Textual.ProcName.t =
   Textual.ProcName.of_string name_str
 
 
+let item_meta_to_string (item_meta : Charon.Generated_Types.item_meta) : string =
+  let names = List.map item_meta.name ~f:name_of_path_element in
+  let name_str = Stdlib.String.concat "::" names in
+  name_str
+
+
 let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
     Textual.QualifiedProcName.t =
   let enclosing_class = Textual.QualifiedProcName.TopLevel in
   let name = mk_name item_meta.name in
   {Textual.QualifiedProcName.enclosing_class; name}
-
-
-let item_meta_to_string (item_meta : Charon.Generated_Types.item_meta) : string =
-  let names = List.map item_meta.name ~f:name_of_path_element in
-  let name_str = Stdlib.String.concat "::" names in
-  name_str
 
 
 let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate) (operand : Charon.Generated_GAst.fn_operand) :
@@ -81,10 +81,10 @@ let params_from_fun_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_dec
       match locals_list with
       | Some locals_list ->
           List.take locals_list arg_count
-          |> List.mapi ~f:(fun _ (local : Charon.Generated_GAst.local) ->
+          |> List.mapi ~f:(fun i (local : Charon.Generated_GAst.local) ->
                  match local.name with
                  | Some name ->
-                     Textual.VarName.of_string name
+                     Textual.VarName.of_string (name ^ "_" ^ string_of_int (i + 1))
                  | None ->
                      L.die UserError "Local variable name not found in %a"
                        Charon.Generated_GAst.pp_local local )

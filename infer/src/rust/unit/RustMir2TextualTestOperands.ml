@@ -98,11 +98,11 @@ let%expect_test "basic_copy" =
     .source_language = "Rust"
 
     define basic_copy::main() : void {
-      local var_0: void, x: int, y: int
+      local var_0: void, x_1: int, y_2: int
       #node_0:
-          store &x <- 42:int
-          n0:int = load &x
-          store &y <- n0:int
+          store &x_1 <- 42:int
+          n0:int = load &x_1
+          store &y_2 <- n0:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
@@ -129,15 +129,15 @@ let%expect_test "copy_from_return" =
     }
 
     define copy_from_return::main() : void {
-      local var_0: void, x: int, y: int
+      local var_0: void, x_1: int, y_2: int
       #node_0:
           n0 = copy_from_return::make()
-          store &x <- n0:int
+          store &x_1 <- n0:int
           jmp node_1
 
       #node_1:
-          n1:int = load &x
-          store &y <- n1:int
+          n1:int = load &x_1
+          store &y_2 <- n1:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n2:void = load &var_0
@@ -158,19 +158,19 @@ let%expect_test "copy_in_exp" =
     .source_language = "Rust"
 
     define copy_in_exp::main() : void {
-      local var_0: void, a: int, b: int, c: int, var_4: int, var_5: int, var_6: int
+      local var_0: void, a_1: int, b_2: int, c_3: int, var_4: int, var_5: int, var_6: int
       #node_0:
-          store &a <- 10:int
-          store &b <- 20:int
-          n0:int = load &a
+          store &a_1 <- 10:int
+          store &b_2 <- 20:int
+          n0:int = load &a_1
           store &var_4 <- n0:int
-          n1:int = load &b
+          n1:int = load &b_2
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
           store &var_6 <- __sil_plusa_int(n2, n3):int
           n4:int = load &var_6
-          store &c <- n4:int
+          store &c_3 <- n4:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n5:void = load &var_0
@@ -188,11 +188,11 @@ let%expect_test "nested_copy" =
     .source_language = "Rust"
 
     define nested_copy::main() : void {
-      local var_0: void, x: int, y: int
+      local var_0: void, x_1: int, y_2: int
       #node_0:
-          store &x <- 100:int
-          n0:int = load &x    
-          store &y <- n0:int
+          store &x_1 <- 100:int
+          n0:int = load &x_1    
+          store &y_2 <- n0:int
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
