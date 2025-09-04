@@ -5,7 +5,7 @@
 
 TESTS_DIR = ../../..
 
-INFER_OPTIONS = --debug-exceptions --fragment-retains-view-only
+INFER_OPTIONS = --debug-exceptions --fragment-retains-view-only --android-view-class-list codetoanalyze.java.checkers.ReallyCustomStub
 INFERPRINT_OPTIONS = \
 	--issues-tests-fields file,procedure,line_offset,bug_type,bucket,severity,bug_trace,taint_extra,transitive_callees_extra,autofix \
 	--issues-tests

@@ -514,6 +514,12 @@ ANALYSIS SCHEDULER OPTIONS
            results database successfully as fewer datatypes are involved.
            (Conversely: --no-store-analysis-schedule)
 
+ANDROID OPTIONS
+       --android-view-class-list +string
+           A class C is considered a view when it has a supertype that
+           matches one of these classes. The default is
+           [`android.view.View`].
+
 BUFFER OVERRUN OPTIONS
        --no-bo-assume-void
            Deactivates: Assume void type as a type of record fields not in

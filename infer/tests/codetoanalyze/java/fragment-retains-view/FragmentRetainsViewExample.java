@@ -27,12 +27,14 @@ public class FragmentRetainsViewExample extends Fragment {
   View mView;
   ViewGroup mViewSubclass;
   CustomView mCustomView;
+  ReallyCustomStub<View> mReallyCustomView;
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle bundle) {
     mView = inflater.inflate(-1, container, false);
     mViewSubclass = (ViewGroup) inflater.inflate(-1, container, false);
     mCustomView = (CustomView) inflater.inflate(-1, container, false);
+    mReallyCustomView = new ReallyCustomStub(mCustomView);
     return container;
   }
 
@@ -40,4 +42,17 @@ public class FragmentRetainsViewExample extends Fragment {
   public void onDestroyView() {
     // not nulling out anything
   }
+}
+
+/* Sometimes people implement a wrapper around a View without implementing the same interface.
+ * For the purposes of memory leaks, though, we want to catch such cases too. That is why the
+ * option --android-view-class-list allows one to add classes such as `ReallyCustomStub` to be
+ * considered "views". */
+class ReallyCustomStub<T extends View> {
+  ReallyCustomStub(T view) {
+    this.view = view;
+  }
+
+  T view;
+  // .. some custom API here ...
 }

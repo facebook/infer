@@ -13,7 +13,11 @@ let is_autocloseable tenv tname =
   PatternMatch.is_subtype_of_str tenv tname "java.lang.AutoCloseable"
 
 
-let is_view tenv tname = PatternMatch.is_subtype_of_str tenv tname "android.view.View"
+let is_view tenv tname =
+  List.exists
+    ~f:(fun supertype -> PatternMatch.is_subtype_of_str tenv tname supertype)
+    Config.android_view_class_list
+
 
 let is_fragment =
   let fragments =

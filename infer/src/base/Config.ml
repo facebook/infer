@@ -145,6 +145,8 @@ let java_lambda_marker_infix_generated_by_javalib = "$Lambda$"
 
 let java_lambda_marker_prefix_generated_by_javac = "lambda$"
 
+let manual_android = "ANDROID OPTIONS"
+
 let manual_buck = "BUCK OPTIONS"
 
 let manual_buffer_overrun = "BUFFER OVERRUN OPTIONS"
@@ -558,6 +560,14 @@ and analysis_schedule_file =
     ~in_help:InferCommand.[(Analyze, manual_scheduler)]
     ( "The file where an analysis schedule is stored. The default is "
     ^ ResultsDirEntryName.get_path ~results_dir:"infer-out" AnalysisDependencyGraph )
+
+
+and android_view_class_list =
+  CLOpt.mk_string_list ~long:"android-view-class-list"
+    ~in_help:InferCommand.[(Analyze, manual_android)]
+    ~default:["android.view.View"]
+    "A class C is considered a view when it has a supertype that matches one of these classes. The \
+     default is [`android.view.View`]."
 
 
 and annotation_reachability_apply_superclass_annotations =
@@ -3824,6 +3834,8 @@ let rest = !rest
 and abstract_pulse_models_for_erlang = !abstract_pulse_models_for_erlang
 
 and analysis_schedule_file = !analysis_schedule_file
+
+and android_view_class_list = RevList.to_list !android_view_class_list
 
 and annotation_reachability_apply_superclass_annotations =
   !annotation_reachability_apply_superclass_annotations

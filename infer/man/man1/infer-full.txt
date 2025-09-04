@@ -59,6 +59,12 @@ OPTIONS
            infer-out/analysis_dependency_graph
            See also infer-analyze(1).
 
+       --android-view-class-list +string
+           A class C is considered a view when it has a supertype that
+           matches one of these classes. The default is
+           [`android.view.View`].
+           See also infer-analyze(1).
+
        --annotation-reachability
            Activates: annotation-reachability checker: Given pairs of source
            and sink annotations, e.g. `@A` and `@B`, this checker will warn
@@ -2412,6 +2418,9 @@ INTERNAL OPTIONS
 
        --analysis-schedule-file-reset
            Cancel the effect of --analysis-schedule-file.
+
+       --android-view-class-list-reset
+           Set --android-view-class-list to the empty list.
 
        --attributes-lru-max-size int
            Specify size of procedure attribute LRU cache. Relevant only to

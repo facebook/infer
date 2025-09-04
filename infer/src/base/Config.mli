@@ -102,6 +102,8 @@ val abstract_pulse_models_for_erlang : bool
 
 val analysis_schedule_file : string option
 
+val android_view_class_list : string list
+
 val annotation_reachability_apply_superclass_annotations : bool
 
 val annotation_reachability_check_loops : bool
