@@ -7,7 +7,6 @@
 
 open! IStd
 module L = Logging
-
 module PlaceMap = Stdlib.Map.Make (Int)
 
 (* A map from place ids to (place name, type) *)
@@ -42,12 +41,6 @@ let mk_name (name : Charon.Generated_Types.name) : Textual.ProcName.t =
   Textual.ProcName.of_string name_str
 
 
-let item_meta_to_string (item_meta : Charon.Generated_Types.item_meta) : string =
-  let names = List.map item_meta.name ~f:name_of_path_element in
-  let name_str = Stdlib.String.concat "::" names in
-  name_str
-
-
 let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
     Textual.QualifiedProcName.t =
   let enclosing_class = Textual.QualifiedProcName.TopLevel in
@@ -55,14 +48,20 @@ let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
   {Textual.QualifiedProcName.enclosing_class; name}
 
 
-let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate) (operand : Charon.Generated_GAst.fn_operand) :
-    string =
+let item_meta_to_string (item_meta : Charon.Generated_Types.item_meta) : string =
+  let names = List.map item_meta.name ~f:name_of_path_element in
+  let name_str = Stdlib.String.concat "::" names in
+  name_str
+
+
+let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate)
+    (operand : Charon.Generated_GAst.fn_operand) : string =
   match operand with
-  | FnOpRegular fn_ptr -> 
-    (match fn_ptr.func with
-    | FunId id -> 
-      (match id with
-      | FRegular fun_decl_id -> 
+  | FnOpRegular fn_ptr -> (
+    match fn_ptr.func with
+    | FunId id -> (
+      match id with
+      | FRegular fun_decl_id ->
           let d = Charon.Types.FunDeclId.Map.find fun_decl_id crate.fun_decls in
           item_meta_to_string d.item_meta
       | FBuiltin _ ->
@@ -184,7 +183,13 @@ let rec ty_to_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t 
 let mk_place_map (locals : Charon.Generated_GAst.local list) : place_map_ty =
   List.foldi locals ~init:PlaceMap.empty ~f:(fun i acc (local : Charon.Generated_GAst.local) ->
       let id = local.index in
-      let name = match local.name with Some name -> name ^ "_" ^ string_of_int i | None -> "var_" ^ string_of_int i in
+      let name =
+        match local.name with
+        | Some name ->
+            name ^ "_" ^ string_of_int i
+        | None ->
+            "var_" ^ string_of_int i
+      in
       let ty = local.var_ty in
       PlaceMap.add (Charon.Generated_Expressions.LocalId.to_int id) (name, ty) acc )
 
@@ -478,7 +483,8 @@ let mk_instr (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.s
       L.die UserError "Unsupported statement: %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
 
-let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generated_UllbcAst.block) (place_map : place_map_ty) : Textual.Node.t =
+let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generated_UllbcAst.block)
+    (place_map : place_map_ty) : Textual.Node.t =
   let label = mk_label idx in
   (*TODO Should be retrieved from Γ *)
   let ssa_parameters = [] in
@@ -491,7 +497,8 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
-let mk_procdesc (crate : Charon.UllbcAst.crate) (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
+let mk_procdesc (crate : Charon.UllbcAst.crate)
+    (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
   ident_set := Textual.Ident.Set.empty ;
   let _, fun_decl = proc in
