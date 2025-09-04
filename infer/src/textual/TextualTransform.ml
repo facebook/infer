@@ -256,36 +256,47 @@ module FixHackInvokeClosure = struct
 
   let transform_invoke (pdesc : ProcDesc.t) =
     let qualified_procname = pdesc.procdecl.qualified_name in
+    let is_async = List.exists ~f:Attr.is_async pdesc.procdecl.attributes in
     if QualifiedProcName.is_hack_closure_generated_invoke qualified_procname then
       match (pdesc.nodes, qualified_procname.enclosing_class) with
       | [node], Enclosing class_name -> (
-        match List.rev node.instrs with
-        | Instr.Let
-            { id= Some ret_id
-            ; exp=
-                Call
-                  {proc= {enclosing_class= Enclosing class_name_call; name}; args; kind= NonVirtual}
-            ; loc= loc1 }
-          :: Instr.Load {id= cls_id; exp= Lvar _ (* &$this *); loc= loc2}
-          :: rev_instrs
-          when TypeName.equal class_name_call class_name ->
-            let fixed_typed_name, fixed_proc = fix_proc_name class_name_call name in
-            let fixed_call_exp = Exp.Call {proc= fixed_proc; args; kind= NonVirtual} in
-            let fixed_call_instr = Instr.Let {id= Some ret_id; exp= fixed_call_exp; loc= loc1} in
-            let fixed_lazy_init_instr =
-              Instr.Let
-                { id= Some cls_id
-                ; exp=
-                    Call
-                      { proc= ProcDecl.lazy_class_initialize_builtin
-                      ; args= [Exp.Typ (Typ.Struct fixed_typed_name)]
-                      ; kind= NonVirtual }
-                ; loc= loc2 }
-            in
-            let instrs = List.rev (fixed_call_instr :: fixed_lazy_init_instr :: rev_instrs) in
-            {pdesc with nodes= [{node with instrs}]}
-        | _ ->
-            pdesc )
+          let rev_instrs = List.rev node.instrs in
+          let rev_instrs, last_await_call_option =
+            if is_async && not (List.is_empty rev_instrs) then
+              (List.tl_exn rev_instrs, List.hd rev_instrs)
+            else (rev_instrs, None)
+          in
+          match rev_instrs with
+          | Instr.Let
+              { id= Some ret_id
+              ; exp=
+                  Call
+                    { proc= {enclosing_class= Enclosing class_name_call; name}
+                    ; args
+                    ; kind= NonVirtual }
+              ; loc= loc1 }
+            :: Instr.Load {id= cls_id; exp= Lvar _ (* &$this *); loc= loc2}
+            :: rev_instrs
+            when TypeName.equal class_name_call class_name ->
+              let fixed_typed_name, fixed_proc = fix_proc_name class_name_call name in
+              let fixed_call_exp = Exp.Call {proc= fixed_proc; args; kind= NonVirtual} in
+              let fixed_call_instr = Instr.Let {id= Some ret_id; exp= fixed_call_exp; loc= loc1} in
+              let fixed_lazy_init_instr =
+                Instr.Let
+                  { id= Some cls_id
+                  ; exp=
+                      Call
+                        { proc= ProcDecl.lazy_class_initialize_builtin
+                        ; args= [Exp.Typ (Typ.Struct fixed_typed_name)]
+                        ; kind= NonVirtual }
+                  ; loc= loc2 }
+              in
+              let rev_instrs = fixed_call_instr :: fixed_lazy_init_instr :: rev_instrs in
+              let rev_instrs = IList.opt_cons last_await_call_option rev_instrs in
+              let instrs = List.rev rev_instrs in
+              {pdesc with nodes= [{node with instrs}]}
+          | _ ->
+              pdesc )
       | _, _ ->
           pdesc
     else pdesc

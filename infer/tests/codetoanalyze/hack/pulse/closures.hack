@@ -277,7 +277,7 @@ class ClosuresAndDict2_with_self_async {
     \Level1\taintSink($data);
   }
 
-  public static async function FP_get_safe_taint_ok(): Awaitable<void> {
+  public static async function get_safe_taint_ok(): Awaitable<void> {
     $o = await self::init(0);
     $data = await $o['get_safe']();
     \Level1\taintSink($data);
@@ -299,8 +299,7 @@ class ClosuresAndDict2_with_self_async {
     return await self::read_key1(dict['key1' => 1, 'key2typo' => 2]);
   }
 
-  public static async function FN_get_key2_dict_missing_key_bad(
-  ): Awaitable<int> {
+  public static async function get_key2_dict_missing_key_bad(): Awaitable<int> {
     return await self::read_key2(dict['key1' => 1, 'key2typo' => 2]);
   }
 

@@ -1073,3 +1073,62 @@ declare Closure$Closures::ClosuresAndDict2_with_self::init.get_unsafe(...): *Hac
 
     declare Closure$Closures::ClosuresAndDict2_with_self::init.get_unsafe(...) : *HackMixed
     |}]
+
+
+let%expect_test "hackc fix - async self in closures" =
+  let source =
+    {|
+.source_language = "hack"
+
+define .async Closure$Closures::ClosuresAndDict2_with_self_async::init.__invoke($this: .notnull *Closure$Closures::ClosuresAndDict2_with_self_async::init) : *HackMixed {
+local $captured: *void, $o: *void
+#b0:
+  n0: *HackMixed = load &$this
+  n1: *HackMixed = load n0.?.captured
+  store &$captured <- n1: *HackMixed
+  n2: *HackMixed = load &$this
+  n3: *HackMixed = load n2.?.o
+  store &$o <- n3: *HackMixed
+  n4: *HackMixed = load &$this
+  n5: *HackMixed = load n4.?.this
+  store &$this <- n5: *HackMixed
+  n6: *HackMixed = load &$captured
+  n7: *HackMixed = load &$o
+  n8: *Closure$Closures::ClosuresAndDict2_with_self_async::init = load &$this
+  n9 = Closure$Closures::ClosuresAndDict2_with_self_async::init.get_unsafe(n8, n6, n7)
+  n10 = $builtins.hhbc_await(n9)
+  ret n10
+}
+
+declare Closure$Closures::ClosuresAndDict2_with_self_async::init.get_unsafe(...): *HackMixed
+|}
+  in
+  let module_ = parse_module source |> TextualTransform.fix_hackc_mistranslations in
+  show module_ ;
+  [%expect
+    {|
+    .source_language = "hack" @[2:0]
+
+    define .async Closure$Closures::ClosuresAndDict2_with_self_async::init.__invoke($this: .notnull *Closure$Closures::ClosuresAndDict2_with_self_async::init) : *HackMixed {
+      local $captured: *void, $o: *void
+      #b0: @[6:0]
+          n0:*HackMixed = load &$this @[7:2]
+          n1:*HackMixed = load n0.?.captured @[8:2]
+          store &$captured <- n1:*HackMixed @[9:2]
+          n2:*HackMixed = load &$this @[10:2]
+          n3:*HackMixed = load n2.?.o @[11:2]
+          store &$o <- n3:*HackMixed @[12:2]
+          n4:*HackMixed = load &$this @[13:2]
+          n5:*HackMixed = load n4.?.this @[14:2]
+          store &$this <- n5:*HackMixed @[15:2]
+          n6:*HackMixed = load &$captured @[16:2]
+          n7:*HackMixed = load &$o @[17:2]
+          n8 = __sil_lazy_class_initialize(<Closures::ClosuresAndDict2_with_self_async>) @[18:2]
+          n9 = Closures::ClosuresAndDict2_with_self_async$static.get_unsafe(n8, n6, n7) @[19:2]
+          n10 = $builtins.hhbc_await(n9) @[20:2]
+          ret n10 @[21:2]
+
+    } @[22:1]
+
+    declare Closure$Closures::ClosuresAndDict2_with_self_async::init.get_unsafe(...) : *HackMixed
+    |}]
