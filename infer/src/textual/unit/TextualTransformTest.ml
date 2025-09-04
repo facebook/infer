@@ -846,7 +846,7 @@ let%expect_test "get_class_ts" =
         }
     |}
   in
-  let module_ = parse_module source |> TextualTransform.ClassGetTS.transform in
+  let module_ = parse_module source |> TextualTransform.fix_hackc_mistranslations in
   show module_ ;
   [%expect
     {|

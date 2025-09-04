@@ -1144,7 +1144,7 @@ let run lang module_ =
   let decls_env =
     if new_decls_were_added then TextualDecls.make_decls module_ |> snd else decls_env
   in
-  let module_ = module_ |> let_propagation |> FixHackWrapper.transform |> out_of_ssa in
+  let module_ = module_ |> let_propagation |> out_of_ssa in
   (module_, decls_env)
 
 
@@ -1296,3 +1296,5 @@ module ClassGetTS = struct
     in
     {module_ with decls= new_decls}
 end
+
+let fix_hackc_mistranslations module_ = module_ |> ClassGetTS.transform |> FixHackWrapper.transform

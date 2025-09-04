@@ -126,7 +126,7 @@ module TextualFile = struct
   let translate file =
     let open IResult.Let_syntax in
     let* sourcefile, textual = parse file in
-    let textual = TextualTransform.ClassGetTS.transform textual in
+    let textual = TextualTransform.fix_hackc_mistranslations textual in
     let* textual_verified = verify sourcefile textual in
     textual_to_sil sourcefile textual_verified
 
