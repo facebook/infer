@@ -184,33 +184,78 @@ class ClosuresAndDict2 {
 
 }
 
+type object2 = shape(
+  'safe' => int,
+  'unsafe' => int,
+  'get_unsafe' => (function(): int),
+  'get_safe' => (function(): int),
+  'get_key1' => (function(): string),
+  'get_key2' => (function(): string),
+);
+
 class ClosuresAndDict2_with_self {
 
-  public static function get_unsafe_bad(): void {
-    $o = self::init();
+  public static function get_unsafe_taint_bad(): void {
+    $o = self::init(0);
     $data = $o['get_unsafe']();
     \Level1\taintSink($data);
   }
 
-  public static function FP_get_safe_ok(): void {
-    $o = self::init();
+  public static function FP_get_safe_taint_ok(): void {
+    $o = self::init(0);
     $data = $o['get_safe']();
     \Level1\taintSink($data);
   }
 
-  public static function init(): object {
+  public static function read_key1(dict<string, int> $d): int {
+    $o = self::init(0);
+    $key = $o['get_key1']();
+    return $d[$key];
+  }
+
+  public static function read_key2(dict<string, int> $d): int {
+    $o = self::init(0);
+    $key = $o['get_key2']();
+    return $d[$key];
+  }
+
+  public static function get_key1_dict_missing_key_ok(): int {
+    return self::read_key1(dict['key1' => 1, 'key2typo' => 2]);
+  }
+
+  public static function FN_get_key2_dict_missing_key_bad(): int {
+    return self::read_key2(dict['key1' => 1, 'key2typo' => 2]);
+  }
+
+  public static function init(int $captured): object2 {
     $o = shape('safe' => 0, 'unsafe' => \Level1\taintSource());
-    $o['get_unsafe'] = () ==> self::get_unsafe($o);
-    $o['get_safe'] = () ==> self::get_safe($o);
+    $o['get_unsafe'] = () ==> self::get_unsafe($captured, $o);
+    $o['get_safe'] = () ==> self::get_safe($captured, $o);
+    $o['get_key1'] = () ==> self::get_key1($captured);
+    $o['get_key2'] = () ==> self::get_key2($captured);
     return $o;
   }
 
-  public static function get_safe(shape('safe' => int, ...) $self): int {
+  public static function get_safe(
+    int $i,
+    shape('safe' => int, ...) $self,
+  ): int {
     return $self['safe'];
   }
 
-  public static function get_unsafe(shape('unsafe' => int, ...) $self): int {
+  public static function get_unsafe(
+    int $i,
+    shape('unsafe' => int, ...) $self,
+  ): int {
     return $self['unsafe'];
+  }
+
+  public static function get_key1(int $i): string {
+    return 'key1';
+  }
+
+  public static function get_key2(int $i): string {
+    return 'key2';
   }
 
 }
