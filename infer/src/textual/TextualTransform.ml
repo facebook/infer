@@ -232,6 +232,68 @@ module FixHackWrapper = struct
         else pdesc )
 end
 
+module FixHackInvokeClosure = struct
+  let fix_proc_name (type_name : TypeName.t) (name : ProcName.t) =
+    let str_name = type_name.name.value in
+    match String.substr_index_all str_name ~may_overlap:false ~pattern:"::" |> List.last with
+    | Some last_pos ->
+        let chopped_str_name =
+          String.sub str_name ~pos:0 ~len:last_pos |> String.chop_prefix_exn ~prefix:"Closure$"
+        in
+        let chopped_type_name =
+          {type_name with TypeName.name= {type_name.name with BaseTypeName.value= chopped_str_name}}
+        in
+        let chopped_static_type_name =
+          { type_name with
+            TypeName.name= {type_name.name with BaseTypeName.value= chopped_str_name ^ "$static"} }
+        in
+        ( chopped_type_name
+        , {QualifiedProcName.enclosing_class= Enclosing chopped_static_type_name; name} )
+    | _ ->
+        (* should not happen *)
+        (type_name, {QualifiedProcName.enclosing_class= Enclosing type_name; name})
+
+
+  let transform_invoke (pdesc : ProcDesc.t) =
+    let qualified_procname = pdesc.procdecl.qualified_name in
+    if QualifiedProcName.is_hack_closure_generated_invoke qualified_procname then
+      match (pdesc.nodes, qualified_procname.enclosing_class) with
+      | [node], Enclosing class_name -> (
+        match List.rev node.instrs with
+        | Instr.Let
+            { id= Some ret_id
+            ; exp=
+                Call
+                  {proc= {enclosing_class= Enclosing class_name_call; name}; args; kind= NonVirtual}
+            ; loc= loc1 }
+          :: Instr.Load {id= cls_id; exp= Lvar _ (* &$this *); loc= loc2}
+          :: rev_instrs
+          when TypeName.equal class_name_call class_name ->
+            let fixed_typed_name, fixed_proc = fix_proc_name class_name_call name in
+            let fixed_call_exp = Exp.Call {proc= fixed_proc; args; kind= NonVirtual} in
+            let fixed_call_instr = Instr.Let {id= Some ret_id; exp= fixed_call_exp; loc= loc1} in
+            let fixed_lazy_init_instr =
+              Instr.Let
+                { id= Some cls_id
+                ; exp=
+                    Call
+                      { proc= ProcDecl.lazy_class_initialize_builtin
+                      ; args= [Exp.Typ (Typ.Struct fixed_typed_name)]
+                      ; kind= NonVirtual }
+                ; loc= loc2 }
+            in
+            let instrs = List.rev (fixed_call_instr :: fixed_lazy_init_instr :: rev_instrs) in
+            {pdesc with nodes= [{node with instrs}]}
+        | _ ->
+            pdesc )
+      | _, _ ->
+          pdesc
+    else pdesc
+
+
+  let transform module_ = module_map_procs module_ ~f:transform_invoke
+end
+
 module Subst = struct
   let rec of_exp_one exp ~id ~by =
     let open Exp in
@@ -1297,4 +1359,5 @@ module ClassGetTS = struct
     {module_ with decls= new_decls}
 end
 
-let fix_hackc_mistranslations module_ = module_ |> ClassGetTS.transform |> FixHackWrapper.transform
+let fix_hackc_mistranslations module_ =
+  module_ |> ClassGetTS.transform |> FixHackInvokeClosure.transform |> FixHackWrapper.transform

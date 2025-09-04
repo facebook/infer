@@ -201,7 +201,7 @@ class ClosuresAndDict2_with_self {
     \Level1\taintSink($data);
   }
 
-  public static function FP_get_safe_taint_ok(): void {
+  public static function get_safe_taint_ok(): void {
     $o = self::init(0);
     $data = $o['get_safe']();
     \Level1\taintSink($data);
@@ -223,7 +223,7 @@ class ClosuresAndDict2_with_self {
     return self::read_key1(dict['key1' => 1, 'key2typo' => 2]);
   }
 
-  public static function FN_get_key2_dict_missing_key_bad(): int {
+  public static function get_key2_dict_missing_key_bad(): int {
     return self::read_key2(dict['key1' => 1, 'key2typo' => 2]);
   }
 

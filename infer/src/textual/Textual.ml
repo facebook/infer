@@ -199,6 +199,8 @@ module BaseTypeName : sig
   val wildcard : t
 
   val swift_tuple_class_name : t
+
+  val is_hack_closure_generated_type : t -> bool
 end = struct
   include Name
 
@@ -213,6 +215,8 @@ end = struct
   let hack_generics = {value= "HackGenerics"; loc= Location.Unknown}
 
   let swift_tuple_class_name = {value= "__infer_tuple_class"; loc= Location.Unknown}
+
+  let is_hack_closure_generated_type {value} = String.is_prefix ~prefix:"Closure$" value
 end
 
 module TypeName : sig
@@ -243,6 +247,8 @@ module TypeName : sig
   val wildcard : t
 
   val mk_swift_tuple_type_name : t list -> t
+
+  val is_hack_closure_generated_type : t -> bool
 end = struct
   module T = struct
     type t = {name: BaseTypeName.t; args: t list} [@@deriving compare, equal, hash]
@@ -279,6 +285,8 @@ end = struct
   let llvm_builtin = from_basename BaseTypeName.llvm_builtin
 
   let hack_generics = from_basename BaseTypeName.hack_generics
+
+  let is_hack_closure_generated_type {name} = BaseTypeName.is_hack_closure_generated_type name
 end
 
 module QualifiedProcName = struct
@@ -339,6 +347,14 @@ module QualifiedProcName = struct
 
 
   let is_hack_init {name} = ProcName.is_hack_init name
+
+  let is_hack_closure_generated_invoke {enclosing_class; name} =
+    match enclosing_class with
+    | Enclosing class_name when TypeName.is_hack_closure_generated_type class_name ->
+        String.equal name.value "__invoke"
+    | _ ->
+        false
+
 
   module Hashtbl = Hashtbl.Make (struct
     type nonrec t = t [@@deriving equal, hash]
@@ -652,7 +668,9 @@ module ProcDecl = struct
 
   let allocate_array_name = make_toplevel_name builtin_allocate_array Location.Unknown
 
-  let lazy_class_initialize_name = make_toplevel_name builtin_lazy_class_initialize Location.Unknown
+  let lazy_class_initialize_builtin =
+    make_toplevel_name builtin_lazy_class_initialize Location.Unknown
+
 
   let get_lazy_class_name = make_toplevel_name builtin_get_lazy_class Location.Unknown
 
@@ -784,7 +802,7 @@ module ProcDecl = struct
 
 
   let is_lazy_class_initialize_builtin qualified_name =
-    QualifiedProcName.equal lazy_class_initialize_name qualified_name
+    QualifiedProcName.equal lazy_class_initialize_builtin qualified_name
 
 
   let is_get_lazy_class_builtin qualified_name =

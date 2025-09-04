@@ -920,8 +920,8 @@ module InstrBridge = struct
         let builtin_new = SilExp.Const (SilConst.Cfun BuiltinDecl.__new_array) in
         Call ((ret, class_type), builtin_new, args, loc, CallFlags.default)
     | Let {id= Some id; exp= Call {proc; args= [Typ typ]}; loc}
-      when ProcDecl.is_lazy_class_initialize_builtin proc || ProcDecl.is_get_lazy_class_builtin proc
-      ->
+      when QualifiedProcName.equal ProcDecl.lazy_class_initialize_builtin proc
+           || ProcDecl.is_get_lazy_class_builtin proc ->
         let typ = TypBridge.to_sil lang typ in
         let sizeof =
           SilExp.Sizeof
@@ -932,7 +932,7 @@ module InstrBridge = struct
         let ret = IdentBridge.to_sil id in
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin =
-          if ProcDecl.is_lazy_class_initialize_builtin proc then
+          if QualifiedProcName.equal ProcDecl.lazy_class_initialize_builtin proc then
             SilExp.Const (Cfun BuiltinDecl.__lazy_class_initialize)
           else if ProcDecl.is_get_lazy_class_builtin proc then
             SilExp.Const (Cfun BuiltinDecl.__get_lazy_class)

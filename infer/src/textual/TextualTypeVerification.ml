@@ -566,7 +566,7 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       (Exp.If {cond; then_; else_}, type_then)
   | Call {proc; args}
     when ProcDecl.is_allocate_object_builtin proc
-         || ProcDecl.is_lazy_class_initialize_builtin proc
+         || QualifiedProcName.equal ProcDecl.lazy_class_initialize_builtin proc
          || ProcDecl.is_get_lazy_class_builtin proc ->
       typeof_allocate_builtin proc args
   | Call {proc; args} when ProcDecl.is_allocate_array_builtin proc ->

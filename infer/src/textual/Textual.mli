@@ -111,6 +111,8 @@ module QualifiedProcName : sig
 
   val contains_wildcard : t -> bool
 
+  val is_hack_closure_generated_invoke : t -> bool
+
   val is_python_builtin : t -> bool
 
   val is_llvm_builtin : t -> bool
@@ -332,7 +334,7 @@ module ProcDecl : sig
 
   val is_get_lazy_class_builtin : QualifiedProcName.t -> bool
 
-  val is_lazy_class_initialize_builtin : QualifiedProcName.t -> bool
+  val lazy_class_initialize_builtin : QualifiedProcName.t
 
   val is_side_effect_free_sil_expr : QualifiedProcName.t -> bool
 
