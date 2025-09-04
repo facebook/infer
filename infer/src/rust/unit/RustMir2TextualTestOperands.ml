@@ -131,7 +131,7 @@ let%expect_test "copy_from_return" =
     define copy_from_return::main() : void {
       local var_0: void, x: int, y: int
       #node_0:
-          n0 = make()
+          n0 = copy_from_return::make()
           store &x <- n0:int
           jmp node_1
 
@@ -271,7 +271,7 @@ let%expect_test "move_from_return" =
     define move_from_return::main() : void {
       local var_0: void, var_1: *String
       #node_0:
-          n0: *String = make_string()
+          n0: *String = move_from_return::make_string()
           store &var_1 <- n0
 
           n1: *String = load &var_1

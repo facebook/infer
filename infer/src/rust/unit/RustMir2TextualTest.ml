@@ -44,7 +44,7 @@ let%expect_test "example" =
   define example::main() : void {
     local var_0: void, var_1: void
     #node_0:
-        n0 = foo()
+        n0 = example::foo()
         store &var_1 <- n0:void
         jmp node_1
 

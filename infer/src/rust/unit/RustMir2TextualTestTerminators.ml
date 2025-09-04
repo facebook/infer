@@ -18,7 +18,7 @@ let%expect_test "basic_call" =
     define basic_call::foo() : void {
       local var_0: void
       #node_0:
-          n0 = bar()
+          n0 = basic_call::bar()
           store &var_0 <- n0:void
           jmp node_2
 
@@ -45,7 +45,7 @@ let%expect_test "basic_call" =
     define basic_call::main() : void {
       local var_0: void
       #node_0:
-          n0 = foo()
+          n0 = basic_call::foo()
           store &var_0 <- n0:void
           jmp node_2
 
@@ -76,7 +76,7 @@ let%expect_test "call_with_args" =
           store &var_4 <- n1:int
           n2:int = load &var_3
           n3:int = load &var_4
-          n4 = add(n2, n3)
+          n4 = call_with_args::add(n2, n3)
           store &var_0 <- n4:int
           jmp node_1
         
@@ -117,7 +117,7 @@ let%expect_test "call_with_args" =
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
-          n4 = call_with_args(n2, n3)
+          n4 = call_with_args::call_with_args(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
 
@@ -194,7 +194,7 @@ let%expect_test "call_with_args" =
             store &var_1 <- 0:int
             n0:bool = load &var_1
             store &var_2 <- n0
-            n1:int = drop_return_early(n0)
+            n1:int = drop_return_early::drop_return_early(n0)
             store &var_0 <- null:void
             store &var_0 <- null:void
             n2:void = load &var_0
@@ -224,7 +224,7 @@ let%expect_test "call_with_args" =
       define drop_implicit::main() : void {
         local var_0: void, var_1: int
         #node_0:
-            n0:int = drop_implicit()
+            n0:int = drop_implicit::drop_implicit()
             store &var_1 <- n0:int
             store &var_0 <- null:void
             store &var_0 <- null:void
@@ -276,7 +276,7 @@ let%expect_test "basic_loop" =
           n0:int = load &x
           store &var_3 <- n0:int
           n1:int = load &var_3
-          n2 = goto_loop(n1)
+          n2 = basic_loop::goto_loop(n1)
           store &var_2 <- n2:int
           jmp node_1
 
@@ -342,7 +342,7 @@ let%expect_test "loop_with_continue" =
           store &var_5 <- n1:int
           n2:int = load &var_4
           n3:int = load &var_5
-          n4 = goto_with_continue(n2, n3)
+          n4 = loop_with_continue::goto_with_continue(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
 
@@ -406,7 +406,7 @@ let%expect_test "int_comparison" =
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5
-        n4 = compare(n2, n3)
+        n4 = int_comparison::compare(n2, n3)
         store &var_3 <- n4:int
         jmp node_1
 
@@ -480,7 +480,7 @@ let%expect_test "nested" =
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5
-        n4 = swi_nested(n2, n3)
+        n4 = nested::swi_nested(n2, n3)
         store &var_3 <- n4:int
         jmp node_1
 

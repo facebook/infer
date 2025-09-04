@@ -17,7 +17,7 @@ let%expect_test "caller_and_callee" =
   define caller_and_callee::caller() : int {
     local var_0: int, k: int
     #node_0:
-        n0 = callee(3)
+        n0 = caller_and_callee::callee(3)
         store &k <- n0:int
         jmp node_1
 
@@ -49,7 +49,7 @@ let%expect_test "caller_and_callee" =
   define caller_and_callee::main() : void {
     local var_0: void, var_1: int
     #node_0:
-        n0 = caller()
+        n0 = caller_and_callee::caller()
         store &var_1 <- n0:int
         jmp node_1
 
@@ -79,7 +79,7 @@ let%expect_test "calculate" =
         n0:int = load &a          
         store &var_4 <- n0:int
         n1:int = load &var_4
-        n2 = square(n1)
+        n2 = calculate::square(n1)
         store &result1 <- n2:int
         jmp node_1
 
@@ -87,7 +87,7 @@ let%expect_test "calculate" =
         n3:int = load &result1
         store &var_6 <- n3:int
         n4:int = load &var_6
-        n5 = square(n4)
+        n5 = calculate::square(n4)
         store &result2 <- n5:int
         jmp node_3
 
@@ -101,7 +101,7 @@ let%expect_test "calculate" =
         store &var_8 <- n7:int
         n8:int = load &var_7
         n9:int = load &var_8
-        n10 = subtract(n8, n9)
+        n10 = calculate::subtract(n8, n9)
         store &var_0 <- n10:int
         jmp node_4
 
@@ -156,7 +156,7 @@ let%expect_test "calculate" =
         store &var_5 <- n1:int
         n2:int = load &var_4
         n3:int = load &var_5
-        n4 = calculate(n2, n3)
+        n4 = calculate::calculate(n2, n3)
         store &result <- n4:int
         jmp node_1
 
