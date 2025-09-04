@@ -260,6 +260,83 @@ class ClosuresAndDict2_with_self {
 
 }
 
+type object2_async = shape(
+  'safe' => int,
+  'unsafe' => int,
+  'get_unsafe' => (function(): Awaitable<int>),
+  'get_safe' => (function(): Awaitable<int>),
+  'get_key1' => (function(): Awaitable<string>),
+  'get_key2' => (function(): Awaitable<string>),
+);
+
+class ClosuresAndDict2_with_self_async {
+
+  public static async function get_unsafe_taint_bad(): Awaitable<void> {
+    $o = await self::init(0);
+    $data = await $o['get_unsafe']();
+    \Level1\taintSink($data);
+  }
+
+  public static async function FP_get_safe_taint_ok(): Awaitable<void> {
+    $o = await self::init(0);
+    $data = await $o['get_safe']();
+    \Level1\taintSink($data);
+  }
+
+  public static async function read_key1(dict<string, int> $d): Awaitable<int> {
+    $o = await self::init(0);
+    $key = await $o['get_key1']();
+    return $d[$key];
+  }
+
+  public static async function read_key2(dict<string, int> $d): Awaitable<int> {
+    $o = await self::init(0);
+    $key = await $o['get_key2']();
+    return $d[$key];
+  }
+
+  public static async function get_key1_dict_missing_key_ok(): Awaitable<int> {
+    return await self::read_key1(dict['key1' => 1, 'key2typo' => 2]);
+  }
+
+  public static async function FN_get_key2_dict_missing_key_bad(
+  ): Awaitable<int> {
+    return await self::read_key2(dict['key1' => 1, 'key2typo' => 2]);
+  }
+
+  public static async function init(int $captured): Awaitable<object2_async> {
+    $o = shape('safe' => 0, 'unsafe' => \Level1\taintSource());
+    $o['get_unsafe'] = async () ==> await self::get_unsafe($captured, $o);
+    $o['get_safe'] = async () ==> await self::get_safe($captured, $o);
+    $o['get_key1'] = async () ==> await self::get_key1($captured);
+    $o['get_key2'] = async () ==> await self::get_key2($captured);
+    return $o;
+  }
+
+  public static async function get_safe(
+    int $i,
+    shape('safe' => int, ...) $self,
+  ): Awaitable<int> {
+    return $self['safe'];
+  }
+
+  public static async function get_unsafe(
+    int $i,
+    shape('unsafe' => int, ...) $self,
+  ): Awaitable<int> {
+    return $self['unsafe'];
+  }
+
+  public static async function get_key1(int $i): Awaitable<string> {
+    return 'key1';
+  }
+
+  public static async function get_key2(int $i): Awaitable<string> {
+    return 'key2';
+  }
+
+}
+
 class ThenAsyncPattern {
   public static async function gen(): Awaitable<void> {
     return;
