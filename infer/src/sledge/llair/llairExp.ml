@@ -218,12 +218,12 @@ module T = struct
 
   and pp_record fs exp =
     match exp with
-    | ApN (Record, _, elts) -> (
+    | ApN (Record, typ, elts) -> (
       match string_of_exp exp with
       | Some s ->
           Format.fprintf fs "@[<h>%s@]" (String.escaped s)
       | None ->
-          Format.fprintf fs "@[<hv>%a@]" (IArray.pp ",@ " pp) elts )
+          Format.fprintf fs "@[<hv>%a@] : %a" (IArray.pp ",@ " pp) elts LlairTyp.pp typ )
     | _ ->
         assert false
 end

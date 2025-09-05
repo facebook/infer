@@ -9,7 +9,7 @@
 define .plain_name = "create_student" $s5Hello14create_studentSiyF() : int {
   local john: *ptr_elt
   #: @[11:16]
-      n2 = T5Hello7StudentC.$s5Hello7StudentCMa(0) @[11:16]
+      n2 = $s5Hello7StudentCMa(0) @[11:16]
       jmp 2::ret @[11:16]
       
   #2::ret: @[11:16]
@@ -150,9 +150,9 @@ define .plain_name = "weight.set" .method_offset = "13" T5Hello7StudentC.$s5Hell
       
 } @?
 
-declare .method_offset = "2" T5Hello7StudentC.$s5Hello7StudentCMa(int) : *ptr_elt
+declare $s5Hello7StudentCMa(int) : *ptr_elt
 
-declare .plain_name = "deinit" $s5Hello7StudentCfD(*ptr_elt) : *ptr_elt
+declare .plain_name = "deinit" .method_offset = "-2" T5Hello7StudentC.$s5Hello7StudentCfD(*ptr_elt) : *ptr_elt
 
 declare .plain_name = "deinit" $s5Hello7StudentCfd(*ptr_elt) : *ptr_elt
 
@@ -161,7 +161,7 @@ define .plain_name = "setWeight" $s5Hello9setWeightyySiF(var0: int) : *ptr_elt {
   #: @[190:0]
       n1 = load &var0 @[190:0]
       store &weight <- n1 @[190:0]
-      n3 = T5Hello7StudentC.$s5Hello7StudentCMa(0) @[25:16]
+      n3 = $s5Hello7StudentCMa(0) @[25:16]
       jmp 4::ret @[25:16]
       
   #4::ret: @[25:16]

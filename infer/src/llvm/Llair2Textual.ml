@@ -795,47 +795,45 @@ let pp_class_method_index fmt () =
 
 let class_from_global global_name =
   let name = String.substr_replace_first global_name ~pattern:"$s" ~with_:"T" in
-  let name = String.chop_suffix_exn name ~suffix:"Mn" in
+  let name = String.chop_suffix_exn name ~suffix:"Mf" in
   Textual.TypeName.of_string name
 
 
-let collect_class_method_indices global global_init_instrs =
-  let rec process_exp exp =
-    match exp with
-    | Textual.Exp.Call {proc; args= [_; exp2]}
-      when Textual.QualifiedProcName.equal proc Textual.ProcDecl.cast_name ->
-        process_exp exp2
-    | Textual.Exp.Call {proc; args= [exp1; exp2]}
-      when Textual.QualifiedProcName.equal proc
-             (Textual.ProcDecl.of_binop (Binop.MinusA (Some IInt))) -> (
-        let exp1 = process_exp exp1 in
-        let exp2 = process_exp exp2 in
-        match (exp1, exp2) with
-        | Textual.Exp.Const (Str s), Textual.Exp.Field {field} ->
-            let field_name = Textual.FieldName.to_string field.name in
-            if String.is_prefix field_name ~prefix:Type.tuple_field_prefix then (
-              let index =
-                String.chop_prefix_exn field_name ~prefix:Type.tuple_field_prefix |> int_of_string
-              in
-              let class_name = class_from_global global in
-              let proc_name = Textual.ProcName.of_string s in
-              let proc =
-                Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name}
-              in
-              add_method_to_class_method_index class_name proc (index - 1) ;
-              method_class_index :=
-                Textual.ProcName.Map.add proc_name class_name !method_class_index ;
-              exp )
-            else exp
+let collect_class_method_indices global exp =
+  let process_exp (last_offset, carry) exp typ =
+    match typ with
+    | Llair.Typ.Integer {bits} when Int.equal bits 64 ->
+        (last_offset + 1, 0)
+    | Llair.Typ.Integer {bits} when Int.equal bits 32 ->
+        let carry = carry + 2 in
+        if Int.equal carry 4 then (last_offset + 1, 0) else (last_offset, carry)
+    | Llair.Typ.Integer {bits} when Int.equal bits 16 ->
+        let carry = carry + 1 in
+        if Int.equal carry 4 then (last_offset + 1, 0) else (last_offset, carry)
+    | Llair.Typ.Pointer _ ->
+        let offset = last_offset + 1 in
+        ( match exp with
+        | Llair.Exp.FuncName {name} ->
+            let class_name = class_from_global global in
+            let proc_name = Textual.ProcName.of_string name in
+            let proc =
+              Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name}
+            in
+            add_method_to_class_method_index class_name proc (offset - 3) ;
+            method_class_index := Textual.ProcName.Map.add proc_name class_name !method_class_index
         | _ ->
-            exp )
+            () ) ;
+        (offset, 0)
     | _ ->
-        exp
+        (last_offset, carry)
   in
-  let process_instr instr =
-    match instr with Textual.Instr.Store {exp2} -> ignore (process_exp exp2) | _ -> ()
-  in
-  List.iter ~f:process_instr global_init_instrs
+  match exp with
+  | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements) ->
+      let elements = StdUtils.iarray_to_list elements in
+      let _, types = StdUtils.iarray_to_list elts |> List.unzip in
+      ignore (List.fold2_exn ~f:process_exp ~init:(-1, 0) elements types)
+  | _ ->
+      ()
 
 
 let to_textual_global lang ~struct_map global =
@@ -849,8 +847,8 @@ let to_textual_global lang ~struct_map global =
     match global.GlobalDefn.init with
     | Some exp ->
         let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
-        if String.is_suffix global_name ~suffix:"CMn" then
-          collect_class_method_indices global_name instrs ;
+        if String.is_suffix global_name ~suffix:"CMf" then
+          collect_class_method_indices global_name exp ;
         let procdecl =
           Textual.ProcDecl.
             { qualified_name= global_proc_state.qualified_name
