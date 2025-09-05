@@ -29,12 +29,21 @@ module TextualFile : sig
 
   type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
-  val translate : t -> (sil, Textual.SourceFile.t * error list) result
+  val parse :
+    t -> (Textual.SourceFile.t * Textual.Module.t, Textual.SourceFile.t * error list) result
+
+  val verify :
+       Textual.SourceFile.t
+    -> Textual.Module.t
+    -> (Textual.Module.t, Textual.SourceFile.t * error list) result
+
+  val textual_to_sil :
+    Textual.SourceFile.t -> Textual.Module.t -> (sil, Textual.SourceFile.t * error list) result
 
   val capture : use_global_tenv:bool -> sil -> unit
 
   val line_map : t -> LineMap.t option [@@warning "-unused-value-declaration"]
 end
 
-val capture : TextualFile.t list -> unit
+val textual_frontend_capture : TextualFile.t list -> unit
 (** turn a list of textual files into a SIL-Java program and capture them. *)

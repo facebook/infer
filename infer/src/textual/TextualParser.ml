@@ -123,14 +123,6 @@ module TextualFile = struct
     Ok {sourcefile; cfg; tenv}
 
 
-  let translate file =
-    let open IResult.Let_syntax in
-    let* sourcefile, textual = parse file in
-    let textual = TextualTransform.fix_hackc_mistranslations textual in
-    let* textual_verified = verify sourcefile textual in
-    textual_to_sil sourcefile textual_verified
-
-
   let capture ~use_global_tenv {sourcefile; cfg; tenv} =
     let sourcefile = Textual.SourceFile.file sourcefile in
     DB.Results_dir.init sourcefile ;
@@ -144,17 +136,30 @@ module TextualFile = struct
     ()
 end
 
-(* This code is used only by the --capture-textual integration, which turn textual files into
+module TextualFrontend = struct
+  (* This code is used only by the --capture-textual integration, which turn textual files into
    a SIL-Java program. The Hack driver doesn't use this function. *)
-let capture files =
-  let global_tenv = Tenv.create () in
-  let capture_one file =
-    match TextualFile.translate file with
-    | Error (sourcefile, errs) ->
-        List.iter errs ~f:(fun error -> L.external_error "%a" (pp_error sourcefile) error)
-    | Ok sil ->
-        TextualFile.capture ~use_global_tenv:true sil ;
-        Tenv.merge ~src:sil.tenv ~dst:global_tenv
-  in
-  List.iter files ~f:capture_one ;
-  Tenv.Global.store ~normalize:true global_tenv
+
+  let translate file =
+    let open IResult.Let_syntax in
+    let open TextualFile in
+    let* sourcefile, textual = parse file in
+    let* textual_verified = verify sourcefile textual in
+    textual_to_sil sourcefile textual_verified
+
+
+  let capture files =
+    let global_tenv = Tenv.create () in
+    let capture_one file =
+      match translate file with
+      | Error (sourcefile, errs) ->
+          List.iter errs ~f:(fun error -> L.external_error "%a" (pp_error sourcefile) error)
+      | Ok sil ->
+          TextualFile.capture ~use_global_tenv:true sil ;
+          Tenv.merge ~src:sil.tenv ~dst:global_tenv
+    in
+    List.iter files ~f:capture_one ;
+    Tenv.Global.store ~normalize:true global_tenv
+end
+
+let textual_frontend_capture = TextualFrontend.capture

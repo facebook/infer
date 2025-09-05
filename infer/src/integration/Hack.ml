@@ -79,6 +79,15 @@ module Peekable_in_channel = struct
   let peek_line {cur_line} = cur_line
 end
 
+let textual_to_sil file =
+  let open IResult.Let_syntax in
+  let open TextualParser in
+  let* sourcefile, textual_parsed = TextualFile.parse file in
+  let textual_fixed = TextualTransform.fix_hackc_mistranslations textual_parsed in
+  let* textual_verified = TextualFile.verify sourcefile textual_fixed in
+  TextualFile.textual_to_sil sourcefile textual_verified
+
+
 (** Utility functions to consume (potentially) multi-file hackc output. *)
 module Unit : sig
   type t = private {source_path: string; content: string}
@@ -170,7 +179,8 @@ end = struct
     L.debug Capture Quiet "Capturing %s@\n" source_path ;
     let open TextualParser in
     let line_map = LineMap.create content in
-    let trans = TextualFile.translate (TranslatedFile {source_path; content; line_map}) in
+    let file : TextualParser.TextualFile.t = TranslatedFile {source_path; content; line_map} in
+    let trans = textual_to_sil file in
     let log_error sourcefile error =
       if Config.keep_going then (
         L.debug Capture Quiet "%a@\n" (pp_error sourcefile) error ;
@@ -444,7 +454,7 @@ let load_textual_models filenames =
   let acc_tenv = Tenv.create () in
   List.iter filenames ~f:(fun filename ->
       L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
-      match TextualParser.TextualFile.translate (StandaloneFile filename) with
+      match textual_to_sil (StandaloneFile filename) with
       | Ok sil ->
           TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
           Tenv.merge ~src:sil.tenv ~dst:acc_tenv

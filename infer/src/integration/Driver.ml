@@ -230,7 +230,7 @@ let capture ~changed_files mode =
           Hack.capture ~prog ~args
       | Textual {textualfiles} ->
           List.map textualfiles ~f:(fun x -> TextualParser.TextualFile.StandaloneFile x)
-          |> TextualParser.capture
+          |> TextualParser.textual_frontend_capture
       | XcodeBuild {prog; args} ->
           L.progress "Capturing in xcodebuild mode...@." ;
           XcodeBuild.capture ~prog ~args
