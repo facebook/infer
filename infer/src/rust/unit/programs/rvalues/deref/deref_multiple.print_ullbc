@@ -1,0 +1,60 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: deref_multiple::deref_multiple
+fn deref_multiple()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+    let ref_1@2: &'_ (i32); // local
+    let ref_2@3: &'_ (&'_ (i32)); // local
+    let ref_3@4: &'_ (&'_ (&'_ (i32))); // local
+    let y@5: i32; // local
+    let @6: (); // anonymous local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (42 : i32);
+        storage_live(ref_1@2);
+        ref_1@2 := &x@1;
+        storage_live(ref_2@3);
+        ref_2@3 := &ref_1@2;
+        storage_live(ref_3@4);
+        ref_3@4 := &ref_2@3;
+        storage_live(y@5);
+        y@5 := copy (*(*(*(ref_3@4))));
+        nop;
+        @0 := ();
+        storage_dead(y@5);
+        storage_dead(ref_3@4);
+        storage_dead(ref_2@3);
+        storage_dead(ref_1@2);
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+}
+
+// Full name: deref_multiple::main
+fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+    let @2: (); // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := deref_multiple() -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_dead(@1);
+        nop;
+        @0 := ();
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}

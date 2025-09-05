@@ -1,18 +1,22 @@
 # Final ULLBC before control-flow reconstruction:
 
-// Full name: mut_ref0::main
+// Full name: basic_mut_raw_ptr::main
 fn main()
 {
     let @0: (); // return
     let y@1: i32; // local
-    let x@2: &'_ mut (i32); // local
-    let @3: (); // anonymous local
+    let x@2: *mut i32; // local
+    let @3: &'_ mut (i32); // anonymous local
+    let @4: (); // anonymous local
 
     bb0: {
         storage_live(y@1);
         y@1 := const (10 : i32);
         storage_live(x@2);
-        x@2 := &mut y@1;
+        storage_live(@3);
+        @3 := &mut y@1;
+        x@2 := &raw mut *(@3);
+        storage_dead(@3);
         nop;
         @0 := ();
         storage_dead(x@2);

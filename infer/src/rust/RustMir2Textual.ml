@@ -200,11 +200,7 @@ let mk_label (id : int) : Textual.NodeName.t =
 
 let mk_locals (locals : Charon.Generated_GAst.local list) (arg_count : int)
     (place_map : place_map_ty) : (Textual.VarName.t * Textual.Typ.annotated) list =
-  (* 
-    Extracts the local variable names from locals list, excluding the return value and the arguments
-    - Return value: Local variable with index 0
-    - Arguments: arg_count number of locals that come after the return value 
-  *)
+  (* Extracts the local variable names from locals list, excluding the return value and the arguments *)
   locals
   |> fun lst ->
   List.take lst 1 @ List.drop lst (1 + arg_count)
@@ -266,16 +262,6 @@ let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
 let mk_place_from_id (id : int) (ty : Charon.Generated_Types.ty) :
     Charon.Generated_Expressions.place =
   {kind= PlaceLocal (Charon.Generated_Expressions.LocalId.of_int id); ty}
-
-
-let rec id_from_place (place : Charon.Generated_Expressions.place) : Textual.Ident.t =
-  match place.kind with
-  | PlaceLocal var_id ->
-      Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id)
-  | PlaceProjection (projection_place, _) ->
-      id_from_place projection_place
-  | _ ->
-      L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place
 
 
 let rec mk_exp_from_place (place_map : place_map_ty) (place : Charon.Generated_Expressions.place) :
@@ -359,14 +345,25 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
             rvalue )
   | Use op ->
       mk_exp_from_operand place_map op
-  | RawPtr (place, _) | RvRef (place, _) ->
-      let id = id_from_place place in
-      let exp =
-        Textual.Exp.Lvar
-          (Textual.VarName.of_string (fst (PlaceMap.find (Textual.Ident.to_int id) place_map)))
-      in
-      let typ = Textual.Typ.Ptr (ty_to_textual_typ place.ty) in
-      ([], exp, typ)
+  | RawPtr (place, _) | RvRef (place, _) -> (
+    match place.kind with
+    | PlaceLocal var_id ->
+        let id = Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id) in
+        let exp =
+          Textual.Exp.Lvar
+            (Textual.VarName.of_string (fst (PlaceMap.find (Textual.Ident.to_int id) place_map)))
+        in
+        let typ = Textual.Typ.Ptr (ty_to_textual_typ place.ty) in
+        ([], exp, typ)
+    | PlaceProjection (projection_place, projection_elem) -> (
+      match projection_elem with
+      | Deref ->
+          mk_exp_from_place place_map projection_place
+      | _ ->
+          L.die UserError "Unsupported projection element: %a"
+            Charon.Generated_Expressions.pp_projection_elem projection_elem )
+    | _ ->
+        L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place )
   | _ ->
       L.die UserError "Unsupported rvalue: %a" Charon.Generated_Expressions.pp_rvalue rvalue
 

@@ -1,7 +1,7 @@
 {
     "charon_version": "0.1.123",
     "translated": {
-        "crate_name": "ref0",
+        "crate_name": "basic_mut_ref",
         "options": {
             "ullbc": true,
             "lib": false,
@@ -55,7 +55,7 @@
                 "value": [
                     {
                         "Ident": [
-                            "ref0",
+                            "basic_mut_ref",
                             0
                         ]
                     },
@@ -86,10 +86,10 @@
         "files": [
             {
                 "name": {
-                    "Local": "./ref/ref0.rs"
+                    "Local": "./unit/programs/rvalues/mut_ref/basic_mut_ref.rs"
                 },
-                "crate_name": "ref0",
-                "contents": "fn main() {\n    let y = 10;\n    let x = &y;\n}"
+                "crate_name": "basic_mut_ref",
+                "contents": "fn main() {\n    let mut y = 10;\n    let x = &mut y;\n}"
             }
         ],
         "type_decls": [],
@@ -100,7 +100,7 @@
                     "name": [
                         {
                             "Ident": [
-                                "ref0",
+                                "basic_mut_ref",
                                 0
                             ]
                         },
@@ -125,7 +125,7 @@
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn main() {\n    let y = 10;\n    let x = &y;\n}",
+                    "source_text": "fn main() {\n    let mut y = 10;\n    let x = &mut y;\n}",
                     "attr_info": {
                         "attributes": [],
                         "inline": null,
@@ -217,7 +217,7 @@
                                                         "Int": "I32"
                                                     }
                                                 },
-                                                "Shared"
+                                                "Mut"
                                             ]
                                         }
                                     }
@@ -237,7 +237,7 @@
                                                     },
                                                     "end": {
                                                         "line": 2,
-                                                        "col": 9
+                                                        "col": 13
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -253,11 +253,11 @@
                                                     "file_id": 0,
                                                     "beg": {
                                                         "line": 2,
-                                                        "col": 12
+                                                        "col": 16
                                                     },
                                                     "end": {
                                                         "line": 2,
-                                                        "col": 14
+                                                        "col": 18
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -329,7 +329,7 @@
                                                     },
                                                     "end": {
                                                         "line": 3,
-                                                        "col": 14
+                                                        "col": 18
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -348,7 +348,7 @@
                                                                         "Int": "I32"
                                                                     }
                                                                 },
-                                                                "Shared"
+                                                                "Mut"
                                                             ]
                                                         }
                                                     },
@@ -364,7 +364,7 @@
                                                                     }
                                                                 }
                                                             },
-                                                            "Shared"
+                                                            "Mut"
                                                         ]
                                                     }
                                                 ]

@@ -1,5 +1,3 @@
-// Trickier storage live test with variable shadowing and nested scopes
-
 fn main() {
     let x = 10;
 

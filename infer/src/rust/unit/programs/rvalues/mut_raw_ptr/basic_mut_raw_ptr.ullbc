@@ -1,7 +1,7 @@
 {
     "charon_version": "0.1.123",
     "translated": {
-        "crate_name": "mut_ref0",
+        "crate_name": "basic_mut_raw_ptr",
         "options": {
             "ullbc": true,
             "lib": false,
@@ -55,7 +55,7 @@
                 "value": [
                     {
                         "Ident": [
-                            "mut_ref0",
+                            "basic_mut_raw_ptr",
                             0
                         ]
                     },
@@ -86,10 +86,10 @@
         "files": [
             {
                 "name": {
-                    "Local": "./mut_ref/mut_ref0.rs"
+                    "Local": "./unit/programs/rvalues/mut_raw_ptr/basic_mut_raw_ptr.rs"
                 },
-                "crate_name": "mut_ref0",
-                "contents": "fn main() {\n    let mut y = 10;\n    let x = &mut y;\n}\n"
+                "crate_name": "basic_mut_raw_ptr",
+                "contents": "fn main() {\n    let mut y = 10;\n    let x = &mut y as *mut i32;\n}"
             }
         ],
         "type_decls": [],
@@ -100,7 +100,7 @@
                     "name": [
                         {
                             "Ident": [
-                                "mut_ref0",
+                                "basic_mut_raw_ptr",
                                 0
                             ]
                         },
@@ -125,7 +125,7 @@
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn main() {\n    let mut y = 10;\n    let x = &mut y;\n}",
+                    "source_text": "fn main() {\n    let mut y = 10;\n    let x = &mut y as *mut i32;\n}",
                     "attr_info": {
                         "attributes": [],
                         "inline": null,
@@ -209,6 +209,20 @@
                                     {
                                         "index": 2,
                                         "name": "x",
+                                        "ty": {
+                                            "RawPtr": [
+                                                {
+                                                    "Literal": {
+                                                        "Int": "I32"
+                                                    }
+                                                },
+                                                "Mut"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "index": 3,
+                                        "name": null,
                                         "ty": {
                                             "Ref": [
                                                 "Erased",
@@ -335,10 +349,30 @@
                                                 "generated_from_span": null
                                             },
                                             "content": {
+                                                "StorageLive": 3
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 3,
+                                                        "col": 12
+                                                    },
+                                                    "end": {
+                                                        "line": 3,
+                                                        "col": 18
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
                                                 "Assign": [
                                                     {
                                                         "kind": {
-                                                            "Local": 2
+                                                            "Local": 3
                                                         },
                                                         "ty": {
                                                             "Ref": [
@@ -368,6 +402,95 @@
                                                         ]
                                                     }
                                                 ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 3,
+                                                        "col": 12
+                                                    },
+                                                    "end": {
+                                                        "line": 3,
+                                                        "col": 18
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "Assign": [
+                                                    {
+                                                        "kind": {
+                                                            "Local": 2
+                                                        },
+                                                        "ty": {
+                                                            "RawPtr": [
+                                                                {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                },
+                                                                "Mut"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "RawPtr": [
+                                                            {
+                                                                "kind": {
+                                                                    "Projection": [
+                                                                        {
+                                                                            "kind": {
+                                                                                "Local": 3
+                                                                            },
+                                                                            "ty": {
+                                                                                "Ref": [
+                                                                                    "Erased",
+                                                                                    {
+                                                                                        "Literal": {
+                                                                                            "Int": "I32"
+                                                                                        }
+                                                                                    },
+                                                                                    "Mut"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "Deref"
+                                                                    ]
+                                                                },
+                                                                "ty": {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "Mut"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 3,
+                                                        "col": 30
+                                                    },
+                                                    "end": {
+                                                        "line": 3,
+                                                        "col": 31
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageDead": 3
                                             },
                                             "comments_before": []
                                         },

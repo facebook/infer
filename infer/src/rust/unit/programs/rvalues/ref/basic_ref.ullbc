@@ -1,7 +1,7 @@
 {
     "charon_version": "0.1.123",
     "translated": {
-        "crate_name": "raw_ptr0",
+        "crate_name": "basic_ref",
         "options": {
             "ullbc": true,
             "lib": false,
@@ -55,7 +55,7 @@
                 "value": [
                     {
                         "Ident": [
-                            "raw_ptr0",
+                            "basic_ref",
                             0
                         ]
                     },
@@ -86,10 +86,10 @@
         "files": [
             {
                 "name": {
-                    "Local": "./raw_ptr/raw_ptr0.rs"
+                    "Local": "./unit/programs/rvalues/ref/basic_ref.rs"
                 },
-                "crate_name": "raw_ptr0",
-                "contents": "fn main() {\n    let y = 10;\n    let x = &y as *const i32;\n}\n"
+                "crate_name": "basic_ref",
+                "contents": "fn main() {\n    let y = 10;\n    let x = &y;\n}"
             }
         ],
         "type_decls": [],
@@ -100,7 +100,7 @@
                     "name": [
                         {
                             "Ident": [
-                                "raw_ptr0",
+                                "basic_ref",
                                 0
                             ]
                         },
@@ -125,7 +125,7 @@
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn main() {\n    let y = 10;\n    let x = &y as *const i32;\n}",
+                    "source_text": "fn main() {\n    let y = 10;\n    let x = &y;\n}",
                     "attr_info": {
                         "attributes": [],
                         "inline": null,
@@ -209,20 +209,6 @@
                                     {
                                         "index": 2,
                                         "name": "x",
-                                        "ty": {
-                                            "RawPtr": [
-                                                {
-                                                    "Literal": {
-                                                        "Int": "I32"
-                                                    }
-                                                },
-                                                "Shared"
-                                            ]
-                                        }
-                                    },
-                                    {
-                                        "index": 3,
-                                        "name": null,
                                         "ty": {
                                             "Ref": [
                                                 "Erased",
@@ -349,30 +335,10 @@
                                                 "generated_from_span": null
                                             },
                                             "content": {
-                                                "StorageLive": 3
-                                            },
-                                            "comments_before": []
-                                        },
-                                        {
-                                            "span": {
-                                                "span": {
-                                                    "file_id": 0,
-                                                    "beg": {
-                                                        "line": 3,
-                                                        "col": 12
-                                                    },
-                                                    "end": {
-                                                        "line": 3,
-                                                        "col": 14
-                                                    }
-                                                },
-                                                "generated_from_span": null
-                                            },
-                                            "content": {
                                                 "Assign": [
                                                     {
                                                         "kind": {
-                                                            "Local": 3
+                                                            "Local": 2
                                                         },
                                                         "ty": {
                                                             "Ref": [
@@ -402,95 +368,6 @@
                                                         ]
                                                     }
                                                 ]
-                                            },
-                                            "comments_before": []
-                                        },
-                                        {
-                                            "span": {
-                                                "span": {
-                                                    "file_id": 0,
-                                                    "beg": {
-                                                        "line": 3,
-                                                        "col": 12
-                                                    },
-                                                    "end": {
-                                                        "line": 3,
-                                                        "col": 14
-                                                    }
-                                                },
-                                                "generated_from_span": null
-                                            },
-                                            "content": {
-                                                "Assign": [
-                                                    {
-                                                        "kind": {
-                                                            "Local": 2
-                                                        },
-                                                        "ty": {
-                                                            "RawPtr": [
-                                                                {
-                                                                    "Literal": {
-                                                                        "Int": "I32"
-                                                                    }
-                                                                },
-                                                                "Shared"
-                                                            ]
-                                                        }
-                                                    },
-                                                    {
-                                                        "RawPtr": [
-                                                            {
-                                                                "kind": {
-                                                                    "Projection": [
-                                                                        {
-                                                                            "kind": {
-                                                                                "Local": 3
-                                                                            },
-                                                                            "ty": {
-                                                                                "Ref": [
-                                                                                    "Erased",
-                                                                                    {
-                                                                                        "Literal": {
-                                                                                            "Int": "I32"
-                                                                                        }
-                                                                                    },
-                                                                                    "Shared"
-                                                                                ]
-                                                                            }
-                                                                        },
-                                                                        "Deref"
-                                                                    ]
-                                                                },
-                                                                "ty": {
-                                                                    "Literal": {
-                                                                        "Int": "I32"
-                                                                    }
-                                                                }
-                                                            },
-                                                            "Shared"
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            "comments_before": []
-                                        },
-                                        {
-                                            "span": {
-                                                "span": {
-                                                    "file_id": 0,
-                                                    "beg": {
-                                                        "line": 3,
-                                                        "col": 28
-                                                    },
-                                                    "end": {
-                                                        "line": 3,
-                                                        "col": 29
-                                                    }
-                                                },
-                                                "generated_from_span": null
-                                            },
-                                            "content": {
-                                                "StorageDead": 3
                                             },
                                             "comments_before": []
                                         },

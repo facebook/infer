@@ -1,7 +1,7 @@
 {
     "charon_version": "0.1.123",
     "translated": {
-        "crate_name": "mut_raw_ptr0",
+        "crate_name": "basic_raw_ptr",
         "options": {
             "ullbc": true,
             "lib": false,
@@ -55,7 +55,7 @@
                 "value": [
                     {
                         "Ident": [
-                            "mut_raw_ptr0",
+                            "basic_raw_ptr",
                             0
                         ]
                     },
@@ -86,10 +86,10 @@
         "files": [
             {
                 "name": {
-                    "Local": "./unit/programs/rvalues/mut_raw_ptr/mut_raw_ptr0.rs"
+                    "Local": "./unit/programs/rvalues/raw_ptr/basic_raw_ptr.rs"
                 },
-                "crate_name": "mut_raw_ptr0",
-                "contents": "fn main() {\n    let mut y = 10;\n    let x = &mut y as *mut i32;\n}"
+                "crate_name": "basic_raw_ptr",
+                "contents": "fn main() {\n    let y = 10;\n    let x = &y as *const i32;\n}"
             }
         ],
         "type_decls": [],
@@ -100,7 +100,7 @@
                     "name": [
                         {
                             "Ident": [
-                                "mut_raw_ptr0",
+                                "basic_raw_ptr",
                                 0
                             ]
                         },
@@ -125,7 +125,7 @@
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn main() {\n    let mut y = 10;\n    let x = &mut y as *mut i32;\n}",
+                    "source_text": "fn main() {\n    let y = 10;\n    let x = &y as *const i32;\n}",
                     "attr_info": {
                         "attributes": [],
                         "inline": null,
@@ -216,7 +216,7 @@
                                                         "Int": "I32"
                                                     }
                                                 },
-                                                "Mut"
+                                                "Shared"
                                             ]
                                         }
                                     },
@@ -231,7 +231,7 @@
                                                         "Int": "I32"
                                                     }
                                                 },
-                                                "Mut"
+                                                "Shared"
                                             ]
                                         }
                                     }
@@ -251,7 +251,7 @@
                                                     },
                                                     "end": {
                                                         "line": 2,
-                                                        "col": 13
+                                                        "col": 9
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -267,11 +267,11 @@
                                                     "file_id": 0,
                                                     "beg": {
                                                         "line": 2,
-                                                        "col": 16
+                                                        "col": 12
                                                     },
                                                     "end": {
                                                         "line": 2,
-                                                        "col": 18
+                                                        "col": 14
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -343,7 +343,7 @@
                                                     },
                                                     "end": {
                                                         "line": 3,
-                                                        "col": 18
+                                                        "col": 14
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -363,7 +363,7 @@
                                                     },
                                                     "end": {
                                                         "line": 3,
-                                                        "col": 18
+                                                        "col": 14
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -382,7 +382,7 @@
                                                                         "Int": "I32"
                                                                     }
                                                                 },
-                                                                "Mut"
+                                                                "Shared"
                                                             ]
                                                         }
                                                     },
@@ -398,7 +398,7 @@
                                                                     }
                                                                 }
                                                             },
-                                                            "Mut"
+                                                            "Shared"
                                                         ]
                                                     }
                                                 ]
@@ -415,7 +415,7 @@
                                                     },
                                                     "end": {
                                                         "line": 3,
-                                                        "col": 18
+                                                        "col": 14
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -433,7 +433,7 @@
                                                                         "Int": "I32"
                                                                     }
                                                                 },
-                                                                "Mut"
+                                                                "Shared"
                                                             ]
                                                         }
                                                     },
@@ -454,7 +454,7 @@
                                                                                             "Int": "I32"
                                                                                         }
                                                                                     },
-                                                                                    "Mut"
+                                                                                    "Shared"
                                                                                 ]
                                                                             }
                                                                         },
@@ -467,7 +467,7 @@
                                                                     }
                                                                 }
                                                             },
-                                                            "Mut"
+                                                            "Shared"
                                                         ]
                                                     }
                                                 ]
@@ -480,11 +480,11 @@
                                                     "file_id": 0,
                                                     "beg": {
                                                         "line": 3,
-                                                        "col": 30
+                                                        "col": 28
                                                     },
                                                     "end": {
                                                         "line": 3,
-                                                        "col": 31
+                                                        "col": 29
                                                     }
                                                 },
                                                 "generated_from_span": null
