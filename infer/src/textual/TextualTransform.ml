@@ -267,51 +267,56 @@ module FixHackInvokeClosure = struct
         (type_name, {QualifiedProcName.enclosing_class= Enclosing type_name; name})
 
 
-  let transform_invoke hashtbl (pdesc : ProcDesc.t) =
-    let qualified_procname = pdesc.procdecl.qualified_name in
-    let is_async = List.exists ~f:Attr.is_async pdesc.procdecl.attributes in
-    if QualifiedProcName.is_hack_closure_generated_invoke qualified_procname then
-      match (pdesc.nodes, qualified_procname.enclosing_class) with
-      | [node], Enclosing class_name -> (
-          let rev_instrs = List.rev node.instrs in
-          let rev_instrs, last_await_call_option =
-            if is_async && not (List.is_empty rev_instrs) then
-              (List.tl_exn rev_instrs, List.hd rev_instrs)
-            else (rev_instrs, None)
-          in
-          match rev_instrs with
-          | Instr.Let
-              { id= Some ret_id
+  let this_varname : VarName.t = VarName.of_string "$this"
+
+  let transform_instrs hashtbl class_name instrs =
+    let rec aux acc = function
+      | Instr.Let
+          { id= Some ret_id
+          ; exp=
+              Call
+                { proc= {enclosing_class= Enclosing class_name_call; name} as to_be_fixed_proc
+                ; args
+                ; kind= NonVirtual }
+          ; loc= loc1 }
+        :: Instr.Load {id= cls_id; exp= Lvar varname; loc= loc2}
+        :: rev_instrs
+        when TypeName.equal class_name_call class_name && VarName.equal varname this_varname ->
+          let fixed_typed_name, fixed_proc = fix_proc_name class_name_call name in
+          let fixed_call_exp = Exp.Call {proc= fixed_proc; args; kind= NonVirtual} in
+          let fixed_call_instr = Instr.Let {id= Some ret_id; exp= fixed_call_exp; loc= loc1} in
+          let fixed_lazy_init_instr =
+            Instr.Let
+              { id= Some cls_id
               ; exp=
                   Call
-                    { proc= {enclosing_class= Enclosing class_name_call; name} as to_be_fixed_proc
-                    ; args
+                    { proc= ProcDecl.lazy_class_initialize_builtin
+                    ; args= [Exp.Typ (Typ.Struct fixed_typed_name)]
                     ; kind= NonVirtual }
-              ; loc= loc1 }
-            :: Instr.Load {id= cls_id; exp= Lvar _ (* &$this *); loc= loc2}
-            :: rev_instrs
-            when TypeName.equal class_name_call class_name ->
-              let fixed_typed_name, fixed_proc = fix_proc_name class_name_call name in
-              let fixed_call_exp = Exp.Call {proc= fixed_proc; args; kind= NonVirtual} in
-              let fixed_call_instr = Instr.Let {id= Some ret_id; exp= fixed_call_exp; loc= loc1} in
-              let fixed_lazy_init_instr =
-                Instr.Let
-                  { id= Some cls_id
-                  ; exp=
-                      Call
-                        { proc= ProcDecl.lazy_class_initialize_builtin
-                        ; args= [Exp.Typ (Typ.Struct fixed_typed_name)]
-                        ; kind= NonVirtual }
-                  ; loc= loc2 }
-              in
-              let rev_instrs = fixed_call_instr :: fixed_lazy_init_instr :: rev_instrs in
-              let rev_instrs = IList.opt_cons last_await_call_option rev_instrs in
-              let instrs = List.rev rev_instrs in
-              QualifiedProcName.Hashtbl.replace hashtbl to_be_fixed_proc fixed_proc ;
-              {pdesc with nodes= [{node with instrs}]}
-          | _ ->
-              pdesc )
-      | _, _ ->
+              ; loc= loc2 }
+          in
+          QualifiedProcName.Hashtbl.replace hashtbl to_be_fixed_proc fixed_proc ;
+          aux (fixed_lazy_init_instr :: fixed_call_instr :: acc) rev_instrs
+      | instr :: rev_instrs ->
+          aux (instr :: acc) rev_instrs
+      | [] ->
+          acc
+    in
+    let rev_instrs = List.rev instrs in
+    aux [] rev_instrs
+
+
+  let transform_invoke hashtbl (pdesc : ProcDesc.t) =
+    let qualified_procname = pdesc.procdecl.qualified_name in
+    if QualifiedProcName.is_hack_closure_generated_invoke qualified_procname then
+      match qualified_procname.enclosing_class with
+      | Enclosing class_name ->
+          let nodes =
+            List.map pdesc.nodes ~f:(fun (node : Node.t) ->
+                {node with instrs= transform_instrs hashtbl class_name node.instrs} )
+          in
+          {pdesc with nodes}
+      | _ ->
           pdesc
     else pdesc
 
