@@ -53,6 +53,19 @@ let module_map_procs ~f (module_ : Module.t) =
   {module_ with decls}
 
 
+let module_map_procdecl ~f (module_ : Module.t) =
+  let open Module in
+  let decls =
+    List.map module_.decls ~f:(fun decl ->
+        match decl with
+        | Procdecl pdecl ->
+            Procdecl (f pdecl)
+        | Global _ | Struct _ | Proc _ ->
+            decl )
+  in
+  {module_ with decls}
+
+
 let module_fold_procs ~init ~f (module_ : Module.t) =
   let open Module in
   let decls, acc =
@@ -254,7 +267,7 @@ module FixHackInvokeClosure = struct
         (type_name, {QualifiedProcName.enclosing_class= Enclosing type_name; name})
 
 
-  let transform_invoke (pdesc : ProcDesc.t) =
+  let transform_invoke hashtbl (pdesc : ProcDesc.t) =
     let qualified_procname = pdesc.procdecl.qualified_name in
     let is_async = List.exists ~f:Attr.is_async pdesc.procdecl.attributes in
     if QualifiedProcName.is_hack_closure_generated_invoke qualified_procname then
@@ -271,7 +284,7 @@ module FixHackInvokeClosure = struct
               { id= Some ret_id
               ; exp=
                   Call
-                    { proc= {enclosing_class= Enclosing class_name_call; name}
+                    { proc= {enclosing_class= Enclosing class_name_call; name} as to_be_fixed_proc
                     ; args
                     ; kind= NonVirtual }
               ; loc= loc1 }
@@ -294,6 +307,7 @@ module FixHackInvokeClosure = struct
               let rev_instrs = fixed_call_instr :: fixed_lazy_init_instr :: rev_instrs in
               let rev_instrs = IList.opt_cons last_await_call_option rev_instrs in
               let instrs = List.rev rev_instrs in
+              QualifiedProcName.Hashtbl.replace hashtbl to_be_fixed_proc fixed_proc ;
               {pdesc with nodes= [{node with instrs}]}
           | _ ->
               pdesc )
@@ -302,7 +316,16 @@ module FixHackInvokeClosure = struct
     else pdesc
 
 
-  let transform module_ = module_map_procs module_ ~f:transform_invoke
+  let fix_decls hashtbl module_ =
+    module_map_procdecl module_ ~f:(fun ({qualified_name} as pdecl) ->
+        QualifiedProcName.Hashtbl.find_opt hashtbl qualified_name
+        |> Option.value_map ~default:pdecl ~f:(fun qualified_name -> {pdecl with qualified_name}) )
+
+
+  let transform module_ =
+    let hashtbl = QualifiedProcName.Hashtbl.create 16 in
+    let module_ = module_map_procs module_ ~f:(transform_invoke hashtbl) in
+    if QualifiedProcName.Hashtbl.length hashtbl > 0 then fix_decls hashtbl module_ else module_
 end
 
 module Subst = struct

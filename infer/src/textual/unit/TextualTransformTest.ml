@@ -1071,7 +1071,7 @@ declare Closure$Closures::ClosuresAndDict2_with_self::init.get_unsafe(...): *Hac
 
     } @[21:1]
 
-    declare Closure$Closures::ClosuresAndDict2_with_self::init.get_unsafe(...) : *HackMixed
+    declare Closures::ClosuresAndDict2_with_self$static.get_unsafe(...) : *HackMixed
     |}]
 
 
@@ -1130,5 +1130,5 @@ declare Closure$Closures::ClosuresAndDict2_with_self_async::init.get_unsafe(...)
 
     } @[22:1]
 
-    declare Closure$Closures::ClosuresAndDict2_with_self_async::init.get_unsafe(...) : *HackMixed
+    declare Closures::ClosuresAndDict2_with_self_async$static.get_unsafe(...) : *HackMixed
     |}]
