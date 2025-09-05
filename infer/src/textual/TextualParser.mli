@@ -29,6 +29,8 @@ module TextualFile : sig
 
   type sil = {sourcefile: Textual.SourceFile.t; cfg: Cfg.t; tenv: Tenv.t}
 
+  val source_path : t -> string
+
   val parse :
     t -> (Textual.SourceFile.t * Textual.Module.t, Textual.SourceFile.t * error list) result
 
