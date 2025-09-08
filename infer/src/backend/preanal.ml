@@ -530,7 +530,7 @@ end
 (** pre-analysis to remove nodes unreachable from start node *)
 module RemoveDeadNodes = struct
   let process proc_desc =
-    let visited = Procdesc.NodeHashSet.create 11 in
+    let visited = Procdesc.NodeHashSet.create 16 in
     let queue = Queue.create ~capacity:(Procdesc.size proc_desc) () in
     let visit n = Procdesc.NodeHashSet.add n visited in
     let enqueue n = Queue.enqueue queue n in

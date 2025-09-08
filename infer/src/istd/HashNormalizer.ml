@@ -31,7 +31,7 @@ module Make (T : NormalizedT) = struct
 
   let hash_normalize =
     let module H = Stdlib.Hashtbl.Make (T) in
-    let table : t H.t = H.create 11 in
+    let table : t H.t = H.create 16 in
     let () = register_reset (fun () -> H.reset table) in
     fun t ->
       match H.find_opt table t with

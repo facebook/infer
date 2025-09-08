@@ -95,7 +95,7 @@ let get_stamp i = i.stamp
 module NameGenerator = struct
   type t = int NameHash.t
 
-  let create () : t = NameHash.create 17
+  let create () : t = NameHash.create 32
 
   (** Map from names to stamps. *)
   let name_map = DLS.new_key create

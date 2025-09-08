@@ -33,7 +33,7 @@ module GenericUnsafeHashtbl (H : Stdlib.Hashtbl.S) = struct
     ; bindings: unit -> (H.key * 'a) list }
 
   let create ?mk_error_msg () =
-    let hashtbl = H.create 17 in
+    let hashtbl = H.create 32 in
     let mk_error_msg =
       Option.value mk_error_msg ~default:(fun _ident -> "key not found in anonymous dictionnary")
     in
@@ -206,7 +206,7 @@ module Modules = struct
     ; get_cfg: QualName.t -> CFG.t }
 
   let mk units =
-    let bodies = Ident.Hashtbl.create 17 in
+    let bodies = Ident.Hashtbl.create 32 in
     let cfgs =
       List.fold units ~init:QualName.Map.empty ~f:(fun cfgs {Module.name; toplevel; functions} ->
           Ident.Hashtbl.replace bodies name (NotImportedYet toplevel) ;

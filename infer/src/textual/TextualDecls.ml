@@ -36,10 +36,10 @@ type t =
   ; lang: Lang.t }
 
 let init sourcefile lang =
-  { globals= VarName.Hashtbl.create 17
-  ; procs= ProcSig.Hashtbl.create 17
-  ; variadic_procs= QualifiedProcName.Hashtbl.create 17
-  ; structs= TypeName.Hashtbl.create 17
+  { globals= VarName.Hashtbl.create 32
+  ; procs= ProcSig.Hashtbl.create 32
+  ; variadic_procs= QualifiedProcName.Hashtbl.create 32
+  ; structs= TypeName.Hashtbl.create 32
   ; sourcefile
   ; lang }
 
@@ -326,7 +326,7 @@ let rec get_typ_name (typ : Typ.t) =
 
 
 let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
-  let referenced = TypeName.HashSet.create 17 in
+  let referenced = TypeName.HashSet.create 32 in
   let add_to_referenced name = TypeName.HashSet.add name referenced in
   (* Helpers *)
   let rec from_exp (exp : Exp.t) =
@@ -408,7 +408,7 @@ let get_procdesc_referenced_types (pdesc : ProcDesc.t) =
 
 let get_undefined_types decls =
   let referenced_tnames, defined_tnames =
-    (TypeName.HashSet.create 17, TypeName.HashSet.create 17)
+    (TypeName.HashSet.create 32, TypeName.HashSet.create 32)
   in
   (* Helpers *)
   let register_tname tname set = TypeName.HashSet.add tname set in

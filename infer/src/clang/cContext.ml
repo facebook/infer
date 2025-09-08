@@ -58,7 +58,7 @@ let create_context translation_unit_context tenv cfg procdesc immediate_curr_cla
   ; return_param_typ
   ; outer_context
   ; blocks_static_vars= Procname.Map.empty
-  ; label_map= Hashtbl.create 17
+  ; label_map= Hashtbl.create 32
   ; vars_to_destroy= StmtMap.empty
   ; temporary_names= Hashtbl.create 0
   ; temporaries_constructor_markers= Pvar.Map.empty }

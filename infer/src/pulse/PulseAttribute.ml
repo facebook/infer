@@ -727,7 +727,7 @@ module Attribute = struct
   let filter_unreachable subst f_keep attr =
     let filter_aux things ~get_addr ~set_addr =
       let module Hashtbl = Stdlib.Hashtbl in
-      let to_keep = Hashtbl.create 17 in
+      let to_keep = Hashtbl.create 32 in
       let filter_thing thing =
         let addr = get_addr thing in
         if f_keep addr then Hashtbl.replace to_keep thing ()

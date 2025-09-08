@@ -257,7 +257,7 @@ let maybe_make_hashtable_api ~loc td =
 
           let hash = [%e hash_name_expr]
         end) in
-        let table : [%t ct] H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+        let table : [%t ct] H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
         let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
         ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)]
     in

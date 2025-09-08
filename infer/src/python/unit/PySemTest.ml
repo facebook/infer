@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 module StringHashtble = Stdlib.Hashtbl.Make (String)
 
-let newbindings () = StringHashtble.create 17
+let newbindings () = StringHashtble.create 32
 
 (* following monty paper, we hardwire clas instead of having a __class__ attribute in the dictionary - correct?
    note that it's spelled clas because typing the other word makes vscode ocaml crash :-( *)

@@ -110,7 +110,7 @@ end
 type t = ErrDataSet.t ErrLogHash.t
 
 (** Empty error log *)
-let empty () = ErrLogHash.create 13
+let empty () = ErrLogHash.create 16
 
 (** type of the function to be passed to iter *)
 type iter_fun = err_key -> err_data -> unit

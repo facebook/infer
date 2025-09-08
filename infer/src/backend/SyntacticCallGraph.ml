@@ -48,7 +48,7 @@ let hashcons_and_update_pname pname_info pname callees =
 
 (* load and hashcons all captured procs and their callees ; return also number of defined procs *)
 let pname_info_from_captured_procs () =
-  let pname_info = Procname.Hash.create 1009 in
+  let pname_info = Procname.Hash.create 1024 in
   let n_captured = ref 0 in
   iter_captured_procs_and_callees (fun pname callees ->
       incr n_captured ;

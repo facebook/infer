@@ -29,7 +29,7 @@ include struct
 
       let _ = hash
     end) in
-    let table : record H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+    let table : record H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
     let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
     ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -93,7 +93,7 @@ include struct
 
       let _ = hash
     end) in
-    let table : tuple H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+    let table : tuple H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
     let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
     ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -163,7 +163,7 @@ include struct
 
       let _ = hash
     end) in
-    let table : variant H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+    let table : variant H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
     let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
     ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -254,7 +254,7 @@ module SourceFile = struct
 
         let _ = hash
       end) in
-      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
       let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
       ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -345,7 +345,7 @@ module Location = struct
 
         let _ = hash
       end) in
-      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
       let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
       ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -412,7 +412,7 @@ module CSharpClassName = struct
 
         let _ = hash
       end) in
-      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
       let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
       ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -479,7 +479,7 @@ module JavaClassName = struct
 
         let _ = hash
       end) in
-      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+      let table : t H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
       let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
       ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -548,7 +548,7 @@ include struct
 
       let _ = hash
     end) in
-    let table : recursive1 H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+    let table : recursive1 H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
     let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
     ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 
@@ -569,7 +569,7 @@ include struct
 
       let _ = hash
     end) in
-    let table : recursive2 H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 11) in
+    let table : recursive2 H.t Domain.DLS.key = Domain.DLS.new_key (fun () -> H.create 16) in
     let () = HashNormalizer.register_reset (fun () -> H.reset @@ Domain.DLS.get table) in
     ((fun t -> H.find_opt (Domain.DLS.get table) t), fun t -> H.add (Domain.DLS.get table) t t)
 

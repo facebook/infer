@@ -59,7 +59,7 @@ module NodesHtml : sig
 
   val finish_session : Procdesc.Node.t -> unit
 end = struct
-  let log_files = DLS.new_key (fun () -> Hashtbl.create 11)
+  let log_files = DLS.new_key (fun () -> Hashtbl.create 32)
 
   let pp_node_link_seq fmt node = pp_node_link_seq [".."] ~description:false fmt node
 
@@ -178,7 +178,7 @@ end = struct
 
   (** Create a hash table mapping line numbers to the set of errors occurring on that line *)
   let create_table_err_per_line err_log =
-    let err_per_line = Hashtbl.create 17 in
+    let err_per_line = Hashtbl.create 32 in
     let add_err (key : Errlog.err_key) (err_data : Errlog.err_data) =
       let err_str =
         F.asprintf "%s %a" key.issue_type.unique_id Localise.pp_error_desc key.err_desc
@@ -221,7 +221,7 @@ end = struct
     F.fprintf fmt "<center><h1>File %a </h1></center>@\n<table class=\"code\">@\n" SourceFile.pp
       filename ;
     let global_err_log = Errlog.empty () in
-    let table_nodes_at_linenum = Hashtbl.create 11 in
+    let table_nodes_at_linenum = Hashtbl.create 16 in
     List.iter ~f:(process_proc table_nodes_at_linenum global_err_log) procs ;
     let table_err_per_line = create_table_err_per_line global_err_log in
     let print_one_line line_number line_raw =

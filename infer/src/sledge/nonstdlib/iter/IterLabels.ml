@@ -1245,7 +1245,7 @@ let[@inline] hashtbl_add h seq = seq (fun (k, v) -> Hashtbl.add h k v)
 let hashtbl_replace h seq = seq (fun (k, v) -> Hashtbl.replace h k v)
 
 let to_hashtbl seq =
-  let h = Hashtbl.create 3 in
+  let h = Hashtbl.create 16 in
   hashtbl_replace h seq ;
   h
 

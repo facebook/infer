@@ -53,7 +53,7 @@ let run_capture buck2_build_cmd =
     buck2_build_cmd ;
   let infer_deps_lines =
     Buck.wrap_buck_call ~label:"build" ("buck2" :: buck2_build_cmd)
-    |> List.fold ~init:[] ~f:(traverse ~root:Config.buck2_root (Visited.create 11))
+    |> List.fold ~init:[] ~f:(traverse ~root:Config.buck2_root (Visited.create 16))
     |> List.dedup_and_sort ~compare:String.compare
   in
   let infer_deps = ResultsDir.get_path CaptureDependencies in

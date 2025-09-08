@@ -20,8 +20,8 @@ module Loader = struct
   let get_indexes () =
     let counter = ref 0 in
     let empties = ref 0 in
-    let proc_index = Procname.Hash.create 11 in
-    let source_index = SourceFile.Hash.create 11 in
+    let proc_index = Procname.Hash.create 16 in
+    let source_index = SourceFile.Hash.create 16 in
     let db = Database.get_database CaptureDatabase in
     let stmt = Sqlite3.prepare db "SELECT source_file, procedure_names FROM source_files" in
     SqliteUtils.result_fold_rows db ~log:"loading procname to source index" stmt ~init:()
@@ -42,7 +42,7 @@ module Loader = struct
 
   (** build a hashtable from a procedure to all (static) callees *)
   let get_call_map () =
-    let call_map = Procname.Hash.create 11 in
+    let call_map = Procname.Hash.create 16 in
     let f procname callees = Procname.Hash.replace call_map procname callees in
     SyntacticCallGraph.iter_captured_procs_and_callees f ;
     call_map
@@ -92,7 +92,7 @@ module G = struct
     in
     let process_source_file source procedures =
       add_vertex g source ;
-      let source_counts = SourceFile.Hash.create 11 in
+      let source_counts = SourceFile.Hash.create 16 in
       unique_callees_of_file procedures
       |> Procname.Set.iter (process_callee_of_file source_counts source) ;
       SourceFile.Hash.iter (create_callee_edges source) source_counts
@@ -106,7 +106,7 @@ module G = struct
 
   let vertex_name =
     (* hashtable from source files to strings of the form "N%d". Used for dot conversion only. *)
-    let cache = Cache.create 11 in
+    let cache = Cache.create 16 in
     fun v ->
       match Cache.find_opt cache v with
       | Some name ->
