@@ -492,11 +492,11 @@ module ProcDeclBridge = struct
         in
         match t.qualified_name.enclosing_class with
         | TopLevel ->
-            SilProcname.Swift (SilProcname.Swift.mk_function mangled)
+            SilProcname.Swift (SwiftProcname.mk_function mangled)
             |> SilStruct.mk_tenv_method ?llvm_offset
         | Enclosing class_name ->
             let class_name = TypeNameBridge.to_sil lang class_name in
-            SilProcname.Swift (SilProcname.Swift.mk_class_method class_name mangled)
+            SilProcname.Swift (SwiftProcname.mk_class_method class_name mangled)
             |> SilStruct.mk_tenv_method ?llvm_offset )
 
 

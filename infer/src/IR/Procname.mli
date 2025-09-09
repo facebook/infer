@@ -10,9 +10,6 @@ module F = Format
 
 (** Module for Procedure Names. *)
 
-(** Level of verbosity of some to_string functions. *)
-type detail_level = FullNameOnly | NameOnly | Non_verbose | Simple | Verbose
-
 (** Type of csharp procedure names. *)
 module CSharp : sig
   type kind =
@@ -188,17 +185,6 @@ module Hack : sig
   val belongs_to_static_companion : t -> bool
 end
 
-module Swift : sig
-  type t =
-    | ClassMethod of {class_name: Typ.Name.t; method_name: Mangled.t}
-    | Function of {function_name: Mangled.t}
-  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
-
-  val mk_function : Mangled.t -> t
-
-  val mk_class_method : Typ.Name.t -> Mangled.t -> t
-end
-
 (** Type of procedure names. *)
 type t =
   | Block of Block.t
@@ -209,7 +195,7 @@ type t =
   | Java of Java.t
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of PythonProcname.t
-  | Swift of Swift.t
+  | Swift of SwiftProcname.t
 [@@deriving compare, yojson_of, sexp, hash, normalize]
 
 val compare_name : t -> t -> int
@@ -391,7 +377,7 @@ val pp : Format.formatter -> t -> unit
 val pp_verbose : Format.formatter -> t -> unit
 (** Pretty print a proc name for the user to see with verbosity parameter. *)
 
-val to_string : ?verbosity:detail_level -> t -> string
+val to_string : ?verbosity:PpDetailLevel.t -> t -> string
 (** Convert a proc name into a string for the user to see. *)
 
 val to_string_verbose : t -> string

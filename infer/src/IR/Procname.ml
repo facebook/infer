@@ -9,10 +9,7 @@ open! IStd
 module Hashtbl = Stdlib.Hashtbl
 module F = Format
 module L = Logging
-
-type detail_level = FullNameOnly | NameOnly | Non_verbose | Simple | Verbose
-
-let is_verbose v = match v with Verbose -> true | _ -> false
+include PpDetailLevel
 
 let remove_templates name =
   match String.lsplit2 ~on:'<' name with
@@ -593,44 +590,6 @@ module Hack = struct
         false
 end
 
-module Swift = struct
-  type t =
-    | ClassMethod of {class_name: Typ.Name.t; method_name: Mangled.t}
-    | Function of {function_name: Mangled.t}
-  [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
-
-  let mk_function mangled = Function {function_name= mangled}
-
-  let mk_class_method class_name mangled = ClassMethod {class_name; method_name= mangled}
-
-  let get_function_name osig =
-    match osig with
-    | ClassMethod {method_name} ->
-        method_name
-    | Function {function_name} ->
-        function_name
-
-
-  let pp verbosity fmt osig =
-    let sep = "." in
-    match osig with
-    | ClassMethod osig -> (
-      match verbosity with
-      | Simple ->
-          F.pp_print_string fmt (Mangled.to_string osig.method_name)
-      | Non_verbose | NameOnly | FullNameOnly ->
-          F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep
-            (Mangled.to_string osig.method_name)
-      | Verbose ->
-          F.fprintf fmt "%s%s%a" (Typ.Name.name osig.class_name) sep Mangled.pp osig.method_name )
-    | Function osig -> (
-      match verbosity with
-      | Simple | Non_verbose | NameOnly | FullNameOnly ->
-          F.pp_print_string fmt (Mangled.to_string osig.function_name)
-      | Verbose ->
-          F.pp_print_string fmt (Mangled.to_string_full osig.function_name) )
-end
-
 (** Type of procedure names. *)
 type t =
   | Block of Block.t
@@ -641,7 +600,7 @@ type t =
   | Java of Java.t
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of PythonProcname.t
-  | Swift of Swift.t
+  | Swift of SwiftProcname.t
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let is_c = function C _ -> true | _ -> false
@@ -722,7 +681,7 @@ let compare_name x y =
   | Python name1, Python name2 ->
       PythonProcname.compare name1 name2
   | Swift name1, Swift name2 ->
-      Swift.compare name1 name2
+      SwiftProcname.compare name1 name2
   | Swift _, _ ->
       -1
   | _, Swift _ ->
@@ -915,7 +874,7 @@ let get_method = function
   | Python name ->
       PythonProcname.get_method name
   | Swift osig ->
-      Swift.get_function_name osig |> Mangled.to_string
+      SwiftProcname.get_function_name osig |> Mangled.to_string
 
 
 (** Return whether the procname is a block procname. *)
@@ -1089,7 +1048,7 @@ let pp_unique_id fmt = function
   | Python h ->
       PythonProcname.pp fmt h
   | Swift osig ->
-      Swift.pp Verbose fmt osig
+      SwiftProcname.pp Verbose fmt osig
 
 
 let to_unique_id proc_name = F.asprintf "%a" pp_unique_id proc_name
@@ -1113,7 +1072,7 @@ let pp_with_verbosity verbosity fmt = function
   | Python h ->
       PythonProcname.pp fmt h
   | Swift osig ->
-      Swift.pp verbosity fmt osig
+      SwiftProcname.pp verbosity fmt osig
 
 
 let pp = pp_with_verbosity Non_verbose
@@ -1154,7 +1113,7 @@ let pp_fullname_only fmt = function
   | Python h ->
       PythonProcname.pp fmt h
   | Swift osig ->
-      Swift.pp FullNameOnly fmt osig
+      SwiftProcname.pp FullNameOnly fmt osig
 
 
 let pp_name_only fmt = function
@@ -1175,7 +1134,7 @@ let pp_name_only fmt = function
   | Python h ->
       PythonProcname.pp fmt h
   | Swift osig ->
-      Swift.pp NameOnly fmt osig
+      SwiftProcname.pp NameOnly fmt osig
 
 
 let patterns_match patterns proc_name =
@@ -1202,7 +1161,7 @@ let pp_simplified_string ?(withclass = false) fmt = function
   | Python h ->
       PythonProcname.pp fmt h
   | Swift osig ->
-      Swift.pp Simple fmt osig
+      SwiftProcname.pp Simple fmt osig
 
 
 let to_simplified_string ?withclass proc_name =
