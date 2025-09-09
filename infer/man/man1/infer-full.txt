@@ -2572,7 +2572,13 @@ INTERNAL OPTIONS
 
        --compaction-if-heap-greater-equal-to-GB-multicore int
            Multicore analysis will trigger compaction if the total heap size
-           is equal or great to this value in Gigabytes. Defaults to 40
+           is equal or great to this value in Gigabytes. Defaults to the
+           amount of available memory on startup, or 40Gb if that can not be
+           determined.
+
+       --compaction-if-heap-greater-equal-to-GB-multicore-reset
+           Cancel the effect of
+           --compaction-if-heap-greater-equal-to-GB-multicore.
 
        --compilation-database-escaped-reset
            Set --compilation-database-escaped to the empty list.

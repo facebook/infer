@@ -1139,9 +1139,10 @@ and compaction_if_heap_greater_equal_to_GB =
 
 
 and compaction_if_heap_greater_equal_to_GB_multicore =
-  CLOpt.mk_int ~long:"compaction-if-heap-greater-equal-to-GB-multicore" ~default:40 ~meta:"int"
+  CLOpt.mk_int_opt ~long:"compaction-if-heap-greater-equal-to-GB-multicore"
     "Multicore analysis will trigger compaction if the total heap size is equal or great to this \
-     value in Gigabytes. Defaults to 40"
+     value in Gigabytes. Defaults to the amount of available memory on startup, or 40Gb if that \
+     can not be determined."
 
 
 and compilation_database =
@@ -3995,7 +3996,8 @@ and classpath = !classpath
 and compaction_if_heap_greater_equal_to_GB = !compaction_if_heap_greater_equal_to_GB
 
 and compaction_if_heap_greater_equal_to_GB_multicore =
-  !compaction_if_heap_greater_equal_to_GB_multicore
+  Option.value_or_thunk !compaction_if_heap_greater_equal_to_GB_multicore ~default:(fun () ->
+      match Utils.get_available_memory_MB () with None -> 40 | Some mem_Mb -> mem_Mb / 1024 )
 
 
 and complete_capture_from = !complete_capture_from
