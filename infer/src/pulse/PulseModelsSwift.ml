@@ -9,6 +9,7 @@ open! IStd
 open PulseBasicInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module DSL = PulseModelsDSL
 
 let alloc size : model_no_non_disj =
  fun model_data astate ->
@@ -16,6 +17,17 @@ let alloc size : model_no_non_disj =
     Basic.alloc_not_null ~initialize:false ~desc:"alloc" SwiftAlloc (Some size) model_data astate
   in
   astate
+
+
+let unknown () : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* res = fresh () in
+  assign_ret res
+
+
+let builtins_matcher builtin _args : unit -> unit PulseModelsDSL.model_monad =
+  let _builtin_s = SwiftProcname.show_builtin builtin in
+  match (builtin : SwiftProcname.builtin) with SwiftProcname.Nondet -> unknown
 
 
 let matchers : matcher list =

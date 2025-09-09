@@ -36,5 +36,10 @@ let dispatch_builtins proc_name args =
         List.map ~f:(fun func_arg -> FuncArg.arg_payload func_arg |> ValueOrigin.addr_hist) args
       in
       Some (PulseModelsPython.builtins_matcher builtin args)
+  | Procname.Swift (SwiftProcname.Builtin builtin) ->
+      let args =
+        List.map ~f:(fun func_arg -> FuncArg.arg_payload func_arg |> ValueOrigin.addr_hist) args
+      in
+      Some (PulseModelsSwift.builtins_matcher builtin args)
   | _ ->
       None

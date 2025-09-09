@@ -27,3 +27,5 @@ val get_function_name : t -> Mangled.t
 val pp : PpDetailLevel.t -> F.formatter -> t -> unit
 
 val builtin_from_string : string -> builtin option
+
+val show_builtin : builtin -> string
