@@ -2322,7 +2322,7 @@ OPTIONS
 
        --timeout float
            Time after which any checker should give up analysing the current
-           function or method, in seconds. Not implemented for multicore mode
+           function or method, in seconds. Defaults to 120 seconds.
            See also infer-analyze(1) and infer-run(1).
 
        --top-longest-proc-duration-size int

@@ -3512,7 +3512,7 @@ and timeout =
     ?default:(if is_running_unit_test then None else Some 120.0)
     ~in_help:[(Analyze, manual_generic); (Run, manual_generic)]
     "Time after which any checker should give up analysing the current function or method, in \
-     seconds. Not implemented for multicore mode"
+     seconds. Defaults to 120 seconds."
 
 
 and top_longest_proc_duration_size =

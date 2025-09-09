@@ -185,7 +185,7 @@ OPTIONS
 
        --timeout float
            Time after which any checker should give up analysing the current
-           function or method, in seconds. Not implemented for multicore mode
+           function or method, in seconds. Defaults to 120 seconds.
 
        --version
            Print version information and exit
