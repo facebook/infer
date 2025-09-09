@@ -1411,83 +1411,13 @@ let compare_in arg1 arg2 () : unit DSL.model_monad =
 
 
 let builtins_matcher builtin args =
-  let expect_1_arg () =
-    match args with
-    | [arg] ->
-        arg
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while 1 was expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
-  let expect_2_args () =
-    match args with
-    | [arg1; arg2] ->
-        (arg1, arg2)
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while 2 were expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
-  let expect_3_args () =
-    match args with
-    | [arg1; arg2; arg3] ->
-        (arg1, arg2, arg3)
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while 3 were expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
-  let expect_4_args () =
-    match args with
-    | [arg1; arg2; arg3; arg4] ->
-        (arg1, arg2, arg3, arg4)
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while 4 were expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
-  let expect_5_args () =
-    match args with
-    | [arg1; arg2; arg3; arg4; arg5] ->
-        (arg1, arg2, arg3, arg4, arg5)
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while 5 were expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
-  let expect_at_least_1_arg () =
-    match args with
-    | arg1 :: args ->
-        (arg1, args)
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while at least 1 were expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
-  let expect_at_least_2_args () =
-    match args with
-    | arg1 :: arg2 :: args ->
-        (arg1, arg2, args)
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while at least 2 were expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
-  let expect_at_least_3_args () =
-    match args with
-    | arg1 :: arg2 :: arg3 :: args ->
-        (arg1, arg2, arg3, args)
-    | _ ->
-        L.die InternalError "builtin %s was given %d arguments while at least 3 were expected"
-          (PythonProcname.show_builtin builtin)
-          (List.length args)
-  in
+  let open ProcnameDispatcherBuiltins in
+  let builtin_s = PythonProcname.show_builtin builtin in
   match (builtin : PythonProcname.builtin) with
   | AsyncGenValueWrapperNew | AttributesOfMatchClass ->
       (unknown ~deep_release:false) args
   | BinaryAdd ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       binary_add arg1 arg2
   | BinaryAnd
   | BinaryFloorDivide
@@ -1508,11 +1438,11 @@ let builtins_matcher builtin args =
   | BoolOfMatchClass ->
       (unknown ~deep_release:false) args
   | Bool ->
-      bool (expect_1_arg ())
+      bool (expect_1_arg args builtin_s)
   | BoolTrue ->
       bool_true
   | BuildClass ->
-      let arg1, arg2, args = expect_at_least_2_args () in
+      let arg1, arg2, args = expect_at_least_2_args args builtin_s in
       build_class arg1 arg2 args
   | BuildFrozenSet ->
       (unknown ~deep_release:true) args
@@ -1531,33 +1461,33 @@ let builtins_matcher builtin args =
   | BuildUnpackTuple ->
       build_tuple args
   | Call ->
-      let arg1, arg2, args = expect_at_least_2_args () in
+      let arg1, arg2, args = expect_at_least_2_args args builtin_s in
       call arg1 arg2 args
   | CallFunctionEx ->
-      let arg1, arg2, arg3 = expect_3_args () in
+      let arg1, arg2, arg3 = expect_3_args args builtin_s in
       call_function_ex arg1 arg2 arg3
   | CallMethod ->
-      let arg1, arg2, arg3, args = expect_at_least_3_args () in
+      let arg1, arg2, arg3, args = expect_at_least_3_args args builtin_s in
       call_method arg1 arg2 arg3 args
   | CompareBad ->
       unknown ~deep_release:false ~must_all_be_awaited:true args
   | CompareEq ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       compare_eq arg1 arg2
   | CompareException | CompareGe | CompareGt ->
       unknown ~deep_release:false ~must_all_be_awaited:true args
   | CompareIn ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       compare_in arg1 arg2
   | CompareIs ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       compare_eq arg1 arg2
   | CompareIsNot | CompareLe | CompareLt | CompareNeq | CompareNotIn | CopyFreeVars ->
       unknown ~deep_release:false ~must_all_be_awaited:true args
   | DeleteAttr | DeleteDeref | DeleteFast | DeleteGlobal | DeleteName | DeleteSubscr | DictMerge ->
       unknown ~deep_release:true args
   | DictSetItem ->
-      let arg1, arg2, arg3 = expect_3_args () in
+      let arg1, arg2, arg3 = expect_3_args args builtin_s in
       dict_set_item arg1 arg2 arg3
   | DictUpdate ->
       unknown ~deep_release:true args
@@ -1570,20 +1500,20 @@ let builtins_matcher builtin args =
   | GetAiter ->
       unknown ~deep_release:true args
   | GetAttr ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       get_attr arg1 arg2
   | GetAwaitable ->
-      let arg1 = expect_1_arg () in
+      let arg1 = expect_1_arg args builtin_s in
       get_awaitable arg1
   | GetIter | GetLen | GetPreviousException ->
       unknown ~deep_release:false ~must_all_be_awaited:true args
   | GetYieldFromIter | HasNextIter ->
       unknown ~deep_release:true args
   | ImportFrom ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       import_from arg1 arg2
   | ImportName ->
-      let arg1, arg2, arg3, arg4 = expect_4_args () in
+      let arg1, arg2, arg3, arg4 = expect_4_args args builtin_s in
       import_name arg1 arg2 arg3 arg4
   | ImportStar ->
       unknown ~deep_release:true args
@@ -1605,7 +1535,7 @@ let builtins_matcher builtin args =
   | IterData ->
       unknown ~deep_release:true args
   | ListAppend ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       list_append arg1 arg2
   | ListExtend | ListToTuple ->
       unknown ~deep_release:true args
@@ -1614,40 +1544,40 @@ let builtins_matcher builtin args =
   | LoadClassDeref | LoadClosure | LoadDeref ->
       unknown ~deep_release:false args
   | LoadFast | LoadFastAndClear ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       load_fast arg1 arg2
   | LoadFastCheck | LoadFromDictOrDeref ->
       unknown ~deep_release:false args
   | LoadGlobal ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       load_global arg1 arg2
   | LoadName ->
-      let arg1, arg2, arg3 = expect_3_args () in
+      let arg1, arg2, arg3 = expect_3_args args builtin_s in
       load_name arg1 arg2 arg3
   | LoadLocals | LoadSuperAttr | MakeBytes | MakeComplex | MakeCell | MakeFloat ->
       unknown ~deep_release:false args
   | MakeFunction ->
-      let arg1, arg2, arg3, arg4, arg5 = expect_5_args () in
+      let arg1, arg2, arg3, arg4, arg5 = expect_5_args args builtin_s in
       make_function arg1 arg2 arg3 arg4 arg5
   | MakeInt ->
-      let arg = expect_1_arg () in
+      let arg = expect_1_arg args builtin_s in
       make_int arg
   | MakeNone ->
       make_none
   | MakeString ->
-      let arg = expect_1_arg () in
+      let arg = expect_1_arg args builtin_s in
       make_string arg
   | MatchClass | MatchSequence | NextIter ->
       unknown ~deep_release:false args
   | NullifyLocals ->
-      let arg1, args = expect_at_least_1_arg () in
+      let arg1, args = expect_at_least_1_arg args builtin_s in
       nullify_locals arg1 args
   | PrepReraiseStar ->
       unknown ~deep_release:false args
   | SetAdd ->
       unknown ~deep_release:true args
   | SetAttr ->
-      let arg1, arg2, arg3 = expect_3_args () in
+      let arg1, arg2, arg3 = expect_3_args args builtin_s in
       store_subscript arg1 arg2 arg3
   | SetUpdate ->
       unknown ~deep_release:true args
@@ -1656,21 +1586,21 @@ let builtins_matcher builtin args =
   | StoreDeref ->
       unknown ~deep_release:true args
   | StoreFast ->
-      let arg1, arg2, arg3 = expect_3_args () in
+      let arg1, arg2, arg3 = expect_3_args args builtin_s in
       store_fast arg1 arg2 arg3
   | StoreGlobal ->
-      let arg1, arg2, arg3 = expect_3_args () in
+      let arg1, arg2, arg3 = expect_3_args args builtin_s in
       store_global arg1 arg2 arg3
   | StoreName ->
-      let arg1, arg2, arg3, arg4 = expect_4_args () in
+      let arg1, arg2, arg3, arg4 = expect_4_args args builtin_s in
       store_name arg1 arg2 arg3 arg4
   | StoreSlice ->
       unknown ~deep_release:true args
   | StoreSubscript ->
-      let arg1, arg2, arg3 = expect_3_args () in
+      let arg1, arg2, arg3 = expect_3_args args builtin_s in
       store_subscript arg1 arg2 arg3
   | Subscript ->
-      let arg1, arg2 = expect_2_args () in
+      let arg1, arg2 = expect_2_args args builtin_s in
       subscript arg1 arg2
   | SetFunctionTypeParams
   | TypevarWithBound
@@ -1683,7 +1613,7 @@ let builtins_matcher builtin args =
   | UnpackEx ->
       unknown ~deep_release:false args
   | Yield ->
-      let arg = expect_1_arg () in
+      let arg = expect_1_arg args builtin_s in
       yield arg
   | YieldFrom ->
       unknown ~deep_release:true args
