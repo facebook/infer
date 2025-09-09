@@ -9,14 +9,21 @@ open! IStd
 module F = Format
 include PpDetailLevel
 
+type builtin = Nondet [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
+
 type t =
   | ClassMethod of {class_name: Typ.Name.t; method_name: Mangled.t}
   | Function of {function_name: Mangled.t}
+  | Builtin of builtin
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let mk_function mangled = Function {function_name= mangled}
 
 let mk_class_method class_name mangled = ClassMethod {class_name; method_name= mangled}
+
+let mk_builtin builtin = Builtin builtin
+
+let show_builtin = function Nondet -> "llvm_nondet"
 
 let get_function_name osig =
   match osig with
@@ -24,6 +31,8 @@ let get_function_name osig =
       method_name
   | Function {function_name} ->
       function_name
+  | Builtin builtin ->
+      Mangled.from_string (show_builtin builtin)
 
 
 let pp verbosity fmt osig =
@@ -44,3 +53,11 @@ let pp verbosity fmt osig =
         F.pp_print_string fmt (Mangled.to_string osig.function_name)
     | Verbose ->
         F.pp_print_string fmt (Mangled.to_string_full osig.function_name) )
+  | Builtin builtin ->
+      F.pp_print_string fmt (show_builtin builtin)
+
+
+let builtin_from_string =
+  let tbl = IString.Hash.create 100 in
+  List.iter all_of_builtin ~f:(fun builtin -> IString.Hash.add tbl (show_builtin builtin) builtin) ;
+  fun str -> IString.Hash.find_opt tbl str

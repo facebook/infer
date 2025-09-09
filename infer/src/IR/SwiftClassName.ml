@@ -14,3 +14,5 @@ let pp fmt {classname} = F.fprintf fmt "%s" classname
 let classname {classname} = classname
 
 let to_string = Pp.string_of_pp pp
+
+let of_string classname = {classname}

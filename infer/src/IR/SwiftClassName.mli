@@ -15,3 +15,5 @@ val pp : F.formatter -> t -> unit
 val to_string : t -> string
 
 val classname : t -> string
+
+val of_string : string -> t

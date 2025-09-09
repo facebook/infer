@@ -108,6 +108,11 @@ module TypeNameBridge = struct
         L.die InternalError "to_python_class_name failed"
 
 
+  let to_swift_class_name value : SwiftClassName.t =
+    let to_string {TypeName.name= {BaseTypeName.value}} = value in
+    SwiftClassName.of_string (to_string value)
+
+
   let to_sil (lang : Lang.t) {name= {value}; args} : SilTyp.Name.t =
     match (lang, args) with
     | Java, [] ->
@@ -429,6 +434,15 @@ module ProcDeclBridge = struct
         `Regular (TypeNameBridge.to_python_class_name value args)
 
 
+  let swift_class_name_to_sil = function
+    | QualifiedProcName.TopLevel ->
+        None
+    | QualifiedProcName.Enclosing {name= {value}} when String.equal "$builtins" value ->
+        Some `Builtin
+    | QualifiedProcName.Enclosing class_name ->
+        Some (`Regular (TypeNameBridge.to_swift_class_name class_name))
+
+
   let to_sil_tenv lang t : SilStruct.tenv_method =
     let method_name = t.qualified_name.name.ProcName.value in
     match (lang : Lang.t) with
@@ -494,10 +508,22 @@ module ProcDeclBridge = struct
         | TopLevel ->
             SilProcname.Swift (SwiftProcname.mk_function mangled)
             |> SilStruct.mk_tenv_method ?llvm_offset
-        | Enclosing class_name ->
-            let class_name = TypeNameBridge.to_sil lang class_name in
-            SilProcname.Swift (SwiftProcname.mk_class_method class_name mangled)
-            |> SilStruct.mk_tenv_method ?llvm_offset )
+        | Enclosing _ -> (
+          match swift_class_name_to_sil t.qualified_name.enclosing_class with
+          | Some (`Regular class_name) ->
+              let class_name = SilTyp.SwiftClass class_name in
+              SilProcname.Swift (SwiftProcname.mk_class_method class_name mangled)
+              |> SilStruct.mk_tenv_method ?llvm_offset
+          | Some `Builtin ->
+              let builtin =
+                SwiftProcname.builtin_from_string method_name
+                |> Option.value_or_thunk ~default:(fun () ->
+                       L.die InternalError "unknown swift builtin name %s" method_name )
+              in
+              SilProcname.Swift (SwiftProcname.mk_builtin builtin)
+              |> SilStruct.mk_tenv_method ?llvm_offset
+          | None ->
+              L.die InternalError "unexpected case" ) )
 
 
   let to_sil lang t : Procname.t =

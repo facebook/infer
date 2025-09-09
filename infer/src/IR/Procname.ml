@@ -803,7 +803,7 @@ let replace_class t ?(arity_incr = 0) (new_class : Typ.Name.t) =
       t
   | Swift (ClassMethod osig) ->
       Swift (ClassMethod {osig with class_name= new_class})
-  | Swift (Function _) ->
+  | Swift (Function _) | Swift (Builtin _) ->
       t
 
 
@@ -823,7 +823,7 @@ let get_class_type_name t =
       PythonProcname.get_module_type_name python
   | Swift (ClassMethod swift) ->
       Some swift.class_name
-  | C _ | Erlang _ | Swift (Function _) ->
+  | C _ | Erlang _ | Swift (Function _) | Swift (Builtin _) ->
       None
 
 
@@ -843,7 +843,7 @@ let get_class_name t =
       Some (PythonProcname.get_module_name_as_a_string py_pname)
   | Swift (ClassMethod swift) ->
       Some (Typ.Name.name swift.class_name)
-  | C _ | Erlang _ | Swift (Function _) ->
+  | C _ | Erlang _ | Swift (Function _) | Swift (Builtin _) ->
       None
 
 
