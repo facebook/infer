@@ -25,6 +25,7 @@ def strip_type_annotations(tree):
             node.returns = None
             node.args.args = self._remove_arg_annotations(node.args.args)
             node.args.kwonlyargs = self._remove_arg_annotations(node.args.kwonlyargs)
+            return self.generic_visit(node)
         def visit_AnnAssign(self, node):
             # Convert annotated assignment to normal assignment
             return ast.Assign(targets=[node.target], value=node.value)

@@ -272,6 +272,18 @@ print(square(5))
   assert (ast_diff_equal prog1 prog2)
 
 
+let test_change_async_fun_body_bad _ =
+  let prog1 = {|
+async def authenticate(self, token: str, tag: str) -> None:
+        print(1)
+|} in
+  let prog2 = {|
+async def authenticate(self, token: str, tag: str) -> None:
+        print(2)
+|} in
+  assert_not (ast_diff_equal prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -289,7 +301,8 @@ let suite =
        ; "fn_test_with_import_bad" >:: fn_test_with_import_bad
        ; "test_import_from_dir_alias_bad" >:: test_import_from_dir_alias_bad
        ; "test_change_async_fun_param_type_good" >:: test_change_async_fun_param_type_good
-       ; "test_change_lambda_param_type_good" >:: test_change_lambda_param_type_good ]
+       ; "test_change_lambda_param_type_good" >:: test_change_lambda_param_type_good
+       ; "test_change_async_fun_body_bad" >:: test_change_async_fun_body_bad ]
 
 
 let () = run_test_tt_main suite
