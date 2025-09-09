@@ -846,37 +846,39 @@ let to_textual_global lang ~struct_map global =
   let proc_desc_opt =
     match global.GlobalDefn.init with
     | Some exp ->
-        let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
         if String.is_suffix global_name ~suffix:"CMf" then
           collect_class_method_indices global_name exp ;
-        let procdecl =
-          Textual.ProcDecl.
-            { qualified_name= global_proc_state.qualified_name
-            ; formals_types= Some []
-            ; result_type= Textual.Typ.mk_without_attributes Textual.Typ.Void
-            ; attributes= [] }
-        in
-        let start_node =
-          Textual.Node.
-            { label= Textual.NodeName.of_string "start"
-            ; ssa_parameters= []
-            ; exn_succs= []
-            ; last= Textual.Terminator.Ret init_exp
-            ; instrs
-            ; last_loc= Textual.Location.Unknown
-            ; label_loc= Textual.Location.Unknown }
-        in
-        let proc_desc =
-          Textual.ProcDesc.
-            { procdecl
-            ; nodes= [start_node]
-            ; fresh_ident= None
-            ; start= start_node.label
-            ; params= []
-            ; locals= []
-            ; exit_loc= Textual.Location.Unknown }
-        in
-        Some proc_desc
+        if Config.llvm_translate_global_init then
+          let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
+          let procdecl =
+            Textual.ProcDecl.
+              { qualified_name= global_proc_state.qualified_name
+              ; formals_types= Some []
+              ; result_type= Textual.Typ.mk_without_attributes Textual.Typ.Void
+              ; attributes= [] }
+          in
+          let start_node =
+            Textual.Node.
+              { label= Textual.NodeName.of_string "start"
+              ; ssa_parameters= []
+              ; exn_succs= []
+              ; last= Textual.Terminator.Ret init_exp
+              ; instrs
+              ; last_loc= Textual.Location.Unknown
+              ; label_loc= Textual.Location.Unknown }
+          in
+          let proc_desc =
+            Textual.ProcDesc.
+              { procdecl
+              ; nodes= [start_node]
+              ; fresh_ident= None
+              ; start= start_node.label
+              ; params= []
+              ; locals= []
+              ; exit_loc= Textual.Location.Unknown }
+          in
+          Some proc_desc
+        else None
     | None ->
         None
   in

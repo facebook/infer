@@ -1162,6 +1162,11 @@ OPTIONS
            [EXPERIMENTAL] Specify source files for llvm bitcode capture
            See also infer-capture(1).
 
+       --llvm-translate-global-init
+           Activates: Translates the initializers of globals in the llvm
+           frontend. (Conversely: --no-llvm-translate-global-init)
+           See also infer-capture(1).
+
        --lock-model json
            Specify custom lock models for starvation analysis.
            Example for pthreads (already included in infer):

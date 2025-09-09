@@ -1978,6 +1978,12 @@ and llvm_bitcode_sources =
     ~in_help:InferCommand.[(Capture, manual_generic)]
 
 
+and llvm_translate_global_init =
+  CLOpt.mk_bool ~long:"llvm-translate-global-init" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_pulse)]
+    "Translates the initializers of globals in the llvm frontend."
+
+
 and lock_model =
   CLOpt.mk_json ~long:"lock-model"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -4301,6 +4307,8 @@ and llair_source_file = !llair_source_file
 and llvm_bitcode_file = !llvm_bitcode_file
 
 and llvm_bitcode_sources = RevList.to_list !llvm_bitcode_sources
+
+and llvm_translate_global_init = !llvm_translate_global_init
 
 and lock_model = !lock_model
 

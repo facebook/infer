@@ -400,6 +400,11 @@ JAVA OPTIONS
            Deactivates: Read java modules file using jimage. (Conversely:
            --read-java-modules)
 
+PULSE CHECKER OPTIONS
+       --llvm-translate-global-init
+           Activates: Translates the initializers of globals in the llvm
+           frontend. (Conversely: --no-llvm-translate-global-init)
+
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).
