@@ -9,7 +9,8 @@ open! IStd
 module F = Format
 include PpDetailLevel
 
-type builtin = Nondet [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
+type builtin = NonDet | InitTuple | DynamicCall
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =
   | ClassMethod of {class_name: Typ.Name.t; method_name: Mangled.t}
@@ -23,7 +24,14 @@ let mk_class_method class_name mangled = ClassMethod {class_name; method_name= m
 
 let mk_builtin builtin = Builtin builtin
 
-let show_builtin = function Nondet -> "llvm_nondet"
+let show_builtin = function
+  | NonDet ->
+      "llvm_nondet"
+  | InitTuple ->
+      "llvm_init_tuple"
+  | DynamicCall ->
+      "llvm_dynamic_call"
+
 
 let get_function_name osig =
   match osig with

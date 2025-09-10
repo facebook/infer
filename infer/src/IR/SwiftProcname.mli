@@ -8,7 +8,8 @@
 open! IStd
 module F = Format
 
-type builtin = Nondet [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
+type builtin = NonDet | InitTuple | DynamicCall
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =
   | ClassMethod of {class_name: Typ.Name.t; method_name: Mangled.t}

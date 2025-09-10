@@ -27,7 +27,13 @@ let unknown () : unit DSL.model_monad =
 
 let builtins_matcher builtin _args : unit -> unit PulseModelsDSL.model_monad =
   let _builtin_s = SwiftProcname.show_builtin builtin in
-  match (builtin : SwiftProcname.builtin) with SwiftProcname.Nondet -> unknown
+  match (builtin : SwiftProcname.builtin) with
+  | NonDet ->
+      unknown
+  | InitTuple ->
+      unknown
+  | DynamicCall ->
+      unknown
 
 
 let matchers : matcher list =
