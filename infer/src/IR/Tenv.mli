@@ -153,6 +153,8 @@ val resolve_method :
     [method_exists adapted_procname methods] should check if [adapted_procname] ([procname] but with
     its class potentially changed to some [other_class]) is among the [methods] of [other_class]. *)
 
+val resolve_method_with_offset : t -> Typ.name -> int -> Procname.t option
+
 val resolve_field_info : t -> Typ.Name.t -> Fieldname.t -> Struct.field_info option
 (** [resolve_field_info tenv class_name field] tries to find the first field declaration that
     matches [field] name (ignoring its enclosing declared type), starting from class [class_name].

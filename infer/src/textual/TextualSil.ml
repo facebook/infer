@@ -132,8 +132,7 @@ module TypeNameBridge = struct
     | Rust, _ ->
         L.die InternalError "to_stil conversion error <NOT YET SUPPORTED>"
     | Swift, _ ->
-        (* TODO: translate Swift tuples more precisely *)
-        SilTyp.Name.C.from_string value
+        SwiftClass (SwiftClassName.of_string value)
 
 
   let java_lang_object = of_string "java.lang.Object"
@@ -171,6 +170,8 @@ let hack_builtins_type_name = SilTyp.HackClass (HackClassName.make "$builtins")
 let hack_root_type_name = SilTyp.HackClass (HackClassName.make "$root")
 
 let python_mixed_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyObject)
+
+let swift_mixed_type_name = SilTyp.SwiftClass (SwiftClassName.of_string "SwiftMixed")
 
 let python_dict_type_name = SilTyp.PythonClass (PythonClassName.Builtin PyDict)
 

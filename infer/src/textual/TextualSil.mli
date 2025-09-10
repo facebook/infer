@@ -67,6 +67,8 @@ val python_none_type_name : Typ.name
 
 val python_mixed_type_name : Typ.name
 
+val swift_mixed_type_name : Typ.name
+
 val python_tuple_type_name : Typ.name
 
 val wildcard_sil_fieldname : Textual.Lang.t -> string -> Fieldname.t

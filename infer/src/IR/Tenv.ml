@@ -562,6 +562,29 @@ let resolve_method ?(is_virtual = false) ~method_exists tenv class_name proc_nam
       Ok method_info
 
 
+let resolve_method_with_offset tenv class_name offset =
+  if Language.curr_language_is Swift then
+    if not (Typ.Name.is_class class_name) then None
+    else
+      let struct_opt = lookup tenv class_name in
+      match struct_opt with
+      | None | Some {dummy= true} ->
+          None
+      | Some {Struct.methods} ->
+          let method_opt =
+            List.find
+              ~f:(fun m ->
+                match m.Struct.llvm_offset with
+                | Some llvm_offset ->
+                    Int.equal offset llvm_offset
+                | None ->
+                    false )
+              methods
+          in
+          Option.map ~f:(fun m -> m.Struct.name) method_opt
+  else L.die InternalError "resolve_method_with_offset only implemented for Swift"
+
+
 let find_cpp_destructor tenv class_name =
   let open IOption.Let_syntax in
   let* struct_ = lookup tenv class_name in

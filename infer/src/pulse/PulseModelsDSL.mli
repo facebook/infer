@@ -83,6 +83,8 @@ module Syntax : sig
 
   val python_call : Procname.t -> (string * aval) list -> aval model_monad
 
+  val swift_call : Procname.t -> (string * aval) list -> aval model_monad
+
   val apply_hack_closure : aval -> aval list -> aval model_monad
 
   val apply_python_closure :
@@ -276,6 +278,8 @@ module Syntax : sig
 
   val tenv_resolve_fieldname :
     Typ.name -> string -> (Fieldname.t option * Tenv.unresolved_reason option) model_monad
+
+  val tenv_resolve_method_with_offset : Typ.name -> int -> Procname.t option model_monad
 
   val tenv_type_is_defined : Typ.name -> bool model_monad
   (** {2 Invalidation operations} *)
