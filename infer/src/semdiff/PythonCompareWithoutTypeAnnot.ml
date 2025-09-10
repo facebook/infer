@@ -33,7 +33,24 @@ def strip_type_annotations(tree):
             return None
         def visit_Import(self, node):
             return None
-    return TypeAnnotationRemover().visit(tree)
+    class ClassEqualityToIsInstanceTransformer(ast.NodeTransformer):
+        def visit_Compare(self, node):
+            # Look for: x.__class__ == Type
+            if (isinstance(node.left, ast.Attribute) and
+                node.left.attr == '__class__' and
+                len(node.ops) == 1 and
+                isinstance(node.ops[0], ast.Eq) and
+                len(node.comparators) == 1):
+                    obj = node.left.value
+                    type_node = node.comparators[0]
+                    new_node = ast.Call(
+                      func=ast.Name(id='isinstance', ctx=ast.Load()),
+                      args=[obj, type_node],
+                      keywords=[]
+                    )
+                    return ast.copy_location(new_node, node)
+            return self.generic_visit(node)
+    return ClassEqualityToIsInstanceTransformer().visit(TypeAnnotationRemover().visit(tree))
   |}
   in
   let ast_module = Py.Import.import_module "ast" in

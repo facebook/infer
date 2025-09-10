@@ -284,7 +284,7 @@ async def authenticate(self, token: str, tag: str) -> None:
   assert_not (ast_diff_equal prog1 prog2)
 
 
-let fp_test_change_class_to_is_instance_good _ =
+let test_change_class_to_is_instance_good _ =
   let prog1 = {|
 def foo(self, x):
         if x.__class__ == str:
@@ -295,7 +295,7 @@ def foo(self, x) -> None:
         if isinstance(x, str):
             print(1)
 |} in
-  assert_not (ast_diff_equal prog1 prog2)
+  assert (ast_diff_equal prog1 prog2)
 
 
 let test_change_class_to_is_instance_bad _ =
@@ -333,7 +333,7 @@ let suite =
        ; "test_change_async_fun_param_type_good" >:: test_change_async_fun_param_type_good
        ; "test_change_lambda_param_type_good" >:: test_change_lambda_param_type_good
        ; "test_change_async_fun_body_bad" >:: test_change_async_fun_body_bad
-       ; "fp_test_change_class_to_is_instance_good" >:: fp_test_change_class_to_is_instance_good
+       ; "test_change_class_to_is_instance_good" >:: test_change_class_to_is_instance_good
        ; "test_change_class_to_is_instance_bad" >:: test_change_class_to_is_instance_bad ]
 
 
