@@ -524,7 +524,7 @@ ifeq ($(BUILD_SWIFT_ANALYZERS), yes)
 	$(QUIET)if [ '$(USER_LLVM)' == 'no' ]; then \
 	  CLANG_INSTALL=$$(realpath '$(FCP_DIR)'/clang/install); \
 	  export PATH="$$CLANG_INSTALL/bin:$$PATH" \
-	         OPAM_USER_PATH_RO="$$CLANG_INSTALL"; \
+	         OPAM_USER_PATH_RO="$$CLANG_INSTALL/bin"; \
 	fi; \
 	llvm_version=$$(opam show \
 	  --just-file $(ROOT_DIR)/dependencies/llvm/opam-repository/packages/llvm/llvm.*-infer/opam \
