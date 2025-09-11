@@ -314,6 +314,22 @@ def foo(self, x) -> None:
   assert_not (ast_diff_equal prog1 prog2)
 
 
+let test_change_async_body_indentation_bad _ =
+  let prog1 = {|
+async def foo(self, x):
+    if x == 1:
+        print(1)
+        print(2)
+|} in
+  let prog2 = {|
+async def foo(self, x):
+    if x == 1:
+        print(1)
+    print(2)
+|} in
+  assert_not (ast_diff_equal prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -334,7 +350,8 @@ let suite =
        ; "test_change_lambda_param_type_good" >:: test_change_lambda_param_type_good
        ; "test_change_async_fun_body_bad" >:: test_change_async_fun_body_bad
        ; "test_change_class_to_is_instance_good" >:: test_change_class_to_is_instance_good
-       ; "test_change_class_to_is_instance_bad" >:: test_change_class_to_is_instance_bad ]
+       ; "test_change_class_to_is_instance_bad" >:: test_change_class_to_is_instance_bad
+       ; "test_change_async_body_indentation_bad" >:: test_change_async_body_indentation_bad ]
 
 
 let () = run_test_tt_main suite
