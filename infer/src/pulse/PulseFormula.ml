@@ -1458,6 +1458,25 @@ module Term = struct
 
     let yojson_of_t_ m = `List (List.map (bindings m) ~f:[%yojson_of: t * Var.t])
   end
+
+  (* PULSEINF: Needed to track term sets for infinite loops *)
+  module Set = struct
+    include Stdlib.Set.Make (struct
+      type nonrec t = t [@@deriving compare]
+    end)
+
+    let pp_with_pp_var ?filter pp_var fmt atoms =
+      if is_empty atoms then F.pp_print_string fmt "(empty)"
+      else
+        Pp.collection ~sep:"∧"
+          ~fold:(IContainer.fold_of_pervasives_set_fold fold)
+          ?filter
+          (fun fmt atom -> F.fprintf fmt "{%a}" (pp_no_paren pp_var) atom)
+          fmt atoms
+
+
+    let yojson_of_t atoms = `List (List.map (elements atoms) ~f:yojson_of_t)
+  end
 end
 
 (** Basically boolean terms, used to build the part of a formula that is not equalities between
@@ -1488,7 +1507,12 @@ module Atom = struct
 
 
   let get_terms atom =
-    let (LessEqual (t1, t2) | LessThan (t1, t2) | Equal (t1, t2) | NotEqual (t1, t2)) = atom in
+    let ( LessEqual (t1, t2)
+        | LessThan (t1, t2)
+        | Equal (t1, t2)
+        | NotEqual (t1, t2) (* | Bitmasked (t1, t2) *) ) =
+      atom
+    in
     (t1, t2)
 
 
@@ -1724,7 +1748,8 @@ module Atom = struct
       | LessEqual _ ->
           True
       | LessThan _ ->
-          False
+          False (* | Bitmasked _ ->
+         False *)
     else Atom atom
 
 
@@ -2173,7 +2198,9 @@ module Formula = struct
       ; term_eqs_occurrences: TermMapOccurrences.t
             (** like [linear_eqs_occurrences] but for [term_eqs] so bindings are from variables to
                 sets of terms *)
-      ; atoms_occurrences: AtomMapOccurrences.t  (** likewise for [atoms] *) }
+      ; atoms_occurrences: AtomMapOccurrences.t  (** likewise for [atoms] *)
+      ; term_conditions: Atom.Set.t  (** Termination conditions for pulse-inf *)
+      ; term_conditions2: Term.Set.t  (** Termination conditions for pulse-inf *) }
     [@@deriving compare, equal, yojson_of]
 
     val pp_with_pp_var : (F.formatter -> Var.t -> unit) -> F.formatter -> t -> unit
@@ -2250,6 +2277,10 @@ module Formula = struct
 
     val add_atom : Atom.t -> t -> t
 
+    val and_termcond_atoms : t -> Atom.t list -> t
+
+    val and_termcond_binop : t -> Term.t -> t
+
     val remove_atom : Atom.t -> t -> t
 
     val add_tableau_eq : Var.t -> LinArith.t -> t -> t
@@ -2276,6 +2307,10 @@ module Formula = struct
 
     val set_intervals : intervals -> t -> t
 
+    val get_terminal_conds : t -> Atom.Set.t
+
+    val get_terminal_terms : t -> Term.Set.t
+
     val join : t -> t -> t
 
     val remove_conditions_for_join : Atom.t list -> t -> t -> t
@@ -2293,6 +2328,8 @@ module Formula = struct
       -> tableau_occurrences:VarMapOccurrences.t
       -> term_eqs_occurrences:TermMapOccurrences.t
       -> atoms_occurrences:AtomMapOccurrences.t
+      -> term_conditions:Atom.Set.t
+      -> term_conditions2:Term.Set.t
       -> t
     (** escape hatch *)
   end = struct
@@ -2312,7 +2349,9 @@ module Formula = struct
       ; linear_eqs_occurrences: VarMapOccurrences.t
       ; tableau_occurrences: VarMapOccurrences.t
       ; term_eqs_occurrences: TermMapOccurrences.t
-      ; atoms_occurrences: AtomMapOccurrences.t }
+      ; atoms_occurrences: AtomMapOccurrences.t
+      ; term_conditions: Atom.Set.t  (** Termination conditions for pulse-inf *)
+      ; term_conditions2: Term.Set.t }
     [@@deriving compare, equal, yojson_of]
 
     let ttrue =
@@ -2327,7 +2366,9 @@ module Formula = struct
       ; linear_eqs_occurrences= Var.Map.empty
       ; tableau_occurrences= Var.Map.empty
       ; term_eqs_occurrences= Var.Map.empty
-      ; atoms_occurrences= Var.Map.empty }
+      ; atoms_occurrences= Var.Map.empty
+      ; term_conditions= Atom.Set.empty
+      ; term_conditions2= Term.Set.empty }
 
 
     let get_repr phi x = VarUF.find phi.var_eqs x
@@ -2346,11 +2387,14 @@ module Formula = struct
          ; linear_eqs_occurrences= _
          ; tableau_occurrences= _
          ; term_eqs_occurrences= _
-         ; atoms_occurrences= _ }
+         ; atoms_occurrences= _
+         ; term_conditions
+         ; term_conditions2 }
          [@warning "+missing-record-field-pattern"] ) =
       VarUF.is_empty var_eqs && Var.Map.is_empty const_eqs && Var.Map.is_empty type_constraints
       && Var.Map.is_empty linear_eqs && term_eqs_is_empty term_eqs && Var.Map.is_empty tableau
-      && Var.Map.is_empty intervals && Atom.Set.is_empty atoms
+      && Var.Map.is_empty intervals && Atom.Set.is_empty atoms && Atom.Set.is_empty term_conditions
+      && Term.Set.is_empty term_conditions2
 
 
     (* {2 [term_eqs] interface due to the totally opaque type} *)
@@ -2422,7 +2466,9 @@ module Formula = struct
            ; linear_eqs_occurrences
            ; tableau_occurrences
            ; term_eqs_occurrences
-           ; atoms_occurrences }
+           ; atoms_occurrences
+           ; term_conditions
+           ; term_conditions2 }
            [@warning "+missing-record-field-pattern"] ) as phi ) =
       let is_first = ref true in
       let pp_if condition header pp fmt x =
@@ -2452,6 +2498,14 @@ module Formula = struct
       (pp_if (not (Var.Map.is_empty intervals)) "intervals" (pp_var_map ~arrow:"" CItv.pp pp_var))
         fmt intervals ;
       (pp_if (not (Atom.Set.is_empty atoms)) "atoms" (Atom.Set.pp_with_pp_var pp_var)) fmt atoms ;
+      (pp_if
+         (not (Atom.Set.is_empty term_conditions))
+         "term_conds" (Atom.Set.pp_with_pp_var pp_var) )
+        fmt term_conditions ;
+      (pp_if
+         (not (Term.Set.is_empty term_conditions2))
+         "term_conds2" (Term.Set.pp_with_pp_var pp_var) )
+        fmt term_conditions2 ;
       if Config.debug_level_analysis >= 3 then (
         (pp_if
            (not (Var.Map.is_empty linear_eqs_occurrences))
@@ -2755,6 +2809,27 @@ module Formula = struct
       {phi with atoms= Atom.Set.add atom phi.atoms; atoms_occurrences}
 
 
+    let add_termination_atom atom phi =
+      let atoms_occurrences =
+        Atom.fold_variables atom ~init:phi.atoms_occurrences ~f:(fun occurrences v' ->
+            AtomMapOccurrences.add v' ~occurs_in:atom occurrences )
+      in
+      {phi with term_conditions= Atom.Set.add atom phi.term_conditions; atoms_occurrences}
+
+
+    let rec and_termcond_atoms (phi : t) (atoms : Atom.t list) : t =
+      match atoms with
+      | hd :: tl ->
+          let newphi = add_termination_atom hd phi in
+          and_termcond_atoms newphi tl
+      | _ ->
+          phi
+
+
+    let and_termcond_binop (phi : t) (term : Term.t) : t =
+      {phi with term_conditions2= Term.Set.add term phi.term_conditions2}
+
+
     let remove_atom_ atom atoms atoms_occurrences =
       let atoms_occurrences =
         Atom.fold_variables atom ~init:atoms_occurrences ~f:(fun occurrences v' ->
@@ -2797,9 +2872,13 @@ module Formula = struct
 
     let set_intervals intervals phi = {phi with intervals}
 
+    let get_terminal_conds t = t.term_conditions
+
+    let get_terminal_terms t = t.term_conditions2
+
     let unsafe_mk ~var_eqs ~const_eqs ~type_constraints ~linear_eqs ~term_eqs ~tableau ~intervals
         ~atoms ~linear_eqs_occurrences ~tableau_occurrences ~term_eqs_occurrences ~atoms_occurrences
-        =
+        ~term_conditions ~term_conditions2 =
       { var_eqs
       ; const_eqs
       ; type_constraints
@@ -2811,7 +2890,9 @@ module Formula = struct
       ; linear_eqs_occurrences
       ; tableau_occurrences
       ; term_eqs_occurrences
-      ; atoms_occurrences }
+      ; atoms_occurrences
+      ; term_conditions
+      ; term_conditions2 }
 
 
     let join phi1 _phi2 =
@@ -2884,6 +2965,9 @@ module Formula = struct
               term_eqs_v
               (phi.term_eqs, phi.term_eqs_occurrences)
       in
+      (* pulseinf: Is there anything more to do here? *)
+      let term_conditions = phi.term_conditions in
+      let term_conditions2 = phi.term_conditions2 in
       { var_eqs
       ; const_eqs
       ; type_constraints
@@ -2895,7 +2979,9 @@ module Formula = struct
       ; linear_eqs_occurrences
       ; tableau_occurrences
       ; term_eqs_occurrences
-      ; atoms_occurrences }
+      ; atoms_occurrences
+      ; term_conditions
+      ; term_conditions2 }
 
 
     let remove_condition_for_join atom phi_lhs phi_rhs =
@@ -2935,7 +3021,9 @@ module Formula = struct
          ; linear_eqs_occurrences= _
          ; tableau_occurrences= _
          ; term_eqs_occurrences= _
-         ; atoms_occurrences= _ }
+         ; atoms_occurrences= _
+         ; term_conditions= _
+         ; term_conditions2= _ }
          [@warning "+missing-record-field-pattern"] ) as phi ) ~init ~f =
     let init = VarUF.fold_elements var_eqs ~init ~f in
     let init = fold_constant_var_map const_eqs ~init ~f in
@@ -2974,10 +3062,15 @@ module Formula = struct
 
     val normalize_atom : t -> Atom.t -> Atom.t list SatUnsat.t
 
-    val and_normalized_atoms : t * new_eqs -> Atom.t list -> (t * new_eqs) SatUnsat.t
+    val and_normalized_atoms :
+         t * new_eqs
+      -> Atom.t list
+      -> orig_atom:Atom.t list
+      -> add_term:bool
+      -> (t * new_eqs) SatUnsat.t
     (** use with the result of {!normalize_atom} in place of {!and_atom} *)
 
-    val and_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
+    val and_atom : Atom.t -> t * new_eqs -> add_term:bool -> (t * new_eqs) SatUnsat.t
 
     val and_dynamic_type :
       Var.t -> Typ.t -> ?source_file:SourceFile.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
@@ -2987,6 +3080,7 @@ module Formula = struct
     val and_notbelow : Var.t -> Typ.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
     val propagate_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
+
     (** [and_atom atom (phi, new_eqs)] is
         [SatUnsat.(normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs))] *)
   end = struct
@@ -3543,7 +3637,9 @@ module Formula = struct
                                       Atom.eval ~is_neq_zero:(is_neq_zero phi)
                                         (NotEqual (Var var, Term.zero))
                                     in
-                                    and_normalized_atoms (phi, new_eqs) atoms >>| snd )
+                                    and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                      ~add_term:true
+                                    >>| snd )
                                   else Sat (phi, new_eqs) )
                                 else if
                                   match tx with
@@ -3561,7 +3657,9 @@ module Formula = struct
                                       Atom.eval ~is_neq_zero:(is_neq_zero phi)
                                         (NotEqual (Var var, Term.zero))
                                     in
-                                    and_normalized_atoms (phi, new_eqs) atoms >>| snd
+                                    and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                      ~add_term:true
+                                    >>| snd
                                   else Sat (phi, new_eqs) )
                                 else (
                                   Debug.p "%a is neither zero nor non-zero, leaving phi alone@\n"
@@ -3589,7 +3687,9 @@ module Formula = struct
                               Debug.p "Found new atoms %a@\n"
                                 (Pp.seq ~sep:"," (Atom.pp_with_pp_var Var.pp))
                                 atoms ;
-                              and_normalized_atoms (phi, new_eqs) atoms >>| snd )
+                              and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                ~add_term:true
+                              >>| snd )
                       | Domain | DomainAndRange -> (
                           let* phi, new_eqs = phi_new_eqs_sat in
                           let subst_target_x =
@@ -3643,7 +3743,9 @@ module Formula = struct
                                   Debug.p "adding atoms %a instead of term_eq@\n"
                                     (Pp.seq ~sep:"," (Atom.pp_with_pp_var Var.pp))
                                     atoms ;
-                                  and_normalized_atoms (phi, new_eqs) atoms >>| snd
+                                  and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                    ~add_term:true
+                                  >>| snd
                               | None -> (
                                 match get_term_eq phi t' with
                                 | None -> (
@@ -3690,7 +3792,7 @@ module Formula = struct
                   (Atom.subst_variables
                      ~f:(fun x' -> if Var.equal x' x then subst_target_x else VarSubst x')
                      atom )
-                  (phi, new_eqs)
+                  (phi, new_eqs) ~add_term:false
                 >>| snd
               else phi_new_eqs_sat )
             in_atoms
@@ -3746,7 +3848,9 @@ module Formula = struct
                                   Atom.eval ~is_neq_zero:(is_neq_zero phi)
                                     (LessThan (Term.zero, Var var))
                                 in
-                                and_normalized_atoms (phi, new_eqs) atoms >>| snd )
+                                and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                  ~add_term:true
+                                >>| snd )
                               else Sat (phi, new_eqs)
                             in
                             and_below var typ (phi, new_eqs)
@@ -3765,7 +3869,8 @@ module Formula = struct
                           Debug.p "Found new atoms thanks to %a≠0: [%a]@\n" Var.pp v
                             (Pp.seq ~sep:"," (Atom.pp_with_pp_var Var.pp))
                             atoms ;
-                          and_normalized_atoms (phi, new_eqs) atoms >>| snd ) )
+                          and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms ~add_term:true
+                          >>| snd ) )
                 in_term_eqs (Sat phi_new_eqs) )
 
 
@@ -3814,7 +3919,7 @@ module Formula = struct
 
     (* TODO: should we check if [φ ⊢ atom] (i.e. whether [φ ∧ ¬atom] is unsat) in [normalize_atom],
        or is [normalize_atom] already just as strong? *)
-    and normalize_atom phi (atom : Atom.t) =
+    and normalize_atom (phi : t) (atom : Atom.t) =
       let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
       Debug.p "Normalizer.normalize_atom atom'=%a@\n" (Atom.pp_with_pp_var Var.pp) atom' ;
       Atom.eval ~is_neq_zero:(is_neq_zero phi) atom'
@@ -3857,15 +3962,17 @@ module Formula = struct
           (false, phi_new_eqs)
 
 
-    and and_normalized_atoms phi_new_eqs atoms =
-      SatUnsat.list_fold atoms ~init:(false, phi_new_eqs)
-        ~f:(fun (linear_changed, phi_new_eqs) atom ->
-          let+ changed', phi_new_eqs = and_normalized_atom phi_new_eqs atom in
+    and and_normalized_atoms (phi, new_eqs) atoms ~orig_atom ~add_term =
+      let upd_phi = if add_term then and_termcond_atoms phi orig_atom else phi in
+      SatUnsat.list_fold atoms
+        ~init:(false, (upd_phi, new_eqs))
+        ~f:(fun (linear_changed, (phi, new_eqs)) atom ->
+          let+ changed', phi_new_eqs = and_normalized_atom (phi, new_eqs) atom in
           (linear_changed || changed', phi_new_eqs) )
 
 
-    and and_atom atom (phi, new_eqs) =
-      normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs)
+    and and_atom atom (phi, new_eqs) ~add_term =
+      normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs) ~orig_atom:[atom] ~add_term
 
 
     and and_var_is_zero v (phi, neweqs) =
@@ -3896,8 +4003,6 @@ module Formula = struct
 
 
     let and_var_term ~fuel v t (phi, new_eqs) =
-      Debug.p "and_var_term: %a=%a in %a,@;new_eqs=%a@\n" Var.pp v (Term.pp Var.pp) t
-        (pp_with_pp_var Var.pp) phi pp_new_eqs new_eqs ;
       let* (t' : Term.t) =
         normalize_var_const phi t |> Atom.eval_term ~is_neq_zero:(is_neq_zero phi)
       in
@@ -3913,29 +4018,29 @@ module Formula = struct
         | None ->
             Sat (phi, new_eqs)
         | Some atoms ->
-            and_normalized_atoms (phi, new_eqs) atoms >>| snd
+            and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms ~add_term:true >>| snd
       in
       solve_normalized_term_eq ~fuel new_eqs t' v' phi
 
 
     (* interface *)
 
-    let and_atom atom phi_new_eqs =
-      Debug.p "BEGIN and_atom %a@\n" (Atom.pp_with_pp_var Var.pp) atom ;
-      let phi_new_eqs' = and_atom atom phi_new_eqs >>| snd in
-      Debug.p "END and_atom %a -> %a@\n" (Atom.pp_with_pp_var Var.pp) atom
+    let and_atom atom phi_new_eqs ~add_term =
+      (* Debug.p "BEGIN and_atom %a@\n" (Atom.pp_with_pp_var Var.pp) atom ; *)
+      let phi_new_eqs' = and_atom atom phi_new_eqs ~add_term >>| snd in
+      (* Debug.p "END and_atom %a -> %a@\n" (Atom.pp_with_pp_var Var.pp) atom 
         (SatUnsat.pp (Pp.pair ~fst:(pp_with_pp_var Var.pp) ~snd:pp_new_eqs))
-        phi_new_eqs' ;
+          phi_new_eqs' ; *)
       phi_new_eqs'
 
 
-    let and_normalized_atoms phi_new_eqs atoms =
-      let phi_new_eqs' = and_normalized_atoms phi_new_eqs atoms >>| snd in
-      Debug.p "and_normalized_atoms [@[<v>%a@]] -> %a@\n"
+    let and_normalized_atoms phi_new_eqs atoms ~orig_atom ~add_term =
+      let phi_new_eqs' = and_normalized_atoms phi_new_eqs atoms ~orig_atom ~add_term >>| snd in
+      (* Debug.p "and_normalized_atoms [@[<v>%a@]] -> %a@\n" 
         (Pp.seq ~sep:";" (Atom.pp_with_pp_var Var.pp))
         atoms
         (SatUnsat.pp (pp_with_pp_var Var.pp))
-        (SatUnsat.map fst phi_new_eqs') ;
+        (SatUnsat.map fst phi_new_eqs') ; *)
       phi_new_eqs'
 
 
@@ -3979,6 +4084,28 @@ let add_conditions (atoms, depth) conditions =
 
 
 let ttrue = {conditions= Atom.Map.empty; phi= Formula.ttrue}
+
+(* added pulse-infinite *)
+let extract_path_cond (var : t) : int Atom.Map.t = var.conditions
+
+let extract_term_cond (var : t) = Formula.get_terminal_conds var.phi
+
+let extract_term_cond2 (var : t) = Formula.get_terminal_terms var.phi
+
+let map_is_empty (conds : int Atom.Map.t) = Atom.Map.is_empty conds
+
+let set_is_empty (conds : Atom.Set.t) = Atom.Set.is_empty conds
+
+let termset_is_empty (conds : Term.Set.t) = Term.Set.is_empty conds
+
+let formula_is_empty (var : t) =
+  map_is_empty (extract_path_cond var)
+  && set_is_empty (extract_term_cond var)
+  && termset_is_empty (extract_term_cond2 var)
+
+
+(* let formula_is_empty (var:t) = (Formula.is_empty var.phi) *)
+(* end pulse-infinite *)
 
 let pp_with_pp_var pp_var fmt {conditions; phi} =
   let pp_conditions fmt conditions =
@@ -4030,9 +4157,7 @@ module Intervals = struct
     >>| update_formula formula
 
 
-  let and_binop ~negated binop op1 op2 (formula, new_eqs) =
-    Debug.p "Intervals.and_binop ~negated:%b %a %a %a@\n" negated Binop.pp binop pp_operand op1
-      pp_operand op2 ;
+  let and_binop ~negated binop op1 op2 ?(ifk = false) (formula, new_eqs) =
     let v1_opt, i1_opt = interval_and_var_of_operand formula.phi op1 in
     let v2_opt, i2_opt = interval_and_var_of_operand formula.phi op2 in
     match CItv.abduce_binop_is_true ~negated binop i1_opt i2_opt with
@@ -4047,7 +4172,6 @@ module Intervals = struct
         let refine v_opt i_better_opt formula_new_eqs =
           Option.both v_opt i_better_opt
           |> Option.fold ~init:(Sat formula_new_eqs) ~f:(fun formula_new_eqs (v, i_better) ->
-                 Debug.p "Refining interval for %a to %a@\n" Var.pp v CItv.pp i_better ;
                  let* formula, new_eqs = formula_new_eqs in
                  let* phi = Formula.add_interval v i_better formula.phi in
                  let* phi, new_eqs =
@@ -4060,7 +4184,55 @@ module Intervals = struct
                  let+ formula = incorporate_new_eqs new_eqs {formula with phi} in
                  (formula, new_eqs) )
         in
-        refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
+        let need_atom = ifk in
+        let binop_unknown (binop : Binop.t) =
+          match binop with Eq | Ne | Le | Lt | Gt | Ge -> false | _ -> true
+        in
+        let nformula =
+          if phys_equal need_atom false || binop_unknown binop then formula
+          else
+            let atom_to_binop (binop : Binop.t) =
+              match binop with
+              | Eq ->
+                  (false, Atom.equal)
+              | Ne ->
+                  (false, Atom.not_equal)
+              | Le ->
+                  (false, Atom.less_equal)
+              | Lt ->
+                  (false, Atom.less_than)
+              | Gt ->
+                  (true, Atom.less_than)
+              | Ge ->
+                  (true, Atom.less_equal)
+              | _ ->
+                  L.die InternalError
+                    "PULSEINF: and_binop: Wrong argument to [mk_atom_of_binop]: %a -- this should \
+                     never happen "
+                    Binop.pp binop
+            in
+            let inv, op = atom_to_binop binop in
+            let invcond = inv in
+            (* Handle non-termination cases with while (x == x) by translating (x == x) to (0 == 0) *)
+            (* If this is not done, each x has a new version per iteration and we have a false negative *)
+            let opcond =
+              match (Term.of_operand op1, Term.of_operand op2) with
+              | Term.Var v1, Term.Var v2 ->
+                  phys_equal v1 v2
+              | _, _ ->
+                  false
+            in
+            let swapcond = match (binop : Binop.t) with Eq -> true | _ -> false in
+            let swapterm = Atom.equal Term.zero Term.zero in
+            let atom =
+              if opcond && swapcond then swapterm
+              else if invcond then op (Term.of_operand op2) (Term.of_operand op1)
+              else op (Term.of_operand op1) (Term.of_operand op2)
+            in
+            let newphi = Formula.and_termcond_atoms formula.phi [atom] in
+            {formula with phi= newphi}
+        in
+        refine v1_opt i1_better_opt (nformula, new_eqs) >>= refine v2_opt i2_better_opt
 
 
   let binop v bop op_lhs op_rhs formula =
@@ -4101,10 +4273,11 @@ module Intervals = struct
         Sat (phi, new_eqs)
 end
 
-let and_atom atom formula =
+let and_atom atom formula ~add_term =
   let open SatUnsat.Import in
-  let* phi, new_eqs = Formula.Normalizer.and_atom atom (formula.phi, RevList.empty) in
-  let+ formula = Intervals.incorporate_new_eqs new_eqs {formula with phi} in
+  let* updphi, new_eqs = Formula.Normalizer.and_atom atom (formula.phi, RevList.empty) ~add_term in
+  let newphi = {formula with phi= updphi} in
+  let+ (formula : t) = Intervals.incorporate_new_eqs new_eqs newphi in
   (formula, new_eqs)
 
 
@@ -4127,7 +4300,7 @@ let and_mk_atom binop op1 op2 formula =
     Intervals.and_binop ~negated:false binop op1 op2 (formula, RevList.empty)
   in
   let atom = (mk_atom_of_binop binop) (Term.of_operand op1) (Term.of_operand op2) in
-  let+ formula, new_eqs' = and_atom atom formula in
+  let+ formula, new_eqs' = and_atom atom formula ~add_term:false in
   (formula, RevList.append new_eqs new_eqs')
 
 
@@ -4141,7 +4314,7 @@ let and_not_equal = and_mk_atom Ne
 
 let and_is_int v formula =
   let atom = Atom.equal (IsInt (Var v)) Term.one in
-  and_atom atom formula
+  and_atom atom formula ~add_term:false
 
 
 let and_less_equal = and_mk_atom Le
@@ -4150,24 +4323,29 @@ let and_less_than = and_mk_atom Lt
 
 let and_equal_unop v (op : Unop.t) x formula =
   let* formula = Intervals.unop v op x formula in
-  and_atom (Equal (Var v, Term.of_unop op (Term.of_operand x))) formula
+  and_atom (Equal (Var v, Term.of_unop op (Term.of_operand x))) formula ~add_term:false
 
 
 let and_equal_binop v (bop : Binop.t) x y formula =
   let* formula = Intervals.binop v bop x y formula in
-  and_atom (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y))) formula
+  and_atom
+    (Equal (Var v, Term.of_binop bop (Term.of_operand x) (Term.of_operand y)))
+    formula ~add_term:false
 
 
 let and_equal_string_concat v x y formula =
-  and_atom (Equal (Var v, StringConcat (Term.of_operand x, Term.of_operand y))) formula
+  and_atom
+    (Equal (Var v, StringConcat (Term.of_operand x, Term.of_operand y)))
+    formula ~add_term:false
 
 
-let prune_atom ~depth atom (formula, new_eqs) =
+let prune_atom ~depth atom (formula, new_eqs) ifk =
   (* Use [phi] to normalize [atom] here to take previous [prune]s into account. *)
   Debug.p "prune atom %a in %a@\n" (Atom.pp_with_pp_var Var.pp) atom pp formula ;
   let* normalized_atoms = Formula.Normalizer.normalize_atom formula.phi atom in
   let* phi, new_eqs =
     Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms
+      ~orig_atom:[atom] ~add_term:ifk
   in
   (* Sticking this call in slightly hopefully *)
   let* phi, new_eqs = Formula.Normalizer.propagate_atom atom (phi, new_eqs) in
@@ -4175,20 +4353,31 @@ let prune_atom ~depth atom (formula, new_eqs) =
     List.fold normalized_atoms ~init:formula.conditions ~f:(fun conditions atom ->
         add_condition (atom, depth) conditions )
   in
+  (* let orig_tconds = (Formula.get_terminal_conds phi) in *)
+  (* let+ formula = Intervals.incorporate_new_eqs new_eqs {phi; conditions; term_conds=orig_tconds} in *)
   let+ formula = Intervals.incorporate_new_eqs new_eqs {phi; conditions} in
   (formula, new_eqs)
 
 
-let prune_atoms ~depth atoms formula_new_eqs =
+let prune_atoms ~depth atoms formula_new_eqs ifk =
+  (* dont add atom on that path as it would be doubly added by prune_binop/and_binop then *)
+  let _ = ifk in
   SatUnsat.list_fold atoms ~init:formula_new_eqs ~f:(fun formula_new_eqs atom ->
-      prune_atom ~depth atom formula_new_eqs )
+      prune_atom ~depth atom formula_new_eqs false )
 
 
-let prune_binop ?(depth = 0) ~negated (bop : Binop.t) x y formula =
+let prune_binop ?(depth = 0) ~negated (bop : Binop.t) ?(ifk = false) x y formula =
+  (* PULSEINF: Check for cases like while (x == x) by rewriting them to while (0 == 0) *)
   let tx = Term.of_operand x in
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
-  (* [Option.value_exn] is justified by [force_to_atom:true] *)
+  let opcond = match (tx, ty) with Term.Var v1, Term.Var v2 -> phys_equal v1 v2 | _, _ -> false in
+  let swapcond = match (bop : Binop.t) with Eq -> true | _ -> false in
+  let swapterm = Term.of_binop Eq Term.zero Term.zero in
+  let atom = if opcond && swapcond then swapterm else t in
+  let newphi = Formula.and_termcond_binop formula.phi atom in
+  let newformula = {formula with phi= newphi} in
+  (* End PULSEINF *)
   let atoms =
     Option.value_exn
       (Atom.atoms_of_term ~is_neq_zero:(Formula.is_neq_zero formula.phi) ~force_to_atom:true
@@ -4198,7 +4387,8 @@ let prune_binop ?(depth = 0) ~negated (bop : Binop.t) x y formula =
      important to do [prune_atoms] *first* otherwise it might become trivial. For instance adding [x
      = 4] would prune [4 = 4] and so not add anything to [formula.conditions] instead of adding [x =
      4]. *)
-  prune_atoms ~depth atoms (formula, RevList.empty) >>= Intervals.and_binop ~negated bop x y
+  prune_atoms ~depth atoms (newformula, RevList.empty) ifk
+  >>= Intervals.and_binop ~negated bop x y ~ifk
 
 
 let is_known_zero formula v =
@@ -4295,7 +4485,9 @@ let and_equal_instanceof v1 v2 t ~nullable formula =
   let tenv = PulseContext.tenv_exn () in
   let t = Tenv.expand_hack_alias_in_typ tenv t in
   let* formula, new_eqs' =
-    and_atom (Atom.equal (Var v1) (IsInstanceOf {var= v2; typ= t; nullable})) formula
+    and_atom
+      (Atom.equal (Var v1) (IsInstanceOf {var= v2; typ= t; nullable}))
+      formula ~add_term:false
   in
   let* formula, new_eqs' =
     match DynamicTypes.evaluate_instanceof formula v2 t nullable with
@@ -4306,6 +4498,7 @@ let and_equal_instanceof v1 v2 t ~nullable formula =
           (* It might look odd to keep the instanceof around, but removing it messes up the latency calculations
              because there's then no dependency on v2 *)
           Formula.Normalizer.and_atom (Atom.equal (Var v1) value_term) (formula.phi, new_eqs')
+            ~add_term:false
         in
         Sat ({formula with phi}, neweqs')
   in
@@ -4384,7 +4577,9 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
     IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:acc_phi_new_eqs
       ~f:(fun (acc_f, phi_new_eqs) atom_foreign ->
         let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f_subst in
-        let phi_new_eqs = Formula.Normalizer.and_atom atom phi_new_eqs |> sat_value_exn in
+        let phi_new_eqs =
+          Formula.Normalizer.and_atom atom phi_new_eqs ~add_term:false |> sat_value_exn
+        in
         (acc_f, phi_new_eqs) )
   in
   let and_ phi_foreign acc phi =
@@ -4418,7 +4613,7 @@ let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var
     IContainer.fold_of_pervasives_map_fold Atom.Map.fold conditions_foreign ~init
       ~f:(fun (acc_f, phi_new_eqs) (atom_foreign, depth) ->
         let acc_f, atom = Atom.fold_subst_variables atom_foreign ~init:acc_f ~f_subst in
-        let phi_new_eqs = prune_atom ~depth:(depth + 1) atom phi_new_eqs |> sat_value_exn in
+        let phi_new_eqs = prune_atom ~depth:(depth + 1) atom phi_new_eqs true |> sat_value_exn in
         (acc_f, phi_new_eqs) )
   in
   try
@@ -4507,6 +4702,7 @@ end = struct
            at this point since they will be reconstructed by callers *)
       ~linear_eqs_occurrences:Var.Map.empty ~tableau_occurrences:Var.Map.empty
       ~term_eqs_occurrences:Var.Map.empty ~atoms_occurrences:Var.Map.empty
+      ~term_conditions:Atom.Set.empty ~term_conditions2:Term.Set.empty
 
 
   let extend_with_restricted_reps_of keep formula =
@@ -4699,7 +4895,9 @@ module DeadVariables = struct
              point since they will be reconstructed by callers *)
         ~linear_eqs_occurrences:Var.Map.empty ~tableau_occurrences:Var.Map.empty
         ~term_eqs_occurrences:Var.Map.empty ~atoms_occurrences:Var.Map.empty
+        ~term_conditions:Atom.Set.empty ~term_conditions2:Term.Set.empty
     in
+    (* let termcond = (Formula.get_terminal_conds formula.phi) in *)
     let phi = simplify_phi formula.phi in
     let conditions =
       (* discard atoms that callers have no way of influencing, i.e. more or less those that do not
@@ -4854,7 +5052,9 @@ let pp_formula_explained pp_var fmt {phi} =
        ; linear_eqs_occurrences= _
        ; tableau_occurrences= _
        ; term_eqs_occurrences= _
-       ; atoms_occurrences= _ }
+       ; atoms_occurrences= _
+       ; term_conditions= _
+       ; term_conditions2= _ }
        [@warning "+missing-record-field-pattern"] ) =
     phi
   in

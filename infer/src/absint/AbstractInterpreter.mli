@@ -78,6 +78,14 @@ module DisjunctiveMetadata : sig
   type t
 
   val pp : F.formatter -> t -> unit
+
+  val record_cfg_node : Procdesc.Node.t -> unit
+
+  val get_cfg_node : unit -> Procdesc.Node.t
+
+  val record_alert_node : Procdesc.Node.t -> unit
+
+  val get_alert_node : unit -> Procdesc.Node.t
 end
 
 (** In the disjunctive interpreter, the domain is a set of abstract states representing a

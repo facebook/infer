@@ -104,19 +104,21 @@ let pp_ ~is_summary f
     else F.fprintf f "%a@;PRE=[%a]" PostDomain.pp post PreDomain.pp pre
   in
   F.fprintf f
-    "@[<v>%a@;\
+      "@[<v>%a@;\
      %t@;\
      %tneed_dynamic_type_specialization=%a@;\
      transitive_info=%a@;\
      recursive_calls=%a@;\
      skipped_calls=%a@;\
-     Topl=%a@]"
-    Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
-    need_dynamic_type_specialization TransitiveInfo.pp transitive_info PulseMutualRecursion.Set.pp
-    recursive_calls SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+       Topl=%a@]"
+      Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
+      need_dynamic_type_specialization TransitiveInfo.pp transitive_info PulseMutualRecursion.Set.pp
+      recursive_calls SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let pp = pp_ ~is_summary:false
+
+let get_path_condition astate = astate.path_condition
 
 let set_path_condition path_condition astate = {astate with path_condition}
 
