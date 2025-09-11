@@ -530,9 +530,7 @@ ifeq ($(BUILD_SWIFT_ANALYZERS), yes)
 	  export PATH="$$LLVM_BIN:$$PATH" \
 	         OPAM_USER_PATH_RO="$$LLVM_BIN"; \
 	fi; \
-	llvm_version=$$(opam show \
-	  --just-file $(ROOT_DIR)/dependencies/llvm/opam-repository/packages/llvm/llvm.*-infer/opam \
-	  --field=version); \
+	llvm_version=$$(llvm-config --version | cut -f1 -d.)-static-infer; \
 	$(call silent_on_success,Installing our LLVM OCaml bindings,\
 	opam update local-llvm && \
 	opam install --yes --no-depext llvm.$$llvm_version)
