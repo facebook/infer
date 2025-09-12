@@ -330,14 +330,14 @@ async def foo(self, x):
   assert_not (ast_diff_equal prog1 prog2)
 
 
-let fp_test_change_async_def_kwargs_good _ =
+let test_change_async_def_kwargs_good _ =
   let prog1 = {|
 async def foo(self, **kwargs): pass
 |} in
   let prog2 = {|
 async def foo(self, **kwargs: int): pass
 |} in
-  assert_not (ast_diff_equal prog1 prog2)
+  assert (ast_diff_equal prog1 prog2)
 
 
 let suite =
@@ -362,7 +362,7 @@ let suite =
        ; "test_change_class_to_is_instance_good" >:: test_change_class_to_is_instance_good
        ; "test_change_class_to_is_instance_bad" >:: test_change_class_to_is_instance_bad
        ; "test_change_async_body_indentation_bad" >:: test_change_async_body_indentation_bad
-       ; "fp_test_change_async_def_kwargs_good" >:: fp_test_change_async_def_kwargs_good ]
+       ; "test_change_async_def_kwargs_good" >:: test_change_async_def_kwargs_good ]
 
 
 let () = run_test_tt_main suite

@@ -19,11 +19,13 @@ def strip_type_annotations(tree):
         def visit_FunctionDef(self, node):
             node.returns = None
             node.args.args = self._remove_arg_annotations(node.args.args)
+            node.args.kwarg = ast.arg(arg=node.args.kwarg.arg, annotation=None) if node.args.kwarg else None
             node.args.kwonlyargs = self._remove_arg_annotations(node.args.kwonlyargs)
             return self.generic_visit(node)
         def visit_AsyncFunctionDef(self, node):
             node.returns = None
             node.args.args = self._remove_arg_annotations(node.args.args)
+            node.args.kwarg = ast.arg(arg=node.args.kwarg.arg, annotation=None) if node.args.kwarg else None
             node.args.kwonlyargs = self._remove_arg_annotations(node.args.kwonlyargs)
             return self.generic_visit(node)
         def visit_AnnAssign(self, node):
