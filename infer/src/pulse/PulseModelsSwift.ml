@@ -39,7 +39,7 @@ let dynamic_call arg args () : unit DSL.model_monad =
       let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true self in
       match arg_dynamic_type_data with
       | Some {Formula.typ= {desc= Tstruct name}} -> (
-          let args = List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) (self :: args) in
+          let args = List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) (args @ [self]) in
           let* proc_name = tenv_resolve_method_with_offset name offset in
           match proc_name with
           | Some proc_name ->
