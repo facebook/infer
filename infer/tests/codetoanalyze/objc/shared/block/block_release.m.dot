@@ -72,7 +72,7 @@ digraph cfg {
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_11" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_10" ;
-"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,(unsigned int)0:unsigned int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n " shape="box"]
+"blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(context:CGContext*); [line 21, column 3]\n  n$18=_fun_CGBitmapContextCreate(null:void*,(unsigned long)0:unsigned long,(unsigned long)0:unsigned long,(unsigned long)8:unsigned long,(unsigned long)0:unsigned long,null:CGColorSpace*,0:int) [line 21, column 26]\n  *&context:CGContext*=n$18 [line 21, column 3]\n " shape="box"]
 	
 
 	 "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_12" -> "blockReleaseNoLeak#My_manager#[in.d6f2b8011ad550e7_11" ;
