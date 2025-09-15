@@ -348,6 +348,12 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
       in
       (rcd_exp, Some textual_typ, List.append (List.append rcd_instrs elt_instrs) [store_instr])
+  | Ap3 (Conditional, _typ, cond_exp, then_exp, else_exp) ->
+      let cond_exp, _, cond_instrs = to_textual_bool_exp loc ~proc_state cond_exp in
+      let then_exp, _, then_instrs = to_textual_exp loc ~proc_state then_exp in
+      let else_exp, _, else_instrs = to_textual_exp loc ~proc_state else_exp in
+      let exp = Textual.Exp.If {cond= cond_exp; then_= then_exp; else_= else_exp} in
+      (exp, None, cond_instrs @ then_instrs @ else_instrs)
   | ApN (Record, typ, _elements) -> (
       let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
       let type_name_opt =
@@ -389,6 +395,11 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           (rcd_exp, Some textual_typ, instrs) )
   | _ ->
       undef_exp exp
+
+
+and to_textual_bool_exp ~proc_state loc exp =
+  let textual_exp, textual_typ_opt, instrs = to_textual_exp loc ~proc_state exp in
+  (Textual.BoolExp.Exp textual_exp, textual_typ_opt, instrs)
 
 
 and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
@@ -646,11 +657,6 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
   (instrs, first_loc, last_loc)
 
 
-let to_textual_bool_exp ~proc_state loc exp =
-  let textual_exp, textual_typ_opt, _ = to_textual_exp loc ~proc_state exp in
-  (Textual.BoolExp.Exp textual_exp, textual_typ_opt)
-
-
 let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =
   let block = jump.dst in
   let node_label = block_to_node_name block in
@@ -693,7 +699,7 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
       match StdUtils.iarray_to_list tbl with
       | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
           (* if then else *)
-          let bexp = to_textual_bool_exp loc ~proc_state key |> fst in
+          let bexp, _, instrs = to_textual_bool_exp loc ~proc_state key in
           let else_, else_typ, zero_nodes =
             to_textual_jump_and_succs ~proc_state ~seen_nodes zero_jump
           in
@@ -701,7 +707,7 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
           let term = Textual.Terminator.If {bexp; then_; else_} in
           let nodes = Textual.Node.Set.union zero_nodes els_nodes in
           let typ_opt = Type.join_typ if_typ else_typ in
-          ((term, typ_opt, nodes), Some loc, [])
+          ((term, typ_opt, nodes), Some loc, instrs)
       | [] when Exp.equal key Exp.false_ ->
           (* goto *)
           (to_textual_jump_and_succs ~proc_state ~seen_nodes els, Some loc, [])

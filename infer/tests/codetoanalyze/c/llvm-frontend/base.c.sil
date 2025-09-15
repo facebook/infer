@@ -291,7 +291,7 @@ define test17(var0: int) : int {
       store &b <- n1 @[122:0]
       n2 = load &b @[142:11]
       n3 = __sil_ne(n2, 0) @[142:11]
-      store &z <- $builtins.llvm_nondet() @[142:7]
+      store &z <- (if n3 then 1 else 0) @[142:7]
       n4 = load &z @[143:10]
       ret n4 @[143:3]
       
