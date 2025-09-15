@@ -164,7 +164,7 @@ and name =
   | ObjcBlock of objc_block_sig
   | CFunction of c_function_sig
   | SwiftClass of SwiftClassName.t
-[@@deriving hash, sexp]
+[@@deriving hash, sexp, compare, equal]
 
 and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
 
@@ -437,64 +437,8 @@ module Name = struct
     | ( (CStruct name1 | CUnion name1 | CppClass {name= name1})
       , (CStruct name2 | CUnion name2 | CppClass {name= name2}) ) ->
         QualifiedCppName.compare_name name1 name2
-    | (CStruct _ | CUnion _ | CppClass _), _ ->
-        -1
-    | _, (CStruct _ | CUnion _ | CppClass _) ->
-        1
-    | CSharpClass name1, CSharpClass name2 ->
-        String.compare (CSharpClassName.classname name1) (CSharpClassName.classname name2)
-    | CSharpClass _, _ ->
-        -1
-    | _, CSharpClass _ ->
-        1
-    | ErlangType name1, ErlangType name2 ->
-        ErlangTypeName.compare name1 name2
-    | ErlangType _, _ ->
-        -1
-    | _, ErlangType _ ->
-        1
-    | JavaClass name1, JavaClass name2 ->
-        String.compare (JavaClassName.classname name1) (JavaClassName.classname name2)
-    | JavaClass _, _ ->
-        -1
-    | _, JavaClass _ ->
-        1
-    | ObjcClass name1, ObjcClass name2 ->
-        QualifiedCppName.compare_name name1 name2
-    | ObjcClass _, _ ->
-        -1
-    | _, ObjcClass _ ->
-        1
-    | ObjcProtocol name1, ObjcProtocol name2 ->
-        QualifiedCppName.compare_name name1 name2
-    | HackClass name1, HackClass name2 ->
-        HackClassName.compare name1 name2
-    | HackClass _, _ ->
-        -1
-    | _, HackClass _ ->
-        1
-    | PythonClass name1, PythonClass name2 ->
-        PythonClassName.compare name1 name2
-    | PythonClass _, _ ->
-        -1
-    | _, PythonClass _ ->
-        1
-    | ObjcBlock bsig1, ObjcBlock bsig2 ->
-        compare_objc_block_sig bsig1 bsig2
-    | ObjcBlock _, _ ->
-        -1
-    | _, ObjcBlock _ ->
-        1
-    | CFunction csig1, CFunction csig2 ->
-        compare_c_function_sig csig1 csig2
-    | CFunction _, _ ->
-        -1
-    | _, CFunction _ ->
-        1
-    | SwiftClass _, _ ->
-        -1
-    | _, SwiftClass _ ->
-        1
+    | _ ->
+        compare x y
 
 
   let qual_name = function
@@ -567,7 +511,7 @@ module Name = struct
           "struct"
       | CUnion _ ->
           "union"
-      | CppClass _ | CSharpClass _ | JavaClass _ | ObjcClass _ ->
+      | CppClass _ | CSharpClass _ | JavaClass _ | ObjcClass _ | SwiftClass _ ->
           "class"
       | ErlangType _ ->
           "erlang"
@@ -581,8 +525,6 @@ module Name = struct
           ""
       | CFunction _ ->
           "function"
-      | SwiftClass _ ->
-          "swift"
     in
     F.fprintf fmt "%s %a" (prefix tname) (pp_name_c_syntax Pp.text) tname
 
