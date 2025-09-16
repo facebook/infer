@@ -1,0 +1,83 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: basic_loop::goto_loop
+pub fn goto_loop(@1: i32) -> i32
+{
+    let @0: i32; // return
+    let n@1: i32; // arg #1
+    let @2: (); // anonymous local
+    let @3: (); // anonymous local
+    let @4: i32; // anonymous local
+    let @5: bool; // anonymous local
+    let @6: i32; // anonymous local
+    let @7: !; // anonymous local
+    let @8: (); // anonymous local
+    let @9: (); // anonymous local
+
+    bb0: {
+        storage_live(@2);
+        goto bb1;
+    }
+
+    bb1: {
+        @4 := copy (n@1) panic.+ const (1 : i32);
+        nop;
+        n@1 := move (@4);
+        storage_live(@5);
+        storage_live(@6);
+        @6 := copy (n@1);
+        @5 := move (@6) > const (5 : i32);
+        if move (@5) -> bb2 else -> bb3;
+    }
+
+    bb2: {
+        storage_dead(@6);
+        nop;
+        nop;
+        storage_dead(@5);
+        storage_dead(@2);
+        @0 := copy (n@1);
+        return;
+    }
+
+    bb3: {
+        storage_dead(@6);
+        nop;
+        nop;
+        storage_dead(@5);
+        goto bb1;
+    }
+}
+
+// Full name: basic_loop::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+    let @2: i32; // anonymous local
+    let @3: i32; // anonymous local
+    let @4: (); // anonymous local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (0 : i32);
+        storage_live(@2);
+        storage_live(@3);
+        @3 := copy (x@1);
+        @2 := goto_loop(move (@3)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_dead(@3);
+        storage_dead(@2);
+        nop;
+        @0 := ();
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}

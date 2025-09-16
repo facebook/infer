@@ -1,0 +1,29 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: shadowing::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+    let @2: (); // anonymous local
+    let x@3: i32; // local
+    let @4: (); // anonymous local
+    let @5: (); // anonymous local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (1 : i32);
+        storage_live(@2);
+        storage_live(x@3);
+        x@3 := const (2 : i32);
+        nop;
+        nop;
+        storage_dead(x@3);
+        storage_dead(@2);
+        nop;
+        @0 := ();
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+}

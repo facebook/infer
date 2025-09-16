@@ -1,7 +1,7 @@
 {
     "charon_version": "0.1.123",
     "translated": {
-        "crate_name": "example",
+        "crate_name": "caller_and_callee",
         "options": {
             "ullbc": true,
             "lib": false,
@@ -50,12 +50,31 @@
         "item_names": [
             {
                 "key": {
-                    "Fun": 1
+                    "Fun": 0
                 },
                 "value": [
                     {
                         "Ident": [
-                            "example",
+                            "caller_and_callee",
+                            0
+                        ]
+                    },
+                    {
+                        "Ident": [
+                            "caller",
+                            0
+                        ]
+                    }
+                ]
+            },
+            {
+                "key": {
+                    "Fun": 2
+                },
+                "value": [
+                    {
+                        "Ident": [
+                            "caller_and_callee",
                             0
                         ]
                     },
@@ -69,18 +88,18 @@
             },
             {
                 "key": {
-                    "Fun": 0
+                    "Fun": 1
                 },
                 "value": [
                     {
                         "Ident": [
-                            "example",
+                            "caller_and_callee",
                             0
                         ]
                     },
                     {
                         "Ident": [
-                            "foo",
+                            "callee",
                             0
                         ]
                     }
@@ -90,7 +109,7 @@
         "short_names": [
             {
                 "key": {
-                    "Fun": 1
+                    "Fun": 2
                 },
                 "value": [
                     {
@@ -103,12 +122,25 @@
             },
             {
                 "key": {
+                    "Fun": 1
+                },
+                "value": [
+                    {
+                        "Ident": [
+                            "callee",
+                            0
+                        ]
+                    }
+                ]
+            },
+            {
+                "key": {
                     "Fun": 0
                 },
                 "value": [
                     {
                         "Ident": [
-                            "foo",
+                            "caller",
                             0
                         ]
                     }
@@ -118,10 +150,10 @@
         "files": [
             {
                 "name": {
-                    "Local": "./unit/programs/example.rs"
+                    "Local": "./unit/programs/function/caller_and_callee.rs"
                 },
-                "crate_name": "example",
-                "contents": "#[allow(unused)]\nfn foo() {\n    let x = 42;\n}\n\nfn main(){\n    foo();\n}"
+                "crate_name": "caller_and_callee",
+                "contents": "pub fn caller() -> i32 {\n    let k = callee(3);\n    k\n}\n\nfn callee(n: i32) -> i32 { n * 2 }\n\nfn main() {\n    let _ = caller();\n}"
             }
         ],
         "type_decls": [],
@@ -132,13 +164,13 @@
                     "name": [
                         {
                             "Ident": [
-                                "example",
+                                "caller_and_callee",
                                 0
                             ]
                         },
                         {
                             "Ident": [
-                                "foo",
+                                "caller",
                                 0
                             ]
                         }
@@ -147,7 +179,7 @@
                         "span": {
                             "file_id": 0,
                             "beg": {
-                                "line": 2,
+                                "line": 1,
                                 "col": 0
                             },
                             "end": {
@@ -157,19 +189,12 @@
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn foo() {\n    let x = 42;\n}",
+                    "source_text": "pub fn caller() -> i32 {\n    let k = callee(3);\n    k\n}",
                     "attr_info": {
-                        "attributes": [
-                            {
-                                "Unknown": {
-                                    "path": "allow",
-                                    "args": "unused"
-                                }
-                            }
-                        ],
+                        "attributes": [],
                         "inline": null,
                         "rename": null,
-                        "public": false
+                        "public": true
                     },
                     "is_local": true,
                     "opacity": "Transparent",
@@ -188,14 +213,8 @@
                     },
                     "inputs": [],
                     "output": {
-                        "Adt": {
-                            "id": "Tuple",
-                            "generics": {
-                                "regions": [],
-                                "types": [],
-                                "const_generics": [],
-                                "trait_refs": []
-                            }
+                        "Literal": {
+                            "Int": "I32"
                         }
                     }
                 },
@@ -208,7 +227,7 @@
                                 "span": {
                                     "file_id": 0,
                                     "beg": {
-                                        "line": 2,
+                                        "line": 1,
                                         "col": 0
                                     },
                                     "end": {
@@ -225,20 +244,14 @@
                                         "index": 0,
                                         "name": null,
                                         "ty": {
-                                            "Adt": {
-                                                "id": "Tuple",
-                                                "generics": {
-                                                    "regions": [],
-                                                    "types": [],
-                                                    "const_generics": [],
-                                                    "trait_refs": []
-                                                }
+                                            "Literal": {
+                                                "Int": "I32"
                                             }
                                         }
                                     },
                                     {
                                         "index": 1,
-                                        "name": "x",
+                                        "name": "k",
                                         "ty": {
                                             "Literal": {
                                                 "Int": "I32"
@@ -256,11 +269,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 3,
+                                                        "line": 2,
                                                         "col": 8
                                                     },
                                                     "end": {
-                                                        "line": 3,
+                                                        "line": 2,
                                                         "col": 9
                                                     }
                                                 },
@@ -270,43 +283,50 @@
                                                 "StorageLive": 1
                                             },
                                             "comments_before": []
-                                        },
-                                        {
+                                        }
+                                    ],
+                                    "terminator": {
+                                        "span": {
                                             "span": {
-                                                "span": {
-                                                    "file_id": 0,
-                                                    "beg": {
-                                                        "line": 3,
-                                                        "col": 12
-                                                    },
-                                                    "end": {
-                                                        "line": 3,
-                                                        "col": 14
-                                                    }
+                                                "file_id": 0,
+                                                "beg": {
+                                                    "line": 2,
+                                                    "col": 12
                                                 },
-                                                "generated_from_span": null
+                                                "end": {
+                                                    "line": 2,
+                                                    "col": 21
+                                                }
                                             },
-                                            "content": {
-                                                "Assign": [
-                                                    {
-                                                        "kind": {
-                                                            "Local": 1
-                                                        },
-                                                        "ty": {
-                                                            "Literal": {
-                                                                "Int": "I32"
+                                            "generated_from_span": null
+                                        },
+                                        "content": {
+                                            "Call": {
+                                                "call": {
+                                                    "func": {
+                                                        "Regular": {
+                                                            "func": {
+                                                                "Fun": {
+                                                                    "Regular": 1
+                                                                }
+                                                            },
+                                                            "generics": {
+                                                                "regions": [],
+                                                                "types": [],
+                                                                "const_generics": [],
+                                                                "trait_refs": []
                                                             }
                                                         }
                                                     },
-                                                    {
-                                                        "Use": {
+                                                    "args": [
+                                                        {
                                                             "Const": {
                                                                 "value": {
                                                                     "Literal": {
                                                                         "Scalar": {
                                                                             "Signed": [
                                                                                 "I32",
-                                                                                "42"
+                                                                                "3"
                                                                             ]
                                                                         }
                                                                     }
@@ -318,22 +338,38 @@
                                                                 }
                                                             }
                                                         }
+                                                    ],
+                                                    "dest": {
+                                                        "kind": {
+                                                            "Local": 1
+                                                        },
+                                                        "ty": {
+                                                            "Literal": {
+                                                                "Int": "I32"
+                                                            }
+                                                        }
                                                     }
-                                                ]
-                                            },
-                                            "comments_before": []
+                                                },
+                                                "target": 1,
+                                                "on_unwind": 2
+                                            }
                                         },
+                                        "comments_before": []
+                                    }
+                                },
+                                {
+                                    "statements": [
                                         {
                                             "span": {
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 2,
-                                                        "col": 9
+                                                        "line": 3,
+                                                        "col": 4
                                                     },
                                                     "end": {
-                                                        "line": 4,
-                                                        "col": 1
+                                                        "line": 3,
+                                                        "col": 5
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -345,36 +381,24 @@
                                                             "Local": 0
                                                         },
                                                         "ty": {
-                                                            "Adt": {
-                                                                "id": "Tuple",
-                                                                "generics": {
-                                                                    "regions": [],
-                                                                    "types": [],
-                                                                    "const_generics": [],
-                                                                    "trait_refs": []
-                                                                }
+                                                            "Literal": {
+                                                                "Int": "I32"
                                                             }
                                                         }
                                                     },
                                                     {
-                                                        "Aggregate": [
-                                                            {
-                                                                "Adt": [
-                                                                    {
-                                                                        "id": "Tuple",
-                                                                        "generics": {
-                                                                            "regions": [],
-                                                                            "types": [],
-                                                                            "const_generics": [],
-                                                                            "trait_refs": []
-                                                                        }
-                                                                    },
-                                                                    null,
-                                                                    null
-                                                                ]
-                                                            },
-                                                            []
-                                                        ]
+                                                        "Use": {
+                                                            "Copy": {
+                                                                "kind": {
+                                                                    "Local": 1
+                                                                },
+                                                                "ty": {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
                                                     }
                                                 ]
                                             },
@@ -399,63 +423,6 @@
                                                 "StorageDead": 1
                                             },
                                             "comments_before": []
-                                        },
-                                        {
-                                            "span": {
-                                                "span": {
-                                                    "file_id": 0,
-                                                    "beg": {
-                                                        "line": 4,
-                                                        "col": 1
-                                                    },
-                                                    "end": {
-                                                        "line": 4,
-                                                        "col": 1
-                                                    }
-                                                },
-                                                "generated_from_span": null
-                                            },
-                                            "content": {
-                                                "Assign": [
-                                                    {
-                                                        "kind": {
-                                                            "Local": 0
-                                                        },
-                                                        "ty": {
-                                                            "Adt": {
-                                                                "id": "Tuple",
-                                                                "generics": {
-                                                                    "regions": [],
-                                                                    "types": [],
-                                                                    "const_generics": [],
-                                                                    "trait_refs": []
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    {
-                                                        "Aggregate": [
-                                                            {
-                                                                "Adt": [
-                                                                    {
-                                                                        "id": "Tuple",
-                                                                        "generics": {
-                                                                            "regions": [],
-                                                                            "types": [],
-                                                                            "const_generics": [],
-                                                                            "trait_refs": []
-                                                                        }
-                                                                    },
-                                                                    null,
-                                                                    null
-                                                                ]
-                                                            },
-                                                            []
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            "comments_before": []
                                         }
                                     ],
                                     "terminator": {
@@ -476,6 +443,27 @@
                                         "content": "Return",
                                         "comments_before": []
                                     }
+                                },
+                                {
+                                    "statements": [],
+                                    "terminator": {
+                                        "span": {
+                                            "span": {
+                                                "file_id": 0,
+                                                "beg": {
+                                                    "line": 1,
+                                                    "col": 0
+                                                },
+                                                "end": {
+                                                    "line": 4,
+                                                    "col": 1
+                                                }
+                                            },
+                                            "generated_from_span": null
+                                        },
+                                        "content": "UnwindResume",
+                                        "comments_before": []
+                                    }
                                 }
                             ]
                         }
@@ -488,7 +476,381 @@
                     "name": [
                         {
                             "Ident": [
-                                "example",
+                                "caller_and_callee",
+                                0
+                            ]
+                        },
+                        {
+                            "Ident": [
+                                "callee",
+                                0
+                            ]
+                        }
+                    ],
+                    "span": {
+                        "span": {
+                            "file_id": 0,
+                            "beg": {
+                                "line": 6,
+                                "col": 0
+                            },
+                            "end": {
+                                "line": 6,
+                                "col": 34
+                            }
+                        },
+                        "generated_from_span": null
+                    },
+                    "source_text": "fn callee(n: i32) -> i32 { n * 2 }",
+                    "attr_info": {
+                        "attributes": [],
+                        "inline": null,
+                        "rename": null,
+                        "public": false
+                    },
+                    "is_local": true,
+                    "opacity": "Transparent",
+                    "lang_item": null
+                },
+                "signature": {
+                    "is_unsafe": false,
+                    "generics": {
+                        "regions": [],
+                        "types": [],
+                        "const_generics": [],
+                        "trait_clauses": [],
+                        "regions_outlive": [],
+                        "types_outlive": [],
+                        "trait_type_constraints": []
+                    },
+                    "inputs": [
+                        {
+                            "Literal": {
+                                "Int": "I32"
+                            }
+                        }
+                    ],
+                    "output": {
+                        "Literal": {
+                            "Int": "I32"
+                        }
+                    }
+                },
+                "kind": "TopLevel",
+                "is_global_initializer": null,
+                "body": {
+                    "Ok": {
+                        "Unstructured": {
+                            "span": {
+                                "span": {
+                                    "file_id": 0,
+                                    "beg": {
+                                        "line": 6,
+                                        "col": 0
+                                    },
+                                    "end": {
+                                        "line": 6,
+                                        "col": 34
+                                    }
+                                },
+                                "generated_from_span": null
+                            },
+                            "locals": {
+                                "arg_count": 1,
+                                "locals": [
+                                    {
+                                        "index": 0,
+                                        "name": null,
+                                        "ty": {
+                                            "Literal": {
+                                                "Int": "I32"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "index": 1,
+                                        "name": "n",
+                                        "ty": {
+                                            "Literal": {
+                                                "Int": "I32"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "index": 2,
+                                        "name": null,
+                                        "ty": {
+                                            "Literal": {
+                                                "Int": "I32"
+                                            }
+                                        }
+                                    },
+                                    {
+                                        "index": 3,
+                                        "name": null,
+                                        "ty": {
+                                            "Literal": {
+                                                "Int": "I32"
+                                            }
+                                        }
+                                    }
+                                ]
+                            },
+                            "comments": [],
+                            "body": [
+                                {
+                                    "statements": [
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 6,
+                                                        "col": 27
+                                                    },
+                                                    "end": {
+                                                        "line": 6,
+                                                        "col": 28
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageLive": 3
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 6,
+                                                        "col": 27
+                                                    },
+                                                    "end": {
+                                                        "line": 6,
+                                                        "col": 28
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageLive": 2
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 6,
+                                                        "col": 27
+                                                    },
+                                                    "end": {
+                                                        "line": 6,
+                                                        "col": 28
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "Assign": [
+                                                    {
+                                                        "kind": {
+                                                            "Local": 2
+                                                        },
+                                                        "ty": {
+                                                            "Literal": {
+                                                                "Int": "I32"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "Use": {
+                                                            "Copy": {
+                                                                "kind": {
+                                                                    "Local": 1
+                                                                },
+                                                                "ty": {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 6,
+                                                        "col": 27
+                                                    },
+                                                    "end": {
+                                                        "line": 6,
+                                                        "col": 32
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "Assign": [
+                                                    {
+                                                        "kind": {
+                                                            "Local": 3
+                                                        },
+                                                        "ty": {
+                                                            "Literal": {
+                                                                "Int": "I32"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "BinaryOp": [
+                                                            {
+                                                                "Mul": "Panic"
+                                                            },
+                                                            {
+                                                                "Copy": {
+                                                                    "kind": {
+                                                                        "Local": 2
+                                                                    },
+                                                                    "ty": {
+                                                                        "Literal": {
+                                                                            "Int": "I32"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            {
+                                                                "Const": {
+                                                                    "value": {
+                                                                        "Literal": {
+                                                                            "Scalar": {
+                                                                                "Signed": [
+                                                                                    "I32",
+                                                                                    "2"
+                                                                                ]
+                                                                            }
+                                                                        }
+                                                                    },
+                                                                    "ty": {
+                                                                        "Literal": {
+                                                                            "Int": "I32"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 6,
+                                                        "col": 27
+                                                    },
+                                                    "end": {
+                                                        "line": 6,
+                                                        "col": 32
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "Assign": [
+                                                    {
+                                                        "kind": {
+                                                            "Local": 0
+                                                        },
+                                                        "ty": {
+                                                            "Literal": {
+                                                                "Int": "I32"
+                                                            }
+                                                        }
+                                                    },
+                                                    {
+                                                        "Use": {
+                                                            "Move": {
+                                                                "kind": {
+                                                                    "Local": 3
+                                                                },
+                                                                "ty": {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 6,
+                                                        "col": 31
+                                                    },
+                                                    "end": {
+                                                        "line": 6,
+                                                        "col": 32
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageDead": 2
+                                            },
+                                            "comments_before": []
+                                        }
+                                    ],
+                                    "terminator": {
+                                        "span": {
+                                            "span": {
+                                                "file_id": 0,
+                                                "beg": {
+                                                    "line": 6,
+                                                    "col": 34
+                                                },
+                                                "end": {
+                                                    "line": 6,
+                                                    "col": 34
+                                                }
+                                            },
+                                            "generated_from_span": null
+                                        },
+                                        "content": "Return",
+                                        "comments_before": []
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            },
+            {
+                "def_id": 2,
+                "item_meta": {
+                    "name": [
+                        {
+                            "Ident": [
+                                "caller_and_callee",
                                 0
                             ]
                         },
@@ -503,17 +865,17 @@
                         "span": {
                             "file_id": 0,
                             "beg": {
-                                "line": 6,
+                                "line": 8,
                                 "col": 0
                             },
                             "end": {
-                                "line": 8,
+                                "line": 10,
                                 "col": 1
                             }
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn main(){\n    foo();\n}",
+                    "source_text": "fn main() {\n    let _ = caller();\n}",
                     "attr_info": {
                         "attributes": [],
                         "inline": null,
@@ -557,11 +919,11 @@
                                 "span": {
                                     "file_id": 0,
                                     "beg": {
-                                        "line": 6,
+                                        "line": 8,
                                         "col": 0
                                     },
                                     "end": {
-                                        "line": 8,
+                                        "line": 10,
                                         "col": 1
                                     }
                                 },
@@ -589,14 +951,8 @@
                                         "index": 1,
                                         "name": null,
                                         "ty": {
-                                            "Adt": {
-                                                "id": "Tuple",
-                                                "generics": {
-                                                    "regions": [],
-                                                    "types": [],
-                                                    "const_generics": [],
-                                                    "trait_refs": []
-                                                }
+                                            "Literal": {
+                                                "Int": "I32"
                                             }
                                         }
                                     }
@@ -611,12 +967,12 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 7,
-                                                        "col": 4
+                                                        "line": 9,
+                                                        "col": 12
                                                     },
                                                     "end": {
-                                                        "line": 7,
-                                                        "col": 9
+                                                        "line": 9,
+                                                        "col": 20
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -632,12 +988,12 @@
                                             "span": {
                                                 "file_id": 0,
                                                 "beg": {
-                                                    "line": 7,
-                                                    "col": 4
+                                                    "line": 9,
+                                                    "col": 12
                                                 },
                                                 "end": {
-                                                    "line": 7,
-                                                    "col": 9
+                                                    "line": 9,
+                                                    "col": 20
                                                 }
                                             },
                                             "generated_from_span": null
@@ -666,14 +1022,8 @@
                                                             "Local": 1
                                                         },
                                                         "ty": {
-                                                            "Adt": {
-                                                                "id": "Tuple",
-                                                                "generics": {
-                                                                    "regions": [],
-                                                                    "types": [],
-                                                                    "const_generics": [],
-                                                                    "trait_refs": []
-                                                                }
+                                                            "Literal": {
+                                                                "Int": "I32"
                                                             }
                                                         }
                                                     }
@@ -692,12 +1042,12 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 7,
-                                                        "col": 9
+                                                        "line": 9,
+                                                        "col": 20
                                                     },
                                                     "end": {
-                                                        "line": 7,
-                                                        "col": 10
+                                                        "line": 9,
+                                                        "col": 21
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -712,11 +1062,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 6,
-                                                        "col": 9
+                                                        "line": 8,
+                                                        "col": 10
                                                     },
                                                     "end": {
-                                                        "line": 8,
+                                                        "line": 10,
                                                         "col": 1
                                                     }
                                                 },
@@ -769,11 +1119,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 8,
+                                                        "line": 10,
                                                         "col": 1
                                                     },
                                                     "end": {
-                                                        "line": 8,
+                                                        "line": 10,
                                                         "col": 1
                                                     }
                                                 },
@@ -827,11 +1177,11 @@
                                             "span": {
                                                 "file_id": 0,
                                                 "beg": {
-                                                    "line": 8,
+                                                    "line": 10,
                                                     "col": 1
                                                 },
                                                 "end": {
-                                                    "line": 8,
+                                                    "line": 10,
                                                     "col": 1
                                                 }
                                             },
@@ -848,11 +1198,11 @@
                                             "span": {
                                                 "file_id": 0,
                                                 "beg": {
-                                                    "line": 6,
+                                                    "line": 8,
                                                     "col": 0
                                                 },
                                                 "end": {
-                                                    "line": 8,
+                                                    "line": 10,
                                                     "col": 1
                                                 }
                                             },
@@ -874,12 +1224,17 @@
         "ordered_decls": [
             {
                 "Fun": {
+                    "NonRec": 1
+                }
+            },
+            {
+                "Fun": {
                     "NonRec": 0
                 }
             },
             {
                 "Fun": {
-                    "NonRec": 1
+                    "NonRec": 2
                 }
             }
         ]

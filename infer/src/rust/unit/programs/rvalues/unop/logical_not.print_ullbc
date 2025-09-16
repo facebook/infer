@@ -1,0 +1,27 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: logical_not::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: bool; // local
+    let y@2: bool; // local
+    let @3: bool; // anonymous local
+    let @4: (); // anonymous local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (true);
+        storage_live(y@2);
+        storage_live(@3);
+        @3 := copy (x@1);
+        y@2 := ~(move (@3));
+        storage_dead(@3);
+        nop;
+        @0 := ();
+        storage_dead(y@2);
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+}

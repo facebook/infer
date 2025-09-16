@@ -1,0 +1,19 @@
+# Final ULLBC before control-flow reconstruction:
+
+// Full name: literal_str::main
+fn main()
+{
+    let @0: (); // return
+    let @1: &'_ (Str); // anonymous local
+    let @2: (); // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := const ("hello");
+        storage_dead(@1);
+        nop;
+        @0 := ();
+        @0 := ();
+        return;
+    }
+}

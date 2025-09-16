@@ -1,7 +1,7 @@
 {
     "charon_version": "0.1.123",
     "translated": {
-        "crate_name": "example",
+        "crate_name": "basic_ref_deref",
         "options": {
             "ullbc": true,
             "lib": false,
@@ -50,18 +50,18 @@
         "item_names": [
             {
                 "key": {
-                    "Fun": 1
+                    "Fun": 0
                 },
                 "value": [
                     {
                         "Ident": [
-                            "example",
+                            "basic_ref_deref",
                             0
                         ]
                     },
                     {
                         "Ident": [
-                            "main",
+                            "ref_deref",
                             0
                         ]
                     }
@@ -69,18 +69,18 @@
             },
             {
                 "key": {
-                    "Fun": 0
+                    "Fun": 1
                 },
                 "value": [
                     {
                         "Ident": [
-                            "example",
+                            "basic_ref_deref",
                             0
                         ]
                     },
                     {
                         "Ident": [
-                            "foo",
+                            "main",
                             0
                         ]
                     }
@@ -108,7 +108,7 @@
                 "value": [
                     {
                         "Ident": [
-                            "foo",
+                            "ref_deref",
                             0
                         ]
                     }
@@ -118,10 +118,10 @@
         "files": [
             {
                 "name": {
-                    "Local": "./unit/programs/example.rs"
+                    "Local": "./unit/programs/rvalues/ref_deref/basic_ref_deref.rs"
                 },
-                "crate_name": "example",
-                "contents": "#[allow(unused)]\nfn foo() {\n    let x = 42;\n}\n\nfn main(){\n    foo();\n}"
+                "crate_name": "basic_ref_deref",
+                "contents": "fn ref_deref() {\n    let x = 42;\n    \n    let y = &*&*&x; \n}\n\nfn main() {\n    ref_deref();\n}\n"
             }
         ],
         "type_decls": [],
@@ -132,13 +132,13 @@
                     "name": [
                         {
                             "Ident": [
-                                "example",
+                                "basic_ref_deref",
                                 0
                             ]
                         },
                         {
                             "Ident": [
-                                "foo",
+                                "ref_deref",
                                 0
                             ]
                         }
@@ -147,26 +147,19 @@
                         "span": {
                             "file_id": 0,
                             "beg": {
-                                "line": 2,
+                                "line": 1,
                                 "col": 0
                             },
                             "end": {
-                                "line": 4,
+                                "line": 5,
                                 "col": 1
                             }
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn foo() {\n    let x = 42;\n}",
+                    "source_text": "fn ref_deref() {\n    let x = 42;\n    \n    let y = &*&*&x; \n}",
                     "attr_info": {
-                        "attributes": [
-                            {
-                                "Unknown": {
-                                    "path": "allow",
-                                    "args": "unused"
-                                }
-                            }
-                        ],
+                        "attributes": [],
                         "inline": null,
                         "rename": null,
                         "public": false
@@ -208,11 +201,11 @@
                                 "span": {
                                     "file_id": 0,
                                     "beg": {
-                                        "line": 2,
+                                        "line": 1,
                                         "col": 0
                                     },
                                     "end": {
-                                        "line": 4,
+                                        "line": 5,
                                         "col": 1
                                     }
                                 },
@@ -244,6 +237,51 @@
                                                 "Int": "I32"
                                             }
                                         }
+                                    },
+                                    {
+                                        "index": 2,
+                                        "name": "y",
+                                        "ty": {
+                                            "Ref": [
+                                                "Erased",
+                                                {
+                                                    "Literal": {
+                                                        "Int": "I32"
+                                                    }
+                                                },
+                                                "Shared"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "index": 3,
+                                        "name": null,
+                                        "ty": {
+                                            "Ref": [
+                                                "Erased",
+                                                {
+                                                    "Literal": {
+                                                        "Int": "I32"
+                                                    }
+                                                },
+                                                "Shared"
+                                            ]
+                                        }
+                                    },
+                                    {
+                                        "index": 4,
+                                        "name": null,
+                                        "ty": {
+                                            "Ref": [
+                                                "Erased",
+                                                {
+                                                    "Literal": {
+                                                        "Int": "I32"
+                                                    }
+                                                },
+                                                "Shared"
+                                            ]
+                                        }
                                     }
                                 ]
                             },
@@ -256,11 +294,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 3,
+                                                        "line": 2,
                                                         "col": 8
                                                     },
                                                     "end": {
-                                                        "line": 3,
+                                                        "line": 2,
                                                         "col": 9
                                                     }
                                                 },
@@ -276,11 +314,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 3,
+                                                        "line": 2,
                                                         "col": 12
                                                     },
                                                     "end": {
-                                                        "line": 3,
+                                                        "line": 2,
                                                         "col": 14
                                                     }
                                                 },
@@ -328,11 +366,263 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 2,
-                                                        "col": 9
+                                                        "line": 4,
+                                                        "col": 8
                                                     },
                                                     "end": {
                                                         "line": 4,
+                                                        "col": 9
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageLive": 2
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 4,
+                                                        "col": 14
+                                                    },
+                                                    "end": {
+                                                        "line": 4,
+                                                        "col": 18
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageLive": 3
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 4,
+                                                        "col": 16
+                                                    },
+                                                    "end": {
+                                                        "line": 4,
+                                                        "col": 18
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageLive": 4
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 4,
+                                                        "col": 16
+                                                    },
+                                                    "end": {
+                                                        "line": 4,
+                                                        "col": 18
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "Assign": [
+                                                    {
+                                                        "kind": {
+                                                            "Local": 4
+                                                        },
+                                                        "ty": {
+                                                            "Ref": [
+                                                                "Erased",
+                                                                {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                },
+                                                                "Shared"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "Ref": [
+                                                            {
+                                                                "kind": {
+                                                                    "Local": 1
+                                                                },
+                                                                "ty": {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "Shared"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 4,
+                                                        "col": 14
+                                                    },
+                                                    "end": {
+                                                        "line": 4,
+                                                        "col": 18
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "Assign": [
+                                                    {
+                                                        "kind": {
+                                                            "Local": 3
+                                                        },
+                                                        "ty": {
+                                                            "Ref": [
+                                                                "Erased",
+                                                                {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                },
+                                                                "Shared"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "Ref": [
+                                                            {
+                                                                "kind": {
+                                                                    "Projection": [
+                                                                        {
+                                                                            "kind": {
+                                                                                "Local": 4
+                                                                            },
+                                                                            "ty": {
+                                                                                "Ref": [
+                                                                                    "Erased",
+                                                                                    {
+                                                                                        "Literal": {
+                                                                                            "Int": "I32"
+                                                                                        }
+                                                                                    },
+                                                                                    "Shared"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "Deref"
+                                                                    ]
+                                                                },
+                                                                "ty": {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "Shared"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 4,
+                                                        "col": 12
+                                                    },
+                                                    "end": {
+                                                        "line": 4,
+                                                        "col": 18
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "Assign": [
+                                                    {
+                                                        "kind": {
+                                                            "Local": 2
+                                                        },
+                                                        "ty": {
+                                                            "Ref": [
+                                                                "Erased",
+                                                                {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                },
+                                                                "Shared"
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "Ref": [
+                                                            {
+                                                                "kind": {
+                                                                    "Projection": [
+                                                                        {
+                                                                            "kind": {
+                                                                                "Local": 3
+                                                                            },
+                                                                            "ty": {
+                                                                                "Ref": [
+                                                                                    "Erased",
+                                                                                    {
+                                                                                        "Literal": {
+                                                                                            "Int": "I32"
+                                                                                        }
+                                                                                    },
+                                                                                    "Shared"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "Deref"
+                                                                    ]
+                                                                },
+                                                                "ty": {
+                                                                    "Literal": {
+                                                                        "Int": "I32"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "Shared"
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 1,
+                                                        "col": 15
+                                                    },
+                                                    "end": {
+                                                        "line": 5,
                                                         "col": 1
                                                     }
                                                 },
@@ -385,11 +675,71 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 4,
+                                                        "line": 5,
                                                         "col": 0
                                                     },
                                                     "end": {
-                                                        "line": 4,
+                                                        "line": 5,
+                                                        "col": 1
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageDead": 4
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 5,
+                                                        "col": 0
+                                                    },
+                                                    "end": {
+                                                        "line": 5,
+                                                        "col": 1
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageDead": 3
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 5,
+                                                        "col": 0
+                                                    },
+                                                    "end": {
+                                                        "line": 5,
+                                                        "col": 1
+                                                    }
+                                                },
+                                                "generated_from_span": null
+                                            },
+                                            "content": {
+                                                "StorageDead": 2
+                                            },
+                                            "comments_before": []
+                                        },
+                                        {
+                                            "span": {
+                                                "span": {
+                                                    "file_id": 0,
+                                                    "beg": {
+                                                        "line": 5,
+                                                        "col": 0
+                                                    },
+                                                    "end": {
+                                                        "line": 5,
                                                         "col": 1
                                                     }
                                                 },
@@ -405,11 +755,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 4,
+                                                        "line": 5,
                                                         "col": 1
                                                     },
                                                     "end": {
-                                                        "line": 4,
+                                                        "line": 5,
                                                         "col": 1
                                                     }
                                                 },
@@ -463,11 +813,11 @@
                                             "span": {
                                                 "file_id": 0,
                                                 "beg": {
-                                                    "line": 4,
+                                                    "line": 5,
                                                     "col": 1
                                                 },
                                                 "end": {
-                                                    "line": 4,
+                                                    "line": 5,
                                                     "col": 1
                                                 }
                                             },
@@ -488,7 +838,7 @@
                     "name": [
                         {
                             "Ident": [
-                                "example",
+                                "basic_ref_deref",
                                 0
                             ]
                         },
@@ -503,17 +853,17 @@
                         "span": {
                             "file_id": 0,
                             "beg": {
-                                "line": 6,
+                                "line": 7,
                                 "col": 0
                             },
                             "end": {
-                                "line": 8,
+                                "line": 9,
                                 "col": 1
                             }
                         },
                         "generated_from_span": null
                     },
-                    "source_text": "fn main(){\n    foo();\n}",
+                    "source_text": "fn main() {\n    ref_deref();\n}",
                     "attr_info": {
                         "attributes": [],
                         "inline": null,
@@ -557,11 +907,11 @@
                                 "span": {
                                     "file_id": 0,
                                     "beg": {
-                                        "line": 6,
+                                        "line": 7,
                                         "col": 0
                                     },
                                     "end": {
-                                        "line": 8,
+                                        "line": 9,
                                         "col": 1
                                     }
                                 },
@@ -611,12 +961,12 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 7,
+                                                        "line": 8,
                                                         "col": 4
                                                     },
                                                     "end": {
-                                                        "line": 7,
-                                                        "col": 9
+                                                        "line": 8,
+                                                        "col": 15
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -632,12 +982,12 @@
                                             "span": {
                                                 "file_id": 0,
                                                 "beg": {
-                                                    "line": 7,
+                                                    "line": 8,
                                                     "col": 4
                                                 },
                                                 "end": {
-                                                    "line": 7,
-                                                    "col": 9
+                                                    "line": 8,
+                                                    "col": 15
                                                 }
                                             },
                                             "generated_from_span": null
@@ -692,12 +1042,12 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 7,
-                                                        "col": 9
+                                                        "line": 8,
+                                                        "col": 15
                                                     },
                                                     "end": {
-                                                        "line": 7,
-                                                        "col": 10
+                                                        "line": 8,
+                                                        "col": 16
                                                     }
                                                 },
                                                 "generated_from_span": null
@@ -712,11 +1062,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 6,
-                                                        "col": 9
+                                                        "line": 7,
+                                                        "col": 10
                                                     },
                                                     "end": {
-                                                        "line": 8,
+                                                        "line": 9,
                                                         "col": 1
                                                     }
                                                 },
@@ -769,11 +1119,11 @@
                                                 "span": {
                                                     "file_id": 0,
                                                     "beg": {
-                                                        "line": 8,
+                                                        "line": 9,
                                                         "col": 1
                                                     },
                                                     "end": {
-                                                        "line": 8,
+                                                        "line": 9,
                                                         "col": 1
                                                     }
                                                 },
@@ -827,11 +1177,11 @@
                                             "span": {
                                                 "file_id": 0,
                                                 "beg": {
-                                                    "line": 8,
+                                                    "line": 9,
                                                     "col": 1
                                                 },
                                                 "end": {
-                                                    "line": 8,
+                                                    "line": 9,
                                                     "col": 1
                                                 }
                                             },
@@ -848,11 +1198,11 @@
                                             "span": {
                                                 "file_id": 0,
                                                 "beg": {
-                                                    "line": 6,
+                                                    "line": 7,
                                                     "col": 0
                                                 },
                                                 "end": {
-                                                    "line": 8,
+                                                    "line": 9,
                                                     "col": 1
                                                 }
                                             },

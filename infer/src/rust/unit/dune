@@ -25,7 +25,10 @@
   IBase
   Textuallib
   RustFrontend
+  yojson
   ppx_show.runtime)
  (preprocess
   (pps ppx_expect ppx_inline_test))
- (inline_tests (deps (glob_files programs/*))))
+ (inline_tests
+  (deps
+   (source_tree programs))))

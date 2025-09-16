@@ -13,7 +13,6 @@ let program_path = "./programs"
 let test json_file =
   try
     let file_path = Filename.concat program_path json_file in
-    let file_path = Filename.concat (Unix.getcwd ()) file_path in
     let json = Yojson.Basic.from_file file_path in
     match Charon.UllbcOfJson.crate_of_json json with
     | Ok crate ->
@@ -24,19 +23,39 @@ let test json_file =
   with e -> F.printf "%s" (Exn.to_string e)
 
 
-
+(* An example test *)
 let%expect_test "example" =
-  test "example.ullbc" ;
+  test "./example.ullbc" ;
   [%expect
-  {|
-  .source_language = "rust"
+    {|
+  .source_language = "Rust"
 
-  define foo() : void {
-    local var_0: void, var_1: int
+  define example::foo() : void {
+    local var_0: void, x_1: int
     #node_0:
-      store &var_1 <- 42
-      store &var_0 <- null
-      n0 = load &var_0
-      ret n0
+        store &x_1 <- 42:int
+        store &var_0 <- null:void
+        store &var_0 <- null:void
+        n0:void = load &var_0
+        ret n0
+
+  }
+
+  define example::main() : void {
+    local var_0: void, var_1: void
+    #node_0:
+        n0 = example::foo()
+        store &var_1 <- n0:void
+        jmp node_1
+
+    #node_1:
+        store &var_0 <- null:void
+        store &var_0 <- null:void
+        n1:void = load &var_0
+        ret n1
+
+    #node_2:
+        unreachable
+
   }
 |}]
