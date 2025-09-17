@@ -4,7 +4,6 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
-
 open! IStd
 module F = Format
 module L = Logging
@@ -184,6 +183,109 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
+  (* Call on back_edge from widen in AbstractInterpreter.ml *)
+  (* JVan: I thought this was equivalent to the verbose version below, but it seems to
+     bring a significant additional amount of FP to enable. (openssl: 18 -> 26 alerts)
+     Disabling for now. *)
+  (*
+   let back_edge (prev:DisjDomain.t list) (next:DisjDomain.t list) (num_iters:int)  : DisjDomain.t list * int =
+    
+    let plist,rplist = List.unzip prev in
+    let nlist,rnlist = List.unzip next in    
+    let dbe,cnt      = (ExecutionDomain.back_edge plist nlist num_iters) in
+    let (pathctx: PathContext.t option) = (List.nth rnlist cnt) in
+    let used,pts =
+      match (pathctx) with
+      | Some p -> 1, p
+      | None ->
+         let len = List.length rnlist in
+         if cnt > 0 then
+           (L.debug Analysis Quiet "PULSEINF: PATHCTX not found at provided index %d - this should never happen! (pclen = %d) \n" cnt len;
+         0, PathContext.initial)
+         else
+           0, PathContext.initial
+    in
+    let res = if (used > 0 && cnt >= 0) then List.zip_exn (plist @ dbe) (rplist @ [pts]) else prev
+    in (res,-1)
+   *)
+
+  (* JVan: Even worse version of it - only gives very partial results -- definitely disabling *)
+  (*
+  let back_edge (prev:DisjDomain.t list) (next:DisjDomain.t list) (num_iters:int)  : DisjDomain.t list * int =
+    
+     let plist,rplist = List.unzip prev in
+     let nlist,_ = List.unzip next in
+     let dbe,cnt = (ExecutionDomain.back_edge plist nlist num_iters) in
+     let pts = PathContext.initial in
+     let res = if (cnt > 0) then
+                 let newplist = (plist @ dbe) in
+                 let newrplist = (rplist @ [pts]) in
+                 match (List.zip newplist newrplist) with
+                 | Unequal_lengths -> L.debug Analysis Quiet "PULSEINF: Zipping lists of unequal lengths ERROR \n"; prev
+                 | Ok result -> result
+               else
+                 prev
+     in (res,-1)
+   *)
+
+  (* Call on back_edge from widen in AbstractInterpreter.ml *)
+  (* JVan: Correct version albeit quite verbose *)
+  let back_edge (prev : DisjDomain.t list) (next : DisjDomain.t list) (num_iters : int) :
+      DisjDomain.t list * int =
+    (* let plen,nlen = List.length(prev), List.length(next) in 
+    L.debug Analysis Quiet "PULSEINF: BACKEDGE NUMITER %d Number of Prev state = %d Number of Post states = %d \n" num_iters plen nlen; *)
+    let rec listpair_split (l : DisjDomain.t list) (o1 : ExecutionDomain.t list)
+        (o2 : PathContext.t list) =
+      match l with [] -> (o1, o2) | (ed, pc) :: tail -> listpair_split tail (ed :: o1) (pc :: o2)
+    in
+    let listpair_combine (l1 : ExecutionDomain.t list) (l2 : PathContext.t list) :
+        (ExecutionDomain.t * PathContext.t) list =
+      let l1len, l2len = (List.length l1, List.length l2) in
+      (* L.debug Analysis Quiet "JV: listpair_combine L1 len = %u L2 len = %u \n" l1len l2len; *)
+      if l1len <> l2len then []
+      else
+        let rec listpair_combine_int (l1 : ExecutionDomain.t list) (l2 : PathContext.t list)
+            (out : (ExecutionDomain.t * PathContext.t) list) :
+            (ExecutionDomain.t * PathContext.t) list =
+          match (l1, l2) with
+          | hd :: tl, hd2 :: tl2 ->
+              let p = (hd, hd2) in
+              listpair_combine_int tl tl2 (out @ [p])
+          | [], [] ->
+              out
+          | _ ->
+              L.debug Analysis Quiet
+                "PULSEINF: BACKEDGE MISMATCH in list size to recombine. Should never happen! \n" ;
+              out
+        in
+        listpair_combine_int l1 l2 []
+    in
+    let plist, rplist = listpair_split prev [] [] in
+    let nlist, rnlist = listpair_split next [] [] in
+    let dbe, cnt = ExecutionDomain.back_edge plist nlist num_iters in
+    let _, _ = PathContext.back_edge rplist rnlist num_iters in
+    let (pathctx : PathContext.t option) = List.nth rnlist cnt in
+    let used, pts =
+      match pathctx with
+      | Some p ->
+          (1, p)
+      | _ ->
+          L.debug Analysis Quiet
+            "PULSEINF: PATHCTX DEBUG: not finding back pathctx at provided index  - this should \
+             never happen \n" ;
+          (0, PathContext.initial (* pathctx is None *))
+    in
+    (* L.debug Analysis Quiet "JV PATHCTX: dbe len = %u pts len = 1 \n" (List.length dbe); *)
+    (* L.debug Analysis Quiet "PULSEINF: Prev MODIFIED %b (if true added Infinite state) \n" (used > 0 && cnt >= 0); *)
+    let res =
+      if used > 0 && cnt >= 0 then listpair_combine (plist @ dbe) (rplist @ [pts])
+      else prev (* listpair_combine plist rplist *)
+    in
+    (res, -1)
+
+
+  (* END OF BACK-EDGE CODE *)
+
   let get_pvar_formals pname =
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
@@ -264,7 +366,8 @@ module PulseTransferFunctions = struct
     | ExitProgram _
     | LatentAbortProgram _
     | LatentInvalidAccess _
-    | LatentSpecializedTypeIssue _ ->
+    | LatentSpecializedTypeIssue _
+    | InfiniteLoop _ ->
         Sat (Ok exec_state)
 
 
@@ -286,14 +389,10 @@ module PulseTransferFunctions = struct
     let do_one_exec_state (exec_state : ExecutionDomain.t) : ExecutionDomain.t =
       match exec_state with
       | ContinueProgram astate ->
-          ContinueProgram (do_astate astate)
-      | AbortProgram _
-      | LatentAbortProgram _
-      | ExitProgram _
-      | ExceptionRaised _
-      | LatentInvalidAccess _
-      | LatentSpecializedTypeIssue _ ->
-          exec_state
+         ContinueProgram (do_astate astate)
+      | AbortProgram _  | LatentAbortProgram _  | ExitProgram _ | ExceptionRaised _
+        | InfiniteLoop _ | LatentInvalidAccess _  | LatentSpecializedTypeIssue _ ->
+         exec_state
     in
     List.map ~f:(PulseResult.map ~f:do_one_exec_state) exec_state_res
 
@@ -974,7 +1073,8 @@ module PulseTransferFunctions = struct
             L.d_printfln "clearing builder attributes on exception" ;
             let astate = AbductiveDomain.finalize_all_hack_builders astate in
             Ok (ExceptionRaised astate)
-        | ( ExitProgram _
+        | ( InfiniteLoop _
+          | ExitProgram _
           | AbortProgram _
           | LatentAbortProgram _
           | LatentInvalidAccess _
@@ -1089,6 +1189,7 @@ module PulseTransferFunctions = struct
               match astate with
               | AbortProgram _
               | ExceptionRaised _
+              | InfiniteLoop _
               | ExitProgram _
               | LatentAbortProgram _
               | LatentInvalidAccess _
@@ -1143,6 +1244,7 @@ module PulseTransferFunctions = struct
           match astate with
           | AbortProgram _
           | ExceptionRaised _
+          | InfiniteLoop _
           | ExitProgram _
           | LatentAbortProgram _
           | LatentInvalidAccess _
@@ -1176,7 +1278,8 @@ module PulseTransferFunctions = struct
         | ExitProgram _
         | LatentAbortProgram _
         | LatentInvalidAccess _
-        | LatentSpecializedTypeIssue _ ->
+        | LatentSpecializedTypeIssue _
+        | InfiniteLoop _ ->
             Some exec_state
         | ContinueProgram astate -> (
           match PulseOperations.remove_vars vars location astate with
@@ -1327,14 +1430,18 @@ module PulseTransferFunctions = struct
       (astate_n : NonDisjDomain.t) ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       cfg_node (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
-    | AbortProgram _ | LatentAbortProgram _ | LatentInvalidAccess _ | LatentSpecializedTypeIssue _
-      ->
+    | AbortProgram _
+    | LatentAbortProgram _
+    | LatentInvalidAccess _
+    | InfiniteLoop _
+    | LatentSpecializedTypeIssue _ ->
         ([astate], path, astate_n)
     (* an exception has been raised, we skip the other instructions until we enter in
        exception edge *)
     | ExceptionRaised _
     (* program already exited, simply propagate the exited state upwards  *)
     | ExitProgram _ ->
+        (* L.debug Analysis Quiet "exec_instr: ExceptionRaised/ExitProgram \n"; *)
         ([astate], path, astate_n)
     | ContinueProgram astate -> (
       match instr with
@@ -1742,6 +1849,7 @@ let exit_function limit analysis_data location posts non_disj_astate =
         | AbortProgram _
         | ExitProgram _
         | ExceptionRaised _
+        | InfiniteLoop _
         | LatentAbortProgram _
         | LatentInvalidAccess _
         | LatentSpecializedTypeIssue _ ->

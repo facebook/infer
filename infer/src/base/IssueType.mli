@@ -265,6 +265,8 @@ val pulse_memory_leak_cpp : t
 
 val pulse_resource_leak : t
 
+val pulse_infinite : t
+
 val pulse_unawaited_awaitable : t
 
 val pulse_unfinished_builder : t

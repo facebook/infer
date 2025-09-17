@@ -359,6 +359,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
          ready to be accessed by the exception handler. *)
       map_call_result astate ~f:(fun return_val_opt _subst astate ->
           Sat (copy_to_caller_return_variable astate return_val_opt) )
+  | InfiniteLoop astate
   | AbortProgram astate
   | ExitProgram astate
   | LatentAbortProgram {astate}
@@ -376,7 +377,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ ->
               assert false
-          | AbortProgram _ ->
+          | AbortProgram _ | InfiniteLoop _ ->
               (* bypass the current errors to avoid compounding issues *)
               Sat (Ok (AbortProgram astate_summary))
           | ExitProgram _ ->
@@ -651,6 +652,8 @@ let add_need_dynamic_type_specialization needs execution_states =
             ExceptionRaised (update_astate astate)
         | ContinueProgram astate ->
             ContinueProgram (update_astate astate)
+        | InfiniteLoop astate ->
+            InfiniteLoop (update_astate astate)
         | ExitProgram summary ->
             ExitProgram (update_summary summary)
         | AbortProgram summary ->
