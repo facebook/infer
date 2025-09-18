@@ -10,13 +10,13 @@ module F = Format
 
 let program_path = "./programs"
 
-let test json_file =
+let test json_filename =
   try
-    let file_path = Filename.concat program_path json_file in
+    let file_path = Filename.concat program_path json_filename in
     let json = Yojson.Basic.from_file file_path in
     match Charon.UllbcOfJson.crate_of_json json with
     | Ok crate ->
-        let textual = RustFrontend.RustMir2Textual.mk_module crate json_file in
+        let textual = RustFrontend.RustMir2Textual.mk_module crate ~json_filename in
         Textual.Module.pp F.std_formatter textual
     | Error err ->
         F.printf "Test failed: %s" err

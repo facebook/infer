@@ -6,4 +6,4 @@
  *)
 open! IStd
 
-val mk_module : Charon.UllbcAst.crate -> string -> Textual.Module.t
+val mk_module : Charon.UllbcAst.crate -> json_filename:string -> Textual.Module.t
