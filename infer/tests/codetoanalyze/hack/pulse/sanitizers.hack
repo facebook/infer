@@ -36,7 +36,7 @@ class Flows {
     Sink::process($t);
   }
 
-  public static async function FPtaintedIfSanitizedOk(
+  public static async function taintedIfSanitizedOk(
     Source $arg,
   ): Awaitable<void> {
     $t = $arg->getTainted();

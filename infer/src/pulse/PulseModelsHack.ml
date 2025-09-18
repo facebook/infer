@@ -1594,6 +1594,11 @@ let hhbc_verify_type_pred _dummy pred : model =
   assign_ret zero
 
 
+let hhbc_cast_int arg : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> assign_ret arg
+
+
 let hhbc_cast_string arg : model =
   (* https://github.com/facebook/hhvm/blob/605ac5dde604ded7f25e9786032a904f28230845/hphp/doc/bytecode.specification#L1087
      Cast to string ((string),(binary)). Pushes (string)$1 onto the stack. If $1
@@ -1672,6 +1677,7 @@ let matchers : matcher list =
     $--> hhbc_lazy_class_from_class
   ; -"$builtins" &:: "hack_field_get" <>$ capt_arg_payload $+ capt_arg_payload $--> hack_field_get
   ; -"$builtins" &:: "hhbc_cast_string" <>$ capt_arg_payload $--> hhbc_cast_string
+  ; -"$builtins" &:: "hhbc_cast_int" <>$ capt_arg_payload $--> hhbc_cast_int
   ; -"$builtins" &:: "hhbc_class_get_c" <>$ capt_arg_payload $--> hhbc_class_get_c
     (* we should be able to model that directly in Textual once specialization will be stronger *)
   ; -"$builtins" &:: "hhbc_cmp_same" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_cmp_same
