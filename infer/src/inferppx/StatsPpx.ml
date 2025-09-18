@@ -47,28 +47,6 @@ let mk_initial_stats_record_field_exps fields =
       fun_exp_of_field ~root:"init" ~loc pld_type )
 
 
-(** generate the pattern [{f1=f1; ...; fn=fn}] to bind [f1], ..., [fn] *)
-let mk_all_fields_pattern ~loc fields =
-  let pattern_fields =
-    List.map fields ~f:(fun {pld_name; pld_loc= loc} ->
-        let label = {txt= Lident pld_name.txt; loc} in
-        let pattern = Ast_helper.Pat.mk ~loc (Ppat_var pld_name) in
-        (label, pattern) )
-  in
-  Ast_helper.Pat.record ~loc pattern_fields Closed
-
-
-(** generate the function call [Fields.Direct.set_all_mutable_fields into ~f1 ~f2 ... ~fn] *)
-let mk_set_all_mutable_fields_call ~loc fields =
-  let labelled_arguments =
-    List.map fields ~f:(fun {pld_name; pld_loc= loc} ->
-        let arg_expr = Common.make_ident_exp ~loc pld_name.txt in
-        (Labelled pld_name.txt, arg_expr) )
-  in
-  Ast_helper.Exp.apply ~loc [%expr Fields.Direct.set_all_mutable_fields]
-    ((Nolabel, [%expr into]) :: labelled_arguments)
-
-
 (** generate [let merge stats1 stats2 = {f1= M1.merge_stats stats1.f1 stats2.f1; ...}] *)
 let mk_merge_fun_decl ~loc fields =
   let res =
@@ -106,6 +84,17 @@ let mk_fields_to_list_log_call ~loc fields =
   Ast_helper.Exp.apply ~loc [%expr Fields.to_list] labelled_arguments
 
 
+(* into.field <- from.field ; ... *)
+let mk_fieldset_exprs ~loc fields =
+  let mk_fieldset_expr ~loc acc field =
+    let lhs = Common.make_longident ~loc field.pld_name.txt in
+    let rhs = Common.access ~loc "from" field in
+    let fieldset_expr = Ast_helper.Exp.setfield ~loc [%expr into] lhs rhs in
+    Ast_helper.Exp.sequence ~loc fieldset_expr acc
+  in
+  List.fold fields ~init:[%expr ()] ~f:(mk_fieldset_expr ~loc)
+
+
 let generate_impl ~ctxt (_rec_flag, type_declarations) =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   match type_declarations with
@@ -114,8 +103,7 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
   | [{ptype_kind= Ptype_record fields; _}] ->
       let field_exps = mk_initial_stats_record_field_exps fields in
       let global_stats_init_record = Common.create_record ~loc fields field_exps in
-      let all_fields_pattern = mk_all_fields_pattern ~loc fields in
-      let set_all_mutable_fields_expression = mk_set_all_mutable_fields_call ~loc fields in
+      let field_assignments = mk_fieldset_exprs ~loc fields in
       let merge_fun_decl = mk_merge_fun_decl ~loc fields in
       let fields_to_list_log_call = mk_fields_to_list_log_call ~loc fields in
       [%str
@@ -123,10 +111,7 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
 
         let initial = [%e global_stats_init_record]
 
-        let copy from ~into =
-          let [%p all_fields_pattern] = from in
-          [%e set_all_mutable_fields_expression]
-
+        let copy from ~into = [%e field_assignments]
 
         [%%i merge_fun_decl]
 
