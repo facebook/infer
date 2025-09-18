@@ -509,7 +509,7 @@ let mk_procdesc (crate : Charon.UllbcAst.crate)
   let place_map = mk_place_map locals in
   let procdecl = mk_procdecl fun_decl in
   let nodes = List.mapi blocks ~f:(fun i block -> mk_node crate i block place_map) in
-  let start = Textual.NodeName.of_string "node_0" in
+  let start = mk_label 0 in
   let params = params_from_fun_decl fun_decl arg_count in
   let locals = mk_locals locals arg_count place_map in
   let exit_loc = location_from_span_end fun_decl.item_meta.span in
