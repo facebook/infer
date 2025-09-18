@@ -19,6 +19,9 @@ class San {
   public static function sanitize(mixed $arg): void {
     Sink::process($arg);
   }
+  public static async function sanitizeTest(mixed $arg): Awaitable<bool> {
+    return true;
+  }
 }
 
 class Flows {
@@ -32,4 +35,27 @@ class Flows {
     $t = $arg->getTainted();
     Sink::process($t);
   }
+
+  public static async function FPtaintedIfSanitizedOk(
+    Source $arg,
+  ): Awaitable<void> {
+    $t = $arg->getTainted();
+    $b = await San::sanitizeTest((int)$t);
+    if ($b) {
+      Sink::process((int)$t);
+    }
+  }
+  public static async function boolTest(mixed $arg): Awaitable<bool> {
+    return true;
+  }
+  public static async function taintedIfSanitizedBad(
+    Source $arg,
+  ): Awaitable<void> {
+    $t = $arg->getTainted();
+    $b = await self::boolTest((int)$t);
+    if ($b) {
+      Sink::process((int)$t);
+    }
+  }
+
 }
