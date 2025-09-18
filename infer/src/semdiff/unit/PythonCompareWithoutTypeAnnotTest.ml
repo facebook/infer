@@ -12,8 +12,6 @@ let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.p
 
 let ast_diff_equal prog1 prog2 = List.is_empty (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
-let assert_not expr = assert (Bool.equal expr false)
-
 let test_basic_fun_good _ =
   let prog1 = "def f():\n  return 1" in
   let prog2 = "def f():\n  return 1" in
@@ -23,7 +21,8 @@ let test_basic_fun_good _ =
 let test_basic_fun_bad _ =
   let prog1 = "def f():\n  return 1" in
   let prog2 = "def f():\n  return 2" in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff = ["-   return 1"; "+   return 2"] in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let test_const_type_annot_good _ =
@@ -55,7 +54,11 @@ CATEGORIES_TO_REMOVE = {'a': 1, 'b': 2, 'c': 3}
 CATEGORIES_TO_REMOVE_RENAMED: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
 |}
   in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff =
+    [ "- CATEGORIES_TO_REMOVE = {'a': 1, 'b': 2, 'c': 3}"
+    ; "+ CATEGORIES_TO_REMOVE_RENAMED: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}" ]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let test_fun_type_annot_good _ =
@@ -107,7 +110,8 @@ def foo() -> None:
 def write_html(json_file_path:str) -> None: pass
 |}
   in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff = ["-         \"file.json\""; "+         \"file_NEW.json\""] in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 (* We may want to silent reporting on case below with assertion added *)
@@ -125,7 +129,10 @@ def foo(self) -> None:
     x = obj.prop
 |}
   in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff =
+    ["-     x = obj.prop"; "+     assert obj is not None"; "+     x = obj.prop"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let test_with_import_good _ =
@@ -210,7 +217,10 @@ def main():
     print("Hello World!")
 |}
   in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff =
+    ["-     print(\"Hello World!\")"; "+     print(1)"; "+     print(\"Hello World!\")"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let fn_test_with_import_bad _ =
@@ -281,7 +291,8 @@ async def authenticate(self, token: str, tag: str) -> None:
 async def authenticate(self, token: str, tag: str) -> None:
         print(2)
 |} in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff = ["-         print(1)"; "+         print(2)"] in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let test_change_class_to_is_instance_good _ =
@@ -311,7 +322,8 @@ def foo(self, x) -> None:
             print(1)
 |}
   in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff = ["-         if x.__class__ == str:"; "+         if isinstance(x, None):"] in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let test_change_async_body_indentation_bad _ =
@@ -327,7 +339,8 @@ async def foo(self, x):
         print(1)
     print(2)
 |} in
-  assert_not (ast_diff_equal prog1 prog2)
+  let expected_diff = ["-         print(2)"; "+     print(2)"] in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let test_change_async_def_kwargs_good _ =
