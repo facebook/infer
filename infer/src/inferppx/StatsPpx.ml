@@ -12,7 +12,9 @@ let name_of_type_name ~root type_name = match type_name with "t" -> root | s -> 
 
 let destruct_stats_field_type ~loc pld_type =
   match pld_type.ptyp_desc with
-  | Ptyp_constr ({txt= Ldot (module_names, type_name)}, _) ->
+  | Ptyp_constr
+      ( {txt= Ldot (Lident "Atomic", "t")}
+      , [{ptyp_desc= Ptyp_constr ({txt= Ldot (module_names, type_name)}, _)}] ) ->
       Ok (module_names, type_name)
   | Ptyp_any
   | Ptyp_var _
@@ -44,7 +46,8 @@ let fun_exp_of_field ~root ~loc pld_type =
 
 let mk_initial_stats_record_field_exps fields =
   List.map fields ~f:(fun {pld_name= _; pld_type; pld_loc= loc} ->
-      fun_exp_of_field ~root:"init" ~loc pld_type )
+      let init = fun_exp_of_field ~root:"init" ~loc pld_type in
+      [%expr Atomic.make [%e init]] )
 
 
 (** generate [let merge stats1 stats2 = {f1= M1.merge_stats stats1.f1 stats2.f1; ...}] *)
@@ -61,7 +64,11 @@ let mk_merge_fun_decl ~loc fields =
         let stats1_field_exp = Ast_helper.Exp.field ~loc [%expr stats1] label in
         let stats2_field_exp = Ast_helper.Exp.field ~loc [%expr stats2] label in
         let merge_apply_exp =
-          [%expr [%e merge_fun_exp] [%e stats1_field_exp] [%e stats2_field_exp]]
+          [%expr
+            Atomic.make
+              ([%e merge_fun_exp]
+                 (Atomic.get [%e stats1_field_exp])
+                 (Atomic.get [%e stats2_field_exp]) )]
         in
         (label, merge_apply_exp) :: res )
   in
@@ -84,15 +91,15 @@ let mk_fields_to_list_log_call ~loc fields =
   Ast_helper.Exp.apply ~loc [%expr Fields.to_list] labelled_arguments
 
 
-(* into.field <- from.field ; ... *)
+(* Atomic.set from.field from.field ; ... *)
 let mk_fieldset_exprs ~loc fields =
-  let mk_fieldset_expr ~loc acc field =
-    let lhs = Common.make_longident ~loc field.pld_name.txt in
+  let mk_atomic_set ~loc acc field =
+    let lhs = Common.access ~loc "into" field in
     let rhs = Common.access ~loc "from" field in
-    let fieldset_expr = Ast_helper.Exp.setfield ~loc [%expr into] lhs rhs in
-    Ast_helper.Exp.sequence ~loc fieldset_expr acc
+    let atomicset_expr = [%expr Atomic.set [%e lhs] (Atomic.get [%e rhs])] in
+    Ast_helper.Exp.sequence ~loc atomicset_expr acc
   in
-  List.fold fields ~init:[%expr ()] ~f:(mk_fieldset_expr ~loc)
+  List.fold fields ~init:[%expr ()] ~f:(mk_atomic_set ~loc)
 
 
 let generate_impl ~ctxt (_rec_flag, type_declarations) =
@@ -117,7 +124,7 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
 
         let to_log_entries stats =
           let of_field value_to_log_entries field =
-            value_to_log_entries ~field_name:(Field.name field) (Field.get field stats)
+            value_to_log_entries ~field_name:(Field.name field) (Atomic.get (Field.get field stats))
           in
           [%e fields_to_list_log_call] |> List.concat]
   | _ ->

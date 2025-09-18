@@ -486,3 +486,13 @@ let is_term_dumb () =
 
 
 let with_dls key ~f = DLS.get key |> f |> DLS.set key
+
+let update_atomic atomic ~f =
+  let rec update_loop () =
+    let seen_value = Atomic.get atomic in
+    let new_value = f seen_value in
+    if not @@ Atomic.compare_and_set atomic seen_value new_value then (
+      Domain.cpu_relax () ;
+      update_loop () )
+  in
+  update_loop ()

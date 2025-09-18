@@ -156,9 +156,9 @@ module LongestProcDurationHeap = struct
 end
 
 module CacheStats = struct
-  type cache_data = {mutable hits: int; mutable misses: int}
+  type cache_data = {hits: int; misses: int}
 
-  type t = cache_data IString.Map.t
+  type t = cache_data Atomic.t IString.Map.t
 
   let merge m1 m2 =
     IString.Map.merge
@@ -169,11 +169,13 @@ module CacheStats = struct
         | None, _ ->
             data2_opt
         | Some data1, Some data2 ->
-            Some {hits= data1.hits + data2.hits; misses= data1.misses + data2.misses} )
+            let data1, data2 = (Atomic.get data1, Atomic.get data2) in
+            Some (Atomic.make {hits= data1.hits + data2.hits; misses= data1.misses + data2.misses}) )
       m1 m2
 
 
-  let get_stats {hits; misses} =
+  let get_stats data =
+    let {hits; misses} = Atomic.get data in
     let total_queries = hits + misses in
     let hit_rate =
       int_of_float @@ Float.round (float_of_int (100 * hits) /. float_of_int total_queries)
@@ -204,62 +206,60 @@ module CacheStats = struct
 
   let init = IString.Map.empty
 
-  let add_hit t ~name =
+  let update t ~name ~f =
     IString.Map.update name
       (fun data_opt ->
-        let data = Option.value data_opt ~default:{hits= 0; misses= 0} in
-        data.hits <- data.hits + 1 ;
-        Some data )
+        let new_data =
+          match data_opt with None -> Atomic.make {hits= 0; misses= 0} | Some data -> data
+        in
+        Utils.update_atomic new_data ~f ;
+        Some new_data )
       t
 
 
-  let add_miss t ~name =
-    IString.Map.update name
-      (fun data_opt ->
-        let data = Option.value data_opt ~default:{hits= 0; misses= 0} in
-        data.misses <- data.misses + 1 ;
-        Some data )
-      t
+  let add_hit t ~name = update t ~name ~f:(fun data -> {data with hits= data.hits + 1})
+
+  let add_miss t ~name = update t ~name ~f:(fun data -> {data with misses= data.misses + 1})
 end
 
 (* NOTE: there is a custom ppx for this data structure to generate boilerplate, see
    src/inferppx/StatsPpx.mli *)
 type t =
-  { mutable cache_stats: CacheStats.t
-  ; mutable summary_file_try_load: IntCounter.t
-  ; mutable summary_read_from_disk: IntCounter.t
-  ; mutable summary_specializations: IntCounter.t
-  ; mutable ondemand_procs_analyzed: IntCounter.t
-  ; mutable ondemand_double_analysis_prevented: IntCounter.t
-  ; mutable ondemand_recursion_cycle_restart_limit_hit: IntCounter.t
-  ; mutable ondemand_callchain_limit_hit: IntCounter.t
-  ; mutable proc_locker_lock_time: TimeCounter.t
-  ; mutable proc_locker_unlock_time: TimeCounter.t
-  ; mutable restart_scheduler_useful_time: TimeCounter.t
-  ; mutable restart_scheduler_total_time: TimeCounter.t
-  ; mutable pulse_aliasing_contradictions: IntCounter.t
-  ; mutable pulse_args_length_contradictions: IntCounter.t
-  ; mutable pulse_captured_vars_length_contradictions: IntCounter.t
-  ; mutable pulse_disjuncts_dropped: IntCounter.t
-  ; mutable pulse_interrupted_loops: IntCounter.t
-  ; mutable pulse_unknown_calls: IntCounter.t
-  ; mutable pulse_unknown_calls_on_hack_resource: IntCounter.t
-  ; mutable pulse_summaries_contradictions: IntCounter.t
-  ; mutable pulse_summaries_unsat_for_caller: IntCounter.t
-  ; mutable pulse_summaries_unsat_for_caller_percent: IntCounter.t
-  ; mutable pulse_summaries_with_some_unreachable_nodes: IntCounter.t
-  ; mutable pulse_summaries_with_some_unreachable_nodes_percent: IntCounter.t
-  ; mutable pulse_summaries_with_some_unreachable_returns: IntCounter.t
-  ; mutable pulse_summaries_with_some_unreachable_returns_percent: IntCounter.t
-  ; mutable pulse_summaries_count: IntCounter.t PulseSummaryCountMap.t
-  ; mutable pulse_summaries_count_0_continue_program: IntCounter.t
-  ; mutable pulse_summaries_count_0_percent: IntCounter.t
-  ; mutable timeouts: IntCounter.t
-  ; mutable timings: TimingsStat.t
-  ; mutable longest_proc_duration_heap: LongestProcDurationHeap.t
-  ; mutable process_times: TimeCounter.t
-  ; mutable useful_times: TimeCounter.t
-  ; mutable spec_store_times: TimeCounter.t }
+  { cache_stats: CacheStats.t Atomic.t
+  ; summary_file_try_load: IntCounter.t Atomic.t
+  ; summary_read_from_disk: IntCounter.t Atomic.t
+  ; summary_specializations: IntCounter.t Atomic.t
+  ; ondemand_procs_analyzed: IntCounter.t Atomic.t
+  ; ondemand_double_analysis_prevented: IntCounter.t Atomic.t
+  ; ondemand_recursion_cycle_restart_limit_hit: IntCounter.t Atomic.t
+  ; ondemand_callchain_limit_hit: IntCounter.t Atomic.t
+  ; proc_locker_lock_time: TimeCounter.t Atomic.t
+  ; proc_locker_unlock_time: TimeCounter.t Atomic.t
+  ; restart_scheduler_useful_time: TimeCounter.t Atomic.t
+  ; restart_scheduler_total_time: TimeCounter.t Atomic.t
+  ; pulse_aliasing_contradictions: IntCounter.t Atomic.t
+  ; pulse_args_length_contradictions: IntCounter.t Atomic.t
+  ; pulse_captured_vars_length_contradictions: IntCounter.t Atomic.t
+  ; pulse_disjuncts_dropped: IntCounter.t Atomic.t
+  ; pulse_interrupted_loops: IntCounter.t Atomic.t
+  ; pulse_unknown_calls: IntCounter.t Atomic.t
+  ; pulse_unknown_calls_on_hack_resource: IntCounter.t Atomic.t
+  ; pulse_summaries_contradictions: IntCounter.t Atomic.t
+  ; pulse_summaries_unsat_for_caller: IntCounter.t Atomic.t
+  ; pulse_summaries_unsat_for_caller_percent: IntCounter.t Atomic.t
+  ; pulse_summaries_with_some_unreachable_nodes: IntCounter.t Atomic.t
+  ; pulse_summaries_with_some_unreachable_nodes_percent: IntCounter.t Atomic.t
+  ; pulse_summaries_with_some_unreachable_returns: IntCounter.t Atomic.t
+  ; pulse_summaries_with_some_unreachable_returns_percent: IntCounter.t Atomic.t
+  ; pulse_summaries_count: IntCounter.t PulseSummaryCountMap.t Atomic.t
+  ; pulse_summaries_count_0_continue_program: IntCounter.t Atomic.t
+  ; pulse_summaries_count_0_percent: IntCounter.t Atomic.t
+  ; timeouts: IntCounter.t Atomic.t
+  ; timings: TimingsStat.t Atomic.t
+  ; longest_proc_duration_heap: LongestProcDurationHeap.t Atomic.t
+  ; process_times: TimeCounter.t Atomic.t
+  ; useful_times: TimeCounter.t Atomic.t
+  ; spec_store_times: TimeCounter.t Atomic.t }
 [@@deriving fields, infer_stats]
 
 let reset () = copy initial ~into:global_stats
@@ -269,7 +269,7 @@ let log_to_jsonl stats = to_log_entries stats |> StatsLogging.log_many
 (** human-readable pretty-printing of all fields *)
 let pp fmt stats =
   let pp_field pp_value fmt field =
-    F.fprintf fmt "%s= %a@;" (Field.name field) pp_value (Field.get field stats)
+    F.fprintf fmt "%s= %a@;" (Field.name field) pp_value (Atomic.get (Field.get field stats))
   in
   let pp_serialized_field deserializer pp_value fmt field =
     pp_field (fun fmt v -> pp_value fmt (deserializer v)) fmt field
@@ -279,17 +279,17 @@ let pp fmt stats =
     pp_field (fun fmt p -> F.fprintf fmt "%.1f%%" (float_of_int p /. 10.)) fmt field
   in
   let pp_time_counter_field fmt field =
-    let field_value = Field.get field stats in
+    let field_value = Field.get field stats |> Atomic.get in
     let field_name = Field.name field in
     F.fprintf fmt "%a@;" (TimeCounter.pp ~prefix:field_name) field_value
   in
   let pp_longest_proc_duration_heap fmt field =
-    let heap : LongestProcDurationHeap.t = Field.get field stats in
+    let heap : LongestProcDurationHeap.t = Field.get field stats |> Atomic.get in
     F.fprintf fmt "%s= [@\n@[<v>%a@]@\n]@;" (Field.name field) LongestProcDurationHeap.pp_sorted
       heap
   in
   let pp_pulse_summaries_count fmt field =
-    let sumcounters : int PulseSummaryCountMap.t = Field.get field stats in
+    let sumcounters : int PulseSummaryCountMap.t = Atomic.get (Field.get field stats) in
     let pp_binding fmt (n, count) = Format.fprintf fmt "%d -> %d" n count in
     F.fprintf fmt "%s= [%a]@;" (Field.name field)
       (F.pp_print_list ~pp_sep:(fun fmt () -> F.fprintf fmt ", ") pp_binding)
@@ -301,7 +301,7 @@ let pp fmt stats =
     F.fprintf fmt "pulse_summaries_total_disjuncts= %d@;" total
   in
   let pp_cache_stats fmt field =
-    let cache_stats : CacheStats.t = Field.get field stats in
+    let cache_stats : CacheStats.t = Field.get field stats |> Atomic.get in
     CacheStats.pp fmt cache_stats
   in
   Fields.iter ~summary_file_try_load:(pp_int_field fmt) ~useful_times:(pp_time_counter_field fmt)
@@ -359,33 +359,37 @@ let log_to_file
   let out_channel = Out_channel.create filename in
   let fmt = Format.formatter_of_out_channel out_channel in
   F.fprintf fmt "=== global counters ===@\n" ;
-  F.fprintf fmt "ondemand_procs_analyzed: %d@\n" ondemand_procs_analyzed ;
-  F.fprintf fmt "pulse_aliasing_contradictions: %d@\n" pulse_aliasing_contradictions ;
-  F.fprintf fmt "pulse_args_length_contradictions: %d@\n" pulse_args_length_contradictions ;
+  F.fprintf fmt "ondemand_procs_analyzed: %d@\n" (Atomic.get ondemand_procs_analyzed) ;
+  F.fprintf fmt "pulse_aliasing_contradictions: %d@\n" (Atomic.get pulse_aliasing_contradictions) ;
+  F.fprintf fmt "pulse_args_length_contradictions: %d@\n"
+    (Atomic.get pulse_args_length_contradictions) ;
   F.fprintf fmt "pulse_captured_vars_length_contradictions: %d@\n"
-    pulse_captured_vars_length_contradictions ;
-  F.fprintf fmt "pulse_disjuncts_dropped: %d@\n" pulse_disjuncts_dropped ;
-  F.fprintf fmt "pulse_interrupted_loops: %d@\n" pulse_interrupted_loops ;
-  F.fprintf fmt "pulse_unknown_calls: %d@\n" pulse_unknown_calls ;
-  F.fprintf fmt "pulse_unknown_calls_on_hack_resource: %d@\n" pulse_unknown_calls_on_hack_resource ;
-  F.fprintf fmt "pulse_summaries_contradictions: %d@\n" pulse_summaries_contradictions ;
-  F.fprintf fmt "pulse_summaries_unsat_for_caller: %d@\n" pulse_summaries_unsat_for_caller ;
+    (Atomic.get pulse_captured_vars_length_contradictions) ;
+  F.fprintf fmt "pulse_disjuncts_dropped: %d@\n" (Atomic.get pulse_disjuncts_dropped) ;
+  F.fprintf fmt "pulse_interrupted_loops: %d@\n" (Atomic.get pulse_interrupted_loops) ;
+  F.fprintf fmt "pulse_unknown_calls: %d@\n" (Atomic.get pulse_unknown_calls) ;
+  F.fprintf fmt "pulse_unknown_calls_on_hack_resource: %d@\n"
+    (Atomic.get pulse_unknown_calls_on_hack_resource) ;
+  F.fprintf fmt "pulse_summaries_contradictions: %d@\n" (Atomic.get pulse_summaries_contradictions) ;
+  F.fprintf fmt "pulse_summaries_unsat_for_caller: %d@\n"
+    (Atomic.get pulse_summaries_unsat_for_caller) ;
   F.fprintf fmt "pulse_summaries_with_some_unreachable_nodes: %d@\n"
-    pulse_summaries_with_some_unreachable_nodes ;
+    (Atomic.get pulse_summaries_with_some_unreachable_nodes) ;
   F.fprintf fmt "pulse_summaries_with_some_unreachable_returns: %d@\n"
-    pulse_summaries_with_some_unreachable_returns ;
+    (Atomic.get pulse_summaries_with_some_unreachable_returns) ;
   F.fprintf fmt "pulse_summaries_count_0_continue_program: %d@\n"
-    pulse_summaries_count_0_continue_program ;
-  F.fprintf fmt "pulse_summaries_count: %a@\n" PulseSummaryCountMap.pp pulse_summaries_count ;
+    (Atomic.get pulse_summaries_count_0_continue_program) ;
+  F.fprintf fmt "pulse_summaries_count: %a@\n" PulseSummaryCountMap.pp
+    (Atomic.get pulse_summaries_count) ;
   F.fprintf fmt "=== percents per function and specialization ===@\n" ;
   F.fprintf fmt "percent of functions where a callee never returns: %d%%@\n"
-    pulse_summaries_unsat_for_caller_percent ;
+    (Atomic.get pulse_summaries_unsat_for_caller_percent) ;
   F.fprintf fmt "percent of functions where at least one node got 0 disjuncts in its post: %d%%@\n"
-    pulse_summaries_with_some_unreachable_nodes_percent ;
+    (Atomic.get pulse_summaries_with_some_unreachable_nodes_percent) ;
   F.fprintf fmt "percent of function where at least one return point got 0 disjuncts: %d%%@\n"
-    pulse_summaries_with_some_unreachable_returns_percent ;
+    (Atomic.get pulse_summaries_with_some_unreachable_returns_percent) ;
   F.fprintf fmt "percent of function where 0 disjuncts were returned: %d%%@\n"
-    pulse_summaries_count_0_percent ;
+    (Atomic.get pulse_summaries_count_0_percent) ;
   Out_channel.close out_channel
 
 
@@ -396,9 +400,13 @@ let log_aggregate stats_list =
   | one :: rest ->
       let stats = List.fold rest ~init:one ~f:(fun aggregate one -> merge aggregate one) in
       let stats =
-        if stats.ondemand_procs_analyzed > 0 then
-          let mk_percent value =
-            int_of_float (100. *. float_of_int value /. float_of_int stats.ondemand_procs_analyzed)
+        if Atomic.get stats.ondemand_procs_analyzed > 0 then
+          let mk_percent atomic_value =
+            Atomic.make
+              (int_of_float
+                 ( 100.
+                 *. float_of_int (Atomic.get atomic_value)
+                 /. float_of_int (Atomic.get stats.ondemand_procs_analyzed) ) )
           in
           let pulse_summaries_unsat_for_caller_percent =
             mk_percent stats.pulse_summaries_unsat_for_caller
@@ -424,20 +432,13 @@ let log_aggregate stats_list =
       log_to_file stats
 
 
-let mutex = IMutex.create ()
-
 let get () =
-  IMutex.critical_section mutex ~f:(fun () ->
-      {global_stats with timings= TimingsStat.serialize global_stats.timings} )
+  {global_stats with timings= Atomic.make (TimingsStat.serialize (Atomic.get global_stats.timings))}
 
 
 let update_with field ~f =
-  match Field.setter field with
-  | None ->
-      L.die InternalError "incr on non-mutable field %s" (Field.name field)
-  | Some set ->
-      IMutex.critical_section mutex ~f:(fun () ->
-          set global_stats (f (Field.get field global_stats)) )
+  let atomic_fld = Field.get field global_stats in
+  Utils.update_atomic atomic_fld ~f
 
 
 let add field n = update_with field ~f:(( + ) n)

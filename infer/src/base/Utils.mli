@@ -154,3 +154,6 @@ val is_term_dumb : unit -> bool
 
 val with_dls : 'a DLS.key -> f:('a -> 'a) -> unit
 (** get value in domain local storage, pass to [f] and set to result *)
+
+val update_atomic : 'a Atomic.t -> f:('a -> 'a) -> unit
+(** atomically update with compare/exchange *)
