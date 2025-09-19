@@ -1139,6 +1139,31 @@ let hh_type_structure clsobj constnameobj : model =
   assign_ret retval
 
 
+let read_string_field_from_ts fieldname tdict =
+  let open DSL.Syntax in
+  let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack fieldname in
+  let* field_boxed_string = load_access tdict (FieldAccess field) in
+  let* field_string_val = load_access field_boxed_string (FieldAccess string_val_field) in
+  as_constant_string field_string_val
+
+
+let hh_type_structure_class clsobj constnameobj : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* constname = load_access constnameobj (FieldAccess string_val_field) in
+  constinit_existing_class_object clsobj
+  @@>
+  let* tdict = internal_hack_field_get clsobj constname in
+  let* classname = read_string_field_from_ts "classname" tdict in
+  match classname with
+  | Some classname ->
+      let* ret = make_hack_string classname in
+      assign_ret ret
+  | None ->
+      ret ()
+
+
 let hack_set_static_prop this prop obj : model =
   let open DSL.Syntax in
   start_model
@@ -1404,14 +1429,6 @@ let read_nullable_field_from_ts tdict =
   let* nullable_boxed_bool = load_access tdict (FieldAccess nullable_field) in
   let* nullable_bool_val = load_access nullable_boxed_bool (FieldAccess bool_val_field) in
   as_constant_bool nullable_bool_val
-
-
-let read_string_field_from_ts fieldname tdict =
-  let open DSL.Syntax in
-  let field = TextualSil.wildcard_sil_fieldname Textual.Lang.Hack fieldname in
-  let* field_boxed_string = load_access tdict (FieldAccess field) in
-  let* field_string_val = load_access field_boxed_string (FieldAccess string_val_field) in
-  as_constant_string field_string_val
 
 
 let read_access_from_ts tdict =
@@ -1720,6 +1737,8 @@ let matchers : matcher list =
     $--> hack_await_static
   ; -"$root" &:: "HH::type_structure" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
     $--> hh_type_structure
+  ; -"$root" &:: "HH::type_structure_class" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
+    $--> hh_type_structure_class
   ; -"$builtins" &:: "hack_get_class_from_type" <>$ capt_arg_payload $+ capt_arg_payload
     $--> hack_get_class_from_type
   ; -"$builtins" &:: "hhbc_iter_base" <>$ capt_arg_payload $--> hhbc_iter_base
