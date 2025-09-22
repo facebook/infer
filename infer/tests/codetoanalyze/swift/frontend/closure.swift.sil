@@ -1,0 +1,496 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+define .plain_name = "setupClosureOk" .method_offset = "19" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(var0: *ptr_elt) : *ptr_elt {
+  local self: *ptr_elt, getelementptr_offset_1: *void
+  #: @[136:0]
+      n1 = load &var0 @[136:0]
+      store &self <- n1 @[136:0]
+      n2 = load &metadata @[138:0]
+      n3 = load n2.swift::full_boxmetadata.field_2 @[138:0]
+      n6 = __sil_swift_alloc(<T5Hello18RetainCycleExampleC>) @[138:0]
+      jmp 3::ret @[139:0]
+      
+  #10::ret: @[13:16]
+      n15 = load &var0 @[13:16]
+      store &getelementptr_offset_1 <- 16 @[13:16]
+      n16 = load &getelementptr_offset_1 @[13:16]
+      n19 = load &var0 @[13:16]
+      _ = $builtins.llvm_dynamic_call(n16, __sil_cast(<int>, "$s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA"), __sil_cast(<int>, n6), n19) @[13:16]
+      jmp 14::void::ret @[13:16]
+      
+  #14::void::ret: @[16:5]
+      ret null @[16:5]
+      
+  #3::ret: @[13:26]
+      n7 = load &var0 @[13:26]
+      n8 = n7 @[13:26]
+      jmp 5::ret @[13:26]
+      
+  #5::ret: @[141:0]
+      n10 = load n6.__infer_tuple_class<*swift::refcounted,*swift::weak>.__infer_tuple_field_1 @[141:0]
+      n12 = swift_weakInit(n10, __sil_cast(<*ptr_elt>, __sil_cast(<int>, &var0))) @[141:0]
+      jmp 8::ret @[142:0]
+      
+  #8::ret: @[145:0]
+      n14 = n6 @[145:0]
+      jmp 10::ret @[146:0]
+      
+} @?
+
+define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var0: *ptr_elt) : *ptr_elt {
+  local var4: *T5Hello18RetainCycleExampleCSg, var3: int[], self: *ptr_elt, getelementptr_offset_1: *void
+  #: @[13:26]
+      n2 = load &var0 @[13:26]
+      n1 = n2.__infer_tuple_class<*swift::refcounted,*swift::weak>.__infer_tuple_field_1 @[13:26]
+      store &self <- n1 @[148:0]
+      n3 = load n1 @[14:17]
+      n4 = swift_weakLoadStrong(n3) @[14:17]
+      jmp 6::ret @[14:17]
+      
+  #11: @[150:0]
+      n6 = load &var4 @[150:0]
+      n7 = $s5Hello18RetainCycleExampleCSgWOh(n6) @[150:0]
+      jmp 12::ret @[151:0]
+      
+  #11::jmp::20: @[154:0]
+      n8 = 1 @[154:0]
+      jmp 20 @[155:0]
+      
+  #12::ret: @[153:0]
+      jmp 11::jmp::20 @[153:0]
+      
+  #13: @[14:17]
+      n9 = load &var4 @[14:17]
+      n11 = n9 @[14:17]
+      jmp 15::ret @[14:17]
+      
+  #13::jmp::20: @[162:0]
+      n8 = 0 @[162:0]
+      jmp 20 @[163:0]
+      
+  #15::ret: @[157:0]
+      n12 = load &var4 @[157:0]
+      n13 = $s5Hello18RetainCycleExampleCSgWOh(n12) @[157:0]
+      jmp 16::ret @[158:0]
+      
+  #16::ret: @[14:22]
+      n14 = load n9 @[14:22]
+      store &getelementptr_offset_1 <- 13 @[14:22]
+      n15 = load &getelementptr_offset_1 @[14:22]
+      _ = $builtins.llvm_dynamic_call(n15, 20, n9) @[14:22]
+      jmp 19::void::ret @[14:22]
+      
+  #19::void::ret: @[161:0]
+      jmp 13::jmp::20 @[161:0]
+      
+  #20: @[15:9]
+      ret null @[15:9]
+      
+  #6::ret: @[14:17]
+      store &var4 <- __sil_cast(<int>, n4) @[14:17]
+      n5 = load &var4 @[14:17]
+      if __sil_bxor(__sil_eq(n5, 0), 1) then jmp 13 else jmp 11 @[14:17]
+      
+} @?
+
+declare $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(*ptr_elt) : *ptr_elt
+
+define .plain_name = "setupClosureBug" .method_offset = "18" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC15setupClosureBugyyF(var0: *ptr_elt) : *ptr_elt {
+  local self: *ptr_elt, getelementptr_offset_1: *void
+  #: @[167:0]
+      n1 = load &var0 @[167:0]
+      store &self <- n1 @[167:0]
+      n2 = load &var0 @[169:0]
+      n3 = n2 @[169:0]
+      jmp 3::ret @[170:0]
+      
+  #3::ret: @[7:17]
+      n4 = load &var0 @[7:17]
+      store &getelementptr_offset_1 <- 16 @[7:17]
+      n5 = load &getelementptr_offset_1 @[7:17]
+      n8 = load &var0 @[7:17]
+      _ = $builtins.llvm_dynamic_call(n5, __sil_cast(<int>, "$s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_TA"), __sil_cast(<int>, &var0), n8) @[7:17]
+      jmp 7::void::ret @[7:17]
+      
+  #7::void::ret: @[10:5]
+      ret null @[10:5]
+      
+} @?
+
+define $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_(var0: *ptr_elt) : *ptr_elt {
+  local self: *ptr_elt, getelementptr_offset_1: *void
+  #: @[172:0]
+      n1 = load &var0 @[172:0]
+      store &self <- n1 @[172:0]
+      n2 = load &var0 @[8:21]
+      store &getelementptr_offset_1 <- 13 @[8:21]
+      n3 = load &getelementptr_offset_1 @[8:21]
+      n5 = load &var0 @[8:21]
+      _ = $builtins.llvm_dynamic_call(n3, 20, n5) @[8:21]
+      jmp 5::void::ret @[8:21]
+      
+  #5::void::ret: @[9:9]
+      ret null @[9:9]
+      
+} @?
+
+declare $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_TA(*ptr_elt) : *ptr_elt
+
+declare .plain_name = "id.modify" .method_offset = "14" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivM(*ptr_elt, *ptr_elt) : *ptr_elt
+
+declare .plain_name = "id.modify" $s5Hello18RetainCycleExampleC2idSivM::resume::0(*ptr_elt, int) : *ptr_elt
+
+define .plain_name = "id.get" .method_offset = "12" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivg(var0: *ptr_elt) : int {
+  local var2: int[]
+  #: @[181:0]
+      n2 = load &var0 @[181:0]
+      n1 = n2.T5Hello18RetainCycleExampleC.field_1 @[181:0]
+      n4 = load n1 @[183:0]
+      n3 = load n4.TSi.field_0 @[183:0]
+      ret n3 @[185:0]
+      
+} @?
+
+declare $s5Hello18RetainCycleExampleC2idSivpfi() : *ptr_elt
+
+define .plain_name = "id.set" .method_offset = "13" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivs(var0: int, var1: *ptr_elt) : *ptr_elt {
+  local var3: int[]
+  #: @[190:0]
+      n2 = load &var1 @[190:0]
+      n1 = n2.T5Hello18RetainCycleExampleC.field_1 @[190:0]
+      n4 = load n1 @[192:0]
+      n3 = load &var0 @[192:0]
+      store n4.TSi.field_0 <- n3 @[192:0]
+      ret null @[194:0]
+      
+} @?
+
+declare .plain_name = "closure.modify" .method_offset = "17" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvM(*ptr_elt, *ptr_elt) : *ptr_elt
+
+declare .plain_name = "closure.modify" $s5Hello18RetainCycleExampleC7closureyycSgvM::resume::0(*ptr_elt, int) : *ptr_elt
+
+define .plain_name = "closure.get" .method_offset = "15" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvg(var0: *ptr_elt) : *__infer_tuple_class<int,int> {
+  local var2: int[]
+  #: @[201:0]
+      n2 = load &var0 @[201:0]
+      n1 = n2.T5Hello18RetainCycleExampleC.field_2 @[201:0]
+      n4 = load n1 @[203:0]
+      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[203:0]
+      n6 = load n1 @[204:0]
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[204:0]
+      _ = $sIeg_SgWOy(n3, n5) @[206:0]
+      jmp $sIeg_SgWOy::void::ret @[207:0]
+      
+  #$sIeg_SgWOy::void::ret: @[209:0]
+      n9 = $builtins.llvm_init_tuple() @[209:0]
+      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[210:0]
+      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[210:0]
+      ret n9 @[210:0]
+      
+} @?
+
+declare $s5Hello18RetainCycleExampleC7closureyycSgvpfi() : *ptr_elt
+
+define .plain_name = "closure.set" .method_offset = "16" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvs(var0: int, var1: int, var2: *ptr_elt) : *ptr_elt {
+  local var4: int[]
+  #: @[216:0]
+      n1 = load &var0 @[216:0]
+      n2 = load &var1 @[216:0]
+      _ = $sIeg_SgWOy(n1, n2) @[216:0]
+      jmp $sIeg_SgWOy::void::ret @[217:0]
+      
+  #$sIeg_SgWOe::void::1::ret: @[231:0]
+      ret null @[231:0]
+      
+  #$sIeg_SgWOe::void::ret: @[229:0]
+      n15 = load &var0 @[229:0]
+      n16 = load &var1 @[229:0]
+      _ = $sIeg_SgWOe(n15, n16) @[229:0]
+      jmp $sIeg_SgWOe::void::1::ret @[230:0]
+      
+  #$sIeg_SgWOy::void::ret: @[218:0]
+      n4 = load &var2 @[218:0]
+      n3 = n4.T5Hello18RetainCycleExampleC.field_2 @[218:0]
+      n6 = load n3 @[220:0]
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[220:0]
+      n8 = load n3 @[221:0]
+      n7 = load n8.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[221:0]
+      n10 = load n3 @[222:0]
+      n9 = load &var0 @[222:0]
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n9 @[222:0]
+      n12 = load n3 @[223:0]
+      n11 = load &var1 @[223:0]
+      store n12.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n11 @[223:0]
+      _ = $sIeg_SgWOe(n5, n7) @[225:0]
+      jmp $sIeg_SgWOe::void::ret @[226:0]
+      
+} @?
+
+define .plain_name = "init" .method_offset = "20" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleCACycfC(var0: *ptr_elt) : *ptr_elt {
+  #: @[233:0]
+      n1 = load &var0 @[233:0]
+      n4 = __sil_swift_alloc(<T5Hello18RetainCycleExampleC>) @[233:0]
+      jmp 2::ret @[234:0]
+      
+  #2::ret: @[236:0]
+      n6 = $s5Hello18RetainCycleExampleCACycfc(n4) @[236:0]
+      jmp 3::ret @[237:0]
+      
+  #3::ret: @[238:0]
+      ret n6 @[238:0]
+      
+} @?
+
+define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(var0: *ptr_elt) : *ptr_elt {
+  local self: *ptr_elt
+  #: @[240:0]
+      n1 = load &var0 @[240:0]
+      store &self <- n1 @[240:0]
+      n2 = load &var0 @[2:14]
+      n3 = load n2.T5Hello18RetainCycleExampleC.field_1 @[2:14]
+      store n3.TSi.field_0 <- 10 @[2:14]
+      n5 = load &var0 @[4:9]
+      n4 = n5.T5Hello18RetainCycleExampleC.field_2 @[4:9]
+      n6 = load n4 @[241:0]
+      store n6.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[241:0]
+      n7 = load n4 @[242:0]
+      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[242:0]
+      n8 = load &var0 @[243:0]
+      ret n8 @[243:0]
+      
+} @?
+
+declare $s5Hello18RetainCycleExampleCMa(int) : *ptr_elt
+
+declare $s5Hello18RetainCycleExampleCSgWOh(*ptr_elt) : *ptr_elt
+
+declare .plain_name = "deinit" .method_offset = "-2" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleCfD(*ptr_elt) : *ptr_elt
+
+declare .plain_name = "deinit" $s5Hello18RetainCycleExampleCfd(*ptr_elt) : *ptr_elt
+
+declare $sIeg_SgWOe(int, int) : *ptr_elt
+
+declare $sIeg_SgWOh(*ptr_elt) : *ptr_elt
+
+declare $sIeg_SgWOy(int, int) : *ptr_elt
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *ptr_elt
+
+declare objc_opt_self(*ptr_elt) : *ptr_elt
+
+declare objectdestroy(*ptr_elt) : *ptr_elt
+
+declare swift_allocObject(*ptr_elt, int, int) : *ptr_elt
+
+declare swift_beginAccess(*ptr_elt, *ptr_elt, int, *ptr_elt) : *ptr_elt
+
+declare swift_deallocClassInstance(*ptr_elt, int, int) : *ptr_elt
+
+declare swift_deallocObject(*ptr_elt, int, int) : *ptr_elt
+
+declare swift_endAccess(*ptr_elt) : *ptr_elt
+
+declare swift_release(*ptr_elt) : *ptr_elt
+
+declare swift_retain(*ptr_elt) : *ptr_elt
+
+declare swift_weakDestroy(*ptr_elt) : *ptr_elt
+
+declare swift_weakInit(*ptr_elt, *ptr_elt) : *ptr_elt
+
+declare swift_weakLoadStrong(*ptr_elt) : *ptr_elt
+
+global symbolic yycSg: *ptr_elt
+
+global symbolic _____SgXw 5Hello18RetainCycleExampleC: *ptr_elt
+
+global symbolic _____ 5Hello18RetainCycleExampleC: *ptr_elt
+
+global symbolic Si: *ptr_elt
+
+global objc_classes_$s5Hello18RetainCycleExampleCN: *ptr_elt
+
+global metadata: *ptr_elt
+
+global llvm::used: *ptr_elt
+
+global llvm::compiler::used: *ptr_elt
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
+
+global _objc_empty_cache: *ptr_elt
+
+global __swift_reflection_version: *ptr_elt
+
+global _METACLASS_DATA__TtC5Hello18RetainCycleExample: *ptr_elt
+
+global _IVARS__TtC5Hello18RetainCycleExample: *ptr_elt
+
+global _DATA__TtC5Hello18RetainCycleExample: *ptr_elt
+
+global OBJC_METACLASS_$__TtCs12_SwiftObject: *ptr_elt
+
+global OBJC_CLASS_$__TtCs12_SwiftObject: *ptr_elt
+
+global ::str::7::closure: *ptr_elt
+
+global ::str::5::Hello: *ptr_elt
+
+global ::str::30::_TtC5Hello18RetainCycleExample: *ptr_elt
+
+global ::str::2::id: *ptr_elt
+
+global ::str::18::RetainCycleExample: *ptr_elt
+
+global ::str::0::: *ptr_elt
+
+global 1: *ptr_elt
+
+global 0: *ptr_elt
+
+global $sBoWV: *ptr_elt
+
+global $s5HelloMXM: *ptr_elt
+
+global $s5Hello18RetainCycleExampleCMn: *ptr_elt
+
+global $s5Hello18RetainCycleExampleCMm: *ptr_elt
+
+global $s5Hello18RetainCycleExampleCMf: *ptr_elt
+
+global $s5Hello18RetainCycleExampleCMF: *ptr_elt
+
+global $s5Hello18RetainCycleExampleCHn: *ptr_elt
+
+global $s5Hello18RetainCycleExampleC7closureyycSgvpWvd: *ptr_elt
+
+global $s5Hello18RetainCycleExampleC2idSivpWvd: *ptr_elt
+
+global l__swift5_reflection_descriptor: *ptr_elt
+
+type $s5Hello18RetainCycleExampleC2idSivM::Frame = {field_0: int[]}
+
+type $s5Hello18RetainCycleExampleC7closureyycSgvM::Frame = {field_0: int[]}
+
+type T5Hello18RetainCycleExampleC = {field_0: *swift::refcounted;
+                                     field_1: *TSi; field_2: *TIeg_Sg}
+
+type T5Hello18RetainCycleExampleCSg = {field_0: int[]}
+
+type TIeg_Sg = {field_0: int[]}
+
+type TSi = {field_0: int}
+
+type __infer_tuple_class<*ptr_elt,*ptr_elt> = {__infer_tuple_field_0: *ptr_elt;
+                                               __infer_tuple_field_1: *ptr_elt}
+
+type __infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,*ptr_elt,*ptr_elt,*ptr_elt,int,int,int,int,int,int,int,int,*ptr_elt,*ptr_elt,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt> = {
+__infer_tuple_field_0: *ptr_elt; __infer_tuple_field_1: *ptr_elt;
+__infer_tuple_field_2: *ptr_elt; __infer_tuple_field_3: int;
+__infer_tuple_field_4: *ptr_elt; __infer_tuple_field_5: *ptr_elt;
+__infer_tuple_field_6: *ptr_elt; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int; __infer_tuple_field_13: int;
+__infer_tuple_field_14: int; __infer_tuple_field_15: *ptr_elt;
+__infer_tuple_field_16: *ptr_elt; __infer_tuple_field_17: int;
+__infer_tuple_field_18: int; __infer_tuple_field_19: *ptr_elt;
+__infer_tuple_field_20: *ptr_elt; __infer_tuple_field_21: *ptr_elt;
+__infer_tuple_field_22: *ptr_elt; __infer_tuple_field_23: *ptr_elt;
+__infer_tuple_field_24: *ptr_elt; __infer_tuple_field_25: *ptr_elt;
+__infer_tuple_field_26: *ptr_elt; __infer_tuple_field_27: *ptr_elt}
+
+type __infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int> = {__infer_tuple_field_0: *ptr_elt;
+                                                                __infer_tuple_field_1: *ptr_elt;
+                                                                __infer_tuple_field_2: *ptr_elt;
+                                                                __infer_tuple_field_3: int;
+                                                                __infer_tuple_field_4: int}
+
+type __infer_tuple_class<*swift::refcounted,*swift::weak> = {__infer_tuple_field_0: *swift::refcounted;
+                                                             __infer_tuple_field_1: *swift::weak}
+
+type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
+                                     __infer_tuple_field_1: int}
+
+type __infer_tuple_class<int,int,(*__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int>)[]> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: (*__infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int>)[]}
+
+type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
+                                         __infer_tuple_field_1: int;
+                                         __infer_tuple_field_2: int}
+
+type __infer_tuple_class<int,int,int,int> = {__infer_tuple_field_0: int;
+                                             __infer_tuple_field_1: int;
+                                             __infer_tuple_field_2: int;
+                                             __infer_tuple_field_3: int}
+
+type __infer_tuple_class<int,int,int,int,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt,*ptr_elt> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: *ptr_elt; __infer_tuple_field_5: *ptr_elt;
+__infer_tuple_field_6: *ptr_elt; __infer_tuple_field_7: *ptr_elt;
+__infer_tuple_field_8: *ptr_elt; __infer_tuple_field_9: *ptr_elt;
+__infer_tuple_field_10: *ptr_elt}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor,*swift::method_descriptor> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int;
+__infer_tuple_field_13: *swift::method_descriptor;
+__infer_tuple_field_14: *swift::method_descriptor;
+__infer_tuple_field_15: *swift::method_descriptor;
+__infer_tuple_field_16: *swift::method_descriptor;
+__infer_tuple_field_17: *swift::method_descriptor;
+__infer_tuple_field_18: *swift::method_descriptor;
+__infer_tuple_field_19: *swift::method_descriptor;
+__infer_tuple_field_20: *swift::method_descriptor;
+__infer_tuple_field_21: *swift::method_descriptor}
+
+type __infer_tuple_class<int,int,int[],int> = {__infer_tuple_field_0: int;
+                                               __infer_tuple_field_1: int;
+                                               __infer_tuple_field_2: int[];
+                                               __infer_tuple_field_3: int}
+
+type __infer_tuple_class<int[],int> = {__infer_tuple_field_0: int[];
+                                       __infer_tuple_field_1: int}
+
+type objc_class = {field_0: *ptr_elt; field_1: *ptr_elt; field_2: *ptr_elt;
+                   field_3: *ptr_elt; field_4: int}
+
+type swift::full_boxmetadata = {field_0: *ptr_elt; field_1: *ptr_elt;
+                                field_2: *swift::type; field_3: int;
+                                field_4: *ptr_elt}
+
+type swift::function = {field_0: *ptr_elt; field_1: *ptr_elt}
+
+type swift::metadata_response = {field_0: *ptr_elt; field_1: int}
+
+type swift::method_descriptor = {field_0: int; field_1: int}
+
+type swift::refcounted = {field_0: *ptr_elt; field_1: int}
+
+type swift::type = {field_0: int}
+
+type swift::type_metadata_record = {field_0: int}
+
+type swift::weak = {field_0: *ptr_elt}
+
