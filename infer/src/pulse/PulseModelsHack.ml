@@ -32,10 +32,6 @@ let read_string_value address astate = PulseArithmetic.as_constant_string astate
 
 let replace_backslash_with_colon s = String.tr s ~target:'\\' ~replacement:':'
 
-let hh_this_rootname = "HH\\\\this"
-
-let this_localvar_name = "$this"
-
 let read_string_value_dsl aval : string option DSL.model_monad =
   let open PulseModelsDSL.Syntax in
   let* inner_val = load_access aval (FieldAccess string_val_field) in
@@ -1447,44 +1443,6 @@ let read_access_from_ts tdict =
   as_constant_string type_prop_name_string_val
 
 
-(* We handle two cases:
-   (1) rootname is HH\this, in this case it returns this object
-   (2) rootname is something else, in this case returns None *)
-let get_cls_obj (rootname, _) : DSL.aval option DSL.model_monad =
-  let open DSL.Syntax in
-  let* opt_str_rootname = exec_pure_operation (read_string_value rootname) in
-  match opt_str_rootname with
-  | Some rootname when String.equal rootname hh_this_rootname ->
-      let* {analysis_data= {proc_desc}} = get_data in
-      let proc_name = Procdesc.get_proc_name proc_desc in
-      let this_var = Pvar.mk_local (Mangled.from_string this_localvar_name) proc_name in
-      let* this_v = load_exp (Exp.Lvar this_var) in
-      ret (Some this_v)
-  | _ ->
-      ret None
-
-
-let hack_get_class_from_type rootname constname : model =
-  let open DSL.Syntax in
-  start_model
-  @@ fun () ->
-  let* clsobj = get_cls_obj rootname in
-  match clsobj with
-  | None ->
-      ret ()
-  | Some clsobj -> (
-      constinit_existing_class_object clsobj
-      @@>
-      let* tdict = internal_hack_field_get clsobj constname in
-      let* classname = read_string_field_from_ts "classname" tdict in
-      match classname with
-      | Some classname ->
-          let* ret = make_hack_string classname in
-          assign_ret ret
-      | None ->
-          ret () )
-
-
 (* returns a fresh value equated to the SIL result of the comparison *)
 let check_against_type_struct v tdict : DSL.aval DSL.model_monad =
   let open DSL.Syntax in
@@ -1739,8 +1697,6 @@ let matchers : matcher list =
     $--> hh_type_structure
   ; -"$root" &:: "HH::type_structure_class" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
     $--> hh_type_structure_class
-  ; -"$builtins" &:: "hack_get_class_from_type" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> hack_get_class_from_type
   ; -"$builtins" &:: "hhbc_iter_base" <>$ capt_arg_payload $--> hhbc_iter_base
   ; -"$builtins" &:: "hhbc_iter_init" <>$ capt_arg_payload $+ capt_arg_payload $--> hhbc_iter_init
   ; -"$builtins" &:: "hhbc_iter_get_key" <>$ capt_arg_payload $+ capt_arg_payload
