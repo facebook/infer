@@ -34,7 +34,6 @@ SOURCES = \
   ../shared/block/block-it.m \
   ../shared/block/block.m \
   ../shared/block/block_no_args.m \
-  ../shared/block/block_release.m \
   ../shared/block/dispatch.m \
   ../shared/block/dispatch_in_macro.m \
   ../shared/field_superclass/SuperExample.m \
