@@ -92,6 +92,7 @@ type t =
   | ConstRefableParameter of {param: Var.t; typ: Typ.t; location: Location.t}
   | DynamicTypeMismatch of {location: Location.t}
   | ErlangError of ErlangError.t
+  | InfiniteLoopError of {location: Location.t}
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
   | MutualRecursionCycle of
       {cycle: PulseMutualRecursion.t; location: Location.t; is_call_with_same_values: bool}

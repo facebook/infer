@@ -2345,6 +2345,12 @@ and pulse_force_continue =
      positives."
 
 
+and pulse_experimental_infinite_loop_checker =
+  CLOpt.mk_bool ~long:"pulse-experimental-infinite-loop-checker" ~default:false
+    "Enable the INFITE_LOOP checker during analysis phase. This is a temporary flag in order to \
+     strictly gate this experimental checker. You may also need to activate reporting if needed"
+
+
 and pulse_havoc_arguments =
   CLOpt.mk_bool ~long:"pulse-havoc-arguments" ~default:true
     "Heuristically havoc arguments to unknown functions."
@@ -4439,6 +4445,8 @@ and pulse_cut_to_one_path_procedures_pattern =
 and pulse_final_types_are_exact = !pulse_final_types_are_exact
 
 and pulse_force_continue = !pulse_force_continue
+
+and pulse_experimental_infinite_loop_checker = !pulse_experimental_infinite_loop_checker
 
 and pulse_havoc_arguments = !pulse_havoc_arguments
 

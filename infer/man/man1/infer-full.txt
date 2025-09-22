@@ -619,6 +619,7 @@ OPTIONS
              INFERBO_ALLOC_MAY_BE_BIG (enabled by default),
              INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default),
              INFINITE_EXECUTION_TIME (disabled by default),
+             INFINITE_LOOP (disabled by default),
              INFINITE_RECURSION (disabled by default),
              INTEGER_OVERFLOW_L1 (enabled by default),
              INTEGER_OVERFLOW_L2 (enabled by default),
@@ -3014,6 +3015,12 @@ INTERNAL OPTIONS
 
        --pulse-cut-to-one-path-procedures-pattern-reset
            Cancel the effect of --pulse-cut-to-one-path-procedures-pattern.
+
+       --pulse-experimental-infinite-loop-checker
+           Activates: Enable the INFITE_LOOP checker during analysis phase.
+           This is a temporary flag in order to strictly gate this
+           experimental checker. You may also need to activate reporting if
+           needed (Conversely: --no-pulse-experimental-infinite-loop-checker)
 
        --no-pulse-final-types-are-exact
            Deactivates: Make Pulse understand that final types are exact

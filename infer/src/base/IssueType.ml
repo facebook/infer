@@ -838,6 +838,11 @@ let pure_function =
     ~user_documentation:[%blob "./documentation/issues/PURE_FUNCTION.md"]
 
 
+let infinite_loop =
+  register ~category:RuntimeException ~enabled:false ~id:"INFINITE_LOOP" Warning Pulse
+    ~user_documentation:[%blob "./documentation/issues/INFINITE_LOOP.md"]
+
+
 let readonly_shared_ptr_param =
   register ~category:PerfRegression ~id:"PULSE_READONLY_SHARED_PTR_PARAM" Error Pulse
     ~hum:"Read-only Shared Parameter"

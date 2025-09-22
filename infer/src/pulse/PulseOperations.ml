@@ -440,7 +440,8 @@ let prune pdesc path location ~condition astate =
                 ValueOrigin.hist vo
           in
           let++ astate =
-            PulseArithmetic.prune_binop ~negated bop (to_op lhs_op) (to_op rhs_op) astate
+            PulseArithmetic.prune_binop ~negated bop ~ifkind:true (to_op lhs_op) (to_op rhs_op)
+              astate
           in
           let hist =
             match (to_hist lhs_op, to_hist rhs_op) with

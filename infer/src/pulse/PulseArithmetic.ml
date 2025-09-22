@@ -78,8 +78,9 @@ let eval_unop ret unop v astate =
       Formula.and_equal_unop ret unop (AbstractValueOperand v) phi )
 
 
-let prune_binop ?depth ~negated binop lhs rhs astate =
-  map_path_condition astate ~f:(fun phi -> Formula.prune_binop ?depth ~negated binop lhs rhs phi)
+let prune_binop ?depth ~negated binop ?ifkind:(need_atom = false) lhs rhs astate =
+  map_path_condition astate ~f:(fun phi ->
+      Formula.prune_binop ?depth ~negated binop ~need_atom lhs rhs phi )
 
 
 let and_equal_string_concat ret lhs rhs astate =

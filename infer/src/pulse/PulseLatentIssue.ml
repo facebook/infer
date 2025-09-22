@@ -110,6 +110,7 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
   | RetainCycle _
   | StackVariableAddressEscape _
   | TaintFlow _
+  | InfiniteLoopError _
   | TransitiveAccess _
   | UninitMethod _
   | UnnecessaryCopy _ ->

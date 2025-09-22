@@ -14,6 +14,7 @@ module LatentIssue = PulseLatentIssue
 
 type 'abductive_domain_t base_t =
   | ContinueProgram of 'abductive_domain_t  (** represents the state at the program point *)
+  | InfiniteLoop of 'abductive_domain_t  (** state after an infinite loop was found **)
   | ExceptionRaised of 'abductive_domain_t  (** state after an exception has been thrown *)
   | ExitProgram of AbductiveDomain.Summary.t
       (** represents the state originating at exit/divergence. *)
@@ -48,3 +49,5 @@ type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojs
 val pp_summary : Pp.print_kind -> F.formatter -> summary -> unit
 
 val to_name : 'a base_t -> string
+
+val back_edge : t list -> t list -> int -> t list * int

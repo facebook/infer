@@ -189,6 +189,7 @@ let is_constant_deref_without_invalidation_diagnostic (diagnostic : Diagnostic.t
   | ConstRefableParameter _
   | DynamicTypeMismatch _
   | ErlangError _
+  | InfiniteLoopError _
   | HackCannotInstantiateAbstractClass _
   | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _

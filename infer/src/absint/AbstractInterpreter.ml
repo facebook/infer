@@ -190,6 +190,19 @@ module DisjunctiveMetadata = struct
      update it whenever a relevant action is taken (eg dropping a disjunct). *)
   let proc_metadata = AnalysisGlobalState.make_dls ~init:(fun () -> empty)
 
+  (* This is used to remember the CFG node otherwise we would need to carry the node around in widen
+     and join as well as other places that may need to access the current CFG node during analysis *)
+
+  let alert_node =
+    AnalysisGlobalState.make_dls ~init:(fun () -> Procdesc.Node.dummy Procname.empty_block)
+
+
+  (* End CFG node tracking for alerts *)
+
+  let record_alert_node new_alert_node = DLS.set alert_node new_alert_node
+
+  let get_alert_node () = DLS.get alert_node
+
   let add_dropped_disjuncts dropped_disjuncts =
     Utils.with_dls proc_metadata ~f:(fun proc_metadata ->
         {proc_metadata with dropped_disjuncts= proc_metadata.dropped_disjuncts + dropped_disjuncts} )
@@ -311,22 +324,49 @@ struct
          && T.NonDisjDomain.leq ~lhs:(snd lhs) ~rhs:(snd rhs)
 
 
-    let widen ~prev ~next ~num_iters =
+    let widen_infinite_loop_checker ~prev ~next ~num_iters =
       let max_iter =
         match DConfig.widen_policy with UnderApproximateAfterNumIterations max_iter -> max_iter
       in
-      if phys_equal prev next then prev
-      else if num_iters > max_iter then (
-        L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
+      if num_iters > max_iter then (
         DisjunctiveMetadata.incr_interrupted_loops () ;
         prev )
       else
+        let back_edges (prev : T.DisjDomain.t list) (next : T.DisjDomain.t list) (num_iters : int) :
+            T.DisjDomain.t list * int =
+          T.back_edge prev next num_iters
+        in
+        let dbe, _ = back_edges (fst prev) (fst next) num_iters in
+        let hasnew = not (phys_equal (fst prev) dbe) in
         let post_disj, _, dropped =
-          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
+          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq
+            ~into:(if hasnew then dbe else fst prev)
+            (fst next)
         in
         let next_non_disj = T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters in
         if leq ~lhs:(post_disj, next_non_disj) ~rhs:prev then prev
         else (post_disj, add_dropped_disjuncts dropped next_non_disj)
+
+
+    let widen ~prev ~next ~num_iters =
+      if Config.pulse_experimental_infinite_loop_checker then
+        widen_infinite_loop_checker ~prev ~next ~num_iters
+      else
+        let max_iter =
+          match DConfig.widen_policy with UnderApproximateAfterNumIterations max_iter -> max_iter
+        in
+        if phys_equal prev next then prev
+        else if num_iters > max_iter then (
+          L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
+          DisjunctiveMetadata.incr_interrupted_loops () ;
+          prev )
+        else
+          let post_disj, _, dropped =
+            join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
+          in
+          let next_non_disj = T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters in
+          if leq ~lhs:(post_disj, next_non_disj) ~rhs:prev then prev
+          else (post_disj, add_dropped_disjuncts dropped next_non_disj)
 
 
     let pp_ (pp_kind : Pp.print_kind) f (disjuncts, non_disj) =

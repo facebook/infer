@@ -380,6 +380,8 @@ val add_skipped_calls : SkippedCalls.t -> t -> t
 
 val add_missed_captures : Typ.Name.Set.t -> t -> t
 
+val get_path_condition : t -> Formula.t
+
 val set_path_condition : Formula.t -> t -> t
 
 val record_transitive_access : Location.t -> t -> t
