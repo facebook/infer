@@ -128,7 +128,7 @@ let has_infinite_state (lst : t list) : bool =
   List.exists ~f:(fun x -> match x with InfiniteLoop _ -> true | _ -> false) lst
 
 
-let back_edge (prev : t list) (next : t list) (_num_iters : int) : int option =
+let back_edge (prev : t list) (next : t list) : int option =
   if has_infinite_state next then None
   else
     let cfgnode = AnalysisState.get_node () |> Option.value_exn in

@@ -324,49 +324,26 @@ struct
          && T.NonDisjDomain.leq ~lhs:(snd lhs) ~rhs:(snd rhs)
 
 
-    let widen_infinite_loop_checker ~prev ~next ~num_iters =
+    let widen ~prev ~next ~num_iters =
       let max_iter =
         match DConfig.widen_policy with UnderApproximateAfterNumIterations max_iter -> max_iter
       in
-      if num_iters > max_iter then (
+      if phys_equal prev next then prev
+      else if num_iters > max_iter then (
+        L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
         DisjunctiveMetadata.incr_interrupted_loops () ;
         prev )
       else
-        let back_edges (prev : T.DisjDomain.t list) (next : T.DisjDomain.t list) (num_iters : int) :
-            T.DisjDomain.t list * int =
-          T.back_edge prev next num_iters
+        let into =
+          if Config.pulse_experimental_infinite_loop_checker then T.widen_list (fst prev) (fst next)
+          else fst prev
         in
-        let dbe, _ = back_edges (fst prev) (fst next) num_iters in
-        let hasnew = not (phys_equal (fst prev) dbe) in
         let post_disj, _, dropped =
-          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq
-            ~into:(if hasnew then dbe else fst prev)
-            (fst next)
+          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into (fst next)
         in
         let next_non_disj = T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters in
         if leq ~lhs:(post_disj, next_non_disj) ~rhs:prev then prev
         else (post_disj, add_dropped_disjuncts dropped next_non_disj)
-
-
-    let widen ~prev ~next ~num_iters =
-      if Config.pulse_experimental_infinite_loop_checker then
-        widen_infinite_loop_checker ~prev ~next ~num_iters
-      else
-        let max_iter =
-          match DConfig.widen_policy with UnderApproximateAfterNumIterations max_iter -> max_iter
-        in
-        if phys_equal prev next then prev
-        else if num_iters > max_iter then (
-          L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
-          DisjunctiveMetadata.incr_interrupted_loops () ;
-          prev )
-        else
-          let post_disj, _, dropped =
-            join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into:(fst prev) (fst next)
-          in
-          let next_non_disj = T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters in
-          if leq ~lhs:(post_disj, next_non_disj) ~rhs:prev then prev
-          else (post_disj, add_dropped_disjuncts dropped next_non_disj)
 
 
     let pp_ (pp_kind : Pp.print_kind) f (disjuncts, non_disj) =

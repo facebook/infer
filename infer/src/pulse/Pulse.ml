@@ -184,13 +184,12 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
-  let back_edge (prev : DisjDomain.t list) (next : DisjDomain.t list) (num_iters : int) :
-      DisjDomain.t list * int =
+  let widen_list (prev : DisjDomain.t list) (next : DisjDomain.t list) : DisjDomain.t list =
     let plist = List.rev_map ~f:fst prev in
     let nlist = List.rev_map ~f:fst next in
-    match ExecutionDomain.back_edge plist nlist num_iters with
+    match ExecutionDomain.back_edge plist nlist with
     | None ->
-        (prev, -1)
+        prev
     | Some cnt ->
         let exec, path = List.nth_exn next cnt in
         let exec =
@@ -202,7 +201,7 @@ module PulseTransferFunctions = struct
           | _ ->
               exec
         in
-        (prev @ [(exec, path)], -1)
+        prev @ [(exec, path)]
 
 
   (* END OF BACK-EDGE CODE *)
