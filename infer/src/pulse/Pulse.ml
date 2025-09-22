@@ -186,12 +186,8 @@ module PulseTransferFunctions = struct
 
   let back_edge (prev : DisjDomain.t list) (next : DisjDomain.t list) (num_iters : int) :
       DisjDomain.t list * int =
-    let rec listpair_split (l : DisjDomain.t list) (o1 : ExecutionDomain.t list)
-        (o2 : PathContext.t list) =
-      match l with [] -> (o1, o2) | (ed, pc) :: tail -> listpair_split tail (ed :: o1) (pc :: o2)
-    in
-    let plist, _ = listpair_split prev [] [] in
-    let nlist, _ = listpair_split next [] [] in
+    let plist = List.rev_map ~f:fst prev in
+    let nlist = List.rev_map ~f:fst next in
     match ExecutionDomain.back_edge plist nlist num_iters with
     | None ->
         (prev, -1)
@@ -206,7 +202,7 @@ module PulseTransferFunctions = struct
           | _ ->
               exec
         in
-        (List.rev prev @ [(exec, path)], -1)
+        (prev @ [(exec, path)], -1)
 
 
   (* END OF BACK-EDGE CODE *)
