@@ -9,4 +9,4 @@ open! IStd
 
 val ast_diff : ?debug:bool -> string -> string -> string list
 
-val semdiff : ?debug:bool -> string -> string -> unit
+val semdiff : string -> string -> unit

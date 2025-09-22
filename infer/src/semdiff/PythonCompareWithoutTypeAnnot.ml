@@ -186,12 +186,13 @@ let ast_diff ?(debug = false) src1 src2 =
   let diffs_pairs = Py.Callable.to_function diff_func [|ast1; ast2|] in
   let diffs_pairs = Py.List.to_list diffs_pairs |> List.map ~f:tuple_to_int_pair in
   let diffs = diff_code diffs_pairs src1 src2 in
-  if debug then Printf.printf "SemDiff:\n%s" (String.concat ~sep:"\n" diffs) ;
+  if debug then Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ;
   diffs
 
 
-let semdiff ?debug previous_file current_file =
+let semdiff previous_file current_file =
+  let debug = Config.debug_mode in
   let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
   let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
-  let diffs = ast_diff ?debug previous_src current_src in
+  let diffs = ast_diff ~debug previous_src current_src in
   write_output previous_file current_file diffs
