@@ -14,7 +14,6 @@ module Diagnostic = PulseDiagnostic
 module Formula = PulseFormula
 module LatentIssue = PulseLatentIssue
 module L = Logging
-module Metadata = AbstractInterpreter.DisjunctiveMetadata
 
 (* The type variable is needed to distinguish summaries from plain states.
 
@@ -129,11 +128,8 @@ let has_infinite_state (lst : t list) : bool =
   List.exists ~f:(fun x -> match x with InfiniteLoop _ -> true | _ -> false) lst
 
 
-let back_edge (prev : t list) (next : t list) (_num_iters : int) : t list * int =
-  if has_infinite_state next then
-    ( (* POST already had an infinite state - not adding more*)
-      []
-    , -1 )
+let back_edge (prev : t list) (next : t list) (_num_iters : int) : int option =
+  if has_infinite_state next then None
   else
     let cfgnode = AnalysisState.get_node () |> Option.value_exn in
     let same = phys_equal prev next in
@@ -205,23 +201,6 @@ let back_edge (prev : t list) (next : t list) (_num_iters : int) : t list * int 
                       Some idx ) ) )
     in
     let repeated_wsidx = if same then None else record_pathcond workset [] in
-    let create_infinite_state (hd : t) : t =
-      (* Only create infinite state from a non-error state that is not already an infinite state *)
-      match hd with
-      | ContinueProgram astate ->
-          InfiniteLoop astate
-      | _ ->
-          hd
-    in
-    let create_infinite_state_and_print (state_set : t list) (idx : int) =
-      Metadata.record_alert_node cfgnode ;
-      let nth =
-        List.nth state_set idx
-        |> Option.value_or_thunk ~default:(fun () ->
-               L.die InternalError "INFITE_LOOP: should never happen" )
-      in
-      ([create_infinite_state nth], idx)
-    in
     (* Identify which state in the post is repeated and generate a new infinite state for it *)
     let find_duplicate_state lst =
       let rec loop (lst : t list) i =
@@ -235,22 +214,9 @@ let back_edge (prev : t list) (next : t list) (_num_iters : int) : t list * int 
       in
       loop lst 0
     in
-    (* we have a trivial lasso because prev = next - this should trigger an alert *)
-    if same && not (List.is_empty next) then
-      (* returning (no bug) *)
-      create_infinite_state_and_print next (find_duplicate_state next)
-      (* We have one or more newly created equivalent states in the post, trigger an alert *)
-    else if List.is_empty workset && nextlen - prevlen > 0 then
-      create_infinite_state_and_print next (find_duplicate_state next)
-      (* We have a new post state whose path condition is equivalent to an existing state, trigger an alert *)
-    else
-      match repeated_wsidx with
-      | Some idx ->
-          create_infinite_state_and_print next idx
-      (* No recurring state detected, return empty *)
-      | None ->
-          (* no recurring state detected - returning (no bug) *)
-          ([], -1)
+    if (same && not (List.is_empty next)) || (List.is_empty workset && nextlen - prevlen > 0) then
+      Some (find_duplicate_state next)
+    else repeated_wsidx
 
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]

@@ -12,6 +12,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 module CallGlobalForStats = PulseCallOperations.GlobalForStats
+module Metadata = AbstractInterpreter.DisjunctiveMetadata
 
 (** raised when we detect that pulse is using too much memory to stop the analysis of the current
     procedure *)
@@ -189,47 +190,23 @@ module PulseTransferFunctions = struct
         (o2 : PathContext.t list) =
       match l with [] -> (o1, o2) | (ed, pc) :: tail -> listpair_split tail (ed :: o1) (pc :: o2)
     in
-    let listpair_combine (l1 : ExecutionDomain.t list) (l2 : PathContext.t list) :
-        (ExecutionDomain.t * PathContext.t) list =
-      let l1len, l2len = (List.length l1, List.length l2) in
-      (* L.debug Analysis Quiet "JV: listpair_combine L1 len = %u L2 len = %u \n" l1len l2len; *)
-      if l1len <> l2len then []
-      else
-        let rec listpair_combine_int (l1 : ExecutionDomain.t list) (l2 : PathContext.t list)
-            (out : (ExecutionDomain.t * PathContext.t) list) :
-            (ExecutionDomain.t * PathContext.t) list =
-          match (l1, l2) with
-          | hd :: tl, hd2 :: tl2 ->
-              let p = (hd, hd2) in
-              listpair_combine_int tl tl2 (out @ [p])
-          | [], [] ->
-              out
+    let plist, _ = listpair_split prev [] [] in
+    let nlist, _ = listpair_split next [] [] in
+    match ExecutionDomain.back_edge plist nlist num_iters with
+    | None ->
+        (prev, -1)
+    | Some cnt ->
+        let exec, path = List.nth_exn next cnt in
+        let exec =
+          match exec with
+          | ContinueProgram astate ->
+              let cfgnode = AnalysisState.get_node () |> Option.value_exn in
+              Metadata.record_alert_node cfgnode ;
+              InfiniteLoop astate
           | _ ->
-              L.debug Analysis Quiet
-                "PULSEINF: BACKEDGE MISMATCH in list size to recombine. Should never happen! \n" ;
-              out
+              exec
         in
-        listpair_combine_int l1 l2 []
-    in
-    let plist, rplist = listpair_split prev [] [] in
-    let nlist, rnlist = listpair_split next [] [] in
-    let dbe, cnt = ExecutionDomain.back_edge plist nlist num_iters in
-    let (pathctx : PathContext.t option) = List.nth rnlist cnt in
-    let used, pts =
-      match pathctx with
-      | Some p ->
-          (true, p)
-      | _ ->
-          L.debug Analysis Quiet
-            "PULSEINF: PATHCTX DEBUG: not finding back pathctx at provided index  - this should \
-             never happen \n" ;
-          (false, PathContext.initial (* pathctx is None *))
-    in
-    let res =
-      if used && cnt >= 0 then listpair_combine (plist @ dbe) (rplist @ [pts])
-      else prev (* listpair_combine plist rplist *)
-    in
-    (res, -1)
+        (List.rev prev @ [(exec, path)], -1)
 
 
   (* END OF BACK-EDGE CODE *)
