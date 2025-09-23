@@ -353,6 +353,19 @@ async def foo(self, **kwargs: int): pass
   assert (ast_diff_equal prog1 prog2)
 
 
+let test_change_fun_type_bad _ =
+  let prog1 = {|
+def foo(self, x: int) -> None: pass
+|} in
+  let prog2 = {|
+def foo(self, x: int | None) -> None: pass
+|} in
+  let expected_diff =
+    ["- def foo(self, x: int) -> None: pass"; "+ def foo(self, x: int | None) -> None: pass"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
+
+
 let test_change_async_fun_type_bad _ =
   let prog1 = {|
 async def foo(self, x: int) -> None: pass
@@ -362,6 +375,28 @@ async def foo(self, x: str) -> None: pass
 |} in
   let expected_diff =
     ["- async def foo(self, x: int) -> None: pass"; "+ async def foo(self, x: str) -> None: pass"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
+
+
+let test_change_assign_type_bad _ =
+  let prog1 =
+    {|
+# pyre-unsafe
+
+CATEGORIES_TO_REMOVE: dict[str, int] = {'a': 1, 'b': 2, 'c': 3}
+|}
+  in
+  let prog2 =
+    {|
+# pyre-strict
+
+CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
+|}
+  in
+  let expected_diff =
+    [ "- CATEGORIES_TO_REMOVE: dict[str, int] = {'a': 1, 'b': 2, 'c': 3}"
+    ; "+ CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}" ]
   in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
@@ -389,7 +424,9 @@ let suite =
        ; "test_change_class_to_is_instance_bad" >:: test_change_class_to_is_instance_bad
        ; "test_change_async_body_indentation_bad" >:: test_change_async_body_indentation_bad
        ; "test_change_async_def_kwargs_good" >:: test_change_async_def_kwargs_good
-       ; "test_change_async_fun_type_bad" >:: test_change_async_fun_type_bad ]
+       ; "test_change_fun_type_bad" >:: test_change_fun_type_bad
+       ; "test_change_async_fun_type_bad" >:: test_change_async_fun_type_bad
+       ; "test_change_assign_type_bad" >:: test_change_assign_type_bad ]
 
 
 let () = run_test_tt_main suite
