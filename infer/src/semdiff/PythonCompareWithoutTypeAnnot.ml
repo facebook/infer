@@ -13,23 +13,8 @@ let init () =
   let strip_annotations_code =
     {|
 import ast
-def strip_type_annotations(tree):
-    class TypeAnnotationRemover(ast.NodeTransformer):
-        def _remove_arg_annotations(self, args):
-            return [ast.arg(arg=a.arg, annotation=None, lineno=a.lineno, end_lineno=a.end_lineno) for a in args]
-        def _remove_fun_arg_annotations(self, node):
-            node.returns = None
-            node.args.args = self._remove_arg_annotations(node.args.args)
-            node.args.kwarg = ast.arg(arg=node.args.kwarg.arg, annotation=None, lineno=node.args.kwarg.lineno, end_lineno=node.args.kwarg.end_lineno) if node.args.kwarg else None
-            node.args.kwonlyargs = self._remove_arg_annotations(node.args.kwonlyargs)
-            return self.generic_visit(node)
-        def visit_FunctionDef(self, node):
-            return self._remove_fun_arg_annotations(node)
-        def visit_AsyncFunctionDef(self, node):
-            return self._remove_fun_arg_annotations(node)
-        def visit_AnnAssign(self, node):
-            # Convert annotated assignment to normal assignment
-            return ast.Assign(targets=[node.target], value=node.value, lineno=node.lineno, end_lineno=node.end_lineno)
+def transform_ast(tree):
+    class ImportStatementRemover(ast.NodeTransformer):
         def visit_ImportFrom(self, node):
             return None
         def visit_Import(self, node):
@@ -51,7 +36,7 @@ def strip_type_annotations(tree):
                     )
                     return ast.copy_location(new_node, node)
             return self.generic_visit(node)
-    return ClassEqualityToIsInstanceTransformer().visit(TypeAnnotationRemover().visit(tree))
+    return ClassEqualityToIsInstanceTransformer().visit(ImportStatementRemover().visit(tree))
 
 def diff_asts(t1, t2):
     diffs = []
@@ -73,6 +58,10 @@ def diff_asts(t1, t2):
 
     def compare(n1, n2):
         if type(n1) != type(n2):
+            # Convert annotated assignment to normal assignment
+            if isinstance(n1, ast.Assign) and isinstance(n2, ast.AnnAssign):
+                converted_assign = ast.Assign(targets=[n2.target], value=n2.value, lineno=n2.lineno, end_lineno=n2.end_lineno)
+                return compare(n1, converted_assign)
             for l1 in collect_lines(n1):
                 diffs.append((l1, -1))
             for l2 in collect_lines(n2):
@@ -84,6 +73,8 @@ def diff_asts(t1, t2):
                 v1 = getattr(n1, field, None)
                 v2 = getattr(n2, field, None)
 
+                if (field == "returns" or field == "annotation") and v1 == None and v2 != None:
+                    continue
                 if isinstance(v1, list) and isinstance(v2, list):
                     for x1, x2 in zip(v1, v2):
                         compare(x1, x2)
@@ -121,15 +112,15 @@ def diff_asts(t1, t2):
   let ast_module = Py.Import.import_module "ast" in
   let main_module = Py.Import.import_module "__main__" in
   let _ = Py.Run.simple_string strip_annotations_code in
-  let strip_func = Py.Module.get main_module "strip_type_annotations" in
+  let transform_func = Py.Module.get main_module "transform_ast" in
   let diff_func = Py.Module.get main_module "diff_asts" in
-  (strip_func, ast_module, diff_func)
+  (transform_func, ast_module, diff_func)
 
 
-let parse_and_strip strip_func ast_module source =
+let parse_and_transform transform_func ast_module source =
   let parse_func = Py.Module.get ast_module "parse" |> Py.Callable.to_function in
   let tree = parse_func [|Py.String.of_string source|] in
-  Py.Callable.to_function strip_func [|tree|]
+  Py.Callable.to_function transform_func [|tree|]
 
 
 let write_output previous_file current_file diffs =
@@ -180,9 +171,9 @@ let diff_code (pairs : (int * int) list) (code1 : string) (code2 : string) : str
 
 
 let ast_diff ?(debug = false) src1 src2 =
-  let strip_func, ast_module, diff_func = init () in
-  let ast1 = parse_and_strip strip_func ast_module src1 in
-  let ast2 = parse_and_strip strip_func ast_module src2 in
+  let transform_func, ast_module, diff_func = init () in
+  let ast1 = parse_and_transform transform_func ast_module src1 in
+  let ast2 = parse_and_transform transform_func ast_module src2 in
   let diffs_pairs = Py.Callable.to_function diff_func [|ast1; ast2|] in
   let diffs_pairs = Py.List.to_list diffs_pairs |> List.map ~f:tuple_to_int_pair in
   let diffs = diff_code diffs_pairs src1 src2 in

@@ -353,6 +353,19 @@ async def foo(self, **kwargs: int): pass
   assert (ast_diff_equal prog1 prog2)
 
 
+let test_change_async_fun_type_bad _ =
+  let prog1 = {|
+async def foo(self, x: int) -> None: pass
+|} in
+  let prog2 = {|
+async def foo(self, x: str) -> None: pass
+|} in
+  let expected_diff =
+    ["- async def foo(self, x: int) -> None: pass"; "+ async def foo(self, x: str) -> None: pass"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -375,7 +388,8 @@ let suite =
        ; "test_change_class_to_is_instance_good" >:: test_change_class_to_is_instance_good
        ; "test_change_class_to_is_instance_bad" >:: test_change_class_to_is_instance_bad
        ; "test_change_async_body_indentation_bad" >:: test_change_async_body_indentation_bad
-       ; "test_change_async_def_kwargs_good" >:: test_change_async_def_kwargs_good ]
+       ; "test_change_async_def_kwargs_good" >:: test_change_async_def_kwargs_good
+       ; "test_change_async_fun_type_bad" >:: test_change_async_fun_type_bad ]
 
 
 let () = run_test_tt_main suite
