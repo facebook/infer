@@ -449,18 +449,6 @@ ENABLE_OCAML_BINANNOT=$enable_ocaml_bin_annot
 AC_SUBST([ENABLE_OCAML_BINANNOT])
 
 
-
-# We use Buck to run the Infer tests
-AS_IF([test x"$is_facebook_tree" = x"yes"],
-  AC_MSG_CHECKING([which .buckjavaversion to use])
-  cp "facebook/dependencies/dotbuckjavaversion" ".buckjavaversion"
-  AC_MSG_RESULT([facebook/dependencies/dotbuckjavaversion])
-
-  AC_MSG_CHECKING([which .buck-java11 to use])
-  cp "facebook/dependencies/dotbuck-java11" ".buck-java11"
-  AC_MSG_RESULT([facebook/dependencies/dotbuck-java11]))
-
-
 AC_CHECK_TOOL([GETCONF], [getconf], [no])
 AC_MSG_CHECKING([the number of cpus the build host has])
 if test "$GETCONF" != "no"; then
