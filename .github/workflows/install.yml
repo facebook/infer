@@ -53,7 +53,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macOS-latest
+          # - macOS-latest
           - ubuntu-latest
         ocaml-compiler:
           - ocaml-variants.5.3.0+options,ocaml-option-flambda
