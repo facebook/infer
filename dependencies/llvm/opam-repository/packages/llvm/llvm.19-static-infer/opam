@@ -49,9 +49,9 @@ synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
 url {
   src:
-    "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/llvm-project-19.1.7.src.tar.xz"
+    "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.4/llvm-project-19.1.4.src.tar.xz"
   checksum: [
-    "sha256=82401fea7b79d0078043f7598b835284d6650a75b93e64b6f761ea7b63097501"
+    "sha256=3aa2d2d2c7553164ad5c6f3b932b31816e422635e18620c9349a7da95b98d811"
   ]
 }
 extra-source "install.sh" {
