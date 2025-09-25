@@ -15,7 +15,7 @@ default: test
 $(ONE_SOURCE).test.dot: $(CLANG_DEPS) $(SOURCES) $(HEADERS)
 	$(QUIET)$(call silent_on_success,Testing the infer/clang frontend in $(TEST_REL_DIR),\
 	  $(INFER_BIN) capture --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) -- \
-	    clang $(CLANG_OPTIONS) $(SOURCES))
+	    $(CLANG_PREFIX)/bin/clang $(CLANG_OPTIONS) $(SOURCES))
 
 .PHONY: capture
 capture: $(ONE_SOURCE).test.dot

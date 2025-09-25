@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "llvm"
-version: "20-static-infer"
+version: "19-static-infer"
 synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
 maintainer: "Alan <ahulambda@gmail.com>"
@@ -20,7 +20,7 @@ depends: [
   "conf-bash" {= "1"}
   "conf-cmake" {= "1"}
   "conf-libffi" {= "2.0.0"}
-  "conf-llvm-static" {= "20"}
+  "conf-llvm-static" {= "19"}
   "conf-pkg-config" {= "4"}
   "csexp" {= "1.5.2"}
   "ctypes" {= "0.23.0"}

@@ -19,6 +19,11 @@ ROOT_DIR = $(TESTS_DIR)/../..
 
 CLEAN_EXTRA += duplicates.txt
 CLEAN_EXTRA += $(foreach source,$(filter %.c ,$(SOURCE)),$(basename $(source)).o)
+ifdef LLVM_CONFIG
+	CLANG_BIN=$(shell dirname $(LLVM_CONFIG))/clang
+else
+	CLANG_BIN=$(CLANG_PREFIX)/bin/clang
+endif
 
 include $(TESTS_DIR)/infer.make
 include $(TESTS_DIR)/clang-base.make
@@ -29,4 +34,4 @@ infer-out$(TEST_SUFFIX)/report.json: $(CLANG_DEPS) $(SOURCE) $(HEADERS) $(TESTS_
 	$(QUIET)$(call silent_on_success,Testing infer/clang in $(TEST_REL_DIR)$(TEST_SUB_TITLE),\
 	  $(INFER_BIN) --results-dir $(@D) --bitcode-capture --dump-duplicate-symbols \
 	    $(INFER_OPTIONS) -- \
-	    $(CLANG_PREFIX)/bin/clang $(CLANG_OPTIONS) $(SOURCE))
+	    $(CLANG_BIN) $(CLANG_OPTIONS) $(SOURCE))

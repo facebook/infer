@@ -9,6 +9,11 @@ TESTS_DIR=../../..
 INFER_OPTIONS =
 SOURCES = $(realpath $(wildcard *.c))
 HEADERS = $(wildcard *.h)
+ifdef LLVM_CONFIG
+	CLANG_BIN=$(shell dirname $(LLVM_CONFIG))/clang
+else
+	CLANG_BIN=$(CLANG_PREFIX)/bin/clang
+endif
 
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/clang-base.make
@@ -19,7 +24,7 @@ default: test
 	$(QUIET)$(call silent_on_success,Testing the infer/llvm frontend in $(TEST_REL_DIR),\
 	  $(INFER_BIN) capture --bitcode-capture \
 	               --frontend-tests --project-root $(TESTS_DIR) $(INFER_OPTIONS) \
-	               -- $(CLANG_PREFIX)/bin/clang -g -c $<)
+	               -- $(CLANG_BIN) -g -c $<)
 
 capture: $(SOURCES:.c=.c.test.sil)
 

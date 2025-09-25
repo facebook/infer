@@ -344,8 +344,8 @@ define test6() : int {
       n1 = call_add() @[34:7]
       jmp 3::ret @[34:7]
       
-  #3::ret: @[34:18]
-      if __sil_eq(n1, 3) then jmp 5 else jmp 8 @[34:18]
+  #3::ret: @[34:7]
+      if __sil_eq(n1, 3) then jmp 5 else jmp 8 @[34:7]
       
   #5: @[35:13]
       n4 = load &ptr @[35:13]
@@ -370,8 +370,8 @@ define test7() : int {
       n1 = call_add() @[42:7]
       jmp 3::ret @[42:7]
       
-  #3::ret: @[42:18]
-      if __sil_eq(n1, 5) then jmp 5 else jmp 8 @[42:18]
+  #3::ret: @[42:7]
+      if __sil_eq(n1, 5) then jmp 5 else jmp 8 @[42:7]
       
   #5: @[43:13]
       n4 = load &ptr @[43:13]
@@ -418,7 +418,7 @@ define test8(var0: *ptr_elt) : int {
   #8::ret: @[53:7]
       store &ret <- n4 @[53:7]
       n5 = load &ret @[54:7]
-      if __sil_eq(n5, 3) then jmp 11 else jmp 14 @[54:11]
+      if __sil_eq(n5, 3) then jmp 11 else jmp 14 @[54:7]
       
 } @?
 

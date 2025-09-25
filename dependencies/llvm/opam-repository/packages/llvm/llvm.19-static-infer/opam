@@ -1,0 +1,92 @@
+opam-version: "2.0"
+maintainer: "Alan <ahulambda@gmail.com>"
+authors: [
+  "whitequark <whitequark@whitequark.org>"
+  "The LLVM team"
+]
+license: "MIT"
+bug-reports: "http://llvm.org/bugs/"
+dev-repo: "git+http://llvm.org/git/llvm.git"
+doc: "http://llvm.org"
+homepage: "http://llvm.org"
+build: [
+  ["bash" "-ex" "install.sh" "build"
+   "--llvm-config" "%{conf-llvm-static:config}%"
+   "--libdir" lib
+   "--cmake" "%{conf-cmake:cmd}%"
+   "--make" make
+   "--link-mode" "static"
+   "--use-homebrew" {os-distribution = "homebrew"}
+  ]
+]
+install: [
+  ["bash" "-ex" "install.sh" "install"
+   "--llvm-config" "%{conf-llvm-static:config}%"
+   "--libdir" lib
+   "--cmake" "%{conf-cmake:cmd}%"
+   "--make" make
+   "--link-mode" "static"
+   "--use-homebrew" {os-distribution = "homebrew"}
+  ]
+]
+depends: [
+  "ocaml" {>= "4.00.0"}
+  "ctypes" {>= "0.4"}
+  "ctypes-foreign"
+  "ocamlfind" {build}
+  "conf-llvm-static" {build & = "19"}
+  "conf-cmake" {build}
+]
+patches: [
+  "AddOCaml.cmake.patch"
+  "add-debug-info.patch"
+  "add-LLVMGetAtomicRMWBinOp.patch"
+  "fix-null-global_initializer.patch"
+  "LLVMGetGEPSourceElementType.patch"
+  "getAllocatedType.patch"
+]
+synopsis: "The OCaml bindings distributed with LLVM"
+description: "Note: LLVM should be installed first."
+url {
+  src:
+    "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/llvm-project-19.1.7.src.tar.xz"
+  checksum: [
+    "sha256=82401fea7b79d0078043f7598b835284d6650a75b93e64b6f761ea7b63097501"
+  ]
+}
+extra-source "install.sh" {
+  src:
+    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/install.sh.18"
+  checksum: [
+    "sha256=c1f95d0c7ae539fcbe97327c4ed64e7a86009143c34f7e721319407975965bae"
+    "md5=6e458426d1008d4696662cf7d3432d8b"
+  ]
+}
+extra-source "AddOCaml.cmake.patch" {
+  src:
+    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
+    checksum: [
+  "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
+  "md5=432ec376b6ffbac44e640c8fb659a7df"
+]
+}
+extra-source "add-LLVMGetAtomicRMWBinOp.patch" {
+  src: "dependencies/llvm/patches/add-LLVMGetAtomicRMWBinOp.patch"
+  checksum: [ "sha256=072b1a1e2d004887126da762e8cc04eca86a89d11eda5ffeec88c0f8e431a1df" ]
+}
+extra-source "add-debug-info.patch" {
+  src: "dependencies/llvm/patches/add-debug-info.patch"
+  checksum: [ "sha256=25b13e4e61f52c404338909866291b8fb045b4c5aa4e81eafa1901f65cd2bd97" ]
+}
+extra-source "fix-null-global_initializer.patch" {
+  src: "dependencies/llvm/patches/fix-null-global_initializer.patch"
+  checksum: [ "sha256=18c65e1036a4466e2db4082f1da4b5a08c725d0670a3e0518f14dba5c88d3192" ]
+}
+extra-source "LLVMGetGEPSourceElementType.patch" {
+  src: "dependencies/llvm/patches/LLVMGetGEPSourceElementType.patch"
+  checksum: [ "sha256=632d24a7bea8076c959f171055d161c7b589b1d961cb5cffda5ebe32602cd85c" ]
+}
+extra-source "getAllocatedType.patch" {
+  src: "dependencies/llvm/patches/getAllocatedType.patch"
+  checksum: [ "sha256=a94060caf325bb83592d7563584326300c8afe2b7f1e3b3d6b0a93aa28739fa5"]
+}

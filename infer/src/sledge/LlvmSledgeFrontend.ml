@@ -1399,34 +1399,14 @@ let xlate_instr :
             Exp.or_ ~typ old arg
         | Xor ->
             Exp.xor ~typ old arg
-        | Max | FMax ->
+        | Max ->
             choose Exp.gt
-        | Min | FMin ->
+        | Min ->
             choose Exp.lt
         | UMax ->
             choose Exp.ugt
         | UMin ->
             choose Exp.ult
-        | UInc_Wrap ->
-            (* [*ptr = ( *ptr u>= val) ? 0 : ( *ptr + 1)] (increment value with wraparound to zero
-               when incremented above input value) *)
-            Exp.conditional typ ~cnd:(Exp.uge ~typ old arg) ~thn:(Exp.integer typ Z.zero)
-              ~els:(Exp.add ~typ old (Exp.integer typ Z.one))
-        | UDec_Wrap ->
-            (* [*ptr = (( *ptr == 0) || ( *ptr u> val)) ? val : ( *ptr - 1)] (decrement with
-               wraparound to input value when decremented below zero) *)
-            Exp.conditional typ
-              ~cnd:(Exp.or_ ~typ (Exp.ugt ~typ old arg) (Exp.eq ~typ old (Exp.integer typ Z.zero)))
-              ~thn:arg
-              ~els:(Exp.sub ~typ old (Exp.integer typ Z.one))
-        | USub_Cond ->
-            (* [*ptr = ( *ptr u>= val) ? *ptr - val : *ptr] (subtract only if no unsigned
-               overflow). *)
-            Exp.conditional typ ~cnd:(Exp.uge ~typ old arg) ~thn:(Exp.sub ~typ old arg) ~els:old
-        | USub_Sat ->
-            (* [*ptr = ( *ptr u>= val) ? *ptr - val : 0] (subtract with clamping to zero) *)
-            Exp.conditional typ ~cnd:(Exp.uge ~typ old arg) ~thn:(Exp.sub ~typ old arg)
-              ~els:(Exp.integer typ Z.zero)
       in
       emit_inst ~prefix (Inst.atomic_rmw ~reg ~ptr ~exp ~len ~loc)
   | AtomicCmpXchg ->
