@@ -8,7 +8,10 @@
 open! IStd
 module F = Format
 
-type t = {classname: string} [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+type t =
+  { classname: string
+  ; mutable plain_name: string option [@compare.ignore] [@equal.ignore] [@hash.ignore] }
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 val pp : F.formatter -> t -> unit
 

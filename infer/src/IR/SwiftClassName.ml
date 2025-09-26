@@ -7,12 +7,21 @@
 open! IStd
 module F = Format
 
-type t = {classname: string} [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+type t =
+  { classname: string
+  ; mutable plain_name: string option [@compare.ignore] [@equal.ignore] [@hash.ignore] }
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-let pp fmt {classname} = F.fprintf fmt "%s" classname
+let pp fmt {plain_name; classname} =
+  match plain_name with
+  | Some plain_name ->
+      F.fprintf fmt "%s" plain_name
+  | None ->
+      F.fprintf fmt "%s" classname
+
 
 let classname {classname} = classname
 
 let to_string = Pp.string_of_pp pp
 
-let of_string classname = {classname}
+let of_string classname = {classname; plain_name= None}
