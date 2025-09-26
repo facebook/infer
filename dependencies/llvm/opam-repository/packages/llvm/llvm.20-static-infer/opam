@@ -39,11 +39,11 @@ depends: [
 ]
 patches: [
   "AddOCaml.cmake.patch"
-  "add-debug-info.patch"
-  "add-LLVMGetAtomicRMWBinOp.patch"
-  "fix-null-global_initializer.patch"
-  "LLVMGetGEPSourceElementType.patch"
-  "getAllocatedType.patch"
+  "1_add-debug-info.patch"
+  "2_add-LLVMGetAtomicRMWBinOp.patch"
+  "3_fix-null-global_initializer.patch"
+  "4_LLVMGetGEPSourceElementType.patch"
+  "5_getAllocatedType.patch"
 ]
 synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
@@ -71,23 +71,23 @@ extra-source "AddOCaml.cmake.patch" {
   "md5=432ec376b6ffbac44e640c8fb659a7df"
 ]
 }
-extra-source "add-LLVMGetAtomicRMWBinOp.patch" {
-  src: "dependencies/llvm/patches/add-LLVMGetAtomicRMWBinOp.patch"
+extra-source "2_add-LLVMGetAtomicRMWBinOp.patch" {
+  src: "dependencies/llvm/patches/2_add-LLVMGetAtomicRMWBinOp.patch"
   checksum: [ "sha256=072b1a1e2d004887126da762e8cc04eca86a89d11eda5ffeec88c0f8e431a1df" ]
 }
-extra-source "add-debug-info.patch" {
-  src: "dependencies/llvm/patches/add-debug-info.patch"
+extra-source "1_add-debug-info.patch" {
+  src: "dependencies/llvm/patches/1_add-debug-info.patch"
   checksum: [ "sha256=25b13e4e61f52c404338909866291b8fb045b4c5aa4e81eafa1901f65cd2bd97" ]
 }
-extra-source "fix-null-global_initializer.patch" {
-  src: "dependencies/llvm/patches/fix-null-global_initializer.patch"
+extra-source "3_fix-null-global_initializer.patch" {
+  src: "dependencies/llvm/patches/3_fix-null-global_initializer.patch"
   checksum: [ "sha256=18c65e1036a4466e2db4082f1da4b5a08c725d0670a3e0518f14dba5c88d3192" ]
 }
-extra-source "LLVMGetGEPSourceElementType.patch" {
-  src: "dependencies/llvm/patches/LLVMGetGEPSourceElementType.patch"
+extra-source "4_LLVMGetGEPSourceElementType.patch" {
+  src: "dependencies/llvm/patches/4_LLVMGetGEPSourceElementType.patch"
   checksum: [ "sha256=632d24a7bea8076c959f171055d161c7b589b1d961cb5cffda5ebe32602cd85c" ]
 }
-extra-source "getAllocatedType.patch" {
-  src: "dependencies/llvm/patches/getAllocatedType.patch"
+extra-source "5_getAllocatedType.patch" {
+  src: "dependencies/llvm/patches/5_getAllocatedType.patch"
   checksum: [ "sha256=a94060caf325bb83592d7563584326300c8afe2b7f1e3b3d6b0a93aa28739fa5"]
 }
