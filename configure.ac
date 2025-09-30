@@ -63,6 +63,14 @@ AS_IF([test "x$LLVM_CONFIG" = "x"], [
 ])
 AC_SUBST([USER_LLVM])
 
+AS_IF([test "x$SWIFT_LLVM" = "x"], [
+  SWIFT_LLVM=no
+], [
+  SWIFT_LLVM=yes
+])
+AC_SUBST([SWIFT_LLVM])
+
+
 BUILD_PLATFORM=unknown
 WINDOWS_BUILD=no
 AC_MSG_CHECKING([for build platform])

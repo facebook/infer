@@ -25,6 +25,8 @@ let rust = is_yes "@BUILD_RUST_ANALYZERS@"
 
 let swift = is_yes "@BUILD_SWIFT_ANALYZERS@"
 
+let swift_llvm = is_yes "@SWIFT_LLVM@"
+
 let facebook = is_yes "@IS_FACEBOOK_TREE@"
 
 let windows = is_yes "@WINDOWS_BUILD@"
@@ -41,8 +43,15 @@ let platform_linking_flags =
     if_platform_env
       (Printf.sprintf "-noautolink %s %s %s "
          ( if swift then
-             "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) (:include \
-              %{project_root}/src/linking-flags-llvm.sexp) "
+             "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) \
+              (:include %{project_root}/src/linking-flags-llvm.sexp) "
            else "" )
          "(:include %{project_root}/src/linking-flags.sexp)"
          "-cclib -Wl,-Bstatic -cclib -lzstd -cclib -Wl,-Bdynamic" )
+    ~else_:(
+       if swift && swift_llvm then
+        "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) \
+        (:include %{project_root}/src/linking-flags-llvm.sexp) \
+        (:include %{project_root}/src/linking-flags-llvm-swift.sexp) "
+      else
+       "") ;;
