@@ -1,1 +1,2 @@
 codetoanalyze/swift/frontend/student.swift, test_student_allocation_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+codetoanalyze/swift/frontend/student.swift, test_employee_allocation_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
