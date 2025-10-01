@@ -54,14 +54,6 @@ url {
     "sha256=3aa2d2d2c7553164ad5c6f3b932b31816e422635e18620c9349a7da95b98d811"
   ]
 }
-extra-source "install.sh" {
-  src:
-    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/install.sh.18"
-  checksum: [
-    "sha256=c1f95d0c7ae539fcbe97327c4ed64e7a86009143c34f7e721319407975965bae"
-    "md5=6e458426d1008d4696662cf7d3432d8b"
-  ]
-}
 extra-source "AddOCaml.cmake.patch" {
   src:
     "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
@@ -90,3 +82,4 @@ extra-source "5_getAllocatedType.patch" {
   src: "dependencies/llvm/patches/5_getAllocatedType.patch"
   checksum: [ "sha256=a94060caf325bb83592d7563584326300c8afe2b7f1e3b3d6b0a93aa28739fa5"]
 }
+extra-files: ["install.sh" "sha256=9d4a83c6b661ca4a80289d8a5bc0cddd6dd5d7e25ca9d61a8c358d801e2b8cdf"]
