@@ -27,10 +27,14 @@ func setWeight( _ weight: Int) {
 
 struct Employee {
     let age: Int
-    var weight: Int
+    private var _weight: Int
+    var weight: Int {
+        get { _weight }
+        set { _weight = newValue }
+    }
     init(age: Int, weight: Int) {
         self.age = age
-        self.weight = weight
+        self._weight = weight
     }
 }
 
@@ -47,7 +51,16 @@ func test_employee_allocation_good() {
 }
 
 
-func setEmployeeWeight( _ weight: Int) {
+func setEmployeeWeight( _ weight: Int) -> Int {
     var john = Employee(age: 30, weight: 60)
     john.weight = weight
+    return john.weight
+}
+
+func test_employee_getter_setter_bad() {
+    assert(setEmployeeWeight(70) == 75)
+}
+
+func test_employee_getter_setter_good() {
+    assert(setEmployeeWeight(70) == 70)
 }
