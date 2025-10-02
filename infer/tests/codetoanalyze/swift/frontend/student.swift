@@ -64,3 +64,23 @@ func test_employee_getter_setter_bad() {
 func test_employee_getter_setter_good() {
     assert(setEmployeeWeight(70) == 70)
 }
+
+class Person {
+    let age: Int
+    var spouse: Person
+    init(age: Int) {
+        self.age = age
+        self.spouse = Person(age: 0)
+    }
+}
+
+func set_spouses(_ john: Person, _ jane: Person) {
+    john.spouse = jane
+    jane.spouse = john
+}
+
+func test_retain_cycle() {
+    let john = Person(age: 30)
+    let jane = Person(age: 35)
+    set_spouses(john, jane)
+}
