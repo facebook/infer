@@ -335,7 +335,7 @@ struct
         prev )
       else
         let into =
-          if Config.pulse_experimental_infinite_loop_checker then T.widen_list (fst prev) (fst next)
+          if Config.pulse_experimental_infinite_loop_checker then T.widen_list (fst prev) (fst next) num_iters
           else fst prev
         in
         let post_disj, _, dropped =

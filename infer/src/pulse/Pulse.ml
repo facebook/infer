@@ -184,10 +184,10 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
-  let widen_list (prev : DisjDomain.t list) (next : DisjDomain.t list) : DisjDomain.t list =
+  let widen_list (prev : DisjDomain.t list) (next : DisjDomain.t list) (num_iters: int) : DisjDomain.t list =
     let plist = List.rev_map ~f:fst prev in
     let nlist = List.rev_map ~f:fst next in
-    match ExecutionDomain.back_edge plist nlist with
+    match ExecutionDomain.back_edge plist nlist num_iters with
     | None ->
         prev
     | Some cnt ->
