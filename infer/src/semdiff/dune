@@ -21,4 +21,6 @@
    ATDGenerated
    -open
    IBase))
- (libraries core IStdlib IBase pyml))
+ (libraries core IStdlib IBase pyml)
+ (preprocess
+  (pps ppx_compare)))
