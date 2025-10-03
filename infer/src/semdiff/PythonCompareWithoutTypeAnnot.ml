@@ -13,7 +13,8 @@ type ast_node =
   | Dict of ast_node StringMap.t
   | List of ast_node list
   | Str of string
-  | Num of int
+  | Int of int
+  | Float of float
   | Bool of bool
   | Null
 [@@deriving compare, equal]
@@ -60,7 +61,9 @@ let rec of_yojson (j : Yojson.Safe.t) : ast_node =
   | `String s ->
       Str s
   | `Int i ->
-      Num i
+      Int i
+  | `Float f ->
+      Float f
   | `Bool b ->
       Bool b
   | `Null ->
@@ -157,7 +160,7 @@ let write_output previous_file current_file diffs =
 
 
 let get_line_number (fields : ast_node StringMap.t) : int option =
-  match StringMap.find_opt "lineno" fields with Some (Num l1) -> Some l1 | _ -> None
+  match StringMap.find_opt "lineno" fields with Some (Int l1) -> Some l1 | _ -> None
 
 
 let ann_assign_to_assign fields : ast_node =

@@ -401,6 +401,16 @@ CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
+let test_change_fun_type_float_good _ =
+  let prog1 = {|
+def foo(x) -> None: pass
+|} in
+  let prog2 = {|
+def foo(x:float) -> None: pass
+|} in
+  assert (ast_diff_equal prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -426,7 +436,8 @@ let suite =
        ; "test_change_async_def_kwargs_good" >:: test_change_async_def_kwargs_good
        ; "test_change_fun_type_bad" >:: test_change_fun_type_bad
        ; "test_change_async_fun_type_bad" >:: test_change_async_fun_type_bad
-       ; "test_change_assign_type_bad" >:: test_change_assign_type_bad ]
+       ; "test_change_assign_type_bad" >:: test_change_assign_type_bad
+       ; "test_change_fun_type_float_good" >:: test_change_fun_type_float_good ]
 
 
 let () = run_test_tt_main suite
