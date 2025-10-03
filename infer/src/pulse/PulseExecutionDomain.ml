@@ -108,19 +108,37 @@ let pp fmt (exec_state : 'abductive_domain_t base_t) =
   F.fprintf fmt "%a%a" (pp_header TEXT) exec_state AbductiveDomain.pp (to_astate exec_state)
 
 
-(* Pulse infinite *)
+(* Pulse infinite: INFINITE_LOOP checker
+
+   This TermKey allows to identify loop states based on four components: CFG Node, Path Condition,
+   Termination Atoms and Termination Terms.  Termination atoms are collected from inter-procedural
+   propagation termination terms are solely from intra-procedural if/else/loop conditions *)
+module TermKey = struct
+  type t =
+    Procdesc.Node.t
+    * int PulseFormula.Atom.Map.t
+    * PulseFormula.Atom.Set.t
+    * PulseFormula.Term.Set.t
+  [@@deriving compare]
+
+  module Set = struct
+    include Stdlib.Set.Make (struct
+      type nonrec t = t [@@deriving compare]
+    end)
+  end
+end
 
 let widenstate = AnalysisGlobalState.make_dls ~init:(fun () -> Some (Stdlib.Hashtbl.create 16))
 
 let get_widenstate () = DLS.get widenstate
 
-let add_widenstate key =
+let add_widenstate (key : Procdesc.Node.t) (data : TermKey.Set.t) =
   Utils.with_dls widenstate ~f:(fun widenstate ->
       match widenstate with
       | None ->
           widenstate
       | Some state ->
-          Stdlib.Hashtbl.add state key () ;
+          Stdlib.Hashtbl.add state key data ;
           widenstate )
 
 
@@ -128,7 +146,7 @@ let has_infinite_state (lst : t list) : bool =
   List.exists ~f:(fun x -> match x with InfiniteLoop _ -> true | _ -> false) lst
 
 
-let back_edge (prev : t list) (next : t list) : int option =
+let back_edge (prev : t list) (next : t list) (num_iters : int) : int option =
   if has_infinite_state next then None
   else
     let cfgnode = AnalysisState.get_node () |> Option.value_exn in
@@ -174,33 +192,48 @@ let back_edge (prev : t list) (next : t list) : int option =
           let pathcond = Formula.extract_path_cond cond in
           let termcond = Formula.extract_term_cond cond in
           let termcond2 = Formula.extract_term_cond2 cond in
-          let key = (cfgnode, termcond, pathcond, termcond2) in
+          let (key : TermKey.t) = (cfgnode, pathcond, termcond, termcond2) in
           let dl_ws = get_widenstate () in
           match dl_ws with
           | None ->
               L.die InternalError "INFITE_LOOP: should never happen"
           | Some ws -> (
-              let prevstate = Stdlib.Hashtbl.find_opt ws key in
+              let prevstate = Stdlib.Hashtbl.find_opt ws cfgnode in
               match prevstate with
               | None ->
-                  add_widenstate key ;
+                  let newset = TermKey.Set.add key TermKey.Set.empty in
+                  add_widenstate cfgnode newset ;
                   record_pathcond tl (key :: kl)
-              | Some _ -> (
-                match
-                  ( Formula.set_is_empty termcond
-                  , Formula.map_is_empty pathcond
-                  , Formula.termset_is_empty termcond2 )
-                with
-                | true, true, true ->
-                    Some idx
-                | _ ->
-                    let test = List.mem ~equal:phys_equal4 kl key in
-                    if test then (* same iter - no bug *)
-                      None
-                    else (* non-term bug *)
-                      Some idx ) ) )
+              | Some tkset -> (
+                match TermKey.Set.find_opt key tkset with
+                | None ->
+                    add_widenstate cfgnode (TermKey.Set.add key tkset) ;
+                    record_pathcond tl (key :: kl)
+                | Some _ -> (
+                  match
+                    ( Formula.set_is_empty termcond
+                    , Formula.map_is_empty pathcond
+                    , Formula.termset_is_empty termcond2 )
+                  with
+                  | true, true, true ->
+                      Some idx (* -2 *)
+                  | _ ->
+                      if List.mem ~equal:phys_equal4 kl key then (* same iter, no bug *)
+                        None
+                      (* TODO: here may want to continue instead of short circuiting *)
+                      (* record_pathcond tl kl *)
+                        else (* non-term bug *)
+                        Some idx ) ) ) )
     in
-    let repeated_wsidx = if same then None else record_pathcond workset [] in
+    (* In the first widening iteration (numiter = 0), always set the cfgnode state set to empty
+       to prevent staled state. This can happen if func/loop is analyzed multiple times due to
+       inter-procedural constraint propagation by the scheduler *)
+    let repeated_wsidx =
+      if same then None
+      else (
+        if Int.equal num_iters 0 then add_widenstate cfgnode TermKey.Set.empty ;
+        record_pathcond workset [] )
+    in
     (* Identify which state in the post is repeated and generate a new infinite state for it *)
     let find_duplicate_state lst =
       let rec loop (lst : t list) i =
