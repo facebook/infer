@@ -183,8 +183,12 @@ let write_output previous_file current_file diffs =
   Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
 
 
-let get_line_number (fields : (string * ast_node) list) : int =
-  match List.Assoc.find ~equal:String.equal fields "lineno" with Some (Num l1) -> l1 | _ -> -1
+let get_line_number (fields : (string * ast_node) list) : int option =
+  match List.Assoc.find ~equal:String.equal fields "lineno" with
+  | Some (Num l1) ->
+      Some l1
+  | _ ->
+      None
 
 
 let ann_assign_to_assign fields : ast_node =
@@ -214,8 +218,8 @@ let is_type fields type_name : bool =
       false
 
 
-let rec get_diff ?(left_line : int = -1) ?(right_line : int = -1) (n1 : ast_node) (n2 : ast_node) :
-    (int * int) list =
+let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
+    (n2 : ast_node) : (int option * int option) list =
   match (n1, n2) with
   | a, b when equal_ast_node a b ->
       []
@@ -241,13 +245,13 @@ let rec get_diff ?(left_line : int = -1) ?(right_line : int = -1) (n1 : ast_node
               | Some v2 ->
                   get_diff ~left_line ~right_line v1 v2 @ acc
               | None ->
-                  (left_line, -1) :: acc )
+                  (left_line, None) :: acc )
             ~init:[] f1
         in
         let missing_in_left =
           List.filter_map
             ~f:(fun (k, _) ->
-              if List.Assoc.mem ~equal:String.equal f1 k then None else Some (-1, right_line) )
+              if List.Assoc.mem ~equal:String.equal f1 k then None else Some (None, right_line) )
             f2
         in
         diffs @ missing_in_left
@@ -257,42 +261,40 @@ let rec get_diff ?(left_line : int = -1) ?(right_line : int = -1) (n1 : ast_node
         | x :: xt, y :: yt ->
             aux (get_diff ~left_line ~right_line x y @ acc) xt yt
         | x :: xt, [] ->
-            aux ((get_line_number_of_node x, -1) :: acc) xt []
+            aux ((get_line_number_of_node x, None) :: acc) xt []
         | [], y :: yt ->
-            aux ((-1, get_line_number_of_node y) :: acc) [] yt
+            aux ((None, get_line_number_of_node y) :: acc) [] yt
         | [], [] ->
             acc
-      and get_line_number_of_node = function Dict f -> get_line_number f | _ -> -1 in
+      and get_line_number_of_node = function Dict f -> get_line_number f | _ -> None in
       aux [] l1 l2
   | Dict f1, _ ->
-      [(get_line_number f1, -1)]
+      [(get_line_number f1, None)]
   | _, Dict f2 ->
-      [(-1, get_line_number f2)]
+      [(None, get_line_number f2)]
   | _ ->
-      [(left_line, -1); (-1, right_line)]
+      [(left_line, None); (None, right_line)]
 
 
 let show_diff file1 file2 diffs =
   let lines1 = String.split_on_chars ~on:['\n'] file1
   and lines2 = String.split_on_chars ~on:['\n'] file2 in
   let get_line_content lines n : string =
-    if Int.equal n (-1) then ""
-    else if n - 1 < List.length lines then List.nth_exn lines (n - 1)
-    else ""
+    match n with Some n when n - 1 < List.length lines -> List.nth_exn lines (n - 1) | _ -> ""
   in
   let diffs =
     let diffs_sorted =
       List.sort
         ~compare:(fun (a1, b1) (a2, b2) ->
           match (b1, b2) with
-          | -1, -1 ->
-              Int.compare a1 a2
-          | -1, _ ->
+          | None, None ->
+              Option.compare Int.compare a1 a2
+          | None, _ ->
               -1
-          | _, -1 ->
+          | _, None ->
               1
-          | _, _ -> (
-            match Int.compare a1 a2 with 0 -> Int.compare b1 b2 | c -> c ) )
+          | Some v1, Some v2 -> (
+            match Option.compare Int.compare a1 a2 with 0 -> Int.compare v1 v2 | c -> c ) )
         diffs
     in
     List.fold_left
