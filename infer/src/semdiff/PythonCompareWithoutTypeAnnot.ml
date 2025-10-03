@@ -7,9 +7,10 @@
 
 open! IStd
 module L = Logging
+module StringMap = Stdlib.Map.Make (String)
 
 type ast_node =
-  | Dict of (string * ast_node) list
+  | Dict of ast_node StringMap.t
   | List of ast_node list
   | Str of string
   | Num of int
@@ -53,7 +54,7 @@ def parse_to_json(source: str) -> str:
 let rec of_yojson (j : Yojson.Safe.t) : ast_node =
   match j with
   | `Assoc fields ->
-      Dict (List.map ~f:(fun (k, v) -> (k, of_yojson v)) fields)
+      Dict (StringMap.of_list (List.map ~f:(fun (k, v) -> (k, of_yojson v)) fields))
   | `List l ->
       List (List.map ~f:of_yojson l)
   | `String s ->
@@ -69,7 +70,7 @@ let rec of_yojson (j : Yojson.Safe.t) : ast_node =
 
 
 let get_type fields =
-  List.Assoc.find ~equal:String.equal fields "_type"
+  StringMap.find_opt "_type" fields
   |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
 
 
@@ -82,40 +83,51 @@ let rec normalize (node : ast_node) : ast_node =
   | Dict fields when is_type fields "Import" || is_type fields "ImportFrom" ->
       Null
   | Dict fields when is_type fields "Compare" -> (
-      let left_node = List.Assoc.find_exn ~equal:String.equal fields "left" in
-      let left_fields = match left_node with Dict fields -> fields | _ -> [] in
-      match List.Assoc.find ~equal:String.equal left_fields "attr" with
+      let left_node = StringMap.find_opt "left" fields in
+      let left_fields =
+        match left_node with Some (Dict fields) -> fields | _ -> StringMap.empty
+      in
+      match StringMap.find_opt "attr" left_fields with
       | Some (Str "__class__") ->
-          let fst_arg = List.Assoc.find_exn ~equal:String.equal left_fields "value" in
+          let fst_arg =
+            match StringMap.find_opt "value" left_fields with
+            | Some arg ->
+                arg
+            | _ ->
+                L.die InternalError "Could not find object where __class__ attribute is accessed"
+          in
           let snd_arg =
-            match List.Assoc.find_exn ~equal:String.equal fields "comparators" with
-            | List [x] ->
+            match StringMap.find_opt "comparators" fields with
+            | Some (List [x]) ->
                 x
             | _ ->
-                Null
+                L.die InternalError
+                  "Could not find rhs type in comparison using __class__ attribute"
           in
-          let ctx_node = List.Assoc.find_exn ~equal:String.equal left_fields "ctx" in
-          let lineno = List.Assoc.find_exn ~equal:String.equal fields "lineno" in
-          let end_lineno = List.Assoc.find_exn ~equal:String.equal fields "end_lineno" in
+          let ctx_node = Option.value (StringMap.find_opt "ctx" left_fields) ~default:Null in
+          let lineno = Option.value (StringMap.find_opt "lineno" fields) ~default:Null in
+          let end_lineno = Option.value (StringMap.find_opt "end_lineno" fields) ~default:Null in
           let func_node =
             Dict
-              [ ("_type", Str "Name")
-              ; ("id", Str "isinstance")
-              ; ("ctx", ctx_node)
-              ; ("lineno", lineno)
-              ; ("end_lineno", end_lineno) ]
+              (StringMap.of_list
+                 [ ("_type", Str "Name")
+                 ; ("id", Str "isinstance")
+                 ; ("ctx", ctx_node)
+                 ; ("lineno", lineno)
+                 ; ("end_lineno", end_lineno) ] )
           in
           Dict
-            [ ("_type", Str "Call")
-            ; ("lineno", lineno)
-            ; ("end_lineno", end_lineno)
-            ; ("func", func_node)
-            ; ("args", List [fst_arg; snd_arg])
-            ; ("keywords", List []) ]
+            (StringMap.of_list
+               [ ("_type", Str "Call")
+               ; ("lineno", lineno)
+               ; ("end_lineno", end_lineno)
+               ; ("func", func_node)
+               ; ("args", List [fst_arg; snd_arg])
+               ; ("keywords", List []) ] )
       | _ ->
-          Dict (List.map ~f:(fun (k, v) -> (k, normalize v)) fields) )
+          Dict (StringMap.map (fun v -> normalize v) fields) )
   | Dict fields ->
-      Dict (List.map ~f:(fun (k, v) -> (k, normalize v)) fields)
+      Dict (StringMap.map (fun v -> normalize v) fields)
   | List l ->
       List
         (List.filter
@@ -144,31 +156,27 @@ let write_output previous_file current_file diffs =
   Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
 
 
-let get_line_number (fields : (string * ast_node) list) : int option =
-  match List.Assoc.find ~equal:String.equal fields "lineno" with
-  | Some (Num l1) ->
-      Some l1
-  | _ ->
-      None
+let get_line_number (fields : ast_node StringMap.t) : int option =
+  match StringMap.find_opt "lineno" fields with Some (Num l1) -> Some l1 | _ -> None
 
 
 let ann_assign_to_assign fields : ast_node =
   (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
   let assign_fields =
-    List.fold
-      ~f:(fun acc (k, field_node) ->
+    StringMap.fold
+      (fun k field_node acc ->
         match k with
         | "annotation" | "simple" ->
             acc
         | "_type" ->
-            ("_type", Str "Assign") :: acc
+            StringMap.add "_type" (Str "Assign") acc
         | "target" ->
-            ("targets", List [field_node]) :: acc
+            StringMap.add "targets" (List [field_node]) acc
         | _ ->
-            (k, field_node) :: acc )
-      ~init:[] fields
+            StringMap.add k field_node acc )
+      fields StringMap.empty
   in
-  Dict (List.rev (("type_comment", Null) :: assign_fields))
+  Dict (StringMap.add "type_comment" Null assign_fields)
 
 
 let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
@@ -183,9 +191,9 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
         get_diff ~left_line ~right_line n1 (ann_assign_to_assign f2)
       else
         let diffs =
-          List.fold_left
-            ~f:(fun acc (k, v1) ->
-              match List.Assoc.find ~equal:String.equal f2 k with
+          StringMap.fold
+            (fun k v1 acc ->
+              match StringMap.find_opt k f2 with
               | Some v2 when String.equal k "annotation" || String.equal k "returns" -> (
                 (* special case for type annotations *)
                 match (v1, v2) with
@@ -199,13 +207,12 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
                   get_diff ~left_line ~right_line v1 v2 @ acc
               | None ->
                   (left_line, None) :: acc )
-            ~init:[] f1
+            f1 []
         in
         let missing_in_left =
-          List.filter_map
-            ~f:(fun (k, _) ->
-              if List.Assoc.mem ~equal:String.equal f1 k then None else Some (None, right_line) )
-            f2
+          StringMap.fold
+            (fun k _ acc -> if StringMap.mem k f1 then acc else (None, right_line) :: acc)
+            f2 []
         in
         diffs @ missing_in_left
   | List l1, List l2 ->
