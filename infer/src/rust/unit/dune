@@ -1,0 +1,34 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name RustFrontendTest)
+ (flags
+  (:standard
+   -open
+   Core
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   IBase
+   -open
+   Textuallib))
+ (libraries
+  core
+  charon
+  zarith
+  IStdlib
+  IBase
+  Textuallib
+  RustFrontend
+  yojson
+  ppx_show.runtime)
+ (preprocess
+  (pps ppx_expect ppx_inline_test))
+ (inline_tests
+  (deps
+   (source_tree programs))))
