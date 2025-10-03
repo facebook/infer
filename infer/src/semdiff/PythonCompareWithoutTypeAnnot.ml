@@ -42,31 +42,6 @@ def node_to_dict(node):
 def parse_to_json(source: str) -> str:
     tree = ast.parse(source)
     return json.dumps(node_to_dict(tree))
-
-def transform_ast(tree):
-    class ImportStatementRemover(ast.NodeTransformer):
-        def visit_ImportFrom(self, node):
-            return None
-        def visit_Import(self, node):
-            return None
-    class ClassEqualityToIsInstanceTransformer(ast.NodeTransformer):
-        def visit_Compare(self, node):
-            # Look for: x.__class__ == Type
-            if (isinstance(node.left, ast.Attribute) and
-                node.left.attr == '__class__' and
-                len(node.ops) == 1 and
-                isinstance(node.ops[0], ast.Eq) and
-                len(node.comparators) == 1):
-                    obj = node.left.value
-                    type_node = node.comparators[0]
-                    new_node = ast.Call(
-                      func=ast.Name(id='isinstance', ctx=ast.Load(), lineno=node.lineno, end_lineno=node.end_lineno),
-                      args=[obj, type_node],
-                      keywords=[]
-                    )
-                    return ast.copy_location(new_node, node)
-            return self.generic_visit(node)
-    return parse_to_json(ClassEqualityToIsInstanceTransformer().visit(ImportStatementRemover().visit(tree)))
   |}
   in
   let main_module = Py.Import.import_module "__main__" in
