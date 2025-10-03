@@ -411,6 +411,18 @@ def foo(x:float) -> None: pass
   assert (ast_diff_equal prog1 prog2)
 
 
+let test_change_fun_type_ellipsis_good _ =
+  let prog1 = {|
+def foo(f) -> None: pass
+|} in
+  let prog2 = {|
+from typing import Callable
+
+def foo(f: Callable[..., int]) -> None: pass
+|} in
+  assert (ast_diff_equal prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -437,7 +449,8 @@ let suite =
        ; "test_change_fun_type_bad" >:: test_change_fun_type_bad
        ; "test_change_async_fun_type_bad" >:: test_change_async_fun_type_bad
        ; "test_change_assign_type_bad" >:: test_change_assign_type_bad
-       ; "test_change_fun_type_float_good" >:: test_change_fun_type_float_good ]
+       ; "test_change_fun_type_float_good" >:: test_change_fun_type_float_good
+       ; "test_change_fun_type_ellipsis_good" >:: test_change_fun_type_ellipsis_good ]
 
 
 let () = run_test_tt_main suite

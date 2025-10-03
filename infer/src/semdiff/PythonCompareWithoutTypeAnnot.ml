@@ -38,6 +38,8 @@ def node_to_dict(node):
         return result
     elif isinstance(node, list):
         return [node_to_dict(x) for x in node]
+    elif node is Ellipsis:  # Handle ellipsis
+        return "..."
     else:
         return node  # literals: str, int, None, etc.
 
