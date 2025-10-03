@@ -19,7 +19,7 @@ type ast_node =
 
 let init () =
   let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () in
-  let strip_annotations_code =
+  let ast_to_json_code =
     {|
 import ast, json
 
@@ -39,7 +39,8 @@ def node_to_dict(node):
     else:
         return node  # literals: str, int, None, etc.
 
-def parse_to_json(tree: ast.AST) -> str:
+def parse_to_json(source: str) -> str:
+    tree = ast.parse(source)
     return json.dumps(node_to_dict(tree))
 
 def transform_ast(tree):
@@ -68,11 +69,10 @@ def transform_ast(tree):
     return parse_to_json(ClassEqualityToIsInstanceTransformer().visit(ImportStatementRemover().visit(tree)))
   |}
   in
-  let ast_module = Py.Import.import_module "ast" in
   let main_module = Py.Import.import_module "__main__" in
-  let _ = Py.Run.simple_string strip_annotations_code in
-  let transform_func = Py.Module.get main_module "transform_ast" in
-  (transform_func, ast_module)
+  let _ = Py.Run.simple_string ast_to_json_code in
+  let parse_func = Py.Module.get main_module "parse_to_json" in
+  parse_func
 
 
 let rec of_yojson (j : Yojson.Safe.t) : ast_node =
@@ -93,11 +93,67 @@ let rec of_yojson (j : Yojson.Safe.t) : ast_node =
       L.die InternalError "unsupported JSON type"
 
 
-let parse_and_transform transform_func ast_module source =
-  let parse_func = Py.Module.get ast_module "parse" |> Py.Callable.to_function in
-  let tree = parse_func [|Py.String.of_string source|] in
-  let ast = Py.Callable.to_function transform_func [|tree|] |> Py.String.to_string in
-  of_yojson (Yojson.Safe.from_string ast)
+let get_type fields =
+  List.Assoc.find ~equal:String.equal fields "_type"
+  |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
+
+
+let is_type fields type_name : bool =
+  match get_type fields with Str name -> String.equal name type_name | _ -> false
+
+
+let rec normalize (node : ast_node) : ast_node =
+  match node with
+  | Dict fields when is_type fields "Import" || is_type fields "ImportFrom" ->
+      Null
+  | Dict fields when is_type fields "Compare" -> (
+      let left_node = List.Assoc.find_exn ~equal:String.equal fields "left" in
+      let left_fields = match left_node with Dict fields -> fields | _ -> [] in
+      match List.Assoc.find ~equal:String.equal left_fields "attr" with
+      | Some (Str "__class__") ->
+          let fst_arg = List.Assoc.find_exn ~equal:String.equal left_fields "value" in
+          let snd_arg =
+            match List.Assoc.find_exn ~equal:String.equal fields "comparators" with
+            | List [x] ->
+                x
+            | _ ->
+                Null
+          in
+          let ctx_node = List.Assoc.find_exn ~equal:String.equal left_fields "ctx" in
+          let lineno = List.Assoc.find_exn ~equal:String.equal fields "lineno" in
+          let end_lineno = List.Assoc.find_exn ~equal:String.equal fields "end_lineno" in
+          let func_node =
+            Dict
+              [ ("_type", Str "Name")
+              ; ("id", Str "isinstance")
+              ; ("ctx", ctx_node)
+              ; ("lineno", lineno)
+              ; ("end_lineno", end_lineno) ]
+          in
+          Dict
+            [ ("_type", Str "Call")
+            ; ("lineno", lineno)
+            ; ("end_lineno", end_lineno)
+            ; ("func", func_node)
+            ; ("args", List [fst_arg; snd_arg])
+            ; ("keywords", List []) ]
+      | _ ->
+          Dict (List.map ~f:(fun (k, v) -> (k, normalize v)) fields) )
+  | Dict fields ->
+      Dict (List.map ~f:(fun (k, v) -> (k, normalize v)) fields)
+  | List l ->
+      List
+        (List.filter
+           ~f:(fun n -> match n with Null -> false | _ -> true)
+           (List.map ~f:normalize l) )
+  | other ->
+      other
+
+
+let parse_and_transform parse_func source =
+  let parse_func = parse_func |> Py.Callable.to_function in
+  let ast = parse_func [|Py.String.of_string source|] |> Py.String.to_string in
+  of_yojson (Yojson.Safe.from_string ast) |> normalize
 
 
 let write_output previous_file current_file diffs =
@@ -138,14 +194,6 @@ let ann_assign_to_assign fields : ast_node =
       ~init:[] fields
   in
   Dict (List.rev (("type_comment", Null) :: assign_fields))
-
-
-let is_type fields type_name : bool =
-  match List.Assoc.find_exn ~equal:String.equal fields "_type" with
-  | Str name ->
-      String.equal name type_name
-  | _ ->
-      false
 
 
 let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
@@ -240,9 +288,9 @@ let show_diff file1 file2 diffs =
 
 
 let ast_diff ?(debug = false) src1 src2 =
-  let transform_func, ast_module = init () in
-  let ast1 = parse_and_transform transform_func ast_module src1 in
-  let ast2 = parse_and_transform transform_func ast_module src2 in
+  let parse_func = init () in
+  let ast1 = parse_and_transform parse_func src1 in
+  let ast2 = parse_and_transform parse_func src2 in
   let diffs = get_diff ast1 ast2 in
   let diffs = show_diff src1 src2 diffs in
   if debug then Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ;
