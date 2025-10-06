@@ -80,6 +80,7 @@ type t =
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])
   ; recursive_calls: (PulseMutualRecursion.Set.t[@yojson.opaque])
+  ; unknown_values: bool
   ; skipped_calls: SkippedCalls.t }
 [@@deriving compare, equal, yojson_of]
 
@@ -92,6 +93,7 @@ let pp_ ~is_summary f
      ; transitive_info
      ; topl
      ; recursive_calls
+     ; unknown_values
      ; skipped_calls }
      [@warning "+missing-record-field-pattern"] ) =
   let pp_decompiler f =
@@ -109,11 +111,12 @@ let pp_ ~is_summary f
      %tneed_dynamic_type_specialization=%a@;\
      transitive_info=%a@;\
      recursive_calls=%a@;\
+     unknown_values=%b@;\
      skipped_calls=%a@;\
      Topl=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
     need_dynamic_type_specialization TransitiveInfo.pp transitive_info PulseMutualRecursion.Set.pp
-    recursive_calls SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    recursive_calls unknown_values SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
 
 
 let pp = pp_ ~is_summary:false
@@ -1480,12 +1483,13 @@ let empty =
   ; topl= PulseTopl.start () (* TODO: this defeats the laziness of Topl.automaton *)
   ; transitive_info= TransitiveInfo.bottom
   ; recursive_calls= PulseMutualRecursion.Set.empty
+  ; unknown_values= false
   ; skipped_calls= SkippedCalls.empty }
 
 
 let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_post, attrs_post)
     path_condition decompiler ~need_dynamic_type_specialization topl transitive_info recursive_calls
-    skipped_calls =
+    ~unknown_values skipped_calls =
   { pre= PreDomain.update empty.pre ~stack:stack_pre ~heap:heap_pre ~attrs:attrs_pre
   ; post= PostDomain.update empty.post ~stack:stack_post ~heap:heap_post ~attrs:attrs_post
   ; path_condition
@@ -1494,6 +1498,7 @@ let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_
   ; topl
   ; transitive_info
   ; recursive_calls
+  ; unknown_values
   ; skipped_calls }
 
 
@@ -2352,6 +2357,8 @@ let add_skipped_calls new_skipped_calls astate =
   in
   if phys_equal skipped_calls astate.skipped_calls then astate else {astate with skipped_calls}
 
+
+let declare_unknown_values astate = {astate with unknown_values= true}
 
 let transfer_transitive_info_to_caller callee_pname call_loc summary caller_astate =
   let caller = caller_astate.transitive_info in
