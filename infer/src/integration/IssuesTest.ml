@@ -93,6 +93,10 @@ let pp_custom_of_report fmt report fields =
           let taint_extra = Option.bind issue.extras ~f:(fun extras -> extras.taint_extra) in
           Option.iter taint_extra ~f:(fun taint_extra ->
               F.fprintf fmt "%s%a" (comma_separator index) pp_taint_extra taint_extra )
+      | MayDependOnAnUnknownValue ->
+          Option.iter issue.extras ~f:(fun {may_depend_on_an_unknown_value} ->
+              Option.iter may_depend_on_an_unknown_value ~f:(fun {value} ->
+                  if value then F.fprintf fmt "true" ) )
       | TransitiveCalleesExtra ->
           let pp_item fmt
               {Jsonbug_t.caller_name; callsite_relative_position_in_caller; kind; resolution} =

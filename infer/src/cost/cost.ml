@@ -206,6 +206,7 @@ let compute_errlog_extras cost =
   ; cost_degree= BasicCostWithReason.degree cost |> Option.map ~f:Polynomials.Degree.encode_to_int
   ; copy_type= None
   ; config_usage_extra= None
+  ; may_depend_on_an_unknown_value= None
   ; taint_extra= None
   ; transitive_callees= []
   ; transitive_missed_captures= [] }

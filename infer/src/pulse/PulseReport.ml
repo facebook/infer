@@ -34,6 +34,14 @@ let report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~la
       else []
     in
     let extras =
+      let may_depend_on_an_unknown_value =
+        match diagnostic with
+        | AccessToInvalidAddress {may_depend_on_an_unknown_value= true} ->
+            let elt : Jsonbug_t.may_depend_on_an_unknown_value = {value= true} in
+            Some elt
+        | _ ->
+            None
+      in
       let transitive_callees, transitive_missed_captures =
         let to_jsonbug_missed_capture class_name =
           {Jsonbug_t.class_name= Typ.Name.name class_name}
@@ -117,6 +125,7 @@ let report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~la
       ; cost_degree= None
       ; copy_type
       ; config_usage_extra
+      ; may_depend_on_an_unknown_value
       ; taint_extra
       ; transitive_callees
       ; transitive_missed_captures }

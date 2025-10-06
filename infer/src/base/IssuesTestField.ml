@@ -23,6 +23,7 @@ type t =
   | Hash
   | LineOffset
   | QualifierContainsPotentialExceptionNote
+  | MayDependOnAnUnknownValue
   | TaintExtra
   | TransitiveCalleesExtra
   | Suppressed
@@ -45,6 +46,7 @@ let all_symbols =
   ; ("hash", Hash)
   ; ("line_offset", LineOffset)
   ; ("qualifier_contains_potential_exception_note", QualifierContainsPotentialExceptionNote)
+  ; ("may_depend_on_an_unknown_value", MayDependOnAnUnknownValue)
   ; ("taint_extra", TaintExtra)
   ; ("transitive_callees_extra", TransitiveCalleesExtra)
   ; ("suppressed", Suppressed)

@@ -53,12 +53,17 @@ type missed_capture = {
   class_name: string;
 }
 
+type may_depend_on_an_unknown_value = {
+  value: bool;  
+}
+
 type extra = {
   ?cost_polynomial : string option;
   ?cost_degree : int option;
   ?copy_type : string option;
   ?config_usage_extra : config_usage_extra option;
   ?taint_extra : taint_extra option;
+  ?may_depend_on_an_unknown_value : may_depend_on_an_unknown_value option;
   ~transitive_callees: transitive_callee list;
   ~transitive_missed_captures: missed_capture list;
 }
