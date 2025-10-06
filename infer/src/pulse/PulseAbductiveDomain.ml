@@ -2332,7 +2332,9 @@ let add_recursive_call location callee actuals astate =
 
 
 let add_recursive_calls traces astate =
-  {astate with recursive_calls= PulseMutualRecursion.Set.union astate.recursive_calls traces}
+  let new_recursive_calls = PulseMutualRecursion.Set.union astate.recursive_calls traces in
+  if phys_equal new_recursive_calls astate.recursive_calls then astate
+  else {astate with recursive_calls= new_recursive_calls}
 
 
 let add_skipped_call pname trace astate =
