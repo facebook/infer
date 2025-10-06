@@ -483,6 +483,8 @@ module Summary : sig
 
   val get_recursive_calls : summary -> PulseMutualRecursion.Set.t
 
+  val contains_unknown_values : summary -> bool
+
   val get_skipped_calls : summary -> SkippedCalls.t
 
   val is_heap_allocated : summary -> AbstractValue.t -> bool

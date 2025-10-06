@@ -290,6 +290,8 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
              ; invalidation_trace=
                  Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch}
              ; access_trace
+             ; may_depend_on_an_unknown_value=
+                 AbductiveDomain.Summary.contains_unknown_values summary
              ; must_be_valid_reason= snd must_be_valid } ) ;
       Some (LatentInvalidAccess {astate= summary; address; must_be_valid; calling_context= []})
   | PotentialInvalidSpecializedCall {specialized_type; trace} ->

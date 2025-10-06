@@ -172,6 +172,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
                       ; invalidation
                       ; invalidation_trace
                       ; access_trace= fst must_be_valid
+                      ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
                       ; must_be_valid_reason= snd must_be_valid }
                 ; astate }
             , summary )

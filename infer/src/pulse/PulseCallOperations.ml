@@ -475,6 +475,8 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
                                        ; invalidation
                                        ; invalidation_trace
                                        ; access_trace
+                                       ; may_depend_on_an_unknown_value=
+                                           AbductiveDomain.Summary.contains_unknown_values astate
                                        ; must_be_valid_reason }
                                  ; astate= astate_post_call }
                              , astate_summary )

@@ -1204,6 +1204,8 @@ let check_all_valid path callee_proc_name call_location ~pre call_state =
                             ; invalidation
                             ; invalidation_trace
                             ; access_trace
+                            ; may_depend_on_an_unknown_value=
+                                call_state.astate.AbductiveDomain.unknown_values
                             ; must_be_valid_reason }
                       ; astate } )
          | `MustBeInitialized (_timestamp, callee_access_trace) ->

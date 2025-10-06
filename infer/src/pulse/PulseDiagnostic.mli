@@ -33,6 +33,9 @@ type access_to_invalid_address =
   ; access_trace: Trace.t
         (** assuming we are in the calling context, the trace leads to an access to the value
             invalidated in [invalidation_trace] without further assumptions *)
+  ; may_depend_on_an_unknown_value: bool
+        (** the issue was detected in a symbolic state containing an unknown value (risk of false
+            positive) *)
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal, yojson_of]
 

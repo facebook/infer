@@ -33,6 +33,7 @@ type access_to_invalid_address =
   ; invalidation: Invalidation.t
   ; invalidation_trace: Trace.t
   ; access_trace: Trace.t
+  ; may_depend_on_an_unknown_value: bool
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
 [@@deriving compare, equal]
 
@@ -44,6 +45,7 @@ let pp_access_to_invalid_address fmt
      ; invalidation
      ; invalidation_trace
      ; access_trace
+     ; may_depend_on_an_unknown_value
      ; must_be_valid_reason }
      [@warning "+missing-record-field-pattern"] ) =
   let pp_immediate fmt = F.pp_print_string fmt "immediate" in
@@ -53,11 +55,13 @@ let pp_access_to_invalid_address fmt
      invalidation=%a;@;\
      invalidation_trace=%a;@;\
      access_trace=%a;@;\
+     may_depend_on_an_unknown_value=%b;@;\
      must_be_valid_reason=%a;@;\
      @]}"
     pp_calling_context calling_context DecompilerExpr.pp_with_abstract_value invalid_address
     Invalidation.pp invalidation (Trace.pp ~pp_immediate) invalidation_trace
-    (Trace.pp ~pp_immediate) access_trace Invalidation.pp_must_be_valid_reason must_be_valid_reason
+    (Trace.pp ~pp_immediate) access_trace may_depend_on_an_unknown_value
+    Invalidation.pp_must_be_valid_reason must_be_valid_reason
 
 
 module ErlangError = struct

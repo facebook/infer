@@ -27,6 +27,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
                    ; invalidation
                    ; invalidation_trace
                    ; access_trace
+                   ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
                    ; must_be_valid_reason }
              ; astate } )
     |> AccessResult.of_result path

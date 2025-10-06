@@ -2149,6 +2149,8 @@ module Summary = struct
 
   let get_recursive_calls {recursive_calls} = recursive_calls
 
+  let contains_unknown_values {unknown_values} = unknown_values
+
   let get_skipped_calls {skipped_calls} = skipped_calls
 
   let is_heap_allocated = is_heap_allocated

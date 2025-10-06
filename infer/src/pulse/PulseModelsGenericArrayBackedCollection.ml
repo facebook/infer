@@ -152,6 +152,7 @@ module Iterator = struct
                     ; invalidation= EndIterator
                     ; invalidation_trace
                     ; access_trace
+                    ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
                     ; must_be_valid_reason= None }
               ; astate }
           , [] )
