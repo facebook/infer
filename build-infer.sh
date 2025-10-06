@@ -188,6 +188,10 @@ install_opam_deps () {
     if [ "$USE_OPAM_LOCK" == yes ]; then
         locked=.locked
     fi
+
+    # Charon Version 0.1.123
+    opam pin add --no-action charon https://github.com/AeneasVerif/charon.git#4289a52cc427ac6f8ecbb746e2b226f5b297be40
+    opam pin add --no-action name_matcher_parser https://github.com/AeneasVerif/charon.git#4289a52cc427ac6f8ecbb746e2b226f5b297be40
     opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
     opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
     # camlzip checks that it is within the required version that the zip/jar file declares as
