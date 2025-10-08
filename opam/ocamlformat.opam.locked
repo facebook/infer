@@ -36,15 +36,12 @@ depends: [
   "base-unix" {= "base"}
   "camlp-streams" {= "5.0.1"}
   "cmdliner" {= "1.3.0"}
-  "cppo" {= "1.8.0" & with-doc}
-  "crunch" {= "4.0.0" & with-doc}
   "csexp" {= "1.5.2"}
   "dune" {= "3.17.2"}
   "dune-build-info" {= "3.17.2"}
   "dune-configurator" {= "3.18.2"}
   "either" {= "1.0.0"}
   "fix" {= "20250428"}
-  "fmt" {= "0.10.0" & with-doc}
   "fpath" {= "0.7.3"}
   "menhir" {= "20240715"}
   "menhirCST" {= "20240715"}
@@ -62,20 +59,14 @@ depends: [
   "ocamlfind" {= "1.9.8"}
   "ocamlformat-lib" {= "0.27.0"}
   "ocp-indent" {= "1.8.1"}
-  "odoc" {= "3.0.0" & with-doc}
-  "odoc-parser" {= "3.0.0" & with-doc}
-  "ptime" {= "1.2.0" & with-doc}
   "re" {= "1.12.0"}
-  "result" {= "1.5" & with-doc}
   "seq" {= "base"}
   "sexplib0" {= "v0.17.0"}
   "stdio" {= "v0.17.0"}
   "topkg" {= "1.0.8"}
-  "tyxml" {= "4.6.0" & with-doc}
   "uucp" {= "16.0.0"}
   "uuseg" {= "16.0.0"}
   "uutf" {= "1.0.4"}
-  "yojson" {= "2.2.2" & with-doc}
 ]
 build: [
   ["dune" "subst"] {dev}
