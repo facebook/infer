@@ -184,6 +184,41 @@ let ann_assign_to_assign fields : ast_node =
   Dict (StringMap.add "type_comment" Null assign_fields)
 
 
+let get_builtin_name_from_type_name type_name =
+  match type_name with
+  | "Dict" | "FrozenSet" | "List" | "Set" | "Tuple" ->
+      Some (String.lowercase type_name)
+  | _ ->
+      None
+
+
+let replace_key_in_dict_node fields key new_value = StringMap.add key new_value fields
+
+let get_annotations_node_ignore_case fields1 fields2 =
+  let get_id_name_opt value_fields =
+    match StringMap.find_opt "id" value_fields with
+    | Some (Str name) ->
+        get_builtin_name_from_type_name name
+    | _ ->
+        None
+  in
+  let update_fields fields value_fields new_name =
+    let new_value_fields = replace_key_in_dict_node value_fields "id" (Str new_name) in
+    replace_key_in_dict_node fields "value" (Dict new_value_fields)
+  in
+  match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
+  | Some (Dict value_fields1), Some (Dict value_fields2) -> (
+    match (get_id_name_opt value_fields1, get_id_name_opt value_fields2) with
+    | Some name1, None ->
+        Some (update_fields fields1 value_fields1 name1, fields2)
+    | None, Some name2 ->
+        Some (fields1, update_fields fields2 value_fields2 name2)
+    | _, _ ->
+        None )
+  | _, _ ->
+      None
+
+
 let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
     (n2 : ast_node) : (int option * int option) list =
   match (n1, n2) with
@@ -204,6 +239,12 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
                 match (v1, v2) with
                 | Null, Dict _ ->
                     acc
+                | Dict fields1, Dict fields2 -> (
+                  match get_annotations_node_ignore_case fields1 fields2 with
+                  | None ->
+                      get_diff ~left_line ~right_line v1 v2 @ acc
+                  | Some (new_fields1, new_fields2) ->
+                      get_diff ~left_line ~right_line (Dict new_fields1) (Dict new_fields2) @ acc )
                 | _ ->
                     get_diff ~left_line ~right_line v1 v2 @ acc )
               | Some _ when String.equal k "lineno" || String.equal k "end_lineno" ->

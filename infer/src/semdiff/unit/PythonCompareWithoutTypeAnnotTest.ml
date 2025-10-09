@@ -423,7 +423,7 @@ def foo(f: Callable[..., int]) -> None: pass
   assert (ast_diff_equal prog1 prog2)
 
 
-let fp_test_change_type_case_sensitive_good _ =
+let test_change_type_case_sensitive_good _ =
   let prog1 = {|
 from typing import Dict
 def foo() -> Dict[str, str]: pass
@@ -431,7 +431,22 @@ def foo() -> Dict[str, str]: pass
   let prog2 = {|
 def foo() -> dict[str, str]: pass
 |} in
-  assert (not (ast_diff_equal prog1 prog2))
+  assert (ast_diff_equal prog1 prog2)
+
+
+let test_change_type_case_sensitive_bad _ =
+  let prog1 = {|
+from mylib import SomeUserDefinedType
+def foo() -> SomeUserDefinedType: pass
+|} in
+  let prog2 = {|
+from mylib import someUserDefinedType
+def foo() -> someUserDefinedType: pass
+|} in
+  let expected_diff =
+    ["- def foo() -> SomeUserDefinedType: pass"; "+ def foo() -> someUserDefinedType: pass"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
 let suite =
@@ -462,7 +477,8 @@ let suite =
        ; "test_change_assign_type_bad" >:: test_change_assign_type_bad
        ; "test_change_fun_type_float_good" >:: test_change_fun_type_float_good
        ; "test_change_fun_type_ellipsis_good" >:: test_change_fun_type_ellipsis_good
-       ; "fp_test_change_type_case_sensitive_good" >:: fp_test_change_type_case_sensitive_good ]
+       ; "test_change_type_case_sensitive_good" >:: test_change_type_case_sensitive_good
+       ; "test_change_type_case_sensitive_bad" >:: test_change_type_case_sensitive_bad ]
 
 
 let () = run_test_tt_main suite
