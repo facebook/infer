@@ -1823,6 +1823,14 @@ let report_undefined func name =
     [%Dbg.printf "@\n@[undefined function: %a@]" FuncName.pp name]
 
 
+let separate_first arr =
+  if Array.length arr = 0 then None
+  else
+    let first = arr.(0) in
+    let rest = Array.sub arr ~pos:1 ~len:(Array.length arr - 1) in
+    Some (first, rest)
+
+
 let xlate_function_decl x llfunc typ k =
   let loc = find_loc llfunc in
   let name = mk_func_name llfunc typ in
@@ -1830,6 +1838,18 @@ let xlate_function_decl x llfunc typ k =
     Iter.from_iter (fun f -> Llvm.iter_params f llfunc)
     |> Iter.map ~f:(xlate_name x)
     |> IArray.of_iter
+  in
+  let formals_types, freturn_type =
+    match Llvm_debuginfo.get_subprogram llfunc with
+    | Some subprogram -> (
+        let di_types = Llvm_debuginfo.di_subprogram_get_type subprogram in
+        match separate_first di_types with
+        | Some (di_type, di_types) ->
+            (IArray.of_array di_types, Some di_type)
+        | None ->
+            (IArray.empty, None) )
+    | None ->
+        (IArray.empty, None)
   in
   let freturn =
     match typ with
@@ -1844,7 +1864,7 @@ let xlate_function_decl x llfunc typ k =
   let exc_name = "fthrow" in
   let exc_id = get_id exc_name in
   let fthrow = Reg.mk exc_typ exc_id exc_name in
-  k ~name ~formals ~freturn ~fthrow ~loc
+  k ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc
 
 
 let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
@@ -1853,7 +1873,7 @@ let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
   ;
   undef_count := 0 ;
   xlate_function_decl x llf typ
-  @@ fun ~name ~formals ~freturn ~fthrow ~loc ->
+  @@ fun ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc ->
   ( match Llvm.block_begin llf with
   | Before entry_blk ->
       let pop = pop_stack_frame_of_function x llf entry_blk in
@@ -1872,10 +1892,10 @@ let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
         in
         trav_blocks (List.rev entry_blocks) entry_blk
       in
-      Func.mk ~name ~formals ~freturn ~fthrow ~entry ~cfg ~loc
+      Func.mk ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~entry ~cfg ~loc
   | At_end _ ->
       report_undefined llf name ;
-      Func.mk_undefined ~name ~formals ~freturn ~fthrow ~loc )
+      Func.mk_undefined ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc )
   |>
   [%Dbg.retn fun {pf} -> pf "@\n%a" Func.pp]
 
@@ -1888,8 +1908,10 @@ let backpatch_calls x =
           backpatch ~callee
       | None ->
           xlate_function_decl x llcallee typ
-          @@ fun ~name ~formals ~freturn ~fthrow ~loc ->
-          let callee = Func.mk_undefined ~name ~formals ~freturn ~fthrow ~loc in
+          @@ fun ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc ->
+          let callee =
+            Func.mk_undefined ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc
+          in
           backpatch ~callee )
     | IndirectBP {typ; backpatch} ->
         let resolve_func = FuncName.name >> String.Tbl.find_exn func_tbl in

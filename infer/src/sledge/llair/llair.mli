@@ -131,12 +131,14 @@ and block = private
 
 (** A function is a control-flow graph with distinguished entry block, whose parameters are the
     function parameters. *)
-and func = private
+and func =
   { name: FuncName.t
-  ; formals: Reg.t iarray  (** Formal parameters *)
+  ; formals: Reg.t iarray
+  ; formals_types: string iarray
   ; freturn: Reg.t option
+  ; freturn_type: string option
   ; fthrow: Reg.t
-  ; locals: Reg.Set.t  (** Local registers *)
+  ; locals: Reg.Set.t
   ; entry: block
   ; loc: LairLoc.t }
 
@@ -308,7 +310,9 @@ module Func : sig
   val mk :
        name:FuncName.t
     -> formals:Reg.t iarray
+    -> formals_types:string iarray
     -> freturn:Reg.t option
+    -> freturn_type:string option
     -> fthrow:Reg.t
     -> entry:block
     -> cfg:block iarray
@@ -318,7 +322,9 @@ module Func : sig
   val mk_undefined :
        name:FuncName.t
     -> formals:Reg.t iarray
+    -> formals_types:string iarray
     -> freturn:Reg.t option
+    -> freturn_type:string option
     -> fthrow:Reg.t
     -> loc:LairLoc.t
     -> t

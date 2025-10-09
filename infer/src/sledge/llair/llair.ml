@@ -96,7 +96,9 @@ and block =
 and func =
   { name: FuncName.t
   ; formals: Reg.t iarray
+  ; formals_types: string iarray
   ; freturn: Reg.t option
+  ; freturn_type: string option
   ; fthrow: Reg.t
   ; locals: Reg.Set.t
   ; entry: block
@@ -220,11 +222,13 @@ let sexp_of_block {lbl; cmnd; term; parent; sort_index; goal_distance} =
     ; goal_distance: int }]
 
 
-let sexp_of_func {name; formals; freturn; fthrow; locals; entry; loc} =
+let sexp_of_func {name; formals; formals_types; freturn; freturn_type; fthrow; locals; entry; loc} =
   [%sexp
     { name: FuncName.t
     ; formals: Reg.t iarray
+    ; formals_types: string iarray
     ; freturn: Reg.t option
+    ; freturn_type: string option
     ; fthrow: Reg.t
     ; locals: Reg.Set.t
     ; entry: block
@@ -353,7 +357,9 @@ and dummy_func =
         (Typ.pointer ~elt:(Typ.function_ ~args:IArray.empty ~return:None))
         "dummy" ~unmangled_name:None
   ; formals= IArray.empty
+  ; formals_types= IArray.empty
   ; freturn= None
+  ; freturn_type= None
   ; fthrow= Reg.mk Typ.ptr 0 "dummy"
   ; locals= Reg.Set.empty
   ; entry= dummy_block
@@ -692,9 +698,17 @@ module Func = struct
 
   let undefined_entry = Block.mk ~lbl:"undefined" ~cmnd:IArray.empty ~term:(Term.unreachable ())
 
-  let mk_undefined ~name ~formals ~freturn ~fthrow ~loc =
+  let mk_undefined ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc =
     let locals = Reg.Set.empty in
-    {name; formals; freturn; fthrow; locals; entry= undefined_entry; loc}
+    { name
+    ; formals
+    ; formals_types
+    ; freturn
+    ; freturn_type
+    ; fthrow
+    ; locals
+    ; entry= undefined_entry
+    ; loc }
 
 
   let is_undefined func = func.entry == undefined_entry
@@ -779,7 +793,7 @@ module Func = struct
 
   let lookup cfg lbl = Iter.find_exn (IArray.to_iter cfg) ~f:(fun k -> String.equal lbl k.lbl)
 
-  let mk ~name ~formals ~freturn ~fthrow ~entry ~cfg ~loc =
+  let mk ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~entry ~cfg ~loc =
     let locals =
       let locals_cmnd locals cmnd = IArray.fold_right ~f:Inst.union_locals cmnd locals in
       let locals_block block locals =
@@ -788,7 +802,7 @@ module Func = struct
       IArray.fold ~f:locals_block cfg (locals_block entry Reg.Set.empty)
     in
     let entry = {entry with lbl= ""} in
-    let func = {name; formals; freturn; fthrow; locals; entry; loc} in
+    let func = {name; formals; formals_types; freturn; freturn_type; fthrow; locals; entry; loc} in
     let seen = BlockS.create (IArray.length cfg) in
     let rec resolve_parent_and_jumps ancestors src =
       src.parent <- func ;
