@@ -753,10 +753,11 @@ module Func = struct
 
 
   let pp fs func =
-    let {name; formals; freturn; entry; loc; _} = func in
+    let {name; formals; formals_types; freturn; freturn_type; entry; loc; _} = func in
     let {cmnd; term; sort_index; _} = entry in
     let pp_if cnd str fs = if cnd then Format.fprintf fs str in
-    Format.fprintf fs "@[<v>@[<v>%a  %a@[<2>%a%a@]%t@]" Typ.pp (FuncName.typ name)
+    Format.fprintf fs "[%a -> %a]@\n@[<v>@[<v>%a  %a@[<2>%a%a@]%t@]" (LlairPp.iarray String.pp)
+      formals_types (LlairPp.option String.pp) freturn_type Typ.pp (FuncName.typ name)
       (Option.pp " %a := " Reg.pp) freturn FuncName.pp name (pp_actuals pp_formal) formals
       (fun fs ->
         if is_undefined func then Format.fprintf fs " #%i@]" sort_index

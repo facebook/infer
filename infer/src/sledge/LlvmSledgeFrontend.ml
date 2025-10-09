@@ -10,41 +10,6 @@
 open Llair
 module F = Format
 
-module Pp = struct
-  let seq ?sep:(sep_text = " ") pp =
-    let rec aux f = function
-      | [] ->
-          ()
-      | [x] ->
-          pp f x
-      | x :: l ->
-          let sep = sep_text in
-          F.fprintf f "%a%s%a" pp x sep aux l
-    in
-    aux
-
-
-  let comma_seq pp f l = seq ~sep:"," pp f l
-
-  let semicolon_seq pp f l = seq ~sep:"; " pp f l
-
-  let option pp fmt = function
-    | None ->
-        F.pp_print_string fmt "[None]"
-    | Some x ->
-        F.fprintf fmt "[Some %a]" pp x
-
-
-  let array pp f array =
-    let list = Array.to_list array in
-    comma_seq pp f list
-
-
-  let iarray pp f iarray =
-    let list = IArray.to_array iarray |> Array.to_list in
-    comma_seq pp f list
-end
-
 let pp_lltype fs t = Format.pp_print_string fs (Llvm.string_of_lltype t)
 
 (* WARNING: SLOW on instructions and functions *)
