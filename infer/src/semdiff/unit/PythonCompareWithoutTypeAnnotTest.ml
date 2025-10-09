@@ -449,6 +449,16 @@ def foo() -> someUserDefinedType: pass
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
+let fp_test_initialisation_set_good _ =
+  let prog1 = {|
+self.errors = {}
+  |} in
+  let prog2 = {|
+self.errors: set[str] = set()
+  |} in
+  assert (not (ast_diff_equal prog1 prog2))
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -478,7 +488,8 @@ let suite =
        ; "test_change_fun_type_float_good" >:: test_change_fun_type_float_good
        ; "test_change_fun_type_ellipsis_good" >:: test_change_fun_type_ellipsis_good
        ; "test_change_type_case_sensitive_good" >:: test_change_type_case_sensitive_good
-       ; "test_change_type_case_sensitive_bad" >:: test_change_type_case_sensitive_bad ]
+       ; "test_change_type_case_sensitive_bad" >:: test_change_type_case_sensitive_bad
+       ; "fp_test_initialisation_set_good" >:: fp_test_initialisation_set_good ]
 
 
 let () = run_test_tt_main suite
