@@ -459,6 +459,27 @@ self.errors: set[str] = set()
   assert (not (ast_diff_equal prog1 prog2))
 
 
+let fp_equivalent_logic_good _ =
+  let prog1 =
+    {|
+def foo():
+  if self.field and self.field.label != TOP:
+    return None
+  return 0
+  |}
+  in
+  let prog2 =
+    {|
+def foo():
+  field = self.field
+  if field and field.label != TOP:
+    return None
+  return 0
+  |}
+  in
+  assert (not (ast_diff_equal prog1 prog2))
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -489,7 +510,8 @@ let suite =
        ; "test_change_fun_type_ellipsis_good" >:: test_change_fun_type_ellipsis_good
        ; "test_change_type_case_sensitive_good" >:: test_change_type_case_sensitive_good
        ; "test_change_type_case_sensitive_bad" >:: test_change_type_case_sensitive_bad
-       ; "fp_test_initialisation_set_good" >:: fp_test_initialisation_set_good ]
+       ; "fp_test_initialisation_set_good" >:: fp_test_initialisation_set_good
+       ; "fp_equivalent_logic_good" >:: fp_equivalent_logic_good ]
 
 
 let () = run_test_tt_main suite
