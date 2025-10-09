@@ -1,0 +1,333 @@
+commit 78f8e20202487835927138cf40abe7f04c90e18a
+Author: Dulma Churchill <dulmarod@meta.com>
+Date:   Fri Sep 26 07:08:47 2025 -0700
+
+    Adding new patch for LLVMExtractDISubprogramType
+
+diff --git a/llvm/bindings/ocaml/debuginfo/CMakeLists.txt b/llvm/bindings/ocaml/debuginfo/CMakeLists.txt
+index 07f4956cccf2..24774b8464b2 100644
+--- a/llvm/bindings/ocaml/debuginfo/CMakeLists.txt
++++ b/llvm/bindings/ocaml/debuginfo/CMakeLists.txt
+@@ -1,6 +1,6 @@
+ add_ocaml_library(llvm_debuginfo
+   OCAML    llvm_debuginfo
+   OCAMLDEP llvm
+-  C        debuginfo_ocaml
+-  CFLAGS   "-I${CMAKE_CURRENT_SOURCE_DIR}/../llvm"
++  C        debuginfo_ocaml llvm_wrapper
++  CFLAGS   "-I${CMAKE_CURRENT_SOURCE_DIR}/../llvm" "-I${CMAKE_CURRENT_BINARY_DIR}/../llvm/include" -xc++ -std=c++17 -fpermissive
+   LLVM     Core)
+diff --git a/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c b/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
+index ba4a9cbde37a..95f6c18b4bb0 100644
+--- a/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
++++ b/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
+@@ -14,9 +14,13 @@
+ |* macros, since most of the parameters are not GC heap objects.              *|
+ |*                                                                            *|
+ \*===----------------------------------------------------------------------===*/
++#ifdef __cplusplus
++extern "C" {
++#endif
+
+-#include <string.h>
+-
++#include "caml/alloc.h"
++#include "caml/custom.h"
++#include "caml/fail.h"
+ #include "caml/memory.h"
+ #include "caml/mlvalues.h"
+ #include "llvm-c/Core.h"
+@@ -24,6 +28,7 @@
+ #include "llvm-c/Support.h"
+
+ #include "llvm_ocaml.h"
++#include <string.h>
+
+ // This is identical to the definition in llvm_debuginfo.ml:DIFlag.t
+ typedef enum {
+@@ -139,6 +144,8 @@ static LLVMDIFlags map_DIFlag(LLVMDIFlag_i DIF) {
+   }
+ }
+
++char **LLVMExtractDISubprogramType(void *DISubprogramRef, unsigned *outLength);
++
+ /* unit -> int */
+ value llvm_debug_metadata_version(value Unit) {
+   return Val_int(LLVMDebugMetadataVersion());
+@@ -163,18 +170,20 @@ static value alloc_diflags(LLVMDIFlags Flags) {
+   return V;
+ }
+
+-LLVMDIFlags llvm_diflags_get(value i_Flag) {
+-  LLVMDIFlags Flags = map_DIFlag(Int_val(i_Flag));
++value llvm_diflags_get(value i_Flag) {
++  LLVMDIFlags Flags = map_DIFlag((LLVMDIFlag_i)Int_val(i_Flag));
+   return alloc_diflags(Flags);
+ }
+
+-LLVMDIFlags llvm_diflags_set(value Flags, value i_Flag) {
+-  LLVMDIFlags FlagsNew = DIFlags_val(Flags) | map_DIFlag(Int_val(i_Flag));
++value llvm_diflags_set(value Flags, value i_Flag) {
++  LLVMDIFlags FlagsNew =
++      (LLVMDIFlags)(DIFlags_val(Flags) |
++                    map_DIFlag((LLVMDIFlag_i)Int_val(i_Flag)));
+   return alloc_diflags(FlagsNew);
+ }
+
+ value llvm_diflags_test(value Flags, value i_Flag) {
+-  LLVMDIFlags Flag = map_DIFlag(Int_val(i_Flag));
++  LLVMDIFlags Flag = map_DIFlag((LLVMDIFlag_i)Int_val(i_Flag));
+   return Val_bool((DIFlags_val(Flags) & Flag) == Flag);
+ }
+
+@@ -213,13 +222,14 @@ value llvm_dibuild_create_compile_unit_native(
+     value SplitDebugInline, value DebugInfoForProfiling, value SysRoot,
+     value SDK) {
+   return to_val(LLVMDIBuilderCreateCompileUnit(
+-      DIBuilder_val(Builder), Int_val(Lang), Metadata_val(FileRef),
+-      String_val(Producer), caml_string_length(Producer), Bool_val(IsOptimized),
+-      String_val(Flags), caml_string_length(Flags), Int_val(RuntimeVer),
+-      String_val(SplitName), caml_string_length(SplitName), Int_val(Kind),
+-      Int_val(DWOId), Bool_val(SplitDebugInline),
+-      Bool_val(DebugInfoForProfiling), String_val(SysRoot),
+-      caml_string_length(SysRoot), String_val(SDK), caml_string_length(SDK)));
++      DIBuilder_val(Builder), (LLVMDWARFSourceLanguage)Int_val(Lang),
++      Metadata_val(FileRef), String_val(Producer), caml_string_length(Producer),
++      Bool_val(IsOptimized), String_val(Flags), caml_string_length(Flags),
++      Int_val(RuntimeVer), String_val(SplitName), caml_string_length(SplitName),
++      (LLVMDWARFEmissionKind)Int_val(Kind), Int_val(DWOId),
++      Bool_val(SplitDebugInline), Bool_val(DebugInfoForProfiling),
++      String_val(SysRoot), caml_string_length(SysRoot), String_val(SDK),
++      caml_string_length(SDK)));
+ }
+
+ value llvm_dibuild_create_compile_unit_bytecode(value *argv, int argn) {
+@@ -326,6 +336,19 @@ value llvm_di_location_get_line(value Location) {
+   return Val_int(LLVMDILocationGetLine(Metadata_val(Location)));
+ }
+
++value llvm_di_subprogram_get_type(value Subprogram) {
++  unsigned Length = 0;
++  char **c_array =
++      LLVMExtractDISubprogramType(Metadata_val(Subprogram), &Length);
++  value Array = caml_alloc_tuple_uninit(Length);
++  for (unsigned i = 0; i < Length; ++i) {
++    size_t len = strlen(c_array[i]);
++    Field(Array, i) = cstr_to_string(c_array[i], len);
++  }
++  free(c_array);
++  return Array;
++}
++
+ value llvm_di_location_get_column(value Location) {
+   return Val_int(LLVMDILocationGetColumn(Metadata_val(Location)));
+ }
+@@ -362,7 +385,7 @@ value llvm_di_file_get_source(value File) {
+
+ value llvm_dibuild_get_or_create_type_array(value Builder, value Data) {
+   mlsize_t Count = Wosize_val(Data);
+-  LLVMMetadataRef *Temp = from_val_array(Data);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Data);
+   LLVMMetadataRef Metadata =
+       LLVMDIBuilderGetOrCreateTypeArray(DIBuilder_val(Builder), Temp, Count);
+   free(Temp);
+@@ -371,7 +394,7 @@ value llvm_dibuild_get_or_create_type_array(value Builder, value Data) {
+
+ value llvm_dibuild_get_or_create_array(value Builder, value Data) {
+   mlsize_t Count = Wosize_val(Data);
+-  LLVMMetadataRef *Temp = from_val_array(Data);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Data);
+   LLVMMetadataRef Metadata =
+       LLVMDIBuilderGetOrCreateArray(DIBuilder_val(Builder), Temp, Count);
+   free(Temp);
+@@ -381,7 +404,7 @@ value llvm_dibuild_get_or_create_array(value Builder, value Data) {
+ value llvm_dibuild_create_subroutine_type(value Builder, value File,
+                                           value ParameterTypes, value Flags) {
+   mlsize_t Count = Wosize_val(ParameterTypes);
+-  LLVMMetadataRef *Temp = from_val_array(ParameterTypes);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(ParameterTypes);
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateSubroutineType(
+       DIBuilder_val(Builder), Metadata_val(File), Temp,
+       Wosize_val(ParameterTypes), DIFlags_val(Flags));
+@@ -400,7 +423,7 @@ value llvm_dibuild_create_enumeration_type_native(
+     value Builder, value Scope, value Name, value File, value LineNumber,
+     value SizeInBits, value AlignInBits, value Elements, value ClassTy) {
+   mlsize_t Count = Wosize_val(Elements);
+-  LLVMMetadataRef *Temp = from_val_array(Elements);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Elements);
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateEnumerationType(
+       DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
+       caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
+@@ -427,7 +450,7 @@ value llvm_dibuild_create_union_type_native(
+     value Builder, value Scope, value Name, value File, value LineNumber,
+     value SizeInBits, value AlignInBits, value Flags, value Elements,
+     value RunTimeLanguage, value UniqueId) {
+-  LLVMMetadataRef *Temp = from_val_array(Elements);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Elements);
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateUnionType(
+       DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
+       caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
+@@ -456,7 +479,7 @@ value llvm_dibuild_create_union_type_bytecode(value *argv, int argn) {
+ value llvm_dibuild_create_array_type(value Builder, value Size,
+                                      value AlignInBits, value Ty,
+                                      value Subscripts) {
+-  LLVMMetadataRef *Temp = from_val_array(Subscripts);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Subscripts);
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateArrayType(
+       DIBuilder_val(Builder), (uint64_t)Int_val(Size), Int_val(AlignInBits),
+       Metadata_val(Ty), Temp, Wosize_val(Subscripts));
+@@ -467,7 +490,7 @@ value llvm_dibuild_create_array_type(value Builder, value Size,
+ value llvm_dibuild_create_vector_type(value Builder, value Size,
+                                       value AlignInBits, value Ty,
+                                       value Subscripts) {
+-  LLVMMetadataRef *Temp = from_val_array(Subscripts);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Subscripts);
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateVectorType(
+       DIBuilder_val(Builder), (uint64_t)Int_val(Size), Int_val(AlignInBits),
+       Metadata_val(Ty), Temp, Wosize_val(Subscripts));
+@@ -515,7 +538,7 @@ value llvm_dibuild_create_struct_type_native(
+     value Builder, value Scope, value Name, value File, value LineNumber,
+     value SizeInBits, value AlignInBits, value Flags, value DerivedFrom,
+     value Elements, value RunTimeLanguage, value VTableHolder, value UniqueId) {
+-  LLVMMetadataRef *Temp = from_val_array(Elements);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Elements);
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateStructType(
+       DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
+       caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
+@@ -602,7 +625,7 @@ value llvm_dibuild_create_member_pointer_type_native(
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateMemberPointerType(
+       DIBuilder_val(Builder), Metadata_val(PointeeType),
+       Metadata_val(ClassType), (uint64_t)Int_val(SizeInBits),
+-      Int_val(AlignInBits), llvm_diflags_get(Flags));
++      Int_val(AlignInBits), (LLVMDIFlags)llvm_diflags_get(Flags));
+   return to_val(Metadata);
+ }
+
+@@ -772,7 +795,7 @@ value llvm_dibuild_create_class_type_native(
+     value SizeInBits, value AlignInBits, value OffsetInBits, value Flags,
+     value DerivedFrom, value Elements, value VTableHolder,
+     value TemplateParamsNode, value UniqueIdentifier) {
+-  LLVMMetadataRef *Temp = from_val_array(Elements);
++  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Elements);
+   LLVMMetadataRef Metadata = LLVMDIBuilderCreateClassType(
+       DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
+       caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
+@@ -1023,3 +1046,7 @@ value llvm_set_is_new_dbg_info_format(value Module, value UseNewFormat) {
+   LLVMSetIsNewDbgInfoFormat(Module_val(Module), Bool_val(UseNewFormat));
+   return Val_unit;
+ }
++
++#ifdef __cplusplus
++}
++#endif
+diff --git a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
+index 8bb5edb17a2c..4d9dc2609af0 100644
+--- a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
++++ b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
+@@ -523,6 +523,9 @@ external set_subprogram : Llvm.llvalue -> Llvm.llmetadata -> unit
+ external di_subprogram_get_line : Llvm.llmetadata -> int
+   = "llvm_di_subprogram_get_line"
+
++external di_subprogram_get_type : Llvm.llmetadata -> string array
++  = "llvm_di_subprogram_get_type"
++
+ external instr_get_debug_loc : Llvm.llvalue -> Llvm.llmetadata option
+   = "llvm_instr_get_debug_loc"
+
+diff --git a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli
+index 7c7882ccce85..e76c7d3625d2 100644
+--- a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli
++++ b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli
+@@ -614,6 +614,9 @@ val set_subprogram : Llvm.llvalue -> Llvm.llmetadata -> unit
+ val di_subprogram_get_line : Llvm.llmetadata -> int
+ (** [di_subprogram_get_line m] Get the line associated with subprogram [m]. *)
+
++val di_subprogram_get_type : Llvm.llmetadata -> string array
++(** [di_location_get_type l] Get the types associated with subprogram [m]. *)
++
+ val instr_get_debug_loc : Llvm.llvalue -> Llvm.llmetadata option
+ (** [instr_get_debug_loc i] Get the debug location for instruction [i]. *)
+
+diff --git a/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c b/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c
+new file mode 100644
+index 000000000000..33080391689b
+--- /dev/null
++++ b/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c
+@@ -0,0 +1,52 @@
++#include "caml/mlvalues.h"
++#include "llvm_ocaml.h"
++#include "llvm-c/Core.h"
++#include "llvm-c/DebugInfo.h"
++#include "llvm-c/Support.h"
++#include "llvm/IR/DebugInfoMetadata.h"
++#include "llvm/IR/Type.h"
++#include <cstdlib>
++#include <cstring>
++#include <llvm/BinaryFormat/Dwarf.h>
++
++char *getTypeName(const llvm::DIType *dtype) {
++  if (!dtype) {
++    const char *unknown = "<unknown>";
++    char *result = (char *)malloc(strlen(unknown) + 1);
++    strcpy(result, unknown);
++    return result;
++  }
++  if (const auto *derived = llvm::dyn_cast<llvm::DIDerivedType>(dtype)) {
++    if (derived->getTag() == llvm::dwarf::DW_TAG_pointer_type) {
++      char *baseName = getTypeName(derived->getBaseType());
++      size_t len = strlen(baseName) + 2;
++      char *result = (char *)malloc(len);
++      snprintf(result, len, "%s*", baseName);
++      free(baseName);
++      return result;
++    }
++  }
++  std::string name = dtype->getName().str();
++  char *result = (char *)malloc(name.size() + 1);
++  strcpy(result, name.c_str());
++  return result;
++}
++extern "C" char **LLVMExtractDISubprogramType(void *DISubprogramRef,
++                                              unsigned *outLength) {
++  llvm::DISubprogram *DISP = static_cast<llvm::DISubprogram *>(DISubprogramRef);
++  if (!DISP) {
++    *outLength = 0;
++    return nullptr;
++  }
++  auto *SubroutineType = DISP->getType();
++  if (!SubroutineType)
++    return nullptr;
++  auto TypeArray = SubroutineType->getTypeArray();
++  size_t numTypes = TypeArray.size();
++  *outLength = static_cast<unsigned>(numTypes);
++  char **result = (char **)malloc(sizeof(char *) * numTypes);
++  for (size_t i = 0; i < numTypes; ++i) {
++    result[i] = getTypeName(TypeArray[i]);
++  }
++  return result;
++}
+diff --git a/llvm/bindings/ocaml/llvm/llvm_ocaml.h b/llvm/bindings/ocaml/llvm/llvm_ocaml.h
+index ec60d6a5dad6..073e8a46796d 100644
+--- a/llvm/bindings/ocaml/llvm/llvm_ocaml.h
++++ b/llvm/bindings/ocaml/llvm/llvm_ocaml.h
+@@ -45,6 +45,7 @@ void *from_val(value v);
+    of decoded LLVM references. The returned array must be deallocated using
+    free. */
+ void *from_val_array(value Elements);
++value caml_alloc_tuple_uninit(mlsize_t wosize);
+
+ #define DiagnosticInfo_val(v) ((LLVMDiagnosticInfoRef)from_val(v))
+ #define Context_val(v) ((LLVMContextRef)from_val(v))
+diff --git a/llvm/cmake/modules/AddOCaml.cmake b/llvm/cmake/modules/AddOCaml.cmake
+index 2f22646f4c2b..5d0fa9fe6fa6 100644
+--- a/llvm/cmake/modules/AddOCaml.cmake
++++ b/llvm/cmake/modules/AddOCaml.cmake
+@@ -208,6 +208,8 @@ function(add_ocaml_library name)
+   set_target_properties("ocaml_${name}" PROPERTIES
+     OCAML_ODOC "${bin}/${name}.odoc")
+
++  add_dependencies("ocaml_${name}" "intrinsics_gen")
++
+   foreach( ocaml_dep ${ARG_OCAMLDEP} )
+     add_dependencies("ocaml_${name}" "ocaml_${ocaml_dep}")
+   endforeach()

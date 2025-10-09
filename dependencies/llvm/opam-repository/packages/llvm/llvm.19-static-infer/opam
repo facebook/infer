@@ -44,6 +44,7 @@ patches: [
   "3_fix-null-global_initializer.patch"
   "4_LLVMGetGEPSourceElementType.patch"
   "5_getAllocatedType.patch"
+  "6_LLVMExtractDISubprogramType.patch"
 ]
 synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
@@ -81,5 +82,9 @@ extra-source "4_LLVMGetGEPSourceElementType.patch" {
 extra-source "5_getAllocatedType.patch" {
   src: "dependencies/llvm/patches/5_getAllocatedType.patch"
   checksum: [ "sha256=a94060caf325bb83592d7563584326300c8afe2b7f1e3b3d6b0a93aa28739fa5"]
+}
+extra-source "6_LLVMExtractDISubprogramType.patch" {
+  src: "dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
+  checksum: [ "sha256=87e7376b7907435d69e8192c1cdccacb058e7ea0cf7c597acb1165dad700c937"]
 }
 extra-files: ["install.sh" "sha256=9d4a83c6b661ca4a80289d8a5bc0cddd6dd5d7e25ca9d61a8c358d801e2b8cdf"]
