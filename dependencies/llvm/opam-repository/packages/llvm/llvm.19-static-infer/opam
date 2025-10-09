@@ -38,7 +38,7 @@ depends: [
   "conf-cmake" {build}
 ]
 patches: [
-  "AddOCaml.cmake.patch"
+  "0_AddOCaml.cmake.patch"
   "1_add-debug-info.patch"
   "2_add-LLVMGetAtomicRMWBinOp.patch"
   "3_fix-null-global_initializer.patch"
@@ -54,7 +54,7 @@ url {
     "sha256=3aa2d2d2c7553164ad5c6f3b932b31816e422635e18620c9349a7da95b98d811"
   ]
 }
-extra-source "AddOCaml.cmake.patch" {
+extra-source "0_AddOCaml.cmake.patch" {
   src:
     "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
     checksum: [

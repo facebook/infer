@@ -72,20 +72,13 @@ install: [
   "--use-homebrew" {os-distribution = "homebrew"}
 ]
 dev-repo: "git+http://llvm.org/git/llvm.git"
-extra-source "AddOCaml.cmake.patch" {
-  src:
-    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
-  checksum: [
-    "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
-    "md5=432ec376b6ffbac44e640c8fb659a7df"
-  ]
-}
+
 
 
 
 
 patches: [
-  "AddOCaml.cmake.patch"
+  "0_AddOCaml.cmake.patch"
   "1_add-debug-info.patch"
   "2_add-LLVMGetAtomicRMWBinOp.patch"
   "3_fix-null-global_initializer.patch"
@@ -129,3 +122,11 @@ extra-files: [
   "install.sh"
   "sha256=9d4a83c6b661ca4a80289d8a5bc0cddd6dd5d7e25ca9d61a8c358d801e2b8cdf"
 ]
+extra-source "0_AddOCaml.cmake.patch" {
+  src:
+    "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
+  checksum: [
+    "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
+    "md5=432ec376b6ffbac44e640c8fb659a7df"
+  ]
+}
