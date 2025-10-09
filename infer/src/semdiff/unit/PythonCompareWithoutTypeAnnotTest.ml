@@ -480,6 +480,16 @@ def foo():
   assert (not (ast_diff_equal prog1 prog2))
 
 
+let fp_type_annotation_with_quotes_good _ =
+  let prog1 = {|
+def foo(params) -> "Tree": pass
+|} in
+  let prog2 = {|
+def foo(params: list[str]) -> Tree: pass
+|} in
+  assert (not (ast_diff_equal prog1 prog2))
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -511,7 +521,8 @@ let suite =
        ; "test_change_type_case_sensitive_good" >:: test_change_type_case_sensitive_good
        ; "test_change_type_case_sensitive_bad" >:: test_change_type_case_sensitive_bad
        ; "fp_test_initialisation_set_good" >:: fp_test_initialisation_set_good
-       ; "fp_equivalent_logic_good" >:: fp_equivalent_logic_good ]
+       ; "fp_equivalent_logic_good" >:: fp_equivalent_logic_good
+       ; "fp_type_annotation_with_quotes_good" >:: fp_type_annotation_with_quotes_good ]
 
 
 let () = run_test_tt_main suite
