@@ -8,23 +8,45 @@
 open! IStd
 module F = Format
 
-let program_path = "./programs"
+let run_charon json_file rust_file = 
+  let redirected_cmd = F.sprintf "charon rustc --ullbc --dest-file %s -- %s --crate-name \"dummy\"" json_file rust_file in
+  let {IUnix.Process_info.stdin; stderr} =
+    IUnix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
+  in
+  Unix.close stdin ;
+  (In_channel.input_lines (Unix.in_channel_of_descr stderr) |> String.concat ~sep:"\n")
 
-let test json_filename =
+
+let test source =
+    let json_file = IFilename.temp_file "charon" ".ullbc" in
+    let rust_file = IFilename.temp_file "dummy" ".rs" in
+    Out_channel.write_all rust_file ~data:source ;
+    let cmd_out = run_charon json_file rust_file in
   try
-    let file_path = Filename.concat program_path json_filename in
-    let json = Yojson.Basic.from_file file_path in
+    let json = Yojson.Basic.from_file json_file in
     match Charon.UllbcOfJson.crate_of_json json with
     | Ok _crate ->
         F.printf "Not yet implemented"
     | Error err ->
         F.printf "Test failed: %s" err
-  with e -> F.printf "%s" (Exn.to_string e)
+  with e -> F.printf "Exn %s\n Command output: %s" (Exn.to_string e) cmd_out
+
 
 (* An example test *)
-(*
-let%expect_test "example" =
-  test "./example.ullbc" ;
+(* let%expect_test "example" =
+  let source = 
+    {|
+#[allow(unused)]
+fn foo() {
+    let x = 42;
+}
+
+fn main(){
+    foo();
+}
+|} 
+  in
+  test source ;
   [%expect
     {|
   .source_language = "Rust"
@@ -57,5 +79,4 @@ let%expect_test "example" =
         unreachable
 
   }
-|}]
-*)
+|}] *)
