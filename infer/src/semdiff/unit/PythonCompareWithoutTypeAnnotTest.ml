@@ -490,6 +490,40 @@ def foo(params: list[str]) -> Tree: pass
   assert (not (ast_diff_equal prog1 prog2))
 
 
+let noise_in_diff_bad _ =
+  let prog1 = {|
+def foo() -> None:
+  x = 1
+  y = 2
+  z = 3
+  d = 4
+  e = 5
+|} in
+  let prog2 = {|
+def foo() -> None:
+  r = 2
+  x = 1
+  y = 2
+  z = 3
+  d = 4
+  e = 5
+|} in
+  let expected_diff =
+    [ "-   x = 1"
+    ; "-   y = 2"
+    ; "-   z = 3"
+    ; "-   d = 4"
+    ; "-   e = 5"
+    ; "+   r = 2"
+    ; "+   x = 1"
+    ; "+   y = 2"
+    ; "+   z = 3"
+    ; "+   d = 4"
+    ; "+   e = 5" ]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -522,7 +556,8 @@ let suite =
        ; "test_change_type_case_sensitive_bad" >:: test_change_type_case_sensitive_bad
        ; "fp_test_initialisation_set_good" >:: fp_test_initialisation_set_good
        ; "fp_equivalent_logic_good" >:: fp_equivalent_logic_good
-       ; "fp_type_annotation_with_quotes_good" >:: fp_type_annotation_with_quotes_good ]
+       ; "fp_type_annotation_with_quotes_good" >:: fp_type_annotation_with_quotes_good
+       ; "noise_in_diff_bad" >:: noise_in_diff_bad ]
 
 
 let () = run_test_tt_main suite
