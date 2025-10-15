@@ -423,6 +423,8 @@ let join_abductive astate_lhs astate_rhs =
     TransitiveInfo.join astate_lhs.AbductiveDomain.transitive_info
       astate_rhs.AbductiveDomain.transitive_info
   in
+  let loop_header_info = astate_lhs.AbductiveDomain.loop_header_info in
+  (* join does not make sense here *)
   let unknown_values =
     astate_lhs.AbductiveDomain.unknown_values || astate_rhs.AbductiveDomain.unknown_values
   in
@@ -431,7 +433,7 @@ let join_abductive astate_lhs astate_rhs =
     ~post:(stack_post_join, heap_post_join, attrs_post_join)
     formula (* TODO: almost everything past this *) Decompiler.empty
     ~need_dynamic_type_specialization:AbstractValue.Set.empty (PulseTopl.start ()) transitive_info
-    PulseMutualRecursion.Set.empty ~unknown_values SkippedCalls.empty
+    PulseMutualRecursion.Set.empty loop_header_info ~unknown_values SkippedCalls.empty
 
 
 let join (astate_lhs, path_lhs) (astate_rhs, path_rhs) =
