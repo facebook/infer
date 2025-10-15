@@ -25,10 +25,17 @@ re:
 }
 
 /* pulse-inf: works -- empty path condition, no bug */
-void simple_loop_ok() {
+void simple_loop0_ok() {
   int y = 0;
   while (y < 100)
     y++;
+}
+
+void simple_loop0_bad() {
+  int y = 0;
+  int x = 0;
+  while (y < 100)
+    x++;
 }
 
 // pulse-inf ok no loop
@@ -40,11 +47,20 @@ end:
 }
 
 /* pulse-inf: Able to flag bug */
-void conditional_goto_bad(int y) {
+void conditional_goto0_bad(int y) {
 re:
   if (y == 100)
     goto re;
   else
+    return;
+}
+
+void conditional_goto0_ok(int y) {
+re:
+  if (y == 100) {
+    y++;
+    goto re;
+  } else
     return;
 }
 
@@ -54,6 +70,14 @@ void fcall(int y) { y++; }
 void loop_call_bad(int y) {
   while (y == 100)
     fcall(y);
+  return;
+}
+
+void fcall_by_ref(int* y) { (*y) = (*y) + 1; }
+
+void loop_call_ok(int y) {
+  while (y == 100)
+    fcall_by_ref(&y);
   return;
 }
 
@@ -107,6 +131,16 @@ void loop_conditional_bad(int y) {
       y++;
 }
 
+void loop_conditional_ok(int y) {
+  int x = 0;
+  while (y < 100)
+    if (y < 50) {
+      x++;
+      y = 50;
+    } else
+      y++;
+}
+
 /* pulse inf used to detect this! NEW FN */
 void FN_nested_loop_cond_bad(int y) {
   int x = 42;
@@ -121,10 +155,29 @@ void FN_nested_loop_cond_bad(int y) {
   }
 }
 
+void nested_loop_cond_ok(int y) {
+  int x = 42;
+  while (y < 100) {
+    while (x <= 100) {
+      if (x == 50)
+        x = 60;
+      else
+        x++;
+    }
+    y++;
+  }
+}
+
 /* pulse inf works */
 void simple_loop_bad(int x) {
   int y = 1;
   while (x != 3)
+    y++;
+}
+
+void simple_loop_ok(int x) {
+  int y = 1;
+  while (y != 3)
     y++;
 }
 
@@ -140,22 +193,17 @@ void loop_alternating_bad(int y, int x) {
   }
 }
 
-/* pulse-inf used to work on this. Now FN */
-/* pulse-inf: This is detected at lower bound */
-void FN_nested_loop_bad(int y, int x) {
-
-  while (y < 100) {
-    while (x <= 100) {
-      if (x == 10)
-        x = 1;
-      else
-        x++;
-    }
-    y++;
+void loop_alternating_ok(int y, int x) {
+  int turn = 0;
+  while (x < 100) {
+    if (turn)
+      x++;
+    else
+      x = x + 2;
+    turn = (turn ? 0 : 1);
   }
 }
 
-/* pulse-inf: works good! */
 void inner_loop_bad(int y, int x) {
   while (y < 100) {
     while (x == 0)
@@ -164,7 +212,16 @@ void inner_loop_bad(int y, int x) {
   }
 }
 
-/* pulse-inf: works good */
+void inner_loop_ok(int y, int x) {
+  while (y < 100) {
+    while (x == 0) {
+      y++;
+      x++;
+    }
+    y++;
+  }
+}
+
 void simple_dowhile_ok(int y, int x) {
   do {
     y++;
@@ -172,11 +229,29 @@ void simple_dowhile_ok(int y, int x) {
   } while (0);
 }
 
-/* pulse-inf: works good */
+void simple_dowhile_bad(int y, int x) {
+  do {
+    x++;
+  } while (y > 0);
+}
+
 int conditional_goto_ok(int x, int y) {
 re:
   x++;
   if (0) {
+    int z1 = x * 2;
+    goto re;
+    return (z1);
+  } else {
+    int z2 = x + y;
+    return z2;
+  }
+}
+
+int conditional_goto_bad(int x, int y) {
+re:
+  x++;
+  if (y) {
     int z1 = x * 2;
     goto re;
     return (z1);
@@ -282,6 +357,15 @@ void loop_with_return_var3_ok(int y) {
       return;
     else
       y++;
+}
+
+int FP_loop_repeated_ok(int i) {
+  int val = 0;
+  for (i = 0; i < 3; i++)
+    val++;
+  for (i = 0; i < 3; i++)
+    val++;
+  return (val);
 }
 
 /* pulse-inf: False negative -- maybe augment the numiters in pulseinf config */
@@ -463,8 +547,7 @@ void nondet_loop_bad(int z) {
 /* From: AProVE: Non-termination proving for C Programs (Hensel et al. TACAS
  * 2022)*/
 /* pulse-inf: Works good! (flag bug at regular widening threshold) */
-// NEW FALSE NEGATIVE AT HIGH WIDENING THRESHOLD - duplication bug? */
-void FN_hensel_tacas22_bad(int x, int y) {
+void hensel_tacas22_bad(int x, int y) {
   y = 0;
   while (x > 0) {
     x--;
