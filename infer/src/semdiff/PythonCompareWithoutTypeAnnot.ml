@@ -7,7 +7,8 @@
 
 open! IStd
 module L = Logging
-module StringMap = Stdlib.Map.Make (String)
+module StringMap = IString.Map
+module StringSet = IString.Set
 
 type ast_node =
   | Dict of ast_node StringMap.t
@@ -18,6 +19,8 @@ type ast_node =
   | Bool of bool
   | Null
 [@@deriving compare, equal]
+
+type diff = LineAdded of int | LineRemoved of int
 
 let init () =
   let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () in
@@ -220,7 +223,13 @@ let get_annotations_node_ignore_case fields1 fields2 =
 
 
 let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
-    (n2 : ast_node) : (int option * int option) list =
+    (n2 : ast_node) : diff list =
+  let append_left_line_option_to_diff_list left_line acc =
+    Option.value_map left_line ~default:acc ~f:(fun left_line -> LineRemoved left_line :: acc)
+  in
+  let append_right_line_option_to_diff_list right_line acc =
+    Option.value_map right_line ~default:acc ~f:(fun right_line -> LineAdded right_line :: acc)
+  in
   match (n1, n2) with
   | a, b when equal_ast_node a b ->
       []
@@ -252,12 +261,14 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
               | Some v2 ->
                   get_diff ~left_line ~right_line v1 v2 @ acc
               | None ->
-                  (left_line, None) :: acc )
+                  append_left_line_option_to_diff_list left_line acc )
             f1 []
         in
         let missing_in_left =
           StringMap.fold
-            (fun k _ acc -> if StringMap.mem k f1 then acc else (None, right_line) :: acc)
+            (fun k _ acc ->
+              if StringMap.mem k f1 then acc
+              else append_right_line_option_to_diff_list right_line acc )
             f2 []
         in
         diffs @ missing_in_left
@@ -267,52 +278,63 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
         | x :: xt, y :: yt ->
             aux (get_diff ~left_line ~right_line x y @ acc) xt yt
         | x :: xt, [] ->
-            aux ((get_line_number_of_node x, None) :: acc) xt []
+            aux (append_left_line_option_to_diff_list (get_line_number_of_node x) acc) xt []
         | [], y :: yt ->
-            aux ((None, get_line_number_of_node y) :: acc) [] yt
+            aux (append_right_line_option_to_diff_list (get_line_number_of_node y) acc) [] yt
         | [], [] ->
             acc
       and get_line_number_of_node = function Dict f -> get_line_number f | _ -> None in
       aux [] l1 l2
   | Dict f1, _ ->
-      [(get_line_number f1, None)]
+      append_left_line_option_to_diff_list (get_line_number f1) []
   | _, Dict f2 ->
-      [(None, get_line_number f2)]
+      append_right_line_option_to_diff_list (get_line_number f2) []
   | _ ->
-      [(left_line, None); (None, right_line)]
+      append_left_line_option_to_diff_list left_line []
+      @ append_right_line_option_to_diff_list right_line []
 
 
-let show_diff file1 file2 diffs =
+let show_diff file1 file2 lines_removed lines_added =
   let lines1 = String.split_on_chars ~on:['\n'] file1
   and lines2 = String.split_on_chars ~on:['\n'] file2 in
   let get_line_content lines n : string =
-    match n with Some n when n - 1 < List.length lines -> List.nth_exn lines (n - 1) | _ -> ""
+    if n - 1 < List.length lines then List.nth_exn lines (n - 1) else ""
   in
-  let diffs =
-    let diffs_sorted =
-      List.sort
-        ~compare:(fun (a1, b1) (a2, b2) ->
-          match (b1, b2) with
-          | None, None ->
-              Option.compare Int.compare a1 a2
-          | None, _ ->
-              -1
-          | _, None ->
-              1
-          | Some v1, Some v2 -> (
-            match Option.compare Int.compare a1 a2 with 0 -> Int.compare v1 v2 | c -> c ) )
-        diffs
+  (* Removes changes from left and right when the only difference is the line number to avoid noise in output *)
+  let remove_common_changes list1 list2 =
+    let set1 =
+      List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty list1
     in
-    List.fold_left
-      ~f:(fun acc (left_line, right_line) ->
-        let line1 = get_line_content lines1 left_line in
-        let line2 = get_line_content lines2 right_line in
-        let acc = if String.length line1 > 0 then acc @ ["- " ^ line1] else acc in
-        let acc = if String.length line2 > 0 then acc @ ["+ " ^ line2] else acc in
-        acc )
-      ~init:[] diffs_sorted
+    let set2 =
+      List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty list2
+    in
+    let common = StringSet.inter set1 set2 in
+    let keep (_, s) = not (StringSet.mem s common) in
+    (List.filter ~f:keep list1, List.filter ~f:keep list2)
   in
-  List.remove_consecutive_duplicates ~equal:String.equal diffs
+  let lines_removed =
+    List.map
+      ~f:(fun line_number -> (line_number, get_line_content lines1 line_number))
+      lines_removed
+  in
+  let lines_added =
+    List.map ~f:(fun line_number -> (line_number, get_line_content lines2 line_number)) lines_added
+  in
+  let lines_removed, lines_added = remove_common_changes lines_removed lines_added in
+  List.remove_consecutive_duplicates ~equal:String.equal
+    ( List.map ~f:(fun (_, line_content) -> "- " ^ line_content) lines_removed
+    @ List.map ~f:(fun (_, line_content) -> "+ " ^ line_content) lines_added )
+
+
+let split_diffs diffs =
+  List.fold
+    ~f:(fun (lines_removed, lines_added) diff ->
+      match diff with
+      | LineRemoved line_number ->
+          (line_number :: lines_removed, lines_added)
+      | LineAdded line_number ->
+          (lines_removed, line_number :: lines_added) )
+    ~init:([], []) diffs
 
 
 let ast_diff ?(debug = false) src1 src2 =
@@ -320,7 +342,8 @@ let ast_diff ?(debug = false) src1 src2 =
   let ast1 = parse_and_transform parse_func src1 in
   let ast2 = parse_and_transform parse_func src2 in
   let diffs = get_diff ast1 ast2 in
-  let diffs = show_diff src1 src2 diffs in
+  let lines_removed, lines_added = split_diffs diffs in
+  let diffs = show_diff src1 src2 lines_removed lines_added in
   if debug then Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ;
   diffs
 

@@ -129,9 +129,7 @@ def foo(self) -> None:
     x = obj.prop
 |}
   in
-  let expected_diff =
-    ["-     x = obj.prop"; "+     assert obj is not None"; "+     x = obj.prop"]
-  in
+  let expected_diff = ["+     assert obj is not None"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -217,9 +215,7 @@ def main():
     print("Hello World!")
 |}
   in
-  let expected_diff =
-    ["-     print(\"Hello World!\")"; "+     print(1)"; "+     print(\"Hello World!\")"]
-  in
+  let expected_diff = ["+     print(1)"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -508,19 +504,7 @@ def foo() -> None:
   d = 4
   e = 5
 |} in
-  let expected_diff =
-    [ "-   x = 1"
-    ; "-   y = 2"
-    ; "-   z = 3"
-    ; "-   d = 4"
-    ; "-   e = 5"
-    ; "+   r = 2"
-    ; "+   x = 1"
-    ; "+   y = 2"
-    ; "+   z = 3"
-    ; "+   d = 4"
-    ; "+   e = 5" ]
-  in
+  let expected_diff = ["+   r = 2"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
