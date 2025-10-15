@@ -184,6 +184,20 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
+  let mark_loop_header cfg_node (disjs : DisjDomain.t list) =
+    if Config.pulse_experimental_infinite_loop_checker_v2 then
+      let id = Procdesc.Node.get_id cfg_node in
+      List.map disjs ~f:(fun disj ->
+          match disj with
+          | ContinueProgram astate, path ->
+              let timestamp = path.PathContext.timestamp in
+              let astate = AbductiveDomain.push_loop_header_info id {timestamp} astate in
+              (ContinueProgram astate, path)
+          | _ ->
+              disj )
+    else disjs
+
+
   let widen_list (prev : DisjDomain.t list) (next : DisjDomain.t list) ~num_iters :
       DisjDomain.t list =
     let plist = List.rev_map ~f:fst prev in

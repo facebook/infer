@@ -13,8 +13,16 @@ type iteration_info = {timestamp: Timestamp.t} [@@deriving compare, equal]
 
 type loop_info = iteration_info list [@@deriving compare, equal]
 
-type t = loop_info Procdesc.IdMap.t [@@deriving compare, equal]
+type t [@@deriving compare, equal]
+
+type id = Procdesc.Node.id
 
 val empty : t
+
+val mem : id -> t -> bool
+
+val get_loop_info : id -> t -> loop_info
+
+val push_loop_info : id -> iteration_info -> t -> t
 
 val pp : F.formatter -> t -> unit

@@ -129,6 +129,11 @@ let get_path_condition astate = astate.path_condition
 
 let set_path_condition path_condition astate = {astate with path_condition}
 
+let push_loop_header_info id info ({loop_header_info} as astate) =
+  let loop_header_info = PulseLoopHeaderInfo.push_loop_info id info loop_header_info in
+  {astate with loop_header_info}
+
+
 let record_transitive_access location astate =
   let trace = Trace.Immediate {location; history= ValueHistory.epoch} in
   let accesses = Trace.Set.add trace astate.transitive_info.accesses in
@@ -1207,7 +1212,6 @@ module Internal = struct
         the subgraph of [rhs] rooted at [addr_rhs]? *)
     let rec isograph_map_from_address ~astate_lhs ~lhs ~addr_lhs ~astate_rhs ~rhs ~addr_rhs mapping
         =
-      L.d_printfln "%a<->%a@\n" CanonValue.pp addr_lhs CanonValue.pp addr_rhs ;
       match record_equal mapping ~addr_lhs ~addr_rhs with
       | `AlreadyVisited ->
           IsomorphicUpTo mapping
