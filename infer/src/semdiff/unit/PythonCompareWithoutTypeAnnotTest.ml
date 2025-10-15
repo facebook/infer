@@ -21,7 +21,7 @@ let test_basic_fun_good _ =
 let test_basic_fun_bad _ =
   let prog1 = "def f():\n  return 1" in
   let prog2 = "def f():\n  return 2" in
-  let expected_diff = ["-   return 1"; "+   return 2"] in
+  let expected_diff = ["(Line 2) -   return 1, +   return 2"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -55,8 +55,8 @@ CATEGORIES_TO_REMOVE_RENAMED: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
 |}
   in
   let expected_diff =
-    [ "- CATEGORIES_TO_REMOVE = {'a': 1, 'b': 2, 'c': 3}"
-    ; "+ CATEGORIES_TO_REMOVE_RENAMED: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}" ]
+    [ "(Line 4) - CATEGORIES_TO_REMOVE = {'a': 1, 'b': 2, 'c': 3}, + CATEGORIES_TO_REMOVE_RENAMED: \
+       dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}" ]
   in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
@@ -110,7 +110,9 @@ def foo() -> None:
 def write_html(json_file_path:str) -> None: pass
 |}
   in
-  let expected_diff = ["-         \"file.json\""; "+         \"file_NEW.json\""] in
+  let expected_diff =
+    ["(Line 4) -         \"file.json\""; "(Line 6) +         \"file_NEW.json\""]
+  in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -129,7 +131,7 @@ def foo(self) -> None:
     x = obj.prop
 |}
   in
-  let expected_diff = ["+     assert obj is not None"] in
+  let expected_diff = ["(Line 4) +     assert obj is not None"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -215,7 +217,7 @@ def main():
     print("Hello World!")
 |}
   in
-  let expected_diff = ["+     print(1)"] in
+  let expected_diff = ["(Line 4) +     print(1)"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -287,7 +289,7 @@ async def authenticate(self, token: str, tag: str) -> None:
 async def authenticate(self, token: str, tag: str) -> None:
         print(2)
 |} in
-  let expected_diff = ["-         print(1)"; "+         print(2)"] in
+  let expected_diff = ["(Line 3) -         print(1), +         print(2)"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -318,7 +320,9 @@ def foo(self, x) -> None:
             print(1)
 |}
   in
-  let expected_diff = ["-         if x.__class__ == str:"; "+         if isinstance(x, None):"] in
+  let expected_diff =
+    ["(Line 3) -         if x.__class__ == str:, +         if isinstance(x, None):"]
+  in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -335,7 +339,7 @@ async def foo(self, x):
         print(1)
     print(2)
 |} in
-  let expected_diff = ["-         print(2)"; "+     print(2)"] in
+  let expected_diff = ["(Line 5) -         print(2), +     print(2)"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
@@ -357,7 +361,7 @@ def foo(self, x: int) -> None: pass
 def foo(self, x: int | None) -> None: pass
 |} in
   let expected_diff =
-    ["- def foo(self, x: int) -> None: pass"; "+ def foo(self, x: int | None) -> None: pass"]
+    ["(Line 2) - def foo(self, x: int) -> None: pass, + def foo(self, x: int | None) -> None: pass"]
   in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
@@ -370,7 +374,8 @@ async def foo(self, x: int) -> None: pass
 async def foo(self, x: str) -> None: pass
 |} in
   let expected_diff =
-    ["- async def foo(self, x: int) -> None: pass"; "+ async def foo(self, x: str) -> None: pass"]
+    [ "(Line 2) - async def foo(self, x: int) -> None: pass, + async def foo(self, x: str) -> \
+       None: pass" ]
   in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
@@ -391,8 +396,8 @@ CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
 |}
   in
   let expected_diff =
-    [ "- CATEGORIES_TO_REMOVE: dict[str, int] = {'a': 1, 'b': 2, 'c': 3}"
-    ; "+ CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}" ]
+    [ "(Line 4) - CATEGORIES_TO_REMOVE: dict[str, int] = {'a': 1, 'b': 2, 'c': 3}, + \
+       CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}" ]
   in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
@@ -440,7 +445,7 @@ from mylib import someUserDefinedType
 def foo() -> someUserDefinedType: pass
 |} in
   let expected_diff =
-    ["- def foo() -> SomeUserDefinedType: pass"; "+ def foo() -> someUserDefinedType: pass"]
+    ["(Line 3) - def foo() -> SomeUserDefinedType: pass, + def foo() -> someUserDefinedType: pass"]
   in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
@@ -504,7 +509,7 @@ def foo() -> None:
   d = 4
   e = 5
 |} in
-  let expected_diff = ["+   r = 2"] in
+  let expected_diff = ["(Line 3) +   r = 2"] in
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 

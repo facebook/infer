@@ -9,6 +9,7 @@ open! IStd
 module L = Logging
 module StringMap = IString.Map
 module StringSet = IString.Set
+module IntSet = IInt.Set
 
 type ast_node =
   | Dict of ast_node StringMap.t
@@ -20,7 +21,7 @@ type ast_node =
   | Null
 [@@deriving compare, equal]
 
-type diff = LineAdded of int | LineRemoved of int
+type diff = LineAdded of int | LineRemoved of int [@@deriving compare, equal]
 
 let init () =
   let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () in
@@ -294,6 +295,23 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
       @ append_right_line_option_to_diff_list right_line []
 
 
+let merge_changes removed added =
+  let rec aux removed added acc =
+    match (removed, added) with
+    | [], [] ->
+        List.rev acc
+    | a :: as', [] ->
+        aux as' [] ((Some a, None) :: acc)
+    | [], r :: rs' ->
+        aux [] rs' ((None, Some r) :: acc)
+    | ((ia, _) as a) :: as', ((ir, _) as r) :: rs' ->
+        if Int.equal ia ir then aux as' rs' ((Some a, Some r) :: acc)
+        else if ia < ir then aux as' added ((Some a, None) :: acc)
+        else aux removed rs' ((None, Some r) :: acc)
+  in
+  aux added removed []
+
+
 let show_diff file1 file2 lines_removed lines_added =
   let lines1 = String.split_on_chars ~on:['\n'] file1
   and lines2 = String.split_on_chars ~on:['\n'] file2 in
@@ -315,15 +333,27 @@ let show_diff file1 file2 lines_removed lines_added =
   let lines_removed =
     List.map
       ~f:(fun line_number -> (line_number, get_line_content lines1 line_number))
-      lines_removed
+      (IntSet.to_list lines_removed)
   in
   let lines_added =
-    List.map ~f:(fun line_number -> (line_number, get_line_content lines2 line_number)) lines_added
+    List.map
+      ~f:(fun line_number -> (line_number, get_line_content lines2 line_number))
+      (IntSet.to_list lines_added)
   in
   let lines_removed, lines_added = remove_common_changes lines_removed lines_added in
-  List.remove_consecutive_duplicates ~equal:String.equal
-    ( List.map ~f:(fun (_, line_content) -> "- " ^ line_content) lines_removed
-    @ List.map ~f:(fun (_, line_content) -> "+ " ^ line_content) lines_added )
+  let diffs = merge_changes lines_added lines_removed in
+  List.map
+    ~f:(fun (line_removed, line_added) ->
+      match (line_removed, line_added) with
+      | Some (line_number, line_content), None ->
+          Printf.sprintf "(Line %d) - %s" line_number line_content
+      | Some (line_number, line_content_removed), Some (_, line_content_added) ->
+          Printf.sprintf "(Line %d) - %s, + %s" line_number line_content_removed line_content_added
+      | None, Some (line_number, line_content_added) ->
+          Printf.sprintf "(Line %d) + %s" line_number line_content_added
+      | None, None ->
+          "" )
+    diffs
 
 
 let split_diffs diffs =
@@ -331,10 +361,10 @@ let split_diffs diffs =
     ~f:(fun (lines_removed, lines_added) diff ->
       match diff with
       | LineRemoved line_number ->
-          (line_number :: lines_removed, lines_added)
+          (IntSet.add line_number lines_removed, lines_added)
       | LineAdded line_number ->
-          (lines_removed, line_number :: lines_added) )
-    ~init:([], []) diffs
+          (lines_removed, IntSet.add line_number lines_added) )
+    ~init:(IntSet.empty, IntSet.empty) diffs
 
 
 let ast_diff ?(debug = false) src1 src2 =
