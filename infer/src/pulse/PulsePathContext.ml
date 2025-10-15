@@ -37,3 +37,5 @@ let pp fmt ({timestamp; is_non_disj} [@warning "+missing-record-field-pattern"])
 let initial = {timestamp= Timestamp.t0; is_non_disj= false}
 
 let post_exec_instr path = {path with timestamp= Timestamp.incr path.timestamp}
+
+let set_is_non_disj path = {path with is_non_disj= true}

@@ -8,7 +8,7 @@
 open! IStd
 open PulseBasicInterface
 
-type t =
+type t = private
   { timestamp: Timestamp.t  (** step number in an intra-procedural analysis *)
   ; is_non_disj: bool
         (** whether we are currently executing the abstract state inside the non-disjunctive
@@ -23,3 +23,5 @@ val initial : t
 
 val post_exec_instr : t -> t
 (** call this after each step of the symbolic execution to update the path information *)
+
+val set_is_non_disj : t -> t

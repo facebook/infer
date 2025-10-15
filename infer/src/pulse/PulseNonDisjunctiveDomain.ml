@@ -848,7 +848,7 @@ let exec non_disj ~exec_instr =
         (* move the abstract state from the non-disjunctive part into a single disjunct *)
         let non_disj = {non_disj with astate= Bottom} in
         (* set the context to "non-disjunctive" *)
-        let path = {path with is_non_disj= true} in
+        let path = PathContext.set_is_non_disj path in
         let exec_states_paths, non_disj =
           exec_instr ((ExecutionDomain.ContinueProgram astate, path), non_disj)
         in
