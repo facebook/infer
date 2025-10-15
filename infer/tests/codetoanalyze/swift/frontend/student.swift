@@ -79,8 +79,25 @@ func set_spouses(_ john: Person, _ jane: Person) {
     jane.spouse = john
 }
 
-func test_retain_cycle() {
+func test_retain_cycle_bad() {
     let john = Person(age: 30)
     let jane = Person(age: 35)
+    set_spouses(john, jane)
+}
+
+class Individual {
+    let age: Int
+    var spouse: Individual?
+    init(age: Int) {
+        self.age = age
+    }
+}
+func set_spouses(_ john: Individual, _ jane: Individual) {
+    john.spouse = jane
+    jane.spouse = john
+}
+func test_retain_cycle1_bad() {
+    let john = Individual(age: 30)
+    let jane = Individual(age: 35)
     set_spouses(john, jane)
 }
