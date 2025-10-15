@@ -90,6 +90,13 @@ type t =
             since abstract values [Var.t] have immutable semantics *) }
 [@@deriving compare, equal, yojson_of]
 
+type path_stamp = {path_cond: int Atom.Map.t; atom_set: Atom.Set.t; term_set: Term.Set.t}
+[@@deriving compare, equal]
+
+val extract_path_stamp : t -> path_stamp
+
+val pp_path_stamp : F.formatter -> path_stamp -> unit
+
 val extract_path_cond : t -> int Atom.Map.t
 
 val extract_term_cond : t -> Atom.Set.t

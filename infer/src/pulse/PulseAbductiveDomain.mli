@@ -390,7 +390,7 @@ val get_path_condition : t -> Formula.t
 
 val set_path_condition : Formula.t -> t -> t
 
-val push_loop_header_info : Procdesc.Node.id -> PulseLoopHeaderInfo.iteration_info -> t -> t
+val push_loop_header_info : Procdesc.Node.id -> Timestamp.t -> t -> t
 
 val record_transitive_access : Location.t -> t -> t
 

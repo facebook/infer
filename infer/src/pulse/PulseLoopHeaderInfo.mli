@@ -9,7 +9,8 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type iteration_info = {timestamp: Timestamp.t} [@@deriving compare, equal]
+type iteration_info = {timestamp: Timestamp.t; path_stamp: Formula.path_stamp}
+[@@deriving compare, equal]
 
 type loop_info = iteration_info list [@@deriving compare, equal]
 
@@ -21,8 +22,8 @@ val empty : t
 
 val mem : id -> t -> bool
 
-val get_loop_info : id -> t -> loop_info
+val has_previous_iteration_same_path_stamp : id -> t -> bool
 
-val push_loop_info : id -> iteration_info -> t -> t
+val push_loop_info : id -> Timestamp.t -> Formula.t -> t -> t
 
 val pp : F.formatter -> t -> unit

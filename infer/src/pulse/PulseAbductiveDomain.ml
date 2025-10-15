@@ -129,8 +129,10 @@ let get_path_condition astate = astate.path_condition
 
 let set_path_condition path_condition astate = {astate with path_condition}
 
-let push_loop_header_info id info ({loop_header_info} as astate) =
-  let loop_header_info = PulseLoopHeaderInfo.push_loop_info id info loop_header_info in
+let push_loop_header_info id timestamp ({path_condition; loop_header_info} as astate) =
+  let loop_header_info =
+    PulseLoopHeaderInfo.push_loop_info id timestamp path_condition loop_header_info
+  in
   {astate with loop_header_info}
 
 

@@ -9,7 +9,8 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type iteration_info = {timestamp: Timestamp.t} [@@deriving compare, equal]
+type iteration_info = {timestamp: Timestamp.t; path_stamp: Formula.path_stamp}
+[@@deriving compare, equal]
 
 type loop_info = iteration_info list [@@deriving compare, equal]
 
@@ -17,8 +18,9 @@ type t = loop_info Procdesc.IdMap.t [@@deriving compare, equal]
 
 type id = Procdesc.IdMap.key
 
-let pp_iteration_info fmt (idx, {timestamp}) =
-  F.fprintf fmt "#%d:{t= %a}" idx Timestamp.pp timestamp
+let pp_iteration_info fmt (idx, {timestamp; path_stamp}) =
+  F.fprintf fmt "@[<hv>#%d:{@[<v>t= %a@;path_stamp=%a@]}@]" idx Timestamp.pp timestamp
+    Formula.pp_path_stamp path_stamp
 
 
 let pp_loop_info fmt l =
@@ -27,18 +29,22 @@ let pp_loop_info fmt l =
   F.fprintf fmt "{%a}" (Pp.semicolon_seq pp_iteration_info) l_with_idx
 
 
-let pp fmt map =
-  let bindings = Procdesc.IdMap.bindings map in
-  let pp fmt (id, info) = F.fprintf fmt "node%a:%a" Procdesc.Node.pp_id id pp_loop_info info in
-  F.fprintf fmt "{@[<v>%a@]}" (Pp.semicolon_seq pp) bindings
-
+let pp fmt map = F.fprintf fmt "{@[<v>%a@]}" (Procdesc.IdMap.pp ~pp_value:pp_loop_info) map
 
 let empty = Procdesc.IdMap.empty
 
 let mem id map = Procdesc.IdMap.mem id map
 
-let get_loop_info = Procdesc.IdMap.find
+let has_previous_iteration_same_path_stamp id map =
+  match Procdesc.IdMap.find id map with
+  | info_current :: info_previous :: _ ->
+      Formula.equal_path_stamp info_current.path_stamp info_previous.path_stamp
+  | _ ->
+      false
 
-let push_loop_info id info map =
+
+let push_loop_info id timestamp formula map =
+  let path_stamp = Formula.extract_path_stamp formula in
+  let info = {timestamp; path_stamp} in
   let infos = Procdesc.IdMap.find_opt id map |> Option.value ~default:[] in
   Procdesc.IdMap.add id (info :: infos) map

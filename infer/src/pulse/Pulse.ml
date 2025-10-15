@@ -191,8 +191,12 @@ module PulseTransferFunctions = struct
           match disj with
           | ContinueProgram astate, path ->
               let timestamp = path.PathContext.timestamp in
-              let astate = AbductiveDomain.push_loop_header_info id {timestamp} astate in
-              (ContinueProgram astate, path)
+              let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
+              let {AbductiveDomain.loop_header_info} = astate in
+              if PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info then (
+                Metadata.record_alert_node cfg_node ;
+                (InfiniteLoop astate, path) )
+              else (ContinueProgram astate, path)
           | _ ->
               disj )
     else disjs

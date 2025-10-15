@@ -3957,8 +3957,11 @@ module Formula = struct
 
     and and_normalized_atoms (phi, new_eqs) atoms ~orig_atom ~add_term =
       let upd_phi =
-        if add_term && Config.pulse_experimental_infinite_loop_checker then
-          and_termcond_atoms phi orig_atom
+        if
+          add_term
+          && ( Config.pulse_experimental_infinite_loop_checker
+             || Config.pulse_experimental_infinite_loop_checker_v2 )
+        then and_termcond_atoms phi orig_atom
         else phi
       in
       SatUnsat.list_fold atoms
@@ -4228,8 +4231,10 @@ module Intervals = struct
                  (formula, new_eqs) )
         in
         let formula =
-          if Config.pulse_experimental_infinite_loop_checker then
-            update_formula_for_infinite_loop_checker ~need_atom binop op1 op2 formula
+          if
+            Config.pulse_experimental_infinite_loop_checker
+            || Config.pulse_experimental_infinite_loop_checker_v2
+          then update_formula_for_infinite_loop_checker ~need_atom binop op1 op2 formula
           else formula
         in
         refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
@@ -4377,8 +4382,10 @@ let prune_binop ?(depth = 0) ~negated (bop : Binop.t) ?(need_atom = false) x y f
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
   let formula =
-    if Config.pulse_experimental_infinite_loop_checker then
-      infinite_loop_checker_prune_binop bop tx ty t formula
+    if
+      Config.pulse_experimental_infinite_loop_checker
+      || Config.pulse_experimental_infinite_loop_checker_v2
+    then infinite_loop_checker_prune_binop bop tx ty t formula
     else formula
   in
   let atoms =
@@ -5141,3 +5148,32 @@ let join {conditions= conditions_lhs; phi= phi_lhs} {conditions= conditions_rhs;
   let phi_rhs = Formula.remove_conditions_for_join killed_conditions_rhs phi_rhs phi_lhs in
   let phi_join = Formula.join phi_lhs phi_rhs in
   {conditions= conditions_join; phi= phi_join}
+
+
+type path_stamp = {path_cond: int Atom.Map.t; atom_set: Atom.Set.t; term_set: Term.Set.t}
+[@@deriving compare, equal]
+
+let pp_path_cond fmt cond =
+  if Atom.Map.is_empty cond then F.pp_print_string fmt "(empty)" else pp_conditions Var.pp fmt cond
+
+
+let pp_atom_set fmt set =
+  if Atom.Set.is_empty set then F.pp_print_string fmt "(empty)"
+  else Atom.Set.pp_with_pp_var Var.pp fmt set
+
+
+let pp_term_set fmt set =
+  if Term.Set.is_empty set then F.pp_print_string fmt "(empty)"
+  else Term.Set.pp_with_pp_var Var.pp fmt set
+
+
+let extract_path_stamp formula =
+  let path_cond = extract_path_cond formula in
+  let atom_set = extract_term_cond formula in
+  let term_set = extract_term_cond2 formula in
+  {path_cond; atom_set; term_set}
+
+
+let pp_path_stamp fmt {path_cond; atom_set; term_set} =
+  F.fprintf fmt "{@[<v>path_cond=%a@;atom_set=%a@;term_set=%a@]}" pp_path_cond path_cond pp_atom_set
+    atom_set pp_term_set term_set
