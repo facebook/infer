@@ -87,7 +87,7 @@ func test_retain_cycle_bad() {
 
 class Individual {
     let age: Int
-    var spouse: Individual?
+    weak var spouse: Individual?
     init(age: Int) {
         self.age = age
     }
