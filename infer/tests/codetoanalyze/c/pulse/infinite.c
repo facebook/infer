@@ -155,6 +155,25 @@ void FN_nested_loop_cond_bad(int y) {
   }
 }
 
+void nested_external_bad(int y) {
+  int x = 0;
+  while (y < 100) {
+    while (x < 3) {
+      x++;
+    }
+  }
+}
+
+void nested_external_ok(int y) {
+  int x = 0;
+  while (y < 100) {
+    while (x < 2) {
+      x++;
+    }
+    y++;
+  }
+}
+
 void nested_loop_cond_ok(int y) {
   int x = 42;
   while (y < 100) {
@@ -357,6 +376,44 @@ void loop_with_return_var3_ok(int y) {
       return;
     else
       y++;
+}
+
+void FN_while_ge_bad() {
+  int i = 0;
+  while ((i >= 0) == 1)
+    i++;
+}
+
+void while_even_bad() {
+  int i = 0;
+  while (i % 2 == 0)
+    i = i + 2;
+}
+
+int incr_if_non_zero(int x, int y) {
+  if (y == 0)
+    return x;
+  else
+    return x + 1;
+}
+
+void incr_with_call_bad(int y) {
+  int i = 0;
+  while (i < 100)
+    i = incr_if_non_zero(i, y);
+}
+
+int incr_if_geq_zero(int x) {
+  if (x < 0)
+    return x;
+  else
+    return x + 1;
+}
+
+void incr_with_call_ok() {
+  int i = 0;
+  while (i < 100)
+    i = incr_if_geq_zero(i);
 }
 
 int FP_loop_repeated_ok(int i) {
