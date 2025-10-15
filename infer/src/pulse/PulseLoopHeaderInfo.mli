@@ -26,4 +26,6 @@ val has_previous_iteration_same_path_stamp : id -> t -> bool
 
 val push_loop_info : id -> Timestamp.t -> Formula.t -> t -> t
 
+val get_iteration_index : id -> t -> int
+
 val pp : F.formatter -> t -> unit

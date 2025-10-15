@@ -416,7 +416,7 @@ void incr_with_call_ok() {
     i = incr_if_geq_zero(i);
 }
 
-int FP_loop_repeated_ok(int i) {
+int loop_repeated_ok(int i) {
   int val = 0;
   for (i = 0; i < 3; i++)
     val++;

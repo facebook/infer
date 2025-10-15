@@ -130,6 +130,13 @@ let get_path_condition astate = astate.path_condition
 let set_path_condition path_condition astate = {astate with path_condition}
 
 let push_loop_header_info id timestamp ({path_condition; loop_header_info} as astate) =
+  let iteration_counter = PulseLoopHeaderInfo.get_iteration_index id loop_header_info in
+  let astate =
+    if Int.equal iteration_counter 0 then
+      let path_condition = Formula.and_path_flush astate.path_condition in
+      {astate with path_condition}
+    else astate
+  in
   let loop_header_info =
     PulseLoopHeaderInfo.push_loop_info id timestamp path_condition loop_header_info
   in

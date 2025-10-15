@@ -148,6 +148,8 @@ type new_eqs = new_eq RevList.t
 
 val ttrue : t
 
+val and_path_flush : t -> t
+
 val and_equal : operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
 val and_equal_vars : Var.t -> Var.t -> t -> (t * new_eqs) SatUnsat.t

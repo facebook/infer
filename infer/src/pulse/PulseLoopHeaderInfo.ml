@@ -37,8 +37,9 @@ let mem id map = Procdesc.IdMap.mem id map
 
 let has_previous_iteration_same_path_stamp id map =
   match Procdesc.IdMap.find id map with
-  | info_current :: info_previous :: _ ->
-      Formula.equal_path_stamp info_current.path_stamp info_previous.path_stamp
+  | info_current :: q ->
+      List.exists q ~f:(fun info ->
+          Formula.equal_path_stamp info_current.path_stamp info.path_stamp )
   | _ ->
       false
 
@@ -48,3 +49,7 @@ let push_loop_info id timestamp formula map =
   let info = {timestamp; path_stamp} in
   let infos = Procdesc.IdMap.find_opt id map |> Option.value ~default:[] in
   Procdesc.IdMap.add id (info :: infos) map
+
+
+let get_iteration_index id map =
+  Procdesc.IdMap.find_opt id map |> Option.value_map ~default:0 ~f:List.length
