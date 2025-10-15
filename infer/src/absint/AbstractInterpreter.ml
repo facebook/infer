@@ -912,7 +912,7 @@ module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
 
   and do_widen_then_narrow ~pp_instr cfg proc_data inv_map head ~is_first_visit rest =
     let inv_map =
-      exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode:Widen
+      exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~mode:Widen
         ~is_first_visit rest
     in
     exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode:Narrow
