@@ -427,11 +427,14 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
         let id = reg_to_id ~proc_state reg |> fst in
         id )
   in
+  let functions_to_skip = ["swift_retain"; "swift_weakLoadStrong"] in
   let call_exp =
     if
       (* skip calls to swift_retain *)
-      Textual.ProcName.equal proc.Textual.QualifiedProcName.name
-        (Textual.ProcName.of_string "swift_retain")
+      List.exists
+        ~f:(fun f ->
+          Textual.ProcName.equal proc.Textual.QualifiedProcName.name (Textual.ProcName.of_string f) )
+        functions_to_skip
     then List.hd_exn args
     else Textual.Exp.Call {proc; args; kind}
   in

@@ -1414,7 +1414,9 @@ let xlate_instr :
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
-      let swift_methods_to_skip = ["swift_release"; "swift_beginAccess"; "swift_endAccess"] in
+      let swift_methods_to_skip =
+        ["swift_release"; "swift_beginAccess"; "swift_endAccess"; "swift_weakInit"]
+      in
       if List.mem fname ~eq:String.equal swift_methods_to_skip then skip fname
       else
         (* builtins *)
