@@ -568,10 +568,13 @@ end
 module FieldDeclBridge = struct
   open FieldDecl
 
-  let to_sil ?is_weak lang {qualified_name} =
+  let to_sil lang field =
+    let is_weak =
+      if Lang.is_swift lang then Some (List.exists field.attributes ~f:Attr.is_weak) else None
+    in
     SilFieldname.make ?is_weak
-      (TypeNameBridge.to_sil lang qualified_name.enclosing_class)
-      qualified_name.name.value
+      (TypeNameBridge.to_sil lang field.qualified_name.enclosing_class)
+      field.qualified_name.name.value
 
 
   let of_sil f typ is_final =
@@ -627,11 +630,8 @@ module StructBridge = struct
             List.filter_map attributes ~f:(fun attr ->
                 if Attr.is_abstract attr then Some Annot.abstract else None )
           in
-          let is_weak =
-            if Lang.is_swift lang then Some (List.exists attributes ~f:Attr.is_weak) else None
-          in
           SilStruct.mk_field ~annot
-            (FieldDeclBridge.to_sil ?is_weak lang fdecl)
+            (FieldDeclBridge.to_sil lang fdecl)
             (TypBridge.to_sil lang ~attrs:attributes typ) )
     in
     let annots =
