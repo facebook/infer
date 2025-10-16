@@ -138,6 +138,8 @@ module Attr : sig
 
   val mk_static : t
 
+  val mk_weak : t
+
   val mk_final : t
 
   val is_async : t -> bool
@@ -155,6 +157,8 @@ module Attr : sig
   val is_notnull : t -> bool
 
   val is_static : t -> bool
+
+  val is_weak : t -> bool
 
   val is_interface : t -> bool
 

@@ -399,6 +399,8 @@ module Attr = struct
 
   let mk_trait = {name= "kind"; values= ["trait"]; loc= Location.Unknown}
 
+  let mk_weak = {name= "weak"; values= []; loc= Location.Unknown}
+
   let is_async {name; values} = String.equal name "async" && List.is_empty values
 
   let is_hack_wrapper {name; values} = String.equal name "wrapper" && List.is_empty values
@@ -430,6 +432,8 @@ module Attr = struct
   let is_static {name; values} = String.equal name "static" && List.is_empty values
 
   let is_variadic {name; values} = String.equal name "variadic" && List.is_empty values
+
+  let is_weak {name; values} = String.equal name "weak" && List.is_empty values
 
   let mk_python_args values = {name= "args"; values; loc= Location.Unknown}
 

@@ -41,7 +41,17 @@ and to_textual_field_decls lang ?struct_map ~tuple struct_name fields =
       if tuple then tuple_field_of_pos struct_name pos else field_of_pos struct_name pos
     in
     let textual_typ = to_textual_typ lang ?struct_map typ in
-    Textual.FieldDecl.{qualified_name; typ= textual_typ; attributes= []}
+    let attributes, textual_typ =
+      match textual_typ with
+      | Textual.Typ.(Ptr (Struct {name})) ->
+          if String.equal (Textual.BaseTypeName.to_string name) "swift::weak" then
+            let textual_typ = Textual.Typ.(Ptr Textual.Typ.any_type_llvm) in
+            ([Textual.Attr.mk_weak], textual_typ)
+          else ([], textual_typ)
+      | _ ->
+          ([], textual_typ)
+    in
+    Textual.FieldDecl.{qualified_name; typ= textual_typ; attributes}
   in
   let fields = StdUtils.iarray_to_list fields in
   List.mapi ~f:to_textual_field_decl fields

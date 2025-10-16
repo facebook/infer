@@ -413,7 +413,7 @@ type __infer_tuple_class<*ptr_elt,*ptr_elt,*ptr_elt,int,int> = {__infer_tuple_fi
                                                                 __infer_tuple_field_4: int}
 
 type __infer_tuple_class<*swift::refcounted,*swift::weak> = {__infer_tuple_field_0: *swift::refcounted;
-                                                             __infer_tuple_field_1: *swift::weak}
+                                                             __infer_tuple_field_1: .weak *ptr_elt}
 
 type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
                                      __infer_tuple_field_1: int}

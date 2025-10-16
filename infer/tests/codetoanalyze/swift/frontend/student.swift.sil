@@ -929,7 +929,7 @@ type $s5Hello7StudentC6weightSivM::Frame = {field_0: int[]}
 type $s5Hello8EmployeeV6weightSivM::Frame = {field_0: *TSi; field_1: *ptr_elt}
 
 type T5Hello10IndividualC = {field_0: *swift::refcounted; field_1: *TSi;
-                             field_2: *swift::weak}
+                             field_2: .weak *ptr_elt}
 
 type T5Hello10IndividualCSg = {field_0: int[]}
 
