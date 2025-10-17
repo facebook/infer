@@ -11,6 +11,7 @@ module StringMap = IString.Map
 module StringSet = IString.Set
 module IntSet = IInt.Set
 
+(* ===== Type Definitions ===== *)
 type ast_node =
   | Dict of ast_node StringMap.t
   | List of ast_node list
@@ -23,6 +24,25 @@ type ast_node =
 
 type diff = LineAdded of int | LineRemoved of int [@@deriving compare, equal]
 
+(* ===== Constants ===== *)
+(* AST field names *)
+let type_field_name = "_type"
+
+let field_args = "args"
+
+let field_ctx = "ctx"
+
+let field_end_lineno = "end_lineno"
+
+let field_func = "func"
+
+let field_id = "id"
+
+let field_keywords = "keywords"
+
+let field_lineno = "lineno"
+
+(* Python integration *)
 let python_ast_parser_code =
   {|
 import ast, json
@@ -59,7 +79,36 @@ let init () =
   parse_func
 
 
+(* ===== AST Type Helpers ===== *)
+let get_type fields =
+  StringMap.find_opt type_field_name fields
+  |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
+
+
+let is_type fields type_name : bool =
+  match get_type fields with Str name -> String.equal name type_name | _ -> false
+
+
+let is_line_number_field field_name =
+  String.equal field_name field_lineno || String.equal field_name field_end_lineno
+
+
+let is_type_annotation_field field_name =
+  String.equal field_name "annotation" || String.equal field_name "returns"
+
+
+let get_line_number (fields : ast_node StringMap.t) : int option =
+  match StringMap.find_opt field_lineno fields with Some (Int l1) -> Some l1 | _ -> None
+
+
+let get_line_number_of_node = function Dict f -> get_line_number f | _ -> None
+
+(* ===== AST Node Construction ===== *)
 let make_dict_node field_list = Dict (StringMap.of_list field_list)
+
+let find_field_or_null field_name fields =
+  Option.value (StringMap.find_opt field_name fields) ~default:Null
+
 
 let rec of_yojson (j : Yojson.Safe.t) : ast_node =
   match j with
@@ -81,33 +130,60 @@ let rec of_yojson (j : Yojson.Safe.t) : ast_node =
       L.die InternalError "unsupported JSON type"
 
 
-let type_field_name = "_type"
+let replace_key_in_dict_node fields key new_value = StringMap.add key new_value fields
 
-let field_args = "args"
+(* ===== AST Normalization ===== *)
 
-let field_ctx = "ctx"
-
-let field_end_lineno = "end_lineno"
-
-let field_func = "func"
-
-let field_id = "id"
-
-let field_keywords = "keywords"
-
-let field_lineno = "lineno"
-
-let get_type fields =
-  StringMap.find_opt type_field_name fields
-  |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
+let get_builtin_name_from_type_name type_name =
+  match type_name with
+  | "Dict" | "FrozenSet" | "List" | "Set" | "Tuple" ->
+      Some (String.lowercase type_name)
+  | _ ->
+      None
 
 
-let is_type fields type_name : bool =
-  match get_type fields with Str name -> String.equal name type_name | _ -> false
+let ann_assign_to_assign fields : ast_node =
+  (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
+  let assign_fields =
+    StringMap.fold
+      (fun k field_node acc ->
+        match k with
+        | "annotation" | "simple" ->
+            acc
+        | k when String.equal k type_field_name ->
+            StringMap.add type_field_name (Str "Assign") acc
+        | "target" ->
+            StringMap.add "targets" (List [field_node]) acc
+        | _ ->
+            StringMap.add k field_node acc )
+      fields StringMap.empty
+  in
+  Dict (StringMap.add "type_comment" Null assign_fields)
 
 
-let find_field_or_null field_name fields =
-  Option.value (StringMap.find_opt field_name fields) ~default:Null
+let get_annotations_node_ignore_case fields1 fields2 =
+  let get_id_name_opt value_fields =
+    match StringMap.find_opt field_id value_fields with
+    | Some (Str name) ->
+        get_builtin_name_from_type_name name
+    | _ ->
+        None
+  in
+  let update_fields fields value_fields new_name =
+    let new_value_fields = replace_key_in_dict_node value_fields field_id (Str new_name) in
+    replace_key_in_dict_node fields "value" (Dict new_value_fields)
+  in
+  match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
+  | Some (Dict value_fields1), Some (Dict value_fields2) -> (
+    match (get_id_name_opt value_fields1, get_id_name_opt value_fields2) with
+    | Some name1, None ->
+        Some (update_fields fields1 value_fields1 name1, fields2)
+    | None, Some name2 ->
+        Some (fields1, update_fields fields2 value_fields2 name2)
+    | _, _ ->
+        None )
+  | _, _ ->
+      None
 
 
 let rec normalize (node : ast_node) : ast_node =
@@ -167,82 +243,7 @@ let rec normalize (node : ast_node) : ast_node =
       other
 
 
-let parse_and_transform parse_func source =
-  let parse_func = parse_func |> Py.Callable.to_function in
-  let ast = parse_func [|Py.String.of_string source|] |> Py.String.to_string in
-  of_yojson (Yojson.Safe.from_string ast) |> normalize
-
-
-let write_output previous_file current_file diffs =
-  let out_path = ResultsDir.get_path SemDiff in
-  let outcome = if List.is_empty diffs then "equal" else "different" in
-  let json =
-    `Assoc
-      [ ("previous", `String previous_file)
-      ; ("current", `String current_file)
-      ; ("outcome", `String outcome)
-      ; ("diff", `List (List.map ~f:(fun diff -> `String diff) diffs)) ]
-  in
-  Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
-
-
-let get_line_number (fields : ast_node StringMap.t) : int option =
-  match StringMap.find_opt field_lineno fields with Some (Int l1) -> Some l1 | _ -> None
-
-
-let ann_assign_to_assign fields : ast_node =
-  (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
-  let assign_fields =
-    StringMap.fold
-      (fun k field_node acc ->
-        match k with
-        | "annotation" | "simple" ->
-            acc
-        | k when String.equal k type_field_name ->
-            StringMap.add type_field_name (Str "Assign") acc
-        | "target" ->
-            StringMap.add "targets" (List [field_node]) acc
-        | _ ->
-            StringMap.add k field_node acc )
-      fields StringMap.empty
-  in
-  Dict (StringMap.add "type_comment" Null assign_fields)
-
-
-let get_builtin_name_from_type_name type_name =
-  match type_name with
-  | "Dict" | "FrozenSet" | "List" | "Set" | "Tuple" ->
-      Some (String.lowercase type_name)
-  | _ ->
-      None
-
-
-let replace_key_in_dict_node fields key new_value = StringMap.add key new_value fields
-
-let get_annotations_node_ignore_case fields1 fields2 =
-  let get_id_name_opt value_fields =
-    match StringMap.find_opt field_id value_fields with
-    | Some (Str name) ->
-        get_builtin_name_from_type_name name
-    | _ ->
-        None
-  in
-  let update_fields fields value_fields new_name =
-    let new_value_fields = replace_key_in_dict_node value_fields field_id (Str new_name) in
-    replace_key_in_dict_node fields "value" (Dict new_value_fields)
-  in
-  match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
-  | Some (Dict value_fields1), Some (Dict value_fields2) -> (
-    match (get_id_name_opt value_fields1, get_id_name_opt value_fields2) with
-    | Some name1, None ->
-        Some (update_fields fields1 value_fields1 name1, fields2)
-    | None, Some name2 ->
-        Some (fields1, update_fields fields2 value_fields2 name2)
-    | _, _ ->
-        None )
-  | _, _ ->
-      None
-
+(* ===== Diff Computation ===== *)
 
 let append_removed_line_to_diff_list left_line acc =
   Option.value_map left_line ~default:acc ~f:(fun line -> LineRemoved line :: acc)
@@ -250,14 +251,6 @@ let append_removed_line_to_diff_list left_line acc =
 
 let append_added_line_to_diff_list right_line acc =
   Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
-
-
-let is_line_number_field field_name =
-  String.equal field_name field_lineno || String.equal field_name field_end_lineno
-
-
-let is_type_annotation_field field_name =
-  String.equal field_name "annotation" || String.equal field_name "returns"
 
 
 let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
@@ -314,7 +307,7 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
             aux (append_added_line_to_diff_list (get_line_number_of_node y) acc) [] yt
         | [], [] ->
             acc
-      and get_line_number_of_node = function Dict f -> get_line_number f | _ -> None in
+      in
       aux [] l1 l2
   | Dict f1, _ ->
       append_removed_line_to_diff_list (get_line_number f1) []
@@ -322,6 +315,37 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
       append_added_line_to_diff_list (get_line_number f2) []
   | _ ->
       append_removed_line_to_diff_list left_line [] @ append_added_line_to_diff_list right_line []
+
+
+let split_diffs diffs =
+  List.fold
+    ~f:(fun (lines_removed, lines_added) diff ->
+      match diff with
+      | LineRemoved line_number ->
+          (IntSet.add line_number lines_removed, lines_added)
+      | LineAdded line_number ->
+          (lines_removed, IntSet.add line_number lines_added) )
+    ~init:(IntSet.empty, IntSet.empty) diffs
+
+
+(* ===== Diff Formatting and Output ===== *)
+let parse_and_transform parse_func source =
+  let parse_func = parse_func |> Py.Callable.to_function in
+  let ast = parse_func [|Py.String.of_string source|] |> Py.String.to_string in
+  of_yojson (Yojson.Safe.from_string ast) |> normalize
+
+
+let write_output previous_file current_file diffs =
+  let out_path = ResultsDir.get_path SemDiff in
+  let outcome = if List.is_empty diffs then "equal" else "different" in
+  let json =
+    `Assoc
+      [ ("previous", `String previous_file)
+      ; ("current", `String current_file)
+      ; ("outcome", `String outcome)
+      ; ("diff", `List (List.map ~f:(fun diff -> `String diff) diffs)) ]
+  in
+  Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
 
 
 let merge_changes removed added =
@@ -384,17 +408,7 @@ let show_diff file1 file2 lines_removed lines_added =
     diffs
 
 
-let split_diffs diffs =
-  List.fold
-    ~f:(fun (lines_removed, lines_added) diff ->
-      match diff with
-      | LineRemoved line_number ->
-          (IntSet.add line_number lines_removed, lines_added)
-      | LineAdded line_number ->
-          (lines_removed, IntSet.add line_number lines_added) )
-    ~init:(IntSet.empty, IntSet.empty) diffs
-
-
+(* ===== Public API ===== *)
 let ast_diff ?(debug = false) src1 src2 =
   let parse_func = init () in
   let ast1 = parse_and_transform parse_func src1 in
