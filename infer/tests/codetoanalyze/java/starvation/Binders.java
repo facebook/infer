@@ -92,9 +92,4 @@ class Binders {
   void doGetConnectionInfoBad(WifiManager w) {
     w.getConnectionInfo();
   }
-
-  @UiThread
-  void doGetRealSizeBad(Display d) {
-    d.getRealSize(null);
-  }
 }
