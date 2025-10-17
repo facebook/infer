@@ -81,13 +81,19 @@ let rec of_yojson (j : Yojson.Safe.t) : ast_node =
 
 let type_field_name = "_type"
 
-let field_id = "id"
+let field_args = "args"
 
 let field_ctx = "ctx"
 
-let field_lineno = "lineno"
-
 let field_end_lineno = "end_lineno"
+
+let field_func = "func"
+
+let field_id = "id"
+
+let field_keywords = "keywords"
+
+let field_lineno = "lineno"
 
 let get_type fields =
   StringMap.find_opt type_field_name fields
@@ -143,9 +149,9 @@ let rec normalize (node : ast_node) : ast_node =
                [ (type_field_name, Str "Call")
                ; (field_lineno, lineno)
                ; (field_end_lineno, end_lineno)
-               ; ("func", func_node)
-               ; ("args", List [fst_arg; snd_arg])
-               ; ("keywords", List []) ] )
+               ; (field_func, func_node)
+               ; (field_args, List [fst_arg; snd_arg])
+               ; (field_keywords, List []) ] )
       | _ ->
           Dict (StringMap.map (fun v -> normalize v) fields) )
   | Dict fields ->
