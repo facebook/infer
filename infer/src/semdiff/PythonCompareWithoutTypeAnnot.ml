@@ -135,115 +135,117 @@ module AstNode = struct
 end
 
 (* ===== AST Normalization ===== *)
-
-let get_builtin_name_from_type_name type_name =
-  match type_name with
-  | "Dict" | "FrozenSet" | "List" | "Set" | "Tuple" ->
-      Some (String.lowercase type_name)
-  | _ ->
-      None
-
-
-let ann_assign_to_assign fields : ast_node =
-  (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
-  let assign_fields =
-    StringMap.fold
-      (fun k field_node acc ->
-        match k with
-        | "annotation" | "simple" ->
-            acc
-        | k when String.equal k type_field_name ->
-            StringMap.add type_field_name (Str "Assign") acc
-        | "target" ->
-            StringMap.add "targets" (List [field_node]) acc
-        | _ ->
-            StringMap.add k field_node acc )
-      fields StringMap.empty
-  in
-  Dict (StringMap.add "type_comment" Null assign_fields)
-
-
-let get_annotations_node_ignore_case fields1 fields2 =
-  let get_id_name_opt value_fields =
-    match StringMap.find_opt field_id value_fields with
-    | Some (Str name) ->
-        get_builtin_name_from_type_name name
+module Normalize = struct
+  let get_builtin_name_from_type_name type_name =
+    match type_name with
+    | "Dict" | "FrozenSet" | "List" | "Set" | "Tuple" ->
+        Some (String.lowercase type_name)
     | _ ->
         None
-  in
-  let update_fields fields value_fields new_name =
-    let new_value_fields = AstNode.replace_key_in_dict_node value_fields field_id (Str new_name) in
-    AstNode.replace_key_in_dict_node fields "value" (Dict new_value_fields)
-  in
-  match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
-  | Some (Dict value_fields1), Some (Dict value_fields2) -> (
-    match (get_id_name_opt value_fields1, get_id_name_opt value_fields2) with
-    | Some name1, None ->
-        Some (update_fields fields1 value_fields1 name1, fields2)
-    | None, Some name2 ->
-        Some (fields1, update_fields fields2 value_fields2 name2)
-    | _, _ ->
-        None )
-  | _, _ ->
-      None
 
 
-let rec normalize (node : ast_node) : ast_node =
-  match node with
-  | Dict fields when is_type fields "Import" || is_type fields "ImportFrom" ->
-      Null
-  | Dict fields when is_type fields "Compare" -> (
-      let left_node = StringMap.find_opt "left" fields in
-      let left_fields =
-        match left_node with Some (Dict fields) -> fields | _ -> StringMap.empty
-      in
-      match StringMap.find_opt "attr" left_fields with
-      | Some (Str "__class__") ->
-          let fst_arg =
-            match StringMap.find_opt "value" left_fields with
-            | Some arg ->
-                arg
-            | _ ->
-                L.die InternalError "Could not find object where __class__ attribute is accessed"
-          in
-          let snd_arg =
-            match StringMap.find_opt "comparators" fields with
-            | Some (List [x]) ->
-                x
-            | _ ->
-                L.die InternalError
-                  "Could not find rhs type in comparison using __class__ attribute"
-          in
-          let ctx_node = AstNode.find_field_or_null field_ctx left_fields in
-          let lineno = AstNode.find_field_or_null field_lineno fields in
-          let end_lineno = AstNode.find_field_or_null field_end_lineno fields in
-          let func_node =
-            AstNode.make_dict_node
-              [ (type_field_name, Str "Name")
-              ; (field_id, Str "isinstance")
-              ; (field_ctx, ctx_node)
-              ; (field_lineno, lineno)
-              ; (field_end_lineno, end_lineno) ]
-          in
-          AstNode.make_dict_node
-            [ (type_field_name, Str "Call")
-            ; (field_lineno, lineno)
-            ; (field_end_lineno, end_lineno)
-            ; (field_func, func_node)
-            ; (field_args, List [fst_arg; snd_arg])
-            ; (field_keywords, List []) ]
+  let ann_assign_to_assign fields : ast_node =
+    (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
+    let assign_fields =
+      StringMap.fold
+        (fun k field_node acc ->
+          match k with
+          | "annotation" | "simple" ->
+              acc
+          | k when String.equal k type_field_name ->
+              StringMap.add type_field_name (Str "Assign") acc
+          | "target" ->
+              StringMap.add "targets" (List [field_node]) acc
+          | _ ->
+              StringMap.add k field_node acc )
+        fields StringMap.empty
+    in
+    Dict (StringMap.add "type_comment" Null assign_fields)
+
+
+  let get_annotations_node_ignore_case fields1 fields2 =
+    let get_id_name_opt value_fields =
+      match StringMap.find_opt field_id value_fields with
+      | Some (Str name) ->
+          get_builtin_name_from_type_name name
       | _ ->
-          Dict (StringMap.map (fun v -> normalize v) fields) )
-  | Dict fields ->
-      Dict (StringMap.map (fun v -> normalize v) fields)
-  | List l ->
-      List
-        (List.filter
-           ~f:(fun n -> match n with Null -> false | _ -> true)
-           (List.map ~f:normalize l) )
-  | other ->
-      other
+          None
+    in
+    let update_fields fields value_fields new_name =
+      let new_value_fields =
+        AstNode.replace_key_in_dict_node value_fields field_id (Str new_name)
+      in
+      AstNode.replace_key_in_dict_node fields "value" (Dict new_value_fields)
+    in
+    match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
+    | Some (Dict value_fields1), Some (Dict value_fields2) -> (
+      match (get_id_name_opt value_fields1, get_id_name_opt value_fields2) with
+      | Some name1, None ->
+          Some (update_fields fields1 value_fields1 name1, fields2)
+      | None, Some name2 ->
+          Some (fields1, update_fields fields2 value_fields2 name2)
+      | _, _ ->
+          None )
+    | _, _ ->
+        None
 
+
+  let rec apply (node : ast_node) : ast_node =
+    match node with
+    | Dict fields when is_type fields "Import" || is_type fields "ImportFrom" ->
+        Null
+    | Dict fields when is_type fields "Compare" -> (
+        let left_node = StringMap.find_opt "left" fields in
+        let left_fields =
+          match left_node with Some (Dict fields) -> fields | _ -> StringMap.empty
+        in
+        match StringMap.find_opt "attr" left_fields with
+        | Some (Str "__class__") ->
+            let fst_arg =
+              match StringMap.find_opt "value" left_fields with
+              | Some arg ->
+                  arg
+              | _ ->
+                  L.die InternalError "Could not find object where __class__ attribute is accessed"
+            in
+            let snd_arg =
+              match StringMap.find_opt "comparators" fields with
+              | Some (List [x]) ->
+                  x
+              | _ ->
+                  L.die InternalError
+                    "Could not find rhs type in comparison using __class__ attribute"
+            in
+            let ctx_node = AstNode.find_field_or_null field_ctx left_fields in
+            let lineno = AstNode.find_field_or_null field_lineno fields in
+            let end_lineno = AstNode.find_field_or_null field_end_lineno fields in
+            let func_node =
+              AstNode.make_dict_node
+                [ (type_field_name, Str "Name")
+                ; (field_id, Str "isinstance")
+                ; (field_ctx, ctx_node)
+                ; (field_lineno, lineno)
+                ; (field_end_lineno, end_lineno) ]
+            in
+            AstNode.make_dict_node
+              [ (type_field_name, Str "Call")
+              ; (field_lineno, lineno)
+              ; (field_end_lineno, end_lineno)
+              ; (field_func, func_node)
+              ; (field_args, List [fst_arg; snd_arg])
+              ; (field_keywords, List []) ]
+        | _ ->
+            Dict (StringMap.map (fun v -> apply v) fields) )
+    | Dict fields ->
+        Dict (StringMap.map (fun v -> apply v) fields)
+    | List l ->
+        List
+          (List.filter
+             ~f:(fun n -> match n with Null -> false | _ -> true)
+             (List.map ~f:apply l) )
+    | other ->
+        other
+end
 
 (* ===== Diff Computation ===== *)
 module Diff = struct
@@ -264,7 +266,7 @@ module Diff = struct
         let left_line = get_line_number f1 in
         let right_line = get_line_number f2 in
         if is_type f1 "Assign" && is_type f2 "AnnAssign" then
-          get_diff ~left_line ~right_line n1 (ann_assign_to_assign f2)
+          get_diff ~left_line ~right_line n1 (Normalize.ann_assign_to_assign f2)
         else
           let diffs =
             StringMap.fold
@@ -276,7 +278,7 @@ module Diff = struct
                   | Null, Dict _ ->
                       acc
                   | Dict fields1, Dict fields2 -> (
-                    match get_annotations_node_ignore_case fields1 fields2 with
+                    match Normalize.get_annotations_node_ignore_case fields1 fields2 with
                     | None ->
                         get_diff ~left_line ~right_line v1 v2 @ acc
                     | Some (new_fields1, new_fields2) ->
@@ -335,7 +337,7 @@ end
 let parse_and_transform parse_func source =
   let parse_func = parse_func |> Py.Callable.to_function in
   let ast = parse_func [|Py.String.of_string source|] |> Py.String.to_string in
-  AstNode.of_yojson (Yojson.Safe.from_string ast) |> normalize
+  AstNode.of_yojson (Yojson.Safe.from_string ast) |> Normalize.apply
 
 
 let write_output previous_file current_file diffs =
