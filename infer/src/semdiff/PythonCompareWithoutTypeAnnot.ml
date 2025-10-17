@@ -246,89 +246,90 @@ let rec normalize (node : ast_node) : ast_node =
 
 
 (* ===== Diff Computation ===== *)
-
-let append_removed_line_to_diff_list left_line acc =
-  Option.value_map left_line ~default:acc ~f:(fun line -> LineRemoved line :: acc)
-
-
-let append_added_line_to_diff_list right_line acc =
-  Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
+module Diff = struct
+  let append_removed_line_to_diff_list left_line acc =
+    Option.value_map left_line ~default:acc ~f:(fun line -> LineRemoved line :: acc)
 
 
-let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
-    (n2 : ast_node) : diff list =
-  match (n1, n2) with
-  | a, b when equal_ast_node a b ->
-      []
-  | Dict f1, Dict f2 ->
-      let left_line = get_line_number f1 in
-      let right_line = get_line_number f2 in
-      if is_type f1 "Assign" && is_type f2 "AnnAssign" then
-        get_diff ~left_line ~right_line n1 (ann_assign_to_assign f2)
-      else
-        let diffs =
-          StringMap.fold
-            (fun k v1 acc ->
-              match StringMap.find_opt k f2 with
-              | Some v2 when is_type_annotation_field k -> (
-                (* special case for type annotations *)
-                match (v1, v2) with
-                | Null, Dict _ ->
+  let append_added_line_to_diff_list right_line acc =
+    Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
+
+
+  let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None)
+      (n1 : ast_node) (n2 : ast_node) : diff list =
+    match (n1, n2) with
+    | a, b when equal_ast_node a b ->
+        []
+    | Dict f1, Dict f2 ->
+        let left_line = get_line_number f1 in
+        let right_line = get_line_number f2 in
+        if is_type f1 "Assign" && is_type f2 "AnnAssign" then
+          get_diff ~left_line ~right_line n1 (ann_assign_to_assign f2)
+        else
+          let diffs =
+            StringMap.fold
+              (fun k v1 acc ->
+                match StringMap.find_opt k f2 with
+                | Some v2 when is_type_annotation_field k -> (
+                  (* special case for type annotations *)
+                  match (v1, v2) with
+                  | Null, Dict _ ->
+                      acc
+                  | Dict fields1, Dict fields2 -> (
+                    match get_annotations_node_ignore_case fields1 fields2 with
+                    | None ->
+                        get_diff ~left_line ~right_line v1 v2 @ acc
+                    | Some (new_fields1, new_fields2) ->
+                        get_diff ~left_line ~right_line (Dict new_fields1) (Dict new_fields2) @ acc
+                    )
+                  | _ ->
+                      get_diff ~left_line ~right_line v1 v2 @ acc )
+                | Some _ when is_line_number_field k ->
                     acc
-                | Dict fields1, Dict fields2 -> (
-                  match get_annotations_node_ignore_case fields1 fields2 with
-                  | None ->
-                      get_diff ~left_line ~right_line v1 v2 @ acc
-                  | Some (new_fields1, new_fields2) ->
-                      get_diff ~left_line ~right_line (Dict new_fields1) (Dict new_fields2) @ acc )
-                | _ ->
-                    get_diff ~left_line ~right_line v1 v2 @ acc )
-              | Some _ when is_line_number_field k ->
-                  acc
-              | Some v2 ->
-                  get_diff ~left_line ~right_line v1 v2 @ acc
-              | None ->
-                  append_removed_line_to_diff_list left_line acc )
-            f1 []
+                | Some v2 ->
+                    get_diff ~left_line ~right_line v1 v2 @ acc
+                | None ->
+                    append_removed_line_to_diff_list left_line acc )
+              f1 []
+          in
+          let missing_in_left =
+            StringMap.fold
+              (fun k _ acc ->
+                if StringMap.mem k f1 then acc else append_added_line_to_diff_list right_line acc )
+              f2 []
+          in
+          diffs @ missing_in_left
+    | List l1, List l2 ->
+        let rec aux acc xs ys =
+          match (xs, ys) with
+          | x :: xt, y :: yt ->
+              aux (get_diff ~left_line ~right_line x y @ acc) xt yt
+          | x :: xt, [] ->
+              aux (append_removed_line_to_diff_list (get_line_number_of_node x) acc) xt []
+          | [], y :: yt ->
+              aux (append_added_line_to_diff_list (get_line_number_of_node y) acc) [] yt
+          | [], [] ->
+              acc
         in
-        let missing_in_left =
-          StringMap.fold
-            (fun k _ acc ->
-              if StringMap.mem k f1 then acc else append_added_line_to_diff_list right_line acc )
-            f2 []
-        in
-        diffs @ missing_in_left
-  | List l1, List l2 ->
-      let rec aux acc xs ys =
-        match (xs, ys) with
-        | x :: xt, y :: yt ->
-            aux (get_diff ~left_line ~right_line x y @ acc) xt yt
-        | x :: xt, [] ->
-            aux (append_removed_line_to_diff_list (get_line_number_of_node x) acc) xt []
-        | [], y :: yt ->
-            aux (append_added_line_to_diff_list (get_line_number_of_node y) acc) [] yt
-        | [], [] ->
-            acc
-      in
-      aux [] l1 l2
-  | Dict f1, _ ->
-      append_removed_line_to_diff_list (get_line_number f1) []
-  | _, Dict f2 ->
-      append_added_line_to_diff_list (get_line_number f2) []
-  | _ ->
-      append_removed_line_to_diff_list left_line [] @ append_added_line_to_diff_list right_line []
+        aux [] l1 l2
+    | Dict f1, _ ->
+        append_removed_line_to_diff_list (get_line_number f1) []
+    | _, Dict f2 ->
+        append_added_line_to_diff_list (get_line_number f2) []
+    | _ ->
+        append_removed_line_to_diff_list left_line [] @ append_added_line_to_diff_list right_line []
 
 
-let split_diffs diffs =
-  List.fold
-    ~f:(fun (lines_removed, lines_added) diff ->
-      match diff with
-      | LineRemoved line_number ->
-          (IntSet.add line_number lines_removed, lines_added)
-      | LineAdded line_number ->
-          (lines_removed, IntSet.add line_number lines_added) )
-    ~init:(IntSet.empty, IntSet.empty) diffs
-
+  let split_diffs diffs =
+    List.fold
+      ~f:(fun (lines_removed, lines_added) diff ->
+        match diff with
+        | LineRemoved line_number ->
+            (IntSet.add line_number lines_removed, lines_added)
+        | LineAdded line_number ->
+            (lines_removed, IntSet.add line_number lines_added) )
+      ~init:(IntSet.empty, IntSet.empty) diffs
+end
 
 (* ===== Diff Formatting and Output ===== *)
 let parse_and_transform parse_func source =
@@ -415,8 +416,8 @@ let ast_diff ?(debug = false) src1 src2 =
   let parse_func = init () in
   let ast1 = parse_and_transform parse_func src1 in
   let ast2 = parse_and_transform parse_func src2 in
-  let diffs = get_diff ast1 ast2 in
-  let lines_removed, lines_added = split_diffs diffs in
+  let diffs = Diff.get_diff ast1 ast2 in
+  let lines_removed, lines_added = Diff.split_diffs diffs in
   let diffs = show_diff src1 src2 lines_removed lines_added in
   if debug then Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ;
   diffs
