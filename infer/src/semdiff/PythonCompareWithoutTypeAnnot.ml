@@ -104,33 +104,35 @@ let get_line_number (fields : ast_node StringMap.t) : int option =
 let get_line_number_of_node = function Dict f -> get_line_number f | _ -> None
 
 (* ===== AST Node Construction ===== *)
-let make_dict_node field_list = Dict (StringMap.of_list field_list)
+module AstNode = struct
+  let make_dict_node field_list = Dict (StringMap.of_list field_list)
 
-let find_field_or_null field_name fields =
-  Option.value (StringMap.find_opt field_name fields) ~default:Null
-
-
-let rec of_yojson (j : Yojson.Safe.t) : ast_node =
-  match j with
-  | `Assoc fields ->
-      make_dict_node (List.map ~f:(fun (k, v) -> (k, of_yojson v)) fields)
-  | `List l ->
-      List (List.map ~f:of_yojson l)
-  | `String s ->
-      Str s
-  | `Int i ->
-      Int i
-  | `Float f ->
-      Float f
-  | `Bool b ->
-      Bool b
-  | `Null ->
-      Null
-  | _ ->
-      L.die InternalError "unsupported JSON type"
+  let find_field_or_null field_name fields =
+    Option.value (StringMap.find_opt field_name fields) ~default:Null
 
 
-let replace_key_in_dict_node fields key new_value = StringMap.add key new_value fields
+  let rec of_yojson (j : Yojson.Safe.t) : ast_node =
+    match j with
+    | `Assoc fields ->
+        make_dict_node (List.map ~f:(fun (k, v) -> (k, of_yojson v)) fields)
+    | `List l ->
+        List (List.map ~f:of_yojson l)
+    | `String s ->
+        Str s
+    | `Int i ->
+        Int i
+    | `Float f ->
+        Float f
+    | `Bool b ->
+        Bool b
+    | `Null ->
+        Null
+    | _ ->
+        L.die InternalError "unsupported JSON type"
+
+
+  let replace_key_in_dict_node fields key new_value = StringMap.add key new_value fields
+end
 
 (* ===== AST Normalization ===== *)
 
@@ -170,8 +172,8 @@ let get_annotations_node_ignore_case fields1 fields2 =
         None
   in
   let update_fields fields value_fields new_name =
-    let new_value_fields = replace_key_in_dict_node value_fields field_id (Str new_name) in
-    replace_key_in_dict_node fields "value" (Dict new_value_fields)
+    let new_value_fields = AstNode.replace_key_in_dict_node value_fields field_id (Str new_name) in
+    AstNode.replace_key_in_dict_node fields "value" (Dict new_value_fields)
   in
   match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
   | Some (Dict value_fields1), Some (Dict value_fields2) -> (
@@ -212,18 +214,18 @@ let rec normalize (node : ast_node) : ast_node =
                 L.die InternalError
                   "Could not find rhs type in comparison using __class__ attribute"
           in
-          let ctx_node = find_field_or_null field_ctx left_fields in
-          let lineno = find_field_or_null field_lineno fields in
-          let end_lineno = find_field_or_null field_end_lineno fields in
+          let ctx_node = AstNode.find_field_or_null field_ctx left_fields in
+          let lineno = AstNode.find_field_or_null field_lineno fields in
+          let end_lineno = AstNode.find_field_or_null field_end_lineno fields in
           let func_node =
-            make_dict_node
+            AstNode.make_dict_node
               [ (type_field_name, Str "Name")
               ; (field_id, Str "isinstance")
               ; (field_ctx, ctx_node)
               ; (field_lineno, lineno)
               ; (field_end_lineno, end_lineno) ]
           in
-          make_dict_node
+          AstNode.make_dict_node
             [ (type_field_name, Str "Call")
             ; (field_lineno, lineno)
             ; (field_end_lineno, end_lineno)
@@ -332,7 +334,7 @@ let split_diffs diffs =
 let parse_and_transform parse_func source =
   let parse_func = parse_func |> Py.Callable.to_function in
   let ast = parse_func [|Py.String.of_string source|] |> Py.String.to_string in
-  of_yojson (Yojson.Safe.from_string ast) |> normalize
+  AstNode.of_yojson (Yojson.Safe.from_string ast) |> normalize
 
 
 let write_output previous_file current_file diffs =
