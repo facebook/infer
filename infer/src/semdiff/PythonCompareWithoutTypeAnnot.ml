@@ -79,8 +79,10 @@ let rec of_yojson (j : Yojson.Safe.t) : ast_node =
       L.die InternalError "unsupported JSON type"
 
 
+let type_field_name = "_type"
+
 let get_type fields =
-  StringMap.find_opt "_type" fields
+  StringMap.find_opt type_field_name fields
   |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
 
 
@@ -120,7 +122,7 @@ let rec normalize (node : ast_node) : ast_node =
           let func_node =
             Dict
               (StringMap.of_list
-                 [ ("_type", Str "Name")
+                 [ (type_field_name, Str "Name")
                  ; ("id", Str "isinstance")
                  ; ("ctx", ctx_node)
                  ; ("lineno", lineno)
@@ -128,7 +130,7 @@ let rec normalize (node : ast_node) : ast_node =
           in
           Dict
             (StringMap.of_list
-               [ ("_type", Str "Call")
+               [ (type_field_name, Str "Call")
                ; ("lineno", lineno)
                ; ("end_lineno", end_lineno)
                ; ("func", func_node)
@@ -178,8 +180,8 @@ let ann_assign_to_assign fields : ast_node =
         match k with
         | "annotation" | "simple" ->
             acc
-        | "_type" ->
-            StringMap.add "_type" (Str "Assign") acc
+        | k when String.equal k type_field_name ->
+            StringMap.add type_field_name (Str "Assign") acc
         | "target" ->
             StringMap.add "targets" (List [field_node]) acc
         | _ ->
