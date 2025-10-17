@@ -59,10 +59,12 @@ let init () =
   parse_func
 
 
+let make_dict_node field_list = Dict (StringMap.of_list field_list)
+
 let rec of_yojson (j : Yojson.Safe.t) : ast_node =
   match j with
   | `Assoc fields ->
-      Dict (StringMap.of_list (List.map ~f:(fun (k, v) -> (k, of_yojson v)) fields))
+      make_dict_node (List.map ~f:(fun (k, v) -> (k, of_yojson v)) fields)
   | `List l ->
       List (List.map ~f:of_yojson l)
   | `String s ->
@@ -138,22 +140,20 @@ let rec normalize (node : ast_node) : ast_node =
           let lineno = find_field_or_null field_lineno fields in
           let end_lineno = find_field_or_null field_end_lineno fields in
           let func_node =
-            Dict
-              (StringMap.of_list
-                 [ (type_field_name, Str "Name")
-                 ; (field_id, Str "isinstance")
-                 ; (field_ctx, ctx_node)
-                 ; (field_lineno, lineno)
-                 ; (field_end_lineno, end_lineno) ] )
+            make_dict_node
+              [ (type_field_name, Str "Name")
+              ; (field_id, Str "isinstance")
+              ; (field_ctx, ctx_node)
+              ; (field_lineno, lineno)
+              ; (field_end_lineno, end_lineno) ]
           in
-          Dict
-            (StringMap.of_list
-               [ (type_field_name, Str "Call")
-               ; (field_lineno, lineno)
-               ; (field_end_lineno, end_lineno)
-               ; (field_func, func_node)
-               ; (field_args, List [fst_arg; snd_arg])
-               ; (field_keywords, List []) ] )
+          make_dict_node
+            [ (type_field_name, Str "Call")
+            ; (field_lineno, lineno)
+            ; (field_end_lineno, end_lineno)
+            ; (field_func, func_node)
+            ; (field_args, List [fst_arg; snd_arg])
+            ; (field_keywords, List []) ]
       | _ ->
           Dict (StringMap.map (fun v -> normalize v) fields) )
   | Dict fields ->
