@@ -347,14 +347,13 @@ let show_diff file1 file2 lines_removed lines_added =
   let get_line_content lines n : string =
     if n - 1 < List.length lines then List.nth_exn lines (n - 1) else ""
   in
+  let lines_to_string_set lines =
+    List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty lines
+  in
   (* Removes changes from left and right when the only difference is the line number to avoid noise in output *)
   let remove_common_changes list1 list2 =
-    let set1 =
-      List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty list1
-    in
-    let set2 =
-      List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty list2
-    in
+    let set1 = lines_to_string_set list1 in
+    let set2 = lines_to_string_set list2 in
     let common = StringSet.inter set1 set2 in
     let keep (_, s) = not (StringSet.mem s common) in
     (List.filter ~f:keep list1, List.filter ~f:keep list2)
