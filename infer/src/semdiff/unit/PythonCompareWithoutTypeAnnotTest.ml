@@ -513,6 +513,52 @@ def foo() -> None:
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
+let fp_test_change_optional_type_good _ =
+  let prog1 = {|
+def foo(x: Optional[int]) -> None: pass
+|} in
+  let prog2 = {|
+def foo(x: int | None) -> None: pass
+|} in
+  assert (not (ast_diff_equal prog1 prog2))
+
+
+let test_change_optional_type_bad _ =
+  let prog1 = {|
+def foo(x: Optional[int]) -> None: pass
+|} in
+  let prog2 = {|
+def foo(x: str | None) -> None: pass
+|} in
+  let expected_diff =
+    ["(Line 2) - def foo(x: Optional[int]) -> None: pass, + def foo(x: str | None) -> None: pass"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
+
+
+let fp_test_change_any_type_good _ =
+  let prog1 = {|
+def foo(x: Any) -> None: pass
+|} in
+  let prog2 = {|
+def foo(x: object) -> None: pass
+|} in
+  assert (not (ast_diff_equal prog1 prog2))
+
+
+let test_change_any_type_bad _ =
+  let prog1 = {|
+def foo(x: Any) -> None: pass
+|} in
+  let prog2 = {|
+def foo(x: str) -> None: pass
+|} in
+  let expected_diff =
+    ["(Line 2) - def foo(x: Any) -> None: pass, + def foo(x: str) -> None: pass"]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -546,7 +592,11 @@ let suite =
        ; "fp_test_initialisation_set_good" >:: fp_test_initialisation_set_good
        ; "fp_equivalent_logic_good" >:: fp_equivalent_logic_good
        ; "fp_type_annotation_with_quotes_good" >:: fp_type_annotation_with_quotes_good
-       ; "noise_in_diff_bad" >:: noise_in_diff_bad ]
+       ; "noise_in_diff_bad" >:: noise_in_diff_bad
+       ; "fp_test_change_optional_type_good" >:: fp_test_change_optional_type_good
+       ; "test_change_optional_type_bad" >:: test_change_optional_type_bad
+       ; "fp_test_change_any_type_good" >:: fp_test_change_any_type_good
+       ; "test_change_any_type_bad" >:: test_change_any_type_bad ]
 
 
 let () = run_test_tt_main suite
