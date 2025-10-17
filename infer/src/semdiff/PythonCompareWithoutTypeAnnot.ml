@@ -333,85 +333,87 @@ module Diff = struct
       ~init:(IntSet.empty, IntSet.empty) diffs
 end
 
-(* ===== Diff Formatting and Output ===== *)
 let parse_and_transform parse_func source =
   let parse_func = parse_func |> Py.Callable.to_function in
   let ast = parse_func [|Py.String.of_string source|] |> Py.String.to_string in
   AstNode.of_yojson (Yojson.Safe.from_string ast) |> Normalize.apply
 
 
-let write_output previous_file current_file diffs =
-  let out_path = ResultsDir.get_path SemDiff in
-  let outcome = if List.is_empty diffs then "equal" else "different" in
-  let json =
-    `Assoc
-      [ ("previous", `String previous_file)
-      ; ("current", `String current_file)
-      ; ("outcome", `String outcome)
-      ; ("diff", `List (List.map ~f:(fun diff -> `String diff) diffs)) ]
-  in
-  Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
+(* ===== Diff Formatting and Output ===== *)
+module Output = struct
+  let write_output previous_file current_file diffs =
+    let out_path = ResultsDir.get_path SemDiff in
+    let outcome = if List.is_empty diffs then "equal" else "different" in
+    let json =
+      `Assoc
+        [ ("previous", `String previous_file)
+        ; ("current", `String current_file)
+        ; ("outcome", `String outcome)
+        ; ("diff", `List (List.map ~f:(fun diff -> `String diff) diffs)) ]
+    in
+    Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
 
 
-let merge_changes removed added =
-  let rec aux removed added acc =
-    match (removed, added) with
-    | [], [] ->
-        List.rev acc
-    | a :: as', [] ->
-        aux as' [] ((Some a, None) :: acc)
-    | [], r :: rs' ->
-        aux [] rs' ((None, Some r) :: acc)
-    | ((ia, _) as a) :: as', ((ir, _) as r) :: rs' ->
-        if Int.equal ia ir then aux as' rs' ((Some a, Some r) :: acc)
-        else if ia < ir then aux as' added ((Some a, None) :: acc)
-        else aux removed rs' ((None, Some r) :: acc)
-  in
-  aux added removed []
+  let merge_changes removed added =
+    let rec aux removed added acc =
+      match (removed, added) with
+      | [], [] ->
+          List.rev acc
+      | a :: as', [] ->
+          aux as' [] ((Some a, None) :: acc)
+      | [], r :: rs' ->
+          aux [] rs' ((None, Some r) :: acc)
+      | ((ia, _) as a) :: as', ((ir, _) as r) :: rs' ->
+          if Int.equal ia ir then aux as' rs' ((Some a, Some r) :: acc)
+          else if ia < ir then aux as' added ((Some a, None) :: acc)
+          else aux removed rs' ((None, Some r) :: acc)
+    in
+    aux added removed []
 
 
-let show_diff file1 file2 lines_removed lines_added =
-  let lines1 = String.split_on_chars ~on:['\n'] file1
-  and lines2 = String.split_on_chars ~on:['\n'] file2 in
-  let get_line_content lines n : string =
-    if n - 1 < List.length lines then List.nth_exn lines (n - 1) else ""
-  in
-  let lines_to_string_set lines =
-    List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty lines
-  in
-  (* Removes changes from left and right when the only difference is the line number to avoid noise in output *)
-  let remove_common_changes list1 list2 =
-    let set1 = lines_to_string_set list1 in
-    let set2 = lines_to_string_set list2 in
-    let common = StringSet.inter set1 set2 in
-    let keep (_, s) = not (StringSet.mem s common) in
-    (List.filter ~f:keep list1, List.filter ~f:keep list2)
-  in
-  let lines_removed =
+  let show_diff file1 file2 lines_removed lines_added =
+    let lines1 = String.split_on_chars ~on:['\n'] file1
+    and lines2 = String.split_on_chars ~on:['\n'] file2 in
+    let get_line_content lines n : string =
+      if n - 1 < List.length lines then List.nth_exn lines (n - 1) else ""
+    in
+    let lines_to_string_set lines =
+      List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty lines
+    in
+    (* Removes changes from left and right when the only difference is the line number to avoid noise in output *)
+    let remove_common_changes list1 list2 =
+      let set1 = lines_to_string_set list1 in
+      let set2 = lines_to_string_set list2 in
+      let common = StringSet.inter set1 set2 in
+      let keep (_, s) = not (StringSet.mem s common) in
+      (List.filter ~f:keep list1, List.filter ~f:keep list2)
+    in
+    let lines_removed =
+      List.map
+        ~f:(fun line_number -> (line_number, get_line_content lines1 line_number))
+        (IntSet.to_list lines_removed)
+    in
+    let lines_added =
+      List.map
+        ~f:(fun line_number -> (line_number, get_line_content lines2 line_number))
+        (IntSet.to_list lines_added)
+    in
+    let lines_removed, lines_added = remove_common_changes lines_removed lines_added in
+    let diffs = merge_changes lines_added lines_removed in
     List.map
-      ~f:(fun line_number -> (line_number, get_line_content lines1 line_number))
-      (IntSet.to_list lines_removed)
-  in
-  let lines_added =
-    List.map
-      ~f:(fun line_number -> (line_number, get_line_content lines2 line_number))
-      (IntSet.to_list lines_added)
-  in
-  let lines_removed, lines_added = remove_common_changes lines_removed lines_added in
-  let diffs = merge_changes lines_added lines_removed in
-  List.map
-    ~f:(fun (line_removed, line_added) ->
-      match (line_removed, line_added) with
-      | Some (line_number, line_content), None ->
-          Printf.sprintf "(Line %d) - %s" line_number line_content
-      | Some (line_number, line_content_removed), Some (_, line_content_added) ->
-          Printf.sprintf "(Line %d) - %s, + %s" line_number line_content_removed line_content_added
-      | None, Some (line_number, line_content_added) ->
-          Printf.sprintf "(Line %d) + %s" line_number line_content_added
-      | None, None ->
-          "" )
-    diffs
-
+      ~f:(fun (line_removed, line_added) ->
+        match (line_removed, line_added) with
+        | Some (line_number, line_content), None ->
+            Printf.sprintf "(Line %d) - %s" line_number line_content
+        | Some (line_number, line_content_removed), Some (_, line_content_added) ->
+            Printf.sprintf "(Line %d) - %s, + %s" line_number line_content_removed
+              line_content_added
+        | None, Some (line_number, line_content_added) ->
+            Printf.sprintf "(Line %d) + %s" line_number line_content_added
+        | None, None ->
+            "" )
+      diffs
+end
 
 (* ===== Public API ===== *)
 let ast_diff ?(debug = false) src1 src2 =
@@ -420,7 +422,7 @@ let ast_diff ?(debug = false) src1 src2 =
   let ast2 = parse_and_transform parse_func src2 in
   let diffs = Diff.get_diff ast1 ast2 in
   let lines_removed, lines_added = Diff.split_diffs diffs in
-  let diffs = show_diff src1 src2 lines_removed lines_added in
+  let diffs = Output.show_diff src1 src2 lines_removed lines_added in
   if debug then Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ;
   diffs
 
@@ -430,4 +432,4 @@ let semdiff previous_file current_file =
   let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
   let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
   let diffs = ast_diff ~debug previous_src current_src in
-  write_output previous_file current_file diffs
+  Output.write_output previous_file current_file diffs
