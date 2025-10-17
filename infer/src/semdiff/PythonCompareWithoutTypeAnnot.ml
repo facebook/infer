@@ -81,6 +81,14 @@ let rec of_yojson (j : Yojson.Safe.t) : ast_node =
 
 let type_field_name = "_type"
 
+let field_id = "id"
+
+let field_ctx = "ctx"
+
+let field_lineno = "lineno"
+
+let field_end_lineno = "end_lineno"
+
 let get_type fields =
   StringMap.find_opt type_field_name fields
   |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
@@ -116,23 +124,25 @@ let rec normalize (node : ast_node) : ast_node =
                 L.die InternalError
                   "Could not find rhs type in comparison using __class__ attribute"
           in
-          let ctx_node = Option.value (StringMap.find_opt "ctx" left_fields) ~default:Null in
-          let lineno = Option.value (StringMap.find_opt "lineno" fields) ~default:Null in
-          let end_lineno = Option.value (StringMap.find_opt "end_lineno" fields) ~default:Null in
+          let ctx_node = Option.value (StringMap.find_opt field_ctx left_fields) ~default:Null in
+          let lineno = Option.value (StringMap.find_opt field_lineno fields) ~default:Null in
+          let end_lineno =
+            Option.value (StringMap.find_opt field_end_lineno fields) ~default:Null
+          in
           let func_node =
             Dict
               (StringMap.of_list
                  [ (type_field_name, Str "Name")
-                 ; ("id", Str "isinstance")
-                 ; ("ctx", ctx_node)
-                 ; ("lineno", lineno)
-                 ; ("end_lineno", end_lineno) ] )
+                 ; (field_id, Str "isinstance")
+                 ; (field_ctx, ctx_node)
+                 ; (field_lineno, lineno)
+                 ; (field_end_lineno, end_lineno) ] )
           in
           Dict
             (StringMap.of_list
                [ (type_field_name, Str "Call")
-               ; ("lineno", lineno)
-               ; ("end_lineno", end_lineno)
+               ; (field_lineno, lineno)
+               ; (field_end_lineno, end_lineno)
                ; ("func", func_node)
                ; ("args", List [fst_arg; snd_arg])
                ; ("keywords", List []) ] )
@@ -169,7 +179,7 @@ let write_output previous_file current_file diffs =
 
 
 let get_line_number (fields : ast_node StringMap.t) : int option =
-  match StringMap.find_opt "lineno" fields with Some (Int l1) -> Some l1 | _ -> None
+  match StringMap.find_opt field_lineno fields with Some (Int l1) -> Some l1 | _ -> None
 
 
 let ann_assign_to_assign fields : ast_node =
@@ -203,14 +213,14 @@ let replace_key_in_dict_node fields key new_value = StringMap.add key new_value 
 
 let get_annotations_node_ignore_case fields1 fields2 =
   let get_id_name_opt value_fields =
-    match StringMap.find_opt "id" value_fields with
+    match StringMap.find_opt field_id value_fields with
     | Some (Str name) ->
         get_builtin_name_from_type_name name
     | _ ->
         None
   in
   let update_fields fields value_fields new_name =
-    let new_value_fields = replace_key_in_dict_node value_fields "id" (Str new_name) in
+    let new_value_fields = replace_key_in_dict_node value_fields field_id (Str new_name) in
     replace_key_in_dict_node fields "value" (Dict new_value_fields)
   in
   match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
@@ -260,7 +270,7 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
                       get_diff ~left_line ~right_line (Dict new_fields1) (Dict new_fields2) @ acc )
                 | _ ->
                     get_diff ~left_line ~right_line v1 v2 @ acc )
-              | Some _ when String.equal k "lineno" || String.equal k "end_lineno" ->
+              | Some _ when String.equal k field_lineno || String.equal k field_end_lineno ->
                   acc
               | Some v2 ->
                   get_diff ~left_line ~right_line v1 v2 @ acc
