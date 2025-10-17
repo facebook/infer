@@ -52,7 +52,7 @@ def parse_to_json(source: str) -> str:
 
 
 let init () =
-  let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () in
+  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
   let main_module = Py.Import.import_module "__main__" in
   let _ = Py.Run.simple_string python_ast_parser_code in
   let parse_func = Py.Module.get main_module "parse_to_json" in
