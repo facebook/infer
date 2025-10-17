@@ -252,6 +252,14 @@ let append_added_line_to_diff_list right_line acc =
   Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
 
 
+let is_line_number_field field_name =
+  String.equal field_name field_lineno || String.equal field_name field_end_lineno
+
+
+let is_type_annotation_field field_name =
+  String.equal field_name "annotation" || String.equal field_name "returns"
+
+
 let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
     (n2 : ast_node) : diff list =
   match (n1, n2) with
@@ -267,7 +275,7 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
           StringMap.fold
             (fun k v1 acc ->
               match StringMap.find_opt k f2 with
-              | Some v2 when String.equal k "annotation" || String.equal k "returns" -> (
+              | Some v2 when is_type_annotation_field k -> (
                 (* special case for type annotations *)
                 match (v1, v2) with
                 | Null, Dict _ ->
@@ -280,7 +288,7 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
                       get_diff ~left_line ~right_line (Dict new_fields1) (Dict new_fields2) @ acc )
                 | _ ->
                     get_diff ~left_line ~right_line v1 v2 @ acc )
-              | Some _ when String.equal k field_lineno || String.equal k field_end_lineno ->
+              | Some _ when is_line_number_field k ->
                   acc
               | Some v2 ->
                   get_diff ~left_line ~right_line v1 v2 @ acc
