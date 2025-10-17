@@ -244,14 +244,16 @@ let get_annotations_node_ignore_case fields1 fields2 =
       None
 
 
+let append_removed_line_to_diff_list left_line acc =
+  Option.value_map left_line ~default:acc ~f:(fun line -> LineRemoved line :: acc)
+
+
+let append_added_line_to_diff_list right_line acc =
+  Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
+
+
 let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : ast_node)
     (n2 : ast_node) : diff list =
-  let append_left_line_option_to_diff_list left_line acc =
-    Option.value_map left_line ~default:acc ~f:(fun left_line -> LineRemoved left_line :: acc)
-  in
-  let append_right_line_option_to_diff_list right_line acc =
-    Option.value_map right_line ~default:acc ~f:(fun right_line -> LineAdded right_line :: acc)
-  in
   match (n1, n2) with
   | a, b when equal_ast_node a b ->
       []
@@ -283,14 +285,13 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
               | Some v2 ->
                   get_diff ~left_line ~right_line v1 v2 @ acc
               | None ->
-                  append_left_line_option_to_diff_list left_line acc )
+                  append_removed_line_to_diff_list left_line acc )
             f1 []
         in
         let missing_in_left =
           StringMap.fold
             (fun k _ acc ->
-              if StringMap.mem k f1 then acc
-              else append_right_line_option_to_diff_list right_line acc )
+              if StringMap.mem k f1 then acc else append_added_line_to_diff_list right_line acc )
             f2 []
         in
         diffs @ missing_in_left
@@ -300,20 +301,19 @@ let rec get_diff ?(left_line : int option = None) ?(right_line : int option = No
         | x :: xt, y :: yt ->
             aux (get_diff ~left_line ~right_line x y @ acc) xt yt
         | x :: xt, [] ->
-            aux (append_left_line_option_to_diff_list (get_line_number_of_node x) acc) xt []
+            aux (append_removed_line_to_diff_list (get_line_number_of_node x) acc) xt []
         | [], y :: yt ->
-            aux (append_right_line_option_to_diff_list (get_line_number_of_node y) acc) [] yt
+            aux (append_added_line_to_diff_list (get_line_number_of_node y) acc) [] yt
         | [], [] ->
             acc
       and get_line_number_of_node = function Dict f -> get_line_number f | _ -> None in
       aux [] l1 l2
   | Dict f1, _ ->
-      append_left_line_option_to_diff_list (get_line_number f1) []
+      append_removed_line_to_diff_list (get_line_number f1) []
   | _, Dict f2 ->
-      append_right_line_option_to_diff_list (get_line_number f2) []
+      append_added_line_to_diff_list (get_line_number f2) []
   | _ ->
-      append_left_line_option_to_diff_list left_line []
-      @ append_right_line_option_to_diff_list right_line []
+      append_removed_line_to_diff_list left_line [] @ append_added_line_to_diff_list right_line []
 
 
 let merge_changes removed added =
