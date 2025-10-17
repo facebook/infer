@@ -23,10 +23,8 @@ type ast_node =
 
 type diff = LineAdded of int | LineRemoved of int [@@deriving compare, equal]
 
-let init () =
-  let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () in
-  let ast_to_json_code =
-    {|
+let python_ast_parser_code =
+  {|
 import ast, json
 
 def node_to_dict(node):
@@ -51,9 +49,12 @@ def parse_to_json(source: str) -> str:
     tree = ast.parse(source)
     return json.dumps(node_to_dict(tree))
   |}
-  in
+
+
+let init () =
+  let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () in
   let main_module = Py.Import.import_module "__main__" in
-  let _ = Py.Run.simple_string ast_to_json_code in
+  let _ = Py.Run.simple_string python_ast_parser_code in
   let parse_func = Py.Module.get main_module "parse_to_json" in
   parse_func
 
