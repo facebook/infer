@@ -104,6 +104,10 @@ let is_type fields type_name : bool =
   match get_type fields with Str name -> String.equal name type_name | _ -> false
 
 
+let find_field_or_null field_name fields =
+  Option.value (StringMap.find_opt field_name fields) ~default:Null
+
+
 let rec normalize (node : ast_node) : ast_node =
   match node with
   | Dict fields when is_type fields "Import" || is_type fields "ImportFrom" ->
@@ -130,11 +134,9 @@ let rec normalize (node : ast_node) : ast_node =
                 L.die InternalError
                   "Could not find rhs type in comparison using __class__ attribute"
           in
-          let ctx_node = Option.value (StringMap.find_opt field_ctx left_fields) ~default:Null in
-          let lineno = Option.value (StringMap.find_opt field_lineno fields) ~default:Null in
-          let end_lineno =
-            Option.value (StringMap.find_opt field_end_lineno fields) ~default:Null
-          in
+          let ctx_node = find_field_or_null field_ctx left_fields in
+          let lineno = find_field_or_null field_lineno fields in
+          let end_lineno = find_field_or_null field_end_lineno fields in
           let func_node =
             Dict
               (StringMap.of_list
