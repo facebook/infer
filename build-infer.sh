@@ -167,6 +167,18 @@ if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && \
   build_all
 fi
 
+CHARON_VERSION="0.1.123"
+CHARON_VERSION_COMMIT="4289a52cc427ac6f8ecbb746e2b226f5b297be40"
+# Check for charon on path when rust is enabled
+if [ "$BUILD_RUST" == "yes" ]; then
+  if [[ $(charon version) != "$CHARON_VERSION" ]] then
+    echo "Warning: charon command not found or charon is the incorrect version (is it on your PATH ?)"
+    echo "The rust analyzer requires version $CHARON_VERSION of the charon library" 
+    echo "You can download charon from https://github.com/AeneasVerif/charon/tree/$CHARON_VERSION_COMMIT"
+    exit 1
+  fi
+fi
+
 # enable --yes option for some commands in non-interactive mode
 YES=
 if [ "$INTERACTIVE" == "no" ]; then
@@ -190,8 +202,8 @@ install_opam_deps () {
     fi
 
     # Charon Version 0.1.123
-    opam pin add --no-action charon https://github.com/AeneasVerif/charon.git#4289a52cc427ac6f8ecbb746e2b226f5b297be40
-    opam pin add --no-action name_matcher_parser https://github.com/AeneasVerif/charon.git#4289a52cc427ac6f8ecbb746e2b226f5b297be40
+    opam pin add --no-action charon https://github.com/AeneasVerif/charon.git#$CHARON_VERSION_COMMIT
+    opam pin add --no-action name_matcher_parser https://github.com/AeneasVerif/charon.git#$CHARON_VERSION_COMMIT
     opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
     opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
     # camlzip checks that it is within the required version that the zip/jar file declares as
