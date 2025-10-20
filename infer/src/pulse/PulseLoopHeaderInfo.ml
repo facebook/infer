@@ -44,6 +44,15 @@ let has_previous_iteration_same_path_stamp id map =
       false
 
 
+let is_current_iteration_empty_path_stamp id map =
+  match Procdesc.IdMap.find id map with
+  | {path_stamp} :: _ :: _ ->
+      (* this is at minima the 2nd time we loop into this node and the path stamp is empty *)
+      Formula.is_empty_path_stamp path_stamp
+  | _ ->
+      false
+
+
 let push_loop_info id timestamp formula map =
   let path_stamp = Formula.extract_path_stamp formula in
   let info = {timestamp; path_stamp} in

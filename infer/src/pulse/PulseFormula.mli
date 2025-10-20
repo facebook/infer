@@ -95,6 +95,8 @@ type path_stamp = {path_cond: int Atom.Map.t; atom_set: Atom.Set.t; term_set: Te
 
 val extract_path_stamp : t -> path_stamp
 
+val is_empty_path_stamp : path_stamp -> bool
+
 val pp_path_stamp : F.formatter -> path_stamp -> unit
 
 val extract_path_cond : t -> int Atom.Map.t

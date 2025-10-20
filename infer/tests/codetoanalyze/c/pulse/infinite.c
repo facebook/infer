@@ -901,6 +901,16 @@ void FN_goto_in_loop_bad() {
   }
 }
 
+void goto_in_loop_without_eqtest_bad() {
+  int i = 0;
+  int j = 0;
+  while (i < 10) {
+  retry:
+    j++;
+    goto retry;
+  }
+}
+
 /* Goto in loop */
 void goto_cross_loop_bad() {
   int i = 0;

@@ -5185,6 +5185,10 @@ let extract_path_stamp formula =
   {path_cond; atom_set; term_set}
 
 
+let is_empty_path_stamp {path_cond; atom_set; term_set} =
+  Atom.Map.is_empty path_cond && Atom.Set.is_empty atom_set && Term.Set.is_empty term_set
+
+
 let pp_path_stamp fmt {path_cond; atom_set; term_set} =
   F.fprintf fmt "{@[<v>path_cond=%a@;atom_set=%a@;term_set=%a@]}" pp_path_cond path_cond pp_atom_set
     atom_set pp_term_set term_set

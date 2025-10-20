@@ -201,7 +201,8 @@ module PulseTransferFunctions = struct
           List.exists disjs ~f:(function
             | ContinueProgram astate, _ ->
                 let {AbductiveDomain.loop_header_info} = astate in
-                PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info
+                PulseLoopHeaderInfo.is_current_iteration_empty_path_stamp id loop_header_info
+                || PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info
             | _ ->
                 false )
         then
