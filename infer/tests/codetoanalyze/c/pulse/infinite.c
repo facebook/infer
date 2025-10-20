@@ -17,8 +17,7 @@ void two_liner_ok(int x) {
   return;
 }
 
-/* Pulse-inf: false negative: no support for infinite goto loops */
-void FN_simple_goto_bad(int y) {
+void simple_goto_bad(int y) {
 re:
   y++;
   goto re;
@@ -81,8 +80,7 @@ void loop_call_ok(int y) {
   return;
 }
 
-/* pulse-inf: FALSE NEGATIVE (empty pathcond) */
-void FN_twovars_goto_bad(int y) {
+void twovars_goto_bad(int y) {
   int z = y;
   int x = 0;
 label:
@@ -200,7 +198,6 @@ void simple_loop_ok(int x) {
     y++;
 }
 
-/* pulse-inf: works good, find bug */
 void loop_alternating_bad(int y, int x) {
   int turn = 0;
   while (x < 100) {
@@ -905,9 +902,6 @@ void FN_goto_in_loop_bad() {
 }
 
 /* Goto in loop */
-/* Pulseinf: find bug in CAV version */
-/* Upstream merged version would not find bug if we integrate the low FP fix for
- * "same iteration lasso" */
 void goto_cross_loop_bad() {
   int i = 0;
 

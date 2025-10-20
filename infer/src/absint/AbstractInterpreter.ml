@@ -118,7 +118,7 @@ module type NodeTransferFunctions = sig
   (** specifies how to symbolically execute the instructions of a node, using [exec_instr] to go
       over a single instruction *)
 
-  val mark_loop_header : CFG.Node.t -> Domain.t -> Domain.t
+  val mark_loop_header : analysis_data -> CFG.Node.t -> Domain.t -> Domain.t
 
   val pp_domain : Pp.print_kind -> F.formatter -> Domain.t -> unit
   (** some checkers may want to do custom pretty printing for HTML debug *)
@@ -148,7 +148,7 @@ module SimpleNodeTransferFunctions (T : TransferFunctions.SIL) = struct
     Instrs.foldi ~init:pre instrs ~f:exec_instr
 
 
-  let mark_loop_header _ x = x
+  let mark_loop_header _ _ x = x
 end
 
 module BackwardNodeTransferFunction (T : TransferFunctions) = struct
@@ -173,7 +173,7 @@ module BackwardNodeTransferFunction (T : TransferFunctions) = struct
     Instrs.foldi ~init:pre instrs ~f
 
 
-  let mark_loop_header _ x = x
+  let mark_loop_header _ _ x = x
 end
 
 module DisjunctiveMetadata = struct
@@ -368,7 +368,9 @@ struct
     let pp = pp_ TEXT
   end
 
-  let mark_loop_header node (disjs, non_disj) = (T.mark_loop_header node disjs, non_disj)
+  let mark_loop_header analysis_data node (disjs, non_disj) =
+    (T.mark_loop_header analysis_data node disjs, non_disj)
+
 
   let pp_domain = Domain.pp_
 
@@ -701,7 +703,7 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
           if is_loop_head && not is_narrowing then (
             let num_iters = (old_state.State.visit_count :> int) in
             let prev = old_state.State.pre in
-            let next = TransferFunctions.mark_loop_header node astate_pre in
+            let next = TransferFunctions.mark_loop_header analysis_data node astate_pre in
             let res = Domain.widen ~prev ~next ~num_iters in
             if Config.write_html then debug_absint_operation (`Widen (num_iters, (prev, next, res))) ;
             res )
@@ -721,7 +723,8 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
       else
         (* first time visiting this node *)
         let astate_pre =
-          if is_loop_head then TransferFunctions.mark_loop_header node astate_pre else astate_pre
+          if is_loop_head then TransferFunctions.mark_loop_header analysis_data node astate_pre
+          else astate_pre
         in
         (update_inv_map inv_map astate_pre None, DidNotReachFixPoint)
     in

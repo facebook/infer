@@ -184,21 +184,31 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
-  let mark_loop_header cfg_node (disjs : DisjDomain.t list) =
-    if Config.pulse_experimental_infinite_loop_checker_v2 then
+  let mark_loop_header analysis_data cfg_node (disjs : DisjDomain.t list) =
+    if Config.pulse_experimental_infinite_loop_checker_v2 then (
       let id = Procdesc.Node.get_id cfg_node in
-      List.map disjs ~f:(fun disj ->
-          match disj with
-          | ContinueProgram astate, path ->
-              let timestamp = path.PathContext.timestamp in
-              let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
-              let {AbductiveDomain.loop_header_info} = astate in
-              if PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info then (
-                Metadata.record_alert_node cfg_node ;
-                (InfiniteLoop astate, path) )
-              else (ContinueProgram astate, path)
-          | _ ->
-              disj )
+      let disjs =
+        List.map disjs ~f:(fun disj ->
+            match disj with
+            | ContinueProgram astate, path ->
+                let timestamp = path.PathContext.timestamp in
+                let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
+                (ContinueProgram astate, path)
+            | _ ->
+                disj )
+      in
+      ( if
+          List.exists disjs ~f:(function
+            | ContinueProgram astate, _ ->
+                let {AbductiveDomain.loop_header_info} = astate in
+                PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info
+            | _ ->
+                false )
+        then
+          let location = Procdesc.Node.get_loc cfg_node in
+          PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+            (InfiniteLoopError {location}) ) ;
+      disjs )
     else disjs
 
 

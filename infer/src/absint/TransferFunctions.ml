@@ -68,7 +68,7 @@ module type DisjReady = sig
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 
-  val mark_loop_header : CFG.Node.t -> DisjDomain.t list -> DisjDomain.t list
+  val mark_loop_header : analysis_data -> CFG.Node.t -> DisjDomain.t list -> DisjDomain.t list
 
   val widen_list : DisjDomain.t list -> DisjDomain.t list -> num_iters:int -> DisjDomain.t list
 
