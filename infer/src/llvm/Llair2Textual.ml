@@ -22,6 +22,8 @@ type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
 
 let method_class_index : methodClassIndex = ref Textual.ProcName.Map.empty
 
+let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
+
 let get_alloc_class_name =
   let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
   fun ~proc_state proc_name ->
@@ -416,7 +418,10 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
         let exp, _, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
         let deref_instrs, deref_exp =
           (* So far it looks like for C the load operations are already there when needed. *)
-          if Textual.Lang.is_swift proc_state.ProcState.lang then add_deref ~proc_state exp loc
+          if
+            Textual.Lang.is_swift proc_state.ProcState.lang
+            && not (Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign)
+          then add_deref ~proc_state exp loc
           else ([], exp)
         in
         (List.append deref_instrs (List.append acc_instrs instrs), deref_exp) )
@@ -436,7 +441,7 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
   let functions_to_skip = ["swift_retain"; "swift_weakLoadStrong"] in
   let call_exp =
     if
-      (* skip calls to swift_retain *)
+      (* skip calls to the elements in functions_to_skip  and returns its first argument instead. *)
       List.exists
         ~f:(fun f ->
           Textual.ProcName.equal proc.Textual.QualifiedProcName.name (Textual.ProcName.of_string f) )
@@ -486,8 +491,19 @@ and to_textual_call ~proc_state (call : 'a Llair.call) =
     | _ ->
         call_exp
   in
-  let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
-  let_instr :: args_instrs
+  (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
+  because we are flattenning the structure of weak pointers to be just like normal pointers in infer,
+  whilst in llvm the structures is field_2: *swift::weak}, type swift::weak = {field_0: *ptr_elt} *)
+  let instrs =
+    match call_exp with
+    | Textual.Exp.Call {proc; args= [arg1; arg2]}
+      when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
+        let instrs2, arg2 = add_deref ~proc_state arg2 loc in
+        Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
+    | _ ->
+        [Textual.Instr.Let {id; exp= call_exp; loc}]
+  in
+  instrs @ args_instrs
 
 
 and to_textual_builtin ~proc_state return name args loc =

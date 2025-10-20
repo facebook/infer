@@ -92,10 +92,12 @@ class Individual {
         self.age = age
     }
 }
+
 func set_spouses(_ john: Individual, _ jane: Individual) {
     john.spouse = jane
     jane.spouse = john
 }
+
 func test_retain_cycle1_bad() {
     let john = Individual(age: 30)
     let jane = Individual(age: 35)
