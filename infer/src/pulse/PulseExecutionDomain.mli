@@ -19,8 +19,10 @@ type 'abductive_domain_t base_t =
   | ExceptionRaised of 'abductive_domain_t  (** state after an exception has been thrown *)
   | ExitProgram of AbductiveDomain.Summary.t
       (** represents the state originating at exit/divergence. *)
-  | AbortProgram of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
-      (** represents the state at the program point that caused an issue *)
+  | AbortProgram of
+      {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t; trace_to_issue: Trace.t}
+      (** represents the state at the program point that caused an issue; the issue [diagnostic] has
+          been propagated from a call chain [trace] *)
   | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
       (** this path leads to an error but we don't have conclusive enough data to report it yet *)
   | LatentInvalidAccess of

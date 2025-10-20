@@ -378,17 +378,28 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ ->
               assert false
-          | AbortProgram {diagnostic} ->
-              (* bypass the current errors to avoid compounding issues *)
-              Sat (Ok (AbortProgram {astate= astate_summary; diagnostic}))
+          (* bypass the current errors to avoid compounding issues *)
+          | AbortProgram {diagnostic; trace_to_issue} ->
+              let trace_to_issue =
+                Trace.add_call (Call callee_proc_name) call_loc hist_map
+                  ~default_caller_history:ValueHistory.epoch trace_to_issue
+              in
+              Sat (Ok (AbortProgram {astate= astate_summary; diagnostic; trace_to_issue}))
           | InfiniteLoop _ ->
-              (* bypass the current errors to avoid compounding issues *)
-              (* TODO kill [InfiniteLoop] in favour of [AbortPorgram] *)
+              (* Summarisation removes [InfiniteLoop] states
+                 TODO kill [InfiniteLoop] in favour of [AbortPorgram] *)
               Sat
                 (Ok
                    (AbortProgram
-                      {astate= astate_summary; diagnostic= InfiniteLoopError {location= call_loc}}
-                   ) )
+                      { astate= astate_summary
+                      ; diagnostic= InfiniteLoopError {location= call_loc}
+                      ; trace_to_issue=
+                          Immediate
+                            { location=
+                                call_loc
+                                (* should be the start of the callee procedure but let's no worry
+                                   about it since we'll delete [InfiniteLoop] eventually *)
+                            ; history= ValueHistory.epoch } } ) )
           | ExitProgram _ ->
               Sat (Ok (ExitProgram astate_summary))
           | LatentAbortProgram {latent_issue} -> (
@@ -667,8 +678,8 @@ let add_need_dynamic_type_specialization needs execution_states =
             InfiniteLoop (update_astate astate)
         | ExitProgram summary ->
             ExitProgram (update_summary summary)
-        | AbortProgram {astate= summary; diagnostic} ->
-            AbortProgram {astate= update_summary summary; diagnostic}
+        | AbortProgram {astate= summary; diagnostic; trace_to_issue} ->
+            AbortProgram {astate= update_summary summary; diagnostic; trace_to_issue}
         | LatentAbortProgram latent_abort_program ->
             let astate = update_summary latent_abort_program.astate in
             LatentAbortProgram {latent_abort_program with astate}

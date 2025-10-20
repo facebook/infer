@@ -142,7 +142,8 @@ module Import = struct
     | InfiniteLoop of 'abductive_domain_t
     | ExceptionRaised of 'abductive_domain_t
     | ExitProgram of AbductiveDomain.Summary.t
-    | AbortProgram of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
+    | AbortProgram of
+        {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t; trace_to_issue: Trace.t}
     | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
     | LatentInvalidAccess of
         { astate: AbductiveDomain.Summary.t

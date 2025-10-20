@@ -18,14 +18,14 @@ let is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn =
 
 
 let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~latent
-    ?location_override (diagnostic : Diagnostic.t) =
+    ?location_override ?extra_trace (diagnostic : Diagnostic.t) =
   let open Diagnostic in
   if is_suppressed && not Config.pulse_report_issues_for_tests then ()
   else
     (* Report suppressed issues with a message to distinguish them from non-suppressed issues.
        Useful for infer's tests. *)
     let loc_instantiated = Diagnostic.get_location_instantiated diagnostic in
-    let extra_trace =
+    let suppressed_extra_trace =
       if is_suppressed && Config.pulse_report_issues_for_tests then
         let depth = 0 in
         let tags = [] in
@@ -154,24 +154,33 @@ let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed 
       | None ->
           Diagnostic.get_location diagnostic
     in
+    let ltr =
+      Option.fold extra_trace
+        ~init:(suppressed_extra_trace @ get_trace diagnostic)
+        ~f:(fun ltr extra_trace ->
+          Trace.add_to_errlog ~nesting:0
+            ~pp_immediate:(fun fmt -> F.fprintf fmt "original issue trace starts here")
+            extra_trace ltr )
+    in
     L.d_printfln ~color:Red "Reporting issue: %a: %s" IssueType.pp issue_type message ;
-    Reporting.log_issue proc_desc err_log ~loc ?loc_instantiated
-      ~ltr:(extra_trace @ get_trace diagnostic)
-      ~extras ~autofix ?suggestion Pulse issue_type message
+    Reporting.log_issue proc_desc err_log ~loc ?loc_instantiated ~ltr ~extras ~autofix ?suggestion
+      Pulse issue_type message
 
 
 let report analysis_data ~is_suppressed ~latent diagnostic =
   do_report analysis_data ~is_suppressed ~latent diagnostic
 
 
-let report_if_entry_point ({InterproceduralAnalysis.proc_desc} as analysis_data) diagnostic =
+let report_if_entry_point ({InterproceduralAnalysis.proc_desc} as analysis_data) trace_to_error
+    diagnostic =
   let proc_name_s = Procdesc.get_proc_name proc_desc |> Procname.to_string in
   if
     List.exists Config.pulse_report_issues_reachable_from ~f:(fun regex ->
         Str.string_match regex proc_name_s 0 )
   then
-    let location_override = Procdesc.get_loc proc_desc in
-    do_report analysis_data ~is_suppressed:false ~latent:false ~location_override diagnostic
+    let location_override = Trace.get_outer_location trace_to_error in
+    do_report analysis_data ~is_suppressed:false ~latent:false ~location_override
+      ~extra_trace:trace_to_error diagnostic
 
 
 let report_latent_issue analysis_data latent_issue ~is_suppressed =
@@ -343,7 +352,10 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
           if is_suppressed then L.d_printfln "ReportNow suppressed error" ;
           report analysis_data ~latent:false ~is_suppressed diagnostic ;
           if Diagnostic.aborts_execution path diagnostic then
-            Some (AbortProgram {astate= summary; diagnostic})
+            let trace_to_issue =
+              Trace.Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch}
+            in
+            Some (AbortProgram {astate= summary; diagnostic; trace_to_issue})
           else None
       | `DelayReport latent_issue ->
           if is_suppressed then L.d_printfln "DelayReport suppressed error" ;

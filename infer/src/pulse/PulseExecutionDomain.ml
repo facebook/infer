@@ -24,7 +24,10 @@ type 'abductive_domain_t base_t =
   | InfiniteLoop of 'abductive_domain_t
   | ExceptionRaised of 'abductive_domain_t
   | ExitProgram of AbductiveDomain.Summary.t
-  | AbortProgram of {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t}
+  | AbortProgram of
+      { astate: AbductiveDomain.Summary.t
+      ; diagnostic: Diagnostic.t
+      ; trace_to_issue: (Trace.t[@yojson.opaque]) }
   | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
   | LatentInvalidAccess of
       { astate: AbductiveDomain.Summary.t
@@ -273,6 +276,7 @@ let equal_fast exec_state1 exec_state2 =
   match (exec_state1, exec_state2) with
   | ( AbortProgram {astate= astate1; diagnostic= diagnostic1}
     , AbortProgram {astate= astate2; diagnostic= diagnostic2} ) ->
+      (* ignoring traces in [AbortProgram] *)
       phys_equal astate1 astate2 && phys_equal diagnostic1 diagnostic2
   | ExitProgram astate1, ExitProgram astate2 ->
       phys_equal astate1 astate2

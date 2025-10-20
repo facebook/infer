@@ -183,9 +183,9 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
   | InfiniteLoop astate ->
       summarize astate ~exec_domain_of_summary:infinite_raised ~is_exceptional_state:false
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
-  | AbortProgram {astate; diagnostic} ->
-      PulseReport.report_if_entry_point analysis_data diagnostic ;
-      Sat (AbortProgram {astate; diagnostic})
+  | AbortProgram {astate; diagnostic; trace_to_issue} ->
+      PulseReport.report_if_entry_point analysis_data trace_to_issue diagnostic ;
+      Sat (AbortProgram {astate; diagnostic; trace_to_issue})
   | ExitProgram astate ->
       Sat (ExitProgram astate)
   | LatentAbortProgram {astate; latent_issue} ->
@@ -202,7 +202,12 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
           Diagnostic.HackCannotInstantiateAbstractClass {type_name= specialized_type; trace}
         in
         PulseReport.report analysis_data ~is_suppressed:false ~latent:false diagnostic ;
-        Sat (AbortProgram {astate; diagnostic}) )
+        Sat
+          (AbortProgram
+             { astate
+             ; diagnostic
+             ; trace_to_issue=
+                 Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch} } ) )
 
 
 let force_exit_program analysis_data path post =
