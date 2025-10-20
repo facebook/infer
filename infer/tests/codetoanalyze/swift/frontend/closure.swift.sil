@@ -20,8 +20,8 @@ define .plain_name = "setupClosureOk" .method_offset = "19" T5Hello18RetainCycle
       n12 = load &var0 @[13:16]
       store &getelementptr_offset_1 <- 16 @[13:16]
       n13 = load &getelementptr_offset_1 @[13:16]
-      n16 = load &var0 @[13:16]
-      _ = $builtins.llvm_dynamic_call(n13, __sil_cast(<int>, "$s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA"), __sil_cast(<int>, n6), n16) @[13:16]
+      n18 = load &var0 @[13:16]
+      _ = $builtins.llvm_dynamic_call(n13, __sil_cast(<int>, "$s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA"), __sil_cast(<int>, n6), n18) @[13:16]
       jmp 14::void::ret @[13:16]
       
   #14::void::ret: @[16:5]
@@ -110,8 +110,9 @@ define .plain_name = "setupClosureBug" .method_offset = "18" T5Hello18RetainCycl
       n4 = load &var0 @[7:17]
       store &getelementptr_offset_1 <- 16 @[7:17]
       n5 = load &getelementptr_offset_1 @[7:17]
-      n8 = load &var0 @[7:17]
-      _ = $builtins.llvm_dynamic_call(n5, __sil_cast(<int>, "$s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_TA"), __sil_cast(<int>, &var0), n8) @[7:17]
+      n9 = load &var0 @[7:17]
+      n10 = load &var0 @[7:17]
+      _ = $builtins.llvm_dynamic_call(n5, __sil_cast(<int>, "$s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_TA"), __sil_cast(<int>, n9), n10) @[7:17]
       jmp 7::void::ret @[7:17]
       
   #7::void::ret: @[10:5]

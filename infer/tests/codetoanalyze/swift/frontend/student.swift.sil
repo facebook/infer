@@ -71,14 +71,16 @@ declare $s5Hello10IndividualC6spouseACSgvpfi() : *ptr_elt
 define .plain_name = "spouse.set" .method_offset = "13" T5Hello10IndividualC.$s5Hello10IndividualC6spouseACSgvs(var0: int, var1: *ptr_elt) : *ptr_elt {
   local var3: int[]
   #: @[206:0]
-      n2 = __sil_cast(<*ptr_elt>, &var0) @[206:0]
+      n2 = load &var0 @[206:0]
+      n3 = __sil_cast(<*ptr_elt>, n2) @[206:0]
       jmp 5::ret @[207:0]
       
   #5::ret: @[208:0]
-      n4 = load &var1 @[208:0]
-      n3 = n4.T5Hello10IndividualC.field_2 @[208:0]
-      n5 = load n3 @[211:0]
-      n7 = swift_weakAssign(n5, __sil_cast(<*ptr_elt>, &var0)) @[211:0]
+      n5 = load &var1 @[208:0]
+      n4 = n5.T5Hello10IndividualC.field_2 @[208:0]
+      n6 = load n4 @[211:0]
+      n8 = load &var0 @[211:0]
+      n9 = swift_weakAssign(n6, __sil_cast(<*ptr_elt>, n8)) @[211:0]
       jmp 8::ret @[212:0]
       
   #8::ret: @[216:0]
@@ -106,11 +108,12 @@ define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA10IndividualC_ADtF(v
       jmp 5::ret @[96:19]
       
   #10::ret: @[97:17]
-      n11 = load &var1 @[97:17]
+      n12 = load &var1 @[97:17]
       store &getelementptr_offset_2 <- 13 @[97:17]
-      n12 = load &getelementptr_offset_2 @[97:17]
-      n14 = load &var1 @[97:17]
-      _ = $builtins.llvm_dynamic_call(n12, __sil_cast(<int>, &var0), n14) @[97:17]
+      n13 = load &getelementptr_offset_2 @[97:17]
+      n15 = load &var0 @[97:17]
+      n16 = load &var1 @[97:17]
+      _ = $builtins.llvm_dynamic_call(n13, __sil_cast(<int>, n15), n16) @[97:17]
       jmp 14::void::ret @[97:17]
       
   #14::void::ret: @[98:1]
@@ -120,13 +123,14 @@ define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA10IndividualC_ADtF(v
       n5 = load &var0 @[96:17]
       store &getelementptr_offset_1 <- 13 @[96:17]
       n6 = load &getelementptr_offset_1 @[96:17]
-      n8 = load &var0 @[96:17]
-      _ = $builtins.llvm_dynamic_call(n6, __sil_cast(<int>, &var1), n8) @[96:17]
+      n8 = load &var1 @[96:17]
+      n9 = load &var0 @[96:17]
+      _ = $builtins.llvm_dynamic_call(n6, __sil_cast(<int>, n8), n9) @[96:17]
       jmp 9::void::ret @[96:17]
       
   #9::void::ret: @[97:19]
-      n9 = load &var0 @[97:19]
-      n10 = n9 @[97:19]
+      n10 = load &var0 @[97:19]
+      n11 = n10 @[97:19]
       jmp 10::ret @[97:19]
       
 } @?

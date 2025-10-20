@@ -200,7 +200,7 @@ let undef_exp exp =
   (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, None, [])
 
 
-let add_deref ~proc_state exp loc =
+let rec add_deref ~proc_state exp loc =
   let add_load_instr =
     let id = add_fresh_id ~proc_state () in
     let instr = Textual.Instr.Load {id; exp; typ= None; loc} in
@@ -212,6 +212,12 @@ let add_deref ~proc_state exp loc =
   | Textual.Exp.Var id -> (
       let typ = IdentMap.find_opt id proc_state.ProcState.ids in
       match typ with Some {typ= Textual.Typ.Ptr _} -> add_load_instr | _ -> ([], exp) )
+  | Textual.Exp.Call {proc; args= [Textual.Exp.Typ typ; exp]; kind= Textual.Exp.NonVirtual}
+    when Textual.Lang.is_swift proc_state.ProcState.lang
+         && Textual.QualifiedProcName.equal proc Textual.ProcDecl.cast_name ->
+      let instrs, exp = add_deref ~proc_state exp loc in
+      ( instrs
+      , Textual.Exp.Call {proc; args= [Textual.Exp.Typ typ; exp]; kind= Textual.Exp.NonVirtual} )
   | _ ->
       ([], exp)
 
