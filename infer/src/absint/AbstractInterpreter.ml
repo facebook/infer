@@ -581,20 +581,16 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
 
   let debug_absint_join_operation (`Join (inputs, into, result)) =
-    match (inputs, into) with
-    | [(_, left); (_, right)], None ->
-        debug_absint_operation (`Join (left, right, result))
-    | _, _ ->
-        let pp_into f =
-          Option.iter into ~f:(fun into -> F.fprintf f "@[<2>INTO:@ %a@]@\n@\n" pp_domain_html into)
-        in
-        (* We set the max number of [inputs] as 99, which is the number of predecessor nodes, but we
+    let pp_into f =
+      Option.iter into ~f:(fun into -> F.fprintf f "@[<2>INTO:@ %a@]@\n@\n" pp_domain_html into)
+    in
+    (* We set the max number of [inputs] as 99, which is the number of predecessor nodes, but we
            do not expect it to be hit in usual CFGs. *)
-        L.d_printfln "JOIN@\n@\n@[<v>INPUTS:@,%a@]@\n@\n%t@[<2>RESULT:@ %a@]@\n"
-          (IList.pp_print_list ~max:99 (fun f (node, astate) ->
-               F.fprintf f "@[<2>FROM Node %a:@ @[%a@]@]" Procdesc.Node.pp
-                 (Node.underlying_node node) pp_domain_html astate ) )
-          inputs pp_into pp_domain_html result
+    L.d_printfln "JOIN@\n@\n@[<v>INPUTS:@,%a@]@\n@\n%t@[<2>RESULT:@ %a@]@\n"
+      (IList.pp_print_list ~max:99 (fun f (node, astate) ->
+           F.fprintf f "@[<2>FROM Node %a:@ @[%a@]@]" Procdesc.Node.pp (Node.underlying_node node)
+             pp_domain_html astate ) )
+      inputs pp_into pp_domain_html result
 
 
   (** reference to log errors only at the innermost recursive call *)
