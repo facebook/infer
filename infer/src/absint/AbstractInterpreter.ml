@@ -559,25 +559,17 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
 
   let pp_domain_html = TransferFunctions.pp_domain HTML
 
-  let debug_absint_operation op =
-    let pp_op fmt op =
-      match op with
-      | `Join _ ->
-          F.pp_print_string fmt "JOIN"
-      | `Widen (num_iters, _) ->
-          F.fprintf fmt "WIDEN(num_iters= %d)" num_iters
-    in
-    let left, right, result = match op with `Join lrr | `Widen (_, lrr) -> lrr in
-    let pp_right f =
-      if phys_equal right left then F.pp_print_string f "= LEFT" else pp_domain_html f right
+  let debug_absint_widen_operation num_iters ~prev ~next ~result =
+    let pp_next f =
+      if phys_equal next prev then F.pp_print_string f "= PREV" else pp_domain_html f next
     in
     let pp_result f =
-      if phys_equal result left then F.pp_print_string f "= LEFT"
-      else if phys_equal result right then F.pp_print_string f "= RIGHT"
+      if phys_equal result prev then F.pp_print_string f "= PREV"
+      else if phys_equal result next then F.pp_print_string f "= NEXT"
       else pp_domain_html f result
     in
-    L.d_printfln "%a@\n@\nLEFT:   %a@\nRIGHT:  %t@\nRESULT: %t@." pp_op op pp_domain_html left
-      pp_right pp_result
+    L.d_printfln "WIDEN(num_iters= %d)@\n@\nPREV:   %a@\nNEXT:  %t@\nRESULT: %t@." num_iters
+      pp_domain_html prev pp_next pp_result
 
 
   let debug_absint_join_operation (`Join (inputs, into, result)) =
@@ -700,9 +692,9 @@ module AbstractInterpreterCommon (TransferFunctions : NodeTransferFunctions) = s
             let num_iters = (old_state.State.visit_count :> int) in
             let prev = old_state.State.pre in
             let next = TransferFunctions.mark_loop_header analysis_data node astate_pre in
-            let res = Domain.widen ~prev ~next ~num_iters in
-            if Config.write_html then debug_absint_operation (`Widen (num_iters, (prev, next, res))) ;
-            res )
+            let result = Domain.widen ~prev ~next ~num_iters in
+            if Config.write_html then debug_absint_widen_operation num_iters ~prev ~next ~result ;
+            result )
           else astate_pre
         in
         if
