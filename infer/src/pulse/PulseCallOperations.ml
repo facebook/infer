@@ -361,7 +361,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       map_call_result astate ~f:(fun return_val_opt _subst astate ->
           Sat (copy_to_caller_return_variable astate return_val_opt) )
   | InfiniteLoop astate
-  | AbortProgram astate
+  | AbortProgram {astate}
   | ExitProgram astate
   | LatentAbortProgram {astate}
   | LatentSpecializedTypeIssue {astate}
@@ -378,9 +378,17 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ ->
               assert false
-          | AbortProgram _ | InfiniteLoop _ ->
+          | AbortProgram {diagnostic} ->
               (* bypass the current errors to avoid compounding issues *)
-              Sat (Ok (AbortProgram astate_summary))
+              Sat (Ok (AbortProgram {astate= astate_summary; diagnostic}))
+          | InfiniteLoop _ ->
+              (* bypass the current errors to avoid compounding issues *)
+              (* TODO kill [InfiniteLoop] in favour of [AbortPorgram] *)
+              Sat
+                (Ok
+                   (AbortProgram
+                      {astate= astate_summary; diagnostic= InfiniteLoopError {location= call_loc}}
+                   ) )
           | ExitProgram _ ->
               Sat (Ok (ExitProgram astate_summary))
           | LatentAbortProgram {latent_issue} -> (
@@ -659,8 +667,8 @@ let add_need_dynamic_type_specialization needs execution_states =
             InfiniteLoop (update_astate astate)
         | ExitProgram summary ->
             ExitProgram (update_summary summary)
-        | AbortProgram summary ->
-            AbortProgram (update_summary summary)
+        | AbortProgram {astate= summary; diagnostic} ->
+            AbortProgram {astate= update_summary summary; diagnostic}
         | LatentAbortProgram latent_abort_program ->
             let astate = update_summary latent_abort_program.astate in
             LatentAbortProgram {latent_abort_program with astate}

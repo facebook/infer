@@ -204,7 +204,7 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
           Diagnostic.HackCannotInstantiateAbstractClass {type_name= specialized_type; trace}
         in
         PulseReport.report analysis_data ~is_suppressed:false ~latent:false diagnostic ;
-        Sat (AbortProgram astate) )
+        Sat (AbortProgram {astate; diagnostic}) )
 
 
 let force_exit_program analysis_data path post =

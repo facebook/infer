@@ -321,7 +321,9 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
       | `ReportNow ->
           if is_suppressed then L.d_printfln "ReportNow suppressed error" ;
           report analysis_data ~latent:false ~is_suppressed diagnostic ;
-          if Diagnostic.aborts_execution path diagnostic then Some (AbortProgram summary) else None
+          if Diagnostic.aborts_execution path diagnostic then
+            Some (AbortProgram {astate= summary; diagnostic})
+          else None
       | `DelayReport latent_issue ->
           if is_suppressed then L.d_printfln "DelayReport suppressed error" ;
           if Config.pulse_report_latent_issues then
