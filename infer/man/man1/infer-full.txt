@@ -1662,6 +1662,11 @@ OPTIONS
            Report data flows which pass through taint sink procname
            See also infer-report(1).
 
+       --pulse-report-issues-reachable-from +regex
+           Re-raise issues that Pulse was able to propagate all the way to
+           procedures matching one of the given regexes
+           See also infer-report(1) and infer-run(1).
+
        --pulse-retain-cycle-blocklist-pattern string
            Skip reporting retain cycles which include an expression that
            matches this pattern. It is useful when developers use naming
@@ -3163,6 +3168,9 @@ INTERNAL OPTIONS
        --pulse-report-issues-for-tests
            Activates: Do not suppress any of the issues found by Pulse.
            (Conversely: --no-pulse-report-issues-for-tests)
+
+       --pulse-report-issues-reachable-from-reset
+           Set --pulse-report-issues-reachable-from to the empty list.
 
        --no-pulse-report-latent-issues
            Deactivates: Report latent issues instead of waiting for them to

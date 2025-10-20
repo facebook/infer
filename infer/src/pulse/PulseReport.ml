@@ -17,8 +17,8 @@ let is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn =
   && match NullsafeMode.of_java_procname tenv jn with Default -> false | Local | Strict -> true
 
 
-let report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~latent
-    (diagnostic : Diagnostic.t) =
+let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~latent
+    ?location_override (diagnostic : Diagnostic.t) =
   let open Diagnostic in
   if is_suppressed && not Config.pulse_report_issues_for_tests then ()
   else
@@ -147,10 +147,31 @@ let report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~la
     let issue_type = get_issue_type tenv ~latent diagnostic proc_desc in
     let message, suggestion = get_message_and_suggestion diagnostic in
     let autofix = PulseAutofix.get_autofix proc_desc diagnostic in
+    let loc =
+      match location_override with
+      | Some location ->
+          location
+      | None ->
+          Diagnostic.get_location diagnostic
+    in
     L.d_printfln ~color:Red "Reporting issue: %a: %s" IssueType.pp issue_type message ;
-    Reporting.log_issue proc_desc err_log ~loc:(get_location diagnostic) ?loc_instantiated
+    Reporting.log_issue proc_desc err_log ~loc ?loc_instantiated
       ~ltr:(extra_trace @ get_trace diagnostic)
       ~extras ~autofix ?suggestion Pulse issue_type message
+
+
+let report analysis_data ~is_suppressed ~latent diagnostic =
+  do_report analysis_data ~is_suppressed ~latent diagnostic
+
+
+let report_if_entry_point ({InterproceduralAnalysis.proc_desc} as analysis_data) diagnostic =
+  let proc_name_s = Procdesc.get_proc_name proc_desc |> Procname.to_string in
+  if
+    List.exists Config.pulse_report_issues_reachable_from ~f:(fun regex ->
+        Str.string_match regex proc_name_s 0 )
+  then
+    let location_override = Procdesc.get_loc proc_desc in
+    do_report analysis_data ~is_suppressed:false ~latent:false ~location_override diagnostic
 
 
 let report_latent_issue analysis_data latent_issue ~is_suppressed =

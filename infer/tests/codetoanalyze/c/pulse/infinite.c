@@ -45,6 +45,10 @@ end:
   return;
 }
 
+void entry_point_calling_bad() {
+  simple_loop0_bad();
+}
+
 /* pulse-inf: Able to flag bug */
 void conditional_goto0_bad(int y) {
 re:

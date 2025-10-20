@@ -13,6 +13,8 @@ open PulseDomainInterface
 val report :
   _ InterproceduralAnalysis.t -> is_suppressed:bool -> latent:bool -> Diagnostic.t -> unit
 
+val report_if_entry_point : _ InterproceduralAnalysis.t -> Diagnostic.t -> unit
+
 val report_summary_error :
      _ InterproceduralAnalysis.t
   -> PathContext.t
