@@ -149,8 +149,12 @@ let add_widenstate (key : Procdesc.Node.t) (data : TermKey.Set.t) =
           widenstate )
 
 
-let has_infinite_state (lst : t list) : bool =
-  List.exists ~f:(fun x -> match x with InfiniteLoop _ -> true | _ -> false) lst
+let has_infinite_state exec_states =
+  List.exists exec_states ~f:(function
+    | AbortProgram {diagnostic= InfiniteLoopError _} | InfiniteLoop _ ->
+        true
+    | _ ->
+        false )
 
 
 let back_edge (prev : t list) (next : t list) (num_iters : int) : int option =
