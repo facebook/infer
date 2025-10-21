@@ -343,7 +343,7 @@ let rec invariant exp =
         assert (
           IArray.for_all2_exn elts args ~f:(fun (_, typ) arg -> LlairTyp.castable typ (typ_of arg) ) )
     | _ ->
-        assert false )
+        () )
 [@@warning "-missing-record-field-pattern"]
 
 

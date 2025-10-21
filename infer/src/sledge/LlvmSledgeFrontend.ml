@@ -300,7 +300,9 @@ let rec xlate_type : x -> Llvm.lltype -> Typ.t =
       | Array ->
           let elt = xlate_type x (Llvm.element_type llt) in
           let len = Llvm.array_length llt in
-          Typ.array ~elt ~len ~bits ~byts
+          if Int.equal len 8 && Int.equal byts 8 then Typ.integer ~bits ~byts
+          else if Int.equal len 1 && Int.equal byts 1 then Typ.bool
+          else Typ.array ~elt ~len ~bits ~byts
       | Struct ->
           let llelts = Llvm.struct_element_types llt in
           let len = Array.length llelts in

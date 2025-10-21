@@ -112,7 +112,7 @@ func test_optional(_ age : Int?) -> Int {
     }
 }
 
-func test_optional_good() {
+func test_optional_good_fp() {
     assert(test_optional(30) == 30)
 }
 

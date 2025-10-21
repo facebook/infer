@@ -378,7 +378,7 @@ type $s5Hello18RetainCycleExampleC7closureyycSgvM::Frame = {field_0: int[]}
 type T5Hello18RetainCycleExampleC = {field_0: *swift::refcounted;
                                      field_1: *TSi; field_2: *TIeg_Sg}
 
-type T5Hello18RetainCycleExampleCSg = {field_0: int[]}
+type T5Hello18RetainCycleExampleCSg = {field_0: int}
 
 type TIeg_Sg = {field_0: int[]}
 

@@ -291,7 +291,7 @@ define .plain_name = "test_optional_bad" $s5Hello17test_optional_badyyF() : *ptr
       
 } @?
 
-define .plain_name = "test_optional_good" $s5Hello18test_optional_goodyyF() : *ptr_elt {
+define .plain_name = "test_optional_good_fp" $s5Hello21test_optional_good_fpyyF() : *ptr_elt {
   #: @[116:5]
       n3 = $s5Hello13test_optionalyS2iSgF(30, 0) @[116:5]
       jmp 1::ret @[116:5]
@@ -1009,7 +1009,7 @@ type $s5Hello8EmployeeV6weightSivM::Frame = {field_0: *TSi; field_1: *ptr_elt}
 type T5Hello10IndividualC = {field_0: *swift::refcounted; field_1: *TSi;
                              field_2: .weak *ptr_elt}
 
-type T5Hello10IndividualCSg = {field_0: int[]}
+type T5Hello10IndividualCSg = {field_0: int}
 
 type T5Hello6PersonC = {field_0: *swift::refcounted; field_1: *TSi;
                         field_2: *ptr_elt}
@@ -1021,7 +1021,7 @@ type T5Hello8EmployeeV = {field_0: *TSi; field_1: *TSi}
 
 type TSi = {field_0: int}
 
-type TSiSg = {field_0: int[]; field_1: int[]}
+type TSiSg = {field_0: int; field_1: int}
 
 type __infer_tuple_class<*ptr_elt,*ptr_elt> = {__infer_tuple_field_0: *ptr_elt;
                                                __infer_tuple_field_1: *ptr_elt}
