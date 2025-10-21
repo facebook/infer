@@ -430,12 +430,12 @@ let aborts_execution (path : PathContext.t) = function
       | Else_clause _
       | Function_clause _
       | If_clause _
-      | Try_clause _ ) ->
+      | Try_clause _ )
+  | InfiniteLoopError _ ->
       (* these errors either abort the whole program or, if they are false positives, mean that
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       not path.is_non_disj
-  | InfiniteLoopError _
   | ConfigUsage _
   | ConstRefableParameter _
   | DynamicTypeMismatch _
