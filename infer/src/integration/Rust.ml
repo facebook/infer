@@ -8,7 +8,6 @@ open! IStd
 module L = Logging
 module F = Format
 
-
 let run_charon json_file prog args =
   let escaped_cmd = List.map ~f:Escape.escape_shell args |> String.concat ~sep:" " in
   let redirected_cmd =
@@ -34,7 +33,7 @@ let compile prog args =
         (IUnix.Exit_or_signal.to_string_hum status)
         output
   | Ok () ->
-      (json_file)
+      json_file
 
 
 let capture prog (args : string list) =
