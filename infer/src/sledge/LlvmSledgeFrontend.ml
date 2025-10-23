@@ -943,14 +943,14 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
             (* don't know what to do with [swift.protocol_requirement] *)
             (instrs, ptr)
         | _ ->
-            let fld =
+            let exp =
               match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op2) with
               | Some n ->
-                  n
+                  Llair.Exp.select typ ptr n
               | None ->
-                  fail "field offset %a not an int: %a" pp_llvalue op2 pp_llvalue llv ()
+                  Llair.Exp.nondet typ
             in
-            ([], Llair.Exp.select typ ptr fld)
+            ([], exp)
       else if
         Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
         && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Pointer
@@ -960,14 +960,14 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
         let op1 = Llvm.operand llv 1 in
         let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
         let typ = xlate_type x lltyp1 in
-        let fld =
+        let exp =
           match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op1) with
           | Some n ->
-              n
+              Llair.Exp.gep typ ptr n
           | None ->
-              fail "field offset %a not an int: %a" pp_llvalue op1 pp_llvalue llv ()
+              Llair.Exp.nondet typ
         in
-        ([], Llair.Exp.gep typ ptr fld)
+        ([], exp)
       else
         let rec xlate_indices i =
           [%Dbg.call fun {pf} -> pf "@ %i %a" i pp_llvalue (Llvm.operand llv i)]

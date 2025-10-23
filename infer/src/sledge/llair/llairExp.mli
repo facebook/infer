@@ -79,6 +79,7 @@ type t = private
       (** Address of named code block within parent function *)
   | Integer of {data: Z.t; typ: LlairTyp.t}  (** Integer constant *)
   | Float of {data: string; typ: LlairTyp.t}  (** Floating-point constant *)
+  | Nondet of {typ: LlairTyp.t}  (** Nondeterministic value *)
   | Ap1 of op1 * LlairTyp.t * t
   | Ap2 of op2 * LlairTyp.t * t * t
   | Ap3 of op3 * LlairTyp.t * t * t * t
@@ -213,6 +214,8 @@ val false_ : t
 val integer : LlairTyp.t -> Z.t -> t
 
 val float : LlairTyp.t -> string -> t
+
+val nondet : LlairTyp.t -> t
 
 (* type conversions *)
 val signed : int -> t -> to_:LlairTyp.t -> t

@@ -195,11 +195,11 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
   Textual.ProcDecl.of_binop sil_bin_op
 
 
-let undef_exp exp =
+let undef_exp ?typ exp =
   L.internal_error "unsupported llair exp %a@\n" Llair.Exp.pp exp ;
   let proc = builtin_qual_proc_name "llvm_nondet" in
   (* TODO: should include the arguments here too *)
-  (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, None, [])
+  (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, typ, [])
 
 
 let add_deref ~proc_state exp loc =
@@ -238,6 +238,9 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         else Textual.Exp.Const (Float (Float.of_string data))
       in
       (textual_exp, Some textual_typ, [])
+  | Nondet {typ} ->
+      let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
+      undef_exp ~typ:textual_typ exp
   | FuncName {name} ->
       (Textual.Exp.Const (Str name), None, [])
   | Reg {id; name; typ} ->

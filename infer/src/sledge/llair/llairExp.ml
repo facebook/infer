@@ -73,6 +73,7 @@ module T = struct
     | Label of {parent: string; name: string}
     | Integer of {data: Z.t; typ: LlairTyp.t}
     | Float of {data: string; typ: LlairTyp.t}
+    | Nondet of {typ: LlairTyp.t}
     | Ap1 of op1 * LlairTyp.t * t
     | Ap2 of op2 * LlairTyp.t * t * t
     | Ap3 of op3 * LlairTyp.t * t * t * t
@@ -189,6 +190,8 @@ module T = struct
         Dbg.pp_styled `Magenta "%a" fs Z.pp data
     | Float {data} ->
         pf "%s" data
+    | Nondet _ ->
+        pf "nondet"
     | Ap1 (Signed {bits}, dst, arg) ->
         pf "((%a)(s%i)@ %a)" LlairTyp.pp dst bits pp arg
     | Ap1 (Unsigned {bits}, dst, arg) ->
@@ -261,6 +264,8 @@ let rec invariant exp =
         assert false )
   | Float {typ} -> (
     match typ with Float _ -> assert true | _ -> assert false )
+  | Nondet _ ->
+      ()
   | Label _ ->
       assert true
   | Ap1 (Signed {bits}, Integer {bits= dst_bits}, arg) -> (
@@ -351,7 +356,7 @@ let rec invariant exp =
 
 and typ_of exp =
   match exp with
-  | Reg {typ} | Global {typ} | FuncName {typ} | Integer {typ} | Float {typ} ->
+  | Reg {typ} | Global {typ} | FuncName {typ} | Integer {typ} | Float {typ} | Nondet {typ} ->
       typ
   | Label _ ->
       LlairTyp.ptr
@@ -486,6 +491,8 @@ let true_ = bool true
 let false_ = bool false
 
 let float typ data = Float {data; typ} |> check invariant
+
+let nondet typ = Nondet {typ}
 
 (* records (struct / array values) *)
 
