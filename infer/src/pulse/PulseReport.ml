@@ -18,7 +18,7 @@ let is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference jn =
 
 
 let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed ~latent
-    ?location_override ?extra_trace (diagnostic : Diagnostic.t) =
+    ?location_override ?extra_trace ?reachable_from (diagnostic : Diagnostic.t) =
   let open Diagnostic in
   if is_suppressed && not Config.pulse_report_issues_for_tests then ()
   else
@@ -126,6 +126,7 @@ let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed 
       ; copy_type
       ; config_usage_extra
       ; may_depend_on_an_unknown_value
+      ; reachable_from
       ; taint_extra
       ; transitive_callees
       ; transitive_missed_captures }
@@ -146,6 +147,10 @@ let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed 
     in
     let issue_type = get_issue_type tenv ~latent diagnostic proc_desc in
     let message, suggestion = get_message_and_suggestion diagnostic in
+    let message =
+      Option.fold reachable_from ~init:message ~f:(fun message reachable_from ->
+          F.sprintf "(reachable from %s) %s" reachable_from message )
+    in
     let autofix = PulseAutofix.get_autofix proc_desc diagnostic in
     let loc =
       match location_override with
@@ -180,7 +185,7 @@ let report_if_entry_point ({InterproceduralAnalysis.proc_desc} as analysis_data)
   then
     let location_override = Trace.get_outer_location trace_to_error in
     do_report analysis_data ~is_suppressed:false ~latent:false ~location_override
-      ~extra_trace:trace_to_error diagnostic
+      ~extra_trace:trace_to_error ~reachable_from:proc_name_s diagnostic
 
 
 let report_latent_issue analysis_data latent_issue ~is_suppressed =
