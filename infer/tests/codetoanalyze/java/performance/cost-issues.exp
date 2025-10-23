@@ -37,7 +37,7 @@ codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.array_get_elem_
 codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add3_overrun_constant():void, 26,  OnUIThread:false, []
 codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_addAll_constant():void, 40,  OnUIThread:false, []
 codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_in_loop_constant():void, 173,  OnUIThread:false, []
-codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_in_nested_loop_constant_constant():void, 1773,  OnUIThread:false, []
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_in_nested_loop_constant_constant():void, ⊤,  OnUIThread:false, [Unbounded loop,Loop]
 codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_then_loop_constant():void, 186,  OnUIThread:false, []
 codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_empty_ok_constant():void, 8,  OnUIThread:false, []
 codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_empty_overrun_constant():void, 8,  OnUIThread:false, []

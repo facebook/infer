@@ -1,4 +1,5 @@
 codetoanalyze/java/performance/Array.java, codetoanalyze.java.performance.Array.call_gen_and_iter_types_linear_FP(int,int):void, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
+codetoanalyze/java/performance/ArrayListTest.java, ArrayListTest.arraylist_add_in_nested_loop_constant_constant():void, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/java/performance/CantHandle.java, CantHandle.square_root_FP(int):void, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/java/performance/CantHandle.java, CantHandle.square_root_variant_FP(int):void, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]
 codetoanalyze/java/performance/Compound_loop.java, codetoanalyze.java.performance.Compound_loop.while_and_or_top(int):void, 0, INFINITE_EXECUTION_TIME, no_bucket, ERROR, [Unbounded loop,Loop]

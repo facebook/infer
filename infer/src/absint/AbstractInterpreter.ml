@@ -904,7 +904,8 @@ module MakeWTONode (TransferFunctions : NodeTransferFunctions) = struct
         let inv_map =
           match mode with
           | Widen when is_first_visit ->
-              do_widen_then_narrow ~pp_instr cfg proc_data inv_map head ~is_first_visit rest
+              exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:true ~mode:Widen
+                ~is_first_visit rest
           | Widen | Narrow ->
               exec_wto_component ~pp_instr cfg proc_data inv_map head ~is_loop_head:false ~mode
                 ~is_first_visit rest
