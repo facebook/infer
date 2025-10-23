@@ -580,7 +580,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t =
         | Array _ | Tuple _ | Struct _ ->
             ([], Exp.splat typ (Exp.integer Typ.byt Z.zero))
         | _ ->
-            fail "ConstantAggregateZero of type %a" Typ.pp typ () )
+            ([], Llair.Exp.nondet typ) )
     | ConstantVector | ConstantArray ->
         let typ = xlate_type x (Llvm.type_of llv) in
         let len = Llvm.num_operands llv in
@@ -695,7 +695,7 @@ and xlate_value ?(inline = false) : x -> Llvm.llvalue -> Inst.t list * Exp.t =
     | InlineAsm
     | MDNode
     | MDString ->
-        fail "xlate_value: %a" pp_llvalue llv ()
+        ([], Llair.Exp.nondet (xlate_type x (Llvm.type_of llv)))
   in
   ValTbl.find_or_add memo_value (inline, llv) ~default:(fun () ->
       [%Dbg.call fun {pf} -> pf "@ %a" pp_llvalue llv]
@@ -738,7 +738,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
       | AddrSpaceCast ->
           Exp.convert src ~to_:dst arg
       | _ ->
-          fail "convert: %a" pp_llvalue llv () )
+          Llair.Exp.nondet dst )
   in
   let unary (mk : ?typ:_ -> _) =
     if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
@@ -906,7 +906,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
           | Array {elt} ->
               (Exp.select typ rcd indices.(i), elt, Exp.update typ ~rcd indices.(i))
           | _ ->
-              fail "xlate_value: %a" pp_llvalue llv ()
+              (Llair.Exp.nondet typ, typ, Exp.update typ ~rcd indices.(i))
         in
         let update_or_return elt ret =
           match[@warning "-partial-match"] opcode with
@@ -1007,8 +1007,8 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
                   let llelt = (Llvm.struct_element_types lltyp).(fld) in
                   ((pre_i1 @ pre_i, ptr_fld x ~ptr ~fld ~lltyp), llelt)
               | _ ->
-                  fail "xlate_opcode unhandled type %a: %i %a" pp_lltype lltyp i pp_llvalue llv ()
-          )
+                  let typ = xlate_type x lltyp in
+                  (([], Llair.Exp.nondet typ), lltyp) )
           |>
           [%Dbg.retn fun {pf} (pre_exp, llt) -> pf "%a %a" pp_prefix_exp pre_exp pp_lltype llt]
         in
@@ -1044,7 +1044,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
   | CleanupPad
   | CatchSwitch
   | VAArg ->
-      fail "xlate_opcode: %a" pp_llvalue llv () )
+      ([], Llair.Exp.nondet (xlate_type x (Llvm.type_of llv))) )
   |>
   [%Dbg.retn fun {pf} -> pf "%a" pp_prefix_exp]
 
@@ -1746,7 +1746,7 @@ let xlate_instr :
   | CallBr ->
       todo "inline asm: %a" pp_llvalue instr ()
   | PHI ->
-      fail "unexpected phi node" ()
+      nop ()
   | Invalid | Invalid2 | UserOp1 | UserOp2 ->
       assert false
 
