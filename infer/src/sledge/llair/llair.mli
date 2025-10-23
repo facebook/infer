@@ -44,6 +44,9 @@ type inst = private
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: LairLoc.t}
       (** Move each value [exp] into corresponding register [reg]. All of the moves take effect
           simultaneously. *)
+  | MovePhi of {reg_exps: (Reg.t * Exp.t) iarray; loc: LairLoc.t}
+      (** Move each value [exp] into corresponding register [reg]. All of the moves take effect
+          simultaneously. *)
   | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: LairLoc.t}
       (** Read a [len]-byte value from the contents of memory at address [ptr] into [reg]. *)
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: LairLoc.t}
@@ -157,6 +160,8 @@ module Inst : sig
   val pp : t pp
 
   val move : reg_exps:(Reg.t * Exp.t) iarray -> loc:LairLoc.t -> inst
+
+  val move_phi : reg_exps:(Reg.t * Exp.t) iarray -> loc:LairLoc.t -> inst
 
   val load : reg:Reg.t -> ptr:Exp.t -> len:Exp.t -> loc:LairLoc.t -> inst
 

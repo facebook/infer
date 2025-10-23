@@ -107,7 +107,8 @@ func test_retain_cycle1_bad() {
 func test_optional(_ age : Int?) -> Int {
     if let actualAge = age {
         return actualAge
-    } else {
+    }
+    else {
         return 0
     }
 }

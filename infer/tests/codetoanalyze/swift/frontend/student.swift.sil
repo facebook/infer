@@ -182,15 +182,16 @@ define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(var0: int, v
       store n2.TSiSg.field_1 <- __sil_cast(<int>, &var1) @[247:0]
       if __sil_cast(<int>, &var1) then jmp 10::jmp::11 else jmp 7::jmp::8 @[108:5]
       
-  #10::jmp::11: @[111:9]
-      n4 = 0 @[111:9]
-      jmp 11 @[111:9]
+  #10::jmp::11: @[112:9]
+      n5 = 0 @[112:9]
+      jmp 11 @[112:9]
       
-  #11: @[113:1]
-      ret n4 @[113:1]
+  #11: @[114:1]
+      ret n5 @[114:1]
       
   #7::jmp::8: @[108:5]
-      n3 = &var0 @[108:5]
+      n4 = load &var0 @[108:5]
+      n3 = n4 @[108:5]
       jmp 8 @[108:5]
       
   #8: @[248:0]
@@ -198,7 +199,7 @@ define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(var0: int, v
       jmp 8::jmp::11 @[109:9]
       
   #8::jmp::11: @[109:9]
-      n4 = n3 @[109:9]
+      n5 = n3 @[109:9]
       jmp 11 @[109:9]
       
 } @?
@@ -267,52 +268,52 @@ define .plain_name = "setEmployeeWeight" $s5Hello17setEmployeeWeightyS2iF(var0: 
 } @?
 
 define .plain_name = "test_optional_bad" $s5Hello17test_optional_badyyF() : *ptr_elt {
-  #: @[120:5]
-      n3 = $s5Hello13test_optionalyS2iSgF(30, 0) @[120:5]
-      jmp 1::ret @[120:5]
+  #: @[121:5]
+      n3 = $s5Hello13test_optionalyS2iSgF(30, 0) @[121:5]
+      jmp 1::ret @[121:5]
       
   #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[253:0]
       unreachable @[253:0]
       
-  #1::ret: @[120:5]
-      n4 = __sil_eq(n3, 35) @[120:5]
-      if n4 then jmp 8 else jmp 4 @[120:5]
+  #1::ret: @[121:5]
+      n4 = __sil_eq(n3, 35) @[121:5]
+      if n4 then jmp 8 else jmp 4 @[121:5]
       
-  #4: @[120:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[120:5]
-      jmp 5::ret @[120:5]
+  #4: @[121:5]
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[121:5]
+      jmp 5::ret @[121:5]
       
-  #5::ret: @[120:5]
-      _ = __sil_assert_fail(null) @[120:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[120:5]
+  #5::ret: @[121:5]
+      _ = __sil_assert_fail(null) @[121:5]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[121:5]
       
-  #8: @[121:1]
-      ret null @[121:1]
+  #8: @[122:1]
+      ret null @[122:1]
       
 } @?
 
 define .plain_name = "test_optional_good_fp" $s5Hello21test_optional_good_fpyyF() : *ptr_elt {
-  #: @[116:5]
-      n3 = $s5Hello13test_optionalyS2iSgF(30, 0) @[116:5]
-      jmp 1::ret @[116:5]
+  #: @[117:5]
+      n3 = $s5Hello13test_optionalyS2iSgF(30, 0) @[117:5]
+      jmp 1::ret @[117:5]
       
   #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[255:0]
       unreachable @[255:0]
       
-  #1::ret: @[116:5]
-      n4 = __sil_eq(n3, 30) @[116:5]
-      if n4 then jmp 8 else jmp 4 @[116:5]
+  #1::ret: @[117:5]
+      n4 = __sil_eq(n3, 30) @[117:5]
+      if n4 then jmp 8 else jmp 4 @[117:5]
       
-  #4: @[116:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[116:5]
-      jmp 5::ret @[116:5]
+  #4: @[117:5]
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[117:5]
+      jmp 5::ret @[117:5]
       
-  #5::ret: @[116:5]
-      _ = __sil_assert_fail(null) @[116:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[116:5]
+  #5::ret: @[117:5]
+      _ = __sil_assert_fail(null) @[117:5]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[117:5]
       
-  #8: @[117:1]
-      ret null @[117:1]
+  #8: @[118:1]
+      ret null @[118:1]
       
 } @?
 

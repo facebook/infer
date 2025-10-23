@@ -528,6 +528,27 @@ let remove_store_zero_in_class exp1 typ_exp1 exp2 loc =
       Some (Textual.Instr.Store {exp1; typ= None; exp2; loc})
 
 
+let translate_move ~move_phi ~proc_state loc textual_instrs reg_exps =
+  let reg_exps = StdUtils.iarray_to_list reg_exps in
+  let loc = to_textual_loc_instr ~proc_state loc in
+  let instrs =
+    List.fold
+      ~f:(fun instrs (reg, exp) ->
+        let id = Some (reg_to_id ~proc_state reg |> fst) in
+        let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state exp in
+        ( match (id, exp_typ) with
+        | Some id, Some exp_typ ->
+            ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes exp_typ)
+        | _ ->
+            () ) ;
+        let deref_instrs, exp = if move_phi then add_deref ~proc_state exp loc else ([], exp) in
+        let instrs = List.append instrs (List.append deref_instrs exp_instrs) in
+        Textual.Instr.Let {id; exp; loc} :: instrs )
+      ~init:[] reg_exps
+  in
+  List.append instrs textual_instrs
+
+
 let cmnd_to_instrs ~(proc_state : ProcState.t) block =
   let struct_map = proc_state.ProcState.struct_map in
   let to_instr textual_instrs inst =
@@ -636,23 +657,9 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let call_textual_instrs = to_textual_builtin ~proc_state reg name args loc in
         List.append call_textual_instrs textual_instrs
     | Move {reg_exps: (Reg.t * Exp.t) NS.iarray; loc} ->
-        let reg_exps = StdUtils.iarray_to_list reg_exps in
-        let loc = to_textual_loc_instr ~proc_state loc in
-        let instrs =
-          List.fold
-            ~f:(fun instrs (reg, exp) ->
-              let id = Some (reg_to_id ~proc_state reg |> fst) in
-              let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state exp in
-              ( match (id, exp_typ) with
-              | Some id, Some exp_typ ->
-                  ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes exp_typ)
-              | _ ->
-                  () ) ;
-              let instrs = List.append instrs exp_instrs in
-              Textual.Instr.Let {id; exp; loc} :: instrs )
-            ~init:[] reg_exps
-        in
-        List.append instrs textual_instrs
+        translate_move ~move_phi:false ~proc_state loc textual_instrs reg_exps
+    | MovePhi {reg_exps: (Reg.t * Exp.t) NS.iarray; loc} ->
+        translate_move ~move_phi:true ~proc_state loc textual_instrs reg_exps
     | AtomicRMW {reg; ptr; exp; loc} ->
         let loc = to_textual_loc ~proc_state loc in
         let call_textual_instrs =

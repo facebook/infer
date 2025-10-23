@@ -44,6 +44,7 @@ module Intrinsic = Bij (Intrinsics)
 
 type inst =
   | Move of {reg_exps: (Reg.t * Exp.t) iarray; loc: LairLoc.t}
+  | MovePhi of {reg_exps: (Reg.t * Exp.t) iarray; loc: LairLoc.t}
   | Load of {reg: Reg.t; ptr: Exp.t; len: Exp.t; loc: LairLoc.t}
   | Store of {ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: LairLoc.t}
   | AtomicRMW of {reg: Reg.t; ptr: Exp.t; exp: Exp.t; len: Exp.t; loc: LairLoc.t}
@@ -249,6 +250,10 @@ let pp_inst fs inst =
       let regs, exps = IArray.split reg_exps in
       pf "@[<2>move @[%a@]@ := @[%a@];@]\t%a" (IArray.pp ",@ " Reg.pp) regs (IArray.pp ",@ " Exp.pp)
         exps LairLoc.pp loc
+  | MovePhi {reg_exps; loc} ->
+      let regs, exps = IArray.split reg_exps in
+      pf "@[<2>move_phi @[%a@]@ := @[%a@];@]\t%a" (IArray.pp ",@ " Reg.pp) regs
+        (IArray.pp ",@ " Exp.pp) exps LairLoc.pp loc
   | Load {reg; ptr; len; loc} ->
       pf "@[<2>%a@ := load %a@ %a;@]\t%a" Reg.pp reg Exp.pp len Exp.pp ptr LairLoc.pp loc
   | Store {ptr; exp; len; loc} ->
@@ -375,6 +380,8 @@ module Inst = struct
 
   let move ~reg_exps ~loc = Move {reg_exps; loc}
 
+  let move_phi ~reg_exps ~loc = MovePhi {reg_exps; loc}
+
   let load ~reg ~ptr ~len ~loc = Load {reg; ptr; len; loc}
 
   let store ~ptr ~exp ~len ~loc = Store {ptr; exp; len; loc}
@@ -395,6 +402,7 @@ module Inst = struct
 
   let loc = function
     | Move {loc; _}
+    | MovePhi {loc; _}
     | Load {loc; _}
     | Store {loc; _}
     | AtomicRMW {loc; _}
@@ -408,7 +416,7 @@ module Inst = struct
 
   let union_locals inst vs =
     match inst with
-    | Move {reg_exps; _} ->
+    | Move {reg_exps; _} | MovePhi {reg_exps; _} ->
         IArray.fold ~f:(fun (reg, _) vs -> Reg.Set.add reg vs) reg_exps vs
     | Load {reg; _}
     | AtomicRMW {reg; _}
@@ -425,7 +433,7 @@ module Inst = struct
 
   let fold_exps inst s ~f =
     match inst with
-    | Move {reg_exps; loc= _} ->
+    | Move {reg_exps; loc= _} | MovePhi {reg_exps; loc= _} ->
         IArray.fold ~f:(fun (_reg, exp) -> f exp) reg_exps s
     | Load {reg= _; ptr; len; loc= _} ->
         f len (f ptr s)
@@ -623,7 +631,7 @@ module IP = struct
       match inst ip with
       | Some (Load _ | Store _ | AtomicRMW _ | AtomicCmpXchg _ | Free _) ->
           true
-      | Some (Move _ | Alloc _ | Nondet _) ->
+      | Some (Move _ | Alloc _ | Nondet _ | MovePhi _) ->
           false
       | Some (Builtin {name; _}) -> (
         match name with

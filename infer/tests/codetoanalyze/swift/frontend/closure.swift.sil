@@ -62,8 +62,8 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var0: *ptr_elt) : 
       jmp 11::jmp::20 @[151:0]
       
   #13: @[14:17]
-      n9 = load &var4 @[14:17]
-      n11 = n9 @[14:17]
+      n10 = load &var4 @[14:17]
+      n12 = n10 @[14:17]
       jmp 15::ret @[14:17]
       
   #13::jmp::20: @[160:0]
@@ -71,15 +71,15 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var0: *ptr_elt) : 
       jmp 20 @[161:0]
       
   #15::ret: @[155:0]
-      n12 = load &var4 @[155:0]
-      n13 = $s5Hello18RetainCycleExampleCSgWOh(n12) @[155:0]
+      n13 = load &var4 @[155:0]
+      n14 = $s5Hello18RetainCycleExampleCSgWOh(n13) @[155:0]
       jmp 16::ret @[156:0]
       
   #16::ret: @[14:22]
-      n14 = load n9 @[14:22]
+      n15 = load n10 @[14:22]
       store &getelementptr_offset_1 <- 13 @[14:22]
-      n15 = load &getelementptr_offset_1 @[14:22]
-      _ = $builtins.llvm_dynamic_call(n15, 20, n9) @[14:22]
+      n16 = load &getelementptr_offset_1 @[14:22]
+      _ = $builtins.llvm_dynamic_call(n16, 20, n10) @[14:22]
       jmp 19::void::ret @[14:22]
       
   #19::void::ret: @[159:0]

@@ -1171,7 +1171,7 @@ let xlate_jump :
         List.fold_map rev_reg_pre_exps [] ~f:(fun (reg, (pre, exp)) rev_pre ->
             ((reg, exp), List.rev_append pre rev_pre) )
       in
-      let mov = Inst.move ~reg_exps:(IArray.of_list_rev rev_reg_exps) ~loc in
+      let mov = Inst.move_phi ~reg_exps:(IArray.of_list_rev rev_reg_exps) ~loc in
       let src_lbl = label_of_block (Llvm.instr_parent instr) in
       let lbl = src_lbl ^ ".jmp." ^ dst_lbl in
       let blk = Block.mk ~lbl ~cmnd:(IArray.of_array [|mov|]) ~term:(Term.goto ~dst:jmp ~loc) in
