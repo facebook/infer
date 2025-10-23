@@ -71,15 +71,15 @@ declare $s5Hello10IndividualC6spouseACSgvpfi() : *ptr_elt
 define .plain_name = "spouse.set" .method_offset = "13" T5Hello10IndividualC.$s5Hello10IndividualC6spouseACSgvs(var0: int, var1: *ptr_elt) : *ptr_elt {
   local var3: int[]
   #: @[206:0]
-      n2 = load &var0 @[206:0]
-      n3 = __sil_cast(<*ptr_elt>, n2) @[206:0]
+      n1 = load &var0 @[206:0]
+      n3 = __sil_cast(<*ptr_elt>, n1) @[206:0]
       jmp 5::ret @[207:0]
       
   #5::ret: @[208:0]
       n5 = load &var1 @[208:0]
       n4 = n5.T5Hello10IndividualC.field_2 @[208:0]
-      n8 = load &var0 @[211:0]
-      store n4 <- __sil_cast(<*ptr_elt>, n8) @[211:0]
+      n6 = load &var0 @[211:0]
+      store n4 <- __sil_cast(<*ptr_elt>, n6) @[211:0]
       jmp 8::ret @[212:0]
       
   #8::ret: @[216:0]
@@ -110,9 +110,9 @@ define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA10IndividualC_ADtF(v
       n12 = load &var1 @[98:17]
       store &getelementptr_offset_2 <- 13 @[98:17]
       n13 = load &getelementptr_offset_2 @[98:17]
-      n15 = load &var0 @[98:17]
+      n14 = load &var0 @[98:17]
       n16 = load &var1 @[98:17]
-      _ = $builtins.llvm_dynamic_call(n13, __sil_cast(<int>, n15), n16) @[98:17]
+      _ = $builtins.llvm_dynamic_call(n13, __sil_cast(<int>, n14), n16) @[98:17]
       jmp 14::void::ret @[98:17]
       
   #14::void::ret: @[99:1]
@@ -122,9 +122,9 @@ define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA10IndividualC_ADtF(v
       n5 = load &var0 @[97:17]
       store &getelementptr_offset_1 <- 13 @[97:17]
       n6 = load &getelementptr_offset_1 @[97:17]
-      n8 = load &var1 @[97:17]
+      n7 = load &var1 @[97:17]
       n9 = load &var0 @[97:17]
-      _ = $builtins.llvm_dynamic_call(n6, __sil_cast(<int>, n8), n9) @[97:17]
+      _ = $builtins.llvm_dynamic_call(n6, __sil_cast(<int>, n7), n9) @[97:17]
       jmp 9::void::ret @[97:17]
       
   #9::void::ret: @[98:19]
@@ -178,28 +178,30 @@ define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(var0: int, v
   #: @[246:0]
       n1 = load &var0 @[246:0]
       store &age <- n1 @[246:0]
-      n2 = load &age @[247:0]
-      store n2.TSiSg.field_1 <- __sil_cast(<int>, &var1) @[247:0]
-      if __sil_cast(<int>, &var1) then jmp 10::jmp::11 else jmp 7::jmp::8 @[108:5]
+      n3 = load &age @[247:0]
+      n2 = load &var1 @[247:0]
+      store n3.TSiSg.field_1 <- __sil_cast(<int>, n2) @[247:0]
+      n4 = load &var1 @[108:5]
+      if __sil_cast(<int>, n4) then jmp 10::jmp::11 else jmp 7::jmp::8 @[108:5]
       
   #10::jmp::11: @[112:9]
-      n5 = 0 @[112:9]
+      n7 = 0 @[112:9]
       jmp 11 @[112:9]
       
   #11: @[114:1]
-      ret n5 @[114:1]
+      ret n7 @[114:1]
       
   #7::jmp::8: @[108:5]
-      n4 = load &var0 @[108:5]
-      n3 = n4 @[108:5]
+      n6 = load &var0 @[108:5]
+      n5 = n6 @[108:5]
       jmp 8 @[108:5]
       
   #8: @[248:0]
-      store &actualAge <- n3 @[248:0]
+      store &actualAge <- n5 @[248:0]
       jmp 8::jmp::11 @[109:9]
       
   #8::jmp::11: @[109:9]
-      n5 = n3 @[109:9]
+      n7 = n5 @[109:9]
       jmp 11 @[109:9]
       
 } @?

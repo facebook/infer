@@ -202,7 +202,7 @@ let undef_exp exp =
   (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, None, [])
 
 
-let rec add_deref ~proc_state exp loc =
+let add_deref ~proc_state exp loc =
   let add_load_instr =
     let id = add_fresh_id ~proc_state () in
     let instr = Textual.Instr.Load {id; exp; typ= None; loc} in
@@ -214,12 +214,6 @@ let rec add_deref ~proc_state exp loc =
   | Textual.Exp.Var id -> (
       let typ = IdentMap.find_opt id proc_state.ProcState.ids in
       match typ with Some {typ= Textual.Typ.Ptr _} -> add_load_instr | _ -> ([], exp) )
-  | Textual.Exp.Call {proc; args= [Textual.Exp.Typ typ; exp]; kind= Textual.Exp.NonVirtual}
-    when Textual.Lang.is_swift proc_state.ProcState.lang
-         && Textual.QualifiedProcName.equal proc Textual.ProcDecl.cast_name ->
-      let instrs, exp = add_deref ~proc_state exp loc in
-      ( instrs
-      , Textual.Exp.Call {proc; args= [Textual.Exp.Typ typ; exp]; kind= Textual.Exp.NonVirtual} )
   | _ ->
       ([], exp)
 
@@ -316,8 +310,10 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
          and convert translates other types of cast *)
       let exp, _, instrs = to_textual_exp loc ~proc_state exp in
+      let deref_instrs, exp = add_deref ~proc_state exp loc in
       let textual_dst_typ = Type.to_textual_typ proc_state.lang ~struct_map dst_typ in
       let proc = Textual.ProcDecl.cast_name in
+      let instrs = List.append instrs deref_instrs in
       ( Call {proc; args= [Textual.Exp.Typ textual_dst_typ; exp]; kind= Textual.Exp.NonVirtual}
       , None
       , instrs )
