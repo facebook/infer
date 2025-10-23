@@ -6,28 +6,28 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var0: int, var1: int) : *__infer_tuple_class<int,int> {
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var1: int, var2: int) : *__infer_tuple_class<int,int> {
   local height: int, age: int
   #: @[106:0]
-      n1 = load &var0 @[106:0]
+      n1 = load &var1 @[106:0]
       store &age <- n1 @[106:0]
-      n2 = load &var1 @[107:0]
+      n2 = load &var2 @[107:0]
       store &height <- n2 @[107:0]
       n3 = $builtins.llvm_init_tuple() @[108:0]
-      n4 = load &var0 @[19:5]
+      n4 = load &var1 @[19:5]
       store n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n4 @[19:5]
-      n5 = load &var1 @[19:5]
+      n5 = load &var2 @[19:5]
       store n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[19:5]
       ret n3 @[19:5]
       
 } @?
 
-define .plain_name = "test1" $s5Hello5test1yS2iF(var0: int) : int {
+define .plain_name = "test1" $s5Hello5test1yS2iF(var1: int) : int {
   local n: int
   #: @[110:0]
-      n1 = load &var0 @[110:0]
+      n1 = load &var1 @[110:0]
       store &n <- n1 @[110:0]
-      n2 = load &var0 @[7:5]
+      n2 = load &var1 @[7:5]
       ret n2 @[7:5]
       
 } @?
@@ -42,12 +42,12 @@ define .plain_name = "test2" $s5Hello5test2SiyF() : int {
       
 } @?
 
-define .plain_name = "test3" $s5Hello5test3yS2iF(var0: int) : int {
+define .plain_name = "test3" $s5Hello5test3yS2iF(var1: int) : int {
   local n: int
   #: @[112:0]
-      n1 = load &var0 @[112:0]
+      n1 = load &var1 @[112:0]
       store &n <- n1 @[112:0]
-      n2 = load &var0 @[15:12]
+      n2 = load &var1 @[15:12]
       n3 = $s5Hello5test1yS2iF(n2) @[15:12]
       jmp 3::ret @[15:12]
       
