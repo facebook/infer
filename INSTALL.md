@@ -27,6 +27,7 @@ is required to compile everything from source.
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
 - gmp
 - mpfr
+- charon = 0.1.123 (only needed for the Rust analysis, instructions [here](https://github.com/AeneasVerif/charon))
 
 You can install some of these dependencies using
 [Homebrew](http://brew.sh/):
@@ -49,6 +50,7 @@ is required to compile everything from source.
 - CMake (only needed for the C/Objective-C analysis)
 - Ninja (optional, if you wish to use sequential linking when building the
   C/Objective-C analysis)
+- charon = 0.1.123 (only needed for the Rust analysis, instructions [here](https://github.com/AeneasVerif/charon))
 
 See also the distro-specific instructions for Ubuntu and Debian below.
 
