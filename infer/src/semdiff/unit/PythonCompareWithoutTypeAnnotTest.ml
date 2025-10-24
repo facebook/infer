@@ -424,13 +424,24 @@ def foo(f: Callable[..., int]) -> None: pass
   assert (ast_diff_equal prog1 prog2)
 
 
-let test_change_type_case_sensitive_good _ =
+let test_change_type_case_sensitive_ret_good _ =
   let prog1 = {|
 from typing import Dict
 def foo() -> Dict[str, str]: pass
 |} in
   let prog2 = {|
 def foo() -> dict[str, str]: pass
+|} in
+  assert (ast_diff_equal prog1 prog2)
+
+
+let test_change_type_case_sensitive_param_good _ =
+  let prog1 = {|
+from typing import Dict
+def foo(x: Dict[str, str]) -> None: pass
+|} in
+  let prog2 = {|
+def foo(x: dict[str, str]) -> None: pass
 |} in
   assert (ast_diff_equal prog1 prog2)
 
@@ -536,14 +547,14 @@ def foo(x: str | None) -> None: pass
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
-let fp_test_change_any_type_good _ =
+let test_change_any_type_good _ =
   let prog1 = {|
 def foo(x: Any) -> None: pass
 |} in
   let prog2 = {|
 def foo(x: object) -> None: pass
 |} in
-  assert (not (ast_diff_equal prog1 prog2))
+  assert (ast_diff_equal prog1 prog2)
 
 
 let test_change_any_type_bad _ =
@@ -587,7 +598,8 @@ let suite =
        ; "test_change_assign_type_bad" >:: test_change_assign_type_bad
        ; "test_change_fun_type_float_good" >:: test_change_fun_type_float_good
        ; "test_change_fun_type_ellipsis_good" >:: test_change_fun_type_ellipsis_good
-       ; "test_change_type_case_sensitive_good" >:: test_change_type_case_sensitive_good
+       ; "test_change_type_case_sensitive_ret_good" >:: test_change_type_case_sensitive_ret_good
+       ; "test_change_type_case_sensitive_param_good" >:: test_change_type_case_sensitive_param_good
        ; "test_change_type_case_sensitive_bad" >:: test_change_type_case_sensitive_bad
        ; "fp_test_initialisation_set_good" >:: fp_test_initialisation_set_good
        ; "fp_equivalent_logic_good" >:: fp_equivalent_logic_good
@@ -595,7 +607,7 @@ let suite =
        ; "noise_in_diff_bad" >:: noise_in_diff_bad
        ; "fp_test_change_optional_type_good" >:: fp_test_change_optional_type_good
        ; "test_change_optional_type_bad" >:: test_change_optional_type_bad
-       ; "fp_test_change_any_type_good" >:: fp_test_change_any_type_good
+       ; "test_change_any_type_good" >:: test_change_any_type_good
        ; "test_change_any_type_bad" >:: test_change_any_type_bad ]
 
 

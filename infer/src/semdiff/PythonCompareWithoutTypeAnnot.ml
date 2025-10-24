@@ -42,6 +42,8 @@ let field_keywords = "keywords"
 
 let field_lineno = "lineno"
 
+let field_value = "value"
+
 (* Python integration *)
 let python_ast_parser_code =
   {|
@@ -203,15 +205,21 @@ module Normalize = struct
       let new_value_fields =
         AstNode.replace_key_in_dict_node value_fields field_id (Str new_name)
       in
-      AstNode.replace_key_in_dict_node fields "value" (Dict new_value_fields)
+      AstNode.replace_key_in_dict_node fields field_value (Dict new_value_fields)
     in
-    match (StringMap.find_opt "value" fields1, StringMap.find_opt "value" fields2) with
+    match (StringMap.find_opt field_value fields1, StringMap.find_opt field_value fields2) with
     | Some (Dict value_fields1), Some (Dict value_fields2) -> (
       match (get_id_name_opt value_fields1, get_id_name_opt value_fields2) with
       | Some name1, None ->
           Some (update_fields fields1 value_fields1 name1, fields2)
       | None, Some name2 ->
           Some (fields1, update_fields fields2 value_fields2 name2)
+      | _, _ ->
+          None )
+    | None, None -> (
+      match (StringMap.find_opt field_id fields1, StringMap.find_opt field_id fields2) with
+      | Some (Str "Any"), Some (Str "object") ->
+          Some (AstNode.replace_key_in_dict_node fields1 field_id (Str "object"), fields2)
       | _, _ ->
           None )
     | _, _ ->
