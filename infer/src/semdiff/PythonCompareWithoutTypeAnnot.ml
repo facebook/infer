@@ -131,6 +131,34 @@ module AstNode = struct
         L.die InternalError "unsupported JSON type"
 
 
+  let rec to_str ?(indent = 0) (node : ast_node) : string =
+    let indent_str = String.make (indent * 2) ' ' in
+    let next_indent = indent + 1 in
+    let next_indent_str = String.make (next_indent * 2) ' ' in
+    match node with
+    | Dict fields ->
+        "Dict: {"
+        ^ StringMap.fold
+            (fun k v acc -> acc ^ "\n" ^ next_indent_str ^ k ^ "=" ^ to_str ~indent:next_indent v)
+            fields ""
+        ^ "\n" ^ indent_str ^ "}"
+    | List l ->
+        "List: ["
+        ^ String.concat ~sep:" "
+            (List.map ~f:(fun node -> "\n" ^ next_indent_str ^ to_str ~indent:next_indent node) l)
+        ^ "\n" ^ indent_str ^ "]"
+    | Str s ->
+        "Str: " ^ s
+    | Int i ->
+        "Int: " ^ Int.to_string i
+    | Float f ->
+        "Float: " ^ Float.to_string f
+    | Bool b ->
+        "Bool: " ^ Bool.to_string b
+    | Null ->
+        "Null"
+
+
   let replace_key_in_dict_node fields key new_value = StringMap.add key new_value fields
 end
 
@@ -423,7 +451,10 @@ let ast_diff ?(debug = false) src1 src2 =
   let diffs = Diff.get_diff ast1 ast2 in
   let lines_removed, lines_added = Diff.split_diffs diffs in
   let diffs = Output.show_diff src1 src2 lines_removed lines_added in
-  if debug then Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ;
+  if debug then (
+    Printf.printf "AST1: %s\n" (AstNode.to_str ast1) ;
+    Printf.printf "AST2: %s\n" (AstNode.to_str ast2) ;
+    Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ) ;
   diffs
 
 
