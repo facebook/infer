@@ -217,6 +217,8 @@ type state =
   ; idents: (Typ.t * Location.t) Ident.Map.t
         (** the type of each ident seen so far, together with the location were the ident was
             assigned *)
+  ; assigned_at_least_twice: (Typ.t * Location.t) list Ident.Map.t
+        (** idents with at least two distinct assignments *)
   ; vars: Typ.t VarName.Map.t  (** the type of each variable seen so far *)
   ; nodes_from_label: Node.t NodeName.Map.t
   ; typechecked_nodes: Node.t NodeName.Map.t
@@ -360,17 +362,19 @@ let typeof_field field : Typ.t monad =
 
 
 let set_ident_type id typ : unit monad =
- fun state ->
+ fun ({assigned_at_least_twice} as state) ->
   let otyp = Ident.Map.find_opt id state.idents in
   match otyp with
   | None ->
       (Value (), {state with idents= Ident.Map.add id (typ, state.loc) state.idents})
   | Some (typ0, loc0) ->
-      let loc1 = state.loc in
-      ( Abort
-      , { state with
-          errors= IdentAssignedTwice {id; typ1= typ; typ2= typ0; loc1; loc2= loc0} :: state.errors
-        } )
+      let loc = state.loc in
+      let assigned_at_least_twice =
+        Ident.Map.update id
+          (function None -> Some [(typ0, loc0); (typ, loc)] | Some l -> Some ((typ, loc) :: l))
+          assigned_at_least_twice
+      in
+      (Abort, {state with assigned_at_least_twice})
 
 
 let dfs_push (label : NodeName.t) : unit monad =
@@ -911,11 +915,22 @@ let typecheck_procdesc decls globals_types (pdesc : ProcDesc.t) errors : ProcDes
         List.fold pdesc.nodes ~init:NodeName.Map.empty ~f:(fun map (node : Node.t) ->
             NodeName.Map.add node.label node map )
     ; idents= Ident.Map.empty
+    ; assigned_at_least_twice= Ident.Map.empty
     ; vars= vars_with_locals
     ; dfs_stack= [pdesc.start]
     ; errors }
   in
-  let _, {errors; typechecked_nodes} = visit_next () init in
+  let _, {errors; typechecked_nodes; assigned_at_least_twice} = visit_next () init in
+  let errors =
+    Ident.Map.fold
+      (fun id l errors ->
+        match l with
+        | (typ2, loc2) :: (typ1, loc1) :: _ ->
+            IdentAssignedTwice {id; typ1; typ2; loc1; loc2} :: errors
+        | _ ->
+            errors )
+      assigned_at_least_twice errors
+  in
   let nodes =
     (* note: this filter also removes nodes that are not reachable from the entry node *)
     List.filter_map pdesc.nodes ~f:(fun node ->
