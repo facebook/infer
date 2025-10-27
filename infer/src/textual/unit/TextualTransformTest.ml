@@ -10,8 +10,6 @@ module F = Format
 open Textual
 open TextualTestHelpers
 
-let show module_ = F.printf "%a" (Module.pp ~show_location:true) module_
-
 (* Inspired by the following Python program:
 
    def f(x, y, z, t):
@@ -91,7 +89,7 @@ let%test_module "remove_effects_in_subexprs transformation" =
 
     let%expect_test _ =
       let lang = Lang.Hack in
-      let module_, _ = parse_module input_text |> remove_effects_in_subexprs lang in
+      let module_, _ = parse_module_ok input_text |> remove_effects_in_subexprs lang in
       show module_ ;
       [%expect
         {|
@@ -227,7 +225,7 @@ let%test_module "remove_if_terminator transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> TextualTransform.remove_if_exp_and_terminator in
+      let module_ = parse_module_ok input_text |> TextualTransform.remove_if_exp_and_terminator in
       show module_ ;
       [%expect
         {|
@@ -518,7 +516,7 @@ let%test_module "remove_if_terminator transformation" =
 
     let%expect_test _ =
       let module_ =
-        parse_module python_inspired_text |> TextualTransform.remove_if_exp_and_terminator
+        parse_module_ok python_inspired_text |> TextualTransform.remove_if_exp_and_terminator
       in
       show module_ ;
       [%expect
@@ -598,78 +596,20 @@ let%test_module "remove_if_terminator transformation" =
 
     let%expect_test _ =
       let module_ = parse_module input_text in
-      let _, decls_env = TextualDecls.make_decls module_ in
-      let module_, _ = module_ |> TextualTransform.remove_effects_in_subexprs C decls_env in
-      print_endline "BEFORE let_propagation" ;
-      show module_ ;
-      let module_ = TextualTransform.let_propagation module_ in
-      print_endline "AFTER let_propagation" ;
-      show module_ ;
-      [%expect
-        {|
-        BEFORE let_propagation
-        .source_language = "c" @[2:8]
-
-        define main(var1: int, var2: int) : int {
-          local temp: int
-          #b0: @[5:10]
-              n4:int = load &var2 @[6:14]
-              jmp b10, b7 @[7:14]
-
-          #b10: @[8:10]
-              prune __sil_cast(<int>, n4) @[7:14]
-              n7 = 0 @[9:14]
-              jmp b11 @[10:14]
-
-          #b11: @[11:11]
-              ret n7 @[12:15]
-
-          #b7: @[13:11]
-              prune __sil_lnot(__sil_cast(<int>, n4)) @[7:14]
-              n6:int = load &var1 @[14:15]
-              n5 = n6 @[15:15]
-              jmp b8 @[16:15]
-
-          #b8: @[17:11]
-              store &temp <- n5:int @[18:15]
-              jmp b811 @[19:15]
-
-          #b811: @[20:11]
-              n7 = n5 @[21:15]
-              jmp b11 @[22:15]
-
-        } @[24:9]
-
-        AFTER let_propagation
-        .source_language = "c" @[2:8]
-
-        define main(var1: int, var2: int) : int {
-          local temp: int
-          #b0: @[5:10]
-              n4:int = load &var2 @[6:14]
-              jmp b10, b7 @[7:14]
-
-          #b10: @[8:10]
-              prune __sil_cast(<int>, n4) @[7:14]
-              jmp b11 @[10:14]
-
-          #b11: @[11:11]
-              ret n6 @[12:15]
-
-          #b7: @[13:11]
-              prune __sil_lnot(__sil_cast(<int>, n4)) @[7:14]
-              n6:int = load &var1 @[14:15]
-              jmp b8 @[16:15]
-
-          #b8: @[17:11]
-              store &temp <- n6:int @[18:15]
-              jmp b811 @[19:15]
-
-          #b811: @[20:11]
-              jmp b11 @[22:15]
-
-        } @[24:9]
-        |}]
+      show_result module_ ;
+      match module_ with
+      | Ok module_ ->
+          let _, decls_env = TextualDecls.make_decls module_ in
+          let module_, _ = module_ |> TextualTransform.remove_effects_in_subexprs C decls_env in
+          print_endline "BEFORE let_propagation" ;
+          show module_ ;
+          let module_ = TextualTransform.let_propagation module_ in
+          print_endline "AFTER let_propagation" ;
+          show module_
+      | Error _ ->
+          () ;
+          [%expect
+            {| dummy.sil, line 9, column 14: textual type error: ident n7 is assigned (with type int), but it has already been assigned at line 21 (with type int) |}]
   end )
 
 
@@ -694,7 +634,7 @@ let%test_module "let_propagation transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> TextualTransform.let_propagation in
+      let module_ = parse_module_ok input_text |> TextualTransform.let_propagation in
       show module_ ;
       [%expect
         {|
@@ -737,7 +677,7 @@ let%test_module "out-of-ssa transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module input_text |> TextualTransform.out_of_ssa in
+      let module_ = parse_module_ok input_text |> TextualTransform.out_of_ssa in
       show module_ ;
       [%expect
         {|
@@ -777,8 +717,8 @@ let%test_module "out-of-ssa transformation" =
 
     let%expect_test _ =
       let module_ =
-        parse_module python_inspired_text |> TextualTransform.remove_if_exp_and_terminator
-        |> TextualTransform.out_of_ssa
+        parse_module_ok python_inspired_text
+        |> TextualTransform.remove_if_exp_and_terminator |> TextualTransform.out_of_ssa
       in
       show module_ ;
       [%expect
@@ -852,7 +792,7 @@ let%expect_test "closures" =
         }
     |}
   in
-  let module_ = parse_module source in
+  let module_ = parse_module_ok source in
   show module_ ;
   [%expect
     {|
@@ -944,7 +884,7 @@ let%expect_test "toplevel if expression" =
         }
     |}
   in
-  let module_ = parse_module source |> TextualTransform.remove_if_exp_and_terminator in
+  let module_ = parse_module_ok source |> TextualTransform.remove_if_exp_and_terminator in
   show module_ ;
   [%expect
     {|
@@ -1003,7 +943,7 @@ let%expect_test "if expression in subexpr" =
         }
     |}
   in
-  let module_, _ = parse_module source |> remove_effects_in_subexprs Hack in
+  let module_, _ = parse_module_ok source |> remove_effects_in_subexprs Hack in
   show module_ ;
   [%expect
     {|
@@ -1107,7 +1047,7 @@ local $captured: *void, $o: *void
 declare Closure$Closures::ClosuresAndDict2_with_self::init.get_unsafe(...): *HackMixed
 |}
   in
-  let module_ = parse_module source |> TextualTransform.fix_hackc_mistranslations in
+  let module_ = parse_module_ok source |> TextualTransform.fix_hackc_mistranslations in
   show module_ ;
   [%expect
     {|
@@ -1165,7 +1105,7 @@ local $captured: *void, $o: *void
 declare Closure$Closures::ClosuresAndDict2_with_self_async::init.get_unsafe(...): *HackMixed
 |}
   in
-  let module_ = parse_module source |> TextualTransform.fix_hackc_mistranslations in
+  let module_ = parse_module_ok source |> TextualTransform.fix_hackc_mistranslations in
   show module_ ;
   [%expect
     {|

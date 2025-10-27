@@ -18,16 +18,12 @@ let parse_string_and_verify sourcefile text =
 
 
 let parse_module ?(verify = true) text =
-  let result =
-    if verify then parse_string_and_verify sourcefile text
-    else TextualParser.parse_string sourcefile text
-  in
-  match result with
-  | Ok m ->
-      m
-  | Error es ->
-      List.iter es ~f:(fun e -> F.printf "%a@\n" (TextualParser.pp_error sourcefile) e) ;
-      raise (Failure "Couldn't parse a module")
+  if verify then parse_string_and_verify sourcefile text
+  else TextualParser.parse_string sourcefile text
+
+
+let parse_module_ok ?(verify = true) text =
+  parse_module ~verify text |> Result.ok |> Option.value_exn
 
 
 let parse_module_print_errors text =
@@ -74,3 +70,12 @@ let parse_string_and_verify_keep_going text =
   | Error errors ->
       F.printf "verification failed - %d errors@\n------@\n" (List.length errors) ;
       List.iter errors ~f:(F.printf "%a@\n" (TextualParser.pp_error sourcefile))
+
+
+let show module_ = F.printf "%a" (Module.pp ~show_location:true) module_
+
+let show_result = function
+  | Ok module_ ->
+      show module_
+  | Error errs ->
+      List.iter errs ~f:(fun e -> F.printf "%a@\n" (TextualParser.pp_error sourcefile) e)

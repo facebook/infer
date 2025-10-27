@@ -141,8 +141,9 @@ let pp_error fmt error =
         (if at_least then "at least " else "")
         expected
   | IdentAssignedTwice {id; typ1; typ2; loc2; _} ->
-      F.fprintf fmt "ident %a is given the type %a, but it has already been given the type %a at %a"
-        Ident.pp id Typ.pp typ1 Typ.pp typ2 Location.pp_line loc2
+      F.fprintf fmt
+        "ident %a is assigned (with type %a), but it has already been assigned at %a (with type %a)"
+        Ident.pp id Typ.pp typ1 Location.pp_line loc2 Typ.pp typ2
   | BranchesWithDifferentTypes {typ1; typ2; loc} ->
       F.fprintf fmt
         "branch at location %a is given the type %a, but the other branch is given a different \
@@ -364,8 +365,6 @@ let set_ident_type id typ : unit monad =
   match otyp with
   | None ->
       (Value (), {state with idents= Ident.Map.add id (typ, state.loc) state.idents})
-  | Some (typ0, _) when Typ.equal typ0 typ ->
-      (Value (), state)
   | Some (typ0, loc0) ->
       let loc1 = state.loc in
       ( Abort

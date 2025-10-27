@@ -25,7 +25,7 @@ let text =
 
 
 let%expect_test _ =
-  let module_ = parse_module text in
+  let module_ = parse_module_ok text in
   let attrs = module_.attrs in
   F.printf "%a" (Pp.seq ~sep:"\n" Attr.pp_with_loc) attrs ;
   [%expect
@@ -38,10 +38,8 @@ let%expect_test _ =
   [%expect {| hack |}]
 
 
-let show module_ = F.printf "%a" (Module.pp ~show_location:true) module_
-
 let%expect_test _ =
-  let module_ = parse_module text in
+  let module_ = parse_module_ok text in
   show module_ ;
   [%expect
     {|
@@ -73,7 +71,7 @@ let text =
 
 
 let%expect_test _ =
-  let m = parse_module text in
+  let m = parse_module_ok text in
   show m ;
   [%expect
     {|
@@ -99,7 +97,7 @@ let text =
 
 
 let%expect_test _ =
-  let m = parse_module text in
+  let m = parse_module_ok text in
   show m ;
   [%expect
     {|
@@ -114,7 +112,7 @@ let%expect_test _ =
 
 let%expect_test "standalone ellipsis are OK" =
   let m =
-    parse_module
+    parse_module_ok
       {|
            .source_language = "hack"
            declare todo(...): *Mixed
@@ -164,26 +162,14 @@ let%expect_test "numbers lexing" =
          |}
   in
   let m = parse_module text in
-  show m ;
+  show_result m ;
   [%expect
     {|
-        .source_language = "hack" @[2:9]
-
-        define foo() : int {
-          #entry: @[4:9]
-              n0 = 12 @[5:11]
-              n1 = -42 @[6:11]
-              n2 = 10. @[7:11]
-              n3 = 2. @[8:11]
-              n4 = 3.14 @[9:11]
-              n5 = 6.022137e+23 @[10:11]
-              n2 = -10. @[11:11]
-              n3 = -2. @[12:11]
-              n4 = -3.14 @[13:11]
-              n5 = -6.022137e+23 @[14:11]
-              ret n1 @[15:11]
-
-        } @[16:10] |}]
+    dummy.sil, line 11, column 11: textual type error: ident n2 is assigned (with type float), but it has already been assigned at line 7 (with type float)
+    dummy.sil, line 12, column 11: textual type error: ident n3 is assigned (with type float), but it has already been assigned at line 8 (with type float)
+    dummy.sil, line 13, column 11: textual type error: ident n4 is assigned (with type float), but it has already been assigned at line 9 (with type float)
+    dummy.sil, line 14, column 11: textual type error: ident n5 is assigned (with type float), but it has already been assigned at line 10 (with type float)
+    |}]
 
 
 let text =
@@ -198,7 +184,7 @@ let text =
 
 
 let%expect_test "keywords as idents" =
-  let module_ = parse_module text |> TextualTransform.out_of_ssa in
+  let module_ = parse_module_ok text |> TextualTransform.out_of_ssa in
   show module_ ;
   [%expect
     {|
@@ -229,7 +215,7 @@ let%expect_test "overloaded functions" =
      }
      |}
   in
-  let m = parse_module text in
+  let m = parse_module_ok text in
   show m ;
   [%expect
     {|
@@ -274,7 +260,7 @@ let%expect_test "conditional expression" =
      }
      |}
   in
-  let m = parse_module ~verify:false text in
+  let m = parse_module_ok ~verify:false text in
   show m ;
   [%expect
     {|

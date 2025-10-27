@@ -14,6 +14,6 @@ define f(x: int, y: int) : *int {
     n2 = 1
     n3 = 2
     ret null
-  #lab2(n1: *int):
-    ret n1
+  #lab2(n4: *int):
+    ret n4
 }
