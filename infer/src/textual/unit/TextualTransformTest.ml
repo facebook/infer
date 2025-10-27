@@ -567,6 +567,112 @@ let%test_module "remove_if_terminator transformation" =
   end )
 
 
+let%test_module "remove_if_terminator transformation" =
+  ( module struct
+    let input_text =
+      {|
+        .source_language = "c"
+        define main(var1: int, var2: int) : int {
+          local temp: int
+          #b0:
+              n4 = load &var2
+              if __sil_cast(<int>, n4) then jmp b10 else jmp b7
+          #b10:
+              n7 = 0
+              jmp b11
+           #b11:
+               ret n7
+           #b7:
+               n6 = load &var1
+               n5 = n6
+               jmp b8
+           #b8:
+               store &temp <- n5
+               jmp b811
+           #b811:
+               n7 = n5
+               jmp b11
+
+        } |}
+
+
+    let%expect_test _ =
+      let module_ = parse_module input_text in
+      let _, decls_env = TextualDecls.make_decls module_ in
+      let module_, _ = module_ |> TextualTransform.remove_effects_in_subexprs C decls_env in
+      print_endline "BEFORE let_propagation" ;
+      show module_ ;
+      let module_ = TextualTransform.let_propagation module_ in
+      print_endline "AFTER let_propagation" ;
+      show module_ ;
+      [%expect
+        {|
+        BEFORE let_propagation
+        .source_language = "c" @[2:8]
+
+        define main(var1: int, var2: int) : int {
+          local temp: int
+          #b0: @[5:10]
+              n4:int = load &var2 @[6:14]
+              jmp b10, b7 @[7:14]
+
+          #b10: @[8:10]
+              prune __sil_cast(<int>, n4) @[7:14]
+              n7 = 0 @[9:14]
+              jmp b11 @[10:14]
+
+          #b11: @[11:11]
+              ret n7 @[12:15]
+
+          #b7: @[13:11]
+              prune __sil_lnot(__sil_cast(<int>, n4)) @[7:14]
+              n6:int = load &var1 @[14:15]
+              n5 = n6 @[15:15]
+              jmp b8 @[16:15]
+
+          #b8: @[17:11]
+              store &temp <- n5:int @[18:15]
+              jmp b811 @[19:15]
+
+          #b811: @[20:11]
+              n7 = n5 @[21:15]
+              jmp b11 @[22:15]
+
+        } @[24:9]
+
+        AFTER let_propagation
+        .source_language = "c" @[2:8]
+
+        define main(var1: int, var2: int) : int {
+          local temp: int
+          #b0: @[5:10]
+              n4:int = load &var2 @[6:14]
+              jmp b10, b7 @[7:14]
+
+          #b10: @[8:10]
+              prune __sil_cast(<int>, n4) @[7:14]
+              jmp b11 @[10:14]
+
+          #b11: @[11:11]
+              ret n6 @[12:15]
+
+          #b7: @[13:11]
+              prune __sil_lnot(__sil_cast(<int>, n4)) @[7:14]
+              n6:int = load &var1 @[14:15]
+              jmp b8 @[16:15]
+
+          #b8: @[17:11]
+              store &temp <- n6:int @[18:15]
+              jmp b811 @[19:15]
+
+          #b811: @[20:11]
+              jmp b11 @[22:15]
+
+        } @[24:9]
+        |}]
+  end )
+
+
 let%test_module "let_propagation transformation" =
   ( module struct
     let input_text =
