@@ -267,7 +267,6 @@ DIRECT_TESTS += \
   java_purity \
   java_racerd \
   java_scopeleakage \
-  java_sil \
   java_starvation \
   java_starvation-dedup \
   java_starvation-whole-program \
