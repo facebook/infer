@@ -159,7 +159,8 @@ val error_loc : error -> Location.t
    all load/store type annotations are filled now. If some procdecls have type
    errors, we return an erro, but we still generate a typecked module but
    without the faulty procdecls. *)
-val run : Module.t -> TextualDecls.t -> (Module.t, error list * Module.t) Result.t
+val run :
+  restore_ssa:bool -> Module.t -> TextualDecls.t -> (Module.t, error list * Module.t) Result.t
 
 type type_check_result =
   | Ok of Module.t
@@ -167,4 +168,5 @@ type type_check_result =
   | Type_errors of error list
 
 (* Called from tests *)
-val type_check : Module.t -> type_check_result [@@warning "-unused-value-declaration"]
+val type_check : restore_ssa:bool -> Module.t -> type_check_result
+[@@warning "-unused-value-declaration"]
