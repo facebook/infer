@@ -33,7 +33,7 @@ define call_add() : int {
       
 } @?
 
-define call_add1(var1: *ptr_elt, var2: int) : int {
+define call_add1(var1: *int, var2: int) : int {
   local y: int, ptr: *ptr_elt
   #: @[108:0]
       n1 = load &var1 @[108:0]
@@ -55,7 +55,7 @@ declare foo() : *ptr_elt
 
 declare free(*ptr_elt) : *ptr_elt
 
-define get_age(var1: *ptr_elt) : int {
+define get_age(var1: *Person) : int {
   local person: *ptr_elt
   #: @[114:0]
       n1 = load &var1 @[114:0]
@@ -248,7 +248,7 @@ define test15() : int {
       
 } @?
 
-define test16(var1: *ptr_elt, var2: *ptr_elt) : int {
+define test16(var1: *Person, var2: *Cat) : int {
   local person: *ptr_elt, cat: *ptr_elt, age: int
   #: @[120:0]
       n1 = load &var1 @[120:0]
@@ -306,7 +306,7 @@ define test2() : int {
       
 } @?
 
-define test3(var1: *ptr_elt) : int {
+define test3(var1: *int) : int {
   local ptr: *ptr_elt
   #: @[123:0]
       n1 = load &var1 @[123:0]
@@ -389,7 +389,7 @@ define test7() : int {
       
 } @?
 
-define test8(var1: *ptr_elt) : int {
+define test8(var1: *int) : int {
   local var3: int, ret: int, ptr: *ptr_elt, null_ptr: *ptr_elt
   #: @[124:0]
       n1 = load &var1 @[124:0]

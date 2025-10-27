@@ -28,3 +28,5 @@ val lookup_field_type :
   -> Textual.Typ.t option
 
 val tuple_field_prefix : string
+
+val signature_type_to_textual_typ : Textual.Lang.t -> string -> Textual.Typ.t option

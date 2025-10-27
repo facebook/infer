@@ -177,3 +177,19 @@ let join_typ typ1_opt typ2_opt =
       Some typ2
   | None, None ->
       None
+
+
+let rec signature_type_to_textual_typ lang signature_type =
+  if String.is_suffix signature_type ~suffix:"*" then
+    let name = String.chop_suffix_if_exists signature_type ~suffix:"*" in
+    match signature_type_to_textual_typ lang name with
+    | Some typ ->
+        Some (Textual.Typ.Ptr typ)
+    | None ->
+        None
+  else if String.equal signature_type "Int" then Some Textual.Typ.Int
+  else if String.equal signature_type "<unknown>" then None
+  else
+    let struct_name = Textual.TypeName.of_string signature_type in
+    if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)
+    else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))

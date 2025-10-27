@@ -126,11 +126,28 @@ let to_name_attr func_name =
 
 let to_formals lang ~struct_map func =
   let to_textual_formal formal = reg_to_var_name formal in
-  let to_textual_formal_type formal = reg_to_annot_typ lang ~struct_map formal in
+  let to_textual_formal_type formal_type = reg_to_annot_typ lang ~struct_map formal_type in
+  let to_textual_formal_signature_type formal formal_type =
+    let typ = Type.signature_type_to_textual_typ lang formal_type in
+    let typ = Option.map ~f:Textual.Typ.mk_without_attributes typ in
+    match typ with Some typ -> typ | None -> to_textual_formal_type formal
+  in
   let llair_formals = StdUtils.iarray_to_list func.Llair.formals in
+  let llair_formals_types = StdUtils.iarray_to_list func.Llair.formals_types in
   let formals = List.map ~f:to_textual_formal llair_formals in
-  let formals_types = List.map ~f:to_textual_formal_type llair_formals in
-  (formals, formals_types)
+  let formals_signature_types =
+    List.map2 ~f:to_textual_formal_signature_type llair_formals llair_formals_types
+  in
+  (* We try using the signature types, but sometimes they don't match the number of arguments,
+     in that case we revert to the ninternal types *)
+  let formals_signature_types =
+    match formals_signature_types with
+    | List.Or_unequal_lengths.Unequal_lengths ->
+        List.map ~f:to_textual_formal_type llair_formals
+    | List.Or_unequal_lengths.Ok formals_ ->
+        formals_
+  in
+  (formals, formals_signature_types)
 
 
 let block_to_node_name block =
@@ -985,9 +1002,20 @@ let translate_llair_functions source_file lang struct_map globals functions =
       ; lang }
     in
     let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
-    let result_type =
+    let fun_result_typ =
       Textual.Typ.mk_without_attributes
         (Type.to_textual_typ lang ~struct_map (FuncName.typ func_name))
+    in
+    let result_type =
+      match func.Llair.freturn_type with
+      | Some typ ->
+          let typ =
+            Option.map ~f:Textual.Typ.mk_without_attributes
+              (Type.signature_type_to_textual_typ lang typ)
+          in
+          Option.value typ ~default:fun_result_typ
+      | None ->
+          fun_result_typ
     in
     let result_type =
       match ret_typ with Some typ -> Textual.Typ.mk_without_attributes typ | None -> result_type

@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "setupClosureOk" .method_offset = "19" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(var1: *ptr_elt) : *ptr_elt {
+define .plain_name = "setupClosureOk" .method_offset = "19" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(var1: *RetainCycleExample) : *$sytD {
   local self: *ptr_elt, getelementptr_offset_1: *void
   #: @[136:0]
       n1 = load &var1 @[136:0]
@@ -39,7 +39,7 @@ define .plain_name = "setupClosureOk" .method_offset = "19" T5Hello18RetainCycle
       
 } @?
 
-define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *ptr_elt) : *ptr_elt {
+define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *$s5Hello18RetainCycleExampleCSgXwz_XxD) : *$sytD {
   local var5: *T5Hello18RetainCycleExampleCSg, var4: int[], self: *ptr_elt, getelementptr_offset_1: *void
   #: @[13:26]
       n2 = load &var1 @[13:26]
@@ -97,7 +97,7 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *ptr_elt) : 
 
 declare $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(*ptr_elt) : *ptr_elt
 
-define .plain_name = "setupClosureBug" .method_offset = "18" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC15setupClosureBugyyF(var1: *ptr_elt) : *ptr_elt {
+define .plain_name = "setupClosureBug" .method_offset = "18" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC15setupClosureBugyyF(var1: *RetainCycleExample) : *$sytD {
   local self: *ptr_elt, getelementptr_offset_1: *void
   #: @[165:0]
       n1 = load &var1 @[165:0]
@@ -120,7 +120,7 @@ define .plain_name = "setupClosureBug" .method_offset = "18" T5Hello18RetainCycl
       
 } @?
 
-define $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_(var1: *ptr_elt) : *ptr_elt {
+define $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_(var1: *RetainCycleExample) : *$sytD {
   local self: *ptr_elt, getelementptr_offset_1: *void
   #: @[170:0]
       n1 = load &var1 @[170:0]
@@ -139,11 +139,11 @@ define $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_(var1: *ptr_elt) :
 
 declare $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_TA(*ptr_elt) : *ptr_elt
 
-declare .plain_name = "id.modify" .method_offset = "14" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivM(*ptr_elt, *ptr_elt) : *ptr_elt
+declare .plain_name = "id.modify" .method_offset = "14" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivM(*ptr_elt, *ptr_elt) : *$sytD
 
-declare .plain_name = "id.modify" $s5Hello18RetainCycleExampleC2idSivM::resume::0(*ptr_elt, int) : *ptr_elt
+declare .plain_name = "id.modify" $s5Hello18RetainCycleExampleC2idSivM::resume::0(*ptr_elt, int) : *$sytD
 
-define .plain_name = "id.get" .method_offset = "12" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivg(var1: *ptr_elt) : int {
+define .plain_name = "id.get" .method_offset = "12" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivg(var1: *RetainCycleExample) : int {
   local var3: int[]
   #: @[179:0]
       n2 = load &var1 @[179:0]
@@ -154,9 +154,9 @@ define .plain_name = "id.get" .method_offset = "12" T5Hello18RetainCycleExampleC
       
 } @?
 
-declare $s5Hello18RetainCycleExampleC2idSivpfi() : *ptr_elt
+declare $s5Hello18RetainCycleExampleC2idSivpfi() : *$sSiD
 
-define .plain_name = "id.set" .method_offset = "13" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivs(var1: int, var2: *ptr_elt) : *ptr_elt {
+define .plain_name = "id.set" .method_offset = "13" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC2idSivs(var1: *$sSiD, var2: *RetainCycleExample) : *$sytD {
   local var4: int[]
   #: @[188:0]
       n2 = load &var2 @[188:0]
@@ -168,11 +168,11 @@ define .plain_name = "id.set" .method_offset = "13" T5Hello18RetainCycleExampleC
       
 } @?
 
-declare .plain_name = "closure.modify" .method_offset = "17" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvM(*ptr_elt, *ptr_elt) : *ptr_elt
+declare .plain_name = "closure.modify" .method_offset = "17" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvM(*ptr_elt, *ptr_elt) : *$sytD
 
-declare .plain_name = "closure.modify" $s5Hello18RetainCycleExampleC7closureyycSgvM::resume::0(*ptr_elt, int) : *ptr_elt
+declare .plain_name = "closure.modify" $s5Hello18RetainCycleExampleC7closureyycSgvM::resume::0(*ptr_elt, int) : *$sytD
 
-define .plain_name = "closure.get" .method_offset = "15" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvg(var1: *ptr_elt) : *__infer_tuple_class<int,int> {
+define .plain_name = "closure.get" .method_offset = "15" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvg(var1: *RetainCycleExample) : *__infer_tuple_class<int,int> {
   local var3: int[]
   #: @[199:0]
       n2 = load &var1 @[199:0]
@@ -192,9 +192,9 @@ define .plain_name = "closure.get" .method_offset = "15" T5Hello18RetainCycleExa
       
 } @?
 
-declare $s5Hello18RetainCycleExampleC7closureyycSgvpfi() : *ptr_elt
+declare $s5Hello18RetainCycleExampleC7closureyycSgvpfi() : *$sIeg_SgD
 
-define .plain_name = "closure.set" .method_offset = "16" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvs(var1: int, var2: int, var3: *ptr_elt) : *ptr_elt {
+define .plain_name = "closure.set" .method_offset = "16" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleC7closureyycSgvs(var1: int, var2: int, var3: *ptr_elt) : *$sytD {
   local var5: int[]
   #: @[214:0]
       n1 = load &var1 @[214:0]
@@ -229,7 +229,7 @@ define .plain_name = "closure.set" .method_offset = "16" T5Hello18RetainCycleExa
       
 } @?
 
-define .plain_name = "init" .method_offset = "20" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleCACycfC(var1: *ptr_elt) : *ptr_elt {
+define .plain_name = "init" .method_offset = "20" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleCACycfC(var1: *$s5Hello18RetainCycleExampleCXMTD) : *ptr_elt {
   #: @[231:0]
       n1 = load &var1 @[231:0]
       n4 = __sil_swift_alloc(<T5Hello18RetainCycleExampleC>) @[231:0]
@@ -244,7 +244,7 @@ define .plain_name = "init" .method_offset = "20" T5Hello18RetainCycleExampleC.$
       
 } @?
 
-define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(var1: *ptr_elt) : *ptr_elt {
+define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(var1: *RetainCycleExample) : *ptr_elt {
   local self: *ptr_elt
   #: @[238:0]
       n1 = load &var1 @[238:0]
@@ -267,9 +267,9 @@ declare $s5Hello18RetainCycleExampleCMa(int) : *ptr_elt
 
 declare $s5Hello18RetainCycleExampleCSgWOh(*ptr_elt) : *ptr_elt
 
-declare .plain_name = "deinit" .method_offset = "-2" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleCfD(*ptr_elt) : *ptr_elt
+declare .plain_name = "deinit" .method_offset = "-2" T5Hello18RetainCycleExampleC.$s5Hello18RetainCycleExampleCfD(*RetainCycleExample) : *$sytD
 
-declare .plain_name = "deinit" $s5Hello18RetainCycleExampleCfd(*ptr_elt) : *ptr_elt
+declare .plain_name = "deinit" $s5Hello18RetainCycleExampleCfd(*RetainCycleExample) : *ptr_elt
 
 declare $sIeg_SgWOe(int, int) : *ptr_elt
 
