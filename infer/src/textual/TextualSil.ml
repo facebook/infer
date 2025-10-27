@@ -130,7 +130,7 @@ module TypeNameBridge = struct
     | C, _ ->
         L.die InternalError "to_sil conversion failed on C type name with non-empty args"
     | Rust, _ ->
-        L.die InternalError "to_stil conversion error <NOT YET SUPPORTED>"
+        SilTyp.Name.C.from_string value
     | Swift, _ ->
         SwiftClass (SwiftClassName.of_string value)
 
@@ -494,7 +494,8 @@ module ProcDeclBridge = struct
         SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
         |> SilStruct.mk_tenv_method
     | Rust ->
-        L.die InternalError "<NOT YET SUPPORTED>"
+        SilProcname.C (SilProcname.C.from_string t.qualified_name.name.value)
+        |> SilStruct.mk_tenv_method
     | Swift -> (
         let plain_name = List.find_map ~f:Attr.get_plain_name t.attributes in
         let llvm_offset = List.find_map ~f:Attr.get_method_offset t.attributes in
@@ -551,10 +552,8 @@ module ProcDeclBridge = struct
             make ~class_name ~function_name ~arity
         in
         improved_match hack_class_name_to_sil Procname.make_hack
-    | Python | C | Swift ->
+    | Python | C | Swift | Rust ->
         to_sil lang t
-    | Rust ->
-        L.die InternalError "<NOT YET SUPPORTED>"
 end
 
 module GlobalBridge = struct

@@ -20,39 +20,35 @@ let run_charon json_file rust_file =
 
 
 let test source =
-  let json_file = IFilename.temp_file "charon" ".ullbc" in
+  let json_filename = IFilename.temp_file "charon" ".ullbc" in
   let rust_file = IFilename.temp_file "dummy" ".rs" in
   Out_channel.write_all rust_file ~data:source ;
-  let cmd_out = run_charon json_file rust_file in
+  let cmd_out = run_charon json_filename rust_file in
   try
-    let json = Yojson.Basic.from_file json_file in
+    let json = Yojson.Basic.from_file json_filename in
     match Charon.UllbcOfJson.crate_of_json json with
-    | Ok _crate ->
-        F.printf "Not yet implemented"
+    | Ok crate ->
+        let textual = RustFrontend.RustMir2Textual.mk_module crate ~json_filename in
+        Textual.Module.pp F.std_formatter textual
     | Error err ->
         F.printf "Test failed: %s" err
   with e -> F.printf "Exn %s\n Command output: %s" (Exn.to_string e) cmd_out
 
+
 (* An example test *)
-(* let%expect_test "example" =
-  let source = 
-    {|
+let%expect_test "example" =
+  let source = {|
 #[allow(unused)]
-fn foo() {
+fn main() {
     let x = 42;
 }
-
-fn main(){
-    foo();
-}
-|} 
-  in
+|} in
   test source ;
   [%expect
     {|
   .source_language = "Rust"
 
-  define example::foo() : void {
+  define dummy::main() : void {
     local var_0: void, x_1: int
     #node_0:
         store &x_1 <- 42:int
@@ -62,22 +58,4 @@ fn main(){
         ret n0
 
   }
-
-  define example::main() : void {
-    local var_0: void, var_1: void
-    #node_0:
-        n0 = example::foo()
-        store &var_1 <- n0:void
-        jmp node_1
-
-    #node_1:
-        store &var_0 <- null:void
-        store &var_0 <- null:void
-        n1:void = load &var_0
-        ret n1
-
-    #node_2:
-        unreachable
-
-  }
-|}] *)
+|}]
