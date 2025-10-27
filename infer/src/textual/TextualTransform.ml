@@ -347,8 +347,11 @@ module Subst = struct
         Field {f with exp= of_exp_one f.exp ~id ~by}
     | Index (exp1, exp2) ->
         Index (of_exp_one exp1 ~id ~by, of_exp_one exp2 ~id ~by)
-    | If _ ->
-        L.die InternalError "TODO: Textual If statement"
+    | If {cond; then_; else_} ->
+        let cond = of_bexp_one cond ~id ~by in
+        let then_ = of_exp_one then_ ~id ~by in
+        let else_ = of_exp_one else_ ~id ~by in
+        If {cond; then_; else_}
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp_one exp ~id ~by)}
     | Closure {proc; captured; params; attributes} ->
@@ -361,6 +364,19 @@ module Subst = struct
         Apply
           { closure= of_exp_one closure ~id ~by
           ; args= List.map args ~f:(fun exp -> of_exp_one exp ~id ~by) }
+
+
+  and of_bexp_one bexp ~id ~by =
+    let open BoolExp in
+    match bexp with
+    | Exp exp ->
+        Exp (of_exp_one exp ~id ~by)
+    | Not bexp ->
+        Not (of_bexp_one bexp ~id ~by)
+    | And (bexp1, bexp2) ->
+        And (of_bexp_one bexp1 ~id ~by, of_bexp_one bexp2 ~id ~by)
+    | Or (bexp1, bexp2) ->
+        Or (of_bexp_one bexp1 ~id ~by, of_bexp_one bexp2 ~id ~by)
 
 
   let rec of_exp exp eqs =
@@ -387,6 +403,19 @@ module Subst = struct
         Apply {closure= of_exp closure eqs; args= List.map args ~f:(fun exp -> of_exp exp eqs)}
 
 
+  and of_bexp bexp eqs =
+    let open BoolExp in
+    match bexp with
+    | Exp exp ->
+        Exp (of_exp exp eqs)
+    | Not bexp ->
+        Not (of_bexp bexp eqs)
+    | And (bexp1, bexp2) ->
+        And (of_bexp bexp1 eqs, of_bexp bexp2 eqs)
+    | Or (bexp1, bexp2) ->
+        Or (of_bexp bexp1 eqs, of_bexp bexp2 eqs)
+
+
   let of_instr instr eqs =
     let open Instr in
     match instr with
@@ -400,11 +429,14 @@ module Subst = struct
         Let {args with exp= of_exp args.exp eqs}
 
 
-  let of_terminator t eqs =
+  let rec of_terminator t eqs =
     let open Terminator in
     match t with
-    | If _ ->
-        L.die InternalError "subst should not be called on If terminator"
+    | If {bexp; then_; else_} ->
+        let bexp = of_bexp bexp eqs in
+        let then_ = of_terminator then_ eqs in
+        let else_ = of_terminator else_ eqs in
+        If {bexp; then_; else_}
     | Ret exp ->
         Ret (of_exp exp eqs)
     | Jump node_call_list ->
