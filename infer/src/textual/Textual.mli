@@ -235,6 +235,8 @@ module Ident : sig
 
   val to_ssa_var : t -> VarName.t
 
+  val to_temp_var : t -> VarName.t
+
   val pp : F.formatter -> t -> unit
 end
 

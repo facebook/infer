@@ -529,6 +529,8 @@ module Ident : sig
 
   val to_ssa_var : t -> VarName.t
 
+  val to_temp_var : t -> VarName.t
+
   val of_int : int -> t
 
   val to_int : t -> int
@@ -549,6 +551,8 @@ end = struct
   type t = int [@@deriving equal]
 
   let to_ssa_var id = Printf.sprintf "__SSA%d" id |> VarName.of_string
+
+  let to_temp_var id = Printf.sprintf "__TEMP%d" id |> VarName.of_string
 
   let of_int id = id
 

@@ -888,6 +888,17 @@ and visit_next () : unit monad =
       typecheck_node next_node
 
 
+let restore_ssa_transform pdesc assigned_at_least_twice =
+  Ident.Map.map
+    (function
+      | [] ->
+          L.die InternalError "assigned_at_least_twice map should never contain empty lists"
+      | (typ0, _) :: l ->
+          Textual.Typ.(if List.for_all l ~f:(fun (typ, _) -> equal typ0 typ) then typ0 else Ptr Void) )
+    assigned_at_least_twice
+  |> TextualTransform.restore_ssa pdesc
+
+
 let rec typecheck_procdesc ~restore_ssa_fuel decls globals_types (pdesc : ProcDesc.t) errors :
     ProcDesc.t * error list =
   let vars_with_params =
@@ -926,7 +937,7 @@ let rec typecheck_procdesc ~restore_ssa_fuel decls globals_types (pdesc : ProcDe
   in
   let _, {errors= new_errors; typechecked_nodes; assigned_at_least_twice} = typecheck_nodes () in
   if (not (Ident.Map.is_empty assigned_at_least_twice)) && restore_ssa_fuel > 0 then
-    (* TODO (next diff): transform pdesc *)
+    let pdesc = restore_ssa_transform pdesc assigned_at_least_twice in
     let restore_ssa_fuel = restore_ssa_fuel - 1 in
     typecheck_procdesc ~restore_ssa_fuel decls globals_types pdesc errors
   else
@@ -963,13 +974,10 @@ let run ~restore_ssa (module_ : Module.t) decls_env : (Module.t, error list * Mo
             let restore_ssa_fuel =
               if restore_ssa then 1 (* we don't want to recurse more than once *) else 0
             in
-            let ({ProcDesc.procdecl} as pdesc), new_errors =
+            let ({ProcDesc.procdecl= _} as pdesc), new_errors =
               typecheck_procdesc ~restore_ssa_fuel decls_env globals_type pdesc errors
             in
-            let decls =
-              if List.length new_errors > List.length errors then Module.Procdecl procdecl :: decls
-              else Module.Proc pdesc :: decls
-            in
+            let decls = Module.Proc pdesc :: decls in
             (decls, new_errors) )
   in
   let decls = List.rev decls in

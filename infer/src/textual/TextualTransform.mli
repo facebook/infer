@@ -45,3 +45,5 @@ val run : Textual.Lang.t -> Textual.Module.t -> Textual.Module.t * TextualDecls.
 *)
 
 val fix_hackc_mistranslations : Textual.Module.t -> Textual.Module.t
+
+val restore_ssa : Textual.ProcDesc.t -> Textual.Typ.t Textual.Ident.Map.t -> Textual.ProcDesc.t

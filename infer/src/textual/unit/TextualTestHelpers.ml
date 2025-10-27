@@ -39,6 +39,24 @@ let remove_effects_in_subexprs lang module_ =
   TextualTransform.remove_effects_in_subexprs lang decls module_
 
 
+let test_restore_ssa text =
+  let module_ = TextualParser.parse_string sourcefile text |> Result.ok |> Option.value_exn in
+  match TextualVerification.verify_keep_going module_ with
+  | Ok (module_, errors) when List.length errors > 0 ->
+      F.printf "%a\n" (Textual.Module.pp ~show_location:false) module_ ;
+      F.printf "TYPE ERRORS AFTER TRANSFORMATION:@\n" ;
+      List.iter errors ~f:(fun err -> F.printf "%a\n" TextualVerification.pp_error err)
+  | Ok (module_, _) ->
+      F.printf "%a\n" (Textual.Module.pp ~show_location:false) module_ ;
+      let lang = Module.lang module_ in
+      let module_, _ = TextualTransform.run lang module_ in
+      F.printf "AFTER COMPLETE TRANSFORMATION:\n%a\n"
+        (Textual.Module.pp ~show_location:false)
+        module_
+  | Error errs ->
+      List.iter errs ~f:(F.printf "%a@\n" (TextualVerification.pp_error_with_sourcefile sourcefile))
+
+
 let type_check module_ =
   match TextualVerification.verify_strict module_ with
   | Ok _ ->
