@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(var1: *Vehicle, var2: *Train) : *$sytD {
+define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(var1: *Vehicle, var2: *Train) : void {
   local v: *ptr_elt, t: *ptr_elt, getelementptr_offset_1: *void
   #: @[135:0]
       n1 = load &var1 @[135:0]
@@ -25,7 +25,7 @@ define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(var1: *Vehicl
       
 } @?
 
-define .plain_name = "makeNoise" .method_offset = "10" T5Hello5TrainC.$s5Hello5TrainC9makeNoiseyyF(var1: *Train) : *$sytD {
+define .plain_name = "makeNoise" .method_offset = "10" T5Hello5TrainC.$s5Hello5TrainC9makeNoiseyyF(var1: *Train) : void {
   local self: *ptr_elt
   #: @[138:0]
       n1 = load &var1 @[138:0]
@@ -71,11 +71,11 @@ define .plain_name = "init" $s5Hello5TrainCACycfc(var1: *Train) : *ptr_elt {
 
 declare $s5Hello5TrainCMa(int) : *ptr_elt
 
-declare .plain_name = "deinit" .method_offset = "-2" T5Hello5TrainC.$s5Hello5TrainCfD(*Train) : *$sytD
+declare .plain_name = "deinit" .method_offset = "-2" T5Hello5TrainC.$s5Hello5TrainCfD(*Train) : void
 
 declare .plain_name = "deinit" $s5Hello5TrainCfd(*Train) : *ptr_elt
 
-define .plain_name = "makeNoise" .method_offset = "10" T5Hello7VehicleC.$s5Hello7VehicleC9makeNoiseyyF(var1: *Vehicle) : *$sytD {
+define .plain_name = "makeNoise" .method_offset = "10" T5Hello7VehicleC.$s5Hello7VehicleC9makeNoiseyyF(var1: *Vehicle) : void {
   local self: *ptr_elt
   #: @[177:0]
       n1 = load &var1 @[177:0]
@@ -111,7 +111,7 @@ define .plain_name = "init" $s5Hello7VehicleCACycfc(var1: *Vehicle) : *ptr_elt {
 
 declare $s5Hello7VehicleCMa(int) : *ptr_elt
 
-declare .plain_name = "deinit" .method_offset = "-2" T5Hello7VehicleC.$s5Hello7VehicleCfD(*Vehicle) : *$sytD
+declare .plain_name = "deinit" .method_offset = "-2" T5Hello7VehicleC.$s5Hello7VehicleCfD(*Vehicle) : void
 
 declare .plain_name = "deinit" $s5Hello7VehicleCfd(*Vehicle) : *ptr_elt
 

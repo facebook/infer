@@ -189,6 +189,7 @@ let rec signature_type_to_textual_typ lang signature_type =
         None
   else if String.equal signature_type "Int" then Some Textual.Typ.Int
   else if String.equal signature_type "<unknown>" then None
+  else if String.equal signature_type "$sytD" then Some Textual.Typ.Void
   else
     let struct_name = Textual.TypeName.of_string signature_type in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)

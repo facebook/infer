@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "main" $s5Hello4mainyyF() : *$sytD {
+define .plain_name = "main" $s5Hello4mainyyF() : void {
   #: @[5:1]
       ret null @[5:1]
       
