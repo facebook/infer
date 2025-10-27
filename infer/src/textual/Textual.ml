@@ -140,7 +140,10 @@ module Name : NAME = struct
 
   include T
 
-  let replace_dot_with_2colons str = String.substr_replace_all str ~pattern:"." ~with_:"::"
+  let replace_dot_with_2colons =
+    let pattern = String.Search_pattern.create ~case_sensitive:true "." in
+    fun str -> String.Search_pattern.replace_all pattern ~in_:str ~with_:"::"
+
 
   let of_string ?loc str =
     let loc = Option.value loc ~default:Location.Unknown in
