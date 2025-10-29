@@ -708,21 +708,21 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
 let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =
   let block = jump.dst in
   let node_label = block_to_node_name block in
-  let node_label, typ_opt, succs =
+  let node_label, typ_opt, succs, seen_nodes =
     (* If we've seen this node, stop the recursion *)
-    if Textual.NodeName.Set.mem node_label seen_nodes then (node_label, None, Textual.Node.Set.empty)
+    if Textual.NodeName.Set.mem node_label seen_nodes then
+      (node_label, None, Textual.Node.Set.empty, seen_nodes)
     else
-      let node, typ_opt, nodes = block_to_node_and_succs ~proc_state ~seen_nodes jump.dst in
-      (node.label, typ_opt, nodes)
+      let (node : Textual.Node.t), typ_opt, nodes, seen_nodes =
+        block_to_node_and_succs ~proc_state ~seen_nodes jump.dst
+      in
+      (node.label, typ_opt, nodes, seen_nodes)
   in
   let node_call = Textual.Terminator.{label= node_label; ssa_args= []} in
-  (Textual.Terminator.Jump [node_call], typ_opt, succs)
+  (Textual.Terminator.Jump [node_call], typ_opt, succs, seen_nodes)
 
 
-and to_terminator_and_succs ~proc_state ~seen_nodes term :
-    (Textual.Terminator.t * Textual.Typ.t option * Textual.Node.Set.t)
-    * Textual.Location.t option
-    * Textual.Instr.t list =
+and to_terminator_and_succs ~proc_state ~seen_nodes term =
   let no_succs = Textual.Node.Set.empty in
   match term with
   | Call {return; loc} ->
@@ -733,13 +733,16 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
       let textual_exp, textual_typ_opt, instrs = to_textual_exp loc ~proc_state exp in
       let exp_deref_instrs, textual_exp = add_deref ~proc_state textual_exp loc in
       let instrs = List.append instrs exp_deref_instrs in
-      ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc, instrs)
+      ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs, seen_nodes), Some loc, instrs)
   | Return {exp= None; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
-      ((Textual.Terminator.Ret (Textual.Exp.Const Null), None, no_succs), Some loc, [])
+      ((Textual.Terminator.Ret (Textual.Exp.Const Null), None, no_succs, seen_nodes), Some loc, [])
   | Throw {exc; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
-      ( (Textual.Terminator.Throw (to_textual_exp loc ~proc_state exc |> fst3), None, no_succs)
+      ( ( Textual.Terminator.Throw (to_textual_exp loc ~proc_state exc |> fst3)
+        , None
+        , no_succs
+        , seen_nodes )
       , Some loc
       , [] )
   | Switch {key; tbl; els; loc} -> (
@@ -748,33 +751,35 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term :
       | [(exp, zero_jump)] when Exp.equal exp Exp.false_ ->
           (* if then else *)
           let bexp, _, instrs = to_textual_bool_exp loc ~proc_state key in
-          let else_, else_typ, zero_nodes =
+          let else_, else_typ, zero_nodes, seen_nodes =
             to_textual_jump_and_succs ~proc_state ~seen_nodes zero_jump
           in
-          let then_, if_typ, els_nodes = to_textual_jump_and_succs ~proc_state ~seen_nodes els in
+          let then_, if_typ, els_nodes, seen_nodes =
+            to_textual_jump_and_succs ~proc_state ~seen_nodes els
+          in
           let term = Textual.Terminator.If {bexp; then_; else_} in
           let nodes = Textual.Node.Set.union zero_nodes els_nodes in
           let typ_opt = Type.join_typ if_typ else_typ in
-          ((term, typ_opt, nodes), Some loc, instrs)
+          ((term, typ_opt, nodes, seen_nodes), Some loc, instrs)
       | [] when Exp.equal key Exp.false_ ->
           (* goto *)
           (to_textual_jump_and_succs ~proc_state ~seen_nodes els, Some loc, [])
       | _ ->
-          ((Textual.Terminator.Unreachable, None, no_succs), None, [] (* TODO translate Switch *)) )
+          ( (Textual.Terminator.Unreachable, None, no_succs, seen_nodes)
+          , None
+          , [] (* TODO translate Switch *) ) )
   | Iswitch {loc} | Abort {loc} | Unreachable {loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
-      ((Textual.Terminator.Unreachable, None, no_succs), Some loc, [])
+      ((Textual.Terminator.Unreachable, None, no_succs, seen_nodes), Some loc, [])
 
 
 (* TODO still various parts of the node left to be translated *)
-and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) :
-    Textual.Node.t * Textual.Typ.t option * Textual.Node.Set.t =
+and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) =
   let node_name = block_to_node_name block in
   let instrs, first_loc, last_loc = cmnd_to_instrs ~proc_state block in
-  let (terminator, typ_opt, succs), term_loc_opt, term_instrs =
-    to_terminator_and_succs ~proc_state
-      ~seen_nodes:(Textual.NodeName.Set.add node_name seen_nodes)
-      block.term
+  let seen_nodes = Textual.NodeName.Set.add node_name seen_nodes in
+  let (terminator, typ_opt, succs, seen_nodes), term_loc_opt, term_instrs =
+    to_terminator_and_succs ~proc_state ~seen_nodes block.term
   in
   let instrs = List.append instrs term_instrs in
   let last_loc =
@@ -804,11 +809,11 @@ and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) :
       ; label_loc= first_loc }
   in
   (* We add the nodes here to make sure they always get added even in the case of recursive jumps *)
-  (node, typ_opt, Textual.Node.Set.add node succs)
+  (node, typ_opt, Textual.Node.Set.add node succs, seen_nodes)
 
 
 let func_to_nodes ~proc_state func =
-  let _, typ_opt, nodes =
+  let _, typ_opt, nodes, _ =
     block_to_node_and_succs ~proc_state ~seen_nodes:Textual.NodeName.Set.empty func.Llair.entry
   in
   (typ_opt, Textual.Node.Set.to_list nodes)
