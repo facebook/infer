@@ -124,8 +124,7 @@ let to_name_attr func_name =
   Option.map ~f:Textual.Attr.mk_plain_name (FuncName.unmangled_name func_name)
 
 
-let to_formals lang ~struct_map func =
-  let to_textual_formal formal = reg_to_var_name formal in
+let to_formal_types lang ~struct_map func =
   let to_textual_formal_type formal_type = reg_to_annot_typ lang ~struct_map formal_type in
   let to_textual_formal_signature_type formal formal_type =
     let typ = Type.signature_type_to_textual_typ lang formal_type in
@@ -134,20 +133,16 @@ let to_formals lang ~struct_map func =
   in
   let llair_formals = StdUtils.iarray_to_list func.Llair.formals in
   let llair_formals_types = StdUtils.iarray_to_list func.Llair.formals_types in
-  let formals = List.map ~f:to_textual_formal llair_formals in
   let formals_signature_types =
     List.map2 ~f:to_textual_formal_signature_type llair_formals llair_formals_types
   in
   (* We try using the signature types, but sometimes they don't match the number of arguments,
      in that case we revert to the ninternal types *)
-  let formals_signature_types =
-    match formals_signature_types with
-    | List.Or_unequal_lengths.Unequal_lengths ->
-        List.map ~f:to_textual_formal_type llair_formals
-    | List.Or_unequal_lengths.Ok formals_ ->
-        formals_
-  in
-  (formals, formals_signature_types)
+  match formals_signature_types with
+  | List.Or_unequal_lengths.Unequal_lengths ->
+      List.map ~f:to_textual_formal_type llair_formals
+  | List.Or_unequal_lengths.Ok formals_ ->
+      formals_
 
 
 let block_to_node_name block =
@@ -977,86 +972,99 @@ let create_offset_attributes class_method_index : attr_map =
   Textual.TypeName.Map.fold process_class class_method_index Textual.QualifiedProcName.Map.empty
 
 
+let function_to_proc_decl lang ~struct_map offset_attributes (func_name, func) =
+  let formal_types = to_formal_types lang ~struct_map func in
+  let loc = to_textual_loc func.Llair.loc in
+  let qualified_name = to_qualified_proc_name ~loc func_name in
+  let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
+  let fun_result_typ =
+    Textual.Typ.mk_without_attributes
+      (Type.to_textual_typ lang ~struct_map (FuncName.typ func_name))
+  in
+  let result_type =
+    match func.Llair.freturn_type with
+    | Some typ ->
+        let typ =
+          Option.map ~f:Textual.Typ.mk_without_attributes
+            (Type.signature_type_to_textual_typ lang typ)
+        in
+        Option.value typ ~default:fun_result_typ
+    | None ->
+        fun_result_typ
+  in
+  let offset_attribute = Textual.QualifiedProcName.Map.find_opt qualified_name offset_attributes in
+  let procdecl =
+    Textual.ProcDecl.
+      { qualified_name
+      ; result_type
+      ; attributes= Option.to_list plain_name @ Option.to_list offset_attribute
+      ; formals_types= Some formal_types }
+  in
+  procdecl
+
+
+let translate_code lang source_file struct_map globals proc_descs (procdecl : Textual.ProcDecl.t)
+    (func_name, func) =
+  let should_translate =
+    should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
+  in
+  let formals_list = List.map ~f:reg_to_var_name (StdUtils.iarray_to_list func.Llair.formals) in
+  let formals =
+    match procdecl.Textual.ProcDecl.formals_types with
+    | None ->
+        Textual.VarName.Map.empty
+    | Some formals_types ->
+        List.fold2_exn
+          ~f:(fun formals varname typ -> Textual.VarName.Map.add varname typ formals)
+          formals_list formals_types ~init:Textual.VarName.Map.empty
+  in
+  let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
+  let proc_state : ProcState.t =
+    { qualified_name= procdecl.qualified_name
+    ; loc
+    ; formals
+    ; locals= VarMap.empty
+    ; ids= IdentMap.empty
+    ; reg_map= RegMap.empty
+    ; last_id= Textual.Ident.of_int 0
+    ; last_tmp_var= 0
+    ; struct_map
+    ; globals
+    ; lang }
+  in
+  let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
+  let result_type =
+    match ret_typ with
+    | Some typ ->
+        Textual.Typ.mk_without_attributes typ
+    | None ->
+        procdecl.result_type
+  in
+  let procdecl = {procdecl with result_type} in
+  let is_deinit () = Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit") in
+  if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
+  then ProcDecl procdecl :: proc_descs
+  else
+    let locals =
+      VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) proc_state.locals []
+    in
+    ProcDesc
+      Textual.ProcDesc.
+        { params= formals_list
+        ; locals
+        ; procdecl
+        ; start= block_to_node_name func.Llair.entry
+        ; nodes
+        ; fresh_ident= None
+        ; exit_loc= Unknown (* TODO: get this location *) }
+    :: proc_descs
+
+
 let translate_llair_functions source_file lang struct_map globals functions =
   let offset_attributes = create_offset_attributes !class_method_index in
-  let function_to_formal proc_descs (func_name, func) =
-    let formals_list, formals_types = to_formals lang ~struct_map func in
-    let loc = to_textual_loc func.Llair.loc in
-    let should_translate =
-      should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
-    in
-    let qualified_name = to_qualified_proc_name ~loc func_name in
-    let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
-    let proc_loc = to_textual_loc func.Llair.loc in
-    let formals_ =
-      List.fold2_exn
-        ~f:(fun formals varname typ -> Textual.VarName.Map.add varname typ formals)
-        formals_list formals_types ~init:Textual.VarName.Map.empty
-    in
-    let proc_state : ProcState.t =
-      { qualified_name
-      ; loc= proc_loc
-      ; formals= formals_
-      ; locals= VarMap.empty
-      ; ids= IdentMap.empty
-      ; reg_map= RegMap.empty
-      ; last_id= Textual.Ident.of_int 0
-      ; last_tmp_var= 0
-      ; struct_map
-      ; globals
-      ; lang }
-    in
-    let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
-    let fun_result_typ =
-      Textual.Typ.mk_without_attributes
-        (Type.to_textual_typ lang ~struct_map (FuncName.typ func_name))
-    in
-    let result_type =
-      match func.Llair.freturn_type with
-      | Some typ ->
-          let typ =
-            Option.map ~f:Textual.Typ.mk_without_attributes
-              (Type.signature_type_to_textual_typ lang typ)
-          in
-          Option.value typ ~default:fun_result_typ
-      | None ->
-          fun_result_typ
-    in
-    let result_type =
-      match ret_typ with Some typ -> Textual.Typ.mk_without_attributes typ | None -> result_type
-    in
-    let offset_attribute =
-      Textual.QualifiedProcName.Map.find_opt qualified_name offset_attributes
-    in
-    let procdecl =
-      Textual.ProcDecl.
-        { qualified_name
-        ; result_type
-        ; attributes= Option.to_list plain_name @ Option.to_list offset_attribute
-        ; formals_types= Some formals_types }
-    in
-    let is_deinit () =
-      Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit")
-    in
-    if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
-    then ProcDecl procdecl :: proc_descs
-    else
-      let locals =
-        VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) proc_state.locals []
-      in
-      ProcDesc
-        Textual.ProcDesc.
-          { params= formals_list
-          ; locals
-          ; procdecl
-          ; start= block_to_node_name func.Llair.entry
-          ; nodes
-          ; fresh_ident= None
-          ; exit_loc= Unknown (* TODO: get this location *) }
-      :: proc_descs
-  in
   let values = FuncName.Map.to_list functions in
-  List.fold values ~f:function_to_formal ~init:[]
+  let proc_decls = List.map values ~f:(function_to_proc_decl lang ~struct_map offset_attributes) in
+  List.fold2_exn proc_decls values ~f:(translate_code lang source_file struct_map globals) ~init:[]
 
 
 let reset_global_state () = Hash_set.clear Type.signature_structs
