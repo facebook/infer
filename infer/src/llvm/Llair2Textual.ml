@@ -1089,7 +1089,7 @@ let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Modu
   let procs = List.append procs proc_descs in
   let structs =
     List.map
-      ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)
+      ~f:(fun (_, (struct_, _)) -> Textual.Module.Struct struct_)
       (Textual.TypeName.Map.bindings struct_map)
   in
   let decls = List.append procs globals in

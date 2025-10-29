@@ -11,7 +11,8 @@ module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
 module RegMap = Llair.Exp.Reg.Map
 
-type structMap = Textual.Struct.t Textual.TypeName.Map.t
+type structMap = (Textual.Struct.t * string option) Textual.TypeName.Map.t
+(* the string option here represents the plain name of the struct. *)
 
 type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 

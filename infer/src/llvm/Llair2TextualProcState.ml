@@ -11,7 +11,7 @@ module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
 module RegMap = Llair.Exp.Reg.Map
 
-type structMap = Textual.Struct.t Textual.TypeName.Map.t
+type structMap = (Textual.Struct.t * string option) Textual.TypeName.Map.t
 
 type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
@@ -71,7 +71,9 @@ let pp_vars fmt vars =
 
 let pp_struct_map fmt struct_map =
   F.fprintf fmt "%a"
-    (Pp.comma_seq (Pp.pair ~fst:Textual.TypeName.pp ~snd:Textual.Struct.pp))
+    (Pp.comma_seq
+       (Pp.pair ~fst:Textual.TypeName.pp
+          ~snd:(Pp.pair ~fst:Textual.Struct.pp ~snd:(Pp.option String.pp)) ) )
     (Textual.TypeName.Map.bindings struct_map)
 
 

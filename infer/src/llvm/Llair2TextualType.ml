@@ -11,7 +11,7 @@ module L = Logging
 
 let add_struct_to_map name struct_ structMap =
   if Option.is_none (Textual.TypeName.Map.find_opt name structMap) then
-    Textual.TypeName.Map.add name struct_ structMap
+    Textual.TypeName.Map.add name (struct_, None) structMap
   else structMap
 
 
@@ -111,7 +111,7 @@ let lookup_field_type ~struct_map struct_name field_name =
   match struct_ with
   | None ->
       None
-  | Some struct_ ->
+  | Some (struct_, _) ->
       let field =
         List.find
           ~f:(fun field ->
