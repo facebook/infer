@@ -8,6 +8,7 @@
 open! IStd
 open! Llair
 module L = Logging
+module ProcState = Llair2TextualProcState
 
 let add_struct_to_map name struct_ structMap =
   if Option.is_none (Textual.TypeName.Map.find_opt name structMap) then
@@ -179,6 +180,9 @@ let join_typ typ1_opt typ2_opt =
       None
 
 
+let signature_structs = Hash_set.create (module String)
+(* Create a new empty set *)
+
 let rec signature_type_to_textual_typ lang signature_type =
   if String.is_suffix signature_type ~suffix:"*" then
     let name = String.chop_suffix_if_exists signature_type ~suffix:"*" in
@@ -190,7 +194,23 @@ let rec signature_type_to_textual_typ lang signature_type =
   else if String.equal signature_type "Int" then Some Textual.Typ.Int
   else if String.equal signature_type "<unknown>" then None
   else if String.equal signature_type "$sytD" then Some Textual.Typ.Void
-  else
+  else (
+    Hash_set.add signature_structs signature_type ;
     let struct_name = Textual.TypeName.of_string signature_type in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)
-    else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
+    else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name)) )
+
+
+let update_struct_map struct_map =
+  let update_struct_map struct_name ((struct_, plain_name) as v) =
+    match plain_name with
+    | Some _ ->
+        v
+    | None ->
+        let typ_name = Textual.BaseTypeName.to_string struct_name.Textual.TypeName.name in
+        let f signature_struct = String.is_substring ~substring:signature_struct typ_name in
+        Hash_set.find ~f signature_structs
+        |> Option.value_map ~default:v ~f:(fun signature_struct ->
+               (struct_, Some signature_struct) )
+  in
+  Textual.TypeName.Map.mapi update_struct_map struct_map

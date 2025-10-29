@@ -7,6 +7,7 @@
 
 open! IStd
 open! Llair
+module ProcState = Llair2TextualProcState
 
 val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
@@ -30,3 +31,8 @@ val lookup_field_type :
 val tuple_field_prefix : string
 
 val signature_type_to_textual_typ : Textual.Lang.t -> string -> Textual.Typ.t option
+
+val update_struct_map : ProcState.structMap -> ProcState.structMap
+[@@warning "-unused-value-declaration"]
+
+val signature_structs : string Hash_set.t

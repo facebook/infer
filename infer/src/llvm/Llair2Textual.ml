@@ -1059,7 +1059,10 @@ let translate_llair_functions source_file lang struct_map globals functions =
   List.fold values ~f:function_to_formal ~init:[]
 
 
+let reset_global_state () = Hash_set.clear Type.signature_structs
+
 let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Module.t =
+  reset_global_state () ;
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
   let globals_map = build_globals_map llair_program.Llair.globals in
   let source_file_ = SourceFile.create source_file in
