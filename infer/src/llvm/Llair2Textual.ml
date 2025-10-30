@@ -150,28 +150,41 @@ let block_to_node_name block =
   Textual.NodeName.of_string name
 
 
-let to_textual_arith_exp_builtin (op : Llair.Exp.op2) (typ : Llair.Typ.t) =
-  let sil_binop : Binop.t =
+let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
+
+let undef_exp ~loc ?typ exp =
+  L.internal_error "unsupported llair exp %a [%a]@\n" Llair.Exp.pp exp Textual.Location.pp loc ;
+  (* TODO: should include the arguments here too *)
+  (Textual.Exp.Call {proc= undef_proc_name; args= []; kind= NonVirtual}, typ, [])
+
+
+let to_textual_arith_exp_builtin ~loc (op : Llair.Exp.op2) (typ : Llair.Typ.t) =
+  let sil_binop : Binop.t option =
     match (op, typ) with
     | Add, Integer _ ->
-        PlusA (Some IInt)
+        Some (PlusA (Some IInt))
     | Add, Pointer _ ->
-        PlusPI
+        Some PlusPI
     | Sub, Integer _ ->
-        MinusA (Some IInt)
+        Some (MinusA (Some IInt))
     | Mul, Integer _ ->
-        Mult (Some IInt)
+        Some (Mult (Some IInt))
     | Div, Integer _ ->
-        DivI
+        Some DivI
     | Div, Float _ ->
-        DivF
+        Some DivF
     | Rem, Integer _ ->
-        Mod
+        Some Mod
     | _ ->
-        L.die InternalError "unsupported llair binop %a:%a@\n" Sexp.pp (Llair.Exp.sexp_of_op2 op)
-          Llair.Typ.pp typ
+        None
   in
-  Textual.ProcDecl.of_binop sil_binop
+  match sil_binop with
+  | Some binop ->
+      Textual.ProcDecl.of_binop binop
+  | None ->
+      L.internal_error "unsupported llair op2 %a [%a]@\n" Llair.Exp.pp_op2 op Textual.Location.pp
+        loc ;
+      undef_proc_name
 
 
 let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
@@ -205,13 +218,6 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
         assert false
   in
   Textual.ProcDecl.of_binop sil_bin_op
-
-
-let undef_exp ?typ exp =
-  L.internal_error "unsupported llair exp %a@\n" Llair.Exp.pp exp ;
-  let proc = builtin_qual_proc_name "llvm_nondet" in
-  (* TODO: should include the arguments here too *)
-  (Textual.Exp.Call {proc; args= []; kind= NonVirtual}, typ, [])
 
 
 let add_deref ~proc_state exp loc =
@@ -252,7 +258,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       (textual_exp, Some textual_typ, [])
   | Nondet {typ} ->
       let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
-      undef_exp ~typ:textual_typ exp
+      undef_exp ~loc ~typ:textual_typ exp
   | FuncName {name} ->
       (Textual.Exp.Const (Str name), None, [])
   | Reg {id; name; typ} ->
@@ -298,7 +304,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       match typ_name with
       | None ->
-          undef_exp exp
+          undef_exp ~loc exp
       | Some typ_name ->
           let exp, _, exp_instrs = to_textual_exp loc ~proc_state llair_exp in
           let field =
@@ -335,10 +341,10 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
   | Ap1 (Splat, _, _) ->
       (* [splat exp] initialises every element of an array with the element exp, so to be precise it
          needs to be translated as a loop. We translate here to a non-deterministic value for the array *)
-      let proc = builtin_qual_proc_name "llvm_nondet" in
+      let proc = undef_proc_name in
       (Call {proc; args= []; kind= Textual.Exp.NonVirtual}, None, [])
   | Ap2 (((Add | Sub | Mul | Div | Rem) as op), typ, e1, e2) ->
-      let proc = to_textual_arith_exp_builtin op typ in
+      let proc = to_textual_arith_exp_builtin ~loc op typ in
       let exp1, typ1, exp1_instrs = to_textual_exp loc ~proc_state e1 in
       let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state e2 in
       ( Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
@@ -385,7 +391,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       match type_name_opt with
       | None ->
-          undef_exp exp
+          undef_exp ~loc exp
       | Some type_name ->
           let elements = StdUtils.iarray_to_list _elements in
           let id = add_fresh_id ~proc_state () in
@@ -413,7 +419,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let instrs = rcd_store_instr :: List.foldi ~f:to_textual_exp_index ~init:[] elements in
           (rcd_exp, Some textual_typ, instrs) )
   | _ ->
-      undef_exp exp
+      undef_exp ~loc exp
 
 
 and to_textual_bool_exp ~proc_state loc exp =

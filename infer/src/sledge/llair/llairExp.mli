@@ -88,6 +88,8 @@ type t = private
 
 val pp : t pp
 
+val pp_op2 : op2 pp
+
 val string_of_exp : t -> string option
 
 include Invariant.S with type t := t
