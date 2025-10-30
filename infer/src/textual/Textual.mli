@@ -67,7 +67,13 @@ module FieldName : NAME (* field names, without their enclosing types *)
 
 module NodeName : NAME (* node names, also called labels *)
 
-module BaseTypeName : NAME
+module BaseTypeName : sig
+  include NAME
+
+  val swift_tuple_class_name : t
+
+  val swift_type_name : t
+end
 
 module TypeName : sig
   (* structured value type name *)
@@ -79,6 +85,8 @@ module TypeName : sig
   val of_string_no_dot_escape : string -> t
 
   val mk_swift_tuple_type_name : t list -> t
+
+  val mk_swift_type_name : ?plain_name:string -> string -> t
 
   val pp : F.formatter -> t -> unit
 

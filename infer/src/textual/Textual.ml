@@ -203,6 +203,8 @@ module BaseTypeName : sig
 
   val swift_tuple_class_name : t
 
+  val swift_type_name : t
+
   val is_hack_closure_generated_type : t -> bool
 end = struct
   include Name
@@ -218,6 +220,8 @@ end = struct
   let hack_generics = {value= "HackGenerics"; loc= Location.Unknown}
 
   let swift_tuple_class_name = {value= "__infer_tuple_class"; loc= Location.Unknown}
+
+  let swift_type_name = {value= "__infer_swift_type"; loc= Location.Unknown}
 
   let is_hack_closure_generated_type {value} = String.is_prefix ~prefix:"Closure$" value
 end
@@ -251,6 +255,8 @@ module TypeName : sig
 
   val mk_swift_tuple_type_name : t list -> t
 
+  val mk_swift_type_name : ?plain_name:string -> string -> t
+
   val is_hack_closure_generated_type : t -> bool
 end = struct
   module T = struct
@@ -268,6 +274,16 @@ end = struct
 
 
   let mk_swift_tuple_type_name args = {name= BaseTypeName.swift_tuple_class_name; args}
+
+  let mk_swift_type_name ?plain_name mangled_name =
+    let fst_arg = {name= BaseTypeName.of_string mangled_name; args= []} in
+    let snd_arg =
+      Option.value_map ~default:[]
+        ~f:(fun plain_name -> [{name= BaseTypeName.of_string plain_name; args= []}])
+        plain_name
+    in
+    {name= BaseTypeName.swift_type_name; args= fst_arg :: snd_arg}
+
 
   let rec pp fmt {name; args} =
     if List.is_empty args then BaseTypeName.pp fmt name

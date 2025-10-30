@@ -7,9 +7,7 @@
 open! IStd
 module F = Format
 
-type t =
-  { classname: string
-  ; mutable plain_name: string option [@compare.ignore] [@equal.ignore] [@hash.ignore] }
+type t = {classname: string; plain_name: string option [@ignore]}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
 let pp fmt {plain_name; classname} =
@@ -24,4 +22,4 @@ let classname {classname} = classname
 
 let to_string = Pp.string_of_pp pp
 
-let of_string classname = {classname; plain_name= None}
+let of_string ?plain_name classname = {classname; plain_name}

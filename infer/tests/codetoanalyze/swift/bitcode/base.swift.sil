@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var1: int, var2: int) : *__infer_tuple_class<int,int> {
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var1: int, var2: int) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
   local height: int, age: int
   #: @[107:0]
       n1 = load &var1 @[107:0]
@@ -15,9 +15,9 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
       store &height <- n2 @[108:0]
       n3 = $builtins.llvm_init_tuple() @[109:0]
       n4 = load &var1 @[19:5]
-      store n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n4 @[19:5]
+      store n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n4 @[19:5]
       n5 = load &var2 @[19:5]
-      store n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[19:5]
+      store n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 <- n5 @[19:5]
       ret n3 @[19:5]
       
 } @?
@@ -62,14 +62,14 @@ define .plain_name = "returnOne" $s5Hello9returnOneSiyF() : int {
       
 } @?
 
-declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *ptr_elt
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 
-global llvm::used: *ptr_elt
+global llvm::used: *__infer_swift_type<ptr_elt>
 
-global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *ptr_elt
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
 
-global __swift_reflection_version: *ptr_elt
+global __swift_reflection_version: *__infer_swift_type<ptr_elt>
 
-type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
-                                     __infer_tuple_field_1: int}
+type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int}
 

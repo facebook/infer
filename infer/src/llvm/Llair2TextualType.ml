@@ -10,6 +10,13 @@ open! Llair
 module L = Logging
 module ProcState = Llair2TextualProcState
 
+let to_textual_type_name lang ?plain_name name =
+  if Textual.Lang.is_swift lang then Textual.TypeName.mk_swift_type_name ?plain_name name
+  else Textual.TypeName.of_string name
+
+
+let type_name_of_type lang typ = to_textual_type_name lang (Format.asprintf "%a" Textual.Typ.pp typ)
+
 let add_struct_to_map name struct_ structMap =
   if Option.is_none (Textual.TypeName.Map.find_opt name structMap) then
     Textual.TypeName.Map.add name (struct_, None) structMap
@@ -27,8 +34,6 @@ let tuple_field_of_pos type_name pos =
   let name = Format.sprintf "%s%s" tuple_field_prefix (Int.to_string pos) in
   Textual.{enclosing_class= type_name; name= FieldName.of_string name}
 
-
-let type_name_of_type typ = Textual.TypeName.of_string (Format.asprintf "%a" Textual.Typ.pp typ)
 
 let rec translate_struct lang ?struct_map ~tuple struct_name elements =
   let fields = to_textual_field_decls lang ~tuple ?struct_map struct_name elements in
@@ -80,12 +85,12 @@ and to_textual_typ lang ?struct_map (typ : Llair.Typ.t) =
       let tuple_name = to_textual_tuple_name lang ?struct_map elts in
       Textual.Typ.(Ptr (Struct tuple_name))
   | Struct {name} ->
-      let struct_name = Textual.TypeName.of_string name in
+      let struct_name = to_textual_type_name lang name in
       if Textual.Lang.is_c lang then Textual.Typ.Struct struct_name
       else Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
   | Opaque {name} ->
       (* From llair's docs: Uniquely named aggregate type whose definition is hidden. *)
-      let struct_name = Textual.TypeName.of_string name in
+      let struct_name = to_textual_type_name lang name in
       Textual.Typ.Struct struct_name
 
 
@@ -96,7 +101,7 @@ and to_textual_tuple_name lang ?struct_map elements =
     List.map
       ~f:(fun typ ->
         let textual_typ = to_textual_typ lang ?struct_map typ in
-        type_name_of_type textual_typ )
+        type_name_of_type lang textual_typ )
       typs
   in
   Textual.TypeName.mk_swift_tuple_type_name textual_types
@@ -126,7 +131,7 @@ let translate_types_env lang (types_defns : Llair.Typ.t list) =
   let translate_types_defn structMap (typ : Llair.Typ.t) =
     match typ with
     | Struct {name: string; elts} ->
-        let struct_name = Textual.TypeName.of_string name in
+        let struct_name = to_textual_type_name lang name in
         let struct_ = translate_struct lang ~tuple:false struct_name elts in
         add_struct_to_map struct_name struct_ structMap
     | Tuple {elts} ->
@@ -196,7 +201,7 @@ let rec signature_type_to_textual_typ lang signature_type =
   else if String.equal signature_type "$sytD" then Some Textual.Typ.Void
   else (
     Hash_set.add signature_structs signature_type ;
-    let struct_name = Textual.TypeName.of_string signature_type in
+    let struct_name = to_textual_type_name lang signature_type in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)
     else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name)) )
 

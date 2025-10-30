@@ -109,11 +109,32 @@ module TypeNameBridge = struct
 
 
   let to_swift_class_name value : SwiftClassName.t =
-    let to_string {TypeName.name= {BaseTypeName.value}} = value in
-    SwiftClassName.of_string (to_string value)
+    match value with
+    | {TypeName.name; args}
+      when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_type_name ->
+        let mangled_name, plain_name =
+          match args with
+          | [mangled_name] ->
+              (mangled_name, None)
+          | [mangled_name; plain_name] ->
+              (mangled_name, Some plain_name)
+          | _ ->
+              assert false
+        in
+        let plain_name =
+          Option.map
+            ~f:(fun plain_name -> Textual.BaseTypeName.to_string plain_name.name)
+            plain_name
+        in
+        SwiftClassName.of_string ?plain_name (Textual.BaseTypeName.to_string mangled_name.name)
+    | {TypeName.name}
+      when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
+        SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
+    | _ ->
+        assert false
 
 
-  let to_sil (lang : Lang.t) {name= {value}; args} : SilTyp.Name.t =
+  let to_sil (lang : Lang.t) ({name= {value}; args} as typ) : SilTyp.Name.t =
     match (lang, args) with
     | Java, [] ->
         string_to_java_sil value
@@ -132,7 +153,7 @@ module TypeNameBridge = struct
     | Rust, _ ->
         L.die InternalError "to_stil conversion error <NOT YET SUPPORTED>"
     | Swift, _ ->
-        SwiftClass (SwiftClassName.of_string value)
+        SwiftClass (to_swift_class_name typ)
 
 
   let java_lang_object = of_string "java.lang.Object"
