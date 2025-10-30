@@ -42,3 +42,6 @@ val pp : F.formatter -> print_types:bool -> t -> unit [@@warning "-unused-value-
 val global_proc_state : Textual.Lang.t -> Textual.Location.t -> string -> t
 
 val get_fresh_fake_line : unit -> int
+
+val pp_struct_map : F.formatter -> (Textual.Struct.t * string option) Textual.TypeName.Map.t -> unit
+[@@warning "-unused-value-declaration"]

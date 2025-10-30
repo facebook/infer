@@ -208,9 +208,14 @@ let update_struct_map struct_map =
         v
     | None ->
         let typ_name = Textual.BaseTypeName.to_string struct_name.Textual.TypeName.name in
-        let f signature_struct = String.is_substring ~substring:signature_struct typ_name in
-        Hash_set.find ~f signature_structs
-        |> Option.value_map ~default:v ~f:(fun signature_struct ->
-               (struct_, Some signature_struct) )
+        if String.is_suffix ~suffix:"C" typ_name || String.is_suffix ~suffix:"V" typ_name then
+          let f signature_struct =
+            String.is_substring ~substring:signature_struct typ_name
+            (* we only want to find the plain name of classes or structs *)
+          in
+          Hash_set.find ~f signature_structs
+          |> Option.value_map ~default:v ~f:(fun signature_struct ->
+                 (struct_, Some signature_struct) )
+        else v
   in
   Textual.TypeName.Map.mapi update_struct_map struct_map

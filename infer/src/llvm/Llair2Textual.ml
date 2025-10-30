@@ -1064,6 +1064,7 @@ let translate_llair_functions source_file lang struct_map globals functions =
   let offset_attributes = create_offset_attributes !class_method_index in
   let values = FuncName.Map.to_list functions in
   let proc_decls = List.map values ~f:(function_to_proc_decl lang ~struct_map offset_attributes) in
+  let struct_map = Type.update_struct_map struct_map in
   List.fold2_exn proc_decls values ~f:(translate_code lang source_file struct_map globals) ~init:[]
 
 

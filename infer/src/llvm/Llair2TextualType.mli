@@ -33,6 +33,5 @@ val tuple_field_prefix : string
 val signature_type_to_textual_typ : Textual.Lang.t -> string -> Textual.Typ.t option
 
 val update_struct_map : ProcState.structMap -> ProcState.structMap
-[@@warning "-unused-value-declaration"]
 
 val signature_structs : string Hash_set.t
