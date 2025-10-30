@@ -41,6 +41,9 @@ module Global : sig
 
   val store : normalize:bool -> t -> unit
   (** Save and cache the global type environment *)
+
+  val set : t option -> unit
+  (** Set the global type environment *)
 end
 
 val lookup : t -> Typ.Name.t -> Struct.t option

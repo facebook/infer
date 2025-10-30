@@ -85,7 +85,17 @@ let capture_llair source_file llair_program =
       TextualSil.module_to_sil lang transformed_textual decls |> Result.map_error ~f
     in
     let sil = {TextualParser.TextualFile.sourcefile= textual_source_file; cfg; tenv} in
-    TextualParser.TextualFile.capture ~use_global_tenv:false sil ;
+    let use_global_tenv = if Textual.Lang.is_swift lang then true else false in
+    TextualParser.TextualFile.capture ~use_global_tenv sil ;
+    ( if use_global_tenv then
+        let global_tenv =
+          Tenv.Global.load ()
+          |> Option.value_or_thunk ~default:(fun () ->
+                 let tenv = Tenv.create () in
+                 Tenv.Global.set (Some tenv) ;
+                 tenv )
+        in
+        Tenv.merge ~src:tenv ~dst:global_tenv ) ;
     Ok warnings
   in
   match result with

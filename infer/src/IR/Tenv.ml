@@ -307,6 +307,8 @@ module Global : sig
   val force_load : unit -> t option
 
   val store : normalize:bool -> t -> unit
+
+  val set : t option -> unit
 end = struct
   let global_tenv : t option Atomic.t = Atomic.make None
 

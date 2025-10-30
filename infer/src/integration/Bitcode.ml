@@ -63,7 +63,8 @@ let llvm_capture ~compiler command args =
 let capture compiler ~command ~args =
   L.debug Capture Quiet "processed command is %s, args are %a@\n" command
     (Pp.comma_seq F.pp_print_string) args ;
-  llvm_capture ~compiler command args
+  llvm_capture ~compiler command args ;
+  Tenv.Global.load () |> Option.iter ~f:(Tenv.Global.store ~normalize:true)
 
 
 let capture_llair ~source_file ~llair_file =
@@ -73,4 +74,5 @@ let capture_llair ~source_file ~llair_file =
 
 
 let direct_bitcode_capture ~sources ~bitcode =
-  Utils.with_file_in bitcode ~f:(fun llvm_bitcode -> LlvmFrontend.capture ~sources llvm_bitcode)
+  Utils.with_file_in bitcode ~f:(fun llvm_bitcode -> LlvmFrontend.capture ~sources llvm_bitcode) ;
+  Tenv.Global.load () |> Option.iter ~f:(Tenv.Global.store ~normalize:true)
