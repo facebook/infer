@@ -208,6 +208,11 @@ BUCK OPTIONS
        --buck2-root dir
            Specify the parent directory of buck-out (used only for buck2).
 
+PULSE CHECKER OPTIONS
+       --pulse-report-issues-reachable-from +regex
+           Re-raise issues that Pulse was able to propagate all the way to
+           procedures matching one of the given regexes
+
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).

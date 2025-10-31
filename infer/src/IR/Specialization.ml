@@ -89,8 +89,8 @@ module Pulse = struct
     let compare = compare
   end)
 
-  let is_pulse_specialization_limit_not_reached map =
-    Map.cardinal map < Config.pulse_specialization_limit
+  let is_pulse_specialization_limit_reached map =
+    Map.cardinal map >= Config.pulse_specialization_limit
 
 
   let has_type_in_specialization {dynamic_types} specialized_type =

@@ -207,6 +207,7 @@ let compute_errlog_extras cost =
   ; copy_type= None
   ; config_usage_extra= None
   ; may_depend_on_an_unknown_value= None
+  ; reachable_from= None
   ; taint_extra= None
   ; transitive_callees= []
   ; transitive_missed_captures= [] }

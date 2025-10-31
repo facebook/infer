@@ -74,6 +74,7 @@ codetoanalyze/c/pulse/getcwd.c, getcwd_no_buf_no_free_bad, 3, MEMORY_LEAK_C, no_
 codetoanalyze/c/pulse/getcwd.c, getcwd_no_check_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `getcwd` (modelled),is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/infinite.c, simple_goto_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, simple_loop0_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
+codetoanalyze/c/pulse/infinite.c, entry_point_calling_bad, 1, INFINITE_LOOP, no_bucket, WARNING, [when calling `simple_loop0_bad` here,original issue trace starts here,in loop]
 codetoanalyze/c/pulse/infinite.c, conditional_goto0_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, loop_call_bad, 1, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, twovars_goto_bad, 5, INFINITE_LOOP, no_bucket, WARNING, [in loop]

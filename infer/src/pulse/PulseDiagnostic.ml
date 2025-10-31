@@ -116,7 +116,7 @@ module ReadUninitialized = struct
       trace
 end
 
-type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
+type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving compare, equal]
 
 let pp_flow_kind fmt flow_kind =
   match flow_kind with
@@ -129,7 +129,7 @@ let pp_flow_kind fmt flow_kind =
 
 
 type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
-[@@deriving equal]
+[@@deriving compare, equal]
 
 type resource =
   | CSharpClass of CSharpClassName.t
@@ -138,7 +138,7 @@ type resource =
   | Awaitable
   | HackBuilderResource of HackClassName.t
   | Memory of Attribute.allocator
-[@@deriving equal]
+[@@deriving compare, equal]
 
 let pp_resource fmt = function
   | CSharpClass class_name ->
@@ -246,7 +246,9 @@ type t =
       ; copied_location: (Procname.t * Location.t) option
       ; location_instantiated: Location.t option
       ; from: PulseAttribute.CopyOrigin.t }
-[@@deriving equal]
+[@@deriving compare, equal]
+
+let yojson_of_t = [%yojson_of: _]
 
 let pp fmt diagnostic =
   let pp_immediate fmt = F.pp_print_string fmt "immediate" in
@@ -430,12 +432,12 @@ let aborts_execution (path : PathContext.t) = function
       | Else_clause _
       | Function_clause _
       | If_clause _
-      | Try_clause _ ) ->
+      | Try_clause _ )
+  | InfiniteLoopError _ ->
       (* these errors either abort the whole program or, if they are false positives, mean that
          pulse is confused and the current abstract state has stopped making sense; either way,
          abort! *)
       not path.is_non_disj
-  | InfiniteLoopError _
   | ConfigUsage _
   | ConstRefableParameter _
   | DynamicTypeMismatch _

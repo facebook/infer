@@ -24,7 +24,10 @@ type 'abductive_domain_t base_t =
   | InfiniteLoop of 'abductive_domain_t
   | ExceptionRaised of 'abductive_domain_t
   | ExitProgram of AbductiveDomain.Summary.t
-  | AbortProgram of AbductiveDomain.Summary.t
+  | AbortProgram of
+      { astate: AbductiveDomain.Summary.t
+      ; diagnostic: Diagnostic.t
+      ; trace_to_issue: (Trace.t[@yojson.opaque]) }
   | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
   | LatentInvalidAccess of
       { astate: AbductiveDomain.Summary.t
@@ -45,7 +48,8 @@ let leq ~lhs ~rhs =
   phys_equal lhs rhs
   ||
   match (lhs, rhs) with
-  | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
+  | AbortProgram {astate= astate1}, AbortProgram {astate= astate2}
+  | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
   | ExceptionRaised astate1, ExceptionRaised astate2
   | InfiniteLoop astate1, InfiniteLoop astate2
@@ -64,7 +68,7 @@ let leq ~lhs ~rhs =
 
 
 let to_astate = function
-  | AbortProgram summary
+  | AbortProgram {astate= summary}
   | ExitProgram summary
   | LatentAbortProgram {astate= summary}
   | LatentInvalidAccess {astate= summary}
@@ -77,8 +81,12 @@ let to_astate = function
 let pp_header kind fmt = function
   | InfiniteLoop _ ->
       Pp.with_color kind Red F.pp_print_string fmt "InfiniteLoop"
-  | AbortProgram _ ->
-      Pp.with_color kind Red F.pp_print_string fmt "AbortProgram"
+  | AbortProgram {diagnostic} ->
+      Pp.with_color kind Red F.pp_print_string fmt "AbortProgram" ;
+      let issue_type = Diagnostic.get_issue_type ~latent:false diagnostic in
+      let message, _suggestion = Diagnostic.get_message_and_suggestion diagnostic in
+      let location = Diagnostic.get_location diagnostic in
+      F.fprintf fmt "(%a: %a: %s)" Location.pp location IssueType.pp issue_type message
   | ContinueProgram _ ->
       F.pp_print_string fmt "ContinueProgram"
   | ExceptionRaised _ ->
@@ -88,9 +96,11 @@ let pp_header kind fmt = function
   | LatentAbortProgram {latent_issue} ->
       Pp.with_color kind Orange F.pp_print_string fmt "LatentAbortProgram" ;
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
+      let issue_type = Diagnostic.get_issue_type ~latent:true diagnostic in
       let message, _suggestion = Diagnostic.get_message_and_suggestion diagnostic in
       let location = Diagnostic.get_location diagnostic in
-      F.fprintf fmt "(%a: %s)@ %a" Location.pp location message LatentIssue.pp latent_issue
+      F.fprintf fmt "(%a: %a: %s)@ %a" Location.pp location IssueType.pp issue_type message
+        LatentIssue.pp latent_issue
   | LatentInvalidAccess {address; must_be_valid= _} ->
       Pp.with_color kind Orange F.pp_print_string fmt "LatentInvalidAccess" ;
       F.fprintf fmt "(%a)" DecompilerExpr.pp address
@@ -142,8 +152,12 @@ let add_widenstate (key : Procdesc.Node.t) (data : TermKey.Set.t) =
           widenstate )
 
 
-let has_infinite_state (lst : t list) : bool =
-  List.exists ~f:(fun x -> match x with InfiniteLoop _ -> true | _ -> false) lst
+let has_infinite_state exec_states =
+  List.exists exec_states ~f:(function
+    | AbortProgram {diagnostic= InfiniteLoopError _} | InfiniteLoop _ ->
+        true
+    | _ ->
+        false )
 
 
 let back_edge (prev : t list) (next : t list) (num_iters : int) : int option =
@@ -167,7 +181,7 @@ let back_edge (prev : t list) (next : t list) (num_iters : int) : int option =
     let nextlen = List.length next in
     let extract_pathcond hd : Formula.t =
       match hd with
-      | AbortProgram astate
+      | AbortProgram {astate}
       | ExitProgram astate
       | LatentAbortProgram {astate}
       | LatentInvalidAccess {astate}
@@ -260,7 +274,11 @@ let equal_fast exec_state1 exec_state2 =
   phys_equal exec_state1 exec_state2
   ||
   match (exec_state1, exec_state2) with
-  | AbortProgram astate1, AbortProgram astate2 | ExitProgram astate1, ExitProgram astate2 ->
+  | ( AbortProgram {astate= astate1; diagnostic= diagnostic1}
+    , AbortProgram {astate= astate2; diagnostic= diagnostic2} ) ->
+      (* ignoring traces in [AbortProgram] *)
+      phys_equal astate1 astate2 && phys_equal diagnostic1 diagnostic2
+  | ExitProgram astate1, ExitProgram astate2 ->
       phys_equal astate1 astate2
   | ContinueProgram astate1, ContinueProgram astate2 ->
       phys_equal astate1 astate2
