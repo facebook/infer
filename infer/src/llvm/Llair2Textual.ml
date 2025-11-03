@@ -108,7 +108,6 @@ let build_globals_map globals =
 
 
 let to_qualified_proc_name ?loc func_name =
-  let func_name = FuncName.name func_name in
   let proc_name = Textual.ProcName.of_string ?loc func_name in
   let enclosing_class =
     match Textual.ProcName.Map.find_opt proc_name !method_class_index with
@@ -480,7 +479,7 @@ and to_textual_call ~proc_state (call : 'a Llair.call) =
               (Procname.get_method BuiltinDecl.__assert_fail)
             || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
           then Textual.ProcDecl.assert_fail_name
-          else to_qualified_proc_name func.Llair.name
+          else to_qualified_proc_name (FuncName.name func.Llair.name)
         in
         (proc, Textual.Exp.NonVirtual, None)
     | Indirect {ptr} ->
@@ -978,10 +977,10 @@ let create_offset_attributes class_method_index : attr_map =
   Textual.TypeName.Map.fold process_class class_method_index Textual.QualifiedProcName.Map.empty
 
 
-let function_to_proc_decl lang ~struct_map offset_attributes (func_name, func) =
+let function_to_proc_decl lang ~struct_map (func_name, func) =
   let formal_types = to_formal_types lang ~struct_map func in
   let loc = to_textual_loc func.Llair.loc in
-  let qualified_name = to_qualified_proc_name ~loc func_name in
+  let qualified_name = to_qualified_proc_name ~loc (FuncName.name func_name) in
   let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
   let fun_result_typ =
     Textual.Typ.mk_without_attributes
@@ -998,12 +997,11 @@ let function_to_proc_decl lang ~struct_map offset_attributes (func_name, func) =
     | None ->
         fun_result_typ
   in
-  let offset_attribute = Textual.QualifiedProcName.Map.find_opt qualified_name offset_attributes in
   let procdecl =
     Textual.ProcDecl.
       { qualified_name
       ; result_type
-      ; attributes= Option.to_list plain_name @ Option.to_list offset_attribute
+      ; attributes= Option.to_list plain_name
       ; formals_types= Some formal_types }
   in
   procdecl
@@ -1067,12 +1065,28 @@ let translate_code lang source_file struct_map globals proc_descs (procdecl : Te
 
 
 let translate_llair_function_signatures lang struct_map functions =
-  let offset_attributes = create_offset_attributes !class_method_index in
-  let proc_decls =
-    List.map functions ~f:(function_to_proc_decl lang ~struct_map offset_attributes)
-  in
+  let proc_decls = List.map functions ~f:(function_to_proc_decl lang ~struct_map) in
   let struct_map = Type.update_struct_map struct_map in
   (proc_decls, struct_map)
+
+
+let update_function_signatures functions =
+  let update_proc_decl offset_attributes (procdecl : Textual.ProcDecl.t) =
+    let procname = procdecl.qualified_name.Textual.QualifiedProcName.name in
+    let loc = procname.Textual.ProcName.loc in
+    let qualified_name = to_qualified_proc_name ~loc (Textual.ProcName.to_string procname) in
+    let offset_attribute =
+      Textual.QualifiedProcName.Map.find_opt qualified_name offset_attributes
+    in
+    let procdecl =
+      { procdecl with
+        qualified_name
+      ; attributes= procdecl.attributes @ Option.to_list offset_attribute }
+    in
+    procdecl
+  in
+  let offset_attributes = create_offset_attributes !class_method_index in
+  List.map functions ~f:(update_proc_decl offset_attributes)
 
 
 let translate_llair_functions source_file lang struct_map globals proc_decls values =
@@ -1098,6 +1112,7 @@ let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Modu
         (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
       globals_map ([], [])
   in
+  let proc_decls = update_function_signatures proc_decls in
   let procs =
     translate_llair_functions source_file_ lang struct_map globals_map proc_decls functions
   in

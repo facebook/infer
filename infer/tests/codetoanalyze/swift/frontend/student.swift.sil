@@ -6,10 +6,10 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfC(var1: int, var2: *__infer_swift_type<$s5Hello10IndividualCXMTD>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC3ageACSi_tcfC(var1: int, var2: *__infer_swift_type<$s5Hello10IndividualCXMTD>) : *__infer_swift_type<ptr_elt> {
   #: @[222:0]
       n1 = load &var2 @[222:0]
-      n4 = swift_allocObject(n1, 32, 7) @[222:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10IndividualC,Individual>>) @[222:0]
       jmp 3::ret @[223:0]
       
   #3::ret: @[225:0]
@@ -48,11 +48,11 @@ define .plain_name = "age.get" $s5Hello10IndividualC3ageSivg(var1: *__infer_swif
       
 } @?
 
-declare .plain_name = "spouse.modify" $s5Hello10IndividualC6spouseACSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+declare .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 declare .plain_name = "spouse.modify" $s5Hello10IndividualC6spouseACSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "spouse.get" $s5Hello10IndividualC6spouseACSgvg(var1: *__infer_swift_type<Individual>) : *__infer_swift_type<$s5Hello10IndividualCSgD> {
+define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvg(var1: *__infer_swift_type<Individual>) : *__infer_swift_type<$s5Hello10IndividualCSgD> {
   local var3: int[]
   #: @[235:0]
       n2 = load &var1 @[235:0]
@@ -67,7 +67,7 @@ define .plain_name = "spouse.get" $s5Hello10IndividualC6spouseACSgvg(var1: *__in
 
 declare $s5Hello10IndividualC6spouseACSgvpfi() : *__infer_swift_type<$s5Hello10IndividualCSgD>
 
-define .plain_name = "spouse.set" $s5Hello10IndividualC6spouseACSgvs(var1: *__infer_swift_type<$s5Hello10IndividualCSgD>, var2: *__infer_swift_type<Individual>) : void {
+define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: *__infer_swift_type<$s5Hello10IndividualCSgD>, var2: *__infer_swift_type<Individual>) : void {
   local var4: int[]
   #: @[243:0]
       n1 = load &var1 @[243:0]
@@ -90,7 +90,7 @@ declare $s5Hello10IndividualCMa(int) : *__infer_swift_type<ptr_elt>
 
 declare $s5Hello10IndividualCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" $s5Hello10IndividualCfD(*__infer_swift_type<Individual>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualCfD(*__infer_swift_type<Individual>) : void
 
 declare .plain_name = "deinit" $s5Hello10IndividualCfd(*__infer_swift_type<Individual>) : *__infer_swift_type<ptr_elt>
 
@@ -524,10 +524,10 @@ define .plain_name = "test_employee_getter_setter_good" $s5Hello32test_employee_
       
 } @?
 
-define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfC(var1: int, var2: *__infer_swift_type<$s5Hello6PersonCXMTD>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC3ageACSi_tcfC(var1: int, var2: *__infer_swift_type<$s5Hello6PersonCXMTD>) : *__infer_swift_type<ptr_elt> {
   #: @[310:0]
       n1 = load &var2 @[310:0]
-      n4 = swift_allocObject(n1, 32, 7) @[310:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello6PersonC,Person>>) @[310:0]
       jmp 3::ret @[311:0]
       
   #3::ret: @[313:0]
@@ -576,11 +576,11 @@ define .plain_name = "age.get" $s5Hello6PersonC3ageSivg(var1: *__infer_swift_typ
       
 } @?
 
-declare .plain_name = "spouse.modify" $s5Hello6PersonC6spouseACvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+declare .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 declare .plain_name = "spouse.modify" $s5Hello6PersonC6spouseACvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "spouse.get" $s5Hello6PersonC6spouseACvg(var1: *__infer_swift_type<Person>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvg(var1: *__infer_swift_type<Person>) : *__infer_swift_type<ptr_elt> {
   local var3: int[]
   #: @[322:0]
       n2 = load &var1 @[322:0]
@@ -594,7 +594,7 @@ define .plain_name = "spouse.get" $s5Hello6PersonC6spouseACvg(var1: *__infer_swi
       
 } @?
 
-define .plain_name = "spouse.set" $s5Hello6PersonC6spouseACvs(var1: *__infer_swift_type<Person>, var2: *__infer_swift_type<Person>) : void {
+define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(var1: *__infer_swift_type<Person>, var2: *__infer_swift_type<Person>) : void {
   local var4: int[]
   #: @[331:0]
       n1 = load &var1 @[331:0]
@@ -613,14 +613,14 @@ define .plain_name = "spouse.set" $s5Hello6PersonC6spouseACvs(var1: *__infer_swi
 
 declare $s5Hello6PersonCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" $s5Hello6PersonCfD(*__infer_swift_type<Person>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonCfD(*__infer_swift_type<Person>) : void
 
 declare .plain_name = "deinit" $s5Hello6PersonCfd(*__infer_swift_type<Person>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "init" $s5Hello7StudentC3age6weightACSi_SitcfC(var1: int, var2: int, var3: *__infer_swift_type<$s5Hello7StudentCXMTD>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC3age6weightACSi_SitcfC(var1: int, var2: int, var3: *__infer_swift_type<$s5Hello7StudentCXMTD>) : *__infer_swift_type<ptr_elt> {
   #: @[356:0]
       n1 = load &var3 @[356:0]
-      n4 = swift_allocObject(n1, 32, 7) @[356:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7StudentC,Student>>) @[356:0]
       jmp 4::ret @[357:0]
       
   #4::ret: @[359:0]
@@ -665,11 +665,11 @@ define .plain_name = "age.get" $s5Hello7StudentC3ageSivg(var1: *__infer_swift_ty
       
 } @?
 
-declare .plain_name = "weight.modify" $s5Hello7StudentC6weightSivM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+declare .plain_name = "weight.modify" .method_offset = "14" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 declare .plain_name = "weight.modify" $s5Hello7StudentC6weightSivM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "weight.get" $s5Hello7StudentC6weightSivg(var1: *__infer_swift_type<Student>) : int {
+define .plain_name = "weight.get" .method_offset = "12" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivg(var1: *__infer_swift_type<Student>) : int {
   local var3: int[]
   #: @[370:0]
       n2 = load &var1 @[370:0]
@@ -679,7 +679,7 @@ define .plain_name = "weight.get" $s5Hello7StudentC6weightSivg(var1: *__infer_sw
       
 } @?
 
-define .plain_name = "weight.set" $s5Hello7StudentC6weightSivs(var1: int, var2: *__infer_swift_type<Student>) : void {
+define .plain_name = "weight.set" .method_offset = "13" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivs(var1: int, var2: *__infer_swift_type<Student>) : void {
   local var4: int[]
   #: @[375:0]
       n2 = load &var2 @[375:0]
@@ -692,7 +692,7 @@ define .plain_name = "weight.set" $s5Hello7StudentC6weightSivs(var1: int, var2: 
 
 declare $s5Hello7StudentCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" $s5Hello7StudentCfD(*__infer_swift_type<Student>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentCfD(*__infer_swift_type<Student>) : void
 
 declare .plain_name = "deinit" $s5Hello7StudentCfd(*__infer_swift_type<Student>) : *__infer_swift_type<ptr_elt>
 
