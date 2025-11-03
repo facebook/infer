@@ -13,13 +13,17 @@ val to_textual_type_name : Textual.Lang.t -> ?plain_name:label -> label -> Textu
 
 val mangled_name_of_type_name : Textual.TypeName.t -> label option
 
+val struct_name_of_mangled_name :
+  Textual.Lang.t -> 'a Textual.TypeName.Map.t -> label -> Textual.TypeName.t
+
 val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
 val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
-val to_annotated_textual_typ : Textual.Lang.t -> struct_map:'a -> Typ.t -> Textual.Typ.annotated
+val to_annotated_textual_typ :
+  Textual.Lang.t -> struct_map:ProcState.structMap -> Typ.t -> Textual.Typ.annotated
 
-val to_textual_typ : Textual.Lang.t -> ?struct_map:'a -> Typ.t -> Textual.Typ.t
+val to_textual_typ : Textual.Lang.t -> ?struct_map:ProcState.structMap -> Typ.t -> Textual.Typ.t
 
 val join_typ : Textual.Typ.t option -> Textual.Typ.t option -> Textual.Typ.t option
 

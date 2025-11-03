@@ -38,6 +38,22 @@ let rec update_type_name_with_plain_name ~plain_name (type_name : Textual.TypeNa
   else type_name
 
 
+let struct_name_of_mangled_name lang struct_map name =
+  let class_opt = ref None in
+  let _ =
+    Textual.TypeName.Map.exists
+      (fun struct_name _ ->
+        match mangled_name_of_type_name struct_name with
+        | Some mangled_name when String.equal mangled_name name ->
+            class_opt := Some struct_name ;
+            true
+        | _ ->
+            false )
+      struct_map
+  in
+  match !class_opt with None -> to_textual_type_name lang name | Some class_ -> class_
+
+
 let type_name_of_type lang typ = to_textual_type_name lang (Format.asprintf "%a" Textual.Typ.pp typ)
 
 let add_struct_to_map name struct_ structMap =
@@ -108,12 +124,24 @@ and to_textual_typ lang ?struct_map (typ : Llair.Typ.t) =
       let tuple_name = to_textual_tuple_name lang ?struct_map elts in
       Textual.Typ.(Ptr (Struct tuple_name))
   | Struct {name} ->
-      let struct_name = to_textual_type_name lang name in
+      let struct_name =
+        match struct_map with
+        | Some struct_map ->
+            struct_name_of_mangled_name lang struct_map name
+        | None ->
+            to_textual_type_name lang name
+      in
       if Textual.Lang.is_c lang then Textual.Typ.Struct struct_name
       else Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
   | Opaque {name} ->
       (* From llair's docs: Uniquely named aggregate type whose definition is hidden. *)
-      let struct_name = to_textual_type_name lang name in
+      let struct_name =
+        match struct_map with
+        | Some struct_map ->
+            struct_name_of_mangled_name lang struct_map name
+        | None ->
+            to_textual_type_name lang name
+      in
       Textual.Typ.Struct struct_name
 
 

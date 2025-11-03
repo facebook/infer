@@ -863,13 +863,13 @@ let pp_class_method_index fmt () =
 [@@warning "-unused-value-declaration"]
 
 
-let class_from_global lang global_name =
+let class_from_global lang struct_map global_name =
   let name = String.substr_replace_first global_name ~pattern:"$s" ~with_:"T" in
   let name = String.chop_suffix_exn name ~suffix:"Mf" in
-  Type.to_textual_type_name lang name
+  Type.struct_name_of_mangled_name lang struct_map name
 
 
-let collect_class_method_indices lang global exp =
+let collect_class_method_indices lang struct_map global exp =
   let process_exp (last_offset, carry) exp typ =
     match typ with
     | Llair.Typ.Integer {bits} when Int.equal bits 64 ->
@@ -884,7 +884,7 @@ let collect_class_method_indices lang global exp =
         let offset = last_offset + 1 in
         ( match exp with
         | Llair.Exp.FuncName {name} ->
-            let class_name = class_from_global lang global in
+            let class_name = class_from_global lang struct_map global in
             let proc_name = Textual.ProcName.of_string name in
             let proc =
               Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name}
@@ -917,7 +917,7 @@ let to_textual_global lang ~struct_map global =
     match global.GlobalDefn.init with
     | Some exp ->
         if String.is_suffix global_name ~suffix:"CMf" then
-          collect_class_method_indices lang global_name exp ;
+          collect_class_method_indices lang struct_map global_name exp ;
         if Config.llvm_translate_global_init then
           let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
           let procdecl =
