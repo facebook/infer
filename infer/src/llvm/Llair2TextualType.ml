@@ -42,7 +42,7 @@ let type_name_of_type lang typ = to_textual_type_name lang (Format.asprintf "%a"
 
 let add_struct_to_map name struct_ structMap =
   if Option.is_none (Textual.TypeName.Map.find_opt name structMap) then
-    Textual.TypeName.Map.add name (struct_, None) structMap
+    Textual.TypeName.Map.add name struct_ structMap
   else structMap
 
 
@@ -140,7 +140,7 @@ let lookup_field_type ~struct_map struct_name field_name =
   match struct_ with
   | None ->
       None
-  | Some (struct_, _) ->
+  | Some struct_ ->
       let field =
         List.find
           ~f:(fun field ->

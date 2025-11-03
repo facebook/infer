@@ -11,8 +11,7 @@ module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
 module RegMap = Llair.Exp.Reg.Map
 
-type structMap = (Textual.Struct.t * string option) Textual.TypeName.Map.t
-(* the string option here represents the plain name of the struct. *)
+type structMap = Textual.Struct.t Textual.TypeName.Map.t
 
 type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
@@ -43,5 +42,5 @@ val global_proc_state : Textual.Lang.t -> Textual.Location.t -> string -> t
 
 val get_fresh_fake_line : unit -> int
 
-val pp_struct_map : F.formatter -> (Textual.Struct.t * string option) Textual.TypeName.Map.t -> unit
+val pp_struct_map : F.formatter -> Textual.Struct.t Textual.TypeName.Map.t -> unit
 [@@warning "-unused-value-declaration"]
