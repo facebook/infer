@@ -1066,11 +1066,16 @@ let translate_code lang source_file struct_map globals proc_descs (procdecl : Te
     :: proc_descs
 
 
-let translate_llair_functions source_file lang struct_map globals functions =
+let translate_llair_function_signatures lang struct_map functions =
   let offset_attributes = create_offset_attributes !class_method_index in
-  let values = FuncName.Map.to_list functions in
-  let proc_decls = List.map values ~f:(function_to_proc_decl lang ~struct_map offset_attributes) in
+  let proc_decls =
+    List.map functions ~f:(function_to_proc_decl lang ~struct_map offset_attributes)
+  in
   let struct_map = Type.update_struct_map struct_map in
+  (proc_decls, struct_map)
+
+
+let translate_llair_functions source_file lang struct_map globals proc_decls values =
   List.fold2_exn proc_decls values ~f:(translate_code lang source_file struct_map globals) ~init:[]
 
 
@@ -1078,7 +1083,9 @@ let reset_global_state () = Hash_set.clear Type.signature_structs
 
 let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Module.t =
   reset_global_state () ;
+  let functions = FuncName.Map.to_list llair_program.Llair.functions in
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
+  let proc_decls, struct_map = translate_llair_function_signatures lang struct_map functions in
   let globals_map = build_globals_map llair_program.Llair.globals in
   let source_file_ = SourceFile.create source_file in
   let globals, proc_descs =
@@ -1092,7 +1099,7 @@ let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Modu
       globals_map ([], [])
   in
   let procs =
-    translate_llair_functions source_file_ lang struct_map globals_map llair_program.Llair.functions
+    translate_llair_functions source_file_ lang struct_map globals_map proc_decls functions
   in
   let procs =
     List.fold

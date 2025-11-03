@@ -15,6 +15,29 @@ let to_textual_type_name lang ?plain_name name =
   else Textual.TypeName.of_string name
 
 
+let mangled_name_of_type_name (type_name : Textual.TypeName.t) =
+  if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
+    match type_name.args with
+    | {name; args= []} :: _ ->
+        Some (Textual.BaseTypeName.to_string name)
+    | _ ->
+        None
+  else None
+
+
+let rec update_type_name_with_plain_name ~plain_name (type_name : Textual.TypeName.t) =
+  if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
+    match type_name.args with
+    | [{name; args= []}] ->
+        Textual.TypeName.mk_swift_type_name ~plain_name (Textual.BaseTypeName.to_string name)
+    | _ ->
+        type_name
+  else if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_tuple_class_name then
+    let args = List.map ~f:(update_type_name_with_plain_name ~plain_name) type_name.args in
+    Textual.TypeName.mk_swift_tuple_type_name args
+  else type_name
+
+
 let type_name_of_type lang typ = to_textual_type_name lang (Format.asprintf "%a" Textual.Typ.pp typ)
 
 let add_struct_to_map name struct_ structMap =
@@ -207,20 +230,24 @@ let rec signature_type_to_textual_typ lang signature_type =
 
 
 let update_struct_map struct_map =
-  let update_struct_map struct_name ((struct_, plain_name) as v) =
-    match plain_name with
-    | Some _ ->
-        v
-    | None ->
-        let typ_name = Textual.BaseTypeName.to_string struct_name.Textual.TypeName.name in
-        if String.is_suffix ~suffix:"C" typ_name || String.is_suffix ~suffix:"V" typ_name then
-          let f signature_struct =
-            String.is_substring ~substring:signature_struct typ_name
-            (* we only want to find the plain name of classes or structs *)
-          in
-          Hash_set.find ~f signature_structs
-          |> Option.value_map ~default:v ~f:(fun signature_struct ->
-                 (struct_, Some signature_struct) )
-        else v
+  let update_struct_map struct_name v struct_map =
+    let struct_name =
+      match mangled_name_of_type_name struct_name with
+      | Some typ_name
+        when String.is_suffix ~suffix:"C" typ_name || String.is_suffix ~suffix:"V" typ_name -> (
+          (* we only want to find the plain name of classes or structs *)
+          let f signature_struct = String.is_substring ~substring:signature_struct typ_name in
+          match Hash_set.find ~f signature_structs with
+          | Some signature_struct ->
+              let struct_name =
+                update_type_name_with_plain_name ~plain_name:signature_struct struct_name
+              in
+              struct_name
+          | None ->
+              struct_name )
+      | _ ->
+          struct_name
+    in
+    Textual.TypeName.Map.add struct_name v struct_map
   in
-  Textual.TypeName.Map.mapi update_struct_map struct_map
+  Textual.TypeName.Map.fold update_struct_map struct_map Textual.TypeName.Map.empty

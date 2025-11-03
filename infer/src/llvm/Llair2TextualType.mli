@@ -11,6 +11,8 @@ module ProcState = Llair2TextualProcState
 
 val to_textual_type_name : Textual.Lang.t -> ?plain_name:label -> label -> Textual.TypeName.t
 
+val mangled_name_of_type_name : Textual.TypeName.t -> label option
+
 val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
 val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
