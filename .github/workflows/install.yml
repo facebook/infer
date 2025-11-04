@@ -7,7 +7,7 @@ on:
 jobs:
   create-release:
     name: Create release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       upload-url: ${{ steps.create-release.outputs.upload_url }}
     steps:
@@ -65,7 +65,7 @@ jobs:
 
       - name: Install Required Apt Packages for Ubuntu
         run: |
-          sudo apt install clang libmpfr-dev libsqlite3-dev ninja-build
+          sudo apt install llvm-19-dev libmpfr-dev libsqlite3-dev ninja-build
           sudo apt clean
         if: runner.os == 'Linux'
 
