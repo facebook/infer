@@ -31,7 +31,7 @@ type allocator =
   | HackBuilderResource of HackClassName.t
   | Awaitable (* used for Hack and Python *)
   | FileDescriptor
-[@@deriving equal]
+[@@deriving compare, equal]
 
 val pp_allocator : F.formatter -> allocator -> unit
 

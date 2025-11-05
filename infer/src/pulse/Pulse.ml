@@ -185,31 +185,30 @@ module PulseTransferFunctions = struct
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
   let mark_loop_header analysis_data cfg_node (disjs : DisjDomain.t list) =
-    if Config.pulse_experimental_infinite_loop_checker_v2 then (
+    if Config.pulse_experimental_infinite_loop_checker_v2 then
       let id = Procdesc.Node.get_id cfg_node in
-      let disjs =
-        List.map disjs ~f:(fun disj ->
-            match disj with
-            | ContinueProgram astate, path ->
-                let timestamp = path.PathContext.timestamp in
-                let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
-                (ContinueProgram astate, path)
-            | _ ->
-                disj )
-      in
-      ( if
-          List.exists disjs ~f:(function
-            | ContinueProgram astate, _ ->
-                let {AbductiveDomain.loop_header_info} = astate in
+      List.concat_map disjs ~f:(fun disj ->
+          match disj with
+          | ContinueProgram astate, path ->
+              let timestamp = path.PathContext.timestamp in
+              let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
+              let {AbductiveDomain.loop_header_info} = astate in
+              if
                 PulseLoopHeaderInfo.is_current_iteration_empty_path_stamp id loop_header_info
                 || PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info
-            | _ ->
-                false )
-        then
-          let location = Procdesc.Node.get_loc cfg_node in
-          PulseReport.report analysis_data ~is_suppressed:false ~latent:false
-            (InfiniteLoopError {location}) ) ;
-      disjs )
+              then
+                let location = Procdesc.Node.get_loc cfg_node in
+                (* typically we get back only one [AbortProgram] state but it could also be zero if
+                   we discover the summary is UNSAT *)
+                let exec_states =
+                  AccessResult.of_result path
+                    (Error (ReportableError {astate; diagnostic= InfiniteLoopError {location}}))
+                  |> PulseReport.report_result analysis_data path location
+                in
+                List.map exec_states ~f:(fun exec_state -> (exec_state, path))
+              else [(ContinueProgram astate, path)]
+          | _ ->
+              [disj] )
     else disjs
 
 

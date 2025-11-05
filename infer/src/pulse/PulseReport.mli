@@ -6,12 +6,15 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 open PulseDomainInterface
 
 [@@@warning "-unused-value-declaration"]
 
 val report :
   _ InterproceduralAnalysis.t -> is_suppressed:bool -> latent:bool -> Diagnostic.t -> unit
+
+val report_if_entry_point : _ InterproceduralAnalysis.t -> Trace.t -> Diagnostic.t -> unit
 
 val report_summary_error :
      _ InterproceduralAnalysis.t

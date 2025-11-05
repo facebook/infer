@@ -133,7 +133,7 @@ type t =
                report: e.g. this is the case for returning copied values. *)
       ; location_instantiated: Location.t option
       ; from: PulseAttribute.CopyOrigin.t }
-[@@deriving equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 

@@ -64,6 +64,7 @@ type extra = {
   ?config_usage_extra : config_usage_extra option;
   ?taint_extra : taint_extra option;
   ?may_depend_on_an_unknown_value : may_depend_on_an_unknown_value option;
+  ?reachable_from: string option;
   ~transitive_callees: transitive_callee list;
   ~transitive_missed_captures: missed_capture list;
 }

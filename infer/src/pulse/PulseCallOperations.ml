@@ -361,7 +361,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       map_call_result astate ~f:(fun return_val_opt _subst astate ->
           Sat (copy_to_caller_return_variable astate return_val_opt) )
   | InfiniteLoop astate
-  | AbortProgram astate
+  | AbortProgram {astate}
   | ExitProgram astate
   | LatentAbortProgram {astate}
   | LatentSpecializedTypeIssue {astate}
@@ -378,9 +378,28 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           match callee_exec_state with
           | ContinueProgram _ | ExceptionRaised _ ->
               assert false
-          | AbortProgram _ | InfiniteLoop _ ->
-              (* bypass the current errors to avoid compounding issues *)
-              Sat (Ok (AbortProgram astate_summary))
+          (* bypass the current errors to avoid compounding issues *)
+          | AbortProgram {diagnostic; trace_to_issue} ->
+              let trace_to_issue =
+                Trace.add_call (Call callee_proc_name) call_loc hist_map
+                  ~default_caller_history:ValueHistory.epoch trace_to_issue
+              in
+              Sat (Ok (AbortProgram {astate= astate_summary; diagnostic; trace_to_issue}))
+          | InfiniteLoop _ ->
+              (* Summarisation removes [InfiniteLoop] states
+                 TODO kill [InfiniteLoop] in favour of [AbortPorgram] *)
+              Sat
+                (Ok
+                   (AbortProgram
+                      { astate= astate_summary
+                      ; diagnostic= InfiniteLoopError {location= call_loc}
+                      ; trace_to_issue=
+                          Immediate
+                            { location=
+                                call_loc
+                                (* should be the start of the callee procedure but let's no worry
+                                   about it since we'll delete [InfiniteLoop] eventually *)
+                            ; history= ValueHistory.epoch } } ) )
           | ExitProgram _ ->
               Sat (Ok (ExitProgram astate_summary))
           | LatentAbortProgram {latent_issue} -> (
@@ -659,8 +678,8 @@ let add_need_dynamic_type_specialization needs execution_states =
             InfiniteLoop (update_astate astate)
         | ExitProgram summary ->
             ExitProgram (update_summary summary)
-        | AbortProgram summary ->
-            AbortProgram (update_summary summary)
+        | AbortProgram {astate= summary; diagnostic; trace_to_issue} ->
+            AbortProgram {astate= update_summary summary; diagnostic; trace_to_issue}
         | LatentAbortProgram latent_abort_program ->
             let astate = update_summary latent_abort_program.astate in
             LatentAbortProgram {latent_abort_program with astate}
@@ -827,7 +846,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
     in
     (results, non_disj, contradiction)
   in
-  let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_not_reached
+  let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_reached
       ?(specialization = Specialization.Pulse.bottom) already_given summary astate =
     let res, non_disj, contradiction = call_specialized specialization summary astate in
     let needs_aliasing_specialization =
@@ -844,17 +863,16 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
       let+ (specialized_summary : PulseSummary.t) =
         analyze_dependency ~specialization:(Pulse specialization) callee_pname
       in
-      let is_limit_not_reached =
-        Specialization.Pulse.is_pulse_specialization_limit_not_reached
-          specialized_summary.specialized
+      let is_limit_reached =
+        Specialization.Pulse.is_pulse_specialization_limit_reached specialized_summary.specialized
       in
       match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
       | None ->
           L.internal_error "ondemand engine did not return the expected specialized summary@\n" ;
           (* we use the non-specialized summary instead *)
-          (specialized_summary.main, is_limit_not_reached)
+          (specialized_summary.main, is_limit_reached)
       | Some pre_posts ->
-          (pre_posts, is_limit_not_reached)
+          (pre_posts, is_limit_reached)
     in
     let case_if_specialization_is_impossible res =
       ( res
@@ -867,7 +885,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
         | `NoAliasSpecializationRequired ->
             `KnownCall )
     in
-    if not is_pulse_specialization_limit_not_reached then case_if_specialization_is_impossible res
+    if is_pulse_specialization_limit_reached then case_if_specialization_is_impossible res
     else
       let more_specialization, ask_caller_of_caller_first, needs_from_caller =
         match needs_aliasing_specialization with
@@ -947,22 +965,21 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
                 case_if_specialization_is_impossible res
             | Error (AnalysisFailed | InBlockList | UnknownProcedure) ->
                 case_if_specialization_is_impossible res
-            | Ok (summary, is_pulse_specialization_limit_not_reached) ->
+            | Ok (summary, is_pulse_specialization_limit_reached) ->
                 let already_given = Specialization.Pulse.Set.add specialization already_given in
                 iter_call ~max_iteration ~nth_iteration:(nth_iteration + 1)
-                  ~is_pulse_specialization_limit_not_reached ~specialization already_given summary
+                  ~is_pulse_specialization_limit_reached ~specialization already_given summary
                   astate )
   in
   match analyze_dependency callee_pname with
   | Ok summary ->
-      let is_pulse_specialization_limit_not_reached =
-        Specialization.Pulse.is_pulse_specialization_limit_not_reached
-          summary.PulseSummary.specialized
+      let is_pulse_specialization_limit_reached =
+        Specialization.Pulse.is_pulse_specialization_limit_reached summary.PulseSummary.specialized
       in
       let max_iteration = Config.pulse_specialization_iteration_limit in
       let already_given = Specialization.Pulse.Set.empty in
       let res, summary_used, non_disj, contradiction, resolution_status =
-        iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_not_reached
+        iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_reached
           already_given summary.PulseSummary.main astate
       in
       let has_continue_program =

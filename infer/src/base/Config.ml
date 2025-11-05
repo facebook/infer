@@ -2667,6 +2667,13 @@ and pulse_report_flows_to_taint_sink =
     ~meta:"procname" "Report data flows which pass through taint sink $(b,procname)"
 
 
+and pulse_report_issues_reachable_from =
+  CLOpt.mk_string_list ~long:"pulse-report-issues-reachable-from" ~meta:"regex"
+    ~in_help:InferCommand.[(Report, manual_pulse); (Run, manual_pulse)]
+    "Re-raise issues that Pulse was able to propagate all the way to procedures matching one of \
+     the given regexes"
+
+
 and pulse_report_issues_for_tests =
   CLOpt.mk_bool ~long:"pulse-report-issues-for-tests" ~default:false
     "Do not suppress any of the issues found by Pulse."
@@ -4562,6 +4569,10 @@ and pulse_report_assert = !pulse_report_assert
 and pulse_report_flows_from_taint_source = !pulse_report_flows_from_taint_source
 
 and pulse_report_flows_to_taint_sink = !pulse_report_flows_to_taint_sink
+
+and pulse_report_issues_reachable_from =
+  RevList.rev_map !pulse_report_issues_reachable_from ~f:Str.regexp
+
 
 and pulse_report_issues_for_tests = !pulse_report_issues_for_tests
 
