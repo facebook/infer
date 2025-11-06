@@ -252,7 +252,10 @@ let rec signature_type_to_textual_typ lang signature_type =
   else if String.equal signature_type "$sytD" then Some Textual.Typ.Void
   else (
     Hash_set.add signature_structs signature_type ;
-    let struct_name = to_textual_type_name lang signature_type in
+    let struct_name =
+      if Textual.Lang.is_swift lang then to_textual_type_name lang ~plain_name:signature_type ""
+      else to_textual_type_name lang signature_type
+    in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)
     else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name)) )
 

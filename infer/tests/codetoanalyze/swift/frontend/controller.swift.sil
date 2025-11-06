@@ -6,64 +6,64 @@
 
 .source_language = "Swift" @?
 
-declare .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello10CustomViewC>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+declare .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 declare .plain_name = "delegate.modify" $s5Hello10CustomViewC8delegateAA0C10ControllerCvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5Hello10CustomViewC>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvg(var1: *__infer_swift_type<CustomView>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvg(var1: *__infer_swift_type<,CustomView>) : *__infer_swift_type<ptr_elt> {
   local var3: int[]
-  #: @[0:0]
-      n2 = load &var1 @[0:0]
-      n1 = n2.__infer_swift_type<T5Hello10CustomViewC>.field_1 @[0:0]
-      n3 = load n1 @[0:0]
-      n5 = n3 @[0:0]
-      jmp 5::ret @[0:0]
+  #: @[163:0]
+      n2 = load &var1 @[163:0]
+      n1 = n2.__infer_swift_type<T5Hello10CustomViewC>.field_1 @[163:0]
+      n3 = load n1 @[165:0]
+      n5 = n3 @[167:0]
+      jmp 5::ret @[168:0]
       
-  #5::ret: @[0:0]
-      ret n3 @[0:0]
+  #5::ret: @[170:0]
+      ret n3 @[170:0]
       
 } @?
 
-define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello10CustomViewC>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvs(var1: *__infer_swift_type<ViewController>, var2: *__infer_swift_type<CustomView>) : void {
+define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvs(var1: *__infer_swift_type<,ViewController>, var2: *__infer_swift_type<,CustomView>) : void {
   local var4: int[]
-  #: @[0:0]
-      n1 = load &var1 @[0:0]
-      n2 = n1 @[0:0]
-      jmp 4::ret @[0:0]
+  #: @[172:0]
+      n1 = load &var1 @[172:0]
+      n2 = n1 @[172:0]
+      jmp 4::ret @[173:0]
       
-  #4::ret: @[0:0]
-      n4 = load &var2 @[0:0]
-      n3 = n4.__infer_swift_type<T5Hello10CustomViewC>.field_1 @[0:0]
-      n5 = load n3 @[0:0]
-      n6 = load &var1 @[0:0]
-      store n3 <- n6 @[0:0]
-      ret null @[0:0]
-      
-} @?
-
-define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello10CustomViewC>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(var1: *__infer_swift_type<ViewController>, var2: *__infer_swift_type<$s5Hello10CustomViewCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[12:0]
-      n1 = load &var2 @[12:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC>>) @[12:0]
-      jmp 3::ret @[12:0]
-      
-  #3::ret: @[12:0]
-      n5 = load &var1 @[12:0]
-      n7 = $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(n5, n4) @[12:0]
-      jmp 4::ret @[12:0]
-      
-  #4::ret: @[12:0]
-      ret n7 @[12:0]
+  #4::ret: @[174:0]
+      n4 = load &var2 @[174:0]
+      n3 = n4.__infer_swift_type<T5Hello10CustomViewC>.field_1 @[174:0]
+      n5 = load n3 @[176:0]
+      n6 = load &var1 @[177:0]
+      store n3 <- n6 @[177:0]
+      ret null @[181:0]
       
 } @?
 
-define .plain_name = "init" $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(var1: *__infer_swift_type<ViewController>, var2: *__infer_swift_type<CustomView>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(var1: *__infer_swift_type<,ViewController>, var2: *__infer_swift_type<,$s5Hello10CustomViewCXMTD>) : *__infer_swift_type<ptr_elt> {
+  #: @[183:0]
+      n1 = load &var2 @[183:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC,CustomView>>) @[183:0]
+      jmp 3::ret @[184:0]
+      
+  #3::ret: @[186:0]
+      n5 = load &var1 @[186:0]
+      n7 = $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(n5, n4) @[186:0]
+      jmp 4::ret @[187:0]
+      
+  #4::ret: @[188:0]
+      ret n7 @[188:0]
+      
+} @?
+
+define .plain_name = "init" $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(var1: *__infer_swift_type<,ViewController>, var2: *__infer_swift_type<,CustomView>) : *__infer_swift_type<ptr_elt> {
   local self: *__infer_swift_type<ptr_elt>, delegate: *__infer_swift_type<ptr_elt>
-  #: @[12:0]
-      n1 = load &var1 @[12:0]
-      store &delegate <- n1 @[12:0]
-      n2 = load &var2 @[12:0]
-      store &self <- n2 @[12:0]
+  #: @[191:0]
+      n1 = load &var1 @[191:0]
+      store &delegate <- n1 @[191:0]
+      n2 = load &var2 @[192:0]
+      store &self <- n2 @[192:0]
       n3 = load &var1 @[13:25]
       n4 = n3 @[13:25]
       jmp 5::ret @[13:25]
@@ -81,68 +81,69 @@ declare $s5Hello10CustomViewCMa(int) : *__infer_swift_type<ptr_elt>
 
 declare $s5Hello10CustomViewCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello10CustomViewC>.$s5Hello10CustomViewCfD(*__infer_swift_type<CustomView>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewCfD(*__infer_swift_type<,CustomView>) : void
 
-declare .plain_name = "deinit" $s5Hello10CustomViewCfd(*__infer_swift_type<CustomView>) : *__infer_swift_type<ptr_elt>
+declare .plain_name = "deinit" $s5Hello10CustomViewCfd(*__infer_swift_type<,CustomView>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "view.modify" .method_offset = "13" __infer_swift_type<T5Hello14ViewControllerC>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+declare .plain_name = "view.modify" .method_offset = "13" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 declare .plain_name = "view.modify" $s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "view.get" .method_offset = "11" __infer_swift_type<T5Hello14ViewControllerC>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvg(var1: *__infer_swift_type<ViewController>) : int {
+define .plain_name = "view.get" .method_offset = "11" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvg(var1: *__infer_swift_type<,ViewController>) : int {
   local var3: int[]
-  #: @[0:0]
-      n2 = load &var1 @[0:0]
-      n1 = n2.__infer_swift_type<T5Hello14ViewControllerC>.field_1 @[0:0]
-      n3 = load n1 @[0:0]
-      n6 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[0:0]
-      jmp 6::ret @[0:0]
+  #: @[207:0]
+      n2 = load &var1 @[207:0]
+      n1 = n2.__infer_swift_type<T5Hello14ViewControllerC>.field_1 @[207:0]
+      n3 = load n1 @[209:0]
+      n6 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[211:0]
+      jmp 6::ret @[212:0]
       
-  #6::ret: @[0:0]
-      ret n3 @[0:0]
+  #6::ret: @[214:0]
+      ret n3 @[214:0]
       
 } @?
 
-declare $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpfi() : *__infer_swift_type<$s5Hello10CustomViewCSgD>
+declare $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpfi() : *__infer_swift_type<,$s5Hello10CustomViewCSgD>
 
-define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: *__infer_swift_type<$s5Hello10CustomViewCSgD>, var2: *__infer_swift_type<ViewController>) : void {
+define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: *__infer_swift_type<,$s5Hello10CustomViewCSgD>, var2: *__infer_swift_type<,ViewController>) : void {
   local var4: int[]
-  #: @[0:0]
-      n1 = load &var1 @[0:0]
-      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[0:0]
-      jmp 5::ret @[0:0]
+  #: @[216:0]
+      n1 = load &var1 @[216:0]
+      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[216:0]
+      jmp 5::ret @[217:0]
       
-  #5::ret: @[0:0]
-      n5 = load &var2 @[0:0]
-      n4 = n5.__infer_swift_type<T5Hello14ViewControllerC>.field_1 @[0:0]
-      n6 = load n4 @[0:0]
-      n7 = load &var1 @[0:0]
-      store n4 <- n7 @[0:0]
-      ret null @[0:0]
-      
-} @?
-
-define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello14ViewControllerC>.$s5Hello14ViewControllerCACycfC(var1: *__infer_swift_type<$s5Hello14ViewControllerCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[4:0]
-      n1 = load &var1 @[4:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC>>) @[4:0]
-      jmp 2::ret @[4:0]
-      
-  #2::ret: @[4:0]
-      n6 = $s5Hello14ViewControllerCACycfc(n4) @[4:0]
-      jmp 3::ret @[4:0]
-      
-  #3::ret: @[4:0]
-      ret n6 @[4:0]
+  #5::ret: @[218:0]
+      n5 = load &var2 @[218:0]
+      n4 = n5.__infer_swift_type<T5Hello14ViewControllerC>.field_1 @[218:0]
+      n6 = load n4 @[220:0]
+      n7 = load &var1 @[221:0]
+      store n4 <- n7 @[221:0]
+      ret null @[225:0]
       
 } @?
 
-define .plain_name = "init" $s5Hello14ViewControllerCACycfc(var1: *__infer_swift_type<ViewController>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerCACycfC(var1: *__infer_swift_type<,$s5Hello14ViewControllerCXMTD>) : *__infer_swift_type<ptr_elt> {
+  #: @[227:0]
+      n1 = load &var1 @[227:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC,ViewController>>) @[227:0]
+      jmp 2::ret @[228:0]
+      
+  #2::ret: @[230:0]
+      n6 = $s5Hello14ViewControllerCACycfc(n4) @[230:0]
+      jmp 3::ret @[231:0]
+      
+  #3::ret: @[232:0]
+      ret n6 @[232:0]
+      
+} @?
+
+define .plain_name = "init" $s5Hello14ViewControllerCACycfc(var1: *__infer_swift_type<,ViewController>) : *__infer_swift_type<ptr_elt> {
   local var4: int[], self: *__infer_swift_type<ptr_elt>
-  #: @[4:0]
-      n1 = load &var1 @[4:0]
-      store &self <- n1 @[4:0]
-      n2 = load &var1 @[4:0]
+  #: @[234:0]
+      n1 = load &var1 @[234:0]
+      store &self <- n1 @[234:0]
+      n2 = load &var1 @[235:0]
+      store n2.__infer_swift_type<T5Hello14ViewControllerC>.field_1 <- 0 @[235:0]
       n4 = $s5Hello10CustomViewCMa(0) @[5:21]
       jmp 5::ret @[5:21]
       
@@ -154,7 +155,7 @@ define .plain_name = "init" $s5Hello14ViewControllerCACycfc(var1: *__infer_swift
   #7::ret: @[5:21]
       n7 = load &var1 @[5:21]
       n9 = load n4.__infer_swift_type<swift::metadata_response>.field_0 @[5:21]
-      n10 = __infer_swift_type<T5Hello10CustomViewC>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(n7, n9) @[5:21]
+      n10 = __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(n7, n9) @[5:21]
       jmp 8::ret @[5:21]
       
   #8::ret: @[5:19]
@@ -169,9 +170,9 @@ define .plain_name = "init" $s5Hello14ViewControllerCACycfc(var1: *__infer_swift
 
 declare $s5Hello14ViewControllerCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello14ViewControllerC>.$s5Hello14ViewControllerCfD(*__infer_swift_type<ViewController>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerCfD(*__infer_swift_type<,ViewController>) : void
 
-declare .plain_name = "deinit" $s5Hello14ViewControllerCfd(*__infer_swift_type<ViewController>) : *__infer_swift_type<ptr_elt>
+declare .plain_name = "deinit" $s5Hello14ViewControllerCfd(*__infer_swift_type<,ViewController>) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "retainCycleExample" $s5Hello18retainCycleExampleyyF() : void {
   #: @[18:13]
@@ -180,7 +181,7 @@ define .plain_name = "retainCycleExample" $s5Hello18retainCycleExampleyyF() : vo
       
   #1::ret: @[18:13]
       n4 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[18:13]
-      n5 = __infer_swift_type<T5Hello14ViewControllerC>.$s5Hello14ViewControllerCACycfC(n4) @[18:13]
+      n5 = __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerCACycfC(n4) @[18:13]
       jmp 3::ret @[18:13]
       
   #3::ret: @[19:1]
