@@ -257,25 +257,51 @@ let rec signature_type_to_textual_typ lang signature_type =
     else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name)) )
 
 
-let update_struct_map struct_map =
-  let update_struct_map struct_name v struct_map =
-    let struct_name =
-      match mangled_name_of_type_name struct_name with
-      | Some typ_name
-        when String.is_suffix ~suffix:"C" typ_name || String.is_suffix ~suffix:"V" typ_name -> (
-          (* we only want to find the plain name of classes or structs *)
-          let f signature_struct = String.is_substring ~substring:signature_struct typ_name in
-          match Hash_set.find ~f signature_structs with
-          | Some signature_struct ->
-              let struct_name =
-                update_type_name_with_plain_name ~plain_name:signature_struct struct_name
-              in
-              struct_name
-          | None ->
-              struct_name )
-      | _ ->
+let update_struct_name struct_name =
+  match mangled_name_of_type_name struct_name with
+  | Some typ_name
+    when String.is_suffix ~suffix:"C" typ_name || String.is_suffix ~suffix:"V" typ_name -> (
+      (* we only want to find the plain name of classes or structs *)
+      let f signature_struct = String.is_substring ~substring:signature_struct typ_name in
+      match Hash_set.find ~f signature_structs with
+      | Some signature_struct ->
+          let struct_name =
+            update_type_name_with_plain_name ~plain_name:signature_struct struct_name
+          in
           struct_name
-    in
-    Textual.TypeName.Map.add struct_name v struct_map
+      | None ->
+          struct_name )
+  | _ ->
+      struct_name
+
+
+let update_type_field_decl fields =
+  let rec update_field_type typ =
+    match typ with
+    | Textual.Typ.Struct struct_name ->
+        let struct_name = update_struct_name struct_name in
+        Textual.Typ.Struct struct_name
+    | Textual.Typ.Ptr typ ->
+        Textual.Typ.Ptr (update_field_type typ)
+    | Textual.Typ.Fun (Some {params_type; return_type}) ->
+        Textual.Typ.Fun
+          (Some
+             { params_type= List.map ~f:update_field_type params_type
+             ; return_type= update_field_type return_type } )
+    | _ ->
+        typ
+  in
+  let update_field_decl field =
+    let typ = update_field_type field.Textual.FieldDecl.typ in
+    {field with Textual.FieldDecl.typ}
+  in
+  List.map ~f:update_field_decl fields
+
+
+let update_struct_map struct_map =
+  let update_struct_map struct_name (Textual.Struct.{fields: _} as struct_) struct_map =
+    let struct_ = {struct_ with Textual.Struct.fields= update_type_field_decl fields} in
+    let struct_name = update_struct_name struct_name in
+    Textual.TypeName.Map.add struct_name struct_ struct_map
   in
   Textual.TypeName.Map.fold update_struct_map struct_map Textual.TypeName.Map.empty
