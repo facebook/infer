@@ -33,8 +33,8 @@ fi
 
 if [ ! -f "${LLVM_FILE}" ]; then
     curl -L "${LLVM_URL}" --output "${LLVM_FILE}"
+    echo "${LLVM_SHA}  ${LLVM_FILE}" | $SHASUM -c
 fi
-echo "${LLVM_SHA}  ${LLVM_FILE}" | $SHASUM -c
 
 rm -rf "llvm-project-${LLVM_VER}.src" "llvm-project"
 
