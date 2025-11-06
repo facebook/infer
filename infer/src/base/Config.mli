@@ -302,6 +302,8 @@ val dotty_cfg_libs : bool
 
 val dump_duplicate_symbols : bool
 
+val dump_json_summaries : bool
+
 val dump_llair : bool
 
 val dump_llair_text : bool

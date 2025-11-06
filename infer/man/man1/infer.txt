@@ -730,6 +730,12 @@ OPTIONS
            more than one file. (Conversely: --no-dump-duplicate-symbols)
            See also infer-capture(1).
 
+       --dump-json-summaries
+           Activates: Directly output the json export of each analyzed
+           procedures in <output-dir>/all_summaries.json (Conversely:
+           --no-dump-json-summaries)
+           See also infer-debug(1).
+
        --dynamic-dispatch-json-file-path path
            Dynamic dispatch file path to get the JSON used for method name
            substitution

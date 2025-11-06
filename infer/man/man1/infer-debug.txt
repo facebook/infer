@@ -47,6 +47,11 @@ DEBUG GLOBAL TYPE ENVIRONMENT
            --no-global-tenv)
 
 DEBUG PROCEDURES
+       --dump-json-summaries
+           Activates: Directly output the json export of each analyzed
+           procedures in <output-dir>/all_summaries.json (Conversely:
+           --no-dump-json-summaries)
+
        --procedures
            Activates: Print functions and methods discovered by infer
            (Conversely: --no-procedures)

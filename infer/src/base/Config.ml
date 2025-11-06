@@ -1428,6 +1428,13 @@ and dump_textual =
      each $(i,filename.java) file in the target."
 
 
+and dump_json_summaries =
+  CLOpt.mk_bool ~long:"dump-json-summaries"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    "Directly output the json export of each analyzed procedures in <output-dir>/all_summaries.json"
+    ~default:false
+
+
 and dynamic_dispatch_json_file_path =
   CLOpt.mk_path_opt ~long:"dynamic-dispatch-json-file-path"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -4112,6 +4119,8 @@ and dotty_cfg_libs = !dotty_cfg_libs
 
 and dump_duplicate_symbols = !dump_duplicate_symbols
 
+and dump_json_summaries = !dump_json_summaries
+
 and dump_llair = !dump_llair
 
 and dump_llair_text = !dump_llair_text
@@ -4394,7 +4403,7 @@ and print_types = !print_types
 
 and print_using_diff = !print_using_diff
 
-and procedures = !procedures
+and procedures = !procedures || !dump_json_summaries
 
 and procedures_attributes = !procedures_attributes
 
@@ -4414,7 +4423,7 @@ and procedures_source_file = !procedures_source_file
 
 and procedures_summary = !procedures_summary
 
-and procedures_summary_json = !procedures_summary_json
+and procedures_summary_json = !procedures_summary_json || !dump_json_summaries
 
 and procedures_summary_skip_empty = !procedures_summary_skip_empty
 
