@@ -9,6 +9,23 @@ open! IStd
 
 let hostname = Unix.gethostname ()
 
+let get_stats_dir () =
+  (* cannot use [ResultsDir.get_path], it would introduce a circular dependency *)
+  ResultsDirEntryName.get_path ~results_dir:Config.results_dir Stats
+
+
+let get_stats_log_file () =
+  let dir_name = get_stats_dir () in
+  let file_name =
+    match WorkerPoolState.get_in_child () with
+    | None ->
+        "stats.jsonl"
+    | Some rank ->
+        Printf.sprintf "stats-%d.jsonl" rank
+  in
+  dir_name ^/ file_name
+
+
 let maybe_add_normal ~name ~value sample =
   match value with None -> sample | Some value -> StatsSample.add_normal ~name ~value sample
 
@@ -46,19 +63,8 @@ let sample_from_event ~loc ({label; created_at_ts; data} : LogEntry.t) =
 
 let log_many ~loc entries =
   let samples = List.map entries ~f:(sample_from_event ~loc) in
-  let log_file =
-    (* cannot use [ResultsDir.get_path], it would introduce a circular dependency *)
-    let dir_name = ResultsDirEntryName.get_path ~results_dir:Config.results_dir Stats in
-    Utils.create_dir dir_name ;
-    let file_name =
-      match WorkerPoolState.get_in_child () with
-      | None ->
-          "stats.jsonl"
-      | Some rank ->
-          Printf.sprintf "stats-%d.jsonl" rank
-    in
-    dir_name ^/ file_name
-  in
+  Utils.create_dir (get_stats_dir ()) ;
+  let log_file = get_stats_log_file () in
   Utils.with_file_out ~append:true log_file ~f:(fun out ->
       List.iter samples ~f:(fun sample ->
           Yojson.to_channel out (StatsSample.sample_to_json sample) ;

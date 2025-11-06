@@ -39,3 +39,6 @@ val execute_with_time_logging : string -> (unit -> 'a) -> 'a
       let f a b = <some code>
       let f a b = StatsLogging.execute_with_time_logging "f" (fun () -> f a b)
     ]} *)
+
+val get_stats_log_file : unit -> string
+(** get the stats log file path *)

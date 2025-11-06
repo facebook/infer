@@ -156,7 +156,7 @@ let of_id = function
   | RunState ->
       file ".infer_runstate.json" ~keep_before_incremental_analysis:()
   | Stats ->
-      directory "stats"
+      directory ~keep_before_caching_capture:() "stats"
   | SemDiff ->
       file "semdiff.json"
   | SourceDebug ->
