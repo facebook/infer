@@ -69,7 +69,8 @@ jobs:
 
       - name: Install Required Apt Packages for Ubuntu
         run: |
-          sudo apt install llvm-19 llvm-19-dev libmpfr-dev libsqlite3-dev ninja-build
+          sudo apt install clang-19 llvm-19 llvm-19-dev libmpfr-dev libsqlite3-dev ninja-build
+          sudo apt remove kotlin
           sudo apt clean
         if: runner.os == 'Linux'
 
