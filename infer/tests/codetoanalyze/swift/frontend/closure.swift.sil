@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(var1: *__infer_swift_type<,RetainCycleExample>) : void {
+define .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local self: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[166:0]
       n1 = load &var1 @[166:0]
@@ -97,7 +97,7 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *__infer_swi
 
 declare $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "setupClosureBug" .method_offset = "18" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC15setupClosureBugyyF(var1: *__infer_swift_type<,RetainCycleExample>) : void {
+define .plain_name = "setupClosureBug" .method_offset = "18" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC15setupClosureBugyyF(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local self: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[193:0]
       n1 = load &var1 @[193:0]
@@ -120,7 +120,7 @@ define .plain_name = "setupClosureBug" .method_offset = "18" __infer_swift_type<
       
 } @?
 
-define $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_(var1: *__infer_swift_type<,RetainCycleExample>) : void {
+define $s5Hello18RetainCycleExampleC15setupClosureBugyyFyycfU_(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local self: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[198:0]
       n1 = load &var1 @[198:0]
@@ -143,7 +143,7 @@ declare .plain_name = "id.modify" .method_offset = "14" __infer_swift_type<T5Hel
 
 declare .plain_name = "id.modify" $s5Hello18RetainCycleExampleC2idSivM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "id.get" .method_offset = "12" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg(var1: *__infer_swift_type<,RetainCycleExample>) : int {
+define .plain_name = "id.get" .method_offset = "12" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : int {
   local var3: int[]
   #: @[199:0]
       n2 = load &var1 @[199:0]
@@ -155,7 +155,7 @@ define .plain_name = "id.get" .method_offset = "12" __infer_swift_type<T5Hello18
 
 declare $s5Hello18RetainCycleExampleC2idSivpfi() : *__infer_swift_type<,$sSiD>
 
-define .plain_name = "id.set" .method_offset = "13" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivs(var1: *__infer_swift_type<,$sSiD>, var2: *__infer_swift_type<,RetainCycleExample>) : void {
+define .plain_name = "id.set" .method_offset = "13" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivs(var1: *__infer_swift_type<,$sSiD>, var2: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local var4: int[]
   #: @[204:0]
       n2 = load &var2 @[204:0]
@@ -170,7 +170,7 @@ declare .plain_name = "closure.modify" .method_offset = "17" __infer_swift_type<
 
 declare .plain_name = "closure.modify" $s5Hello18RetainCycleExampleC7closureyycSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "closure.get" .method_offset = "15" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvg(var1: *__infer_swift_type<,RetainCycleExample>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
+define .plain_name = "closure.get" .method_offset = "15" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvg(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
   local var3: int[]
   #: @[209:0]
       n2 = load &var1 @[209:0]
@@ -236,7 +236,7 @@ define .plain_name = "init" .method_offset = "20" __infer_swift_type<T5Hello18Re
       
 } @?
 
-define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(var1: *__infer_swift_type<,RetainCycleExample>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : *__infer_swift_type<ptr_elt> {
   local self: *__infer_swift_type<ptr_elt>
   #: @[244:0]
       n1 = load &var1 @[244:0]
@@ -257,9 +257,9 @@ declare $s5Hello18RetainCycleExampleCMa(int) : *__infer_swift_type<ptr_elt>
 
 declare $s5Hello18RetainCycleExampleCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCfD(*__infer_swift_type<,RetainCycleExample>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCfD(*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void
 
-declare .plain_name = "deinit" $s5Hello18RetainCycleExampleCfd(*__infer_swift_type<,RetainCycleExample>) : *__infer_swift_type<ptr_elt>
+declare .plain_name = "deinit" $s5Hello18RetainCycleExampleCfd(*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : *__infer_swift_type<ptr_elt>
 
 declare $sIeg_SgWOe(int, int) : *__infer_swift_type<ptr_elt>
 

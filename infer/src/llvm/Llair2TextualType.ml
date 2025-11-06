@@ -25,6 +25,16 @@ let mangled_name_of_type_name (type_name : Textual.TypeName.t) =
   else None
 
 
+let plain_name_of_type_name (type_name : Textual.TypeName.t) =
+  if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
+    match type_name.args with
+    | _ :: [{name; args= []}] ->
+        Some (Textual.BaseTypeName.to_string name)
+    | _ ->
+        None
+  else None
+
+
 let rec update_type_name_with_plain_name ~plain_name (type_name : Textual.TypeName.t) =
   if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
     match type_name.args with
@@ -34,6 +44,21 @@ let rec update_type_name_with_plain_name ~plain_name (type_name : Textual.TypeNa
         type_name
   else if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_tuple_class_name then
     let args = List.map ~f:(update_type_name_with_plain_name ~plain_name) type_name.args in
+    Textual.TypeName.mk_swift_tuple_type_name args
+  else type_name
+
+
+let rec update_type_name_with_mangled_name ~mangled_name (type_name : Textual.TypeName.t) =
+  if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
+    match type_name.args with
+    | _ :: [{name; args= []}] ->
+        Textual.TypeName.mk_swift_type_name
+          ~plain_name:(Textual.BaseTypeName.to_string name)
+          mangled_name
+    | _ ->
+        type_name
+  else if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_tuple_class_name then
+    let args = List.map ~f:(update_type_name_with_mangled_name ~mangled_name) type_name.args in
     Textual.TypeName.mk_swift_tuple_type_name args
   else type_name
 
@@ -52,6 +77,22 @@ let struct_name_of_mangled_name lang struct_map name =
       struct_map
   in
   match !class_opt with None -> to_textual_type_name lang name | Some class_ -> class_
+
+
+let struct_name_of_plain_name struct_map name =
+  let class_opt = ref None in
+  let _ =
+    Textual.TypeName.Map.exists
+      (fun struct_name _ ->
+        match plain_name_of_type_name struct_name with
+        | Some plain_name when String.equal plain_name name ->
+            class_opt := Some struct_name ;
+            true
+        | _ ->
+            false )
+      struct_map
+  in
+  !class_opt
 
 
 let type_name_of_type lang typ = to_textual_type_name lang (Format.asprintf "%a" Textual.Typ.pp typ)
@@ -278,24 +319,41 @@ let update_struct_name struct_name =
       struct_name
 
 
-let update_type_field_decl fields =
-  let rec update_field_type typ =
-    match typ with
-    | Textual.Typ.Struct struct_name ->
-        let struct_name = update_struct_name struct_name in
-        Textual.Typ.Struct struct_name
-    | Textual.Typ.Ptr typ ->
-        Textual.Typ.Ptr (update_field_type typ)
-    | Textual.Typ.Fun (Some {params_type; return_type}) ->
-        Textual.Typ.Fun
-          (Some
-             { params_type= List.map ~f:update_field_type params_type
-             ; return_type= update_field_type return_type } )
-    | _ ->
-        typ
-  in
+let update_signature_type struct_map type_name =
+  match plain_name_of_type_name type_name with
+  | Some plain_name -> (
+    match struct_name_of_plain_name struct_map plain_name with
+    | Some struct_name -> (
+      match mangled_name_of_type_name struct_name with
+      | Some mangled_name ->
+          update_type_name_with_mangled_name ~mangled_name type_name
+      | None ->
+          type_name )
+    | None ->
+        type_name )
+  | None ->
+      type_name
+
+
+let rec update_type ~update_struct_name typ =
+  match typ with
+  | Textual.Typ.Struct struct_name ->
+      let struct_name = update_struct_name struct_name in
+      Textual.Typ.Struct struct_name
+  | Textual.Typ.Ptr typ ->
+      Textual.Typ.Ptr (update_type ~update_struct_name typ)
+  | Textual.Typ.Fun (Some {params_type; return_type}) ->
+      Textual.Typ.Fun
+        (Some
+           { params_type= List.map ~f:(update_type ~update_struct_name) params_type
+           ; return_type= (update_type ~update_struct_name) return_type } )
+  | _ ->
+      typ
+
+
+let update_type_field_decl ~update_struct_name fields =
   let update_field_decl field =
-    let typ = update_field_type field.Textual.FieldDecl.typ in
+    let typ = update_type ~update_struct_name field.Textual.FieldDecl.typ in
     {field with Textual.FieldDecl.typ}
   in
   List.map ~f:update_field_decl fields
@@ -303,7 +361,9 @@ let update_type_field_decl fields =
 
 let update_struct_map struct_map =
   let update_struct_map struct_name (Textual.Struct.{fields: _} as struct_) struct_map =
-    let struct_ = {struct_ with Textual.Struct.fields= update_type_field_decl fields} in
+    let struct_ =
+      {struct_ with Textual.Struct.fields= update_type_field_decl ~update_struct_name fields}
+    in
     let struct_name = update_struct_name struct_name in
     Textual.TypeName.Map.add struct_name struct_ struct_map
   in

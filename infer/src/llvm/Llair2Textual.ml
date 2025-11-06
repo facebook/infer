@@ -136,12 +136,27 @@ let to_formal_types lang ~struct_map func =
     List.map2 ~f:to_textual_formal_signature_type llair_formals llair_formals_types
   in
   (* We try using the signature types, but sometimes they don't match the number of arguments,
-     in that case we revert to the ninternal types *)
+     in that case we revert to the internal types *)
   match formals_signature_types with
   | List.Or_unequal_lengths.Unequal_lengths ->
       List.map ~f:to_textual_formal_type llair_formals
   | List.Or_unequal_lengths.Ok formals_ ->
       formals_
+
+
+let update_signature_types ~struct_map formal_types return_type =
+  let update_signature_type typ =
+    let typ =
+      Type.update_type
+        ~update_struct_name:(Type.update_signature_type struct_map)
+        typ.Textual.Typ.typ
+    in
+    Textual.Typ.mk_without_attributes typ
+  in
+  let update formal_types = List.map ~f:update_signature_type formal_types in
+  let formal_types = Option.map ~f:update formal_types in
+  let return_type = update_signature_type return_type in
+  (formal_types, return_type)
 
 
 let block_to_node_name block =
@@ -1070,7 +1085,7 @@ let translate_llair_function_signatures lang struct_map functions =
   (proc_decls, struct_map)
 
 
-let update_function_signatures functions =
+let update_function_signatures lang ~struct_map functions =
   let update_proc_decl offset_attributes (procdecl : Textual.ProcDecl.t) =
     let procname = procdecl.qualified_name.Textual.QualifiedProcName.name in
     let loc = procname.Textual.ProcName.loc in
@@ -1078,10 +1093,17 @@ let update_function_signatures functions =
     let offset_attribute =
       Textual.QualifiedProcName.Map.find_opt qualified_name offset_attributes
     in
+    let formals_types, result_type =
+      if Textual.Lang.is_swift lang then
+        update_signature_types ~struct_map procdecl.formals_types procdecl.result_type
+      else (procdecl.formals_types, procdecl.result_type)
+    in
     let procdecl =
-      { procdecl with
-        qualified_name
-      ; attributes= procdecl.attributes @ Option.to_list offset_attribute }
+      Textual.ProcDecl.
+        { qualified_name
+        ; formals_types
+        ; result_type
+        ; attributes= procdecl.attributes @ Option.to_list offset_attribute }
     in
     procdecl
   in
@@ -1112,7 +1134,7 @@ let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Modu
         (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
       globals_map ([], [])
   in
-  let proc_decls = update_function_signatures proc_decls in
+  let proc_decls = update_function_signatures lang ~struct_map proc_decls in
   let procs =
     translate_llair_functions source_file_ lang struct_map globals_map proc_decls functions
   in
