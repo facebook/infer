@@ -9,6 +9,10 @@
 set -e
 set -o pipefail
 
+if [ -n "$C2_FBSOURCE_DIR" ] ; then
+  exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SHASUM=${SHASUM:-shasum -a 256}
 PATCH=${PATCH:-patch}
