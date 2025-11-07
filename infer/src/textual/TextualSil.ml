@@ -540,7 +540,8 @@ module ProcDeclBridge = struct
               let builtin =
                 SwiftProcname.builtin_from_string method_name
                 |> Option.value_or_thunk ~default:(fun () ->
-                       L.die InternalError "unknown swift builtin name %s" method_name )
+                       L.internal_error "unknown swift builtin name %s, using NonDet" method_name ;
+                       SwiftProcname.NonDet )
               in
               SilProcname.Swift (SwiftProcname.mk_builtin builtin)
               |> SilStruct.mk_tenv_method ?llvm_offset
