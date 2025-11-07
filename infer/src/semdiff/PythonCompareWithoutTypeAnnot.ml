@@ -159,9 +159,6 @@ module AstNode = struct
         "Bool: " ^ Bool.to_string b
     | Null ->
         "Null"
-
-
-  let replace_key_in_dict_node fields key new_value = StringMap.add key new_value fields
 end
 
 (* ===== AST Normalization ===== *)
@@ -193,39 +190,6 @@ module Normalize = struct
     Dict (StringMap.add "type_comment" Null assign_fields)
 
 
-  let get_annotations_node_ignore_case fields1 fields2 =
-    let get_id_name_opt value_fields =
-      match StringMap.find_opt field_id value_fields with
-      | Some (Str name) ->
-          get_builtin_name_from_type_name name
-      | _ ->
-          None
-    in
-    let update_fields fields value_fields new_name =
-      let new_value_fields =
-        AstNode.replace_key_in_dict_node value_fields field_id (Str new_name)
-      in
-      AstNode.replace_key_in_dict_node fields field_value (Dict new_value_fields)
-    in
-    match (StringMap.find_opt field_value fields1, StringMap.find_opt field_value fields2) with
-    | Some (Dict value_fields1), Some (Dict value_fields2) -> (
-      match (get_id_name_opt value_fields1, get_id_name_opt value_fields2) with
-      | Some name1, None ->
-          Some (update_fields fields1 value_fields1 name1, fields2)
-      | None, Some name2 ->
-          Some (fields1, update_fields fields2 value_fields2 name2)
-      | _, _ ->
-          None )
-    | None, None -> (
-      match (StringMap.find_opt field_id fields1, StringMap.find_opt field_id fields2) with
-      | Some (Str "Any"), Some (Str "object") ->
-          Some (AstNode.replace_key_in_dict_node fields1 field_id (Str "object"), fields2)
-      | _, _ ->
-          None )
-    | _, _ ->
-        None
-
-
   let rec apply (node : ast_node) : ast_node =
     match node with
     | Dict fields when is_type fields "Import" || is_type fields "ImportFrom" ->
@@ -238,7 +202,7 @@ module Normalize = struct
         match StringMap.find_opt "attr" left_fields with
         | Some (Str "__class__") ->
             let fst_arg =
-              match StringMap.find_opt "value" left_fields with
+              match StringMap.find_opt field_value left_fields with
               | Some arg ->
                   arg
               | _ ->
@@ -293,6 +257,61 @@ module Diff = struct
     Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
 
 
+  let rec annotations_equal (n1 : ast_node) (n2 : ast_node) : bool =
+    let internal_fields_equal fields1 fields2 =
+      StringMap.for_all
+        (fun k _ ->
+          StringMap.mem k fields1 || String.equal k type_field_name || is_line_number_field k )
+        fields2
+      && StringMap.for_all
+           (fun k v1 ->
+             String.equal k field_id || String.equal k type_field_name || is_line_number_field k
+             ||
+             match StringMap.find_opt k fields2 with
+             | Some v2 ->
+                 annotations_equal v1 v2
+             | None ->
+                 false )
+           fields1
+    in
+    match (n1, n2) with
+    | a, b when equal_ast_node a b ->
+        (* Type annotations are equal: no need to compare field by field *)
+        true
+    | Null, Dict _ ->
+        (* Adding any type annotation is fine *)
+        true
+    | Dict fields1, Dict fields2 -> (
+      (* More complex case: type annotations are preeexisting and change to something else
+      A few cases to consider here:
+      Dict --> dict, Set --> set etc
+      Any --> object should also be allowed *)
+      match (get_type fields1, get_type fields2) with
+      | Str type1, Str type2 when not (String.equal type1 type2) ->
+          false
+      | Str "Name", Str "Name" -> (
+        match (StringMap.find_opt field_id fields1, StringMap.find_opt field_id fields2) with
+        | Some (Str id1), Some (Str id2) ->
+            let builtin =
+              Option.value (Normalize.get_builtin_name_from_type_name id1) ~default:id1
+            in
+            let ids_equal =
+              String.equal builtin id2 || (String.equal id1 "Any" && String.equal id2 "object")
+            in
+            ids_equal && internal_fields_equal fields1 fields2
+        | _ ->
+            false )
+      | _ ->
+          (* For all other Dict node types (Subscript, Tuple, Load, etc.) *)
+          (* Recursively compare all fields, skipping type and line number fields *)
+          internal_fields_equal fields1 fields2 )
+    | List l1, List l2 ->
+        (* Compare lists element by element *)
+        Int.equal (List.length l1) (List.length l2) && List.for_all2_exn ~f:annotations_equal l1 l2
+    | _ ->
+        false
+
+
   let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None)
       (n1 : ast_node) (n2 : ast_node) : diff list =
     match (n1, n2) with
@@ -308,20 +327,12 @@ module Diff = struct
             StringMap.fold
               (fun k v1 acc ->
                 match StringMap.find_opt k f2 with
-                | Some v2 when is_type_annotation_field k -> (
-                  (* special case for type annotations *)
-                  match (v1, v2) with
-                  | Null, Dict _ ->
-                      acc
-                  | Dict fields1, Dict fields2 -> (
-                    match Normalize.get_annotations_node_ignore_case fields1 fields2 with
-                    | None ->
-                        get_diff ~left_line ~right_line v1 v2 @ acc
-                    | Some (new_fields1, new_fields2) ->
-                        get_diff ~left_line ~right_line (Dict new_fields1) (Dict new_fields2) @ acc
-                    )
-                  | _ ->
-                      get_diff ~left_line ~right_line v1 v2 @ acc )
+                | Some v2 when is_type_annotation_field k ->
+                    if
+                      (* special case for type annotations *)
+                      annotations_equal v1 v2
+                    then acc
+                    else get_diff ~left_line ~right_line v1 v2 @ acc
                 | Some _ when is_line_number_field k ->
                     acc
                 | Some v2 ->
