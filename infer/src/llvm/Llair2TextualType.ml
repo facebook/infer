@@ -361,10 +361,12 @@ let update_type_field_decl ~update_struct_name fields =
 
 let update_struct_map struct_map =
   let update_struct_map struct_name (Textual.Struct.{fields: _} as struct_) struct_map =
+    let new_struct_name = update_struct_name struct_name in
     let struct_ =
-      {struct_ with Textual.Struct.fields= update_type_field_decl ~update_struct_name fields}
+      { struct_ with
+        Textual.Struct.fields= update_type_field_decl ~update_struct_name fields
+      ; name= new_struct_name }
     in
-    let struct_name = update_struct_name struct_name in
-    Textual.TypeName.Map.add struct_name struct_ struct_map
+    Textual.TypeName.Map.add new_struct_name struct_ struct_map
   in
   Textual.TypeName.Map.fold update_struct_map struct_map Textual.TypeName.Map.empty

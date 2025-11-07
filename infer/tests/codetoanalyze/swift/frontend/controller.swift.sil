@@ -14,7 +14,7 @@ define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5H
   local var3: int[]
   #: @[163:0]
       n2 = load &var1 @[163:0]
-      n1 = n2.__infer_swift_type<T5Hello10CustomViewC>.field_1 @[163:0]
+      n1 = n2.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 @[163:0]
       n3 = load n1 @[165:0]
       n5 = n3 @[167:0]
       jmp 5::ret @[168:0]
@@ -33,7 +33,7 @@ define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5H
       
   #4::ret: @[174:0]
       n4 = load &var2 @[174:0]
-      n3 = n4.__infer_swift_type<T5Hello10CustomViewC>.field_1 @[174:0]
+      n3 = n4.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 @[174:0]
       n5 = load n3 @[176:0]
       n6 = load &var1 @[177:0]
       store n3 <- n6 @[177:0]
@@ -71,7 +71,7 @@ define .plain_name = "init" $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcf
   #5::ret: @[13:23]
       n5 = load &var2 @[13:23]
       n1 = load &var1 @[13:23]
-      store n5.__infer_swift_type<T5Hello10CustomViewC>.field_1 <- n1 @[13:23]
+      store n5.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 <- n1 @[13:23]
       n6 = load &var2 @[14:5]
       ret n6 @[14:5]
       
@@ -93,7 +93,7 @@ define .plain_name = "view.get" .method_offset = "11" __infer_swift_type<T5Hello
   local var3: int[]
   #: @[207:0]
       n2 = load &var1 @[207:0]
-      n1 = n2.__infer_swift_type<T5Hello14ViewControllerC>.field_1 @[207:0]
+      n1 = n2.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[207:0]
       n3 = load n1 @[209:0]
       n6 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[211:0]
       jmp 6::ret @[212:0]
@@ -114,7 +114,7 @@ define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello
       
   #5::ret: @[218:0]
       n5 = load &var2 @[218:0]
-      n4 = n5.__infer_swift_type<T5Hello14ViewControllerC>.field_1 @[218:0]
+      n4 = n5.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[218:0]
       n6 = load n4 @[220:0]
       n7 = load &var1 @[221:0]
       store n4 <- n7 @[221:0]
@@ -143,7 +143,7 @@ define .plain_name = "init" $s5Hello14ViewControllerCACycfc(var1: *__infer_swift
       n1 = load &var1 @[234:0]
       store &self <- n1 @[234:0]
       n2 = load &var1 @[235:0]
-      store n2.__infer_swift_type<T5Hello14ViewControllerC>.field_1 <- 0 @[235:0]
+      store n2.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 <- 0 @[235:0]
       n4 = $s5Hello10CustomViewCMa(0) @[5:21]
       jmp 5::ret @[5:21]
       
@@ -160,7 +160,7 @@ define .plain_name = "init" $s5Hello14ViewControllerCACycfc(var1: *__infer_swift
       
   #8::ret: @[5:19]
       n12 = load &var1 @[5:19]
-      n11 = n12.__infer_swift_type<T5Hello14ViewControllerC>.field_1 @[5:19]
+      n11 = n12.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[5:19]
       n13 = load n11 @[5:19]
       store n11 <- __sil_cast(<int>, n10) @[5:19]
       n15 = load &var1 @[6:5]
@@ -295,13 +295,13 @@ field_0: int[]}
 type __infer_swift_type<$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::Frame> = {
 field_0: int[]}
 
-type __infer_swift_type<T5Hello10CustomViewC> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                 field_1: *__infer_swift_type<ptr_elt>}
+type __infer_swift_type<T5Hello10CustomViewC,CustomView> = {field_0: *__infer_swift_type<swift::refcounted>;
+                                                            field_1: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello10CustomViewCSg> = {field_0: int}
 
-type __infer_swift_type<T5Hello14ViewControllerC> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                     field_1: *__infer_swift_type<T5Hello10CustomViewCSg>}
+type __infer_swift_type<T5Hello14ViewControllerC,ViewController> = {field_0: *__infer_swift_type<swift::refcounted>;
+                                                                    field_1: *__infer_swift_type<T5Hello10CustomViewCSg>}
 
 type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
                                        field_1: *__infer_swift_type<ptr_elt>;

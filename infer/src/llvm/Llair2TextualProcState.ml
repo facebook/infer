@@ -70,9 +70,10 @@ let pp_vars fmt vars =
 
 
 let pp_struct_map fmt struct_map =
-  F.fprintf fmt "%a"
-    (Pp.comma_seq (Pp.pair ~fst:Textual.TypeName.pp ~snd:Textual.Struct.pp))
-    (Textual.TypeName.Map.bindings struct_map)
+  let pp_item key value =
+    F.fprintf fmt "%a -> @\n%a@\n" Textual.TypeName.pp key Textual.Struct.pp value
+  in
+  Textual.TypeName.Map.iter pp_item struct_map
 
 
 let pp fmt ~print_types proc_state =

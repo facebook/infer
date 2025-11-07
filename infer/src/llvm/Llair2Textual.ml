@@ -306,7 +306,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let typ_name =
         match typ with
         | Struct {name} ->
-            Some (Type.to_textual_type_name proc_state.lang name)
+            Some (Type.struct_name_of_mangled_name proc_state.lang struct_map name)
         | Tuple _ -> (
           match Type.to_textual_typ proc_state.lang ~struct_map typ with
           | Textual.Typ.(Ptr (Struct name)) ->

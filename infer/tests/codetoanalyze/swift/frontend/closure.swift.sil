@@ -147,7 +147,7 @@ define .plain_name = "id.get" .method_offset = "12" __infer_swift_type<T5Hello18
   local var3: int[]
   #: @[199:0]
       n2 = load &var1 @[199:0]
-      n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC>.field_1 @[199:0]
+      n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_1 @[199:0]
       n3 = load n1.__infer_swift_type<TSi>.field_0 @[201:0]
       ret n3 @[203:0]
       
@@ -159,7 +159,7 @@ define .plain_name = "id.set" .method_offset = "13" __infer_swift_type<T5Hello18
   local var4: int[]
   #: @[204:0]
       n2 = load &var2 @[204:0]
-      n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC>.field_1 @[204:0]
+      n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_1 @[204:0]
       n3 = load &var1 @[206:0]
       store n1.__infer_swift_type<TSi>.field_0 <- n3 @[206:0]
       ret null @[208:0]
@@ -174,7 +174,7 @@ define .plain_name = "closure.get" .method_offset = "15" __infer_swift_type<T5He
   local var3: int[]
   #: @[209:0]
       n2 = load &var1 @[209:0]
-      n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC>.field_2 @[209:0]
+      n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_2 @[209:0]
       n3 = load n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 @[211:0]
       n5 = load n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[212:0]
       _ = $sIeg_SgWOy(n3, n5) @[214:0]
@@ -209,7 +209,7 @@ define .plain_name = "closure.set" .method_offset = "16" __infer_swift_type<T5He
       
   #$sIeg_SgWOy::void::ret: @[222:0]
       n4 = load &var3 @[222:0]
-      n3 = n4.__infer_swift_type<T5Hello18RetainCycleExampleC>.field_2 @[222:0]
+      n3 = n4.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_2 @[222:0]
       n5 = load n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 @[224:0]
       n7 = load n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[225:0]
       n9 = load &var1 @[226:0]
@@ -242,10 +242,10 @@ define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(var1: *__infer_s
       n1 = load &var1 @[244:0]
       store &self <- n1 @[244:0]
       n2 = load &var1 @[2:14]
-      n3 = load n2.__infer_swift_type<T5Hello18RetainCycleExampleC>.field_1 @[2:14]
+      n3 = load n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_1 @[2:14]
       store n3.__infer_swift_type<TSi>.field_0 <- 10 @[2:14]
       n5 = load &var1 @[4:9]
-      n4 = n5.__infer_swift_type<T5Hello18RetainCycleExampleC>.field_2 @[4:9]
+      n4 = n5.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_2 @[4:9]
       store n4.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- 0 @[245:0]
       store n4.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 <- 0 @[246:0]
       n8 = load &var1 @[247:0]
@@ -367,9 +367,9 @@ field_0: int[]}
 type __infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycSgvM::Frame> = {
 field_0: int[]}
 
-type __infer_swift_type<T5Hello18RetainCycleExampleC> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                         field_1: *__infer_swift_type<TSi>;
-                                                         field_2: *__infer_swift_type<TIeg_Sg>}
+type __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = {
+field_0: *__infer_swift_type<swift::refcounted>;
+field_1: *__infer_swift_type<TSi>; field_2: *__infer_swift_type<TIeg_Sg>}
 
 type __infer_swift_type<T5Hello18RetainCycleExampleCSg> = {field_0: int}
 
