@@ -570,6 +570,36 @@ def foo(x: str) -> None: pass
   assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
 
 
+let fp_test_change_type_case_sensitive_rec_good _ =
+  let prog1 =
+    {|
+from typing import Dict, Set
+def foo() -> Dict[str, Dict[str, Set[str]]]: pass
+|}
+  in
+  let prog2 = {|
+def foo() -> dict[str, dict[str, set[str]]]: pass
+|} in
+  assert (not (ast_diff_equal prog1 prog2))
+
+
+let test_change_type_case_sensitive_rec_bad _ =
+  let prog1 =
+    {|
+from typing import Dict, Set
+def foo() -> Dict[str, Dict[str, Set[str]]]: pass
+|}
+  in
+  let prog2 = {|
+def foo() -> dict[str, dict[str, str]]: pass
+|} in
+  let expected_diff =
+    [ "(Line 2) + def foo() -> dict[str, dict[str, str]]: pass"
+    ; "(Line 3) - def foo() -> Dict[str, Dict[str, Set[str]]]: pass" ]
+  in
+  assert_equal expected_diff (PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2)
+
+
 let suite =
   "PythonCompareWithoutTypeAnnotTest"
   >::: [ "test_basic_fun_good" >:: test_basic_fun_good
@@ -608,7 +638,10 @@ let suite =
        ; "fp_test_change_optional_type_good" >:: fp_test_change_optional_type_good
        ; "test_change_optional_type_bad" >:: test_change_optional_type_bad
        ; "test_change_any_type_good" >:: test_change_any_type_good
-       ; "test_change_any_type_bad" >:: test_change_any_type_bad ]
+       ; "test_change_any_type_bad" >:: test_change_any_type_bad
+       ; "fp_test_change_type_case_sensitive_rec_good"
+         >:: fp_test_change_type_case_sensitive_rec_good
+       ; "test_change_type_case_sensitive_rec_bad" >:: test_change_type_case_sensitive_rec_bad ]
 
 
 let () = run_test_tt_main suite
