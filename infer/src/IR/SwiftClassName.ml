@@ -23,7 +23,7 @@ let pp_full fmt {plain_name; classname} =
   | Some plain_name ->
       F.fprintf fmt "%s [%s]" plain_name classname
   | None ->
-      F.fprintf fmt "%s" classname
+      F.pp_print_string fmt classname
 
 
 let classname {classname} = classname

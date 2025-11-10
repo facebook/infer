@@ -1009,7 +1009,7 @@ type __infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame> = {field_0: *__inf
 
 type __infer_swift_type<T5Hello10IndividualC,Individual> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                             field_1: *__infer_swift_type<TSi>;
-                                                            field_2: *__infer_swift_type<swift::weak>}
+                                                            field_2: .weak *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello10IndividualCSg> = {field_0: int}
 

@@ -538,6 +538,8 @@ module Typ = struct
   let mk_without_attributes typ = {typ; attributes= []}
 
   let any_type_llvm = Struct (TypeName.of_string "ptr_elt")
+
+  let any_type_swift = Struct (TypeName.mk_swift_type_name "ptr_elt")
 end
 
 module Ident : sig

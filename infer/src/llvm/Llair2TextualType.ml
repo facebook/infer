@@ -129,11 +129,13 @@ and to_textual_field_decls lang ?struct_map ~tuple struct_name fields =
     let textual_typ = to_textual_typ lang ?struct_map typ in
     let attributes, textual_typ =
       match textual_typ with
-      | Textual.Typ.(Ptr (Struct {name})) ->
-          if String.equal (Textual.BaseTypeName.to_string name) "swift::weak" then
-            let textual_typ = Textual.Typ.(Ptr Textual.Typ.any_type_llvm) in
+      | Textual.Typ.(Ptr (Struct name)) -> (
+        match mangled_name_of_type_name name with
+        | Some mangled_name when String.equal mangled_name "swift::weak" ->
+            let textual_typ = Textual.Typ.(Ptr Textual.Typ.any_type_swift) in
             ([Textual.Attr.mk_weak], textual_typ)
-          else ([], textual_typ)
+        | _ ->
+            ([], textual_typ) )
       | _ ->
           ([], textual_typ)
     in

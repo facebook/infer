@@ -224,6 +224,8 @@ module Typ : sig
   val mk_without_attributes : t -> annotated
 
   val any_type_llvm : t
+
+  val any_type_swift : t
 end
 
 module Ident : sig
