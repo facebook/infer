@@ -163,14 +163,6 @@ end
 
 (* ===== AST Normalization ===== *)
 module Normalize = struct
-  let get_builtin_name_from_type_name type_name =
-    match type_name with
-    | "Dict" | "FrozenSet" | "List" | "Set" | "Tuple" ->
-        Some (String.lowercase type_name)
-    | _ ->
-        None
-
-
   let ann_assign_to_assign fields : ast_node =
     (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
     let assign_fields =
@@ -257,6 +249,14 @@ module Diff = struct
     Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
 
 
+  let get_builtin_name_from_type_name type_name =
+    match type_name with
+    | "Dict" | "FrozenSet" | "List" | "Set" | "Tuple" ->
+        Some (String.lowercase type_name)
+    | _ ->
+        None
+
+
   let rec annotations_equal (n1 : ast_node) (n2 : ast_node) : bool =
     let internal_fields_equal fields1 fields2 =
       StringMap.for_all
@@ -266,12 +266,7 @@ module Diff = struct
       && StringMap.for_all
            (fun k v1 ->
              String.equal k field_id || String.equal k type_field_name || is_line_number_field k
-             ||
-             match StringMap.find_opt k fields2 with
-             | Some v2 ->
-                 annotations_equal v1 v2
-             | None ->
-                 false )
+             || Option.exists (StringMap.find_opt k fields2) ~f:(fun v2 -> annotations_equal v1 v2) )
            fields1
     in
     match (n1, n2) with
@@ -289,18 +284,18 @@ module Diff = struct
       match (get_type fields1, get_type fields2) with
       | Str type1, Str type2 when not (String.equal type1 type2) ->
           false
-      | Str "Name", Str "Name" -> (
-        match (StringMap.find_opt field_id fields1, StringMap.find_opt field_id fields2) with
-        | Some (Str id1), Some (Str id2) ->
-            let builtin =
-              Option.value (Normalize.get_builtin_name_from_type_name id1) ~default:id1
-            in
-            let ids_equal =
-              String.equal builtin id2 || (String.equal id1 "Any" && String.equal id2 "object")
-            in
-            ids_equal && internal_fields_equal fields1 fields2
-        | _ ->
-            false )
+      | Str "Name", Str "Name" ->
+          IOption.exists2 (StringMap.find_opt field_id fields1)
+            (StringMap.find_opt field_id fields2) ~f:(fun id1 id2 ->
+              match (id1, id2) with
+              | Str id1, Str id2 ->
+                  let builtin = Option.value (get_builtin_name_from_type_name id1) ~default:id1 in
+                  let ids_equal =
+                    String.equal builtin id2 || (String.equal id1 "Any" && String.equal id2 "object")
+                  in
+                  ids_equal && internal_fields_equal fields1 fields2
+              | _ ->
+                  false )
       | _ ->
           (* For all other Dict node types (Subscript, Tuple, Load, etc.) *)
           (* Recursively compare all fields, skipping type and line number fields *)
