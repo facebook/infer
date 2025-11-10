@@ -14,6 +14,8 @@ type t =
 
 val pp : F.formatter -> t -> unit
 
+val pp_full : F.formatter -> t -> unit
+
 val to_string : t -> string
 
 val classname : t -> string

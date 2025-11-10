@@ -18,6 +18,14 @@ let pp fmt {plain_name; classname} =
       F.fprintf fmt "%s" classname
 
 
+let pp_full fmt {plain_name; classname} =
+  match plain_name with
+  | Some plain_name ->
+      F.fprintf fmt "%s [%s]" plain_name classname
+  | None ->
+      F.fprintf fmt "%s" classname
+
+
 let classname {classname} = classname
 
 let to_string = Pp.string_of_pp pp
