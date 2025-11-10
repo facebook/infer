@@ -356,7 +356,12 @@ let rec update_type ~update_struct_name typ =
 let update_type_field_decl ~update_struct_name fields =
   let update_field_decl field =
     let typ = update_type ~update_struct_name field.Textual.FieldDecl.typ in
-    {field with Textual.FieldDecl.typ}
+    let enclosing_class =
+      update_struct_name field.Textual.FieldDecl.qualified_name.enclosing_class
+    in
+    { field with
+      Textual.FieldDecl.typ
+    ; qualified_name= Textual.{enclosing_class; name= field.FieldDecl.qualified_name.name} }
   in
   List.map ~f:update_field_decl fields
 

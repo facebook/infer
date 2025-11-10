@@ -143,7 +143,6 @@ define .plain_name = "init" $s5Hello14ViewControllerCACycfc(var1: *__infer_swift
       n1 = load &var1 @[234:0]
       store &self <- n1 @[234:0]
       n2 = load &var1 @[235:0]
-      store n2.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 <- 0 @[235:0]
       n4 = $s5Hello10CustomViewCMa(0) @[5:21]
       jmp 5::ret @[5:21]
       
