@@ -17,6 +17,8 @@ type astate = AbductiveDomain.t
 
 type aval = AbstractValue.t * ValueHistory.t
 
+val pp_aval : Format.formatter -> AbstractValue.t * 'a -> unit
+
 module Syntax : sig
   module ModeledField = PulseOperations.ModeledField
 

@@ -23,7 +23,8 @@ let pp_cycle_data fmt cycle_data =
 
 let is_ref_counted_or_block astate addr =
   AddressAttributes.get_static_type addr astate
-  |> Option.exists ~f:(fun typ_name -> Typ.Name.is_objc_class typ_name)
+  |> Option.exists ~f:(fun typ_name ->
+         Typ.Name.is_objc_class typ_name || Typ.Name.is_swift_class typ_name )
   ||
   match PulseArithmetic.get_dynamic_type addr astate with
   | Some {typ= {desc= Tstruct typ_name}} ->

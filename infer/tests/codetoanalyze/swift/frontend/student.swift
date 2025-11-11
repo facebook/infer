@@ -74,16 +74,11 @@ class Person {
     }
 }
 
-func set_spouses(_ john: Person, _ jane: Person) {
+func test_retain_cycle_bad(_ john: Person, _ jane: Person) {
     john.spouse = jane
     jane.spouse = john
 }
 
-func test_retain_cycle_bad() {
-    let john = Person(age: 30)
-    let jane = Person(age: 35)
-    set_spouses(john, jane)
-}
 
 class Individual {
     let age: Int

@@ -32,23 +32,34 @@ let function_ptr_call args () : unit DSL.model_monad =
 
 let dynamic_call arg args () : unit DSL.model_monad =
   let open DSL.Syntax in
+  let dynamic_call_with_type name offset self args =
+    let args = List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) (args @ [self]) in
+    let* proc_name = tenv_resolve_method_with_offset name offset in
+    match proc_name with
+    | Some proc_name ->
+        Logging.d_printfln "calling %a with args = %a" Procname.pp proc_name
+          (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:DSL.pp_aval))
+          args ;
+        let* res = swift_call proc_name args in
+        assign_ret res
+    | None ->
+        unknown args ()
+  in
   let* offset_opt = as_constant_int arg in
   match (offset_opt, List.rev args) with
   | Some offset, self :: actuals -> (
       let args = List.rev actuals in
       let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true self in
       match arg_dynamic_type_data with
-      | Some {Formula.typ= {desc= Tstruct name}} -> (
-          let args = List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) (args @ [self]) in
-          let* proc_name = tenv_resolve_method_with_offset name offset in
-          match proc_name with
-          | Some proc_name ->
-              let* res = swift_call proc_name args in
-              assign_ret res
+      | Some {Formula.typ= {desc= Tstruct name}} ->
+          dynamic_call_with_type name offset self args
+      | _ -> (
+          let* arg_static_type = get_static_type self in
+          match arg_static_type with
+          | Some name ->
+              dynamic_call_with_type name offset self args
           | None ->
-              unknown args () )
-      | _ ->
-          unknown args () )
+              unknown args () ) )
   | _, _ ->
       function_ptr_call args ()
 

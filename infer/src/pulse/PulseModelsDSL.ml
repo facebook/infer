@@ -21,6 +21,8 @@ type 'a result = 'a AccessResult.t
 
 type aval = AbstractValue.t * ValueHistory.t
 
+let pp_aval fmt aval = AbstractValue.pp fmt (fst aval)
+
 type 'a execution =
   | ContinueProgram of 'a * astate
   | Other of ExecutionDomain.t (* should never contain a ExecutionDomain.ContinueProgram *)
