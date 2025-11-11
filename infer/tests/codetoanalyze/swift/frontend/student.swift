@@ -79,6 +79,18 @@ func test_retain_cycle_bad(_ john: Person, _ jane: Person) {
     jane.spouse = john
 }
 
+func createPerson() -> Person {
+    fatalError("Fail here")
+}
+
+
+func test_retain_cycle_person1_bad_FN(_ jane: Person) {
+    let john = createPerson()
+    john.spouse = jane
+    jane.spouse = john
+}
+
+
 
 class Individual {
     let age: Int

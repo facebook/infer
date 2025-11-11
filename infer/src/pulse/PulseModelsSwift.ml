@@ -59,6 +59,10 @@ let dynamic_call arg args () : unit DSL.model_monad =
           | Some name ->
               dynamic_call_with_type name offset self args
           | None ->
+              Logging.d_printfln
+                "method to call not found, no dynamic or static type found for %a, returning a \
+                 fresh value"
+                DSL.pp_aval self ;
               unknown args () ) )
   | _, _ ->
       function_ptr_call args ()
