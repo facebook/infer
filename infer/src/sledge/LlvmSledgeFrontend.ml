@@ -933,6 +933,7 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
       else if
         Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
         && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Struct
+        && len > 2
       then
         let lltyp1 = Llvm.get_gep_source_element_type llv in
         let op2 = Llvm.operand llv 2 in

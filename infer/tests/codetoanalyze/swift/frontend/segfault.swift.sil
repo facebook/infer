@@ -1,0 +1,186 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_segfault1a1bSDyS2SGSi_SitF(var1: int, var2: int) : *__infer_swift_type<ptr_elt> {
+  local var7: *__infer_swift_type<TSi>, var6: *__infer_swift_type<TSi>, b: int, a: int
+  #: @[124:0]
+      n1 = load &var1 @[124:0]
+      store &a <- n1 @[124:0]
+      n2 = load &var2 @[125:0]
+      store &b <- n2 @[125:0]
+      n3 = load &$sSS_SStMD @[2:12]
+      n4 = __swift_instantiateConcreteTypeFromMangledName(n3) @[2:12]
+      jmp 7::ret @[2:12]
+      
+  #13::ret: @[3:9]
+      n15 = load n8 @[3:9]
+      n16 = load n15.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSS>>,__infer_swift_type<*__infer_swift_type<TSS>>>.__infer_tuple_field_0 @[3:9]
+      n17 = load n16.__infer_swift_type<TSS>.field_0 @[3:9]
+      n14 = n17.__infer_swift_type<Ts11_StringGutsV>.field_0 @[3:9]
+      n19 = load n14 @[3:9]
+      n20 = load n19.__infer_swift_type<Ts13_StringObjectV>.field_0 @[3:9]
+      store n20.__infer_swift_type<Ts6UInt64V>.field_0 <- n13.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_0 @[3:9]
+      n22 = load n14 @[3:9]
+      store n22.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n13.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_1 @[3:9]
+      n23 = load &var6 @[3:21]
+      n1 = load &var1 @[3:21]
+      store n23.__infer_swift_type<TSi>.field_0 <- n1 @[3:21]
+      n24 = load &var6 @[3:14]
+      n25 = load &$sSiN @[3:14]
+      n26 = load &$sSis25LosslessStringConvertiblesWP @[3:14]
+      n27 = $sSSySSxcs25LosslessStringConvertibleRzlufC(n24, n25, n26) @[3:14]
+      jmp 22::ret @[3:14]
+      
+  #22::ret: @[3:14]
+      n29 = load n8 @[3:14]
+      n30 = load n29.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSS>>,__infer_swift_type<*__infer_swift_type<TSS>>>.__infer_tuple_field_1 @[3:14]
+      n31 = load n30.__infer_swift_type<TSS>.field_0 @[3:14]
+      n28 = n31.__infer_swift_type<Ts11_StringGutsV>.field_0 @[3:14]
+      n33 = load n28 @[3:14]
+      n34 = load n33.__infer_swift_type<Ts13_StringObjectV>.field_0 @[3:14]
+      store n34.__infer_swift_type<Ts6UInt64V>.field_0 <- n27.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_0 @[3:14]
+      n36 = load n28 @[3:14]
+      store n36.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n27.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_1 @[3:14]
+      n37 = __sil_pluspi(n8, __sil_mult_int(8, 1)) @[2:12]
+      n41 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("b", 1, 1) @[4:9]
+      jmp 33::ret @[4:9]
+      
+  #33::ret: @[4:9]
+      n43 = load n37 @[4:9]
+      n44 = load n43.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSS>>,__infer_swift_type<*__infer_swift_type<TSS>>>.__infer_tuple_field_0 @[4:9]
+      n45 = load n44.__infer_swift_type<TSS>.field_0 @[4:9]
+      n42 = n45.__infer_swift_type<Ts11_StringGutsV>.field_0 @[4:9]
+      n47 = load n42 @[4:9]
+      n48 = load n47.__infer_swift_type<Ts13_StringObjectV>.field_0 @[4:9]
+      store n48.__infer_swift_type<Ts6UInt64V>.field_0 <- n41.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_0 @[4:9]
+      n50 = load n42 @[4:9]
+      store n50.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n41.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_1 @[4:9]
+      n51 = load &var7 @[4:21]
+      n2 = load &var2 @[4:21]
+      store n51.__infer_swift_type<TSi>.field_0 <- n2 @[4:21]
+      n52 = load &var7 @[4:14]
+      n53 = load &$sSiN @[4:14]
+      n54 = load &$sSis25LosslessStringConvertiblesWP @[4:14]
+      n55 = $sSSySSxcs25LosslessStringConvertibleRzlufC(n52, n53, n54) @[4:14]
+      jmp 42::ret @[4:14]
+      
+  #42::ret: @[4:14]
+      n57 = load n37 @[4:14]
+      n58 = load n57.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSS>>,__infer_swift_type<*__infer_swift_type<TSS>>>.__infer_tuple_field_1 @[4:14]
+      n59 = load n58.__infer_swift_type<TSS>.field_0 @[4:14]
+      n56 = n59.__infer_swift_type<Ts11_StringGutsV>.field_0 @[4:14]
+      n61 = load n56 @[4:14]
+      n62 = load n61.__infer_swift_type<Ts13_StringObjectV>.field_0 @[4:14]
+      store n62.__infer_swift_type<Ts6UInt64V>.field_0 <- n55.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_0 @[4:14]
+      n64 = load n56 @[4:14]
+      store n64.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n55.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_1 @[4:14]
+      n66 = load n7.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_0 @[2:12]
+      n68 = $ss27_finalizeUninitializedArrayySayxGABnlF(n66, n4) @[2:12]
+      jmp 50::ret @[2:12]
+      
+  #50::ret: @[2:12]
+      n70 = load &$sSSN @[2:12]
+      n71 = load &$sSSN @[2:12]
+      n72 = load &$sSSSHsWP @[2:12]
+      n73 = $sSD17dictionaryLiteralSDyxq_Gx_q_td_tcfC(n68, n70, n71, n72) @[2:12]
+      jmp 51::ret @[2:12]
+      
+  #51::ret: @[2:5]
+      ret n73 @[2:5]
+      
+  #7::ret: @[2:12]
+      n7 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(2, n4) @[2:12]
+      jmp 8::ret @[2:12]
+      
+  #8::ret: @[2:12]
+      n8 = n7.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>>.__infer_tuple_field_1 @[2:12]
+      n13 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("a", 1, 1) @[3:9]
+      jmp 13::ret @[3:9]
+      
+} @?
+
+declare $sSD17dictionaryLiteralSDyxq_Gx_q_td_tcfC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+declare $sSSySSxcs25LosslessStringConvertibleRzlufC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSa12_endMutationyyF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+
+declare $sSaMa(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $ss27_allocateUninitializedArrayySayxG_BptBwlF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "_finalizeUninitializedArray" $ss27_finalizeUninitializedArrayySayxGABnlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSayxGD>
+
+declare __swift_instantiateConcreteTypeFromMangledName(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare swift_getTypeByMangledNameInContext(*__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+global symbolic SS_SSt: *__infer_swift_type<ptr_elt>
+
+global llvm::used: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
+
+global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+
+global ::str::1::b: *__infer_swift_type<ptr_elt>
+
+global ::str::1::a: *__infer_swift_type<ptr_elt>
+
+global $sSis25LosslessStringConvertiblesWP: *__infer_swift_type<ptr_elt>
+
+global $sSiN: *__infer_swift_type<ptr_elt>
+
+global $sSS_SStMD: *__infer_swift_type<ptr_elt>
+
+global $sSSSHsWP: *__infer_swift_type<ptr_elt>
+
+global $sSSN: *__infer_swift_type<ptr_elt>
+
+type __infer_swift_type<TSS> = {field_0: *__infer_swift_type<Ts11_StringGutsV>}
+
+type __infer_swift_type<TSa> = {field_0: *__infer_swift_type<Ts12_ArrayBufferV>}
+
+type __infer_swift_type<TSi> = {field_0: int}
+
+type __infer_swift_type<Ts11_StringGutsV> = {field_0: *__infer_swift_type<Ts13_StringObjectV>}
+
+type __infer_swift_type<Ts12_ArrayBufferV> = {field_0: *__infer_swift_type<Ts14_BridgeStorageV>}
+
+type __infer_swift_type<Ts13_StringObjectV> = {field_0: *__infer_swift_type<Ts6UInt64V>;
+                                               field_1: *__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<Ts14_BridgeStorageV> = {field_0: *__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<Ts6UInt64V> = {field_0: int}
+
+type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+
+type __infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSS>>,__infer_swift_type<*__infer_swift_type<TSS>>> = {
+__infer_tuple_field_0: *__infer_swift_type<TSS>;
+__infer_tuple_field_1: *__infer_swift_type<TSS>}
+
+type __infer_tuple_class<__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>> = {
+__infer_tuple_field_0: int;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int}
+
+type __infer_tuple_class<__infer_swift_type<int[]>,__infer_swift_type<int>> = {
+__infer_tuple_field_0: int[]; __infer_tuple_field_1: int}
+
