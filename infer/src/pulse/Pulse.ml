@@ -184,8 +184,6 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
-  let mark_loop_header _analysis_data _cfg_node (disjs : DisjDomain.t list) = disjs
-
   let widen_list (prev : DisjDomain.t list) (next : DisjDomain.t list) ~num_iters :
       DisjDomain.t list =
     let plist = List.rev_map ~f:fst prev in

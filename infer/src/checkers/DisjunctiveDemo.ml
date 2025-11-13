@@ -66,8 +66,6 @@ module DisjunctiveAnalyzerTransferFunctions = struct
 
   let remember_dropped_disjuncts _ non_disj = non_disj
 
-  let mark_loop_header _ _ disjs = disjs
-
   let widen_list _ next ~num_iters:_ = next
 
   let exec_instr_non_disj non_disj _analysis_data _cfg_node _instr = non_disj
