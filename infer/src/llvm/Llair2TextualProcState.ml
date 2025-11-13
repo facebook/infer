@@ -24,6 +24,8 @@ type t =
   ; mutable formals: Textual.Typ.annotated VarMap.t
   ; mutable ids_move: Textual.Typ.annotated IdentMap.t
   ; mutable ids_types: Textual.Typ.annotated IdentMap.t
+  ; mutable id_offset: (Textual.Ident.t * int) option
+  ; mutable get_element_ptr_offset: (Textual.VarName.t * int) option
   ; mutable reg_map: Textual.Ident.t RegMap.t
   ; mutable last_id: Textual.Ident.t
   ; mutable last_tmp_var: int
@@ -31,6 +33,8 @@ type t =
   ; globals: globalMap
   ; lang: Textual.Lang.t
   ; proc_map: procMap }
+
+let get_element_ptr_offset_prefix = "getelementptr_offset"
 
 let mk_fresh_id ?reg proc_state =
   let fresh_id ?reg () =
@@ -107,6 +111,24 @@ let update_ids_types ~proc_state id typ =
   proc_state.ids_types <- IdentMap.add id typ proc_state.ids_types
 
 
+let update_id_offset ~proc_state id exp =
+  match (exp, proc_state.get_element_ptr_offset) with
+  | Textual.Exp.Lvar varname, Some (var, offset) when Textual.VarName.equal var varname ->
+      proc_state.id_offset <- Some (id, offset)
+  | _ ->
+      ()
+
+
+let update_var_offset ~proc_state varname offset =
+  if String.is_prefix ~prefix:get_element_ptr_offset_prefix (Textual.VarName.to_string varname) then
+    proc_state.get_element_ptr_offset <- Some (varname, offset)
+
+
+let reset_offsets ~proc_state =
+  proc_state.id_offset <- None ;
+  proc_state.get_element_ptr_offset <- None
+
+
 let global_proc_state lang loc global_var =
   let global_init_name = Format.sprintf "global_init_%s" global_var in
   let qualified_name =
@@ -119,6 +141,8 @@ let global_proc_state lang loc global_var =
   ; locals= VarMap.empty
   ; ids_move= IdentMap.empty
   ; ids_types= IdentMap.empty
+  ; id_offset= None
+  ; get_element_ptr_offset= None
   ; reg_map= RegMap.empty
   ; last_id= Textual.Ident.of_int 0
   ; last_tmp_var= 0

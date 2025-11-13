@@ -351,12 +351,15 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
   | Ap1 (GetElementPtr n, _typ, _exp) ->
       let n_arg = Llair.Exp.integer (Llair.Typ.integer ~bits:32 ~byts:4) (Z.of_int n) in
       let exp, _, instrs = to_textual_exp loc ~proc_state n_arg in
-      let var_name = ProcState.mk_fresh_tmp_var "getelementptr_offset" proc_state in
+      let var_name =
+        ProcState.mk_fresh_tmp_var ProcState.get_element_ptr_offset_prefix proc_state
+      in
       let new_var = Textual.Exp.Lvar var_name in
       let _ =
         proc_state.locals <-
           VarMap.add var_name (Textual.Typ.mk_without_attributes (Ptr Void)) proc_state.locals
       in
+      ProcState.update_var_offset ~proc_state var_name n ;
       let store_instr = Textual.Instr.Store {exp1= new_var; exp2= exp; typ= None; loc} in
       (new_var, None, store_instr :: instrs)
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
@@ -607,6 +610,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let loc = to_textual_loc_instr ~proc_state loc in
         let id, _ = reg_to_id ~proc_state reg in
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
+        ProcState.update_id_offset ~proc_state id exp ;
         let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
         textual_instr :: List.append ptr_instrs textual_instrs
     | Store {ptr; exp; loc} ->
@@ -1071,6 +1075,8 @@ let translate_code proc_decls lang source_file struct_map globals proc_descs
     ; locals= VarMap.empty
     ; ids_move= IdentMap.empty
     ; ids_types= IdentMap.empty
+    ; id_offset= None
+    ; get_element_ptr_offset= None
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0

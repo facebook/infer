@@ -24,6 +24,8 @@ type t =
   ; mutable formals: Textual.Typ.annotated VarMap.t
   ; mutable ids_move: Textual.Typ.annotated IdentMap.t
   ; mutable ids_types: Textual.Typ.annotated IdentMap.t
+  ; mutable id_offset: (Textual.Ident.t * int) option
+  ; mutable get_element_ptr_offset: (Textual.VarName.t * int) option
   ; mutable reg_map: Textual.Ident.t RegMap.t
   ; mutable last_id: Textual.Ident.t
   ; mutable last_tmp_var: int
@@ -31,6 +33,8 @@ type t =
   ; globals: globalMap
   ; lang: Textual.Lang.t
   ; proc_map: procMap }
+
+val get_element_ptr_offset_prefix : string
 
 val mk_fresh_id : ?reg:Llair.Reg.t -> t -> IdentMap.key
 
@@ -41,6 +45,12 @@ val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
 val update_ids_move : proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> unit
 
 val update_ids_types : proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> unit
+
+val update_id_offset : proc_state:t -> IdentMap.key -> Textual.Exp.t -> unit
+
+val update_var_offset : proc_state:t -> VarMap.key -> int -> unit
+
+val reset_offsets : proc_state:t -> unit
 
 val pp : F.formatter -> print_types:bool -> t -> unit [@@warning "-unused-value-declaration"]
 
