@@ -18,8 +18,15 @@ type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 type summary = {pre_post_list: pre_post_list; non_disj: (NonDisjDomain.Summary.t[@yojson.opaque])}
 [@@deriving yojson_of]
 
-type t = {main: summary; specialized: (summary Specialization.Pulse.Map.t[@yojson.opaque])}
-[@@deriving yojson_of]
+type t = {main: summary; specialized: summary Specialization.Pulse.Map.t}
+
+let yojson_of_t {main; specialized} =
+  `Assoc
+    [ ("main", [%yojson_of: summary] main)
+    ; ( "specialized"
+      , [%yojson_of: (Specialization.Pulse.t * summary) list]
+          (Specialization.Pulse.Map.bindings specialized) ) ]
+
 
 let pp_pre_post_list print_kind fmt ~pp_specialized_name pre_posts =
   F.open_vbox 0 ;

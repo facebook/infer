@@ -37,7 +37,8 @@ module Pulse : sig
 
       [aliases=Some []] means something went wrong... We have detected some aliases when applying
       the last summary, but we were not able to phrase it in term of parameters equalities. *)
-  type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t} [@@deriving equal, compare]
+  type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t}
+  [@@deriving equal, compare, yojson_of]
 
   val bottom : t
 
