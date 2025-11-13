@@ -973,3 +973,26 @@ int constant_loop_ok(int i, int j) {
     j++;
   return (j);
 }
+
+/* in this example, the back-edge could also be considered as a loop-entry (if
+ * b1=false) */
+int nested_goto_bad(int b1, int b2, int b3, int b4) {
+  int x = 0;
+  if (b1) {
+  retry:
+    if (b2) {
+      x++;
+    }
+    if (b2) {
+      x++;
+    }
+  }
+  if (b3) {
+    if (b2) {
+      x++;
+    }
+    if (b4) {
+      goto retry;
+    }
+  }
+}
