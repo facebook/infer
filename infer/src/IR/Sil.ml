@@ -18,7 +18,7 @@ type if_kind =
   | Ik_land_lor
   | Ik_while
   | Ik_switch
-[@@deriving compare, equal, hash, normalize]
+[@@deriving compare, equal, hash, normalize, yojson_of]
 
 let pp_if_kind fmt = function
   | Ik_bexp ->

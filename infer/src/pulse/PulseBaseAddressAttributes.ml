@@ -12,6 +12,8 @@ open PulseBasicInterface
 module AttributesNoRank = struct
   include Attributes
 
+  let yojson_of_t set = [%yojson_of: Attribute.t list] (elements set)
+
   let pp fmt t : unit = Attributes.pp ?print_rank:None fmt t
 end
 
@@ -19,11 +21,11 @@ module Graph = PrettyPrintable.MakePPMonoMap (AbstractValue) (AttributesNoRank)
 
 type t = Graph.t
 
+let yojson_of_t map = [%yojson_of: (AbstractValue.t * AttributesNoRank.t) list] (Graph.bindings map)
+
 let compare = Graph.compare AttributesNoRank.compare
 
 let equal = Graph.equal AttributesNoRank.equal
-
-let yojson_of_t = [%yojson_of: _]
 
 let add_one addr attribute attrs =
   match Graph.find_opt addr attrs with

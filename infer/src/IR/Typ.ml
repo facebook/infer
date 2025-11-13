@@ -29,7 +29,7 @@ type ikind =
   | IULongLong  (** [unsigned long long] (or [unsigned int64_] on Microsoft Visual C) *)
   | I128  (** [__int128_t] *)
   | IU128  (** [__uint128_t] *)
-[@@deriving compare, equal, yojson_of, sexp, hash, normalize]
+[@@deriving compare, equal, yojson_of, sexp, hash, normalize, yojson_of]
 
 let ikind_to_string = function
   | IChar ->
@@ -164,14 +164,12 @@ and name =
   | ObjcBlock of objc_block_sig
   | CFunction of c_function_sig
   | SwiftClass of SwiftClassName.t
-[@@deriving hash, sexp, compare, equal]
+[@@deriving hash, sexp, compare, equal, yojson_of]
 
 and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
 
 and template_spec_info = NoTemplate | Template of {mangled: string option; args: template_arg list}
 [@@deriving compare, equal, yojson_of, hash, normalize]
-
-let yojson_of_name = [%yojson_of: _]
 
 let is_const {is_const} = is_const
 

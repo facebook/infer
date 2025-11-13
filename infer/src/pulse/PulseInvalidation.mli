@@ -17,10 +17,12 @@ type std_vector_function =
   | PushBack
   | Reserve
   | ShrinkToFit
+[@@deriving compare, equal, yojson_of]
 
 val pp_std_vector_function : F.formatter -> std_vector_function -> unit
 
 type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
+[@@deriving compare, equal, yojson_of]
 
 type map_function =
   | Clear
@@ -34,6 +36,7 @@ type map_function =
   | TryEmplaceToken
   | EmplaceHint
   | OperatorBracket
+[@@deriving compare, equal, yojson_of]
 
 val pp_map_type : F.formatter -> map_type -> unit
 
@@ -51,7 +54,7 @@ type t =
   | OptionalEmpty
   | StdVector of std_vector_function
   | CppMap of map_type * map_function
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 
@@ -68,7 +71,7 @@ type must_be_valid_reason =
   | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
   | NullArgumentWhereNonNullExpected of PulseCallEvent.t * int option
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp_must_be_valid_reason : F.formatter -> must_be_valid_reason option -> unit
 

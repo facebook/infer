@@ -11,7 +11,7 @@ module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 
 type base = PVar of Pvar.t | Block of string | ReturnValue of CallEvent.t
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 type access =
   | CaptureFieldAccess of string
@@ -23,7 +23,7 @@ type access =
 (* TODO: could add more kinds of operations too to show "x + y" or "x + 4", or even "x +
    sizeof(struct x)". At the moment the memory model doesn't do anything useful with those though so
    there's no need to be that fancy. *)
-and source_expr = base * access list [@@deriving compare, equal]
+and source_expr = base * access list [@@deriving compare, equal, yojson_of]
 
 (** intermediate representation of [source_expr] used for pretty-printing only *)
 type access_expr =
@@ -179,7 +179,7 @@ let rec access_expr_of_source_expr (base, rev_accesses) =
 let pp_source_expr fmt source_expr = pp_access_expr fmt (access_expr_of_source_expr source_expr)
 
 type t = SourceExpr of source_expr * AbstractValue.t option | Unknown of AbstractValue.t option
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let abstract_value_of_expr = function Unknown v | SourceExpr (_, v) -> v
 

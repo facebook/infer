@@ -27,6 +27,6 @@ type t =
   ; capture_mode: capture_mode
   ; captured_from: captured_info option
   ; context_info: context_info option }
-[@@deriving compare, equal, sexp, hash, normalize]
+[@@deriving compare, equal, sexp, hash, normalize, yojson_of]
 
 val pp : Format.formatter -> t -> unit

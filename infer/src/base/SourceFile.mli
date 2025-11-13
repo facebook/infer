@@ -7,7 +7,7 @@
 
 open! IStd
 
-type t [@@deriving compare, sexp, hash, normalize]
+type t [@@deriving compare, sexp, hash, normalize, yojson_of]
 
 (** Maps from source_file *)
 module Map : Stdlib.Map.S with type key = t

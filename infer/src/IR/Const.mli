@@ -18,7 +18,7 @@ type t =
   | Cstr of string  (** string constants *)
   | Cfloat of float  (** float constants *)
   | Cclass of Ident.name  (** class constant *)
-[@@deriving compare, hash, equal, normalize]
+[@@deriving compare, hash, equal, normalize, yojson_of]
 
 val pp : Pp.env -> F.formatter -> t -> unit
 (** Pretty print a const *)

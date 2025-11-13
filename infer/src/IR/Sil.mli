@@ -23,7 +23,7 @@ type if_kind =
   | Ik_land_lor  (** obtained from translation of && or || *)
   | Ik_while
   | Ik_switch
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp_if_kind : F.formatter -> if_kind -> unit
 

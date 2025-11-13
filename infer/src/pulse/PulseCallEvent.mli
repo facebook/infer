@@ -14,7 +14,7 @@ type t =
   | ModelName of Procname.t  (** hardcoded model taking the name of the original procedure *)
   | SkippedKnownCall of Procname.t  (** known function without summary *)
   | SkippedUnknownCall of Exp.t  (** couldn't link the expression to a proc name *)
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 

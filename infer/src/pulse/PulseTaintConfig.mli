@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module Kind : sig
-  type t = private string [@@deriving compare, equal]
+  type t = private string [@@deriving compare, equal, yojson_of]
 
   module Set : PrettyPrintable.PPSet with type elt = t
 

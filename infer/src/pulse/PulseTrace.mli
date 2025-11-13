@@ -17,7 +17,7 @@ type t =
       ; location: Location.t  (** location of the call event *)
       ; history: ValueHistory.t  (** the call involves a value with this prior history *)
       ; in_call: t  (** last step of the trace is in a call to [f] made at [location] *) }
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 module Set : sig
   include PrettyPrintable.PPSet with type elt = t

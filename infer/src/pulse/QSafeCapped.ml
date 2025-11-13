@@ -11,7 +11,7 @@ include Q
 
 type _q = Q.t = {num: Z.t; den: Z.t} [@@deriving yojson_of]
 
-let yojson_of_t = [%yojson_of: _q]
+let yojson_of_t = yojson_of__q
 
 let not_equal q1 q2 = not (Q.equal q1 q2)
 

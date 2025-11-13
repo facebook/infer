@@ -26,7 +26,12 @@ module CellId = struct
 
 
   module Map = IInt.Map
-  module Set = IInt.Set
+
+  module Set = struct
+    include IInt.Set
+
+    let yojson_of_t set = `List (fold (fun x acc -> yojson_of_t x :: acc) set [])
+  end
 end
 
 type event =
@@ -61,7 +66,7 @@ and t =
   | FromCellIds of CellId.Set.t * t
   | Multiplex of t list
   | UnknownCall of {f: CallEvent.t; actuals: t list; location: Location.t; timestamp: Timestamp.t}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 module EventSet = Stdlib.Set.Make (struct
   type t = event [@@deriving compare]
@@ -310,10 +315,6 @@ and rev_iter (history : t) ~f =
 
 
 let iter history ~f = Iter.rev (Iter.from_labelled_iter (rev_iter history)) f
-
-let yojson_of_event = [%yojson_of: _]
-
-let yojson_of_t = [%yojson_of: _]
 
 let pp_fields =
   let pp_sep fmt () = Format.pp_print_char fmt '.' in

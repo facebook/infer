@@ -11,7 +11,7 @@ module AbstractValue = PulseAbstractValue
 module CallEvent = PulseCallEvent
 
 type base = PVar of Pvar.t | Block of string | ReturnValue of CallEvent.t
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 type access =
   | CaptureFieldAccess of string
@@ -20,10 +20,10 @@ type access =
   | Dereference
   | MethodCall of CallEvent.t
 
-and source_expr = base * access list [@@deriving compare, equal]
+and source_expr = base * access list [@@deriving compare, equal, yojson_of]
 
 type t = SourceExpr of source_expr * AbstractValue.t option | Unknown of AbstractValue.t option
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 

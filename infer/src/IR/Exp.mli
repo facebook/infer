@@ -44,7 +44,7 @@ and t =
       (** A field offset, the type is the surrounding struct type *)
   | Lindex of t * t  (** An array index offset: [exp1[exp2]] *)
   | Sizeof of sizeof_data
-[@@deriving compare, hash, normalize]
+[@@deriving compare, hash, normalize, yojson_of]
 
 val equal : t -> t -> bool
 (** Equality for expressions. *)

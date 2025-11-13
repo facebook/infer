@@ -17,7 +17,7 @@ type origin =
   | GetField
   | SetField
   | FieldOfValue of {name: string; origin: origin}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let rec pp_origin fmt = function
   | Argument {index} ->
@@ -40,7 +40,7 @@ type value =
   | TaintBlockPassedTo of Procname.t
   | TaintField of Fieldname.t
   | TaintProcedure of Procname.t
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let pp_value f value =
   match value with
@@ -66,7 +66,7 @@ type value_tuple =
   | Basic of {value: value; origin: origin}
   | FieldOf of {name: string; value_tuple: value_tuple}
   | PointedToBy of {value_tuple: value_tuple}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let rec pp_value_tuple fmt value_tuple =
   match value_tuple with
@@ -76,7 +76,8 @@ let rec pp_value_tuple fmt value_tuple =
       F.fprintf fmt "%a" pp_value_tuple value_tuple
 
 
-type t = {kinds: TaintConfig.Kind.t list; value_tuple: value_tuple} [@@deriving compare, equal]
+type t = {kinds: TaintConfig.Kind.t list; value_tuple: value_tuple}
+[@@deriving compare, equal, yojson_of]
 
 let pp fmt {value_tuple; kinds} =
   F.fprintf fmt "%a with kind%s %a" pp_value_tuple value_tuple

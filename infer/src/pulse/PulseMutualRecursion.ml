@@ -9,12 +9,12 @@ open! IStd
 module F = Format
 open PulseBasicInterface
 
-type call = {proc_name: Procname.t; location: Location.t} [@@deriving compare, equal]
+type call = {proc_name: Procname.t; location: Location.t} [@@deriving compare, equal, yojson_of]
 
 type inner_call = {call: call; actuals: (AbstractValue.t * ValueHistory.t) list}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
-type t = {chain: call list; innermost: inner_call} [@@deriving compare, equal]
+type t = {chain: call list; innermost: inner_call} [@@deriving compare, equal, yojson_of]
 
 let mk location proc_name actuals = {chain= []; innermost= {call= {proc_name; location}; actuals}}
 

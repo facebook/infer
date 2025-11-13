@@ -34,7 +34,7 @@ type t =
   | BOr  (** inclusive-or *)
   | LAnd  (** logical and. Does not always evaluate both operands. *)
   | LOr  (** logical or. Does not always evaluate both operands. *)
-[@@deriving compare, equal, hash, normalize]
+[@@deriving compare, equal, hash, normalize, yojson_of]
 
 let to_string = function
   | PlusA _ ->

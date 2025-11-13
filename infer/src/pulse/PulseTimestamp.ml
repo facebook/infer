@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type t = int [@@deriving compare, equal]
+type t = int [@@deriving compare, equal, yojson_of]
 
 let t0 = 0
 

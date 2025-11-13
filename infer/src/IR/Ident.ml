@@ -39,7 +39,7 @@ module Name = struct
         s
 end
 
-type name = Name.t [@@deriving compare, equal, sexp, hash, normalize]
+type name = Name.t [@@deriving compare, equal, sexp, hash, normalize, yojson_of]
 
 type kind =
   | KNone

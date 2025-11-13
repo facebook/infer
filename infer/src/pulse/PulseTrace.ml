@@ -13,7 +13,7 @@ module CellId = PulseValueHistory.CellId
 type t =
   | Immediate of {location: Location.t; history: ValueHistory.t}
   | ViaCall of {f: CallEvent.t; location: Location.t; history: ValueHistory.t; in_call: t}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
 

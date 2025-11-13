@@ -17,21 +17,22 @@ type origin =
   | GetField
   | SetField
   | FieldOfValue of {name: string; origin: origin}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 type value =
   | TaintBlockPassedTo of Procname.t
   | TaintField of Fieldname.t
   | TaintProcedure of Procname.t
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 type value_tuple =
   | Basic of {value: value; origin: origin}
   | FieldOf of {name: string; value_tuple: value_tuple}
   | PointedToBy of {value_tuple: value_tuple}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
-type t = {kinds: TaintConfig.Kind.t list; value_tuple: value_tuple} [@@deriving compare, equal]
+type t = {kinds: TaintConfig.Kind.t list; value_tuple: value_tuple}
+[@@deriving compare, equal, yojson_of]
 
 val pp_value : F.formatter -> value -> unit
 

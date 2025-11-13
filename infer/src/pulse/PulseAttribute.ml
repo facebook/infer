@@ -33,7 +33,7 @@ module Attribute = struct
     | HackBuilderResource of HackClassName.t
     | Awaitable (* used for Hack and Python *)
     | FileDescriptor
-  [@@deriving compare, equal]
+  [@@deriving compare, equal, yojson_of]
 
   let pp_allocator fmt = function
     | CMalloc ->
@@ -116,10 +116,10 @@ module Attribute = struct
   [@@deriving compare, equal, show {with_path= false}]
 
   module CopyOrigin = struct
-    type assign_t = Normal | Thrift [@@deriving compare, equal]
+    type assign_t = Normal | Thrift [@@deriving compare, equal, yojson_of]
 
     type t = CopyCtor | CopyAssignment of assign_t | CopyToOptional | CopyInGetDefault
-    [@@deriving compare, equal]
+    [@@deriving compare, equal, yojson_of]
 
     let pp fmt = function
       | CopyCtor ->
@@ -137,7 +137,7 @@ module Attribute = struct
       | IntoVar of {copied_var: Var.t}
       | IntoIntermediate of {copied_var: Var.t}
       | IntoField of {field: Fieldname.t}
-    [@@deriving compare, equal]
+    [@@deriving compare, equal, yojson_of]
 
     let pp fmt = function
       | IntoVar {copied_var} ->
@@ -175,7 +175,7 @@ module Attribute = struct
       | Value
       | Const of Fieldname.t
       | DictMissingKey of {dict: DecompilerExpr.t; key: Fieldname.t}
-    [@@deriving compare, equal]
+    [@@deriving compare, equal, yojson_of]
 
     let pp f = function
       | Value ->
@@ -221,7 +221,7 @@ module Attribute = struct
     | Allocated of allocator * Trace.t
     | AlwaysReachable
     | Closure of Procname.t
-    | ConfigUsage of ConfigUsage.t
+    | ConfigUsage of (ConfigUsage.t[@yojson.opaque])
     | CopiedInto of CopiedInto.t
     | CopiedReturn of
         { source: AbstractValue.t
@@ -229,9 +229,9 @@ module Attribute = struct
         ; from: CopyOrigin.t
         ; copied_location: Location.t }
     | DictContainConstKeys
-    | DictReadConstKeys of ConstKeys.t
+    | DictReadConstKeys of (ConstKeys.t[@yojson.opaque])
     | EndOfCollection
-    | HackBuilder of Builder.t
+    | HackBuilder of (Builder.t[@yojson.opaque])
     | HackConstinitCalled
     | InReportedRetainCycle
     | Initialized
@@ -240,11 +240,12 @@ module Attribute = struct
     | MustBeAwaited
     | MustBeInitialized of Timestamp.t * Trace.t
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
-    | MustNotBeTainted of TaintSink.t TaintSinkMap.t
+    | MustNotBeTainted of (TaintSink.t TaintSinkMap.t[@yojson.opaque])
     | JavaResourceReleased
     | CSharpResourceReleased
     | AwaitedAwaitable
-    | PropagateTaintFrom of taint_propagation_reason * taint_in list
+    | PropagateTaintFrom of
+        (taint_propagation_reason[@yojson.opaque]) * (taint_in list[@yojson.opaque])
       (* [v -> PropagateTaintFrom \[v1; ..; vn\]] does not
          retain [v1] to [vn], in fact they should be collected
          when they become unreachable *)
@@ -255,14 +256,14 @@ module Attribute = struct
     | StaticType of Typ.Name.t
     | StdMoved
     | StdVectorReserve
-    | Tainted of TaintedSet.t
-    | TaintSanitized of TaintSanitizedSet.t
+    | Tainted of (TaintedSet.t[@yojson.opaque])
+    | TaintSanitized of (TaintSanitizedSet.t[@yojson.opaque])
     | Uninitialized of UninitializedTyp.t
     | UnknownEffect of CallEvent.t * ValueHistory.t
     | UnreachableAt of Location.t
     | UsedAsBranchCond of Procname.t * Location.t * Trace.t
     | WrittenTo of Timestamp.t * Trace.t
-  [@@deriving compare, equal, variants]
+  [@@deriving compare, equal, variants, yojson_of]
 
   type rank = int
 

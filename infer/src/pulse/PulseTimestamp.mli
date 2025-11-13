@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type t = private int [@@deriving compare, equal]
+type t = private int [@@deriving compare, equal, yojson_of]
 
 val t0 : t
 

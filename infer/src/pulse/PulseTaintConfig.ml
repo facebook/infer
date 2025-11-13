@@ -11,7 +11,7 @@ module L = Logging
 
 module Kind = struct
   module T = struct
-    type t = string [@@deriving compare, equal, hash, show]
+    type t = string [@@deriving compare, equal, hash, show, yojson_of]
   end
 
   include T

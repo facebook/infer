@@ -19,7 +19,7 @@ module Trace = PulseTrace
 module TransitiveInfo = PulseTransitiveInfo
 module ValueHistory = PulseValueHistory
 
-type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal]
+type calling_context = (CallEvent.t * Location.t) list [@@deriving compare, equal, yojson_of]
 
 let pp_calling_context fmt calling_context =
   F.fprintf fmt "[@[<v1>%a@]]"
@@ -35,9 +35,7 @@ type access_to_invalid_address =
   ; access_trace: Trace.t
   ; may_depend_on_an_unknown_value: bool
   ; must_be_valid_reason: Invalidation.must_be_valid_reason option }
-[@@deriving compare, equal]
-
-let yojson_of_access_to_invalid_address = [%yojson_of: _]
+[@@deriving compare, equal, yojson_of]
 
 let pp_access_to_invalid_address fmt
     ({ calling_context
@@ -105,9 +103,7 @@ end
 
 module ReadUninitialized = struct
   type t = {typ: Attribute.UninitializedTyp.t; calling_context: calling_context; trace: Trace.t}
-  [@@deriving compare, equal]
-
-  let yojson_of_t = [%yojson_of: _]
+  [@@deriving compare, equal, yojson_of]
 
   let pp fmt {typ; calling_context; trace} =
     F.fprintf fmt "{@[typ=%a;@;calling_context=%a;@;trace=%a@]}" Attribute.UninitializedTyp.pp typ
@@ -116,7 +112,7 @@ module ReadUninitialized = struct
       trace
 end
 
-type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving compare, equal]
+type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving compare, equal, yojson_of]
 
 let pp_flow_kind fmt flow_kind =
   match flow_kind with
@@ -129,7 +125,7 @@ let pp_flow_kind fmt flow_kind =
 
 
 type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 type resource =
   | CSharpClass of CSharpClassName.t
@@ -138,7 +134,7 @@ type resource =
   | Awaitable
   | HackBuilderResource of HackClassName.t
   | Memory of Attribute.allocator
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let pp_resource fmt = function
   | CSharpClass class_name ->
@@ -192,9 +188,7 @@ let resource_closed_s = function
       "freed"
 
 
-type assertion_error = {location: Location.t} [@@deriving compare, equal]
-
-let yojson_of_assertion_error = [%yojson_of: _]
+type assertion_error = {location: Location.t} [@@deriving compare, equal, yojson_of]
 
 let pp_assertion_error fmt {location} = F.fprintf fmt "{@[location=%a;@;@]}" Location.pp location
 
@@ -203,7 +197,7 @@ type t =
   | AccessToInvalidAddress of access_to_invalid_address
   | ConfigUsage of
       { pname: Procname.t
-      ; config: ConfigName.t
+      ; config: (ConfigName.t[@yojson.opaque])
       ; branch_location: Location.t
       ; location: Location.t
       ; trace: Trace.t }
@@ -235,8 +229,8 @@ type t =
       { tag: string
       ; description: string
       ; call_trace: Trace.t
-      ; transitive_callees: TransitiveInfo.Callees.t [@ignore]
-      ; transitive_missed_captures: Typ.Name.Set.t [@ignore] }
+      ; transitive_callees: (TransitiveInfo.Callees.t[@opaque]) [@ignore]
+      ; transitive_missed_captures: (Typ.Name.Set.t[@opaque]) [@ignore] }
   | UninitMethod of {callee: Procname.t; history: ValueHistory.t; location: Location.t}
   | UnnecessaryCopy of
       { copied_into: PulseAttribute.CopiedInto.t
@@ -246,9 +240,7 @@ type t =
       ; copied_location: (Procname.t * Location.t) option
       ; location_instantiated: Location.t option
       ; from: PulseAttribute.CopyOrigin.t }
-[@@deriving compare, equal]
-
-let yojson_of_t = [%yojson_of: _]
+[@@deriving compare, equal, yojson_of]
 
 let pp fmt diagnostic =
   let pp_immediate fmt = F.pp_print_string fmt "immediate" in

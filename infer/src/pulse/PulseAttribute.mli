@@ -31,7 +31,7 @@ type allocator =
   | HackBuilderResource of HackClassName.t
   | Awaitable (* used for Hack and Python *)
   | FileDescriptor
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp_allocator : F.formatter -> allocator -> unit
 
@@ -74,10 +74,10 @@ type taint_propagation_reason = InternalModel | UnknownCall | UserConfig
 val pp_taint_propagation_reason : F.formatter -> taint_propagation_reason -> unit
 
 module CopyOrigin : sig
-  type assign_t = Normal | Thrift [@@deriving compare, equal]
+  type assign_t = Normal | Thrift [@@deriving compare, equal, yojson_of]
 
   type t = CopyCtor | CopyAssignment of assign_t | CopyToOptional | CopyInGetDefault
-  [@@deriving compare, equal]
+  [@@deriving compare, equal, yojson_of]
 
   val pp : Formatter.t -> t -> unit
 end
@@ -87,7 +87,7 @@ module CopiedInto : sig
     | IntoVar of {copied_var: Var.t}
     | IntoIntermediate of {copied_var: Var.t}
     | IntoField of {field: Fieldname.t}
-  [@@deriving compare, equal]
+  [@@deriving compare, equal, yojson_of]
 
   val is_copied_into_var : t -> bool
 
@@ -110,7 +110,7 @@ module UninitializedTyp : sig
     | Value
     | Const of Fieldname.t
     | DictMissingKey of {dict: DecompilerExpr.t; key: Fieldname.t}
-  [@@deriving compare, equal]
+  [@@deriving compare, equal, yojson_of]
 
   val pp : F.formatter -> t -> unit
 end
@@ -177,7 +177,7 @@ type t =
           reporting leaks *)
   | UsedAsBranchCond of Procname.t * Location.t * Trace.t
   | WrittenTo of Timestamp.t * Trace.t
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
 

@@ -16,7 +16,7 @@ type std_vector_function =
   | PushBack
   | Reserve
   | ShrinkToFit
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let pp_std_vector_function f = function
   | Assign ->
@@ -37,7 +37,8 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::shrink_to_fit"
 
 
-type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast [@@deriving compare, equal]
+type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
+[@@deriving compare, equal, yojson_of]
 
 type map_function =
   | Clear
@@ -51,7 +52,7 @@ type map_function =
   | TryEmplaceToken
   | EmplaceHint
   | OperatorBracket
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let pp_map_type f = function
   | FollyF14Value ->
@@ -99,7 +100,7 @@ type t =
   | OptionalEmpty
   | StdVector of std_vector_function
   | CppMap of map_type * map_function
-[@@deriving compare, equal, variants]
+[@@deriving compare, equal, yojson_of, variants]
 
 let is_same_type invalidation1 invalidation2 =
   Int.equal (Variants.to_rank invalidation1) (Variants.to_rank invalidation2)
@@ -111,7 +112,7 @@ type must_be_valid_reason =
   | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
   | NullArgumentWhereNonNullExpected of PulseCallEvent.t * int option
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 let pp_must_be_valid_reason f = function
   | None ->

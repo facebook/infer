@@ -18,10 +18,10 @@ let is_captured_by_ref captured_mode =
 
 
 type captured_info = {loc: Location.t; is_formal: Procname.t option}
-[@@deriving compare, equal, sexp, hash, normalize]
+[@@deriving compare, equal, sexp, hash, normalize, yojson_of]
 
 type context_info = {is_checked_for_null: bool; is_internal_pointer_of: Typ.t option}
-[@@deriving compare, equal, sexp, hash, normalize]
+[@@deriving compare, equal, sexp, hash, normalize, yojson_of]
 
 type t =
   { pvar: Pvar.t
@@ -29,7 +29,7 @@ type t =
   ; capture_mode: capture_mode
   ; captured_from: captured_info option
   ; context_info: context_info option }
-[@@deriving compare, equal, sexp, hash, normalize]
+[@@deriving compare, equal, sexp, hash, normalize, yojson_of]
 
 let pp_captured_info fmt {loc; is_formal} =
   F.fprintf fmt "(%a, %a)" (Pp.option Procname.pp) is_formal Location.pp loc

@@ -17,12 +17,12 @@ let list_to_string list =
 
 
 type t' = Exact  (** denotes the current type only *) | Subtypes of Typ.Name.t list
-[@@deriving compare, equal, hash, normalize]
+[@@deriving compare, equal, hash, normalize, yojson_of]
 
 (** denotes the current type and a list of types that are not their subtypes *)
-type kind = CAST | INSTOF | NORMAL [@@deriving compare, equal, hash, normalize]
+type kind = CAST | INSTOF | NORMAL [@@deriving compare, equal, hash, normalize, yojson_of]
 
-type t = t' * kind [@@deriving compare, equal, hash, normalize]
+type t = t' * kind [@@deriving compare, equal, hash, normalize, yojson_of]
 
 type result = No | Unknown | Yes [@@deriving compare, equal]
 
