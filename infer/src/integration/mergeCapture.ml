@@ -86,13 +86,26 @@ module TenvMerger = struct
 end
 
 let merge_captured_stats infer_deps_file =
+  (* only merge json objects containing [{ "normal":{"message": ...}}] *)
+  let should_output (json : Yojson.Safe.t) =
+    match json with
+    | `Assoc fields ->
+        List.exists fields ~f:(function
+          | "normal", `Assoc normals ->
+              List.exists normals ~f:(function "message", _ -> true | _, _ -> false)
+          | _, _ ->
+              false )
+    | _ ->
+        false
+  in
   let top_level_stats_file = StatsLogging.get_stats_log_file () in
   let captured_stats_dir results_dir = ResultsDirEntryName.get_path ~results_dir Stats in
   let process_stats_file stats_file =
     Utils.with_file_in stats_file ~f:(fun stats_file_in ->
         Utils.with_file_out ~append:true top_level_stats_file ~f:(fun stats_file_out ->
             In_channel.iter_lines stats_file_in ~f:(fun line ->
-                Out_channel.output_line stats_file_out line ) ) )
+                let json = Yojson.Safe.from_string ~fname:stats_file line in
+                if should_output json then Out_channel.output_line stats_file_out line ) ) )
   in
   Utils.fold_infer_deps infer_deps_file ~root:Config.project_root ~init:() ~f:(fun () results_dir ->
       let stats_dir = captured_stats_dir results_dir in
