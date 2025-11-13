@@ -2114,7 +2114,7 @@ module Formula = struct
 
   let yojson_of_linear_eqs linear_eqs = Var.Map.yojson_of_t LinArith.yojson_of_t linear_eqs
 
-  type intervals = CItv.t Var.Map.t [@@deriving compare, equal]
+  type intervals = CItv.t Var.Map.t [@@deriving compare, equal, yojson_of]
 
   module Unsafe : sig
     (** opaque because we need to normalize variables in the co-domain of term equalities on the fly
@@ -2168,7 +2168,7 @@ module Formula = struct
                 "slack") variables; this is used for reasoning about inequalities, see \[2\]
 
                 INVARIANT: see {!Tableau} *)
-      ; intervals: (intervals[@yojson.opaque])
+      ; intervals: intervals
             (** A simple, non-relational domain of concrete integer intervals of the form [x∈[i,j]]
                 or [x∉[i,j]].
 
@@ -2338,7 +2338,7 @@ module Formula = struct
       ; linear_eqs: linear_eqs
       ; term_eqs: term_eqs
       ; tableau: Tableau.t
-      ; intervals: (intervals[@yojson.opaque])
+      ; intervals: intervals
       ; atoms: Atom.Set.t
       ; linear_eqs_occurrences: VarMapOccurrences.t
       ; tableau_occurrences: VarMapOccurrences.t

@@ -9,7 +9,7 @@ module F = Format
 
 (** Concrete interval domain (CItv) *)
 
-type t [@@deriving compare, equal]
+type t [@@deriving compare, equal, yojson_of]
 
 val equal_to : IntLit.t -> t
 
