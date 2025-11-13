@@ -176,6 +176,30 @@ void nested_external_ok(int y) {
   }
 }
 
+void two_nested_fst_bad(int k) {
+  int r = 0;
+  for (int i = 0; i < k; r++)
+    for (int j = 0; j < k; j++)
+      r++;
+  return r;
+}
+
+void two_nested_snd_bad(int k) {
+  int r = 0;
+  for (int i = 0; i < k; i++)
+    for (int j = 0; j < k; r++)
+      r++;
+  return r;
+}
+
+void FP_two_nested_ok(int k) {
+  int r = 0;
+  for (int i = 0; i < k; i++)
+    for (int j = 0; j < k; j++)
+      r++;
+  return r;
+}
+
 void nested_loop_cond_ok(int y) {
   int x = 42;
   while (y < 100) {
