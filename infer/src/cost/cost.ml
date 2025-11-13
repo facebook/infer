@@ -170,6 +170,7 @@ module InstrBasicCostWithReason = struct
         | CatchEntry _
         | ExitScope _
         | Nullify _
+        | LoopEntry _
         | Skip
         | TryEntry _
         | TryExit _

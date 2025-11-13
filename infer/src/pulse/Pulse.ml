@@ -1608,6 +1608,9 @@ module PulseTransferFunctions = struct
               |> ExecutionDomain.continue ]
           , path
           , astate_n )
+      | Metadata (LoopEntry _) ->
+          (* TODO *)
+          ([ContinueProgram astate], path, astate_n)
       | Metadata
           ( Abstract _
           | CatchEntry _

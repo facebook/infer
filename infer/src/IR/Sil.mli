@@ -33,6 +33,7 @@ type instr_metadata =
   | CatchEntry of {try_id: int; loc: Location.t}  (** entry of C++ catch blocks *)
   | ExitScope of Var.t list * Location.t  (** remove temporaries and dead program variables *)
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
+  | LoopEntry of {header_id: int}  (** next node is a loop header *)
   | Skip  (** no-op *)
   | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
   | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)
