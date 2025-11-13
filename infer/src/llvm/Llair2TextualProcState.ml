@@ -92,10 +92,16 @@ let pp fmt ~print_types proc_state =
      @[formals: %a@]@;\
      @[ids_move: %a@]@;\
      @[ids_types: %a@]@;\
+     @[id_offset: %a@]@;\
+     @[get_element_ptr_offset: %a@]@;\
      ]@]"
     Textual.QualifiedProcName.pp proc_state.qualified_name Textual.Location.pp proc_state.loc
     pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids_move pp_ids
-    proc_state.ids_types ;
+    proc_state.ids_types
+    (Pp.option (Pp.pair ~fst:Textual.Ident.pp ~snd:Int.pp))
+    proc_state.id_offset
+    (Pp.option (Pp.pair ~fst:Textual.VarName.pp ~snd:Int.pp))
+    proc_state.get_element_ptr_offset ;
   if print_types then F.fprintf fmt "types: %a@" pp_struct_map proc_state.struct_map
 
 
@@ -150,3 +156,30 @@ let global_proc_state lang loc global_var =
   ; globals= VarMap.empty
   ; lang
   ; proc_map= Textual.QualifiedProcName.Map.empty }
+
+
+let find_method_with_offset ~proc_state struct_name offset =
+  let proc_map = proc_state.proc_map in
+  let class_procs =
+    Textual.QualifiedProcName.Map.filter
+      (fun proc_name _ ->
+        match Textual.QualifiedProcName.get_class_name proc_name with
+        | Some class_name ->
+            Textual.TypeName.equal class_name struct_name
+        | None ->
+            false )
+      proc_map
+  in
+  let _, methods = Textual.QualifiedProcName.Map.bindings class_procs |> List.unzip in
+  let find_offset offset_opt (proc_decl : Textual.ProcDecl.t) =
+    match offset_opt with
+    | Some offset ->
+        Some offset
+    | None -> (
+      match List.find_map ~f:Textual.Attr.get_method_offset proc_decl.attributes with
+      | Some method_offset ->
+          if Int.equal offset method_offset then Some proc_decl.qualified_name else None
+      | None ->
+          None )
+  in
+  List.fold ~init:None ~f:find_offset methods

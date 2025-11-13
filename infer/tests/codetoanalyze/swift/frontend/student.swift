@@ -84,7 +84,7 @@ func createPerson() -> Person {
 }
 
 
-func test_retain_cycle_person1_bad_FN(_ jane: Person) {
+func test_retain_cycle_person1_bad(_ jane: Person) {
     let john = createPerson()
     john.spouse = jane
     jane.spouse = john

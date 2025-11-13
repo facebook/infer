@@ -505,67 +505,98 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
   (id, call_exp, args_instrs)
 
 
-and to_textual_call ~proc_state (call : 'a Llair.call) =
-  let loc = to_textual_loc ~proc_state call.loc in
-  let proc, kind, exp_opt =
-    match call.callee with
-    | Direct {func} ->
-        let proc =
-          if
-            String.equal (FuncName.name func.Llair.name)
-              (Procname.get_method BuiltinDecl.__assert_fail)
-            || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
-          then Textual.ProcDecl.assert_fail_name
-          else to_qualified_proc_name (FuncName.name func.Llair.name)
-        in
-        (proc, Textual.Exp.NonVirtual, None)
-    | Indirect {ptr} ->
-        let proc = builtin_qual_proc_name "llvm_dynamic_call" in
-        (proc, Textual.Exp.NonVirtual, Some (to_textual_exp loc ~proc_state ptr |> fst3))
-    | Intrinsic intrinsic ->
-        let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
-        (proc, Textual.Exp.NonVirtual, None)
-  in
-  let args = StdUtils.iarray_to_list call.actuals in
-  let loc = to_textual_loc_instr ~proc_state call.loc in
-  let id, call_exp, args_instrs =
-    to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args loc
-  in
-  let call_exp =
-    match call_exp with
-    | Textual.Exp.Call {proc} -> (
-      match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) with
-      | Some class_name ->
-          let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
-          Textual.Exp.Call
-            {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
-      | None ->
-          call_exp )
-    | _ ->
-        call_exp
-  in
-  (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
-  because we are flattenning the structure of weak pointers to be just like normal pointers in infer,
-  whilst in llvm the structures is field_2: *swift::weak}, type swift::weak = {field_0: *ptr_elt} *)
-  let instrs =
-    match call_exp with
-    | Textual.Exp.Call {proc; args= [arg1; arg2]}
-      when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
-        let instrs2, arg2 = add_deref ~proc_state arg2 loc in
-        Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
-    | _ ->
-        [Textual.Instr.Let {id; exp= call_exp; loc}]
-  in
-  instrs @ args_instrs
-
-
-and to_textual_builtin ~proc_state return name args loc =
-  let proc = builtin_qual_proc_name name in
+and to_textual_call_instrs ~proc_state return proc args loc =
   let id, call_exp, args_instrs =
     to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc return args loc
   in
   let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
   let_instr :: args_instrs
+
+
+and to_textual_builtin ~proc_state return name args loc =
+  let proc = builtin_qual_proc_name name in
+  to_textual_call_instrs ~proc_state return proc args loc
+
+
+and resolve_method_call ~proc_state return callee args loc =
+  match (callee, proc_state.ProcState.id_offset, List.hd (List.rev args)) with
+  | Indirect {ptr= offset_arg}, Some (id_offset, offset), Some self_id -> (
+      let offset_exp, _, _ = to_textual_exp ~proc_state loc offset_arg in
+      let self_id, _, _ = to_textual_exp ~proc_state loc self_id in
+      match (offset_exp, self_id) with
+      | Textual.Exp.Var id, Var self_id when Textual.Ident.equal id id_offset -> (
+        match ProcState.IdentMap.find_opt self_id proc_state.ProcState.ids_types with
+        | Some {typ= Textual.Typ.Struct struct_name} -> (
+          match ProcState.find_method_with_offset ~proc_state struct_name offset with
+          | Some proc_name ->
+              ProcState.reset_offsets ~proc_state ;
+              Some (to_textual_call_instrs ~proc_state return proc_name args loc)
+          | None ->
+              None )
+        | _ ->
+            None )
+      | _ ->
+          None )
+  | _ ->
+      None
+
+
+and to_textual_call ~proc_state (call : 'a Llair.call) =
+  let loc = to_textual_loc ~proc_state call.loc in
+  let args = StdUtils.iarray_to_list call.actuals in
+  match resolve_method_call ~proc_state call.areturn call.callee args loc with
+  | Some call_instrs ->
+      call_instrs
+  | None ->
+      let proc, kind, exp_opt =
+        match call.callee with
+        | Direct {func} ->
+            let proc =
+              if
+                String.equal (FuncName.name func.Llair.name)
+                  (Procname.get_method BuiltinDecl.__assert_fail)
+                || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
+              then Textual.ProcDecl.assert_fail_name
+              else to_qualified_proc_name (FuncName.name func.Llair.name)
+            in
+            (proc, Textual.Exp.NonVirtual, None)
+        | Indirect {ptr} ->
+            let proc = builtin_qual_proc_name "llvm_dynamic_call" in
+            (proc, Textual.Exp.NonVirtual, Some (to_textual_exp loc ~proc_state ptr |> fst3))
+        | Intrinsic intrinsic ->
+            let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
+            (proc, Textual.Exp.NonVirtual, None)
+      in
+      let loc = to_textual_loc_instr ~proc_state call.loc in
+      let id, call_exp, args_instrs =
+        to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args loc
+      in
+      let call_exp =
+        match call_exp with
+        | Textual.Exp.Call {proc} -> (
+          match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) with
+          | Some class_name ->
+              let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
+              Textual.Exp.Call
+                {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
+          | None ->
+              call_exp )
+        | _ ->
+            call_exp
+      in
+      (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
+  because we are flattenning the structure of weak pointers to be just like normal pointers in infer,
+  whilst in llvm the structures is field_2: *swift::weak}, type swift::weak = {field_0: *ptr_elt} *)
+      let instrs =
+        match call_exp with
+        | Textual.Exp.Call {proc; args= [arg1; arg2]}
+          when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
+            let instrs2, arg2 = add_deref ~proc_state arg2 loc in
+            Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
+        | _ ->
+            [Textual.Instr.Let {id; exp= call_exp; loc}]
+      in
+      instrs @ args_instrs
 
 
 let remove_store_zero_in_class exp1 typ_exp1 exp2 loc =

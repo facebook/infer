@@ -461,13 +461,48 @@ define .plain_name = "test_employee_allocation_good" $s5Hello29test_employee_all
       
 } @?
 
+define .plain_name = "test_retain_cycle_person1_bad" $s5Hello29test_retain_cycle_person1_badyyAA6PersonCF(var1: *__infer_swift_type<T5Hello6PersonC,Person>) : void {
+  local john: *__infer_swift_type<ptr_elt>, jane: *__infer_swift_type<ptr_elt>, getelementptr_offset_2: *void, getelementptr_offset_1: *void
+  #: @[308:0]
+      n1 = load &var1 @[308:0]
+      store &jane <- n1 @[308:0]
+      n2 = $s5Hello12createPersonAA0C0CyF() @[88:16]
+      jmp 4::ret @[88:16]
+      
+  #11::void::ret: @[91:1]
+      ret null @[91:1]
+      
+  #4::ret: @[309:0]
+      store &john <- n2 @[309:0]
+      n3 = load &var1 @[89:19]
+      n4 = n3 @[89:19]
+      jmp 5::ret @[89:19]
+      
+  #5::ret: @[89:17]
+      n5 = load n2 @[89:17]
+      store &getelementptr_offset_1 <- 13 @[89:17]
+      n6 = load &getelementptr_offset_1 @[89:17]
+      n7 = load &var1 @[89:17]
+      _ = __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n7, n2) @[89:17]
+      jmp 8::void::ret @[89:17]
+      
+  #8::void::ret: @[90:17]
+      n9 = load &var1 @[90:17]
+      store &getelementptr_offset_2 <- 13 @[90:17]
+      n10 = load &getelementptr_offset_2 @[90:17]
+      n12 = load &var1 @[90:17]
+      _ = $builtins.llvm_dynamic_call(n10, n2, n12) @[90:17]
+      jmp 11::void::ret @[90:17]
+      
+} @?
+
 define .plain_name = "test_employee_getter_setter_bad" $s5Hello31test_employee_getter_setter_badyyF() : void {
   #: @[61:5]
       n2 = $s5Hello17setEmployeeWeightyS2iF(70) @[61:5]
       jmp 1::ret @[61:5]
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[307:0]
-      unreachable @[307:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[311:0]
+      unreachable @[311:0]
       
   #1::ret: @[61:5]
       n3 = __sil_eq(n2, 75) @[61:5]
@@ -491,8 +526,8 @@ define .plain_name = "test_employee_getter_setter_good" $s5Hello32test_employee_
       n2 = $s5Hello17setEmployeeWeightyS2iF(70) @[65:5]
       jmp 1::ret @[65:5]
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[309:0]
-      unreachable @[309:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[313:0]
+      unreachable @[313:0]
       
   #1::ret: @[65:5]
       n3 = __sil_eq(n2, 70) @[65:5]
@@ -508,41 +543,6 @@ define .plain_name = "test_employee_getter_setter_good" $s5Hello32test_employee_
       
   #8: @[66:1]
       ret null @[66:1]
-      
-} @?
-
-define .plain_name = "test_retain_cycle_person1_bad_FN" $s5Hello32test_retain_cycle_person1_bad_FNyyAA6PersonCF(var1: *__infer_swift_type<T5Hello6PersonC,Person>) : void {
-  local john: *__infer_swift_type<ptr_elt>, jane: *__infer_swift_type<ptr_elt>, getelementptr_offset_2: *void, getelementptr_offset_1: *void
-  #: @[312:0]
-      n1 = load &var1 @[312:0]
-      store &jane <- n1 @[312:0]
-      n2 = $s5Hello12createPersonAA0C0CyF() @[88:16]
-      jmp 4::ret @[88:16]
-      
-  #11::void::ret: @[91:1]
-      ret null @[91:1]
-      
-  #4::ret: @[313:0]
-      store &john <- n2 @[313:0]
-      n3 = load &var1 @[89:19]
-      n4 = n3 @[89:19]
-      jmp 5::ret @[89:19]
-      
-  #5::ret: @[89:17]
-      n5 = load n2 @[89:17]
-      store &getelementptr_offset_1 <- 13 @[89:17]
-      n6 = load &getelementptr_offset_1 @[89:17]
-      n7 = load &var1 @[89:17]
-      _ = $builtins.llvm_dynamic_call(n6, n7, n2) @[89:17]
-      jmp 8::void::ret @[89:17]
-      
-  #8::void::ret: @[90:17]
-      n9 = load &var1 @[90:17]
-      store &getelementptr_offset_2 <- 13 @[90:17]
-      n10 = load &getelementptr_offset_2 @[90:17]
-      n12 = load &var1 @[90:17]
-      _ = $builtins.llvm_dynamic_call(n10, n2, n12) @[90:17]
-      jmp 11::void::ret @[90:17]
       
 } @?
 
@@ -828,7 +828,7 @@ define .plain_name = "setWeight" $s5Hello9setWeightyySiF(var1: int) : void {
       store &getelementptr_offset_1 <- 13 @[25:17]
       n10 = load &getelementptr_offset_1 @[25:17]
       n11 = load &var1 @[25:17]
-      _ = $builtins.llvm_dynamic_call(n10, n11, n8) @[25:17]
+      _ = __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivs(n11, n8) @[25:17]
       jmp 9::void::ret @[25:17]
       
   #9::void::ret: @[26:1]

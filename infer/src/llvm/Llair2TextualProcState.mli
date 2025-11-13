@@ -60,3 +60,6 @@ val get_fresh_fake_line : unit -> int
 
 val pp_struct_map : F.formatter -> Textual.Struct.t Textual.TypeName.Map.t -> unit
 [@@warning "-unused-value-declaration"]
+
+val find_method_with_offset :
+  proc_state:t -> Textual.TypeName.t -> int -> Textual.QualifiedProcName.t option
