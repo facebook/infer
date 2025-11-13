@@ -165,10 +165,10 @@ let%expect_test "numbers lexing" =
   show_result m ;
   [%expect
     {|
-    dummy.sil, line 11, column 11: textual type error: ident n2 is assigned (with type float), but it has already been assigned at line 7 (with type float)
-    dummy.sil, line 12, column 11: textual type error: ident n3 is assigned (with type float), but it has already been assigned at line 8 (with type float)
-    dummy.sil, line 13, column 11: textual type error: ident n4 is assigned (with type float), but it has already been assigned at line 9 (with type float)
-    dummy.sil, line 14, column 11: textual type error: ident n5 is assigned (with type float), but it has already been assigned at line 10 (with type float)
+    Textual: Type Error: dummy.sil, line 11, column 11: ident n2 is assigned (with type float), but it has already been assigned at line 7 (with type float)
+    Textual: Type Error: dummy.sil, line 12, column 11: ident n3 is assigned (with type float), but it has already been assigned at line 8 (with type float)
+    Textual: Type Error: dummy.sil, line 13, column 11: ident n4 is assigned (with type float), but it has already been assigned at line 9 (with type float)
+    Textual: Type Error: dummy.sil, line 14, column 11: ident n5 is assigned (with type float), but it has already been assigned at line 10 (with type float)
     |}]
 
 

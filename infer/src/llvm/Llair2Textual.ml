@@ -167,10 +167,10 @@ let block_to_node_name block =
 
 let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
 
-let undef_exp ~loc ?typ exp =
+let undef_exp ~loc ?typ ~proc exp =
   let pp_typ fmt typ = Option.iter typ ~f:(fun typ -> F.fprintf fmt ":%a" Textual.Typ.pp typ) in
-  L.internal_error "Llair2Textual: unsupported exp %a%a [%a]@\n" Llair.Exp.pp exp pp_typ typ
-    Textual.Location.pp loc ;
+  L.internal_error "Llair2Textual: unsupported exp %a%a [%a:%a]@\n" Llair.Exp.pp exp pp_typ typ
+    Textual.QualifiedProcName.pp proc Textual.Location.pp loc ;
   (* TODO: should include the arguments here too *)
   (Textual.Exp.Call {proc= undef_proc_name; args= []; kind= NonVirtual}, typ, [])
 
@@ -275,7 +275,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       (textual_exp, Some textual_typ, [])
   | Nondet {typ} ->
       let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
-      undef_exp ~loc ~typ:textual_typ exp
+      undef_exp ~loc ~proc:proc_state.qualified_name ~typ:textual_typ exp
   | FuncName {name} ->
       (Textual.Exp.Const (Str name), None, [])
   | Reg {id; name; typ} ->
@@ -321,7 +321,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       match typ_name with
       | None ->
-          undef_exp ~loc exp
+          undef_exp ~loc ~proc:proc_state.qualified_name exp
       | Some typ_name ->
           let exp, _, exp_instrs = to_textual_exp loc ~proc_state llair_exp in
           let field =
@@ -408,7 +408,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       match type_name_opt with
       | None ->
-          undef_exp ~loc exp
+          undef_exp ~loc ~proc:proc_state.qualified_name exp
       | Some type_name ->
           let elements = StdUtils.iarray_to_list _elements in
           let id = add_fresh_id ~proc_state () in
@@ -436,7 +436,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let instrs = rcd_store_instr :: List.foldi ~f:to_textual_exp_index ~init:[] elements in
           (rcd_exp, Some textual_typ, instrs) )
   | _ ->
-      undef_exp ~loc exp
+      undef_exp ~loc ~proc:proc_state.qualified_name exp
 
 
 and to_textual_bool_exp ~proc_state loc exp =

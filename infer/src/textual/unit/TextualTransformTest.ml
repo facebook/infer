@@ -609,7 +609,7 @@ let%test_module "remove_if_terminator transformation" =
       | Error _ ->
           () ;
           [%expect
-            {| dummy.sil, line 9, column 14: textual type error: ident n7 is assigned (with type int), but it has already been assigned at line 21 (with type int) |}]
+            {| Textual: Type Error: dummy.sil, line 9, column 14: ident n7 is assigned (with type int), but it has already been assigned at line 21 (with type int) |}]
   end )
 
 
