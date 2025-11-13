@@ -15,18 +15,22 @@ type structMap = Textual.Struct.t Textual.TypeName.Map.t
 
 type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
+type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
+
 type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: Textual.Typ.annotated VarMap.t
-  ; mutable ids: Textual.Typ.annotated IdentMap.t
+  ; mutable ids_move: Textual.Typ.annotated IdentMap.t
+  ; mutable ids_types: Textual.Typ.annotated IdentMap.t
   ; mutable reg_map: Textual.Ident.t RegMap.t
   ; mutable last_id: Textual.Ident.t
   ; mutable last_tmp_var: int
   ; struct_map: structMap
   ; globals: globalMap
-  ; lang: Textual.Lang.t }
+  ; lang: Textual.Lang.t
+  ; proc_map: procMap }
 
 let mk_fresh_id ?reg proc_state =
   let fresh_id ?reg () =
@@ -78,9 +82,16 @@ let pp_struct_map fmt struct_map =
 
 let pp fmt ~print_types proc_state =
   F.fprintf fmt
-    "@[<v>@[<v>qualified_name: %a@]@;@[loc: %a@]@;@[locals: %a@]@;@[formals: %a@]@;@[ids: %a@]@;]@]"
+    "@[<v>@[<v>qualified_name: %a@]@;\
+     @[loc: %a@]@;\
+     @[locals: %a@]@;\
+     @[formals: %a@]@;\
+     @[ids_move: %a@]@;\
+     @[ids_types: %a@]@;\
+     ]@]"
     Textual.QualifiedProcName.pp proc_state.qualified_name Textual.Location.pp proc_state.loc
-    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids ;
+    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids_move pp_ids
+    proc_state.ids_types ;
   if print_types then F.fprintf fmt "types: %a@" pp_struct_map proc_state.struct_map
 
 
@@ -88,7 +99,13 @@ let update_locals ~proc_state varname typ =
   proc_state.locals <- VarMap.add varname typ proc_state.locals
 
 
-let update_ids ~proc_state id typ = proc_state.ids <- IdentMap.add id typ proc_state.ids
+let update_ids_move ~proc_state id typ =
+  proc_state.ids_move <- IdentMap.add id typ proc_state.ids_move
+
+
+let update_ids_types ~proc_state id typ =
+  proc_state.ids_types <- IdentMap.add id typ proc_state.ids_types
+
 
 let global_proc_state lang loc global_var =
   let global_init_name = Format.sprintf "global_init_%s" global_var in
@@ -100,10 +117,12 @@ let global_proc_state lang loc global_var =
   ; loc
   ; formals= VarMap.empty
   ; locals= VarMap.empty
-  ; ids= IdentMap.empty
+  ; ids_move= IdentMap.empty
+  ; ids_types= IdentMap.empty
   ; reg_map= RegMap.empty
   ; last_id= Textual.Ident.of_int 0
   ; last_tmp_var= 0
   ; struct_map= Textual.TypeName.Map.empty
   ; globals= VarMap.empty
-  ; lang }
+  ; lang
+  ; proc_map= Textual.QualifiedProcName.Map.empty }

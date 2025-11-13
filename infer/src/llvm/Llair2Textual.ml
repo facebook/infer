@@ -247,10 +247,25 @@ let add_deref ~proc_state exp loc =
   | Textual.Exp.Lvar _ | Textual.Exp.Field _ ->
       add_load_instr
   | Textual.Exp.Var id -> (
-      let typ = IdentMap.find_opt id proc_state.ProcState.ids in
+      let typ = IdentMap.find_opt id proc_state.ProcState.ids_move in
       match typ with Some {typ= Textual.Typ.Ptr _} -> add_load_instr | _ -> ([], exp) )
   | _ ->
       ([], exp)
+
+
+let update_id_return_type ~proc_state proc id =
+  let proc_decl_opt = Textual.QualifiedProcName.Map.find_opt proc proc_state.ProcState.proc_map in
+  match (id, proc_decl_opt) with
+  | Some id, Some proc_decl -> (
+      let return_typ = proc_decl.Textual.ProcDecl.result_type in
+      match return_typ.Textual.Typ.typ with
+      | Textual.Typ.(Ptr (Struct _ as struct_name))
+        when not (Textual.Typ.equal Textual.Typ.any_type_swift struct_name) ->
+          ProcState.update_ids_types ~proc_state id (Textual.Typ.mk_without_attributes struct_name)
+      | _ ->
+          () )
+  | _ ->
+      ()
 
 
 let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : Llair.Exp.t) :
@@ -483,6 +498,7 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
     then List.hd_exn args
     else Textual.Exp.Call {proc; args; kind}
   in
+  update_id_return_type ~proc_state proc id ;
   (id, call_exp, args_instrs)
 
 
@@ -572,7 +588,7 @@ let translate_move ~move_phi ~proc_state loc textual_instrs reg_exps =
         let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state exp in
         ( match (id, exp_typ) with
         | Some id, Some exp_typ ->
-            ProcState.update_ids ~proc_state id (Textual.Typ.mk_without_attributes exp_typ)
+            ProcState.update_ids_move ~proc_state id (Textual.Typ.mk_without_attributes exp_typ)
         | _ ->
             () ) ;
         let deref_instrs, exp = if move_phi then add_deref ~proc_state exp loc else ([], exp) in
@@ -1025,8 +1041,8 @@ let function_to_proc_decl lang ~struct_map (func_name, func) =
   procdecl
 
 
-let translate_code lang source_file struct_map globals proc_descs (procdecl : Textual.ProcDecl.t)
-    (func_name, func) =
+let translate_code proc_decls lang source_file struct_map globals proc_descs
+    (procdecl : Textual.ProcDecl.t) (func_name, func) =
   let should_translate =
     should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
   in
@@ -1041,18 +1057,27 @@ let translate_code lang source_file struct_map globals proc_descs (procdecl : Te
           formals_list formals_types ~init:Textual.VarName.Map.empty
   in
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
+  let proc_map =
+    List.fold
+      ~f:(fun proc_map proc_decl ->
+        Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
+          proc_map )
+      ~init:Textual.QualifiedProcName.Map.empty proc_decls
+  in
   let proc_state : ProcState.t =
     { qualified_name= procdecl.qualified_name
     ; loc
     ; formals
     ; locals= VarMap.empty
-    ; ids= IdentMap.empty
+    ; ids_move= IdentMap.empty
+    ; ids_types= IdentMap.empty
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
     ; struct_map
     ; globals
-    ; lang }
+    ; lang
+    ; proc_map }
   in
   let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
   let result_type =
@@ -1115,7 +1140,9 @@ let update_function_signatures lang ~struct_map functions =
 
 
 let translate_llair_functions source_file lang struct_map globals proc_decls values =
-  List.fold2_exn proc_decls values ~f:(translate_code lang source_file struct_map globals) ~init:[]
+  List.fold2_exn proc_decls values
+    ~f:(translate_code proc_decls lang source_file struct_map globals)
+    ~init:[]
 
 
 let reset_global_state () = Hash_set.clear Type.signature_structs
