@@ -692,11 +692,12 @@ void nondet_nonterminate_chen14_bad(int k, int i) {
   i = 2;
 }
 
-// TNT fails to prove non-termination
-/* pulse-inf says there is no bug */
-/* To me: this will terminate because k >= 0 will eventually be false due to
- * integer wrap */
-void nestedloop2_chen14_ok(int k, int j) {
+/* TNT fails to prove non-termination
+   If we assume, bounded arithmetic, this will terminate because
+   k >= 0 will eventually be false due to integer wrap.
+   But Pulse assumes unbounded arithmetic so this should be
+   marked as an infinite recursion */
+void nestedloop2_chen14_bad(int k, int j) {
   while (k >= 0) {
     k++;
     j = k;

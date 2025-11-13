@@ -25,6 +25,8 @@ end
 module Node = struct
   type id = int [@@deriving compare, equal, hash]
 
+  let unsafe_int_to_id id = id
+
   type destruction_kind =
     | DestrBreakStmt
     | DestrContinueStmt

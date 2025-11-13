@@ -24,6 +24,8 @@ module Node : sig
   (** node id *)
   type id = private int [@@deriving compare, equal, hash]
 
+  val unsafe_int_to_id : int -> id
+
   type destruction_kind =
     | DestrBreakStmt
     | DestrContinueStmt

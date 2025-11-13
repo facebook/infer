@@ -190,8 +190,6 @@ module PulseTransferFunctions = struct
       List.concat_map disjs ~f:(fun disj ->
           match disj with
           | ContinueProgram astate, path ->
-              let timestamp = path.PathContext.timestamp in
-              let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
               let {AbductiveDomain.loop_header_info} = astate in
               if PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info then
                 let location = Procdesc.Node.get_loc cfg_node in
@@ -1608,8 +1606,15 @@ module PulseTransferFunctions = struct
               |> ExecutionDomain.continue ]
           , path
           , astate_n )
-      | Metadata (LoopEntry _ | LoopBackEdge _) ->
-          (* TODO *)
+      | Metadata (LoopEntry {header_id}) ->
+          let id = Procdesc.Node.unsafe_int_to_id header_id in
+          let timestamp = path.PathContext.timestamp in
+          let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
+          ([ContinueProgram astate], path, astate_n)
+      | Metadata (LoopBackEdge {header_id}) ->
+          let id = Procdesc.Node.unsafe_int_to_id header_id in
+          let timestamp = path.PathContext.timestamp in
+          let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
           ([ContinueProgram astate], path, astate_n)
       | Metadata
           ( Abstract _

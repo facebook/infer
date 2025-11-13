@@ -305,7 +305,10 @@ module Exceptional = struct
     let start_node = Procdesc.get_start_node
   end)
 
-  let wto (pdesc, _) = WTO.make pdesc
+  let wto (pdesc, _) =
+    (* we force lazy initialization of regular wto (all analyses do not use the same CFG) *)
+    let _ = Procdesc.get_wto pdesc in
+    WTO.make pdesc
 end
 
 (** Forward CFG with exceptional control-flow, but no edge from exceptions sink to exit node. *)
