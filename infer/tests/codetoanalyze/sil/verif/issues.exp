@@ -1,47 +1,47 @@
-annotated.sil, line 21, column 19: textual type error: expression &y has type *float, while a subtype of *int was expected
-annotated.sil, line 22, column 19: textual type error: expression &n has type **node, while a pointer of array type was expected
-basic.sil, line 17, column 19: textual type error: expression &y has type *float, while a subtype of *int was expected
-basic.sil, line 18, column 19: textual type error: expression &n has type **node, while a pointer of array type was expected
-basic.sil, line 20, column 4: textual type error: expression n1 has type int, while a subtype of *node was expected
-basic.sil, line 35, column 11: textual type error: variable u has not been declared
-basic.sil, line 24, column 4: textual type error: expression n0 has type int, while a subtype of float was expected
-basic.sil, line 24, column 11: textual type error: expression &x has type *int, while a supertype of *float was expected
-basic.sil, line 25, column 4: textual type error: expression n1 has type int, while a subtype of float was expected
-basic.sil, line 25, column 11: textual type error: expression &x has type *int, while a pointer of array type was expected
-basic.sil, line 29, column 4: textual type error: expression n3 has type *int[], while a pointer of struct type was expected
-basic.sil, line 36, column 4: textual type error: ident n0 is assigned (with type float), but it has already been assigned at line 17 (with type int)
-basic.sil, line 48, column 4: textual type error: expression n2 has type *int[], while a subtype of *node was expected
-basic.sil, line 48, column 4: textual type error: expression n3 has type *node, while a subtype of *int[] was expected
-basic.sil, line 52, column 11: textual type error: expression &y has type *float, while a supertype of *int was expected
-basic.sil, line 55, column 11: textual type error: expression &y has type *float, while a supertype of *int was expected
-basic.sil, line 75, column 4: textual type error: ident n1 is read before being written
-basic.sil, line 86, column 8: textual type error: expression __sil_pluspi([&ptr:*int], 4) has type *int, while a subtype of *float was expected
-basic.sil, line 96, column 4: textual type error: builtin __sil_allocate is called with 2 arguments while it expects 1
-basic.sil, line 98, column 4: textual type error: expression 0 has type int, while the type of all types was expected
-basic.sil, line 116, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
-basic.sil, line 118, column 4: textual type error: expression n1 has type float, while a subtype of int was expected
-basic.sil, line 120, column 9: textual type error: expression [&y:float] has type float, while a subtype of int was expected
-basic.sil, line 125, column 16: textual type error: variable b0 has not been declared
-basic.sil, line 125, column 24: textual type error: variable x has not been declared
-basic.sil, line 132, column 2: textual type error: branch at location line 132, column 2 is given the type int, but the other branch is given a different type float
-basic.sil, line 133, column 2: textual type error: expression n0 has type int, while a subtype of float was expected
-error2.sil, line 20, column 9: SIL consistency error: function g which can be called with 0 arguments is not declared
-error2.sil, line 19, column 13: SIL consistency error: field cell.n is not declared
-error2.sil, line 16, column 8: SIL consistency error: label lab2 is not declared in function f
-error_label.sil, line 17, column 8: SIL consistency error: label lab2 is not declared in function B.f
-fun_type.sil, line 14, column 8: textual type error: expression [&f1:(fun () -> void)] has type (fun () -> void), while a subtype of float was expected
-twice.sil: SIL consistency error: node entry is implemented twice in the same function f
-twice.sil: SIL consistency error: parameter x is declared twice in the same function f
-twice.sil: SIL consistency error: function f is implemented twice in the same file
-twice.sil: SIL consistency error: field next is declared twice in type node
-twice.sil: SIL consistency error: type node is declared twice in the same file
-twice.sil: SIL consistency error: global I is declared twice in the same file
-type_error_argnum.sil, line 19, column 2: textual type error: expression n0 has type *HackMixed, while a subtype of bool was expected
-variadic.sil, line 55, column 7: SIL consistency error: variadic parameter is not in second-to-last position in trait function T.with_generics_bad2 which has a reified generics parameter
-variadic.sil, line 50, column 7: SIL consistency error: variadic parameter is not in second-to-last position in trait function T.with_generics_bad1 which has a reified generics parameter
-variadic.sil, line 40, column 7: SIL consistency error: variadic parameter is not in penultimate position in trait function T.bad
-variadic.sil, line 28, column 7: SIL consistency error: variadic parameter is not in penultimate position in function with_generics_bad which has a reified generics parameter
-variadic.sil, line 18, column 7: SIL consistency error: variadic parameter is not in last position in function f3
+Textual: Type Error: annotated.sil, line 21, column 19: expression &y has type *float, while a subtype of *int was expected
+Textual: Type Error: annotated.sil, line 22, column 19: expression &n has type **node, while a pointer of array type was expected
+Textual: Type Error: basic.sil, line 17, column 19: expression &y has type *float, while a subtype of *int was expected
+Textual: Type Error: basic.sil, line 18, column 19: expression &n has type **node, while a pointer of array type was expected
+Textual: Type Error: basic.sil, line 20, column 4: expression n1 has type int, while a subtype of *node was expected
+Textual: Type Error: basic.sil, line 35, column 11: variable u has not been declared
+Textual: Type Error: basic.sil, line 24, column 4: expression n0 has type int, while a subtype of float was expected
+Textual: Type Error: basic.sil, line 24, column 11: expression &x has type *int, while a supertype of *float was expected
+Textual: Type Error: basic.sil, line 25, column 4: expression n1 has type int, while a subtype of float was expected
+Textual: Type Error: basic.sil, line 25, column 11: expression &x has type *int, while a pointer of array type was expected
+Textual: Type Error: basic.sil, line 29, column 4: expression n3 has type *int[], while a pointer of struct type was expected
+Textual: Type Error: basic.sil, line 36, column 4: ident n0 is assigned (with type float), but it has already been assigned at line 17 (with type int)
+Textual: Type Error: basic.sil, line 48, column 4: expression n2 has type *int[], while a subtype of *node was expected
+Textual: Type Error: basic.sil, line 48, column 4: expression n3 has type *node, while a subtype of *int[] was expected
+Textual: Type Error: basic.sil, line 52, column 11: expression &y has type *float, while a supertype of *int was expected
+Textual: Type Error: basic.sil, line 55, column 11: expression &y has type *float, while a supertype of *int was expected
+Textual: Type Error: basic.sil, line 75, column 4: ident n1 is read before being written
+Textual: Type Error: basic.sil, line 86, column 8: expression __sil_pluspi([&ptr:*int], 4) has type *int, while a subtype of *float was expected
+Textual: Type Error: basic.sil, line 96, column 4: builtin __sil_allocate is called with 2 arguments while it expects 1
+Textual: Type Error: basic.sil, line 98, column 4: expression 0 has type int, while the type of all types was expected
+Textual: Type Error: basic.sil, line 116, column 4: expression n1 has type float, while a subtype of int was expected
+Textual: Type Error: basic.sil, line 118, column 4: expression n1 has type float, while a subtype of int was expected
+Textual: Type Error: basic.sil, line 120, column 9: expression [&y:float] has type float, while a subtype of int was expected
+Textual: Type Error: basic.sil, line 125, column 16: variable b0 has not been declared
+Textual: Type Error: basic.sil, line 125, column 24: variable x has not been declared
+Textual: Type Error: basic.sil, line 132, column 2: branch at location line 132, column 2 is given the type int, but the other branch is given a different type float
+Textual: Type Error: basic.sil, line 133, column 2: expression n0 has type int, while a subtype of float was expected
+SIL: Consistency Error: error2.sil, line 20, column 9: function g which can be called with 0 arguments is not declared
+SIL: Consistency Error: error2.sil, line 19, column 13: field cell.n is not declared
+SIL: Consistency Error: error2.sil, line 16, column 8: label lab2 is not declared in function f
+SIL: Consistency Error: error_label.sil, line 17, column 8: label lab2 is not declared in function B.f
+Textual: Type Error: fun_type.sil, line 14, column 8: expression [&f1:(fun () -> void)] has type (fun () -> void), while a subtype of float was expected
+SIL: Consistency Error: twice.sil: node entry is implemented twice in the same function f
+SIL: Consistency Error: twice.sil: parameter x is declared twice in the same function f
+SIL: Consistency Error: twice.sil: function f is implemented twice in the same file
+SIL: Consistency Error: twice.sil: field next is declared twice in type node
+SIL: Consistency Error: twice.sil: type node is declared twice in the same file
+SIL: Consistency Error: twice.sil: global I is declared twice in the same file
+Textual: Type Error: type_error_argnum.sil, line 19, column 2: expression n0 has type *HackMixed, while a subtype of bool was expected
+SIL: Consistency Error: variadic.sil, line 55, column 7: variadic parameter is not in second-to-last position in trait function T.with_generics_bad2 which has a reified generics parameter
+SIL: Consistency Error: variadic.sil, line 50, column 7: variadic parameter is not in second-to-last position in trait function T.with_generics_bad1 which has a reified generics parameter
+SIL: Consistency Error: variadic.sil, line 40, column 7: variadic parameter is not in penultimate position in trait function T.bad
+SIL: Consistency Error: variadic.sil, line 28, column 7: variadic parameter is not in penultimate position in function with_generics_bad which has a reified generics parameter
+SIL: Consistency Error: variadic.sil, line 18, column 7: variadic parameter is not in last position in function f3
 error1.sil, line 14, column 4: SIL syntax error: unexpected token x
 error3.sil, line 4, column 0: SIL syntax error: unexpected token ^
 error_lit_float.sil, line 10, column 13: SIL syntax error: unexpected token d

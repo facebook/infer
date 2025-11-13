@@ -27,14 +27,14 @@ let pp_error_with_sourcefile sourcefile fmt err =
   match err with
   | BasicError err ->
       let loc = TextualBasicVerification.error_loc err in
-      F.fprintf fmt "%a, %a: SIL consistency error: " SourceFile.pp sourcefile Location.pp loc ;
+      F.fprintf fmt "SIL: Consistency Error: %a, %a: " SourceFile.pp sourcefile Location.pp loc ;
       TextualBasicVerification.pp_error fmt err
   | TypeError err ->
       let loc = TextualTypeVerification.error_loc err in
-      F.fprintf fmt "%a, %a: textual type error: " SourceFile.pp sourcefile Location.pp loc ;
+      F.fprintf fmt "Textual: Type Error: %a, %a: " SourceFile.pp sourcefile Location.pp loc ;
       TextualTypeVerification.pp_error fmt err
   | DeclaredTwiceError err ->
-      F.fprintf fmt "%a: SIL consistency error: " SourceFile.pp sourcefile ;
+      F.fprintf fmt "SIL: Consistency Error: %a: " SourceFile.pp sourcefile ;
       TextualDecls.pp_error fmt err
 
 

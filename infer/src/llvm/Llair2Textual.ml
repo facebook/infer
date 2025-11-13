@@ -7,6 +7,7 @@
 
 open! IStd
 open Llair
+module F = Format
 module Type = Llair2TextualType
 module L = Logging
 module ProcState = Llair2TextualProcState
@@ -167,7 +168,9 @@ let block_to_node_name block =
 let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
 
 let undef_exp ~loc ?typ exp =
-  L.internal_error "unsupported llair exp %a [%a]@\n" Llair.Exp.pp exp Textual.Location.pp loc ;
+  let pp_typ fmt typ = Option.iter typ ~f:(fun typ -> F.fprintf fmt ":%a" Textual.Typ.pp typ) in
+  L.internal_error "Llair2Textual: unsupported exp %a%a [%a]@\n" Llair.Exp.pp exp pp_typ typ
+    Textual.Location.pp loc ;
   (* TODO: should include the arguments here too *)
   (Textual.Exp.Call {proc= undef_proc_name; args= []; kind= NonVirtual}, typ, [])
 
@@ -196,8 +199,8 @@ let to_textual_arith_exp_builtin ~loc (op : Llair.Exp.op2) (typ : Llair.Typ.t) =
   | Some binop ->
       Textual.ProcDecl.of_binop binop
   | None ->
-      L.internal_error "unsupported llair op2 %a [%a]@\n" Llair.Exp.pp_op2 op Textual.Location.pp
-        loc ;
+      L.internal_error "Llair2Textual: unsupported op2 %a [%a]@\n" Llair.Exp.pp_op2 op
+        Textual.Location.pp loc ;
       undef_proc_name
 
 
