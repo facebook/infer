@@ -363,8 +363,14 @@ module Liveness = struct
         | Store _
         | Prune _
         | Metadata
-            (Abstract _ | CatchEntry _ | ExitScope _ | LoopEntry _ | Skip | TryEntry _ | TryExit _)
-          ->
+            ( Abstract _
+            | CatchEntry _
+            | ExitScope _
+            | LoopBackEdge _
+            | LoopEntry _
+            | Skip
+            | TryEntry _
+            | TryExit _ ) ->
             astate
         | Metadata (Nullify _) ->
             L.die InternalError

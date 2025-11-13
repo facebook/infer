@@ -489,6 +489,7 @@ module TransferFunctions = struct
           ( Abstract _
           | CatchEntry _
           | Nullify _
+          | LoopBackEdge _
           | LoopEntry _
           | Skip
           | TryEntry _

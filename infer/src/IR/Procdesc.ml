@@ -741,21 +741,28 @@ module IdSet = PrettyPrintable.MakePPSet (struct
   let pp = Node.pp_id
 end)
 
-let add_loop_entry_metadata pdesc wto =
+let add_loop_metadata pdesc wto =
   let heads =
     WeakTopologicalOrder.Partition.fold_heads wto ~init:IdSet.empty ~f:(fun heads head ->
         IdSet.add head.Node.id heads )
   in
+  let debug kind node succ =
+    let pp_node fmt node = Node.pp_id fmt node.Node.id in
+    let pname = get_proc_name pdesc in
+    L.debug Analysis Quiet "[WTO][%a] {%s=%a; header=%a}\n" Procname.pp_fullname_only pname kind
+      pp_node node pp_node succ
+  in
   List.iter pdesc.nodes ~f:(fun node ->
       List.iter (Node.get_succs node) ~f:(fun succ ->
-          if IdSet.mem succ.Node.id heads && node.Node.wto_index < succ.Node.wto_index then (
-            ( if Config.trace_wto then
-                let pp_node fmt node = Node.pp_id fmt node.Node.id in
-                let pname = get_proc_name pdesc in
-                L.debug Analysis Quiet "[WTO][%a] {entry=%a; header=%a}\n" Procname.pp_fullname_only
-                  pname pp_node node pp_node succ ) ;
-            let header_id = succ.Node.id in
-            Node.append_instrs node [Sil.Metadata (LoopEntry {header_id})] ) ) )
+          if IdSet.mem succ.Node.id heads then
+            if node.Node.wto_index < succ.Node.wto_index then (
+              if Config.trace_wto then debug "entry" node succ ;
+              let header_id = succ.Node.id in
+              Node.append_instrs node [Sil.Metadata (LoopEntry {header_id})] )
+            else (
+              if Config.trace_wto then debug "loop_body_end" node succ ;
+              let header_id = succ.Node.id in
+              Node.append_instrs node [Sil.Metadata (LoopBackEdge {header_id})] ) ) )
 
 
 module WTO = WeakTopologicalOrder.Bourdoncle_SCC (PreProcCfg)
@@ -774,7 +781,7 @@ let init_wto pdesc =
         node.Node.wto_index <- idx ;
         idx + 1 )
   in
-  if Config.pulse_experimental_infinite_loop_checker_v2 then add_loop_entry_metadata pdesc wto ;
+  if Config.pulse_experimental_infinite_loop_checker_v2 then add_loop_metadata pdesc wto ;
   pdesc.wto <- Some wto
 
 
