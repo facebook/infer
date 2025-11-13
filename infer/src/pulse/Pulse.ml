@@ -184,28 +184,7 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
-  let mark_loop_header analysis_data cfg_node (disjs : DisjDomain.t list) =
-    if Config.pulse_experimental_infinite_loop_checker_v2 then
-      let id = Procdesc.Node.get_id cfg_node in
-      List.concat_map disjs ~f:(fun disj ->
-          match disj with
-          | ContinueProgram astate, path ->
-              let {AbductiveDomain.loop_header_info} = astate in
-              if PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info then
-                let location = Procdesc.Node.get_loc cfg_node in
-                (* typically we get back only one [AbortProgram] state but it could also be zero if
-                   we discover the summary is UNSAT *)
-                let exec_states =
-                  AccessResult.of_result path
-                    (Error (ReportableError {astate; diagnostic= InfiniteLoopError {location}}))
-                  |> PulseReport.report_result analysis_data path location
-                in
-                List.map exec_states ~f:(fun exec_state -> (exec_state, path))
-              else [(ContinueProgram astate, path)]
-          | _ ->
-              [disj] )
-    else disjs
-
+  let mark_loop_header _analysis_data _cfg_node (disjs : DisjDomain.t list) = disjs
 
   let widen_list (prev : DisjDomain.t list) (next : DisjDomain.t list) ~num_iters :
       DisjDomain.t list =
@@ -1606,16 +1585,25 @@ module PulseTransferFunctions = struct
               |> ExecutionDomain.continue ]
           , path
           , astate_n )
-      | Metadata (LoopEntry {header_id}) ->
-          let id = Procdesc.Node.unsafe_int_to_id header_id in
-          let timestamp = path.PathContext.timestamp in
-          let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
+      | Metadata (LoopEntry {header_id= _}) ->
+          let astate = AbductiveDomain.init_loop_header_info astate in
           ([ContinueProgram astate], path, astate_n)
       | Metadata (LoopBackEdge {header_id}) ->
           let id = Procdesc.Node.unsafe_int_to_id header_id in
           let timestamp = path.PathContext.timestamp in
           let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
-          ([ContinueProgram astate], path, astate_n)
+          let {AbductiveDomain.loop_header_info} = astate in
+          if PulseLoopHeaderInfo.has_previous_iteration_same_path_stamp id loop_header_info then
+            let location = Procdesc.Node.get_loc cfg_node in
+            (* typically we get back only one [AbortProgram] state but it could also be zero if
+               we discover the summary is UNSAT *)
+            let exec_states =
+              AccessResult.of_result path
+                (Error (ReportableError {astate; diagnostic= InfiniteLoopError {location}}))
+              |> PulseReport.report_result analysis_data path location
+            in
+            (exec_states, path, astate_n)
+          else ([ContinueProgram astate], path, astate_n)
       | Metadata
           ( Abstract _
           | CatchEntry _

@@ -192,7 +192,7 @@ void two_nested_snd_bad(int k) {
   return r;
 }
 
-void FP_two_nested_ok(int k) {
+void two_nested_ok(int k) {
   int r = 0;
   for (int i = 0; i < k; i++)
     for (int j = 0; j < k; j++)
@@ -697,7 +697,7 @@ void nondet_nonterminate_chen14_bad(int k, int i) {
    k >= 0 will eventually be false due to integer wrap.
    But Pulse assumes unbounded arithmetic so this should be
    marked as an infinite recursion */
-void nestedloop2_chen14_bad(int k, int j) {
+void FN_nestedloop2_chen14_bad(int k, int j) {
   while (k >= 0) {
     k++;
     j = k;
@@ -941,7 +941,8 @@ void goto_in_loop_without_eqtest_bad() {
 }
 
 /* Goto in loop */
-void goto_cross_loop_bad() {
+/* FN is expected with pulse-widen-threshold < 5 */
+void FN_goto_cross_loop_bad() {
   int i = 0;
 
 retry:
