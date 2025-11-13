@@ -28,6 +28,8 @@ val is_current_iteration_empty_path_stamp : id -> t -> bool
 
 val push_loop_info : id -> Timestamp.t -> Formula.t -> t -> t
 
+val init_loop_info : id -> t -> t
+
 val get_iteration_index : id -> t -> int
 
 val pp : F.formatter -> t -> unit

@@ -56,9 +56,10 @@ let is_current_iteration_empty_path_stamp id map =
 let push_loop_info id timestamp formula map =
   let path_stamp = Formula.extract_path_stamp formula in
   let info = {timestamp; path_stamp} in
-  let infos = Procdesc.IdMap.find_opt id map |> Option.value ~default:[] in
+  let infos = Procdesc.IdMap.find id map in
   Procdesc.IdMap.add id (info :: infos) map
 
 
-let get_iteration_index id map =
-  Procdesc.IdMap.find_opt id map |> Option.value_map ~default:0 ~f:List.length
+let init_loop_info id map = Procdesc.IdMap.add id [] map
+
+let get_iteration_index id map = Procdesc.IdMap.find id map |> List.length

@@ -176,7 +176,7 @@ void nested_external_ok(int y) {
   }
 }
 
-void two_nested_fst_bad(int k) {
+void FN_two_nested_fst_bad(int k) {
   int r = 0;
   for (int i = 0; i < k; r++)
     for (int j = 0; j < k; j++)

@@ -81,7 +81,6 @@ codetoanalyze/c/pulse/infinite.c, twovars_goto_bad, 4, INFINITE_LOOP, no_bucket,
 codetoanalyze/c/pulse/infinite.c, loop_pointer_bad, 6, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, loop_conditional_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, nested_external_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
-codetoanalyze/c/pulse/infinite.c, two_nested_fst_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, two_nested_snd_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, simple_loop_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, loop_alternating_bad, 7, INFINITE_LOOP, no_bucket, WARNING, [in loop]

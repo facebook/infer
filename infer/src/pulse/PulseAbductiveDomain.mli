@@ -390,7 +390,7 @@ val get_path_condition : t -> Formula.t
 
 val set_path_condition : Formula.t -> t -> t
 
-val init_loop_header_info : t -> t
+val init_loop_header_info : Procdesc.Node.id -> t -> t
 
 val push_loop_header_info : Procdesc.Node.id -> Timestamp.t -> t -> t
 
