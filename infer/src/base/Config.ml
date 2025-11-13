@@ -3614,6 +3614,11 @@ and trace_topl =
   CLOpt.mk_bool ~long:"trace-topl" "Detailed tracing information during Topl analysis"
 
 
+and trace_wto =
+  CLOpt.mk_bool ~long:"trace-wto"
+    "Emit debug information for the weak topological order computation."
+
+
 and unix_fork =
   CLOpt.mk_bool ~long:"unix-fork"
     ~default:(not (Stdlib.( = ) Version.build_platform Version.Windows))
@@ -4924,6 +4929,8 @@ and trace_mutual_recursion_cycle_checker = !trace_mutual_recursion_cycle_checker
 and trace_ondemand = !trace_ondemand
 
 and trace_topl = !trace_topl
+
+and trace_wto = !trace_wto
 
 and unix_fork = !unix_fork
 

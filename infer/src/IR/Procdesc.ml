@@ -737,6 +737,13 @@ module WTO = WeakTopologicalOrder.Bourdoncle_SCC (PreProcCfg)
 
 let init_wto pdesc =
   let wto = WTO.make pdesc in
+  pdesc.wto <- None ;
+  let pp_node fmt node = Node.pp_id fmt node.Node.id in
+  let pname = get_proc_name pdesc in
+  if Config.trace_wto then
+    L.debug Analysis Quiet "[WTO][%a] %a@\n" Procname.pp_fullname_only pname
+      (WeakTopologicalOrder.Partition.pp ~pp_node)
+      wto ;
   let (_ : int) =
     WeakTopologicalOrder.Partition.fold_nodes wto ~init:0 ~f:(fun idx node ->
         node.Node.wto_index <- idx ;

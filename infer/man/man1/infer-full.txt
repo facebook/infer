@@ -3538,6 +3538,10 @@ INTERNAL OPTIONS
            Activates: Detailed tracing information during Topl analysis
            (Conversely: --no-trace-topl)
 
+       --trace-wto
+           Activates: Emit debug information for the weak topological order
+           computation. (Conversely: --no-trace-wto)
+
        --no-unix-fork
            Deactivates: Use the fork(2) system call to spawn sub-processes.
            Otherwise use the equivalent of fork(2) followed by exec(3) --
