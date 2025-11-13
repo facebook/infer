@@ -688,6 +688,7 @@ let create_node_from_not_reversed pdesc loc kind instrs =
     ; code_block_exit= None }
   in
   pdesc.nodes <- node :: pdesc.nodes ;
+  pdesc.wto <- None ;
   node
 
 
@@ -698,6 +699,7 @@ let create_node pdesc loc kind instrs =
 let remove_node pdesc ({Node.preds; succs} as node) =
   List.iter preds ~f:(remove_succ_node ~to_remove:node) ;
   List.iter succs ~f:(remove_pred_node ~to_remove:node) ;
+  pdesc.wto <- None ;
   pdesc.nodes <- remove_node_from_list node pdesc.nodes
 
 
