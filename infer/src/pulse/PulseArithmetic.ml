@@ -14,6 +14,10 @@ let map_path_condition_common ~f astate =
   let open SatUnsat.Import in
   let* phi, new_eqs = f astate.AbductiveDomain.path_condition in
   let astate = AbductiveDomain.set_path_condition phi astate in
+  let astate =
+    AbductiveDomain.map_loop_header_formulas astate ~f:(fun phi ->
+        match f phi with Sat (phi, _) -> phi | Unsat _ -> phi )
+  in
   let+ result =
     AbductiveDomain.incorporate_new_eqs new_eqs astate >>| AccessResult.of_abductive_result
   in

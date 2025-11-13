@@ -941,8 +941,21 @@ void goto_in_loop_without_eqtest_bad() {
 }
 
 /* Goto in loop */
-/* FN is expected with pulse-widen-threshold < 5 */
-void FN_goto_cross_loop_bad() {
+/* FN is expected with pulse-widen-threshold < 4 */
+void FN_goto_cross_loop_stop_at_6_bad() {
+  int i = 0;
+
+retry:
+  while (i < 10) {
+    if (i == 6)
+      goto retry;
+    i++;
+  }
+}
+
+/* Goto in loop */
+/* Signal is expected with pulse-widen-threshold >= 3 */
+void goto_cross_loop_stop_at_5_bad() {
   int i = 0;
 
 retry:
