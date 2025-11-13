@@ -2324,8 +2324,6 @@ module Formula = struct
       -> tableau_occurrences:VarMapOccurrences.t
       -> term_eqs_occurrences:TermMapOccurrences.t
       -> atoms_occurrences:AtomMapOccurrences.t
-      -> term_conditions:Atom.Set.t
-      -> term_conditions2:Term.Set.t
       -> t
     (** escape hatch *)
   end = struct
@@ -2878,7 +2876,7 @@ module Formula = struct
 
     let unsafe_mk ~var_eqs ~const_eqs ~type_constraints ~linear_eqs ~term_eqs ~tableau ~intervals
         ~atoms ~linear_eqs_occurrences ~tableau_occurrences ~term_eqs_occurrences ~atoms_occurrences
-        ~term_conditions ~term_conditions2 =
+        =
       { var_eqs
       ; const_eqs
       ; type_constraints
@@ -2891,8 +2889,8 @@ module Formula = struct
       ; tableau_occurrences
       ; term_eqs_occurrences
       ; atoms_occurrences
-      ; term_conditions
-      ; term_conditions2 }
+      ; term_conditions= Atom.Set.empty
+      ; term_conditions2= Term.Set.empty }
 
 
     let join phi1 _phi2 =
@@ -4725,7 +4723,6 @@ end = struct
            at this point since they will be reconstructed by callers *)
       ~linear_eqs_occurrences:Var.Map.empty ~tableau_occurrences:Var.Map.empty
       ~term_eqs_occurrences:Var.Map.empty ~atoms_occurrences:Var.Map.empty
-      ~term_conditions:Atom.Set.empty ~term_conditions2:Term.Set.empty
 
 
   let extend_with_restricted_reps_of keep formula =
@@ -4918,7 +4915,6 @@ module DeadVariables = struct
              point since they will be reconstructed by callers *)
         ~linear_eqs_occurrences:Var.Map.empty ~tableau_occurrences:Var.Map.empty
         ~term_eqs_occurrences:Var.Map.empty ~atoms_occurrences:Var.Map.empty
-        ~term_conditions:Atom.Set.empty ~term_conditions2:Term.Set.empty
     in
     let phi = simplify_phi formula.phi in
     let conditions =
