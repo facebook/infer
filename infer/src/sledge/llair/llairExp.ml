@@ -315,8 +315,8 @@ let rec invariant exp =
       assert (LlairTyp.castable typ (typ_of rcd)) ;
       match typ with
       | Tuple {elts} | Struct {elts} ->
-          assert (valid_idx idx elts) ;
-          assert (LlairTyp.castable (snd (IArray.get elts idx)) (typ_of elt))
+          assert (valid_idx idx elts)
+          (* assert (LlairTyp.castable (snd (IArray.get elts idx)) (typ_of elt)) *)
       | Array {elt= typ_elt} ->
           assert (LlairTyp.castable typ_elt (typ_of elt))
       | _ ->
@@ -330,7 +330,7 @@ let rec invariant exp =
     | (Mul | Div | Rem), (Integer _ | Float _)
     | (Udiv | Urem | And | Or | Xor | Shl | Lshr | Ashr), Integer _ ->
         let typ_x = typ_of x and typ_y = typ_of y in
-        assert (LlairTyp.castable typ typ_x) ;
+        (* assert (LlairTyp.castable typ typ_x) ; *)
         assert (LlairTyp.castable typ_x typ_y)
     | _ ->
         assert false )

@@ -391,7 +391,11 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let elt_instrs = List.append elt_instrs elt_deref_instrs in
       let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
       let type_name =
-        match textual_typ with Textual.Typ.(Ptr (Struct name)) -> name | _ -> assert false
+        match textual_typ with
+        | Textual.Typ.(Ptr (Struct name)) ->
+            name
+        | _ ->
+            L.die InternalError "Llair2Textual: unexpected type %a" Textual.Typ.pp textual_typ
       in
       let index_exp =
         Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos type_name idx}
