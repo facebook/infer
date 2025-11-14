@@ -17,6 +17,22 @@ type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
 type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
+type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
+
+let class_method_index : classMethodIndex = ref Textual.TypeName.Map.empty
+
+type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
+
+let method_class_index : methodClassIndex = ref Textual.ProcName.Map.empty
+
+module ClassNameOffset = struct
+  type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare]
+end
+
+module ClassNameOffsetMap = Stdlib.Map.Make (ClassNameOffset)
+
+type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
+
 type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
@@ -32,7 +48,8 @@ type t =
   ; struct_map: structMap
   ; globals: globalMap
   ; lang: Textual.Lang.t
-  ; proc_map: procMap }
+  ; proc_map: procMap
+  ; class_name_offset_map: classNameOffsetMap }
 
 let get_element_ptr_offset_prefix = "getelementptr_offset"
 
@@ -155,31 +172,21 @@ let global_proc_state lang loc global_var =
   ; struct_map= Textual.TypeName.Map.empty
   ; globals= VarMap.empty
   ; lang
-  ; proc_map= Textual.QualifiedProcName.Map.empty }
+  ; proc_map= Textual.QualifiedProcName.Map.empty
+  ; class_name_offset_map= ClassNameOffsetMap.empty }
 
 
 let find_method_with_offset ~proc_state struct_name offset =
-  let proc_map = proc_state.proc_map in
-  let class_procs =
-    Textual.QualifiedProcName.Map.filter
-      (fun proc_name _ ->
-        match Textual.QualifiedProcName.get_class_name proc_name with
-        | Some class_name ->
-            Textual.TypeName.equal class_name struct_name
-        | None ->
-            false )
-      proc_map
+  let key = ClassNameOffset.{class_name= struct_name; offset} in
+  ClassNameOffsetMap.find_opt key proc_state.class_name_offset_map
+
+
+let fill_class_name_offset_map class_method_index =
+  let process_map class_name class_name_offset_map (proc, offset) =
+    let key = ClassNameOffset.{class_name; offset} in
+    ClassNameOffsetMap.add key proc class_name_offset_map
   in
-  let _, methods = Textual.QualifiedProcName.Map.bindings class_procs |> List.unzip in
-  let find_offset offset_opt (proc_decl : Textual.ProcDecl.t) =
-    match offset_opt with
-    | Some offset ->
-        Some offset
-    | None -> (
-      match List.find_map ~f:Textual.Attr.get_method_offset proc_decl.attributes with
-      | Some method_offset ->
-          if Int.equal offset method_offset then Some proc_decl.qualified_name else None
-      | None ->
-          None )
+  let process_class class_name procs class_name_offset_map =
+    List.fold procs ~init:class_name_offset_map ~f:(process_map class_name)
   in
-  List.fold ~init:None ~f:find_offset methods
+  Textual.TypeName.Map.fold process_class !class_method_index ClassNameOffsetMap.empty

@@ -17,6 +17,22 @@ type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
 type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
+type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
+
+val class_method_index : classMethodIndex
+
+type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
+
+val method_class_index : methodClassIndex
+
+module ClassNameOffset : sig
+  type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare]
+end
+
+module ClassNameOffsetMap : Stdlib.Map.S with type key = ClassNameOffset.t
+
+type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
+
 type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
@@ -32,7 +48,8 @@ type t =
   ; struct_map: structMap
   ; globals: globalMap
   ; lang: Textual.Lang.t
-  ; proc_map: procMap }
+  ; proc_map: procMap
+  ; class_name_offset_map: classNameOffsetMap }
 
 val get_element_ptr_offset_prefix : string
 
@@ -63,3 +80,6 @@ val pp_struct_map : F.formatter -> Textual.Struct.t Textual.TypeName.Map.t -> un
 
 val find_method_with_offset :
   proc_state:t -> Textual.TypeName.t -> int -> Textual.QualifiedProcName.t option
+
+val fill_class_name_offset_map :
+  classMethodIndex -> Textual.QualifiedProcName.t ClassNameOffsetMap.t
