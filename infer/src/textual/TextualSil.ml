@@ -131,7 +131,8 @@ module TypeNameBridge = struct
       when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
         SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
     | _ ->
-        assert false
+        L.die InternalError "TextualSil: to_swift_class_name called with illegal type name %a@\n" pp
+          value
 
 
   let to_sil (lang : Lang.t) ({name= {value}; args} as typ) : SilTyp.Name.t =
