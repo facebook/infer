@@ -110,8 +110,7 @@ module TypeNameBridge = struct
 
   let to_swift_class_name value : SwiftClassName.t =
     match value with
-    | {TypeName.name; args}
-      when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_type_name ->
+    | {name; args} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_type_name ->
         let mangled_name, plain_name =
           match args with
           | [mangled_name] ->
@@ -127,12 +126,11 @@ module TypeNameBridge = struct
             plain_name
         in
         SwiftClassName.of_string ?plain_name (Textual.BaseTypeName.to_string mangled_name.name)
-    | {TypeName.name}
-      when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
+    | {name} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
         SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
-    | _ ->
-        L.die InternalError "TextualSil: to_swift_class_name called with illegal type name %a@\n" pp
-          value
+    | {name= {loc}} ->
+        L.die InternalError "TextualSil: to_swift_class_name called with illegal type name %a%a@\n"
+          pp value Location.pp loc
 
 
   let to_sil (lang : Lang.t) ({name= {value}; args} as typ) : SilTyp.Name.t =
@@ -869,7 +867,8 @@ module InstrBridge = struct
     let sourcefile = TextualDecls.source_file decls_env in
     match i with
     | Load {typ= None} ->
-        L.die InternalError "to_sil should come after type inference"
+        L.die InternalError "to_sil should come after type inference: %a in %a"
+          (Instr.pp ~show_location:true) i Textual.SourceFile.pp sourcefile
     | Load {id; exp; typ= Some typ; loc} ->
         let typ = TypBridge.to_sil lang typ in
         let id = IdentBridge.to_sil id in
@@ -877,7 +876,8 @@ module InstrBridge = struct
         let loc = LocationBridge.to_sil sourcefile loc in
         Load {id; e; typ; loc}
     | Store {typ= None} ->
-        L.die InternalError "to_sil should come after type inference"
+        L.die InternalError "to_sil should come after type inference: %a in %a"
+          (Instr.pp ~show_location:true) i Textual.SourceFile.pp sourcefile
     | Store {exp1; typ= Some typ; exp2; loc} ->
         let e1 = ExpBridge.to_sil lang decls_env procname exp1 in
         let typ = TypBridge.to_sil lang typ in
@@ -890,7 +890,8 @@ module InstrBridge = struct
         Prune (e, loc, true, Ik_if)
     | Let {id= None} ->
         L.die InternalError
-          "to_sil should come after type transformation remove_effects_in_subexprs"
+          "to_sil should come after type transformation remove_effects_in_subexprs: %a in %a"
+          (Instr.pp ~show_location:true) i Textual.SourceFile.pp sourcefile
     | Let {id= Some id; exp= Call {proc; args= [Typ typ]}; loc}
       when ProcDecl.is_allocate_object_builtin proc
            || ProcDecl.is_malloc_builtin proc
