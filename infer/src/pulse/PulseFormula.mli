@@ -8,7 +8,6 @@
 open! IStd
 module F = Format
 module SatUnsat = PulseSatUnsat
-module ValueHistory = PulseValueHistory
 
 (* NOTE: using [Var] for [AbstractValue] here since this is how "abstract values" are interpreted,
    in particular as far as arithmetic is concerned *)
@@ -240,10 +239,11 @@ val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)
 
 val and_callee_formula :
-     (Var.t * ValueHistory.t) Var.Map.t
+     default:'metadata
+  -> subst:(Var.t * 'metadata) Var.Map.t
   -> t
   -> callee:t
-  -> ((Var.t * ValueHistory.t) Var.Map.t * t * new_eqs) SatUnsat.t
+  -> ((Var.t * 'metadata) Var.Map.t * t * new_eqs) SatUnsat.t
 
 val fold_variables : (t, Var.t, 'acc) Container.fold
 (** note: each variable mentioned in the formula is visited at least once, possibly more *)

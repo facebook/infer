@@ -711,8 +711,8 @@ let conjoin_callee_arith callee_path_condition call_state =
   L.d_printfln "applying callee path condition: (%a)[%a]" Formula.pp callee_path_condition
     pp_to_caller_subst call_state.subst ;
   let subst, path_condition, new_eqs =
-    Formula.and_callee_formula
-      (raw_map_of_to_caller_subst call_state.subst)
+    Formula.and_callee_formula ~default:ValueHistory.epoch
+      ~subst:(raw_map_of_to_caller_subst call_state.subst)
       call_state.astate.path_condition ~callee:callee_path_condition
     |> raise_if_unsat
   in

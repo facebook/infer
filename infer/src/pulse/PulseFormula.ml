@@ -10,7 +10,6 @@ module F = Format
 module L = Logging
 module CItv = PulseCItv
 module SatUnsat = PulseSatUnsat
-module ValueHistory = PulseValueHistory
 
 module Var = struct
   include PulseAbstractValue
@@ -4984,25 +4983,26 @@ let as_constant_string formula v =
 
 (** for use in applying callee path conditions: we need to translate callee variables to make sense
     for the caller, thereby possibly extending the current substitution *)
-let subst_find_or_new subst addr_callee =
+let subst_find_or_new ~default subst addr_callee =
   match Var.Map.find_opt addr_callee subst with
   | None ->
       (* map restricted (≥0) values to restricted values to preserve their semantics *)
       let addr_caller = Var.mk_fresh_same_kind addr_callee in
       L.d_printfln "new subst %a <-> %a (fresh)" Var.pp addr_callee Var.pp addr_caller ;
-      let addr_hist_fresh = (addr_caller, ValueHistory.epoch) in
+      let addr_hist_fresh = (addr_caller, default) in
       (Var.Map.add addr_callee addr_hist_fresh subst, fst addr_hist_fresh)
   | Some addr_hist_caller ->
       (subst, fst addr_hist_caller)
 
 
-let and_callee_formula subst formula ~callee:formula_callee =
+let and_callee_formula ~default ~subst formula ~callee:formula_callee =
   let* subst, formula, new_eqs =
-    and_conditions_fold_subst_variables formula ~up_to_f:formula_callee ~f:subst_find_or_new
-      ~init:subst
+    and_conditions_fold_subst_variables formula ~up_to_f:formula_callee
+      ~f:(subst_find_or_new ~default) ~init:subst
   in
   let+ subst, formula, new_eqs' =
-    and_fold_subst_variables ~up_to_f:formula_callee ~f:subst_find_or_new ~init:subst formula
+    and_fold_subst_variables ~up_to_f:formula_callee ~f:(subst_find_or_new ~default) ~init:subst
+      formula
   in
   (subst, formula, RevList.append new_eqs' new_eqs)
 
