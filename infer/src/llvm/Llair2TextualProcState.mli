@@ -37,7 +37,7 @@ type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
-  ; mutable formals: Textual.Typ.annotated VarMap.t
+  ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
   ; mutable ids_move: Textual.Typ.annotated IdentMap.t
   ; mutable ids_types: Textual.Typ.annotated IdentMap.t
   ; mutable id_offset: (Textual.Ident.t * int) option
@@ -67,6 +67,8 @@ val update_id_offset : proc_state:t -> IdentMap.key -> Textual.Exp.t -> unit
 
 val update_var_offset : proc_state:t -> VarMap.key -> int -> unit
 
+val subst_formal_local : proc_state:t -> formal:VarMap.key -> local:VarMap.key -> unit
+
 val reset_offsets : proc_state:t -> unit
 
 val pp : F.formatter -> print_types:bool -> t -> unit [@@warning "-unused-value-declaration"]
@@ -83,3 +85,5 @@ val find_method_with_offset :
 
 val fill_class_name_offset_map :
   classMethodIndex -> Textual.QualifiedProcName.t ClassNameOffsetMap.t
+
+val compute_locals : proc_state:t -> (VarMap.key * Textual.Typ.annotated) list

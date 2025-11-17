@@ -37,7 +37,7 @@ type t =
   { qualified_name: Textual.QualifiedProcName.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
-  ; mutable formals: Textual.Typ.annotated VarMap.t
+  ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
   ; mutable ids_move: Textual.Typ.annotated IdentMap.t
   ; mutable ids_types: Textual.Typ.annotated IdentMap.t
   ; mutable id_offset: (Textual.Ident.t * int) option
@@ -94,6 +94,14 @@ let pp_vars fmt vars =
     (VarMap.bindings vars)
 
 
+let pp_formals fmt vars =
+  F.fprintf fmt "%a"
+    (Pp.comma_seq
+       (Pp.pair ~fst:Textual.VarName.pp
+          ~snd:(Pp.pair ~fst:Textual.Typ.pp_annotated ~snd:(Pp.option Textual.VarName.pp)) ) )
+    (VarMap.bindings vars)
+
+
 let pp_struct_map fmt struct_map =
   let pp_item key value =
     F.fprintf fmt "%a -> @\n%a@\n" Textual.TypeName.pp key Textual.Struct.pp value
@@ -113,7 +121,7 @@ let pp fmt ~print_types proc_state =
      @[get_element_ptr_offset: %a@]@;\
      ]@]"
     Textual.QualifiedProcName.pp proc_state.qualified_name Textual.Location.pp proc_state.loc
-    pp_vars proc_state.locals pp_vars proc_state.formals pp_ids proc_state.ids_move pp_ids
+    pp_vars proc_state.locals pp_formals proc_state.formals pp_ids proc_state.ids_move pp_ids
     proc_state.ids_types
     (Pp.option (Pp.pair ~fst:Textual.Ident.pp ~snd:Int.pp))
     proc_state.id_offset
@@ -130,8 +138,26 @@ let update_ids_move ~proc_state id typ =
   proc_state.ids_move <- IdentMap.add id typ proc_state.ids_move
 
 
-let update_ids_types ~proc_state id typ =
-  proc_state.ids_types <- IdentMap.add id typ proc_state.ids_types
+(* debug_name = var1,
+debug_name is originally a local and var1 is originally a formal. We are
+removing this intruction and substituting var1 for debug_name in the code.
+Result of this: var1 -> debug_name is added to the formals  such that we can
+use the substitution in the code later on. *)
+let subst_formal_local ~proc_state ~formal ~local =
+  let formal_binding = VarMap.find_opt formal proc_state.formals in
+  match formal_binding with
+  | Some (formal_typ, _) ->
+      proc_state.formals <- VarMap.add formal (formal_typ, Some local) proc_state.formals
+  | _ ->
+      ()
+
+
+let compute_locals ~proc_state =
+  let remove_locals_in_formals _ (_, local) locals =
+    match local with Some local -> VarMap.remove local locals | None -> locals
+  in
+  let locals = VarMap.fold remove_locals_in_formals proc_state.formals proc_state.locals in
+  VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) locals []
 
 
 let update_id_offset ~proc_state id exp =
@@ -145,6 +171,10 @@ let update_id_offset ~proc_state id exp =
 let update_var_offset ~proc_state varname offset =
   if String.is_prefix ~prefix:get_element_ptr_offset_prefix (Textual.VarName.to_string varname) then
     proc_state.get_element_ptr_offset <- Some (varname, offset)
+
+
+let update_ids_types ~proc_state id typ =
+  proc_state.ids_types <- IdentMap.add id typ proc_state.ids_types
 
 
 let reset_offsets ~proc_state =

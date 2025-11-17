@@ -6,31 +6,21 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(var1: int, var2: int) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
-  local height: int, age: int
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: int, height: int) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
   #: @[107:0]
-      n1 = load &var1 @[107:0]
-      store &age <- n1 @[107:0]
-      n2 = load &var2 @[108:0]
-      store &height <- n2 @[108:0]
-      n3 = $builtins.llvm_init_tuple() @[109:0]
-      n4 = load &var1 @[19:5]
-      store n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n4 @[19:5]
-      n5 = load &var2 @[19:5]
-      store n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 <- n5 @[19:5]
-      ret n3 @[19:5]
+      n1 = $builtins.llvm_init_tuple() @[107:0]
+      n2 = load &age @[19:5]
+      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n2 @[19:5]
+      n3 = load &height @[19:5]
+      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 <- n3 @[19:5]
+      ret n1 @[19:5]
       
 } @?
 
-define .plain_name = "test1" $s5Hello5test1yS2i_SitF(var1: int, var2: int) : int {
-  local n2: int, n: int
-  #: @[112:0]
-      n1 = load &var1 @[112:0]
-      store &n <- n1 @[112:0]
-      n2 = load &var2 @[113:0]
-      store &n2 <- n2 @[113:0]
-      n3 = load &var1 @[7:5]
-      ret n3 @[7:5]
+define .plain_name = "test1" $s5Hello5test1yS2i_SitF(n: int, n2: int) : int {
+  #: @?
+      n1 = load &n @[7:5]
+      ret n1 @[7:5]
       
 } @?
 
@@ -44,20 +34,15 @@ define .plain_name = "test2" $s5Hello5test2SiyF() : int {
       
 } @?
 
-define .plain_name = "test3" $s5Hello5test3yS2i_SitF(var1: int, var2: int) : int {
-  local n2: int, n: int
-  #: @[116:0]
-      n1 = load &var1 @[116:0]
-      store &n <- n1 @[116:0]
-      n2 = load &var2 @[117:0]
-      store &n2 <- n2 @[117:0]
-      n3 = load &var1 @[15:12]
-      n4 = load &var2 @[15:12]
-      n5 = $s5Hello5test1yS2i_SitF(n3, n4) @[15:12]
+define .plain_name = "test3" $s5Hello5test3yS2i_SitF(n: int, n2: int) : int {
+  #: @[15:12]
+      n1 = load &n @[15:12]
+      n2 = load &n2 @[15:12]
+      n3 = $s5Hello5test1yS2i_SitF(n1, n2) @[15:12]
       jmp 5::ret @[15:12]
       
   #5::ret: @[15:5]
-      ret n5 @[15:5]
+      ret n3 @[15:5]
       
 } @?
 
@@ -69,12 +54,12 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
       
   #2::ret: @[23:18]
       n4 = n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 @[23:18]
-      n6 = load &person @[119:0]
-      n7 = load n6.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_0 @[119:0]
-      store n7.__infer_swift_type<TSi>.field_0 <- n4 @[119:0]
-      n9 = load &person @[120:0]
-      n10 = load n9.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_1 @[120:0]
-      store n10.__infer_swift_type<TSi>.field_0 <- n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[120:0]
+      n6 = load &person @[113:0]
+      n7 = load n6.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_0 @[113:0]
+      store n7.__infer_swift_type<TSi>.field_0 <- n4 @[113:0]
+      n9 = load &person @[114:0]
+      n10 = load n9.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_1 @[114:0]
+      store n10.__infer_swift_type<TSi>.field_0 <- n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[114:0]
       ret n4 @[24:5]
       
 } @?
