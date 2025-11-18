@@ -1981,6 +1981,7 @@ let translate ?dump_bitcode : string -> Llair.program =
           String.prefix name ~pre:"__llair_"
           || String.prefix name ~pre:"llvm."
           || Option.is_some (Intrinsic.of_name name)
+          || Option.is_some (Builtin.of_name name)
         then functions
         else
           let typ = xlate_type x (Llvm.type_of llf) in

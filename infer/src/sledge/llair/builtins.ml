@@ -37,5 +37,8 @@ type t =
   | (* folly *)
     `_ZN5folly13usingJEMallocEv
   | (* cct *)
-    `cct_point ]
+    `cct_point
+  | (* Swift *)
+    `objc_msgSend
+  | `objc_msgSendSuper2 ]
 [@@deriving compare, equal, sexp_of, enumerate]

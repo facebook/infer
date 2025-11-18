@@ -281,28 +281,6 @@ module Block : sig
   module Tbl : HashTable.S with type key := t
 end
 
-module IP : sig
-  type t = ip [@@deriving compare, equal, sexp_of]
-
-  val pp : t pp
-
-  val mk : block -> t
-
-  val block : t -> block
-
-  val index : t -> int
-
-  val inst : t -> inst option
-
-  val loc : t -> LairLoc.t
-
-  val succ : t -> t
-
-  val is_schedule_point : t -> bool
-
-  module Tbl : HashTable.S with type key := t
-end
-
 module Func : sig
   type t = func [@@deriving compare, equal]
 

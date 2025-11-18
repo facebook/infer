@@ -7,45 +7,37 @@
 .source_language = "Swift" @?
 
 define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[150:0]
-      n1 = load &var1 @[150:0]
-      n2 = objc_allocWithZone(n1) @[150:0]
-      jmp 2::ret @[151:0]
+  #: @[148:0]
+      n1 = load &var1 @[148:0]
+      n2 = objc_allocWithZone(n1) @[148:0]
+      jmp 2::ret @[149:0]
       
-  #2::ret: @[152:0]
-      n3 = load &L_selector(init) @[152:0]
-      n6 = objc_msgSend(n2, n3) @[154:0]
-      jmp 4::ret @[155:0]
-      
-  #4::ret: @[156:0]
-      ret n6 @[156:0]
+  #2::ret: @[150:0]
+      n3 = load &L_selector(init) @[150:0]
+      n6 = $builtins.objc_msgSend(n2, n3) @[151:0]
+      ret n6 @[152:0]
       
 } @?
 
-define .plain_name = "init" $s5Hello9ObjCClassCACycfc(var1: *__infer_swift_type<,ObjCClass>) : *__infer_swift_type<ptr_elt> {
-  local var4: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>
-  #: @[158:0]
-      n1 = load &var1 @[158:0]
-      store &self <- n1 @[158:0]
-      n2 = load &self @[5:9]
-      n4 = $s5Hello9ObjCClassCMa(0) @[5:15]
+define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<,ObjCClass>) : *__infer_swift_type<ptr_elt> {
+  local var4: *__infer_swift_type<objc_super>
+  #: @[5:9]
+      n1 = load &self @[5:9]
+      n3 = $s5Hello9ObjCClassCMa(0) @[5:15]
       jmp 5::ret @[5:15]
       
-  #10::ret: @[159:0]
-      n12 = $builtins.llvm_nondet() @[159:0]
-      store &self <- n11 @[160:0]
-      n13 = load &self @[6:5]
-      ret n11 @[6:5]
-      
   #5::ret: @[5:15]
-      n5 = load &var4 @[5:15]
-      store n5.__infer_swift_type<objc_super>.field_0 <- n2 @[5:15]
-      n7 = load &var4 @[5:15]
-      store n7.__infer_swift_type<objc_super>.field_1 <- n4.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
-      n8 = load &L_selector(init) @[5:15]
-      n9 = load &var4 @[5:15]
-      n11 = objc_msgSendSuper2(n9, n8) @[5:15]
-      jmp 10::ret @[5:15]
+      n4 = load &var4 @[5:15]
+      store n4.__infer_swift_type<objc_super>.field_0 <- n1 @[5:15]
+      n6 = load &var4 @[5:15]
+      store n6.__infer_swift_type<objc_super>.field_1 <- n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
+      n7 = load &L_selector(init) @[5:15]
+      n8 = load &var4 @[5:15]
+      n10 = $builtins.objc_msgSendSuper2(n8, n7) @[5:15]
+      n11 = $builtins.llvm_nondet() @[154:0]
+      store &self <- n10 @[155:0]
+      n12 = load &self @[6:5]
+      ret n10 @[6:5]
       
 } @?
 
@@ -70,10 +62,6 @@ declare _swift_FORCE_LOAD_$_swiftXPC() : *__infer_swift_type<ptr_elt>
 declare _swift_FORCE_LOAD_$_swift_Builtin_float() : *__infer_swift_type<ptr_elt>
 
 declare objc_allocWithZone(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare objc_msgSend() : *__infer_swift_type<ptr_elt>
-
-declare objc_msgSendSuper2() : *__infer_swift_type<ptr_elt>
 
 declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
