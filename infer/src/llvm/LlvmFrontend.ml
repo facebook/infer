@@ -40,23 +40,14 @@ module Error = struct
 end
 
 let dump_textual_file source_file module_ =
-  let source_file =
-    if Config.frontend_tests then
-      let suffix = ".test.sil" in
-      String.append source_file suffix
-    else
-      let suffix = ".sil" in
-      String.append source_file suffix
-  in
-  TextualSil.dump_module ~filename:source_file module_
+  let suffix = if Config.frontend_tests then ".test.sil" else ".sil" in
+  let filename = source_file ^ suffix in
+  TextualSil.dump_module ~filename module_
 
 
 let should_dump_textual () = Config.debug_mode || Config.dump_textual || Config.frontend_tests
 
-let to_module source_file llair_program =
-  let module_ = Llair2Textual.translate ~source_file llair_program in
-  module_
-
+let to_module source_file llair_program = Llair2Textual.translate ~source_file llair_program
 
 let language_of_source_file source_file =
   if String.is_suffix source_file ~suffix:".c" then Textual.Lang.C

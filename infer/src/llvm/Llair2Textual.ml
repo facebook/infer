@@ -1261,14 +1261,12 @@ let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Modu
             Textual.Module.Proc proc_desc :: procs )
       procs ~init:[]
   in
-  let procs = List.append procs proc_descs in
   let structs =
     List.map
       ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)
       (Textual.TypeName.Map.bindings struct_map)
   in
-  let decls = List.append procs globals in
-  let decls = List.append decls structs in
+  let decls = procs @ proc_descs @ globals @ structs in
   let attrs = [Textual.Attr.mk_source_language lang] in
-  let textual_source_file = Textual.SourceFile.create source_file in
-  Textual.Module.{attrs; decls; sourcefile= textual_source_file}
+  let sourcefile = Textual.SourceFile.create source_file in
+  Textual.Module.{attrs; decls; sourcefile}

@@ -19,6 +19,8 @@ module SilStruct = Struct
 module SilTyp = Typ
 open Textual
 
+let textual_transformation_error loc msg = raise (TextualTransformError [{msg; loc}])
+
 module LocationBridge = struct
   open Location
 
@@ -129,14 +131,12 @@ module TypeNameBridge = struct
     | {name} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
         SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
     | {name= {loc}} ->
-        raise
-          (Textual.TextualTransformError
-             [ { msg=
-                   lazy
-                     (F.asprintf
-                        "TextualSil: to_swift_class_name called with illegal type name %a%a@\n" pp
-                        value Location.pp loc )
-               ; loc } ] )
+        let msg =
+          lazy
+            (F.asprintf "TextualSil: to_swift_class_name called with illegal type name %a%a" pp
+               value Location.pp loc )
+        in
+        textual_transformation_error loc msg
 
 
   let to_sil (lang : Lang.t) ({name= {value}; args} as typ) : SilTyp.Name.t =
@@ -562,7 +562,9 @@ module ProcDeclBridge = struct
 
   let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
     match lang with
-    | Java ->
+    | Java | Python | C | Swift ->
+        to_sil lang t
+    | Hack when Option.is_some t.formals_types ->
         to_sil lang t
     | Hack ->
         (* When we translate function calls in Hack, the ProcDecl we get from TextualDecls may have
@@ -571,16 +573,9 @@ module ProcDeclBridge = struct
            procname with its definition from a different translation unit during the analysis
            phase. *)
         let arity = ProcSig.arity callsig in
-        let improved_match name_to_sil make =
-          if Option.is_some t.formals_types then to_sil lang t
-          else
-            let class_name = name_to_sil t.qualified_name.enclosing_class in
-            let function_name = t.qualified_name.name.value in
-            make ~class_name ~function_name ~arity
-        in
-        improved_match hack_class_name_to_sil Procname.make_hack
-    | Python | C | Swift ->
-        to_sil lang t
+        let class_name = hack_class_name_to_sil t.qualified_name.enclosing_class in
+        let function_name = t.qualified_name.name.value in
+        Procname.make_hack ~class_name ~function_name ~arity
     | Rust ->
         L.die InternalError "<NOT YET SUPPORTED>"
 end
@@ -872,18 +867,26 @@ module InstrBridge = struct
   let to_sil lang decls_env procname i : Sil.instr =
     let sourcefile = TextualDecls.source_file decls_env in
     match i with
-    | Load {typ= None} ->
-        L.die InternalError "to_sil should come after type inference: %a in %a"
-          (Instr.pp ~show_location:true) i Textual.SourceFile.pp sourcefile
+    | Load {typ= None; loc} ->
+        let msg =
+          lazy
+            (F.asprintf "to_sil should come after type inference: %a in %a"
+               (Instr.pp ~show_location:true) i ProcDecl.pp procname )
+        in
+        textual_transformation_error loc msg
     | Load {id; exp; typ= Some typ; loc} ->
         let typ = TypBridge.to_sil lang typ in
         let id = IdentBridge.to_sil id in
         let e = ExpBridge.to_sil lang decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
         Load {id; e; typ; loc}
-    | Store {typ= None} ->
-        L.die InternalError "to_sil should come after type inference: %a in %a"
-          (Instr.pp ~show_location:true) i Textual.SourceFile.pp sourcefile
+    | Store {typ= None; loc} ->
+        let msg =
+          lazy
+            (F.asprintf "to_sil should come after type inference: %a in %a"
+               (Instr.pp ~show_location:true) i ProcDecl.pp procname )
+        in
+        textual_transformation_error loc msg
     | Store {exp1; typ= Some typ; exp2; loc} ->
         let e1 = ExpBridge.to_sil lang decls_env procname exp1 in
         let typ = TypBridge.to_sil lang typ in
