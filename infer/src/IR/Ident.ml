@@ -98,24 +98,26 @@ module NameGenerator = struct
   let create () : t = NameHash.create 32
 
   (** Map from names to stamps. *)
-  let name_map = DLS.new_key create
+  let name_map_key = DLS.new_key create
 
-  let get_current () = DLS.get name_map
+  let get_current () = DLS.get name_map_key
 
-  let set_current map = DLS.set name_map map
+  let set_current map = DLS.set name_map_key map
 
   (** Reset the name generator *)
-  let reset () = DLS.set name_map (create ())
+  let reset () = DLS.set name_map_key (create ())
 
   (** Create a fresh identifier with the given kind and name. *)
   let create_fresh_ident kind name =
     let stamp =
+      let name_map = DLS.get name_map_key in
       try
-        let stamp = NameHash.find (DLS.get name_map) name in
-        NameHash.replace (DLS.get name_map) name (stamp + 1) ;
-        stamp + 1
+        let stamp = NameHash.find name_map name in
+        let new_stamp = stamp + 1 in
+        NameHash.replace name_map name new_stamp ;
+        new_stamp
       with Stdlib.Not_found ->
-        NameHash.add (DLS.get name_map) name 0 ;
+        NameHash.add name_map name 0 ;
         0
     in
     {kind; name; stamp}
@@ -123,11 +125,12 @@ module NameGenerator = struct
 
   (** Make sure that fresh ids after whis one will be with different stamps *)
   let update_name_hash name stamp =
+    let name_map = DLS.get name_map_key in
     try
-      let curr_stamp = NameHash.find (DLS.get name_map) name in
+      let curr_stamp = NameHash.find name_map name in
       let new_stamp = max curr_stamp stamp in
-      NameHash.replace (DLS.get name_map) name new_stamp
-    with Stdlib.Not_found -> NameHash.add (DLS.get name_map) name stamp
+      NameHash.replace name_map name new_stamp
+    with Stdlib.Not_found -> NameHash.add name_map name stamp
 end
 
 (** Name used for the return variable *)
