@@ -9,9 +9,10 @@ open! IStd
 module L = Logging
 
 module Error = struct
-  type t =
-    | TextualVerification of (Textual.SourceFile.t * TextualVerification.error list)
-    | TextualTransformation of (Textual.SourceFile.t * Textual.transform_error list)
+  type errors =
+    {verification: TextualVerification.error list; transformation: Textual.transform_error list}
+
+  type t = errors Textual.SourceFile.Map.t
 
   let log level =
     let level = if Config.keep_going then L.InternalError else level in
@@ -24,19 +25,37 @@ module Error = struct
         L.user_error
 
 
-  let format_error error =
-    match error with
-    | TextualVerification (source_file, errs) ->
-        List.iter errs
+  let format_error (t : t) =
+    Textual.SourceFile.Map.iter
+      (fun source_file {verification; transformation} ->
+        List.iter verification
           ~f:
-            (log L.InternalError "%a@\n" (TextualVerification.pp_error_with_sourcefile source_file))
-    | TextualTransformation (source_file, errs) ->
-        List.iter errs ~f:(log L.InternalError "%a@\n" (Textual.pp_transform_error source_file))
+            (log L.InternalError "%a@\n" (TextualVerification.pp_error_with_sourcefile source_file)) ;
+        List.iter transformation
+          ~f:(log L.InternalError "%a@\n" (Textual.pp_transform_error source_file)) )
+      t
 
 
-  let textual_verification sourcefile list = TextualVerification (sourcefile, list)
+  let empty_error = {verification= []; transformation= []}
 
-  let textual_transformation sourcefile list = TextualTransformation (sourcefile, list)
+  let no_errors : t = Textual.SourceFile.Map.empty
+
+  let add_errors t ~f sourcefile =
+    Textual.SourceFile.Map.update sourcefile
+      (fun errors_opt ->
+        let error = match errors_opt with Some errors -> errors | None -> empty_error in
+        Some (f error) )
+      t
+
+
+  let add_verification_errors (t : t) sourcefile list =
+    add_errors t ~f:(fun error -> {error with verification= list @ error.verification}) sourcefile
+
+
+  let add_transformation_errors (t : t) sourcefile list =
+    add_errors t
+      ~f:(fun error -> {error with transformation= list @ error.transformation})
+      sourcefile
 end
 
 let dump_textual_file source_file module_ =
@@ -59,21 +78,27 @@ let capture_llair source_file llair_program =
   let open IResult.Let_syntax in
   let lang = language_of_source_file source_file in
   let result =
+    let error_state = Error.no_errors in
     let textual = to_module source_file llair_program lang in
     if should_dump_textual () then dump_textual_file ~show_location:true source_file textual ;
     let textual_source_file = Textual.SourceFile.create source_file in
-    let map_errors = Error.textual_verification textual_source_file in
-    let* verified_textual, warnings =
+    let* verified_textual, error_state =
+      let f = Error.add_verification_errors error_state textual_source_file in
       match TextualVerification.verify_keep_going textual with
       | Ok (textual, errors) ->
-          Ok (textual, map_errors errors)
+          Ok (textual, f errors)
       | Error errors ->
-          Error (map_errors errors)
+          Error (f errors)
     in
+    (* if Config.debug_mode then dump_textual_file ~version:0 file textual ; *)
     let transformed_textual, decls = TextualTransform.run lang verified_textual in
-    let* cfg, tenv =
-      let f = Error.textual_transformation textual_source_file in
-      TextualSil.module_to_sil lang transformed_textual decls |> Result.map_error ~f
+    let* (cfg, tenv), error_state =
+      let f = Error.add_transformation_errors error_state textual_source_file in
+      match TextualSil.module_to_sil lang transformed_textual decls with
+      | Ok (cfg, tenv) ->
+          Ok ((cfg, tenv), error_state)
+      | Error errors ->
+          Error (f errors)
     in
     let sil = {TextualParser.TextualFile.sourcefile= textual_source_file; cfg; tenv} in
     let use_global_tenv = if Textual.Lang.is_swift lang then true else false in
@@ -87,7 +112,7 @@ let capture_llair source_file llair_program =
                  tenv )
         in
         Tenv.merge ~src:tenv ~dst:global_tenv ) ;
-    Ok warnings
+    Ok error_state
   in
   match result with
   | Ok warnings ->

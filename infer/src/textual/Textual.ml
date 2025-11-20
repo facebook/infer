@@ -92,7 +92,7 @@ module Location = struct
 end
 
 module SourceFile = struct
-  type t = {file: SourceFile.t; line_map: LineMap.t option}
+  type t = {file: SourceFile.t; line_map: LineMap.t option [@ignore]} [@@deriving compare]
 
   let create ?line_map filename = {file= SourceFile.create filename; line_map}
 
@@ -101,6 +101,12 @@ module SourceFile = struct
   let file {file} = file
 
   let pp fmt {file} = SourceFile.pp fmt file
+
+  module Map = PrettyPrintable.MakePPMap (struct
+    type nonrec t = t [@@deriving compare]
+
+    let pp = pp
+  end)
 end
 
 type transform_error = {loc: Location.t; msg: string Lazy.t}

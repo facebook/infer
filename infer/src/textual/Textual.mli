@@ -506,6 +506,8 @@ module SourceFile : sig
   val file : t -> SourceFile.t
 
   val pp : F.formatter -> t -> unit
+
+  module Map : PrettyPrintable.PPMap with type key = t
 end
 
 module Module : sig
