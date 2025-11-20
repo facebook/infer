@@ -392,8 +392,8 @@ module Subst = struct
         Field {f with exp= of_exp f.exp eqs}
     | Index (exp1, exp2) ->
         Index (of_exp exp1 eqs, of_exp exp2 eqs)
-    | If _ ->
-        L.die InternalError "TODO: Textual If statement"
+    | If {cond; then_; else_} ->
+        If {cond= of_bexp cond eqs; then_= of_exp then_ eqs; else_= of_exp else_ eqs}
     | Call f ->
         Call {f with args= List.map f.args ~f:(fun exp -> of_exp exp eqs)}
     | Closure {proc; captured; params; attributes} ->
