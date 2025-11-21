@@ -3,23 +3,11 @@
 ; This source code is licensed under the MIT license found in the
 ; LICENSE file in the root directory of this source tree.
 
-(test
- (name PythonCompareWithoutTypeAnnotTest)
- (modules PythonCompareWithoutTypeAnnotTest)
+(library
+ (name SemDiffLinTest)
  (flags
-  (:standard
-   -open
-   Core
-   -open
-   IStdlib
-   -open
-   IStd
-   -open
-   OpenSource
-   -open
-   ATDGenerated
-   -open
-   IBase
-   -open
-   SemDiffLib))
- (libraries core ounit2 IStdlib IBase pyml SemDiffLib))
+  (:standard -open IStdlib -open IBase -open SemDiffLib))
+ (libraries IStdlib pyml SemDiffLib)
+ (preprocess
+  (pps ppx_expect))
+ (inline_tests))
