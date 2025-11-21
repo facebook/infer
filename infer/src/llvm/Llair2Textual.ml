@@ -379,17 +379,21 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
   | Ap2 (((Add | Sub | Mul | Div | Rem) as op), typ, e1, e2) ->
       let proc = to_textual_arith_exp_builtin ~loc op typ in
       let exp1, typ1, exp1_instrs = to_textual_exp loc ~proc_state e1 in
+      let deref_instrs1, exp1 = add_deref ~proc_state exp1 loc in
       let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state e2 in
+      let deref_instrs2, exp2 = add_deref ~proc_state exp2 loc in
       ( Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
       , typ1
-      , List.append exp1_instrs exp2_instrs )
+      , deref_instrs1 @ exp1_instrs @ deref_instrs2 @ exp2_instrs )
   | Ap2 (((Eq | Dq | Gt | Ge | Le | Lt | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2) ->
       let proc = to_textual_bool_exp_builtin op in
       let exp1, typ1, exp1_instrs = to_textual_exp loc ~proc_state e1 in
+      let deref_instrs1, exp1 = add_deref ~proc_state exp1 loc in
       let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state e2 in
+      let deref_instrs2, exp2 = add_deref ~proc_state exp2 loc in
       ( Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
       , typ1
-      , List.append exp1_instrs exp2_instrs )
+      , deref_instrs1 @ exp1_instrs @ deref_instrs2 @ exp2_instrs )
   | Ap2 (Update idx, typ, rcd, elt) ->
       let rcd_exp, _, rcd_instrs = to_textual_exp loc ~proc_state rcd in
       let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state elt in

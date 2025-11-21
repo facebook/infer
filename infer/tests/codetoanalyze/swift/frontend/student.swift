@@ -141,6 +141,6 @@ func test_optional_person_good() -> Int {
     test_optional_person(Person(age: 30))
 }
 
-func test_optional_preson_nil_good_FP() -> Int {
+func test_optional_preson_nil_good() -> Int {
     test_optional_person(nil)
 }

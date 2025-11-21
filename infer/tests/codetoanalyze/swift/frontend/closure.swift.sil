@@ -48,36 +48,36 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *__infer_swi
       jmp 6::ret @[14:17]
       
   #11: @[177:0]
-      n7 = load &var5 @[177:0]
-      n8 = $s5Hello18RetainCycleExampleCSgWOh(n7) @[177:0]
+      n11 = load &var5 @[177:0]
+      n12 = $s5Hello18RetainCycleExampleCSgWOh(n11) @[177:0]
       jmp 12::ret @[178:0]
       
   #11::jmp::20: @[181:0]
-      n9 = 1 @[181:0]
+      n13 = 1 @[181:0]
       jmp 20 @[182:0]
       
   #12::ret: @[180:0]
       jmp 11::jmp::20 @[180:0]
       
   #13: @[14:17]
-      n11 = load &var5 @[14:17]
-      n13 = n11 @[14:17]
+      n15 = load &var5 @[14:17]
+      n17 = n15 @[14:17]
       jmp 15::ret @[14:17]
       
   #13::jmp::20: @[189:0]
-      n9 = 0 @[189:0]
+      n13 = 0 @[189:0]
       jmp 20 @[190:0]
       
   #15::ret: @[184:0]
-      n14 = load &var5 @[184:0]
-      n15 = $s5Hello18RetainCycleExampleCSgWOh(n14) @[184:0]
+      n18 = load &var5 @[184:0]
+      n19 = $s5Hello18RetainCycleExampleCSgWOh(n18) @[184:0]
       jmp 16::ret @[185:0]
       
   #16::ret: @[14:22]
-      n16 = load n11 @[14:22]
+      n20 = load n15 @[14:22]
       store &getelementptr_offset_1 <- 13 @[14:22]
-      n17 = load &getelementptr_offset_1 @[14:22]
-      _ = $builtins.llvm_dynamic_call(n17, 20, n11) @[14:22]
+      n21 = load &getelementptr_offset_1 @[14:22]
+      _ = $builtins.llvm_dynamic_call(n21, 20, n15) @[14:22]
       jmp 19::void::ret @[14:22]
       
   #19::void::ret: @[188:0]

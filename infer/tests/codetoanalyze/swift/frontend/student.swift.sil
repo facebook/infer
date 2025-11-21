@@ -240,11 +240,11 @@ define .plain_name = "test_optional_bad" $s5Hello17test_optional_badyyF() : void
       unreachable @[278:0]
       
   #1::ret: @[128:5]
-      n4 = __sil_eq(n3, 35) @[128:5]
-      if n4 then jmp 8 else jmp 4 @[128:5]
+      n6 = __sil_eq(n3, 35) @[128:5]
+      if n6 then jmp 8 else jmp 4 @[128:5]
       
   #4: @[128:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[128:5]
+      n7 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[128:5]
       jmp 5::ret @[128:5]
       
   #5::ret: @[128:5]
@@ -264,28 +264,29 @@ define .plain_name = "test_optional_person" $s5Hello20test_optional_personySiAA6
       jmp 5::ret @[132:27]
       
   #14::jmp::15: @[136:9]
-      n10 = 0 @[136:9]
+      n12 = 0 @[136:9]
       jmp 15 @[136:9]
       
   #15: @[138:1]
-      ret n10 @[138:1]
+      ret n12 @[138:1]
       
-  #5::ret: @[132:5]
-      if __sil_eq(&person, 0) then jmp 14::jmp::15 else jmp 7::jmp::9 @[132:5]
+  #5::ret: @?
+      n4 = load &person @[132:5]
+      if __sil_eq(n4, 0) then jmp 14::jmp::15 else jmp 7::jmp::9 @[132:5]
       
   #7::jmp::9: @[132:5]
-      n5 = load &person @[132:5]
-      n4 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n5) @[132:5]
+      n7 = load &person @[132:5]
+      n6 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n7) @[132:5]
       jmp 9 @[132:5]
       
   #9: @[281:0]
-      store &actualPerson <- n4 @[281:0]
-      n9 = load n4.__infer_swift_type<T5Hello6PersonC,Person>.field_1 @[133:29]
-      n7 = load n9.__infer_swift_type<TSi>.field_0 @[133:29]
+      store &actualPerson <- n6 @[281:0]
+      n11 = load n6.__infer_swift_type<T5Hello6PersonC,Person>.field_1 @[133:29]
+      n9 = load n11.__infer_swift_type<TSi>.field_0 @[133:29]
       jmp 9::jmp::15 @[133:9]
       
   #9::jmp::15: @[133:9]
-      n10 = n7 @[133:9]
+      n12 = n9 @[133:9]
       jmp 15 @[133:9]
       
 } @?
@@ -299,11 +300,11 @@ define .plain_name = "test_optional_good_fp" $s5Hello21test_optional_good_fpyyF(
       unreachable @[283:0]
       
   #1::ret: @[124:5]
-      n4 = __sil_eq(n3, 30) @[124:5]
-      if n4 then jmp 8 else jmp 4 @[124:5]
+      n6 = __sil_eq(n3, 30) @[124:5]
+      if n6 then jmp 8 else jmp 4 @[124:5]
       
   #4: @[124:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[124:5]
+      n7 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[124:5]
       jmp 5::ret @[124:5]
       
   #5::ret: @[124:5]
@@ -406,11 +407,11 @@ define .plain_name = "test_student_allocation_bad" $s5Hello27test_student_alloca
       unreachable @[291:0]
       
   #1::ret: @[15:5]
-      n2 = __sil_eq(n1, 35) @[15:5]
-      if n2 then jmp 8 else jmp 4 @[15:5]
+      n4 = __sil_eq(n1, 35) @[15:5]
+      if n4 then jmp 8 else jmp 4 @[15:5]
       
   #4: @[15:5]
-      n3 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[15:5]
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[15:5]
       jmp 5::ret @[15:5]
       
   #5::ret: @[15:5]
@@ -431,11 +432,11 @@ define .plain_name = "test_employee_allocation_bad" $s5Hello28test_employee_allo
       unreachable @[293:0]
       
   #1::ret: @[46:5]
-      n2 = __sil_eq(n1, 35) @[46:5]
-      if n2 then jmp 8 else jmp 4 @[46:5]
+      n4 = __sil_eq(n1, 35) @[46:5]
+      if n4 then jmp 8 else jmp 4 @[46:5]
       
   #4: @[46:5]
-      n3 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[46:5]
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[46:5]
       jmp 5::ret @[46:5]
       
   #5::ret: @[46:5]
@@ -456,11 +457,11 @@ define .plain_name = "test_student_allocation_good" $s5Hello28test_student_alloc
       unreachable @[295:0]
       
   #1::ret: @[19:5]
-      n2 = __sil_eq(n1, 30) @[19:5]
-      if n2 then jmp 8 else jmp 4 @[19:5]
+      n4 = __sil_eq(n1, 30) @[19:5]
+      if n4 then jmp 8 else jmp 4 @[19:5]
       
   #4: @[19:5]
-      n3 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[19:5]
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[19:5]
       jmp 5::ret @[19:5]
       
   #5::ret: @[19:5]
@@ -481,11 +482,11 @@ define .plain_name = "test_employee_allocation_good" $s5Hello29test_employee_all
       unreachable @[297:0]
       
   #1::ret: @[50:5]
-      n2 = __sil_eq(n1, 30) @[50:5]
-      if n2 then jmp 8 else jmp 4 @[50:5]
+      n4 = __sil_eq(n1, 30) @[50:5]
+      if n4 then jmp 8 else jmp 4 @[50:5]
       
   #4: @[50:5]
-      n3 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[50:5]
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[50:5]
       jmp 5::ret @[50:5]
       
   #5::ret: @[50:5]
@@ -539,11 +540,11 @@ define .plain_name = "test_employee_getter_setter_bad" $s5Hello31test_employee_g
       unreachable @[302:0]
       
   #1::ret: @[61:5]
-      n3 = __sil_eq(n2, 75) @[61:5]
-      if n3 then jmp 8 else jmp 4 @[61:5]
+      n5 = __sil_eq(n2, 75) @[61:5]
+      if n5 then jmp 8 else jmp 4 @[61:5]
       
   #4: @[61:5]
-      n4 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[61:5]
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[61:5]
       jmp 5::ret @[61:5]
       
   #5::ret: @[61:5]
@@ -564,11 +565,11 @@ define .plain_name = "test_employee_getter_setter_good" $s5Hello32test_employee_
       unreachable @[304:0]
       
   #1::ret: @[65:5]
-      n3 = __sil_eq(n2, 70) @[65:5]
-      if n3 then jmp 8 else jmp 4 @[65:5]
+      n5 = __sil_eq(n2, 70) @[65:5]
+      if n5 then jmp 8 else jmp 4 @[65:5]
       
   #4: @[65:5]
-      n4 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[65:5]
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[65:5]
       jmp 5::ret @[65:5]
       
   #5::ret: @[65:5]
