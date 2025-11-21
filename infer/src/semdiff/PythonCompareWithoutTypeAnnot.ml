@@ -7,163 +7,12 @@
 
 open! IStd
 module L = Logging
-module StringMap = IString.Map
 module StringSet = IString.Set
 module IntSet = IInt.Set
+open PythonSourceAst
 
-(* ===== Type Definitions ===== *)
-type ast_node =
-  | Dict of ast_node StringMap.t
-  | List of ast_node list
-  | Str of string
-  | Int of int
-  | Float of float
-  | Bool of bool
-  | Null
-[@@deriving compare, equal]
-
-type diff = LineAdded of int | LineRemoved of int [@@deriving compare, equal]
-
-(* ===== Constants ===== *)
-(* AST field names *)
-let type_field_name = "_type"
-
-let field_args = "args"
-
-let field_ctx = "ctx"
-
-let field_end_lineno = "end_lineno"
-
-let field_func = "func"
-
-let field_id = "id"
-
-let field_keywords = "keywords"
-
-let field_lineno = "lineno"
-
-let field_value = "value"
-
-(* Python integration *)
-let python_ast_parser_code =
-  {|
-import ast, json
-
-def node_to_dict(node):
-    if isinstance(node, ast.AST):
-        result = {"_type": node.__class__.__name__}
-
-        for attr in ("lineno", "end_lineno"):
-            if hasattr(node, attr):
-                result[attr] = getattr(node, attr)
-
-        for field, value in ast.iter_fields(node):
-            result[field] = node_to_dict(value)
-        return result
-    elif isinstance(node, list):
-        return [node_to_dict(x) for x in node]
-    elif node is Ellipsis:  # Handle ellipsis
-        return "..."
-    else:
-        return node  # literals: str, int, None, etc.
-
-def parse_to_json(source: str) -> str:
-    tree = ast.parse(source)
-    return json.dumps(node_to_dict(tree))
-  |}
-
-
-let init () =
-  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
-  let main_module = Py.Import.import_module "__main__" in
-  ignore (Py.Run.simple_string python_ast_parser_code) ;
-  let parse_func = Py.Module.get main_module "parse_to_json" in
-  parse_func
-
-
-(* ===== AST Type Helpers ===== *)
-let get_type fields =
-  StringMap.find_opt type_field_name fields
-  |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
-
-
-let is_type fields type_name : bool =
-  match get_type fields with Str name -> String.equal name type_name | _ -> false
-
-
-let is_line_number_field field_name =
-  String.equal field_name field_lineno || String.equal field_name field_end_lineno
-
-
-let is_type_annotation_field field_name =
-  String.equal field_name "annotation" || String.equal field_name "returns"
-
-
-let get_line_number (fields : ast_node StringMap.t) : int option =
-  match StringMap.find_opt field_lineno fields with Some (Int l1) -> Some l1 | _ -> None
-
-
-let get_line_number_of_node = function Dict f -> get_line_number f | _ -> None
-
-(* ===== AST Node Construction ===== *)
-module AstNode = struct
-  let make_dict_node field_list = Dict (StringMap.of_list field_list)
-
-  let find_field_or_null field_name fields =
-    Option.value (StringMap.find_opt field_name fields) ~default:Null
-
-
-  let rec of_yojson (j : Yojson.Safe.t) : ast_node =
-    match j with
-    | `Assoc fields ->
-        make_dict_node (List.map ~f:(fun (k, v) -> (k, of_yojson v)) fields)
-    | `List l ->
-        List (List.map ~f:of_yojson l)
-    | `String s ->
-        Str s
-    | `Int i ->
-        Int i
-    | `Float f ->
-        Float f
-    | `Bool b ->
-        Bool b
-    | `Null ->
-        Null
-    | _ ->
-        L.die InternalError "unsupported JSON type"
-
-
-  let rec to_str ?(indent = 0) (node : ast_node) : string =
-    let indent_str = String.make (indent * 2) ' ' in
-    let next_indent = indent + 1 in
-    let next_indent_str = String.make (next_indent * 2) ' ' in
-    match node with
-    | Dict fields ->
-        "Dict: {"
-        ^ StringMap.fold
-            (fun k v acc -> acc ^ "\n" ^ next_indent_str ^ k ^ "=" ^ to_str ~indent:next_indent v)
-            fields ""
-        ^ "\n" ^ indent_str ^ "}"
-    | List l ->
-        "List: ["
-        ^ String.concat ~sep:" "
-            (List.map ~f:(fun node -> "\n" ^ next_indent_str ^ to_str ~indent:next_indent node) l)
-        ^ "\n" ^ indent_str ^ "]"
-    | Str s ->
-        "Str: " ^ s
-    | Int i ->
-        "Int: " ^ Int.to_string i
-    | Float f ->
-        "Float: " ^ Float.to_string f
-    | Bool b ->
-        "Bool: " ^ Bool.to_string b
-    | Null ->
-        "Null"
-end
-
-(* ===== AST Normalization ===== *)
 module Normalize = struct
-  let ann_assign_to_assign fields : ast_node =
+  let ann_assign_to_assign fields : Node.t =
     (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
     let assign_fields =
       StringMap.fold
@@ -171,22 +20,22 @@ module Normalize = struct
           match k with
           | "annotation" | "simple" ->
               acc
-          | k when String.equal k type_field_name ->
-              StringMap.add type_field_name (Str "Assign") acc
+          | k when String.equal k Node.type_field_name ->
+              StringMap.add Node.type_field_name (Node.Str "Assign") acc
           | "target" ->
-              StringMap.add "targets" (List [field_node]) acc
+              StringMap.add "targets" (Node.List [field_node]) acc
           | _ ->
               StringMap.add k field_node acc )
         fields StringMap.empty
     in
-    Dict (StringMap.add "type_comment" Null assign_fields)
+    Dict (StringMap.add "type_comment" Node.Null assign_fields)
 
 
-  let rec apply (node : ast_node) : ast_node =
+  let rec apply (node : Node.t) : Node.t =
     match node with
-    | Dict fields when is_type fields "Import" || is_type fields "ImportFrom" ->
+    | Dict fields when Node.is_type fields "Import" || Node.is_type fields "ImportFrom" ->
         Null
-    | Dict fields when is_type fields "Compare" -> (
+    | Dict fields when Node.is_type fields "Compare" -> (
         let left_node = StringMap.find_opt "left" fields in
         let left_fields =
           match left_node with Some (Dict fields) -> fields | _ -> StringMap.empty
@@ -194,7 +43,7 @@ module Normalize = struct
         match StringMap.find_opt "attr" left_fields with
         | Some (Str "__class__") ->
             let fst_arg =
-              match StringMap.find_opt field_value left_fields with
+              match StringMap.find_opt Node.field_value left_fields with
               | Some arg ->
                   arg
               | _ ->
@@ -208,24 +57,24 @@ module Normalize = struct
                   L.die InternalError
                     "Could not find rhs type in comparison using __class__ attribute"
             in
-            let ctx_node = AstNode.find_field_or_null field_ctx left_fields in
-            let lineno = AstNode.find_field_or_null field_lineno fields in
-            let end_lineno = AstNode.find_field_or_null field_end_lineno fields in
+            let ctx_node = Node.find_field_or_null Node.field_ctx left_fields in
+            let lineno = Node.find_field_or_null Node.field_lineno fields in
+            let end_lineno = Node.find_field_or_null Node.field_end_lineno fields in
             let func_node =
-              AstNode.make_dict_node
-                [ (type_field_name, Str "Name")
-                ; (field_id, Str "isinstance")
-                ; (field_ctx, ctx_node)
-                ; (field_lineno, lineno)
-                ; (field_end_lineno, end_lineno) ]
+              Node.make_dict_node
+                [ (Node.type_field_name, Str "Name")
+                ; (Node.field_id, Str "isinstance")
+                ; (Node.field_ctx, ctx_node)
+                ; (Node.field_lineno, lineno)
+                ; (Node.field_end_lineno, end_lineno) ]
             in
-            AstNode.make_dict_node
-              [ (type_field_name, Str "Call")
-              ; (field_lineno, lineno)
-              ; (field_end_lineno, end_lineno)
-              ; (field_func, func_node)
-              ; (field_args, List [fst_arg; snd_arg])
-              ; (field_keywords, List []) ]
+            Node.make_dict_node
+              [ (Node.type_field_name, Str "Call")
+              ; (Node.field_lineno, lineno)
+              ; (Node.field_end_lineno, end_lineno)
+              ; (Node.field_func, func_node)
+              ; (Node.field_args, List [fst_arg; snd_arg])
+              ; (Node.field_keywords, List []) ]
         | _ ->
             Dict (StringMap.map (fun v -> apply v) fields) )
     | Dict fields ->
@@ -233,13 +82,15 @@ module Normalize = struct
     | List l ->
         List
           (List.filter
-             ~f:(fun n -> match n with Null -> false | _ -> true)
+             ~f:(fun n -> match n with Node.Null -> false | _ -> true)
              (List.map ~f:apply l) )
     | other ->
         other
 end
 
 (* ===== Diff Computation ===== *)
+type diff = LineAdded of int | LineRemoved of int [@@deriving compare, equal]
+
 module Diff = struct
   let append_removed_line_to_diff_list left_line acc =
     Option.value_map left_line ~default:acc ~f:(fun line -> LineRemoved line :: acc)
@@ -257,20 +108,24 @@ module Diff = struct
         None
 
 
-  let rec annotations_equal (n1 : ast_node) (n2 : ast_node) : bool =
+  let rec annotations_equal (n1 : Node.t) (n2 : Node.t) : bool =
     let internal_fields_equal fields1 fields2 =
       StringMap.for_all
         (fun k _ ->
-          StringMap.mem k fields1 || String.equal k type_field_name || is_line_number_field k )
+          StringMap.mem k fields1
+          || String.equal k Node.type_field_name
+          || Node.is_line_number_field k )
         fields2
       && StringMap.for_all
            (fun k v1 ->
-             String.equal k field_id || String.equal k type_field_name || is_line_number_field k
+             String.equal k Node.field_id
+             || String.equal k Node.type_field_name
+             || Node.is_line_number_field k
              || Option.exists (StringMap.find_opt k fields2) ~f:(fun v2 -> annotations_equal v1 v2) )
            fields1
     in
     match (n1, n2) with
-    | a, b when equal_ast_node a b ->
+    | a, b when Node.equal a b ->
         (* Type annotations are equal: no need to compare field by field *)
         true
     | Null, Dict _ ->
@@ -281,14 +136,14 @@ module Diff = struct
       A few cases to consider here:
       Dict --> dict, Set --> set etc
       Any --> object should also be allowed *)
-      match (get_type fields1, get_type fields2) with
+      match (Node.get_type fields1, Node.get_type fields2) with
       | Str type1, Str type2 when not (String.equal type1 type2) ->
           false
       | Str "Name", Str "Name" ->
-          IOption.exists2 (StringMap.find_opt field_id fields1)
-            (StringMap.find_opt field_id fields2) ~f:(fun id1 id2 ->
+          IOption.exists2 (StringMap.find_opt Node.field_id fields1)
+            (StringMap.find_opt Node.field_id fields2) ~f:(fun id1 id2 ->
               match (id1, id2) with
-              | Str id1, Str id2 ->
+              | Node.Str id1, Node.Str id2 ->
                   let builtin = Option.value (get_builtin_name_from_type_name id1) ~default:id1 in
                   let ids_equal =
                     String.equal builtin id2 || (String.equal id1 "Any" && String.equal id2 "object")
@@ -307,28 +162,28 @@ module Diff = struct
         false
 
 
-  let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None)
-      (n1 : ast_node) (n2 : ast_node) : diff list =
+  let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : Node.t)
+      (n2 : Node.t) : diff list =
     match (n1, n2) with
-    | a, b when equal_ast_node a b ->
+    | a, b when Node.equal a b ->
         []
     | Dict f1, Dict f2 ->
-        let left_line = get_line_number f1 in
-        let right_line = get_line_number f2 in
-        if is_type f1 "Assign" && is_type f2 "AnnAssign" then
+        let left_line = Node.get_line_number f1 in
+        let right_line = Node.get_line_number f2 in
+        if Node.is_type f1 "Assign" && Node.is_type f2 "AnnAssign" then
           get_diff ~left_line ~right_line n1 (Normalize.ann_assign_to_assign f2)
         else
           let diffs =
             StringMap.fold
               (fun k v1 acc ->
                 match StringMap.find_opt k f2 with
-                | Some v2 when is_type_annotation_field k ->
+                | Some v2 when Node.is_type_annotation_field k ->
                     if
                       (* special case for type annotations *)
                       annotations_equal v1 v2
                     then acc
                     else get_diff ~left_line ~right_line v1 v2 @ acc
-                | Some _ when is_line_number_field k ->
+                | Some _ when Node.is_line_number_field k ->
                     acc
                 | Some v2 ->
                     get_diff ~left_line ~right_line v1 v2 @ acc
@@ -349,17 +204,17 @@ module Diff = struct
           | x :: xt, y :: yt ->
               aux (get_diff ~left_line ~right_line x y @ acc) xt yt
           | x :: xt, [] ->
-              aux (append_removed_line_to_diff_list (get_line_number_of_node x) acc) xt []
+              aux (append_removed_line_to_diff_list (Node.get_line_number_of_node x) acc) xt []
           | [], y :: yt ->
-              aux (append_added_line_to_diff_list (get_line_number_of_node y) acc) [] yt
+              aux (append_added_line_to_diff_list (Node.get_line_number_of_node y) acc) [] yt
           | [], [] ->
               acc
         in
         aux [] l1 l2
     | Dict f1, _ ->
-        append_removed_line_to_diff_list (get_line_number f1) []
+        append_removed_line_to_diff_list (Node.get_line_number f1) []
     | _, Dict f2 ->
-        append_added_line_to_diff_list (get_line_number f2) []
+        append_added_line_to_diff_list (Node.get_line_number f2) []
     | _ ->
         append_removed_line_to_diff_list left_line [] @ append_added_line_to_diff_list right_line []
 
@@ -374,12 +229,6 @@ module Diff = struct
             (lines_removed, IntSet.add line_number lines_added) )
       ~init:(IntSet.empty, IntSet.empty) diffs
 end
-
-let parse_and_transform parse_func source =
-  let parse_func = parse_func |> Py.Callable.to_function in
-  let ast = parse_func [|Py.String.of_string source|] |> Py.String.to_string in
-  AstNode.of_yojson (Yojson.Safe.from_string ast) |> Normalize.apply
-
 
 (* ===== Diff Formatting and Output ===== *)
 module Output = struct
@@ -459,15 +308,15 @@ end
 
 (* ===== Public API ===== *)
 let ast_diff ?(debug = false) src1 src2 =
-  let parse_func = init () in
-  let ast1 = parse_and_transform parse_func src1 in
-  let ast2 = parse_and_transform parse_func src2 in
+  let parse = build_parser () in
+  let ast1 = parse src1 |> Normalize.apply in
+  let ast2 = parse src2 |> Normalize.apply in
   let diffs = Diff.get_diff ast1 ast2 in
   let lines_removed, lines_added = Diff.split_diffs diffs in
   let diffs = Output.show_diff src1 src2 lines_removed lines_added in
   if debug then (
-    Printf.printf "AST1: %s\n" (AstNode.to_str ast1) ;
-    Printf.printf "AST2: %s\n" (AstNode.to_str ast2) ;
+    Printf.printf "AST1: %s\n" (Node.to_str ast1) ;
+    Printf.printf "AST2: %s\n" (Node.to_str ast2) ;
     Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ) ;
   diffs
 
