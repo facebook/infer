@@ -127,3 +127,20 @@ func test_optional_good_fp() {
 func test_optional_bad() {
     assert(test_optional(30) == 35)
 }
+
+func test_optional_person(_ person : Person?) -> Int {
+    if let actualPerson = person {
+        return actualPerson.age
+    }
+    else {
+        return 0
+    }
+}
+
+func test_optional_person_good() -> Int {
+    test_optional_person(Person(age: 30))
+}
+
+func test_optional_preson_nil_good_FP() -> Int {
+    test_optional_person(nil)
+}
