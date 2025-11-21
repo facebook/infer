@@ -52,6 +52,10 @@ OPTIONS
        --semdiff-previous path
            Previous python program to be analysed by semdiff
 
+       --semdiff-test-files-index path
+           A file containing a list of newline-separated Python files to run
+           SemDiff tests.
+
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE
            See the ENVIRONMENT section in the manual of infer(1).

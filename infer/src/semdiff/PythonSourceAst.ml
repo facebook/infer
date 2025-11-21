@@ -155,3 +155,21 @@ let build_parser () =
     let parser = Py.Callable.to_function pyobject in
     let ast = parser [|Py.String.of_string source|] |> Py.String.to_string in
     Node.of_yojson (Yojson.Safe.from_string ast)
+
+
+let iter_files ~f filenames =
+  let parse = build_parser () in
+  List.iter filenames ~f:(fun filename ->
+      let source = In_channel.with_file filename ~f:In_channel.input_all in
+      try parse source |> f
+      with Py.E (error_type, error_value) ->
+        L.internal_error "Error while parsing file %s:\n  type:%s\n  value: %s\n" filename
+          (Py.Object.to_string error_type) (Py.Object.to_string error_value) )
+
+
+let iter_from_index ~f ~index_filename =
+  match Utils.read_file index_filename with
+  | Ok lines ->
+      iter_files ~f lines
+  | Error error ->
+      L.die UserError "Error reading the semdiff input files index '%s': %s@." index_filename error

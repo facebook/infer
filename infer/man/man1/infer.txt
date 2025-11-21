@@ -2120,6 +2120,11 @@ OPTIONS
            Previous python program to be analysed by semdiff
            See also infer-semdiff(1).
 
+       --semdiff-test-files-index path
+           A file containing a list of newline-separated Python files to run
+           SemDiff tests.
+           See also infer-semdiff(1).
+
        --shrink-analysis-db
            Activates: After analysis, delete analysis summaries (but not
            report summaries) and vacuum analysis database. (Conversely:

@@ -3250,6 +3250,12 @@ and semdiff_previous =
     "Previous python program to be analysed by semdiff"
 
 
+and semdiff_test_files_index =
+  CLOpt.mk_path_opt ~long:"semdiff-test-files-index" ~meta:"path"
+    ~in_help:InferCommand.[(SemDiff, manual_generic)]
+    "A file containing a list of newline-separated Python files to run SemDiff tests."
+
+
 and shrink_analysis_db =
   CLOpt.mk_bool ~long:"shrink-analysis-db"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4804,6 +4810,8 @@ and select =
 and semdiff_current = !semdiff_current
 
 and semdiff_previous = !semdiff_previous
+
+and semdiff_test_files_index = !semdiff_test_files_index
 
 and shrink_analysis_db = !shrink_analysis_db
 

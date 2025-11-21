@@ -59,3 +59,5 @@ module Node : sig
 end
 
 val build_parser : unit -> string -> Node.t
+
+val iter_from_index : f:(Node.t -> unit) -> index_filename:string -> unit
