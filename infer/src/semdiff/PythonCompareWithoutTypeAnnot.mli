@@ -7,6 +7,6 @@
 
 open! IStd
 
-val ast_diff : ?debug:bool -> string -> string -> string list
+val test_ast_diff : debug:bool -> string -> string -> string list
 
 val semdiff : string -> string -> unit

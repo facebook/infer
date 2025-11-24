@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 module StringMap = IString.Map
 
@@ -148,25 +149,50 @@ def parse_to_json(source: str) -> str:
   |}
 
 
+type error = SyntaxError of {filename: string option; py_error: string}
+
+let pp_error fmt = function
+  | SyntaxError {filename= Some filename; py_error} ->
+      F.fprintf fmt "Syntax error in %s: %s\n" filename py_error
+  | SyntaxError {filename= None; py_error} ->
+      F.fprintf fmt "Syntax error: %s\n" py_error
+
+
 let build_parser () =
   if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
   let main_module = Py.Import.import_module "__main__" in
   ignore (Py.Run.simple_string python_ast_parser_code) ;
   let pyobject = Py.Module.get main_module "parse_to_json" in
-  fun source ->
+  fun ?filename source ->
     let parser = Py.Callable.to_function pyobject in
-    let ast = parser [|Py.String.of_string source|] |> Py.String.to_string in
-    Node.of_yojson (Yojson.Safe.from_string ast)
+    try
+      let ast = parser [|Py.String.of_string source|] |> Py.String.to_string in
+      Ok (Node.of_yojson (Yojson.Safe.from_string ast))
+    with Py.E (error_type, error_value) as exn ->
+      let str_error_type = Py.Object.to_string error_type in
+      if String.equal str_error_type "<class 'SyntaxError'>" then
+        let py_error = Py.Object.to_string error_value in
+        Error (SyntaxError {filename; py_error})
+      else raise exn
 
 
 let iter_files ~f filenames =
   let parse = build_parser () in
-  List.iter filenames ~f:(fun filename ->
-      let source = In_channel.with_file filename ~f:In_channel.input_all in
-      try parse source |> f
-      with Py.E (error_type, error_value) ->
-        L.internal_error "Error while parsing file %s:\n  type:%s\n  value: %s\n" filename
-          (Py.Object.to_string error_type) (Py.Object.to_string error_value) )
+  let errors =
+    List.fold filenames ~init:[] ~f:(fun errors filename ->
+        let source = In_channel.with_file filename ~f:In_channel.input_all in
+        match parse ~filename source with
+        | Ok node ->
+            f node ;
+            errors
+        | Error error ->
+            error :: errors
+        | exception Py.E (error_type, error_value) ->
+            L.internal_error "Error while parsing file %s:\n  type:%s\n  value: %s\n" filename
+              (Py.Object.to_string error_type) (Py.Object.to_string error_value) ;
+            errors )
+  in
+  if List.is_empty errors then Ok () else Error errors
 
 
 let iter_from_index ~f ~index_filename =

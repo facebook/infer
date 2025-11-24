@@ -306,24 +306,32 @@ module Output = struct
       diffs
 end
 
-(* ===== Public API ===== *)
-let ast_diff ?(debug = false) src1 src2 =
+let ast_diff ~debug ?filename1 ?filename2 src1 src2 =
   let parse = build_parser () in
-  let ast1 = parse src1 |> Normalize.apply in
-  let ast2 = parse src2 |> Normalize.apply in
-  let diffs = Diff.get_diff ast1 ast2 in
-  let lines_removed, lines_added = Diff.split_diffs diffs in
-  let diffs = Output.show_diff src1 src2 lines_removed lines_added in
-  if debug then (
-    Printf.printf "AST1: %s\n" (Node.to_str ast1) ;
-    Printf.printf "AST2: %s\n" (Node.to_str ast2) ;
-    Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ) ;
-  diffs
+  match (parse ?filename:filename1 src1, parse ?filename:filename2 src2) with
+  | Error error, _ | Ok _, Error error ->
+      L.user_error "%a" PythonSourceAst.pp_error error ;
+      []
+  | Ok ast1, Ok ast2 ->
+      let ast1 = Normalize.apply ast1 in
+      let ast2 = Normalize.apply ast2 in
+      let diffs = Diff.get_diff ast1 ast2 in
+      let lines_removed, lines_added = Diff.split_diffs diffs in
+      let diffs = Output.show_diff src1 src2 lines_removed lines_added in
+      if debug then (
+        Printf.printf "AST1: %s\n" (Node.to_str ast1) ;
+        Printf.printf "AST2: %s\n" (Node.to_str ast2) ;
+        Printf.printf "SemDiff:\n%s\n" (String.concat ~sep:"\n" diffs) ) ;
+      diffs
 
+
+let test_ast_diff ~debug src1 src2 = ast_diff ~debug src1 src2
 
 let semdiff previous_file current_file =
   let debug = Config.debug_mode in
   let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
   let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
-  let diffs = ast_diff ~debug previous_src current_src in
+  let diffs =
+    ast_diff ~debug ~filename1:previous_file ~filename2:current_file previous_src current_src
+  in
   Output.write_output previous_file current_file diffs

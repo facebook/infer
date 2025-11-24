@@ -58,6 +58,10 @@ module Node : sig
   val to_str : ?indent:int -> t -> string
 end
 
-val build_parser : unit -> string -> Node.t
+type error
 
-val iter_from_index : f:(Node.t -> unit) -> index_filename:string -> unit
+val pp_error : Format.formatter -> error -> unit
+
+val build_parser : unit -> ?filename:string -> string -> (Node.t, error) result
+
+val iter_from_index : f:(Node.t -> unit) -> index_filename:string -> (unit, error list) result

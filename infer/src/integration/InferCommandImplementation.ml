@@ -358,8 +358,12 @@ let sem_diff () =
       PythonCompareWithoutTypeAnnot.semdiff previous current
   | None, Some index_filename ->
       let count = ref 0 in
-      PythonSourceAst.iter_from_index ~f:(fun _node -> incr count) ~index_filename ;
-      F.printf "%d ast(s) have been parsed\n" !count
+      ( match PythonSourceAst.iter_from_index ~f:(fun _node -> incr count) ~index_filename with
+      | Ok () ->
+          ()
+      | Error errors ->
+          List.iter errors ~f:(L.user_error "%a" PythonSourceAst.pp_error) ) ;
+      L.progress "%d ast(s) have been parsed\n" !count
   | Some _, Some _ ->
       L.die UserError
         "option '--semdiff-test-files-index' can not be used at the same time than \

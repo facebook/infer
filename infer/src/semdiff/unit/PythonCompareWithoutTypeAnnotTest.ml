@@ -11,7 +11,7 @@ module F = Format
 let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe ()
 
 let ast_diff_equal prog1 prog2 =
-  let diffs = PythonCompareWithoutTypeAnnot.ast_diff prog1 prog2 in
+  let diffs = PythonCompareWithoutTypeAnnot.test_ast_diff ~debug:false prog1 prog2 in
   List.iter diffs ~f:(F.printf "%s\n")
 
 
