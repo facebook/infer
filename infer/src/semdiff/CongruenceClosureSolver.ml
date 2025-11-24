@@ -111,22 +111,22 @@ end)
 
 type t =
   { repr: Atom.t Dynarray.t
-  ; classes: Atom.t list Dynarray.t
   ; mutable pending: pending_item list
   ; use: app_equation list Dynarray.t
   ; lookup: app_equation LookupTbl.t
   ; mk_app_history: (Atom.t * Atom.t) option Dynarray.t
   ; hashcons: Atom.state
+  ; enable_term_pp: bool
   ; debug: bool }
 
-let init ~debug =
+let init ~debug ~enable_term_pp =
   { repr= Dynarray.create ()
-  ; classes= Dynarray.create ()
   ; pending= []
   ; use= Dynarray.create ()
   ; lookup= LookupTbl.create 32
   ; mk_app_history= Dynarray.create ()
   ; hashcons= Atom.init ()
+  ; enable_term_pp
   ; debug }
 
 
@@ -145,18 +145,16 @@ let mk_atom state value =
   let atom, is_new = Atom.mk state.hashcons value in
   if is_new then (
     Dynarray.add_last state.repr atom ;
-    Dynarray.add_last state.classes [atom] ;
     Dynarray.add_last state.use [] ;
-    Dynarray.add_last state.mk_app_history None ) ;
+    if state.enable_term_pp then Dynarray.add_last state.mk_app_history None ) ;
   atom
 
 
 let mk_fresh_atom state =
   let atom = Atom.mk_fresh state.hashcons in
   Dynarray.add_last state.repr atom ;
-  Dynarray.add_last state.classes [atom] ;
   Dynarray.add_last state.use [] ;
-  Dynarray.add_last state.mk_app_history None ;
+  if state.enable_term_pp then Dynarray.add_last state.mk_app_history None ;
   atom
 
 
@@ -262,7 +260,7 @@ let mk_app state ~left ~right =
   let term = App (left, right) in
   let atom = mk_fresh_atom state in
   merge state atom term ;
-  set_mk_app_history state atom (left, right) ;
+  if state.enable_term_pp then set_mk_app_history state atom (left, right) ;
   atom
 
 

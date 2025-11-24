@@ -2120,9 +2120,20 @@ OPTIONS
            Previous python program to be analysed by semdiff
            See also infer-semdiff(1).
 
+       --semdiff-test-actions ,-separated sequence of { normalize | currify }
+           Specify which action must be performed in each parsed AST during
+           semdiff tests
+           See also infer-semdiff(1).
+
        --semdiff-test-files-index path
            A file containing a list of newline-separated Python files to run
            SemDiff tests.
+           See also infer-semdiff(1).
+
+       --semdiff-test-show-syntax-errors
+           Activates: List all syntax errors (location and explanation) the
+           Python source parser encountered. (Conversely:
+           --no-semdiff-test-show-syntax-errors)
            See also infer-semdiff(1).
 
        --shrink-analysis-db

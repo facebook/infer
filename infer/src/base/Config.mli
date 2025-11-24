@@ -804,6 +804,10 @@ val semdiff_current : string option
 
 val semdiff_previous : string option
 
+val semdiff_test_show_syntax_errors : bool
+
+val semdiff_test_actions : [`Normalize | `Currify] list
+
 val semdiff_test_files_index : string option
 
 val shrink_analysis_db : bool

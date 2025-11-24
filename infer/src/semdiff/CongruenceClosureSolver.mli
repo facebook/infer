@@ -24,7 +24,7 @@ type t
 
 val pp_nested_term : t -> Atom.t -> unit
 
-val init : debug:bool -> t
+val init : debug:bool -> enable_term_pp:bool -> t
 
 val mk_atom : t -> string -> Atom.t
 

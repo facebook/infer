@@ -35,7 +35,7 @@ let rec curry cc ast =
       CC.mk_term cc ~header ~args:(List.map ~f:mk_atom_binding assoc)
 
 
-let store_ast ast =
-  let cc = CC.init ~debug:false in
+let store_ast ?(debug = false) ?(enable_term_pp = false) ast =
+  let cc = CC.init ~debug:false ~enable_term_pp in
   let atom = curry cc ast in
-  CC.pp_nested_term cc atom
+  if debug then CC.pp_nested_term cc atom

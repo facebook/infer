@@ -16,7 +16,7 @@ y = 1
 z = 2
       |} |> Result.ok |> Option.value_exn in
   F.printf "%s\n" (PythonSourceAst.Node.to_str ast) ;
-  PythonSourceAstDiff.store_ast ast ;
+  PythonSourceAstDiff.store_ast ~debug:true ~enable_term_pp:true ast ;
   [%expect
     {|
     Dict: {

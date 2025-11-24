@@ -7,4 +7,4 @@
 
 open! IStd
 
-val store_ast : PythonSourceAst.Node.t -> unit
+val store_ast : ?debug:bool -> ?enable_term_pp:bool -> PythonSourceAst.Node.t -> unit

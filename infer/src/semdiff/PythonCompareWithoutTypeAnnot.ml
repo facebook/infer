@@ -230,6 +230,8 @@ module Diff = struct
       ~init:(IntSet.empty, IntSet.empty) diffs
 end
 
+let normalize = Normalize.apply
+
 (* ===== Diff Formatting and Output ===== *)
 module Output = struct
   let write_output previous_file current_file diffs =

@@ -52,9 +52,18 @@ OPTIONS
        --semdiff-previous path
            Previous python program to be analysed by semdiff
 
+       --semdiff-test-actions ,-separated sequence of { normalize | currify }
+           Specify which action must be performed in each parsed AST during
+           semdiff tests
+
        --semdiff-test-files-index path
            A file containing a list of newline-separated Python files to run
            SemDiff tests.
+
+       --semdiff-test-show-syntax-errors
+           Activates: List all syntax errors (location and explanation) the
+           Python source parser encountered. (Conversely:
+           --no-semdiff-test-show-syntax-errors)
 
 ENVIRONMENT
        INFER_ARGS, INFERCONFIG, INFER_STRICT_MODE

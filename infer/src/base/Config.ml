@@ -3250,6 +3250,20 @@ and semdiff_previous =
     "Previous python program to be analysed by semdiff"
 
 
+and semdiff_test_actions =
+  CLOpt.mk_symbol_seq ~long:"semdiff-test-actions" ~eq:PolyVariantEqual.( = )
+    "Specify which action must be performed  in each parsed AST during semdiff tests"
+    ~in_help:InferCommand.[(SemDiff, manual_generic)]
+    ~symbols:[("normalize", `Normalize); ("currify", `Currify)]
+    ~default:[]
+
+
+and semdiff_test_show_syntax_errors =
+  CLOpt.mk_bool ~long:"semdiff-test-show-syntax-errors" ~default:false
+    ~in_help:InferCommand.[(SemDiff, manual_generic)]
+    "List all syntax errors (location and explanation) the Python source parser encountered."
+
+
 and semdiff_test_files_index =
   CLOpt.mk_path_opt ~long:"semdiff-test-files-index" ~meta:"path"
     ~in_help:InferCommand.[(SemDiff, manual_generic)]
@@ -4811,7 +4825,11 @@ and semdiff_current = !semdiff_current
 
 and semdiff_previous = !semdiff_previous
 
+and semdiff_test_actions = !semdiff_test_actions
+
 and semdiff_test_files_index = !semdiff_test_files_index
+
+and semdiff_test_show_syntax_errors = !semdiff_test_show_syntax_errors
 
 and shrink_analysis_db = !shrink_analysis_db
 
