@@ -128,6 +128,12 @@ let python_ast_parser_code =
   {|
 import ast, json
 
+def sanityze(string):
+    try:
+        return string.encode("utf16").decode("utf16", "ignore")
+    except UnicodeEncodeError:
+        return "<some invalid utf16>"
+
 def node_to_dict(node):
     if isinstance(node, ast.AST):
         result = {"_type": node.__class__.__name__}
@@ -147,6 +153,8 @@ def node_to_dict(node):
         return {"_type": "complex", "real": node.real, "imag": node.imag}
     elif node is Ellipsis:  # Handle ellipsis
         return "..."
+    elif isinstance(node, str):
+        return sanityze(node)
     else:
         return node  # literals: str, int, None, etc.
 
@@ -201,6 +209,9 @@ let iter_files ~f filenames =
         | exception Py.E (error_type, error_value) ->
             L.internal_error "[semdiff] error while parsing file %s:\n  type:%s\n  value: %s\n"
               filename (Py.Object.to_string error_type) (Py.Object.to_string error_value) ;
+            errors
+        | exception Yojson.Json_error e ->
+            L.internal_error "[semdiff] Yojson internal error on file %s: %s\n" filename e ;
             errors )
   in
   if List.is_empty errors then Ok () else Error errors
