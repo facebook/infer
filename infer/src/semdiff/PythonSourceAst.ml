@@ -46,6 +46,21 @@ module Node = struct
     |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
 
 
+  let assoc_of_dict dict =
+    let typ =
+      match get_type dict with
+      | Str name ->
+          name
+      | _ ->
+          L.die InternalError "_typ should be a string"
+    in
+    let washed_assoc =
+      dict |> StringMap.remove type_field_name |> StringMap.remove field_lineno
+      |> StringMap.remove field_end_lineno |> StringMap.bindings
+    in
+    (typ, washed_assoc)
+
+
   let is_type fields type_name : bool =
     match get_type fields with Str name -> String.equal name type_name | _ -> false
 

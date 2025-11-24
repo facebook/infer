@@ -55,6 +55,8 @@ module Node : sig
 
   val find_field_or_null : string -> dict -> t
 
+  val assoc_of_dict : dict -> string * (string * t) list
+
   val to_str : ?indent:int -> t -> string
 end
 
