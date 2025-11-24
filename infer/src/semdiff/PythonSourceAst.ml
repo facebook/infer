@@ -88,6 +88,9 @@ module Node = struct
         Bool b
     | `Null ->
         Null
+    | `Intlit str ->
+        (* Large integers will just be handled as string. It will restrict our abilty to reason on them, except for exact matching *)
+        Str str
     | _ ->
         raise (UnsupportedJsonType j)
 
