@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type value = string
+type value = string option
 
 module Atom : sig
   type t = private {index: int; value: value}
@@ -24,7 +24,9 @@ type t
 
 val init : debug:bool -> t
 
-val mk_atom : t -> value -> Atom.t
+val mk_atom : t -> string -> Atom.t
+
+val mk_fresh_atom : t -> Atom.t
 
 val merge : t -> Atom.t -> term -> unit
 

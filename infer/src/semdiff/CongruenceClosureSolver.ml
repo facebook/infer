@@ -17,7 +17,7 @@ module F = Format
    with arbitrary headers and arity.
 *)
 
-type value = string
+type value = string option [@@deriving equal, hash]
 
 module Atom : sig
   type t = private {index: int; value: value}
@@ -28,7 +28,9 @@ module Atom : sig
 
   val init : unit -> state
 
-  val mk : state -> value -> t * bool
+  val mk : state -> string -> t * bool
+
+  val mk_fresh : state -> t
 
   val cardinal : state -> int
 
@@ -36,14 +38,20 @@ module Atom : sig
 end = struct
   type t = {index: int; value: value}
 
-  let pp fmt {index; value} = F.fprintf fmt "%s[%d]" value index
+  let pp fmt {index; value} =
+    match value with
+    | None ->
+        F.fprintf fmt "[%d]" index
+    | Some value ->
+        F.fprintf fmt "%s[%d]" value index
+
 
   module HashconsSet = Weak.Make (struct
     type nonrec t = t
 
-    let equal atom1 atom2 = String.equal atom1.value atom2.value
+    let equal atom1 atom2 = equal_value atom1.value atom2.value
 
-    let hash {value} = String.hash value
+    let hash {value} = hash_value value
   end)
 
   type state = {hashconsed: HashconsSet.t; mutable fresh: int}
@@ -54,22 +62,28 @@ end = struct
 
   let cardinal {fresh} = fresh
 
-  let mk h value =
-    let atom0 = {index= h.fresh; value} in
+  let mk h string =
+    let atom0 = {index= h.fresh; value= Some string} in
     let atom = HashconsSet.merge h.hashconsed atom0 in
     let is_new = phys_equal atom atom0 in
     if is_new then h.fresh <- h.fresh + 1 ;
     (atom, is_new)
+
+
+  let mk_fresh h =
+    let atom = {index= h.fresh; value= None} in
+    h.fresh <- h.fresh + 1 ;
+    atom
 end
 
 type atom_equation = {rhs: Atom.t; lhs: Atom.t}
 
-let pp_atom_equation fmt {rhs; lhs} = F.fprintf fmt "%s=%s" lhs.value rhs.value
+let pp_atom_equation fmt {rhs; lhs} = F.fprintf fmt "%a=%a" Atom.pp lhs Atom.pp rhs
 
 type app_equation = {rhs: Atom.t; left: Atom.t; right: Atom.t}
 
 let pp_app_equation fmt {rhs; left; right} =
-  F.fprintf fmt "f(%s,%s)=%s" left.value right.value rhs.value
+  F.fprintf fmt "f(%a,%a)=%a" Atom.pp left Atom.pp right Atom.pp rhs
 
 
 type pending_item = PendingAtom of atom_equation | PendingApp of app_equation * app_equation
@@ -138,15 +152,23 @@ let mk_atom state value =
   atom
 
 
+let mk_fresh_atom state =
+  let atom = Atom.mk_fresh state.hashcons in
+  Dynarray.add_last state.repr atom ;
+  Dynarray.add_last state.classes [atom] ;
+  Dynarray.add_last state.use [] ;
+  atom
+
+
 let get_use {use} {Atom.index} = Dynarray.get use index
 
-let flush_use {use; debug} {Atom.index; value} =
-  if debug then F.printf "use[%s] <- []\n" value ;
+let flush_use {use; debug} ({Atom.index} as atom) =
+  if debug then F.printf "use[%a] <- []\n" Atom.pp atom ;
   Dynarray.set use index []
 
 
-let set_use {use; debug} {Atom.index; value} l =
-  if debug then F.printf "use[%s] <- [%a]\n" value (Pp.semicolon_seq pp_app_equation) l ;
+let set_use {use; debug} ({Atom.index} as atom) l =
+  if debug then F.printf "use[%a] <- [%a]\n" Atom.pp atom (Pp.semicolon_seq pp_app_equation) l ;
   Dynarray.set use index l
 
 
@@ -155,7 +177,7 @@ let add_use state atom app_equation = set_use state atom (app_equation :: get_us
 let lookup state key = LookupTbl.find_opt state.lookup key
 
 let set_lookup {lookup; debug} ((a, b) as key) eq =
-  if debug then F.printf "Lookup(%s,%s) <- %a\n" a.Atom.value b.Atom.value pp_app_equation eq ;
+  if debug then F.printf "Lookup(%a,%a) <- %a\n" Atom.pp a Atom.pp b pp_app_equation eq ;
   LookupTbl.add lookup key eq
 
 
@@ -163,14 +185,14 @@ type term = App of Atom.t * Atom.t | Atom of Atom.t
 
 let pp_term fmt term =
   match term with
-  | Atom {value} ->
-      F.pp_print_string fmt value
+  | Atom a ->
+      Atom.pp fmt a
   | App (a, b) ->
-      F.fprintf fmt "f(%s,%s)" a.value b.value
+      F.fprintf fmt "f(%a,%a)" Atom.pp a Atom.pp b
 
 
 let rec merge state rhs term =
-  if state.debug then F.printf "MERGE %a=%s\n" pp_term term rhs.Atom.value ;
+  if state.debug then F.printf "MERGE %a=%a\n" pp_term term Atom.pp rhs ;
   match term with
   | Atom lhs ->
       state.pending <- PendingAtom {rhs; lhs} :: state.pending ;
@@ -206,7 +228,7 @@ and propagate state =
 
 
 and change_representative state old_repr new_repr =
-  if state.debug then F.printf "repr[%s] <- %s\n" old_repr.Atom.value new_repr.Atom.value ;
+  if state.debug then F.printf "repr[%a] <- %a\n" Atom.pp old_repr Atom.pp new_repr ;
   Dynarray.set state.repr old_repr.Atom.index new_repr ;
   (* TODO: update classes *)
   let use_new_repr =
@@ -216,7 +238,7 @@ and change_representative state old_repr new_repr =
            let c1' = representative state c1 in
            let c2' = representative state c2 in
            let key = (c1', c2') in
-           if state.debug then F.printf "Lookup(%s,%s) ?\n" c1'.value c2'.value ;
+           if state.debug then F.printf "Lookup(%a,%a) ?\n" Atom.pp c1' Atom.pp c2' ;
            match lookup state key with
            | Some app_eq_d ->
                state.pending <- PendingApp (app_eq_c, app_eq_d) :: state.pending ;
