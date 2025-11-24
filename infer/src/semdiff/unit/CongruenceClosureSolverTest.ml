@@ -17,11 +17,15 @@ let restart () = st := init ~debug:false
 
 let mk_atom value = mk_atom !st value
 
+let mk_term header args = mk_term !st ~header ~args
+
 let merge atom term = merge !st atom term
 
 let repr atom = representative !st atom
 
 let show_stats () = show_stats !st
+
+let pp_nested_term atom = pp_nested_term !st atom
 
 let%expect_test "" =
   restart () ;
@@ -42,6 +46,59 @@ let%expect_test "" =
   [%expect {|
     size=7
     max_depth=3
+    |}]
+
+
+let%expect_test "mk_term" =
+  restart () ;
+  let a = mk_atom "area" in
+  let b = mk_atom "band" in
+  let c = mk_atom "card" in
+  let d = mk_atom "door" in
+  let e = mk_atom "earn" in
+  let g = mk_atom "gold" in
+  let h = mk_atom "hand" in
+  let i = mk_atom "idea" in
+  let j = mk_atom "jump" in
+  let l1 = mk_term "list1" [a; b; c; d] in
+  let l2 = mk_term "list2" [e; l1; g; h] in
+  let l3 = mk_term "list3" [i; l2; j; l1] in
+  let l4 = mk_term "list4" [l3; l2; l1] in
+  let l5 = mk_term "list5" [l4; l3; l2; l1] in
+  pp_nested_term l1 ;
+  pp_nested_term l2 ;
+  pp_nested_term l3 ;
+  pp_nested_term l4 ;
+  pp_nested_term l5 ;
+  [%expect
+    {|
+    (list1 area band card door)
+    (list2 earn (list1 area band card door) gold hand)
+    (list3 idea (list2 earn (list1 area band card door) gold hand) jump (list1 area band card door))
+    (list4
+        (list3
+            idea
+            (list2 earn (list1 area band card door) gold hand)
+            jump
+            (list1 area band card door))
+        (list2 earn (list1 area band card door) gold hand)
+        (list1 area band card door))
+    (list5
+        (list4
+            (list3
+                idea
+                (list2 earn (list1 area band card door) gold hand)
+                jump
+                (list1 area band card door))
+            (list2 earn (list1 area band card door) gold hand)
+            (list1 area band card door))
+        (list3
+            idea
+            (list2 earn (list1 area band card door) gold hand)
+            jump
+            (list1 area band card door))
+        (list2 earn (list1 area band card door) gold hand)
+        (list1 area band card door))
     |}]
 
 

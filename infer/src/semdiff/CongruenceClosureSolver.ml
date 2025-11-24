@@ -39,11 +39,7 @@ end = struct
   type t = {index: int; value: value}
 
   let pp fmt {index; value} =
-    match value with
-    | None ->
-        F.fprintf fmt "[%d]" index
-    | Some value ->
-        F.fprintf fmt "%s[%d]" value index
+    match value with None -> F.fprintf fmt "%%%d" index | Some value -> F.fprintf fmt "%s" value
 
 
   module HashconsSet = Weak.Make (struct
@@ -119,6 +115,7 @@ type t =
   ; mutable pending: pending_item list
   ; use: app_equation list Dynarray.t
   ; lookup: app_equation LookupTbl.t
+  ; mk_app_history: (Atom.t * Atom.t) option Dynarray.t
   ; hashcons: Atom.state
   ; debug: bool }
 
@@ -128,6 +125,7 @@ let init ~debug =
   ; pending= []
   ; use= Dynarray.create ()
   ; lookup= LookupTbl.create 32
+  ; mk_app_history= Dynarray.create ()
   ; hashcons= Atom.init ()
   ; debug }
 
@@ -148,7 +146,8 @@ let mk_atom state value =
   if is_new then (
     Dynarray.add_last state.repr atom ;
     Dynarray.add_last state.classes [atom] ;
-    Dynarray.add_last state.use [] ) ;
+    Dynarray.add_last state.use [] ;
+    Dynarray.add_last state.mk_app_history None ) ;
   atom
 
 
@@ -157,6 +156,7 @@ let mk_fresh_atom state =
   Dynarray.add_last state.repr atom ;
   Dynarray.add_last state.classes [atom] ;
   Dynarray.add_last state.use [] ;
+  Dynarray.add_last state.mk_app_history None ;
   atom
 
 
@@ -170,6 +170,12 @@ let flush_use {use; debug} ({Atom.index} as atom) =
 let set_use {use; debug} ({Atom.index} as atom) l =
   if debug then F.printf "use[%a] <- [%a]\n" Atom.pp atom (Pp.semicolon_seq pp_app_equation) l ;
   Dynarray.set use index l
+
+
+let get_mk_app_history {mk_app_history} atom = Dynarray.get mk_app_history atom.Atom.index
+
+let set_mk_app_history {mk_app_history} atom pair =
+  Dynarray.set mk_app_history atom.Atom.index (Some pair)
 
 
 let add_use state atom app_equation = set_use state atom (app_equation :: get_use state atom)
@@ -252,7 +258,32 @@ and change_representative state old_repr new_repr =
   set_use state new_repr use_new_repr
 
 
+let mk_app state ~left ~right =
+  let term = App (left, right) in
+  let atom = mk_fresh_atom state in
+  merge state atom term ;
+  set_mk_app_history state atom (left, right) ;
+  atom
+
+
+let mk_term state ~header ~args =
+  let header_atom = mk_atom state header in
+  List.fold ~init:header_atom ~f:(fun left right -> mk_app state ~left ~right) args
+
+
 let show_stats state =
   let size = Atom.cardinal state.hashcons in
   let max_depth = Atom.fold state.hashcons ~init:0 ~f:(fun atom -> max (depth state atom)) in
   F.printf "size=%d\nmax_depth=%d\n" size max_depth
+
+
+let pp_nested_term state atom =
+  let rec pp ~internal fmt atom =
+    match get_mk_app_history state atom with
+    | Some (left, right) ->
+        if internal then F.fprintf fmt "%a@ %a" (pp ~internal:true) left (pp ~internal:false) right
+        else F.fprintf fmt "@[<hv4>(%a@ %a)@]" (pp ~internal:true) left (pp ~internal:false) right
+    | None ->
+        Atom.pp fmt atom
+  in
+  F.printf "%a@." (pp ~internal:false) atom

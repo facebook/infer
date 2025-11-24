@@ -11,7 +11,7 @@ module F = Format
 type value = string option
 
 module Atom : sig
-  type t = private {index: int; value: value}
+  type t
 
   val pp : F.formatter -> t -> unit
 end
@@ -22,11 +22,15 @@ val pp_term : F.formatter -> term -> unit
 
 type t
 
+val pp_nested_term : t -> Atom.t -> unit
+
 val init : debug:bool -> t
 
 val mk_atom : t -> string -> Atom.t
 
-val mk_fresh_atom : t -> Atom.t
+val mk_app : t -> left:Atom.t -> right:Atom.t -> Atom.t
+
+val mk_term : t -> header:string -> args:Atom.t list -> Atom.t
 
 val merge : t -> Atom.t -> term -> unit
 
