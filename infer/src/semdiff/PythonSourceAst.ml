@@ -191,35 +191,66 @@ let build_parser () =
       else raise exn
 
 
-let iter_files ~f filenames =
+let run ~f filename =
   let parse = build_parser () in
-  let errors =
-    List.fold filenames ~init:[] ~f:(fun errors filename ->
-        let source = In_channel.with_file filename ~f:In_channel.input_all in
-        match parse ~filename source with
-        | Ok node ->
-            f node ;
-            errors
-        | Error error ->
-            error :: errors
-        | exception Node.UnsupportedJsonType j ->
-            L.internal_error "[semdiff] unsupported JSON type in file %s: %a\n" filename
-              Yojson.Safe.pp j ;
-            errors
-        | exception Py.E (error_type, error_value) ->
-            L.internal_error "[semdiff] error while parsing file %s:\n  type:%s\n  value: %s\n"
-              filename (Py.Object.to_string error_type) (Py.Object.to_string error_value) ;
-            errors
-        | exception Yojson.Json_error e ->
-            L.internal_error "[semdiff] Yojson internal error on file %s: %s\n" filename e ;
-            errors )
+  let source = In_channel.with_file filename ~f:In_channel.input_all in
+  match parse ~filename source with
+  | Ok node ->
+      f node ;
+      None
+  | Error error ->
+      Some error
+  | exception Node.UnsupportedJsonType j ->
+      L.internal_error "[semdiff] unsupported JSON type in file %s: %a\n" filename Yojson.Safe.pp j ;
+      None
+  | exception Py.E (error_type, error_value) ->
+      L.internal_error "[semdiff] error while parsing file %s:\n  type:%s\n  value: %s\n" filename
+        (Py.Object.to_string error_type) (Py.Object.to_string error_value) ;
+      None
+  | exception Yojson.Json_error e ->
+      L.internal_error "[semdiff] Yojson internal error on file %s: %s\n" filename e ;
+      None
+
+
+let multi_process_iter ~f filenames =
+  let n_files = List.length filenames in
+  let child_action, child_prologue, child_epilogue =
+    let child_action filename =
+      let t0 = Mtime_clock.now () in
+      !WorkerPoolState.update_status (Some t0) filename ;
+      run ~f filename
+    in
+    let child_prologue _ = () in
+    let child_epilogue _ = Py.finalize () in
+    (child_action, child_prologue, child_epilogue)
   in
-  if List.is_empty errors then Ok () else Error errors
+  L.progress "Testing source parsing on %d files@\n" n_files ;
+  let n_success = ref 0 in
+  let errors = ref [] in
+  let tasks () =
+    TaskGenerator.of_list filenames ~finish:(fun result _ ->
+        match result with
+        | Some error ->
+            errors := error :: !errors ;
+            None
+        | None ->
+            incr n_success ;
+            None )
+  in
+  let jobs = min n_files Config.jobs in
+  let runner =
+    ProcessPool.create ~with_primary_db:false ~jobs ~child_prologue ~f:child_action ~child_epilogue
+      ~tasks ()
+  in
+  let _ = ProcessPool.run runner in
+  L.progress "Success: %d files@\n" !n_success ;
+  L.progress "Syntax errors: %d files@\n" (List.length !errors) ;
+  if List.is_empty !errors then Ok () else Error !errors
 
 
 let iter_from_index ~f ~index_filename =
   match Utils.read_file index_filename with
   | Ok lines ->
-      iter_files ~f lines
+      multi_process_iter ~f lines
   | Error error ->
       L.die UserError "Error reading the semdiff input files index '%s': %s@." index_filename error
