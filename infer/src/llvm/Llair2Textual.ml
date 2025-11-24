@@ -496,7 +496,7 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
         let id = Var.reg_to_id ~proc_state reg |> fst in
         id )
   in
-  let functions_to_skip = ["swift_retain"; "swift_unknownObjectRetain"; "swift_weakLoadStrong"] in
+  let functions_to_skip = ["swift_unknownObjectRetain"; "swift_weakLoadStrong"] in
   let call_exp =
     if
       (* skip calls to the elements in functions_to_skip  and returns its first argument instead. *)

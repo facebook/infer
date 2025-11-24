@@ -16,59 +16,48 @@ define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5H
       n2 = load &var1 @[163:0]
       n1 = n2.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 @[163:0]
       n3 = load n1 @[165:0]
-      n5 = n3 @[167:0]
-      jmp 5::ret @[168:0]
-      
-  #5::ret: @[170:0]
-      ret n3 @[170:0]
+      n4 = $builtins.llvm_nondet() @[166:0]
+      ret n3 @[168:0]
       
 } @?
 
 define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvs(var1: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>, var2: *__infer_swift_type<T5Hello10CustomViewC,CustomView>) : void {
   local var4: int[]
-  #: @[172:0]
-      n1 = load &var1 @[172:0]
-      n2 = n1 @[172:0]
-      jmp 4::ret @[173:0]
-      
-  #4::ret: @[174:0]
-      n4 = load &var2 @[174:0]
-      n3 = n4.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 @[174:0]
-      n5 = load n3 @[176:0]
-      n6 = load &var1 @[177:0]
-      store n3 <- n6 @[177:0]
-      ret null @[181:0]
+  #: @[169:0]
+      n1 = $builtins.llvm_nondet() @[169:0]
+      n3 = load &var2 @[170:0]
+      n2 = n3.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 @[170:0]
+      n4 = load n2 @[172:0]
+      n5 = load &var1 @[173:0]
+      store n2 <- n5 @[173:0]
+      ret null @[177:0]
       
 } @?
 
 define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(var1: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>, var2: *__infer_swift_type<,$s5Hello10CustomViewCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[183:0]
-      n1 = load &var2 @[183:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC,CustomView>>) @[183:0]
-      jmp 3::ret @[184:0]
+  #: @[179:0]
+      n1 = load &var2 @[179:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC,CustomView>>) @[179:0]
+      jmp 3::ret @[180:0]
       
-  #3::ret: @[186:0]
-      n5 = load &var1 @[186:0]
-      n7 = $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(n5, n4) @[186:0]
-      jmp 4::ret @[187:0]
+  #3::ret: @[182:0]
+      n5 = load &var1 @[182:0]
+      n7 = $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(n5, n4) @[182:0]
+      jmp 4::ret @[183:0]
       
-  #4::ret: @[188:0]
-      ret n7 @[188:0]
+  #4::ret: @[184:0]
+      ret n7 @[184:0]
       
 } @?
 
 define .plain_name = "init" $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(delegate: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>, self: *__infer_swift_type<T5Hello10CustomViewC,CustomView>) : *__infer_swift_type<ptr_elt> {
   #: @[13:25]
-      n1 = load &delegate @[13:25]
-      n2 = n1 @[13:25]
-      jmp 5::ret @[13:25]
-      
-  #5::ret: @[13:23]
-      n4 = load &self @[13:23]
-      n3 = load &delegate @[13:23]
-      store n4.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 <- n3 @[13:23]
-      n5 = load &self @[14:5]
-      ret n5 @[14:5]
+      n1 = $builtins.llvm_nondet() @[13:25]
+      n3 = load &self @[13:23]
+      n2 = load &delegate @[13:23]
+      store n3.__infer_swift_type<T5Hello10CustomViewC,CustomView>.field_1 <- n2 @[13:23]
+      n4 = load &self @[14:5]
+      ret n4 @[14:5]
       
 } @?
 
@@ -86,15 +75,12 @@ declare .plain_name = "view.modify" $s5Hello14ViewControllerC4viewAA06CustomB0CS
 
 define .plain_name = "view.get" .method_offset = "11" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvg(var1: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : int {
   local var3: int[]
-  #: @[203:0]
-      n2 = load &var1 @[203:0]
-      n1 = n2.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[203:0]
-      n3 = load n1 @[205:0]
-      n6 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[207:0]
-      jmp 6::ret @[208:0]
-      
-  #6::ret: @[210:0]
-      ret n3 @[210:0]
+  #: @[199:0]
+      n2 = load &var1 @[199:0]
+      n1 = n2.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[199:0]
+      n3 = load n1 @[201:0]
+      n4 = $builtins.llvm_nondet() @[202:0]
+      ret n3 @[204:0]
       
 } @?
 
@@ -102,61 +88,53 @@ declare $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpfi() : *__infer_swift_typ
 
 define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: *__infer_swift_type<,$s5Hello10CustomViewCSgD>, var2: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : void {
   local var4: int[]
-  #: @[212:0]
-      n1 = load &var1 @[212:0]
-      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[212:0]
-      jmp 5::ret @[213:0]
-      
-  #5::ret: @[214:0]
-      n5 = load &var2 @[214:0]
-      n4 = n5.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[214:0]
-      n6 = load n4 @[216:0]
-      n7 = load &var1 @[217:0]
-      store n4 <- n7 @[217:0]
-      ret null @[221:0]
+  #: @[205:0]
+      n1 = $builtins.llvm_nondet() @[205:0]
+      n3 = load &var2 @[206:0]
+      n2 = n3.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[206:0]
+      n4 = load n2 @[208:0]
+      n5 = load &var1 @[209:0]
+      store n2 <- n5 @[209:0]
+      ret null @[213:0]
       
 } @?
 
 define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerCACycfC(var1: *__infer_swift_type<,$s5Hello14ViewControllerCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[223:0]
-      n1 = load &var1 @[223:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC,ViewController>>) @[223:0]
-      jmp 2::ret @[224:0]
+  #: @[215:0]
+      n1 = load &var1 @[215:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC,ViewController>>) @[215:0]
+      jmp 2::ret @[216:0]
       
-  #2::ret: @[226:0]
-      n6 = $s5Hello14ViewControllerCACycfc(n4) @[226:0]
-      jmp 3::ret @[227:0]
+  #2::ret: @[218:0]
+      n6 = $s5Hello14ViewControllerCACycfc(n4) @[218:0]
+      jmp 3::ret @[219:0]
       
-  #3::ret: @[228:0]
-      ret n6 @[228:0]
+  #3::ret: @[220:0]
+      ret n6 @[220:0]
       
 } @?
 
 define .plain_name = "init" $s5Hello14ViewControllerCACycfc(self: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : *__infer_swift_type<ptr_elt> {
   local var4: int[]
-  #: @[230:0]
-      n1 = load &self @[230:0]
+  #: @[222:0]
+      n1 = load &self @[222:0]
       n3 = $s5Hello10CustomViewCMa(0) @[5:21]
       jmp 5::ret @[5:21]
       
   #5::ret: @[5:42]
-      n4 = load &self @[5:42]
-      n5 = n4 @[5:42]
-      jmp 7::ret @[5:42]
-      
-  #7::ret: @[5:21]
-      n6 = load &self @[5:21]
-      n8 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:21]
-      n9 = __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(n6, n8) @[5:21]
+      n4 = $builtins.llvm_nondet() @[5:42]
+      n5 = load &self @[5:21]
+      n7 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:21]
+      n8 = __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(n5, n7) @[5:21]
       jmp 8::ret @[5:21]
       
   #8::ret: @[5:19]
-      n11 = load &self @[5:19]
-      n10 = n11.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[5:19]
-      n12 = load n10 @[5:19]
-      store n10 <- __sil_cast(<int>, n9) @[5:19]
-      n14 = load &self @[6:5]
-      ret n14 @[6:5]
+      n10 = load &self @[5:19]
+      n9 = n10.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.field_1 @[5:19]
+      n11 = load n9 @[5:19]
+      store n9 <- __sil_cast(<int>, n8) @[5:19]
+      n13 = load &self @[6:5]
+      ret n13 @[6:5]
       
 } @?
 

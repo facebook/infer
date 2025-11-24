@@ -1413,7 +1413,8 @@ let xlate_instr :
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
       let swift_methods_to_skip =
-        [ "swift_release"
+        [ "swift_retain"
+        ; "swift_release"
         ; "swift_unknownObjectRelease"
         ; "swift_beginAccess"
         ; "swift_endAccess"
