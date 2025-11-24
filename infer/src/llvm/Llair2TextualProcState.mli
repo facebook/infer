@@ -67,7 +67,8 @@ val update_id_offset : proc_state:t -> IdentMap.key -> Textual.Exp.t -> unit
 
 val update_var_offset : proc_state:t -> VarMap.key -> int -> unit
 
-val subst_formal_local : proc_state:t -> formal:VarMap.key -> local:VarMap.key -> unit
+val subst_formal_local :
+  proc_state:t -> formal:VarMap.key -> local:VarMap.key * Textual.Typ.annotated -> unit
 
 val reset_offsets : proc_state:t -> unit
 

@@ -639,7 +639,7 @@ let translate_move ~move_phi ~proc_state loc textual_instrs reg_exps =
   List.append instrs textual_instrs
 
 
-let is_store_formal_to_local ~proc_state exp1 exp2 =
+let is_store_formal_to_local ~(proc_state : ProcState.t) exp1 exp2 =
   match (exp1, exp2) with
   | Llair.Exp.Reg {name= name1; id= id1; typ= typ1}, Llair.Exp.Reg {name= name2; id= id2; typ= typ2}
     ->
@@ -651,7 +651,10 @@ let is_store_formal_to_local ~proc_state exp1 exp2 =
         Textual.VarName.Map.mem name2 proc_state.ProcState.formals
         && Textual.VarName.Map.mem name1 proc_state.ProcState.locals
       then (
-        ProcState.subst_formal_local ~proc_state ~formal:name2 ~local:name1 ;
+        let typ1 =
+          Type.to_annotated_textual_typ proc_state.lang ~struct_map:proc_state.struct_map typ1
+        in
+        ProcState.subst_formal_local ~proc_state ~formal:name2 ~local:(name1, typ1) ;
         true )
       else false
   | _ ->
@@ -1115,10 +1118,10 @@ let function_to_proc_decl lang ~struct_map (func_name, func) =
 let update_formals_list formals_list formals_map =
   let update_formal varname =
     match Textual.VarName.Map.find_opt varname formals_map with
-    | Some (_, Some local) ->
-        local
+    | Some (typ, Some local) ->
+        (Some typ, local)
     | Some (_, None) | None ->
-        varname
+        (None, varname)
   in
   List.map ~f:update_formal formals_list
 
@@ -1172,7 +1175,16 @@ let translate_code proc_decls lang source_file struct_map globals class_name_off
     | None ->
         procdecl.result_type
   in
-  let procdecl = {procdecl with result_type} in
+  let params_types = update_formals_list formals_list proc_state.formals in
+  let formals_types =
+    let update_formals_types params formal_types =
+      List.map2_exn params formal_types ~f:(fun (typ_opt, _) signature_type ->
+          match typ_opt with Some formal_typ -> formal_typ | None -> signature_type )
+    in
+    Option.map procdecl.formals_types ~f:(fun formals_types ->
+        update_formals_types params_types formals_types )
+  in
+  let procdecl = {procdecl with result_type; formals_types} in
   let is_deinit () = Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit") in
   if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
   then ProcDecl procdecl :: proc_descs
@@ -1180,7 +1192,7 @@ let translate_code proc_decls lang source_file struct_map globals class_name_off
     let locals = ProcState.compute_locals ~proc_state in
     ProcDesc
       Textual.ProcDesc.
-        { params= update_formals_list formals_list proc_state.formals
+        { params= List.map ~f:(fun (_, param) -> param) params_types
         ; locals
         ; procdecl
         ; start= block_to_node_name func.Llair.entry

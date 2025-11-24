@@ -22,7 +22,7 @@ define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello10In
       
 } @?
 
-define .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfc(age: int, self: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfc(age: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<ptr_elt> {
   #: @[232:0]
       n1 = $builtins.llvm_nondet() @[232:0]
       n3 = load &self @[99:18]
@@ -127,7 +127,7 @@ define .plain_name = "createPerson" $s5Hello12createPersonAA0C0CyF() : *__infer_
       
 } @?
 
-define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(age: int, var2: int) : int {
+define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(age: *__infer_swift_type<ptr_elt>, var2: int) : int {
   local actualAge: int
   #: @[271:0]
       n2 = load &age @[271:0]
@@ -186,7 +186,7 @@ define .plain_name = "create_employee" $s5Hello15create_employeeSiyF() : int {
       
 } @?
 
-define .plain_name = "setEmployeeWeight" $s5Hello17setEmployeeWeightyS2iF(weight: int) : int {
+define .plain_name = "setEmployeeWeight" $s5Hello17setEmployeeWeightyS2iF(weight: *__infer_swift_type<ptr_elt>) : int {
   local john: *__infer_swift_type<T5Hello8EmployeeV,Employee>
   #: @[55:16]
       n3 = $s5Hello8EmployeeV3age6weightACSi_SitcfC(30, 60) @[55:16]
@@ -579,7 +579,7 @@ define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello6Per
       
 } @?
 
-define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(age: int, self: *__infer_swift_type<T5Hello6PersonC,Person>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(age: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello6PersonC,Person>) : *__infer_swift_type<ptr_elt> {
   #: @[72:18]
       n2 = load &self @[72:18]
       n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.field_1 @[72:18]
@@ -661,7 +661,7 @@ define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello7Stu
       
 } @?
 
-define .plain_name = "init" $s5Hello7StudentC3age6weightACSi_Sitcfc(age: int, weight: int, self: *__infer_swift_type<T5Hello7StudentC,Student>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" $s5Hello7StudentC3age6weightACSi_Sitcfc(age: *__infer_swift_type<ptr_elt>, weight: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello7StudentC,Student>) : *__infer_swift_type<ptr_elt> {
   #: @[5:18]
       n2 = load &self @[5:18]
       n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.field_1 @[5:18]
@@ -718,7 +718,7 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7
 
 declare .plain_name = "deinit" $s5Hello7StudentCfd(*__infer_swift_type<T5Hello7StudentC,Student>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "init" $s5Hello8EmployeeV3age6weightACSi_SitcfC(age: int, weight: int) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
+define .plain_name = "init" $s5Hello8EmployeeV3age6weightACSi_SitcfC(age: *__infer_swift_type<ptr_elt>, weight: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
   local self: *__infer_swift_type<T5Hello8EmployeeV,Employee>
   #: @[36:18]
       n2 = load &self @[36:18]
@@ -765,7 +765,7 @@ define .plain_name = "weight.get" $s5Hello8EmployeeV6weightSivg(var1: int, var2:
       
 } @?
 
-define .plain_name = "weight.set" $s5Hello8EmployeeV6weightSivs(newValue: int, self: *__infer_swift_type<T5Hello8EmployeeV,Employee>) : void {
+define .plain_name = "weight.set" $s5Hello8EmployeeV6weightSivs(newValue: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello8EmployeeV,Employee>) : void {
   #: @[33:23]
       n2 = load &self @[33:23]
       n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[33:23]
@@ -798,7 +798,7 @@ declare $s5Hello8EmployeeVwet(*__infer_swift_type<ptr_elt>, int, *__infer_swift_
 
 declare $s5Hello8EmployeeVwst(*__infer_swift_type<ptr_elt>, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "setWeight" $s5Hello9setWeightyySiF(weight: int) : void {
+define .plain_name = "setWeight" $s5Hello9setWeightyySiF(weight: *__infer_swift_type<ptr_elt>) : void {
   local john: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[24:16]
       n2 = $s5Hello7StudentCMa(0) @[24:16]

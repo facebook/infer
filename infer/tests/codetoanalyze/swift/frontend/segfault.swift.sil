@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_segfault1a1bSDyS2SGSi_SitF(a: int, b: int) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_segfault1a1bSDyS2SGSi_SitF(a: *__infer_swift_type<ptr_elt>, b: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   local var7: *__infer_swift_type<TSi>, var6: *__infer_swift_type<TSi>
   #: @[2:12]
       n1 = load &$sSS_SStMD @[2:12]

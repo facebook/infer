@@ -6,7 +6,7 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: int, height: int) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
   #: @[107:0]
       n1 = $builtins.llvm_init_tuple() @[107:0]
       n2 = load &age @[19:5]
@@ -17,7 +17,7 @@ define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtS
       
 } @?
 
-define .plain_name = "test1" $s5Hello5test1yS2iF(n: int) : int {
+define .plain_name = "test1" $s5Hello5test1yS2iF(n: *__infer_swift_type<ptr_elt>) : int {
   #: @?
       n1 = load &n @[7:5]
       ret n1 @[7:5]
@@ -34,7 +34,7 @@ define .plain_name = "test2" $s5Hello5test2SiyF() : int {
       
 } @?
 
-define .plain_name = "test3" $s5Hello5test3yS2iF(n: int) : int {
+define .plain_name = "test3" $s5Hello5test3yS2iF(n: *__infer_swift_type<ptr_elt>) : int {
   #: @[15:12]
       n1 = load &n @[15:12]
       n2 = $s5Hello5test1yS2iF(n1) @[15:12]

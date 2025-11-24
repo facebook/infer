@@ -147,7 +147,18 @@ let subst_formal_local ~proc_state ~formal ~local =
   let formal_binding = VarMap.find_opt formal proc_state.formals in
   match formal_binding with
   | Some (formal_typ, _) ->
-      proc_state.formals <- VarMap.add formal (formal_typ, Some local) proc_state.formals
+      let local, local_typ = local in
+      let new_typ =
+        match (local_typ.Textual.Typ.typ, formal_typ.Textual.Typ.typ) with
+        | Textual.Typ.Ptr (Struct _), Int | Textual.Typ.Int, Textual.Typ.Ptr (Struct _) ->
+            (* This is to avoid a type error when the signature type was int, because internally
+           int is a pointer to a struct. Now, we use the local type for the formal in case of
+           such a contradiction. *)
+            local_typ
+        | _ ->
+            formal_typ
+      in
+      proc_state.formals <- VarMap.add formal (new_typ, Some local) proc_state.formals
   | _ ->
       ()
 
