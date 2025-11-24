@@ -143,6 +143,8 @@ def node_to_dict(node):
         return [node_to_dict(x) for x in node]
     elif isinstance(node, bytes):
         return "<unserializable bytes>"
+    elif isinstance(node, complex):
+        return {"_type": "complex", "real": node.real, "imag": node.imag}
     elif node is Ellipsis:  # Handle ellipsis
         return "..."
     else:
