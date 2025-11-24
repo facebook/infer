@@ -58,10 +58,19 @@ module Error = struct
       sourcefile
 end
 
-let dump_textual_file source_file module_ =
-  let suffix = if Config.frontend_tests then ".test.sil" else ".sil" in
-  let filename = source_file ^ suffix in
-  TextualSil.dump_module ~filename module_
+let dump_textual_file =
+  let version = ref 0 in
+  fun source_file module_ ->
+    let suffix = if Config.frontend_tests then "test.sil" else "sil" in
+    let filename =
+      match !version with
+      | 0 ->
+          Format.asprintf "%s.%s" source_file suffix
+      | _ ->
+          Format.asprintf "%s.v%d.%s" source_file !version suffix
+    in
+    TextualSil.dump_module ~filename ~show_location:true module_ ;
+    incr version
 
 
 let should_dump_textual () = Config.debug_mode || Config.dump_textual || Config.frontend_tests
@@ -80,7 +89,7 @@ let capture_llair source_file llair_program =
   let result =
     let error_state = Error.no_errors in
     let textual = to_module source_file llair_program lang in
-    if should_dump_textual () then dump_textual_file ~show_location:true source_file textual ;
+    if should_dump_textual () then dump_textual_file source_file textual ;
     let textual_source_file = Textual.SourceFile.create source_file in
     let* verified_textual, error_state =
       let f = Error.add_verification_errors error_state textual_source_file in
@@ -90,7 +99,7 @@ let capture_llair source_file llair_program =
       | Error errors ->
           Error (f errors)
     in
-    (* if Config.debug_mode then dump_textual_file ~version:0 file textual ; *)
+    if Config.debug_mode then dump_textual_file source_file textual ;
     let transformed_textual, decls = TextualTransform.run lang verified_textual in
     let* (cfg, tenv), error_state =
       let f = Error.add_transformation_errors error_state textual_source_file in
@@ -100,6 +109,7 @@ let capture_llair source_file llair_program =
       | Error errors ->
           Error (f errors)
     in
+    if Config.debug_mode then dump_textual_file source_file textual ;
     let sil = {TextualParser.TextualFile.sourcefile= textual_source_file; cfg; tenv} in
     let use_global_tenv = if Textual.Lang.is_swift lang then true else false in
     TextualParser.TextualFile.capture ~use_global_tenv sil ;
