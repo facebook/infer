@@ -293,14 +293,20 @@ let rec signature_type_to_textual_typ lang signature_type =
   else if String.equal signature_type "Int" then Some Textual.Typ.Int
   else if String.equal signature_type "<unknown>" then None
   else if String.equal signature_type "$sytD" then Some Textual.Typ.Void
-  else (
-    Hash_set.add signature_structs signature_type ;
+  else
     let struct_name =
-      if Textual.Lang.is_swift lang then to_textual_type_name lang ~plain_name:signature_type ""
+      if Textual.Lang.is_swift lang then (* optional type *)
+        if String.is_suffix signature_type ~suffix:"SgD" then
+          let type_name = String.chop_suffix_if_exists signature_type ~suffix:"SgD" in
+          let type_name = String.substr_replace_first type_name ~pattern:"$s" ~with_:"T" in
+          to_textual_type_name lang type_name
+        else (
+          Hash_set.add signature_structs signature_type ;
+          to_textual_type_name lang ~plain_name:signature_type "" )
       else to_textual_type_name lang signature_type
     in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)
-    else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name)) )
+    else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
 
 
 let update_struct_name struct_name =
@@ -321,7 +327,7 @@ let update_struct_name struct_name =
       struct_name
 
 
-let update_signature_type struct_map type_name =
+let update_signature_type lang struct_map type_name =
   match plain_name_of_type_name type_name with
   | Some plain_name -> (
     match struct_name_of_plain_name struct_map plain_name with
@@ -333,8 +339,17 @@ let update_signature_type struct_map type_name =
           type_name )
     | None ->
         type_name )
-  | None ->
-      type_name
+  | None -> (
+    match mangled_name_of_type_name type_name with
+    | Some mangled_name -> (
+        let struct_name = struct_name_of_mangled_name lang struct_map mangled_name in
+        match plain_name_of_type_name struct_name with
+        | Some plain_name ->
+            update_type_name_with_plain_name ~plain_name struct_name
+        | None ->
+            type_name )
+    | None ->
+        type_name )
 
 
 let rec update_type ~update_struct_name typ =

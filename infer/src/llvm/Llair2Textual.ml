@@ -143,11 +143,11 @@ let to_formal_types lang ~struct_map func =
       formals_
 
 
-let update_signature_types ~struct_map formal_types return_type =
+let update_signature_types lang ~struct_map formal_types return_type =
   let update_signature_type typ =
     let typ =
       Type.update_type
-        ~update_struct_name:(Type.update_signature_type struct_map)
+        ~update_struct_name:(Type.update_signature_type lang struct_map)
         typ.Textual.Typ.typ
     in
     Textual.Typ.mk_without_attributes typ
@@ -1206,7 +1206,7 @@ let update_function_signatures lang ~struct_map functions =
     in
     let formals_types, result_type =
       if Textual.Lang.is_swift lang then
-        update_signature_types ~struct_map procdecl.formals_types procdecl.result_type
+        update_signature_types lang ~struct_map procdecl.formals_types procdecl.result_type
       else (procdecl.formals_types, procdecl.result_type)
     in
     let procdecl =

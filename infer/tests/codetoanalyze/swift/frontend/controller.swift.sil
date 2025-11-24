@@ -84,9 +84,9 @@ define .plain_name = "view.get" .method_offset = "11" __infer_swift_type<T5Hello
       
 } @?
 
-declare $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpfi() : *__infer_swift_type<,$s5Hello10CustomViewCSgD>
+declare $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpfi() : *__infer_swift_type<T5Hello10CustomViewC,CustomView>
 
-define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: *__infer_swift_type<,$s5Hello10CustomViewCSgD>, var2: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : void {
+define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: *__infer_swift_type<T5Hello10CustomViewC,CustomView>, var2: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : void {
   local var4: int[]
   #: @[205:0]
       n1 = $builtins.llvm_nondet() @[205:0]

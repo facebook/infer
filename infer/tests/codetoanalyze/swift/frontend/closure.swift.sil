@@ -172,7 +172,7 @@ define .plain_name = "closure.get" .method_offset = "15" __infer_swift_type<T5He
       
 } @?
 
-declare $s5Hello18RetainCycleExampleC7closureyycSgvpfi() : *__infer_swift_type<,$sIeg_SgD>
+declare $s5Hello18RetainCycleExampleC7closureyycSgvpfi() : *__infer_swift_type<TIeg_>
 
 define .plain_name = "closure.set" .method_offset = "16" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
   local var5: int[]

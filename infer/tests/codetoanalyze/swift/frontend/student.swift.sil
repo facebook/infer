@@ -47,7 +47,7 @@ declare .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T
 
 declare .plain_name = "spouse.modify" $s5Hello10IndividualC6spouseACSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvg(var1: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<,$s5Hello10IndividualCSgD> {
+define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvg(var1: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<T5Hello10IndividualC,Individual> {
   local var3: int[]
   #: @[235:0]
       n2 = load &var1 @[235:0]
@@ -61,9 +61,9 @@ define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hel
       
 } @?
 
-declare $s5Hello10IndividualC6spouseACSgvpfi() : *__infer_swift_type<,$s5Hello10IndividualCSgD>
+declare $s5Hello10IndividualC6spouseACSgvpfi() : *__infer_swift_type<T5Hello10IndividualC,Individual>
 
-define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: *__infer_swift_type<,$s5Hello10IndividualCSgD>, var2: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
+define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: *__infer_swift_type<T5Hello10IndividualC,Individual>, var2: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
   local var4: int[]
   #: @[242:0]
       n1 = $builtins.llvm_nondet() @[242:0]
@@ -244,7 +244,7 @@ define .plain_name = "test_optional_bad" $s5Hello17test_optional_badyyF() : void
       
 } @?
 
-define .plain_name = "test_optional_person" $s5Hello20test_optional_personySiAA6PersonCSgF(person: *__infer_swift_type<,$s5Hello6PersonCSgD>) : int {
+define .plain_name = "test_optional_person" $s5Hello20test_optional_personySiAA6PersonCSgF(person: *__infer_swift_type<T5Hello6PersonC,Person>) : int {
   local actualPerson: *__infer_swift_type<ptr_elt>
   #: @[132:27]
       n1 = $builtins.llvm_nondet() @[132:27]
