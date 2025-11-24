@@ -70,6 +70,8 @@ module Node = struct
     Option.value (StringMap.find_opt field_name fields) ~default:Null
 
 
+  exception UnsupportedJsonType of Yojson.Safe.t
+
   let rec of_yojson (j : Yojson.Safe.t) : t =
     match j with
     | `Assoc fields ->
@@ -87,7 +89,7 @@ module Node = struct
     | `Null ->
         Null
     | _ ->
-        L.die InternalError "unsupported JSON type"
+        raise (UnsupportedJsonType j)
 
 
   let rec to_str ?(indent = 0) (node : t) : string =
@@ -187,9 +189,13 @@ let iter_files ~f filenames =
             errors
         | Error error ->
             error :: errors
+        | exception Node.UnsupportedJsonType j ->
+            L.internal_error "[semdiff] unsupported JSON type in file %s: %a\n" filename
+              Yojson.Safe.pp j ;
+            errors
         | exception Py.E (error_type, error_value) ->
-            L.internal_error "Error while parsing file %s:\n  type:%s\n  value: %s\n" filename
-              (Py.Object.to_string error_type) (Py.Object.to_string error_value) ;
+            L.internal_error "[semdiff] error while parsing file %s:\n  type:%s\n  value: %s\n"
+              filename (Py.Object.to_string error_type) (Py.Object.to_string error_value) ;
             errors )
   in
   if List.is_empty errors then Ok () else Error errors
