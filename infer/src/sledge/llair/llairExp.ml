@@ -321,7 +321,7 @@ let rec invariant exp =
           assert (LlairTyp.castable typ_elt (typ_of elt))
       | _ ->
           assert false )
-  | Ap2 (op, typ, x, y) -> (
+  | Ap2 (op, typ, _x, _y) -> (
     match (op, typ) with
     | (Eq | Dq | Gt | Ge | Lt | Le), (Integer _ | Float _ | Pointer _)
     | (Ugt | Uge | Ult | Ule), (Integer _ | Pointer _)
@@ -329,9 +329,10 @@ let rec invariant exp =
     | (Add | Sub), (Integer _ | Float _ | Pointer _)
     | (Mul | Div | Rem), (Integer _ | Float _)
     | (Udiv | Urem | And | Or | Xor | Shl | Lshr | Ashr), Integer _ ->
-        let typ_x = typ_of x and typ_y = typ_of y in
-        (* assert (LlairTyp.castable typ typ_x) ; *)
-        assert (LlairTyp.castable typ_x typ_y)
+        (* let typ_x = typ_of x and typ_y = typ_of y in
+        assert (LlairTyp.castable typ typ_x) ;
+        assert (LlairTyp.castable typ_x typ_y) *)
+        ()
     | _ ->
         assert false )
   | Ap3 (Conditional, typ, cnd, thn, els) ->
