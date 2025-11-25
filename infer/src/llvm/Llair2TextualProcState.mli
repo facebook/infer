@@ -17,7 +17,7 @@ type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
 type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
-type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
+type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
 
 val class_method_index : classMethodIndex
 

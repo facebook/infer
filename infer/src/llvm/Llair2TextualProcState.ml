@@ -17,9 +17,9 @@ type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
 type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
-type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Map.t ref
+type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
 
-let class_method_index : classMethodIndex = ref Textual.TypeName.Map.empty
+let class_method_index : classMethodIndex = Textual.TypeName.Hashtbl.create 16
 
 type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
 
@@ -229,5 +229,5 @@ let fill_class_name_offset_map () =
     ClassNameOffsetMap.replace class_name_offset_map key proc
   in
   let process_class class_name procs = List.iter procs ~f:(process_map class_name) in
-  Textual.TypeName.Map.iter process_class !class_method_index ;
+  Textual.TypeName.Hashtbl.iter process_class class_method_index ;
   class_name_offset_map
