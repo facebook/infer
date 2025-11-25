@@ -26,10 +26,10 @@ type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
 val method_class_index : methodClassIndex
 
 module ClassNameOffset : sig
-  type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare]
+  type t = {class_name: Textual.TypeName.t; offset: int}
 end
 
-module ClassNameOffsetMap : Stdlib.Map.S with type key = ClassNameOffset.t
+module ClassNameOffsetMap : Stdlib.Hashtbl.S with type key = ClassNameOffset.t
 
 type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
@@ -84,7 +84,6 @@ val pp_struct_map : F.formatter -> Textual.Struct.t Textual.TypeName.Map.t -> un
 val find_method_with_offset :
   proc_state:t -> Textual.TypeName.t -> int -> Textual.QualifiedProcName.t option
 
-val fill_class_name_offset_map :
-  classMethodIndex -> Textual.QualifiedProcName.t ClassNameOffsetMap.t
+val fill_class_name_offset_map : unit -> classNameOffsetMap
 
 val compute_locals : proc_state:t -> (VarMap.key * Textual.Typ.annotated) list

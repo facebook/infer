@@ -26,10 +26,10 @@ type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
 let method_class_index : methodClassIndex = ref Textual.ProcName.Map.empty
 
 module ClassNameOffset = struct
-  type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare]
+  type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare, hash, equal]
 end
 
-module ClassNameOffsetMap = Stdlib.Map.Make (ClassNameOffset)
+module ClassNameOffsetMap = Stdlib.Hashtbl.Make (ClassNameOffset)
 
 type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
@@ -49,7 +49,7 @@ type t =
   ; globals: globalMap
   ; lang: Textual.Lang.t
   ; proc_map: procMap
-  ; class_name_offset_map: classNameOffsetMap }
+  ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
 
 let get_element_ptr_offset_prefix = "getelementptr_offset"
 
@@ -214,20 +214,20 @@ let global_proc_state lang loc global_var =
   ; globals= VarMap.empty
   ; lang
   ; proc_map= Textual.QualifiedProcName.Map.empty
-  ; class_name_offset_map= ClassNameOffsetMap.empty }
+  ; class_name_offset_map= ClassNameOffsetMap.create 16 }
 
 
 let find_method_with_offset ~proc_state struct_name offset =
   let key = ClassNameOffset.{class_name= struct_name; offset} in
-  ClassNameOffsetMap.find_opt key proc_state.class_name_offset_map
+  ClassNameOffsetMap.find_opt proc_state.class_name_offset_map key
 
 
-let fill_class_name_offset_map class_method_index =
-  let process_map class_name class_name_offset_map (proc, offset) =
+let fill_class_name_offset_map () =
+  let class_name_offset_map = ClassNameOffsetMap.create 16 in
+  let process_map class_name (proc, offset) =
     let key = ClassNameOffset.{class_name; offset} in
-    ClassNameOffsetMap.add key proc class_name_offset_map
+    ClassNameOffsetMap.replace class_name_offset_map key proc
   in
-  let process_class class_name procs class_name_offset_map =
-    List.fold procs ~init:class_name_offset_map ~f:(process_map class_name)
-  in
-  Textual.TypeName.Map.fold process_class !class_method_index ClassNameOffsetMap.empty
+  let process_class class_name procs = List.iter procs ~f:(process_map class_name) in
+  Textual.TypeName.Map.iter process_class !class_method_index ;
+  class_name_offset_map
