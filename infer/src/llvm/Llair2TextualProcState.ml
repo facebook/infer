@@ -21,9 +21,9 @@ type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeNam
 
 let class_method_index : classMethodIndex = Textual.TypeName.Hashtbl.create 16
 
-type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
+type methodClassIndex = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
-let method_class_index : methodClassIndex = ref Textual.ProcName.Map.empty
+let method_class_index : methodClassIndex = Textual.ProcName.Hashtbl.create 16
 
 module ClassNameOffset = struct
   type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare, hash, equal]

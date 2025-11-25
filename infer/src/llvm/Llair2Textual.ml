@@ -109,7 +109,7 @@ let build_globals_map globals =
 let to_qualified_proc_name ?loc func_name =
   let proc_name = Textual.ProcName.of_string ?loc func_name in
   let enclosing_class =
-    match Textual.ProcName.Map.find_opt proc_name !ProcState.method_class_index with
+    match Textual.ProcName.Hashtbl.find_opt ProcState.method_class_index proc_name with
     | Some class_name ->
         Textual.QualifiedProcName.Enclosing class_name
     | None ->
@@ -990,8 +990,7 @@ let collect_class_method_indices lang struct_map global exp =
               Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name}
             in
             add_method_to_class_method_index class_name proc (offset - 3) ;
-            ProcState.method_class_index :=
-              Textual.ProcName.Map.add proc_name class_name !ProcState.method_class_index
+            Textual.ProcName.Hashtbl.replace ProcState.method_class_index proc_name class_name
         | _ ->
             () ) ;
         (offset, 0)
@@ -1239,7 +1238,7 @@ let translate_llair_functions source_file lang struct_map globals proc_decls cla
 let reset_global_state () =
   Hash_set.clear Type.signature_structs ;
   Textual.TypeName.Hashtbl.clear ProcState.class_method_index ;
-  ProcState.method_class_index := Textual.ProcName.Map.empty
+  Textual.ProcName.Hashtbl.clear ProcState.method_class_index
 
 
 let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Module.t =

@@ -21,7 +21,7 @@ type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeNam
 
 val class_method_index : classMethodIndex
 
-type methodClassIndex = Textual.TypeName.t Textual.ProcName.Map.t ref
+type methodClassIndex = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
 val method_class_index : methodClassIndex
 
