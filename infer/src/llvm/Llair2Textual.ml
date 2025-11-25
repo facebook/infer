@@ -1120,7 +1120,7 @@ let update_formals_list formals_list formals_map =
   List.map ~f:update_formal formals_list
 
 
-let translate_code proc_decls lang source_file struct_map globals class_name_offset_map proc_descs
+let translate_code proc_map lang source_file struct_map globals class_name_offset_map proc_descs
     (procdecl : Textual.ProcDecl.t) (func_name, func) =
   let should_translate =
     should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
@@ -1136,13 +1136,6 @@ let translate_code proc_decls lang source_file struct_map globals class_name_off
           formals_list formals_types ~init:Textual.VarName.Map.empty
   in
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
-  let proc_map =
-    List.fold
-      ~f:(fun proc_map proc_decl ->
-        Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
-          proc_map )
-      ~init:Textual.QualifiedProcName.Map.empty proc_decls
-  in
   let proc_state : ProcState.t =
     { qualified_name= procdecl.qualified_name
     ; loc
@@ -1230,8 +1223,15 @@ let update_function_signatures lang ~struct_map functions =
 
 let translate_llair_functions source_file lang struct_map globals proc_decls class_name_offset_map
     values =
+  let proc_map =
+    List.fold
+      ~f:(fun proc_map proc_decl ->
+        Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
+          proc_map )
+      ~init:Textual.QualifiedProcName.Map.empty proc_decls
+  in
   List.fold2_exn proc_decls values
-    ~f:(translate_code proc_decls lang source_file struct_map globals class_name_offset_map)
+    ~f:(translate_code proc_map lang source_file struct_map globals class_name_offset_map)
     ~init:[]
 
 
