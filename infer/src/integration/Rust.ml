@@ -8,6 +8,16 @@ open! IStd
 module L = Logging
 module F = Format
 
+let dump_textual_file file module_ =
+  (* TODO: avoid Format.asprintf for string litterals *)
+  let suffix = Format.asprintf ".sil" in
+  let filename =
+    let textual_filename = TextualSil.to_filename file in
+    IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename suffix
+  in
+  TextualSil.dump_module ~show_location:true ~filename module_
+
+
 let run_charon json_file prog args =
   let escaped_cmd = List.map ~f:Escape.escape_shell args |> String.concat ~sep:" " in
   let redirected_cmd =
@@ -39,10 +49,36 @@ let compile prog args =
 let capture prog (args : string list) =
   if not (String.equal prog "rustc") then
     L.die UserError "rustc should be explicitly used instead of %s." prog ;
-  let json_file = compile prog args in
-  let json = Yojson.Basic.from_file json_file in
-  match Charon.UllbcOfJson.crate_of_json json with
-  | Ok _crate ->
-      Printf.printf "Success: %s" json_file
-  | Error err ->
-      L.die UserError "%s: %s" err (Yojson.Basic.to_string json)
+  let json_filename = compile prog args in
+  let json = Yojson.Basic.from_file json_filename in
+  let textual =
+    match Charon.UllbcOfJson.crate_of_json json with
+    | Ok crate ->
+        RustFrontend.RustMir2Textual.mk_module crate ~json_filename
+    | Error err ->
+        L.die UserError "%s: %s" err (Yojson.Basic.to_string json)
+  in
+  if Config.debug_mode || Config.dump_textual then dump_textual_file json_filename textual ;
+  let sourcefile = Textual.SourceFile.create json_filename in
+  let verified_textual =
+    match TextualVerification.verify_strict textual with
+    | Ok vt ->
+        vt
+    | Error err ->
+        L.die UserError "Textual verification failed:%a"
+          (F.pp_print_list TextualVerification.pp_error)
+          err
+  in
+  let transformed_textual, decls = TextualTransform.run Rust verified_textual in
+  let cfg, tenv =
+    match TextualSil.module_to_sil Rust transformed_textual decls with
+    | Ok s ->
+        s
+    | Error err ->
+        L.die UserError "Module to sil failed: %a"
+          (F.pp_print_list (Textual.pp_transform_error sourcefile))
+          err
+  in
+  let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
+  TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+  Tenv.Global.store ~normalize:false sil.tenv

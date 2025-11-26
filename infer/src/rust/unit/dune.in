@@ -36,14 +36,10 @@ let library =
   ppx_show.runtime)
  (preprocess
   (pps ppx_expect ppx_inline_test))
-%s
+ %s
 )
 |}
-    (if rust then {|
-(inline_tests
- (deps
-  (source_tree programs)))
-|} else "")
+    (if rust then "(inline_tests)" else "")
 
 ;;
 
