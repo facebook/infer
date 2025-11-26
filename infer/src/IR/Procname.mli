@@ -195,6 +195,7 @@ type t =
   | Java of Java.t
   | ObjC_Cpp of ObjC_Cpp.t
   | Python of PythonProcname.t
+  | Rust of C.t
   | Swift of SwiftProcname.t
 [@@deriving compare, yojson_of, sexp, hash, normalize]
 
