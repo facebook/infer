@@ -100,7 +100,10 @@ let capture_llair source_file llair_program =
           Error (f errors)
     in
     if Config.debug_mode then dump_textual_file source_file textual ;
-    let transformed_textual, decls = TextualTransform.run lang verified_textual in
+    let transformed_textual, decls =
+      try TextualTransform.run lang verified_textual
+      with exn -> IExn.reraise_after ~f:(fun () -> Error.format_error error_state) exn
+    in
     let* (cfg, tenv), error_state =
       let f = Error.add_transformation_errors error_state textual_source_file in
       match TextualSil.module_to_sil lang transformed_textual decls with
