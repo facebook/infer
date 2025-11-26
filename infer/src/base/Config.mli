@@ -894,6 +894,8 @@ val tenvs_lru_max_size : int
 
 val testing_mode : bool
 
+val textual_sil_keep_going : bool
+
 val threadsafe_aliases : Yojson.Safe.t
 
 val timeout : float option

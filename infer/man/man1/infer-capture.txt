@@ -176,6 +176,11 @@ OPTIONS
        --tenv-json file
            Path to TEnv json file
 
+       --textual-sil-keep-going
+           Activates: When converting textual to SIL, keep going even if some
+           elements fail to convert. (Conversely:
+           --no-textual-sil-keep-going)
+
        --workspace path
            Specifies the root of the workspace, which is a directory
            containing --project-root. This can be needed if the capture phase

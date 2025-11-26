@@ -2349,6 +2349,12 @@ OPTIONS
            Path to TEnv json file
            See also infer-capture(1).
 
+       --textual-sil-keep-going
+           Activates: When converting textual to SIL, keep going even if some
+           elements fail to convert. (Conversely:
+           --no-textual-sil-keep-going)
+           See also infer-capture(1).
+
        --threadsafe-aliases json
            Specify custom annotations that should be considered aliases of
            @ThreadSafe

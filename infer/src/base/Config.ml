@@ -3555,6 +3555,12 @@ and testing_mode =
     "Mode for testing, where no headers are translated, and dot files are created (clang only)"
 
 
+and textual_sil_keep_going =
+  CLOpt.mk_bool ~long:"textual-sil-keep-going" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "When converting textual to SIL, keep going even if some elements fail to convert."
+
+
 and threadsafe_aliases =
   CLOpt.mk_json ~long:"threadsafe-aliases"
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
@@ -4914,6 +4920,8 @@ and tenv_json = !tenv_json
 and tenvs_lru_max_size = !tenvs_lru_max_size
 
 and testing_mode = !testing_mode
+
+and textual_sil_keep_going = !textual_sil_keep_going
 
 and threadsafe_aliases = !threadsafe_aliases
 
