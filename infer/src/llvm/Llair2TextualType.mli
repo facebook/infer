@@ -56,3 +56,5 @@ val update_type :
 
 val update_signature_type :
   Textual.Lang.t -> ProcState.structMap -> Textual.TypeName.t -> Textual.TypeName.t
+
+val pp_signature_structs : Format.formatter -> unit -> unit

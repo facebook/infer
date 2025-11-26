@@ -291,7 +291,7 @@ let rec signature_type_to_textual_typ lang signature_type =
     | None ->
         None
   else if String.equal signature_type "Int" then Some Textual.Typ.Int
-  else if String.equal signature_type "<unknown>" then None
+  else if String.equal signature_type "<unknown>" || String.is_empty signature_type then None
   else if String.equal signature_type "$sytD" then Some Textual.Typ.Void
   else
     let struct_name =
@@ -307,6 +307,11 @@ let rec signature_type_to_textual_typ lang signature_type =
     in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)
     else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
+
+
+let pp_signature_structs fmt () =
+  let pp_item fmt key = Format.fprintf fmt "%s@." key in
+  Hash_set.iter signature_structs ~f:(pp_item fmt)
 
 
 let update_struct_name struct_name =

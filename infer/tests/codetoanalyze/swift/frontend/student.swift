@@ -144,3 +144,14 @@ func test_optional_person_good() -> Int {
 func test_optional_preson_nil_good() -> Int {
     test_optional_person(nil)
 }
+
+// This reports an assertion error, but in prod it would just create
+// only one spec with person <> nil. In that case test_optional3_bad_FN
+// should report an NPE but it doesn't yet.
+func test_optional_crash_bad(_ person: Person?) -> Int {
+    return person!.age // This will crash if age is nil!
+}
+
+func test_optional3_bad_FN() -> Int {
+    test_optional_crash_bad(nil)
+}
