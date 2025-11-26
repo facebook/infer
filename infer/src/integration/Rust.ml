@@ -9,9 +9,8 @@ module L = Logging
 module F = Format
 
 let dump_textual_file file module_ =
-  (* TODO: avoid Format.asprintf for string litterals *)
-  let suffix = Format.asprintf ".sil" in
   let filename =
+    let suffix = "sil" in
     let textual_filename = TextualSil.to_filename file in
     IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename suffix
   in

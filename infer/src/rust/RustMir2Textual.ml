@@ -9,9 +9,6 @@ open! IStd
 module L = Logging
 module PlaceMap = Stdlib.Map.Make (Int)
 
-(* A map from place ids to (place name, type) *)
-type place_map_ty = (Textual.VarName.t * Charon.Generated_Types.ty) PlaceMap.t
-
 (* Holds the identifiers of temporary variables (n0, n1, etc.) to avoid reusing them within the same function *)
 let ident_set = ref Textual.Ident.Set.empty
 
@@ -63,17 +60,10 @@ let mk_label (id : int) : Textual.NodeName.t =
 let params_from_fun_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) (arg_count : int)
     : Textual.VarName.t list =
   match fun_decl.body with
-  | Some {locals} -> (
-      let locals_list = List.tl locals.locals in
-      (* TODO: favor one match with nested patterns instead of nested matchs *)
-      match locals_list with
-      | Some locals_list ->
-          List.take locals_list arg_count
-          (* TODO: avoid 3x shadowing of locals_list *)
-          |> List.mapi ~f:(fun i (local : Charon.Generated_GAst.local) -> mk_varname local (i + 1))
-      | None ->
-          [] )
-  | None ->
+  | Some {locals= {locals= _ :: locals_list}} ->
+      List.take locals_list arg_count
+      |> List.mapi ~f:(fun i (local : Charon.Generated_GAst.local) -> mk_varname local (i + 1))
+  | _ ->
       []
 
 
@@ -105,6 +95,9 @@ let rec ty_to_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t 
       L.die UserError "Unsupported type: %a" Charon.Generated_Types.pp_ty rust_ty
 
 
+(* A map from place ids to (place name, type) *)
+type place_map_ty = (Textual.VarName.t * Charon.Generated_Types.ty) PlaceMap.t
+
 let mk_place_map (locals : Charon.Generated_GAst.local list) : place_map_ty =
   List.foldi locals ~init:PlaceMap.empty ~f:(fun i acc (local : Charon.Generated_GAst.local) ->
       let id = local.index in
@@ -113,62 +106,63 @@ let mk_place_map (locals : Charon.Generated_GAst.local list) : place_map_ty =
       PlaceMap.add (Charon.Generated_Expressions.LocalId.to_int id) (name, ty) acc )
 
 
+let place_map_find_id place_map (id : Charon.Expressions.LocalId.id) =
+  PlaceMap.find (Charon.Generated_Expressions.LocalId.to_int id) place_map |> fst
+
+
 let mk_place_from_id (id : int) (ty : Charon.Generated_Types.ty) :
     Charon.Generated_Expressions.place =
   {kind= PlaceLocal (Charon.Generated_Expressions.LocalId.of_int id); ty}
 
 
+let mk_return_place place_map =
+  let _, ty = PlaceMap.find 0 place_map in
+  mk_place_from_id 0 ty
+
+
 let mk_locals (locals : Charon.Generated_GAst.local list) (arg_count : int)
     (place_map : place_map_ty) : (Textual.VarName.t * Textual.Typ.annotated) list =
   (* Extracts the local variable names from locals list, excluding the return value and the arguments *)
-  locals
-  |> fun lst ->
-  (* TODO: could be simplified *)
-  List.take lst 1 @ List.drop lst (1 + arg_count)
+  List.take locals 1 @ List.drop locals (1 + arg_count)
   |> List.map ~f:(fun (l : Charon.Generated_GAst.local) ->
          let id = l.index in
-         let varname, _ =
-           PlaceMap.find (Charon.Generated_Expressions.LocalId.to_int id) place_map
-         in
+         let varname = place_map_find_id place_map id in
          (varname, Textual.Typ.mk_without_attributes (ty_to_textual_typ l.var_ty)) )
+
+
+let mk_const_literal (literal_ty : Charon.Generated_Types.literal_type)
+    (value : Charon.Generated_Expressions.raw_constant_expr) : Textual.Exp.t =
+  match (literal_ty, value) with
+  | ( (TInt _ | TUInt _)
+    , (CLiteral (VScalar (UnsignedScalar (_, n))) | CLiteral (VScalar (SignedScalar (_, n)))) ) ->
+      Textual.Exp.Const (Textual.Const.Int n)
+  | (TInt _ | TUInt _), _ ->
+      L.die UserError "Unsupported int type: %a" Charon.Generated_Types.pp_literal_type literal_ty
+  | TFloat _, CLiteral (VFloat {float_value= f; float_ty= _}) ->
+      Textual.Exp.Const (Textual.Const.Float (float_of_string f))
+  | TFloat _, _ ->
+      L.die UserError "Unsupported float type: %a" Charon.Generated_Types.pp_literal_type literal_ty
+  | TBool, CLiteral (VBool b) ->
+      Textual.Exp.Const (Textual.Const.Int (if b then Z.one else Z.zero))
+  | TBool, _ ->
+      L.die UserError "Unsupported bool type: %a" Charon.Generated_Types.pp_literal_type literal_ty
+  | TChar, CLiteral (VChar c) -> (
+    match Uchar.to_char c with
+    | Some ch ->
+        Textual.Exp.Const (Textual.Const.Int (Z.of_int (int_of_char ch)))
+    | None ->
+        L.die UserError "Cannot convert Unicode character to char: %a"
+          Charon.Generated_Types.pp_literal_type literal_ty )
+  | TChar, _ ->
+      L.die UserError "Unsupported char type: %a" Charon.Generated_Types.pp_literal_type literal_ty
 
 
 let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
     (value : Charon.Generated_Expressions.raw_constant_expr) : Textual.Exp.t =
   (* TODO: Add support for more types *)
   match rust_ty with
-  | TLiteral literal_ty -> (
-    (* TODO: favor one match with nested patterns instead of nested matchs *)
-    match literal_ty with
-    | TInt _ | TUInt _ -> (
-      match value with
-      | CLiteral (VScalar (UnsignedScalar (_, n))) | CLiteral (VScalar (SignedScalar (_, n))) ->
-          Textual.Exp.Const (Textual.Const.Int n)
-      | _ ->
-          L.die UserError "Unsupported int type: %a" Charon.Generated_Types.pp_ty rust_ty )
-    | TFloat _ -> (
-      match value with
-      | CLiteral (VFloat {float_value= f; float_ty= _}) ->
-          Textual.Exp.Const (Textual.Const.Float (float_of_string f))
-      | _ ->
-          L.die UserError "Unsupported float type: %a" Charon.Generated_Types.pp_ty rust_ty )
-    | TBool -> (
-      match value with
-      | CLiteral (VBool b) ->
-          Textual.Exp.Const (Textual.Const.Int (if b then Z.one else Z.zero))
-      | _ ->
-          L.die UserError "Unsupported bool type: %a" Charon.Generated_Types.pp_ty rust_ty )
-    | TChar -> (
-      match value with
-      | CLiteral (VChar c) -> (
-        match Uchar.to_char c with
-        | Some ch ->
-            Textual.Exp.Const (Textual.Const.Int (Z.of_int (int_of_char ch)))
-        | None ->
-            L.die UserError "Cannot convert Unicode character to char: %a"
-              Charon.Generated_Types.pp_ty rust_ty )
-      | _ ->
-          L.die UserError "Unsupported char type: %a" Charon.Generated_Types.pp_ty rust_ty ) )
+  | TLiteral literal_ty ->
+      mk_const_literal literal_ty value
   | _ ->
       L.die UserError "Unsupported literal type: %a" Charon.Generated_Types.pp_ty rust_ty
 
@@ -182,10 +176,9 @@ let mk_exp_from_place (place_map : place_map_ty) (place : Charon.Generated_Expre
   ident_set := Textual.Ident.Set.add temp_id !ident_set ;
   match place.kind with
   | PlaceLocal var_id ->
-      let id = Textual.Ident.of_int (Charon.Generated_Expressions.LocalId.to_int var_id) in
-      let exp = Textual.Exp.Lvar (fst (PlaceMap.find (Textual.Ident.to_int id) place_map)) in
+      let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
       let load_instr = Textual.Instr.Load {id= temp_id; exp; typ= Some temp_typ; loc= temp_loc} in
-      (* TODO: generate a Load expression and avoid the ref [ident_set] *)
+      (* TODO: generate a Load expression and avoid the ref [ident_set] ====> SEE NEXT DIFF *)
       ([load_instr], temp_exp, temp_typ)
   | _ ->
       L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place
@@ -238,9 +231,7 @@ let mk_terminator (_crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       let node_call : Textual.Terminator.node_call = {label; ssa_args} in
       ([], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.Return ->
-      (* TODO: give a meaningfull name to constant 0 *)
-      let _, ty = PlaceMap.find 0 place_map in
-      let place = mk_place_from_id 0 ty in
+      let place = mk_return_place place_map in
       let instrs, exp, _ = mk_exp_from_place place_map place in
       (instrs, Textual.Terminator.Ret exp)
   | Charon.Generated_UllbcAst.UnwindResume ->
@@ -254,18 +245,15 @@ let mk_instr (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.s
     Textual.Instr.t list =
   let loc = location_from_span statement.span in
   match statement.content with
-  | Assign (lhs, rhs) -> (
-    (* TODO: favor one match with nested patterns instead of nested matchs *)
-    match lhs.kind with
-    | PlaceLocal var_id ->
-        let id = Charon.Generated_Expressions.LocalId.to_int var_id in
-        let varname, _ = PlaceMap.find id place_map in
-        let exp1 = Textual.Exp.Lvar varname in
-        let instrs, exp2, typ = mk_exp_from_rvalue rhs place_map in
-        let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
-        instrs @ [store_instr]
-    | _ ->
-        L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place lhs )
+  | Assign ({kind= PlaceLocal var_id}, rhs) ->
+      let id = Charon.Generated_Expressions.LocalId.to_int var_id in
+      let varname, _ = PlaceMap.find id place_map in
+      let exp1 = Textual.Exp.Lvar varname in
+      let instrs, exp2, typ = mk_exp_from_rvalue rhs place_map in
+      let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
+      instrs @ [store_instr]
+  | Assign (lhs, _rhs) ->
+      L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place lhs
   | StorageDead _ ->
       []
   | StorageLive _ ->
@@ -299,7 +287,7 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
 let mk_procdesc (crate : Charon.UllbcAst.crate)
     (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
-  (* TODO: use setter or avoid this ref *)
+  (* TODO: use setter or avoid this ref ==> SEE NEXT DIFF *)
   ident_set := Textual.Ident.Set.empty ;
   let _, fun_decl = proc in
   let blocks, locals, arg_count =
