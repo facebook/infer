@@ -155,3 +155,23 @@ func test_optional_crash_bad(_ person: Person?) -> Int {
 func test_optional3_bad_FN() -> Int {
     test_optional_crash_bad(nil)
 }
+
+class ViewController {
+    var view: CustomView?
+
+    init() {
+        self.view = CustomView(delegate: self)
+    }
+}
+
+class CustomView {
+    var delegate: ViewController
+
+    init(delegate: ViewController) {
+        self.delegate = delegate
+    }
+}
+
+func retainCycleExample() {
+    let _ = ViewController()
+}
