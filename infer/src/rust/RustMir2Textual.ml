@@ -9,9 +9,6 @@ open! IStd
 module L = Logging
 module PlaceMap = Stdlib.Map.Make (Int)
 
-(* Holds the identifiers of temporary variables (n0, n1, etc.) to avoid reusing them within the same function *)
-let ident_set = ref Textual.Ident.Set.empty
-
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
   let line = span.span.beg_loc.line in
   let col = span.span.beg_loc.col in
@@ -168,24 +165,18 @@ let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
 
 
 let mk_exp_from_place (place_map : place_map_ty) (place : Charon.Generated_Expressions.place) :
-    Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
-  let temp_id = Textual.Ident.fresh !ident_set in
-  let temp_exp = Textual.Exp.Var temp_id in
-  let temp_typ = ty_to_textual_typ place.ty in
-  let temp_loc = Textual.Location.Unknown in
-  ident_set := Textual.Ident.Set.add temp_id !ident_set ;
+    Textual.Exp.t * Textual.Typ.t =
   match place.kind with
   | PlaceLocal var_id ->
+      let typ = ty_to_textual_typ place.ty in
       let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
-      let load_instr = Textual.Instr.Load {id= temp_id; exp; typ= Some temp_typ; loc= temp_loc} in
-      (* TODO: generate a Load expression and avoid the ref [ident_set] ====> SEE NEXT DIFF *)
-      ([load_instr], temp_exp, temp_typ)
+      (Textual.Exp.Load {exp; typ= Some typ}, typ)
   | _ ->
       L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place
 
 
 let mk_exp_from_operand (place_map : place_map_ty) (operand : Charon.Generated_Expressions.operand)
-    : Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
+    : Textual.Exp.t * Textual.Typ.t =
   match operand with
   | Copy place | Move place ->
       mk_exp_from_place place_map place
@@ -194,24 +185,18 @@ let mk_exp_from_operand (place_map : place_map_ty) (operand : Charon.Generated_E
       let rust_ty = const_operand.ty in
       let textual_typ = ty_to_textual_typ rust_ty in
       let exp = mk_const_exp rust_ty value in
-      ([], exp, textual_typ)
+      (exp, textual_typ)
 
 
 let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map : place_map_ty) :
-    Textual.Instr.t list * Textual.Exp.t * Textual.Typ.t =
+    Textual.Exp.t * Textual.Typ.t =
   match rvalue with
   | Aggregate (kind, ops) -> (
       (* TODO: Handle non-empty aggregates as well *)
-      let _, exps, _ =
-        List.fold_right
-          (List.map ~f:(mk_exp_from_operand place_map) ops)
-          ~f:(fun (instrs, exp, typ) (all_instrs, all_exps, all_typs) ->
-            (instrs @ all_instrs, exp :: all_exps, typ :: all_typs) )
-          ~init:([], [], [])
-      in
+      let exps = List.map ~f:(fun op -> mk_exp_from_operand place_map op |> fst) ops in
       match (kind, exps) with
       | AggregatedAdt (_, None, None), [] ->
-          ([], Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void)
+          (Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void)
       | _ ->
           L.die UserError "Unsupported aggregate type: %a" Charon.Generated_Expressions.pp_rvalue
             rvalue )
@@ -222,21 +207,20 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
 
 
 let mk_terminator (_crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
-    (terminator : Charon.Generated_UllbcAst.terminator) :
-    Textual.Instr.t list * Textual.Terminator.t =
+    (terminator : Charon.Generated_UllbcAst.terminator) : Textual.Terminator.t =
   match terminator.content with
   | Charon.Generated_UllbcAst.Goto block_id ->
       let label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int block_id) in
       let ssa_args = [] in
       let node_call : Textual.Terminator.node_call = {label; ssa_args} in
-      ([], Textual.Terminator.Jump [node_call])
+      Textual.Terminator.Jump [node_call]
   | Charon.Generated_UllbcAst.Return ->
       let place = mk_return_place place_map in
-      let instrs, exp, _ = mk_exp_from_place place_map place in
-      (instrs, Textual.Terminator.Ret exp)
+      let exp, _ = mk_exp_from_place place_map place in
+      Textual.Terminator.Ret exp
   | Charon.Generated_UllbcAst.UnwindResume ->
       (* TODO: To be updated when error handling is being implemented *)
-      ([], Textual.Terminator.Unreachable)
+      Textual.Terminator.Unreachable
   | t ->
       L.die UserError "Unsupported terminator: %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
@@ -249,9 +233,9 @@ let mk_instr (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.s
       let id = Charon.Generated_Expressions.LocalId.to_int var_id in
       let varname, _ = PlaceMap.find id place_map in
       let exp1 = Textual.Exp.Lvar varname in
-      let instrs, exp2, typ = mk_exp_from_rvalue rhs place_map in
+      let exp2, typ = mk_exp_from_rvalue rhs place_map in
       let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
-      instrs @ [store_instr]
+      [store_instr]
   | Assign (lhs, _rhs) ->
       L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place lhs
   | StorageDead _ ->
@@ -276,9 +260,8 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
   let label = mk_label idx in
   let ssa_parameters = [] in
   let exn_succs = [] in
-  let instrs1 = block.statements |> List.concat_map ~f:(mk_instr place_map) in
-  let instrs2, last = mk_terminator crate place_map block.terminator in
-  let instrs = instrs1 @ instrs2 in
+  let instrs = block.statements |> List.concat_map ~f:(mk_instr place_map) in
+  let last = mk_terminator crate place_map block.terminator in
   let last_loc = location_from_span block.terminator.span in
   let label_loc = Textual.Location.Unknown in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
@@ -287,8 +270,6 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
 let mk_procdesc (crate : Charon.UllbcAst.crate)
     (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.ProcDesc.t =
-  (* TODO: use setter or avoid this ref ==> SEE NEXT DIFF *)
-  ident_set := Textual.Ident.Set.empty ;
   let _, fun_decl = proc in
   let blocks, locals, arg_count =
     match fun_decl.body with
