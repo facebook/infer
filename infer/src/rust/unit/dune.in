@@ -1,0 +1,50 @@
+(* -*- tuareg -*- *)
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+(* NOTE: prepend dune.common to this file! *)
+
+let library =
+  Printf.sprintf
+    {|
+(library
+ (name RustFrontendTest)
+ (flags
+  (:standard
+   -open
+   Core
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   IBase
+   -open
+   Textuallib))
+ (libraries
+  core
+  charon
+  zarith
+  IStdlib
+  IBase
+  Textuallib
+  RustFrontend
+  yojson
+  ppx_show.runtime)
+ (preprocess
+  (pps ppx_expect ppx_inline_test))
+%s
+)
+|}
+    (if rust then {|
+(inline_tests
+ (deps
+  (source_tree programs)))
+|} else "")
+
+;;
+
+Jbuild_plugin.V1.send library

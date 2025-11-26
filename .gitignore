@@ -195,6 +195,7 @@ rebar3.crashdump
 /infer/src/llvm/dune
 /infer/src/opensource/dune
 /infer/src/python/unit/dune
+/infer/src/rust/unit/dune
 /infer/src/sledge/dune
 /infer/src/unit/dune
 .merlin
