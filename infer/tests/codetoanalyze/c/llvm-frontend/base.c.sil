@@ -51,15 +51,26 @@ define call_add1(var1: *int, var2: int) : int {
       
 } @?
 
+define deref_example(var1: *int) : int {
+  local ptr: *ptr_elt
+  #: @[111:0]
+      n1 = load &var1 @[111:0]
+      store &ptr <- n1 @[111:0]
+      n2 = load &ptr @[146:39]
+      n3 = load n2 @[146:38]
+      ret n3 @[146:31]
+      
+} @?
+
 declare foo() : *ptr_elt
 
 declare free(*ptr_elt) : *ptr_elt
 
 define get_age(var1: *Person) : int {
   local person: *ptr_elt
-  #: @[111:0]
-      n1 = load &var1 @[111:0]
-      store &person <- n1 @[111:0]
+  #: @[112:0]
+      n1 = load &var1 @[112:0]
+      store &person <- n1 @[112:0]
       n2 = load &person @[109:45]
       n3 = load n2.struct::Person.field_2 @[109:53]
       ret n3 @[109:38]
@@ -68,13 +79,23 @@ define get_age(var1: *Person) : int {
 
 define main() : int {
   local var2: int
-  #: @[112:0]
-      store &var2 <- 0 @[112:0]
+  #: @[113:0]
+      store &var2 <- 0 @[113:0]
       ret 0 @[11:14]
       
 } @?
 
 declare my_fun(*ptr_elt) : *ptr_elt
+
+define npe_bad() : int {
+  #: @[148:24]
+      n1 = deref_example(null) @[148:24]
+      jmp 1::ret @[148:24]
+      
+  #1::ret: @[148:17]
+      ret n1 @[148:17]
+      
+} @?
 
 define test() : *int {
   #: @[12:15]
@@ -248,11 +269,11 @@ define test15() : int {
 
 define test16(var1: *Person, var2: *Cat) : int {
   local person: *ptr_elt, cat: *ptr_elt, age: int
-  #: @[113:0]
-      n1 = load &var1 @[113:0]
-      store &person <- n1 @[113:0]
-      n2 = load &var2 @[114:0]
-      store &cat <- n2 @[114:0]
+  #: @[114:0]
+      n1 = load &var1 @[114:0]
+      store &person <- n1 @[114:0]
+      n2 = load &var2 @[115:0]
+      store &cat <- n2 @[115:0]
       n3 = load &cat @[132:3]
       store n3.struct::Cat.field_1 <- 10 @[132:12]
       n5 = load &person @[133:3]
@@ -284,9 +305,9 @@ define test16(var1: *Person, var2: *Cat) : int {
 
 define test17(var1: int) : int {
   local z: int, b: int
-  #: @[115:0]
-      n1 = load &var1 @[115:0]
-      store &b <- n1 @[115:0]
+  #: @[116:0]
+      n1 = load &var1 @[116:0]
+      store &b <- n1 @[116:0]
       n2 = load &b @[142:11]
       n3 = __sil_ne(n2, 0) @[142:11]
       store &z <- (if n3 then 1 else 0) @[142:7]
@@ -306,9 +327,9 @@ define test2() : int {
 
 define test3(var1: *int) : int {
   local ptr: *ptr_elt
-  #: @[116:0]
-      n1 = load &var1 @[116:0]
-      store &ptr <- n1 @[116:0]
+  #: @[117:0]
+      n1 = load &var1 @[117:0]
+      store &ptr <- n1 @[117:0]
       n2 = load &ptr @[22:31]
       n3 = load n2 @[22:30]
       ret n3 @[22:23]
@@ -389,9 +410,9 @@ define test7() : int {
 
 define test8(var1: *int) : int {
   local var3: int, ret: int, ptr: *ptr_elt, null_ptr: *ptr_elt
-  #: @[117:0]
-      n1 = load &var1 @[117:0]
-      store &ptr <- n1 @[117:0]
+  #: @[118:0]
+      n1 = load &var1 @[118:0]
+      store &ptr <- n1 @[118:0]
       n2 = load &ptr @[51:4]
       store n2 <- 1 @[51:8]
       store &null_ptr <- null @[52:8]

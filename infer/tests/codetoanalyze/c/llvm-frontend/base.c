@@ -142,3 +142,7 @@ int test17(int b) {
   int z = b ? 1 : 0;
   return z;
 }
+
+int deref_example(int* ptr) { return *ptr; }
+
+int npe_bad() { return deref_example(NULL); }

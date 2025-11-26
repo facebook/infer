@@ -11,3 +11,4 @@ codetoanalyze/c/llvm-frontend/base.c, test13, 5, PULSE_ASSERTION_ERROR, no_bucke
 codetoanalyze/c/llvm-frontend/base.c, test14, 7, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/c/llvm-frontend/base.c, test15, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/c/llvm-frontend/base.c, test16, 6, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+codetoanalyze/c/llvm-frontend/base.c, npe_bad, 0, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,when calling `deref_example` here,parameter `var1` of deref_example,assigned,invalid access occurs here]
