@@ -1175,7 +1175,8 @@ let let_propagation module_ =
       | Some `VisitInProgress ->
           L.die InternalError
             "Textual transformation error: sort_equation was given a set of equations with cyclic \
-             dependencies"
+             dependencies: id %a is already in the process of being visited"
+            Ident.pp id
       | Some `VisitCompleted ->
           state
       | None ->
