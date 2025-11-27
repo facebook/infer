@@ -98,7 +98,7 @@ let pp_all ~filter ~proc_name:proc_name_cond ~defined ~source_file:source_file_c
     F.fprintf fmt "@[<v2>%s@,%a%a%a%a%a%a@]@\n" proc_uid
       (pp_if source_file_cond "source_file" SourceFile.pp)
       source_file
-      (pp_if proc_name_cond "proc_name" Procname.pp)
+      (pp_if proc_name_cond "proc_name" Procname.pp_verbose)
       proc_name
       (pp_column_if stmt defined "defined" deserialize_bool_int Bool.pp)
       1

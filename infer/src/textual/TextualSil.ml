@@ -139,9 +139,9 @@ module TypeNameBridge = struct
               assert false
         in
         let plain_name =
-          Option.map
-            ~f:(fun plain_name -> Textual.BaseTypeName.to_string plain_name.name)
-            plain_name
+          Option.bind plain_name ~f:(fun plain_name ->
+              let name = Textual.BaseTypeName.to_string plain_name.name in
+              if String.is_empty name then None else Some name )
         in
         SwiftClassName.of_string ?plain_name (Textual.BaseTypeName.to_string mangled_name.name)
     | {name} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
