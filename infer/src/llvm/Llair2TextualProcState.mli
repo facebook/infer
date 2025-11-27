@@ -35,6 +35,7 @@ type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
 type t =
   { qualified_name: Textual.QualifiedProcName.t
+  ; sourcefile: SourceFile.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
@@ -74,7 +75,7 @@ val reset_offsets : proc_state:t -> unit
 
 val pp : F.formatter -> print_types:bool -> t -> unit [@@warning "-unused-value-declaration"]
 
-val global_proc_state : Textual.Lang.t -> Textual.Location.t -> string -> t
+val global_proc_state : Textual.Lang.t -> SourceFile.t -> Textual.Location.t -> string -> t
 
 val get_fresh_fake_line : unit -> int
 

@@ -66,7 +66,7 @@ let%expect_test _ =
     {|
     verification failed - 1 errors
     ------
-    SIL: Consistency Error: dummy.sil, line 7, column 15: function test3 which can be called with 0 arguments is not declared
+    SIL: Consistency Error: function test3 which can be called with 0 arguments is not declared in dummy.sil at line 7, column 15
     |}]
 
 

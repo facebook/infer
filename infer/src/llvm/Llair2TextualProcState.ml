@@ -35,6 +35,7 @@ type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
 type t =
   { qualified_name: Textual.QualifiedProcName.t
+  ; sourcefile: SourceFile.t
   ; loc: Textual.Location.t
   ; mutable locals: Textual.Typ.annotated VarMap.t
   ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
@@ -193,13 +194,14 @@ let reset_offsets ~proc_state =
   proc_state.get_element_ptr_offset <- None
 
 
-let global_proc_state lang loc global_var =
+let global_proc_state lang sourcefile loc global_var =
   let global_init_name = Format.sprintf "global_init_%s" global_var in
   let qualified_name =
     Textual.QualifiedProcName.
       {enclosing_class= TopLevel; name= Textual.ProcName.of_string global_init_name}
   in
   { qualified_name
+  ; sourcefile
   ; loc
   ; formals= VarMap.empty
   ; locals= VarMap.empty

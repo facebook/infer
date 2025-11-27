@@ -27,15 +27,15 @@ let pp_error_with_sourcefile sourcefile fmt err =
   match err with
   | BasicError err ->
       let loc = TextualBasicVerification.error_loc err in
-      F.fprintf fmt "SIL: Consistency Error: %a, %a: " SourceFile.pp sourcefile Location.pp loc ;
-      TextualBasicVerification.pp_error fmt err
+      F.fprintf fmt "SIL: Consistency Error: %a in %a at %a" TextualBasicVerification.pp_error err
+        SourceFile.pp sourcefile Location.pp loc
   | TypeError err ->
       let loc = TextualTypeVerification.error_loc err in
-      F.fprintf fmt "Textual: Type Error: %a, %a: " SourceFile.pp sourcefile Location.pp loc ;
-      TextualTypeVerification.pp_error fmt err
+      F.fprintf fmt "Textual: Type Error: %a in %a at %a" TextualTypeVerification.pp_error err
+        SourceFile.pp sourcefile Location.pp loc
   | DeclaredTwiceError err ->
-      F.fprintf fmt "SIL: Consistency Error: %a: " SourceFile.pp sourcefile ;
-      TextualDecls.pp_error fmt err
+      F.fprintf fmt "SIL: Consistency Error: %a in %a" TextualDecls.pp_error err SourceFile.pp
+        sourcefile
 
 
 let verify_common ~restore_ssa module_ =

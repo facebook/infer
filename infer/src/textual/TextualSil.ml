@@ -15,6 +15,7 @@ module SilIdent = Ident
 module SilProcdesc = Procdesc
 module SilProcname = Procname
 module SilPvar = Pvar
+module SilSourceFile = SourceFile
 module SilStruct = Struct
 module SilTyp = Typ
 open Textual
@@ -479,13 +480,13 @@ module ProcDeclBridge = struct
   let swift_class_name_to_sil = function
     | QualifiedProcName.TopLevel ->
         None
-    | QualifiedProcName.Enclosing {name= {value}} when String.equal "$builtins" value ->
+    | QualifiedProcName.Enclosing {name= {value= "$builtins"}} ->
         Some `Builtin
     | QualifiedProcName.Enclosing class_name ->
         Some (`Regular (TypeNameBridge.to_swift_class_name class_name))
 
 
-  let to_sil_tenv lang t : SilStruct.tenv_method =
+  let to_sil_tenv lang sourcefile t : SilStruct.tenv_method =
     let method_name = t.qualified_name.name.ProcName.value in
     match (lang : Lang.t) with
     | Java ->
@@ -561,8 +562,8 @@ module ProcDeclBridge = struct
               let builtin =
                 SwiftProcname.builtin_from_string method_name
                 |> Option.value_or_thunk ~default:(fun () ->
-                       L.internal_error "Textual: Swift: unknown builtin %s, using NonDet@\n"
-                         method_name ;
+                       L.internal_error "Textual: Swift: unknown builtin %s, using NonDet in %a@\n"
+                         method_name Textual.SourceFile.pp sourcefile ;
                        SwiftProcname.NonDet )
               in
               SilProcname.Swift (SwiftProcname.mk_builtin builtin)
@@ -571,17 +572,17 @@ module ProcDeclBridge = struct
               L.die InternalError "unexpected case" ) )
 
 
-  let to_sil lang t : Procname.t =
-    let m = to_sil_tenv lang t in
+  let to_sil lang sourcefile t : Procname.t =
+    let m = to_sil_tenv lang sourcefile t in
     m.name
 
 
-  let call_to_sil (lang : Lang.t) (callsig : ProcSig.t) t : SilProcname.t =
+  let call_to_sil (lang : Lang.t) sourcefile (callsig : ProcSig.t) t : SilProcname.t =
     match lang with
     | Java | Python | C | Rust | Swift ->
-        to_sil lang t
+        to_sil lang sourcefile t
     | Hack when Option.is_some t.formals_types ->
-        to_sil lang t
+        to_sil lang sourcefile t
     | Hack ->
         (* When we translate function calls in Hack, the ProcDecl we get from TextualDecls may have
            unknown args. In such case we need to conjure up a procname with the arity matching that
@@ -659,7 +660,10 @@ module StructBridge = struct
           | Decl _ ->
               (* TODO: Don't just throw Decls away entirely *)
               None )
-      |> List.map ~f:(ProcDeclBridge.to_sil_tenv lang)
+      |> List.map
+           ~f:
+             (ProcDeclBridge.to_sil_tenv lang
+                (Textual.SourceFile.create (SilSourceFile.to_string source_file)) )
     in
     let fields =
       List.map fields ~f:(fun ({FieldDecl.typ; attributes} as fdecl) ->
@@ -676,7 +680,7 @@ module StructBridge = struct
           if Attr.is_final attr then Some Annot.final else None )
     in
     (* FIXME: generate static fields *)
-    Tenv.mk_struct tenv ~fields ~annots ~supers ~methods ?class_info ?source_file name |> ignore
+    Tenv.mk_struct tenv ~fields ~annots ~supers ~methods ?class_info ~source_file name |> ignore
 
 
   let of_hack_class_info class_info =
@@ -753,7 +757,7 @@ module ExpBridge = struct
         L.die InternalError "Sizeof expression should note appear here, please report"
 
 
-  let to_sil lang decls_env procname exp =
+  let to_sil lang sourcefile decls_env procname exp =
     let rec aux e : SilExp.t =
       match e with
       | Var id ->
@@ -767,7 +771,7 @@ module ExpBridge = struct
                 GlobalBridge.to_sil global
             | None ->
                 let mangled = Mangled.from_string name.value in
-                let pname = ProcDeclBridge.to_sil lang procname in
+                let pname = ProcDeclBridge.to_sil lang sourcefile procname in
                 SilPvar.mk mangled pname
           in
           Lvar pvar
@@ -891,7 +895,7 @@ module InstrBridge = struct
     | Load {id; exp; typ= Some typ; loc} ->
         let typ = TypBridge.to_sil lang typ in
         let id = IdentBridge.to_sil id in
-        let e = ExpBridge.to_sil lang decls_env procname exp in
+        let e = ExpBridge.to_sil lang sourcefile decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
         Load {id; e; typ; loc}
     | Store {typ= None; loc} ->
@@ -902,13 +906,13 @@ module InstrBridge = struct
         in
         textual_transformation_error loc msg
     | Store {exp1; typ= Some typ; exp2; loc} ->
-        let e1 = ExpBridge.to_sil lang decls_env procname exp1 in
+        let e1 = ExpBridge.to_sil lang sourcefile decls_env procname exp1 in
         let typ = TypBridge.to_sil lang typ in
-        let e2 = ExpBridge.to_sil lang decls_env procname exp2 in
+        let e2 = ExpBridge.to_sil lang sourcefile decls_env procname exp2 in
         let loc = LocationBridge.to_sil sourcefile loc in
         Store {e1; typ; e2; loc}
     | Prune {exp; loc} ->
-        let e = ExpBridge.to_sil lang decls_env procname exp in
+        let e = ExpBridge.to_sil lang sourcefile decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
         Prune (e, loc, true, Ik_if)
     | Let {id= None} ->
@@ -938,7 +942,7 @@ module InstrBridge = struct
         Call ((ret, class_type), builtin_name, args, loc, CallFlags.default)
     | Let {id= Some id; exp= Call {proc; args= [exp]}; loc} when ProcDecl.is_free_builtin proc ->
         let ret = IdentBridge.to_sil id in
-        let e = ExpBridge.to_sil lang decls_env procname exp in
+        let e = ExpBridge.to_sil lang sourcefile decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_free = SilExp.Const (SilConst.Cfun BuiltinDecl.free) in
         Call
@@ -950,7 +954,7 @@ module InstrBridge = struct
     | Let {id= Some id; exp= Call {proc; args= exp :: _}; loc}
       when ProcDecl.is_assert_fail_builtin proc ->
         let ret = IdentBridge.to_sil id in
-        let e = ExpBridge.to_sil lang decls_env procname exp in
+        let e = ExpBridge.to_sil lang sourcefile decls_env procname exp in
         let loc = LocationBridge.to_sil sourcefile loc in
         let builtin_assert_fail = SilExp.Const (SilConst.Cfun BuiltinDecl.__assert_fail) in
         Call
@@ -975,7 +979,7 @@ module InstrBridge = struct
           SilExp.Sizeof
             {typ; nbytes= None; dynamic_length= None; subtype= Subtype.subtypes_instof; nullable}
         in
-        let target = ExpBridge.to_sil lang decls_env procname target in
+        let target = ExpBridge.to_sil lang sourcefile decls_env procname target in
         let args = [(target, StdTyp.void_star); (sizeof, StdTyp.void)] in
         let ret = IdentBridge.to_sil id in
         let loc = LocationBridge.to_sil sourcefile loc in
@@ -985,7 +989,7 @@ module InstrBridge = struct
       when ProcDecl.is_allocate_array_builtin proc ->
         let element_typ = TypBridge.to_sil lang element_typ in
         let typ = SilTyp.mk_array element_typ in
-        let e = ExpBridge.to_sil lang decls_env procname exp in
+        let e = ExpBridge.to_sil lang sourcefile decls_env procname exp in
         let sizeof =
           SilExp.Sizeof
             {typ; nbytes= None; dynamic_length= Some e; subtype= Subtype.exact; nullable= false}
@@ -1049,12 +1053,12 @@ module InstrBridge = struct
               in
               raise (TextualTransformError [{loc; msg}])
         in
-        let pname = ProcDeclBridge.call_to_sil lang procsig callee_procdecl in
+        let pname = ProcDeclBridge.call_to_sil lang sourcefile procsig callee_procdecl in
         let result_type =
           TypBridge.to_sil lang ~attrs:callee_procdecl.result_type.attributes
             callee_procdecl.result_type.typ
         in
-        let args = List.map ~f:(ExpBridge.to_sil lang decls_env procname) args in
+        let args = List.map ~f:(ExpBridge.to_sil lang sourcefile decls_env procname) args in
         let args =
           match formals_types with
           | None ->
@@ -1131,11 +1135,11 @@ let instr_is_return = function Sil.Store {e1= Lvar v} -> SilPvar.is_return v | _
 module TerminatorBridge = struct
   open Terminator
 
-  let to_sil lang decls_env procname pdesc loc (t : t) : Sil.instr list =
+  let to_sil lang sourcefile decls_env procname pdesc loc (t : t) : Sil.instr list =
     let write_to_ret_var exp =
-      let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
+      let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang sourcefile procname) in
       let ret_type = SilProcdesc.get_ret_type pdesc in
-      let e2 = ExpBridge.to_sil lang decls_env procname exp in
+      let e2 = ExpBridge.to_sil lang sourcefile decls_env procname exp in
       Sil.Store {e1= SilExp.Lvar ret_var; typ= ret_type; e2; loc}
     in
     match t with
@@ -1176,7 +1180,7 @@ module NodeBridge = struct
           []
       | [(id, _typ)] ->
           let sil_param_ident = IdentBridge.to_sil id in
-          let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang procname) in
+          let ret_var = SilPvar.get_ret_pvar (ProcDeclBridge.to_sil lang sourcefile procname) in
           let ret_type = SilProcdesc.get_ret_type pdesc in
           let load_param : Sil.instr =
             Sil.Load
@@ -1198,7 +1202,9 @@ module NodeBridge = struct
       load_thrown_exception @ List.map ~f:(InstrBridge.to_sil lang decls_env procname) node.instrs
     in
     let last_loc = LocationBridge.to_sil sourcefile node.last_loc in
-    let last = TerminatorBridge.to_sil lang decls_env procname pdesc last_loc node.last in
+    let last =
+      TerminatorBridge.to_sil lang sourcefile decls_env procname pdesc last_loc node.last
+    in
     let instrs = match last with [] -> instrs | _ -> instrs @ last in
     (* Use min instr line for node's loc. This makes node placement in a debug HTML a bit more
        predictable and relevant compared to using block labels' locations which can be more detached
@@ -1297,7 +1303,7 @@ module ProcDescBridge = struct
 
   let to_sil lang decls_env cfgs ({procdecl; nodes; start; exit_loc} as pdesc) =
     let sourcefile = TextualDecls.source_file decls_env in
-    let sil_procname = ProcDeclBridge.to_sil lang procdecl in
+    let sil_procname = ProcDeclBridge.to_sil lang sourcefile procdecl in
     let sil_ret_type =
       TypBridge.to_sil lang ~attrs:procdecl.result_type.attributes procdecl.result_type.typ
     in
@@ -1467,7 +1473,7 @@ module ModuleBridge = struct
                  let proc_entries =
                    TypeName.Map.find_opt strct.name all_proc_entries |> Option.value ~default:[]
                  in
-                 let source_file = Some (TextualDecls.source_file decls_env |> SourceFile.file) in
+                 let source_file = TextualDecls.source_file decls_env |> SourceFile.file in
                  StructBridge.to_sil lang decls_env tenv proc_entries source_file strct
              | Procdecl _ ->
                  ()

@@ -21,8 +21,9 @@ let%test_module "procnames" =
           ; result_type= Typ.mk_without_attributes Typ.Void
           ; attributes= [] }
       in
-      let as_java = TextualSil.proc_decl_to_sil Lang.Java toplevel_proc in
-      let as_hack = TextualSil.proc_decl_to_sil Lang.Hack toplevel_proc in
+      let sourcefile = SourceFile.create "toplevel" in
+      let as_java = TextualSil.proc_decl_to_sil Lang.Java sourcefile toplevel_proc in
+      let as_hack = TextualSil.proc_decl_to_sil Lang.Hack sourcefile toplevel_proc in
       F.printf "%a@\n" Procname.pp as_java ;
       F.printf "%a@\n" Procname.pp as_hack ;
       [%expect {|

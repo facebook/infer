@@ -7,7 +7,7 @@
 
 open! IStd
 
-val proc_decl_to_sil : Textual.Lang.t -> Textual.ProcDecl.t -> Procname.t
+val proc_decl_to_sil : Textual.Lang.t -> Textual.SourceFile.t -> Textual.ProcDecl.t -> Procname.t
 [@@warning "-unused-value-declaration"]
 
 val module_to_sil :

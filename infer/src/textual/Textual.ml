@@ -112,8 +112,8 @@ end
 type transform_error = {loc: Location.t; msg: string Lazy.t}
 
 let pp_transform_error sourcefile fmt {loc; msg} =
-  F.fprintf fmt "Textual Transformation Error: %s: %a, %a" (Lazy.force msg) SourceFile.pp sourcefile
-    Location.pp loc
+  F.fprintf fmt "Textual: Transformation Error: %s in %a at %a" (Lazy.force msg) SourceFile.pp
+    sourcefile Location.pp loc
 
 
 exception TextualTransformError of transform_error list
