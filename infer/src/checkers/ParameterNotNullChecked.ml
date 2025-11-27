@@ -54,7 +54,7 @@ module TraceInfo = struct
 end
 
 module Mem = struct
-  type t = {vars: Vars.t; blockParams: BlockParams.t; traceInfo: TraceInfo.t [@compare.ignore]}
+  type t = {vars: Vars.t; blockParams: BlockParams.t; traceInfo: TraceInfo.t [@ignore]}
   [@@deriving compare]
 
   let pp fmt {vars; blockParams; traceInfo} =

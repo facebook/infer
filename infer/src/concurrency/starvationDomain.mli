@@ -68,7 +68,7 @@ module Event : sig
         { locks: Lock.t list
         ; thread: ThreadDomain.t
         ; callsite: CallSite.t option
-        ; call_context: Errlog.loc_trace [@compare.ignore] }
+        ; call_context: Errlog.loc_trace [@ignore] }
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
@@ -83,8 +83,7 @@ end
 
 (** a lock acquisition with location information *)
 module AcquisitionElem : sig
-  type t = private
-    {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Procname.t [@compare.ignore]}
+  type t = private {lock: Lock.t; loc: Location.t [@ignore]; procname: Procname.t [@ignore]}
   [@@deriving compare]
 end
 

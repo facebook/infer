@@ -28,7 +28,7 @@ type t_ignore_duplicates = t =
   { err_data: err_data_
   ; err_key: Errlog.err_key
   ; proc_location_opt: Location.t option
-  ; proc_name: Procname.t [@compare.ignore] }
+  ; proc_name: Procname.t [@ignore] }
 [@@deriving compare]
 
 (* If two issues are identical except for their procnames, they are probably duplicate reports on

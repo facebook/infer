@@ -33,8 +33,7 @@ module LocalAccessPathSet = PrettyPrintable.MakePPSet (LocalAccessPath)
 let suffixes = ["Attr"; "Dip"; "Px"; "Res"; "Sp"]
 
 module MethodCallPrefix = struct
-  type t =
-    {prefix: string; procname: Procname.t [@compare.ignore]; location: Location.t [@compare.ignore]}
+  type t = {prefix: string; procname: Procname.t [@ignore]; location: Location.t [@ignore]}
   [@@deriving compare]
 
   let make_with_prefixes procname location =

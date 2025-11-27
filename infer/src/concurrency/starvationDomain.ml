@@ -214,10 +214,10 @@ module Event = struct
     | LockAcquire of
         { locks: Lock.t list
         ; thread: ThreadDomain.t
-              (* callsite and call_context indicate that this lock was acquired 
+              (* callsite and call_context indicate that this lock was acquired
                * through an interprocedrual call, otherwise they are None/[] *)
         ; callsite: CallSite.t option
-        ; call_context: Errlog.loc_trace [@compare.ignore] }
+        ; call_context: Errlog.loc_trace [@ignore] }
     | MayBlock of {callee: Procname.t; thread: ThreadDomain.t}
     | MonitorWait of {lock: Lock.t; thread: ThreadDomain.t}
     | MustNotOccurUnderLock of {callee: Procname.t; thread: ThreadDomain.t}
@@ -364,7 +364,7 @@ end
 (** A lock acquisition with source location and procname in which it occurs. The location & procname
     are *ignored* for comparisons, and are only for reporting. *)
 module AcquisitionElem = struct
-  type t = {lock: Lock.t; loc: Location.t [@compare.ignore]; procname: Procname.t [@compare.ignore]}
+  type t = {lock: Lock.t; loc: Location.t [@ignore]; procname: Procname.t [@ignore]}
   [@@deriving compare]
 
   let pp fmt {lock; loc; procname} =
@@ -465,7 +465,7 @@ end = struct
   module UnlockedMap = AbstractDomain.InvertedMap (Lock) (UnlockCount)
 
   (* [held] has the locks currently held.
-   * [unlocked] The lock function has unlocked (without locking them) 
+   * [unlocked] The lock function has unlocked (without locking them)
    * [acquisitions] has the currently held locks, so as to avoid a linear fold in [get_acquisitions].
      This should also increase sharing across returned values from [get_acquisitions]. *)
   type t = {held: HeldMap.t; unlocked: UnlockedMap.t; acquisitions: Acquisitions.t}

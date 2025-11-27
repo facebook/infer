@@ -62,7 +62,7 @@ module Attribute = struct
         F.pp_print_string fmt "file descriptor"
 
 
-  type taint_in = {v: AbstractValue.t; history: (ValueHistory.t[@compare.ignore] [@equal.ignore])}
+  type taint_in = {v: AbstractValue.t; history: (ValueHistory.t[@ignore])}
   [@@deriving compare, equal]
 
   let pp_taint_in fmt {v; history} =

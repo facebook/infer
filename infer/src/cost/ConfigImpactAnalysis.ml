@@ -143,8 +143,8 @@ module UncheckedCallee = struct
   type t =
     { callee: callee
     ; is_known_expensive: bool
-    ; location: Location.t [@compare.ignore]
-    ; call_type: call_type [@compare.ignore] }
+    ; location: Location.t [@ignore]
+    ; call_type: call_type [@ignore] }
   [@@deriving compare]
 
   and call_type = Direct | Indirect of {unchecked: t; via: Procname.t}

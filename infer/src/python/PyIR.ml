@@ -144,7 +144,7 @@ module NodeName : sig
     val map_result : f:(key -> 'a -> ('b, 'c) result) -> 'a t -> ('b t, 'c) result
   end
 end = struct
-  type t = {name: string; offset: int [@compare.ignore] [@equal.ignore]} [@@deriving equal, compare]
+  type t = {name: string; offset: int [@ignore]} [@@deriving equal, compare]
 
   let pp ~debug fmt {name; offset} =
     if debug then F.fprintf fmt "%s@%d" name offset else F.pp_print_string fmt name

@@ -19,7 +19,7 @@ type t =
   | Struct of
       { name: string
       ; elts: (int * t) iarray (* possibly cyclic, name unique *)
-            [@compare.ignore] [@equal.ignore] [@sexp_drop_if fun _ -> true]
+            [@ignore] [@sexp_drop_if fun _ -> true]
       ; bits: int
       ; byts: int }
   | Opaque of {name: string}

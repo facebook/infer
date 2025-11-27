@@ -17,8 +17,8 @@ module Callees = struct
   module CallSite = struct
     type t =
       { callsite_loc: Location.t
-      ; caller_name: (Procname.t[@compare.ignore])
-      ; caller_loc: (Location.t[@compare.ignore]) }
+      ; caller_name: (Procname.t[@ignore])
+      ; caller_loc: (Location.t[@ignore]) }
     [@@deriving compare]
 
     let pp fmt {callsite_loc} = Location.pp_file_pos fmt callsite_loc

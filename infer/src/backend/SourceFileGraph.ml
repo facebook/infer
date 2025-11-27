@@ -205,7 +205,7 @@ end
 
 module Tree = struct
   (** trees are compared only by size *)
-  type t = {vertices: SourceFile.t list [@compare.ignore]; size: int} [@@deriving compare]
+  type t = {vertices: SourceFile.t list [@ignore]; size: int} [@@deriving compare]
 
   let size {size} = size
 
@@ -269,7 +269,7 @@ end
 
 module Bin = struct
   (** a set of trees to send to a single worker, compared only by size *)
-  type t = {trees: Tree.t list [@compare.ignore]; bin_size: int} [@@deriving compare]
+  type t = {trees: Tree.t list [@ignore]; bin_size: int} [@@deriving compare]
 
   let empty = {trees= []; bin_size= 0}
 

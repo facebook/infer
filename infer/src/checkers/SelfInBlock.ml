@@ -74,11 +74,7 @@ module DomainData = struct
 
 
   type t =
-    { pvar: Pvar.t
-    ; typ: Typ.t [@compare.ignore]
-    ; loc: Location.t
-    ; kind: self_pointer_kind
-    ; is_implicit: bool }
+    {pvar: Pvar.t; typ: Typ.t [@ignore]; loc: Location.t; kind: self_pointer_kind; is_implicit: bool}
   [@@deriving compare]
 
   let pp fmt {pvar; typ; loc; kind} =

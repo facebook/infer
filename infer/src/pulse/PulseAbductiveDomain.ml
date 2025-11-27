@@ -75,7 +75,7 @@ type t =
   { post: PostDomain.t
   ; pre: PreDomain.t
   ; path_condition: Formula.t
-  ; decompiler: (Decompiler.t[@yojson.opaque] [@equal.ignore] [@compare.ignore])
+  ; decompiler: (Decompiler.t[@yojson.opaque] [@ignore])
   ; topl: (PulseTopl.state[@yojson.opaque])
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])

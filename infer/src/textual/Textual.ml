@@ -119,7 +119,7 @@ let pp_transform_error sourcefile fmt {loc; msg} =
 exception TextualTransformError of transform_error list
 
 module type NAME = sig
-  type t = {value: string; loc: Location.t [@compare.ignore]} [@@deriving compare, equal, hash]
+  type t = {value: string; loc: Location.t [@ignore]} [@@deriving compare, equal, hash]
 
   val of_string : ?loc:Location.t -> string -> t
 
@@ -140,8 +140,7 @@ end
 
 module Name : NAME = struct
   module T = struct
-    type t = {value: string; loc: Location.t [@compare.ignore] [@equal.ignore] [@hash.ignore]}
-    [@@deriving compare, equal, hash]
+    type t = {value: string; loc: Location.t [@ignore]} [@@deriving compare, equal, hash]
   end
 
   include T

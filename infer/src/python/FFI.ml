@@ -397,20 +397,20 @@ module Code = struct
     { co_name: string
     ; co_firstlineno: int
     ; co_filename: string
-    ; co_flags: int [@compare.ignore] [@equal.ignore]
-    ; co_cellvars: string array [@compare.ignore] [@equal.ignore]
-    ; co_freevars: string array [@compare.ignore] [@equal.ignore]
-    ; co_names: string array [@compare.ignore] [@equal.ignore]
-    ; co_varnames: string array [@compare.ignore] [@equal.ignore]
-    ; co_nlocals: int [@compare.ignore] [@equal.ignore]
-    ; co_argcount: int [@compare.ignore] [@equal.ignore]
-    ; co_posonlyargcount: int [@compare.ignore] [@equal.ignore]
-    ; co_stacksize: int [@compare.ignore] [@equal.ignore]
-    ; co_kwonlyargcount: int [@compare.ignore] [@equal.ignore]
-    ; co_lnotab: char array [@compare.ignore] [@equal.ignore]
-    ; co_consts: pyConstant array [@compare.ignore] [@equal.ignore]
-    ; instructions: pyInstruction list [@compare.ignore] [@equal.ignore]
-    ; version: version [@compare.ignore] [@equal.ignore] }
+    ; co_flags: int [@ignore]
+    ; co_cellvars: string array [@ignore]
+    ; co_freevars: string array [@ignore]
+    ; co_names: string array [@ignore]
+    ; co_varnames: string array [@ignore]
+    ; co_nlocals: int [@ignore]
+    ; co_argcount: int [@ignore]
+    ; co_posonlyargcount: int [@ignore]
+    ; co_stacksize: int [@ignore]
+    ; co_kwonlyargcount: int [@ignore]
+    ; co_lnotab: char array [@ignore]
+    ; co_consts: pyConstant array [@ignore]
+    ; instructions: pyInstruction list [@ignore]
+    ; version: version [@ignore] }
   [@@deriving show, compare, equal]
 end
 

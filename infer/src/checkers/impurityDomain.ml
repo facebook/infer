@@ -18,7 +18,7 @@ module PVar = struct
 end
 
 module ModifiedAccess = struct
-  type t = {ordered_access_list: unit Access.access list; trace: trace [@compare.ignore]}
+  type t = {ordered_access_list: unit Access.access list; trace: trace [@ignore]}
   [@@deriving compare]
 
   let pp fmt {ordered_access_list} =

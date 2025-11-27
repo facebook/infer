@@ -20,7 +20,7 @@ module SymbolPath : sig
   type prim =
     | Pvar of Pvar.t
     | Deref of deref_kind * partial
-    | Callsite of {ret_typ: Typ.t; cs: CallSite.t; obj_path: partial option [@compare.ignore]}
+    | Callsite of {ret_typ: Typ.t; cs: CallSite.t; obj_path: partial option [@ignore]}
         (** [obj_path] represents the varaible name object when a method of which is called at the
             [cs] callsite. *)
   [@@deriving compare]
