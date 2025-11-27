@@ -112,7 +112,7 @@ let should_report_cycle astate cycle =
       match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> true
     in
     let blocklisted =
-      if Language.curr_language_is Language.Swift then true
+      if Language.curr_language_is Language.Swift then false
       else
         Option.value_map Config.pulse_retain_cycle_blocklist_pattern ~default:false ~f:(fun re ->
             let expr_str = F.asprintf "%a" DecompilerExpr.pp value in
