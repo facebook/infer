@@ -104,14 +104,19 @@ let should_report_cycle astate cycle =
     let path_condition = astate.AbductiveDomain.path_condition in
     let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
     let value = Decompiler.find addr astate in
-    let is_known = not (DecompilerExpr.is_unknown value) in
+    let is_known =
+      if Language.curr_language_is Language.Swift then true
+      else not (DecompilerExpr.is_unknown value)
+    in
     let is_objc_swift_or_block_if_field_access =
       match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> true
     in
     let blocklisted =
-      Option.value_map Config.pulse_retain_cycle_blocklist_pattern ~default:false ~f:(fun re ->
-          let expr_str = F.asprintf "%a" DecompilerExpr.pp value in
-          Str.string_match re expr_str 0 )
+      if Language.curr_language_is Language.Swift then true
+      else
+        Option.value_map Config.pulse_retain_cycle_blocklist_pattern ~default:false ~f:(fun re ->
+            let expr_str = F.asprintf "%a" DecompilerExpr.pp value in
+            Str.string_match re expr_str 0 )
     in
     not_previously_reported && is_not_null && is_known && is_objc_swift_or_block_if_field_access
     && not blocklisted
