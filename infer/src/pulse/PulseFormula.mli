@@ -8,14 +8,7 @@
 open! IStd
 module F = Format
 module SatUnsat = PulseSatUnsat
-
-(* NOTE: using [Var] for [AbstractValue] here since this is how "abstract values" are interpreted,
-   in particular as far as arithmetic is concerned *)
-module Var :
-  module type of PulseAbstractValue
-    with type t = PulseAbstractValue.t
-     and module Set = PulseAbstractValue.Set
-     and module Map = PulseAbstractValue.Map
+module Var = PulseFormulaVar
 
 (* Pulse-infinite added *)
 
