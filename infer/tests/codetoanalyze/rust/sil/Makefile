@@ -21,13 +21,13 @@ default: test
 %.print_ullbc: %.rs
 	$(QUIET)if [ "$(BUILD_RUST_ANALYZERS)" = "yes" ]; then \
 	error=0; for file in $(RUSTSOURCES) ; do \
-		charon rustc --print-ullbc --ullbc --dest-file /dev/null -- $$file > $$file.test.print_ullbc || error=1 ; \
+		charon rustc --print-ullbc --ullbc --dest-file /dev/null -- $$file --allow unused > $$file.test.print_ullbc || error=1 ; \
 	done; fi
 
 %.ullbc: %.rs
 	$(QUIET)if [ "$(BUILD_RUST_ANALYZERS)" = "yes" ]; then \
 	error=0; for file in $(RUSTSOURCES) ; do \
-		charon rustc --ullbc --dest-file $$file.test.ullbc -- $$file || error=1 ; \
+		charon rustc --ullbc --dest-file $$file.test.ullbc -- $$file --allow unused || error=1 ; \
 	done; fi
 
 %.test.sil: %.ullbc
@@ -73,5 +73,5 @@ clean:
 charon:
 	$(QUIET)if [ "$(BUILD_RUST_ANALYZERS)" = "yes" ]; then \
 	error=0; for file in $(RUSTSOURCES) ; do \
-		charon rustc --print-ullbc --ullbc --dest-file $$file.ullbc -- $$file > $$file.print_ullbc || error=1 ; \
+		charon rustc --print-ullbc --ullbc --dest-file $$file.ullbc -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
 	done; fi
