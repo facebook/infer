@@ -226,6 +226,8 @@ module Typ : sig
   val any_type_llvm : t
 
   val any_type_swift : t
+
+  val is_pointer : t -> bool
 end
 
 module Ident : sig

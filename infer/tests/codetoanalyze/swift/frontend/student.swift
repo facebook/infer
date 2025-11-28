@@ -72,6 +72,10 @@ class Person {
         self.age = age
         self.spouse = Person(age: 0)
     }
+
+    func setting_jane(_ jane: Person) {
+        self.spouse = jane
+    }
 }
 
 func test_retain_cycle_bad(_ john: Person, _ jane: Person) {

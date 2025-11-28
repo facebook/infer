@@ -535,6 +535,8 @@ module Typ = struct
 
   let is_annotated ~f {attributes} = List.exists ~f attributes
 
+  let is_pointer typ = match typ with Ptr _ -> true | _ -> false
+
   let pp_annotated fmt {typ; attributes} =
     List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
     pp fmt typ

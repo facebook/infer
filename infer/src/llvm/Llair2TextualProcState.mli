@@ -88,3 +88,5 @@ val find_method_with_offset :
 val fill_class_name_offset_map : unit -> classNameOffsetMap
 
 val compute_locals : proc_state:t -> (VarMap.key * Textual.Typ.annotated) list
+
+val pp_ids : F.formatter -> Textual.Typ.annotated IdentMap.t -> unit

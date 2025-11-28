@@ -83,7 +83,7 @@ define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello7Veh
       
 } @?
 
-define .plain_name = "init" $s5Hello7VehicleCACycfc(self: *__infer_swift_type<,Vehicle>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" $s5Hello7VehicleCACycfc(self: *__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle> {
   #: @?
       n1 = load &self @[183:0]
       ret n1 @[183:0]
@@ -94,7 +94,7 @@ declare $s5Hello7VehicleCMa(int) : *__infer_swift_type<ptr_elt>
 
 declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleCfD(*__infer_swift_type<,Vehicle>) : void
 
-declare .plain_name = "deinit" $s5Hello7VehicleCfd(*__infer_swift_type<,Vehicle>) : *__infer_swift_type<ptr_elt>
+declare .plain_name = "deinit" $s5Hello7VehicleCfd(*__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle>
 
 declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 

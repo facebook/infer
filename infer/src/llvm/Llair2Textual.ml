@@ -17,6 +17,8 @@ module RegMap = Llair.Exp.Reg.Map
 
 let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
 
+let llvm_dynamic_call = Textual.ProcName.of_string "llvm_dynamic_call"
+
 let get_alloc_class_name =
   let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
   fun ~proc_state proc_name ->
@@ -49,16 +51,28 @@ module Var = struct
 
   let add_fresh_id ~proc_state () = ProcState.mk_fresh_id proc_state
 
+  let find_formal_type ~proc_state reg_var_name =
+    VarMap.fold
+      (fun _ (annot_typ, local) acc ->
+        match local with
+        | Some local when Textual.VarName.equal local reg_var_name ->
+            Some annot_typ.Textual.Typ.typ
+        | _ ->
+            acc )
+      proc_state.ProcState.formals None
+
+
   let reg_to_textual_var ~(proc_state : ProcState.t) reg =
     let reg_var_name = reg_to_var_name reg in
     match VarMap.find_opt reg_var_name proc_state.formals with
-    | Some (_, Some local) ->
-        Textual.Exp.Lvar local
-    | Some (_, None) ->
-        Textual.Exp.Lvar reg_var_name
+    | Some (annot_typ, Some local) ->
+        (Textual.Exp.Lvar local, Some annot_typ.Textual.Typ.typ)
+    | Some (annot_typ, None) ->
+        (Textual.Exp.Lvar reg_var_name, Some annot_typ.Textual.Typ.typ)
     | None ->
-        if VarMap.mem reg_var_name proc_state.locals then Textual.Exp.Lvar reg_var_name
-        else Textual.Exp.Var (reg_to_id ~proc_state reg |> fst)
+        if VarMap.mem reg_var_name proc_state.locals then
+          (Textual.Exp.Lvar reg_var_name, find_formal_type ~proc_state reg_var_name)
+        else (Textual.Exp.Var (reg_to_id ~proc_state reg |> fst), None)
 
 
   let reg_to_annot_typ lang ~struct_map reg =
@@ -235,14 +249,23 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
   Textual.ProcDecl.of_binop sil_bin_op
 
 
-let add_deref ~proc_state exp loc =
+let add_deref ~proc_state ?from_call exp loc =
+  let id = Var.add_fresh_id ~proc_state () in
   let add_load_instr =
-    let id = Var.add_fresh_id ~proc_state () in
     let instr = Textual.Instr.Load {id; exp; typ= None; loc} in
     ([instr], Textual.Exp.Var id)
   in
   match exp with
-  | Textual.Exp.Lvar _ | Textual.Exp.Field _ ->
+  | Textual.Exp.Lvar var_name ->
+      ( if Option.is_some from_call then
+          let typ_opt = Var.find_formal_type ~proc_state var_name in
+          match typ_opt with
+          | Some typ ->
+              ProcState.update_ids_types ~proc_state id (Textual.Typ.mk_without_attributes typ)
+          | None ->
+              () ) ;
+      add_load_instr
+  | Textual.Exp.Field _ ->
       add_load_instr
   | Textual.Exp.Var id -> (
       let typ = IdentMap.find_opt id proc_state.ProcState.ids_move in
@@ -254,14 +277,9 @@ let add_deref ~proc_state exp loc =
 let update_id_return_type ~proc_state proc id =
   let proc_decl_opt = Textual.QualifiedProcName.Map.find_opt proc proc_state.ProcState.proc_map in
   match (id, proc_decl_opt) with
-  | Some id, Some proc_decl -> (
+  | Some id, Some proc_decl ->
       let return_typ = proc_decl.Textual.ProcDecl.result_type in
-      match return_typ.Textual.Typ.typ with
-      | Textual.Typ.(Ptr (Struct _ as struct_name))
-        when not (Textual.Typ.equal Textual.Typ.any_type_swift struct_name) ->
-          ProcState.update_ids_types ~proc_state id (Textual.Typ.mk_without_attributes struct_name)
-      | _ ->
-          () )
+      ProcState.update_ids_types ~proc_state id return_typ
   | _ ->
       ()
 
@@ -294,8 +312,19 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       (Textual.Exp.Const (Str name), None, [])
   | Reg {id; name; typ} ->
       let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
-      let textual_exp = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
-      (textual_exp, Some textual_typ, [])
+      let textual_exp, var_typ = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
+      let typ =
+        match var_typ with
+        | Some var_typ
+          when (Textual.Typ.is_pointer textual_typ && not (Textual.Typ.is_pointer var_typ))
+               || not (Textual.Typ.is_pointer textual_typ && Textual.Typ.is_pointer var_typ) ->
+            textual_typ
+        | Some var_typ ->
+            var_typ
+        | _ ->
+            textual_typ
+      in
+      (textual_exp, Some typ, [])
   | Global {name; typ; is_constant} ->
       let textual_typ = Type.to_textual_typ proc_state.lang ~struct_map typ in
       let textual_exp =
@@ -469,6 +498,30 @@ and to_textual_bool_exp ~proc_state loc exp =
   (Textual.BoolExp.Exp textual_exp, textual_typ_opt, instrs)
 
 
+and resolve_method_call ~proc_state proc args =
+  match args with
+  | Textual.Exp.Var id_offset :: args -> (
+    match (proc_state.ProcState.id_offset, List.hd (List.rev args)) with
+    | Some (proc_state_id_offset, offset), Some (Textual.Exp.Var self_id)
+      when Textual.Ident.equal proc_state_id_offset id_offset
+           && Textual.ProcName.equal (Textual.QualifiedProcName.name proc) llvm_dynamic_call -> (
+      match ProcState.IdentMap.find_opt self_id proc_state.ProcState.ids_types with
+      | Some {typ= Textual.Typ.Ptr (Textual.Typ.Struct struct_name as inner_typ)}
+        when not (Textual.Typ.equal Textual.Typ.any_type_swift inner_typ) -> (
+        match ProcState.find_method_with_offset ~proc_state struct_name offset with
+        | Some proc_name ->
+            ProcState.reset_offsets ~proc_state ;
+            Some (Textual.Exp.Call {proc= proc_name; args; kind= Textual.Exp.Virtual})
+        | None ->
+            None )
+      | _ ->
+          None )
+    | _ ->
+        None )
+  | _ ->
+      None
+
+
 and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
     (args : Llair.Exp.t list) (loc : Textual.Location.t) =
   let args_instrs, args =
@@ -480,7 +533,7 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
           if
             Textual.Lang.is_swift proc_state.ProcState.lang
             && not (Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign)
-          then add_deref ~proc_state exp loc
+          then add_deref ~proc_state ~from_call:true exp loc
           else ([], exp)
         in
         (List.append deref_instrs (List.append acc_instrs instrs), deref_exp) )
@@ -492,7 +545,7 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
       ([Textual.Exp.Const Null], [])
     else (args, args_instrs)
   in
-  let id =
+  let return_id =
     Option.map return ~f:(fun reg ->
         let id = Var.reg_to_id ~proc_state reg |> fst in
         id )
@@ -506,10 +559,15 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
           Textual.ProcName.equal proc.Textual.QualifiedProcName.name (Textual.ProcName.of_string f) )
         functions_to_skip
     then List.hd_exn args
-    else Textual.Exp.Call {proc; args; kind}
+    else
+      match resolve_method_call ~proc_state proc args with
+      | Some call_instrs ->
+          call_instrs
+      | None ->
+          Textual.Exp.Call {proc; args; kind}
   in
-  update_id_return_type ~proc_state proc id ;
-  (id, call_exp, args_instrs)
+  update_id_return_type ~proc_state proc return_id ;
+  (return_id, call_exp, args_instrs)
 
 
 and to_textual_call_instrs ~proc_state return proc args loc =
@@ -525,85 +583,58 @@ and to_textual_builtin ~proc_state return name args loc =
   to_textual_call_instrs ~proc_state return proc args loc
 
 
-and resolve_method_call ~proc_state return callee args loc =
-  match (callee, proc_state.ProcState.id_offset, List.hd (List.rev args)) with
-  | Indirect {ptr= offset_arg}, Some (id_offset, offset), Some self_id -> (
-      let offset_exp, _, _ = to_textual_exp ~proc_state loc offset_arg in
-      let self_id, _, _ = to_textual_exp ~proc_state loc self_id in
-      match (offset_exp, self_id) with
-      | Textual.Exp.Var id, Var self_id when Textual.Ident.equal id id_offset -> (
-        match ProcState.IdentMap.find_opt self_id proc_state.ProcState.ids_types with
-        | Some {typ= Textual.Typ.Struct struct_name} -> (
-          match ProcState.find_method_with_offset ~proc_state struct_name offset with
-          | Some proc_name ->
-              ProcState.reset_offsets ~proc_state ;
-              Some (to_textual_call_instrs ~proc_state return proc_name args loc)
-          | None ->
-              None )
-        | _ ->
-            None )
-      | _ ->
-          None )
-  | _ ->
-      None
-
-
 and to_textual_call ~proc_state (call : 'a Llair.call) =
   let loc = to_textual_loc ~proc_state call.loc in
   let args = StdUtils.iarray_to_list call.actuals in
-  match resolve_method_call ~proc_state call.areturn call.callee args loc with
-  | Some call_instrs ->
-      call_instrs
-  | None ->
-      let proc, kind, exp_opt =
-        match call.callee with
-        | Direct {func} ->
-            let proc =
-              if
-                String.equal (FuncName.name func.Llair.name)
-                  (Procname.get_method BuiltinDecl.__assert_fail)
-                || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
-              then Textual.ProcDecl.assert_fail_name
-              else to_qualified_proc_name (FuncName.name func.Llair.name)
-            in
-            (proc, Textual.Exp.NonVirtual, None)
-        | Indirect {ptr} ->
-            let proc = builtin_qual_proc_name "llvm_dynamic_call" in
-            (proc, Textual.Exp.NonVirtual, Some (to_textual_exp loc ~proc_state ptr |> fst3))
-        | Intrinsic intrinsic ->
-            let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
-            (proc, Textual.Exp.NonVirtual, None)
-      in
-      let loc = to_textual_loc_instr ~proc_state call.loc in
-      let id, call_exp, args_instrs =
-        to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args loc
-      in
-      let call_exp =
-        match call_exp with
-        | Textual.Exp.Call {proc} -> (
-          match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) with
-          | Some class_name ->
-              let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
-              Textual.Exp.Call
-                {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
-          | None ->
-              call_exp )
-        | _ ->
-            call_exp
-      in
-      (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
+  let proc, kind, exp_opt =
+    match call.callee with
+    | Direct {func} ->
+        let proc =
+          if
+            String.equal (FuncName.name func.Llair.name)
+              (Procname.get_method BuiltinDecl.__assert_fail)
+            || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
+          then Textual.ProcDecl.assert_fail_name
+          else to_qualified_proc_name (FuncName.name func.Llair.name)
+        in
+        (proc, Textual.Exp.NonVirtual, None)
+    | Indirect {ptr} ->
+        let proc = builtin_qual_proc_name (Textual.ProcName.to_string llvm_dynamic_call) in
+        (proc, Textual.Exp.NonVirtual, Some (to_textual_exp loc ~proc_state ptr |> fst3))
+    | Intrinsic intrinsic ->
+        let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
+        (proc, Textual.Exp.NonVirtual, None)
+  in
+  let loc = to_textual_loc_instr ~proc_state call.loc in
+  let id, call_exp, args_instrs =
+    to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args loc
+  in
+  let call_exp =
+    match call_exp with
+    | Textual.Exp.Call {proc} -> (
+      match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) with
+      | Some class_name ->
+          let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
+          Textual.Exp.Call
+            {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
+      | None ->
+          call_exp )
+    | _ ->
+        call_exp
+  in
+  (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
   because we are flattenning the structure of weak pointers to be just like normal pointers in infer,
   whilst in llvm the structures is field_2: *swift::weak}, type swift::weak = {field_0: *ptr_elt} *)
-      let instrs =
-        match call_exp with
-        | Textual.Exp.Call {proc; args= [arg1; arg2]}
-          when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
-            let instrs2, arg2 = add_deref ~proc_state arg2 loc in
-            Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
-        | _ ->
-            [Textual.Instr.Let {id; exp= call_exp; loc}]
-      in
-      instrs @ args_instrs
+  let instrs =
+    match call_exp with
+    | Textual.Exp.Call {proc; args= [arg1; arg2]}
+      when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
+        let instrs2, arg2 = add_deref ~proc_state arg2 loc in
+        Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
+    | _ ->
+        [Textual.Instr.Let {id; exp= call_exp; loc}]
+  in
+  instrs @ args_instrs
 
 
 let remove_store_zero_in_class typ_exp1 exp2 =
