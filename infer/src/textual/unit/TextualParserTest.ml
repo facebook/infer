@@ -184,7 +184,7 @@ let text =
 
 
 let%expect_test "keywords as idents" =
-  let module_ = parse_module_ok text |> TextualTransform.out_of_ssa in
+  let module_ = parse_module_ok text |> TextualTransform.out_of_ssa_exn in
   show module_ ;
   [%expect
     {|

@@ -122,7 +122,7 @@ let process_file ~is_binary file =
       TextualVerification.verify_strict textual |> Result.map_error ~f
     in
     if Config.debug_mode then dump_textual_file ~version:1 file verified_textual ;
-    let transformed_textual, decls = TextualTransform.run Python verified_textual in
+    let transformed_textual, decls = TextualTransform.run_exn Python verified_textual in
     let {PyIR.Module.name= module_name} = pyir in
     let transformed_textual =
       PyIRTypeInference.gen_module_default_type pyir

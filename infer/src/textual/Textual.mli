@@ -532,6 +532,13 @@ type transform_error = {loc: Location.t; msg: string Lazy.t}
 
 val pp_transform_error : SourceFile.t -> F.formatter -> transform_error -> unit
 
+val seq_fallible_fold :
+     ?errors:transform_error list
+  -> init:'a
+  -> f:('a -> 'b -> 'a)
+  -> 'b Seq.t
+  -> 'a * transform_error list
+
 exception TextualTransformError of transform_error list
 
 exception SpecialSyntaxError of Location.t * string

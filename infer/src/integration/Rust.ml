@@ -68,7 +68,7 @@ let capture prog (args : string list) =
           (F.pp_print_list TextualVerification.pp_error)
           err
   in
-  let transformed_textual, decls = TextualTransform.run Rust verified_textual in
+  let transformed_textual, decls = TextualTransform.run_exn Rust verified_textual in
   let cfg, tenv =
     match TextualSil.module_to_sil Rust transformed_textual decls with
     | Ok s ->

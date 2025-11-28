@@ -32,17 +32,20 @@ val remove_effects_in_subexprs :
 val remove_if_exp_and_terminator : Textual.Module.t -> Textual.Module.t
 [@@warning "-unused-value-declaration"]
 
-val let_propagation : Textual.Module.t -> Textual.Module.t [@@warning "-unused-value-declaration"]
+val let_propagation_exn : Textual.Module.t -> Textual.Module.t
+[@@warning "-unused-value-declaration"]
 
-val out_of_ssa : Textual.Module.t -> Textual.Module.t [@@warning "-unused-value-declaration"]
+val out_of_ssa_exn : Textual.Module.t -> Textual.Module.t [@@warning "-unused-value-declaration"]
 
-val run : Textual.Lang.t -> Textual.Module.t -> Textual.Module.t * TextualDecls.t
-(* run the following transformations in the given order:
-   1) remove_if_terminator
-   2) remove_effects_in_subexprs (also removes closures expressions)
-   3) let_propagation
-   4) out_of_ssa in
-*)
+val run :
+     Textual.Lang.t
+  -> Textual.Module.t
+  -> (Textual.Module.t * TextualDecls.t, Textual.transform_error list) result
+(** run the following transformations in the given order: 1) remove_if_terminator 2)
+    remove_effects_in_subexprs (also removes closures expressions) 3) let_propagation 4) out_of_ssa
+    in *)
+
+val run_exn : Textual.Lang.t -> Textual.Module.t -> Textual.Module.t * TextualDecls.t
 
 val fix_hackc_mistranslations : Textual.Module.t -> Textual.Module.t
 

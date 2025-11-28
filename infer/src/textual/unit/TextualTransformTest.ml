@@ -603,7 +603,7 @@ let%test_module "remove_if_terminator transformation" =
           let module_, _ = module_ |> TextualTransform.remove_effects_in_subexprs C decls_env in
           print_endline "BEFORE let_propagation" ;
           show module_ ;
-          let module_ = TextualTransform.let_propagation module_ in
+          let module_ = TextualTransform.let_propagation_exn module_ in
           print_endline "AFTER let_propagation" ;
           show module_
       | Error _ ->
@@ -634,7 +634,7 @@ let%test_module "let_propagation transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module_ok input_text |> TextualTransform.let_propagation in
+      let module_ = parse_module_ok input_text |> TextualTransform.let_propagation_exn in
       show module_ ;
       [%expect
         {|
@@ -677,7 +677,7 @@ let%test_module "out-of-ssa transformation" =
 
 
     let%expect_test _ =
-      let module_ = parse_module_ok input_text |> TextualTransform.out_of_ssa in
+      let module_ = parse_module_ok input_text |> TextualTransform.out_of_ssa_exn in
       show module_ ;
       [%expect
         {|
@@ -718,7 +718,7 @@ let%test_module "out-of-ssa transformation" =
     let%expect_test _ =
       let module_ =
         parse_module_ok python_inspired_text
-        |> TextualTransform.remove_if_exp_and_terminator |> TextualTransform.out_of_ssa
+        |> TextualTransform.remove_if_exp_and_terminator |> TextualTransform.out_of_ssa_exn
       in
       show module_ ;
       [%expect

@@ -49,7 +49,7 @@ let test_restore_ssa text =
   | Ok (module_, _) ->
       F.printf "%a\n" (Textual.Module.pp ~show_location:false) module_ ;
       let lang = Module.lang module_ in
-      let module_, _ = TextualTransform.run lang module_ in
+      let module_, _ = TextualTransform.run_exn lang module_ in
       F.printf "AFTER COMPLETE TRANSFORMATION:\n%a\n"
         (Textual.Module.pp ~show_location:false)
         module_

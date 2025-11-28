@@ -21,7 +21,7 @@ let run pyir =
     in
     F.printf "TYPE INFERENCE@\n" ;
     show verified_textual ;
-    let transformed_textual, _ = TextualTransform.run Python verified_textual in
+    let transformed_textual, _ = TextualTransform.run_exn Python verified_textual in
     let {PyIR.Module.name= module_name} = pyir in
     let transformed_textual =
       PyIRTypeInference.gen_module_default_type pyir

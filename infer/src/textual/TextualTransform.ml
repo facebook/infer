@@ -9,6 +9,11 @@ open! IStd
 module L = Logging
 open Textual
 
+let seq_fallible_map ?(errors = []) ~f seq =
+  let rev_result, errors = seq_fallible_fold ~errors ~init:[] ~f:(fun acc x -> f x :: acc) seq in
+  (List.rev rev_result, errors)
+
+
 let get_fresh_ident ({nodes; fresh_ident} : ProcDesc.t) =
   match fresh_ident with
   | None ->
@@ -44,13 +49,20 @@ let create_fresh_label_generator ~prefix ({nodes} : ProcDesc.t) =
   fresh_label
 
 
-let module_map_procs ~f (module_ : Module.t) =
+let fallible_module_map_procs ?(errors = []) ~f (module_ : Module.t) =
   let open Module in
-  let decls =
-    List.map module_.decls ~f:(fun decl ->
+  let decls, errors =
+    seq_fallible_map ~errors
+      ~f:(fun decl ->
         match decl with Proc pdesc -> Proc (f pdesc) | Global _ | Struct _ | Procdecl _ -> decl )
+      (Stdlib.List.to_seq module_.decls)
   in
-  {module_ with decls}
+  ({module_ with decls}, errors)
+
+
+let module_map_procs ~f module_ =
+  let module_, errors = fallible_module_map_procs ~f module_ in
+  if List.is_empty errors then module_ else raise (TextualTransformError errors)
 
 
 let module_map_procdecl ~f (module_ : Module.t) =
@@ -1138,11 +1150,12 @@ let remove_effects_in_subexprs lang decls_env module_ =
 
 
 (* TODO (T131910123): replace with STORE+LOAD transform *)
-let let_propagation module_ =
+let let_propagation ?(errors = []) (module_ : Module.t) =
   let get id ident_map =
     try Ident.Map.find id ident_map
     with Stdlib.Not_found ->
-      L.die InternalError "Textual.let_propagation.get failed: unknown identifier %a" Ident.pp id
+      let msg = lazy (F.asprintf "let_propagation.get failed: unknown identifier %a" Ident.pp id) in
+      raise (TextualTransformError [{msg; loc= Location.Unknown}])
   in
   let build_equations pdesc : Exp.t Ident.Map.t =
     (* we collect all rule of the form [id = exp] where [exp] is not a regular call nor an
@@ -1173,10 +1186,14 @@ let let_propagation module_ =
     let rec visit id ((status, sorted_idents) as state) =
       match Ident.Map.find_opt id status with
       | Some `VisitInProgress ->
-          L.die InternalError
-            "Textual transformation error: sort_equation was given a set of equations with cyclic \
-             dependencies: id %a is already in the process of being visited"
-            Ident.pp id
+          let msg =
+            lazy
+              (F.asprintf
+                 "sort_equation was given a set of equations with cyclic dependencies: id %a is \
+                  already in the process of being visited"
+                 Ident.pp id )
+          in
+          raise (TextualTransformError [{msg; loc= Location.Unknown}])
       | Some `VisitCompleted ->
           state
       | None ->
@@ -1215,10 +1232,18 @@ let let_propagation module_ =
     in
     Subst.of_procdesc ~varify:false pdesc saturated_equations
   in
-  module_map_procs ~f:transform module_
+  fallible_module_map_procs ~errors ~f:transform module_
 
 
-let out_of_ssa module_ =
+let let_propagation_exn (module_ : Module.t) =
+  match let_propagation module_ with
+  | result, [] ->
+      result
+  | _, errors ->
+      raise (TextualTransformError errors)
+
+
+let out_of_ssa ?(errors = []) (module_ : Module.t) =
   let transform (pdesc : ProcDesc.t) : ProcDesc.t =
     let get_node : NodeName.t -> Node.t =
       let map =
@@ -1246,9 +1271,14 @@ let out_of_ssa module_ =
       | Ok equations ->
           equations
       | Unequal_lengths ->
-          L.die InternalError
-            "Jmp arguments at %a and block parameters at %a should have the same size" Location.pp
-            call_location Location.pp end_node.label_loc
+          let msg =
+            lazy
+              (F.asprintf
+                 "out_of_ssa: Jmp arguments at %a and block parameters at %a should have the same \
+                  size"
+                 Location.pp call_location Location.pp end_node.label_loc )
+          in
+          raise (TextualTransformError [{msg; loc= Location.Unknown}])
     in
     let build_assignements (start_node : Node.t) : Instr.t list =
       match (start_node.last : Terminator.t) with
@@ -1301,7 +1331,15 @@ let out_of_ssa module_ =
     (* no need to update fresh_ident *)
     {pdesc with nodes}
   in
-  module_map_procs ~f:transform module_
+  fallible_module_map_procs ~errors ~f:transform module_
+
+
+let out_of_ssa_exn module_ =
+  match out_of_ssa module_ with
+  | result, [] ->
+      result
+  | _, errors ->
+      raise (TextualTransformError errors)
 
 
 let run lang module_ =
@@ -1314,8 +1352,24 @@ let run lang module_ =
   let decls_env =
     if new_decls_were_added then TextualDecls.make_decls module_ |> snd else decls_env
   in
-  let module_ = module_ |> let_propagation |> out_of_ssa in
-  (module_, decls_env)
+  let module_, errors = let_propagation ~errors:[] module_ in
+  let module_, errors = out_of_ssa ~errors module_ in
+  match errors with
+  | [] ->
+      Ok (module_, decls_env)
+  | errors when Config.textual_sil_keep_going ->
+      List.iter errors ~f:(L.internal_error "%a@\n" (Textual.pp_transform_error module_.sourcefile)) ;
+      Ok (module_, decls_env)
+  | errors ->
+      Error errors
+
+
+let run_exn lang module_ =
+  match run lang module_ with
+  | Ok result ->
+      result
+  | Error errors ->
+      raise (TextualTransformError errors)
 
 
 let fix_hackc_mistranslations module_ =

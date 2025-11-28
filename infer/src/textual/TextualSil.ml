@@ -22,19 +22,8 @@ open Textual
 
 let textual_transformation_error loc msg = raise (TextualTransformError [{msg; loc}])
 
-let wrap_exn_to_textual_transform_error f x =
-  try
-    f x ;
-    []
-  with TextualTransformError errors -> errors
-
-
-let seq_fold_results l ~errors ~f =
-  Seq.fold_left
-    (fun acc x ->
-      let result = wrap_exn_to_textual_transform_error f x in
-      acc @ result )
-    errors l
+let seq_fallible_iter ?(errors = []) ~f seq =
+  seq_fallible_fold ~errors ~init:() ~f:(fun () x -> f x) seq |> snd
 
 
 module LocationBridge = struct
@@ -1460,12 +1449,12 @@ module ModuleBridge = struct
     let tenv = Tenv.create () in
     let errors =
       TypeName.Set.to_seq types_used_as_enclosing_but_not_defined
-      |> seq_fold_results ~errors:[] ~f:(fun name ->
+      |> seq_fallible_iter ~errors:[] ~f:(fun name ->
              TypeNameBridge.to_sil lang name |> Tenv.mk_struct ~dummy:true tenv |> ignore )
     in
     let errors =
       Stdlib.List.to_seq module_.decls
-      |> seq_fold_results ~errors ~f:(fun decl ->
+      |> seq_fallible_iter ~errors ~f:(fun decl ->
              match decl with
              | Global _ ->
                  ()
@@ -1493,7 +1482,7 @@ module ModuleBridge = struct
     let errors =
       if not (Lang.equal lang Python || Lang.equal lang Swift) then
         TextualDecls.get_undefined_types decls_env
-        |> seq_fold_results ~errors ~f:(fun tname ->
+        |> seq_fallible_iter ~errors ~f:(fun tname ->
                if is_undefined_type tname then
                  let sil_tname = TypeNameBridge.to_sil lang tname in
                  Tenv.mk_struct ~dummy:true tenv sil_tname |> ignore )

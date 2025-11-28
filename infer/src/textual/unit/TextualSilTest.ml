@@ -11,7 +11,7 @@ module T = Textual
 open TextualTestHelpers
 
 let module_to_sil_exn module_ =
-  let module_, decls = TextualTransform.run Hack module_ in
+  let module_, decls = TextualTransform.run_exn Hack module_ in
   match TextualSil.module_to_sil Hack module_ decls with
   | Ok (cfg, tenv) ->
       (cfg, tenv)

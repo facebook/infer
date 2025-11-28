@@ -115,7 +115,7 @@ module TextualFile = struct
   let textual_to_sil sourcefile module_ =
     let open IResult.Let_syntax in
     let* lang = lang sourcefile module_ in
-    let module_, decls_env = TextualTransform.run lang module_ in
+    let module_, decls_env = TextualTransform.run_exn lang module_ in
     let* cfg, tenv =
       TextualSil.module_to_sil lang module_ decls_env
       |> Result.map_error ~f:(fun errors -> (sourcefile, [TransformError errors]))

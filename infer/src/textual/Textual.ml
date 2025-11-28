@@ -118,6 +118,13 @@ let pp_transform_error sourcefile fmt {loc; msg} =
 
 exception TextualTransformError of transform_error list
 
+let seq_fallible_fold ?(errors = []) ~init ~f seq =
+  Seq.fold_left
+    (fun (acc, errors) x ->
+      try (f acc x, errors) with TextualTransformError errors' -> (acc, errors @ errors') )
+    (init, errors) seq
+
+
 module type NAME = sig
   type t = {value: string; loc: Location.t [@ignore]} [@@deriving compare, equal, hash]
 
