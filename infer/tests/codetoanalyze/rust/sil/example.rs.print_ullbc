@@ -1,0 +1,20 @@
+# Final ULLBC before serialization:
+
+// Full name: example::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (42 : i32);
+        @0 := ();
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+

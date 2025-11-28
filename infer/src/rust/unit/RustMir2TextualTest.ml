@@ -27,11 +27,16 @@ let test source =
   try
     let json = Yojson.Basic.from_file json_filename in
     match Charon.UllbcOfJson.crate_of_json json with
-    | Ok crate ->
-        let textual = RustFrontend.RustMir2Textual.mk_module crate ~json_filename in
-        Textual.Module.pp F.std_formatter textual
     | Error err ->
         F.printf "Test failed: %s" err
+    | Ok crate -> (
+        let textual = RustFrontend.RustMir2Textual.mk_module crate ~json_filename in
+        match TextualVerification.verify_strict textual with
+        | Error err ->
+            F.printf "Test failed: %a" (F.pp_print_list TextualVerification.pp_error) err
+        | Ok verified ->
+            let transformed_textual, _ = TextualTransform.run Rust verified in
+            Textual.Module.pp F.std_formatter transformed_textual )
   with e -> F.printf "Exn %s\n Command output: %s" (Exn.to_string e) cmd_out
 
 

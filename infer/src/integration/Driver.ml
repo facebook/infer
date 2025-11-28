@@ -36,6 +36,7 @@ type mode =
   | PythonBytecode of {files: string list}
   | Rebar3 of {args: string list}
   | Rust of {prog: string; args: string list}
+  | RustULLBC of {ullbc_files: string list}
   | Swiftc of {prog: string; args: string list}
   | Textual of {textualfiles: string list}
   | XcodeBuild of {prog: string; args: string list}
@@ -44,7 +45,14 @@ type mode =
 let is_analyze_mode = function Analyze -> true | _ -> false
 
 let is_compatible_with_textual_generation = function
-  | Javac _ | Llair _ | Python _ | PythonBytecode _ | LLVMBitcode _ | Rust _ | Swiftc _ ->
+  | Javac _
+  | Llair _
+  | Python _
+  | PythonBytecode _
+  | LLVMBitcode _
+  | Rust _
+  | RustULLBC _
+  | Swiftc _ ->
       true
   | _ ->
       false
@@ -95,6 +103,8 @@ let pp_mode fmt = function
       F.fprintf fmt "Rebar3 driver mode:@\nargs = %a" Pp.cli_args args
   | Rust {prog; args} ->
       F.fprintf fmt "Rust driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
+  | RustULLBC {ullbc_files} ->
+      F.fprintf fmt "Rust driver mode:@\nfiles = '%a'" Pp.cli_args ullbc_files
   | Swiftc {prog; args} ->
       F.fprintf fmt "Swift driver mode:@\nprog = '%s' args = %a" prog Pp.cli_args args
   | Erlc {args} ->
@@ -219,6 +229,9 @@ let capture ~changed_files mode =
       | Rust {prog; args} ->
           L.progress "Capturing in rust mode...@." ;
           Rust.capture prog args
+      | RustULLBC {ullbc_files} ->
+          L.progress "Capturing in rust ullbc mode...@." ;
+          Rust.capture_ullbc ullbc_files
       | Swiftc {prog; args} ->
           L.progress "Capturing in swift mode...@." ;
           Bitcode.capture Swiftc ~command:prog ~args
@@ -472,6 +485,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
   match build_cmd with
   | [] when not (List.is_empty Config.pyc_file) ->
       PythonBytecode {files= Config.pyc_file}
+  | [] when not (List.is_empty Config.capture_ullbc) ->
+      RustULLBC {ullbc_files= Config.capture_ullbc}
   | [] -> (
       let textualfiles = Config.capture_textual in
       match (Config.clang_compilation_dbs, textualfiles, Config.capture_llair) with

@@ -218,6 +218,9 @@ BUILD_SYSTEMS_TESTS += \
 
 endif
 
+DIRECT_TESTS += \
+	rust_sil
+
 ifeq ($(BUILD_PYTHON_ANALYZERS),yes)
 ifneq ($(PYTHON),no)
 DIRECT_TESTS += \

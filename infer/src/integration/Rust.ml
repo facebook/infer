@@ -17,6 +17,11 @@ let dump_textual_file file module_ =
   TextualSil.dump_module ~show_location:true ~filename module_
 
 
+let dump_textual_test_file file module_ =
+  let suffix = "test.sil" in
+  let filename = Format.asprintf "%s.%s" file suffix in
+  TextualSil.dump_module ~show_location:false ~filename module_
+
 let run_charon json_file prog args =
   let escaped_cmd = List.map ~f:Escape.escape_shell args |> String.concat ~sep:" " in
   let redirected_cmd =
@@ -45,10 +50,7 @@ let compile prog args =
       json_file
 
 
-let capture prog (args : string list) =
-  if not (String.equal prog "rustc") then
-    L.die UserError "rustc should be explicitly used instead of %s." prog ;
-  let json_filename = compile prog args in
+let capture_file json_filename =
   let json = Yojson.Basic.from_file json_filename in
   let textual =
     match Charon.UllbcOfJson.crate_of_json json with
@@ -57,7 +59,6 @@ let capture prog (args : string list) =
     | Error err ->
         L.die UserError "%s: %s" err (Yojson.Basic.to_string json)
   in
-  if Config.debug_mode || Config.dump_textual then dump_textual_file json_filename textual ;
   let sourcefile = Textual.SourceFile.create json_filename in
   let verified_textual =
     match TextualVerification.verify_strict textual with
@@ -69,6 +70,9 @@ let capture prog (args : string list) =
           err
   in
   let transformed_textual, decls = TextualTransform.run Rust verified_textual in
+  if Config.debug_mode || Config.dump_textual then
+    dump_textual_file json_filename transformed_textual ;
+  if Config.frontend_tests then dump_textual_test_file json_filename transformed_textual ;
   let cfg, tenv =
     match TextualSil.module_to_sil Rust transformed_textual decls with
     | Ok s ->
@@ -81,3 +85,13 @@ let capture prog (args : string list) =
   let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
   TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
   Tenv.Global.store ~normalize:false sil.tenv
+
+
+let capture prog (args : string list) =
+  if not (String.equal prog "rustc") then
+    L.die UserError "rustc should be explicitly used instead of %s." prog ;
+  let json_filename = compile prog args in
+  capture_file json_filename
+
+
+let capture_ullbc (files : string list) = List.iter files ~f:capture_file
