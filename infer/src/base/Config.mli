@@ -186,6 +186,8 @@ val capture_llair : string option
 
 val capture_textual : string list
 
+val capture_ullbc : string list
+
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val cfg_json : string option
