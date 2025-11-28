@@ -16,8 +16,8 @@ val pp_full : F.formatter -> t -> unit
 
 val to_string : t -> string
 
-val classname : t -> string
-(** retrieve the [plain_name] if available, otherwise the mangled name *)
+val mangled : t -> string
+(** retrieve the mangled name *)
 
 val of_string : ?plain_name:string -> string -> t
 (** make a class name out of its mangled name and optionally its [plain_name] NB only non-empty

@@ -11,9 +11,9 @@ module L = Logging
 type t = {mangled: string; plain_name: string option [@ignore]}
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize]
 
-let classname {mangled; plain_name} = Option.value plain_name ~default:mangled
+let mangled {mangled} = mangled
 
-let pp fmt t = F.pp_print_string fmt (classname t)
+let pp fmt t = F.pp_print_string fmt (mangled t)
 
 let pp_full fmt {plain_name; mangled} =
   match plain_name with
