@@ -179,3 +179,21 @@ class CustomView {
 func retainCycleExample() {
     let _ = ViewController()
 }
+
+class RetainCycleExample {
+    var id = 10
+    // The closure property
+    var closure: (() -> Void)?
+    func setupClosureBad() {
+        // Capturing self strongly inside the closure
+        closure = {
+            self.id = 20
+        }
+    }
+
+     func setupClosureOk() {
+       closure = { [weak self] in
+            self?.id = 20
+        }
+    }
+}
