@@ -1,0 +1,20 @@
+# Final ULLBC before serialization:
+
+// Full name: literal_float::main
+fn main()
+{
+    let @0: (); // return
+    let @1: f64; // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := const (3.1400000000000001 : f64);
+        storage_dead(@1);
+        @0 := ();
+        @0 := ();
+        return;
+    }
+}
+
+
+

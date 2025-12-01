@@ -23,7 +23,9 @@ _build_infer
 *.exp.test*
 *.dot.test
 *.test.dot
+*.test.print_ullbc
 *.test.sil
+*.test.ullbc
 *.test.txt
 duplicates.txt
 *.ast.sh

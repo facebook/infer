@@ -1,0 +1,24 @@
+# Final ULLBC before serialization:
+
+// Full name: nested_copy::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+    let y@2: i32; // local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (100 : i32);
+        storage_live(y@2);
+        y@2 := copy (x@1);
+        @0 := ();
+        storage_dead(y@2);
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+

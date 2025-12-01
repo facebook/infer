@@ -1,0 +1,19 @@
+# Final ULLBC before serialization:
+
+// Full name: literal_unit::main
+fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        storage_dead(@1);
+        @0 := ();
+        @0 := ();
+        return;
+    }
+}
+
+
+
