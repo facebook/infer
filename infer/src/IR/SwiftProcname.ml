@@ -54,7 +54,8 @@ let pp verbosity fmt osig =
         F.fprintf fmt "%s%s%s" (Typ.Name.name osig.class_name) sep
           (Mangled.to_string osig.method_name)
     | Verbose ->
-        F.fprintf fmt "%s%s%a" (Typ.Name.name osig.class_name) sep Mangled.pp osig.method_name )
+        F.fprintf fmt "%s%s%a" (Typ.Name.name osig.class_name) sep Mangled.pp_full osig.method_name
+    )
   | Function osig -> (
     match verbosity with
     | Simple | Non_verbose | NameOnly | FullNameOnly ->

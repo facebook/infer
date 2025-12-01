@@ -33,6 +33,8 @@ let to_string_full (pn : t) =
 (** Pretty print a mangled name *)
 let pp f pn = F.pp_print_string f (to_string pn)
 
+let pp_full f pn = F.pp_print_string f (to_string_full pn)
+
 let this = from_string "this"
 
 let is_this = function {plain= "this" | "$this"} -> true | _ -> false
