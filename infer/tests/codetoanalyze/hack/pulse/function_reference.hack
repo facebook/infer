@@ -148,7 +148,7 @@ class TestVariadicAndFunctionReferences {
     }
   }
 
-  public static function noVariadicGood(): void {
+  public static function FP_noVariadicGood(): void {
     $tainted = \Level1\taintSource();
     if (
       LogicalOps::orVariadic(
@@ -200,7 +200,7 @@ class TestVariadicAndFunctionReferences {
     }
   }
 
-  public static function twoVariadicGood(): void {
+  public static function FP_twoVariadicGood(): void {
     $tainted = \Level1\taintSource();
     if (
       LogicalOps::orVariadic(
@@ -214,7 +214,7 @@ class TestVariadicAndFunctionReferences {
     }
   }
 
-  public static function FN_threeVariadicBad(): void {
+  public static function threeVariadicBad(): void {
     $tainted = \Level1\taintSource();
     if (
       LogicalOps::orVariadic(
@@ -229,7 +229,7 @@ class TestVariadicAndFunctionReferences {
     }
   }
 
-  public static function threeVariadicGood(): void {
+  public static function FP_threeVariadicGood(): void {
     $tainted = \Level1\taintSource();
     if (
       LogicalOps::orVariadic(
