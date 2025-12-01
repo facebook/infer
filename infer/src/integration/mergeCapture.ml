@@ -98,22 +98,24 @@ let merge_captured_stats infer_deps_file =
     | _ ->
         false
   in
-  let top_level_stats_file = StatsLogging.get_stats_log_file () in
-  let captured_stats_dir results_dir = ResultsDirEntryName.get_path ~results_dir Stats in
-  let process_stats_file stats_file =
+  let process_stats_file stats_file_out stats_file =
     Utils.with_file_in stats_file ~f:(fun stats_file_in ->
-        Utils.with_file_out ~append:true top_level_stats_file ~f:(fun stats_file_out ->
-            In_channel.iter_lines stats_file_in ~f:(fun line ->
-                let json = Yojson.Safe.from_string ~fname:stats_file line in
-                if should_output json then Out_channel.output_line stats_file_out line ) ) )
+        In_channel.iter_lines stats_file_in ~f:(fun line ->
+            try
+              let json = Yojson.Safe.from_string ~fname:stats_file line in
+              if should_output json then Out_channel.output_line stats_file_out line
+            with Yojson.Json_error _ -> () ) )
   in
-  Utils.fold_infer_deps infer_deps_file ~root:Config.project_root ~init:() ~f:(fun () results_dir ->
-      let stats_dir = captured_stats_dir results_dir in
-      match ISys.is_directory stats_dir with
-      | `No | `Unknown ->
-          ()
-      | `Yes ->
-          Utils.directory_iter process_stats_file stats_dir )
+  let top_level_stats_file = StatsLogging.get_stats_log_file () in
+  Utils.with_file_out ~append:true top_level_stats_file ~f:(fun stats_file_out ->
+      Utils.fold_infer_deps infer_deps_file ~root:Config.project_root ~init:()
+        ~f:(fun () results_dir ->
+          let stats_dir = ResultsDirEntryName.get_path ~results_dir Stats in
+          match ISys.is_directory stats_dir with
+          | `No | `Unknown ->
+              ()
+          | `Yes ->
+              Utils.directory_iter (process_stats_file stats_file_out) stats_dir ) )
 
 
 let merge_captured_targets ~root =
@@ -122,8 +124,9 @@ let merge_captured_targets ~root =
   let infer_deps_file = ResultsDir.get_path CaptureDependencies in
   let tenv_merger_child = TenvMerger.start infer_deps_file in
   DBWriter.merge_captures ~root ~infer_deps_file ;
-  merge_captured_stats infer_deps_file ;
   TenvMerger.wait tenv_merger_child ;
+  (* wait until forked process is done to avoid racing on the stats file *)
+  merge_captured_stats infer_deps_file ;
   let targets_num =
     let counter = ref 0 in
     let incr_counter _line = incr counter in
