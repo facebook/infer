@@ -1,0 +1,43 @@
+error: Found inconsistent generics after translation:
+       Mismatched regions:
+       target: test_crate::foo::closure::closure
+       expected: ['_0]
+            got: []
+       Visitor stack:
+         charon_lib::ast::types::TypeDeclRef
+         charon_lib::ast::types::TyKind
+         charon_lib::ast::types::Ty
+         charon_lib::ast::types::FunSig
+         charon_lib::ast::gast::FunDecl
+       Binding stack (depth 1):
+         0: <'a, T, [@TraitClause0]: @TraitDecl0<missing(@Type1_0)>, [@TraitClause1]: @TraitDecl1<missing(@Type1_0)>>
+ --> tests/ui/simple/nested-closure-lifetime.rs:2:1
+  |
+2 | / fn foo<'a, T: Clone>(x: &'a T) -> impl Fn() -> &'a T {
+3 | |     let f = move || move || x;
+4 | |     f()
+5 | | }
+  | |_^
+
+error: Found inconsistent generics after transformations:
+       Mismatched regions:
+       target: test_crate::foo::closure::closure
+       expected: ['_0]
+            got: []
+       Visitor stack:
+         charon_lib::ast::types::TypeDeclRef
+         charon_lib::ast::types::TyKind
+         charon_lib::ast::types::Ty
+         charon_lib::ast::types::FunSig
+         charon_lib::ast::gast::FunDecl
+       Binding stack (depth 1):
+         0: <'a, T, [@TraitClause0]: @TraitDecl0<missing(@Type1_0)>, [@TraitClause1]: @TraitDecl1<missing(@Type1_0)>>
+ --> tests/ui/simple/nested-closure-lifetime.rs:2:1
+  |
+2 | / fn foo<'a, T: Clone>(x: &'a T) -> impl Fn() -> &'a T {
+3 | |     let f = move || move || x;
+4 | |     f()
+5 | | }
+  | |_^
+
+ERROR Charon failed to translate this code (2 errors)

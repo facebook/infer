@@ -1,0 +1,815 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone::clone
+#[lang_item("clone_fn")]
+pub fn clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::cmp::PartialEq
+#[lang_item("eq")]
+pub trait PartialEq<Self, Rhs>
+{
+    fn eq<'_0, '_1> = core::cmp::PartialEq::eq<'_0_0, '_0_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialEq::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1, Self, Rhs>(@1: &'_0 (Self), @2: &'_1 (Rhs)) -> bool
+where
+    [@TraitClause0]: PartialEq<Self, Rhs>,
+
+// Full name: core::cmp::Eq
+#[lang_item("Eq")]
+pub trait Eq<Self>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq<Self, Self>
+    non-dyn-compatible
+}
+
+// Full name: core::cmp::Ordering
+#[lang_item("Ordering")]
+pub enum Ordering {
+  Less,
+  Equal,
+  Greater,
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::cmp::PartialOrd
+#[lang_item("partial_ord")]
+pub trait PartialOrd<Self, Rhs>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq<Self, Rhs>
+    fn partial_cmp<'_0, '_1> = core::cmp::PartialOrd::partial_cmp<'_0_0, '_0_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialOrd::{vtable}<Rhs>
+}
+
+// Full name: core::cmp::Ord
+#[lang_item("Ord")]
+pub trait Ord<Self>
+{
+    parent_clause0 : [@TraitClause0]: Eq<Self>
+    parent_clause1 : [@TraitClause1]: PartialOrd<Self, Self>
+    fn cmp<'_0, '_1> = core::cmp::Ord::cmp<'_0_0, '_0_1, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("ord_cmp_method")]
+pub fn core::cmp::Ord::cmp<'_0, '_1, Self>(@1: &'_0 (Self), @2: &'_1 (Self)) -> Ordering
+where
+    [@TraitClause0]: Ord<Self>,
+
+#[lang_item("cmp_partialord_cmp")]
+pub fn core::cmp::PartialOrd::partial_cmp<'_0, '_1, Self, Rhs>(@1: &'_0 (Self), @2: &'_1 (Rhs)) -> Option<Ordering>[Sized<Ordering>]
+where
+    [@TraitClause0]: PartialOrd<Self, Rhs>,
+
+// Full name: core::default::Default
+#[lang_item("Default")]
+pub trait Default<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn default = default<Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::default::Default::default
+#[lang_item("default_fn")]
+pub fn default<Self>() -> Self
+where
+    [@TraitClause0]: Default<Self>,
+
+// Full name: core::iter::adapters::zip::TrustedRandomAccessNoCoerce
+pub trait TrustedRandomAccessNoCoerce<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    const MAY_HAVE_SIDE_EFFECT : bool
+    non-dyn-compatible
+}
+
+// Full name: core::iter::traits::iterator::Iterator
+#[lang_item("iterator")]
+pub trait Iterator<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Item>
+    type Item
+    fn next<'_0> = core::iter::traits::iterator::Iterator::next<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::iter::traits::accum::Sum
+pub trait Sum<Self, A>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<A>
+    fn sum<I, [@TraitClause0]: Sized<I>, [@TraitClause1]: Iterator<I>, @TraitClause1_1::Item = A> = core::iter::traits::accum::Sum::sum<Self, A, I>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+pub fn core::iter::traits::accum::Sum::sum<Self, A, I>(@1: I) -> Self
+where
+    [@TraitClause0]: Sum<Self, A>,
+    [@TraitClause1]: Sized<I>,
+    [@TraitClause2]: Iterator<I>,
+    @TraitClause2::Item = A,
+
+// Full name: core::iter::traits::accum::Product
+pub trait Product<Self, A>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<A>
+    fn product<I, [@TraitClause0]: Sized<I>, [@TraitClause1]: Iterator<I>, @TraitClause1_1::Item = A> = core::iter::traits::accum::Product::product<Self, A, I>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+pub fn core::iter::traits::accum::Product::product<Self, A, I>(@1: I) -> Self
+where
+    [@TraitClause0]: Product<Self, A>,
+    [@TraitClause1]: Sized<I>,
+    [@TraitClause2]: Iterator<I>,
+    @TraitClause2::Item = A,
+
+// Full name: core::iter::traits::collect::IntoIterator
+#[lang_item("IntoIterator")]
+pub trait IntoIterator<Self>
+where
+    Self::parent_clause3::Item = Self::Item,
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Item>
+    parent_clause2 : [@TraitClause2]: Sized<Self::IntoIter>
+    parent_clause3 : [@TraitClause3]: Iterator<Self::IntoIter>
+    type Item
+    type IntoIter
+    fn into_iter = core::iter::traits::collect::IntoIterator::into_iter<Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::iter::traits::collect::FromIterator
+#[lang_item("FromIterator")]
+pub trait FromIterator<Self, A>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<A>
+    fn from_iter<T, [@TraitClause0]: Sized<T>, [@TraitClause1]: IntoIterator<T>, @TraitClause1_1::Item = A> = from_iter<Self, A, T>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: core::iter::traits::collect::FromIterator::from_iter
+#[lang_item("from_iter_fn")]
+pub fn from_iter<Self, A, T>(@1: T) -> Self
+where
+    [@TraitClause0]: FromIterator<Self, A>,
+    [@TraitClause1]: Sized<T>,
+    [@TraitClause2]: IntoIterator<T>,
+    @TraitClause2::Item = A,
+
+#[lang_item("into_iter")]
+pub fn core::iter::traits::collect::IntoIterator::into_iter<Self>(@1: Self) -> @TraitClause0::IntoIter
+where
+    [@TraitClause0]: IntoIterator<Self>,
+
+// Full name: core::iter::traits::collect::{impl IntoIterator for I}::into_iter
+pub fn {impl IntoIterator for I}::into_iter<I>(@1: I) -> I
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: Iterator<I>,
+
+// Full name: core::iter::traits::collect::{impl IntoIterator for I}
+impl<I> IntoIterator for I
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: Iterator<I>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    parent_clause1 = @TraitClause1::parent_clause1
+    parent_clause2 = @TraitClause0
+    parent_clause3 = @TraitClause1
+    type Item = @TraitClause1::Item
+    type IntoIter = I
+    fn into_iter = {impl IntoIterator for I}::into_iter<I>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: core::iter::traits::collect::Extend
+pub trait Extend<Self, A>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<A>
+    fn extend<'_0, T, [@TraitClause0]: Sized<T>, [@TraitClause1]: IntoIterator<T>, @TraitClause1_1::Item = A> = extend<'_0_0, Self, A, T>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: core::iter::traits::collect::Extend::extend
+pub fn extend<'_0, Self, A, T>(@1: &'_0 mut (Self), @2: T)
+where
+    [@TraitClause0]: Extend<Self, A>,
+    [@TraitClause1]: Sized<T>,
+    [@TraitClause2]: IntoIterator<T>,
+    @TraitClause2::Item = A,
+
+// Full name: core::iter::traits::double_ended::DoubleEndedIterator
+#[lang_item("DoubleEndedIterator")]
+pub trait DoubleEndedIterator<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Iterator<Self>
+    fn next_back<'_0> = next_back<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::iter::traits::double_ended::DoubleEndedIterator::next_back
+pub fn next_back<'_0, Self>(@1: &'_0 mut (Self)) -> Option<@TraitClause0::parent_clause1::Item>[@TraitClause0::parent_clause1::parent_clause1]
+where
+    [@TraitClause0]: DoubleEndedIterator<Self>,
+
+// Full name: core::iter::traits::exact_size::ExactSizeIterator
+pub trait ExactSizeIterator<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Iterator<Self>
+    non-dyn-compatible
+}
+
+#[lang_item("next")]
+pub fn core::iter::traits::iterator::Iterator::next<'_0, Self>(@1: &'_0 mut (Self)) -> Option<@TraitClause0::Item>[@TraitClause0::parent_clause1]
+where
+    [@TraitClause0]: Iterator<Self>,
+
+// Full name: core::marker::Copy
+#[lang_item("copy")]
+pub trait Copy<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Clone<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Tuple::{vtable}
+}
+
+// Full name: core::ops::control_flow::ControlFlow
+#[lang_item("ControlFlow")]
+pub enum ControlFlow<B, C>
+where
+    [@TraitClause0]: Sized<B>,
+    [@TraitClause1]: Sized<C>,
+{
+  Continue(C),
+  Break(B),
+}
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self::Output>
+    type Output
+    fn call_once = call_once<Self, Args>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0> = call_mut<'_0_0, Self, Args>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut::call_mut
+pub fn call_mut<'_0, Self, Args>(@1: &'_0 mut (Self), @2: Args) -> @TraitClause0::parent_clause1::Output
+where
+    [@TraitClause0]: FnMut<Self, Args>,
+
+// Full name: core::ops::function::FnOnce::call_once
+pub fn call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+where
+    [@TraitClause0]: FnOnce<Self, Args>,
+
+// Full name: core::ops::try_trait::FromResidual
+#[lang_item("FromResidual")]
+pub trait FromResidual<Self, R>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<R>
+    fn from_residual = from_residual<Self, R>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::try_trait::Try
+#[lang_item("Try")]
+pub trait Try<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FromResidual<Self, Self::Residual>
+    parent_clause2 : [@TraitClause2]: Sized<Self::Output>
+    parent_clause3 : [@TraitClause3]: Sized<Self::Residual>
+    type Output
+    type Residual
+    fn from_output = from_output<Self>[Self]
+    fn branch = branch<Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::try_trait::Try::from_output
+#[lang_item("from_output")]
+pub fn from_output<Self>(@1: @TraitClause0::Output) -> Self
+where
+    [@TraitClause0]: Try<Self>,
+
+// Full name: core::ops::try_trait::Try::branch
+#[lang_item("branch")]
+pub fn branch<Self>(@1: Self) -> ControlFlow<@TraitClause0::Residual, @TraitClause0::Output>[@TraitClause0::parent_clause1::parent_clause1, @TraitClause0::parent_clause2]
+where
+    [@TraitClause0]: Try<Self>,
+
+// Full name: core::ops::try_trait::FromResidual::from_residual
+#[lang_item("from_residual")]
+pub fn from_residual<Self, R>(@1: R) -> Self
+where
+    [@TraitClause0]: FromResidual<Self, R>,
+
+// Full name: core::ops::try_trait::Residual
+pub trait Residual<Self, O>
+where
+    Self::parent_clause3::Output = O,
+    Self::parent_clause3::Residual = Self,
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<O>
+    parent_clause2 : [@TraitClause2]: Sized<Self::TryType>
+    parent_clause3 : [@TraitClause3]: Try<Self::TryType>
+    type TryType
+    non-dyn-compatible
+}
+
+// Full name: core::slice::iter::Chunks
+pub opaque type Chunks<'a, T>
+where
+    [@TraitClause0]: Sized<T>,
+    T : 'a,
+    T : 'a,
+
+// Full name: core::slice::iter::{impl Iterator for Chunks<'a, T>[@TraitClause0]}::next
+pub fn {impl Iterator for Chunks<'a, T>[@TraitClause0]}::next<'a, '_1, T>(@1: &'_1 mut (Chunks<'a, T>[@TraitClause0])) -> Option<&'a (Slice<T>)>[Sized<&'_ (Slice<T>)>]
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::slice::iter::{impl Iterator for Chunks<'a, T>[@TraitClause0]}
+impl<'a, T> Iterator for Chunks<'a, T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<Chunks<'_, T>[@TraitClause0]>
+    parent_clause1 = Sized<&'_ (Slice<T>)>
+    type Item = &'a (Slice<T>)
+    fn next<'_0> = {impl Iterator for Chunks<'a, T>[@TraitClause0]}::next<'a, '_0_0, T>[@TraitClause0]
+    non-dyn-compatible
+}
+
+// Full name: core::slice::{Slice<T>}::chunks
+pub fn chunks<'_0, T>(@1: &'_0 (Slice<T>), @2: usize) -> Chunks<'_0, T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: test_crate::f1
+fn f1<'_0>(@1: &'_0 (Slice<u8>)) -> usize
+{
+    let @0: usize; // return
+    let a@1: &'_ (Slice<u8>); // arg #1
+    let sampled@2: usize; // local
+    let @3: (); // anonymous local
+    let @4: bool; // anonymous local
+    let @5: u8; // anonymous local
+    let @6: usize; // anonymous local
+    let @7: bool; // anonymous local
+    let @8: u8; // anonymous local
+    let @9: usize; // anonymous local
+    let @10: usize; // anonymous local
+    let @11: usize; // anonymous local
+    let @12: &'_ (Slice<u8>); // anonymous local
+    let @13: &'_ (u8); // anonymous local
+    let @14: &'_ (Slice<u8>); // anonymous local
+    let @15: &'_ (u8); // anonymous local
+
+    storage_live(@8)
+    storage_live(@9)
+    storage_live(@10)
+    storage_live(@11)
+    storage_live(@12)
+    storage_live(@13)
+    storage_live(sampled@2)
+    sampled@2 := const (0 : usize)
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    @6 := const (0 : usize)
+    storage_live(@14)
+    @14 := &*(a@1)
+    storage_live(@15)
+    @15 := @SliceIndexShared<'_, u8>(move (@14), copy (@6))
+    @5 := copy (*(@15))
+    @4 := move (@5) < const (42 : u8)
+    if move (@4) {
+        storage_dead(@6)
+        storage_dead(@5)
+        storage_live(@7)
+        storage_live(@8)
+        storage_live(@9)
+        @9 := const (1 : usize)
+        storage_live(@12)
+        @12 := &*(a@1)
+        storage_live(@13)
+        @13 := @SliceIndexShared<'_, u8>(move (@12), copy (@9))
+        @8 := copy (*(@13))
+        @7 := move (@8) < const (16 : u8)
+        if move (@7) {
+            storage_dead(@9)
+            storage_dead(@8)
+            @10 := copy (sampled@2) panic.+ const (100 : usize)
+            sampled@2 := move (@10)
+        }
+        else {
+            storage_dead(@9)
+            storage_dead(@8)
+        }
+    }
+    else {
+        storage_dead(@6)
+        storage_dead(@5)
+    }
+    storage_dead(@7)
+    storage_dead(@4)
+    storage_dead(@3)
+    @11 := copy (sampled@2) panic.+ const (101 : usize)
+    sampled@2 := move (@11)
+    @0 := copy (sampled@2)
+    storage_dead(sampled@2)
+    return
+}
+
+// Full name: test_crate::FIELD_MODULUS
+fn FIELD_MODULUS() -> i16
+{
+    let @0: i16; // return
+
+    @0 := const (8 : i16)
+    return
+}
+
+// Full name: test_crate::FIELD_MODULUS
+const FIELD_MODULUS: i16 = FIELD_MODULUS()
+
+// Full name: test_crate::f2
+fn f2<'_0, '_1>(@1: &'_0 (Slice<u8>), @2: &'_1 mut (Slice<i16>)) -> usize
+{
+    let @0: usize; // return
+    let a@1: &'_ (Slice<u8>); // arg #1
+    let result@2: &'_ mut (Slice<i16>); // arg #2
+    let sampled@3: usize; // local
+    let @4: (); // anonymous local
+    let @5: Chunks<'_, u8>[Sized<u8>]; // anonymous local
+    let @6: Chunks<'_, u8>[Sized<u8>]; // anonymous local
+    let @7: &'_ (Slice<u8>); // anonymous local
+    let iter@8: Chunks<'_, u8>[Sized<u8>]; // local
+    let @9: (); // anonymous local
+    let @10: Option<&'_ (Slice<u8>)>[Sized<&'_ (Slice<u8>)>]; // anonymous local
+    let @11: &'_ mut (Chunks<'_, u8>[Sized<u8>]); // anonymous local
+    let @12: &'_ mut (Chunks<'_, u8>[Sized<u8>]); // anonymous local
+    let bytes@13: &'_ (Slice<u8>); // local
+    let b1@14: i16; // local
+    let @15: u8; // anonymous local
+    let @16: usize; // anonymous local
+    let b2@17: i16; // local
+    let @18: u8; // anonymous local
+    let @19: usize; // anonymous local
+    let b3@20: i16; // local
+    let @21: u8; // anonymous local
+    let @22: usize; // anonymous local
+    let d1@23: i16; // local
+    let @24: i16; // anonymous local
+    let @25: i16; // anonymous local
+    let @26: i16; // anonymous local
+    let @27: i16; // anonymous local
+    let d2@28: i16; // local
+    let @29: i16; // anonymous local
+    let @30: i16; // anonymous local
+    let @31: i16; // anonymous local
+    let @32: i16; // anonymous local
+    let @33: (); // anonymous local
+    let @34: bool; // anonymous local
+    let @35: i16; // anonymous local
+    let @36: bool; // anonymous local
+    let @37: usize; // anonymous local
+    let @38: i16; // anonymous local
+    let @39: usize; // anonymous local
+    let @40: usize; // anonymous local
+    let @41: bool; // anonymous local
+    let @42: i16; // anonymous local
+    let @43: bool; // anonymous local
+    let @44: usize; // anonymous local
+    let @45: i16; // anonymous local
+    let @46: usize; // anonymous local
+    let @47: usize; // anonymous local
+    let @48: &'_ mut (Slice<i16>); // anonymous local
+    let @49: &'_ mut (i16); // anonymous local
+    let @50: &'_ mut (Slice<i16>); // anonymous local
+    let @51: &'_ mut (i16); // anonymous local
+    let @52: &'_ (Slice<u8>); // anonymous local
+    let @53: &'_ (u8); // anonymous local
+    let @54: &'_ (Slice<u8>); // anonymous local
+    let @55: &'_ (u8); // anonymous local
+    let @56: &'_ (Slice<u8>); // anonymous local
+    let @57: &'_ (u8); // anonymous local
+
+    storage_live(@11)
+    storage_live(bytes@13)
+    storage_live(b1@14)
+    storage_live(@15)
+    storage_live(@16)
+    storage_live(b2@17)
+    storage_live(@18)
+    storage_live(@19)
+    storage_live(b3@20)
+    storage_live(@21)
+    storage_live(@22)
+    storage_live(d1@23)
+    storage_live(@24)
+    storage_live(@25)
+    storage_live(@26)
+    storage_live(@27)
+    storage_live(d2@28)
+    storage_live(@29)
+    storage_live(@30)
+    storage_live(@31)
+    storage_live(@32)
+    storage_live(@33)
+    storage_live(@34)
+    storage_live(@35)
+    storage_live(@36)
+    storage_live(@37)
+    storage_live(@38)
+    storage_live(@39)
+    storage_live(@40)
+    storage_live(@41)
+    storage_live(@42)
+    storage_live(@43)
+    storage_live(@44)
+    storage_live(@45)
+    storage_live(@46)
+    storage_live(@47)
+    storage_live(@48)
+    storage_live(@49)
+    storage_live(@50)
+    storage_live(@51)
+    storage_live(@52)
+    storage_live(@53)
+    storage_live(@54)
+    storage_live(@55)
+    storage_live(@56)
+    storage_live(@57)
+    storage_live(sampled@3)
+    sampled@3 := const (0 : usize)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := &*(a@1)
+    @6 := chunks<'_, u8>[Sized<u8>](move (@7), const (3 : usize))
+    storage_dead(@7)
+    @5 := {impl IntoIterator for I}::into_iter<Chunks<'_, u8>[Sized<u8>]>[Sized<Chunks<'_, u8>[Sized<u8>]>, {impl Iterator for Chunks<'a, T>[@TraitClause0]}<'_, u8>[Sized<u8>]](move (@6))
+    storage_dead(@6)
+    storage_live(iter@8)
+    iter@8 := move (@5)
+    loop {
+        storage_live(@9)
+        storage_live(@10)
+        storage_live(@11)
+        storage_live(@12)
+        @12 := &mut iter@8
+        @11 := &two-phase-mut *(@12)
+        @10 := {impl Iterator for Chunks<'a, T>[@TraitClause0]}::next<'_, '_, u8>[Sized<u8>](move (@11))
+        storage_dead(@11)
+        match @10 {
+            Option::None => {
+                break 0
+            },
+            Option::Some => {
+                storage_live(bytes@13)
+                bytes@13 := copy ((@10 as variant Option::Some).0)
+                storage_live(b1@14)
+                storage_live(@15)
+                storage_live(@16)
+                @16 := const (0 : usize)
+                storage_live(@56)
+                @56 := &*(bytes@13)
+                storage_live(@57)
+                @57 := @SliceIndexShared<'_, u8>(move (@56), copy (@16))
+                @15 := copy (*(@57))
+                b1@14 := cast<u8, i16>(move (@15))
+                storage_dead(@15)
+                storage_dead(@16)
+                storage_live(b2@17)
+                storage_live(@18)
+                storage_live(@19)
+                @19 := const (1 : usize)
+                storage_live(@54)
+                @54 := &*(bytes@13)
+                storage_live(@55)
+                @55 := @SliceIndexShared<'_, u8>(move (@54), copy (@19))
+                @18 := copy (*(@55))
+                b2@17 := cast<u8, i16>(move (@18))
+                storage_dead(@18)
+                storage_dead(@19)
+                storage_live(b3@20)
+                storage_live(@21)
+                storage_live(@22)
+                @22 := const (2 : usize)
+                storage_live(@52)
+                @52 := &*(bytes@13)
+                storage_live(@53)
+                @53 := @SliceIndexShared<'_, u8>(move (@52), copy (@22))
+                @21 := copy (*(@53))
+                b3@20 := cast<u8, i16>(move (@21))
+                storage_dead(@21)
+                storage_dead(@22)
+                storage_live(d1@23)
+                storage_live(@24)
+                storage_live(@25)
+                storage_live(@26)
+                @26 := copy (b2@17)
+                @25 := move (@26) & const (15 : i16)
+                storage_dead(@26)
+                @24 := move (@25) panic.<< const (8 : i32)
+                storage_dead(@25)
+                storage_live(@27)
+                @27 := copy (b1@14)
+                d1@23 := move (@24) | move (@27)
+                storage_dead(@27)
+                storage_dead(@24)
+                storage_live(d2@28)
+                storage_live(@29)
+                storage_live(@30)
+                @30 := copy (b3@20)
+                @29 := move (@30) panic.<< const (4 : i32)
+                storage_dead(@30)
+                storage_live(@31)
+                storage_live(@32)
+                @32 := copy (b2@17)
+                @31 := move (@32) panic.>> const (4 : i32)
+                storage_dead(@32)
+                d2@28 := move (@29) | move (@31)
+                storage_dead(@31)
+                storage_dead(@29)
+                storage_live(@33)
+                storage_live(@34)
+                storage_live(@35)
+                @35 := copy (d1@23)
+                @34 := move (@35) < copy (FIELD_MODULUS)
+                if move (@34) {
+                    storage_dead(@35)
+                    storage_live(@36)
+                    storage_live(@37)
+                    @37 := copy (sampled@3)
+                    @36 := move (@37) < const (16 : usize)
+                    if move (@36) {
+                        storage_dead(@37)
+                        storage_live(@38)
+                        @38 := copy (d1@23)
+                        storage_live(@39)
+                        @39 := copy (sampled@3)
+                        storage_live(@48)
+                        @48 := &mut *(result@2)
+                        storage_live(@49)
+                        @49 := @SliceIndexMut<'_, i16>(move (@48), copy (@39))
+                        *(@49) := move (@38)
+                        storage_dead(@38)
+                        storage_dead(@39)
+                        @40 := copy (sampled@3) panic.+ const (1 : usize)
+                        sampled@3 := move (@40)
+                    }
+                    else {
+                        storage_dead(@37)
+                    }
+                }
+                else {
+                    storage_dead(@35)
+                }
+                storage_dead(@36)
+                storage_dead(@34)
+                storage_dead(@33)
+                storage_live(@41)
+                storage_live(@42)
+                @42 := copy (d2@28)
+                @41 := move (@42) < copy (FIELD_MODULUS)
+                if move (@41) {
+                    storage_dead(@42)
+                    storage_live(@43)
+                    storage_live(@44)
+                    @44 := copy (sampled@3)
+                    @43 := move (@44) < const (16 : usize)
+                    if move (@43) {
+                        storage_dead(@44)
+                        storage_live(@45)
+                        @45 := copy (d2@28)
+                        storage_live(@46)
+                        @46 := copy (sampled@3)
+                        storage_live(@50)
+                        @50 := &mut *(result@2)
+                        storage_live(@51)
+                        @51 := @SliceIndexMut<'_, i16>(move (@50), copy (@46))
+                        *(@51) := move (@45)
+                        storage_dead(@45)
+                        storage_dead(@46)
+                        @47 := copy (sampled@3) panic.+ const (1 : usize)
+                        sampled@3 := move (@47)
+                    }
+                    else {
+                        storage_dead(@44)
+                    }
+                }
+                else {
+                    storage_dead(@42)
+                }
+                storage_dead(@43)
+                storage_dead(@41)
+                storage_dead(d2@28)
+                storage_dead(d1@23)
+                storage_dead(b3@20)
+                storage_dead(b2@17)
+                storage_dead(b1@14)
+                storage_dead(bytes@13)
+                storage_dead(@12)
+                storage_dead(@10)
+                storage_dead(@9)
+                continue 0
+            },
+        }
+    }
+    storage_dead(@12)
+    storage_dead(@10)
+    storage_dead(@9)
+    storage_dead(iter@8)
+    storage_dead(@5)
+    storage_dead(@4)
+    @0 := copy (sampled@3)
+    storage_dead(sampled@3)
+    return
+}
+
+
+

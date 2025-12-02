@@ -1,0 +1,163 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Tuple::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self::Output>
+    type Output
+    fn call_once = core::ops::function::FnOnce::call_once<Self, Args>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0> = core::ops::function::FnMut::call_mut<'_0_0, Self, Args>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::ops::function::FnMut::call_mut<'_0, Self, Args>(@1: &'_0 mut (Self), @2: Args) -> @TraitClause0::parent_clause1::Output
+where
+    [@TraitClause0]: FnMut<Self, Args>,
+
+pub fn core::ops::function::FnOnce::call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+where
+    [@TraitClause0]: FnOnce<Self, Args>,
+
+// Full name: test_crate::foo::closure
+struct closure<'_0> {
+  &'_0 mut (i32),
+}
+
+// Full name: test_crate::foo::{impl FnMut<()> for closure<'_0>}::call_mut
+fn {impl FnMut<()> for closure<'_0>}::call_mut<'_0, '_1>(@1: &'_1 mut (closure<'_0>), @2: ())
+{
+    let @0: (); // return
+    let @1: &'_ mut (closure<'_0>); // arg #1
+    let tupled_args@2: (); // arg #2
+    let @3: i32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (*((*(@1)).0)) panic.+ const (1 : i32)
+    *((*(@1)).0) := move (@3)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+    let rx@2: &'_ mut (i32); // local
+    let closure@3: closure<'_>; // local
+    let @4: (); // anonymous local
+    let @5: &'_ mut (closure<'_>); // anonymous local
+    let @6: (); // anonymous local
+
+    storage_live(x@1)
+    x@1 := const (0 : i32)
+    storage_live(rx@2)
+    rx@2 := &mut x@1
+    storage_live(closure@3)
+    closure@3 := closure { 0: move (rx@2) }
+    storage_live(@4)
+    storage_live(@5)
+    @5 := &mut closure@3
+    storage_live(@6)
+    @6 := ()
+    @4 := {impl FnMut<()> for closure<'_0>}::call_mut<'_, '_>(move (@5), move (@6))
+    storage_dead(@6)
+    storage_dead(@5)
+    storage_dead(@4)
+    @0 := ()
+    storage_dead(closure@3)
+    storage_dead(rx@2)
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::foo::{impl FnOnce<()> for closure<'_0>}::call_once
+fn {impl FnOnce<()> for closure<'_0>}::call_once<'_0>(@1: closure<'_0>, @2: ())
+{
+    let @0: (); // return
+    let @1: closure<'_0>; // arg #1
+    let @2: (); // arg #2
+    let @3: &'_ mut (closure<'_0>); // anonymous local
+
+    storage_live(@3)
+    @3 := &mut @1
+    @0 := {impl FnMut<()> for closure<'_0>}::call_mut<'_0, '_>(move (@3), move (@2))
+    drop[Drop<closure<'_0>>] @1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::foo::{impl FnOnce<()> for closure<'_0>}
+impl<'_0> FnOnce<()> for closure<'_0> {
+    parent_clause0 = MetaSized<closure<'_0>>
+    parent_clause1 = Sized<()>
+    parent_clause2 = Tuple<()>
+    parent_clause3 = Sized<()>
+    type Output = ()
+    fn call_once = {impl FnOnce<()> for closure<'_0>}::call_once<'_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::foo::{impl FnMut<()> for closure<'_0>}
+impl<'_0> FnMut<()> for closure<'_0> {
+    parent_clause0 = MetaSized<closure<'_0>>
+    parent_clause1 = {impl FnOnce<()> for closure<'_0>}<'_0>
+    parent_clause2 = Sized<()>
+    parent_clause3 = Tuple<()>
+    fn call_mut<'_0> = {impl FnMut<()> for closure<'_0>}::call_mut<'_0, '_0_0>
+    non-dyn-compatible
+}
+
+
+

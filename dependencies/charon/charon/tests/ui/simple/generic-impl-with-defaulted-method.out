@@ -1,0 +1,69 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: test_crate::BoolTrait
+pub trait BoolTrait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn foo<'_0> = foo<'_0_0, Self>[Self]
+    vtable: test_crate::BoolTrait::{vtable}
+}
+
+// Full name: test_crate::BoolTrait::foo
+pub fn foo<'_0, Self>(@1: &'_0 (Self))
+where
+    [@TraitClause0]: BoolTrait<Self>,
+{
+    let @0: (); // return
+    let self@1: &'_ (Self); // arg #1
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+pub fn test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}::foo<'_0, T>(@1: &'_0 (Option<T>[@TraitClause0]))
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: (); // return
+    let self@1: &'_ (Option<T>[@TraitClause0]); // arg #1
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}
+impl<T> BoolTrait for Option<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
+    fn foo<'_0> = test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}::foo<'_0_0, T>[@TraitClause0]
+    vtable: {impl BoolTrait for Option<T>[@TraitClause0]}::{vtable}<T>[@TraitClause0]
+}
+
+
+

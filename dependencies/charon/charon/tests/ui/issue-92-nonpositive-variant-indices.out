@@ -1,0 +1,35 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::Ordering
+enum Ordering {
+  Less,
+  Equal,
+  Greater,
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: Ordering; // anonymous local
+
+    storage_live(@1)
+    @1 := Ordering::Less {  }
+    match @1 {
+        Ordering::Less => {
+            @0 := ()
+        },
+        Ordering::Equal => {
+            @0 := ()
+        },
+        Ordering::Greater => {
+            @0 := ()
+        },
+    }
+    storage_dead(@1)
+    @0 := ()
+    return
+}
+
+
+

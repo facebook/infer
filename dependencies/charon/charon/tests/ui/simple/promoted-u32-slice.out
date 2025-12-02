@@ -1,0 +1,30 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::foo
+pub fn foo() -> &'static (Slice<u32>)
+{
+    let @0: &'_ (Slice<u32>); // return
+    let @1: &'_ (Array<u32, 4 : usize>); // anonymous local
+    let @2: &'_ (Array<u32, 4 : usize>); // anonymous local
+    let @3: &'_ (Array<u32, 4 : usize>); // anonymous local
+    let @4: &'_ (Array<u32, 4 : usize>); // anonymous local
+    let @5: Array<u32, 4 : usize>; // anonymous local
+
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := [const (0 : u32), const (1 : u32), const (2 : u32), const (3 : u32)]
+    @4 := &@5
+    storage_live(@1)
+    storage_live(@2)
+    @3 := move (@4)
+    @2 := &*(@3)
+    @1 := &*(@2)
+    @0 := @ArrayToSliceShared<'_, u32, 4 : usize>(move (@1))
+    storage_dead(@1)
+    storage_dead(@2)
+    return
+}
+
+
+

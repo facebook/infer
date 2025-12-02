@@ -1,0 +1,7 @@
+[package]
+name = "crate1"
+version = "0.1.0"
+authors = ["Son Ho <hosonmarc@gmail.com>"]
+edition = "2021"
+
+[dependencies]

@@ -1,0 +1,193 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::cell::RefCell
+#[lang_item("RefCell")]
+pub opaque type RefCell<T>
+where
+    [@TraitClause0]: MetaSized<T>,
+
+// Full name: core::cell::BorrowError
+pub struct BorrowError {}
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::cell::{RefCell<T>[@TraitClause0::parent_clause0]}::new
+pub fn new<T>(@1: T) -> RefCell<T>[@TraitClause0::parent_clause0]
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+// Full name: core::cell::Ref
+#[lang_item("RefCellRef")]
+pub opaque type Ref<'b, T>
+where
+    [@TraitClause0]: MetaSized<T>,
+    T : 'b,
+
+// Full name: core::cell::{RefCell<T>[@TraitClause0]}::try_borrow
+pub fn try_borrow<'_0, T>(@1: &'_0 (RefCell<T>[@TraitClause0])) -> Result<Ref<'_0, T>[@TraitClause0], BorrowError>[Sized<Ref<'_0, T>[@TraitClause0]>, Sized<BorrowError>]
+where
+    [@TraitClause0]: MetaSized<T>,
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone::clone
+#[lang_item("clone_fn")]
+pub fn clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::result::Result::{impl Drop for Result<T, E>[@TraitClause0, @TraitClause1]}::drop
+fn {impl Drop for Result<T, E>[@TraitClause0, @TraitClause1]}::drop<'_0, T, E>(@1: &'_0 mut (Result<T, E>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+
+// Full name: core::result::Result::{impl Drop for Result<T, E>[@TraitClause0, @TraitClause1]}
+impl<T, E> Drop for Result<T, E>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+    parent_clause0 = MetaSized<Result<T, E>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for Result<T, E>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, E>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::wrap
+fn wrap<'a>(@1: &'a (u32)) -> Option<&'a (u32)>[Sized<&'a (u32)>]
+{
+    let @0: Option<&'_ (u32)>[Sized<&'_ (u32)>]; // return
+    let x@1: &'_ (u32); // arg #1
+    let @2: &'_ (u32); // anonymous local
+
+    storage_live(@2)
+    @2 := &*(x@1)
+    @0 := Option::Some { 0: move (@2) }
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::wrap2
+fn wrap2<'a>(@1: &'a (u32)) -> Option<&'a (u32)>[Sized<&'_ (u32)>]
+where
+    [@TraitClause0]: Clone<&'a (())>,
+{
+    let @0: Option<&'_ (u32)>[Sized<&'_ (u32)>]; // return
+    let x@1: &'_ (u32); // arg #1
+    let @2: &'_ (u32); // anonymous local
+
+    storage_live(@2)
+    @2 := &*(x@1)
+    @0 := Option::Some { 0: move (@2) }
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let @0: (); // return
+    let ref_b@1: RefCell<bool>[MetaSized<bool>]; // local
+    let @2: Result<Ref<'_, bool>[MetaSized<bool>], BorrowError>[Sized<Ref<'_, bool>[MetaSized<bool>]>, Sized<BorrowError>]; // anonymous local
+    let @3: &'_ (RefCell<bool>[MetaSized<bool>]); // anonymous local
+
+    storage_live(ref_b@1)
+    ref_b@1 := new<bool>[Sized<bool>](const (false))
+    storage_live(@2)
+    storage_live(@3)
+    // `try_borrow` has a type that includes predicates on late bound regions.
+    @3 := &ref_b@1
+    @2 := try_borrow<'_, bool>[MetaSized<bool>](move (@3))
+    storage_dead(@3)
+    drop[{impl Drop for Result<T, E>[@TraitClause0, @TraitClause1]}<Ref<'_, bool>[MetaSized<bool>], BorrowError>[Sized<Ref<'_, bool>[MetaSized<bool>]>, Sized<BorrowError>]] @2
+    storage_dead(@2)
+    @0 := ()
+    storage_dead(ref_b@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::Foo
+trait Foo<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::S>
+    type S
+    non-dyn-compatible
+}
+
+// Full name: test_crate::f
+fn f<T, U>() -> Option<@TraitClause3::S>[@TraitClause3::parent_clause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: Foo<T>,
+    [@TraitClause3]: Foo<U>,
+    @TraitClause2::S = @TraitClause3::S,
+{
+    let @0: Option<@TraitClause3::S>[@TraitClause3::parent_clause1]; // return
+
+    panic(core::panicking::panic)
+}
+
+
+

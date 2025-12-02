@@ -1,0 +1,18 @@
+error: Generic associated types are not supported
+ --> /rustc/library/core/src/str/pattern.rs:102:5
+
+note: the error occurred when translating `core::str::pattern::Pattern`, which is (transitively) used at the following location(s):
+  --> tests/ui/error-dependencies.rs:9:13
+   |
+ 9 |     let _ = "".contains("");
+   |             ---------------
+...
+16 |         let _ = takes_pattern::<&str>();
+   |                 -----------------------
+17 |     }
+18 |     fn takes_pattern<T: std::str::pattern::Pattern>() {}
+   |                         --------------------------
+error: Item `core::str::pattern::Pattern` caused errors; ignoring.
+ --> /rustc/library/core/src/str/pattern.rs:100:1
+
+ERROR Charon failed to translate this code (2 errors)

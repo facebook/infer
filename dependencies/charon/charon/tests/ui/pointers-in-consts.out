@@ -1,0 +1,7 @@
+error: Unsupported constant: `ConstantExprKind::Cast {..}`
+ --> tests/ui/pointers-in-consts.rs:6:9
+  |
+6 |         DISGUISED_INT => {}
+  |         ^^^^^^^^^^^^^
+
+ERROR Charon failed to translate this code (1 errors)

@@ -1,0 +1,61 @@
+name: Deploy Doc
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # Build job
+  build:
+    # Specify runner +  build & upload the static files as an artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build static files
+        env:
+          CARGO_TERM_COLOR: always
+        run: |
+          cd charon
+          make doc
+
+      - name: Install rustc internal docs
+        run: |
+          rustup toolchain list -v
+          # Find toolchain path
+          export TOOLCHAIN=$(rustc --print sysroot)
+          echo "toolchain=\"$TOOLCHAIN\""
+          # Remove rustc book
+          rm $TOOLCHAIN/share/doc/rust/html/rustc -rf
+          # Download rustc API docs
+          rustup component add rustc-docs
+          # Move the docs to deployment path
+          mv $TOOLCHAIN/share/doc/rust/html/rustc charon/target/doc/rustc
+
+      - name: Prepare index.html
+        run: |
+          # Find toolchain name
+          export toolchain=$(rustc --print sysroot | grep -oP "nightly-\d{4}-\d{2}-\d{2}")
+          echo "toolchain=\"$toolchain\""
+          # Fill in toolchain placeholder in index.html
+          sed "s/nightly-xxxx-xx-xx/$toolchain/" .github/index.html > charon/target/doc/index.html
+
+      - name: Upload static files as artifact
+        uses: actions/upload-pages-artifact@v3 # or specific "vX.X.X" version tag for this action
+        with:
+          path: charon/target/doc/
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

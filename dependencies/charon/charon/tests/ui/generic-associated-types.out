@@ -1,0 +1,217 @@
+error: Generic associated types are not supported
+ --> tests/ui/generic-associated-types.rs:5:5
+  |
+5 |     type Item<'a>
+  |     ^^^^^^^^^^^^^
+
+error: Item `test_crate::LendingIterator` caused errors; ignoring.
+ --> tests/ui/generic-associated-types.rs:4:1
+  |
+4 | pub trait LendingIterator {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause0::Item>`
+ --> tests/ui/generic-associated-types.rs:9:5
+  |
+9 |     fn next<'a>(&'a mut self) -> Option<Self::Item<'a>>;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause0::Item>`
+ --> tests/ui/generic-associated-types.rs:9:5
+  |
+9 |     fn next<'a>(&'a mut self) -> Option<Self::Item<'a>>;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:29:28
+   |
+29 |     while let Some(item) = iter.next() {
+   |                            ^^^^^^^^^^^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:29:28
+   |
+29 |     while let Some(item) = iter.next() {
+   |                            ^^^^^^^^^^^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:30:15
+   |
+30 |         f(item)
+   |               ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:30:15
+   |
+30 |         f(item)
+   |               ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:30:15
+   |
+30 |         f(item)
+   |               ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:30:15
+   |
+30 |         f(item)
+   |               ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::MetaSized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Item` when resolving trait `core::marker::Sized<@TraitClause2::Item>`
+  --> tests/ui/generic-associated-types.rs:31:5
+   |
+31 |     }
+   |     ^
+
+error: Generic associated types are not supported
+  --> tests/ui/generic-associated-types.rs:48:9
+   |
+48 |         type Type<'b>: for<'c> Foo<&'a &'b &'c ()>;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Item `test_crate::lifetimes::Bar` caused errors; ignoring.
+  --> tests/ui/generic-associated-types.rs:47:5
+   |
+47 |     pub trait Bar<'a> {
+   |     ^^^^^^^^^^^^^^^^^
+
+error: Found unsupported GAT `Type` when resolving trait `test_crate::lifetimes::Foo<@TraitClause1::Type, &'_ (&'_ (&'_ (())))>`
+  --> tests/ui/generic-associated-types.rs:55:9
+   |
+55 |         x.foo()
+   |         ^^^^^^^
+
+error: Error during trait resolution: Found unsupported GAT `Type` when resolving trait `test_crate::lifetimes::Foo<@TraitClause1::Type, &'_ (&'_ (&'_ (())))>`
+  --> tests/ui/generic-associated-types.rs:55:9
+   |
+55 |         x.foo()
+   |         ^^^^^^^
+
+error: Found unsupported GAT `Type` when resolving trait `core::marker::MetaSized<@TraitClause1::Type>`
+  --> tests/ui/generic-associated-types.rs:56:5
+   |
+56 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Type` when resolving trait `core::marker::MetaSized<@TraitClause1::Type>`
+  --> tests/ui/generic-associated-types.rs:56:5
+   |
+56 |     }
+   |     ^
+
+error: Found unsupported GAT `Type` when resolving trait `core::marker::MetaSized<@TraitClause1::Type>`
+  --> tests/ui/generic-associated-types.rs:55:15
+   |
+55 |         x.foo()
+   |               ^
+
+error: Error during trait resolution: Found unsupported GAT `Type` when resolving trait `core::marker::MetaSized<@TraitClause1::Type>`
+  --> tests/ui/generic-associated-types.rs:55:15
+   |
+55 |         x.foo()
+   |               ^
+
+error: Found unsupported GAT `Type` when resolving trait `core::marker::MetaSized<@TraitClause1::Type>`
+  --> tests/ui/generic-associated-types.rs:56:5
+   |
+56 |     }
+   |     ^
+
+error: Error during trait resolution: Found unsupported GAT `Type` when resolving trait `core::marker::MetaSized<@TraitClause1::Type>`
+  --> tests/ui/generic-associated-types.rs:56:5
+   |
+56 |     }
+   |     ^
+
+ERROR Charon failed to translate this code (36 errors)

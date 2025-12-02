@@ -1,0 +1,10 @@
+error: Could not reconstruct `Box` initialization; branching during `Box` initialization is not supported.
+ --> tests/ui/issue-393-shallowinitbox.rs:2:1
+  |
+2 | / pub fn next(b: bool) -> Option<Vec<u8>> {
+3 | |     let vec = vec![if b { 42 } else { return None }];
+4 | |     Some(vec)
+5 | | }
+  | |_^
+
+ERROR Charon failed to translate this code (1 errors)

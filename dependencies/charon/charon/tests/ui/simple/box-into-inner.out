@@ -1,0 +1,122 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::ptr::non_null::NonNull
+#[lang_item("NonNull")]
+pub opaque type NonNull<T>
+
+// Full name: core::ptr::unique::Unique
+#[lang_item("ptr_unique")]
+pub opaque type Unique<T>
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop
+pub fn {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub opaque type String
+
+// Full name: alloc::string::String::{impl Drop for String}::drop
+fn {impl Drop for String}::drop<'_0>(@1: &'_0 mut (String))
+
+// Full name: alloc::string::String::{impl Drop for String}
+impl Drop for String {
+    parent_clause0 = MetaSized<String>
+    fn drop<'_0> = {impl Drop for String}::drop<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::into_inner
+fn into_inner(@1: alloc::boxed::Box<String>[MetaSized<String>, Sized<Global>])
+{
+    let @0: (); // return
+    let b@1: alloc::boxed::Box<String>[MetaSized<String>, Sized<Global>]; // arg #1
+    let _x@2: String; // local
+    let @3: &'_ mut (alloc::boxed::Box<String>[MetaSized<String>, Sized<Global>]); // anonymous local
+    let @4: (); // anonymous local
+    let @5: *const String; // anonymous local
+    let @6: *const String; // anonymous local
+    let @7: *const (); // anonymous local
+    let @8: usize; // anonymous local
+    let @9: usize; // anonymous local
+    let @10: bool; // anonymous local
+    let @11: bool; // anonymous local
+    let @12: bool; // anonymous local
+    let @13: bool; // anonymous local
+
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    storage_live(@8)
+    storage_live(@9)
+    storage_live(@10)
+    storage_live(@11)
+    storage_live(@12)
+    storage_live(@13)
+    storage_live(_x@2)
+    @6 := transmute<NonNull<String>, *const String>(copy ((*(b@1)).0))
+    @7 := cast<*const String, *const ()>(copy (@6))
+    @8 := transmute<*const (), usize>(copy (@7))
+    @9 := size_of<String>
+    @10 := copy (@9) != const (0 : usize)
+    @11 := copy (@8) == const (0 : usize)
+    @12 := copy (@11) & copy (@10)
+    @13 := ~(copy (@12))
+    assert(copy (@13) == true)
+    _x@2 := move (*(@6))
+    @0 := ()
+    drop[{impl Drop for String}] _x@2
+    storage_dead(_x@2)
+    @5 := transmute<NonNull<String>, *const String>(copy ((*(b@1)).0))
+    @3 := &mut b@1
+    @4 := {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_, String, Global>[MetaSized<String>, Sized<Global>](move (@3))
+    @0 := ()
+    return
+}
+
+
+

@@ -1,0 +1,56 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub opaque type String
+
+// Full name: alloc::string::{String}::new
+#[lang_item("string_new")]
+pub fn new() -> String
+
+// Full name: test_crate::use_string
+fn use_string(@1: String)
+{
+    let @0: (); // return
+    let @1: String; // arg #1
+
+    @0 := ()
+    drop[{impl#0}] @1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let _s@1: String; // local
+
+    storage_live(_s@1)
+    _s@1 := new()
+    @0 := ()
+    drop[{impl#0}] _s@1
+    storage_dead(_s@1)
+    @0 := ()
+    return
+}
+
+
+

@@ -1,0 +1,54 @@
+# Final LLBC before serialization:
+
+// Full name: core::cmp::Ordering
+#[lang_item("Ordering")]
+pub enum Ordering {
+  Less,
+  Equal,
+  Greater,
+}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Ord
+trait Ord<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn cmp<'_0, '_1> = cmp<'_0_0, '_0_1, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Ord::cmp
+fn cmp<'_0, '_1, Self>(@1: &'_0 (Self), @2: &'_1 (Self)) -> Ordering
+where
+    [@TraitClause0]: Ord<Self>,
+
+// Full name: test_crate::min
+fn min<T>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Ord<T>,
+{
+    let @0: (); // return
+    let @1: for<'_0, '_1> @TraitClause1::cmp<'_0_0, '_0_1>; // anonymous local
+
+    storage_live(@1)
+    @1 := const (@TraitClause1::cmp<'_, '_>)
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

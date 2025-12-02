@@ -1,0 +1,72 @@
+# Final LLBC before serialization:
+
+// Full name: core::any::TypeId
+pub opaque type TypeId
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+struct core::any::Any::{vtable}
+where
+    (dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_) : 'static,
+{
+  size: usize,
+  align: usize,
+  drop: fn(*mut (dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)),
+  method_type_id: fn<'_0>(&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_))) -> TypeId,
+  super_trait_0: &'static (core::marker::MetaSized::{vtable}),
+}
+
+// Full name: core::any::Any
+#[lang_item("Any")]
+pub trait Any<Self>
+where
+    Self : 'static,
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn type_id<'_0> = type_id<'_0_0, Self>[Self]
+    vtable: core::any::Any::{vtable}
+}
+
+// Full name: core::any::Any::type_id
+pub fn type_id<'_0, Self>(@1: &'_0 (Self)) -> TypeId
+where
+    [@TraitClause0]: Any<Self>,
+    Self : 'static,
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::foo
+fn foo<'_0, T>(@1: &'_0 (T)) -> &'_0 ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : 'static))
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Any<T>,
+{
+    let @0: &'_ ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)); // return
+    let x@1: &'_ (T); // arg #1
+    let @2: &'_ ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)); // anonymous local
+    let @3: &'_ ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)); // anonymous local
+    let @4: &'_ (T); // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := &*(x@1)
+    @3 := unsize_cast<&'_ (T), &'_ ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)), @TraitClause1>(move (@4))
+    storage_dead(@4)
+    @2 := &*(@3)
+    @0 := unsize_cast<&'_ ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)), &'_ ((dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)), Any<(dyn exists<_dyn> [@TraitClause0]: Any<_dyn> + _dyn : '_)>>(move (@2))
+    storage_dead(@3)
+    storage_dead(@2)
+    return
+}
+
+
+

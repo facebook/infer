@@ -1,0 +1,9 @@
+error: Mismatched method generics:
+       params:   
+       supplied: [@TraitDecl2<()>]
+  --> tests/ui/simple/fewer-clauses-in-method-impl.2.rs:14:5
+   |
+14 |     <() as Trait>::method()
+   |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+ERROR Charon failed to translate this code (1 errors)

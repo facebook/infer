@@ -1,0 +1,32 @@
+# Final LLBC before serialization:
+
+struct test_crate::main::AssertIsAsBytes {}
+
+struct test_crate::main::AssertIsAsBytes#1 {}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+    let @2: test_crate::main::AssertIsAsBytes; // anonymous local
+    let @3: (); // anonymous local
+    let @4: test_crate::main::AssertIsAsBytes#1; // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    @2 := test_crate::main::AssertIsAsBytes {  }
+    storage_dead(@2)
+    storage_dead(@1)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := test_crate::main::AssertIsAsBytes#1 {  }
+    storage_dead(@4)
+    storage_dead(@3)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

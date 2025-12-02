@@ -1,0 +1,577 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Tuple::{vtable}
+}
+
+// Full name: core::mem::size_of
+#[lang_item("mem_size_of")]
+pub fn size_of<T>() -> usize
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::mem::align_of
+#[lang_item("mem_align_of")]
+pub fn align_of<T>() -> usize
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::f32::{f32}::MAX
+pub fn MAX() -> f32
+
+// Full name: core::f32::{f32}::MAX
+pub const MAX: f32 = MAX()
+
+// Full name: core::f64::{f64}::MIN
+pub fn MIN() -> f64
+
+// Full name: core::f64::{f64}::MIN
+pub const MIN: f64 = MIN()
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self::Output>
+    type Output
+    fn call_once = core::ops::function::FnOnce::call_once<Self, Args>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0> = core::ops::function::FnMut::call_mut<'_0_0, Self, Args>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::Fn
+#[lang_item("r#fn")]
+pub trait Fn<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnMut<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call<'_0> = core::ops::function::Fn::call<'_0_0, Self, Args>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::ops::function::Fn::call<'_0, Self, Args>(@1: &'_0 (Self), @2: Args) -> @TraitClause0::parent_clause1::parent_clause1::Output
+where
+    [@TraitClause0]: Fn<Self, Args>,
+
+pub fn core::ops::function::FnMut::call_mut<'_0, Self, Args>(@1: &'_0 mut (Self), @2: Args) -> @TraitClause0::parent_clause1::Output
+where
+    [@TraitClause0]: FnMut<Self, Args>,
+
+pub fn core::ops::function::FnOnce::call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+where
+    [@TraitClause0]: FnOnce<Self, Args>,
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::alloc::exchange_malloc
+#[lang_item("exchange_malloc")]
+unsafe fn exchange_malloc(@1: usize, @2: usize) -> *mut u8
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop
+pub fn {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: test_crate::addr_of
+fn addr_of()
+{
+    let @0: (); // return
+    let x@1: u32; // local
+    let @2: *const u32; // anonymous local
+    let @3: &'_ (u32); // anonymous local
+    let @4: *const u32; // anonymous local
+    let @5: *mut u32; // anonymous local
+
+    storage_live(x@1)
+    x@1 := const (0 : u32)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := &x@1
+    @2 := &raw const *(@3)
+    storage_dead(@3)
+    storage_dead(@2)
+    storage_live(@4)
+    @4 := &raw const x@1
+    storage_dead(@4)
+    storage_live(@5)
+    @5 := &raw mut x@1
+    storage_dead(@5)
+    @0 := ()
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::literal_casts
+fn literal_casts()
+{
+    let @0: (); // return
+    let @1: u8; // anonymous local
+    let @2: u64; // anonymous local
+    let @3: f64; // anonymous local
+    let @4: u64; // anonymous local
+    let @5: f64; // anonymous local
+
+    storage_live(@1)
+    @1 := cast<u64, u8>(const (0 : u64))
+    storage_dead(@1)
+    storage_live(@2)
+    @2 := cast<u8, u64>(const (0 : u8))
+    storage_dead(@2)
+    storage_live(@3)
+    @3 := cast<u64, f64>(const (0 : u64))
+    storage_dead(@3)
+    storage_live(@4)
+    @4 := cast<f64, u64>(copy (MIN))
+    storage_dead(@4)
+    storage_live(@5)
+    @5 := cast<f32, f64>(copy (MAX))
+    storage_dead(@5)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+fn test_crate::ptr_casts::foo()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::ptr_casts
+fn ptr_casts()
+{
+    let @0: (); // return
+    let array_ptr@1: *const Array<u32, 64 : usize>; // local
+    let @2: &'_ (Array<u32, 64 : usize>); // anonymous local
+    let @3: Array<u32, 64 : usize>; // anonymous local
+    let @4: *const u32; // anonymous local
+    let @5: *const Array<u32, 64 : usize>; // anonymous local
+    let x@6: u8; // local
+    let x@7: *const u8; // local
+    let @8: &'_ (u8); // anonymous local
+    let @9: *const u8; // anonymous local
+    let @10: *const u8; // anonymous local
+    let @11: *mut u8; // anonymous local
+    let @12: *const u8; // anonymous local
+    let @13: usize; // anonymous local
+    let @14: *const u8; // anonymous local
+    let @15: *const u8; // anonymous local
+    let @16: *const u8; // anonymous local
+    let @17: fn(); // anonymous local
+
+    storage_live(array_ptr@1)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := @ArrayRepeat<'_, u32, 64 : usize>(const (0 : u32))
+    @2 := &@3
+    array_ptr@1 := &raw const *(@2)
+    storage_dead(@2)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := copy (array_ptr@1)
+    @4 := cast<*const Array<u32, 64 : usize>, *const u32>(move (@5))
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(x@6)
+    x@6 := const (0 : u8)
+    storage_live(x@7)
+    storage_live(@8)
+    @8 := &x@6
+    x@7 := &raw const *(@8)
+    storage_dead(@8)
+    storage_live(@9)
+    storage_live(@10)
+    storage_live(@11)
+    storage_live(@12)
+    @12 := copy (x@7)
+    @11 := cast<*const u8, *mut u8>(move (@12))
+    @10 := cast<*mut u8, *const u8>(move (@11))
+    storage_dead(@12)
+    storage_dead(@11)
+    @9 := cast<*const u8, *const u8>(move (@10))
+    storage_dead(@10)
+    storage_dead(@9)
+    storage_live(@13)
+    storage_live(@14)
+    @14 := copy (x@7)
+    @13 := cast<*const u8, usize>(move (@14))
+    storage_dead(@14)
+    storage_dead(@13)
+    storage_live(@15)
+    @15 := cast<usize, *const u8>(const (0 : usize))
+    storage_dead(@15)
+    storage_live(@16)
+    storage_live(@17)
+    @17 := cast<test_crate::ptr_casts::foo, fn()>(const (test_crate::ptr_casts::foo))
+    @16 := cast<fn(), *const u8>(move (@17))
+    storage_dead(@17)
+    storage_dead(@16)
+    @0 := ()
+    storage_dead(x@7)
+    storage_dead(x@6)
+    storage_dead(@3)
+    storage_dead(array_ptr@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts::closure
+struct closure {}
+
+fn test_crate::fn_casts::foo()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts::bar
+unsafe fn bar()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts::{impl Fn<(u8)> for closure}::call
+fn {impl Fn<(u8)> for closure}::call<'_0>(@1: &'_0 (closure), @2: (u8))
+{
+    let @0: (); // return
+    let @1: &'_ (closure); // arg #1
+    let tupled_args@2: (u8); // arg #2
+    let @3: u8; // anonymous local
+
+    storage_live(@3)
+    @3 := move ((tupled_args@2).0)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts::{impl FnMut<(u8)> for closure}::call_mut
+fn {impl FnMut<(u8)> for closure}::call_mut<'_0>(@1: &'_0 mut (closure), @2: (u8))
+{
+    let @0: (); // return
+    let state@1: &'_0 mut (closure); // arg #1
+    let args@2: (u8); // arg #2
+    let @3: &'_ (closure); // anonymous local
+
+    storage_live(@3)
+    @3 := &*(state@1)
+    @0 := {impl Fn<(u8)> for closure}::call<'_>(move (@3), move (args@2))
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts::{impl FnOnce<(u8)> for closure}::call_once
+fn {impl FnOnce<(u8)> for closure}::call_once(@1: closure, @2: (u8))
+{
+    let @0: (); // return
+    let @1: closure; // arg #1
+    let @2: (u8); // arg #2
+    let @3: &'_ mut (closure); // anonymous local
+
+    storage_live(@3)
+    @3 := &mut @1
+    @0 := {impl FnMut<(u8)> for closure}::call_mut<'_>(move (@3), move (@2))
+    drop[Drop<closure>] @1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts::closure::as_fn
+fn as_fn(@1: u8)
+{
+    let @0: (); // return
+    let arg1@1: u8; // arg #1
+    let args@2: (u8); // local
+    let state@3: closure; // local
+
+    storage_live(args@2)
+    storage_live(state@3)
+    args@2 := (move (arg1@1))
+    state@3 := closure {  }
+    @0 := {impl FnOnce<(u8)> for closure}::call_once(move (state@3), move (args@2))
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts
+fn fn_casts()
+{
+    let @0: (); // return
+    let @1: fn(); // anonymous local
+    let @2: fn(); // anonymous local
+    let closure@3: closure; // local
+    let @4: fn(u8); // anonymous local
+    let @5: closure; // anonymous local
+    let @6: fn(u8); // anonymous local
+    let @7: closure; // anonymous local
+
+    storage_live(@1)
+    @1 := cast<test_crate::fn_casts::foo, fn()>(const (test_crate::fn_casts::foo))
+    storage_dead(@1)
+    storage_live(@2)
+    @2 := cast<bar, fn()>(const (bar))
+    storage_dead(@2)
+    storage_live(closure@3)
+    closure@3 := closure {  }
+    storage_live(@4)
+    storage_live(@5)
+    @5 := copy (closure@3)
+    @4 := cast<as_fn, fn(u8)>(const (as_fn))
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (closure@3)
+    @6 := cast<as_fn, fn(u8)>(const (as_fn))
+    storage_dead(@7)
+    storage_dead(@6)
+    @0 := ()
+    storage_dead(closure@3)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fn_casts::{impl FnOnce<(u8)> for closure}
+impl FnOnce<(u8)> for closure {
+    parent_clause0 = MetaSized<closure>
+    parent_clause1 = Sized<(u8)>
+    parent_clause2 = Tuple<(u8)>
+    parent_clause3 = Sized<()>
+    type Output = ()
+    fn call_once = {impl FnOnce<(u8)> for closure}::call_once
+    non-dyn-compatible
+}
+
+// Full name: test_crate::fn_casts::{impl FnMut<(u8)> for closure}
+impl FnMut<(u8)> for closure {
+    parent_clause0 = MetaSized<closure>
+    parent_clause1 = {impl FnOnce<(u8)> for closure}
+    parent_clause2 = Sized<(u8)>
+    parent_clause3 = Tuple<(u8)>
+    fn call_mut<'_0> = {impl FnMut<(u8)> for closure}::call_mut<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::fn_casts::{impl Fn<(u8)> for closure}
+impl Fn<(u8)> for closure {
+    parent_clause0 = MetaSized<closure>
+    parent_clause1 = {impl FnMut<(u8)> for closure}
+    parent_clause2 = Sized<(u8)>
+    parent_clause3 = Tuple<(u8)>
+    fn call<'_0> = {impl Fn<(u8)> for closure}::call<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::boxes
+fn boxes()
+{
+    let @0: (); // return
+    let @1: alloc::boxed::Box<i32>[MetaSized<i32>, Sized<Global>]; // anonymous local
+    let @2: alloc::boxed::Box<i32>[MetaSized<i32>, Sized<Global>]; // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    @2 := @BoxNew<i32>[MetaSized<i32>, Sized<Global>](const (42 : i32))
+    @1 := move (@2)
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<i32, Global>[MetaSized<i32>, Sized<Global>]] @2
+    storage_dead(@2)
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<i32, Global>[MetaSized<i32>, Sized<Global>]] @1
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::STEAL
+fn STEAL() -> Array<(), 1 : usize>
+{
+    let @0: Array<(), 1 : usize>; // return
+    let @1: (); // anonymous local
+
+    storage_live(@1)
+    @1 := ()
+    @0 := @ArrayRepeat<'_, (), 1 : usize>(move (@1))
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::STEAL
+static STEAL: Array<(), 1 : usize> = STEAL()
+
+// Full name: test_crate::transmute
+fn transmute(@1: Array<u32, 2 : usize>) -> u64
+{
+    let @0: u64; // return
+    let x@1: Array<u32, 2 : usize>; // arg #1
+    let @2: Array<u32, 2 : usize>; // anonymous local
+
+    storage_live(@2)
+    // When optimized, this becomes a built-in cast. Otherwise this is just a call to `transmute`.
+    @2 := copy (x@1)
+    @0 := transmute<Array<u32, 2 : usize>, u64>(move (@2))
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::STEAL2
+fn STEAL2() -> Array<(), 13 : usize>
+{
+    let @0: Array<(), 13 : usize>; // return
+    let @1: (); // anonymous local
+
+    storage_live(@1)
+    @1 := ()
+    @0 := @ArrayRepeat<'_, (), 13 : usize>(move (@1))
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::STEAL2
+static STEAL2: Array<(), 13 : usize> = STEAL2()
+
+// Full name: test_crate::nullary_ops::Struct
+struct Struct<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  a: u8,
+  b: T,
+}
+
+// Full name: test_crate::nullary_ops
+fn nullary_ops<T>() -> usize
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: usize; // return
+    let size@1: usize; // local
+    let align@2: usize; // local
+    let ub@3: bool; // local
+    let offset@4: usize; // local
+    let @5: usize; // anonymous local
+    let @6: usize; // anonymous local
+    let @7: usize; // anonymous local
+    let @8: usize; // anonymous local
+    let @9: usize; // anonymous local
+    let @10: usize; // anonymous local
+    let @11: bool; // anonymous local
+    let @12: usize; // anonymous local
+    let @13: usize; // anonymous local
+    let @14: usize; // anonymous local
+
+    storage_live(@9)
+    storage_live(@12)
+    storage_live(@14)
+    storage_live(size@1)
+    size@1 := size_of<T>[@TraitClause0]()
+    storage_live(align@2)
+    align@2 := align_of<T>[@TraitClause0]()
+    storage_live(ub@3)
+    // This is `const (false)` in the MIR we get, but `true` in const evaluation.
+    ub@3 := ub_checks<bool>
+    storage_live(offset@4)
+    offset@4 := offset_of(?)<Struct<T>[@TraitClause0]>
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (size@1)
+    storage_live(@8)
+    @8 := copy (align@2)
+    @9 := copy (@7) panic.+ copy (@8)
+    @6 := move (@9)
+    storage_dead(@8)
+    storage_dead(@7)
+    storage_live(@10)
+    storage_live(@11)
+    @11 := copy (ub@3)
+    @10 := cast<bool, usize>(move (@11))
+    storage_dead(@11)
+    @12 := copy (@6) panic.+ copy (@10)
+    @5 := move (@12)
+    storage_dead(@10)
+    storage_dead(@6)
+    storage_live(@13)
+    @13 := copy (offset@4)
+    @14 := copy (@5) panic.+ copy (@13)
+    @0 := move (@14)
+    storage_dead(@13)
+    storage_dead(@5)
+    storage_dead(offset@4)
+    storage_dead(ub@3)
+    storage_dead(align@2)
+    storage_dead(size@1)
+    return
+}
+
+
+

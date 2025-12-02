@@ -1,0 +1,48 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::mem::size_of
+#[lang_item("mem_size_of")]
+pub fn size_of<T>() -> usize
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: test_crate::f
+fn f<T>()
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: (); // return
+    let @1: &'_ (usize); // anonymous local
+    let @2: &'_ (usize); // anonymous local
+    let @3: &'_ (usize); // anonymous local
+    let @4: usize; // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    // This can't be evaluated generically.
+    @4 := size_of<T>[@TraitClause0]()
+    @3 := &@4
+    storage_live(@1)
+    @2 := move (@3)
+    @1 := &*(@2)
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

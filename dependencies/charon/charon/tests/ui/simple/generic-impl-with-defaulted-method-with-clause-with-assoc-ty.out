@@ -1,0 +1,77 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: test_crate::HasType
+trait HasType<Self, Self_Type>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Type>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::HasMethod
+trait HasMethod<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn method<Clause0_Type, [@TraitClause0]: HasType<Self, Clause0_Type>> = method<Self, Clause0_Type>[Self, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::HasMethod::method
+fn method<Self, Clause1_Type>()
+where
+    [@TraitClause0]: HasMethod<Self>,
+    [@TraitClause1]: HasType<Self, Clause1_Type>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+fn test_crate::{impl HasMethod for Option<T>[@TraitClause0]}::method<T, Clause1_Type>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: HasType<Option<T>[@TraitClause0], Clause1_Type>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl HasMethod for Option<T>[@TraitClause0]}
+impl<T> HasMethod for Option<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
+    fn method<Clause0_Type, [@TraitClause0]: HasType<Option<T>[@TraitClause0], Clause0_Type>> = test_crate::{impl HasMethod for Option<T>[@TraitClause0]}::method<T, Clause0_Type>[@TraitClause0, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+
+

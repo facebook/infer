@@ -1,0 +1,288 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = core::clone::Clone::clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::fmt::Error
+pub struct Error {}
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+struct core::fmt::Display::{vtable} {
+  size: usize,
+  align: usize,
+  drop: fn(*mut (dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)),
+  method_fmt: fn<'_0, '_1, '_2>(&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)), &'_0_1 mut (Formatter<'_0_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>],
+}
+
+// Full name: core::fmt::Display
+#[lang_item("Display")]
+pub trait Display<Self>
+{
+    fn fmt<'_0, '_1, '_2> = core::fmt::Display::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    vtable: core::fmt::Display::{vtable}
+}
+
+pub fn core::fmt::Display::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+where
+    [@TraitClause0]: Display<Self>,
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop
+pub fn {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: alloc::rc::Rc
+#[lang_item("Rc")]
+pub opaque type Rc<T>
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<type_error("removed allocator parameter")>,
+
+pub fn alloc::rc::{Rc<T>[@TraitClause0::parent_clause0, Sized<Global>]}::new<T>(@1: T) -> Rc<T>[@TraitClause0::parent_clause0, Sized<Global>]
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: alloc::rc::{impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}::drop
+pub fn {impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (Rc<T>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::rc::{impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Drop for Rc<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<Rc<T>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub opaque type String
+
+// Full name: alloc::string::String::{impl Drop for String}::drop
+fn {impl Drop for String}::drop<'_0>(@1: &'_0 mut (String))
+
+// Full name: alloc::string::String::{impl Drop for String}
+impl Drop for String {
+    parent_clause0 = MetaSized<String>
+    fn drop<'_0> = {impl Drop for String}::drop<'_0_0>
+    non-dyn-compatible
+}
+
+#[lang_item("string_new")]
+pub fn alloc::string::{String}::new() -> String
+
+// Full name: alloc::string::{impl Clone for String}::clone
+pub fn {impl Clone for String}::clone<'_0>(@1: &'_0 (String)) -> String
+
+// Full name: alloc::string::{impl Clone for String}
+impl Clone for String {
+    parent_clause0 = Sized<String>
+    fn clone<'_0> = {impl Clone for String}::clone<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: alloc::string::{impl Display for String}::fmt
+pub fn {impl Display for String}::fmt<'_0, '_1, '_2>(@1: &'_0 (String), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+
+// Full name: alloc::string::{impl Display for String}::{vtable}
+fn {impl Display for String}::{vtable}() -> core::fmt::Display::{vtable}
+{
+    let ret@0: core::fmt::Display::{vtable}; // return
+
+    ret@0 := core::fmt::Display::{vtable} { size: const (Opaque(unknown size)), align: const (Opaque(unknown align)), drop: const (Opaque(unknown drop)), method_fmt: const ({impl Display for String}::fmt) }
+    return
+}
+
+// Full name: alloc::string::{impl Display for String}::{vtable}
+static {impl Display for String}::{vtable}: core::fmt::Display::{vtable} = {impl Display for String}::{vtable}()
+
+// Full name: alloc::string::{impl Display for String}
+impl Display for String {
+    fn fmt<'_0, '_1, '_2> = {impl Display for String}::fmt<'_0_0, '_0_1, '_0_2>
+    vtable: {impl Display for String}::{vtable}
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let @0: (); // return
+    let array@1: Array<i32, 2 : usize>; // local
+    let @2: &'_ (Slice<i32>); // anonymous local
+    let @3: &'_ (Array<i32, 2 : usize>); // anonymous local
+    let @4: &'_ (Array<i32, 2 : usize>); // anonymous local
+    let @5: alloc::boxed::Box<Slice<i32>>[MetaSized<Slice<i32>>, Sized<Global>]; // anonymous local
+    let @6: alloc::boxed::Box<Array<i32, 2 : usize>>[MetaSized<Array<i32, 2 : usize>>, Sized<Global>]; // anonymous local
+    let @7: Array<i32, 2 : usize>; // anonymous local
+    let @8: Rc<Slice<i32>>[MetaSized<Slice<i32>>, Sized<Global>]; // anonymous local
+    let @9: Rc<Array<i32, 2 : usize>>[MetaSized<Array<i32, 2 : usize>>, Sized<Global>]; // anonymous local
+    let @10: Array<i32, 2 : usize>; // anonymous local
+    let string@11: String; // local
+    let @12: &'_ ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)); // anonymous local
+    let @13: &'_ (String); // anonymous local
+    let @14: &'_ (String); // anonymous local
+    let @15: alloc::boxed::Box<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Sized<Global>]; // anonymous local
+    let @16: alloc::boxed::Box<String>[MetaSized<String>, Sized<Global>]; // anonymous local
+    let @17: String; // anonymous local
+    let @18: &'_ (String); // anonymous local
+    let @19: Rc<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Sized<Global>]; // anonymous local
+    let @20: Rc<String>[MetaSized<String>, Sized<Global>]; // anonymous local
+    let @21: String; // anonymous local
+    let @22: &'_ (String); // anonymous local
+
+    storage_live(array@1)
+    array@1 := @ArrayRepeat<'_, i32, 2 : usize>(const (0 : i32))
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := &array@1
+    @3 := &*(@4)
+    @2 := @ArrayToSliceShared<'_, i32, 2 : usize>(move (@3))
+    storage_dead(@3)
+    storage_dead(@4)
+    storage_dead(@2)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (array@1)
+    @6 := @BoxNew<Array<i32, 2 : usize>>[Sized<Array<i32, 2 : usize>>](move (@7))
+    @5 := unsize_cast<alloc::boxed::Box<Array<i32, 2 : usize>>[MetaSized<Array<i32, 2 : usize>>, Sized<Global>], alloc::boxed::Box<Slice<i32>>[MetaSized<Slice<i32>>, Sized<Global>], 2 : usize>(move (@6))
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<Array<i32, 2 : usize>, Global>[MetaSized<Array<i32, 2 : usize>>, Sized<Global>]] @6
+    storage_dead(@7)
+    storage_dead(@6)
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<Slice<i32>, Global>[MetaSized<Slice<i32>>, Sized<Global>]] @5
+    storage_dead(@5)
+    storage_live(@8)
+    storage_live(@9)
+    storage_live(@10)
+    @10 := copy (array@1)
+    @9 := alloc::rc::{Rc<T>[@TraitClause0::parent_clause0, Sized<Global>]}::new<Array<i32, 2 : usize>>[Sized<Array<i32, 2 : usize>>](move (@10))
+    @8 := unsize_cast<Rc<Array<i32, 2 : usize>>[MetaSized<Array<i32, 2 : usize>>, Sized<Global>], Rc<Slice<i32>>[MetaSized<Slice<i32>>, Sized<Global>]>(move (@9))
+    drop[{impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}<Array<i32, 2 : usize>, Global>[MetaSized<Array<i32, 2 : usize>>, Sized<Global>]] @9
+    storage_dead(@10)
+    storage_dead(@9)
+    drop[{impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}<Slice<i32>, Global>[MetaSized<Slice<i32>>, Sized<Global>]] @8
+    storage_dead(@8)
+    storage_live(string@11)
+    string@11 := alloc::string::{String}::new()
+    storage_live(@12)
+    storage_live(@13)
+    storage_live(@14)
+    @14 := &string@11
+    @13 := &*(@14)
+    @12 := unsize_cast<&'_ (String), &'_ ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)), {impl Display for String}>(move (@13))
+    storage_dead(@13)
+    storage_dead(@14)
+    storage_dead(@12)
+    storage_live(@15)
+    storage_live(@16)
+    storage_live(@17)
+    storage_live(@18)
+    @18 := &string@11
+    @17 := {impl Clone for String}::clone<'_>(move (@18))
+    storage_dead(@18)
+    @16 := @BoxNew<String>[Sized<String>](move (@17))
+    @15 := unsize_cast<alloc::boxed::Box<String>[MetaSized<String>, Sized<Global>], alloc::boxed::Box<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Sized<Global>], {impl Display for String}>(move (@16))
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<String, Global>[MetaSized<String>, Sized<Global>]] @16
+    storage_dead(@17)
+    storage_dead(@16)
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_), Global>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Sized<Global>]] @15
+    storage_dead(@15)
+    storage_live(@19)
+    storage_live(@20)
+    storage_live(@21)
+    storage_live(@22)
+    @22 := &string@11
+    @21 := {impl Clone for String}::clone<'_>(move (@22))
+    storage_dead(@22)
+    @20 := alloc::rc::{Rc<T>[@TraitClause0::parent_clause0, Sized<Global>]}::new<String>[Sized<String>](move (@21))
+    @19 := unsize_cast<Rc<String>[MetaSized<String>, Sized<Global>], Rc<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Sized<Global>]>(move (@20))
+    drop[{impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}<String, Global>[MetaSized<String>, Sized<Global>]] @20
+    storage_dead(@21)
+    storage_dead(@20)
+    drop[{impl Drop for Rc<T>[@TraitClause0, @TraitClause1]}<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_), Global>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Sized<Global>]] @19
+    storage_dead(@19)
+    @0 := ()
+    drop[{impl Drop for String}] string@11
+    storage_dead(string@11)
+    storage_dead(array@1)
+    @0 := ()
+    return
+}
+
+
+

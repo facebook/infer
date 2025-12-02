@@ -1,0 +1,16 @@
+[package]
+name = "test-cargo-dependencies"
+version = "0.1.0"
+authors = ["Son Ho <hosonmarc@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+# Important: because of how we use Nix, only the dependencies of charon itself
+# will be available when running tests. So the only dependencies we can list
+# here must be in `charon/Cargo.toml`.
+take_mut = { version = "0.2.2", optional = true }
+
+[features]
+default = []
+# We activate this feature by calling charon with `--cargo-arg=--features=test_feature`.
+test_feature = [ "dep:take_mut" ]

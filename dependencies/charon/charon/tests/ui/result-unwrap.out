@@ -1,0 +1,254 @@
+# Final LLBC before serialization:
+
+// Full name: core::fmt::Error
+pub struct Error {}
+
+// Full name: core::fmt::FormattingOptions
+pub struct FormattingOptions {
+  flags: u32,
+  width: u16,
+  precision: u16,
+}
+
+// Full name: core::fmt::flags::DEBUG_LOWER_HEX_FLAG
+fn DEBUG_LOWER_HEX_FLAG() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (1 : u32) panic.<< const (25 : i32)
+    return
+}
+
+// Full name: core::fmt::flags::DEBUG_LOWER_HEX_FLAG
+const DEBUG_LOWER_HEX_FLAG: u32 = DEBUG_LOWER_HEX_FLAG()
+
+// Full name: core::fmt::flags::DEBUG_UPPER_HEX_FLAG
+fn DEBUG_UPPER_HEX_FLAG() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (1 : u32) panic.<< const (26 : i32)
+    return
+}
+
+// Full name: core::fmt::flags::DEBUG_UPPER_HEX_FLAG
+const DEBUG_UPPER_HEX_FLAG: u32 = DEBUG_UPPER_HEX_FLAG()
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+struct core::fmt::Debug::{vtable} {
+  size: usize,
+  align: usize,
+  drop: fn(*mut (dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)),
+  method_fmt: fn<'_0, '_1, '_2>(&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)), &'_0_1 mut (Formatter<'_0_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>],
+}
+
+// Full name: core::fmt::Debug
+#[lang_item("Debug")]
+pub trait Debug<Self>
+{
+    fn fmt<'_0, '_1, '_2> = core::fmt::Debug::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    vtable: core::fmt::Debug::{vtable}
+}
+
+pub fn core::fmt::Debug::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+where
+    [@TraitClause0]: Debug<Self>,
+
+// Full name: core::fmt::Display
+#[lang_item("Display")]
+pub trait Display<Self>
+{
+    fn fmt<'_0, '_1, '_2> = core::fmt::Display::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    vtable: core::fmt::Display::{vtable}
+}
+
+pub fn core::fmt::Display::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+where
+    [@TraitClause0]: Display<Self>,
+
+// Full name: core::fmt::LowerHex
+pub trait LowerHex<Self>
+{
+    fn fmt<'_0, '_1, '_2> = core::fmt::LowerHex::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    vtable: core::fmt::LowerHex::{vtable}
+}
+
+pub fn core::fmt::LowerHex::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+where
+    [@TraitClause0]: LowerHex<Self>,
+
+// Full name: core::fmt::UpperHex
+pub trait UpperHex<Self>
+{
+    fn fmt<'_0, '_1, '_2> = core::fmt::UpperHex::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    vtable: core::fmt::UpperHex::{vtable}
+}
+
+pub fn core::fmt::UpperHex::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+where
+    [@TraitClause0]: UpperHex<Self>,
+
+// Full name: core::fmt::num::{impl LowerHex for u32}::fmt
+pub fn {impl LowerHex for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+
+// Full name: core::fmt::num::{impl LowerHex for u32}
+impl LowerHex for u32 {
+    fn fmt<'_0, '_1, '_2> = {impl LowerHex for u32}::fmt<'_0_0, '_0_1, '_0_2>
+    vtable: {impl LowerHex for u32}::{vtable}
+}
+
+// Full name: core::fmt::num::{impl UpperHex for u32}::fmt
+pub fn {impl UpperHex for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+
+// Full name: core::fmt::num::{impl UpperHex for u32}
+impl UpperHex for u32 {
+    fn fmt<'_0, '_1, '_2> = {impl UpperHex for u32}::fmt<'_0_0, '_0_1, '_0_2>
+    vtable: {impl UpperHex for u32}::{vtable}
+}
+
+// Full name: core::fmt::num::imp::{impl Display for u32}::fmt
+pub fn {impl Display for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+
+// Full name: core::fmt::num::{impl Debug for u32}::fmt
+pub fn {impl Debug for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+{
+    let @0: Result<(), Error>[Sized<()>, Sized<Error>]; // return
+    let self@1: &'_ (u32); // arg #1
+    let f@2: &'_ mut (Formatter<'_>); // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+
+    storage_live(@3)
+    storage_live(@4)
+    @4 := copy (((*(f@2)).0).flags)
+    @3 := move (@4) & copy (DEBUG_LOWER_HEX_FLAG)
+    storage_dead(@4)
+    switch move (@3) {
+        0 : u32 => {
+        },
+        _ => {
+            storage_dead(@3)
+            @0 := {impl LowerHex for u32}::fmt<'_, '_, '_>(move (self@1), move (f@2))
+            return
+        },
+    }
+    storage_dead(@3)
+    storage_live(@5)
+    storage_live(@6)
+    @6 := copy (((*(f@2)).0).flags)
+    @5 := move (@6) & copy (DEBUG_UPPER_HEX_FLAG)
+    storage_dead(@6)
+    switch move (@5) {
+        0 : u32 => {
+            storage_dead(@5)
+            @0 := {impl Display for u32}::fmt<'_, '_, '_>(move (self@1), move (f@2))
+        },
+        _ => {
+            storage_dead(@5)
+            @0 := {impl UpperHex for u32}::fmt<'_, '_, '_>(move (self@1), move (f@2))
+        },
+    }
+    return
+}
+
+// Full name: core::fmt::num::{impl Debug for u32}
+impl Debug for u32 {
+    fn fmt<'_0, '_1, '_2> = {impl Debug for u32}::fmt<'_0_0, '_0_1, '_0_2>
+    vtable: {impl Debug for u32}::{vtable}
+}
+
+// Full name: core::fmt::num::imp::{impl Display for u32}
+impl Display for u32 {
+    fn fmt<'_0, '_1, '_2> = {impl Display for u32}::fmt<'_0_0, '_0_1, '_0_2>
+    vtable: {impl Display for u32}::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::result::unwrap_failed
+fn unwrap_failed<'_0, '_1>(@1: &'_0 (Str), @2: &'_1 ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_1))) -> !
+
+pub fn core::result::{Result<T, E>[@TraitClause0, @TraitClause1]}::unwrap<T, E>(@1: Result<T, E>[@TraitClause0, @TraitClause1]) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+    [@TraitClause2]: Debug<E>,
+{
+    let t@0: T; // return
+    let self@1: Result<T, E>[@TraitClause0, @TraitClause1]; // arg #1
+    let e@2: E; // local
+    let @3: !; // anonymous local
+    let @4: &'_ ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)); // anonymous local
+    let @5: &'_ (E); // anonymous local
+
+    storage_live(e@2)
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    match self@1 {
+        Result::Ok => {
+        },
+        Result::Err => {
+            storage_live(e@2)
+            e@2 := move ((self@1 as variant Result::Err).0)
+            storage_live(@4)
+            @5 := &e@2
+            @4 := unsize_cast<&'_ (E), &'_ ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)), @TraitClause2>(copy (@5))
+            @3 := unwrap_failed<'_, '_>(const ("called `Result::unwrap()` on an `Err` value"), move (@4))
+        },
+    }
+    t@0 := move ((self@1 as variant Result::Ok).0)
+    return
+}
+
+fn test_crate::unwrap(@1: Result<u32, u32>[Sized<u32>, Sized<u32>]) -> u32
+{
+    let @0: u32; // return
+    let res@1: Result<u32, u32>[Sized<u32>, Sized<u32>]; // arg #1
+    let @2: Result<u32, u32>[Sized<u32>, Sized<u32>]; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (res@1)
+    @0 := core::result::{Result<T, E>[@TraitClause0, @TraitClause1]}::unwrap<u32, u32>[Sized<u32>, Sized<u32>, {impl Debug for u32}](move (@2))
+    storage_dead(@2)
+    return
+}
+
+
+

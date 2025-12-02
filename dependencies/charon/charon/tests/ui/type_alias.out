@@ -1,0 +1,142 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::borrow::Borrow
+#[lang_item("Borrow")]
+pub trait Borrow<Self, Borrowed>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: MetaSized<Borrowed>
+    fn borrow<'_0> = core::borrow::Borrow::borrow<'_0_0, Self, Borrowed>[Self]
+    vtable: core::borrow::Borrow::{vtable}<Borrowed>
+}
+
+pub fn core::borrow::Borrow::borrow<'_0, Self, Borrowed>(@1: &'_0 (Self)) -> &'_0 (Borrowed)
+where
+    [@TraitClause0]: Borrow<Self, Borrowed>,
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone::clone
+#[lang_item("clone_fn")]
+pub fn clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::borrow::ToOwned
+#[lang_item("ToOwned")]
+pub trait ToOwned<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Owned>
+    parent_clause2 : [@TraitClause2]: Borrow<Self::Owned, Self>
+    type Owned
+    fn to_owned<'_0> = alloc::borrow::ToOwned::to_owned<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("to_owned_method")]
+pub fn alloc::borrow::ToOwned::to_owned<'_0, Self>(@1: &'_0 (Self)) -> @TraitClause0::Owned
+where
+    [@TraitClause0]: ToOwned<Self>,
+
+// Full name: alloc::borrow::Cow
+#[lang_item("Cow")]
+pub enum Cow<'a, B>
+where
+    [@TraitClause0]: MetaSized<B>,
+    [@TraitClause1]: ToOwned<B>,
+    B : 'a,
+    B : 'a,
+{
+  Borrowed(&'a (B)),
+  Owned(@TraitClause1::Owned),
+}
+
+// Full name: alloc::vec::Vec
+#[lang_item("Vec")]
+pub opaque type Vec<T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<type_error("removed allocator parameter")>,
+
+// Full name: alloc::slice::{impl Borrow<Slice<T>> for Vec<T>[@TraitClause0, @TraitClause1]}::borrow
+pub fn {impl Borrow<Slice<T>> for Vec<T>[@TraitClause0, @TraitClause1]}::borrow<'_0, T, A>(@1: &'_0 (Vec<T>[@TraitClause0, @TraitClause1])) -> &'_0 (Slice<T>)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::slice::{impl Borrow<Slice<T>> for Vec<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Borrow<Slice<T>> for Vec<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<Vec<T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = MetaSized<Slice<T>>
+    fn borrow<'_0> = {impl Borrow<Slice<T>> for Vec<T>[@TraitClause0, @TraitClause1]}::borrow<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Borrow<Slice<T>> for Vec<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: alloc::slice::{impl ToOwned for Slice<T>}::to_owned
+pub fn {impl ToOwned for Slice<T>}::to_owned<'_0, T>(@1: &'_0 (Slice<T>)) -> Vec<T>[@TraitClause0, Sized<Global>]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+
+// Full name: alloc::slice::{impl ToOwned for Slice<T>}
+impl<T> ToOwned for Slice<T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<Slice<T>>
+    parent_clause1 = Sized<Vec<T>[@TraitClause0, Sized<Global>]>
+    parent_clause2 = {impl Borrow<Slice<T>> for Vec<T>[@TraitClause0, @TraitClause1]}<T, Global>[@TraitClause0, Sized<Global>]
+    type Owned = Vec<T>[@TraitClause0, Sized<Global>]
+    fn to_owned<'_0> = {impl ToOwned for Slice<T>}::to_owned<'_0_0, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Generic2
+struct Generic2<'a, T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+    T : 'a,
+{
+  Cow<'a, Slice<T>>[MetaSized<Slice<T>>, {impl ToOwned for Slice<T>}<T>[@TraitClause0, @TraitClause1]],
+}
+
+
+

@@ -1,0 +1,138 @@
+# Final ULLBC before serialization:
+
+// Full name: core::cmp::PartialEq::<bool, bool>
+#[lang_item("eq")]
+pub trait PartialEq::<bool, bool>
+{
+    fn eq<'_0, '_1> = core::cmp::PartialEq::eq::<bool, bool><'_0_0, '_0_1>
+    vtable: core::cmp::PartialEq::{vtable}::<bool, bool>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1>(@1: &'_0 (bool), @2: &'_1 (bool)) -> bool
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq::<bool, bool><'_0, '_1>(@1: &'_0 (bool), @2: &'_1 (bool)) -> bool
+
+// Full name: core::cmp::Eq::<bool>
+#[lang_item("Eq")]
+pub trait Eq::<bool>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq::<bool, bool>
+    non-dyn-compatible
+}
+
+// Full name: core::cmp::impls::{impl PartialEq::<bool, bool>}::eq
+pub fn {impl PartialEq::<bool, bool>}::eq<'_0, '_1>(@1: &'_0 (bool), @2: &'_1 (bool)) -> bool
+
+// Full name: core::cmp::impls::{impl PartialEq::<bool, bool>}
+impl PartialEq::<bool, bool> {
+    fn eq<'_0, '_1> = {impl PartialEq::<bool, bool>}::eq<'_0_0, '_0_1>
+    vtable: {impl PartialEq::<bool, bool>}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl Eq::<bool>}
+impl Eq::<bool> {
+    parent_clause0 = {impl PartialEq::<bool, bool>}
+    non-dyn-compatible
+}
+
+// Full name: core::marker::MetaSized::<bool>
+#[lang_item("meta_sized")]
+pub trait MetaSized::<bool>
+
+// Full name: core::marker::Sized::<bool>
+#[lang_item("sized")]
+pub trait Sized::<bool>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<bool>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop::<bool>
+#[lang_item("drop")]
+pub trait Drop::<bool>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<bool>
+    fn drop<'_0> = drop::<bool><'_0_0>
+    vtable: core::ops::drop::Drop::{vtable}::<bool>
+}
+
+// Full name: core::ops::drop::Drop::drop::<bool>
+pub fn drop::<bool><'_0>(@1: &'_0 mut (bool))
+
+// Full name: test_crate::do_test::<bool>
+fn do_test::<bool>(@1: bool, @2: bool)
+{
+    let @0: (); // return
+    let init@1: bool; // arg #1
+    let expected@2: bool; // arg #2
+    let @3: (); // anonymous local
+    let @4: bool; // anonymous local
+    let @5: &'_ (bool); // anonymous local
+    let @6: &'_ (bool); // anonymous local
+
+    bb0: {
+        storage_live(@3);
+        storage_live(@4);
+        storage_live(@5);
+        @5 := &expected@2;
+        storage_live(@6);
+        @6 := &init@1;
+        @4 := {impl PartialEq::<bool, bool>}::eq<'_, '_>(move (@5), move (@6)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        if move (@4) -> bb3 else -> bb4;
+    }
+
+    bb2: {
+        drop[Drop::<bool>] expected@2;
+        drop[Drop::<bool>] init@1;
+        unwind_continue;
+    }
+
+    bb3: {
+        storage_dead(@6);
+        storage_dead(@5);
+        storage_dead(@4);
+        storage_dead(@3);
+        @0 := ();
+        drop[Drop::<bool>] expected@2;
+        drop[Drop::<bool>] init@1;
+        @0 := ();
+        return;
+    }
+
+    bb4: {
+        storage_dead(@6);
+        storage_dead(@5);
+        panic(core::panicking::panic);
+    }
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := do_test::<bool>(const (true), const (true)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_dead(@1);
+        @0 := ();
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+
+

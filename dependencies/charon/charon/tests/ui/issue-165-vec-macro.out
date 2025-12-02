@@ -1,0 +1,200 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = core::clone::Clone::clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::clone::impls::{impl Clone for i32}::clone
+pub fn {impl Clone for i32}::clone<'_0>(@1: &'_0 (i32)) -> i32
+
+// Full name: core::clone::impls::{impl Clone for i32}
+impl Clone for i32 {
+    parent_clause0 = Sized<i32>
+    fn clone<'_0> = {impl Clone for i32}::clone<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::alloc::exchange_malloc
+#[lang_item("exchange_malloc")]
+unsafe fn exchange_malloc(@1: usize, @2: usize) -> *mut u8
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop
+pub fn {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: alloc::vec::Vec
+#[lang_item("Vec")]
+pub opaque type Vec<T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<type_error("removed allocator parameter")>,
+
+// Full name: alloc::slice::{Slice<T>}::into_vec
+#[lang_item("slice_into_vec")]
+pub fn into_vec<T, A>(@1: alloc::boxed::Box<Slice<T>>[MetaSized<Slice<T>>, @TraitClause1]) -> Vec<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::vec::from_elem
+#[lang_item("vec_from_elem")]
+pub fn from_elem<T>(@1: T, @2: usize) -> Vec<T>[@TraitClause0, Sized<Global>]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+
+// Full name: alloc::vec::{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop
+pub fn {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (Vec<T>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::vec::{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Drop for Vec<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<Vec<T>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let @0: (); // return
+    let _v@1: Vec<i32>[Sized<i32>, Sized<Global>]; // local
+    let @2: alloc::boxed::Box<Slice<i32>>[MetaSized<Slice<i32>>, Sized<Global>]; // anonymous local
+    let @3: alloc::boxed::Box<Array<i32, 1 : usize>>[MetaSized<Array<i32, 1 : usize>>, Sized<Global>]; // anonymous local
+    let @4: alloc::boxed::Box<Array<i32, 1 : usize>>[MetaSized<Array<i32, 1 : usize>>, Sized<Global>]; // anonymous local
+    let _v2@5: Vec<i32>[Sized<i32>, Sized<Global>]; // local
+    let @6: Array<i32, 1 : usize>; // anonymous local
+
+    storage_live(@6)
+    storage_live(_v@1)
+    storage_live(@2)
+    storage_live(@3)
+    @6 := [const (1 : i32)]
+    storage_live(@4)
+    @4 := @BoxNew<Array<i32, 1 : usize>>[MetaSized<Array<i32, 1 : usize>>, Sized<Global>](move (@6))
+    @3 := move (@4)
+    @2 := unsize_cast<alloc::boxed::Box<Array<i32, 1 : usize>>[MetaSized<Array<i32, 1 : usize>>, Sized<Global>], alloc::boxed::Box<Slice<i32>>[MetaSized<Slice<i32>>, Sized<Global>], 1 : usize>(move (@3))
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<Array<i32, 1 : usize>, Global>[MetaSized<Array<i32, 1 : usize>>, Sized<Global>]] @3
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<Array<i32, 1 : usize>, Global>[MetaSized<Array<i32, 1 : usize>>, Sized<Global>]] @4
+    storage_dead(@4)
+    storage_dead(@3)
+    _v@1 := into_vec<i32, Global>[Sized<i32>, Sized<Global>](move (@2))
+    storage_dead(@2)
+    storage_live(_v2@5)
+    _v2@5 := from_elem<i32>[Sized<i32>, {impl Clone for i32}](const (1 : i32), const (10 : usize))
+    @0 := ()
+    drop[{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}<i32, Global>[Sized<i32>, Sized<Global>]] _v2@5
+    storage_dead(_v2@5)
+    drop[{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}<i32, Global>[Sized<i32>, Sized<Global>]] _v@1
+    storage_dead(_v@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::Foo
+pub struct Foo {}
+
+// Full name: test_crate::bar
+pub fn bar()
+{
+    let @0: (); // return
+    let @1: Vec<Foo>[Sized<Foo>, Sized<Global>]; // anonymous local
+    let @2: alloc::boxed::Box<Slice<Foo>>[MetaSized<Slice<Foo>>, Sized<Global>]; // anonymous local
+    let @3: alloc::boxed::Box<Array<Foo, 1 : usize>>[MetaSized<Array<Foo, 1 : usize>>, Sized<Global>]; // anonymous local
+    let @4: alloc::boxed::Box<Array<Foo, 1 : usize>>[MetaSized<Array<Foo, 1 : usize>>, Sized<Global>]; // anonymous local
+    let @5: Foo; // anonymous local
+    let @6: Array<Foo, 1 : usize>; // anonymous local
+
+    storage_live(@6)
+    storage_live(@1)
+    storage_live(@2)
+    storage_live(@3)
+    @6 := [move (@5)]
+    storage_live(@4)
+    @4 := @BoxNew<Array<Foo, 1 : usize>>[MetaSized<Array<Foo, 1 : usize>>, Sized<Global>](move (@6))
+    storage_live(@5)
+    @5 := Foo {  }
+    storage_dead(@5)
+    @3 := move (@4)
+    @2 := unsize_cast<alloc::boxed::Box<Array<Foo, 1 : usize>>[MetaSized<Array<Foo, 1 : usize>>, Sized<Global>], alloc::boxed::Box<Slice<Foo>>[MetaSized<Slice<Foo>>, Sized<Global>], 1 : usize>(move (@3))
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<Array<Foo, 1 : usize>, Global>[MetaSized<Array<Foo, 1 : usize>>, Sized<Global>]] @3
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<Array<Foo, 1 : usize>, Global>[MetaSized<Array<Foo, 1 : usize>>, Sized<Global>]] @4
+    storage_dead(@4)
+    storage_dead(@3)
+    @1 := into_vec<Foo, Global>[Sized<Foo>, Sized<Global>](move (@2))
+    storage_dead(@2)
+    drop[{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}<Foo, Global>[Sized<Foo>, Sized<Global>]] @1
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

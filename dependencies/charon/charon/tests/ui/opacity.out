@@ -1,0 +1,169 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::convert::Into
+#[lang_item("Into")]
+pub trait Into<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    fn into = core::convert::Into::into<Self, T>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::convert::Into::into<Self, T>(@1: Self) -> T
+where
+    [@TraitClause0]: Into<Self, T>,
+
+// Full name: core::convert::From
+#[lang_item("From")]
+pub trait From<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    fn from = core::convert::From::from<Self, T>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("from_fn")]
+pub fn core::convert::From::from<Self, T>(@1: T) -> Self
+where
+    [@TraitClause0]: From<Self, T>,
+
+// Full name: core::convert::{impl Into<U> for T}::into
+pub fn {impl Into<U> for T}::into<T, U>(@1: T) -> U
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: From<U, T>,
+{
+    let @0: U; // return
+    let self@1: T; // arg #1
+
+    @0 := @TraitClause2::from(move (self@1))
+    return
+}
+
+// Full name: core::convert::{impl Into<U> for T}
+impl<T, U> Into<U> for T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: From<U, T>,
+{
+    parent_clause0 = @TraitClause0
+    parent_clause1 = @TraitClause1
+    fn into = {impl Into<U> for T}::into<T, U>[@TraitClause0, @TraitClause1, @TraitClause2]
+    non-dyn-compatible
+}
+
+// Full name: core::convert::num::{impl From<u32> for u64}::from
+pub fn {impl From<u32> for u64}::from(@1: u32) -> u64
+{
+    let @0: u64; // return
+    let small@1: u32; // arg #1
+
+    @0 := cast<u32, u64>(copy (small@1))
+    return
+}
+
+// Full name: core::convert::num::{impl From<u32> for u64}
+impl From<u32> for u64 {
+    parent_clause0 = Sized<u64>
+    parent_clause1 = Sized<u32>
+    fn from = {impl From<u32> for u64}::from
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::option::{Option<T>[@TraitClause0]}::is_some
+pub fn is_some<'_0, T>(@1: &'_0 (Option<T>[@TraitClause0])) -> bool
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: bool; // return
+    let self@1: &'_ (Option<T>[@TraitClause0]); // arg #1
+    let @2: isize; // anonymous local
+
+    storage_live(@2)
+    @2 := @discriminant(*(self@1))
+    @0 := copy (@2) == const (1 : isize)
+    return
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let @0: (); // return
+    let @1: bool; // anonymous local
+    let @2: &'_ (Option<i32>[Sized<i32>]); // anonymous local
+    let @3: Option<i32>[Sized<i32>]; // anonymous local
+    let @4: u64; // anonymous local
+    let @5: &'_ (Slice<i32>); // anonymous local
+    let @6: &'_ (i32); // anonymous local
+    let @7: &'_ (i32); // anonymous local
+    let @8: i32; // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := Option::Some { 0: const (0 : i32) }
+    @2 := &@3
+    @1 := is_some<'_, i32>[Sized<i32>](move (@2))
+    storage_dead(@2)
+    storage_dead(@3)
+    storage_dead(@1)
+    storage_live(@4)
+    @4 := {impl Into<U> for T}::into<u32, u64>[Sized<u32>, Sized<u64>, {impl From<u32> for u64}](const (42 : u32))
+    storage_dead(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    storage_live(@8)
+    @8 := const (0 : i32)
+    @7 := &@8
+    @6 := &*(@7)
+    @5 := from_ref<'_, i32>[Sized<i32>](move (@6))
+    storage_dead(@6)
+    storage_dead(@8)
+    storage_dead(@7)
+    storage_dead(@5)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::module::dont_translate_body
+fn dont_translate_body()
+
+// Full name: test_crate::exclude_me
+fn exclude_me()
+
+// Full name: test_crate::Struct
+struct Struct {}
+
+// Full name: test_crate::extern_fn
+unsafe fn extern_fn(@1: i32)
+
+
+

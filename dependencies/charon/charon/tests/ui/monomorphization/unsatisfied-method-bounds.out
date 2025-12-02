@@ -1,0 +1,48 @@
+disabled backtrace
+warning[E9999]: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
+  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:21:1
+   |
+21 | impl MyIterator for A {
+   | ^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ⚠️ This is a bug in Hax's frontend.
+           Please report this error to https://github.com/hacspec/hax/issues with some context (e.g. the current crate)!
+
+disabled backtrace
+warning[E9999]: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
+  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:9:5
+   |
+9  | /     fn flatten(self) -> Flatten<Self>
+10 | |     where
+11 | |         Self: Sized,
+12 | |         Self::Item: Copy,
+   | |_________________________^
+   |
+   = note: ⚠️ This is a bug in Hax's frontend.
+           Please report this error to https://github.com/hacspec/hax/issues with some context (e.g. the current crate)!
+
+disabled backtrace
+warning[E9999]: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
+  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:18:1
+   |
+18 | struct Flatten<I: MyIterator<Item: Copy>>(I);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: ⚠️ This is a bug in Hax's frontend.
+           Please report this error to https://github.com/hacspec/hax/issues with some context (e.g. the current crate)!
+
+error: Error during trait resolution: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
+  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:18:1
+   |
+18 | struct Flatten<I: MyIterator<Item: Copy>>(I);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Error during trait resolution: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
+  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:18:1
+   |
+18 | struct Flatten<I: MyIterator<Item: Copy>>(I);
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: 3 warnings emitted
+
+ERROR Charon failed to translate this code (2 errors)

@@ -1,0 +1,51 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait
+pub trait Trait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn method<'_0> = test_crate::Trait::method<'_0_0, Self>[Self]
+    vtable: test_crate::Trait::{vtable}
+}
+
+pub fn test_crate::Trait::method<'_0, Self>(@1: &'_0 (Self))
+where
+    [@TraitClause0]: Trait<Self>,
+
+// Full name: test_crate::{impl Trait for T}::method
+pub fn {impl Trait for T}::method<'_0, T>(@1: &'_0 (T))
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: (); // return
+    let self@1: &'_ (T); // arg #1
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for T}
+impl<T> Trait for T
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    fn method<'_0> = {impl Trait for T}::method<'_0_0, T>[@TraitClause0]
+    vtable: {impl Trait for T}::{vtable}<T>[@TraitClause0]
+}
+
+
+

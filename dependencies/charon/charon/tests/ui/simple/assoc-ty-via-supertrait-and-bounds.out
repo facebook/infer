@@ -1,0 +1,99 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::HasOutput
+pub trait HasOutput<Self, Self_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Output>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl HasOutput<()> for ()}
+impl HasOutput<()> for () {
+    parent_clause0 = MetaSized<()>
+    parent_clause1 = Sized<()>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::HasOutput2
+pub trait HasOutput2<Self, Self_Clause1_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: HasOutput<Self, Self_Clause1_Output>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl HasOutput2<()> for ()}
+impl HasOutput2<()> for () {
+    parent_clause0 = MetaSized<()>
+    parent_clause1 = {impl HasOutput<()> for ()}
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Wrapper
+struct Wrapper<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  T,
+}
+
+// Full name: test_crate::{impl HasOutput<Clause1_Output> for Wrapper<T>[@TraitClause0]}
+impl<T, Clause1_Output> HasOutput<Clause1_Output> for Wrapper<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: HasOutput<T, Clause1_Output>,
+{
+    parent_clause0 = MetaSized<Wrapper<T>[@TraitClause0]>
+    parent_clause1 = @TraitClause1::parent_clause1
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl HasOutput2<Clause1_Clause1_Output> for Wrapper<T>[@TraitClause0]}
+impl<T, Clause1_Clause1_Output> HasOutput2<Clause1_Clause1_Output> for Wrapper<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: HasOutput2<T, Clause1_Clause1_Output>,
+{
+    parent_clause0 = MetaSized<Wrapper<T>[@TraitClause0]>
+    parent_clause1 = {impl HasOutput<Clause1_Output> for Wrapper<T>[@TraitClause0]}<T, Clause1_Clause1_Output>[@TraitClause0, @TraitClause1::parent_clause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::take
+fn take<T, Clause1_Clause1_Output>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: HasOutput2<T, Clause1_Clause1_Output>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+
+    @0 := take<Wrapper<()>[Sized<()>], ()>[Sized<Wrapper<()>[Sized<()>]>, {impl HasOutput2<Clause1_Clause1_Output> for Wrapper<T>[@TraitClause0]}<(), ()>[Sized<()>, {impl HasOutput2<()> for ()}]]()
+    @0 := ()
+    return
+}
+
+
+

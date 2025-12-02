@@ -1,0 +1,149 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: test_crate::test_static
+fn test_static(@1: &'static (u32)) -> &'static (u32)
+{
+    let @0: &'_ (u32); // return
+    let x@1: &'_ (u32); // arg #1
+
+    @0 := copy (x@1)
+    return
+}
+
+// Full name: test_crate::SStatic
+struct SStatic {
+  x: &'static (u32),
+}
+
+// Full name: test_crate::E0
+enum E0<'a, 'b, T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+    T1 : 'a,
+    T2 : 'b,
+{
+  V1(&'a mut (T1), &'b mut (T2)),
+}
+
+// Full name: test_crate::E1
+enum E1<'a, 'b, T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+    T1 : 'a,
+    T2 : 'b,
+    T2 : 'a,
+    T1 : 'b,
+{
+  V1(&'a mut (T1), &'b mut (T2)),
+  V2(alloc::boxed::Box<E1<'a, 'b, T2, T1>[@TraitClause1, @TraitClause0]>[MetaSized<E1<'_, '_, T2, T1>[@TraitClause1, @TraitClause0]>, Sized<Global>]),
+}
+
+// Full name: test_crate::E2
+enum E2<'a, 'b, T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+    T1 : 'a,
+    T2 : 'b,
+    T1 : 'b,
+    T2 : 'a,
+{
+  V1(&'a mut (T1), &'b mut (T2)),
+  V3(alloc::boxed::Box<E2<'b, 'a, T1, T2>[@TraitClause0, @TraitClause1]>[MetaSized<E2<'_, '_, T1, T2>[@TraitClause0, @TraitClause1]>, Sized<Global>]),
+}
+
+// Full name: test_crate::E3
+enum E3<'a, 'b, 'c, T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+    T1 : 'a,
+    T2 : 'b,
+    T2 : 'a,
+    T1 : 'b,
+    T2 : 'c,
+    T1 : 'c,
+    'a : 'c,
+    'b : 'c,
+{
+  V1(&'a mut (T1), &'b mut (T2)),
+  V2(alloc::boxed::Box<E3<'a, 'b, 'c, T2, T1>[@TraitClause1, @TraitClause0]>[MetaSized<E3<'_, '_, '_, T2, T1>[@TraitClause1, @TraitClause0]>, Sized<Global>]),
+  V3(alloc::boxed::Box<E3<'b, 'a, 'c, T1, T2>[@TraitClause0, @TraitClause1]>[MetaSized<E3<'_, '_, '_, T1, T2>[@TraitClause0, @TraitClause1]>, Sized<Global>]),
+  V4(&'c (&'a (T1))),
+}
+
+// Full name: test_crate::E4
+enum E4<'a, 'b, 'c, T1, T2, T3>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+    [@TraitClause2]: Sized<T3>,
+    T1 : 'a,
+    T2 : 'b,
+    T2 : 'a,
+    T1 : 'b,
+    T3 : 'c,
+    T3 : 'a,
+    T3 : 'b,
+    'a : 'c,
+    'b : 'c,
+{
+  V1(&'a mut (T1), &'b mut (T2)),
+  V2(alloc::boxed::Box<E4<'a, 'b, 'c, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>[MetaSized<E4<'_, '_, '_, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>, Sized<Global>]),
+  V3(alloc::boxed::Box<E4<'b, 'a, 'c, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>[MetaSized<E4<'_, '_, '_, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>, Sized<Global>]),
+  V4(&'c (&'a (T3))),
+}
+
+// Full name: test_crate::E5
+enum E5<'a, 'b, 'c, T1, T2, T3>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+    [@TraitClause2]: Sized<T3>,
+    T1 : 'a,
+    T2 : 'b,
+    T2 : 'a,
+    T1 : 'b,
+    T3 : 'a,
+    T3 : 'c,
+    T3 : 'b,
+    'c : 'a,
+    'c : 'b,
+{
+  V1(&'a mut (T1), &'b mut (T2)),
+  V2(alloc::boxed::Box<E5<'a, 'b, 'c, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>[MetaSized<E5<'_, '_, '_, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>, Sized<Global>]),
+  V3(alloc::boxed::Box<E5<'b, 'a, 'c, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>[MetaSized<E5<'_, '_, '_, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>, Sized<Global>]),
+  V4(&'a (&'c (T3))),
+}
+
+// Full name: test_crate::S1
+struct S1<'a, 'b, 'c, 'd>
+where
+    'c : 'a,
+    'd : 'b,
+    'd : 'a,
+    'c : 'b,
+{
+  x: E1<'a, 'b, &'c mut (u32), &'d (u32)>[Sized<&'_ mut (u32)>, Sized<&'_ (u32)>],
+}
+
+
+

@@ -1,0 +1,38 @@
+# Final LLBC before serialization:
+
+pub fn core::char::methods::{char}::MAX() -> char
+{
+    let @0: char; // return
+
+    @0 := const (􏿿)
+    return
+}
+
+pub const core::char::methods::{char}::MAX: char = core::char::methods::{char}::MAX()
+
+pub fn core::char::MAX() -> char
+{
+    let @0: char; // return
+
+    @0 := copy (core::char::methods::{char}::MAX)
+    return
+}
+
+pub const core::char::MAX: char = core::char::MAX()
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let _max_char@1: char; // local
+
+    storage_live(_max_char@1)
+    _max_char@1 := copy (core::char::MAX)
+    @0 := ()
+    storage_dead(_max_char@1)
+    @0 := ()
+    return
+}
+
+
+

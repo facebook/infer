@@ -1,0 +1,359 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = core::clone::Clone::clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::clone::impls::{impl Clone for u32}::clone
+pub fn {impl Clone for u32}::clone<'_0>(@1: &'_0 (u32)) -> u32
+
+// Full name: core::clone::impls::{impl Clone for u32}
+impl Clone for u32 {
+    parent_clause0 = Sized<u32>
+    fn clone<'_0> = {impl Clone for u32}::clone<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::impls::{impl Clone for &'_0 (T)}::clone
+#[lang_item("noop_method_clone")]
+pub fn {impl Clone for &'_0 (T)}::clone<'_0, '_1, T>(@1: &'_1 (&'_0 (T))) -> &'_0 (T)
+
+// Full name: core::clone::impls::{impl Clone for &'_0 (T)}
+impl<'_0, T> Clone for &'_0 (T) {
+    parent_clause0 = Sized<&'_ (T)>
+    fn clone<'_0> = {impl Clone for &'_0 (T)}::clone<'_0, '_0_0, T>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Tuple::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self::Output>
+    type Output
+    fn call_once = core::ops::function::FnOnce::call_once<Self, Args>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::ops::function::FnOnce::call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+where
+    [@TraitClause0]: FnOnce<Self, Args>,
+
+// Full name: test_crate::Foo
+pub trait Foo<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Type>
+    parent_clause2 : [@TraitClause2]: Clone<Self::Type>
+    type Type
+    fn get_ty<'_0> = test_crate::Foo::get_ty<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+pub fn test_crate::Foo::get_ty<'_0, Self>(@1: &'_0 (Self)) -> &'_0 (@TraitClause0::Type)
+where
+    [@TraitClause0]: Foo<Self>,
+
+// Full name: test_crate::{impl Foo for ()}::get_ty
+pub fn {impl Foo for ()}::get_ty<'_0>(@1: &'_0 (())) -> &'_0 (u32)
+{
+    let @0: &'_ (u32); // return
+    let self@1: &'_ (()); // arg #1
+    let @2: &'_ (u32); // anonymous local
+    let @3: u32; // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    @3 := const (42 : u32)
+    @2 := &@3
+    @0 := &*(@2)
+    storage_dead(@3)
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::{impl Foo for ()}
+impl Foo for () {
+    parent_clause0 = MetaSized<()>
+    parent_clause1 = Sized<u32>
+    parent_clause2 = {impl Clone for u32}
+    type Type = u32
+    fn get_ty<'_0> = {impl Foo for ()}::get_ty<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::mk_foo
+fn mk_foo()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::use_foo
+fn use_foo()
+{
+    let @0: (); // return
+    let foo@1: (); // local
+    let @2: u32; // anonymous local
+    let @3: &'_ (u32); // anonymous local
+    let @4: &'_ (u32); // anonymous local
+    let @5: &'_ (()); // anonymous local
+
+    storage_live(foo@1)
+    foo@1 := mk_foo()
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := &foo@1
+    @4 := {impl Foo for ()}::get_ty<'_>(move (@5))
+    @3 := &*(@4)
+    storage_dead(@5)
+    @2 := {impl Clone for u32}::clone<'_>(move (@3))
+    storage_dead(@3)
+    drop[Drop<u32>] @2
+    storage_dead(@4)
+    storage_dead(@2)
+    @0 := ()
+    drop[Drop<()>] foo@1
+    storage_dead(foo@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::RPITIT
+pub trait RPITIT<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::>
+    parent_clause2 : [@TraitClause2]: Foo<Self::>
+    type 
+    fn make_foo = test_crate::RPITIT::make_foo<Self>[Self]
+    non-dyn-compatible
+}
+
+pub fn test_crate::RPITIT::make_foo<Self>()
+where
+    [@TraitClause0]: RPITIT<Self>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl RPITIT for ()}::make_foo
+pub fn {impl RPITIT for ()}::make_foo()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl RPITIT for ()}
+impl RPITIT for () {
+    parent_clause0 = MetaSized<()>
+    parent_clause1 = Sized<()>
+    parent_clause2 = {impl Foo for ()}
+    type  = ()
+    fn make_foo = {impl RPITIT for ()}::make_foo
+    non-dyn-compatible
+}
+
+// Full name: test_crate::use_tait
+fn use_tait<T>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: RPITIT<T>,
+{
+    let @0: (); // return
+    let foo@1: @TraitClause1::; // local
+    let @2: @TraitClause1::parent_clause2::Type; // anonymous local
+    let @3: &'_ (@TraitClause1::parent_clause2::Type); // anonymous local
+    let @4: &'_ (@TraitClause1::parent_clause2::Type); // anonymous local
+    let @5: &'_ (@TraitClause1::); // anonymous local
+
+    storage_live(foo@1)
+    foo@1 := @TraitClause1::make_foo()
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := &foo@1
+    @4 := @TraitClause1::parent_clause2::get_ty<'_>(move (@5))
+    @3 := &*(@4)
+    storage_dead(@5)
+    @2 := @TraitClause1::parent_clause2::parent_clause2::clone<'_>(move (@3))
+    storage_dead(@3)
+    drop[Drop<@TraitClause1::parent_clause2::Type>] @2
+    storage_dead(@4)
+    storage_dead(@2)
+    @0 := ()
+    drop[Drop<@TraitClause1::>] foo@1
+    storage_dead(foo@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::WrapClone
+pub struct WrapClone<T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+  T,
+}
+
+// Full name: test_crate::wrap::closure
+struct closure<U>
+where
+    [@TraitClause0]: Sized<U>,
+{}
+
+// Full name: test_crate::wrap
+pub fn wrap<U>() -> closure<U>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<U>,
+{
+    let @0: closure<U>[@TraitClause0]; // return
+
+    @0 := closure {  }
+    return
+}
+
+// Full name: test_crate::wrap::{impl FnOnce<(&'_ (U))> for closure<U>[@TraitClause0]}::call_once
+fn {impl FnOnce<(&'_ (U))> for closure<U>[@TraitClause0]}::call_once<'_0, U>(@1: closure<U>[@TraitClause0], @2: (&'_0 (U))) -> WrapClone<&'_0 (U)>[Sized<&'_0 (U)>, {impl Clone for &'_0 (T)}<'_, U>]
+where
+    [@TraitClause0]: Sized<U>,
+{
+    let @0: WrapClone<&'_ (U)>[Sized<&'_ (U)>, {impl Clone for &'_0 (T)}<'_, U>]; // return
+    let @1: closure<U>[@TraitClause0]; // arg #1
+    let tupled_args@2: (&'_0 (U)); // arg #2
+    let x@3: &'_ (U); // local
+    let @4: &'_ (U); // anonymous local
+
+    storage_live(x@3)
+    x@3 := move ((tupled_args@2).0)
+    storage_live(@4)
+    @4 := &*(x@3)
+    @0 := WrapClone { 0: move (@4) }
+    storage_dead(@4)
+    return
+}
+
+// Full name: test_crate::wrap::{impl FnOnce<(&'_ (U))> for closure<U>[@TraitClause0]}
+impl<'_0, U> FnOnce<(&'_ (U))> for closure<U>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<U>,
+{
+    parent_clause0 = MetaSized<closure<U>[@TraitClause0]>
+    parent_clause1 = Sized<(&'_ (U))>
+    parent_clause2 = Tuple<(&'_ (U))>
+    parent_clause3 = Sized<WrapClone<&'_ (U)>[Sized<&'_ (U)>, {impl Clone for &'_0 (T)}<'_, U>]>
+    type Output = WrapClone<&'_ (U)>[Sized<&'_ (U)>, {impl Clone for &'_0 (T)}<'_, U>]
+    fn call_once = {impl FnOnce<(&'_ (U))> for closure<U>[@TraitClause0]}::call_once<'_0, U>[@TraitClause0]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::use_wrap
+pub fn use_wrap()
+{
+    let @0: (); // return
+    let f@1: closure<u32>[Sized<u32>]; // local
+    let @2: WrapClone<&'_ (u32)>[Sized<&'_ (u32)>, {impl Clone for &'_0 (T)}<'_, u32>]; // anonymous local
+    let @3: closure<u32>[Sized<u32>]; // anonymous local
+    let @4: (&'_ (u32)); // anonymous local
+    let @5: &'_ (u32); // anonymous local
+    let @6: &'_ (u32); // anonymous local
+    let @7: u32; // anonymous local
+
+    storage_live(f@1)
+    f@1 := wrap<u32>[Sized<u32>]()
+    storage_live(@2)
+    storage_live(@3)
+    @3 := move (f@1)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := const (42 : u32)
+    @6 := &@7
+    @5 := &*(@6)
+    @4 := (move (@5))
+    @2 := {impl FnOnce<(&'_ (U))> for closure<U>[@TraitClause0]}::call_once<'_, u32>[Sized<u32>](move (@3), move (@4))
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_dead(@3)
+    storage_dead(@7)
+    storage_dead(@6)
+    storage_dead(@2)
+    @0 := ()
+    drop[Drop<closure<u32>[Sized<u32>]>] f@1
+    storage_dead(f@1)
+    @0 := ()
+    return
+}
+
+
+

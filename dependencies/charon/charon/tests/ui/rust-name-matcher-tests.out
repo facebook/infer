@@ -1,0 +1,126 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: test_crate::foo::bar
+fn bar()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    fn method<U, [@TraitClause0]: Sized<U>> = test_crate::Trait::method<Self, T, U>[Self, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+fn test_crate::Trait::method<Self, T, U>()
+where
+    [@TraitClause0]: Trait<Self, T>,
+    [@TraitClause1]: Sized<U>,
+
+// Full name: test_crate::{impl Trait<Option<T>[@TraitClause0]> for alloc::boxed::Box<T>[@TraitClause0::parent_clause0, Sized<Global>]}::method
+fn {impl Trait<Option<T>[@TraitClause0]> for alloc::boxed::Box<T>[@TraitClause0::parent_clause0, Sized<Global>]}::method<T, U>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait<Option<T>[@TraitClause0]> for alloc::boxed::Box<T>[@TraitClause0::parent_clause0, Sized<Global>]}
+impl<T> Trait<Option<T>[@TraitClause0]> for alloc::boxed::Box<T>[@TraitClause0::parent_clause0, Sized<Global>]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<alloc::boxed::Box<T>[@TraitClause0::parent_clause0, Sized<Global>]>
+    parent_clause1 = Sized<Option<T>[@TraitClause0]>
+    fn method<U, [@TraitClause0]: Sized<U>> = {impl Trait<Option<T>[@TraitClause0]> for alloc::boxed::Box<T>[@TraitClause0::parent_clause0, Sized<Global>]}::method<T, U>[@TraitClause0, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl Trait<T> for Slice<T>}::method
+fn {impl Trait<T> for Slice<T>}::method<T, U>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait<T> for Slice<T>}
+impl<T> Trait<T> for Slice<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<Slice<T>>
+    parent_clause1 = @TraitClause0
+    fn method<U, [@TraitClause0]: Sized<U>> = {impl Trait<T> for Slice<T>}::method<T, U>[@TraitClause0, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl Trait<T> for &'_0 (Slice<T>)}::method
+fn {impl Trait<T> for &'_0 (Slice<T>)}::method<'_0, T, U>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait<T> for &'_0 (Slice<T>)}
+impl<'_0, T> Trait<T> for &'_0 (Slice<T>)
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<&'_ (Slice<T>)>
+    parent_clause1 = @TraitClause0
+    fn method<U, [@TraitClause0]: Sized<U>> = {impl Trait<T> for &'_0 (Slice<T>)}::method<'_0, T, U>[@TraitClause0, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+
+

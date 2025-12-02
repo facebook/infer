@@ -1,0 +1,43 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::UInt
+pub struct UInt<U, B> {
+  U,
+  B,
+}
+
+// Full name: test_crate::UTerm
+pub struct UTerm {}
+
+// Full name: test_crate::B0
+pub struct B0 {}
+
+// Full name: test_crate::LongType
+pub type LongType = UInt<UInt<UInt<UInt<UInt<UInt<UTerm, B0>, B0>, B0>, B0>, B0>, B0>
+
+// Full name: test_crate::foo
+pub fn foo<T>()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::main
+pub fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+
+    storage_live(@1)
+    @1 := foo<UInt<UInt<UInt<UInt<UInt<UInt<UTerm, B0>, B0>, B0>, B0>, B0>, B0>>()
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

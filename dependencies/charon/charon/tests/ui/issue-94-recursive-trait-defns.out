@@ -1,0 +1,121 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait1
+pub trait Trait1<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::T>
+    parent_clause2 : [@TraitClause2]: Trait2<Self::T>
+    type T
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait2
+pub trait Trait2<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Trait1<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T1
+pub trait T1<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    parent_clause2 : [@TraitClause2]: T2<T, Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T2
+pub trait T2<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    parent_clause2 : [@TraitClause2]: T1<T, Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T3
+pub trait T3<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::T>
+    parent_clause2 : [@TraitClause2]: T5<Self::T>
+    type T
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T5
+pub trait T5<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::T>
+    parent_clause2 : [@TraitClause2]: T4<Self::T>
+    type T
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T4
+pub trait T4<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: T3<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T6
+pub trait T6<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    parent_clause2 : [@TraitClause2]: T7<T>
+    fn f = f<Self, T>[Self]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T7
+pub trait T7<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: T6<Self, Self>
+    fn g = g<Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T7::g
+pub fn g<Self>(@1: u64)
+where
+    [@TraitClause0]: T7<Self>,
+
+// Full name: test_crate::T6::f
+pub fn f<Self, T>(@1: u64)
+where
+    [@TraitClause0]: T6<Self, T>,
+{
+    let @0: (); // return
+    let x@1: u64; // arg #1
+    let @2: u64; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (x@1)
+    @0 := @TraitClause0::parent_clause2::g(move (@2))
+    storage_dead(@2)
+    @0 := ()
+    return
+}
+
+
+

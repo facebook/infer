@@ -1,0 +1,351 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::borrow::Borrow
+#[lang_item("Borrow")]
+pub trait Borrow<Self, Borrowed>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: MetaSized<Borrowed>
+    fn borrow<'_0> = core::borrow::Borrow::borrow<'_0_0, Self, Borrowed>[Self]
+    vtable: core::borrow::Borrow::{vtable}<Borrowed>
+}
+
+pub fn core::borrow::Borrow::borrow<'_0, Self, Borrowed>(@1: &'_0 (Self)) -> &'_0 (Borrowed)
+where
+    [@TraitClause0]: Borrow<Self, Borrowed>,
+
+// Full name: core::borrow::{impl Borrow<T> for T}::borrow
+#[lang_item("noop_method_borrow")]
+pub fn {impl Borrow<T> for T}::borrow<'_0, T>(@1: &'_0 (T)) -> &'_0 (T)
+where
+    [@TraitClause0]: MetaSized<T>,
+
+// Full name: core::borrow::{impl Borrow<T> for T}
+impl<T> Borrow<T> for T
+where
+    [@TraitClause0]: MetaSized<T>,
+{
+    parent_clause0 = @TraitClause0
+    parent_clause1 = @TraitClause0
+    fn borrow<'_0> = {impl Borrow<T> for T}::borrow<'_0_0, T>[@TraitClause0]
+    vtable: {impl Borrow<T> for T}::{vtable}<T>[@TraitClause0]
+}
+
+// Full name: core::cmp::PartialEq
+#[lang_item("eq")]
+pub trait PartialEq<Self, Rhs>
+{
+    fn eq<'_0, '_1> = core::cmp::PartialEq::eq<'_0_0, '_0_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialEq::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1, Self, Rhs>(@1: &'_0 (Self), @2: &'_1 (Rhs)) -> bool
+where
+    [@TraitClause0]: PartialEq<Self, Rhs>,
+
+// Full name: core::cmp::Eq
+#[lang_item("Eq")]
+pub trait Eq<Self>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq<Self, Self>
+    non-dyn-compatible
+}
+
+// Full name: core::cmp::impls::{impl PartialEq<u32> for u32}::eq
+pub fn {impl PartialEq<u32> for u32}::eq<'_0, '_1>(@1: &'_0 (u32), @2: &'_1 (u32)) -> bool
+
+// Full name: core::cmp::impls::{impl PartialEq<u32> for u32}
+impl PartialEq<u32> for u32 {
+    fn eq<'_0, '_1> = {impl PartialEq<u32> for u32}::eq<'_0_0, '_0_1>
+    vtable: {impl PartialEq<u32> for u32}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl Eq for u32}
+impl Eq for u32 {
+    parent_clause0 = {impl PartialEq<u32> for u32}
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::hash::Hasher
+pub trait Hasher<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn finish<'_0> = core::hash::Hasher::finish<'_0_0, Self>[Self]
+    fn write<'_0, '_1> = core::hash::Hasher::write<'_0_0, '_0_1, Self>[Self]
+    vtable: core::hash::Hasher::{vtable}
+}
+
+// Full name: core::hash::Hash
+#[lang_item("Hash")]
+pub trait Hash<Self>
+{
+    fn hash<'_0, '_1, H, [@TraitClause0]: Sized<H>, [@TraitClause1]: Hasher<H>> = core::hash::Hash::hash<'_0_0, '_0_1, Self, H>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+pub fn core::hash::Hash::hash<'_0, '_1, Self, H>(@1: &'_0 (Self), @2: &'_1 mut (H))
+where
+    [@TraitClause0]: Hash<Self>,
+    [@TraitClause1]: Sized<H>,
+    [@TraitClause2]: Hasher<H>,
+
+pub fn core::hash::Hasher::finish<'_0, Self>(@1: &'_0 (Self)) -> u64
+where
+    [@TraitClause0]: Hasher<Self>,
+
+pub fn core::hash::Hasher::write<'_0, '_1, Self>(@1: &'_0 mut (Self), @2: &'_1 (Slice<u8>))
+where
+    [@TraitClause0]: Hasher<Self>,
+
+// Full name: core::hash::BuildHasher
+pub trait BuildHasher<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Hasher>
+    parent_clause2 : [@TraitClause2]: Hasher<Self::Hasher>
+    type Hasher
+    fn build_hasher<'_0> = core::hash::BuildHasher::build_hasher<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::hash::BuildHasher::build_hasher<'_0, Self>(@1: &'_0 (Self)) -> @TraitClause0::Hasher
+where
+    [@TraitClause0]: BuildHasher<Self>,
+
+// Full name: core::hash::impls::{impl Hash for u32}::hash
+pub fn {impl Hash for u32}::hash<'_0, '_1, H>(@1: &'_0 (u32), @2: &'_1 mut (H))
+where
+    [@TraitClause0]: Sized<H>,
+    [@TraitClause1]: Hasher<H>,
+
+// Full name: core::hash::impls::{impl Hash for u32}
+impl Hash for u32 {
+    fn hash<'_0, '_1, H, [@TraitClause0]: Sized<H>, [@TraitClause1]: Hasher<H>> = {impl Hash for u32}::hash<'_0_0, '_0_1, H>[@TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::index::Index
+#[lang_item("index")]
+pub trait Index<Self, Idx>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: MetaSized<Idx>
+    parent_clause2 : [@TraitClause2]: MetaSized<Self::Output>
+    type Output
+    fn index<'_0> = core::ops::index::Index::index<'_0_0, Self, Idx>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::ops::index::Index::index<'_0, Self, Idx>(@1: &'_0 (Self), @2: Idx) -> &'_0 (@TraitClause0::Output)
+where
+    [@TraitClause0]: Index<Self, Idx>,
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: std::collections::hash::map::HashMap
+#[lang_item("HashMap")]
+pub opaque type HashMap<K, V, S>
+where
+    [@TraitClause0]: Sized<K>,
+    [@TraitClause1]: Sized<V>,
+    [@TraitClause2]: Sized<S>,
+
+// Full name: std::collections::hash::map::{HashMap<K, V, S>[@TraitClause0, @TraitClause1, @TraitClause2]}::get
+pub fn get<'_0, '_1, K, V, S, Q>(@1: &'_0 (HashMap<K, V, S>[@TraitClause0, @TraitClause1, @TraitClause2]), @2: &'_1 (Q)) -> Option<&'_0 (V)>[Sized<&'_0 (V)>]
+where
+    [@TraitClause0]: Sized<K>,
+    [@TraitClause1]: Sized<V>,
+    [@TraitClause2]: Sized<S>,
+    [@TraitClause3]: Eq<K>,
+    [@TraitClause4]: Hash<K>,
+    [@TraitClause5]: BuildHasher<S>,
+    [@TraitClause6]: MetaSized<Q>,
+    [@TraitClause7]: Borrow<K, Q>,
+    [@TraitClause8]: Hash<Q>,
+    [@TraitClause9]: Eq<Q>,
+
+// Full name: std::collections::hash::map::{HashMap<K, V, S>[@TraitClause0, @TraitClause1, @TraitClause2]}::insert
+#[lang_item("hashmap_insert")]
+pub fn insert<'_0, K, V, S>(@1: &'_0 mut (HashMap<K, V, S>[@TraitClause0, @TraitClause1, @TraitClause2]), @2: K, @3: V) -> Option<V>[@TraitClause1]
+where
+    [@TraitClause0]: Sized<K>,
+    [@TraitClause1]: Sized<V>,
+    [@TraitClause2]: Sized<S>,
+    [@TraitClause3]: Eq<K>,
+    [@TraitClause4]: Hash<K>,
+    [@TraitClause5]: BuildHasher<S>,
+
+// Full name: std::collections::hash::map::{impl Index<&'_0 (Q)> for HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]}::index
+pub fn {impl Index<&'_0 (Q)> for HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]}::index<'_0, '_1, K, Q, V, S>(@1: &'_1 (HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]), @2: &'_0 (Q)) -> &'_1 (V)
+where
+    [@TraitClause0]: Sized<K>,
+    [@TraitClause1]: MetaSized<Q>,
+    [@TraitClause2]: Sized<V>,
+    [@TraitClause3]: Sized<S>,
+    [@TraitClause4]: Eq<K>,
+    [@TraitClause5]: Hash<K>,
+    [@TraitClause6]: Borrow<K, Q>,
+    [@TraitClause7]: Eq<Q>,
+    [@TraitClause8]: Hash<Q>,
+    [@TraitClause9]: BuildHasher<S>,
+
+// Full name: std::collections::hash::map::{impl Index<&'_0 (Q)> for HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]}
+impl<'_0, K, Q, V, S> Index<&'_0 (Q)> for HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]
+where
+    [@TraitClause0]: Sized<K>,
+    [@TraitClause1]: MetaSized<Q>,
+    [@TraitClause2]: Sized<V>,
+    [@TraitClause3]: Sized<S>,
+    [@TraitClause4]: Eq<K>,
+    [@TraitClause5]: Hash<K>,
+    [@TraitClause6]: Borrow<K, Q>,
+    [@TraitClause7]: Eq<Q>,
+    [@TraitClause8]: Hash<Q>,
+    [@TraitClause9]: BuildHasher<S>,
+{
+    parent_clause0 = MetaSized<HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]>
+    parent_clause1 = MetaSized<&'_ (Q)>
+    parent_clause2 = @TraitClause2::parent_clause0
+    type Output = V
+    fn index<'_0> = {impl Index<&'_0 (Q)> for HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]}::index<'_0, '_0_0, K, Q, V, S>[@TraitClause0, @TraitClause1, @TraitClause2, @TraitClause3, @TraitClause4, @TraitClause5, @TraitClause6, @TraitClause7, @TraitClause8, @TraitClause9]
+    non-dyn-compatible
+}
+
+// Full name: std::hash::random::RandomState
+pub opaque type RandomState
+
+// Full name: std::hash::random::DefaultHasher
+pub opaque type DefaultHasher
+
+// Full name: std::hash::random::{impl Hasher for DefaultHasher}::finish
+pub fn {impl Hasher for DefaultHasher}::finish<'_0>(@1: &'_0 (DefaultHasher)) -> u64
+
+// Full name: std::hash::random::{impl Hasher for DefaultHasher}::write
+pub fn {impl Hasher for DefaultHasher}::write<'_0, '_1>(@1: &'_0 mut (DefaultHasher), @2: &'_1 (Slice<u8>))
+
+// Full name: std::hash::random::{impl Hasher for DefaultHasher}
+impl Hasher for DefaultHasher {
+    parent_clause0 = MetaSized<DefaultHasher>
+    fn finish<'_0> = {impl Hasher for DefaultHasher}::finish<'_0_0>
+    fn write<'_0, '_1> = {impl Hasher for DefaultHasher}::write<'_0_0, '_0_1>
+    vtable: {impl Hasher for DefaultHasher}::{vtable}
+}
+
+// Full name: std::hash::random::{impl BuildHasher for RandomState}::build_hasher
+pub fn {impl BuildHasher for RandomState}::build_hasher<'_0>(@1: &'_0 (RandomState)) -> DefaultHasher
+
+// Full name: std::hash::random::{impl BuildHasher for RandomState}
+impl BuildHasher for RandomState {
+    parent_clause0 = MetaSized<RandomState>
+    parent_clause1 = Sized<DefaultHasher>
+    parent_clause2 = {impl Hasher for DefaultHasher}
+    type Hasher = DefaultHasher
+    fn build_hasher<'_0> = {impl BuildHasher for RandomState}::build_hasher<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::get_or_insert
+pub fn get_or_insert<'_0>(@1: &'_0 mut (HashMap<u32, u32, RandomState>[Sized<u32>, Sized<u32>, Sized<RandomState>])) -> &'_0 (u32)
+{
+    let @0: &'_ (u32); // return
+    let map@1: &'_ mut (HashMap<u32, u32, RandomState>[Sized<u32>, Sized<u32>, Sized<RandomState>]); // arg #1
+    let @2: Option<&'_ (u32)>[Sized<&'_ (u32)>]; // anonymous local
+    let @3: &'_ (HashMap<u32, u32, RandomState>[Sized<u32>, Sized<u32>, Sized<RandomState>]); // anonymous local
+    let @4: &'_ (u32); // anonymous local
+    let @5: &'_ (u32); // anonymous local
+    let @6: u32; // anonymous local
+    let v@7: &'_ (u32); // local
+    let @8: Option<u32>[Sized<u32>]; // anonymous local
+    let @9: &'_ mut (HashMap<u32, u32, RandomState>[Sized<u32>, Sized<u32>, Sized<RandomState>]); // anonymous local
+    let @10: &'_ (u32); // anonymous local
+    let @11: &'_ (u32); // anonymous local
+    let @12: &'_ (HashMap<u32, u32, RandomState>[Sized<u32>, Sized<u32>, Sized<RandomState>]); // anonymous local
+    let @13: &'_ (u32); // anonymous local
+    let @14: &'_ (u32); // anonymous local
+    let @15: u32; // anonymous local
+
+    storage_live(v@7)
+    storage_live(@8)
+    storage_live(@9)
+    storage_live(@10)
+    storage_live(@11)
+    storage_live(@12)
+    storage_live(@13)
+    storage_live(@14)
+    storage_live(@15)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := &*(map@1)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    @6 := const (22 : u32)
+    @5 := &@6
+    @4 := &*(@5)
+    @2 := get<'_, '_, u32, u32, RandomState, u32>[Sized<u32>, Sized<u32>, Sized<RandomState>, {impl Eq for u32}, {impl Hash for u32}, {impl BuildHasher for RandomState}, MetaSized<u32>, {impl Borrow<T> for T}<u32>[MetaSized<u32>], {impl Hash for u32}, {impl Eq for u32}](move (@3), move (@4))
+    storage_dead(@4)
+    storage_dead(@3)
+    match @2 {
+        Option::None => {
+            storage_live(@8)
+            storage_live(@9)
+            @9 := &two-phase-mut *(map@1)
+            @8 := insert<'_, u32, u32, RandomState>[Sized<u32>, Sized<u32>, Sized<RandomState>, {impl Eq for u32}, {impl Hash for u32}, {impl BuildHasher for RandomState}](move (@9), const (22 : u32), const (33 : u32))
+            storage_dead(@9)
+            storage_dead(@8)
+            storage_live(@10)
+            storage_live(@11)
+            storage_live(@12)
+            @12 := &*(map@1)
+            storage_live(@13)
+            storage_live(@14)
+            storage_live(@15)
+            @15 := const (22 : u32)
+            @14 := &@15
+            @13 := &*(@14)
+            @11 := {impl Index<&'_0 (Q)> for HashMap<K, V, S>[@TraitClause0, @TraitClause2, @TraitClause3]}::index<'_, '_, u32, u32, u32, RandomState>[Sized<u32>, MetaSized<u32>, Sized<u32>, Sized<RandomState>, {impl Eq for u32}, {impl Hash for u32}, {impl Borrow<T> for T}<u32>[MetaSized<u32>], {impl Eq for u32}, {impl Hash for u32}, {impl BuildHasher for RandomState}](move (@12), move (@13))
+            storage_dead(@13)
+            storage_dead(@12)
+            @10 := &*(@11)
+            @0 := &*(@10)
+            storage_dead(@15)
+            storage_dead(@14)
+            storage_dead(@11)
+            storage_dead(@10)
+        },
+        Option::Some => {
+            storage_live(v@7)
+            v@7 := copy ((@2 as variant Option::Some).0)
+            @0 := &*(v@7)
+            storage_dead(v@7)
+        },
+    }
+    storage_dead(@6)
+    storage_dead(@5)
+    storage_dead(@2)
+    return
+}
+
+
+

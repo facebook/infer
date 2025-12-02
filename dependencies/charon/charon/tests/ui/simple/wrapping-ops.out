@@ -1,0 +1,71 @@
+# Final LLBC before serialization:
+
+// Full name: core::num::{u8}::wrapping_add
+pub fn wrapping_add(@1: u8, @2: u8) -> u8
+{
+    let @0: u8; // return
+    let self@1: u8; // arg #1
+    let rhs@2: u8; // arg #2
+
+    @0 := copy (self@1) wrap.+ copy (rhs@2)
+    return
+}
+
+// Full name: core::num::{u8}::wrapping_sub
+pub fn wrapping_sub(@1: u8, @2: u8) -> u8
+{
+    let @0: u8; // return
+    let self@1: u8; // arg #1
+    let rhs@2: u8; // arg #2
+
+    @0 := copy (self@1) wrap.- copy (rhs@2)
+    return
+}
+
+// Full name: core::num::{u8}::wrapping_mul
+pub fn wrapping_mul(@1: u8, @2: u8) -> u8
+{
+    let @0: u8; // return
+    let self@1: u8; // arg #1
+    let rhs@2: u8; // arg #2
+
+    @0 := copy (self@1) wrap.* copy (rhs@2)
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: u8; // anonymous local
+    let @2: u8; // anonymous local
+    let @3: u8; // anonymous local
+    let @4: u8; // anonymous local
+    let @5: u8; // anonymous local
+    let @6: u8; // anonymous local
+
+    storage_live(@1)
+    @1 := const (255 : u8) wrap.+ const (1 : u8)
+    storage_dead(@1)
+    storage_live(@2)
+    @2 := const (0 : u8) wrap.- const (1 : u8)
+    storage_dead(@2)
+    storage_live(@3)
+    @3 := const (255 : u8) wrap.* const (2 : u8)
+    storage_dead(@3)
+    storage_live(@4)
+    @4 := wrapping_add(const (255 : u8), const (1 : u8))
+    storage_dead(@4)
+    storage_live(@5)
+    @5 := wrapping_sub(const (0 : u8), const (1 : u8))
+    storage_dead(@5)
+    storage_live(@6)
+    @6 := wrapping_mul(const (255 : u8), const (2 : u8))
+    storage_dead(@6)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

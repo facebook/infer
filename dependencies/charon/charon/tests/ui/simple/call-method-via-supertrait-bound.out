@@ -1,0 +1,105 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: test_crate::OtherTrait
+trait OtherTrait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::OtherTrait::{vtable}
+}
+
+// Full name: test_crate::ImpliesOtherTrait
+trait ImpliesOtherTrait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: OtherTrait<Self>
+    vtable: test_crate::ImpliesOtherTrait::{vtable}
+}
+
+// Full name: test_crate::HasMethod
+trait HasMethod<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn method<'_0> = test_crate::HasMethod::method<'_0_0, Self>[Self]
+    vtable: test_crate::HasMethod::{vtable}
+}
+
+fn test_crate::HasMethod::method<'_0, Self>(@1: &'_0 (Self))
+where
+    [@TraitClause0]: HasMethod<Self>,
+
+// Full name: test_crate::{impl HasMethod for T}::method
+fn {impl HasMethod for T}::method<'_0, T>(@1: &'_0 (T))
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: OtherTrait<T>,
+{
+    let @0: (); // return
+    let self@1: &'_ (T); // arg #1
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl HasMethod for T}
+impl<T> HasMethod for T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: OtherTrait<T>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    fn method<'_0> = {impl HasMethod for T}::method<'_0_0, T>[@TraitClause0, @TraitClause1]
+    vtable: {impl HasMethod for T}::{vtable}<T>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: test_crate::call_method
+fn call_method<T>(@1: T)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: ImpliesOtherTrait<T>,
+{
+    let @0: (); // return
+    let x@1: T; // arg #1
+    let @2: (); // anonymous local
+    let @3: &'_ (T); // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    @3 := &x@1
+    @2 := {impl HasMethod for T}::method<'_, T>[@TraitClause0, @TraitClause1::parent_clause1](move (@3))
+    storage_dead(@3)
+    storage_dead(@2)
+    @0 := ()
+    drop[Drop<T>] x@1
+    @0 := ()
+    return
+}
+
+
+

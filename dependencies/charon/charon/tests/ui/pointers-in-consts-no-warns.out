@@ -1,0 +1,42 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::DISGUISED_INT
+fn DISGUISED_INT() -> *const ()
+{
+    let @0: *const (); // return
+    let @1: *const (); // anonymous local
+
+    storage_live(@1)
+    @1 := cast<i32, *const ()>(const (42 : i32))
+    @0 := copy (@1)
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::DISGUISED_INT
+const DISGUISED_INT: *const () = DISGUISED_INT()
+
+// Full name: test_crate::bar
+pub fn bar()
+{
+    let @0: (); // return
+    let @1: *const (); // anonymous local
+    let @2: bool; // anonymous local
+
+    storage_live(@2)
+    storage_live(@1)
+    @1 := cast<usize, *const ()>(const (43 : usize))
+    @2 := const (Opaque(`ConstantExprKind::Cast {{..}}`)) == copy (@1)
+    if move (@2) {
+        @0 := ()
+    }
+    else {
+        @0 := ()
+    }
+    storage_dead(@1)
+    @0 := ()
+    return
+}
+
+
+

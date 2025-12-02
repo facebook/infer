@@ -1,0 +1,15 @@
+error: Well-formedness clauses are unsupported
+ --> tests/ui/unsupported/well-formedness-bound.rs:4:5
+  |
+4 |     &'a ():,
+  |     ^^^^^^
+
+error: Item `test_crate::get` caused errors; ignoring.
+ --> tests/ui/unsupported/well-formedness-bound.rs:2:1
+  |
+2 | / pub fn get<'a>(x: &'a u32) -> Option<&'a u32>
+3 | | where
+4 | |     &'a ():,
+  | |____________^
+
+ERROR Charon failed to translate this code (2 errors)

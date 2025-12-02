@@ -1,0 +1,58 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::test_float
+fn test_float(@1: f64) -> f64
+{
+    let @0: f64; // return
+    let x@1: f64; // arg #1
+
+    @0 := copy (x@1)
+    return
+}
+
+// Full name: test_crate::sum_float
+fn sum_float(@1: f64, @2: f64) -> f64
+{
+    let @0: f64; // return
+    let x@1: f64; // arg #1
+    let y@2: f64; // arg #2
+    let @3: f64; // anonymous local
+    let @4: f64; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) wrap.+ move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::literal_float
+fn literal_float() -> f64
+{
+    let @0: f64; // return
+    let x@1: f64; // local
+    let y@2: f64; // local
+    let @3: f64; // anonymous local
+    let @4: f64; // anonymous local
+
+    storage_live(x@1)
+    x@1 := const (1 : f64)
+    storage_live(y@2)
+    y@2 := const (1.5 : f64)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) wrap.+ move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    storage_dead(y@2)
+    storage_dead(x@1)
+    return
+}
+
+
+

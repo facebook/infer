@@ -1,0 +1,139 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::BoolTrait
+pub trait BoolTrait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn get_bool<'_0> = test_crate::BoolTrait::get_bool<'_0_0, Self>[Self]
+    fn ret_true<'_0> = ret_true<'_0_0, Self>[Self]
+    vtable: test_crate::BoolTrait::{vtable}
+}
+
+pub fn test_crate::BoolTrait::get_bool<'_0, Self>(@1: &'_0 (Self)) -> bool
+where
+    [@TraitClause0]: BoolTrait<Self>,
+
+// Full name: test_crate::BoolTrait::ret_true
+pub fn ret_true<'_0, Self>(@1: &'_0 (Self)) -> bool
+where
+    [@TraitClause0]: BoolTrait<Self>,
+{
+    let @0: bool; // return
+    let self@1: &'_ (Self); // arg #1
+
+    @0 := const (true)
+    return
+}
+
+// Full name: test_crate::{impl BoolTrait for bool}::get_bool
+pub fn {impl BoolTrait for bool}::get_bool<'_0>(@1: &'_0 (bool)) -> bool
+{
+    let @0: bool; // return
+    let self@1: &'_ (bool); // arg #1
+
+    @0 := copy (*(self@1))
+    return
+}
+
+pub fn test_crate::{impl BoolTrait for bool}::ret_true<'_0>(@1: &'_0 (bool)) -> bool
+{
+    let @0: bool; // return
+    let self@1: &'_ (bool); // arg #1
+
+    @0 := const (true)
+    return
+}
+
+// Full name: test_crate::{impl BoolTrait for bool}
+impl BoolTrait for bool {
+    parent_clause0 = MetaSized<bool>
+    fn get_bool<'_0> = {impl BoolTrait for bool}::get_bool<'_0_0>
+    fn ret_true<'_0> = test_crate::{impl BoolTrait for bool}::ret_true<'_0_0>
+    vtable: {impl BoolTrait for bool}::{vtable}
+}
+
+// Full name: test_crate::test_bool_trait
+pub fn test_bool_trait<T>(@1: bool) -> bool
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: bool; // return
+    let x@1: bool; // arg #1
+    let @2: bool; // anonymous local
+    let @3: &'_ (bool); // anonymous local
+    let @4: &'_ (bool); // anonymous local
+
+    storage_live(@4)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := &x@1
+    @2 := {impl BoolTrait for bool}::get_bool<'_>(move (@3))
+    if move (@2) {
+        storage_dead(@3)
+        storage_live(@4)
+        @4 := &x@1
+        @0 := test_crate::{impl BoolTrait for bool}::ret_true<'_>(move (@4))
+        storage_dead(@4)
+    }
+    else {
+        storage_dead(@3)
+        @0 := const (false)
+    }
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::Test
+type Test = i32
+
+// Full name: test_crate::SimpleEnum
+enum SimpleEnum {
+  FirstVariant,
+  SecondVariant,
+  ThirdVariant,
+}
+
+// Full name: test_crate::Foo
+struct Foo {
+  field1: u32,
+}
+
+// Full name: test_crate::C
+fn C() -> u32
+{
+    let @0: u32; // return
+    let @1: u32; // anonymous local
+    let @2: u32; // anonymous local
+    let @3: u32; // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@1)
+    @2 := const (100 : u32) panic.+ const (10 : u32)
+    @1 := move (@2)
+    @3 := copy (@1) panic.+ const (1 : u32)
+    @0 := move (@3)
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::C
+const C: u32 = C()
+
+// Full name: test_crate::Test2
+type Test2 = u32
+
+
+

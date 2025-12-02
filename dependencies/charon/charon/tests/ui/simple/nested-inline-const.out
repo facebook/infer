@@ -1,0 +1,21 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: i32; // anonymous local
+    let @2: i32; // anonymous local
+
+    storage_live(@2)
+    storage_live(@1)
+    @2 := const (1 : i32) panic.+ const (9 : i32)
+    @1 := move (@2)
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

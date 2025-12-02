@@ -1,0 +1,91 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = clone<'_0_0, Self>[Self]
+    fn clone_from<'_0, '_1, [@TraitClause0]: Destruct<Self>> = clone_from<'_0_0, '_0_1, Self>[Self, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone::clone
+#[lang_item("clone_fn")]
+pub fn clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::clone::Clone::clone_from
+pub fn clone_from<'_0, '_1, Self>(@1: &'_0 mut (Self), @2: &'_1 (Self))
+where
+    [@TraitClause0]: Clone<Self>,
+    [@TraitClause1]: Destruct<Self>,
+
+// Full name: core::iter::sources::once::Once
+#[lang_item("IterOnce")]
+pub opaque type Once<T>
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::iter::sources::once::once
+pub fn once<T>(@1: T) -> Once<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::num::{u32}::wrapping_add
+pub fn wrapping_add(@1: u32, @2: u32) -> u32
+
+// Full name: core::slice::iter::Iter
+#[lang_item("SliceIter")]
+pub opaque type Iter<'a, T>
+where
+    [@TraitClause0]: Sized<T>,
+    T : 'a,
+    T : 'a,
+
+// Full name: core::slice::iter::{Iter<'a, T>[@TraitClause0]}::as_slice
+pub fn as_slice<'a, '_1, T>(@1: &'_1 (Iter<'a, T>[@TraitClause0])) -> &'a (Slice<T>)
+where
+    [@TraitClause0]: Sized<T>,
+
+fn test_crate::module1::do_translate()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+fn test_crate::module2::do_translate()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

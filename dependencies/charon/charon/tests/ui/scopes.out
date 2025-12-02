@@ -1,0 +1,43 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: test_crate::Trait
+trait Trait<'a, Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn method<'b> = test_crate::Trait::method<'a, 'b, Self>[Self]
+    vtable: test_crate::Trait::{vtable}<'a>
+}
+
+fn test_crate::Trait::method<'a, 'b, Self>(@1: &'b (Self)) -> &'b (())
+where
+    [@TraitClause0]: Trait<'a, Self>,
+
+// Full name: test_crate::{impl Trait<'a> for &'a (())}::method
+fn {impl Trait<'a> for &'a (())}::method<'a, 'b>(@1: &'b (&'a (()))) -> &'b (())
+
+// Full name: test_crate::{impl Trait<'a> for &'a (())}
+impl<'a> Trait<'a> for &'a (()) {
+    parent_clause0 = MetaSized<&'_ (())>
+    fn method<'b> = {impl Trait<'a> for &'a (())}::method<'a, 'b>
+    vtable: {impl Trait<'a> for &'a (())}::{vtable}<'a>
+}
+
+// Full name: test_crate::Foo
+opaque type Foo<'a>
+
+fn test_crate::{Foo<'_0>}::bar<'_0, '_1>(@1: &'_1 (Foo<'_0>)) -> &'_1 (())
+
+// Full name: test_crate::foo
+fn foo<'_0>(@1: &'_0 (fn<'_0>(&'_0_0 (u32)) -> u32))
+
+fn test_crate::bar<'_0>(@1: &'_0 (fn<'_0>(&'_0_0 (fn<'_0>(&'_0_0 (u32)) -> u32))))
+
+// Full name: test_crate::baz
+fn baz<'a>(@1: &'a (fn<'b>(&'a (u32), &'b (fn<'c>(&'a (u32), &'b (u32), &'c (u32)) -> u32))))
+
+
+

@@ -1,0 +1,133 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Tuple::{vtable}
+}
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args, Self_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self_Output>
+    fn call_once = call_once<Self, Args, Self_Output>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args, Self_Clause1_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args, Self_Clause1_Output>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0> = call_mut<'_0_0, Self, Args, Self_Clause1_Output>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::Fn
+#[lang_item("r#fn")]
+pub trait Fn<Self, Args, Self_Clause1_Clause1_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnMut<Self, Args, Self_Clause1_Clause1_Output>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call<'_0> = core::ops::function::Fn::call<'_0_0, Self, Args, Self_Clause1_Clause1_Output>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::ops::function::Fn::call<'_0, Self, Args, Clause0_Clause1_Clause1_Output>(@1: &'_0 (Self), @2: Args) -> Clause0_Clause1_Clause1_Output
+where
+    [@TraitClause0]: Fn<Self, Args, Clause0_Clause1_Clause1_Output>,
+
+// Full name: core::ops::function::FnMut::call_mut
+pub fn call_mut<'_0, Self, Args, Clause0_Clause1_Output>(@1: &'_0 mut (Self), @2: Args) -> Clause0_Clause1_Output
+where
+    [@TraitClause0]: FnMut<Self, Args, Clause0_Clause1_Output>,
+
+// Full name: core::ops::function::FnOnce::call_once
+pub fn call_once<Self, Args, Clause0_Output>(@1: Self, @2: Args) -> Clause0_Output
+where
+    [@TraitClause0]: FnOnce<Self, Args, Clause0_Output>,
+
+// Full name: test_crate::Trait
+pub trait Trait<Self, Self_Foo>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Foo>
+    parent_clause2 : [@TraitClause2]: Fn<Self_Foo, (), ()>
+    fn call<'_0> = test_crate::Trait::call<'_0_0, Self, Self_Foo>[Self]
+    non-dyn-compatible
+}
+
+pub fn test_crate::Trait::call<'_0, Self, Clause0_Foo>(@1: &'_0 (Self))
+where
+    [@TraitClause0]: Trait<Self, Clause0_Foo>,
+
+// Full name: test_crate::{impl Trait<F> for F}::call
+pub fn {impl Trait<F> for F}::call<'_0, F>(@1: &'_0 (F))
+where
+    [@TraitClause0]: Fn<F, (), ()>,
+    [@TraitClause1]: Sized<F>,
+{
+    let @0: (); // return
+    let self@1: &'_ (F); // arg #1
+    let @2: &'_ (F); // anonymous local
+    let @3: (); // anonymous local
+
+    storage_live(@2)
+    @2 := &*(self@1)
+    storage_live(@3)
+    @3 := ()
+    @0 := @TraitClause0::call<'_>(move (@2), move (@3))
+    storage_dead(@3)
+    storage_dead(@2)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait<F> for F}
+impl<F> Trait<F> for F
+where
+    [@TraitClause0]: Fn<F, (), ()>,
+    [@TraitClause1]: Sized<F>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    parent_clause1 = @TraitClause1
+    parent_clause2 = @TraitClause0
+    fn call<'_0> = {impl Trait<F> for F}::call<'_0_0, F>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::use_foo
+pub fn use_foo()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

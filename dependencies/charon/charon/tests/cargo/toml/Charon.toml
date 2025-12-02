@@ -1,0 +1,5 @@
+[charon]
+extract_opaque_bodies = true
+
+[rustc]
+flags = ["--cfg", "abc"]

@@ -1,0 +1,101 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::arith::Add
+#[lang_item("add")]
+pub trait Add<Self, Rhs>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Rhs>
+    parent_clause2 : [@TraitClause2]: Sized<Self::Output>
+    type Output
+    fn add = core::ops::arith::Add::add<Self, Rhs>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::arith::{impl Add<&'_0 (u32)> for &'_1 (u32)}::add
+pub fn {impl Add<&'_0 (u32)> for &'_1 (u32)}::add<'_0, '_1>(@1: &'_1 (u32), @2: &'_0 (u32)) -> u32
+
+// Full name: core::ops::arith::{impl Add<&'_0 (u32)> for &'_1 (u32)}
+impl<'_0, '_1> Add<&'_0 (u32)> for &'_1 (u32) {
+    parent_clause0 = MetaSized<&'_ (u32)>
+    parent_clause1 = Sized<&'_ (u32)>
+    parent_clause2 = Sized<u32>
+    type Output = u32
+    fn add = {impl Add<&'_0 (u32)> for &'_1 (u32)}::add<'_0, '_1>
+    non-dyn-compatible
+}
+
+#[lang_item("add")]
+pub fn core::ops::arith::Add::add<Self, Rhs>(@1: Self, @2: Rhs) -> @TraitClause0::Output
+where
+    [@TraitClause0]: Add<Self, Rhs>,
+
+// Full name: test_crate::six
+fn six() -> u32
+{
+    let @0: u32; // return
+    let x@1: &'_ (u32); // local
+    let @2: u32; // anonymous local
+    let y@3: &'_ (u32); // local
+    let @4: u32; // anonymous local
+    let @5: &'_ (u32); // anonymous local
+    let @6: &'_ (u32); // anonymous local
+    let @7: &'_ (u32); // anonymous local
+    let @8: &'_ (u32); // anonymous local
+    let @9: &'_ (u32); // anonymous local
+    let @10: u32; // anonymous local
+    let @11: u32; // anonymous local
+    let @12: &'_ (u32); // anonymous local
+    let @13: u32; // anonymous local
+    let @14: u32; // anonymous local
+
+    storage_live(@2)
+    storage_live(@4)
+    storage_live(@7)
+    storage_live(@8)
+    storage_live(@9)
+    storage_live(@10)
+    storage_live(@11)
+    storage_live(@12)
+    storage_live(@13)
+    storage_live(@14)
+    storage_live(x@1)
+    @2 := const (0 : u32) panic.+ const (1 : u32)
+    @11 := const (0 : u32) wrap.+ const (1 : u32)
+    @10 := move (@11)
+    @9 := &@10
+    @8 := move (@9)
+    x@1 := &*(@8)
+    storage_live(y@3)
+    @4 := const (2 : u32) panic.+ const (3 : u32)
+    @14 := const (2 : u32) wrap.+ const (3 : u32)
+    @13 := move (@14)
+    @12 := &@13
+    @7 := move (@12)
+    y@3 := &*(@7)
+    storage_live(@5)
+    @5 := copy (x@1)
+    storage_live(@6)
+    @6 := copy (y@3)
+    @0 := {impl Add<&'_0 (u32)> for &'_1 (u32)}::add<'_, '_>(move (@5), move (@6))
+    storage_dead(@6)
+    storage_dead(@5)
+    storage_dead(y@3)
+    storage_dead(x@1)
+    return
+}
+
+
+

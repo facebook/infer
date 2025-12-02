@@ -1,0 +1,56 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self, Self_Assoc>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Assoc>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::IntoIterator
+trait IntoIterator<Self, Self_IntoIter>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_IntoIter>
+    parent_clause2 : [@TraitClause2]: Trait<Self_IntoIter, ()>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::IntoIntoIterator
+trait IntoIntoIterator<Self, Self_IntoIntoIter, Self_Clause2_IntoIter>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_IntoIntoIter>
+    parent_clause2 : [@TraitClause2]: IntoIterator<Self_IntoIntoIter, Self_Clause2_IntoIter>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::foo
+fn foo<I, Clause1_IntoIntoIter, Clause1_Clause2_IntoIter, Clause2_Assoc>()
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: IntoIntoIterator<I, Clause1_IntoIntoIter, Clause1_Clause2_IntoIter>,
+    [@TraitClause2]: Trait<Clause1_Clause2_IntoIter, Clause2_Assoc>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

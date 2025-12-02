@@ -1,0 +1,134 @@
+name: "Build and test"
+
+on:
+  # Run the checks on the latest commit from `main`
+  push:
+    branches:
+      - main
+  # Run the check for any pull request. The check is run on a merge between the
+  # PR commit and the `main` branch at the time of running the check.
+  pull_request:
+  # Runs the check when a PR is added to the merge queue.
+  merge_group:
+  # Makes it possible to run the forkflow by hand from GitHub's interface.
+  workflow_dispatch:
+
+# Cancel previous versions of this job that are still running.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  charon:
+    #runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, nix]
+    steps:
+      #- uses: cachix/install-nix-action@v22
+      - uses: actions/checkout@v4
+      - run: nix build -L .#charon
+      - run: nix build -L .#charon-ml
+      - run: nix flake check -L
+
+  check-version-number:
+    runs-on: [self-hosted, linux, nix]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # deep clone in order to get access to other commits
+      - run: nix develop '.#ci' --command ./scripts/ci-check-version-number.sh
+
+  check-hax-commit:
+    runs-on: [self-hosted, linux, nix]
+    steps:
+      - uses: actions/checkout@v4
+      - run: nix develop '.#ci' --command ./scripts/ci-check-hax-commit.sh
+
+  # Choose which commit to use for each project. By default we use the latest
+  # from the main branch, but this can be overridden with a command in the PR
+  # description.
+  select-dep-versions:
+    needs: [charon]
+    runs-on: [self-hosted, linux, nix]
+    env:
+      CI_EVENT: ${{ github.event_name }}
+      PR_NUMBER: ${{ github.event.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # deep clone in order to get access to other commits
+      - id: select
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "charon=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          nix develop '.#ci' --command ./scripts/ci-select-dep-versions.py >> "$GITHUB_OUTPUT"
+          echo
+          echo "Selected the following versions for dependent projects:"
+          cat "$GITHUB_OUTPUT"
+    outputs:
+      charon: ${{ steps.select.outputs.charon }}
+      aeneas: ${{ steps.select.outputs.aeneas }}
+      eurydice: ${{ steps.select.outputs.eurydice }}
+      libcrux: ${{ steps.select.outputs.libcrux }}
+
+  aeneas:
+    needs: [charon, select-dep-versions]
+    runs-on: [self-hosted, linux, nix]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Inria-Prosecco/circus-green
+      - env:
+          CHARON: ${{needs.select-dep-versions.outputs.charon}}
+          AENEAS: ${{needs.select-dep-versions.outputs.aeneas}}
+        run: |
+          echo 'Using the aeneas commit selected by `select-dep-versions`'
+          nix flake update --refresh \
+              charon aeneas \
+              --override-input charon github:aeneasverif/charon/$CHARON \
+              --override-input aeneas github:aeneasverif/aeneas/$AENEAS
+          ./check.sh aeneas
+
+  eurydice:
+    needs: [charon, select-dep-versions]
+    runs-on: [self-hosted, linux, nix]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Inria-Prosecco/circus-green
+      - env:
+          CHARON: ${{needs.select-dep-versions.outputs.charon}}
+          EURYDICE: ${{needs.select-dep-versions.outputs.eurydice}}
+        run: |
+          echo 'Using the eurydice commit selected by `select-dep-versions`'
+          nix flake update --refresh \
+              charon eurydice \
+              --override-input charon github:aeneasverif/charon/$CHARON \
+              --override-input eurydice github:aeneasverif/eurydice/$EURYDICE
+          ./check.sh eurydice
+
+  kyber:
+    needs: [eurydice, select-dep-versions]
+    runs-on: [self-hosted, linux, nix]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: Inria-Prosecco/circus-green
+      - env:
+          CHARON: ${{needs.select-dep-versions.outputs.charon}}
+          EURYDICE: ${{needs.select-dep-versions.outputs.eurydice}}
+          LIBCRUX: ${{needs.select-dep-versions.outputs.libcrux}}
+        run: |
+          echo 'Using the eurydice and libcrux commits selected by `select-dep-versions`'
+          nix flake update --refresh \
+              charon eurydice \
+              --override-input charon github:aeneasverif/charon/$CHARON \
+              --override-input eurydice github:aeneasverif/eurydice/$EURYDICE
+          # Use the last-known-good libcrux version unless overridden.
+          if [[ -n "$LIBCRUX" ]]; then
+              nix flake update --refresh libcrux \
+                  --override-input libcrux github:cryspen/libcrux/$LIBCRUX
+              nix develop --command ./update-cargo-lock.sh libcrux
+          fi
+          ./check.sh ml-kem-small
+          # ./check.sh ml-dsa-small

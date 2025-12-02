@@ -186,13 +186,3 @@ depexts: [
   ["default-jdk"] {"debian"}
 ]
 dev-repo: "git://github.com/facebook/infer.git"
-pin-depends: [
-  [
-    "charon.0.1"
-    "git+https://github.com/AeneasVerif/charon.git#4289a52cc427ac6f8ecbb746e2b226f5b297be40"
-  ]
-  [
-    "name_matcher_parser.0.1"
-    "git+https://github.com/AeneasVerif/charon.git#4289a52cc427ac6f8ecbb746e2b226f5b297be40"
-  ]
-]

@@ -1,0 +1,49 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized::<u32>
+#[lang_item("meta_sized")]
+pub trait MetaSized::<u32>
+
+// Full name: core::marker::Sized::<u32>
+#[lang_item("sized")]
+pub trait Sized::<u32>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<u32>
+    non-dyn-compatible
+}
+
+// Full name: core::result::Result::<u32, u32>
+#[lang_item("Result")]
+pub enum Result::<u32, u32> {
+  Ok(u32),
+  Err(u32),
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let res@1: Result::<u32, u32>; // local
+    let n@2: u32; // local
+
+    storage_live(res@1)
+    res@1 := Result::<u32, u32>::Ok { 0: const (0 : u32) }
+    storage_live(n@2)
+    match res@1 {
+        Result::<u32, u32>::Ok => {
+        },
+        _ => {
+            storage_dead(n@2)
+            panic(core::panicking::panic_explicit)
+        },
+    }
+    n@2 := copy ((res@1 as variant Result::<u32, u32>::Ok).0)
+    @0 := ()
+    storage_dead(n@2)
+    storage_dead(res@1)
+    @0 := ()
+    return
+}
+
+
+

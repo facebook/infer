@@ -1,0 +1,21 @@
+(include_subdirs unqualified)
+
+(library
+ (name charon) ;; The name as used in the project
+ (public_name charon) ;; The name as revealed to the projects importing this library
+ (preprocess
+  (pps ppx_deriving.show ppx_deriving.ord ppx_deriving.eq visitors.ppx))
+ (libraries yojson zarith easy_logging name_matcher_parser unionFind))
+
+(documentation
+ (package charon))
+
+(env
+ (_
+  (flags
+   :standard
+   -safe-string
+   -g
+   ;-dsource
+   -w
+   -5@8-11-14-30-33-20-21-26-27-39)))

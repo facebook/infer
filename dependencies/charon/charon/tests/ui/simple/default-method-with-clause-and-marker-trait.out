@@ -1,0 +1,54 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::HasAssoc
+trait HasAssoc<Self>
+{
+    type Assoc
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self>
+{
+    fn default_method<T, [@TraitClause1]: HasAssoc<T>> = default_method<Self, T>[Self, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait::default_method
+fn default_method<Self, T>() -> @TraitClause2::Assoc
+where
+    [@TraitClause0]: Trait<Self>,
+    [@TraitClause2]: HasAssoc<T>,
+{
+    let @0: @TraitClause2::Assoc; // return
+
+    panic(core::panicking::panic)
+}
+
+fn test_crate::{impl Trait for T}::default_method<T, T>() -> @TraitClause2::Assoc
+where
+    [@TraitClause2]: HasAssoc<T>,
+{
+    let @0: @TraitClause2::Assoc; // return
+
+    panic(core::panicking::panic)
+}
+
+// Full name: test_crate::{impl Trait for T}
+impl<T> Trait for T {
+    fn default_method<T, [@TraitClause1]: HasAssoc<T>> = test_crate::{impl Trait for T}::default_method<T, T>[@TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

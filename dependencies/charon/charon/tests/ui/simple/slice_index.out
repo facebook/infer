@@ -1,0 +1,24 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::first
+pub fn first<'_0>(@1: &'_0 (Slice<u32>)) -> u32
+{
+    let @0: u32; // return
+    let s@1: &'_ (Slice<u32>); // arg #1
+    let @2: usize; // anonymous local
+    let @3: &'_ (Slice<u32>); // anonymous local
+    let @4: &'_ (u32); // anonymous local
+
+    storage_live(@2)
+    @2 := const (0 : usize)
+    storage_live(@3)
+    @3 := &*(s@1)
+    storage_live(@4)
+    @4 := @SliceIndexShared<'_, u32>(move (@3), copy (@2))
+    @0 := copy (*(@4))
+    storage_dead(@2)
+    return
+}
+
+
+

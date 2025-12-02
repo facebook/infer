@@ -1,0 +1,10 @@
+error: path start_from_errors does not correspond to any item
+
+error: path module2 does not correspond to any item
+
+error: path std::iter:once does not correspond to any item
+
+error: Cannot register item `core::ops::deref::Deref::Target` with kind `AssocTy`
+ --> /rustc/library/core/src/ops/deref.rs:145:5
+
+ERROR Charon failed to translate this code (4 errors)

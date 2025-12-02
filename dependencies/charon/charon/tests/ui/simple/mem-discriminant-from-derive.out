@@ -1,0 +1,310 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone::clone
+#[lang_item("clone_fn")]
+pub fn clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::cmp::PartialEq
+#[lang_item("eq")]
+pub trait PartialEq<Self, Rhs>
+{
+    fn eq<'_0, '_1> = core::cmp::PartialEq::eq<'_0_0, '_0_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialEq::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1, Self, Rhs>(@1: &'_0 (Self), @2: &'_1 (Rhs)) -> bool
+where
+    [@TraitClause0]: PartialEq<Self, Rhs>,
+
+// Full name: core::cmp::Eq
+#[lang_item("Eq")]
+pub trait Eq<Self>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq<Self, Self>
+    non-dyn-compatible
+}
+
+// Full name: core::cmp::impls::{impl PartialEq<u8> for u8}::eq
+pub fn {impl PartialEq<u8> for u8}::eq<'_0, '_1>(@1: &'_0 (u8), @2: &'_1 (u8)) -> bool
+
+// Full name: core::cmp::impls::{impl PartialEq<u8> for u8}
+impl PartialEq<u8> for u8 {
+    fn eq<'_0, '_1> = {impl PartialEq<u8> for u8}::eq<'_0_0, '_0_1>
+    vtable: {impl PartialEq<u8> for u8}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialEq<&'_0 (B)> for &'_1 (A)}::eq
+pub fn {impl PartialEq<&'_0 (B)> for &'_1 (A)}::eq<'_0, '_1, '_2, '_3, A, B>(@1: &'_2 (&'_1 (A)), @2: &'_3 (&'_0 (B))) -> bool
+where
+    [@TraitClause0]: PartialEq<A, B>,
+
+// Full name: core::cmp::impls::{impl PartialEq<&'_0 (B)> for &'_1 (A)}
+impl<'_0, '_1, A, B> PartialEq<&'_0 (B)> for &'_1 (A)
+where
+    [@TraitClause0]: PartialEq<A, B>,
+{
+    fn eq<'_0, '_1> = {impl PartialEq<&'_0 (B)> for &'_1 (A)}::eq<'_0, '_1, '_0_0, '_0_1, A, B>[@TraitClause0]
+    vtable: {impl PartialEq<&'_0 (B)> for &'_1 (A)}::{vtable}<'_0, '_1, A, B>[@TraitClause0]
+}
+
+// Full name: core::fmt::Error
+pub struct Error {}
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+// Full name: core::fmt::Debug
+#[lang_item("Debug")]
+pub trait Debug<Self>
+{
+    fn fmt<'_0, '_1, '_2> = fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    vtable: core::fmt::Debug::{vtable}
+}
+
+// Full name: core::fmt::Debug::fmt
+pub fn fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+where
+    [@TraitClause0]: Debug<Self>,
+
+// Full name: core::hash::Hasher
+pub trait Hasher<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn finish<'_0> = finish<'_0_0, Self>[Self]
+    fn write<'_0, '_1> = write<'_0_0, '_0_1, Self>[Self]
+    vtable: core::hash::Hasher::{vtable}
+}
+
+// Full name: core::hash::Hash
+#[lang_item("Hash")]
+pub trait Hash<Self>
+{
+    fn hash<'_0, '_1, H, [@TraitClause0]: Sized<H>, [@TraitClause1]: Hasher<H>> = hash<'_0_0, '_0_1, Self, H>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: core::hash::Hash::hash
+pub fn hash<'_0, '_1, Self, H>(@1: &'_0 (Self), @2: &'_1 mut (H))
+where
+    [@TraitClause0]: Hash<Self>,
+    [@TraitClause1]: Sized<H>,
+    [@TraitClause2]: Hasher<H>,
+
+// Full name: core::hash::Hasher::finish
+pub fn finish<'_0, Self>(@1: &'_0 (Self)) -> u64
+where
+    [@TraitClause0]: Hasher<Self>,
+
+// Full name: core::hash::Hasher::write
+pub fn write<'_0, '_1, Self>(@1: &'_0 mut (Self), @2: &'_1 (Slice<u8>))
+where
+    [@TraitClause0]: Hasher<Self>,
+
+// Full name: core::marker::Copy
+#[lang_item("copy")]
+pub trait Copy<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Clone<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Send
+#[lang_item("Send")]
+pub trait Send<Self>
+
+// Full name: core::marker::Sync
+#[lang_item("sync")]
+pub trait Sync<Self>
+
+// Full name: core::marker::Unpin
+#[lang_item("unpin")]
+pub trait Unpin<Self>
+
+// Full name: core::marker::DiscriminantKind
+#[lang_item("discriminant_kind")]
+pub trait DiscriminantKind<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Discriminant>
+    parent_clause2 : [@TraitClause2]: Clone<Self::Discriminant>
+    parent_clause3 : [@TraitClause3]: Copy<Self::Discriminant>
+    parent_clause4 : [@TraitClause4]: Debug<Self::Discriminant>
+    parent_clause5 : [@TraitClause5]: Eq<Self::Discriminant>
+    parent_clause6 : [@TraitClause6]: PartialEq<Self::Discriminant, Self::Discriminant>
+    parent_clause7 : [@TraitClause7]: Hash<Self::Discriminant>
+    parent_clause8 : [@TraitClause8]: Send<Self::Discriminant>
+    parent_clause9 : [@TraitClause9]: Sync<Self::Discriminant>
+    parent_clause10 : [@TraitClause10]: Unpin<Self::Discriminant>
+    type Discriminant
+    non-dyn-compatible
+}
+
+// Full name: core::intrinsics::discriminant_value
+pub fn discriminant_value<'_0, T>(@1: &'_0 (T)) -> DiscriminantKind<T>::Discriminant
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::marker::StructuralPartialEq
+#[lang_item("structural_peq")]
+pub trait StructuralPartialEq<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::StructuralPartialEq::{vtable}
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: test_crate::Enum
+enum Enum {
+  Some(u8),
+  None,
+}
+
+// Full name: test_crate::{impl StructuralPartialEq for Enum}
+impl StructuralPartialEq for Enum {
+    parent_clause0 = MetaSized<Enum>
+    vtable: {impl StructuralPartialEq for Enum}::{vtable}
+}
+
+// Full name: test_crate::{impl PartialEq<Enum> for Enum}::eq
+pub fn {impl PartialEq<Enum> for Enum}::eq<'_0, '_1>(@1: &'_0 (Enum), @2: &'_1 (Enum)) -> bool
+{
+    let @0: bool; // return
+    let self@1: &'_ (Enum); // arg #1
+    let other@2: &'_ (Enum); // arg #2
+    let __self_discr@3: isize; // local
+    let @4: &'_ (Enum); // anonymous local
+    let __arg1_discr@5: isize; // local
+    let @6: &'_ (Enum); // anonymous local
+    let @7: bool; // anonymous local
+    let @8: isize; // anonymous local
+    let @9: isize; // anonymous local
+    let @10: (&'_ (Enum), &'_ (Enum)); // anonymous local
+    let @11: &'_ (Enum); // anonymous local
+    let @12: &'_ (Enum); // anonymous local
+    let __self_0@13: &'_ (u8); // local
+    let __arg1_0@14: &'_ (u8); // local
+    let @15: &'_ (&'_ (u8)); // anonymous local
+    let @16: &'_ (&'_ (u8)); // anonymous local
+
+    storage_live(@10)
+    storage_live(@11)
+    storage_live(@12)
+    storage_live(__self_0@13)
+    storage_live(__arg1_0@14)
+    storage_live(@15)
+    storage_live(@16)
+    storage_live(__self_discr@3)
+    storage_live(@4)
+    @4 := &*(self@1)
+    __self_discr@3 := @discriminant(*(@4))
+    storage_dead(@4)
+    storage_live(__arg1_discr@5)
+    storage_live(@6)
+    @6 := &*(other@2)
+    __arg1_discr@5 := @discriminant(*(@6))
+    storage_dead(@6)
+    storage_live(@7)
+    storage_live(@8)
+    @8 := copy (__self_discr@3)
+    storage_live(@9)
+    @9 := copy (__arg1_discr@5)
+    @7 := move (@8) == move (@9)
+    if move (@7) {
+        storage_dead(@9)
+        storage_dead(@8)
+        storage_live(@10)
+        storage_live(@11)
+        @11 := copy (self@1)
+        storage_live(@12)
+        @12 := copy (other@2)
+        @10 := (move (@11), move (@12))
+        storage_dead(@12)
+        storage_dead(@11)
+        match *((@10).0) {
+            Enum::Some => {
+                match *((@10).1) {
+                    Enum::Some => {
+                        storage_live(__self_0@13)
+                        __self_0@13 := &(*((@10).0) as variant Enum::Some).0
+                        storage_live(__arg1_0@14)
+                        __arg1_0@14 := &(*((@10).1) as variant Enum::Some).0
+                        storage_live(@15)
+                        @15 := &__self_0@13
+                        storage_live(@16)
+                        @16 := &__arg1_0@14
+                        @0 := {impl PartialEq<&'_0 (B)> for &'_1 (A)}::eq<'_, '_, '_, '_, u8, u8>[{impl PartialEq<u8> for u8}](move (@15), move (@16))
+                        storage_dead(@16)
+                        storage_dead(@15)
+                        storage_dead(__arg1_0@14)
+                        storage_dead(__self_0@13)
+                    },
+                    _ => {
+                        @0 := const (true)
+                    },
+                }
+            },
+            _ => {
+                @0 := const (true)
+            },
+        }
+        storage_dead(@10)
+    }
+    else {
+        storage_dead(@9)
+        storage_dead(@8)
+        @0 := const (false)
+    }
+    storage_dead(@7)
+    storage_dead(__arg1_discr@5)
+    storage_dead(__self_discr@3)
+    return
+}
+
+// Full name: test_crate::{impl PartialEq<Enum> for Enum}
+impl PartialEq<Enum> for Enum {
+    fn eq<'_0, '_1> = {impl PartialEq<Enum> for Enum}::eq<'_0_0, '_0_1>
+    vtable: {impl PartialEq<Enum> for Enum}::{vtable}
+}
+
+
+

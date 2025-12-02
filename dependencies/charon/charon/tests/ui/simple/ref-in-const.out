@@ -1,0 +1,32 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::SOME_INT
+fn SOME_INT() -> &'static (&'static (i32))
+{
+    let @0: &'_ (&'_ (i32)); // return
+    let @1: &'_ (&'_ (i32)); // anonymous local
+    let @2: &'_ (&'_ (i32)); // anonymous local
+    let @3: &'_ (&'_ (i32)); // anonymous local
+    let @4: &'_ (i32); // anonymous local
+    let @5: i32; // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := const (0 : i32)
+    @4 := &@5
+    @3 := &@4
+    storage_live(@1)
+    @2 := move (@3)
+    @1 := &*(@2)
+    @0 := &*(@1)
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::SOME_INT
+const SOME_INT: &'static (&'static (i32)) = SOME_INT()
+
+
+

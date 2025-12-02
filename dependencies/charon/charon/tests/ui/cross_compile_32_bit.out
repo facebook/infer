@@ -1,0 +1,68 @@
+# Final LLBC before serialization:
+
+// Full name: core::num::{usize}::MAX
+pub fn MAX() -> usize
+
+// Full name: core::num::{usize}::MAX
+pub const MAX: usize = MAX()
+
+// Full name: core::ptr::non_null::NonNull
+#[lang_item("NonNull")]
+pub opaque type NonNull<T>
+
+// Full name: core::ptr::non_null::{NonNull<T>}::new_unchecked
+pub unsafe fn new_unchecked<T>(@1: *mut T) -> NonNull<T>
+
+// Full name: test_crate::HasPointerNiche
+enum HasPointerNiche {
+  First,
+  Second(NonNull<usize>),
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: usize; // local
+    let y@2: usize; // local
+    let z@3: usize; // local
+    let @4: usize; // anonymous local
+    let @5: usize; // anonymous local
+    let @6: usize; // anonymous local
+    let a@7: HasPointerNiche; // local
+    let @8: NonNull<usize>; // anonymous local
+    let @9: *mut usize; // anonymous local
+
+    storage_live(@6)
+    storage_live(x@1)
+    x@1 := const (52 : usize)
+    storage_live(y@2)
+    y@2 := copy (MAX)
+    storage_live(z@3)
+    storage_live(@4)
+    @4 := copy (y@2)
+    storage_live(@5)
+    @5 := copy (x@1)
+    @6 := copy (@4) panic.- copy (@5)
+    z@3 := move (@6)
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(a@7)
+    storage_live(@8)
+    storage_live(@9)
+    @9 := &raw mut x@1
+    @8 := new_unchecked<usize>(move (@9))
+    storage_dead(@9)
+    a@7 := HasPointerNiche::Second { 0: move (@8) }
+    storage_dead(@8)
+    @0 := ()
+    storage_dead(a@7)
+    storage_dead(z@3)
+    storage_dead(y@2)
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+
+

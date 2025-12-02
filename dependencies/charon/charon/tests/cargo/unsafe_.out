@@ -1,0 +1,49 @@
+# Final LLBC before serialization:
+
+// Full name: core::fmt::Arguments
+#[lang_item("format_arguments")]
+pub opaque type Arguments<'a>
+where
+    'a : 'a,
+
+// Full name: core::fmt::rt::{Arguments<'a>}::new_const
+pub fn new_const<'a, const N : usize>(@1: &'a (Array<&'static (Str), const N : usize>)) -> Arguments<'a>
+
+// Full name: std::io::stdio::_print
+pub fn _print<'_0>(@1: Arguments<'_0>)
+
+// Full name: unsafe::main
+fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+    let @2: (); // anonymous local
+    let @3: Arguments<'_>; // anonymous local
+    let @4: &'_ (Array<&'_ (Str), 1 : usize>); // anonymous local
+    let @5: &'_ (Array<&'_ (Str), 1 : usize>); // anonymous local
+    let @6: Array<&'_ (Str), 1 : usize>; // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    @6 := [const ("Hello, world!\n")]
+    @5 := &@6
+    @4 := &*(@5)
+    @3 := new_const<'_, 1 : usize>(move (@4))
+    storage_dead(@4)
+    @2 := _print<'_>(move (@3))
+    storage_dead(@3)
+    storage_dead(@6)
+    storage_dead(@5)
+    storage_dead(@2)
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

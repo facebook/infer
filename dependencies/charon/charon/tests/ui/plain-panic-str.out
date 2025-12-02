@@ -1,0 +1,34 @@
+# Final LLBC before serialization:
+
+// Full name: core::fmt::Arguments
+#[lang_item("format_arguments")]
+pub opaque type Arguments<'a>
+where
+    'a : 'a,
+
+// Full name: core::fmt::rt::{Arguments<'a>}::new_const
+pub fn new_const<'a, const N : usize>(@1: &'a (Array<&'static (Str), const N : usize>)) -> Arguments<'a>
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: Arguments<'_>; // anonymous local
+    let @2: &'_ (Array<&'_ (Str), 1 : usize>); // anonymous local
+    let @3: &'_ (Array<&'_ (Str), 1 : usize>); // anonymous local
+    let @4: Array<&'_ (Str), 1 : usize>; // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := [const ("O no")]
+    @3 := &@4
+    @2 := &*(@3)
+    @1 := new_const<'_, 1 : usize>(move (@2))
+    storage_dead(@2)
+    panic(core::panicking::panic_fmt)
+}
+
+
+

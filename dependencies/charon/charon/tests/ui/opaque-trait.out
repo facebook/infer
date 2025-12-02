@@ -1,0 +1,223 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    const CONST1 : usize
+    const CONST2 : usize
+    const CONST3 : usize
+    fn method1 = test_crate::Trait::method1<Self>[Self]
+    fn method2 = test_crate::Trait::method2<Self>[Self]
+    non-dyn-compatible
+}
+
+fn test_crate::Trait::CONST1<Self>() -> usize
+where
+    [@TraitClause0]: Trait<Self>,
+{
+    let @0: usize; // return
+
+    @0 := const (0 : usize)
+    return
+}
+
+const test_crate::Trait::CONST1<Self>: usize
+where
+    [@TraitClause0]: Trait<Self>,
+ = test_crate::Trait::CONST1()
+
+fn test_crate::Trait::CONST2<Self>() -> usize
+where
+    [@TraitClause0]: Trait<Self>,
+{
+    let @0: usize; // return
+
+    @0 := const (0 : usize)
+    return
+}
+
+const test_crate::Trait::CONST2<Self>: usize
+where
+    [@TraitClause0]: Trait<Self>,
+ = test_crate::Trait::CONST2()
+
+fn test_crate::Trait::CONST3<Self>() -> usize
+where
+    [@TraitClause0]: Trait<Self>,
+{
+    let @0: usize; // return
+
+    @0 := const (0 : usize)
+    return
+}
+
+const test_crate::Trait::CONST3<Self>: usize
+where
+    [@TraitClause0]: Trait<Self>,
+ = test_crate::Trait::CONST3()
+
+fn test_crate::Trait::method1<Self>()
+where
+    [@TraitClause0]: Trait<Self>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+fn test_crate::Trait::method2<Self>()
+where
+    [@TraitClause0]: Trait<Self>,
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for ()}::CONST1
+fn {impl Trait for ()}::CONST1() -> usize
+{
+    let @0: usize; // return
+
+    @0 := const (1 : usize)
+    return
+}
+
+// Full name: test_crate::{impl Trait for ()}::CONST1
+const {impl Trait for ()}::CONST1: usize = {impl Trait for ()}::CONST1()
+
+// Full name: test_crate::{impl Trait for ()}::CONST2
+fn {impl Trait for ()}::CONST2() -> usize
+{
+    let @0: usize; // return
+
+    @0 := const (1 : usize)
+    return
+}
+
+// Full name: test_crate::{impl Trait for ()}::CONST2
+const {impl Trait for ()}::CONST2: usize = {impl Trait for ()}::CONST2()
+
+// Full name: test_crate::{impl Trait for ()}::CONST3
+fn {impl Trait for ()}::CONST3() -> usize
+{
+    let @0: usize; // return
+
+    @0 := const (1 : usize)
+    return
+}
+
+// Full name: test_crate::{impl Trait for ()}::CONST3
+const {impl Trait for ()}::CONST3: usize = {impl Trait for ()}::CONST3()
+
+fn test_crate::{impl Trait for ()}::method1()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+fn test_crate::{impl Trait for ()}::method2()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for ()}
+impl Trait for () {
+    parent_clause0 = MetaSized<()>
+    const CONST1 = {impl Trait for ()}::CONST1
+    const CONST2 = {impl Trait for ()}::CONST2
+    const CONST3 = {impl Trait for ()}::CONST3
+    fn method1 = test_crate::{impl Trait for ()}::method1
+    fn method2 = test_crate::{impl Trait for ()}::method2
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl Trait for u8}::CONST2
+fn {impl Trait for u8}::CONST2() -> usize
+{
+    let @0: usize; // return
+
+    @0 := const (2 : usize)
+    return
+}
+
+// Full name: test_crate::{impl Trait for u8}::CONST2
+const {impl Trait for u8}::CONST2: usize = {impl Trait for u8}::CONST2()
+
+fn test_crate::{impl Trait for u8}::method1()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for u8}::method2
+fn {impl Trait for u8}::method2()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for u8}
+impl Trait for u8 {
+    parent_clause0 = MetaSized<u8>
+    const CONST1 = test_crate::Trait::CONST1<u8>[{impl Trait for u8}]
+    const CONST2 = {impl Trait for u8}::CONST2
+    const CONST3 = test_crate::Trait::CONST3<u8>[{impl Trait for u8}]
+    fn method1 = test_crate::{impl Trait for u8}::method1
+    fn method2 = {impl Trait for u8}::method2
+    non-dyn-compatible
+}
+
+// Full name: test_crate::use_method
+fn use_method<T>()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Trait<T>,
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+    let @2: usize; // anonymous local
+
+    storage_live(@1)
+    @1 := @TraitClause1::method1()
+    storage_dead(@1)
+    storage_live(@2)
+    @2 := const (@TraitClause1::CONST1)
+    storage_dead(@2)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

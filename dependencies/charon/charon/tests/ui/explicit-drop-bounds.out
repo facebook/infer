@@ -1,0 +1,138 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub opaque type String
+
+// Full name: alloc::string::String::{impl Drop for String}::drop
+fn {impl Drop for String}::drop<'_0>(@1: &'_0 mut (String))
+
+// Full name: alloc::string::String::{impl Drop for String}
+impl Drop for String {
+    parent_clause0 = MetaSized<String>
+    fn drop<'_0> = {impl Drop for String}::drop<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    parent_clause2 : [@TraitClause2]: Drop<Self>
+    parent_clause3 : [@TraitClause3]: Drop<T>
+    parent_clause4 : [@TraitClause4]: Sized<Self::Type>
+    parent_clause5 : [@TraitClause5]: Drop<Self::Type>
+    type Type
+    fn foo<U, [@TraitClause0]: Sized<U>, [@TraitClause1]: Drop<U>> = foo<Self, T, U>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait::foo
+fn foo<Self, T, U>(@1: U)
+where
+    [@TraitClause0]: Trait<Self, T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: Drop<U>,
+{
+    let @0: (); // return
+    let x@1: U; // arg #1
+
+    @0 := ()
+    drop[@TraitClause2] x@1
+    @0 := ()
+    return
+}
+
+fn test_crate::{impl Trait<u32> for ()}::foo<U>(@1: U)
+where
+    [@TraitClause0]: Sized<U>,
+    [@TraitClause1]: Drop<U>,
+{
+    let @0: (); // return
+    let x@1: U; // arg #1
+
+    @0 := ()
+    drop[@TraitClause1] x@1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Trait<u32> for ()}
+impl Trait<u32> for () {
+    parent_clause0 = MetaSized<()>
+    parent_clause1 = Sized<u32>
+    parent_clause2 = Drop<()>
+    parent_clause3 = Drop<u32>
+    parent_clause4 = Sized<String>
+    parent_clause5 = {impl Drop for String}
+    type Type = String
+    fn foo<U, [@TraitClause0]: Sized<U>, [@TraitClause1]: Drop<U>> = test_crate::{impl Trait<u32> for ()}::foo<U>[@TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::use_trait
+fn use_trait<T, X>(@1: T, @2: X)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<X>,
+    [@TraitClause2]: Trait<X, T>,
+    [@TraitClause3]: Drop<T>,
+    [@TraitClause4]: Drop<X>,
+{
+    let @0: (); // return
+    let _x@1: T; // arg #1
+    let _y@2: X; // arg #2
+
+    @0 := ()
+    drop[@TraitClause4] _y@2
+    drop[@TraitClause3] _x@1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+    let @2: (); // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    @2 := ()
+    @1 := use_trait<u32, ()>[Sized<u32>, Sized<()>, {impl Trait<u32> for ()}, Drop<u32>, Drop<()>](const (42 : u32), move (@2))
+    storage_dead(@2)
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

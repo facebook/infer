@@ -1,0 +1,213 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::option::Option::Some
+fn Some<T>(@1: T) -> Option<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub opaque type String
+
+// Full name: alloc::string::String::{impl Drop for String}::drop
+fn {impl Drop for String}::drop<'_0>(@1: &'_0 mut (String))
+
+// Full name: alloc::string::String::{impl Drop for String}
+impl Drop for String {
+    parent_clause0 = MetaSized<String>
+    fn drop<'_0> = {impl Drop for String}::drop<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: alloc::string::{String}::new
+#[lang_item("string_new")]
+pub fn new() -> String
+
+// Full name: test_crate::F
+fn F() -> fn(u8) -> Option<u8>[Sized<u8>]
+{
+    let @0: fn(u8) -> Option<u8>[Sized<u8>]; // return
+
+    @0 := cast<Some<u8>[Sized<u8>], fn(u8) -> Option<u8>[Sized<u8>]>(const (Some<u8>[Sized<u8>]))
+    return
+}
+
+// Full name: test_crate::F
+static F: fn(u8) -> Option<u8>[Sized<u8>] = F()
+
+// Full name: test_crate::Foo
+struct Foo {
+  u32,
+  String,
+}
+
+// Full name: test_crate::Foo::{impl Drop for Foo}::drop
+fn {impl Drop for Foo}::drop<'_0>(@1: &'_0 mut (Foo))
+{
+    let @0: (); // return
+    let @1: *mut Foo; // arg #1
+    let @2: &'_ mut (Foo); // anonymous local
+
+    storage_live(@2)
+    @2 := &mut *(@1)
+    drop[{impl Drop for String}] (*(@2)).1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::Foo::{impl Drop for Foo}
+impl Drop for Foo {
+    parent_clause0 = MetaSized<Foo>
+    fn drop<'_0> = {impl Drop for Foo}::drop<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Foo
+fn Foo(@1: u32, @2: String) -> Foo
+{
+    let @0: Foo; // return
+    let @1: u32; // arg #1
+    let @2: String; // arg #2
+
+    @0 := Foo { 0: move (@1), 1: move (@2) }
+    return
+}
+
+// Full name: test_crate::Bar
+enum Bar<'a, T>
+where
+    [@TraitClause0]: Sized<T>,
+    T : 'a,
+{
+  Variant(&'a (T)),
+}
+
+// Full name: test_crate::Bar::Variant
+fn Variant<'a, T>(@1: &'a (T)) -> Bar<'a, T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+    T : 'a,
+{
+    let @0: Bar<'a, T>[@TraitClause0]; // return
+    let @1: &'a (T); // arg #1
+
+    @0 := Bar::Variant { 0: move (@1) }
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let f@1: Some<u8>[Sized<u8>]; // local
+    let @2: Option<u8>[Sized<u8>]; // anonymous local
+    let @3: Some<u8>[Sized<u8>]; // anonymous local
+    let f@4: fn(u8) -> Option<u8>[Sized<u8>]; // local
+    let @5: Some<u8>[Sized<u8>]; // anonymous local
+    let @6: Option<u8>[Sized<u8>]; // anonymous local
+    let @7: fn(u8) -> Option<u8>[Sized<u8>]; // anonymous local
+    let f@8: Foo; // local
+    let @9: Foo; // anonymous local
+    let @10: Foo; // anonymous local
+    let @11: String; // anonymous local
+    let f@12: Variant<'_, i32>[Sized<i32>]; // local
+    let @13: Bar<'_, i32>[Sized<i32>]; // anonymous local
+    let @14: Variant<'_, i32>[Sized<i32>]; // anonymous local
+    let @15: &'_ (i32); // anonymous local
+    let @16: &'_ (i32); // anonymous local
+    let @17: i32; // anonymous local
+
+    storage_live(f@1)
+    f@1 := const (Some<u8>[Sized<u8>])
+    storage_live(@2)
+    storage_live(@3)
+    @3 := copy (f@1)
+    @2 := Some<u8>[Sized<u8>](const (42 : u8))
+    storage_dead(@3)
+    storage_dead(@2)
+    storage_live(f@4)
+    storage_live(@5)
+    @5 := copy (f@1)
+    f@4 := cast<Some<u8>[Sized<u8>], fn(u8) -> Option<u8>[Sized<u8>]>(move (@5))
+    storage_dead(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (f@4)
+    @6 := (move @7)(const (42 : u8))
+    storage_dead(@7)
+    storage_dead(@6)
+    storage_live(f@8)
+    f@8 := const (Foo)
+    storage_live(@9)
+    storage_live(@10)
+    @10 := copy (f@8)
+    storage_live(@11)
+    @11 := new()
+    @9 := Foo(const (42 : u32), move (@11))
+    storage_dead(@11)
+    storage_dead(@10)
+    drop[{impl Drop for Foo}] @9
+    storage_dead(@9)
+    storage_live(f@12)
+    f@12 := const (Variant<'_, i32>[Sized<i32>])
+    storage_live(@13)
+    storage_live(@14)
+    @14 := copy (f@12)
+    storage_live(@15)
+    storage_live(@16)
+    storage_live(@17)
+    @17 := const (42 : i32)
+    @16 := &@17
+    @15 := &*(@16)
+    @13 := Variant<'_, i32>[Sized<i32>](move (@15))
+    storage_dead(@15)
+    storage_dead(@14)
+    storage_dead(@17)
+    storage_dead(@16)
+    storage_dead(@13)
+    @0 := ()
+    storage_dead(f@12)
+    storage_dead(f@8)
+    storage_dead(f@4)
+    storage_dead(f@1)
+    @0 := ()
+    return
+}
+
+
+

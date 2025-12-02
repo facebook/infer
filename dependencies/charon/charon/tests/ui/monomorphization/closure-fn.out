@@ -1,0 +1,340 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized::<closure<'_, '_>>
+#[lang_item("meta_sized")]
+pub trait MetaSized::<closure<'_, '_>>
+
+// Full name: core::marker::Sized::<closure<'_, '_>>
+#[lang_item("sized")]
+pub trait Sized::<closure<'_, '_>>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<closure<'_, '_>>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::MetaSized::<(u8, u8)>
+#[lang_item("meta_sized")]
+pub trait MetaSized::<(u8, u8)>
+
+// Full name: core::marker::Sized::<(u8, u8)>
+#[lang_item("sized")]
+pub trait Sized::<(u8, u8)>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<(u8, u8)>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Tuple::<(u8, u8)>
+#[lang_item("tuple_trait")]
+pub trait Tuple::<(u8, u8)>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<(u8, u8)>
+    vtable: core::marker::Tuple::{vtable}::<(u8, u8)>
+}
+
+// Full name: test_crate::main::closure
+struct closure<'_0, '_1> {
+  &'_0 (u8),
+  &'_1 (u8),
+}
+
+// Full name: core::ops::drop::Drop::<closure<'_, '_>>
+#[lang_item("drop")]
+pub trait Drop::<closure<'_, '_>>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<closure<'_, '_>>
+    fn drop<'_0> = drop::<closure<'_, '_>><'_0_0>
+    vtable: core::ops::drop::Drop::{vtable}::<closure<'_, '_>>
+}
+
+// Full name: core::ops::drop::Drop::drop::<closure<'_, '_>>
+pub fn drop::<closure<'_, '_>><'_0>(@1: &'_0 mut (closure<'_, '_>))
+
+// Full name: core::ops::function::FnOnce::<closure<'_, '_>, (u8, u8)>
+#[lang_item("fn_once")]
+pub trait FnOnce::<closure<'_, '_>, (u8, u8)>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<closure<'_, '_>>
+    parent_clause1 : [@TraitClause1]: Sized::<(u8, u8)>
+    parent_clause2 : [@TraitClause2]: Tuple::<(u8, u8)>
+    type Output
+    fn call_once = core::ops::function::FnOnce::call_once::<closure<'_, '_>, (u8, u8)>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut::<closure<'_, '_>, (u8, u8)>
+#[lang_item("fn_mut")]
+pub trait FnMut::<closure<'_, '_>, (u8, u8)>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<closure<'_, '_>>
+    parent_clause1 : [@TraitClause1]: FnOnce::<closure<'_, '_>, (u8, u8)>
+    parent_clause2 : [@TraitClause2]: Sized::<(u8, u8)>
+    parent_clause3 : [@TraitClause3]: Tuple::<(u8, u8)>
+    fn call_mut<'_0> = core::ops::function::FnMut::call_mut::<closure<'_, '_>, (u8, u8)><'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::Fn::<closure<'_, '_>, (u8, u8)>
+#[lang_item("r#fn")]
+pub trait Fn::<closure<'_, '_>, (u8, u8)>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized::<closure<'_, '_>>
+    parent_clause1 : [@TraitClause1]: FnMut::<closure<'_, '_>, (u8, u8)>
+    parent_clause2 : [@TraitClause2]: Sized::<(u8, u8)>
+    parent_clause3 : [@TraitClause3]: Tuple::<(u8, u8)>
+    fn call<'_0> = core::ops::function::Fn::call::<closure<'_, '_>, (u8, u8)><'_0_0>
+    non-dyn-compatible
+}
+
+pub fn core::ops::function::Fn::call<'_0>(@1: &'_0 (closure<'_, '_>), @2: (u8, u8)) -> u8
+
+pub fn core::ops::function::Fn::call::<closure<'_, '_>, (u8, u8)><'_0>(@1: &'_0 (closure<'_, '_>), @2: (u8, u8)) -> u8
+
+pub fn core::ops::function::FnMut::call_mut<'_0>(@1: &'_0 mut (closure<'_, '_>), @2: (u8, u8)) -> u8
+
+pub fn core::ops::function::FnMut::call_mut::<closure<'_, '_>, (u8, u8)><'_0>(@1: &'_0 mut (closure<'_, '_>), @2: (u8, u8)) -> u8
+
+pub fn core::ops::function::FnOnce::call_once(@1: closure<'_, '_>, @2: (u8, u8)) -> u8
+
+pub fn core::ops::function::FnOnce::call_once::<closure<'_, '_>, (u8, u8)>(@1: closure<'_, '_>, @2: (u8, u8)) -> u8
+
+// Full name: test_crate::main::{impl Fn::<closure<'_, '_>, (u8, u8)>}::call
+fn {impl Fn::<closure<'_, '_>, (u8, u8)>}::call<'_0, '_1, '_2>(@1: &'_2 (closure<'_0, '_1>), @2: (u8, u8)) -> u8
+{
+    let @0: u8; // return
+    let @1: &'_ (closure<'_0, '_1>); // arg #1
+    let tupled_args@2: (u8, u8); // arg #2
+    let x@3: u8; // local
+    let y@4: u8; // local
+    let @5: u8; // anonymous local
+    let @6: u8; // anonymous local
+    let @7: u8; // anonymous local
+    let @8: u8; // anonymous local
+    let @9: u8; // anonymous local
+    let @10: u8; // anonymous local
+    let @11: u8; // anonymous local
+    let @12: u8; // anonymous local
+    let @13: u8; // anonymous local
+
+    storage_live(x@3)
+    storage_live(y@4)
+    storage_live(@9)
+    storage_live(@11)
+    storage_live(@13)
+    x@3 := move ((tupled_args@2).0)
+    y@4 := move ((tupled_args@2).1)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (*((*(@1)).0))
+    storage_live(@8)
+    @8 := copy (x@3)
+    @9 := copy (@7) panic.+ copy (@8)
+    @6 := move (@9)
+    storage_dead(@8)
+    storage_dead(@7)
+    storage_live(@10)
+    @10 := copy (y@4)
+    @11 := copy (@6) panic.+ copy (@10)
+    @5 := move (@11)
+    storage_dead(@10)
+    storage_dead(@6)
+    storage_live(@12)
+    @12 := copy (*((*(@1)).1))
+    @13 := copy (@5) panic.+ copy (@12)
+    @0 := move (@13)
+    storage_dead(@12)
+    storage_dead(@5)
+    return
+}
+
+// Full name: test_crate::apply_to::<closure<'_, '_>>
+fn apply_to::<closure<'_, '_>><'_0>(@1: &'_0 (closure<'_, '_>)) -> u8
+{
+    let @0: u8; // return
+    let f@1: &'_ (closure<'_, '_>); // arg #1
+    let @2: &'_ (closure<'_, '_>); // anonymous local
+    let @3: (u8, u8); // anonymous local
+
+    storage_live(@2)
+    @2 := &*(f@1)
+    storage_live(@3)
+    @3 := (const (10 : u8), const (20 : u8))
+    @0 := {impl Fn::<closure<'_, '_>, (u8, u8)>}::call<'_, '_, '_>(move (@2), move (@3))
+    storage_dead(@3)
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::main::{impl FnMut::<closure<'_, '_>, (u8, u8)>}::call_mut
+fn {impl FnMut::<closure<'_, '_>, (u8, u8)>}::call_mut<'_0, '_1, '_2>(@1: &'_2 mut (closure<'_0, '_1>), @2: (u8, u8)) -> u8
+{
+    let @0: u8; // return
+    let state@1: &'_2 mut (closure<'_0, '_1>); // arg #1
+    let args@2: (u8, u8); // arg #2
+    let @3: &'_ (closure<'_0, '_1>); // anonymous local
+
+    storage_live(@3)
+    @3 := &*(state@1)
+    @0 := {impl Fn::<closure<'_, '_>, (u8, u8)>}::call<'_0, '_1, '_>(move (@3), move (args@2))
+    return
+}
+
+// Full name: test_crate::apply_to_mut::<closure<'_, '_>>
+fn apply_to_mut::<closure<'_, '_>><'_0>(@1: &'_0 mut (closure<'_, '_>)) -> u8
+{
+    let @0: u8; // return
+    let f@1: &'_ mut (closure<'_, '_>); // arg #1
+    let @2: &'_ mut (closure<'_, '_>); // anonymous local
+    let @3: (u8, u8); // anonymous local
+
+    storage_live(@2)
+    @2 := &mut *(f@1)
+    storage_live(@3)
+    @3 := (const (10 : u8), const (20 : u8))
+    @0 := {impl FnMut::<closure<'_, '_>, (u8, u8)>}::call_mut<'_, '_, '_>(move (@2), move (@3))
+    storage_dead(@3)
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::main::{impl FnOnce::<closure<'_, '_>, (u8, u8)>}::call_once
+fn {impl FnOnce::<closure<'_, '_>, (u8, u8)>}::call_once<'_0, '_1>(@1: closure<'_0, '_1>, @2: (u8, u8)) -> u8
+{
+    let @0: u8; // return
+    let @1: closure<'_0, '_1>; // arg #1
+    let @2: (u8, u8); // arg #2
+    let @3: &'_ mut (closure<'_0, '_1>); // anonymous local
+
+    storage_live(@3)
+    @3 := &mut @1
+    @0 := {impl FnMut::<closure<'_, '_>, (u8, u8)>}::call_mut<'_0, '_1, '_>(move (@3), move (@2))
+    drop[Drop::<closure<'_, '_>>] @1
+    return
+}
+
+// Full name: test_crate::apply_to_once::<closure<'_, '_>>
+fn apply_to_once::<closure<'_, '_>>(@1: closure<'_, '_>) -> u8
+{
+    let @0: u8; // return
+    let f@1: closure<'_, '_>; // arg #1
+    let @2: closure<'_, '_>; // anonymous local
+    let @3: (u8, u8); // anonymous local
+
+    storage_live(@2)
+    @2 := move (f@1)
+    storage_live(@3)
+    @3 := (const (10 : u8), const (20 : u8))
+    @0 := {impl FnOnce::<closure<'_, '_>, (u8, u8)>}::call_once<'_, '_>(move (@2), move (@3))
+    storage_dead(@3)
+    storage_dead(@2)
+    drop[Drop::<closure<'_, '_>>] f@1
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let v@1: u8; // local
+    let z@2: u8; // local
+    let f@3: closure<'_, '_>; // local
+    let @4: &'_ (u8); // anonymous local
+    let @5: &'_ (u8); // anonymous local
+    let @6: u8; // anonymous local
+    let @7: &'_ (closure<'_, '_>); // anonymous local
+    let @8: (u8, u8); // anonymous local
+    let @9: u8; // anonymous local
+    let @10: &'_ (closure<'_, '_>); // anonymous local
+    let @11: &'_ (closure<'_, '_>); // anonymous local
+    let @12: u8; // anonymous local
+    let @13: &'_ mut (closure<'_, '_>); // anonymous local
+    let @14: &'_ mut (closure<'_, '_>); // anonymous local
+    let @15: u8; // anonymous local
+    let @16: closure<'_, '_>; // anonymous local
+
+    storage_live(v@1)
+    v@1 := const (5 : u8)
+    storage_live(z@2)
+    z@2 := const (1 : u8)
+    storage_live(f@3)
+    storage_live(@4)
+    @4 := &v@1
+    storage_live(@5)
+    @5 := &z@2
+    f@3 := closure { 0: move (@4), 1: move (@5) }
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := &f@3
+    storage_live(@8)
+    @8 := (const (10 : u8), const (20 : u8))
+    @6 := {impl Fn::<closure<'_, '_>, (u8, u8)>}::call<'_, '_, '_>(move (@7), move (@8))
+    storage_dead(@8)
+    storage_dead(@7)
+    storage_dead(@6)
+    storage_live(@9)
+    storage_live(@10)
+    storage_live(@11)
+    @11 := &f@3
+    @10 := &*(@11)
+    @9 := apply_to::<closure<'_, '_>><'_>(move (@10))
+    storage_dead(@10)
+    storage_dead(@11)
+    storage_dead(@9)
+    storage_live(@12)
+    storage_live(@13)
+    storage_live(@14)
+    @14 := &mut f@3
+    @13 := &two-phase-mut *(@14)
+    @12 := apply_to_mut::<closure<'_, '_>><'_>(move (@13))
+    storage_dead(@13)
+    storage_dead(@14)
+    storage_dead(@12)
+    storage_live(@15)
+    storage_live(@16)
+    @16 := copy (f@3)
+    @15 := apply_to_once::<closure<'_, '_>>(move (@16))
+    storage_dead(@16)
+    storage_dead(@15)
+    @0 := ()
+    storage_dead(f@3)
+    storage_dead(z@2)
+    storage_dead(v@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::main::{impl FnOnce::<closure<'_, '_>, (u8, u8)>}
+impl<'_0, '_1> FnOnce::<closure<'_, '_>, (u8, u8)> {
+    parent_clause0 = MetaSized::<closure<'_, '_>>
+    parent_clause1 = Sized::<(u8, u8)>
+    parent_clause2 = Tuple::<(u8, u8)>
+    type Output = u8
+    fn call_once = {impl FnOnce::<closure<'_, '_>, (u8, u8)>}::call_once<'_0, '_1>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::main::{impl FnMut::<closure<'_, '_>, (u8, u8)>}
+impl<'_0, '_1> FnMut::<closure<'_, '_>, (u8, u8)> {
+    parent_clause0 = MetaSized::<closure<'_, '_>>
+    parent_clause1 = {impl FnOnce::<closure<'_, '_>, (u8, u8)>}<'_0, '_1>
+    parent_clause2 = Sized::<(u8, u8)>
+    parent_clause3 = Tuple::<(u8, u8)>
+    fn call_mut<'_0> = {impl FnMut::<closure<'_, '_>, (u8, u8)>}::call_mut<'_0, '_1, '_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::main::{impl Fn::<closure<'_, '_>, (u8, u8)>}
+impl<'_0, '_1> Fn::<closure<'_, '_>, (u8, u8)> {
+    parent_clause0 = MetaSized::<closure<'_, '_>>
+    parent_clause1 = {impl FnMut::<closure<'_, '_>, (u8, u8)>}<'_0, '_1>
+    parent_clause2 = Sized::<(u8, u8)>
+    parent_clause3 = Tuple::<(u8, u8)>
+    fn call<'_0> = {impl Fn::<closure<'_, '_>, (u8, u8)>}::call<'_0, '_1, '_0_0>
+    non-dyn-compatible
+}
+
+
+

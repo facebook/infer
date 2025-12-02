@@ -1,0 +1,514 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone::clone
+#[lang_item("clone_fn")]
+pub fn clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Tuple::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self::Output>
+    type Output
+    fn call_once = core::ops::function::FnOnce::call_once<Self, Args>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0> = core::ops::function::FnMut::call_mut<'_0_0, Self, Args>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::Fn
+#[lang_item("r#fn")]
+pub trait Fn<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnMut<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call<'_0> = core::ops::function::Fn::call<'_0_0, Self, Args>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::ops::function::Fn::call<'_0, Self, Args>(@1: &'_0 (Self), @2: Args) -> @TraitClause0::parent_clause1::parent_clause1::Output
+where
+    [@TraitClause0]: Fn<Self, Args>,
+
+pub fn core::ops::function::FnMut::call_mut<'_0, Self, Args>(@1: &'_0 mut (Self), @2: Args) -> @TraitClause0::parent_clause1::Output
+where
+    [@TraitClause0]: FnMut<Self, Args>,
+
+pub fn core::ops::function::FnOnce::call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+where
+    [@TraitClause0]: FnOnce<Self, Args>,
+
+// Full name: test_crate::Foo
+struct Foo<'a, T>
+where
+    [@TraitClause0]: Sized<T>,
+    T : 'a,
+{
+  &'a (T),
+}
+
+struct test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'a, '_1, T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+  &'_1 (T),
+}
+
+struct test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'a, '_1, T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+  &'_1 (T),
+}
+
+struct test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'a, '_1, T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+  &'_1 (T),
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::{impl Fn<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call
+fn {impl Fn<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'a, '_1, '_2, T>(@1: &'_2 (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]), @2: ()) -> test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // return
+    let @1: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // arg #1
+    let tupled_args@2: (); // arg #2
+    let @3: &'_ (T); // anonymous local
+
+    storage_live(@3)
+    @3 := &*((*(@1)).0)
+    @0 := test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure { 0: move (@3) }
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::{impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call
+fn {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'a, '_1, '_2, '_3, T>(@1: &'_3 (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]), @2: (&'_2 (u32))) -> test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // return
+    let @1: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // arg #1
+    let tupled_args@2: (&'_2 (u32)); // arg #2
+    let _y@3: &'_ (u32); // local
+    let @4: &'_ (T); // anonymous local
+
+    storage_live(_y@3)
+    _y@3 := move ((tupled_args@2).0)
+    storage_live(@4)
+    @4 := &*((*(@1)).0)
+    @0 := test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure { 0: move (@4) }
+    storage_dead(@4)
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::{impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call
+fn {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'a, '_1, '_2, '_3, T>(@1: &'_3 (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]), @2: (&'_2 (u32))) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: T; // return
+    let @1: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // arg #1
+    let tupled_args@2: (&'_2 (u32)); // arg #2
+    let _z@3: &'_ (u32); // local
+    let @4: &'_ (T); // anonymous local
+
+    storage_live(_z@3)
+    _z@3 := move ((tupled_args@2).0)
+    storage_live(@4)
+    @4 := &*((*(@1)).0)
+    @0 := @TraitClause1::clone<'_>(move (@4))
+    storage_dead(@4)
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures
+pub fn test_nested_closures<'a, 'b, T>(@1: &'a (&'b (T))) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: T; // return
+    let x@1: &'_ (&'_ (T)); // arg #1
+    let clo@2: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // local
+    let @3: &'_ (T); // anonymous local
+    let @4: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]); // anonymous local
+    let @5: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // anonymous local
+    let @6: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]); // anonymous local
+    let @7: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // anonymous local
+    let @8: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_, T>[@TraitClause0, @TraitClause1]); // anonymous local
+    let @9: (); // anonymous local
+    let @10: (&'_ (u32)); // anonymous local
+    let @11: &'_ (u32); // anonymous local
+    let @12: &'_ (u32); // anonymous local
+    let @13: u32; // anonymous local
+    let @14: (&'_ (u32)); // anonymous local
+    let @15: &'_ (u32); // anonymous local
+    let @16: &'_ (u32); // anonymous local
+    let @17: u32; // anonymous local
+
+    storage_live(clo@2)
+    storage_live(@3)
+    @3 := &*(*(x@1))
+    clo@2 := test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure { 0: move (@3) }
+    storage_dead(@3)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    storage_live(@8)
+    @8 := &clo@2
+    storage_live(@9)
+    @9 := ()
+    @7 := {impl Fn<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'_, '_, '_, T>[@TraitClause0, @TraitClause1](move (@8), move (@9))
+    @6 := &@7
+    storage_dead(@9)
+    storage_dead(@8)
+    storage_live(@10)
+    storage_live(@11)
+    storage_live(@12)
+    storage_live(@13)
+    @13 := const (0 : u32)
+    @12 := &@13
+    @11 := &*(@12)
+    @10 := (move (@11))
+    @5 := {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'_, '_, '_, '_, T>[@TraitClause0, @TraitClause1](move (@6), move (@10))
+    @4 := &@5
+    storage_dead(@11)
+    storage_dead(@10)
+    storage_dead(@6)
+    storage_live(@14)
+    storage_live(@15)
+    storage_live(@16)
+    storage_live(@17)
+    @17 := const (1 : u32)
+    @16 := &@17
+    @15 := &*(@16)
+    @14 := (move (@15))
+    @0 := {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'_, '_, '_, '_, T>[@TraitClause0, @TraitClause1](move (@4), move (@14))
+    storage_dead(@15)
+    storage_dead(@14)
+    storage_dead(@4)
+    storage_dead(clo@2)
+    storage_dead(@17)
+    storage_dead(@16)
+    storage_dead(@13)
+    storage_dead(@12)
+    storage_dead(@7)
+    storage_dead(@5)
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::{impl FnMut<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut
+fn {impl FnMut<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'a, '_1, '_2, T>(@1: &'_2 mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]), @2: ()) -> test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // return
+    let state@1: &'_2 mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // arg #1
+    let args@2: (); // arg #2
+    let @3: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // anonymous local
+
+    storage_live(@3)
+    @3 := &*(state@1)
+    @0 := {impl Fn<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'_, '_1, '_, T>[@TraitClause0, @TraitClause1](move (@3), move (args@2))
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::{impl FnOnce<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once
+fn {impl FnOnce<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once<'a, '_1, T>(@1: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1], @2: ()) -> test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // return
+    let @1: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]; // arg #1
+    let @2: (); // arg #2
+    let @3: &'_ mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // anonymous local
+
+    storage_live(@3)
+    @3 := &mut @1
+    @0 := {impl FnMut<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'_, '_1, '_, T>[@TraitClause0, @TraitClause1](move (@3), move (@2))
+    drop[Drop<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>] @1
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::{impl FnOnce<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, T> FnOnce<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = Sized<()>
+    parent_clause2 = Tuple<()>
+    parent_clause3 = Sized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]>
+    type Output = test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+    fn call_once = {impl FnOnce<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once<'a, '_1, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::{impl FnMut<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, T> FnMut<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = {impl FnOnce<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}<'_, '_1, T>[@TraitClause0, @TraitClause1]
+    parent_clause2 = Sized<()>
+    parent_clause3 = Tuple<()>
+    fn call_mut<'_0> = {impl FnMut<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'a, '_1, '_0_0, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::{impl Fn<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, T> Fn<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = {impl FnMut<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}<'_, '_1, T>[@TraitClause0, @TraitClause1]
+    parent_clause2 = Sized<()>
+    parent_clause3 = Tuple<()>
+    fn call<'_0> = {impl Fn<()> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'a, '_1, '_0_0, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::{impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut
+fn {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'a, '_1, '_2, '_3, T>(@1: &'_3 mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]), @2: (&'_2 (u32))) -> test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // return
+    let state@1: &'_3 mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // arg #1
+    let args@2: (&'_2 (u32)); // arg #2
+    let @3: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // anonymous local
+
+    storage_live(@3)
+    @3 := &*(state@1)
+    @0 := {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'_, '_1, '_2, '_, T>[@TraitClause0, @TraitClause1](move (@3), move (args@2))
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::{impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once
+fn {impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once<'a, '_1, '_2, T>(@1: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1], @2: (&'_2 (u32))) -> test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]; // return
+    let @1: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]; // arg #1
+    let @2: (&'_ (u32)); // arg #2
+    let @3: &'_ mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // anonymous local
+
+    storage_live(@3)
+    @3 := &mut @1
+    @0 := {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'_, '_1, '_2, '_, T>[@TraitClause0, @TraitClause1](move (@3), move (@2))
+    drop[Drop<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>] @1
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::{impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, '_2, T> FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = Sized<(&'_ (u32))>
+    parent_clause2 = Tuple<(&'_ (u32))>
+    parent_clause3 = Sized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]>
+    type Output = test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_, T>[@TraitClause0, @TraitClause1]
+    fn call_once = {impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once<'a, '_1, '_2, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::{impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, '_2, T> FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = {impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}<'_, '_1, '_2, T>[@TraitClause0, @TraitClause1]
+    parent_clause2 = Sized<(&'_ (u32))>
+    parent_clause3 = Tuple<(&'_ (u32))>
+    fn call_mut<'_0> = {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'a, '_1, '_2, '_0_0, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::{impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, '_2, T> Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}<'_, '_1, '_2, T>[@TraitClause0, @TraitClause1]
+    parent_clause2 = Sized<(&'_ (u32))>
+    parent_clause3 = Tuple<(&'_ (u32))>
+    fn call<'_0> = {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'a, '_1, '_2, '_0_0, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::{impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut
+fn {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'a, '_1, '_2, '_3, T>(@1: &'_3 mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]), @2: (&'_2 (u32))) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: T; // return
+    let state@1: &'_3 mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // arg #1
+    let args@2: (&'_2 (u32)); // arg #2
+    let @3: &'_ (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // anonymous local
+
+    storage_live(@3)
+    @3 := &*(state@1)
+    @0 := {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'_, '_1, '_2, '_, T>[@TraitClause0, @TraitClause1](move (@3), move (args@2))
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::{impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once
+fn {impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once<'a, '_1, '_2, T>(@1: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1], @2: (&'_2 (u32))) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    let @0: T; // return
+    let @1: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]; // arg #1
+    let @2: (&'_ (u32)); // arg #2
+    let @3: &'_ mut (test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]); // anonymous local
+
+    storage_live(@3)
+    @3 := &mut @1
+    @0 := {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'_, '_1, '_2, '_, T>[@TraitClause0, @TraitClause1](move (@3), move (@2))
+    drop[Drop<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>] @1
+    return
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::{impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, '_2, T> FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = Sized<(&'_ (u32))>
+    parent_clause2 = Tuple<(&'_ (u32))>
+    parent_clause3 = @TraitClause0
+    type Output = T
+    fn call_once = {impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_once<'a, '_1, '_2, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::{impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, '_2, T> FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = {impl FnOnce<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}<'_, '_1, '_2, T>[@TraitClause0, @TraitClause1]
+    parent_clause2 = Sized<(&'_ (u32))>
+    parent_clause3 = Tuple<(&'_ (u32))>
+    fn call_mut<'_0> = {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call_mut<'a, '_1, '_2, '_0_0, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::{impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}
+impl<'a, '_1, '_2, T> Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Clone<T>,
+{
+    parent_clause0 = MetaSized<test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]>
+    parent_clause1 = {impl FnMut<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}<'_, '_1, '_2, T>[@TraitClause0, @TraitClause1]
+    parent_clause2 = Sized<(&'_ (u32))>
+    parent_clause3 = Tuple<(&'_ (u32))>
+    fn call<'_0> = {impl Fn<(&'_ (u32))> for test_crate::{Foo<'a, T>[@TraitClause0]}::test_nested_closures::closure::closure::closure<'_, '_1, T>[@TraitClause0, @TraitClause1]}::call<'a, '_1, '_2, '_0_0, T>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+
+

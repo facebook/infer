@@ -1,0 +1,834 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::deref::Deref
+#[lang_item("deref")]
+pub trait Deref<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self::Target>
+    type Target
+    fn deref<'_0> = core::ops::deref::Deref::deref<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("deref_method")]
+pub fn core::ops::deref::Deref::deref<'_0, Self>(@1: &'_0 (Self)) -> &'_0 (@TraitClause0::Target)
+where
+    [@TraitClause0]: Deref<Self>,
+
+// Full name: core::ops::deref::DerefMut
+#[lang_item("deref_mut")]
+pub trait DerefMut<Self>
+{
+    parent_clause0 : [@TraitClause0]: Deref<Self>
+    fn deref_mut<'_0> = core::ops::deref::DerefMut::deref_mut<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("deref_mut_method")]
+pub fn core::ops::deref::DerefMut::deref_mut<'_0, Self>(@1: &'_0 mut (Self)) -> &'_0 mut (@TraitClause0::parent_clause0::Target)
+where
+    [@TraitClause0]: DerefMut<Self>,
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop
+pub fn {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = MetaSized<alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]>
+    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: alloc::boxed::{impl Deref for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref
+pub fn {impl Deref for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref<'_0, T, A>(@1: &'_0 (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1])) -> &'_0 (T)
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::boxed::{impl Deref for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Deref for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = @TraitClause0
+    type Target = T
+    fn deref<'_0> = {impl Deref for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: alloc::boxed::{impl DerefMut for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref_mut
+pub fn {impl DerefMut for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref_mut<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1])) -> &'_0 mut (T)
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::boxed::{impl DerefMut for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> DerefMut for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    parent_clause0 = {impl Deref for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<T, A>[@TraitClause0, @TraitClause1]
+    fn deref_mut<'_0> = {impl DerefMut for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref_mut<'_0_0, T, A>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Pair
+pub struct Pair<T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+{
+  x: T1,
+  y: T2,
+}
+
+// Full name: test_crate::List
+pub enum List<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  Cons(T, alloc::boxed::Box<List<T>[@TraitClause0]>[MetaSized<List<T>[@TraitClause0]>, Sized<Global>]),
+  Nil,
+}
+
+// Full name: test_crate::List::{impl Drop for List<T>[@TraitClause0]}::drop
+fn {impl Drop for List<T>[@TraitClause0]}::drop<'_0, T>(@1: &'_0 mut (List<T>[@TraitClause0]))
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: test_crate::List::{impl Drop for List<T>[@TraitClause0]}
+impl<T> Drop for List<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<List<T>[@TraitClause0]>
+    fn drop<'_0> = {impl Drop for List<T>[@TraitClause0]}::drop<'_0_0, T>[@TraitClause0]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::One
+pub enum One<T1>
+where
+    [@TraitClause0]: Sized<T1>,
+{
+  One(T1),
+}
+
+// Full name: test_crate::EmptyEnum
+pub enum EmptyEnum {
+  Empty,
+}
+
+// Full name: test_crate::Enum
+pub enum Enum {
+  Variant1,
+  Variant2,
+}
+
+// Full name: test_crate::EmptyStruct
+pub struct EmptyStruct {}
+
+// Full name: test_crate::Sum
+pub enum Sum<T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+{
+  Left(T1),
+  Right(T2),
+}
+
+// Full name: test_crate::Tuple
+pub struct Tuple<T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+{
+  T1,
+  T2,
+}
+
+// Full name: test_crate::use_tuple_struct
+pub fn use_tuple_struct<'_0>(@1: &'_0 mut (Tuple<u32, u32>[Sized<u32>, Sized<u32>]))
+{
+    let @0: (); // return
+    let x@1: &'_ mut (Tuple<u32, u32>[Sized<u32>, Sized<u32>]); // arg #1
+
+    (*(x@1)).0 := const (1 : u32)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::create_tuple_struct
+pub fn create_tuple_struct(@1: u32, @2: u64) -> Tuple<u32, u64>[Sized<u32>, Sized<u64>]
+{
+    let @0: Tuple<u32, u64>[Sized<u32>, Sized<u64>]; // return
+    let x@1: u32; // arg #1
+    let y@2: u64; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u64; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := Tuple { 0: move (@3), 1: move (@4) }
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::create_pair
+pub fn create_pair(@1: u32, @2: u64) -> Pair<u32, u64>[Sized<u32>, Sized<u64>]
+{
+    let @0: Pair<u32, u64>[Sized<u32>, Sized<u64>]; // return
+    let x@1: u32; // arg #1
+    let y@2: u64; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u64; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := Pair { x: move (@3), y: move (@4) }
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::IdType
+pub struct IdType<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  T,
+}
+
+// Full name: test_crate::IdType::{impl Drop for IdType<T>[@TraitClause0]}::drop
+fn {impl Drop for IdType<T>[@TraitClause0]}::drop<'_0, T>(@1: &'_0 mut (IdType<T>[@TraitClause0]))
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: test_crate::IdType::{impl Drop for IdType<T>[@TraitClause0]}
+impl<T> Drop for IdType<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<IdType<T>[@TraitClause0]>
+    fn drop<'_0> = {impl Drop for IdType<T>[@TraitClause0]}::drop<'_0_0, T>[@TraitClause0]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::use_id_type
+pub fn use_id_type<T>(@1: IdType<T>[@TraitClause0]) -> T
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: T; // return
+    let x@1: IdType<T>[@TraitClause0]; // arg #1
+
+    @0 := move ((x@1).0)
+    drop[{impl Drop for IdType<T>[@TraitClause0]}<T>[@TraitClause0]] x@1
+    return
+}
+
+// Full name: test_crate::create_id_type
+pub fn create_id_type<T>(@1: T) -> IdType<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: IdType<T>[@TraitClause0]; // return
+    let x@1: T; // arg #1
+    let @2: T; // anonymous local
+
+    storage_live(@2)
+    @2 := move (x@1)
+    @0 := IdType { 0: move (@2) }
+    drop[Drop<T>] @2
+    storage_dead(@2)
+    drop[Drop<T>] x@1
+    return
+}
+
+// Full name: test_crate::cast_u32_to_i32
+pub fn cast_u32_to_i32(@1: u32) -> i32
+{
+    let @0: i32; // return
+    let x@1: u32; // arg #1
+    let @2: u32; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (x@1)
+    @0 := cast<u32, i32>(move (@2))
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::cast_bool_to_i32
+pub fn cast_bool_to_i32(@1: bool) -> i32
+{
+    let @0: i32; // return
+    let x@1: bool; // arg #1
+    let @2: bool; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (x@1)
+    @0 := cast<bool, i32>(move (@2))
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::cast_bool_to_bool
+pub fn cast_bool_to_bool(@1: bool) -> bool
+{
+    let @0: bool; // return
+    let x@1: bool; // arg #1
+
+    @0 := copy (x@1)
+    return
+}
+
+// Full name: test_crate::test2
+pub fn test2()
+{
+    let @0: (); // return
+    let x@1: u32; // local
+    let y@2: u32; // local
+    let z@3: u32; // local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+    let p@7: Pair<u32, u32>[Sized<u32>, Sized<u32>]; // local
+    let @8: u32; // anonymous local
+    let @9: u32; // anonymous local
+    let s@10: Sum<u32, bool>[Sized<u32>, Sized<bool>]; // local
+    let o@11: One<u64>[Sized<u64>]; // local
+    let e0@12: EmptyEnum; // local
+    let e1@13: EmptyEnum; // local
+    let enum0@14: Enum; // local
+
+    storage_live(@6)
+    storage_live(x@1)
+    x@1 := const (23 : u32)
+    storage_live(y@2)
+    y@2 := const (44 : u32)
+    storage_live(z@3)
+    storage_live(@4)
+    @4 := copy (x@1)
+    storage_live(@5)
+    @5 := copy (y@2)
+    @6 := copy (@4) panic.+ copy (@5)
+    z@3 := move (@6)
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(p@7)
+    storage_live(@8)
+    @8 := copy (x@1)
+    storage_live(@9)
+    @9 := copy (z@3)
+    p@7 := Pair { x: move (@8), y: move (@9) }
+    storage_dead(@9)
+    storage_dead(@8)
+    storage_live(s@10)
+    s@10 := Sum::Right { 0: const (true) }
+    storage_live(o@11)
+    o@11 := One::One { 0: const (3 : u64) }
+    storage_live(e0@12)
+    e0@12 := EmptyEnum::Empty {  }
+    storage_live(e1@13)
+    e1@13 := move (e0@12)
+    storage_live(enum0@14)
+    enum0@14 := Enum::Variant1 {  }
+    @0 := ()
+    storage_dead(enum0@14)
+    storage_dead(e1@13)
+    storage_dead(e0@12)
+    storage_dead(o@11)
+    storage_dead(s@10)
+    storage_dead(p@7)
+    storage_dead(z@3)
+    storage_dead(y@2)
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::get_max
+pub fn get_max(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: bool; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+
+    storage_live(@3)
+    storage_live(@4)
+    @4 := copy (x@1)
+    storage_live(@5)
+    @5 := copy (y@2)
+    @3 := move (@4) >= move (@5)
+    if move (@3) {
+        storage_dead(@5)
+        storage_dead(@4)
+        @0 := copy (x@1)
+    }
+    else {
+        storage_dead(@5)
+        storage_dead(@4)
+        @0 := copy (y@2)
+    }
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::test_list1
+pub fn test_list1()
+{
+    let @0: (); // return
+    let l@1: List<i32>[Sized<i32>]; // local
+    let @2: alloc::boxed::Box<List<i32>[Sized<i32>]>[MetaSized<List<i32>[Sized<i32>]>, Sized<Global>]; // anonymous local
+    let @3: List<i32>[Sized<i32>]; // anonymous local
+
+    storage_live(l@1)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := List::Nil {  }
+    @2 := @BoxNew<List<i32>[Sized<i32>]>[Sized<List<i32>[Sized<i32>]>](move (@3))
+    storage_dead(@3)
+    l@1 := List::Cons { 0: const (0 : i32), 1: move (@2) }
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<List<i32>[Sized<i32>], Global>[MetaSized<List<i32>[Sized<i32>]>, Sized<Global>]] @2
+    storage_dead(@2)
+    @0 := ()
+    drop[{impl Drop for List<T>[@TraitClause0]}<i32>[Sized<i32>]] l@1
+    storage_dead(l@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::test_box1
+pub fn test_box1()
+{
+    let @0: (); // return
+    let b@1: alloc::boxed::Box<i32>[MetaSized<i32>, Sized<Global>]; // local
+    let x@2: &'_ mut (i32); // local
+    let @3: &'_ mut (alloc::boxed::Box<i32>[MetaSized<i32>, Sized<Global>]); // anonymous local
+    let x@4: &'_ (i32); // local
+    let @5: &'_ (alloc::boxed::Box<i32>[MetaSized<i32>, Sized<Global>]); // anonymous local
+    let @6: (); // anonymous local
+    let @7: bool; // anonymous local
+    let @8: i32; // anonymous local
+
+    storage_live(b@1)
+    b@1 := @BoxNew<i32>[Sized<i32>](const (0 : i32))
+    storage_live(x@2)
+    storage_live(@3)
+    @3 := &two-phase-mut b@1
+    x@2 := {impl DerefMut for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref_mut<'_, i32, Global>[MetaSized<i32>, Sized<Global>](move (@3))
+    storage_dead(@3)
+    *(x@2) := const (1 : i32)
+    storage_live(x@4)
+    storage_live(@5)
+    @5 := &b@1
+    x@4 := {impl Deref for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::deref<'_, i32, Global>[MetaSized<i32>, Sized<Global>](move (@5))
+    storage_dead(@5)
+    storage_live(@6)
+    storage_live(@7)
+    storage_live(@8)
+    @8 := copy (*(x@4))
+    @7 := move (@8) == const (1 : i32)
+    if move (@7) {
+    }
+    else {
+        storage_dead(@8)
+        panic(core::panicking::panic)
+    }
+    storage_dead(@8)
+    storage_dead(@7)
+    storage_dead(@6)
+    @0 := ()
+    storage_dead(x@4)
+    storage_dead(x@2)
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<i32, Global>[MetaSized<i32>, Sized<Global>]] b@1
+    storage_dead(b@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::copy_int
+pub fn copy_int(@1: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+
+    @0 := copy (x@1)
+    return
+}
+
+// Full name: test_crate::test_unreachable
+pub fn test_unreachable(@1: bool)
+{
+    let @0: (); // return
+    let b@1: bool; // arg #1
+    let @2: bool; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (b@1)
+    assert(move (@2) == false)
+    @0 := ()
+    storage_dead(@2)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::is_cons
+pub fn is_cons<'_0, T>(@1: &'_0 (List<T>[@TraitClause0])) -> bool
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: bool; // return
+    let l@1: &'_ (List<T>[@TraitClause0]); // arg #1
+
+    match *(l@1) {
+        List::Cons => {
+        },
+        List::Nil => {
+            @0 := const (false)
+            return
+        },
+    }
+    @0 := const (true)
+    return
+}
+
+// Full name: test_crate::split_list
+pub fn split_list<T>(@1: List<T>[@TraitClause0]) -> (T, List<T>[@TraitClause0])
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: (T, List<T>[@TraitClause0]); // return
+    let l@1: List<T>[@TraitClause0]; // arg #1
+    let hd@2: T; // local
+    let tl@3: alloc::boxed::Box<List<T>[@TraitClause0]>[MetaSized<List<T>[@TraitClause0]>, Sized<Global>]; // local
+    let @4: T; // anonymous local
+    let @5: List<T>[@TraitClause0]; // anonymous local
+
+    match l@1 {
+        List::Cons => {
+        },
+        _ => {
+            panic(core::panicking::panic_explicit)
+        },
+    }
+    storage_live(hd@2)
+    hd@2 := move ((l@1 as variant List::Cons).0)
+    storage_live(tl@3)
+    tl@3 := move ((l@1 as variant List::Cons).1)
+    storage_live(@4)
+    @4 := move (hd@2)
+    storage_live(@5)
+    @5 := move (*(tl@3))
+    @0 := (move (@4), move (@5))
+    drop[{impl Drop for List<T>[@TraitClause0]}<T>[@TraitClause0]] @5
+    storage_dead(@5)
+    drop[Drop<T>] @4
+    storage_dead(@4)
+    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<List<T>[@TraitClause0], Global>[MetaSized<List<T>[@TraitClause0]>, Sized<Global>]] tl@3
+    storage_dead(tl@3)
+    drop[Drop<T>] hd@2
+    storage_dead(hd@2)
+    drop[{impl Drop for List<T>[@TraitClause0]}<T>[@TraitClause0]] l@1
+    return
+}
+
+// Full name: test_crate::test_char
+pub fn test_char() -> char
+{
+    let @0: char; // return
+
+    @0 := const (a)
+    return
+}
+
+// Full name: test_crate::Tree
+pub enum Tree<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  Leaf(T),
+  Node(T, NodeElem<T>[@TraitClause0], alloc::boxed::Box<Tree<T>[@TraitClause0]>[MetaSized<Tree<T>[@TraitClause0]>, Sized<Global>]),
+}
+
+// Full name: test_crate::NodeElem
+pub enum NodeElem<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  Cons(alloc::boxed::Box<Tree<T>[@TraitClause0]>[MetaSized<Tree<T>[@TraitClause0]>, Sized<Global>], alloc::boxed::Box<NodeElem<T>[@TraitClause0]>[MetaSized<NodeElem<T>[@TraitClause0]>, Sized<Global>]),
+  Nil,
+}
+
+// Full name: test_crate::even
+pub fn even(@1: u32) -> bool
+{
+    let @0: bool; // return
+    let x@1: u32; // arg #1
+    let @2: bool; // anonymous local
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := copy (x@1)
+    @2 := move (@3) == const (0 : u32)
+    if move (@2) {
+        storage_dead(@3)
+        @0 := const (true)
+    }
+    else {
+        storage_dead(@3)
+        storage_live(@4)
+        storage_live(@5)
+        @5 := copy (x@1)
+        @6 := copy (@5) panic.- const (1 : u32)
+        @4 := move (@6)
+        storage_dead(@5)
+        @0 := odd(move (@4))
+        storage_dead(@4)
+    }
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::odd
+pub fn odd(@1: u32) -> bool
+{
+    let @0: bool; // return
+    let x@1: u32; // arg #1
+    let @2: bool; // anonymous local
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := copy (x@1)
+    @2 := move (@3) == const (0 : u32)
+    if move (@2) {
+        storage_dead(@3)
+        @0 := const (false)
+    }
+    else {
+        storage_dead(@3)
+        storage_live(@4)
+        storage_live(@5)
+        @5 := copy (x@1)
+        @6 := copy (@5) panic.- const (1 : u32)
+        @4 := move (@6)
+        storage_dead(@5)
+        @0 := even(move (@4))
+        storage_dead(@4)
+    }
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::test_even_odd
+pub fn test_even_odd()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+    let @2: bool; // anonymous local
+    let @3: (); // anonymous local
+    let @4: bool; // anonymous local
+    let @5: (); // anonymous local
+    let @6: bool; // anonymous local
+    let @7: (); // anonymous local
+    let @8: bool; // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    @2 := even(const (0 : u32))
+    assert(move (@2) == true)
+    storage_dead(@2)
+    storage_dead(@1)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := even(const (4 : u32))
+    assert(move (@4) == true)
+    storage_dead(@4)
+    storage_dead(@3)
+    storage_live(@5)
+    storage_live(@6)
+    @6 := odd(const (1 : u32))
+    assert(move (@6) == true)
+    storage_dead(@6)
+    storage_dead(@5)
+    storage_live(@7)
+    storage_live(@8)
+    @8 := odd(const (5 : u32))
+    assert(move (@8) == true)
+    storage_dead(@8)
+    storage_dead(@7)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::StructWithTuple
+pub struct StructWithTuple<T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+{
+  p: (T1, T2),
+}
+
+// Full name: test_crate::new_tuple1
+pub fn new_tuple1() -> StructWithTuple<u32, u32>[Sized<u32>, Sized<u32>]
+{
+    let @0: StructWithTuple<u32, u32>[Sized<u32>, Sized<u32>]; // return
+    let @1: (u32, u32); // anonymous local
+
+    storage_live(@1)
+    @1 := (const (1 : u32), const (2 : u32))
+    @0 := StructWithTuple { p: move (@1) }
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::new_tuple2
+pub fn new_tuple2() -> StructWithTuple<i16, i16>[Sized<i16>, Sized<i16>]
+{
+    let @0: StructWithTuple<i16, i16>[Sized<i16>, Sized<i16>]; // return
+    let @1: (i16, i16); // anonymous local
+
+    storage_live(@1)
+    @1 := (const (1 : i16), const (2 : i16))
+    @0 := StructWithTuple { p: move (@1) }
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::new_tuple3
+pub fn new_tuple3() -> StructWithTuple<u64, i64>[Sized<u64>, Sized<i64>]
+{
+    let @0: StructWithTuple<u64, i64>[Sized<u64>, Sized<i64>]; // return
+    let @1: (u64, i64); // anonymous local
+
+    storage_live(@1)
+    @1 := (const (1 : u64), const (2 : i64))
+    @0 := StructWithTuple { p: move (@1) }
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::StructWithPair
+pub struct StructWithPair<T1, T2>
+where
+    [@TraitClause0]: Sized<T1>,
+    [@TraitClause1]: Sized<T2>,
+{
+  p: Pair<T1, T2>[@TraitClause0, @TraitClause1],
+}
+
+// Full name: test_crate::new_pair1
+pub fn new_pair1() -> StructWithPair<u32, u32>[Sized<u32>, Sized<u32>]
+{
+    let @0: StructWithPair<u32, u32>[Sized<u32>, Sized<u32>]; // return
+    let @1: Pair<u32, u32>[Sized<u32>, Sized<u32>]; // anonymous local
+
+    storage_live(@1)
+    // This actually doesn't make rustc generate a constant...
+    // I guess it only happens for tuples.
+    @1 := Pair { x: const (1 : u32), y: const (2 : u32) }
+    @0 := StructWithPair { p: move (@1) }
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::incr
+pub fn incr<'_0>(@1: &'_0 mut (u32))
+{
+    let @0: (); // return
+    let x@1: &'_ mut (u32); // arg #1
+    let @2: u32; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (*(x@1)) panic.+ const (1 : u32)
+    *(x@1) := move (@2)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::read_then_incr
+pub fn read_then_incr<'_0>(@1: &'_0 mut (u32)) -> u32
+{
+    let @0: u32; // return
+    let x@1: &'_ mut (u32); // arg #1
+    let r@2: u32; // local
+    let @3: u32; // anonymous local
+
+    storage_live(@3)
+    storage_live(r@2)
+    r@2 := copy (*(x@1))
+    @3 := copy (*(x@1)) panic.+ const (1 : u32)
+    *(x@1) := move (@3)
+    @0 := copy (r@2)
+    storage_dead(r@2)
+    return
+}
+
+
+

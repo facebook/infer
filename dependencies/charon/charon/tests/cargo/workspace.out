@@ -1,0 +1,30 @@
+# Final LLBC before serialization:
+
+// Full name: crate1::random_number
+pub fn random_number() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (4 : u32)
+    return
+}
+
+// Full name: crate2::extra_random_number
+pub fn extra_random_number() -> u32
+{
+    let @0: u32; // return
+    let @1: u32; // anonymous local
+    let @2: u32; // anonymous local
+
+    storage_live(@2)
+    storage_live(@1)
+    // Even more random.
+    @1 := random_number()
+    @2 := copy (@1) panic.+ const (1 : u32)
+    @0 := move (@2)
+    storage_dead(@1)
+    return
+}
+
+
+

@@ -1,0 +1,62 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: test_crate::Ops
+trait Ops<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn ZERO = test_crate::Ops::ZERO<Self>[Self]
+    fn ntt_multiply = test_crate::Ops::ntt_multiply<Self>[Self]
+    non-dyn-compatible
+}
+
+fn test_crate::Ops::ZERO<Self>() -> Self
+where
+    [@TraitClause0]: Ops<Self>,
+
+fn test_crate::Ops::ntt_multiply<Self>() -> Self
+where
+    [@TraitClause0]: Ops<Self>,
+
+// Full name: test_crate::Portable
+struct Portable {}
+
+// Full name: test_crate::{impl Ops for Portable}::ZERO
+fn {impl Ops for Portable}::ZERO() -> Portable
+{
+    let @0: Portable; // return
+
+    @0 := Portable {  }
+    return
+}
+
+fn test_crate::ntt_multiply() -> Portable
+{
+    let @0: Portable; // return
+
+    @0 := {impl Ops for Portable}::ZERO()
+    return
+}
+
+// Full name: test_crate::{impl Ops for Portable}::ntt_multiply
+fn {impl Ops for Portable}::ntt_multiply() -> Portable
+{
+    let @0: Portable; // return
+
+    @0 := test_crate::ntt_multiply()
+    return
+}
+
+// Full name: test_crate::{impl Ops for Portable}
+impl Ops for Portable {
+    parent_clause0 = MetaSized<Portable>
+    fn ZERO = {impl Ops for Portable}::ZERO
+    fn ntt_multiply = {impl Ops for Portable}::ntt_multiply
+    non-dyn-compatible
+}
+
+
+

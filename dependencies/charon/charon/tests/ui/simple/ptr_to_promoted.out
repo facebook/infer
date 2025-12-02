@@ -1,0 +1,39 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: *const u8; // local
+    let @2: &'_ (u8); // anonymous local
+    let @3: usize; // anonymous local
+    let @4: *const u8; // anonymous local
+    let @5: &'_ (u8); // anonymous local
+    let @6: &'_ (u8); // anonymous local
+    let @7: u8; // anonymous local
+
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := const (0 : u8)
+    @6 := &@7
+    storage_live(x@1)
+    storage_live(@2)
+    @5 := move (@6)
+    @2 := &*(@5)
+    x@1 := &raw const *(@2)
+    storage_dead(@2)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := copy (x@1)
+    @3 := cast<*const u8, usize>(move (@4))
+    storage_dead(@4)
+    storage_dead(@3)
+    @0 := ()
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+
+

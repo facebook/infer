@@ -1,0 +1,102 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Hasher
+pub trait Hasher<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::Hasher::{vtable}
+}
+
+// Full name: test_crate::DefaultHasher
+pub struct DefaultHasher {}
+
+// Full name: test_crate::{impl Hasher for DefaultHasher}
+impl Hasher for DefaultHasher {
+    parent_clause0 = MetaSized<DefaultHasher>
+    vtable: {impl Hasher for DefaultHasher}::{vtable}
+}
+
+// Full name: test_crate::Hash
+pub trait Hash<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn hash<'_0, '_1, H, [@TraitClause0]: Sized<H>, [@TraitClause1]: Hasher<H>> = test_crate::Hash::hash<'_0_0, '_0_1, Self, H>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+pub fn test_crate::Hash::hash<'_0, '_1, Self, H>(@1: &'_0 (Self), @2: &'_1 mut (H))
+where
+    [@TraitClause0]: Hash<Self>,
+    [@TraitClause1]: Sized<H>,
+    [@TraitClause2]: Hasher<H>,
+
+// Full name: test_crate::{impl Hash for u32}::hash
+pub fn {impl Hash for u32}::hash<'_0, '_1, H>(@1: &'_0 (u32), @2: &'_1 mut (H))
+where
+    [@TraitClause0]: Sized<H>,
+    [@TraitClause1]: Hasher<H>,
+{
+    let @0: (); // return
+    let self@1: &'_ (u32); // arg #1
+    let _state@2: &'_ mut (H); // arg #2
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl Hash for u32}
+impl Hash for u32 {
+    parent_clause0 = MetaSized<u32>
+    fn hash<'_0, '_1, H, [@TraitClause0]: Sized<H>, [@TraitClause1]: Hasher<H>> = {impl Hash for u32}::hash<'_0_0, '_0_1, H>[@TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let hasher@1: DefaultHasher; // local
+    let @2: (); // anonymous local
+    let @3: &'_ (u32); // anonymous local
+    let @4: u32; // anonymous local
+    let @5: &'_ mut (DefaultHasher); // anonymous local
+    let @6: &'_ mut (DefaultHasher); // anonymous local
+
+    storage_live(hasher@1)
+    hasher@1 := DefaultHasher {  }
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := const (0 : u32)
+    @3 := &@4
+    storage_live(@5)
+    storage_live(@6)
+    @6 := &mut hasher@1
+    @5 := &two-phase-mut *(@6)
+    @2 := {impl Hash for u32}::hash<'_, '_, DefaultHasher>[Sized<DefaultHasher>, {impl Hasher for DefaultHasher}](move (@3), move (@5))
+    storage_dead(@5)
+    storage_dead(@3)
+    storage_dead(@6)
+    storage_dead(@4)
+    storage_dead(@2)
+    @0 := ()
+    storage_dead(hasher@1)
+    @0 := ()
+    return
+}
+
+
+

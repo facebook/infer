@@ -1,0 +1,72 @@
+# Final LLBC before serialization:
+
+// Full name: core::num::{usize}::MAX
+pub fn MAX() -> usize
+
+// Full name: core::num::{usize}::MAX
+pub const MAX: usize = MAX()
+
+// Full name: core::num::{u128}::to_ne_bytes
+pub fn to_ne_bytes(@1: u128) -> Array<u8, 16 : usize>
+
+// Full name: test_crate::S
+fn S() -> Array<u8, 16 : usize>
+{
+    let @0: Array<u8, 16 : usize>; // return
+
+    @0 := to_ne_bytes(const (24197857199965561741520400062332047378 : u128))
+    return
+}
+
+// Full name: test_crate::S
+const S: Array<u8, 16 : usize> = S()
+
+// Full name: test_crate::HasBEDiscr
+enum HasBEDiscr {
+  First,
+  Second,
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: usize; // local
+    let y@2: usize; // local
+    let z@3: usize; // local
+    let @4: usize; // anonymous local
+    let @5: usize; // anonymous local
+    let @6: usize; // anonymous local
+    let a@7: u128; // local
+    let b@8: HasBEDiscr; // local
+
+    storage_live(@6)
+    storage_live(x@1)
+    x@1 := const (52 : usize)
+    storage_live(y@2)
+    y@2 := copy (MAX)
+    storage_live(z@3)
+    storage_live(@4)
+    @4 := copy (y@2)
+    storage_live(@5)
+    @5 := copy (x@1)
+    @6 := copy (@4) panic.- copy (@5)
+    z@3 := move (@6)
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(a@7)
+    a@7 := const (102 : u128) panic.<< const (64 : i32)
+    storage_live(b@8)
+    b@8 := HasBEDiscr::Second {  }
+    @0 := ()
+    storage_dead(b@8)
+    storage_dead(a@7)
+    storage_dead(z@3)
+    storage_dead(y@2)
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+
+

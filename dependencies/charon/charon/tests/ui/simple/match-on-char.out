@@ -1,0 +1,7 @@
+error: Can't match on type char
+ --> tests/ui/simple/match-on-char.rs:3:5
+  |
+3 |     match 'x' {
+  |     ^^^^^^^^^
+
+ERROR Charon failed to translate this code (1 errors)

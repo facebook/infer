@@ -1,0 +1,63 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::option::{Option<T>[@TraitClause0]}::is_some
+pub fn is_some<'_0, T>(@1: &'_0 (Option<T>[@TraitClause0])) -> bool
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: bool; // return
+    let self@1: &'_ (Option<T>[@TraitClause0]); // arg #1
+    let @2: isize; // anonymous local
+
+    storage_live(@2)
+    @2 := @discriminant(*(self@1))
+    @0 := copy (@2) == const (1 : isize)
+    return
+}
+
+// Full name: test_cargo_toml::main
+fn main()
+{
+    let @0: (); // return
+    let @1: bool; // anonymous local
+    let @2: &'_ (Option<bool>[Sized<bool>]); // anonymous local
+    let @3: Option<bool>[Sized<bool>]; // anonymous local
+
+    storage_live(@1)
+    storage_live(@2)
+    storage_live(@3)
+    @3 := Option::Some { 0: const (false) }
+    @2 := &@3
+    @1 := is_some<'_, bool>[Sized<bool>](move (@2))
+    storage_dead(@2)
+    storage_dead(@3)
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

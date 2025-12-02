@@ -1,0 +1,917 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::neg_test
+pub fn neg_test(@1: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let @2: i32; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (x@1)
+    @0 := panic.-(move (@2))
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::add_u32
+pub fn add_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+
+    storage_live(@5)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @5 := copy (@3) panic.+ copy (@4)
+    @0 := move (@5)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::incr
+pub fn incr<'_0>(@1: &'_0 mut (u32))
+{
+    let @0: (); // return
+    let x@1: &'_ mut (u32); // arg #1
+    let @2: u32; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (*(x@1)) panic.+ const (1 : u32)
+    *(x@1) := move (@2)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::subs_u32
+pub fn subs_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+
+    storage_live(@5)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @5 := copy (@3) panic.- copy (@4)
+    @0 := move (@5)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::div_u32
+pub fn div_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic./ move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::div_u32_const
+pub fn div_u32_const(@1: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let @2: u32; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (x@1)
+    @0 := move (@2) panic./ const (2 : u32)
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::rem_u32
+pub fn rem_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic.% move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::mul_u32
+pub fn mul_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+
+    storage_live(@5)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @5 := copy (@3) panic.* copy (@4)
+    @0 := move (@5)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::add_i32
+pub fn add_i32(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: i32; // anonymous local
+    let @5: i32; // anonymous local
+
+    storage_live(@5)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @5 := copy (@3) panic.+ copy (@4)
+    @0 := move (@5)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::subs_i32
+pub fn subs_i32(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: i32; // anonymous local
+    let @5: i32; // anonymous local
+
+    storage_live(@5)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @5 := copy (@3) panic.- copy (@4)
+    @0 := move (@5)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::div_i32
+pub fn div_i32(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: i32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic./ move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::div_i32_const
+pub fn div_i32_const(@1: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let @2: i32; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (x@1)
+    @0 := move (@2) panic./ const (2 : i32)
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::rem_i32
+pub fn rem_i32(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: i32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic.% move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::mul_i32
+pub fn mul_i32(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: i32; // anonymous local
+    let @5: i32; // anonymous local
+
+    storage_live(@5)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @5 := copy (@3) panic.* copy (@4)
+    @0 := move (@5)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::mix_arith_u32
+pub fn mix_arith_u32(@1: u32, @2: u32, @3: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let z@3: u32; // arg #3
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+    let @7: u32; // anonymous local
+    let @8: u32; // anonymous local
+    let @9: u32; // anonymous local
+    let @10: u32; // anonymous local
+    let @11: u32; // anonymous local
+    let @12: u32; // anonymous local
+    let @13: u32; // anonymous local
+    let @14: u32; // anonymous local
+    let @15: u32; // anonymous local
+    let @16: u32; // anonymous local
+    let @17: u32; // anonymous local
+    let @18: u32; // anonymous local
+    let @19: u32; // anonymous local
+    let @20: u32; // anonymous local
+    let @21: u32; // anonymous local
+    let @22: u32; // anonymous local
+    let @23: u32; // anonymous local
+    let @24: u32; // anonymous local
+    let @25: u32; // anonymous local
+    let @26: u32; // anonymous local
+    let @27: u32; // anonymous local
+
+    storage_live(@9)
+    storage_live(@13)
+    storage_live(@19)
+    storage_live(@20)
+    storage_live(@25)
+    storage_live(@27)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (x@1)
+    storage_live(@8)
+    @8 := copy (y@2)
+    @9 := copy (@7) panic.+ copy (@8)
+    @6 := move (@9)
+    storage_dead(@8)
+    storage_dead(@7)
+    storage_live(@10)
+    storage_live(@11)
+    @11 := copy (x@1)
+    storage_live(@12)
+    @12 := copy (y@2)
+    @10 := move (@11) panic./ move (@12)
+    storage_dead(@12)
+    storage_dead(@11)
+    @13 := copy (@6) panic.* copy (@10)
+    @5 := move (@13)
+    storage_dead(@10)
+    storage_dead(@6)
+    storage_live(@14)
+    storage_live(@15)
+    @15 := copy (x@1)
+    storage_live(@16)
+    storage_live(@17)
+    @17 := copy (z@3)
+    storage_live(@18)
+    @18 := copy (y@2)
+    @16 := move (@17) panic.% move (@18)
+    storage_dead(@18)
+    storage_dead(@17)
+    @19 := copy (@15) panic.- copy (@16)
+    @14 := move (@19)
+    storage_dead(@16)
+    storage_dead(@15)
+    @20 := copy (@5) panic.+ copy (@14)
+    @4 := move (@20)
+    storage_dead(@14)
+    storage_dead(@5)
+    storage_live(@21)
+    storage_live(@22)
+    storage_live(@23)
+    @23 := copy (x@1)
+    storage_live(@24)
+    @24 := copy (y@2)
+    @25 := copy (@23) panic.+ copy (@24)
+    @22 := move (@25)
+    storage_dead(@24)
+    storage_dead(@23)
+    storage_live(@26)
+    @26 := copy (z@3)
+    @27 := copy (@22) panic.+ copy (@26)
+    @21 := move (@27)
+    storage_dead(@26)
+    storage_dead(@22)
+    @0 := move (@4) panic.% move (@21)
+    storage_dead(@21)
+    storage_dead(@4)
+    return
+}
+
+// Full name: test_crate::mix_arith_i32
+pub fn mix_arith_i32(@1: i32, @2: i32, @3: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let z@3: i32; // arg #3
+    let @4: i32; // anonymous local
+    let @5: i32; // anonymous local
+    let @6: i32; // anonymous local
+    let @7: i32; // anonymous local
+    let @8: i32; // anonymous local
+    let @9: i32; // anonymous local
+    let @10: i32; // anonymous local
+    let @11: i32; // anonymous local
+    let @12: i32; // anonymous local
+    let @13: i32; // anonymous local
+    let @14: i32; // anonymous local
+    let @15: i32; // anonymous local
+    let @16: i32; // anonymous local
+    let @17: i32; // anonymous local
+    let @18: i32; // anonymous local
+    let @19: i32; // anonymous local
+    let @20: i32; // anonymous local
+    let @21: i32; // anonymous local
+    let @22: i32; // anonymous local
+    let @23: i32; // anonymous local
+    let @24: i32; // anonymous local
+    let @25: i32; // anonymous local
+    let @26: i32; // anonymous local
+    let @27: i32; // anonymous local
+
+    storage_live(@9)
+    storage_live(@13)
+    storage_live(@19)
+    storage_live(@20)
+    storage_live(@25)
+    storage_live(@27)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (x@1)
+    storage_live(@8)
+    @8 := copy (y@2)
+    @9 := copy (@7) panic.+ copy (@8)
+    @6 := move (@9)
+    storage_dead(@8)
+    storage_dead(@7)
+    storage_live(@10)
+    storage_live(@11)
+    @11 := copy (x@1)
+    storage_live(@12)
+    @12 := copy (y@2)
+    @10 := move (@11) panic./ move (@12)
+    storage_dead(@12)
+    storage_dead(@11)
+    @13 := copy (@6) panic.* copy (@10)
+    @5 := move (@13)
+    storage_dead(@10)
+    storage_dead(@6)
+    storage_live(@14)
+    storage_live(@15)
+    @15 := copy (x@1)
+    storage_live(@16)
+    storage_live(@17)
+    @17 := copy (z@3)
+    storage_live(@18)
+    @18 := copy (y@2)
+    @16 := move (@17) panic.% move (@18)
+    storage_dead(@18)
+    storage_dead(@17)
+    @19 := copy (@15) panic.- copy (@16)
+    @14 := move (@19)
+    storage_dead(@16)
+    storage_dead(@15)
+    @20 := copy (@5) panic.+ copy (@14)
+    @4 := move (@20)
+    storage_dead(@14)
+    storage_dead(@5)
+    storage_live(@21)
+    storage_live(@22)
+    storage_live(@23)
+    @23 := copy (x@1)
+    storage_live(@24)
+    @24 := copy (y@2)
+    @25 := copy (@23) panic.+ copy (@24)
+    @22 := move (@25)
+    storage_dead(@24)
+    storage_dead(@23)
+    storage_live(@26)
+    @26 := copy (z@3)
+    @27 := copy (@22) panic.+ copy (@26)
+    @21 := move (@27)
+    storage_dead(@26)
+    storage_dead(@22)
+    @0 := move (@4) panic.% move (@21)
+    storage_dead(@21)
+    storage_dead(@4)
+    return
+}
+
+// Full name: test_crate::shl_u32
+fn shl_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic.<< move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::shr_u32
+fn shr_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic.>> move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::shr_add_u32
+fn shr_add_u32(@1: u32, @2: u32) -> u32
+{
+    let @0: u32; // return
+    let x@1: u32; // arg #1
+    let y@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+
+    storage_live(@6)
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := copy (y@2)
+    @6 := copy (@5) panic.+ const (1 : u32)
+    @4 := move (@6)
+    storage_dead(@5)
+    @0 := move (@3) panic.>> move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::shl_i32
+fn shl_i32(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: i32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic.<< move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::shr_i32
+fn shr_i32(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: i32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    @4 := copy (y@2)
+    @0 := move (@3) panic.>> move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+// Full name: test_crate::shr_i32_manual_cast
+fn shr_i32_manual_cast(@1: i32, @2: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+    let y@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: i32; // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@1)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := copy (y@2)
+    @4 := cast<i32, u32>(move (@5))
+    storage_dead(@5)
+    @0 := move (@3) panic.>> move (@4)
+    storage_dead(@4)
+    storage_dead(@3)
+    return
+}
+
+pub fn test_crate::_() -> isize
+{
+    let @0: isize; // return
+    let @1: isize; // anonymous local
+
+    storage_live(@1)
+    @1 := const (1 : isize) panic.+ const (1 : isize)
+    @0 := move (@1)
+    return
+}
+
+pub const test_crate::_: isize = test_crate::_()
+
+pub fn test_crate::_#1() -> isize
+{
+    let @0: isize; // return
+    let @1: isize; // anonymous local
+
+    storage_live(@1)
+    @1 := const (1 : isize) panic.- const (1 : isize)
+    @0 := move (@1)
+    return
+}
+
+pub const test_crate::_#1: isize = test_crate::_#1()
+
+pub fn test_crate::_#2() -> isize
+{
+    let @0: isize; // return
+
+    @0 := const (-1 : isize)
+    return
+}
+
+pub const test_crate::_#2: isize = test_crate::_#2()
+
+pub fn test_crate::_#3() -> isize
+{
+    let @0: isize; // return
+    let @1: isize; // anonymous local
+
+    storage_live(@1)
+    @1 := const (2 : isize) panic.* const (2 : isize)
+    @0 := move (@1)
+    return
+}
+
+pub const test_crate::_#3: isize = test_crate::_#3()
+
+pub fn test_crate::_#4() -> isize
+{
+    let @0: isize; // return
+
+    @0 := const (2 : isize) panic.>> const (2 : i32)
+    return
+}
+
+pub const test_crate::_#4: isize = test_crate::_#4()
+
+pub fn test_crate::_#5() -> isize
+{
+    let @0: isize; // return
+
+    @0 := const (2 : isize) panic.<< const (2 : i32)
+    return
+}
+
+pub const test_crate::_#5: isize = test_crate::_#5()
+
+pub fn test_crate::_#6() -> isize
+{
+    let @0: isize; // return
+
+    @0 := const (2 : isize) panic.% const (2 : isize)
+    return
+}
+
+pub const test_crate::_#6: isize = test_crate::_#6()
+
+pub fn test_crate::_#7() -> isize
+{
+    let @0: isize; // return
+
+    @0 := const (2 : isize) panic./ const (2 : isize)
+    return
+}
+
+pub const test_crate::_#7: isize = test_crate::_#7()
+
+pub fn test_crate::FOO() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (10 : u32)
+    return
+}
+
+pub const test_crate::FOO: u32 = test_crate::FOO()
+
+pub fn test_crate::_#8() -> u32
+{
+    let @0: u32; // return
+    let @1: u32; // anonymous local
+
+    storage_live(@1)
+    @1 := const (1 : u32) panic.+ copy (test_crate::FOO)
+    @0 := move (@1)
+    return
+}
+
+pub const test_crate::_#8: u32 = test_crate::_#8()
+
+pub fn test_crate::_#9() -> u32
+{
+    let @0: u32; // return
+    let @1: u32; // anonymous local
+
+    storage_live(@1)
+    @1 := const (10 : u32) panic.- copy (test_crate::FOO)
+    @0 := move (@1)
+    return
+}
+
+pub const test_crate::_#9: u32 = test_crate::_#9()
+
+pub fn test_crate::_#10() -> u32
+{
+    let @0: u32; // return
+    let @1: u32; // anonymous local
+
+    storage_live(@1)
+    @1 := const (2 : u32) panic.* copy (test_crate::FOO)
+    @0 := move (@1)
+    return
+}
+
+pub const test_crate::_#10: u32 = test_crate::_#10()
+
+pub fn test_crate::_#11() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (2 : u32) panic.>> copy (test_crate::FOO)
+    return
+}
+
+pub const test_crate::_#11: u32 = test_crate::_#11()
+
+pub fn test_crate::_#12() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (2 : u32) panic.<< copy (test_crate::FOO)
+    return
+}
+
+pub const test_crate::_#12: u32 = test_crate::_#12()
+
+pub fn test_crate::_#13() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (2 : u32) panic.% copy (test_crate::FOO)
+    return
+}
+
+pub const test_crate::_#13: u32 = test_crate::_#13()
+
+pub fn test_crate::_#14() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (2 : u32) panic./ copy (test_crate::FOO)
+    return
+}
+
+pub const test_crate::_#14: u32 = test_crate::_#14()
+
+fn test_crate::div_signed_with_constant::FOO() -> i32
+{
+    let @0: i32; // return
+
+    @0 := const (42 : i32)
+    return
+}
+
+const test_crate::div_signed_with_constant::FOO: i32 = test_crate::div_signed_with_constant::FOO()
+
+// Full name: test_crate::div_signed_with_constant
+fn div_signed_with_constant() -> i32
+{
+    let @0: i32; // return
+
+    @0 := copy (test_crate::div_signed_with_constant::FOO) panic./ const (2 : i32)
+    return
+}
+
+// Full name: test_crate::div_unsigned_to_slice
+fn div_unsigned_to_slice<'_0>(@1: &'_0 mut (Slice<u32>), @2: u32)
+{
+    let @0: (); // return
+    let result@1: &'_ mut (Slice<u32>); // arg #1
+    let x@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: usize; // anonymous local
+    let @5: &'_ mut (Slice<u32>); // anonymous local
+    let @6: &'_ mut (u32); // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@2)
+    storage_live(@4)
+    @4 := const (0 : usize)
+    storage_live(@5)
+    @5 := &mut *(result@1)
+    storage_live(@6)
+    @6 := @SliceIndexMut<'_, u32>(move (@5), copy (@4))
+    *(@6) := move (@3) panic./ const (3329 : u32)
+    storage_dead(@3)
+    storage_dead(@4)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::div_signed_to_slice
+fn div_signed_to_slice<'_0>(@1: &'_0 mut (Slice<i32>), @2: i32)
+{
+    let @0: (); // return
+    let result@1: &'_ mut (Slice<i32>); // arg #1
+    let x@2: i32; // arg #2
+    let @3: i32; // anonymous local
+    let @4: usize; // anonymous local
+    let @5: &'_ mut (Slice<i32>); // anonymous local
+    let @6: &'_ mut (i32); // anonymous local
+
+    storage_live(@3)
+    @3 := copy (x@2)
+    storage_live(@4)
+    @4 := const (0 : usize)
+    storage_live(@5)
+    @5 := &mut *(result@1)
+    storage_live(@6)
+    @6 := @SliceIndexMut<'_, i32>(move (@5), copy (@4))
+    *(@6) := move (@3) panic./ const (3329 : i32)
+    storage_dead(@3)
+    storage_dead(@4)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::add_to_slice
+fn add_to_slice<'_0>(@1: &'_0 mut (Slice<u32>), @2: u32)
+{
+    let @0: (); // return
+    let result@1: &'_ mut (Slice<u32>); // arg #1
+    let x@2: u32; // arg #2
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: usize; // anonymous local
+    let @6: &'_ mut (Slice<u32>); // anonymous local
+    let @7: &'_ mut (u32); // anonymous local
+
+    storage_live(@4)
+    storage_live(@3)
+    @3 := copy (x@2)
+    @4 := copy (@3) panic.+ const (1 : u32)
+    storage_live(@5)
+    @5 := const (0 : usize)
+    storage_live(@6)
+    @6 := &mut *(result@1)
+    storage_live(@7)
+    @7 := @SliceIndexMut<'_, u32>(move (@6), copy (@5))
+    *(@7) := move (@4)
+    storage_dead(@3)
+    storage_dead(@5)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::add_to_slice2
+fn add_to_slice2<'_0>(@1: &'_0 mut (Slice<u8>), @2: usize, @3: u8)
+{
+    let @0: (); // return
+    let result@1: &'_ mut (Slice<u8>); // arg #1
+    let i@2: usize; // arg #2
+    let x@3: u8; // arg #3
+    let @4: u8; // anonymous local
+    let @5: u8; // anonymous local
+    let @6: usize; // anonymous local
+    let @7: usize; // anonymous local
+    let @8: usize; // anonymous local
+    let @9: &'_ mut (Slice<u8>); // anonymous local
+    let @10: &'_ mut (u8); // anonymous local
+
+    storage_live(@5)
+    storage_live(@8)
+    storage_live(@4)
+    @4 := copy (x@3)
+    @5 := copy (@4) panic.* const (7 : u8)
+    storage_live(@6)
+    storage_live(@7)
+    @7 := copy (i@2)
+    @8 := copy (@7) panic.+ const (1 : usize)
+    @6 := move (@8)
+    storage_dead(@7)
+    storage_live(@9)
+    @9 := &mut *(result@1)
+    storage_live(@10)
+    @10 := @SliceIndexMut<'_, u8>(move (@9), copy (@6))
+    *(@10) := move (@5)
+    storage_dead(@4)
+    storage_dead(@6)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

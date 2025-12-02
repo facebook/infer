@@ -1,0 +1,78 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: trait_default_const::Trait
+trait Trait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    const FOO : usize
+    non-dyn-compatible
+}
+
+// Full name: trait_default_const::Trait::FOO
+fn FOO<Self>() -> usize
+where
+    [@TraitClause0]: Trait<Self>,
+{
+    let @0: usize; // return
+
+    @0 := const (42 : usize)
+    return
+}
+
+// Full name: trait_default_const::Trait::FOO
+const FOO<Self>: usize
+where
+    [@TraitClause0]: Trait<Self>,
+ = FOO()
+
+// Full name: trait_default_const::{impl Trait for T}
+impl<T> Trait for T
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    const FOO = FOO<T>[{impl Trait for T}<T>[@TraitClause0]]
+    non-dyn-compatible
+}
+
+// Full name: trait_default_const::foo
+pub fn foo<T>() -> usize
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: usize; // return
+
+    @0 := const ({impl Trait for T}<T>[@TraitClause0]::FOO)
+    return
+}
+
+// Full name: test_crate::bar
+fn bar<T>()
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: (); // return
+    let @1: usize; // anonymous local
+
+    storage_live(@1)
+    @1 := foo<T>[@TraitClause0]()
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

@@ -1,0 +1,48 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::slice_pattern_end
+fn slice_pattern_end<'_0>(@1: &'_0 (Slice<()>))
+{
+    let @0: (); // return
+    let x@1: &'_ (Slice<()>); // arg #1
+    let @2: usize; // anonymous local
+    let @3: usize; // anonymous local
+    let @4: bool; // anonymous local
+    let _named@5: &'_ (()); // local
+    let @6: &'_ (Slice<()>); // anonymous local
+    let @7: usize; // anonymous local
+    let @8: usize; // anonymous local
+    let @9: &'_ (()); // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    storage_live(@4)
+    @2 := len(*(x@1))
+    @3 := const (1 : usize)
+    @4 := move (@2) >= move (@3)
+    if move (@4) {
+    }
+    else {
+        @0 := ()
+        @0 := ()
+        return
+    }
+    storage_live(_named@5)
+    storage_live(@6)
+    @6 := &*(x@1)
+    storage_live(@7)
+    @7 := len(*(x@1))
+    storage_live(@8)
+    @8 := copy (@7) ub.- const (1 : usize)
+    storage_dead(@7)
+    storage_live(@9)
+    @9 := @SliceIndexShared<'_, ()>(move (@6), copy (@8))
+    _named@5 := &*(@9)
+    @0 := ()
+    storage_dead(_named@5)
+    @0 := ()
+    return
+}
+
+
+

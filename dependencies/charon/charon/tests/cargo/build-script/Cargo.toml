@@ -1,0 +1,5 @@
+[package]
+name = "test-cargo-build-script"
+version = "0.1.0"
+authors = ["Son Ho <hosonmarc@gmail.com>"]
+edition = "2021"

@@ -1,0 +1,149 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: test_crate::Trait
+pub trait Trait<Self, Self_Type>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Type>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl Trait<()> for ()}
+impl Trait<()> for () {
+    parent_clause0 = MetaSized<()>
+    parent_clause1 = Sized<()>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::HashMap
+pub struct HashMap<S>
+where
+    [@TraitClause0]: Sized<S>,
+{
+  S,
+}
+
+// Full name: test_crate::HashMap::{impl Drop for HashMap<S>[@TraitClause0]}::drop
+fn {impl Drop for HashMap<S>[@TraitClause0]}::drop<'_0, S>(@1: &'_0 mut (HashMap<S>[@TraitClause0]))
+where
+    [@TraitClause0]: Sized<S>,
+
+// Full name: test_crate::HashMap::{impl Drop for HashMap<S>[@TraitClause0]}
+impl<S> Drop for HashMap<S>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<S>,
+{
+    parent_clause0 = MetaSized<HashMap<S>[@TraitClause0]>
+    fn drop<'_0> = {impl Drop for HashMap<S>[@TraitClause0]}::drop<'_0_0, S>[@TraitClause0]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{HashMap<S>[@TraitClause0]}::get
+pub fn get<S, Q, Clause2_Type>(@1: HashMap<S>[@TraitClause0], @2: Q)
+where
+    [@TraitClause0]: Sized<S>,
+    [@TraitClause1]: Sized<Q>,
+    [@TraitClause2]: Trait<Q, Clause2_Type>,
+{
+    let @0: (); // return
+    let _x@1: HashMap<S>[@TraitClause0]; // arg #1
+    let _k@2: Q; // arg #2
+
+    @0 := ()
+    drop[Drop<Q>] _k@2
+    drop[{impl Drop for HashMap<S>[@TraitClause0]}<S>[@TraitClause0]] _x@1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::top_level_get
+pub fn top_level_get<S, Q, Clause2_Type>(@1: HashMap<S>[@TraitClause0], @2: Q)
+where
+    [@TraitClause0]: Sized<S>,
+    [@TraitClause1]: Sized<Q>,
+    [@TraitClause2]: Trait<Q, Clause2_Type>,
+{
+    let @0: (); // return
+    let _x@1: HashMap<S>[@TraitClause0]; // arg #1
+    let _k@2: Q; // arg #2
+
+    @0 := ()
+    drop[Drop<Q>] _k@2
+    drop[{impl Drop for HashMap<S>[@TraitClause0]}<S>[@TraitClause0]] _x@1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::test1
+pub fn test1(@1: HashMap<()>[Sized<()>])
+{
+    let @0: (); // return
+    let map@1: HashMap<()>[Sized<()>]; // arg #1
+    let @2: (); // anonymous local
+    let @3: HashMap<()>[Sized<()>]; // anonymous local
+    let @4: (); // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    @3 := move (map@1)
+    storage_live(@4)
+    @4 := ()
+    @2 := top_level_get<(), (), ()>[Sized<()>, Sized<()>, {impl Trait<()> for ()}](move (@3), move (@4))
+    storage_dead(@4)
+    storage_dead(@3)
+    storage_dead(@2)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::test2
+pub fn test2(@1: HashMap<()>[Sized<()>])
+{
+    let @0: (); // return
+    let map@1: HashMap<()>[Sized<()>]; // arg #1
+    let @2: (); // anonymous local
+    let @3: HashMap<()>[Sized<()>]; // anonymous local
+    let @4: (); // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    @3 := move (map@1)
+    storage_live(@4)
+    @4 := ()
+    @2 := get<(), (), ()>[Sized<()>, Sized<()>, {impl Trait<()> for ()}](move (@3), move (@4))
+    storage_dead(@4)
+    storage_dead(@3)
+    storage_dead(@2)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

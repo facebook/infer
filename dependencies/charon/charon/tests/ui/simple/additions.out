@@ -1,0 +1,206 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = core::clone::Clone::clone<'_0_0, Self>[Self]
+    fn clone_from<'_0, '_1, [@TraitClause0]: Destruct<Self>> = clone_from<'_0_0, '_0_1, Self>[Self, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::clone::Clone::clone_from
+pub fn clone_from<'_0, '_1, Self>(@1: &'_0 mut (Self), @2: &'_1 (Self))
+where
+    [@TraitClause0]: Clone<Self>,
+    [@TraitClause1]: Destruct<Self>,
+{
+    let @0: (); // return
+    let self@1: &'_ mut (Self); // arg #1
+    let source@2: &'_ (Self); // arg #2
+    let @3: Self; // anonymous local
+
+    storage_live(@3)
+    @3 := @TraitClause0::clone<'_>(move (source@2))
+    drop[Drop<Self>] *(self@1)
+    *(self@1) := move (@3)
+    storage_dead(@3)
+    @0 := ()
+    return
+}
+
+// Full name: core::clone::impls::{impl Clone for u8}::clone
+pub fn {impl Clone for u8}::clone<'_0>(@1: &'_0 (u8)) -> u8
+{
+    let @0: u8; // return
+    let self@1: &'_ (u8); // arg #1
+
+    @0 := copy (*(self@1))
+    return
+}
+
+pub fn core::clone::impls::{impl Clone for u8}::clone_from<'_0, '_1>(@1: &'_0 mut (u8), @2: &'_1 (u8))
+where
+    [@TraitClause0]: Destruct<u8>,
+{
+    let @0: (); // return
+    let self@1: &'_ mut (u8); // arg #1
+    let source@2: &'_ (u8); // arg #2
+    let @3: u8; // anonymous local
+
+    storage_live(@3)
+    @3 := {impl Clone for u8}::clone<'_>(move (source@2))
+    drop[Drop<u8>] *(self@1)
+    *(self@1) := move (@3)
+    storage_dead(@3)
+    @0 := ()
+    return
+}
+
+// Full name: core::clone::impls::{impl Clone for u8}
+impl Clone for u8 {
+    parent_clause0 = Sized<u8>
+    fn clone<'_0> = {impl Clone for u8}::clone<'_0_0>
+    fn clone_from<'_0, '_1, [@TraitClause0]: Destruct<u8>> = core::clone::impls::{impl Clone for u8}::clone_from<'_0_0, '_0_1>[@TraitClause0_0]
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Copy
+#[lang_item("copy")]
+pub trait Copy<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Clone<Self>
+    non-dyn-compatible
+}
+
+pub fn core::intrinsics::saturating_add<T>(@1: T, @2: T) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Copy<T>,
+{
+    let @0: T; // return
+    let a@1: T; // arg #1
+    let b@2: T; // arg #2
+
+    undefined_behavior
+}
+
+// Full name: core::marker::{impl Copy for u8}
+impl Copy for u8 {
+    parent_clause0 = MetaSized<u8>
+    parent_clause1 = {impl Clone for u8}
+    non-dyn-compatible
+}
+
+pub fn core::num::{u8}::saturating_add(@1: u8, @2: u8) -> u8
+{
+    let @0: u8; // return
+    let self@1: u8; // arg #1
+    let rhs@2: u8; // arg #2
+
+    @0 := core::intrinsics::saturating_add<u8>[Sized<u8>, {impl Copy for u8}](move (self@1), move (rhs@2))
+    return
+}
+
+// Full name: core::num::{u8}::wrapping_add
+pub fn wrapping_add(@1: u8, @2: u8) -> u8
+{
+    let @0: u8; // return
+    let self@1: u8; // arg #1
+    let rhs@2: u8; // arg #2
+
+    @0 := copy (self@1) wrap.+ copy (rhs@2)
+    return
+}
+
+// Full name: core::num::{u8}::overflowing_add
+pub fn overflowing_add(@1: u8, @2: u8) -> (u8, bool)
+{
+    let @0: (u8, bool); // return
+    let self@1: u8; // arg #1
+    let rhs@2: u8; // arg #2
+    let @3: u8; // anonymous local
+    let @4: bool; // anonymous local
+    let @5: (u8, bool); // anonymous local
+
+    storage_live(@3)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := copy (self@1) checked.+ copy (rhs@2)
+    @3 := copy ((@5).0)
+    @4 := copy ((@5).1)
+    storage_dead(@5)
+    @0 := (copy (@3), copy (@4))
+    return
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: test_crate::main
+fn main()
+{
+    let @0: (); // return
+    let @1: u8; // anonymous local
+    let @2: (u8, bool); // anonymous local
+    let @3: u8; // anonymous local
+
+    storage_live(@1)
+    @1 := wrapping_add(const (255 : u8), const (1 : u8))
+    storage_dead(@1)
+    storage_live(@2)
+    @2 := overflowing_add(const (255 : u8), const (1 : u8))
+    storage_dead(@2)
+    storage_live(@3)
+    // This one is meant to be implemented by codegen backends, hence has no useful MIR.
+    @3 := core::num::{u8}::saturating_add(const (255 : u8), const (1 : u8))
+    storage_dead(@3)
+    @0 := ()
+    // FIXME(#543): this causes a panic in hax
+    // unsafe {
+    //     let _ = 255u8.unchecked_add(1);
+    // }
+    @0 := ()
+    return
+}
+
+
+

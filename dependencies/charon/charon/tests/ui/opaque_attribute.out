@@ -1,0 +1,138 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: test_crate::BoolTrait
+pub trait BoolTrait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn get_bool<'_0> = test_crate::BoolTrait::get_bool<'_0_0, Self>[Self]
+    vtable: test_crate::BoolTrait::{vtable}
+}
+
+pub fn test_crate::BoolTrait::get_bool<'_0, Self>(@1: &'_0 (Self)) -> bool
+where
+    [@TraitClause0]: BoolTrait<Self>,
+
+// Full name: test_crate::{impl BoolTrait for bool}::get_bool
+pub fn {impl BoolTrait for bool}::get_bool<'_0>(@1: &'_0 (bool)) -> bool
+{
+    let @0: bool; // return
+    let self@1: &'_ (bool); // arg #1
+
+    @0 := copy (*(self@1))
+    return
+}
+
+// Full name: test_crate::{impl BoolTrait for bool}
+impl BoolTrait for bool {
+    parent_clause0 = MetaSized<bool>
+    fn get_bool<'_0> = {impl BoolTrait for bool}::get_bool<'_0_0>
+    vtable: {impl BoolTrait for bool}::{vtable}
+}
+
+// Full name: test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}::get_bool
+pub fn {impl BoolTrait for Option<T>[@TraitClause0]}::get_bool<'_0, T>(@1: &'_0 (Option<T>[@TraitClause0])) -> bool
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: BoolTrait<T>,
+{
+    let @0: bool; // return
+    let self@1: &'_ (Option<T>[@TraitClause0]); // arg #1
+    let x@2: &'_ (T); // local
+    let @3: &'_ (T); // anonymous local
+
+    storage_live(x@2)
+    storage_live(@3)
+    match *(self@1) {
+        Option::None => {
+        },
+        Option::Some => {
+            storage_live(x@2)
+            x@2 := &(*(self@1) as variant Option::Some).0
+            storage_live(@3)
+            @3 := &*(x@2)
+            @0 := @TraitClause1::get_bool<'_>(move (@3))
+            storage_dead(@3)
+            storage_dead(x@2)
+            return
+        },
+    }
+    @0 := const (false)
+    return
+}
+
+// Full name: test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}
+impl<T> BoolTrait for Option<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: BoolTrait<T>,
+{
+    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
+    fn get_bool<'_0> = {impl BoolTrait for Option<T>[@TraitClause0]}::get_bool<'_0_0, T>[@TraitClause0, @TraitClause1]
+    vtable: {impl BoolTrait for Option<T>[@TraitClause0]}::{vtable}<T>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: test_crate::test_bool_trait_option
+pub fn test_bool_trait_option<T>(@1: Option<T>[@TraitClause0]) -> bool
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: BoolTrait<T>,
+
+// Full name: test_crate::Test
+opaque type Test
+
+// Full name: test_crate::SIX_SIX_SIX
+fn SIX_SIX_SIX() -> u32
+
+// Full name: test_crate::SIX_SIX_SIX
+const SIX_SIX_SIX: u32 = SIX_SIX_SIX()
+
+// Full name: test_crate::Test2
+opaque type Test2
+
+// Full name: test_crate::opaque::fn_in_opaque_module
+pub fn fn_in_opaque_module() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (42 : u32)
+    return
+}
+
+// Full name: test_crate::call_fn_in_opaque_module
+fn call_fn_in_opaque_module()
+{
+    let @0: (); // return
+    let @1: u32; // anonymous local
+
+    storage_live(@1)
+    @1 := fn_in_opaque_module()
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

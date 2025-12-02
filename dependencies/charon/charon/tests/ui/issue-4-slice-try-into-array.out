@@ -1,0 +1,207 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+// Full name: core::fmt::Error
+pub struct Error {}
+
+// Full name: core::fmt::Debug
+#[lang_item("Debug")]
+pub trait Debug<Self>
+{
+    fn fmt<'_0, '_1, '_2> = core::fmt::Debug::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    vtable: core::fmt::Debug::{vtable}
+}
+
+// Full name: core::array::TryFromSliceError
+pub opaque type TryFromSliceError
+
+// Full name: core::array::{impl Debug for TryFromSliceError}::fmt
+pub fn {impl Debug for TryFromSliceError}::fmt<'_0, '_1, '_2>(@1: &'_0 (TryFromSliceError), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+
+// Full name: core::array::{impl Debug for TryFromSliceError}
+impl Debug for TryFromSliceError {
+    fn fmt<'_0, '_1, '_2> = {impl Debug for TryFromSliceError}::fmt<'_0_0, '_0_1, '_0_2>
+    vtable: {impl Debug for TryFromSliceError}::{vtable}
+}
+
+// Full name: core::convert::TryFrom
+#[lang_item("TryFrom")]
+pub trait TryFrom<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    parent_clause2 : [@TraitClause2]: Sized<Self::Error>
+    type Error
+    fn try_from = core::convert::TryFrom::try_from<Self, T>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = core::clone::Clone::clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Copy
+#[lang_item("copy")]
+pub trait Copy<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Clone<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::array::{impl TryFrom<&'_0 (Slice<T>)> for Array<T, const N : usize>}::try_from
+pub fn {impl TryFrom<&'_0 (Slice<T>)> for Array<T, const N : usize>}::try_from<'_0, T, const N : usize>(@1: &'_0 (Slice<T>)) -> Result<Array<T, const N : usize>, TryFromSliceError>[Sized<Array<T, const N : usize>>, Sized<TryFromSliceError>]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Copy<T>,
+
+// Full name: core::array::{impl TryFrom<&'_0 (Slice<T>)> for Array<T, const N : usize>}
+impl<'_0, T, const N : usize> TryFrom<&'_0 (Slice<T>)> for Array<T, const N : usize>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Copy<T>,
+{
+    parent_clause0 = Sized<Array<T, const N : usize>>
+    parent_clause1 = Sized<&'_ (Slice<T>)>
+    parent_clause2 = Sized<TryFromSliceError>
+    type Error = TryFromSliceError
+    fn try_from = {impl TryFrom<&'_0 (Slice<T>)> for Array<T, const N : usize>}::try_from<'_0, T, const N : usize>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::clone::impls::{impl Clone for u8}::clone
+pub fn {impl Clone for u8}::clone<'_0>(@1: &'_0 (u8)) -> u8
+
+// Full name: core::clone::impls::{impl Clone for u8}
+impl Clone for u8 {
+    parent_clause0 = Sized<u8>
+    fn clone<'_0> = {impl Clone for u8}::clone<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: core::convert::TryInto
+#[lang_item("TryInto")]
+pub trait TryInto<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    parent_clause2 : [@TraitClause2]: Sized<Self::Error>
+    type Error
+    fn try_into = core::convert::TryInto::try_into<Self, T>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::convert::TryInto::try_into<Self, T>(@1: Self) -> Result<T, @TraitClause0::Error>[@TraitClause0::parent_clause1, @TraitClause0::parent_clause2]
+where
+    [@TraitClause0]: TryInto<Self, T>,
+
+#[lang_item("try_from_fn")]
+pub fn core::convert::TryFrom::try_from<Self, T>(@1: T) -> Result<Self, @TraitClause0::Error>[@TraitClause0::parent_clause0, @TraitClause0::parent_clause2]
+where
+    [@TraitClause0]: TryFrom<Self, T>,
+
+// Full name: core::convert::{impl TryInto<U> for T}::try_into
+pub fn {impl TryInto<U> for T}::try_into<T, U>(@1: T) -> Result<U, @TraitClause2::Error>[@TraitClause1, @TraitClause2::parent_clause2]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: TryFrom<U, T>,
+
+// Full name: core::convert::{impl TryInto<U> for T}
+impl<T, U> TryInto<U> for T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: TryFrom<U, T>,
+{
+    parent_clause0 = @TraitClause0
+    parent_clause1 = @TraitClause1
+    parent_clause2 = @TraitClause2::parent_clause2
+    type Error = @TraitClause2::Error
+    fn try_into = {impl TryInto<U> for T}::try_into<T, U>[@TraitClause0, @TraitClause1, @TraitClause2]
+    non-dyn-compatible
+}
+
+pub fn core::fmt::Debug::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+where
+    [@TraitClause0]: Debug<Self>,
+
+// Full name: core::marker::{impl Copy for u8}
+impl Copy for u8 {
+    parent_clause0 = MetaSized<u8>
+    parent_clause1 = {impl Clone for u8}
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::result::{Result<T, E>[@TraitClause0, @TraitClause1]}::unwrap
+pub fn unwrap<T, E>(@1: Result<T, E>[@TraitClause0, @TraitClause1]) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+    [@TraitClause2]: Debug<E>,
+
+// Full name: test_crate::trait_error
+pub fn trait_error<'_0>(@1: &'_0 (Slice<u8>))
+{
+    let @0: (); // return
+    let s@1: &'_ (Slice<u8>); // arg #1
+    let _array@2: Array<u8, 4 : usize>; // local
+    let @3: Result<Array<u8, 4 : usize>, TryFromSliceError>[Sized<Array<u8, 4 : usize>>, Sized<TryFromSliceError>]; // anonymous local
+    let @4: &'_ (Slice<u8>); // anonymous local
+
+    storage_live(_array@2)
+    storage_live(@3)
+    storage_live(@4)
+    @4 := &*(s@1)
+    @3 := {impl TryInto<U> for T}::try_into<&'_ (Slice<u8>), Array<u8, 4 : usize>>[Sized<&'_ (Slice<u8>)>, Sized<Array<u8, 4 : usize>>, {impl TryFrom<&'_0 (Slice<T>)> for Array<T, const N : usize>}<'_, u8, 4 : usize>[Sized<u8>, {impl Copy for u8}]](move (@4))
+    storage_dead(@4)
+    _array@2 := unwrap<Array<u8, 4 : usize>, TryFromSliceError>[Sized<Array<u8, 4 : usize>>, Sized<TryFromSliceError>, {impl Debug for TryFromSliceError}](move (@3))
+    storage_dead(@3)
+    @0 := ()
+    storage_dead(_array@2)
+    @0 := ()
+    return
+}
+
+
+

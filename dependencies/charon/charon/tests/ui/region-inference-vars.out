@@ -1,0 +1,67 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+// Full name: test_crate::MyTryFrom
+pub trait MyTryFrom<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    parent_clause2 : [@TraitClause2]: Sized<Self::Error>
+    type Error
+    fn from<[@TraitClause0]: Sized<Self>> = test_crate::MyTryFrom::from<Self, T>[Self, @TraitClause0_0]
+    non-dyn-compatible
+}
+
+pub fn test_crate::MyTryFrom::from<Self, T>(@1: T) -> Result<Self, @TraitClause0::Error>[@TraitClause1, @TraitClause0::parent_clause2]
+where
+    [@TraitClause0]: MyTryFrom<Self, T>,
+    [@TraitClause1]: Sized<Self>,
+
+// Full name: test_crate::{impl MyTryFrom<&'_0 (bool)> for bool}::from
+pub fn {impl MyTryFrom<&'_0 (bool)> for bool}::from<'_0>(@1: &'_0 (bool)) -> Result<bool, ()>[Sized<bool>, Sized<()>]
+{
+    let @0: Result<bool, ()>[Sized<bool>, Sized<()>]; // return
+    let v@1: &'_ (bool); // arg #1
+    let @2: bool; // anonymous local
+
+    storage_live(@2)
+    @2 := copy (*(v@1))
+    @0 := Result::Ok { 0: move (@2) }
+    storage_dead(@2)
+    return
+}
+
+// Full name: test_crate::{impl MyTryFrom<&'_0 (bool)> for bool}
+impl<'_0> MyTryFrom<&'_0 (bool)> for bool {
+    parent_clause0 = MetaSized<bool>
+    parent_clause1 = Sized<&'_ (bool)>
+    parent_clause2 = Sized<()>
+    type Error = ()
+    fn from = {impl MyTryFrom<&'_0 (bool)> for bool}::from<'_0>
+    non-dyn-compatible
+}
+
+
+

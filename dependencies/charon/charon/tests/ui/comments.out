@@ -1,0 +1,548 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::default::Default
+#[lang_item("Default")]
+pub trait Default<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn default = core::default::Default::default<Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("default_fn")]
+pub fn core::default::Default::default<Self>() -> Self
+where
+    [@TraitClause0]: Default<Self>,
+
+// Full name: core::default::{impl Default for u32}::default
+pub fn {impl Default for u32}::default() -> u32
+
+// Full name: core::default::{impl Default for u32}
+impl Default for u32 {
+    parent_clause0 = Sized<u32>
+    fn default = {impl Default for u32}::default
+    non-dyn-compatible
+}
+
+// Full name: core::fmt::Arguments
+#[lang_item("format_arguments")]
+pub opaque type Arguments<'a>
+where
+    'a : 'a,
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::panicking::AssertKind
+pub enum AssertKind {
+  Eq,
+  Ne,
+  Match,
+}
+
+// Full name: core::slice::{Slice<T>}::len
+#[lang_item("slice_len_fn")]
+pub fn len<'_0, T>(@1: &'_0 (Slice<T>)) -> usize
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: test_crate::function_call
+fn function_call(@1: u32)
+{
+    let @0: (); // return
+    let @1: u32; // arg #1
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::sum
+pub fn sum<'_0>(@1: &'_0 (Slice<u32>)) -> u32
+{
+    let @0: u32; // return
+    let s@1: &'_ (Slice<u32>); // arg #1
+    let sum@2: u32; // local
+    let i@3: usize; // local
+    let @4: (); // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+    let @7: u32; // anonymous local
+    let @8: (); // anonymous local
+    let @9: bool; // anonymous local
+    let @10: usize; // anonymous local
+    let @11: usize; // anonymous local
+    let @12: &'_ (Slice<u32>); // anonymous local
+    let @13: u32; // anonymous local
+    let @14: usize; // anonymous local
+    let @15: u32; // anonymous local
+    let @16: usize; // anonymous local
+    let @17: (); // anonymous local
+    let @18: u32; // anonymous local
+    let @19: bool; // anonymous local
+    let @20: u32; // anonymous local
+    let @21: u32; // anonymous local
+    let @22: u32; // anonymous local
+    let @23: (); // anonymous local
+    let @24: u32; // anonymous local
+    let @25: u32; // anonymous local
+    let @26: u32; // anonymous local
+    let @27: &'_ (Slice<u32>); // anonymous local
+    let @28: &'_ (u32); // anonymous local
+
+    storage_live(@7)
+    storage_live(@12)
+    storage_live(@13)
+    storage_live(@14)
+    storage_live(@15)
+    storage_live(@16)
+    storage_live(@21)
+    storage_live(@22)
+    storage_live(@26)
+    storage_live(@27)
+    storage_live(@28)
+    storage_live(sum@2)
+    // `let sum`
+    sum@2 := const (0 : u32)
+    storage_live(i@3)
+    // `let i`
+    //  indented sub-comment
+    // unindented sub-comment
+    i@3 := const (0 : usize)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    // Function call
+    @6 := copy (sum@2)
+    @7 := copy (@6) panic.+ const (2 : u32)
+    @5 := move (@7)
+    storage_dead(@6)
+    @4 := function_call(move (@5))
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(@8)
+    // Start of loop
+    loop {
+        storage_live(@9)
+        storage_live(@10)
+        @10 := copy (i@3)
+        storage_live(@11)
+        storage_live(@12)
+        @12 := &*(s@1)
+        @11 := len<'_, u32>[Sized<u32>](move (@12))
+        storage_dead(@12)
+        @9 := move (@10) < move (@11)
+        if move (@9) {
+        }
+        else {
+            break 0
+        }
+        storage_dead(@11)
+        storage_dead(@10)
+        storage_live(@13)
+        storage_live(@14)
+        // Add to running sum
+        @14 := copy (i@3)
+        storage_live(@27)
+        @27 := &*(s@1)
+        storage_live(@28)
+        @28 := @SliceIndexShared<'_, u32>(move (@27), copy (@14))
+        @13 := copy (*(@28))
+        @15 := copy (sum@2) panic.+ copy (@13)
+        sum@2 := move (@15)
+        storage_dead(@13)
+        storage_dead(@14)
+        // Increment `i`
+        @16 := copy (i@3) panic.+ const (1 : usize)
+        i@3 := move (@16)
+        // Before end of loop
+        storage_dead(@9)
+        continue 0
+    }
+    storage_dead(@11)
+    storage_dead(@10)
+    storage_live(@17)
+    storage_dead(@17)
+    storage_dead(@9)
+    storage_dead(@8)
+    storage_live(@18)
+    storage_live(@19)
+    storage_live(@20)
+    // Assign the result of an `if`.
+    @20 := copy (sum@2)
+    @19 := move (@20) > const (10 : u32)
+    if move (@19) {
+        storage_dead(@20)
+        storage_live(@21)
+        // sum + 100
+        @21 := copy (sum@2)
+        @22 := copy (@21) panic.+ const (100 : u32)
+        @18 := move (@22)
+        storage_dead(@21)
+    }
+    else {
+        storage_dead(@20)
+        // let sum untouched
+        @18 := copy (sum@2)
+    }
+    storage_dead(@19)
+    sum@2 := move (@18)
+    storage_dead(@18)
+    storage_live(@23)
+    storage_live(@24)
+    storage_live(@25)
+    // Function call
+    @25 := copy (sum@2)
+    @26 := copy (@25) panic.+ const (2 : u32)
+    @24 := move (@26)
+    storage_dead(@25)
+    @23 := function_call(move (@24))
+    storage_dead(@24)
+    storage_dead(@23)
+    // Return final value
+    @0 := copy (sum@2)
+    storage_dead(i@3)
+    storage_dead(sum@2)
+    return
+}
+
+// Full name: test_crate::Foo
+struct Foo {
+  x: u32,
+  y: u32,
+}
+
+// Full name: test_crate::{impl Default for Foo}::default
+pub fn {impl Default for Foo}::default() -> Foo
+{
+    let @0: Foo; // return
+    let @1: u32; // anonymous local
+    let @2: u32; // anonymous local
+
+    storage_live(@1)
+    @1 := {impl Default for u32}::default()
+    storage_live(@2)
+    @2 := {impl Default for u32}::default()
+    @0 := Foo { x: move (@1), y: move (@2) }
+    storage_dead(@2)
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::{impl Default for Foo}
+impl Default for Foo {
+    parent_clause0 = Sized<Foo>
+    fn default = {impl Default for Foo}::default
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Bar
+struct Bar {
+  x: u32,
+  super_long_field_name: u32,
+}
+
+// Full name: test_crate::{impl Default for Bar}::default
+pub fn {impl Default for Bar}::default() -> Bar
+{
+    let @0: Bar; // return
+    let @1: u32; // anonymous local
+    let @2: u32; // anonymous local
+
+    storage_live(@1)
+    @1 := {impl Default for u32}::default()
+    storage_live(@2)
+    @2 := {impl Default for u32}::default()
+    @0 := Bar { x: move (@1), super_long_field_name: move (@2) }
+    storage_dead(@2)
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::{impl Default for Bar}
+impl Default for Bar {
+    parent_clause0 = Sized<Bar>
+    fn default = {impl Default for Bar}::default
+    non-dyn-compatible
+}
+
+// Full name: test_crate::eat
+fn eat<T>(@1: T)
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let @0: (); // return
+    let @1: T; // arg #1
+
+    @0 := ()
+    drop[Drop<T>] @1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let @0: (); // return
+    let x@1: u32; // local
+    let y@2: u32; // local
+    let @3: Foo; // anonymous local
+    let @4: (); // anonymous local
+    let @5: Foo; // anonymous local
+    let @6: u32; // anonymous local
+    let @7: u32; // anonymous local
+    let x@8: u32; // local
+    let super_long_field_name@9: u32; // local
+    let @10: Bar; // anonymous local
+    let @11: (); // anonymous local
+    let @12: Bar; // anonymous local
+    let @13: u32; // anonymous local
+    let @14: u32; // anonymous local
+    let a@15: Array<u32, 10 : usize>; // local
+    let @16: (); // anonymous local
+    let @17: (&'_ (u32), &'_ (u32)); // anonymous local
+    let @18: &'_ (u32); // anonymous local
+    let @19: usize; // anonymous local
+    let @20: &'_ (u32); // anonymous local
+    let @21: u32; // anonymous local
+    let left_val@22: &'_ (u32); // local
+    let right_val@23: &'_ (u32); // local
+    let @24: bool; // anonymous local
+    let @25: u32; // anonymous local
+    let @26: u32; // anonymous local
+    let kind@27: AssertKind; // local
+    let @28: AssertKind; // anonymous local
+    let @29: &'_ (u32); // anonymous local
+    let @30: &'_ (u32); // anonymous local
+    let @31: &'_ (u32); // anonymous local
+    let @32: &'_ (u32); // anonymous local
+    let @33: Option<Arguments<'_>>[Sized<Arguments<'_>>]; // anonymous local
+    let @34: &'_ (Array<u32, 10 : usize>); // anonymous local
+    let @35: &'_ (u32); // anonymous local
+
+    storage_live(kind@27)
+    storage_live(@28)
+    storage_live(@29)
+    storage_live(@30)
+    storage_live(@31)
+    storage_live(@32)
+    storage_live(@33)
+    storage_live(@3)
+    // Call `default` and destructure the result
+    @3 := {impl Default for Foo}::default()
+    storage_live(x@1)
+    x@1 := copy ((@3).x)
+    storage_live(y@2)
+    y@2 := copy ((@3).y)
+    storage_dead(@3)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(@6)
+    // Call `eat` on an aggregate value
+    @6 := copy (x@1)
+    storage_live(@7)
+    @7 := copy (y@2)
+    @5 := Foo { x: move (@6), y: move (@7) }
+    storage_dead(@7)
+    storage_dead(@6)
+    @4 := eat<Foo>[Sized<Foo>](move (@5))
+    storage_dead(@5)
+    storage_dead(@4)
+    storage_live(@10)
+    // Call `default` and destructure the result
+    // This is the long field
+    @10 := {impl Default for Bar}::default()
+    storage_live(x@8)
+    x@8 := copy ((@10).x)
+    storage_live(super_long_field_name@9)
+    super_long_field_name@9 := copy ((@10).super_long_field_name)
+    storage_dead(@10)
+    storage_live(@11)
+    storage_live(@12)
+    storage_live(@13)
+    // Call `eat` on an aggregate value
+    @13 := copy (x@8)
+    storage_live(@14)
+    // This is the long field
+    @14 := copy (super_long_field_name@9)
+    @12 := Bar { x: move (@13), super_long_field_name: move (@14) }
+    storage_dead(@14)
+    storage_dead(@13)
+    @11 := eat<Bar>[Sized<Bar>](move (@12))
+    storage_dead(@12)
+    storage_dead(@11)
+    storage_live(a@15)
+    // Build an array
+    a@15 := @ArrayRepeat<'_, u32, 10 : usize>(const (0 : u32))
+    storage_live(@16)
+    storage_live(@17)
+    storage_live(@18)
+    storage_live(@19)
+    // `assert_eq`
+    @19 := const (9 : usize)
+    storage_live(@34)
+    @34 := &a@15
+    storage_live(@35)
+    @35 := @ArrayIndexShared<'_, u32, 10 : usize>(move (@34), copy (@19))
+    @18 := &*(@35)
+    storage_live(@20)
+    storage_live(@21)
+    @21 := const (9 : u32)
+    @20 := &@21
+    @17 := (move (@18), move (@20))
+    storage_dead(@20)
+    storage_dead(@18)
+    storage_live(left_val@22)
+    left_val@22 := copy ((@17).0)
+    storage_live(right_val@23)
+    right_val@23 := copy ((@17).1)
+    storage_live(@24)
+    storage_live(@25)
+    @25 := copy (*(left_val@22))
+    storage_live(@26)
+    @26 := copy (*(right_val@23))
+    @24 := move (@25) == move (@26)
+    if move (@24) {
+    }
+    else {
+        storage_dead(@26)
+        storage_dead(@25)
+        storage_live(kind@27)
+        kind@27 := AssertKind::Eq {  }
+        storage_live(@28)
+        @28 := move (kind@27)
+        storage_live(@29)
+        storage_live(@30)
+        @30 := &*(left_val@22)
+        @29 := &*(@30)
+        storage_live(@31)
+        storage_live(@32)
+        @32 := &*(right_val@23)
+        @31 := &*(@32)
+        storage_live(@33)
+        @33 := Option::None {  }
+        panic(core::panicking::assert_failed)
+    }
+    storage_dead(@26)
+    storage_dead(@25)
+    storage_dead(@24)
+    storage_dead(right_val@23)
+    storage_dead(left_val@22)
+    storage_dead(@21)
+    storage_dead(@19)
+    storage_dead(@17)
+    storage_dead(@16)
+    @0 := ()
+    storage_dead(a@15)
+    storage_dead(super_long_field_name@9)
+    storage_dead(x@8)
+    storage_dead(y@2)
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::CONSTANT
+fn CONSTANT() -> u32
+{
+    let @0: u32; // return
+
+    @0 := const (42 : u32)
+    return
+}
+
+// Full name: test_crate::CONSTANT
+const CONSTANT: u32 = CONSTANT()
+
+// Full name: test_crate::thing
+pub fn thing()
+{
+    let @0: (); // return
+    let x@1: u32; // local
+    let @2: u32; // anonymous local
+    let @3: u32; // anonymous local
+    let @4: (); // anonymous local
+    let @5: u32; // anonymous local
+
+    storage_live(@3)
+    storage_live(x@1)
+    storage_live(@2)
+    // This comment belongs above the assignment to `x` and not above intermediate computations.
+    @2 := copy (CONSTANT) panic.>> const (3 : i32)
+    @3 := copy (@2) panic.+ const (12 : u32)
+    x@1 := move (@3)
+    storage_dead(@2)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := copy (x@1)
+    @4 := function_call(move (@5))
+    storage_dead(@5)
+    storage_dead(@4)
+    @0 := ()
+    storage_dead(x@1)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fake_read
+pub fn fake_read(@1: u32)
+{
+    let @0: (); // return
+    let x@1: u32; // arg #1
+
+    @0 := ()
+    // This statement is translated to a `fake_read`.
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::fool
+fn fool()
+{
+    let @0: (); // return
+    let @1: &'_ (Str); // anonymous local
+
+    storage_live(@1)
+    @1 := const ("\n    // Fooled ya")
+    storage_dead(@1)
+    // Fooled ya";
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

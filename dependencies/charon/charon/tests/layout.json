@@ -1,0 +1,591 @@
+{
+  "test_crate::SimpleStruct": {
+    "size": 12,
+    "align": 4,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          0,
+          4,
+          8
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::GenericStruct": null,
+  "test_crate::UnsizedStruct": {
+    "size": null,
+    "align": null,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          0,
+          8
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::SimpleEnum": {
+    "size": 1,
+    "align": 1,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Unsigned": "U8"
+      },
+      "encoding": "Direct"
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U8",
+            "0"
+          ]
+        }
+      },
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U8",
+            "1"
+          ]
+        }
+      }
+    ]
+  },
+  "test_crate::SimpleAdt": {
+    "size": 24,
+    "align": 8,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Unsigned": "U32"
+      },
+      "encoding": "Direct"
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "0"
+          ]
+        }
+      },
+      {
+        "field_offsets": [
+          8,
+          16
+        ],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "1"
+          ]
+        }
+      },
+      {
+        "field_offsets": [
+          4,
+          8
+        ],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "2"
+          ]
+        }
+      }
+    ]
+  },
+  "test_crate::NicheAdt": {
+    "size": 4,
+    "align": 4,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Unsigned": "U32"
+      },
+      "encoding": {
+        "Niche": {
+          "untagged_variant": 1
+        }
+      }
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "0"
+          ]
+        }
+      },
+      {
+        "field_offsets": [
+          0
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::IsAZST": {
+    "size": 0,
+    "align": 1,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::UnsizedStruct2": {
+    "size": null,
+    "align": null,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          0,
+          8
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::GenericWithKnownLayout": {
+    "size": 16,
+    "align": 8,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          8,
+          0
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::Reordered": {
+    "size": 8,
+    "align": 4,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          4,
+          0,
+          5
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::NotReordered": {
+    "size": 12,
+    "align": 4,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          0,
+          4,
+          8
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::Packed": {
+    "size": 6,
+    "align": 1,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          0,
+          1,
+          5
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::UninhabitedVariant": {
+    "size": 8,
+    "align": 4,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Unsigned": "U32"
+      },
+      "encoding": "Direct"
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          4,
+          4
+        ],
+        "uninhabited": true,
+        "tag": null
+      },
+      {
+        "field_offsets": [
+          4
+        ],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "1"
+          ]
+        }
+      }
+    ]
+  },
+  "test_crate::Uninhabited": {
+    "size": 0,
+    "align": 1,
+    "discriminant_layout": null,
+    "uninhabited": true,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          0
+        ],
+        "uninhabited": true,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::DiscriminantInNicheOfField": {
+    "size": 16,
+    "align": 8,
+    "discriminant_layout": {
+      "offset": 8,
+      "tag_ty": {
+        "Signed": "Isize"
+      },
+      "encoding": {
+        "Niche": {
+          "untagged_variant": 1
+        }
+      }
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "Isize",
+            "0"
+          ]
+        }
+      },
+      {
+        "field_offsets": [
+          0
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::PackIntsUnion": {
+    "size": 8,
+    "align": 8,
+    "discriminant_layout": null,
+    "uninhabited": false,
+    "variant_layouts": []
+  },
+  "test_crate::NonZeroNiche": {
+    "size": 4,
+    "align": 4,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Unsigned": "U32"
+      },
+      "encoding": {
+        "Niche": {
+          "untagged_variant": 0
+        }
+      }
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          0
+        ],
+        "uninhabited": false,
+        "tag": null
+      },
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "1114112"
+          ]
+        }
+      },
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "1114113"
+          ]
+        }
+      }
+    ]
+  },
+  "test_crate::ArbitraryDiscriminants": {
+    "size": 32,
+    "align": 8,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Signed": "I32"
+      },
+      "encoding": "Direct"
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [
+          8
+        ],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "I32",
+            "12"
+          ]
+        }
+      },
+      {
+        "field_offsets": [
+          4
+        ],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "I32",
+            "43"
+          ]
+        }
+      },
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "I32",
+            "123456"
+          ]
+        }
+      }
+    ]
+  },
+  "test_crate::MyOrder": {
+    "size": 1,
+    "align": 1,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Signed": "I8"
+      },
+      "encoding": "Direct"
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "I8",
+            "-1"
+          ]
+        }
+      },
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "I8",
+            "0"
+          ]
+        }
+      },
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "I8",
+            "1"
+          ]
+        }
+      }
+    ]
+  },
+  "test_crate::WithNicheAndUninhabited": {
+    "size": 4,
+    "align": 4,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Unsigned": "U32"
+      },
+      "encoding": {
+        "Niche": {
+          "untagged_variant": 2
+        }
+      }
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U32",
+            "0"
+          ]
+        }
+      },
+      {
+        "field_offsets": [
+          0
+        ],
+        "uninhabited": true,
+        "tag": null
+      },
+      {
+        "field_offsets": [
+          0
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::GenericUnsized": null,
+  "test_crate::GenericButFixedSize": {
+    "size": 8,
+    "align": 8,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Signed": "Isize"
+      },
+      "encoding": {
+        "Niche": {
+          "untagged_variant": 1
+        }
+      }
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Signed": [
+            "Isize",
+            "0"
+          ]
+        }
+      },
+      {
+        "field_offsets": [
+          0
+        ],
+        "uninhabited": false,
+        "tag": null
+      }
+    ]
+  },
+  "test_crate::MaxBitsDiscr": {
+    "size": 16,
+    "align": 16,
+    "discriminant_layout": {
+      "offset": 0,
+      "tag_ty": {
+        "Unsigned": "U128"
+      },
+      "encoding": "Direct"
+    },
+    "uninhabited": false,
+    "variant_layouts": [
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U128",
+            "42"
+          ]
+        }
+      },
+      {
+        "field_offsets": [],
+        "uninhabited": false,
+        "tag": {
+          "Unsigned": [
+            "U128",
+            "18446744073709551615"
+          ]
+        }
+      }
+    ]
+  }
+}

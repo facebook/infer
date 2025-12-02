@@ -1,0 +1,60 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::SLICE
+fn SLICE() -> Array<(), 4 : usize>
+{
+    let @0: Array<(), 4 : usize>; // return
+    let @1: (); // anonymous local
+
+    storage_live(@1)
+    @1 := ()
+    @0 := @ArrayRepeat<'_, (), 4 : usize>(move (@1))
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::SLICE
+static SLICE: Array<(), 4 : usize> = SLICE()
+
+// Full name: test_crate::four
+fn four() -> usize
+{
+    let @0: usize; // return
+    let @1: usize; // anonymous local
+
+    storage_live(@1)
+    @1 := const (2 : usize) panic.+ const (2 : usize)
+    @0 := move (@1)
+    return
+}
+
+// Full name: test_crate::BAR
+fn BAR() -> Array<(), 42 : usize>
+{
+    let @0: Array<(), 42 : usize>; // return
+    let @1: (); // anonymous local
+
+    storage_live(@1)
+    @1 := ()
+    @0 := @ArrayRepeat<'_, (), 42 : usize>(move (@1))
+    storage_dead(@1)
+    return
+}
+
+// Full name: test_crate::BAR
+const BAR: Array<(), 42 : usize> = BAR()
+
+// Full name: test_crate::FOO
+fn FOO() -> usize
+{
+    let @0: usize; // return
+
+    @0 := const (42 : usize)
+    return
+}
+
+// Full name: test_crate::FOO
+const FOO: usize = FOO()
+
+
+

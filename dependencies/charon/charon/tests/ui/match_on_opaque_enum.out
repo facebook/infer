@@ -1,0 +1,11 @@
+error: reading the discriminant of an opaque enum. Add `--include test_crate::Enum` to the `charon` arguments to translate this enum.
+  --> tests/ui/match_on_opaque_enum.rs:9:5
+   |
+ 9 | /     match x {
+10 | |         Enum::A => true,
+11 | |         Enum::B => false,
+12 | |     }
+13 | | }
+   | |_^
+
+ERROR Charon failed to translate this code (1 errors)

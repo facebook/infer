@@ -1,0 +1,167 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::num::niche_types::UsizeNoHighBit
+pub opaque type UsizeNoHighBit
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::ptr::non_null::NonNull
+#[lang_item("NonNull")]
+pub opaque type NonNull<T>
+
+// Full name: core::ptr::unique::Unique
+#[lang_item("ptr_unique")]
+pub opaque type Unique<T>
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::raw_vec::RawVec
+opaque type RawVec<T, A>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::raw_vec::RawVecInner
+opaque type RawVecInner<A>
+where
+    [@TraitClause0]: Sized<A>,
+
+// Full name: alloc::raw_vec::{RawVec<T, A>[@TraitClause0, @TraitClause1]}::grow_one
+fn grow_one<'_0, T, A>(@1: &'_0 mut (RawVec<T, A>[@TraitClause0, @TraitClause1]))
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+
+// Full name: alloc::vec::Vec
+#[lang_item("Vec")]
+pub struct Vec<T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<type_error("removed allocator parameter")>,
+{
+  buf: RawVec<T, type_error("removed allocator parameter")>[@TraitClause0, @TraitClause1],
+  len: usize,
+}
+
+// Full name: alloc::vec::{Vec<T>[@TraitClause0, @TraitClause1]}::push
+pub fn push<'_0, T, A>(@1: &'_0 mut (Vec<T>[@TraitClause0, @TraitClause1]), @2: T)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    let @0: (); // return
+    let self@1: &'_ mut (Vec<T>[@TraitClause0, @TraitClause1]); // arg #1
+    let value@2: T; // arg #2
+    let len@3: usize; // local
+    let @4: bool; // anonymous local
+    let @5: usize; // anonymous local
+    let self@6: &'_ (RawVec<T, A>[@TraitClause0, @TraitClause1]); // local
+    let @7: (); // anonymous local
+    let @8: &'_ mut (RawVec<T, A>[@TraitClause0, @TraitClause1]); // anonymous local
+    let end@9: *mut T; // local
+    let self@10: *mut T; // local
+    let src@11: T; // local
+    let self@12: &'_ (RawVecInner<A>[@TraitClause1]); // local
+    let elem_size@13: usize; // local
+    let self@14: UsizeNoHighBit; // local
+    let @15: NonNull<u8>; // anonymous local
+
+    storage_live(len@3)
+    storage_live(@7)
+    storage_live(@8)
+    storage_live(end@9)
+    storage_live(self@14)
+    len@3 := copy ((*(self@1)).len)
+    storage_live(@4)
+    storage_live(@5)
+    storage_live(self@6)
+    self@6 := &(*(self@1)).buf
+    storage_live(self@12)
+    self@12 := &((*(self@1)).buf).0
+    storage_live(elem_size@13)
+    elem_size@13 := size_of<T>
+    switch move (elem_size@13) {
+        0 : usize => {
+            @5 := const (18446744073709551615 : usize)
+        },
+        _ => {
+            storage_live(self@14)
+            self@14 := copy ((((*(self@1)).buf).0).1)
+            @5 := transmute<UsizeNoHighBit, usize>(copy (self@14))
+            storage_dead(self@14)
+        },
+    }
+    storage_dead(elem_size@13)
+    storage_dead(self@12)
+    storage_dead(self@6)
+    @4 := copy (len@3) == move (@5)
+    if move (@4) {
+        storage_dead(@5)
+        storage_live(@8)
+        @8 := &two-phase-mut (*(self@1)).buf
+        @7 := grow_one<'_, T, A>[@TraitClause0, @TraitClause1](move (@8))
+        storage_dead(@8)
+    }
+    else {
+        storage_dead(@5)
+    }
+    storage_dead(@4)
+    storage_live(self@10)
+    storage_live(@15)
+    @15 := copy (((((*(self@1)).buf).0).0).0)
+    self@10 := transmute<NonNull<u8>, *mut T>(copy (@15))
+    storage_dead(@15)
+    end@9 := copy (self@10) offset copy (len@3)
+    storage_dead(self@10)
+    storage_live(src@11)
+    src@11 := move (value@2)
+    *(end@9) := copy (src@11)
+    storage_dead(src@11)
+    (*(self@1)).len := copy (len@3) wrap.+ const (1 : usize)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::vec
+fn vec<'_0>(@1: &'_0 mut (Vec<u32>[Sized<u32>, Sized<Global>]))
+{
+    let @0: (); // return
+    let x@1: &'_ mut (Vec<u32>[Sized<u32>, Sized<Global>]); // arg #1
+    let @2: &'_ mut (Vec<u32>[Sized<u32>, Sized<Global>]); // anonymous local
+
+    storage_live(@2)
+    @2 := &two-phase-mut *(x@1)
+    @0 := push<'_, u32, Global>[Sized<u32>, Sized<Global>](move (@2), const (42 : u32))
+    storage_dead(@2)
+    @0 := ()
+    return
+}
+
+
+

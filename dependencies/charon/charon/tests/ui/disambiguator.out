@@ -1,0 +1,41 @@
+# Final LLBC before serialization:
+
+fn test_crate::nonzero_disambiguator::my_function()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+fn test_crate::nonzero_disambiguator::my_function#1()
+{
+    let @0: (); // return
+
+    @0 := ()
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::nonzero_disambiguator
+fn nonzero_disambiguator()
+{
+    let @0: (); // return
+    let @1: bool; // anonymous local
+
+    storage_live(@1)
+    @1 := const (true)
+    if move (@1) {
+        @0 := test_crate::nonzero_disambiguator::my_function()
+    }
+    else {
+        @0 := test_crate::nonzero_disambiguator::my_function#1()
+    }
+    storage_dead(@1)
+    @0 := ()
+    return
+}
+
+
+

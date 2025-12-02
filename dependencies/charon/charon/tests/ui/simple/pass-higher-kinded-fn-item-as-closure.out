@@ -1,0 +1,126 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Tuple::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args, Self_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self_Output>
+    fn call_once = call_once<Self, Args, Self_Output>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args, Self_Clause1_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args, Self_Clause1_Output>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0> = call_mut<'_0_0, Self, Args, Self_Clause1_Output>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::Fn
+#[lang_item("r#fn")]
+pub trait Fn<Self, Args, Self_Clause1_Clause1_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnMut<Self, Args, Self_Clause1_Clause1_Output>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call<'_0> = core::ops::function::Fn::call<'_0_0, Self, Args, Self_Clause1_Clause1_Output>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::ops::function::Fn::call<'_0, Self, Args, Clause0_Clause1_Clause1_Output>(@1: &'_0 (Self), @2: Args) -> Clause0_Clause1_Clause1_Output
+where
+    [@TraitClause0]: Fn<Self, Args, Clause0_Clause1_Clause1_Output>,
+
+// Full name: core::ops::function::FnMut::call_mut
+pub fn call_mut<'_0, Self, Args, Clause0_Clause1_Output>(@1: &'_0 mut (Self), @2: Args) -> Clause0_Clause1_Output
+where
+    [@TraitClause0]: FnMut<Self, Args, Clause0_Clause1_Output>,
+
+// Full name: core::ops::function::FnOnce::call_once
+pub fn call_once<Self, Args, Clause0_Output>(@1: Self, @2: Args) -> Clause0_Output
+where
+    [@TraitClause0]: FnOnce<Self, Args, Clause0_Output>,
+
+// Full name: test_crate::flabada
+pub fn flabada<'a>(@1: &'a (())) -> &'a (())
+{
+    let @0: &'_ (()); // return
+    let x@1: &'_ (()); // arg #1
+
+    @0 := copy (x@1)
+    return
+}
+
+pub fn test_crate::call<'b, F>(@1: F)
+where
+    [@TraitClause0]: Sized<F>,
+    [@TraitClause1]: Fn<F, (&'b (())), &'b (())>,
+{
+    let @0: (); // return
+    let @1: F; // arg #1
+
+    @0 := ()
+    drop[Drop<F>] @1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::flibidi
+pub fn flibidi()
+{
+    let @0: (); // return
+    let @1: (); // anonymous local
+
+    storage_live(@1)
+    @1 := test_crate::call<'_, for<'a> flabada<'a>>[Sized<for<'a> flabada<'a>>, Fn<for<'a> flabada<'a>, (&'_ (())), &'_ (())>](const (flabada<'_>))
+    storage_dead(@1)
+    @0 := ()
+    @0 := ()
+    return
+}
+
+
+

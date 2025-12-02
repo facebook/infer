@@ -1,0 +1,225 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone::clone
+#[lang_item("clone_fn")]
+pub fn clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::marker::Copy
+#[lang_item("copy")]
+pub trait Copy<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Clone<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: test_crate::Iterator
+trait Iterator<Self, Self_Item>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Item>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::IntoIterator
+trait IntoIterator<Self, Self_Item, Self_IntoIter>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Item>
+    parent_clause2 : [@TraitClause2]: Sized<Self_IntoIter>
+    parent_clause3 : [@TraitClause3]: Iterator<Self_IntoIter, Self_Item>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl IntoIterator<Clause1_Item, I> for I}
+impl<I, Clause1_Item> IntoIterator<Clause1_Item, I> for I
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: Iterator<I, Clause1_Item>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    parent_clause1 = @TraitClause1::parent_clause1
+    parent_clause2 = @TraitClause0
+    parent_clause3 = @TraitClause1
+    non-dyn-compatible
+}
+
+// Full name: test_crate::callee
+fn callee<T, Clause1_Item>(@1: Clause1_Item) -> Clause1_Item
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Iterator<T, Clause1_Item>,
+{
+    let @0: Clause1_Item; // return
+    let t@1: Clause1_Item; // arg #1
+
+    @0 := move (t@1)
+    drop[Drop<Clause1_Item>] t@1
+    return
+}
+
+// Full name: test_crate::caller
+fn caller<T, Clause1_Item, Clause2_Item, Clause2_IntoIter>(@1: Clause1_Item) -> Clause2_Item
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Iterator<T, Clause1_Item>,
+    [@TraitClause2]: IntoIterator<T, Clause2_Item, Clause2_IntoIter>,
+{
+    let @0: Clause2_Item; // return
+    let t@1: Clause1_Item; // arg #1
+    let @2: Clause1_Item; // anonymous local
+
+    storage_live(@2)
+    @2 := move (t@1)
+    @0 := callee<T, Clause1_Item>[@TraitClause0, @TraitClause1](move (@2))
+    storage_dead(@2)
+    drop[Drop<Clause1_Item>] t@1
+    return
+}
+
+// Full name: test_crate::X
+trait X<Self, Self_Assoc>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Assoc>
+    fn method<'_0> = method<'_0_0, Self, Self_Assoc>[Self]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::X::method
+fn method<'_0, Self, Clause0_Assoc>(@1: &'_0 (Self)) -> Clause0_Assoc
+where
+    [@TraitClause0]: X<Self, Clause0_Assoc>,
+
+// Full name: test_crate::A
+trait A<Self, Self_Clause1_Assoc>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: X<Self, Self_Clause1_Assoc>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::B
+trait B<Self, Self_Clause1_Assoc>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: X<Self, Self_Clause1_Assoc>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::a
+fn a<T, Clause1_Clause1_Assoc>(@1: T) -> Clause1_Clause1_Assoc
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: A<T, Clause1_Clause1_Assoc>,
+{
+    let @0: Clause1_Clause1_Assoc; // return
+    let x@1: T; // arg #1
+    let @2: &'_ (T); // anonymous local
+
+    storage_live(@2)
+    @2 := &x@1
+    @0 := @TraitClause1::parent_clause1::method<'_>(move (@2))
+    storage_dead(@2)
+    drop[Drop<T>] x@1
+    return
+}
+
+// Full name: test_crate::b
+fn b<T, Clause1_Clause1_Assoc>(@1: T) -> Clause1_Clause1_Assoc
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: B<T, Clause1_Clause1_Assoc>,
+{
+    let @0: Clause1_Clause1_Assoc; // return
+    let x@1: T; // arg #1
+    let @2: &'_ (T); // anonymous local
+
+    storage_live(@2)
+    @2 := &x@1
+    @0 := @TraitClause1::parent_clause1::method<'_>(move (@2))
+    storage_dead(@2)
+    drop[Drop<T>] x@1
+    return
+}
+
+// Full name: test_crate::x
+fn x<T, Clause1_Clause1_Assoc, Clause2_Clause1_Assoc>(@1: T) -> (Clause1_Clause1_Assoc, Clause1_Clause1_Assoc)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: A<T, Clause1_Clause1_Assoc>,
+    [@TraitClause2]: B<T, Clause2_Clause1_Assoc>,
+    [@TraitClause3]: Copy<T>,
+{
+    let @0: (Clause1_Clause1_Assoc, Clause1_Clause1_Assoc); // return
+    let x@1: T; // arg #1
+    let @2: Clause1_Clause1_Assoc; // anonymous local
+    let @3: T; // anonymous local
+    let @4: Clause1_Clause1_Assoc; // anonymous local
+    let @5: T; // anonymous local
+
+    storage_live(@2)
+    storage_live(@3)
+    @3 := copy (x@1)
+    @2 := a<T, Clause1_Clause1_Assoc>[@TraitClause0, @TraitClause1](move (@3))
+    storage_dead(@3)
+    storage_live(@4)
+    storage_live(@5)
+    @5 := copy (x@1)
+    @4 := b<T, Clause2_Clause1_Assoc>[@TraitClause0, @TraitClause2](move (@5))
+    storage_dead(@5)
+    @0 := (move (@2), move (@4))
+    drop[Drop<Clause1_Clause1_Assoc>] @4
+    storage_dead(@4)
+    drop[Drop<Clause1_Clause1_Assoc>] @2
+    storage_dead(@2)
+    return
+}
+
+
+

@@ -177,6 +177,7 @@ if [ "$BUILD_RUST" == "yes" ]; then
     echo "The rust analyzer requires version $CHARON_VERSION of the charon library"
     echo "You can download charon from "\
          "https://github.com/AeneasVerif/charon/tree/$CHARON_VERSION_COMMIT"
+    echo "The required commit must be checked out in dependencies/charon"
     exit 1
   fi
 fi
@@ -204,8 +205,8 @@ install_opam_deps () {
     fi
 
     # Charon Version 0.1.123
-    opam pin add --no-action charon https://github.com/AeneasVerif/charon.git#$CHARON_VERSION_COMMIT
-    opam pin add --no-action name_matcher_parser https://github.com/AeneasVerif/charon.git#$CHARON_VERSION_COMMIT
+    opam pin add --no-action charon "$INFER_ROOT"/dependencies/charon
+    opam pin add --no-action name_matcher_parser "$INFER_ROOT"/dependencies/charon
     opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
     opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
     # camlzip checks that it is within the required version that the zip/jar file declares as

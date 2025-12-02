@@ -1,0 +1,66 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: test_crate::FromResidual
+pub trait FromResidual<Self, R>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<R>
+    vtable: test_crate::FromResidual::{vtable}<R>
+}
+
+// Full name: test_crate::Try
+pub trait Try<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FromResidual<Self, ()>
+    parent_clause2 : [@TraitClause2]: Sized<Self::Residual>
+    type Residual
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl FromResidual<()> for Option<T>[@TraitClause0]}
+impl<T> FromResidual<()> for Option<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
+    parent_clause1 = Sized<()>
+    vtable: {impl FromResidual<()> for Option<T>[@TraitClause0]}::{vtable}<T>[@TraitClause0]
+}
+
+// Full name: test_crate::{impl Try for Option<T>[@TraitClause0]}
+impl<T> Try for Option<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
+    parent_clause1 = {impl FromResidual<()> for Option<T>[@TraitClause0]}<T>[@TraitClause0]
+    parent_clause2 = Sized<()>
+    type Residual = ()
+    non-dyn-compatible
+}
+
+
+

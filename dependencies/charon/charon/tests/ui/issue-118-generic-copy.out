@@ -1,0 +1,147 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0> = core::clone::Clone::clone<'_0_0, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+
+// Full name: core::marker::Copy
+#[lang_item("copy")]
+pub trait Copy<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Clone<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::Destruct::{vtable}
+}
+
+// Full name: test_crate::Foo
+struct Foo {}
+
+// Full name: test_crate::{impl Clone for Foo}::clone
+pub fn {impl Clone for Foo}::clone<'_0>(@1: &'_0 (Foo)) -> Foo
+{
+    let @0: Foo; // return
+    let self@1: &'_ (Foo); // arg #1
+
+    @0 := copy (*(self@1))
+    return
+}
+
+// Full name: test_crate::{impl Clone for Foo}
+impl Clone for Foo {
+    parent_clause0 = Sized<Foo>
+    fn clone<'_0> = {impl Clone for Foo}::clone<'_0_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl Copy for Foo}
+impl Copy for Foo {
+    parent_clause0 = MetaSized<Foo>
+    parent_clause1 = {impl Clone for Foo}
+    non-dyn-compatible
+}
+
+// Full name: test_crate::copy_foo
+fn copy_foo(@1: Foo)
+{
+    let @0: (); // return
+    let x@1: Foo; // arg #1
+    let y@2: Foo; // local
+    let z@3: Foo; // local
+
+    storage_live(y@2)
+    y@2 := copy (x@1)
+    storage_live(z@3)
+    z@3 := copy (x@1)
+    @0 := ()
+    storage_dead(z@3)
+    storage_dead(y@2)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::copy_generic
+fn copy_generic<T>(@1: T)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Copy<T>,
+{
+    let @0: (); // return
+    let x@1: T; // arg #1
+    let y@2: T; // local
+    let z@3: T; // local
+
+    storage_live(y@2)
+    y@2 := copy (x@1)
+    storage_live(z@3)
+    z@3 := copy (x@1)
+    @0 := ()
+    storage_dead(z@3)
+    storage_dead(y@2)
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Ty>
+    parent_clause2 : [@TraitClause2]: Copy<Self::Ty>
+    type Ty
+    non-dyn-compatible
+}
+
+// Full name: test_crate::copy_assoc_ty
+fn copy_assoc_ty<T>(@1: @TraitClause1::Ty)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Trait<T>,
+{
+    let @0: (); // return
+    let x@1: @TraitClause1::Ty; // arg #1
+    let y@2: @TraitClause1::Ty; // local
+    let z@3: @TraitClause1::Ty; // local
+
+    storage_live(y@2)
+    y@2 := copy (x@1)
+    storage_live(z@3)
+    z@3 := copy (x@1)
+    @0 := ()
+    storage_dead(z@3)
+    storage_dead(y@2)
+    @0 := ()
+    return
+}
+
+
+

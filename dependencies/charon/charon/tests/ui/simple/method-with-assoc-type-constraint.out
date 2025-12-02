@@ -1,0 +1,76 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn drop<'_0> = drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+// Full name: core::ops::drop::Drop::drop
+pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: test_crate::IntoIterator
+pub trait IntoIterator<Self, Self_Item>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Item>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::FromIterator
+pub trait FromIterator<Self, A>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<A>
+    fn from_iter<T, [@TraitClause0]: Sized<T>, [@TraitClause1]: IntoIterator<T, A>> = test_crate::FromIterator::from_iter<Self, A, T>[Self, @TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+pub fn test_crate::FromIterator::from_iter<Self, A, T>(@1: T) -> Self
+where
+    [@TraitClause0]: FromIterator<Self, A>,
+    [@TraitClause1]: Sized<T>,
+    [@TraitClause2]: IntoIterator<T, A>,
+
+// Full name: test_crate::{impl FromIterator<()> for ()}::from_iter
+pub fn {impl FromIterator<()> for ()}::from_iter<I>(@1: I)
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: IntoIterator<I, ()>,
+{
+    let @0: (); // return
+    let iter@1: I; // arg #1
+
+    @0 := ()
+    drop[Drop<I>] iter@1
+    @0 := ()
+    return
+}
+
+// Full name: test_crate::{impl FromIterator<()> for ()}
+impl FromIterator<()> for () {
+    parent_clause0 = Sized<()>
+    parent_clause1 = Sized<()>
+    fn from_iter<I, [@TraitClause0]: Sized<I>, [@TraitClause1]: IntoIterator<I, ()>> = {impl FromIterator<()> for ()}::from_iter<I>[@TraitClause0_0, @TraitClause0_1]
+    non-dyn-compatible
+}
+
+
+

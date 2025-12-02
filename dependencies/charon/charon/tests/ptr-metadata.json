@@ -1,0 +1,25 @@
+{
+  "test_crate::Alias": "Length",
+  "test_crate::StrDst": "Length",
+  "test_crate::SliceDst": "Length",
+  "test_crate::Point": "None",
+  "test_crate::MoreSliceDst": "Length",
+  "test_crate::Embedded": "Length",
+  "test_crate::DynTrait": {
+    "VTable": null
+  },
+  "test_crate::GenericInLastField": null,
+  "test_crate::GenericNotLastField": "None",
+  "test_crate::GenericBehindIndirection": "None",
+  "test_crate::ThinGeneric": null,
+  "test_crate::Showable::{vtable}": null,
+  "alloc::alloc::Global": "None",
+  "core::cmp::Ordering": "None",
+  "core::option::Option": "None",
+  "core::fmt::Formatter": "None",
+  "core::result::Result": "None",
+  "core::fmt::Error": "None",
+  "core::alloc::layout::Layout": "None",
+  "core::ptr::non_null::NonNull": "None",
+  "core::alloc::AllocError": "None"
+}

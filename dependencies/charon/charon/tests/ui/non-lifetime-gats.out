@@ -1,0 +1,25 @@
+error: Generic associated types are not supported
+ --> tests/ui/non-lifetime-gats.rs:5:5
+  |
+5 |     type Pointer<T>: Deref<Target = T>;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Item `test_crate::PointerFamily` caused errors; ignoring.
+ --> tests/ui/non-lifetime-gats.rs:4:1
+  |
+4 | pub trait PointerFamily {
+  | ^^^^^^^^^^^^^^^^^^^^^^^
+
+error: Generic associated types are not supported
+  --> tests/ui/non-lifetime-gats.rs:34:9
+   |
+34 |         type Type<U>: Link<T>;
+   |         ^^^^^^^^^^^^^^^^^^^^^
+
+error: Item `test_crate::moar_variables::Trait` caused errors; ignoring.
+  --> tests/ui/non-lifetime-gats.rs:33:5
+   |
+33 |     pub trait Trait<T> {
+   |     ^^^^^^^^^^^^^^^^^^
+
+ERROR Charon failed to translate this code (4 errors)
