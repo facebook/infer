@@ -157,9 +157,9 @@ module Basic = struct
         SatUnsat.log_unsat unsat_info ;
         []
     | Sat (Ok astate) ->
-        [Ok (ExitProgram astate)]
+        [Ok (Stopped (ExitProgram astate))]
     | Sat (Recoverable (astate, errors)) ->
-        [Recoverable (ExitProgram astate, errors)]
+        [Recoverable (Stopped (ExitProgram astate), errors)]
     | Sat (FatalError _ as err) ->
         [err]
 
@@ -338,13 +338,7 @@ module Basic = struct
                       (addr, deleted_hist) astate )
                   addrs_to_invalidate astate
                 |> ok_continue
-            | ExceptionRaised _
-            | InfiniteLoop _
-            | ExitProgram _
-            | AbortProgram _
-            | LatentAbortProgram _
-            | LatentInvalidAccess _
-            | LatentSpecializedTypeIssue _ ->
+            | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
                 [Ok exec_state] )
       , non_disj )
     in

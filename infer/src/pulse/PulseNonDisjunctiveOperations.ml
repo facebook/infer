@@ -238,13 +238,7 @@ let continue_bind exec_state ~f =
   match (exec_state : ExecutionDomain.t) with
   | ContinueProgram astate ->
       f astate
-  | ExceptionRaised _
-  | InfiniteLoop _
-  | AbortProgram _
-  | ExitProgram _
-  | LatentAbortProgram _
-  | LatentInvalidAccess _
-  | LatentSpecializedTypeIssue _ ->
+  | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
       None
 
 

@@ -283,12 +283,7 @@ module PulseTransferFunctions = struct
           (StackAddress (Var.of_pvar pvar, ValueHistory.epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         |> ExecutionDomain.continue
-    | AbortProgram _
-    | ExitProgram _
-    | LatentAbortProgram _
-    | LatentInvalidAccess _
-    | LatentSpecializedTypeIssue _
-    | InfiniteLoop _ ->
+    | Stopped _ | InfiniteLoop _ ->
         Sat (Ok exec_state)
 
 
@@ -311,13 +306,7 @@ module PulseTransferFunctions = struct
       match exec_state with
       | ContinueProgram astate ->
           ContinueProgram (do_astate astate)
-      | AbortProgram _
-      | LatentAbortProgram _
-      | ExitProgram _
-      | ExceptionRaised _
-      | InfiniteLoop _
-      | LatentInvalidAccess _
-      | LatentSpecializedTypeIssue _ ->
+      | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
           exec_state
     in
     List.map ~f:(PulseResult.map ~f:do_one_exec_state) exec_state_res
@@ -999,12 +988,7 @@ module PulseTransferFunctions = struct
             L.d_printfln "clearing builder attributes on exception" ;
             let astate = AbductiveDomain.finalize_all_hack_builders astate in
             Ok (ExceptionRaised astate)
-        | ( InfiniteLoop _
-          | ExitProgram _
-          | AbortProgram _
-          | LatentAbortProgram _
-          | LatentInvalidAccess _
-          | LatentSpecializedTypeIssue _ ) as exec_state ->
+        | (InfiniteLoop _ | Stopped _) as exec_state ->
             Ok exec_state
       in
       List.map exec_states_res ~f:one_state
@@ -1113,13 +1097,7 @@ module PulseTransferFunctions = struct
         let astates, non_disj =
           NonDisjDomain.bind (astates, non_disj) ~f:(fun astate non_disj ->
               match astate with
-              | AbortProgram _
-              | ExceptionRaised _
-              | InfiniteLoop _
-              | ExitProgram _
-              | LatentAbortProgram _
-              | LatentInvalidAccess _
-              | LatentSpecializedTypeIssue _ ->
+              | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
                   ([astate], non_disj)
               | ContinueProgram astate as default_astate ->
                   (let open IOption.Let_syntax in
@@ -1168,13 +1146,7 @@ module PulseTransferFunctions = struct
         call_instr ;
       NonDisjDomain.bind (astate_list, non_disj) ~f:(fun (astate : ExecutionDomain.t) non_disj ->
           match astate with
-          | AbortProgram _
-          | ExceptionRaised _
-          | InfiniteLoop _
-          | ExitProgram _
-          | LatentAbortProgram _
-          | LatentInvalidAccess _
-          | LatentSpecializedTypeIssue _ ->
+          | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
               ([astate], non_disj)
           | ContinueProgram astate ->
               let execs, non_disj =
@@ -1200,12 +1172,7 @@ module PulseTransferFunctions = struct
   let remove_vars vars location astates =
     List.filter_map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
         match exec_state with
-        | AbortProgram _
-        | ExitProgram _
-        | LatentAbortProgram _
-        | LatentInvalidAccess _
-        | LatentSpecializedTypeIssue _
-        | InfiniteLoop _ ->
+        | Stopped _ | InfiniteLoop _ ->
             Some exec_state
         | ContinueProgram astate -> (
           match PulseOperations.remove_vars vars location astate with
@@ -1356,17 +1323,11 @@ module PulseTransferFunctions = struct
       (astate_n : NonDisjDomain.t) ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       cfg_node (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
-    | AbortProgram _
-    | LatentAbortProgram _
-    | LatentInvalidAccess _
     | InfiniteLoop _
-    | LatentSpecializedTypeIssue _ ->
-        ([astate], path, astate_n)
+    | Stopped _
     (* an exception has been raised, we skip the other instructions until we enter in
        exception edge *)
-    | ExceptionRaised _
-    (* program already exited, simply propagate the exited state upwards  *)
-    | ExitProgram _ ->
+    | ExceptionRaised _ ->
         (* L.debug Analysis Quiet "exec_instr: ExceptionRaised/ExitProgram \n"; *)
         ([astate], path, astate_n)
     | ContinueProgram astate -> (
@@ -1792,13 +1753,7 @@ let exit_function limit analysis_data location posts non_disj_astate =
     List.fold_left posts ~init:([], non_disj_astate)
       ~f:(fun (acc_astates, astate_n) (exec_state, path) ->
         match exec_state with
-        | AbortProgram _
-        | ExitProgram _
-        | ExceptionRaised _
-        | InfiniteLoop _
-        | LatentAbortProgram _
-        | LatentInvalidAccess _
-        | LatentSpecializedTypeIssue _ ->
+        | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
             ((exec_state, path) :: acc_astates, astate_n)
         | ContinueProgram astate ->
             let vars =

@@ -19,10 +19,7 @@ module L = Logging
 
    Some of the variants have summary-typed states instead of plain states, to ensure we have
    normalized them and don't need to normalize them again. *)
-type 'abductive_domain_t base_t =
-  | ContinueProgram of 'abductive_domain_t
-  | InfiniteLoop of 'abductive_domain_t
-  | ExceptionRaised of 'abductive_domain_t
+type stopped_execution =
   | ExitProgram of AbductiveDomain.Summary.t
   | AbortProgram of
       {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t; trace_to_issue: Trace.t}
@@ -36,21 +33,33 @@ type 'abductive_domain_t base_t =
       {astate: AbductiveDomain.Summary.t; specialized_type: Typ.Name.t; trace: Trace.t}
 [@@deriving equal, compare, yojson_of, variants]
 
+type 'abductive_domain_t base_t =
+  | ContinueProgram of 'abductive_domain_t
+  | InfiniteLoop of 'abductive_domain_t
+  | ExceptionRaised of 'abductive_domain_t
+  | Stopped of stopped_execution
+[@@deriving equal, compare, yojson_of, variants]
+
 type t = AbductiveDomain.t base_t
 
 let continue astate = ContinueProgram astate
 
-let leq ~lhs ~rhs =
+let summary_of_stopped_execution = function
+  | ExitProgram astate
+  | AbortProgram {astate}
+  | LatentAbortProgram {astate}
+  | LatentInvalidAccess {astate}
+  | LatentSpecializedTypeIssue {astate} ->
+      astate
+
+
+let leq_stopped_execution ~lhs ~rhs =
   phys_equal lhs rhs
   ||
   match (lhs, rhs) with
   | AbortProgram {astate= astate1}, AbortProgram {astate= astate2}
   | ExitProgram astate1, ExitProgram astate2 ->
       AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
-  | ExceptionRaised astate1, ExceptionRaised astate2
-  | InfiniteLoop astate1, InfiniteLoop astate2
-  | ContinueProgram astate1, ContinueProgram astate2 ->
-      AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
   | ( LatentAbortProgram {astate= astate1; latent_issue= issue1}
     , LatentAbortProgram {astate= astate2; latent_issue= issue2} ) ->
       LatentIssue.equal issue1 issue2 && AbductiveDomain.Summary.leq ~lhs:astate1 ~rhs:astate2
@@ -63,13 +72,23 @@ let leq ~lhs ~rhs =
       false
 
 
+let leq ~lhs ~rhs =
+  phys_equal lhs rhs
+  ||
+  match (lhs, rhs) with
+  | Stopped astate1, Stopped astate2 ->
+      leq_stopped_execution ~lhs:astate1 ~rhs:astate2
+  | ExceptionRaised astate1, ExceptionRaised astate2
+  | InfiniteLoop astate1, InfiniteLoop astate2
+  | ContinueProgram astate1, ContinueProgram astate2 ->
+      AbductiveDomain.leq ~lhs:astate1 ~rhs:astate2
+  | _ ->
+      false
+
+
 let to_astate = function
-  | AbortProgram {astate= summary}
-  | ExitProgram summary
-  | LatentAbortProgram {astate= summary}
-  | LatentInvalidAccess {astate= summary}
-  | LatentSpecializedTypeIssue {astate= summary} ->
-      (summary :> AbductiveDomain.t)
+  | Stopped exec ->
+      (summary_of_stopped_execution exec :> AbductiveDomain.t)
   | ExceptionRaised astate | ContinueProgram astate | InfiniteLoop astate ->
       astate
 
@@ -77,19 +96,19 @@ let to_astate = function
 let pp_header kind fmt = function
   | InfiniteLoop _ ->
       Pp.with_color kind Red F.pp_print_string fmt "InfiniteLoop"
-  | AbortProgram {diagnostic} ->
+  | ContinueProgram _ ->
+      F.pp_print_string fmt "ContinueProgram"
+  | ExceptionRaised _ ->
+      Pp.with_color kind Orange F.pp_print_string fmt "ExceptionRaised"
+  | Stopped (AbortProgram {diagnostic}) ->
       Pp.with_color kind Red F.pp_print_string fmt "AbortProgram" ;
       let issue_type = Diagnostic.get_issue_type ~latent:false diagnostic in
       let message, _suggestion = Diagnostic.get_message_and_suggestion diagnostic in
       let location = Diagnostic.get_location diagnostic in
       F.fprintf fmt "(%a: %a: %s)" Location.pp location IssueType.pp issue_type message
-  | ContinueProgram _ ->
-      F.pp_print_string fmt "ContinueProgram"
-  | ExceptionRaised _ ->
-      Pp.with_color kind Orange F.pp_print_string fmt "ExceptionRaised"
-  | ExitProgram _ ->
+  | Stopped (ExitProgram _) ->
       Pp.with_color kind Orange F.pp_print_string fmt "ExitProgram"
-  | LatentAbortProgram {latent_issue} ->
+  | Stopped (LatentAbortProgram {latent_issue}) ->
       Pp.with_color kind Orange F.pp_print_string fmt "LatentAbortProgram" ;
       let diagnostic = LatentIssue.to_diagnostic latent_issue in
       let issue_type = Diagnostic.get_issue_type ~latent:true diagnostic in
@@ -97,10 +116,10 @@ let pp_header kind fmt = function
       let location = Diagnostic.get_location diagnostic in
       F.fprintf fmt "(%a: %a: %s)@ %a" Location.pp location IssueType.pp issue_type message
         LatentIssue.pp latent_issue
-  | LatentInvalidAccess {address; must_be_valid= _} ->
+  | Stopped (LatentInvalidAccess {address; must_be_valid= _}) ->
       Pp.with_color kind Orange F.pp_print_string fmt "LatentInvalidAccess" ;
       F.fprintf fmt "(%a)" DecompilerExpr.pp address
-  | LatentSpecializedTypeIssue {specialized_type; trace} ->
+  | Stopped (LatentSpecializedTypeIssue {specialized_type; trace}) ->
       Pp.with_color kind Orange F.pp_print_string fmt "LatentSpecializedTypeIssue" ;
       let origin_location = Trace.get_start_location trace in
       F.fprintf fmt "(%a: %a)" Location.pp origin_location Typ.Name.pp specialized_type
@@ -150,7 +169,7 @@ let add_widenstate (key : Procdesc.Node.t) (data : TermKey.Set.t) =
 
 let has_infinite_state exec_states =
   List.exists exec_states ~f:(function
-    | AbortProgram {diagnostic= InfiniteLoopError _} | InfiniteLoop _ ->
+    | Stopped (AbortProgram {diagnostic= InfiniteLoopError _}) | InfiniteLoop _ ->
         true
     | _ ->
         false )
@@ -177,12 +196,8 @@ let back_edge (prev : t list) (next : t list) (num_iters : int) : int option =
     let nextlen = List.length next in
     let extract_pathcond hd : Formula.t =
       match hd with
-      | AbortProgram {astate}
-      | ExitProgram astate
-      | LatentAbortProgram {astate}
-      | LatentInvalidAccess {astate}
-      | LatentSpecializedTypeIssue {astate} ->
-          AbductiveDomain.Summary.get_path_condition astate
+      | Stopped exec ->
+          summary_of_stopped_execution exec |> AbductiveDomain.Summary.get_path_condition
       | InfiniteLoop astate | ExceptionRaised astate | ContinueProgram astate ->
           AbductiveDomain.get_path_condition astate
     in
@@ -266,7 +281,7 @@ type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojs
 
 let pp_summary pe fmt (exec_summary : summary) = pp_with_kind pe None fmt (exec_summary :> t)
 
-let equal_fast exec_state1 exec_state2 =
+let equal_fast_stopped_execution exec_state1 exec_state2 =
   phys_equal exec_state1 exec_state2
   ||
   match (exec_state1, exec_state2) with
@@ -276,7 +291,19 @@ let equal_fast exec_state1 exec_state2 =
       phys_equal astate1 astate2 && phys_equal diagnostic1 diagnostic2
   | ExitProgram astate1, ExitProgram astate2 ->
       phys_equal astate1 astate2
-  | ContinueProgram astate1, ContinueProgram astate2 ->
+  | _ ->
+      false
+
+
+let equal_fast exec_state1 exec_state2 =
+  phys_equal exec_state1 exec_state2
+  ||
+  match (exec_state1, exec_state2) with
+  | Stopped astate1, Stopped astate2 ->
+      equal_fast_stopped_execution astate1 astate2
+  | ContinueProgram astate1, ContinueProgram astate2
+  | ExceptionRaised astate1, ExceptionRaised astate2
+  | InfiniteLoop astate1, InfiniteLoop astate2 ->
       phys_equal astate1 astate2
   | _ ->
       false

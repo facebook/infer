@@ -64,13 +64,7 @@ let realloc_common ~null_case ~desc allocator pointer size : model =
          | ContinueProgram astate ->
              alloc_common ~null_case ~initialize:false ~desc allocator (Some size) data astate
                non_disj
-         | InfiniteLoop _
-         | ExceptionRaised _
-         | ExitProgram _
-         | AbortProgram _
-         | LatentAbortProgram _
-         | LatentInvalidAccess _
-         | LatentSpecializedTypeIssue _ ->
+         | InfiniteLoop _ | ExceptionRaised _ | Stopped _ ->
              ([Ok exec_state], non_disj) )
 
 

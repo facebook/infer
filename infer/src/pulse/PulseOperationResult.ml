@@ -141,17 +141,7 @@ module Import = struct
     | ContinueProgram of 'abductive_domain_t
     | InfiniteLoop of 'abductive_domain_t
     | ExceptionRaised of 'abductive_domain_t
-    | ExitProgram of AbductiveDomain.Summary.t
-    | AbortProgram of
-        {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t; trace_to_issue: Trace.t}
-    | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
-    | LatentInvalidAccess of
-        { astate: AbductiveDomain.Summary.t
-        ; address: DecompilerExpr.t
-        ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
-        ; calling_context: (CallEvent.t * Location.t) list }
-    | LatentSpecializedTypeIssue of
-        {astate: AbductiveDomain.Summary.t; specialized_type: Typ.Name.t; trace: Trace.t}
+    | Stopped of ExecutionDomain.stopped_execution
 
   type base_error = AccessResult.error =
     | PotentialInvalidAccess of

@@ -361,11 +361,12 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       map_call_result astate ~f:(fun return_val_opt _subst astate ->
           Sat (copy_to_caller_return_variable astate return_val_opt) )
   | InfiniteLoop astate
-  | AbortProgram {astate}
-  | ExitProgram astate
-  | LatentAbortProgram {astate}
-  | LatentSpecializedTypeIssue {astate}
-  | LatentInvalidAccess {astate} ->
+  | Stopped
+      ( AbortProgram {astate}
+      | ExitProgram astate
+      | LatentAbortProgram {astate}
+      | LatentSpecializedTypeIssue {astate}
+      | LatentInvalidAccess {astate} ) ->
       map_call_result astate ~f:(fun _return_val_opt (subst, hist_map) astate_post_call ->
           let** astate_summary =
             let open SatUnsat.Import in
@@ -379,30 +380,31 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
           | ContinueProgram _ | ExceptionRaised _ ->
               assert false
           (* bypass the current errors to avoid compounding issues *)
-          | AbortProgram {diagnostic; trace_to_issue} ->
+          | Stopped (AbortProgram {diagnostic; trace_to_issue}) ->
               let trace_to_issue =
                 Trace.add_call (Call callee_proc_name) call_loc hist_map
                   ~default_caller_history:ValueHistory.epoch trace_to_issue
               in
-              Sat (Ok (AbortProgram {astate= astate_summary; diagnostic; trace_to_issue}))
+              Sat (Ok (Stopped (AbortProgram {astate= astate_summary; diagnostic; trace_to_issue})))
           | InfiniteLoop _ ->
               (* Summarisation removes [InfiniteLoop] states
                  TODO kill [InfiniteLoop] in favour of [AbortPorgram] *)
               Sat
                 (Ok
-                   (AbortProgram
-                      { astate= astate_summary
-                      ; diagnostic= InfiniteLoopError {location= call_loc}
-                      ; trace_to_issue=
-                          Immediate
-                            { location=
-                                call_loc
-                                (* should be the start of the callee procedure but let's no worry
+                   (Stopped
+                      (AbortProgram
+                         { astate= astate_summary
+                         ; diagnostic= InfiniteLoopError {location= call_loc}
+                         ; trace_to_issue=
+                             Immediate
+                               { location=
+                                   call_loc
+                                   (* should be the start of the callee procedure but let's no worry
                                    about it since we'll delete [InfiniteLoop] eventually *)
-                            ; history= ValueHistory.epoch } } ) )
-          | ExitProgram _ ->
-              Sat (Ok (ExitProgram astate_summary))
-          | LatentAbortProgram {latent_issue} -> (
+                               ; history= ValueHistory.epoch } } ) ) )
+          | Stopped (ExitProgram _) ->
+              Sat (Ok (Stopped (ExitProgram astate_summary)))
+          | Stopped (LatentAbortProgram {latent_issue}) -> (
               let open SatUnsat.Import in
               let latent_issue =
                 LatentIssue.add_call (Call callee_proc_name, call_loc) (subst, hist_map)
@@ -412,7 +414,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
               match LatentIssue.should_report astate_summary diagnostic with
               | `DelayReport latent_issue ->
                   L.d_printfln ~color:Orange "issue is still latent, recording a LatentAbortProgram" ;
-                  Sat (Ok (LatentAbortProgram {astate= astate_summary; latent_issue}))
+                  Sat (Ok (Stopped (LatentAbortProgram {astate= astate_summary; latent_issue})))
               | `ReportNow ->
                   L.d_printfln ~color:Red "issue is now manifest, emitting an error" ;
                   Sat
@@ -423,7 +425,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
                        ~f:(fun _ ->
                          L.die InternalError
                            "LatentAbortProgram cannot be applied to non-fatal errors" ) ) )
-          | LatentSpecializedTypeIssue {specialized_type; trace} ->
+          | Stopped (LatentSpecializedTypeIssue {specialized_type; trace}) ->
               let trace =
                 Trace.ViaCall
                   { f= Call callee_proc_name
@@ -433,11 +435,16 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
               in
               (* The decision to report or further propagate the issue is done
                  at summary creation time based on the current specialization *)
-              Sat (Ok (LatentSpecializedTypeIssue {astate= astate_summary; specialized_type; trace}))
-          | LatentInvalidAccess
-              { address= address_callee
-              ; must_be_valid= callee_access_trace, must_be_valid_reason
-              ; calling_context } -> (
+              Sat
+                (Ok
+                   (Stopped
+                      (LatentSpecializedTypeIssue {astate= astate_summary; specialized_type; trace})
+                   ) )
+          | Stopped
+              (LatentInvalidAccess
+                 { address= address_callee
+                 ; must_be_valid= callee_access_trace, must_be_valid_reason
+                 ; calling_context } ) -> (
             match
               let open IOption.Let_syntax in
               let* addr = DecompilerExpr.abstract_value_of_expr address_callee in
@@ -472,11 +479,12 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
                       DecompilerExpr.pp address_callee DecompilerExpr.pp address_caller ;
                     Sat
                       (Ok
-                         (LatentInvalidAccess
-                            { astate= astate_summary
-                            ; address= address_caller
-                            ; must_be_valid= (access_trace, must_be_valid_reason)
-                            ; calling_context } ) )
+                         (Stopped
+                            (LatentInvalidAccess
+                               { astate= astate_summary
+                               ; address= address_caller
+                               ; must_be_valid= (access_trace, must_be_valid_reason)
+                               ; calling_context } ) ) )
                 | Some (invalidation, invalidation_trace) ->
                     let address_caller = Decompiler.find invalid_address astate_post_call in
                     L.d_printfln ~color:Red
@@ -676,19 +684,22 @@ let add_need_dynamic_type_specialization needs execution_states =
             ContinueProgram (update_astate astate)
         | InfiniteLoop astate ->
             InfiniteLoop (update_astate astate)
-        | ExitProgram summary ->
-            ExitProgram (update_summary summary)
-        | AbortProgram {astate= summary; diagnostic; trace_to_issue} ->
-            AbortProgram {astate= update_summary summary; diagnostic; trace_to_issue}
-        | LatentAbortProgram latent_abort_program ->
-            let astate = update_summary latent_abort_program.astate in
-            LatentAbortProgram {latent_abort_program with astate}
-        | LatentInvalidAccess latent_invalid_access ->
-            let astate = update_summary latent_invalid_access.astate in
-            LatentInvalidAccess {latent_invalid_access with astate}
-        | LatentSpecializedTypeIssue latent_specialized_type_issue ->
-            let astate = update_summary latent_specialized_type_issue.astate in
-            LatentSpecializedTypeIssue {latent_specialized_type_issue with astate} ))
+        | Stopped exec ->
+            Stopped
+              ( match exec with
+              | ExitProgram summary ->
+                  ExitProgram (update_summary summary)
+              | AbortProgram {astate= summary; diagnostic; trace_to_issue} ->
+                  AbortProgram {astate= update_summary summary; diagnostic; trace_to_issue}
+              | LatentAbortProgram latent_abort_program ->
+                  let astate = update_summary latent_abort_program.astate in
+                  LatentAbortProgram {latent_abort_program with astate}
+              | LatentInvalidAccess latent_invalid_access ->
+                  let astate = update_summary latent_invalid_access.astate in
+                  LatentInvalidAccess {latent_invalid_access with astate}
+              | LatentSpecializedTypeIssue latent_specialized_type_issue ->
+                  let astate = update_summary latent_specialized_type_issue.astate in
+                  LatentSpecializedTypeIssue {latent_specialized_type_issue with astate} ) ))
 
 
 let maybe_dynamic_type_specialization_is_needed already_specialized contradiction astate =

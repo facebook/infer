@@ -13,29 +13,24 @@ module DecompilerExpr = PulseDecompilerExpr
 module Diagnostic = PulseDiagnostic
 module LatentIssue = PulseLatentIssue
 
-type 'abductive_domain_t base_t =
-  | ContinueProgram of 'abductive_domain_t  (** represents the state at the program point *)
-  | InfiniteLoop of 'abductive_domain_t  (** state after an infinite loop was found **)
-  | ExceptionRaised of 'abductive_domain_t  (** state after an exception has been thrown *)
+type stopped_execution =
   | ExitProgram of AbductiveDomain.Summary.t
-      (** represents the state originating at exit/divergence. *)
   | AbortProgram of
       {astate: AbductiveDomain.Summary.t; diagnostic: Diagnostic.t; trace_to_issue: Trace.t}
-      (** represents the state at the program point that caused an issue; the issue [diagnostic] has
-          been propagated from a call chain [trace] *)
   | LatentAbortProgram of {astate: AbductiveDomain.Summary.t; latent_issue: LatentIssue.t}
-      (** this path leads to an error but we don't have conclusive enough data to report it yet *)
   | LatentInvalidAccess of
       { astate: AbductiveDomain.Summary.t
       ; address: DecompilerExpr.t
       ; must_be_valid: Trace.t * Invalidation.must_be_valid_reason option
       ; calling_context: (CallEvent.t * Location.t) list }
-      (** if [address] is ever observed to be invalid then there is an invalid access because it
-          [must_be_valid] *)
   | LatentSpecializedTypeIssue of
       {astate: AbductiveDomain.Summary.t; specialized_type: Typ.Name.t; trace: Trace.t}
-      (** this path leads to an error but we need to know where type specialization happened to
-          report it *)
+
+type 'abductive_domain_t base_t =
+  | ContinueProgram of 'abductive_domain_t
+  | InfiniteLoop of 'abductive_domain_t
+  | ExceptionRaised of 'abductive_domain_t
+  | Stopped of stopped_execution
 
 type t = AbductiveDomain.t base_t
 
@@ -46,6 +41,8 @@ val pp_with_kind : Pp.print_kind -> PulsePathContext.t option -> F.formatter -> 
 val pp : F.formatter -> t -> unit
 
 val continue : AbductiveDomain.t -> t
+
+val summary_of_stopped_execution : stopped_execution -> AbductiveDomain.Summary.t
 
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
 

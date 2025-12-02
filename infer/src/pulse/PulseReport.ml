@@ -337,9 +337,11 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
              ; may_depend_on_an_unknown_value=
                  AbductiveDomain.Summary.contains_unknown_values summary
              ; must_be_valid_reason= snd must_be_valid } ) ;
-      Some (LatentInvalidAccess {astate= summary; address; must_be_valid; calling_context= []})
+      Some
+        (Stopped (LatentInvalidAccess {astate= summary; address; must_be_valid; calling_context= []})
+        )
   | PotentialInvalidSpecializedCall {specialized_type; trace} ->
-      Some (LatentSpecializedTypeIssue {astate= summary; specialized_type; trace})
+      Some (Stopped (LatentSpecializedTypeIssue {astate= summary; specialized_type; trace}))
   | ReportableError {diagnostic} -> (
       let is_nullptr_dereference =
         match diagnostic with AccessToInvalidAddress _ -> true | _ -> false
@@ -360,13 +362,13 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
             let trace_to_issue =
               Trace.Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch}
             in
-            Some (AbortProgram {astate= summary; diagnostic; trace_to_issue})
+            Some (Stopped (AbortProgram {astate= summary; diagnostic; trace_to_issue}))
           else None
       | `DelayReport latent_issue ->
           if is_suppressed then L.d_printfln "DelayReport suppressed error" ;
           if Config.pulse_report_latent_issues then
             report_latent_issue analysis_data ~is_suppressed latent_issue ;
-          Some (LatentAbortProgram {astate= summary; latent_issue}) )
+          Some (Stopped (LatentAbortProgram {astate= summary; latent_issue})) )
   | WithSummary _ ->
       (* impossible thanks to prior application of [summary_error_of_error] *)
       assert false
