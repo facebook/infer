@@ -27,17 +27,18 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<
       jmp 5::ret @[5:15]
       
   #5::ret: @[5:15]
-      n4 = load &var4 @[5:15]
-      store n4.__infer_swift_type<objc_super>.field_0 <- n1 @[5:15]
-      n6 = load &var4 @[5:15]
-      store n6.__infer_swift_type<objc_super>.field_1 <- n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
-      n7 = load &L_selector(init) @[5:15]
+      n5 = load &var4 @[5:15]
+      store n5.__infer_swift_type<objc_super>.field_0 <- n1 @[5:15]
       n8 = load &var4 @[5:15]
-      n10 = $builtins.objc_msgSendSuper2(n8, n7) @[5:15]
-      n11 = $builtins.llvm_nondet() @[154:0]
-      store &self <- n10 @[155:0]
-      n12 = load &self @[6:5]
-      ret n10 @[6:5]
+      n7 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
+      store n8.__infer_swift_type<objc_super>.field_1 <- n7 @[5:15]
+      n9 = load &L_selector(init) @[5:15]
+      n10 = load &var4 @[5:15]
+      n12 = $builtins.objc_msgSendSuper2(n10, n9) @[5:15]
+      n13 = $builtins.llvm_nondet() @[154:0]
+      store &self <- n12 @[155:0]
+      n15 = load &self @[6:5]
+      ret n12 @[6:5]
       
 } @?
 

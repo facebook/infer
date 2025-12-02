@@ -54,12 +54,13 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
       
   #2::ret: @[23:18]
       n4 = n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 @[23:18]
-      n6 = load &person @[113:0]
-      n7 = load n6.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_0 @[113:0]
-      store n7.__infer_swift_type<TSi>.field_0 <- n4 @[113:0]
-      n9 = load &person @[114:0]
-      n10 = load n9.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_1 @[114:0]
-      store n10.__infer_swift_type<TSi>.field_0 <- n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[114:0]
+      n7 = load &person @[113:0]
+      n8 = load n7.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_0 @[113:0]
+      store n8.__infer_swift_type<TSi>.field_0 <- n4 @[113:0]
+      n11 = load &person @[114:0]
+      n12 = load n11.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_1 @[114:0]
+      n10 = load n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[114:0]
+      store n12.__infer_swift_type<TSi>.field_0 <- n10 @[114:0]
       ret n4 @[24:5]
       
 } @?

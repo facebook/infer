@@ -51,7 +51,7 @@ define .plain_name = "init" $s5Hello5TrainCACycfc(self: *__infer_swift_type<,Tra
   #4::ret: @[156:0]
       n4 = $builtins.llvm_nondet() @[156:0]
       store &self <- n3 @[157:0]
-      n5 = load &self @[158:0]
+      n6 = load &self @[158:0]
       ret n3 @[160:0]
       
 } @?

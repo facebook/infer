@@ -111,30 +111,30 @@ define test10() : int {
       jmp 3 @[70:8]
       
   #10: @[70:27]
-      n13 = load &i @[70:27]
-      store &i <- __sil_plusa_int(n13, 1) @[70:27]
+      n16 = load &i @[70:27]
+      store &i <- __sil_plusa_int(n16, 1) @[70:27]
       jmp 3 @[70:3]
       
   #13: @[73:3]
-      n4 = load &sum @[73:3]
-      if __sil_ne(n4, 3) then jmp 18 else jmp 17 @[73:3]
+      n6 = load &sum @[73:3]
+      if __sil_ne(n6, 3) then jmp 18 else jmp 17 @[73:3]
       
   #17: @[73:3]
       _ = __sil_assert_fail(null) @[73:3]
       jmp __assert_fail::void::ret @[73:3]
       
   #18: @[74:10]
-      n7 = load &sum @[74:10]
-      ret n7 @[74:3]
+      n9 = load &sum @[74:10]
+      ret n9 @[74:3]
       
   #3: @[70:19]
-      n1 = load &i @[70:19]
-      if __sil_lt(n1, 3) then jmp 6 else jmp 13 @[70:3]
+      n3 = load &i @[70:19]
+      if __sil_lt(n3, 3) then jmp 6 else jmp 13 @[70:3]
       
   #6: @[71:12]
-      n9 = load &i @[71:12]
-      n10 = load &sum @[71:9]
-      store &sum <- __sil_plusa_int(n10, n9) @[71:9]
+      n11 = load &i @[71:12]
+      n12 = load &sum @[71:9]
+      store &sum <- __sil_plusa_int(n12, n11) @[71:9]
       jmp 10 @[72:3]
       
   #__assert_fail::void::ret: @[73:3]
@@ -175,21 +175,21 @@ define test13() : int {
       jmp __assert_fail::void::ret @[92:3]
       
   #13: @[93:10]
-      n7 = load &i @[93:10]
-      ret n7 @[93:3]
+      n8 = load &i @[93:10]
+      ret n8 @[93:3]
       
   #2: @[89:10]
-      n1 = load &i @[89:10]
-      if __sil_ge(n1, 8) then jmp 5 else jmp 8 @[89:3]
+      n2 = load &i @[89:10]
+      if __sil_ge(n2, 8) then jmp 5 else jmp 8 @[89:3]
       
   #5: @[90:6]
-      n9 = load &i @[90:6]
-      store &i <- __sil_plusa_int(n9, -1) @[90:6]
+      n10 = load &i @[90:6]
+      store &i <- __sil_plusa_int(n10, -1) @[90:6]
       jmp 2 @[89:3]
       
   #8: @[92:3]
-      n4 = load &i @[92:3]
-      if __sil_ne(n4, 7) then jmp 13 else jmp 12 @[92:3]
+      n5 = load &i @[92:3]
+      if __sil_ne(n5, 7) then jmp 13 else jmp 12 @[92:3]
       
   #__assert_fail::void::ret: @[92:3]
       unreachable @[92:3]
@@ -201,23 +201,23 @@ define test14() : int {
   #: @[112:27]
       n1 = __sil_malloc(<int>) @[112:27]
       store &person <- n1 @[112:18]
-      n2 = load &person @[113:7]
-      if __sil_ne(n2, null) then jmp 7 else jmp 21 @[113:7]
+      n3 = load &person @[113:7]
+      if __sil_ne(n3, null) then jmp 7 else jmp 21 @[113:7]
       
   #13::ret: @[116:9]
-      store &age <- n12 @[116:9]
-      n13 = load &person @[117:10]
-      _ = __sil_free(n13) @[117:5]
-      n14 = load &age @[118:5]
-      if __sil_ne(n14, 30) then jmp 19 else jmp 18 @[118:5]
+      store &age <- n16 @[116:9]
+      n18 = load &person @[117:10]
+      _ = __sil_free(n18) @[117:5]
+      n19 = load &age @[118:5]
+      if __sil_ne(n19, 30) then jmp 19 else jmp 18 @[118:5]
       
   #18: @[118:5]
       _ = __sil_assert_fail(null) @[118:5]
       jmp __assert_fail::void::ret @[118:5]
       
   #19: @[119:12]
-      n17 = load &age @[119:12]
-      store &var2 <- n17 @[119:5]
+      n22 = load &age @[119:12]
+      store &var2 <- n22 @[119:5]
       jmp 22 @[119:5]
       
   #21: @[121:3]
@@ -225,16 +225,16 @@ define test14() : int {
       jmp 22 @[121:3]
       
   #22: @[122:1]
-      n5 = load &var2 @[122:1]
-      ret n5 @[122:1]
+      n7 = load &var2 @[122:1]
+      ret n7 @[122:1]
       
   #7: @[114:5]
-      n7 = load &person @[114:5]
-      store n7.struct::Person.field_2 <- 30 @[114:17]
-      n9 = load &person @[115:5]
-      store n9.struct::Person.field_0 <- "John" @[115:18]
-      n11 = load &person @[116:23]
-      n12 = get_age(n11) @[116:15]
+      n9 = load &person @[114:5]
+      store n9.struct::Person.field_2 <- 30 @[114:17]
+      n12 = load &person @[115:5]
+      store n12.struct::Person.field_0 <- "John" @[115:18]
+      n15 = load &person @[116:23]
+      n16 = get_age(n15) @[116:15]
       jmp 13::ret @[116:15]
       
   #__assert_fail::void::ret: @[118:5]
@@ -251,16 +251,16 @@ define test15() : int {
       
   #3::ret: @[126:7]
       store &age <- n1 @[126:7]
-      n2 = load &age @[127:3]
-      if __sil_ne(n2, 30) then jmp 8 else jmp 7 @[127:3]
+      n3 = load &age @[127:3]
+      if __sil_ne(n3, 30) then jmp 8 else jmp 7 @[127:3]
       
   #7: @[127:3]
       _ = __sil_assert_fail(null) @[127:3]
       jmp __assert_fail::void::ret @[127:3]
       
   #8: @[128:10]
-      n5 = load &age @[128:10]
-      ret n5 @[128:3]
+      n6 = load &age @[128:10]
+      ret n6 @[128:3]
       
   #__assert_fail::void::ret: @[127:3]
       unreachable @[127:3]
@@ -276,27 +276,27 @@ define test16(var1: *Person, var2: *Cat) : int {
       store &cat <- n2 @[115:0]
       n3 = load &cat @[132:3]
       store n3.struct::Cat.field_1 <- 10 @[132:12]
-      n5 = load &person @[133:3]
-      store n5.struct::Person.field_2 <- 30 @[133:15]
-      n7 = load &person @[134:3]
-      store n7.struct::Person.field_0 <- "John" @[134:16]
-      n9 = load &cat @[135:17]
-      n10 = load &person @[135:3]
-      store n10.struct::Person.field_4 <- n9 @[135:15]
-      n12 = load &person @[136:13]
-      n13 = load n12.struct::Person.field_4 @[136:21]
-      n15 = load n13.struct::Cat.field_1 @[136:26]
-      store &age <- n15 @[136:7]
-      n17 = load &age @[137:3]
-      if __sil_ne(n17, 10) then jmp 24 else jmp 23 @[137:3]
+      n6 = load &person @[133:3]
+      store n6.struct::Person.field_2 <- 30 @[133:15]
+      n9 = load &person @[134:3]
+      store n9.struct::Person.field_0 <- "John" @[134:16]
+      n12 = load &cat @[135:17]
+      n13 = load &person @[135:3]
+      store n13.struct::Person.field_4 <- n12 @[135:15]
+      n16 = load &person @[136:13]
+      n17 = load n16.struct::Person.field_4 @[136:21]
+      n19 = load n17.struct::Cat.field_1 @[136:26]
+      store &age <- n19 @[136:7]
+      n22 = load &age @[137:3]
+      if __sil_ne(n22, 10) then jmp 24 else jmp 23 @[137:3]
       
   #23: @[137:3]
       _ = __sil_assert_fail(null) @[137:3]
       jmp __assert_fail::void::ret @[137:3]
       
   #24: @[138:10]
-      n20 = load &age @[138:10]
-      ret n20 @[138:3]
+      n25 = load &age @[138:10]
+      ret n25 @[138:3]
       
   #__assert_fail::void::ret: @[137:3]
       unreachable @[137:3]
@@ -311,8 +311,8 @@ define test17(var1: int) : int {
       n2 = load &b @[142:11]
       n3 = __sil_ne(n2, 0) @[142:11]
       store &z <- (if n3 then 1 else 0) @[142:7]
-      n6 = load &z @[143:10]
-      ret n6 @[143:3]
+      n7 = load &z @[143:10]
+      ret n7 @[143:3]
       
 } @?
 
@@ -360,16 +360,16 @@ define test6() : int {
   local var2: int, ptr: *ptr_elt
   #: @[33:8]
       store &ptr <- null @[33:8]
-      n1 = call_add() @[34:7]
+      n2 = call_add() @[34:7]
       jmp 3::ret @[34:7]
       
   #3::ret: @[34:7]
-      if __sil_eq(n1, 3) then jmp 5 else jmp 8 @[34:7]
+      if __sil_eq(n2, 3) then jmp 5 else jmp 8 @[34:7]
       
   #5: @[35:13]
-      n6 = load &ptr @[35:13]
-      n7 = load n6 @[35:12]
-      store &var2 <- n7 @[35:5]
+      n8 = load &ptr @[35:13]
+      n9 = load n8 @[35:12]
+      store &var2 <- n9 @[35:5]
       jmp 9 @[35:5]
       
   #8: @[37:5]
@@ -377,8 +377,8 @@ define test6() : int {
       jmp 9 @[37:5]
       
   #9: @[38:1]
-      n4 = load &var2 @[38:1]
-      ret n4 @[38:1]
+      n6 = load &var2 @[38:1]
+      ret n6 @[38:1]
       
 } @?
 
@@ -386,16 +386,16 @@ define test7() : int {
   local var2: int, ptr: *ptr_elt
   #: @[41:8]
       store &ptr <- null @[41:8]
-      n1 = call_add() @[42:7]
+      n2 = call_add() @[42:7]
       jmp 3::ret @[42:7]
       
   #3::ret: @[42:7]
-      if __sil_eq(n1, 5) then jmp 5 else jmp 8 @[42:7]
+      if __sil_eq(n2, 5) then jmp 5 else jmp 8 @[42:7]
       
   #5: @[43:13]
-      n6 = load &ptr @[43:13]
-      n7 = load n6 @[43:12]
-      store &var2 <- n7 @[43:5]
+      n8 = load &ptr @[43:13]
+      n9 = load n8 @[43:12]
+      store &var2 <- n9 @[43:5]
       jmp 9 @[43:5]
       
   #8: @[45:5]
@@ -403,8 +403,8 @@ define test7() : int {
       jmp 9 @[45:5]
       
   #9: @[46:1]
-      n4 = load &var2 @[46:1]
-      ret n4 @[46:1]
+      n6 = load &var2 @[46:1]
+      ret n6 @[46:1]
       
 } @?
 
@@ -416,14 +416,14 @@ define test8(var1: *int) : int {
       n2 = load &ptr @[51:4]
       store n2 <- 1 @[51:8]
       store &null_ptr <- null @[52:8]
-      n3 = load &ptr @[53:23]
-      n4 = call_add1(n3, 2) @[53:13]
+      n5 = load &ptr @[53:23]
+      n6 = call_add1(n5, 2) @[53:13]
       jmp 8::ret @[53:13]
       
   #11: @[55:13]
-      n10 = load &null_ptr @[55:13]
-      n11 = load n10 @[55:12]
-      store &var3 <- n11 @[55:5]
+      n14 = load &null_ptr @[55:13]
+      n15 = load n14 @[55:12]
+      store &var3 <- n15 @[55:5]
       jmp 15 @[55:5]
       
   #14: @[57:5]
@@ -431,13 +431,13 @@ define test8(var1: *int) : int {
       jmp 15 @[57:5]
       
   #15: @[58:1]
-      n8 = load &var3 @[58:1]
-      ret n8 @[58:1]
+      n12 = load &var3 @[58:1]
+      ret n12 @[58:1]
       
   #8::ret: @[53:7]
-      store &ret <- n4 @[53:7]
-      n5 = load &ret @[54:7]
-      if __sil_eq(n5, 3) then jmp 11 else jmp 14 @[54:7]
+      store &ret <- n6 @[53:7]
+      n8 = load &ret @[54:7]
+      if __sil_eq(n8, 3) then jmp 11 else jmp 14 @[54:7]
       
 } @?
 
@@ -446,15 +446,15 @@ define test9() : int {
   #: @[61:14]
       n1 = __sil_malloc(<int>) @[61:14]
       store &ptr <- n1 @[61:8]
-      n2 = load &ptr @[62:4]
-      store n2 <- 42 @[62:8]
-      n3 = load &ptr @[63:14]
-      n4 = load n3 @[63:13]
-      store &ret <- n4 @[63:7]
-      n5 = load &ptr @[64:8]
-      _ = __sil_free(n5) @[64:3]
-      n6 = load &ret @[65:10]
-      ret n6 @[65:3]
+      n3 = load &ptr @[62:4]
+      store n3 <- 42 @[62:8]
+      n5 = load &ptr @[63:14]
+      n6 = load n5 @[63:13]
+      store &ret <- n6 @[63:7]
+      n8 = load &ptr @[64:8]
+      _ = __sil_free(n8) @[64:3]
+      n9 = load &ret @[65:10]
+      ret n9 @[65:3]
       
 } @?
 

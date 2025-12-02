@@ -709,24 +709,15 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         []
     | Store {ptr; exp; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
-        let exp2, _, exp2_instrs_ = to_textual_exp loc ~proc_state exp in
-        let exp2, exp2_instrs =
-          match (exp, exp2) with
-          | Llair.Exp.Reg {name; id; typ}, Textual.Exp.Lvar _ ->
-              let reg = Reg.mk typ id name in
-              let id, _ = Var.reg_to_id ~proc_state reg in
-              let new_exp2 = Textual.Exp.Var id in
-              let exp2_instr = Textual.Instr.Load {id; exp= exp2; typ= None; loc} in
-              (new_exp2, exp2_instrs_ @ [exp2_instr])
-          | _ ->
-              (exp2, exp2_instrs_)
-        in
+        let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state exp in
+        let exp2_deref_instrs, exp2 = add_deref ~proc_state exp2 loc in
         let exp1, typ_exp1, exp1_instrs = to_textual_exp loc ~proc_state ptr in
         let textual_instr_opt =
           if remove_store_zero_in_class typ_exp1 exp2 then None
           else Some (Textual.Instr.Store {exp1; typ= None; exp2; loc})
         in
-        (Option.to_list textual_instr_opt @ exp2_instrs) @ exp1_instrs @ textual_instrs
+        (Option.to_list textual_instr_opt @ exp2_deref_instrs @ exp2_instrs)
+        @ exp1_instrs @ textual_instrs
     | Alloc {reg} ->
         let reg_var_name = Var.reg_to_var_name reg in
         let ptr_typ = Type.to_annotated_textual_typ proc_state.lang ~struct_map (Reg.typ reg) in
