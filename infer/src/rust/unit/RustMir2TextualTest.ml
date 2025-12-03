@@ -35,7 +35,9 @@ let test source =
         | Error err ->
             F.printf "Test failed: %a" (F.pp_print_list TextualVerification.pp_error) err
         | Ok verified ->
-            let transformed_textual, _ = TextualTransform.run Rust verified in
+            let transformed_textual, _ =
+              TextualTransform.run Rust verified |> Stdlib.Result.get_ok
+            in
             Textual.Module.pp F.std_formatter transformed_textual )
   with e -> F.printf "Exn %s\n Command output: %s" (Exn.to_string e) cmd_out
 
