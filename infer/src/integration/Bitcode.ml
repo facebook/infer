@@ -70,7 +70,9 @@ let capture compiler ~command ~args =
 let capture_llair ~source_file ~llair_file =
   Utils.with_file_in llair_file ~f:(fun llair_in ->
       let llair_program : Llair.program = Marshal.from_channel llair_in in
-      LlvmFrontend.capture_llair source_file llair_program )
+      let lang = LlvmFrontend.language_of_source_file source_file in
+      let module_state = LlvmFrontend.init_module_state llair_program lang in
+      LlvmFrontend.capture_llair source_file module_state )
 
 
 let direct_bitcode_capture ~sources ~bitcode =

@@ -8,4 +8,8 @@
 open! IStd
 open Llair
 
-val translate : source_file:string -> Program.t -> Textual.Lang.t -> Textual.Module.t
+type module_state
+
+val init_module_state : Program.t -> Textual.Lang.t -> module_state
+
+val translate : source_file:string -> module_state -> Textual.Module.t

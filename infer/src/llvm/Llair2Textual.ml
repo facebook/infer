@@ -435,7 +435,8 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         | Textual.Typ.(Ptr (Struct name)) ->
             name
         | _ ->
-            L.die InternalError "Llair2Textual: unexpected type %a" Textual.Typ.pp textual_typ
+            L.die InternalError "Llair2Textual: unexpected type %a in %a at %a" Textual.Typ.pp
+              textual_typ SourceFile.pp proc_state.sourcefile Textual.Location.pp loc
       in
       let index_exp =
         Textual.Exp.Field {exp= rcd_exp; field= Type.tuple_field_of_pos type_name idx}
@@ -1265,12 +1266,24 @@ let reset_global_state () =
   Textual.ProcName.Hashtbl.clear ProcState.method_class_index
 
 
-let translate ~source_file (llair_program : Llair.Program.t) lang : Textual.Module.t =
-  reset_global_state () ;
+type module_state =
+  { functions: (FuncName.t * func) list
+  ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
+  ; proc_decls: Textual.ProcDecl.t list
+  ; globals_map: GlobalDefn.t VarMap.t
+  ; lang: Textual.Lang.t }
+
+let init_module_state llair_program lang =
   let functions = FuncName.Map.to_list llair_program.Llair.functions in
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
   let proc_decls, struct_map = translate_llair_function_signatures lang struct_map functions in
   let globals_map = build_globals_map llair_program.Llair.globals in
+  {functions; struct_map; proc_decls; globals_map; lang}
+
+
+let translate ~source_file (module_state : module_state) : Textual.Module.t =
+  reset_global_state () ;
+  let {functions; struct_map; proc_decls; globals_map; lang} = module_state in
   let source_file_ = SourceFile.create source_file in
   let globals, proc_descs =
     Textual.VarName.Map.fold
