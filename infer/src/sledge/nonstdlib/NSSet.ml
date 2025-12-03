@@ -18,7 +18,7 @@ module Make_from_Comparer (Elt : sig
   include NSComparer.S with type t := t
 end) =
 struct
-  module S = OSet.Make [@inlined] (Elt)
+  module S = OSet.Make (Elt)
 
   type elt = Elt.t
 

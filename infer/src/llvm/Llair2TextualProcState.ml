@@ -52,6 +52,27 @@ type t =
   ; proc_map: procMap
   ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
 
+let init_state ~qualified_name ~sourcefile ~loc ~formals ~struct_map ~globals ~lang ~proc_map
+    ~class_name_offset_map =
+  { qualified_name
+  ; sourcefile
+  ; loc
+  ; formals
+  ; locals= VarMap.empty
+  ; ids_move= IdentMap.empty
+  ; ids_types= IdentMap.empty
+  ; id_offset= None
+  ; get_element_ptr_offset= None
+  ; reg_map= RegMap.empty
+  ; last_id= Textual.Ident.of_int 0
+  ; last_tmp_var= 0
+  ; struct_map
+  ; globals
+  ; lang
+  ; proc_map
+  ; class_name_offset_map }
+
+
 let get_element_ptr_offset_prefix = "getelementptr_offset"
 
 let mk_fresh_id ?reg proc_state =

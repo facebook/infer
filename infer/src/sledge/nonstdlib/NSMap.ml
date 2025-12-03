@@ -19,7 +19,7 @@ module Make_from_Comparer (Key : sig
   include NSComparer.S with type t := t
 end) =
 struct
-  module M = OMap.Make [@inlined] (Key)
+  module M = OMap.Make (Key)
 
   type key = Key.t
 

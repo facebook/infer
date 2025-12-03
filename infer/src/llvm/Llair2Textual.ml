@@ -13,7 +13,6 @@ module L = Logging
 module ProcState = Llair2TextualProcState
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
-module RegMap = Llair.Exp.Reg.Map
 
 let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
 
@@ -383,10 +382,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         ProcState.mk_fresh_tmp_var ProcState.get_element_ptr_offset_prefix proc_state
       in
       let new_var = Textual.Exp.Lvar var_name in
-      let _ =
-        proc_state.locals <-
-          VarMap.add var_name (Textual.Typ.mk_without_attributes (Ptr Void)) proc_state.locals
-      in
+      ProcState.update_locals ~proc_state var_name (Textual.Typ.mk_without_attributes (Ptr Void)) ;
       ProcState.update_var_offset ~proc_state var_name n ;
       let store_instr = Textual.Instr.Store {exp1= new_var; exp2= exp; typ= None; loc} in
       (new_var, None, store_instr :: instrs)
@@ -1160,24 +1156,9 @@ let translate_code proc_map lang source_file struct_map globals class_name_offse
           formals_list formals_types ~init:Textual.VarName.Map.empty
   in
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
-  let proc_state : ProcState.t =
-    { qualified_name= procdecl.qualified_name
-    ; sourcefile= source_file
-    ; loc
-    ; formals= formals_map
-    ; locals= VarMap.empty
-    ; ids_move= IdentMap.empty
-    ; ids_types= IdentMap.empty
-    ; id_offset= None
-    ; get_element_ptr_offset= None
-    ; reg_map= RegMap.empty
-    ; last_id= Textual.Ident.of_int 0
-    ; last_tmp_var= 0
-    ; struct_map
-    ; globals
-    ; lang
-    ; proc_map
-    ; class_name_offset_map }
+  let proc_state =
+    ProcState.init_state ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
+      ~formals:formals_map ~struct_map ~globals ~lang ~proc_map ~class_name_offset_map
   in
   let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
   let result_type =

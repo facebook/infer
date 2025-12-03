@@ -33,7 +33,7 @@ module ClassNameOffsetMap : Stdlib.Hashtbl.S with type key = ClassNameOffset.t
 
 type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
-type t =
+type t = private
   { qualified_name: Textual.QualifiedProcName.t
   ; sourcefile: SourceFile.t
   ; loc: Textual.Location.t
@@ -51,6 +51,18 @@ type t =
   ; lang: Textual.Lang.t
   ; proc_map: procMap
   ; class_name_offset_map: classNameOffsetMap }
+
+val init_state :
+     qualified_name:Textual.QualifiedProcName.t
+  -> sourcefile:SourceFile.t
+  -> loc:Textual.Location.t
+  -> formals:(Textual.Typ.annotated * VarMap.key option) VarMap.t
+  -> struct_map:structMap
+  -> globals:globalMap
+  -> lang:Textual.Lang.t
+  -> proc_map:procMap
+  -> class_name_offset_map:Textual.QualifiedProcName.t ClassNameOffsetMap.t
+  -> t
 
 val get_element_ptr_offset_prefix : string
 
