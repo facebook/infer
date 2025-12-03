@@ -17,7 +17,6 @@ let get_missed_captures ~get_summary entry_nodes =
   let from_execution (exec_state : ExecutionDomain.summary) =
     match exec_state with
     | ContinueProgram summary
-    | InfiniteLoop summary
     | ExceptionRaised summary
     | Stopped
         ( ExitProgram summary

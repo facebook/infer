@@ -92,7 +92,6 @@ module Import : sig
 
   type 'abductive_domain_t execution_domain_base_t = 'abductive_domain_t ExecutionDomain.base_t =
     | ContinueProgram of 'abductive_domain_t
-    | InfiniteLoop of 'abductive_domain_t
     | ExceptionRaised of 'abductive_domain_t
     | Stopped of ExecutionDomain.stopped_execution
 

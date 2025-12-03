@@ -338,7 +338,7 @@ module Basic = struct
                       (addr, deleted_hist) astate )
                   addrs_to_invalidate astate
                 |> ok_continue
-            | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
+            | ExceptionRaised _ | Stopped _ ->
                 [Ok exec_state] )
       , non_disj )
     in

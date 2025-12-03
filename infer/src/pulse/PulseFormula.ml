@@ -216,10 +216,8 @@ module Intervals = struct
                  (formula, new_eqs) )
         in
         let formula =
-          if
-            Config.pulse_experimental_infinite_loop_checker
-            || Config.pulse_experimental_infinite_loop_checker_v2
-          then update_formula_for_infinite_loop_checker ~need_atom binop op1 op2 formula
+          if Config.pulse_experimental_infinite_loop_checker then
+            update_formula_for_infinite_loop_checker ~need_atom binop op1 op2 formula
           else formula
         in
         refine v1_opt i1_better_opt (formula, new_eqs) >>= refine v2_opt i2_better_opt
@@ -372,10 +370,8 @@ let prune_binop ?(depth = 0) ~negated (bop : Binop.t) ?(need_atom = false) x y f
   let ty = Term.of_operand y in
   let t = Term.of_binop bop tx ty in
   let formula =
-    if
-      Config.pulse_experimental_infinite_loop_checker
-      || Config.pulse_experimental_infinite_loop_checker_v2
-    then infinite_loop_checker_prune_binop bop tx ty t formula
+    if Config.pulse_experimental_infinite_loop_checker then
+      infinite_loop_checker_prune_binop bop tx ty t formula
     else formula
   in
   let atoms =

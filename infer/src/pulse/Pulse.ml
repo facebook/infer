@@ -12,7 +12,6 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 module CallGlobalForStats = PulseCallOperations.GlobalForStats
-module Metadata = AbstractInterpreter.DisjunctiveMetadata
 
 (** raised when we detect that pulse is using too much memory to stop the analysis of the current
     procedure *)
@@ -184,29 +183,6 @@ module PulseTransferFunctions = struct
 
   type analysis_data = PulseSummary.t InterproceduralAnalysis.t
 
-  let widen_list (prev : DisjDomain.t list) (next : DisjDomain.t list) ~num_iters :
-      DisjDomain.t list =
-    let plist = List.rev_map ~f:fst prev in
-    let nlist = List.rev_map ~f:fst next in
-    match ExecutionDomain.back_edge plist nlist num_iters with
-    | None ->
-        prev
-    | Some cnt ->
-        let exec, path = List.nth_exn next cnt in
-        let exec =
-          match exec with
-          | ContinueProgram astate ->
-              let cfgnode = AnalysisState.get_node () |> Option.value_exn in
-              Metadata.record_alert_node cfgnode ;
-              InfiniteLoop astate
-          | _ ->
-              exec
-        in
-        prev @ [(exec, path)]
-
-
-  (* END OF BACK-EDGE CODE *)
-
   let get_pvar_formals pname =
     IRAttributes.load pname |> Option.map ~f:ProcAttributes.get_pvar_formals
 
@@ -283,7 +259,7 @@ module PulseTransferFunctions = struct
           (StackAddress (Var.of_pvar pvar, ValueHistory.epoch))
           call_loc gone_out_of_scope out_of_scope_base astate
         |> ExecutionDomain.continue
-    | Stopped _ | InfiniteLoop _ ->
+    | Stopped _ ->
         Sat (Ok exec_state)
 
 
@@ -306,7 +282,7 @@ module PulseTransferFunctions = struct
       match exec_state with
       | ContinueProgram astate ->
           ContinueProgram (do_astate astate)
-      | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
+      | ExceptionRaised _ | Stopped _ ->
           exec_state
     in
     List.map ~f:(PulseResult.map ~f:do_one_exec_state) exec_state_res
@@ -988,7 +964,7 @@ module PulseTransferFunctions = struct
             L.d_printfln "clearing builder attributes on exception" ;
             let astate = AbductiveDomain.finalize_all_hack_builders astate in
             Ok (ExceptionRaised astate)
-        | (InfiniteLoop _ | Stopped _) as exec_state ->
+        | Stopped _ as exec_state ->
             Ok exec_state
       in
       List.map exec_states_res ~f:one_state
@@ -1097,7 +1073,7 @@ module PulseTransferFunctions = struct
         let astates, non_disj =
           NonDisjDomain.bind (astates, non_disj) ~f:(fun astate non_disj ->
               match astate with
-              | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
+              | ExceptionRaised _ | Stopped _ ->
                   ([astate], non_disj)
               | ContinueProgram astate as default_astate ->
                   (let open IOption.Let_syntax in
@@ -1146,7 +1122,7 @@ module PulseTransferFunctions = struct
         call_instr ;
       NonDisjDomain.bind (astate_list, non_disj) ~f:(fun (astate : ExecutionDomain.t) non_disj ->
           match astate with
-          | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
+          | ExceptionRaised _ | Stopped _ ->
               ([astate], non_disj)
           | ContinueProgram astate ->
               let execs, non_disj =
@@ -1172,7 +1148,7 @@ module PulseTransferFunctions = struct
   let remove_vars vars location astates =
     List.filter_map astates ~f:(fun (exec_state : ExecutionDomain.t) ->
         match exec_state with
-        | Stopped _ | InfiniteLoop _ ->
+        | Stopped _ ->
             Some exec_state
         | ContinueProgram astate -> (
           match PulseOperations.remove_vars vars location astate with
@@ -1323,7 +1299,6 @@ module PulseTransferFunctions = struct
       (astate_n : NonDisjDomain.t) ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       cfg_node (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
     match astate with
-    | InfiniteLoop _
     | Stopped _
     (* an exception has been raised, we skip the other instructions until we enter in
        exception edge *)
@@ -1753,7 +1728,7 @@ let exit_function limit analysis_data location posts non_disj_astate =
     List.fold_left posts ~init:([], non_disj_astate)
       ~f:(fun (acc_astates, astate_n) (exec_state, path) ->
         match exec_state with
-        | ExceptionRaised _ | InfiniteLoop _ | Stopped _ ->
+        | ExceptionRaised _ | Stopped _ ->
             ((exec_state, path) :: acc_astates, astate_n)
         | ContinueProgram astate ->
             let vars =

@@ -783,7 +783,7 @@ let init_wto pdesc =
         node.Node.wto_index <- idx ;
         idx + 1 )
   in
-  if Config.pulse_experimental_infinite_loop_checker_v2 then add_loop_metadata pdesc wto ;
+  if Config.pulse_experimental_infinite_loop_checker then add_loop_metadata pdesc wto ;
   pdesc.wto <- Some wto
 
 

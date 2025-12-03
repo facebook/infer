@@ -360,13 +360,8 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
          ready to be accessed by the exception handler. *)
       map_call_result astate ~f:(fun return_val_opt _subst astate ->
           Sat (copy_to_caller_return_variable astate return_val_opt) )
-  | InfiniteLoop astate
-  | Stopped
-      ( AbortProgram {astate}
-      | ExitProgram astate
-      | LatentAbortProgram {astate}
-      | LatentSpecializedTypeIssue {astate}
-      | LatentInvalidAccess {astate} ) ->
+  | Stopped exec ->
+      let astate = ExecutionDomain.summary_of_stopped_execution exec in
       map_call_result astate ~f:(fun _return_val_opt (subst, hist_map) astate_post_call ->
           let** astate_summary =
             let open SatUnsat.Import in
@@ -386,22 +381,6 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
                   ~default_caller_history:ValueHistory.epoch trace_to_issue
               in
               Sat (Ok (Stopped (AbortProgram {astate= astate_summary; diagnostic; trace_to_issue})))
-          | InfiniteLoop _ ->
-              (* Summarisation removes [InfiniteLoop] states
-                 TODO kill [InfiniteLoop] in favour of [AbortPorgram] *)
-              Sat
-                (Ok
-                   (Stopped
-                      (AbortProgram
-                         { astate= astate_summary
-                         ; diagnostic= InfiniteLoopError {location= call_loc}
-                         ; trace_to_issue=
-                             Immediate
-                               { location=
-                                   call_loc
-                                   (* should be the start of the callee procedure but let's no worry
-                                   about it since we'll delete [InfiniteLoop] eventually *)
-                               ; history= ValueHistory.epoch } } ) ) )
           | Stopped (ExitProgram _) ->
               Sat (Ok (Stopped (ExitProgram astate_summary)))
           | Stopped (LatentAbortProgram {latent_issue}) -> (
@@ -682,8 +661,6 @@ let add_need_dynamic_type_specialization needs execution_states =
             ExceptionRaised (update_astate astate)
         | ContinueProgram astate ->
             ContinueProgram (update_astate astate)
-        | InfiniteLoop astate ->
-            InfiniteLoop (update_astate astate)
         | Stopped exec ->
             Stopped
               ( match exec with

@@ -79,8 +79,6 @@ module type DisjReady = sig
 
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 
-  val widen_list : DisjDomain.t list -> DisjDomain.t list -> num_iters:int -> DisjDomain.t list
-
   val pp_disjunct : Pp.print_kind -> Format.formatter -> DisjDomain.t -> unit
 
   val pp_non_disj : Pp.print_kind -> Format.formatter -> NonDisjDomain.t -> unit

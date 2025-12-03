@@ -11,7 +11,6 @@ module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
-module Metadata = AbstractInterpreter.DisjunctiveMetadata
 
 type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 
@@ -85,7 +84,7 @@ let join summary1 summary2 =
 
 
 let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis_data)
-    ~continue_program ~exception_raised ~infinite_raised specialization path location
+    ~continue_program ~exception_raised specialization path location
     (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
       ~(exec_domain_of_summary : AbductiveDomain.Summary.summary -> 'a ExecutionDomain.base_t)
@@ -95,16 +94,8 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
       AbductiveDomain.Summary.of_post (Procdesc.get_attributes proc_desc) location astate
     in
     match (summary_result : _ result) with
-    | Ok summary -> (
-      match exec_domain_of_summary summary with
-      | InfiniteLoop _ as exec_state ->
-          let curnode = Metadata.get_alert_node in
-          let curloc = Procdesc.Node.get_loc (curnode ()) in
-          let error = ReportableError {astate; diagnostic= InfiniteLoopError {location= curloc}} in
-          PulseReport.report_summary_error analysis_data path (error, summary)
-          |> Option.value ~default:exec_state
-      | exec_state ->
-          exec_state )
+    | Ok summary ->
+        exec_domain_of_summary summary
     | Error (`MemoryLeak (summary, astate, allocator, allocation_trace, location)) ->
         PulseReport.report_summary_error analysis_data path
           ( ReportableError
@@ -188,8 +179,6 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
       summarize astate ~exec_domain_of_summary:exception_raised ~is_exceptional_state:true
   | ContinueProgram astate ->
       summarize astate ~exec_domain_of_summary:continue_program ~is_exceptional_state:false
-  | InfiniteLoop astate ->
-      summarize astate ~exec_domain_of_summary:infinite_raised ~is_exceptional_state:false
   (* already a summary but need to reconstruct the variants to make the type system happy :( *)
   | Stopped (AbortProgram {astate; diagnostic; trace_to_issue}) ->
       PulseReport.report_if_entry_point analysis_data trace_to_issue diagnostic ;
@@ -224,7 +213,6 @@ let force_exit_program analysis_data path post =
   exec_summary_of_post_common analysis_data None path post
     ~continue_program:(fun astate -> Stopped (ExitProgram astate))
     ~exception_raised:(fun astate -> Stopped (ExitProgram astate))
-    ~infinite_raised:(fun astate -> Stopped (ExitProgram astate))
 
 
 let of_posts ({InterproceduralAnalysis.proc_desc} as analysis_data) specialization location posts
@@ -237,7 +225,6 @@ let of_posts ({InterproceduralAnalysis.proc_desc} as analysis_data) specializati
         exec_summary_of_post_common analysis_data specialization path location exec_state
           ~continue_program:(fun astate -> ContinueProgram astate)
           ~exception_raised:(fun astate -> ExceptionRaised astate)
-          ~infinite_raised:(fun astate -> InfiniteLoop astate)
         |> SatUnsat.sat )
   in
   { pre_post_list

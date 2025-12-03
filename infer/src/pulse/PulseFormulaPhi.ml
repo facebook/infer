@@ -1957,11 +1957,8 @@ end = struct
 
   and and_normalized_atoms (phi, new_eqs) atoms ~orig_atom ~add_term =
     let upd_phi =
-      if
-        add_term
-        && ( Config.pulse_experimental_infinite_loop_checker
-           || Config.pulse_experimental_infinite_loop_checker_v2 )
-      then and_termcond_atoms phi orig_atom
+      if add_term && Config.pulse_experimental_infinite_loop_checker then
+        and_termcond_atoms phi orig_atom
       else phi
     in
     SatUnsat.list_fold atoms

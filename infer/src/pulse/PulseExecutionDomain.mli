@@ -28,7 +28,6 @@ type stopped_execution =
 
 type 'abductive_domain_t base_t =
   | ContinueProgram of 'abductive_domain_t
-  | InfiniteLoop of 'abductive_domain_t
   | ExceptionRaised of 'abductive_domain_t
   | Stopped of stopped_execution
 
@@ -49,5 +48,3 @@ type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojs
 val pp_summary : Pp.print_kind -> F.formatter -> summary -> unit
 
 val to_name : 'a base_t -> string
-
-val back_edge : t list -> t list -> int -> int option

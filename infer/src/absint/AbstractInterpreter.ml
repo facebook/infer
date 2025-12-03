@@ -190,19 +190,6 @@ module DisjunctiveMetadata = struct
      update it whenever a relevant action is taken (eg dropping a disjunct). *)
   let proc_metadata = AnalysisGlobalState.make_dls ~init:(fun () -> empty)
 
-  (* This is used to remember the CFG node otherwise we would need to carry the node around in widen
-     and join as well as other places that may need to access the current CFG node during analysis *)
-
-  let alert_node =
-    AnalysisGlobalState.make_dls ~init:(fun () -> Procdesc.Node.dummy Procname.empty_block)
-
-
-  (* End CFG node tracking for alerts *)
-
-  let record_alert_node new_alert_node = DLS.set alert_node new_alert_node
-
-  let get_alert_node () = DLS.get alert_node
-
   let add_dropped_disjuncts dropped_disjuncts =
     Utils.with_dls proc_metadata ~f:(fun proc_metadata ->
         {proc_metadata with dropped_disjuncts= proc_metadata.dropped_disjuncts + dropped_disjuncts} )
@@ -334,11 +321,7 @@ struct
         DisjunctiveMetadata.incr_interrupted_loops () ;
         prev )
       else
-        let into =
-          if Config.pulse_experimental_infinite_loop_checker then
-            T.widen_list (fst prev) (fst next) ~num_iters
-          else fst prev
-        in
+        let into = fst prev in
         let post_disj, _, dropped =
           join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into (fst next)
         in

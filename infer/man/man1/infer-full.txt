@@ -3062,13 +3062,6 @@ INTERNAL OPTIONS
            experimental checker. You may also need to activate reporting if
            needed (Conversely: --no-pulse-experimental-infinite-loop-checker)
 
-       --pulse-experimental-infinite-loop-checker-v2
-           Activates: Enable the INFINITE_LOOP (2nd version) checker during
-           analysis phase. This is a temporary flag in order to strictly gate
-           this experimental checker. You may also need to activate reporting
-           if needed (Conversely:
-           --no-pulse-experimental-infinite-loop-checker-v2)
-
        --no-pulse-final-types-are-exact
            Deactivates: Make Pulse understand that final types are exact
            (i.e. static type is equal to the exact runtime type).
