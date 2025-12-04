@@ -1,0 +1,44 @@
+# GitHub Actions workflow to set up and build Infer in different development environments
+
+name: devsetup
+
+on:
+  - pull_request
+
+jobs:
+  devsetup-build:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-15-intel
+        ocaml-compiler:
+          - ocaml-variants.5.3.0+options
+        build-mode:
+          - user-opam-switch
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install automake coreutils zlib
+
+      - name: Setup Java SDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: Use OCaml ${{ matrix.ocaml-compiler }}
+        uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ${{ matrix.ocaml-compiler }}
+
+      - run: ./build-infer.sh --yes --${{ matrix.build-mode }} java
+      - run: make -C infer/src clean
+      - run: make -j -C infer/src byte
+      - run: make -j direct_sil_pulse_test
+      - run: make -j direct_java_pulse_test
