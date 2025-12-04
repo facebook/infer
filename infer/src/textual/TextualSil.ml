@@ -135,6 +135,8 @@ module TypeNameBridge = struct
         SwiftClassName.of_string ?plain_name (Textual.BaseTypeName.to_string mangled_name.name)
     | {name} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
         SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
+    | {name} when TypeName.equal value TypeName.sil_string ->
+        SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
     | {name= {loc}} ->
         let msg =
           lazy

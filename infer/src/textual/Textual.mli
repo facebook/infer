@@ -88,6 +88,10 @@ module TypeName : sig
 
   val mk_swift_type_name : ?plain_name:string -> string -> t
 
+  val sil_string : t
+
+  (** the name of the Textual string type *)
+
   val pp : F.formatter -> t -> unit
 
   module Hashtbl : Hashtbl.S with type key = t

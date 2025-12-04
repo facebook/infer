@@ -12,9 +12,6 @@ open Textual
 module TypeNameBridge = struct
   include TypeName
 
-  (** the name of the Textual string type *)
-  let sil_string = of_string "String"
-
   (** the name of the Textual type of all types (do not ask what it the type of this type itself
       please...) *)
   let sil_type_of_types = of_string "TYPE"
@@ -413,7 +410,7 @@ let typeof_const (const : Const.t) : Typ.t =
   | Null ->
       Null
   | Str _ ->
-      Ptr (Struct TypeNameBridge.sil_string)
+      Ptr (Struct TypeName.sil_string)
   | Float _ ->
       Float
 

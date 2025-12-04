@@ -245,6 +245,8 @@ module TypeName : sig
 
   val of_string_no_dot_escape : string -> t
 
+  val sil_string : t
+
   val pp : F.formatter -> t -> unit
 
   module Hashtbl : Hashtbl.S with type key = t
@@ -296,6 +298,8 @@ end = struct
     in
     {name= BaseTypeName.swift_type_name; args= fst_arg :: snd_arg}
 
+
+  let sil_string = of_string "String"
 
   let rec pp fmt {name; args} =
     if List.is_empty args then BaseTypeName.pp fmt name
