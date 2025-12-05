@@ -7,15 +7,15 @@
 .source_language = "Swift" @?
 
 define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[148:0]
-      n1 = load &var1 @[148:0]
-      n2 = objc_allocWithZone(n1) @[148:0]
-      jmp 2::ret @[149:0]
+  #: @[147:0]
+      n1 = load &var1 @[147:0]
+      n2 = objc_allocWithZone(n1) @[147:0]
+      jmp 2::ret @[148:0]
       
-  #2::ret: @[150:0]
-      n3 = load &L_selector(init) @[150:0]
-      n6 = $builtins.objc_msgSend(n2, n3) @[151:0]
-      ret n6 @[152:0]
+  #2::ret: @[149:0]
+      n3 = load &L_selector(init) @[149:0]
+      n6 = $builtins.objc_msgSend(n2, n3) @[150:0]
+      ret n6 @[151:0]
       
 } @?
 
@@ -35,8 +35,8 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<
       n9 = load &L_selector(init) @[5:15]
       n10 = load &var4 @[5:15]
       n12 = $builtins.objc_msgSendSuper2(n10, n9) @[5:15]
-      n13 = $builtins.llvm_nondet() @[154:0]
-      store &self <- n12 @[155:0]
+      n13 = $builtins.llvm_nondet() @[153:0]
+      store &self <- n12 @[154:0]
       n15 = load &self @[6:5]
       ret n12 @[6:5]
       

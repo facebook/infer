@@ -12,8 +12,8 @@ define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(v: *__infer_s
       n1 = load &v @[12:8]
       store &getelementptr_offset_1 <- 10 @[12:8]
       n2 = load &getelementptr_offset_1 @[12:8]
-      n3 = load &v @[12:8]
-      _ = $builtins.llvm_dynamic_call(n2, n3) @[12:8]
+      n4 = load &v @[12:8]
+      _ = $builtins.llvm_dynamic_call(n2, n4) @[12:8]
       jmp 7::void::ret @[12:8]
       
   #7::void::ret: @[13:1]
@@ -28,31 +28,31 @@ define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hell
 } @?
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainCACycfC(var1: *__infer_swift_type<,$s5Hello5TrainCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[145:0]
-      n1 = load &var1 @[145:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5TrainC>>) @[145:0]
-      jmp 2::ret @[146:0]
+  #: @[144:0]
+      n1 = load &var1 @[144:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5TrainC>>) @[144:0]
+      jmp 2::ret @[145:0]
       
-  #2::ret: @[148:0]
-      n6 = $s5Hello5TrainCACycfc(n4) @[148:0]
-      jmp 3::ret @[149:0]
+  #2::ret: @[146:0]
+      n6 = $s5Hello5TrainCACycfc(n4) @[146:0]
+      jmp 3::ret @[147:0]
       
-  #3::ret: @[150:0]
-      ret n6 @[150:0]
+  #3::ret: @[148:0]
+      ret n6 @[148:0]
       
 } @?
 
 define .plain_name = "init" $s5Hello5TrainCACycfc(self: *__infer_swift_type<,Train>) : *__infer_swift_type<ptr_elt> {
-  #: @[152:0]
-      n1 = load &self @[152:0]
-      n3 = $s5Hello7VehicleCACycfc(n1) @[154:0]
-      jmp 4::ret @[155:0]
+  #: @[150:0]
+      n1 = load &self @[150:0]
+      n3 = $s5Hello7VehicleCACycfc(n1) @[151:0]
+      jmp 4::ret @[152:0]
       
-  #4::ret: @[156:0]
-      n4 = $builtins.llvm_nondet() @[156:0]
-      store &self <- n3 @[157:0]
-      n6 = load &self @[158:0]
-      ret n3 @[160:0]
+  #4::ret: @[153:0]
+      n4 = $builtins.llvm_nondet() @[153:0]
+      store &self <- n3 @[154:0]
+      n6 = load &self @[155:0]
+      ret n3 @[157:0]
       
 } @?
 
@@ -69,24 +69,24 @@ define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hell
 } @?
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleCACycfC(var1: *__infer_swift_type<,$s5Hello7VehicleCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[176:0]
-      n1 = load &var1 @[176:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7VehicleC>>) @[176:0]
-      jmp 2::ret @[177:0]
+  #: @[169:0]
+      n1 = load &var1 @[169:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7VehicleC>>) @[169:0]
+      jmp 2::ret @[170:0]
       
-  #2::ret: @[179:0]
-      n6 = $s5Hello7VehicleCACycfc(n4) @[179:0]
-      jmp 3::ret @[180:0]
+  #2::ret: @[171:0]
+      n6 = $s5Hello7VehicleCACycfc(n4) @[171:0]
+      jmp 3::ret @[172:0]
       
-  #3::ret: @[181:0]
-      ret n6 @[181:0]
+  #3::ret: @[173:0]
+      ret n6 @[173:0]
       
 } @?
 
 define .plain_name = "init" $s5Hello7VehicleCACycfc(self: *__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle> {
   #: @?
-      n1 = load &self @[183:0]
-      ret n1 @[183:0]
+      n1 = load &self @[175:0]
+      ret n1 @[175:0]
       
 } @?
 

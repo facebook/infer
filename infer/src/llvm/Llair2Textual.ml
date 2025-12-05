@@ -519,8 +519,8 @@ and resolve_method_call ~proc_state proc args =
       None
 
 
-and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
-    (args : Llair.Exp.t list) (loc : Textual.Location.t) =
+and to_textual_call_aux ~proc_state ~kind proc return ?generate_typ_exp (args : Llair.Exp.t list)
+    (loc : Textual.Location.t) =
   let args_instrs, args =
     List.fold_map
       ~f:(fun acc_instrs exp ->
@@ -536,7 +536,6 @@ and to_textual_call_aux ~proc_state ~kind ?exp_opt proc return ?generate_typ_exp
         (List.append deref_instrs (List.append acc_instrs instrs), deref_exp) )
       args ~init:[]
   in
-  let args = List.append (Option.to_list exp_opt) args in
   let args, args_instrs =
     if Textual.QualifiedProcName.equal proc Textual.ProcDecl.assert_fail_name then
       ([Textual.Exp.Const Null], [])
@@ -581,7 +580,6 @@ and to_textual_builtin ~proc_state return name args loc =
 
 
 and to_textual_call ~proc_state (call : 'a Llair.call) =
-  let loc = to_textual_loc ~proc_state call.loc in
   let args = StdUtils.iarray_to_list call.actuals in
   let proc, kind, exp_opt =
     match call.callee with
@@ -597,14 +595,15 @@ and to_textual_call ~proc_state (call : 'a Llair.call) =
         (proc, Textual.Exp.NonVirtual, None)
     | Indirect {ptr} ->
         let proc = builtin_qual_proc_name (Textual.ProcName.to_string llvm_dynamic_call) in
-        (proc, Textual.Exp.NonVirtual, Some (to_textual_exp loc ~proc_state ptr |> fst3))
+        (proc, Textual.Exp.NonVirtual, Some ptr)
     | Intrinsic intrinsic ->
         let proc = builtin_qual_proc_name (Llair.Intrinsic.to_name intrinsic) in
         (proc, Textual.Exp.NonVirtual, None)
   in
   let loc = to_textual_loc_instr ~proc_state call.loc in
+  let args = Option.to_list exp_opt @ args in
   let id, call_exp, args_instrs =
-    to_textual_call_aux ~proc_state ~kind ?exp_opt proc call.areturn args loc
+    to_textual_call_aux ~proc_state ~kind proc call.areturn args loc
   in
   let call_exp =
     match call_exp with
