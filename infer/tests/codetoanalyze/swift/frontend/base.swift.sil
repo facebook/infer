@@ -7,8 +7,8 @@
 .source_language = "Swift" @?
 
 define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
-  #: @[107:0]
-      n1 = $builtins.llvm_init_tuple() @[107:0]
+  #: @[104:0]
+      n1 = $builtins.llvm_init_tuple() @[104:0]
       n2 = load &age @[19:5]
       store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n2 @[19:5]
       n3 = load &height @[19:5]
@@ -54,13 +54,13 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
       
   #2::ret: @[23:18]
       n4 = n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 @[23:18]
-      n7 = load &person @[113:0]
-      n8 = load n7.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_0 @[113:0]
-      store n8.__infer_swift_type<TSi>.field_0 <- n4 @[113:0]
-      n11 = load &person @[114:0]
-      n12 = load n11.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_1 @[114:0]
-      n10 = load n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[114:0]
-      store n12.__infer_swift_type<TSi>.field_0 <- n10 @[114:0]
+      n7 = load &person @[110:0]
+      n8 = load n7.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_0 @[110:0]
+      store n8.__infer_swift_type<TSi>.field_0 <- n4 @[110:0]
+      n11 = load &person @[111:0]
+      n12 = load n11.__infer_tuple_class<__infer_swift_type<*__infer_swift_type<TSi>>,__infer_swift_type<*__infer_swift_type<TSi>>>.__infer_tuple_field_1 @[111:0]
+      n10 = load n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[111:0]
+      store n12.__infer_swift_type<TSi>.field_0 <- n10 @[111:0]
       ret n4 @[24:5]
       
 } @?

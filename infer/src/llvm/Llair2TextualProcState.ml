@@ -19,8 +19,6 @@ type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
 type methodClassIndex = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
-let method_class_index : methodClassIndex = Textual.ProcName.Hashtbl.create 16
-
 module ClassNameOffset = struct
   type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare, hash, equal]
 end
@@ -46,10 +44,11 @@ type t =
   ; globals: globalMap
   ; lang: Textual.Lang.t
   ; proc_map: procMap
-  ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
+  ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
+  ; method_class_index: methodClassIndex }
 
 let init_state ~qualified_name ~sourcefile ~loc ~formals ~struct_map ~globals ~lang ~proc_map
-    ~class_name_offset_map =
+    ~class_name_offset_map ~method_class_index =
   { qualified_name
   ; sourcefile
   ; loc
@@ -66,7 +65,8 @@ let init_state ~qualified_name ~sourcefile ~loc ~formals ~struct_map ~globals ~l
   ; globals
   ; lang
   ; proc_map
-  ; class_name_offset_map }
+  ; class_name_offset_map
+  ; method_class_index }
 
 
 let get_element_ptr_offset_prefix = "getelementptr_offset"
@@ -233,7 +233,8 @@ let global_proc_state lang sourcefile loc global_var =
   ; globals= VarMap.empty
   ; lang
   ; proc_map= Textual.QualifiedProcName.Map.empty
-  ; class_name_offset_map= ClassNameOffsetMap.create 16 }
+  ; class_name_offset_map= ClassNameOffsetMap.create 16
+  ; method_class_index= Textual.ProcName.Hashtbl.create 16 }
 
 
 let find_method_with_offset ~proc_state struct_name offset =

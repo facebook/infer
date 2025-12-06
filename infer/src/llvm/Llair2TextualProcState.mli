@@ -19,8 +19,6 @@ type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
 type methodClassIndex = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
-val method_class_index : methodClassIndex
-
 module ClassNameOffset : sig
   type t = {class_name: Textual.TypeName.t; offset: int}
 end
@@ -46,7 +44,8 @@ type t = private
   ; globals: globalMap
   ; lang: Textual.Lang.t
   ; proc_map: procMap
-  ; class_name_offset_map: classNameOffsetMap }
+  ; class_name_offset_map: classNameOffsetMap
+  ; method_class_index: methodClassIndex }
 
 val init_state :
      qualified_name:Textual.QualifiedProcName.t
@@ -58,6 +57,7 @@ val init_state :
   -> lang:Textual.Lang.t
   -> proc_map:procMap
   -> class_name_offset_map:Textual.QualifiedProcName.t ClassNameOffsetMap.t
+  -> method_class_index:methodClassIndex
   -> t
 
 val get_element_ptr_offset_prefix : string
