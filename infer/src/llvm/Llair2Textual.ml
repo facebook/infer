@@ -960,26 +960,11 @@ let should_translate plain_name lang source_file (loc : Llair.Loc.t) =
          || String.is_substring ~substring:".set" plain_name )
 
 
-let add_method_to_class_method_index class_name proc_name index =
+let add_method_to_class_method_index class_method_index class_name proc_name index =
   let methods =
-    Textual.TypeName.Hashtbl.find_opt ProcState.class_method_index class_name
-    |> Option.value ~default:[]
+    Textual.TypeName.Hashtbl.find_opt class_method_index class_name |> Option.value ~default:[]
   in
-  Textual.TypeName.Hashtbl.replace ProcState.class_method_index class_name
-    ((proc_name, index) :: methods)
-
-
-let pp_class_method_index fmt () =
-  let pp (class_name, index) =
-    Format.fprintf fmt "%a: %a@." Textual.TypeName.pp class_name
-      (Pp.comma_seq (Pp.pair ~fst:Textual.QualifiedProcName.pp ~snd:Int.pp))
-      index
-  in
-  Textual.TypeName.Hashtbl.to_seq ProcState.class_method_index
-  |> Stdlib.List.of_seq
-  |> List.sort ~compare:[%compare: Textual.TypeName.t * _]
-  |> List.iter ~f:pp
-[@@warning "-unused-value-declaration"]
+  Textual.TypeName.Hashtbl.replace class_method_index class_name ((proc_name, index) :: methods)
 
 
 let class_from_global lang struct_map global_name =
@@ -988,7 +973,7 @@ let class_from_global lang struct_map global_name =
   Type.struct_name_of_mangled_name lang struct_map name
 
 
-let process_globals lang ~struct_map globals_map =
+let process_globals lang class_method_index ~struct_map globals_map =
   let process_exp global (last_offset, carry) exp typ =
     match typ with
     | Llair.Typ.Integer {bits} when Int.equal bits 64 ->
@@ -1008,7 +993,7 @@ let process_globals lang ~struct_map globals_map =
             let proc =
               Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name}
             in
-            add_method_to_class_method_index class_name proc (offset - 3) ;
+            add_method_to_class_method_index class_method_index class_name proc (offset - 3) ;
             Textual.ProcName.Hashtbl.replace ProcState.method_class_index proc_name class_name
         | _ ->
             () ) ;
@@ -1094,7 +1079,7 @@ let pp_attr_map fmt attr_map =
 [@@warning "-unused-value-declaration"]
 
 
-let create_offset_attributes () : attr_map =
+let create_offset_attributes class_method_index : attr_map =
   let process_class _ method_offsets attr_map =
     let process_method attr_map (method_name, index) =
       let offset_attr = Textual.Attr.mk_method_offset index in
@@ -1102,8 +1087,7 @@ let create_offset_attributes () : attr_map =
     in
     List.fold ~init:attr_map ~f:process_method method_offsets
   in
-  Textual.TypeName.Hashtbl.fold process_class ProcState.class_method_index
-    Textual.QualifiedProcName.Map.empty
+  Textual.TypeName.Hashtbl.fold process_class class_method_index Textual.QualifiedProcName.Map.empty
 
 
 let function_to_proc_decl lang ~struct_map (func_name, func) =
@@ -1208,7 +1192,7 @@ let translate_llair_function_signatures lang struct_map functions =
   (proc_decls, struct_map)
 
 
-let update_function_signatures lang ~struct_map functions =
+let update_function_signatures lang class_method_index ~struct_map functions =
   let update_proc_decl offset_attributes (procdecl : Textual.ProcDecl.t) =
     let procname = procdecl.qualified_name.Textual.QualifiedProcName.name in
     let loc = procname.Textual.ProcName.loc in
@@ -1230,7 +1214,7 @@ let update_function_signatures lang ~struct_map functions =
     in
     procdecl
   in
-  let offset_attributes = create_offset_attributes () in
+  let offset_attributes = create_offset_attributes class_method_index in
   List.map functions ~f:(update_proc_decl offset_attributes)
 
 
@@ -1250,16 +1234,43 @@ let translate_llair_functions source_file lang struct_map globals proc_decls cla
 
 let reset_global_state () =
   Hash_set.clear Type.signature_structs ;
-  Textual.TypeName.Hashtbl.clear ProcState.class_method_index ;
   Textual.ProcName.Hashtbl.clear ProcState.method_class_index
 
+
+module ClassMethodIndex = struct
+  type t = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
+
+  let pp_ fmt class_method_index =
+    let pp (class_name, index) =
+      Format.fprintf fmt "%a: %a@." Textual.TypeName.pp class_name
+        (Pp.comma_seq (Pp.pair ~fst:Textual.QualifiedProcName.pp ~snd:Int.pp))
+        index
+    in
+    Textual.TypeName.Hashtbl.to_seq class_method_index
+    |> Stdlib.List.of_seq
+    |> List.sort ~compare:[%compare: Textual.TypeName.t * _]
+    |> List.iter ~f:pp
+  [@@warning "-unused-value-declaration"]
+
+
+  let fill_class_name_offset_map class_method_index =
+    let class_name_offset_map = ProcState.ClassNameOffsetMap.create 16 in
+    let process_map class_name (proc, offset) =
+      let key = ProcState.ClassNameOffset.{class_name; offset} in
+      ProcState.ClassNameOffsetMap.replace class_name_offset_map key proc
+    in
+    let process_class class_name procs = List.iter procs ~f:(process_map class_name) in
+    Textual.TypeName.Hashtbl.iter process_class class_method_index ;
+    class_name_offset_map
+end
 
 type module_state =
   { functions: (FuncName.t * func) list
   ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
   ; proc_decls: Textual.ProcDecl.t list
   ; globals_map: GlobalDefn.t VarMap.t
-  ; lang: Textual.Lang.t }
+  ; lang: Textual.Lang.t
+  ; class_method_index: ClassMethodIndex.t }
 
 let init_module_state llair_program lang =
   reset_global_state () ;
@@ -1267,12 +1278,13 @@ let init_module_state llair_program lang =
   let globals_map = build_globals_map llair_program.Llair.globals in
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
   let proc_decls, struct_map = translate_llair_function_signatures lang struct_map functions in
-  process_globals lang ~struct_map globals_map ;
-  {functions; struct_map; proc_decls; globals_map; lang}
+  let class_method_index = Textual.TypeName.Hashtbl.create 16 in
+  process_globals lang class_method_index ~struct_map globals_map ;
+  {functions; struct_map; proc_decls; globals_map; lang; class_method_index}
 
 
 let translate ~source_file (module_state : module_state) : Textual.Module.t =
-  let {functions; struct_map; proc_decls; globals_map; lang} = module_state in
+  let {functions; struct_map; proc_decls; globals_map; lang; class_method_index} = module_state in
   let source_file_ = SourceFile.create source_file in
   let globals, proc_descs =
     Textual.VarName.Map.fold
@@ -1284,8 +1296,8 @@ let translate ~source_file (module_state : module_state) : Textual.Module.t =
         (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
       globals_map ([], [])
   in
-  let proc_decls = update_function_signatures lang ~struct_map proc_decls in
-  let class_name_offset_map = ProcState.fill_class_name_offset_map () in
+  let proc_decls = update_function_signatures lang class_method_index ~struct_map proc_decls in
+  let class_name_offset_map = ClassMethodIndex.fill_class_name_offset_map class_method_index in
   let procs =
     translate_llair_functions source_file_ lang struct_map globals_map proc_decls
       class_name_offset_map functions

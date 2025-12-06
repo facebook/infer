@@ -17,10 +17,6 @@ type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
 type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
-type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
-
-let class_method_index : classMethodIndex = Textual.TypeName.Hashtbl.create 16
-
 type methodClassIndex = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
 let method_class_index : methodClassIndex = Textual.ProcName.Hashtbl.create 16
@@ -243,14 +239,3 @@ let global_proc_state lang sourcefile loc global_var =
 let find_method_with_offset ~proc_state struct_name offset =
   let key = ClassNameOffset.{class_name= struct_name; offset} in
   ClassNameOffsetMap.find_opt proc_state.class_name_offset_map key
-
-
-let fill_class_name_offset_map () =
-  let class_name_offset_map = ClassNameOffsetMap.create 16 in
-  let process_map class_name (proc, offset) =
-    let key = ClassNameOffset.{class_name; offset} in
-    ClassNameOffsetMap.replace class_name_offset_map key proc
-  in
-  let process_class class_name procs = List.iter procs ~f:(process_map class_name) in
-  Textual.TypeName.Hashtbl.iter process_class class_method_index ;
-  class_name_offset_map

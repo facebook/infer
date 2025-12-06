@@ -17,10 +17,6 @@ type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
 
 type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
-type classMethodIndex = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
-
-val class_method_index : classMethodIndex
-
 type methodClassIndex = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
 val method_class_index : methodClassIndex
@@ -96,8 +92,6 @@ val pp_struct_map : F.formatter -> Textual.Struct.t Textual.TypeName.Map.t -> un
 
 val find_method_with_offset :
   proc_state:t -> Textual.TypeName.t -> int -> Textual.QualifiedProcName.t option
-
-val fill_class_name_offset_map : unit -> classNameOffsetMap
 
 val compute_locals : proc_state:t -> (VarMap.key * Textual.Typ.annotated) list
 
