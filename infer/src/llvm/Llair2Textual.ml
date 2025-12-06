@@ -988,8 +988,8 @@ let class_from_global lang struct_map global_name =
   Type.struct_name_of_mangled_name lang struct_map name
 
 
-let collect_class_method_indices lang struct_map global exp =
-  let process_exp (last_offset, carry) exp typ =
+let process_globals lang ~struct_map globals_map =
+  let process_exp global (last_offset, carry) exp typ =
     match typ with
     | Llair.Typ.Integer {bits} when Int.equal bits 64 ->
         (last_offset + 1, 0)
@@ -1016,13 +1016,25 @@ let collect_class_method_indices lang struct_map global exp =
     | _ ->
         (last_offset, carry)
   in
-  match exp with
-  | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements) ->
-      let elements = StdUtils.iarray_to_list elements in
-      let _, types = StdUtils.iarray_to_list elts |> List.unzip in
-      ignore (List.fold2_exn ~f:process_exp ~init:(-1, 0) elements types)
-  | _ ->
-      ()
+  let collect_class_method_indices global_name exp =
+    match exp with
+    | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements) ->
+        let elements = StdUtils.iarray_to_list elements in
+        let _, types = StdUtils.iarray_to_list elts |> List.unzip in
+        ignore (List.fold2_exn ~f:(process_exp global_name) ~init:(-1, 0) elements types)
+    | _ ->
+        ()
+  in
+  let process_global _var global =
+    match global with
+    | GlobalDefn.{name; init= Some exp} ->
+        let global_name = Global.name name in
+        if String.is_suffix global_name ~suffix:"CMf" then
+          collect_class_method_indices global_name exp
+    | _ ->
+        ()
+  in
+  Textual.VarName.Map.iter process_global globals_map
 
 
 let to_textual_global lang ~struct_map sourcefile global =
@@ -1034,41 +1046,37 @@ let to_textual_global lang ~struct_map sourcefile global =
   let global_proc_state = ProcState.global_proc_state lang sourcefile loc global_name in
   let proc_desc_opt =
     match global.GlobalDefn.init with
-    | Some exp ->
-        if String.is_suffix global_name ~suffix:"CMf" then
-          collect_class_method_indices lang struct_map global_name exp ;
-        if Config.llvm_translate_global_init then
-          let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
-          let procdecl =
-            Textual.ProcDecl.
-              { qualified_name= global_proc_state.qualified_name
-              ; formals_types= Some []
-              ; result_type= Textual.Typ.mk_without_attributes Textual.Typ.Void
-              ; attributes= [] }
-          in
-          let start_node =
-            Textual.Node.
-              { label= Textual.NodeName.of_string "start"
-              ; ssa_parameters= []
-              ; exn_succs= []
-              ; last= Textual.Terminator.Ret init_exp
-              ; instrs
-              ; last_loc= Textual.Location.Unknown
-              ; label_loc= Textual.Location.Unknown }
-          in
-          let proc_desc =
-            Textual.ProcDesc.
-              { procdecl
-              ; nodes= [start_node]
-              ; fresh_ident= None
-              ; start= start_node.label
-              ; params= []
-              ; locals= []
-              ; exit_loc= Textual.Location.Unknown }
-          in
-          Some proc_desc
-        else None
-    | None ->
+    | Some exp when Config.llvm_translate_global_init ->
+        let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
+        let procdecl =
+          Textual.ProcDecl.
+            { qualified_name= global_proc_state.qualified_name
+            ; formals_types= Some []
+            ; result_type= Textual.Typ.mk_without_attributes Textual.Typ.Void
+            ; attributes= [] }
+        in
+        let start_node =
+          Textual.Node.
+            { label= Textual.NodeName.of_string "start"
+            ; ssa_parameters= []
+            ; exn_succs= []
+            ; last= Textual.Terminator.Ret init_exp
+            ; instrs
+            ; last_loc= Textual.Location.Unknown
+            ; label_loc= Textual.Location.Unknown }
+        in
+        let proc_desc =
+          Textual.ProcDesc.
+            { procdecl
+            ; nodes= [start_node]
+            ; fresh_ident= None
+            ; start= start_node.label
+            ; params= []
+            ; locals= []
+            ; exit_loc= Textual.Location.Unknown }
+        in
+        Some proc_desc
+    | _ ->
         None
   in
   (* The init_exp would need to be a call to the initialiser, to add later. *)
@@ -1254,15 +1262,16 @@ type module_state =
   ; lang: Textual.Lang.t }
 
 let init_module_state llair_program lang =
+  reset_global_state () ;
   let functions = FuncName.Map.to_list llair_program.Llair.functions in
+  let globals_map = build_globals_map llair_program.Llair.globals in
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
   let proc_decls, struct_map = translate_llair_function_signatures lang struct_map functions in
-  let globals_map = build_globals_map llair_program.Llair.globals in
+  process_globals lang ~struct_map globals_map ;
   {functions; struct_map; proc_decls; globals_map; lang}
 
 
 let translate ~source_file (module_state : module_state) : Textual.Module.t =
-  reset_global_state () ;
   let {functions; struct_map; proc_decls; globals_map; lang} = module_state in
   let source_file_ = SourceFile.create source_file in
   let globals, proc_descs =
