@@ -7,8 +7,8 @@
 .source_language = "Swift" @?
 
 define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
-  #: @[107:0]
-      n1 = $builtins.llvm_init_tuple() @[107:0]
+  #: @[104:0]
+      n1 = $builtins.llvm_init_tuple() @[104:0]
       n2 = load &age @[19:5]
       store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n2 @[19:5]
       n3 = load &height @[19:5]
