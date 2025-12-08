@@ -139,10 +139,10 @@ let to_name_attr func_name =
   Option.map ~f:Textual.Attr.mk_plain_name (FuncName.unmangled_name func_name)
 
 
-let to_formal_types lang ~struct_map func =
+let to_formal_types lang signature_structs ~struct_map func =
   let to_textual_formal_type formal_type = Var.reg_to_annot_typ lang ~struct_map formal_type in
   let to_textual_formal_signature_type formal formal_type =
-    let typ = Type.signature_type_to_textual_typ lang formal_type in
+    let typ = Type.signature_type_to_textual_typ signature_structs lang formal_type in
     let typ = Option.map ~f:Textual.Typ.mk_without_attributes typ in
     match typ with Some typ -> typ | None -> to_textual_formal_type formal
   in
@@ -1101,8 +1101,8 @@ let create_offset_attributes class_method_index : attr_map =
   Textual.TypeName.Hashtbl.fold process_class class_method_index Textual.QualifiedProcName.Map.empty
 
 
-let function_to_proc_decl lang method_class_index ~struct_map (func_name, func) =
-  let formal_types = to_formal_types lang ~struct_map func in
+let function_to_proc_decl lang signature_structs method_class_index ~struct_map (func_name, func) =
+  let formal_types = to_formal_types lang signature_structs ~struct_map func in
   let loc = to_textual_loc func.Llair.loc in
   let qualified_name = to_qualified_proc_name method_class_index ~loc (FuncName.name func_name) in
   let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
@@ -1115,7 +1115,7 @@ let function_to_proc_decl lang method_class_index ~struct_map (func_name, func) 
     | Some typ ->
         let typ =
           Option.map ~f:Textual.Typ.mk_without_attributes
-            (Type.signature_type_to_textual_typ lang typ)
+            (Type.signature_type_to_textual_typ signature_structs lang typ)
         in
         Option.value typ ~default:fun_result_typ
     | None ->
@@ -1198,10 +1198,12 @@ let translate_code source_file ~module_state proc_descs (procdecl : Textual.Proc
 
 
 let translate_llair_function_signatures lang method_class_index struct_map functions =
+  let signature_structs = Hash_set.create (module String) in
   let proc_decls =
-    List.map functions ~f:(function_to_proc_decl lang method_class_index ~struct_map)
+    List.map functions
+      ~f:(function_to_proc_decl lang signature_structs method_class_index ~struct_map)
   in
-  let struct_map = Type.update_struct_map struct_map in
+  let struct_map = Type.update_struct_map signature_structs struct_map in
   (proc_decls, struct_map)
 
 
@@ -1239,10 +1241,7 @@ let translate_llair_functions source_file ~(module_state : ModuleState.t) =
   |> List.rev
 
 
-let reset_global_state () = Hash_set.clear Type.signature_structs
-
 let init_module_state (llair_program : Llair.program) lang =
-  reset_global_state () ;
   let functions = FuncName.Map.to_list llair_program.functions in
   let globals_map = build_globals_map llair_program.globals in
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in

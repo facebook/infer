@@ -279,13 +279,10 @@ let join_typ typ1_opt typ2_opt =
       None
 
 
-let signature_structs = Hash_set.create (module String)
-(* Create a new empty set *)
-
-let rec signature_type_to_textual_typ lang signature_type =
+let rec signature_type_to_textual_typ signature_structs lang signature_type =
   if String.is_suffix signature_type ~suffix:"*" then
     let name = String.chop_suffix_if_exists signature_type ~suffix:"*" in
-    match signature_type_to_textual_typ lang name with
+    match signature_type_to_textual_typ signature_structs lang name with
     | Some typ ->
         Some (Textual.Typ.Ptr typ)
     | None ->
@@ -309,12 +306,12 @@ let rec signature_type_to_textual_typ lang signature_type =
     else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
 
 
-let pp_signature_structs fmt () =
+let pp_signature_structs fmt signature_structs =
   let pp_item fmt key = Format.fprintf fmt "%s@." key in
   Hash_set.iter signature_structs ~f:(pp_item fmt)
 
 
-let update_struct_name struct_name =
+let update_struct_name signature_structs struct_name =
   match mangled_name_of_type_name struct_name with
   | Some typ_name
     when String.is_suffix ~suffix:"C" typ_name || String.is_suffix ~suffix:"V" typ_name -> (
@@ -386,7 +383,8 @@ let update_type_field_decl ~update_struct_name fields =
   List.map ~f:update_field_decl fields
 
 
-let update_struct_map struct_map =
+let update_struct_map signature_structs struct_map =
+  let update_struct_name x = update_struct_name signature_structs x in
   let update_struct_map struct_name (Textual.Struct.{fields: _} as struct_) struct_map =
     let new_struct_name = update_struct_name struct_name in
     let struct_ =

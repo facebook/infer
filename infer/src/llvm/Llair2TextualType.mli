@@ -45,11 +45,10 @@ val lookup_field_type :
 
 val tuple_field_prefix : string
 
-val signature_type_to_textual_typ : Textual.Lang.t -> string -> Textual.Typ.t option
+val signature_type_to_textual_typ :
+  string Hash_set.t -> Textual.Lang.t -> string -> Textual.Typ.t option
 
-val update_struct_map : ProcState.structMap -> ProcState.structMap
-
-val signature_structs : string Hash_set.t
+val update_struct_map : string Hash_set.t -> ProcState.structMap -> ProcState.structMap
 
 val update_type :
   update_struct_name:(Textual.TypeName.t -> Textual.TypeName.t) -> Textual.Typ.t -> Textual.Typ.t
@@ -57,4 +56,4 @@ val update_type :
 val update_signature_type :
   Textual.Lang.t -> ProcState.structMap -> Textual.TypeName.t -> Textual.TypeName.t
 
-val pp_signature_structs : Format.formatter -> unit -> unit
+val pp_signature_structs : Format.formatter -> string Hash_set.t -> unit
