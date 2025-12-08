@@ -84,15 +84,12 @@ module ProcState = struct
     ; mutable reg_map: Textual.Ident.t RegMap.t
     ; mutable last_id: Textual.Ident.t
     ; mutable last_tmp_var: int
-    ; struct_map: structMap
-    ; globals: globalMap
-    ; lang: Textual.Lang.t
     ; proc_map: procMap
     ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
-    ; method_class_index: methodClassIndex }
+    ; module_state: ModuleState.t }
 
-  let init ~qualified_name ~sourcefile ~loc ~formals ~struct_map ~globals ~lang ~proc_map
-      ~class_name_offset_map ~method_class_index =
+  let init ~qualified_name ~sourcefile ~loc ~formals ~proc_map ~class_name_offset_map ~module_state
+      =
     { qualified_name
     ; sourcefile
     ; loc
@@ -105,12 +102,9 @@ module ProcState = struct
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
-    ; struct_map
-    ; globals
-    ; lang
     ; proc_map
     ; class_name_offset_map
-    ; method_class_index }
+    ; module_state }
 
 
   let mk_fresh_id ?reg proc_state =
@@ -176,7 +170,7 @@ module ProcState = struct
       proc_state.id_offset
       (Pp.option (Pp.pair ~fst:Textual.VarName.pp ~snd:Int.pp))
       proc_state.get_element_ptr_offset ;
-    if print_types then F.fprintf fmt "types: %a@" pp_struct_map proc_state.struct_map
+    if print_types then F.fprintf fmt "types: %a@" pp_struct_map proc_state.module_state.struct_map
 
 
   let update_locals ~proc_state varname typ =
@@ -242,7 +236,7 @@ use the substitution in the code later on. *)
     proc_state.get_element_ptr_offset <- None
 
 
-  let global_proc_state lang sourcefile loc global_var =
+  let global_proc_state sourcefile loc module_state global_var =
     let global_init_name = Format.sprintf "global_init_%s" global_var in
     let qualified_name =
       Textual.QualifiedProcName.
@@ -260,12 +254,9 @@ use the substitution in the code later on. *)
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
-    ; struct_map= Textual.TypeName.Map.empty
-    ; globals= VarMap.empty
-    ; lang
     ; proc_map= Textual.QualifiedProcName.Map.empty
     ; class_name_offset_map= ClassNameOffsetMap.create 16
-    ; method_class_index= Textual.ProcName.Hashtbl.create 16 }
+    ; module_state }
 
 
   let find_method_with_offset ~proc_state struct_name offset =

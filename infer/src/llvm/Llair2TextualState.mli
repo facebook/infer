@@ -44,7 +44,7 @@ module ModuleState : sig
     { functions: (Llair.FuncName.t * Llair.func) list
     ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
     ; proc_decls: Textual.ProcDecl.t list
-    ; globals_map: Llair.GlobalDefn.t VarMap.t
+    ; globals_map: globalMap
     ; lang: Textual.Lang.t
     ; class_method_index: ClassMethodIndex.t
     ; method_class_index: methodClassIndex }
@@ -53,7 +53,7 @@ module ModuleState : sig
        functions:(Llair.FuncName.t * Llair.func) list
     -> struct_map:Textual.Struct.t Textual.TypeName.Map.t
     -> proc_decls:Textual.ProcDecl.t list
-    -> globals_map:Llair.GlobalDefn.t VarMap.t
+    -> globals_map:globalMap
     -> lang:Textual.Lang.t
     -> class_method_index:ClassMethodIndex.t
     -> method_class_index:methodClassIndex
@@ -74,24 +74,18 @@ module ProcState : sig
     ; mutable reg_map: Textual.Ident.t RegMap.t
     ; mutable last_id: Textual.Ident.t
     ; mutable last_tmp_var: int
-    ; struct_map: structMap
-    ; globals: globalMap
-    ; lang: Textual.Lang.t
     ; proc_map: procMap
-    ; class_name_offset_map: classNameOffsetMap
-    ; method_class_index: methodClassIndex }
+    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
+    ; module_state: ModuleState.t }
 
   val init :
        qualified_name:Textual.QualifiedProcName.t
     -> sourcefile:SourceFile.t
     -> loc:Textual.Location.t
     -> formals:(Textual.Typ.annotated * VarMap.key option) VarMap.t
-    -> struct_map:structMap
-    -> globals:globalMap
-    -> lang:Textual.Lang.t
     -> proc_map:procMap
     -> class_name_offset_map:Textual.QualifiedProcName.t ClassNameOffsetMap.t
-    -> method_class_index:methodClassIndex
+    -> module_state:ModuleState.t
     -> t
 
   val mk_fresh_id : ?reg:Llair.Reg.t -> t -> IdentMap.key
@@ -115,7 +109,7 @@ module ProcState : sig
 
   val pp : F.formatter -> print_types:bool -> t -> unit
 
-  val global_proc_state : Textual.Lang.t -> SourceFile.t -> Textual.Location.t -> string -> t
+  val global_proc_state : SourceFile.t -> Textual.Location.t -> ModuleState.t -> string -> t
 
   val find_method_with_offset :
     proc_state:t -> Textual.TypeName.t -> int -> Textual.QualifiedProcName.t option
