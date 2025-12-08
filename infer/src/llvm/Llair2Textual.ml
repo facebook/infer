@@ -1068,7 +1068,7 @@ let to_textual_global ~module_state sourcefile global =
               ; locals= []
               ; exit_loc= Textual.Location.Unknown }
           in
-          Some proc_desc
+          Some (Textual.Module.Proc proc_desc)
       | _ ->
           None
     else None
@@ -1140,8 +1140,8 @@ let update_formals_list formals_list formals_map =
   List.map ~f:update_formal formals_list
 
 
-let translate_code proc_map source_file module_state class_name_offset_map proc_descs
-    (procdecl : Textual.ProcDecl.t) (func_name, func) =
+let translate_code proc_map source_file ~module_state proc_descs (procdecl : Textual.ProcDecl.t)
+    (func_name, func) =
   let ModuleState.{lang; _} = module_state in
   let should_translate =
     should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
@@ -1159,7 +1159,7 @@ let translate_code proc_map source_file module_state class_name_offset_map proc_
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
   let proc_state =
     ProcState.init ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
-      ~formals:formals_map ~proc_map ~class_name_offset_map ~module_state
+      ~formals:formals_map ~proc_map ~module_state
   in
   let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
   let result_type =
@@ -1232,24 +1232,28 @@ let update_function_signatures lang class_method_index method_class_index ~struc
   List.map functions ~f:(update_proc_decl offset_attributes)
 
 
-let translate_llair_functions source_file module_state proc_decls class_name_offset_map values =
+let translate_llair_functions source_file ~(module_state : ModuleState.t) proc_decls =
   let proc_map =
-    List.fold
-      ~f:(fun proc_map proc_decl ->
+    List.fold proc_decls ~init:Textual.QualifiedProcName.Map.empty ~f:(fun proc_map proc_decl ->
         Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
           proc_map )
-      ~init:Textual.QualifiedProcName.Map.empty proc_decls
   in
-  List.fold2_exn proc_decls values ~init:[]
-    ~f:(translate_code proc_map source_file module_state class_name_offset_map)
+  List.fold2_exn proc_decls module_state.functions ~init:[]
+    ~f:(translate_code proc_map source_file ~module_state)
+  |> List.fold ~init:[] ~f:(fun procs proc ->
+         match proc with
+         | ProcDecl proc_decl ->
+             Textual.Module.Procdecl proc_decl :: procs
+         | ProcDesc proc_desc ->
+             Textual.Module.Proc proc_desc :: procs )
 
 
 let reset_global_state () = Hash_set.clear Type.signature_structs
 
-let init_module_state llair_program lang =
+let init_module_state (llair_program : Llair.program) lang =
   reset_global_state () ;
-  let functions = FuncName.Map.to_list llair_program.Llair.functions in
-  let globals_map = build_globals_map llair_program.Llair.globals in
+  let functions = FuncName.Map.to_list llair_program.functions in
+  let globals_map = build_globals_map llair_program.globals in
   let struct_map = Llair2TextualType.translate_types_env lang llair_program.typ_defns in
   let method_class_index = Textual.ProcName.Hashtbl.create 16 in
   let proc_decls, struct_map =
@@ -1257,55 +1261,30 @@ let init_module_state llair_program lang =
   in
   let class_method_index = Textual.TypeName.Hashtbl.create 16 in
   process_globals lang class_method_index method_class_index ~struct_map globals_map ;
-  ModuleState.init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~class_method_index
-    ~method_class_index
-
-
-let translate ~source_file (module_state : ModuleState.t) : Textual.Module.t =
-  let ModuleState.
-        { functions
-        ; struct_map
-        ; proc_decls
-        ; globals_map
-        ; lang
-        ; class_method_index
-        ; method_class_index } =
-    module_state
-  in
-  let source_file_ = SourceFile.create source_file in
-  let globals, proc_descs =
-    Textual.VarName.Map.fold
-      (fun _ global (globals, proc_descs) ->
-        let global, proc_desc_opt = to_textual_global source_file_ ~module_state global in
-        let proc_desc_opt =
-          Option.map ~f:(fun proc_desc -> Textual.Module.Proc proc_desc) proc_desc_opt
-        in
-        (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
-      globals_map ([], [])
-  in
   let proc_decls =
     update_function_signatures lang class_method_index method_class_index ~struct_map proc_decls
   in
   let class_name_offset_map =
     State.ClassMethodIndex.fill_class_name_offset_map class_method_index
   in
-  let procs =
-    translate_llair_functions source_file_ module_state proc_decls class_name_offset_map functions
+  ModuleState.init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~class_method_index
+    ~method_class_index ~class_name_offset_map
+
+
+let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =
+  let ModuleState.{struct_map; proc_decls; globals_map; lang} = module_state in
+  let source_file_ = SourceFile.create source_file in
+  let globals, proc_descs =
+    Textual.VarName.Map.fold
+      (fun _ global (globals, proc_descs) ->
+        let global, proc_desc_opt = to_textual_global source_file_ ~module_state global in
+        (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
+      globals_map ([], [])
   in
-  let procs =
-    List.fold
-      ~f:(fun procs proc ->
-        match proc with
-        | ProcDecl proc_decl ->
-            Textual.Module.Procdecl proc_decl :: procs
-        | ProcDesc proc_desc ->
-            Textual.Module.Proc proc_desc :: procs )
-      procs ~init:[]
-  in
+  let procs = translate_llair_functions source_file_ ~module_state proc_decls in
   let structs =
-    List.map
-      ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)
-      (Textual.TypeName.Map.bindings struct_map)
+    Textual.TypeName.Map.bindings struct_map
+    |> List.map ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)
   in
   let decls = procs @ proc_descs @ globals @ structs in
   let attrs = [Textual.Attr.mk_source_language lang] in

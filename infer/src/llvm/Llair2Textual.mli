@@ -12,4 +12,4 @@ type module_state
 
 val init_module_state : Program.t -> Textual.Lang.t -> module_state
 
-val translate : source_file:string -> module_state -> Textual.Module.t
+val translate : source_file:string -> module_state:module_state -> Textual.Module.t

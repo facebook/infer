@@ -90,7 +90,7 @@ let capture_llair source_file module_state =
   let lang = language_of_source_file source_file in
   let result =
     let error_state = Error.no_errors in
-    let textual = Llair2Textual.translate ~source_file module_state in
+    let textual = Llair2Textual.translate ~source_file ~module_state in
     if should_dump_textual () then dump_textual_file source_file textual ;
     let textual_source_file = Textual.SourceFile.create source_file in
     let* verified_textual, error_state =

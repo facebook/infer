@@ -63,11 +63,19 @@ module ModuleState = struct
     ; globals_map: Llair.GlobalDefn.t VarMap.t
     ; lang: Textual.Lang.t
     ; class_method_index: ClassMethodIndex.t
-    ; method_class_index: methodClassIndex }
+    ; method_class_index: methodClassIndex
+    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
 
   let init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~class_method_index
-      ~method_class_index =
-    {functions; struct_map; proc_decls; globals_map; lang; class_method_index; method_class_index}
+      ~method_class_index ~class_name_offset_map =
+    { functions
+    ; struct_map
+    ; proc_decls
+    ; globals_map
+    ; lang
+    ; class_method_index
+    ; method_class_index
+    ; class_name_offset_map }
 end
 
 module ProcState = struct
@@ -85,11 +93,9 @@ module ProcState = struct
     ; mutable last_id: Textual.Ident.t
     ; mutable last_tmp_var: int
     ; proc_map: procMap
-    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
     ; module_state: ModuleState.t }
 
-  let init ~qualified_name ~sourcefile ~loc ~formals ~proc_map ~class_name_offset_map ~module_state
-      =
+  let init ~qualified_name ~sourcefile ~loc ~formals ~proc_map ~module_state =
     { qualified_name
     ; sourcefile
     ; loc
@@ -103,7 +109,6 @@ module ProcState = struct
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
     ; proc_map
-    ; class_name_offset_map
     ; module_state }
 
 
@@ -255,13 +260,12 @@ use the substitution in the code later on. *)
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
     ; proc_map= Textual.QualifiedProcName.Map.empty
-    ; class_name_offset_map= ClassNameOffsetMap.create 16
     ; module_state }
 
 
   let find_method_with_offset ~proc_state struct_name offset =
     let key = ClassNameOffset.{class_name= struct_name; offset} in
-    ClassNameOffsetMap.find_opt proc_state.class_name_offset_map key
+    ClassNameOffsetMap.find_opt proc_state.module_state.class_name_offset_map key
 end
 
 let last_fake_line : int ref = ref 100
