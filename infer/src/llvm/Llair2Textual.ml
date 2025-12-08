@@ -951,8 +951,6 @@ let is_undefined func =
       false
 
 
-type textual_proc = ProcDecl of Textual.ProcDecl.t | ProcDesc of Textual.ProcDesc.t
-
 let should_translate plain_name mangled_name lang source_file (loc : Llair.Loc.t) =
   let file =
     if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
@@ -1121,14 +1119,11 @@ let function_to_proc_decl lang method_class_index ~struct_map (func_name, func) 
     | None ->
         fun_result_typ
   in
-  let procdecl =
-    Textual.ProcDecl.
-      { qualified_name
-      ; result_type
-      ; attributes= Option.to_list plain_name
-      ; formals_types= Some formal_types }
-  in
-  procdecl
+  Textual.ProcDecl.
+    { qualified_name
+    ; result_type
+    ; attributes= Option.to_list plain_name
+    ; formals_types= Some formal_types }
 
 
 let update_formals_list formals_list formals_map =
@@ -1185,10 +1180,10 @@ let translate_code proc_map source_file ~module_state proc_descs (procdecl : Tex
   let procdecl = {procdecl with result_type; formals_types} in
   let is_deinit () = Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit") in
   if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
-  then ProcDecl procdecl :: proc_descs
+  then Textual.Module.Procdecl procdecl :: proc_descs
   else
     let locals = ProcState.compute_locals ~proc_state in
-    ProcDesc
+    Textual.Module.Proc
       Textual.ProcDesc.
         { params= List.map ~f:(fun (_, param) -> param) params_types
         ; locals
@@ -1236,20 +1231,16 @@ let update_function_signatures lang class_method_index method_class_index ~struc
   List.map functions ~f:(update_proc_decl offset_attributes)
 
 
-let translate_llair_functions source_file ~(module_state : ModuleState.t) proc_decls =
+let translate_llair_functions source_file ~(module_state : ModuleState.t) =
+  let ModuleState.{proc_decls; functions; _} = module_state in
   let proc_map =
     List.fold proc_decls ~init:Textual.QualifiedProcName.Map.empty ~f:(fun proc_map proc_decl ->
         Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
           proc_map )
   in
-  List.fold2_exn proc_decls module_state.functions ~init:[]
+  List.fold2_exn proc_decls functions ~init:[]
     ~f:(translate_code proc_map source_file ~module_state)
-  |> List.fold ~init:[] ~f:(fun procs proc ->
-         match proc with
-         | ProcDecl proc_decl ->
-             Textual.Module.Procdecl proc_decl :: procs
-         | ProcDesc proc_desc ->
-             Textual.Module.Proc proc_desc :: procs )
+  |> List.rev
 
 
 let reset_global_state () = Hash_set.clear Type.signature_structs
@@ -1271,12 +1262,12 @@ let init_module_state (llair_program : Llair.program) lang =
   let class_name_offset_map =
     State.ClassMethodIndex.fill_class_name_offset_map class_method_index
   in
-  ModuleState.init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~class_method_index
-    ~method_class_index ~class_name_offset_map
+  ModuleState.init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~method_class_index
+    ~class_name_offset_map
 
 
 let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =
-  let ModuleState.{struct_map; proc_decls; globals_map; lang} = module_state in
+  let ModuleState.{struct_map; globals_map; lang} = module_state in
   let source_file_ = SourceFile.create source_file in
   let globals, proc_descs =
     Textual.VarName.Map.fold
@@ -1285,7 +1276,7 @@ let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =
         (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
       globals_map ([], [])
   in
-  let procs = translate_llair_functions source_file_ ~module_state proc_decls in
+  let procs = translate_llair_functions source_file_ ~module_state in
   let structs =
     Textual.TypeName.Map.bindings struct_map
     |> List.map ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)

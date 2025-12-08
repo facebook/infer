@@ -46,7 +46,6 @@ module ModuleState : sig
     ; proc_decls: Textual.ProcDecl.t list
     ; globals_map: globalMap
     ; lang: Textual.Lang.t
-    ; class_method_index: ClassMethodIndex.t
     ; method_class_index: methodClassIndex
     ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
 
@@ -56,7 +55,6 @@ module ModuleState : sig
     -> proc_decls:Textual.ProcDecl.t list
     -> globals_map:globalMap
     -> lang:Textual.Lang.t
-    -> class_method_index:ClassMethodIndex.t
     -> method_class_index:methodClassIndex
     -> class_name_offset_map:Textual.QualifiedProcName.t ClassNameOffsetMap.t
     -> t

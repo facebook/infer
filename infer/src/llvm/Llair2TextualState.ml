@@ -62,20 +62,12 @@ module ModuleState = struct
     ; proc_decls: Textual.ProcDecl.t list
     ; globals_map: Llair.GlobalDefn.t VarMap.t
     ; lang: Textual.Lang.t
-    ; class_method_index: ClassMethodIndex.t
     ; method_class_index: methodClassIndex
     ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
 
-  let init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~class_method_index
-      ~method_class_index ~class_name_offset_map =
-    { functions
-    ; struct_map
-    ; proc_decls
-    ; globals_map
-    ; lang
-    ; class_method_index
-    ; method_class_index
-    ; class_name_offset_map }
+  let init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~method_class_index
+      ~class_name_offset_map =
+    {functions; struct_map; proc_decls; globals_map; lang; method_class_index; class_name_offset_map}
 end
 
 module ProcState = struct
