@@ -172,11 +172,14 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello1
 
 declare .plain_name = "deinit" $s5Hello18RetainCycleExampleCfd(*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>
 
-define .plain_name = "test" $s5Hello4testyyF() : void {
-  local obj: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
+define .plain_name = "test" $s5Hello4testSiyF() : int {
+  local obj: *__infer_swift_type<ptr_elt>, getelementptr_offset_2: *void, getelementptr_offset_1: *void
   #: @[15:15]
       n1 = $s5Hello12createObjectAA18RetainCycleExampleCyF() @[15:15]
       jmp 2::ret @[15:15]
+      
+  #12::ret: @[17:5]
+      ret n17 @[17:5]
       
   #2::ret: @[175:0]
       store &obj <- n1 @[175:0]
@@ -193,8 +196,12 @@ define .plain_name = "test" $s5Hello4testyyF() : void {
       _ = $builtins.llvm_dynamic_call(n11, n12) @[16:9]
       jmp 8::void::ret @[16:9]
       
-  #8::void::ret: @[17:1]
-      ret null @[17:1]
+  #8::void::ret: @[17:16]
+      n13 = load n1 @[17:16]
+      store &getelementptr_offset_2 <- 12 @[17:16]
+      n14 = load &getelementptr_offset_2 @[17:16]
+      n17 = n1.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg() @[17:16]
+      jmp 12::ret @[17:16]
       
 } @?
 

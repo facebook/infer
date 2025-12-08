@@ -11,7 +11,8 @@ func createObject() -> RetainCycleExample {
     return obj
 }
 
-func test() {
+func test() -> Int {
     let obj = createObject()
     obj.closure()
+    return obj.id
 }

@@ -30,7 +30,30 @@ let function_ptr_call args () : unit DSL.model_monad =
   unknown args ()
 
 
-let dynamic_call arg args () : unit DSL.model_monad =
+let closure_call orig_args () : unit DSL.model_monad =
+  let open DSL.Syntax in
+  match orig_args with
+  | proc_name_arg :: args -> (
+      let* proc_name_opt = as_constant_string proc_name_arg in
+      match proc_name_opt with
+      | Some proc_name ->
+          let proc_name =
+            Procname.Swift (SwiftProcname.mk_function (Mangled.from_string proc_name))
+          in
+          let args = List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) args in
+          Logging.d_printfln "calling %a with args = %a" Procname.pp proc_name
+            (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:DSL.pp_aval))
+            args ;
+          let* res = swift_call proc_name args in
+          assign_ret res
+      | None ->
+          Logging.d_printfln "no method name found for closure %a" DSL.pp_aval proc_name_arg ;
+          function_ptr_call args () )
+  | [] ->
+      function_ptr_call orig_args ()
+
+
+let dynamic_call arg orig_args () : unit DSL.model_monad =
   let open DSL.Syntax in
   let dynamic_call_with_type name offset self args =
     let args = List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) (args @ [self]) in
@@ -46,7 +69,7 @@ let dynamic_call arg args () : unit DSL.model_monad =
         unknown args ()
   in
   let* offset_opt = as_constant_int arg in
-  match (offset_opt, List.rev args) with
+  match (offset_opt, List.rev orig_args) with
   | Some offset, self :: actuals -> (
       let args = List.rev actuals in
       let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true self in
@@ -65,7 +88,7 @@ let dynamic_call arg args () : unit DSL.model_monad =
                 DSL.pp_aval self ;
               unknown args () ) )
   | _, _ ->
-      function_ptr_call args ()
+      closure_call (arg :: orig_args) ()
 
 
 let builtins_matcher builtin args : unit -> unit DSL.model_monad =
