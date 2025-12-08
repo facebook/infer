@@ -6,18 +6,29 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[112:0]
-      n1 = load &var1 @[112:0]
-      n2 = objc_allocWithZone(n1) @[112:0]
-      jmp 2::ret @[113:0]
-      
-  #2::ret: @[114:0]
-      n3 = load &L_selector(init) @[114:0]
-      n6 = $builtins.objc_msgSend(n2, n3) @[115:0]
-      ret n6 @[116:0]
-      
-} @?
+declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare objc_allocWithZone(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swift_Builtin_float() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftXPC() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftObjectiveC() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftFoundation() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftDispatch() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9ObjCClassC>.$s5Hello9ObjCClassCfD(*__infer_swift_type<,ObjCClass>) : void
+
+declare $s5Hello9ObjCClassCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "init" $s5Hello9ObjCClassCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,ObjCClass>
 
 define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<,ObjCClass>) : *__infer_swift_type<ptr_elt> {
   local var4: *__infer_swift_type<objc_super>
@@ -42,29 +53,18 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<
       
 } @?
 
-declare .plain_name = "init" $s5Hello9ObjCClassCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,ObjCClass>
-
-declare $s5Hello9ObjCClassCMa(int) : *__infer_swift_type<ptr_elt>
-
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9ObjCClassC>.$s5Hello9ObjCClassCfD(*__infer_swift_type<,ObjCClass>) : void
-
-declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
-
-declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
-
-declare _swift_FORCE_LOAD_$_swiftDispatch() : *__infer_swift_type<ptr_elt>
-
-declare _swift_FORCE_LOAD_$_swiftFoundation() : *__infer_swift_type<ptr_elt>
-
-declare _swift_FORCE_LOAD_$_swiftObjectiveC() : *__infer_swift_type<ptr_elt>
-
-declare _swift_FORCE_LOAD_$_swiftXPC() : *__infer_swift_type<ptr_elt>
-
-declare _swift_FORCE_LOAD_$_swift_Builtin_float() : *__infer_swift_type<ptr_elt>
-
-declare objc_allocWithZone(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<ptr_elt> {
+  #: @[112:0]
+      n1 = load &var1 @[112:0]
+      n2 = objc_allocWithZone(n1) @[112:0]
+      jmp 2::ret @[113:0]
+      
+  #2::ret: @[114:0]
+      n3 = load &L_selector(init) @[114:0]
+      n6 = $builtins.objc_msgSend(n2, n3) @[115:0]
+      ret n6 @[116:0]
+      
+} @?
 
 global symbolic _____ 5Hello9ObjCClassC: *__infer_swift_type<ptr_elt>
 

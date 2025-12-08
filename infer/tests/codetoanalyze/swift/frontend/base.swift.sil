@@ -6,43 +6,11 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
-  #: @[104:0]
-      n1 = $builtins.llvm_init_tuple() @[104:0]
-      n2 = load &age @[19:5]
-      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n2 @[19:5]
-      n3 = load &height @[19:5]
-      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 <- n3 @[19:5]
-      ret n1 @[19:5]
-      
-} @?
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "test1" $s5Hello5test1yS2i_SitF(n: *__infer_swift_type<ptr_elt>, n2: *__infer_swift_type<ptr_elt>) : int {
-  #: @?
-      n1 = load &n @[7:5]
-      ret n1 @[7:5]
-      
-} @?
-
-define .plain_name = "test2" $s5Hello5test2SiyF() : int {
-  #: @[11:12]
-      n1 = $s5Hello9returnOneSiyF() @[11:12]
-      jmp 1::ret @[11:12]
-      
-  #1::ret: @[11:5]
-      ret n1 @[11:5]
-      
-} @?
-
-define .plain_name = "test3" $s5Hello5test3yS2i_SitF(n: *__infer_swift_type<ptr_elt>, n2: *__infer_swift_type<ptr_elt>) : int {
-  #: @[15:12]
-      n1 = load &n @[15:12]
-      n2 = load &n2 @[15:12]
-      n3 = $s5Hello5test1yS2i_SitF(n1, n2) @[15:12]
-      jmp 5::ret @[15:12]
-      
-  #5::ret: @[15:5]
-      ret n3 @[15:5]
+define .plain_name = "returnOne" $s5Hello9returnOneSiyF() : int {
+  #: @[3:5]
+      ret 1 @[3:5]
       
 } @?
 
@@ -65,13 +33,45 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
       
 } @?
 
-define .plain_name = "returnOne" $s5Hello9returnOneSiyF() : int {
-  #: @[3:5]
-      ret 1 @[3:5]
+define .plain_name = "test3" $s5Hello5test3yS2i_SitF(n: *__infer_swift_type<ptr_elt>, n2: *__infer_swift_type<ptr_elt>) : int {
+  #: @[15:12]
+      n1 = load &n @[15:12]
+      n2 = load &n2 @[15:12]
+      n3 = $s5Hello5test1yS2i_SitF(n1, n2) @[15:12]
+      jmp 5::ret @[15:12]
+      
+  #5::ret: @[15:5]
+      ret n3 @[15:5]
       
 } @?
 
-declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+define .plain_name = "test2" $s5Hello5test2SiyF() : int {
+  #: @[11:12]
+      n1 = $s5Hello9returnOneSiyF() @[11:12]
+      jmp 1::ret @[11:12]
+      
+  #1::ret: @[11:5]
+      ret n1 @[11:5]
+      
+} @?
+
+define .plain_name = "test1" $s5Hello5test1yS2i_SitF(n: *__infer_swift_type<ptr_elt>, n2: *__infer_swift_type<ptr_elt>) : int {
+  #: @?
+      n1 = load &n @[7:5]
+      ret n1 @[7:5]
+      
+} @?
+
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
+  #: @[104:0]
+      n1 = $builtins.llvm_init_tuple() @[104:0]
+      n2 = load &age @[19:5]
+      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n2 @[19:5]
+      n3 = load &height @[19:5]
+      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 <- n3 @[19:5]
+      ret n1 @[19:5]
+      
+} @?
 
 global llvm::used: *__infer_swift_type<ptr_elt>
 

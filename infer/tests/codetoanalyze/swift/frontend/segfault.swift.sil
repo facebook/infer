@@ -6,6 +6,26 @@
 
 .source_language = "Swift" @?
 
+declare swift_getTypeByMangledNameInContext(*__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare __swift_instantiateConcreteTypeFromMangledName(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "_finalizeUninitializedArray" $ss27_finalizeUninitializedArrayySayxGABnlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSayxGD>
+
+declare $ss27_allocateUninitializedArrayySayxG_BptBwlF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSaMa(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSa12_endMutationyyF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+
+declare $sSSySSxcs25LosslessStringConvertibleRzlufC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+declare $sSD17dictionaryLiteralSDyxq_Gx_q_td_tcfC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
 define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_segfault1a1bSDyS2SGSi_SitF(a: *__infer_swift_type<ptr_elt>, b: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   local var7: *__infer_swift_type<TSi>, var6: *__infer_swift_type<TSi>
   #: @[2:12]
@@ -108,26 +128,6 @@ define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_
       jmp 13::ret @[3:9]
       
 } @?
-
-declare $sSD17dictionaryLiteralSDyxq_Gx_q_td_tcfC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
-
-declare $sSSySSxcs25LosslessStringConvertibleRzlufC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare $sSa12_endMutationyyF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
-
-declare $sSaMa(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare $ss27_allocateUninitializedArrayySayxG_BptBwlF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare .plain_name = "_finalizeUninitializedArray" $ss27_finalizeUninitializedArrayySayxGABnlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSayxGD>
-
-declare __swift_instantiateConcreteTypeFromMangledName(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
-
-declare swift_getTypeByMangledNameInContext(*__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 global symbolic SS_SSt: *__infer_swift_type<ptr_elt>
 

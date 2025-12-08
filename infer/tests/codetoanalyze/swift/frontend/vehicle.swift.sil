@@ -6,65 +6,28 @@
 
 .source_language = "Swift" @?
 
-define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(v: *__infer_swift_type<,Vehicle>, t: *__infer_swift_type<,Train>) : void {
-  local getelementptr_offset_1: *void
-  #: @[12:8]
-      n1 = load &v @[12:8]
-      store &getelementptr_offset_1 <- 10 @[12:8]
-      n2 = load &getelementptr_offset_1 @[12:8]
-      n4 = load &v @[12:8]
-      _ = $builtins.llvm_dynamic_call(n2, n4) @[12:8]
-      jmp 7::void::ret @[12:8]
-      
-  #7::void::ret: @[13:1]
-      ret null @[13:1]
-      
-} @?
+declare swift_retain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainC9makeNoiseyyF(self: *__infer_swift_type<,Train>) : void {
-  #: @[9:5]
-      ret null @[9:5]
-      
-} @?
+declare swift_release(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainCACycfC(var1: *__infer_swift_type<,$s5Hello5TrainCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[112:0]
-      n1 = load &var1 @[112:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5TrainC>>) @[112:0]
-      jmp 2::ret @[113:0]
-      
-  #2::ret: @[114:0]
-      n6 = $s5Hello5TrainCACycfc(n4) @[114:0]
-      jmp 3::ret @[115:0]
-      
-  #3::ret: @[116:0]
-      ret n6 @[116:0]
-      
-} @?
+declare swift_deallocClassInstance(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "init" $s5Hello5TrainCACycfc(self: *__infer_swift_type<,Train>) : *__infer_swift_type<ptr_elt> {
-  #: @[118:0]
-      n1 = load &self @[118:0]
-      n3 = $s5Hello7VehicleCACycfc(n1) @[119:0]
-      jmp 4::ret @[120:0]
-      
-  #4::ret: @[121:0]
-      n4 = $builtins.llvm_nondet() @[121:0]
-      store &self <- n3 @[122:0]
-      n6 = load &self @[123:0]
-      ret n3 @[125:0]
-      
-} @?
+declare swift_allocObject(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
 
-declare $s5Hello5TrainCMa(int) : *__infer_swift_type<ptr_elt>
+declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainCfD(*__infer_swift_type<,Train>) : void
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" $s5Hello5TrainCfd(*__infer_swift_type<,Train>) : *__infer_swift_type<ptr_elt>
+declare .plain_name = "deinit" $s5Hello7VehicleCfd(*__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle>
 
-define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleC9makeNoiseyyF(self: *__infer_swift_type<,Vehicle>) : void {
-  #: @[4:5]
-      ret null @[4:5]
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleCfD(*__infer_swift_type<,Vehicle>) : void
+
+declare $s5Hello7VehicleCMa(int) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "init" $s5Hello7VehicleCACycfc(self: *__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle> {
+  #: @?
+      n1 = load &self @[143:0]
+      ret n1 @[143:0]
       
 } @?
 
@@ -83,30 +46,67 @@ define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello7Veh
       
 } @?
 
-define .plain_name = "init" $s5Hello7VehicleCACycfc(self: *__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle> {
-  #: @?
-      n1 = load &self @[143:0]
-      ret n1 @[143:0]
+define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleC9makeNoiseyyF(self: *__infer_swift_type<,Vehicle>) : void {
+  #: @[4:5]
+      ret null @[4:5]
       
 } @?
 
-declare $s5Hello7VehicleCMa(int) : *__infer_swift_type<ptr_elt>
+declare .plain_name = "deinit" $s5Hello5TrainCfd(*__infer_swift_type<,Train>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleCfD(*__infer_swift_type<,Vehicle>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainCfD(*__infer_swift_type<,Train>) : void
 
-declare .plain_name = "deinit" $s5Hello7VehicleCfd(*__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle>
+declare $s5Hello5TrainCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+define .plain_name = "init" $s5Hello5TrainCACycfc(self: *__infer_swift_type<,Train>) : *__infer_swift_type<ptr_elt> {
+  #: @[118:0]
+      n1 = load &self @[118:0]
+      n3 = $s5Hello7VehicleCACycfc(n1) @[119:0]
+      jmp 4::ret @[120:0]
+      
+  #4::ret: @[121:0]
+      n4 = $builtins.llvm_nondet() @[121:0]
+      store &self <- n3 @[122:0]
+      n6 = load &self @[123:0]
+      ret n3 @[125:0]
+      
+} @?
 
-declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainCACycfC(var1: *__infer_swift_type<,$s5Hello5TrainCXMTD>) : *__infer_swift_type<ptr_elt> {
+  #: @[112:0]
+      n1 = load &var1 @[112:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5TrainC>>) @[112:0]
+      jmp 2::ret @[113:0]
+      
+  #2::ret: @[114:0]
+      n6 = $s5Hello5TrainCACycfc(n4) @[114:0]
+      jmp 3::ret @[115:0]
+      
+  #3::ret: @[116:0]
+      ret n6 @[116:0]
+      
+} @?
 
-declare swift_allocObject(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainC9makeNoiseyyF(self: *__infer_swift_type<,Train>) : void {
+  #: @[9:5]
+      ret null @[9:5]
+      
+} @?
 
-declare swift_deallocClassInstance(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
-
-declare swift_release(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
-
-declare swift_retain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(v: *__infer_swift_type<,Vehicle>, t: *__infer_swift_type<,Train>) : void {
+  local getelementptr_offset_1: *void
+  #: @[12:8]
+      n1 = load &v @[12:8]
+      store &getelementptr_offset_1 <- 10 @[12:8]
+      n2 = load &getelementptr_offset_1 @[12:8]
+      n4 = load &v @[12:8]
+      _ = $builtins.llvm_dynamic_call(n2, n4) @[12:8]
+      jmp 7::void::ret @[12:8]
+      
+  #7::void::ret: @[13:1]
+      ret null @[13:1]
+      
+} @?
 
 global symbolic _____ 5Hello7VehicleC: *__infer_swift_type<ptr_elt>
 

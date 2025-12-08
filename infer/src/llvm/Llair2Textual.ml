@@ -1227,7 +1227,6 @@ let update_function_signatures lang class_method_index method_class_index ~struc
 let translate_llair_functions source_file ~(module_state : ModuleState.t) =
   let ModuleState.{proc_decls; functions; _} = module_state in
   List.fold2_exn proc_decls functions ~init:[] ~f:(translate_code source_file ~module_state)
-  |> List.rev
 
 
 let init_module_state (llair_program : Llair.program) lang =
