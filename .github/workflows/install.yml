@@ -1,8 +1,10 @@
 name: build
 
 on:
-  - push
-  - pull_request
+  push:
+    branches:
+      - "main"
+  pull_request: {}
 
 env:
   USER_LLVM: "yes"
