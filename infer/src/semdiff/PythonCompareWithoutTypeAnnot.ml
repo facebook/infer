@@ -125,9 +125,6 @@ module Diff = struct
            fields1
     in
     match (n1, n2) with
-    | a, b when Node.equal a b ->
-        (* Type annotations are equal: no need to compare field by field *)
-        true
     | Null, Dict _ ->
         (* Adding any type annotation is fine *)
         true
@@ -158,8 +155,8 @@ module Diff = struct
     | List l1, List l2 ->
         (* Compare lists element by element *)
         Int.equal (List.length l1) (List.length l2) && List.for_all2_exn ~f:annotations_equal l1 l2
-    | _ ->
-        false
+    | a, b ->
+        Node.equal a b
 
 
   let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : Node.t)
@@ -265,10 +262,10 @@ module Output = struct
 
 
   let show_diff file1 file2 lines_removed lines_added =
-    let lines1 = String.split_on_chars ~on:['\n'] file1
-    and lines2 = String.split_on_chars ~on:['\n'] file2 in
+    let lines1 = String.split_on_chars ~on:['\n'] file1 |> Array.of_list
+    and lines2 = String.split_on_chars ~on:['\n'] file2 |> Array.of_list in
     let get_line_content lines n : string =
-      if n - 1 < List.length lines then List.nth_exn lines (n - 1) else ""
+      if n - 1 < Array.length lines then Array.get lines (n - 1) else ""
     in
     let lines_to_string_set lines =
       List.fold_left ~f:(fun acc (_, s) -> StringSet.add s acc) ~init:StringSet.empty lines
