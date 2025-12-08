@@ -8,7 +8,7 @@
 open! IStd
 open! Llair
 module L = Logging
-module ProcState = Llair2TextualProcState
+module ProcState = Llair2TextualState
 
 let to_textual_type_name lang ?plain_name name =
   if Textual.Lang.is_swift lang then Textual.TypeName.mk_swift_type_name ?plain_name name

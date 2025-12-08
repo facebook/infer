@@ -7,7 +7,7 @@
 
 open! IStd
 open! Llair
-module ProcState = Llair2TextualProcState
+module ProcState = Llair2TextualState
 
 val to_textual_type_name : Textual.Lang.t -> ?plain_name:label -> label -> Textual.TypeName.t
 

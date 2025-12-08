@@ -10,9 +10,13 @@ open Llair
 module F = Format
 module Type = Llair2TextualType
 module L = Logging
-module ProcState = Llair2TextualProcState
+module State = Llair2TextualState
+module ModuleState = Llair2TextualState.ModuleState
+module ProcState = Llair2TextualState.ProcState
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
+
+type module_state = ModuleState.t
 
 let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
 
@@ -81,7 +85,7 @@ end
 let to_textual_loc ?proc_state {Loc.line; col} =
   if Int.equal line 0 && Int.equal col 0 then
     let line =
-      if Config.frontend_tests then ProcState.get_fresh_fake_line ()
+      if Config.frontend_tests then State.get_fresh_fake_line ()
       else
         match proc_state with
         | Some proc_state -> (
@@ -378,9 +382,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
   | Ap1 (GetElementPtr n, _typ, _exp) ->
       let n_arg = Llair.Exp.integer (Llair.Typ.integer ~bits:32 ~byts:4) (Z.of_int n) in
       let exp, _, instrs = to_textual_exp loc ~proc_state n_arg in
-      let var_name =
-        ProcState.mk_fresh_tmp_var ProcState.get_element_ptr_offset_prefix proc_state
-      in
+      let var_name = ProcState.mk_fresh_tmp_var State.get_element_ptr_offset_prefix proc_state in
       let new_var = Textual.Exp.Lvar var_name in
       ProcState.update_locals ~proc_state var_name (Textual.Typ.mk_without_attributes (Ptr Void)) ;
       ProcState.update_var_offset ~proc_state var_name n ;
@@ -502,7 +504,7 @@ and resolve_method_call ~proc_state proc args =
     | Some (proc_state_id_offset, offset), Some (Textual.Exp.Var self_id)
       when Textual.Ident.equal proc_state_id_offset id_offset
            && Textual.ProcName.equal (Textual.QualifiedProcName.name proc) llvm_dynamic_call -> (
-      match ProcState.IdentMap.find_opt self_id proc_state.ProcState.ids_types with
+      match State.IdentMap.find_opt self_id proc_state.ProcState.ids_types with
       | Some {typ= Textual.Typ.Ptr (Textual.Typ.Struct struct_name as inner_typ)}
         when not (Textual.Typ.equal Textual.Typ.any_type_swift inner_typ) -> (
         match ProcState.find_method_with_offset ~proc_state struct_name offset with
@@ -1150,7 +1152,7 @@ let translate_code proc_map lang source_file struct_map method_class_index globa
   in
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
   let proc_state =
-    ProcState.init_state ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
+    ProcState.init ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
       ~formals:formals_map ~struct_map ~globals ~lang ~proc_map ~class_name_offset_map
       ~method_class_index
   in
@@ -1243,42 +1245,6 @@ let translate_llair_functions source_file lang struct_map method_class_index glo
 
 let reset_global_state () = Hash_set.clear Type.signature_structs
 
-module ClassMethodIndex = struct
-  type t = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
-
-  let pp_ fmt class_method_index =
-    let pp (class_name, index) =
-      Format.fprintf fmt "%a: %a@." Textual.TypeName.pp class_name
-        (Pp.comma_seq (Pp.pair ~fst:Textual.QualifiedProcName.pp ~snd:Int.pp))
-        index
-    in
-    Textual.TypeName.Hashtbl.to_seq class_method_index
-    |> Stdlib.List.of_seq
-    |> List.sort ~compare:[%compare: Textual.TypeName.t * _]
-    |> List.iter ~f:pp
-  [@@warning "-unused-value-declaration"]
-
-
-  let fill_class_name_offset_map class_method_index =
-    let class_name_offset_map = ProcState.ClassNameOffsetMap.create 16 in
-    let process_map class_name (proc, offset) =
-      let key = ProcState.ClassNameOffset.{class_name; offset} in
-      ProcState.ClassNameOffsetMap.replace class_name_offset_map key proc
-    in
-    let process_class class_name procs = List.iter procs ~f:(process_map class_name) in
-    Textual.TypeName.Hashtbl.iter process_class class_method_index ;
-    class_name_offset_map
-end
-
-type module_state =
-  { functions: (FuncName.t * func) list
-  ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
-  ; proc_decls: Textual.ProcDecl.t list
-  ; globals_map: GlobalDefn.t VarMap.t
-  ; lang: Textual.Lang.t
-  ; class_method_index: ClassMethodIndex.t
-  ; method_class_index: ProcState.methodClassIndex }
-
 let init_module_state llair_program lang =
   reset_global_state () ;
   let functions = FuncName.Map.to_list llair_program.Llair.functions in
@@ -1290,12 +1256,19 @@ let init_module_state llair_program lang =
   in
   let class_method_index = Textual.TypeName.Hashtbl.create 16 in
   process_globals lang class_method_index method_class_index ~struct_map globals_map ;
-  {functions; struct_map; proc_decls; globals_map; lang; class_method_index; method_class_index}
+  ModuleState.init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~class_method_index
+    ~method_class_index
 
 
-let translate ~source_file (module_state : module_state) : Textual.Module.t =
-  let {functions; struct_map; proc_decls; globals_map; lang; class_method_index; method_class_index}
-      =
+let translate ~source_file (module_state : ModuleState.t) : Textual.Module.t =
+  let ModuleState.
+        { functions
+        ; struct_map
+        ; proc_decls
+        ; globals_map
+        ; lang
+        ; class_method_index
+        ; method_class_index } =
     module_state
   in
   let source_file_ = SourceFile.create source_file in
@@ -1312,7 +1285,9 @@ let translate ~source_file (module_state : module_state) : Textual.Module.t =
   let proc_decls =
     update_function_signatures lang class_method_index method_class_index ~struct_map proc_decls
   in
-  let class_name_offset_map = ClassMethodIndex.fill_class_name_offset_map class_method_index in
+  let class_name_offset_map =
+    State.ClassMethodIndex.fill_class_name_offset_map class_method_index
+  in
   let procs =
     translate_llair_functions source_file_ lang struct_map method_class_index globals_map proc_decls
       class_name_offset_map functions
