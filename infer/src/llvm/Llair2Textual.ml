@@ -278,7 +278,9 @@ let add_deref ~proc_state ?from_call exp loc =
 
 
 let update_id_return_type ~(proc_state : ProcState.t) proc id =
-  let proc_decl_opt = Textual.QualifiedProcName.Map.find_opt proc proc_state.proc_map in
+  let proc_decl_opt =
+    Textual.QualifiedProcName.Map.find_opt proc proc_state.module_state.proc_map
+  in
   match (id, proc_decl_opt) with
   | Some id, Some proc_decl ->
       let return_typ = proc_decl.Textual.ProcDecl.result_type in
@@ -1137,7 +1139,7 @@ let update_formals_list formals_list formals_map =
   List.map ~f:update_formal formals_list
 
 
-let translate_code proc_map source_file ~module_state proc_descs (procdecl : Textual.ProcDecl.t)
+let translate_code source_file ~module_state proc_descs (procdecl : Textual.ProcDecl.t)
     (func_name, func) =
   let ModuleState.{lang; _} = module_state in
   let should_translate =
@@ -1158,7 +1160,7 @@ let translate_code proc_map source_file ~module_state proc_descs (procdecl : Tex
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
   let proc_state =
     ProcState.init ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
-      ~formals:formals_map ~proc_map ~module_state
+      ~formals:formals_map ~module_state
   in
   let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
   let result_type =
@@ -1233,13 +1235,7 @@ let update_function_signatures lang class_method_index method_class_index ~struc
 
 let translate_llair_functions source_file ~(module_state : ModuleState.t) =
   let ModuleState.{proc_decls; functions; _} = module_state in
-  let proc_map =
-    List.fold proc_decls ~init:Textual.QualifiedProcName.Map.empty ~f:(fun proc_map proc_decl ->
-        Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
-          proc_map )
-  in
-  List.fold2_exn proc_decls functions ~init:[]
-    ~f:(translate_code proc_map source_file ~module_state)
+  List.fold2_exn proc_decls functions ~init:[] ~f:(translate_code source_file ~module_state)
   |> List.rev
 
 
@@ -1262,8 +1258,13 @@ let init_module_state (llair_program : Llair.program) lang =
   let class_name_offset_map =
     State.ClassMethodIndex.fill_class_name_offset_map class_method_index
   in
-  ModuleState.init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~method_class_index
-    ~class_name_offset_map
+  let proc_map =
+    List.fold proc_decls ~init:Textual.QualifiedProcName.Map.empty ~f:(fun proc_map proc_decl ->
+        Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
+          proc_map )
+  in
+  ModuleState.init ~functions ~struct_map ~proc_decls ~proc_map ~globals_map ~lang
+    ~method_class_index ~class_name_offset_map
 
 
 let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =

@@ -60,14 +60,22 @@ module ModuleState = struct
     { functions: (Llair.FuncName.t * Llair.func) list
     ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
     ; proc_decls: Textual.ProcDecl.t list
+    ; proc_map: procMap
     ; globals_map: Llair.GlobalDefn.t VarMap.t
     ; lang: Textual.Lang.t
     ; method_class_index: methodClassIndex
     ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
 
-  let init ~functions ~struct_map ~proc_decls ~globals_map ~lang ~method_class_index
+  let init ~functions ~struct_map ~proc_decls ~proc_map ~globals_map ~lang ~method_class_index
       ~class_name_offset_map =
-    {functions; struct_map; proc_decls; globals_map; lang; method_class_index; class_name_offset_map}
+    { functions
+    ; struct_map
+    ; proc_decls
+    ; proc_map
+    ; globals_map
+    ; lang
+    ; method_class_index
+    ; class_name_offset_map }
 end
 
 module ProcState = struct
@@ -84,10 +92,9 @@ module ProcState = struct
     ; mutable reg_map: Textual.Ident.t RegMap.t
     ; mutable last_id: Textual.Ident.t
     ; mutable last_tmp_var: int
-    ; proc_map: procMap
     ; module_state: ModuleState.t }
 
-  let init ~qualified_name ~sourcefile ~loc ~formals ~proc_map ~module_state =
+  let init ~qualified_name ~sourcefile ~loc ~formals ~module_state =
     { qualified_name
     ; sourcefile
     ; loc
@@ -100,7 +107,6 @@ module ProcState = struct
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
-    ; proc_map
     ; module_state }
 
 
@@ -251,7 +257,6 @@ use the substitution in the code later on. *)
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
-    ; proc_map= Textual.QualifiedProcName.Map.empty
     ; module_state }
 
 

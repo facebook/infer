@@ -44,6 +44,7 @@ module ModuleState : sig
     { functions: (Llair.FuncName.t * Llair.func) list
     ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
     ; proc_decls: Textual.ProcDecl.t list
+    ; proc_map: procMap
     ; globals_map: globalMap
     ; lang: Textual.Lang.t
     ; method_class_index: methodClassIndex
@@ -53,6 +54,7 @@ module ModuleState : sig
        functions:(Llair.FuncName.t * Llair.func) list
     -> struct_map:Textual.Struct.t Textual.TypeName.Map.t
     -> proc_decls:Textual.ProcDecl.t list
+    -> proc_map:procMap
     -> globals_map:globalMap
     -> lang:Textual.Lang.t
     -> method_class_index:methodClassIndex
@@ -74,7 +76,6 @@ module ProcState : sig
     ; mutable reg_map: Textual.Ident.t RegMap.t
     ; mutable last_id: Textual.Ident.t
     ; mutable last_tmp_var: int
-    ; proc_map: procMap
     ; module_state: ModuleState.t }
 
   val init :
@@ -82,7 +83,6 @@ module ProcState : sig
     -> sourcefile:SourceFile.t
     -> loc:Textual.Location.t
     -> formals:(Textual.Typ.annotated * VarMap.key option) VarMap.t
-    -> proc_map:procMap
     -> module_state:ModuleState.t
     -> t
 
