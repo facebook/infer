@@ -953,15 +953,17 @@ let is_undefined func =
 
 type textual_proc = ProcDecl of Textual.ProcDecl.t | ProcDesc of Textual.ProcDesc.t
 
-let should_translate plain_name lang source_file (loc : Llair.Loc.t) =
+let should_translate plain_name mangled_name lang source_file (loc : Llair.Loc.t) =
   let file =
     if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
     else loc.Llair.Loc.file
   in
   let source_file_loc = SourceFile.create file in
   SourceFile.equal source_file source_file_loc
+  (* the loc in these methods is empty but these are getters
+    and setters or closure bodies and we need to translate them *)
+  || String.is_substring ~substring:"fU" mangled_name
   || Option.exists plain_name ~f:(fun plain_name ->
-         (* the loc in these methods is empty but these are getters and setters and we need to translate them *)
          String.is_substring ~substring:".get" plain_name
          || String.is_substring ~substring:".set" plain_name )
 
@@ -1144,7 +1146,9 @@ let translate_code proc_map source_file ~module_state proc_descs (procdecl : Tex
     (func_name, func) =
   let ModuleState.{lang; _} = module_state in
   let should_translate =
-    should_translate (FuncName.unmangled_name func_name) lang source_file func.Llair.loc
+    should_translate
+      (FuncName.unmangled_name func_name)
+      (FuncName.name func_name) lang source_file func.Llair.loc
   in
   let formals_list = List.map ~f:Var.reg_to_var_name (StdUtils.iarray_to_list func.Llair.formals) in
   let formals_map =
