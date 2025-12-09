@@ -36,8 +36,8 @@ make devsetup
   use infer), while running `make` commands from within subdirectories generally assumes that
   dependencies are already up-to-date.
 
-  For instance, running `make direct_java_biabduction_test` will rebuild infer if
-  necessary before running the test, but running `make -C infer/tests/codetoanalyze/java/biabduction/ test`
+  For instance, running `make direct_java_pulse_test` will rebuild infer if
+  necessary before running the test, but running `make -C infer/tests/codetoanalyze/java/pulse/ test`
   will just execute the test.
 
 
