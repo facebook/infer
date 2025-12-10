@@ -63,12 +63,14 @@ let templated_name_of_class_name class_name =
       (QualifiedCppName.of_list (HackClassName.components mangled_name), [])
   | PythonClass mangled_name ->
       (QualifiedCppName.of_list (PythonClassName.components mangled_name), [])
+  | SwiftClass mangled_name ->
+      (QualifiedCppName.of_list [SwiftClassName.to_string mangled_name], [])
   | ObjcBlock bsig ->
       (QualifiedCppName.of_list [bsig.name], [])
   | CFunction csig ->
       (csig.c_name, [])
-  | SwiftClass mangled_name ->
-      (QualifiedCppName.of_list [SwiftClassName.to_string mangled_name], [])
+  | SwiftClosure csig ->
+      (QualifiedCppName.of_list [Mangled.to_string csig], [])
 
 
 let templated_name_of_hack hack =

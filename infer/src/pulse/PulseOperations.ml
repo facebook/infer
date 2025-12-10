@@ -216,6 +216,11 @@ and record_closure astate (path : PathContext.t) loc procname
     | _, Procname.C csig ->
         let typ = Typ.mk (Typ.Tstruct (Typ.CFunction csig)) in
         PulseArithmetic.and_dynamic_type_is_unsafe closure_addr typ loc astate
+    | _, Procname.Swift swift_procname ->
+        let typ =
+          Typ.mk (Typ.Tstruct (Typ.SwiftClosure (SwiftProcname.get_function_name swift_procname)))
+        in
+        PulseArithmetic.and_dynamic_type_is_unsafe closure_addr typ loc astate
     | _ ->
         astate
   in
@@ -269,7 +274,7 @@ and eval_to_value_origin (path : PathContext.t) mode location exp astate :
         (ArrayAccess (StdTyp.void, fst addr_hist_index))
         astate
   | Closure {name; captured_vars} ->
-      if Procname.is_cpp_lambda name || Procname.is_objc_block name then
+      if Procname.is_cpp_lambda name || Procname.is_objc_block name || Procname.is_swift name then
         let++ astate, v_hist = record_closure astate path location name captured_vars in
         (astate, v_hist)
       else

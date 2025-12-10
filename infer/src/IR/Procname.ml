@@ -891,6 +891,8 @@ let get_method = function
 (** Return whether the procname is a block procname. *)
 let is_objc_block = function Block _ -> true | _ -> false
 
+let is_swift = function Swift _ -> true | _ -> false
+
 (** Return whether the procname is a cpp lambda procname. *)
 let is_cpp_lambda t =
   match t with ObjC_Cpp cpp_pname when ObjC_Cpp.is_cpp_lambda cpp_pname -> true | _ -> false

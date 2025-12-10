@@ -70,3 +70,6 @@ let builtin_from_string =
   let tbl = IString.Hash.create 100 in
   List.iter all_of_builtin ~f:(fun builtin -> IString.Hash.add tbl (show_builtin builtin) builtin) ;
   fun str -> IString.Hash.find_opt tbl str
+
+
+let to_string osig = Format.asprintf "%a" (pp Simple) osig

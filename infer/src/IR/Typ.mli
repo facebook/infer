@@ -104,9 +104,10 @@ and name =
   | ObjcClass of QualifiedCppName.t
   | ObjcProtocol of QualifiedCppName.t
   | PythonClass of PythonClassName.t
+  | SwiftClass of SwiftClassName.t
   | ObjcBlock of objc_block_sig
   | CFunction of c_function_sig
-  | SwiftClass of SwiftClassName.t
+  | SwiftClosure of Mangled.t
 [@@deriving hash, sexp, compare, equal]
 
 and template_arg = TType of t | TInt of Int64.t | TNull | TNullPtr | TOpaque

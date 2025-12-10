@@ -325,6 +325,8 @@ val get_method : t -> string
 val is_objc_block : t -> bool
 (** Return whether the procname is a block procname. *)
 
+val is_swift : t -> bool
+
 val is_cpp_lambda : t -> bool
 (** Return whether the procname is a cpp lambda procname. *)
 

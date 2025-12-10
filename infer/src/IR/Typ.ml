@@ -161,9 +161,10 @@ and name =
   | ObjcClass of QualifiedCppName.t
   | ObjcProtocol of QualifiedCppName.t
   | PythonClass of PythonClassName.t
+  | SwiftClass of SwiftClassName.t
   | ObjcBlock of objc_block_sig
   | CFunction of c_function_sig
-  | SwiftClass of SwiftClassName.t
+  | SwiftClosure of Mangled.t
 [@@deriving hash, sexp, compare, equal, yojson_of]
 
 and template_arg = TType of t | TInt of int64 | TNull | TNullPtr | TOpaque
@@ -239,12 +240,14 @@ and pp_name_c_syntax pe f = function
       CSharpClassName.pp f name
   | PythonClass name ->
       PythonClassName.pp f name
+  | SwiftClass name ->
+      SwiftClassName.pp f name
   | ObjcBlock bsig ->
       F.fprintf f "%s" bsig.name
   | CFunction csig ->
       F.fprintf f "%a" QualifiedCppName.pp csig.c_name
-  | SwiftClass name ->
-      SwiftClassName.pp f name
+  | SwiftClosure swift_procname ->
+      F.fprintf f "%a" Mangled.pp swift_procname
 
 
 and pp_template_spec_info pe f = function
@@ -450,9 +453,10 @@ module Name = struct
     | ErlangType _
     | HackClass _
     | PythonClass _
+    | SwiftClass _
     | ObjcBlock _
     | CFunction _
-    | SwiftClass _ ->
+    | SwiftClosure _ ->
         QualifiedCppName.empty
 
 
@@ -466,9 +470,10 @@ module Name = struct
     | ErlangType _
     | HackClass _
     | PythonClass _
+    | SwiftClass _
     | ObjcBlock _
     | CFunction _
-    | SwiftClass _ ->
+    | SwiftClosure _ ->
         QualifiedCppName.empty
 
 
@@ -495,12 +500,14 @@ module Name = struct
         HackClassName.to_string name
     | PythonClass name ->
         PythonClassName.to_string name
+    | SwiftClass name ->
+        SwiftClassName.to_string name
     | ObjcBlock bsig ->
         bsig.name
     | CFunction csig ->
         QualifiedCppName.to_qual_string csig.c_name
-    | SwiftClass name ->
-        SwiftClassName.to_string name
+    | SwiftClosure swift_procname ->
+        Mangled.to_string swift_procname
 
 
   let pp fmt tname =
@@ -519,7 +526,7 @@ module Name = struct
           "python"
       | ObjcProtocol _ ->
           "protocol"
-      | ObjcBlock _ ->
+      | ObjcBlock _ | SwiftClosure _ ->
           ""
       | CFunction _ ->
           "function"
@@ -540,7 +547,13 @@ module Name = struct
     | PythonClass _
     | SwiftClass _ ->
         true
-    | CStruct _ | CUnion _ | ErlangType _ | ObjcProtocol _ | ObjcBlock _ | CFunction _ ->
+    | CStruct _
+    | CUnion _
+    | ErlangType _
+    | ObjcProtocol _
+    | ObjcBlock _
+    | CFunction _
+    | SwiftClosure _ ->
         false
 
 

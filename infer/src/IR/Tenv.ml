@@ -540,7 +540,7 @@ let resolve_method ?(is_virtual = false) ~method_exists tenv class_name proc_nam
               | ObjcClass _ ->
                   (* multiple inheritance impossible, but recursive calls will throw away protocols *)
                   supers
-              | ObjcProtocol _ | ObjcBlock _ | CFunction _ ->
+              | ObjcProtocol _ | ObjcBlock _ | CFunction _ | SwiftClosure _ ->
                   []
               | PythonClass _ ->
                   (* We currently only support single inheritance for Python so this is straightforward *)

@@ -16,3 +16,16 @@ func test() -> Int {
     obj.closure()
     return obj.id
 }
+
+
+func example(using closure: @escaping (RetainCycleExample) -> Void) -> Int {
+    let obj = RetainCycleExample()
+    closure(obj)
+    return obj.id
+}
+
+func testWithClosure() -> Int {
+    return example { obj in
+        obj.id = 20
+    }
+}
