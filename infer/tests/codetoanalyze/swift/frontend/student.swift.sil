@@ -770,7 +770,8 @@ define .plain_name = "test_retain_cycle_bad2" $s5Hello22test_retain_cycle_bad2yy
   #13::ret: @[409:0]
       n20 = $builtins.llvm_nondet() @[409:0]
       n24 = load n19.__infer_swift_type<swift::metadata_response>.field_0 @[222:20]
-      n25 = __infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.$s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfC("$s5Hello22test_retain_cycle_bad2yyFyycfU_TA", n11, n24) @[222:20]
+      n25 = __infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.$s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfC(
+      fun (var1) -> $s5Hello22test_retain_cycle_bad2yyFyycfU_TA(var1), n11, n24) @[222:20]
       jmp 16::ret @[222:20]
       
   #16::ret: @[410:0]
@@ -1103,7 +1104,7 @@ define .plain_name = "setupClosureBad" .method_offset = "18" __infer_swift_type<
       n3 = load &getelementptr_offset_1 @[189:17]
       n7 = load &self @[189:17]
       n9 = load &self @[189:17]
-      _ = __sil_cast(<int>, "$s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA").__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n7), n9) @[189:17]
+      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n7), n9) @[189:17]
       jmp 7::void::ret @[189:17]
       
   #7::void::ret: @[192:5]
@@ -1195,7 +1196,7 @@ define .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T
       store &getelementptr_offset_1 <- 16 @[195:16]
       n10 = load &getelementptr_offset_1 @[195:16]
       n16 = load &self @[195:16]
-      _ = __sil_cast(<int>, "$s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA").__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n5), n16) @[195:16]
+      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n5), n16) @[195:16]
       jmp 14::void::ret @[195:16]
       
 } @?

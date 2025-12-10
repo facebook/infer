@@ -1007,6 +1007,8 @@ let remove_effects_in_subexprs lang decls_env module_ =
           let fresh = state.State.fresh_ident in
           let new_instr : Instr.t = Let {id= Some fresh; exp= Call {proc; args; kind}; loc} in
           (Var fresh, State.push_instr new_instr state |> State.incr_fresh)
+    | Closure {proc; captured; params; attributes} when Lang.is_swift lang ->
+        (Closure {proc; captured; params; attributes}, state)
     | Closure {proc; captured; params; attributes} ->
         let captured, state = flatten_exp_list loc captured state in
         let signature = TransformClosures.signature_body lang proc captured params in

@@ -41,6 +41,12 @@ let builtin_qual_proc_name =
 
 let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
 
+let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~substring:"fU" s
+
+let to_proc_name_closure_name s =
+  Textual.QualifiedProcName.{enclosing_class= TopLevel; name= Textual.ProcName.of_string s}
+
+
 module Var = struct
   let string_name_of_reg reg =
     let name = Reg.name reg in
@@ -314,7 +320,31 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       undef_exp ~sourcefile:proc_state.sourcefile ~loc ~proc:proc_state.qualified_name
         ~typ:textual_typ exp
   | FuncName {name} ->
-      (Textual.Exp.Const (Str name), None, [])
+      let s_exp = Textual.Exp.Const (Str name) in
+      let exp =
+        if is_closure lang name then
+          let proc =
+            Textual.QualifiedProcName.Map.find_opt (to_proc_name_closure_name name)
+              proc_state.module_state.ModuleState.proc_map
+          in
+          match proc with
+          | Some proc -> (
+            match proc.formals_types with
+            | Some formals ->
+                let params =
+                  List.mapi
+                    ~f:(fun i _ -> Textual.VarName.of_string (Format.sprintf "var%d" (i + 1)))
+                    formals
+                in
+                Textual.Exp.Closure
+                  {proc= to_proc_name_closure_name name; attributes= []; captured= []; params}
+            | _ ->
+                s_exp )
+          | None ->
+              s_exp
+        else s_exp
+      in
+      (exp, None, [])
   | Reg {id; name; typ} ->
       let textual_typ = Type.to_textual_typ lang ~struct_map typ in
       let textual_exp, var_typ = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
@@ -951,7 +981,7 @@ let should_translate plain_name mangled_name lang source_file (loc : Llair.Loc.t
   SourceFile.equal source_file source_file_loc
   (* the loc in these methods is empty but these are getters
     and setters or closure bodies and we need to translate them *)
-  || String.is_substring ~substring:"fU" mangled_name
+  || is_closure lang mangled_name
   || Option.exists plain_name ~f:(fun plain_name ->
          String.is_substring ~substring:".get" plain_name
          || String.is_substring ~substring:".set" plain_name )

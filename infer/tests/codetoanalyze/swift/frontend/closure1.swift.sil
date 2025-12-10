@@ -69,7 +69,7 @@ define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(self: *__infer_s
       n5 = load &self @[4:9]
       n4 = n5.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_2 @[4:9]
       n7 = load n4 @[4:33]
-      store n7.__infer_swift_type<swift::function>.field_0 <- "$s5Hello18RetainCycleExampleC7closureyycvpfiyycfU_" @[4:33]
+      store n7.__infer_swift_type<swift::function>.field_0 <- fun () -> $s5Hello18RetainCycleExampleC7closureyycvpfiyycfU_() @[4:33]
       n9 = load n4 @[4:33]
       store n9.__infer_swift_type<swift::function>.field_1 <- null @[4:33]
       n10 = load &self @[163:0]
@@ -213,7 +213,7 @@ define .plain_name = "createObject" $s5Hello12createObjectAA18RetainCycleExample
       n8 = load n5 @[10:17]
       store &getelementptr_offset_1 <- 16 @[10:17]
       n9 = load &getelementptr_offset_1 @[10:17]
-      _ = "$s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_TA".__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycvs(n5, n5) @[10:17]
+      _ = fun (var1) -> $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_TA(var1).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycvs(n5, n5) @[10:17]
       jmp 8::void::ret @[10:17]
       
   #8::void::ret: @[11:5]

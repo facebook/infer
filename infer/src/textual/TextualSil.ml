@@ -817,6 +817,13 @@ module ExpBridge = struct
           L.die InternalError
             "Internal error: type expressions should not appear outside builtins, proc: %a, exp: %a"
             ProcDecl.pp procname Exp.pp exp
+      | Closure {proc} when Lang.is_swift lang ->
+          let name =
+            SilProcname.Swift
+              (SwiftProcname.mk_function
+                 (Mangled.from_string (ProcName.to_string proc.QualifiedProcName.name)) )
+          in
+          SilExp.Closure {name; captured_vars= []}
       | Closure _ | Apply _ ->
           L.die InternalError "Internal error: closures should not appear inside sub-expressions"
     in
