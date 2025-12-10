@@ -8,10 +8,6 @@
 open! IStd
 module L = Logging
 
-type module_state = Llair2Textual.module_state
-
-let init_module_state = Llair2Textual.init_module_state
-
 module Error = struct
   type errors =
     {verification: TextualVerification.error list; transformation: Textual.transform_error list}
@@ -161,4 +157,13 @@ let capture ~sources llvm_bitcode_in =
   List.iter sources ~f:(fun source_file ->
       if Config.dump_llair then dump_llair llair_program source_file ;
       if Config.dump_llair_text then dump_llair_text llair_program source_file ;
+      capture_llair source_file module_state )
+
+
+(** shadows above definition to provide a different interface to module users *)
+let capture_llair ~source_file ~llair_file =
+  Utils.with_file_in llair_file ~f:(fun llair_in ->
+      let llair_program : Llair.program = Marshal.from_channel llair_in in
+      let lang = language_of_source_file source_file in
+      let module_state = Llair2Textual.init_module_state llair_program lang in
       capture_llair source_file module_state )

@@ -204,7 +204,7 @@ let capture ~changed_files mode =
           Kotlinc.capture ~prog ~args
       | Llair {source_file; llair_file} ->
           L.progress "Capturing llair program...@." ;
-          Bitcode.capture_llair ~source_file ~llair_file
+          LlvmFrontend.capture_llair ~source_file ~llair_file
       | LLVMBitcode {bitcode; sources} ->
           L.progress "Capturing LLVM bitcode...@." ;
           Bitcode.direct_bitcode_capture ~bitcode ~sources

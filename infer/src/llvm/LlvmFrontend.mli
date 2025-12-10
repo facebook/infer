@@ -7,12 +7,6 @@
 
 open! IStd
 
-type module_state
-
-val init_module_state : Llair.Program.t -> Textual.Lang.t -> module_state
-
-val language_of_source_file : string -> Textual.Lang.t
-
 val capture : sources:string list -> In_channel.t -> unit
 
-val capture_llair : string -> module_state -> unit
+val capture_llair : source_file:string -> llair_file:string -> unit

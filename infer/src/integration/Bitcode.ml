@@ -67,14 +67,6 @@ let capture compiler ~command ~args =
   Tenv.Global.load () |> Option.iter ~f:(Tenv.Global.store ~normalize:true)
 
 
-let capture_llair ~source_file ~llair_file =
-  Utils.with_file_in llair_file ~f:(fun llair_in ->
-      let llair_program : Llair.program = Marshal.from_channel llair_in in
-      let lang = LlvmFrontend.language_of_source_file source_file in
-      let module_state = LlvmFrontend.init_module_state llair_program lang in
-      LlvmFrontend.capture_llair source_file module_state )
-
-
 let direct_bitcode_capture ~sources ~bitcode =
   Utils.with_file_in bitcode ~f:(fun llvm_bitcode -> LlvmFrontend.capture ~sources llvm_bitcode) ;
   Tenv.Global.load () |> Option.iter ~f:(Tenv.Global.store ~normalize:true)
