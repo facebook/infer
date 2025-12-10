@@ -8,6 +8,19 @@
 open! IStd
 module L = Logging
 
+type stats =
+  { mutable files_total: int
+  ; mutable files_captured: int
+  ; mutable procs_total: int
+  ; mutable procs_captured: int }
+
+let stats = {files_total= 0; files_captured= 0; procs_total= 0; procs_captured= 0}
+
+let init_module_state llair_program lang =
+  stats.procs_total <- Llair.FuncName.Map.length llair_program.Llair.functions ;
+  Llair2Textual.init_module_state llair_program lang
+
+
 module Error = struct
   type errors =
     {verification: TextualVerification.error list; transformation: Textual.transform_error list}
@@ -82,6 +95,7 @@ let language_of_source_file source_file =
 
 
 let capture_llair source_file module_state =
+  stats.files_total <- stats.files_total + 1 ;
   let open IResult.Let_syntax in
   let lang = language_of_source_file source_file in
   let result =
@@ -127,6 +141,7 @@ let capture_llair source_file module_state =
                  tenv )
         in
         Tenv.merge ~src:tenv ~dst:global_tenv ) ;
+    stats.files_captured <- stats.files_captured + 1 ;
     Ok error_state
   in
   match result with
@@ -149,15 +164,42 @@ let dump_llair llair_program source_file =
   Utils.with_file_out output_file ~f:(fun outc -> Marshal.to_channel outc llair_program [])
 
 
+let log_stats () =
+  let count_defined_procs =
+    let query_str = "SELECT count(*) FROM procedures WHERE cfg IS NOT NULL" in
+    let db = Database.get_database CaptureDatabase in
+    let stmt = Sqlite3.prepare db query_str in
+    let log = "Counting defined procs" in
+    fun () ->
+      SqliteUtils.result_option db ~log stmt ~finalize:true ~read_row:(fun stmt ->
+          match Sqlite3.column stmt 0 with
+          | Sqlite3.Data.INT i ->
+              Int64.to_int i |> Option.value_exn
+          | _ ->
+              L.die InternalError "Expected integer result from query %s" query_str )
+  in
+  stats.procs_captured <- count_defined_procs () |> Option.value_exn ;
+  StatsLogging.log_many
+    [ LogEntry.mk_count ~label:"capture.files_total" ~value:stats.files_total
+    ; LogEntry.mk_count ~label:"capture.files_captured" ~value:stats.files_captured
+    ; LogEntry.mk_count ~label:"capture.procs_total" ~value:stats.procs_total
+    ; LogEntry.mk_count ~label:"capture.procs_captured" ~value:stats.procs_captured ] ;
+  stats.files_captured <- 0 ;
+  stats.procs_captured <- 0 ;
+  stats.files_total <- 0 ;
+  stats.procs_total <- 0
+
+
 let capture ~sources llvm_bitcode_in =
   let lang = language_of_source_file (List.hd_exn sources) in
   let llvm_program = In_channel.input_all llvm_bitcode_in in
   let llair_program = LlvmSledgeFrontend.translate llvm_program in
-  let module_state = Llair2Textual.init_module_state llair_program lang in
+  let module_state = init_module_state llair_program lang in
   List.iter sources ~f:(fun source_file ->
       if Config.dump_llair then dump_llair llair_program source_file ;
       if Config.dump_llair_text then dump_llair_text llair_program source_file ;
-      capture_llair source_file module_state )
+      capture_llair source_file module_state ) ;
+  log_stats ()
 
 
 (** shadows above definition to provide a different interface to module users *)
@@ -166,4 +208,5 @@ let capture_llair ~source_file ~llair_file =
       let llair_program : Llair.program = Marshal.from_channel llair_in in
       let lang = language_of_source_file source_file in
       let module_state = Llair2Textual.init_module_state llair_program lang in
-      capture_llair source_file module_state )
+      capture_llair source_file module_state ) ;
+  log_stats ()

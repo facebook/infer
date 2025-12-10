@@ -6,7 +6,7 @@
  *)
 open! IStd
 
-(** collect statistics about backend/analysis operations *)
+(** collect statistics about various operations *)
 
 type t
 

@@ -86,13 +86,22 @@ module TenvMerger = struct
 end
 
 let merge_captured_stats infer_deps_file =
-  (* only merge json objects containing [{ "normal":{"message": ...}}] *)
+  (* only merge json objects containing
+     [{ "normal":{"message": ...}}] or
+     [{ "normal":{ "event": "count.capture..*" }}]
+  *)
   let should_output (json : Yojson.Safe.t) =
     match json with
     | `Assoc fields ->
         List.exists fields ~f:(function
           | "normal", `Assoc normals ->
-              List.exists normals ~f:(function "message", _ -> true | _, _ -> false)
+              List.exists normals ~f:(function
+                | "message", _ ->
+                    true
+                | "event", `String str ->
+                    String.is_prefix str ~prefix:"count.capture."
+                | _, _ ->
+                    false )
           | _, _ ->
               false )
     | _ ->
