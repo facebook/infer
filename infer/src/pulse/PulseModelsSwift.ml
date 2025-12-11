@@ -36,14 +36,14 @@ let closure_call orig_args () : unit DSL.model_monad =
   | proc_name_arg :: args -> (
       let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true proc_name_arg in
       match arg_dynamic_type_data with
-      | Some {Formula.typ= {desc= Typ.Tstruct (SwiftClosure csig)}} ->
+      | Some {Formula.typ= {desc= Typ.Tstruct (SwiftClosure csig)}} -> (
           let proc_name = Procname.Swift (SwiftProcname.mk_function csig) in
           let args = List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) args in
           Logging.d_printfln "calling %a with args = %a" Procname.pp proc_name
             (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:DSL.pp_aval))
             args ;
-          let* res = swift_call proc_name args in
-          assign_ret res
+          let* res_opt = swift_call proc_name args |> is_unsat in
+          match res_opt with Some res -> assign_ret res | None -> unreachable )
       | _ ->
           Logging.d_printfln "no method name found for closure %a" DSL.pp_aval proc_name_arg ;
           function_ptr_call args () )

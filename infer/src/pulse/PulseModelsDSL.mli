@@ -72,6 +72,9 @@ module Syntax : sig
 
   val ignore : 'a model_monad -> unit model_monad [@@warning "-unused-value-declaration"]
 
+  val is_unsat : 'a model_monad -> 'a option model_monad
+  (** return None if unsat *)
+
   val assign_ret : aval -> unit model_monad
 
   val dynamic_dispatch :

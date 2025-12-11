@@ -131,6 +131,27 @@ module Syntax = struct
     ret ()
 
 
+  let is_unsat (m : 'a model_monad) : 'a option model_monad =
+   fun data astate non_disj ->
+    let disjs, non_disj = m data astate non_disj in
+    if List.is_empty disjs then ret None data astate non_disj
+    else
+      let disjs =
+        List.map disjs ~f:(function
+          | Ok (ContinueProgram (a, astate)) ->
+              Ok (ContinueProgram (Some a, astate))
+          | Recoverable (ContinueProgram (a, astate), err) ->
+              Recoverable (ContinueProgram (Some a, astate), err)
+          | Ok (Other other) ->
+              Ok (Other other)
+          | Recoverable (Other other, err) ->
+              Recoverable (Other other, err)
+          | FatalError _ as err ->
+              err )
+      in
+      (disjs, non_disj)
+
+
   let get_data : model_data model_monad = fun (desc, data) astate -> ret data (desc, data) astate
 
   let get_desc : CallEvent.t model_monad = fun (desc, data) astate -> ret desc (desc, data) astate
