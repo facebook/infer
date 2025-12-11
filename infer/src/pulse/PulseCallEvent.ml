@@ -16,16 +16,19 @@ type t =
 [@@deriving compare, equal, yojson_of]
 
 let pp_config ~verbose fmt =
-  let pp_proc_name = if verbose then Procname.pp else Procname.describe in
+  let pp_proc_name proc_name =
+    if verbose then if Procname.is_swift proc_name then Procname.pp_fullname_only else Procname.pp
+    else Procname.describe
+  in
   function
   | Call proc_name ->
-      F.fprintf fmt "`%a`" pp_proc_name proc_name
+      F.fprintf fmt "`%a`" (pp_proc_name proc_name) proc_name
   | Model model ->
       F.fprintf fmt "`%s` (modelled)" model
   | ModelName proc_name ->
-      F.fprintf fmt "`%a` (modelled)" pp_proc_name proc_name
+      F.fprintf fmt "`%a` (modelled)" (pp_proc_name proc_name) proc_name
   | SkippedKnownCall proc_name ->
-      F.fprintf fmt "function `%a` with no summary" pp_proc_name proc_name
+      F.fprintf fmt "function `%a` with no summary" (pp_proc_name proc_name) proc_name
   | SkippedUnknownCall call_exp ->
       F.fprintf fmt "unresolved call expression `%a`" Exp.pp call_exp
 

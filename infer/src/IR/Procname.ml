@@ -1104,6 +1104,8 @@ let pp_without_templates fmt = function
       ObjC_Cpp.pp_without_templates fmt osig
   | C csig ->
       C.pp_without_templates fmt csig
+  | Swift swift_proc_name ->
+      SwiftProcname.pp FullNameOnly fmt swift_proc_name
   | other ->
       (* For other languages, we use the formaters defined in pp *)
       pp fmt other

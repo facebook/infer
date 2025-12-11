@@ -23,6 +23,10 @@ let pp_full fmt {plain_name; mangled} =
       F.pp_print_string fmt mangled
 
 
+let pp_plain_name fmt {plain_name; mangled} =
+  F.pp_print_string fmt (Option.value plain_name ~default:mangled)
+
+
 let to_string = Pp.string_of_pp pp
 
 let of_string ?plain_name mangled =
