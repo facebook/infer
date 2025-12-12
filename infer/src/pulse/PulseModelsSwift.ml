@@ -43,7 +43,19 @@ let closure_call orig_args () : unit DSL.model_monad =
             (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:DSL.pp_aval))
             args ;
           let* res_opt = swift_call proc_name args |> is_unsat in
-          match res_opt with Some res -> assign_ret res | None -> unreachable )
+          match res_opt with
+          | Some res ->
+              assign_ret res
+          | None -> (
+              (* if the call is unsat, it could be because of mismatched arguments, because the specialised
+                 closure doesn't capture any variables, and so the captured argument is not needed. In this
+                 case, we try the call again, by removing the last argument, which will be null. *)
+              let args = List.take args (List.length args - 1) in
+              Logging.d_printfln "calling %a again with args = %a" Procname.pp proc_name
+                (Pp.comma_seq (Pp.pair ~fst:String.pp ~snd:DSL.pp_aval))
+                args ;
+              let* res_opt = swift_call proc_name args |> is_unsat in
+              match res_opt with Some res -> assign_ret res | None -> unreachable ) )
       | _ ->
           Logging.d_printfln "no method name found for closure %a" DSL.pp_aval proc_name_arg ;
           function_ptr_call args () )
