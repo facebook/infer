@@ -8,8 +8,6 @@
 open! IStd
 module F = Format
 
-type value = string option
-
 module Atom : sig
   type t
 
@@ -24,7 +22,7 @@ type t
 
 val pp_nested_term : t -> Atom.t -> unit
 
-val init : debug:bool -> enable_term_pp:bool -> t
+val init : debug:bool -> t
 
 val mk_atom : t -> string -> Atom.t
 

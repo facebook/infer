@@ -114,19 +114,17 @@ type t =
   ; mutable pending: pending_item list
   ; use: app_equation list Dynarray.t
   ; lookup: app_equation LookupTbl.t
-  ; mk_app_history: (Atom.t * Atom.t) option Dynarray.t
+  ; input_app_equations: (Atom.t * Atom.t) option Dynarray.t
   ; hashcons: Atom.state
-  ; enable_term_pp: bool
   ; debug: bool }
 
-let init ~debug ~enable_term_pp =
+let init ~debug =
   { repr= Dynarray.create ()
   ; pending= []
   ; use= Dynarray.create ()
   ; lookup= LookupTbl.create 32
-  ; mk_app_history= Dynarray.create ()
+  ; input_app_equations= Dynarray.create ()
   ; hashcons= Atom.init ()
-  ; enable_term_pp
   ; debug }
 
 
@@ -146,7 +144,7 @@ let mk_atom state value =
   if is_new then (
     Dynarray.add_last state.repr atom ;
     Dynarray.add_last state.use [] ;
-    if state.enable_term_pp then Dynarray.add_last state.mk_app_history None ) ;
+    Dynarray.add_last state.input_app_equations None ) ;
   atom
 
 
@@ -154,7 +152,7 @@ let mk_fresh_atom state =
   let atom = Atom.mk_fresh state.hashcons in
   Dynarray.add_last state.repr atom ;
   Dynarray.add_last state.use [] ;
-  if state.enable_term_pp then Dynarray.add_last state.mk_app_history None ;
+  Dynarray.add_last state.input_app_equations None ;
   atom
 
 
@@ -170,10 +168,12 @@ let set_use {use; debug} ({Atom.index} as atom) l =
   Dynarray.set use index l
 
 
-let get_mk_app_history {mk_app_history} atom = Dynarray.get mk_app_history atom.Atom.index
+let get_input_app_equation {input_app_equations} atom =
+  Dynarray.get input_app_equations atom.Atom.index
 
-let set_mk_app_history {mk_app_history} atom pair =
-  Dynarray.set mk_app_history atom.Atom.index (Some pair)
+
+let set_input_app_equation {input_app_equations} atom pair =
+  Dynarray.set input_app_equations atom.Atom.index (Some pair)
 
 
 let add_use state atom app_equation = set_use state atom (app_equation :: get_use state atom)
@@ -260,7 +260,7 @@ let mk_app state ~left ~right =
   let term = App (left, right) in
   let atom = mk_fresh_atom state in
   merge state atom term ;
-  if state.enable_term_pp then set_mk_app_history state atom (left, right) ;
+  set_input_app_equation state atom (left, right) ;
   atom
 
 
@@ -277,7 +277,7 @@ let show_stats state =
 
 let pp_nested_term state atom =
   let rec pp ~internal fmt atom =
-    match get_mk_app_history state atom with
+    match get_input_app_equation state atom with
     | Some (left, right) ->
         if internal then F.fprintf fmt "%a@ %a" (pp ~internal:true) left (pp ~internal:false) right
         else F.fprintf fmt "@[<hv4>(%a@ %a)@]" (pp ~internal:true) left (pp ~internal:false) right

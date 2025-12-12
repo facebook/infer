@@ -11,9 +11,9 @@ open CongruenceClosureSolver
 
 let () = Random.init 0
 
-let st = ref (init ~debug:false ~enable_term_pp:true)
+let st = ref (init ~debug:false)
 
-let restart () = st := init ~debug:false ~enable_term_pp:true
+let restart () = st := init ~debug:false
 
 let mk_atom value = mk_atom !st value
 
