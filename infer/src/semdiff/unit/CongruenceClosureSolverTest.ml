@@ -25,7 +25,7 @@ let repr atom = representative !st atom
 
 let show_stats () = show_stats !st
 
-let pp_nested_term atom = pp_nested_term !st atom
+let pp_nested_term atom = F.printf "%a@." (pp_nested_term !st) atom
 
 let equiv_atoms atom =
   let l = equiv_atoms !st atom in

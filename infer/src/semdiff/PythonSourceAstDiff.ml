@@ -38,4 +38,4 @@ let rec curry cc ast =
 let store_ast ?(debug = false) ast =
   let cc = CC.init ~debug:false in
   let atom = curry cc ast in
-  if debug then CC.pp_nested_term cc atom
+  if debug then F.printf "%a" (CC.pp_nested_term cc) atom

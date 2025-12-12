@@ -20,7 +20,7 @@ module F = Format
 type value = string option [@@deriving equal, hash]
 
 module Atom : sig
-  type t = private {index: int; value: value}
+  type t = private {index: int; value: value} [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
 
@@ -36,7 +36,7 @@ module Atom : sig
 
   val fold : state -> init:'a -> f:(t -> 'a -> 'a) -> 'a
 end = struct
-  type t = {index: int; value: value}
+  type t = {index: int; value: value [@ignore]} [@@deriving compare]
 
   let pp fmt {index; value} =
     match value with None -> F.fprintf fmt "%%%d" index | Some value -> F.fprintf fmt "%s" value
@@ -140,6 +140,7 @@ end
 type t =
   { repr: Atom.t Dynarray.t
   ; mutable pending: pending_item list
+  ; atoms: Atom.t Dynarray.t
   ; classes: Class.t Dynarray.t
   ; use: app_equation list Dynarray.t
   ; lookup: app_equation LookupTbl.t
@@ -150,6 +151,7 @@ type t =
 let init ~debug =
   { repr= Dynarray.create ()
   ; pending= []
+  ; atoms= Dynarray.create ()
   ; classes= Dynarray.create ()
   ; use= Dynarray.create ()
   ; lookup= LookupTbl.create 32
@@ -173,6 +175,7 @@ let mk_atom state value =
   let atom, is_new = Atom.mk state.hashcons value in
   if is_new then (
     Dynarray.add_last state.repr atom ;
+    Dynarray.add_last state.atoms atom ;
     Dynarray.add_last state.classes (Class.of_atom atom) ;
     Dynarray.add_last state.use [] ;
     Dynarray.add_last state.input_app_equations None ) ;
@@ -182,11 +185,14 @@ let mk_atom state value =
 let mk_fresh_atom state =
   let atom = Atom.mk_fresh state.hashcons in
   Dynarray.add_last state.repr atom ;
+  Dynarray.add_last state.atoms atom ;
   Dynarray.add_last state.classes (Class.of_atom atom) ;
   Dynarray.add_last state.use [] ;
   Dynarray.add_last state.input_app_equations None ;
   atom
 
+
+let debug state = F.printf "|atoms| = %d\n" (Dynarray.length state.atoms)
 
 let get_use {use} {Atom.index} = Dynarray.get use index
 
@@ -210,6 +216,16 @@ let set_input_app_equation {input_app_equations} atom pair =
 
 let equiv_atoms state {Atom.index} =
   Dynarray.get state.classes index |> Class.fold ~init:[] ~f:(fun l a -> a :: l)
+
+
+let equiv_terms state {Atom.index} =
+  Dynarray.get state.classes index
+  |> Class.fold ~init:[] ~f:(fun l rhs ->
+         match Dynarray.get state.input_app_equations rhs.Atom.index with
+         | None ->
+             l
+         | Some (left, right) ->
+             {rhs; left; right} :: l )
 
 
 let add_use state atom app_equation = set_use state atom (app_equation :: get_use state atom)
@@ -313,7 +329,7 @@ let show_stats state =
   F.printf "size=%d\nmax_depth=%d\n" size max_depth
 
 
-let pp_nested_term state atom =
+let pp_nested_term state fmt atom =
   let rec pp ~internal fmt atom =
     match get_input_app_equation state atom with
     | Some (left, right) ->
@@ -322,4 +338,4 @@ let pp_nested_term state atom =
     | None ->
         Atom.pp fmt atom
   in
-  F.printf "%a@." (pp ~internal:false) atom
+  pp ~internal:false fmt atom

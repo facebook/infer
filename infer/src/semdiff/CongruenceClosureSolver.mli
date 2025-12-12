@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module Atom : sig
-  type t
+  type t [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
 end
@@ -20,7 +20,7 @@ val pp_term : F.formatter -> term -> unit
 
 type t
 
-val pp_nested_term : t -> Atom.t -> unit
+val pp_nested_term : t -> F.formatter -> Atom.t -> unit
 
 val init : debug:bool -> t
 
@@ -36,4 +36,10 @@ val representative : t -> Atom.t -> Atom.t
 
 val equiv_atoms : t -> Atom.t -> Atom.t list
 
+type app_equation = {rhs: Atom.t; left: Atom.t; right: Atom.t}
+
+val equiv_terms : t -> Atom.t -> app_equation list
+
 val show_stats : t -> unit
+
+val debug : t -> unit
