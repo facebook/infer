@@ -109,9 +109,38 @@ module LookupTbl = Stdlib.Hashtbl.Make (struct
   let hash (a, b) = [%hash: int * int] (a.Atom.index, b.Atom.index)
 end)
 
+module Class : sig
+  type t
+
+  val of_atom : Atom.t -> t
+
+  val merge : t -> t -> t
+
+  val fold : t -> init:'a -> f:('a -> Atom.t -> 'a) -> 'a
+end = struct
+  (* represent a list of atoms without concatening them *)
+  type t = Atom of Atom.t | Merge of t * t
+
+  let of_atom atom = Atom atom
+
+  let merge c1 c2 =
+    (* we assume the input classes are disjoint *)
+    Merge (c1, c2)
+
+
+  let rec fold c ~init ~f =
+    match c with
+    | Atom a ->
+        f init a
+    | Merge (c1, c2) ->
+        let init = fold c1 ~init ~f in
+        fold c2 ~init ~f
+end
+
 type t =
   { repr: Atom.t Dynarray.t
   ; mutable pending: pending_item list
+  ; classes: Class.t Dynarray.t
   ; use: app_equation list Dynarray.t
   ; lookup: app_equation LookupTbl.t
   ; input_app_equations: (Atom.t * Atom.t) option Dynarray.t
@@ -121,6 +150,7 @@ type t =
 let init ~debug =
   { repr= Dynarray.create ()
   ; pending= []
+  ; classes= Dynarray.create ()
   ; use= Dynarray.create ()
   ; lookup= LookupTbl.create 32
   ; input_app_equations= Dynarray.create ()
@@ -143,6 +173,7 @@ let mk_atom state value =
   let atom, is_new = Atom.mk state.hashcons value in
   if is_new then (
     Dynarray.add_last state.repr atom ;
+    Dynarray.add_last state.classes (Class.of_atom atom) ;
     Dynarray.add_last state.use [] ;
     Dynarray.add_last state.input_app_equations None ) ;
   atom
@@ -151,6 +182,7 @@ let mk_atom state value =
 let mk_fresh_atom state =
   let atom = Atom.mk_fresh state.hashcons in
   Dynarray.add_last state.repr atom ;
+  Dynarray.add_last state.classes (Class.of_atom atom) ;
   Dynarray.add_last state.use [] ;
   Dynarray.add_last state.input_app_equations None ;
   atom
@@ -174,6 +206,10 @@ let get_input_app_equation {input_app_equations} atom =
 
 let set_input_app_equation {input_app_equations} atom pair =
   Dynarray.set input_app_equations atom.Atom.index (Some pair)
+
+
+let equiv_atoms state {Atom.index} =
+  Dynarray.get state.classes index |> Class.fold ~init:[] ~f:(fun l a -> a :: l)
 
 
 let add_use state atom app_equation = set_use state atom (app_equation :: get_use state atom)
@@ -234,7 +270,9 @@ and propagate state =
 and change_representative state old_repr new_repr =
   if state.debug then F.printf "repr[%a] <- %a\n" Atom.pp old_repr Atom.pp new_repr ;
   Dynarray.set state.repr old_repr.Atom.index new_repr ;
-  (* TODO: update classes *)
+  let old_class = Dynarray.get state.classes old_repr.Atom.index in
+  let new_class = Dynarray.get state.classes new_repr.Atom.index in
+  Dynarray.set state.classes new_repr.Atom.index (Class.merge new_class old_class) ;
   let use_new_repr =
     get_use state old_repr
     |> List.fold

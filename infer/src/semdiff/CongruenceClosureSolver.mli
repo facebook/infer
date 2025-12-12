@@ -34,4 +34,6 @@ val merge : t -> Atom.t -> term -> unit
 
 val representative : t -> Atom.t -> Atom.t
 
+val equiv_atoms : t -> Atom.t -> Atom.t list
+
 val show_stats : t -> unit

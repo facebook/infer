@@ -27,6 +27,12 @@ let show_stats () = show_stats !st
 
 let pp_nested_term atom = pp_nested_term !st atom
 
+let equiv_atoms atom =
+  let l = equiv_atoms !st atom in
+  let repr = repr atom in
+  F.printf "%a: {%a} (repr=%a)\n" Atom.pp atom (Pp.comma_seq Atom.pp) l Atom.pp repr
+
+
 let%expect_test "" =
   restart () ;
   let a = mk_atom "a" in
@@ -43,9 +49,24 @@ let%expect_test "" =
   merge b (Atom e) ;
   merge h (Atom b) ;
   show_stats () ;
-  [%expect {|
+  equiv_atoms a ;
+  equiv_atoms b ;
+  equiv_atoms c ;
+  equiv_atoms d ;
+  equiv_atoms e ;
+  equiv_atoms g ;
+  equiv_atoms h ;
+  [%expect
+    {|
     size=7
     max_depth=3
+    a: {h,b,d,c,e,a} (repr=a)
+    b: {b} (repr=a)
+    c: {d,c} (repr=a)
+    d: {d} (repr=a)
+    e: {h,b,d,c,e} (repr=a)
+    g: {g} (repr=g)
+    h: {h} (repr=a)
     |}]
 
 
