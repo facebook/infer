@@ -32,6 +32,8 @@ val mk_term : t -> header:string -> args:Atom.t list -> Atom.t
 
 val merge : t -> Atom.t -> term -> unit
 
+val is_equiv : t -> Atom.t -> Atom.t -> bool
+
 val representative : t -> Atom.t -> Atom.t
 
 val equiv_atoms : t -> Atom.t -> Atom.t list

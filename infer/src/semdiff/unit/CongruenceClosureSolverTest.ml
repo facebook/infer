@@ -123,6 +123,55 @@ let%expect_test "mk_term" =
     |}]
 
 
+let%expect_test "show sharing" =
+  restart () ;
+  let x = mk_atom "x" in
+  let y = mk_atom "y" in
+  let z = mk_atom "z" in
+  let t1 = mk_term "mult" [x; mk_term "plus" [y; z]] in
+  let t2 = mk_term "plus" [mk_term "mult" [x; y]; mk_term "mult" [x; z]] in
+  F.printf "t1 := " ;
+  pp_nested_term t1 ;
+  F.printf "t2 := " ;
+  pp_nested_term t2 ;
+  F.printf "t1 == t2? %b@." (is_equiv !st t1 t2) ;
+  let t3 = mk_term "plus" [mk_term "mult" [x; y]; mk_term "mult" [x; z]] in
+  F.printf "t3 := " ;
+  pp_nested_term t3 ;
+  merge t1 (Atom t3) ;
+  F.printf "t1 == t2? %b@." (is_equiv !st t1 t2) ;
+  debug !st ;
+  [%expect
+    {|
+    t1 := (mult x (plus y z))
+    t2 := (plus (mult x y) (mult x z))
+    t1 == t2? false
+    t3 := (plus (mult x y) (mult x z))
+    t1 == t2? true
+    repr: x is x (repr=x)
+          y is y (repr=y)
+          z is z (repr=z)
+          plus is plus (repr=plus)
+          %4 is (plus y) (repr=%4)
+          %5 is (plus y z) (repr=%5)
+          mult is mult (repr=mult)
+          %7 is (mult x) (repr=%7)
+          %8 is (mult x (plus y z)) (repr=%14)
+          %9 is (mult x) (repr=%7)
+          %10 is (mult x z) (repr=%10)
+          %11 is (mult x) (repr=%7)
+          %12 is (mult x y) (repr=%12)
+          %13 is (plus (mult x y)) (repr=%13)
+          %14 is (plus (mult x y) (mult x z)) (repr=%14)
+          %15 is (mult x) (repr=%7)
+          %16 is (mult x z) (repr=%10)
+          %17 is (mult x) (repr=%7)
+          %18 is (mult x y) (repr=%12)
+          %19 is (plus (mult x y)) (repr=%13)
+          %20 is (plus (mult x y) (mult x z)) (repr=%14)
+    |}]
+
+
 let gen_term_chain size =
   let mk_atom1 i = mk_atom (F.asprintf "a%d" i) in
   let mk_atom2 i = mk_atom (F.asprintf "b%d" i) in

@@ -166,6 +166,12 @@ let rec representative state atom =
   if phys_equal parent atom then atom else representative state parent
 
 
+let is_equiv state atom1 atom2 =
+  let atom1' = representative state atom1 in
+  let atom2' = representative state atom2 in
+  phys_equal atom1' atom2'
+
+
 let rec depth state atom =
   let parent = Dynarray.get state.repr atom.Atom.index in
   if phys_equal parent atom then 0 else 1 + depth state parent
@@ -191,8 +197,6 @@ let mk_fresh_atom state =
   Dynarray.add_last state.input_app_equations None ;
   atom
 
-
-let debug state = F.printf "|atoms| = %d\n" (Dynarray.length state.atoms)
 
 let get_use {use} {Atom.index} = Dynarray.get use index
 
@@ -339,3 +343,14 @@ let pp_nested_term state fmt atom =
         Atom.pp fmt atom
   in
   pp ~internal:false fmt atom
+
+
+let debug state =
+  F.printf "repr: @[<hv>" ;
+  Dynarray.iteri
+    (fun index atom ->
+      let repr = Dynarray.get state.repr index in
+      if index > 0 then F.printf "@ " ;
+      F.printf "%a is %a (repr=%a)" Atom.pp atom (pp_nested_term state) atom Atom.pp repr )
+    state.atoms ;
+  F.printf "@]@."
