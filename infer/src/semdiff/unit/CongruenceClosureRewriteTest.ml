@@ -26,9 +26,9 @@ let test_pattern_e_matching ?(debug = false) pattern atom =
   F.print_newline ()
 
 
-let mk_atom value = mk_atom !st value
-
 let mk_term header args = mk_term !st ~header ~args
+
+let mk_const header = mk_term header []
 
 let merge atom term =
   let pp_term fmt = function
@@ -55,10 +55,10 @@ let const header = apply header []
 
 let%expect_test "e-matching singleton" =
   restart () ;
-  let one = mk_atom "1" in
-  let zero = mk_atom "0" in
-  let x = mk_atom "x" in
-  let y = mk_atom "y" in
+  let one = mk_const "1" in
+  let zero = mk_const "0" in
+  let x = mk_const "x" in
+  let y = mk_const "y" in
   let t1 = mk_term "mult" [zero; x] in
   let t2 = mk_term "plus" [one; t1; y] in
   let t3 = mk_term "mult" [y; zero] in
@@ -81,9 +81,9 @@ let%expect_test "e-matching singleton" =
 
 let%expect_test "e-matching multiple" =
   restart () ;
-  let zero = mk_atom "0" in
-  let x = mk_atom "x" in
-  let y = mk_atom "y" in
+  let zero = mk_const "0" in
+  let x = mk_const "x" in
+  let y = mk_const "y" in
   let t1 = mk_term "plus" [y; x] in
   let t2 = mk_term "plus" [x; y] in
   let t3 = mk_term "mult" [zero; t2] in
@@ -101,13 +101,13 @@ let%expect_test "e-matching multiple" =
 
 let%expect_test "pattern -> term" =
   restart () ;
-  let zero = mk_atom "0" in
-  let x = mk_atom "x" in
-  let y = mk_atom "y" in
+  let zero = mk_const "0" in
+  let x = mk_const "x" in
+  let y = mk_const "y" in
   let t1 = mk_term "plus" [y; x] in
   let t2 = mk_term "mult" [zero; t1] in
   let expected =
-    mk_term "mult" [mk_term "div" [mk_atom "2"; x]; mk_term "plus" [t1; mk_atom "1"; zero; t2]]
+    mk_term "mult" [mk_term "div" [mk_const "2"; x]; mk_term "plus" [t1; mk_const "1"; zero; t2]]
   in
   let vX = Var.of_string "X" in
   let vU = Var.of_string "U" in
@@ -129,9 +129,9 @@ let%expect_test "pattern -> term" =
 
 let%expect_test "rewriting" =
   restart () ;
-  let x = mk_atom "x" in
-  let y = mk_atom "y" in
-  let z = mk_atom "z" in
+  let x = mk_const "x" in
+  let y = mk_const "y" in
+  let z = mk_const "z" in
   let t1 = mk_term "mult" [x; mk_term "plus" [y; z]] in
   let t2 = mk_term "plus" [mk_term "mult" [x; y]; mk_term "mult" [x; z]] in
   let distribute_rule : Rule.t =

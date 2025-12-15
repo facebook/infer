@@ -45,7 +45,7 @@ end = struct
 
   let of_string h = h
 
-  let to_atom cc header = CC.mk_atom cc header
+  let to_atom cc header = CC.mk_header cc header
 
   let to_term cc header args = CC.mk_term cc ~header ~args
 end

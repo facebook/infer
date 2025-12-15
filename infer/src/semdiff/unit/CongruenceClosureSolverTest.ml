@@ -15,15 +15,25 @@ let st = ref (init ~debug:false)
 
 let restart () = st := init ~debug:false
 
-let mk_atom value = mk_atom !st value
-
 let mk_term header args = mk_term !st ~header ~args
+
+let mk_const header = mk_term header []
 
 let merge atom term = merge !st atom term
 
 let repr atom = representative !st atom
 
 let show_stats () = show_stats !st
+
+let show_term_roots header =
+  F.printf "roots[%s] = @[<hv>{" header ;
+  let first = ref true in
+  iter_term_roots !st (mk_header !st header) ~f:(fun atom ->
+      if not !first then F.printf ",@ " ;
+      F.printf "%a" (pp_nested_term !st) atom ;
+      first := false ) ;
+  F.printf "}@]@."
+
 
 let pp_nested_term atom = F.printf "%a@." (pp_nested_term !st) atom
 
@@ -35,13 +45,13 @@ let equiv_atoms atom =
 
 let%expect_test "" =
   restart () ;
-  let a = mk_atom "a" in
-  let b = mk_atom "b" in
-  let c = mk_atom "c" in
-  let d = mk_atom "d" in
-  let e = mk_atom "e" in
-  let g = mk_atom "g" in
-  let h = mk_atom "h" in
+  let a = mk_const "a" in
+  let b = mk_const "b" in
+  let c = mk_const "c" in
+  let d = mk_const "d" in
+  let e = mk_const "e" in
+  let g = mk_const "g" in
+  let h = mk_const "h" in
   merge d (App (g, h)) ;
   merge d (Atom c) ;
   merge a (App (g, d)) ;
@@ -72,15 +82,15 @@ let%expect_test "" =
 
 let%expect_test "mk_term" =
   restart () ;
-  let a = mk_atom "area" in
-  let b = mk_atom "band" in
-  let c = mk_atom "card" in
-  let d = mk_atom "door" in
-  let e = mk_atom "earn" in
-  let g = mk_atom "gold" in
-  let h = mk_atom "hand" in
-  let i = mk_atom "idea" in
-  let j = mk_atom "jump" in
+  let a = mk_const "area" in
+  let b = mk_const "band" in
+  let c = mk_const "card" in
+  let d = mk_const "door" in
+  let e = mk_const "earn" in
+  let g = mk_const "gold" in
+  let h = mk_const "hand" in
+  let i = mk_const "idea" in
+  let j = mk_const "jump" in
   let l1 = mk_term "list1" [a; b; c; d] in
   let l2 = mk_term "list2" [e; l1; g; h] in
   let l3 = mk_term "list3" [i; l2; j; l1] in
@@ -125,9 +135,9 @@ let%expect_test "mk_term" =
 
 let%expect_test "show sharing" =
   restart () ;
-  let x = mk_atom "x" in
-  let y = mk_atom "y" in
-  let z = mk_atom "z" in
+  let x = mk_const "x" in
+  let y = mk_const "y" in
+  let z = mk_const "z" in
   let t1 = mk_term "mult" [x; mk_term "plus" [y; z]] in
   let t2 = mk_term "plus" [mk_term "mult" [x; y]; mk_term "mult" [x; z]] in
   F.printf "t1 := " ;
@@ -141,6 +151,8 @@ let%expect_test "show sharing" =
   merge t1 (Atom t3) ;
   F.printf "t1 == t2? %b@." (is_equiv !st t1 t2) ;
   debug !st ;
+  show_term_roots "plus" ;
+  show_term_roots "mult" ;
   [%expect
     {|
     t1 := (mult x (plus y z))
@@ -161,23 +173,25 @@ let%expect_test "show sharing" =
           %10 is (mult x y) (repr=%10)
           %11 is (plus (mult x y)) (repr=%11)
           %12 is (plus (mult x y) (mult x z)) (repr=%12)
+    roots[plus] = {(plus y z), (plus (mult x y) (mult x z))}
+    roots[mult] = {(mult x z), (mult x y)}
     |}]
 
 
 let gen_term_chain size =
-  let mk_atom1 i = mk_atom (F.asprintf "a%d" i) in
-  let mk_atom2 i = mk_atom (F.asprintf "b%d" i) in
+  let mk_const1 i = mk_const (F.asprintf "a%d" i) in
+  let mk_const2 i = mk_const (F.asprintf "b%d" i) in
   let rec aux i size eqs leafs =
     assert (0 < size) ;
     if size <= 1 then
-      let c1 = mk_atom1 i in
-      let c2 = mk_atom2 i in
+      let c1 = mk_const1 i in
+      let c2 = mk_const2 i in
       (c1, c2, eqs, (c1, c2) :: leafs)
     else
       let size_left = 1 + Random.int (size - 1) in
       let c1_left, c2_left, eqs, leafs = aux i size_left eqs leafs in
-      let c1 = mk_atom1 (i + size_left) in
-      let c2 = mk_atom2 (i + size_left) in
+      let c1 = mk_const1 (i + size_left) in
+      let c2 = mk_const2 (i + size_left) in
       let c1_right, c2_right, eqs, leafs = aux (i + 1 + size_left) (size - size_left) eqs leafs in
       let term1 = App (c1_left, c1_right) in
       let term2 = App (c2_left, c2_right) in

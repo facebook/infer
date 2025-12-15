@@ -24,7 +24,7 @@ val pp_nested_term : t -> F.formatter -> Atom.t -> unit
 
 val init : debug:bool -> t
 
-val mk_atom : t -> string -> Atom.t
+val mk_header : t -> string -> Atom.t
 
 val mk_app : t -> left:Atom.t -> right:Atom.t -> Atom.t
 
@@ -35,6 +35,8 @@ val merge : t -> Atom.t -> term -> unit
 val is_equiv : t -> Atom.t -> Atom.t -> bool
 
 val representative : t -> Atom.t -> Atom.t
+
+val iter_term_roots : t -> Atom.t -> f:(Atom.t -> unit) -> unit
 
 val equiv_atoms : t -> Atom.t -> Atom.t list
 
