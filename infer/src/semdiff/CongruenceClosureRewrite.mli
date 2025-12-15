@@ -25,12 +25,16 @@ type subst
 
 val pp_subst : CC.t -> F.formatter -> subst -> unit
 
+val mk_subst : (Var.t * CC.Atom.t) list -> subst
+
 module Pattern : sig
   type t = Var of Var.t | Term of {header: Header.t; args: t list}
 
   val pp : F.formatter -> t -> unit
 
   val e_match : ?debug:bool -> CC.t -> t -> CC.Atom.t -> subst list
+
+  val to_term : CC.t -> subst -> t -> CC.Atom.t
 end
 
 module Rule : sig

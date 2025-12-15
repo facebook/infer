@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module CC = CongruenceClosureSolver
 
 module Var : sig
@@ -35,6 +36,8 @@ module Header : sig
   val of_string : string -> t
 
   val to_atom : CC.t -> t -> CC.Atom.t
+
+  val to_term : CC.t -> t -> CC.Atom.t list -> CC.Atom.t
 end = struct
   type t = string [@@deriving compare, equal]
 
@@ -43,6 +46,8 @@ end = struct
   let of_string h = h
 
   let to_atom cc header = CC.mk_atom cc header
+
+  let to_term cc header args = CC.mk_term cc ~header ~args
 end
 
 type subst = CC.Atom.t Var.Map.t [@@deriving compare]
@@ -50,6 +55,19 @@ type subst = CC.Atom.t Var.Map.t [@@deriving compare]
 let pp_subst cc fmt subst =
   let pp fmt (var, atom) = F.fprintf fmt "%a: %a" Var.pp var (CC.pp_nested_term cc) atom in
   F.fprintf fmt "{%a}" (Pp.comma_seq pp) (Var.Map.bindings subst)
+
+
+let mk_subst bindings =
+  (* for testing only *)
+  Var.Map.of_list bindings
+
+
+let lookup_subst cc subst var =
+  match Var.Map.find_opt var subst with
+  | Some atom ->
+      atom
+  | None ->
+      L.die InternalError "var %a is not in subst %a" Var.pp var (pp_subst cc) subst
 
 
 module SubstSet = Stdlib.Set.Make (struct
@@ -116,6 +134,22 @@ module Pattern = struct
             ~init:SubstSet.empty
     in
     loop Var.Map.empty pat atom |> SubstSet.elements
+
+
+  let to_term cc subst pat =
+    let rec pattern = function
+      | Var var ->
+          lookup_subst cc subst var |> CC.representative cc
+      | Term {header; args} ->
+          term_args header (List.rev args) []
+    and term_args header rev_args atoms =
+      match rev_args with
+      | [] ->
+          Header.to_term cc header atoms
+      | pat :: rev_args ->
+          term_args header rev_args (pattern pat :: atoms)
+    in
+    pattern pat
 end
 
 module Rule = struct

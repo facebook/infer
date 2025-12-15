@@ -18,7 +18,7 @@ let pp_subst fmt = pp_subst !st fmt
 
 let pp_nested_term atom = (pp_nested_term !st) atom
 
-let test_pattern ?(debug = false) pattern atom =
+let test_pattern_e_matching ?(debug = false) pattern atom =
   F.printf "e-matching pattern %a with term %a:@." Pattern.pp pattern pp_nested_term atom ;
   let substs = Pattern.e_match ~debug !st pattern atom in
   if List.is_empty substs then F.printf "--> no substitution found@."
@@ -41,6 +41,12 @@ let merge atom term =
   merge !st atom term
 
 
+let test_to_term_conversion pattern subst =
+  let atom = Pattern.to_term !st subst pattern in
+  F.printf "@[<hv>pattern %a@ becomes %a@]@." Pattern.pp pattern pp_nested_term atom ;
+  atom
+
+
 let var str = Pattern.Var (Var.of_string str)
 
 let apply name args = Pattern.Term {header= Header.of_string name; args}
@@ -57,9 +63,9 @@ let%expect_test "e-matching singleton" =
   let t2 = mk_term "plus" [one; t1; y] in
   let t3 = mk_term "mult" [y; zero] in
   let pattern = apply "mult" [const "0"; var "X"] in
-  test_pattern pattern t1 ;
-  test_pattern pattern t2 ;
-  test_pattern pattern t3 ;
+  test_pattern_e_matching pattern t1 ;
+  test_pattern_e_matching pattern t2 ;
+  test_pattern_e_matching pattern t3 ;
   [%expect
     {|
     e-matching pattern (mult 0 ?X) with term (mult 0 x):
@@ -83,11 +89,39 @@ let%expect_test "e-matching multiple" =
   let t3 = mk_term "mult" [zero; t2] in
   merge t1 (Atom t2) ;
   let pattern = apply "mult" [const "0"; apply "plus" [var "U"; var "V"]] in
-  test_pattern pattern t3 ;
+  test_pattern_e_matching pattern t3 ;
   [%expect
     {|
     merging (plus y x) and (plus x y)...
     e-matching pattern (mult 0 (plus ?U ?V)) with term (mult 0 (plus x y)):
     --> subst #0: {U: x,V: y}
     --> subst #1: {U: y,V: x}
+    |}]
+
+
+let%expect_test "pattern -> term" =
+  restart () ;
+  let zero = mk_atom "0" in
+  let x = mk_atom "x" in
+  let y = mk_atom "y" in
+  let t1 = mk_term "plus" [y; x] in
+  let t2 = mk_term "mult" [zero; t1] in
+  let expected =
+    mk_term "mult" [mk_term "div" [mk_atom "2"; x]; mk_term "plus" [t1; mk_atom "1"; zero; t2]]
+  in
+  let vX = Var.of_string "X" in
+  let vU = Var.of_string "U" in
+  let vV = Var.of_string "V" in
+  let vW = Var.of_string "W" in
+  let pattern =
+    apply "mult" [apply "div" [const "2"; Var vX]; apply "plus" [Var vU; const "1"; Var vV; Var vW]]
+  in
+  let subst = mk_subst [(vX, x); (vU, t1); (vV, zero); (vW, t2)] in
+  let obtained = test_to_term_conversion pattern subst in
+  F.printf "expected == obtained? %b@." (CC.is_equiv !st expected obtained) ;
+  [%expect
+    {|
+    pattern (mult (div 2 ?X) (plus ?U 1 ?V ?W))
+    becomes (mult (div 2 x) (plus (plus y x) 1 0 (mult 0 (plus y x))))
+    expected == obtained? true
     |}]
