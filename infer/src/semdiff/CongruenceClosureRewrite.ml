@@ -66,7 +66,7 @@ module Pattern = struct
         F.fprintf fmt "@[<hv4>(%a@ %a)@]" CC.pp_header header (Pp.seq ~sep_html:"@ " pp) args
 
 
-  let e_match ?(debug = false) cc pat atom =
+  let e_match_at ?(debug = false) cc pat atom =
     let add_or_empty subst var atom' =
       match Var.Map.find_opt var subst with
       | None ->
@@ -114,6 +114,15 @@ module Pattern = struct
     loop Var.Map.empty pat atom |> SubstSet.elements
 
 
+  let e_match ?(debug = false) cc pat ~f =
+    match pat with
+    | Var _ ->
+        L.die InternalError "should not happen"
+    | Term {header} ->
+        CC.iter_term_roots cc header ~f:(fun atom ->
+            e_match_at ~debug cc pat atom |> List.iter ~f:(fun subst -> f atom subst) )
+
+
   let to_term cc subst pat =
     let rec pattern = function
       | Var var ->
@@ -136,7 +145,7 @@ module Rule = struct
   let pp fmt {lhs; rhs} = F.fprintf fmt "@[<hv>%a@ ==>@ %a@]" Pattern.pp lhs Pattern.pp rhs
 
   let apply ?(debug = false) cc {lhs; rhs} atom =
-    let substs = Pattern.e_match cc lhs atom in
+    let substs = Pattern.e_match_at cc lhs atom in
     List.iteri substs ~f:(fun i subst ->
         if debug then F.printf "subst #%d = %a@." i (pp_subst cc) subst ;
         let rhs_term = Pattern.to_term cc subst rhs in

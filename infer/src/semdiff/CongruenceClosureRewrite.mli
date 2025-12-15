@@ -26,7 +26,9 @@ module Pattern : sig
 
   val pp : F.formatter -> t -> unit
 
-  val e_match : ?debug:bool -> CC.t -> t -> CC.Atom.t -> subst list
+  val e_match_at : ?debug:bool -> CC.t -> t -> CC.Atom.t -> subst list
+
+  val e_match : ?debug:bool -> CC.t -> t -> f:(CC.Atom.t -> subst -> unit) -> unit
 
   val to_term : CC.t -> subst -> t -> CC.Atom.t
 end

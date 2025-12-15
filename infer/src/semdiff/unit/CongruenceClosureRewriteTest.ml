@@ -18,12 +18,19 @@ let pp_subst fmt = pp_subst !st fmt
 
 let pp_nested_term atom = (pp_nested_term !st) atom
 
-let test_pattern_e_matching ?(debug = false) pattern atom =
+let test_e_match_at ?(debug = false) pattern atom =
   F.printf "e-matching pattern %a with term %a:@." Pattern.pp pattern pp_nested_term atom ;
-  let substs = Pattern.e_match ~debug !st pattern atom in
+  let substs = Pattern.e_match_at ~debug !st pattern atom in
   if List.is_empty substs then F.printf "--> no substitution found@."
   else List.iteri substs ~f:(fun i subst -> F.printf "--> subst #%d: %a@." i pp_subst subst) ;
   F.print_newline ()
+
+
+let test_e_match ?(debug = false) pattern =
+  F.printf "e-matching pattern %a:@." Pattern.pp pattern ;
+  Pattern.e_match ~debug !st pattern ~f:(fun atom subst ->
+      F.printf "--> term %a@." pp_nested_term atom ;
+      F.printf "    subst %a@." pp_subst subst )
 
 
 let mk_term header args =
@@ -66,9 +73,9 @@ let%expect_test "e-matching singleton" =
   let t2 = mk_term "plus" [one; t1; y] in
   let t3 = mk_term "mult" [y; zero] in
   let pattern = apply "mult" [const "0"; var "X"] in
-  test_pattern_e_matching pattern t1 ;
-  test_pattern_e_matching pattern t2 ;
-  test_pattern_e_matching pattern t3 ;
+  test_e_match_at pattern t1 ;
+  test_e_match_at pattern t2 ;
+  test_e_match_at pattern t3 ;
   [%expect
     {|
     e-matching pattern (mult 0 ?X) with term (mult 0 x):
@@ -92,13 +99,41 @@ let%expect_test "e-matching multiple" =
   let t3 = mk_term "mult" [zero; t2] in
   merge t1 (Atom t2) ;
   let pattern = apply "mult" [const "0"; apply "plus" [var "U"; var "V"]] in
-  test_pattern_e_matching pattern t3 ;
+  test_e_match_at pattern t3 ;
   [%expect
     {|
     merging (plus y x) and (plus x y)...
     e-matching pattern (mult 0 (plus ?U ?V)) with term (mult 0 (plus x y)):
     --> subst #0: {U: x,V: y}
     --> subst #1: {U: y,V: x}
+    |}]
+
+
+let%expect_test "e-matching search" =
+  restart () ;
+  let zero = mk_const "0" in
+  let x = mk_const "x" in
+  let y = mk_const "y" in
+  let t1 = mk_term "plus" [y; x] in
+  let t2 = mk_term "plus" [x; y] in
+  let t3 = mk_term "plus" [t1; t2] in
+  let t4 = mk_term "plus" [zero; t3] in
+  let t5 = mk_term "start" [t4] in
+  merge t1 (Atom t2) ;
+  let pattern = apply "plus" [var "U"; apply "plus" [var "V"; var "W"]] in
+  F.printf "t5 := %a@." pp_nested_term t5 ;
+  test_e_match pattern ;
+  [%expect
+    {|
+    merging (plus y x) and (plus x y)...
+    t5 := (start (plus 0 (plus (plus y x) (plus x y))))
+    e-matching pattern (plus ?U (plus ?V ?W)):
+    --> term (plus (plus y x) (plus x y))
+        subst {U: (plus x y),V: x,W: y}
+    --> term (plus (plus y x) (plus x y))
+        subst {U: (plus x y),V: y,W: x}
+    --> term (plus 0 (plus (plus y x) (plus x y)))
+        subst {U: 0,V: (plus x y),W: (plus x y)}
     |}]
 
 
