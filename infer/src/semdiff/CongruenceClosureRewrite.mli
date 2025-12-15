@@ -38,6 +38,8 @@ module Rule : sig
 
   val pp : F.formatter -> t -> unit
 
-  val apply : ?debug:bool -> CC.t -> t -> CC.Atom.t -> int
+  val apply_at : ?debug:bool -> CC.t -> t -> CC.Atom.t -> int
   (** return the number of compatible substitution used during rewriting *)
+
+  val rewrite_once : ?debug:bool -> CC.t -> t list -> unit
 end

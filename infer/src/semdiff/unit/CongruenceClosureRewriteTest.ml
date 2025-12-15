@@ -165,7 +165,7 @@ let%expect_test "pattern -> term" =
     |}]
 
 
-let%expect_test "rewriting" =
+let%expect_test "rewriting at specific atom" =
   restart () ;
   let x = mk_const "x" in
   let y = mk_const "y" in
@@ -180,7 +180,7 @@ let%expect_test "rewriting" =
   F.printf "t2 := %a@." pp_nested_term t2 ;
   F.printf "t1 == t2? %b@." (CC.is_equiv !st t1 t2) ;
   F.printf "applying rule %a...@." Rule.pp distribute_rule ;
-  let _ = Rule.apply ~debug:true !st distribute_rule t1 in
+  let _ = Rule.apply_at ~debug:true !st distribute_rule t1 in
   F.printf "t1 == t2? %b@." (CC.is_equiv !st t1 t2) ;
   [%expect
     {|
@@ -191,4 +191,29 @@ let%expect_test "rewriting" =
     subst #0 = {X: x,Y: y,Z: z}
     rhs_term = (plus (mult x y) (mult x z))
     t1 == t2? true
+    |}]
+
+
+let%expect_test "rewriting one round" =
+  restart () ;
+  let x = mk_const "x" in
+  let y = mk_const "y" in
+  let t = mk_term "g" [mk_term "f" [mk_term "g" [y]]] in
+  merge x (Atom t) ;
+  F.printf "0: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
+  let rule1 : Rule.t = {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
+  let rule2 : Rule.t = {lhs= apply "f" [var "X"]; rhs= var "X"} in
+  let rules = [rule1; rule2] in
+  Rule.rewrite_once ~debug:true !st rules ;
+  F.printf "1: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
+  Rule.rewrite_once ~debug:true !st rules ;
+  F.printf "2: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
+  [%expect
+    {|
+    merging x and (g (f (g y)))...
+    0: x == y? false
+    rewriting atom (f (g y)) with rule (f ?X) ==> ?X and subst {X: (g y)}
+    1: x == y? false
+    rewriting atom (g (f (g y))) with rule (g (g ?X)) ==> ?X and subst {X: y}
+    2: x == y? true
     |}]
