@@ -39,4 +39,9 @@ end
 
 module Rule : sig
   type t = {lhs: Pattern.t; rhs: Pattern.t}
+
+  val pp : F.formatter -> t -> unit
+
+  val apply : ?debug:bool -> CC.t -> t -> CC.Atom.t -> int
+  (** return the number of compatible substitution used during rewriting *)
 end

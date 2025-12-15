@@ -154,4 +154,15 @@ end
 
 module Rule = struct
   type t = {lhs: Pattern.t; rhs: Pattern.t}
+
+  let pp fmt {lhs; rhs} = F.fprintf fmt "@[<hv>%a@ ==>@ %a@]" Pattern.pp lhs Pattern.pp rhs
+
+  let apply ?(debug = false) cc {lhs; rhs} atom =
+    let substs = Pattern.e_match cc lhs atom in
+    List.iteri substs ~f:(fun i subst ->
+        if debug then F.printf "subst #%d = %a@." i (pp_subst cc) subst ;
+        let rhs_term = Pattern.to_term cc subst rhs in
+        if debug then F.printf "rhs_term = %a@." (CC.pp_nested_term cc) rhs_term ;
+        CC.merge cc atom (CC.Atom rhs_term) ) ;
+    List.length substs
 end

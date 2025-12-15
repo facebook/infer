@@ -125,3 +125,32 @@ let%expect_test "pattern -> term" =
     becomes (mult (div 2 x) (plus (plus y x) 1 0 (mult 0 (plus y x))))
     expected == obtained? true
     |}]
+
+
+let%expect_test "rewriting" =
+  restart () ;
+  let x = mk_atom "x" in
+  let y = mk_atom "y" in
+  let z = mk_atom "z" in
+  let t1 = mk_term "mult" [x; mk_term "plus" [y; z]] in
+  let t2 = mk_term "plus" [mk_term "mult" [x; y]; mk_term "mult" [x; z]] in
+  let distribute_rule : Rule.t =
+    { lhs= apply "mult" [var "X"; apply "plus" [var "Y"; var "Z"]]
+    ; rhs= apply "plus" [apply "mult" [var "X"; var "Y"]; apply "mult" [var "X"; var "Z"]] }
+  in
+  F.printf "t1 := %a@." pp_nested_term t1 ;
+  F.printf "t2 := %a@." pp_nested_term t2 ;
+  F.printf "t1 == t2? %b@." (CC.is_equiv !st t1 t2) ;
+  F.printf "applying rule %a...@." Rule.pp distribute_rule ;
+  let _ = Rule.apply ~debug:true !st distribute_rule t1 in
+  F.printf "t1 == t2? %b@." (CC.is_equiv !st t1 t2) ;
+  [%expect
+    {|
+    t1 := (mult x (plus y z))
+    t2 := (plus (mult x y) (mult x z))
+    t1 == t2? false
+    applying rule (mult ?X (plus ?Y ?Z)) ==> (plus (mult ?X ?Y) (mult ?X ?Z))...
+    subst #0 = {X: x,Y: y,Z: z}
+    rhs_term = (plus (mult x y) (mult x z))
+    t1 == t2? true
+    |}]
