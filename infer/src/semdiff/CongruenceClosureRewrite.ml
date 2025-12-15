@@ -28,28 +28,6 @@ end = struct
   module Map = Stdlib.Map.Make (String)
 end
 
-module Header : sig
-  type t = private string [@@deriving compare, equal]
-
-  val pp : F.formatter -> t -> unit
-
-  val of_string : string -> t
-
-  val to_atom : CC.t -> t -> CC.Atom.t
-
-  val to_term : CC.t -> t -> CC.Atom.t list -> CC.Atom.t
-end = struct
-  type t = string [@@deriving compare, equal]
-
-  let pp = F.pp_print_string
-
-  let of_string h = h
-
-  let to_atom cc header = CC.mk_header cc header
-
-  let to_term cc header args = CC.mk_term cc ~header ~args
-end
-
 type subst = CC.Atom.t Var.Map.t [@@deriving compare]
 
 let pp_subst cc fmt subst =
@@ -77,15 +55,15 @@ module SubstSet = Stdlib.Set.Make (struct
 end)
 
 module Pattern = struct
-  type t = Var of Var.t | Term of {header: Header.t; args: t list}
+  type t = Var of Var.t | Term of {header: CC.header; args: t list}
 
   let rec pp fmt = function
     | Var v ->
         F.fprintf fmt "?%a" Var.pp v
     | Term {header; args= []} ->
-        F.fprintf fmt "%a" Header.pp header
+        F.fprintf fmt "%a" CC.pp_header header
     | Term {header; args} ->
-        F.fprintf fmt "@[<hv4>(%a@ %a)@]" Header.pp header (Pp.seq ~sep_html:"@ " pp) args
+        F.fprintf fmt "@[<hv4>(%a@ %a)@]" CC.pp_header header (Pp.seq ~sep_html:"@ " pp) args
 
 
   let e_match ?(debug = false) cc pat atom =
@@ -111,11 +89,11 @@ module Pattern = struct
           loop_term_args subst header (List.rev args) atom'
     and loop_term_args subst header rev_args atom' =
       if debug then
-        F.printf "e-matching term pattern header=%a args=[%a]@." Header.pp header (Pp.comma_seq pp)
-          rev_args ;
+        F.printf "e-matching term pattern header=%a args=[%a]@." CC.pp_header header
+          (Pp.comma_seq pp) rev_args ;
       match rev_args with
       | [] ->
-          let header_atom' = CC.representative cc (Header.to_atom cc header) in
+          let header_atom' = CC.representative_of_header cc header in
           if phys_equal atom' header_atom' then SubstSet.singleton subst else SubstSet.empty
       | pat :: rev_args ->
           let app_equations = CC.equiv_terms cc atom' in
@@ -145,7 +123,7 @@ module Pattern = struct
     and term_args header rev_args atoms =
       match rev_args with
       | [] ->
-          Header.to_term cc header atoms
+          CC.mk_term cc header atoms
       | pat :: rev_args ->
           term_args header rev_args (pattern pat :: atoms)
     in

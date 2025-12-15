@@ -354,14 +354,19 @@ let iter_term_roots state {Atom.index} ~f =
   Atom.Set.iter (fun atom -> if phys_equal (representative state atom) atom then f atom) roots
 
 
-let mk_term state ~header ~args =
-  let header = mk_atom state header in
+type header = Atom.t
+
+let mk_header = mk_atom
+
+let pp_header = Atom.pp
+
+let representative_of_header = representative
+
+let mk_term state header args =
   let term = List.fold ~init:header ~f:(fun left right -> mk_app state ~left ~right) args in
   add_term_root state ~header ~term ;
   term
 
-
-let mk_header = mk_atom (* TODO: use private type *)
 
 let show_stats state =
   let size = Atom.cardinal state.hashcons in

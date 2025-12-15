@@ -15,12 +15,6 @@ module Var : sig
   val of_string : string -> t
 end
 
-module Header : sig
-  type t = private string [@@deriving compare, equal]
-
-  val of_string : string -> t
-end
-
 type subst
 
 val pp_subst : CC.t -> F.formatter -> subst -> unit
@@ -28,7 +22,7 @@ val pp_subst : CC.t -> F.formatter -> subst -> unit
 val mk_subst : (Var.t * CC.Atom.t) list -> subst
 
 module Pattern : sig
-  type t = Var of Var.t | Term of {header: Header.t; args: t list}
+  type t = Var of Var.t | Term of {header: CC.header; args: t list}
 
   val pp : F.formatter -> t -> unit
 

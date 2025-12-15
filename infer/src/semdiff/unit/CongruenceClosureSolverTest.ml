@@ -15,7 +15,10 @@ let st = ref (init ~debug:false)
 
 let restart () = st := init ~debug:false
 
-let mk_term header args = mk_term !st ~header ~args
+let mk_term header args =
+  let header = mk_header !st header in
+  mk_term !st header args
+
 
 let mk_const header = mk_term header []
 

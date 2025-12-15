@@ -26,7 +26,10 @@ let test_pattern_e_matching ?(debug = false) pattern atom =
   F.print_newline ()
 
 
-let mk_term header args = mk_term !st ~header ~args
+let mk_term header args =
+  let header = mk_header !st header in
+  mk_term !st header args
+
 
 let mk_const header = mk_term header []
 
@@ -49,7 +52,7 @@ let test_to_term_conversion pattern subst =
 
 let var str = Pattern.Var (Var.of_string str)
 
-let apply name args = Pattern.Term {header= Header.of_string name; args}
+let apply name args = Pattern.Term {header= mk_header !st name; args}
 
 let const header = apply header []
 

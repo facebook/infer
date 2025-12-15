@@ -12,8 +12,8 @@ open PythonSourceAst
 
 (* currying AST -> CongruenceClosure terms *)
 let rec curry cc ast =
-  let mk_const header = CC.mk_term cc ~header ~args:[] in
-  let mk_term header args = CC.mk_term cc ~header ~args in
+  let mk_const header = CC.mk_term cc (CC.mk_header cc header) [] in
+  let mk_term header args = CC.mk_term cc (CC.mk_header cc header) args in
   match (ast : Node.t) with
   | Null ->
       mk_const "Null"
