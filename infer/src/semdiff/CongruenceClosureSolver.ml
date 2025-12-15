@@ -315,11 +315,17 @@ and change_representative state old_repr new_repr =
 
 
 let mk_app state ~left ~right =
-  let term = App (left, right) in
-  let atom = mk_fresh_atom state in
-  merge state atom term ;
-  set_input_app_equation state atom (left, right) ;
-  atom
+  let left' = representative state left in
+  let right' = representative state right in
+  match lookup state (left', right') with
+  | Some {rhs} ->
+      representative state rhs
+  | None ->
+      let term = App (left, right) in
+      let atom = mk_fresh_atom state in
+      merge state atom term ;
+      set_input_app_equation state atom (left, right) ;
+      atom
 
 
 let mk_term state ~header ~args =
