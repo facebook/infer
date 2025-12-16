@@ -332,14 +332,12 @@ let update_struct_map_with_field_names field_offset_map struct_map =
     match ProcState.FieldOffsetMap.find_opt field_offset_map key with
     | Some field_name ->
         { field with
-          Textual.FieldDecl.qualified_name= Textual.{enclosing_class= struct_name; name= field_name}
-        }
+          Textual.FieldDecl.qualified_name= {enclosing_class= struct_name; name= field_name} }
     | None ->
         field
   in
-  let update_struct struct_name struct_ struct_map =
-    let fields = List.mapi ~f:(update_field_name struct_name) struct_.Textual.Struct.fields in
-    let struct_ = {struct_ with Textual.Struct.fields} in
-    Textual.TypeName.Map.add struct_name struct_ struct_map
+  let update_struct struct_name (struct_ : Textual.Struct.t) =
+    let fields = List.mapi ~f:(update_field_name struct_name) struct_.fields in
+    {struct_ with fields}
   in
-  Textual.TypeName.Map.fold update_struct struct_map Textual.TypeName.Map.empty
+  Textual.TypeName.Map.mapi update_struct struct_map
