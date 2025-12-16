@@ -29,6 +29,15 @@ module ClassNameOffsetMap = Stdlib.Hashtbl.Make (ClassNameOffset)
 
 type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
+(* Map from (class_name, offset) to field_name for struct fields *)
+module FieldOffset = struct
+  type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare, hash, equal]
+end
+
+module FieldOffsetMap = Stdlib.Hashtbl.Make (FieldOffset)
+
+type fieldOffsetMap = Textual.FieldName.t FieldOffsetMap.t
+
 module ClassMethodIndex = struct
   type t = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
 
@@ -64,10 +73,11 @@ module ModuleState = struct
     ; globals_map: Llair.GlobalDefn.t VarMap.t
     ; lang: Textual.Lang.t
     ; method_class_index: methodClassIndex
-    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
+    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
+    ; field_offset_map: fieldOffsetMap }
 
   let init ~functions ~struct_map ~proc_decls ~proc_map ~globals_map ~lang ~method_class_index
-      ~class_name_offset_map =
+      ~class_name_offset_map ~field_offset_map =
     { functions
     ; struct_map
     ; proc_decls
@@ -75,7 +85,8 @@ module ModuleState = struct
     ; globals_map
     ; lang
     ; method_class_index
-    ; class_name_offset_map }
+    ; class_name_offset_map
+    ; field_offset_map }
 end
 
 module ProcState = struct

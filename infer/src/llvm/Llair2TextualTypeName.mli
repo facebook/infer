@@ -1,0 +1,24 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+open! IStd
+open! Llair
+
+val to_textual_type_name : Textual.Lang.t -> ?plain_name:label -> label -> Textual.TypeName.t
+
+val mangled_name_of_type_name : Textual.TypeName.t -> label option
+
+val plain_name_of_type_name : Textual.TypeName.t -> label option
+
+val struct_name_of_mangled_name :
+  Textual.Lang.t -> 'a Textual.TypeName.Map.t -> string -> Textual.TypeName.t
+
+val struct_name_of_plain_name : 'a Textual.TypeName.Map.t -> string -> Textual.TypeName.t option
+
+val update_type_name_with_mangled_name :
+  mangled_name:string -> Textual.TypeName.t -> Textual.TypeName.t
+
+val update_type_name_with_plain_name : plain_name:string -> Textual.TypeName.t -> Textual.TypeName.t

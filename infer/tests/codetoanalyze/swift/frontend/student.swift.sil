@@ -102,7 +102,7 @@ define .plain_name = "_weight.set" $s5Hello8EmployeeV7_weight33_312A41DD1C73018F
       n2 = load &var2 @[578:0]
       n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[578:0]
       n1 = load &var1 @[578:0]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[578:0]
+      store n3.__infer_swift_type<TSi>.weight <- n1 @[578:0]
       ret null @[579:0]
       
 } @?
@@ -119,7 +119,7 @@ define .plain_name = "weight.set" $s5Hello8EmployeeV6weightSivs(newValue: *__inf
       n2 = load &self @[33:23]
       n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[33:23]
       n1 = load &newValue @[33:23]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[33:23]
+      store n3.__infer_swift_type<TSi>.weight <- n1 @[33:23]
       ret null @[33:34]
       
 } @?
@@ -130,11 +130,11 @@ define .plain_name = "weight.get" $s5Hello8EmployeeV6weightSivg(var1: int, var2:
       n2 = load &self @[573:0]
       n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[573:0]
       n1 = load &var1 @[573:0]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[573:0]
+      store n3.__infer_swift_type<TSi>.weight <- n1 @[573:0]
       n5 = load &self @[574:0]
       n6 = load n5.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[574:0]
       n4 = load &var2 @[574:0]
-      store n6.__infer_swift_type<TSi>.field_0 <- n4 @[574:0]
+      store n6.__infer_swift_type<TSi>.weight <- n4 @[574:0]
       n7 = load &var2 @[32:23]
       ret n7 @[32:23]
       
@@ -157,11 +157,11 @@ define .plain_name = "init" $s5Hello8EmployeeV3age6weightACSi_SitcfC(age: *__inf
       n2 = load &self @[36:18]
       n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[36:18]
       n1 = load &age @[36:18]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[36:18]
+      store n3.__infer_swift_type<TSi>.weight <- n1 @[36:18]
       n5 = load &self @[37:22]
       n6 = load n5.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[37:22]
       n4 = load &weight @[37:22]
-      store n6.__infer_swift_type<TSi>.field_0 <- n4 @[37:22]
+      store n6.__infer_swift_type<TSi>.weight <- n4 @[37:22]
       n7 = $builtins.llvm_init_tuple() @[570:0]
       n8 = load &age @[38:5]
       store n7.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n8 @[38:5]
@@ -184,7 +184,7 @@ define .plain_name = "weight.set" .method_offset = "13" __infer_swift_type<T5Hel
       n1 = n2.__infer_swift_type<T5Hello7StudentC,Student>.field_2 @[554:0]
       n4 = load n1 @[556:0]
       n3 = load &var1 @[556:0]
-      store n4.__infer_swift_type<TSi>.field_0 <- n3 @[556:0]
+      store n4.__infer_swift_type<TSi>.weight <- n3 @[556:0]
       ret null @[558:0]
       
 } @?
@@ -195,7 +195,7 @@ define .plain_name = "weight.get" .method_offset = "12" __infer_swift_type<T5Hel
       n2 = load &var1 @[549:0]
       n1 = n2.__infer_swift_type<T5Hello7StudentC,Student>.field_2 @[549:0]
       n4 = load n1 @[551:0]
-      n3 = load n4.__infer_swift_type<TSi>.field_0 @[551:0]
+      n3 = load n4.__infer_swift_type<TSi>.weight @[551:0]
       ret n3 @[553:0]
       
 } @?
@@ -207,8 +207,8 @@ declare .plain_name = "weight.modify" .method_offset = "14" __infer_swift_type<T
 define .plain_name = "age.get" $s5Hello7StudentC3ageSivg(var1: *__infer_swift_type<T5Hello7StudentC,Student>) : int {
   #: @[547:0]
       n2 = load &var1 @[547:0]
-      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.field_1 @[547:0]
-      n1 = load n3.__infer_swift_type<TSi>.field_0 @[547:0]
+      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.age @[547:0]
+      n1 = load n3.__infer_swift_type<TSi>.weight @[547:0]
       ret n1 @[548:0]
       
 } @?
@@ -216,13 +216,13 @@ define .plain_name = "age.get" $s5Hello7StudentC3ageSivg(var1: *__infer_swift_ty
 define .plain_name = "init" $s5Hello7StudentC3age6weightACSi_Sitcfc(age: *__infer_swift_type<ptr_elt>, weight: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello7StudentC,Student>) : *__infer_swift_type<T5Hello7StudentC,Student> {
   #: @[5:18]
       n2 = load &self @[5:18]
-      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.field_1 @[5:18]
+      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.age @[5:18]
       n1 = load &age @[5:18]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[5:18]
+      store n3.__infer_swift_type<TSi>.weight <- n1 @[5:18]
       n5 = load &self @[6:21]
       n6 = load n5.__infer_swift_type<T5Hello7StudentC,Student>.field_2 @[6:21]
       n4 = load &weight @[6:21]
-      store n6.__infer_swift_type<TSi>.field_0 <- n4 @[6:21]
+      store n6.__infer_swift_type<TSi>.weight <- n4 @[6:21]
       n7 = load &self @[7:5]
       ret n7 @[7:5]
       
@@ -282,8 +282,8 @@ declare .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T
 define .plain_name = "age.get" $s5Hello6PersonC3ageSivg(var1: *__infer_swift_type<T5Hello6PersonC,Person>) : int {
   #: @[512:0]
       n2 = load &var1 @[512:0]
-      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.field_1 @[512:0]
-      n1 = load n3.__infer_swift_type<TSi>.field_0 @[512:0]
+      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.age @[512:0]
+      n1 = load n3.__infer_swift_type<TSi>.weight @[512:0]
       ret n1 @[513:0]
       
 } @?
@@ -291,9 +291,9 @@ define .plain_name = "age.get" $s5Hello6PersonC3ageSivg(var1: *__infer_swift_typ
 define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(age: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello6PersonC,Person>) : *__infer_swift_type<T5Hello6PersonC,Person> {
   #: @[72:18]
       n2 = load &self @[72:18]
-      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.field_1 @[72:18]
+      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.age @[72:18]
       n1 = load &age @[72:18]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[72:18]
+      store n3.__infer_swift_type<TSi>.weight <- n1 @[72:18]
       n5 = $s5Hello6PersonCMa(0) @[73:23]
       jmp 7::ret @[73:23]
       
@@ -610,7 +610,7 @@ define .plain_name = "onStartServiceResponse.get" $s5Hello28DeviceAppManagerDele
       n2 = load &var1 @[433:0]
       n1 = n2.__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.field_1 @[433:0]
       n4 = load n1 @[434:0]
-      n3 = load n4.__infer_swift_type<swift::function>.field_0 @[434:0]
+      n3 = load n4.__infer_swift_type<swift::function>.onStartServiceResponse @[434:0]
       n6 = load n1 @[435:0]
       n5 = load n6.__infer_swift_type<swift::function>.field_1 @[435:0]
       n7 = $builtins.llvm_nondet() @[436:0]
@@ -629,7 +629,7 @@ define .plain_name = "init" $s5Hello28DeviceAppManagerDelegateImplC22onStartServ
       n6 = n7.__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.field_1 @[210:37]
       n9 = load n6 @[210:37]
       n8 = load &var1 @[210:37]
-      store n9.__infer_swift_type<swift::function>.field_0 <- n8 @[210:37]
+      store n9.__infer_swift_type<swift::function>.onStartServiceResponse <- n8 @[210:37]
       n11 = load n6 @[210:37]
       n10 = load &var2 @[210:37]
       store n11.__infer_swift_type<swift::function>.field_1 <- n10 @[210:37]
@@ -718,8 +718,8 @@ define .plain_name = "test_optional_crash_bad" $s5Hello23test_optional_crash_bad
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[156:18]
       
   #9: @[156:20]
-      n9 = load n4.__infer_swift_type<T5Hello6PersonC,Person>.field_1 @[156:20]
-      n7 = load n9.__infer_swift_type<TSi>.field_0 @[156:20]
+      n9 = load n4.__infer_swift_type<T5Hello6PersonC,Person>.age @[156:20]
+      n7 = load n9.__infer_swift_type<TSi>.weight @[156:20]
       ret n7 @[156:5]
       
 } @?
@@ -915,8 +915,8 @@ define .plain_name = "test_optional_person" $s5Hello20test_optional_personySiAA6
       
   #9: @[391:0]
       store &actualPerson <- n4 @[391:0]
-      n10 = load n4.__infer_swift_type<T5Hello6PersonC,Person>.field_1 @[137:29]
-      n8 = load n10.__infer_swift_type<TSi>.field_0 @[137:29]
+      n10 = load n4.__infer_swift_type<T5Hello6PersonC,Person>.age @[137:29]
+      n8 = load n10.__infer_swift_type<TSi>.weight @[137:29]
       jmp 9::jmp::15 @[137:9]
       
   #9::jmp::15: @[137:9]
@@ -952,7 +952,7 @@ define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(self: *__infer_s
   #: @[184:14]
       n2 = load &self @[184:14]
       n3 = load n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_1 @[184:14]
-      store n3.__infer_swift_type<TSi>.field_0 <- 10 @[184:14]
+      store n3.__infer_swift_type<TSi>.weight <- 10 @[184:14]
       n5 = load &self @[186:9]
       n4 = n5.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_2 @[186:9]
       n7 = load n4 @[376:0]
@@ -1047,7 +1047,7 @@ define .plain_name = "id.set" .method_offset = "13" __infer_swift_type<T5Hello18
       n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_1 @[342:0]
       n4 = load n1 @[344:0]
       n3 = load &var1 @[344:0]
-      store n4.__infer_swift_type<TSi>.field_0 <- n3 @[344:0]
+      store n4.__infer_swift_type<TSi>.weight <- n3 @[344:0]
       ret null @[346:0]
       
 } @?
@@ -1060,7 +1060,7 @@ define .plain_name = "id.get" .method_offset = "12" __infer_swift_type<T5Hello18
       n2 = load &var1 @[337:0]
       n1 = n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.field_1 @[337:0]
       n4 = load n1 @[339:0]
-      n3 = load n4.__infer_swift_type<TSi>.field_0 @[339:0]
+      n3 = load n4.__infer_swift_type<TSi>.weight @[339:0]
       ret n3 @[341:0]
       
 } @?
@@ -1235,10 +1235,10 @@ define .plain_name = "setEmployeeWeight" $s5Hello17setEmployeeWeightyS2iF(weight
   #$s5Hello8EmployeeV6weightSivs::void::ret: @[57:17]
       n15 = load &john @[57:17]
       n16 = load n15.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[57:17]
-      n14 = load n16.__infer_swift_type<TSi>.field_0 @[57:17]
+      n14 = load n16.__infer_swift_type<TSi>.weight @[57:17]
       n18 = load &john @[57:17]
       n19 = load n18.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[57:17]
-      n17 = load n19.__infer_swift_type<TSi>.field_0 @[57:17]
+      n17 = load n19.__infer_swift_type<TSi>.weight @[57:17]
       n22 = $s5Hello8EmployeeV6weightSivg(n14, n17) @[57:17]
       jmp 17::ret @[57:17]
       
@@ -1249,11 +1249,11 @@ define .plain_name = "setEmployeeWeight" $s5Hello17setEmployeeWeightyS2iF(weight
       n6 = load &john @[55:16]
       n7 = load n6.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[55:16]
       n5 = load n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 @[55:16]
-      store n7.__infer_swift_type<TSi>.field_0 <- n5 @[55:16]
+      store n7.__infer_swift_type<TSi>.weight <- n5 @[55:16]
       n10 = load &john @[55:16]
       n11 = load n10.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[55:16]
       n9 = load n3.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 @[55:16]
-      store n11.__infer_swift_type<TSi>.field_0 <- n9 @[55:16]
+      store n11.__infer_swift_type<TSi>.weight <- n9 @[55:16]
       n12 = load &weight @[56:17]
       n13 = load &john @[56:17]
       _ = $s5Hello8EmployeeV6weightSivs(n12, n13) @[56:17]
@@ -1283,8 +1283,8 @@ define .plain_name = "create_student" $s5Hello14create_studentSiyF() : int {
       jmp 3::ret @[11:12]
       
   #3::ret: @[11:41]
-      n10 = load n7.__infer_swift_type<T5Hello7StudentC,Student>.field_1 @[11:41]
-      n8 = load n10.__infer_swift_type<TSi>.field_0 @[11:41]
+      n10 = load n7.__infer_swift_type<T5Hello7StudentC,Student>.age @[11:41]
+      n8 = load n10.__infer_swift_type<TSi>.weight @[11:41]
       ret n8 @[11:5]
       
 } @?
@@ -1482,8 +1482,8 @@ declare .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T
 define .plain_name = "age.get" $s5Hello10IndividualC3ageSivg(var1: *__infer_swift_type<T5Hello10IndividualC,Individual>) : int {
   #: @[235:0]
       n2 = load &var1 @[235:0]
-      n3 = load n2.__infer_swift_type<T5Hello10IndividualC,Individual>.field_1 @[235:0]
-      n1 = load n3.__infer_swift_type<TSi>.field_0 @[235:0]
+      n3 = load n2.__infer_swift_type<T5Hello10IndividualC,Individual>.age @[235:0]
+      n1 = load n3.__infer_swift_type<TSi>.weight @[235:0]
       ret n1 @[236:0]
       
 } @?
@@ -1492,9 +1492,9 @@ define .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfc(age: *__infer_swi
   #: @[234:0]
       n1 = $builtins.llvm_nondet() @[234:0]
       n3 = load &self @[103:18]
-      n4 = load n3.__infer_swift_type<T5Hello10IndividualC,Individual>.field_1 @[103:18]
+      n4 = load n3.__infer_swift_type<T5Hello10IndividualC,Individual>.age @[103:18]
       n2 = load &age @[103:18]
-      store n4.__infer_swift_type<TSi>.field_0 <- n2 @[103:18]
+      store n4.__infer_swift_type<TSi>.weight <- n2 @[103:18]
       n5 = load &self @[104:5]
       ret n5 @[104:5]
       
@@ -1949,7 +1949,7 @@ type __infer_swift_type<T5Hello10CustomViewC,CustomView> = {field_0: *__infer_sw
 type __infer_swift_type<T5Hello10CustomViewCSg> = {field_0: int}
 
 type __infer_swift_type<T5Hello10IndividualC,Individual> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                            field_1: *__infer_swift_type<TSi>;
+                                                            age: *__infer_swift_type<TSi>;
                                                             field_2: .weak *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello10IndividualCSg> = {field_0: int}
@@ -1979,11 +1979,11 @@ type __infer_swift_type<T5Hello5StateC,State> = {field_0: *__infer_swift_type<sw
 type __infer_swift_type<T5Hello5StateCSg> = {field_0: int}
 
 type __infer_swift_type<T5Hello6PersonC,Person> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                   field_1: *__infer_swift_type<TSi>;
+                                                   age: *__infer_swift_type<TSi>;
                                                    field_2: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello7StudentC,Student> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                     field_1: *__infer_swift_type<TSi>;
+                                                     age: *__infer_swift_type<TSi>;
                                                      field_2: *__infer_swift_type<TSi>}
 
 type __infer_swift_type<T5Hello8EmployeeV,Employee> = {field_0: *__infer_swift_type<TSi>;
@@ -1991,7 +1991,7 @@ type __infer_swift_type<T5Hello8EmployeeV,Employee> = {field_0: *__infer_swift_t
 
 type __infer_swift_type<TIeg_Sg> = {field_0: int[]}
 
-type __infer_swift_type<TSi> = {field_0: int}
+type __infer_swift_type<TSi> = {weight: int}
 
 type __infer_swift_type<TSiSg> = {field_0: int; field_1: int}
 
@@ -2007,7 +2007,7 @@ type __infer_swift_type<swift::full_boxmetadata> = {field_0: *__infer_swift_type
                                                     field_3: int;
                                                     field_4: *__infer_swift_type<ptr_elt>}
 
-type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+type __infer_swift_type<swift::function> = {onStartServiceResponse: *__infer_swift_type<ptr_elt>;
                                             field_1: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;

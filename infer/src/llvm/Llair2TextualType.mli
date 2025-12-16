@@ -9,24 +9,6 @@ open! IStd
 open! Llair
 module ProcState = Llair2TextualState
 
-val to_textual_type_name : Textual.Lang.t -> ?plain_name:label -> label -> Textual.TypeName.t
-
-val mangled_name_of_type_name : Textual.TypeName.t -> label option
-
-val plain_name_of_type_name : Textual.TypeName.t -> label option
-
-val update_type_name_with_mangled_name :
-  mangled_name:string -> Textual.TypeName.t -> Textual.TypeName.t
-
-val struct_name_of_mangled_name :
-  Textual.Lang.t -> ProcState.structMap -> label -> Textual.TypeName.t
-
-val struct_name_of_plain_name : ProcState.structMap -> label -> Textual.TypeName.t option
-
-val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
-
-val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
-
 val to_annotated_textual_typ :
   Textual.Lang.t -> struct_map:ProcState.structMap -> Typ.t -> Textual.Typ.annotated
 
@@ -43,12 +25,13 @@ val lookup_field_type :
   -> Textual.qualified_fieldname
   -> Textual.Typ.t option
 
-val tuple_field_prefix : string
-
 val signature_type_to_textual_typ :
   string Hash_set.t -> Textual.Lang.t -> string -> Textual.Typ.t option
 
 val update_struct_map : string Hash_set.t -> ProcState.structMap -> ProcState.structMap
+
+val update_struct_map_with_field_names :
+  ProcState.fieldOffsetMap -> ProcState.structMap -> ProcState.structMap
 
 val update_type :
   update_struct_name:(Textual.TypeName.t -> Textual.TypeName.t) -> Textual.Typ.t -> Textual.Typ.t

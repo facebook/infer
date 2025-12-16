@@ -31,6 +31,14 @@ module ClassNameOffsetMap : Stdlib.Hashtbl.S with type key = ClassNameOffset.t
 
 type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
+module FieldOffset : sig
+  type t = {class_name: Textual.TypeName.t; offset: int}
+end
+
+module FieldOffsetMap : Stdlib.Hashtbl.S with type key = FieldOffset.t
+
+type fieldOffsetMap = Textual.FieldName.t FieldOffsetMap.t
+
 module ClassMethodIndex : sig
   type t = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
 
@@ -48,7 +56,8 @@ module ModuleState : sig
     ; globals_map: globalMap
     ; lang: Textual.Lang.t
     ; method_class_index: methodClassIndex
-    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t }
+    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
+    ; field_offset_map: fieldOffsetMap }
 
   val init :
        functions:(Llair.FuncName.t * Llair.func) list
@@ -59,6 +68,7 @@ module ModuleState : sig
     -> lang:Textual.Lang.t
     -> method_class_index:methodClassIndex
     -> class_name_offset_map:Textual.QualifiedProcName.t ClassNameOffsetMap.t
+    -> field_offset_map:fieldOffsetMap
     -> t
 end
 
