@@ -24,6 +24,7 @@ val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldnam
 module OffsetIndex : sig
   val build_field_offset_map :
        Textual.Lang.t
+    -> mangled_map:Textual.TypeName.t IString.Map.t
     -> State.structMap
     -> (FuncName.t * func) list
     -> Textual.FieldName.t State.FieldOffsetMap.t

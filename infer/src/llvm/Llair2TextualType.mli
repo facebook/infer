@@ -9,10 +9,29 @@ open! IStd
 open! Llair
 module ProcState = Llair2TextualState
 
+val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
+
+val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
+
 val to_annotated_textual_typ :
+     Textual.Lang.t
+  -> mangled_map:Textual.TypeName.t IString.Map.t
+  -> struct_map:ProcState.structMap
+  -> Typ.t
+  -> Textual.Typ.annotated
+
+val to_annotated_textual_typ_without_mangled_map :
   Textual.Lang.t -> struct_map:ProcState.structMap -> Typ.t -> Textual.Typ.annotated
 
-val to_textual_typ : Textual.Lang.t -> struct_map:ProcState.structMap -> Typ.t -> Textual.Typ.t
+val to_textual_typ :
+     Textual.Lang.t
+  -> mangled_map:Textual.TypeName.t IString.Map.t
+  -> struct_map:ProcState.structMap
+  -> Typ.t
+  -> Textual.Typ.t
+
+val to_textual_typ_without_mangled_map :
+  Textual.Lang.t -> struct_map:ProcState.structMap -> Typ.t -> Textual.Typ.t
 
 val join_typ : Textual.Typ.t option -> Textual.Typ.t option -> Textual.Typ.t option
 
@@ -36,7 +55,12 @@ val update_struct_map_with_field_names :
 val update_type :
   update_struct_name:(Textual.TypeName.t -> Textual.TypeName.t) -> Textual.Typ.t -> Textual.Typ.t
 
-val update_signature_type :
-  Textual.Lang.t -> ProcState.structMap -> Textual.TypeName.t -> Textual.TypeName.t
+val update_signature_types :
+     Textual.Lang.t
+  -> mangled_map:Textual.TypeName.t IString.Map.t
+  -> struct_map:'a Textual.TypeName.Map.t
+  -> Textual.Typ.annotated list option
+  -> Textual.Typ.annotated
+  -> Textual.Typ.annotated list option * Textual.Typ.annotated
 
 val pp_signature_structs : Format.formatter -> string Hash_set.t -> unit

@@ -60,20 +60,43 @@ let rec update_type_name_with_mangled_name ~mangled_name (type_name : Textual.Ty
   else type_name
 
 
-let struct_name_of_mangled_name lang struct_map name =
-  let class_opt = ref None in
-  let _ =
-    Textual.TypeName.Map.exists
-      (fun struct_name _ ->
-        match mangled_name_of_type_name struct_name with
-        | Some mangled_name when String.equal mangled_name name ->
-            class_opt := Some struct_name ;
-            true
-        | _ ->
-            false )
-      struct_map
+let struct_name_of_mangled_name lang ~mangled_map struct_map name =
+  let struct_name_of_mangled_name_inner lang struct_map name =
+    let class_opt = ref None in
+    let _ =
+      Textual.TypeName.Map.exists
+        (fun struct_name _ ->
+          match mangled_name_of_type_name struct_name with
+          | Some mangled_name when String.equal mangled_name name ->
+              class_opt := Some struct_name ;
+              true
+          | _ ->
+              false )
+        struct_map
+    in
+    match !class_opt with None -> to_textual_type_name lang name | Some class_ -> class_
   in
-  match !class_opt with None -> to_textual_type_name lang name | Some class_ -> class_
+  match mangled_map with
+  | None ->
+      struct_name_of_mangled_name_inner lang struct_map name
+  | Some mangled_map -> (
+    match IString.Map.find_opt name mangled_map with
+    | Some struct_name ->
+        struct_name
+    | None ->
+        to_textual_type_name lang name )
+
+
+let compute_mangled_map struct_map =
+  let mangled_map = IString.Map.empty in
+  let add_mangled_name struct_name _ acc =
+    match mangled_name_of_type_name struct_name with
+    | Some mangled_name ->
+        IString.Map.add mangled_name struct_name acc
+    | None ->
+        acc
+  in
+  Textual.TypeName.Map.fold add_mangled_name struct_map mangled_map
 
 
 let struct_name_of_plain_name struct_map name =

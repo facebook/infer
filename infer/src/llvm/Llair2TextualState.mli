@@ -51,6 +51,7 @@ module ModuleState : sig
   type t = private
     { functions: (Llair.FuncName.t * Llair.func) list
     ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
+    ; mangled_map: Textual.TypeName.t IString.Map.t
     ; proc_decls: Textual.ProcDecl.t list
     ; proc_map: procMap
     ; globals_map: globalMap
@@ -62,6 +63,7 @@ module ModuleState : sig
   val init :
        functions:(Llair.FuncName.t * Llair.func) list
     -> struct_map:Textual.Struct.t Textual.TypeName.Map.t
+    -> mangled_map:Textual.TypeName.t IString.Map.t
     -> proc_decls:Textual.ProcDecl.t list
     -> proc_map:procMap
     -> globals_map:globalMap

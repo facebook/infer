@@ -68,6 +68,7 @@ module ModuleState = struct
   type t =
     { functions: (Llair.FuncName.t * Llair.func) list
     ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
+    ; mangled_map: Textual.TypeName.t IString.Map.t
     ; proc_decls: Textual.ProcDecl.t list
     ; proc_map: procMap
     ; globals_map: Llair.GlobalDefn.t VarMap.t
@@ -76,10 +77,11 @@ module ModuleState = struct
     ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
     ; field_offset_map: fieldOffsetMap }
 
-  let init ~functions ~struct_map ~proc_decls ~proc_map ~globals_map ~lang ~method_class_index
-      ~class_name_offset_map ~field_offset_map =
+  let init ~functions ~struct_map ~mangled_map ~proc_decls ~proc_map ~globals_map ~lang
+      ~method_class_index ~class_name_offset_map ~field_offset_map =
     { functions
     ; struct_map
+    ; mangled_map
     ; proc_decls
     ; proc_map
     ; globals_map

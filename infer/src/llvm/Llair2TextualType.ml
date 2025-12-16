@@ -16,18 +16,69 @@ let type_name_of_type lang typ =
   TypeName.to_textual_type_name lang (Format.asprintf "%a" Textual.Typ.pp typ)
 
 
-let rec translate_struct lang ~struct_map ~tuple struct_name elements =
-  let fields = to_textual_field_decls lang ~tuple ~struct_map struct_name elements in
-  let struct_ = {Textual.Struct.name= struct_name; supers= []; fields; attributes= []} in
-  struct_
+let field_of_pos type_name pos =
+  let name = Format.asprintf "field_%s" (Int.to_string pos) in
+  Textual.{enclosing_class= type_name; name= FieldName.of_string name}
 
 
-and to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
+let tuple_field_prefix = "__infer_tuple_field_"
+
+let tuple_field_of_pos type_name pos =
+  let name = Format.sprintf "%s%s" tuple_field_prefix (Int.to_string pos) in
+  Textual.{enclosing_class= type_name; name= FieldName.of_string name}
+
+
+let rec to_textual_typ lang ~mangled_map ~struct_map (typ : Llair.Typ.t) =
+  match typ with
+  | Function {return; args} ->
+      let params_type =
+        StdUtils.iarray_to_list args |> List.map ~f:(to_textual_typ lang ~mangled_map ~struct_map)
+      in
+      let return_type =
+        Option.value_map return ~default:Textual.Typ.Void
+          ~f:(to_textual_typ lang ~mangled_map ~struct_map)
+      in
+      Textual.Typ.Fun (Some {params_type; return_type})
+  | Integer _ ->
+      Textual.Typ.Int
+  | Float _ ->
+      Textual.Typ.Float
+  | Pointer {elt} ->
+      Textual.Typ.Ptr (to_textual_typ lang ~mangled_map ~struct_map elt)
+  | Array {elt} ->
+      Textual.Typ.Array (to_textual_typ lang ~mangled_map ~struct_map elt)
+  | Tuple {elts} ->
+      let tuple_name = to_textual_tuple_name lang ~mangled_map ~struct_map elts in
+      Textual.Typ.(Ptr (Struct tuple_name))
+  | Struct {name} ->
+      let struct_name = TypeName.struct_name_of_mangled_name lang ~mangled_map struct_map name in
+      if Textual.Lang.is_c lang then Textual.Typ.Struct struct_name
+      else Textual.Typ.(Ptr (Struct struct_name))
+  | Opaque {name} ->
+      (* From llair's docs: Uniquely named aggregate type whose definition is hidden. *)
+      let struct_name = TypeName.struct_name_of_mangled_name lang ~mangled_map struct_map name in
+      Textual.Typ.Struct struct_name
+
+
+and to_textual_tuple_name lang ~mangled_map ~struct_map elements =
+  let elts = StdUtils.iarray_to_list elements in
+  let _, typs = List.sort ~compare:(fun (n1, _) (n2, _) -> Int.compare n1 n2) elts |> List.unzip in
+  let textual_types =
+    List.map
+      ~f:(fun typ ->
+        let textual_typ = to_textual_typ lang ~mangled_map ~struct_map typ in
+        type_name_of_type lang textual_typ )
+      typs
+  in
+  Textual.TypeName.mk_swift_tuple_type_name textual_types
+
+
+let to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
   let to_textual_field_decl pos (_, typ) =
     let qualified_name =
       if tuple then Field.tuple_field_of_pos struct_name pos else Field.field_of_pos struct_name pos
     in
-    let textual_typ = to_textual_typ lang ~struct_map typ in
+    let textual_typ = to_textual_typ lang ~mangled_map:None ~struct_map typ in
     let attributes, textual_typ =
       match textual_typ with
       | Textual.Typ.(Ptr (Struct name)) -> (
@@ -46,53 +97,10 @@ and to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
   List.mapi ~f:to_textual_field_decl fields
 
 
-and to_textual_typ lang ~struct_map (typ : Llair.Typ.t) =
-  match typ with
-  | Function {return; args} ->
-      let params_type =
-        StdUtils.iarray_to_list args |> List.map ~f:(to_textual_typ lang ~struct_map)
-      in
-      let return_type =
-        Option.value_map ~f:(to_textual_typ lang ~struct_map) return ~default:Textual.Typ.Void
-      in
-      Textual.Typ.Fun (Some {params_type; return_type})
-  | Integer _ ->
-      Textual.Typ.Int
-  | Float _ ->
-      Textual.Typ.Float
-  | Pointer {elt} ->
-      Textual.Typ.Ptr (to_textual_typ lang ~struct_map elt)
-  | Array {elt} ->
-      Textual.Typ.Array (to_textual_typ lang ~struct_map elt)
-  | Tuple {elts} ->
-      let tuple_name = to_textual_tuple_name lang ~struct_map elts in
-      Textual.Typ.(Ptr (Struct tuple_name))
-  | Struct {name} ->
-      let struct_name = TypeName.struct_name_of_mangled_name lang struct_map name in
-      if Textual.Lang.is_c lang then Textual.Typ.Struct struct_name
-      else Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
-  | Opaque {name} ->
-      (* From llair's docs: Uniquely named aggregate type whose definition is hidden. *)
-      let struct_name = TypeName.struct_name_of_mangled_name lang struct_map name in
-      Textual.Typ.Struct struct_name
-
-
-and to_textual_tuple_name lang ~struct_map elements =
-  let elts = StdUtils.iarray_to_list elements in
-  let _, typs = List.sort ~compare:(fun (n1, _) (n2, _) -> Int.compare n1 n2) elts |> List.unzip in
-  let textual_types =
-    List.map
-      ~f:(fun typ ->
-        let textual_typ = to_textual_typ lang ~struct_map typ in
-        type_name_of_type lang textual_typ )
-      typs
-  in
-  Textual.TypeName.mk_swift_tuple_type_name textual_types
-
-
-let to_annotated_textual_typ lang ~struct_map llair_typ =
-  let typ = to_textual_typ lang ~struct_map llair_typ in
-  {typ; Textual.Typ.attributes= []}
+let translate_struct lang ~struct_map ~tuple struct_name elements =
+  let fields = to_textual_field_decls lang ~tuple ~struct_map struct_name elements in
+  let struct_ = {Textual.Struct.name= struct_name; supers= []; fields; attributes= []} in
+  struct_
 
 
 let lookup_field_type ~struct_map struct_name field_name =
@@ -118,7 +126,7 @@ let translate_types_env lang (types_defns : Llair.Typ.t list) =
         let struct_ = translate_struct ~struct_map lang ~tuple:false struct_name elts in
         Textual.TypeName.Map.add struct_name struct_ struct_map
     | Tuple {elts} ->
-        let tuple_name = to_textual_tuple_name ~struct_map lang elts in
+        let tuple_name = to_textual_tuple_name ~mangled_map:None ~struct_map lang elts in
         let struct_ = translate_struct ~struct_map lang ~tuple:true tuple_name elts in
         Textual.TypeName.Map.add tuple_name struct_ struct_map
     | Opaque _ ->
@@ -218,31 +226,6 @@ let update_struct_name signature_structs struct_name =
       struct_name
 
 
-let update_signature_type lang struct_map type_name =
-  match TypeName.plain_name_of_type_name type_name with
-  | Some plain_name -> (
-    match TypeName.struct_name_of_plain_name struct_map plain_name with
-    | Some struct_name -> (
-      match TypeName.mangled_name_of_type_name struct_name with
-      | Some mangled_name ->
-          TypeName.update_type_name_with_mangled_name ~mangled_name type_name
-      | None ->
-          type_name )
-    | None ->
-        type_name )
-  | None -> (
-    match TypeName.mangled_name_of_type_name type_name with
-    | Some mangled_name -> (
-        let struct_name = TypeName.struct_name_of_mangled_name lang struct_map mangled_name in
-        match TypeName.plain_name_of_type_name struct_name with
-        | Some plain_name ->
-            TypeName.update_type_name_with_plain_name ~plain_name struct_name
-        | None ->
-            type_name )
-    | None ->
-        type_name )
-
-
 let rec update_type ~update_struct_name typ =
   match typ with
   | Textual.Typ.Struct struct_name ->
@@ -284,6 +267,61 @@ let update_struct_map signature_structs struct_map =
     Textual.TypeName.Map.add new_struct_name struct_ struct_map
   in
   Textual.TypeName.Map.fold update_struct_map struct_map Textual.TypeName.Map.empty
+
+
+(** remove optional type from the signature *)
+let struct_name_of_mangled_name lang ~mangled_map struct_map name =
+  TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
+
+
+let update_signature_type lang ~mangled_map ~struct_map type_name =
+  (let open IOption.Let_syntax in
+   match TypeName.plain_name_of_type_name type_name with
+   | Some plain_name ->
+       let* struct_name = TypeName.struct_name_of_plain_name struct_map plain_name in
+       let+ mangled_name = TypeName.mangled_name_of_type_name struct_name in
+       TypeName.update_type_name_with_mangled_name ~mangled_name type_name
+   | None ->
+       let* mangled_name = TypeName.mangled_name_of_type_name type_name in
+       let struct_name = struct_name_of_mangled_name lang ~mangled_map struct_map mangled_name in
+       let+ plain_name = TypeName.plain_name_of_type_name struct_name in
+       TypeName.update_type_name_with_plain_name ~plain_name struct_name )
+  |> Option.value ~default:type_name
+
+
+let update_signature_types lang ~mangled_map ~struct_map formal_types return_type =
+  let update_signature_type typ =
+    let typ =
+      update_type typ.Textual.Typ.typ
+        ~update_struct_name:(update_signature_type lang ~mangled_map ~struct_map)
+    in
+    Textual.Typ.mk_without_attributes typ
+  in
+  let update formal_types = List.map ~f:update_signature_type formal_types in
+  let formal_types = Option.map ~f:update formal_types in
+  let return_type = update_signature_type return_type in
+  (formal_types, return_type)
+
+
+let to_annotated_textual_typ lang ~mangled_map ~struct_map llair_typ =
+  let typ = to_textual_typ lang ~mangled_map ~struct_map llair_typ in
+  {typ; Textual.Typ.attributes= []}
+
+
+let to_textual_typ_without_mangled_map lang ~struct_map llair_typ =
+  to_textual_typ lang ~mangled_map:None ~struct_map llair_typ
+
+
+let to_textual_typ lang ~mangled_map ~struct_map llair_typ =
+  to_textual_typ lang ~mangled_map:(Some mangled_map) ~struct_map llair_typ
+
+
+let to_annotated_textual_typ_without_mangled_map lang ~struct_map llair_typ =
+  to_annotated_textual_typ lang ~mangled_map:None ~struct_map llair_typ
+
+
+let to_annotated_textual_typ lang ~mangled_map ~struct_map llair_typ =
+  to_annotated_textual_typ lang ~mangled_map:(Some mangled_map) ~struct_map llair_typ
 
 
 (** Update struct field names using the field offset map. This replaces generic field_N names with
