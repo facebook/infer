@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module State = Llair2TextualState
 
 let to_textual_type_name lang ?plain_name name =
   if Textual.Lang.is_swift lang then Textual.TypeName.mk_swift_type_name ?plain_name name

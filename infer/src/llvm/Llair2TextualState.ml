@@ -13,13 +13,15 @@ module RegMap = Llair.Exp.Reg.Map
 
 let get_element_ptr_offset_prefix = "getelementptr_offset"
 
-type structMap = Textual.Struct.t Textual.TypeName.Map.t
+type struct_map = Textual.Struct.t Textual.TypeName.Map.t
 
-type globalMap = Llair.GlobalDefn.t Textual.VarName.Map.t
+type globals_map = Llair.GlobalDefn.t Textual.VarName.Map.t
 
-type procMap = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
+type proc_map = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
-type methodClassIndex = Textual.TypeName.t Textual.ProcName.Hashtbl.t
+type mangled_map = Textual.TypeName.t IString.Map.t
+
+type method_class_index = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
 module ClassNameOffset = struct
   type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare, hash, equal]
@@ -27,7 +29,7 @@ end
 
 module ClassNameOffsetMap = Stdlib.Hashtbl.Make (ClassNameOffset)
 
-type classNameOffsetMap = Textual.QualifiedProcName.t ClassNameOffsetMap.t
+type class_name_offset_map = Textual.QualifiedProcName.t ClassNameOffsetMap.t
 
 (* Map from (class_name, offset) to field_name for struct fields *)
 module FieldOffset = struct
@@ -36,7 +38,7 @@ end
 
 module FieldOffsetMap = Stdlib.Hashtbl.Make (FieldOffset)
 
-type fieldOffsetMap = Textual.FieldName.t FieldOffsetMap.t
+type field_offset_map = Textual.FieldName.t FieldOffsetMap.t
 
 module ClassMethodIndex = struct
   type t = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
@@ -67,15 +69,15 @@ end
 module ModuleState = struct
   type t =
     { functions: (Llair.FuncName.t * Llair.func) list
-    ; struct_map: Textual.Struct.t Textual.TypeName.Map.t
-    ; mangled_map: Textual.TypeName.t IString.Map.t
+    ; struct_map: struct_map
+    ; mangled_map: mangled_map
     ; proc_decls: Textual.ProcDecl.t list
-    ; proc_map: procMap
-    ; globals_map: Llair.GlobalDefn.t VarMap.t
+    ; proc_map: proc_map
+    ; globals_map: globals_map
     ; lang: Textual.Lang.t
-    ; method_class_index: methodClassIndex
-    ; class_name_offset_map: Textual.QualifiedProcName.t ClassNameOffsetMap.t
-    ; field_offset_map: fieldOffsetMap }
+    ; method_class_index: method_class_index
+    ; class_name_offset_map: class_name_offset_map
+    ; field_offset_map: field_offset_map }
 
   let init ~functions ~struct_map ~mangled_map ~proc_decls ~proc_map ~globals_map ~lang
       ~method_class_index ~class_name_offset_map ~field_offset_map =

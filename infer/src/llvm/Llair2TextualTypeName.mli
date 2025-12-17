@@ -6,6 +6,7 @@
  *)
 open! IStd
 open! Llair
+module State = Llair2TextualState
 
 val to_textual_type_name : Textual.Lang.t -> ?plain_name:label -> label -> Textual.TypeName.t
 
@@ -15,14 +16,14 @@ val plain_name_of_type_name : Textual.TypeName.t -> label option
 
 val struct_name_of_mangled_name :
      Textual.Lang.t
-  -> mangled_map:Textual.TypeName.t IString.Map.t option
-  -> 'a Textual.TypeName.Map.t
+  -> mangled_map:State.mangled_map option
+  -> State.struct_map
   -> string
   -> Textual.TypeName.t
 
-val struct_name_of_plain_name : 'a Textual.TypeName.Map.t -> string -> Textual.TypeName.t option
+val struct_name_of_plain_name : State.struct_map -> string -> Textual.TypeName.t option
 
-val compute_mangled_map : 'a Textual.TypeName.Map.t -> Textual.TypeName.t IString.Map.t
+val compute_mangled_map : State.struct_map -> State.mangled_map
 
 val update_type_name_with_mangled_name :
   mangled_name:string -> Textual.TypeName.t -> Textual.TypeName.t

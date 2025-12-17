@@ -17,15 +17,15 @@ val tuple_field_prefix : string
 val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
 val field_of_pos_with_map :
-  Llair2TextualState.fieldOffsetMap -> Textual.TypeName.t -> int -> Textual.qualified_fieldname
+  Llair2TextualState.field_offset_map -> Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
 val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
 module OffsetIndex : sig
   val build_field_offset_map :
        Textual.Lang.t
-    -> mangled_map:Textual.TypeName.t IString.Map.t
-    -> State.structMap
+    -> mangled_map:State.mangled_map
+    -> State.struct_map
     -> (FuncName.t * func) list
     -> Textual.FieldName.t State.FieldOffsetMap.t
 end
