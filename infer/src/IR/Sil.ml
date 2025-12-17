@@ -46,6 +46,7 @@ type instr_metadata =
   | Nullify of Pvar.t * Location.t
   | LoopBackEdge of {header_id: int}
   | LoopEntry of {header_id: int}
+  | LoopExit of {header_id: int}
   | Skip
   | TryEntry of {try_id: int; loc: Location.t}
   | TryExit of {try_id: int; loc: Location.t}
@@ -89,7 +90,7 @@ let location_of_instr_metadata = function
   | TryExit {loc}
   | VariableLifetimeBegins {loc} ->
       loc
-  | Skip | LoopEntry _ | LoopBackEdge _ ->
+  | Skip | LoopEntry _ | LoopExit _ | LoopBackEdge _ ->
       Location.dummy
 
 
@@ -107,7 +108,7 @@ let exps_of_instr_metadata = function
       List.map ~f:Var.to_exp vars
   | Nullify (pvar, _) ->
       [Exp.Lvar pvar]
-  | Skip | LoopEntry _ | LoopBackEdge _ | TryEntry _ | TryExit _ ->
+  | Skip | LoopEntry _ | LoopExit _ | LoopBackEdge _ | TryEntry _ | TryExit _ ->
       []
   | VariableLifetimeBegins {pvar} ->
       [Exp.Lvar pvar]
@@ -138,6 +139,8 @@ let pp_instr_metadata pe f = function
       F.fprintf f "NULLIFY(%a); [%a]" (Pvar.pp pe) pvar Location.pp loc
   | LoopEntry {header_id} ->
       F.fprintf f "LOOP_ENTRY(header=%d)" header_id
+  | LoopExit {header_id} ->
+      F.fprintf f "LOOP_EXIT(header=%d)" header_id
   | LoopBackEdge {header_id} ->
       F.fprintf f "LOOP_BACK_EDGE(header=%d)" header_id
   | Skip ->

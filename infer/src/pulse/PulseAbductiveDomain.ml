@@ -134,6 +134,11 @@ let init_loop_header_info id ({path_condition; loop_header_info} as astate) =
   {astate with path_condition; loop_header_info}
 
 
+let remove_loop_header_info id ({loop_header_info} as astate) =
+  let loop_header_info = PulseLoopHeaderInfo.remove_loop_info id loop_header_info in
+  {astate with loop_header_info}
+
+
 let map_loop_header_formulas ({loop_header_info} as astate) ~f =
   let loop_header_info = PulseLoopHeaderInfo.map_formulas ~f loop_header_info in
   {astate with loop_header_info}

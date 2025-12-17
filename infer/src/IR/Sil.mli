@@ -35,6 +35,7 @@ type instr_metadata =
   | Nullify of Pvar.t * Location.t  (** nullify stack variable *)
   | LoopBackEdge of {header_id: int}  (** next node is the loop header of the current loop *)
   | LoopEntry of {header_id: int}  (** next node is the loop header of nested loop *)
+  | LoopExit of {header_id: int}  (** reaching the current node requires to exit this loop header *)
   | Skip  (** no-op *)
   | TryEntry of {try_id: int; loc: Location.t}  (** entry of C++ try block *)
   | TryExit of {try_id: int; loc: Location.t}  (** exit of C++ try block *)

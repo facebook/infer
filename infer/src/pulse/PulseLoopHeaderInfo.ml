@@ -80,4 +80,6 @@ let init_loop_info id map =
   Procdesc.IdMap.add id {local_path_condition= Formula.ttrue; stack= []} map
 
 
+let remove_loop_info id map = Procdesc.IdMap.remove id map
+
 let get_iteration_index id map = (get id map).stack |> List.length

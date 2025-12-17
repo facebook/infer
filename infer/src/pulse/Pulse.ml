@@ -1523,6 +1523,10 @@ module PulseTransferFunctions = struct
           let id = Procdesc.Node.unsafe_int_to_id header_id in
           let astate = AbductiveDomain.init_loop_header_info id astate in
           ([ContinueProgram astate], path, astate_n)
+      | Metadata (LoopExit {header_id}) ->
+          let id = Procdesc.Node.unsafe_int_to_id header_id in
+          let astate = AbductiveDomain.init_loop_header_info id astate in
+          ([ContinueProgram astate], path, astate_n)
       | Metadata (LoopBackEdge {header_id}) ->
           let id = Procdesc.Node.unsafe_int_to_id header_id in
           let timestamp = path.PathContext.timestamp in

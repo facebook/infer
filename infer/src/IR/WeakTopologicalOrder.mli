@@ -45,6 +45,8 @@ module type PreProcCfg = sig
     val id : t -> id
 
     module IdMap : PrettyPrintable.PPMap with type key = id
+
+    module IdSet : PrettyPrintable.PPSet with type elt = id
   end
 
   type t
@@ -79,3 +81,14 @@ module type Make = functor (CFG : PreProcCfg) -> S with module CFG = CFG
 (** Implementation of Bourdoncle's "Hierarchical decomposition of a directed graph into strongly
     connected components and subcomponents". See [Bou] Figure 4, page 10. *)
 module Bourdoncle_SCC : Make
+
+(** Iterator module that traverses nodes in a weak topological order partition while tracking loop
+    structure. For each edge (node -> succ), it identifies which loops are exited when moving from
+    node to succ by checking if succ is outside the local scope of any enclosing loops. *)
+module Iterator : functor (CFG : PreProcCfg) -> sig
+  val iter_nodes :
+       CFG.Node.t Partition.t
+    -> f:(node:CFG.Node.t -> succ:CFG.Node.t -> exited_loops:CFG.Node.id list -> unit)
+    -> get_succs:(CFG.Node.t -> CFG.Node.t list)
+    -> unit
+end

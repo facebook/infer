@@ -95,6 +95,8 @@ module type PreProcCfg = sig
     val id : t -> id
 
     module IdMap : PrettyPrintable.PPMap with type key = id
+
+    module IdSet : PrettyPrintable.PPSet with type elt = id
   end
 
   type t
@@ -111,6 +113,72 @@ module type S = sig
 end
 
 module type Make = functor (CFG : PreProcCfg) -> S with module CFG = CFG
+
+module Iterator (CFG : PreProcCfg) = struct
+  module IdSet = CFG.Node.IdSet
+
+  let id = CFG.Node.id
+
+  let build_local_scope head rest =
+    let rec aux acc partition =
+      match (partition : CFG.Node.t Partition.t) with
+      | Empty ->
+          acc
+      | Node {node; next} ->
+          aux (IdSet.add (id node) acc) next
+      | Component {head; next} ->
+          (* we skip non-header inner loop nodes *)
+          aux (IdSet.add (id head) acc) next
+    in
+    aux IdSet.(add (id head) empty) rest
+
+
+  type loop_info =
+    { (* for inner loop node only *)
+      header: CFG.Node.id
+    ; local_scope: IdSet.t }
+
+  let iter_nodes partition ~f ~get_succs =
+    let rec traverse_parents_stack stack acc node =
+      match stack with
+      | [] ->
+          acc
+      | {header; local_scope} :: stack ->
+          if IdSet.mem (id node) local_scope then acc
+          else traverse_parents_stack stack (IdSet.add header acc) node
+    in
+    let rec inner_scopes header local_scope parent_stack partition =
+      match (partition : CFG.Node.t Partition.t) with
+      | Empty ->
+          ()
+      | Node {node; next} ->
+          let succs = get_succs node in
+          let stack = {header; local_scope} :: parent_stack in
+          List.iter succs ~f:(fun succ ->
+              let set = traverse_parents_stack stack IdSet.empty succ in
+              f ~node ~succ ~exited_loops:(IdSet.to_list set) ) ;
+          inner_scopes header local_scope parent_stack next
+      | Component {head; rest; next} ->
+          inner_scopes (id head) (build_local_scope head rest)
+            ({header; local_scope} :: parent_stack)
+            (Partition.Node {node= head; next= rest}) ;
+          inner_scopes header local_scope parent_stack next
+    in
+    let rec outer_scope partition =
+      match (partition : CFG.Node.t Partition.t) with
+      | Empty ->
+          ()
+      | Node {node; next} ->
+          List.iter (get_succs node) ~f:(fun succ -> f ~node ~succ ~exited_loops:[]) ;
+          (* can not exit any loop *)
+          outer_scope next
+      | Component {head; rest; next} ->
+          inner_scopes (id head) (build_local_scope head rest) []
+            (Partition.Node {node= head; next= rest}) ;
+          outer_scope next
+    in
+    outer_scope partition
+end
 
 module Bourdoncle_SCC (CFG : PreProcCfg) = struct
   module CFG = CFG
