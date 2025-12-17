@@ -23,6 +23,8 @@ type proc_map = Textual.ProcDecl.t Textual.QualifiedProcName.Map.t
 
 type mangled_map = Textual.TypeName.t IString.Map.t
 
+type plain_map = Textual.TypeName.t IString.Map.t
+
 type method_class_index = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
 module ClassNameOffset : sig
@@ -54,6 +56,7 @@ module ModuleState : sig
     { functions: (Llair.FuncName.t * Llair.func) list
     ; struct_map: struct_map
     ; mangled_map: mangled_map
+    ; plain_map: plain_map
     ; proc_decls: Textual.ProcDecl.t list
     ; proc_map: proc_map
     ; globals_map: globals_map
@@ -66,6 +69,7 @@ module ModuleState : sig
        functions:(Llair.FuncName.t * Llair.func) list
     -> struct_map:struct_map
     -> mangled_map:mangled_map
+    -> plain_map:plain_map
     -> proc_decls:Textual.ProcDecl.t list
     -> proc_map:proc_map
     -> globals_map:globals_map

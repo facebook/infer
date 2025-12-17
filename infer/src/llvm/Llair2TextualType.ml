@@ -274,11 +274,11 @@ let struct_name_of_mangled_name lang ~mangled_map struct_map name =
   TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
 
 
-let update_signature_type lang ~mangled_map ~struct_map type_name =
+let update_signature_type lang ~mangled_map ~struct_map ~plain_map type_name =
   (let open IOption.Let_syntax in
    match TypeName.plain_name_of_type_name type_name with
    | Some plain_name ->
-       let* struct_name = TypeName.struct_name_of_plain_name struct_map plain_name in
+       let* struct_name = TypeName.struct_name_of_plain_name plain_map plain_name in
        let+ mangled_name = TypeName.mangled_name_of_type_name struct_name in
        TypeName.update_type_name_with_mangled_name ~mangled_name type_name
    | None ->
@@ -289,11 +289,11 @@ let update_signature_type lang ~mangled_map ~struct_map type_name =
   |> Option.value ~default:type_name
 
 
-let update_signature_types lang ~mangled_map ~struct_map formal_types return_type =
+let update_signature_types lang ~mangled_map ~struct_map ~plain_map formal_types return_type =
   let update_signature_type typ =
     let typ =
       update_type typ.Textual.Typ.typ
-        ~update_struct_name:(update_signature_type lang ~mangled_map ~struct_map)
+        ~update_struct_name:(update_signature_type lang ~mangled_map ~struct_map ~plain_map)
     in
     Textual.Typ.mk_without_attributes typ
   in

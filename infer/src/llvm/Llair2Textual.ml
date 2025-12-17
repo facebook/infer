@@ -1219,7 +1219,7 @@ let translate_llair_function_signatures lang method_class_index struct_map funct
 
 
 let update_function_signatures lang class_method_index method_class_index ~mangled_map ~struct_map
-    functions =
+    ~plain_map functions =
   let update_proc_decl offset_attributes (procdecl : Textual.ProcDecl.t) =
     let procname = procdecl.qualified_name.Textual.QualifiedProcName.name in
     let loc = procname.Textual.ProcName.loc in
@@ -1231,7 +1231,7 @@ let update_function_signatures lang class_method_index method_class_index ~mangl
     in
     let formals_types, result_type =
       if Textual.Lang.is_swift lang then
-        Type.update_signature_types lang ~mangled_map ~struct_map procdecl.formals_types
+        Type.update_signature_types lang ~mangled_map ~struct_map ~plain_map procdecl.formals_types
           procdecl.result_type
       else (procdecl.formals_types, procdecl.result_type)
     in
@@ -1262,11 +1262,12 @@ let init_module_state (llair_program : Llair.program) lang =
     translate_llair_function_signatures lang method_class_index struct_map functions
   in
   let mangled_map = Llair2TextualTypeName.compute_mangled_map struct_map in
+  let plain_map = Llair2TextualTypeName.compute_plain_map struct_map in
   let class_method_index = Textual.TypeName.Hashtbl.create 16 in
   process_globals lang class_method_index method_class_index ~mangled_map ~struct_map globals_map ;
   let proc_decls =
     update_function_signatures lang class_method_index method_class_index ~mangled_map ~struct_map
-      proc_decls
+      ~plain_map proc_decls
   in
   let class_name_offset_map =
     State.ClassMethodIndex.fill_class_name_offset_map class_method_index
@@ -1280,8 +1281,8 @@ let init_module_state (llair_program : Llair.program) lang =
         Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
           proc_map )
   in
-  ModuleState.init ~functions ~struct_map ~mangled_map ~proc_decls ~proc_map ~globals_map ~lang
-    ~method_class_index ~class_name_offset_map ~field_offset_map
+  ModuleState.init ~functions ~struct_map ~mangled_map ~plain_map ~proc_decls ~proc_map ~globals_map
+    ~lang ~method_class_index ~class_name_offset_map ~field_offset_map
 
 
 let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =

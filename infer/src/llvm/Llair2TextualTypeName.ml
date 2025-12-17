@@ -100,17 +100,21 @@ let compute_mangled_map struct_map =
   Textual.TypeName.Map.fold add_mangled_name struct_map mangled_map
 
 
-let struct_name_of_plain_name struct_map name =
-  let class_opt = ref None in
-  let _ =
-    Textual.TypeName.Map.exists
-      (fun struct_name _ ->
-        match plain_name_of_type_name struct_name with
-        | Some plain_name when String.equal plain_name name ->
-            class_opt := Some struct_name ;
-            true
-        | _ ->
-            false )
-      struct_map
+let struct_name_of_plain_name plain_map name = IString.Map.find_opt name plain_map
+
+let compute_plain_map struct_map =
+  let add_plain_name struct_name _ acc =
+    match plain_name_of_type_name struct_name with
+    | None ->
+        acc
+    | Some plain_name ->
+        IString.Map.update plain_name
+          (function
+            | None ->
+                Some struct_name
+            | Some _ as some ->
+                (* this means there is a plain name mapping to more than one type *)
+                some )
+          acc
   in
-  !class_opt
+  Textual.TypeName.Map.fold add_plain_name struct_map IString.Map.empty

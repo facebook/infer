@@ -58,6 +58,7 @@ val update_signature_types :
      Textual.Lang.t
   -> mangled_map:ProcState.mangled_map
   -> struct_map:ProcState.struct_map
+  -> plain_map:ProcState.plain_map
   -> Textual.Typ.annotated list option
   -> Textual.Typ.annotated
   -> Textual.Typ.annotated list option * Textual.Typ.annotated
