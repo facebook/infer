@@ -1273,7 +1273,7 @@ let init_module_state (llair_program : Llair.program) lang =
     State.ClassMethodIndex.fill_class_name_offset_map class_method_index
   in
   let field_offset_map =
-    Field.OffsetIndex.build_field_offset_map ~mangled_map lang struct_map functions
+    Field.OffsetIndex.build_field_offset_map ~mangled_map ~plain_map lang struct_map functions
   in
   let struct_map = Type.update_struct_map_with_field_names field_offset_map struct_map in
   let proc_map =

@@ -25,6 +25,7 @@ module OffsetIndex : sig
   val build_field_offset_map :
        Textual.Lang.t
     -> mangled_map:State.mangled_map
+    -> plain_map:State.plain_map
     -> State.struct_map
     -> (FuncName.t * func) list
     -> Textual.FieldName.t State.FieldOffsetMap.t
