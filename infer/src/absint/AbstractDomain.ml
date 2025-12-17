@@ -36,6 +36,8 @@ module type Disjunct = sig
   val is_executable : t -> bool
 
   val exceptional_to_normal : t -> t
+
+  val is_active_loop : t -> Procdesc.Node.id option
 end
 
 module type S = sig
@@ -313,6 +315,10 @@ module PairDisjunct (Domain1 : Disjunct) (Domain2 : Disjunct) = struct
 
   let exceptional_to_normal (x1, x2) =
     (Domain1.exceptional_to_normal x1, Domain2.exceptional_to_normal x2)
+
+
+  let is_active_loop (x1, x2) =
+    match Domain1.is_active_loop x1 with Some _ as res -> res | _ -> Domain2.is_active_loop x2
 end
 
 module Pair (Domain1 : S) (Domain2 : S) = struct

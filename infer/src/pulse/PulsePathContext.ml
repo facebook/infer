@@ -29,6 +29,8 @@ let is_executable _ = true
 
 let exceptional_to_normal x = x
 
+let is_active_loop _ = None
+
 let pp fmt ({timestamp; is_non_disj} [@warning "+missing-record-field-pattern"]) =
   F.fprintf fmt "timestamp= %a%s" Timestamp.pp timestamp
     (if is_non_disj then " NON-DISJUNCTIVE EXECUTION" else "")

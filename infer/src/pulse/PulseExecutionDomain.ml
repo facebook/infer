@@ -177,4 +177,11 @@ let exceptional_to_normal : t -> t = function
       x
 
 
+let is_active_loop = function
+  | ContinueProgram {AbductiveDomain.loop_invariant_under_inference= Some {header}} ->
+      Some header
+  | _ ->
+      None
+
+
 let to_name = Variants_of_base_t.to_name

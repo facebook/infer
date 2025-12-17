@@ -27,3 +27,15 @@ val set_remaining_disjuncts : int -> unit
 
 val set_session : int -> unit
 (** Set last session seen in symbolic execution *)
+
+val reset_active_loops : unit -> unit
+(** Reset the set ot active loops *)
+
+val is_active_loop : Procdesc.Node.id -> bool
+(** Test if node id is an active loop header *)
+
+val set_active_loops : Procdesc.IdSet.t -> unit
+(** Declare a set of active loop header *)
+
+val set_active_loop : Procdesc.Node.id -> unit
+(** Declare an other active loop header *)

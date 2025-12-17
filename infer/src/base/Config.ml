@@ -2363,6 +2363,11 @@ and pulse_experimental_infinite_loop_checker =
      strictly gate this experimental checker. You may also need to activate reporting if needed"
 
 
+and pulse_experimental_loop_abstraction =
+  CLOpt.mk_bool ~long:"pulse-experimental-loop-abstraction" ~default:false
+    "Enable an experimental symbolic execution of loop body with abstracted state."
+
+
 and pulse_havoc_arguments =
   CLOpt.mk_bool ~long:"pulse-havoc-arguments" ~default:true
     "Heuristically havoc arguments to unknown functions."
@@ -4501,6 +4506,8 @@ and pulse_final_types_are_exact = !pulse_final_types_are_exact
 and pulse_force_continue = !pulse_force_continue
 
 and pulse_experimental_infinite_loop_checker = !pulse_experimental_infinite_loop_checker
+
+and pulse_experimental_loop_abstraction = !pulse_experimental_loop_abstraction
 
 and pulse_havoc_arguments = !pulse_havoc_arguments
 

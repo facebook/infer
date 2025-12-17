@@ -46,6 +46,10 @@ module type Disjunct = sig
 
   val exceptional_to_normal : t -> t
   (** convert all exceptional states into normal states (used when reaching a handler) *)
+
+  val is_active_loop : t -> Procdesc.Node.id option
+  (** test if the abstract state is a loop invariant under inference and return the corresponding
+      loop header id *)
 end
 
 module type S = sig

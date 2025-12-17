@@ -789,7 +789,7 @@ let init_wto pdesc =
   let pp_node fmt node = Node.pp_id fmt node.Node.id in
   let pname = get_proc_name pdesc in
   if Config.trace_wto then
-    L.debug Analysis Quiet "[WTO][%a] %a@\n" Procname.pp_fullname_only pname
+    L.debug Analysis Quiet "[WTO][%a] order=%a@\n" Procname.pp_fullname_only pname
       (WeakTopologicalOrder.Partition.pp ~pp_node)
       wto ;
   let (_ : int) =

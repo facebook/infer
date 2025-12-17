@@ -592,6 +592,8 @@ val pulse_force_continue : bool
 
 val pulse_experimental_infinite_loop_checker : bool
 
+val pulse_experimental_loop_abstraction : bool
+
 val pulse_havoc_arguments : bool
 
 val pulse_inline_global_init_func_pointer : bool

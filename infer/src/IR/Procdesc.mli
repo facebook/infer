@@ -194,6 +194,9 @@ end
 (** Map with node id keys. *)
 module IdMap : PrettyPrintable.PPMap with type key = Node.id
 
+(** Set of node ids. *)
+module IdSet : PrettyPrintable.PPSet with type elt = Node.id
+
 (** Hash table with nodes as keys. *)
 module NodeHash : Stdlib.Hashtbl.S with type key = Node.t
 

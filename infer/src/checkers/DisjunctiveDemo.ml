@@ -31,6 +31,8 @@ module DisjDomain = struct
   let is_executable _ = true
 
   let exceptional_to_normal _ = assert false (* no exceptional state anyway *)
+
+  let is_active_loop _ = None
 end
 
 module NonDisjDomain = AbstractDomain.BottomTopLifted (AbstractDomain.Empty)
