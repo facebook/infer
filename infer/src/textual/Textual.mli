@@ -73,6 +73,8 @@ module BaseTypeName : sig
   val swift_tuple_class_name : t
 
   val swift_type_name : t
+
+  val swift_any_type_name : t
 end
 
 module TypeName : sig

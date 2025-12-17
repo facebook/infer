@@ -217,6 +217,8 @@ module BaseTypeName : sig
 
   val swift_type_name : t
 
+  val swift_any_type_name : t
+
   val is_hack_closure_generated_type : t -> bool
 end = struct
   include Name
@@ -236,6 +238,8 @@ end = struct
   let swift_type_name = {value= "__infer_swift_type"; loc= Location.Unknown}
 
   let is_hack_closure_generated_type {value} = String.is_prefix ~prefix:"Closure$" value
+
+  let swift_any_type_name = {value= "ptr_elt"; loc= Location.Unknown}
 end
 
 module TypeName : sig
@@ -555,9 +559,9 @@ module Typ = struct
 
   let mk_without_attributes typ = {typ; attributes= []}
 
-  let any_type_llvm = Struct (TypeName.of_string "ptr_elt")
+  let any_type_llvm = Struct TypeName.{name= BaseTypeName.swift_any_type_name; args= []}
 
-  let any_type_swift = Struct (TypeName.mk_swift_type_name "ptr_elt")
+  let any_type_swift = Struct (TypeName.mk_swift_type_name BaseTypeName.swift_any_type_name.value)
 end
 
 module Ident : sig

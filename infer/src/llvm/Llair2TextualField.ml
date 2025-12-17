@@ -15,63 +15,72 @@ let get_suffix = ".get"
 let set_suffix = ".set"
 
 module OffsetIndex = struct
-  (** Extract field name from getter/setter method's unmangled name. E.g., "age.get" -> Some "age",
-      "age.set" -> Some "age", "foo" -> None *)
+  (** Extract field name from getter method's unmangled name. E.g., "age.get" -> Some "age", "foo"
+      -> None *)
 
-  let extract_field_name_from_getter_setter plain_name =
-    String.chop_suffix ~suffix:get_suffix plain_name
-
+  let extract_field_name_from_getter plain_name = String.chop_suffix ~suffix:get_suffix plain_name
 
   (** Recursively traverse expression to find the innermost Select with offset and class type. For
       nested types like %ptr_elt*[1]:%T5Hello6PersonC[0]:%TSi, we want offset 1 (PersonC) which is
       the innermost Select in the expression tree. *)
-  let rec extract_offset_and_type_from_exp lang ~mangled_map struct_map (exp : Llair.Exp.t) =
+  let rec extract_offset_and_type_from_exp lang ~mangled_map struct_map func (exp : Llair.Exp.t) =
+    let formals_types = func.formals_types |> StdUtils.iarray_to_list in
+    let formals = func.formals |> StdUtils.iarray_to_list in
     match exp with
     | Ap1 (Select offset, typ, inner_exp) -> (
       (* First recurse to find innermost Select *)
-      match extract_offset_and_type_from_exp lang ~mangled_map struct_map inner_exp with
+      match extract_offset_and_type_from_exp lang ~mangled_map struct_map func inner_exp with
       | Some _ as some_result ->
           (* Use the innermost result *)
           some_result
       | None -> (
         (* This is the innermost Select, use it if it has a struct type *)
-        match typ with
-        | Llair.Typ.Struct {name; _} ->
+        match (typ, inner_exp, formals, formals_types) with
+        | Llair.Typ.Struct {name; _}, _, _, _
+          when not (String.equal Textual.BaseTypeName.swift_any_type_name.value name) ->
             Some
               ( TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
                   name
               , offset )
+        | _, Reg {id}, [arg], [arg_typ] when Int.equal id (Reg.id arg) ->
+            Option.map
+              ~f:(fun typ -> (typ, offset))
+              (TypeName.struct_name_of_plain_name struct_map arg_typ)
         | _ ->
             None ) )
     | Ap1 (_, _, inner_exp) ->
-        extract_offset_and_type_from_exp lang ~mangled_map struct_map inner_exp
+        extract_offset_and_type_from_exp lang ~mangled_map struct_map func inner_exp
     | Ap2 (_, _, exp1, exp2) -> (
-      match extract_offset_and_type_from_exp lang ~mangled_map struct_map exp1 with
+      match extract_offset_and_type_from_exp lang ~mangled_map struct_map func exp1 with
       | Some _ as some_result ->
           some_result
       | None ->
-          extract_offset_and_type_from_exp lang ~mangled_map struct_map exp2 )
+          extract_offset_and_type_from_exp lang ~mangled_map struct_map func exp2 )
     | Ap3 (_, _, exp1, exp2, exp3) -> (
-      match extract_offset_and_type_from_exp lang ~mangled_map struct_map exp1 with
+      match extract_offset_and_type_from_exp lang ~mangled_map struct_map func exp1 with
       | Some _ as some_result ->
           some_result
       | None -> (
-        match extract_offset_and_type_from_exp lang ~mangled_map struct_map exp2 with
+        match extract_offset_and_type_from_exp lang ~mangled_map struct_map func exp2 with
         | Some _ as some_result ->
             some_result
         | None ->
-            extract_offset_and_type_from_exp lang ~mangled_map struct_map exp3 ) )
+            extract_offset_and_type_from_exp lang ~mangled_map struct_map func exp3 ) )
     | _ ->
         None
 
 
   (** Extract the first instance of offset and class type from instructions in a function *)
-  let extract_offset_from_instructions lang ~mangled_map struct_map cmnd =
+  let extract_offset_from_instructions lang ~mangled_map struct_map func cmnd =
     let instrs = StdUtils.iarray_to_list cmnd in
     List.find_map instrs ~f:(fun inst ->
         match inst with
         | Llair.Load {ptr; _} ->
-            extract_offset_and_type_from_exp lang ~mangled_map struct_map ptr
+            extract_offset_and_type_from_exp lang ~mangled_map struct_map func ptr
+        | Move {reg_exps: (Reg.t * Exp.t) NS.iarray} ->
+            let exps = StdUtils.iarray_to_list reg_exps in
+            List.find_map exps ~f:(fun (_, exp) ->
+                extract_offset_and_type_from_exp lang ~mangled_map struct_map func exp )
         | _ ->
             None )
 
@@ -85,12 +94,12 @@ module OffsetIndex = struct
       | None ->
           ()
       | Some plain_name -> (
-        match extract_field_name_from_getter_setter plain_name with
+        match extract_field_name_from_getter plain_name with
         | None ->
             ()
         | Some field_name -> (
             let entry = func.Llair.entry in
-            match extract_offset_from_instructions lang ~mangled_map struct_map entry.cmnd with
+            match extract_offset_from_instructions lang ~mangled_map struct_map func entry.cmnd with
             | Some (class_name, offset) ->
                 let key = State.FieldOffset.{class_name; offset} in
                 State.FieldOffsetMap.replace field_offset_map key
