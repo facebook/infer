@@ -46,7 +46,9 @@ let rec to_textual_typ lang ~mangled_map ~struct_map (typ : Llair.Typ.t) =
   | Pointer {elt} ->
       Textual.Typ.Ptr (to_textual_typ lang ~mangled_map ~struct_map elt)
   | Array {elt} ->
-      Textual.Typ.Array (to_textual_typ lang ~mangled_map ~struct_map elt)
+      (* often the type we want is ptr rather than array, and it's not always clear from llvm,
+         when they really mean an array. This is a better heuristic. *)
+      Textual.Typ.Ptr (to_textual_typ lang ~mangled_map ~struct_map elt)
   | Tuple {elts} ->
       let tuple_name = to_textual_tuple_name lang ~mangled_map ~struct_map elts in
       Textual.Typ.(Ptr (Struct tuple_name))

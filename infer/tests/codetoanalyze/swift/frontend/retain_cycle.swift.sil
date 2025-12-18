@@ -93,7 +93,7 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9
 declare $s5Hello9TransportCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello9TransportCACycfc(self: *__infer_swift_type<T5Hello9TransportC,Transport>) : *__infer_swift_type<T5Hello9TransportC,Transport> {
-  local var4: int[], getelementptr_offset_1: *void
+  local var4: *int, getelementptr_offset_1: *void
   #: @[22:39]
       n2 = load &self @[22:39]
       n3 = load n2.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[22:39]
@@ -152,7 +152,7 @@ define .plain_name = "init" .method_offset = "22" __infer_swift_type<T5Hello9Tra
 declare .plain_name = "didReceiveMessage" $s5Hello9TransportCAA23MessageReceiverDelegateA2aDP010didReceiveC0yySSFTW(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 define .plain_name = "connected.set" .method_offset = "14" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvs(var1: *__infer_swift_type<,ConnectionState>, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
-  local var4: int[]
+  local var4: *int
   #: @[336:0]
       n2 = load &var2 @[336:0]
       n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[336:0]
@@ -166,7 +166,7 @@ define .plain_name = "connected.set" .method_offset = "14" __infer_swift_type<T5
 declare $s5Hello9TransportC9connectedAC15ConnectionStateOvpfi() : *__infer_swift_type<,ConnectionState>
 
 define .plain_name = "connected.get" .method_offset = "13" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvg(var1: *__infer_swift_type<T5Hello9TransportC,Transport>) : *__infer_swift_type<,ConnectionState> {
-  local var3: int[]
+  local var3: *int
   #: @[331:0]
       n2 = load &var1 @[331:0]
       n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[331:0]
@@ -181,7 +181,7 @@ declare .plain_name = "connected.modify" $s5Hello9TransportC9connectedAC15Connec
 declare .plain_name = "connected.modify" .method_offset = "15" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 define .plain_name = "delegate.set" .method_offset = "20" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC8delegateAA0B8Delegate_pSgvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
-  local var5: int[]
+  local var5: *int
   #: @[319:0]
       n1 = load &var1 @[319:0]
       n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[319:0]
@@ -207,7 +207,7 @@ define .plain_name = "delegate.set" .method_offset = "20" __infer_swift_type<T5H
 declare $s5Hello9TransportC8delegateAA0B8Delegate_pSgvpfi() : *__infer_swift_type<T5Hello17TransportDelegate_p>
 
 define .plain_name = "delegate.get" .method_offset = "19" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC8delegateAA0B8Delegate_pSgvg(var1: *__infer_swift_type<T5Hello9TransportC,Transport>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
-  local var3: int[]
+  local var3: *int
   #: @[310:0]
       n2 = load &var1 @[310:0]
       n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[310:0]
@@ -389,7 +389,7 @@ define .plain_name = "didReceiveMessage" .method_offset = "24" __infer_swift_typ
 } @?
 
 define .plain_name = "messageReceiver.set" .method_offset = "17" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC15messageReceiverAA07MessageD0Cvs(var1: *__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
-  local var4: int[]
+  local var4: *int
   #: @[270:0]
       n1 = $builtins.llvm_nondet() @[270:0]
       n3 = load &var2 @[271:0]
@@ -402,7 +402,7 @@ define .plain_name = "messageReceiver.set" .method_offset = "17" __infer_swift_t
 } @?
 
 define .plain_name = "messageReceiver.get" .method_offset = "16" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC15messageReceiverAA07MessageD0Cvg(var1: *__infer_swift_type<T5Hello9TransportC,Transport>) : *__infer_swift_type<ptr_elt> {
-  local var3: int[]
+  local var3: *int
   #: @[264:0]
       n2 = load &var1 @[264:0]
       n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.messageReceiver @[264:0]
@@ -708,7 +708,7 @@ define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello15Me
 } @?
 
 define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
-  local var5: int[]
+  local var5: *int
   #: @[191:0]
       n1 = load &var1 @[191:0]
       n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[191:0]
@@ -734,7 +734,7 @@ define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5H
 declare $s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvpfi() : *__infer_swift_type<T5Hello23MessageReceiverDelegate_p>
 
 define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvg(var1: *__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
-  local var3: int[]
+  local var3: *int
   #: @[182:0]
       n2 = load &var1 @[182:0]
       n1 = n2.__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.delegate @[182:0]
@@ -1011,18 +1011,18 @@ global $s5Hello15MessageReceiverCHn: *__infer_swift_type<ptr_elt>
 global $s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvpWvd: *__infer_swift_type<ptr_elt>
 
 type __infer_swift_type<$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM::Frame> = {
-field_0: int[]}
+field_0: *int}
 
 type __infer_swift_type<$s5Hello9TransportC15messageReceiverAA07MessageD0CvM::Frame> = {
-field_0: int[]}
+field_0: *int}
 
 type __infer_swift_type<$s5Hello9TransportC8delegateAA0B8Delegate_pSgvM::Frame> = {
-field_0: int[]}
+field_0: *int}
 
 type __infer_swift_type<$s5Hello9TransportC9connectedAC15ConnectionStateOvM::Frame> = {
-field_0: int[]}
+field_0: *int}
 
-type __infer_swift_type<Any> = {field_0: int[];
+type __infer_swift_type<Any> = {field_0: *int;
                                 field_1: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver> = {
@@ -1032,16 +1032,16 @@ delegate: *__infer_swift_type<T5Hello23MessageReceiverDelegate_pSg>}
 type __infer_swift_type<T5Hello17TransportDelegateP> = {field_0: *__infer_swift_type<ptr_elt>;
                                                         field_1: *__infer_swift_type<ptr_elt>}
 
-type __infer_swift_type<T5Hello17TransportDelegate_pSg> = {field_0: int[]}
+type __infer_swift_type<T5Hello17TransportDelegate_pSg> = {field_0: *int}
 
 type __infer_swift_type<T5Hello23MessageReceiverDelegateP> = {field_0: *__infer_swift_type<ptr_elt>;
                                                               field_1: *__infer_swift_type<ptr_elt>}
 
-type __infer_swift_type<T5Hello23MessageReceiverDelegate_pSg> = {field_0: int[]}
+type __infer_swift_type<T5Hello23MessageReceiverDelegate_pSg> = {field_0: *int}
 
 type __infer_swift_type<T5Hello9TransportC,Transport> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                          connected: *__infer_swift_type<T5Hello9TransportC15ConnectionStateO>;
-                                                         field_2: int[];
+                                                         field_2: *int;
                                                          messageReceiver: *__infer_swift_type<ptr_elt>;
                                                          delegate: *__infer_swift_type<T5Hello17TransportDelegate_pSg>}
 
@@ -1179,6 +1179,9 @@ __infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_2: int;
 __infer_tuple_field_3: *__infer_swift_type<ptr_elt>}
 
+type __infer_tuple_class<__infer_swift_type<*int>,__infer_swift_type<int>> = {
+__infer_tuple_field_0: *int; __infer_tuple_field_1: int}
+
 type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<*__infer_swift_type<ptr_elt>>> = {
 __infer_tuple_field_0: int;
 __infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
@@ -1186,9 +1189,13 @@ __infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
 type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> = {
 __infer_tuple_field_0: int; __infer_tuple_field_1: int}
 
-type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>,__infer_swift_type<(*__infer_tuple_class<__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<int>,__infer_swift_type<int>>)[]>> = {
+type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>,__infer_swift_type<**__infer_tuple_class<__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<int>,__infer_swift_type<int>>>> = {
 __infer_tuple_field_0: int; __infer_tuple_field_1: int;
-__infer_tuple_field_2: (*__infer_tuple_class<__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<int>,__infer_swift_type<int>>)[]}
+__infer_tuple_field_2: **__infer_tuple_class<__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<*__infer_swift_type<ptr_elt>>,__infer_swift_type<int>,__infer_swift_type<int>>}
+
+type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>,__infer_swift_type<*int>,__infer_swift_type<int>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: *int; __infer_tuple_field_3: int}
 
 type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>,__infer_swift_type<int>> = {
 __infer_tuple_field_0: int; __infer_tuple_field_1: int;
@@ -1310,11 +1317,4 @@ __infer_tuple_field_10: int; __infer_tuple_field_11: int;
 __infer_tuple_field_12: int; __infer_tuple_field_13: int;
 __infer_tuple_field_14: int; __infer_tuple_field_15: int;
 __infer_tuple_field_16: int}
-
-type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>,__infer_swift_type<int[]>,__infer_swift_type<int>> = {
-__infer_tuple_field_0: int; __infer_tuple_field_1: int;
-__infer_tuple_field_2: int[]; __infer_tuple_field_3: int}
-
-type __infer_tuple_class<__infer_swift_type<int[]>,__infer_swift_type<int>> = {
-__infer_tuple_field_0: int[]; __infer_tuple_field_1: int}
 
