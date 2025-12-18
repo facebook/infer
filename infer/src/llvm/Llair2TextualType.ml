@@ -82,16 +82,21 @@ let to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
     in
     let textual_typ = to_textual_typ lang ~mangled_map:None ~struct_map typ in
     let attributes, textual_typ =
-      match textual_typ with
-      | Textual.Typ.(Ptr (Struct name)) -> (
-        match TypeName.mangled_name_of_type_name name with
-        | Some mangled_name when String.equal mangled_name "swift::weak" ->
-            let textual_typ = Textual.Typ.(Ptr Textual.Typ.any_type_swift) in
-            ([Textual.Attr.mk_weak], textual_typ)
+      match TypeName.mangled_name_of_type_name struct_name with
+      | Some "Any" when Int.equal pos 0 ->
+          (* For AnyObject, the field_0 should be a generic pointer, but we get int* from llvm *)
+          ([], Textual.Typ.Ptr Textual.Typ.any_type_swift)
+      | _ -> (
+        match textual_typ with
+        | Textual.Typ.(Ptr (Struct name)) -> (
+          match TypeName.mangled_name_of_type_name name with
+          | Some mangled_name when String.equal mangled_name "swift::weak" ->
+              let textual_typ = Textual.Typ.(Ptr Textual.Typ.any_type_swift) in
+              ([Textual.Attr.mk_weak], textual_typ)
+          | _ ->
+              ([], textual_typ) )
         | _ ->
             ([], textual_typ) )
-      | _ ->
-          ([], textual_typ)
     in
     Textual.FieldDecl.{qualified_name; typ= textual_typ; attributes}
   in

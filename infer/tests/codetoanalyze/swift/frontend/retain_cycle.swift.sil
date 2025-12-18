@@ -1022,7 +1022,7 @@ field_0: *int}
 type __infer_swift_type<$s5Hello9TransportC9connectedAC15ConnectionStateOvM::Frame> = {
 field_0: *int}
 
-type __infer_swift_type<Any> = {field_0: *int;
+type __infer_swift_type<Any> = {field_0: *__infer_swift_type<ptr_elt>;
                                 field_1: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver> = {
