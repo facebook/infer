@@ -25,12 +25,6 @@ module Pattern : sig
   type t = Var of Var.t | Term of {header: CC.header; args: t list}
 
   val pp : F.formatter -> t -> unit
-
-  val e_match_at : ?debug:bool -> CC.t -> t -> CC.Atom.t -> subst list
-
-  val e_match : ?debug:bool -> CC.t -> t -> f:(CC.Atom.t -> subst -> unit) -> unit
-
-  val to_term : CC.t -> subst -> t -> CC.Atom.t
 end
 
 module Rule : sig
@@ -38,8 +32,16 @@ module Rule : sig
 
   val pp : F.formatter -> t -> unit
 
-  val apply_at : ?debug:bool -> CC.t -> t -> CC.Atom.t -> int
-  (** return the number of compatible substitution used during rewriting *)
-
   val rewrite_once : ?debug:bool -> CC.t -> t list -> unit
+end
+
+module TestOnly : sig
+  val e_match_pattern_at : ?debug:bool -> CC.t -> Pattern.t -> CC.Atom.t -> subst list
+
+  val e_match_pattern : ?debug:bool -> CC.t -> Pattern.t -> f:(CC.Atom.t -> subst -> unit) -> unit
+
+  val pattern_to_term : CC.t -> subst -> Pattern.t -> CC.Atom.t
+
+  val apply_rule_at : ?debug:bool -> CC.t -> Rule.t -> CC.Atom.t -> int
+  (** return the number of compatible substitution used during rewriting *)
 end

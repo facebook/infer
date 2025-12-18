@@ -164,3 +164,13 @@ module Rule = struct
                   pp rule (pp_subst cc) subst ;
             CC.merge cc atom (CC.Atom rhs_term) ) )
 end
+
+module TestOnly = struct
+  let e_match_pattern_at = Pattern.e_match_at
+
+  let e_match_pattern = Pattern.e_match
+
+  let pattern_to_term = Pattern.to_term
+
+  let apply_rule_at = Rule.apply_at
+end

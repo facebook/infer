@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 open CongruenceClosureSolver
 open CongruenceClosureRewrite
+open CongruenceClosureRewrite.TestOnly
 
 let st = ref (init ~debug:false)
 
@@ -20,7 +21,7 @@ let pp_nested_term atom = (pp_nested_term !st) atom
 
 let test_e_match_at ?(debug = false) pattern atom =
   F.printf "e-matching pattern %a with term %a:@." Pattern.pp pattern pp_nested_term atom ;
-  let substs = Pattern.e_match_at ~debug !st pattern atom in
+  let substs = e_match_pattern_at ~debug !st pattern atom in
   if List.is_empty substs then F.printf "--> no substitution found@."
   else List.iteri substs ~f:(fun i subst -> F.printf "--> subst #%d: %a@." i pp_subst subst) ;
   F.print_newline ()
@@ -28,7 +29,7 @@ let test_e_match_at ?(debug = false) pattern atom =
 
 let test_e_match ?(debug = false) pattern =
   F.printf "e-matching pattern %a:@." Pattern.pp pattern ;
-  Pattern.e_match ~debug !st pattern ~f:(fun atom subst ->
+  e_match_pattern ~debug !st pattern ~f:(fun atom subst ->
       F.printf "--> term %a@." pp_nested_term atom ;
       F.printf "    subst %a@." pp_subst subst )
 
@@ -52,7 +53,7 @@ let merge atom term =
 
 
 let test_to_term_conversion pattern subst =
-  let atom = Pattern.to_term !st subst pattern in
+  let atom = pattern_to_term !st subst pattern in
   F.printf "@[<hv>pattern %a@ becomes %a@]@." Pattern.pp pattern pp_nested_term atom ;
   atom
 
@@ -180,7 +181,7 @@ let%expect_test "rewriting at specific atom" =
   F.printf "t2 := %a@." pp_nested_term t2 ;
   F.printf "t1 == t2? %b@." (CC.is_equiv !st t1 t2) ;
   F.printf "applying rule %a...@." Rule.pp distribute_rule ;
-  let _ = Rule.apply_at ~debug:true !st distribute_rule t1 in
+  let _ = apply_rule_at ~debug:true !st distribute_rule t1 in
   F.printf "t1 == t2? %b@." (CC.is_equiv !st t1 t2) ;
   [%expect
     {|
