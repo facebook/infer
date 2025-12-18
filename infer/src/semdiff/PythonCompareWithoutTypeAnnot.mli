@@ -7,7 +7,7 @@
 
 open! IStd
 
-val test_ast_diff : debug:bool -> string -> string -> string list
+val test_ast_diff : debug:bool -> string -> string -> Diff.explicit list
 
 val semdiff : string -> string -> unit
 

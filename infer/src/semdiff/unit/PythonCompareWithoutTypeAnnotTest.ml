@@ -12,7 +12,7 @@ let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.p
 
 let ast_diff_equal prog1 prog2 =
   let diffs = PythonCompareWithoutTypeAnnot.test_ast_diff ~debug:false prog1 prog2 in
-  List.iter diffs ~f:(F.printf "%s\n")
+  List.iter diffs ~f:(F.printf "%a\n" Diff.pp_explicit)
 
 
 let%expect_test "test_basic_fun_good" =
