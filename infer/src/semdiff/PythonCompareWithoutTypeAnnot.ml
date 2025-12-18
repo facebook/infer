@@ -12,7 +12,7 @@ module IntSet = IInt.Set
 open PythonSourceAst
 
 module Normalize = struct
-  let ann_assign_to_assign fields : Node.t =
+  let ann_assign_to_assign fields : Node.dict =
     (* remove annotation, simple, type_comment, change type to assign, target becomes targets = [target] *)
     let assign_fields =
       StringMap.fold
@@ -28,7 +28,7 @@ module Normalize = struct
               StringMap.add k field_node acc )
         fields StringMap.empty
     in
-    Dict (StringMap.add "type_comment" Node.Null assign_fields)
+    StringMap.add "type_comment" Node.Null assign_fields
 
 
   let rec apply (node : Node.t) : Node.t =
@@ -159,61 +159,71 @@ module Diff = struct
         Node.equal a b
 
 
-  let rec get_diff ?(left_line : int option = None) ?(right_line : int option = None) (n1 : Node.t)
-      (n2 : Node.t) : diff list =
-    match (n1, n2) with
-    | a, b when Node.equal a b ->
-        []
-    | Dict f1, Dict f2 ->
-        let left_line = Node.get_line_number f1 in
-        let right_line = Node.get_line_number f2 in
-        if Node.is_type f1 "Assign" && Node.is_type f2 "AnnAssign" then
-          get_diff ~left_line ~right_line n1 (Normalize.ann_assign_to_assign f2)
-        else
-          let diffs =
+  let zip_and_build_diffs ~normalize_right_dict ~skip_annotations (n1 : Node.t) (n2 : Node.t) :
+      diff list =
+    let rec zip ~left_line ~right_line acc (n1 : Node.t) (n2 : Node.t) : diff list =
+      match (n1, n2) with
+      | a, b when Node.equal a b ->
+          acc
+      | Dict f1, Dict f2 ->
+          let left_line = Node.get_line_number f1 in
+          let right_line = Node.get_line_number f2 in
+          let f2 = normalize_right_dict ~left:f1 ~right:f2 in
+          let acc =
             StringMap.fold
               (fun k v1 acc ->
                 match StringMap.find_opt k f2 with
                 | Some v2 when Node.is_type_annotation_field k ->
                     if
                       (* special case for type annotations *)
-                      annotations_equal v1 v2
+                      skip_annotations v1 v2
                     then acc
-                    else get_diff ~left_line ~right_line v1 v2 @ acc
+                    else zip ~left_line ~right_line acc v1 v2
                 | Some _ when Node.is_line_number_field k ->
                     acc
                 | Some v2 ->
-                    get_diff ~left_line ~right_line v1 v2 @ acc
+                    zip ~left_line ~right_line acc v1 v2
                 | None ->
                     append_removed_line_to_diff_list left_line acc )
-              f1 []
+              f1 acc
           in
           let missing_in_left =
             StringMap.fold
               (fun k _ acc ->
                 if StringMap.mem k f1 then acc else append_added_line_to_diff_list right_line acc )
-              f2 []
+              f2 acc
           in
-          diffs @ missing_in_left
-    | List l1, List l2 ->
-        let rec aux acc xs ys =
-          match (xs, ys) with
-          | x :: xt, y :: yt ->
-              aux (get_diff ~left_line ~right_line x y @ acc) xt yt
-          | x :: xt, [] ->
-              aux (append_removed_line_to_diff_list (Node.get_line_number_of_node x) acc) xt []
-          | [], y :: yt ->
-              aux (append_added_line_to_diff_list (Node.get_line_number_of_node y) acc) [] yt
-          | [], [] ->
-              acc
-        in
-        aux [] l1 l2
-    | Dict f1, _ ->
-        append_removed_line_to_diff_list (Node.get_line_number f1) []
-    | _, Dict f2 ->
-        append_added_line_to_diff_list (Node.get_line_number f2) []
-    | _ ->
-        append_removed_line_to_diff_list left_line [] @ append_added_line_to_diff_list right_line []
+          missing_in_left
+      | List l1, List l2 ->
+          let rec aux acc xs ys =
+            match (xs, ys) with
+            | x :: xt, y :: yt ->
+                aux (zip ~left_line ~right_line acc x y) xt yt
+            | x :: xt, [] ->
+                aux (append_removed_line_to_diff_list (Node.get_line_number_of_node x) acc) xt []
+            | [], y :: yt ->
+                aux (append_added_line_to_diff_list (Node.get_line_number_of_node y) acc) [] yt
+            | [], [] ->
+                acc
+          in
+          aux acc l1 l2
+      | Dict f1, _ ->
+          append_removed_line_to_diff_list (Node.get_line_number f1) acc
+      | _, Dict f2 ->
+          append_added_line_to_diff_list (Node.get_line_number f2) acc
+      | _ ->
+          append_removed_line_to_diff_list left_line (append_added_line_to_diff_list right_line acc)
+    in
+    zip ~left_line:None ~right_line:None [] n1 n2
+
+
+  let get_diff n1 n2 =
+    zip_and_build_diffs n1 n2
+      ~normalize_right_dict:(fun ~left ~right ->
+        if Node.is_type left "Assign" && Node.is_type right "AnnAssign" then
+          Normalize.ann_assign_to_assign right
+        else right )
+      ~skip_annotations:annotations_equal
 
 
   let split_diffs diffs =
