@@ -104,6 +104,7 @@ module ProcState = struct
     ; loc: Textual.Location.t
     ; mutable locals: Textual.Typ.annotated VarMap.t
     ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
+    ; mutable local_map: Textual.Typ.t Textual.VarName.Hashtbl.t
     ; mutable ids_move: Textual.Typ.annotated IdentMap.t
     ; mutable ids_types: Textual.Typ.annotated IdentMap.t
     ; mutable id_offset: (Textual.Ident.t * int) option
@@ -119,6 +120,7 @@ module ProcState = struct
     ; loc
     ; formals
     ; locals= VarMap.empty
+    ; local_map= Textual.VarName.Hashtbl.create 16
     ; ids_move= IdentMap.empty
     ; ids_types= IdentMap.empty
     ; id_offset= None
@@ -223,7 +225,8 @@ use the substitution in the code later on. *)
           | _ ->
               formal_typ
         in
-        proc_state.formals <- VarMap.add formal (new_typ, Some local) proc_state.formals
+        proc_state.formals <- VarMap.add formal (new_typ, Some local) proc_state.formals ;
+        Textual.VarName.Hashtbl.replace proc_state.local_map local new_typ.Textual.Typ.typ
     | _ ->
         ()
 
@@ -269,6 +272,7 @@ use the substitution in the code later on. *)
     ; loc
     ; formals= VarMap.empty
     ; locals= VarMap.empty
+    ; local_map= Textual.VarName.Hashtbl.create 16
     ; ids_move= IdentMap.empty
     ; ids_types= IdentMap.empty
     ; id_offset= None

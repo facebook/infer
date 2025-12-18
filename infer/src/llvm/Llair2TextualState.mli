@@ -87,6 +87,7 @@ module ProcState : sig
     ; loc: Textual.Location.t
     ; mutable locals: Textual.Typ.annotated VarMap.t
     ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
+    ; mutable local_map: Textual.Typ.t Textual.VarName.Hashtbl.t
     ; mutable ids_move: Textual.Typ.annotated IdentMap.t
     ; mutable ids_types: Textual.Typ.annotated IdentMap.t
     ; mutable id_offset: (Textual.Ident.t * int) option

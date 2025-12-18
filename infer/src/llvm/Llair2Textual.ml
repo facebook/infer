@@ -69,15 +69,8 @@ module Var = struct
 
   let add_fresh_id ~proc_state () = ProcState.mk_fresh_id proc_state
 
-  let find_formal_type ~proc_state reg_var_name =
-    VarMap.fold
-      (fun _ (annot_typ, local) acc ->
-        match local with
-        | Some local when Textual.VarName.equal local reg_var_name ->
-            Some annot_typ.Textual.Typ.typ
-        | _ ->
-            acc )
-      proc_state.ProcState.formals None
+  let find_formal_type ~(proc_state : ProcState.t) reg_var_name =
+    Textual.VarName.Hashtbl.find_opt proc_state.local_map reg_var_name
 
 
   let reg_to_textual_var ~(proc_state : ProcState.t) reg =
