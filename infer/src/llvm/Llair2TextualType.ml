@@ -12,9 +12,7 @@ module Field = Llair2TextualField
 module TypeName = Llair2TextualTypeName
 module ProcState = Llair2TextualState
 
-let type_name_of_type lang typ =
-  TypeName.to_textual_type_name lang (Format.asprintf "%a" Textual.Typ.pp typ)
-
+let type_name_of_type typ = Textual.TypeName.of_string (Format.asprintf "%a" Textual.Typ.pp typ)
 
 let field_of_pos type_name pos =
   let name = Format.asprintf "field_%s" (Int.to_string pos) in
@@ -69,7 +67,7 @@ and to_textual_tuple_name lang ~mangled_map ~struct_map elements =
     List.map
       ~f:(fun typ ->
         let textual_typ = to_textual_typ lang ~mangled_map ~struct_map typ in
-        type_name_of_type lang textual_typ )
+        type_name_of_type textual_typ )
       typs
   in
   Textual.TypeName.mk_swift_tuple_type_name textual_types

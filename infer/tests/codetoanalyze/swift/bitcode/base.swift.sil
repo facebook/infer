@@ -42,13 +42,13 @@ define .plain_name = "test1" $s5Hello5test1yS2iF(n: *__infer_swift_type<ptr_elt>
       
 } @?
 
-define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> {
+define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,int> {
   #: @[104:0]
       n1 = $builtins.llvm_init_tuple() @[104:0]
       n2 = load &age @[19:5]
-      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_0 <- n2 @[19:5]
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n2 @[19:5]
       n3 = load &height @[19:5]
-      store n1.__infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>>.__infer_tuple_field_1 <- n3 @[19:5]
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[19:5]
       ret n1 @[19:5]
       
 } @?
@@ -59,6 +59,6 @@ global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr
 
 global __swift_reflection_version: *__infer_swift_type<ptr_elt>
 
-type __infer_tuple_class<__infer_swift_type<int>,__infer_swift_type<int>> = {
-__infer_tuple_field_0: int; __infer_tuple_field_1: int}
+type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
+                                     __infer_tuple_field_1: int}
 
