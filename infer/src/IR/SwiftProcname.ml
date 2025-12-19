@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 include PpDetailLevel
 
-type builtin = NonDet | InitTuple | DynamicCall
+type builtin = NonDet | InitTuple | DynamicCall | DerivedEnumEquals
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =
@@ -31,6 +31,8 @@ let show_builtin = function
       "llvm_init_tuple"
   | DynamicCall ->
       "llvm_dynamic_call"
+  | DerivedEnumEquals ->
+      "__derived_enum_equals"
 
 
 let get_function_name osig =

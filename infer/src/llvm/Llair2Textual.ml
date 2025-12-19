@@ -24,6 +24,8 @@ let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
 
 let llvm_dynamic_call = Textual.ProcName.of_string "llvm_dynamic_call"
 
+let derived_enum_equals = "__derived_enum_equals"
+
 let functions_to_skip =
   List.map ~f:Textual.ProcName.of_string ["swift_unknownObjectRetain"; "swift_weakLoadStrong"]
 
@@ -591,18 +593,22 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   let args = StdUtils.iarray_to_list call.actuals in
   let proc, kind, exp_opt =
     match call.callee with
-    | Direct {func} ->
-        let proc =
-          if
-            String.equal (FuncName.name func.Llair.name)
-              (Procname.get_method BuiltinDecl.__assert_fail)
-            || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
-          then Textual.ProcDecl.assert_fail_name
-          else
-            to_qualified_proc_name proc_state.module_state.method_class_index
-              (FuncName.name func.Llair.name)
-        in
-        (proc, Textual.Exp.NonVirtual, None)
+    | Direct {func} -> (
+      match FuncName.unmangled_name func.Llair.name with
+      | Some name when String.equal name derived_enum_equals ->
+          (builtin_qual_proc_name derived_enum_equals, Textual.Exp.NonVirtual, None)
+      | _ ->
+          let proc =
+            if
+              String.equal (FuncName.name func.Llair.name)
+                (Procname.get_method BuiltinDecl.__assert_fail)
+              || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
+            then Textual.ProcDecl.assert_fail_name
+            else
+              to_qualified_proc_name proc_state.module_state.method_class_index
+                (FuncName.name func.Llair.name)
+          in
+          (proc, Textual.Exp.NonVirtual, None) )
     | Indirect {ptr} ->
         let proc = builtin_qual_proc_name (Textual.ProcName.to_string llvm_dynamic_call) in
         (proc, Textual.Exp.NonVirtual, Some ptr)

@@ -101,6 +101,12 @@ let dynamic_call arg orig_args () : unit DSL.model_monad =
       closure_call (arg :: orig_args) ()
 
 
+let derived_enum_equals arg1 arg2 () : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* res = binop Binop.Eq arg1 arg2 in
+  assign_ret res
+
+
 let builtins_matcher builtin args : unit -> unit DSL.model_monad =
   let builtin_s = SwiftProcname.show_builtin builtin in
   match (builtin : SwiftProcname.builtin) with
@@ -111,6 +117,9 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
   | DynamicCall ->
       let arg, args = ProcnameDispatcherBuiltins.expect_at_least_1_arg args builtin_s in
       dynamic_call arg args
+  | DerivedEnumEquals ->
+      let arg1, arg2 = ProcnameDispatcherBuiltins.expect_2_args args builtin_s in
+      derived_enum_equals arg1 arg2
 
 
 let matchers : matcher list =

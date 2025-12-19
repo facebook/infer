@@ -8,7 +8,7 @@
 open! IStd
 module F = Format
 
-type builtin = NonDet | InitTuple | DynamicCall
+type builtin = NonDet | InitTuple | DynamicCall | DerivedEnumEquals
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =
