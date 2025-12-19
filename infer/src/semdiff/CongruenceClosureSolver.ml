@@ -156,6 +156,7 @@ type t =
   ; input_app_equations: (Atom.t * Atom.t) option Dynarray.t
   ; term_roots: Atom.Set.t Dynarray.t
   ; hashcons: Atom.state
+  ; mutable update_count: int
   ; debug: bool }
 
 let init ~debug =
@@ -167,9 +168,16 @@ let init ~debug =
   ; lookup= LookupTbl.create 32
   ; input_app_equations= Dynarray.create ()
   ; term_roots= Dynarray.create ()
+  ; update_count= 0
   ; hashcons= Atom.init ()
   ; debug }
 
+
+let reset_update_count state = state.update_count <- 0
+
+let get_update_count state = state.update_count
+
+let incr_update_count state = state.update_count <- state.update_count + 1
 
 let rec representative state atom =
   (* TODO: path compression *)
@@ -303,6 +311,7 @@ and propagate state =
 and change_representative ({debug; pending; repr; classes; term_roots} as state)
     ({Atom.index= old_index} as old_repr) ({Atom.index= new_index} as new_repr) =
   if debug then F.printf "repr[%a] <- %a\n" Atom.pp old_repr Atom.pp new_repr ;
+  incr_update_count state ;
   Dynarray.set repr old_index new_repr ;
   let old_class = Dynarray.get classes old_index in
   let new_class = Dynarray.get classes new_index in
@@ -349,10 +358,14 @@ let add_term_root state ~header:{Atom.index} ~term =
   Dynarray.set state.term_roots index (Atom.Set.add term roots)
 
 
-let iter_term_roots state {Atom.index} ~f =
+let fold_term_roots state {Atom.index} ~f ~init =
   let roots = Dynarray.get state.term_roots index in
-  Atom.Set.iter (fun atom -> if phys_equal (representative state atom) atom then f atom) roots
+  Atom.Set.fold
+    (fun atom acc -> if phys_equal (representative state atom) atom then f atom acc else acc)
+    roots init
 
+
+let iter_term_roots state atom ~f = fold_term_roots state atom ~init:() ~f:(fun atom () -> f atom)
 
 type header = Atom.t
 

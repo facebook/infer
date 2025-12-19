@@ -205,16 +205,47 @@ let%expect_test "rewriting one round" =
   let rule1 : Rule.t = {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
   let rule2 : Rule.t = {lhs= apply "f" [var "X"]; rhs= var "X"} in
   let rules = [rule1; rule2] in
-  Rule.rewrite_once ~debug:true !st rules ;
+  let updates = rewrite_rules_once ~debug:true !st rules in
+  F.printf "%d updates@." updates ;
   F.printf "1: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
-  Rule.rewrite_once ~debug:true !st rules ;
+  let updates = rewrite_rules_once ~debug:true !st rules in
+  F.printf "%d updates@." updates ;
   F.printf "2: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
+  let updates = rewrite_rules_once ~debug:true !st rules in
+  F.printf "%d updates@." updates ;
+  F.printf "3: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
   [%expect
     {|
     merging x and (g (f (g y)))...
     0: x == y? false
     rewriting atom (f (g y)) with rule (f ?X) ==> ?X and subst {X: (g y)}
+    1 updates
     1: x == y? false
     rewriting atom (g (f (g y))) with rule (g (g ?X)) ==> ?X and subst {X: y}
+    1 updates
     2: x == y? true
+    0 updates
+    3: x == y? true
+    |}]
+
+
+let%expect_test "full rewrite" =
+  restart () ;
+  let x = mk_const "x" in
+  let y = mk_const "y" in
+  let t = mk_term "g" [mk_term "f" [mk_term "g" [y]]] in
+  merge x (Atom t) ;
+  F.printf "0: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
+  let rule1 : Rule.t = {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
+  let rule2 : Rule.t = {lhs= apply "f" [var "X"]; rhs= var "X"} in
+  let rules = [rule1; rule2] in
+  let rounds = Rule.full_rewrite !st rules in
+  F.printf "%d rounds@." rounds ;
+  F.printf "1: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
+  [%expect
+    {|
+    merging x and (g (f (g y)))...
+    0: x == y? false
+    3 rounds
+    1: x == y? true
     |}]

@@ -42,6 +42,8 @@ val representative : t -> Atom.t -> Atom.t
 
 val representative_of_header : t -> header -> Atom.t
 
+val fold_term_roots : t -> header -> f:(Atom.t -> 'a -> 'a) -> init:'a -> 'a
+
 val iter_term_roots : t -> header -> f:(Atom.t -> unit) -> unit
 
 val equiv_atoms : t -> Atom.t -> Atom.t list
@@ -49,6 +51,10 @@ val equiv_atoms : t -> Atom.t -> Atom.t list
 type app_equation = {rhs: Atom.t; left: Atom.t; right: Atom.t}
 
 val equiv_terms : t -> Atom.t -> app_equation list
+
+val reset_update_count : t -> unit
+
+val get_update_count : t -> int
 
 val show_stats : t -> unit
 

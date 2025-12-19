@@ -155,6 +155,7 @@ module Rule = struct
 
 
   let rewrite_once ?(debug = false) cc rules =
+    CC.reset_update_count cc ;
     List.iter rules ~f:(fun ({lhs; rhs} as rule) ->
         Pattern.e_match cc lhs ~f:(fun atom subst ->
             let rhs_term = Pattern.to_term cc subst rhs in
@@ -162,7 +163,25 @@ module Rule = struct
               if debug then
                 F.printf "rewriting atom %a with rule %a and subst %a@." (CC.pp_nested_term cc) atom
                   pp rule (pp_subst cc) subst ;
-            CC.merge cc atom (CC.Atom rhs_term) ) )
+            CC.merge cc atom (CC.Atom rhs_term) ) ) ;
+    CC.get_update_count cc
+
+
+  exception FuelExhausted of {round_count: int}
+
+  let full_rewrite ?(fuel = 1 lsl 10) cc rules =
+    let rec loop fuel round_count =
+      if fuel <= 0 then raise (FuelExhausted {round_count})
+      else
+        let updates = rewrite_once cc rules in
+        if Int.equal updates 0 then
+          (* the last round did not change anything *)
+          round_count
+        else (
+          assert (updates > 0) ;
+          loop (fuel - updates) (round_count + 1) )
+    in
+    loop fuel 1
 end
 
 module TestOnly = struct
@@ -173,4 +192,6 @@ module TestOnly = struct
   let pattern_to_term = Pattern.to_term
 
   let apply_rule_at = Rule.apply_at
+
+  let rewrite_rules_once = Rule.rewrite_once
 end

@@ -32,7 +32,11 @@ module Rule : sig
 
   val pp : F.formatter -> t -> unit
 
-  val rewrite_once : ?debug:bool -> CC.t -> t list -> unit
+  exception FuelExhausted of {round_count: int}
+
+  val full_rewrite : ?fuel:int -> CC.t -> t list -> int
+  (** iterate rewriting until saturation.
+      @raise FuelExhausted if fuel exhausted before saturation *)
 end
 
 module TestOnly : sig
@@ -44,4 +48,6 @@ module TestOnly : sig
 
   val apply_rule_at : ?debug:bool -> CC.t -> Rule.t -> CC.Atom.t -> int
   (** return the number of compatible substitution used during rewriting *)
+
+  val rewrite_rules_once : ?debug:bool -> CC.t -> Rule.t list -> int
 end
