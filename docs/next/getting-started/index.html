@@ -14,7 +14,7 @@
 
 
 <link rel="search" type="application/opensearchdescription+xml" title="Infer" href="/opensearch.xml"><link rel="stylesheet" href="/assets/css/styles.e7478e84.css">
-<script src="/assets/js/runtime~main.9996d003.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.90b6e7be.js" defer="defer"></script>
 <script src="/assets/js/main.3090bd59.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -26,7 +26,7 @@
 <p>Find our latest <a href="https://github.com/facebook/infer/releases/latest" target="_blank" rel="noopener noreferrer">binary release here</a>. Download
 the tarball then extract it anywhere on your system to start using infer. For example, this
 downloads infer in /opt on Linux (replace <code>VERSION</code> with the latest release, eg <code>VERSION=1.0.0</code>):</p>
-<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">VERSION=0.XX.Y; \</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">curl -sSL &quot;https://github.com/facebook/infer/releases/download/v$VERSION/infer-linux64-v$VERSION.tar.xz&quot; \</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">| sudo tar -C /opt -xJ &amp;&amp; \</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">sudo ln -s &quot;/opt/infer-linux64-v$VERSION/bin/infer&quot; /usr/local/bin/infer</span><br></span></code></pre></div></div>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_e6Vv"><span class="token-line" style="color:#bfc7d5"><span class="token plain">VERSION=0.XX.Y; \</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">curl -sSL &quot;https://github.com/facebook/infer/releases/download/v$VERSION/infer-linux-x86_64-v$VERSION.tar.xz&quot; \</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">| sudo tar -C /opt -xJ &amp;&amp; \</span><br></span><span class="token-line" style="color:#bfc7d5"><span class="token plain">sudo ln -s &quot;/opt/infer-linux-x86_64-v$VERSION/bin/infer&quot; /usr/local/bin/infer</span><br></span></code></pre></div></div>
 <p>If the binaries do not work for you, or if you would rather build infer from
 source, follow the
 <a href="https://github.com/facebook/infer/blob/main/INSTALL.md#install-infer-from-source" target="_blank" rel="noopener noreferrer">install from source</a>
