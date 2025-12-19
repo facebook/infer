@@ -7,16 +7,26 @@
 
 open! IStd
 module F = Format
+module CC = CongruenceClosureSolver
 
-let%expect_test "" =
+let build_parser () =
   let parser = PythonSourceAst.build_parser () in
+  fun string -> parser string |> Result.ok |> Option.value_exn
+
+
+let st = ref (CC.init ~debug:false)
+
+let restart () = st := CC.init ~debug:false
+
+let%expect_test "store ast" =
+  let parser = build_parser () in
   let ast = parser {|
 x = 0
 y = 1
 z = 2
-      |} |> Result.ok |> Option.value_exn in
+      |} in
   F.printf "%s\n" (PythonSourceAst.Node.to_str ast) ;
-  PythonSourceAstDiff.store_ast ~debug:true ast ;
+  PythonSourceAstDiff.TestOnly.store_ast ~debug:true ast ;
   [%expect
     {|
     Dict: {
@@ -116,3 +126,68 @@ z = 2
                     (value (Constant (kind Null) (value 2))))))
         (type_ignores List))
     |}]
+
+
+let%expect_test "compare same ast" =
+  let parser = build_parser () in
+  restart () ;
+  let ast =
+    parser
+      {|
+def factorial(n):
+    """
+    Returns the factorial of a non-negative integer n.
+    Raises ValueError for negative inputs.
+    """
+    if n < 0:
+        raise ValueError("Factorial is not defined for negative numbers.")
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+      |}
+  in
+  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast [] in
+  F.printf "ast == ast? %b\n" equiv ;
+  [%expect {| ast == ast? true |}]
+
+
+let%expect_test "ignore_me() call" =
+  let parser = build_parser () in
+  restart () ;
+  let ast =
+    parser
+      {|
+def factorial(n):
+    """
+    Returns the factorial of a non-negative integer n.
+    Raises ValueError for negative inputs.
+    """
+    if n < 0:
+        raise ValueError("Factorial is not defined for negative numbers.")
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+      |}
+  in
+  let ast_with_ignore =
+    parser
+      {|
+def factorial(n):
+    """
+    Returns the factorial of a non-negative integer n.
+    Raises ValueError for negative inputs.
+    """
+    if n < 0:
+        raise ValueError("Factorial is not defined for negative numbers.")
+    result = 1
+    ignore_me()
+    for i in range(2, n + 1):
+        result *= i
+    return result
+      |}
+  in
+  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast_with_ignore [] in
+  F.printf "ast == ast_with_ignore? %b (no rules)\n" equiv ;
+  [%expect {| ast == ast_with_ignore? false (no rules) |}]

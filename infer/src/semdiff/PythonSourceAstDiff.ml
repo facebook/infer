@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module CC = CongruenceClosureSolver
+module Rewrite = CongruenceClosureRewrite
 open PythonSourceAst
 
 (* currying AST -> CongruenceClosure terms *)
@@ -37,7 +38,16 @@ let rec curry cc ast =
       mk_term header (List.map ~f:mk_atom_binding assoc)
 
 
-let store_ast ?(debug = false) ast =
-  let cc = CC.init ~debug:false in
-  let atom = curry cc ast in
-  if debug then F.printf "%a" (CC.pp_nested_term cc) atom
+let are_ast_equivalent cc ast1 ast2 rules =
+  let atom1 = curry cc ast1 in
+  let atom2 = curry cc ast2 in
+  let _rounds = Rewrite.Rule.full_rewrite cc rules in
+  CC.is_equiv cc atom1 atom2
+
+
+module TestOnly = struct
+  let store_ast ?(debug = false) ast =
+    let cc = CC.init ~debug:false in
+    let atom = curry cc ast in
+    if debug then F.printf "%a" (CC.pp_nested_term cc) atom
+end

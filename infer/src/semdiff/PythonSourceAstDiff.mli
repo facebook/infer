@@ -6,5 +6,12 @@
  *)
 
 open! IStd
+module CC = CongruenceClosureSolver
+module Rewrite = CongruenceClosureRewrite
 
-val store_ast : ?debug:bool -> PythonSourceAst.Node.t -> unit
+val are_ast_equivalent :
+  CC.t -> PythonSourceAst.Node.t -> PythonSourceAst.Node.t -> Rewrite.Rule.t list -> bool
+
+module TestOnly : sig
+  val store_ast : ?debug:bool -> PythonSourceAst.Node.t -> unit
+end

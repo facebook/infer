@@ -362,7 +362,7 @@ let sem_diff () =
           | `Normalize ->
               PythonCompareWithoutTypeAnnot.normalize node |> ignore
           | `Currify ->
-              PythonSourceAstDiff.store_ast node |> ignore )
+              PythonSourceAstDiff.TestOnly.store_ast node |> ignore )
       in
       match PythonSourceAst.iter_from_index ~f ~index_filename with
       | Ok () ->
