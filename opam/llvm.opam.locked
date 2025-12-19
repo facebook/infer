@@ -122,7 +122,7 @@ extra-source "6_LLVMExtractDISubprogramType.patch" {
   src:
     "dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
   checksum:
-    "sha256=87e7376b7907435d69e8192c1cdccacb058e7ea0cf7c597acb1165dad700c937"
+    "sha256=3590818da43426962c95a86515d7e2e2e78304f4d906c2d096e9892ea0120754"
 }
 extra-files: [
   "install.sh"
@@ -131,8 +131,6 @@ extra-files: [
 extra-source "0_AddOCaml.cmake.patch" {
   src:
     "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
-  checksum: [
+  checksum:
     "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
-    "md5=432ec376b6ffbac44e640c8fb659a7df"
-  ]
 }

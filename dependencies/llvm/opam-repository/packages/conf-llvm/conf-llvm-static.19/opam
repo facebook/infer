@@ -27,8 +27,6 @@ flags: conf
 extra-source "configure.sh" {
   src:
     "https://raw.githubusercontent.com/ocaml/opam-source-archives/refs/heads/main/patches/conf-llvm/configure.sh.18"
-  checksum: [
+  checksum:
     "sha256=3675ad30b93aab67f1d57aa7c700800a3b5954768610ef9ef29bba7483f16936"
-    "md5=409c0a03dcea76a45719b80a06e2bd71"
-  ]
 }
