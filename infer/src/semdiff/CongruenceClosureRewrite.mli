@@ -12,6 +12,8 @@ module CC = CongruenceClosureSolver
 module Var : sig
   type t = private string [@@deriving compare, equal]
 
+  val pp : F.formatter -> t -> unit
+
   val of_string : string -> t
 end
 
@@ -25,6 +27,8 @@ module Pattern : sig
   type t = Var of Var.t | Term of {header: CC.header; args: t list}
 
   val pp : F.formatter -> t -> unit
+
+  val vars : t -> Var.t list
 end
 
 module Rule : sig
@@ -38,6 +42,8 @@ module Rule : sig
   (** iterate rewriting until saturation.
       @raise FuelExhausted if fuel exhausted before saturation *)
 end
+
+val parse_pattern : CC.t -> string -> Pattern.t option
 
 module TestOnly : sig
   val e_match_pattern_at : ?debug:bool -> CC.t -> Pattern.t -> CC.Atom.t -> subst list

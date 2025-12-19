@@ -64,6 +64,16 @@ let apply name args = Pattern.Term {header= mk_header !st name; args}
 
 let const header = apply header []
 
+let parse_pattern str = parse_pattern !st str |> Option.value_exn
+
+let pp_vars fmt vars =
+  F.fprintf fmt "@[<hv>{" ;
+  List.iteri vars ~f:(fun i var ->
+      Var.pp fmt var ;
+      if i > 0 then F.fprintf fmt "@ " ) ;
+  F.fprintf fmt "@]}"
+
+
 let%expect_test "e-matching singleton" =
   restart () ;
   let one = mk_const "1" in
@@ -248,4 +258,24 @@ let%expect_test "full rewrite" =
     0: x == y? false
     3 rounds
     1: x == y? true
+    |}]
+
+
+let%expect_test "parse pattern" =
+  restart () ;
+  let pattern1 =
+    parse_pattern
+      {|
+         (Type
+           (arg1 ?V1)
+           (arg2 List)
+           (arg3 (Exp (Const 1) (Const 2) (Str "quoted"))))
+  |}
+  in
+  F.printf "pattern1 = %a@." Pattern.pp pattern1 ;
+  F.printf "  with vars = %a@." pp_vars (Pattern.vars pattern1) ;
+  [%expect
+    {|
+    pattern1 = (Type (arg1 ?V1) (arg2 List) (arg3 (Exp (Const 1) (Const 2) (Str "quoted"))))
+      with vars = {V1}
     |}]

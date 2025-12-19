@@ -18,6 +18,8 @@ module Var : sig
   val pp : F.formatter -> t -> unit
 
   module Map : Stdlib.Map.S with type key = t
+
+  module Set : Stdlib.Set.S with type elt = t
 end = struct
   type t = string [@@deriving compare, equal]
 
@@ -26,6 +28,7 @@ end = struct
   let pp = F.pp_print_string
 
   module Map = Stdlib.Map.Make (String)
+  module Set = Stdlib.Set.Make (String)
 end
 
 type subst = CC.Atom.t Var.Map.t [@@deriving compare]
@@ -64,6 +67,16 @@ module Pattern = struct
         F.fprintf fmt "%a" CC.pp_header header
     | Term {header; args} ->
         F.fprintf fmt "@[<hv4>(%a@ %a)@]" CC.pp_header header (Pp.seq ~sep_html:"@ " pp) args
+
+
+  let vars pat =
+    let rec aux acc = function
+      | Var var ->
+          Var.Set.add var acc
+      | Term {args} ->
+          List.fold args ~init:acc ~f:aux
+    in
+    aux Var.Set.empty pat |> Var.Set.elements
 
 
   let e_match_at ?(debug = false) cc pat atom =
@@ -183,6 +196,102 @@ module Rule = struct
     in
     loop fuel 1
 end
+
+module Parser = struct
+  type buffer = string list (* striped strings to be parser *)
+
+  type 'a m = buffer -> ('a * buffer) list
+
+  let ret (a : 'a) : 'a m = fun buf -> [(a, buf)]
+
+  let bind (m : 'a m) (f : 'a -> 'b m) : 'b m =
+   fun buf -> List.concat_map ~f:(fun (a, buf) -> f a buf) (m buf)
+
+
+  let ( let* ) = bind
+
+  let rec char (c : char) : unit m = function
+    | [] ->
+        []
+    | "" :: buffer ->
+        char c buffer
+    | hd :: buffer when Char.equal hd.[0] c ->
+        let n = String.length hd in
+        [((), String.sub hd ~pos:1 ~len:(n - 1) :: buffer)]
+    | _ ->
+        []
+
+
+  let rec all ~(except : char list) : string m =
+    let rec extract from str =
+      if from < String.length str then
+        let c = str.[from] in
+        if List.mem ~equal:Char.equal except c then from else extract (from + 1) str
+      else from
+    in
+    function
+    | [] ->
+        []
+    | "" :: buffer ->
+        all ~except buffer
+    | hd :: buffer ->
+        let len = extract 0 hd in
+        if len > 0 then
+          let n = String.length hd in
+          [(String.sub hd ~pos:0 ~len, String.sub hd ~pos:len ~len:(n - len) :: buffer)]
+        else []
+
+
+  let ident = all ~except:['('; ')'; '?']
+
+  let ( + ) (m : 'a m) (n : 'a m) : 'a m = fun buf -> m buf @ n buf
+
+  type raw = Var of string | Term of {header: string; args: raw list}
+
+  let rec raw_pattern () : raw m =
+    (let* () = char '?' in
+     let* var = ident in
+     ret (Var var) )
+    + (let* () = char '(' in
+       let* header = ident in
+       let* args = args () in
+       ret (Term {header; args}) )
+    +
+    let* header = ident in
+    ret (Term {header; args= []})
+
+
+  and args () : raw list m =
+    (let* () = char ')' in
+     ret [] )
+    +
+    let* arg = raw_pattern () in
+    let* args = args () in
+    ret (arg :: args)
+
+
+  let rec raw_to_pattern cc raw : Pattern.t =
+    match raw with
+    | Var var ->
+        Var (Var.of_string var)
+    | Term {header; args} ->
+        let header = CC.mk_header cc header in
+        let args = List.map args ~f:(raw_to_pattern cc) in
+        Term {header; args}
+
+
+  let parse cc str : Pattern.t option =
+    let buffer = String.split_on_chars str ~on:[' '; '\n'; '\t'] in
+    match raw_pattern () buffer with
+    | [] ->
+        None
+    | [(raw, _)] ->
+        Some (raw_to_pattern cc raw)
+    | _ ->
+        L.die InternalError "parse error"
+end
+
+let parse_pattern = Parser.parse
 
 module TestOnly = struct
   let e_match_pattern_at = Pattern.e_match_at
