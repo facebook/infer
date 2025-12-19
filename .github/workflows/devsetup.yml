@@ -20,14 +20,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install macOS dependencies
         if: runner.os == 'macOS'
         run: brew install automake coreutils zlib
 
       - name: Setup Java SDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '11'
