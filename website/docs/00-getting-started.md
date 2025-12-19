@@ -13,9 +13,9 @@ downloads infer in /opt on Linux (replace `VERSION` with the latest release, eg 
 
 ```bash
 VERSION=0.XX.Y; \
-curl -sSL "https://github.com/facebook/infer/releases/download/v$VERSION/infer-linux64-v$VERSION.tar.xz" \
+curl -sSL "https://github.com/facebook/infer/releases/download/v$VERSION/infer-linux-x86_64-v$VERSION.tar.xz" \
 | sudo tar -C /opt -xJ && \
-sudo ln -s "/opt/infer-linux64-v$VERSION/bin/infer" /usr/local/bin/infer
+sudo ln -s "/opt/infer-linux-x86_64-v$VERSION/bin/infer" /usr/local/bin/infer
 ```
 
 If the binaries do not work for you, or if you would rather build infer from
