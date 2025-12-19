@@ -2368,6 +2368,11 @@ and pulse_experimental_loop_abstraction =
     "Enable an experimental symbolic execution of loop body with abstracted state."
 
 
+and pulse_experimental_track_all_unknown_calls =
+  CLOpt.mk_bool ~long:"pulse-experimental-track-all-unknown-calls" ~default:false
+    "Mark results of unknown calls with a [ReturnedFromUnknown] attribute in all situations."
+
+
 and pulse_havoc_arguments =
   CLOpt.mk_bool ~long:"pulse-havoc-arguments" ~default:true
     "Heuristically havoc arguments to unknown functions."
@@ -4508,6 +4513,8 @@ and pulse_force_continue = !pulse_force_continue
 and pulse_experimental_infinite_loop_checker = !pulse_experimental_infinite_loop_checker
 
 and pulse_experimental_loop_abstraction = !pulse_experimental_loop_abstraction
+
+and pulse_experimental_track_all_unknown_calls = !pulse_experimental_track_all_unknown_calls
 
 and pulse_havoc_arguments = !pulse_havoc_arguments
 

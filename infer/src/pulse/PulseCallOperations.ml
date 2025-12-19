@@ -17,7 +17,7 @@ let is_ptr_to_const formal_typ_opt = Option.exists formal_typ_opt ~f:Typ.is_ptr_
 
 let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
   if
-    (not (List.is_empty actuals))
+    (Config.pulse_experimental_track_all_unknown_calls || not (List.is_empty actuals))
     && Option.value_map callee_pname_opt ~default:true ~f:(fun pname ->
            not (Procname.is_constructor pname) )
   then

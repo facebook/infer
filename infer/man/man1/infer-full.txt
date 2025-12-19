@@ -3067,6 +3067,11 @@ INTERNAL OPTIONS
            with abstracted state. (Conversely:
            --no-pulse-experimental-loop-abstraction)
 
+       --pulse-experimental-track-all-unknown-calls
+           Activates: Mark results of unknown calls with a
+           [ReturnedFromUnknown] attribute in all situations. (Conversely:
+           --no-pulse-experimental-track-all-unknown-calls)
+
        --no-pulse-final-types-are-exact
            Deactivates: Make Pulse understand that final types are exact
            (i.e. static type is equal to the exact runtime type).

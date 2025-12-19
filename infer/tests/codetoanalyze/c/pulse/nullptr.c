@@ -149,6 +149,15 @@ void report_correct_error_among_multiple_bad() {
   several_dereferences_ok(p, p, p);
 }
 
+int unknown0();
+
+void unknown_is_constant_ok() {
+  int* p = NULL;
+  if (unknown0() != unknown0()) {
+    *p = 42;
+  }
+}
+
 int unknown(int x);
 
 void unknown_is_functional_ok() {
