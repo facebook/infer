@@ -493,8 +493,7 @@ define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateO8rawVal
   #13: @[246:0]
       n14 = $builtins.llvm_init_tuple() @[246:0]
       store n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- n8 @[247:0]
-      n16 = load n11 @[247:0]
-      store n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n16 @[247:0]
+      store n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n11 @[247:0]
       ret n14 @[247:0]
       
   #5: @[242:0]

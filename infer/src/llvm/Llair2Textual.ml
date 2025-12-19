@@ -260,8 +260,14 @@ let add_deref ~proc_state ?from_call exp loc =
   | Textual.Exp.Field _ ->
       add_load_instr
   | Textual.Exp.Var id -> (
-      let typ = IdentMap.find_opt id proc_state.ProcState.ids_move in
-      match typ with Some {typ= Textual.Typ.Ptr _} -> add_load_instr | _ -> ([], exp) )
+      let id_data = IdentMap.find_opt id proc_state.ProcState.ids_move in
+      match id_data with
+      | Some {no_deref_needed= true} ->
+          ([], exp)
+      | Some {typ= {typ= Textual.Typ.Ptr _}} ->
+          add_load_instr
+      | _ ->
+          ([], exp) )
   | _ ->
       ([], exp)
 
@@ -662,7 +668,7 @@ let remove_store_zero_in_class typ_exp1 exp2 =
       false
 
 
-let translate_move ~move_phi ~proc_state loc textual_instrs reg_exps =
+let translate_move ~proc_state ~move_phi loc textual_instrs reg_exps =
   let reg_exps = StdUtils.iarray_to_list reg_exps in
   let loc = to_textual_loc_instr ~proc_state loc in
   let instrs =
@@ -670,9 +676,23 @@ let translate_move ~move_phi ~proc_state loc textual_instrs reg_exps =
       ~f:(fun instrs (reg, exp) ->
         let id = Some (Var.reg_to_id ~proc_state reg |> fst) in
         let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state exp in
+        let no_deref_needed =
+          match exp with
+          | Textual.Exp.Var var ->
+              Option.value_map
+                ~f:(fun id_data -> id_data.ProcState.no_deref_needed)
+                (IdentMap.find_opt var proc_state.ProcState.ids_move)
+                ~default:false
+          | _ when move_phi ->
+              true
+          | _ ->
+              false
+        in
         ( match (id, exp_typ) with
         | Some id, Some exp_typ ->
-            ProcState.update_ids_move ~proc_state id (Textual.Typ.mk_without_attributes exp_typ)
+            ProcState.update_ids_move ~proc_state id
+              (Textual.Typ.mk_without_attributes exp_typ)
+              ~no_deref_needed
         | _ ->
             () ) ;
         let deref_instrs, exp = if move_phi then add_deref ~proc_state exp loc else ([], exp) in
@@ -816,9 +836,9 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let call_textual_instrs = to_textual_builtin ~proc_state reg name args loc in
         List.append call_textual_instrs textual_instrs
     | Move {reg_exps: (Reg.t * Exp.t) NS.iarray; loc} ->
-        translate_move ~move_phi:false ~proc_state loc textual_instrs reg_exps
+        translate_move ~proc_state ~move_phi:false loc textual_instrs reg_exps
     | MovePhi {reg_exps: (Reg.t * Exp.t) NS.iarray; loc} ->
-        translate_move ~move_phi:true ~proc_state loc textual_instrs reg_exps
+        translate_move ~proc_state ~move_phi:true loc textual_instrs reg_exps
     | AtomicRMW {reg; ptr; exp; loc} ->
         let loc = to_textual_loc ~proc_state loc in
         let call_textual_instrs =

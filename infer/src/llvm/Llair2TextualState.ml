@@ -98,6 +98,12 @@ module ModuleState = struct
 end
 
 module ProcState = struct
+  type id_data = {typ: Textual.Typ.annotated; no_deref_needed: bool}
+
+  let pp_data fmt {typ; no_deref_needed} =
+    F.fprintf fmt "typ:%a, no_deref_needed: %b" Textual.Typ.pp_annotated typ no_deref_needed
+
+
   type t =
     { qualified_name: Textual.QualifiedProcName.t
     ; sourcefile: SourceFile.t
@@ -105,7 +111,7 @@ module ProcState = struct
     ; mutable locals: Textual.Typ.annotated VarMap.t
     ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
     ; mutable local_map: Textual.Typ.t Textual.VarName.Hashtbl.t
-    ; mutable ids_move: Textual.Typ.annotated IdentMap.t
+    ; mutable ids_move: id_data IdentMap.t
     ; mutable ids_types: Textual.Typ.annotated IdentMap.t
     ; mutable id_offset: (Textual.Ident.t * int) option
     ; mutable get_element_ptr_offset: (Textual.VarName.t * int) option
@@ -159,6 +165,11 @@ module ProcState = struct
         (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:Textual.Typ.pp_annotated))
         (IdentMap.bindings current_ids)
     in
+    let pp_ids_data fmt current_ids =
+      F.fprintf fmt "%a"
+        (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:pp_data))
+        (IdentMap.bindings current_ids)
+    in
     let pp_vars fmt vars =
       F.fprintf fmt "%a"
         (Pp.comma_seq (Pp.pair ~fst:Textual.VarName.pp ~snd:Textual.Typ.pp_annotated))
@@ -188,7 +199,7 @@ module ProcState = struct
        @[get_element_ptr_offset: %a@]@;\
        ]@]"
       Textual.QualifiedProcName.pp proc_state.qualified_name Textual.Location.pp proc_state.loc
-      pp_vars proc_state.locals pp_formals proc_state.formals pp_ids proc_state.ids_move pp_ids
+      pp_vars proc_state.locals pp_formals proc_state.formals pp_ids_data proc_state.ids_move pp_ids
       proc_state.ids_types
       (Pp.option (Pp.pair ~fst:Textual.Ident.pp ~snd:Int.pp))
       proc_state.id_offset
@@ -201,8 +212,8 @@ module ProcState = struct
     proc_state.locals <- VarMap.add varname typ proc_state.locals
 
 
-  let update_ids_move ~proc_state id typ =
-    proc_state.ids_move <- IdentMap.add id typ proc_state.ids_move
+  let update_ids_move ~proc_state id typ ~no_deref_needed =
+    proc_state.ids_move <- IdentMap.add id {typ; no_deref_needed} proc_state.ids_move
 
 
   (* debug_name = var1,

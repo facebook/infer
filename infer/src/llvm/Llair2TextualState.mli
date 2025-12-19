@@ -81,6 +81,8 @@ module ModuleState : sig
 end
 
 module ProcState : sig
+  type id_data = {typ: Textual.Typ.annotated; no_deref_needed: bool}
+
   type t = private
     { qualified_name: Textual.QualifiedProcName.t
     ; sourcefile: SourceFile.t
@@ -88,7 +90,7 @@ module ProcState : sig
     ; mutable locals: Textual.Typ.annotated VarMap.t
     ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
     ; mutable local_map: Textual.Typ.t Textual.VarName.Hashtbl.t
-    ; mutable ids_move: Textual.Typ.annotated IdentMap.t
+    ; mutable ids_move: id_data IdentMap.t
     ; mutable ids_types: Textual.Typ.annotated IdentMap.t
     ; mutable id_offset: (Textual.Ident.t * int) option
     ; mutable get_element_ptr_offset: (Textual.VarName.t * int) option
@@ -111,7 +113,8 @@ module ProcState : sig
 
   val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
 
-  val update_ids_move : proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> unit
+  val update_ids_move :
+    proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> no_deref_needed:bool -> unit
 
   val update_ids_types : proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> unit
 
