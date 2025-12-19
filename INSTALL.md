@@ -102,6 +102,12 @@ export PATH=`pwd`/infer/bin:$PATH
 See the Dockerfile in docker/ for inspiration. It includes the
 dependencies needed to build Infer on Debian 9 (stretch).
 
+## Build from source on Fedora 42
+
+```sh
+dnf install -y pkgconf-pkg-config opam java-latest-openjdk-devel cmake ninja-build autoconf automake rsync gmp-devel sqlite-devel libffi-devel which zlib-ng-compat-devel perl-Digest-SHA patch g++
+./build-infer.sh -y -- --disable-swift-analyzers
+```
 
 ### Setting up opam
 
