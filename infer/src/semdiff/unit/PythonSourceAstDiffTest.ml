@@ -8,6 +8,7 @@
 open! IStd
 module F = Format
 module CC = CongruenceClosureSolver
+module Rewrite = CongruenceClosureRewrite
 
 let build_parser () =
   let parser = PythonSourceAst.build_parser () in
@@ -17,6 +18,16 @@ let build_parser () =
 let st = ref (CC.init ~debug:false)
 
 let restart () = st := CC.init ~debug:false
+
+let parse_pattern str = Rewrite.parse_pattern !st str |> Option.value_exn
+
+let pp_rules fmt rules =
+  F.fprintf fmt "@[<hv1>{" ;
+  List.iteri rules ~f:(fun i rule ->
+      Rewrite.Rule.pp fmt rule ;
+      if i > 0 then F.fprintf fmt "@ " ) ;
+  F.fprintf fmt "@]}"
+
 
 let%expect_test "store ast" =
   let parser = build_parser () in
@@ -190,4 +201,31 @@ def factorial(n):
   in
   let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast_with_ignore [] in
   F.printf "ast == ast_with_ignore? %b (no rules)\n" equiv ;
-  [%expect {| ast == ast_with_ignore? false (no rules) |}]
+  let rules : Rewrite.Rule.t list =
+    [ { lhs= parse_pattern "(List ?X1 ?X2 ?X3 Null ?X5 ?X6)"
+      ; rhs= parse_pattern "(List ?X1 ?X2 ?X3 ?X5 ?X6)" }
+    ; { lhs=
+          parse_pattern
+            {|(Expr
+                (value
+                  (Call
+                    (args List)
+                    (func (Name (ctx Load) (id ignore_me)))
+                    (keywords List))))|}
+      ; rhs= parse_pattern "Null" } ]
+  in
+  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast_with_ignore rules in
+  F.printf "ast == ast_with_ignore? %b@." equiv ;
+  F.printf " with rules: %a@." pp_rules rules ;
+  [%expect
+    {|
+    ast == ast_with_ignore? false (no rules)
+    ast == ast_with_ignore? true
+     with rules: {(List ?X1 ?X2 ?X3 Null ?X5 ?X6) ==> (List ?X1 ?X2 ?X3 ?X5 ?X6)
+                  (Expr
+                      (value
+                          (Call (args List) (func (Name (ctx Load) (id ignore_me))) (keywords List))))
+                  ==>
+                  Null
+                  }
+    |}]
