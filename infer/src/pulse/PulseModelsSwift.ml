@@ -117,9 +117,15 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
   | DynamicCall ->
       let arg, args = ProcnameDispatcherBuiltins.expect_at_least_1_arg args builtin_s in
       dynamic_call arg args
-  | DerivedEnumEquals ->
-      let arg1, arg2 = ProcnameDispatcherBuiltins.expect_2_args args builtin_s in
-      derived_enum_equals arg1 arg2
+  | DerivedEnumEquals -> (
+      let arg1, arg2, args = ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s in
+      (* we are modelling the case for simple enums where there are two args here, in the case
+         of complex enums there can be more args, but we are not modelling that yet. *)
+      match args with
+      | [] ->
+          derived_enum_equals arg1 arg2
+      | _ ->
+          unknown args )
 
 
 let matchers : matcher list =

@@ -266,3 +266,22 @@ func using_enums_with_saturday_ok() {
     let today = Day.saturday
     assert(isWeekend(today) == true)
 }
+
+// Example that shows we do not crash on complex enums
+// We haven't yet checked that we translate correctly the semantics of this code,
+// but it doesn't crash and it doesn't have typechecking errors.
+enum CoverPictureModel: Equatable {
+    case empty
+    case upload(imageName: String)
+}
+class Profile {
+    public private(set) var coverPictureModel: CoverPictureModel = .empty {
+        didSet {
+            guard coverPictureModel != oldValue else { return }
+            updateCollectionViewForItems(["coverPicture"])
+        }
+    }
+    func updateCollectionViewForItems(_ items: [String]) {
+        print("Updating collection view for items: \(items)")
+    }
+}
