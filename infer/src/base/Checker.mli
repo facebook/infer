@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 
 type t =
+  | Atlas
   | AnnotationReachability
   | BufferOverrunAnalysis
   | BufferOverrunChecker

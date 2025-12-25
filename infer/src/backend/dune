@@ -57,7 +57,8 @@
   Topllib
   Concurrency
   Labs
-  Textuallib)
+  Textuallib
+  Atlas)
  (preprocess
   (pps ppx_compare ppx_fields_conv ppx_hash ppx_sexp_conv ppx_yojson_conv)))
 

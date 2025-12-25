@@ -181,6 +181,8 @@ let all_checkers =
          ; (pulse, Python)
          ; (pulse, Rust)
          ; (pulse, Swift) ] ) }
+  ; { checker=Atlas
+    ; callbacks= [(intraprocedural Atlas.checker, Clang)] }
   ; { checker= Impurity
     ; callbacks=
         (let impurity =

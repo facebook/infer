@@ -10,6 +10,7 @@ module F = Format
 module L = Die
 
 type t =
+  | Atlas
   | AnnotationReachability
   | BufferOverrunAnalysis
   | BufferOverrunChecker
@@ -85,6 +86,15 @@ type config =
    with each analysis. Some runtime check probably needed. *)
 let config_unsafe checker =
   match checker with
+  | Atlas ->
+      { id="atlas"
+      ; kind= UserFacing {title= "Atlas"; markdown_body= ""}
+      ; support=
+          mk_support_func ~clang:Support()
+      ; short_documentation= ""
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= true
+      ; activates= [] }
   | AnnotationReachability ->
       { id= "annotation-reachability"
       ; kind= UserFacing {title= "Annotation Reachability"; markdown_body= ""}
