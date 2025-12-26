@@ -50,7 +50,7 @@ module Term : sig
     | IsInt of t
   [@@deriving compare, equal, yojson_of]
 
-  module Set : Stdlib.Set.S [@@deriving compare]
+  module Set : Stdlib.Set.S
 end
 
 module Atom : sig
@@ -63,9 +63,9 @@ module Atom : sig
 
   val equal : Term.t -> Term.t -> t
 
-  module Set : Stdlib.Set.S [@@deriving compare]
+  module Set : Stdlib.Set.S
 
-  module Map : Stdlib.Map.S [@@deriving compare]
+  module Map : Stdlib.Map.S
 end
 
 module Formula : sig
