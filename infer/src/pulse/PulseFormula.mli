@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module Atom = PulseFormulaAtom
 module SatUnsat = PulseSatUnsat
 module Var = PulseFormulaVar
 
@@ -51,21 +52,6 @@ module Term : sig
   [@@deriving compare, equal, yojson_of]
 
   module Set : Stdlib.Set.S
-end
-
-module Atom : sig
-  type t =
-    | LessEqual of Term.t * Term.t
-    | LessThan of Term.t * Term.t
-    | Equal of Term.t * Term.t
-    | NotEqual of Term.t * Term.t
-  [@@deriving compare, equal, yojson_of]
-
-  val equal : Term.t -> Term.t -> t
-
-  module Set : Stdlib.Set.S
-
-  module Map : Stdlib.Map.S
 end
 
 module Formula : sig
@@ -237,6 +223,8 @@ val and_callee_formula :
   -> t
   -> callee:t
   -> ((Var.t * 'metadata) Var.Map.t * t * new_eqs) SatUnsat.t
+
+val implies_conditions_up_to : subst:Var.t Var.Map.t -> t -> implies:t -> (unit, Atom.t) result
 
 val fold_variables : (t, Var.t, 'acc) Container.fold
 (** note: each variable mentioned in the formula is visited at least once, possibly more *)

@@ -177,7 +177,9 @@ let w_var = mk_var "w"
 
 let w = op_of_var w_var
 
-let v = op_of_var (mk_var "v")
+let v_var = mk_var "v"
+
+let v = op_of_var v_var
 
 let dummy_tenv = Tenv.create ()
 
@@ -223,16 +225,21 @@ let nil_typ = Typ.mk (Tstruct (ErlangType Nil))
 
 let cons_typ = Typ.mk (Tstruct (ErlangType Cons))
 
+let assert_sat = function
+  | Sat x ->
+      x
+  | Unsat {reason} ->
+      Logging.die InternalError "Failed to initialise test phi, got UNSAT: %s" (reason ())
+
+
 let test_with_all_types_Nil phi =
-  match
+  let init_phi =
     SatUnsat.list_fold [x_var; y_var; z_var; w_var] ~init:ttrue ~f:(fun phi v ->
         let* phi, _ = and_dynamic_type v nil_typ phi in
         Sat phi )
-  with
-  | Unsat {reason} ->
-      Logging.die InternalError "Failed to initialise test phi, got UNSAT: %s" (reason ())
-  | Sat init_phi ->
-      test_with_initial phi init_phi
+    |> assert_sat
+  in
+  test_with_initial phi init_phi
 
 
 let () = Language.set_language Language.Erlang
@@ -243,6 +250,23 @@ let simplify ~keep phi =
       (* keep variables as if they were in the pre-condition, which makes [simplify] keeps the most
          facts (eg atoms in [pruned] may be discarded if their variables are not in the pre) *)
       simplify ~precondition_vocabulary:keep ~keep phi >>| fst3 )
+
+
+let named_vars_id_subst =
+  Var.Map.add x_var x_var @@ Var.Map.add y_var y_var @@ Var.Map.add z_var z_var
+  @@ Var.Map.add w_var w_var @@ Var.Map.add v_var v_var @@ Var.Map.empty
+
+
+let test_implies_conditions phi1 phi2 =
+  AnalysisGlobalState.restore global_state ;
+  let phi1 = phi1 ttrue |> assert_sat in
+  let phi2 = phi2 ttrue |> assert_sat in
+  match implies_conditions_up_to ~subst:named_vars_id_subst phi1 ~implies:phi2 with
+  | Ok () ->
+      F.printf "implies conditions"
+  | Error atom ->
+      F.printf "Not implied atom: %a" (PulseFormulaAtom.pp_with_pp_var pp_var) atom ;
+      ()
 
 
 (* These instanceof tests now normalize at construction time *)
@@ -827,4 +851,22 @@ let%test_module "join" =
     let%expect_test _ =
       test (x =. s "toto" || x =. s "titi") ;
       [%expect {| conditions: (empty) phi: (empty) |}]
+  end )
+
+
+let%test_module "implication" =
+  ( module struct
+    let%expect_test _ =
+      test_implies_conditions (x = i 1) (x = i 1) ;
+      [%expect {| implies conditions |}]
+
+
+    let%expect_test _ =
+      test_implies_conditions (x = i 1 && y = i 4) (x =. i 1 && y >. i 0) ;
+      [%expect {| implies conditions |}]
+
+
+    let%expect_test _ =
+      test_implies_conditions (x = i 1 && y = i 4) (x =. i 1 && i 0 >. y) ;
+      [%expect {| Not implied atom: y < 0 |}]
   end )

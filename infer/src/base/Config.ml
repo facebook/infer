@@ -2357,15 +2357,25 @@ and pulse_force_continue =
      positives."
 
 
-and pulse_experimental_infinite_loop_checker =
-  CLOpt.mk_bool ~long:"pulse-experimental-infinite-loop-checker" ~default:false
-    "Enable the INFINITE_LOOP checker during analysis phase. This is a temporary flag in order to \
-     strictly gate this experimental checker. You may also need to activate reporting if needed"
-
-
-and pulse_experimental_loop_abstraction =
-  CLOpt.mk_bool ~long:"pulse-experimental-loop-abstraction" ~default:false
-    "Enable an experimental symbolic execution of loop body with abstracted state."
+and pulse_eternal, pulse_experimental_infinite_loop_checker, pulse_experimental_loop_abstraction =
+  let pulse_experimental_infinite_loop_checker =
+    CLOpt.mk_bool ~long:"pulse-experimental-infinite-loop-checker" ~default:false
+      "Enable the INFINITE_LOOP checker during analysis phase. This is a temporary flag in order \
+       to strictly gate this experimental checker. You may also need to activate reporting if \
+       needed"
+  and pulse_experimental_loop_abstraction =
+    CLOpt.mk_bool ~long:"pulse-experimental-loop-abstraction" ~default:false
+      "Enable an experimental symbolic execution of loop body with abstracted state."
+  in
+  let pulse_eternal =
+    CLOpt.mk_bool_group ~long:"pulse-eternal"
+      ~in_help:InferCommand.[(Analyze, manual_pulse)]
+      "[EXPERIMENTAL] latest iteration of the non-termination loop prover based on the UNTER \
+       under-approximate theory"
+      [pulse_experimental_infinite_loop_checker; pulse_experimental_loop_abstraction]
+      []
+  in
+  (pulse_eternal, pulse_experimental_infinite_loop_checker, pulse_experimental_loop_abstraction)
 
 
 and pulse_experimental_track_all_unknown_calls =
@@ -4526,6 +4536,8 @@ and pulse_cut_to_one_path_procedures_pattern =
 and pulse_final_types_are_exact = !pulse_final_types_are_exact
 
 and pulse_force_continue = !pulse_force_continue
+
+and pulse_eternal = !pulse_eternal
 
 and pulse_experimental_infinite_loop_checker = !pulse_experimental_infinite_loop_checker
 

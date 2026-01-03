@@ -918,6 +918,57 @@ let simplify ~precondition_vocabulary ~keep formula =
   (formula, live_vars, RevList.empty)
 
 
+(** translate each variable in [formula_foreign] according to [f] then prove that each translated
+    fact is implied by [formula0] *)
+let implies_conditions_up_to ~subst formula0 ~implies:formula_foreign =
+  let subst_map = ref subst in
+  let subst v =
+    match Var.Map.find_opt v !subst_map with
+    | Some v' ->
+        v'
+    | None ->
+        let v' = Var.mk_fresh_same_kind v in
+        subst_map := Var.Map.add v v' !subst_map ;
+        v'
+  in
+  let f_subst v =
+    let v' = subst v in
+    Term.VarSubst v'
+  in
+  (* propagate non faster using this exception *)
+  let exception NotImplied of Atom.t in
+  let assert_atom atom =
+    match
+      Formula.Normalizer.and_atom (Atom.nnot atom) (formula0.phi, RevList.empty) ~add_term:false
+    with
+    | Unsat _ ->
+        ()
+    | Sat _ ->
+        raise (NotImplied atom)
+  in
+  let implies_atoms atoms_foreign =
+    Stdlib.Seq.iter
+      (fun atom_foreign -> Atom.subst_variables atom_foreign ~f:f_subst |> assert_atom)
+      atoms_foreign
+  in
+  let implies_terms terms =
+    Stdlib.Seq.concat_map
+      (fun term ->
+        Option.value_exn
+          (Atom.atoms_of_term
+             ~is_neq_zero:(Formula.is_neq_zero formula0.phi)
+             ~force_to_atom:true ~negated:false term )
+        |> ListLabels.to_seq )
+      terms
+    |> implies_atoms
+  in
+  try
+    implies_atoms (formula_foreign.conditions |> Atom.Map.to_seq |> Seq.map fst) ;
+    implies_terms (formula_foreign.phi.term_conditions2 |> Term.Set.to_seq) ;
+    Ok ()
+  with NotImplied atom -> Error atom
+
+
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 
 let is_manifest ~is_allocated formula =

@@ -30,7 +30,7 @@ void simple_loop0_ok() {
     y++;
 }
 
-void simple_loop0_bad() {
+void FN_simple_loop0_bad() {
   int y = 0;
   int x = 0;
   while (y < 100)
@@ -45,8 +45,8 @@ end:
   return;
 }
 
-void entry_point_calling_bad() {
-  simple_loop0_bad();
+void FN_entry_point_calling_bad() {
+  FN_simple_loop0_bad();
 }
 
 /* pulse-inf: Able to flag bug */
@@ -104,7 +104,7 @@ void loop_pointer_ok(int* x, int y) {
 }
 
 /* pulse-inf: works good */
-void loop_pointer_bad(int* x, int y) {
+void FN_loop_pointer_bad(int* x, int y) {
   int* z = x;
   // int y = 1;
   if (x == &y)
@@ -157,7 +157,7 @@ void FN_nested_loop_cond_bad(int y) {
   }
 }
 
-void nested_external_bad(int y) {
+void FN_nested_external_bad(int y) {
   int x = 0;
   while (y < 100) {
     while (x < 3) {
@@ -226,7 +226,7 @@ void simple_loop_ok(int x) {
     y++;
 }
 
-void loop_alternating_bad(int y, int x) {
+void FN_loop_alternating_bad(int y, int x) {
   int turn = 0;
   while (x < 100) {
     if (turn)
@@ -409,7 +409,7 @@ void FN_while_ge_bad() {
     i++;
 }
 
-void while_even_bad() {
+void FN_while_even_bad() {
   int i = 0;
   while (i % 2 == 0)
     i = i + 2;
@@ -435,10 +435,12 @@ int incr_if_geq_zero(int x) {
     return x + 1;
 }
 
-void incr_with_call_ok() {
+void FP_incr_with_call_ok() {
   int i = 0;
-  while (i < 100)
+  while (i < 100) {
+    // FP because of abstraction: i could be < 0
     i = incr_if_geq_zero(i);
+  }
 }
 
 int loop_repeated_ok(int i) {
@@ -619,7 +621,7 @@ void benchmark_simple_cook06_ok() {
 /* Simple non-det benchmark for non-terminate */
 /* Inspired by cook'06 by flipping existing test benchmark_simple_ok_cook06 */
 /* pulse-inf: works good! flag the bug */
-void nondet_loop_bad(int z) {
+void FN_nondet_loop_bad(int z) {
   int x = 1;
   while (x < z)
     if (nondet())
@@ -666,7 +668,7 @@ void interproc_terminating_harris10_cond_ok(int x) {
 /* TERMINATOR unable to find bug */
 /* TREX find bug in 5sec */
 /* pulse-inf: works good! Detect the bug! */
-void loop_non_terminating_harris10_bad(int x, int d, int z) {
+void FN_loop_non_terminating_harris10_bad(int x, int d, int z) {
   d = 0;
   z = 0;
   while (x > 0) {
@@ -682,7 +684,7 @@ void loop_non_terminating_harris10_bad(int x, int d, int z) {
  * eventually make it break */
 // #include <stdlib.h>
 // int nondet() { return (rand()); }
-void nondet_nonterminate_chen14_bad(int k, int i) {
+void FN_nondet_nonterminate_chen14_bad(int k, int i) {
   if (k >= 0)
     ;
   else
@@ -708,7 +710,7 @@ void FN_nestedloop2_chen14_bad(int k, int j) {
 
 /* pulse-inf used to find bug - Now FN */
 // TNT proves non-termination
-void FN_nestedloop_chen14_bad(int i) {
+void nestedloop_chen14_bad(int i) {
   if (i == 10) {
     while (i > 0) {
       i = i - 1;
@@ -783,7 +785,7 @@ void iterate_bitmask2_ok(int array[256], int len) {
 
 // Iterate over an array using a bitmask leading to a non-termination
 /* Pulse-inf: able to find bug */
-void iterate_bitmask_bad(int array[256], unsigned int len) {
+void FN_iterate_bitmask_bad(int array[256], unsigned int len) {
   unsigned int i = 0;
   while (i < len) {
     i = (i & (~7));
@@ -799,7 +801,7 @@ void bitshift_right_loop_ok(int i) {
 }
 
 // Simple bitshift test - will terminate as i will eventually reach 0
-void bitshift_left_loop_ok(int i) {
+void FP_bitshift_left_loop_ok(int i) {
   while (i)
     i = i << 1;
 }
@@ -813,7 +815,7 @@ void bitshift_loop_ok(unsigned int i) {
 // Iterate over an array using a bitshift to compute array index leading to a
 // non-termination
 /* Pulse-inf: false negative. Unable to reason about bitshift */
-void FN_iterate_bitshift_bad(int array[256]) {
+void iterate_bitshift_bad(int array[256]) {
   unsigned int i = 1;
   while (i != 0) {
     array[i] = i;
@@ -902,7 +904,7 @@ void simple_loop_equal_bad() {
 /* Pulse-Inf: OK! Find bug */
 int compute_increment(int k) { return (k % 2 ? 1 : 0); }
 
-void loop_fcall_add_inductive_bad() {
+void FN_loop_fcall_add_inductive_bad() {
   int i;
   int incr;
   for (i = 0; i < 10; i += incr)
@@ -919,7 +921,7 @@ void allocate_all_in_array_ok(int* array[]) {
 
 /* Infinite Goto in loop */
 /* Pulseinf: FN */
-void FN_goto_in_loop_bad() {
+void goto_in_loop_bad() {
   int i = 0;
 
   while (i < 10) {
@@ -942,7 +944,7 @@ void goto_in_loop_without_eqtest_bad() {
 
 /* Goto in loop */
 /* FN is expected with pulse-widen-threshold < 4 */
-void FN_goto_cross_loop_stop_at_6_bad() {
+void goto_cross_loop_stop_at_6_bad() {
   int i = 0;
 
 retry:
@@ -997,7 +999,7 @@ int nested_goto_bad(int b1, int b2, int b3, int b4) {
   }
 }
 
-void FP_no_incr_first_iterations_ok() {
+void no_incr_first_iterations_ok() {
   int i = 0;
   int j = 0;
   while (i < 1) {
@@ -1012,7 +1014,7 @@ void incr_if_eq(int k1, int k2, int* x) {
   }
 }
 
-void FP_no_incr_first_iterations_interproc_ok() {
+void no_incr_first_iterations_interproc_ok() {
   int i = 0;
   int j = 0;
   while (i < 1) {
