@@ -66,7 +66,7 @@ let const header = apply header []
 
 let mk_ellipsis header arg : Pattern.ellipsis = {header= mk_header !st header; arg}
 
-let parse_pattern str = parse_pattern !st str |> Option.value_exn
+let parse_pattern str = parse_pattern !st str
 
 let pp_vars fmt vars =
   F.fprintf fmt "@[<hv>{" ;

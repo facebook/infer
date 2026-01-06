@@ -261,76 +261,98 @@ module Rule = struct
 end
 
 module Parser = struct
-  type buffer = string list (* striped strings to be parser *)
+  type state = {pos: int (* position in the input string *)}
 
-  type 'a m = buffer -> ('a * buffer) list
+  type 'a m = string -> state -> ('a * state) list
 
-  let ret (a : 'a) : 'a m = fun buf -> [(a, buf)]
+  let ret (a : 'a) : 'a m = fun _input state -> [(a, state)]
 
   let bind (m : 'a m) (f : 'a -> 'b m) : 'b m =
-   fun buf -> List.concat_map ~f:(fun (a, buf) -> f a buf) (m buf)
+   fun input state -> List.concat_map ~f:(fun (a, state) -> f a input state) (m input state)
 
 
   let ( let* ) = bind
 
-  let rec char (c : char) : unit m = function
+  let rec find_next_non_white_space_char input pos =
+    if String.length input <= pos then None
+    else if Char.is_whitespace input.[pos] then find_next_non_white_space_char input (pos + 1)
+    else Some pos
+
+
+  let run (m : unit -> 'a m) input : 'a =
+    match m () input {pos= 0} with
     | [] ->
-        []
-    | "" :: buffer ->
-        char c buffer
-    | hd :: buffer when Char.equal hd.[0] c ->
-        let n = String.length hd in
-        [((), String.sub hd ~pos:1 ~len:(n - 1) :: buffer)]
-    | _ ->
-        []
+        L.die UserError " parser error"
+    | _ :: _ :: _ ->
+        L.die InternalError "nondeterministic parser"
+    | [(a, {pos})] -> (
+      match find_next_non_white_space_char input pos with
+      | None ->
+          a
+      | Some pos ->
+          let rest = String.sub input ~pos ~len:(String.length input - pos) in
+          L.die UserError " parser ended while %s was unparsed " rest )
 
 
-  let rec all ~(except : char list) : string m =
-    let rec extract from str =
-      if from < String.length str then
-        let c = str.[from] in
-        if List.mem ~equal:Char.equal except c then from else extract (from + 1) str
-      else from
+  let char (c : char) : unit m =
+   fun input {pos} ->
+    match find_next_non_white_space_char input pos with
+    | None ->
+        []
+    | Some pos ->
+        if Char.equal input.[pos] c then [((), {pos= pos + 1})] else []
+
+
+  let reserved_chars = ['('; ')']
+
+  let raw_ident : string m =
+   fun input {pos} ->
+    let rec aux pos =
+      if String.length input <= pos then pos
+      else
+        let c = input.[pos] in
+        if Char.is_whitespace c || List.mem ~equal:Char.equal reserved_chars c then pos
+        else aux (pos + 1)
     in
-    function
-    | [] ->
+    match find_next_non_white_space_char input pos with
+    | None ->
         []
-    | "" :: buffer ->
-        all ~except buffer
-    | hd :: buffer ->
-        let len = extract 0 hd in
-        if len > 0 then
-          let n = String.length hd in
-          [(String.sub hd ~pos:0 ~len, String.sub hd ~pos:len ~len:(n - len) :: buffer)]
-        else []
+    | Some pos ->
+        let end_pos = aux pos in
+        if pos < end_pos then [(String.sub input ~pos ~len:(end_pos - pos), {pos= end_pos})] else []
 
 
-  let string = all ~except:['('; ')'; '?']
+  let zero : 'a m = fun _ _ -> []
 
   let ellipsis : unit m =
-    let* str = string in
-    if String.equal str "..." then ret () else fun _ -> []
+    let* str = raw_ident in
+    if String.equal str "..." then ret () else zero
 
 
   let rule_arrow : unit m =
-    let* str = string in
-    if String.equal str "==>" then ret () else fun _ -> []
+    let* str = raw_ident in
+    if String.equal str "==>" then ret () else zero
 
 
   let reserved = ["..."; "==>"]
 
+  let var : string m =
+    let* str = raw_ident in
+    let n = String.length str in
+    if Char.equal str.[0] '?' && n > 1 then ret (String.sub ~pos:1 ~len:(n - 1) str) else zero
+
+
   let ident : string m =
-    let* str = string in
-    if List.mem ~equal:String.equal reserved str then fun _ -> [] else ret str
+    let* str = raw_ident in
+    if Char.equal str.[0] '?' || List.mem ~equal:String.equal reserved str then zero else ret str
 
 
-  let ( + ) (m : 'a m) (n : 'a m) : 'a m = fun buf -> m buf @ n buf
+  let ( + ) (m : 'a m) (n : 'a m) : 'a m = fun input state -> m input state @ n input state
 
   type raw_pattern = Var of string | Term of {header: string; args: raw_pattern list}
 
   let rec raw_pattern () : raw_pattern m =
-    (let* () = char '?' in
-     let* var = ident in
+    (let* var = var in
      ret (Var var) )
     + (let* () = char '(' in
        let* header = ident in
@@ -396,22 +418,9 @@ module Parser = struct
         Ellipsis {header= CC.mk_header cc header; arg= raw_to_pattern cc arg}
 
 
-  let parse m str =
-    let buffer = String.split_on_chars str ~on:[' '; '\n'; '\t'] in
-    match m () buffer with
-    | [] ->
-        None
-    | [(raw, _)] ->
-        Some raw
-    | _ ->
-        L.die InternalError "parse error"
+  let parse_pattern cc input : Pattern.t = run raw_pattern input |> raw_to_pattern cc
 
-
-  let parse_pattern cc str : Pattern.t option =
-    parse raw_pattern str |> Option.map ~f:(raw_to_pattern cc)
-
-
-  let parse_rule cc str : Rule.t option = parse raw_rule str |> Option.map ~f:(raw_to_rule cc)
+  let parse_rule cc input : Rule.t = run raw_rule input |> raw_to_rule cc
 end
 
 let parse_pattern = Parser.parse_pattern
