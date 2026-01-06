@@ -19,7 +19,7 @@ let st = ref (CC.init ~debug:false)
 
 let restart () = st := CC.init ~debug:false
 
-let parse_rule str = Rewrite.parse_rule !st str
+let parse_rule str = Rewrite.parse_rule !st str |> Result.ok |> Option.value_exn
 
 let pp_rules fmt rules =
   F.fprintf fmt "@[<hv1>{" ;

@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 open CongruenceClosureSolver
 open CongruenceClosureRewrite
 open CongruenceClosureRewrite.TestOnly
@@ -66,7 +67,29 @@ let const header = apply header []
 
 let mk_ellipsis header arg : Pattern.ellipsis = {header= mk_header !st header; arg}
 
-let parse_pattern str = parse_pattern !st str
+let parse_pattern_with_error str =
+  match parse_pattern !st str with
+  | Ok _ ->
+      F.printf "no error"
+  | Error err ->
+      F.printf "%a" pp_parse_error err
+
+
+let parse_rule_with_error str =
+  match parse_rule !st str with
+  | Ok _ ->
+      F.printf "no error"
+  | Error err ->
+      F.printf "%a" pp_parse_error err
+
+
+let parse_pattern str =
+  match parse_pattern !st str with
+  | Ok pattern ->
+      pattern
+  | Error err ->
+      L.die UserError "parse error %a" pp_parse_error err
+
 
 let pp_vars fmt vars =
   F.fprintf fmt "@[<hv>{" ;
@@ -281,6 +304,76 @@ let%expect_test "parse pattern" =
     {|
     pattern1 = (Type (arg1 ?V1) (arg2 List) (arg3 (Exp (Const 1) (Const 2) (Str "quoted"))))
       with vars = {V1}
+    |}]
+
+
+let%expect_test "parse pattern error 1" =
+  restart () ;
+  parse_pattern_with_error
+    {|
+         (Type
+           (arg1 ?V1)
+           (arg2 List)
+           (arg3 (Exp (Const 1) (Const 2) (Str "quoted")))) (oops)
+  |} ;
+  [%expect
+    {|
+    paser error at line 4, col 60:
+               (arg3 (Exp (Const 1) (Const 2) (Str "quoted")))) (oops)
+                                                                ^
+    --> end of buffer expected
+    |}]
+
+
+let%expect_test "parse pattern error 2" =
+  restart () ;
+  parse_pattern_with_error
+    {|
+         (Type
+           (arg1 ?V1)
+           (arg2 List)
+           (arg3 (Exp (Const 1) (Const 2) (Str "quoted"))
+  |} ;
+  [%expect
+    {|
+    paser error at line 4, col 57:
+               (arg3 (Exp (Const 1) (Const 2) (Str "quoted"))
+                                                             ^
+    --> end of buffer unexpected
+    |}]
+
+
+let%expect_test "parse rule error 1" =
+  restart () ;
+  parse_rule_with_error {|
+         (Type
+           (arg1 ?V1)
+           (arg2 List))
+
+  |} ;
+  [%expect
+    {|
+    paser error at line 3, col 23:
+               (arg2 List))
+                           ^
+    --> arrow "==>" expected
+    |}]
+
+
+let%expect_test "parse rule error 2" =
+  restart () ;
+  parse_rule_with_error {|
+         (Type
+           (arg1 ?V1)
+           (arg2 List)) =>
+
+  |} ;
+  [%expect
+    {|
+    paser error at line 3, col 24:
+               (arg2 List)) =>
+                            ^
+    --> arrow "==>" expected
     |}]
 
 

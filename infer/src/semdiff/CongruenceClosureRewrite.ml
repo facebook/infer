@@ -261,52 +261,129 @@ module Rule = struct
 end
 
 module Parser = struct
-  type state = {pos: int (* position in the input string *)}
+  type state = {pos: int (* position in the input string *); col: int; line: int}
 
-  type 'a m = string -> state -> ('a * state) list
+  type error_token = EndOfBuffer | Arrow
 
-  let ret (a : 'a) : 'a m = fun _input state -> [(a, state)]
+  type error_kind = Expected | Unexpected
 
-  let bind (m : 'a m) (f : 'a -> 'b m) : 'b m =
-   fun input state -> List.concat_map ~f:(fun (a, state) -> f a input state) (m input state)
+  type error = {kind: error_kind; token: error_token; input: string; col: int; line: int}
+
+  let pp_error fmt {kind; token; input; col; line} =
+    let lines = String.split_on_chars input ~on:['\n'; '\r'] in
+    let error_line = List.nth_exn lines line in
+    let show_error = String.make col ' ' in
+    let pp_kind fmt = function
+      | Expected ->
+          F.pp_print_string fmt "expected"
+      | Unexpected ->
+          F.pp_print_string fmt "unexpected"
+    in
+    let pp_token fmt = function
+      | EndOfBuffer ->
+          F.pp_print_string fmt "end of buffer"
+      | Arrow ->
+          F.pp_print_string fmt {|arrow "==>"|}
+    in
+    F.fprintf fmt "paser error at line %d, col %d:@.%s@.%s^@.--> %a %a " line col error_line
+      show_error pp_token token pp_kind kind
 
 
-  let ( let* ) = bind
+  type 'a result = Choices of ('a * state) list | Error of error
 
-  let rec find_next_non_white_space_char input pos =
+  type 'a m = string -> state -> 'a result
+
+  let ret (a : 'a) : 'a m = fun _input state -> Choices [(a, state)]
+
+  let bind ~if_empty (m : 'a m) (f : 'a -> 'b m) : 'b m =
+   fun input state ->
+    match m input state with
+    | Choices [] ->
+        if_empty input state
+    | Choices l ->
+        List.fold l ~init:(Choices []) ~f:(fun res (a, state) ->
+            match res with
+            | Error _ ->
+                res
+            | Choices acc -> (
+              match f a input state with
+              | Error err ->
+                  Error err
+              | Choices l_a ->
+                  Choices (l_a @ acc) ) )
+    | Error err ->
+        Error err
+
+
+  let zero : 'a m = fun _ _ -> Choices []
+
+  let ( let* ) m f = bind ~if_empty:zero m f
+
+  let error kind token : 'a m = fun input {col; line} -> Error {input; col; line; kind; token}
+
+  let ( let*! ) (m, token) f = bind ~if_empty:(error Expected token) m f
+
+  let ( ++ ) (m : 'a m) (n : 'a m) : 'a m =
+   fun input state ->
+    match m input state with
+    | Error err ->
+        Error err
+    | Choices l1 -> (
+      match n input state with Error err -> Error err | Choices l2 -> Choices (l1 @ l2) )
+
+
+  let step input {pos; col; line} =
+    assert (pos < String.length input) ;
+    match input.[pos] with
+    | '\n' | '\r' ->
+        {pos= pos + 1; col= 0; line= line + 1}
+    | _ ->
+        {pos= pos + 1; col= col + 1; line}
+
+
+  let rec find_next_non_white_space_char input ({pos} as state) =
     if String.length input <= pos then None
-    else if Char.is_whitespace input.[pos] then find_next_non_white_space_char input (pos + 1)
-    else Some pos
+    else if Char.is_whitespace input.[pos] then
+      find_next_non_white_space_char input (step input state)
+    else Some state
 
 
-  let run (m : unit -> 'a m) input : 'a =
-    match m () input {pos= 0} with
-    | [] ->
-        L.die UserError " parser error"
-    | _ :: _ :: _ ->
-        L.die InternalError "nondeterministic parser"
-    | [(a, {pos})] -> (
-      match find_next_non_white_space_char input pos with
+  let run (m : unit -> 'a m) input : ('a, error) Stdlib.result =
+    match m () input {pos= 0; col= 0; line= 0} with
+    | Error err ->
+        Error err
+    | Choices [(a, state)] -> (
+      match find_next_non_white_space_char input state with
       | None ->
-          a
-      | Some pos ->
-          let rest = String.sub input ~pos ~len:(String.length input - pos) in
-          L.die UserError " parser ended while %s was unparsed " rest )
+          Ok a
+      | Some {col; line} ->
+          Error {kind= Expected; token= EndOfBuffer; col; line; input} )
+    | Choices _ ->
+        L.die InternalError "should not happen"
+
+
+  let end_of_buffer () : unit m =
+   fun input state ->
+    match find_next_non_white_space_char input state with
+    | None ->
+        ret () input state
+    | Some _ ->
+        zero input state
 
 
   let char (c : char) : unit m =
-   fun input {pos} ->
-    match find_next_non_white_space_char input pos with
+   fun input state ->
+    match find_next_non_white_space_char input state with
     | None ->
-        []
-    | Some pos ->
-        if Char.equal input.[pos] c then [((), {pos= pos + 1})] else []
+        Choices []
+    | Some state ->
+        if Char.equal input.[state.pos] c then Choices [((), step input state)] else Choices []
 
 
   let reserved_chars = ['('; ')']
 
-  let raw_ident : string m =
-   fun input {pos} ->
+  let raw_ident ~expected : string m =
+   fun input state ->
     let rec aux pos =
       if String.length input <= pos then pos
       else
@@ -314,62 +391,69 @@ module Parser = struct
         if Char.is_whitespace c || List.mem ~equal:Char.equal reserved_chars c then pos
         else aux (pos + 1)
     in
-    match find_next_non_white_space_char input pos with
+    match find_next_non_white_space_char input state with
     | None ->
-        []
-    | Some pos ->
-        let end_pos = aux pos in
-        if pos < end_pos then [(String.sub input ~pos ~len:(end_pos - pos), {pos= end_pos})] else []
+        Choices []
+    | Some state ->
+        let end_pos = aux state.pos in
+        if state.pos < end_pos then
+          let len = end_pos - state.pos in
+          let ident = String.sub input ~pos:state.pos ~len in
+          let new_state = {state with pos= end_pos; col= state.col + len} in
+          match expected with
+          | None ->
+              Choices [(ident, new_state)]
+          | Some (expected, _token) when String.equal expected ident ->
+              Choices [(ident, new_state)]
+          | Some (_expected, token) ->
+              error Expected token input state
+        else Choices []
 
-
-  let zero : 'a m = fun _ _ -> []
 
   let ellipsis : unit m =
-    let* str = raw_ident in
+    let* str = raw_ident ~expected:None in
     if String.equal str "..." then ret () else zero
 
 
-  let rule_arrow : unit m =
-    let* str = raw_ident in
-    if String.equal str "==>" then ret () else zero
+  let rule_arrow_or_error : unit m =
+    let*! _ = (raw_ident ~expected:(Some ("==>", Arrow)), Arrow) in
+    ret ()
 
 
   let reserved = ["..."; "==>"]
 
   let var : string m =
-    let* str = raw_ident in
+    let* str = raw_ident ~expected:None in
     let n = String.length str in
     if Char.equal str.[0] '?' && n > 1 then ret (String.sub ~pos:1 ~len:(n - 1) str) else zero
 
 
   let ident : string m =
-    let* str = raw_ident in
+    let* str = raw_ident ~expected:None in
     if Char.equal str.[0] '?' || List.mem ~equal:String.equal reserved str then zero else ret str
 
-
-  let ( + ) (m : 'a m) (n : 'a m) : 'a m = fun input state -> m input state @ n input state
 
   type raw_pattern = Var of string | Term of {header: string; args: raw_pattern list}
 
   let rec raw_pattern () : raw_pattern m =
     (let* var = var in
      ret (Var var) )
-    + (let* () = char '(' in
-       let* header = ident in
-       let* args = args () in
-       ret (Term {header; args}) )
-    +
-    let* header = ident in
-    ret (Term {header; args= []})
+    ++ (let* () = char '(' in
+        let* header = ident in
+        let* args = args () in
+        ret (Term {header; args}) )
+    ++ let* header = ident in
+       ret (Term {header; args= []})
 
 
   and args () : raw_pattern list m =
     (let* () = char ')' in
      ret [] )
-    +
-    let* arg = raw_pattern () in
-    let* args = args () in
-    ret (arg :: args)
+    ++ (let* arg = raw_pattern () in
+        let* args = args () in
+        ret (arg :: args) )
+    ++ let* () = end_of_buffer () in
+       error Unexpected EndOfBuffer
 
 
   type raw_ellipsis = {header: string; arg: raw_pattern}
@@ -388,16 +472,16 @@ module Parser = struct
 
   let raw_rule () : raw_rule m =
     (let* lhs = raw_pattern () in
-     let* () = rule_arrow in
+     let* () = rule_arrow_or_error in
      let* rhs = raw_pattern () in
      ret (Regular {lhs; rhs}) )
-    + let* raw_ellipsis = raw_ellipsis in
-      let* () = rule_arrow in
-      let* () = char '(' in
-      let* _ = ident in
-      let* () = ellipsis in
-      let* () = char ')' in
-      ret (Ellipsis raw_ellipsis)
+    ++ let* raw_ellipsis = raw_ellipsis in
+       let* () = rule_arrow_or_error in
+       let* () = char '(' in
+       let* _ = ident in
+       let* () = ellipsis in
+       let* () = char ')' in
+       ret (Ellipsis raw_ellipsis)
 
 
   let rec raw_to_pattern cc raw : Pattern.t =
@@ -418,10 +502,17 @@ module Parser = struct
         Ellipsis {header= CC.mk_header cc header; arg= raw_to_pattern cc arg}
 
 
-  let parse_pattern cc input : Pattern.t = run raw_pattern input |> raw_to_pattern cc
+  let parse_pattern cc input : (Pattern.t, error) Stdlib.result =
+    run raw_pattern input |> Result.map ~f:(raw_to_pattern cc)
 
-  let parse_rule cc input : Rule.t = run raw_rule input |> raw_to_rule cc
+
+  let parse_rule cc input : (Rule.t, error) Stdlib.result =
+    run raw_rule input |> Result.map ~f:(raw_to_rule cc)
 end
+
+type parse_error = Parser.error
+
+let pp_parse_error = Parser.pp_error
 
 let parse_pattern = Parser.parse_pattern
 

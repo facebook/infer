@@ -47,9 +47,13 @@ module Rule : sig
       @raise FuelExhausted if fuel exhausted before saturation *)
 end
 
-val parse_pattern : CC.t -> string -> Pattern.t
+type parse_error
 
-val parse_rule : CC.t -> string -> Rule.t
+val pp_parse_error : F.formatter -> parse_error -> unit
+
+val parse_pattern : CC.t -> string -> (Pattern.t, parse_error) result
+
+val parse_rule : CC.t -> string -> (Rule.t, parse_error) result
 
 module TestOnly : sig
   val e_match_pattern_at : ?debug:bool -> CC.t -> Pattern.t -> CC.Atom.t -> subst list
