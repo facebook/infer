@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module CC = CongruenceClosureSolver
 module Rewrite = CongruenceClosureRewrite
 open PythonSourceAst
@@ -41,9 +42,58 @@ let are_ast_equivalent cc ast1 ast2 rules =
   CC.is_equiv cc atom1 atom2
 
 
+let build_rules cc : Rewrite.Rule.t list =
+  List.map
+    ~f:(fun prog ->
+      match Rewrite.parse_rule cc prog with
+      | Ok ast ->
+          ast
+      | Error err ->
+          L.die InternalError "%a" Rewrite.pp_parse_error err )
+    [ "(List ... Null ...) ==> (List ...)"
+    ; "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> Null"
+    ; "(Import (names ?N)) ==> Null"
+    ; "(returns ?X) ==> (returns Null)"
+    ; "(annotation ?X) ==> (annotation Null)"
+    ; {|(AnnAssign (annotation ?A) (simple ?S) (target ?N) (value ?V))
+        ==>
+        (Assign (targets (List ?N)) (type_comment Null) (value ?V))|}
+    ; {|(If
+              (body ?BODY) (orelse ?LIST) (test
+                                              (Compare
+                                                  (comparators
+                                                      (List (Name (ctx Load) (id str))))
+                                                  (left
+                                                      (Attribute
+                                                          (attr __class__)
+                                                          (ctx Load)
+                                                          (value ?NAME)))
+                                                  (ops (List Eq)))))
+          ==>
+          (If
+              (body ?BODY) (orelse ?LIST) (test
+                                              (Call
+                                                  (args
+                                                      (List ?NAME (Name (ctx Load) (id str))))
+                                                  (func
+                                                      (Name (ctx Load) (id isinstance)))
+                                                  (keywords
+                                                      List))))|}
+    ]
+
+
+let check_equivalence ast1 ast2 =
+  let cc = CC.init ~debug:false in
+  let rules = build_rules cc in
+  are_ast_equivalent cc ast1 ast2 rules
+
+
 module TestOnly = struct
   let store_ast ?(debug = false) ast =
     let cc = CC.init ~debug:false in
     let atom = curry cc ast in
     if debug then F.printf "%a" (CC.pp_nested_term cc) atom
+
+
+  let are_ast_equivalent = are_ast_equivalent
 end

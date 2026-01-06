@@ -29,6 +29,14 @@ let pp_rules fmt rules =
   F.fprintf fmt "}@]"
 
 
+let are_ast_equivalent ?(debug = false) ast1 ast2 rules =
+  if debug then (
+    PythonSourceAstDiff.TestOnly.store_ast ~debug:true ast1 ;
+    F.printf "@." ;
+    PythonSourceAstDiff.TestOnly.store_ast ~debug:true ast2 ) ;
+  PythonSourceAstDiff.TestOnly.are_ast_equivalent !st ast1 ast2 rules
+
+
 let%expect_test "store ast" =
   let parser = build_parser () in
   let ast = parser {|
@@ -158,7 +166,7 @@ def factorial(n):
     return result
       |}
   in
-  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast [] in
+  let equiv = are_ast_equivalent ast ast [] in
   F.printf "ast == ast? %b\n" equiv ;
   [%expect {| ast == ast? true |}]
 
@@ -199,7 +207,7 @@ def factorial(n):
     return result
       |}
   in
-  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast_with_ignore [] in
+  let equiv = are_ast_equivalent ast ast_with_ignore [] in
   F.printf "ast == ast_with_ignore? %b (no rules)\n" equiv ;
   let rules : Rewrite.Rule.t list =
     [ parse_rule "(List ... Null ...) ==> (List ...)"
@@ -213,7 +221,7 @@ def factorial(n):
                     (keywords List)))) ==> Null |}
     ]
   in
-  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast_with_ignore rules in
+  let equiv = are_ast_equivalent ast ast_with_ignore rules in
   F.printf "ast == ast_with_ignore? %b@." equiv ;
   F.printf " with rules: %a@." pp_rules rules ;
   [%expect
@@ -227,6 +235,34 @@ def factorial(n):
                   ==>
                   Null}
     |}]
+
+
+let%expect_test "ignore imports" =
+  let parser = build_parser () in
+  restart () ;
+  let ast1 = parser {|
+def greet(name):
+    return f"Hello, {name}!"
+|} in
+  let ast2 =
+    parser
+      {|
+# pyre-strict
+from typing import Any
+import urllib.parse
+
+def greet(name):
+    return f"Hello, {name}!"
+|}
+  in
+  let rules : Rewrite.Rule.t list =
+    [ parse_rule "(List ... Null ...) ==> (List ...)"
+    ; parse_rule "(ImportFrom (level ?L) (module typing) (names ?N)) ==> Null"
+    ; parse_rule "(Import (names ?N)) ==> Null" ]
+  in
+  let equiv = are_ast_equivalent ast1 ast2 rules in
+  F.printf "ast1 == ast2? %b@." equiv ;
+  [%expect {| ast1 == ast2? true |}]
 
 
 let%expect_test "type test modernization" =
@@ -269,7 +305,7 @@ def foo(self, x) -> None:
                                                               List))))|}
     ; parse_rule "(returns (Constant (kind Null) (value Null))) ==> (returns Null)" ]
   in
-  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast1 ast2 rules in
+  let equiv = are_ast_equivalent ast1 ast2 rules in
   F.printf "ast1 == ast2? %b@." equiv ;
   [%expect {| ast1 == ast2? true |}]
 
@@ -296,6 +332,6 @@ def foo(self, x: int) -> int:
           (Assign (targets (List ?N)) (type_comment Null) (value ?V))|}
     ]
   in
-  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast1 ast2 rules in
+  let equiv = are_ast_equivalent ast1 ast2 rules in
   F.printf "ast1 == ast2? %b@." equiv ;
   [%expect {| ast1 == ast2? true |}]

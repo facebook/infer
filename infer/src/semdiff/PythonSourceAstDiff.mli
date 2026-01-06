@@ -9,9 +9,11 @@ open! IStd
 module CC = CongruenceClosureSolver
 module Rewrite = CongruenceClosureRewrite
 
-val are_ast_equivalent :
-  CC.t -> PythonSourceAst.Node.t -> PythonSourceAst.Node.t -> Rewrite.Rule.t list -> bool
+val check_equivalence : PythonSourceAst.Node.t -> PythonSourceAst.Node.t -> bool
 
 module TestOnly : sig
   val store_ast : ?debug:bool -> PythonSourceAst.Node.t -> unit
+
+  val are_ast_equivalent :
+    CC.t -> PythonSourceAst.Node.t -> PythonSourceAst.Node.t -> Rewrite.Rule.t list -> bool
 end

@@ -10,8 +10,9 @@ module F = Format
 
 let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe ()
 
-let ast_diff_equal prog1 prog2 =
-  let diffs = PythonCompareWithoutTypeAnnot.test_ast_diff ~debug:false prog1 prog2 in
+let ast_diff_equal ?(require_type_comparisons = false) prog1 prog2 =
+  let test_eqsat = not require_type_comparisons in
+  let diffs = PythonCompareWithoutTypeAnnot.test_ast_diff ~debug:false ~test_eqsat prog1 prog2 in
   List.iter diffs ~f:(F.printf "%a\n" Diff.pp_explicit)
 
 
@@ -373,7 +374,7 @@ def foo(self, x: int) -> None: pass
   let prog2 = {|
 def foo(self, x: int | None) -> None: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {| (Line 2) - def foo(self, x: int) -> None: pass, + def foo(self, x: int | None) -> None: pass |}]
 
@@ -385,7 +386,7 @@ async def foo(self, x: int) -> None: pass
   let prog2 = {|
 async def foo(self, x: str) -> None: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {| (Line 2) - async def foo(self, x: int) -> None: pass, + async def foo(self, x: str) -> None: pass |}]
 
@@ -405,7 +406,7 @@ CATEGORIES_TO_REMOVE: dict[str, int] = {'a': 1, 'b': 2, 'c': 3}
 CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
 |}
   in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {| (Line 4) - CATEGORIES_TO_REMOVE: dict[str, int] = {'a': 1, 'b': 2, 'c': 3}, + CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3} |}]
 
@@ -467,7 +468,7 @@ def foo() -> SomeUserDefinedType: pass
 from mylib import someUserDefinedType
 def foo() -> someUserDefinedType: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {| (Line 3) - def foo() -> SomeUserDefinedType: pass, + def foo() -> someUserDefinedType: pass |}]
 
@@ -516,7 +517,7 @@ def foo(params) -> "Tree": pass
   let prog2 = {|
 def foo(params: list[str]) -> Tree: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {| (Line 2) - def foo(params) -> "Tree": pass, + def foo(params: list[str]) -> Tree: pass |}]
 
@@ -550,7 +551,7 @@ def foo(x: Optional[int]) -> None: pass
   let prog2 = {|
 def foo(x: int | None) -> None: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {| (Line 2) - def foo(x: Optional[int]) -> None: pass, + def foo(x: int | None) -> None: pass |}]
 
@@ -562,7 +563,7 @@ def foo(x: Optional[int]) -> None: pass
   let prog2 = {|
 def foo(x: str | None) -> None: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {| (Line 2) - def foo(x: Optional[int]) -> None: pass, + def foo(x: str | None) -> None: pass |}]
 
@@ -585,7 +586,7 @@ def foo(x: Any) -> None: pass
   let prog2 = {|
 def foo(x: str) -> None: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect {| (Line 2) - def foo(x: Any) -> None: pass, + def foo(x: str) -> None: pass |}]
 
 
@@ -613,7 +614,7 @@ def foo() -> Dict[str, Dict[str, Set[str]]]: pass
   let prog2 = {|
 def foo() -> dict[str, dict[str, str]]: pass
 |} in
-  ast_diff_equal prog1 prog2 ;
+  ast_diff_equal ~require_type_comparisons:true prog1 prog2 ;
   [%expect
     {|
     (Line 2) + def foo() -> dict[str, dict[str, str]]: pass
