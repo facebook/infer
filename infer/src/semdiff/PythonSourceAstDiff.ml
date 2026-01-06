@@ -13,26 +13,32 @@ module Rewrite = CongruenceClosureRewrite
 open PythonSourceAst
 
 (* currying AST -> CongruenceClosure terms *)
+let mk_const cc header = CC.mk_term cc (CC.mk_header cc header) []
+
+let mk_term cc header args = CC.mk_term cc (CC.mk_header cc header) args
+
+let mk_null cc = mk_const cc "Null"
+
+let mk_list cc args = mk_term cc "List" args
+
 let rec curry cc ast =
-  let mk_const header = CC.mk_term cc (CC.mk_header cc header) [] in
-  let mk_term header args = CC.mk_term cc (CC.mk_header cc header) args in
   match (ast : Node.t) with
   | Null ->
-      mk_const "Null"
+      mk_null cc
   | Bool b ->
-      mk_const (F.asprintf "%b" b)
+      mk_const cc (F.asprintf "%b" b)
   | Float f ->
-      mk_const (F.asprintf "%f" f)
+      mk_const cc (F.asprintf "%f" f)
   | Int i ->
-      mk_const (F.asprintf "%d" i)
+      mk_const cc (F.asprintf "%d" i)
   | Str s ->
-      mk_const s
+      mk_const cc s
   | List l ->
-      mk_term "List" (List.map ~f:(curry cc) l)
+      mk_list cc (List.map ~f:(curry cc) l)
   | Dict dict ->
       let header, assoc = Node.assoc_of_dict dict in
-      let mk_atom_binding (field_name, ast) = mk_term field_name [curry cc ast] in
-      mk_term header (List.map ~f:mk_atom_binding assoc)
+      let mk_atom_binding (field_name, ast) = mk_term cc field_name [curry cc ast] in
+      mk_term cc header (List.map ~f:mk_atom_binding assoc)
 
 
 let are_ast_equivalent cc ast1 ast2 rules =
@@ -47,8 +53,7 @@ let diff_header_name = "@DIFF"
 let build_diff cc ast1 ast2 =
   let atom1 = curry cc ast1 in
   let atom2 = curry cc ast2 in
-  let diff_header = CC.mk_header cc diff_header_name in
-  CC.mk_term cc diff_header [atom1; atom2] |> ignore
+  mk_term cc diff_header_name [atom1; atom2] |> ignore
 
 
 let is_header_equivalent cc (header1 : CC.header) (header2 : CC.header) =
@@ -75,17 +80,54 @@ let gen_diff_commutative_rules cc =
          else None )
 
 
-let build_rules cc : Rewrite.Rule.t list =
-  List.map
-    ~f:(fun prog ->
+let gen_diff_rules cc =
+  let open Rewrite in
+  let open Pattern in
+  let open Rule in
+  let diff_header = CC.mk_header cc diff_header_name in
+  let var = Var (Var.of_string "X") in
+  Regular {lhs= Term {header= diff_header; args= [var; var]}; rhs= var}
+  :: gen_diff_commutative_rules cc
+
+
+let get_unresolved_diffs cc =
+  let diff = CC.mk_header cc diff_header_name in
+  let is_a_diff_root =
+    let set =
+      CC.fold_term_roots cc diff ~init:CC.Atom.Set.empty ~f:(fun root set ->
+          let root' = CC.representative cc root in
+          CC.Atom.Set.add root' set )
+    in
+    fun atom -> CC.Atom.Set.mem atom set
+  in
+  let is_only_equivalent_to_diff_terms atom =
+    CC.equiv_atoms cc atom |> List.for_all ~f:is_a_diff_root
+  in
+  CC.fold_term_roots cc diff ~init:[] ~f:(fun root acc ->
+      let root' = CC.representative cc root in
+      if is_only_equivalent_to_diff_terms root' then
+        CC.equiv_terms cc root'
+        |> List.fold ~init:acc ~f:(fun acc {CC.left; right= right_arg} ->
+               CC.representative cc left |> CC.equiv_terms cc
+               |> List.fold ~init:acc ~f:(fun acc {CC.right= left_arg} ->
+                      (left_arg, right_arg) :: acc ) )
+      else acc )
+
+
+let parse_rules cc str_rules : Rewrite.Rule.t list =
+  List.map str_rules ~f:(fun prog ->
       match Rewrite.parse_rule cc prog with
       | Ok ast ->
           ast
       | Error err ->
           L.die InternalError "%a" Rewrite.pp_parse_error err )
-    [ "(List ... Null ...) ==> (List ...)"
-    ; "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> Null"
-    ; "(Import (names ?N)) ==> Null"
+
+
+let build_rules cc : Rewrite.Rule.t list =
+  CC.set_app_right_neutral cc (mk_const cc "_epsilon_") ;
+  parse_rules cc
+    [ "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> _epsilon_"
+    ; "(Import (names ?N)) ==> _epsilon_"
     ; "(returns ?X) ==> (returns Null)"
     ; "(annotation ?X) ==> (annotation Null)"
     ; {|(AnnAssign (annotation ?A) (simple ?S) (target ?N) (value ?V))

@@ -353,63 +353,108 @@ def foo(self, x: int) -> int:
       return x
 |} in
   Diff.build_diff !st ast1 ast2 ;
-  Diff.gen_diff_commutative_rules !st
+  Diff.gen_diff_rules !st
   |> List.iteri ~f:(fun i rule -> F.printf "RULE%d: %a@." i Rewrite.Rule.pp rule) ;
   [%expect
     {|
-    RULE0: (@DIFF (annotation ?X0) (annotation ?Y0)) ==> (annotation (@DIFF ?X0 ?Y0))
-    RULE1: (@DIFF (arg ?X0) (arg ?Y0)) ==> (arg (@DIFF ?X0 ?Y0))
-    RULE2: (@DIFF (arg ?X0 ?X1 ?X2) (arg ?Y0 ?Y1 ?Y2))
+    RULE0: (@DIFF ?X ?X) ==> ?X
+    RULE1: (@DIFF (annotation ?X0) (annotation ?Y0)) ==> (annotation (@DIFF ?X0 ?Y0))
+    RULE2: (@DIFF (arg ?X0) (arg ?Y0)) ==> (arg (@DIFF ?X0 ?Y0))
+    RULE3: (@DIFF (arg ?X0 ?X1 ?X2) (arg ?Y0 ?Y1 ?Y2))
            ==>
            (arg (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1) (@DIFF ?X2 ?Y2))
-    RULE3: (@DIFF (type_comment ?X0) (type_comment ?Y0)) ==> (type_comment (@DIFF ?X0 ?Y0))
-    RULE4: (@DIFF (ctx ?X0) (ctx ?Y0)) ==> (ctx (@DIFF ?X0 ?Y0))
-    RULE5: (@DIFF (id ?X0) (id ?Y0)) ==> (id (@DIFF ?X0 ?Y0))
-    RULE6: (@DIFF (Name ?X0 ?X1) (Name ?Y0 ?Y1)) ==> (Name (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1))
-    RULE7: (@DIFF (List ?X0) (List ?Y0)) ==> (List (@DIFF ?X0 ?Y0))
-    RULE8: (@DIFF (List ?X0 ?X1) (List ?Y0 ?Y1)) ==> (List (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1))
-    RULE9: (@DIFF (args ?X0) (args ?Y0)) ==> (args (@DIFF ?X0 ?Y0))
-    RULE10: (@DIFF (defaults ?X0) (defaults ?Y0)) ==> (defaults (@DIFF ?X0 ?Y0))
-    RULE11: (@DIFF (kw_defaults ?X0) (kw_defaults ?Y0)) ==> (kw_defaults (@DIFF ?X0 ?Y0))
-    RULE12: (@DIFF (kwarg ?X0) (kwarg ?Y0)) ==> (kwarg (@DIFF ?X0 ?Y0))
-    RULE13: (@DIFF (kwonlyargs ?X0) (kwonlyargs ?Y0)) ==> (kwonlyargs (@DIFF ?X0 ?Y0))
-    RULE14: (@DIFF (posonlyargs ?X0) (posonlyargs ?Y0)) ==> (posonlyargs (@DIFF ?X0 ?Y0))
-    RULE15: (@DIFF (vararg ?X0) (vararg ?Y0)) ==> (vararg (@DIFF ?X0 ?Y0))
-    RULE16: (@DIFF (arguments ?X0 ?X1 ?X2 ?X3 ?X4 ?X5 ?X6) (arguments ?Y0 ?Y1 ?Y2 ?Y3 ?Y4 ?Y5 ?Y6))
+    RULE4: (@DIFF (type_comment ?X0) (type_comment ?Y0)) ==> (type_comment (@DIFF ?X0 ?Y0))
+    RULE5: (@DIFF (ctx ?X0) (ctx ?Y0)) ==> (ctx (@DIFF ?X0 ?Y0))
+    RULE6: (@DIFF (id ?X0) (id ?Y0)) ==> (id (@DIFF ?X0 ?Y0))
+    RULE7: (@DIFF (Name ?X0 ?X1) (Name ?Y0 ?Y1)) ==> (Name (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1))
+    RULE8: (@DIFF (List ?X0) (List ?Y0)) ==> (List (@DIFF ?X0 ?Y0))
+    RULE9: (@DIFF (List ?X0 ?X1) (List ?Y0 ?Y1)) ==> (List (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1))
+    RULE10: (@DIFF (args ?X0) (args ?Y0)) ==> (args (@DIFF ?X0 ?Y0))
+    RULE11: (@DIFF (defaults ?X0) (defaults ?Y0)) ==> (defaults (@DIFF ?X0 ?Y0))
+    RULE12: (@DIFF (kw_defaults ?X0) (kw_defaults ?Y0)) ==> (kw_defaults (@DIFF ?X0 ?Y0))
+    RULE13: (@DIFF (kwarg ?X0) (kwarg ?Y0)) ==> (kwarg (@DIFF ?X0 ?Y0))
+    RULE14: (@DIFF (kwonlyargs ?X0) (kwonlyargs ?Y0)) ==> (kwonlyargs (@DIFF ?X0 ?Y0))
+    RULE15: (@DIFF (posonlyargs ?X0) (posonlyargs ?Y0)) ==> (posonlyargs (@DIFF ?X0 ?Y0))
+    RULE16: (@DIFF (vararg ?X0) (vararg ?Y0)) ==> (vararg (@DIFF ?X0 ?Y0))
+    RULE17: (@DIFF (arguments ?X0 ?X1 ?X2 ?X3 ?X4 ?X5 ?X6) (arguments ?Y0 ?Y1 ?Y2 ?Y3 ?Y4 ?Y5 ?Y6))
             ==>
             (arguments
                 (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1) (@DIFF ?X2 ?Y2) (@DIFF ?X3 ?Y3)
                 (@DIFF ?X4 ?Y4) (@DIFF ?X5 ?Y5) (@DIFF ?X6 ?Y6))
-    RULE17: (@DIFF (targets ?X0) (targets ?Y0)) ==> (targets (@DIFF ?X0 ?Y0))
-    RULE18: (@DIFF (left ?X0) (left ?Y0)) ==> (left (@DIFF ?X0 ?Y0))
-    RULE19: (@DIFF (op ?X0) (op ?Y0)) ==> (op (@DIFF ?X0 ?Y0))
-    RULE20: (@DIFF (kind ?X0) (kind ?Y0)) ==> (kind (@DIFF ?X0 ?Y0))
-    RULE21: (@DIFF (value ?X0) (value ?Y0)) ==> (value (@DIFF ?X0 ?Y0))
-    RULE22: (@DIFF (Constant ?X0 ?X1) (Constant ?Y0 ?Y1))
+    RULE18: (@DIFF (targets ?X0) (targets ?Y0)) ==> (targets (@DIFF ?X0 ?Y0))
+    RULE19: (@DIFF (left ?X0) (left ?Y0)) ==> (left (@DIFF ?X0 ?Y0))
+    RULE20: (@DIFF (op ?X0) (op ?Y0)) ==> (op (@DIFF ?X0 ?Y0))
+    RULE21: (@DIFF (kind ?X0) (kind ?Y0)) ==> (kind (@DIFF ?X0 ?Y0))
+    RULE22: (@DIFF (value ?X0) (value ?Y0)) ==> (value (@DIFF ?X0 ?Y0))
+    RULE23: (@DIFF (Constant ?X0 ?X1) (Constant ?Y0 ?Y1))
             ==>
             (Constant (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1))
-    RULE23: (@DIFF (right ?X0) (right ?Y0)) ==> (right (@DIFF ?X0 ?Y0))
-    RULE24: (@DIFF (BinOp ?X0 ?X1 ?X2) (BinOp ?Y0 ?Y1 ?Y2))
+    RULE24: (@DIFF (right ?X0) (right ?Y0)) ==> (right (@DIFF ?X0 ?Y0))
+    RULE25: (@DIFF (BinOp ?X0 ?X1 ?X2) (BinOp ?Y0 ?Y1 ?Y2))
             ==>
             (BinOp (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1) (@DIFF ?X2 ?Y2))
-    RULE25: (@DIFF (Assign ?X0 ?X1 ?X2) (Assign ?Y0 ?Y1 ?Y2))
+    RULE26: (@DIFF (Assign ?X0 ?X1 ?X2) (Assign ?Y0 ?Y1 ?Y2))
             ==>
             (Assign (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1) (@DIFF ?X2 ?Y2))
-    RULE26: (@DIFF (Return ?X0) (Return ?Y0)) ==> (Return (@DIFF ?X0 ?Y0))
-    RULE27: (@DIFF (body ?X0) (body ?Y0)) ==> (body (@DIFF ?X0 ?Y0))
-    RULE28: (@DIFF (decorator_list ?X0) (decorator_list ?Y0)) ==> (decorator_list (@DIFF ?X0 ?Y0))
-    RULE29: (@DIFF (name ?X0) (name ?Y0)) ==> (name (@DIFF ?X0 ?Y0))
-    RULE30: (@DIFF (returns ?X0) (returns ?Y0)) ==> (returns (@DIFF ?X0 ?Y0))
-    RULE31: (@DIFF (FunctionDef ?X0 ?X1 ?X2 ?X3 ?X4 ?X5) (FunctionDef ?Y0 ?Y1 ?Y2 ?Y3 ?Y4 ?Y5))
+    RULE27: (@DIFF (Return ?X0) (Return ?Y0)) ==> (Return (@DIFF ?X0 ?Y0))
+    RULE28: (@DIFF (body ?X0) (body ?Y0)) ==> (body (@DIFF ?X0 ?Y0))
+    RULE29: (@DIFF (decorator_list ?X0) (decorator_list ?Y0)) ==> (decorator_list (@DIFF ?X0 ?Y0))
+    RULE30: (@DIFF (name ?X0) (name ?Y0)) ==> (name (@DIFF ?X0 ?Y0))
+    RULE31: (@DIFF (returns ?X0) (returns ?Y0)) ==> (returns (@DIFF ?X0 ?Y0))
+    RULE32: (@DIFF (FunctionDef ?X0 ?X1 ?X2 ?X3 ?X4 ?X5) (FunctionDef ?Y0 ?Y1 ?Y2 ?Y3 ?Y4 ?Y5))
             ==>
             (FunctionDef
                 (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1) (@DIFF ?X2 ?Y2) (@DIFF ?X3 ?Y3)
                 (@DIFF ?X4 ?Y4) (@DIFF ?X5 ?Y5))
-    RULE32: (@DIFF (type_ignores ?X0) (type_ignores ?Y0)) ==> (type_ignores (@DIFF ?X0 ?Y0))
-    RULE33: (@DIFF (Module ?X0 ?X1) (Module ?Y0 ?Y1)) ==> (Module (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1))
-    RULE34: (@DIFF (simple ?X0) (simple ?Y0)) ==> (simple (@DIFF ?X0 ?Y0))
-    RULE35: (@DIFF (target ?X0) (target ?Y0)) ==> (target (@DIFF ?X0 ?Y0))
-    RULE36: (@DIFF (AnnAssign ?X0 ?X1 ?X2 ?X3) (AnnAssign ?Y0 ?Y1 ?Y2 ?Y3))
+    RULE33: (@DIFF (type_ignores ?X0) (type_ignores ?Y0)) ==> (type_ignores (@DIFF ?X0 ?Y0))
+    RULE34: (@DIFF (Module ?X0 ?X1) (Module ?Y0 ?Y1)) ==> (Module (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1))
+    RULE35: (@DIFF (simple ?X0) (simple ?Y0)) ==> (simple (@DIFF ?X0 ?Y0))
+    RULE36: (@DIFF (target ?X0) (target ?Y0)) ==> (target (@DIFF ?X0 ?Y0))
+    RULE37: (@DIFF (AnnAssign ?X0 ?X1 ?X2 ?X3) (AnnAssign ?Y0 ?Y1 ?Y2 ?Y3))
             ==>
             (AnnAssign (@DIFF ?X0 ?Y0) (@DIFF ?X1 ?Y1) (@DIFF ?X2 ?Y2) (@DIFF ?X3 ?Y3))
+    |}]
+
+
+let%expect_test "build diffs and simplify" =
+  let parser = build_parser () in
+  restart () ;
+  let ast1 = parser {|
+def foo(self, x: Any) -> int:
+      y = x + 1
+      return x
+|} in
+  let ast2 = parser {|
+def foo(self, x: int) -> int:
+      y: int = x + 1
+      return x
+|} in
+  Diff.build_diff !st ast1 ast2 ;
+  let rules = Diff.gen_diff_rules !st in
+  Rewrite.Rule.full_rewrite !st rules |> ignore ;
+  Diff.get_unresolved_diffs !st
+  |> List.iter ~f:(fun (left, right) ->
+         F.printf "@[<hv 4>(DIFF@ %a@ %a)@]@." (CC.pp_nested_term !st) left (CC.pp_nested_term !st)
+           right ) ;
+  [%expect
+    {|
+    (DIFF Any int)
+    (DIFF
+        (Assign
+            (targets (List (Name (ctx Store) (id y))))
+            (type_comment Null)
+            (value
+                (BinOp
+                    (left (Name (ctx Load) (id x)))
+                    (op Add)
+                    (right (Constant (kind Null) (value 1))))))
+        (AnnAssign
+            (annotation (Name (ctx Load) (id int)))
+            (simple 1)
+            (target (Name (ctx Store) (id y)))
+            (value
+                (BinOp
+                    (left (Name (ctx Load) (id x)))
+                    (op Add)
+                    (right (Constant (kind Null) (value 1)))))))
     |}]
