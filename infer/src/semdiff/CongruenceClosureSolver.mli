@@ -44,7 +44,15 @@ val representative_of_header : t -> header -> Atom.t
 
 val fold_term_roots : t -> header -> f:(Atom.t -> 'a -> 'a) -> init:'a -> 'a
 
+val iter_app_roots : t -> f:(Atom.t -> unit) -> unit
+
 val iter_term_roots : t -> header -> f:(Atom.t -> unit) -> unit
+
+val set_app_right_neutral : t -> Atom.t -> unit
+
+val app_right_neutral_exists : t -> bool
+
+val is_app_right_neutral : t -> Atom.t -> bool
 
 val equiv_atoms : t -> Atom.t -> Atom.t list
 

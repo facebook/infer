@@ -167,6 +167,15 @@ module Rule = struct
     List.length substs
 
 
+  let rewrite_app_right_neutral cc =
+    if CC.app_right_neutral_exists cc then
+      CC.iter_app_roots cc ~f:(fun atom ->
+          let atom' = CC.representative cc atom in
+          let app_equations = CC.equiv_terms cc atom' in
+          List.iter app_equations ~f:(fun {CC.left; right} ->
+              if CC.is_app_right_neutral cc right then CC.merge cc atom' (CC.Atom left) ) )
+
+
   let rewrite_once ?(debug = false) cc rules =
     CC.reset_update_count cc ;
     List.iter rules ~f:(fun ({lhs; rhs} as rule) ->
@@ -177,6 +186,7 @@ module Rule = struct
                 F.printf "rewriting atom %a with rule %a and subst %a@." (CC.pp_nested_term cc) atom
                   pp rule (pp_subst cc) subst ;
             CC.merge cc atom (CC.Atom rhs_term) ) ) ;
+    rewrite_app_right_neutral cc ;
     CC.get_update_count cc
 
 

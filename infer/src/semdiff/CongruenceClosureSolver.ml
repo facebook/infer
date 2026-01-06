@@ -155,6 +155,8 @@ type t =
   ; lookup: app_equation LookupTbl.t
   ; input_app_equations: (Atom.t * Atom.t) option Dynarray.t
   ; term_roots: Atom.Set.t Dynarray.t
+  ; mutable app_roots: Atom.Set.t
+  ; mutable app_right_neutral: Atom.t option
   ; hashcons: Atom.state
   ; mutable update_count: int
   ; debug: bool }
@@ -168,10 +170,14 @@ let init ~debug =
   ; lookup= LookupTbl.create 32
   ; input_app_equations= Dynarray.create ()
   ; term_roots= Dynarray.create ()
+  ; app_roots= Atom.Set.empty
+  ; app_right_neutral= None
   ; update_count= 0
   ; hashcons= Atom.init ()
   ; debug }
 
+
+let set_app_right_neutral state atom = state.app_right_neutral <- Some atom
 
 let reset_update_count state = state.update_count <- 0
 
@@ -190,6 +196,12 @@ let is_equiv state atom1 atom2 =
   let atom2' = representative state atom2 in
   phys_equal atom1' atom2'
 
+
+let is_app_right_neutral state atom =
+  Option.exists state.app_right_neutral ~f:(fun atom_neutral -> is_equiv state atom_neutral atom)
+
+
+let app_right_neutral_exists state = Option.is_some state.app_right_neutral
 
 let rec depth state atom =
   let parent = Dynarray.get state.repr atom.Atom.index in
@@ -318,6 +330,8 @@ and change_representative ({debug; pending; repr; classes; term_roots} as state)
   Dynarray.set classes new_index (Class.merge new_class old_class) ;
   Dynarray.set term_roots new_index
     (Atom.Set.union (Dynarray.get term_roots new_index) (Dynarray.get term_roots old_index)) ;
+  if Atom.Set.mem old_repr state.app_roots then
+    state.app_roots <- Atom.Set.remove old_repr state.app_roots |> Atom.Set.add new_repr ;
   let use_new_repr =
     get_use state old_repr
     |> List.fold
@@ -350,6 +364,7 @@ let mk_app state ~left ~right =
       let atom = mk_fresh_atom state in
       merge state atom term ;
       set_input_app_equation state atom (left, right) ;
+      state.app_roots <- Atom.Set.add atom state.app_roots ;
       atom
 
 
@@ -366,6 +381,8 @@ let fold_term_roots state {Atom.index} ~f ~init =
 
 
 let iter_term_roots state atom ~f = fold_term_roots state atom ~init:() ~f:(fun atom () -> f atom)
+
+let iter_app_roots state ~f = Atom.Set.iter f state.app_roots
 
 type header = Atom.t
 
