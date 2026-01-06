@@ -22,7 +22,7 @@ val pp_term : F.formatter -> term -> unit
 
 type t
 
-val pp_nested_term : t -> F.formatter -> Atom.t -> unit
+val pp_nested_term : ?depth:int -> t -> F.formatter -> Atom.t -> unit
 
 val init : debug:bool -> t
 

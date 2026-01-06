@@ -18,6 +18,8 @@ type explicit
 
 val pp_explicit : F.formatter -> explicit -> unit
 
+val dummy_explicit : explicit
+
 val write_json :
   previous_file:string -> current_file:string -> out_path:string -> explicit list -> unit
 

@@ -810,6 +810,8 @@ val semdiff_previous : string option
 
 val semdiff_test_show_syntax_errors : bool
 
+val semdiff_experimental_eqsat_engine : bool
+
 val semdiff_test_actions : [`Normalize | `Currify] list
 
 val semdiff_test_files_index : string option

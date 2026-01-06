@@ -34,7 +34,7 @@ end
 type subst = CC.Atom.t Var.Map.t [@@deriving compare]
 
 let pp_subst cc fmt subst =
-  let pp fmt (var, atom) = F.fprintf fmt "%a: %a" Var.pp var (CC.pp_nested_term cc) atom in
+  let pp fmt (var, atom) = F.fprintf fmt "%a: %a" Var.pp var (CC.pp_nested_term ~depth:1 cc) atom in
   F.fprintf fmt "{%a}" (Pp.comma_seq pp) (Var.Map.bindings subst)
 
 
@@ -217,13 +217,16 @@ module Rule = struct
         0
 
 
-  let rewrite_app_right_neutral cc =
+  let rewrite_app_right_neutral ~debug cc =
     if CC.app_right_neutral_exists cc then
       CC.iter_app_roots cc ~f:(fun atom ->
           let atom' = CC.representative cc atom in
           let app_equations = CC.equiv_terms cc atom' in
           List.iter app_equations ~f:(fun {CC.left; right} ->
-              if CC.is_app_right_neutral cc right then CC.merge cc atom' (CC.Atom left) ) )
+              if CC.is_app_right_neutral cc right && not (CC.is_equiv cc atom' left) then (
+                if debug then
+                  F.printf "rewrite app_right_neutral on atom %a@." (CC.pp_nested_term cc) right ;
+                CC.merge cc atom' (CC.Atom left) ) ) )
 
 
   let rewrite_once ?(debug = false) cc rules =
@@ -235,14 +238,14 @@ module Rule = struct
                 let rhs_term = Pattern.to_term cc subst rhs in
                 if not (CC.is_equiv cc atom rhs_term) then (
                   if debug then
-                    F.printf "rewriting atom %a with rule %a and subst %a@." (CC.pp_nested_term cc)
-                      atom pp rule (pp_subst cc) subst ;
+                    F.printf "rewriting @[<hv>atom %a@ with rule %a@ and subst %a@]@."
+                      (CC.pp_nested_term ~depth:5 cc) atom pp rule (pp_subst cc) subst ;
                   CC.merge cc atom (CC.Atom rhs_term) ) )
         | Ellipsis ellipsis ->
             CC.iter_term_roots cc ellipsis.header ~f:(fun atom ->
                 Pattern.e_match_ellipsis_at cc ellipsis atom
                 |> List.iter ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ) ) ;
-    rewrite_app_right_neutral cc ;
+    rewrite_app_right_neutral ~debug cc ;
     CC.get_update_count cc
 
 

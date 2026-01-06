@@ -413,16 +413,24 @@ let show_stats state =
   F.printf "size=%d\nmax_depth=%d\n" size max_depth
 
 
-let pp_nested_term state fmt atom =
-  let rec pp ~internal fmt atom =
-    match get_input_app_equation state atom with
-    | Some (left, right) ->
-        if internal then F.fprintf fmt "%a@ %a" (pp ~internal:true) left (pp ~internal:false) right
-        else F.fprintf fmt "@[<hv4>(%a@ %a)@]" (pp ~internal:true) left (pp ~internal:false) right
-    | None ->
-        Atom.pp fmt atom
+let pp_nested_term ?(depth = 1 lsl 5) state fmt atom =
+  let rec pp depth ~internal fmt atom =
+    if Int.equal depth 0 then F.pp_print_string fmt "..."
+    else
+      match get_input_app_equation state atom with
+      | Some (left, right) ->
+          if internal then
+            F.fprintf fmt "%a@ %a" (pp depth ~internal:true) left
+              (pp (depth - 1) ~internal:false)
+              right
+          else
+            F.fprintf fmt "@[<hv4>(%a@ %a)@]" (pp depth ~internal:true) left
+              (pp (depth - 1) ~internal:false)
+              right
+      | None ->
+          Atom.pp fmt atom
   in
-  pp ~internal:false fmt atom
+  pp depth ~internal:false fmt atom
 
 
 let pp_atom_set fmt set = F.fprintf fmt "{%a}" (Pp.comma_seq Atom.pp) (Atom.Set.elements set)

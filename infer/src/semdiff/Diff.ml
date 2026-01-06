@@ -96,6 +96,8 @@ type explicit = string
 
 let pp_explicit = F.pp_print_string
 
+let dummy_explicit = "something wrong"
+
 let write_json ~previous_file ~current_file ~out_path diffs =
   let outcome = if List.is_empty diffs then "equal" else "different" in
   let json =

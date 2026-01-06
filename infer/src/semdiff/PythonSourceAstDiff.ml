@@ -96,11 +96,7 @@ let gen_diff_rules cc =
 
 
 let get_unresolved_diffs cc =
-  let resolved_atom = CC.mk_header cc "__DONE__" in
   let diff = CC.mk_header cc diff_header_name in
-  let _is_marked_as_resolved_diff_root root =
-    CC.is_equiv cc (root :> CC.Atom.t) (resolved_atom :> CC.Atom.t)
-  in
   let is_a_diff_root =
     let set =
       CC.fold_term_roots cc diff ~init:CC.Atom.Set.empty ~f:(fun root set ->

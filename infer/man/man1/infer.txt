@@ -2116,6 +2116,11 @@ OPTIONS
            Current python program to be analysed by semdiff
            See also infer-semdiff(1).
 
+       --semdiff-experimental-eqsat-engine
+           Activates: Use experimental equality saturation rewriting engine.
+           (Conversely: --no-semdiff-experimental-eqsat-engine)
+           See also infer-semdiff(1).
+
        --semdiff-previous path
            Previous python program to be analysed by semdiff
            See also infer-semdiff(1).

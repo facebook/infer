@@ -173,11 +173,11 @@ let%expect_test "e-matching search" =
     t5 := (start (plus 0 (plus (plus y x) (plus x y))))
     e-matching pattern (plus ?U (plus ?V ?W)):
     --> term (plus (plus y x) (plus x y))
-        subst {U: (plus x y),V: x,W: y}
+        subst {U: (plus ... ...),V: x,W: y}
     --> term (plus (plus y x) (plus x y))
-        subst {U: (plus x y),V: y,W: x}
+        subst {U: (plus ... ...),V: y,W: x}
     --> term (plus 0 (plus (plus y x) (plus x y)))
-        subst {U: 0,V: (plus x y),W: (plus x y)}
+        subst {U: 0,V: (plus ... ...),W: (plus ... ...)}
     |}]
 
 
@@ -260,7 +260,7 @@ let%expect_test "rewriting one round" =
     {|
     merging x and (g (f (g y)))...
     0: x == y? false
-    rewriting atom (f (g y)) with rule (f ?X) ==> ?X and subst {X: (g y)}
+    rewriting atom (f (g y)) with rule (f ?X) ==> ?X and subst {X: (g ...)}
     1 updates
     1: x == y? false
     rewriting atom (g (f (g y))) with rule (g (g ?X)) ==> ?X and subst {X: y}
