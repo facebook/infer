@@ -146,6 +146,12 @@ end = struct
         fold c2 ~init ~f
 end
 
+type header = Atom.t
+
+module HeaderSet = Stdlib.Set.Make (struct
+  type t = Atom.t * int [@@deriving compare]
+end)
+
 type t =
   { repr: Atom.t Dynarray.t
   ; mutable pending: pending_item list
@@ -159,6 +165,7 @@ type t =
   ; mutable app_right_neutral: Atom.t option
   ; hashcons: Atom.state
   ; mutable update_count: int
+  ; mutable headers_with_arity: HeaderSet.t
   ; debug: bool }
 
 let init ~debug =
@@ -174,6 +181,7 @@ let init ~debug =
   ; app_right_neutral= None
   ; update_count= 0
   ; hashcons= Atom.init ()
+  ; headers_with_arity= HeaderSet.empty
   ; debug }
 
 
@@ -384,8 +392,6 @@ let iter_term_roots state atom ~f = fold_term_roots state atom ~init:() ~f:(fun 
 
 let iter_app_roots state ~f = Atom.Set.iter f state.app_roots
 
-type header = Atom.t
-
 let mk_header = mk_atom
 
 let pp_header = Atom.pp
@@ -395,8 +401,11 @@ let representative_of_header = representative
 let mk_term state header args =
   let term = List.fold ~init:header ~f:(fun left right -> mk_app state ~left ~right) args in
   add_term_root state ~header ~term ;
+  state.headers_with_arity <- HeaderSet.add (header, List.length args) state.headers_with_arity ;
   term
 
+
+let headers_with_arity state = HeaderSet.elements state.headers_with_arity
 
 let show_stats state =
   let size = Atom.cardinal state.hashcons in

@@ -11,6 +11,10 @@ module Rewrite = CongruenceClosureRewrite
 
 val check_equivalence : PythonSourceAst.Node.t -> PythonSourceAst.Node.t -> bool
 
+val build_diff : CC.t -> PythonSourceAst.Node.t -> PythonSourceAst.Node.t -> unit
+
+val gen_diff_commutative_rules : CC.t -> Rewrite.Rule.t list
+
 module TestOnly : sig
   val store_ast : ?debug:bool -> PythonSourceAst.Node.t -> unit
 

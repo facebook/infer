@@ -42,6 +42,39 @@ let are_ast_equivalent cc ast1 ast2 rules =
   CC.is_equiv cc atom1 atom2
 
 
+let diff_header_name = "@DIFF"
+
+let build_diff cc ast1 ast2 =
+  let atom1 = curry cc ast1 in
+  let atom2 = curry cc ast2 in
+  let diff_header = CC.mk_header cc diff_header_name in
+  CC.mk_term cc diff_header [atom1; atom2] |> ignore
+
+
+let is_header_equivalent cc (header1 : CC.header) (header2 : CC.header) =
+  CC.is_equiv cc (header1 :> CC.Atom.t) (header2 :> CC.Atom.t)
+
+
+let gen_diff_commutative_rules cc =
+  let open Rewrite in
+  let open Pattern in
+  let mk_args arity prefix =
+    List.init arity ~f:(fun i -> Var (Var.of_string (prefix ^ string_of_int i)))
+  in
+  let diff_header = CC.mk_header cc diff_header_name in
+  let mk_diff_pattern pat1 pat2 = Term {header= diff_header; args= [pat1; pat2]} in
+  CC.headers_with_arity cc
+  |> List.filter_map ~f:(fun (header, arity) ->
+         if is_header_equivalent cc header diff_header then None
+         else if arity > 0 then
+           let args1 = mk_args arity "X" in
+           let args2 = mk_args arity "Y" in
+           let lhs = mk_diff_pattern (Term {header; args= args1}) (Term {header; args= args2}) in
+           let rhs = Term {header; args= List.map2_exn args1 args2 ~f:mk_diff_pattern} in
+           Some (Rule.Regular {lhs; rhs})
+         else None )
+
+
 let build_rules cc : Rewrite.Rule.t list =
   List.map
     ~f:(fun prog ->

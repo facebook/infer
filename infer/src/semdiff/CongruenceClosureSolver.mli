@@ -56,6 +56,8 @@ val is_app_right_neutral : t -> Atom.t -> bool
 
 val equiv_atoms : t -> Atom.t -> Atom.t list
 
+val headers_with_arity : t -> (header * int) list
+
 type app_equation = {rhs: Atom.t; left: Atom.t; right: Atom.t}
 
 val equiv_terms : t -> Atom.t -> app_equation list
