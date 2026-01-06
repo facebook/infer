@@ -202,17 +202,19 @@ def factorial(n):
   let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast_with_ignore [] in
   F.printf "ast == ast_with_ignore? %b (no rules)\n" equiv ;
   let rules : Rewrite.Rule.t list =
-    [ { lhs= parse_pattern "(List ?X1 ?X2 ?X3 Null ?X5 ?X6)"
-      ; rhs= parse_pattern "(List ?X1 ?X2 ?X3 ?X5 ?X6)" }
-    ; { lhs=
-          parse_pattern
-            {|(Expr
+    [ Regular
+        { lhs= parse_pattern "(List ?X1 ?X2 ?X3 Null ?X5 ?X6)"
+        ; rhs= parse_pattern "(List ?X1 ?X2 ?X3 ?X5 ?X6)" }
+    ; Regular
+        { lhs=
+            parse_pattern
+              {|(Expr
                 (value
                   (Call
                     (args List)
                     (func (Name (ctx Load) (id ignore_me)))
                     (keywords List))))|}
-      ; rhs= parse_pattern "Null" } ]
+        ; rhs= parse_pattern "Null" } ]
   in
   let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast ast_with_ignore rules in
   F.printf "ast == ast_with_ignore? %b@." equiv ;

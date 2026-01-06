@@ -26,13 +26,17 @@ val mk_subst : (Var.t * CC.Atom.t) list -> subst
 module Pattern : sig
   type t = Var of Var.t | Term of {header: CC.header; args: t list}
 
+  type ellipsis = {header: CC.header; arg: t}
+
   val pp : F.formatter -> t -> unit
+
+  val pp_ellipsis : F.formatter -> ellipsis -> unit
 
   val vars : t -> Var.t list
 end
 
 module Rule : sig
-  type t = {lhs: Pattern.t; rhs: Pattern.t}
+  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t}
 
   val pp : F.formatter -> t -> unit
 
@@ -49,6 +53,8 @@ module TestOnly : sig
   val e_match_pattern_at : ?debug:bool -> CC.t -> Pattern.t -> CC.Atom.t -> subst list
 
   val e_match_pattern : ?debug:bool -> CC.t -> Pattern.t -> f:(CC.Atom.t -> subst -> unit) -> unit
+
+  val e_match_ellipsis_at : CC.t -> Pattern.ellipsis -> CC.Atom.t -> CC.Atom.t list
 
   val pattern_to_term : CC.t -> subst -> Pattern.t -> CC.Atom.t
 

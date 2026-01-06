@@ -12,6 +12,8 @@ module Atom : sig
   type t [@@deriving compare]
 
   val pp : F.formatter -> t -> unit
+
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 type term = App of Atom.t * Atom.t | Atom of Atom.t

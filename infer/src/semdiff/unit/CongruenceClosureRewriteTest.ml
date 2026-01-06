@@ -64,6 +64,8 @@ let apply name args = Pattern.Term {header= mk_header !st name; args}
 
 let const header = apply header []
 
+let mk_ellipsis header arg : Pattern.ellipsis = {header= mk_header !st header; arg}
+
 let parse_pattern str = parse_pattern !st str |> Option.value_exn
 
 let pp_vars fmt vars =
@@ -184,8 +186,9 @@ let%expect_test "rewriting at specific atom" =
   let t1 = mk_term "mult" [x; mk_term "plus" [y; z]] in
   let t2 = mk_term "plus" [mk_term "mult" [x; y]; mk_term "mult" [x; z]] in
   let distribute_rule : Rule.t =
-    { lhs= apply "mult" [var "X"; apply "plus" [var "Y"; var "Z"]]
-    ; rhs= apply "plus" [apply "mult" [var "X"; var "Y"]; apply "mult" [var "X"; var "Z"]] }
+    Regular
+      { lhs= apply "mult" [var "X"; apply "plus" [var "Y"; var "Z"]]
+      ; rhs= apply "plus" [apply "mult" [var "X"; var "Y"]; apply "mult" [var "X"; var "Z"]] }
   in
   F.printf "t1 := %a@." pp_nested_term t1 ;
   F.printf "t2 := %a@." pp_nested_term t2 ;
@@ -212,8 +215,8 @@ let%expect_test "rewriting one round" =
   let t = mk_term "g" [mk_term "f" [mk_term "g" [y]]] in
   merge x (Atom t) ;
   F.printf "0: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
-  let rule1 : Rule.t = {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
-  let rule2 : Rule.t = {lhs= apply "f" [var "X"]; rhs= var "X"} in
+  let rule1 : Rule.t = Regular {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
+  let rule2 : Rule.t = Regular {lhs= apply "f" [var "X"]; rhs= var "X"} in
   let rules = [rule1; rule2] in
   let updates = rewrite_rules_once ~debug:true !st rules in
   F.printf "%d updates@." updates ;
@@ -246,8 +249,8 @@ let%expect_test "full rewrite" =
   let t = mk_term "g" [mk_term "f" [mk_term "g" [y]]] in
   merge x (Atom t) ;
   F.printf "0: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
-  let rule1 : Rule.t = {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
-  let rule2 : Rule.t = {lhs= apply "f" [var "X"]; rhs= var "X"} in
+  let rule1 : Rule.t = Regular {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
+  let rule2 : Rule.t = Regular {lhs= apply "f" [var "X"]; rhs= var "X"} in
   let rules = [rule1; rule2] in
   let rounds = Rule.full_rewrite !st rules in
   F.printf "%d rounds@." rounds ;
@@ -278,4 +281,40 @@ let%expect_test "parse pattern" =
     {|
     pattern1 = (Type (arg1 ?V1) (arg2 List) (arg3 (Exp (Const 1) (Const 2) (Str "quoted"))))
       with vars = {V1}
+    |}]
+
+
+let test_e_match_ellipsis_at ellipsis atom =
+  F.printf "ellipsis = %a@.@." Pattern.pp_ellipsis ellipsis ;
+  TestOnly.e_match_ellipsis_at !st ellipsis atom
+  |> List.iter ~f:(fun atom2 -> F.printf "%a --> %a@." pp_nested_term atom pp_nested_term atom2)
+
+
+let%expect_test "e-matching ellipsis" =
+  restart () ;
+  let zero = mk_const "0" in
+  let one = mk_const "1" in
+  let two = mk_const "2" in
+  let null = mk_const "null" in
+  let list args = mk_term "list" args in
+  let ellipsis = mk_ellipsis "list" (const "null") in
+  let l1 = list [zero; null; one; two] in
+  test_e_match_ellipsis_at ellipsis l1 ;
+  let l2 = list [two; null; one; null; zero; null] in
+  test_e_match_ellipsis_at ellipsis l2 ;
+  merge l1 (Atom l2) ;
+  test_e_match_ellipsis_at ellipsis l2 ;
+  [%expect
+    {|
+    ellipsis = (list ... null ...)
+
+    (list 0 null 1 2) --> (list 0 1 2)
+    ellipsis = (list ... null ...)
+
+    (list 2 null 1 null 0 null) --> (list 2 1 0)
+    merging (list 0 null 1 2) and (list 2 null 1 null 0 null)...
+    ellipsis = (list ... null ...)
+
+    (list 2 null 1 null 0 null) --> (list 0 1 2)
+    (list 2 null 1 null 0 null) --> (list 2 1 0)
     |}]

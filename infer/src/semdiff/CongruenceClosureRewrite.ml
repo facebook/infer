@@ -79,52 +79,87 @@ module Pattern = struct
     aux Var.Set.empty pat |> Var.Set.elements
 
 
+  let add_or_empty ~debug cc subst var atom' =
+    match Var.Map.find_opt var subst with
+    | None ->
+        if debug then F.printf "adding %a=%a@." Var.pp var (CC.pp_nested_term cc) atom' ;
+        Var.Map.add var atom' subst |> SubstSet.singleton
+    | Some already' when phys_equal atom' already' ->
+        SubstSet.singleton subst
+    | Some _ ->
+        SubstSet.empty
+
+
+  let rec e_match_at_loop ~debug cc subst pat atom =
+    let atom' = CC.representative cc atom in
+    if debug then
+      F.printf "e-maching %a with %a (repr is %a)@." pp pat (CC.pp_nested_term cc) atom CC.Atom.pp
+        atom' ;
+    match pat with
+    | Var var ->
+        add_or_empty ~debug cc subst var atom'
+    | Term {header; args} ->
+        loop_term_args ~debug cc subst header (List.rev args) atom'
+
+
+  and loop_term_args ~debug cc subst header rev_args atom' =
+    if debug then
+      F.printf "e-matching term pattern header=%a args=[%a]@." CC.pp_header header (Pp.comma_seq pp)
+        rev_args ;
+    match rev_args with
+    | [] ->
+        let header_atom' = CC.representative_of_header cc header in
+        if phys_equal atom' header_atom' then SubstSet.singleton subst else SubstSet.empty
+    | pat :: rev_args ->
+        let app_equations = CC.equiv_terms cc atom' in
+        if debug then
+          F.printf "app_equations(%a) = [%a]@." (CC.pp_nested_term cc) atom'
+            (Pp.comma_seq (fun fmt {CC.rhs} -> CC.pp_nested_term cc fmt rhs))
+            app_equations ;
+        List.fold app_equations
+          ~f:(fun acc {CC.left; right} ->
+            let right' = CC.representative cc right in
+            let left' = CC.representative cc left in
+            let substs = e_match_at_loop ~debug cc subst pat right' in
+            SubstSet.fold
+              (fun subst acc ->
+                SubstSet.union (loop_term_args ~debug cc subst header rev_args left') acc )
+              substs acc )
+          ~init:SubstSet.empty
+
+
   let e_match_at ?(debug = false) cc pat atom =
-    let add_or_empty subst var atom' =
-      match Var.Map.find_opt var subst with
-      | None ->
-          if debug then F.printf "adding %a=%a@." Var.pp var (CC.pp_nested_term cc) atom' ;
-          Var.Map.add var atom' subst |> SubstSet.singleton
-      | Some already' when phys_equal atom' already' ->
-          SubstSet.singleton subst
-      | Some _ ->
-          SubstSet.empty
-    in
-    let rec loop subst pat atom =
+    e_match_at_loop ~debug cc Var.Map.empty pat atom |> SubstSet.elements
+
+
+  type ellipsis = {header: CC.header; arg: t}
+
+  let pp_ellipsis fmt {header; arg} =
+    F.fprintf fmt "@[<hv4>(%a@ ... %a ...)@]" CC.pp_header header pp arg
+
+
+  let e_match_ellipsis_at cc {header; arg} atom =
+    let rec loop kept_arg_atoms subst atom =
+      let matched_atoms =
+        if CC.is_equiv cc atom (header :> CC.Atom.t) then
+          CC.mk_term cc header kept_arg_atoms |> CC.Atom.Set.singleton
+        else CC.Atom.Set.empty
+      in
       let atom' = CC.representative cc atom in
-      if debug then
-        F.printf "e-maching %a with %a (repr is %a)@." pp pat (CC.pp_nested_term cc) atom CC.Atom.pp
-          atom' ;
-      match pat with
-      | Var var ->
-          add_or_empty subst var atom'
-      | Term {header; args} ->
-          loop_term_args subst header (List.rev args) atom'
-    and loop_term_args subst header rev_args atom' =
-      if debug then
-        F.printf "e-matching term pattern header=%a args=[%a]@." CC.pp_header header
-          (Pp.comma_seq pp) rev_args ;
-      match rev_args with
-      | [] ->
-          let header_atom' = CC.representative_of_header cc header in
-          if phys_equal atom' header_atom' then SubstSet.singleton subst else SubstSet.empty
-      | pat :: rev_args ->
-          let app_equations = CC.equiv_terms cc atom' in
-          if debug then
-            F.printf "app_equations(%a) = [%a]@." (CC.pp_nested_term cc) atom'
-              (Pp.comma_seq (fun fmt {CC.rhs} -> CC.pp_nested_term cc fmt rhs))
-              app_equations ;
-          List.fold app_equations
-            ~f:(fun acc {CC.left; right} ->
-              let right' = CC.representative cc right in
-              let left' = CC.representative cc left in
-              let substs = loop subst pat right' in
-              SubstSet.fold
-                (fun subst acc -> SubstSet.union (loop_term_args subst header rev_args left') acc)
-                substs acc )
-            ~init:SubstSet.empty
+      let app_equations = CC.equiv_terms cc atom' in
+      List.fold app_equations
+        ~f:(fun acc {CC.left; right} ->
+          let right' = CC.representative cc right in
+          let left' = CC.representative cc left in
+          let substs = e_match_at_loop ~debug:false cc subst arg right' in
+          if SubstSet.is_empty substs then loop (right' :: kept_arg_atoms) subst left'
+          else
+            SubstSet.fold
+              (fun subst acc -> CC.Atom.Set.union (loop kept_arg_atoms subst left') acc)
+              substs acc )
+        ~init:matched_atoms
     in
-    loop Var.Map.empty pat atom |> SubstSet.elements
+    loop [] Var.Map.empty atom |> CC.Atom.Set.elements
 
 
   let e_match ?(debug = false) cc pat ~f =
@@ -153,18 +188,23 @@ module Pattern = struct
 end
 
 module Rule = struct
-  type t = {lhs: Pattern.t; rhs: Pattern.t}
+  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t}
 
-  let pp fmt {lhs; rhs} = F.fprintf fmt "@[<hv>%a@ ==>@ %a@]" Pattern.pp lhs Pattern.pp rhs
+  let pp fmt = function
+    | Regular {lhs; rhs} ->
+        F.fprintf fmt "@[<hv>%a@ ==>@ %a@]" Pattern.pp lhs Pattern.pp rhs
 
-  let apply_at ?(debug = false) cc {lhs; rhs} atom =
-    let substs = Pattern.e_match_at cc lhs atom in
-    List.iteri substs ~f:(fun i subst ->
-        if debug then F.printf "subst #%d = %a@." i (pp_subst cc) subst ;
-        let rhs_term = Pattern.to_term cc subst rhs in
-        if debug then F.printf "rhs_term = %a@." (CC.pp_nested_term cc) rhs_term ;
-        CC.merge cc atom (CC.Atom rhs_term) ) ;
-    List.length substs
+
+  let apply_at ?(debug = false) cc rule atom =
+    match rule with
+    | Regular {lhs; rhs} ->
+        let substs = Pattern.e_match_at cc lhs atom in
+        List.iteri substs ~f:(fun i subst ->
+            if debug then F.printf "subst #%d = %a@." i (pp_subst cc) subst ;
+            let rhs_term = Pattern.to_term cc subst rhs in
+            if debug then F.printf "rhs_term = %a@." (CC.pp_nested_term cc) rhs_term ;
+            CC.merge cc atom (CC.Atom rhs_term) ) ;
+        List.length substs
 
 
   let rewrite_app_right_neutral cc =
@@ -178,14 +218,16 @@ module Rule = struct
 
   let rewrite_once ?(debug = false) cc rules =
     CC.reset_update_count cc ;
-    List.iter rules ~f:(fun ({lhs; rhs} as rule) ->
-        Pattern.e_match cc lhs ~f:(fun atom subst ->
-            let rhs_term = Pattern.to_term cc subst rhs in
-            if not (CC.is_equiv cc atom rhs_term) then
-              if debug then
-                F.printf "rewriting atom %a with rule %a and subst %a@." (CC.pp_nested_term cc) atom
-                  pp rule (pp_subst cc) subst ;
-            CC.merge cc atom (CC.Atom rhs_term) ) ) ;
+    List.iter rules ~f:(fun rule ->
+        match rule with
+        | Regular {lhs; rhs} ->
+            Pattern.e_match cc lhs ~f:(fun atom subst ->
+                let rhs_term = Pattern.to_term cc subst rhs in
+                if not (CC.is_equiv cc atom rhs_term) then
+                  if debug then
+                    F.printf "rewriting atom %a with rule %a and subst %a@." (CC.pp_nested_term cc)
+                      atom pp rule (pp_subst cc) subst ;
+                CC.merge cc atom (CC.Atom rhs_term) ) ) ;
     rewrite_app_right_neutral cc ;
     CC.get_update_count cc
 
@@ -307,6 +349,8 @@ module TestOnly = struct
   let e_match_pattern_at = Pattern.e_match_at
 
   let e_match_pattern = Pattern.e_match
+
+  let e_match_ellipsis_at = Pattern.e_match_ellipsis_at
 
   let pattern_to_term = Pattern.to_term
 
