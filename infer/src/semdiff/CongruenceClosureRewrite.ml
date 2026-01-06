@@ -188,11 +188,14 @@ module Pattern = struct
 end
 
 module Rule = struct
-  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t}
+  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t} | Ellipsis of Pattern.ellipsis
 
   let pp fmt = function
     | Regular {lhs; rhs} ->
         F.fprintf fmt "@[<hv>%a@ ==>@ %a@]" Pattern.pp lhs Pattern.pp rhs
+    | Ellipsis ellipsis ->
+        F.fprintf fmt "@[<hv>%a ==>@ (%a ...)@]" Pattern.pp_ellipsis ellipsis CC.pp_header
+          ellipsis.header
 
 
   let apply_at ?(debug = false) cc rule atom =
@@ -205,6 +208,10 @@ module Rule = struct
             if debug then F.printf "rhs_term = %a@." (CC.pp_nested_term cc) rhs_term ;
             CC.merge cc atom (CC.Atom rhs_term) ) ;
         List.length substs
+    | Ellipsis ellipsis ->
+        Pattern.e_match_ellipsis_at cc ellipsis atom
+        |> List.iter ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ;
+        0
 
 
   let rewrite_app_right_neutral cc =
@@ -227,7 +234,11 @@ module Rule = struct
                   if debug then
                     F.printf "rewriting atom %a with rule %a and subst %a@." (CC.pp_nested_term cc)
                       atom pp rule (pp_subst cc) subst ;
-                CC.merge cc atom (CC.Atom rhs_term) ) ) ;
+                CC.merge cc atom (CC.Atom rhs_term) )
+        | Ellipsis ellipsis ->
+            CC.iter_term_roots cc ellipsis.header ~f:(fun atom ->
+                Pattern.e_match_ellipsis_at cc ellipsis atom
+                |> List.iter ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ) ) ;
     rewrite_app_right_neutral cc ;
     CC.get_update_count cc
 
@@ -294,13 +305,30 @@ module Parser = struct
         else []
 
 
-  let ident = all ~except:['('; ')'; '?']
+  let string = all ~except:['('; ')'; '?']
+
+  let ellipsis : unit m =
+    let* str = string in
+    if String.equal str "..." then ret () else fun _ -> []
+
+
+  let rule_arrow : unit m =
+    let* str = string in
+    if String.equal str "==>" then ret () else fun _ -> []
+
+
+  let reserved = ["..."; "==>"]
+
+  let ident : string m =
+    let* str = string in
+    if List.mem ~equal:String.equal reserved str then fun _ -> [] else ret str
+
 
   let ( + ) (m : 'a m) (n : 'a m) : 'a m = fun buf -> m buf @ n buf
 
-  type raw = Var of string | Term of {header: string; args: raw list}
+  type raw_pattern = Var of string | Term of {header: string; args: raw_pattern list}
 
-  let rec raw_pattern () : raw m =
+  let rec raw_pattern () : raw_pattern m =
     (let* () = char '?' in
      let* var = ident in
      ret (Var var) )
@@ -313,13 +341,41 @@ module Parser = struct
     ret (Term {header; args= []})
 
 
-  and args () : raw list m =
+  and args () : raw_pattern list m =
     (let* () = char ')' in
      ret [] )
     +
     let* arg = raw_pattern () in
     let* args = args () in
     ret (arg :: args)
+
+
+  type raw_ellipsis = {header: string; arg: raw_pattern}
+
+  let raw_ellipsis : raw_ellipsis m =
+    let* () = char '(' in
+    let* header = ident in
+    let* () = ellipsis in
+    let* arg = raw_pattern () in
+    let* () = ellipsis in
+    let* () = char ')' in
+    ret {header; arg}
+
+
+  type raw_rule = Regular of {lhs: raw_pattern; rhs: raw_pattern} | Ellipsis of raw_ellipsis
+
+  let raw_rule () : raw_rule m =
+    (let* lhs = raw_pattern () in
+     let* () = rule_arrow in
+     let* rhs = raw_pattern () in
+     ret (Regular {lhs; rhs}) )
+    + let* raw_ellipsis = raw_ellipsis in
+      let* () = rule_arrow in
+      let* () = char '(' in
+      let* _ = ident in
+      let* () = ellipsis in
+      let* () = char ')' in
+      ret (Ellipsis raw_ellipsis)
 
 
   let rec raw_to_pattern cc raw : Pattern.t =
@@ -332,18 +388,35 @@ module Parser = struct
         Term {header; args}
 
 
-  let parse cc str : Pattern.t option =
+  let raw_to_rule cc raw : Rule.t =
+    match raw with
+    | Regular {lhs; rhs} ->
+        Regular {lhs= raw_to_pattern cc lhs; rhs= raw_to_pattern cc rhs}
+    | Ellipsis {header; arg} ->
+        Ellipsis {header= CC.mk_header cc header; arg= raw_to_pattern cc arg}
+
+
+  let parse m str =
     let buffer = String.split_on_chars str ~on:[' '; '\n'; '\t'] in
-    match raw_pattern () buffer with
+    match m () buffer with
     | [] ->
         None
     | [(raw, _)] ->
-        Some (raw_to_pattern cc raw)
+        Some raw
     | _ ->
         L.die InternalError "parse error"
+
+
+  let parse_pattern cc str : Pattern.t option =
+    parse raw_pattern str |> Option.map ~f:(raw_to_pattern cc)
+
+
+  let parse_rule cc str : Rule.t option = parse raw_rule str |> Option.map ~f:(raw_to_rule cc)
 end
 
-let parse_pattern = Parser.parse
+let parse_pattern = Parser.parse_pattern
+
+let parse_rule = Parser.parse_rule
 
 module TestOnly = struct
   let e_match_pattern_at = Pattern.e_match_at

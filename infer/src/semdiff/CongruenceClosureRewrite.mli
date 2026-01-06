@@ -36,7 +36,7 @@ module Pattern : sig
 end
 
 module Rule : sig
-  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t}
+  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t} | Ellipsis of Pattern.ellipsis
 
   val pp : F.formatter -> t -> unit
 
@@ -48,6 +48,8 @@ module Rule : sig
 end
 
 val parse_pattern : CC.t -> string -> Pattern.t option
+
+val parse_rule : CC.t -> string -> Rule.t option
 
 module TestOnly : sig
   val e_match_pattern_at : ?debug:bool -> CC.t -> Pattern.t -> CC.Atom.t -> subst list
