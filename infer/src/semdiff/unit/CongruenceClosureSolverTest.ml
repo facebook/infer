@@ -163,13 +163,13 @@ let%expect_test "show sharing" =
     t1 == t2? false
     t3 := (plus (mult x y) (mult x z))
     t1 == t2? true
-    repr: x is x (repr=x)
-          y is y (repr=y)
-          z is z (repr=z)
-          plus is plus (repr=plus)
+    repr: x is x (repr=x) (roots={x})
+          y is y (repr=y) (roots={y})
+          z is z (repr=z) (roots={z})
+          plus is plus (repr=plus) (roots={%5,%12})
           %4 is (plus y) (repr=%4)
           %5 is (plus y z) (repr=%5)
-          mult is mult (repr=mult)
+          mult is mult (repr=mult) (roots={%8,%9,%10})
           %7 is (mult x) (repr=%7)
           %8 is (mult x (plus y z)) (repr=%12)
           %9 is (mult x z) (repr=%9)

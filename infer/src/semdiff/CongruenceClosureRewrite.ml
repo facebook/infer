@@ -230,11 +230,11 @@ module Rule = struct
         | Regular {lhs; rhs} ->
             Pattern.e_match cc lhs ~f:(fun atom subst ->
                 let rhs_term = Pattern.to_term cc subst rhs in
-                if not (CC.is_equiv cc atom rhs_term) then
+                if not (CC.is_equiv cc atom rhs_term) then (
                   if debug then
                     F.printf "rewriting atom %a with rule %a and subst %a@." (CC.pp_nested_term cc)
                       atom pp rule (pp_subst cc) subst ;
-                CC.merge cc atom (CC.Atom rhs_term) )
+                  CC.merge cc atom (CC.Atom rhs_term) ) )
         | Ellipsis ellipsis ->
             CC.iter_term_roots cc ellipsis.header ~f:(fun atom ->
                 Pattern.e_match_ellipsis_at cc ellipsis atom

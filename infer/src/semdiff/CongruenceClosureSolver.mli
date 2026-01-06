@@ -32,8 +32,6 @@ val pp_header : F.formatter -> header -> unit
 
 val mk_header : t -> string -> header
 
-val mk_app : t -> left:Atom.t -> right:Atom.t -> Atom.t
-
 val mk_term : t -> header -> Atom.t list -> Atom.t
 
 val merge : t -> Atom.t -> term -> unit

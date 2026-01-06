@@ -227,3 +227,75 @@ def factorial(n):
                   ==>
                   Null}
     |}]
+
+
+let%expect_test "type test modernization" =
+  let parser = build_parser () in
+  restart () ;
+  let ast1 = parser {|
+def foo(self, x):
+        if x.__class__ == str:
+            print(1)
+|} in
+  let ast2 =
+    parser {|
+def foo(self, x) -> None:
+        if isinstance(x, str):
+            print(1)
+|}
+  in
+  let rules : Rewrite.Rule.t list =
+    [ parse_rule
+        {|        (If
+                      (body ?BODY) (orelse ?LIST) (test
+                                                      (Compare
+                                                          (comparators
+                                                              (List (Name (ctx Load) (id str))))
+                                                          (left
+                                                              (Attribute
+                                                                  (attr __class__)
+                                                                  (ctx Load)
+                                                                  (value ?NAME)))
+                                                          (ops (List Eq)))))
+                  ==>
+                  (If
+                      (body ?BODY) (orelse ?LIST) (test
+                                                      (Call
+                                                          (args
+                                                              (List ?NAME (Name (ctx Load) (id str))))
+                                                          (func
+                                                              (Name (ctx Load) (id isinstance)))
+                                                          (keywords
+                                                              List))))|}
+    ; parse_rule "(returns (Constant (kind Null) (value Null))) ==> (returns Null)" ]
+  in
+  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast1 ast2 rules in
+  F.printf "ast1 == ast2? %b@." equiv ;
+  [%expect {| ast1 == ast2? true |}]
+
+
+let%expect_test "remove types" =
+  let parser = build_parser () in
+  restart () ;
+  let ast1 = parser {|
+def foo(self, x):
+      y = x + 1
+      return x
+|} in
+  let ast2 = parser {|
+def foo(self, x: int) -> int:
+      y: int = x + 1
+      return x
+|} in
+  let rules : Rewrite.Rule.t list =
+    [ parse_rule "(returns ?X) ==> (returns Null)"
+    ; parse_rule "(annotation ?X) ==> (annotation Null)"
+    ; parse_rule
+        {|(AnnAssign (annotation ?A) (simple ?S) (target ?N) (value ?V))
+          ==>
+          (Assign (targets (List ?N)) (type_comment Null) (value ?V))|}
+    ]
+  in
+  let equiv = PythonSourceAstDiff.are_ast_equivalent !st ast1 ast2 rules in
+  F.printf "ast1 == ast2? %b@." equiv ;
+  [%expect {| ast1 == ast2? true |}]

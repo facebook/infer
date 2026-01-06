@@ -30,11 +30,7 @@ let rec curry cc ast =
       mk_term "List" (List.map ~f:(curry cc) l)
   | Dict dict ->
       let header, assoc = Node.assoc_of_dict dict in
-      let mk_atom_binding (field_name, ast) =
-        let left = mk_const field_name in
-        let right = curry cc ast in
-        CC.mk_app cc ~left ~right
-      in
+      let mk_atom_binding (field_name, ast) = mk_term field_name [curry cc ast] in
       mk_term header (List.map ~f:mk_atom_binding assoc)
 
 

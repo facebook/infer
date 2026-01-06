@@ -416,12 +416,16 @@ let pp_nested_term state fmt atom =
   pp ~internal:false fmt atom
 
 
+let pp_atom_set fmt set = F.fprintf fmt "{%a}" (Pp.comma_seq Atom.pp) (Atom.Set.elements set)
+
 let debug state =
   F.printf "repr: @[<hv>" ;
   Dynarray.iteri
     (fun index atom ->
       let repr = Dynarray.get state.repr index in
       if index > 0 then F.printf "@ " ;
-      F.printf "%a is %a (repr=%a)" Atom.pp atom (pp_nested_term state) atom Atom.pp repr )
+      F.printf "%a is %a (repr=%a)" Atom.pp atom (pp_nested_term state) atom Atom.pp repr ;
+      let set = Dynarray.get state.term_roots index in
+      if not (Atom.Set.is_empty set) then F.printf " (roots=%a)" pp_atom_set set )
     state.atoms ;
   F.printf "@]@."
