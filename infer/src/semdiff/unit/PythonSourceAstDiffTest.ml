@@ -353,11 +353,11 @@ def foo(self, x: int) -> int:
       return x
 |} in
   Diff.build_diff !st ast1 ast2 ;
-  Diff.gen_diff_rules !st
+  Diff.TestOnly.gen_diff_rules !st
   |> List.iteri ~f:(fun i rule -> F.printf "RULE%d: %a@." i Rewrite.Rule.pp rule) ;
   [%expect
     {|
-    RULE0: (@DIFF ?X ?X) ==> ?X
+    RULE0: (@DIFF ?X ?X) ==> __DONE__
     RULE1: (@DIFF (annotation ?X0) (annotation ?Y0)) ==> (annotation (@DIFF ?X0 ?Y0))
     RULE2: (@DIFF (arg ?X0) (arg ?Y0)) ==> (arg (@DIFF ?X0 ?Y0))
     RULE3: (@DIFF (arg ?X0 ?X1 ?X2) (arg ?Y0 ?Y1 ?Y2))
@@ -416,7 +416,7 @@ def foo(self, x: int) -> int:
     |}]
 
 
-let%expect_test "build diffs and simplify" =
+let%expect_test "build diffs and simplify with generated diff rules" =
   let parser = build_parser () in
   restart () ;
   let ast1 = parser {|
@@ -430,7 +430,7 @@ def foo(self, x: int) -> int:
       return x
 |} in
   Diff.build_diff !st ast1 ast2 ;
-  let rules = Diff.gen_diff_rules !st in
+  let rules = Diff.TestOnly.gen_diff_rules !st in
   Rewrite.Rule.full_rewrite !st rules |> ignore ;
   Diff.get_unresolved_diffs !st
   |> List.iter ~f:(fun (left, right) ->
@@ -458,3 +458,26 @@ def foo(self, x: int) -> int:
                     (op Add)
                     (right (Constant (kind Null) (value 1)))))))
     |}]
+
+
+let%expect_test "build diffs and simplify with all rules" =
+  let parser = build_parser () in
+  restart () ;
+  let ast1 = parser {|
+def foo(self, x: Any) -> int:
+      y = x + 1
+      return x
+|} in
+  let ast2 = parser {|
+def foo(self, x: int) -> int:
+      y: int = x + 1
+      return x
+|} in
+  Diff.build_diff !st ast1 ast2 ;
+  let rules = Diff.TestOnly.gen_all_rules !st in
+  Rewrite.Rule.full_rewrite !st rules |> ignore ;
+  Diff.get_unresolved_diffs !st
+  |> List.iter ~f:(fun (left, right) ->
+         F.printf "@[<hv 4>(DIFF@ %a@ %a)@]@." (CC.pp_nested_term !st) left (CC.pp_nested_term !st)
+           right ) ;
+  [%expect {| |}]

@@ -36,13 +36,15 @@ module Pattern : sig
 end
 
 module Rule : sig
-  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t} | Ellipsis of Pattern.ellipsis
+  type t =
+    | Regular of {lhs: Pattern.t; rhs: Pattern.t; exclude: CC.Atom.t list}
+    | Ellipsis of Pattern.ellipsis
 
   val pp : F.formatter -> t -> unit
 
   exception FuelExhausted of {round_count: int}
 
-  val full_rewrite : ?fuel:int -> CC.t -> t list -> int
+  val full_rewrite : ?debug:bool -> ?fuel:int -> CC.t -> t list -> int
   (** iterate rewriting until saturation.
       @raise FuelExhausted if fuel exhausted before saturation *)
 end

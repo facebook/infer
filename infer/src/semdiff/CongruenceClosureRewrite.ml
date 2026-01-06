@@ -84,7 +84,7 @@ module Pattern = struct
     | None ->
         if debug then F.printf "adding %a=%a@." Var.pp var (CC.pp_nested_term cc) atom' ;
         Var.Map.add var atom' subst |> SubstSet.singleton
-    | Some already' when phys_equal atom' already' ->
+    | Some already' when CC.is_equiv cc atom' already' ->
         SubstSet.singleton subst
     | Some _ ->
         SubstSet.empty
@@ -162,13 +162,14 @@ module Pattern = struct
     loop [] Var.Map.empty atom |> CC.Atom.Set.elements
 
 
-  let e_match ?(debug = false) cc pat ~f =
+  let e_match ?(debug = false) cc pat exclude ~f =
     match pat with
     | Var _ ->
         L.die InternalError "should not happen"
     | Term {header} ->
         CC.iter_term_roots cc header ~f:(fun atom ->
-            e_match_at ~debug cc pat atom |> List.iter ~f:(fun subst -> f atom subst) )
+            if not (List.exists exclude ~f:(CC.is_equiv cc atom)) then
+              e_match_at ~debug cc pat atom |> List.iter ~f:(fun subst -> f atom subst) )
 
 
   let to_term cc subst pat =
@@ -188,7 +189,9 @@ module Pattern = struct
 end
 
 module Rule = struct
-  type t = Regular of {lhs: Pattern.t; rhs: Pattern.t} | Ellipsis of Pattern.ellipsis
+  type t =
+    | Regular of {lhs: Pattern.t; rhs: Pattern.t; exclude: CC.Atom.t list}
+    | Ellipsis of Pattern.ellipsis
 
   let pp fmt = function
     | Regular {lhs; rhs} ->
@@ -227,8 +230,8 @@ module Rule = struct
     CC.reset_update_count cc ;
     List.iter rules ~f:(fun rule ->
         match rule with
-        | Regular {lhs; rhs} ->
-            Pattern.e_match cc lhs ~f:(fun atom subst ->
+        | Regular {lhs; rhs; exclude} ->
+            Pattern.e_match cc lhs exclude ~f:(fun atom subst ->
                 let rhs_term = Pattern.to_term cc subst rhs in
                 if not (CC.is_equiv cc atom rhs_term) then (
                   if debug then
@@ -245,17 +248,18 @@ module Rule = struct
 
   exception FuelExhausted of {round_count: int}
 
-  let full_rewrite ?(fuel = 1 lsl 10) cc rules =
+  let full_rewrite ?(debug = false) ?(fuel = 1 lsl 10) cc rules =
     let rec loop fuel round_count =
       if fuel <= 0 then raise (FuelExhausted {round_count})
-      else
-        let updates = rewrite_once cc rules in
+      else (
+        if debug then F.printf "full_rewrite - round %d@." round_count ;
+        let updates = rewrite_once ~debug cc rules in
         if Int.equal updates 0 then
           (* the last round did not change anything *)
           round_count
         else (
           assert (updates > 0) ;
-          loop (fuel - updates) (round_count + 1) )
+          loop (fuel - updates) (round_count + 1) ) )
     in
     loop fuel 1
 end
@@ -497,7 +501,7 @@ module Parser = struct
   let raw_to_rule cc raw : Rule.t =
     match raw with
     | Regular {lhs; rhs} ->
-        Regular {lhs= raw_to_pattern cc lhs; rhs= raw_to_pattern cc rhs}
+        Regular {lhs= raw_to_pattern cc lhs; rhs= raw_to_pattern cc rhs; exclude= []}
     | Ellipsis {header; arg} ->
         Ellipsis {header= CC.mk_header cc header; arg= raw_to_pattern cc arg}
 
@@ -521,7 +525,7 @@ let parse_rule = Parser.parse_rule
 module TestOnly = struct
   let e_match_pattern_at = Pattern.e_match_at
 
-  let e_match_pattern = Pattern.e_match
+  let e_match_pattern ?(debug = false) cc pat ~f = Pattern.e_match ~debug cc pat [] ~f
 
   let e_match_ellipsis_at = Pattern.e_match_ellipsis_at
 

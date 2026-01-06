@@ -91,6 +91,14 @@ let parse_pattern str =
       L.die UserError "parse error %a" pp_parse_error err
 
 
+let parse_rule str =
+  match parse_rule !st str with
+  | Ok pattern ->
+      pattern
+  | Error err ->
+      L.die UserError "parse error %a" pp_parse_error err
+
+
 let pp_vars fmt vars =
   F.fprintf fmt "@[<hv>{" ;
   List.iteri vars ~f:(fun i var ->
@@ -209,9 +217,7 @@ let%expect_test "rewriting at specific atom" =
   let t1 = mk_term "mult" [x; mk_term "plus" [y; z]] in
   let t2 = mk_term "plus" [mk_term "mult" [x; y]; mk_term "mult" [x; z]] in
   let distribute_rule : Rule.t =
-    Regular
-      { lhs= apply "mult" [var "X"; apply "plus" [var "Y"; var "Z"]]
-      ; rhs= apply "plus" [apply "mult" [var "X"; var "Y"]; apply "mult" [var "X"; var "Z"]] }
+    parse_rule "(mult ?X (plus ?Y ?Z)) ==> (plus (mult ?X ?Y) (mult ?X ?Z))"
   in
   F.printf "t1 := %a@." pp_nested_term t1 ;
   F.printf "t2 := %a@." pp_nested_term t2 ;
@@ -238,8 +244,8 @@ let%expect_test "rewriting one round" =
   let t = mk_term "g" [mk_term "f" [mk_term "g" [y]]] in
   merge x (Atom t) ;
   F.printf "0: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
-  let rule1 : Rule.t = Regular {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
-  let rule2 : Rule.t = Regular {lhs= apply "f" [var "X"]; rhs= var "X"} in
+  let rule1 : Rule.t = parse_rule "(g (g ?X)) ==> ?X" in
+  let rule2 : Rule.t = parse_rule "(f ?X) ==> ?X" in
   let rules = [rule1; rule2] in
   let updates = rewrite_rules_once ~debug:true !st rules in
   F.printf "%d updates@." updates ;
@@ -272,8 +278,8 @@ let%expect_test "full rewrite" =
   let t = mk_term "g" [mk_term "f" [mk_term "g" [y]]] in
   merge x (Atom t) ;
   F.printf "0: %a == %a? %b@." Atom.pp x Atom.pp y (CC.is_equiv !st x y) ;
-  let rule1 : Rule.t = Regular {lhs= apply "g" [apply "g" [var "X"]]; rhs= var "X"} in
-  let rule2 : Rule.t = Regular {lhs= apply "f" [var "X"]; rhs= var "X"} in
+  let rule1 : Rule.t = parse_rule "(g (g ?X)) ==> ?X" in
+  let rule2 : Rule.t = parse_rule "(f ?X) ==> ?X" in
   let rules = [rule1; rule2] in
   let rounds = Rule.full_rewrite !st rules in
   F.printf "%d rounds@." rounds ;

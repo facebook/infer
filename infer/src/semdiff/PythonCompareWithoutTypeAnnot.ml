@@ -229,10 +229,9 @@ let ast_diff ~debug ~test_eqsat ?filename1 ?filename2 previous_content current_c
         make_diffs ast1 ast2 |> Diff.gen_explicit_diffs ~previous_content ~current_content
       in
       if test_eqsat then
-        assert (
-          Bool.equal
-            (PythonSourceAstDiff.check_equivalence original_ast1 original_ast2)
-            (List.is_empty diffs) ) ;
+        PythonSourceAstDiff.check_equivalence ~debug:false ~expected:(List.is_empty diffs)
+          original_ast1 original_ast2
+        |> ignore ;
       if debug then (
         F.printf "AST1: %s\n" (Node.to_str ast1) ;
         F.printf "AST2: %s\n" (Node.to_str ast2) ;
