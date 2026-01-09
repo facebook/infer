@@ -28,9 +28,10 @@ func test4() -> Int {
 
 
 struct TestSize: Equatable {
+     let width: Int
 
-    func test(size: CGSize) -> Int {
-        guard size.width > 0 && size.height > 0 else { return 0 }
-        return 1
+    init?(size: CGSize) {
+        guard size.width > 0 && size.height > 0 else { return nil}
+        self.width = Int(size.width)
     }
 }
