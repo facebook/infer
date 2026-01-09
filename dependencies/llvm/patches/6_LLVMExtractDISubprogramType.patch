@@ -102,22 +102,24 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
  }
 
  value llvm_dibuild_create_compile_unit_bytecode(value *argv, int argn) {
-@@ -326,6 +336,20 @@ value llvm_di_location_get_line(value Location) {
+@@ -326,6 +336,22 @@ value llvm_di_location_get_line(value Location) {
    return Val_int(LLVMDILocationGetLine(Metadata_val(Location)));
  }
 
 +value llvm_di_subprogram_get_type(value Subprogram) {
++  CAMLparam1(Subprogram);
++  CAMLlocal1(Array);
 +  unsigned Length = 0;
 +  char **c_array =
 +      LLVMExtractDISubprogramType(Metadata_val(Subprogram), &Length);
-+  value Array = caml_alloc_tuple_uninit(Length);
++  Array = caml_alloc_tuple_uninit(Length);
 +  for (unsigned i = 0; i < Length; ++i) {
 +    size_t len = strlen(c_array[i]);
 +    Field(Array, i) = cstr_to_string(c_array[i], len);
 +    free(c_array[i]);
 +  }
 +  free(c_array);
-+  return Array;
++  CAMLreturn(Array);
 +}
 +
  value llvm_di_location_get_column(value Location) {
