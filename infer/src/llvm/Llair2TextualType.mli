@@ -35,6 +35,8 @@ val to_textual_typ_without_mangled_map :
 
 val join_typ : Textual.Typ.t option -> Textual.Typ.t option -> Textual.Typ.t option
 
+val is_compatible : Textual.Typ.t -> Textual.Typ.t -> bool
+
 val translate_types_env : Textual.Lang.t -> Llair.Typ.t list -> ProcState.struct_map
 
 val lookup_field_type :

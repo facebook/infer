@@ -1,3 +1,5 @@
+import Foundation
+import CoreGraphics
 
 func returnOne() -> Int {
     return 1
@@ -22,4 +24,13 @@ func createPerson(age: Int, height : Int) -> (age: Int, height: Int) {
 func test4() -> Int {
     let person = createPerson(age: 30, height: 180)
     return person.age
+}
+
+
+struct TestSize: Equatable {
+
+    func test(size: CGSize) -> Int {
+        guard size.width > 0 && size.height > 0 else { return 0 }
+        return 1
+    }
 }

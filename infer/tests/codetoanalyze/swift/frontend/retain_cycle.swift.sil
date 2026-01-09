@@ -151,7 +151,7 @@ define .plain_name = "init" .method_offset = "22" __infer_swift_type<T5Hello9Tra
 
 declare .plain_name = "didReceiveMessage" $s5Hello9TransportCAA23MessageReceiverDelegateA2aDP010didReceiveC0yySSFTW(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-define .plain_name = "connected.set" .method_offset = "14" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvs(var1: *__infer_swift_type<,ConnectionState>, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
+define .plain_name = "connected.set" .method_offset = "14" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvs(var1: int, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
   local var4: *int
   #: @[336:0]
       n2 = load &var2 @[336:0]
@@ -482,7 +482,7 @@ declare $s5Hello9TransportC15ConnectionStateOAESYAAWl() : *__infer_swift_type<pt
 
 declare $s5Hello9TransportC15ConnectionStateOAESQAAWl() : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateO8rawValueSSvg(var1: *__infer_swift_type<,ConnectionState>) : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
+define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateO8rawValueSSvg(var1: int) : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
   local self: int
   #: @[240:0]
       n1 = load &var1 @[240:0]
@@ -520,7 +520,7 @@ define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateO8rawVal
       
 } @?
 
-declare .plain_name = "init" $s5Hello9TransportC15ConnectionStateO8rawValueAESgSS_tcfC(*__infer_swift_type<Ts11_StringGutsV,String>, *__infer_swift_type<,$s5Hello9TransportC15ConnectionStateOXMtD>) : *__infer_swift_type<T5Hello9TransportC15ConnectionStateO>
+declare .plain_name = "init" $s5Hello9TransportC15ConnectionStateO8rawValueAESgSS_tcfC(int, *__infer_swift_type<,$s5Hello9TransportC15ConnectionStateOXMtD>) : *__infer_swift_type<T5Hello9TransportC15ConnectionStateO>
 
 define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC14onDisconnectedyyF(self: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
   local var4: *__infer_swift_type<T5Hello17TransportDelegate_pSg>, getelementptr_offset_9: *void, getelementptr_offset_8: *void, getelementptr_offset_7: *void, getelementptr_offset_6: *void, getelementptr_offset_5: *void, getelementptr_offset_4: *void, getelementptr_offset_3: *void, getelementptr_offset_2: *void, getelementptr_offset_1: *void

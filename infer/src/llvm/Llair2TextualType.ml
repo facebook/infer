@@ -181,6 +181,28 @@ let join_typ typ1_opt typ2_opt =
       None
 
 
+let rec is_compatible typ1 typ2 =
+  match (typ1, typ2) with
+  | Textual.Typ.Struct _, Textual.Typ.Struct _ ->
+      true
+  | Textual.Typ.Ptr typ1, Textual.Typ.Ptr typ2 ->
+      is_compatible typ1 typ2
+  | ( Textual.Typ.Fun (Some {params_type= params_type1; return_type= return_type1})
+    , Textual.Typ.Fun (Some {params_type= params_type2; return_type= return_type2}) ) ->
+      List.for_all2_exn ~f:is_compatible params_type1 params_type2
+      && is_compatible return_type1 return_type2
+  | Textual.Typ.Int, Textual.Typ.Int ->
+      true
+  | Textual.Typ.Float, Textual.Typ.Float ->
+      true
+  | Textual.Typ.Null, Textual.Typ.Null ->
+      true
+  | Textual.Typ.Void, Textual.Typ.Void ->
+      true
+  | _ ->
+      false
+
+
 let rec signature_type_to_textual_typ signature_structs lang signature_type =
   if String.is_suffix signature_type ~suffix:"*" then
     let name = String.chop_suffix_if_exists signature_type ~suffix:"*" in

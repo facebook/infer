@@ -148,9 +148,16 @@ let to_name_attr func_name =
 let to_formal_types lang signature_structs ~struct_map func =
   let to_textual_formal_type formal_type = Var.reg_to_annot_typ lang ~struct_map formal_type in
   let to_textual_formal_signature_type formal formal_type =
-    let typ = Type.signature_type_to_textual_typ signature_structs lang formal_type in
-    let typ = Option.map ~f:Textual.Typ.mk_without_attributes typ in
-    match typ with Some typ -> typ | None -> to_textual_formal_type formal
+    let signature_type = Type.signature_type_to_textual_typ signature_structs lang formal_type in
+    let signature_type = Option.map ~f:Textual.Typ.mk_without_attributes signature_type in
+    let internal_typ = to_textual_formal_type formal in
+    (* we need this check because sometimes llvm changes the types of the parameters to be primitive
+    types instead of objects *)
+    match signature_type with
+    | Some signature_type when Type.is_compatible internal_typ.typ signature_type.typ ->
+        signature_type
+    | _ ->
+        internal_typ
   in
   let llair_formals = StdUtils.iarray_to_list func.Llair.formals in
   let llair_formals_types = StdUtils.iarray_to_list func.Llair.formals_types in

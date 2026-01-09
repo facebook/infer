@@ -139,7 +139,7 @@ define .plain_name = "setWeight" $s5Hello9setWeightyySiF(weight: *__infer_swift_
       
 } @?
 
-define .plain_name = "isWeekend" $s5Hello9isWeekendySbAA3DayOF(day: *__infer_swift_type<,Day>) : int {
+define .plain_name = "isWeekend" $s5Hello9isWeekendySbAA3DayOF(day: *__infer_swift_type<ptr_elt>) : int {
   #: @[242:16]
       n1 = load &day @[242:16]
       n3 = $builtins.__derived_enum_equals(n1, 5) @[242:16]
@@ -857,7 +857,7 @@ declare .plain_name = "delegate.modify" $s5Hello5StateC8delegateAA30DeviceAppMan
 
 declare .plain_name = "delegate.modify" $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-define .plain_name = "foo" $s5Hello3fooyyAA5StateCSgF(state: *__infer_swift_type<T5Hello5StateC,State>) : void {
+define .plain_name = "foo" $s5Hello3fooyyAA5StateCSgF(state: *__infer_swift_type<ptr_elt>) : void {
   #: @[214:29]
       ret null @[214:29]
       
@@ -899,7 +899,7 @@ declare $s5Hello3DayOACSQAAWl() : *__infer_swift_type<ptr_elt>
 
 declare $s5Hello3DayOACSHAAWl() : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "hashValue.get" $s5Hello3DayO9hashValueSivg(self: *__infer_swift_type<,Day>) : int {
+define .plain_name = "hashValue.get" $s5Hello3DayO9hashValueSivg(self: *__infer_swift_type<ptr_elt>) : int {
   local var4: *__infer_swift_type<T5Hello3DayO>
   #: @[532:0]
       n2 = load &var4 @[532:0]
@@ -920,7 +920,7 @@ define .plain_name = "hashValue.get" $s5Hello3DayO9hashValueSivg(self: *__infer_
       
 } @?
 
-declare .plain_name = "hash" $s5Hello3DayO4hash4intoys6HasherVz_tF(*__infer_swift_type<,Hasher>, *__infer_swift_type<,Day>) : void
+declare .plain_name = "hash" $s5Hello3DayO4hash4intoys6HasherVz_tF(*__infer_swift_type<,Hasher>, int) : void
 
 declare .plain_name = "__derived_enum_equals" $s5Hello3DayO21__derived_enum_equalsySbAC_ACtFZ(int, int) : *__infer_swift_type<,$sSbD>
 
@@ -1510,7 +1510,7 @@ define .plain_name = "test_optional3_bad_FN" $s5Hello21test_optional3_bad_FNSiyF
       
 } @?
 
-define .plain_name = "test_optional_person" $s5Hello20test_optional_personySiAA6PersonCSgF(person: *__infer_swift_type<T5Hello6PersonC,Person>) : int {
+define .plain_name = "test_optional_person" $s5Hello20test_optional_personySiAA6PersonCSgF(person: *__infer_swift_type<ptr_elt>) : int {
   local actualPerson: *__infer_swift_type<ptr_elt>
   #: @[136:27]
       n1 = $builtins.llvm_nondet() @[136:27]
@@ -1978,7 +1978,7 @@ define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello14Vi
       
 } @?
 
-define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: *__infer_swift_type<T5Hello10CustomViewC,CustomView>, var2: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : void {
+define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: int, var2: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : void {
   local var4: *int
   #: @[335:0]
       n1 = $builtins.llvm_nondet() @[335:0]
@@ -2088,7 +2088,7 @@ declare $s5Hello10IndividualCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swif
 
 declare $s5Hello10IndividualCMa(int) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: *__infer_swift_type<T5Hello10IndividualC,Individual>, var2: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
+define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: int, var2: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
   local var4: *int
   #: @[302:0]
       n1 = $builtins.llvm_nondet() @[302:0]
