@@ -902,6 +902,10 @@ module ProcDecl = struct
       ~f:(List.exists ~f:(Typ.is_annotated ~f:Attr.is_variadic))
 
 
+  let unop_builtins = List.unzip unop_table |> snd
+
+  let binop_builtins = Map.Poly.keys binop_inverse_map
+
   let builtins =
     let builtins =
       [ builtin_allocate
@@ -915,12 +919,10 @@ module ProcDecl = struct
       ; builtin_get_lazy_class
       ; builtin_instanceof ]
     in
-    let unop_builtins = List.unzip unop_table |> snd in
-    let binop_builtins = Map.Poly.keys binop_inverse_map in
     builtins @ unop_builtins @ binop_builtins
 
 
-  let builtins_swift = [builtin_assert_fail; builtin_swift_alloc]
+  let builtins_swift = [builtin_assert_fail; builtin_swift_alloc] @ unop_builtins @ binop_builtins
 
   let is_builtin (proc : QualifiedProcName.t) lang =
     match lang with
