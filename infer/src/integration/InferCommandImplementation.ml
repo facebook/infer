@@ -354,6 +354,8 @@ let sem_diff () =
       L.die UserError
         "Expected '--semdiff-current' and '--semdiff-previous' to be specified, or \
          '--semdiff-test-files-index' for tests."
+  | Some (previous, current), None when Config.semdiff_configurable ->
+      PythonCompareDirectRewrite.semdiff previous current
   | Some (previous, current), None ->
       PythonCompareWithoutTypeAnnot.semdiff previous current
   | None, Some index_filename -> (

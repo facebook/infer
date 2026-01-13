@@ -61,6 +61,11 @@ module Node = struct
     (typ, washed_assoc)
 
 
+  let dict_of_assoc header assoc =
+    let init = StringMap.singleton type_field_name (Str header) in
+    List.fold assoc ~init ~f:(fun dict (field, node) -> StringMap.add field node dict)
+
+
   let is_type fields type_name : bool =
     match get_type fields with Str name -> String.equal name type_name | _ -> false
 
@@ -75,6 +80,10 @@ module Node = struct
 
   let get_line_number (fields : dict) : int option =
     match StringMap.find_opt field_lineno fields with Some (Int l1) -> Some l1 | _ -> None
+
+
+  let get_end_line_number (fields : dict) : int option =
+    match StringMap.find_opt field_end_lineno fields with Some (Int l1) -> Some l1 | _ -> None
 
 
   let get_line_number_of_node = function Dict f -> get_line_number f | _ -> None

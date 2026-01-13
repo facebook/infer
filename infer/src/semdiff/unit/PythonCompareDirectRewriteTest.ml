@@ -137,7 +137,10 @@ def foo(self) -> None:
 |}
   in
   ast_diff_equal prog1 prog2 ;
-  [%expect {| (Line 4) +     assert obj is not None |}]
+  [%expect {|
+    (Line 4) +     assert obj is not None
+    (Line 5) +     x = obj.prop
+    |}]
 
 
 let%expect_test "test_with_import_good" =
@@ -335,7 +338,7 @@ def foo(self, x) -> None:
 |}
   in
   ast_diff_equal prog1 prog2 ;
-  [%expect {| (Line 3) -         if x.__class__ == str:, +         if isinstance(x, None): |}]
+  [%expect {| (Line 3) +         if isinstance(x, None): |}]
 
 
 let%expect_test "test_change_async_body_indentation_bad" =
@@ -504,7 +507,7 @@ def foo():
   ast_diff_equal prog1 prog2 ;
   [%expect
     {|
-    (Line 3) -   if self.field and self.field.label != TOP:, +   field = self.field
+    (Line 3) -   if self.field and self.field.label != TOP:
     (Line 4) +   if field and field.label != TOP:
     |}]
 
@@ -659,6 +662,6 @@ def main():
   ast_diff_equal prog1 prog2 ;
   [%expect
     {|
-    (Line 3) +     temp_dict = dict(o.mapping)
-    (Line 6) +     o.mapping = temp_dict
+    (Line 4) -         o.mapping[i] -= 7
+    (Line 5) +         temp_dict[i] -= 7
     |}]

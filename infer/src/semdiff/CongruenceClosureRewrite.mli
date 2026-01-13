@@ -15,6 +15,8 @@ module Var : sig
   val pp : F.formatter -> t -> unit
 
   val of_string : string -> t
+
+  module Map : Stdlib.Map.S with type key = t
 end
 
 type subst

@@ -49,6 +49,8 @@ module Node : sig
 
   val get_line_number : dict -> int option
 
+  val get_end_line_number : dict -> int option
+
   val get_line_number_of_node : t -> int option
 
   val make_dict_node : (string * t) list -> t
@@ -56,6 +58,8 @@ module Node : sig
   val find_field_or_null : string -> dict -> t
 
   val assoc_of_dict : dict -> string * (string * t) list
+
+  val dict_of_assoc : string -> (string * t) list -> dict
 
   val to_str : ?indent:int -> t -> string
 end

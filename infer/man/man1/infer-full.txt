@@ -2112,6 +2112,11 @@ OPTIONS
            (Conversely: --no-self-in-block-only)
            See also infer-analyze(1).
 
+       --semdiff-configurable
+           Activates: Use configurable rewriting engine. (Conversely:
+           --no-semdiff-configurable)
+           See also infer-semdiff(1).
+
        --semdiff-current path
            Current python program to be analysed by semdiff
            See also infer-semdiff(1).

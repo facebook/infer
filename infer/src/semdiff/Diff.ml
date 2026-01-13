@@ -20,6 +20,23 @@ let append_added_line right_line acc =
   Option.value_map right_line ~default:acc ~f:(fun line -> LineAdded line :: acc)
 
 
+let append_lines line_start line_end ~f ~init =
+  match (line_start, line_end) with
+  | Some line_start, Some line_end when line_start <= line_end ->
+      let range = List.range ~start:`inclusive ~stop:`inclusive line_start line_end in
+      List.fold ~init ~f range
+  | _, _ ->
+      init
+
+
+let append_removed_lines line_start line_end acc =
+  append_lines line_start line_end ~init:acc ~f:(fun acc line -> LineRemoved line :: acc)
+
+
+let append_added_lines line_start line_end acc =
+  append_lines line_start line_end ~init:acc ~f:(fun acc line -> LineAdded line :: acc)
+
+
 let split_diffs diffs =
   List.fold
     ~f:(fun (lines_removed, lines_added) diff ->

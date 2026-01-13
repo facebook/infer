@@ -3264,6 +3264,12 @@ and semdiff_experimental_eqsat_engine =
     "Use experimental equality saturation rewriting engine."
 
 
+and semdiff_configurable =
+  CLOpt.mk_bool ~long:"semdiff-configurable" ~default:false
+    ~in_help:InferCommand.[(SemDiff, manual_generic)]
+    "Use configurable rewriting engine."
+
+
 and semdiff_test_actions =
   CLOpt.mk_symbol_seq ~long:"semdiff-test-actions" ~eq:PolyVariantEqual.( = )
     "Specify which action must be performed  in each parsed AST during semdiff tests"
@@ -4852,6 +4858,8 @@ and semdiff_previous = !semdiff_previous
 and semdiff_test_actions = !semdiff_test_actions
 
 and semdiff_experimental_eqsat_engine = !semdiff_experimental_eqsat_engine
+
+and semdiff_configurable = !semdiff_configurable
 
 and semdiff_test_files_index = !semdiff_test_files_index
 
