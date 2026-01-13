@@ -141,6 +141,10 @@ let gen_all_rules cc : Rewrite.Rule.t list =
     ; "(@DIFF (id List) (id list)) ==> __DONE__"
     ; "(@DIFF (id Set) (id set)) ==> __DONE__"
     ; "(@DIFF (id Tuple) (id tuple)) ==> __DONE__"
+      (* TODO: investigate why this rule does not solve test test_field_assign_type
+    ; {|(@DIFF
+         (AnnAssign (annotation Null) (simple 1) (target ?N) (value ?V))
+         (AnnAssign (annotation Null) (simple 0) (target ?N) (value ?V))) ==> __DONE__|} *)
     ; {|(Assign (targets (List ?N)) (type_comment Null) (value ?V))
         ==>
         (AnnAssign (annotation Null) (simple 1) (target ?N) (value ?V))|}
