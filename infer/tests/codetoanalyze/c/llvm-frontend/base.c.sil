@@ -300,7 +300,7 @@ define test13() : int {
       
 } @?
 
-define test12() : *ptr_elt {
+define test12() : void {
   local str: *ptr_elt
   #: @[82:3]
       _ = my_fun("hello") @[82:3]
@@ -316,7 +316,7 @@ define test12() : *ptr_elt {
       
 } @?
 
-define test11() : *ptr_elt {
+define test11() : void {
   #: @[77:16]
       ret null @[77:16]
       

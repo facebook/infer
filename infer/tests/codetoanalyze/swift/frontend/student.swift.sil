@@ -1340,7 +1340,7 @@ define .plain_name = "test_optional_crash_bad" $s5Hello23test_optional_crash_bad
       
 } @?
 
-define $s5Hello22test_retain_cycle_bad2yyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
+define $s5Hello22test_retain_cycle_bad2yyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : void {
   #: @[476:0]
       n1 = load &var1 @[476:0]
       _ = $s5Hello22test_retain_cycle_bad2yyFyycfU_(n1) @[476:0]
@@ -1685,7 +1685,7 @@ declare .plain_name = "id.modify" $s5Hello18RetainCycleExampleC2idSivM::resume::
 
 declare .plain_name = "id.modify" .method_offset = "14" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-define $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
+define $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : void {
   #: @[393:0]
       n1 = load &var1 @[393:0]
       _ = $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_(n1) @[393:0]
@@ -1728,7 +1728,7 @@ define .plain_name = "setupClosureBad" .method_offset = "18" __infer_swift_type<
       
 } @?
 
-define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
+define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : void {
   #: @[387:0]
       n1 = load &var1 @[387:0]
       _ = $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(n1) @[387:0]

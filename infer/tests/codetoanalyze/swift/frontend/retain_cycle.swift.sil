@@ -428,7 +428,7 @@ declare $s5Hello9TransportC15ConnectionStateOwet(*__infer_swift_type<ptr_elt>, i
 
 declare .plain_name = "init" $s5Hello9TransportC15ConnectionStateOSYAASY8rawValuexSg03RawF0Qz_tcfCTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello9TransportC15ConnectionStateO>
 
-define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateOSYAASY8rawValue03RawF0QzvgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<Ts11_StringGutsV,String> {
+define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateOSYAASY8rawValue03RawF0QzvgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>) : void {
   #: @[257:0]
       n2 = load &var2 @[257:0]
       n1 = load n2.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue @[257:0]

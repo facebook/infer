@@ -907,7 +907,9 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
       ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc, instrs)
   | Return {exp= None; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
-      ((Textual.Terminator.Ret (Textual.Exp.Const Null), None, no_succs), Some loc, [])
+      ( (Textual.Terminator.Ret (Textual.Exp.Const Null), Some Textual.Typ.Void, no_succs)
+      , Some loc
+      , [] )
   | Throw {exc; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
       ( (Textual.Terminator.Throw (to_textual_exp loc ~proc_state exc |> fst3), None, no_succs)

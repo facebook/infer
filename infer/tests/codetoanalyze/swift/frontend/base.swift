@@ -27,11 +27,20 @@ func test4() -> Int {
 }
 
 
+@objc public enum SizeMode: Int {
+    case sBox
+    case pBox
+    case invalid
+}
 struct TestSize: Equatable {
-     let width: Int
-
-    init?(size: CGSize) {
-        guard size.width > 0 && size.height > 0 else { return nil}
+    let width: Int
+    let height: Int
+    let mode: SizeMode
+    let stringValue: String
+    init?(size: CGSize, mode: SizeMode) {
         self.width = Int(size.width)
+        self.height = Int(size.height)
+        self.mode = mode
+        self.stringValue = "\(width)x\(height)"
     }
 }

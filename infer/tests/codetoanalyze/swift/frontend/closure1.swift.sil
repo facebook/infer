@@ -252,7 +252,7 @@ define .plain_name = "testWithClosure2" $s5Hello16testWithClosure2SiyF() : int {
       
 } @?
 
-define $s5Hello15testWithClosureSiyFySicfU_TA(var1: int, var2: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
+define $s5Hello15testWithClosureSiyFySicfU_TA(var1: int, var2: *__infer_swift_type<ptr_elt>) : void {
   #: @[135:0]
       n1 = load &var1 @[135:0]
       n2 = load &var2 @[135:0]
@@ -309,7 +309,7 @@ define .plain_name = "testWithClosure" $s5Hello15testWithClosureSiyF() : int {
       
 } @?
 
-define $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
+define $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : void {
   #: @[126:0]
       n1 = load &var1 @[126:0]
       _ = $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_(n1) @[126:0]
