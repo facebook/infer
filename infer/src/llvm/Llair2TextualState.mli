@@ -83,12 +83,16 @@ end
 module ProcState : sig
   type id_data = {typ: Textual.Typ.annotated; no_deref_needed: bool}
 
+  type read = Read | NotRead
+
+  type formal_data = {typ: Textual.Typ.annotated; assoc_local: Textual.VarName.t option; read: read}
+
   type t = private
     { qualified_name: Textual.QualifiedProcName.t
     ; sourcefile: SourceFile.t
     ; loc: Textual.Location.t
     ; mutable locals: Textual.Typ.annotated VarMap.t
-    ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
+    ; mutable formals: formal_data VarMap.t
     ; mutable local_map: Textual.Typ.t Textual.VarName.Hashtbl.t
     ; mutable ids_move: id_data IdentMap.t
     ; mutable ids_types: Textual.Typ.annotated IdentMap.t
@@ -103,7 +107,7 @@ module ProcState : sig
        qualified_name:Textual.QualifiedProcName.t
     -> sourcefile:SourceFile.t
     -> loc:Textual.Location.t
-    -> formals:(Textual.Typ.annotated * VarMap.key option) VarMap.t
+    -> formals:formal_data VarMap.t
     -> module_state:ModuleState.t
     -> t
 
@@ -112,6 +116,9 @@ module ProcState : sig
   val mk_fresh_tmp_var : string -> t -> VarMap.key
 
   val update_locals : proc_state:t -> VarMap.key -> Textual.Typ.annotated -> unit
+
+  val update_formals :
+    proc_state:t -> VarMap.key -> Textual.Typ.annotated * VarMap.key option -> read -> unit
 
   val update_ids_move :
     proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> no_deref_needed:bool -> unit

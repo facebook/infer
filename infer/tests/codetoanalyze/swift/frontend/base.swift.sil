@@ -414,8 +414,8 @@ declare $s5Hello8CTPParamCMa(int) : *__infer_swift_type<ptr_elt>
 
 declare .plain_name = "init" $s5Hello8CTPParamCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,CTPParam>
 
-define .plain_name = "init" $s5Hello8CTPParamCACycfc(self: *__infer_swift_type<,CTPParam>) : *__infer_swift_type<ptr_elt> {
-  local var5: *__infer_swift_type<objc_super>
+define .plain_name = "init" $s5Hello8CTPParamCACycfc(var1: *__infer_swift_type<,CTPParam>) : *__infer_swift_type<ptr_elt> {
+  local var5: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>
   #: @[171:0]
       n1 = load &var1 @[171:0]
       n2 = swift_getObjectType(n1) @[171:0]

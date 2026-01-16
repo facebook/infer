@@ -104,12 +104,16 @@ module ProcState = struct
     F.fprintf fmt "typ:%a, no_deref_needed: %b" Textual.Typ.pp_annotated typ no_deref_needed
 
 
+  type read = Read | NotRead
+
+  type formal_data = {typ: Textual.Typ.annotated; assoc_local: Textual.VarName.t option; read: read}
+
   type t =
     { qualified_name: Textual.QualifiedProcName.t
     ; sourcefile: SourceFile.t
     ; loc: Textual.Location.t
     ; mutable locals: Textual.Typ.annotated VarMap.t
-    ; mutable formals: (Textual.Typ.annotated * Textual.VarName.t option) VarMap.t
+    ; mutable formals: formal_data VarMap.t
     ; mutable local_map: Textual.Typ.t Textual.VarName.Hashtbl.t
     ; mutable ids_move: id_data IdentMap.t
     ; mutable ids_types: Textual.Typ.annotated IdentMap.t
@@ -176,11 +180,14 @@ module ProcState = struct
         (VarMap.bindings vars)
     in
     let pp_formals fmt vars =
-      F.fprintf fmt "%a"
-        (Pp.comma_seq
-           (Pp.pair ~fst:Textual.VarName.pp
-              ~snd:(Pp.pair ~fst:Textual.Typ.pp_annotated ~snd:(Pp.option Textual.VarName.pp)) ) )
-        (VarMap.bindings vars)
+      let pp_item key item =
+        let pp_read fmt read =
+          match read with Read -> F.fprintf fmt "Read" | NotRead -> F.fprintf fmt "NotRead"
+        in
+        F.fprintf fmt "%a -> %a, %a, %a@." Textual.VarName.pp key Textual.Typ.pp_annotated item.typ
+          (Pp.option Textual.VarName.pp) item.assoc_local pp_read item.read
+      in
+      VarMap.iter pp_item vars
     in
     let pp_struct_map fmt struct_map =
       let pp_item key value =
@@ -212,6 +219,10 @@ module ProcState = struct
     proc_state.locals <- VarMap.add varname typ proc_state.locals
 
 
+  let update_formals ~proc_state varname (typ, assoc_local) read =
+    proc_state.formals <- VarMap.add varname {typ; assoc_local; read} proc_state.formals
+
+
   let update_ids_move ~proc_state id typ ~no_deref_needed =
     proc_state.ids_move <- IdentMap.add id {typ; no_deref_needed} proc_state.ids_move
 
@@ -224,27 +235,29 @@ use the substitution in the code later on. *)
   let subst_formal_local ~proc_state ~formal ~local =
     let formal_binding = VarMap.find_opt formal proc_state.formals in
     match formal_binding with
-    | Some (formal_typ, _) ->
+    (* If this variable has been read before, this transformation is not safe. *)
+    | Some ({read= NotRead} as item) ->
         let local, local_typ = local in
         let new_typ =
-          match (local_typ.Textual.Typ.typ, formal_typ.Textual.Typ.typ) with
+          match (local_typ.Textual.Typ.typ, item.typ.Textual.Typ.typ) with
           | Textual.Typ.Ptr (Struct _), Int | Textual.Typ.Int, Textual.Typ.Ptr (Struct _) ->
               (* This is to avoid a type error when the signature type was int, because internally
            int is a pointer to a struct. Now, we use the local type for the formal in case of
            such a contradiction. *)
               local_typ
           | _ ->
-              formal_typ
+              item.typ
         in
-        proc_state.formals <- VarMap.add formal (new_typ, Some local) proc_state.formals ;
+        proc_state.formals <-
+          VarMap.add formal {typ= new_typ; assoc_local= Some local; read= Read} proc_state.formals ;
         Textual.VarName.Hashtbl.replace proc_state.local_map local new_typ.Textual.Typ.typ
     | _ ->
         ()
 
 
   let compute_locals ~proc_state =
-    let remove_locals_in_formals _ (_, local) locals =
-      match local with Some local -> VarMap.remove local locals | None -> locals
+    let remove_locals_in_formals _ {assoc_local} locals =
+      match assoc_local with Some local -> VarMap.remove local locals | None -> locals
     in
     let locals = VarMap.fold remove_locals_in_formals proc_state.formals proc_state.locals in
     VarMap.fold (fun varname typ locals -> (varname, typ) :: locals) locals []

@@ -78,9 +78,10 @@ module Var = struct
   let reg_to_textual_var ~(proc_state : ProcState.t) reg =
     let reg_var_name = reg_to_var_name reg in
     match VarMap.find_opt reg_var_name proc_state.formals with
-    | Some (annot_typ, Some local) ->
+    | Some {typ= annot_typ; assoc_local= Some local} ->
         (Textual.Exp.Lvar local, Some annot_typ.Textual.Typ.typ)
-    | Some (annot_typ, None) ->
+    | Some {typ= annot_typ; assoc_local= None} ->
+        ProcState.update_formals ~proc_state reg_var_name (annot_typ, None) ProcState.Read ;
         (Textual.Exp.Lvar reg_var_name, Some annot_typ.Textual.Typ.typ)
     | None when VarMap.mem reg_var_name proc_state.locals ->
         (Textual.Exp.Lvar reg_var_name, find_formal_type ~proc_state reg_var_name)
@@ -1171,9 +1172,9 @@ let function_to_proc_decl lang signature_structs method_class_index ~struct_map 
 let update_formals_list formals_list formals_map =
   let update_formal varname =
     match Textual.VarName.Map.find_opt varname formals_map with
-    | Some (typ, Some local) ->
+    | Some ProcState.{typ; assoc_local= Some local} ->
         (Some typ, local)
-    | Some (_, None) | None ->
+    | Some ProcState.{assoc_local= None} | None ->
         (None, varname)
   in
   List.map ~f:update_formal formals_list
@@ -1194,7 +1195,10 @@ let translate_code source_file ~module_state proc_descs (procdecl : Textual.Proc
         Textual.VarName.Map.empty
     | Some formals_types ->
         List.fold2_exn
-          ~f:(fun formals varname typ -> Textual.VarName.Map.add varname (typ, None) formals)
+          ~f:(fun formals varname typ ->
+            Textual.VarName.Map.add varname
+              ProcState.{typ; assoc_local= None; read= NotRead}
+              formals )
           formals_list formals_types ~init:Textual.VarName.Map.empty
   in
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
