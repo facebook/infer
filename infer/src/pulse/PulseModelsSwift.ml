@@ -126,6 +126,9 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
           derived_enum_equals arg1 arg2
       | _ ->
           unknown args )
+  | ObjcMsgSend ->
+      (* TODO T251645387 *)
+      unknown args
 
 
 let matchers : matcher list =

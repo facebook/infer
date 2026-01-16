@@ -44,3 +44,5 @@ struct TestSize: Equatable {
         self.stringValue = "\(width)x\(height)"
     }
 }
+
+@objc final public class CTPParam: NSObject { }

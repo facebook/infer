@@ -10,9 +10,15 @@ declare swift_retain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt
 
 declare swift_getWitnessTable(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
+declare swift_getObjectType(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
 declare swift_bridgeObjectRetain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare swift_bridgeObjectRelease(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare objc_allocWithZone(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare _swift_FORCE_LOAD_$_swift_Builtin_float() : *__infer_swift_type<ptr_elt>
 
@@ -79,20 +85,20 @@ declare .plain_name = "__derived_struct_equals" $s5Hello8TestSizeVSQAASQ2eeoiySb
 declare $s5Hello8TestSizeVMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "height.get" $s5Hello8TestSizeV6heightSivg(var1: *__infer_swift_type<T5Hello8TestSizeV,TestSize>) : int {
-  #: @[220:0]
-      n2 = load &var1 @[220:0]
-      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.height @[220:0]
-      n1 = load n3.__infer_swift_type<TSi>.rawValue @[220:0]
-      ret n1 @[221:0]
+  #: @[251:0]
+      n2 = load &var1 @[251:0]
+      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.height @[251:0]
+      n1 = load n3.__infer_swift_type<TSi>.rawValue @[251:0]
+      ret n1 @[252:0]
       
 } @?
 
 define .plain_name = "width.get" $s5Hello8TestSizeV5widthSivg(var1: *__infer_swift_type<T5Hello8TestSizeV,TestSize>) : int {
-  #: @[218:0]
-      n2 = load &var1 @[218:0]
-      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.width @[218:0]
-      n1 = load n3.__infer_swift_type<TSi>.rawValue @[218:0]
-      ret n1 @[219:0]
+  #: @[249:0]
+      n2 = load &var1 @[249:0]
+      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.width @[249:0]
+      n1 = load n3.__infer_swift_type<TSi>.rawValue @[249:0]
+      ret n1 @[250:0]
       
 } @?
 
@@ -112,38 +118,38 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       n95 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("x", 1, 1) @[44:37]
       jmp 68::ret @[44:37]
       
-  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[196:0]
-      n102 = load n96 @[196:0]
-      _ = swift_bridgeObjectRelease(n102) @[196:0]
-      jmp swift_bridgeObjectRelease::void::1::ret @[197:0]
+  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[227:0]
+      n102 = load n96 @[227:0]
+      _ = swift_bridgeObjectRelease(n102) @[227:0]
+      jmp swift_bridgeObjectRelease::void::1::ret @[228:0]
       
-  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::2::ret: @[201:0]
-      n120 = load n114 @[201:0]
-      _ = swift_bridgeObjectRelease(n120) @[201:0]
-      jmp swift_bridgeObjectRelease::void::2::ret @[202:0]
+  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::2::ret: @[232:0]
+      n120 = load n114 @[232:0]
+      _ = swift_bridgeObjectRelease(n120) @[232:0]
+      jmp swift_bridgeObjectRelease::void::2::ret @[233:0]
       
-  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret: @[191:0]
-      n84 = load n78 @[191:0]
-      _ = swift_bridgeObjectRelease(n84) @[191:0]
-      jmp swift_bridgeObjectRelease::void::ret @[192:0]
+  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret: @[222:0]
+      n84 = load n78 @[222:0]
+      _ = swift_bridgeObjectRelease(n84) @[222:0]
+      jmp swift_bridgeObjectRelease::void::ret @[223:0]
       
-  #102: @[217:0]
-      unreachable @[217:0]
+  #102: @[248:0]
+      unreachable @[248:0]
       
-  #103: @[216:0]
-      unreachable @[216:0]
+  #103: @[247:0]
+      unreachable @[247:0]
       
-  #104: @[215:0]
-      unreachable @[215:0]
+  #104: @[246:0]
+      unreachable @[246:0]
       
-  #105: @[214:0]
-      unreachable @[214:0]
+  #105: @[245:0]
+      unreachable @[245:0]
       
-  #106: @[213:0]
-      unreachable @[213:0]
+  #106: @[244:0]
+      unreachable @[244:0]
       
-  #107: @[212:0]
-      unreachable @[212:0]
+  #107: @[243:0]
+      unreachable @[243:0]
       
   #23: @[41:22]
       n20 = load &var2 @[41:22]
@@ -200,32 +206,32 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       
   #64::ret: @[44:28]
       n78 = n77.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:28]
-      n81 = load n77.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[189:0]
-      n82 = load n78 @[189:0]
-      n83 = load &var9 @[189:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n81, n82, n83) @[189:0]
-      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret @[190:0]
+      n81 = load n77.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[220:0]
+      n82 = load n78 @[220:0]
+      n83 = load &var9 @[220:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n81, n82, n83) @[220:0]
+      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret @[221:0]
       
   #68::ret: @[44:37]
       n96 = n95.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:37]
-      n99 = load n95.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[194:0]
-      n100 = load n96 @[194:0]
-      n101 = load &var9 @[194:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n99, n100, n101) @[194:0]
-      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret @[195:0]
+      n99 = load n95.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[225:0]
+      n100 = load n96 @[225:0]
+      n101 = load &var9 @[225:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n99, n100, n101) @[225:0]
+      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret @[226:0]
       
   #72::ret: @[44:47]
       n114 = n113.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:47]
-      n117 = load n113.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[199:0]
-      n118 = load n114 @[199:0]
-      n119 = load &var9 @[199:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n117, n118, n119) @[199:0]
-      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::2::ret @[200:0]
+      n117 = load n113.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[230:0]
+      n118 = load n114 @[230:0]
+      n119 = load &var9 @[230:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n117, n118, n119) @[230:0]
+      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::2::ret @[231:0]
       
-  #83::ret: @[208:0]
-      n132 = load &var9 @[208:0]
-      n133 = $ss26DefaultStringInterpolationVWOh(n132) @[208:0]
-      jmp 84::ret @[209:0]
+  #83::ret: @[239:0]
+      n132 = load &var9 @[239:0]
+      n133 = $ss26DefaultStringInterpolationVWOh(n132) @[239:0]
+      jmp 84::ret @[240:0]
       
   #84::ret: @[44:28]
       n136 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n125, n128) @[44:28]
@@ -249,9 +255,9 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       n151 = load n143 @[44:26]
       n150 = load n139 @[44:26]
       store n151.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n150 @[44:26]
-      n152 = load &self @[210:0]
-      n153 = $s5Hello8TestSizeVWOh(n152) @[210:0]
-      jmp 96::ret @[211:0]
+      n152 = load &self @[241:0]
+      n153 = $s5Hello8TestSizeVWOh(n152) @[241:0]
+      jmp 96::ret @[242:0]
       
   #96::ret: @[40:5]
       n156 = load &var1 @[40:5]
@@ -270,10 +276,10 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       store n166.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 <- __sil_cast(<int>, n164) @[40:5]
       ret null @[40:5]
       
-  #swift_bridgeObjectRelease::void::1::ret: @[198:0]
-      n105 = load &var11 @[198:0]
-      n103 = load &var3 @[198:0]
-      store n105.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n103) @[198:0]
+  #swift_bridgeObjectRelease::void::1::ret: @[229:0]
+      n105 = load &var11 @[229:0]
+      n103 = load &var3 @[229:0]
+      store n105.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n103) @[229:0]
       n106 = load &var11 @[44:39]
       n107 = load &$sSiN @[44:39]
       n108 = load &$sSis23CustomStringConvertiblesWP @[44:39]
@@ -281,23 +287,23 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n106, n107, n108, n109) @[44:39]
       jmp $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::1::ret @[44:39]
       
-  #swift_bridgeObjectRelease::void::2::ret: @[203:0]
-      n122 = load &var9 @[203:0]
-      n123 = load n122.__infer_swift_type<Ts26DefaultStringInterpolationV>.field_0 @[203:0]
-      n124 = load n123.__infer_swift_type<TSS>.field_0 @[203:0]
-      n121 = n124.__infer_swift_type<Ts11_StringGutsV>.field_0 @[203:0]
-      n126 = load n121 @[204:0]
-      n127 = load n126.__infer_swift_type<Ts13_StringObjectV>.field_0 @[204:0]
-      n125 = load n127.__infer_swift_type<Ts6UInt64V>.field_0 @[204:0]
-      n129 = load n121 @[205:0]
-      n128 = load n129.__infer_swift_type<Ts13_StringObjectV>.field_1 @[205:0]
-      n131 = swift_bridgeObjectRetain(n128) @[206:0]
-      jmp 83::ret @[207:0]
+  #swift_bridgeObjectRelease::void::2::ret: @[234:0]
+      n122 = load &var9 @[234:0]
+      n123 = load n122.__infer_swift_type<Ts26DefaultStringInterpolationV>.field_0 @[234:0]
+      n124 = load n123.__infer_swift_type<TSS>.field_0 @[234:0]
+      n121 = n124.__infer_swift_type<Ts11_StringGutsV>.field_0 @[234:0]
+      n126 = load n121 @[235:0]
+      n127 = load n126.__infer_swift_type<Ts13_StringObjectV>.field_0 @[235:0]
+      n125 = load n127.__infer_swift_type<Ts6UInt64V>.field_0 @[235:0]
+      n129 = load n121 @[236:0]
+      n128 = load n129.__infer_swift_type<Ts13_StringObjectV>.field_1 @[236:0]
+      n131 = swift_bridgeObjectRetain(n128) @[237:0]
+      jmp 83::ret @[238:0]
       
-  #swift_bridgeObjectRelease::void::ret: @[193:0]
-      n87 = load &var10 @[193:0]
-      n85 = load &var2 @[193:0]
-      store n87.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n85) @[193:0]
+  #swift_bridgeObjectRelease::void::ret: @[224:0]
+      n87 = load &var10 @[224:0]
+      n85 = load &var2 @[224:0]
+      store n87.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n85) @[224:0]
       n88 = load &var10 @[44:30]
       n89 = load &$sSiN @[44:30]
       n90 = load &$sSis23CustomStringConvertiblesWP @[44:30]
@@ -308,51 +314,51 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
 } @?
 
 define .plain_name = "mode.get" $s5Hello8TestSizeV4modeAA0C4ModeOvg(var1: *__infer_swift_type<T5Hello8TestSizeV,TestSize>) : int {
-  #: @[182:0]
-      n2 = load &var1 @[182:0]
-      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.mode @[182:0]
-      n1 = load n3.__infer_swift_type<T5Hello8SizeModeO>.rawValue @[182:0]
-      ret n1 @[183:0]
+  #: @[213:0]
+      n2 = load &var1 @[213:0]
+      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.mode @[213:0]
+      n1 = load n3.__infer_swift_type<T5Hello8SizeModeO>.rawValue @[213:0]
+      ret n1 @[214:0]
       
 } @?
 
 declare .plain_name = "__derived_struct_equals" $s5Hello8TestSizeV23__derived_struct_equalsySbAC_ACtFZ(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSbD>
 
 define .plain_name = "stringValue.get" $s5Hello8TestSizeV11stringValueSSvg(var1: *__infer_swift_type<T5Hello8TestSizeV,TestSize>) : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
-  #: @[175:0]
-      n2 = load &var1 @[175:0]
-      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.stringValue @[175:0]
-      n4 = load n3.__infer_swift_type<TSS>.field_0 @[175:0]
-      n1 = n4.__infer_swift_type<Ts11_StringGutsV>.field_0 @[175:0]
-      n6 = load n1 @[176:0]
-      n7 = load n6.__infer_swift_type<Ts13_StringObjectV>.field_0 @[176:0]
-      n5 = load n7.__infer_swift_type<Ts6UInt64V>.field_0 @[176:0]
-      n9 = load n1 @[177:0]
-      n8 = load n9.__infer_swift_type<Ts13_StringObjectV>.field_1 @[177:0]
-      n11 = swift_bridgeObjectRetain(n8) @[178:0]
-      jmp 10::ret @[179:0]
+  #: @[206:0]
+      n2 = load &var1 @[206:0]
+      n3 = load n2.__infer_swift_type<T5Hello8TestSizeV,TestSize>.stringValue @[206:0]
+      n4 = load n3.__infer_swift_type<TSS>.field_0 @[206:0]
+      n1 = n4.__infer_swift_type<Ts11_StringGutsV>.field_0 @[206:0]
+      n6 = load n1 @[207:0]
+      n7 = load n6.__infer_swift_type<Ts13_StringObjectV>.field_0 @[207:0]
+      n5 = load n7.__infer_swift_type<Ts6UInt64V>.field_0 @[207:0]
+      n9 = load n1 @[208:0]
+      n8 = load n9.__infer_swift_type<Ts13_StringObjectV>.field_1 @[208:0]
+      n11 = swift_bridgeObjectRetain(n8) @[209:0]
+      jmp 10::ret @[210:0]
       
-  #10::ret: @[180:0]
-      n12 = $builtins.llvm_init_tuple() @[180:0]
-      store n12.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- n5 @[181:0]
-      store n12.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n8 @[181:0]
-      ret n12 @[181:0]
+  #10::ret: @[211:0]
+      n12 = $builtins.llvm_init_tuple() @[211:0]
+      store n12.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- n5 @[212:0]
+      store n12.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n8 @[212:0]
+      ret n12 @[212:0]
       
 } @?
 
 declare .plain_name = "init" $s5Hello8SizeModeOSYAASY8rawValuexSg03RawE0Qz_tcfCTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello8SizeModeO>
 
 define .plain_name = "rawValue.get" $s5Hello8SizeModeOSYAASY8rawValue03RawE0QzvgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>) : void {
-  #: @[170:0]
-      n2 = load &var2 @[170:0]
-      n1 = load n2.__infer_swift_type<T5Hello8SizeModeO>.rawValue @[170:0]
-      n4 = $s5Hello8SizeModeO8rawValueSivg(n1) @[171:0]
-      jmp 7::ret @[172:0]
+  #: @[201:0]
+      n2 = load &var2 @[201:0]
+      n1 = load n2.__infer_swift_type<T5Hello8SizeModeO>.rawValue @[201:0]
+      n4 = $s5Hello8SizeModeO8rawValueSivg(n1) @[202:0]
+      jmp 7::ret @[203:0]
       
-  #7::ret: @[173:0]
-      n6 = load &var1 @[173:0]
-      store n6.__infer_swift_type<TSi>.rawValue <- n4 @[173:0]
-      ret null @[174:0]
+  #7::ret: @[204:0]
+      n6 = load &var1 @[204:0]
+      store n6.__infer_swift_type<TSi>.rawValue <- n4 @[204:0]
+      ret null @[205:0]
       
 } @?
 
@@ -361,20 +367,20 @@ declare .plain_name = "==" $s5Hello8SizeModeOSQAASQ2eeoiySbx_xtFZTW(*__infer_swi
 declare $s5Hello8SizeModeOSHAASQWb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "hashValue.get" $s5Hello8SizeModeOSHAASH9hashValueSivgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : int {
-  #: @[165:0]
-      n1 = $s5Hello8SizeModeOACSYAAWl() @[165:0]
-      jmp 4::ret @[166:0]
+  #: @[196:0]
+      n1 = $s5Hello8SizeModeOACSYAAWl() @[196:0]
+      jmp 4::ret @[197:0]
       
-  #4::ret: @[167:0]
-      n2 = load &var2 @[167:0]
-      n3 = load &var3 @[167:0]
-      n5 = load &$sSiSHsWP @[167:0]
-      n6 = load &var1 @[167:0]
-      n7 = $sSYsSHRzSH8RawValueSYRpzrlE04hashB0Sivg(n2, n3, n1, n5, n6) @[167:0]
-      jmp 5::ret @[168:0]
+  #4::ret: @[198:0]
+      n2 = load &var2 @[198:0]
+      n3 = load &var3 @[198:0]
+      n5 = load &$sSiSHsWP @[198:0]
+      n6 = load &var1 @[198:0]
+      n7 = $sSYsSHRzSH8RawValueSYRpzrlE04hashB0Sivg(n2, n3, n1, n5, n6) @[198:0]
+      jmp 5::ret @[199:0]
       
-  #5::ret: @[169:0]
-      ret n7 @[169:0]
+  #5::ret: @[200:0]
+      ret n7 @[200:0]
       
 } @?
 
@@ -390,17 +396,59 @@ declare $s5Hello8SizeModeOACSQAAWl() : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "rawValue.get" $s5Hello8SizeModeO8rawValueSivg(self: *__infer_swift_type<ptr_elt>) : int {
   local var4: *__infer_swift_type<T5Hello8SizeModeO>
-  #: @[162:0]
-      n2 = load &var4 @[162:0]
-      n1 = load &self @[162:0]
-      store n2.__infer_swift_type<T5Hello8SizeModeO>.rawValue <- n1 @[162:0]
-      n4 = load &var4 @[163:0]
-      n3 = load n4.__infer_swift_type<TSi>.rawValue @[163:0]
-      ret n3 @[164:0]
+  #: @[193:0]
+      n2 = load &var4 @[193:0]
+      n1 = load &self @[193:0]
+      store n2.__infer_swift_type<T5Hello8SizeModeO>.rawValue <- n1 @[193:0]
+      n4 = load &var4 @[194:0]
+      n3 = load n4.__infer_swift_type<TSi>.rawValue @[194:0]
+      ret n3 @[195:0]
       
 } @?
 
 declare .plain_name = "init" $s5Hello8SizeModeO8rawValueACSgSi_tcfC(int) : *__infer_swift_type<T5Hello8SizeModeO>
+
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello8CTPParamC>.$s5Hello8CTPParamCfD(*__infer_swift_type<,CTPParam>) : void
+
+declare $s5Hello8CTPParamCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "init" $s5Hello8CTPParamCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,CTPParam>
+
+define .plain_name = "init" $s5Hello8CTPParamCACycfc(self: *__infer_swift_type<,CTPParam>) : *__infer_swift_type<ptr_elt> {
+  local var5: *__infer_swift_type<objc_super>
+  #: @[171:0]
+      n1 = load &var1 @[171:0]
+      n2 = swift_getObjectType(n1) @[171:0]
+      jmp 2::ret @[172:0]
+      
+  #2::ret: @[174:0]
+      n3 = load &self @[174:0]
+      n5 = load &var5 @[175:0]
+      store n5.__infer_swift_type<objc_super>.field_0 <- n3 @[175:0]
+      n7 = load &var5 @[176:0]
+      store n7.__infer_swift_type<objc_super>.field_1 <- n2 @[176:0]
+      n8 = load &L_selector(init) @[177:0]
+      n9 = load &var5 @[178:0]
+      n11 = $builtins.objc_msgSendSuper2(n9, n8) @[178:0]
+      n12 = $builtins.llvm_nondet() @[179:0]
+      store &self <- n11 @[180:0]
+      n14 = load &self @[181:0]
+      ret n11 @[183:0]
+      
+} @?
+
+define .plain_name = "init" $s5Hello8CTPParamCACycfC(var1: *__infer_swift_type<,$s5Hello8CTPParamCXMTD>) : *__infer_swift_type<ptr_elt> {
+  #: @[166:0]
+      n1 = load &var1 @[166:0]
+      n2 = objc_allocWithZone(n1) @[166:0]
+      jmp 2::ret @[167:0]
+      
+  #2::ret: @[168:0]
+      n3 = load &L_selector(init) @[168:0]
+      n6 = $builtins.objc_msgSend(n2, n3) @[169:0]
+      ret n6 @[170:0]
+      
+} @?
 
 define .plain_name = "test4" $s5Hello5test4SiyF() : int {
   local person: *__infer_tuple_class<*__infer_swift_type<TSi>,*__infer_swift_type<TSi>>
@@ -410,13 +458,13 @@ define .plain_name = "test4" $s5Hello5test4SiyF() : int {
       
   #2::ret: @[25:18]
       n4 = n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[25:18]
-      n7 = load &person @[159:0]
-      n8 = load n7.__infer_tuple_class<*__infer_swift_type<TSi>,*__infer_swift_type<TSi>>.__infer_tuple_field_0 @[159:0]
-      store n8.__infer_swift_type<TSi>.rawValue <- n4 @[159:0]
-      n11 = load &person @[160:0]
-      n12 = load n11.__infer_tuple_class<*__infer_swift_type<TSi>,*__infer_swift_type<TSi>>.__infer_tuple_field_1 @[160:0]
-      n10 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[160:0]
-      store n12.__infer_swift_type<TSi>.rawValue <- n10 @[160:0]
+      n7 = load &person @[164:0]
+      n8 = load n7.__infer_tuple_class<*__infer_swift_type<TSi>,*__infer_swift_type<TSi>>.__infer_tuple_field_0 @[164:0]
+      store n8.__infer_swift_type<TSi>.rawValue <- n4 @[164:0]
+      n11 = load &person @[165:0]
+      n12 = load n11.__infer_tuple_class<*__infer_swift_type<TSi>,*__infer_swift_type<TSi>>.__infer_tuple_field_1 @[165:0]
+      n10 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[165:0]
+      store n12.__infer_swift_type<TSi>.rawValue <- n10 @[165:0]
       ret n4 @[26:5]
       
 } @?
@@ -451,8 +499,8 @@ define .plain_name = "test1" $s5Hello5test1yS2i_SitF(n: *__infer_swift_type<ptr_
 } @?
 
 define .plain_name = "createPerson" $s5Hello12createPerson3age6heightSiAC_SiADtSi_SitF(age: *__infer_swift_type<ptr_elt>, height: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,int> {
-  #: @[153:0]
-      n1 = $builtins.llvm_init_tuple() @[153:0]
+  #: @[158:0]
+      n1 = $builtins.llvm_init_tuple() @[158:0]
       n2 = load &age @[21:5]
       store n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n2 @[21:5]
       n3 = load &height @[21:5]
@@ -465,11 +513,19 @@ global symbolic _____ 5Hello8TestSizeV: *__infer_swift_type<ptr_elt>
 
 global symbolic _____ 5Hello8SizeModeO: *__infer_swift_type<ptr_elt>
 
+global symbolic _____ 5Hello8CTPParamC: *__infer_swift_type<ptr_elt>
+
+global symbolic So8NSObjectC: *__infer_swift_type<ptr_elt>
+
 global symbolic Si: *__infer_swift_type<ptr_elt>
 
 global symbolic SS: *__infer_swift_type<ptr_elt>
 
 global symbolic $sSY: *__infer_swift_type<ptr_elt>
+
+global swift_isaMask: *__infer_swift_type<ptr_elt>
+
+global objc_classes_$s5Hello8CTPParamCN: *__infer_swift_type<ptr_elt>
 
 global llvm::used: *__infer_swift_type<ptr_elt>
 
@@ -513,15 +569,35 @@ global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello: *__infer_swift_type<ptr_
 
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
 
+global _objc_empty_cache: *__infer_swift_type<ptr_elt>
+
 global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+
+global _METACLASS_DATA__TtC5Hello8CTPParam: *__infer_swift_type<ptr_elt>
+
+global _INSTANCE_METHODS__TtC5Hello8CTPParam: *__infer_swift_type<ptr_elt>
+
+global _DATA__TtC5Hello8CTPParam: *__infer_swift_type<ptr_elt>
+
+global OBJC_METACLASS_$__TtC5Hello8CTPParam: *__infer_swift_type<ptr_elt>
+
+global OBJC_METACLASS_$_NSObject: *__infer_swift_type<ptr_elt>
+
+global OBJC_CLASS_$_NSObject: *__infer_swift_type<ptr_elt>
 
 global ::str::8::TestSize: *__infer_swift_type<ptr_elt>
 
 global ::str::8::SizeMode: *__infer_swift_type<ptr_elt>
 
+global ::str::8::CTPParam: *__infer_swift_type<ptr_elt>
+
+global ::str::7::@16@0:8: *__infer_swift_type<ptr_elt>
+
 global ::str::5::Hello: *__infer_swift_type<ptr_elt>
 
 global ::str::1::x: *__infer_swift_type<ptr_elt>
+
+global ::str::19::_TtC5Hello8CTPParam: *__infer_swift_type<ptr_elt>
 
 global ::str::0::: *__infer_swift_type<ptr_elt>
 
@@ -564,6 +640,8 @@ global $sSH4hash4intoys6HasherVz_tFTq: *__infer_swift_type<ptr_elt>
 global $sSH13_rawHashValue4seedS2i_tFTq: *__infer_swift_type<ptr_elt>
 
 global $sBi64_WV: *__infer_swift_type<ptr_elt>
+
+global $sBOWV: *__infer_swift_type<ptr_elt>
 
 global $s8RawValueSYTl: *__infer_swift_type<ptr_elt>
 
@@ -619,6 +697,22 @@ global $s5Hello8SizeModeOACSQAAWL: *__infer_swift_type<ptr_elt>
 
 global $s5Hello8SizeModeO8rawValueSivpMV: *__infer_swift_type<ptr_elt>
 
+global $s5Hello8CTPParamCMn: *__infer_swift_type<ptr_elt>
+
+global $s5Hello8CTPParamCMf: *__infer_swift_type<ptr_elt>
+
+global $s5Hello8CTPParamCMF: *__infer_swift_type<ptr_elt>
+
+global $s5Hello8CTPParamCHn: *__infer_swift_type<ptr_elt>
+
+global L_selector_data(init): *__infer_swift_type<ptr_elt>
+
+global L_selector_data(dealloc): *__infer_swift_type<ptr_elt>
+
+global L_selector(init): *__infer_swift_type<ptr_elt>
+
+global L_selector(dealloc): *__infer_swift_type<ptr_elt>
+
 type __infer_swift_type<T12CoreGraphics7CGFloatV> = {field_0: *__infer_swift_type<TSd>}
 
 type __infer_swift_type<T5Hello8SizeModeO> = {rawValue: int}
@@ -648,6 +742,15 @@ type __infer_swift_type<Ts26DefaultStringInterpolationV> = {field_0: *__infer_sw
 
 type __infer_swift_type<Ts6UInt64V> = {field_0: int}
 
+type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>;
+                                       field_2: *__infer_swift_type<ptr_elt>;
+                                       field_3: *__infer_swift_type<ptr_elt>;
+                                       field_4: int}
+
+type __infer_swift_type<objc_super> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>}
+
 type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
                                                      field_1: int}
 
@@ -667,6 +770,26 @@ type __infer_swift_type<swift::vwtable> = {field_0: *__infer_swift_type<ptr_elt>
 type __infer_tuple_class<*__infer_swift_type<TSi>,*__infer_swift_type<TSi>> = {
 __infer_tuple_field_0: *__infer_swift_type<TSi>;
 __infer_tuple_field_1: *__infer_swift_type<TSi>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: int; __infer_tuple_field_8: int;
+__infer_tuple_field_9: int; __infer_tuple_field_10: int;
+__infer_tuple_field_11: int; __infer_tuple_field_12: int;
+__infer_tuple_field_13: int; __infer_tuple_field_14: int;
+__infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>}
 
 type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>> = {
 __infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
@@ -693,6 +816,10 @@ type __infer_tuple_class<int,*__infer_swift_type<ptr_elt>> = {__infer_tuple_fiel
 type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
                                      __infer_tuple_field_1: int}
 
+type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>}
+
 type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
                                          __infer_tuple_field_1: int;
                                          __infer_tuple_field_2: int}
@@ -701,6 +828,17 @@ type __infer_tuple_class<int,int,int,int> = {__infer_tuple_field_0: int;
                                              __infer_tuple_field_1: int;
                                              __infer_tuple_field_2: int;
                                              __infer_tuple_field_3: int}
+
+type __infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_8: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_9: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_10: *__infer_swift_type<ptr_elt>}
 
 type __infer_tuple_class<int,int,int,int,int> = {__infer_tuple_field_0: int;
                                                  __infer_tuple_field_1: int;
