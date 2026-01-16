@@ -131,6 +131,8 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
       unknown args
   | ObjcMsgSendSuper2 ->
       unknown args
+  | Memcpy ->
+      unknown args
 
 
 let matchers : matcher list =

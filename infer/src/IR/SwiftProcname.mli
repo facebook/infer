@@ -12,6 +12,7 @@ type builtin =
   | DerivedEnumEquals
   | DynamicCall
   | InitTuple
+  | Memcpy
   | NonDet
   | ObjcMsgSend
   | ObjcMsgSendSuper2

@@ -45,4 +45,9 @@ struct TestSize: Equatable {
     }
 }
 
-@objc final public class CTPParam: NSObject { }
+@objc final public class Param: NSObject {
+    let size: TestSize?
+    init(size: TestSize?) {
+       self.size = size
+    }
+ }

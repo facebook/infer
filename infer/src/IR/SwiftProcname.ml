@@ -13,6 +13,7 @@ type builtin =
   | DerivedEnumEquals
   | DynamicCall
   | InitTuple
+  | Memcpy
   | NonDet
   | ObjcMsgSend
   | ObjcMsgSendSuper2
@@ -43,6 +44,8 @@ let show_builtin = function
       "objc_msgSend"
   | ObjcMsgSendSuper2 ->
       "objc_msgSendSuper2"
+  | Memcpy ->
+      "memcpy"
 
 
 let get_function_name osig =
