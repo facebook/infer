@@ -1884,13 +1884,7 @@ let backpatch_calls x =
           in
           backpatch ~callee )
     | IndirectBP {typ; backpatch} ->
-        let resolve_func = FuncName.name >> String.Tbl.find_exn func_tbl in
-        let candidates =
-          Typ.Tbl.fold rval_fns Iter.empty ~f:(fun ~key ~data acc ->
-              if Typ.compatible_fnptr key typ then Iter.(map ~f:resolve_func (of_list data) <+> acc)
-              else acc )
-          |> IArray.of_iter
-        in
+        let candidates = IArray.empty in
         backpatch ~candidates )
 
 
