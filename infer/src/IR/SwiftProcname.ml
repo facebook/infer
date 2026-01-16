@@ -9,7 +9,13 @@ open! IStd
 module F = Format
 include PpDetailLevel
 
-type builtin = DerivedEnumEquals | DynamicCall | InitTuple | NonDet | ObjcMsgSend
+type builtin =
+  | DerivedEnumEquals
+  | DynamicCall
+  | InitTuple
+  | NonDet
+  | ObjcMsgSend
+  | ObjcMsgSendSuper2
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =
@@ -35,6 +41,8 @@ let show_builtin = function
       "__derived_enum_equals"
   | ObjcMsgSend ->
       "objc_msgSend"
+  | ObjcMsgSendSuper2 ->
+      "objc_msgSendSuper2"
 
 
 let get_function_name osig =
