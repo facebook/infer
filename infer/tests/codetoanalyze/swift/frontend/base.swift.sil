@@ -56,7 +56,9 @@ define $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFxSPys6UInt64V
       _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "self must be a properly aligned pointer for types Pointee and T"), 63, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 31972, 0) @[465:0]
       jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[466:0]
       
-  #13: @[469:0]
+  #13: @[468:0]
+      n23 = load &var5 @[468:0]
+      n22 = load n23.__infer_swift_type<TSi>.rawValue @[468:0]
       n26 = __sil_lt(n22, 0) @[469:0]
       if n26 then jmp 26 else jmp 19 @[470:0]
       
@@ -710,7 +712,11 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       n28 = __sil_bxor(__sil_lt(n24, 4.89090919532e+18), 1) @[41:22]
       if n28 then jmp 104 else jmp 31 @[41:22]
       
-  #31: @[42:23]
+  #31: @[41:20]
+      n31 = load &self @[41:20]
+      n32 = load n31.__infer_swift_type<T5Hello8TestSizeV,TestSize>.width @[41:20]
+      n29 = load &var2 @[41:20]
+      store n32.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n29) @[41:20]
       n33 = load &var3 @[42:23]
       n42 = __sil_bxor(__sil_lt(__sil_land(__sil_shiftrt(__sil_cast(<int>, n33), 52), 2047), 2047), 1) @[42:23]
       if n42 then jmp 105 else jmp 41 @[42:23]

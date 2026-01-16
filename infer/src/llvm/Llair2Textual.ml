@@ -835,7 +835,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
               | None ->
                   Some (Var.add_fresh_id ~proc_state ())
             in
-            Textual.Instr.Let {id; exp; loc} :: exp_instrs
+            Textual.Instr.Let {id; exp; loc} :: (exp_instrs @ textual_instrs)
         | _ ->
             assert false )
     | Builtin {reg; name; args; loc} ->
