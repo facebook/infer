@@ -345,6 +345,12 @@ val pulse_reference_stability : t
 
 val weak_self_in_noescape_block : t
 
+val atlas_free_non_base_pointer : t
+
+val atlas_double_free : t
+
+val atlas_use_after_free : t
+
 val unreachable_cost_call : kind:CostKind.t -> t
 
 val lineage_flow : t

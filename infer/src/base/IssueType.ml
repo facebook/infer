@@ -1035,6 +1035,21 @@ let lineage_flow =
     ~user_documentation:[%blob "./documentation/issues/LINEAGE_FLOW.md"]
 
 
+let atlas_free_non_base_pointer =
+  register ~category:MemoryError ~id:"ATLAS_FREE_NON_BASE_POINTER" Error Atlas
+    ~user_documentation:[%blob "./documentation/issues/ATLAS_FREE_NON_BASE_POINTER.md"]
+
+
+let atlas_double_free =
+  register ~category:MemoryError ~id:"ATLAS_DOUBLE_FREE" Error Atlas
+  ~user_documentation:[%blob "./documentation/issues/ATLAS_DOUBLE_FREE.md"]
+
+
+let atlas_use_after_free =
+  register ~category:MemoryError ~id:"ATLAS_USE_AFTER_FREE" Error Atlas
+  ~user_documentation:[%blob "./documentation/issues/ATLAS_USE_AFTER_FREE.md"]
+
+
 let unreachable_cost_call ~kind = register_cost ~enabled:false ~kind "%s_UNREACHABLE_AT_EXIT"
 
 (* register enabled cost issues *)
