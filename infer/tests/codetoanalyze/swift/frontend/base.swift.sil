@@ -300,7 +300,7 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
 } @?
 
 define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_(var1: *__infer_swift_type<ptr_elt>, var2: int, var3: int, var4: int, var5: int, var6: int, var7: int, var8: int, var9: int, var10: int) : void {
-  local var43: int, var13: int, var12: *__infer_swift_type<ptr_elt>
+  local var43: *__infer_swift_type<ptr_elt>, var13: *__infer_swift_type<ptr_elt>, var12: *__infer_swift_type<ptr_elt>
   #: @[296:0]
       store &var12 <- null @[296:0]
       n3 = load &var13 @[297:0]

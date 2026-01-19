@@ -763,8 +763,14 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         @ exp1_instrs @ textual_instrs
     | Alloc {reg} ->
         let reg_var_name = Var.reg_to_var_name reg in
-        let ptr_typ = Type.to_annotated_textual_typ lang ~mangled_map ~struct_map (Reg.typ reg) in
-        ProcState.update_locals ~proc_state reg_var_name ptr_typ ;
+        let ptr_typ = Type.to_textual_typ lang ~mangled_map ~struct_map (Reg.typ reg) in
+        let ptr_typ =
+          if not (Textual.Typ.is_pointer ptr_typ) then
+            if Textual.Lang.is_swift lang then Textual.Typ.Ptr Textual.Typ.any_type_swift
+            else Textual.Typ.Ptr Textual.Typ.any_type_llvm
+          else ptr_typ
+        in
+        ProcState.update_locals ~proc_state reg_var_name (Textual.Typ.mk_without_attributes ptr_typ) ;
         textual_instrs
     | Free _ when Textual.Lang.is_swift lang ->
         (* ignore [free] in Swift for now until we know if/where it's needed *)

@@ -483,7 +483,7 @@ declare $s5Hello9TransportC15ConnectionStateOAESYAAWl() : *__infer_swift_type<pt
 declare $s5Hello9TransportC15ConnectionStateOAESQAAWl() : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateO8rawValueSSvg(var1: int) : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
-  local self: int
+  local self: *__infer_swift_type<ptr_elt>
   #: @[240:0]
       n1 = load &var1 @[240:0]
       store &self <- __sil_cast(<int>, n1) @[240:0]

@@ -2009,7 +2009,7 @@ declare .plain_name = "view.modify" $s5Hello14ViewControllerC4viewAA06CustomB0CS
 declare .plain_name = "view.modify" .method_offset = "13" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(age: *__infer_swift_type<ptr_elt>, var2: int) : int {
-  local actualAge: int
+  local actualAge: *__infer_swift_type<ptr_elt>
   #: @[327:0]
       n3 = load &age @[327:0]
       n1 = load &var2 @[327:0]

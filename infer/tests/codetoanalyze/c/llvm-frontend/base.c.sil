@@ -7,7 +7,7 @@
 .source_language = "C" @?
 
 define test9() : int {
-  local ret: int, ptr: *ptr_elt
+  local ret: *ptr_elt, ptr: *ptr_elt
   #: @[61:14]
       n1 = __sil_malloc(<int>) @[61:14]
       store &ptr <- n1 @[61:8]
@@ -24,7 +24,7 @@ define test9() : int {
 } @?
 
 define test8(var1: *int) : int {
-  local var3: int, ret: int, ptr: *ptr_elt, null_ptr: *ptr_elt
+  local var3: *ptr_elt, ret: *ptr_elt, ptr: *ptr_elt, null_ptr: *ptr_elt
   #: @[117:0]
       n1 = load &var1 @[117:0]
       store &ptr <- n1 @[117:0]
@@ -57,7 +57,7 @@ define test8(var1: *int) : int {
 } @?
 
 define test7() : int {
-  local var2: int, ptr: *ptr_elt
+  local var2: *ptr_elt, ptr: *ptr_elt
   #: @[41:8]
       store &ptr <- null @[41:8]
       n2 = call_add() @[42:7]
@@ -83,7 +83,7 @@ define test7() : int {
 } @?
 
 define test6() : int {
-  local var2: int, ptr: *ptr_elt
+  local var2: *ptr_elt, ptr: *ptr_elt
   #: @[33:8]
       store &ptr <- null @[33:8]
       n2 = call_add() @[34:7]
@@ -140,7 +140,7 @@ define test3(var1: *int) : int {
 } @?
 
 define test2() : int {
-  local n2: int, n1: int
+  local n2: *ptr_elt, n1: *ptr_elt
   #: @[19:10]
       n1 = load &n1 @[19:10]
       n2 = load &n2 @[19:15]
@@ -149,7 +149,7 @@ define test2() : int {
 } @?
 
 define test17(var1: int) : int {
-  local z: int, b: int
+  local z: *ptr_elt, b: *ptr_elt
   #: @[115:0]
       n1 = load &var1 @[115:0]
       store &b <- n1 @[115:0]
@@ -162,7 +162,7 @@ define test17(var1: int) : int {
 } @?
 
 define test16(var1: *Person, var2: *Cat) : int {
-  local person: *ptr_elt, cat: *ptr_elt, age: int
+  local person: *ptr_elt, cat: *ptr_elt, age: *ptr_elt
   #: @[113:0]
       n1 = load &var1 @[113:0]
       store &person <- n1 @[113:0]
@@ -198,7 +198,7 @@ define test16(var1: *Person, var2: *Cat) : int {
 } @?
 
 define test15() : int {
-  local person: struct::Person, age: int
+  local person: *ptr_elt, age: *ptr_elt
   #: @[125:17]
       _ = $builtins.memcpy(&person, &__const::test15::person, 32, 0) @[125:17]
       n1 = get_age(&person) @[126:13]
@@ -223,7 +223,7 @@ define test15() : int {
 } @?
 
 define test14() : int {
-  local var2: int, person: *ptr_elt, age: int
+  local var2: *ptr_elt, person: *ptr_elt, age: *ptr_elt
   #: @[112:27]
       n1 = __sil_malloc(<int>) @[112:27]
       store &person <- n1 @[112:18]
@@ -269,7 +269,7 @@ define test14() : int {
 } @?
 
 define test13() : int {
-  local i: int
+  local i: *ptr_elt
   #: @[88:7]
       store &i <- 10 @[88:7]
       jmp 2 @[89:3]
@@ -323,7 +323,7 @@ define test11() : void {
 } @?
 
 define test10() : int {
-  local sum: int, i: int
+  local sum: *ptr_elt, i: *ptr_elt
   #: @[69:7]
       store &sum <- 0 @[69:7]
       store &i <- 0 @[70:12]
@@ -380,7 +380,7 @@ define npe_bad() : int {
 declare my_fun(*ptr_elt) : *ptr_elt
 
 define main() : int {
-  local var2: int
+  local var2: *ptr_elt
   #: @[112:0]
       store &var2 <- 0 @[112:0]
       ret 0 @[11:14]
@@ -414,7 +414,7 @@ define deref_example(var1: *int) : int {
 } @?
 
 define call_add1(var1: *int, var2: int) : int {
-  local y: int, ptr: *ptr_elt
+  local y: *ptr_elt, ptr: *ptr_elt
   #: @[108:0]
       n1 = load &var1 @[108:0]
       store &ptr <- n1 @[108:0]
@@ -444,7 +444,7 @@ define call_add() : int {
 declare bar() : *ptr_elt
 
 define add(var1: int, var2: int) : int {
-  local n2: int, n1: int
+  local n2: *ptr_elt, n1: *ptr_elt
   #: @[106:0]
       n1 = load &var1 @[106:0]
       store &n1 <- n1 @[106:0]
