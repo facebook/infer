@@ -98,10 +98,12 @@ module ModuleState = struct
 end
 
 module ProcState = struct
-  type id_data = {typ: Textual.Typ.annotated; no_deref_needed: bool}
+  type id_data = {typ: Textual.Typ.annotated option; no_deref_needed: bool}
 
   let pp_data fmt {typ; no_deref_needed} =
-    F.fprintf fmt "typ:%a, no_deref_needed: %b" Textual.Typ.pp_annotated typ no_deref_needed
+    F.fprintf fmt "typ:%a, no_deref_needed: %b"
+      (Pp.option Textual.Typ.pp_annotated)
+      typ no_deref_needed
 
 
   type read = Read | NotRead

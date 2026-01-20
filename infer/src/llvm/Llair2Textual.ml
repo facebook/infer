@@ -264,6 +264,7 @@ let add_deref ~proc_state ?from_call exp loc =
               ProcState.update_ids_types ~proc_state id (Textual.Typ.mk_without_attributes typ)
           | None ->
               () ) ;
+      ProcState.update_ids_move ~proc_state id None ~no_deref_needed:true ;
       add_load_instr
   | Textual.Exp.Field _ ->
       add_load_instr
@@ -272,7 +273,7 @@ let add_deref ~proc_state ?from_call exp loc =
       match id_data with
       | Some {no_deref_needed= true} ->
           ([], exp)
-      | Some {typ= {typ= Textual.Typ.Ptr _}} ->
+      | Some {typ= Some {typ= Textual.Typ.Ptr _}} ->
           add_load_instr
       | _ ->
           ([], exp) )
@@ -700,7 +701,7 @@ let translate_move ~proc_state ~move_phi loc textual_instrs reg_exps =
         ( match (id, exp_typ) with
         | Some id, Some exp_typ ->
             ProcState.update_ids_move ~proc_state id
-              (Textual.Typ.mk_without_attributes exp_typ)
+              (Some (Textual.Typ.mk_without_attributes exp_typ))
               ~no_deref_needed
         | _ ->
             () ) ;
@@ -745,6 +746,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let id, _ = Var.reg_to_id ~proc_state reg in
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
         ProcState.update_id_offset ~proc_state id exp ;
+        ProcState.update_ids_move ~proc_state id None ~no_deref_needed:true ;
         let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
         textual_instr :: List.append ptr_instrs textual_instrs
     | Store {ptr; exp}

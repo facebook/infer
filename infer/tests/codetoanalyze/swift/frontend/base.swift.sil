@@ -81,8 +81,7 @@ define $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFxSPys6UInt64V
       
   #23: @[478:0]
       store &var7 <- null @[478:0]
-      n40 = load n37 @[479:0]
-      store &var7 <- n40 @[479:0]
+      store &var7 <- n37 @[479:0]
       ret null @[480:0]
       
   #25: @[475:0]
