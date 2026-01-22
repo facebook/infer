@@ -57,8 +57,13 @@ struct Quality: Equatable {
 @objc final public class Param: NSObject {
     let size: TestSize?
     let quality: Quality?
+    @objc public let stringValue: String
     init(size: TestSize?, quality: Quality?) {
-       self.size = size
-       self.quality = quality
+        self.size = size
+        self.quality = quality
+        var result: [String] = []
+        if let size = size { result.append(size.stringValue) }
+        if let quality = quality { result.append(quality.stringValue) }
+        stringValue = result.sorted(by: { $0 < $1 }).joined(separator: "_")
     }
  }

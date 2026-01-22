@@ -60,7 +60,15 @@ let rec compat lang ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
 
 let is_ptr typ = match typ with Typ.Ptr _ -> true | Typ.Void -> true | _ -> false
 
-let is_ptr_struct typ = match typ with Typ.Ptr (Struct _) | Typ.Void -> true | _ -> false
+let is_ptr_struct lang typ =
+  match typ with
+  | Typ.Ptr (Struct _) | Typ.Void ->
+      true
+  | Typ.Ptr Void when Textual.Lang.is_c lang || Textual.Lang.is_swift lang ->
+      true
+  | _ ->
+      false
+
 
 let is_int lang typ =
   match typ with
@@ -545,7 +553,7 @@ and typeof_exp (exp : Exp.t) : (Exp.t * Typ.t) monad =
       (exp, Typ.Ptr typ)
   | Field {exp; field} ->
       let* loc = get_location in
-      let* exp = typecheck_exp exp ~check:is_ptr_struct ~expected:PtrStruct ~loc in
+      let* exp = typecheck_exp exp ~check:(is_ptr_struct lang) ~expected:PtrStruct ~loc in
       (* remark: we could check if field is declared in the type of exp, but this may be too
          strong for some weakly typed frontend langages *)
       let+ field_typ = typeof_field field in
