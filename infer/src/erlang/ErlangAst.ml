@@ -114,7 +114,7 @@ and qualifier =
   | BitsGenerator of {pattern: expression; expression: expression}
   | Filter of expression
   | Generator of {pattern: expression; expression: expression; strict: bool}
-  | MapGenerator of {pattern: association; expression: expression}
+  | MapGenerator of {pattern: association; expression: expression; strict: bool}
 
 and timeout = {time: expression; handler: body}
 

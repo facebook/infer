@@ -1042,7 +1042,7 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
         let init_block = Block.all env [init_block; check_block] in
         let mk_matcher head_var = translate_pattern env head_var pattern in
         make_gen gen_var init_block mk_matcher strict
-    | MapGenerator {pattern; expression} ->
+    | MapGenerator {pattern; expression; strict} ->
         let gen_var = mk_fresh_id () in
         let init_block =
           (* Turn the generator map into a list of {key, val} pairs *)
@@ -1070,7 +1070,7 @@ and translate_comprehension_loop (env : (_, _) Env.t) loop_body qualifiers : Blo
           key_val_load |~~> [matcher.start] ;
           {matcher with start= key_val_load}
         in
-        make_gen gen_var init_block mk_matcher false (* Strict mode not yet parsed for maps *)
+        make_gen gen_var init_block mk_matcher strict
     | BitsGenerator _ ->
         let unsupported = call_unsupported "bits_generator" 0 in
         let call_instr = builtin_call env (mk_fresh_id ()) unsupported [] in

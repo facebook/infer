@@ -520,7 +520,11 @@ and to_qualifier gen_uniq json : Ast.qualifier option =
   | `List [`String "m_generate"; _anno; pattern; expression] ->
       let* pattern = to_association gen_uniq pattern in
       let* expression = to_expression gen_uniq expression in
-      Some (Ast.MapGenerator {pattern; expression})
+      Some (Ast.MapGenerator {pattern; expression; strict= false})
+  | `List [`String "m_generate_strict"; _anno; pattern; expression] ->
+      let* pattern = to_association gen_uniq pattern in
+      let* expression = to_expression gen_uniq expression in
+      Some (Ast.MapGenerator {pattern; expression; strict= true})
   | filter ->
       let* filter = to_expression gen_uniq filter in
       Some (Ast.Filter filter)

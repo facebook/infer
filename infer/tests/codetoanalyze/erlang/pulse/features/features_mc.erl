@@ -20,7 +20,11 @@
     test_mapgen_badmap_Bad/0,
     test_mapgen_badmap2_Bad/0,
     test_mapcomp_with_mapgen_Ok/0,
-    test_mapcomp_with_mapgen_Bad/0
+    test_mapcomp_with_mapgen_Bad/0,
+    test_mapgen_nonstrict_Ok/0,
+    test_mapgen_nonstrict_Bad/0,
+    test_mapgen_strict_Ok/0,
+    test_mapgen_strict_Bad/0
 ]).
 
 test_mapcomp_Ok() ->
@@ -91,3 +95,22 @@ test_mapcomp_with_mapgen_Bad() ->
     M = #{1 => 2},
     M2 = #{V => K || K := V <- M},
     ?CRASH_IF_EQUAL(1, maps:get(2, M2)).
+
+test_mapgen_nonstrict_Ok() ->
+    M = #{1 => 2},
+    L = [K || K := 2 <- M],
+    ?ASSERT_EQUAL([1], L).
+
+test_mapgen_nonstrict_Bad() ->
+    M = #{1 => 2},
+    L = [K || K := 2 <- M],
+    ?CRASH_IF_EQUAL([1], L).
+
+test_mapgen_strict_Ok() ->
+    M = #{1 => 2},
+    L = [K || K := 2 <:- M],
+    ?ASSERT_EQUAL([1], L).
+
+test_mapgen_strict_Bad() ->
+    M = #{1 => 2},
+    L = [K || K := 3 <:- M].

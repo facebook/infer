@@ -237,6 +237,8 @@ codetoanalyze/erlang/pulse/features/features_mc.erl, fp_test_mapgen_nonempty2_Ok
 codetoanalyze/erlang/pulse/features/features_mc.erl, test_mapgen_badmap_Bad/0, 2, BAD_GENERATOR, no_bucket, ERROR, [bad generator here]
 codetoanalyze/erlang/pulse/features/features_mc.erl, test_mapgen_badmap2_Bad/0, 2, BAD_GENERATOR, no_bucket, ERROR, [bad generator here]
 codetoanalyze/erlang/pulse/features/features_mc.erl, test_mapcomp_with_mapgen_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
+codetoanalyze/erlang/pulse/features/features_mc.erl, test_mapgen_nonstrict_Bad/0, 3, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
+codetoanalyze/erlang/pulse/features/features_mc.erl, test_mapgen_strict_Bad/0, 2, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_receive.erl, test_receive2_Bad/0, 7, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_receive.erl, test_receive4_Bad/0, 6, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]
 codetoanalyze/erlang/pulse/features/features_receive.erl, test_receive5_Bad/0, 6, NO_MATCH_OF_RHS, no_bucket, ERROR, [no match of RHS here]

@@ -453,6 +453,10 @@ features_mc:test_mapgen_empty_Bad/0: expected_crash
 features_mc:test_mapgen_empty_Ok/0: ok
 features_mc:test_mapgen_nonempty_Bad/0: expected_crash
 features_mc:test_mapgen_nonempty_Ok/0: ok
+features_mc:test_mapgen_nonstrict_Bad/0: expected_crash
+features_mc:test_mapgen_nonstrict_Ok/0: ok
+features_mc:test_mapgen_strict_Bad/0: badmatch
+features_mc:test_mapgen_strict_Ok/0: ok
 
 ----- features_receive -----
 features_receive:test_receive1_Ok/0: ok
