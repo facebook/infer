@@ -1374,6 +1374,7 @@ let xlate_instr :
         [ "swift_retain"
         ; "swift_release"
         ; "swift_unknownObjectRelease"
+        ; "swift_bridgeObjectRelease"
         ; "swift_beginAccess"
         ; "swift_endAccess"
         ; "swift_weakInit" ]

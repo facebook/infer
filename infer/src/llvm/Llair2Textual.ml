@@ -27,7 +27,8 @@ let llvm_dynamic_call = Textual.ProcName.of_string "llvm_dynamic_call"
 let derived_enum_equals = "__derived_enum_equals"
 
 let functions_to_skip =
-  List.map ~f:Textual.ProcName.of_string ["swift_unknownObjectRetain"; "swift_weakLoadStrong"]
+  List.map ~f:Textual.ProcName.of_string
+    ["swift_unknownObjectRetain"; "swift_weakLoadStrong"; "swift_bridgeObjectRetain"]
 
 
 let get_alloc_class_name =
