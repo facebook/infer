@@ -66,4 +66,14 @@ struct Quality: Equatable {
         if let quality = quality { result.append(quality.stringValue) }
         stringValue = result.sorted(by: { $0 < $1 }).joined(separator: "_")
     }
- }
+
+    @objc public convenience init(size: CGSize, mode: SizeMode) {
+        let newSize = TestSize(size: size, mode: mode)
+        self.init(size: newSize, quality: nil)
+    }
+    @objc public convenience init(size: CGSize, mode: SizeMode, quality: Int) { //retain cycle fp
+        let newSize = TestSize(size: size, mode: mode)
+        let quality = Quality(value: quality)
+        self.init(size: newSize, quality: quality)
+    }
+}
