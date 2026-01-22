@@ -13,3 +13,4 @@ codetoanalyze/swift/frontend/student.swift, test_retain_cycle_bad2, 12, RETAIN_C
 codetoanalyze/swift/frontend/student.swift, using_enums_with_thursday_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/frontend/student.swift, using_enums_with_saturday_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/frontend/student.swift, using_enums_with_sunday_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+codetoanalyze/swift/frontend/student.swift, retain_cycle_variable_shadow_fp, 1, RETAIN_CYCLE, no_bucket, ERROR, [assignment of quality->field_0->field_0 part of the trace starts here,parameter `quality` of retain_cycle_variable_shadow_fp,assigned,assignment of init().__infer_tuple_field_0 part of the trace starts here,when calling `init` here,in call to `llvm_init_tuple` (modelled),assigned,retain cycle here]
