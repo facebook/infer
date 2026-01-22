@@ -1377,7 +1377,8 @@ let xlate_instr :
         ; "swift_bridgeObjectRelease"
         ; "swift_beginAccess"
         ; "swift_endAccess"
-        ; "swift_weakInit" ]
+        ; "swift_weakInit"
+        ; "swift_deallocPartialClassInstance" ]
       in
       if List.mem fname ~eq:String.equal swift_methods_to_skip then skip fname
       else
