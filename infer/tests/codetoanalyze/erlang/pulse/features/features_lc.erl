@@ -32,7 +32,11 @@
     test_gen_after_filter_Ok/0,
     test_gen_after_filter_Bad/0,
     test_scoping1_Ok/0,
-    test_scoping2_Ok/0
+    test_scoping2_Ok/0,
+    test_nonstrict_Ok/0,
+    test_nonstrict_Bad/0,
+    test_strict_Ok/0,
+    test_strict_Bad/0
 ]).
 
 test_empty_Ok() ->
@@ -146,3 +150,21 @@ test_scoping2_Ok() ->
     % Both Xs are different ones
     _ = [X || X <- [1]],
     _ = [X || X <- [2]].
+
+test_nonstrict_Ok() ->
+    % The value 1 is ingored
+    L = [A || {A, _} <- [1, {2, 3}]],
+    ?ASSERT_EQUAL([2], L).
+
+test_nonstrict_Bad() ->
+    % The value 1 is ingored
+    L = [A || {A, _} <- [1, {2, 3}]],
+    ?CRASH_IF_EQUAL([2], L).
+
+test_strict_Ok() ->
+    L = [A || {A, _} <:- [{2, 3}]],
+    ?ASSERT_EQUAL([2], L).
+
+test_strict_Bad() ->
+    % Crashes because 3 doesn't match
+    [A || {A, _} <:- [{1, 2}, 3]].
