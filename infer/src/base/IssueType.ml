@@ -458,7 +458,7 @@ let compared_to_null_and_dereferenced =
   register ~enabled:false ~category:NullPointerDereference ~id:"COMPARED_TO_NULL_AND_DEREFERENCED"
     Error Pulse
     ~user_documentation:
-      "A pointer that has both been compared to null, whcich suggests that it could be null, but \
+      "A pointer that has both been compared to null, which suggests that it could be null, but \
        has also been dereferenced without a null check."
 
 
