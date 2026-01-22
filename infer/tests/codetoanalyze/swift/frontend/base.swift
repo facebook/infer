@@ -44,10 +44,21 @@ struct TestSize: Equatable {
         self.stringValue = "\(width)x\(height)"
     }
 }
+struct Quality: Equatable {
+    let value: Int
+    let stringValue: String
+    init?(value: Int) {
+        guard value > 0 && value <= 100 else { return nil }
+        self.value = value
+        self.stringValue = "q\(value)"
+    }
+}
 
 @objc final public class Param: NSObject {
     let size: TestSize?
-    init(size: TestSize?) {
+    let quality: Quality?
+    init(size: TestSize?, quality: Quality?) {
        self.size = size
+       self.quality = quality
     }
  }
