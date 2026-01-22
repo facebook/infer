@@ -1,0 +1,200 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare swift_retain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_release(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_deallocClassInstance(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+declare swift_allocObject(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "deinit" $s5Hello7VehicleCfd(*__infer_swift_type<,Vehicle>) : *__infer_swift_type<,$sBoD>
+
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleCfD(*__infer_swift_type<,Vehicle>) : void
+
+declare $s5Hello7VehicleCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "init" $s5Hello7VehicleCACycfc(*__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle>
+
+declare .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleCACycfC(*__infer_swift_type<,$s5Hello7VehicleCXMTD>) : *__infer_swift_type<,Vehicle>
+
+declare .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello7VehicleC>.$s5Hello7VehicleC9makeNoiseyyF(*__infer_swift_type<,Vehicle>) : void
+
+declare .plain_name = "deinit" $s5Hello5TrainCfd(*__infer_swift_type<,Train>) : *__infer_swift_type<,$sBoD>
+
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainCfD(*__infer_swift_type<,Train>) : void
+
+declare $s5Hello5TrainCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "init" $s5Hello5TrainCACycfc(*__infer_swift_type<,Train>) : *__infer_swift_type<,Train>
+
+declare .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainCACycfC(*__infer_swift_type<,$s5Hello5TrainCXMTD>) : *__infer_swift_type<,Train>
+
+declare .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello5TrainC>.$s5Hello5TrainC9makeNoiseyyF(*__infer_swift_type<,Train>) : void
+
+define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(v: *__infer_swift_type<,Vehicle>, t: *__infer_swift_type<,Train>) : void {
+  local getelementptr_offset_1: *void
+  #: @[2:8]
+      n1 = load &v @[2:8]
+      store &getelementptr_offset_1 <- 10 @[2:8]
+      n2 = load &getelementptr_offset_1 @[2:8]
+      n4 = load &v @[2:8]
+      _ = $builtins.llvm_dynamic_call(n2, n4) @[2:8]
+      jmp 7::void::ret @[2:8]
+      
+  #7::void::ret: @[3:1]
+      ret null @[3:1]
+      
+} @?
+
+global symbolic _____ 5Hello7VehicleC: *__infer_swift_type<ptr_elt>
+
+global symbolic _____ 5Hello5TrainC: *__infer_swift_type<ptr_elt>
+
+global objc_classes_$s5Hello7VehicleCN: *__infer_swift_type<ptr_elt>
+
+global objc_classes_$s5Hello5TrainCN: *__infer_swift_type<ptr_elt>
+
+global llvm::used: *__infer_swift_type<ptr_elt>
+
+global llvm::compiler::used: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _objc_empty_cache: *__infer_swift_type<ptr_elt>
+
+global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+
+global _METACLASS_DATA__TtC5Hello7Vehicle: *__infer_swift_type<ptr_elt>
+
+global _METACLASS_DATA__TtC5Hello5Train: *__infer_swift_type<ptr_elt>
+
+global _DATA__TtC5Hello7Vehicle: *__infer_swift_type<ptr_elt>
+
+global _DATA__TtC5Hello5Train: *__infer_swift_type<ptr_elt>
+
+global OBJC_METACLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
+
+global OBJC_CLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
+
+global ::str::7::Vehicle: *__infer_swift_type<ptr_elt>
+
+global ::str::5::Train: *__infer_swift_type<ptr_elt>
+
+global ::str::5::Hello: *__infer_swift_type<ptr_elt>
+
+global ::str::18::_TtC5Hello7Vehicle: *__infer_swift_type<ptr_elt>
+
+global ::str::16::_TtC5Hello5Train: *__infer_swift_type<ptr_elt>
+
+global $sBoWV: *__infer_swift_type<ptr_elt>
+
+global $s5HelloMXM: *__infer_swift_type<ptr_elt>
+
+global $s5Hello7VehicleCMn: *__infer_swift_type<ptr_elt>
+
+global $s5Hello7VehicleCMm: *__infer_swift_type<ptr_elt>
+
+global $s5Hello7VehicleCMf: *__infer_swift_type<ptr_elt>
+
+global $s5Hello7VehicleCMF: *__infer_swift_type<ptr_elt>
+
+global $s5Hello7VehicleCHn: *__infer_swift_type<ptr_elt>
+
+global $s5Hello5TrainCMn: *__infer_swift_type<ptr_elt>
+
+global $s5Hello5TrainCMm: *__infer_swift_type<ptr_elt>
+
+global $s5Hello5TrainCMf: *__infer_swift_type<ptr_elt>
+
+global $s5Hello5TrainCMF: *__infer_swift_type<ptr_elt>
+
+global $s5Hello5TrainCHn: *__infer_swift_type<ptr_elt>
+
+type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>;
+                                       field_2: *__infer_swift_type<ptr_elt>;
+                                       field_3: *__infer_swift_type<ptr_elt>;
+                                       field_4: int}
+
+type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+
+type __infer_swift_type<swift::method_descriptor> = {field_0: int;
+                                                     field_1: int}
+
+type __infer_swift_type<swift::method_override_descriptor> = {field_0: int;
+                                                              field_1: int;
+                                                              field_2: int}
+
+type __infer_swift_type<swift::type_metadata_record> = {field_0: int}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: int; __infer_tuple_field_8: int;
+__infer_tuple_field_9: int; __infer_tuple_field_10: int;
+__infer_tuple_field_11: int; __infer_tuple_field_12: int;
+__infer_tuple_field_13: int; __infer_tuple_field_14: int;
+__infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_17: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_18: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
+                                         __infer_tuple_field_1: int;
+                                         __infer_tuple_field_2: int}
+
+type __infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_8: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_9: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_10: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<int,int,int,int,int> = {__infer_tuple_field_0: int;
+                                                 __infer_tuple_field_1: int;
+                                                 __infer_tuple_field_2: int;
+                                                 __infer_tuple_field_3: int;
+                                                 __infer_tuple_field_4: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_override_descriptor>,*__infer_swift_type<swift::method_override_descriptor>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: *__infer_swift_type<swift::method_override_descriptor>;
+__infer_tuple_field_13: *__infer_swift_type<swift::method_override_descriptor>}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int;
+__infer_tuple_field_13: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_14: *__infer_swift_type<swift::method_descriptor>}
+

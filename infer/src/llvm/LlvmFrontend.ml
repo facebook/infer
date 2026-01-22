@@ -71,19 +71,19 @@ module Error = struct
       sourcefile
 end
 
-let dump_textual_file =
-  let version = ref 0 in
-  fun source_file module_ ->
-    let suffix = if Config.frontend_tests then "test.sil" else "sil" in
-    let filename =
-      match !version with
-      | 0 ->
-          Format.asprintf "%s.%s" source_file suffix
-      | _ ->
-          Format.asprintf "%s.v%d.%s" source_file !version suffix
-    in
-    TextualSil.dump_module ~filename ~show_location:true module_ ;
-    incr version
+let textual_version = ref 0
+
+let dump_textual_file source_file module_ =
+  let suffix = if Config.frontend_tests then "test.sil" else "sil" in
+  let filename =
+    match !textual_version with
+    | 0 ->
+        Format.asprintf "%s.%s" source_file suffix
+    | _ ->
+        Format.asprintf "%s.v%d.%s" source_file !textual_version suffix
+  in
+  TextualSil.dump_module ~filename ~show_location:true module_ ;
+  incr textual_version
 
 
 let should_dump_textual () = Config.debug_mode || Config.dump_textual || Config.frontend_tests
@@ -196,6 +196,7 @@ let capture ~sources llvm_bitcode_in =
   let llair_program = LlvmSledgeFrontend.translate llvm_program in
   let module_state = init_module_state llair_program lang in
   List.iter sources ~f:(fun source_file ->
+      textual_version := 0 ;
       if Config.dump_llair then dump_llair llair_program source_file ;
       if Config.dump_llair_text then dump_llair_text llair_program source_file ;
       capture_llair source_file module_state ) ;

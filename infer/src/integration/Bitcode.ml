@@ -44,20 +44,21 @@ let run_cmd cmd frontend =
 
 
 let llvm_capture ~compiler command args =
-  let cmd =
+  let cmd, source_extension =
     match compiler with
     | Swiftc ->
-        (command :: args) @ ["-emit-bc"; "-o"; "-"]
+        (command :: (args @ ["-emit-bc"; "-o"; "-"]), ".swift")
     | Clang ->
-        (command :: args) @ ["-emit-llvm"; "-o"; "-"]
+        (command :: (args @ ["-emit-llvm"; "-o"; "-"]), ".c")
   in
-  let source_path =
-    let cmd = List.filter cmd ~f:(fun arg -> not (String.is_prefix ~prefix:"-" arg)) in
-    List.last_exn cmd
+  let sources =
+    List.filter args ~f:(fun arg ->
+        (not (String.is_prefix ~prefix:"-" arg)) && String.is_suffix ~suffix:source_extension arg )
   in
-  L.debug Capture Quiet "@\n*** Beginning capture of file %s ***@\n" source_path ;
+  L.debug Capture Quiet "@\n*** Beginning capture of files@\n%s@\n***@\n"
+    (String.concat ~sep:"\n" sources) ;
   let cmd = String.concat ~sep:" " cmd in
-  run_cmd cmd (fun chan_in -> run_llvm_frontend ~sources:[source_path] chan_in)
+  run_cmd cmd (fun chan_in -> run_llvm_frontend ~sources chan_in)
 
 
 let capture compiler ~command ~args =
