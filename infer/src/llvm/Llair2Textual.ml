@@ -467,8 +467,9 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         | Textual.Typ.(Ptr (Struct name)) ->
             name
         | _ ->
-            L.die InternalError "Llair2Textual: unexpected type %a in %a at %a" Textual.Typ.pp
-              textual_typ SourceFile.pp proc_state.sourcefile Textual.Location.pp loc
+            L.internal_error "Llair2Textual: unexpected type %a in %a at %a" Textual.Typ.pp
+              textual_typ SourceFile.pp proc_state.sourcefile Textual.Location.pp loc ;
+            Textual.TypeName.mk_swift_type_name Textual.BaseTypeName.swift_any_type_name.value
       in
       let index_exp =
         Textual.Exp.Field {exp= rcd_exp; field= Field.tuple_field_of_pos type_name idx}
