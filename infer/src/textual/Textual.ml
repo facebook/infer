@@ -145,17 +145,17 @@ module type NAME = sig
   module Set : Stdlib.Set.S with type elt = t
 end
 
+let replace_dot_with_2colons =
+  let pattern = String.Search_pattern.create ~case_sensitive:true "." in
+  fun str -> String.Search_pattern.replace_all pattern ~in_:str ~with_:"::"
+
+
 module Name : NAME = struct
   module T = struct
     type t = {value: string; loc: Location.t [@ignore]} [@@deriving compare, equal, hash]
   end
 
   include T
-
-  let replace_dot_with_2colons =
-    let pattern = String.Search_pattern.create ~case_sensitive:true "." in
-    fun str -> String.Search_pattern.replace_all pattern ~in_:str ~with_:"::"
-
 
   let of_string ?loc str =
     let loc = Option.value loc ~default:Location.Unknown in
@@ -408,13 +408,62 @@ let pp_qualified_fieldname fmt ({enclosing_class; name} : qualified_fieldname) =
 
 
 module VarName : sig
-  include NAME
+  type t [@@deriving compare, equal, hash]
+
+  val location : t -> Location.t
+
+  val of_string : ?loc:Location.t -> string -> t
+
+  val of_mangled : ?loc:Location.t -> Mangled.t -> t
+
+  val to_string : t -> string
+
+  val to_mangled : t -> Mangled.t
+
+  val pp : F.formatter -> t -> unit
+
+  module Hashtbl : Hashtbl.S with type key = t
+
+  module HashSet : HashSet.S with type elt = t
+
+  module Map : Stdlib.Map.S with type key = t
+
+  module Set : Stdlib.Set.S with type elt = t
 
   val is_hack_reified_generics_param : t -> bool
 end = struct
-  include Name
+  module T = struct
+    type t = {value: Mangled.t; loc: Location.t [@ignore]} [@@deriving compare, equal, hash]
+  end
 
-  let is_hack_reified_generics_param {value} = String.equal value "$0ReifiedGenerics"
+  include T
+
+  let location {loc} = loc
+
+  let of_string ?loc str =
+    let loc = Option.value loc ~default:Location.Unknown in
+    let value = replace_dot_with_2colons str |> Mangled.from_string in
+    {value; loc}
+
+
+  let of_mangled ?loc mangled =
+    let loc = Option.value loc ~default:Location.Unknown in
+    {value= mangled; loc}
+
+
+  let to_string {value} = Mangled.to_string value
+
+  let to_mangled {value} = value
+
+  let pp fmt name = Mangled.pp fmt name.value
+
+  module Hashtbl = Hashtbl.Make (T)
+  module HashSet = HashSet.Make (T)
+  module Map = Stdlib.Map.Make (T)
+  module Set = Stdlib.Set.Make (T)
+
+  let is_hack_reified_generics_param {value} =
+    Mangled.to_string value |> String.equal "$0ReifiedGenerics"
 end
 
 module NodeName : NAME = Name

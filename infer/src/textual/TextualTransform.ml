@@ -103,13 +103,12 @@ module FixClosureAppExpr = struct
     if Option.is_some pdesc.fresh_ident then
       L.die InternalError "we assume fresh ident has not been computed yet" ;
     let globals_and_locals =
-      List.fold pdesc.locals ~init:globals ~f:(fun set (varname, _) ->
-          IString.Set.add varname.VarName.value set )
+      List.fold pdesc.locals ~init:globals ~f:(fun set (varname, _) -> VarName.Set.add varname set)
     in
     let is_varname ({enclosing_class; name} : QualifiedProcName.t) =
       match enclosing_class with
-      | TopLevel when IString.Set.mem name.value globals_and_locals ->
-          let varname : VarName.t = {value= name.value; loc= name.loc} in
+      | TopLevel when VarName.Set.mem (VarName.of_string name.value) globals_and_locals ->
+          let varname : VarName.t = VarName.of_string ~loc:name.loc name.value in
           Some (Exp.Load {exp= Lvar varname; typ= None})
       | TopLevel when is_ident name.value ->
           let ident =
@@ -191,10 +190,10 @@ module FixClosureAppExpr = struct
   let transform (module_ : Module.t) =
     let open Module in
     let globals =
-      List.fold module_.decls ~init:IString.Set.empty ~f:(fun set decl ->
+      List.fold module_.decls ~init:VarName.Set.empty ~f:(fun set decl ->
           match decl with
           | Global {name} ->
-              IString.Set.add name.VarName.value set
+              VarName.Set.add name set
           | Proc _ | Struct _ | Procdecl _ ->
               set )
     in
@@ -595,7 +594,8 @@ module TransformClosures = struct
   let mk_fielddecl (varname : VarName.t) (typ : Typ.t) : FieldDecl.t =
     (* each captured variable will be associated to an instance field *)
     let qualified_name : qualified_fieldname =
-      {enclosing_class= TypeName.wildcard; name= {value= varname.value; loc= varname.loc}}
+      { enclosing_class= TypeName.wildcard
+      ; name= {value= VarName.to_string varname; loc= VarName.location varname} }
     in
     {qualified_name; typ; attributes= []}
 
@@ -665,7 +665,7 @@ module TransformClosures = struct
     let state = {state with State.fresh_ident= Ident.of_int 0} in
     let procdecl = closure_call_procdecl loc typename closure nb_captured in
     let start : NodeName.t = {value= "entry"; loc} in
-    let this_var : VarName.t = {value= "__this"; loc} in
+    let this_var : VarName.t = VarName.of_string ~loc "__this" in
     let state, args, instrs =
       List.fold fields ~init:(state, [], [])
         ~f:(fun (state, args, instrs) ({qualified_name= field; typ} : FieldDecl.t) ->

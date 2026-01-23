@@ -590,7 +590,7 @@ module GlobalBridge = struct
   open Global
 
   let to_sil {name} =
-    let mangled = Mangled.from_string name.value in
+    let mangled = VarName.to_mangled name in
     SilPvar.mk_global mangled
 end
 
@@ -761,7 +761,7 @@ module ExpBridge = struct
             | Some global ->
                 GlobalBridge.to_sil global
             | None ->
-                let mangled = Mangled.from_string name.value in
+                let mangled = VarName.to_mangled name in
                 let pname = ProcDeclBridge.to_sil lang sourcefile procname in
                 SilPvar.mk mangled pname
           in
@@ -1267,7 +1267,7 @@ module ProcDescBridge = struct
 
   let build_formals lang ({procdecl; params} as procdesc) =
     let mk_formal ({typ; attributes} : Typ.annotated) vname =
-      let name = Mangled.from_string vname.VarName.value in
+      let name = VarName.to_mangled vname in
       let typ = TypBridge.to_sil lang typ in
       let annots =
         if List.exists ~f:Attr.is_notnull attributes then [Annot.notnull] else Annot.Item.empty
@@ -1294,7 +1294,7 @@ module ProcDescBridge = struct
       ; tmp_id= None }
     in
     List.map locals ~f:(fun (var, annotated_typ) ->
-        let name = Mangled.from_string var.VarName.value in
+        let name = VarName.to_mangled var in
         let typ = TypBridge.to_sil lang ~attrs:annotated_typ.Typ.attributes annotated_typ.Typ.typ in
         make_var_data name typ )
 

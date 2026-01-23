@@ -58,7 +58,27 @@ module ProcName : NAME (* procedure names, without their attachement type *)
 
 module VarName : sig
   (* variables names *)
-  include NAME
+  type t [@@deriving compare, equal, hash]
+
+  val location : t -> Location.t
+
+  val of_string : ?loc:Location.t -> string -> t
+
+  val of_mangled : ?loc:Location.t -> Mangled.t -> t
+
+  val to_string : t -> string
+
+  val to_mangled : t -> Mangled.t
+
+  val pp : F.formatter -> t -> unit
+
+  module Hashtbl : Hashtbl.S with type key = t
+
+  module HashSet : HashSet.S with type elt = t
+
+  module Map : Stdlib.Map.S with type key = t
+
+  module Set : Stdlib.Set.S with type elt = t
 
   val is_hack_reified_generics_param : t -> bool
 end

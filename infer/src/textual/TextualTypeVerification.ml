@@ -174,8 +174,8 @@ let rec loc_of_exp exp =
       loc_of_exp closure
   | Var _ ->
       None
-  | Lvar {loc} ->
-      Some loc
+  | Lvar varname ->
+      Some (VarName.location varname)
   | Load {exp} | Field {exp} ->
       loc_of_exp exp
   | Index (exp, _) ->
@@ -343,7 +343,7 @@ let typeof_var var : Typ.t monad =
   let optional_typ = VarName.Map.find_opt var state.vars in
   option_value_map optional_typ state
     ~none:
-      (let loc = var.VarName.loc in
+      (let loc = VarName.location var in
        let* () = add_error (VarTypeNotDeclared {var; loc}) in
        abort )
     ~some:ret
