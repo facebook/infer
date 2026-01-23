@@ -757,7 +757,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         textual_instr :: List.append ptr_instrs textual_instrs
     | Store {ptr; exp}
       when Textual.Lang.is_swift lang && is_store_formal_to_local ~proc_state ptr exp ->
-        []
+        textual_instrs
     | Store {ptr; exp; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
         let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state exp in
@@ -782,7 +782,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         textual_instrs
     | Free _ when Textual.Lang.is_swift lang ->
         (* ignore [free] in Swift for now until we know if/where it's needed *)
-        []
+        textual_instrs
     | Free {ptr; loc} ->
         let proc = Textual.ProcDecl.free_name in
         let loc = to_textual_loc ~proc_state loc in

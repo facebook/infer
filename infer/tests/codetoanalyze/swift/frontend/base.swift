@@ -77,3 +77,21 @@ struct Quality: Equatable {
         self.init(size: newSize, quality: quality)
     }
 }
+
+struct ImageURL {
+    let url: String
+}
+
+func return_string(url: String) -> String {
+    return ""
+}
+
+func my_test() -> Set<String> {
+    let ascendingSizeImageURLs = [ImageURL(url: "https://example.com/image1.jpg")]
+    var urlIdentifiersToTrack = Set<String>()
+    ascendingSizeImageURLs.forEach { imageUrl in
+        let urlIdentifier = return_string(url: imageUrl.url)
+        urlIdentifiersToTrack.insert(urlIdentifier)
+    }
+    return urlIdentifiersToTrack
+}

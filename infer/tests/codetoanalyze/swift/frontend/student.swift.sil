@@ -526,7 +526,13 @@ define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infe
 
 define .plain_name = "coverPictureModel.set" .method_offset = "12" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs(var1: int, var2: int, self: *__infer_swift_type<ptr_elt>) : void {
   local var8: *int, var7: *int, value: *__infer_swift_type<T5Hello17CoverPictureModelO>
-  #: @[651:0]
+  #: @[649:0]
+      n2 = load &value @[649:0]
+      n1 = load &var1 @[649:0]
+      store n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n1 @[649:0]
+      n4 = load &value @[650:0]
+      n3 = load &var2 @[650:0]
+      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[650:0]
       n6 = load &self @[651:0]
       n5 = n6.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[651:0]
       n8 = load n5 @[653:0]
@@ -587,7 +593,13 @@ define .plain_name = "coverPictureModel.get" .method_offset = "11" __infer_swift
 
 define .plain_name = "coverPictureModel.didset" $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW(var1: int, var2: int, self: *__infer_swift_type<ptr_elt>) : void {
   local var9: *__infer_swift_type<T5Hello17CoverPictureModelO>, var8: *__infer_swift_type<T5Hello17CoverPictureModelO>, var7: *int, oldValue: *__infer_swift_type<T5Hello17CoverPictureModelO>, getelementptr_offset_1: *void
-  #: @[280:19]
+  #: @[633:0]
+      n2 = load &oldValue @[633:0]
+      n1 = load &var1 @[633:0]
+      store n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n1 @[633:0]
+      n4 = load &oldValue @[634:0]
+      n3 = load &var2 @[634:0]
+      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[634:0]
       n6 = load &self @[280:19]
       n5 = n6.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[280:19]
       n8 = load n5 @[280:19]
@@ -1234,7 +1246,13 @@ define .plain_name = "onStartServiceResponse.get" $s5Hello28DeviceAppManagerDele
 
 define .plain_name = "init" $s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfc(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   local onStartServiceResponse: *__infer_swift_type<swift::function>
-  #: @[210:39]
+  #: @[499:0]
+      n2 = load &onStartServiceResponse @[499:0]
+      n1 = load &var1 @[499:0]
+      store n2.__infer_swift_type<swift::function>.field_0 <- n1 @[499:0]
+      n4 = load &onStartServiceResponse @[500:0]
+      n3 = load &var2 @[500:0]
+      store n4.__infer_swift_type<swift::function>.field_1 <- n3 @[500:0]
       n5 = $builtins.llvm_nondet() @[210:39]
       n7 = load &self @[210:37]
       n6 = n7.__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.onStartServiceResponse @[210:37]

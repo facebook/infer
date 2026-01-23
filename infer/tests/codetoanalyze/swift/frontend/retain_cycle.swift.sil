@@ -232,7 +232,17 @@ declare .plain_name = "delegate.modify" .method_offset = "21" __infer_swift_type
 
 define .plain_name = "didReceiveMessage" .method_offset = "24" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC17didReceiveMessageyySSF(var1: int, var2: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<ptr_elt>) : void {
   local var8: *__infer_swift_type<TSS>, var7: *__infer_swift_type<Ts26DefaultStringInterpolationV,String>, message: *__infer_swift_type<TSS>
-  #: @[283:0]
+  #: @[280:0]
+      n2 = load &message @[280:0]
+      n3 = load n2.__infer_swift_type<TSS>.field_0 @[280:0]
+      n1 = n3.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[280:0]
+      n5 = load n1 @[281:0]
+      n6 = load n5.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[281:0]
+      n4 = load &var1 @[281:0]
+      store n6.__infer_swift_type<Ts6UInt64V>.field_0 <- n4 @[281:0]
+      n8 = load n1 @[282:0]
+      n7 = load &var2 @[282:0]
+      store n8.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n7 @[282:0]
       n10 = load &$sypN @[283:0]
       n11 = load n10.__infer_swift_type<swift::full_existential_type>.field_1 @[283:0]
       n12 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, n11) @[283:0]
