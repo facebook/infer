@@ -58,7 +58,11 @@ module Var = struct
     match Int.of_string_opt name with Some i -> Format.sprintf "var%d" (i + 1) | None -> name
 
 
-  let reg_to_var_name reg = Textual.VarName.of_string (string_name_of_reg reg)
+  let reg_to_var_name reg =
+    let id = Reg.id reg in
+    let mangled = Mangled.mangled (string_name_of_reg reg) (Int.to_string id) in
+    Textual.VarName.of_mangled mangled
+
 
   let reg_to_id ~(proc_state : ProcState.t) reg =
     let id = ProcState.mk_fresh_id ~reg proc_state in

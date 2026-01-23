@@ -1346,7 +1346,7 @@ define $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfcSbSS_SStXEfU
 } @?
 
 define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfc(size: *__infer_swift_type<ptr_elt>, var2: int, var3: int, var4: int, var5: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  local var8: *__infer_swift_type<TSS>, var24: *__infer_swift_type<TSS>, var23: *__infer_swift_type<T5Hello8TestSizeV,TestSize>, var22: *__infer_swift_type<TSS>, var20: *__infer_swift_type<objc_super>, var19: *__infer_swift_type<TSa>, var18: *__infer_swift_type<ptr_elt>, var17: *__infer_swift_type<TSa>, var16: *__infer_swift_type<T5Hello8TestSizeVSg>, var14: *__infer_swift_type<T5Hello8TestSizeVSg>, var10: *__infer_swift_type<T5Hello8TestSizeVSg>, self: *__infer_swift_type<ptr_elt>, result: *__infer_swift_type<TSa>, quality: *__infer_swift_type<T5Hello7QualityV>
+  local var8: *__infer_swift_type<TSS>, var24: *__infer_swift_type<TSS>, var23: *__infer_swift_type<T5Hello8TestSizeV,TestSize>, var22: *__infer_swift_type<TSS>, var20: *__infer_swift_type<objc_super>, var19: *__infer_swift_type<TSa>, var18: *__infer_swift_type<ptr_elt>, var17: *__infer_swift_type<TSa>, var16: *__infer_swift_type<T5Hello8TestSizeVSg>, var14: *__infer_swift_type<T5Hello8TestSizeVSg>, var10: *__infer_swift_type<T5Hello8TestSizeVSg>, size: *__infer_swift_type<T5Hello8TestSizeV,TestSize>, self: *__infer_swift_type<ptr_elt>, result: *__infer_swift_type<TSa>, quality: *__infer_swift_type<T5Hello7QualityV>, quality: *__infer_swift_type<T5Hello7QualityVSg>
   #: @[278:0]
       n1 = load &var5 @[278:0]
       n2 = swift_getObjectType(n1) @[278:0]
@@ -1696,7 +1696,7 @@ define .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtc
 declare .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float, int, int) : *__infer_swift_type<,Param>
 
 define .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfc(var1: float, var2: float, mode: *__infer_swift_type<ptr_elt>, quality: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  local var13: *__infer_swift_type<T5Hello8TestSizeVSg>, size: *__infer_swift_type<TSo6CGSizeV>, newSize: *__infer_swift_type<T5Hello8TestSizeVSg>
+  local var13: *__infer_swift_type<T5Hello8TestSizeVSg>, size: *__infer_swift_type<TSo6CGSizeV>, quality: *__infer_swift_type<T5Hello7QualityVSg>, newSize: *__infer_swift_type<T5Hello8TestSizeVSg>
   #: @[75:23]
       n9 = load &newSize @[75:23]
       n10 = load &var1 @[75:23]

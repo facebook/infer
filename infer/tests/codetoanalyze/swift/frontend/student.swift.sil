@@ -972,6 +972,7 @@ define .plain_name = "test_employee_getter_setter_bad" $s5Hello31test_employee_g
 } @?
 
 define .plain_name = "retain_cycle_variable_shadow_fp" $s5Hello31retain_cycle_variable_shadow_fp7qualityAA7QualityVSi_tF(quality: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,int> {
+  local quality: *__infer_swift_type<T5Hello7QualityV,Quality>
   #: @[295:19]
       n1 = load &quality @[295:19]
       n3 = $s5Hello7QualityV5value8sndValueACSi_SitcfC(n1, 0) @[295:19]
