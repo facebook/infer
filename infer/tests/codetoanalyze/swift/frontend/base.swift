@@ -95,3 +95,21 @@ func my_test() -> Set<String> {
     }
     return urlIdentifiersToTrack
 }
+
+import UIKit
+struct LayoutConstants {
+    static let spacingStandard: CGFloat = 8.0
+    static let spacingReduced: CGFloat = 4.0
+    static let insets = UIEdgeInsets(
+        top: spacingStandard,
+        left: spacingReduced,
+        bottom: spacingStandard,
+        right: spacingReduced
+    )
+    static let interitemSpacing = spacingReduced
+    static let titleFont = UIFont.boldSystemFont(ofSize: 17)
+    static let subtitleFont = UIFont.systemFont(ofSize: 17)
+    static let profilePictureSize: CGFloat = 36.0
+    static let chevronSize = CGSize(width: 24.0, height: 24.0)
+    static let separatorHeight: CGFloat = 0.4
+}

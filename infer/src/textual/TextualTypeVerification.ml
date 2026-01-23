@@ -18,10 +18,8 @@ module TypeNameBridge = struct
 end
 
 let is_any_type_llvm lang typ =
-  match typ with
-  | _ ->
-      (Textual.Lang.is_c lang || Textual.Lang.is_swift lang)
-      && Typ.equal typ Textual.Typ.any_type_llvm
+  (Textual.Lang.is_c lang && Typ.equal typ Textual.Typ.any_type_llvm)
+  || (Textual.Lang.is_swift lang && Typ.equal typ Textual.Typ.any_type_swift)
 
 
 (** is it safe to assign a value of type [given] to a variable of type [assigned] *)
@@ -54,6 +52,8 @@ let rec compat lang ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       Typ.equal fun1 fun2
   | (_, Ptr Void | Ptr Void, _) when Textual.Lang.is_c lang || Textual.Lang.is_swift lang ->
       true
+  | Ptr typ1, typ2 | typ1, Ptr typ2 ->
+      is_any_type_llvm lang typ1 || is_any_type_llvm lang typ2
   | _, _ ->
       false
 
