@@ -70,6 +70,10 @@ features_arithmetic:test_uminus1_Ok/0: ok
 features_arithmetic:test_uminus2_Bad/0: expected_crash
 features_arithmetic:test_uminus2_Ok/0: ok
 
+----- features_bc -----
+features_bc:fn_test_strict_Bad/0: bad_generator
+features_bc:test_strict_Ok/0: ok
+
 ----- features_binary_attr -----
 features_binary_attr:test_bad_Bad/0: expected_crash
 features_binary_attr:test_ok_Ok/0: ok
