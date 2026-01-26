@@ -2719,6 +2719,11 @@ and pulse_skip_procedures =
     ~meta:"regex" "Regex of procedures that should not be analyzed by Pulse."
 
 
+and pulse_specialization_abort_if_impossible =
+  CLOpt.mk_bool ~long:"pulse-specialization-abort-if-impossible" ~default:false
+    "If a caller can not satisfy callee specialization needs, abort current symbolic execution"
+
+
 and pulse_specialization_iteration_limit =
   CLOpt.mk_int ~long:"pulse-specialization-iteration-limit" ~default:20
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4649,6 +4654,8 @@ and pulse_retain_cycle_blocklist_pattern =
 and pulse_sanity_checks = !pulse_sanity_checks
 
 and pulse_skip_procedures = Option.map ~f:Str.regexp !pulse_skip_procedures
+
+and pulse_specialization_abort_if_impossible = !pulse_specialization_abort_if_impossible
 
 and pulse_specialization_iteration_limit = !pulse_specialization_iteration_limit
 

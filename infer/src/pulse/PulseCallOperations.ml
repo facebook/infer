@@ -836,6 +836,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
   in
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_reached
       ?(specialization = Specialization.Pulse.bottom) already_given summary astate =
+    L.d_printfln ~color:Orange "iter_call %d" nth_iteration ;
     let res, non_disj, contradiction = call_specialized specialization summary astate in
     let needs_aliasing_specialization =
       match (res, contradiction) with
@@ -927,7 +928,9 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
               Specialization.Pulse.pp specialization ;
           if nth_iteration >= max_iteration then
             L.d_printfln "[specialization] we have reached the maximum number of iteration" ;
-          if
+          if nth_iteration >= max_iteration && Config.pulse_specialization_abort_if_impossible then
+            case_if_specialization_is_impossible []
+          else if
             nth_iteration >= max_iteration || has_already_be_given || ask_caller_of_caller_first
             || Specialization.Pulse.is_bottom specialization
           then

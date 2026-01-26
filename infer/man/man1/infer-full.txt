@@ -3234,6 +3234,11 @@ INTERNAL OPTIONS
        --pulse-skip-procedures-reset
            Cancel the effect of --pulse-skip-procedures.
 
+       --pulse-specialization-abort-if-impossible
+           Activates: If a caller can not satisfy callee specialization
+           needs, abort current symbolic execution (Conversely:
+           --no-pulse-specialization-abort-if-impossible)
+
        --no-pulse-specialization-partial
            Deactivates: A caller does not wait to have a full set of
            specialization information before running a specialized analysis

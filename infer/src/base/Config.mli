@@ -684,6 +684,8 @@ val pulse_sanity_checks : bool
 
 val pulse_skip_procedures : Str.regexp option
 
+val pulse_specialization_abort_if_impossible : bool
+
 val pulse_specialization_iteration_limit : int
 
 val pulse_specialization_limit : int
