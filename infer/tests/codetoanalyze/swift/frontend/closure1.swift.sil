@@ -360,67 +360,67 @@ define .plain_name = "createObject" $s5Hello12createObjectAA18RetainCycleExample
       
 } @?
 
-global symbolic yyc: *__infer_swift_type<ptr_elt>
+global symbolic yyc: *__infer_tuple_class<*int,int>
 
-global symbolic _____ 5Hello18RetainCycleExampleC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello18RetainCycleExampleC: *__infer_tuple_class<int,int,int>
 
-global symbolic Si: *__infer_swift_type<ptr_elt>
+global symbolic Si: *__infer_tuple_class<*int,int>
 
 global objc_classes_$s5Hello18RetainCycleExampleCN: *__infer_swift_type<ptr_elt>
 
-global llvm::used: *__infer_swift_type<ptr_elt>
+global llvm::used: **__infer_swift_type<ptr_elt>
 
-global llvm::compiler::used: *__infer_swift_type<ptr_elt>
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
 
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
 
 global _objc_empty_cache: *__infer_swift_type<ptr_elt>
 
-global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+global __swift_reflection_version: int
 
-global _METACLASS_DATA__TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello18RetainCycleExample: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _IVARS__TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello18RetainCycleExample: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _DATA__TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello18RetainCycleExample: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
 global OBJC_METACLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
 global OBJC_CLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
-global ::str::7::closure: *__infer_swift_type<ptr_elt>
+global ::str::7::closure: int
 
-global ::str::5::Hello: *__infer_swift_type<ptr_elt>
+global ::str::5::Hello: *int
 
-global ::str::30::_TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global ::str::30::_TtC5Hello18RetainCycleExample: *int
 
-global ::str::2::id: *__infer_swift_type<ptr_elt>
+global ::str::2::id: *int
 
-global ::str::18::RetainCycleExample: *__infer_swift_type<ptr_elt>
+global ::str::18::RetainCycleExample: *int
 
-global ::str::0::: *__infer_swift_type<ptr_elt>
+global ::str::0::: int
 
-global 1: *__infer_swift_type<ptr_elt>
+global 1: int
 
-global 0: *__infer_swift_type<ptr_elt>
+global 0: *int
 
 global $sBoWV: *__infer_swift_type<ptr_elt>
 
-global $s5HelloMXM: *__infer_swift_type<ptr_elt>
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
 
-global $s5Hello18RetainCycleExampleCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello18RetainCycleExampleCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello18RetainCycleExampleCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello18RetainCycleExampleCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello18RetainCycleExampleCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello18RetainCycleExampleC7closureyycvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleC7closureyycvpWvd: int
 
-global $s5Hello18RetainCycleExampleC2idSivpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleC2idSivpWvd: int
 
 type __infer_swift_type<$s5Hello18RetainCycleExampleC2idSivM::Frame> = {
 field_0: *int}

@@ -363,28 +363,35 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             textual_typ
       in
       (textual_exp, Some typ, [])
-  | Global {name; typ; is_constant} ->
+  | Global {name; typ} ->
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
-      let textual_exp =
-        match textual_typ with
-        | Textual.Typ.Ptr _ when is_constant -> (
-            let string_opt =
-              match
-                VarMap.find_opt (Textual.VarName.of_string name) proc_state.module_state.globals_map
-              with
-              | Some global ->
-                  Option.bind ~f:Llair.Exp.string_of_exp global.Llair.GlobalDefn.init
-              | None ->
-                  None
-            in
-            match string_opt with
-            | Some s ->
-                Textual.Exp.Const (Str s)
-            | None ->
-                Textual.Exp.Lvar (Textual.VarName.of_string name) )
-        | _ ->
-            Textual.Exp.Lvar (Textual.VarName.of_string name)
+      let textual_exp, typ_opt =
+        let string_opt, typ_opt =
+          match
+            VarMap.find_opt (Textual.VarName.of_string name) proc_state.module_state.globals_map
+          with
+          | Some global ->
+              let string_opt =
+                Option.bind
+                  ~f:(fun (exp, _typ) -> Llair.Exp.string_of_exp exp)
+                  global.Llair.GlobalDefn.init
+              in
+              let typ_opt =
+                Option.map
+                  ~f:(fun (_, typ) -> Type.to_textual_typ lang ~mangled_map ~struct_map typ)
+                  global.Llair.GlobalDefn.init
+              in
+              (string_opt, typ_opt)
+          | None ->
+              (None, None)
+        in
+        match string_opt with
+        | Some s ->
+            (Textual.Exp.Const (Str s), typ_opt)
+        | None ->
+            (Textual.Exp.Lvar (Textual.VarName.of_string name), typ_opt)
       in
+      let textual_typ = Option.value typ_opt ~default:textual_typ in
       (textual_exp, Some textual_typ, [])
   | Ap1 (Select n, typ, llair_exp) -> (
       let typ_name =
@@ -1075,10 +1082,10 @@ let process_globals lang class_method_index method_class_index ~mangled_map ~str
   in
   let process_global _var global =
     match global with
-    | GlobalDefn.{name; init= Some exp} ->
+    | GlobalDefn.{name; init= Some exp_typ} ->
         let global_name = Global.name name in
         if String.is_suffix global_name ~suffix:"CMf" then
-          collect_class_method_indices global_name exp
+          collect_class_method_indices global_name (fst exp_typ)
     | _ ->
         ()
   in
@@ -1090,13 +1097,16 @@ let to_textual_global ~module_state sourcefile global =
   let global_ = global.GlobalDefn.name in
   let global_name = Global.name global_ in
   let name = Textual.VarName.of_string global_name in
-  let typ = Type.to_textual_typ lang ~mangled_map ~struct_map (Global.typ global_) in
+  let global_typ =
+    match global.GlobalDefn.init with Some (_, typ) -> typ | None -> Global.typ global_
+  in
+  let typ = Type.to_textual_typ lang ~mangled_map ~struct_map global_typ in
   let proc_desc_opt =
     if Config.llvm_translate_global_init then
       let loc = to_textual_loc global.GlobalDefn.loc in
       let global_proc_state = ProcState.global_proc_state sourcefile loc module_state global_name in
       match global.GlobalDefn.init with
-      | Some exp ->
+      | Some (exp, _) ->
           let init_exp, _, instrs = to_textual_exp ~proc_state:global_proc_state loc exp in
           let procdecl =
             Textual.ProcDecl.

@@ -9,11 +9,11 @@
 
 open! NS
 
-type t = private {name: Global.t; init: LlairExp.t option; loc: LairLoc.t}
+type t = {name: Global.t; init: (LlairExp.t * LlairTyp.t) option; loc: LairLoc.t}
 [@@deriving compare, equal, sexp]
 
 val pp : t pp
 
 include Invariant.S with type t := t
 
-val mk : ?init:LlairExp.t -> Global.t -> LairLoc.t -> t
+val mk : ?init:LlairExp.t * LlairTyp.t -> Global.t -> LairLoc.t -> t

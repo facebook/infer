@@ -458,31 +458,31 @@ define add(var1: int, var2: int) : int {
 
 declare __assert_fail(*ptr_elt, *ptr_elt, int, *ptr_elt) : *ptr_elt
 
-global __const::test15::person: *ptr_elt
+global __const::test15::person: struct::Person
 
-global __PRETTY_FUNCTION__::test16: *ptr_elt
+global __PRETTY_FUNCTION__::test16: *int
 
-global __PRETTY_FUNCTION__::test15: *ptr_elt
+global __PRETTY_FUNCTION__::test15: *int
 
-global __PRETTY_FUNCTION__::test14: *ptr_elt
+global __PRETTY_FUNCTION__::test14: *int
 
-global __PRETTY_FUNCTION__::test13: *ptr_elt
+global __PRETTY_FUNCTION__::test13: *int
 
-global __PRETTY_FUNCTION__::test10: *ptr_elt
+global __PRETTY_FUNCTION__::test10: *int
 
-global ::str::6: *ptr_elt
+global ::str::6: *int
 
-global ::str::5: *ptr_elt
+global ::str::5: *int
 
-global ::str::4: *ptr_elt
+global ::str::4: *int
 
-global ::str::3: *ptr_elt
+global ::str::3: *int
 
-global ::str::2: *ptr_elt
+global ::str::2: *int
 
-global ::str::1: *ptr_elt
+global ::str::1: *int
 
-global ::str: *ptr_elt
+global ::str: *int
 
 type struct::Cat = {field_0: *ptr_elt; field_1: int}
 

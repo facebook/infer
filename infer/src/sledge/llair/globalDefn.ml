@@ -9,11 +9,12 @@
 
 open! NS
 
-type t = {name: Global.t; init: LlairExp.t option; loc: LairLoc.t} [@@deriving compare, equal, sexp]
+type t = {name: Global.t; init: (LlairExp.t * LlairTyp.t) option; loc: LairLoc.t}
+[@@deriving compare, equal, sexp]
 
 let pp ppf {name; init; loc} =
   Format.fprintf ppf "@[<2>%a %a%a %a@]" LlairTyp.pp (Global.typ name) Global.pp name
-    (Option.pp "@ = @[%a@]" LlairExp.pp)
+    (Option.pp "@ = @[%a@]" (Pair.pp LlairExp.pp LlairTyp.pp))
     init LairLoc.pp loc
 
 

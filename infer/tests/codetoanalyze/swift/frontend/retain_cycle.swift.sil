@@ -737,33 +737,33 @@ declare .plain_name = "delegate.modify" $s5Hello15MessageReceiverC8delegateAA0bC
 
 declare .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-global symbolic x: *__infer_swift_type<ptr_elt>
+global symbolic x: *__infer_tuple_class<int,int>
 
-global symbolic ______pSg 5Hello23MessageReceiverDelegateP: *__infer_swift_type<ptr_elt>
+global symbolic ______pSg 5Hello23MessageReceiverDelegateP: *__infer_tuple_class<int,int,*int,int>
 
-global symbolic ______pSg 5Hello17TransportDelegateP: *__infer_swift_type<ptr_elt>
+global symbolic ______pSg 5Hello17TransportDelegateP: *__infer_tuple_class<int,int,*int,int>
 
-global symbolic _____ 5Hello9TransportC15ConnectionStateO: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello9TransportC15ConnectionStateO: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello9TransportC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello9TransportC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello15MessageReceiverC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello15MessageReceiverC: *__infer_tuple_class<int,int,int>
 
-global symbolic SS: *__infer_swift_type<ptr_elt>
+global symbolic SS: *__infer_tuple_class<*int,int>
 
-global symbolic $sSY: *__infer_swift_type<ptr_elt>
+global symbolic $sSY: *__infer_tuple_class<*int,int>
 
-global symbolic $s5Hello23MessageReceiverDelegateP: *__infer_swift_type<ptr_elt>
+global symbolic $s5Hello23MessageReceiverDelegateP: *__infer_tuple_class<*int,int>
 
-global symbolic $s5Hello17TransportDelegateP: *__infer_swift_type<ptr_elt>
+global symbolic $s5Hello17TransportDelegateP: *__infer_tuple_class<*int,int>
 
 global objc_classes_$s5Hello9TransportCN: *__infer_swift_type<ptr_elt>
 
 global objc_classes_$s5Hello15MessageReceiverCN: *__infer_swift_type<ptr_elt>
 
-global llvm::used: *__infer_swift_type<ptr_elt>
+global llvm::used: **__infer_swift_type<ptr_elt>
 
-global llvm::compiler::used: *__infer_swift_type<ptr_elt>
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
 
 global got::$sSYMp: *__infer_swift_type<ptr_elt>
 
@@ -787,7 +787,7 @@ global got::$sSH13_rawHashValue4seedS2i_tFTq: *__infer_swift_type<ptr_elt>
 
 global got::$s8RawValueSYTl: *__infer_swift_type<ptr_elt>
 
-global associated conformance 5Hello9TransportC15ConnectionStateOSHAASQ: *__infer_swift_type<ptr_elt>
+global associated conformance 5Hello9TransportC15ConnectionStateOSHAASQ: *__infer_tuple_class<int,int,int,int>
 
 global _swift_FORCE_LOAD_$_swift_Builtin_float_$_Hello: *__infer_swift_type<ptr_elt>
 
@@ -805,70 +805,70 @@ global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr
 
 global _objc_empty_cache: *__infer_swift_type<ptr_elt>
 
-global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+global __swift_reflection_version: int
 
-global _METACLASS_DATA__TtC5Hello9Transport: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello9Transport: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello15MessageReceiver: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello15MessageReceiver: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _IVARS__TtC5Hello9Transport: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello9Transport: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello15MessageReceiver: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello15MessageReceiver: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _DATA__TtC5Hello9Transport: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello9Transport: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello15MessageReceiver: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello15MessageReceiver: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
 global OBJC_METACLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
 global OBJC_CLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
-global ::str::9::connected::2: *__infer_swift_type<ptr_elt>
+global ::str::9::connected::2: *int
 
-global ::str::9::connected: *__infer_swift_type<ptr_elt>
+global ::str::9::connected: *int
 
-global ::str::9::Transport: *__infer_swift_type<ptr_elt>
+global ::str::9::Transport: *int
 
-global ::str::8::delegate: *__infer_swift_type<ptr_elt>
+global ::str::8::delegate: *int
 
-global ::str::5::Hello: *__infer_swift_type<ptr_elt>
+global ::str::5::Hello: *int
 
-global ::str::27::_TtC5Hello15MessageReceiver: *__infer_swift_type<ptr_elt>
+global ::str::27::_TtC5Hello15MessageReceiver: *int
 
-global ::str::23::MessageReceiverDelegate: *__infer_swift_type<ptr_elt>
+global ::str::23::MessageReceiverDelegate: *int
 
-global ::str::20::_TtC5Hello9Transport: *__infer_swift_type<ptr_elt>
+global ::str::20::_TtC5Hello9Transport: *int
 
-global ::str::1:: : *__infer_swift_type<ptr_elt>
+global ::str::1:: : *int
 
 global ::str::1::
-: *__infer_swift_type<ptr_elt>
+: *int
 
-global ::str::18::Received message: : *__infer_swift_type<ptr_elt>
+global ::str::18::Received message: : *int
 
-global ::str::17::TransportDelegate: *__infer_swift_type<ptr_elt>
+global ::str::17::TransportDelegate: *int
 
-global ::str::15::messageReceiver: *__infer_swift_type<ptr_elt>
+global ::str::15::messageReceiver: *int
 
-global ::str::15::MessageReceiver: *__infer_swift_type<ptr_elt>
+global ::str::15::MessageReceiver: *int
 
-global ::str::15::ConnectionState: *__infer_swift_type<ptr_elt>
+global ::str::15::ConnectionState: *int
 
-global ::str::12::disconnected: *__infer_swift_type<ptr_elt>
+global ::str::12::disconnected: *int
 
-global ::str::0::::1: *__infer_swift_type<ptr_elt>
+global ::str::0::::1: int
 
-global ::str::0::: *__infer_swift_type<ptr_elt>
+global ::str::0::: int
 
-global 4: *__infer_swift_type<ptr_elt>
+global 4: *int
 
-global 3: *__infer_swift_type<ptr_elt>
+global 3: *int
 
-global 2: *__infer_swift_type<ptr_elt>
+global 2: *int
 
-global 1: *__infer_swift_type<ptr_elt>
+global 1: *int
 
-global 0: *__infer_swift_type<ptr_elt>
+global 0: *int
 
 global $sypN: *__infer_swift_type<ptr_elt>
 
@@ -908,87 +908,87 @@ global $sBoWV: *__infer_swift_type<ptr_elt>
 
 global $s8RawValueSYTl: *__infer_swift_type<ptr_elt>
 
-global $s5HelloMXM: *__infer_swift_type<ptr_elt>
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
 
-global $s5Hello9TransportCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello9TransportCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello9TransportCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello9TransportCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello9TransportCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello9TransportCAA23MessageReceiverDelegateAAWP: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCAA23MessageReceiverDelegateAAWP: **__infer_swift_type<ptr_elt>
 
-global $s5Hello9TransportCAA23MessageReceiverDelegateAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCAA23MessageReceiverDelegateAAMc: *__infer_swift_type<swift::protocol_conformance_descriptor>
 
-global $s5Hello9TransportCAA23MessageReceiverDelegateAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportCAA23MessageReceiverDelegateAAHc: int
 
-global $s5Hello9TransportC9connectedAC15ConnectionStateOvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC9connectedAC15ConnectionStateOvpWvd: int
 
-global $s5Hello9TransportC8delegateAA0B8Delegate_pSgvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC8delegateAA0B8Delegate_pSgvpWvd: int
 
-global $s5Hello9TransportC15messageReceiverAA07MessageD0CvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15messageReceiverAA07MessageD0CvpWvd: int
 
-global $s5Hello9TransportC15ConnectionStateOWV: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOWV: *__infer_swift_type<swift::enum_vwtable>
 
-global $s5Hello9TransportC15ConnectionStateOSYAAMcMK: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSYAAMcMK: **__infer_swift_type<ptr_elt>
 
-global $s5Hello9TransportC15ConnectionStateOSYAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSYAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello9TransportC15ConnectionStateOSYAAMA: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSYAAMA: *__infer_tuple_class<int,int,int,int,int,int>
 
-global $s5Hello9TransportC15ConnectionStateOSYAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSYAAHc: int
 
-global $s5Hello9TransportC15ConnectionStateOSQAAMcMK: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSQAAMcMK: **__infer_swift_type<ptr_elt>
 
-global $s5Hello9TransportC15ConnectionStateOSQAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSQAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello9TransportC15ConnectionStateOSQAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSQAAHc: int
 
-global $s5Hello9TransportC15ConnectionStateOSHAAMcMK: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSHAAMcMK: **__infer_swift_type<ptr_elt>
 
-global $s5Hello9TransportC15ConnectionStateOSHAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSHAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello9TransportC15ConnectionStateOSHAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOSHAAHc: int
 
-global $s5Hello9TransportC15ConnectionStateOMn: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOMn: *__infer_tuple_class<int,int,int,int,int,int,int>
 
-global $s5Hello9TransportC15ConnectionStateOMf: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello9TransportC15ConnectionStateOMF: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello9TransportC15ConnectionStateOHn: *__infer_swift_type<ptr_elt>
+global $s5Hello9TransportC15ConnectionStateOHn: *__infer_swift_type<swift::type_metadata_record>
 
 global $s5Hello9TransportC15ConnectionStateOAESYAAWL: *__infer_swift_type<ptr_elt>
 
 global $s5Hello9TransportC15ConnectionStateOAESQAAWL: *__infer_swift_type<ptr_elt>
 
-global $s5Hello23MessageReceiverDelegate_pMF: *__infer_swift_type<ptr_elt>
+global $s5Hello23MessageReceiverDelegate_pMF: *__infer_tuple_class<int,int,int,int,int>
 
-global $s5Hello23MessageReceiverDelegateMp: *__infer_swift_type<ptr_elt>
+global $s5Hello23MessageReceiverDelegateMp: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::protocol_requirement>>
 
-global $s5Hello23MessageReceiverDelegateHr: *__infer_swift_type<ptr_elt>
+global $s5Hello23MessageReceiverDelegateHr: *__infer_swift_type<swift::protocolref>
 
-global $s5Hello17TransportDelegate_pMF: *__infer_swift_type<ptr_elt>
+global $s5Hello17TransportDelegate_pMF: *__infer_tuple_class<int,int,int,int,int>
 
-global $s5Hello17TransportDelegateMp: *__infer_swift_type<ptr_elt>
+global $s5Hello17TransportDelegateMp: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::protocol_requirement>>
 
-global $s5Hello17TransportDelegateHr: *__infer_swift_type<ptr_elt>
+global $s5Hello17TransportDelegateHr: *__infer_swift_type<swift::protocolref>
 
-global $s5Hello15MessageReceiverCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello15MessageReceiverCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello15MessageReceiverCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello15MessageReceiverCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello15MessageReceiverCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello15MessageReceiverCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello15MessageReceiverCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello15MessageReceiverCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 
-global $s5Hello15MessageReceiverCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello15MessageReceiverCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvpWvd: int
 
 type __infer_swift_type<$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM::Frame> = {
 field_0: *int}

@@ -2261,55 +2261,55 @@ declare .plain_name = "delegate.modify" $s5Hello10CustomViewC8delegateAA0C10Cont
 
 declare .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-global symbolic yycSg: *__infer_swift_type<ptr_elt>
+global symbolic yycSg: *__infer_tuple_class<*int,int>
 
-global symbolic yyc: *__infer_swift_type<ptr_elt>
+global symbolic yyc: *__infer_tuple_class<*int,int>
 
-global symbolic x: *__infer_swift_type<ptr_elt>
+global symbolic x: *__infer_tuple_class<int,int>
 
-global symbolic ______pSg 5Hello30DeviceAppManagerClientDelegateP: *__infer_swift_type<ptr_elt>
+global symbolic ______pSg 5Hello30DeviceAppManagerClientDelegateP: *__infer_tuple_class<int,int,*int,int>
 
-global symbolic _____SgXw 5Hello18RetainCycleExampleC: *__infer_swift_type<ptr_elt>
+global symbolic _____SgXw 5Hello18RetainCycleExampleC: *__infer_tuple_class<int,int,*int,int>
 
-global symbolic _____SgXw 5Hello10IndividualC: *__infer_swift_type<ptr_elt>
+global symbolic _____SgXw 5Hello10IndividualC: *__infer_tuple_class<int,int,*int,int>
 
-global symbolic _____Sg 5Hello5StateC: *__infer_swift_type<ptr_elt>
+global symbolic _____Sg 5Hello5StateC: *__infer_tuple_class<int,int,*int,int>
 
-global symbolic _____Sg 5Hello10CustomViewC: *__infer_swift_type<ptr_elt>
+global symbolic _____Sg 5Hello10CustomViewC: *__infer_tuple_class<int,int,*int,int>
 
-global symbolic _____ 5Hello8EmployeeV: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello8EmployeeV: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello7StudentC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello7StudentC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello7QualityV: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello7QualityV: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello7ProfileC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello7ProfileC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello6PersonC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello6PersonC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello5StateC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello5StateC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello3DayO: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello3DayO: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello28DeviceAppManagerDelegateImplC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello28DeviceAppManagerDelegateImplC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello18RetainCycleExampleC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello18RetainCycleExampleC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello17CoverPictureModelO: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello17CoverPictureModelO: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello14ViewControllerC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello14ViewControllerC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello10IndividualC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello10IndividualC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello10CustomViewC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello10CustomViewC: *__infer_tuple_class<int,int,int>
 
-global symbolic Si: *__infer_swift_type<ptr_elt>
+global symbolic Si: *__infer_tuple_class<*int,int>
 
-global symbolic SaySSG: *__infer_swift_type<ptr_elt>
+global symbolic SaySSG: *__infer_tuple_class<*int,int>
 
-global symbolic SS9imageName_t: *__infer_swift_type<ptr_elt>
+global symbolic SS9imageName_t: *__infer_tuple_class<*int,int>
 
-global symbolic $s5Hello30DeviceAppManagerClientDelegateP: *__infer_swift_type<ptr_elt>
+global symbolic $s5Hello30DeviceAppManagerClientDelegateP: *__infer_tuple_class<*int,int>
 
 global objc_classes_$s5Hello7StudentCN: *__infer_swift_type<ptr_elt>
 
@@ -2329,13 +2329,13 @@ global objc_classes_$s5Hello10IndividualCN: *__infer_swift_type<ptr_elt>
 
 global objc_classes_$s5Hello10CustomViewCN: *__infer_swift_type<ptr_elt>
 
-global metadata::3: *__infer_swift_type<ptr_elt>
+global metadata::3: *__infer_swift_type<swift::full_boxmetadata>
 
-global metadata: *__infer_swift_type<ptr_elt>
+global metadata: *__infer_swift_type<swift::full_boxmetadata>
 
-global llvm::used: *__infer_swift_type<ptr_elt>
+global llvm::used: **__infer_swift_type<ptr_elt>
 
-global llvm::compiler::used: *__infer_swift_type<ptr_elt>
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
 
 global got::$sSQMp: *__infer_swift_type<ptr_elt>
 
@@ -2351,202 +2351,202 @@ global got::$sSH4hash4intoys6HasherVz_tFTq: *__infer_swift_type<ptr_elt>
 
 global got::$sSH13_rawHashValue4seedS2i_tFTq: *__infer_swift_type<ptr_elt>
 
-global associated conformance 5Hello3DayOSHAASQ: *__infer_swift_type<ptr_elt>
+global associated conformance 5Hello3DayOSHAASQ: *__infer_tuple_class<int,int,int,int>
 
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
 
 global _objc_empty_cache: *__infer_swift_type<ptr_elt>
 
-global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+global __swift_reflection_version: int
 
-global _METACLASS_DATA__TtC5Hello7Student: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello7Student: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello7Profile: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello7Profile: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello6Person: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello6Person: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello5State: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello5State: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello28DeviceAppManagerDelegateImpl: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello28DeviceAppManagerDelegateImpl: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello18RetainCycleExample: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello14ViewController: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello14ViewController: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello10Individual: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello10Individual: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello10CustomView: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello10CustomView: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _IVARS__TtC5Hello7Student: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello7Student: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello7Profile: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello7Profile: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello6Person: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello6Person: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello5State: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello5State: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello28DeviceAppManagerDelegateImpl: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello28DeviceAppManagerDelegateImpl: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello18RetainCycleExample: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello14ViewController: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello14ViewController: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello10Individual: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello10Individual: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _IVARS__TtC5Hello10CustomView: *__infer_swift_type<ptr_elt>
+global _IVARS__TtC5Hello10CustomView: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
-global _DATA__TtC5Hello7Student: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello7Student: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello7Profile: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello7Profile: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello6Person: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello6Person: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello5State: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello5State: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello28DeviceAppManagerDelegateImpl: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello28DeviceAppManagerDelegateImpl: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello18RetainCycleExample: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello14ViewController: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello14ViewController: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello10Individual: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello10Individual: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello10CustomView: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello10CustomView: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
 global OBJC_METACLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
 global OBJC_CLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
-global ::str::9::Fail here: *__infer_swift_type<ptr_elt>
+global ::str::9::Fail here: *int
 
-global ::str::8::delegate: *__infer_swift_type<ptr_elt>
+global ::str::8::delegate: *int
 
-global ::str::8::Employee: *__infer_swift_type<ptr_elt>
+global ::str::8::Employee: *int
 
-global ::str::7::closure: *__infer_swift_type<ptr_elt>
+global ::str::7::closure: int
 
-global ::str::7::Student: *__infer_swift_type<ptr_elt>
+global ::str::7::Student: int
 
-global ::str::7::Quality: *__infer_swift_type<ptr_elt>
+global ::str::7::Quality: int
 
-global ::str::7::Profile: *__infer_swift_type<ptr_elt>
+global ::str::7::Profile: int
 
-global ::str::6::weight: *__infer_swift_type<ptr_elt>
+global ::str::6::weight: *int
 
-global ::str::6::spouse: *__infer_swift_type<ptr_elt>
+global ::str::6::spouse: *int
 
-global ::str::6::Person: *__infer_swift_type<ptr_elt>
+global ::str::6::Person: *int
 
-global ::str::5::State: *__infer_swift_type<ptr_elt>
+global ::str::5::State: *int
 
-global ::str::5::Hello: *__infer_swift_type<ptr_elt>
+global ::str::5::Hello: *int
 
-global ::str::57::Unexpectedly found nil while unwrapping an Optional value: *__infer_swift_type<ptr_elt>
+global ::str::57::Unexpectedly found nil while unwrapping an Optional value: *int
 
-global ::str::4::view: *__infer_swift_type<ptr_elt>
+global ::str::4::view: *int
 
-global ::str::40::_TtC5Hello28DeviceAppManagerDelegateImpl: *__infer_swift_type<ptr_elt>
+global ::str::40::_TtC5Hello28DeviceAppManagerDelegateImpl: *int
 
-global ::str::3::age: *__infer_swift_type<ptr_elt>
+global ::str::3::age: *int
 
-global ::str::3::Day: *__infer_swift_type<ptr_elt>
+global ::str::3::Day: *int
 
-global ::str::36::Updating collection view for items: : *__infer_swift_type<ptr_elt>
+global ::str::36::Updating collection view for items: : *int
 
-global ::str::30::_TtC5Hello18RetainCycleExample: *__infer_swift_type<ptr_elt>
+global ::str::30::_TtC5Hello18RetainCycleExample: *int
 
-global ::str::30::DeviceAppManagerClientDelegate: *__infer_swift_type<ptr_elt>
+global ::str::30::DeviceAppManagerClientDelegate: *int
 
-global ::str::2::id: *__infer_swift_type<ptr_elt>
+global ::str::2::id: *int
 
-global ::str::28::DeviceAppManagerDelegateImpl: *__infer_swift_type<ptr_elt>
+global ::str::28::DeviceAppManagerDelegateImpl: *int
 
-global ::str::26::_TtC5Hello14ViewController: *__infer_swift_type<ptr_elt>
+global ::str::26::_TtC5Hello14ViewController: *int
 
-global ::str::22::onStartServiceResponse: *__infer_swift_type<ptr_elt>
+global ::str::22::onStartServiceResponse: *int
 
-global ::str::22::_TtC5Hello10Individual: *__infer_swift_type<ptr_elt>
+global ::str::22::_TtC5Hello10Individual: *int
 
-global ::str::22::_TtC5Hello10CustomView: *__infer_swift_type<ptr_elt>
+global ::str::22::_TtC5Hello10CustomView: *int
 
-global ::str::1:: : *__infer_swift_type<ptr_elt>
+global ::str::1:: : *int
 
 global ::str::1::
-: *__infer_swift_type<ptr_elt>
+: *int
 
-global ::str::19::Hello/student::swift: *__infer_swift_type<ptr_elt>
+global ::str::19::Hello/student::swift: *int
 
-global ::str::18::_TtC5Hello7Student: *__infer_swift_type<ptr_elt>
+global ::str::18::_TtC5Hello7Student: *int
 
-global ::str::18::_TtC5Hello7Profile: *__infer_swift_type<ptr_elt>
+global ::str::18::_TtC5Hello7Profile: *int
 
-global ::str::18::RetainCycleExample: *__infer_swift_type<ptr_elt>
+global ::str::18::RetainCycleExample: *int
 
-global ::str::17::coverPictureModel: *__infer_swift_type<ptr_elt>
+global ::str::17::coverPictureModel: *int
 
-global ::str::17::_TtC5Hello6Person: *__infer_swift_type<ptr_elt>
+global ::str::17::_TtC5Hello6Person: *int
 
-global ::str::17::CoverPictureModel: *__infer_swift_type<ptr_elt>
+global ::str::17::CoverPictureModel: *int
 
-global ::str::16::_TtC5Hello5State: *__infer_swift_type<ptr_elt>
+global ::str::16::_TtC5Hello5State: *int
 
-global ::str::16::Assertion failed: *__infer_swift_type<ptr_elt>
+global ::str::16::Assertion failed: *int
 
-global ::str::14::ViewController: *__infer_swift_type<ptr_elt>
+global ::str::14::ViewController: *int
 
-global ::str::12::coverPicture: *__infer_swift_type<ptr_elt>
+global ::str::12::coverPicture: *int
 
-global ::str::11::Fatal error: *__infer_swift_type<ptr_elt>
+global ::str::11::Fatal error: *int
 
-global ::str::10::Individual: *__infer_swift_type<ptr_elt>
+global ::str::10::Individual: *int
 
-global ::str::10::CustomView: *__infer_swift_type<ptr_elt>
+global ::str::10::CustomView: *int
 
-global ::str::0::::4: *__infer_swift_type<ptr_elt>
+global ::str::0::::4: int
 
-global ::str::0::: *__infer_swift_type<ptr_elt>
+global ::str::0::: int
 
-global 9: *__infer_swift_type<ptr_elt>
+global 9: *int
 
-global 8: *__infer_swift_type<ptr_elt>
+global 8: *int
 
-global 7: *__infer_swift_type<ptr_elt>
+global 7: int
 
-global 6: *__infer_swift_type<ptr_elt>
+global 6: *int
 
-global 5: *__infer_swift_type<ptr_elt>
+global 5: *int
 
-global 4: *__infer_swift_type<ptr_elt>
+global 4: *int
 
-global 3: *__infer_swift_type<ptr_elt>
+global 3: *int
 
-global 20: *__infer_swift_type<ptr_elt>
+global 20: *int
 
-global 2: *__infer_swift_type<ptr_elt>
+global 2: int
 
-global 19: *__infer_swift_type<ptr_elt>
+global 19: *int
 
-global 18: *__infer_swift_type<ptr_elt>
+global 18: *int
 
-global 17: *__infer_swift_type<ptr_elt>
+global 17: *int
 
-global 16: *__infer_swift_type<ptr_elt>
+global 16: *int
 
-global 15: *__infer_swift_type<ptr_elt>
+global 15: *int
 
-global 14: *__infer_swift_type<ptr_elt>
+global 14: *int
 
-global 13: *__infer_swift_type<ptr_elt>
+global 13: *int
 
-global 12: *__infer_swift_type<ptr_elt>
+global 12: *int
 
-global 11: *__infer_swift_type<ptr_elt>
+global 11: *int
 
-global 10: *__infer_swift_type<ptr_elt>
+global 10: int
 
-global 1: *__infer_swift_type<ptr_elt>
+global 1: *int
 
-global 0: *__infer_swift_type<ptr_elt>
+global 0: *int
 
 global $sypN: *__infer_swift_type<ptr_elt>
 
@@ -2558,11 +2558,11 @@ global $sSayxGs23CustomStringConvertiblesMc: *__infer_swift_type<ptr_elt>
 
 global $sSaySSGSayxGs23CustomStringConvertiblesWL: *__infer_swift_type<ptr_elt>
 
-global $sSaySSGMD: *__infer_swift_type<ptr_elt>
+global $sSaySSGMD: *__infer_tuple_class<int,int>
 
 global $sSSN: *__infer_swift_type<ptr_elt>
 
-global $sSS9imageName_tMD: *__infer_swift_type<ptr_elt>
+global $sSS9imageName_tMD: *__infer_tuple_class<int,int>
 
 global $sSQMp: *__infer_swift_type<ptr_elt>
 
@@ -2580,207 +2580,207 @@ global $sSH13_rawHashValue4seedS2i_tFTq: *__infer_swift_type<ptr_elt>
 
 global $sBoWV: *__infer_swift_type<ptr_elt>
 
-global $s5HelloMXM: *__infer_swift_type<ptr_elt>
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
 
-global $s5Hello8EmployeeVWV: *__infer_swift_type<ptr_elt>
+global $s5Hello8EmployeeVWV: *__infer_swift_type<swift::vwtable>
 
-global $s5Hello8EmployeeVMn: *__infer_swift_type<ptr_elt>
+global $s5Hello8EmployeeVMn: *__infer_tuple_class<int,int,int,int,int,int,int>
 
-global $s5Hello8EmployeeVMf: *__infer_swift_type<ptr_elt>
+global $s5Hello8EmployeeVMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,int,int>
 
-global $s5Hello8EmployeeVMF: *__infer_swift_type<ptr_elt>
+global $s5Hello8EmployeeVMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello8EmployeeVHn: *__infer_swift_type<ptr_elt>
+global $s5Hello8EmployeeVHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello7StudentCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello7StudentCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello7StudentCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello7StudentCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello7StudentCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello7StudentCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello7StudentCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello7StudentCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello7StudentCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello7StudentCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello7StudentC6weightSivpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello7StudentC6weightSivpWvd: int
 
-global $s5Hello7StudentC3ageSivpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello7StudentC3ageSivpWvd: int
 
-global $s5Hello7QualityVWV: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVWV: *__infer_swift_type<swift::vwtable>
 
-global $s5Hello7QualityVSQAAMcMK: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVSQAAMcMK: **__infer_swift_type<ptr_elt>
 
-global $s5Hello7QualityVSQAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVSQAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello7QualityVSQAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVSQAAHc: int
 
-global $s5Hello7QualityVMn: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVMn: *__infer_tuple_class<int,int,int,int,int,int,int>
 
-global $s5Hello7QualityVMf: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,int,int>
 
-global $s5Hello7QualityVMF: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello7QualityVHn: *__infer_swift_type<ptr_elt>
+global $s5Hello7QualityVHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello7ProfileCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello7ProfileCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello7ProfileCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello7ProfileCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello7ProfileCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello7ProfileCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello7ProfileCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello7ProfileCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 
-global $s5Hello7ProfileCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello7ProfileCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvpWvd: int
 
-global $s5Hello6PersonCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello6PersonCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello6PersonCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello6PersonCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello6PersonCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello6PersonCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello6PersonCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello6PersonCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello6PersonCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello6PersonCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello6PersonC6spouseACvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello6PersonC6spouseACvpWvd: int
 
-global $s5Hello6PersonC3ageSivpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello6PersonC3ageSivpWvd: int
 
-global $s5Hello5StateCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello5StateCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello5StateCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello5StateCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello5StateCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello5StateCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello5StateCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello5StateCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 
-global $s5Hello5StateCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello5StateCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvpWvd: int
 
-global $s5Hello3DayOWV: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOWV: *__infer_swift_type<swift::enum_vwtable>
 
-global $s5Hello3DayOSQAAMcMK: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOSQAAMcMK: **__infer_swift_type<ptr_elt>
 
-global $s5Hello3DayOSQAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOSQAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello3DayOSQAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOSQAAHc: int
 
-global $s5Hello3DayOSHAAMcMK: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOSHAAMcMK: **__infer_swift_type<ptr_elt>
 
-global $s5Hello3DayOSHAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOSHAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello3DayOSHAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOSHAAHc: int
 
-global $s5Hello3DayOMn: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOMn: *__infer_tuple_class<int,int,int,int,int,int,int>
 
-global $s5Hello3DayOMf: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello3DayOMF: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello3DayOHn: *__infer_swift_type<ptr_elt>
+global $s5Hello3DayOHn: *__infer_swift_type<swift::type_metadata_record>
 
 global $s5Hello3DayOACSQAAWL: *__infer_swift_type<ptr_elt>
 
 global $s5Hello3DayOACSHAAWL: *__infer_swift_type<ptr_elt>
 
-global $s5Hello30DeviceAppManagerClientDelegate_pMF: *__infer_swift_type<ptr_elt>
+global $s5Hello30DeviceAppManagerClientDelegate_pMF: *__infer_tuple_class<int,int,int,int,int>
 
-global $s5Hello30DeviceAppManagerClientDelegateMp: *__infer_swift_type<ptr_elt>
+global $s5Hello30DeviceAppManagerClientDelegateMp: *__infer_tuple_class<int,int,int,int,int,int,int,int,int>
 
-global $s5Hello30DeviceAppManagerClientDelegateHr: *__infer_swift_type<ptr_elt>
+global $s5Hello30DeviceAppManagerClientDelegateHr: *__infer_swift_type<swift::protocolref>
 
-global $s5Hello28DeviceAppManagerDelegateImplCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello28DeviceAppManagerDelegateImplCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello28DeviceAppManagerDelegateImplCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello28DeviceAppManagerDelegateImplCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 
-global $s5Hello28DeviceAppManagerDelegateImplCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAWP: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAWP: **__infer_swift_type<ptr_elt>
 
-global $s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAMc: *__infer_swift_type<swift::protocol_conformance_descriptor>
 
-global $s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAHc: int
 
-global $s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseyycvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseyycvpWvd: int
 
-global $s5Hello18RetainCycleExampleCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello18RetainCycleExampleCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello18RetainCycleExampleCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello18RetainCycleExampleCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello18RetainCycleExampleCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello18RetainCycleExampleC7closureyycSgvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleC7closureyycSgvpWvd: int
 
-global $s5Hello18RetainCycleExampleC2idSivpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello18RetainCycleExampleC2idSivpWvd: int
 
-global $s5Hello17CoverPictureModelOWV: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOWV: *__infer_swift_type<swift::enum_vwtable>
 
-global $s5Hello17CoverPictureModelOSQAAMcMK: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOSQAAMcMK: **__infer_swift_type<ptr_elt>
 
-global $s5Hello17CoverPictureModelOSQAAMc: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOSQAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello17CoverPictureModelOSQAAHc: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOSQAAHc: int
 
-global $s5Hello17CoverPictureModelOMn: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOMn: *__infer_tuple_class<int,int,int,int,int,int,int>
 
-global $s5Hello17CoverPictureModelOMf: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello17CoverPictureModelOMF: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello17CoverPictureModelOHn: *__infer_swift_type<ptr_elt>
+global $s5Hello17CoverPictureModelOHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello14ViewControllerCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello14ViewControllerCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello14ViewControllerCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello14ViewControllerCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello14ViewControllerCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello14ViewControllerCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello14ViewControllerCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello14ViewControllerCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 
-global $s5Hello14ViewControllerCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello14ViewControllerCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpWvd: int
 
-global $s5Hello10IndividualCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello10IndividualCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello10IndividualCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello10IndividualCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello10IndividualCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello10IndividualCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello10IndividualCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello10IndividualCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello10IndividualCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello10IndividualCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello10IndividualC6spouseACSgvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello10IndividualC6spouseACSgvpWvd: int
 
-global $s5Hello10IndividualC3ageSivpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello10IndividualC3ageSivpWvd: int
 
-global $s5Hello10CustomViewCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello10CustomViewCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello10CustomViewCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello10CustomViewCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello10CustomViewCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello10CustomViewCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello10CustomViewCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello10CustomViewCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 
-global $s5Hello10CustomViewCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello10CustomViewCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello10CustomViewC8delegateAA0C10ControllerCvpWvd: *__infer_swift_type<ptr_elt>
+global $s5Hello10CustomViewC8delegateAA0C10ControllerCvpWvd: int
 
-global l__swift5_reflection_descriptor::1: *__infer_swift_type<ptr_elt>
+global l__swift5_reflection_descriptor::1: *__infer_tuple_class<int,int,int,int>
 
-global l__swift5_reflection_descriptor: *__infer_swift_type<ptr_elt>
+global l__swift5_reflection_descriptor: *__infer_tuple_class<int,int,int,int>
 
 type __infer_swift_type<$s5Hello10CustomViewC8delegateAA0C10ControllerCvM::Frame> = {
 field_0: *int}

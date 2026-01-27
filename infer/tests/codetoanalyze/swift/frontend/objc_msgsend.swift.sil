@@ -66,17 +66,17 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<
       
 } @?
 
-global symbolic _____ 5Hello9ObjCClassC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello9ObjCClassC: *__infer_tuple_class<int,int,int>
 
-global symbolic So8NSObjectC: *__infer_swift_type<ptr_elt>
+global symbolic So8NSObjectC: *__infer_tuple_class<*int,int>
 
 global swift_isaMask: *__infer_swift_type<ptr_elt>
 
 global objc_classes_$s5Hello9ObjCClassCN: *__infer_swift_type<ptr_elt>
 
-global llvm::used: *__infer_swift_type<ptr_elt>
+global llvm::used: **__infer_swift_type<ptr_elt>
 
-global llvm::compiler::used: *__infer_swift_type<ptr_elt>
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
 
 global _swift_FORCE_LOAD_$_swift_Builtin_float_$_Hello: *__infer_swift_type<ptr_elt>
 
@@ -94,43 +94,43 @@ global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr
 
 global _objc_empty_cache: *__infer_swift_type<ptr_elt>
 
-global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+global __swift_reflection_version: int
 
-global _METACLASS_DATA__TtC5Hello9ObjCClass: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello9ObjCClass: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _INSTANCE_METHODS__TtC5Hello9ObjCClass: *__infer_swift_type<ptr_elt>
+global _INSTANCE_METHODS__TtC5Hello9ObjCClass: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
 
-global _DATA__TtC5Hello9ObjCClass: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello9ObjCClass: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global OBJC_METACLASS_$__TtC5Hello9ObjCClass: *__infer_swift_type<ptr_elt>
+global OBJC_METACLASS_$__TtC5Hello9ObjCClass: *__infer_swift_type<objc_class>
 
 global OBJC_METACLASS_$_NSObject: *__infer_swift_type<ptr_elt>
 
 global OBJC_CLASS_$_NSObject: *__infer_swift_type<ptr_elt>
 
-global ::str::9::ObjCClass: *__infer_swift_type<ptr_elt>
+global ::str::9::ObjCClass: *int
 
-global ::str::7::@16@0:8: *__infer_swift_type<ptr_elt>
+global ::str::7::@16@0:8: int
 
-global ::str::5::Hello: *__infer_swift_type<ptr_elt>
+global ::str::5::Hello: *int
 
-global ::str::20::_TtC5Hello9ObjCClass: *__infer_swift_type<ptr_elt>
+global ::str::20::_TtC5Hello9ObjCClass: *int
 
 global $sBOWV: *__infer_swift_type<ptr_elt>
 
-global $s5HelloMXM: *__infer_swift_type<ptr_elt>
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
 
-global $s5Hello9ObjCClassCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello9ObjCClassCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello9ObjCClassCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello9ObjCClassCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello9ObjCClassCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello9ObjCClassCMF: *__infer_tuple_class<int,int,int,int,int>
 
-global $s5Hello9ObjCClassCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello9ObjCClassCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global L_selector_data(init): *__infer_swift_type<ptr_elt>
+global L_selector_data(init): *int
 
-global L_selector_data(dealloc): *__infer_swift_type<ptr_elt>
+global L_selector_data(dealloc): int
 
 global L_selector(init): *__infer_swift_type<ptr_elt>
 

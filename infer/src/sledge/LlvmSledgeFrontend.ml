@@ -1018,7 +1018,10 @@ and xlate_global : x -> Llvm.llvalue -> GlobalDefn.t =
         match Llvm.classify_value llg with
         | GlobalVariable ->
             Option.map (Llvm.global_initializer llg) ~f:(fun llv ->
-                let pre, init = xlate_value x llv in
+                let init_type = Llvm.type_of llv in
+                let init_type_llair = xlate_type x init_type in
+                let pre, init_exp = xlate_value x llv in
+                let init = (init_exp, init_type_llair) in
                 (* Nondet insts to set up globals can be dropped to simply
                    leave the undef regs unconstrained. Other insts to set up
                    globals are currently not supported *)
