@@ -108,6 +108,18 @@ let translate_struct lang ~struct_map ~tuple struct_name elements =
   struct_
 
 
+let is_ptr_struct typ =
+  match typ with
+  | Textual.Typ.Ptr (Textual.Typ.Struct name) -> (
+    match TypeName.mangled_name_of_type_name name with
+    | Some mangled_name ->
+        String.is_suffix ~suffix:"V" mangled_name
+    | None ->
+        false )
+  | _ ->
+      false
+
+
 let lookup_field_type ~struct_map struct_name field_name =
   let struct_ = Textual.TypeName.Map.find_opt struct_name struct_map in
   match struct_ with

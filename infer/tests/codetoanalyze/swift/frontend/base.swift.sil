@@ -2297,13 +2297,14 @@ define $s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B56
       jmp 5::ret @[113:16]
       
   #5::ret: @[109:40]
-      store &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ <- n1 @[109:40]
-      n7 = load &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ @[109:40]
-      store n7.__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>.field_1 <- n2 @[109:40]
-      n9 = load &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ @[109:40]
-      store n9.__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>.field_2 <- n3 @[109:40]
-      n11 = load &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ @[109:40]
-      store n11.__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>.field_3 <- n4 @[109:40]
+      n6 = load &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ @[109:40]
+      store n6.__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>.field_0 <- n1 @[109:40]
+      n8 = load &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ @[109:40]
+      store n8.__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>.field_1 <- n2 @[109:40]
+      n10 = load &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ @[109:40]
+      store n10.__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>.field_2 <- n3 @[109:40]
+      n12 = load &$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ @[109:40]
+      store n12.__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>.field_3 <- n4 @[109:40]
       ret null @[114:5]
       
 } @?

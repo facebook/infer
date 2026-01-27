@@ -1,4 +1,3 @@
-codetoanalyze/swift/pulse/global.swift, $s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_D0A9DE5C7BFF00383C9C6F4934C5EE94LL_WZ, 0, RETAIN_CYCLE, no_bucket, ERROR, [assignment of #GB<>$$s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_D0A9DE5C7BFF00383C9C6F4934C5EE94LLSo06UIEdgeF0VvpZ->field_1 part of the trace starts here,in call to `getSpacing`,assigned,returned,return from call to `getSpacing`,assigned,assigned,retain cycle here]
 codetoanalyze/swift/pulse/student.swift, test_student_allocation_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/student.swift, test_employee_allocation_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/student.swift, test_employee_getter_setter_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []

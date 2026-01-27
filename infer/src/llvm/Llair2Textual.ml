@@ -770,12 +770,31 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state exp in
         let exp2_deref_instrs, exp2 = add_deref ~proc_state exp2 loc in
         let exp1, typ_exp1, exp1_instrs = to_textual_exp loc ~proc_state ptr in
+        let exp1, exp1_deref_instrs =
+          match (exp1, typ_exp1) with
+          | Textual.Exp.Lvar _, Some (Textual.Typ.Ptr (Textual.Typ.Struct typ_name) as typ_exp1)
+            when Type.is_ptr_struct typ_exp1 ->
+              let deref_instrs, exp1 = add_deref ~proc_state exp1 loc in
+              let exp1 =
+                (* In llvm when we store the struct without accessing any fields, it means the first field.
+                The first field of a struct is always at offset 0, so the base pointer already points to it.
+                No offset calculation is needed. *)
+                Textual.Exp.Field
+                  { exp= exp1
+                  ; field=
+                      Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name
+                        0 }
+              in
+              (exp1, deref_instrs)
+          | _ ->
+              (exp1, [])
+        in
         let textual_instr_opt =
           if remove_store_zero_in_class typ_exp1 exp2 then None
           else Some (Textual.Instr.Store {exp1; typ= None; exp2; loc})
         in
         (Option.to_list textual_instr_opt @ exp2_deref_instrs @ exp2_instrs)
-        @ exp1_instrs @ textual_instrs
+        @ exp1_instrs @ exp1_deref_instrs @ textual_instrs
     | Alloc {reg} ->
         let reg_var_name = Var.reg_to_var_name reg in
         let ptr_typ = Type.to_textual_typ lang ~mangled_map ~struct_map (Reg.typ reg) in
