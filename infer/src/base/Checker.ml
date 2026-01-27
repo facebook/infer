@@ -88,7 +88,8 @@ let config_unsafe checker =
   | AnnotationReachability ->
       { id= "annotation-reachability"
       ; kind= UserFacing {title= "Annotation Reachability"; markdown_body= ""}
-      ; support= mk_support_func ~clang:Support ~erlang:Support ~java:Support ()
+      ; support=
+          mk_support_func ~clang:Support ~erlang:Support ~java:Support ~swift:ExperimentalSupport ()
       ; short_documentation=
           "Given pairs of source and sink annotations, e.g. `@A` and `@B`, this checker will warn \
            whenever some method annotated with `@A` calls, directly or indirectly, another method \
