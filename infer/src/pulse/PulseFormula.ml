@@ -920,14 +920,14 @@ let simplify ~precondition_vocabulary ~keep formula =
 
 (** translate each variable in [formula_foreign] according to [f] then prove that each translated
     fact is implied by [formula0] *)
-let implies_conditions_up_to ~subst formula0 ~implies:formula_foreign =
-  let subst_map = ref subst in
+let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
+  let subst_map = ref subst0 in
   let subst v =
     match Var.Map.find_opt v !subst_map with
     | Some v' ->
         v'
     | None ->
-        let v' = Var.mk_fresh_same_kind v in
+        let v' = Var.mk_fresh () in
         subst_map := Var.Map.add v v' !subst_map ;
         v'
   in
@@ -935,38 +935,159 @@ let implies_conditions_up_to ~subst formula0 ~implies:formula_foreign =
     let v' = subst v in
     Term.VarSubst v'
   in
-  (* propagate non faster using this exception *)
+  (* HEURISTIC: all RHS atoms that transitively relate RHS variables that have been unified to
+     variables from the LHS should be conjoined to the LHS as they are likely to reflect expressions
+     constructed from these variables and not facts to be established in a universal way.
+
+     Example for the program [while(x+2>0) { x++; }]:
+
+     We enter the loop with some value for [x] that gets abstracted away:
+     {[
+       α(Init) = P0 = x |-> v
+     ]}
+
+     After going through the body once, we reach the back edge in the CFG with the assertion:
+
+     {[
+       P1= x|->v' * v''=v+2 * v'=v+1 * v''>0
+     ]}
+
+     We then ask whether this implies [P0], together with the conditions needed to execute the loop
+     body once more, i.e. the pure part of [P1]. Since variables (abstract values) are immutable,
+     [P1] pure facts make sense for [P0]. However, we don't want to establish [P0] exactly: we just
+     need to establish that there exists instantiations of the variables that make [P0 ∧ pure(P1)]
+     true, i.e. existentially quantify. The entailment question becomes:
+
+     {[
+       x↦v' ∧ v'' = v+2 ∧ v' = v+1 ∧ v''>0 ⊢ ∃v,v',v''. x↦v ∧ v'=v+1 ∧ v''=v+2 ∧ v''>0
+     ]}
+
+     Let's rename existentially bound variables for clarity:
+
+     {[
+       x↦v' ∧ v'' = v+2 ∧ v' = v+1 ∧ v''>0 ⊢ ∃w,w',w''. x↦w ∧ w'=w+1 ∧ w''=w+2 ∧ w''>0
+     ]}
+
+     The step before calling [implies] was heap unification, which will instantiate [w] with [v']:
+
+     {[
+       x↦v' ∧ v'' = v+2 ∧ v' = v+1 ∧ v''>0 ⊢ ∃w',w''. x↦v' ∧ w'=v'+1 ∧ w''=v'+2 ∧ w''>0
+     ]}
+
+     So, the question asked to this function, [implies], is, after removing the matching spatial [↦]
+     predicates:
+
+     {[
+       v'' = v+2 ∧ v' = v+1 ∧ v''>0 ⊢ ∃w',w''. w'=v'+1 ∧ w''=v'+2 ∧ w''>0
+     ]}
+
+     
+     Now the HEURISTIC part is to remark that [w'] and [w''] are bound to terms about [v'], so they
+     can be conjoined to LHS instead first, then we'll try to prove each remaining condition atom
+     (here only [w''>0]) is implied:
+
+     {[
+       v'' = v+2 ∧ v' = v+1 ∧ v''>0 ∧ w'=v'+1 ∧ w''=v'+2  ⊢ w''>0
+     ]}
+     v]
+ *)
+  let vars_to_existentially_quantify =
+    DeadVariables.get_reachable_from
+      (DeadVariables.build_var_graph formula0.phi)
+      (Var.Map.to_seq !subst_map |> Seq.map fst |> Var.Set.of_seq)
+  in
+  subst_map :=
+    Var.Set.fold
+      (fun v subst_map ->
+        if Var.Map.mem v subst_map then subst_map else Var.Map.add v (Var.mk_fresh ()) subst_map )
+      vars_to_existentially_quantify !subst_map ;
+  (* propagate non-implication and contradictions faster using these exceptions *)
   let exception NotImplied of Atom.t in
-  let assert_atom atom =
-    match
-      Formula.Normalizer.and_atom (Atom.nnot atom) (formula0.phi, RevList.empty) ~add_term:false
-    with
-    | Unsat _ ->
+  let exception Contradiction of unsat_info in
+  let sat_value_exn (norm : 'a SatUnsat.t) =
+    match norm with Unsat unsat_info -> raise_notrace (Contradiction unsat_info) | Sat x -> x
+  in
+  (* TODO: instead of matching atoms/terms with two or more existentially quantified variables,
+     match "bindings": variables that are just intermediate variables representing a term ultimately
+     built from variables in [subst0]. *)
+  let should_be_conjoined acc v =
+    match acc with
+    | `FoundNone ->
+        `FoundOne v
+    | `FoundTwo ->
+        `FoundTwo
+    | `FoundOne v' ->
+        if Var.equal v v' then acc else `FoundTwo
+  in
+  let and_term_eqs phi_foreign phi =
+    IContainer.fold_of_pervasives_map_fold Formula.term_eqs_fold phi_foreign ~init:phi
+      ~f:(fun phi (t_foreign, v_foreign) ->
+        match
+          Term.fold_variables t_foreign
+            ~init:(should_be_conjoined `FoundNone v_foreign)
+            ~f:should_be_conjoined
+        with
+        | `FoundTwo ->
+            let t = Term.subst_variables t_foreign ~f:f_subst in
+            let phi, _new_eqs =
+              Formula.Normalizer.and_var_term (subst v_foreign) t (phi, RevList.empty)
+              |> sat_value_exn
+            in
+            phi
+        | _ ->
+            phi )
+  in
+  let and_atoms atoms_foreign phi =
+    IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:phi
+      ~f:(fun phi atom_foreign ->
+        match Atom.fold_variables atom_foreign ~init:`FoundNone ~f:should_be_conjoined with
+        | `FoundTwo ->
+            let atom = Atom.subst_variables atom_foreign ~f:f_subst in
+            let phi, _new_eqs =
+              Formula.Normalizer.and_atom atom (phi, RevList.empty) ~add_term:false |> sat_value_exn
+            in
+            phi
+        | _ ->
+            phi )
+  in
+  let assert_atom phi atom =
+    match Formula.Normalizer.and_atom (Atom.nnot atom) (phi, RevList.empty) ~add_term:false with
+    | Unsat unsat_info ->
+        L.d_printfln_escaped "implies %a by %a" (Atom.pp_with_pp_var Var.pp) atom
+          SatUnsat.pp_unsat_info unsat_info ;
         ()
     | Sat _ ->
         raise (NotImplied atom)
   in
-  let implies_atoms atoms_foreign =
+  let implies_atoms phi atoms_foreign =
     Stdlib.Seq.iter
-      (fun atom_foreign -> Atom.subst_variables atom_foreign ~f:f_subst |> assert_atom)
+      (fun atom_foreign -> Atom.subst_variables atom_foreign ~f:f_subst |> assert_atom phi)
       atoms_foreign
   in
-  let implies_terms terms =
+  let implies_terms phi terms =
     Stdlib.Seq.concat_map
       (fun term ->
         Option.value_exn
-          (Atom.atoms_of_term
-             ~is_neq_zero:(Formula.is_neq_zero formula0.phi)
-             ~force_to_atom:true ~negated:false term )
+          (Atom.atoms_of_term ~is_neq_zero:(Formula.is_neq_zero phi) ~force_to_atom:true
+             ~negated:false term )
         |> ListLabels.to_seq )
       terms
-    |> implies_atoms
+    |> implies_atoms phi
   in
   try
-    implies_atoms (formula_foreign.conditions |> Atom.Map.to_seq |> Seq.map fst) ;
-    implies_terms (formula_foreign.phi.term_conditions2 |> Term.Set.to_seq) ;
+    (* first use the HEURISTIC above to add some of the formula as facts *)
+    let phi =
+      and_term_eqs formula_foreign.phi formula0.phi |> and_atoms formula_foreign.phi.atoms
+    in
+    (* try to imply each atom in the conditions *)
+    implies_atoms phi (formula_foreign.conditions |> Atom.Map.to_seq |> Seq.map fst) ;
+    implies_terms phi (formula_foreign.phi.term_conditions2 |> Term.Set.to_seq) ;
     Ok ()
-  with NotImplied atom -> Error atom
+  with
+  | NotImplied atom ->
+      Error (`NotImplied atom)
+  | Contradiction unsat_info ->
+      Error (`Contradiction unsat_info)
 
 
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v

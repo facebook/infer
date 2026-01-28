@@ -36,7 +36,7 @@ void always_gt_zero_bad() {
   }
 }
 
-void FN_complex_condition_always_true_bad() {
+void complex_condition_always_true_bad() {
   int i = 0;
   while (i+2 > 0) {
     i++;

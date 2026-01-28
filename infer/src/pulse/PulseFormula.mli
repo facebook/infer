@@ -224,7 +224,11 @@ val and_callee_formula :
   -> callee:t
   -> ((Var.t * 'metadata) Var.Map.t * t * new_eqs) SatUnsat.t
 
-val implies_conditions_up_to : subst:Var.t Var.Map.t -> t -> implies:t -> (unit, Atom.t) result
+val implies_conditions_up_to :
+     subst:Var.t Var.Map.t
+  -> t
+  -> implies:t
+  -> (unit, [> `Contradiction of SatUnsat.unsat_info | `NotImplied of Atom.t]) result
 
 val fold_variables : (t, Var.t, 'acc) Container.fold
 (** note: each variable mentioned in the formula is visited at least once, possibly more *)

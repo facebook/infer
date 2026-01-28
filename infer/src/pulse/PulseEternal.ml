@@ -364,7 +364,11 @@ let implies (astate_lhs : AbductiveDomain.t) (astate_rhs : AbductiveDomain.t) =
     with
     | Ok () ->
         true
-    | Error atom ->
+    | Error (`Contradiction unsat_info) ->
+        L.d_printfln_escaped "implication failed, UNSAT when adding pure facts:@\n  %s"
+          (unsat_info.reason ()) ;
+        false
+    | Error (`NotImplied atom) ->
         L.d_printfln_escaped "implication failed:@\n  @[%a@\n⊬ %a@]" PulseFormula.pp
           astate_lhs.path_condition
           (PulseFormulaAtom.pp_with_pp_var AbstractValue.pp)

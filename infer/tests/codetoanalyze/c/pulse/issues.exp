@@ -24,6 +24,7 @@ codetoanalyze/c/pulse/eternal.c, trivial_no_condition_bad, 1, INFINITE_LOOP, no_
 codetoanalyze/c/pulse/eternal.c, trivial_constant_true_bad, 1, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/eternal.c, condition_never_changes_bad, 4, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/eternal.c, always_gt_zero_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
+codetoanalyze/c/pulse/eternal.c, complex_condition_always_true_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/exit_example.c, exit_example_bad, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/field_taint.c, test_taint_field_bad, 2, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: field `manipulated` of value passed as argument `#0` to `taint_manipulated` with kind `Simple`,flows to this sink: value passed as argument `#0` to `sink_int` with kind `Simple`], source: taint_manipulated, sink: sink_int, tainted expression: s.manipulated
 codetoanalyze/c/pulse/field_taint.c, test_sink_field_bad, 3, TAINT_ERROR, no_bucket, ERROR, [source of the taint here: value returned from `int_source` with kind `Simple`,flows to this sink: field `manipulated` of value passed as argument `#0` to `sink_manipulated` with kind `Simple`], source: int_source, sink: sink_manipulated, tainted expression: s.manipulated
