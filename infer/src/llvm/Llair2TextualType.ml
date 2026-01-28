@@ -80,14 +80,14 @@ let to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
     in
     let textual_typ = to_textual_typ lang ~mangled_map:None ~struct_map typ in
     let attributes, textual_typ =
-      match TypeName.mangled_name_of_type_name struct_name with
+      match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
       | Some "Any" when Int.equal pos 0 ->
           (* For AnyObject, the field_0 should be a generic pointer, but we get int* from llvm *)
           ([], Textual.Typ.Ptr Textual.Typ.any_type_swift)
       | _ -> (
         match textual_typ with
         | Textual.Typ.(Ptr (Struct name)) -> (
-          match TypeName.mangled_name_of_type_name name with
+          match Textual.TypeName.swift_mangled_name_of_type_name name with
           | Some mangled_name when String.equal mangled_name "swift::weak" ->
               let textual_typ = Textual.Typ.(Ptr Textual.Typ.any_type_swift) in
               ([Textual.Attr.mk_weak], textual_typ)
@@ -111,7 +111,7 @@ let translate_struct lang ~struct_map ~tuple struct_name elements =
 let is_ptr_struct typ =
   match typ with
   | Textual.Typ.Ptr (Textual.Typ.Struct name) -> (
-    match TypeName.mangled_name_of_type_name name with
+    match Textual.TypeName.swift_mangled_name_of_type_name name with
     | Some mangled_name ->
         String.is_suffix ~suffix:"V" mangled_name
     | None ->
@@ -248,7 +248,7 @@ let pp_signature_structs fmt signature_structs =
 
 
 let update_struct_name signature_structs struct_name =
-  match TypeName.mangled_name_of_type_name struct_name with
+  match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
   | Some typ_name
     when String.is_suffix ~suffix:"C" typ_name || String.is_suffix ~suffix:"V" typ_name -> (
       (* we only want to find the plain name of classes or structs *)
@@ -315,15 +315,15 @@ let struct_name_of_mangled_name lang ~mangled_map struct_map name =
 
 let update_signature_type lang ~mangled_map ~struct_map ~plain_map type_name =
   (let open IOption.Let_syntax in
-   match TypeName.plain_name_of_type_name type_name with
+   match Textual.TypeName.swift_plain_name_of_type_name type_name with
    | Some plain_name ->
        let* struct_name = TypeName.struct_name_of_plain_name plain_map plain_name in
-       let+ mangled_name = TypeName.mangled_name_of_type_name struct_name in
+       let+ mangled_name = Textual.TypeName.swift_mangled_name_of_type_name struct_name in
        TypeName.update_type_name_with_mangled_name ~mangled_name type_name
    | None ->
-       let* mangled_name = TypeName.mangled_name_of_type_name type_name in
+       let* mangled_name = Textual.TypeName.swift_mangled_name_of_type_name type_name in
        let struct_name = struct_name_of_mangled_name lang ~mangled_map struct_map mangled_name in
-       let+ plain_name = TypeName.plain_name_of_type_name struct_name in
+       let+ plain_name = Textual.TypeName.swift_plain_name_of_type_name struct_name in
        TypeName.update_type_name_with_plain_name ~plain_name struct_name )
   |> Option.value ~default:type_name
 

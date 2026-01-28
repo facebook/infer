@@ -127,6 +127,10 @@ module TypeName : sig
   val hack_generics : t
 
   val wildcard : t
+
+  val swift_mangled_name_of_type_name : t -> string option
+
+  val swift_plain_name_of_type_name : t -> string option
 end
 
 module QualifiedProcName : sig

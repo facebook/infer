@@ -275,6 +275,10 @@ module TypeName : sig
 
   val mk_swift_type_name : ?plain_name:string -> string -> t
 
+  val swift_mangled_name_of_type_name : t -> string option
+
+  val swift_plain_name_of_type_name : t -> string option
+
   val is_hack_closure_generated_type : t -> bool
 end = struct
   module T = struct
@@ -326,6 +330,25 @@ end = struct
   let hack_generics = from_basename BaseTypeName.hack_generics
 
   let is_hack_closure_generated_type {name} = BaseTypeName.is_hack_closure_generated_type name
+
+  let swift_mangled_name_of_type_name (type_name : t) =
+    if BaseTypeName.equal type_name.name BaseTypeName.swift_type_name then
+      match type_name.args with
+      | {name; args= []} :: _ ->
+          Some (BaseTypeName.to_string name)
+      | _ ->
+          None
+    else None
+
+
+  let swift_plain_name_of_type_name (type_name : t) =
+    if BaseTypeName.equal type_name.name BaseTypeName.swift_type_name then
+      match type_name.args with
+      | _ :: [{name; args= []}] ->
+          Some (BaseTypeName.to_string name)
+      | _ ->
+          None
+    else None
 end
 
 module QualifiedProcName = struct

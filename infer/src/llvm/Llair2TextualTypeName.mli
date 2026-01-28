@@ -10,10 +10,6 @@ module State = Llair2TextualState
 
 val to_textual_type_name : Textual.Lang.t -> ?plain_name:label -> label -> Textual.TypeName.t
 
-val mangled_name_of_type_name : Textual.TypeName.t -> label option
-
-val plain_name_of_type_name : Textual.TypeName.t -> label option
-
 val struct_name_of_mangled_name :
      Textual.Lang.t
   -> mangled_map:State.mangled_map option

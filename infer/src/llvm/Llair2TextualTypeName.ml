@@ -13,26 +13,6 @@ let to_textual_type_name lang ?plain_name name =
   else Textual.TypeName.of_string name
 
 
-let mangled_name_of_type_name (type_name : Textual.TypeName.t) =
-  if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
-    match type_name.args with
-    | {name; args= []} :: _ ->
-        Some (Textual.BaseTypeName.to_string name)
-    | _ ->
-        None
-  else None
-
-
-let plain_name_of_type_name (type_name : Textual.TypeName.t) =
-  if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
-    match type_name.args with
-    | _ :: [{name; args= []}] ->
-        Some (Textual.BaseTypeName.to_string name)
-    | _ ->
-        None
-  else None
-
-
 let rec update_type_name_with_plain_name ~plain_name (type_name : Textual.TypeName.t) =
   if Textual.BaseTypeName.equal type_name.name Textual.BaseTypeName.swift_type_name then
     match type_name.args with
@@ -67,7 +47,7 @@ let struct_name_of_mangled_name lang ~mangled_map struct_map name =
     let _ =
       Textual.TypeName.Map.exists
         (fun struct_name _ ->
-          match mangled_name_of_type_name struct_name with
+          match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
           | Some mangled_name when String.equal mangled_name name ->
               class_opt := Some struct_name ;
               true
@@ -91,7 +71,7 @@ let struct_name_of_mangled_name lang ~mangled_map struct_map name =
 let compute_mangled_map struct_map =
   let mangled_map = IString.Map.empty in
   let add_mangled_name struct_name _ acc =
-    match mangled_name_of_type_name struct_name with
+    match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
     | Some mangled_name ->
         IString.Map.add mangled_name struct_name acc
     | None ->
@@ -104,7 +84,7 @@ let struct_name_of_plain_name plain_map name = IString.Map.find_opt name plain_m
 
 let compute_plain_map struct_map =
   let add_plain_name struct_name _ acc =
-    match plain_name_of_type_name struct_name with
+    match Textual.TypeName.swift_plain_name_of_type_name struct_name with
     | None ->
         acc
     | Some plain_name ->

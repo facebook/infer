@@ -22,6 +22,25 @@ let is_any_type_llvm lang typ =
   || (Textual.Lang.is_swift lang && Typ.equal typ Textual.Typ.any_type_swift)
 
 
+let is_float_swift lang typ =
+  if Textual.Lang.is_swift lang then
+    let cgfloat = "CGFloat" in
+    match typ with
+    | Typ.Ptr (Struct struct_name) -> (
+      match TypeName.swift_plain_name_of_type_name struct_name with
+      | Some plain_name when String.equal plain_name cgfloat ->
+          true
+      | _ -> (
+        match TypeName.swift_mangled_name_of_type_name struct_name with
+        | Some mangled_name when String.is_substring mangled_name ~substring:cgfloat ->
+            true
+        | _ ->
+            false ) )
+    | _ ->
+        false
+  else false
+
+
 (** is it safe to assign a value of type [given] to a variable of type [assigned] *)
 let rec compat lang ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
   match (t1, t2) with
@@ -52,6 +71,8 @@ let rec compat lang ~assigned:(t1 : Typ.t) ~given:(t2 : Typ.t) =
       Typ.equal fun1 fun2
   | (_, Ptr Void | Ptr Void, _) when Textual.Lang.is_c lang || Textual.Lang.is_swift lang ->
       true
+  | Float, typ | typ, Float ->
+      is_float_swift lang typ
   | Ptr typ1, typ2 | typ1, Ptr typ2 ->
       is_any_type_llvm lang typ1 || is_any_type_llvm lang typ2
   | _, _ ->
@@ -65,6 +86,8 @@ let is_ptr_struct lang typ =
   | Typ.Ptr (Struct _) | Typ.Void ->
       true
   | Typ.Ptr Void when Textual.Lang.is_c lang || Textual.Lang.is_swift lang ->
+      true
+  | Typ.Float when Textual.Lang.is_swift lang ->
       true
   | _ ->
       false
