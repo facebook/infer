@@ -61,13 +61,13 @@ extra-source "0_AddOCaml.cmake.patch" {
   checksum:
     "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
 }
+extra-source "1_add-debug-info.patch" {
+  src: "dependencies/llvm/patches/1_add-debug-info.patch"
+  checksum: [ "sha256=562e09a08afc3b4b639ae1b1721ba20d2fe7d2410af11b350602f385b6e1deba" ]
+}
 extra-source "2_add-LLVMGetAtomicRMWBinOp.patch" {
   src: "dependencies/llvm/patches/2_add-LLVMGetAtomicRMWBinOp.patch"
   checksum: [ "sha256=072b1a1e2d004887126da762e8cc04eca86a89d11eda5ffeec88c0f8e431a1df" ]
-}
-extra-source "1_add-debug-info.patch" {
-  src: "dependencies/llvm/patches/1_add-debug-info.patch"
-  checksum: [ "sha256=25b13e4e61f52c404338909866291b8fb045b4c5aa4e81eafa1901f65cd2bd97" ]
 }
 extra-source "3_fix-null-global_initializer.patch" {
   src: "dependencies/llvm/patches/3_fix-null-global_initializer.patch"

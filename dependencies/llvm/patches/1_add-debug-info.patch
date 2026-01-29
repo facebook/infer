@@ -12,7 +12,6 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.ml b/llvm/bindings/ocaml/llvm/l
  
  (*--... Operations on scalar constants .....................................--*)
  external const_int : lltype -> int -> llvalue = "llvm_const_int"
-diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.mli b/llvm/bindings/ocaml/llvm/llvm.mli
 --- a/llvm/bindings/ocaml/llvm/llvm.mli	2025-04-11 06:57:47.931800281 -0700
 +++ b/llvm/bindings/ocaml/llvm/llvm.mli	2025-04-11 07:42:51.660447162 -0700
 @@ -962,6 +962,33 @@
@@ -49,7 +48,6 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.mli b/llvm/bindings/ocaml/llvm/
  (** {7 Operations on scalar constants} *)
  
  (** [const_int ty i] returns the integer constant of type [ty] and value [i].
-diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/llvm/llvm_ocaml.c
 --- a/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 06:57:47.931800281 -0700
 +++ b/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 07:42:51.660447162 -0700
 @@ -19,6 +19,7 @@
@@ -60,7 +58,7 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/l
  #include "llvm-c/Support.h"
  #include "llvm/Config/llvm-config.h"
  #include "caml/memory.h"
-@@ -988,6 +989,116 @@
+@@ -988,6 +989,118 @@
    return to_val(LLVMMetadataAsValue(Context_val(C), Metadata_val(MD)));
  }
  
@@ -110,9 +108,9 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/l
 +
 +/* llvalue -> string option */
 +CAMLprim value llvm_get_debug_loc_directory(value v) {
-+  LLVMValueRef Val = Value_val(v);
-+  CAMLparam0();
++  CAMLparam1(v);
 +  CAMLlocal1(Option);
++  LLVMValueRef Val = Value_val(v);
 +  unsigned Length = 0;
 +  const char *Chars = NULL;
 +  LLVMMetadataRef File = get_debug_file(Val);
@@ -125,9 +123,9 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/l
 +
 +/* llvalue -> string option */
 +CAMLprim value llvm_get_debug_loc_filename(value v) {
-+  LLVMValueRef Val = Value_val(v);
-+  CAMLparam0();
++  CAMLparam1(v);
 +  CAMLlocal1(Option);
++  LLVMValueRef Val = Value_val(v);
 +  unsigned Length = 0;
 +  const char *Chars = NULL;
 +  LLVMMetadataRef File = get_debug_file(Val);
@@ -140,6 +138,7 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/l
 +
 +/* llvalue -> int */
 +CAMLprim value llvm_get_debug_loc_line(value v) {
++  CAMLparam1(v);
 +  LLVMValueRef Val = Value_val(v);
 +  unsigned L = 0;
 +  if (LLVMIsAInstruction(Val)) {
@@ -158,11 +157,12 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/l
 +      L = LLVMDISubprogramGetLine(Subprogram);
 +    }
 +  }
-+  return Val_int(L);
++  CAMLreturn(Val_int(L));
 +}
 +
 +/* llvalue -> int */
 +CAMLprim value llvm_get_debug_loc_column(value v) {
++  CAMLparam1(v);
 +  LLVMValueRef Val = Value_val(v);
 +  unsigned C = 0;
 +  if (LLVMIsAInstruction(Val)) {
@@ -171,7 +171,7 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/l
 +      C = LLVMDILocationGetColumn(Loc);
 +    }
 +  }
-+  return Val_int(C);
++  CAMLreturn(Val_int(C));
 +}
 +
  /*--... Operations on scalar constants .....................................--*/
