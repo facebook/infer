@@ -113,3 +113,23 @@ final class BCNTypeaheadSuggestionsCell: UICollectionViewCell {
         right: getSpacing()
     )
 }
+
+public struct TextRendererConfig {
+  public struct Padding: Sendable  {
+    public let top: Float
+    public let bottom: Float
+    public let sides: Float
+
+    public init(
+      top: Float = 5,
+      bottom: Float = 5,
+      sides: Float = 4
+    ) {
+      self.top = top
+      self.bottom = bottom
+      self.sides = sides
+    }
+
+    public static let `default` = Padding()
+  }
+}

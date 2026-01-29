@@ -34,6 +34,8 @@ let is_float_swift lang typ =
         match TypeName.swift_mangled_name_of_type_name struct_name with
         | Some mangled_name when String.is_substring mangled_name ~substring:cgfloat ->
             true
+        | Some "TSf" ->
+            true
         | _ ->
             false ) )
     | _ ->
