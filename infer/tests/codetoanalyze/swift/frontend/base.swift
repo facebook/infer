@@ -133,3 +133,14 @@ public struct TextRendererConfig {
     public static let `default` = Padding()
   }
 }
+
+struct Padding  {
+    let top: Float
+    let bottom: Float
+    let sides: Float
+}
+
+func test() -> Float {
+    let padding = Padding(top: 1.0, bottom: 2.0, sides: 3.0)
+    return padding.top
+}

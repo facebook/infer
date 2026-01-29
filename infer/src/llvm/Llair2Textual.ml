@@ -269,21 +269,44 @@ let add_deref ~proc_state ?from_call exp loc =
               ProcState.update_ids_types ~proc_state id (Textual.Typ.mk_without_attributes typ)
           | None ->
               () ) ;
-      ProcState.update_ids_move ~proc_state id None ~no_deref_needed:true ;
+      ProcState.update_ids_move ~proc_state id None ~loaded_var:true ~deref_needed:false ;
       add_load_instr
   | Textual.Exp.Field _ ->
       add_load_instr
   | Textual.Exp.Var id -> (
       let id_data = IdentMap.find_opt id proc_state.ProcState.ids_move in
       match id_data with
-      | Some {no_deref_needed= true} ->
+      | Some {loaded_var= true} ->
           ([], exp)
+      | Some {deref_needed= true} ->
+          add_load_instr
       | Some {typ= Some {typ= Textual.Typ.Ptr _}} ->
           add_load_instr
       | _ ->
           ([], exp) )
   | _ ->
       ([], exp)
+
+
+let should_add_deref ~proc_state exp =
+  match exp with
+  | Textual.Exp.Lvar _ ->
+      true
+  | Textual.Exp.Field _ ->
+      true
+  | Textual.Exp.Var id -> (
+      let id_data = IdentMap.find_opt id proc_state.ProcState.ids_move in
+      match id_data with
+      | Some {loaded_var= true} ->
+          false
+      | Some {deref_needed= true} ->
+          true
+      | Some {typ= Some {typ= Textual.Typ.Ptr _}} ->
+          true
+      | _ ->
+          false )
+  | _ ->
+      false
 
 
 let update_id_return_type ~(proc_state : ProcState.t) proc id =
@@ -699,11 +722,11 @@ let translate_move ~proc_state ~move_phi loc textual_instrs reg_exps =
       ~f:(fun instrs (reg, exp) ->
         let id = Some (Var.reg_to_id ~proc_state reg |> fst) in
         let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state exp in
-        let no_deref_needed =
+        let loaded_var =
           match exp with
           | Textual.Exp.Var var ->
               Option.value_map
-                ~f:(fun id_data -> id_data.ProcState.no_deref_needed)
+                ~f:(fun id_data -> id_data.ProcState.loaded_var)
                 (IdentMap.find_opt var proc_state.ProcState.ids_move)
                 ~default:false
           | _ when move_phi ->
@@ -715,7 +738,8 @@ let translate_move ~proc_state ~move_phi loc textual_instrs reg_exps =
         | Some id, Some exp_typ ->
             ProcState.update_ids_move ~proc_state id
               (Some (Textual.Typ.mk_without_attributes exp_typ))
-              ~no_deref_needed
+              ~loaded_var
+              ~deref_needed:(should_add_deref ~proc_state exp)
         | _ ->
             () ) ;
         let deref_instrs, exp = if move_phi then add_deref ~proc_state exp loc else ([], exp) in
@@ -759,7 +783,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let id, _ = Var.reg_to_id ~proc_state reg in
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
         ProcState.update_id_offset ~proc_state id exp ;
-        ProcState.update_ids_move ~proc_state id None ~no_deref_needed:true ;
+        ProcState.update_ids_move ~proc_state id None ~loaded_var:true ~deref_needed:false ;
         let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
         textual_instr :: List.append ptr_instrs textual_instrs
     | Store {ptr; exp}

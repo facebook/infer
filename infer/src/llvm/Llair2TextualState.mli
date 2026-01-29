@@ -81,7 +81,7 @@ module ModuleState : sig
 end
 
 module ProcState : sig
-  type id_data = {typ: Textual.Typ.annotated option; no_deref_needed: bool}
+  type id_data = {typ: Textual.Typ.annotated option; loaded_var: bool; deref_needed: bool}
 
   type read = Read | NotRead
 
@@ -121,7 +121,12 @@ module ProcState : sig
     proc_state:t -> VarMap.key -> Textual.Typ.annotated * VarMap.key option -> read -> unit
 
   val update_ids_move :
-    proc_state:t -> IdentMap.key -> Textual.Typ.annotated option -> no_deref_needed:bool -> unit
+       proc_state:t
+    -> IdentMap.key
+    -> Textual.Typ.annotated option
+    -> loaded_var:bool
+    -> deref_needed:bool
+    -> unit
 
   val update_ids_types : proc_state:t -> IdentMap.key -> Textual.Typ.annotated -> unit
 

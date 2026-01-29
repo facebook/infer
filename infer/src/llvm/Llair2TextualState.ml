@@ -98,12 +98,12 @@ module ModuleState = struct
 end
 
 module ProcState = struct
-  type id_data = {typ: Textual.Typ.annotated option; no_deref_needed: bool}
+  type id_data = {typ: Textual.Typ.annotated option; loaded_var: bool; deref_needed: bool}
 
-  let pp_data fmt {typ; no_deref_needed} =
-    F.fprintf fmt "typ:%a, no_deref_needed: %b"
+  let pp_data fmt {typ; loaded_var; deref_needed} =
+    F.fprintf fmt "typ:%a, loaded_var: %b, deref_needed: %b"
       (Pp.option Textual.Typ.pp_annotated)
-      typ no_deref_needed
+      typ loaded_var deref_needed
 
 
   type read = Read | NotRead
@@ -225,8 +225,8 @@ module ProcState = struct
     proc_state.formals <- VarMap.add varname {typ; assoc_local; read} proc_state.formals
 
 
-  let update_ids_move ~proc_state id typ ~no_deref_needed =
-    proc_state.ids_move <- IdentMap.add id {typ; no_deref_needed} proc_state.ids_move
+  let update_ids_move ~proc_state id typ ~loaded_var ~deref_needed =
+    proc_state.ids_move <- IdentMap.add id {typ; loaded_var; deref_needed} proc_state.ids_move
 
 
   (* debug_name = var1,
