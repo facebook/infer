@@ -71,7 +71,7 @@ extra-source "2_add-LLVMGetAtomicRMWBinOp.patch" {
 }
 extra-source "3_fix-null-global_initializer.patch" {
   src: "dependencies/llvm/patches/3_fix-null-global_initializer.patch"
-  checksum: [ "sha256=18c65e1036a4466e2db4082f1da4b5a08c725d0670a3e0518f14dba5c88d3192" ]
+  checksum: [ "sha256=e2d0faca83e2542454606c544478a2847f27c6dbd9ccf9aa352059e7b1407481" ]
 }
 extra-source "4_LLVMGetGEPSourceElementType.patch" {
   src: "dependencies/llvm/patches/4_LLVMGetGEPSourceElementType.patch"
