@@ -1,3 +1,4 @@
+codetoanalyze/swift/pulse/enums.swift, using_enums_with_defaultPadding_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/student.swift, test_student_allocation_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/student.swift, test_employee_allocation_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/student.swift, test_employee_getter_setter_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
