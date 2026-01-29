@@ -17,6 +17,8 @@ module Var : sig
   val of_string : string -> t
 
   module Map : Stdlib.Map.S with type key = t
+
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 type subst

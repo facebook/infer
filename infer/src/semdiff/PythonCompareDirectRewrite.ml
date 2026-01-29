@@ -51,6 +51,20 @@ module Pattern = struct
     Node {name; args}
 
 
+  let vars pattern =
+    let rec aux acc = function
+      | Var v ->
+          Var.Set.add v acc
+      | AstNode _ ->
+          acc
+      | List l ->
+          List.fold l ~init:acc ~f:aux
+      | Node {args} ->
+          List.fold args ~init:acc ~f:(fun acc (_, pattern) -> aux acc pattern)
+    in
+    aux Var.Set.empty pattern
+
+
   exception ImpossibleMatching
 
   let check b : unit = if not b then raise ImpossibleMatching
@@ -130,7 +144,21 @@ module Rules = struct
 
   type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
 
-  let pp fmt {ignore; rewrite; accept} =
+  let vars {ignore; rewrite; accept} =
+    let open Var.Set in
+    let acc =
+      List.fold ignore ~init:empty ~f:(fun acc pattern -> union acc (Pattern.vars pattern))
+    in
+    let acc =
+      List.fold rewrite ~init:acc ~f:(fun acc {lhs; rhs} ->
+          union (union acc (Pattern.vars lhs)) (Pattern.vars rhs) )
+    in
+    List.fold accept ~init:acc ~f:(fun acc {lhs; rhs} ->
+        union (union acc (Pattern.vars lhs)) (Pattern.vars rhs) )
+
+
+  let pp fmt ({ignore; rewrite; accept} as rules) =
+    let vars = vars rules in
     let pp_ignore fmt pattern = F.fprintf fmt "ignore(%a)@." Pattern.pp pattern in
     let pp_rewrite fmt {lhs; rhs} =
       F.fprintf fmt "rewrite(@[<hv>lhs=%a,@ rhs=%a@])@." Pattern.pp lhs Pattern.pp rhs
@@ -138,6 +166,8 @@ module Rules = struct
     let pp_accept fmt {lhs; rhs} =
       F.fprintf fmt "accept(@[<hv>lhs=%a, rhs=%a@])@." Pattern.pp lhs Pattern.pp rhs
     in
+    F.fprintf fmt "@.vars:" ;
+    Var.Set.iter (fun var -> F.fprintf fmt " %a" Var.pp var) vars ;
     F.fprintf fmt "@." ;
     List.iter ignore ~f:(pp_ignore fmt) ;
     F.fprintf fmt "@." ;

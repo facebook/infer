@@ -672,6 +672,7 @@ let%expect_test "pp missing_python_type_annotations_config" =
   F.printf "%a@." Rules.pp missing_python_type_annotations_config ;
   [%expect
     {|
+    vars: A C L M N V X
     ignore(ImportFrom(level=L,module=M,names=N))
     ignore(Import(names=N))
 
