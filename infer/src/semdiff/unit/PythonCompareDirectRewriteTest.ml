@@ -665,3 +665,28 @@ def main():
     (Line 4) -         o.mapping[i] -= 7
     (Line 5) +         temp_dict[i] -= 7
     |}]
+
+
+let%expect_test "pp missing_python_type_annotations_config" =
+  let open PythonCompareDirectRewrite in
+  F.printf "%a@." Rules.pp missing_python_type_annotations_config ;
+  [%expect
+    {|
+    ignore(ImportFrom(level=L,module=M,names=N))
+    ignore(Import(names=N))
+
+    rewrite(lhs=Assign(targets=[N],type_comment=null,value=V),
+            rhs=AnnAssign(annotation=null,simple=1,target=N,value=V))
+    rewrite(lhs=AnnAssign(annotation=A,simple=0,target=N,value=V),
+            rhs=AnnAssign(annotation=A,simple=1,target=N,value=V))
+    rewrite(lhs=Compare(comparators=[Name(ctx=Load(),id="str")],left=Attribute(attr="__class__",ctx=Load(),value=N),ops=[Eq()]),
+            rhs=Call(args=[N,Name(ctx=Load(),id="str")],func=Name(ctx=Load(),id="isinstance"),keywords=[]))
+
+    accept(lhs=null, rhs=X)
+    accept(lhs="Any", rhs="object")
+    accept(lhs=Name(id="Dict",ctx=C), rhs=Name(id="dict",ctx=C))
+    accept(lhs=Name(id="FrozenSet",ctx=C), rhs=Name(id="frozenset",ctx=C))
+    accept(lhs=Name(id="List",ctx=C), rhs=Name(id="list",ctx=C))
+    accept(lhs=Name(id="Tuple",ctx=C), rhs=Name(id="tuple",ctx=C))
+    accept(lhs=Name(id="Set",ctx=C), rhs=Name(id="set",ctx=C))
+    |}]

@@ -62,6 +62,8 @@ module Node : sig
   val dict_of_assoc : string -> (string * t) list -> dict
 
   val to_str : ?indent:int -> t -> string
+
+  val pp : Format.formatter -> t -> unit
 end
 
 type error

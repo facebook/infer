@@ -32,6 +32,16 @@ module Pattern : sig
     | List of t list
 end
 
+module Rules : sig
+  type rule = {lhs: Pattern.t; rhs: Pattern.t}
+
+  type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
+
+  val pp : F.formatter -> t -> unit
+end
+
+val missing_python_type_annotations_config : Rules.t
+
 val semdiff : string -> string -> unit
 
 val test_ast_diff : debug:bool -> string -> string -> Diff.explicit list

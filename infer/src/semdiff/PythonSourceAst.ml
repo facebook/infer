@@ -145,6 +145,30 @@ module Node = struct
         "Bool: " ^ Bool.to_string b
     | Null ->
         "Null"
+
+
+  let rec pp fmt = function
+    | Dict dict ->
+        let header, fields = assoc_of_dict dict in
+        F.fprintf fmt "%s(@[<hv>" header ;
+        List.iteri fields ~f:(fun i (key, node) ->
+            if i > 0 then F.fprintf fmt ",@ " ;
+            F.fprintf fmt "%s=%a" key pp node ) ;
+        F.fprintf fmt "@])"
+    | List l ->
+        F.fprintf fmt "[%a]" (Pp.comma_seq pp) l
+    | Str s ->
+        F.fprintf fmt "\"%s\"" s
+    | Int i ->
+        F.pp_print_int fmt i
+    | Float f ->
+        F.pp_print_float fmt f
+    | Bool true ->
+        F.pp_print_string fmt "True"
+    | Bool false ->
+        F.pp_print_string fmt "False"
+    | Null ->
+        F.pp_print_string fmt "null"
 end
 
 (* Python integration *)

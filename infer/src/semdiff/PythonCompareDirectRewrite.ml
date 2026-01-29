@@ -20,6 +20,20 @@ module Pattern = struct
     | AstNode of Ast.Node.t
     | Node of {name: Name.t; args: (Name.t * t) list}
     | List of t list
+  [@@deriving equal]
+
+  let rec pp fmt = function
+    | Var v ->
+        Var.pp fmt v
+    | AstNode ast ->
+        Ast.Node.pp fmt ast
+    | Node {name; args} ->
+        F.fprintf fmt "%a(%a)" Name.pp name
+          (Pp.comma_seq (fun fmt (key, node) -> F.fprintf fmt "%a=%a" Name.pp key pp node))
+          args
+    | List l ->
+        F.fprintf fmt "[%a]" (Pp.comma_seq pp) l
+
 
   let var v = Var (Var.of_string v)
 
@@ -112,11 +126,25 @@ module Action = struct
 end
 
 module Rules = struct
-  type rewrite_rule = {lhs: Pattern.t; rhs: Pattern.t}
+  type rule = {lhs: Pattern.t; rhs: Pattern.t} [@@deriving equal]
 
-  type accept_rule = {lhs: Pattern.t; rhs: Pattern.t}
+  type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
 
-  type t = {ignore: Pattern.t list; rewrite: rewrite_rule list; accept: accept_rule list}
+  let pp fmt {ignore; rewrite; accept} =
+    let pp_ignore fmt pattern = F.fprintf fmt "ignore(%a)@." Pattern.pp pattern in
+    let pp_rewrite fmt {lhs; rhs} =
+      F.fprintf fmt "rewrite(@[<hv>lhs=%a,@ rhs=%a@])@." Pattern.pp lhs Pattern.pp rhs
+    in
+    let pp_accept fmt {lhs; rhs} =
+      F.fprintf fmt "accept(@[<hv>lhs=%a, rhs=%a@])@." Pattern.pp lhs Pattern.pp rhs
+    in
+    F.fprintf fmt "@." ;
+    List.iter ignore ~f:(pp_ignore fmt) ;
+    F.fprintf fmt "@." ;
+    List.iter rewrite ~f:(pp_rewrite fmt) ;
+    F.fprintf fmt "@." ;
+    List.iter accept ~f:(pp_accept fmt) ;
+    F.fprintf fmt "@."
 end
 
 module Run = struct
@@ -125,12 +153,12 @@ module Run = struct
 
 
   let rewrite {Rules.rewrite} node =
-    List.fold rewrite ~init:node ~f:(fun node ({lhs; rhs} : Rules.rewrite_rule) ->
+    List.fold rewrite ~init:node ~f:(fun node ({lhs; rhs} : Rules.rule) ->
         Action.rewrite node ~lhs ~rhs )
 
 
   let accept {Rules.accept} ~left ~right =
-    List.exists accept ~f:(fun ({lhs; rhs} : Rules.accept_rule) ->
+    List.exists accept ~f:(fun ({lhs; rhs} : Rules.rule) ->
         Action.accept ~lhs_node:left ~rhs_node:right ~lhs_pattern:lhs ~rhs_pattern:rhs )
 end
 
@@ -197,7 +225,7 @@ let zip_and_build_diffs config n1 n2 : Diff.t list =
   zip ~left_line:None ~right_line:None ~rewritten:false [] n1 n2
 
 
-let config : Rules.t =
+let missing_python_type_annotations_config : Rules.t =
   let open Pattern in
   { ignore=
       (* we ignore all import statements during comparison *)
@@ -263,7 +291,7 @@ let ast_diff ~debug ?filename1 ?filename2 previous_content current_content =
       []
   | Ok ast1, Ok ast2 ->
       let diffs =
-        zip_and_build_diffs config ast1 ast2
+        zip_and_build_diffs missing_python_type_annotations_config ast1 ast2
         |> Diff.gen_explicit_diffs ~previous_content ~current_content
       in
       if debug then (
