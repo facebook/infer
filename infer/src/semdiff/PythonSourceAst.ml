@@ -90,6 +90,8 @@ module Node = struct
 
   let make_dict_node field_list = Dict (StringMap.of_list field_list)
 
+  let find_field field_name fields = StringMap.find_opt field_name fields
+
   let find_field_or_null field_name fields =
     Option.value (StringMap.find_opt field_name fields) ~default:Null
 
@@ -119,32 +121,38 @@ module Node = struct
         raise (UnsupportedJsonType j)
 
 
-  let rec to_str ?(indent = 0) (node : t) : string =
-    let indent_str = String.make (indent * 2) ' ' in
-    let next_indent = indent + 1 in
-    let next_indent_str = String.make (next_indent * 2) ' ' in
-    match node with
-    | Dict fields ->
-        "Dict: {"
-        ^ StringMap.fold
-            (fun k v acc -> acc ^ "\n" ^ next_indent_str ^ k ^ "=" ^ to_str ~indent:next_indent v)
-            fields ""
-        ^ "\n" ^ indent_str ^ "}"
-    | List l ->
-        "List: ["
-        ^ String.concat ~sep:" "
-            (List.map ~f:(fun node -> "\n" ^ next_indent_str ^ to_str ~indent:next_indent node) l)
-        ^ "\n" ^ indent_str ^ "]"
-    | Str s ->
-        "Str: " ^ s
-    | Int i ->
-        "Int: " ^ Int.to_string i
-    | Float f ->
-        "Float: " ^ Float.to_string f
-    | Bool b ->
-        "Bool: " ^ Bool.to_string b
-    | Null ->
-        "Null"
+  let rec to_str ?(indent = 0) ?(depth = Int.max_value) (node : t) : string =
+    if Int.equal depth 0 then "..."
+    else
+      let depth = depth - 1 in
+      let indent_str = String.make (indent * 2) ' ' in
+      let next_indent = indent + 1 in
+      let next_indent_str = String.make (next_indent * 2) ' ' in
+      match node with
+      | Dict fields ->
+          "Dict: {"
+          ^ StringMap.fold
+              (fun k v acc ->
+                acc ^ "\n" ^ next_indent_str ^ k ^ "=" ^ to_str ~indent:next_indent ~depth v )
+              fields ""
+          ^ "\n" ^ indent_str ^ "}"
+      | List l ->
+          "List: ["
+          ^ String.concat ~sep:" "
+              (List.map
+                 ~f:(fun node -> "\n" ^ next_indent_str ^ to_str ~indent:next_indent ~depth node)
+                 l )
+          ^ "\n" ^ indent_str ^ "]"
+      | Str s ->
+          "Str: " ^ s
+      | Int i ->
+          "Int: " ^ Int.to_string i
+      | Float f ->
+          "Float: " ^ Float.to_string f
+      | Bool b ->
+          "Bool: " ^ Bool.to_string b
+      | Null ->
+          "Null"
 
 
   let rec pp fmt = function

@@ -55,13 +55,15 @@ module Node : sig
 
   val make_dict_node : (string * t) list -> t
 
+  val find_field : string -> dict -> t option
+
   val find_field_or_null : string -> dict -> t
 
   val assoc_of_dict : dict -> string * (string * t) list
 
   val dict_of_assoc : string -> (string * t) list -> dict
 
-  val to_str : ?indent:int -> t -> string
+  val to_str : ?indent:int -> ?depth:int -> t -> string
 
   val pp : Format.formatter -> t -> unit
 end
