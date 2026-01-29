@@ -18,7 +18,6 @@ index 07f4956cccf2..24774b8464b2 100644
 +  CFLAGS   "-I${CMAKE_CURRENT_SOURCE_DIR}/../llvm" "-I${CMAKE_CURRENT_BINARY_DIR}/../llvm/include" -xc++ -std=c++17 -fpermissive
    LLVM     Core)
 diff --git a/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c b/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
-index ba4a9cbde37a..95f6c18b4bb0 100644
 --- a/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
 +++ b/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
 @@ -14,9 +14,13 @@
@@ -37,14 +36,13 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
  #include "caml/memory.h"
  #include "caml/mlvalues.h"
  #include "llvm-c/Core.h"
-@@ -24,6 +28,7 @@
+@@ -24,5 +28,6 @@
  #include "llvm-c/Support.h"
 
  #include "llvm_ocaml.h"
 +#include <string.h>
 
  // This is identical to the definition in llvm_debuginfo.ml:DIFlag.t
- typedef enum {
 @@ -139,6 +144,8 @@ static LLVMDIFlags map_DIFlag(LLVMDIFlag_i DIF) {
    }
  }
@@ -54,7 +52,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
  /* unit -> int */
  value llvm_debug_metadata_version(value Unit) {
    return Val_int(LLVMDebugMetadataVersion());
-@@ -163,18 +170,20 @@ static value alloc_diflags(LLVMDIFlags Flags) {
+@@ -163,17 +170,19 @@ static value alloc_diflags(LLVMDIFlags Flags) {
    return V;
  }
 
@@ -79,7 +77,6 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
 +  LLVMDIFlags Flag = map_DIFlag((LLVMDIFlag_i)Int_val(i_Flag));
    return Val_bool((DIFlags_val(Flags) & Flag) == Flag);
  }
-
 @@ -213,13 +222,14 @@ value llvm_dibuild_create_compile_unit_native(
      value SplitDebugInline, value DebugInfoForProfiling, value SysRoot,
      value SDK) {
@@ -102,20 +99,21 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
  }
 
  value llvm_dibuild_create_compile_unit_bytecode(value *argv, int argn) {
-@@ -326,6 +336,22 @@ value llvm_di_location_get_line(value Location) {
+@@ -326,6 +336,23 @@ value llvm_di_location_get_line(value Location) {
    return Val_int(LLVMDILocationGetLine(Metadata_val(Location)));
  }
 
 +value llvm_di_subprogram_get_type(value Subprogram) {
 +  CAMLparam1(Subprogram);
-+  CAMLlocal1(Array);
++  CAMLlocal2(Array, tmp_string);
 +  unsigned Length = 0;
 +  char **c_array =
 +      LLVMExtractDISubprogramType(Metadata_val(Subprogram), &Length);
-+  Array = caml_alloc_tuple_uninit(Length);
++  Array = caml_alloc_tuple(Length);
 +  for (unsigned i = 0; i < Length; ++i) {
 +    size_t len = strlen(c_array[i]);
-+    Field(Array, i) = cstr_to_string(c_array[i], len);
++    tmp_string = cstr_to_string(c_array[i], len);
++    caml_modify(&Field(Array, i), tmp_string);
 +    free(c_array[i]);
 +  }
 +  free(c_array);
@@ -125,7 +123,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
  value llvm_di_location_get_column(value Location) {
    return Val_int(LLVMDILocationGetColumn(Metadata_val(Location)));
  }
-@@ -362,7 +388,7 @@ value llvm_di_file_get_source(value File) {
+@@ -362,7 +389,7 @@ value llvm_di_file_get_source(value File) {
 
  value llvm_dibuild_get_or_create_type_array(value Builder, value Data) {
    mlsize_t Count = Wosize_val(Data);
@@ -134,7 +132,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    LLVMMetadataRef Metadata =
        LLVMDIBuilderGetOrCreateTypeArray(DIBuilder_val(Builder), Temp, Count);
    free(Temp);
-@@ -371,7 +397,7 @@ value llvm_dibuild_get_or_create_type_array(value Builder, value Data) {
+@@ -371,6 +398,6 @@ value llvm_dibuild_get_or_create_type_array(value Builder, value Data) {
 
  value llvm_dibuild_get_or_create_array(value Builder, value Data) {
    mlsize_t Count = Wosize_val(Data);
@@ -142,8 +140,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
 +  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Data);
    LLVMMetadataRef Metadata =
        LLVMDIBuilderGetOrCreateArray(DIBuilder_val(Builder), Temp, Count);
-   free(Temp);
-@@ -381,7 +407,7 @@ value llvm_dibuild_get_or_create_array(value Builder, value Data) {
+@@ -381,7 +408,7 @@ value llvm_dibuild_get_or_create_array(value Builder, value Data) {
  value llvm_dibuild_create_subroutine_type(value Builder, value File,
                                            value ParameterTypes, value Flags) {
    mlsize_t Count = Wosize_val(ParameterTypes);
@@ -152,7 +149,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateSubroutineType(
        DIBuilder_val(Builder), Metadata_val(File), Temp,
        Wosize_val(ParameterTypes), DIFlags_val(Flags));
-@@ -400,7 +426,7 @@ value llvm_dibuild_create_enumeration_type_native(
+@@ -400,7 +427,7 @@ value llvm_dibuild_create_enumeration_type_native(
      value Builder, value Scope, value Name, value File, value LineNumber,
      value SizeInBits, value AlignInBits, value Elements, value ClassTy) {
    mlsize_t Count = Wosize_val(Elements);
@@ -161,7 +158,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateEnumerationType(
        DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
        caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
-@@ -427,7 +453,7 @@ value llvm_dibuild_create_union_type_native(
+@@ -427,7 +454,7 @@ value llvm_dibuild_create_union_type_native(
      value Builder, value Scope, value Name, value File, value LineNumber,
      value SizeInBits, value AlignInBits, value Flags, value Elements,
      value RunTimeLanguage, value UniqueId) {
@@ -170,7 +167,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateUnionType(
        DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
        caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
-@@ -456,7 +482,7 @@ value llvm_dibuild_create_union_type_bytecode(value *argv, int argn) {
+@@ -456,7 +483,7 @@ value llvm_dibuild_create_union_type_bytecode(value *argv, int argn) {
  value llvm_dibuild_create_array_type(value Builder, value Size,
                                       value AlignInBits, value Ty,
                                       value Subscripts) {
@@ -179,7 +176,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateArrayType(
        DIBuilder_val(Builder), (uint64_t)Int_val(Size), Int_val(AlignInBits),
        Metadata_val(Ty), Temp, Wosize_val(Subscripts));
-@@ -467,7 +493,7 @@ value llvm_dibuild_create_array_type(value Builder, value Size,
+@@ -467,7 +494,7 @@ value llvm_dibuild_create_array_type(value Builder, value Size,
  value llvm_dibuild_create_vector_type(value Builder, value Size,
                                        value AlignInBits, value Ty,
                                        value Subscripts) {
@@ -188,7 +185,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateVectorType(
        DIBuilder_val(Builder), (uint64_t)Int_val(Size), Int_val(AlignInBits),
        Metadata_val(Ty), Temp, Wosize_val(Subscripts));
-@@ -515,7 +541,7 @@ value llvm_dibuild_create_struct_type_native(
+@@ -515,7 +542,7 @@ value llvm_dibuild_create_struct_type_native(
      value Builder, value Scope, value Name, value File, value LineNumber,
      value SizeInBits, value AlignInBits, value Flags, value DerivedFrom,
      value Elements, value RunTimeLanguage, value VTableHolder, value UniqueId) {
@@ -197,7 +194,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateStructType(
        DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
        caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
-@@ -602,7 +628,7 @@ value llvm_dibuild_create_member_pointer_type_native(
+@@ -602,7 +629,7 @@ value llvm_dibuild_create_member_pointer_type_native(
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateMemberPointerType(
        DIBuilder_val(Builder), Metadata_val(PointeeType),
        Metadata_val(ClassType), (uint64_t)Int_val(SizeInBits),
@@ -206,7 +203,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
    return to_val(Metadata);
  }
 
-@@ -772,7 +798,7 @@ value llvm_dibuild_create_class_type_native(
+@@ -772,6 +799,6 @@ value llvm_dibuild_create_class_type_native(
      value SizeInBits, value AlignInBits, value OffsetInBits, value Flags,
      value DerivedFrom, value Elements, value VTableHolder,
      value TemplateParamsNode, value UniqueIdentifier) {
@@ -214,8 +211,7 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
 +  LLVMMetadataRef *Temp = (LLVMMetadataRef *)from_val_array(Elements);
    LLVMMetadataRef Metadata = LLVMDIBuilderCreateClassType(
        DIBuilder_val(Builder), Metadata_val(Scope), String_val(Name),
-       caml_string_length(Name), Metadata_val(File), Int_val(LineNumber),
-@@ -1023,3 +1049,7 @@ value llvm_set_is_new_dbg_info_format(value Module, value UseNewFormat) {
+@@ -1023,3 +1050,7 @@ value llvm_set_is_new_dbg_info_format(value Module, value UseNewFormat) {
    LLVMSetIsNewDbgInfoFormat(Module_val(Module), Bool_val(UseNewFormat));
    return Val_unit;
  }
@@ -224,7 +220,6 @@ index ba4a9cbde37a..95f6c18b4bb0 100644
 +}
 +#endif
 diff --git a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
-index 8bb5edb17a2c..4d9dc2609af0 100644
 --- a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
 +++ b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
 @@ -523,6 +523,9 @@ external set_subprogram : Llvm.llvalue -> Llvm.llmetadata -> unit
@@ -253,7 +248,6 @@ index 7c7882ccce85..e76c7d3625d2 100644
 
 diff --git a/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c b/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c
 new file mode 100644
-index 000000000000..33080391689b
 --- /dev/null
 +++ b/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c
 @@ -0,0 +1,52 @@
@@ -310,7 +304,6 @@ index 000000000000..33080391689b
 +  return result;
 +}
 diff --git a/llvm/bindings/ocaml/llvm/llvm_ocaml.h b/llvm/bindings/ocaml/llvm/llvm_ocaml.h
-index ec60d6a5dad6..073e8a46796d 100644
 --- a/llvm/bindings/ocaml/llvm/llvm_ocaml.h
 +++ b/llvm/bindings/ocaml/llvm/llvm_ocaml.h
 @@ -45,6 +45,7 @@ void *from_val(value v);

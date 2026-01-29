@@ -83,6 +83,6 @@ extra-source "5_getAllocatedType.patch" {
 }
 extra-source "6_LLVMExtractDISubprogramType.patch" {
   src: "dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
-  checksum: [ "sha256=c46ae6128dbe0c330d082f5959166dc9ef32c9bf68a5b016fe41b16af90ef26c"]
+  checksum: [ "sha256=090e1b70a75c32b378162e82f4e8028a32f5e49cbc004a7dffc27a8d33f8a129"]
 }
 extra-files: ["install.sh" "sha256=9d4a83c6b661ca4a80289d8a5bc0cddd6dd5d7e25ca9d61a8c358d801e2b8cdf"]
