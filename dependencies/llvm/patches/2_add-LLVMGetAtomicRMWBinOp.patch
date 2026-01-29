@@ -9,7 +9,6 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.ml b/llvm/bindings/ocaml/llvm/l
  external instr_clone : llvalue -> llvalue = "llvm_instr_clone"
  
  let rec iter_instrs_range f i e =
-diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.mli b/llvm/bindings/ocaml/llvm/llvm.mli
 --- a/llvm/bindings/ocaml/llvm/llvm.mli	2025-04-11 07:46:28.842864717 -0700
 +++ b/llvm/bindings/ocaml/llvm/llvm.mli	2025-04-11 07:45:58.343665651 -0700
 @@ -1743,6 +1743,11 @@
@@ -24,22 +23,22 @@ diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm.mli b/llvm/bindings/ocaml/llvm/
  (** [inst_clone i] returns a copy of instruction [i],
      The instruction has no parent, and no name.
      See the method [llvm::Instruction::clone]. *)
-diff -wbBdu -Nru a/llvm/bindings/ocaml/llvm/llvm_ocaml.c b/llvm/bindings/ocaml/llvm/llvm_ocaml.c
 --- a/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 07:46:41.875949783 -0700
 +++ b/llvm/bindings/ocaml/llvm/llvm_ocaml.c	2025-04-11 07:45:58.343665651 -0700
-@@ -1927,6 +1927,17 @@
+@@ -1927,6 +1927,18 @@
    return caml_alloc_some(Val_int(x - LLVMRealPredicateFalse));
  }
  
 +/* llvalue -> AtomicRMWBinOp.t */
 +value llvm_instr_get_atomicrmw_binop(value v) {
++  CAMLparam1(v);
 +  LLVMValueRef Inst = Value_val(v);
 +  LLVMAtomicRMWBinOp o;
 +  if (!LLVMIsAInstruction(Inst))
 +    caml_failwith("Not an instruction");
 +  o = LLVMGetAtomicRMWBinOp(Inst);
 +  assert(o <= LLVMAtomicRMWBinOpFSub);
-+  return Val_int(o);
++  CAMLreturn(Val_int(o));
 +}
 +
  /* llvalue -> llvalue */
