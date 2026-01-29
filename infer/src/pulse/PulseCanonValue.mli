@@ -31,6 +31,8 @@ module type S = sig
   (** an abstract value that needs to be normalized; just [AbstractValue.t] under the hood too *)
   type needs_canon
 
+  val downcast_needs_canon : AbstractValue.t -> needs_canon
+
   (** [PulseAbductiveDomain.t] but we cannot mention it there otherwise it would create a circular
       dependency.*)
   type astate

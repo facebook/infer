@@ -13,7 +13,7 @@ void trivial_constant_true_bad() {
   while(0 == 0) {}
 }
 
-void FN_condition_never_changes_bad() {
+void condition_never_changes_bad() {
   int i = 0;
   int j = 0;
   while (i == 0) {

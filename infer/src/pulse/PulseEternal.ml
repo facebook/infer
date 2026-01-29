@@ -370,3 +370,10 @@ let implies (astate_lhs : AbductiveDomain.t) (astate_rhs : AbductiveDomain.t) =
           (PulseFormulaAtom.pp_with_pp_var AbstractValue.pp)
           atom ;
         false )
+
+
+let abstract header_id astate =
+  astate
+  |> AbductiveDomain.set_loop_invariant_under_inference header_id
+  |> AbductiveDomain.set_path_condition Formula.ttrue
+  |> AbductiveDomain.Memory.dealias_post

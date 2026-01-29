@@ -1554,7 +1554,7 @@ module PulseTransferFunctions = struct
               "[LOOP INVARIANT]     loop entry at node %a - starting abstract execution@\n"
               Procdesc.Node.pp_id id ;
             AnalysisState.set_active_loop id ;
-            let abstracted_astate = AbductiveDomain.start_loop_invariant_inference id astate in
+            let abstracted_astate = PulseEternal.abstract id astate in
             add_abstracted_state_at_loop_head header_id abstracted_astate ;
             ([ContinueProgram astate; ContinueProgram abstracted_astate], path, astate_n) )
           else ([ContinueProgram astate], path, astate_n)

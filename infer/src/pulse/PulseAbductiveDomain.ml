@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module Hashtbl = Stdlib.Hashtbl
 module L = Logging
 open PulseBasicInterface
 module BaseDomain = PulseBaseDomain
@@ -173,10 +174,8 @@ let record_call_resolution ~caller callsite_loc call_kind resolution astate =
   {astate with transitive_info}
 
 
-let start_loop_invariant_inference header astate =
-  { astate with
-    path_condition= Formula.ttrue
-  ; loop_invariant_under_inference= Some {entry_astate= astate; header} }
+let set_loop_invariant_under_inference header astate =
+  {astate with loop_invariant_under_inference= Some {entry_astate= astate; header}}
 
 
 let is_loop_invariant_under_inference id {loop_invariant_under_inference= opt} =
@@ -250,6 +249,10 @@ module Internal = struct
             f access (CanonValue.canon_fst astate addr_hist) )
 
 
+      let map astate edges ~f =
+        BaseMemory.Edges.map edges ~f:(fun addr_hist -> f (CanonValue.canon_fst astate addr_hist))
+
+
       let fold_merge astate1 astate2 edges1_opt edges2_opt ~init ~f =
         let edges1 = Option.value edges1_opt ~default:BaseMemory.Edges.empty in
         let edges2 = Option.value edges2_opt ~default:BaseMemory.Edges.empty in
@@ -267,6 +270,8 @@ module Internal = struct
         in
         (!acc_ref, edges)
     end
+
+    let map_edges astate heap ~f = BaseMemory.mapi (fun _v edges -> Edges.map astate edges ~f) heap
 
     let fold_edges astate v heap ~init ~f =
       match BaseMemory.find_opt v heap with
@@ -2563,6 +2568,24 @@ module Memory = struct
       ~init
       ~f:(fun acc access v_hist1_opt v_hist2_opt ->
         f acc (downcast_access access) (downcast_opt_fst v_hist1_opt) (downcast_opt_fst v_hist2_opt) )
+
+
+  let dealias_post astate =
+    SafeMemory.map_post_heap astate ~f:(fun heap ->
+        (* using [Hashtbl] to create a hash set *)
+        let range = Hashtbl.create (BaseMemory.cardinal heap) in
+        SafeBaseMemory.map_edges astate heap ~f:(fun (v, hist) ->
+            let v = downcast v in
+            let v =
+              if Hashtbl.mem range v then
+                (* no need to add the new value to [range] since it cannot appear elsewhere in the
+                   heap because it is fresh (hence cannot be another aliased value) *)
+                AbstractValue.mk_fresh_same_kind v
+              else (
+                Hashtbl.add range v () ;
+                v )
+            in
+            (CanonValue.downcast_needs_canon v, hist) ) )
 end
 
 let add_block_source v block astate =

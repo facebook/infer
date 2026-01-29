@@ -24,6 +24,8 @@ module type S = sig
 
   type needs_canon
 
+  val downcast_needs_canon : AbstractValue.t -> needs_canon
+
   val canon : astate -> needs_canon -> t
 
   val canon' : astate -> AbstractValue.t -> t
@@ -95,6 +97,8 @@ end) : S with type astate = AbductiveDomain.astate = struct
   let unsafe_cast_set x = x [@@inline always]
 
   type needs_canon = AbstractValue.t
+
+  let downcast_needs_canon = Fn.id
 
   let mk_fresh = AbstractValue.mk_fresh
 
