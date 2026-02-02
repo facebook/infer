@@ -152,7 +152,8 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
   (Textual.ProcDecl.of_binop bin_op, typ)
 
 
-let adt_ty_to_textual_typ (type_decl_ref : Charon.Generated_Types.type_decl_ref) : Textual.Typ.t =
+let rec adt_ty_to_textual_typ (type_decl_ref : Charon.Generated_Types.type_decl_ref) : Textual.Typ.t
+    =
   (* TODO: Implement non-empty tuple and other adt types *)
   match type_decl_ref.id with
   | TTuple ->
@@ -165,7 +166,7 @@ let adt_ty_to_textual_typ (type_decl_ref : Charon.Generated_Types.type_decl_ref)
         type_decl_ref
 
 
-let rec ty_to_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
+and ty_to_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
   (* Bool and char are mapped to int since Textual does not have bool type *)
   match rust_ty with
   | TLiteral (TInt _) | TLiteral (TUInt _) | TLiteral TBool | TLiteral TChar ->
@@ -178,6 +179,20 @@ let rec ty_to_textual_typ (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t 
       adt_ty_to_textual_typ type_decl_ref
   | _ ->
       L.die UserError "Unsupported type: %a" Charon.Generated_Types.pp_ty rust_ty
+
+
+let cast_kind_to_textual_typ (_crate : Charon.UllbcAst.crate)
+    (cast_kind : Charon.Generated_Expressions.cast_kind) : Textual.Typ.t =
+  match cast_kind with
+  | CastScalar (_, target_typ) ->
+      ty_to_textual_typ (TLiteral target_typ)
+  | CastRawPtr (_, target_typ) ->
+      ty_to_textual_typ target_typ
+  | CastTransmute (_, target_type) ->
+      ty_to_textual_typ target_type
+  | _ ->
+      (* TODO: Add Support for more cast types*)
+      Textual.Typ.Void
 
 
 (* A map from place ids to (place name, type) *)
@@ -252,22 +267,32 @@ let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
       L.die UserError "Unsupported literal type: %a" Charon.Generated_Types.pp_ty rust_ty
 
 
-let mk_exp_from_place (place_map : place_map_ty) (place : Charon.Generated_Expressions.place) :
-    Textual.Exp.t * Textual.Typ.t =
+let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
+    (place : Charon.Generated_Expressions.place) : Textual.Exp.t * Textual.Typ.t =
+  let typ = ty_to_textual_typ place.ty in
   match place.kind with
   | PlaceLocal var_id ->
-      let typ = ty_to_textual_typ place.ty in
       let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
-      (Textual.Exp.Load {exp; typ= Some typ}, typ)
+      (exp, typ)
+  | PlaceProjection (projection_place, Deref) ->
+      let exp, proj_typ = mk_exp_from_place ~loc crate place_map projection_place in
+      (Textual.Exp.Load {exp; typ= Some proj_typ}, typ)
   | _ ->
       L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place
 
 
-let mk_exp_from_operand (place_map : place_map_ty) (operand : Charon.Generated_Expressions.operand)
-    : Textual.Exp.t * Textual.Typ.t =
+and mk_exp_from_place_load ~loc (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
+    (place : Charon.Generated_Expressions.place) : Textual.Exp.t * Textual.Typ.t =
+  let typ = ty_to_textual_typ place.ty in
+  let exp, _ = mk_exp_from_place ~loc crate place_map place in
+  (Textual.Exp.Load {exp; typ= Some typ}, typ)
+
+
+and mk_exp_from_operand ~loc crate (place_map : place_map_ty)
+    (operand : Charon.Generated_Expressions.operand) : Textual.Exp.t * Textual.Typ.t =
   match operand with
   | Copy place | Move place ->
-      mk_exp_from_place place_map place
+      mk_exp_from_place_load ~loc crate place_map place
   | Constant const_operand ->
       let value = const_operand.value in
       let rust_ty = const_operand.ty in
@@ -276,23 +301,35 @@ let mk_exp_from_operand (place_map : place_map_ty) (operand : Charon.Generated_E
       (exp, textual_typ)
 
 
-let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map : place_map_ty) :
-    Textual.Exp.t * Textual.Typ.t =
+let mk_exp_from_rvalue ~loc crate (rvalue : Charon.Generated_Expressions.rvalue)
+    (place_map : place_map_ty) : Textual.Exp.t * Textual.Typ.t =
   match rvalue with
+  | UnaryOp (Cast cast_kind, operand) ->
+      let exp, _ = mk_exp_from_operand ~loc crate place_map operand in
+      let target_typ = cast_kind_to_textual_typ crate cast_kind in
+      let call = Textual.Exp.cast target_typ exp in
+      (call, target_typ)
   | UnaryOp (op, operand) ->
-      let exp, typ = mk_exp_from_operand place_map operand in
+      let exp, typ = mk_exp_from_operand ~loc crate place_map operand in
       let qualified_proc_name = proc_name_from_unop op in
       let call = Textual.Exp.call_non_virtual qualified_proc_name [exp] in
       (call, typ)
   | BinaryOp (op, operand1, operand2) ->
-      let exp1, typ1 = mk_exp_from_operand place_map operand1 in
-      let exp2, _ = mk_exp_from_operand place_map operand2 in
+      let exp1, typ1 = mk_exp_from_operand ~loc crate place_map operand1 in
+      let exp2, _ = mk_exp_from_operand ~loc crate place_map operand2 in
       let qualified_proc_name, typ_binop = proc_name_from_binop op typ1 in
       let call = Textual.Exp.call_non_virtual qualified_proc_name [exp1; exp2] in
       (call, typ_binop)
+  | RawPtr ({kind= PlaceLocal var_id; ty}, _) | RvRef ({kind= PlaceLocal var_id; ty}, _) ->
+      let typ = ty_to_textual_typ ty in
+      let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
+      (exp, Textual.Typ.Ptr typ)
+  | RawPtr (place, _) | RvRef (place, _) ->
+      let exp, typ = mk_exp_from_place ~loc crate place_map place in
+      (exp, Textual.Typ.Ptr typ)
   | Aggregate (kind, ops) -> (
       (* TODO: Handle non-empty aggregates as well *)
-      let exps = List.map ~f:(fun op -> mk_exp_from_operand place_map op |> fst) ops in
+      let exps = List.map ~f:(fun op -> mk_exp_from_operand ~loc crate place_map op |> fst) ops in
       match (kind, exps) with
       | AggregatedAdt (_, None, None), [] ->
           (Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void)
@@ -300,7 +337,7 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
           L.die UserError "Unsupported aggregate type: %a" Charon.Generated_Expressions.pp_rvalue
             rvalue )
   | Use op ->
-      mk_exp_from_operand place_map op
+      mk_exp_from_operand ~loc crate place_map op
   | _ ->
       L.die UserError "Unsupported rvalue: %a" Charon.Generated_Expressions.pp_rvalue rvalue
 
@@ -317,13 +354,13 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       ([], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.Return ->
       let place = mk_return_place place_map in
-      let exp, _ = mk_exp_from_place place_map place in
+      let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
       ([], Textual.Terminator.Ret exp)
   | Charon.Generated_UllbcAst.Switch (_operand, (SwitchInt (_, _, _) as switch)) ->
       L.die UserError "Unsupported switch type: SwitchInt %a\n" Charon.Generated_UllbcAst.pp_switch
         switch
   | Charon.Generated_UllbcAst.Switch (operand, If (then_block_id, else_block_id)) ->
-      let exp, _ = mk_exp_from_operand place_map operand in
+      let exp, _ = mk_exp_from_operand ~loc crate place_map operand in
       let then_label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int then_block_id) in
       let else_label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int else_block_id) in
       let bexp = Textual.BoolExp.Exp exp in
@@ -333,13 +370,15 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       let else_ = Textual.Terminator.Jump [else_node_call] in
       ([], Textual.Terminator.If {bexp; then_; else_})
   | Charon.Generated_UllbcAst.Call (call, block_id_1, _) ->
-      let args_exps, _ = List.map call.args ~f:(mk_exp_from_operand place_map) |> List.unzip in
+      let args_exps, _ =
+        List.map call.args ~f:(mk_exp_from_operand ~loc crate place_map) |> List.unzip
+      in
       let proc_name = Textual.ProcName.of_string (fun_name_from_fun_operand crate call.func) in
       let qualified_proc_name =
         { Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel
         ; name= proc_name }
       in
-      let dest_exp, dest_typ = mk_exp_from_place place_map call.dest in
+      let dest_exp, dest_typ = mk_exp_from_place ~loc crate place_map call.dest in
       let call_exp =
         Textual.Exp.Call {proc= qualified_proc_name; args= args_exps; kind= Textual.Exp.NonVirtual}
       in
@@ -357,19 +396,15 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       L.die UserError "Unsupported terminator: %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
 
-let mk_instr (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.statement) :
+let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.statement) :
     Textual.Instr.t list =
   let loc = location_from_span statement.span in
   match statement.content with
-  | Assign ({kind= PlaceLocal var_id}, rhs) ->
-      let id = Charon.Generated_Expressions.LocalId.to_int var_id in
-      let varname, _ = PlaceMap.find id place_map in
-      let exp1 = Textual.Exp.Lvar varname in
-      let exp2, typ = mk_exp_from_rvalue rhs place_map in
+  | Assign (lhs, rhs) ->
+      let exp1, _ = mk_exp_from_place ~loc crate place_map lhs in
+      let exp2, typ = mk_exp_from_rvalue ~loc crate rhs place_map in
       let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
       [store_instr]
-  | Assign (lhs, _rhs) ->
-      L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place lhs
   | StorageDead _ ->
       []
   | StorageLive _ ->
@@ -392,7 +427,7 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
   let label = mk_label idx in
   let ssa_parameters = [] in
   let exn_succs = [] in
-  let instrs = block.statements |> List.concat_map ~f:(mk_instr place_map) in
+  let instrs = block.statements |> List.concat_map ~f:(mk_instr crate place_map) in
   let term_instr, last = mk_terminator crate place_map block.terminator in
   let instrs = instrs @ term_instr in
   let last_loc = location_from_span block.terminator.span in

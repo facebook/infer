@@ -31,15 +31,14 @@ fn main() {
     define dummy::foo() : void {
       local var_0: void
       #node_0:
-          n0:void = load &var_0
-          n1 = dummy::bar()
-          store n0 <- n1:void
+          n0 = dummy::bar()
+          store &var_0 <- n0:void
           jmp node_2
 
       #node_2:
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n1:void = load &var_0
+          ret n1
 
     }
 
@@ -56,15 +55,14 @@ fn main() {
     define dummy::main() : void {
       local var_0: void
       #node_0:
-          n0:void = load &var_0
-          n1 = dummy::foo()
-          store n0 <- n1:void
+          n0 = dummy::foo()
+          store &var_0 <- n0:void
           jmp node_2
 
       #node_2:
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n1:void = load &var_0
+          ret n1
 
     }
     |}]
@@ -146,16 +144,15 @@ fn main() {
     define dummy::main() : void {
       local var_0: void, x_1: int
       #node_0:
-          n0:int = load &x_1
-          n1 = dummy::id(10)
-          store n0 <- n1:int
+          n0 = dummy::id(10)
+          store &x_1 <- n0:int
           jmp node_1
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n1:void = load &var_0
+          ret n1
 
     }
     |}]
@@ -211,16 +208,15 @@ fn main() {
     define dummy::main() : void {
       local var_0: void, x_1: int
       #node_0:
-          n0:int = load &x_1
-          n1 = dummy::ifelse(1, 10, 20)
-          store n0 <- n1:int
+          n0 = dummy::ifelse(1, 10, 20)
+          store &x_1 <- n0:int
           jmp node_1
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n1:void = load &var_0
+          ret n1
 
     }
     |}]

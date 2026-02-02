@@ -1,0 +1,28 @@
+# Final ULLBC before serialization:
+
+// Full name: basic_deref::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+    let ref_x@2: &'_ (i32); // local
+    let y@3: i32; // local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (42 : i32);
+        storage_live(ref_x@2);
+        ref_x@2 := &x@1;
+        storage_live(y@3);
+        y@3 := copy (*(ref_x@2));
+        @0 := ();
+        storage_dead(y@3);
+        storage_dead(ref_x@2);
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+
