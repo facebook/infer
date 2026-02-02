@@ -1,0 +1,20 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define basic_mut_ref::main() : void {
+  local var_0: void, y_1: int, x_2: *int
+  #node_0:
+      store &y_1 <- 10:int
+      store &x_2 <- &y_1:*int
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n0:void = load &var_0
+      ret n0
+      
+}
+

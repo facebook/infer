@@ -1,0 +1,23 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define basic_deref::main() : void {
+  local var_0: void, x_1: int, ref_x_2: *int, y_3: int
+  #node_0:
+      store &x_1 <- 42:int
+      store &ref_x_2 <- &x_1:*int
+      n0:*int = load &ref_x_2
+      n1:int = load n0
+      store &y_3 <- n1:int
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n2:void = load &var_0
+      ret n2
+      
+}
+
