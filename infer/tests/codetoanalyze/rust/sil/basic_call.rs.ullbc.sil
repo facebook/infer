@@ -1,0 +1,48 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define basic_call::main() : void {
+  local var_0: void
+  #node_0:
+      n0:void = load &var_0
+      n1 = basic_call::foo()
+      store n0 <- n1:void
+      jmp node_2
+      
+  #node_2:
+      store &var_0 <- null:void
+      n2:void = load &var_0
+      ret n2
+      
+}
+
+define basic_call::foo() : void {
+  local var_0: void
+  #node_0:
+      n0:void = load &var_0
+      n1 = basic_call::bar()
+      store n0 <- n1:void
+      jmp node_2
+      
+  #node_2:
+      store &var_0 <- null:void
+      n2:void = load &var_0
+      ret n2
+      
+}
+
+define basic_call::bar() : void {
+  local var_0: void
+  #node_0:
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n0:void = load &var_0
+      ret n0
+      
+}
+

@@ -1,0 +1,58 @@
+# Final ULLBC before serialization:
+
+// Full name: ifelse_function::ifelse
+fn ifelse(@1: bool, @2: i32, @3: i32) -> i32
+{
+    let @0: i32; // return
+    let b@1: bool; // arg #1
+    let x@2: i32; // arg #2
+    let y@3: i32; // arg #3
+    let @4: bool; // anonymous local
+
+    bb0: {
+        storage_live(@4);
+        @4 := copy (b@1);
+        if move (@4) -> bb1 else -> bb2;
+    }
+
+    bb1: {
+        @0 := copy (x@2);
+        goto bb3;
+    }
+
+    bb2: {
+        @0 := copy (y@3);
+        goto bb3;
+    }
+
+    bb3: {
+        storage_dead(@4);
+        return;
+    }
+}
+
+// Full name: ifelse_function::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := ifelse(const (true), const (10 : i32), const (20 : i32)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        @0 := ();
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+
+
