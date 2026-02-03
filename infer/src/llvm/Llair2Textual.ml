@@ -20,6 +20,10 @@ module IdentMap = Textual.Ident.Map
 
 type module_state = ModuleState.t
 
+let witness_protocol_suffix = "WP"
+
+let class_virtual_table_suffix = "Mf"
+
 let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
 
 let llvm_dynamic_call = Textual.ProcName.of_string "llvm_dynamic_call"
@@ -1082,12 +1086,23 @@ let add_method_to_class_method_index class_method_index class_name proc_name ind
 
 let process_globals lang class_method_index method_class_index ~mangled_map ~struct_map globals_map
     =
-  let class_from_global lang struct_map global_name =
-    let name = String.substr_replace_first global_name ~pattern:"$s" ~with_:"T" in
-    let name = String.chop_suffix_exn name ~suffix:"Mf" in
+  let class_from_global ~suffix lang struct_map global_name =
+    let name =
+      if String.equal suffix witness_protocol_suffix then global_name
+      else
+        let name = String.substr_replace_first global_name ~pattern:"$s" ~with_:"T" in
+        String.chop_suffix_exn name ~suffix
+    in
     TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
   in
-  let process_exp global (last_offset, carry) exp typ =
+  let process_func_name struct_map name ~suffix global offset =
+    let class_name = class_from_global ~suffix lang struct_map global in
+    let proc_name = Textual.ProcName.of_string name in
+    let proc = Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name} in
+    add_method_to_class_method_index class_method_index class_name proc offset ;
+    Textual.ProcName.Hashtbl.replace method_class_index proc_name class_name
+  in
+  let process_exp struct_map global ~suffix (last_offset, carry) exp typ =
     match typ with
     | Llair.Typ.Integer {bits} when Int.equal bits 64 ->
         (last_offset + 1, 0)
@@ -1101,38 +1116,59 @@ let process_globals lang class_method_index method_class_index ~mangled_map ~str
         let offset = last_offset + 1 in
         ( match exp with
         | Llair.Exp.FuncName {name} ->
-            let class_name = class_from_global lang struct_map global in
-            let proc_name = Textual.ProcName.of_string name in
-            let proc =
-              Textual.QualifiedProcName.{enclosing_class= Enclosing class_name; name= proc_name}
-            in
-            add_method_to_class_method_index class_method_index class_name proc (offset - 3) ;
-            Textual.ProcName.Hashtbl.replace method_class_index proc_name class_name
+            process_func_name struct_map name ~suffix global (offset - 3)
         | _ ->
             () ) ;
         (offset, 0)
     | _ ->
         (last_offset, carry)
   in
-  let collect_class_method_indices global_name exp =
+  let process_exp_witness_protocol struct_map global ~suffix offset exp =
+    match exp with
+    | Llair.Exp.FuncName {name} ->
+        process_func_name struct_map name ~suffix global offset
+    | _ ->
+        ()
+  in
+  let collect_class_method_indices struct_map ~suffix global_name exp =
     match exp with
     | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements) ->
         let elements = StdUtils.iarray_to_list elements in
         let _, types = StdUtils.iarray_to_list elts |> List.unzip in
-        ignore (List.fold2_exn ~f:(process_exp global_name) ~init:(-1, 0) elements types)
+        ignore
+          (List.fold2_exn
+             ~f:(process_exp struct_map ~suffix global_name)
+             ~init:(-1, 0) elements types )
+    | Llair.Exp.ApN (Record, Llair.Typ.Array _, elements) ->
+        let elements = StdUtils.iarray_to_list elements in
+        ignore (List.mapi ~f:(process_exp_witness_protocol struct_map global_name ~suffix) elements)
     | _ ->
         ()
   in
-  let process_global _var global =
+  let process_global _var global struct_map =
     match global with
     | GlobalDefn.{name; init= Some exp_typ} ->
         let global_name = Global.name name in
-        if String.is_suffix global_name ~suffix:"CMf" then
-          collect_class_method_indices global_name (fst exp_typ)
+        let suffix = "C" ^ class_virtual_table_suffix in
+        if String.is_suffix global_name ~suffix then (
+          collect_class_method_indices struct_map global_name (fst exp_typ)
+            ~suffix:class_virtual_table_suffix ;
+          struct_map )
+        else
+          let suffix = witness_protocol_suffix in
+          if String.is_suffix global_name ~suffix then (
+            let struct_name = TypeName.to_textual_type_name lang global_name in
+            let struct_ =
+              Textual.Struct.{name= struct_name; supers= []; fields= []; attributes= []}
+            in
+            let struct_map = Textual.TypeName.Map.add struct_name struct_ struct_map in
+            collect_class_method_indices struct_map global_name (fst exp_typ) ~suffix ;
+            struct_map )
+          else struct_map
     | _ ->
-        ()
+        struct_map
   in
-  Textual.VarName.Map.iter process_global globals_map
+  Textual.VarName.Map.fold process_global globals_map struct_map
 
 
 let to_textual_global ~module_state sourcefile global =
@@ -1364,7 +1400,9 @@ let init_module_state (llair_program : Llair.program) lang =
   let mangled_map = Llair2TextualTypeName.compute_mangled_map struct_map in
   let plain_map = Llair2TextualTypeName.compute_plain_map struct_map in
   let class_method_index = Textual.TypeName.Hashtbl.create 16 in
-  process_globals lang class_method_index method_class_index ~mangled_map ~struct_map globals_map ;
+  let struct_map =
+    process_globals lang class_method_index method_class_index ~mangled_map ~struct_map globals_map
+  in
   let proc_decls =
     update_function_signatures lang class_method_index method_class_index ~mangled_map ~struct_map
       ~plain_map proc_decls

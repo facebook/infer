@@ -87,7 +87,7 @@ define $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFxSPys6UInt64V
       unreachable @[833:0]
       
   #12: @[831:0]
-      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "self must be a properly aligned pointer for types Pointee and T"), 63, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 31972, 0) @[831:0]
+      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "self must be a properly aligned pointer for types Pointee and T"), 63, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 31883, 0) @[831:0]
       jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[832:0]
       
   #13: @[834:0]
@@ -122,7 +122,7 @@ define $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFxSPys6UInt64V
       ret null @[841:0]
       
   #26: @[847:0]
-      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45390, 0) @[847:0]
+      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45301, 0) @[847:0]
       jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::1::ret @[848:0]
       
   #9::ret: @[830:0]
@@ -439,7 +439,7 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::11::ret @[745:0]
       
   #106: @[750:0]
-      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45390, 0) @[750:0]
+      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45301, 0) @[750:0]
       jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[751:0]
       
   #107: @[753:0]

@@ -2802,6 +2802,9 @@ field_0: *int}
 type __infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycSgvM::Frame> = {
 field_0: *int}
 
+type __infer_swift_type<$s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAWP> = {
+}
+
 type __infer_swift_type<$s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM::Frame> = {
 field_0: *int}
 

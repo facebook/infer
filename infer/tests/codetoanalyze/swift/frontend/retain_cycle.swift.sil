@@ -149,7 +149,7 @@ define .plain_name = "init" .method_offset = "22" __infer_swift_type<T5Hello9Tra
       
 } @?
 
-declare .plain_name = "didReceiveMessage" $s5Hello9TransportCAA23MessageReceiverDelegateA2aDP010didReceiveC0yySSFTW(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+declare .plain_name = "didReceiveMessage" .method_offset = "1" __infer_swift_type<$s5Hello9TransportCAA23MessageReceiverDelegateAAWP>.$s5Hello9TransportCAA23MessageReceiverDelegateA2aDP010didReceiveC0yySSFTW(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 define .plain_name = "connected.set" .method_offset = "14" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvs(var1: int, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
   local var4: *int
@@ -1001,6 +1001,9 @@ field_0: *int}
 
 type __infer_swift_type<$s5Hello9TransportC9connectedAC15ConnectionStateOvM::Frame> = {
 field_0: *int}
+
+type __infer_swift_type<$s5Hello9TransportCAA23MessageReceiverDelegateAAWP> = {
+}
 
 type __infer_swift_type<Any> = {field_0: *__infer_swift_type<ptr_elt>;
                                 field_1: *__infer_swift_type<ptr_elt>}
