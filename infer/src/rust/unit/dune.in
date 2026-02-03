@@ -23,6 +23,8 @@ let library =
    -open
    IBase
    -open
+   IR
+   -open
    Textuallib))
  (libraries
   core
@@ -30,6 +32,7 @@ let library =
   zarith
   IStdlib
   IBase
+  IR
   Textuallib
   RustFrontend
   yojson

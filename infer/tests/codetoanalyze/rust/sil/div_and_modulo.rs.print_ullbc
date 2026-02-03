@@ -1,0 +1,112 @@
+# Final ULLBC before serialization:
+
+// Full name: div_and_modulo::main
+fn main()
+{
+    let @0: (); // return
+    let a@1: u32; // local
+    let b@2: u32; // local
+    let @3: u32; // anonymous local
+    let @4: u32; // anonymous local
+    let @5: u32; // anonymous local
+    let @6: u32; // anonymous local
+    let @7: u32; // anonymous local
+    let @8: u32; // anonymous local
+    let c@9: i32; // local
+    let d@10: i32; // local
+    let @11: i32; // anonymous local
+    let @12: i32; // anonymous local
+    let @13: i32; // anonymous local
+    let @14: i32; // anonymous local
+    let @15: i32; // anonymous local
+    let @16: i32; // anonymous local
+    let e@17: i32; // local
+    let f@18: i32; // local
+    let @19: i32; // anonymous local
+    let @20: i32; // anonymous local
+    let @21: i32; // anonymous local
+    let @22: i32; // anonymous local
+    let @23: i32; // anonymous local
+    let @24: i32; // anonymous local
+
+    bb0: {
+        storage_live(a@1);
+        a@1 := const (7 : u32);
+        storage_live(b@2);
+        b@2 := const (3 : u32);
+        storage_live(@3);
+        storage_live(@4);
+        @4 := copy (a@1);
+        storage_live(@5);
+        @5 := copy (b@2);
+        @3 := move (@4) panic./ move (@5);
+        storage_dead(@5);
+        storage_dead(@4);
+        storage_dead(@3);
+        storage_live(@6);
+        storage_live(@7);
+        @7 := copy (a@1);
+        storage_live(@8);
+        @8 := copy (b@2);
+        @6 := move (@7) panic.% move (@8);
+        storage_dead(@8);
+        storage_dead(@7);
+        storage_dead(@6);
+        storage_live(c@9);
+        c@9 := const (7 : i32);
+        storage_live(d@10);
+        d@10 := const (-3 : i32);
+        storage_live(@11);
+        storage_live(@12);
+        @12 := copy (c@9);
+        storage_live(@13);
+        @13 := copy (d@10);
+        @11 := move (@12) panic./ move (@13);
+        storage_dead(@13);
+        storage_dead(@12);
+        storage_dead(@11);
+        storage_live(@14);
+        storage_live(@15);
+        @15 := copy (c@9);
+        storage_live(@16);
+        @16 := copy (d@10);
+        @14 := move (@15) panic.% move (@16);
+        storage_dead(@16);
+        storage_dead(@15);
+        storage_dead(@14);
+        storage_live(e@17);
+        e@17 := const (-7 : i32);
+        storage_live(f@18);
+        f@18 := const (3 : i32);
+        storage_live(@19);
+        storage_live(@20);
+        @20 := copy (e@17);
+        storage_live(@21);
+        @21 := copy (f@18);
+        @19 := move (@20) panic./ move (@21);
+        storage_dead(@21);
+        storage_dead(@20);
+        storage_dead(@19);
+        storage_live(@22);
+        storage_live(@23);
+        @23 := copy (e@17);
+        storage_live(@24);
+        @24 := copy (f@18);
+        @22 := move (@23) panic.% move (@24);
+        storage_dead(@24);
+        storage_dead(@23);
+        storage_dead(@22);
+        @0 := ();
+        storage_dead(f@18);
+        storage_dead(e@17);
+        storage_dead(d@10);
+        storage_dead(c@9);
+        storage_dead(b@2);
+        storage_dead(a@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+
