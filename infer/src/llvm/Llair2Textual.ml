@@ -390,6 +390,20 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             textual_typ
       in
       (textual_exp, Some typ, [])
+  | Global {name}
+    when String.is_suffix name ~suffix:witness_protocol_suffix
+         && Option.is_some
+              (Textual.TypeName.Map.find_opt (Textual.TypeName.mk_swift_type_name name) struct_map)
+    ->
+      let class_name =
+        TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
+      in
+      let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
+      let exp =
+        Textual.Exp.Call
+          {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
+      in
+      (exp, None, [])
   | Global {name; typ} ->
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
       let textual_exp, typ_opt =

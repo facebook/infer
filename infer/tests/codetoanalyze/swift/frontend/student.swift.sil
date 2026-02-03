@@ -1421,8 +1421,7 @@ define .plain_name = "test_retain_cycle_bad2" $s5Hello22test_retain_cycle_bad2yy
       n39 = load n31 @[228:20]
       store n39.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- __sil_cast(<int>, n25) @[228:20]
       n42 = load n31 @[228:20]
-      n40 = load &$s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAWP @[228:20]
-      store n42.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, n40) @[228:20]
+      store n42.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_swift_alloc(<__infer_swift_type<$s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAWP>>)) @[228:20]
       ret null @[229:1]
       
   #13::ret: @[475:0]

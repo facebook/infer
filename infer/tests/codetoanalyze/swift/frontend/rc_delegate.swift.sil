@@ -66,6 +66,40 @@ declare __swift_coroFrameAllocStub(int, int) : *__infer_swift_type<ptr_elt>
 
 declare $syXlSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
+define .plain_name = "test" $s5Hello4testyyF() : void {
+  local var3: *int, getelementptr_offset_1: *void, cell: *__infer_swift_type<ptr_elt>
+  #: @[25:16]
+      n2 = $s5Hello12CreationCellCMa(0) @[25:16]
+      jmp 3::ret @[25:16]
+      
+  #13::ret: @[26:31]
+      store &getelementptr_offset_1 <- 3 @[26:31]
+      n17 = load &getelementptr_offset_1 @[26:31]
+      _ = $builtins.llvm_dynamic_call(n17, __sil_cast(<int>, n5), n16, n10, n12) @[26:31]
+      jmp 15::void::ret @[26:31]
+      
+  #15::void::ret: @[27:1]
+      ret null @[27:1]
+      
+  #3::ret: @[25:16]
+      n4 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[25:16]
+      n5 = __infer_swift_type<T5Hello12CreationCellC,CreationCell>.$s5Hello12CreationCellCACycfC(n4) @[25:16]
+      jmp 5::ret @[25:16]
+      
+  #5::ret: @[244:0]
+      store &cell <- n5 @[244:0]
+      n7 = $builtins.llvm_nondet() @[26:33]
+      n8 = n5.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[26:31]
+      n11 = load n8 @[26:31]
+      n10 = load n11.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[26:31]
+      n13 = load n8 @[26:31]
+      n12 = load n13.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[26:31]
+      n14 = load n8 @[26:31]
+      n16 = __swift_mutable_project_boxed_opaque_existential_1(n14, n10) @[26:31]
+      jmp 13::ret @[26:31]
+      
+} @?
+
 declare .plain_name = "deinit" $s5Hello16DummyContentViewCfd(*__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>
 
 declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCfD(*__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : void
@@ -203,8 +237,7 @@ define .plain_name = "init" $s5Hello12CreationCellCACycfc(self: *__infer_swift_t
       n9 = load n5 @[181:0]
       store n10.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 <- n9 @[181:0]
       n12 = load n1 @[182:0]
-      n11 = load &$s5Hello16DummyContentViewCAA0cD4TypeAAWP @[182:0]
-      store n12.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 <- n11 @[182:0]
+      store n12.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 <- __sil_swift_alloc(<__infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>>) @[182:0]
       n14 = load n1 @[183:0]
       store n14.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 <- n8 @[183:0]
       n15 = load &self @[184:0]

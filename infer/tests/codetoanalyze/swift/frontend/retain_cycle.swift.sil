@@ -118,9 +118,8 @@ define .plain_name = "init" $s5Hello9TransportCACycfc(self: *__infer_swift_type<
       n22 = load n19 @[27:34]
       store &getelementptr_offset_1 <- 12 @[27:34]
       n23 = load &getelementptr_offset_1 @[27:34]
-      n27 = load &$s5Hello9TransportCAA23MessageReceiverDelegateAAWP @[27:34]
       n25 = load &self @[27:34]
-      _ = $builtins.llvm_dynamic_call(n23, __sil_cast(<int>, n25), __sil_cast(<int>, n27), n19) @[27:34]
+      _ = $builtins.llvm_dynamic_call(n23, __sil_cast(<int>, n25), __sil_cast(<int>, __sil_swift_alloc(<__infer_swift_type<$s5Hello9TransportCAA23MessageReceiverDelegateAAWP>>)), n19) @[27:34]
       jmp 20::void::ret @[27:34]
       
   #20::void::ret: @?
@@ -555,9 +554,8 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       n33 = load n31 @[34:34]
       store &getelementptr_offset_6 <- 12 @[34:34]
       n34 = load &getelementptr_offset_6 @[34:34]
-      n38 = load &$s5Hello9TransportCAA23MessageReceiverDelegateAAWP @[34:34]
       n36 = load &self @[34:34]
-      _ = $builtins.llvm_dynamic_call(n34, __sil_cast(<int>, n36), __sil_cast(<int>, n38), n31) @[34:34]
+      _ = $builtins.llvm_dynamic_call(n34, __sil_cast(<int>, n36), __sil_cast(<int>, __sil_swift_alloc(<__infer_swift_type<$s5Hello9TransportCAA23MessageReceiverDelegateAAWP>>)), n31) @[34:34]
       jmp 28::void::ret @[34:34]
       
   #28::void::ret: @[35:17]

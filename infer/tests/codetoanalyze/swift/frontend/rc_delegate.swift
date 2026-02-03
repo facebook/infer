@@ -20,3 +20,8 @@ final class CreationCell {
         contentView.delegate = self
     }
 }
+
+func test() {
+    let cell = CreationCell()
+    cell.contentView.delegate = cell
+}
