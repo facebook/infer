@@ -609,10 +609,41 @@ and resolve_method_call ~proc_state proc args =
       None
 
 
+and translate_boxed_opaque_existential llair_args ~proc_state loc =
+  let arg = List.hd_exn llair_args in
+  let typ =
+    match arg with
+    | Llair.Exp.Reg {id; name; typ} -> (
+        let exp, _ = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
+        match exp with
+        | Textual.Exp.Var var_name -> (
+          match Textual.Ident.Map.find_opt var_name proc_state.ProcState.ids_move with
+          | Some {typ= Some annotated_typ} ->
+              Some annotated_typ.typ
+          | _ ->
+              None )
+        | _ ->
+            None )
+    | _ ->
+        None
+  in
+  match typ with
+  | Some (Textual.Typ.Ptr (Struct struct_name)) ->
+      let elts = NS.IArray.init 1 ~f:(fun _ -> lazy (1, Llair.Typ.bool)) in
+      let name = Textual.TypeName.swift_mangled_name_of_type_name struct_name |> Option.value_exn in
+      let llair_typ = Typ.struct_ ~name elts ~bits:0 ~byts:0 in
+      let llair_exp = Llair.Exp.select llair_typ arg 0 in
+      let textual_exp, _, instrs = to_textual_exp ~proc_state loc llair_exp in
+      let deref_instrs, textual_exp = add_deref ~proc_state textual_exp loc in
+      Some (textual_exp, deref_instrs @ instrs)
+  | _ ->
+      None
+
+
 and to_textual_call_aux ~(proc_state : ProcState.t) ~kind proc return ?generate_typ_exp
-    (args : Llair.Exp.t list) (loc : Textual.Location.t) =
+    (llair_args : Llair.Exp.t list) (loc : Textual.Location.t) =
   let args_instrs, args =
-    List.fold_map args ~init:[] ~f:(fun acc_instrs exp ->
+    List.fold_map llair_args ~init:[] ~f:(fun acc_instrs exp ->
         let exp, _, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
         let deref_instrs, deref_exp =
           (* So far it looks like for C the load operations are already there when needed. *)
@@ -630,20 +661,32 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind proc return ?generate_
     else (args, args_instrs)
   in
   let return_id = Option.map return ~f:(fun reg -> Var.reg_to_id ~proc_state reg |> fst) in
-  let call_exp =
+  let resolve_call_translation proc args =
+    match resolve_method_call ~proc_state proc args with
+    | Some call_instr ->
+        (call_instr, [])
+    | None ->
+        (Textual.Exp.Call {proc; args; kind}, [])
+  in
+  let call_exp, call_instrs =
     if
       (* skip calls to the elements in functions_to_skip  and returns its first argument instead. *)
       List.exists functions_to_skip ~f:(Textual.ProcName.equal proc.Textual.QualifiedProcName.name)
-    then List.hd_exn args
-    else
-      match resolve_method_call ~proc_state proc args with
-      | Some call_instrs ->
-          call_instrs
+    then (List.hd_exn args, [])
+    else if
+      Textual.ProcName.equal proc.Textual.QualifiedProcName.name
+        (Textual.ProcName.of_string "__swift_mutable_project_boxed_opaque_existential_1")
+    then
+      match translate_boxed_opaque_existential llair_args ~proc_state loc with
+      | Some (textual_exp, instrs) ->
+          (textual_exp, instrs)
       | None ->
-          Textual.Exp.Call {proc; args; kind}
+          resolve_call_translation proc args
+    else resolve_call_translation proc args
   in
   update_id_return_type ~proc_state proc return_id ;
-  (return_id, call_exp, args_instrs)
+  let instrs = call_instrs @ args_instrs in
+  (return_id, call_exp, instrs)
 
 
 and to_textual_call_instrs ~proc_state return proc args loc =

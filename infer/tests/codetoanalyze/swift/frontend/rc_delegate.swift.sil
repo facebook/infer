@@ -74,8 +74,8 @@ define .plain_name = "test" $s5Hello4testyyF() : void {
       
   #13::ret: @[26:31]
       store &getelementptr_offset_1 <- 3 @[26:31]
-      n17 = load &getelementptr_offset_1 @[26:31]
-      _ = $builtins.llvm_dynamic_call(n17, __sil_cast(<int>, n5), n16, n10, n12) @[26:31]
+      n19 = load &getelementptr_offset_1 @[26:31]
+      _ = $builtins.llvm_dynamic_call(n19, __sil_cast(<int>, n5), n16, n10, n12) @[26:31]
       jmp 15::void::ret @[26:31]
       
   #15::void::ret: @[27:1]
@@ -95,7 +95,9 @@ define .plain_name = "test" $s5Hello4testyyF() : void {
       n13 = load n8 @[26:31]
       n12 = load n13.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[26:31]
       n14 = load n8 @[26:31]
-      n16 = __swift_mutable_project_boxed_opaque_existential_1(n14, n10) @[26:31]
+      n17 = load n8 @[26:31]
+      n18 = load n17.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[26:31]
+      n16 = n18 @[26:31]
       jmp 13::ret @[26:31]
       
 } @?
@@ -271,14 +273,16 @@ define .plain_name = "configure" $s5Hello12CreationCellC9configureyyF(self: *__i
       n7 = load n2 @[20:30]
       n6 = load n7.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[20:30]
       n8 = load n2 @[20:30]
-      n10 = __swift_mutable_project_boxed_opaque_existential_1(n8, n4) @[20:30]
+      n11 = load n2 @[20:30]
+      n12 = load n11.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[20:30]
+      n10 = n12 @[20:30]
       jmp 11::ret @[20:30]
       
   #11::ret: @[20:30]
       store &getelementptr_offset_1 <- 3 @[20:30]
-      n11 = load &getelementptr_offset_1 @[20:30]
-      n13 = load &self @[20:30]
-      _ = $builtins.llvm_dynamic_call(n11, __sil_cast(<int>, n13), n10, n4, n6) @[20:30]
+      n13 = load &getelementptr_offset_1 @[20:30]
+      n15 = load &self @[20:30]
+      _ = $builtins.llvm_dynamic_call(n13, __sil_cast(<int>, n15), n10, n4, n6) @[20:30]
       jmp 13::void::ret @[20:30]
       
   #13::void::ret: @[21:5]
