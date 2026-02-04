@@ -20,7 +20,7 @@ class San {
     Sink::process($arg);
   }
   public static async function sanitizeTest(mixed $arg): Awaitable<bool> {
-    return true;
+    return \Unknown\UnknownClass::someBool();
   }
 }
 

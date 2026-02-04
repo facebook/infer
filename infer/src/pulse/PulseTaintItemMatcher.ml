@@ -442,8 +442,8 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
             let is_const_exp = match exp with Some exp -> Exp.is_const exp | None -> false in
             if taint_procedure_target_matches tenv taint_target i actual_typ && not is_const_exp
             then (
-              L.d_printfln_escaped "match! tainting actual #%d with type %a" i (Typ.pp_full Pp.text)
-                actual_typ ;
+              L.d_printfln_escaped "match! tainting actual #%d with type %a and taint target %a" i
+                (Typ.pp_full Pp.text) actual_typ TaintConfig.Target.pp_procedure_target taint_target ;
               let taint =
                 { TaintItem.value_tuple=
                     Basic {value= potential_taint_value; origin= Argument {index= i}}

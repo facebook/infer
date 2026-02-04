@@ -10,4 +10,5 @@ class Unknown {}
 class UnknownClass {
   public static function explicitSinkAllArgs(SensitiveClass $sc): void {}
   public static function mayAwait<T>(Awaitable<T> $arg): void {}
+  public static function someBool(): bool { return true; }
 }
