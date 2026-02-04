@@ -2357,25 +2357,22 @@ and pulse_force_continue =
      positives."
 
 
-and pulse_eternal, pulse_experimental_infinite_loop_checker, pulse_experimental_loop_abstraction =
+and pulse_eternal, pulse_experimental_infinite_loop_checker =
   let pulse_experimental_infinite_loop_checker =
     CLOpt.mk_bool ~long:"pulse-experimental-infinite-loop-checker" ~default:false
       "Enable the INFINITE_LOOP checker during analysis phase. This is a temporary flag in order \
        to strictly gate this experimental checker. You may also need to activate reporting if \
        needed"
-  and pulse_experimental_loop_abstraction =
-    CLOpt.mk_bool ~long:"pulse-experimental-loop-abstraction" ~default:false
-      "Enable an experimental symbolic execution of loop body with abstracted state."
   in
   let pulse_eternal =
     CLOpt.mk_bool_group ~long:"pulse-eternal"
       ~in_help:InferCommand.[(Analyze, manual_pulse)]
       "[EXPERIMENTAL] latest iteration of the non-termination loop prover based on the UNTER \
        under-approximate theory"
-      [pulse_experimental_infinite_loop_checker; pulse_experimental_loop_abstraction]
+      [pulse_experimental_infinite_loop_checker]
       []
   in
-  (pulse_eternal, pulse_experimental_infinite_loop_checker, pulse_experimental_loop_abstraction)
+  (pulse_eternal, pulse_experimental_infinite_loop_checker)
 
 
 and pulse_experimental_track_all_unknown_calls =
@@ -4540,8 +4537,6 @@ and pulse_force_continue = !pulse_force_continue
 and pulse_eternal = !pulse_eternal
 
 and pulse_experimental_infinite_loop_checker = !pulse_experimental_infinite_loop_checker
-
-and pulse_experimental_loop_abstraction = !pulse_experimental_loop_abstraction
 
 and pulse_experimental_track_all_unknown_calls = !pulse_experimental_track_all_unknown_calls
 

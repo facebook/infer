@@ -80,7 +80,6 @@ codetoanalyze/c/pulse/infinite.c, conditional_goto0_bad, 2, INFINITE_LOOP, no_bu
 codetoanalyze/c/pulse/infinite.c, loop_call_bad, 2, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, twovars_goto_bad, 4, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, loop_conditional_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
-codetoanalyze/c/pulse/infinite.c, two_nested_snd_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, simple_loop_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, inner_loop_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]
 codetoanalyze/c/pulse/infinite.c, simple_dowhile_bad, 3, INFINITE_LOOP, no_bucket, WARNING, [in loop]

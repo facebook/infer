@@ -1547,25 +1547,21 @@ module PulseTransferFunctions = struct
           let id = Procdesc.Node.unsafe_int_to_id header_id in
           let astate = AbductiveDomain.init_loop_header_info id astate in
           if
-            (not Config.pulse_eternal)
-            && ( (not Config.pulse_experimental_loop_abstraction)
-               || AbductiveDomain.is_some_loop_invariant_under_inference astate )
-          then ([ContinueProgram astate], path, astate_n)
-          else (
+            Config.pulse_eternal
+            && not (AbductiveDomain.is_some_loop_invariant_under_inference astate)
+          then (
             L.debug Analysis Quiet
               "[LOOP INVARIANT]     loop entry at node %a - starting abstract execution@\n"
               Procdesc.Node.pp_id id ;
             AnalysisState.set_active_loop id ;
             let abstracted_astate = AbductiveDomain.start_loop_invariant_inference id astate in
-            if Config.pulse_eternal then
-              add_abstracted_state_at_loop_head header_id abstracted_astate ;
+            add_abstracted_state_at_loop_head header_id abstracted_astate ;
             ([ContinueProgram astate; ContinueProgram abstracted_astate], path, astate_n) )
+          else ([ContinueProgram astate], path, astate_n)
       | Metadata (LoopExit {header_id}) ->
           let id = Procdesc.Node.unsafe_int_to_id header_id in
           let astate = AbductiveDomain.init_loop_header_info id astate in
-          if
-            Config.pulse_experimental_loop_abstraction
-            && AbductiveDomain.is_loop_invariant_under_inference id astate
+          if Config.pulse_eternal && AbductiveDomain.is_loop_invariant_under_inference id astate
           then (
             L.debug Analysis Quiet
               "[LOOP INVARIANT]     exiting loop %a at node %a - removing abstract execution@\n"
@@ -1590,8 +1586,7 @@ module PulseTransferFunctions = struct
               (exec_states, path, astate_n)
             else ([ContinueProgram astate], path, astate_n)
           else if
-            Config.pulse_experimental_loop_abstraction
-            && AbductiveDomain.is_loop_invariant_under_inference id astate
+            Config.pulse_eternal && AbductiveDomain.is_loop_invariant_under_inference id astate
           then (
             L.debug Analysis Quiet
               "[LOOP INVARIANT]     back edge at node %a - removing abstract execution@\n"
