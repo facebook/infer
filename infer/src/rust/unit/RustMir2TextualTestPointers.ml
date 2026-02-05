@@ -253,3 +253,34 @@ fn main() {
 
     }
     |}]
+
+
+let%expect_test "mutate_through_reference" =
+  let source =
+    {|
+  fn main() {
+      let mut x = 10;
+      let ptr = &mut x;
+      *ptr = 20;
+  }
+    |}
+  in
+  test source ;
+  [%expect
+    {|
+    .source_language = "Rust"
+
+    define dummy::main() : void {
+      local var_0: void, x_1: int, ptr_2: *int
+      #node_0:
+          store &x_1 <- 10:int
+          store &ptr_2 <- &x_1:*int
+          n0:*int = load &ptr_2
+          store n0 <- 20:int
+          store &var_0 <- null:void
+          store &var_0 <- null:void
+          n1:void = load &var_0
+          ret n1
+
+    }
+    |}]
