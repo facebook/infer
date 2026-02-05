@@ -21,7 +21,12 @@ final class CreationCell {
     }
 }
 
-func test() {
+func test_retain_cycle_bad() {
     let cell = CreationCell()
     cell.contentView.delegate = cell
+}
+
+func test_retain_cycle_specialisation_bad() {
+    let cell = CreationCell()
+    cell.configure()
 }
