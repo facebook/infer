@@ -590,9 +590,9 @@ val pulse_final_types_are_exact : bool
 
 val pulse_force_continue : bool
 
-val pulse_experimental_infinite_loop_checker : bool
+val pulse_eternal : bool
 
-val pulse_experimental_loop_abstraction : bool
+val pulse_experimental_infinite_loop_checker : bool
 
 val pulse_experimental_track_all_unknown_calls : bool
 

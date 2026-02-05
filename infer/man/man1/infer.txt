@@ -1453,6 +1453,12 @@ OPTIONS
            states from being produced.
            See also infer-analyze(1).
 
+       --pulse-eternal
+           Activates: [EXPERIMENTAL] latest iteration of the non-termination
+           loop prover based on the UNTER under-approximate theory
+           (Conversely: --no-pulse-eternal)
+           See also infer-analyze(1).
+
        --pulse-inline-global-init-func-pointer
            Activates: Inline the initializer of global variables that are of
            type function pointer in Pulse. (Conversely:

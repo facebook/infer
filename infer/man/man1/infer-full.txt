@@ -1453,6 +1453,12 @@ OPTIONS
            states from being produced.
            See also infer-analyze(1).
 
+       --pulse-eternal
+           Activates: [EXPERIMENTAL] latest iteration of the non-termination
+           loop prover based on the UNTER under-approximate theory
+           (Conversely: --no-pulse-eternal)
+           See also infer-analyze(1).
+
        --pulse-inline-global-init-func-pointer
            Activates: Inline the initializer of global variables that are of
            type function pointer in Pulse. (Conversely:
@@ -3071,11 +3077,6 @@ INTERNAL OPTIONS
            This is a temporary flag in order to strictly gate this
            experimental checker. You may also need to activate reporting if
            needed (Conversely: --no-pulse-experimental-infinite-loop-checker)
-
-       --pulse-experimental-loop-abstraction
-           Activates: Enable an experimental symbolic execution of loop body
-           with abstracted state. (Conversely:
-           --no-pulse-experimental-loop-abstraction)
 
        --pulse-experimental-track-all-unknown-calls
            Activates: Mark results of unknown calls with a

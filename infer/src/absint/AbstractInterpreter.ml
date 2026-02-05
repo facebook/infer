@@ -341,7 +341,7 @@ struct
           if leq ~lhs:(post_disj, next_non_disj) ~rhs:prev then prev
           else (post_disj, add_dropped_disjuncts dropped next_non_disj)
         in
-        if Config.pulse_experimental_loop_abstraction then
+        if Config.pulse_eternal then
           AnalysisState.get_node ()
           |> Option.iter ~f:(fun node ->
                  L.debug Analysis Quiet "[LOOP INVARIANT]     widen at %a = %a@\n" Procdesc.Node.pp
@@ -484,7 +484,7 @@ struct
           List.partition_tf pre ~f:(fun disj ->
               not (List.mem ~equal:T.DisjDomain.equal_fast old_pre disj) ) )
     in
-    ( if Config.pulse_experimental_loop_abstraction then
+    ( if Config.pulse_eternal then
         let active_loops =
           List.filter_map pre ~f:T.DisjDomain.is_active_loop |> Procdesc.IdSet.of_list
         in

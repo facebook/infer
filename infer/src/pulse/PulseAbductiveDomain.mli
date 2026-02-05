@@ -184,6 +184,11 @@ module Memory : sig
     -> 'acc * PulseBaseMemory.value
   (** merge the stacks of the given astates into one and set the stack of the first abstract state
       to be the merged stack*)
+
+  val dealias_post : t -> t
+  (** Replace aliased locations (equal destinations of any two pointers) with fresh values. Which
+      value gets replaced is arbitrary. For example, schematically, this turns [x|->z * y |->z] into
+      [x|->z * y |->z'], with [z'] a fresh abstract value. This is used for abstraction. *)
 end
 
 (** Safe version of {!PulseBaseAddressAttributes} *)
@@ -401,9 +406,9 @@ val map_loop_header_formulas : t -> f:(Formula.t -> Formula.t) -> t
 
 val push_loop_header_info : Procdesc.Node.id -> Timestamp.t -> t -> t
 
-val start_loop_invariant_inference : Procdesc.Node.id -> t -> t
-
 val is_loop_invariant_under_inference : Procdesc.Node.id -> t -> bool
+
+val set_loop_invariant_under_inference : Procdesc.Node.id -> t -> t
 
 val is_some_loop_invariant_under_inference : t -> bool
 
