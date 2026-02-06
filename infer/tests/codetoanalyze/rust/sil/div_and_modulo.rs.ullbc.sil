@@ -1,0 +1,66 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define div_and_modulo::main() : void {
+  local var_0: void, a_1: int, b_2: int, var_3: int, var_4: int, var_5: int, var_6: int, var_7: int, var_8: int, c_9: int, d_10: int, var_11: int, var_12: int, var_13: int, var_14: int, var_15: int, var_16: int, e_17: int, f_18: int, var_19: int, var_20: int, var_21: int, var_22: int, var_23: int, var_24: int
+  #node_0:
+      store &a_1 <- 7:int
+      store &b_2 <- 3:int
+      n0:int = load &a_1
+      store &var_4 <- n0:int
+      n1:int = load &b_2
+      store &var_5 <- n1:int
+      n2:int = load &var_4
+      n3:int = load &var_5
+      store &var_3 <- __sil_divi(n2, n3):int
+      n4:int = load &a_1
+      store &var_7 <- n4:int
+      n5:int = load &b_2
+      store &var_8 <- n5:int
+      n6:int = load &var_7
+      n7:int = load &var_8
+      store &var_6 <- __sil_mod(n6, n7):int
+      store &c_9 <- 7:int
+      store &d_10 <- -3:int
+      n8:int = load &c_9
+      store &var_12 <- n8:int
+      n9:int = load &d_10
+      store &var_13 <- n9:int
+      n10:int = load &var_12
+      n11:int = load &var_13
+      store &var_11 <- __sil_divi(n10, n11):int
+      n12:int = load &c_9
+      store &var_15 <- n12:int
+      n13:int = load &d_10
+      store &var_16 <- n13:int
+      n14:int = load &var_15
+      n15:int = load &var_16
+      store &var_14 <- __sil_mod(n14, n15):int
+      store &e_17 <- -7:int
+      store &f_18 <- 3:int
+      n16:int = load &e_17
+      store &var_20 <- n16:int
+      n17:int = load &f_18
+      store &var_21 <- n17:int
+      n18:int = load &var_20
+      n19:int = load &var_21
+      store &var_19 <- __sil_divi(n18, n19):int
+      n20:int = load &e_17
+      store &var_23 <- n20:int
+      n21:int = load &f_18
+      store &var_24 <- n21:int
+      n22:int = load &var_23
+      n23:int = load &var_24
+      store &var_22 <- __sil_mod(n22, n23):int
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n24:void = load &var_0
+      ret n24
+      
+}
+

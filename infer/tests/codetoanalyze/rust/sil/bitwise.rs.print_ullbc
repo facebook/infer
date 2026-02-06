@@ -1,0 +1,40 @@
+# Final ULLBC before serialization:
+
+// Full name: bitwise::main
+fn main()
+{
+    let @0: (); // return
+    let @1: u8; // anonymous local
+    let @2: u8; // anonymous local
+    let @3: u8; // anonymous local
+    let a@4: i8; // local
+    let @5: i8; // anonymous local
+    let @6: i8; // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := const (10 : u8) & const (12 : u8);
+        storage_dead(@1);
+        storage_live(@2);
+        @2 := const (10 : u8) | const (5 : u8);
+        storage_dead(@2);
+        storage_live(@3);
+        @3 := const (15 : u8) ^ const (5 : u8);
+        storage_dead(@3);
+        storage_live(a@4);
+        a@4 := const (-1 : i8);
+        storage_live(@5);
+        storage_live(@6);
+        @6 := copy (a@4);
+        @5 := move (@6) & const (15 : i8);
+        storage_dead(@6);
+        storage_dead(@5);
+        @0 := ();
+        storage_dead(a@4);
+        @0 := ();
+        return;
+    }
+}
+
+
+
