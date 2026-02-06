@@ -1,0 +1,39 @@
+# Final ULLBC before serialization:
+
+// Full name: basic_if::main
+fn main()
+{
+    let @0: (); // return
+    let b@1: bool; // local
+    let @2: bool; // anonymous local
+
+    bb0: {
+        storage_live(b@1);
+        b@1 := const (true);
+        storage_live(@2);
+        @2 := copy (b@1);
+        if move (@2) -> bb1 else -> bb2;
+    }
+
+    bb1: {
+        b@1 := const (false);
+        @0 := ();
+        goto bb3;
+    }
+
+    bb2: {
+        b@1 := const (true);
+        @0 := ();
+        goto bb3;
+    }
+
+    bb3: {
+        storage_dead(@2);
+        storage_dead(b@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+

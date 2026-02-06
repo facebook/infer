@@ -1,0 +1,39 @@
+# Final ULLBC before serialization:
+
+// Full name: call_with_args::id
+fn id(@1: i32) -> i32
+{
+    let @0: i32; // return
+    let x@1: i32; // arg #1
+
+    bb0: {
+        @0 := copy (x@1);
+        return;
+    }
+}
+
+// Full name: call_with_args::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := id(const (10 : i32)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        @0 := ();
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+
+

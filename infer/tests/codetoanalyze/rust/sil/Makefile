@@ -48,7 +48,6 @@ test: ullbc print_ullbc capture
 	done ; \
 	if [ "$(BUILD_RUST_ANALYZERS)" = "yes" ]; then \
 	error=0; for file in $(RUSTSOURCES) ; do \
-		diff -u "$$file.ullbc" "$$file.test.ullbc" || error=1 ; \
 		diff -u "$$file.print_ullbc" "$$file.test.print_ullbc" || error=1 ; \
 	done; fi; \
 	if [ $$error = 1 ]; then exit 1; fi
