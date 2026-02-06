@@ -33,3 +33,13 @@ func test_retain_cycle_bad_fn() {
     let cell = CreationCell()
     cell.configure()
 }
+
+final class Cell {
+
+    var contentView: ContentViewType = DummyContentView()
+
+    func configure() {
+        contentView = Utils.contentViewForVariant()
+        contentView.delegate = self
+    }
+}

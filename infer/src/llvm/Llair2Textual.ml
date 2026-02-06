@@ -52,10 +52,10 @@ let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
 
 let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~substring:"fU" s
 
-let is_protocol_witness_optional_deinit lang mangled_name =
-  let suffix = "WOd" in
+let is_protocol_witness_optional_deinit_copy lang mangled_name =
+  let suffixes = ["WOd"; "WOb"] in
   Textual.Lang.is_swift lang
-  && String.is_suffix ~suffix mangled_name
+  && List.exists ~f:(fun s -> String.is_suffix ~suffix:s mangled_name) suffixes
   && String.is_substring ~substring:"_p" mangled_name
 
 
@@ -647,7 +647,7 @@ and translate_boxed_opaque_existential llair_args ~proc_state loc =
       None
 
 
-and translate_protocol_witness_optional_deinit ~proc_state ptr exp loc =
+and translate_protocol_witness_optional_deinit_copy ~proc_state ptr exp loc =
   let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state exp in
   let exp2_deref_instrs, exp2 = add_deref ~proc_state exp2 loc in
   let exp1, _, exp1_instrs = to_textual_exp loc ~proc_state ptr in
@@ -773,9 +773,9 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
         let instrs2, arg2 = add_deref ~proc_state arg2 loc in
         Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
     | Textual.Exp.Call {proc}, [exp; ptr]
-      when is_protocol_witness_optional_deinit proc_state.ProcState.module_state.lang
+      when is_protocol_witness_optional_deinit_copy proc_state.ProcState.module_state.lang
              (Textual.ProcName.to_string proc.Textual.QualifiedProcName.name) ->
-        translate_protocol_witness_optional_deinit ~proc_state ptr exp loc
+        translate_protocol_witness_optional_deinit_copy ~proc_state ptr exp loc
     | _ ->
         [Textual.Instr.Let {id; exp= call_exp; loc}]
   in
