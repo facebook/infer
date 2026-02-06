@@ -1,0 +1,25 @@
+# Final ULLBC before serialization:
+
+// Full name: mutate_through_reference::main
+fn main()
+{
+    let @0: (); // return
+    let x@1: i32; // local
+    let ptr@2: &'_ mut (i32); // local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (10 : i32);
+        storage_live(ptr@2);
+        ptr@2 := &mut x@1;
+        *(ptr@2) := const (20 : i32);
+        @0 := ();
+        storage_dead(ptr@2);
+        storage_dead(x@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+
