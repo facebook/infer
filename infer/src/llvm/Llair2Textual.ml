@@ -52,6 +52,13 @@ let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
 
 let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~substring:"fU" s
 
+let is_protocol_witness_optional_deinit lang mangled_name =
+  let suffix = "WOd" in
+  Textual.Lang.is_swift lang
+  && String.is_suffix ~suffix mangled_name
+  && String.is_substring ~substring:"_p" mangled_name
+
+
 let to_proc_name_closure_name s =
   Textual.QualifiedProcName.{enclosing_class= TopLevel; name= Textual.ProcName.of_string s}
 
@@ -640,6 +647,15 @@ and translate_boxed_opaque_existential llair_args ~proc_state loc =
       None
 
 
+and translate_protocol_witness_optional_deinit ~proc_state ptr exp loc =
+  let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state exp in
+  let exp2_deref_instrs, exp2 = add_deref ~proc_state exp2 loc in
+  let exp1, _, exp1_instrs = to_textual_exp loc ~proc_state ptr in
+  let instr = Textual.Instr.Store {exp1; typ= None; exp2; loc} in
+  let instrs = exp2_deref_instrs @ exp2_instrs @ exp1_instrs in
+  instr :: instrs
+
+
 and to_textual_call_aux ~(proc_state : ProcState.t) ~kind proc return ?generate_typ_exp
     (llair_args : Llair.Exp.t list) (loc : Textual.Location.t) =
   let args_instrs, args =
@@ -703,7 +719,7 @@ and to_textual_builtin ~proc_state return name args loc =
 
 
 and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
-  let args = StdUtils.iarray_to_list call.actuals in
+  let llair_args = StdUtils.iarray_to_list call.actuals in
   let proc, kind, exp_opt =
     match call.callee with
     | Direct {func} -> (
@@ -730,9 +746,9 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
         (proc, Textual.Exp.NonVirtual, None)
   in
   let loc = to_textual_loc_instr ~proc_state call.loc in
-  let args = Option.to_list exp_opt @ args in
+  let llair_args = Option.to_list exp_opt @ llair_args in
   let id, call_exp, args_instrs =
-    to_textual_call_aux ~proc_state ~kind proc call.areturn args loc
+    to_textual_call_aux ~proc_state ~kind proc call.areturn llair_args loc
   in
   let call_exp =
     match call_exp with
@@ -747,15 +763,19 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
     | _ ->
         call_exp
   in
-  (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
+  let instrs =
+    match (call_exp, llair_args) with
+    (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
      because we are flattenning the structure of weak pointers to be just like normal pointers in infer,
      whilst in llvm the structures is field_2: *swift::weak}, type swift::weak = {field_0: *ptr_elt} *)
-  let instrs =
-    match call_exp with
-    | Textual.Exp.Call {proc; args= [arg1; arg2]}
+    | Textual.Exp.Call {proc; args= [arg1; arg2]}, _
       when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
         let instrs2, arg2 = add_deref ~proc_state arg2 loc in
         Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
+    | Textual.Exp.Call {proc}, [exp; ptr]
+      when is_protocol_witness_optional_deinit proc_state.ProcState.module_state.lang
+             (Textual.ProcName.to_string proc.Textual.QualifiedProcName.name) ->
+        translate_protocol_witness_optional_deinit ~proc_state ptr exp loc
     | _ ->
         [Textual.Instr.Let {id; exp= call_exp; loc}]
   in

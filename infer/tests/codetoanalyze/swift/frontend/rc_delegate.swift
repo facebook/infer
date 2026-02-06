@@ -6,6 +6,13 @@ protocol ContentViewType {
     var delegate: AnyObject? { get set }
 }
 
+struct Utils {
+
+    static func contentViewForVariant() -> ContentViewType {
+        return DummyContentView()
+    }
+}
+
 class DummyContentView: ContentViewType {
     var delegate: AnyObject?
     func configure() {
@@ -14,14 +21,15 @@ class DummyContentView: ContentViewType {
 
 final class CreationCell {
 
-    var contentView: ContentViewType = DummyContentView()
+    var contentView: ContentViewType?
 
     func configure() {
-        contentView.delegate = self
+        contentView = Utils.contentViewForVariant()
+        contentView?.delegate = self
     }
 }
 
-func test() {
+func test_retain_cycle_bad_fn() {
     let cell = CreationCell()
-    cell.contentView.delegate = cell
+    cell.configure()
 }

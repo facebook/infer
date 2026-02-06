@@ -66,39 +66,55 @@ declare __swift_coroFrameAllocStub(int, int) : *__infer_swift_type<ptr_elt>
 
 declare $syXlSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "test" $s5Hello4testyyF() : void {
-  local var3: *int, getelementptr_offset_1: *void, cell: *__infer_swift_type<ptr_elt>
-  #: @[25:16]
-      n2 = $s5Hello12CreationCellCMa(0) @[25:16]
-      jmp 3::ret @[25:16]
+declare $s5Hello5UtilsVMa(int) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "init" $s5Hello5UtilsVACycfC() : void {
+  #: @[250:0]
+      ret null @[250:0]
       
-  #13::ret: @[26:31]
-      store &getelementptr_offset_1 <- 3 @[26:31]
-      n19 = load &getelementptr_offset_1 @[26:31]
-      _ = $builtins.llvm_dynamic_call(n19, __sil_cast(<int>, n5), n16, n10, n12) @[26:31]
-      jmp 15::void::ret @[26:31]
+} @?
+
+define .plain_name = "contentViewForVariant" $s5Hello5UtilsV21contentViewForVariantAA07ContentD4Type_pyFZ(var1: *__infer_swift_type<,$s5Hello5UtilsVXMtD>) : void {
+  #: @[12:16]
+      n2 = $s5Hello16DummyContentViewCMa(0) @[12:16]
+      jmp 2::ret @[12:16]
       
-  #15::void::ret: @[27:1]
-      ret null @[27:1]
+  #2::ret: @[12:16]
+      n3 = n2.__infer_swift_type<swift::metadata_response>.field_0 @[12:16]
+      n5 = load n3 @[12:16]
+      n6 = __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCACycfC(n5) @[12:16]
+      jmp 4::ret @[12:16]
       
-  #3::ret: @[25:16]
-      n4 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[25:16]
-      n5 = __infer_swift_type<T5Hello12CreationCellC,CreationCell>.$s5Hello12CreationCellCACycfC(n4) @[25:16]
-      jmp 5::ret @[25:16]
+  #4::ret: @[12:16]
+      n8 = load &var1 @[12:16]
+      n7 = load n3 @[12:16]
+      store n8.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 <- n7 @[12:16]
+      n10 = load &var1 @[12:16]
+      store n10.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 <- __sil_swift_alloc(<__infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>>) @[12:16]
+      n12 = load &var1 @[12:16]
+      store n12.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 <- n6 @[12:16]
+      ret null @[12:9]
       
-  #5::ret: @[244:0]
-      store &cell <- n5 @[244:0]
-      n7 = $builtins.llvm_nondet() @[26:33]
-      n8 = n5.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[26:31]
-      n11 = load n8 @[26:31]
-      n10 = load n11.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[26:31]
-      n13 = load n8 @[26:31]
-      n12 = load n13.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[26:31]
-      n14 = load n8 @[26:31]
-      n17 = load n8 @[26:31]
-      n18 = load n17.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[26:31]
-      n16 = n18 @[26:31]
-      jmp 13::ret @[26:31]
+} @?
+
+define .plain_name = "test_retain_cycle_bad_fn" $s5Hello24test_retain_cycle_bad_fnyyF() : void {
+  local cell: *__infer_swift_type<ptr_elt>
+  #: @[33:16]
+      n2 = $s5Hello12CreationCellCMa(0) @[33:16]
+      jmp 2::ret @[33:16]
+      
+  #$s5Hello12CreationCellC9configureyyF::void::ret: @[35:1]
+      ret null @[35:1]
+      
+  #2::ret: @[33:16]
+      n4 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[33:16]
+      n5 = __infer_swift_type<T5Hello12CreationCellC,CreationCell>.$s5Hello12CreationCellCACycfC(n4) @[33:16]
+      jmp 4::ret @[33:16]
+      
+  #4::ret: @[249:0]
+      store &cell <- n5 @[249:0]
+      _ = $s5Hello12CreationCellC9configureyyF(n5) @[34:10]
+      jmp $s5Hello12CreationCellC9configureyyF::void::ret @[34:10]
       
 } @?
 
@@ -109,25 +125,25 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello1
 declare $s5Hello16DummyContentViewCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello16DummyContentViewCACycfc(self: *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView> {
-  #: @[231:0]
-      n2 = load &self @[231:0]
-      n3 = load &self @[232:0]
-      ret n3 @[232:0]
+  #: @[236:0]
+      n2 = load &self @[236:0]
+      n3 = load &self @[237:0]
+      ret n3 @[237:0]
       
 } @?
 
 define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCACycfC(var1: *__infer_swift_type<,$s5Hello16DummyContentViewCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[225:0]
-      n1 = load &var1 @[225:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>>) @[225:0]
-      jmp 2::ret @[226:0]
+  #: @[230:0]
+      n1 = load &var1 @[230:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>>) @[230:0]
+      jmp 2::ret @[231:0]
       
-  #2::ret: @[227:0]
-      n6 = $s5Hello16DummyContentViewCACycfc(n4) @[227:0]
-      jmp 3::ret @[228:0]
+  #2::ret: @[232:0]
+      n6 = $s5Hello16DummyContentViewCACycfc(n4) @[232:0]
+      jmp 3::ret @[233:0]
       
-  #3::ret: @[229:0]
-      ret n6 @[229:0]
+  #3::ret: @[234:0]
+      ret n6 @[234:0]
       
 } @?
 
@@ -135,32 +151,32 @@ declare .plain_name = "configure" .method_offset = "1" __infer_swift_type<$s5Hel
 
 define .plain_name = "delegate.set" .method_offset = "3" __infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>.$s5Hello16DummyContentViewCAA0cD4TypeA2aDP8delegateyXlSgvsTW(var1: int, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>) : void {
   local getelementptr_offset_1: *void
-  #: @[219:0]
-      n1 = load &var2 @[219:0]
-      n2 = load n1 @[220:0]
-      store &getelementptr_offset_1 <- 12 @[221:0]
-      n3 = load &getelementptr_offset_1 @[221:0]
-      n5 = load &var1 @[222:0]
-      _ = $builtins.llvm_dynamic_call(n3, n5, n1) @[222:0]
-      jmp 8::void::ret @[223:0]
+  #: @[224:0]
+      n1 = load &var2 @[224:0]
+      n2 = load n1 @[225:0]
+      store &getelementptr_offset_1 <- 12 @[226:0]
+      n3 = load &getelementptr_offset_1 @[226:0]
+      n5 = load &var1 @[227:0]
+      _ = $builtins.llvm_dynamic_call(n3, n5, n1) @[227:0]
+      jmp 8::void::ret @[228:0]
       
-  #8::void::ret: @[224:0]
-      ret null @[224:0]
+  #8::void::ret: @[229:0]
+      ret null @[229:0]
       
 } @?
 
 define .plain_name = "delegate.get" .method_offset = "2" __infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>.$s5Hello16DummyContentViewCAA0cD4TypeA2aDP8delegateyXlSgvgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : int {
   local getelementptr_offset_1: *void
-  #: @[213:0]
-      n1 = load &var1 @[213:0]
-      n2 = load n1 @[214:0]
-      store &getelementptr_offset_1 <- 11 @[215:0]
-      n3 = load &getelementptr_offset_1 @[215:0]
-      n6 = $builtins.llvm_dynamic_call(n3, n1) @[216:0]
-      jmp 8::ret @[217:0]
+  #: @[218:0]
+      n1 = load &var1 @[218:0]
+      n2 = load n1 @[219:0]
+      store &getelementptr_offset_1 <- 11 @[220:0]
+      n3 = load &getelementptr_offset_1 @[220:0]
+      n6 = $builtins.llvm_dynamic_call(n3, n1) @[221:0]
+      jmp 8::ret @[222:0]
       
-  #8::ret: @[218:0]
-      ret n6 @[218:0]
+  #8::ret: @[223:0]
+      ret n6 @[223:0]
       
 } @?
 
@@ -169,25 +185,25 @@ declare .plain_name = "delegate.modify" $s5Hello16DummyContentViewCAA0cD4TypeA2a
 declare .plain_name = "delegate.modify" .method_offset = "4" __infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>.$s5Hello16DummyContentViewCAA0cD4TypeA2aDP8delegateyXlSgvMTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 define .plain_name = "configure" .method_offset = "14" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewC9configureyyF(self: *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : void {
-  #: @[12:5]
-      ret null @[12:5]
+  #: @[19:5]
+      ret null @[19:5]
       
 } @?
 
 define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewC8delegateyXlSgvs(var1: int, var2: *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : void {
   local var4: *int
-  #: @[202:0]
-      n1 = load &var1 @[202:0]
-      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[202:0]
-      jmp 5::ret @[203:0]
+  #: @[207:0]
+      n1 = load &var1 @[207:0]
+      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[207:0]
+      jmp 5::ret @[208:0]
       
-  #5::ret: @[204:0]
-      n5 = load &var2 @[204:0]
-      n4 = n5.__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.delegate @[204:0]
-      n6 = load n4 @[206:0]
-      n7 = load &var1 @[207:0]
-      store n4 <- n7 @[207:0]
-      ret null @[211:0]
+  #5::ret: @[209:0]
+      n5 = load &var2 @[209:0]
+      n4 = n5.__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.delegate @[209:0]
+      n6 = load n4 @[211:0]
+      n7 = load &var1 @[212:0]
+      store n4 <- n7 @[212:0]
+      ret null @[216:0]
       
 } @?
 
@@ -195,15 +211,15 @@ declare $s5Hello16DummyContentViewC8delegateyXlSgvpfi() : *__infer_swift_type<Ty
 
 define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewC8delegateyXlSgvg(var1: *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : int {
   local var3: *int
-  #: @[195:0]
-      n2 = load &var1 @[195:0]
-      n1 = n2.__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.delegate @[195:0]
-      n3 = load n1 @[197:0]
-      n6 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[198:0]
-      jmp 6::ret @[199:0]
+  #: @[200:0]
+      n2 = load &var1 @[200:0]
+      n1 = n2.__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.delegate @[200:0]
+      n3 = load n1 @[202:0]
+      n6 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[203:0]
+      jmp 6::ret @[204:0]
       
-  #6::ret: @[201:0]
-      ret n3 @[201:0]
+  #6::ret: @[206:0]
+      ret n3 @[206:0]
       
 } @?
 
@@ -211,9 +227,11 @@ declare .plain_name = "delegate.modify" $s5Hello16DummyContentViewC8delegateyXlS
 
 declare .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewC8delegateyXlSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-declare $s5Hello15ContentViewType_pWOc(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+declare $s5Hello15ContentViewType_pSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare $s5Hello15ContentViewType_pWOb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+declare $s5Hello15ContentViewType_pSgWOd(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello15ContentViewType_pSgWOc(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare .plain_name = "deinit" $s5Hello12CreationCellCfd(*__infer_swift_type<T5Hello12CreationCellC,CreationCell>) : *__infer_swift_type<T5Hello12CreationCellC,CreationCell>
 
@@ -222,129 +240,161 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello1
 declare $s5Hello12CreationCellCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello12CreationCellCACycfc(self: *__infer_swift_type<T5Hello12CreationCellC,CreationCell>) : *__infer_swift_type<T5Hello12CreationCellC,CreationCell> {
-  #: @[17:9]
-      n2 = load &self @[17:9]
-      n1 = n2.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[17:9]
-      n4 = $s5Hello16DummyContentViewCMa(0) @[176:0]
-      jmp 4::ret @[177:0]
-      
-  #4::ret: @[178:0]
-      n5 = n4.__infer_swift_type<swift::metadata_response>.field_0 @[178:0]
-      n7 = load n5 @[179:0]
-      n8 = __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCACycfC(n7) @[179:0]
-      jmp 6::ret @[180:0]
-      
-  #6::ret: @[181:0]
-      n10 = load n1 @[181:0]
-      n9 = load n5 @[181:0]
-      store n10.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 <- n9 @[181:0]
-      n12 = load n1 @[182:0]
-      store n12.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 <- __sil_swift_alloc(<__infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>>) @[182:0]
-      n14 = load n1 @[183:0]
-      store n14.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 <- n8 @[183:0]
-      n15 = load &self @[184:0]
-      ret n15 @[184:0]
+  #: @[24:9]
+      n2 = load &self @[24:9]
+      n1 = n2.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[24:9]
+      n4 = load n1 @[184:0]
+      store n4.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 <- 0 @[184:0]
+      n6 = load n1 @[185:0]
+      store n6.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 <- 0 @[185:0]
+      n8 = load n1 @[186:0]
+      store n8.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 <- 0 @[186:0]
+      n10 = load n1 @[187:0]
+      store n10.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_3 <- 0 @[187:0]
+      n12 = load n1 @[188:0]
+      store n12.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 <- 0 @[188:0]
+      n13 = load &self @[189:0]
+      ret n13 @[189:0]
       
 } @?
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello12CreationCellC,CreationCell>.$s5Hello12CreationCellCACycfC(var1: *__infer_swift_type<,$s5Hello12CreationCellCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[170:0]
-      n1 = load &var1 @[170:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello12CreationCellC,CreationCell>>) @[170:0]
-      jmp 2::ret @[171:0]
+  #: @[178:0]
+      n1 = load &var1 @[178:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello12CreationCellC,CreationCell>>) @[178:0]
+      jmp 2::ret @[179:0]
       
-  #2::ret: @[172:0]
-      n6 = $s5Hello12CreationCellCACycfc(n4) @[172:0]
-      jmp 3::ret @[173:0]
+  #2::ret: @[180:0]
+      n6 = $s5Hello12CreationCellCACycfc(n4) @[180:0]
+      jmp 3::ret @[181:0]
       
-  #3::ret: @[174:0]
-      ret n6 @[174:0]
+  #3::ret: @[182:0]
+      ret n6 @[182:0]
       
 } @?
 
 define .plain_name = "configure" $s5Hello12CreationCellC9configureyyF(self: *__infer_swift_type<T5Hello12CreationCellC,CreationCell>) : void {
-  local var4: *int, getelementptr_offset_1: *void
-  #: @[20:32]
-      n1 = $builtins.llvm_nondet() @[20:32]
-      n3 = load &self @[20:30]
-      n2 = n3.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[20:30]
-      n5 = load n2 @[20:30]
-      n4 = load n5.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[20:30]
-      n7 = load n2 @[20:30]
-      n6 = load n7.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[20:30]
-      n8 = load n2 @[20:30]
-      n11 = load n2 @[20:30]
-      n12 = load n11.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[20:30]
-      n10 = n12 @[20:30]
-      jmp 11::ret @[20:30]
+  local var6: *int, var5: *int, var4: *__infer_swift_type<T5Hello15ContentViewType_pSg>, getelementptr_offset_1: *void
+  #: @[27:29]
+      n1 = load &var4 @[27:29]
+      _ = $s5Hello5UtilsV21contentViewForVariantAA07ContentD4Type_pyFZ(n1) @[27:29]
+      jmp $s5Hello5UtilsV21contentViewForVariantAA07ContentD4Type_pyFZ::void::ret @[27:29]
       
-  #11::ret: @[20:30]
-      store &getelementptr_offset_1 <- 3 @[20:30]
-      n13 = load &getelementptr_offset_1 @[20:30]
-      n15 = load &self @[20:30]
-      _ = $builtins.llvm_dynamic_call(n13, __sil_cast(<int>, n15), n10, n4, n6) @[20:30]
-      jmp 13::void::ret @[20:30]
+  #$s5Hello5UtilsV21contentViewForVariantAA07ContentD4Type_pyFZ::void::ret: @[27:21]
+      n3 = load &self @[27:21]
+      n2 = n3.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[27:21]
+      n4 = load &var4 @[27:21]
+      n5 = load n2 @[27:21]
+      n7 = load &var4 @[27:21]
+      store n2 <- n7 @[27:21]
+      jmp 7::ret @[27:21]
       
-  #13::void::ret: @[21:5]
-      ret null @[21:5]
+  #21: @[28:33]
+      n26 = $builtins.llvm_nondet() @[28:33]
+      n28 = load n8 @[28:31]
+      n27 = load n28.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[28:31]
+      n30 = load n8 @[28:31]
+      n29 = load n30.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[28:31]
+      n31 = load n8 @[28:31]
+      n34 = load n8 @[28:31]
+      n35 = load n34.__infer_swift_type<T5Hello15ContentViewType_pSg>.field_0 @[28:31]
+      n33 = n35 @[28:31]
+      jmp 28::ret @[28:31]
+      
+  #21::jmp::31: @[176:0]
+      n24 = 0 @[176:0]
+      jmp 31 @[177:0]
+      
+  #28::ret: @[28:31]
+      store &getelementptr_offset_1 <- 3 @[28:31]
+      n36 = load &getelementptr_offset_1 @[28:31]
+      n38 = load &self @[28:31]
+      _ = $builtins.llvm_dynamic_call(n36, __sil_cast(<int>, n38), n33, n27, n29) @[28:31]
+      jmp 30::void::ret @[28:31]
+      
+  #30::void::ret: @[175:0]
+      jmp 21::jmp::31 @[175:0]
+      
+  #31: @[29:5]
+      ret null @[29:5]
+      
+  #33: @[171:0]
+      jmp 33::jmp::31 @[171:0]
+      
+  #33::jmp::31: @[172:0]
+      n24 = 1 @[172:0]
+      jmp 31 @[173:0]
+      
+  #7::ret: @[28:20]
+      n9 = load &self @[28:20]
+      n8 = n9.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[28:20]
+      n11 = load n8 @[28:20]
+      n10 = load n11.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 @[28:20]
+      n13 = load n8 @[28:20]
+      n12 = load n13.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 @[28:20]
+      n15 = load n8 @[28:20]
+      n14 = load n15.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 @[28:20]
+      n17 = load n8 @[28:20]
+      n16 = load n17.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_3 @[28:20]
+      n19 = load n8 @[28:20]
+      n18 = load n19.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 @[28:20]
+      if __sil_bxor(__sil_eq(n16, 0), 1) then jmp 21 else jmp 33 @[28:20]
       
 } @?
 
-define .plain_name = "contentView.set" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pvs(var1: *__infer_swift_type<,$s5Hello15ContentViewType_pD>, var2: *__infer_swift_type<T5Hello12CreationCellC,CreationCell>) : void {
-  local var5: *int, var4: *__infer_swift_type<T5Hello15ContentViewTypeP>
-  #: @[156:0]
-      n1 = load &var1 @[156:0]
-      n2 = load &var4 @[156:0]
-      n3 = $s5Hello15ContentViewType_pWOc(n1, n2) @[156:0]
-      jmp 5::ret @[157:0]
+define .plain_name = "contentView.set" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pSgvs(var1: *__infer_swift_type<T5Hello15ContentViewType_p>, var2: *__infer_swift_type<T5Hello12CreationCellC,CreationCell>) : void {
+  local var5: *int, var4: *__infer_swift_type<T5Hello15ContentViewType_pSg>
+  #: @[158:0]
+      n1 = load &var1 @[158:0]
+      n2 = load &var4 @[158:0]
+      n3 = $s5Hello15ContentViewType_pSgWOc(n1, n2) @[158:0]
+      jmp 5::ret @[159:0]
       
-  #5::ret: @[158:0]
-      n5 = load &var2 @[158:0]
-      n4 = n5.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[158:0]
-      n6 = load n4 @[160:0]
-      _ = __swift_destroy_boxed_opaque_existential_1(n6) @[160:0]
-      jmp __swift_destroy_boxed_opaque_existential_1::void::ret @[161:0]
+  #5::ret: @[160:0]
+      n5 = load &var2 @[160:0]
+      n4 = n5.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[160:0]
+      n6 = load &var4 @[162:0]
+      n7 = load n4 @[162:0]
+      n9 = load &var4 @[162:0]
+      store n4 <- n9 @[162:0]
+      jmp 7::ret @[163:0]
       
   #7::ret: @[165:0]
       n10 = load &var1 @[165:0]
-      _ = __swift_destroy_boxed_opaque_existential_1(n10) @[165:0]
-      jmp __swift_destroy_boxed_opaque_existential_1::void::1::ret @[166:0]
+      n11 = $s5Hello15ContentViewType_pSgWOh(n10) @[165:0]
+      jmp 8::ret @[166:0]
       
-  #__swift_destroy_boxed_opaque_existential_1::void::1::ret: @[167:0]
+  #8::ret: @[167:0]
       ret null @[167:0]
       
-  #__swift_destroy_boxed_opaque_existential_1::void::ret: @[162:0]
-      n7 = load &var4 @[162:0]
-      n8 = load n4 @[162:0]
-      n9 = $s5Hello15ContentViewType_pWOb(n7, n8) @[162:0]
-      jmp 7::ret @[163:0]
-      
 } @?
 
-declare $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pvpfi(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$s5Hello15ContentViewType_pD>
+declare $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pSgvpfi(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello15ContentViewType_p>
 
-define .plain_name = "contentView.get" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pvg(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : void {
+define .plain_name = "contentView.get" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pSgvg(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : void {
   local var4: *int
-  #: @[150:0]
-      n2 = load &var2 @[150:0]
-      n1 = n2.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[150:0]
-      n3 = load n1 @[152:0]
-      n4 = load &var1 @[152:0]
-      n5 = $s5Hello15ContentViewType_pWOc(n3, n4) @[152:0]
-      jmp 5::ret @[153:0]
+  #: @[152:0]
+      n2 = load &var2 @[152:0]
+      n1 = n2.__infer_swift_type<T5Hello12CreationCellC,CreationCell>.contentView @[152:0]
+      n3 = load n1 @[154:0]
+      n4 = load &var1 @[154:0]
+      n5 = $s5Hello15ContentViewType_pSgWOc(n3, n4) @[154:0]
+      jmp 5::ret @[155:0]
       
-  #5::ret: @[155:0]
-      ret null @[155:0]
+  #5::ret: @[157:0]
+      ret null @[157:0]
       
 } @?
 
-declare .plain_name = "contentView.modify" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
+declare .plain_name = "contentView.modify" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
-declare .plain_name = "contentView.modify" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+declare .plain_name = "contentView.modify" $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
 global symbolic yXlSg: *__infer_tuple_class<*int,int>
 
-global symbolic ______p 5Hello15ContentViewTypeP: *__infer_tuple_class<int,int,*int,int>
+global symbolic ______pSg 5Hello15ContentViewTypeP: *__infer_tuple_class<int,int,*int,int>
+
+global symbolic _____ 5Hello5UtilsV: *__infer_tuple_class<int,int,int>
 
 global symbolic _____ 5Hello16DummyContentViewC: *__infer_tuple_class<int,int,int>
 
@@ -410,6 +460,8 @@ global OBJC_CLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
 global ::str::8::delegate: *int
 
+global ::str::5::Utils: *int
+
 global ::str::5::Hello: *int
 
 global ::str::28::_TtC5Hello16DummyContentView: *int
@@ -430,9 +482,19 @@ global 1: *int
 
 global 0: *int
 
+global $sytWV: *__infer_swift_type<ptr_elt>
+
 global $sBoWV: *__infer_swift_type<ptr_elt>
 
 global $s5HelloMXM: *__infer_tuple_class<int,int,int>
+
+global $s5Hello5UtilsVMn: *__infer_tuple_class<int,int,int,int,int,int,int>
+
+global $s5Hello5UtilsVMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
+
+global $s5Hello5UtilsVMF: *__infer_tuple_class<int,int,int,int,int>
+
+global $s5Hello5UtilsVHn: *__infer_swift_type<swift::type_metadata_record>
 
 global $s5Hello16DummyContentViewCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
@@ -468,9 +530,9 @@ global $s5Hello12CreationCellCMF: *__infer_tuple_class<int,int,int,int,int,int,i
 
 global $s5Hello12CreationCellCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pvpWvd: int
+global $s5Hello12CreationCellC11contentViewAA07ContentE4Type_pSgvpWvd: int
 
-type __infer_swift_type<$s5Hello12CreationCellC11contentViewAA07ContentE4Type_pvM::Frame> = {
+type __infer_swift_type<$s5Hello12CreationCellC11contentViewAA07ContentE4Type_pSgvM::Frame> = {
 field_0: *int}
 
 type __infer_swift_type<$s5Hello16DummyContentViewC8delegateyXlSgvM::Frame> = {
@@ -483,11 +545,13 @@ type __infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP> = {
 }
 
 type __infer_swift_type<T5Hello12CreationCellC,CreationCell> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                                contentView: *__infer_swift_type<T5Hello15ContentViewTypeP>}
+                                                                contentView: *__infer_swift_type<T5Hello15ContentViewType_pSg>}
 
 type __infer_swift_type<T5Hello15ContentViewTypeP> = {field_0: *int;
                                                       field_1: *__infer_swift_type<ptr_elt>;
                                                       field_2: *__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<T5Hello15ContentViewType_pSg> = {field_0: *int}
 
 type __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView> = {
 field_0: *__infer_swift_type<swift::refcounted>;
@@ -585,6 +649,12 @@ __infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_3: int; __infer_tuple_field_4: int}
 
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: int;
+__infer_tuple_field_3: *__infer_swift_type<ptr_elt>}
+
 type __infer_tuple_class<*int,int> = {__infer_tuple_field_0: *int;
                                       __infer_tuple_field_1: int}
 
@@ -626,6 +696,14 @@ __infer_tuple_field_6: *__infer_swift_type<swift::protocol_requirement>;
 __infer_tuple_field_7: *__infer_swift_type<swift::protocol_requirement>;
 __infer_tuple_field_8: *__infer_swift_type<swift::protocol_requirement>;
 __infer_tuple_field_9: *__infer_swift_type<swift::protocol_requirement>}
+
+type __infer_tuple_class<int,int,int,int,int,int,int> = {__infer_tuple_field_0: int;
+                                                         __infer_tuple_field_1: int;
+                                                         __infer_tuple_field_2: int;
+                                                         __infer_tuple_field_3: int;
+                                                         __infer_tuple_field_4: int;
+                                                         __infer_tuple_field_5: int;
+                                                         __infer_tuple_field_6: int}
 
 type __infer_tuple_class<int,int,int,int,int,int,int,int> = {__infer_tuple_field_0: int;
                                                              __infer_tuple_field_1: int;
