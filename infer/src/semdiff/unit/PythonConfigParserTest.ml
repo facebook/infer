@@ -23,6 +23,7 @@ C = var("C")
 L = var("L")
 M = var("M")
 N = var("N")
+T = var("T")
 V = var("V")
 X = var("X")
 
@@ -42,7 +43,7 @@ rewrite(
     rhs=AnnAssign(annotation=A, simple=1, target=N, value=V),
 )
 
-# if N.class == str <=> if isinstance(N, str)
+# if N.class == str ==> if isinstance(N, str)
 rewrite(
     lhs=Compare(
         comparators=[Name(ctx=Load(), id="str")],
@@ -54,6 +55,19 @@ rewrite(
         func=Name(ctx=Load(), id="isinstance"),
         keywords=[],
     ),
+)
+
+# Optional[T] ==> T|None
+rewrite(
+    lhs=Subscript(
+        value=Name(id="Optional",ctx=Load()),
+        slice=T,ctx=Load()
+    ),
+    rhs=BinOp(
+        left=T,
+        op=BitOr(),
+        right=Constant(kind=null,value=null)
+    )
 )
 
 # if the parent file was not annotated, the new version can be annotated with any type

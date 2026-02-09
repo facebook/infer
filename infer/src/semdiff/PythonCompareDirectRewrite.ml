@@ -284,7 +284,7 @@ let missing_python_type_annotations_config : Rules.t =
             node "AnnAssign"
               [("annotation", var "A"); ("simple", int 1); ("target", var "N"); ("value", var "V")]
         }
-      ; { (* if N.class == str <=> if isinstance(N, str) *)
+      ; { (* if N.class == str ==> if isinstance(N, str) *)
           lhs=
             node "Compare"
               [ ("comparators", list [node "Name" [("ctx", node "Load" []); ("id", str "str")]])
@@ -296,7 +296,18 @@ let missing_python_type_annotations_config : Rules.t =
             node "Call"
               [ ("args", list [var "N"; node "Name" [("ctx", node "Load" []); ("id", str "str")]])
               ; ("func", node "Name" [("ctx", node "Load" []); ("id", str "isinstance")])
-              ; ("keywords", list []) ] } ]
+              ; ("keywords", list []) ] }
+      ; { (*  Optional[T] ==> T | None *)
+          lhs=
+            node "Subscript"
+              [ ("value", node "Name" [("id", str "Optional"); ("ctx", node "Load" [])])
+              ; ("slice", var "T")
+              ; ("ctx", node "Load" []) ]
+        ; rhs=
+            node "BinOp"
+              [ ("left", var "T")
+              ; ("op", node "BitOr" [])
+              ; ("right", node "Constant" [("kind", null); ("value", null)]) ] } ]
   ; accept=
       [ { (* if the parent file was not annotated, the new version can be annotated with any type*)
           lhs= null

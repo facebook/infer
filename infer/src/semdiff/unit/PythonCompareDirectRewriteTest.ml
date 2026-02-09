@@ -544,7 +544,7 @@ def foo() -> None:
   [%expect {| (Line 3) +   r = 2 |}]
 
 
-let%expect_test "fp_test_change_optional_type_good" =
+let%expect_test "test_change_optional_type_good" =
   let prog1 = {|
 def foo(x: Optional[int]) -> None: pass
 |} in
@@ -552,8 +552,7 @@ def foo(x: Optional[int]) -> None: pass
 def foo(x: int | None) -> None: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 2) - def foo(x: Optional[int]) -> None: pass, + def foo(x: int | None) -> None: pass |}]
+  [%expect {| |}]
 
 
 let%expect_test "test_change_optional_type_bad" =
@@ -672,7 +671,7 @@ let%expect_test "pp missing_python_type_annotations_config" =
   F.printf "%a@." Rules.pp missing_python_type_annotations_config ;
   [%expect
     {|
-    vars: A C L M N V X
+    vars: A C L M N T V X
     ignore(ImportFrom(level=L,module=M,names=N))
     ignore(Import(names=N))
 
@@ -682,6 +681,8 @@ let%expect_test "pp missing_python_type_annotations_config" =
             rhs=AnnAssign(annotation=A,simple=1,target=N,value=V))
     rewrite(lhs=Compare(comparators=[Name(ctx=Load(),id="str")],left=Attribute(attr="__class__",ctx=Load(),value=N),ops=[Eq()]),
             rhs=Call(args=[N,Name(ctx=Load(),id="str")],func=Name(ctx=Load(),id="isinstance"),keywords=[]))
+    rewrite(lhs=Subscript(value=Name(id="Optional",ctx=Load()),slice=T,ctx=Load()),
+            rhs=BinOp(left=T,op=BitOr(),right=Constant(kind=null,value=null)))
 
     accept(lhs=null, rhs=X)
     accept(lhs="Any", rhs="object")
