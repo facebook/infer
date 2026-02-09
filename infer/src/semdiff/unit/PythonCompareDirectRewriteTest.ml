@@ -10,9 +10,9 @@ module F = Format
 
 let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe ()
 
-let ast_diff_equal prog1 prog2 =
+let ast_diff_equal ?(debug = false) prog1 prog2 =
   let config = PythonCompareDirectRewrite.missing_python_type_annotations_config in
-  let diffs = PythonCompareDirectRewrite.ast_diff ~debug:false ~config prog1 prog2 in
+  let diffs = PythonCompareDirectRewrite.ast_diff ~debug ~config prog1 prog2 in
   List.iter diffs ~f:(F.printf "%a\n" Diff.pp_explicit)
 
 
@@ -156,7 +156,8 @@ def greet(name: Any) -> str:
 |}
   in
   ast_diff_equal prog1 prog2 ;
-  [%expect {| (Line 5) + def greet(name: Any) -> str: |}]
+  [%expect
+    {| (Line 5) + def greet(name: Any) -> str: |}]
 
 
 let%expect_test "test_with_missing_type_good" =
@@ -389,8 +390,7 @@ def foo(self, x: int) -> None: pass
 def foo(self, x: int | None) -> None: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 2) - def foo(self, x: int) -> None: pass, + def foo(self, x: int | None) -> None: pass |}]
+  [%expect {| |}]
 
 
 let%expect_test "test_change_async_fun_type_bad" =
@@ -401,8 +401,7 @@ async def foo(self, x: int) -> None: pass
 async def foo(self, x: str) -> None: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 2) - async def foo(self, x: int) -> None: pass, + async def foo(self, x: str) -> None: pass |}]
+  [%expect {| |}]
 
 
 let%expect_test "test_change_assign_type_bad" =
@@ -421,8 +420,7 @@ CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3}
 |}
   in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 4) - CATEGORIES_TO_REMOVE: dict[str, int] = {'a': 1, 'b': 2, 'c': 3}, + CATEGORIES_TO_REMOVE: dict[str, int | None] = {'a': 1, 'b': 2, 'c': 3} |}]
+  [%expect {| |}]
 
 
 let%expect_test "test_change_fun_type_float_good" =
@@ -483,8 +481,7 @@ from mylib import someUserDefinedType
 def foo() -> someUserDefinedType: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 3) - def foo() -> SomeUserDefinedType: pass, + def foo() -> someUserDefinedType: pass |}]
+  [%expect {| |}]
 
 
 let%expect_test "fp_test_initialisation_set_good" =
@@ -532,8 +529,7 @@ def foo(params) -> "Tree": pass
 def foo(params: list[str]) -> Tree: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 2) - def foo(params) -> "Tree": pass, + def foo(params: list[str]) -> Tree: pass |}]
+  [%expect {| |}]
 
 
 let%expect_test "noise_in_diff_bad" =
@@ -577,8 +573,7 @@ def foo(x: Optional[int]) -> None: pass
 def foo(x: str | None) -> None: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 2) - def foo(x: Optional[int]) -> None: pass, + def foo(x: str | None) -> None: pass |}]
+  [%expect {| |}]
 
 
 let%expect_test "test_change_any_type_good" =
@@ -600,7 +595,7 @@ def foo(x: Any) -> None: pass
 def foo(x: str) -> None: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect {| (Line 2) - def foo(x: Any) -> None: pass, + def foo(x: str) -> None: pass |}]
+  [%expect {| |}]
 
 
 let%expect_test "test_change_type_case_sensitive_rec_good" =
@@ -628,11 +623,7 @@ def foo() -> Dict[str, Dict[str, Set[str]]]: pass
 def foo() -> dict[str, dict[str, str]]: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {|
-    (Line 2) + def foo() -> dict[str, dict[str, str]]: pass
-    (Line 3) - def foo() -> Dict[str, Dict[str, Set[str]]]: pass
-    |}]
+  [%expect {| |}]
 
 
 let%expect_test "test_field_assign_type" =
@@ -685,7 +676,7 @@ let%expect_test "pp missing_python_type_annotations_config" =
   F.printf "%a@." Rules.pp missing_python_type_annotations_config ;
   [%expect
     {|
-    vars: A C L M N T V X
+    vars: A C L M N T T1 T2 V X
     ignore(ImportFrom(level=L,module=M,names=N))
     ignore(Import(names=N))
 
@@ -696,8 +687,11 @@ let%expect_test "pp missing_python_type_annotations_config" =
     rewrite(lhs=Compare(comparators=[Name(ctx=Load(),id="str")],left=Attribute(attr="__class__",ctx=Load(),value=N),ops=[Eq()]),
             rhs=Call(args=[N,Name(ctx=Load(),id="str")],func=Name(ctx=Load(),id="isinstance"),keywords=[]))
 
-    accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(),id="Any"),X))
-    accept(lhs="Any", rhs="object")
+    accept(lhs=null,
+           rhs=X,
+           condition=not (equals(Name(ctx=Load(),id="Any"),X)),
+           key=["returns","annotation"])
+    accept(lhs=T1, rhs=T2, condition=not (equals(null,T1)), key=["returns","annotation","rule2"])
     accept(lhs=Subscript(value=Name(id="Optional",ctx=Load()),slice=T,ctx=Load()),
            rhs=BinOp(left=T,op=BitOr(),right=Constant(kind=null,value=null)))
     accept(lhs=Name(id="Dict",ctx=C), rhs=Name(id="dict",ctx=C))

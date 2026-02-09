@@ -33,13 +33,14 @@ module Pattern : sig
 end
 
 module Condition : sig
-  type predicate = Equals [@@deriving equal]
+  type predicate = Contains | Equals [@@deriving equal]
 
-  type t = {predicate: predicate; args: Pattern.t list; value: bool} [@@deriving equal]
+  type t = Atom of {predicate: predicate; args: Pattern.t list} | Not of t | And of t * t
+  [@@deriving equal]
 end
 
 module Rules : sig
-  type rule = {lhs: Pattern.t; rhs: Pattern.t; condition: Condition.t option}
+  type rule = {lhs: Pattern.t; rhs: Pattern.t; condition: Condition.t option; key: Name.t list}
 
   type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
 

@@ -58,10 +58,13 @@ rewrite(
 )
 
 # if the parent file was not annotated, the new version can be annotated with any type, except Any
-accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(), id="Any"), X))
+accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(), id="Any"), X), key=["returns","annotation"])
 
-# if the parent file was annotated with 'Any', we accept 'object' instead
-accept(lhs="Any", rhs="object")
+# if the parent file was annotated', we accept any type as long as it does not contain Any
+accept(lhs=T1,
+       rhs=T2,
+       condition=(not (equals(null,T1))) and (not (contains(Name(ctx=Load(),id="Any"),T2))),
+       key=["returns","annotation"])
 
 # if the parent was annotated with Optional[T], we require T | None instead
 accept(
@@ -93,4 +96,33 @@ accept(lhs=Name(id="Set", ctx=C), rhs=Name(id="set", ctx=C))
 |}
   in
   if Rules.equal rules1 rules2 then F.printf "parsing was successful" else F.printf "parsing failed" ;
-  [%expect {| parsing was successful |}]
+  F.printf "%a@." Rules.pp rules1 ;
+  F.printf "%a@." Rules.pp rules2 ;
+  [%expect.unreachable]
+[@@expect.uncaught_exn
+  {|
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+  ("IBase.Die.InferUserError(\"line 48, assign\\n\")")
+  Raised at SemDiffLib__PythonConfigParser.parse_module.(fun) in file "src/semdiff/PythonConfigParser.ml", line 250, characters 12-95
+  Called from Base__List0.fold in file "src/list0.ml", line 43, characters 27-37
+  Called from SemDiffLib__PythonConfigParser.parse_module in file "src/semdiff/PythonConfigParser.ml", lines 237-250, characters 4-97
+  Called from SemDiffLib__PythonConfigParser.parse_string in file "src/semdiff/PythonConfigParser.ml", line 261, characters 8-24
+  Re-raised at IBase__Die.raise_error.do_raise in file "src/base/Die.ml", line 26, characters 8-58
+  Called from SemDiffLinTest__PythonConfigParserTest.(fun) in file "src/semdiff/unit/PythonConfigParserTest.ml", lines 16-96, characters 4-2
+  Called from Ppx_expect_runtime__Test_block.Configured.dump_backtrace in file "runtime/test_block.ml", line 142, characters 10-28
+
+  Trailing output
+  ---------------
+  (* CR expect_test_collector: This test expectation appears to contain a backtrace.
+     This is strongly discouraged as backtraces are fragile.
+     Please change this test to not include a backtrace. *)
+
+  line 48, assign
+
+  Raised at SemDiffLib__PythonConfigParser.parse_module.(fun) in file "src/semdiff/PythonConfigParser.ml", line 250, characters 12-95
+  Called from Base__List0.fold in file "src/list0.ml", line 43, characters 27-37
+  Called from SemDiffLib__PythonConfigParser.parse_module in file "src/semdiff/PythonConfigParser.ml", lines 237-250, characters 4-97
+  Called from SemDiffLib__PythonConfigParser.parse_string in file "src/semdiff/PythonConfigParser.ml", line 261, characters 8-24
+  |}]

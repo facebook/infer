@@ -141,13 +141,17 @@ let keyword name = function
 
 let predicate funcname args =
   match (funcname, args) with
+  | "contains", [arg1; arg2] ->
+      Some (Condition.Atom {predicate= Condition.Contains; args= [arg1; arg2]})
   | "equals", [arg1; arg2] ->
-      Some {Condition.predicate= Condition.Equals; args= [arg1; arg2]; value= true}
+      Some (Condition.Atom {predicate= Condition.Equals; args= [arg1; arg2]})
   | _ ->
       None
 
 
 let is_not = function Dict dict when is_type dict "Not" -> true | _ -> false
+
+let is_and = function Dict dict when is_type dict "And" -> true | _ -> false
 
 let rec condition map node =
   let open IOption.Let_syntax in
@@ -161,8 +165,24 @@ let rec condition map node =
       if is_not op then
         let* operand = find_field "operand" dict in
         let* cond = condition map operand in
-        Some {cond with Condition.value= not cond.Condition.value}
+        Some (Condition.Not cond)
       else None
+  | Dict dict when is_type dict "BoolOp" ->
+      let* op = find_field "op" dict in
+      if is_and op then
+        let* values = find_field "values" dict >>= list ~f:(condition map) in
+        match values with [cond1; cond2] -> Some (Condition.And (cond1, cond2)) | _ -> None
+      else None
+  | _ ->
+      None
+
+
+let key node =
+  let open IOption.Let_syntax in
+  match node with
+  | Dict dict when is_type dict "List" ->
+      let* elts = find_field "elts" dict in
+      list elts ~f:(fun node -> constant node >>| Name.of_string)
   | _ ->
       None
 
@@ -177,24 +197,18 @@ let expr map node =
       | "ignore", List [node], List [] ->
           let* node = pattern map node in
           Some (`Ignore node)
-      | "rewrite", List [], List ([_; _] as l) ->
+      | "rewrite", List [], List l when List.length l <= 4 ->
           let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
           let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
-          Some (`Rewrite (lhs, rhs, None))
-      | "rewrite", List [], List ([_; _; _] as l) ->
+          let condition = List.find_map l ~f:(keyword "condition") >>= condition map in
+          let key = List.find_map l ~f:(keyword "key") >>= key |> Option.value ~default:[] in
+          Some (`Rewrite (lhs, rhs, condition, key))
+      | "accept", List [], List l when List.length l <= 4 ->
           let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
           let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
-          let* condition = List.find_map l ~f:(keyword "condition") >>= condition map in
-          Some (`Rewrite (lhs, rhs, Some condition))
-      | "accept", List [], List ([_; _] as l) ->
-          let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
-          let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
-          Some (`Accept (lhs, rhs, None))
-      | "accept", List [], List ([_; _; _] as l) ->
-          let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
-          let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
-          let* condition = List.find_map l ~f:(keyword "condition") >>= condition map in
-          Some (`Accept (lhs, rhs, Some condition))
+          let condition = List.find_map l ~f:(keyword "condition") >>= condition map in
+          let key = List.find_map l ~f:(keyword "key") >>= key |> Option.value ~default:[] in
+          Some (`Accept (lhs, rhs, condition, key))
       | _, _, _ ->
           None )
   | _ ->
@@ -226,10 +240,10 @@ let parse_module ast =
             (map, rules)
         | Some (`Ignore pattern) ->
             (map, {rules with Rules.ignore= pattern :: rules.Rules.ignore})
-        | Some (`Rewrite (lhs, rhs, condition)) ->
-            (map, {rules with Rules.rewrite= {lhs; rhs; condition} :: rules.Rules.rewrite})
-        | Some (`Accept (lhs, rhs, condition)) ->
-            (map, {rules with Rules.accept= {lhs; rhs; condition} :: rules.Rules.accept})
+        | Some (`Rewrite (lhs, rhs, condition, key)) ->
+            (map, {rules with Rules.rewrite= {lhs; rhs; condition; key} :: rules.Rules.rewrite})
+        | Some (`Accept (lhs, rhs, condition, key)) ->
+            (map, {rules with Rules.accept= {lhs; rhs; condition; key} :: rules.Rules.accept})
         | Some (`Assign map) ->
             (map, rules)
         | None ->

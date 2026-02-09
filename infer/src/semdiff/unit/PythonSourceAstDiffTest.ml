@@ -40,9 +40,9 @@ let are_ast_equivalent ?(debug = false) ast1 ast2 rules =
 let%expect_test "store ast" =
   let parser = build_parser () in
   let ast = parser {|
-x = 0
-y = 1
-z = 2
+x : T = 0
+def main(x: X) -> R:
+      pass
       |} in
   F.printf "%s\n" (PythonSourceAst.Node.to_str ast) ;
   PythonSourceAstDiff.TestOnly.store_ast ~debug:true ast ;
@@ -52,21 +52,28 @@ z = 2
       _type=Str: Module
       body=List: [
         Dict: {
-          _type=Str: Assign
+          _type=Str: AnnAssign
+          annotation=Dict: {
+            _type=Str: Name
+            ctx=Dict: {
+              _type=Str: Load
+            }
+            end_lineno=Int: 2
+            id=Str: T
+            lineno=Int: 2
+          }
           end_lineno=Int: 2
           lineno=Int: 2
-          targets=List: [
-            Dict: {
-              _type=Str: Name
-              ctx=Dict: {
-                _type=Str: Store
-              }
-              end_lineno=Int: 2
-              id=Str: x
-              lineno=Int: 2
+          simple=Int: 1
+          target=Dict: {
+            _type=Str: Name
+            ctx=Dict: {
+              _type=Str: Store
             }
-          ]
-          type_comment=Null
+            end_lineno=Int: 2
+            id=Str: x
+            lineno=Int: 2
+          }
           value=Dict: {
             _type=Str: Constant
             end_lineno=Int: 2
@@ -76,52 +83,60 @@ z = 2
           }
         }
         Dict: {
-          _type=Str: Assign
-          end_lineno=Int: 3
-          lineno=Int: 3
-          targets=List: [
-            Dict: {
-              _type=Str: Name
-              ctx=Dict: {
-                _type=Str: Store
+          _type=Str: FunctionDef
+          args=Dict: {
+            _type=Str: arguments
+            args=List: [
+              Dict: {
+                _type=Str: arg
+                annotation=Dict: {
+                  _type=Str: Name
+                  ctx=Dict: {
+                    _type=Str: Load
+                  }
+                  end_lineno=Int: 3
+                  id=Str: X
+                  lineno=Int: 3
+                }
+                arg=Str: x
+                end_lineno=Int: 3
+                lineno=Int: 3
+                type_comment=Null
               }
-              end_lineno=Int: 3
-              id=Str: y
-              lineno=Int: 3
-            }
-          ]
-          type_comment=Null
-          value=Dict: {
-            _type=Str: Constant
-            end_lineno=Int: 3
-            kind=Null
-            lineno=Int: 3
-            value=Int: 1
+            ]
+            defaults=List: [
+            ]
+            kw_defaults=List: [
+            ]
+            kwarg=Null
+            kwonlyargs=List: [
+            ]
+            posonlyargs=List: [
+            ]
+            vararg=Null
           }
-        }
-        Dict: {
-          _type=Str: Assign
-          end_lineno=Int: 4
-          lineno=Int: 4
-          targets=List: [
+          body=List: [
             Dict: {
-              _type=Str: Name
-              ctx=Dict: {
-                _type=Str: Store
-              }
+              _type=Str: Pass
               end_lineno=Int: 4
-              id=Str: z
               lineno=Int: 4
             }
           ]
-          type_comment=Null
-          value=Dict: {
-            _type=Str: Constant
-            end_lineno=Int: 4
-            kind=Null
-            lineno=Int: 4
-            value=Int: 2
+          decorator_list=List: [
+          ]
+          end_lineno=Int: 4
+          lineno=Int: 3
+          name=Str: main
+          returns=Dict: {
+            _type=Str: Name
+            ctx=Dict: {
+              _type=Str: Load
+            }
+            end_lineno=Int: 3
+            id=Str: R
+            lineno=Int: 3
           }
+          type_comment=Null
         }
       ]
       type_ignores=List: [
@@ -131,18 +146,31 @@ z = 2
     (Module
         (body
             (List
-                (Assign
-                    (targets (List (Name (ctx Store) (id x))))
-                    (type_comment Null)
+                (AnnAssign
+                    (annotation (Name (ctx Load) (id T)))
+                    (simple 1)
+                    (target (Name (ctx Store) (id x)))
                     (value (Constant (kind Null) (value 0))))
-                (Assign
-                    (targets (List (Name (ctx Store) (id y))))
-                    (type_comment Null)
-                    (value (Constant (kind Null) (value 1))))
-                (Assign
-                    (targets (List (Name (ctx Store) (id z))))
-                    (type_comment Null)
-                    (value (Constant (kind Null) (value 2))))))
+                (FunctionDef
+                    (args
+                        (arguments
+                            (args
+                                (List
+                                    (arg
+                                        (annotation (Name (ctx Load) (id X)))
+                                        (arg x)
+                                        (type_comment Null))))
+                            (defaults List)
+                            (kw_defaults List)
+                            (kwarg Null)
+                            (kwonlyargs List)
+                            (posonlyargs List)
+                            (vararg Null)))
+                    (body (List Pass))
+                    (decorator_list List)
+                    (name main)
+                    (returns (Name (ctx Load) (id R)))
+                    (type_comment Null))))
         (type_ignores List))
     |}]
 
