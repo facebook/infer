@@ -32,8 +32,14 @@ module Pattern : sig
     | List of t list
 end
 
+module Condition : sig
+  type predicate = Equals [@@deriving equal]
+
+  type t = {predicate: predicate; args: Pattern.t list; value: bool} [@@deriving equal]
+end
+
 module Rules : sig
-  type rule = {lhs: Pattern.t; rhs: Pattern.t}
+  type rule = {lhs: Pattern.t; rhs: Pattern.t; condition: Condition.t option}
 
   type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
 

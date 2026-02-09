@@ -141,7 +141,7 @@ def foo(self) -> None:
   [%expect {| (Line 4) +     assert obj is not None |}]
 
 
-let%expect_test "test_with_import_good" =
+let%expect_test "test_with_missing_type_bad" =
   let prog1 = {|
 def greet(name):
     return f"Hello, {name}!"
@@ -155,6 +155,20 @@ def greet(name: Any) -> str:
     return f"Hello, {name}!"
 |}
   in
+  ast_diff_equal prog1 prog2 ;
+  [%expect {| (Line 5) + def greet(name: Any) -> str: |}]
+
+
+let%expect_test "test_with_missing_type_good" =
+  let prog1 = {|
+def greet(name):
+    return f"Hello, {name}!"
+|} in
+  let prog2 = {|
+# pyre-strict
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+|} in
   ast_diff_equal prog1 prog2 ;
   [%expect {| |}]
 
@@ -684,7 +698,7 @@ let%expect_test "pp missing_python_type_annotations_config" =
     rewrite(lhs=Subscript(value=Name(id="Optional",ctx=Load()),slice=T,ctx=Load()),
             rhs=BinOp(left=T,op=BitOr(),right=Constant(kind=null,value=null)))
 
-    accept(lhs=null, rhs=X)
+    accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(),id="Any"),X))
     accept(lhs="Any", rhs="object")
     accept(lhs=Name(id="Dict",ctx=C), rhs=Name(id="dict",ctx=C))
     accept(lhs=Name(id="FrozenSet",ctx=C), rhs=Name(id="frozenset",ctx=C))

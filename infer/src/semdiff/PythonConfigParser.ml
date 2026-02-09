@@ -189,9 +189,9 @@ let parse_module ast =
         | Some (`Ignore pattern) ->
             (map, {rules with Rules.ignore= pattern :: rules.Rules.ignore})
         | Some (`Rewrite (lhs, rhs)) ->
-            (map, {rules with Rules.rewrite= {lhs; rhs} :: rules.Rules.rewrite})
+            (map, {rules with Rules.rewrite= {lhs; rhs; condition= None} :: rules.Rules.rewrite})
         | Some (`Accept (lhs, rhs)) ->
-            (map, {rules with Rules.accept= {lhs; rhs} :: rules.Rules.accept})
+            (map, {rules with Rules.accept= {lhs; rhs; condition= None} :: rules.Rules.accept})
         | Some (`Assign map) ->
             (map, rules)
         | None ->

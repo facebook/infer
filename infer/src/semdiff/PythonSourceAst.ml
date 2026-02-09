@@ -46,6 +46,26 @@ module Node = struct
     |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "Could not find ast node type")
 
 
+  let wash_lines_info dict =
+    dict |> StringMap.remove field_lineno |> StringMap.remove field_end_lineno
+
+
+  let equal node1 node2 =
+    match (node1, node2) with
+    | Dict dict1, Dict dict2 ->
+        equal_dict (wash_lines_info dict1) (wash_lines_info dict2)
+    | _, _ ->
+        equal node1 node2
+
+
+  let compare node1 node2 =
+    match (node1, node2) with
+    | Dict dict1, Dict dict2 ->
+        compare_dict (wash_lines_info dict1) (wash_lines_info dict2)
+    | _, _ ->
+        compare node1 node2
+
+
   let assoc_of_dict dict =
     let typ =
       match get_type dict with
@@ -55,8 +75,7 @@ module Node = struct
           L.die InternalError "_typ should be a string"
     in
     let washed_assoc =
-      dict |> StringMap.remove type_field_name |> StringMap.remove field_lineno
-      |> StringMap.remove field_end_lineno |> StringMap.bindings
+      wash_lines_info dict |> StringMap.remove type_field_name |> StringMap.bindings
     in
     (typ, washed_assoc)
 

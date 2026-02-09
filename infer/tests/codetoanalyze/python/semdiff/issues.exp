@@ -2,3 +2,4 @@ previous/different_assert_added.py, current/different_assert_added.py, SEMDIFF M
 previous/different_async_body_change.py, current/different_async_body_change.py, SEMDIFF MISMATCH: [(Line 8) -         print(1), +         print(2)]
 previous/different_for_loop_refactor.py, current/different_for_loop_refactor.py, SEMDIFF MISMATCH: [(Line 8) +     temp_dict = dict(o.mapping),(Line 9) -         o.mapping[i] -= 7,(Line 10) +         temp_dict[i] -= 7,(Line 11) +     o.mapping = temp_dict]
 previous/different_return_value_change.py, current/different_return_value_change.py, SEMDIFF MISMATCH: [(Line 8) -     return 1, +     return 2]
+previous/different_with_missing_type.py, current/different_with_missing_type.py, SEMDIFF MISMATCH: [(Line 9) + def greet(name: Any) -> str:]

@@ -51,6 +51,8 @@ module Pattern = struct
     Node {name; args}
 
 
+  let any = node "Name" [("ctx", node "Load" []); ("id", str "Any")]
+
   let vars pattern =
     let rec aux acc = function
       | Var v ->
@@ -107,48 +109,85 @@ module Pattern = struct
   and match_pair (pattern1, pattern2) (ast1, ast2) =
     try
       let subst = match_rec Subst.empty pattern1 ast1 in
-      let _subst = match_rec subst pattern2 ast2 in
-      true
-    with ImpossibleMatching -> false
+      Some (match_rec subst pattern2 ast2)
+    with ImpossibleMatching -> None
 
 
-  let rec to_node ~start_line ~end_line subst = function
+  let rec to_node ?start_line ?end_line subst = function
     | Var var ->
         Subst.find_opt var subst
         |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "invalid substitution")
     | AstNode node ->
         node
     | List l ->
-        Ast.Node.List (List.map l ~f:(to_node ~start_line ~end_line subst))
+        Ast.Node.List (List.map l ~f:(to_node ?start_line ?end_line subst))
     | Node {name; args} ->
         let args : (string * Ast.Node.t) list =
           List.map args ~f:(fun ((name : Name.t), pattern) ->
-              ((name :> string), to_node ~start_line ~end_line subst pattern) )
+              ((name :> string), to_node ?start_line ?end_line subst pattern) )
         in
         let new_node = Ast.Node.Dict (Ast.Node.dict_of_assoc (name :> string) args) in
         let new_node = Ast.Node.set_node_line_number new_node start_line in
         Ast.Node.set_node_end_line_number new_node end_line
 end
 
+module Condition = struct
+  type predicate = Equals [@@deriving equal]
+
+  let pp_predicate fmt = function Equals -> F.pp_print_string fmt "equals"
+
+  let eval_predicate predicate args subst =
+    match (predicate, args) with
+    | Equals, [arg1; arg2] ->
+        let arg1 = Pattern.to_node subst arg1 in
+        let arg2 = Pattern.to_node subst arg2 in
+        Ast.Node.equal arg1 arg2
+    | Equals, _ ->
+        false
+
+
+  type t = {predicate: predicate; args: Pattern.t list; value: bool} [@@deriving equal]
+
+  let pp fmt {predicate; args; value} =
+    F.fprintf fmt "%s%a(%a)"
+      (if value then "" else "not ")
+      pp_predicate predicate (Pp.comma_seq Pattern.pp) args
+
+
+  let eval opt_condition subst =
+    match opt_condition with
+    | None ->
+        true
+    | Some {predicate; args; value} ->
+        Bool.equal (eval_predicate predicate args subst) value
+
+
+  let is_not_Any arg = Some {predicate= Equals; args= [Pattern.any; arg]; value= false}
+end
+
 module Action = struct
   let ignore node pattern = Option.is_some (Pattern.match_node pattern node)
 
-  let rewrite node ~lhs ~rhs =
+  let rewrite node ~lhs ~rhs ~condition =
     match Pattern.match_node lhs node with
-    | Some subst ->
+    | Some subst when Condition.eval condition subst ->
         let start_line = Ast.Node.get_node_line_number node in
         let end_line = Ast.Node.get_node_end_line_number node in
-        Pattern.to_node ~start_line ~end_line subst rhs
-    | None ->
+        Pattern.to_node ?start_line ?end_line subst rhs
+    | _ ->
         node
 
 
-  let accept ~lhs_node ~rhs_node ~lhs_pattern ~rhs_pattern =
-    Pattern.match_pair (lhs_pattern, rhs_pattern) (lhs_node, rhs_node)
+  let accept ~lhs_node ~rhs_node ~lhs_pattern ~rhs_pattern ~condition =
+    match Pattern.match_pair (lhs_pattern, rhs_pattern) (lhs_node, rhs_node) with
+    | None ->
+        false
+    | Some subst ->
+        Condition.eval condition subst
 end
 
 module Rules = struct
-  type rule = {lhs: Pattern.t; rhs: Pattern.t} [@@deriving equal]
+  type rule = {lhs: Pattern.t; rhs: Pattern.t; condition: Condition.t option} [@@deriving equal]
 
   type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
 
@@ -157,23 +196,34 @@ module Rules = struct
     let acc =
       List.fold ignore ~init:empty ~f:(fun acc pattern -> union acc (Pattern.vars pattern))
     in
-    let acc =
-      List.fold rewrite ~init:acc ~f:(fun acc {lhs; rhs} ->
-          union (union acc (Pattern.vars lhs)) (Pattern.vars rhs) )
+    let vars_condition acc {Condition.args} =
+      List.fold args ~init:acc ~f:(fun acc arg -> union acc (Pattern.vars arg))
     in
-    List.fold accept ~init:acc ~f:(fun acc {lhs; rhs} ->
-        union (union acc (Pattern.vars lhs)) (Pattern.vars rhs) )
+    let vars_rule acc {lhs; rhs; condition} =
+      match condition with
+      | None ->
+          union (Pattern.vars rhs) acc |> union (Pattern.vars lhs)
+      | Some condition ->
+          vars_condition acc condition |> union (Pattern.vars rhs) |> union (Pattern.vars lhs)
+    in
+    let acc = List.fold rewrite ~init:acc ~f:vars_rule in
+    List.fold accept ~init:acc ~f:vars_rule
+
+
+  let pp_rule fmt {lhs; rhs; condition} =
+    match condition with
+    | None ->
+        F.fprintf fmt "@[<hv>lhs=%a,@ rhs=%a@]" Pattern.pp lhs Pattern.pp rhs
+    | Some condition ->
+        F.fprintf fmt "@[<hv>lhs=%a,@ rhs=%a,@ condition=%a@]" Pattern.pp lhs Pattern.pp rhs
+          Condition.pp condition
 
 
   let pp fmt ({ignore; rewrite; accept} as rules) =
     let vars = vars rules in
     let pp_ignore fmt pattern = F.fprintf fmt "ignore(%a)@." Pattern.pp pattern in
-    let pp_rewrite fmt {lhs; rhs} =
-      F.fprintf fmt "rewrite(@[<hv>lhs=%a,@ rhs=%a@])@." Pattern.pp lhs Pattern.pp rhs
-    in
-    let pp_accept fmt {lhs; rhs} =
-      F.fprintf fmt "accept(@[<hv>lhs=%a, rhs=%a@])@." Pattern.pp lhs Pattern.pp rhs
-    in
+    let pp_rewrite fmt rule = F.fprintf fmt "rewrite(%a)@." pp_rule rule in
+    let pp_accept fmt rule = F.fprintf fmt "accept(%a)@." pp_rule rule in
     F.fprintf fmt "@.vars:" ;
     Var.Set.iter (fun var -> F.fprintf fmt " %a" Var.pp var) vars ;
     F.fprintf fmt "@." ;
@@ -191,13 +241,13 @@ module Run = struct
 
 
   let rewrite {Rules.rewrite} node =
-    List.fold rewrite ~init:node ~f:(fun node ({lhs; rhs} : Rules.rule) ->
-        Action.rewrite node ~lhs ~rhs )
+    List.fold rewrite ~init:node ~f:(fun node ({lhs; rhs; condition} : Rules.rule) ->
+        Action.rewrite node ~lhs ~rhs ~condition )
 
 
   let accept {Rules.accept} ~left ~right =
-    List.exists accept ~f:(fun ({lhs; rhs} : Rules.rule) ->
-        Action.accept ~lhs_node:left ~rhs_node:right ~lhs_pattern:lhs ~rhs_pattern:rhs )
+    List.exists accept ~f:(fun ({lhs; rhs; condition} : Rules.rule) ->
+        Action.accept ~lhs_node:left ~rhs_node:right ~lhs_pattern:lhs ~rhs_pattern:rhs ~condition )
 end
 
 let zip_and_build_diffs config n1 n2 : Diff.t list =
@@ -275,7 +325,8 @@ let missing_python_type_annotations_config : Rules.t =
             node "Assign" [("targets", list [var "N"]); ("type_comment", null); ("value", var "V")]
         ; rhs=
             node "AnnAssign"
-              [("annotation", null); ("simple", int 1); ("target", var "N"); ("value", var "V")] }
+              [("annotation", null); ("simple", int 1); ("target", var "N"); ("value", var "V")]
+        ; condition= None }
       ; { (* annotated statements are simple or not (see documentation), but we don't care *)
           lhs=
             node "AnnAssign"
@@ -283,7 +334,7 @@ let missing_python_type_annotations_config : Rules.t =
         ; rhs=
             node "AnnAssign"
               [("annotation", var "A"); ("simple", int 1); ("target", var "N"); ("value", var "V")]
-        }
+        ; condition= None }
       ; { (* if N.class == str ==> if isinstance(N, str) *)
           lhs=
             node "Compare"
@@ -296,7 +347,8 @@ let missing_python_type_annotations_config : Rules.t =
             node "Call"
               [ ("args", list [var "N"; node "Name" [("ctx", node "Load" []); ("id", str "str")]])
               ; ("func", node "Name" [("ctx", node "Load" []); ("id", str "isinstance")])
-              ; ("keywords", list []) ] }
+              ; ("keywords", list []) ]
+        ; condition= None }
       ; { (*  Optional[T] ==> T | None *)
           lhs=
             node "Subscript"
@@ -307,29 +359,37 @@ let missing_python_type_annotations_config : Rules.t =
             node "BinOp"
               [ ("left", var "T")
               ; ("op", node "BitOr" [])
-              ; ("right", node "Constant" [("kind", null); ("value", null)]) ] } ]
+              ; ("right", node "Constant" [("kind", null); ("value", null)]) ]
+        ; condition= None } ]
   ; accept=
-      [ { (* if the parent file was not annotated, the new version can be annotated with any type*)
+      [ { (* if the parent file was not annotated, the new version can be annotated with any type, except Any*)
           lhs= null
-        ; rhs= var "X" }
+        ; rhs= var "X"
+        ; condition= Condition.is_not_Any (var "X") }
       ; { (* if the parent file was annotated with 'Any', we accept 'object' instead *)
           lhs= str "Any"
-        ; rhs= str "object" }
+        ; rhs= str "object"
+        ; condition= None }
       ; { (* if the parent file was annotated with 'Dict[T]', we require 'dict[T]' instead *)
           lhs= node "Name" [("id", str "Dict"); ("ctx", var "C")]
-        ; rhs= node "Name" [("id", str "dict"); ("ctx", var "C")] }
+        ; rhs= node "Name" [("id", str "dict"); ("ctx", var "C")]
+        ; condition= None }
       ; { (* if the parent file was annotated with 'FrozenSet[T]', we require 'frozenset[T]' instead *)
           lhs= node "Name" [("id", str "FrozenSet"); ("ctx", var "C")]
-        ; rhs= node "Name" [("id", str "frozenset"); ("ctx", var "C")] }
+        ; rhs= node "Name" [("id", str "frozenset"); ("ctx", var "C")]
+        ; condition= None }
       ; { (* if the parent file was annotated with 'List[T]', we require 'list[T]' instead *)
           lhs= node "Name" [("id", str "List"); ("ctx", var "C")]
-        ; rhs= node "Name" [("id", str "list"); ("ctx", var "C")] }
+        ; rhs= node "Name" [("id", str "list"); ("ctx", var "C")]
+        ; condition= None }
       ; { (* if the parent file was annotated with 'Tuple[T]', we require 'tuple[T]' instead *)
           lhs= node "Name" [("id", str "Tuple"); ("ctx", var "C")]
-        ; rhs= node "Name" [("id", str "tuple"); ("ctx", var "C")] }
+        ; rhs= node "Name" [("id", str "tuple"); ("ctx", var "C")]
+        ; condition= None }
       ; { (* if the parent file was annotated with 'Set[T]', we require 'set[T]' instead *)
           lhs= node "Name" [("id", str "Set"); ("ctx", var "C")]
-        ; rhs= node "Name" [("id", str "set"); ("ctx", var "C")] } ] }
+        ; rhs= node "Name" [("id", str "set"); ("ctx", var "C")]
+        ; condition= None } ] }
 
 
 let ast_diff ~debug ~config ?filename1 ?filename2 previous_content current_content =

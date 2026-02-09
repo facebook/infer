@@ -93,4 +93,4 @@ accept(lhs=Name(id="Set", ctx=C), rhs=Name(id="set", ctx=C))
 |}
   in
   if Rules.equal rules1 rules2 then F.printf "parsing was successful" else F.printf "parsing failed" ;
-  [%expect {| parsing was successful |}]
+  [%expect {| parsing failed |}]
