@@ -139,6 +139,34 @@ let keyword name = function
       None
 
 
+let predicate funcname args =
+  match (funcname, args) with
+  | "equals", [arg1; arg2] ->
+      Some {Condition.predicate= Condition.Equals; args= [arg1; arg2]; value= true}
+  | _ ->
+      None
+
+
+let is_not = function Dict dict when is_type dict "Not" -> true | _ -> false
+
+let rec condition map node =
+  let open IOption.Let_syntax in
+  match node with
+  | Dict dict when is_type dict "Call" ->
+      let* funcname, args, _keywords = call node in
+      let* args = list args ~f:(pattern map) in
+      predicate funcname args
+  | Dict dict when is_type dict "UnaryOp" ->
+      let* op = find_field "op" dict in
+      if is_not op then
+        let* operand = find_field "operand" dict in
+        let* cond = condition map operand in
+        Some {cond with Condition.value= not cond.Condition.value}
+      else None
+  | _ ->
+      None
+
+
 let expr map node =
   let open IOption.Let_syntax in
   match node with
@@ -152,11 +180,21 @@ let expr map node =
       | "rewrite", List [], List ([_; _] as l) ->
           let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
           let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
-          Some (`Rewrite (lhs, rhs))
+          Some (`Rewrite (lhs, rhs, None))
+      | "rewrite", List [], List ([_; _; _] as l) ->
+          let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
+          let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
+          let* condition = List.find_map l ~f:(keyword "condition") >>= condition map in
+          Some (`Rewrite (lhs, rhs, Some condition))
       | "accept", List [], List ([_; _] as l) ->
           let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
           let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
-          Some (`Accept (lhs, rhs))
+          Some (`Accept (lhs, rhs, None))
+      | "accept", List [], List ([_; _; _] as l) ->
+          let* lhs = List.find_map l ~f:(keyword "lhs") >>= pattern map in
+          let* rhs = List.find_map l ~f:(keyword "rhs") >>= pattern map in
+          let* condition = List.find_map l ~f:(keyword "condition") >>= condition map in
+          Some (`Accept (lhs, rhs, Some condition))
       | _, _, _ ->
           None )
   | _ ->
@@ -188,10 +226,10 @@ let parse_module ast =
             (map, rules)
         | Some (`Ignore pattern) ->
             (map, {rules with Rules.ignore= pattern :: rules.Rules.ignore})
-        | Some (`Rewrite (lhs, rhs)) ->
-            (map, {rules with Rules.rewrite= {lhs; rhs; condition= None} :: rules.Rules.rewrite})
-        | Some (`Accept (lhs, rhs)) ->
-            (map, {rules with Rules.accept= {lhs; rhs; condition= None} :: rules.Rules.accept})
+        | Some (`Rewrite (lhs, rhs, condition)) ->
+            (map, {rules with Rules.rewrite= {lhs; rhs; condition} :: rules.Rules.rewrite})
+        | Some (`Accept (lhs, rhs, condition)) ->
+            (map, {rules with Rules.accept= {lhs; rhs; condition} :: rules.Rules.accept})
         | Some (`Assign map) ->
             (map, rules)
         | None ->

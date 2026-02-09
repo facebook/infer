@@ -70,8 +70,8 @@ rewrite(
     )
 )
 
-# if the parent file was not annotated, the new version can be annotated with any type
-accept(lhs=null, rhs=X)
+# if the parent file was not annotated, the new version can be annotated with any type, except Any
+accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(), id="Any"), X))
 
 # if the parent file was annotated with 'Any', we accept 'object' instead
 accept(lhs="Any", rhs="object")
@@ -93,4 +93,4 @@ accept(lhs=Name(id="Set", ctx=C), rhs=Name(id="set", ctx=C))
 |}
   in
   if Rules.equal rules1 rules2 then F.printf "parsing was successful" else F.printf "parsing failed" ;
-  [%expect {| parsing failed |}]
+  [%expect {| parsing was successful |}]
