@@ -195,7 +195,7 @@ let parse_module ast =
         | Some (`Assign map) ->
             (map, rules)
         | None ->
-            raise (ParseError {lineno= Ast.Node.get_line_number_of_node node; expected= "assign"}) )
+            raise (ParseError {lineno= Ast.Node.get_node_line_number node; expected= "assign"}) )
   in
   {Rules.ignore= List.rev ignore; rewrite= List.rev rewrite; accept= List.rev accept}
 

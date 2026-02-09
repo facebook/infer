@@ -188,9 +188,9 @@ let zip_and_build_diffs ~normalize_right_dict ~skip_annotations (n1 : Node.t) (n
           | x :: xt, y :: yt ->
               aux (zip ~left_line ~right_line acc x y) xt yt
           | x :: xt, [] ->
-              aux (Diff.append_removed_line (Node.get_line_number_of_node x) acc) xt []
+              aux (Diff.append_removed_line (Node.get_node_line_number x) acc) xt []
           | [], y :: yt ->
-              aux (Diff.append_added_line (Node.get_line_number_of_node y) acc) [] yt
+              aux (Diff.append_added_line (Node.get_node_line_number y) acc) [] yt
           | [], [] ->
               acc
         in

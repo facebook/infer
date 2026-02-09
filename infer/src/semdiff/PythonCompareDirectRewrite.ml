@@ -112,27 +112,35 @@ module Pattern = struct
     with ImpossibleMatching -> false
 
 
-  let rec to_node subst = function
+  let rec to_node ~start_line ~end_line subst = function
     | Var var ->
         Subst.find_opt var subst
         |> Option.value_or_thunk ~default:(fun () -> L.die InternalError "invalid substitution")
     | AstNode node ->
         node
     | List l ->
-        Ast.Node.List (List.map l ~f:(to_node subst))
+        Ast.Node.List (List.map l ~f:(to_node ~start_line ~end_line subst))
     | Node {name; args} ->
         let args : (string * Ast.Node.t) list =
           List.map args ~f:(fun ((name : Name.t), pattern) ->
-              ((name :> string), to_node subst pattern) )
+              ((name :> string), to_node ~start_line ~end_line subst pattern) )
         in
-        Ast.Node.Dict (Ast.Node.dict_of_assoc (name :> string) args)
+        let new_node = Ast.Node.Dict (Ast.Node.dict_of_assoc (name :> string) args) in
+        let new_node = Ast.Node.set_node_line_number new_node start_line in
+        Ast.Node.set_node_end_line_number new_node end_line
 end
 
 module Action = struct
   let ignore node pattern = Option.is_some (Pattern.match_node pattern node)
 
   let rewrite node ~lhs ~rhs =
-    match Pattern.match_node lhs node with Some subst -> Pattern.to_node subst rhs | None -> node
+    match Pattern.match_node lhs node with
+    | Some subst ->
+        let start_line = Ast.Node.get_node_line_number node in
+        let end_line = Ast.Node.get_node_end_line_number node in
+        Pattern.to_node ~start_line ~end_line subst rhs
+    | None ->
+        node
 
 
   let accept ~lhs_node ~rhs_node ~lhs_pattern ~rhs_pattern =
@@ -237,14 +245,14 @@ let zip_and_build_diffs config n1 n2 : Diff.t list =
             List.fold2_exn l1 l2_start ~f:(zip ~left_line ~right_line ~rewritten:false) ~init:acc
           in
           List.fold l2_end ~init:acc ~f:(fun acc node ->
-              Diff.append_added_line (Ast.Node.get_line_number_of_node node) acc )
+              Diff.append_added_line (Ast.Node.get_node_line_number node) acc )
         else
           let l1_start, l1_end = List.split_n l1 n2 in
           let acc =
             List.fold2_exn l1_start l2 ~f:(zip ~left_line ~right_line ~rewritten:false) ~init:acc
           in
           List.fold l1_end ~init:acc ~f:(fun acc node ->
-              Diff.append_removed_line (Ast.Node.get_line_number_of_node node) acc )
+              Diff.append_removed_line (Ast.Node.get_node_line_number node) acc )
     | Dict f1, _ ->
         Diff.append_removed_line (Ast.Node.get_line_number f1) acc
     | _, Dict f2 ->

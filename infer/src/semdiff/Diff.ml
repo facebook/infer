@@ -65,6 +65,19 @@ let merge_changes removed added =
   aux added removed []
 
 
+let pp_content fmt ~prefix content =
+  String.split_on_chars ~on:['\n'] content
+  |> List.iteri ~f:(fun i line ->
+         let i = i + 1 in
+         F.fprintf fmt "%s%2d %s@." (prefix i) i line )
+
+
+let pp fmt ~previous_content ~current_content diffs =
+  let lines_removed, lines_added = split_diffs diffs in
+  pp_content fmt ~prefix:(fun i -> if IntSet.mem i lines_removed then "-" else " ") previous_content ;
+  pp_content fmt ~prefix:(fun i -> if IntSet.mem i lines_added then "+" else " ") current_content
+
+
 let gen_explicit_diffs ~previous_content ~current_content diffs =
   let lines_removed, lines_added = split_diffs diffs in
   let lines1 = String.split_on_chars ~on:['\n'] previous_content |> Array.of_list

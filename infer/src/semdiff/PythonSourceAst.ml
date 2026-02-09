@@ -82,11 +82,35 @@ module Node = struct
     match StringMap.find_opt field_lineno fields with Some (Int l1) -> Some l1 | _ -> None
 
 
+  let set_line_number (fields : dict) = function
+    | None ->
+        fields
+    | Some line ->
+        StringMap.add field_lineno (Int line) fields
+
+
   let get_end_line_number (fields : dict) : int option =
     match StringMap.find_opt field_end_lineno fields with Some (Int l1) -> Some l1 | _ -> None
 
 
-  let get_line_number_of_node = function Dict f -> get_line_number f | _ -> None
+  let set_end_line_number (fields : dict) = function
+    | None ->
+        fields
+    | Some line ->
+        StringMap.add field_end_lineno (Int line) fields
+
+
+  let get_node_line_number = function Dict f -> get_line_number f | _ -> None
+
+  let set_node_line_number node line =
+    match node with Dict dict -> Dict (set_line_number dict line) | _ -> node
+
+
+  let get_node_end_line_number = function Dict f -> get_end_line_number f | _ -> None
+
+  let set_node_end_line_number node line =
+    match node with Dict dict -> Dict (set_end_line_number dict line) | _ -> node
+
 
   let make_dict_node field_list = Dict (StringMap.of_list field_list)
 

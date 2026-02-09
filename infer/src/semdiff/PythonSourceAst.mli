@@ -51,7 +51,13 @@ module Node : sig
 
   val get_end_line_number : dict -> int option
 
-  val get_line_number_of_node : t -> int option
+  val get_node_line_number : t -> int option
+
+  val set_node_line_number : t -> int option -> t
+
+  val get_node_end_line_number : t -> int option
+
+  val set_node_end_line_number : t -> int option -> t
 
   val make_dict_node : (string * t) list -> t
 

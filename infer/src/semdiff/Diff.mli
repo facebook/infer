@@ -18,6 +18,8 @@ val append_removed_lines : int option -> int option -> t list -> t list
 
 val append_added_lines : int option -> int option -> t list -> t list
 
+val pp : F.formatter -> previous_content:string -> current_content:string -> t list -> unit
+
 type explicit
 
 val pp_explicit : F.formatter -> explicit -> unit
