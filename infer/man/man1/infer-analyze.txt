@@ -621,9 +621,19 @@ JAVA OPTIONS
            some loop. (Conversely: --no-annotation-reachability-check-loops)
 
        --annotation-reachability-custom-models json
-           Specify a map from annotations to lists of regexps to treat
-           matching methods as if they had the annotation.
-           Example format: {"Annotation": ["com\\.Myclass\\.foo.*"]}
+           Use regular expressions to treat methods as if they were
+           annotated. The format is a map from
+                 annotations to objects with an "allow" and "block" field,
+           which are both lists of regular
+                 expressions. A method is treated as annotated if any
+           matcher in the allow list matches AND
+                 none of the matchers in the block list matches. If there
+           are only "allow" matchers, a list
+                 can be given instead of the object.
+                 Example 1: {"Annotation": ["com\\.Myclass\\.foo.*"]}
+                 Example 2: {"Annotation": {"allow": ["foo.*"], "block":
+           ["foobar"]}}
+           
 
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks, and optionally sanitizers for the

@@ -587,8 +587,14 @@ and annotation_reachability_check_loops =
 and annotation_reachability_custom_models =
   CLOpt.mk_json ~long:"annotation-reachability-custom-models"
     ~in_help:InferCommand.[(Analyze, manual_java)]
-    {|Specify a map from annotations to lists of regexps to treat matching methods as if they had the annotation.
-Example format: {"Annotation": ["com\\\\.Myclass\\\\.foo.*"]}|}
+    {|Use regular expressions to treat methods as if they were annotated. The format is a map from
+      annotations to objects with an "allow" and "block" field, which are both lists of regular
+      expressions. A method is treated as annotated if any matcher in the allow list matches AND
+      none of the matchers in the block list matches. If there are only "allow" matchers, a list
+      can be given instead of the object.
+      Example 1: {"Annotation": ["com\\\\.Myclass\\\\.foo.*"]}
+      Example 2: {"Annotation": {"allow": ["foo.*"], "block": ["foobar"]}}
+|}
 
 
 and annotation_reachability_custom_pairs =
