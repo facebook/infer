@@ -57,8 +57,14 @@ rewrite(
     ),
 )
 
-# Optional[T] ==> T|None
-rewrite(
+# if the parent file was not annotated, the new version can be annotated with any type, except Any
+accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(), id="Any"), X))
+
+# if the parent file was annotated with 'Any', we accept 'object' instead
+accept(lhs="Any", rhs="object")
+
+# if the parent was annotated with Optional[T], we require T | None instead
+accept(
     lhs=Subscript(
         value=Name(id="Optional",ctx=Load()),
         slice=T,ctx=Load()
@@ -69,12 +75,6 @@ rewrite(
         right=Constant(kind=null,value=null)
     )
 )
-
-# if the parent file was not annotated, the new version can be annotated with any type, except Any
-accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(), id="Any"), X))
-
-# if the parent file was annotated with 'Any', we accept 'object' instead
-accept(lhs="Any", rhs="object")
 
 # if the parent file was annotated with 'Dict[T]', we require 'dict[T]' instead
 accept(lhs=Name(id="Dict", ctx=C), rhs=Name(id="dict", ctx=C))

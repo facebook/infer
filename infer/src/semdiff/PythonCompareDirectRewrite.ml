@@ -348,8 +348,17 @@ let missing_python_type_annotations_config : Rules.t =
               [ ("args", list [var "N"; node "Name" [("ctx", node "Load" []); ("id", str "str")]])
               ; ("func", node "Name" [("ctx", node "Load" []); ("id", str "isinstance")])
               ; ("keywords", list []) ]
+        ; condition= None } ]
+  ; accept=
+      [ { (* if the parent file was not annotated, the new version can be annotated with any type, except Any*)
+          lhs= null
+        ; rhs= var "X"
+        ; condition= Condition.is_not_Any (var "X") }
+      ; { (* if the parent file was annotated with 'Any', we accept 'object' instead *)
+          lhs= str "Any"
+        ; rhs= str "object"
         ; condition= None }
-      ; { (*  Optional[T] ==> T | None *)
+      ; { (* if the parent was annotated with Optional[T], we require T | None instead *)
           lhs=
             node "Subscript"
               [ ("value", node "Name" [("id", str "Optional"); ("ctx", node "Load" [])])
@@ -360,15 +369,6 @@ let missing_python_type_annotations_config : Rules.t =
               [ ("left", var "T")
               ; ("op", node "BitOr" [])
               ; ("right", node "Constant" [("kind", null); ("value", null)]) ]
-        ; condition= None } ]
-  ; accept=
-      [ { (* if the parent file was not annotated, the new version can be annotated with any type, except Any*)
-          lhs= null
-        ; rhs= var "X"
-        ; condition= Condition.is_not_Any (var "X") }
-      ; { (* if the parent file was annotated with 'Any', we accept 'object' instead *)
-          lhs= str "Any"
-        ; rhs= str "object"
         ; condition= None }
       ; { (* if the parent file was annotated with 'Dict[T]', we require 'dict[T]' instead *)
           lhs= node "Name" [("id", str "Dict"); ("ctx", var "C")]

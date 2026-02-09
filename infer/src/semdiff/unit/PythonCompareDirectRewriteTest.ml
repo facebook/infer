@@ -695,11 +695,11 @@ let%expect_test "pp missing_python_type_annotations_config" =
             rhs=AnnAssign(annotation=A,simple=1,target=N,value=V))
     rewrite(lhs=Compare(comparators=[Name(ctx=Load(),id="str")],left=Attribute(attr="__class__",ctx=Load(),value=N),ops=[Eq()]),
             rhs=Call(args=[N,Name(ctx=Load(),id="str")],func=Name(ctx=Load(),id="isinstance"),keywords=[]))
-    rewrite(lhs=Subscript(value=Name(id="Optional",ctx=Load()),slice=T,ctx=Load()),
-            rhs=BinOp(left=T,op=BitOr(),right=Constant(kind=null,value=null)))
 
     accept(lhs=null, rhs=X, condition=not equals(Name(ctx=Load(),id="Any"),X))
     accept(lhs="Any", rhs="object")
+    accept(lhs=Subscript(value=Name(id="Optional",ctx=Load()),slice=T,ctx=Load()),
+           rhs=BinOp(left=T,op=BitOr(),right=Constant(kind=null,value=null)))
     accept(lhs=Name(id="Dict",ctx=C), rhs=Name(id="dict",ctx=C))
     accept(lhs=Name(id="FrozenSet",ctx=C), rhs=Name(id="frozenset",ctx=C))
     accept(lhs=Name(id="List",ctx=C), rhs=Name(id="list",ctx=C))
