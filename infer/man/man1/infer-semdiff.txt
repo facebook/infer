@@ -46,9 +46,8 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
-       --semdiff-configurable
-           Activates: Use configurable rewriting engine. (Conversely:
-           --no-semdiff-configurable)
+       --semdiff-configuration path
+           Use configurable rewriting engine with the given pythom file.
 
        --semdiff-current path
            Current python program to be analysed by semdiff

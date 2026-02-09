@@ -2118,9 +2118,8 @@ OPTIONS
            (Conversely: --no-self-in-block-only)
            See also infer-analyze(1).
 
-       --semdiff-configurable
-           Activates: Use configurable rewriting engine. (Conversely:
-           --no-semdiff-configurable)
+       --semdiff-configuration path
+           Use configurable rewriting engine with the given pythom file.
            See also infer-semdiff(1).
 
        --semdiff-current path
@@ -3417,6 +3416,9 @@ INTERNAL OPTIONS
 
        --select-reset
            Cancel the effect of --select.
+
+       --semdiff-configuration-reset
+           Cancel the effect of --semdiff-configuration.
 
        --semdiff-current-reset
            Cancel the effect of --semdiff-current.

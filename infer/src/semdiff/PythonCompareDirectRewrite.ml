@@ -321,7 +321,7 @@ let missing_python_type_annotations_config : Rules.t =
         ; rhs= node "Name" [("id", str "set"); ("ctx", var "C")] } ] }
 
 
-let ast_diff ~debug ?filename1 ?filename2 previous_content current_content =
+let ast_diff ~debug ~config ?filename1 ?filename2 previous_content current_content =
   let parse = Ast.build_parser () in
   match (parse ?filename:filename1 previous_content, parse ?filename:filename2 current_content) with
   | Error error, _ | Ok _, Error error ->
@@ -329,7 +329,7 @@ let ast_diff ~debug ?filename1 ?filename2 previous_content current_content =
       []
   | Ok ast1, Ok ast2 ->
       let diffs =
-        zip_and_build_diffs missing_python_type_annotations_config ast1 ast2
+        zip_and_build_diffs config ast1 ast2
         |> Diff.gen_explicit_diffs ~previous_content ~current_content
       in
       if debug then (
@@ -338,16 +338,3 @@ let ast_diff ~debug ?filename1 ?filename2 previous_content current_content =
         F.printf "SemDiff:\n" ;
         List.iter diffs ~f:(fun diff -> F.printf "%a\n" Diff.pp_explicit diff) ) ;
       diffs
-
-
-let test_ast_diff ~debug src1 src2 = ast_diff ~debug src1 src2
-
-let semdiff previous_file current_file =
-  let debug = Config.debug_mode in
-  let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
-  let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
-  let diffs =
-    ast_diff ~debug ~filename1:previous_file ~filename2:current_file previous_src current_src
-  in
-  let out_path = ResultsDir.get_path SemDiff in
-  Diff.write_json ~previous_file ~current_file ~out_path diffs

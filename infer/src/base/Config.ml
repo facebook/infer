@@ -3276,10 +3276,10 @@ and semdiff_experimental_eqsat_engine =
     "Use experimental equality saturation rewriting engine."
 
 
-and semdiff_configurable =
-  CLOpt.mk_bool ~long:"semdiff-configurable" ~default:false
+and semdiff_configuration =
+  CLOpt.mk_path_opt ~long:"semdiff-configuration" ~meta:"path"
     ~in_help:InferCommand.[(SemDiff, manual_generic)]
-    "Use configurable rewriting engine."
+    "Use configurable rewriting engine with the given pythom file."
 
 
 and semdiff_test_actions =
@@ -4873,7 +4873,7 @@ and semdiff_test_actions = !semdiff_test_actions
 
 and semdiff_experimental_eqsat_engine = !semdiff_experimental_eqsat_engine
 
-and semdiff_configurable = !semdiff_configurable
+and semdiff_configuration = !semdiff_configuration
 
 and semdiff_test_files_index = !semdiff_test_files_index
 

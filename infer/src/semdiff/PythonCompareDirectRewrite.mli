@@ -42,6 +42,11 @@ end
 
 val missing_python_type_annotations_config : Rules.t
 
-val semdiff : string -> string -> unit
-
-val test_ast_diff : debug:bool -> string -> string -> Diff.explicit list
+val ast_diff :
+     debug:bool
+  -> config:Rules.t
+  -> ?filename1:string
+  -> ?filename2:string
+  -> string
+  -> string
+  -> Diff.explicit list

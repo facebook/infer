@@ -354,10 +354,9 @@ let sem_diff () =
       L.die UserError
         "Expected '--semdiff-current' and '--semdiff-previous' to be specified, or \
          '--semdiff-test-files-index' for tests."
-  | Some (previous, current), None when Config.semdiff_configurable ->
-      PythonCompareDirectRewrite.semdiff previous current
-  | Some (previous, current), None ->
-      PythonCompareWithoutTypeAnnot.semdiff previous current ;
+  | Some (previous_file, current_file), None ->
+      let config_file = Config.semdiff_configuration in
+      Semdiff.semdiff ~config_file ~previous_file ~current_file ;
       Option.iter Config.issues_tests ~f:(fun out_path ->
           let json_path = ResultsDir.get_path SemDiff in
           Diff.write_from_json ~json_path ~out_path )

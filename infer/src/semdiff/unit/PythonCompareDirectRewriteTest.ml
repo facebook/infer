@@ -11,7 +11,8 @@ module F = Format
 let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe ()
 
 let ast_diff_equal prog1 prog2 =
-  let diffs = PythonCompareDirectRewrite.test_ast_diff ~debug:false prog1 prog2 in
+  let config = PythonCompareDirectRewrite.missing_python_type_annotations_config in
+  let diffs = PythonCompareDirectRewrite.ast_diff ~debug:false ~config prog1 prog2 in
   List.iter diffs ~f:(F.printf "%a\n" Diff.pp_explicit)
 
 
