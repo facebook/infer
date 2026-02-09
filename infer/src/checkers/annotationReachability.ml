@@ -76,10 +76,6 @@ let is_allocator tenv pname =
       false
 
 
-type custom_model = {method_regex: string; annotation: string} [@@deriving of_yojson]
-
-type custom_models = custom_model list [@@deriving of_yojson]
-
 let parse_custom_models () =
   match Config.annotation_reachability_custom_models with
   (* The default value for JSON options is an empty list and not an empty object *)
