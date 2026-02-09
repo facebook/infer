@@ -207,7 +207,11 @@ module Node = struct
             F.fprintf fmt "%s=%a" key pp node ) ;
         F.fprintf fmt "@])"
     | List l ->
-        F.fprintf fmt "[%a]" (Pp.comma_seq pp) l
+        F.fprintf fmt "[@[<hv>" ;
+        List.iteri l ~f:(fun i node ->
+            if i > 0 then F.fprintf fmt ",@ " ;
+            pp fmt node ) ;
+        F.fprintf fmt "]@]"
     | Str s ->
         F.fprintf fmt "\"%s\"" s
     | Int i ->

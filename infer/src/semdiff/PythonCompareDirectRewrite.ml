@@ -215,9 +215,9 @@ module Condition = struct
 
   let is_not_null arg = Some (Not (Atom {predicate= Equals; args= [Pattern.null; arg]}))
 
-  let _does_not_contain_Any arg = Some (Not (Atom {predicate= Contains; args= [Pattern.any; arg]}))
+  let does_not_contain_Any arg = Some (Not (Atom {predicate= Contains; args= [Pattern.any; arg]}))
 
-  let _and_ opt1 opt2 =
+  let and_ opt1 opt2 =
     match (opt1, opt2) with Some cond1, Some cond2 -> Some (And (cond1, cond2)) | _, _ -> None
 end
 
@@ -441,8 +441,8 @@ let missing_python_type_annotations_config : Rules.t =
       ; { (* if the parent file was annotated', we accept any type as long as it does not contain Any *)
           lhs= var "T1"
         ; rhs= var "T2"
-        ; condition= Condition.(is_not_null (var "T1"))
-        ; key= [Name.of_string "returns"; Name.of_string "annotation"; Name.of_string "rule2"] }
+        ; condition= Condition.(and_ (is_not_null (var "T1")) (does_not_contain_Any (var "T2")))
+        ; key= [Name.of_string "returns"; Name.of_string "annotation"] }
       ; { (* if the parent was annotated with Optional[T], we require T | None instead *)
           lhs=
             node "Subscript"

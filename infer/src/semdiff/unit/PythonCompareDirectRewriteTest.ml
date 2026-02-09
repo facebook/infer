@@ -156,8 +156,7 @@ def greet(name: Any) -> str:
 |}
   in
   ast_diff_equal prog1 prog2 ;
-  [%expect
-    {| (Line 5) + def greet(name: Any) -> str: |}]
+  [%expect {| (Line 5) + def greet(name: Any) -> str: |}]
 
 
 let%expect_test "test_with_missing_type_good" =
@@ -382,7 +381,7 @@ async def foo(self, **kwargs: int): pass
   [%expect {| |}]
 
 
-let%expect_test "test_change_fun_type_bad" =
+let%expect_test "test_change_fun_type_ok" =
   let prog1 = {|
 def foo(self, x: int) -> None: pass
 |} in
@@ -393,7 +392,8 @@ def foo(self, x: int | None) -> None: pass
   [%expect {| |}]
 
 
-let%expect_test "test_change_async_fun_type_bad" =
+let%expect_test "test_change_async_fun_type_ok" =
+  (* the type checker will catch these regressions *)
   let prog1 = {|
 async def foo(self, x: int) -> None: pass
 |} in
@@ -404,7 +404,7 @@ async def foo(self, x: str) -> None: pass
   [%expect {| |}]
 
 
-let%expect_test "test_change_assign_type_bad" =
+let%expect_test "test_change_assign_type_ok" =
   let prog1 =
     {|
 # pyre-unsafe
@@ -471,7 +471,7 @@ def foo(x: dict[str, str]) -> None: pass
   [%expect {| |}]
 
 
-let%expect_test "test_change_type_case_sensitive_bad" =
+let%expect_test "test_change_type_case_sensitive_ok" =
   let prog1 = {|
 from mylib import SomeUserDefinedType
 def foo() -> SomeUserDefinedType: pass
@@ -521,7 +521,7 @@ def foo():
     |}]
 
 
-let%expect_test "fp_type_annotation_with_quotes_good" =
+let%expect_test "type_annotation_with_quotes_good" =
   let prog1 = {|
 def foo(params) -> "Tree": pass
 |} in
@@ -565,7 +565,7 @@ def foo(x: int | None) -> None: pass
   [%expect {| |}]
 
 
-let%expect_test "test_change_optional_type_bad" =
+let%expect_test "test_change_optional_type_ok" =
   let prog1 = {|
 def foo(x: Optional[int]) -> None: pass
 |} in
@@ -588,6 +588,17 @@ def foo(x: object) -> None: pass
 
 
 let%expect_test "test_change_any_type_bad" =
+  let prog1 = {|
+def foo(x) -> None: pass
+|} in
+  let prog2 = {|
+def foo(x: Any) -> None: pass
+|} in
+  ast_diff_equal prog1 prog2 ;
+  [%expect {| (Line 2) + def foo(x: Any) -> None: pass |}]
+
+
+let%expect_test "test_change_any_type_ok" =
   let prog1 = {|
 def foo(x: Any) -> None: pass
 |} in
@@ -620,13 +631,17 @@ def foo() -> Dict[str, Dict[str, Set[str]]]: pass
 |}
   in
   let prog2 = {|
-def foo() -> dict[str, dict[str, str]]: pass
+def foo() -> dict[str, dict[str, Any]]: pass
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect {| |}]
+  [%expect
+    {|
+    (Line 2) + def foo() -> dict[str, dict[str, Any]]: pass
+    (Line 3) - def foo() -> Dict[str, Dict[str, Set[str]]]: pass
+    |}]
 
 
-let%expect_test "test_field_assign_type" =
+let%expect_test "test_field_assign_type_good" =
   let prog1 = {|
 def __init__(self):
     self.msg = "hello"
@@ -691,7 +706,10 @@ let%expect_test "pp missing_python_type_annotations_config" =
            rhs=X,
            condition=not (equals(Name(ctx=Load(),id="Any"),X)),
            key=["returns","annotation"])
-    accept(lhs=T1, rhs=T2, condition=not (equals(null,T1)), key=["returns","annotation","rule2"])
+    accept(lhs=T1,
+           rhs=T2,
+           condition=(not (equals(null,T1))) and (not (contains(Name(ctx=Load(),id="Any"),T2))),
+           key=["returns","annotation"])
     accept(lhs=Subscript(value=Name(id="Optional",ctx=Load()),slice=T,ctx=Load()),
            rhs=BinOp(left=T,op=BitOr(),right=Constant(kind=null,value=null)))
     accept(lhs=Name(id="Dict",ctx=C), rhs=Name(id="dict",ctx=C))
