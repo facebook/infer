@@ -224,6 +224,7 @@ ifneq ($(PYTHON),no)
 DIRECT_TESTS += \
   python_exec \
   python_pulse \
+  python_semdiff \
 
 endif
 ifneq ($(PYTHONNEXT),no)

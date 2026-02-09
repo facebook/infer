@@ -138,3 +138,31 @@ let write_json ~previous_file ~current_file ~out_path diffs =
       ; ("diff", `List (List.map ~f:(fun diff -> `String diff) diffs)) ]
   in
   Out_channel.with_file out_path ~f:(fun out_channel -> Yojson.Safe.to_channel out_channel json)
+
+
+let write_from_json ~json_path ~out_path =
+  let raise_invalid msg = Logging.die UserError "semdiff json report invalid format: %s" msg in
+  let read_diff_lines lines =
+    List.map lines ~f:(function `String line -> line | _ -> raise_invalid "string expected")
+  in
+  let write_report outf = function
+    | `Assoc
+        [ ("previous", `String _previous_file)
+        ; ("current", `String _current_file)
+        ; ("outcome", `String "equal")
+        ; ("diff", `List _lines) ] ->
+        ()
+    | `Assoc
+        [ ("previous", `String previous_file)
+        ; ("current", `String current_file)
+        ; ("outcome", `String "different")
+        ; ("diff", `List lines) ] ->
+        let lines = read_diff_lines lines in
+        F.fprintf outf "%s, %s, SEMDIFF MISMATCH: [%a]@." previous_file current_file
+          (Pp.comma_seq F.pp_print_string) lines
+    | _ ->
+        raise_invalid {|{"previous": "...", "current": "...", "outcome": "...", "diff": [...]}|}
+  in
+  Utils.with_file_out ~append:true out_path ~f:(fun outf ->
+      let fmt = F.formatter_of_out_channel outf in
+      Yojson.Safe.from_file json_path |> write_report fmt )

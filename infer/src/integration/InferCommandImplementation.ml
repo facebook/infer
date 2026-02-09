@@ -357,7 +357,10 @@ let sem_diff () =
   | Some (previous, current), None when Config.semdiff_configurable ->
       PythonCompareDirectRewrite.semdiff previous current
   | Some (previous, current), None ->
-      PythonCompareWithoutTypeAnnot.semdiff previous current
+      PythonCompareWithoutTypeAnnot.semdiff previous current ;
+      Option.iter Config.issues_tests ~f:(fun out_path ->
+          let json_path = ResultsDir.get_path SemDiff in
+          Diff.write_from_json ~json_path ~out_path )
   | None, Some index_filename -> (
       let f node =
         List.iter Config.semdiff_test_actions ~f:(function

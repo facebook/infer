@@ -1,0 +1,4 @@
+previous/different_assert_added.py, current/different_assert_added.py, SEMDIFF MISMATCH: [(Line 9) +     assert obj is not None]
+previous/different_async_body_change.py, current/different_async_body_change.py, SEMDIFF MISMATCH: [(Line 8) -         print(1), +         print(2)]
+previous/different_for_loop_refactor.py, current/different_for_loop_refactor.py, SEMDIFF MISMATCH: [(Line 8) +     temp_dict = dict(o.mapping),(Line 11) +     o.mapping = temp_dict]
+previous/different_return_value_change.py, current/different_return_value_change.py, SEMDIFF MISMATCH: [(Line 8) -     return 1, +     return 2]

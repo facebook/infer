@@ -29,5 +29,7 @@ val dummy_explicit : explicit
 val write_json :
   previous_file:string -> current_file:string -> out_path:string -> explicit list -> unit
 
+val write_from_json : json_path:string -> out_path:string -> unit
+
 val gen_explicit_diffs :
   previous_content:string -> current_content:string -> t list -> explicit list
