@@ -416,10 +416,9 @@ int incr_if_geq_zero(int x) {
     return x + 1;
 }
 
-void FP_incr_with_call_ok() {
+void incr_with_call_ok() {
   int i = 0;
   while (i < 100) {
-    // FP because of abstraction: i could be < 0
     i = incr_if_geq_zero(i);
   }
 }
@@ -680,7 +679,7 @@ void FN_nestedloop2_chen14_bad(int k, int j) {
 
 /* pulse-inf used to find bug - Now FN */
 // TNT proves non-termination
-void nestedloop_chen14_bad(int i) {
+void FN_nestedloop_chen14_bad(int i) {
   if (i == 10) {
     while (i > 0) {
       i = i - 1;
@@ -879,7 +878,7 @@ void allocate_all_in_array_ok(int* array[]) {
 }
 
 /* Infinite Goto in loop */
-void goto_in_loop_bad() {
+void FN_goto_in_loop_bad() {
   int i = 0;
 
   while (i < 10) {
@@ -902,7 +901,7 @@ void goto_in_loop_without_eqtest_bad() {
 
 /* Goto in loop */
 /* FN is expected with pulse-widen-threshold < 4 */
-void goto_cross_loop_stop_at_6_bad() {
+void FN_goto_cross_loop_stop_at_6_bad() {
   int i = 0;
 
 retry:
@@ -915,7 +914,7 @@ retry:
 
 /* Goto in loop */
 /* Signal is expected with pulse-widen-threshold >= 3 */
-void goto_cross_loop_stop_at_5_bad() {
+void FN_goto_cross_loop_stop_at_5_bad() {
   int i = 0;
 
 retry:

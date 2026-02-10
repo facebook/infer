@@ -76,7 +76,8 @@ type t = private
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 
-and loop_invariant_under_inference = {header: Procdesc.Node.id; previous_astate_at_header: t list}
+and loop_invariant_under_inference =
+  {header: Procdesc.Node.id; previous_astate_at_header: t list; astate_entry: t option}
 [@@deriving equal]
 
 val leq : lhs:t -> rhs:t -> bool
@@ -404,9 +405,10 @@ val map_loop_header_formulas : t -> f:(Formula.t -> Formula.t) -> t
 
 val push_loop_header_info : Procdesc.Node.id -> Timestamp.t -> t -> t
 
-val get_loop_invariant_under_inference : Procdesc.Node.id -> t -> t list option
+val get_loop_invariant_under_inference :
+  Procdesc.Node.id -> t -> loop_invariant_under_inference option
 
-val add_loop_invariant_under_inference : Procdesc.Node.id -> t -> t
+val add_loop_invariant_under_inference : Procdesc.Node.id -> entry:t option -> t -> t
 
 val record_transitive_access : Location.t -> t -> t
 

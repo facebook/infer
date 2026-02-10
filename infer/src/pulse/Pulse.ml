@@ -1534,7 +1534,8 @@ module PulseTransferFunctions = struct
               Procdesc.Node.pp_id id ;
             AnalysisState.set_active_loop id ;
             let abstracted_astate =
-              PulseEternal.abstract astate |> AbductiveDomain.add_loop_invariant_under_inference id
+              PulseEternal.abstract astate
+              |> AbductiveDomain.add_loop_invariant_under_inference ~entry:(Some astate) id
             in
             ([ContinueProgram astate; ContinueProgram abstracted_astate], path, astate_n) )
           else ([ContinueProgram astate], path, astate_n)
@@ -1554,10 +1555,11 @@ module PulseTransferFunctions = struct
           let id = Procdesc.Node.unsafe_int_to_id header_id in
           if Config.pulse_eternal then
             match AbductiveDomain.get_loop_invariant_under_inference id astate with
-            | Some abstract_states_at_loop_head
-              when List.exists abstract_states_at_loop_head ~f:(fun astate_at_loop_head ->
+            | Some {previous_astate_at_header; astate_entry= Some astate_entry}
+              when List.exists previous_astate_at_header ~f:(fun astate_at_loop_head ->
                        AbstractValue.throwaway_context
-                       @@ fun () -> PulseEternal.implies astate astate_at_loop_head ) ->
+                       @@ fun () -> PulseEternal.implies astate (astate_entry, astate_at_loop_head) )
+              ->
                 let location = Procdesc.Node.get_loc cfg_node in
                 (* typically we get back only one [AbortProgram] state but it could also be zero if we
                  discover the summary is UNSAT *)

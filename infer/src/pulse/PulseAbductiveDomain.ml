@@ -87,7 +87,9 @@ type t =
   ; skipped_calls: SkippedCalls.t }
 
 and loop_invariant_under_inference =
-  {header: (Procdesc.Node.id[@yojson.opaque]); previous_astate_at_header: t list}
+  { header: (Procdesc.Node.id[@yojson.opaque])
+  ; previous_astate_at_header: t list
+  ; astate_entry: t option }
 [@@deriving compare, equal, yojson_of]
 
 let pp_ ~is_summary f
@@ -174,22 +176,24 @@ let record_call_resolution ~caller callsite_loc call_kind resolution astate =
 
 let enable_multiple_astates_pre_header = false
 
-let add_loop_invariant_under_inference header astate =
+let add_loop_invariant_under_inference header ~entry:astate_entry astate =
   L.d_printfln "Abstract states at loop head %a:@\n  @[%a@]@\n" Procdesc.Node.pp_id header pp astate ;
   if Option.is_none astate.loop_invariant_under_inference || enable_multiple_astates_pre_header then
-    let {previous_astate_at_header; header} =
+    let ({previous_astate_at_header} as previous_loop_invariant) =
       Option.value astate.loop_invariant_under_inference
-        ~default:{previous_astate_at_header= []; header}
+        ~default:{previous_astate_at_header= []; astate_entry; header}
     in
     { astate with
       loop_invariant_under_inference=
-        Some {previous_astate_at_header= astate :: previous_astate_at_header; header} }
+        Some
+          { previous_loop_invariant with
+            previous_astate_at_header= astate :: previous_astate_at_header } }
   else astate
 
 
 let get_loop_invariant_under_inference id {loop_invariant_under_inference= opt} =
-  Option.bind opt ~f:(fun {previous_astate_at_header; header} ->
-      if Procdesc.Node.equal_id id header then Some previous_astate_at_header else None )
+  Option.bind opt ~f:(fun ({header} as invariant) ->
+      if Procdesc.Node.equal_id id header then Some invariant else None )
 
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}

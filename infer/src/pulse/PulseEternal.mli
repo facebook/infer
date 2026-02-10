@@ -8,11 +8,11 @@
 open! IStd
 open PulseDomainInterface
 
-val implies : AbductiveDomain.t -> AbductiveDomain.t -> bool
-(** [implies lhs rhs] is [true] if there is a renaming [σ] of abstract values in [rhs.current_state]
-    such that [lhs.current_state ⊢ σ(rhs.current_state) ∧ σ(lhs.path_condition)]. Assuming [lhs] is
-    the analysis state after going through a loop body and [rhs] is the state before, this tests
-    whether it is possible to satisfy the loop conditions again. If so, following the UNTER theory,
-    an infinite loop is detected. *)
+val implies : AbductiveDomain.t -> AbductiveDomain.t * AbductiveDomain.t -> bool
+(** [implies lhs (entry,rhs)] is [true] if there is a renaming [σ] of abstract values in
+    [rhs.current_state] such that, letting [inv = σ(rhs.current_state) ∧ σ(lhs.path_condition)]
+    [lhs.current_state ⊢ inv] and [entry ⊢ inv]. Assuming [lhs] is the analysis state after going
+    through a loop body and [rhs] is the state before, this tests whether it is possible to satisfy
+    the loop conditions again. If so, following the UNTER theory, an infinite loop is detected. *)
 
 val abstract : AbductiveDomain.t -> AbductiveDomain.t

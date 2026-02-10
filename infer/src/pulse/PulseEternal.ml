@@ -30,12 +30,6 @@ type rhs_index_to_visit =
   ; access_rhs: Access.t
   ; addr_hist_lhs: AbstractValue.t * ValueHistory.t }
 
-type to_lhs_subst = AbstractValue.t AddressMap.t
-
-let empty_to_lhs_subst = AddressMap.empty
-
-let add_to_lhs_subst = AddressMap.add
-
 let pp_subst fmt subst =
   (AddressMap.pp ~pp_value:(fun fmt addr -> AbstractValue.pp fmt addr)) fmt subst
 
@@ -50,7 +44,7 @@ let to_lhs_value_ _astate subst x =
 
 type unification =
   { astate: AbductiveDomain.t
-  ; subst: to_lhs_subst
+  ; subst: AbstractValue.t AddressMap.t  (** rhs -> lhs *)
   ; rev_subst: AbstractValue.t AddressMap.t
   ; visited: AddressSet.t
   ; array_indices_to_visit: rhs_index_to_visit list }
@@ -209,7 +203,7 @@ let visit unification ~rhs ~addr_rhs ~addr_hist_lhs =
         ( `NotAlreadyVisited
         , { unification with
             visited= AddressSet.add addr_rhs unification.visited
-          ; subst= add_to_lhs_subst addr_rhs addr_lhs unification.subst
+          ; subst= AddressMap.add addr_rhs addr_lhs unification.subst
           ; rev_subst= AddressMap.add addr_lhs addr_rhs unification.rev_subst } )
   | `AliasFound unification ->
       Ok (`AlreadyVisited, unification)
@@ -226,7 +220,7 @@ let subst_find_or_new astate subst addr_rhs =
       (* map restricted (≥0) values to restricted values to preserve their semantics *)
       let addr_lhs = AbstractValue.mk_fresh_same_kind addr_rhs in
       L.d_printfln "new subst %a <-> %a (fresh)" AbstractValue.pp addr_rhs AbstractValue.pp addr_lhs ;
-      (add_to_lhs_subst addr_rhs addr_lhs subst, addr_lhs)
+      (AddressMap.add addr_rhs addr_lhs subst, addr_lhs)
   | Some addr_hist_lhs ->
       (subst, addr_hist_lhs)
 
@@ -334,7 +328,8 @@ let unify astate_rhs unification =
   unify_rhs_from_stack ~rhs:astate_rhs unification >>= unify_rhs_from_array_indices ~rhs:rhs_post
 
 
-let implies (astate_lhs : AbductiveDomain.t) (astate_rhs : AbductiveDomain.t) =
+let implies (astate_lhs : AbductiveDomain.t)
+    ((astate_entry : AbductiveDomain.t), (astate_rhs : AbductiveDomain.t)) =
   L.d_printfln_escaped
     "Eternal Infinite Loop Check: Does this implication hold?@\n  @[%a@\n?⊢?@\n%a@]"
     AbductiveDomain.pp astate_lhs AbductiveDomain.pp astate_rhs ;
@@ -342,7 +337,7 @@ let implies (astate_lhs : AbductiveDomain.t) (astate_rhs : AbductiveDomain.t) =
      this implication state (where we throw away all the freshly-generated variables at the end) *)
   let empty_unification =
     { astate= astate_lhs
-    ; subst= empty_to_lhs_subst
+    ; subst= AddressMap.empty
     ; rev_subst= AddressMap.empty
     ; visited= AddressSet.empty
     ; array_indices_to_visit= [] }
@@ -364,8 +359,20 @@ let implies (astate_lhs : AbductiveDomain.t) (astate_rhs : AbductiveDomain.t) =
         PulseFormula.implies_conditions_up_to ~subst:unification.subst astate_lhs.path_condition
           ~implies:astate_lhs.path_condition
       with
-      | Ok () ->
-          true
+      | Ok () -> (
+          (* [astate_entry = astate_rhs * φ_entry]. We want to establish that [astate_entry] is
+             compatible with conditions in [astate_rhs], which contains inferred constraints on the
+             heap abstract values in [astate_entry].  i.e. [φ_entry ∧ lhs.path_condition] is SAT *)
+          L.d_printfln "checking that we can enter the loop based on these conditions" ;
+          match
+            PulseFormula.compatible_conditions astate_entry.path_condition astate_lhs.path_condition
+          with
+          | Ok _ ->
+              true
+          | Error (`Contradiction unsat_info) ->
+              L.d_printfln_escaped "implication failed, UNSAT when adding pure facts:@\n  %s"
+                (unsat_info.reason ()) ;
+              false )
       | Error (`Contradiction unsat_info) ->
           L.d_printfln_escaped "implication failed, UNSAT when adding pure facts:@\n  %s"
             (unsat_info.reason ()) ;
