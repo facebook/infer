@@ -43,3 +43,16 @@ final class Cell {
         contentView.delegate = self
     }
 }
+
+
+final class Cell2 {
+
+    var contentView: ContentViewType?
+
+    func configure() {
+        let newContentView = Utils.contentViewForVariant()
+        contentView = newContentView
+        contentView?.delegate = self
+        contentView?.configure()
+    }
+}

@@ -53,7 +53,7 @@ let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
 let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~substring:"fU" s
 
 let is_protocol_witness_optional_deinit_copy lang mangled_name =
-  let suffixes = ["WOd"; "WOb"] in
+  let suffixes = ["WOd"; "WOb"; "WOc"] in
   Textual.Lang.is_swift lang
   && List.exists ~f:(fun s -> String.is_suffix ~suffix:s mangled_name) suffixes
   && String.is_substring ~substring:"_p" mangled_name
