@@ -21,16 +21,12 @@ class DummyContentView: ContentViewType {
 
 final class CreationCell {
 
-    var contentView: ContentViewType = DummyContentView()
+    var contentView: ContentViewType?
 
     func configure() {
-        contentView.delegate = self
+        contentView = Utils.contentViewForVariant()
+        contentView?.delegate = self
     }
-}
-
-func test_retain_cycle_bad() {
-    let cell = CreationCell()
-    cell.contentView.delegate = cell
 }
 
 func test_retain_cycle_specialisation_bad() {

@@ -448,7 +448,7 @@ define .plain_name = "configure" $s5Hello12CreationCellC9configureyyF(self: *__i
       n29 = load n30.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[28:31]
       n31 = load n8 @[28:31]
       n34 = load n8 @[28:31]
-      n35 = load n34.__infer_swift_type<T5Hello15ContentViewType_pSg>.field_0 @[28:31]
+      n35 = load n34.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[28:31]
       n33 = n35 @[28:31]
       jmp 28::ret @[28:31]
       

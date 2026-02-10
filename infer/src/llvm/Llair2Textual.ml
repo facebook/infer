@@ -638,6 +638,7 @@ and translate_boxed_opaque_existential llair_args ~proc_state loc =
   | Some (Textual.Typ.Ptr (Struct struct_name)) ->
       let elts = NS.IArray.init 1 ~f:(fun _ -> lazy (1, Llair.Typ.bool)) in
       let name = Textual.TypeName.swift_mangled_name_of_type_name struct_name |> Option.value_exn in
+      let name = String.substr_replace_all ~pattern:"_pSg" ~with_:"P" name in
       let llair_typ = Typ.struct_ ~name elts ~bits:0 ~byts:0 in
       let llair_exp = Llair.Exp.select llair_typ arg 0 in
       let textual_exp, _, instrs = to_textual_exp ~proc_state loc llair_exp in
