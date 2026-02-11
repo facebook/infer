@@ -332,6 +332,42 @@ let update_id_return_type ~(proc_state : ProcState.t) proc id =
       ()
 
 
+(* When translating a field access, if the variable is an optional protocol, we need to
+modify the type and field number to access the protocol value. *)
+let translate_optional_protocol_witness ~proc_state exp typ_name n =
+  let ModuleState.{struct_map; mangled_map; lang; _} = proc_state.ProcState.module_state in
+  let exp_typ =
+    match exp with
+    | Textual.Exp.Var ident when Int.equal n 3 -> (
+      match IdentMap.find_opt ident proc_state.ProcState.ids_move with
+      | Some id_data ->
+          Option.map ~f:(fun typ -> typ.Textual.Typ.typ) id_data.ProcState.typ
+      | None ->
+          None )
+    | _ ->
+        None
+  in
+  match exp_typ with
+  | Some (Textual.Typ.Ptr (Struct struct_name)) ->
+      let typ_name =
+        match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
+        | Some name ->
+            let name =
+              let optional_protocol_suffix = "_pSg" in
+              if String.is_suffix name ~suffix:optional_protocol_suffix then
+                String.substr_replace_all ~pattern:optional_protocol_suffix ~with_:"P" name
+              else name
+            in
+            TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+              name
+        | None ->
+            struct_name
+      in
+      (typ_name, 0)
+  | _ ->
+      (typ_name, n)
+
+
 let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : Llair.Exp.t) :
     Textual.Exp.t * Textual.Typ.t option * Textual.Instr.t list =
   let ModuleState.{struct_map; mangled_map; lang; _} = proc_state.module_state in
@@ -441,7 +477,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       let textual_typ = Option.value typ_opt ~default:textual_typ in
       (textual_exp, Some textual_typ, [])
-  | Ap1 (Select n, typ, llair_exp) -> (
+  | Ap1 (Select offset, typ, llair_exp) -> (
       let typ_name =
         match typ with
         | Struct {name} ->
@@ -462,8 +498,9 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           undef_exp ~sourcefile:proc_state.sourcefile ~loc ~proc:proc_state.qualified_name exp
       | Some typ_name ->
           let exp, _, exp_instrs = to_textual_exp loc ~proc_state llair_exp in
+          let typ_name, n = translate_optional_protocol_witness ~proc_state exp typ_name offset in
           let field =
-            if Llair.Typ.is_tuple typ then Field.tuple_field_of_pos typ_name n
+            if Llair.Typ.is_tuple typ && Int.equal n offset then Field.tuple_field_of_pos typ_name n
             else Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name n
           in
           let field_instrs, exp = add_deref ~proc_state exp loc in
