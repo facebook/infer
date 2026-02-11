@@ -1071,6 +1071,8 @@ module rec Exp : sig
 
   val is_zero_exp : t -> bool
 
+  val is_one_exp : t -> bool
+
   val pp : F.formatter -> t -> unit
 end = struct
   (* TODO(T133190934) *)
@@ -1110,6 +1112,8 @@ end = struct
   let cast typ exp = call_non_virtual ProcDecl.cast_name [Typ typ; exp]
 
   let is_zero_exp exp = match exp with Const (Int i) -> Z.equal i Z.zero | _ -> false
+
+  let is_one_exp exp = match exp with Const (Int i) -> Z.equal i Z.one | _ -> false
 
   let allocate_object typename =
     Call {proc= ProcDecl.allocate_object_name; args= [Typ (Typ.Struct typename)]; kind= NonVirtual}

@@ -637,7 +637,7 @@ define .plain_name = "coverPictureModel.didset" $s5Hello7ProfileC17coverPictureM
       jmp 33::ret @[280:37]
       
   #33::ret: @[280:37]
-      if __sil_bxor(n34, 1) then jmp 34 else jmp 51 @[280:37]
+      if __sil_lnot(n34) then jmp 34 else jmp 51 @[280:37]
       
   #34: @[281:42]
       n40 = load &$sSSN @[281:42]
@@ -1830,7 +1830,7 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *__infer_swi
   #6::ret: @[196:17]
       store &var5 <- __sil_cast(<int>, n5) @[196:17]
       n8 = load &var5 @[196:17]
-      if __sil_bxor(__sil_eq(n8, 0), 1) then jmp 13 else jmp 11 @[196:17]
+      if __sil_lnot(__sil_eq(n8, 0)) then jmp 13 else jmp 11 @[196:17]
       
 } @?
 

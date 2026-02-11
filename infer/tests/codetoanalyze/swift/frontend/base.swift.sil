@@ -734,7 +734,7 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       n5 = load &var3 @[621:0]
       store n8.__infer_swift_type<TSd>.field_0 <- n5 @[621:0]
       n9 = load &var2 @[41:22]
-      n18 = __sil_bxor(__sil_lt(__sil_land(__sil_shiftrt(__sil_cast(<int>, n9), 52), 2047), 2047), 1) @[41:22]
+      n18 = __sil_lnot(__sil_lt(__sil_land(__sil_shiftrt(__sil_cast(<int>, n9), 52), 2047), 2047)) @[41:22]
       if n18 then jmp 102 else jmp 23 @[41:22]
       
   #$ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::1::ret: @[44:47]
@@ -801,12 +801,12 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       
   #23: @[41:22]
       n20 = load &var2 @[41:22]
-      n23 = __sil_bxor(__sil_lt(1.41142812322e+19, n20), 1) @[41:22]
+      n23 = __sil_lnot(__sil_lt(1.41142812322e+19, n20)) @[41:22]
       if n23 then jmp 103 else jmp 27 @[41:22]
       
   #27: @[41:22]
       n24 = load &var2 @[41:22]
-      n28 = __sil_bxor(__sil_lt(n24, 4.89090919532e+18), 1) @[41:22]
+      n28 = __sil_lnot(__sil_lt(n24, 4.89090919532e+18)) @[41:22]
       if n28 then jmp 104 else jmp 31 @[41:22]
       
   #31: @[41:20]
@@ -815,17 +815,17 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       n29 = load &var2 @[41:20]
       store n32.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n29) @[41:20]
       n33 = load &var3 @[42:23]
-      n42 = __sil_bxor(__sil_lt(__sil_land(__sil_shiftrt(__sil_cast(<int>, n33), 52), 2047), 2047), 1) @[42:23]
+      n42 = __sil_lnot(__sil_lt(__sil_land(__sil_shiftrt(__sil_cast(<int>, n33), 52), 2047), 2047)) @[42:23]
       if n42 then jmp 105 else jmp 41 @[42:23]
       
   #41: @[42:23]
       n44 = load &var3 @[42:23]
-      n47 = __sil_bxor(__sil_lt(1.41142812322e+19, n44), 1) @[42:23]
+      n47 = __sil_lnot(__sil_lt(1.41142812322e+19, n44)) @[42:23]
       if n47 then jmp 106 else jmp 45 @[42:23]
       
   #45: @[42:23]
       n48 = load &var3 @[42:23]
-      n52 = __sil_bxor(__sil_lt(n48, 4.89090919532e+18), 1) @[42:23]
+      n52 = __sil_lnot(__sil_lt(n48, 4.89090919532e+18)) @[42:23]
       if n52 then jmp 107 else jmp 49 @[42:23]
       
   #49: @[42:21]
@@ -1411,7 +1411,7 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
       
   #7::jmp::11: @[51:25]
       n97 = load &value @[51:25]
-      n3 = __sil_bxor(__sil_lt(100, n97), 1) @[51:25]
+      n3 = __sil_lnot(__sil_lt(100, n97)) @[51:25]
       jmp 11 @[51:25]
       
 } @?
@@ -2347,7 +2347,7 @@ define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7N
       n9 = load &var7 @[304:0]
       n11 = load &coder @[304:0]
       n12 = $builtins.objc_msgSendSuper2(n9, n8, n11) @[304:0]
-      if __sil_bxor(__sil_eq(__sil_cast(<int>, n12), 0), 1) then jmp 17 else jmp 15 @[305:0]
+      if __sil_lnot(__sil_eq(__sil_cast(<int>, n12), 0)) then jmp 17 else jmp 15 @[305:0]
       
 } @?
 

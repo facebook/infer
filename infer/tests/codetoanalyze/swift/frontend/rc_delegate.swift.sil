@@ -166,7 +166,7 @@ define .plain_name = "configure" $s5Hello5Cell2C9configureyyF(self: *__infer_swi
       n20 = load n21.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[54:20]
       n23 = load n12 @[54:20]
       n22 = load n23.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 @[54:20]
-      if __sil_bxor(__sil_eq(n20, 0), 1) then jmp 25 else jmp 62 @[54:20]
+      if __sil_lnot(__sil_eq(n20, 0)) then jmp 25 else jmp 62 @[54:20]
       
   #25: @[54:33]
       n67 = $builtins.llvm_nondet() @[54:33]
@@ -207,7 +207,7 @@ define .plain_name = "configure" $s5Hello5Cell2C9configureyyF(self: *__infer_swi
       n38 = load n39.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[55:20]
       n41 = load n30 @[55:20]
       n40 = load n41.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 @[55:20]
-      if __sil_bxor(__sil_eq(n38, 0), 1) then jmp 50 else jmp 61 @[55:20]
+      if __sil_lnot(__sil_eq(n38, 0)) then jmp 50 else jmp 61 @[55:20]
       
   #50: @[55:20]
       n49 = load n30 @[55:20]
@@ -717,7 +717,7 @@ define .plain_name = "configure" $s5Hello12CreationCellC9configureyyF(self: *__i
       n16 = load n17.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[28:20]
       n19 = load n8 @[28:20]
       n18 = load n19.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 @[28:20]
-      if __sil_bxor(__sil_eq(n16, 0), 1) then jmp 21 else jmp 33 @[28:20]
+      if __sil_lnot(__sil_eq(n16, 0)) then jmp 21 else jmp 33 @[28:20]
       
 } @?
 

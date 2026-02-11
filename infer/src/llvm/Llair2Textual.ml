@@ -368,6 +368,18 @@ let translate_optional_protocol_witness ~proc_state exp typ_name n =
       (typ_name, n)
 
 
+let to_textual_not_exp op exp1 exp2 =
+  match op with
+  | Llair.Exp.Xor when Textual.Exp.is_one_exp exp1 ->
+      let proc = Textual.ProcDecl.of_unop Unop.LNot in
+      Some Textual.Exp.(Call {proc; args= [exp2]; kind= Textual.Exp.NonVirtual})
+  | Llair.Exp.Xor when Textual.Exp.is_one_exp exp2 ->
+      let proc = Textual.ProcDecl.of_unop Unop.LNot in
+      Some Textual.Exp.(Call {proc; args= [exp1]; kind= Textual.Exp.NonVirtual})
+  | _ ->
+      None
+
+
 let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : Llair.Exp.t) :
     Textual.Exp.t * Textual.Typ.t option * Textual.Instr.t list =
   let ModuleState.{struct_map; mangled_map; lang; _} = proc_state.module_state in
@@ -544,14 +556,19 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       , deref_instrs1 @ exp1_instrs @ deref_instrs2 @ exp2_instrs )
   | Ap2 (((Eq | Dq | Gt | Ge | Le | Lt | Ult | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2)
     ->
-      let proc = to_textual_bool_exp_builtin op in
       let exp1, typ1, exp1_instrs = to_textual_exp loc ~proc_state e1 in
       let deref_instrs1, exp1 = add_deref ~proc_state exp1 loc in
       let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state e2 in
       let deref_instrs2, exp2 = add_deref ~proc_state exp2 loc in
-      ( Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
-      , typ1
-      , deref_instrs1 @ exp1_instrs @ deref_instrs2 @ exp2_instrs )
+      let proc = to_textual_bool_exp_builtin op in
+      let exp =
+        match to_textual_not_exp op exp1 exp2 with
+        | Some exp ->
+            exp
+        | None ->
+            Textual.Exp.Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
+      in
+      (exp, typ1, deref_instrs1 @ exp1_instrs @ deref_instrs2 @ exp2_instrs)
   | Ap2 (Update idx, typ, rcd, elt) ->
       let rcd_exp, _, rcd_instrs = to_textual_exp loc ~proc_state rcd in
       let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state elt in

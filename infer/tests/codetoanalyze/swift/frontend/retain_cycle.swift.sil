@@ -577,7 +577,7 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       n52 = load n53.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[35:17]
       n55 = load &var4 @[35:17]
       n54 = load n55.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[35:17]
-      if __sil_bxor(__sil_eq(n52, 0), 1) then jmp 43 else jmp 64 @[35:17]
+      if __sil_lnot(__sil_eq(n52, 0)) then jmp 43 else jmp 64 @[35:17]
       
   #43: @[35:17]
       n65 = load &var4 @[35:17]

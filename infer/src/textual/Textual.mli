@@ -436,6 +436,8 @@ module rec Exp : sig
 
   val is_zero_exp : t -> bool
 
+  val is_one_exp : t -> bool
+
   val pp : F.formatter -> t -> unit
 end
 

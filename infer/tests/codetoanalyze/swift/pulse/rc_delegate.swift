@@ -55,4 +55,14 @@ final class Cell2 {
         contentView?.delegate = self
         contentView?.configure()
     }
+
+    func test() {
+        contentView?.delegate = self
+    }
+}
+
+func test_retain_cycle_specialisation2_bad() {
+    let cell = Cell2()
+    cell.contentView = DummyContentView()
+    cell.test()
 }
