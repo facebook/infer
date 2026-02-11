@@ -64,6 +64,68 @@ let params_from_fun_decl (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_dec
       []
 
 
+let proc_name_from_unop (op : Charon.Generated_Expressions.unop) : Textual.QualifiedProcName.t =
+  match op with
+  | Neg _ ->
+      Textual.ProcDecl.of_unop IR.Unop.Neg
+  | Not ->
+      Textual.ProcDecl.of_unop IR.Unop.LNot
+  | Cast _ ->
+      Textual.ProcDecl.cast_name
+  | _ ->
+      L.die UserError "Unsupported unary operator: %a" Charon.Generated_Expressions.pp_unop op
+
+
+let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textual.Typ.t) :
+    Textual.QualifiedProcName.t * Textual.Typ.t =
+  let bin_op, typ =
+    match (op, typ) with
+    | Add _, Textual.Typ.Int ->
+        (IR.Binop.PlusA (Some IInt), typ)
+    | Add _, _ ->
+        (IR.Binop.PlusA None, typ)
+    | Sub _, Textual.Typ.Int ->
+        (IR.Binop.MinusA (Some IInt), typ)
+    | Sub _, _ ->
+        (IR.Binop.MinusA None, typ)
+    | Mul _, Textual.Typ.Int ->
+        (IR.Binop.Mult (Some IInt), typ)
+    | Mul _, _ ->
+        (IR.Binop.Mult None, typ)
+    | Div _, Textual.Typ.Int ->
+        (IR.Binop.DivI, typ)
+    | Div _, Textual.Typ.Float ->
+        (IR.Binop.DivF, typ)
+    | Rem _, Textual.Typ.Int ->
+        (IR.Binop.Mod, typ)
+    | BitXor, Textual.Typ.Int ->
+        (IR.Binop.BXor, typ)
+    | BitAnd, Textual.Typ.Int ->
+        (IR.Binop.BAnd, typ)
+    | BitOr, Textual.Typ.Int ->
+        (IR.Binop.BOr, typ)
+    | Eq, Textual.Typ.Int ->
+        (IR.Binop.Eq, Textual.Typ.Int)
+    | Lt, _ ->
+        (IR.Binop.Lt, Textual.Typ.Int)
+    | Le, _ ->
+        (IR.Binop.Le, Textual.Typ.Int)
+    | Ne, _ ->
+        (IR.Binop.Ne, Textual.Typ.Int)
+    | Ge, _ ->
+        (IR.Binop.Ge, Textual.Typ.Int)
+    | Gt, _ ->
+        (IR.Binop.Gt, Textual.Typ.Int)
+    | Shl _, _ ->
+        (IR.Binop.Shiftlt, typ)
+    | Shr _, _ ->
+        (IR.Binop.Shiftrt, typ)
+    | _ ->
+        L.die UserError "Unsupported binary operator: %a" Charon.Generated_Expressions.pp_binop op
+  in
+  (Textual.ProcDecl.of_binop bin_op, typ)
+
+
 let adt_ty_to_textual_typ (type_decl_ref : Charon.Generated_Types.type_decl_ref) : Textual.Typ.t =
   (* TODO: Implement non-empty tuple and other adt types *)
   match type_decl_ref.id with
@@ -191,6 +253,17 @@ let mk_exp_from_operand (place_map : place_map_ty) (operand : Charon.Generated_E
 let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map : place_map_ty) :
     Textual.Exp.t * Textual.Typ.t =
   match rvalue with
+  | UnaryOp (op, operand) ->
+      let exp, typ = mk_exp_from_operand place_map operand in
+      let qualified_proc_name = proc_name_from_unop op in
+      let call = Textual.Exp.call_non_virtual qualified_proc_name [exp] in
+      (call, typ)
+  | BinaryOp (op, operand1, operand2) ->
+      let exp1, typ1 = mk_exp_from_operand place_map operand1 in
+      let exp2, _ = mk_exp_from_operand place_map operand2 in
+      let qualified_proc_name, typ_binop = proc_name_from_binop op typ1 in
+      let call = Textual.Exp.call_non_virtual qualified_proc_name [exp1; exp2] in
+      (call, typ_binop)
   | Aggregate (kind, ops) -> (
       (* TODO: Handle non-empty aggregates as well *)
       let exps = List.map ~f:(fun op -> mk_exp_from_operand place_map op |> fst) ops in
