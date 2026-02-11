@@ -1,0 +1,54 @@
+# Final ULLBC before serialization:
+
+// Full name: basic_call::bar
+fn bar()
+{
+    let @0: (); // return
+
+    bb0: {
+        @0 := ();
+        @0 := ();
+        return;
+    }
+}
+
+// Full name: basic_call::foo
+fn foo()
+{
+    let @0: (); // return
+
+    bb0: {
+        @0 := bar() -> bb2 (unwind: bb1);
+    }
+
+    bb1: {
+        unwind_continue;
+    }
+
+    bb2: {
+        @0 := ();
+        return;
+    }
+}
+
+// Full name: basic_call::main
+fn main()
+{
+    let @0: (); // return
+
+    bb0: {
+        @0 := foo() -> bb2 (unwind: bb1);
+    }
+
+    bb1: {
+        unwind_continue;
+    }
+
+    bb2: {
+        @0 := ();
+        return;
+    }
+}
+
+
+

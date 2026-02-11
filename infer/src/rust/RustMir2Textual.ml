@@ -9,6 +9,18 @@ open! IStd
 module L = Logging
 module PlaceMap = Stdlib.Map.Make (Int)
 
+let fun_map_find_id (crate : Charon.UllbcAst.crate) fun_decl_id =
+  let decl = Charon.Types.FunDeclId.Map.find_opt fun_decl_id crate.fun_decls in
+  match decl with
+  | Some decl ->
+      decl
+  | None ->
+      L.die UserError "Unsupported fun type (fun_decl_id not found) %s"
+        (Charon.PrintTypes.fun_decl_id_to_string
+           (Charon.PrintUllbcAst.Crate.crate_to_fmt_env crate)
+           fun_decl_id )
+
+
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
   let line = span.span.beg_loc.line in
   let col = span.span.beg_loc.col in
@@ -21,25 +33,39 @@ let location_from_span_end (span : Charon.Generated_Meta.span) : Textual.Locatio
   Textual.Location.known ~line ~col
 
 
-let name_of_path_element (path_element : Charon.Generated_Types.path_elem) : string =
-  match path_element with
-  | PeIdent (name, _) ->
-      name
-  | _ ->
-      L.die UserError "Unsupported path element %a" Charon.Generated_Types.pp_path_elem path_element
+let name_of_path_element crate (path_element : Charon.Generated_Types.path_elem) : string =
+  Charon.PrintTypes.path_elem_to_string
+    (Charon.PrintUllbcAst.Crate.crate_to_fmt_env crate)
+    path_element
 
 
-let mk_name (name : Charon.Generated_Types.name) : Textual.ProcName.t =
-  let names = List.map name ~f:name_of_path_element in
+let mk_name crate (name : Charon.Generated_Types.name) : Textual.ProcName.t =
+  let names = List.map name ~f:(name_of_path_element crate) in
   let name_str = Stdlib.String.concat "::" names in
   Textual.ProcName.of_string name_str
 
 
-let mk_qualified_proc_name (item_meta : Charon.Generated_Types.item_meta) :
+let mk_qualified_proc_name crate (item_meta : Charon.Generated_Types.item_meta) :
     Textual.QualifiedProcName.t =
   let enclosing_class = Textual.QualifiedProcName.TopLevel in
-  let name = mk_name item_meta.name in
+  let name = mk_name crate item_meta.name in
   {Textual.QualifiedProcName.enclosing_class; name}
+
+
+let item_meta_to_string crate (item_meta : Charon.Generated_Types.item_meta) : string =
+  let names = List.map item_meta.name ~f:(name_of_path_element crate) in
+  let name_str = Stdlib.String.concat "::" names in
+  name_str
+
+
+let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate)
+    (operand : Charon.Generated_GAst.fn_operand) : string =
+  match operand with
+  | FnOpRegular {func= FunId (FRegular fun_decl_id)} ->
+      let decl = fun_map_find_id crate fun_decl_id in
+      item_meta_to_string crate decl.item_meta
+  | _ ->
+      L.die UserError "Unsupported fun operand: %a" Charon.Generated_GAst.pp_fn_operand operand
 
 
 let mk_varname (local : Charon.Generated_GAst.local) (index : int) : Textual.VarName.t =
@@ -279,21 +305,54 @@ let mk_exp_from_rvalue (rvalue : Charon.Generated_Expressions.rvalue) (place_map
       L.die UserError "Unsupported rvalue: %a" Charon.Generated_Expressions.pp_rvalue rvalue
 
 
-let mk_terminator (_crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
-    (terminator : Charon.Generated_UllbcAst.terminator) : Textual.Terminator.t =
+let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
+    (terminator : Charon.Generated_UllbcAst.terminator) :
+    Textual.Instr.t list * Textual.Terminator.t =
+  let loc = location_from_span terminator.span in
   match terminator.content with
   | Charon.Generated_UllbcAst.Goto block_id ->
       let label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int block_id) in
       let ssa_args = [] in
       let node_call : Textual.Terminator.node_call = {label; ssa_args} in
-      Textual.Terminator.Jump [node_call]
+      ([], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.Return ->
       let place = mk_return_place place_map in
       let exp, _ = mk_exp_from_place place_map place in
-      Textual.Terminator.Ret exp
+      ([], Textual.Terminator.Ret exp)
+  | Charon.Generated_UllbcAst.Switch (_operand, (SwitchInt (_, _, _) as switch)) ->
+      L.die UserError "Unsupported switch type: SwitchInt %a\n" Charon.Generated_UllbcAst.pp_switch
+        switch
+  | Charon.Generated_UllbcAst.Switch (operand, If (then_block_id, else_block_id)) ->
+      let exp, _ = mk_exp_from_operand place_map operand in
+      let then_label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int then_block_id) in
+      let else_label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int else_block_id) in
+      let bexp = Textual.BoolExp.Exp exp in
+      let then_node_call : Textual.Terminator.node_call = {label= then_label; ssa_args= []} in
+      let else_node_call : Textual.Terminator.node_call = {label= else_label; ssa_args= []} in
+      let then_ = Textual.Terminator.Jump [then_node_call] in
+      let else_ = Textual.Terminator.Jump [else_node_call] in
+      ([], Textual.Terminator.If {bexp; then_; else_})
+  | Charon.Generated_UllbcAst.Call (call, block_id_1, _) ->
+      let args_exps, _ = List.map call.args ~f:(mk_exp_from_operand place_map) |> List.unzip in
+      let proc_name = Textual.ProcName.of_string (fun_name_from_fun_operand crate call.func) in
+      let qualified_proc_name =
+        { Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel
+        ; name= proc_name }
+      in
+      let dest_exp, dest_typ = mk_exp_from_place place_map call.dest in
+      let call_exp =
+        Textual.Exp.Call {proc= qualified_proc_name; args= args_exps; kind= Textual.Exp.NonVirtual}
+      in
+      let call_instr =
+        Textual.Instr.Store {exp1= dest_exp; exp2= call_exp; loc; typ= Some dest_typ}
+      in
+      let label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int block_id_1) in
+      let ssa_args = [] in
+      let node_call : Textual.Terminator.node_call = {label; ssa_args} in
+      ([call_instr], Textual.Terminator.Jump [node_call])
   | Charon.Generated_UllbcAst.UnwindResume ->
       (* TODO: To be updated when error handling is being implemented *)
-      Textual.Terminator.Unreachable
+      ([], Textual.Terminator.Unreachable)
   | t ->
       L.die UserError "Unsupported terminator: %a" Charon.Generated_UllbcAst.pp_raw_terminator t
 
@@ -319,8 +378,8 @@ let mk_instr (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.s
       L.die UserError "Unsupported statement: %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
 
-let mk_procdecl (proc : Charon.UllbcAst.fun_decl) : Textual.ProcDecl.t =
-  let qualified_name = mk_qualified_proc_name proc.item_meta in
+let mk_procdecl crate (proc : Charon.UllbcAst.fun_decl) : Textual.ProcDecl.t =
+  let qualified_name = mk_qualified_proc_name crate proc.item_meta in
   let result_type = Textual.Typ.mk_without_attributes (ty_to_textual_typ proc.signature.output) in
   let param_types = List.map proc.signature.inputs ~f:ty_to_textual_typ in
   let formals_types = Some (List.map param_types ~f:Textual.Typ.mk_without_attributes) in
@@ -334,7 +393,8 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
   let ssa_parameters = [] in
   let exn_succs = [] in
   let instrs = block.statements |> List.concat_map ~f:(mk_instr place_map) in
-  let last = mk_terminator crate place_map block.terminator in
+  let term_instr, last = mk_terminator crate place_map block.terminator in
+  let instrs = instrs @ term_instr in
   let last_loc = location_from_span block.terminator.span in
   let label_loc = Textual.Location.Unknown in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
@@ -353,7 +413,7 @@ let mk_procdesc (crate : Charon.UllbcAst.crate)
   in
   let place_map = mk_place_map locals in
   let fresh_ident = None in
-  let procdecl = mk_procdecl fun_decl in
+  let procdecl = mk_procdecl crate fun_decl in
   let nodes = List.mapi blocks ~f:(fun i block -> mk_node crate i block place_map) in
   let start = mk_label 0 in
   let params = params_from_fun_decl fun_decl arg_count in

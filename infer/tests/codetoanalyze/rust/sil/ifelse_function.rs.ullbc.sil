@@ -1,0 +1,50 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define ifelse_function::main() : void {
+  local var_0: void, x_1: int
+  #node_0:
+      n0:int = load &x_1
+      n1 = ifelse_function::ifelse(1, 10, 20)
+      store n0 <- n1:int
+      jmp node_1
+      
+  #node_1:
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n2:void = load &var_0
+      ret n2
+      
+}
+
+define ifelse_function::ifelse(b_1: int, x_2: int, y_3: int) : int {
+  local var_0: int, var_4: int
+  #node_0:
+      n0:int = load &b_1
+      store &var_4 <- n0:int
+      n1:int = load &var_4
+      jmp node_1, node_2
+      
+  #node_1:
+      prune n1
+      n2:int = load &x_2
+      store &var_0 <- n2:int
+      jmp node_3
+      
+  #node_2:
+      prune __sil_lnot(n1)
+      n3:int = load &y_3
+      store &var_0 <- n3:int
+      jmp node_3
+      
+  #node_3:
+      n4:int = load &var_0
+      ret n4
+      
+}
+
