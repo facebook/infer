@@ -457,12 +457,12 @@ let mk_procdesc (crate : Charon.UllbcAst.crate)
   {Textual.ProcDesc.procdecl; fresh_ident; nodes; start; params; locals; exit_loc}
 
 
-let mk_module (crate : Charon.UllbcAst.crate) ~json_filename : Textual.Module.t =
+let mk_module (crate : Charon.UllbcAst.crate) ~file_name : Textual.Module.t =
   let fun_decls = crate.fun_decls in
   let attrs = [Textual.Attr.mk_source_language Rust] in
   let decls =
     Charon.Generated_Types.FunDeclId.Map.bindings fun_decls
     |> List.map ~f:(fun proc -> Textual.Module.Proc (mk_procdesc crate proc))
   in
-  let sourcefile = Textual.SourceFile.create json_filename in
+  let sourcefile = Textual.SourceFile.create file_name in
   {Textual.Module.attrs; decls; sourcefile}

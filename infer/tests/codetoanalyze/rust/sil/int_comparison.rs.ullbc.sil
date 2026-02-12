@@ -1,0 +1,62 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define int_comparison::compare(x_1: int, y_2: int) : int {
+  local var_0: int, var_3: int, var_4: int, var_5: int
+  #node_0:
+      n0:int = load &x_1
+      store &var_4 <- n0:int
+      n1:int = load &y_2
+      store &var_5 <- n1:int
+      n2:int = load &var_4
+      n3:int = load &var_5
+      store &var_3 <- __sil_gt(n2, n3):int
+      n4:int = load &var_3
+      jmp node_1, node_2
+      
+  #node_1:
+      prune n4
+      n5:int = load &x_1
+      store &var_0 <- n5:int
+      jmp node_3
+      
+  #node_2:
+      prune __sil_lnot(n4)
+      n6:int = load &y_2
+      store &var_0 <- n6:int
+      jmp node_3
+      
+  #node_3:
+      n7:int = load &var_0
+      ret n7
+      
+}
+
+define int_comparison::main() : void {
+  local var_0: void, x_1: int, y_2: int, var_3: int, var_4: int, var_5: int
+  #node_0:
+      store &x_1 <- 0:int
+      store &y_2 <- 1:int
+      n0:int = load &x_1
+      store &var_4 <- n0:int
+      n1:int = load &y_2
+      store &var_5 <- n1:int
+      n2:int = load &var_4
+      n3:int = load &var_5
+      n4 = int_comparison::compare(n2, n3)
+      store &var_3 <- n4:int
+      jmp node_1
+      
+  #node_1:
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n5:void = load &var_0
+      ret n5
+      
+}
+

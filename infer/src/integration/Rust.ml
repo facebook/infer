@@ -32,35 +32,62 @@ let run_charon json_file prog args =
     IUnix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
   in
   Unix.close stdin ;
-  Unix.close stderr ;
   let stdout = Unix.in_channel_of_descr stdout in
-  (pid, stdout)
+  let stderr = Unix.in_channel_of_descr stderr in
+  (pid, stdout, stderr)
 
 
 let compile prog args =
   let json_file = IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "charon" ".ullbc" in
-  let pid, stdout = run_charon json_file prog args in
+  let pid, stdout, stderr = run_charon json_file prog args in
   let output = In_channel.input_lines stdout |> String.concat ~sep:"\n" in
+  let error = In_channel.input_lines stderr |> String.concat ~sep:"\n" in
   In_channel.close stdout ;
+  In_channel.close stderr ;
   match IUnix.waitpid pid with
   | Error _ as status ->
-      L.die ExternalError "Rustc exited with: %s@\n Trace: %s\n"
+      L.die ExternalError "Rustc exited with: %s@\n Trace: %s\n%s\n"
         (IUnix.Exit_or_signal.to_string_hum status)
-        output
+        output error
   | Ok () ->
       json_file
 
 
+(* 
+  In a ullbc file the first item in files is the 
+  entry point e.g. the file the command is executed on or 
+  the main file in a cargo project. 
+  The remaining files are the dependencies.
+  TODO: In the future we probably want to do the textual translation on a file per file basis.
+*)
+let filename_from_json json =
+  let file_name =
+    json
+    |> Yojson.Basic.Util.member "translated"
+    |> Yojson.Basic.Util.member "files" |> Yojson.Basic.Util.to_list
+    |> List.map ~f:(fun file ->
+           Yojson.Basic.Util.member "name" file
+           |> Yojson.Basic.Util.member "Local" |> Yojson.Basic.Util.to_string )
+    |> List.hd
+  in
+  match file_name with
+  | Some file_name ->
+      file_name
+  | None ->
+      L.die UserError "No file found in crate"
+
+
 let capture_file json_filename =
   let json = Yojson.Basic.from_file json_filename in
+  let file_name = filename_from_json json in
   let textual =
     match Charon.UllbcOfJson.crate_of_json json with
     | Ok crate ->
-        RustFrontend.RustMir2Textual.mk_module crate ~json_filename
+        RustFrontend.RustMir2Textual.mk_module crate ~file_name
     | Error err ->
         L.die UserError "%s: %s" err (Yojson.Basic.to_string json)
   in
-  let sourcefile = Textual.SourceFile.create json_filename in
+  let sourcefile = Textual.SourceFile.create file_name in
   let verified_textual =
     match TextualVerification.verify_strict textual with
     | Ok vt ->
