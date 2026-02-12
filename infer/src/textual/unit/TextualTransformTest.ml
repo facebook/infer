@@ -221,6 +221,12 @@ let%test_module "remove_if_terminator transformation" =
               if ((n1 && n2)) || n1 then ret 1 else jmp lab5
           #lab5:
               if ((n1 || n2)) && (n1) then ret 1 else ret 2
+        }
+
+        define if_lnot_test(b: int) : int {
+          #entry:
+              n1 : int = load &b
+              if  __sil_lnot(n1) then ret 1 else ret 2
         }|}
 
 
@@ -511,7 +517,23 @@ let%test_module "remove_if_terminator transformation" =
               prune __sil_lnot(n1) @[60:14]
               ret 2 @[60:14]
 
-        } @[61:9] |}]
+        } @[61:9]
+
+        define if_lnot_test(b: int) : int {
+          #entry: @[64:10]
+              n1:int = load &b @[65:14]
+              jmp if1, if0 @[66:14]
+
+          #if1: @[66:14]
+              prune __sil_lnot(n1) @[66:14]
+              ret 1 @[66:14]
+
+          #if0: @[66:14]
+              prune n1 @[66:14]
+              ret 2 @[66:14]
+
+        } @[67:9]
+        |}]
 
 
     let%expect_test _ =

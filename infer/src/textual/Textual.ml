@@ -1107,7 +1107,16 @@ end = struct
         ProcSig.Other {qualified_name}
 
 
-  let not exp = call_non_virtual (ProcDecl.of_unop Unop.LNot) [exp]
+  let lnot_proc = ProcDecl.of_unop Unop.LNot
+
+  let is_not = function
+    | Call {proc; args= [arg]; kind= NonVirtual} when QualifiedProcName.equal lnot_proc proc ->
+        Some arg
+    | _ ->
+        None
+
+
+  let not exp = match is_not exp with Some arg -> arg | _ -> call_non_virtual lnot_proc [exp]
 
   let cast typ exp = call_non_virtual ProcDecl.cast_name [Typ typ; exp]
 
