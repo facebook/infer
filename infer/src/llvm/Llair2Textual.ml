@@ -35,6 +35,11 @@ let functions_to_skip =
     ["swift_unknownObjectRetain"; "swift_weakLoadStrong"; "swift_bridgeObjectRetain"]
 
 
+let boxed_opaque_existentials =
+  [ "__swift_mutable_project_boxed_opaque_existential_1"
+  ; "__swift_project_boxed_opaque_existential_1" ]
+
+
 let get_alloc_class_name =
   let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
   fun ~proc_state proc_name ->
@@ -100,7 +105,14 @@ module Var = struct
         ProcState.update_formals ~proc_state reg_var_name (annot_typ, None) ProcState.Read ;
         (Textual.Exp.Lvar reg_var_name, Some annot_typ.Textual.Typ.typ)
     | None when VarMap.mem reg_var_name proc_state.locals ->
-        (Textual.Exp.Lvar reg_var_name, find_formal_type ~proc_state reg_var_name)
+        let typ = find_formal_type ~proc_state reg_var_name in
+        let typ =
+          if Option.is_some typ then typ
+          else
+            let annot_typ_opt = VarMap.find_opt reg_var_name proc_state.locals in
+            Option.map ~f:(fun Textual.Typ.{typ} -> typ) annot_typ_opt
+        in
+        (Textual.Exp.Lvar reg_var_name, typ)
     | None ->
         (Textual.Exp.Var (reg_to_id ~proc_state reg |> fst), None)
 
@@ -675,9 +687,11 @@ and translate_boxed_opaque_existential llair_args ~proc_state loc =
   let typ =
     match arg with
     | Llair.Exp.Reg {id; name; typ} -> (
-        let exp, _ = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
-        match exp with
-        | Textual.Exp.Var var_name -> (
+        let exp, exp_typ = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
+        match (exp, exp_typ) with
+        | _, Some _ ->
+            exp_typ
+        | Textual.Exp.Var var_name, None -> (
           match Textual.Ident.Map.find_opt var_name proc_state.ProcState.ids_move with
           | Some {typ= Some annotated_typ} ->
               Some annotated_typ.typ
@@ -745,8 +759,11 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind proc return ?generate_
       List.exists functions_to_skip ~f:(Textual.ProcName.equal proc.Textual.QualifiedProcName.name)
     then (List.hd_exn args, [])
     else if
-      Textual.ProcName.equal proc.Textual.QualifiedProcName.name
-        (Textual.ProcName.of_string "__swift_mutable_project_boxed_opaque_existential_1")
+      List.exists
+        ~f:(fun opaque_existential ->
+          Textual.ProcName.equal proc.Textual.QualifiedProcName.name
+            (Textual.ProcName.of_string opaque_existential) )
+        boxed_opaque_existentials
     then
       match translate_boxed_opaque_existential llair_args ~proc_state loc with
       | Some (textual_exp, instrs) ->

@@ -3,6 +3,7 @@ import Foundation
 
 protocol ContentViewType {
     func configure()
+    func value() -> Int
     var delegate: AnyObject? { get set }
 }
 
@@ -17,6 +18,9 @@ class DummyContentView: ContentViewType {
     var delegate: AnyObject?
     func configure() {
     }
+    func value() -> Int  {
+        return 15
+    }
 }
 
 final class CreationCell {
@@ -29,7 +33,7 @@ final class CreationCell {
     }
 }
 
-func test_retain_cycle_bad_fn() {
+func test_retain_cycle_specialisation_bad() {
     let cell = CreationCell()
     cell.configure()
 }
@@ -38,11 +42,12 @@ final class Cell {
 
     var contentView: ContentViewType = DummyContentView()
 
-    func configure() {
+    func configure_bad() {
         contentView = Utils.contentViewForVariant()
         contentView.delegate = self
     }
 }
+
 
 final class Cell2 {
 
@@ -54,4 +59,24 @@ final class Cell2 {
         contentView?.delegate = self
         contentView?.configure()
     }
+
+    func test() {
+        contentView?.delegate = self
+    }
+
+    func test2() -> Int? {
+        return contentView?.value()
+    }
+}
+
+func test_retain_cycle_specialisation2_bad() {
+    let cell = Cell2()
+    cell.contentView = DummyContentView()
+    cell.test()
+}
+
+func test_value() -> Int? {
+    let cell = Cell2()
+    cell.contentView = Utils.contentViewForVariant()
+    return cell.test2()
 }

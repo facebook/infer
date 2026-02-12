@@ -77,6 +77,6 @@ func test_retain_cycle_specialisation2_bad() {
 
 func test_value() -> Int? {
     let cell = Cell2()
-    cell.contentView = DummyContentView()
+    cell.contentView = Utils.contentViewForVariant()
     return cell.test2()
 }
