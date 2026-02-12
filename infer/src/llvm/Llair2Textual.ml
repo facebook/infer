@@ -1194,16 +1194,23 @@ let is_undefined func =
       false
 
 
-let should_translate plain_name mangled_name lang source_file (loc : Llair.Loc.t) =
+let should_translate plain_name mangled_name lang method_class_index source_file (loc : Llair.Loc.t)
+    =
   let file =
     if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
     else loc.Llair.Loc.file
   in
   let source_file_loc = SourceFile.create file in
+  let proc_name = Textual.ProcName.of_string mangled_name in
+  let typ_name = Textual.ProcName.Hashtbl.find_opt method_class_index proc_name in
+  let typ_name =
+    Option.bind ~f:(fun name -> Textual.TypeName.swift_mangled_name_of_type_name name) typ_name
+  in
   SourceFile.equal source_file source_file_loc
   (* the loc in these methods is empty but these are getters
      and setters or closure bodies and we need to translate them *)
   || is_closure lang mangled_name
+  || Option.exists ~f:(fun name -> String.is_suffix ~suffix:witness_protocol_suffix name) typ_name
   || Option.exists plain_name ~f:(fun plain_name ->
          String.is_substring ~substring:Field.get_suffix plain_name
          || String.is_substring ~substring:Field.set_suffix plain_name )
@@ -1417,11 +1424,11 @@ let update_formals_list formals_list formals_map =
 
 let translate_code source_file ~module_state proc_descs (procdecl : Textual.ProcDecl.t)
     (func_name, func) =
-  let ModuleState.{lang; _} = module_state in
+  let ModuleState.{lang; method_class_index} = module_state in
   let should_translate =
     should_translate
       (FuncName.unmangled_name func_name)
-      (FuncName.name func_name) lang source_file func.Llair.loc
+      (FuncName.name func_name) lang method_class_index source_file func.Llair.loc
   in
   let formals_list = List.map ~f:Var.reg_to_var_name (StdUtils.iarray_to_list func.Llair.formals) in
   let formals_map =
