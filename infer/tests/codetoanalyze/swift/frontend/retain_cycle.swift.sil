@@ -100,10 +100,10 @@ define .plain_name = "init" $s5Hello9TransportCACycfc(self: *__infer_swift_type<
       store n3.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue <- 0 @[22:39]
       n5 = load &self @[24:9]
       n4 = n5.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[24:9]
-      n7 = load n4 @[344:0]
-      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[344:0]
-      n9 = load n4 @[345:0]
-      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[345:0]
+      n7 = load n4 @[349:0]
+      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[349:0]
+      n9 = load n4 @[350:0]
+      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[350:0]
       n11 = $s5Hello15MessageReceiverCMa(0) @[26:27]
       jmp 9::ret @[26:27]
       
@@ -134,21 +134,36 @@ define .plain_name = "init" $s5Hello9TransportCACycfc(self: *__infer_swift_type<
 } @?
 
 define .plain_name = "init" .method_offset = "22" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportCACycfC(var1: *__infer_swift_type<,$s5Hello9TransportCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[338:0]
-      n1 = load &var1 @[338:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello9TransportC,Transport>>) @[338:0]
-      jmp 2::ret @[339:0]
+  #: @[343:0]
+      n1 = load &var1 @[343:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello9TransportC,Transport>>) @[343:0]
+      jmp 2::ret @[344:0]
       
-  #2::ret: @[340:0]
-      n6 = $s5Hello9TransportCACycfc(n4) @[340:0]
-      jmp 3::ret @[341:0]
+  #2::ret: @[345:0]
+      n6 = $s5Hello9TransportCACycfc(n4) @[345:0]
+      jmp 3::ret @[346:0]
       
-  #3::ret: @[342:0]
-      ret n6 @[342:0]
+  #3::ret: @[347:0]
+      ret n6 @[347:0]
       
 } @?
 
-declare .plain_name = "didReceiveMessage" .method_offset = "1" __infer_swift_type<$s5Hello9TransportCAA23MessageReceiverDelegateAAWP>.$s5Hello9TransportCAA23MessageReceiverDelegateA2aDP010didReceiveC0yySSFTW(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+define .plain_name = "didReceiveMessage" .method_offset = "1" __infer_swift_type<$s5Hello9TransportCAA23MessageReceiverDelegateAAWP>.$s5Hello9TransportCAA23MessageReceiverDelegateA2aDP010didReceiveC0yySSFTW(var1: int, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>, var5: *__infer_swift_type<ptr_elt>) : void {
+  local getelementptr_offset_1: *void
+  #: @[338:0]
+      n1 = load &var3 @[338:0]
+      store &getelementptr_offset_1 <- 24 @[339:0]
+      n2 = load &getelementptr_offset_1 @[339:0]
+      n4 = load &var1 @[340:0]
+      n5 = load &var2 @[340:0]
+      n6 = load &var3 @[340:0]
+      _ = $builtins.llvm_dynamic_call(n2, n4, n5, n6) @[340:0]
+      jmp 8::void::ret @[341:0]
+      
+  #8::void::ret: @[342:0]
+      ret null @[342:0]
+      
+} @?
 
 define .plain_name = "connected.set" .method_offset = "14" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvs(var1: int, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
   local var4: *int
