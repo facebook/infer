@@ -1381,7 +1381,8 @@ let xlate_instr :
         ; "swift_beginAccess"
         ; "swift_endAccess"
         ; "swift_weakInit"
-        ; "swift_deallocPartialClassInstance" ]
+        ; "swift_deallocPartialClassInstance"
+        ; "__swift_destroy_boxed_opaque_existential_1" ]
       in
       if List.mem fname ~eq:String.equal swift_methods_to_skip then skip fname
       else
