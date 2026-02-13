@@ -9,7 +9,7 @@ INFER_OPTIONS =
 
 SOURCES = $(sort $(wildcard *.rs.ullbc))
 CAPTURE_CMD = $(patsubst %.rs.ullbc, --capture-rust-ullbc %.rs.ullbc,$(SOURCES))
-RUSTSOURCES = $(realpath $(wildcard *.rs))
+RUSTSOURCES = $(wildcard *.rs)
 
 include $(TESTS_DIR)/base.make
 

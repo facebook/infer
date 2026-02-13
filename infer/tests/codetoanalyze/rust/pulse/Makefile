@@ -10,7 +10,7 @@ INFERPRINT_OPTIONS = --issues-tests
 include $(TESTS_DIR)/infer.make
 
 SOURCES = $(sort $(wildcard *.ullbc))
-RUSTSOURCES = $(realpath $(wildcard *.rs))
+RUSTSOURCES = $(wildcard *.rs)
 CAPTURE_CMD = $(patsubst %.rs.ullbc, --capture-rust-ullbc %.rs.ullbc,$(SOURCES))
 
 default: test
