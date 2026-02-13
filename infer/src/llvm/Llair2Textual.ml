@@ -1230,7 +1230,8 @@ let should_translate plain_name mangled_name lang method_class_index source_file
   || Option.exists ~f:(fun name -> String.is_suffix ~suffix:witness_protocol_suffix name) typ_name
   || Option.exists plain_name ~f:(fun plain_name ->
          String.is_substring ~substring:Field.get_suffix plain_name
-         || String.is_substring ~substring:Field.set_suffix plain_name )
+         || String.is_substring ~substring:Field.set_suffix plain_name
+         || String.is_substring ~substring:Field.modify_suffix plain_name )
 
 
 let add_method_to_class_method_index class_method_index class_name proc_name index =

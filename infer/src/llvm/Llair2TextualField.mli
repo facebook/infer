@@ -12,6 +12,8 @@ val get_suffix : string
 
 val set_suffix : string
 
+val modify_suffix : string
+
 val tuple_field_prefix : string
 
 val field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname

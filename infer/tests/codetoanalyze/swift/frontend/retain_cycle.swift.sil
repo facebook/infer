@@ -100,10 +100,10 @@ define .plain_name = "init" $s5Hello9TransportCACycfc(self: *__infer_swift_type<
       store n3.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue <- 0 @[22:39]
       n5 = load &self @[24:9]
       n4 = n5.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[24:9]
-      n7 = load n4 @[349:0]
-      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[349:0]
-      n9 = load n4 @[350:0]
-      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[350:0]
+      n7 = load n4 @[397:0]
+      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[397:0]
+      n9 = load n4 @[398:0]
+      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[398:0]
       n11 = $s5Hello15MessageReceiverCMa(0) @[26:27]
       jmp 9::ret @[26:27]
       
@@ -134,46 +134,46 @@ define .plain_name = "init" $s5Hello9TransportCACycfc(self: *__infer_swift_type<
 } @?
 
 define .plain_name = "init" .method_offset = "22" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportCACycfC(var1: *__infer_swift_type<,$s5Hello9TransportCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[343:0]
-      n1 = load &var1 @[343:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello9TransportC,Transport>>) @[343:0]
-      jmp 2::ret @[344:0]
+  #: @[391:0]
+      n1 = load &var1 @[391:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello9TransportC,Transport>>) @[391:0]
+      jmp 2::ret @[392:0]
       
-  #2::ret: @[345:0]
-      n6 = $s5Hello9TransportCACycfc(n4) @[345:0]
-      jmp 3::ret @[346:0]
+  #2::ret: @[393:0]
+      n6 = $s5Hello9TransportCACycfc(n4) @[393:0]
+      jmp 3::ret @[394:0]
       
-  #3::ret: @[347:0]
-      ret n6 @[347:0]
+  #3::ret: @[395:0]
+      ret n6 @[395:0]
       
 } @?
 
 define .plain_name = "didReceiveMessage" .method_offset = "1" __infer_swift_type<$s5Hello9TransportCAA23MessageReceiverDelegateAAWP>.$s5Hello9TransportCAA23MessageReceiverDelegateA2aDP010didReceiveC0yySSFTW(var1: int, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>, var5: *__infer_swift_type<ptr_elt>) : void {
   local getelementptr_offset_1: *void
-  #: @[338:0]
-      n1 = load &var3 @[338:0]
-      store &getelementptr_offset_1 <- 24 @[339:0]
-      n2 = load &getelementptr_offset_1 @[339:0]
-      n4 = load &var1 @[340:0]
-      n5 = load &var2 @[340:0]
-      n6 = load &var3 @[340:0]
-      _ = $builtins.llvm_dynamic_call(n2, n4, n5, n6) @[340:0]
-      jmp 8::void::ret @[341:0]
+  #: @[386:0]
+      n1 = load &var3 @[386:0]
+      store &getelementptr_offset_1 <- 24 @[387:0]
+      n2 = load &getelementptr_offset_1 @[387:0]
+      n4 = load &var1 @[388:0]
+      n5 = load &var2 @[388:0]
+      n6 = load &var3 @[388:0]
+      _ = $builtins.llvm_dynamic_call(n2, n4, n5, n6) @[388:0]
+      jmp 8::void::ret @[389:0]
       
-  #8::void::ret: @[342:0]
-      ret null @[342:0]
+  #8::void::ret: @[390:0]
+      ret null @[390:0]
       
 } @?
 
 define .plain_name = "connected.set" .method_offset = "14" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvs(var1: int, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
   local var4: *int
-  #: @[333:0]
-      n2 = load &var2 @[333:0]
-      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[333:0]
-      n6 = load n1 @[335:0]
-      n3 = load &var1 @[335:0]
-      store n6.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue <- __sil_cast(<int>, __sil_cast(<int>, n3)) @[335:0]
-      ret null @[337:0]
+  #: @[381:0]
+      n2 = load &var2 @[381:0]
+      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[381:0]
+      n6 = load n1 @[383:0]
+      n3 = load &var1 @[383:0]
+      store n6.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue <- __sil_cast(<int>, __sil_cast(<int>, n3)) @[383:0]
+      ret null @[385:0]
       
 } @?
 
@@ -181,40 +181,67 @@ declare $s5Hello9TransportC9connectedAC15ConnectionStateOvpfi() : *__infer_swift
 
 define .plain_name = "connected.get" .method_offset = "13" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvg(var1: *__infer_swift_type<T5Hello9TransportC,Transport>) : *__infer_swift_type<,ConnectionState> {
   local var3: *int
-  #: @[328:0]
-      n2 = load &var1 @[328:0]
-      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[328:0]
-      n4 = load n1 @[330:0]
-      n3 = load n4.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue @[330:0]
-      ret __sil_cast(<int>, n3) @[332:0]
+  #: @[376:0]
+      n2 = load &var1 @[376:0]
+      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[376:0]
+      n4 = load n1 @[378:0]
+      n3 = load n4.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue @[378:0]
+      ret __sil_cast(<int>, n3) @[380:0]
       
 } @?
 
-declare .plain_name = "connected.modify" $s5Hello9TransportC9connectedAC15ConnectionStateOvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
+define .plain_name = "connected.modify" $s5Hello9TransportC9connectedAC15ConnectionStateOvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
+  #: @[369:0]
+      n2 = load &var1 @[369:0]
+      n1 = n2.__infer_swift_type<$s5Hello9TransportC9connectedAC15ConnectionStateOvM::Frame>.field_0 @[369:0]
+      if &var2 then jmp 5 else jmp 4 @[370:0]
+      
+  #4: @[372:0]
+      jmp 6 @[372:0]
+      
+  #5: @[375:0]
+      jmp 6 @[375:0]
+      
+  #6: @[373:0]
+      ret null @[373:0]
+      
+} @?
 
-declare .plain_name = "connected.modify" .method_offset = "15" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+define .plain_name = "connected.modify" .method_offset = "15" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC9connectedAC15ConnectionStateOvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
+  #: @[364:0]
+      n2 = load &var1 @[364:0]
+      n1 = n2.__infer_swift_type<$s5Hello9TransportC9connectedAC15ConnectionStateOvM::Frame>.field_0 @[364:0]
+      n4 = load &var2 @[365:0]
+      n3 = n4.__infer_swift_type<T5Hello9TransportC,Transport>.connected @[365:0]
+      n5 = $builtins.llvm_init_tuple() @[367:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello9TransportC9connectedAC15ConnectionStateOvM.resume.0" @[368:0]
+      n7 = load n3 @[368:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[368:0]
+      ret n5 @[368:0]
+      
+} @?
 
 define .plain_name = "delegate.set" .method_offset = "20" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC8delegateAA0B8Delegate_pSgvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
   local var5: *int
-  #: @[316:0]
-      n1 = load &var1 @[316:0]
-      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[316:0]
-      jmp 7::ret @[317:0]
+  #: @[352:0]
+      n1 = load &var1 @[352:0]
+      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[352:0]
+      jmp 7::ret @[353:0]
       
-  #7::ret: @[318:0]
-      n5 = load &var3 @[318:0]
-      n4 = n5.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[318:0]
-      n7 = load n4 @[320:0]
-      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[320:0]
-      n9 = load n4 @[321:0]
-      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[321:0]
-      n11 = load n4 @[322:0]
-      n10 = load &var1 @[322:0]
-      store n11.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n10 @[322:0]
-      n13 = load n4 @[323:0]
-      n12 = load &var2 @[323:0]
-      store n13.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n12 @[323:0]
-      ret null @[327:0]
+  #7::ret: @[354:0]
+      n5 = load &var3 @[354:0]
+      n4 = n5.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[354:0]
+      n7 = load n4 @[356:0]
+      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[356:0]
+      n9 = load n4 @[357:0]
+      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[357:0]
+      n11 = load n4 @[358:0]
+      n10 = load &var1 @[358:0]
+      store n11.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n10 @[358:0]
+      n13 = load n4 @[359:0]
+      n12 = load &var2 @[359:0]
+      store n13.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n12 @[359:0]
+      ret null @[363:0]
       
 } @?
 
@@ -222,63 +249,90 @@ declare $s5Hello9TransportC8delegateAA0B8Delegate_pSgvpfi() : *__infer_swift_typ
 
 define .plain_name = "delegate.get" .method_offset = "19" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC8delegateAA0B8Delegate_pSgvg(var1: *__infer_swift_type<T5Hello9TransportC,Transport>) : *__infer_tuple_class<int,int> {
   local var3: *int
-  #: @[307:0]
-      n2 = load &var1 @[307:0]
-      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[307:0]
-      n4 = load n1 @[309:0]
-      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[309:0]
-      n6 = load n1 @[310:0]
-      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[310:0]
-      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[311:0]
-      jmp 10::ret @[312:0]
+  #: @[343:0]
+      n2 = load &var1 @[343:0]
+      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[343:0]
+      n4 = load n1 @[345:0]
+      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[345:0]
+      n6 = load n1 @[346:0]
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[346:0]
+      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[347:0]
+      jmp 10::ret @[348:0]
       
-  #10::ret: @[314:0]
-      n10 = $builtins.llvm_init_tuple() @[314:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[315:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[315:0]
-      ret n10 @[315:0]
+  #10::ret: @[350:0]
+      n10 = $builtins.llvm_init_tuple() @[350:0]
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[351:0]
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[351:0]
+      ret n10 @[351:0]
       
 } @?
 
-declare .plain_name = "delegate.modify" $s5Hello9TransportC8delegateAA0B8Delegate_pSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
+define .plain_name = "delegate.modify" $s5Hello9TransportC8delegateAA0B8Delegate_pSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
+  #: @[336:0]
+      n2 = load &var1 @[336:0]
+      n1 = n2.__infer_swift_type<$s5Hello9TransportC8delegateAA0B8Delegate_pSgvM::Frame>.field_0 @[336:0]
+      if &var2 then jmp 5 else jmp 4 @[337:0]
+      
+  #4: @[339:0]
+      jmp 6 @[339:0]
+      
+  #5: @[342:0]
+      jmp 6 @[342:0]
+      
+  #6: @[340:0]
+      ret null @[340:0]
+      
+} @?
 
-declare .plain_name = "delegate.modify" .method_offset = "21" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC8delegateAA0B8Delegate_pSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+define .plain_name = "delegate.modify" .method_offset = "21" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC8delegateAA0B8Delegate_pSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
+  #: @[331:0]
+      n2 = load &var1 @[331:0]
+      n1 = n2.__infer_swift_type<$s5Hello9TransportC8delegateAA0B8Delegate_pSgvM::Frame>.field_0 @[331:0]
+      n4 = load &var2 @[332:0]
+      n3 = n4.__infer_swift_type<T5Hello9TransportC,Transport>.delegate @[332:0]
+      n5 = $builtins.llvm_init_tuple() @[334:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello9TransportC8delegateAA0B8Delegate_pSgvM.resume.0" @[335:0]
+      n7 = load n3 @[335:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[335:0]
+      ret n5 @[335:0]
+      
+} @?
 
 define .plain_name = "didReceiveMessage" .method_offset = "24" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC17didReceiveMessageyySSF(var1: int, var2: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<ptr_elt>) : void {
   local var8: *__infer_swift_type<TSS>, var7: *__infer_swift_type<Ts26DefaultStringInterpolationV,String>, message: *__infer_swift_type<TSS>
-  #: @[280:0]
-      n2 = load &message @[280:0]
-      n3 = load n2.__infer_swift_type<TSS>.field_0 @[280:0]
-      n1 = n3.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[280:0]
-      n5 = load n1 @[281:0]
-      n6 = load n5.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[281:0]
-      n4 = load &var1 @[281:0]
-      store n6.__infer_swift_type<Ts6UInt64V>.field_0 <- n4 @[281:0]
-      n8 = load n1 @[282:0]
-      n7 = load &var2 @[282:0]
-      store n8.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n7 @[282:0]
-      n10 = load &$sypN @[283:0]
-      n11 = load n10.__infer_swift_type<swift::full_existential_type>.field_1 @[283:0]
-      n12 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, n11) @[283:0]
-      jmp 13::ret @[284:0]
+  #: @[304:0]
+      n2 = load &message @[304:0]
+      n3 = load n2.__infer_swift_type<TSS>.field_0 @[304:0]
+      n1 = n3.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[304:0]
+      n5 = load n1 @[305:0]
+      n6 = load n5.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[305:0]
+      n4 = load &var1 @[305:0]
+      store n6.__infer_swift_type<Ts6UInt64V>.field_0 <- n4 @[305:0]
+      n8 = load n1 @[306:0]
+      n7 = load &var2 @[306:0]
+      store n8.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n7 @[306:0]
+      n10 = load &$sypN @[307:0]
+      n11 = load n10.__infer_swift_type<swift::full_existential_type>.field_1 @[307:0]
+      n12 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, n11) @[307:0]
+      jmp 13::ret @[308:0]
       
   #$ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzs20TextOutputStreamableRzlF::void::ret: @[39:44]
       n52 = load &::str::0:: @[39:44]
       n55 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n52, 0, 1) @[39:44]
       jmp 33::ret @[39:44]
       
-  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[292:0]
-      n63 = load &var7 @[292:0]
-      n64 = load n63.__infer_swift_type<Ts26DefaultStringInterpolationV,String>.field_0 @[292:0]
-      n65 = load n64.__infer_swift_type<TSS>.field_0 @[292:0]
-      n62 = n65.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[292:0]
-      n67 = load n62 @[293:0]
-      n68 = load n67.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[293:0]
-      n66 = load n68.__infer_swift_type<Ts6UInt64V>.field_0 @[293:0]
-      n70 = load n62 @[294:0]
-      n69 = load n70.__infer_swift_type<Ts13_StringObjectV,String>.field_1 @[294:0]
-      n72 = n69 @[295:0]
-      jmp 44::ret @[296:0]
+  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[316:0]
+      n63 = load &var7 @[316:0]
+      n64 = load n63.__infer_swift_type<Ts26DefaultStringInterpolationV,String>.field_0 @[316:0]
+      n65 = load n64.__infer_swift_type<TSS>.field_0 @[316:0]
+      n62 = n65.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[316:0]
+      n67 = load n62 @[317:0]
+      n68 = load n67.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[317:0]
+      n66 = load n68.__infer_swift_type<Ts6UInt64V>.field_0 @[317:0]
+      n70 = load n62 @[318:0]
+      n69 = load n70.__infer_swift_type<Ts13_StringObjectV,String>.field_1 @[318:0]
+      n72 = n69 @[319:0]
+      jmp 44::ret @[320:0]
       
   #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret: @[39:36]
       n40 = load &var8 @[39:36]
@@ -302,8 +356,8 @@ define .plain_name = "didReceiveMessage" .method_offset = "24" __infer_swift_typ
   #$ss5print_9separator10terminatoryypd_S2StF::void::ret: @[40:5]
       ret null @[40:5]
       
-  #13::ret: @[285:0]
-      n13 = n12.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[285:0]
+  #13::ret: @[309:0]
+      n13 = n12.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[309:0]
       n17 = $ss26DefaultStringInterpolationV15literalCapacity18interpolationCountABSi_SitcfC(18, 1) @[39:15]
       jmp 16::ret @[39:15]
       
@@ -324,24 +378,24 @@ define .plain_name = "didReceiveMessage" .method_offset = "24" __infer_swift_typ
       
   #25::ret: @[39:15]
       n33 = n32.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[39:15]
-      n36 = load n32.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[286:0]
-      n37 = load n33 @[286:0]
-      n38 = load &var7 @[286:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n36, n37, n38) @[286:0]
-      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret @[287:0]
+      n36 = load n32.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[310:0]
+      n37 = load n33 @[310:0]
+      n38 = load &var7 @[310:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n36, n37, n38) @[310:0]
+      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret @[311:0]
       
   #33::ret: @[39:44]
       n56 = n55.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[39:44]
-      n59 = load n55.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[289:0]
-      n60 = load n56 @[289:0]
-      n61 = load &var7 @[289:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n59, n60, n61) @[289:0]
-      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret @[290:0]
+      n59 = load n55.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[313:0]
+      n60 = load n56 @[313:0]
+      n61 = load &var7 @[313:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n59, n60, n61) @[313:0]
+      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret @[314:0]
       
-  #44::ret: @[297:0]
-      n73 = load &var7 @[297:0]
-      n74 = $ss26DefaultStringInterpolationVWOh(n73) @[297:0]
-      jmp 45::ret @[298:0]
+  #44::ret: @[321:0]
+      n73 = load &var7 @[321:0]
+      n74 = $ss26DefaultStringInterpolationVWOh(n73) @[321:0]
+      jmp 45::ret @[322:0]
       
   #45::ret: @[39:15]
       n77 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n66, n69) @[39:15]
@@ -362,23 +416,23 @@ define .plain_name = "didReceiveMessage" .method_offset = "24" __infer_swift_typ
       n90 = load n80 @[39:15]
       n89 = load n77.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[39:15]
       store n90.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n89 @[39:15]
-      n93 = load &$sypN @[299:0]
-      n92 = load n12.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[299:0]
-      n94 = load n93.__infer_swift_type<swift::full_existential_type>.field_1 @[299:0]
-      n95 = $ss27_finalizeUninitializedArrayySayxGABnlF(n92, n94) @[299:0]
-      jmp 57::ret @[300:0]
+      n93 = load &$sypN @[323:0]
+      n92 = load n12.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[323:0]
+      n94 = load n93.__infer_swift_type<swift::full_existential_type>.field_1 @[323:0]
+      n95 = $ss27_finalizeUninitializedArrayySayxGABnlF(n92, n94) @[323:0]
+      jmp 57::ret @[324:0]
       
-  #57::ret: @[301:0]
-      n96 = $ss5print_9separator10terminatoryypd_S2StFfA0_() @[301:0]
-      jmp 58::ret @[302:0]
+  #57::ret: @[325:0]
+      n96 = $ss5print_9separator10terminatoryypd_S2StFfA0_() @[325:0]
+      jmp 58::ret @[326:0]
       
-  #58::ret: @[303:0]
-      n97 = n96.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[303:0]
-      n99 = $ss5print_9separator10terminatoryypd_S2StFfA1_() @[304:0]
-      jmp 61::ret @[305:0]
+  #58::ret: @[327:0]
+      n97 = n96.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[327:0]
+      n99 = $ss5print_9separator10terminatoryypd_S2StFfA1_() @[328:0]
+      jmp 61::ret @[329:0]
       
-  #61::ret: @[306:0]
-      n100 = n99.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[306:0]
+  #61::ret: @[330:0]
+      n100 = n99.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[330:0]
       n104 = load n96.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[39:9]
       n105 = load n97 @[39:9]
       n107 = load n99.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[39:9]
@@ -390,31 +444,58 @@ define .plain_name = "didReceiveMessage" .method_offset = "24" __infer_swift_typ
 
 define .plain_name = "messageReceiver.set" .method_offset = "17" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC15messageReceiverAA07MessageD0Cvs(var1: *__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>, var2: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
   local var4: *int
-  #: @[269:0]
-      n1 = $builtins.llvm_nondet() @[269:0]
-      n3 = load &var2 @[270:0]
-      n2 = n3.__infer_swift_type<T5Hello9TransportC,Transport>.messageReceiver @[270:0]
-      n4 = load n2 @[272:0]
-      n5 = load &var1 @[273:0]
-      store n2 <- n5 @[273:0]
-      ret null @[277:0]
+  #: @[293:0]
+      n1 = $builtins.llvm_nondet() @[293:0]
+      n3 = load &var2 @[294:0]
+      n2 = n3.__infer_swift_type<T5Hello9TransportC,Transport>.messageReceiver @[294:0]
+      n4 = load n2 @[296:0]
+      n5 = load &var1 @[297:0]
+      store n2 <- n5 @[297:0]
+      ret null @[301:0]
       
 } @?
 
 define .plain_name = "messageReceiver.get" .method_offset = "16" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC15messageReceiverAA07MessageD0Cvg(var1: *__infer_swift_type<T5Hello9TransportC,Transport>) : *__infer_swift_type<ptr_elt> {
   local var3: *int
-  #: @[263:0]
-      n2 = load &var1 @[263:0]
-      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.messageReceiver @[263:0]
-      n3 = load n1 @[265:0]
-      n4 = $builtins.llvm_nondet() @[266:0]
-      ret n3 @[268:0]
+  #: @[287:0]
+      n2 = load &var1 @[287:0]
+      n1 = n2.__infer_swift_type<T5Hello9TransportC,Transport>.messageReceiver @[287:0]
+      n3 = load n1 @[289:0]
+      n4 = $builtins.llvm_nondet() @[290:0]
+      ret n3 @[292:0]
       
 } @?
 
-declare .plain_name = "messageReceiver.modify" $s5Hello9TransportC15messageReceiverAA07MessageD0CvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
+define .plain_name = "messageReceiver.modify" $s5Hello9TransportC15messageReceiverAA07MessageD0CvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
+  #: @[280:0]
+      n2 = load &var1 @[280:0]
+      n1 = n2.__infer_swift_type<$s5Hello9TransportC15messageReceiverAA07MessageD0CvM::Frame>.field_0 @[280:0]
+      if &var2 then jmp 5 else jmp 4 @[281:0]
+      
+  #4: @[283:0]
+      jmp 6 @[283:0]
+      
+  #5: @[286:0]
+      jmp 6 @[286:0]
+      
+  #6: @[284:0]
+      ret null @[284:0]
+      
+} @?
 
-declare .plain_name = "messageReceiver.modify" .method_offset = "18" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC15messageReceiverAA07MessageD0CvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+define .plain_name = "messageReceiver.modify" .method_offset = "18" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC15messageReceiverAA07MessageD0CvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
+  #: @[275:0]
+      n2 = load &var1 @[275:0]
+      n1 = n2.__infer_swift_type<$s5Hello9TransportC15messageReceiverAA07MessageD0CvM::Frame>.field_0 @[275:0]
+      n4 = load &var2 @[276:0]
+      n3 = n4.__infer_swift_type<T5Hello9TransportC,Transport>.messageReceiver @[276:0]
+      n5 = $builtins.llvm_init_tuple() @[278:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello9TransportC15messageReceiverAA07MessageD0CvM.resume.0" @[279:0]
+      n7 = load n3 @[279:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[279:0]
+      ret n5 @[279:0]
+      
+} @?
 
 declare $s5Hello9TransportC15ConnectionStateOwup(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -429,24 +510,24 @@ declare $s5Hello9TransportC15ConnectionStateOwet(*__infer_swift_type<ptr_elt>, i
 declare .plain_name = "init" $s5Hello9TransportC15ConnectionStateOSYAASY8rawValuexSg03RawF0Qz_tcfCTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello9TransportC15ConnectionStateO>
 
 define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateOSYAASY8rawValue03RawF0QzvgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>) : void {
-  #: @[256:0]
-      n2 = load &var2 @[256:0]
-      n1 = load n2.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue @[256:0]
-      n5 = $s5Hello9TransportC15ConnectionStateO8rawValueSSvg(__sil_cast(<int>, n1)) @[257:0]
-      jmp 8::ret @[258:0]
+  #: @[268:0]
+      n2 = load &var2 @[268:0]
+      n1 = load n2.__infer_swift_type<T5Hello9TransportC15ConnectionStateO>.rawValue @[268:0]
+      n5 = $s5Hello9TransportC15ConnectionStateO8rawValueSSvg(__sil_cast(<int>, n1)) @[269:0]
+      jmp 8::ret @[270:0]
       
-  #8::ret: @[259:0]
-      n7 = load &var1 @[259:0]
-      n8 = load n7.__infer_swift_type<TSS>.field_0 @[259:0]
-      n6 = n8.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[259:0]
-      n11 = load n6 @[260:0]
-      n12 = load n11.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[260:0]
-      n10 = load n5.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[260:0]
-      store n12.__infer_swift_type<Ts6UInt64V>.field_0 <- n10 @[260:0]
-      n15 = load n6 @[261:0]
-      n14 = load n5.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[261:0]
-      store n15.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n14 @[261:0]
-      ret null @[262:0]
+  #8::ret: @[271:0]
+      n7 = load &var1 @[271:0]
+      n8 = load n7.__infer_swift_type<TSS>.field_0 @[271:0]
+      n6 = n8.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[271:0]
+      n11 = load n6 @[272:0]
+      n12 = load n11.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[272:0]
+      n10 = load n5.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[272:0]
+      store n12.__infer_swift_type<Ts6UInt64V>.field_0 <- n10 @[272:0]
+      n15 = load n6 @[273:0]
+      n14 = load n5.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[273:0]
+      store n15.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n14 @[273:0]
+      ret null @[274:0]
       
 } @?
 
@@ -455,20 +536,20 @@ declare .plain_name = "==" $s5Hello9TransportC15ConnectionStateOSQAASQ2eeoiySbx_
 declare $s5Hello9TransportC15ConnectionStateOSHAASQWb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "hashValue.get" $s5Hello9TransportC15ConnectionStateOSHAASH9hashValueSivgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : int {
-  #: @[251:0]
-      n1 = $s5Hello9TransportC15ConnectionStateOAESYAAWl() @[251:0]
-      jmp 4::ret @[252:0]
+  #: @[263:0]
+      n1 = $s5Hello9TransportC15ConnectionStateOAESYAAWl() @[263:0]
+      jmp 4::ret @[264:0]
       
-  #4::ret: @[253:0]
-      n2 = load &var2 @[253:0]
-      n3 = load &var3 @[253:0]
-      n5 = load &$sSSSHsWP @[253:0]
-      n6 = load &var1 @[253:0]
-      n7 = $sSYsSHRzSH8RawValueSYRpzrlE04hashB0Sivg(n2, n3, n1, n5, n6) @[253:0]
-      jmp 5::ret @[254:0]
+  #4::ret: @[265:0]
+      n2 = load &var2 @[265:0]
+      n3 = load &var3 @[265:0]
+      n5 = load &$sSSSHsWP @[265:0]
+      n6 = load &var1 @[265:0]
+      n7 = $sSYsSHRzSH8RawValueSYRpzrlE04hashB0Sivg(n2, n3, n1, n5, n6) @[265:0]
+      jmp 5::ret @[266:0]
       
-  #5::ret: @[255:0]
-      ret n7 @[255:0]
+  #5::ret: @[267:0]
+      ret n7 @[267:0]
       
 } @?
 
@@ -484,39 +565,39 @@ declare $s5Hello9TransportC15ConnectionStateOAESQAAWl() : *__infer_swift_type<pt
 
 define .plain_name = "rawValue.get" $s5Hello9TransportC15ConnectionStateO8rawValueSSvg(var1: int) : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
   local self: *__infer_swift_type<ptr_elt>
-  #: @[239:0]
-      n1 = load &var1 @[239:0]
-      store &self <- __sil_cast(<int>, n1) @[239:0]
-      n3 = load &var1 @[240:0]
-      if __sil_cast(<int>, n3) then jmp 9 else jmp 5 @[240:0]
+  #: @[251:0]
+      n1 = load &var1 @[251:0]
+      store &self <- __sil_cast(<int>, n1) @[251:0]
+      n3 = load &var1 @[252:0]
+      if __sil_cast(<int>, n3) then jmp 9 else jmp 5 @[252:0]
       
-  #13: @[245:0]
-      n14 = $builtins.llvm_init_tuple() @[245:0]
-      store n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- n8 @[246:0]
-      store n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n11 @[246:0]
-      ret n14 @[246:0]
+  #13: @[257:0]
+      n14 = $builtins.llvm_init_tuple() @[257:0]
+      store n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- n8 @[258:0]
+      store n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n11 @[258:0]
+      ret n14 @[258:0]
       
-  #5: @[241:0]
-      n7 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("connected", 9, 1) @[241:0]
-      jmp 5::jmp::13 @[242:0]
+  #5: @[253:0]
+      n7 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("connected", 9, 1) @[253:0]
+      jmp 5::jmp::13 @[254:0]
       
-  #5::jmp::13: @[243:0]
-      n13 = load n7.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[243:0]
-      n10 = load n7.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[243:0]
-      n8 = n10 @[243:0]
-      n11 = n13 @[243:0]
-      jmp 13 @[244:0]
+  #5::jmp::13: @[255:0]
+      n13 = load n7.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[255:0]
+      n10 = load n7.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[255:0]
+      n8 = n10 @[255:0]
+      n11 = n13 @[255:0]
+      jmp 13 @[256:0]
       
-  #9: @[247:0]
-      n21 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("disconnected", 12, 1) @[247:0]
-      jmp 9::jmp::13 @[248:0]
+  #9: @[259:0]
+      n21 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("disconnected", 12, 1) @[259:0]
+      jmp 9::jmp::13 @[260:0]
       
-  #9::jmp::13: @[249:0]
-      n25 = load n21.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[249:0]
-      n23 = load n21.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[249:0]
-      n8 = n23 @[249:0]
-      n11 = n25 @[249:0]
-      jmp 13 @[250:0]
+  #9::jmp::13: @[261:0]
+      n25 = load n21.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[261:0]
+      n23 = load n21.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[261:0]
+      n8 = n23 @[261:0]
+      n11 = n25 @[261:0]
+      jmp 13 @[262:0]
       
 } @?
 
@@ -602,18 +683,18 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       n69 = n64 @[35:17]
       jmp 48::ret @[35:17]
       
-  #43::jmp::62: @[236:0]
-      n62 = 0 @[236:0]
-      jmp 62 @[237:0]
+  #43::jmp::62: @[248:0]
+      n62 = 0 @[248:0]
+      jmp 62 @[249:0]
       
-  #48::ret: @[229:0]
-      n70 = load &var4 @[229:0]
-      n71 = $s5Hello17TransportDelegate_pSgWOh(n70) @[229:0]
-      jmp 49::ret @[230:0]
+  #48::ret: @[241:0]
+      n70 = load &var4 @[241:0]
+      n71 = $s5Hello17TransportDelegate_pSgWOh(n70) @[241:0]
+      jmp 49::ret @[242:0]
       
-  #49::ret: @[231:0]
-      n73 = swift_getObjectType(n64) @[231:0]
-      jmp 50::ret @[232:0]
+  #49::ret: @[243:0]
+      n73 = swift_getObjectType(n64) @[243:0]
+      jmp 50::ret @[244:0]
       
   #50::ret: @[35:42]
       n74 = load &self @[35:42]
@@ -637,20 +718,20 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       _ = $builtins.llvm_dynamic_call(n85, n88, n89, n90, n64, n73, n66) @[35:19]
       jmp 61::void::ret @[35:19]
       
-  #61::void::ret: @[235:0]
-      jmp 43::jmp::62 @[235:0]
+  #61::void::ret: @[247:0]
+      jmp 43::jmp::62 @[247:0]
       
   #62: @[36:5]
       ret null @[36:5]
       
-  #64: @[225:0]
-      n60 = load &var4 @[225:0]
-      n61 = $s5Hello17TransportDelegate_pSgWOh(n60) @[225:0]
-      jmp 64::jmp::62 @[226:0]
+  #64: @[237:0]
+      n60 = load &var4 @[237:0]
+      n61 = $s5Hello17TransportDelegate_pSgWOh(n60) @[237:0]
+      jmp 64::jmp::62 @[238:0]
       
-  #64::jmp::62: @[227:0]
-      n62 = 1 @[227:0]
-      jmp 62 @[228:0]
+  #64::jmp::62: @[239:0]
+      n62 = 1 @[239:0]
+      jmp 62 @[240:0]
       
   #6::void::ret: @[32:9]
       n6 = load &self @[32:9]
@@ -676,51 +757,51 @@ define .plain_name = "init" $s5Hello15MessageReceiverCACycfc(self: *__infer_swif
   #: @[10:9]
       n2 = load &self @[10:9]
       n1 = n2.__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.delegate @[10:9]
-      n4 = load n1 @[209:0]
-      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[209:0]
-      n6 = load n1 @[210:0]
-      store n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[210:0]
-      n7 = load &self @[211:0]
-      ret n7 @[211:0]
+      n4 = load n1 @[221:0]
+      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[221:0]
+      n6 = load n1 @[222:0]
+      store n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[222:0]
+      n7 = load &self @[223:0]
+      ret n7 @[223:0]
       
 } @?
 
 define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverCACycfC(var1: *__infer_swift_type<,$s5Hello15MessageReceiverCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[203:0]
-      n1 = load &var1 @[203:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>>) @[203:0]
-      jmp 2::ret @[204:0]
+  #: @[215:0]
+      n1 = load &var1 @[215:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>>) @[215:0]
+      jmp 2::ret @[216:0]
       
-  #2::ret: @[205:0]
-      n6 = $s5Hello15MessageReceiverCACycfc(n4) @[205:0]
-      jmp 3::ret @[206:0]
+  #2::ret: @[217:0]
+      n6 = $s5Hello15MessageReceiverCACycfc(n4) @[217:0]
+      jmp 3::ret @[218:0]
       
-  #3::ret: @[207:0]
-      ret n6 @[207:0]
+  #3::ret: @[219:0]
+      ret n6 @[219:0]
       
 } @?
 
 define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
   local var5: *int
-  #: @[191:0]
-      n1 = load &var1 @[191:0]
-      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[191:0]
-      jmp 7::ret @[192:0]
+  #: @[203:0]
+      n1 = load &var1 @[203:0]
+      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[203:0]
+      jmp 7::ret @[204:0]
       
-  #7::ret: @[193:0]
-      n5 = load &var3 @[193:0]
-      n4 = n5.__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.delegate @[193:0]
-      n7 = load n4 @[195:0]
-      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[195:0]
-      n9 = load n4 @[196:0]
-      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[196:0]
-      n11 = load n4 @[197:0]
-      n10 = load &var1 @[197:0]
-      store n11.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n10 @[197:0]
-      n13 = load n4 @[198:0]
-      n12 = load &var2 @[198:0]
-      store n13.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n12 @[198:0]
-      ret null @[202:0]
+  #7::ret: @[205:0]
+      n5 = load &var3 @[205:0]
+      n4 = n5.__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.delegate @[205:0]
+      n7 = load n4 @[207:0]
+      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[207:0]
+      n9 = load n4 @[208:0]
+      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[208:0]
+      n11 = load n4 @[209:0]
+      n10 = load &var1 @[209:0]
+      store n11.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n10 @[209:0]
+      n13 = load n4 @[210:0]
+      n12 = load &var2 @[210:0]
+      store n13.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n12 @[210:0]
+      ret null @[214:0]
       
 } @?
 
@@ -728,27 +809,54 @@ declare $s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvpfi() : *__infer_s
 
 define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvg(var1: *__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>) : *__infer_tuple_class<int,int> {
   local var3: *int
-  #: @[182:0]
-      n2 = load &var1 @[182:0]
-      n1 = n2.__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.delegate @[182:0]
-      n4 = load n1 @[184:0]
-      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[184:0]
-      n6 = load n1 @[185:0]
-      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[185:0]
-      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[186:0]
-      jmp 10::ret @[187:0]
+  #: @[194:0]
+      n2 = load &var1 @[194:0]
+      n1 = n2.__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.delegate @[194:0]
+      n4 = load n1 @[196:0]
+      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[196:0]
+      n6 = load n1 @[197:0]
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[197:0]
+      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[198:0]
+      jmp 10::ret @[199:0]
       
-  #10::ret: @[189:0]
-      n10 = $builtins.llvm_init_tuple() @[189:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[190:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[190:0]
-      ret n10 @[190:0]
+  #10::ret: @[201:0]
+      n10 = $builtins.llvm_init_tuple() @[201:0]
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[202:0]
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[202:0]
+      ret n10 @[202:0]
       
 } @?
 
-declare .plain_name = "delegate.modify" $s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
+define .plain_name = "delegate.modify" $s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
+  #: @[187:0]
+      n2 = load &var1 @[187:0]
+      n1 = n2.__infer_swift_type<$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM::Frame>.field_0 @[187:0]
+      if &var2 then jmp 5 else jmp 4 @[188:0]
+      
+  #4: @[190:0]
+      jmp 6 @[190:0]
+      
+  #5: @[193:0]
+      jmp 6 @[193:0]
+      
+  #6: @[191:0]
+      ret null @[191:0]
+      
+} @?
 
-declare .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+define .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
+  #: @[182:0]
+      n2 = load &var1 @[182:0]
+      n1 = n2.__infer_swift_type<$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM::Frame>.field_0 @[182:0]
+      n4 = load &var2 @[183:0]
+      n3 = n4.__infer_swift_type<T5Hello15MessageReceiverC,MessageReceiver>.delegate @[183:0]
+      n5 = $builtins.llvm_init_tuple() @[185:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello15MessageReceiverC8delegateAA0bC8Delegate_pSgvM.resume.0" @[186:0]
+      n7 = load n3 @[186:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[186:0]
+      ret n5 @[186:0]
+      
+} @?
 
 global symbolic x: *__infer_tuple_class<int,int>
 

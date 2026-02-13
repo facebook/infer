@@ -14,6 +14,8 @@ let get_suffix = ".get"
 
 let set_suffix = ".set"
 
+let modify_suffix = ".modify"
+
 module OffsetIndex = struct
   (** Extract field name from getter method's unmangled name. E.g., "age.get" -> Some "age", "foo"
       -> None *)
