@@ -30,7 +30,7 @@ let test source =
     | Error err ->
         F.printf "Test failed: %s" err
     | Ok crate -> (
-        let textual = RustFrontend.RustMir2Textual.mk_module crate ~json_filename in
+        let textual = RustFrontend.RustMir2Textual.mk_module crate ~file_name:rust_file in
         match TextualVerification.verify_strict textual with
         | Error err ->
             F.printf "Test failed: %a" (F.pp_print_list TextualVerification.pp_error) err

@@ -223,6 +223,11 @@ endif
 DIRECT_TESTS += \
 	rust_sil
 
+ifeq ($(BUILD_RUST_ANALYZERS),yes)
+DIRECT_TESTS += \
+  rust_pulse
+endif
+
 ifeq ($(BUILD_PYTHON_ANALYZERS),yes)
 ifneq ($(PYTHON),no)
 DIRECT_TESTS += \

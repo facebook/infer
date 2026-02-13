@@ -1,0 +1,54 @@
+# Final ULLBC before serialization:
+
+// Full name: dangling::create_evil_pointer
+fn create_evil_pointer() -> *mut i32
+{
+    let @0: *mut i32; // return
+    let x@1: i32; // local
+    let x_ref@2: &'_ mut (i32); // local
+    let evil_pointer@3: *mut i32; // local
+
+    bb0: {
+        storage_live(x@1);
+        x@1 := const (42 : i32);
+        storage_live(x_ref@2);
+        x_ref@2 := &mut x@1;
+        storage_live(evil_pointer@3);
+        evil_pointer@3 := &raw mut *(x_ref@2);
+        @0 := copy (evil_pointer@3);
+        storage_dead(evil_pointer@3);
+        storage_dead(x_ref@2);
+        storage_dead(x@1);
+        return;
+    }
+}
+
+// Full name: dangling::main
+fn main()
+{
+    let @0: (); // return
+    let evil_pointer@1: *mut i32; // local
+    let @2: (); // anonymous local
+
+    bb0: {
+        storage_live(evil_pointer@1);
+        evil_pointer@1 := create_evil_pointer() -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_live(@2);
+        *(evil_pointer@1) := const (10 : i32);
+        storage_dead(@2);
+        @0 := ();
+        storage_dead(evil_pointer@1);
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+
+

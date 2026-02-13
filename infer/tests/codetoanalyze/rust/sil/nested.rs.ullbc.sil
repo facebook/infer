@@ -1,0 +1,74 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define nested::swi_nested(a_1: int, b_2: int) : int {
+  local var_0: int, var_3: int, var_4: int, var_5: int, var_6: int
+  #node_0:
+      n0:int = load &a_1
+      store &var_4 <- n0:int
+      n1:int = load &var_4
+      store &var_3 <- __sil_ge(n1, 0):int
+      n2:int = load &var_3
+      jmp node_1, node_2
+      
+  #node_1:
+      prune n2
+      n3:int = load &b_2
+      store &var_6 <- n3:int
+      n4:int = load &var_6
+      store &var_5 <- __sil_eq(n4, 0):int
+      n5:int = load &var_5
+      jmp node_3, node_4
+      
+  #node_2:
+      prune __sil_lnot(n2)
+      store &var_0 <- 3:int
+      jmp node_5
+      
+  #node_3:
+      prune n5
+      store &var_0 <- 1:int
+      jmp node_6
+      
+  #node_4:
+      prune __sil_lnot(n5)
+      store &var_0 <- 2:int
+      jmp node_6
+      
+  #node_5:
+      n6:int = load &var_0
+      ret n6
+      
+  #node_6:
+      jmp node_5
+      
+}
+
+define nested::main() : void {
+  local var_0: void, x_1: int, y_2: int, var_3: int, var_4: int, var_5: int
+  #node_0:
+      store &x_1 <- 0:int
+      store &y_2 <- 1:int
+      n0:int = load &x_1
+      store &var_4 <- n0:int
+      n1:int = load &y_2
+      store &var_5 <- n1:int
+      n2:int = load &var_4
+      n3:int = load &var_5
+      n4 = nested::swi_nested(n2, n3)
+      store &var_3 <- n4:int
+      jmp node_1
+      
+  #node_1:
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n5:void = load &var_0
+      ret n5
+      
+}
+
