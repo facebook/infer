@@ -71,7 +71,8 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig_ = PostDomain
 
-type 'astate loop_invariant_under_inference = {header: Procdesc.Node.id; entry_astate: 'astate}
+type 'astate loop_invariant_under_inference =
+  {header: Procdesc.Node.id; previous_astate_at_header: 'astate list}
 [@@deriving compare, equal]
 
 (* see documentation in this file's .mli *)
@@ -175,11 +176,27 @@ let record_call_resolution ~caller callsite_loc call_kind resolution astate =
 
 
 let set_loop_invariant_under_inference header astate =
-  {astate with loop_invariant_under_inference= Some {entry_astate= astate; header}}
+  L.d_printfln "Abstract states at loop head %a:@\n  @[%a@]@\n" Procdesc.Node.pp_id header pp astate ;
+  {astate with loop_invariant_under_inference= Some {previous_astate_at_header= [astate]; header}}
+
+
+let enable_multiple_astates_pre_header = false
+
+let add_loop_invariant_under_inference header astate =
+  if enable_multiple_astates_pre_header then
+    let {previous_astate_at_header; header} =
+      Option.value astate.loop_invariant_under_inference
+        ~default:{previous_astate_at_header= []; header}
+    in
+    { astate with
+      loop_invariant_under_inference=
+        Some {previous_astate_at_header= astate :: previous_astate_at_header; header} }
+  else astate
 
 
 let is_loop_invariant_under_inference id {loop_invariant_under_inference= opt} =
-  Option.exists opt ~f:(fun {header} -> Procdesc.Node.equal_id id header)
+  Option.bind opt ~f:(fun {previous_astate_at_header; header} ->
+      if Procdesc.Node.equal_id id header then Some previous_astate_at_header else None )
 
 
 let is_some_loop_invariant_under_inference {loop_invariant_under_inference= opt} =

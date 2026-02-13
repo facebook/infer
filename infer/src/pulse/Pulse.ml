@@ -1295,30 +1295,6 @@ module PulseTransferFunctions = struct
       instr
 
 
-  let loop_head_abstracted_states = AnalysisGlobalState.make_dls ~init:(fun () -> IInt.Map.empty)
-
-  let add_abstracted_state_at_loop_head header_id abstracted_astate =
-    let loop_heads_ = DLS.get loop_head_abstracted_states in
-    let abstract_states_at_loop_head =
-      IInt.Map.find_opt header_id loop_heads_ |> Option.value ~default:[]
-    in
-    let abstract_states_at_loop_head = abstracted_astate :: abstract_states_at_loop_head in
-    DLS.set loop_head_abstracted_states
-      (IInt.Map.add header_id abstract_states_at_loop_head loop_heads_) ;
-    L.d_printfln "Abstract states at loop head %d:@\n  @[%a@]@\n" header_id
-      (Pp.seq ~sep:"\n===\n" AbductiveDomain.pp)
-      abstract_states_at_loop_head
-
-
-  let eternal_found_infinite_loop header_id astate =
-    let loop_heads_ = DLS.get loop_head_abstracted_states in
-    let abstract_states_at_loop_head =
-      IInt.Map.find_opt header_id loop_heads_ |> Option.value ~default:[]
-    in
-    List.exists abstract_states_at_loop_head ~f:(fun astate_at_loop_head ->
-        PulseEternal.implies astate astate_at_loop_head )
-
-
   let exec_instr_aux limit ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t) ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       cfg_node (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
@@ -1555,13 +1531,14 @@ module PulseTransferFunctions = struct
               Procdesc.Node.pp_id id ;
             AnalysisState.set_active_loop id ;
             let abstracted_astate = PulseEternal.abstract id astate in
-            add_abstracted_state_at_loop_head header_id abstracted_astate ;
             ([ContinueProgram astate; ContinueProgram abstracted_astate], path, astate_n) )
           else ([ContinueProgram astate], path, astate_n)
       | Metadata (LoopExit {header_id}) ->
           let id = Procdesc.Node.unsafe_int_to_id header_id in
-          let astate = AbductiveDomain.init_loop_header_info id astate in
-          if Config.pulse_eternal && AbductiveDomain.is_loop_invariant_under_inference id astate
+          let astate = AbductiveDomain.remove_loop_header_info id astate in
+          if
+            Config.pulse_eternal
+            && AbductiveDomain.is_loop_invariant_under_inference id astate |> Option.is_some
           then (
             L.debug Analysis Quiet
               "[LOOP INVARIANT]     exiting loop %a at node %a - removing abstract execution@\n"
@@ -1571,27 +1548,22 @@ module PulseTransferFunctions = struct
       | Metadata (LoopBackEdge {header_id}) ->
           let id = Procdesc.Node.unsafe_int_to_id header_id in
           if Config.pulse_eternal then
-            if
-              AbductiveDomain.is_loop_invariant_under_inference id astate
-              && eternal_found_infinite_loop header_id astate
-            then
-              let location = Procdesc.Node.get_loc cfg_node in
-              (* typically we get back only one [AbortProgram] state but it could also be zero if we
+            match AbductiveDomain.is_loop_invariant_under_inference id astate with
+            | Some abstract_states_at_loop_head
+              when List.exists abstract_states_at_loop_head ~f:(fun astate_at_loop_head ->
+                       PulseEternal.implies astate astate_at_loop_head ) ->
+                let location = Procdesc.Node.get_loc cfg_node in
+                (* typically we get back only one [AbortProgram] state but it could also be zero if we
                  discover the summary is UNSAT *)
-              let exec_states =
-                AccessResult.of_result path
-                  (Error (ReportableError {astate; diagnostic= InfiniteLoopError {location}}))
-                |> PulseReport.report_result analysis_data path location
-              in
-              (exec_states, path, astate_n)
-            else ([ContinueProgram astate], path, astate_n)
-          else if
-            Config.pulse_eternal && AbductiveDomain.is_loop_invariant_under_inference id astate
-          then (
-            L.debug Analysis Quiet
-              "[LOOP INVARIANT]     back edge at node %a - removing abstract execution@\n"
-              Procdesc.Node.pp_id id ;
-            ([], path, astate_n) )
+                let exec_states =
+                  AccessResult.of_result path
+                    (Error (ReportableError {astate; diagnostic= InfiniteLoopError {location}}))
+                  |> PulseReport.report_result analysis_data path location
+                in
+                (exec_states, path, astate_n)
+            | _ ->
+                let astate = AbductiveDomain.add_loop_invariant_under_inference id astate in
+                ([ContinueProgram astate], path, astate_n)
           else
             let timestamp = path.PathContext.timestamp in
             let astate = AbductiveDomain.push_loop_header_info id timestamp astate in
