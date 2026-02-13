@@ -600,9 +600,10 @@ and annotation_reachability_custom_models =
 and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:InferCommand.[(Analyze, manual_java)]
-    {|Specify custom sources/sinks, and optionally sanitizers for the annotation reachability checker
+    {|Specify custom sources/sinks, and optionally sanitizers for the annotation reachability checker.
+Optionally override minimize_sources/minimize_sinks flags per spec (default: use command line flags).
 Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1,Sanitizer1}
-{ "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"], "sanitizers": ["Sanitizer1"] }|}
+{ "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"], "sanitizers": ["Sanitizer1"], "minimize_sources": true, "minimize_sinks": false }|}
 
 
 and annotation_reachability_expensive =

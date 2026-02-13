@@ -196,7 +196,11 @@ module AnnotationSpec = struct
     ; issue_type: IssueType.t
     ; models: matcher list IString.Map.t  (** model functions as if they were annotated *)
     ; pre_check: Domain.t InterproceduralAnalysis.t -> unit
-          (** additional check before reporting *) }
+          (** additional check before reporting *)
+    ; minimize_sources: bool option
+          (** override [Config.annotation_reachability_minimize_sources] for this spec *)
+    ; minimize_sinks: bool option
+          (** override [Config.annotation_reachability_minimize_sinks] for this spec *) }
 end
 
 let prepend_if_not_empty str prefix = if String.equal str "" then "" else prefix ^ str
@@ -340,9 +344,9 @@ let find_paths_to_snk ({InterproceduralAnalysis.proc_desc; tenv} as analysis_dat
             "Annotation reachability skipped path %s -> %s all procedures were synthetic@."
             (str_of_pname src_pname) (str_of_pname snk_pname)
     else if
-      Config.annotation_reachability_minimize_sources
+      Option.value spec.minimize_sources ~default:Config.annotation_reachability_minimize_sources
       && method_overrides_annot src spec.models tenv callee_pname
-      || Config.annotation_reachability_minimize_sinks
+      || Option.value spec.minimize_sinks ~default:Config.annotation_reachability_minimize_sinks
          && method_overrides_annot snk_annot spec.models tenv callee_pname
     then
       (* If minimization is enabled and we find a source/sink in the middle, skip this path *)
@@ -407,7 +411,8 @@ let check_srcs_and_find_snk ({InterproceduralAnalysis.proc_desc; tenv} as analys
 
 
 module StandardAnnotationSpec = struct
-  let from_annotations str_src_annots str_snk_annot str_sanitizer_annots name description models =
+  let from_annotations ?(minimize_sources = None) ?(minimize_sinks = None) str_src_annots
+      str_snk_annot str_sanitizer_annots name description models =
     let src_list = List.map str_src_annots ~f:annotation_of_str in
     let sanitizer_annots = List.map str_sanitizer_annots ~f:annotation_of_str in
     let snk = annotation_of_str str_snk_annot in
@@ -423,7 +428,9 @@ module StandardAnnotationSpec = struct
     ; description
     ; issue_type= IssueType.checkers_annotation_reachability_error
     ; models
-    ; pre_check= (fun _ -> ()) }
+    ; pre_check= (fun _ -> ())
+    ; minimize_sources
+    ; minimize_sinks }
 end
 
 module NoAllocationAnnotationSpec = struct
@@ -441,7 +448,9 @@ module NoAllocationAnnotationSpec = struct
     ; description= ""
     ; issue_type= IssueType.checkers_allocates_memory
     ; models= IString.Map.empty
-    ; pre_check= (fun _ -> ()) }
+    ; pre_check= (fun _ -> ())
+    ; minimize_sources= None
+    ; minimize_sinks= None }
 end
 
 module ExpensiveAnnotationSpec = struct
@@ -488,7 +497,9 @@ module ExpensiveAnnotationSpec = struct
           if is_expensive tenv proc_name then
             PatternMatch.override_iter
               (check_expensive_subtyping_rules analysis_data)
-              tenv proc_name ) }
+              tenv proc_name )
+    ; minimize_sources= None
+    ; minimize_sinks= None }
 end
 
 module MakeTransferFunctions (CFG : ProcCfg.S) = struct
@@ -603,17 +614,21 @@ type custom_spec =
   ; sinks: string list
   ; sanitizers: string list [@yojson.default []]
   ; name: string [@yojson.default ""]
-  ; description: string [@yojson.default ""] }
+  ; description: string [@yojson.default ""]
+  ; minimize_sources: bool option [@yojson.default None]
+  ; minimize_sinks: bool option [@yojson.default None] }
 [@@deriving of_yojson]
 
 type custom_specs = custom_spec list [@@deriving of_yojson]
 
 let parse_custom_specs () =
   let models = parse_custom_models () in
-  let make_standard_spec_from_custom_spec {sources; sinks; sanitizers; name; description} =
+  let make_standard_spec_from_custom_spec
+      {sources; sinks; sanitizers; name; description; minimize_sources; minimize_sinks} =
     List.map
       ~f:(fun sink ->
-        StandardAnnotationSpec.from_annotations sources sink sanitizers name description models )
+        StandardAnnotationSpec.from_annotations ~minimize_sources ~minimize_sinks sources sink
+          sanitizers name description models )
       sinks
   in
   let custom_specs =
