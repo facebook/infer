@@ -54,6 +54,7 @@ BUILD_SYSTEM_TESTS += assembly
 endif
 
 DIRECT_TESTS += \
+  c_annotreach \
   c_bufferoverrun \
   c_performance \
   c_pulse \
@@ -134,6 +135,7 @@ BUILD_SYSTEMS_TESTS += \
   pulse_taint_exclude_matching_objc
 
 DIRECT_TESTS += \
+  objc_annotreach \
   objc_bufferoverrun \
   objc_frontend \
   objc_liveness \
@@ -177,6 +179,7 @@ ifneq ($(BUILD_SWIFT_ANALYZERS),no)
 DIRECT_TESTS += \
   c_llvm-frontend \
   c_pulse-llvm \
+#   swift_annotreach \
 #   swift_frontend \
 #   swift_bitcode \
 #   swift_pulse \
@@ -187,6 +190,7 @@ ifeq ($(BUILD_ERLANG_ANALYZERS),yes)
 ifneq ($(ERLC),no)
 ifneq ($(ESCRIPT),no)
 DIRECT_TESTS += \
+  erlang_annotreach \
   erlang_flowquery \
   erlang_pulse \
   erlang_pulse-taint \
@@ -253,6 +257,8 @@ BUILD_SYSTEMS_TESTS += \
 
 DIRECT_TESTS += \
   java_annotreach \
+  java_annotreach-loops \
+  java_annotreach-negation \
   java_annotreach-nosuperclass \
   java_bufferoverrun \
   java_dependencies \
