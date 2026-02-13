@@ -57,69 +57,69 @@ define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(v: *__infer_s
       
 } @?
 
-global symbolic _____ 5Hello7VehicleC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello7VehicleC: *__infer_tuple_class<int,int,int>
 
-global symbolic _____ 5Hello5TrainC: *__infer_swift_type<ptr_elt>
+global symbolic _____ 5Hello5TrainC: *__infer_tuple_class<int,int,int>
 
 global objc_classes_$s5Hello7VehicleCN: *__infer_swift_type<ptr_elt>
 
 global objc_classes_$s5Hello5TrainCN: *__infer_swift_type<ptr_elt>
 
-global llvm::used: *__infer_swift_type<ptr_elt>
+global llvm::used: **__infer_swift_type<ptr_elt>
 
-global llvm::compiler::used: *__infer_swift_type<ptr_elt>
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
 
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
 
 global _objc_empty_cache: *__infer_swift_type<ptr_elt>
 
-global __swift_reflection_version: *__infer_swift_type<ptr_elt>
+global __swift_reflection_version: int
 
-global _METACLASS_DATA__TtC5Hello7Vehicle: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello7Vehicle: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _METACLASS_DATA__TtC5Hello5Train: *__infer_swift_type<ptr_elt>
+global _METACLASS_DATA__TtC5Hello5Train: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello7Vehicle: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello7Vehicle: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global _DATA__TtC5Hello5Train: *__infer_swift_type<ptr_elt>
+global _DATA__TtC5Hello5Train: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
 global OBJC_METACLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
 global OBJC_CLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
 
-global ::str::7::Vehicle: *__infer_swift_type<ptr_elt>
+global ::str::7::Vehicle: int
 
-global ::str::5::Train: *__infer_swift_type<ptr_elt>
+global ::str::5::Train: *int
 
-global ::str::5::Hello: *__infer_swift_type<ptr_elt>
+global ::str::5::Hello: *int
 
-global ::str::18::_TtC5Hello7Vehicle: *__infer_swift_type<ptr_elt>
+global ::str::18::_TtC5Hello7Vehicle: *int
 
-global ::str::16::_TtC5Hello5Train: *__infer_swift_type<ptr_elt>
+global ::str::16::_TtC5Hello5Train: *int
 
 global $sBoWV: *__infer_swift_type<ptr_elt>
 
-global $s5HelloMXM: *__infer_swift_type<ptr_elt>
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
 
-global $s5Hello7VehicleCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello7VehicleCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
-global $s5Hello7VehicleCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello7VehicleCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello7VehicleCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello7VehicleCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello7VehicleCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello7VehicleCMF: *__infer_tuple_class<int,int,int,int,int>
 
-global $s5Hello7VehicleCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello7VehicleCHn: *__infer_swift_type<swift::type_metadata_record>
 
-global $s5Hello5TrainCMn: *__infer_swift_type<ptr_elt>
+global $s5Hello5TrainCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_override_descriptor>,*__infer_swift_type<swift::method_override_descriptor>>
 
-global $s5Hello5TrainCMm: *__infer_swift_type<ptr_elt>
+global $s5Hello5TrainCMm: *__infer_swift_type<objc_class>
 
-global $s5Hello5TrainCMf: *__infer_swift_type<ptr_elt>
+global $s5Hello5TrainCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
-global $s5Hello5TrainCMF: *__infer_swift_type<ptr_elt>
+global $s5Hello5TrainCMF: *__infer_tuple_class<int,int,int,int,int>
 
-global $s5Hello5TrainCHn: *__infer_swift_type<ptr_elt>
+global $s5Hello5TrainCHn: *__infer_swift_type<swift::type_metadata_record>
 
 type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
                                        field_1: *__infer_swift_type<ptr_elt>;
