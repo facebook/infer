@@ -601,7 +601,9 @@ and annotation_reachability_custom_pairs =
   CLOpt.mk_json ~long:"annotation-reachability-custom-pairs"
     ~in_help:InferCommand.[(Analyze, manual_java)]
     {|Specify custom sources/sinks, and optionally sanitizers for the annotation reachability checker.
-Optionally override minimize_sources/minimize_sinks flags per spec (default: use command line flags).
+The optional "minimize_sinks" (default: true) and "minimize_sources" (default: false) flags control path minimization.
+When "minimize_sinks" is true, paths where a prefix is also a source-to-sink path are not reported. For example if there is a source() -> sink1() -> sink2() path then only source() -> sink1() will be reported.
+When "minimize_sources" is true, paths where a suffix is also a source-to-sink path are not reported. For example if there is a source1() -> source2() -> sink() path then only source2() -> sink() will be reported.
 Example format: for custom annotations com.my.annotation.{Source1,Source2,Sink1,Sanitizer1}
 { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"], "sanitizers": ["Sanitizer1"], "minimize_sources": true, "minimize_sinks": false }|}
 
@@ -612,22 +614,6 @@ and annotation_reachability_expensive =
     ~default:false
     "check if methods annotated with @PerformanceCritical can call expensive methods (annotated \
      @Expensive or modeled, with annotation reachability checker)"
-
-
-and annotation_reachability_minimize_sinks =
-  CLOpt.mk_bool ~long:"annotation-reachability-minimize-sinks"
-    ~in_help:InferCommand.[(Analyze, manual_java)]
-    "do not report paths where a prefix is also a source to sink path. For example if there is a \
-     source() -> sink1() -> sink2() path then only source() -> sink1() will be reported."
-    ~default:true
-
-
-and annotation_reachability_minimize_sources =
-  CLOpt.mk_bool ~long:"annotation-reachability-minimize-sources"
-    ~in_help:InferCommand.[(Analyze, manual_java)]
-    "do not report paths where a suffix is also a source to sink path. For example if there is a \
-     source1() -> source2() -> sink() path then only source2() -> sink() will be reported."
-    ~default:false
 
 
 and annotation_reachability_no_allocation =
@@ -3952,10 +3938,6 @@ and annotation_reachability_custom_models = !annotation_reachability_custom_mode
 and annotation_reachability_custom_pairs = !annotation_reachability_custom_pairs
 
 and annotation_reachability_expensive = !annotation_reachability_expensive
-
-and annotation_reachability_minimize_sinks = !annotation_reachability_minimize_sinks
-
-and annotation_reachability_minimize_sources = !annotation_reachability_minimize_sources
 
 and annotation_reachability_no_allocation = !annotation_reachability_no_allocation
 

@@ -110,8 +110,17 @@ OPTIONS
        --annotation-reachability-custom-pairs json
            Specify custom sources/sinks, and optionally sanitizers for the
            annotation reachability checker.
-           Optionally override minimize_sources/minimize_sinks flags per
-           spec (default: use command line flags).
+           The optional "minimize_sinks" (default: true) and
+           "minimize_sources" (default: false) flags control path
+           minimization.
+           When "minimize_sinks" is true, paths where a prefix is also a
+           source-to-sink path are not reported. For example if there is a
+           source() -> sink1() -> sink2() path then only source() -> sink1()
+           will be reported.
+           When "minimize_sources" is true, paths where a suffix is also a
+           source-to-sink path are not reported. For example if there is a
+           source1() -> source2() -> sink() path then only source2() ->
+           sink() will be reported.
            Example format: for custom annotations
            com.my.annotation.{Source1,Source2,Sink1,Sanitizer1}
            { "sources" : ["Source1", "Source2"], "sinks" : ["Sink1"],
@@ -124,20 +133,6 @@ OPTIONS
            can call expensive methods (annotated @Expensive or modeled, with
            annotation reachability checker) (Conversely:
            --no-annotation-reachability-expensive)
-           See also infer-analyze(1).
-
-       --no-annotation-reachability-minimize-sinks
-           Deactivates: do not report paths where a prefix is also a source
-           to sink path. For example if there is a source() -> sink1() ->
-           sink2() path then only source() -> sink1() will be reported.
-           (Conversely: --annotation-reachability-minimize-sinks)
-           See also infer-analyze(1).
-
-       --annotation-reachability-minimize-sources
-           Activates: do not report paths where a suffix is also a source to
-           sink path. For example if there is a source1() -> source2() ->
-           sink() path then only source2() -> sink() will be reported.
-           (Conversely: --no-annotation-reachability-minimize-sources)
            See also infer-analyze(1).
 
        --annotation-reachability-no-allocation
