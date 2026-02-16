@@ -8,8 +8,7 @@
 open! IStd
 open RustMir2TextualTest
 
-(* TODO: Enable when tuples are merged *)
-(* let%expect_test "basic_tuple" =
+let%expect_test "basic_tuple" =
   let source =
     {|
 fn main() {
@@ -51,7 +50,8 @@ fn main() {
     }
 
     type __infer_rust_tuple_class<int,int> = {0: int; 1: int}
-    |}] *)
+    |}]
+
 
 let%expect_test "basic_struct" =
   let source =
@@ -295,8 +295,8 @@ fn main() {
     }
     |}]
 
-(* TODO: Enable after tuples are merged *)
-(* let%expect_test "nested_type" =
+
+let%expect_test "nested_type" =
   let source =
     {|
 fn main() {
@@ -336,6 +336,7 @@ struct Foo {
 
     type __infer_rust_tuple_class<int,int> = {0: int; 1: int}
     |}]
+
 
 let%expect_test "multiple_tuples" =
   let source =
@@ -391,4 +392,4 @@ fn main() {
     type __infer_rust_tuple_class<int,int,int> = {0: int; 1: int; 2: int}
 
     type __infer_rust_tuple_class<int[],int[]> = {0: int[]; 1: int[]}
-    |}] *)
+    |}]

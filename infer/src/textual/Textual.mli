@@ -95,6 +95,8 @@ module BaseTypeName : sig
   val swift_type_name : t
 
   val swift_any_type_name : t
+
+  val rust_tuple_class_name : t
 end
 
 module TypeName : sig
@@ -107,6 +109,8 @@ module TypeName : sig
   val of_string_no_dot_escape : string -> t
 
   val mk_swift_tuple_type_name : t list -> t
+
+  val mk_rust_tuple_type_name : t list -> t
 
   val mk_swift_type_name : ?plain_name:string -> string -> t
 

@@ -219,6 +219,8 @@ module BaseTypeName : sig
 
   val swift_any_type_name : t
 
+  val rust_tuple_class_name : t
+
   val is_hack_closure_generated_type : t -> bool
 end = struct
   include Name
@@ -240,6 +242,8 @@ end = struct
   let is_hack_closure_generated_type {value} = String.is_prefix ~prefix:"Closure$" value
 
   let swift_any_type_name = {value= "ptr_elt"; loc= Location.Unknown}
+
+  let rust_tuple_class_name = {value= "__infer_rust_tuple_class"; loc= Location.Unknown}
 end
 
 module TypeName : sig
@@ -279,6 +283,8 @@ module TypeName : sig
 
   val swift_plain_name_of_type_name : t -> string option
 
+  val mk_rust_tuple_type_name : t list -> t
+
   val is_hack_closure_generated_type : t -> bool
 end = struct
   module T = struct
@@ -306,6 +312,8 @@ end = struct
     in
     {name= BaseTypeName.swift_type_name; args= fst_arg :: snd_arg}
 
+
+  let mk_rust_tuple_type_name args = {name= BaseTypeName.rust_tuple_class_name; args}
 
   let sil_string = of_string "String"
 
