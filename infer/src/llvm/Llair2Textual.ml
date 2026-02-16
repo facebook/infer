@@ -346,36 +346,36 @@ let update_id_return_type ~(proc_state : ProcState.t) proc id =
 
 (* When translating a field access, if the variable is an optional protocol, we need to
 modify the type and field number to access the protocol value. *)
-let translate_optional_protocol_witness ~proc_state exp typ_name n =
+let translate_optional_protocol_witness ~proc_state exp exp_typ typ_name n =
   let ModuleState.{struct_map; mangled_map; lang; _} = proc_state.ProcState.module_state in
   let exp_typ =
-    match exp with
-    | Textual.Exp.Var ident when Int.equal n 3 -> (
-      match IdentMap.find_opt ident proc_state.ProcState.ids_move with
-      | Some id_data ->
-          Option.map ~f:(fun typ -> typ.Textual.Typ.typ) id_data.ProcState.typ
-      | None ->
-          None )
-    | _ ->
-        None
+    if Int.equal n 3 then
+      match exp with
+      | Textual.Exp.Var ident -> (
+        match IdentMap.find_opt ident proc_state.ProcState.ids_move with
+        | Some id_data ->
+            Option.map ~f:(fun typ -> typ.Textual.Typ.typ) id_data.ProcState.typ
+        | None ->
+            None )
+      | Textual.Exp.Lvar _ ->
+          exp_typ
+      | _ ->
+          None
+    else None
   in
   match exp_typ with
-  | Some (Textual.Typ.Ptr (Struct struct_name)) ->
-      let typ_name =
-        match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
-        | Some name ->
-            let name =
-              let optional_protocol_suffix = "_pSg" in
-              if String.is_suffix name ~suffix:optional_protocol_suffix then
-                String.substr_replace_all ~pattern:optional_protocol_suffix ~with_:"P" name
-              else name
-            in
+  | Some (Textual.Typ.Ptr (Struct struct_name)) -> (
+      let optional_protocol_suffix = "_pSg" in
+      match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
+      | Some name when String.is_suffix name ~suffix:optional_protocol_suffix ->
+          let name = String.substr_replace_all ~pattern:optional_protocol_suffix ~with_:"P" name in
+          let protocol_typ_name =
             TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
               name
-        | None ->
-            struct_name
-      in
-      (typ_name, 0)
+          in
+          (protocol_typ_name, 0)
+      | _ ->
+          (typ_name, n) )
   | _ ->
       (typ_name, n)
 
@@ -521,8 +521,10 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       | None ->
           undef_exp ~sourcefile:proc_state.sourcefile ~loc ~proc:proc_state.qualified_name exp
       | Some typ_name ->
-          let exp, _, exp_instrs = to_textual_exp loc ~proc_state llair_exp in
-          let typ_name, n = translate_optional_protocol_witness ~proc_state exp typ_name offset in
+          let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state llair_exp in
+          let typ_name, n =
+            translate_optional_protocol_witness ~proc_state exp exp_typ typ_name offset
+          in
           let field =
             if Llair.Typ.is_tuple typ && Int.equal n offset then Field.tuple_field_of_pos typ_name n
             else Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name n

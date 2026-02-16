@@ -80,3 +80,9 @@ func test_value() -> Int? {
     cell.contentView = Utils.contentViewForVariant()
     return cell.test2()
 }
+
+func test_value_nil() -> Int? {
+    let cell = Cell2()
+    cell.contentView = nil
+    return cell.contentView?.value()
+}
