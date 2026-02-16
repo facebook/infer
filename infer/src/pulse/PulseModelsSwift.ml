@@ -76,6 +76,8 @@ let dynamic_call arg orig_args () : unit DSL.model_monad =
         let* res = swift_call proc_name args in
         assign_ret res
     | None ->
+        Logging.d_printfln "proc_name not found for name = %a and offset = %a" Typ.Name.pp name
+          Int.pp offset ;
         unknown args ()
   in
   let* offset_opt = as_constant_int arg in
@@ -89,9 +91,10 @@ let dynamic_call arg orig_args () : unit DSL.model_monad =
       | _ -> (
           let* arg_static_type = get_static_type self in
           match arg_static_type with
-          | Some name ->
+          | Some (Typ.SwiftClass class_name as name)
+            when not (SwiftClassName.equal (SwiftClassName.of_string "ptr_elt") class_name) ->
               dynamic_call_with_type name offset self args
-          | None ->
+          | _ ->
               Logging.d_printfln
                 "method to call not found, no dynamic or static type found for %a, returning a \
                  fresh value"
