@@ -71,8 +71,8 @@ declare $syXlSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 declare $s5Hello5UtilsVMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello5UtilsVACycfC() : void {
-  #: @[501:0]
-      ret null @[501:0]
+  #: @[534:0]
+      ret null @[534:0]
       
 } @?
 
@@ -109,33 +109,33 @@ define .plain_name = "init" $s5Hello5Cell2CACycfc(self: *__infer_swift_type<,Cel
   #: @[54:9]
       n2 = load &self @[54:9]
       n1 = n2.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[54:9]
-      n4 = load n1 @[485:0]
-      store n4.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 <- 0 @[485:0]
-      n6 = load n1 @[486:0]
-      store n6.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 <- 0 @[486:0]
-      n8 = load n1 @[487:0]
-      store n8.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 <- 0 @[487:0]
-      n10 = load n1 @[488:0]
-      store n10.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 <- 0 @[488:0]
-      n12 = load n1 @[489:0]
-      store n12.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 <- 0 @[489:0]
-      n13 = load &self @[490:0]
-      ret n13 @[490:0]
+      n4 = load n1 @[518:0]
+      store n4.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 <- 0 @[518:0]
+      n6 = load n1 @[519:0]
+      store n6.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 <- 0 @[519:0]
+      n8 = load n1 @[520:0]
+      store n8.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 <- 0 @[520:0]
+      n10 = load n1 @[521:0]
+      store n10.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 <- 0 @[521:0]
+      n12 = load n1 @[522:0]
+      store n12.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 <- 0 @[522:0]
+      n13 = load &self @[523:0]
+      ret n13 @[523:0]
       
 } @?
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello5Cell2C,Cell>.$s5Hello5Cell2CACycfC(var1: *__infer_swift_type<,$s5Hello5Cell2CXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[479:0]
-      n1 = load &var1 @[479:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5Cell2C,Cell>>) @[479:0]
-      jmp 2::ret @[480:0]
+  #: @[512:0]
+      n1 = load &var1 @[512:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5Cell2C,Cell>>) @[512:0]
+      jmp 2::ret @[513:0]
       
-  #2::ret: @[481:0]
-      n6 = $s5Hello5Cell2CACycfc(n4) @[481:0]
-      jmp 3::ret @[482:0]
+  #2::ret: @[514:0]
+      n6 = $s5Hello5Cell2CACycfc(n4) @[514:0]
+      jmp 3::ret @[515:0]
       
-  #3::ret: @[483:0]
-      ret n6 @[483:0]
+  #3::ret: @[516:0]
+      ret n6 @[516:0]
       
 } @?
 
@@ -180,9 +180,9 @@ define .plain_name = "configure" $s5Hello5Cell2C9configureyyF(self: *__infer_swi
       n74 = n76 @[59:31]
       jmp 32::ret @[59:31]
       
-  #25::jmp::35: @[477:0]
-      n28 = 0 @[477:0]
-      jmp 35 @[478:0]
+  #25::jmp::35: @[510:0]
+      n28 = 0 @[510:0]
+      jmp 35 @[511:0]
       
   #32::ret: @[59:31]
       store &getelementptr_offset_2 <- 4 @[59:31]
@@ -191,8 +191,8 @@ define .plain_name = "configure" $s5Hello5Cell2C9configureyyF(self: *__infer_swi
       _ = $builtins.llvm_dynamic_call(n77, __sil_cast(<int>, n79), n74, n68, n70) @[59:31]
       jmp 34::void::ret @[59:31]
       
-  #34::void::ret: @[476:0]
-      jmp 25::jmp::35 @[476:0]
+  #34::void::ret: @[509:0]
+      jmp 25::jmp::35 @[509:0]
       
   #35: @[60:20]
       n31 = load &self @[60:20]
@@ -216,20 +216,20 @@ define .plain_name = "configure" $s5Hello5Cell2C9configureyyF(self: *__infer_swi
       store &var9 <- n51 @[60:20]
       jmp 51::ret @[60:20]
       
-  #50::jmp::59: @[473:0]
-      n46 = 0 @[473:0]
-      jmp 59 @[474:0]
+  #50::jmp::59: @[506:0]
+      n46 = 0 @[506:0]
+      jmp 59 @[507:0]
       
-  #51::ret: @[467:0]
-      n53 = load &var9 @[467:0]
-      n52 = load n53.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[467:0]
-      n55 = load &var9 @[468:0]
-      n54 = load n55.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[468:0]
-      n56 = load &var9 @[469:0]
-      n59 = load &var9 @[469:0]
-      n60 = load n59.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[469:0]
-      n58 = n60 @[469:0]
-      jmp 56::ret @[470:0]
+  #51::ret: @[500:0]
+      n53 = load &var9 @[500:0]
+      n52 = load n53.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[500:0]
+      n55 = load &var9 @[501:0]
+      n54 = load n55.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[501:0]
+      n56 = load &var9 @[502:0]
+      n59 = load &var9 @[502:0]
+      n60 = load n59.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[502:0]
+      n58 = n60 @[502:0]
+      jmp 56::ret @[503:0]
       
   #56::ret: @[60:22]
       store &getelementptr_offset_1 <- 1 @[60:22]
@@ -237,25 +237,25 @@ define .plain_name = "configure" $s5Hello5Cell2C9configureyyF(self: *__infer_swi
       _ = $builtins.llvm_dynamic_call(n61, n58, n52, n54) @[60:22]
       jmp 58::void::ret @[60:22]
       
-  #58::void::ret: @[472:0]
-      jmp 50::jmp::59 @[472:0]
+  #58::void::ret: @[505:0]
+      jmp 50::jmp::59 @[505:0]
       
   #59: @[61:5]
       ret null @[61:5]
       
-  #61: @[463:0]
-      jmp 61::jmp::59 @[463:0]
+  #61: @[496:0]
+      jmp 61::jmp::59 @[496:0]
       
-  #61::jmp::59: @[464:0]
-      n46 = 1 @[464:0]
-      jmp 59 @[465:0]
+  #61::jmp::59: @[497:0]
+      n46 = 1 @[497:0]
+      jmp 59 @[498:0]
       
-  #62: @[459:0]
-      jmp 62::jmp::35 @[459:0]
+  #62: @[492:0]
+      jmp 62::jmp::35 @[492:0]
       
-  #62::jmp::35: @[460:0]
-      n28 = 1 @[460:0]
-      jmp 35 @[461:0]
+  #62::jmp::35: @[493:0]
+      n28 = 1 @[493:0]
+      jmp 35 @[494:0]
       
   #9::ret: @[58:21]
       n7 = load &self @[58:21]
@@ -292,21 +292,21 @@ define .plain_name = "test2" $s5Hello5Cell2C5test2SiSgyF(self: *__infer_swift_ty
       store &var5 <- n29 @[68:27]
       jmp 19::ret @[68:27]
       
-  #18::jmp::28: @[454:0]
-      n17 = n44 @[454:0]
-      n19 = 0 @[454:0]
-      jmp 28 @[455:0]
+  #18::jmp::28: @[487:0]
+      n17 = n44 @[487:0]
+      n19 = 0 @[487:0]
+      jmp 28 @[488:0]
       
-  #19::ret: @[448:0]
-      n31 = load &var5 @[448:0]
-      n30 = load n31.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[448:0]
-      n33 = load &var5 @[449:0]
-      n32 = load n33.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[449:0]
-      n34 = load &var5 @[450:0]
-      n37 = load &var5 @[450:0]
-      n38 = load n37.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[450:0]
-      n36 = n38 @[450:0]
-      jmp 24::ret @[451:0]
+  #19::ret: @[481:0]
+      n31 = load &var5 @[481:0]
+      n30 = load n31.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[481:0]
+      n33 = load &var5 @[482:0]
+      n32 = load n33.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[482:0]
+      n34 = load &var5 @[483:0]
+      n37 = load &var5 @[483:0]
+      n38 = load n37.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[483:0]
+      n36 = n38 @[483:0]
+      jmp 24::ret @[484:0]
       
   #24::ret: @[68:29]
       store &getelementptr_offset_1 <- 2 @[68:29]
@@ -314,22 +314,22 @@ define .plain_name = "test2" $s5Hello5Cell2C5test2SiSgyF(self: *__infer_swift_ty
       n44 = $builtins.llvm_dynamic_call(n39, n36, n30, n32) @[68:29]
       jmp 27::ret @[68:29]
       
-  #27::ret: @[453:0]
-      jmp 18::jmp::28 @[453:0]
+  #27::ret: @[486:0]
+      jmp 18::jmp::28 @[486:0]
       
-  #28: @[446:0]
-      n21 = $builtins.llvm_init_tuple() @[446:0]
+  #28: @[479:0]
+      n21 = $builtins.llvm_init_tuple() @[479:0]
       store n21.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n17 @[68:9]
       store n21.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, n19) @[68:9]
       ret n21 @[68:9]
       
-  #34: @[443:0]
-      jmp 34::jmp::28 @[443:0]
+  #34: @[476:0]
+      jmp 34::jmp::28 @[476:0]
       
-  #34::jmp::28: @[444:0]
-      n17 = 0 @[444:0]
-      n19 = 1 @[444:0]
-      jmp 28 @[445:0]
+  #34::jmp::28: @[477:0]
+      n17 = 0 @[477:0]
+      n19 = 1 @[477:0]
+      jmp 28 @[478:0]
       
 } @?
 
@@ -362,9 +362,9 @@ define .plain_name = "test" $s5Hello5Cell2C4testyyF(self: *__infer_swift_type<,C
       n26 = n28 @[64:31]
       jmp 24::ret @[64:31]
       
-  #17::jmp::27: @[439:0]
-      n17 = 0 @[439:0]
-      jmp 27 @[440:0]
+  #17::jmp::27: @[472:0]
+      n17 = 0 @[472:0]
+      jmp 27 @[473:0]
       
   #24::ret: @[64:31]
       store &getelementptr_offset_1 <- 4 @[64:31]
@@ -373,46 +373,46 @@ define .plain_name = "test" $s5Hello5Cell2C4testyyF(self: *__infer_swift_type<,C
       _ = $builtins.llvm_dynamic_call(n29, __sil_cast(<int>, n31), n26, n20, n22) @[64:31]
       jmp 26::void::ret @[64:31]
       
-  #26::void::ret: @[438:0]
-      jmp 17::jmp::27 @[438:0]
+  #26::void::ret: @[471:0]
+      jmp 17::jmp::27 @[471:0]
       
   #27: @[65:5]
       ret null @[65:5]
       
-  #29: @[434:0]
-      jmp 29::jmp::27 @[434:0]
+  #29: @[467:0]
+      jmp 29::jmp::27 @[467:0]
       
-  #29::jmp::27: @[435:0]
-      n17 = 1 @[435:0]
-      jmp 27 @[436:0]
+  #29::jmp::27: @[468:0]
+      n17 = 1 @[468:0]
+      jmp 27 @[469:0]
       
 } @?
 
 define .plain_name = "contentView.set" $s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvs(var1: *__infer_swift_type<T5Hello15ContentViewType_p>, var2: *__infer_swift_type<,Cell2>) : void {
   local var5: *int, var4: *__infer_swift_type<T5Hello15ContentViewType_pSg>
-  #: @[422:0]
-      n1 = load &var1 @[422:0]
-      n2 = load &var4 @[422:0]
-      n4 = load &var1 @[422:0]
-      store &var4 <- n4 @[422:0]
-      jmp 5::ret @[423:0]
+  #: @[455:0]
+      n1 = load &var1 @[455:0]
+      n2 = load &var4 @[455:0]
+      n4 = load &var1 @[455:0]
+      store &var4 <- n4 @[455:0]
+      jmp 5::ret @[456:0]
       
-  #5::ret: @[424:0]
-      n6 = load &var2 @[424:0]
-      n5 = n6.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[424:0]
-      n7 = load &var4 @[426:0]
-      n8 = load n5 @[426:0]
-      n10 = load &var4 @[426:0]
-      store n5 <- n10 @[426:0]
-      jmp 7::ret @[427:0]
+  #5::ret: @[457:0]
+      n6 = load &var2 @[457:0]
+      n5 = n6.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[457:0]
+      n7 = load &var4 @[459:0]
+      n8 = load n5 @[459:0]
+      n10 = load &var4 @[459:0]
+      store n5 <- n10 @[459:0]
+      jmp 7::ret @[460:0]
       
-  #7::ret: @[429:0]
-      n11 = load &var1 @[429:0]
-      n12 = $s5Hello15ContentViewType_pSgWOh(n11) @[429:0]
-      jmp 8::ret @[430:0]
+  #7::ret: @[462:0]
+      n11 = load &var1 @[462:0]
+      n12 = $s5Hello15ContentViewType_pSgWOh(n11) @[462:0]
+      jmp 8::ret @[463:0]
       
-  #8::ret: @[431:0]
-      ret null @[431:0]
+  #8::ret: @[464:0]
+      ret null @[464:0]
       
 } @?
 
@@ -420,48 +420,48 @@ declare $s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvpfi(*__infer_swift_typ
 
 define .plain_name = "contentView.get" $s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvg(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : void {
   local var4: *int
-  #: @[416:0]
-      n2 = load &var2 @[416:0]
-      n1 = n2.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[416:0]
-      n3 = load n1 @[418:0]
-      n4 = load &var1 @[418:0]
-      n6 = load n1 @[418:0]
-      store &var1 <- n6 @[418:0]
-      jmp 5::ret @[419:0]
+  #: @[449:0]
+      n2 = load &var2 @[449:0]
+      n1 = n2.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[449:0]
+      n3 = load n1 @[451:0]
+      n4 = load &var1 @[451:0]
+      n6 = load n1 @[451:0]
+      store &var1 <- n6 @[451:0]
+      jmp 5::ret @[452:0]
       
-  #5::ret: @[421:0]
-      ret null @[421:0]
+  #5::ret: @[454:0]
+      ret null @[454:0]
       
 } @?
 
 define .plain_name = "contentView.modify" $s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[409:0]
-      n2 = load &var1 @[409:0]
-      n1 = n2.__infer_swift_type<$s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM::Frame>.field_0 @[409:0]
-      if &var2 then jmp 5 else jmp 4 @[410:0]
+  #: @[442:0]
+      n2 = load &var1 @[442:0]
+      n1 = n2.__infer_swift_type<$s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM::Frame>.field_0 @[442:0]
+      if &var2 then jmp 5 else jmp 4 @[443:0]
       
-  #4: @[412:0]
-      jmp 6 @[412:0]
+  #4: @[445:0]
+      jmp 6 @[445:0]
       
-  #5: @[415:0]
-      jmp 6 @[415:0]
+  #5: @[448:0]
+      jmp 6 @[448:0]
       
-  #6: @[413:0]
-      ret null @[413:0]
+  #6: @[446:0]
+      ret null @[446:0]
       
 } @?
 
 define .plain_name = "contentView.modify" $s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[404:0]
-      n2 = load &var1 @[404:0]
-      n1 = n2.__infer_swift_type<$s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM::Frame>.field_0 @[404:0]
-      n4 = load &var2 @[405:0]
-      n3 = n4.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[405:0]
-      n5 = $builtins.llvm_init_tuple() @[407:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM.resume.0" @[408:0]
-      n7 = load n3 @[408:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[408:0]
-      ret n5 @[408:0]
+  #: @[437:0]
+      n2 = load &var1 @[437:0]
+      n1 = n2.__infer_swift_type<$s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM::Frame>.field_0 @[437:0]
+      n4 = load &var2 @[438:0]
+      n3 = n4.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[438:0]
+      n5 = $builtins.llvm_init_tuple() @[440:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello5Cell2C11contentViewAA07ContentD4Type_pSgvM.resume.0" @[441:0]
+      n7 = load n3 @[441:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[441:0]
+      ret n5 @[441:0]
       
 } @?
 
@@ -475,40 +475,40 @@ define .plain_name = "init" $s5Hello4CellCACycfc(self: *__infer_swift_type<T5Hel
   #: @[43:9]
       n2 = load &self @[43:9]
       n1 = n2.__infer_swift_type<T5Hello4CellC,Cell>.contentView @[43:9]
-      n4 = $s5Hello16DummyContentViewCMa(0) @[386:0]
-      jmp 4::ret @[387:0]
+      n4 = $s5Hello16DummyContentViewCMa(0) @[419:0]
+      jmp 4::ret @[420:0]
       
-  #4::ret: @[388:0]
-      n5 = n4.__infer_swift_type<swift::metadata_response>.field_0 @[388:0]
-      n7 = load n5 @[389:0]
-      n8 = __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCACycfC(n7) @[389:0]
-      jmp 6::ret @[390:0]
+  #4::ret: @[421:0]
+      n5 = n4.__infer_swift_type<swift::metadata_response>.field_0 @[421:0]
+      n7 = load n5 @[422:0]
+      n8 = __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCACycfC(n7) @[422:0]
+      jmp 6::ret @[423:0]
       
-  #6::ret: @[391:0]
-      n10 = load n1 @[391:0]
-      n9 = load n5 @[391:0]
-      store n10.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 <- n9 @[391:0]
-      n12 = load n1 @[392:0]
-      store n12.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 <- __sil_swift_alloc(<__infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>>) @[392:0]
-      n14 = load n1 @[393:0]
-      store n14.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 <- n8 @[393:0]
-      n15 = load &self @[394:0]
-      ret n15 @[394:0]
+  #6::ret: @[424:0]
+      n10 = load n1 @[424:0]
+      n9 = load n5 @[424:0]
+      store n10.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 <- n9 @[424:0]
+      n12 = load n1 @[425:0]
+      store n12.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 <- __sil_swift_alloc(<__infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP>>) @[425:0]
+      n14 = load n1 @[426:0]
+      store n14.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 <- n8 @[426:0]
+      n15 = load &self @[427:0]
+      ret n15 @[427:0]
       
 } @?
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello4CellC,Cell>.$s5Hello4CellCACycfC(var1: *__infer_swift_type<,$s5Hello4CellCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[380:0]
-      n1 = load &var1 @[380:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello4CellC,Cell>>) @[380:0]
-      jmp 2::ret @[381:0]
+  #: @[413:0]
+      n1 = load &var1 @[413:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello4CellC,Cell>>) @[413:0]
+      jmp 2::ret @[414:0]
       
-  #2::ret: @[382:0]
-      n6 = $s5Hello4CellCACycfc(n4) @[382:0]
-      jmp 3::ret @[383:0]
+  #2::ret: @[415:0]
+      n6 = $s5Hello4CellCACycfc(n4) @[415:0]
+      jmp 3::ret @[416:0]
       
-  #3::ret: @[384:0]
-      ret n6 @[384:0]
+  #3::ret: @[417:0]
+      ret n6 @[417:0]
       
 } @?
 
@@ -556,24 +556,24 @@ define .plain_name = "configure_bad" $s5Hello4CellC13configure_badyyF(self: *__i
 
 define .plain_name = "contentView.set" $s5Hello4CellC11contentViewAA07ContentD4Type_pvs(var1: *__infer_swift_type<,ContentViewType>, var2: *__infer_swift_type<T5Hello12CreationCellC,Cell>) : void {
   local var5: *int, var4: *__infer_swift_type<T5Hello15ContentViewTypeP>
-  #: @[367:0]
-      n1 = load &var1 @[367:0]
-      n2 = load &var4 @[367:0]
-      n4 = load &var1 @[367:0]
-      store &var4 <- n4 @[367:0]
-      jmp 5::ret @[368:0]
+  #: @[400:0]
+      n1 = load &var1 @[400:0]
+      n2 = load &var4 @[400:0]
+      n4 = load &var1 @[400:0]
+      store &var4 <- n4 @[400:0]
+      jmp 5::ret @[401:0]
       
-  #5::ret: @[369:0]
-      n6 = load &var2 @[369:0]
-      n5 = n6.__infer_swift_type<T5Hello4CellC,Cell>.contentView @[369:0]
-      n7 = load &var4 @[372:0]
-      n8 = load n5 @[372:0]
-      n10 = load &var4 @[372:0]
-      store n5 <- n10 @[372:0]
-      jmp 7::ret @[373:0]
+  #5::ret: @[402:0]
+      n6 = load &var2 @[402:0]
+      n5 = n6.__infer_swift_type<T5Hello4CellC,Cell>.contentView @[402:0]
+      n7 = load &var4 @[405:0]
+      n8 = load n5 @[405:0]
+      n10 = load &var4 @[405:0]
+      store n5 <- n10 @[405:0]
+      jmp 7::ret @[406:0]
       
-  #7::ret: @[376:0]
-      ret null @[376:0]
+  #7::ret: @[409:0]
+      ret null @[409:0]
       
 } @?
 
@@ -581,48 +581,48 @@ declare $s5Hello4CellC11contentViewAA07ContentD4Type_pvpfi(*__infer_swift_type<p
 
 define .plain_name = "contentView.get" $s5Hello4CellC11contentViewAA07ContentD4Type_pvg(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : void {
   local var4: *int
-  #: @[361:0]
-      n2 = load &var2 @[361:0]
-      n1 = n2.__infer_swift_type<T5Hello4CellC,Cell>.contentView @[361:0]
-      n3 = load n1 @[363:0]
-      n4 = load &var1 @[363:0]
-      n6 = load n1 @[363:0]
-      store &var1 <- n6 @[363:0]
-      jmp 5::ret @[364:0]
+  #: @[394:0]
+      n2 = load &var2 @[394:0]
+      n1 = n2.__infer_swift_type<T5Hello4CellC,Cell>.contentView @[394:0]
+      n3 = load n1 @[396:0]
+      n4 = load &var1 @[396:0]
+      n6 = load n1 @[396:0]
+      store &var1 <- n6 @[396:0]
+      jmp 5::ret @[397:0]
       
-  #5::ret: @[366:0]
-      ret null @[366:0]
+  #5::ret: @[399:0]
+      ret null @[399:0]
       
 } @?
 
 define .plain_name = "contentView.modify" $s5Hello4CellC11contentViewAA07ContentD4Type_pvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[354:0]
-      n2 = load &var1 @[354:0]
-      n1 = n2.__infer_swift_type<$s5Hello4CellC11contentViewAA07ContentD4Type_pvM::Frame>.field_0 @[354:0]
-      if &var2 then jmp 5 else jmp 4 @[355:0]
+  #: @[387:0]
+      n2 = load &var1 @[387:0]
+      n1 = n2.__infer_swift_type<$s5Hello4CellC11contentViewAA07ContentD4Type_pvM::Frame>.field_0 @[387:0]
+      if &var2 then jmp 5 else jmp 4 @[388:0]
       
-  #4: @[357:0]
-      jmp 6 @[357:0]
+  #4: @[390:0]
+      jmp 6 @[390:0]
       
-  #5: @[360:0]
-      jmp 6 @[360:0]
+  #5: @[393:0]
+      jmp 6 @[393:0]
       
-  #6: @[358:0]
-      ret null @[358:0]
+  #6: @[391:0]
+      ret null @[391:0]
       
 } @?
 
 define .plain_name = "contentView.modify" $s5Hello4CellC11contentViewAA07ContentD4Type_pvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[349:0]
-      n2 = load &var1 @[349:0]
-      n1 = n2.__infer_swift_type<$s5Hello4CellC11contentViewAA07ContentD4Type_pvM::Frame>.field_0 @[349:0]
-      n4 = load &var2 @[350:0]
-      n3 = n4.__infer_swift_type<T5Hello4CellC,Cell>.contentView @[350:0]
-      n5 = $builtins.llvm_init_tuple() @[352:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello4CellC11contentViewAA07ContentD4Type_pvM.resume.0" @[353:0]
-      n7 = load n3 @[353:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[353:0]
-      ret n5 @[353:0]
+  #: @[382:0]
+      n2 = load &var1 @[382:0]
+      n1 = n2.__infer_swift_type<$s5Hello4CellC11contentViewAA07ContentD4Type_pvM::Frame>.field_0 @[382:0]
+      n4 = load &var2 @[383:0]
+      n3 = n4.__infer_swift_type<T5Hello4CellC,Cell>.contentView @[383:0]
+      n5 = $builtins.llvm_init_tuple() @[385:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello4CellC11contentViewAA07ContentD4Type_pvM.resume.0" @[386:0]
+      n7 = load n3 @[386:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[386:0]
+      ret n5 @[386:0]
       
 } @?
 
@@ -644,8 +644,8 @@ define .plain_name = "test_retain_cycle_specialisation2_bad" $s5Hello37test_reta
       n5 = __infer_swift_type<T5Hello5Cell2C,Cell>.$s5Hello5Cell2CACycfC(n4) @[73:16]
       jmp 6::ret @[73:16]
       
-  #6::ret: @[347:0]
-      store &cell <- n5 @[347:0]
+  #6::ret: @[380:0]
+      store &cell <- n5 @[380:0]
       n8 = $s5Hello16DummyContentViewCMa(0) @[74:24]
       jmp 7::ret @[74:24]
       
@@ -686,10 +686,220 @@ define .plain_name = "test_retain_cycle_specialisation_bad" $s5Hello36test_retai
       n5 = __infer_swift_type<T5Hello12CreationCellC,Cell>.$s5Hello12CreationCellCACycfC(n4) @[37:16]
       jmp 4::ret @[37:16]
       
-  #4::ret: @[345:0]
-      store &cell <- n5 @[345:0]
+  #4::ret: @[378:0]
+      store &cell <- n5 @[378:0]
       _ = $s5Hello12CreationCellC9configureyyF(n5) @[38:10]
       jmp $s5Hello12CreationCellC9configureyyF::void::ret @[38:10]
+      
+} @?
+
+define .plain_name = "test_value_nil3_bad_fp" $s5Hello22test_value_nil3_bad_fpySiAA15ContentViewType_pSgF(contentView: *__infer_swift_type<T5Hello15ContentViewType_p>) : int {
+  local var5: *__infer_swift_type<TSiSg>, var4: *__infer_swift_type<T5Hello15ContentViewType_pSg>, getelementptr_offset_1: *void
+  #: @[97:12]
+      n1 = load &contentView @[97:12]
+      n2 = load &var4 @[97:12]
+      n4 = load &contentView @[97:12]
+      store &var4 <- n4 @[97:12]
+      jmp 5::ret @[97:12]
+      
+  #17: @[363:0]
+      n18 = load &var4 @[363:0]
+      n17 = load n18.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[363:0]
+      n20 = load &var4 @[364:0]
+      n19 = load n20.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[364:0]
+      n21 = load &var4 @[365:0]
+      n24 = load &var4 @[365:0]
+      n25 = load n24.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[365:0]
+      n23 = n25 @[365:0]
+      jmp 22::ret @[366:0]
+      
+  #17::jmp::26: @[369:0]
+      n32 = n31 @[369:0]
+      n34 = 0 @[369:0]
+      jmp 26 @[370:0]
+      
+  #22::ret: @[97:25]
+      store &getelementptr_offset_1 <- 2 @[97:25]
+      n26 = load &getelementptr_offset_1 @[97:25]
+      n31 = $builtins.llvm_dynamic_call(n26, n23, n17, n19) @[97:25]
+      jmp 25::ret @[97:25]
+      
+  #25::ret: @[368:0]
+      jmp 17::jmp::26 @[368:0]
+      
+  #26: @[371:0]
+      store &var5 <- n32 @[371:0]
+      n38 = load &var5 @[372:0]
+      store n38.__infer_swift_type<TSiSg>.field_1 <- n34 @[372:0]
+      n39 = load &var5 @[97:33]
+      n41 = load &var5 @[97:33]
+      n40 = load n41.__infer_swift_type<TSiSg>.field_1 @[97:33]
+      if n40 then jmp 36 else jmp 33 @[97:33]
+      
+  #33: @[97:33]
+      n43 = load &var5 @[97:33]
+      n42 = load n43.__infer_swift_type<TSi>.field_0 @[97:33]
+      jmp 33::jmp::40 @[97:33]
+      
+  #33::jmp::40: @[97:33]
+      n44 = n42 @[97:33]
+      jmp 40 @[97:33]
+      
+  #36: @[97:33]
+      n47 = load &var5 @[97:33]
+      n49 = load &var5 @[97:33]
+      n48 = load n49.__infer_swift_type<TSiSg>.field_1 @[97:33]
+      if n48 then jmp 42::jmp::40 else jmp 43::jmp::40 @[97:33]
+      
+  #40: @[97:5]
+      ret n44 @[97:5]
+      
+  #42::jmp::40: @[97:33]
+      n44 = 0 @[97:33]
+      jmp 40 @[97:33]
+      
+  #43::jmp::40: @[97:33]
+      n44 = 0 @[97:33]
+      jmp 40 @[97:33]
+      
+  #44: @[373:0]
+      n52 = load &var4 @[373:0]
+      n53 = $s5Hello15ContentViewType_pSgWOh(n52) @[373:0]
+      jmp 44::jmp::26 @[374:0]
+      
+  #44::jmp::26: @[375:0]
+      n32 = 0 @[375:0]
+      n34 = 1 @[375:0]
+      jmp 26 @[376:0]
+      
+  #5::ret: @[97:23]
+      n6 = load &var4 @[97:23]
+      n5 = load n6.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 @[97:23]
+      n8 = load &var4 @[97:23]
+      n7 = load n8.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 @[97:23]
+      n10 = load &var4 @[97:23]
+      n9 = load n10.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 @[97:23]
+      n12 = load &var4 @[97:23]
+      n11 = load n12.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[97:23]
+      n14 = load &var4 @[97:23]
+      n13 = load n14.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 @[97:23]
+      if __sil_eq(n11, 0) then jmp 44 else jmp 17 @[97:23]
+      
+} @?
+
+define .plain_name = "test_value_nil2_bad_fp" $s5Hello22test_value_nil2_bad_fpSiyF() : int {
+  local var7: *__infer_swift_type<T5Hello15ContentViewTypeP>, var6: *__infer_swift_type<TSiSg>, var5: *int, var4: *int, var3: *__infer_swift_type<T5Hello15ContentViewType_pSg>, getelementptr_offset_1: *void, cell: *__infer_swift_type<ptr_elt>
+  #: @[91:16]
+      n2 = $s5Hello5Cell2CMa(0) @[91:16]
+      jmp 7::ret @[91:16]
+      
+  #$s5Hello5UtilsV21contentViewForVariantAA07ContentD4Type_pyFZ::void::ret: @[92:22]
+      n8 = n5.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[92:22]
+      n10 = load &var3 @[92:22]
+      n11 = load n8 @[92:22]
+      n13 = load &var3 @[92:22]
+      store n8 <- n13 @[92:22]
+      jmp 11::ret @[92:22]
+      
+  #11::ret: @[93:28]
+      n14 = n5.__infer_swift_type<T5Hello5Cell2C,Cell>.contentView @[93:28]
+      n17 = load n14 @[93:28]
+      n16 = load n17.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 @[93:28]
+      n19 = load n14 @[93:28]
+      n18 = load n19.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 @[93:28]
+      n21 = load n14 @[93:28]
+      n20 = load n21.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 @[93:28]
+      n23 = load n14 @[93:28]
+      n22 = load n23.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[93:28]
+      n25 = load n14 @[93:28]
+      n24 = load n25.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 @[93:28]
+      if __sil_lnot(__sil_eq(n22, 0)) then jmp 25 else jmp 53 @[93:28]
+      
+  #25: @[93:28]
+      n50 = load n14 @[93:28]
+      n51 = load &var7 @[93:28]
+      n53 = load n14 @[93:28]
+      store &var7 <- n53 @[93:28]
+      jmp 26::ret @[93:28]
+      
+  #25::jmp::35: @[360:0]
+      n30 = n68 @[360:0]
+      n32 = 0 @[360:0]
+      jmp 35 @[361:0]
+      
+  #26::ret: @[354:0]
+      n55 = load &var7 @[354:0]
+      n54 = load n55.__infer_swift_type<T5Hello15ContentViewTypeP>.field_1 @[354:0]
+      n57 = load &var7 @[355:0]
+      n56 = load n57.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[355:0]
+      n58 = load &var7 @[356:0]
+      n61 = load &var7 @[356:0]
+      n62 = load n61.__infer_swift_type<T5Hello15ContentViewTypeP>.field_0 @[356:0]
+      n60 = n62 @[356:0]
+      jmp 31::ret @[357:0]
+      
+  #31::ret: @[93:30]
+      store &getelementptr_offset_1 <- 2 @[93:30]
+      n63 = load &getelementptr_offset_1 @[93:30]
+      n68 = $builtins.llvm_dynamic_call(n63, n60, n54, n56) @[93:30]
+      jmp 34::ret @[93:30]
+      
+  #34::ret: @[359:0]
+      jmp 25::jmp::35 @[359:0]
+      
+  #35: @[351:0]
+      store &var6 <- n30 @[351:0]
+      n36 = load &var6 @[352:0]
+      store n36.__infer_swift_type<TSiSg>.field_1 <- n32 @[352:0]
+      n37 = load &var6 @[93:38]
+      n39 = load &var6 @[93:38]
+      n38 = load n39.__infer_swift_type<TSiSg>.field_1 @[93:38]
+      if n38 then jmp 45 else jmp 42 @[93:38]
+      
+  #42: @[93:38]
+      n41 = load &var6 @[93:38]
+      n40 = load n41.__infer_swift_type<TSi>.field_0 @[93:38]
+      jmp 42::jmp::49 @[93:38]
+      
+  #42::jmp::49: @[93:38]
+      n42 = n40 @[93:38]
+      jmp 49 @[93:38]
+      
+  #45: @[93:38]
+      n45 = load &var6 @[93:38]
+      n47 = load &var6 @[93:38]
+      n46 = load n47.__infer_swift_type<TSiSg>.field_1 @[93:38]
+      if n46 then jmp 51::jmp::49 else jmp 52::jmp::49 @[93:38]
+      
+  #49: @[93:5]
+      ret n42 @[93:5]
+      
+  #51::jmp::49: @[93:38]
+      n42 = 0 @[93:38]
+      jmp 49 @[93:38]
+      
+  #52::jmp::49: @[93:38]
+      n42 = 0 @[93:38]
+      jmp 49 @[93:38]
+      
+  #53: @[348:0]
+      jmp 53::jmp::35 @[348:0]
+      
+  #53::jmp::35: @[349:0]
+      n30 = 0 @[349:0]
+      n32 = 1 @[349:0]
+      jmp 35 @[350:0]
+      
+  #7::ret: @[91:16]
+      n4 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[91:16]
+      n5 = __infer_swift_type<T5Hello5Cell2C,Cell>.$s5Hello5Cell2CACycfC(n4) @[91:16]
+      jmp 9::ret @[91:16]
+      
+  #9::ret: @[345:0]
+      store &cell <- n5 @[345:0]
+      n7 = load &var3 @[92:30]
+      _ = $s5Hello5UtilsV21contentViewForVariantAA07ContentD4Type_pyFZ(n7) @[92:30]
+      jmp $s5Hello5UtilsV21contentViewForVariantAA07ContentD4Type_pyFZ::void::ret @[92:30]
       
 } @?
 
@@ -1467,6 +1677,10 @@ type __infer_swift_type<T5Hello4CellC,Cell> = {field_0: *__infer_swift_type<swif
 
 type __infer_swift_type<T5Hello5Cell2C,Cell> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                 contentView: *__infer_swift_type<T5Hello15ContentViewType_pSg>}
+
+type __infer_swift_type<TSi> = {field_0: int}
+
+type __infer_swift_type<TSiSg> = {field_0: int; field_1: int}
 
 type __infer_swift_type<TyXlSg> = {field_0: int}
 
