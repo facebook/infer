@@ -9,6 +9,10 @@ protocol ContentViewType {
 
 struct Utils {
 
+    static func contentViewClassForVariant() -> ContentViewType.Type {
+        return DummyContentView.self
+    }
+
     static func contentViewForVariant() -> ContentViewType {
         return DummyContentView()
     }
@@ -53,10 +57,18 @@ final class Cell2 {
 
     var contentView: ContentViewType?
 
-    func configure() {
-        let newContentView = Utils.contentViewForVariant()
-        contentView = newContentView
-        contentView?.delegate = self
+func configure() {
+        let contentViewType = Utils.contentViewClassForVariant()
+        if let unwrappedContentView = contentView {
+            if type(of: unwrappedContentView) != contentViewType {
+                contentView = nil
+            }
+        }
+        if contentView == nil {
+            let newContentView = Utils.contentViewForVariant()
+            contentView = newContentView
+            contentView?.delegate = self
+        }
         contentView?.configure()
     }
 
