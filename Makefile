@@ -261,10 +261,7 @@ BUILD_SYSTEMS_TESTS += \
   merge-capture \
 
 DIRECT_TESTS += \
-  java_annotreach-basic \
-  java_annotreach-loops \
-  java_annotreach-negation \
-  java_annotreach-nosuperclass \
+  java_annotreach \
   java_bufferoverrun \
   java_dependencies \
   java_fragment-retains-view \
