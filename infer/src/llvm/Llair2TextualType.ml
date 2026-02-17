@@ -120,6 +120,18 @@ let is_ptr_struct typ =
       false
 
 
+let is_int_optional typ =
+  match typ with
+  | Textual.Typ.Ptr (Textual.Typ.Struct typ_name) -> (
+    match Textual.TypeName.swift_mangled_name_of_type_name typ_name with
+    | Some name ->
+        String.is_suffix name ~suffix:"SiSg" (* Int Optional *)
+    | None ->
+        false )
+  | _ ->
+      false
+
+
 let lookup_field_type ~struct_map struct_name field_name =
   let struct_ = Textual.TypeName.Map.find_opt struct_name struct_map in
   match struct_ with

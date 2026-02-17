@@ -41,6 +41,8 @@ val translate_types_env : Textual.Lang.t -> Llair.Typ.t list -> ProcState.struct
 
 val is_ptr_struct : Textual.Typ.t -> bool
 
+val is_int_optional : Textual.Typ.t -> bool
+
 val lookup_field_type :
      struct_map:ProcState.struct_map
   -> Textual.TypeName.t

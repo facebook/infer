@@ -87,12 +87,12 @@ func test_value_nil() -> Int? {
     return cell.contentView?.value()
 }
 
-func test_value_nil2_bad_fp() -> Int {
+func test_value_nil2_good() -> Int {
     let cell = Cell2()
     cell.contentView = Utils.contentViewForVariant()
     return cell.contentView?.value() ?? 0
 }
 
-func test_value_nil3_bad_fp(_ contentView: ContentViewType?) -> Int {
+func test_value_nil3_good(_ contentView: ContentViewType?) -> Int {
     return contentView?.value() ?? 0
 }
