@@ -6,6 +6,10 @@
   with config (ignore imports)                       => equal
   without rules (empty config)                       => different
 
+--- Scenario 2: rewrite() — Assign ≡ AnnAssign ---
+  with config (rewrite + accept)                     => equal
+  without rules (empty config)                       => different
+
 ======================================
  Done.
 ======================================

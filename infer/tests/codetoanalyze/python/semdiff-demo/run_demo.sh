@@ -46,6 +46,17 @@ run_semdiff "without rules (empty config)" \
     "$DEMO_DIR/examples/01_imports/after.py"
 echo ""
 
+echo "--- Scenario 2: rewrite() — Assign ≡ AnnAssign ---"
+run_semdiff "with config (rewrite + accept)" \
+    "$DEMO_DIR/configs/02_rewrite_assign.py" \
+    "$DEMO_DIR/examples/02_assign_to_annassign/before.py" \
+    "$DEMO_DIR/examples/02_assign_to_annassign/after.py"
+run_semdiff "without rules (empty config)" \
+    "$EMPTY_CONFIG" \
+    "$DEMO_DIR/examples/02_assign_to_annassign/before.py" \
+    "$DEMO_DIR/examples/02_assign_to_annassign/after.py"
+echo ""
+
 echo "======================================"
 echo " Done."
 echo "======================================"

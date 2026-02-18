@@ -228,3 +228,85 @@ The `diff` array uses a unified-diff-like notation: `-` marks lines from the
 previous file and `+` marks lines from the current file.
 
 ---
+
+## Scenario 2: `rewrite()` — Bidirectional equivalence
+
+**Concept:** `rewrite()` declares that two syntactic forms are equivalent.
+Both sides are normalized to the same canonical form before comparison.
+This is **bidirectional** — it doesn't matter which direction the change goes.
+
+Looking at the AST dumps above, `x = 5` is an `Assign` node while
+`x: int = 5` is an `AnnAssign` node. The rewrite rule normalizes `Assign`
+into `AnnAssign` (with a null annotation), making the two structurally
+comparable.
+
+**Config** (`configs/02_rewrite_assign.py`):
+
+```python
+from ast import *
+from infer_semdiff import var, ignore, rewrite, accept, null
+
+A = var("A")
+N = var("N")
+V = var("V")
+X = var("X")
+
+rewrite(
+    lhs=Assign(targets=[N], type_comment=null, value=V),
+    rhs=AnnAssign(annotation=null, simple=1, target=N, value=V),
+)
+
+rewrite(
+    lhs=AnnAssign(annotation=A, simple=0, target=N, value=V),
+    rhs=AnnAssign(annotation=A, simple=1, target=N, value=V),
+)
+
+accept(lhs=null, rhs=X, key=["annotation"])
+```
+
+After the rewrite, both sides become `AnnAssign` nodes. But the `annotation`
+fields still differ (`null` vs `Name(id='int')`). The `accept` rule handles
+this: it accepts a change from `null` to any value `X`. The `key=["annotation"]`
+restricts this rule so it only applies to the `annotation` field of AST nodes
+(we will explain `key` in detail in Scenario 3).
+
+**Before** (`examples/02_assign_to_annassign/before.py`):
+
+```python
+def compute(x):
+    result = x * 2
+    return result
+```
+
+**After** (`examples/02_assign_to_annassign/after.py`):
+
+```python
+def compute(x):
+    result: int = x * 2
+    return result
+```
+
+**Run:**
+
+```bash
+infer semdiff --quiet --no-progress-bar \
+    --semdiff-configuration configs/02_rewrite_assign.py \
+    --semdiff-previous examples/02_assign_to_annassign/before.py \
+    --semdiff-current examples/02_assign_to_annassign/after.py \
+    -o /tmp/semdiff-out
+
+jq . /tmp/semdiff-out/semdiff.json
+```
+
+**Output:**
+
+```json
+{
+  "previous": "examples/02_assign_to_annassign/before.py",
+  "current": "examples/02_assign_to_annassign/after.py",
+  "outcome": "equal",
+  "diff": []
+}
+```
+
+---
