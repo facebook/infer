@@ -40,6 +40,8 @@ let boxed_opaque_existentials =
   ; "__swift_project_boxed_opaque_existential_1" ]
 
 
+let llvm_init_tuple = "llvm_init_tuple"
+
 let get_alloc_class_name =
   let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
   fun ~proc_state proc_name ->
@@ -629,7 +631,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let id = Var.add_fresh_id ~proc_state () in
           let rcd_exp = Textual.Exp.Var id in
           let undef_exp =
-            let proc = builtin_qual_proc_name "llvm_init_tuple" in
+            let proc = builtin_qual_proc_name llvm_init_tuple in
             Textual.Exp.Call {proc; args= []; kind= NonVirtual}
           in
           let rcd_store_instr = Textual.Instr.Let {id= Some id; exp= undef_exp; loc} in
@@ -727,8 +729,38 @@ and translate_protocol_witness_optional_deinit_copy ~proc_state ptr exp loc =
   instr :: instrs
 
 
-and to_textual_call_aux ~(proc_state : ProcState.t) ~kind proc return ?generate_typ_exp
-    (llair_args : Llair.Exp.t list) (loc : Textual.Location.t) =
+and translate_ma_accessor ~(proc_state : ProcState.t) proc_name_str loc =
+  let ModuleState.{lang; struct_map; mangled_map; _} = proc_state.module_state in
+  (* 1. Transform Function name to Type name ($s...Ma -> T...C) *)
+  let middle = String.sub proc_name_str ~pos:2 ~len:(String.length proc_name_str - 4) in
+  let class_mangled_name = "T" ^ middle in
+  let class_type_name =
+    TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+      class_mangled_name
+  in
+  (* 2. Initialize the Metadata Response record *)
+  let id = Var.add_fresh_id ~proc_state () in
+  let init_metadata_exp =
+    Textual.Exp.Call {proc= builtin_qual_proc_name llvm_init_tuple; args= []; kind= NonVirtual}
+  in
+  let let_metadata = Textual.Instr.Let {id= Some id; exp= init_metadata_exp; loc} in
+  (* 3. Allocate the symbolic instance representative: __sil_swift_alloc(<T...C>) *)
+  let alloc_args = [Textual.Exp.Typ (Textual.Typ.Struct class_type_name)] in
+  let alloc_exp =
+    Textual.Exp.Call {proc= Textual.ProcDecl.swift_alloc_name; args= alloc_args; kind= NonVirtual}
+  in
+  (* 4. Store the allocated instance into field_0 of the metadata response *)
+  let metadata_resp_type = Textual.TypeName.mk_swift_type_name "swift::metadata_response" in
+  let field =
+    Field.field_of_pos_with_map proc_state.module_state.field_offset_map metadata_resp_type 0
+  in
+  let field_access_exp = Textual.Exp.Field {exp= Textual.Exp.Var id; field} in
+  let store_instr = Textual.Instr.Store {exp1= field_access_exp; typ= None; exp2= alloc_exp; loc} in
+  (Textual.Exp.Var id, [store_instr; let_metadata])
+
+
+and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.QualifiedProcName.t)
+    return ?generate_typ_exp (llair_args : Llair.Exp.t list) (loc : Textual.Location.t) =
   let args_instrs, args =
     List.fold_map llair_args ~init:[] ~f:(fun acc_instrs exp ->
         let exp, _, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
@@ -756,15 +788,15 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind proc return ?generate_
         (Textual.Exp.Call {proc; args; kind}, [])
   in
   let call_exp, call_instrs =
+    let proc_name_str = Textual.ProcName.to_string proc.name in
     if
       (* skip calls to the elements in functions_to_skip  and returns its first argument instead. *)
-      List.exists functions_to_skip ~f:(Textual.ProcName.equal proc.Textual.QualifiedProcName.name)
+      List.exists functions_to_skip ~f:(Textual.ProcName.equal proc.name)
     then (List.hd_exn args, [])
     else if
       List.exists
         ~f:(fun opaque_existential ->
-          Textual.ProcName.equal proc.Textual.QualifiedProcName.name
-            (Textual.ProcName.of_string opaque_existential) )
+          Textual.ProcName.equal proc.name (Textual.ProcName.of_string opaque_existential) )
         boxed_opaque_existentials
     then
       match translate_boxed_opaque_existential llair_args ~proc_state loc with
@@ -772,6 +804,10 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind proc return ?generate_
           (textual_exp, instrs)
       | None ->
           resolve_call_translation proc args
+    else if String.is_suffix proc_name_str ~suffix:"Ma" then
+      (* Check for Swift Metadata Accessors *)
+      let exp, ma_instrs = translate_ma_accessor ~proc_state proc_name_str loc in
+      (exp, ma_instrs)
     else resolve_call_translation proc args
   in
   update_id_return_type ~proc_state proc return_id ;

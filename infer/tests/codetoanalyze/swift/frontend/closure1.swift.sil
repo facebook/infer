@@ -31,30 +31,32 @@ define .plain_name = "example2" $s5Hello8example25usingSiyAA18RetainCycleExample
       n4 = load &closure @[218:0]
       n3 = load &var2 @[218:0]
       store n4.__infer_swift_type<swift::function>.field_1 <- n3 @[218:0]
-      n6 = $s5Hello18RetainCycleExampleCMa(0) @[34:15]
+      n7 = $builtins.llvm_init_tuple() @[34:15]
+      store n7.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>>) @[34:15]
+      n6 = n7 @[34:15]
       jmp 7::ret @[34:15]
       
   #10::void::ret: @[36:16]
-      n15 = load n9 @[36:16]
+      n16 = load n10 @[36:16]
       store &getelementptr_offset_1 <- 12 @[36:16]
-      n16 = load &getelementptr_offset_1 @[36:16]
-      n19 = n9.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg() @[36:16]
+      n17 = load &getelementptr_offset_1 @[36:16]
+      n20 = n10.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg() @[36:16]
       jmp 14::ret @[36:16]
       
   #14::ret: @[36:5]
-      ret n19 @[36:5]
+      ret n20 @[36:5]
       
   #7::ret: @[34:15]
-      n8 = load n6.__infer_swift_type<swift::metadata_response>.field_0 @[34:15]
-      n9 = __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCACycfC(n8) @[34:15]
+      n9 = load n6.__infer_swift_type<swift::metadata_response>.field_0 @[34:15]
+      n10 = __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCACycfC(n9) @[34:15]
       jmp 9::ret @[34:15]
       
   #9::ret: @[219:0]
-      store &obj <- n9 @[219:0]
-      n11 = $builtins.llvm_nondet() @[35:5]
-      n12 = load &var1 @[35:5]
-      n14 = load &var2 @[35:5]
-      _ = $builtins.llvm_dynamic_call(n12, n9, n14) @[35:5]
+      store &obj <- n10 @[219:0]
+      n12 = $builtins.llvm_nondet() @[35:5]
+      n13 = load &var1 @[35:5]
+      n15 = load &var2 @[35:5]
+      _ = $builtins.llvm_dynamic_call(n13, n10, n15) @[35:5]
       jmp 10::void::ret @[35:5]
       
 } @?
@@ -337,29 +339,31 @@ define $s5Hello15testWithClosureSiyFySicfU_(n: *__infer_swift_type<ptr_elt>, obj
 define .plain_name = "testWithClosure" $s5Hello15testWithClosureSiyF() : int {
   local obj: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[26:14]
-      n2 = $s5Hello18RetainCycleExampleCMa(0) @[26:14]
+      n3 = $builtins.llvm_init_tuple() @[26:14]
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>>) @[26:14]
+      n2 = n3 @[26:14]
       jmp 2::ret @[26:14]
       
   #$s5Hello7exampleyyySicF::void::ret: @[30:16]
-      n10 = load n5 @[30:16]
+      n11 = load n6 @[30:16]
       store &getelementptr_offset_1 <- 12 @[30:16]
-      n11 = load &getelementptr_offset_1 @[30:16]
-      n14 = n5.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg() @[30:16]
+      n12 = load &getelementptr_offset_1 @[30:16]
+      n15 = n6.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg() @[30:16]
       jmp 9::ret @[30:16]
       
   #2::ret: @[26:14]
-      n4 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[26:14]
-      n5 = __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCACycfC(n4) @[26:14]
+      n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[26:14]
+      n6 = __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCACycfC(n5) @[26:14]
       jmp 4::ret @[26:14]
       
   #4::ret: @[130:0]
-      store &obj <- n5 @[130:0]
-      n7 = $builtins.llvm_nondet() @[131:0]
-      _ = $s5Hello7exampleyyySicF(fun (var1, var2) -> $s5Hello15testWithClosureSiyFySicfU_TA(var1, var2), n5) @[27:5]
+      store &obj <- n6 @[130:0]
+      n8 = $builtins.llvm_nondet() @[131:0]
+      _ = $s5Hello7exampleyyySicF(fun (var1, var2) -> $s5Hello15testWithClosureSiyFySicfU_TA(var1, var2), n6) @[27:5]
       jmp $s5Hello7exampleyyySicF::void::ret @[27:5]
       
   #9::ret: @[30:5]
-      ret n14 @[30:5]
+      ret n15 @[30:5]
       
 } @?
 
@@ -392,25 +396,27 @@ define $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_(obj: *__infer_swift
 define .plain_name = "createObject" $s5Hello12createObjectAA18RetainCycleExampleCyF() : *__infer_swift_type<ptr_elt> {
   local obj: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[9:15]
-      n2 = $s5Hello18RetainCycleExampleCMa(0) @[9:15]
+      n3 = $builtins.llvm_init_tuple() @[9:15]
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>>) @[9:15]
+      n2 = n3 @[9:15]
       jmp 2::ret @[9:15]
       
   #2::ret: @[9:15]
-      n4 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[9:15]
-      n5 = __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCACycfC(n4) @[9:15]
+      n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[9:15]
+      n6 = __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCACycfC(n5) @[9:15]
       jmp 4::ret @[9:15]
       
   #4::ret: @[123:0]
-      store &obj <- n5 @[123:0]
-      n7 = $builtins.llvm_nondet() @[124:0]
-      n8 = load n5 @[10:17]
+      store &obj <- n6 @[123:0]
+      n8 = $builtins.llvm_nondet() @[124:0]
+      n9 = load n6 @[10:17]
       store &getelementptr_offset_1 <- 16 @[10:17]
-      n9 = load &getelementptr_offset_1 @[10:17]
-      _ = fun (var1) -> $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_TA(var1).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycvs(n5, n5) @[10:17]
+      n10 = load &getelementptr_offset_1 @[10:17]
+      _ = fun (var1) -> $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_TA(var1).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycvs(n6, n6) @[10:17]
       jmp 8::void::ret @[10:17]
       
   #8::void::ret: @[11:5]
-      ret n5 @[11:5]
+      ret n6 @[11:5]
       
 } @?
 
