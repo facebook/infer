@@ -234,6 +234,7 @@ DIRECT_TESTS += \
   python_exec \
   python_pulse \
   python_semdiff \
+  python_semdiff-demo \
 
 endif
 ifneq ($(PYTHONNEXT),no)

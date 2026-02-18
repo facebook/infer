@@ -1,0 +1,11 @@
+======================================
+ Semdiff Configuration Demo
+======================================
+
+--- Scenario 1: ignore() — Ignoring import changes ---
+  with config (ignore imports)                       => equal
+  without rules (empty config)                       => different
+
+======================================
+ Done.
+======================================
