@@ -310,3 +310,81 @@ jq . /tmp/semdiff-out/semdiff.json
 ```
 
 ---
+
+## Scenario 3: `accept()` with `key` — Adding function annotations
+
+**Concept:** `accept()` is **unidirectional**: it accepts a change from `lhs`
+(previous) to `rhs` (current), but NOT the reverse. This is the key difference
+with `rewrite()`, which is bidirectional. A `rewrite` says "these two forms
+are equivalent, no matter which one appears in which file." An `accept` says
+"it is OK for the previous file to have `lhs` and the current file to have
+`rhs`, but not the other way around." This directionality is useful for
+migrations where changes should only go in one direction (e.g., adding
+annotations, not removing them).
+
+The `key=` parameter restricts which AST field positions the rule applies to.
+But how do you know which field names to use? Use `ast.dump()`:
+
+```bash
+python3 -c "import ast; print(ast.dump(ast.parse('def greet(name: str) -> str: pass'), indent=2))"
+```
+
+In the output, notice:
+- `arg(arg='name', annotation=Name(id='str', ...))` — the **`annotation`** field
+- `returns=Name(id='str', ...)` on `FunctionDef` — the **`returns`** field
+
+These are standard Python AST field names. The rule
+`accept(lhs=null, rhs=X, key=["returns", "annotation"])` says: when an AST
+field named `returns` or `annotation` was absent (null) and now has a value
+(X), accept that change. Without `key`, the rule would apply to any
+null-to-value change anywhere in the AST, which would be too broad.
+
+**Config** (`configs/03_accept_annotations.py`):
+
+```python
+from ast import *
+from infer_semdiff import var, ignore, rewrite, accept, null
+
+X = var("X")
+
+accept(lhs=null, rhs=X, key=["returns", "annotation"])
+```
+
+**Before** (`examples/03_add_annotations/before.py`):
+
+```python
+def greet(name):
+    return "Hello, " + name
+```
+
+**After** (`examples/03_add_annotations/after.py`):
+
+```python
+def greet(name: str) -> str:
+    return "Hello, " + name
+```
+
+**Run:**
+
+```bash
+infer semdiff --quiet --no-progress-bar \
+    --semdiff-configuration configs/03_accept_annotations.py \
+    --semdiff-previous examples/03_add_annotations/before.py \
+    --semdiff-current examples/03_add_annotations/after.py \
+    -o /tmp/semdiff-out
+
+jq . /tmp/semdiff-out/semdiff.json
+```
+
+**Output:**
+
+```json
+{
+  "previous": "examples/03_add_annotations/before.py",
+  "current": "examples/03_add_annotations/after.py",
+  "outcome": "equal",
+  "diff": []
+}
+```
+
+---

@@ -10,6 +10,10 @@
   with config (rewrite + accept)                     => equal
   without rules (empty config)                       => different
 
+--- Scenario 3: accept() with key — Adding annotations ---
+  with config (accept in annotation positions)       => equal
+  without rules (empty config)                       => different
+
 ======================================
  Done.
 ======================================

@@ -57,6 +57,17 @@ run_semdiff "without rules (empty config)" \
     "$DEMO_DIR/examples/02_assign_to_annassign/after.py"
 echo ""
 
+echo "--- Scenario 3: accept() with key — Adding annotations ---"
+run_semdiff "with config (accept in annotation positions)" \
+    "$DEMO_DIR/configs/03_accept_annotations.py" \
+    "$DEMO_DIR/examples/03_add_annotations/before.py" \
+    "$DEMO_DIR/examples/03_add_annotations/after.py"
+run_semdiff "without rules (empty config)" \
+    "$EMPTY_CONFIG" \
+    "$DEMO_DIR/examples/03_add_annotations/before.py" \
+    "$DEMO_DIR/examples/03_add_annotations/after.py"
+echo ""
+
 echo "======================================"
 echo " Done."
 echo "======================================"
