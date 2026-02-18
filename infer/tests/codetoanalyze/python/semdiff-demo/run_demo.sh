@@ -68,6 +68,17 @@ run_semdiff "without rules (empty config)" \
     "$DEMO_DIR/examples/03_add_annotations/after.py"
 echo ""
 
+echo "--- Scenario 4: accept() with condition — Rejecting Any ---"
+run_semdiff "with condition (reject Any annotation)" \
+    "$DEMO_DIR/configs/04_accept_with_condition.py" \
+    "$DEMO_DIR/examples/04_annotation_with_any/before.py" \
+    "$DEMO_DIR/examples/04_annotation_with_any/after.py"
+run_semdiff "without condition (accept all annotations)" \
+    "$DEMO_DIR/configs/03_accept_annotations.py" \
+    "$DEMO_DIR/examples/04_annotation_with_any/before.py" \
+    "$DEMO_DIR/examples/04_annotation_with_any/after.py"
+echo ""
+
 echo "======================================"
 echo " Done."
 echo "======================================"

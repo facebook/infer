@@ -388,3 +388,156 @@ jq . /tmp/semdiff-out/semdiff.json
 ```
 
 ---
+
+## Scenario 4: `accept()` with `condition` — Rejecting `Any`
+
+**Concept:** The `condition=` parameter adds a guard to an accept rule.
+Available predicates are `equals(pat1, pat2)` and `contains(pat1, pat2)`,
+composable with `not` and `and`.
+
+During a type annotation migration, adding `Any` as a return type is
+technically valid but undesirable — it hides real type information. We want to
+reject it. But how do we refer to `Any` in a pattern? Use `ast.dump()`:
+
+```bash
+python3 -c "import ast; print(ast.dump(ast.parse('x: Any'), indent=2))"
+```
+
+```
+Module(
+  body=[
+    AnnAssign(
+      target=Name(id='x', ctx=Store()),
+      annotation=Name(id='Any', ctx=Load()),
+      simple=1)],
+  type_ignores=[])
+```
+
+In the output, the `Any` identifier appears as `Name(id='Any', ctx=Load())`.
+`Name` is the AST node for any identifier, `id` is the name string, and
+`ctx=Load()` means the name is being read (as opposed to `Store()` for
+assignment targets). So the pattern `Name(ctx=Load(), id="Any")` matches
+exactly the `Any` identifier used as a type annotation.
+
+The condition `not equals(Name(ctx=Load(), id="Any"), X)` then says: accept
+the new annotation `X`, but only if `X` is not the `Any` identifier.
+
+**Config** (`configs/04_accept_with_condition.py`):
+
+```python
+from ast import *
+from infer_semdiff import var, ignore, rewrite, accept, null
+
+X = var("X")
+T1 = var("T1")
+T2 = var("T2")
+
+accept(
+    lhs=null,
+    rhs=X,
+    condition=not equals(Name(ctx=Load(), id="Any"), X),
+    key=["returns", "annotation"]
+)
+
+accept(
+    lhs=T1,
+    rhs=T2,
+    condition=(not (equals(null, T1))) and (not (contains(Name(ctx=Load(), id="Any"), T2))),
+    key=["returns", "annotation"]
+)
+```
+
+The second rule handles the case where an annotation already existed: it
+accepts the new annotation `T2` only if `T1` was not null (it was already
+annotated) and `T2` does not contain `Any` anywhere in its subtree.
+
+**Before** (`examples/04_annotation_with_any/before.py`):
+
+```python
+from typing import Any
+
+def fetch(url):
+    return download(url)
+
+def parse(data):
+    return data.split(",")
+```
+
+**After** (`examples/04_annotation_with_any/after.py`):
+
+```python
+from typing import Any
+
+def fetch(url: str) -> Any:
+    return download(url)
+
+def parse(data: str) -> list[str]:
+    return data.split(",")
+```
+
+Note: the import line is kept identical in both files so this scenario focuses
+purely on the annotation changes, otherwise we would need to use the `ignore`
+command explained in Scenario 1.
+
+**Run with condition (rejects Any):**
+
+```bash
+infer semdiff --quiet --no-progress-bar \
+    --semdiff-configuration configs/04_accept_with_condition.py \
+    --semdiff-previous examples/04_annotation_with_any/before.py \
+    --semdiff-current examples/04_annotation_with_any/after.py \
+    -o /tmp/semdiff-out
+
+jq . /tmp/semdiff-out/semdiff.json
+```
+
+**Output:**
+
+```json
+{
+  "previous": "examples/04_annotation_with_any/before.py",
+  "current": "examples/04_annotation_with_any/after.py",
+  "outcome": "different",
+  "diff": [
+    "(Line 3) + def fetch(url: str) -> Any:"
+  ]
+}
+```
+
+The `-> Any` return type on `fetch` is rejected by the condition. The diff
+output pinpoints exactly where the rejected change is.
+
+**Compare with the config from Scenario 3** (no condition):
+
+```bash
+infer semdiff --quiet --no-progress-bar \
+    --semdiff-configuration configs/03_accept_annotations.py \
+    --semdiff-previous examples/04_annotation_with_any/before.py \
+    --semdiff-current examples/04_annotation_with_any/after.py \
+    -o /tmp/semdiff-out
+
+jq . /tmp/semdiff-out/semdiff.json
+```
+
+**Output:**
+
+```json
+{
+  "previous": "examples/04_annotation_with_any/before.py",
+  "current": "examples/04_annotation_with_any/after.py",
+  "outcome": "equal",
+  "diff": []
+}
+```
+
+Without the condition, `Any` is accepted like any other annotation.
+
+**Warning:** The second accept rule (`lhs=T1, rhs=T2`) accepts any annotation
+change as long as the new type does not contain `Any`. However, accepting an
+arbitrary type change does not guarantee that the resulting file is well-typed.
+For example, changing `int` to `str` would be accepted by this rule even though
+it could introduce type errors. Semdiff only checks that the change matches the
+configured rules — it does not perform type checking. Users should run a type
+checker on the modified file to verify it is still correctly typed.
+
+---
