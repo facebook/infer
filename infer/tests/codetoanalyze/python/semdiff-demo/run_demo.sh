@@ -79,6 +79,24 @@ run_semdiff "without condition (accept all annotations)" \
     "$DEMO_DIR/examples/04_annotation_with_any/after.py"
 echo ""
 
+echo "--- Scenario 5: Full config — Combined changes ---"
+run_semdiff "with full config" \
+    "$DEMO_DIR/configs/05_full.py" \
+    "$DEMO_DIR/examples/05_combined/before.py" \
+    "$DEMO_DIR/examples/05_combined/after.py"
+run_semdiff "without rules (empty config)" \
+    "$EMPTY_CONFIG" \
+    "$DEMO_DIR/examples/05_combined/before.py" \
+    "$DEMO_DIR/examples/05_combined/after.py"
+echo ""
+
+echo "--- Scenario 6: Catching real semantic changes ---"
+run_semdiff "with full config (catches real change)" \
+    "$DEMO_DIR/configs/05_full.py" \
+    "$DEMO_DIR/examples/06_real_change/before.py" \
+    "$DEMO_DIR/examples/06_real_change/after.py"
+echo ""
+
 echo "======================================"
 echo " Done."
 echo "======================================"

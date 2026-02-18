@@ -541,3 +541,221 @@ configured rules — it does not perform type checking. Users should run a type
 checker on the modified file to verify it is still correctly typed.
 
 ---
+
+## Scenario 5: Full config — Combined changes
+
+**Concept:** All rules combined into a single configuration file that handles
+imports, assignments, and annotations.
+
+**Config** (`configs/05_full.py` — combines all rules from scenarios 1-4):
+
+```python
+from ast import *
+from infer_semdiff import var, ignore, rewrite, accept, null
+
+A = var("A")
+L = var("L")
+M = var("M")
+N = var("N")
+T1 = var("T1")
+T2 = var("T2")
+V = var("V")
+X = var("X")
+
+# --- Ignore rules ---
+# Filter out all import statements from both sides
+ignore(ImportFrom(level=L, module=M, names=N))
+ignore(Import(names=N))
+
+# --- Rewrite rules (bidirectional equivalence) ---
+# Normalize Assign into AnnAssign
+rewrite(
+    lhs=Assign(targets=[N], type_comment=null, value=V),
+    rhs=AnnAssign(annotation=null, simple=1, target=N, value=V),
+)
+# Ignore the "simple" flag
+rewrite(
+    lhs=AnnAssign(annotation=A, simple=0, target=N, value=V),
+    rhs=AnnAssign(annotation=A, simple=1, target=N, value=V),
+)
+
+# --- Accept rules (unidirectional: previous -> current) ---
+# Accept new annotations (except Any) in annotation positions
+accept(
+    lhs=null,
+    rhs=X,
+    condition=not equals(Name(ctx=Load(), id="Any"), X),
+    key=["returns", "annotation"]
+)
+
+# Accept changed annotations as long as the new one doesn't contain Any
+accept(
+    lhs=T1,
+    rhs=T2,
+    condition=(not (equals(null, T1))) and (not (contains(Name(ctx=Load(), id="Any"), T2))),
+    key=["returns", "annotation"]
+)
+```
+
+**Before** (`examples/05_combined/before.py`):
+
+```python
+import os
+
+def lookup(table, key):
+    value = table.get(key)
+    return value
+
+def format_entry(name):
+    if name is None:
+        return "<unknown>"
+    return name.upper()
+```
+
+**After** (`examples/05_combined/after.py`):
+
+```python
+from pathlib import Path
+
+def lookup(table: str, key: str) -> int:
+    value: int = table.get(key)
+    return value
+
+def format_entry(name: str) -> str:
+    if name is None:
+        return "<unknown>"
+    return name.upper()
+```
+
+Changes: imports replaced, annotations added, `value = ...` -> `value: int = ...`.
+All are cosmetic.
+
+**Run:**
+
+```bash
+infer semdiff --quiet --no-progress-bar \
+    --semdiff-configuration configs/05_full.py \
+    --semdiff-previous examples/05_combined/before.py \
+    --semdiff-current examples/05_combined/after.py \
+    -o /tmp/semdiff-out
+
+jq . /tmp/semdiff-out/semdiff.json
+```
+
+**Output:**
+
+```json
+{
+  "previous": "examples/05_combined/before.py",
+  "current": "examples/05_combined/after.py",
+  "outcome": "equal",
+  "diff": []
+}
+```
+
+---
+
+## Scenario 6: Catching real semantic changes
+
+**Concept:** The configuration accepts cosmetic changes but correctly
+detects real semantic modifications.
+
+**Config:** Same `configs/05_full.py`
+
+**Before** (`examples/06_real_change/before.py`):
+
+```python
+import os
+
+def increment(x):
+    return x + 1
+```
+
+**After** (`examples/06_real_change/after.py`):
+
+```python
+from pathlib import Path
+
+def increment(x: int) -> int:
+    return x + 2
+```
+
+The import change and added annotations are cosmetic (handled by the config).
+But `return x + 1` -> `return x + 2` is a real semantic change.
+
+**Run:**
+
+```bash
+infer semdiff --quiet --no-progress-bar \
+    --semdiff-configuration configs/05_full.py \
+    --semdiff-previous examples/06_real_change/before.py \
+    --semdiff-current examples/06_real_change/after.py \
+    -o /tmp/semdiff-out
+
+jq . /tmp/semdiff-out/semdiff.json
+```
+
+**Output:**
+
+```json
+{
+  "previous": "examples/06_real_change/before.py",
+  "current": "examples/06_real_change/after.py",
+  "outcome": "different",
+  "diff": [
+    "(Line 4) -     return x + 1, +     return x + 2"
+  ]
+}
+```
+
+The config correctly accepts all the cosmetic changes (import, annotations)
+but catches the semantic change in the return value. The diff output shows
+exactly what changed.
+
+---
+
+## Configuration reference
+
+### Metavariables
+
+```python
+X = var("X")   # Declares a metavariable that matches any AST subtree
+```
+
+### Rule types
+
+| Rule | Syntax | Semantics |
+|------|--------|-----------|
+| `ignore` | `ignore(pattern)` | Filter out matching nodes from both sides |
+| `rewrite` | `rewrite(lhs=..., rhs=...)` | Bidirectional: both forms are equivalent |
+| `accept` | `accept(lhs=..., rhs=..., key=..., condition=...)` | Unidirectional: accept `lhs`->`rhs` change |
+
+### Patterns
+
+| Syntax | Matches |
+|--------|---------|
+| `Name(id="str", ctx=Load())` | A specific AST node with given fields |
+| `X` (metavariable) | Any AST subtree (binds for reuse) |
+| `null` | Absent/None field value |
+| `"str"` | A string literal |
+| `1` | An integer literal |
+| `[X, Y]` | A list with specific elements |
+
+### The `key` parameter
+
+Restricts an `accept` rule to specific AST field positions. Values are Python
+AST field names (discoverable via `ast.dump()`):
+
+| Key | Where it appears |
+|-----|-----------------|
+| `"annotation"` | Type annotation on function arguments (`arg.annotation`) |
+| `"returns"` | Return type on function definitions (`FunctionDef.returns`) |
+
+### Conditions
+
+| Syntax | Meaning |
+|--------|---------|
+| `equals(pat1, pat2)` | Both patterns evaluate to the same AST node |
+| `contains(pat1, pat2)` | `pat2` recursively contains a subtree matching `pat1` |
+| `not expr` | Boolean negation |
+| `expr1 and expr2` | Boolean conjunction |

@@ -18,6 +18,13 @@
   with condition (reject Any annotation)             => different
   without condition (accept all annotations)         => equal
 
+--- Scenario 5: Full config — Combined changes ---
+  with full config                                   => equal
+  without rules (empty config)                       => different
+
+--- Scenario 6: Catching real semantic changes ---
+  with full config (catches real change)             => different
+
 ======================================
  Done.
 ======================================
