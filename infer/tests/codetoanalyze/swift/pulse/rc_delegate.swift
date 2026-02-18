@@ -108,3 +108,9 @@ func test_value_nil2_good() -> Int {
 func test_value_nil3_good(_ contentView: ContentViewType?) -> Int {
     return contentView?.value() ?? 0
 }
+
+func test() {
+    let cell = Cell2()
+    cell.contentView = DummyContentView()
+    cell.configure()
+}

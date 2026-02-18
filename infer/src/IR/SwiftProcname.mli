@@ -16,6 +16,7 @@ type builtin =
   | NonDet
   | ObjcMsgSend
   | ObjcMsgSendSuper2
+  | SwiftGetDynamicType
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =

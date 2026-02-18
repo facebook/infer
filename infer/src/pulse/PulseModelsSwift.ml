@@ -104,6 +104,18 @@ let dynamic_call arg orig_args () : unit DSL.model_monad =
       closure_call (arg :: orig_args) ()
 
 
+let swift_dynamic_type arg1 arg2 () : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
+  match arg1_dynamic_type_data with
+  | None ->
+      unknown [arg1; arg2] ()
+  | Some {Formula.typ= arg1_dynamic_type} ->
+      let* res = fresh () in
+      let* () = and_dynamic_type_is res arg1_dynamic_type in
+      assign_ret res
+
+
 let derived_enum_equals arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* res = binop Binop.Eq arg1 arg2 in
@@ -135,6 +147,9 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
       unknown args
   | Memcpy ->
       unknown args
+  | SwiftGetDynamicType ->
+      let arg1, arg2, _ = ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s in
+      swift_dynamic_type arg1 arg2
 
 
 let matchers : matcher list =
