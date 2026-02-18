@@ -87,6 +87,24 @@ It defines **metavariables** (with `var()`) and three kinds of rules:
 The `accept` rule also supports optional `key=` and `condition=` parameters,
 introduced in Scenarios 3 and 4 respectively.
 
+## Running semdiff
+
+The general command line is:
+
+```bash
+infer semdiff \
+    --semdiff-configuration <config.py> \
+    --semdiff-previous <before.py> \
+    --semdiff-current <after.py> \
+    -o <output-dir>
+```
+
+- `semdiff` — Selects the semdiff subcommand of infer.
+- `--semdiff-configuration <config.py>` — Path to the configuration file defining the rules.
+- `--semdiff-previous <before.py>` — The original Python file (before changes).
+- `--semdiff-current <after.py>` — The modified Python file (after changes).
+- `-o <output-dir>` — Directory where results are written. The comparison result is stored in `<output-dir>/semdiff.json`.
+
 ---
 
 ## Scenario 1: `ignore()` — Ignoring import changes
@@ -168,7 +186,7 @@ def get_size(path):
 **Run:**
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/01_ignore_imports.py \
     --semdiff-previous examples/01_imports/before.py \
     --semdiff-current examples/01_imports/after.py \
@@ -201,7 +219,7 @@ from infer_semdiff import var, ignore, rewrite, accept, null
 ```
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/empty.py \
     --semdiff-previous examples/01_imports/before.py \
     --semdiff-current examples/01_imports/after.py \
@@ -289,7 +307,7 @@ def compute(x):
 **Run:**
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/02_rewrite_assign.py \
     --semdiff-previous examples/02_assign_to_annassign/before.py \
     --semdiff-current examples/02_assign_to_annassign/after.py \
@@ -367,7 +385,7 @@ def greet(name: str) -> str:
 **Run:**
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/03_accept_annotations.py \
     --semdiff-previous examples/03_add_annotations/before.py \
     --semdiff-current examples/03_add_annotations/after.py \
@@ -482,7 +500,7 @@ command explained in Scenario 1.
 **Run with condition (rejects Any):**
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/04_accept_with_condition.py \
     --semdiff-previous examples/04_annotation_with_any/before.py \
     --semdiff-current examples/04_annotation_with_any/after.py \
@@ -510,7 +528,7 @@ output pinpoints exactly where the rejected change is.
 **Compare with the config from Scenario 3** (no condition):
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/03_accept_annotations.py \
     --semdiff-previous examples/04_annotation_with_any/before.py \
     --semdiff-current examples/04_annotation_with_any/after.py \
@@ -633,7 +651,7 @@ All are cosmetic.
 **Run:**
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/05_full.py \
     --semdiff-previous examples/05_combined/before.py \
     --semdiff-current examples/05_combined/after.py \
@@ -686,7 +704,7 @@ But `return x + 1` -> `return x + 2` is a real semantic change.
 **Run:**
 
 ```bash
-infer semdiff --quiet --no-progress-bar \
+infer semdiff \
     --semdiff-configuration configs/05_full.py \
     --semdiff-previous examples/06_real_change/before.py \
     --semdiff-current examples/06_real_change/after.py \

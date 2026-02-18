@@ -19,7 +19,7 @@ run_semdiff() {
     local outdir="$TMPDIR/out"
     rm -rf "$outdir"
 
-    $INFER semdiff --quiet --no-progress-bar \
+    $INFER semdiff \
         --semdiff-configuration "$config" \
         --semdiff-previous "$before" \
         --semdiff-current "$after" \
