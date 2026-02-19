@@ -18,6 +18,7 @@ type builtin =
   | ObjcMsgSend
   | ObjcMsgSendSuper2
   | SwiftGetDynamicType
+  | MetadataEquals  (** Used to compare metadata of two types. *)
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =
@@ -49,6 +50,8 @@ let show_builtin = function
       "memcpy"
   | SwiftGetDynamicType ->
       "swift_getDynamicType"
+  | MetadataEquals ->
+      "__swift_metadata_equals"
 
 
 let get_function_name osig =

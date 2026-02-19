@@ -147,6 +147,8 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
       unknown args
   | Memcpy ->
       unknown args
+  | MetadataEquals ->
+      unknown args (* TODO *)
   | SwiftGetDynamicType ->
       let arg1, arg2, _ = ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s in
       swift_dynamic_type arg1 arg2

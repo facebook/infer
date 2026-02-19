@@ -17,6 +17,7 @@ type builtin =
   | ObjcMsgSend
   | ObjcMsgSendSuper2
   | SwiftGetDynamicType
+  | MetadataEquals  (** Used to compare metadata of two types. *)
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
 
 type t =

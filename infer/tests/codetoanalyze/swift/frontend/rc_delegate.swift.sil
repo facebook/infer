@@ -301,7 +301,7 @@ define .plain_name = "configure" $s5Hello5Cell2C9configureyyF(self: *__infer_swi
       n43 = load &unwrappedContentView @[63:16]
       n42 = load n43.__infer_swift_type<T5Hello15ContentViewTypeP>.field_2 @[63:16]
       n45 = load n2 @[63:47]
-      if __sil_lnot(__sil_eq(n41, n45)) then jmp 47 else jmp 56 @[63:47]
+      if __sil_lnot($builtins.__swift_metadata_equals(n41, n45)) then jmp 47 else jmp 56 @[63:47]
       
   #47: @[64:31]
       n156 = load &var16 @[64:31]

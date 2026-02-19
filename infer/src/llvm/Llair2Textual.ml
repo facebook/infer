@@ -42,6 +42,10 @@ let boxed_opaque_existentials =
 
 let llvm_init_tuple = "llvm_init_tuple"
 
+let swift_get_dynamic_type = SwiftProcname.to_string (SwiftProcname.Builtin SwiftGetDynamicType)
+
+let swift_metadata_equals = SwiftProcname.to_string (SwiftProcname.Builtin MetadataEquals)
+
 let get_alloc_class_name =
   let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
   fun ~proc_state proc_name ->
@@ -576,13 +580,21 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let deref_instrs1, exp1 = add_deref ~proc_state exp1 loc in
       let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state e2 in
       let deref_instrs2, exp2 = add_deref ~proc_state exp2 loc in
-      let proc = to_textual_bool_exp_builtin op in
+      (* Check if either expression is a Var that we know came from getDynamicType *)
+      let is_metadata exp =
+        match exp with Textual.Exp.Var id -> ProcState.is_metadata_id ~proc_state id | _ -> false
+      in
       let exp =
-        match to_textual_not_exp op exp1 exp2 with
-        | Some exp ->
-            exp
-        | None ->
-            Textual.Exp.Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
+        if Llair.Exp.equal_op2 op Eq && (is_metadata exp1 || is_metadata exp2) then
+          let proc = builtin_qual_proc_name swift_metadata_equals in
+          Textual.Exp.Call {proc; args= [exp1; exp2]; kind= NonVirtual}
+        else
+          match to_textual_not_exp op exp1 exp2 with
+          | Some exp ->
+              exp
+          | None ->
+              let proc = to_textual_bool_exp_builtin op in
+              Textual.Exp.Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
       in
       (exp, typ1, deref_instrs1 @ exp1_instrs @ deref_instrs2 @ exp2_instrs)
   | Ap2 (Update idx, typ, rcd, elt) ->
@@ -780,6 +792,9 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.Qualif
     else (args, args_instrs)
   in
   let return_id = Option.map return ~f:(fun reg -> Var.reg_to_id ~proc_state reg |> fst) in
+  let proc_name_str = Textual.ProcName.to_string proc.name in
+  if String.equal proc_name_str swift_get_dynamic_type then
+    Option.iter return_id ~f:(fun id -> ProcState.mark_as_metadata ~proc_state id) ;
   let resolve_call_translation proc args =
     match resolve_method_call ~proc_state proc args with
     | Some call_instr ->
@@ -788,7 +803,6 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.Qualif
         (Textual.Exp.Call {proc; args; kind}, [])
   in
   let call_exp, call_instrs =
-    let proc_name_str = Textual.ProcName.to_string proc.name in
     if
       (* skip calls to the elements in functions_to_skip  and returns its first argument instead. *)
       List.exists functions_to_skip ~f:(Textual.ProcName.equal proc.name)

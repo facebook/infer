@@ -124,6 +124,7 @@ module ProcState = struct
     ; mutable reg_map: Textual.Ident.t RegMap.t
     ; mutable last_id: Textual.Ident.t
     ; mutable last_tmp_var: int
+    ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; module_state: ModuleState.t }
 
   let init ~qualified_name ~sourcefile ~loc ~formals ~module_state =
@@ -140,6 +141,7 @@ module ProcState = struct
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
+    ; metadata_ids= Textual.Ident.Set.empty
     ; module_state }
 
 
@@ -164,6 +166,12 @@ module ProcState = struct
     proc_state.last_tmp_var <- proc_state.last_tmp_var + 1 ;
     Textual.VarName.of_string (Format.sprintf "%s_%d" name proc_state.last_tmp_var)
 
+
+  let mark_as_metadata ~proc_state id =
+    proc_state.metadata_ids <- Textual.Ident.Set.add id proc_state.metadata_ids
+
+
+  let is_metadata_id ~proc_state id = Textual.Ident.Set.mem id proc_state.metadata_ids
 
   let pp fmt ~print_types proc_state =
     let pp_ids fmt current_ids =
@@ -306,6 +314,7 @@ use the substitution in the code later on. *)
     ; reg_map= RegMap.empty
     ; last_id= Textual.Ident.of_int 0
     ; last_tmp_var= 0
+    ; metadata_ids= Textual.Ident.Set.empty
     ; module_state }
 
 

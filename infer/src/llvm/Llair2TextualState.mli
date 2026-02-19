@@ -101,6 +101,7 @@ module ProcState : sig
     ; mutable reg_map: Textual.Ident.t RegMap.t
     ; mutable last_id: Textual.Ident.t
     ; mutable last_tmp_var: int
+    ; mutable metadata_ids: Textual.Ident.Set.t
     ; module_state: ModuleState.t }
 
   val init :
@@ -147,4 +148,8 @@ module ProcState : sig
     proc_state:t -> Textual.TypeName.t -> int -> Textual.QualifiedProcName.t option
 
   val compute_locals : proc_state:t -> (VarMap.key * Textual.Typ.annotated) list
+
+  val mark_as_metadata : proc_state:t -> Textual.Ident.t -> unit
+
+  val is_metadata_id : proc_state:t -> Textual.Ident.t -> bool
 end
