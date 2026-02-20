@@ -19,6 +19,12 @@ let alloc size : model_no_non_disj =
   astate
 
 
+let make_swift_bool b : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  (* Translates an OCaml boolean into an Infer SMT integer (1 or 0) *)
+  int (if b then 1 else 0)
+
+
 let unknown _args () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* res = fresh () in
@@ -122,6 +128,21 @@ let derived_enum_equals arg1 arg2 () : unit DSL.model_monad =
   assign_ret res
 
 
+let metadata_equals arg1 arg2 () : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
+  let* arg2_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg2 in
+  match (arg1_dynamic_type_data, arg2_dynamic_type_data) with
+  | Some {Formula.typ= typ1}, Some {Formula.typ= typ2} ->
+      (* We know both types, so we directly compute the boolean result and assign it *)
+      let* res = make_swift_bool (Typ.equal typ1 typ2) in
+      assign_ret res
+  | _ ->
+      (* We lack dynamic type info for one or both, return an unconstrained value *)
+      let* unknown_bool = fresh () in
+      assign_ret unknown_bool
+
+
 let builtins_matcher builtin args : unit -> unit DSL.model_monad =
   let builtin_s = SwiftProcname.show_builtin builtin in
   match (builtin : SwiftProcname.builtin) with
@@ -148,7 +169,8 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
   | Memcpy ->
       unknown args
   | MetadataEquals ->
-      unknown args (* TODO *)
+      let arg1, arg2, _ = ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s in
+      metadata_equals arg1 arg2
   | SwiftGetDynamicType ->
       let arg1, arg2, _ = ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s in
       swift_dynamic_type arg1 arg2
