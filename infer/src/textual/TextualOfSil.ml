@@ -23,7 +23,7 @@ module LocationBridge = struct
   open Location
 
   let of_sil ({line; col} : BaseLocation.t) =
-    if Int.(line = -1 && col = -1) then Known {line; col} else Unknown
+    if Int.(line = -1 && col = -1) then Unknown else Known {line; col}
 end
 
 module VarNameBridge = struct
@@ -344,15 +344,15 @@ module InstrBridge = struct
 
   let of_sil_metadata decls (meta : Sil.instr_metadata) =
     let lang = TextualDecls.lang decls in
-    let call name args =
-      Let {id= None; exp= Exp.call_non_virtual (metadata_name name) args; loc= Location.Unknown}
+    let call name loc args =
+      Let {id= None; exp= Exp.call_non_virtual (metadata_name name) args; loc}
     in
     match meta with
-    | Abstract _ ->
-        call "abstract" []
-    | CatchEntry {try_id} ->
-        call "catch_entry" [int_exp try_id]
-    | ExitScope (vars, _) ->
+    | Abstract loc ->
+        call "abstract" (LocationBridge.of_sil loc) []
+    | CatchEntry {try_id; loc} ->
+        call "catch_entry" (LocationBridge.of_sil loc) [int_exp try_id]
+    | ExitScope (vars, loc) ->
         let args =
           List.map vars ~f:(fun (var : Var.t) ->
               match var with
@@ -361,51 +361,55 @@ module InstrBridge = struct
               | LogicalVar id ->
                   Exp.Var (IdentBridge.of_sil id) )
         in
-        call "exit_scope" args
-    | Nullify (pvar, _) ->
-        call "nullify" [Exp.Lvar (VarNameBridge.of_pvar lang pvar)]
+        call "exit_scope" (LocationBridge.of_sil loc) args
+    | Nullify (pvar, loc) ->
+        call "nullify" (LocationBridge.of_sil loc) [Exp.Lvar (VarNameBridge.of_pvar lang pvar)]
     | LoopBackEdge {header_id} ->
-        call "loop_back_edge" [int_exp header_id]
+        call "loop_back_edge" Location.Unknown [int_exp header_id]
     | LoopEntry {header_id} ->
-        call "loop_entry" [int_exp header_id]
+        call "loop_entry" Location.Unknown [int_exp header_id]
     | LoopExit {header_id} ->
-        call "loop_exit" [int_exp header_id]
+        call "loop_exit" Location.Unknown [int_exp header_id]
     | Skip ->
-        call "skip" []
-    | TryEntry {try_id} ->
-        call "try_entry" [int_exp try_id]
-    | TryExit {try_id} ->
-        call "try_exit" [int_exp try_id]
-    | VariableLifetimeBegins {pvar; typ} ->
-        call "variable_lifetime_begins"
+        call "skip" Location.Unknown []
+    | TryEntry {try_id; loc} ->
+        call "try_entry" (LocationBridge.of_sil loc) [int_exp try_id]
+    | TryExit {try_id; loc} ->
+        call "try_exit" (LocationBridge.of_sil loc) [int_exp try_id]
+    | VariableLifetimeBegins {pvar; typ; loc} ->
+        call "variable_lifetime_begins" (LocationBridge.of_sil loc)
           [Exp.Lvar (VarNameBridge.of_pvar lang pvar); Typ (TypBridge.of_sil typ)]
 
 
   let of_sil decls tenv (i : Sil.instr) =
     match i with
-    | Load {id; e; typ} ->
+    | Load {id; e; typ; loc} ->
         let id = IdentBridge.of_sil id in
         let exp = ExpBridge.of_sil decls tenv e in
         let typ = Some (TypBridge.of_sil typ) in
-        let loc = Location.Unknown in
+        let loc = LocationBridge.of_sil loc in
         Load {id; exp; typ; loc}
-    | Store {e1; typ; e2} ->
+    | Store {e1; typ; e2; loc} ->
         let exp1 = ExpBridge.of_sil decls tenv e1 in
         let typ = Some (TypBridge.of_sil typ) in
         let exp2 = ExpBridge.of_sil decls tenv e2 in
-        let loc = Location.Unknown in
+        let loc = LocationBridge.of_sil loc in
         Store {exp1; typ; exp2; loc}
-    | Prune (e, _, _, _) ->
-        Prune {exp= ExpBridge.of_sil decls tenv e; loc= Location.Unknown}
-    | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
+    | Prune (e, loc, _, _) ->
+        Prune {exp= ExpBridge.of_sil decls tenv e; loc= LocationBridge.of_sil loc}
+    | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, loc, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let typ = Typ.Struct (TypeNameBridge.of_sil name) in
         Let
           { id= Some (IdentBridge.of_sil id)
           ; exp= Exp.call_non_virtual ProcDecl.allocate_object_name [Typ typ]
-          ; loc= Location.Unknown }
+          ; loc= LocationBridge.of_sil loc }
     | Call
-        ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ; dynamic_length= Some exp}, _) :: _, _, _)
+        ( (id, _)
+        , Const (Cfun pname)
+        , (SilExp.Sizeof {typ; dynamic_length= Some exp}, _) :: _
+        , loc
+        , _ )
       when String.equal (SilProcname.to_simplified_string pname) "__new_array()" ->
         let typ = TypBridge.of_sil typ in
         Let
@@ -413,14 +417,14 @@ module InstrBridge = struct
           ; exp=
               Exp.call_non_virtual ProcDecl.allocate_array_name
                 [Typ typ; ExpBridge.of_sil decls tenv exp]
-          ; loc= Location.Unknown }
-    | Call ((id, ret_typ), Const (Cfun pname), args, _, call_flags) ->
+          ; loc= LocationBridge.of_sil loc }
+    | Call ((id, ret_typ), Const (Cfun pname), args, loc, call_flags) ->
         let args_typ = List.map ~f:snd args in
         let procdecl = ProcDeclBridge.of_sil pname ret_typ args_typ in
         let () = TextualDecls.declare_proc decls (Decl procdecl) in
         let proc = procdecl.qualified_name in
         let args = List.map ~f:(fun (e, _) -> ExpBridge.of_sil decls tenv e) args in
-        let loc = Location.Unknown in
+        let loc = LocationBridge.of_sil loc in
         let kind = if call_flags.cf_virtual then Exp.Virtual else Exp.NonVirtual in
         Let {id= Some (IdentBridge.of_sil id); exp= Call {proc; args; kind}; loc}
     | Call _ ->
@@ -550,7 +554,7 @@ module ProcDescBridge = struct
              in
              (var, Typ.mk_without_attributes typ) )
     in
-    let exit_loc = Location.Unknown in
+    let exit_loc = P.get_loc pdesc |> LocationBridge.of_sil in
     let fresh_ident = None in
     {procdecl; nodes; fresh_ident; start; params; locals; exit_loc}
 end
@@ -588,15 +592,15 @@ let pp_copyright fmt =
   F.fprintf fmt "\n"
 
 
-let from_sil ~lang ~filename tenv cfg =
+let from_sil ~lang ?(show_location = false) ~filename tenv cfg =
   Utils.with_file_out filename ~f:(fun oc ->
       let fmt = F.formatter_of_out_channel oc in
       let sourcefile = SourceFile.create filename in
       pp_copyright fmt ;
-      Module.pp fmt (ModuleBridge.of_sil ~sourcefile ~lang tenv cfg) ;
+      Module.pp ~show_location fmt (ModuleBridge.of_sil ~sourcefile ~lang tenv cfg) ;
       Format.pp_print_flush fmt () )
 
 
 let from_java ~filename tenv cfg = from_sil ~lang:Java ~filename tenv cfg
 
-let from_c ~filename tenv cfg = from_sil ~lang:C ~filename tenv cfg
+let from_c ~filename tenv cfg = from_sil ~lang:C ~show_location:true ~filename tenv cfg

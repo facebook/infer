@@ -4,83 +4,83 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "C"
+.source_language = "C" @?
 
 define max(x: int, y: int) : int {
-  #node_0:
-      jmp node_1
+  #node_0: @[8:1]
+      jmp node_1 @[8:1]
       
-  #node_9:
-      jmp 
+  #node_9: @[14:1]
+      jmp  @[14:1]
       
-  #node_10:
-      jmp node_8
+  #node_10: @[9:3]
+      jmp node_8 @[9:3]
       
-  #node_8:
-      jmp node_9
+  #node_8: @[9:3]
+      jmp node_9 @[9:3]
       
-  #node_1:
-      n0:int = load &x
-      n1:int = load &y
-      jmp node_7, node_6
+  #node_1: @[9:7]
+      n0:int = load &x @[9:7]
+      n1:int = load &y @[9:11]
+      jmp node_7, node_6 @[9:11]
       
-  #node_7:
-      prune __sil_gt(n0, n1)
-      jmp node_5
+  #node_7: @[9:7]
+      prune __sil_gt(n0, n1) @[9:7]
+      jmp node_5 @[9:7]
       
-  #node_6:
-      prune __sil_lnot(__sil_gt(n0, n1))
-      jmp node_3
+  #node_6: @[9:7]
+      prune __sil_lnot(__sil_gt(n0, n1)) @[9:7]
+      jmp node_3 @[9:7]
       
-  #node_5:
-      n2:int = load &x
-      jmp node_4
+  #node_5: @[10:5]
+      n2:int = load &x @[10:12]
+      jmp node_4 @[10:12]
       
-  #node_4:
-      ret n2
+  #node_4: @[10:5]
+      ret n2 @[10:5]
       
-  #node_3:
-      n3:int = load &y
-      jmp node_2
+  #node_3: @[12:5]
+      n3:int = load &y @[12:12]
+      jmp node_2 @[12:12]
       
-  #node_2:
-      ret n3
+  #node_2: @[12:5]
+      ret n3 @[12:5]
       
-}
+} @[8:1]
 
 define abs(x: int) : int {
-  #node_0:
-      jmp node_1
+  #node_0: @[16:1]
+      jmp node_1 @[16:1]
       
-  #node_8:
-      jmp 
+  #node_8: @[21:1]
+      jmp  @[21:1]
       
-  #node_6:
-      n0:int = load &x
-      jmp node_7
+  #node_6: @[20:3]
+      n0:int = load &x @[20:10]
+      jmp node_7 @[20:10]
       
-  #node_7:
-      ret n0
+  #node_7: @[20:3]
+      ret n0 @[20:3]
       
-  #node_3:
-      jmp node_6
+  #node_3: @[17:3]
+      jmp node_6 @[17:3]
       
-  #node_1:
-      n1:int = load &x
-      jmp node_5, node_4
+  #node_1: @[17:7]
+      n1:int = load &x @[17:7]
+      jmp node_5, node_4 @[17:7]
       
-  #node_5:
-      prune __sil_lt(n1, 0)
-      jmp node_2
+  #node_5: @[17:7]
+      prune __sil_lt(n1, 0) @[17:7]
+      jmp node_2 @[17:7]
       
-  #node_4:
-      prune __sil_lnot(__sil_lt(n1, 0))
-      jmp node_3
+  #node_4: @[17:7]
+      prune __sil_lnot(__sil_lt(n1, 0)) @[17:7]
+      jmp node_3 @[17:7]
       
-  #node_2:
-      n2:int = load &x
-      store &x <- __sil_neg(n2):int
-      jmp node_3
+  #node_2: @[18:5]
+      n2:int = load &x @[18:10]
+      store &x <- __sil_neg(n2):int @[18:5]
+      jmp node_3 @[18:5]
       
-}
+} @[16:1]
 

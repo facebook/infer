@@ -4,51 +4,51 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "C"
+.source_language = "C" @?
 
 define local_vars(a: int) : int {
   local c: int, b: int
-  #node_0:
-      jmp node_1
+  #node_0: @[10:1]
+      jmp node_1 @[10:1]
       
-  #node_5:
-      jmp 
+  #node_5: @[14:1]
+      jmp  @[14:1]
       
-  #node_3:
-      n0:int = load &c
-      jmp node_4
+  #node_3: @[13:3]
+      n0:int = load &c @[13:10]
+      jmp node_4 @[13:10]
       
-  #node_4:
-      ret n0
+  #node_4: @[13:3]
+      ret n0 @[13:3]
       
-  #node_2:
-      _ = __sil_metadata_variable_lifetime_begins(&c, <int>)
-      n1:int = load &b
-      store &c <- __sil_mult_int(n1, 2):int
-      jmp node_3
+  #node_2: @[12:3]
+      _ = __sil_metadata_variable_lifetime_begins(&c, <int>) @[12:3]
+      n1:int = load &b @[12:11]
+      store &c <- __sil_mult_int(n1, 2):int @[12:3]
+      jmp node_3 @[12:3]
       
-  #node_1:
-      _ = __sil_metadata_variable_lifetime_begins(&b, <int>)
-      n2:int = load &a
-      store &b <- __sil_plusa_int(n2, 1):int
-      jmp node_2
+  #node_1: @[11:3]
+      _ = __sil_metadata_variable_lifetime_begins(&b, <int>) @[11:3]
+      n2:int = load &a @[11:11]
+      store &b <- __sil_plusa_int(n2, 1):int @[11:3]
+      jmp node_2 @[11:3]
       
-}
+} @[10:1]
 
 define add(x: int, y: int) : int {
-  #node_0:
-      jmp node_1
+  #node_0: @[8:1]
+      jmp node_1 @[8:1]
       
-  #node_3:
-      jmp 
+  #node_3: @[8:39]
+      jmp  @[8:39]
       
-  #node_1:
-      n0:int = load &x
-      n1:int = load &y
-      jmp node_2
+  #node_1: @[8:25]
+      n0:int = load &x @[8:32]
+      n1:int = load &y @[8:36]
+      jmp node_2 @[8:36]
       
-  #node_2:
-      ret __sil_plusa_int(n0, n1)
+  #node_2: @[8:25]
+      ret __sil_plusa_int(n0, n1) @[8:25]
       
-}
+} @[8:1]
 

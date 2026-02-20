@@ -4,39 +4,39 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "C"
+.source_language = "C" @?
 
 type point = {x: int; y: int}
 
 define set_y(p: *point, v: int) : void {
-  #node_0:
-      jmp node_1
+  #node_0: @[15:1]
+      jmp node_1 @[15:1]
       
-  #node_2:
-      jmp 
+  #node_2: @[15:48]
+      jmp  @[15:48]
       
-  #node_1:
-      n1:int = load &v
-      n0:*point = load &p
-      store n0.point.y <- n1:int
-      jmp node_2
+  #node_1: @[15:38]
+      n1:int = load &v @[15:45]
+      n0:*point = load &p @[15:38]
+      store n0.point.y <- n1:int @[15:38]
+      jmp node_2 @[15:38]
       
-}
+} @[15:1]
 
 define get_x(p: *point) : int {
-  #node_0:
-      jmp node_1
+  #node_0: @[13:1]
+      jmp node_1 @[13:1]
       
-  #node_3:
-      jmp 
+  #node_3: @[13:43]
+      jmp  @[13:43]
       
-  #node_1:
-      n0:*point = load &p
-      n1:int = load n0.point.x
-      jmp node_2
+  #node_1: @[13:30]
+      n0:*point = load &p @[13:37]
+      n1:int = load n0.point.x @[13:37]
+      jmp node_2 @[13:37]
       
-  #node_2:
-      ret n1
+  #node_2: @[13:30]
+      ret n1 @[13:30]
       
-}
+} @[13:1]
 
