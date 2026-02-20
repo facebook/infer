@@ -1,0 +1,45 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+type empty_struct::Adder = {}
+
+define empty_struct::main() : void {
+  local var_0: void, adder_1: empty_struct::Adder, three_2: int, var_3: *empty_struct::Adder
+  #node_0:
+      store &adder_1 <- null:void
+      store &var_3 <- &adder_1:*empty_struct::Adder
+      n0:*empty_struct::Adder = load &var_3
+      n1 = empty_struct::{empty_struct::Adder}::add(n0, 1, 2)
+      store &three_2 <- n1:int
+      jmp node_1
+      
+  #node_1:
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n2:void = load &var_0
+      ret n2
+      
+}
+
+define empty_struct::{empty_struct::Adder}::add(self_1: *empty_struct::Adder, a_2: int, b_3: int) : int {
+  local var_0: int, var_4: int, var_5: int, var_6: int
+  #node_0:
+      n0:int = load &a_2
+      store &var_4 <- n0:int
+      n1:int = load &b_3
+      store &var_5 <- n1:int
+      n2:int = load &var_4
+      n3:int = load &var_5
+      store &var_6 <- __sil_plusa_int(n2, n3):int
+      n4:int = load &var_6
+      store &var_0 <- n4:int
+      n5:int = load &var_0
+      ret n5
+      
+}
+
