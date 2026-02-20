@@ -204,15 +204,22 @@ let rec mk_struct_args crate (types : Charon.Generated_Types.ty list) =
       Textual.TypeName.of_string (Format.asprintf "%a" Textual.Typ.pp (ty_to_textual_typ crate typ)) )
 
 
+and mk_tuple_type_name crate generics =
+  let args = mk_struct_args crate generics in
+  Textual.TypeName.mk_rust_tuple_type_name args
+
+
+and mk_tuple_struct_typ crate type_decl_ref =
+  Textual.Typ.Struct (mk_tuple_type_name crate type_decl_ref)
+
+
 and adt_ty_to_textual_typ crate (type_decl_ref : Charon.Generated_Types.type_decl_ref) :
     Textual.Typ.t =
-  (* TODO: Implement non-empty tuple and other adt types *)
+  (* TODO: Implement other adt types *)
   match type_decl_ref.id with
   | TTuple ->
       if List.is_empty type_decl_ref.generics.types then Textual.Typ.Void
-      else
-        L.die UserError "Unsupported tuple type: %a" Charon.Generated_Types.pp_type_decl_ref
-          type_decl_ref
+      else mk_tuple_struct_typ crate type_decl_ref.generics.types
   | TBuiltin TArray -> (
     match type_decl_ref.generics.types with
     | [typ] ->
@@ -355,6 +362,16 @@ let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : plac
       let field = mk_qualified_fieldname crate type_decl field_id in
       let field_exp = Textual.Exp.Field {exp; field} in
       (field_exp, typ)
+  | PlaceProjection
+      (({ty= TAdt {id= TTuple; generics}} as projection_place), Field (ProjTuple _, field_id)) ->
+      let exp, _ = mk_exp_from_place ~loc crate place_map projection_place in
+      let tuple_type_name = mk_tuple_type_name crate generics.types in
+      let name =
+        Textual.FieldName.of_string (Int.to_string (Charon.Generated_Types.FieldId.to_int field_id))
+      in
+      let field = {Textual.enclosing_class= tuple_type_name; name} in
+      let field_exp = Textual.Exp.Field {exp; field} in
+      (field_exp, typ)
   | PlaceProjection (projection_place, ProjIndex (operand, _from_end)) ->
       let exp_place, _ = mk_exp_from_place ~loc crate place_map projection_place in
       let exp_op, _ = mk_exp_from_operand ~loc crate place_map operand in
@@ -490,7 +507,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
       let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
       [store_instr]
   (* Structs *)
-  (* foo = Foo {x : 1; y: 2} --> 
+  (* foo = Foo {x : 1; y: 2} -->
     store &foo.Foo.x <- 1
     store &foo.Foo.y <- 2
   *)
@@ -520,6 +537,18 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
       | __ ->
           L.die UserError "Unsupported TAdtId kind: %a" Charon.Generated_Types.pp_type_decl_kind
             type_decl.kind )
+  (* Tuples *)
+  | Assign
+      ( ({ty= TAdt {id= TTuple; generics}} as lhs)
+      , Aggregate (AggregatedAdt ({id= TTuple; _}, _, _), ops) ) ->
+      let lhexp, _ = mk_exp_from_place ~loc crate place_map lhs in
+      let rvalues = List.map ~f:(mk_exp_from_operand ~loc crate place_map) ops in
+      let tuple_type_name = mk_tuple_type_name crate generics.types in
+      List.mapi rvalues ~f:(fun idx (exp, typ) ->
+          let name = Textual.FieldName.of_string (Int.to_string idx) in
+          let field = {Textual.enclosing_class= tuple_type_name; name} in
+          let field_exp = Textual.Exp.Field {exp= lhexp; field} in
+          Textual.Instr.Store {exp1= field_exp; typ= Some typ; exp2= exp; loc} )
   (* Arrays *)
   | Assign (lhs, Aggregate (AggregatedArray (_, _), ops)) ->
       let lhexp, _ = mk_exp_from_place ~loc crate place_map lhs in
@@ -613,6 +642,49 @@ let mk_procdesc (crate : Charon.UllbcAst.crate)
   {Textual.ProcDesc.procdecl; fresh_ident; nodes; start; params; locals; exit_loc}
 
 
+(* If this local is a tuple type, create a tuple struct with the indices as field names. *)
+let mk_tuple_type crate (local : Charon.Generated_GAst.local) =
+  let var_ty = local.var_ty in
+  match var_ty with
+  (* Unit Type *)
+  | TAdt {id= TTuple; generics= {types= []}} ->
+      None
+  | TAdt {id= TTuple; generics} ->
+      let tuple_type_name = mk_tuple_type_name crate generics.types in
+      let fields =
+        generics.types
+        |> List.mapi ~f:(fun i typ ->
+               let attributes = [] in
+               let name = Textual.FieldName.of_string (Int.to_string i) in
+               let qualified_name = {Textual.enclosing_class= tuple_type_name; name} in
+               let typ = ty_to_textual_typ crate typ in
+               {Textual.FieldDecl.typ; qualified_name; attributes} )
+      in
+      Some {Textual.Struct.name= tuple_type_name; supers= []; fields; attributes= []}
+  | _ ->
+      None
+
+
+let mk_tuple_decl (crate : Charon.UllbcAst.crate)
+    (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) =
+  let _, fun_decl = proc in
+  let locals = match fun_decl.body with Some {locals} -> locals.locals | None -> [] in
+  List.filter_map locals ~f:(mk_tuple_type crate)
+
+
+(* Compare tuple declarations so that it is possible to filter out duplicates *)
+let compare (struct1 : Textual.Struct.t) (struct2 : Textual.Struct.t) =
+  let name = Textual.TypeName.compare struct1.name struct2.name in
+  if Int.( <> ) name 0 then name
+  else
+    List.compare
+      (fun (field1 : Textual.FieldDecl.t) (field2 : Textual.FieldDecl.t) ->
+        String.compare
+          (Format.asprintf "%a" Textual.Typ.pp field1.typ)
+          (Format.asprintf "%a" Textual.Typ.pp field2.typ) )
+      struct1.fields struct2.fields
+
+
 let mk_module (crate : Charon.UllbcAst.crate) ~file_name : Textual.Module.t =
   let fun_decls = crate.fun_decls in
   let attrs = [Textual.Attr.mk_source_language Rust] in
@@ -625,6 +697,15 @@ let mk_module (crate : Charon.UllbcAst.crate) ~file_name : Textual.Module.t =
     Charon.Generated_Types.FunDeclId.Map.bindings fun_decls
     |> List.map ~f:(fun proc -> Textual.Module.Proc (mk_procdesc crate proc))
   in
-  let decls = type_decls @ proc_decls in
+  (* The crate does not store tuple types in it declerations
+    so we need to extract the tuples from the locals of the functions.
+  *)
+  let tuple_decls =
+    Charon.Generated_Types.FunDeclId.Map.bindings crate.fun_decls
+    |> List.map ~f:(mk_tuple_decl crate)
+    |> List.concat |> List.dedup_and_sort ~compare
+    |> List.map ~f:(fun strct -> Textual.Module.Struct strct)
+  in
+  let decls = type_decls @ proc_decls @ tuple_decls in
   let sourcefile = Textual.SourceFile.create file_name in
   {Textual.Module.attrs; decls; sourcefile}

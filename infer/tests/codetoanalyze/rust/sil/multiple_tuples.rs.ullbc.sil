@@ -1,0 +1,48 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define multiple_tuples::main() : void {
+  local var_0: void, x_1: __infer_rust_tuple_class<int,int>, y_2: __infer_rust_tuple_class<int,int>, z_3: __infer_rust_tuple_class<int[],int[]>, var_4: int[], var_5: int[], aa_6: __infer_rust_tuple_class<__infer_rust_tuple_class<int,int,int>,__infer_rust_tuple_class<int,int,int>>, var_7: __infer_rust_tuple_class<int,int,int>, var_8: __infer_rust_tuple_class<int,int,int>
+  #node_0:
+      store &x_1.__infer_rust_tuple_class<int,int>.0 <- 1:int
+      store &x_1.__infer_rust_tuple_class<int,int>.1 <- 2:int
+      store &y_2.__infer_rust_tuple_class<int,int>.0 <- 2:int
+      store &y_2.__infer_rust_tuple_class<int,int>.1 <- 3:int
+      store &var_4[0] <- 3:int
+      store &var_5[0] <- 4:int
+      n0:int[] = load &var_4
+      store &z_3.__infer_rust_tuple_class<int[],int[]>.0 <- n0:int[]
+      n1:int[] = load &var_5
+      store &z_3.__infer_rust_tuple_class<int[],int[]>.1 <- n1:int[]
+      store &var_7.__infer_rust_tuple_class<int,int,int>.0 <- 1:int
+      store &var_7.__infer_rust_tuple_class<int,int,int>.1 <- 2:int
+      store &var_7.__infer_rust_tuple_class<int,int,int>.2 <- 3:int
+      store &var_8.__infer_rust_tuple_class<int,int,int>.0 <- 4:int
+      store &var_8.__infer_rust_tuple_class<int,int,int>.1 <- 5:int
+      store &var_8.__infer_rust_tuple_class<int,int,int>.2 <- 6:int
+      n2:__infer_rust_tuple_class<int,int,int> = load &var_7
+      store &aa_6.__infer_rust_tuple_class<__infer_rust_tuple_class<int,int,int>,__infer_rust_tuple_class<int,int,int>>.0 <- n2:__infer_rust_tuple_class<int,int,int>
+      n3:__infer_rust_tuple_class<int,int,int> = load &var_8
+      store &aa_6.__infer_rust_tuple_class<__infer_rust_tuple_class<int,int,int>,__infer_rust_tuple_class<int,int,int>>.1 <- n3:__infer_rust_tuple_class<int,int,int>
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n4:void = load &var_0
+      ret n4
+      
+}
+
+type __infer_rust_tuple_class<__infer_rust_tuple_class<int,int,int>,__infer_rust_tuple_class<int,int,int>> = {
+0: __infer_rust_tuple_class<int,int,int>;
+1: __infer_rust_tuple_class<int,int,int>}
+
+type __infer_rust_tuple_class<int,int> = {0: int; 1: int}
+
+type __infer_rust_tuple_class<int,int,int> = {0: int; 1: int; 2: int}
+
+type __infer_rust_tuple_class<int[],int[]> = {0: int[]; 1: int[]}
+
