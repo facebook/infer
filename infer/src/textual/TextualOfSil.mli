@@ -7,5 +7,9 @@
 
 open! IStd
 
-val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
+val from_c : filename:string -> Tenv.t -> Cfg.t -> unit
 (** generate a .sil file with name [filename] containing all the functions in the given cfg *)
+
+val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
+(** generate a .sil file with name [filename] containing all the functions in the given cfg (Java)
+*)
