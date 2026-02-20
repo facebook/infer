@@ -19,9 +19,6 @@ val module_to_sil :
     textual representation undergoes several transformations. The result is passed as the third
     element of the returned tuple *)
 
-val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
-(** generate a .sil file with name [filename] containing all the functions in the given cfg *)
-
 val dump_module : show_location:bool -> filename:string -> Textual.Module.t -> unit
 (** generate a .sil file with name [filename] with all the content of the input module *)
 
