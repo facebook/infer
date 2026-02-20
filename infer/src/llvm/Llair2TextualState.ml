@@ -250,7 +250,7 @@ use the substitution in the code later on. *)
         let local, local_typ = local in
         let new_typ =
           match (local_typ.Textual.Typ.typ, item.typ.Textual.Typ.typ) with
-          | Textual.Typ.Ptr (Struct _), Int | Textual.Typ.Int, Textual.Typ.Ptr (Struct _) ->
+          | Textual.Typ.Ptr (Struct _, _), Int | Textual.Typ.Int, Textual.Typ.Ptr (Struct _, _) ->
               (* This is to avoid a type error when the signature type was int, because internally
            int is a pointer to a struct. Now, we use the local type for the formal in case of
            such a contradiction. *)

@@ -193,13 +193,13 @@ let swift_mixed_type_textual = Typ.Void
 let default_return_type (lang : Lang.t) loc =
   match lang with
   | Hack ->
-      Typ.Ptr (mk_hack_mixed_type_textual loc)
+      Typ.mk_ptr (mk_hack_mixed_type_textual loc)
   | Python ->
-      Typ.Ptr (mk_python_mixed_type_textual loc)
+      Typ.mk_ptr (mk_python_mixed_type_textual loc)
   | C ->
-      Typ.Ptr c_mixed_type_textual
+      Typ.mk_ptr c_mixed_type_textual
   | Swift ->
-      Typ.Ptr swift_mixed_type_textual
+      Typ.mk_ptr swift_mixed_type_textual
   | other ->
       L.die InternalError "Unexpected return type outside of Hack/Python/C/Swift: %s"
         (Lang.to_string other)
@@ -239,7 +239,7 @@ module TypBridge = struct
           let params_type = List.map ~f:(to_sil lang) params_type in
           let return_type = to_sil lang return_type in
           Tfun (Some {params_type; return_type})
-      | Ptr t ->
+      | Ptr (t, _) ->
           Tptr (to_sil lang t, Pk_pointer)
       | Struct name ->
           SilTyp.Tstruct (TypeNameBridge.to_sil lang name)

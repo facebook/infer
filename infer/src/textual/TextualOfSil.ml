@@ -68,6 +68,26 @@ end
 module TypBridge = struct
   open Typ
 
+  let annots_of_ptr_kind (kind : SilTyp.ptr_kind) =
+    match kind with
+    | Pk_pointer ->
+        []
+    | Pk_lvalue_reference ->
+        [Attr.ptr_lvalue_reference]
+    | Pk_rvalue_reference ->
+        [Attr.ptr_rvalue_reference]
+    | Pk_objc_weak ->
+        [Attr.ptr_objc_weak]
+    | Pk_objc_unsafe_unretained ->
+        [Attr.ptr_unsafe_unretained]
+    | Pk_objc_autoreleasing ->
+        [Attr.ptr_autoreleasing]
+    | Pk_objc_nonnull_block ->
+        [Attr.ptr_nonull]
+    | Pk_objc_nullable_block ->
+        [Attr.ptr_nullable]
+
+
   let rec of_sil ({desc} : SilTyp.t) =
     match desc with
     | Tint _ ->
@@ -78,8 +98,8 @@ module TypBridge = struct
         Void
     | Tfun _ ->
         Fun None
-    | Tptr (t, _) ->
-        Ptr (of_sil t)
+    | Tptr (t, kind) ->
+        Typ.Ptr (of_sil t, annots_of_ptr_kind kind)
     | Tstruct name ->
         Struct (TypeNameBridge.of_sil name)
     | TVar _ ->
@@ -183,7 +203,7 @@ module ProcDeclBridge = struct
           else
             let typ = Procname.Java.get_class_type_name jpname in
             let this_type =
-              Typ.(Ptr (Struct (TypeNameBridge.of_sil typ))) |> Typ.mk_without_attributes
+              Typ.(mk_ptr (Struct (TypeNameBridge.of_sil typ))) |> Typ.mk_without_attributes
             in
             (this_type :: formals_types, [])
         in
@@ -478,7 +498,7 @@ module ProcDescBridge = struct
                       ~default:
                         ( match lang with
                         | Lang.Java ->
-                            Typ.(Ptr (Struct TypeNameBridge.java_lang_object))
+                            Typ.(mk_ptr (Struct TypeNameBridge.java_lang_object))
                         | _ ->
                             Typ.Void )
                else TypBridge.of_sil typ

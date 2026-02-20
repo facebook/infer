@@ -214,6 +214,20 @@ module Attr : sig
 
   val find_python_args : t -> string list option
 
+  val ptr_lvalue_reference : t
+
+  val ptr_rvalue_reference : t
+
+  val ptr_objc_weak : t
+
+  val ptr_unsafe_unretained : t
+
+  val ptr_autoreleasing : t
+
+  val ptr_nonull : t
+
+  val ptr_nullable : t
+
   val mk_async : t
 
   val mk_closure_wrapper : t
@@ -240,7 +254,7 @@ module Typ : sig
     | Null
     | Void  (** void type *)
     | Fun of function_prototype option  (** function type *)
-    | Ptr of t  (** pointer type *)
+    | Ptr of t * Attr.t list  (** pointer type *)
     | Struct of TypeName.t  (** structured value type name *)
     | Array of t  (** array type *)
   [@@deriving equal]
@@ -254,6 +268,8 @@ module Typ : sig
   val is_annotated : f:(Attr.t -> bool) -> annotated -> bool
 
   val pp_annotated : F.formatter -> annotated -> unit
+
+  val mk_ptr : t -> t
 
   val mk_without_attributes : t -> annotated
 

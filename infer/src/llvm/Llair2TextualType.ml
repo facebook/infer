@@ -42,18 +42,18 @@ let rec to_textual_typ lang ~mangled_map ~struct_map (typ : Llair.Typ.t) =
   | Float _ ->
       Textual.Typ.Float
   | Pointer {elt} ->
-      Textual.Typ.Ptr (to_textual_typ lang ~mangled_map ~struct_map elt)
+      Textual.Typ.mk_ptr (to_textual_typ lang ~mangled_map ~struct_map elt)
   | Array {elt} ->
       (* often the type we want is ptr rather than array, and it's not always clear from llvm,
          when they really mean an array. This is a better heuristic. *)
-      Textual.Typ.Ptr (to_textual_typ lang ~mangled_map ~struct_map elt)
+      Textual.Typ.mk_ptr (to_textual_typ lang ~mangled_map ~struct_map elt)
   | Tuple {elts} ->
       let tuple_name = to_textual_tuple_name lang ~mangled_map ~struct_map elts in
-      Textual.Typ.(Ptr (Struct tuple_name))
+      Textual.Typ.(mk_ptr (Struct tuple_name))
   | Struct {name} ->
       let struct_name = TypeName.struct_name_of_mangled_name lang ~mangled_map struct_map name in
       if Textual.Lang.is_c lang then Textual.Typ.Struct struct_name
-      else Textual.Typ.(Ptr (Struct struct_name))
+      else Textual.Typ.(mk_ptr (Struct struct_name))
   | Opaque {name} ->
       (* From llair's docs: Uniquely named aggregate type whose definition is hidden. *)
       let struct_name = TypeName.struct_name_of_mangled_name lang ~mangled_map struct_map name in
@@ -83,13 +83,13 @@ let to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
       match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
       | Some "Any" when Int.equal pos 0 ->
           (* For AnyObject, the field_0 should be a generic pointer, but we get int* from llvm *)
-          ([], Textual.Typ.Ptr Textual.Typ.any_type_swift)
+          ([], Textual.Typ.mk_ptr Textual.Typ.any_type_swift)
       | _ -> (
         match textual_typ with
-        | Textual.Typ.(Ptr (Struct name)) -> (
+        | Textual.Typ.(Ptr (Struct name, _)) -> (
           match Textual.TypeName.swift_mangled_name_of_type_name name with
           | Some mangled_name when String.equal mangled_name "swift::weak" ->
-              let textual_typ = Textual.Typ.(Ptr Textual.Typ.any_type_swift) in
+              let textual_typ = Textual.Typ.(mk_ptr Textual.Typ.any_type_swift) in
               ([Textual.Attr.mk_weak], textual_typ)
           | _ ->
               ([], textual_typ) )
@@ -110,7 +110,7 @@ let translate_struct lang ~struct_map ~tuple struct_name elements =
 
 let is_ptr_struct typ =
   match typ with
-  | Textual.Typ.Ptr (Textual.Typ.Struct name) -> (
+  | Textual.Typ.Ptr (Textual.Typ.Struct name, _) -> (
     match Textual.TypeName.swift_mangled_name_of_type_name name with
     | Some mangled_name ->
         String.is_suffix ~suffix:"V" mangled_name
@@ -122,7 +122,7 @@ let is_ptr_struct typ =
 
 let is_int_optional typ =
   match typ with
-  | Textual.Typ.Ptr (Textual.Typ.Struct typ_name) -> (
+  | Textual.Typ.Ptr (Textual.Typ.Struct typ_name, _) -> (
     match Textual.TypeName.swift_mangled_name_of_type_name typ_name with
     | Some name ->
         String.is_suffix name ~suffix:"SiSg" (* Int Optional *)
@@ -173,8 +173,8 @@ let rec join (typ1 : Textual.Typ.t) (typ2 : Textual.Typ.t) : Textual.Typ.t =
       Int
   | Float, Float ->
       Float
-  | Ptr typ1, Ptr typ2 ->
-      Ptr (join typ1 typ2)
+  | Ptr (typ1, _), Ptr (typ2, _) ->
+      Textual.Typ.mk_ptr (join typ1 typ2)
   | Array typ1, Array typ2 ->
       Array (join typ1 typ2)
   | Textual.Typ.Struct name1, Textual.Typ.Struct name2 ->
@@ -209,7 +209,7 @@ let rec is_compatible typ1 typ2 =
   match (typ1, typ2) with
   | Textual.Typ.Struct _, Textual.Typ.Struct _ ->
       true
-  | Textual.Typ.Ptr typ1, Textual.Typ.Ptr typ2 ->
+  | Textual.Typ.Ptr (typ1, _), Textual.Typ.Ptr (typ2, _) ->
       is_compatible typ1 typ2
   | ( Textual.Typ.Fun (Some {params_type= params_type1; return_type= return_type1})
     , Textual.Typ.Fun (Some {params_type= params_type2; return_type= return_type2}) ) ->
@@ -232,7 +232,7 @@ let rec signature_type_to_textual_typ signature_structs lang signature_type =
     let name = String.chop_suffix_if_exists signature_type ~suffix:"*" in
     match signature_type_to_textual_typ signature_structs lang name with
     | Some typ ->
-        Some (Textual.Typ.Ptr typ)
+        Some (Textual.Typ.mk_ptr typ)
     | None ->
         None
   else if String.equal signature_type "Int" then Some Textual.Typ.Int
@@ -251,7 +251,7 @@ let rec signature_type_to_textual_typ signature_structs lang signature_type =
       else TypeName.to_textual_type_name lang signature_type
     in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)
-    else Some Textual.Typ.(Ptr (Textual.Typ.Struct struct_name))
+    else Some (Textual.Typ.mk_ptr (Textual.Typ.Struct struct_name))
 
 
 let pp_signature_structs fmt signature_structs =
@@ -282,8 +282,8 @@ let rec update_type ~update_struct_name typ =
   | Textual.Typ.Struct struct_name ->
       let struct_name = update_struct_name struct_name in
       Textual.Typ.Struct struct_name
-  | Textual.Typ.Ptr typ ->
-      Textual.Typ.Ptr (update_type ~update_struct_name typ)
+  | Textual.Typ.Ptr (typ, attrs) ->
+      Textual.Typ.Ptr (update_type ~update_struct_name typ, attrs)
   | Textual.Typ.Fun (Some {params_type; return_type}) ->
       Textual.Typ.Fun
         (Some

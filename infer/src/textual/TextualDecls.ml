@@ -322,7 +322,13 @@ let check_proc_not_implemented_twice decls errors procdecl =
 
 
 let rec get_typ_name (typ : Typ.t) =
-  match typ with Struct tname -> Some tname | Ptr typ | Array typ -> get_typ_name typ | _ -> None
+  match typ with
+  | Struct tname ->
+      Some tname
+  | Ptr (typ, _) | Array typ ->
+      get_typ_name typ
+  | _ ->
+      None
 
 
 let get_procdesc_referenced_types (pdesc : ProcDesc.t) =

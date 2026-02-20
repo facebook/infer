@@ -253,7 +253,7 @@ and ty_to_textual_typ crate (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.
   | TLiteral (TFloat _) ->
       Textual.Typ.Float
   | TRawPtr (ty, _) | TRef (_, ty, _) ->
-      Textual.Typ.Ptr (ty_to_textual_typ crate ty)
+      Textual.Typ.mk_ptr (ty_to_textual_typ crate ty)
   | TAdt type_decl_ref ->
       adt_ty_to_textual_typ crate type_decl_ref
   | _ ->
@@ -423,10 +423,10 @@ let mk_exp_from_rvalue ~loc crate (rvalue : Charon.Generated_Expressions.rvalue)
   | RawPtr ({kind= PlaceLocal var_id; ty}, _) | RvRef ({kind= PlaceLocal var_id; ty}, _) ->
       let typ = ty_to_textual_typ crate ty in
       let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
-      (exp, Textual.Typ.Ptr typ)
+      (exp, Textual.Typ.mk_ptr typ)
   | RawPtr (place, _) | RvRef (place, _) ->
       let exp, typ = mk_exp_from_place ~loc crate place_map place in
-      (exp, Textual.Typ.Ptr typ)
+      (exp, Textual.Typ.mk_ptr typ)
   | Aggregate (kind, ops) -> (
       (* TODO: Handle non-empty aggregates as well *)
       let exps = List.map ~f:(fun op -> mk_exp_from_operand ~loc crate place_map op |> fst) ops in

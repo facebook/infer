@@ -324,7 +324,7 @@ typ:
   | typ=base_typ
     { typ }
   | STAR typ=typ
-    { Typ.Ptr typ }
+    { Typ.Ptr (typ, []) }
 
 %inline
 annots:

@@ -500,7 +500,7 @@ end
 module NodeName : NAME = Name
 
 module Attr = struct
-  type t = {name: string; values: string list; loc: Location.t}
+  type t = {name: string; values: string list; loc: (Location.t[@ignore])} [@@deriving equal, hash]
 
   let name {name} = name
 
@@ -512,13 +512,15 @@ module Attr = struct
     {name= source_language; values= [Lang.to_string value]; loc= Location.Unknown}
 
 
-  let mk_static = {name= "static"; values= []; loc= Location.Unknown}
+  let mk name = {name; values= []; loc= Location.Unknown}
 
-  let mk_final = {name= "final"; values= []; loc= Location.Unknown}
+  let mk_static = mk "static"
+
+  let mk_final = mk "final"
 
   let mk_trait = {name= "kind"; values= ["trait"]; loc= Location.Unknown}
 
-  let mk_weak = {name= "weak"; values= []; loc= Location.Unknown}
+  let mk_weak = mk "weak"
 
   let is_async {name; values} = String.equal name "async" && List.is_empty values
 
@@ -558,9 +560,23 @@ module Attr = struct
 
   let find_python_args {name; values} = if String.equal name "args" then Some values else None
 
-  let mk_async = {name= "async"; values= []; loc= Location.Unknown}
+  let mk_async = mk "async"
 
-  let mk_closure_wrapper = {name= "closure_wrapper"; values= []; loc= Location.Unknown}
+  let mk_closure_wrapper = mk "closure_wrapper"
+
+  let ptr_lvalue_reference = mk "lvalue_reference"
+
+  let ptr_rvalue_reference = mk "rvalue_reference"
+
+  let ptr_objc_weak = mk "weak"
+
+  let ptr_unsafe_unretained = mk "unsafe_unretained *"
+
+  let ptr_autoreleasing = mk "autoreleasing *"
+
+  let ptr_nonull = mk "nonnull"
+
+  let ptr_nullable = mk "nullable *"
 
   let mk_plain_name name = {name= "plain_name"; values= [name]; loc= Location.Unknown}
 
@@ -595,7 +611,7 @@ module Typ = struct
     | Null
     | Void
     | Fun of function_prototype option
-    | Ptr of t
+    | Ptr of t * Attr.t list
     | Struct of TypeName.t
     | Array of t
   [@@deriving equal, hash]
@@ -615,13 +631,14 @@ module Typ = struct
         F.pp_print_string fmt "(fun _ -> _)"
     | Fun (Some {params_type; return_type}) ->
         F.fprintf fmt "(fun (%a) -> %a)" (Pp.comma_seq pp) params_type pp return_type
-    | Ptr typ ->
+    | Ptr (typ, attributes) ->
+        List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
         F.pp_print_char fmt '*' ;
         pp fmt typ
     | Struct name ->
         TypeName.pp fmt name
-    | Array (Ptr typ) ->
-        F.fprintf fmt "(*%a)[]" pp typ
+    | Array (Ptr _ as t) ->
+        F.fprintf fmt "(%a)[]" pp t
     | Array typ ->
         F.fprintf fmt "%a[]" pp typ
 
@@ -636,6 +653,8 @@ module Typ = struct
     List.iter attributes ~f:(fun attr -> F.fprintf fmt "%a " Attr.pp attr) ;
     pp fmt typ
 
+
+  let mk_ptr t = Ptr (t, [])
 
   let mk_without_attributes typ = {typ; attributes= []}
 

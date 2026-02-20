@@ -649,7 +649,7 @@ module TransformClosures = struct
     in
     let unresolved_qualified_name = closure_call_qualified_procname loc in
     let qualified_name = {unresolved_qualified_name with enclosing_class= Enclosing typename} in
-    let this_typ = Typ.mk_without_attributes (Ptr (Struct typename)) in
+    let this_typ = Typ.mk_without_attributes (Typ.mk_ptr (Struct typename)) in
     let formals_types =
       Option.map procdecl.formals_types ~f:(fun formals ->
           this_typ :: List.drop formals nb_captured )
@@ -670,7 +670,7 @@ module TransformClosures = struct
       List.fold fields ~init:(state, [], [])
         ~f:(fun (state, args, instrs) ({qualified_name= field; typ} : FieldDecl.t) ->
           let state, exp, load1 =
-            State.insert_load state loc (Exp.Lvar this_var) Typ.(Ptr (Struct typename))
+            State.insert_load state loc (Exp.Lvar this_var) Typ.(mk_ptr (Struct typename))
           in
           let state, exp, load2 = State.insert_load state loc (Exp.Field {exp; field}) typ in
           (state, exp :: args, load2 :: load1 :: instrs) )
@@ -775,7 +775,7 @@ module RemoveIf = struct
             ; label_loc= loc }
           in
           let typ =
-            Typ.(Ptr Void)
+            Typ.(mk_ptr Void)
             (* TODO find a better type *)
           in
           let next_node : Node.t =

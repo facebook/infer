@@ -372,7 +372,7 @@ let translate_optional_protocol_witness ~proc_state exp exp_typ typ_name n =
     else None
   in
   match exp_typ with
-  | Some (Textual.Typ.Ptr (Struct struct_name)) -> (
+  | Some (Textual.Typ.Ptr (Struct struct_name, _)) -> (
       let optional_protocol_suffix = "_pSg" in
       match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
       | Some name when String.is_suffix name ~suffix:optional_protocol_suffix ->
@@ -518,7 +518,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
                  name )
         | Tuple _ -> (
           match Type.to_textual_typ lang ~mangled_map ~struct_map typ with
-          | Textual.Typ.(Ptr (Struct name)) ->
+          | Textual.Typ.(Ptr (Struct name, _)) ->
               Some name
           | _ ->
               None )
@@ -547,7 +547,8 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let exp, _, instrs = to_textual_exp loc ~proc_state n_arg in
       let var_name = ProcState.mk_fresh_tmp_var State.get_element_ptr_offset_prefix proc_state in
       let new_var = Textual.Exp.Lvar var_name in
-      ProcState.update_locals ~proc_state var_name (Textual.Typ.mk_without_attributes (Ptr Void)) ;
+      ProcState.update_locals ~proc_state var_name
+        (Textual.Typ.mk_without_attributes (Textual.Typ.mk_ptr Void)) ;
       ProcState.update_var_offset ~proc_state var_name n ;
       let store_instr = Textual.Instr.Store {exp1= new_var; exp2= exp; typ= None; loc} in
       (new_var, None, store_instr :: instrs)
@@ -607,7 +608,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
       let type_name =
         match textual_typ with
-        | Textual.Typ.(Ptr (Struct name)) ->
+        | Textual.Typ.(Ptr (Struct name, _)) ->
             name
         | _ ->
             L.internal_error "Llair2Textual: unexpected type %a in %a at %a" Textual.Typ.pp
@@ -631,7 +632,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
       let type_name_opt =
         match textual_typ with
-        | Textual.Typ.(Ptr (Struct name)) | Textual.Typ.Struct name ->
+        | Textual.Typ.(Ptr (Struct name, _)) | Textual.Typ.Struct name ->
             Some name
         | _ ->
             (* skipping arrays for now *)
@@ -684,7 +685,7 @@ and resolve_method_call ~proc_state proc args =
       when Textual.Ident.equal proc_state_id_offset id_offset
            && Textual.ProcName.equal (Textual.QualifiedProcName.name proc) llvm_dynamic_call -> (
       match State.IdentMap.find_opt self_id proc_state.ProcState.ids_types with
-      | Some {typ= Textual.Typ.Ptr (Textual.Typ.Struct struct_name as inner_typ)}
+      | Some {typ= Textual.Typ.Ptr ((Textual.Typ.Struct struct_name as inner_typ), _)}
         when not (Textual.Typ.equal Textual.Typ.any_type_swift inner_typ) -> (
         match ProcState.find_method_with_offset ~proc_state struct_name offset with
         | Some proc_name ->
@@ -721,7 +722,7 @@ and translate_boxed_opaque_existential llair_args ~proc_state loc =
         None
   in
   match typ with
-  | Some (Textual.Typ.Ptr (Struct struct_name)) ->
+  | Some (Textual.Typ.Ptr (Struct struct_name, _)) ->
       let elts = NS.IArray.init 1 ~f:(fun _ -> lazy (1, Llair.Typ.bool)) in
       let name = Textual.TypeName.swift_mangled_name_of_type_name struct_name |> Option.value_exn in
       let name = String.substr_replace_all ~pattern:"_pSg" ~with_:"P" name in
@@ -956,7 +957,7 @@ let remove_store_zero_in_class typ_exp1 exp2 =
     match Textual.Typ.any_type_llvm with Textual.Typ.Struct name -> name | _ -> assert false
   in
   match typ_exp1 with
-  | Some (Textual.Typ.Ptr (Struct type_name))
+  | Some (Textual.Typ.Ptr (Struct type_name, _))
     when Textual.Exp.is_zero_exp exp2 && not (Textual.TypeName.equal type_name any_type_llvm_name)
     ->
       true
@@ -1059,10 +1060,10 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
          it means the first field. The first field of a struct is always at offset 0, so the base
          pointer already points to it. No offset calculation is needed. *)
           match (exp1, typ_exp1) with
-          | Textual.Exp.Lvar _, Some (Textual.Typ.Ptr (Textual.Typ.Struct typ_name) as typ_exp)
+          | Textual.Exp.Lvar _, Some (Textual.Typ.Ptr ((Textual.Typ.Struct typ_name as typ_exp), _))
             when Type.is_ptr_struct typ_exp ->
               translate_store_in_field_zero ~(proc_state : ProcState.t) exp1 loc typ_name
-          | _, Some (Textual.Typ.Ptr (Textual.Typ.Struct typ_name) as typ_exp)
+          | _, Some (Textual.Typ.Ptr ((Textual.Typ.Struct typ_name as typ_exp), _))
             when Type.is_int_optional typ_exp ->
               translate_store_in_field_zero ~(proc_state : ProcState.t) exp1 loc typ_name
           | _ ->
@@ -1079,8 +1080,8 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let ptr_typ = Type.to_textual_typ lang ~mangled_map ~struct_map (Reg.typ reg) in
         let ptr_typ =
           if not (Textual.Typ.is_pointer ptr_typ) then
-            if Textual.Lang.is_swift lang then Textual.Typ.Ptr Textual.Typ.any_type_swift
-            else Textual.Typ.Ptr Textual.Typ.any_type_llvm
+            if Textual.Lang.is_swift lang then Textual.Typ.mk_ptr Textual.Typ.any_type_swift
+            else Textual.Typ.mk_ptr Textual.Typ.any_type_llvm
           else ptr_typ
         in
         ProcState.update_locals ~proc_state reg_var_name (Textual.Typ.mk_without_attributes ptr_typ) ;

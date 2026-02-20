@@ -24,7 +24,7 @@ let location_from_opt_line = function
 let of_location loc = Location.line loc |> location_from_opt_line
 
 module Typ = struct
-  let locals = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyLocals")))
+  let locals = Textual.(Typ.mk_ptr (Typ.Struct (TypeName.of_string "PyLocals")))
 
   let ident_to_typename ident =
     let name = Ident.to_textual_base_type_name ident in
@@ -34,7 +34,7 @@ module Typ = struct
   let globals module_name =
     let name = Textual.BaseTypeName.of_string "PyGlobals" in
     let args = [ident_to_typename module_name] in
-    Textual.(Typ.Ptr (Typ.Struct {TypeName.name; args}))
+    Textual.(Typ.mk_ptr (Typ.Struct {TypeName.name; args}))
 
 
   let class_companion_name module_name name =
@@ -44,16 +44,16 @@ module Typ = struct
 
 
   let class_companion module_name name =
-    Textual.(Typ.Ptr (Typ.Struct (class_companion_name module_name name)))
+    Textual.(Typ.mk_ptr (Typ.Struct (class_companion_name module_name name)))
 
 
   let module_attribute module_name attr_name =
     let name = Textual.BaseTypeName.of_string "PyModuleAttr" in
     let args = Textual.TypeName.[of_string module_name; of_string attr_name] in
-    Textual.(Typ.Ptr (Typ.Struct {TypeName.name; args}))
+    Textual.(Typ.mk_ptr (Typ.Struct {TypeName.name; args}))
 
 
-  let value = Textual.(Typ.Ptr (Typ.Struct (TypeName.of_string "PyObject")))
+  let value = Textual.(Typ.mk_ptr (Typ.Struct (TypeName.of_string "PyObject")))
 end
 
 let global_type_of_str str = Typ.globals (Ident.mk str)
@@ -634,7 +634,7 @@ let pyir_type_to_textual module_name struct_types =
   let mk_closure_typename str =
     let open Textual in
     let typename = TypeName.of_string_no_dot_escape str in
-    Typ.(Ptr (Struct {TypeName.name= BaseTypeName.of_string "PyClosure"; args= [typename]}))
+    Typ.(mk_ptr (Struct {TypeName.name= BaseTypeName.of_string "PyClosure"; args= [typename]}))
   in
   let field_typ_to_textual typ =
     match (typ : PyIRTypeInference.field_type) with
