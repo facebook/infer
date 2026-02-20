@@ -343,32 +343,34 @@ module InstrBridge = struct
         let exp = ExpBridge.of_sil decls tenv e in
         let typ = Some (TypBridge.of_sil typ) in
         let loc = Location.Unknown in
-        Load {id; exp; typ; loc}
+        Some (Load {id; exp; typ; loc})
     | Store {e1; typ; e2} ->
         let exp1 = ExpBridge.of_sil decls tenv e1 in
         let typ = Some (TypBridge.of_sil typ) in
         let exp2 = ExpBridge.of_sil decls tenv e2 in
         let loc = Location.Unknown in
-        Store {exp1; typ; exp2; loc}
+        Some (Store {exp1; typ; exp2; loc})
     | Prune (e, _, _, _) ->
-        Prune {exp= ExpBridge.of_sil decls tenv e; loc= Location.Unknown}
+        Some (Prune {exp= ExpBridge.of_sil decls tenv e; loc= Location.Unknown})
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let typ = Typ.Struct (TypeNameBridge.of_sil name) in
-        Let
-          { id= Some (IdentBridge.of_sil id)
-          ; exp= Exp.call_non_virtual ProcDecl.allocate_object_name [Typ typ]
-          ; loc= Location.Unknown }
+        Some
+          (Let
+             { id= Some (IdentBridge.of_sil id)
+             ; exp= Exp.call_non_virtual ProcDecl.allocate_object_name [Typ typ]
+             ; loc= Location.Unknown } )
     | Call
         ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ; dynamic_length= Some exp}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new_array()" ->
         let typ = TypBridge.of_sil typ in
-        Let
-          { id= Some (IdentBridge.of_sil id)
-          ; exp=
-              Exp.call_non_virtual ProcDecl.allocate_array_name
-                [Typ typ; ExpBridge.of_sil decls tenv exp]
-          ; loc= Location.Unknown }
+        Some
+          (Let
+             { id= Some (IdentBridge.of_sil id)
+             ; exp=
+                 Exp.call_non_virtual ProcDecl.allocate_array_name
+                   [Typ typ; ExpBridge.of_sil decls tenv exp]
+             ; loc= Location.Unknown } )
     | Call ((id, ret_typ), Const (Cfun pname), args, _, call_flags) ->
         let args_typ = List.map ~f:snd args in
         let procdecl = ProcDeclBridge.of_sil pname ret_typ args_typ in
@@ -377,11 +379,11 @@ module InstrBridge = struct
         let args = List.map ~f:(fun (e, _) -> ExpBridge.of_sil decls tenv e) args in
         let loc = Location.Unknown in
         let kind = if call_flags.cf_virtual then Exp.Virtual else Exp.NonVirtual in
-        Let {id= Some (IdentBridge.of_sil id); exp= Call {proc; args; kind}; loc}
+        Some (Let {id= Some (IdentBridge.of_sil id); exp= Call {proc; args; kind}; loc})
     | Call _ ->
         L.die InternalError "Translation of a SIL call that is not const not supported"
     | Metadata _ ->
-        L.die InternalError "Translation of a metadata instructions not supported"
+        None
 end
 
 let instr_is_return = function Sil.Store {e1= Lvar v} -> SilPvar.is_return v | _ -> false
@@ -417,8 +419,11 @@ module NodeBridge = struct
     let rec backward_iter i acc =
       if i < 0 then acc
       else
-        let instr = InstrBridge.of_sil decls tenv instrs.(i) in
-        backward_iter (i - 1) (instr :: acc)
+        match InstrBridge.of_sil decls tenv instrs.(i) with
+        | Some instr ->
+            backward_iter (i - 1) (instr :: acc)
+        | None ->
+            backward_iter (i - 1) acc
     in
     let instrs_length = Array.length instrs in
     let instrs =

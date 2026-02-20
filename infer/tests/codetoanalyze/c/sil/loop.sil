@@ -1,0 +1,60 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C"
+
+define sum(n: int) : int {
+  local i: int, s: int
+  #node_0:
+      jmp node_1
+      
+  #node_11:
+      jmp 
+      
+  #node_7:
+      n0:int = load &s
+      jmp node_10
+      
+  #node_10:
+      ret n0
+      
+  #node_3:
+      jmp node_9
+      
+  #node_9:
+      n1:int = load &i
+      n2:int = load &n
+      jmp node_8, node_6
+      
+  #node_8:
+      prune __sil_lt(n1, n2)
+      jmp node_4
+      
+  #node_6:
+      prune __sil_lnot(__sil_lt(n1, n2))
+      jmp node_7
+      
+  #node_5:
+      n3:int = load &i
+      store &i <- __sil_plusa_int(n3, 1):int
+      jmp node_3
+      
+  #node_4:
+      n4:int = load &s
+      n5:int = load &i
+      store &s <- __sil_plusa_int(n4, n5):int
+      jmp node_5
+      
+  #node_2:
+      store &i <- 0:int
+      jmp node_3
+      
+  #node_1:
+      store &s <- 0:int
+      jmp node_2
+      
+}
+

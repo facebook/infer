@@ -45,6 +45,7 @@ type mode =
 let is_analyze_mode = function Analyze -> true | _ -> false
 
 let is_compatible_with_textual_generation = function
+  | Clang _
   | Javac _
   | Llair _
   | Python _
@@ -624,7 +625,8 @@ let run_epilogue () =
 let run driver_mode =
   if Config.dump_textual && not (is_compatible_with_textual_generation driver_mode) then
     L.die UserError
-      "ERROR: Textual generation is only allowed in Java, Llair, Python, Swift modes currently" ;
+      "ERROR: Textual generation is only allowed in Clang, Java, Llair, Python, Swift modes \
+       currently" ;
   run_prologue driver_mode ;
   let changed_files = SourceFile.read_config_files_to_analyze () in
   capture driver_mode ~changed_files ;

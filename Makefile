@@ -61,6 +61,7 @@ DIRECT_TESTS += \
   c_pulse-over-only \
   c_pulse-over-under \
   c_purity \
+  c_sil \
   c_starvation \
   c_topl \
   cpp_bufferoverrun \

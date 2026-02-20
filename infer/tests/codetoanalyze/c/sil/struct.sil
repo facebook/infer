@@ -1,0 +1,42 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C"
+
+type point = {x: int; y: int}
+
+define set_y(p: *point, v: int) : void {
+  #node_0:
+      jmp node_1
+      
+  #node_2:
+      jmp 
+      
+  #node_1:
+      n1:int = load &v
+      n0:*point = load &p
+      store n0.point.y <- n1:int
+      jmp node_2
+      
+}
+
+define get_x(p: *point) : int {
+  #node_0:
+      jmp node_1
+      
+  #node_3:
+      jmp 
+      
+  #node_1:
+      n0:*point = load &p
+      n1:int = load n0.point.x
+      jmp node_2
+      
+  #node_2:
+      ret n1
+      
+}
+

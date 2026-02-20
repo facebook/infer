@@ -85,5 +85,9 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
     Config.debug_mode || Config.testing_mode || Config.frontend_tests
     || Option.is_some Config.icfg_dotty_outfile
   then DotCfg.emit_frontend_cfg source_file cfg ;
+  ( if Config.dump_textual then
+      let ext = if Config.frontend_tests then ".test.sil" else ".sil" in
+      let filename = Filename.chop_extension (SourceFile.to_abs_path source_file) ^ ext in
+      TextualOfSil.from_c ~filename tenv cfg ) ;
   L.debug Capture Verbose "Stored on disk:@[<v>%a@]@." Cfg.pp_proc_signatures cfg ;
   ()
