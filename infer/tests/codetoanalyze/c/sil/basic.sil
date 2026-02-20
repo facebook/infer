@@ -22,11 +22,13 @@ define local_vars(a: int) : int {
       ret n0
       
   #node_2:
+      _ = __sil_metadata_variable_lifetime_begins(&c, <int>)
       n1:int = load &b
       store &c <- __sil_mult_int(n1, 2):int
       jmp node_3
       
   #node_1:
+      _ = __sil_metadata_variable_lifetime_begins(&b, <int>)
       n2:int = load &a
       store &b <- __sil_plusa_int(n2, 1):int
       jmp node_2

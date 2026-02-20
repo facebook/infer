@@ -336,6 +336,51 @@ end
 module InstrBridge = struct
   open Instr
 
+  let metadata_name s : QualifiedProcName.t =
+    {enclosing_class= TopLevel; name= {value= "__sil_metadata_" ^ s; loc= Location.Unknown}}
+
+
+  let int_exp i = Exp.Const (Const.Int (Z.of_int i))
+
+  let of_sil_metadata decls (meta : Sil.instr_metadata) =
+    let lang = TextualDecls.lang decls in
+    let call name args =
+      Let {id= None; exp= Exp.call_non_virtual (metadata_name name) args; loc= Location.Unknown}
+    in
+    match meta with
+    | Abstract _ ->
+        call "abstract" []
+    | CatchEntry {try_id} ->
+        call "catch_entry" [int_exp try_id]
+    | ExitScope (vars, _) ->
+        let args =
+          List.map vars ~f:(fun (var : Var.t) ->
+              match var with
+              | ProgramVar pvar ->
+                  Exp.Lvar (VarNameBridge.of_pvar lang pvar)
+              | LogicalVar id ->
+                  Exp.Var (IdentBridge.of_sil id) )
+        in
+        call "exit_scope" args
+    | Nullify (pvar, _) ->
+        call "nullify" [Exp.Lvar (VarNameBridge.of_pvar lang pvar)]
+    | LoopBackEdge {header_id} ->
+        call "loop_back_edge" [int_exp header_id]
+    | LoopEntry {header_id} ->
+        call "loop_entry" [int_exp header_id]
+    | LoopExit {header_id} ->
+        call "loop_exit" [int_exp header_id]
+    | Skip ->
+        call "skip" []
+    | TryEntry {try_id} ->
+        call "try_entry" [int_exp try_id]
+    | TryExit {try_id} ->
+        call "try_exit" [int_exp try_id]
+    | VariableLifetimeBegins {pvar; typ} ->
+        call "variable_lifetime_begins"
+          [Exp.Lvar (VarNameBridge.of_pvar lang pvar); Typ (TypBridge.of_sil typ)]
+
+
   let of_sil decls tenv (i : Sil.instr) =
     match i with
     | Load {id; e; typ} ->
@@ -343,34 +388,32 @@ module InstrBridge = struct
         let exp = ExpBridge.of_sil decls tenv e in
         let typ = Some (TypBridge.of_sil typ) in
         let loc = Location.Unknown in
-        Some (Load {id; exp; typ; loc})
+        Load {id; exp; typ; loc}
     | Store {e1; typ; e2} ->
         let exp1 = ExpBridge.of_sil decls tenv e1 in
         let typ = Some (TypBridge.of_sil typ) in
         let exp2 = ExpBridge.of_sil decls tenv e2 in
         let loc = Location.Unknown in
-        Some (Store {exp1; typ; exp2; loc})
+        Store {exp1; typ; exp2; loc}
     | Prune (e, _, _, _) ->
-        Some (Prune {exp= ExpBridge.of_sil decls tenv e; loc= Location.Unknown})
+        Prune {exp= ExpBridge.of_sil decls tenv e; loc= Location.Unknown}
     | Call ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ= {desc= Tstruct name}}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new()" ->
         let typ = Typ.Struct (TypeNameBridge.of_sil name) in
-        Some
-          (Let
-             { id= Some (IdentBridge.of_sil id)
-             ; exp= Exp.call_non_virtual ProcDecl.allocate_object_name [Typ typ]
-             ; loc= Location.Unknown } )
+        Let
+          { id= Some (IdentBridge.of_sil id)
+          ; exp= Exp.call_non_virtual ProcDecl.allocate_object_name [Typ typ]
+          ; loc= Location.Unknown }
     | Call
         ((id, _), Const (Cfun pname), (SilExp.Sizeof {typ; dynamic_length= Some exp}, _) :: _, _, _)
       when String.equal (SilProcname.to_simplified_string pname) "__new_array()" ->
         let typ = TypBridge.of_sil typ in
-        Some
-          (Let
-             { id= Some (IdentBridge.of_sil id)
-             ; exp=
-                 Exp.call_non_virtual ProcDecl.allocate_array_name
-                   [Typ typ; ExpBridge.of_sil decls tenv exp]
-             ; loc= Location.Unknown } )
+        Let
+          { id= Some (IdentBridge.of_sil id)
+          ; exp=
+              Exp.call_non_virtual ProcDecl.allocate_array_name
+                [Typ typ; ExpBridge.of_sil decls tenv exp]
+          ; loc= Location.Unknown }
     | Call ((id, ret_typ), Const (Cfun pname), args, _, call_flags) ->
         let args_typ = List.map ~f:snd args in
         let procdecl = ProcDeclBridge.of_sil pname ret_typ args_typ in
@@ -379,11 +422,11 @@ module InstrBridge = struct
         let args = List.map ~f:(fun (e, _) -> ExpBridge.of_sil decls tenv e) args in
         let loc = Location.Unknown in
         let kind = if call_flags.cf_virtual then Exp.Virtual else Exp.NonVirtual in
-        Some (Let {id= Some (IdentBridge.of_sil id); exp= Call {proc; args; kind}; loc})
+        Let {id= Some (IdentBridge.of_sil id); exp= Call {proc; args; kind}; loc}
     | Call _ ->
         L.die InternalError "Translation of a SIL call that is not const not supported"
-    | Metadata _ ->
-        None
+    | Metadata meta ->
+        of_sil_metadata decls meta
 end
 
 let instr_is_return = function Sil.Store {e1= Lvar v} -> SilPvar.is_return v | _ -> false
@@ -419,11 +462,8 @@ module NodeBridge = struct
     let rec backward_iter i acc =
       if i < 0 then acc
       else
-        match InstrBridge.of_sil decls tenv instrs.(i) with
-        | Some instr ->
-            backward_iter (i - 1) (instr :: acc)
-        | None ->
-            backward_iter (i - 1) acc
+        let instr = InstrBridge.of_sil decls tenv instrs.(i) in
+        backward_iter (i - 1) (instr :: acc)
     in
     let instrs_length = Array.length instrs in
     let instrs =

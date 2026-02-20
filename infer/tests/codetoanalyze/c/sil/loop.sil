@@ -49,10 +49,12 @@ define sum(n: int) : int {
       jmp node_5
       
   #node_2:
+      _ = __sil_metadata_variable_lifetime_begins(&i, <int>)
       store &i <- 0:int
       jmp node_3
       
   #node_1:
+      _ = __sil_metadata_variable_lifetime_begins(&s, <int>)
       store &s <- 0:int
       jmp node_2
       
