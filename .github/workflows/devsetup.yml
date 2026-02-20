@@ -15,7 +15,9 @@ jobs:
         ocaml-compiler:
           - ocaml-variants.5.3.0+options
         build-mode:
-          - user-opam-switch
+          - ""
+          - "--user-opam-switch"
+          - "--no-opam-lock"
       fail-fast: false
     runs-on: ${{ matrix.os }}
     steps:
@@ -37,7 +39,7 @@ jobs:
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
 
-      - run: ./build-infer.sh --yes --${{ matrix.build-mode }} java
+      - run: ./build-infer.sh --yes ${{ matrix.build-mode }} java
       - run: make -C infer/src clean
       - run: make -j -C infer/src byte
       - run: make -j direct_sil_pulse_test
