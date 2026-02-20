@@ -1118,7 +1118,7 @@ define $s5Hello7my_testShySSGyFyAA8ImageURLVXEfU_(var1: *__infer_swift_type<ptr_
       n35 = load n17 @[94:38]
       store n36.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n35 @[94:38]
       n37 = load &$sShySSGMD @[94:31]
-      n38 = __swift_instantiateConcreteTypeFromMangledName(n37) @[94:31]
+      n38 = __sil_swift_alloc(<__infer_swift_type<TShySSG>>) @[94:31]
       jmp 33::ret @[94:31]
       
   #33::ret: @[94:31]
@@ -1823,7 +1823,7 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n71 = load &var8 @[65:49]
       _ = $builtins.memcpy(n70, n71, 16, 0) @[65:49]
       n74 = load &$sSaySSGMD @[65:37]
-      n75 = __swift_instantiateConcreteTypeFromMangledName(n74) @[65:37]
+      n75 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[65:37]
       jmp 62::ret @[65:37]
       
   #62::ret: @[65:37]
@@ -1893,7 +1893,7 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n114 = load n107 @[66:58]
       store n114.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n90 @[66:58]
       n115 = load &$sSaySSGMD @[66:43]
-      n116 = __swift_instantiateConcreteTypeFromMangledName(n115) @[66:43]
+      n116 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[66:43]
       jmp 90::ret @[66:43]
       
   #90::ret: @[66:43]
@@ -1925,7 +1925,7 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n130 = load n129.__infer_swift_type<Ts12_ArrayBufferV>.field_0 @[459:0]
       store n130.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n121 @[459:0]
       n131 = load &$sSaySSGMD @[67:30]
-      n132 = __swift_instantiateConcreteTypeFromMangledName(n131) @[67:30]
+      n132 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[67:30]
       jmp 101::ret @[67:30]
       
 } @?

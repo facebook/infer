@@ -30,7 +30,7 @@ define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_
   local var7: *__infer_swift_type<TSi>, var6: *__infer_swift_type<TSi>
   #: @[2:12]
       n1 = load &$sSS_SStMD @[2:12]
-      n2 = __swift_instantiateConcreteTypeFromMangledName(n1) @[2:12]
+      n2 = __sil_swift_alloc(<__infer_swift_type<TSS_SSt>>) @[2:12]
       jmp 7::ret @[2:12]
       
   #13::ret: @[3:9]

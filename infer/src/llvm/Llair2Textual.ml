@@ -46,6 +46,8 @@ let swift_get_dynamic_type = SwiftProcname.to_string (SwiftProcname.Builtin Swif
 
 let swift_metadata_equals = SwiftProcname.to_string (SwiftProcname.Builtin MetadataEquals)
 
+let swift_instantiateConcreteTypeFromMangledName = "__swift_instantiateConcreteTypeFromMangledName"
+
 let get_alloc_class_name =
   let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
   fun ~proc_state proc_name ->
@@ -771,6 +773,51 @@ and translate_ma_accessor ~(proc_state : ProcState.t) proc_name_str loc =
   (Textual.Exp.Var id, [store_instr; let_metadata])
 
 
+and translate_instantiate_mangled_name ~(proc_state : ProcState.t) global_name_str =
+  let ModuleState.{lang; struct_map; mangled_map; _} = proc_state.module_state in
+  (* 1. Extract type name: $s...MD -> T... *)
+  let middle = String.sub global_name_str ~pos:2 ~len:(String.length global_name_str - 4) in
+  let class_mangled_name = "T" ^ middle in
+  let class_type_name =
+    TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+      class_mangled_name
+  in
+  (* 2. Allocate the symbolic instance representative directly: __sil_swift_alloc(...) *)
+  let alloc_args = [Textual.Exp.Typ (Textual.Typ.Struct class_type_name)] in
+  let alloc_exp =
+    Textual.Exp.Call {proc= Textual.ProcDecl.swift_alloc_name; args= alloc_args; kind= NonVirtual}
+  in
+  (alloc_exp, [])
+
+
+and try_translate_swift_metadata_call ~proc_state (proc : Textual.QualifiedProcName.t) llair_args
+    return_id loc =
+  let proc_name_str = Textual.ProcName.to_string proc.name in
+  (* 1. Side-effect: Mark metadata-producing builtins *)
+  if
+    String.equal proc_name_str swift_get_dynamic_type
+    || String.equal proc_name_str swift_instantiateConcreteTypeFromMangledName
+  then Option.iter return_id ~f:(fun id -> ProcState.mark_as_metadata ~proc_state id) ;
+  (* 2. Route the translation based on the function name *)
+  if String.is_suffix proc_name_str ~suffix:"Ma" then
+    let exp_instrs = translate_ma_accessor ~proc_state proc_name_str loc in
+    Some exp_instrs
+  else if String.equal proc_name_str swift_instantiateConcreteTypeFromMangledName then
+    let extract_global_name (exp : Llair.Exp.t) =
+      match exp with Global {name; _} -> Some name | _ -> None
+    in
+    let global_name_opt = List.hd llair_args |> Option.bind ~f:extract_global_name in
+    match global_name_opt with
+    | Some global_name_str ->
+        let exp, instrs = translate_instantiate_mangled_name ~proc_state global_name_str in
+        Some (exp, instrs)
+    | _ ->
+        None
+  else
+    (* Not a special Swift metadata function we need to manually model *)
+    None
+
+
 and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.QualifiedProcName.t)
     return ?generate_typ_exp (llair_args : Llair.Exp.t list) (loc : Textual.Location.t) =
   let args_instrs, args =
@@ -792,9 +839,6 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.Qualif
     else (args, args_instrs)
   in
   let return_id = Option.map return ~f:(fun reg -> Var.reg_to_id ~proc_state reg |> fst) in
-  let proc_name_str = Textual.ProcName.to_string proc.name in
-  if String.equal proc_name_str swift_get_dynamic_type then
-    Option.iter return_id ~f:(fun id -> ProcState.mark_as_metadata ~proc_state id) ;
   let resolve_call_translation proc args =
     match resolve_method_call ~proc_state proc args with
     | Some call_instr ->
@@ -818,11 +862,12 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.Qualif
           (textual_exp, instrs)
       | None ->
           resolve_call_translation proc args
-    else if String.is_suffix proc_name_str ~suffix:"Ma" then
-      (* Check for Swift Metadata Accessors *)
-      let exp, ma_instrs = translate_ma_accessor ~proc_state proc_name_str loc in
-      (exp, ma_instrs)
-    else resolve_call_translation proc args
+    else
+      match try_translate_swift_metadata_call ~proc_state proc llair_args return_id loc with
+      | Some exp_instrs ->
+          exp_instrs
+      | None ->
+          resolve_call_translation proc args
   in
   update_id_return_type ~proc_state proc return_id ;
   let instrs = call_instrs @ args_instrs in

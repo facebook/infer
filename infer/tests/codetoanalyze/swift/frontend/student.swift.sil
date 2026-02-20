@@ -501,7 +501,7 @@ define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infe
       n31 = load &items @[285:54]
       store n34.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n31 @[285:54]
       n35 = load &$sSaySSGMD @[285:53]
-      n36 = __swift_instantiateConcreteTypeFromMangledName(n35) @[285:53]
+      n36 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[285:53]
       jmp 25::ret @[285:53]
       
   #$ss5print_9separator10terminatoryypd_S2StF::void::ret: @[286:5]
