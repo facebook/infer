@@ -1,0 +1,62 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+// Boxes are A pointer type that uniquely owns a heap allocation of type T.
+// The ABI of a box is the same as pointers in C however they are always fully aligned
+// and non-null. 
+// https://doc.rust-lang.org/1.93.1/src/alloc/boxed.rs.html#109
+// https://doc.rust-lang.org/book/ch15-01-box.html
+//
+// The function represents a simplified model of the builtin box new function 
+// that calls malloc. 
+// https://doc.rust-lang.org/1.93.1/src/alloc/boxed.rs.html#244-266
+// 
+// Internally in rust the type of the box and its fields look like: 
+//  `pub struct Box<T, A : Allocator = Global>(Unqiue<T>, A)`
+//  `pub struct Unique<T>(NonNull<T>, PhantomData<T>)`
+//  `pub struct NonNull<T> {pointer: *const T}`
+// Unique is a wrapper around a raw non-null *mut T that indicates that the possessor of this wrapper owns the referent.
+// The allocator is a a nightly-only experimental API to make custom allocators for custom types.
+// By default the global allocator passess malloc and dealloc calls to the operating system.
+// https://docs.rs/unique/latest/unique/struct.Unique.html
+// 
+// However, since both Unqiue and NonNull have #[repr(transparent)] it means that their memory layout is the same
+// as their non-zero-sized field allowing you to cast NonNull and Unqiue directly the the pointer they contain.
+// From observation this seems to currently only be done to cast NonNull to a raw pointer.
+// https://doc.rust-lang.org/reference/type-layout.html#the-transparent-representation
+// Box does not have the #[repr(transparent)] but the #[lang = "owned_box"] indicating special handling by the compiler.
+// Making it also possible to cast between boxes and raw pointers.
+//
+// In charon's ULLBC boxes are handled differently depending on the stage or parameters passed to it.
+// For example the following code:
+//      let b = Box::new(10);
+//      let value = *b;
+// By default boxes are handled as pointers by the use of the Deref Trait. ULLBC: 
+//      `value = copy (*(b@1))`;
+// When using --mir-elaborated boxes are treated as a pointer to Unqiue and then derefenced : 
+//      @3 := transmute<NonNull<i32>, *const i32>(copy ((*(b@1)).0));
+//      value@2 := copy (*(@3));
+// When using --mir-elaborated --raw-boxes boxes are handled as:
+//      @3 := transmute<NonNull<i32>, *const i32>(copy (((b@1).0).0));
+//      value@2 := copy (*(@3));
+// At some point we want to move to model the --mir-elaborated version since this allows us the get drop-elaboration to
+// get precise information on when a a value is freed.
+define __sil_boxnew(o : int): *int {
+  local ptr : *int
+  #entry:
+    n1 = __sil_malloc(<int>)
+    store &ptr <- n1
+    if __sil_ne([&ptr], 0) then jmp end else jmp invalid
+  #end:
+    n2 = load &ptr
+    store n2 <- o
+    ret n1
+  // TODO: Error handling in case of failure. 
+  #invalid:
+    unreachable
+
+}

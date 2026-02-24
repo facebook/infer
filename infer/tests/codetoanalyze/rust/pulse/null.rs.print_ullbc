@@ -1,0 +1,48 @@
+# Final ULLBC before serialization:
+
+// Full name: core::ptr::null
+#[lang_item("ptr_null")]
+pub fn null<T>() -> *const T
+where
+    [@TraitClause0]: Thin<T>,
+{
+    let @0: *const T; // return
+    let @1: *const T; // anonymous local
+
+    bb0: {
+        storage_live(@1);
+        @1 := cast<usize, *const T>(const (0 : usize));
+        @0 := move (@1);
+        return;
+    }
+}
+
+// Full name: null::main
+fn main()
+{
+    let @0: (); // return
+    let ptr@1: *const i32; // local
+    let x@2: i32; // local
+
+    bb0: {
+        storage_live(ptr@1);
+        ptr@1 := null<i32>[{impl#0}<i32>[Pointee<i32> where Metadata  = ()]]() -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_live(x@2);
+        x@2 := copy (*(ptr@1));
+        @0 := ();
+        storage_dead(x@2);
+        storage_dead(ptr@1);
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+
+

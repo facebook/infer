@@ -192,6 +192,8 @@ let c_mixed_type_textual = Typ.Void
 
 let swift_mixed_type_textual = Typ.Void
 
+let rust_mixed_type_textual = Typ.Void
+
 let default_return_type (lang : Lang.t) loc =
   match lang with
   | Hack ->
@@ -202,6 +204,8 @@ let default_return_type (lang : Lang.t) loc =
       Typ.mk_ptr c_mixed_type_textual
   | Swift ->
       Typ.mk_ptr swift_mixed_type_textual
+  | Rust ->
+      Typ.mk_ptr rust_mixed_type_textual
   | other ->
       L.die InternalError "Unexpected return type outside of Hack/Python/C/Swift: %s"
         (Lang.to_string other)
@@ -267,6 +271,11 @@ module TypBridge = struct
 
 
   let swift_mixed =
+    let void = SilTyp.mk SilTyp.Tvoid in
+    SilTyp.mk_ptr void
+
+
+  let rust_mixed =
     let void = SilTyp.mk SilTyp.Tvoid in
     SilTyp.mk_ptr void
 end
@@ -854,6 +863,10 @@ module InstrBridge = struct
                     (* Declarations with unknown formals are expected in Swift. Assume that unknown
                        formal types are *void. *)
                     TypBridge.swift_mixed
+                | Lang.Rust ->
+                    (* Declarations with unknown formals are expected in Rust. Assume that unknown
+                       formal types are *void. *)
+                    TypBridge.rust_mixed
                 | other ->
                     L.die InternalError
                       "Unexpected unknown formals outside of Hack/Python/C/Swift: %s"

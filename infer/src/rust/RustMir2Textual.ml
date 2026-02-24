@@ -79,11 +79,13 @@ let item_meta_to_string crate (item_meta : Charon.Generated_Types.item_meta) : s
 
 
 let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate)
-    (operand : Charon.Generated_GAst.fn_operand) : string =
+    (operand : Charon.Generated_GAst.fn_operand) : Textual.QualifiedProcName.t =
   match operand with
   | FnOpRegular {func= FunId (FRegular fun_decl_id)} ->
       let decl = fun_map_find_id crate fun_decl_id in
-      item_meta_to_string crate decl.item_meta
+      mk_qualified_proc_name crate decl.item_meta
+  | FnOpRegular {func= FunId (FBuiltin BoxNew)} ->
+      Textual.ProcDecl.boxnew_name
   | _ ->
       L.die UserError "Unsupported fun operand: %a" Charon.Generated_GAst.pp_fn_operand operand
 
@@ -240,9 +242,16 @@ and adt_ty_to_textual_typ crate (type_decl_ref : Charon.Generated_Types.type_dec
           Textual.Typ.Void
       | _ ->
           Textual.Typ.Void )
+  | TBuiltin TBox -> (
+    match type_decl_ref.generics.types with
+    | typ :: _ ->
+        Textual.Typ.mk_ptr (ty_to_textual_typ crate typ)
+    | _ ->
+        Textual.Typ.mk_ptr Textual.Typ.Void )
   | _ ->
-      L.die UserError "Unsupported adt type: %a" Charon.Generated_Types.pp_type_decl_ref
-        type_decl_ref
+      L.user_warning "Unsupported adt type: %a" Charon.Generated_Types.pp_type_decl_ref
+        type_decl_ref ;
+      Textual.Typ.Void
 
 
 and ty_to_textual_typ crate (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
@@ -256,8 +265,12 @@ and ty_to_textual_typ crate (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.
       Textual.Typ.mk_ptr (ty_to_textual_typ crate ty)
   | TAdt type_decl_ref ->
       adt_ty_to_textual_typ crate type_decl_ref
+  (* Generics *)
+  | TVar _ ->
+      Textual.Typ.Void
   | _ ->
-      L.die UserError "Unsupported type: %a" Charon.Generated_Types.pp_ty rust_ty
+      L.user_error "Unsupported type: %a" Charon.Generated_Types.pp_ty rust_ty ;
+      Textual.Typ.Void
 
 
 let cast_kind_to_textual_typ (crate : Charon.UllbcAst.crate)
@@ -473,12 +486,7 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       let args_exps, _ =
         List.map call.args ~f:(mk_exp_from_operand ~loc crate place_map) |> List.unzip
       in
-      let proc_name = Textual.ProcName.of_string (fun_name_from_fun_operand crate call.func) in
-      let qualified_proc_name =
-        { Textual.QualifiedProcName.enclosing_class= Textual.QualifiedProcName.TopLevel
-        ; name= proc_name
-        ; metadata= None }
-      in
+      let qualified_proc_name = fun_name_from_fun_operand crate call.func in
       let dest_exp, dest_typ = mk_exp_from_place ~loc crate place_map call.dest in
       let call_exp =
         Textual.Exp.Call {proc= qualified_proc_name; args= args_exps; kind= Textual.Exp.NonVirtual}
@@ -568,6 +576,23 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
       []
   | StorageLive _ ->
       []
+  (* A drop frees the memory of a value once it goes out of scope.
+    The following implementation is a simplified model for drops 
+    of boxes created by Box::new() of types using the global allocator.
+    https://doc.rust-lang.org/1.93.1/alloc/alloc/struct.Global.html
+    It assumes that drops are elaborated, it is possible to get the elaborated mir
+    by passing --mir=elaborated as charon argument, however this will also change
+    how box types are trated in the current verion. 
+    At some point we want to update the charon version to be able to use --precise-drops
+    https://rustc-dev-guide.rust-lang.org/mir/drop-elaboration.html
+    https://doc.rust-lang.org/1.93.1/alloc/alloc/trait.GlobalAlloc.html#tymethod.dealloc
+  *)
+  | Drop (place, _trait_ref) ->
+      let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
+      let qualified_free_name = Textual.ProcDecl.free_name in
+      let free_call = Textual.Exp.call_non_virtual qualified_free_name [exp] in
+      let free_instr = Textual.Instr.Let {id= None; exp= free_call; loc} in
+      [free_instr]
   | s ->
       L.die UserError "Unsupported statement: %a" Charon.Generated_UllbcAst.pp_raw_statement s
 
@@ -597,7 +622,7 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
 
 
 let mk_typedesc (crate : Charon.UllbcAst.crate) (type_decl : Charon.Generated_Types.type_decl) :
-    Textual.Struct.t =
+    Textual.Struct.t option =
   let enclosing_class_name = item_meta_to_string crate type_decl.item_meta in
   match type_decl.kind with
   | Struct fields | Union fields ->
@@ -611,27 +636,25 @@ let mk_typedesc (crate : Charon.UllbcAst.crate) (type_decl : Charon.Generated_Ty
             {Textual.FieldDecl.qualified_name= qualified_fieldname; typ= field_typ; attributes= []} )
       in
       let type_name = Textual.TypeName.of_string enclosing_class_name in
-      {Textual.Struct.name= type_name; supers= []; fields; attributes= []}
+      Some {Textual.Struct.name= type_name; supers= []; fields; attributes= []}
   | Enum _ ->
       (* TODO: Implement enum type *)
-      L.die UserError "Unsupported type Enum: %s\n" (item_meta_to_string crate type_decl.item_meta)
+      L.user_warning "Unsupported type Enum: %s\n" (item_meta_to_string crate type_decl.item_meta) ;
+      None
   | _ ->
-      L.die UserError "Unsupported type kind: %a@\n%s@\n" Charon.Generated_Types.pp_type_decl_kind
+      L.user_warning "Unsupported type kind: %a@\n%s@\n" Charon.Generated_Types.pp_type_decl_kind
         type_decl.kind
-        (item_meta_to_string crate type_decl.item_meta)
+        (item_meta_to_string crate type_decl.item_meta) ;
+      None
 
 
 let mk_procdesc (crate : Charon.UllbcAst.crate)
-    (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
-    Textual.ProcDesc.t =
+    (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl)
+    (body : 'body Charon.Generated_GAst.gexpr_body) : Textual.ProcDesc.t =
   let _, fun_decl = proc in
-  let blocks, locals, arg_count =
-    match fun_decl.body with
-    | Some {span= _; locals; body} ->
-        (body, locals.locals, locals.arg_count)
-    | None ->
-        ([], [], 0)
-  in
+  let blocks = body.body in
+  let locals = body.locals.locals in
+  let arg_count = body.locals.arg_count in
   let place_map = mk_place_map locals in
   let fresh_ident = None in
   let procdecl = mk_procdecl crate fun_decl in
@@ -641,6 +664,25 @@ let mk_procdesc (crate : Charon.UllbcAst.crate)
   let locals = mk_locals crate locals arg_count place_map in
   let exit_loc = location_from_span_end fun_decl.item_meta.span in
   {Textual.ProcDesc.procdecl; fresh_ident; nodes; start; params; locals; exit_loc}
+
+
+let mk_decl crate (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
+    Textual.Module.decl option =
+  let _, fun_decl = proc in
+  try
+    match fun_decl.body with
+    | Some body ->
+        Some (Textual.Module.Proc (mk_procdesc crate proc body))
+    (* Functions withouth body, they can be among others functions from other crates, 
+    opaque types or trait definitions without default implementations.*)
+    | None ->
+        Some (Textual.Module.Procdecl (mk_procdecl crate fun_decl))
+  with L.InferUserError s ->
+    (* Catch Translation error so that other functions can still be translated *)
+    L.user_warning "[Warning] Could not translate %s:\n[Reason]: %s\n"
+      (item_meta_to_string crate fun_decl.item_meta)
+      s ;
+    None
 
 
 (* If this local is a tuple type, create a tuple struct with the indices as field names. *)
@@ -691,12 +733,12 @@ let mk_module (crate : Charon.UllbcAst.crate) ~file_name : Textual.Module.t =
   let attrs = [Textual.Attr.mk_source_language Rust] in
   let type_decls =
     Charon.Generated_Types.TypeDeclId.Map.bindings crate.type_decls
-    |> List.map ~f:(fun (_, type_decl) -> mk_typedesc crate type_decl)
+    |> List.filter_map ~f:(fun (_, type_decl) -> mk_typedesc crate type_decl)
     |> List.map ~f:(fun s -> Textual.Module.Struct s)
   in
   let proc_decls =
     Charon.Generated_Types.FunDeclId.Map.bindings fun_decls
-    |> List.map ~f:(fun proc -> Textual.Module.Proc (mk_procdesc crate proc))
+    |> List.filter_map ~f:(fun proc -> mk_decl crate proc)
   in
   (* The crate does not store tuple types in it declerations
     so we need to extract the tuples from the locals of the functions.

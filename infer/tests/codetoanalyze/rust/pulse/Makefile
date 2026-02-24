@@ -17,6 +17,7 @@ default: test
 
 $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN)
 	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions \
+	    --enable-issue-type BIABDUCTION_MEMORY_LEAK \
 		--dump-duplicate-symbols \
 		-o $(INFER_OUT) $(CAPTURE_CMD)
 
@@ -25,5 +26,9 @@ $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN)
 charon:
 	$(QUIET)if [ "$(BUILD_RUST_ANALYZERS)" = "yes" ]; then \
 	error=0; for file in $(RUSTSOURCES) ; do \
-		charon rustc --print-ullbc --ullbc --dest-file $$file.ullbc -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
+		args=""; \
+		if [ -e "$$file.args" ]; then \
+    		args=$$(cat "$$file.args"); \
+		fi; \
+		charon rustc --print-ullbc --ullbc --dest-file $$file.ullbc $$args -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
 	done; fi
