@@ -246,16 +246,14 @@ and adt_ty_to_textual_typ crate (type_decl_ref : Charon.Generated_Types.type_dec
           Textual.Typ.Void
       | _ ->
           Textual.Typ.Void )
-  | TBuiltin TBox -> (
+  | TBuiltin TBox | TBuiltin TSlice -> (
     match type_decl_ref.generics.types with
     | typ :: _ ->
         Textual.Typ.mk_ptr (ty_to_textual_typ crate typ)
     | _ ->
         Textual.Typ.mk_ptr Textual.Typ.Void )
-  | _ ->
-      L.user_warning "[WARNING] Unsupported adt type: @. > %a @."
-        Charon.Generated_Types.pp_type_decl_ref type_decl_ref ;
-      Textual.Typ.Void
+  | TBuiltin TStr ->
+      Textual.Typ.Struct Textual.TypeName.sil_string
 
 
 and ty_to_textual_typ crate (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.t =
@@ -272,6 +270,15 @@ and ty_to_textual_typ crate (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.
   (* Generics *)
   | TVar _ ->
       Textual.Typ.Void
+  | TNever ->
+      Textual.Typ.Void
+  | TFnPtr {binder_value= args, ret} ->
+      let params_type = List.map args ~f:(fun arg -> ty_to_textual_typ crate arg) in
+      let return_type = ty_to_textual_typ crate ret in
+      Textual.Typ.Fun (Some {params_type; return_type})
+  | TFnDef _ ->
+      (* TODO Types *)
+      Textual.Typ.Fun None
   | _ ->
       L.user_warning "[WARNING] Unsupported type: @. > %a @." Charon.Generated_Types.pp_ty rust_ty ;
       Textual.Typ.Void
@@ -282,13 +289,11 @@ let cast_kind_to_textual_typ (crate : Charon.UllbcAst.crate)
   match cast_kind with
   | CastScalar (_, target_typ) ->
       ty_to_textual_typ crate (TLiteral target_typ)
-  | CastRawPtr (_, target_typ) ->
-      ty_to_textual_typ crate target_typ
-  | CastTransmute (_, target_type) ->
+  | CastRawPtr (_, target_type)
+  | CastTransmute (_, target_type)
+  | CastFnPtr (_, target_type)
+  | CastUnsize (_, target_type, _) ->
       ty_to_textual_typ crate target_type
-  | _ ->
-      (* TODO: Add Support for more cast types*)
-      Textual.Typ.Void
 
 
 (* A map from place ids to (place name, type) *)
@@ -660,10 +665,16 @@ let mk_typedesc (crate : Charon.UllbcAst.crate) (type_decl : Charon.Generated_Ty
       L.user_warning "[WARNNIG] Unsupported type Enum: %s\n"
         (item_meta_to_string crate type_decl.item_meta) ;
       None
-  | _ ->
-      L.user_warning "[WARNING] Unsupported type kind: %s @. > %a @."
-        (item_meta_to_string crate type_decl.item_meta)
-        Charon.Generated_Types.pp_type_decl_kind type_decl.kind ;
+  | Alias _ ->
+      (* Alias already replaced in function bodies *)
+      None
+  | Opaque ->
+      L.user_warning "[WARNING] Unsupported type Opaque: %s @."
+        (item_meta_to_string crate type_decl.item_meta) ;
+      None
+  | TDeclError s ->
+      L.external_warning "[WARNING] Charon encountered %s : %s @." s
+        (item_meta_to_string crate type_decl.item_meta) ;
       None
 
 
