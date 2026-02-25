@@ -15,7 +15,7 @@ let fun_map_find_id (crate : Charon.UllbcAst.crate) fun_decl_id =
   | Some decl ->
       decl
   | None ->
-      L.die UserError "Unsupported fun type (fun_decl_id not found) %s"
+      L.die UserError "[ERROR] Unsupported fun type (fun_decl_id not found): @. > %s @."
         (Charon.PrintTypes.fun_decl_id_to_string
            (Charon.PrintUllbcAst.Crate.crate_to_fmt_env crate)
            fun_decl_id )
@@ -27,7 +27,8 @@ let type_decl_map_find_id (crate : Charon.UllbcAst.crate) type_decl_id =
   | Some decl ->
       decl
   | None ->
-      L.die UserError "Unsupported adt_typ_to_textual type (type_decl_ref not found) %s"
+      L.die UserError
+        "[ERROR] Unsupported adt_typ_to_textual type (type_decl_ref not found): @. > %s @."
         (Charon.PrintTypes.type_decl_id_to_string
            (Charon.PrintUllbcAst.Crate.crate_to_fmt_env crate)
            type_decl_id )
@@ -87,7 +88,8 @@ let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate)
   | FnOpRegular {func= FunId (FBuiltin BoxNew)} ->
       Textual.ProcDecl.boxnew_name
   | _ ->
-      L.die UserError "Unsupported fun operand: %a" Charon.Generated_GAst.pp_fn_operand operand
+      L.die UserError "[ERROR] Unsupported fun operand: @. > %a @."
+        Charon.Generated_GAst.pp_fn_operand operand
 
 
 let mk_fieldname (type_decl : Charon.Generated_Types.type_decl) field_id =
@@ -96,7 +98,7 @@ let mk_fieldname (type_decl : Charon.Generated_Types.type_decl) field_id =
     | Struct fields | Union fields ->
         fields
     | _ ->
-        L.die UserError "Unsupported type for fieldname"
+        L.die UserError "[ERROR] Unsupported type for fieldname: @."
   in
   let field = List.nth fields (Charon.Generated_Types.FieldId.to_int field_id) in
   let field_name =
@@ -106,7 +108,7 @@ let mk_fieldname (type_decl : Charon.Generated_Types.type_decl) field_id =
   | Some (Some field_name) ->
       Textual.FieldName.of_string field_name
   | _ ->
-      L.die UserError "Did not find fieldname in %a field_id: %a "
+      L.die UserError "[ERROR] Did not find fieldname in %a field_id: @. > %a @."
         Charon.Generated_Types.pp_type_decl type_decl Charon.Generated_Types.pp_field_id field_id
 
 
@@ -148,7 +150,8 @@ let proc_name_from_unop (op : Charon.Generated_Expressions.unop) : Textual.Quali
   | Cast _ ->
       Textual.ProcDecl.cast_name
   | _ ->
-      L.die UserError "Unsupported unary operator: %a" Charon.Generated_Expressions.pp_unop op
+      L.die UserError "[ERROR] Unsupported unary operator: @. > %a @."
+        Charon.Generated_Expressions.pp_unop op
 
 
 let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textual.Typ.t) :
@@ -196,7 +199,8 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
     | Shr _, _ ->
         (IR.Binop.Shiftrt, typ)
     | _ ->
-        L.die UserError "Unsupported binary operator: %a" Charon.Generated_Expressions.pp_binop op
+        L.die UserError "[ERROR] Unsupported binary operator: @. > %a @."
+          Charon.Generated_Expressions.pp_binop op
   in
   (Textual.ProcDecl.of_binop bin_op, typ)
 
@@ -249,8 +253,8 @@ and adt_ty_to_textual_typ crate (type_decl_ref : Charon.Generated_Types.type_dec
     | _ ->
         Textual.Typ.mk_ptr Textual.Typ.Void )
   | _ ->
-      L.user_warning "Unsupported adt type: %a" Charon.Generated_Types.pp_type_decl_ref
-        type_decl_ref ;
+      L.user_warning "[WARNING] Unsupported adt type: @. > %a @."
+        Charon.Generated_Types.pp_type_decl_ref type_decl_ref ;
       Textual.Typ.Void
 
 
@@ -269,7 +273,7 @@ and ty_to_textual_typ crate (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.
   | TVar _ ->
       Textual.Typ.Void
   | _ ->
-      L.user_error "Unsupported type: %a" Charon.Generated_Types.pp_ty rust_ty ;
+      L.user_warning "[WARNING] Unsupported type: @. > %a @." Charon.Generated_Types.pp_ty rust_ty ;
       Textual.Typ.Void
 
 
@@ -329,24 +333,33 @@ let mk_const_literal (literal_ty : Charon.Generated_Types.literal_type)
     , (CLiteral (VScalar (UnsignedScalar (_, n))) | CLiteral (VScalar (SignedScalar (_, n)))) ) ->
       Textual.Exp.Const (Textual.Const.Int n)
   | (TInt _ | TUInt _), _ ->
-      L.die UserError "Unsupported int type: %a" Charon.Generated_Types.pp_literal_type literal_ty
+      L.die UserError "[ERROR] Unsupported int type: @. > %a @. > %a @."
+        Charon.Generated_Types.pp_literal_type literal_ty
+        Charon.Generated_Expressions.pp_raw_constant_expr value
   | TFloat _, CLiteral (VFloat {float_value= f; float_ty= _}) ->
       Textual.Exp.Const (Textual.Const.Float (float_of_string f))
   | TFloat _, _ ->
-      L.die UserError "Unsupported float type: %a" Charon.Generated_Types.pp_literal_type literal_ty
+      L.die UserError "[ERROR] Unsupported float type: @. > %a @. > %a @."
+        Charon.Generated_Types.pp_literal_type literal_ty
+        Charon.Generated_Expressions.pp_raw_constant_expr value
   | TBool, CLiteral (VBool b) ->
       Textual.Exp.Const (Textual.Const.Int (if b then Z.one else Z.zero))
   | TBool, _ ->
-      L.die UserError "Unsupported bool type: %a" Charon.Generated_Types.pp_literal_type literal_ty
+      L.die UserError "[ERROR] Unsupported bool type: @. > %a @. > %a @."
+        Charon.Generated_Types.pp_literal_type literal_ty
+        Charon.Generated_Expressions.pp_raw_constant_expr value
   | TChar, CLiteral (VChar c) -> (
     match Uchar.to_char c with
     | Some ch ->
         Textual.Exp.Const (Textual.Const.Int (Z.of_int (int_of_char ch)))
     | None ->
-        L.die UserError "Cannot convert Unicode character to char: %a"
-          Charon.Generated_Types.pp_literal_type literal_ty )
+        L.die UserError "[ERROR] Cannot convert Unicode character to char: @. > %a @. > %a @."
+          Charon.Generated_Types.pp_literal_type literal_ty
+          Charon.Generated_Expressions.pp_raw_constant_expr value )
   | TChar, _ ->
-      L.die UserError "Unsupported char type: %a" Charon.Generated_Types.pp_literal_type literal_ty
+      L.die UserError "[ERROR] Unsupported char type: @. > %a @. > %a @."
+        Charon.Generated_Types.pp_literal_type literal_ty
+        Charon.Generated_Expressions.pp_raw_constant_expr value
 
 
 let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
@@ -356,7 +369,8 @@ let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
   | TLiteral literal_ty ->
       mk_const_literal literal_ty value
   | _ ->
-      L.die UserError "Unsupported literal type: %a" Charon.Generated_Types.pp_ty rust_ty
+      L.die UserError "[ERROR] Unsupported literal type: @. > %a @." Charon.Generated_Types.pp_ty
+        rust_ty
 
 
 let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
@@ -391,7 +405,8 @@ let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : plac
       let exp = Textual.Exp.Index (exp_place, exp_op) in
       (exp, typ)
   | _ ->
-      L.die UserError "Unsupported place: %a" Charon.Generated_Expressions.pp_place place
+      L.die UserError "[ERROR] Unsupported place: @. > %a @." Charon.Generated_Expressions.pp_place
+        place
 
 
 and mk_exp_from_place_load ~loc (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
@@ -447,12 +462,13 @@ let mk_exp_from_rvalue ~loc crate (rvalue : Charon.Generated_Expressions.rvalue)
       | AggregatedAdt (_, None, None), [] ->
           (Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void)
       | _ ->
-          L.die UserError "Unsupported aggregate type: %a" Charon.Generated_Expressions.pp_rvalue
-            rvalue )
+          L.die UserError "[ERROR] Unsupported aggregate type: @. > %a @."
+            Charon.Generated_Expressions.pp_rvalue rvalue )
   | Use op ->
       mk_exp_from_operand ~loc crate place_map op
   | _ ->
-      L.die UserError "Unsupported rvalue: %a" Charon.Generated_Expressions.pp_rvalue rvalue
+      L.die UserError "[ERROR] Unsupported rvalue: @. > %a @."
+        Charon.Generated_Expressions.pp_rvalue rvalue
 
 
 let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
@@ -470,8 +486,8 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
       ([], Textual.Terminator.Ret exp)
   | Charon.Generated_UllbcAst.Switch (_operand, (SwitchInt (_, _, _) as switch)) ->
-      L.die UserError "Unsupported switch type: SwitchInt %a\n" Charon.Generated_UllbcAst.pp_switch
-        switch
+      L.die UserError "[ERROR] Unsupported switch type: @. > %a @."
+        Charon.Generated_UllbcAst.pp_switch switch
   | Charon.Generated_UllbcAst.Switch (operand, If (then_block_id, else_block_id)) ->
       let exp, _ = mk_exp_from_operand ~loc crate place_map operand in
       let then_label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int then_block_id) in
@@ -502,7 +518,8 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       (* TODO: To be updated when error handling is being implemented *)
       ([], Textual.Terminator.Unreachable)
   | t ->
-      L.die UserError "Unsupported terminator: %a" Charon.Generated_UllbcAst.pp_raw_terminator t
+      L.die UserError "[ERROR] Unsupported terminator: @. > %a @."
+        Charon.Generated_UllbcAst.pp_raw_terminator t
 
 
 let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.statement) :
@@ -536,7 +553,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
                 | Some field ->
                     field
                 | None ->
-                    L.die UserError "Field not found in: %s"
+                    L.die UserError "[ERROR] Field not found in: %s @."
                       (item_meta_to_string crate type_decl.item_meta)
               in
               let field_name = name_of_field field idx in
@@ -544,8 +561,8 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
               let field_exp = Textual.Exp.Field {exp= lexp; field} in
               Textual.Instr.Store {exp1= field_exp; typ= Some typ; exp2= exp; loc} )
       | __ ->
-          L.die UserError "Unsupported TAdtId kind: %a" Charon.Generated_Types.pp_type_decl_kind
-            type_decl.kind )
+          L.die UserError "[ERROR] Unsupported TAdtId kind: @. > %a @."
+            Charon.Generated_Types.pp_type_decl_kind type_decl.kind )
   (* Tuples *)
   | Assign
       ( ({ty= TAdt {id= TTuple; generics}} as lhs)
@@ -594,7 +611,8 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
       let free_instr = Textual.Instr.Let {id= None; exp= free_call; loc} in
       [free_instr]
   | s ->
-      L.die UserError "Unsupported statement: %a" Charon.Generated_UllbcAst.pp_raw_statement s
+      L.die UserError "[ERROR] Unsupported statement: @. > %a @."
+        Charon.Generated_UllbcAst.pp_raw_statement s
 
 
 let mk_procdecl crate (proc : Charon.UllbcAst.fun_decl) : Textual.ProcDecl.t =
@@ -639,12 +657,13 @@ let mk_typedesc (crate : Charon.UllbcAst.crate) (type_decl : Charon.Generated_Ty
       Some {Textual.Struct.name= type_name; supers= []; fields; attributes= []}
   | Enum _ ->
       (* TODO: Implement enum type *)
-      L.user_warning "Unsupported type Enum: %s\n" (item_meta_to_string crate type_decl.item_meta) ;
+      L.user_warning "[WARNNIG] Unsupported type Enum: %s\n"
+        (item_meta_to_string crate type_decl.item_meta) ;
       None
   | _ ->
-      L.user_warning "Unsupported type kind: %a@\n%s@\n" Charon.Generated_Types.pp_type_decl_kind
-        type_decl.kind
-        (item_meta_to_string crate type_decl.item_meta) ;
+      L.user_warning "[WARNING] Unsupported type kind: %s @. > %a @."
+        (item_meta_to_string crate type_decl.item_meta)
+        Charon.Generated_Types.pp_type_decl_kind type_decl.kind ;
       None
 
 
@@ -679,7 +698,7 @@ let mk_decl crate (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charo
         Some (Textual.Module.Procdecl (mk_procdecl crate fun_decl))
   with L.InferUserError s ->
     (* Catch Translation error so that other functions can still be translated *)
-    L.user_warning "[Warning] Could not translate %s:\n[Reason]: %s\n"
+    L.user_warning "[WARNING] Could not translate %s: @. [REASON]: %s @."
       (item_meta_to_string crate fun_decl.item_meta)
       s ;
     None
