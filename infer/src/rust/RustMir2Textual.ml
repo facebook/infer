@@ -690,8 +690,13 @@ let mk_decl crate (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charo
   let _, fun_decl = proc in
   try
     match fun_decl.body with
-    | Some body ->
-        Some (Textual.Module.Proc (mk_procdesc crate proc body))
+    | Some body -> (
+      try Some (Textual.Module.Proc (mk_procdesc crate proc body))
+      with L.InferUserError s ->
+        L.user_warning "[WARNING] Trying procdecl for %s: @. [REASON]: %s @."
+          (item_meta_to_string crate fun_decl.item_meta)
+          s ;
+        Some (Textual.Module.Procdecl (mk_procdecl crate fun_decl)) )
     (* Functions withouth body, they can be among others functions from other crates, 
     opaque types or trait definitions without default implementations.*)
     | None ->
