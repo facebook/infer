@@ -331,51 +331,26 @@ let mk_locals crate (locals : Charon.Generated_GAst.local list) (arg_count : int
          (varname, Textual.Typ.mk_without_attributes (ty_to_textual_typ crate l.var_ty)) )
 
 
-let mk_const_literal (literal_ty : Charon.Generated_Types.literal_type)
-    (value : Charon.Generated_Expressions.raw_constant_expr) : Textual.Exp.t =
-  match (literal_ty, value) with
-  | ( (TInt _ | TUInt _)
-    , (CLiteral (VScalar (UnsignedScalar (_, n))) | CLiteral (VScalar (SignedScalar (_, n)))) ) ->
+let mk_const_exp _crate (value : Charon.Generated_Expressions.raw_constant_expr) : Textual.Exp.t =
+  match value with
+  | CLiteral (VScalar (UnsignedScalar (_, n))) | CLiteral (VScalar (SignedScalar (_, n))) ->
       Textual.Exp.Const (Textual.Const.Int n)
-  | (TInt _ | TUInt _), _ ->
-      L.die UserError "[ERROR] Unsupported int type: @. > %a @. > %a @."
-        Charon.Generated_Types.pp_literal_type literal_ty
-        Charon.Generated_Expressions.pp_raw_constant_expr value
-  | TFloat _, CLiteral (VFloat {float_value= f; float_ty= _}) ->
+  | CLiteral (VFloat {float_value= f; float_ty= _}) ->
       Textual.Exp.Const (Textual.Const.Float (float_of_string f))
-  | TFloat _, _ ->
-      L.die UserError "[ERROR] Unsupported float type: @. > %a @. > %a @."
-        Charon.Generated_Types.pp_literal_type literal_ty
-        Charon.Generated_Expressions.pp_raw_constant_expr value
-  | TBool, CLiteral (VBool b) ->
+  | CLiteral (VBool b) ->
       Textual.Exp.Const (Textual.Const.Int (if b then Z.one else Z.zero))
-  | TBool, _ ->
-      L.die UserError "[ERROR] Unsupported bool type: @. > %a @. > %a @."
-        Charon.Generated_Types.pp_literal_type literal_ty
-        Charon.Generated_Expressions.pp_raw_constant_expr value
-  | TChar, CLiteral (VChar c) -> (
+  | CLiteral (VChar c) -> (
     match Uchar.to_char c with
     | Some ch ->
         Textual.Exp.Const (Textual.Const.Int (Z.of_int (int_of_char ch)))
     | None ->
-        L.die UserError "[ERROR] Cannot convert Unicode character to char: @. > %a @. > %a @."
-          Charon.Generated_Types.pp_literal_type literal_ty
+        L.die UserError "[ERROR] Cannot convert Unicode character to char: @. > %a @."
           Charon.Generated_Expressions.pp_raw_constant_expr value )
-  | TChar, _ ->
-      L.die UserError "[ERROR] Unsupported char type: @. > %a @. > %a @."
-        Charon.Generated_Types.pp_literal_type literal_ty
-        Charon.Generated_Expressions.pp_raw_constant_expr value
-
-
-let mk_const_exp (rust_ty : Charon.Generated_Types.ty)
-    (value : Charon.Generated_Expressions.raw_constant_expr) : Textual.Exp.t =
-  (* TODO: Add support for more types *)
-  match rust_ty with
-  | TLiteral literal_ty ->
-      mk_const_literal literal_ty value
+  | CLiteral (VStr s) ->
+      Textual.Exp.Const (Textual.Const.Str s)
   | _ ->
-      L.die UserError "[ERROR] Unsupported literal type: @. > %a @." Charon.Generated_Types.pp_ty
-        rust_ty
+      L.die UserError "[ERROR] Unsupported constant expressions: @. > %a @."
+        Charon.Generated_Expressions.pp_raw_constant_expr value
 
 
 let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
@@ -430,7 +405,7 @@ and mk_exp_from_operand ~loc crate (place_map : place_map_ty)
       let value = const_operand.value in
       let rust_ty = const_operand.ty in
       let textual_typ = ty_to_textual_typ crate rust_ty in
-      let exp = mk_const_exp rust_ty value in
+      let exp = mk_const_exp crate value in
       (exp, textual_typ)
 
 
