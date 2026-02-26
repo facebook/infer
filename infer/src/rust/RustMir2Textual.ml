@@ -34,6 +34,18 @@ let type_decl_map_find_id (crate : Charon.UllbcAst.crate) type_decl_id =
            type_decl_id )
 
 
+let global_decl_map_find_id (crate : Charon.UllbcAst.crate) global_decl_id =
+  let decl = Charon.Generated_Types.GlobalDeclId.Map.find_opt global_decl_id crate.global_decls in
+  match decl with
+  | Some decl ->
+      decl
+  | None ->
+      L.die UserError "[ERROR] Unsupported global type (global_decls not found): @. > %s @."
+        (Charon.PrintTypes.global_decl_id_to_string
+           (Charon.PrintUllbcAst.Crate.crate_to_fmt_env crate)
+           global_decl_id )
+
+
 let location_from_span (span : Charon.Generated_Meta.span) : Textual.Location.t =
   let line = span.span.beg_loc.line in
   let col = span.span.beg_loc.col in
@@ -77,6 +89,10 @@ let item_meta_to_string crate (item_meta : Charon.Generated_Types.item_meta) : s
   let names = List.map item_meta.name ~f:(name_of_path_element crate) in
   let name_str = Stdlib.String.concat "::" names in
   name_str
+
+
+let global_to_varname crate item_meta =
+  "GLOBAL@" ^ item_meta_to_string crate item_meta |> Textual.VarName.of_string
 
 
 let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate)
@@ -384,6 +400,10 @@ let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : plac
       let exp_op, _ = mk_exp_from_operand ~loc crate place_map operand in
       let exp = Textual.Exp.Index (exp_place, exp_op) in
       exp
+  | PlaceGlobal {id} ->
+      let global_decl = global_decl_map_find_id crate id in
+      let exp = Textual.Exp.Lvar (global_to_varname crate global_decl.item_meta) in
+      exp
   | _ ->
       L.die UserError "[ERROR] Unsupported place: @. > %a @." Charon.Generated_Expressions.pp_place
         place
@@ -614,8 +634,12 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
   let instrs = block.statements |> List.concat_map ~f:(mk_instr crate place_map) in
   let term_instr, last = mk_terminator crate place_map block.terminator in
   let instrs = instrs @ term_instr in
-  let last_loc = location_from_span block.terminator.span in
-  let label_loc = Textual.Location.Unknown in
+  let last_loc = location_from_span_end block.terminator.span in
+  let label_loc =
+    List.hd block.statements
+    |> Option.map ~f:(fun (s : Charon.Generated_UllbcAst.statement) -> location_from_span s.span)
+    |> Option.value ~default:Textual.Location.Unknown
+  in
   {Textual.Node.label; ssa_parameters; exn_succs; last; instrs; last_loc; label_loc}
 
 
@@ -654,9 +678,8 @@ let mk_typedesc (crate : Charon.UllbcAst.crate) (type_decl : Charon.Generated_Ty
 
 
 let mk_procdesc (crate : Charon.UllbcAst.crate)
-    (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl)
+    (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl)
     (body : 'body Charon.Generated_GAst.gexpr_body) : Textual.ProcDesc.t =
-  let _, fun_decl = proc in
   let blocks = body.body in
   let locals = body.locals.locals in
   let arg_count = body.locals.arg_count in
@@ -671,13 +694,12 @@ let mk_procdesc (crate : Charon.UllbcAst.crate)
   {Textual.ProcDesc.procdecl; fresh_ident; nodes; start; params; locals; exit_loc}
 
 
-let mk_decl crate (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
+let mk_decl crate (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
     Textual.Module.decl option =
-  let _, fun_decl = proc in
   try
     match fun_decl.body with
     | Some body -> (
-      try Some (Textual.Module.Proc (mk_procdesc crate proc body))
+      try Some (Textual.Module.Proc (mk_procdesc crate fun_decl body))
       with L.InferUserError s ->
         L.user_warning "[WARNING] Trying procdecl for %s: @. [REASON]: %s @."
           (item_meta_to_string crate fun_decl.item_meta)
@@ -693,6 +715,19 @@ let mk_decl crate (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charo
       (item_meta_to_string crate fun_decl.item_meta)
       s ;
     None
+
+
+(* A global_decl in ULLBC is defined by the variable name and a generated function that produces the initial value *)
+let mk_global crate (global_decl : Charon.Generated_GAst.global_decl) =
+  let fun_decl = fun_map_find_id crate global_decl.body in
+  let name = global_to_varname crate global_decl.item_meta in
+  let typ = ty_to_textual_typ crate global_decl.ty in
+  let proc_name = mk_qualified_proc_name crate fun_decl.item_meta in
+  let init_exp = Textual.Exp.call_non_virtual proc_name [] in
+  let global =
+    Textual.Module.Global {Textual.Global.name; attributes= []; init_exp= Some init_exp; typ}
+  in
+  global
 
 
 (* If this local is a tuple type, create a tuple struct with the indices as field names. *)
@@ -719,8 +754,7 @@ let mk_tuple_type crate (local : Charon.Generated_GAst.local) =
 
 
 let mk_tuple_decl (crate : Charon.UllbcAst.crate)
-    (proc : Charon.GAst.fun_decl_id * Charon.UllbcAst.blocks Charon.GAst.gfun_decl) =
-  let _, fun_decl = proc in
+    (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) =
   let locals = match fun_decl.body with Some {locals} -> locals.locals | None -> [] in
   List.filter_map locals ~f:(mk_tuple_type crate)
 
@@ -747,18 +781,22 @@ let mk_module (crate : Charon.UllbcAst.crate) ~file_name : Textual.Module.t =
     |> List.map ~f:(fun s -> Textual.Module.Struct s)
   in
   let proc_decls =
-    Charon.Generated_Types.FunDeclId.Map.bindings fun_decls
+    Charon.Generated_Types.FunDeclId.Map.values fun_decls
     |> List.filter_map ~f:(fun proc -> mk_decl crate proc)
   in
   (* The crate does not store tuple types in it declerations
     so we need to extract the tuples from the locals of the functions.
   *)
   let tuple_decls =
-    Charon.Generated_Types.FunDeclId.Map.bindings crate.fun_decls
+    Charon.Generated_Types.FunDeclId.Map.values crate.fun_decls
     |> List.map ~f:(mk_tuple_decl crate)
     |> List.concat |> List.dedup_and_sort ~compare
     |> List.map ~f:(fun strct -> Textual.Module.Struct strct)
   in
-  let decls = type_decls @ proc_decls @ tuple_decls in
+  let global_vars =
+    Charon.Generated_Expressions.GlobalDeclId.Map.values crate.global_decls
+    |> List.map ~f:(mk_global crate)
+  in
+  let decls = type_decls @ proc_decls @ tuple_decls @ global_vars in
   let sourcefile = Textual.SourceFile.create file_name in
   {Textual.Module.attrs; decls; sourcefile}
