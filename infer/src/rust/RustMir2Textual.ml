@@ -452,16 +452,20 @@ let mk_exp_from_rvalue ~loc crate (rvalue : Charon.Generated_Expressions.rvalue)
         Charon.Generated_Expressions.pp_rvalue rvalue
 
 
+let mk_jump block_id =
+  let label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int block_id) in
+  let node_call : Textual.Terminator.node_call = {label; ssa_args= []} in
+  Textual.Terminator.Jump [node_call]
+
+
 let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
     (terminator : Charon.Generated_UllbcAst.terminator) :
     Textual.Instr.t list * Textual.Terminator.t =
   let loc = location_from_span terminator.span in
   match terminator.content with
   | Charon.Generated_UllbcAst.Goto block_id ->
-      let label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int block_id) in
-      let ssa_args = [] in
-      let node_call : Textual.Terminator.node_call = {label; ssa_args} in
-      ([], Textual.Terminator.Jump [node_call])
+      let jmp = mk_jump block_id in
+      ([], jmp)
   | Charon.Generated_UllbcAst.Return ->
       let place = mk_return_place place_map in
       let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
@@ -471,13 +475,9 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
         Charon.Generated_UllbcAst.pp_switch switch
   | Charon.Generated_UllbcAst.Switch (operand, If (then_block_id, else_block_id)) ->
       let exp, _ = mk_exp_from_operand ~loc crate place_map operand in
-      let then_label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int then_block_id) in
-      let else_label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int else_block_id) in
       let bexp = Textual.BoolExp.Exp exp in
-      let then_node_call : Textual.Terminator.node_call = {label= then_label; ssa_args= []} in
-      let else_node_call : Textual.Terminator.node_call = {label= else_label; ssa_args= []} in
-      let then_ = Textual.Terminator.Jump [then_node_call] in
-      let else_ = Textual.Terminator.Jump [else_node_call] in
+      let then_ = mk_jump then_block_id in
+      let else_ = mk_jump else_block_id in
       ([], Textual.Terminator.If {bexp; then_; else_})
   | Charon.Generated_UllbcAst.Call (call, block_id_1, _) ->
       let args_exps, _ =
@@ -492,10 +492,8 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
       let call_instr =
         Textual.Instr.Store {exp1= dest_exp; exp2= call_exp; loc; typ= Some dest_typ}
       in
-      let label = mk_label (Charon.Generated_UllbcAst.BlockId.to_int block_id_1) in
-      let ssa_args = [] in
-      let node_call : Textual.Terminator.node_call = {label; ssa_args} in
-      ([call_instr], Textual.Terminator.Jump [node_call])
+      let jmp = mk_jump block_id_1 in
+      ([call_instr], jmp)
   | Charon.Generated_UllbcAst.UnwindResume ->
       (* TODO: To be updated when error handling is being implemented *)
       ([], Textual.Terminator.Unreachable)
