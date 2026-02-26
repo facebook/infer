@@ -174,7 +174,7 @@ void FN_two_nested_fst_bad(int k) {
   return r;
 }
 
-void FN_two_nested_snd_bad(int k) {
+void two_nested_snd_bad(int k) {
   int r = 0;
   for (int i = 0; i < k; i++)
     for (int j = 0; j < k; r++)

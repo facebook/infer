@@ -405,13 +405,9 @@ val map_loop_header_formulas : t -> f:(Formula.t -> Formula.t) -> t
 
 val push_loop_header_info : Procdesc.Node.id -> Timestamp.t -> t -> t
 
-val is_loop_invariant_under_inference : Procdesc.Node.id -> t -> t list option
-
-val set_loop_invariant_under_inference : Procdesc.Node.id -> t -> t
+val get_loop_invariant_under_inference : Procdesc.Node.id -> t -> t list option
 
 val add_loop_invariant_under_inference : Procdesc.Node.id -> t -> t
-
-val is_some_loop_invariant_under_inference : t -> bool
 
 val record_transitive_access : Location.t -> t -> t
 
