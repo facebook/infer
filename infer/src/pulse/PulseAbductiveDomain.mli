@@ -55,9 +55,6 @@ module PostDomain : BaseDomainSig
     collapse into one. * *)
 module PreDomain : BaseDomainSig
 
-type 'astate loop_invariant_under_inference =
-  {header: Procdesc.Node.id; previous_astate_at_header: 'astate list}
-
 (** pre/post on a single program path *)
 type t = private
   { post: PostDomain.t  (** state at the current program point*)
@@ -74,10 +71,12 @@ type t = private
   ; transitive_info: TransitiveInfo.t  (** record transitive information inter-procedurally *)
   ; recursive_calls: PulseMutualRecursion.Set.t
   ; loop_header_info: PulseLoopHeaderInfo.t
-  ; loop_invariant_under_inference: t loop_invariant_under_inference option
+  ; loop_invariant_under_inference: loop_invariant_under_inference option
   ; unknown_values: bool  (** did we generate at least one unknown abstract value on this path? *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
+
+and loop_invariant_under_inference = {header: Procdesc.Node.id; previous_astate_at_header: t list}
 [@@deriving equal]
 
 val leq : lhs:t -> rhs:t -> bool

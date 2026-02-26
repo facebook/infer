@@ -71,10 +71,6 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig_ = PostDomain
 
-type 'astate loop_invariant_under_inference =
-  {header: Procdesc.Node.id; previous_astate_at_header: 'astate list}
-[@@deriving compare, equal]
-
 (* see documentation in this file's .mli *)
 type t =
   { post: PostDomain.t
@@ -86,9 +82,12 @@ type t =
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])
   ; recursive_calls: (PulseMutualRecursion.Set.t[@yojson.opaque])
   ; loop_header_info: (PulseLoopHeaderInfo.t[@yojson.opaque])
-  ; loop_invariant_under_inference: (t loop_invariant_under_inference option[@yojson.opaque])
+  ; loop_invariant_under_inference: (loop_invariant_under_inference option[@yojson.opaque])
   ; unknown_values: bool
   ; skipped_calls: SkippedCalls.t }
+
+and loop_invariant_under_inference =
+  {header: (Procdesc.Node.id[@yojson.opaque]); previous_astate_at_header: t list}
 [@@deriving compare, equal, yojson_of]
 
 let pp_ ~is_summary f
