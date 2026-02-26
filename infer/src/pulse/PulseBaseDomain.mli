@@ -18,4 +18,6 @@ val empty : t
 
 val pp : F.formatter -> t -> unit
 
+val pp_no_attrs : F.formatter -> t -> unit
+
 val subst_var : for_summary:bool -> AbstractValue.t * AbstractValue.t -> t -> t SatUnsat.t

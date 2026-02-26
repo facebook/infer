@@ -1556,7 +1556,8 @@ module PulseTransferFunctions = struct
             match AbductiveDomain.get_loop_invariant_under_inference id astate with
             | Some abstract_states_at_loop_head
               when List.exists abstract_states_at_loop_head ~f:(fun astate_at_loop_head ->
-                       PulseEternal.implies astate astate_at_loop_head ) ->
+                       AbstractValue.throwaway_context
+                       @@ fun () -> PulseEternal.implies astate astate_at_loop_head ) ->
                 let location = Procdesc.Node.get_loc cfg_node in
                 (* typically we get back only one [AbortProgram] state but it could also be zero if we
                  discover the summary is UNSAT *)

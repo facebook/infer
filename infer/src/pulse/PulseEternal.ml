@@ -32,13 +32,13 @@ type rhs_index_to_visit =
 
 type to_lhs_subst = AbstractValue.t AddressMap.t
 
-let pp_to_lhs_subst fmt subst =
-  AddressMap.pp ~pp_value:(fun fmt addr -> AbstractValue.pp fmt addr) fmt subst
-
-
 let empty_to_lhs_subst = AddressMap.empty
 
 let add_to_lhs_subst = AddressMap.add
+
+let pp_subst fmt subst =
+  (AddressMap.pp ~pp_value:(fun fmt addr -> AbstractValue.pp fmt addr)) fmt subst
+
 
 let to_lhs_subst_fold_constant_astate _astate f subst init =
   AddressMap.fold (fun addr_rhs addr_lhs acc -> f addr_rhs addr_lhs acc) subst init
@@ -94,16 +94,13 @@ let to_lhs_value unification x = to_lhs_value_ unification.astate unification.su
 let pp_unification fmt
     ({astate; subst; rev_subst; visited; array_indices_to_visit}
      [@warning "+missing-record-field-pattern"] ) =
-  let pp_value_and_path fmt value = F.fprintf fmt "[value %a]" AbstractValue.pp value in
   F.fprintf fmt
     "@[<v>{ astate=@[%a@];@,\
     \ subst=@[%a@];@,\
     \ rev_subst=@[%a@];@,\
     \ visited=@[%a@]@,\
     \ array_indices_to_visit=@[%a@]@}@]"
-    AbductiveDomain.pp astate pp_to_lhs_subst subst
-    (AddressMap.pp ~pp_value:pp_value_and_path)
-    rev_subst AddressSet.pp visited
+    AbductiveDomain.pp astate pp_subst subst pp_subst rev_subst AddressSet.pp visited
     (Pp.seq (fun _ _ -> ()))
     array_indices_to_visit
 
@@ -339,7 +336,7 @@ let unify astate_rhs unification =
 
 let implies (astate_lhs : AbductiveDomain.t) (astate_rhs : AbductiveDomain.t) =
   L.d_printfln_escaped
-    "Eternal Infinite Loop Check: Does this implication hold?@\n  @[%a@\n⊢@\n%a@]"
+    "Eternal Infinite Loop Check: Does this implication hold?@\n  @[%a@\n?⊢?@\n%a@]"
     AbductiveDomain.pp astate_lhs AbductiveDomain.pp astate_rhs ;
   (* TODO: it would be better to reset the "next fresh" abstract value to avoid polluting it with
      this implication state (where we throw away all the freshly-generated variables at the end) *)
@@ -358,22 +355,28 @@ let implies (astate_lhs : AbductiveDomain.t) (astate_rhs : AbductiveDomain.t) =
       L.d_printfln "Fatal error when unifying." ;
       false
   | Recoverable (unification, _) | Ok unification -> (
-    match
-      PulseFormula.implies_conditions_up_to ~subst:unification.subst astate_lhs.path_condition
-        ~implies:astate_lhs.path_condition
-    with
-    | Ok () ->
-        true
-    | Error (`Contradiction unsat_info) ->
-        L.d_printfln_escaped "implication failed, UNSAT when adding pure facts:@\n  %s"
-          (unsat_info.reason ()) ;
-        false
-    | Error (`NotImplied atom) ->
-        L.d_printfln_escaped "implication failed:@\n  @[%a@\n⊬ %a@]" PulseFormula.pp
-          astate_lhs.path_condition
-          (PulseFormulaAtom.pp_with_pp_var AbstractValue.pp)
-          atom ;
-        false )
+      L.d_printfln "Substition found:@\n  @[%a@]@\nThis implication holds:@\n  @[%a@\n⊢@\n%a@]"
+        pp_subst unification.subst BaseDomain.pp_no_attrs
+        (astate_lhs.post :> BaseDomain.t)
+        BaseDomain.pp_no_attrs
+        (astate_rhs.post :> BaseDomain.t) ;
+      match
+        PulseFormula.implies_conditions_up_to ~subst:unification.subst astate_lhs.path_condition
+          ~implies:astate_lhs.path_condition
+      with
+      | Ok () ->
+          true
+      | Error (`Contradiction unsat_info) ->
+          L.d_printfln_escaped "implication failed, UNSAT when adding pure facts:@\n  %s"
+            (unsat_info.reason ()) ;
+          false
+      | Error (`NotImplied (phi, atom)) ->
+          L.d_printfln_escaped "implication failed:@\n  @[%a@\n⊬ %a@]"
+            (PulseFormulaPhi.pp_with_pp_var AbstractValue.pp)
+            phi
+            (PulseFormulaAtom.pp_with_pp_var AbstractValue.pp)
+            atom ;
+          false )
 
 
 let abstract astate =

@@ -22,10 +22,10 @@ module VarUF = UnionFind.Make (Var) (Var.Set) (Var.Map)
 module InstanceOf = PulseFormulaInstanceOf
 
 let pp_var_map ?filter ~arrow pp_val pp_var fmt var_map =
-  Pp.collection ~sep:"@;∧ "
+  Pp.collection ~sep:"@;∧@ "
     ~fold:(IContainer.fold_of_pervasives_map_fold Var.Map.fold)
     ?filter
-    (fun fmt (v, value) -> F.fprintf fmt "%a%s%a" pp_var v arrow pp_val value)
+    (fun fmt (v, value) -> F.fprintf fmt ("%a" ^^ arrow ^^ "%a") pp_var v pp_val value)
     fmt var_map
 
 
@@ -460,7 +460,7 @@ end = struct
         (fun term var ->
           if filter term var then (
             F.pp_open_hbox fmt () ;
-            if not !is_first then F.pp_print_string fmt "∧" ;
+            if not !is_first then F.fprintf fmt "@,∧" ;
             is_first := false ;
             F.fprintf fmt "%a=%a@]" (Term.pp pp_var) term pp_var var ) )
         phi ;
@@ -504,7 +504,7 @@ end = struct
     (pp_if
        (not (Var.Map.is_empty linear_eqs))
        "linear_eqs"
-       (pp_var_map ~arrow:" = " (LinArith.pp pp_var) pp_var) )
+       (pp_var_map ~arrow:" =@ " (LinArith.pp pp_var) pp_var) )
       fmt linear_eqs ;
     (pp_if (not (term_eqs_is_empty term_eqs)) "term_eqs" (pp_term_eqs_with_pp_var pp_var)) fmt phi ;
     (pp_if (not (Var.Map.is_empty tableau)) "tableau" (Tableau.pp pp_var)) fmt tableau ;

@@ -27,6 +27,10 @@ let empty =
 
 type cell = Memory.Edges.t * Attributes.t
 
+let pp_no_attrs fmt {heap; stack} =
+  F.fprintf fmt "{@[<v1> roots=@[<hv>%a@];@;mem  =@[<hv>%a@]@]}" Stack.pp stack Memory.pp heap
+
+
 let pp fmt {heap; stack; attrs} =
   let attrs =
     if Language.curr_language_is Python then
