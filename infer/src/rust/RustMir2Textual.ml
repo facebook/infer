@@ -354,36 +354,36 @@ let mk_const_exp _crate (value : Charon.Generated_Expressions.raw_constant_expr)
 
 
 let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
-    (place : Charon.Generated_Expressions.place) : Textual.Exp.t * Textual.Typ.t =
-  let typ = ty_to_textual_typ crate place.ty in
+    (place : Charon.Generated_Expressions.place) : Textual.Exp.t =
   match place.kind with
   | PlaceLocal var_id ->
       let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
-      (exp, typ)
+      exp
   | PlaceProjection (projection_place, Deref) ->
-      let exp, proj_typ = mk_exp_from_place ~loc crate place_map projection_place in
-      (Textual.Exp.Load {exp; typ= Some proj_typ}, typ)
+      let proj_typ = ty_to_textual_typ crate projection_place.ty in
+      let exp = mk_exp_from_place ~loc crate place_map projection_place in
+      Textual.Exp.Load {exp; typ= Some proj_typ}
   | PlaceProjection (projection_place, Field (ProjAdt (type_decl_id, _), field_id)) ->
-      let exp, _ = mk_exp_from_place ~loc crate place_map projection_place in
+      let exp = mk_exp_from_place ~loc crate place_map projection_place in
       let type_decl = type_decl_map_find_id crate type_decl_id in
       let field = mk_qualified_fieldname crate type_decl field_id in
       let field_exp = Textual.Exp.Field {exp; field} in
-      (field_exp, typ)
+      field_exp
   | PlaceProjection
       (({ty= TAdt {id= TTuple; generics}} as projection_place), Field (ProjTuple _, field_id)) ->
-      let exp, _ = mk_exp_from_place ~loc crate place_map projection_place in
+      let exp = mk_exp_from_place ~loc crate place_map projection_place in
       let tuple_type_name = mk_tuple_type_name crate generics.types in
       let name =
         Textual.FieldName.of_string (Int.to_string (Charon.Generated_Types.FieldId.to_int field_id))
       in
       let field = {Textual.enclosing_class= tuple_type_name; name} in
       let field_exp = Textual.Exp.Field {exp; field} in
-      (field_exp, typ)
+      field_exp
   | PlaceProjection (projection_place, ProjIndex (operand, _from_end)) ->
-      let exp_place, _ = mk_exp_from_place ~loc crate place_map projection_place in
+      let exp_place = mk_exp_from_place ~loc crate place_map projection_place in
       let exp_op, _ = mk_exp_from_operand ~loc crate place_map operand in
       let exp = Textual.Exp.Index (exp_place, exp_op) in
-      (exp, typ)
+      exp
   | _ ->
       L.die UserError "[ERROR] Unsupported place: @. > %a @." Charon.Generated_Expressions.pp_place
         place
@@ -392,7 +392,7 @@ let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : plac
 and mk_exp_from_place_load ~loc (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
     (place : Charon.Generated_Expressions.place) : Textual.Exp.t * Textual.Typ.t =
   let typ = ty_to_textual_typ crate place.ty in
-  let exp, _ = mk_exp_from_place ~loc crate place_map place in
+  let exp = mk_exp_from_place ~loc crate place_map place in
   (Textual.Exp.Load {exp; typ= Some typ}, typ)
 
 
@@ -433,7 +433,8 @@ let mk_exp_from_rvalue ~loc crate (rvalue : Charon.Generated_Expressions.rvalue)
       let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
       (exp, Textual.Typ.mk_ptr typ)
   | RawPtr (place, _) | RvRef (place, _) ->
-      let exp, typ = mk_exp_from_place ~loc crate place_map place in
+      let typ = ty_to_textual_typ crate place.ty in
+      let exp = mk_exp_from_place ~loc crate place_map place in
       (exp, Textual.Typ.mk_ptr typ)
   | Aggregate (kind, ops) -> (
       (* TODO: Handle non-empty aggregates as well *)
@@ -483,7 +484,8 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (place_map : place_map_ty)
         List.map call.args ~f:(mk_exp_from_operand ~loc crate place_map) |> List.unzip
       in
       let qualified_proc_name = fun_name_from_fun_operand crate call.func in
-      let dest_exp, dest_typ = mk_exp_from_place ~loc crate place_map call.dest in
+      let dest_typ = ty_to_textual_typ crate call.dest.ty in
+      let dest_exp = mk_exp_from_place ~loc crate place_map call.dest in
       let call_exp =
         Textual.Exp.Call {proc= qualified_proc_name; args= args_exps; kind= Textual.Exp.NonVirtual}
       in
@@ -508,7 +510,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
   match statement.content with
   (* Unit type case *)
   | Assign (lhs, Aggregate (AggregatedAdt (_, None, None), [])) ->
-      let exp1, _ = mk_exp_from_place ~loc crate place_map lhs in
+      let exp1 = mk_exp_from_place ~loc crate place_map lhs in
       let exp2, typ = (Textual.Exp.Const Textual.Const.Null, Textual.Typ.Void) in
       let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
       [store_instr]
@@ -518,7 +520,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
     store &foo.Foo.y <- 2
   *)
   | Assign (lhs, Aggregate (AggregatedAdt ({id= TAdtId type_decl_id}, _, _), ops)) -> (
-      let lexp, _ = mk_exp_from_place ~loc crate place_map lhs in
+      let lexp = mk_exp_from_place ~loc crate place_map lhs in
       let rvalues = List.map ~f:(mk_exp_from_operand ~loc crate place_map) ops in
       let type_decl = type_decl_map_find_id crate type_decl_id in
       let enclosing_class_name =
@@ -547,7 +549,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
   | Assign
       ( ({ty= TAdt {id= TTuple; generics}} as lhs)
       , Aggregate (AggregatedAdt ({id= TTuple; _}, _, _), ops) ) ->
-      let lhexp, _ = mk_exp_from_place ~loc crate place_map lhs in
+      let lhexp = mk_exp_from_place ~loc crate place_map lhs in
       let rvalues = List.map ~f:(mk_exp_from_operand ~loc crate place_map) ops in
       let tuple_type_name = mk_tuple_type_name crate generics.types in
       List.mapi rvalues ~f:(fun idx (exp, typ) ->
@@ -557,7 +559,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
           Textual.Instr.Store {exp1= field_exp; typ= Some typ; exp2= exp; loc} )
   (* Arrays *)
   | Assign (lhs, Aggregate (AggregatedArray (_, _), ops)) ->
-      let lhexp, _ = mk_exp_from_place ~loc crate place_map lhs in
+      let lhexp = mk_exp_from_place ~loc crate place_map lhs in
       let rvalues = List.map ~f:(mk_exp_from_operand ~loc crate place_map) ops in
       List.mapi rvalues ~f:(fun i (exp, typ) ->
           let index_exp =
@@ -565,7 +567,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
           in
           Textual.Instr.Store {exp1= index_exp; typ= Some typ; exp2= exp; loc} )
   | Assign (lhs, rhs) ->
-      let exp1, _ = mk_exp_from_place ~loc crate place_map lhs in
+      let exp1 = mk_exp_from_place ~loc crate place_map lhs in
       let exp2, typ = mk_exp_from_rvalue ~loc crate rhs place_map in
       let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
       [store_instr]
