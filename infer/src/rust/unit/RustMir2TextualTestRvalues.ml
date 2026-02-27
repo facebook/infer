@@ -508,3 +508,56 @@ let%expect_test "string" =
 
      }
      |}]
+
+
+let%expect_test "enum" =
+  let source =
+    {|
+    fn main() {
+      let tunit = Types::Unit;
+      let tvalue = Types::Value(10);
+      let ttype = Types::Tuple(20,30);
+      let tname = Types::Named{id:40};
+    }
+
+    enum Types {
+      Unit,
+      Value(i32),
+      Tuple(i32,i32),
+      Named{id:i32}
+    }
+    |}
+  in
+  test source ;
+  [%expect
+    {|
+    .source_language = "Rust"
+
+    type dummy::Types = {@discriminant: int}
+
+    type dummy::Types@Unit extends dummy::Types = {@discriminant: int}
+
+    type dummy::Types@Value extends dummy::Types = {@discriminant: int; 0: int}
+
+    type dummy::Types@Tuple extends dummy::Types = {@discriminant: int; 0: int; 1: int}
+
+    type dummy::Types@Named extends dummy::Types = {@discriminant: int; id: int}
+
+    define dummy::main() : void {
+      local var_0: void, tunit_1: dummy::Types, tvalue_2: dummy::Types, ttype_3: dummy::Types, tname_4: dummy::Types
+      #node_0:
+          store &tunit_1.dummy::Types@Unit.@discriminant <- 0:int
+          store &tvalue_2.dummy::Types@Value.@discriminant <- 1:int
+          store &tvalue_2.dummy::Types@Value.0 <- 10:int
+          store &ttype_3.dummy::Types@Tuple.@discriminant <- 2:int
+          store &ttype_3.dummy::Types@Tuple.0 <- 20:int
+          store &ttype_3.dummy::Types@Tuple.1 <- 30:int
+          store &tname_4.dummy::Types@Named.@discriminant <- 3:int
+          store &tname_4.dummy::Types@Named.id <- 40:int
+          store &var_0 <- null:void
+          store &var_0 <- null:void
+          n0:void = load &var_0
+          ret n0
+
+    }
+    |}]
