@@ -151,6 +151,8 @@ module QualifiedProcName : sig
 
   val make_qualified_proc_name : ?metadata:proc_metadata -> enclosing_class -> ProcName.t -> t
 
+  val is_cross_lang : t -> bool
+
   module Map : Stdlib.Map.S with type key = t
 
   val pp : F.formatter -> t -> unit

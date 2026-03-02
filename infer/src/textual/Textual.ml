@@ -375,6 +375,8 @@ module QualifiedProcName = struct
     (* procedure name [name] is attached to the name space [enclosing_class] *)
 
     let make_qualified_proc_name ?metadata enclosing_class name = {enclosing_class; name; metadata}
+
+    let is_cross_lang {metadata} = match metadata with Some {lang= Some _} -> true | _ -> false
   end
 
   include T

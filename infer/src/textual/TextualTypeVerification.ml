@@ -490,6 +490,7 @@ let skip_type_verification lang proc =
   QualifiedProcName.contains_wildcard proc
   || QualifiedProcName.is_python_builtin proc
   || QualifiedProcName.is_llvm_builtin proc
+  || QualifiedProcName.is_cross_lang proc
   || ProcDecl.is_builtin proc lang
 
 

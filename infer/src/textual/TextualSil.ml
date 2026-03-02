@@ -789,6 +789,7 @@ module InstrBridge = struct
             when QualifiedProcName.contains_wildcard proc
                  || QualifiedProcName.is_python_builtin proc
                  || QualifiedProcName.is_llvm_builtin proc
+                 || QualifiedProcName.is_cross_lang proc
                  || ProcDecl.is_builtin proc lang ->
               let textual_ret_typ =
                 (* Declarations with unknown formals are expected in Hack/Python/C. Assume that unknown
