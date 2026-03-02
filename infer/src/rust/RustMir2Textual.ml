@@ -732,31 +732,41 @@ let mk_global crate (global_decl : Charon.Generated_GAst.global_decl) =
 
 (* If this local is a tuple type, create a tuple struct with the indices as field names. *)
 let mk_tuple_type crate (local : Charon.Generated_GAst.local) =
-  let var_ty = local.var_ty in
-  match var_ty with
-  (* Unit Type *)
-  | TAdt {id= TTuple; generics= {types= []}} ->
-      None
-  | TAdt {id= TTuple; generics} ->
-      let tuple_type_name = mk_tuple_type_name crate generics.types in
-      let fields =
-        generics.types
-        |> List.mapi ~f:(fun i typ ->
-               let attributes = [] in
-               let name = Textual.FieldName.of_string (Int.to_string i) in
-               let qualified_name = {Textual.enclosing_class= tuple_type_name; name} in
-               let typ = ty_to_textual_typ crate typ in
-               {Textual.FieldDecl.typ; qualified_name; attributes} )
-      in
-      Some {Textual.Struct.name= tuple_type_name; supers= []; fields; attributes= []}
-  | _ ->
-      None
+  let rec mk_tuple (ty : Charon.Generated_Types.ty) =
+    match ty with
+    (* Unit Type *)
+    | TAdt {id= TTuple; generics= {types= []}} ->
+        []
+    | TAdt {id= TTuple; generics} ->
+        let tuple_type_name = mk_tuple_type_name crate generics.types in
+        let fields =
+          generics.types
+          |> List.mapi ~f:(fun i typ ->
+                 let attributes = [] in
+                 let name = Textual.FieldName.of_string (Int.to_string i) in
+                 let qualified_name = {Textual.enclosing_class= tuple_type_name; name} in
+                 let typ = ty_to_textual_typ crate typ in
+                 {Textual.FieldDecl.typ; qualified_name; attributes} )
+        in
+        [{Textual.Struct.name= tuple_type_name; supers= []; fields; attributes= []}]
+    | TRef (_, ty, _) | TRawPtr (ty, _) ->
+        mk_tuple ty
+    | TAdt {generics} ->
+        List.concat_map generics.types ~f:mk_tuple
+    | TFnPtr {binder_value= args, ret} ->
+        List.concat_map args ~f:mk_tuple @ mk_tuple ret
+    | TFnDef {binder_value= fn_ptr} ->
+        List.concat_map fn_ptr.generics.types ~f:mk_tuple
+    | _ ->
+        []
+  in
+  mk_tuple local.var_ty
 
 
 let mk_tuple_decl (crate : Charon.UllbcAst.crate)
     (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) =
   let locals = match fun_decl.body with Some {locals} -> locals.locals | None -> [] in
-  List.filter_map locals ~f:(mk_tuple_type crate)
+  List.concat_map locals ~f:(mk_tuple_type crate)
 
 
 (* Compare tuple declarations so that it is possible to filter out duplicates *)
