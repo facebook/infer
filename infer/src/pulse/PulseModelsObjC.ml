@@ -311,7 +311,12 @@ let matchers : matcher list =
       &:: "performAsCurrentTraitCollection:" $ capt_arg $++$--> call_objc_block
     ; +BuiltinDecl.(match_builtin __call_objc_block) $ capt_arg $++$--> call_objc_block ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
-  @ ( [ +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
+  @ ( [ -"init" <>$ capt_arg_payload $+...$--> Basic.id_first_arg ~desc:"NSObject.init"
+      ; -"initWithFrame:" <>$ capt_arg_payload
+        $+...$--> Basic.id_first_arg ~desc:"NSObject.initWithFrame:"
+      ; -"initWithCoder:" <>$ capt_arg_payload
+        $+...$--> Basic.id_first_arg ~desc:"NSObject.initWithCoder:"
+      ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
         <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
       ; -"CFRelease" <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
       ; +match_regexp_opt Config.pulse_model_release_pattern
@@ -449,7 +454,10 @@ let matchers : matcher list =
         $+...$--> Basic.id_first_arg ~desc:"UIViewController.initWithNibName:bundle:"
       ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
         &:: "initWithFrame:" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"UIView.initWithFrame:" ]
+        $+...$--> Basic.id_first_arg ~desc:"UIView.initWithFrame:"
+      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
+        &:: "initWithCoder:" <>$ capt_arg_payload
+        $+...$--> Basic.id_first_arg ~desc:"UIView.initWithCoder:" ]
     |> List.map ~f:(fun matcher ->
            matcher
            |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
