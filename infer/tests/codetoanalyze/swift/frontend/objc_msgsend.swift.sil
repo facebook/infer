@@ -58,7 +58,7 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<
 define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<ptr_elt> {
   #: @[112:0]
       n1 = load &var1 @[112:0]
-      n2 = objc_allocWithZone(n1) @[112:0]
+      n2 = __sil_objc_alloc(<NSObject>) @[112:0]
       jmp 2::ret @[113:0]
       
   #2::ret: @[114:0]

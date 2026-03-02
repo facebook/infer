@@ -49,11 +49,26 @@ let swift_metadata_equals = SwiftProcname.to_string (SwiftProcname.Builtin Metad
 let swift_instantiateConcreteTypeFromMangledName = "__swift_instantiateConcreteTypeFromMangledName"
 
 let get_alloc_class_name =
-  let alloc_object = Textual.ProcName.of_string "swift_allocObject" in
+  let swift_alloc_object = Textual.ProcName.of_string "swift_allocObject" in
+  let alloc_with_zone = Textual.ProcName.of_string "allocWithZone:" in
+  let alloc = Textual.ProcName.of_string "alloc" in
+  let objc_alloc = Textual.ProcName.of_string "objc_alloc" in
+  let objc_allocWithZone = Textual.ProcName.of_string "objc_allocWithZone" in
+  let ns_object = Textual.TypeName.of_string "NSObject" in
   fun ~proc_state proc_name ->
-    if Textual.ProcName.equal proc_name alloc_object then
-      Textual.QualifiedProcName.get_class_name proc_state.ProcState.qualified_name
-    else None
+    match Textual.QualifiedProcName.get_class_name proc_state.ProcState.qualified_name with
+    | Some class_name when Textual.ProcName.equal proc_name swift_alloc_object ->
+        Some (class_name, Textual.ProcDecl.swift_alloc_name)
+    | _
+      when Textual.ProcName.equal proc_name alloc_with_zone
+           || Textual.ProcName.equal proc_name alloc
+           || Textual.ProcName.equal proc_name objc_alloc
+           || Textual.ProcName.equal proc_name objc_allocWithZone ->
+        (* Route to the new ObjC builtin! *)
+        (* TODO: find the correct class name *)
+        Some (ns_object, Textual.ProcDecl.objc_alloc_name)
+    | _ ->
+        None
 
 
 let builtin_qual_proc_name =
@@ -979,10 +994,9 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
     match call_exp with
     | Textual.Exp.Call {proc} -> (
       match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) with
-      | Some class_name ->
+      | Some (class_name, builtin_alloc_proc) ->
           let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
-          Textual.Exp.Call
-            {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
+          Textual.Exp.Call {proc= builtin_alloc_proc; args; kind= Textual.Exp.NonVirtual}
       | None ->
           call_exp )
     | _ ->

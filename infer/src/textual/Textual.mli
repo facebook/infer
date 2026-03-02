@@ -392,9 +392,13 @@ module ProcDecl : sig
 
   val swift_alloc_name : QualifiedProcName.t
 
+  val objc_alloc_name : QualifiedProcName.t
+
   val is_malloc_builtin : QualifiedProcName.t -> bool
 
   val is_swift_alloc_builtin : QualifiedProcName.t -> bool
+
+  val is_objc_alloc_builtin : QualifiedProcName.t -> bool
 
   val free_name : QualifiedProcName.t [@@warning "-unused-value-declaration"]
 

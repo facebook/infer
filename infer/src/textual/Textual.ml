@@ -188,6 +188,8 @@ let builtin_free = "__sil_free"
 
 let builtin_swift_alloc = "__sil_swift_alloc"
 
+let builtin_objc_alloc = "__sil_objc_alloc"
+
 let builtin_assert_fail = "__sil_assert_fail"
 
 let builtin_allocate_array = "__sil_allocate_array"
@@ -823,6 +825,8 @@ module ProcDecl = struct
 
   let swift_alloc_name = make_toplevel_name builtin_swift_alloc Location.Unknown
 
+  let objc_alloc_name = make_toplevel_name builtin_objc_alloc Location.Unknown
+
   let free_name = make_toplevel_name builtin_free Location.Unknown
 
   let assert_fail_name = make_toplevel_name builtin_assert_fail Location.Unknown
@@ -954,6 +958,8 @@ module ProcDecl = struct
     QualifiedProcName.equal swift_alloc_name qualified_name
 
 
+  let is_objc_alloc_builtin qualified_name = QualifiedProcName.equal objc_alloc_name qualified_name
+
   let is_assert_fail_builtin qualified_name =
     QualifiedProcName.equal assert_fail_name qualified_name
 
@@ -1032,7 +1038,9 @@ module ProcDecl = struct
     builtins @ unop_builtins @ binop_builtins
 
 
-  let builtins_swift = [builtin_assert_fail; builtin_swift_alloc] @ unop_builtins @ binop_builtins
+  let builtins_swift =
+    [builtin_assert_fail; builtin_swift_alloc; builtin_objc_alloc] @ unop_builtins @ binop_builtins
+
 
   let is_builtin (proc : QualifiedProcName.t) lang =
     match lang with

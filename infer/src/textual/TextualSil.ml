@@ -678,8 +678,10 @@ module InstrBridge = struct
     | Let {id= Some id; exp= Call {proc; args= [Typ typ]}; loc}
       when ProcDecl.is_allocate_object_builtin proc
            || ProcDecl.is_malloc_builtin proc
-           || ProcDecl.is_swift_alloc_builtin proc ->
-        let typ = TypBridge.to_sil lang typ in
+           || ProcDecl.is_swift_alloc_builtin proc
+           || ProcDecl.is_objc_alloc_builtin proc ->
+        let alloc_lang = if ProcDecl.is_objc_alloc_builtin proc then Lang.ObjectiveC else lang in
+        let typ = TypBridge.to_sil alloc_lang typ in
         let sizeof =
           SilExp.Sizeof
             {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= false}
@@ -693,6 +695,8 @@ module InstrBridge = struct
             SilExp.Const (SilConst.Cfun BuiltinDecl.__new)
           else if ProcDecl.is_swift_alloc_builtin proc then
             SilExp.Const (SilConst.Cfun BuiltinDecl.__swift_alloc)
+          else if ProcDecl.is_objc_alloc_builtin proc then
+            SilExp.Const (SilConst.Cfun BuiltinDecl.__objc_alloc_no_fail)
           else SilExp.Const (SilConst.Cfun BuiltinDecl.malloc)
         in
         Call ((ret, class_type), builtin_name, args, loc, CallFlags.default)

@@ -1568,7 +1568,7 @@ define .plain_name = "init" $s5Hello5ParamCACycfc(self: *__infer_swift_type<,Par
 define .plain_name = "init" $s5Hello5ParamCACycfC(var1: *__infer_swift_type<,$s5Hello5ParamCXMTD>) : *__infer_swift_type<ptr_elt> {
   #: @[508:0]
       n1 = load &var1 @[508:0]
-      n2 = objc_allocWithZone(n1) @[508:0]
+      n2 = __sil_objc_alloc(<NSObject>) @[508:0]
       jmp 2::ret @[509:0]
       
   #2::ret: @[510:0]
@@ -1933,7 +1933,7 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
 define .plain_name = "init" .method_offset = "13" __infer_swift_type<T5Hello5ParamC>.$s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfC(var1: *__infer_swift_type<ptr_elt>, var2: int, var3: int, var4: int, var5: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   #: @[438:0]
       n1 = load &var5 @[438:0]
-      n2 = objc_allocWithZone(n1) @[438:0]
+      n2 = __sil_objc_alloc(<NSObject>) @[438:0]
       jmp 6::ret @[439:0]
       
   #6::ret: @[440:0]
@@ -2008,7 +2008,7 @@ define .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtc
 define .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtcfC(var1: float, var2: float, var3: int, var4: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   #: @[418:0]
       n1 = load &var4 @[418:0]
-      n2 = objc_allocWithZone(n1) @[418:0]
+      n2 = __sil_objc_alloc(<NSObject>) @[418:0]
       jmp 5::ret @[419:0]
       
   #5::ret: @[420:0]
@@ -2107,7 +2107,7 @@ define .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8Siz
 define .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfC(var1: float, var2: float, var3: int, var4: int, var5: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   #: @[392:0]
       n1 = load &var5 @[392:0]
-      n2 = objc_allocWithZone(n1) @[392:0]
+      n2 = __sil_objc_alloc(<NSObject>) @[392:0]
       jmp 6::ret @[393:0]
       
   #6::ret: @[394:0]
@@ -2273,7 +2273,7 @@ define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGR
   local var7: *__infer_swift_type<TSo6CGRectV>
   #: @[320:0]
       n1 = load &var5 @[320:0]
-      n2 = objc_allocWithZone(n1) @[320:0]
+      n2 = __sil_objc_alloc(<NSObject>) @[320:0]
       jmp 7::ret @[321:0]
       
   #7::ret: @[322:0]
@@ -2354,7 +2354,7 @@ define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7N
 define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello27BCNTypeaheadSuggestionsCellCXMTD>) : *__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC> {
   #: @[290:0]
       n1 = load &var2 @[290:0]
-      n2 = objc_allocWithZone(n1) @[290:0]
+      n2 = __sil_objc_alloc(<NSObject>) @[290:0]
       jmp 3::ret @[291:0]
       
   #3::ret: @[292:0]
