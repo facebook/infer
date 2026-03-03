@@ -11,6 +11,7 @@ module L = Logging
 module Field = Llair2TextualField
 module TypeName = Llair2TextualTypeName
 module ProcState = Llair2TextualState
+module Utils = Llair2TextualUtils
 
 let type_name_of_type typ = Textual.TypeName.of_string (Format.asprintf "%a" Textual.Typ.pp typ)
 
@@ -151,7 +152,15 @@ let translate_types_env lang (types_defns : Llair.Typ.t list) =
   let translate_types_defn struct_map (typ : Llair.Typ.t) =
     match typ with
     | Struct {name; elts} ->
-        let struct_name = TypeName.to_textual_type_name lang name in
+        (* --- INJECT DEMANGLER HERE --- *)
+        let demangled_name = Utils.demangle_swift_class_name name in
+        let struct_name =
+          if not (String.equal demangled_name name) then
+            (* It's a mangled class! Pass the demangled name as the plain name. *)
+            TypeName.to_textual_type_name lang ~plain_name:demangled_name name
+          else (* Standard fallback *)
+            TypeName.to_textual_type_name lang name
+        in
         let struct_ = translate_struct ~struct_map lang ~tuple:false struct_name elts in
         Textual.TypeName.Map.add struct_name struct_ struct_map
     | Tuple {elts} ->
@@ -247,7 +256,11 @@ let rec signature_type_to_textual_typ signature_structs lang signature_type =
           TypeName.to_textual_type_name lang type_name
         else (
           Hash_set.add signature_structs signature_type ;
-          TypeName.to_textual_type_name lang ~plain_name:signature_type "" )
+          let demangled_name = Utils.demangle_swift_class_name signature_type in
+          if not (String.equal demangled_name signature_type) then
+            (* It's a mangled class! Use the clean name as plain_name, and the original as mangled *)
+            TypeName.to_textual_type_name lang ~plain_name:demangled_name signature_type
+          else TypeName.to_textual_type_name lang ~plain_name:signature_type "" )
       else TypeName.to_textual_type_name lang signature_type
     in
     if Textual.Lang.is_c lang then Some (Textual.Typ.Struct struct_name)

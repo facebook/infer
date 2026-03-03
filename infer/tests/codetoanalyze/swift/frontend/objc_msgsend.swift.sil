@@ -24,7 +24,7 @@ declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
 
 declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9ObjCClassC>.$s5Hello9ObjCClassCfD(*__infer_swift_type<,ObjCClass>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.$s5Hello9ObjCClassCfD(*__infer_swift_type<,ObjCClass>) : void
 
 declare $s5Hello9ObjCClassCMa(int) : *__infer_swift_type<ptr_elt>
 
@@ -35,7 +35,7 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<
   #: @[5:9]
       n1 = load &self @[5:9]
       n4 = $builtins.llvm_init_tuple() @[5:15]
-      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9ObjCClassC>>) @[5:15]
+      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>>) @[5:15]
       n3 = n4 @[5:15]
       jmp 5::ret @[5:15]
       

@@ -469,7 +469,7 @@ define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello7Pro
 } @?
 
 define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC28updateCollectionViewForItemsyySaySSGF(items: *__infer_swift_type<,$sSaySSGD>, self: *__infer_swift_type<T5Hello7ProfileC,Profile>) : void {
-  local var7: *__infer_swift_type<TSa>, var6: *__infer_swift_type<Ts26DefaultStringInterpolationV>
+  local var7: *__infer_swift_type<TSa>, var6: *__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>
   #: @[817:0]
       n2 = load &$sypN @[817:0]
       n3 = load n2.__infer_swift_type<swift::full_existential_type>.field_1 @[817:0]
@@ -483,12 +483,12 @@ define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infe
       
   #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[826:0]
       n52 = load &var6 @[826:0]
-      n53 = load n52.__infer_swift_type<Ts26DefaultStringInterpolationV>.field_0 @[826:0]
+      n53 = load n52.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[826:0]
       n54 = load n53.__infer_swift_type<TSS>.field_0 @[826:0]
       n55 = n54.__infer_swift_type<Ts11_StringGutsV>.field_0 @[826:0]
       n57 = load n55 @[827:0]
       n58 = load n57.__infer_swift_type<Ts13_StringObjectV>.field_0 @[827:0]
-      n56 = load n58.__infer_swift_type<Ts6UInt64V>.field_0 @[827:0]
+      n56 = load n58.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 @[827:0]
       n60 = load n55 @[828:0]
       n59 = load n60.__infer_swift_type<Ts13_StringObjectV>.field_1 @[828:0]
       n62 = n59 @[829:0]
@@ -509,13 +509,13 @@ define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infe
       
   #10::ret: @[285:15]
       n10 = load &var6 @[285:15]
-      n11 = load n10.__infer_swift_type<Ts26DefaultStringInterpolationV>.field_0 @[285:15]
+      n11 = load n10.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[285:15]
       n12 = load n11.__infer_swift_type<TSS>.field_0 @[285:15]
       n13 = n12.__infer_swift_type<Ts11_StringGutsV>.field_0 @[285:15]
       n16 = load n13 @[285:15]
       n17 = load n16.__infer_swift_type<Ts13_StringObjectV>.field_0 @[285:15]
       n15 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[285:15]
-      store n17.__infer_swift_type<Ts6UInt64V>.field_0 <- n15 @[285:15]
+      store n17.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n15 @[285:15]
       n20 = load n13 @[285:15]
       n19 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[285:15]
       store n20.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n19 @[285:15]
@@ -568,7 +568,7 @@ define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infe
       n76 = load n73 @[285:15]
       n77 = load n76.__infer_swift_type<Ts13_StringObjectV>.field_0 @[285:15]
       n75 = load n67.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[285:15]
-      store n77.__infer_swift_type<Ts6UInt64V>.field_0 <- n75 @[285:15]
+      store n77.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n75 @[285:15]
       n80 = load n73 @[285:15]
       n79 = load n67.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[285:15]
       store n80.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n79 @[285:15]
@@ -604,7 +604,7 @@ define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infe
 } @?
 
 define .plain_name = "coverPictureModel.set" .method_offset = "12" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs(var1: int, var2: int, self: *__infer_swift_type<ptr_elt>) : void {
-  local var8: *int, var7: *int, value: *__infer_swift_type<T5Hello17CoverPictureModelO>
+  local var8: *int, var7: *int, value: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>
   #: @[791:0]
       n2 = load &value @[791:0]
       n1 = load &var1 @[791:0]
@@ -648,7 +648,7 @@ define .plain_name = "coverPictureModel.set" .method_offset = "12" __infer_swift
       
 } @?
 
-declare $s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovpfi() : *__infer_swift_type<,CoverPictureModel>
+declare $s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovpfi() : *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>
 
 define .plain_name = "coverPictureModel.get" .method_offset = "11" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovg(var1: *__infer_swift_type<T5Hello7ProfileC,Profile>) : *__infer_tuple_class<int,int> {
   local var3: *int
@@ -671,7 +671,7 @@ define .plain_name = "coverPictureModel.get" .method_offset = "11" __infer_swift
 } @?
 
 define .plain_name = "coverPictureModel.didset" $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW(var1: int, var2: int, self: *__infer_swift_type<ptr_elt>) : void {
-  local var9: *__infer_swift_type<T5Hello17CoverPictureModelO>, var8: *__infer_swift_type<T5Hello17CoverPictureModelO>, var7: *int, oldValue: *__infer_swift_type<T5Hello17CoverPictureModelO>, getelementptr_offset_1: *void
+  local var9: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>, var8: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>, var7: *int, oldValue: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>, getelementptr_offset_1: *void
   #: @[775:0]
       n2 = load &oldValue @[775:0]
       n1 = load &var1 @[775:0]
@@ -734,7 +734,7 @@ define .plain_name = "coverPictureModel.didset" $s5Hello7ProfileC17coverPictureM
       n52 = load n49 @[281:43]
       n53 = load n52.__infer_swift_type<Ts13_StringObjectV>.field_0 @[281:43]
       n51 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[281:43]
-      store n53.__infer_swift_type<Ts6UInt64V>.field_0 <- n51 @[281:43]
+      store n53.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n51 @[281:43]
       n56 = load n49 @[281:43]
       n55 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[281:43]
       store n56.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n55 @[281:43]
@@ -1091,7 +1091,7 @@ declare $s5Hello3DayOSHAASQWb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<
 define .plain_name = "hashValue.get" $s5Hello3DayOSHAASH9hashValueSivgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : int {
   #: @[633:0]
       n2 = load &var1 @[633:0]
-      n1 = load n2.__infer_swift_type<T5Hello3DayO>.hashValue @[633:0]
+      n1 = load n2.__infer_swift_type<T5Hello3DayO,Day>.hashValue @[633:0]
       n4 = $s5Hello3DayO9hashValueSivg(n1) @[634:0]
       jmp 6::ret @[635:0]
       
@@ -1111,11 +1111,11 @@ declare $s5Hello3DayOACSQAAWl() : *__infer_swift_type<ptr_elt>
 declare $s5Hello3DayOACSHAAWl() : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "hashValue.get" $s5Hello3DayO9hashValueSivg(self: *__infer_swift_type<ptr_elt>) : int {
-  local var4: *__infer_swift_type<T5Hello3DayO>
+  local var4: *__infer_swift_type<T5Hello3DayO,Day>
   #: @[627:0]
       n2 = load &var4 @[627:0]
       n1 = load &self @[627:0]
-      store n2.__infer_swift_type<T5Hello3DayO>.hashValue <- n1 @[627:0]
+      store n2.__infer_swift_type<T5Hello3DayO,Day>.hashValue <- n1 @[627:0]
       n3 = $s5Hello3DayOACSHAAWl() @[628:0]
       jmp 5::ret @[629:0]
       
@@ -1601,7 +1601,7 @@ define $s5Hello22test_retain_cycle_bad2yyFyycfU_(var1: *__infer_swift_type<,$s5H
   local var4: *int, stateRef: *__infer_swift_type<ptr_elt>
   #: @[219:9]
       n1 = load &var1 @[219:9]
-      n2 = n1.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg>>.__infer_tuple_field_1 @[219:9]
+      n2 = n1.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg,State>>.__infer_tuple_field_1 @[219:9]
       n3 = load n2 @[564:0]
       store &stateRef <- n3 @[564:0]
       n4 = load n2 @[224:18]
@@ -1657,7 +1657,7 @@ define .plain_name = "test_retain_cycle_bad2" $s5Hello22test_retain_cycle_bad2yy
       jmp 9::ret @[554:0]
       
   #9::ret: @[555:0]
-      n14 = n12.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg>>.__infer_tuple_field_1 @[555:0]
+      n14 = n12.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg,State>>.__infer_tuple_field_1 @[555:0]
       n15 = load n14 @[556:0]
       store &stateRef <- n15 @[556:0]
       n16 = $builtins.llvm_nondet() @[219:28]
@@ -2047,7 +2047,7 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1: *__infer_s
 } @?
 
 define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *__infer_swift_type<,$s5Hello18RetainCycleExampleCSgXwz_XxD>) : void {
-  local var5: *__infer_swift_type<T5Hello18RetainCycleExampleCSg>, var4: *int, self: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
+  local var5: *__infer_swift_type<T5Hello18RetainCycleExampleCSg,RetainCycleExample>, var4: *int, self: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[195:26]
       n1 = load &var1 @[195:26]
       n2 = n1.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::weak>>.__infer_tuple_field_1 @[195:26]
@@ -3172,7 +3172,8 @@ type __infer_swift_type<$s5Hello10CustomViewC8delegateAA0C10ControllerCvM::Frame
 field_0: *int}
 
 type __infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame> = {
-field_0: *int; field_1: *__infer_swift_type<T5Hello10IndividualCSg>;
+field_0: *int;
+field_1: *__infer_swift_type<T5Hello10IndividualCSg,Individual>;
 field_2: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::Frame> = {
@@ -3193,7 +3194,8 @@ field_0: *int}
 type __infer_swift_type<$s5Hello6PersonC6spouseACvM::Frame> = {field_0: *int}
 
 type __infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame> = {
-field_0: *int; field_1: *__infer_swift_type<T5Hello17CoverPictureModelO>;
+field_0: *int;
+field_1: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>;
 field_2: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<$s5Hello7StudentC6weightSivM::Frame> = {field_0: *int}
@@ -3207,48 +3209,50 @@ type __infer_swift_type<Any> = {field_0: *__infer_swift_type<ptr_elt>;
 type __infer_swift_type<T5Hello10CustomViewC,CustomView> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                             delegate: *__infer_swift_type<ptr_elt>}
 
-type __infer_swift_type<T5Hello10CustomViewCSg> = {field_0: int}
+type __infer_swift_type<T5Hello10CustomViewCSg,CustomView> = {field_0: int}
 
 type __infer_swift_type<T5Hello10IndividualC,Individual> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                             age: *__infer_swift_type<TSi>;
                                                             spouse: .weak *__infer_swift_type<ptr_elt>}
 
-type __infer_swift_type<T5Hello10IndividualCSg> = {field_0: int}
+type __infer_swift_type<T5Hello10IndividualCSg,Individual> = {field_0: int}
 
 type __infer_swift_type<T5Hello14ViewControllerC,ViewController> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                                    view: *__infer_swift_type<T5Hello10CustomViewCSg>}
+                                                                    view: *__infer_swift_type<T5Hello10CustomViewCSg,CustomView>}
 
-type __infer_swift_type<T5Hello17CoverPictureModelO> = {field_0: *int}
+type __infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel> = {
+field_0: *int}
 
 type __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = {
 field_0: *__infer_swift_type<swift::refcounted>;
 id: *__infer_swift_type<TSi>; closure: *__infer_swift_type<TIeg_Sg>}
 
-type __infer_swift_type<T5Hello18RetainCycleExampleCSg> = {field_0: int}
+type __infer_swift_type<T5Hello18RetainCycleExampleCSg,RetainCycleExample> = {
+field_0: int}
 
 type __infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl> = {
 field_0: *__infer_swift_type<swift::refcounted>;
 onStartServiceResponse: *__infer_swift_type<swift::function>}
 
-type __infer_swift_type<T5Hello30DeviceAppManagerClientDelegateP> = {
+type __infer_swift_type<T5Hello30DeviceAppManagerClientDelegateP,DeviceAppManagerClientDelegate> = {
 field_0: *__infer_swift_type<ptr_elt>; field_1: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello30DeviceAppManagerClientDelegate_pSg> = {
 field_0: *int}
 
-type __infer_swift_type<T5Hello3DayO> = {hashValue: int}
+type __infer_swift_type<T5Hello3DayO,Day> = {hashValue: int}
 
 type __infer_swift_type<T5Hello5StateC,State> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                  delegate: *__infer_swift_type<T5Hello30DeviceAppManagerClientDelegate_pSg>}
 
-type __infer_swift_type<T5Hello5StateCSg> = {field_0: int}
+type __infer_swift_type<T5Hello5StateCSg,State> = {field_0: int}
 
 type __infer_swift_type<T5Hello6PersonC,Person> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                    age: *__infer_swift_type<TSi>;
                                                    spouse: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<T5Hello7ProfileC,Profile> = {field_0: *__infer_swift_type<swift::refcounted>;
-                                                     coverPictureModel: *__infer_swift_type<T5Hello17CoverPictureModelO>}
+                                                     coverPictureModel: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>}
 
 type __infer_swift_type<T5Hello7QualityV,Quality> = {field_0: *__infer_swift_type<TSi>;
                                                      field_1: *__infer_swift_type<TSi>}
@@ -3274,14 +3278,15 @@ type __infer_swift_type<Ts11_StringGutsV> = {field_0: *__infer_swift_type<Ts13_S
 
 type __infer_swift_type<Ts12_ArrayBufferV> = {field_0: *__infer_swift_type<Ts14_BridgeStorageV>}
 
-type __infer_swift_type<Ts13_StringObjectV> = {field_0: *__infer_swift_type<Ts6UInt64V>;
+type __infer_swift_type<Ts13_StringObjectV> = {field_0: *__infer_swift_type<Ts6UInt64V,UInt64>;
                                                field_1: *__infer_swift_type<ptr_elt>}
 
 type __infer_swift_type<Ts14_BridgeStorageV> = {field_0: *__infer_swift_type<ptr_elt>}
 
-type __infer_swift_type<Ts26DefaultStringInterpolationV> = {field_0: *__infer_swift_type<TSS>}
+type __infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation> = {
+field_0: *__infer_swift_type<TSS>}
 
-type __infer_swift_type<Ts6UInt64V> = {field_0: int}
+type __infer_swift_type<Ts6UInt64V,UInt64> = {field_0: int}
 
 type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
                                        field_1: *__infer_swift_type<ptr_elt>;
@@ -3497,9 +3502,9 @@ __infer_tuple_field_2: int;
 __infer_tuple_field_3: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_4: int; __infer_tuple_field_5: int}
 
-type __infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg>> = {
+type __infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg,State>> = {
 __infer_tuple_field_0: *__infer_swift_type<swift::refcounted>;
-__infer_tuple_field_1: *__infer_swift_type<T5Hello5StateCSg>}
+__infer_tuple_field_1: *__infer_swift_type<T5Hello5StateCSg,State>}
 
 type __infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::weak>> = {
 __infer_tuple_field_0: *__infer_swift_type<swift::refcounted>;

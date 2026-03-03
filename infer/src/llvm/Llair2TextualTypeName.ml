@@ -7,6 +7,7 @@
 
 open! IStd
 module State = Llair2TextualState
+module Utils = Llair2TextualUtils
 
 let to_textual_type_name lang ?plain_name name =
   if Textual.Lang.is_swift lang then Textual.TypeName.mk_swift_type_name ?plain_name name
@@ -42,6 +43,12 @@ let rec update_type_name_with_mangled_name ~mangled_name (type_name : Textual.Ty
 
 
 let struct_name_of_mangled_name lang ~mangled_map struct_map name =
+  let fallback_to_textual_type_name lang name =
+    let demangled_name = Utils.demangle_swift_class_name name in
+    if not (String.equal demangled_name name) then
+      to_textual_type_name lang ~plain_name:demangled_name name
+    else to_textual_type_name lang name
+  in
   let struct_name_of_mangled_name_inner lang struct_map name =
     let class_opt = ref None in
     let _ =
@@ -55,7 +62,7 @@ let struct_name_of_mangled_name lang ~mangled_map struct_map name =
               false )
         struct_map
     in
-    match !class_opt with None -> to_textual_type_name lang name | Some class_ -> class_
+    match !class_opt with None -> fallback_to_textual_type_name lang name | Some class_ -> class_
   in
   match mangled_map with
   | None ->
@@ -65,7 +72,7 @@ let struct_name_of_mangled_name lang ~mangled_map struct_map name =
     | Some struct_name ->
         struct_name
     | None ->
-        to_textual_type_name lang name )
+        fallback_to_textual_type_name lang name )
 
 
 let compute_mangled_map struct_map =

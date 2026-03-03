@@ -46,9 +46,9 @@ declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
 
 declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $sSo6UIViewCABycfcTO(*__infer_swift_type<,$sSo6UIViewCD>) : *__infer_swift_type<,$sSo6UIViewCD>
+declare .plain_name = "init" $sSo6UIViewCABycfcTO(*__infer_swift_type<$sSo6UIViewCD,UIView>) : *__infer_swift_type<$sSo6UIViewCD,UIView>
 
-declare .plain_name = "init" $sSo6UIViewCABycfC(*__infer_swift_type<,$sSo6UIViewCXMTD>) : *__infer_swift_type<,$sSo6UIViewCD>
+declare .plain_name = "init" $sSo6UIViewCABycfC(*__infer_swift_type<,$sSo6UIViewCXMTD>) : *__infer_swift_type<$sSo6UIViewCD,UIView>
 
 define .plain_name = "BCNCell" $s5Hello7BCNCellCfETo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : void {
   local self: *__infer_swift_type<ptr_elt>
@@ -64,7 +64,7 @@ define .plain_name = "BCNCell" $s5Hello7BCNCellCfETo(var1: *__infer_swift_type<p
       
 } @?
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7BCNCellC>.$s5Hello7BCNCellCfD(*__infer_swift_type<,BCNCell>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7BCNCellC,BCNCell>.$s5Hello7BCNCellCfD(*__infer_swift_type<,BCNCell>) : void
 
 declare $s5Hello7BCNCellCMa(int) : *__infer_swift_type<ptr_elt>
 
@@ -96,7 +96,7 @@ define .plain_name = "configure" $s5Hello7BCNCellC9configureyyF(self: *__infer_s
 declare .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<,BCNCell>
 
 define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfc(var1: float, var2: float, var3: float, var4: float, var5: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  local var11: *__infer_swift_type<TSo6CGRectV>, var10: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>, frame: *__infer_swift_type<TSo6CGRectV>
+  local var11: *__infer_swift_type<TSo6CGRectV,CGRect>, var10: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>, frame: *__infer_swift_type<TSo6CGRectV,CGRect>
   #: @[287:0]
       n1 = load &var5 @[287:0]
       n2 = swift_getObjectType(n1) @[287:0]
@@ -104,27 +104,27 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfc(var1: float
       
   #6::ret: @[291:0]
       n3 = load &frame @[291:0]
-      n4 = n3.__infer_swift_type<TSo6CGRectV>.field_0 @[291:0]
+      n4 = n3.__infer_swift_type<TSo6CGRectV,CGRect>.field_0 @[291:0]
       n6 = load n4 @[292:0]
-      n7 = load n6.__infer_swift_type<TSo7CGPointV>.field_0 @[292:0]
-      n8 = load n7.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[292:0]
+      n7 = load n6.__infer_swift_type<TSo7CGPointV,CGPoint>.field_0 @[292:0]
+      n8 = load n7.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[292:0]
       n5 = load &var1 @[292:0]
       store n8.__infer_swift_type<TSd>.field_0 <- n5 @[292:0]
       n10 = load n4 @[293:0]
-      n11 = load n10.__infer_swift_type<TSo7CGPointV>.field_1 @[293:0]
-      n12 = load n11.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[293:0]
+      n11 = load n10.__infer_swift_type<TSo7CGPointV,CGPoint>.field_1 @[293:0]
+      n12 = load n11.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[293:0]
       n9 = load &var2 @[293:0]
       store n12.__infer_swift_type<TSd>.field_0 <- n9 @[293:0]
       n13 = load &frame @[294:0]
-      n14 = n13.__infer_swift_type<TSo6CGRectV>.field_1 @[294:0]
+      n14 = n13.__infer_swift_type<TSo6CGRectV,CGRect>.field_1 @[294:0]
       n16 = load n14 @[295:0]
-      n17 = load n16.__infer_swift_type<TSo6CGSizeV>.field_0 @[295:0]
-      n18 = load n17.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[295:0]
+      n17 = load n16.__infer_swift_type<TSo6CGSizeV,CGSize>.field_0 @[295:0]
+      n18 = load n17.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[295:0]
       n15 = load &var3 @[295:0]
       store n18.__infer_swift_type<TSd>.field_0 <- n15 @[295:0]
       n20 = load n14 @[296:0]
-      n21 = load n20.__infer_swift_type<TSo6CGSizeV>.field_1 @[296:0]
-      n22 = load n21.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[296:0]
+      n21 = load n20.__infer_swift_type<TSo6CGSizeV,CGSize>.field_1 @[296:0]
+      n22 = load n21.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[296:0]
       n19 = load &var4 @[296:0]
       store n22.__infer_swift_type<TSd>.field_0 <- n19 @[296:0]
       n23 = load &self @[14:9]
@@ -136,27 +136,27 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfc(var1: float
       store n30.__infer_swift_type<objc_super>.field_1 <- n2 @[300:0]
       n31 = load &L_selector(initWithFrame:) @[301:0]
       n32 = load &var11 @[302:0]
-      n33 = n32.__infer_swift_type<TSo6CGRectV>.field_0 @[302:0]
+      n33 = n32.__infer_swift_type<TSo6CGRectV,CGRect>.field_0 @[302:0]
       n35 = load n33 @[303:0]
-      n36 = load n35.__infer_swift_type<TSo7CGPointV>.field_0 @[303:0]
-      n37 = load n36.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[303:0]
+      n36 = load n35.__infer_swift_type<TSo7CGPointV,CGPoint>.field_0 @[303:0]
+      n37 = load n36.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[303:0]
       n34 = load &var1 @[303:0]
       store n37.__infer_swift_type<TSd>.field_0 <- n34 @[303:0]
       n39 = load n33 @[304:0]
-      n40 = load n39.__infer_swift_type<TSo7CGPointV>.field_1 @[304:0]
-      n41 = load n40.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[304:0]
+      n40 = load n39.__infer_swift_type<TSo7CGPointV,CGPoint>.field_1 @[304:0]
+      n41 = load n40.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[304:0]
       n38 = load &var2 @[304:0]
       store n41.__infer_swift_type<TSd>.field_0 <- n38 @[304:0]
       n42 = load &var11 @[305:0]
-      n43 = n42.__infer_swift_type<TSo6CGRectV>.field_1 @[305:0]
+      n43 = n42.__infer_swift_type<TSo6CGRectV,CGRect>.field_1 @[305:0]
       n45 = load n43 @[306:0]
-      n46 = load n45.__infer_swift_type<TSo6CGSizeV>.field_0 @[306:0]
-      n47 = load n46.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[306:0]
+      n46 = load n45.__infer_swift_type<TSo6CGSizeV,CGSize>.field_0 @[306:0]
+      n47 = load n46.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[306:0]
       n44 = load &var3 @[306:0]
       store n47.__infer_swift_type<TSd>.field_0 <- n44 @[306:0]
       n49 = load n43 @[307:0]
-      n50 = load n49.__infer_swift_type<TSo6CGSizeV>.field_1 @[307:0]
-      n51 = load n50.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[307:0]
+      n50 = load n49.__infer_swift_type<TSo6CGSizeV,CGSize>.field_1 @[307:0]
+      n51 = load n50.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[307:0]
       n48 = load &var4 @[307:0]
       store n51.__infer_swift_type<TSd>.field_0 <- n48 @[307:0]
       n52 = load &var11 @[308:0]
@@ -170,7 +170,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfc(var1: float
 } @?
 
 define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfC(var1: float, var2: float, var3: float, var4: float, var5: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  local var7: *__infer_swift_type<TSo6CGRectV>
+  local var7: *__infer_swift_type<TSo6CGRectV,CGRect>
   #: @[275:0]
       n1 = load &var5 @[275:0]
       n2 = __sil_objc_alloc(<NSObject>) @[275:0]
@@ -179,27 +179,27 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfC(var1: float
   #7::ret: @[277:0]
       n3 = load &L_selector(initWithFrame:) @[277:0]
       n4 = load &var7 @[278:0]
-      n5 = n4.__infer_swift_type<TSo6CGRectV>.field_0 @[278:0]
+      n5 = n4.__infer_swift_type<TSo6CGRectV,CGRect>.field_0 @[278:0]
       n7 = load n5 @[279:0]
-      n8 = load n7.__infer_swift_type<TSo7CGPointV>.field_0 @[279:0]
-      n9 = load n8.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[279:0]
+      n8 = load n7.__infer_swift_type<TSo7CGPointV,CGPoint>.field_0 @[279:0]
+      n9 = load n8.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[279:0]
       n6 = load &var1 @[279:0]
       store n9.__infer_swift_type<TSd>.field_0 <- n6 @[279:0]
       n11 = load n5 @[280:0]
-      n12 = load n11.__infer_swift_type<TSo7CGPointV>.field_1 @[280:0]
-      n13 = load n12.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[280:0]
+      n12 = load n11.__infer_swift_type<TSo7CGPointV,CGPoint>.field_1 @[280:0]
+      n13 = load n12.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[280:0]
       n10 = load &var2 @[280:0]
       store n13.__infer_swift_type<TSd>.field_0 <- n10 @[280:0]
       n14 = load &var7 @[281:0]
-      n15 = n14.__infer_swift_type<TSo6CGRectV>.field_1 @[281:0]
+      n15 = n14.__infer_swift_type<TSo6CGRectV,CGRect>.field_1 @[281:0]
       n17 = load n15 @[282:0]
-      n18 = load n17.__infer_swift_type<TSo6CGSizeV>.field_0 @[282:0]
-      n19 = load n18.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[282:0]
+      n18 = load n17.__infer_swift_type<TSo6CGSizeV,CGSize>.field_0 @[282:0]
+      n19 = load n18.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[282:0]
       n16 = load &var3 @[282:0]
       store n19.__infer_swift_type<TSd>.field_0 <- n16 @[282:0]
       n21 = load n15 @[283:0]
-      n22 = load n21.__infer_swift_type<TSo6CGSizeV>.field_1 @[283:0]
-      n23 = load n22.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[283:0]
+      n22 = load n21.__infer_swift_type<TSo6CGSizeV,CGSize>.field_1 @[283:0]
+      n23 = load n22.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[283:0]
       n20 = load &var4 @[283:0]
       store n23.__infer_swift_type<TSd>.field_0 <- n20 @[283:0]
       n24 = load &var7 @[284:0]
@@ -208,7 +208,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfC(var1: float
       
 } @?
 
-declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello7BCNCellC>
+declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell>
 
 define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(coder: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,BCNCell>) : int {
   local var7: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>
@@ -253,7 +253,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(coder: *
       
 } @?
 
-define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello7BCNCellCXMTD>) : *__infer_swift_type<T5Hello7BCNCellC> {
+define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello7BCNCellCXMTD>) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell> {
   #: @[244:0]
       n1 = load &var2 @[244:0]
       n2 = __sil_objc_alloc(<NSObject>) @[244:0]
@@ -280,7 +280,7 @@ define .plain_name = "nuxContentView.set" $s5Hello7BCNCellC14nuxContentViewAA05D
       
 } @?
 
-declare $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvpfi() : *__infer_swift_type<T5Hello16DummyContentViewC>
+declare $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvpfi() : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>
 
 define .plain_name = "nuxContentView.get" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvg(self: *__infer_swift_type<,BCNCell>) : int {
   local var4: *int
@@ -325,13 +325,13 @@ define .plain_name = "nuxContentView.modify" $s5Hello7BCNCellC14nuxContentViewAA
       
 } @?
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello16DummyContentViewC>.$s5Hello16DummyContentViewCfD(*__infer_swift_type<,DummyContentView>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCfD(*__infer_swift_type<,DummyContentView>) : void
 
 declare $s5Hello16DummyContentViewCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare $s5Hello16DummyContentViewCMa(int) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "configure" .method_offset = "10" __infer_swift_type<T5Hello16DummyContentViewC>.$s5Hello16DummyContentViewC9configureyyF(self: *__infer_swift_type<,DummyContentView>) : void {
+define .plain_name = "configure" .method_offset = "10" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewC9configureyyF(self: *__infer_swift_type<,DummyContentView>) : void {
   #: @[4:23]
       ret null @[4:23]
       
@@ -340,35 +340,35 @@ define .plain_name = "configure" .method_offset = "10" __infer_swift_type<T5Hell
 declare .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<,DummyContentView>
 
 define .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfc(var1: float, var2: float, var3: float, var4: float, self: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  local var9: *__infer_swift_type<objc_super>, var10: *__infer_swift_type<TSo6CGRectV>, frame: *__infer_swift_type<TSo6CGRectV>
+  local var9: *__infer_swift_type<objc_super>, var10: *__infer_swift_type<TSo6CGRectV,CGRect>, frame: *__infer_swift_type<TSo6CGRectV,CGRect>
   #: @[176:0]
       n1 = load &frame @[176:0]
-      n2 = n1.__infer_swift_type<TSo6CGRectV>.field_0 @[176:0]
+      n2 = n1.__infer_swift_type<TSo6CGRectV,CGRect>.field_0 @[176:0]
       n4 = load n2 @[177:0]
-      n5 = load n4.__infer_swift_type<TSo7CGPointV>.field_0 @[177:0]
-      n6 = load n5.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[177:0]
+      n5 = load n4.__infer_swift_type<TSo7CGPointV,CGPoint>.field_0 @[177:0]
+      n6 = load n5.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[177:0]
       n3 = load &var1 @[177:0]
       store n6.__infer_swift_type<TSd>.field_0 <- n3 @[177:0]
       n8 = load n2 @[178:0]
-      n9 = load n8.__infer_swift_type<TSo7CGPointV>.field_1 @[178:0]
-      n10 = load n9.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[178:0]
+      n9 = load n8.__infer_swift_type<TSo7CGPointV,CGPoint>.field_1 @[178:0]
+      n10 = load n9.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[178:0]
       n7 = load &var2 @[178:0]
       store n10.__infer_swift_type<TSd>.field_0 <- n7 @[178:0]
       n11 = load &frame @[179:0]
-      n12 = n11.__infer_swift_type<TSo6CGRectV>.field_1 @[179:0]
+      n12 = n11.__infer_swift_type<TSo6CGRectV,CGRect>.field_1 @[179:0]
       n14 = load n12 @[180:0]
-      n15 = load n14.__infer_swift_type<TSo6CGSizeV>.field_0 @[180:0]
-      n16 = load n15.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[180:0]
+      n15 = load n14.__infer_swift_type<TSo6CGSizeV,CGSize>.field_0 @[180:0]
+      n16 = load n15.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[180:0]
       n13 = load &var3 @[180:0]
       store n16.__infer_swift_type<TSd>.field_0 <- n13 @[180:0]
       n18 = load n12 @[181:0]
-      n19 = load n18.__infer_swift_type<TSo6CGSizeV>.field_1 @[181:0]
-      n20 = load n19.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[181:0]
+      n19 = load n18.__infer_swift_type<TSo6CGSizeV,CGSize>.field_1 @[181:0]
+      n20 = load n19.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[181:0]
       n17 = load &var4 @[181:0]
       store n20.__infer_swift_type<TSd>.field_0 <- n17 @[181:0]
       n21 = load &self @[182:0]
       n24 = $builtins.llvm_init_tuple() @[183:0]
-      store n24.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC>>) @[183:0]
+      store n24.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>>) @[183:0]
       n23 = n24 @[183:0]
       jmp 25::ret @[184:0]
       
@@ -380,27 +380,27 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfc(v
       store n29.__infer_swift_type<objc_super>.field_1 <- n28 @[186:0]
       n30 = load &L_selector(initWithFrame:) @[187:0]
       n31 = load &var10 @[188:0]
-      n32 = n31.__infer_swift_type<TSo6CGRectV>.field_0 @[188:0]
+      n32 = n31.__infer_swift_type<TSo6CGRectV,CGRect>.field_0 @[188:0]
       n34 = load n32 @[189:0]
-      n35 = load n34.__infer_swift_type<TSo7CGPointV>.field_0 @[189:0]
-      n36 = load n35.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[189:0]
+      n35 = load n34.__infer_swift_type<TSo7CGPointV,CGPoint>.field_0 @[189:0]
+      n36 = load n35.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[189:0]
       n33 = load &var1 @[189:0]
       store n36.__infer_swift_type<TSd>.field_0 <- n33 @[189:0]
       n38 = load n32 @[190:0]
-      n39 = load n38.__infer_swift_type<TSo7CGPointV>.field_1 @[190:0]
-      n40 = load n39.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[190:0]
+      n39 = load n38.__infer_swift_type<TSo7CGPointV,CGPoint>.field_1 @[190:0]
+      n40 = load n39.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[190:0]
       n37 = load &var2 @[190:0]
       store n40.__infer_swift_type<TSd>.field_0 <- n37 @[190:0]
       n41 = load &var10 @[191:0]
-      n42 = n41.__infer_swift_type<TSo6CGRectV>.field_1 @[191:0]
+      n42 = n41.__infer_swift_type<TSo6CGRectV,CGRect>.field_1 @[191:0]
       n44 = load n42 @[192:0]
-      n45 = load n44.__infer_swift_type<TSo6CGSizeV>.field_0 @[192:0]
-      n46 = load n45.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[192:0]
+      n45 = load n44.__infer_swift_type<TSo6CGSizeV,CGSize>.field_0 @[192:0]
+      n46 = load n45.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[192:0]
       n43 = load &var3 @[192:0]
       store n46.__infer_swift_type<TSd>.field_0 <- n43 @[192:0]
       n48 = load n42 @[193:0]
-      n49 = load n48.__infer_swift_type<TSo6CGSizeV>.field_1 @[193:0]
-      n50 = load n49.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[193:0]
+      n49 = load n48.__infer_swift_type<TSo6CGSizeV,CGSize>.field_1 @[193:0]
+      n50 = load n49.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[193:0]
       n47 = load &var4 @[193:0]
       store n50.__infer_swift_type<TSd>.field_0 <- n47 @[193:0]
       n51 = load &var10 @[194:0]
@@ -414,7 +414,7 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfc(v
 } @?
 
 define .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfC(var1: float, var2: float, var3: float, var4: float, var5: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  local var7: *__infer_swift_type<TSo6CGRectV>
+  local var7: *__infer_swift_type<TSo6CGRectV,CGRect>
   #: @[162:0]
       n1 = load &var5 @[162:0]
       n2 = __sil_objc_alloc(<NSObject>) @[162:0]
@@ -423,27 +423,27 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfC(v
   #7::ret: @[164:0]
       n3 = load &L_selector(initWithFrame:) @[164:0]
       n4 = load &var7 @[165:0]
-      n5 = n4.__infer_swift_type<TSo6CGRectV>.field_0 @[165:0]
+      n5 = n4.__infer_swift_type<TSo6CGRectV,CGRect>.field_0 @[165:0]
       n7 = load n5 @[166:0]
-      n8 = load n7.__infer_swift_type<TSo7CGPointV>.field_0 @[166:0]
-      n9 = load n8.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[166:0]
+      n8 = load n7.__infer_swift_type<TSo7CGPointV,CGPoint>.field_0 @[166:0]
+      n9 = load n8.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[166:0]
       n6 = load &var1 @[166:0]
       store n9.__infer_swift_type<TSd>.field_0 <- n6 @[166:0]
       n11 = load n5 @[167:0]
-      n12 = load n11.__infer_swift_type<TSo7CGPointV>.field_1 @[167:0]
-      n13 = load n12.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[167:0]
+      n12 = load n11.__infer_swift_type<TSo7CGPointV,CGPoint>.field_1 @[167:0]
+      n13 = load n12.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[167:0]
       n10 = load &var2 @[167:0]
       store n13.__infer_swift_type<TSd>.field_0 <- n10 @[167:0]
       n14 = load &var7 @[168:0]
-      n15 = n14.__infer_swift_type<TSo6CGRectV>.field_1 @[168:0]
+      n15 = n14.__infer_swift_type<TSo6CGRectV,CGRect>.field_1 @[168:0]
       n17 = load n15 @[169:0]
-      n18 = load n17.__infer_swift_type<TSo6CGSizeV>.field_0 @[169:0]
-      n19 = load n18.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[169:0]
+      n18 = load n17.__infer_swift_type<TSo6CGSizeV,CGSize>.field_0 @[169:0]
+      n19 = load n18.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[169:0]
       n16 = load &var3 @[169:0]
       store n19.__infer_swift_type<TSd>.field_0 <- n16 @[169:0]
       n21 = load n15 @[170:0]
-      n22 = load n21.__infer_swift_type<TSo6CGSizeV>.field_1 @[170:0]
-      n23 = load n22.__infer_swift_type<T12CoreGraphics7CGFloatV>.field_0 @[170:0]
+      n22 = load n21.__infer_swift_type<TSo6CGSizeV,CGSize>.field_1 @[170:0]
+      n23 = load n22.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[170:0]
       n20 = load &var4 @[170:0]
       store n23.__infer_swift_type<TSd>.field_0 <- n20 @[170:0]
       n24 = load &var7 @[171:0]
@@ -459,7 +459,7 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcf
   #: @[140:0]
       n1 = load &self @[140:0]
       n4 = $builtins.llvm_init_tuple() @[141:0]
-      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC>>) @[141:0]
+      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>>) @[141:0]
       n3 = n4 @[141:0]
       jmp 7::ret @[142:0]
       
@@ -497,7 +497,7 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcf
       
 } @?
 
-define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello16DummyContentViewCXMTD>) : *__infer_swift_type<T5Hello16DummyContentViewC> {
+define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello16DummyContentViewCXMTD>) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView> {
   #: @[132:0]
       n1 = load &var2 @[132:0]
       n2 = __sil_objc_alloc(<NSObject>) @[132:0]
@@ -522,7 +522,7 @@ define .plain_name = "init" $s5Hello12BCNViewUtilsVACycfC() : void {
 define .plain_name = "contentViewForVariant" $s5Hello12BCNViewUtilsV21contentViewForVariantAA012DummyContentE0CyFZ() : *__infer_swift_type<ptr_elt> {
   #: @[9:16]
       n3 = $builtins.llvm_init_tuple() @[9:16]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC>>) @[9:16]
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>>) @[9:16]
       n2 = n3 @[9:16]
       jmp 1::ret @[9:16]
       
@@ -695,18 +695,18 @@ global L_selector(dealloc): *__infer_swift_type<ptr_elt>
 type __infer_swift_type<$s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvM::Frame> = {
 field_0: *int}
 
-type __infer_swift_type<T12CoreGraphics7CGFloatV> = {field_0: *__infer_swift_type<TSd>}
+type __infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat> = {field_0: *__infer_swift_type<TSd>}
 
 type __infer_swift_type<TSd> = {field_0: float}
 
-type __infer_swift_type<TSo6CGRectV> = {field_0: *__infer_swift_type<TSo7CGPointV>;
-                                        field_1: *__infer_swift_type<TSo6CGSizeV>}
+type __infer_swift_type<TSo6CGRectV,CGRect> = {field_0: *__infer_swift_type<TSo7CGPointV,CGPoint>;
+                                               field_1: *__infer_swift_type<TSo6CGSizeV,CGSize>}
 
-type __infer_swift_type<TSo6CGSizeV> = {field_0: *__infer_swift_type<T12CoreGraphics7CGFloatV>;
-                                        field_1: *__infer_swift_type<T12CoreGraphics7CGFloatV>}
+type __infer_swift_type<TSo6CGSizeV,CGSize> = {field_0: *__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>;
+                                               field_1: *__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>}
 
-type __infer_swift_type<TSo7CGPointV> = {field_0: *__infer_swift_type<T12CoreGraphics7CGFloatV>;
-                                         field_1: *__infer_swift_type<T12CoreGraphics7CGFloatV>}
+type __infer_swift_type<TSo7CGPointV,CGPoint> = {field_0: *__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>;
+                                                 field_1: *__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>}
 
 type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
                                        field_1: *__infer_swift_type<ptr_elt>;
