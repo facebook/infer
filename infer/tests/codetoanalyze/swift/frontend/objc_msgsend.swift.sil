@@ -4,7 +4,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "Swift" @?
+.source_language = "Swift"
 
 declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -34,44 +34,44 @@ declare .plain_name = "init" $s5Hello9ObjCClassCACycfcTo(*__infer_swift_type<ptr
 
 define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<,ObjCClass>) : *__infer_swift_type<ptr_elt> {
   local var4: *__infer_swift_type<objc_super>
-  #: @[5:9]
-      n1 = load &self @[5:9]
-      n4 = $builtins.llvm_init_tuple() @[5:15]
-      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>>) @[5:15]
-      n3 = n4 @[5:15]
-      jmp 5::ret @[5:15]
+  #:
+      n1 = load &self
+      n4 = $builtins.llvm_init_tuple()
+      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>>)
+      n3 = n4
+      jmp 5::ret
       
-  #5::ret: @[5:15]
-      n6 = load &var4 @[5:15]
-      store n6.__infer_swift_type<objc_super>.field_0 <- n1 @[5:15]
-      n9 = load &var4 @[5:15]
-      n8 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
-      store n9.__infer_swift_type<objc_super>.field_1 <- n8 @[5:15]
-      n10 = load &L_selector(init) @[5:15]
-      n11 = load &var4 @[5:15]
-      n13 = $builtins.objc_msgSendSuper2(n11, n10) @[5:15]
-      n14 = $builtins.llvm_nondet() @[120:0]
-      store &self <- n13 @[121:0]
-      n16 = load &self @[6:5]
-      ret n13 @[6:5]
+  #5::ret:
+      n6 = load &var4
+      store n6.__infer_swift_type<objc_super>.field_0 <- n1
+      n9 = load &var4
+      n8 = load n3.__infer_swift_type<swift::metadata_response>.field_0
+      store n9.__infer_swift_type<objc_super>.field_1 <- n8
+      n10 = load &L_selector(init)
+      n11 = load &var4
+      n13 = $builtins.objc_msgSendSuper2(n11, n10)
+      n14 = $builtins.llvm_nondet()
+      store &self <- n13
+      n16 = load &self
+      ret n13
       
-} @?
+}
 
 define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[113:0]
-      n1 = load &var1 @[113:0]
-      n2 = __sil_objc_alloc(<NSObject>) @[113:0]
-      jmp 2::ret @[114:0]
+  #:
+      n1 = load &var1
+      n2 = __sil_objc_alloc(<NSObject>)
+      jmp 2::ret
       
-  #2::ret: @[115:0]
-      n3 = load &L_selector(init) @[115:0]
-      n6 = n2.init() @[116:0]
-      jmp 4::ret @[117:0]
+  #2::ret:
+      n3 = load &L_selector(init)
+      n6 = n2.init()
+      jmp 4::ret
       
-  #4::ret: @[118:0]
-      ret n6 @[118:0]
+  #4::ret:
+      ret n6
       
-} @?
+}
 
 global symbolic _____ 5Hello9ObjCClassC: *__infer_tuple_class<int,int,int>
 

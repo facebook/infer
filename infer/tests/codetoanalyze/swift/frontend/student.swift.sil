@@ -4,7 +4,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "Swift" @?
+.source_language = "Swift"
 
 declare swift_weakLoadStrong(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -116,57 +116,57 @@ declare $sIeg_SgWOe(int, int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "setWeight" $s5Hello9setWeightyySiF(weight: *__infer_swift_type<ptr_elt>) : void {
   local john: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
-  #: @[24:16]
-      n3 = $builtins.llvm_init_tuple() @[24:16]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello7StudentC,Student>>) @[24:16]
-      n2 = n3 @[24:16]
-      jmp 4::ret @[24:16]
+  #:
+      n3 = $builtins.llvm_init_tuple()
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello7StudentC,Student>>)
+      n2 = n3
+      jmp 4::ret
       
-  #4::ret: @[24:16]
-      n7 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[24:16]
-      n8 = __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC3age6weightACSi_SitcfC(30, 60, n7) @[24:16]
-      jmp 6::ret @[24:16]
+  #4::ret:
+      n7 = load n2.__infer_swift_type<swift::metadata_response>.field_0
+      n8 = __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC3age6weightACSi_SitcfC(30, 60, n7)
+      jmp 6::ret
       
-  #6::ret: @[938:0]
-      store &john <- n8 @[938:0]
-      n10 = load n8 @[25:17]
-      store &getelementptr_offset_1 <- 13 @[25:17]
-      n11 = load &getelementptr_offset_1 @[25:17]
-      n13 = load &weight @[25:17]
-      _ = n13.__infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivs(n8) @[25:17]
-      jmp 9::void::ret @[25:17]
+  #6::ret:
+      store &john <- n8
+      n10 = load n8
+      store &getelementptr_offset_1 <- 13
+      n11 = load &getelementptr_offset_1
+      n13 = load &weight
+      _ = n13.__infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivs(n8)
+      jmp 9::void::ret
       
-  #9::void::ret: @[26:1]
-      ret null @[26:1]
+  #9::void::ret:
+      ret null
       
-} @?
+}
 
 define .plain_name = "isWeekend" $s5Hello9isWeekendySbAA3DayOF(day: *__infer_swift_type<ptr_elt>) : int {
-  #: @[242:16]
-      n1 = load &day @[242:16]
-      n3 = $builtins.__derived_enum_equals(n1, 5) @[242:16]
-      jmp 3::ret @[242:16]
+  #:
+      n1 = load &day
+      n3 = $builtins.__derived_enum_equals(n1, 5)
+      jmp 3::ret
       
-  #3::ret: @[242:29]
-      if n3 then jmp 4::jmp::7 else jmp 5 @[242:29]
+  #3::ret:
+      if n3 then jmp 4::jmp::7 else jmp 5
       
-  #4::jmp::7: @[242:29]
-      n7 = 1 @[242:29]
-      jmp 7 @[242:29]
+  #4::jmp::7:
+      n7 = 1
+      jmp 7
       
-  #5: @[242:29]
-      n4 = load &day @[242:29]
-      n6 = $builtins.__derived_enum_equals(n4, 6) @[242:29]
-      jmp 5::jmp::7 @[242:29]
+  #5:
+      n4 = load &day
+      n6 = $builtins.__derived_enum_equals(n4, 6)
+      jmp 5::jmp::7
       
-  #5::jmp::7: @[242:29]
-      n7 = n6 @[242:29]
-      jmp 7 @[242:29]
+  #5::jmp::7:
+      n7 = n6
+      jmp 7
       
-  #7: @[242:5]
-      ret n7 @[242:5]
+  #7:
+      ret n7
       
-} @?
+}
 
 declare $s5Hello8EmployeeVwst(*__infer_swift_type<ptr_elt>, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -175,128 +175,128 @@ declare $s5Hello8EmployeeVwet(*__infer_swift_type<ptr_elt>, int, *__infer_swift_
 declare $s5Hello8EmployeeVMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "_weight.set" $s5Hello8EmployeeV7_weight33_312A41DD1C73018F76DD0D9DF408C41DLLSivs(var1: int, var2: *__infer_swift_type<T5Hello8EmployeeV,Employee>) : void {
-  #: @[933:0]
-      n2 = load &var2 @[933:0]
-      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[933:0]
-      n1 = load &var1 @[933:0]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[933:0]
-      ret null @[934:0]
+  #:
+      n2 = load &var2
+      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1
+      n1 = load &var1
+      store n3.__infer_swift_type<TSi>.field_0 <- n1
+      ret null
       
-} @?
+}
 
 define .plain_name = "_weight.get" $s5Hello8EmployeeV7_weight33_312A41DD1C73018F76DD0D9DF408C41DLLSivg(var1: int, var2: int) : int {
-  #: @?
-      n1 = load &var2 @[932:0]
-      ret n1 @[932:0]
+  #:
+      n1 = load &var2
+      ret n1
       
-} @?
+}
 
 define .plain_name = "weight.set" $s5Hello8EmployeeV6weightSivs(newValue: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello8EmployeeV,Employee>) : void {
-  #: @[33:23]
-      n2 = load &self @[33:23]
-      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[33:23]
-      n1 = load &newValue @[33:23]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[33:23]
-      ret null @[33:34]
+  #:
+      n2 = load &self
+      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1
+      n1 = load &newValue
+      store n3.__infer_swift_type<TSi>.field_0 <- n1
+      ret null
       
-} @?
+}
 
 define .plain_name = "weight.get" $s5Hello8EmployeeV6weightSivg(var1: int, var2: int) : int {
   local self: *__infer_swift_type<T5Hello8EmployeeV,Employee>
-  #: @[928:0]
-      n2 = load &self @[928:0]
-      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[928:0]
-      n1 = load &var1 @[928:0]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[928:0]
-      n5 = load &self @[929:0]
-      n6 = load n5.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[929:0]
-      n4 = load &var2 @[929:0]
-      store n6.__infer_swift_type<TSi>.field_0 <- n4 @[929:0]
-      n7 = load &var2 @[32:23]
-      ret n7 @[32:23]
+  #:
+      n2 = load &self
+      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0
+      n1 = load &var1
+      store n3.__infer_swift_type<TSi>.field_0 <- n1
+      n5 = load &self
+      n6 = load n5.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1
+      n4 = load &var2
+      store n6.__infer_swift_type<TSi>.field_0 <- n4
+      n7 = load &var2
+      ret n7
       
-} @?
+}
 
 define .plain_name = "weight.modify" $s5Hello8EmployeeV6weightSivM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[916:0]
-      n1 = load &var1 @[916:0]
-      n2 = n1.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_0 @[916:0]
-      if &var2 then jmp 9 else jmp 4 @[917:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_0
+      if &var2 then jmp 9 else jmp 4
       
-  #14: @[922:0]
-      ret null @[922:0]
+  #14:
+      ret null
       
-  #4: @[918:0]
-      n4 = load &var1 @[918:0]
-      n3 = load n4.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_1 @[918:0]
-      n6 = load n2 @[919:0]
-      n5 = load n6.__infer_swift_type<TSi>.field_0 @[919:0]
-      _ = $s5Hello8EmployeeV6weightSivs(n5, n3) @[920:0]
-      jmp 14 @[921:0]
+  #4:
+      n4 = load &var1
+      n3 = load n4.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_1
+      n6 = load n2
+      n5 = load n6.__infer_swift_type<TSi>.field_0
+      _ = $s5Hello8EmployeeV6weightSivs(n5, n3)
+      jmp 14
       
-  #9: @[923:0]
-      n10 = load &var1 @[923:0]
-      n9 = load n10.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_1 @[923:0]
-      n12 = load n2 @[924:0]
-      n11 = load n12.__infer_swift_type<TSi>.field_0 @[924:0]
-      _ = $s5Hello8EmployeeV6weightSivs(n11, n9) @[925:0]
-      jmp 14 @[926:0]
+  #9:
+      n10 = load &var1
+      n9 = load n10.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_1
+      n12 = load n2
+      n11 = load n12.__infer_swift_type<TSi>.field_0
+      _ = $s5Hello8EmployeeV6weightSivs(n11, n9)
+      jmp 14
       
-} @?
+}
 
 define .plain_name = "weight.modify" $s5Hello8EmployeeV6weightSivM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[907:0]
-      n1 = load &var1 @[907:0]
-      n2 = n1.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_0 @[907:0]
-      n4 = load &var1 @[908:0]
-      n3 = load &var2 @[908:0]
-      store n4.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_1 <- n3 @[908:0]
-      n6 = load &var2 @[909:0]
-      n7 = load n6.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[909:0]
-      n5 = load n7.__infer_swift_type<TSi>.field_0 @[909:0]
-      n9 = load &var2 @[910:0]
-      n10 = load n9.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[910:0]
-      n8 = load n10.__infer_swift_type<TSi>.field_0 @[910:0]
-      n13 = $s5Hello8EmployeeV6weightSivg(n5, n8) @[911:0]
-      jmp 11::ret @[912:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_0
+      n4 = load &var1
+      n3 = load &var2
+      store n4.__infer_swift_type<$s5Hello8EmployeeV6weightSivM::Frame>.field_1 <- n3
+      n6 = load &var2
+      n7 = load n6.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0
+      n5 = load n7.__infer_swift_type<TSi>.field_0
+      n9 = load &var2
+      n10 = load n9.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1
+      n8 = load n10.__infer_swift_type<TSi>.field_0
+      n13 = $s5Hello8EmployeeV6weightSivg(n5, n8)
+      jmp 11::ret
       
-  #11::ret: @[913:0]
-      n15 = load n2 @[913:0]
-      store n15.__infer_swift_type<TSi>.field_0 <- n13 @[913:0]
-      n16 = $builtins.llvm_init_tuple() @[914:0]
-      store n16.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello8EmployeeV6weightSivM.resume.0" @[915:0]
-      n18 = load n2 @[915:0]
-      store n16.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n18 @[915:0]
-      ret n16 @[915:0]
+  #11::ret:
+      n15 = load n2
+      store n15.__infer_swift_type<TSi>.field_0 <- n13
+      n16 = $builtins.llvm_init_tuple()
+      store n16.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello8EmployeeV6weightSivM.resume.0"
+      n18 = load n2
+      store n16.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n18
+      ret n16
       
-} @?
+}
 
 define .plain_name = "age.get" $s5Hello8EmployeeV3ageSivg(var1: int, var2: int) : int {
-  #: @?
-      n1 = load &var1 @[906:0]
-      ret n1 @[906:0]
+  #:
+      n1 = load &var1
+      ret n1
       
-} @?
+}
 
 define .plain_name = "init" $s5Hello8EmployeeV3age6weightACSi_SitcfC(age: *__infer_swift_type<ptr_elt>, weight: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,int> {
   local self: *__infer_swift_type<T5Hello8EmployeeV,Employee>
-  #: @[36:18]
-      n2 = load &self @[36:18]
-      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[36:18]
-      n1 = load &age @[36:18]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[36:18]
-      n5 = load &self @[37:22]
-      n6 = load n5.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[37:22]
-      n4 = load &weight @[37:22]
-      store n6.__infer_swift_type<TSi>.field_0 <- n4 @[37:22]
-      n7 = $builtins.llvm_init_tuple() @[905:0]
-      n8 = load &age @[38:5]
-      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n8 @[38:5]
-      n9 = load &weight @[38:5]
-      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n9 @[38:5]
-      ret n7 @[38:5]
+  #:
+      n2 = load &self
+      n3 = load n2.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0
+      n1 = load &age
+      store n3.__infer_swift_type<TSi>.field_0 <- n1
+      n5 = load &self
+      n6 = load n5.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1
+      n4 = load &weight
+      store n6.__infer_swift_type<TSi>.field_0 <- n4
+      n7 = $builtins.llvm_init_tuple()
+      n8 = load &age
+      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n8
+      n9 = load &weight
+      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n9
+      ret n7
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello7StudentCfd(*__infer_swift_type<T5Hello7StudentC,Student>) : *__infer_swift_type<T5Hello7StudentC,Student>
 
@@ -306,98 +306,98 @@ declare $s5Hello7StudentCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "weight.set" .method_offset = "13" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivs(var1: int, var2: *__infer_swift_type<T5Hello7StudentC,Student>) : void {
   local var4: *int
-  #: @[889:0]
-      n1 = load &var2 @[889:0]
-      n2 = n1.__infer_swift_type<T5Hello7StudentC,Student>.weight @[889:0]
-      n4 = load n2 @[891:0]
-      n3 = load &var1 @[891:0]
-      store n4.__infer_swift_type<TSi>.field_0 <- n3 @[891:0]
-      ret null @[893:0]
+  #:
+      n1 = load &var2
+      n2 = n1.__infer_swift_type<T5Hello7StudentC,Student>.weight
+      n4 = load n2
+      n3 = load &var1
+      store n4.__infer_swift_type<TSi>.field_0 <- n3
+      ret null
       
-} @?
+}
 
 define .plain_name = "weight.get" .method_offset = "12" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivg(var1: *__infer_swift_type<T5Hello7StudentC,Student>) : int {
   local var3: *int
-  #: @[884:0]
-      n1 = load &var1 @[884:0]
-      n2 = n1.__infer_swift_type<T5Hello7StudentC,Student>.weight @[884:0]
-      n4 = load n2 @[886:0]
-      n3 = load n4.__infer_swift_type<TSi>.field_0 @[886:0]
-      ret n3 @[888:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello7StudentC,Student>.weight
+      n4 = load n2
+      n3 = load n4.__infer_swift_type<TSi>.field_0
+      ret n3
       
-} @?
+}
 
 define .plain_name = "weight.modify" $s5Hello7StudentC6weightSivM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[877:0]
-      n1 = load &var1 @[877:0]
-      n2 = n1.__infer_swift_type<$s5Hello7StudentC6weightSivM::Frame>.field_0 @[877:0]
-      if &var2 then jmp 5 else jmp 4 @[878:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello7StudentC6weightSivM::Frame>.field_0
+      if &var2 then jmp 5 else jmp 4
       
-  #4: @[880:0]
-      jmp 6 @[880:0]
+  #4:
+      jmp 6
       
-  #5: @[883:0]
-      jmp 6 @[883:0]
+  #5:
+      jmp 6
       
-  #6: @[881:0]
-      ret null @[881:0]
+  #6:
+      ret null
       
-} @?
+}
 
 define .plain_name = "weight.modify" .method_offset = "14" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC6weightSivM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[872:0]
-      n1 = load &var1 @[872:0]
-      n2 = n1.__infer_swift_type<$s5Hello7StudentC6weightSivM::Frame>.field_0 @[872:0]
-      n3 = load &var2 @[873:0]
-      n4 = n3.__infer_swift_type<T5Hello7StudentC,Student>.weight @[873:0]
-      n5 = $builtins.llvm_init_tuple() @[875:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello7StudentC6weightSivM.resume.0" @[876:0]
-      n7 = load n4 @[876:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[876:0]
-      ret n5 @[876:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello7StudentC6weightSivM::Frame>.field_0
+      n3 = load &var2
+      n4 = n3.__infer_swift_type<T5Hello7StudentC,Student>.weight
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello7StudentC6weightSivM.resume.0"
+      n7 = load n4
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7
+      ret n5
       
-} @?
+}
 
 define .plain_name = "age.get" $s5Hello7StudentC3ageSivg(var1: *__infer_swift_type<T5Hello7StudentC,Student>) : int {
-  #: @[870:0]
-      n2 = load &var1 @[870:0]
-      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.age @[870:0]
-      n1 = load n3.__infer_swift_type<TSi>.field_0 @[870:0]
-      ret n1 @[871:0]
+  #:
+      n2 = load &var1
+      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.age
+      n1 = load n3.__infer_swift_type<TSi>.field_0
+      ret n1
       
-} @?
+}
 
 define .plain_name = "init" $s5Hello7StudentC3age6weightACSi_Sitcfc(age: *__infer_swift_type<ptr_elt>, weight: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello7StudentC,Student>) : *__infer_swift_type<T5Hello7StudentC,Student> {
-  #: @[5:18]
-      n2 = load &self @[5:18]
-      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.age @[5:18]
-      n1 = load &age @[5:18]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[5:18]
-      n5 = load &self @[6:21]
-      n6 = load n5.__infer_swift_type<T5Hello7StudentC,Student>.weight @[6:21]
-      n4 = load &weight @[6:21]
-      store n6.__infer_swift_type<TSi>.field_0 <- n4 @[6:21]
-      n7 = load &self @[7:5]
-      ret n7 @[7:5]
+  #:
+      n2 = load &self
+      n3 = load n2.__infer_swift_type<T5Hello7StudentC,Student>.age
+      n1 = load &age
+      store n3.__infer_swift_type<TSi>.field_0 <- n1
+      n5 = load &self
+      n6 = load n5.__infer_swift_type<T5Hello7StudentC,Student>.weight
+      n4 = load &weight
+      store n6.__infer_swift_type<TSi>.field_0 <- n4
+      n7 = load &self
+      ret n7
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC3age6weightACSi_SitcfC(var1: int, var2: int, var3: *__infer_swift_type<,$s5Hello7StudentCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[862:0]
-      n1 = load &var3 @[862:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7StudentC,Student>>) @[862:0]
-      jmp 4::ret @[863:0]
+  #:
+      n1 = load &var3
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7StudentC,Student>>)
+      jmp 4::ret
       
-  #4::ret: @[864:0]
-      n5 = load &var1 @[864:0]
-      n6 = load &var2 @[864:0]
-      n8 = $s5Hello7StudentC3age6weightACSi_Sitcfc(n5, n6, n4) @[864:0]
-      jmp 5::ret @[865:0]
+  #4::ret:
+      n5 = load &var1
+      n6 = load &var2
+      n8 = $s5Hello7StudentC3age6weightACSi_Sitcfc(n5, n6, n4)
+      jmp 5::ret
       
-  #5::ret: @[866:0]
-      ret n8 @[866:0]
+  #5::ret:
+      ret n8
       
-} @?
+}
 
 declare $s5Hello7QualityVwst(*__infer_swift_type<ptr_elt>, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -408,29 +408,29 @@ declare .plain_name = "__derived_struct_equals" $s5Hello7QualityVSQAASQ2eeoiySbx
 declare $s5Hello7QualityVMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "sndValue.get" $s5Hello7QualityV8sndValueSivg(var1: int, var2: int) : int {
-  #: @?
-      n1 = load &var2 @[861:0]
-      ret n1 @[861:0]
+  #:
+      n1 = load &var2
+      ret n1
       
-} @?
+}
 
 define .plain_name = "value.get" $s5Hello7QualityV5valueSivg(var1: int, var2: int) : int {
-  #: @?
-      n1 = load &var1 @[860:0]
-      ret n1 @[860:0]
+  #:
+      n1 = load &var1
+      ret n1
       
-} @?
+}
 
 define .plain_name = "init" $s5Hello7QualityV5value8sndValueACSi_SitcfC(var1: int, var2: int) : *__infer_tuple_class<int,int> {
-  #: @[858:0]
-      n1 = $builtins.llvm_init_tuple() @[858:0]
-      n2 = load &var1 @[859:0]
-      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n2 @[859:0]
-      n3 = load &var2 @[859:0]
-      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[859:0]
-      ret n1 @[859:0]
+  #:
+      n1 = $builtins.llvm_init_tuple()
+      n2 = load &var1
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n2
+      n3 = load &var2
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3
+      ret n1
       
-} @?
+}
 
 declare .plain_name = "__derived_struct_equals" $s5Hello7QualityV23__derived_struct_equalsySbAC_ACtFZ(int, int, int, int) : *__infer_swift_type<,$sSbD>
 
@@ -441,394 +441,394 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7
 declare $s5Hello7ProfileCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello7ProfileCACycfc(self: *__infer_swift_type<T5Hello7ProfileC,Profile>) : *__infer_swift_type<T5Hello7ProfileC,Profile> {
-  #: @[278:29]
-      n1 = load &self @[278:29]
-      n2 = n1.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[278:29]
-      n4 = load n2 @[278:69]
-      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[278:69]
-      n6 = load n2 @[278:69]
-      store n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[278:69]
-      n7 = load &self @[847:0]
-      ret n7 @[847:0]
+  #:
+      n1 = load &self
+      n2 = n1.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel
+      n4 = load n2
+      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0
+      n6 = load n2
+      store n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0
+      n7 = load &self
+      ret n7
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileCACycfC(var1: *__infer_swift_type<,$s5Hello7ProfileCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[841:0]
-      n1 = load &var1 @[841:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7ProfileC,Profile>>) @[841:0]
-      jmp 2::ret @[842:0]
+  #:
+      n1 = load &var1
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7ProfileC,Profile>>)
+      jmp 2::ret
       
-  #2::ret: @[843:0]
-      n6 = $s5Hello7ProfileCACycfc(n4) @[843:0]
-      jmp 3::ret @[844:0]
+  #2::ret:
+      n6 = $s5Hello7ProfileCACycfc(n4)
+      jmp 3::ret
       
-  #3::ret: @[845:0]
-      ret n6 @[845:0]
+  #3::ret:
+      ret n6
       
-} @?
+}
 
 define .plain_name = "updateCollectionViewForItems" .method_offset = "14" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC28updateCollectionViewForItemsyySaySSGF(items: *__infer_swift_type<,$sSaySSGD>, self: *__infer_swift_type<T5Hello7ProfileC,Profile>) : void {
   local var7: *__infer_swift_type<TSa>, var6: *__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>
-  #: @[817:0]
-      n2 = load &$sypN @[817:0]
-      n3 = load n2.__infer_swift_type<swift::full_existential_type>.field_1 @[817:0]
-      n4 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, n3) @[817:0]
-      jmp 7::ret @[818:0]
+  #:
+      n2 = load &$sypN
+      n3 = load n2.__infer_swift_type<swift::full_existential_type>.field_1
+      n4 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, n3)
+      jmp 7::ret
       
-  #$ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret: @[285:60]
-      n42 = load &::str::0:: @[285:60]
-      n45 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n42, 0, 1) @[285:60]
-      jmp 27::ret @[285:60]
+  #$ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret:
+      n42 = load &::str::0::
+      n45 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n42, 0, 1)
+      jmp 27::ret
       
-  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[826:0]
-      n52 = load &var6 @[826:0]
-      n53 = load n52.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[826:0]
-      n54 = load n53.__infer_swift_type<TSS>.field_0 @[826:0]
-      n55 = n54.__infer_swift_type<Ts11_StringGutsV>.field_0 @[826:0]
-      n57 = load n55 @[827:0]
-      n58 = load n57.__infer_swift_type<Ts13_StringObjectV>.field_0 @[827:0]
-      n56 = load n58.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 @[827:0]
-      n60 = load n55 @[828:0]
-      n59 = load n60.__infer_swift_type<Ts13_StringObjectV>.field_1 @[828:0]
-      n62 = n59 @[829:0]
-      jmp 38::ret @[830:0]
+  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret:
+      n52 = load &var6
+      n53 = load n52.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0
+      n54 = load n53.__infer_swift_type<TSS>.field_0
+      n55 = n54.__infer_swift_type<Ts11_StringGutsV>.field_0
+      n57 = load n55
+      n58 = load n57.__infer_swift_type<Ts13_StringObjectV>.field_0
+      n56 = load n58.__infer_swift_type<Ts6UInt64V,UInt64>.field_0
+      n60 = load n55
+      n59 = load n60.__infer_swift_type<Ts13_StringObjectV>.field_1
+      n62 = n59
+      jmp 38::ret
       
-  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret: @[285:54]
-      n32 = load &var7 @[285:54]
-      n33 = load n32.__infer_swift_type<TSa>.field_0 @[285:54]
-      n34 = load n33.__infer_swift_type<Ts12_ArrayBufferV>.field_0 @[285:54]
-      n31 = load &items @[285:54]
-      store n34.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n31 @[285:54]
-      n35 = load &$sSaySSGMD @[285:53]
-      n36 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[285:53]
-      jmp 25::ret @[285:53]
+  #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret:
+      n32 = load &var7
+      n33 = load n32.__infer_swift_type<TSa>.field_0
+      n34 = load n33.__infer_swift_type<Ts12_ArrayBufferV>.field_0
+      n31 = load &items
+      store n34.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n31
+      n35 = load &$sSaySSGMD
+      n36 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>)
+      jmp 25::ret
       
-  #$ss5print_9separator10terminatoryypd_S2StF::void::ret: @[286:5]
-      ret null @[286:5]
+  #$ss5print_9separator10terminatoryypd_S2StF::void::ret:
+      ret null
       
-  #10::ret: @[285:15]
-      n10 = load &var6 @[285:15]
-      n11 = load n10.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[285:15]
-      n12 = load n11.__infer_swift_type<TSS>.field_0 @[285:15]
-      n13 = n12.__infer_swift_type<Ts11_StringGutsV>.field_0 @[285:15]
-      n16 = load n13 @[285:15]
-      n17 = load n16.__infer_swift_type<Ts13_StringObjectV>.field_0 @[285:15]
-      n15 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[285:15]
-      store n17.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n15 @[285:15]
-      n20 = load n13 @[285:15]
-      n19 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[285:15]
-      store n20.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n19 @[285:15]
-      n24 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("Updating collection view for items: ", 36, 1) @[285:15]
-      jmp 19::ret @[285:15]
+  #10::ret:
+      n10 = load &var6
+      n11 = load n10.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0
+      n12 = load n11.__infer_swift_type<TSS>.field_0
+      n13 = n12.__infer_swift_type<Ts11_StringGutsV>.field_0
+      n16 = load n13
+      n17 = load n16.__infer_swift_type<Ts13_StringObjectV>.field_0
+      n15 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      store n17.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n15
+      n20 = load n13
+      n19 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      store n20.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n19
+      n24 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("Updating collection view for items: ", 36, 1)
+      jmp 19::ret
       
-  #19::ret: @[285:15]
-      n26 = n24.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[285:15]
-      n28 = load n24.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[820:0]
-      n29 = load n26 @[820:0]
-      n30 = load &var6 @[820:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n28, n29, n30) @[820:0]
-      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret @[821:0]
+  #19::ret:
+      n26 = n24.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      n28 = load n24.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      n29 = load n26
+      n30 = load &var6
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n28, n29, n30)
+      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret
       
-  #25::ret: @[285:53]
-      n37 = $sSaySSGSayxGs23CustomStringConvertiblesWl() @[285:53]
-      jmp 26::ret @[285:53]
+  #25::ret:
+      n37 = $sSaySSGSayxGs23CustomStringConvertiblesWl()
+      jmp 26::ret
       
-  #26::ret: @[285:53]
-      n38 = load &var7 @[285:53]
-      n41 = load &var6 @[285:53]
-      _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n38, n36, n37, n41) @[285:53]
-      jmp $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret @[285:53]
+  #26::ret:
+      n38 = load &var7
+      n41 = load &var6
+      _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n38, n36, n37, n41)
+      jmp $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret
       
-  #27::ret: @[285:60]
-      n47 = n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[285:60]
-      n49 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[823:0]
-      n50 = load n47 @[823:0]
-      n51 = load &var6 @[823:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n49, n50, n51) @[823:0]
-      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret @[824:0]
+  #27::ret:
+      n47 = n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      n49 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      n50 = load n47
+      n51 = load &var6
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n49, n50, n51)
+      jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret
       
-  #38::ret: @[831:0]
-      n63 = load &var6 @[831:0]
-      n64 = $ss26DefaultStringInterpolationVWOh(n63) @[831:0]
-      jmp 39::ret @[832:0]
+  #38::ret:
+      n63 = load &var6
+      n64 = $ss26DefaultStringInterpolationVWOh(n63)
+      jmp 39::ret
       
-  #39::ret: @[285:15]
-      n67 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n56, n59) @[285:15]
-      jmp 40::ret @[285:15]
+  #39::ret:
+      n67 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n56, n59)
+      jmp 40::ret
       
-  #40::ret: @[285:15]
-      n69 = load n6 @[285:15]
-      n68 = load &$sSSN @[285:15]
-      store n69.__infer_swift_type<Any>.field_1 <- n68 @[285:15]
-      n70 = load n6 @[285:15]
-      n71 = load n70.__infer_swift_type<Any>.field_0 @[285:15]
-      n72 = load n71.__infer_swift_type<TSS>.field_0 @[285:15]
-      n73 = n72.__infer_swift_type<Ts11_StringGutsV>.field_0 @[285:15]
-      n76 = load n73 @[285:15]
-      n77 = load n76.__infer_swift_type<Ts13_StringObjectV>.field_0 @[285:15]
-      n75 = load n67.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[285:15]
-      store n77.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n75 @[285:15]
-      n80 = load n73 @[285:15]
-      n79 = load n67.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[285:15]
-      store n80.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n79 @[285:15]
-      n83 = load &$sypN @[833:0]
-      n82 = load n4.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[833:0]
-      n84 = load n83.__infer_swift_type<swift::full_existential_type>.field_1 @[833:0]
-      n85 = $ss27_finalizeUninitializedArrayySayxGABnlF(n82, n84) @[833:0]
-      jmp 51::ret @[834:0]
+  #40::ret:
+      n69 = load n6
+      n68 = load &$sSSN
+      store n69.__infer_swift_type<Any>.field_1 <- n68
+      n70 = load n6
+      n71 = load n70.__infer_swift_type<Any>.field_0
+      n72 = load n71.__infer_swift_type<TSS>.field_0
+      n73 = n72.__infer_swift_type<Ts11_StringGutsV>.field_0
+      n76 = load n73
+      n77 = load n76.__infer_swift_type<Ts13_StringObjectV>.field_0
+      n75 = load n67.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      store n77.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n75
+      n80 = load n73
+      n79 = load n67.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      store n80.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n79
+      n83 = load &$sypN
+      n82 = load n4.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      n84 = load n83.__infer_swift_type<swift::full_existential_type>.field_1
+      n85 = $ss27_finalizeUninitializedArrayySayxGABnlF(n82, n84)
+      jmp 51::ret
       
-  #51::ret: @[835:0]
-      n86 = $ss5print_9separator10terminatoryypd_S2StFfA0_() @[835:0]
-      jmp 52::ret @[836:0]
+  #51::ret:
+      n86 = $ss5print_9separator10terminatoryypd_S2StFfA0_()
+      jmp 52::ret
       
-  #52::ret: @[837:0]
-      n88 = n86.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[837:0]
-      n89 = $ss5print_9separator10terminatoryypd_S2StFfA1_() @[838:0]
-      jmp 55::ret @[839:0]
+  #52::ret:
+      n88 = n86.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      n89 = $ss5print_9separator10terminatoryypd_S2StFfA1_()
+      jmp 55::ret
       
-  #55::ret: @[840:0]
-      n91 = n89.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[840:0]
-      n94 = load n86.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[285:9]
-      n95 = load n88 @[285:9]
-      n97 = load n89.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[285:9]
-      n98 = load n91 @[285:9]
-      _ = $ss5print_9separator10terminatoryypd_S2StF(n85, n94, n95, n97, n98) @[285:9]
-      jmp $ss5print_9separator10terminatoryypd_S2StF::void::ret @[285:9]
+  #55::ret:
+      n91 = n89.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      n94 = load n86.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      n95 = load n88
+      n97 = load n89.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      n98 = load n91
+      _ = $ss5print_9separator10terminatoryypd_S2StF(n85, n94, n95, n97, n98)
+      jmp $ss5print_9separator10terminatoryypd_S2StF::void::ret
       
-  #7::ret: @[819:0]
-      n6 = n4.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[819:0]
-      n9 = $ss26DefaultStringInterpolationV15literalCapacity18interpolationCountABSi_SitcfC(36, 1) @[285:15]
-      jmp 10::ret @[285:15]
+  #7::ret:
+      n6 = n4.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      n9 = $ss26DefaultStringInterpolationV15literalCapacity18interpolationCountABSi_SitcfC(36, 1)
+      jmp 10::ret
       
-} @?
+}
 
 define .plain_name = "coverPictureModel.set" .method_offset = "12" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs(var1: int, var2: int, self: *__infer_swift_type<ptr_elt>) : void {
   local var8: *int, var7: *int, value: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>
-  #: @[791:0]
-      n2 = load &value @[791:0]
-      n1 = load &var1 @[791:0]
-      store n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n1 @[791:0]
-      n4 = load &value @[792:0]
-      n3 = load &var2 @[792:0]
-      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[792:0]
-      n5 = load &self @[793:0]
-      n6 = n5.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[793:0]
-      n8 = load n6 @[795:0]
-      n7 = load n8.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[795:0]
-      n10 = load n6 @[796:0]
-      n9 = load n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[796:0]
-      n13 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n9) @[797:0]
-      jmp 16::ret @[798:0]
+  #:
+      n2 = load &value
+      n1 = load &var1
+      store n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n1
+      n4 = load &value
+      n3 = load &var2
+      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3
+      n5 = load &self
+      n6 = n5.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel
+      n8 = load n6
+      n7 = load n8.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n10 = load n6
+      n9 = load n10.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n13 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n9)
+      jmp 16::ret
       
-  #$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW::void::ret: @[814:0]
-      ret null @[814:0]
+  #$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW::void::ret:
+      ret null
       
-  #16::ret: @[800:0]
-      n14 = load &var2 @[800:0]
-      n16 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n14) @[800:0]
-      jmp 19::ret @[801:0]
+  #16::ret:
+      n14 = load &var2
+      n16 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n14)
+      jmp 19::ret
       
-  #19::ret: @[802:0]
-      n17 = load &self @[802:0]
-      n18 = n17.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[802:0]
-      n20 = load n18 @[804:0]
-      n19 = load n20.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[804:0]
-      n22 = load n18 @[805:0]
-      n21 = load n22.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[805:0]
-      n24 = load n18 @[806:0]
-      n23 = load &var1 @[806:0]
-      store n24.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n23 @[806:0]
-      n26 = load n18 @[807:0]
-      n25 = load &var2 @[807:0]
-      store n26.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n25 @[807:0]
-      n29 = load &self @[810:0]
-      _ = $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW(n7, n9, n29) @[810:0]
-      jmp $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW::void::ret @[811:0]
+  #19::ret:
+      n17 = load &self
+      n18 = n17.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel
+      n20 = load n18
+      n19 = load n20.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n22 = load n18
+      n21 = load n22.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n24 = load n18
+      n23 = load &var1
+      store n24.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n23
+      n26 = load n18
+      n25 = load &var2
+      store n26.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n25
+      n29 = load &self
+      _ = $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW(n7, n9, n29)
+      jmp $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW::void::ret
       
-} @?
+}
 
 declare $s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovpfi() : *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>
 
 define .plain_name = "coverPictureModel.get" .method_offset = "11" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovg(var1: *__infer_swift_type<T5Hello7ProfileC,Profile>) : *__infer_tuple_class<int,int> {
   local var3: *int
-  #: @[780:0]
-      n1 = load &var1 @[780:0]
-      n2 = n1.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[780:0]
-      n4 = load n2 @[782:0]
-      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[782:0]
-      n6 = load n2 @[783:0]
-      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[783:0]
-      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n5) @[784:0]
-      jmp 9::ret @[785:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel
+      n4 = load n2
+      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n6 = load n2
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n5)
+      jmp 9::ret
       
-  #9::ret: @[787:0]
-      n10 = $builtins.llvm_init_tuple() @[787:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[788:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[788:0]
-      ret n10 @[788:0]
+  #9::ret:
+      n10 = $builtins.llvm_init_tuple()
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5
+      ret n10
       
-} @?
+}
 
 define .plain_name = "coverPictureModel.didset" $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvW(var1: int, var2: int, self: *__infer_swift_type<ptr_elt>) : void {
   local var9: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>, var8: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>, var7: *int, oldValue: *__infer_swift_type<T5Hello17CoverPictureModelO,CoverPictureModel>, getelementptr_offset_1: *void
-  #: @[775:0]
-      n2 = load &oldValue @[775:0]
-      n1 = load &var1 @[775:0]
-      store n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n1 @[775:0]
-      n4 = load &oldValue @[776:0]
-      n3 = load &var2 @[776:0]
-      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[776:0]
-      n5 = load &self @[280:19]
-      n6 = n5.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[280:19]
-      n8 = load n6 @[280:19]
-      n7 = load n8.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[280:19]
-      n10 = load n6 @[280:19]
-      n9 = load n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[280:19]
-      n13 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n9) @[280:19]
-      jmp 17::ret @[280:19]
+  #:
+      n2 = load &oldValue
+      n1 = load &var1
+      store n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n1
+      n4 = load &oldValue
+      n3 = load &var2
+      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3
+      n5 = load &self
+      n6 = n5.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel
+      n8 = load n6
+      n7 = load n8.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n10 = load n6
+      n9 = load n10.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n13 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n9)
+      jmp 17::ret
       
-  #17::ret: @[778:0]
-      n15 = load &var8 @[778:0]
-      store n15.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n7 @[778:0]
-      n17 = load &var8 @[779:0]
-      store n17.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n9 @[779:0]
-      n19 = load &var9 @[280:40]
-      n18 = load &var1 @[280:40]
-      store n19.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n18 @[280:40]
-      n21 = load &var9 @[280:40]
-      n20 = load &var2 @[280:40]
-      store n21.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n20 @[280:40]
-      n23 = load &var8 @[280:37]
-      n22 = load n23.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[280:37]
-      n25 = load &var8 @[280:37]
-      n24 = load n25.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[280:37]
-      n27 = load &var9 @[280:37]
-      n26 = load n27.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[280:37]
-      n29 = load &var9 @[280:37]
-      n28 = load n29.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[280:37]
-      n34 = $builtins.__derived_enum_equals(n22, n24, n26, n28) @[280:37]
-      jmp 31::ret @[280:37]
+  #17::ret:
+      n15 = load &var8
+      store n15.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n7
+      n17 = load &var8
+      store n17.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n9
+      n19 = load &var9
+      n18 = load &var1
+      store n19.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n18
+      n21 = load &var9
+      n20 = load &var2
+      store n21.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n20
+      n23 = load &var8
+      n22 = load n23.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n25 = load &var8
+      n24 = load n25.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n27 = load &var9
+      n26 = load n27.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n29 = load &var9
+      n28 = load n29.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n34 = $builtins.__derived_enum_equals(n22, n24, n26, n28)
+      jmp 31::ret
       
-  #31::ret: @[280:37]
-      n35 = load &var8 @[280:37]
-      n36 = $s5Hello17CoverPictureModelOWOh(n35) @[280:37]
-      jmp 33::ret @[280:37]
+  #31::ret:
+      n35 = load &var8
+      n36 = $s5Hello17CoverPictureModelOWOh(n35)
+      jmp 33::ret
       
-  #33::ret: @[280:37]
-      if __sil_lnot(n34) then jmp 34 else jmp 51 @[280:37]
+  #33::ret:
+      if __sil_lnot(n34) then jmp 34 else jmp 51
       
-  #34: @[281:42]
-      n40 = load &$sSSN @[281:42]
-      n41 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, n40) @[281:42]
-      jmp 35::ret @[281:42]
+  #34:
+      n40 = load &$sSSN
+      n41 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(1, n40)
+      jmp 35::ret
       
-  #35::ret: @[281:43]
-      n45 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("coverPicture", 12, 1) @[281:43]
-      jmp 38::ret @[281:43]
+  #35::ret:
+      n45 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("coverPicture", 12, 1)
+      jmp 38::ret
       
-  #38::ret: @[281:43]
-      n47 = load n41.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[281:43]
-      n48 = load n47.__infer_swift_type<TSS>.field_0 @[281:43]
-      n49 = n48.__infer_swift_type<Ts11_StringGutsV>.field_0 @[281:43]
-      n52 = load n49 @[281:43]
-      n53 = load n52.__infer_swift_type<Ts13_StringObjectV>.field_0 @[281:43]
-      n51 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[281:43]
-      store n53.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n51 @[281:43]
-      n56 = load n49 @[281:43]
-      n55 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[281:43]
-      store n56.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n55 @[281:43]
-      n58 = load n41.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[281:42]
-      n59 = load &$sSSN @[281:42]
-      n60 = $ss27_finalizeUninitializedArrayySayxGABnlF(n58, n59) @[281:42]
-      jmp 46::ret @[281:42]
+  #38::ret:
+      n47 = load n41.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      n48 = load n47.__infer_swift_type<TSS>.field_0
+      n49 = n48.__infer_swift_type<Ts11_StringGutsV>.field_0
+      n52 = load n49
+      n53 = load n52.__infer_swift_type<Ts13_StringObjectV>.field_0
+      n51 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      store n53.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n51
+      n56 = load n49
+      n55 = load n45.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1
+      store n56.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n55
+      n58 = load n41.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0
+      n59 = load &$sSSN
+      n60 = $ss27_finalizeUninitializedArrayySayxGABnlF(n58, n59)
+      jmp 46::ret
       
-  #46::ret: @[281:13]
-      n61 = load &self @[281:13]
-      store &getelementptr_offset_1 <- 14 @[281:13]
-      n62 = load &getelementptr_offset_1 @[281:13]
-      n65 = load &self @[281:13]
-      _ = $builtins.llvm_dynamic_call(n62, n60, n65) @[281:13]
-      jmp 49::void::ret @[281:13]
+  #46::ret:
+      n61 = load &self
+      store &getelementptr_offset_1 <- 14
+      n62 = load &getelementptr_offset_1
+      n65 = load &self
+      _ = $builtins.llvm_dynamic_call(n62, n60, n65)
+      jmp 49::void::ret
       
-  #49::void::ret: @[282:9]
-      jmp 51 @[282:9]
+  #49::void::ret:
+      jmp 51
       
-  #51: @[282:9]
-      ret null @[282:9]
+  #51:
+      ret null
       
-} @?
+}
 
 define .plain_name = "coverPictureModel.modify" $s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[755:0]
-      n1 = load &var1 @[755:0]
-      n3 = n1.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_1 @[756:0]
-      if &var2 then jmp 13 else jmp 6 @[757:0]
+  #:
+      n1 = load &var1
+      n3 = n1.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_1
+      if &var2 then jmp 13 else jmp 6
       
-  #$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs::void::1::ret: @[771:0]
-      n25 = load n3 @[771:0]
-      n26 = $s5Hello17CoverPictureModelOWOh(n25) @[771:0]
-      jmp 24 @[772:0]
+  #$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs::void::1::ret:
+      n25 = load n3
+      n26 = $s5Hello17CoverPictureModelOWOh(n25)
+      jmp 24
       
-  #13: @[764:0]
-      n13 = load n1.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_2 @[764:0]
-      n16 = load n3 @[765:0]
-      n15 = load n16.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[765:0]
-      n18 = load n3 @[766:0]
-      n17 = load n18.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[766:0]
-      n21 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n17) @[767:0]
-      jmp 21::ret @[768:0]
+  #13:
+      n13 = load n1.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_2
+      n16 = load n3
+      n15 = load n16.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n18 = load n3
+      n17 = load n18.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n21 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n17)
+      jmp 21::ret
       
-  #21::ret: @[769:0]
-      _ = __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs(n15, n17, n13) @[769:0]
-      jmp $s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs::void::1::ret @[770:0]
+  #21::ret:
+      _ = __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs(n15, n17, n13)
+      jmp $s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs::void::1::ret
       
-  #24: @[763:0]
-      ret null @[763:0]
+  #24:
+      ret null
       
-  #6: @[758:0]
-      n4 = load n1.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_2 @[758:0]
-      n7 = load n3 @[759:0]
-      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[759:0]
-      n9 = load n3 @[760:0]
-      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[760:0]
-      _ = __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs(n6, n8, n4) @[761:0]
-      jmp 24 @[762:0]
+  #6:
+      n4 = load n1.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_2
+      n7 = load n3
+      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n9 = load n3
+      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      _ = __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0Ovs(n6, n8, n4)
+      jmp 24
       
-} @?
+}
 
 define .plain_name = "coverPictureModel.modify" .method_offset = "13" __infer_swift_type<T5Hello7ProfileC,Profile>.$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[738:0]
-      n3 = __swift_coroFrameAllocStub(48, 8635) @[738:0]
-      jmp 3::ret @[739:0]
+  #:
+      n3 = __swift_coroFrameAllocStub(48, 8635)
+      jmp 3::ret
       
-  #13::ret: @[751:0]
-      n21 = load n6 @[751:0]
-      store n21.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n13 @[751:0]
-      n23 = load n6 @[752:0]
-      store n23.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n15 @[752:0]
-      n24 = $builtins.llvm_init_tuple() @[753:0]
-      store n24.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM.resume.0" @[754:0]
-      n26 = load n6 @[754:0]
-      store n24.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n26 @[754:0]
-      ret n24 @[754:0]
+  #13::ret:
+      n21 = load n6
+      store n21.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n13
+      n23 = load n6
+      store n23.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n15
+      n24 = $builtins.llvm_init_tuple()
+      store n24.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM.resume.0"
+      n26 = load n6
+      store n24.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n26
+      ret n24
       
-  #3::ret: @[740:0]
-      store &var1 <- n3 @[740:0]
-      n6 = n3.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_1 @[741:0]
-      n8 = n3.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_0 @[742:0]
-      n9 = load &var2 @[743:0]
-      store n3.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_2 <- n9 @[743:0]
-      n11 = load &var2 @[744:0]
-      n12 = n11.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel @[744:0]
-      n14 = load n12 @[746:0]
-      n13 = load n14.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[746:0]
-      n16 = load n12 @[747:0]
-      n15 = load n16.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[747:0]
-      n19 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n15) @[748:0]
-      jmp 13::ret @[749:0]
+  #3::ret:
+      store &var1 <- n3
+      n6 = n3.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_1
+      n8 = n3.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_0
+      n9 = load &var2
+      store n3.__infer_swift_type<$s5Hello7ProfileC17coverPictureModelAA05CoverdE0OvM::Frame>.field_2 <- n9
+      n11 = load &var2
+      n12 = n11.__infer_swift_type<T5Hello7ProfileC,Profile>.coverPictureModel
+      n14 = load n12
+      n13 = load n14.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n16 = load n12
+      n15 = load n16.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n19 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n15)
+      jmp 13::ret
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello6PersonCfd(*__infer_swift_type<T5Hello6PersonC,Person>) : *__infer_swift_type<T5Hello6PersonC,Person>
 
@@ -838,124 +838,124 @@ declare $s5Hello6PersonCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(var1: *__infer_swift_type<T5Hello6PersonC,Person>, var2: *__infer_swift_type<T5Hello6PersonC,Person>) : void {
   local var4: *int
-  #: @[719:0]
-      n1 = $builtins.llvm_nondet() @[719:0]
-      n2 = load &var2 @[720:0]
-      n3 = n2.__infer_swift_type<T5Hello6PersonC,Person>.spouse @[720:0]
-      n4 = load n3 @[722:0]
-      n5 = load &var1 @[723:0]
-      store n3 <- n5 @[723:0]
-      ret null @[727:0]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &var2
+      n3 = n2.__infer_swift_type<T5Hello6PersonC,Person>.spouse
+      n4 = load n3
+      n5 = load &var1
+      store n3 <- n5
+      ret null
       
-} @?
+}
 
 define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvg(var1: *__infer_swift_type<T5Hello6PersonC,Person>) : *__infer_swift_type<ptr_elt> {
   local var3: *int
-  #: @[713:0]
-      n1 = load &var1 @[713:0]
-      n2 = n1.__infer_swift_type<T5Hello6PersonC,Person>.spouse @[713:0]
-      n3 = load n2 @[715:0]
-      n4 = $builtins.llvm_nondet() @[716:0]
-      ret n3 @[718:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello6PersonC,Person>.spouse
+      n3 = load n2
+      n4 = $builtins.llvm_nondet()
+      ret n3
       
-} @?
+}
 
 define .plain_name = "spouse.modify" $s5Hello6PersonC6spouseACvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[706:0]
-      n1 = load &var1 @[706:0]
-      n2 = n1.__infer_swift_type<$s5Hello6PersonC6spouseACvM::Frame>.field_0 @[706:0]
-      if &var2 then jmp 5 else jmp 4 @[707:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello6PersonC6spouseACvM::Frame>.field_0
+      if &var2 then jmp 5 else jmp 4
       
-  #4: @[709:0]
-      jmp 6 @[709:0]
+  #4:
+      jmp 6
       
-  #5: @[712:0]
-      jmp 6 @[712:0]
+  #5:
+      jmp 6
       
-  #6: @[710:0]
-      ret null @[710:0]
+  #6:
+      ret null
       
-} @?
+}
 
 define .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[701:0]
-      n1 = load &var1 @[701:0]
-      n2 = n1.__infer_swift_type<$s5Hello6PersonC6spouseACvM::Frame>.field_0 @[701:0]
-      n3 = load &var2 @[702:0]
-      n4 = n3.__infer_swift_type<T5Hello6PersonC,Person>.spouse @[702:0]
-      n5 = $builtins.llvm_init_tuple() @[704:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello6PersonC6spouseACvM.resume.0" @[705:0]
-      n7 = load n4 @[705:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[705:0]
-      ret n5 @[705:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello6PersonC6spouseACvM::Frame>.field_0
+      n3 = load &var2
+      n4 = n3.__infer_swift_type<T5Hello6PersonC,Person>.spouse
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello6PersonC6spouseACvM.resume.0"
+      n7 = load n4
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7
+      ret n5
       
-} @?
+}
 
 define .plain_name = "age.get" $s5Hello6PersonC3ageSivg(var1: *__infer_swift_type<T5Hello6PersonC,Person>) : int {
-  #: @[699:0]
-      n2 = load &var1 @[699:0]
-      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.age @[699:0]
-      n1 = load n3.__infer_swift_type<TSi>.field_0 @[699:0]
-      ret n1 @[700:0]
+  #:
+      n2 = load &var1
+      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.age
+      n1 = load n3.__infer_swift_type<TSi>.field_0
+      ret n1
       
-} @?
+}
 
 define .plain_name = "init" $s5Hello6PersonC3ageACSi_tcfc(age: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello6PersonC,Person>) : *__infer_swift_type<T5Hello6PersonC,Person> {
-  #: @[72:18]
-      n2 = load &self @[72:18]
-      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.age @[72:18]
-      n1 = load &age @[72:18]
-      store n3.__infer_swift_type<TSi>.field_0 <- n1 @[72:18]
-      n6 = $builtins.llvm_init_tuple() @[73:23]
-      store n6.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello6PersonC,Person>>) @[73:23]
-      n5 = n6 @[73:23]
-      jmp 7::ret @[73:23]
+  #:
+      n2 = load &self
+      n3 = load n2.__infer_swift_type<T5Hello6PersonC,Person>.age
+      n1 = load &age
+      store n3.__infer_swift_type<TSi>.field_0 <- n1
+      n6 = $builtins.llvm_init_tuple()
+      store n6.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello6PersonC,Person>>)
+      n5 = n6
+      jmp 7::ret
       
-  #7::ret: @[73:23]
-      n9 = load n5.__infer_swift_type<swift::metadata_response>.field_0 @[73:23]
-      n10 = __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC3ageACSi_tcfC(0, n9) @[73:23]
-      jmp 9::ret @[73:23]
+  #7::ret:
+      n9 = load n5.__infer_swift_type<swift::metadata_response>.field_0
+      n10 = __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC3ageACSi_tcfC(0, n9)
+      jmp 9::ret
       
-  #9::ret: @[73:21]
-      n12 = load &self @[73:21]
-      store n12.__infer_swift_type<T5Hello6PersonC,Person>.spouse <- n10 @[73:21]
-      n13 = load &self @[74:5]
-      ret n13 @[74:5]
+  #9::ret:
+      n12 = load &self
+      store n12.__infer_swift_type<T5Hello6PersonC,Person>.spouse <- n10
+      n13 = load &self
+      ret n13
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC3ageACSi_tcfC(var1: int, var2: *__infer_swift_type<,$s5Hello6PersonCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[692:0]
-      n1 = load &var2 @[692:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello6PersonC,Person>>) @[692:0]
-      jmp 3::ret @[693:0]
+  #:
+      n1 = load &var2
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello6PersonC,Person>>)
+      jmp 3::ret
       
-  #3::ret: @[694:0]
-      n5 = load &var1 @[694:0]
-      n7 = $s5Hello6PersonC3ageACSi_tcfc(n5, n4) @[694:0]
-      jmp 4::ret @[695:0]
+  #3::ret:
+      n5 = load &var1
+      n7 = $s5Hello6PersonC3ageACSi_tcfc(n5, n4)
+      jmp 4::ret
       
-  #4::ret: @[696:0]
-      ret n7 @[696:0]
+  #4::ret:
+      ret n7
       
-} @?
+}
 
 define .plain_name = "setting_jane" .method_offset = "16" __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC12setting_janeyyACF(jane: *__infer_swift_type<T5Hello6PersonC,Person>, self: *__infer_swift_type<T5Hello6PersonC,Person>) : void {
   local getelementptr_offset_1: *void
-  #: @[77:23]
-      n1 = $builtins.llvm_nondet() @[77:23]
-      n2 = load &self @[77:21]
-      store &getelementptr_offset_1 <- 13 @[77:21]
-      n3 = load &getelementptr_offset_1 @[77:21]
-      n5 = load &jane @[77:21]
-      n6 = load &self @[77:21]
-      _ = n5.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n6) @[77:21]
-      jmp 8::void::ret @[77:21]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &self
+      store &getelementptr_offset_1 <- 13
+      n3 = load &getelementptr_offset_1
+      n5 = load &jane
+      n6 = load &self
+      _ = n5.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n6)
+      jmp 8::void::ret
       
-  #8::void::ret: @[78:5]
-      ret null @[78:5]
+  #8::void::ret:
+      ret null
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello5StateCfd(*__infer_swift_type<T5Hello5StateC,State>) : *__infer_swift_type<T5Hello5StateC,State>
 
@@ -964,115 +964,115 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello5
 declare $s5Hello5StateCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello5StateCACycfc(self: *__infer_swift_type<T5Hello5StateC,State>) : *__infer_swift_type<T5Hello5StateC,State> {
-  #: @[202:9]
-      n1 = load &self @[202:9]
-      n2 = n1.__infer_swift_type<T5Hello5StateC,State>.delegate @[202:9]
-      n4 = load n2 @[677:0]
-      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[677:0]
-      n6 = load n2 @[678:0]
-      store n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[678:0]
-      n7 = load &self @[679:0]
-      ret n7 @[679:0]
+  #:
+      n1 = load &self
+      n2 = n1.__infer_swift_type<T5Hello5StateC,State>.delegate
+      n4 = load n2
+      store n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0
+      n6 = load n2
+      store n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0
+      n7 = load &self
+      ret n7
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello5StateC,State>.$s5Hello5StateCACycfC(var1: *__infer_swift_type<,$s5Hello5StateCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[671:0]
-      n1 = load &var1 @[671:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5StateC,State>>) @[671:0]
-      jmp 2::ret @[672:0]
+  #:
+      n1 = load &var1
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5StateC,State>>)
+      jmp 2::ret
       
-  #2::ret: @[673:0]
-      n6 = $s5Hello5StateCACycfc(n4) @[673:0]
-      jmp 3::ret @[674:0]
+  #2::ret:
+      n6 = $s5Hello5StateCACycfc(n4)
+      jmp 3::ret
       
-  #3::ret: @[675:0]
-      ret n6 @[675:0]
+  #3::ret:
+      ret n6
       
-} @?
+}
 
 define .plain_name = "delegate.set" $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
   local var5: *int
-  #: @[659:0]
-      n1 = load &var1 @[659:0]
-      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[659:0]
-      jmp 7::ret @[660:0]
+  #:
+      n1 = load &var1
+      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1)
+      jmp 7::ret
       
-  #7::ret: @[661:0]
-      n4 = load &var3 @[661:0]
-      n5 = n4.__infer_swift_type<T5Hello5StateC,State>.delegate @[661:0]
-      n7 = load n5 @[663:0]
-      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[663:0]
-      n9 = load n5 @[664:0]
-      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[664:0]
-      n11 = load n5 @[665:0]
-      n10 = load &var1 @[665:0]
-      store n11.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n10 @[665:0]
-      n13 = load n5 @[666:0]
-      n12 = load &var2 @[666:0]
-      store n13.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n12 @[666:0]
-      ret null @[670:0]
+  #7::ret:
+      n4 = load &var3
+      n5 = n4.__infer_swift_type<T5Hello5StateC,State>.delegate
+      n7 = load n5
+      n6 = load n7.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n9 = load n5
+      n8 = load n9.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n11 = load n5
+      n10 = load &var1
+      store n11.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n10
+      n13 = load n5
+      n12 = load &var2
+      store n13.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n12
+      ret null
       
-} @?
+}
 
 declare $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvpfi() : *__infer_swift_type<T5Hello30DeviceAppManagerClientDelegate_p>
 
 define .plain_name = "delegate.get" $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvg(var1: *__infer_swift_type<T5Hello5StateC,State>) : *__infer_tuple_class<int,int> {
   local var3: *int
-  #: @[650:0]
-      n1 = load &var1 @[650:0]
-      n2 = n1.__infer_swift_type<T5Hello5StateC,State>.delegate @[650:0]
-      n4 = load n2 @[652:0]
-      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[652:0]
-      n6 = load n2 @[653:0]
-      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[653:0]
-      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3) @[654:0]
-      jmp 10::ret @[655:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello5StateC,State>.delegate
+      n4 = load n2
+      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n6 = load n2
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n9 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n3)
+      jmp 10::ret
       
-  #10::ret: @[657:0]
-      n10 = $builtins.llvm_init_tuple() @[657:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[658:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[658:0]
-      ret n10 @[658:0]
+  #10::ret:
+      n10 = $builtins.llvm_init_tuple()
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5
+      ret n10
       
-} @?
+}
 
 define .plain_name = "delegate.modify" $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[643:0]
-      n1 = load &var1 @[643:0]
-      n2 = n1.__infer_swift_type<$s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM::Frame>.field_0 @[643:0]
-      if &var2 then jmp 5 else jmp 4 @[644:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM::Frame>.field_0
+      if &var2 then jmp 5 else jmp 4
       
-  #4: @[646:0]
-      jmp 6 @[646:0]
+  #4:
+      jmp 6
       
-  #5: @[649:0]
-      jmp 6 @[649:0]
+  #5:
+      jmp 6
       
-  #6: @[647:0]
-      ret null @[647:0]
+  #6:
+      ret null
       
-} @?
+}
 
 define .plain_name = "delegate.modify" $s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[638:0]
-      n1 = load &var1 @[638:0]
-      n2 = n1.__infer_swift_type<$s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM::Frame>.field_0 @[638:0]
-      n3 = load &var2 @[639:0]
-      n4 = n3.__infer_swift_type<T5Hello5StateC,State>.delegate @[639:0]
-      n5 = $builtins.llvm_init_tuple() @[641:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM.resume.0" @[642:0]
-      n7 = load n4 @[642:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[642:0]
-      ret n5 @[642:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM::Frame>.field_0
+      n3 = load &var2
+      n4 = n3.__infer_swift_type<T5Hello5StateC,State>.delegate
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello5StateC8delegateAA30DeviceAppManagerClientDelegate_pSgvM.resume.0"
+      n7 = load n4
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7
+      ret n5
       
-} @?
+}
 
 define .plain_name = "foo" $s5Hello3fooyyAA5StateCSgF(state: *__infer_swift_type<ptr_elt>) : void {
-  #: @[214:29]
-      ret null @[214:29]
+  #:
+      ret null
       
-} @?
+}
 
 declare $s5Hello3DayOwup(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -1089,16 +1089,16 @@ declare .plain_name = "__derived_enum_equals" $s5Hello3DayOSQAASQ2eeoiySbx_xtFZT
 declare $s5Hello3DayOSHAASQWb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "hashValue.get" $s5Hello3DayOSHAASH9hashValueSivgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : int {
-  #: @[633:0]
-      n2 = load &var1 @[633:0]
-      n1 = load n2.__infer_swift_type<T5Hello3DayO,Day>.hashValue @[633:0]
-      n4 = $s5Hello3DayO9hashValueSivg(n1) @[634:0]
-      jmp 6::ret @[635:0]
+  #:
+      n2 = load &var1
+      n1 = load n2.__infer_swift_type<T5Hello3DayO,Day>.hashValue
+      n4 = $s5Hello3DayO9hashValueSivg(n1)
+      jmp 6::ret
       
-  #6::ret: @[636:0]
-      ret n4 @[636:0]
+  #6::ret:
+      ret n4
       
-} @?
+}
 
 declare .plain_name = "hash" $s5Hello3DayOSHAASH4hash4intoys6HasherVz_tFTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
@@ -1112,321 +1112,321 @@ declare $s5Hello3DayOACSHAAWl() : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "hashValue.get" $s5Hello3DayO9hashValueSivg(self: *__infer_swift_type<ptr_elt>) : int {
   local var4: *__infer_swift_type<T5Hello3DayO,Day>
-  #: @[627:0]
-      n2 = load &var4 @[627:0]
-      n1 = load &self @[627:0]
-      store n2.__infer_swift_type<T5Hello3DayO,Day>.hashValue <- n1 @[627:0]
-      n3 = $s5Hello3DayOACSHAAWl() @[628:0]
-      jmp 5::ret @[629:0]
+  #:
+      n2 = load &var4
+      n1 = load &self
+      store n2.__infer_swift_type<T5Hello3DayO,Day>.hashValue <- n1
+      n3 = $s5Hello3DayOACSHAAWl()
+      jmp 5::ret
       
-  #5::ret: @[630:0]
-      n5 = load &$s5Hello3DayOMf @[630:0]
-      n4 = load &var4 @[630:0]
-      n6 = load n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_2 @[630:0]
-      n8 = $ss10_hashValue3forSix_tSHRzlF(n4, n6, n3) @[630:0]
-      jmp 6::ret @[631:0]
+  #5::ret:
+      n5 = load &$s5Hello3DayOMf
+      n4 = load &var4
+      n6 = load n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_2
+      n8 = $ss10_hashValue3forSix_tSHRzlF(n4, n6, n3)
+      jmp 6::ret
       
-  #6::ret: @[632:0]
-      ret n8 @[632:0]
+  #6::ret:
+      ret n8
       
-} @?
+}
 
 declare .plain_name = "hash" $s5Hello3DayO4hash4intoys6HasherVz_tF(*__infer_swift_type<,Hasher>, int) : void
 
 declare .plain_name = "__derived_enum_equals" $s5Hello3DayO21__derived_enum_equalsySbAC_ACtFZ(int, int) : *__infer_swift_type<,$sSbD>
 
 define .plain_name = "test_employee_getter_setter_good" $s5Hello32test_employee_getter_setter_goodyyF() : void {
-  #: @[65:5]
-      n2 = $s5Hello17setEmployeeWeightyS2iF(70) @[65:5]
-      jmp 1::ret @[65:5]
+  #:
+      n2 = $s5Hello17setEmployeeWeightyS2iF(70)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[625:0]
-      unreachable @[625:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[65:5]
-      n5 = __sil_eq(n2, 70) @[65:5]
-      if n5 then jmp 8 else jmp 4 @[65:5]
+  #1::ret:
+      n5 = __sil_eq(n2, 70)
+      if n5 then jmp 8 else jmp 4
       
-  #4: @[65:5]
-      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[65:5]
-      jmp 5::ret @[65:5]
+  #4:
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[65:5]
-      _ = __sil_assert_fail(null) @[65:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[65:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[66:1]
-      ret null @[66:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_employee_getter_setter_bad" $s5Hello31test_employee_getter_setter_badyyF() : void {
-  #: @[61:5]
-      n2 = $s5Hello17setEmployeeWeightyS2iF(70) @[61:5]
-      jmp 1::ret @[61:5]
+  #:
+      n2 = $s5Hello17setEmployeeWeightyS2iF(70)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[623:0]
-      unreachable @[623:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[61:5]
-      n5 = __sil_eq(n2, 75) @[61:5]
-      if n5 then jmp 8 else jmp 4 @[61:5]
+  #1::ret:
+      n5 = __sil_eq(n2, 75)
+      if n5 then jmp 8 else jmp 4
       
-  #4: @[61:5]
-      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[61:5]
-      jmp 5::ret @[61:5]
+  #4:
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[61:5]
-      _ = __sil_assert_fail(null) @[61:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[61:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[62:1]
-      ret null @[62:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "retain_cycle_variable_shadow_fp" $s5Hello31retain_cycle_variable_shadow_fp7qualityAA7QualityVSi_tF(quality: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,int> {
   local quality: *__infer_swift_type<T5Hello7QualityV,Quality>
-  #: @[295:19]
-      n1 = load &quality @[295:19]
-      n3 = $s5Hello7QualityV5value8sndValueACSi_SitcfC(n1, 0) @[295:19]
-      jmp 4::ret @[295:19]
+  #:
+      n1 = load &quality
+      n3 = $s5Hello7QualityV5value8sndValueACSi_SitcfC(n1, 0)
+      jmp 4::ret
       
-  #4::ret: @[295:19]
-      n5 = n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[295:19]
-      n7 = n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[295:19]
-      n9 = load &quality @[619:0]
-      n10 = load n9.__infer_swift_type<T5Hello7QualityV,Quality>.field_0 @[619:0]
-      n8 = load n5 @[619:0]
-      store n10.__infer_swift_type<TSi>.field_0 <- n8 @[619:0]
-      n12 = load &quality @[620:0]
-      n13 = load n12.__infer_swift_type<T5Hello7QualityV,Quality>.field_1 @[620:0]
-      n11 = load n7 @[620:0]
-      store n13.__infer_swift_type<TSi>.field_0 <- n11 @[620:0]
-      n14 = $builtins.llvm_init_tuple() @[621:0]
-      n15 = load n5 @[296:5]
-      store n14.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n15 @[296:5]
-      n16 = load n7 @[296:5]
-      store n14.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n16 @[296:5]
-      ret n14 @[296:5]
+  #4::ret:
+      n5 = n3.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n7 = n3.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n9 = load &quality
+      n10 = load n9.__infer_swift_type<T5Hello7QualityV,Quality>.field_0
+      n8 = load n5
+      store n10.__infer_swift_type<TSi>.field_0 <- n8
+      n12 = load &quality
+      n13 = load n12.__infer_swift_type<T5Hello7QualityV,Quality>.field_1
+      n11 = load n7
+      store n13.__infer_swift_type<TSi>.field_0 <- n11
+      n14 = $builtins.llvm_init_tuple()
+      n15 = load n5
+      store n14.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n15
+      n16 = load n7
+      store n14.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n16
+      ret n14
       
-} @?
+}
 
 declare $s5Hello30DeviceAppManagerClientDelegate_pSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "using_enums_with_thursday_bad" $s5Hello29using_enums_with_thursday_badyyF() : void {
-  #: @[247:5]
-      n2 = $s5Hello9isWeekendySbAA3DayOF(3) @[247:5]
-      jmp 1::ret @[247:5]
+  #:
+      n2 = $s5Hello9isWeekendySbAA3DayOF(3)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[616:0]
-      unreachable @[616:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[247:5]
-      n5 = __sil_eq(n2, 1) @[247:5]
-      if n5 then jmp 8 else jmp 4 @[247:5]
+  #1::ret:
+      n5 = __sil_eq(n2, 1)
+      if n5 then jmp 8 else jmp 4
       
-  #4: @[247:5]
-      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[247:5]
-      jmp 5::ret @[247:5]
+  #4:
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[247:5]
-      _ = __sil_assert_fail(null) @[247:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[247:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[248:1]
-      ret null @[248:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "using_enums_with_saturday_bad" $s5Hello29using_enums_with_saturday_badyyF() : void {
-  #: @[252:5]
-      n2 = $s5Hello9isWeekendySbAA3DayOF(5) @[252:5]
-      jmp 1::ret @[252:5]
+  #:
+      n2 = $s5Hello9isWeekendySbAA3DayOF(5)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[614:0]
-      unreachable @[614:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[252:5]
-      n5 = __sil_eq(n2, 0) @[252:5]
-      if n5 then jmp 8 else jmp 4 @[252:5]
+  #1::ret:
+      n5 = __sil_eq(n2, 0)
+      if n5 then jmp 8 else jmp 4
       
-  #4: @[252:5]
-      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[252:5]
-      jmp 5::ret @[252:5]
+  #4:
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[252:5]
-      _ = __sil_assert_fail(null) @[252:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[252:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[253:1]
-      ret null @[253:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_retain_cycle_person1_bad" $s5Hello29test_retain_cycle_person1_badyyAA6PersonCF(jane: *__infer_swift_type<T5Hello6PersonC,Person>) : void {
   local john: *__infer_swift_type<ptr_elt>, getelementptr_offset_2: *void, getelementptr_offset_1: *void
-  #: @[92:16]
-      n1 = $s5Hello12createPersonAA0C0CyF() @[92:16]
-      jmp 4::ret @[92:16]
+  #:
+      n1 = $s5Hello12createPersonAA0C0CyF()
+      jmp 4::ret
       
-  #11::void::ret: @[95:1]
-      ret null @[95:1]
+  #11::void::ret:
+      ret null
       
-  #4::ret: @[612:0]
-      store &john <- n1 @[612:0]
-      n3 = $builtins.llvm_nondet() @[93:19]
-      n4 = load n1 @[93:17]
-      store &getelementptr_offset_1 <- 13 @[93:17]
-      n5 = load &getelementptr_offset_1 @[93:17]
-      n7 = load &jane @[93:17]
-      _ = n7.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n1) @[93:17]
-      jmp 8::void::ret @[93:17]
+  #4::ret:
+      store &john <- n1
+      n3 = $builtins.llvm_nondet()
+      n4 = load n1
+      store &getelementptr_offset_1 <- 13
+      n5 = load &getelementptr_offset_1
+      n7 = load &jane
+      _ = n7.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n1)
+      jmp 8::void::ret
       
-  #8::void::ret: @[94:17]
-      n9 = load &jane @[94:17]
-      store &getelementptr_offset_2 <- 13 @[94:17]
-      n10 = load &getelementptr_offset_2 @[94:17]
-      n13 = load &jane @[94:17]
-      _ = n1.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n13) @[94:17]
-      jmp 11::void::ret @[94:17]
+  #8::void::ret:
+      n9 = load &jane
+      store &getelementptr_offset_2 <- 13
+      n10 = load &getelementptr_offset_2
+      n13 = load &jane
+      _ = n1.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n13)
+      jmp 11::void::ret
       
-} @?
+}
 
 define .plain_name = "test_optional_preson_nil_good" $s5Hello29test_optional_preson_nil_goodSiyF() : int {
-  #: @[149:5]
-      n2 = $s5Hello20test_optional_personySiAA6PersonCSgF(0) @[149:5]
-      jmp 1::ret @[149:5]
+  #:
+      n2 = $s5Hello20test_optional_personySiAA6PersonCSgF(0)
+      jmp 1::ret
       
-  #1::ret: @[150:1]
-      ret n2 @[150:1]
+  #1::ret:
+      ret n2
       
-} @?
+}
 
 define .plain_name = "test_employee_allocation_good" $s5Hello29test_employee_allocation_goodyyF() : void {
-  #: @[50:5]
-      n1 = $s5Hello15create_employeeSiyF() @[50:5]
-      jmp 1::ret @[50:5]
+  #:
+      n1 = $s5Hello15create_employeeSiyF()
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[609:0]
-      unreachable @[609:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[50:5]
-      n4 = __sil_eq(n1, 30) @[50:5]
-      if n4 then jmp 8 else jmp 4 @[50:5]
+  #1::ret:
+      n4 = __sil_eq(n1, 30)
+      if n4 then jmp 8 else jmp 4
       
-  #4: @[50:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[50:5]
-      jmp 5::ret @[50:5]
+  #4:
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[50:5]
-      _ = __sil_assert_fail(null) @[50:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[50:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[51:1]
-      ret null @[51:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "using_enums_with_thursday_ok" $s5Hello28using_enums_with_thursday_okyyF() : void {
-  #: @[262:5]
-      n2 = $s5Hello9isWeekendySbAA3DayOF(3) @[262:5]
-      jmp 1::ret @[262:5]
+  #:
+      n2 = $s5Hello9isWeekendySbAA3DayOF(3)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[607:0]
-      unreachable @[607:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[262:5]
-      n5 = __sil_eq(n2, 0) @[262:5]
-      if n5 then jmp 8 else jmp 4 @[262:5]
+  #1::ret:
+      n5 = __sil_eq(n2, 0)
+      if n5 then jmp 8 else jmp 4
       
-  #4: @[262:5]
-      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[262:5]
-      jmp 5::ret @[262:5]
+  #4:
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[262:5]
-      _ = __sil_assert_fail(null) @[262:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[262:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[263:1]
-      ret null @[263:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "using_enums_with_saturday_ok" $s5Hello28using_enums_with_saturday_okyyF() : void {
-  #: @[267:5]
-      n2 = $s5Hello9isWeekendySbAA3DayOF(5) @[267:5]
-      jmp 1::ret @[267:5]
+  #:
+      n2 = $s5Hello9isWeekendySbAA3DayOF(5)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[605:0]
-      unreachable @[605:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[267:5]
-      n5 = __sil_eq(n2, 1) @[267:5]
-      if n5 then jmp 8 else jmp 4 @[267:5]
+  #1::ret:
+      n5 = __sil_eq(n2, 1)
+      if n5 then jmp 8 else jmp 4
       
-  #4: @[267:5]
-      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[267:5]
-      jmp 5::ret @[267:5]
+  #4:
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[267:5]
-      _ = __sil_assert_fail(null) @[267:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[267:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[268:1]
-      ret null @[268:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_student_allocation_good" $s5Hello28test_student_allocation_goodyyF() : void {
-  #: @[19:5]
-      n1 = $s5Hello14create_studentSiyF() @[19:5]
-      jmp 1::ret @[19:5]
+  #:
+      n1 = $s5Hello14create_studentSiyF()
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[603:0]
-      unreachable @[603:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[19:5]
-      n4 = __sil_eq(n1, 30) @[19:5]
-      if n4 then jmp 8 else jmp 4 @[19:5]
+  #1::ret:
+      n4 = __sil_eq(n1, 30)
+      if n4 then jmp 8 else jmp 4
       
-  #4: @[19:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[19:5]
-      jmp 5::ret @[19:5]
+  #4:
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[19:5]
-      _ = __sil_assert_fail(null) @[19:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[19:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[20:1]
-      ret null @[20:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_employee_allocation_bad" $s5Hello28test_employee_allocation_badyyF() : void {
-  #: @[46:5]
-      n1 = $s5Hello15create_employeeSiyF() @[46:5]
-      jmp 1::ret @[46:5]
+  #:
+      n1 = $s5Hello15create_employeeSiyF()
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[601:0]
-      unreachable @[601:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[46:5]
-      n4 = __sil_eq(n1, 35) @[46:5]
-      if n4 then jmp 8 else jmp 4 @[46:5]
+  #1::ret:
+      n4 = __sil_eq(n1, 35)
+      if n4 then jmp 8 else jmp 4
       
-  #4: @[46:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[46:5]
-      jmp 5::ret @[46:5]
+  #4:
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[46:5]
-      _ = __sil_assert_fail(null) @[46:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[46:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[47:1]
-      ret null @[47:1]
+  #8:
+      ret null
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello28DeviceAppManagerDelegateImplCfd(*__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>) : *__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>
 
@@ -1435,379 +1435,379 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello2
 declare $s5Hello28DeviceAppManagerDelegateImplCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "onStartServiceResponse.get" $s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseyycvg(var1: *__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[584:0]
-      n1 = load &var1 @[584:0]
-      n2 = n1.__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.onStartServiceResponse @[584:0]
-      n4 = load n2 @[585:0]
-      n3 = load n4.__infer_swift_type<swift::function>.field_0 @[585:0]
-      n6 = load n2 @[586:0]
-      n5 = load n6.__infer_swift_type<swift::function>.field_1 @[586:0]
-      n7 = $builtins.llvm_nondet() @[587:0]
-      n8 = $builtins.llvm_init_tuple() @[588:0]
-      store n8.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- n3 @[589:0]
-      store n8.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n5 @[589:0]
-      ret n8 @[589:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.onStartServiceResponse
+      n4 = load n2
+      n3 = load n4.__infer_swift_type<swift::function>.field_0
+      n6 = load n2
+      n5 = load n6.__infer_swift_type<swift::function>.field_1
+      n7 = $builtins.llvm_nondet()
+      n8 = $builtins.llvm_init_tuple()
+      store n8.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- n3
+      store n8.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n5
+      ret n8
       
-} @?
+}
 
 define .plain_name = "init" $s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfc(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   local onStartServiceResponse: *__infer_swift_type<swift::function>
-  #: @[582:0]
-      n2 = load &onStartServiceResponse @[582:0]
-      n1 = load &var1 @[582:0]
-      store n2.__infer_swift_type<swift::function>.field_0 <- n1 @[582:0]
-      n4 = load &onStartServiceResponse @[583:0]
-      n3 = load &var2 @[583:0]
-      store n4.__infer_swift_type<swift::function>.field_1 <- n3 @[583:0]
-      n5 = $builtins.llvm_nondet() @[210:39]
-      n6 = load &self @[210:37]
-      n7 = n6.__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.onStartServiceResponse @[210:37]
-      n9 = load n7 @[210:37]
-      n8 = load &var1 @[210:37]
-      store n9.__infer_swift_type<swift::function>.field_0 <- n8 @[210:37]
-      n11 = load n7 @[210:37]
-      n10 = load &var2 @[210:37]
-      store n11.__infer_swift_type<swift::function>.field_1 <- n10 @[210:37]
-      n12 = load &self @[211:5]
-      ret n12 @[211:5]
+  #:
+      n2 = load &onStartServiceResponse
+      n1 = load &var1
+      store n2.__infer_swift_type<swift::function>.field_0 <- n1
+      n4 = load &onStartServiceResponse
+      n3 = load &var2
+      store n4.__infer_swift_type<swift::function>.field_1 <- n3
+      n5 = $builtins.llvm_nondet()
+      n6 = load &self
+      n7 = n6.__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.onStartServiceResponse
+      n9 = load n7
+      n8 = load &var1
+      store n9.__infer_swift_type<swift::function>.field_0 <- n8
+      n11 = load n7
+      n10 = load &var2
+      store n11.__infer_swift_type<swift::function>.field_1 <- n10
+      n12 = load &self
+      ret n12
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.$s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfC(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  #: @[575:0]
-      n1 = load &var3 @[575:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>>) @[575:0]
-      jmp 4::ret @[576:0]
+  #:
+      n1 = load &var3
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>>)
+      jmp 4::ret
       
-  #4::ret: @[577:0]
-      n5 = load &var1 @[577:0]
-      n6 = load &var2 @[577:0]
-      n8 = $s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfc(n5, n6, n4) @[577:0]
-      jmp 5::ret @[578:0]
+  #4::ret:
+      n5 = load &var1
+      n6 = load &var2
+      n8 = $s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfc(n5, n6, n4)
+      jmp 5::ret
       
-  #5::ret: @[579:0]
-      ret n8 @[579:0]
+  #5::ret:
+      ret n8
       
-} @?
+}
 
 define .plain_name = "using_enums_with_sunday_bad" $s5Hello27using_enums_with_sunday_badyyF() : void {
-  #: @[257:5]
-      n2 = $s5Hello9isWeekendySbAA3DayOF(6) @[257:5]
-      jmp 1::ret @[257:5]
+  #:
+      n2 = $s5Hello9isWeekendySbAA3DayOF(6)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[574:0]
-      unreachable @[574:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[257:5]
-      n5 = __sil_eq(n2, 0) @[257:5]
-      if n5 then jmp 8 else jmp 4 @[257:5]
+  #1::ret:
+      n5 = __sil_eq(n2, 0)
+      if n5 then jmp 8 else jmp 4
       
-  #4: @[257:5]
-      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[257:5]
-      jmp 5::ret @[257:5]
+  #4:
+      n6 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[257:5]
-      _ = __sil_assert_fail(null) @[257:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[257:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[258:1]
-      ret null @[258:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_student_allocation_bad" $s5Hello27test_student_allocation_badyyF() : void {
-  #: @[15:5]
-      n1 = $s5Hello14create_studentSiyF() @[15:5]
-      jmp 1::ret @[15:5]
+  #:
+      n1 = $s5Hello14create_studentSiyF()
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[572:0]
-      unreachable @[572:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[15:5]
-      n4 = __sil_eq(n1, 35) @[15:5]
-      if n4 then jmp 8 else jmp 4 @[15:5]
+  #1::ret:
+      n4 = __sil_eq(n1, 35)
+      if n4 then jmp 8 else jmp 4
       
-  #4: @[15:5]
-      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[15:5]
-      jmp 5::ret @[15:5]
+  #4:
+      n5 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[15:5]
-      _ = __sil_assert_fail(null) @[15:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[15:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[16:1]
-      ret null @[16:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_optional_person_good" $s5Hello25test_optional_person_goodSiyF() : int {
-  #: @[145:26]
-      n3 = $builtins.llvm_init_tuple() @[145:26]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello6PersonC,Person>>) @[145:26]
-      n2 = n3 @[145:26]
-      jmp 1::ret @[145:26]
+  #:
+      n3 = $builtins.llvm_init_tuple()
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello6PersonC,Person>>)
+      n2 = n3
+      jmp 1::ret
       
-  #1::ret: @[145:26]
-      n6 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[145:26]
-      n7 = __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC3ageACSi_tcfC(30, n6) @[145:26]
-      jmp 3::ret @[145:26]
+  #1::ret:
+      n6 = load n2.__infer_swift_type<swift::metadata_response>.field_0
+      n7 = __infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC3ageACSi_tcfC(30, n6)
+      jmp 3::ret
       
-  #3::ret: @[145:5]
-      n10 = $s5Hello20test_optional_personySiAA6PersonCSgF(__sil_cast(<int>, n7)) @[145:5]
-      jmp 5::ret @[145:5]
+  #3::ret:
+      n10 = $s5Hello20test_optional_personySiAA6PersonCSgF(__sil_cast(<int>, n7))
+      jmp 5::ret
       
-  #5::ret: @[146:1]
-      ret n10 @[146:1]
+  #5::ret:
+      ret n10
       
-} @?
+}
 
 define .plain_name = "test_optional_crash_bad" $s5Hello23test_optional_crash_badySiAA6PersonCSgF(person: *__infer_swift_type<ptr_elt>) : int {
-  #: @[156:12]
-      n1 = $builtins.llvm_nondet() @[156:12]
-      n2 = load &person @[156:18]
-      if __sil_eq(n2, 0) then jmp 8 else jmp 6::jmp::9 @[156:18]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &person
+      if __sil_eq(n2, 0) then jmp 8 else jmp 6::jmp::9
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[570:0]
-      unreachable @[570:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret:
+      unreachable
       
-  #6::jmp::9: @[156:18]
-      n4 = load &person @[156:18]
-      n5 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n4) @[156:18]
-      jmp 9 @[156:18]
+  #6::jmp::9:
+      n4 = load &person
+      n5 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n4)
+      jmp 9
       
-  #8: @[156:18]
-      _ = __sil_assert_fail(null) @[156:18]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[156:18]
+  #8:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret
       
-  #9: @[156:20]
-      n9 = load n5.__infer_swift_type<T5Hello6PersonC,Person>.age @[156:20]
-      n7 = load n9.__infer_swift_type<TSi>.field_0 @[156:20]
-      ret n7 @[156:5]
+  #9:
+      n9 = load n5.__infer_swift_type<T5Hello6PersonC,Person>.age
+      n7 = load n9.__infer_swift_type<TSi>.field_0
+      ret n7
       
-} @?
+}
 
 define $s5Hello22test_retain_cycle_bad2yyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : void {
-  #: @[566:0]
-      n1 = load &var1 @[566:0]
-      _ = $s5Hello22test_retain_cycle_bad2yyFyycfU_(n1) @[566:0]
-      jmp $s5Hello22test_retain_cycle_bad2yyFyycfU_::void::ret @[567:0]
+  #:
+      n1 = load &var1
+      _ = $s5Hello22test_retain_cycle_bad2yyFyycfU_(n1)
+      jmp $s5Hello22test_retain_cycle_bad2yyFyycfU_::void::ret
       
-  #$s5Hello22test_retain_cycle_bad2yyFyycfU_::void::ret: @[568:0]
-      ret null @[568:0]
+  #$s5Hello22test_retain_cycle_bad2yyFyycfU_::void::ret:
+      ret null
       
-} @?
+}
 
 define $s5Hello22test_retain_cycle_bad2yyFyycfU_(var1: *__infer_swift_type<,$s5Hello5StateCSgz_XxD>) : void {
   local var4: *int, stateRef: *__infer_swift_type<ptr_elt>
-  #: @[219:9]
-      n1 = load &var1 @[219:9]
-      n2 = n1.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg,State>>.__infer_tuple_field_1 @[219:9]
-      n3 = load n2 @[564:0]
-      store &stateRef <- n3 @[564:0]
-      n4 = load n2 @[224:18]
-      ret null @[225:5]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg,State>>.__infer_tuple_field_1
+      n3 = load n2
+      store &stateRef <- n3
+      n4 = load n2
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_retain_cycle_bad2" $s5Hello22test_retain_cycle_bad2yyF() : void {
   local var6: *int, var5: *int, stateRef: *__infer_swift_type<ptr_elt>, state: *__infer_swift_type<ptr_elt>, delegate: *__infer_swift_type<ptr_elt>
-  #: @[218:17]
-      n3 = $builtins.llvm_init_tuple() @[218:17]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello5StateC,State>>) @[218:17]
-      n2 = n3 @[218:17]
-      jmp 6::ret @[218:17]
+  #:
+      n3 = $builtins.llvm_init_tuple()
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello5StateC,State>>)
+      n2 = n3
+      jmp 6::ret
       
-  #$s5Hello3fooyyAA5StateCSgF::void::ret: @[228:22]
-      n32 = $builtins.llvm_nondet() @[228:22]
-      n34 = n6.__infer_swift_type<T5Hello5StateC,State>.delegate @[228:20]
-      n36 = load n34 @[228:20]
-      n35 = load n36.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[228:20]
-      n38 = load n34 @[228:20]
-      n37 = load n38.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[228:20]
-      n41 = load n34 @[228:20]
-      store n41.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- __sil_cast(<int>, n27) @[228:20]
-      n44 = load n34 @[228:20]
-      store n44.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_swift_alloc(<__infer_swift_type<$s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAWP>>)) @[228:20]
-      ret null @[229:1]
+  #$s5Hello3fooyyAA5StateCSgF::void::ret:
+      n32 = $builtins.llvm_nondet()
+      n34 = n6.__infer_swift_type<T5Hello5StateC,State>.delegate
+      n36 = load n34
+      n35 = load n36.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n38 = load n34
+      n37 = load n38.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n41 = load n34
+      store n41.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- __sil_cast(<int>, n27)
+      n44 = load n34
+      store n44.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, __sil_swift_alloc(<__infer_swift_type<$s5Hello28DeviceAppManagerDelegateImplCAA0bcd6ClientE0AAWP>>))
+      ret null
       
-  #13::ret: @[558:0]
-      n22 = $builtins.llvm_nondet() @[558:0]
-      n26 = load n20.__infer_swift_type<swift::metadata_response>.field_0 @[222:20]
+  #13::ret:
+      n22 = $builtins.llvm_nondet()
+      n26 = load n20.__infer_swift_type<swift::metadata_response>.field_0
       n27 = __infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>.$s5Hello28DeviceAppManagerDelegateImplC22onStartServiceResponseACyyc_tcfC(
-      fun (var1) -> $s5Hello22test_retain_cycle_bad2yyFyycfU_TA(var1), n12, n26) @[222:20]
-      jmp 16::ret @[222:20]
+      fun (var1) -> $s5Hello22test_retain_cycle_bad2yyFyycfU_TA(var1), n12, n26)
+      jmp 16::ret
       
-  #16::ret: @[559:0]
-      store &delegate <- n27 @[559:0]
-      n29 = load n14 @[226:9]
-      n30 = $builtins.llvm_nondet() @[226:9]
-      _ = $s5Hello3fooyyAA5StateCSgF(n29) @[226:5]
-      jmp $s5Hello3fooyyAA5StateCSgF::void::ret @[226:5]
+  #16::ret:
+      store &delegate <- n27
+      n29 = load n14
+      n30 = $builtins.llvm_nondet()
+      _ = $s5Hello3fooyyAA5StateCSgF(n29)
+      jmp $s5Hello3fooyyAA5StateCSgF::void::ret
       
-  #6::ret: @[218:17]
-      n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[218:17]
-      n6 = __infer_swift_type<T5Hello5StateC,State>.$s5Hello5StateCACycfC(n5) @[218:17]
-      jmp 8::ret @[218:17]
+  #6::ret:
+      n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0
+      n6 = __infer_swift_type<T5Hello5StateC,State>.$s5Hello5StateCACycfC(n5)
+      jmp 8::ret
       
-  #8::ret: @[552:0]
-      store &state <- n6 @[552:0]
-      n8 = load &metadata::3 @[553:0]
-      n9 = load n8.__infer_swift_type<swift::full_boxmetadata>.field_2 @[553:0]
-      n12 = swift_allocObject(n9, 24, 7) @[553:0]
-      jmp 9::ret @[554:0]
+  #8::ret:
+      store &state <- n6
+      n8 = load &metadata::3
+      n9 = load n8.__infer_swift_type<swift::full_boxmetadata>.field_2
+      n12 = swift_allocObject(n9, 24, 7)
+      jmp 9::ret
       
-  #9::ret: @[555:0]
-      n14 = n12.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg,State>>.__infer_tuple_field_1 @[555:0]
-      n15 = load n14 @[556:0]
-      store &stateRef <- n15 @[556:0]
-      n16 = $builtins.llvm_nondet() @[219:28]
-      store n14 <- __sil_cast(<int>, n6) @[557:0]
-      n21 = $builtins.llvm_init_tuple() @[222:20]
-      store n21.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>>) @[222:20]
-      n20 = n21 @[222:20]
-      jmp 13::ret @[222:20]
+  #9::ret:
+      n14 = n12.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<T5Hello5StateCSg,State>>.__infer_tuple_field_1
+      n15 = load n14
+      store &stateRef <- n15
+      n16 = $builtins.llvm_nondet()
+      store n14 <- __sil_cast(<int>, n6)
+      n21 = $builtins.llvm_init_tuple()
+      store n21.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello28DeviceAppManagerDelegateImplC,DeviceAppManagerDelegateImpl>>)
+      n20 = n21
+      jmp 13::ret
       
-} @?
+}
 
 define .plain_name = "test_retain_cycle1_bad" $s5Hello22test_retain_cycle1_badyyF() : void {
   local john: *__infer_swift_type<ptr_elt>, jane: *__infer_swift_type<ptr_elt>
-  #: @[113:16]
-      n3 = $builtins.llvm_init_tuple() @[113:16]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello10IndividualC,Individual>>) @[113:16]
-      n2 = n3 @[113:16]
-      jmp 3::ret @[113:16]
+  #:
+      n3 = $builtins.llvm_init_tuple()
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello10IndividualC,Individual>>)
+      n2 = n3
+      jmp 3::ret
       
-  #$s5Hello11set_spousesyyAA10IndividualC_ADtF::void::ret: @[116:1]
-      ret null @[116:1]
+  #$s5Hello11set_spousesyyAA10IndividualC_ADtF::void::ret:
+      ret null
       
-  #3::ret: @[113:16]
-      n5 = n2.__infer_swift_type<swift::metadata_response>.field_0 @[113:16]
-      n7 = load n5 @[113:16]
-      n8 = __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC3ageACSi_tcfC(30, n7) @[113:16]
-      jmp 5::ret @[113:16]
+  #3::ret:
+      n5 = n2.__infer_swift_type<swift::metadata_response>.field_0
+      n7 = load n5
+      n8 = __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC3ageACSi_tcfC(30, n7)
+      jmp 5::ret
       
-  #5::ret: @[547:0]
-      store &john <- n8 @[547:0]
-      n11 = load n5 @[114:16]
-      n12 = __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC3ageACSi_tcfC(35, n11) @[114:16]
-      jmp 6::ret @[114:16]
+  #5::ret:
+      store &john <- n8
+      n11 = load n5
+      n12 = __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC3ageACSi_tcfC(35, n11)
+      jmp 6::ret
       
-  #6::ret: @[548:0]
-      store &jane <- n12 @[548:0]
-      _ = $s5Hello11set_spousesyyAA10IndividualC_ADtF(n8, n12) @[115:5]
-      jmp $s5Hello11set_spousesyyAA10IndividualC_ADtF::void::ret @[115:5]
+  #6::ret:
+      store &jane <- n12
+      _ = $s5Hello11set_spousesyyAA10IndividualC_ADtF(n8, n12)
+      jmp $s5Hello11set_spousesyyAA10IndividualC_ADtF::void::ret
       
-} @?
+}
 
 define .plain_name = "test_retain_cycle_bad" $s5Hello21test_retain_cycle_badyyAA6PersonC_ADtF(john: *__infer_swift_type<T5Hello6PersonC,Person>, jane: *__infer_swift_type<T5Hello6PersonC,Person>) : void {
   local getelementptr_offset_2: *void, getelementptr_offset_1: *void
-  #: @[82:19]
-      n1 = $builtins.llvm_nondet() @[82:19]
-      n2 = load &john @[82:17]
-      store &getelementptr_offset_1 <- 13 @[82:17]
-      n3 = load &getelementptr_offset_1 @[82:17]
-      n5 = load &jane @[82:17]
-      n6 = load &john @[82:17]
-      _ = n5.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n6) @[82:17]
-      jmp 8::void::ret @[82:17]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &john
+      store &getelementptr_offset_1 <- 13
+      n3 = load &getelementptr_offset_1
+      n5 = load &jane
+      n6 = load &john
+      _ = n5.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n6)
+      jmp 8::void::ret
       
-  #12::void::ret: @[84:1]
-      ret null @[84:1]
+  #12::void::ret:
+      ret null
       
-  #8::void::ret: @[83:19]
-      n7 = $builtins.llvm_nondet() @[83:19]
-      n8 = load &jane @[83:17]
-      store &getelementptr_offset_2 <- 13 @[83:17]
-      n9 = load &getelementptr_offset_2 @[83:17]
-      n11 = load &john @[83:17]
-      n12 = load &jane @[83:17]
-      _ = n11.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n12) @[83:17]
-      jmp 12::void::ret @[83:17]
+  #8::void::ret:
+      n7 = $builtins.llvm_nondet()
+      n8 = load &jane
+      store &getelementptr_offset_2 <- 13
+      n9 = load &getelementptr_offset_2
+      n11 = load &john
+      n12 = load &jane
+      _ = n11.__infer_swift_type<T5Hello6PersonC,Person>.$s5Hello6PersonC6spouseACvs(n12)
+      jmp 12::void::ret
       
-} @?
+}
 
 define .plain_name = "test_optional_good_fp" $s5Hello21test_optional_good_fpyyF() : void {
-  #: @[128:5]
-      n3 = $s5Hello13test_optionalyS2iSgF(30, 0) @[128:5]
-      jmp 1::ret @[128:5]
+  #:
+      n3 = $s5Hello13test_optionalyS2iSgF(30, 0)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[542:0]
-      unreachable @[542:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[128:5]
-      n6 = __sil_eq(n3, 30) @[128:5]
-      if n6 then jmp 8 else jmp 4 @[128:5]
+  #1::ret:
+      n6 = __sil_eq(n3, 30)
+      if n6 then jmp 8 else jmp 4
       
-  #4: @[128:5]
-      n7 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[128:5]
-      jmp 5::ret @[128:5]
+  #4:
+      n7 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[128:5]
-      _ = __sil_assert_fail(null) @[128:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[128:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[129:1]
-      ret null @[129:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "test_optional3_bad_FN" $s5Hello21test_optional3_bad_FNSiyF() : int {
-  #: @[160:5]
-      n2 = $s5Hello23test_optional_crash_badySiAA6PersonCSgF(0) @[160:5]
-      jmp 1::ret @[160:5]
+  #:
+      n2 = $s5Hello23test_optional_crash_badySiAA6PersonCSgF(0)
+      jmp 1::ret
       
-  #1::ret: @[161:1]
-      ret n2 @[161:1]
+  #1::ret:
+      ret n2
       
-} @?
+}
 
 define .plain_name = "test_optional_person" $s5Hello20test_optional_personySiAA6PersonCSgF(person: *__infer_swift_type<ptr_elt>) : int {
   local actualPerson: *__infer_swift_type<ptr_elt>
-  #: @[136:27]
-      n1 = $builtins.llvm_nondet() @[136:27]
-      n2 = load &person @[136:5]
-      if __sil_eq(n2, 0) then jmp 14::jmp::15 else jmp 7::jmp::9 @[136:5]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &person
+      if __sil_eq(n2, 0) then jmp 14::jmp::15 else jmp 7::jmp::9
       
-  #14::jmp::15: @[140:9]
-      n11 = 0 @[140:9]
-      jmp 15 @[140:9]
+  #14::jmp::15:
+      n11 = 0
+      jmp 15
       
-  #15: @[142:1]
-      ret n11 @[142:1]
+  #15:
+      ret n11
       
-  #7::jmp::9: @[136:5]
-      n4 = load &person @[136:5]
-      n5 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n4) @[136:5]
-      jmp 9 @[136:5]
+  #7::jmp::9:
+      n4 = load &person
+      n5 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n4)
+      jmp 9
       
-  #9: @[540:0]
-      store &actualPerson <- n5 @[540:0]
-      n10 = load n5.__infer_swift_type<T5Hello6PersonC,Person>.age @[137:29]
-      n8 = load n10.__infer_swift_type<TSi>.field_0 @[137:29]
-      jmp 9::jmp::15 @[137:9]
+  #9:
+      store &actualPerson <- n5
+      n10 = load n5.__infer_swift_type<T5Hello6PersonC,Person>.age
+      n8 = load n10.__infer_swift_type<TSi>.field_0
+      jmp 9::jmp::15
       
-  #9::jmp::15: @[137:9]
-      n11 = n8 @[137:9]
-      jmp 15 @[137:9]
+  #9::jmp::15:
+      n11 = n8
+      jmp 15
       
-} @?
+}
 
 define .plain_name = "retainCycleExample" $s5Hello18retainCycleExampleyyF() : void {
-  #: @[180:13]
-      n3 = $builtins.llvm_init_tuple() @[180:13]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC,ViewController>>) @[180:13]
-      n2 = n3 @[180:13]
-      jmp 1::ret @[180:13]
+  #:
+      n3 = $builtins.llvm_init_tuple()
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC,ViewController>>)
+      n2 = n3
+      jmp 1::ret
       
-  #1::ret: @[180:13]
-      n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[180:13]
-      n6 = __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerCACycfC(n5) @[180:13]
-      jmp 3::ret @[180:13]
+  #1::ret:
+      n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0
+      n6 = __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerCACycfC(n5)
+      jmp 3::ret
       
-  #3::ret: @[181:1]
-      ret null @[181:1]
+  #3::ret:
+      ret null
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello18RetainCycleExampleCfd(*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>
 
@@ -1818,371 +1818,371 @@ declare $s5Hello18RetainCycleExampleCSgWOh(*__infer_swift_type<ptr_elt>) : *__in
 declare $s5Hello18RetainCycleExampleCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello18RetainCycleExampleCACycfc(self: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> {
-  #: @[184:14]
-      n2 = load &self @[184:14]
-      n3 = load n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id @[184:14]
-      store n3.__infer_swift_type<TSi>.field_0 <- 10 @[184:14]
-      n4 = load &self @[186:9]
-      n5 = n4.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure @[186:9]
-      n7 = load n5 @[525:0]
-      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0 @[525:0]
-      n9 = load n5 @[526:0]
-      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0 @[526:0]
-      n10 = load &self @[527:0]
-      ret n10 @[527:0]
+  #:
+      n2 = load &self
+      n3 = load n2.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id
+      store n3.__infer_swift_type<TSi>.field_0 <- 10
+      n4 = load &self
+      n5 = n4.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure
+      n7 = load n5
+      store n7.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- 0
+      n9 = load n5
+      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- 0
+      n10 = load &self
+      ret n10
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "20" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleCACycfC(var1: *__infer_swift_type<,$s5Hello18RetainCycleExampleCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[519:0]
-      n1 = load &var1 @[519:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>>) @[519:0]
-      jmp 2::ret @[520:0]
+  #:
+      n1 = load &var1
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>>)
+      jmp 2::ret
       
-  #2::ret: @[521:0]
-      n6 = $s5Hello18RetainCycleExampleCACycfc(n4) @[521:0]
-      jmp 3::ret @[522:0]
+  #2::ret:
+      n6 = $s5Hello18RetainCycleExampleCACycfc(n4)
+      jmp 3::ret
       
-  #3::ret: @[523:0]
-      ret n6 @[523:0]
+  #3::ret:
+      ret n6
       
-} @?
+}
 
 define .plain_name = "closure.set" .method_offset = "16" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
   local var5: *int
-  #: @[505:0]
-      n1 = load &var1 @[505:0]
-      n2 = load &var2 @[505:0]
-      _ = $sIeg_SgWOy(n1, n2) @[505:0]
-      jmp $sIeg_SgWOy::void::ret @[506:0]
+  #:
+      n1 = load &var1
+      n2 = load &var2
+      _ = $sIeg_SgWOy(n1, n2)
+      jmp $sIeg_SgWOy::void::ret
       
-  #$sIeg_SgWOe::void::1::ret: @[518:0]
-      ret null @[518:0]
+  #$sIeg_SgWOe::void::1::ret:
+      ret null
       
-  #$sIeg_SgWOe::void::ret: @[516:0]
-      n15 = load &var1 @[516:0]
-      n16 = load &var2 @[516:0]
-      _ = $sIeg_SgWOe(n15, n16) @[516:0]
-      jmp $sIeg_SgWOe::void::1::ret @[517:0]
+  #$sIeg_SgWOe::void::ret:
+      n15 = load &var1
+      n16 = load &var2
+      _ = $sIeg_SgWOe(n15, n16)
+      jmp $sIeg_SgWOe::void::1::ret
       
-  #$sIeg_SgWOy::void::ret: @[507:0]
-      n3 = load &var3 @[507:0]
-      n4 = n3.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure @[507:0]
-      n6 = load n4 @[509:0]
-      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[509:0]
-      n8 = load n4 @[510:0]
-      n7 = load n8.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[510:0]
-      n10 = load n4 @[511:0]
-      n9 = load &var1 @[511:0]
-      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n9 @[511:0]
-      n12 = load n4 @[512:0]
-      n11 = load &var2 @[512:0]
-      store n12.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n11 @[512:0]
-      _ = $sIeg_SgWOe(n5, n7) @[513:0]
-      jmp $sIeg_SgWOe::void::ret @[514:0]
+  #$sIeg_SgWOy::void::ret:
+      n3 = load &var3
+      n4 = n3.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure
+      n6 = load n4
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n8 = load n4
+      n7 = load n8.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      n10 = load n4
+      n9 = load &var1
+      store n10.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n9
+      n12 = load n4
+      n11 = load &var2
+      store n12.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n11
+      _ = $sIeg_SgWOe(n5, n7)
+      jmp $sIeg_SgWOe::void::ret
       
-} @?
+}
 
 declare $s5Hello18RetainCycleExampleC7closureyycSgvpfi() : *__infer_swift_type<TIeg_>
 
 define .plain_name = "closure.get" .method_offset = "15" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvg(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : *__infer_tuple_class<int,int> {
   local var3: *int
-  #: @[496:0]
-      n1 = load &var1 @[496:0]
-      n2 = n1.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure @[496:0]
-      n4 = load n2 @[498:0]
-      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[498:0]
-      n6 = load n2 @[499:0]
-      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[499:0]
-      _ = $sIeg_SgWOy(n3, n5) @[500:0]
-      jmp $sIeg_SgWOy::void::ret @[501:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure
+      n4 = load n2
+      n3 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      n6 = load n2
+      n5 = load n6.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      _ = $sIeg_SgWOy(n3, n5)
+      jmp $sIeg_SgWOy::void::ret
       
-  #$sIeg_SgWOy::void::ret: @[503:0]
-      n9 = $builtins.llvm_init_tuple() @[503:0]
-      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3 @[504:0]
-      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5 @[504:0]
-      ret n9 @[504:0]
+  #$sIeg_SgWOy::void::ret:
+      n9 = $builtins.llvm_init_tuple()
+      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n3
+      store n9.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n5
+      ret n9
       
-} @?
+}
 
 define .plain_name = "closure.modify" $s5Hello18RetainCycleExampleC7closureyycSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[489:0]
-      n1 = load &var1 @[489:0]
-      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycSgvM::Frame>.field_0 @[489:0]
-      if &var2 then jmp 5 else jmp 4 @[490:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycSgvM::Frame>.field_0
+      if &var2 then jmp 5 else jmp 4
       
-  #4: @[492:0]
-      jmp 6 @[492:0]
+  #4:
+      jmp 6
       
-  #5: @[495:0]
-      jmp 6 @[495:0]
+  #5:
+      jmp 6
       
-  #6: @[493:0]
-      ret null @[493:0]
+  #6:
+      ret null
       
-} @?
+}
 
 define .plain_name = "closure.modify" .method_offset = "17" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[484:0]
-      n1 = load &var1 @[484:0]
-      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycSgvM::Frame>.field_0 @[484:0]
-      n3 = load &var2 @[485:0]
-      n4 = n3.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure @[485:0]
-      n5 = $builtins.llvm_init_tuple() @[487:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello18RetainCycleExampleC7closureyycSgvM.resume.0" @[488:0]
-      n7 = load n4 @[488:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[488:0]
-      ret n5 @[488:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycSgvM::Frame>.field_0
+      n3 = load &var2
+      n4 = n3.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.closure
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello18RetainCycleExampleC7closureyycSgvM.resume.0"
+      n7 = load n4
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7
+      ret n5
       
-} @?
+}
 
 define .plain_name = "id.set" .method_offset = "13" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivs(var1: int, var2: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local var4: *int
-  #: @[479:0]
-      n1 = load &var2 @[479:0]
-      n2 = n1.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id @[479:0]
-      n4 = load n2 @[481:0]
-      n3 = load &var1 @[481:0]
-      store n4.__infer_swift_type<TSi>.field_0 <- n3 @[481:0]
-      ret null @[483:0]
+  #:
+      n1 = load &var2
+      n2 = n1.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id
+      n4 = load n2
+      n3 = load &var1
+      store n4.__infer_swift_type<TSi>.field_0 <- n3
+      ret null
       
-} @?
+}
 
 declare $s5Hello18RetainCycleExampleC2idSivpfi() : int
 
 define .plain_name = "id.get" .method_offset = "12" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivg(var1: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : int {
   local var3: *int
-  #: @[474:0]
-      n1 = load &var1 @[474:0]
-      n2 = n1.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id @[474:0]
-      n4 = load n2 @[476:0]
-      n3 = load n4.__infer_swift_type<TSi>.field_0 @[476:0]
-      ret n3 @[478:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id
+      n4 = load n2
+      n3 = load n4.__infer_swift_type<TSi>.field_0
+      ret n3
       
-} @?
+}
 
 define .plain_name = "id.modify" $s5Hello18RetainCycleExampleC2idSivM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[467:0]
-      n1 = load &var1 @[467:0]
-      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC2idSivM::Frame>.field_0 @[467:0]
-      if &var2 then jmp 5 else jmp 4 @[468:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC2idSivM::Frame>.field_0
+      if &var2 then jmp 5 else jmp 4
       
-  #4: @[470:0]
-      jmp 6 @[470:0]
+  #4:
+      jmp 6
       
-  #5: @[473:0]
-      jmp 6 @[473:0]
+  #5:
+      jmp 6
       
-  #6: @[471:0]
-      ret null @[471:0]
+  #6:
+      ret null
       
-} @?
+}
 
 define .plain_name = "id.modify" .method_offset = "14" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[462:0]
-      n1 = load &var1 @[462:0]
-      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC2idSivM::Frame>.field_0 @[462:0]
-      n3 = load &var2 @[463:0]
-      n4 = n3.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id @[463:0]
-      n5 = $builtins.llvm_init_tuple() @[465:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello18RetainCycleExampleC2idSivM.resume.0" @[466:0]
-      n7 = load n4 @[466:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[466:0]
-      ret n5 @[466:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC2idSivM::Frame>.field_0
+      n3 = load &var2
+      n4 = n3.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.id
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello18RetainCycleExampleC2idSivM.resume.0"
+      n7 = load n4
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7
+      ret n5
       
-} @?
+}
 
 define $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : void {
-  #: @[459:0]
-      n1 = load &var1 @[459:0]
-      _ = $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_(n1) @[459:0]
-      jmp $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_::void::ret @[460:0]
+  #:
+      n1 = load &var1
+      _ = $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_(n1)
+      jmp $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_::void::ret
       
-  #$s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_::void::ret: @[461:0]
-      ret null @[461:0]
+  #$s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_::void::ret:
+      ret null
       
-} @?
+}
 
 define $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_(self: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local getelementptr_offset_1: *void
-  #: @[190:21]
-      n1 = load &self @[190:21]
-      store &getelementptr_offset_1 <- 13 @[190:21]
-      n2 = load &getelementptr_offset_1 @[190:21]
-      n5 = load &self @[190:21]
-      _ = 20.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivs(n5) @[190:21]
-      jmp 5::void::ret @[190:21]
+  #:
+      n1 = load &self
+      store &getelementptr_offset_1 <- 13
+      n2 = load &getelementptr_offset_1
+      n5 = load &self
+      _ = 20.__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC2idSivs(n5)
+      jmp 5::void::ret
       
-  #5::void::ret: @[191:9]
-      ret null @[191:9]
+  #5::void::ret:
+      ret null
       
-} @?
+}
 
 define .plain_name = "setupClosureBad" .method_offset = "18" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC15setupClosureBadyyF(self: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local getelementptr_offset_1: *void
-  #: @[457:0]
-      n1 = $builtins.llvm_nondet() @[457:0]
-      n2 = load &self @[189:17]
-      store &getelementptr_offset_1 <- 16 @[189:17]
-      n3 = load &getelementptr_offset_1 @[189:17]
-      n7 = load &self @[189:17]
-      n9 = load &self @[189:17]
-      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n7), n9) @[189:17]
-      jmp 7::void::ret @[189:17]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &self
+      store &getelementptr_offset_1 <- 16
+      n3 = load &getelementptr_offset_1
+      n7 = load &self
+      n9 = load &self
+      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n7), n9)
+      jmp 7::void::ret
       
-  #7::void::ret: @[192:5]
-      ret null @[192:5]
+  #7::void::ret:
+      ret null
       
-} @?
+}
 
 define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1: *__infer_swift_type<ptr_elt>) : void {
-  #: @[453:0]
-      n1 = load &var1 @[453:0]
-      _ = $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(n1) @[453:0]
-      jmp $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_::void::ret @[454:0]
+  #:
+      n1 = load &var1
+      _ = $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(n1)
+      jmp $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_::void::ret
       
-  #$s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_::void::ret: @[455:0]
-      ret null @[455:0]
+  #$s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_::void::ret:
+      ret null
       
-} @?
+}
 
 define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *__infer_swift_type<,$s5Hello18RetainCycleExampleCSgXwz_XxD>) : void {
   local var5: *__infer_swift_type<T5Hello18RetainCycleExampleCSg,RetainCycleExample>, var4: *int, self: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
-  #: @[195:26]
-      n1 = load &var1 @[195:26]
-      n2 = n1.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::weak>>.__infer_tuple_field_1 @[195:26]
-      n3 = load n2 @[439:0]
-      store &self <- n3 @[439:0]
-      n4 = load n2 @[196:17]
-      n5 = n4 @[196:17]
-      jmp 6::ret @[196:17]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::weak>>.__infer_tuple_field_1
+      n3 = load n2
+      store &self <- n3
+      n4 = load n2
+      n5 = n4
+      jmp 6::ret
       
-  #11: @[440:0]
-      n13 = load &var5 @[440:0]
-      n14 = $s5Hello18RetainCycleExampleCSgWOh(n13) @[440:0]
-      jmp 12::ret @[441:0]
+  #11:
+      n13 = load &var5
+      n14 = $s5Hello18RetainCycleExampleCSgWOh(n13)
+      jmp 12::ret
       
-  #11::jmp::20: @[444:0]
-      n15 = 1 @[444:0]
-      jmp 20 @[445:0]
+  #11::jmp::20:
+      n15 = 1
+      jmp 20
       
-  #12::ret: @[443:0]
-      jmp 11::jmp::20 @[443:0]
+  #12::ret:
+      jmp 11::jmp::20
       
-  #13: @[196:17]
-      n17 = load &var5 @[196:17]
-      n18 = $builtins.llvm_nondet() @[196:17]
-      n19 = load &var5 @[446:0]
-      n20 = $s5Hello18RetainCycleExampleCSgWOh(n19) @[446:0]
-      jmp 16::ret @[447:0]
+  #13:
+      n17 = load &var5
+      n18 = $builtins.llvm_nondet()
+      n19 = load &var5
+      n20 = $s5Hello18RetainCycleExampleCSgWOh(n19)
+      jmp 16::ret
       
-  #13::jmp::20: @[451:0]
-      n15 = 0 @[451:0]
-      jmp 20 @[452:0]
+  #13::jmp::20:
+      n15 = 0
+      jmp 20
       
-  #16::ret: @[196:22]
-      n21 = load n17 @[196:22]
-      store &getelementptr_offset_1 <- 13 @[196:22]
-      n22 = load &getelementptr_offset_1 @[196:22]
-      _ = $builtins.llvm_dynamic_call(n22, 20, n17) @[196:22]
-      jmp 19::void::ret @[196:22]
+  #16::ret:
+      n21 = load n17
+      store &getelementptr_offset_1 <- 13
+      n22 = load &getelementptr_offset_1
+      _ = $builtins.llvm_dynamic_call(n22, 20, n17)
+      jmp 19::void::ret
       
-  #19::void::ret: @[450:0]
-      jmp 13::jmp::20 @[450:0]
+  #19::void::ret:
+      jmp 13::jmp::20
       
-  #20: @[197:9]
-      ret null @[197:9]
+  #20:
+      ret null
       
-  #6::ret: @[196:17]
-      store &var5 <- __sil_cast(<int>, n5) @[196:17]
-      n8 = load &var5 @[196:17]
-      if __sil_lnot(__sil_eq(n8, 0)) then jmp 13 else jmp 11 @[196:17]
+  #6::ret:
+      store &var5 <- __sil_cast(<int>, n5)
+      n8 = load &var5
+      if __sil_lnot(__sil_eq(n8, 0)) then jmp 13 else jmp 11
       
-} @?
+}
 
 define .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(self: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local getelementptr_offset_1: *void
-  #: @[433:0]
-      n1 = load &metadata @[433:0]
-      n2 = load n1.__infer_swift_type<swift::full_boxmetadata>.field_2 @[433:0]
-      n5 = __sil_swift_alloc(<__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>>) @[433:0]
-      jmp 3::ret @[434:0]
+  #:
+      n1 = load &metadata
+      n2 = load n1.__infer_swift_type<swift::full_boxmetadata>.field_2
+      n5 = __sil_swift_alloc(<__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>>)
+      jmp 3::ret
       
-  #14::void::ret: @[198:5]
-      ret null @[198:5]
+  #14::void::ret:
+      ret null
       
-  #3::ret: @[195:26]
-      n6 = $builtins.llvm_nondet() @[195:26]
-      n7 = $builtins.llvm_nondet() @[435:0]
-      n8 = $builtins.llvm_nondet() @[437:0]
-      n9 = load &self @[195:16]
-      store &getelementptr_offset_1 <- 16 @[195:16]
-      n10 = load &getelementptr_offset_1 @[195:16]
-      n16 = load &self @[195:16]
-      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n5), n16) @[195:16]
-      jmp 14::void::ret @[195:16]
+  #3::ret:
+      n6 = $builtins.llvm_nondet()
+      n7 = $builtins.llvm_nondet()
+      n8 = $builtins.llvm_nondet()
+      n9 = load &self
+      store &getelementptr_offset_1 <- 16
+      n10 = load &getelementptr_offset_1
+      n16 = load &self
+      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n5), n16)
+      jmp 14::void::ret
       
-} @?
+}
 
 define .plain_name = "test_optional_bad" $s5Hello17test_optional_badyyF() : void {
-  #: @[132:5]
-      n3 = $s5Hello13test_optionalyS2iSgF(30, 0) @[132:5]
-      jmp 1::ret @[132:5]
+  #:
+      n3 = $s5Hello13test_optionalyS2iSgF(30, 0)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[431:0]
-      unreachable @[431:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[132:5]
-      n6 = __sil_eq(n3, 35) @[132:5]
-      if n6 then jmp 8 else jmp 4 @[132:5]
+  #1::ret:
+      n6 = __sil_eq(n3, 35)
+      if n6 then jmp 8 else jmp 4
       
-  #4: @[132:5]
-      n7 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() @[132:5]
-      jmp 5::ret @[132:5]
+  #4:
+      n7 = $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_()
+      jmp 5::ret
       
-  #5::ret: @[132:5]
-      _ = __sil_assert_fail(null) @[132:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[132:5]
+  #5::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-  #8: @[133:1]
-      ret null @[133:1]
+  #8:
+      ret null
       
-} @?
+}
 
 define .plain_name = "setEmployeeWeight" $s5Hello17setEmployeeWeightyS2iF(weight: *__infer_swift_type<ptr_elt>) : int {
   local john: *__infer_swift_type<T5Hello8EmployeeV,Employee>
-  #: @[55:16]
-      n3 = $s5Hello8EmployeeV3age6weightACSi_SitcfC(30, 60) @[55:16]
-      jmp 4::ret @[55:16]
+  #:
+      n3 = $s5Hello8EmployeeV3age6weightACSi_SitcfC(30, 60)
+      jmp 4::ret
       
-  #$s5Hello8EmployeeV6weightSivs::void::ret: @[57:17]
-      n15 = load &john @[57:17]
-      n16 = load n15.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[57:17]
-      n14 = load n16.__infer_swift_type<TSi>.field_0 @[57:17]
-      n18 = load &john @[57:17]
-      n19 = load n18.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[57:17]
-      n17 = load n19.__infer_swift_type<TSi>.field_0 @[57:17]
-      n22 = $s5Hello8EmployeeV6weightSivg(n14, n17) @[57:17]
-      jmp 17::ret @[57:17]
+  #$s5Hello8EmployeeV6weightSivs::void::ret:
+      n15 = load &john
+      n16 = load n15.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0
+      n14 = load n16.__infer_swift_type<TSi>.field_0
+      n18 = load &john
+      n19 = load n18.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1
+      n17 = load n19.__infer_swift_type<TSi>.field_0
+      n22 = $s5Hello8EmployeeV6weightSivg(n14, n17)
+      jmp 17::ret
       
-  #17::ret: @[57:5]
-      ret n22 @[57:5]
+  #17::ret:
+      ret n22
       
-  #4::ret: @[55:16]
-      n6 = load &john @[55:16]
-      n7 = load n6.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0 @[55:16]
-      n5 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[55:16]
-      store n7.__infer_swift_type<TSi>.field_0 <- n5 @[55:16]
-      n10 = load &john @[55:16]
-      n11 = load n10.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1 @[55:16]
-      n9 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[55:16]
-      store n11.__infer_swift_type<TSi>.field_0 <- n9 @[55:16]
-      n12 = load &weight @[56:17]
-      n13 = load &john @[56:17]
-      _ = $s5Hello8EmployeeV6weightSivs(n12, n13) @[56:17]
-      jmp $s5Hello8EmployeeV6weightSivs::void::ret @[56:17]
+  #4::ret:
+      n6 = load &john
+      n7 = load n6.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_0
+      n5 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      store n7.__infer_swift_type<TSi>.field_0 <- n5
+      n10 = load &john
+      n11 = load n10.__infer_swift_type<T5Hello8EmployeeV,Employee>.field_1
+      n9 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_1
+      store n11.__infer_swift_type<TSi>.field_0 <- n9
+      n12 = load &weight
+      n13 = load &john
+      _ = $s5Hello8EmployeeV6weightSivs(n12, n13)
+      jmp $s5Hello8EmployeeV6weightSivs::void::ret
       
-} @?
+}
 
 declare $s5Hello17CoverPictureModelOwxx(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -2213,34 +2213,34 @@ declare $s5Hello17CoverPictureModelOMa(int) : *__infer_swift_type<ptr_elt>
 declare .plain_name = "__derived_enum_equals" $s5Hello17CoverPictureModelO21__derived_enum_equalsySbAC_ACtFZ(int, int, int, int) : *__infer_swift_type<,$sSbD>
 
 define .plain_name = "create_employee" $s5Hello15create_employeeSiyF() : int {
-  #: @[42:12]
-      n3 = $s5Hello8EmployeeV3age6weightACSi_SitcfC(30, 60) @[42:12]
-      jmp 1::ret @[42:12]
+  #:
+      n3 = $s5Hello8EmployeeV3age6weightACSi_SitcfC(30, 60)
+      jmp 1::ret
       
-  #1::ret: @?
-      n5 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[42:5]
-      ret n5 @[42:5]
+  #1::ret:
+      n5 = load n3.__infer_tuple_class<int,int>.__infer_tuple_field_0
+      ret n5
       
-} @?
+}
 
 define .plain_name = "create_student" $s5Hello14create_studentSiyF() : int {
-  #: @[11:12]
-      n3 = $builtins.llvm_init_tuple() @[11:12]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello7StudentC,Student>>) @[11:12]
-      n2 = n3 @[11:12]
-      jmp 1::ret @[11:12]
+  #:
+      n3 = $builtins.llvm_init_tuple()
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello7StudentC,Student>>)
+      n2 = n3
+      jmp 1::ret
       
-  #1::ret: @[11:12]
-      n7 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[11:12]
-      n8 = __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC3age6weightACSi_SitcfC(30, 60, n7) @[11:12]
-      jmp 3::ret @[11:12]
+  #1::ret:
+      n7 = load n2.__infer_swift_type<swift::metadata_response>.field_0
+      n8 = __infer_swift_type<T5Hello7StudentC,Student>.$s5Hello7StudentC3age6weightACSi_SitcfC(30, 60, n7)
+      jmp 3::ret
       
-  #3::ret: @[11:41]
-      n11 = load n8.__infer_swift_type<T5Hello7StudentC,Student>.age @[11:41]
-      n9 = load n11.__infer_swift_type<TSi>.field_0 @[11:41]
-      ret n9 @[11:5]
+  #3::ret:
+      n11 = load n8.__infer_swift_type<T5Hello7StudentC,Student>.age
+      n9 = load n11.__infer_swift_type<TSi>.field_0
+      ret n9
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello14ViewControllerCfd(*__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : *__infer_swift_type<T5Hello14ViewControllerC,ViewController>
 
@@ -2250,173 +2250,173 @@ declare $s5Hello14ViewControllerCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello14ViewControllerCACycfc(self: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : *__infer_swift_type<T5Hello14ViewControllerC,ViewController> {
   local var4: *int
-  #: @[416:0]
-      n2 = load &self @[416:0]
-      n5 = $builtins.llvm_init_tuple() @[167:21]
-      store n5.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC,CustomView>>) @[167:21]
-      n4 = n5 @[167:21]
-      jmp 5::ret @[167:21]
+  #:
+      n2 = load &self
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC,CustomView>>)
+      n4 = n5
+      jmp 5::ret
       
-  #5::ret: @[167:42]
-      n6 = $builtins.llvm_nondet() @[167:42]
-      n7 = load &self @[167:21]
-      n9 = load n4.__infer_swift_type<swift::metadata_response>.field_0 @[167:21]
-      n10 = __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(n7, n9) @[167:21]
-      jmp 8::ret @[167:21]
+  #5::ret:
+      n6 = $builtins.llvm_nondet()
+      n7 = load &self
+      n9 = load n4.__infer_swift_type<swift::metadata_response>.field_0
+      n10 = __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(n7, n9)
+      jmp 8::ret
       
-  #8::ret: @[167:19]
-      n11 = load &self @[167:19]
-      n12 = n11.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view @[167:19]
-      n13 = load n12 @[167:19]
-      store n12 <- __sil_cast(<int>, n10) @[167:19]
-      n16 = load &self @[168:5]
-      ret n16 @[168:5]
+  #8::ret:
+      n11 = load &self
+      n12 = n11.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view
+      n13 = load n12
+      store n12 <- __sil_cast(<int>, n10)
+      n16 = load &self
+      ret n16
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerCACycfC(var1: *__infer_swift_type<,$s5Hello14ViewControllerCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[410:0]
-      n1 = load &var1 @[410:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC,ViewController>>) @[410:0]
-      jmp 2::ret @[411:0]
+  #:
+      n1 = load &var1
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello14ViewControllerC,ViewController>>)
+      jmp 2::ret
       
-  #2::ret: @[412:0]
-      n6 = $s5Hello14ViewControllerCACycfc(n4) @[412:0]
-      jmp 3::ret @[413:0]
+  #2::ret:
+      n6 = $s5Hello14ViewControllerCACycfc(n4)
+      jmp 3::ret
       
-  #3::ret: @[414:0]
-      ret n6 @[414:0]
+  #3::ret:
+      ret n6
       
-} @?
+}
 
 define .plain_name = "view.set" .method_offset = "12" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvs(var1: int, var2: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : void {
   local var4: *int
-  #: @[401:0]
-      n1 = $builtins.llvm_nondet() @[401:0]
-      n2 = load &var2 @[402:0]
-      n3 = n2.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view @[402:0]
-      n4 = load n3 @[404:0]
-      n5 = load &var1 @[405:0]
-      store n3 <- n5 @[405:0]
-      ret null @[409:0]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &var2
+      n3 = n2.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view
+      n4 = load n3
+      n5 = load &var1
+      store n3 <- n5
+      ret null
       
-} @?
+}
 
 declare $s5Hello14ViewControllerC4viewAA06CustomB0CSgvpfi() : *__infer_swift_type<T5Hello10CustomViewC,CustomView>
 
 define .plain_name = "view.get" .method_offset = "11" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvg(var1: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>) : int {
   local var3: *int
-  #: @[395:0]
-      n1 = load &var1 @[395:0]
-      n2 = n1.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view @[395:0]
-      n3 = load n2 @[397:0]
-      n4 = $builtins.llvm_nondet() @[398:0]
-      ret n3 @[400:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view
+      n3 = load n2
+      n4 = $builtins.llvm_nondet()
+      ret n3
       
-} @?
+}
 
 define .plain_name = "view.modify" $s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[388:0]
-      n1 = load &var1 @[388:0]
-      n2 = n1.__infer_swift_type<$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::Frame>.field_0 @[388:0]
-      if &var2 then jmp 5 else jmp 4 @[389:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::Frame>.field_0
+      if &var2 then jmp 5 else jmp 4
       
-  #4: @[391:0]
-      jmp 6 @[391:0]
+  #4:
+      jmp 6
       
-  #5: @[394:0]
-      jmp 6 @[394:0]
+  #5:
+      jmp 6
       
-  #6: @[392:0]
-      ret null @[392:0]
+  #6:
+      ret null
       
-} @?
+}
 
 define .plain_name = "view.modify" .method_offset = "13" __infer_swift_type<T5Hello14ViewControllerC,ViewController>.$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[383:0]
-      n1 = load &var1 @[383:0]
-      n2 = n1.__infer_swift_type<$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::Frame>.field_0 @[383:0]
-      n3 = load &var2 @[384:0]
-      n4 = n3.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view @[384:0]
-      n5 = $builtins.llvm_init_tuple() @[386:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM.resume.0" @[387:0]
-      n7 = load n4 @[387:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[387:0]
-      ret n5 @[387:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM::Frame>.field_0
+      n3 = load &var2
+      n4 = n3.__infer_swift_type<T5Hello14ViewControllerC,ViewController>.view
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello14ViewControllerC4viewAA06CustomB0CSgvM.resume.0"
+      n7 = load n4
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7
+      ret n5
       
-} @?
+}
 
 define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(age: *__infer_swift_type<ptr_elt>, var2: int) : int {
   local actualAge: *__infer_swift_type<ptr_elt>
-  #: @[381:0]
-      n3 = load &age @[381:0]
-      n1 = load &var2 @[381:0]
-      store n3.__infer_swift_type<TSiSg>.field_1 <- __sil_cast(<int>, n1) @[381:0]
-      n4 = load &var2 @[119:5]
-      if __sil_cast(<int>, n4) then jmp 10::jmp::11 else jmp 7::jmp::8 @[119:5]
+  #:
+      n3 = load &age
+      n1 = load &var2
+      store n3.__infer_swift_type<TSiSg>.field_1 <- __sil_cast(<int>, n1)
+      n4 = load &var2
+      if __sil_cast(<int>, n4) then jmp 10::jmp::11 else jmp 7::jmp::8
       
-  #10::jmp::11: @[123:9]
-      n8 = 0 @[123:9]
-      jmp 11 @[123:9]
+  #10::jmp::11:
+      n8 = 0
+      jmp 11
       
-  #11: @[125:1]
-      ret n8 @[125:1]
+  #11:
+      ret n8
       
-  #7::jmp::8: @[119:5]
-      n6 = load &age @[119:5]
-      n5 = n6 @[119:5]
-      jmp 8 @[119:5]
+  #7::jmp::8:
+      n6 = load &age
+      n5 = n6
+      jmp 8
       
-  #8: @[382:0]
-      store &actualAge <- n5 @[382:0]
-      jmp 8::jmp::11 @[120:9]
+  #8:
+      store &actualAge <- n5
+      jmp 8::jmp::11
       
-  #8::jmp::11: @[120:9]
-      n8 = n5 @[120:9]
-      jmp 11 @[120:9]
+  #8::jmp::11:
+      n8 = n5
+      jmp 11
       
-} @?
+}
 
 define .plain_name = "createPerson" $s5Hello12createPersonAA0C0CyF() : *__infer_swift_type<T5Hello6PersonC,Person> {
-  #: @[87:5]
-      n4 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("Fail here", 9, 1) @[87:5]
-      jmp 1::ret @[87:5]
+  #:
+      n4 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("Fail here", 9, 1)
+      jmp 1::ret
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret: @[378:0]
-      unreachable @[378:0]
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret:
+      unreachable
       
-  #1::ret: @[87:5]
-      _ = __sil_assert_fail(null) @[87:5]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret @[87:5]
+  #1::ret:
+      _ = __sil_assert_fail(null)
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF::void::ret
       
-} @?
+}
 
 define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA10IndividualC_ADtF(john: *__infer_swift_type<T5Hello10IndividualC,Individual>, jane: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
   local getelementptr_offset_2: *void, getelementptr_offset_1: *void
-  #: @[108:19]
-      n1 = $builtins.llvm_nondet() @[108:19]
-      n2 = load &john @[108:17]
-      store &getelementptr_offset_1 <- 13 @[108:17]
-      n3 = load &getelementptr_offset_1 @[108:17]
-      n5 = load &jane @[108:17]
-      n7 = load &john @[108:17]
-      _ = __sil_cast(<int>, n5).__infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(n7) @[108:17]
-      jmp 9::void::ret @[108:17]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &john
+      store &getelementptr_offset_1 <- 13
+      n3 = load &getelementptr_offset_1
+      n5 = load &jane
+      n7 = load &john
+      _ = __sil_cast(<int>, n5).__infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(n7)
+      jmp 9::void::ret
       
-  #14::void::ret: @[110:1]
-      ret null @[110:1]
+  #14::void::ret:
+      ret null
       
-  #9::void::ret: @[109:19]
-      n8 = $builtins.llvm_nondet() @[109:19]
-      n9 = load &jane @[109:17]
-      store &getelementptr_offset_2 <- 13 @[109:17]
-      n10 = load &getelementptr_offset_2 @[109:17]
-      n12 = load &john @[109:17]
-      n14 = load &jane @[109:17]
-      _ = __sil_cast(<int>, n12).__infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(n14) @[109:17]
-      jmp 14::void::ret @[109:17]
+  #9::void::ret:
+      n8 = $builtins.llvm_nondet()
+      n9 = load &jane
+      store &getelementptr_offset_2 <- 13
+      n10 = load &getelementptr_offset_2
+      n12 = load &john
+      n14 = load &jane
+      _ = __sil_cast(<int>, n12).__infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(n14)
+      jmp 14::void::ret
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello10IndividualCfd(*__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<T5Hello10IndividualC,Individual>
 
@@ -2428,134 +2428,134 @@ declare $s5Hello10IndividualCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: int, var2: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
   local var4: *int
-  #: @[356:0]
-      n1 = $builtins.llvm_nondet() @[356:0]
-      n2 = load &var2 @[357:0]
-      n3 = n2.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse @[357:0]
-      n4 = load &var1 @[359:0]
-      store n3 <- __sil_cast(<*__infer_swift_type<ptr_elt>>, n4) @[359:0]
-      jmp 8::ret @[360:0]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &var2
+      n3 = n2.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse
+      n4 = load &var1
+      store n3 <- __sil_cast(<*__infer_swift_type<ptr_elt>>, n4)
+      jmp 8::ret
       
-  #8::ret: @[364:0]
-      ret null @[364:0]
+  #8::ret:
+      ret null
       
-} @?
+}
 
 declare $s5Hello10IndividualC6spouseACSgvpfi() : *__infer_swift_type<T5Hello10IndividualC,Individual>
 
 define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvg(var1: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<T5Hello10IndividualC,Individual> {
   local var3: *int
-  #: @[350:0]
-      n1 = load &var1 @[350:0]
-      n2 = n1.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse @[350:0]
-      n3 = load n2 @[352:0]
-      n4 = n3 @[352:0]
-      jmp 4::ret @[353:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse
+      n3 = load n2
+      n4 = n3
+      jmp 4::ret
       
-  #4::ret: @[355:0]
-      ret __sil_cast(<int>, n4) @[355:0]
+  #4::ret:
+      ret __sil_cast(<int>, n4)
       
-} @?
+}
 
 define .plain_name = "spouse.modify" $s5Hello10IndividualC6spouseACSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[328:0]
-      n1 = load &var1 @[328:0]
-      n3 = n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_0 @[329:0]
-      n5 = n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_1 @[330:0]
-      if &var2 then jmp 14 else jmp 6 @[331:0]
+  #:
+      n1 = load &var1
+      n3 = n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_0
+      n5 = n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_1
+      if &var2 then jmp 14 else jmp 6
       
-  #12::ret: @[338:0]
-      jmp 25 @[338:0]
+  #12::ret:
+      jmp 25
       
-  #14: @[340:0]
-      n13 = load n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_2 @[340:0]
-      n15 = load n5 @[341:0]
-      n16 = $builtins.llvm_nondet() @[342:0]
-      store n13.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse <- __sil_cast(<*__infer_swift_type<ptr_elt>>, n15) @[343:0]
-      jmp 22::ret @[344:0]
+  #14:
+      n13 = load n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_2
+      n15 = load n5
+      n16 = $builtins.llvm_nondet()
+      store n13.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse <- __sil_cast(<*__infer_swift_type<ptr_elt>>, n15)
+      jmp 22::ret
       
-  #22::ret: @[346:0]
-      n21 = load n5 @[346:0]
-      n22 = $s5Hello10IndividualCSgWOh(n21) @[346:0]
-      jmp 24::ret @[347:0]
+  #22::ret:
+      n21 = load n5
+      n22 = $s5Hello10IndividualCSgWOh(n21)
+      jmp 24::ret
       
-  #24::ret: @[349:0]
-      jmp 25 @[349:0]
+  #24::ret:
+      jmp 25
       
-  #25: @[339:0]
-      ret null @[339:0]
+  #25:
+      ret null
       
-  #6: @[332:0]
-      n6 = load n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_2 @[332:0]
-      n8 = load n5 @[333:0]
-      store n6.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse <- __sil_cast(<*__infer_swift_type<ptr_elt>>, n8) @[334:0]
-      jmp 12::ret @[335:0]
+  #6:
+      n6 = load n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_2
+      n8 = load n5
+      store n6.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse <- __sil_cast(<*__infer_swift_type<ptr_elt>>, n8)
+      jmp 12::ret
       
-} @?
+}
 
 define .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[315:0]
-      n3 = __swift_coroFrameAllocStub(40, 60087) @[315:0]
-      jmp 3::ret @[316:0]
+  #:
+      n3 = __swift_coroFrameAllocStub(40, 60087)
+      jmp 3::ret
       
-  #3::ret: @[317:0]
-      store &var1 <- n3 @[317:0]
-      n6 = n3.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_0 @[318:0]
-      n8 = n3.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_1 @[319:0]
-      n9 = load &var2 @[320:0]
-      store n3.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_2 <- n9 @[320:0]
-      n11 = load &var2 @[321:0]
-      n12 = n11.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse @[321:0]
-      n13 = load n12 @[323:0]
-      n14 = n13 @[323:0]
-      jmp 8::ret @[324:0]
+  #3::ret:
+      store &var1 <- n3
+      n6 = n3.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_0
+      n8 = n3.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_1
+      n9 = load &var2
+      store n3.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_2 <- n9
+      n11 = load &var2
+      n12 = n11.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse
+      n13 = load n12
+      n14 = n13
+      jmp 8::ret
       
-  #8::ret: @[325:0]
-      store n8 <- __sil_cast(<int>, n14) @[325:0]
-      n17 = $builtins.llvm_init_tuple() @[326:0]
-      store n17.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello10IndividualC6spouseACSgvM.resume.0" @[327:0]
-      n19 = load n8 @[327:0]
-      store n17.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n19 @[327:0]
-      ret n17 @[327:0]
+  #8::ret:
+      store n8 <- __sil_cast(<int>, n14)
+      n17 = $builtins.llvm_init_tuple()
+      store n17.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello10IndividualC6spouseACSgvM.resume.0"
+      n19 = load n8
+      store n17.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n19
+      ret n17
       
-} @?
+}
 
 define .plain_name = "age.get" $s5Hello10IndividualC3ageSivg(var1: *__infer_swift_type<T5Hello10IndividualC,Individual>) : int {
-  #: @[313:0]
-      n2 = load &var1 @[313:0]
-      n3 = load n2.__infer_swift_type<T5Hello10IndividualC,Individual>.age @[313:0]
-      n1 = load n3.__infer_swift_type<TSi>.field_0 @[313:0]
-      ret n1 @[314:0]
+  #:
+      n2 = load &var1
+      n3 = load n2.__infer_swift_type<T5Hello10IndividualC,Individual>.age
+      n1 = load n3.__infer_swift_type<TSi>.field_0
+      ret n1
       
-} @?
+}
 
 define .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfc(age: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<T5Hello10IndividualC,Individual> {
-  #: @[312:0]
-      n1 = $builtins.llvm_nondet() @[312:0]
-      n3 = load &self @[103:18]
-      n4 = load n3.__infer_swift_type<T5Hello10IndividualC,Individual>.age @[103:18]
-      n2 = load &age @[103:18]
-      store n4.__infer_swift_type<TSi>.field_0 <- n2 @[103:18]
-      n5 = load &self @[104:5]
-      ret n5 @[104:5]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n3 = load &self
+      n4 = load n3.__infer_swift_type<T5Hello10IndividualC,Individual>.age
+      n2 = load &age
+      store n4.__infer_swift_type<TSi>.field_0 <- n2
+      n5 = load &self
+      ret n5
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "15" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC3ageACSi_tcfC(var1: int, var2: *__infer_swift_type<,$s5Hello10IndividualCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[305:0]
-      n1 = load &var2 @[305:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10IndividualC,Individual>>) @[305:0]
-      jmp 3::ret @[306:0]
+  #:
+      n1 = load &var2
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10IndividualC,Individual>>)
+      jmp 3::ret
       
-  #3::ret: @[307:0]
-      n5 = load &var1 @[307:0]
-      n7 = $s5Hello10IndividualC3ageACSi_tcfc(n5, n4) @[307:0]
-      jmp 4::ret @[308:0]
+  #3::ret:
+      n5 = load &var1
+      n7 = $s5Hello10IndividualC3ageACSi_tcfc(n5, n4)
+      jmp 4::ret
       
-  #4::ret: @[309:0]
-      ret n7 @[309:0]
+  #4::ret:
+      ret n7
       
-} @?
+}
 
 declare .plain_name = "deinit" $s5Hello10CustomViewCfd(*__infer_swift_type<T5Hello10CustomViewC,CustomView>) : *__infer_swift_type<T5Hello10CustomViewC,CustomView>
 
@@ -2566,86 +2566,86 @@ declare $s5Hello10CustomViewCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swif
 declare $s5Hello10CustomViewCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(delegate: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>, self: *__infer_swift_type<T5Hello10CustomViewC,CustomView>) : *__infer_swift_type<T5Hello10CustomViewC,CustomView> {
-  #: @[175:25]
-      n1 = $builtins.llvm_nondet() @[175:25]
-      n3 = load &self @[175:23]
-      n2 = load &delegate @[175:23]
-      store n3.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate <- n2 @[175:23]
-      n4 = load &self @[176:5]
-      ret n4 @[176:5]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n3 = load &self
+      n2 = load &delegate
+      store n3.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate <- n2
+      n4 = load &self
+      ret n4
       
-} @?
+}
 
 define .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfC(var1: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>, var2: *__infer_swift_type<,$s5Hello10CustomViewCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[288:0]
-      n1 = load &var2 @[288:0]
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC,CustomView>>) @[288:0]
-      jmp 3::ret @[289:0]
+  #:
+      n1 = load &var2
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello10CustomViewC,CustomView>>)
+      jmp 3::ret
       
-  #3::ret: @[290:0]
-      n5 = load &var1 @[290:0]
-      n7 = $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(n5, n4) @[290:0]
-      jmp 4::ret @[291:0]
+  #3::ret:
+      n5 = load &var1
+      n7 = $s5Hello10CustomViewC8delegateAcA0C10ControllerC_tcfc(n5, n4)
+      jmp 4::ret
       
-  #4::ret: @[292:0]
-      ret n7 @[292:0]
+  #4::ret:
+      ret n7
       
-} @?
+}
 
 define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvs(var1: *__infer_swift_type<T5Hello14ViewControllerC,ViewController>, var2: *__infer_swift_type<T5Hello10CustomViewC,CustomView>) : void {
   local var4: *int
-  #: @[279:0]
-      n1 = $builtins.llvm_nondet() @[279:0]
-      n2 = load &var2 @[280:0]
-      n3 = n2.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate @[280:0]
-      n4 = load n3 @[282:0]
-      n5 = load &var1 @[283:0]
-      store n3 <- n5 @[283:0]
-      ret null @[287:0]
+  #:
+      n1 = $builtins.llvm_nondet()
+      n2 = load &var2
+      n3 = n2.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate
+      n4 = load n3
+      n5 = load &var1
+      store n3 <- n5
+      ret null
       
-} @?
+}
 
 define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvg(var1: *__infer_swift_type<T5Hello10CustomViewC,CustomView>) : *__infer_swift_type<ptr_elt> {
   local var3: *int
-  #: @[273:0]
-      n1 = load &var1 @[273:0]
-      n2 = n1.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate @[273:0]
-      n3 = load n2 @[275:0]
-      n4 = $builtins.llvm_nondet() @[276:0]
-      ret n3 @[278:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate
+      n3 = load n2
+      n4 = $builtins.llvm_nondet()
+      ret n3
       
-} @?
+}
 
 define .plain_name = "delegate.modify" $s5Hello10CustomViewC8delegateAA0C10ControllerCvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
-  #: @[266:0]
-      n1 = load &var1 @[266:0]
-      n2 = n1.__infer_swift_type<$s5Hello10CustomViewC8delegateAA0C10ControllerCvM::Frame>.field_0 @[266:0]
-      if &var2 then jmp 5 else jmp 4 @[267:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello10CustomViewC8delegateAA0C10ControllerCvM::Frame>.field_0
+      if &var2 then jmp 5 else jmp 4
       
-  #4: @[269:0]
-      jmp 6 @[269:0]
+  #4:
+      jmp 6
       
-  #5: @[272:0]
-      jmp 6 @[272:0]
+  #5:
+      jmp 6
       
-  #6: @[270:0]
-      ret null @[270:0]
+  #6:
+      ret null
       
-} @?
+}
 
 define .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello10CustomViewC,CustomView>.$s5Hello10CustomViewC8delegateAA0C10ControllerCvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
-  #: @[261:0]
-      n1 = load &var1 @[261:0]
-      n2 = n1.__infer_swift_type<$s5Hello10CustomViewC8delegateAA0C10ControllerCvM::Frame>.field_0 @[261:0]
-      n3 = load &var2 @[262:0]
-      n4 = n3.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate @[262:0]
-      n5 = $builtins.llvm_init_tuple() @[264:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello10CustomViewC8delegateAA0C10ControllerCvM.resume.0" @[265:0]
-      n7 = load n4 @[265:0]
-      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7 @[265:0]
-      ret n5 @[265:0]
+  #:
+      n1 = load &var1
+      n2 = n1.__infer_swift_type<$s5Hello10CustomViewC8delegateAA0C10ControllerCvM::Frame>.field_0
+      n3 = load &var2
+      n4 = n3.__infer_swift_type<T5Hello10CustomViewC,CustomView>.delegate
+      n5 = $builtins.llvm_init_tuple()
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello10CustomViewC8delegateAA0C10ControllerCvM.resume.0"
+      n7 = load n4
+      store n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n7
+      ret n5
       
-} @?
+}
 
 global symbolic yycSg: *__infer_tuple_class<*int,int>
 
