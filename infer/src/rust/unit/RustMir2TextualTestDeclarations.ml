@@ -76,6 +76,10 @@ fn main() {
           n1 = dummy::succ(n0)
           store &var_0 <- n1:int
           jmp node_2
+          .handlers node_1
+
+      #node_1:
+          throw "UnwindResume"
 
       #node_2:
           n2:int = load &var_0

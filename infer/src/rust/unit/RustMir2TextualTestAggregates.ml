@@ -192,12 +192,16 @@ struct Point {
           n2 = dummy::distance(n1)
           store &var_2 <- n2:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3
+
+      #node_2:
+          throw "UnwindResume"
 
     }
 
@@ -231,7 +235,7 @@ struct Point {
           ret n13
 
     }
-|}]
+    |}]
 
 
 let%expect_test "empty_struct" =
@@ -268,12 +272,16 @@ fn main() {
           n1 = dummy::{dummy::Adder}::add(n0, 1, 2)
           store &three_2 <- n1:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n2:void = load &var_0
           ret n2
+
+      #node_2:
+          throw "UnwindResume"
 
     }
 

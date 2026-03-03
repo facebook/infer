@@ -85,10 +85,14 @@ let mk_qualified_proc_name crate (item_meta : Charon.Generated_Types.item_meta) 
   {Textual.QualifiedProcName.enclosing_class; name; metadata= None}
 
 
-let item_meta_to_string crate (item_meta : Charon.Generated_Types.item_meta) : string =
-  let names = List.map item_meta.name ~f:(name_of_path_element crate) in
+let name_to_string crate (name : Charon.Generated_Types.name) : string =
+  let names = List.map name ~f:(name_of_path_element crate) in
   let name_str = Stdlib.String.concat "::" names in
   name_str
+
+
+let item_meta_to_string crate (item_meta : Charon.Generated_Types.item_meta) : string =
+  name_to_string crate item_meta.name
 
 
 let global_to_varname crate item_meta =
@@ -561,18 +565,22 @@ let mk_switch_block_otherwise from_block_id block_id prune_exps =
   , node_call_here )
 
 
+let mk_throw_of_string message =
+  Textual.Terminator.Throw (Textual.Exp.Const (Textual.Const.Str message))
+
+
 let mk_terminator (crate : Charon.UllbcAst.crate) (idx : int) (place_map : place_map_ty)
     (terminator : Charon.Generated_UllbcAst.terminator) :
-    Textual.Node.t list * Textual.Instr.t list * Textual.Terminator.t =
+    Textual.Node.t list * Textual.Instr.t list * Textual.Terminator.t * Textual.NodeName.t list =
   let loc = location_from_span terminator.span in
   match terminator.content with
   | Charon.Generated_UllbcAst.Goto block_id ->
       let jmp = mk_jump block_id in
-      ([], [], jmp)
+      ([], [], jmp, [])
   | Charon.Generated_UllbcAst.Return ->
       let place = mk_return_place place_map in
       let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
-      ([], [], Textual.Terminator.Ret exp)
+      ([], [], Textual.Terminator.Ret exp, [])
   | Charon.Generated_UllbcAst.Switch (operand, SwitchInt (_, cases, otherwise)) ->
       let op_exp, _ = mk_exp_from_operand ~loc crate place_map operand in
       let nodes, node_calls, prune_exps =
@@ -580,14 +588,14 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (idx : int) (place_map : place
       in
       let node, node_call = mk_switch_block_otherwise idx otherwise prune_exps in
       let jmp = Textual.Terminator.Jump ([node_call] @ node_calls) in
-      (nodes @ [node], [], jmp)
+      (nodes @ [node], [], jmp, [])
   | Charon.Generated_UllbcAst.Switch (operand, If (then_block_id, else_block_id)) ->
       let exp, _ = mk_exp_from_operand ~loc crate place_map operand in
       let bexp = Textual.BoolExp.Exp exp in
       let then_ = mk_jump then_block_id in
       let else_ = mk_jump else_block_id in
-      ([], [], Textual.Terminator.If {bexp; then_; else_})
-  | Charon.Generated_UllbcAst.Call (call, block_id_1, _) ->
+      ([], [], Textual.Terminator.If {bexp; then_; else_}, [])
+  | Charon.Generated_UllbcAst.Call (call, block_id_1, on_unwind) ->
       let args_exps, _ =
         List.map call.args ~f:(mk_exp_from_operand ~loc crate place_map) |> List.unzip
       in
@@ -601,18 +609,21 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (idx : int) (place_map : place
         Textual.Instr.Store {exp1= dest_exp; exp2= call_exp; loc; typ= Some dest_typ}
       in
       let jmp = mk_jump block_id_1 in
-      ([], [call_instr], jmp)
+      let on_unwind = mk_label (Charon.Generated_UllbcAst.BlockId.to_int on_unwind) in
+      ([], [call_instr], jmp, [on_unwind])
   | Charon.Generated_UllbcAst.UnwindResume ->
       (* TODO: To be updated when error handling is being implemented *)
-      ([], [], Textual.Terminator.Unreachable)
+      ([], [], mk_throw_of_string "UnwindResume", [])
   (* Undefined behavior in the rust abstract machine.
   These are things that 'should' not be possible to occur under normal circumstances.
   For example, the otherwise case in matches that are exhausitive without the use of a catch all case*)
   | Abort UndefinedBehavior ->
-      ([], [], Textual.Terminator.Unreachable)
-  | t ->
-      L.die UserError "[ERROR] Unsupported terminator: @. > %a @."
-        Charon.Generated_UllbcAst.pp_raw_terminator t
+      ([], [], mk_throw_of_string "Undefined Behaviour", [])
+  | Abort UnwindTerminate ->
+      ([], [], mk_throw_of_string "Unwind Terminate", [])
+  | Abort (Panic message) ->
+      let message = message |> Option.value_map ~f:(name_to_string crate) ~default:"Unknown" in
+      ([], [], mk_throw_of_string message, [])
 
 
 let mk_field_store_instr_from_rvalue ~loc crate lexp enclosing_class place_map field_id
@@ -754,9 +765,8 @@ let mk_node (crate : Charon.UllbcAst.crate) (idx : int) (block : Charon.Generate
     (place_map : place_map_ty) : Textual.Node.t list =
   let label = mk_label idx in
   let ssa_parameters = [] in
-  let exn_succs = [] in
   let instrs = block.statements |> List.concat_map ~f:(mk_instr crate place_map) in
-  let nodes, term_instr, last = mk_terminator crate idx place_map block.terminator in
+  let nodes, term_instr, last, exn_succs = mk_terminator crate idx place_map block.terminator in
   let instrs = instrs @ term_instr in
   let last_loc = location_from_span_end block.terminator.span in
   let label_loc =
