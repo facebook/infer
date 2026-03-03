@@ -88,6 +88,11 @@ let is_protocol_witness_optional_deinit_copy lang mangled_name =
   && String.is_substring ~substring:"_p" mangled_name
 
 
+let is_init_in_swift_overlay mangled_name =
+  String.is_prefix mangled_name ~prefix:"$sSo"
+  && (String.is_suffix mangled_name ~suffix:"fC" || String.is_suffix mangled_name ~suffix:"TO")
+
+
 let to_proc_name_closure_name s =
   Textual.QualifiedProcName.
     {enclosing_class= TopLevel; name= Textual.ProcName.of_string s; metadata= None}
@@ -887,11 +892,82 @@ and translate_protocol_witness_optional_deinit_copy ~proc_state ptr exp loc =
   instr :: instrs
 
 
+and resolve_objc_msgSend ~(proc_state : ProcState.t) call_exp arg_types =
+  match call_exp with
+  | Textual.Exp.Call {proc; args= textual_args}
+    when Textual.ProcName.equal
+           (Textual.QualifiedProcName.name proc)
+           (Textual.ProcName.of_string "objc_msgSend") -> (
+    match (textual_args, arg_types) with
+    | receiver_textual :: selector_textual :: rest_textual_args, receiver_type_opt :: _ -> (
+        (* 1. Determine the Enclosing Class (Enclosing vs TopLevel) *)
+        let receiver_type_opt =
+          match receiver_textual with
+          | Textual.Exp.Var ident -> (
+            match IdentMap.find_opt ident proc_state.ProcState.ids_move with
+            | Some id_data ->
+                Option.map ~f:(fun typ -> typ.Textual.Typ.typ) id_data.ProcState.typ
+            | None ->
+                None )
+          | _ ->
+              receiver_type_opt
+        in
+        let enclosing_class =
+          match receiver_type_opt with
+          | Some (Textual.Typ.Ptr ((Struct type_name as struct_typ), _))
+          (* Route any_type_swift to TopLevel so existing C-function models can catch it *)
+            when not (Textual.Typ.equal struct_typ Textual.Typ.any_type_swift) -> (
+            match Textual.TypeName.swift_plain_name_of_type_name type_name with
+            | Some plain_name ->
+                Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string plain_name)
+            | None -> (
+              match Textual.TypeName.swift_mangled_name_of_type_name type_name with
+              | Some mangled_name ->
+                  Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string mangled_name)
+              | None ->
+                  Textual.QualifiedProcName.TopLevel ) )
+          | _ ->
+              Textual.QualifiedProcName.TopLevel
+        in
+        (* 2. Get Selector Name from the map *)
+        let selector_name_opt =
+          match selector_textual with
+          | Textual.Exp.Var id ->
+              Textual.Ident.Map.find_opt id proc_state.selector_map
+          | _ ->
+              None
+        in
+        (* 3. Construct the Virtual Call *)
+        match selector_name_opt with
+        | Some method_name ->
+            let metadata =
+              Some
+                Textual.QualifiedProcName.
+                  { lang=
+                      Some Textual.Lang.ObjectiveC
+                      (* TODO: find whether it's instance or class method. *)
+                  ; method_kind= Some Textual.QualifiedProcName.InstanceMethod }
+            in
+            let new_proc =
+              Textual.QualifiedProcName.
+                {enclosing_class; name= Textual.ProcName.of_string method_name; metadata}
+            in
+            (* Drop the selector argument (2nd arg), keep receiver + rest *)
+            let new_args = receiver_textual :: rest_textual_args in
+            Textual.Exp.Call {proc= new_proc; args= new_args; kind= Textual.Exp.Virtual}
+        | None ->
+            call_exp )
+    | _ ->
+        call_exp )
+  | _ ->
+      call_exp
+
+
 and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.QualifiedProcName.t)
     return ?generate_typ_exp (llair_args : Llair.Exp.t list) (loc : Textual.Location.t) =
-  let args_instrs, args =
+  let args_instrs, args_with_types =
     List.fold_map llair_args ~init:[] ~f:(fun acc_instrs exp ->
-        let exp, _, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
+        let exp, typ, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
         let deref_instrs, deref_exp =
           (* So far it looks like for C the load operations are already there when needed. *)
           if
@@ -900,8 +976,10 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.Qualif
           then add_deref ~proc_state ~from_call:true exp loc
           else ([], exp)
         in
-        (deref_instrs @ acc_instrs @ instrs, deref_exp) )
+        (* Store pair (exp, typ) in the list *)
+        (deref_instrs @ acc_instrs @ instrs, (deref_exp, typ)) )
   in
+  let args, arg_types = List.unzip args_with_types in
   let args, args_instrs =
     if Textual.QualifiedProcName.equal proc Textual.ProcDecl.assert_fail_name then
       ([Textual.Exp.Const Null], [])
@@ -942,11 +1020,11 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.Qualif
   in
   update_id_return_type ~proc_state proc return_id ;
   let instrs = call_instrs @ args_instrs in
-  (return_id, call_exp, instrs)
+  (return_id, call_exp, instrs, arg_types)
 
 
 and to_textual_call_instrs ~proc_state return proc args loc =
-  let id, call_exp, args_instrs =
+  let id, call_exp, args_instrs, _ =
     to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc return args loc
   in
   let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
@@ -987,7 +1065,7 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   in
   let loc = to_textual_loc_instr ~proc_state call.loc in
   let llair_args = Option.to_list exp_opt @ llair_args in
-  let id, call_exp, args_instrs =
+  let id, call_exp, args_instrs, arg_types =
     to_textual_call_aux ~proc_state ~kind proc call.areturn llair_args loc
   in
   let call_exp =
@@ -1002,6 +1080,7 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
     | _ ->
         call_exp
   in
+  let call_exp = resolve_objc_msgSend ~proc_state call_exp arg_types in
   let instrs =
     match (call_exp, llair_args) with
     (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
@@ -1109,6 +1188,19 @@ let translate_store_in_field_zero ~(proc_state : ProcState.t) exp1 loc typ_name 
   (field_exp, deref_instrs)
 
 
+let extract_selector_name name =
+  try
+    (* Find the position of the opening parenthesis '(' *)
+    let start_pos = String.index_exn name '(' + 1 in
+    (* Find the position of the closing parenthesis ')' *)
+    let end_pos = String.rindex_exn name ')' in
+    (* Extract the substring between them *)
+    String.sub name ~pos:start_pos ~len:(end_pos - start_pos)
+  with _ ->
+    (* Fallback if the format is unexpected *)
+    "unknown_selector"
+
+
 let cmnd_to_instrs ~(proc_state : ProcState.t) block =
   let ModuleState.{lang; struct_map; mangled_map} = proc_state.module_state in
   let to_instr textual_instrs inst =
@@ -1116,6 +1208,14 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
     | Load {reg; ptr; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
         let id, _ = Var.reg_to_id ~proc_state reg in
+        (* Check if we are loading a selector global *)
+        ( match ptr with
+        | Global {name} when String.is_substring name ~substring:"L_selector" ->
+            let selector = extract_selector_name name in
+            (* Your extraction logic *)
+            ProcState.add_selector proc_state id selector
+        | _ ->
+            () ) ;
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
         (* Taint propagation (Address -> Value) *)
         Metadata.propagate ~proc_state id exp ~is_load:true ;
@@ -1168,7 +1268,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
     | Free {ptr; loc} ->
         let proc = Textual.ProcDecl.free_name in
         let loc = to_textual_loc ~proc_state loc in
-        let id, call_exp, call_textual_instrs =
+        let id, call_exp, call_textual_instrs, _ =
           to_textual_call_aux ~proc_state ~kind:Textual.Exp.NonVirtual proc None [ptr] loc
         in
         let let_instr = Textual.Instr.Let {id; exp= call_exp; loc} in
@@ -1198,7 +1298,7 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let loc = to_textual_loc ~proc_state loc in
         match StdUtils.iarray_to_list args with
         | [((Llair.Exp.Integer _ | Llair.Exp.Float _) as exp)] ->
-            let id, call_exp, args_instrs =
+            let id, call_exp, args_instrs, _ =
               to_textual_call_aux ~proc_state ~generate_typ_exp:(Some true)
                 ~kind:Textual.Exp.NonVirtual proc reg [exp] loc
             in
@@ -1404,8 +1504,9 @@ let should_translate plain_name mangled_name lang method_class_index source_file
   in
   SourceFile.equal source_file source_file_loc
   (* the loc in these methods is empty but these are getters
-     and setters or closure bodies and we need to translate them *)
+     and setters or closure bodies, etc and we need to translate them *)
   || is_closure lang mangled_name
+  || is_init_in_swift_overlay mangled_name
   || Option.exists ~f:(fun name -> String.is_suffix ~suffix:witness_protocol_suffix name) typ_name
   || Option.exists plain_name ~f:(fun plain_name ->
          String.is_substring ~substring:Field.get_suffix plain_name

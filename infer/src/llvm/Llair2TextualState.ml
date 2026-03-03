@@ -126,6 +126,7 @@ module ProcState = struct
     ; mutable last_tmp_var: int
     ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
+    ; mutable selector_map: string Textual.Ident.Map.t
     ; module_state: ModuleState.t }
 
   let init ~qualified_name ~sourcefile ~loc ~formals ~module_state =
@@ -144,6 +145,7 @@ module ProcState = struct
     ; last_tmp_var= 0
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
+    ; selector_map= Textual.Ident.Map.empty
     ; module_state }
 
 
@@ -183,6 +185,12 @@ module ProcState = struct
     Textual.Ident.Set.mem id proc_state.metadata_address_ids
 
 
+  let add_selector state ident selector =
+    state.selector_map <- Textual.Ident.Map.add ident selector state.selector_map
+
+
+  let find_selector state ident = Textual.Ident.Map.find_opt ident state.selector_map
+
   let pp fmt ~print_types proc_state =
     let pp_ids fmt current_ids =
       F.fprintf fmt "%a"
@@ -209,6 +217,11 @@ module ProcState = struct
       in
       VarMap.iter pp_item vars
     in
+    let pp_selector_map fmt selector_map =
+      F.fprintf fmt "%a"
+        (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:F.pp_print_string))
+        (Textual.Ident.Map.bindings selector_map)
+    in
     let pp_struct_map fmt struct_map =
       let pp_item key value =
         F.fprintf fmt "%a -> @\n%a@\n" Textual.TypeName.pp key Textual.Struct.pp value
@@ -224,6 +237,7 @@ module ProcState = struct
        @[ids_metadata: %a@]@;\
        @[ids_metadata_address: %a@]@;\
        @[ids_types: %a@]@;\
+       @[selector_map: %a@]@;\
        @[id_offset: %a@]@;\
        @[get_element_ptr_offset: %a@]@;\
        ]@]"
@@ -233,7 +247,7 @@ module ProcState = struct
       (Textual.Ident.Set.elements proc_state.metadata_ids)
       (Pp.seq ~sep:"," Textual.Ident.pp)
       (Textual.Ident.Set.elements proc_state.metadata_address_ids)
-      pp_ids proc_state.ids_types
+      pp_ids proc_state.ids_types pp_selector_map proc_state.selector_map
       (Pp.option (Pp.pair ~fst:Textual.Ident.pp ~snd:Int.pp))
       proc_state.id_offset
       (Pp.option (Pp.pair ~fst:Textual.VarName.pp ~snd:Int.pp))
@@ -334,6 +348,7 @@ use the substitution in the code later on. *)
     ; last_tmp_var= 0
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
+    ; selector_map= Textual.Ident.Map.empty
     ; module_state }
 
 

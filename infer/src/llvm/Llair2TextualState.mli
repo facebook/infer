@@ -103,6 +103,7 @@ module ProcState : sig
     ; mutable last_tmp_var: int
     ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
+    ; mutable selector_map: string Textual.Ident.Map.t
     ; module_state: ModuleState.t }
 
   val init :
@@ -157,4 +158,8 @@ module ProcState : sig
   val mark_as_metadata_address : proc_state:t -> Textual.Ident.t -> unit
 
   val is_metadata_address_id : proc_state:t -> Textual.Ident.t -> bool
+
+  val add_selector : t -> IdentMap.key -> string -> unit
+
+  val find_selector : t -> IdentMap.key -> string option
 end
