@@ -32,7 +32,10 @@ let derived_enum_equals = "__derived_enum_equals"
 
 let functions_to_skip =
   List.map ~f:Textual.ProcName.of_string
-    ["swift_unknownObjectRetain"; "swift_weakLoadStrong"; "swift_bridgeObjectRetain"]
+    [ "swift_unknownObjectRetain"
+    ; "swift_weakLoadStrong"
+    ; "swift_bridgeObjectRetain"
+    ; "swift_getObjCClassFromMetadata" ]
 
 
 let boxed_opaque_existentials =
@@ -1101,10 +1104,14 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   in
   let call_exp =
     match call_exp with
-    | Textual.Exp.Call {proc} -> (
+    | Textual.Exp.Call {proc; args= textual_args} -> (
       match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) llair_args with
       | Some (class_name, builtin_alloc_proc) ->
-          let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
+          let args =
+            if Textual.QualifiedProcName.equal builtin_alloc_proc Textual.ProcDecl.objc_alloc_name
+            then Textual.Exp.Typ (Textual.Typ.Struct class_name) :: textual_args
+            else [Textual.Exp.Typ (Textual.Typ.Struct class_name)]
+          in
           Textual.Exp.Call {proc= builtin_alloc_proc; args; kind= Textual.Exp.NonVirtual}
       | None ->
           call_exp )

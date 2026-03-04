@@ -678,10 +678,8 @@ module InstrBridge = struct
     | Let {id= Some id; exp= Call {proc; args= [Typ typ]}; loc}
       when ProcDecl.is_allocate_object_builtin proc
            || ProcDecl.is_malloc_builtin proc
-           || ProcDecl.is_swift_alloc_builtin proc
-           || ProcDecl.is_objc_alloc_builtin proc ->
-        let alloc_lang = if ProcDecl.is_objc_alloc_builtin proc then Lang.ObjectiveC else lang in
-        let typ = TypBridge.to_sil alloc_lang typ in
+           || ProcDecl.is_swift_alloc_builtin proc ->
+        let typ = TypBridge.to_sil lang typ in
         let sizeof =
           SilExp.Sizeof
             {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= false}
@@ -695,10 +693,25 @@ module InstrBridge = struct
             SilExp.Const (SilConst.Cfun BuiltinDecl.__new)
           else if ProcDecl.is_swift_alloc_builtin proc then
             SilExp.Const (SilConst.Cfun BuiltinDecl.__swift_alloc)
-          else if ProcDecl.is_objc_alloc_builtin proc then
-            SilExp.Const (SilConst.Cfun BuiltinDecl.__objc_alloc_no_fail)
           else SilExp.Const (SilConst.Cfun BuiltinDecl.malloc)
         in
+        Call ((ret, class_type), builtin_name, args, loc, CallFlags.default)
+    | Let {id= Some id; exp= Call {proc; args= [Typ typ; dynamic_class_ptr_exp]}; loc}
+      when ProcDecl.is_objc_alloc_builtin proc ->
+        let alloc_lang = Lang.ObjectiveC in
+        let typ = TypBridge.to_sil alloc_lang typ in
+        let sizeof =
+          SilExp.Sizeof
+            {typ; nbytes= None; dynamic_length= None; subtype= Subtype.exact; nullable= false}
+        in
+        let class_type = SilTyp.mk_ptr typ in
+        let dynamic_class_sil_exp =
+          ExpBridge.to_sil lang sourcefile decls_env procname dynamic_class_ptr_exp
+        in
+        let args = [(sizeof, class_type); (dynamic_class_sil_exp, StdTyp.void_star)] in
+        let ret = IdentBridge.to_sil id in
+        let loc = LocationBridge.to_sil sourcefile loc in
+        let builtin_name = SilExp.Const (SilConst.Cfun BuiltinDecl.__objc_alloc_from_swift) in
         Call ((ret, class_type), builtin_name, args, loc, CallFlags.default)
     | Let {id= Some id; exp= Call {proc; args= [exp]}; loc} when ProcDecl.is_free_builtin proc ->
         let ret = IdentBridge.to_sil id in

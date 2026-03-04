@@ -161,6 +161,40 @@ let alloc size_exp : model =
   assign_ret allocated_obj
 
 
+let objc_alloc_from_swift size_exp class_ptr : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  (* 1. Extract the static fallback type from the LLVM sizeof AST *)
+  let static_typ_opt =
+    match size_exp with
+    | Exp.Sizeof {typ} ->
+        Some (if Typ.is_pointer typ then Typ.strip_ptr typ else typ)
+    | _ ->
+        None
+  in
+  (* 2. Check if Pulse tracked a dynamic type on the class pointer argument *)
+  let* dynamic_type_data_opt = get_dynamic_type ~ask_specialization:true class_ptr in
+  (* 3. Determine the final type to allocate: Dynamic > Static > Fallback (NSObject) *)
+  let alloc_typ =
+    match (dynamic_type_data_opt, static_typ_opt) with
+    | Some {Formula.typ= dyn_typ}, _ ->
+        dyn_typ
+    | None, Some stat_typ ->
+        stat_typ
+    | None, None ->
+        Typ.mk (Typ.Tstruct (Typ.Name.Objc.from_string "NSObject"))
+  in
+  (* 4. Create the main object memory space *)
+  let* allocated_obj = fresh () in
+  let* () = and_positive allocated_obj in
+  (* 5. Allocate as an ObjC object *)
+  let* () = allocation ObjCAlloc allocated_obj in
+  (* 6. Bind the strictly resolved type *)
+  let* () = and_dynamic_type_is allocated_obj alloc_typ in
+  assign_ret allocated_obj
+
+
 let builtins_matcher builtin args : unit -> unit DSL.model_monad =
   let builtin_s = SwiftProcname.show_builtin builtin in
   match (builtin : SwiftProcname.builtin) with
@@ -197,6 +231,9 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ (* Capture the raw AST to retain the static type during allocation *)
-    +BuiltinDecl.(match_builtin __swift_alloc) <>$ capt_exp $--> alloc ]
+    +BuiltinDecl.(match_builtin __swift_alloc) <>$ capt_exp $--> alloc
+    (* Capture the static type AND the dynamic class pointer for ObjC from Swift allocs *)
+  ; +BuiltinDecl.(match_builtin __objc_alloc_from_swift)
+    <>$ capt_exp $+ capt_arg_payload $--> objc_alloc_from_swift ]
   |> List.map ~f:(fun matcher ->
          matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )

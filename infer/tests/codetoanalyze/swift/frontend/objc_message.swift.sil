@@ -63,11 +63,11 @@ define .plain_name = "init" $sSo6UIViewCABycfcTO(var1: *__infer_swift_type<$sSo6
 define .plain_name = "init" $sSo6UIViewCABycfC(var1: *__infer_swift_type<,$sSo6UIViewCXMTD>) : *__infer_swift_type<ptr_elt> {
   #:
       n1 = load &var1
-      n2 = swift_getObjCClassFromMetadata(n1)
+      n2 = n1
       jmp 2::ret
       
   #2::ret:
-      n4 = __sil_objc_alloc(<UIView>)
+      n4 = __sil_objc_alloc(<UIView>, n2)
       jmp 3::ret
       
   #3::ret:
@@ -202,7 +202,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfC(var1: float
   local var7: *__infer_swift_type<TSo6CGRectV,CGRect>
   #:
       n1 = load &var5
-      n2 = __sil_objc_alloc(<NSObject>)
+      n2 = __sil_objc_alloc(<NSObject>, n1)
       jmp 7::ret
       
   #24::ret:
@@ -288,7 +288,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(coder: *
 define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello7BCNCellCXMTD>) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell> {
   #:
       n1 = load &var2
-      n2 = __sil_objc_alloc(<NSObject>)
+      n2 = __sil_objc_alloc(<NSObject>, n1)
       jmp 3::ret
       
   #3::ret:
@@ -452,7 +452,7 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfC(v
   local var7: *__infer_swift_type<TSo6CGRectV,CGRect>
   #:
       n1 = load &var5
-      n2 = __sil_objc_alloc(<NSObject>)
+      n2 = __sil_objc_alloc(<NSObject>, n1)
       jmp 7::ret
       
   #24::ret:
@@ -538,7 +538,7 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcf
 define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello16DummyContentViewCXMTD>) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView> {
   #:
       n1 = load &var2
-      n2 = __sil_objc_alloc(<NSObject>)
+      n2 = __sil_objc_alloc(<NSObject>, n1)
       jmp 3::ret
       
   #3::ret:
