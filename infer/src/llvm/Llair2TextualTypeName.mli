@@ -27,3 +27,5 @@ val update_type_name_with_mangled_name :
 val update_type_name_with_plain_name : plain_name:string -> Textual.TypeName.t -> Textual.TypeName.t
 
 val compute_plain_map : State.struct_map -> State.plain_map
+
+val extract_class_from_metatype : string -> Textual.TypeName.t

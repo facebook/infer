@@ -104,6 +104,7 @@ module ProcState : sig
     ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
     ; mutable selector_map: string Textual.Ident.Map.t
+    ; mutable class_type_map: Textual.TypeName.t VarMap.t
     ; module_state: ModuleState.t }
 
   val init :
@@ -162,4 +163,8 @@ module ProcState : sig
   val add_selector : t -> IdentMap.key -> string -> unit
 
   val find_selector : t -> IdentMap.key -> string option
+
+  val add_class_type : t -> VarMap.key -> Textual.TypeName.t -> unit
+
+  val get_class_type : t -> VarMap.key -> Textual.TypeName.t option
 end

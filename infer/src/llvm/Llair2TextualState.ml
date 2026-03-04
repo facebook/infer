@@ -127,6 +127,7 @@ module ProcState = struct
     ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
     ; mutable selector_map: string Textual.Ident.Map.t
+    ; mutable class_type_map: Textual.TypeName.t VarMap.t
     ; module_state: ModuleState.t }
 
   let init ~qualified_name ~sourcefile ~loc ~formals ~module_state =
@@ -146,6 +147,7 @@ module ProcState = struct
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
     ; selector_map= Textual.Ident.Map.empty
+    ; class_type_map= VarMap.empty
     ; module_state }
 
 
@@ -190,6 +192,12 @@ module ProcState = struct
 
 
   let find_selector state ident = Textual.Ident.Map.find_opt ident state.selector_map
+
+  let add_class_type state id type_name =
+    state.class_type_map <- VarMap.add id type_name state.class_type_map
+
+
+  let get_class_type state id = VarMap.find_opt id state.class_type_map
 
   let pp fmt ~print_types proc_state =
     let pp_ids fmt current_ids =
@@ -349,6 +357,7 @@ use the substitution in the code later on. *)
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
     ; selector_map= Textual.Ident.Map.empty
+    ; class_type_map= VarMap.empty
     ; module_state }
 
 

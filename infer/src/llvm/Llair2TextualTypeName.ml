@@ -105,3 +105,15 @@ let compute_plain_map struct_map =
           acc
   in
   Textual.TypeName.Map.fold add_plain_name struct_map IString.Map.empty
+
+
+let extract_class_from_metatype type_string =
+  let mangled_base =
+    if String.is_suffix type_string ~suffix:"XMTD" then
+      String.chop_suffix_if_exists type_string ~suffix:"XMTD"
+    else if String.is_suffix type_string ~suffix:"XMt" then
+      String.chop_suffix_if_exists type_string ~suffix:"XMt"
+    else type_string
+  in
+  let plain_name = Utils.demangle_swift_class_name mangled_base in
+  Textual.TypeName.of_string plain_name

@@ -48,29 +48,6 @@ let swift_metadata_equals = SwiftProcname.to_string (SwiftProcname.Builtin Metad
 
 let swift_instantiateConcreteTypeFromMangledName = "__swift_instantiateConcreteTypeFromMangledName"
 
-let get_alloc_class_name =
-  let swift_alloc_object = Textual.ProcName.of_string "swift_allocObject" in
-  let alloc_with_zone = Textual.ProcName.of_string "allocWithZone:" in
-  let alloc = Textual.ProcName.of_string "alloc" in
-  let objc_alloc = Textual.ProcName.of_string "objc_alloc" in
-  let objc_allocWithZone = Textual.ProcName.of_string "objc_allocWithZone" in
-  let ns_object = Textual.TypeName.of_string "NSObject" in
-  fun ~proc_state proc_name ->
-    match Textual.QualifiedProcName.get_class_name proc_state.ProcState.qualified_name with
-    | Some class_name when Textual.ProcName.equal proc_name swift_alloc_object ->
-        Some (class_name, Textual.ProcDecl.swift_alloc_name)
-    | _
-      when Textual.ProcName.equal proc_name alloc_with_zone
-           || Textual.ProcName.equal proc_name alloc
-           || Textual.ProcName.equal proc_name objc_alloc
-           || Textual.ProcName.equal proc_name objc_allocWithZone ->
-        (* Route to the new ObjC builtin! *)
-        (* TODO: find the correct class name *)
-        Some (ns_object, Textual.ProcDecl.objc_alloc_name)
-    | _ ->
-        None
-
-
 let builtin_qual_proc_name =
   let enclosing_class = Textual.(QualifiedProcName.Enclosing (TypeName.of_string "$builtins")) in
   fun name : Textual.QualifiedProcName.t ->
@@ -1036,6 +1013,59 @@ and to_textual_builtin ~proc_state return name args loc =
   to_textual_call_instrs ~proc_state return proc args loc
 
 
+and save_metadata_type proc_state call llair_args (proc : Textual.QualifiedProcName.t) =
+  (* --- 1. Intercept Metadata Conversion to SAVE the type --- *)
+  if String.equal (Textual.ProcName.to_string proc.name) "swift_getObjCClassFromMetadata" then
+    match llair_args with
+    | [Llair.Exp.Reg {id; name; typ}] -> (
+        let _, type_opt = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
+        match type_opt with
+        | Some (Textual.Typ.Ptr (Struct type_name, _)) -> (
+          match Textual.TypeName.swift_plain_name_of_type_name type_name with
+          | Some metatype_string ->
+              let actual_type_name = TypeName.extract_class_from_metatype metatype_string in
+              (* Map the return register (if it exists) to the demangled class name *)
+              Option.iter call.areturn ~f:(fun ret_reg ->
+                  let var_name = Var.reg_to_var_name ret_reg in
+                  ProcState.add_class_type proc_state var_name actual_type_name )
+          | None ->
+              () )
+        | _ ->
+            () )
+    | _ ->
+        ()
+
+
+and get_alloc_class_name =
+  let swift_alloc_object = Textual.ProcName.of_string "swift_allocObject" in
+  let alloc_with_zone = Textual.ProcName.of_string "allocWithZone:" in
+  let alloc = Textual.ProcName.of_string "alloc" in
+  let objc_alloc = Textual.ProcName.of_string "objc_alloc" in
+  let objc_allocWithZone = Textual.ProcName.of_string "objc_allocWithZone" in
+  let ns_object = Textual.TypeName.of_string "NSObject" in
+  fun ~proc_state proc_name llair_args ->
+    match Textual.QualifiedProcName.get_class_name proc_state.ProcState.qualified_name with
+    | Some class_name when Textual.ProcName.equal proc_name swift_alloc_object ->
+        Some (class_name, Textual.ProcDecl.swift_alloc_name)
+    | _
+      when Textual.ProcName.equal proc_name alloc_with_zone
+           || Textual.ProcName.equal proc_name alloc
+           || Textual.ProcName.equal proc_name objc_alloc
+           || Textual.ProcName.equal proc_name objc_allocWithZone ->
+        let tracked_type_opt =
+          match llair_args with
+          | [Llair.Exp.Reg {id; name; typ}] ->
+              let var_name = Var.reg_to_var_name (Reg.mk typ id name) in
+              ProcState.get_class_type proc_state var_name
+          | _ ->
+              None
+        in
+        let class_name = Option.value tracked_type_opt ~default:ns_object in
+        Some (class_name, Textual.ProcDecl.objc_alloc_name)
+    | _ ->
+        None
+
+
 and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   let llair_args = StdUtils.iarray_to_list call.actuals in
   let proc, kind, exp_opt =
@@ -1065,13 +1095,14 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   in
   let loc = to_textual_loc_instr ~proc_state call.loc in
   let llair_args = Option.to_list exp_opt @ llair_args in
+  save_metadata_type proc_state call llair_args proc ;
   let id, call_exp, args_instrs, arg_types =
     to_textual_call_aux ~proc_state ~kind proc call.areturn llair_args loc
   in
   let call_exp =
     match call_exp with
     | Textual.Exp.Call {proc} -> (
-      match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) with
+      match get_alloc_class_name ~proc_state (Textual.QualifiedProcName.name proc) llair_args with
       | Some (class_name, builtin_alloc_proc) ->
           let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
           Textual.Exp.Call {proc= builtin_alloc_proc; args; kind= Textual.Exp.NonVirtual}
