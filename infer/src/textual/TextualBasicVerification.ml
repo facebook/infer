@@ -100,6 +100,7 @@ let verify_decl ~env errors (decl : Module.decl) =
         when QualifiedProcName.contains_wildcard proc
              || QualifiedProcName.is_python_builtin proc
              || QualifiedProcName.is_llvm_builtin proc
+             || QualifiedProcName.is_cross_lang proc
              || ProcDecl.is_builtin proc (TextualDecls.lang env) ->
           errors
       | None when nb_generics_args > 0 ->
