@@ -143,6 +143,8 @@ global L_selector(init): *__infer_swift_type<ptr_elt>
 
 global L_selector(dealloc): *__infer_swift_type<ptr_elt>
 
+type __infer_swift_type<T5Hello9ObjCClassC,ObjCClass> = {}
+
 type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
                                        field_1: *__infer_swift_type<ptr_elt>;
                                        field_2: *__infer_swift_type<ptr_elt>;

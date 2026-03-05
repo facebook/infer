@@ -1610,7 +1610,8 @@ let process_globals lang class_method_index method_class_index ~mangled_map ~str
   in
   let collect_class_method_indices struct_map ~suffix global_name exp =
     match exp with
-    | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements) ->
+    | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements)
+    | Llair.Exp.ApN (Record, Llair.Typ.Struct {elts}, elements) ->
         let elements = StdUtils.iarray_to_list elements in
         let _, types = StdUtils.iarray_to_list elts |> List.unzip in
         ignore
@@ -1629,6 +1630,17 @@ let process_globals lang class_method_index method_class_index ~mangled_map ~str
         let global_name = Global.name name in
         let suffix = "C" ^ class_virtual_table_suffix in
         if String.is_suffix global_name ~suffix then (
+          let class_name =
+            class_from_global ~suffix:class_virtual_table_suffix lang struct_map global_name
+          in
+          let struct_map =
+            if Textual.TypeName.Map.mem class_name struct_map then struct_map
+            else
+              let struct_ =
+                Textual.Struct.{name= class_name; supers= []; fields= []; attributes= []}
+              in
+              Textual.TypeName.Map.add class_name struct_ struct_map
+          in
           collect_class_method_indices struct_map global_name (fst exp_typ)
             ~suffix:class_virtual_table_suffix ;
           struct_map )

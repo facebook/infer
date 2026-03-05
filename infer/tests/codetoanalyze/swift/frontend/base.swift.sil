@@ -3106,6 +3106,11 @@ type __infer_swift_type<T5Hello18TextRendererConfigV7PaddingV,Padding> = {
 field_0: *__infer_swift_type<TSf>; field_1: *__infer_swift_type<TSf>;
 field_2: *__infer_swift_type<TSf>}
 
+type __infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell> = {
+}
+
+type __infer_swift_type<T5Hello5ParamC,Param> = {}
+
 type __infer_swift_type<T5Hello7PaddingV,Padding> = {field_0: *__infer_swift_type<TSf>;
                                                      field_1: *__infer_swift_type<TSf>;
                                                      field_2: *__infer_swift_type<TSf>}

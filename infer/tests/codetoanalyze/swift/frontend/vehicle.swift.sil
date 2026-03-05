@@ -172,6 +172,10 @@ global $s5Hello5TrainCMF: *__infer_tuple_class<int,int,int,int,int>
 
 global $s5Hello5TrainCHn: *__infer_swift_type<swift::type_metadata_record>
 
+type __infer_swift_type<T5Hello5TrainC,Train> = {}
+
+type __infer_swift_type<T5Hello7VehicleC,Vehicle> = {}
+
 type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
                                        field_1: *__infer_swift_type<ptr_elt>;
                                        field_2: *__infer_swift_type<ptr_elt>;

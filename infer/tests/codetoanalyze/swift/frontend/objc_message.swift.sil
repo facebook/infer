@@ -738,6 +738,11 @@ field_0: *int}
 
 type __infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat> = {field_0: *__infer_swift_type<TSd>}
 
+type __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView> = {
+}
+
+type __infer_swift_type<T5Hello7BCNCellC,BCNCell> = {}
+
 type __infer_swift_type<TSd> = {field_0: float}
 
 type __infer_swift_type<TSo6CGRectV,CGRect> = {field_0: *__infer_swift_type<TSo7CGPointV,CGPoint>;
