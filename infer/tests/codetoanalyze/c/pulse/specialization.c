@@ -74,3 +74,20 @@ void invoke_itself_bad(int (*f)(int), int i) {
 }
 
 void specialize_invoke_itself_ok() { invoke_itself_bad(id, 10); }
+
+void may_double_free_if_alias(int* x, int* y) {
+  int a = *x;
+  int b = *y;
+
+  free(x);
+  free(y);
+}
+
+void call_may_double_free_if_alias_bad() {
+  int* z = (int*)malloc(sizeof(int));
+  if (z == NULL)
+    return 0;
+  *z = 1;
+
+  may_double_free_if_alias(z, z);
+}

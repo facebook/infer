@@ -1411,8 +1411,8 @@ let merge_contradictions contradiction1 contradiction2 =
   match (contradiction1, contradiction2) with
   | None, contradiction
   | contradiction, None
-  | (Some (Aliasing _) as contradiction), _
-  | _, (Some (Aliasing _) as contradiction) ->
+  | (Some (Aliasing _ | AliasingWithAllAliases _) as contradiction), _
+  | _, (Some (Aliasing _ | AliasingWithAllAliases _) as contradiction) ->
       contradiction
   | Some (DynamicTypeNeeded heapmap1), Some (DynamicTypeNeeded heapmap2) ->
       let heapmap =

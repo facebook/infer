@@ -112,7 +112,7 @@ int test_explicitCaptured_specializable(ExplicitCaptured* a) {
   return explicit;
 }
 
-int test_explicitCaptured_specialized_no_alias_bad_FP() {
+int test_explicitCaptured_specialized_no_alias_bad() {
   ExplicitCaptured* a = [ExplicitCaptured new];
   ExplicitCaptured* b = [ExplicitCaptured new];
   b.get_explicitProperty = a.get_explicitProperty;

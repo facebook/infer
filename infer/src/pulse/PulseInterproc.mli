@@ -36,6 +36,9 @@ type contradiction = private
       {formals: (Pvar.t * Typ.t) list; actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list}
   | PathCondition of unsat_info
 
+val pp_contradiction : Format.formatter -> contradiction -> unit
+[@@warning "-unused-value-declaration"]
+
 val is_dynamic_type_needed_contradiction :
   contradiction -> AbstractValue.t Specialization.HeapPath.Map.t option
 
