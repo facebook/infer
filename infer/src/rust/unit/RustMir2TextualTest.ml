@@ -8,9 +8,10 @@
 open! IStd
 module F = Format
 
-let run_charon json_file rust_file =
+let run_charon json_file rust_file args =
   let redirected_cmd =
-    F.sprintf "charon rustc --ullbc --dest-file %s -- %s --crate-name \"dummy\"" json_file rust_file
+    F.sprintf "charon rustc --ullbc --dest-file %s %s -- %s --crate-name \"dummy\"" json_file args
+      rust_file
   in
   let {IUnix.Process_info.stdin; stderr} =
     IUnix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
@@ -19,11 +20,11 @@ let run_charon json_file rust_file =
   In_channel.input_lines (Unix.in_channel_of_descr stderr) |> String.concat ~sep:"\n"
 
 
-let test source =
+let test ?(args = "") source =
   let json_filename = IFilename.temp_file "charon" ".ullbc" in
   let rust_file = IFilename.temp_file "dummy" ".rs" in
   Out_channel.write_all rust_file ~data:source ;
-  let cmd_out = run_charon json_filename rust_file in
+  let cmd_out = run_charon json_filename rust_file args in
   try
     let json = Yojson.Basic.from_file json_filename in
     match Charon.UllbcOfJson.crate_of_json json with

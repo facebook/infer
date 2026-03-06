@@ -1,0 +1,1 @@
+--hide-marker-traits --hide-allocator --mir=elaborated --extract-opaque-bodies --include=std::mem::forget
