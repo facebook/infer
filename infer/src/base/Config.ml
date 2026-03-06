@@ -1989,6 +1989,13 @@ and llvm_translate_global_init =
     "Translates the initializers of globals in the llvm frontend."
 
 
+and llvm_debug_loc =
+  CLOpt.mk_bool ~long:"llvm-debug-loc" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_pulse)]
+    "In the llvm frontend, when enabled, we create fresh line numbers instead of 0 for debugging \
+     purposes."
+
+
 and lock_model =
   CLOpt.mk_json ~long:"lock-model"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -4392,6 +4399,8 @@ and llvm_bitcode_file = !llvm_bitcode_file
 and llvm_bitcode_sources = RevList.to_list !llvm_bitcode_sources
 
 and llvm_translate_global_init = !llvm_translate_global_init
+
+and llvm_debug_loc = !llvm_debug_loc
 
 and lock_model = !lock_model
 

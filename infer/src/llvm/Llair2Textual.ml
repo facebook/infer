@@ -134,7 +134,7 @@ end
 let to_textual_loc ?proc_state {Loc.line; col} =
   if Int.equal line 0 && Int.equal col 0 then
     let line =
-      if Config.frontend_tests then State.get_fresh_fake_line ()
+      if Config.llvm_debug_loc then State.get_fresh_fake_line ()
       else
         match proc_state with
         | Some ProcState.{loc= Known {line= proc_line; _}} ->

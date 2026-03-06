@@ -4,7 +4,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "Swift"
+.source_language = "Swift" @?
 
 declare swift_retain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -44,18 +44,18 @@ declare .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hel
 
 define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(v: *__infer_swift_type<,Vehicle>, t: *__infer_swift_type<,Train>) : void {
   local getelementptr_offset_1: *void
-  #:
-      n1 = load &v
-      store &getelementptr_offset_1 <- 10
-      n2 = load &getelementptr_offset_1
-      n4 = load &v
-      _ = $builtins.llvm_dynamic_call(n2, n4)
-      jmp 7::void::ret
+  #: @[2:8]
+      n1 = load &v @[2:8]
+      store &getelementptr_offset_1 <- 10 @[2:8]
+      n2 = load &getelementptr_offset_1 @[2:8]
+      n4 = load &v @[2:8]
+      _ = $builtins.llvm_dynamic_call(n2, n4) @[2:8]
+      jmp 7::void::ret @[2:8]
       
-  #7::void::ret:
-      ret null
+  #7::void::ret: @[3:1]
+      ret null @[3:1]
       
-}
+} @?
 
 global symbolic _____ 5Hello7VehicleC: *__infer_tuple_class<int,int,int>
 

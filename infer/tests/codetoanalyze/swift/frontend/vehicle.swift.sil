@@ -4,7 +4,7 @@
 // This source code is licensed under the MIT license found in the
 // LICENSE file in the root directory of this source tree.
 
-.source_language = "Swift"
+.source_language = "Swift" @?
 
 declare swift_retain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -25,32 +25,32 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7
 declare $s5Hello7VehicleCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello7VehicleCACycfc(self: *__infer_swift_type<,Vehicle>) : *__infer_swift_type<,Vehicle> {
-  #:
-      n1 = load &self
-      ret n1
+  #: @?
+      n1 = load &self @[1:0]
+      ret n1 @[1:0]
       
-}
+} @?
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello7VehicleC,Vehicle>.$s5Hello7VehicleCACycfC(var1: *__infer_swift_type<,$s5Hello7VehicleCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #:
-      n1 = load &var1
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7VehicleC,Vehicle>>)
-      jmp 2::ret
+  #: @[1:0]
+      n1 = load &var1 @[1:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello7VehicleC,Vehicle>>) @[1:0]
+      jmp 2::ret @[1:0]
       
-  #2::ret:
-      n6 = $s5Hello7VehicleCACycfc(n4)
-      jmp 3::ret
+  #2::ret: @[1:0]
+      n6 = $s5Hello7VehicleCACycfc(n4) @[1:0]
+      jmp 3::ret @[1:0]
       
-  #3::ret:
-      ret n6
+  #3::ret: @[1:0]
+      ret n6 @[1:0]
       
-}
+} @?
 
 define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello7VehicleC,Vehicle>.$s5Hello7VehicleC9makeNoiseyyF(self: *__infer_swift_type<,Vehicle>) : void {
-  #:
-      ret null
+  #: @[4:5]
+      ret null @[4:5]
       
-}
+} @?
 
 declare .plain_name = "deinit" $s5Hello5TrainCfd(*__infer_swift_type<,Train>) : *__infer_swift_type<ptr_elt>
 
@@ -59,54 +59,54 @@ declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello5
 declare $s5Hello5TrainCMa(int) : *__infer_swift_type<ptr_elt>
 
 define .plain_name = "init" $s5Hello5TrainCACycfc(self: *__infer_swift_type<,Train>) : *__infer_swift_type<ptr_elt> {
-  #:
-      n1 = load &self
-      n3 = $s5Hello7VehicleCACycfc(n1)
-      jmp 4::ret
+  #: @[6:0]
+      n1 = load &self @[6:0]
+      n3 = $s5Hello7VehicleCACycfc(n1) @[6:0]
+      jmp 4::ret @[6:0]
       
-  #4::ret:
-      n4 = $builtins.llvm_nondet()
-      store &self <- n3
-      n6 = load &self
-      ret n3
+  #4::ret: @[6:0]
+      n4 = $builtins.llvm_nondet() @[6:0]
+      store &self <- n3 @[6:0]
+      n6 = load &self @[6:0]
+      ret n3 @[6:0]
       
-}
+} @?
 
 define .plain_name = "init" .method_offset = "11" __infer_swift_type<T5Hello5TrainC,Train>.$s5Hello5TrainCACycfC(var1: *__infer_swift_type<,$s5Hello5TrainCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #:
-      n1 = load &var1
-      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5TrainC,Train>>)
-      jmp 2::ret
+  #: @[6:0]
+      n1 = load &var1 @[6:0]
+      n4 = __sil_swift_alloc(<__infer_swift_type<T5Hello5TrainC,Train>>) @[6:0]
+      jmp 2::ret @[6:0]
       
-  #2::ret:
-      n6 = $s5Hello5TrainCACycfc(n4)
-      jmp 3::ret
+  #2::ret: @[6:0]
+      n6 = $s5Hello5TrainCACycfc(n4) @[6:0]
+      jmp 3::ret @[6:0]
       
-  #3::ret:
-      ret n6
+  #3::ret: @[6:0]
+      ret n6 @[6:0]
       
-}
+} @?
 
 define .plain_name = "makeNoise" .method_offset = "10" __infer_swift_type<T5Hello5TrainC,Train>.$s5Hello5TrainC9makeNoiseyyF(self: *__infer_swift_type<,Train>) : void {
-  #:
-      ret null
+  #: @[9:5]
+      ret null @[9:5]
       
-}
+} @?
 
 define .plain_name = "main" $s5Hello4mainyyAA7VehicleC_AA5TrainCtF(v: *__infer_swift_type<,Vehicle>, t: *__infer_swift_type<,Train>) : void {
   local getelementptr_offset_1: *void
-  #:
-      n1 = load &v
-      store &getelementptr_offset_1 <- 10
-      n2 = load &getelementptr_offset_1
-      n4 = load &v
-      _ = $builtins.llvm_dynamic_call(n2, n4)
-      jmp 7::void::ret
+  #: @[12:8]
+      n1 = load &v @[12:8]
+      store &getelementptr_offset_1 <- 10 @[12:8]
+      n2 = load &getelementptr_offset_1 @[12:8]
+      n4 = load &v @[12:8]
+      _ = $builtins.llvm_dynamic_call(n2, n4) @[12:8]
+      jmp 7::void::ret @[12:8]
       
-  #7::void::ret:
-      ret null
+  #7::void::ret: @[13:1]
+      ret null @[13:1]
       
-}
+} @?
 
 global symbolic _____ 5Hello7VehicleC: *__infer_tuple_class<int,int,int>
 

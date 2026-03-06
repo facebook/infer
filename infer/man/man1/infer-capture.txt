@@ -406,6 +406,11 @@ JAVA OPTIONS
            --read-java-modules)
 
 PULSE CHECKER OPTIONS
+       --llvm-debug-loc
+           Activates: In the llvm frontend, when enabled, we create fresh
+           line numbers instead of 0 for debugging purposes. (Conversely:
+           --no-llvm-debug-loc)
+
        --llvm-translate-global-init
            Activates: Translates the initializers of globals in the llvm
            frontend. (Conversely: --no-llvm-translate-global-init)

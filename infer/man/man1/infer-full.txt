@@ -1178,6 +1178,12 @@ OPTIONS
            [EXPERIMENTAL] Specify source files for llvm bitcode capture
            See also infer-capture(1).
 
+       --llvm-debug-loc
+           Activates: In the llvm frontend, when enabled, we create fresh
+           line numbers instead of 0 for debugging purposes. (Conversely:
+           --no-llvm-debug-loc)
+           See also infer-capture(1).
+
        --llvm-translate-global-init
            Activates: Translates the initializers of globals in the llvm
            frontend. (Conversely: --no-llvm-translate-global-init)

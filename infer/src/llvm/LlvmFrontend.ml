@@ -82,8 +82,7 @@ let dump_textual_file source_file module_ =
     | _ ->
         Format.asprintf "%s.v%d.%s" source_file !textual_version suffix
   in
-  let show_location = not Config.frontend_tests in
-  TextualSil.dump_module ~filename ~show_location module_ ;
+  TextualSil.dump_module ~filename ~show_location:true module_ ;
   incr textual_version
 
 
