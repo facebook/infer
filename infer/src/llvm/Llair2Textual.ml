@@ -666,7 +666,17 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             else Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name n
           in
           let field_instrs, exp = add_deref ~proc_state exp loc in
-          let instrs = List.append field_instrs exp_instrs in
+          (* Inject the expected type into the Load instruction *)
+          let expected_typ = Textual.Typ.mk_ptr (Struct typ_name) in
+          let field_instrs =
+            List.map field_instrs ~f:(fun instr ->
+                match instr with
+                | Textual.Instr.Load {id; exp= load_exp; typ= _; loc= load_loc} ->
+                    Textual.Instr.Load {id; exp= load_exp; typ= Some expected_typ; loc= load_loc}
+                | _ ->
+                    instr )
+          in
+          let instrs = field_instrs @ exp_instrs in
           let exp = Textual.Exp.Field {exp; field} in
           let typ = Type.lookup_field_type ~struct_map typ_name field in
           (exp, typ, instrs) )

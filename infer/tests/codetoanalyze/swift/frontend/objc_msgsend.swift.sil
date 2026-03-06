@@ -42,9 +42,9 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<
       jmp 5::ret @[5:15]
       
   #5::ret: @[5:15]
-      n6 = load &var4 @[5:15]
+      n6:*__infer_swift_type<objc_super> = load &var4 @[5:15]
       store n6.__infer_swift_type<objc_super>.field_0 <- n1 @[5:15]
-      n9 = load &var4 @[5:15]
+      n9:*__infer_swift_type<objc_super> = load &var4 @[5:15]
       n8 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
       store n9.__infer_swift_type<objc_super>.field_1 <- n8 @[5:15]
       n10 = load &L_selector(init) @[5:15]
