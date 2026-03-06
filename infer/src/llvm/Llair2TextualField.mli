@@ -32,3 +32,5 @@ module OffsetIndex : sig
     -> (FuncName.t * func) list
     -> Textual.FieldName.t State.FieldOffsetMap.t
 end
+
+val extract_class_and_field_from_wvd : string -> string option * string

@@ -12,6 +12,8 @@ open! NS
 [@@@warning "+missing-record-field-pattern"]
 
 module T = struct
+  type gep_idx = Static of int | DynamicWvd of string [@@deriving compare, equal, sexp]
+
   type op1 =
     (* conversion *)
     | Signed of {bits: int}
@@ -20,7 +22,7 @@ module T = struct
     (* array/struct operations *)
     | Splat
     | Select of int
-    | GetElementPtr of int
+    | GetElementPtr of gep_idx (* <-- Unified GEP constructor *)
   [@@deriving compare, equal, sexp]
 
   type op2 =
@@ -202,8 +204,10 @@ module T = struct
         pf "%a^" pp byt
     | Ap1 (Select idx, typ, rcd) ->
         pf "%a[%i]:%a" pp rcd idx LlairTyp.pp typ
-    | Ap1 (GetElementPtr idx, typ, rcd) ->
+    | Ap1 (GetElementPtr (Static idx), typ, rcd) ->
         pf "gep %a[%i]:%a" pp rcd idx LlairTyp.pp typ
+    | Ap1 (GetElementPtr (DynamicWvd name), typ, rcd) ->
+        pf "gepFromWvd %a[%s]:%a" pp rcd name LlairTyp.pp typ
     | Ap2 (Update idx, _, rcd, elt) ->
         pf "[%a@ @[| %i → %a@]]" pp rcd idx pp elt
     | Ap2 (Xor, _, Integer {data}, x) when Z.is_true data ->
@@ -363,7 +367,7 @@ and typ_of exp =
       LlairTyp.ptr
   | Ap1 ((Signed _ | Unsigned _ | Convert _ | Splat), dst, _) ->
       dst
-  | Ap1 (Select idx, typ, _) | Ap1 (GetElementPtr idx, typ, _) -> (
+  | Ap1 (Select idx, typ, _) | Ap1 (GetElementPtr (Static idx), typ, _) -> (
     match typ with
     | Array {elt} ->
         elt
@@ -381,6 +385,8 @@ and typ_of exp =
   | Ap3 (Conditional, typ, _, _, _)
   | ApN (Record, typ, _) ->
       typ
+  | Ap1 (GetElementPtr (DynamicWvd _), _, _) ->
+      assert false
 [@@warning "-missing-record-field-pattern"]
 
 
@@ -501,7 +507,9 @@ let record typ elts = ApN (Record, typ, elts) |> check invariant
 
 let select typ rcd idx = Ap1 (Select idx, typ, rcd) |> check invariant
 
-let gep typ rcd idx = Ap1 (GetElementPtr idx, typ, rcd)
+let gep typ rcd idx = Ap1 (GetElementPtr (Static idx), typ, rcd)
+
+let gep_wvd typ rcd wvd_name = Ap1 (GetElementPtr (DynamicWvd wvd_name), typ, rcd)
 
 let update typ ~rcd idx ~elt = Ap2 (Update idx, typ, rcd, elt) |> check invariant
 

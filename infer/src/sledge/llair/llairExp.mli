@@ -12,6 +12,13 @@
 
 open! NS
 
+type gep_idx =
+  | Static of int  (** Get element pointer when the type is a simple pointer *)
+  | DynamicWvd of string
+      (** Get element pointer for Swift dynamic field access, storing the mangled Wvd global name
+          containing the field offset *)
+[@@deriving compare, equal, sexp]
+
 type op1 =
   | Signed of {bits: int}
       (** [Ap1 (Signed {bits= n}, dst, arg)] is [arg] interpreted as an [n]-bit signed integer and
@@ -33,7 +40,7 @@ type op1 =
           must not both be [Integer] types. *)
   | Splat  (** Iterated concatenation of a single byte *)
   | Select of int  (** Select an index from a record *)
-  | GetElementPtr of int  (** Get element pointer when the type is a simple pointer *)
+  | GetElementPtr of gep_idx (* <-- Unified GEP constructor *)
 [@@deriving compare, equal, sexp]
 
 type op2 =
@@ -292,6 +299,8 @@ val record : LlairTyp.t -> t iarray -> t
 val select : LlairTyp.t -> t -> int -> t
 
 val gep : LlairTyp.t -> t -> int -> t
+
+val gep_wvd : LlairTyp.t -> t -> string -> t
 
 val update : LlairTyp.t -> rcd:t -> int -> elt:t -> t
 

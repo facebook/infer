@@ -517,6 +517,31 @@ let mk_func_name llv typ =
   FuncName.mk ~unmangled_name typ (fst (find_name llv))
 
 
+let ends_with ~suffix s =
+  let len_s = String.length s in
+  let len_suffix = String.length suffix in
+  len_s >= len_suffix
+  && String.equal (String.sub s ~pos:(len_s - len_suffix) ~len:len_suffix) suffix
+
+
+let get_wvd_global op =
+  match Llvm.classify_value op with
+  | Llvm.ValueKind.Instruction _ -> (
+    match Llvm.instr_opcode op with
+    | Llvm.Opcode.Load -> (
+        let ptr = Llvm.operand op 0 in
+        match Llvm.classify_value ptr with
+        | Llvm.ValueKind.GlobalVariable ->
+            let name = Llvm.value_name ptr in
+            if ends_with ~suffix:"Wvd" name then Some ptr else None
+        | _ ->
+            None )
+    | _ ->
+        None )
+  | _ ->
+      None
+
+
 let rec xlate_builtin_exp : string -> (x -> Llvm.llvalue -> Inst.t list * Exp.t) option =
  fun name ->
   match name with
@@ -964,6 +989,32 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
               Llair.Exp.nondet typ
         in
         ([], exp)
+      else if
+        Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
+        && ( Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Pointer
+           || Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Integer )
+        && Int.equal len 2
+      then
+        let lltyp1 = Llvm.get_gep_source_element_type llv in
+        let op1 = Llvm.operand llv 1 in
+        let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
+        let typ = xlate_type x lltyp1 in
+        let exp =
+          match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op1) with
+          | Some _n ->
+              (* TODO: Handle static opaque byte offsets (e.g. jumping past Swift object headers).
+                 Currently returning nondet to match prior behavior until we have a test case. *)
+              Llair.Exp.nondet typ
+          | None -> (
+            (* --- Intercept dynamic Swift Wvd offsets using our new IR node --- *)
+            match get_wvd_global op1 with
+            | Some wvd_ptr ->
+                let wvd_name = Llvm.value_name wvd_ptr in
+                Llair.Exp.gep_wvd typ ptr wvd_name
+            | None ->
+                Llair.Exp.nondet typ )
+        in
+        (instrs, exp)
       else
         (* TODO *)
         ([], Llair.Exp.nondet (xlate_type x (Llvm.type_of llv)))

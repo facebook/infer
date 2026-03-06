@@ -140,3 +140,70 @@ let tuple_field_prefix = "__infer_tuple_field_"
 let tuple_field_of_pos type_name pos =
   let name = Format.sprintf "%s%s" tuple_field_prefix (Int.to_string pos) in
   Textual.{enclosing_class= type_name; name= FieldName.of_string name}
+
+
+(* Module-level cache for Wvd demangling *)
+let wvd_cache = Hashtbl.create (module String)
+
+(** * Parses a Swift Field Offset Vector (Wvd) mangled name to extract the * enclosing class/struct
+    name and the specific field name. * * Example Input:
+    $s5Hello17WidgetDisplayViewC8hostCellAA09DashboardbF0CSgvpWvd * Example Output: Some
+    ("T5Hello17WidgetDisplayViewC", "hostCell") * * Why a manual parser instead of regex? * Swift
+    often appends the property's type signature to the end of the mangled name * (e.g., the
+    `AA09...` part above). If the property's type happens to be a class * or struct, a greedy regex
+    will accidentally skip the parent class and match * the `C` or `V` marker of the property's type
+    instead. * * This parser strictly evaluates the Swift ABI length-prefixes (e.g., reading `5`, *
+    then skipping 5 characters for "Hello") to deterministically stop at the exact * class boundary,
+    guaranteeing we extract the correct field name. * Results are cached to ensure O(1) performance
+    on hot compiler paths. *)
+let extract_class_and_field_from_wvd mangled =
+  match Hashtbl.find wvd_cache mangled with
+  | Some cached_result ->
+      cached_result
+  | None ->
+      let len = String.length mangled in
+      let rec consume_digits pos =
+        if pos < len && Char.is_digit mangled.[pos] then consume_digits (pos + 1) else pos
+      in
+      let rec parse pos =
+        if pos >= len then None
+        else
+          let end_digits = consume_digits pos in
+          if Int.equal pos end_digits then None
+          else
+            let len_str = String.sub mangled ~pos ~len:(end_digits - pos) in
+            match int_of_string_opt len_str with
+            | Some str_len ->
+                let str_end = end_digits + str_len in
+                if str_end >= len then None
+                else
+                  let next_char = mangled.[str_end] in
+                  if Char.equal next_char 'C' || Char.equal next_char 'V' then
+                    let class_part_len = str_end - 2 + 1 in
+                    let class_part = String.sub mangled ~pos:2 ~len:class_part_len in
+                    let class_name = "T" ^ class_part in
+                    let prop_pos = str_end + 1 in
+                    let end_prop_digits = consume_digits prop_pos in
+                    if Int.equal prop_pos end_prop_digits then None
+                    else
+                      let prop_len_str =
+                        String.sub mangled ~pos:prop_pos ~len:(end_prop_digits - prop_pos)
+                      in
+                      match int_of_string_opt prop_len_str with
+                      | Some prop_len ->
+                          let prop_name = String.sub mangled ~pos:end_prop_digits ~len:prop_len in
+                          Some (class_name, prop_name)
+                      | None ->
+                          None
+                  else parse str_end
+            | None ->
+                None
+      in
+      let result =
+        if String.is_prefix mangled ~prefix:"$s" then
+          match parse 2 with Some (c, f) -> (Some c, f) | None -> (None, "unknown_field")
+        else (None, "unknown_field")
+      in
+      (* Cache the parsed result for all future O(1) lookups *)
+      Hashtbl.set wvd_cache ~key:mangled ~data:result ;
+      result

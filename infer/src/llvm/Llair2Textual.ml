@@ -680,7 +680,7 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
           let exp = Textual.Exp.Field {exp; field} in
           let typ = Type.lookup_field_type ~struct_map typ_name field in
           (exp, typ, instrs) )
-  | Ap1 (GetElementPtr n, _typ, _exp) ->
+  | Ap1 (GetElementPtr (Static n), _typ, _exp) ->
       let n_arg = Llair.Exp.integer (Llair.Typ.integer ~bits:32 ~byts:4) (Z.of_int n) in
       let exp, _, instrs = to_textual_exp loc ~proc_state n_arg in
       let var_name = ProcState.mk_fresh_tmp_var State.get_element_ptr_offset_prefix proc_state in
@@ -690,6 +690,26 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       ProcState.update_var_offset ~proc_state var_name n ;
       let store_instr = Textual.Instr.Store {exp1= new_var; exp2= exp; typ= None; loc} in
       (new_var, None, store_instr :: instrs)
+  | Ap1 (GetElementPtr (DynamicWvd wvd_name), typ, base_ptr) ->
+      let base_exp, base_typ_opt, base_instrs = to_textual_exp loc ~proc_state base_ptr in
+      let base_deref_instrs, base_exp_deref = add_deref ~proc_state base_exp loc in
+      let wvd_class_opt, field_name_str = Field.extract_class_and_field_from_wvd wvd_name in
+      let name = Textual.FieldName.of_string field_name_str in
+      let enclosing_class =
+        match (wvd_class_opt, base_typ_opt) with
+        | Some mangled_class, _ ->
+            TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+              mangled_class
+        | None, Some (Textual.Typ.Ptr (Struct class_name, _)) ->
+            class_name
+        | _ ->
+            Textual.TypeName.mk_swift_type_name Textual.BaseTypeName.swift_any_type_name.value
+      in
+      let field = {Textual.enclosing_class; name} in
+      let exp = Textual.Exp.Field {exp= base_exp_deref; field} in
+      let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
+      let instrs = base_instrs @ base_deref_instrs in
+      (exp, Some textual_typ, instrs)
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
        and convert translates other types of cast *)
@@ -1634,10 +1654,72 @@ let process_globals lang class_method_index method_class_index ~mangled_map ~str
     | _ ->
         ()
   in
+  (*
+   * Scans for Swift Field Offset Vector (Wvd) globals to proactively inject
+   * missing fields into the Textual type environment (struct_map).
+   *
+   * Why is this necessary?
+   * For Swift classes that inherit from Objective-C classes (e.g., UIView subclasses),
+   * the compiler often emits an opaque memory layout where the struct definition
+   * appears empty in the IR. Consequently, property assignments are compiled into
+   * opaque byte-offset arithmetic (`getelementptr i8`).
+   *
+   * By parsing the Wvd global name, we can deduce the exact class and field name,
+   * and inject a generic field definition into the Textual struct. This bridges
+   * the gap, preventing Textual type-checking errors and ensuring that the IR
+   * accurately reflects the semantic memory layout of the object so that downstream
+   * analyses can correctly track field accesses.
+   *
+   * Note: If the struct already possesses an LLVM-provided layout , we safely skip
+   * injection to avoid duplicating fields, leaving them for the renaming pass later.
+   *)
+  let process_wvd_global global_name struct_map =
+    if String.is_suffix global_name ~suffix:"Wvd" then
+      let class_name_opt, field_name_str = Field.extract_class_and_field_from_wvd global_name in
+      match class_name_opt with
+      | Some mangled_class ->
+          let class_name =
+            TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+              mangled_class
+          in
+          let field_name = Textual.FieldName.of_string field_name_str in
+          let field_decl =
+            Textual.FieldDecl.
+              { qualified_name= {enclosing_class= class_name; name= field_name}
+              ; typ= Textual.Typ.any_type_swift
+              ; attributes= [] }
+          in
+          let struct_ =
+            match Textual.TypeName.Map.find_opt class_name struct_map with
+            | Some (struct_ : Textual.Struct.t) ->
+                (* --- Check if LLVM already provided a memory layout --- *)
+                let has_llvm_layout =
+                  List.exists struct_.fields ~f:(fun f ->
+                      String.is_prefix
+                        (Textual.FieldName.to_string f.Textual.FieldDecl.qualified_name.name)
+                        ~prefix:"field_" )
+                in
+                (* If it has LLVM fields, the later renaming pass will handle it. Skip injection. *)
+                if has_llvm_layout then struct_
+                else if
+                  List.exists struct_.fields ~f:(fun (field : Textual.FieldDecl.t) ->
+                      Textual.FieldName.equal field.qualified_name.name field_name )
+                then struct_
+                else {struct_ with fields= field_decl :: struct_.fields}
+            | None ->
+                Textual.Struct.{name= class_name; supers= []; fields= [field_decl]; attributes= []}
+          in
+          Textual.TypeName.Map.add class_name struct_ struct_map
+      | None ->
+          struct_map
+    else struct_map
+  in
   let process_global _var global struct_map =
     match global with
     | GlobalDefn.{name; init= Some exp_typ} ->
         let global_name = Global.name name in
+        (* 1. Inject any missing fields from Wvd globals *)
+        let struct_map = process_wvd_global global_name struct_map in
         let suffix = "C" ^ class_virtual_table_suffix in
         if String.is_suffix global_name ~suffix then (
           let class_name =
