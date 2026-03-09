@@ -207,6 +207,7 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | FunctionDecl _
     | FunctionTemplateDecl _
     | HLSLBufferDecl _
+    | HLSLRootSignatureDecl _
     | ImplicitConceptSpecializationDecl _
     | ImplicitParamDecl _
     | ImportDecl _
@@ -232,6 +233,8 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
     | OMPDeclareReductionDecl _
     | OMPRequiresDecl _
     | OMPThreadPrivateDecl _
+    | OpenACCDeclareDecl _
+    | OpenACCRoutineDecl _
     | OutlinedFunctionDecl _
     | ParmVarDecl _
     | PragmaCommentDecl _

@@ -5365,7 +5365,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `OMPTeamsGenericLoopDirective _
     | `OMPTileDirective _
     | `OMPUnrollDirective _
+    | `OMPStripeDirective _
     | `OpenACCAsteriskSizeExpr _
+    | `OpenACCAtomicConstruct _
+    | `OpenACCCacheConstruct _
     | `OpenACCCombinedConstruct _
     | `OpenACCComputeConstruct _
     | `OpenACCDataConstruct _
@@ -5391,7 +5394,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `SourceLocExpr _
     | `SYCLKernelCallStmt _
     | `SYCLUniqueStableNameExpr _
-    | `TypoExpr _
     | `UnresolvedLookupExpr _
     | `UnresolvedMemberExpr _ ->
         let (stmt_info, stmts), ret_typ =

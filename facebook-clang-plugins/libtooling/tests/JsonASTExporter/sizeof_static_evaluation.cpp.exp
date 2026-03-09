@@ -309,9 +309,9 @@
             "access" : "Public"
           },
           {
-            "name" : "__foo<type-parameter-0-0, true>",
+            "name" : "__foo<T, true>",
             "qual_name" : [
-              "__foo<type-parameter-0-0, true>",
+              "__foo<T, true>",
               "__foo<type-parameter-0-0, true>"
             ]
           },
@@ -961,9 +961,15 @@
           "pointer" : 9
         }
       ]],
+      ["SubstTemplateTypeParmType" , [
+        {
+          "pointer" : 103,
+          "desugared_type" : 21
+        }
+      ]],
       ["PointerType" , [
         {
-          "pointer" : 103
+          "pointer" : 104
         },
         {
           "type_ptr" : 9
@@ -983,7 +989,7 @@
       ]],
       ["ObjCObjectType" , [
         {
-          "pointer" : 104
+          "pointer" : 105
         },
         {
           "base_type" : 82
@@ -991,32 +997,32 @@
       ]],
       ["ObjCObjectPointerType" , [
         {
-          "pointer" : 105
+          "pointer" : 106
         },
         {
-          "type_ptr" : 104
+          "type_ptr" : 105
         }
       ]],
       ["TypedefType" , [
         {
-          "pointer" : 106,
-          "desugared_type" : 105
+          "pointer" : 107,
+          "desugared_type" : 106
         },
         {
           "child_type" : {
-            "type_ptr" : 105
+            "type_ptr" : 106
           },
-          "decl_ptr" : 107
+          "decl_ptr" : 108
         }
       ]],
       ["TypedefType" , [
         {
           "pointer" : 27,
-          "desugared_type" : 105
+          "desugared_type" : 106
         },
         {
           "child_type" : {
-            "type_ptr" : 106
+            "type_ptr" : 107
           },
           "decl_ptr" : 26
         }

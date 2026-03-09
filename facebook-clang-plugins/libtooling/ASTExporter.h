@@ -984,9 +984,6 @@ void ASTExporter<ATDWriter>::dumpNestedNameSpecifierLoc(
     case NestedNameSpecifier::TypeSpec:
       OF.emitSimpleVariant("TypeSpec");
       break;
-    case NestedNameSpecifier::TypeSpecWithTemplate:
-      OF.emitSimpleVariant("TypeSpecWithTemplate");
-      break;
     case NestedNameSpecifier::Global:
       OF.emitSimpleVariant("Global");
       break;
@@ -4194,7 +4191,7 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitTypeTraitExpr(const TypeTraitExpr *Node) {
   VisitExpr(Node);
   // FIXME: don't dump false when value is dependent
-  bool value = Node->isValueDependent() ? false : Node->getValue();
+  bool value = Node->isValueDependent() ? false : Node->getBoolValue();
   ObjectScope Scope(OF, 0 + value);
   OF.emitFlag("value", value);
 }
@@ -5001,7 +4998,7 @@ int ASTExporter<ATDWriter>::BuiltinTypeTupleSize() {
 #define SVE_VECTOR_TYPE(Name, MangledName, Id, SingletonId) //@atd   | Id
 #define SVE_OPAQUE_TYPE(Name, MangledName, Id, SingletonId) //@atd   | Id
 #define SVE_SCALAR_TYPE(Name, MangledName, Id, SingletonId, Bits) //@atd   | Id
-#include <clang/Basic/AArch64SVEACLETypes.def>
+#include <clang/Basic/AArch64ACLETypes.def>
 //@atd ]
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
@@ -5034,7 +5031,7 @@ void ASTExporter<ATDWriter>::VisitBuiltinType(const BuiltinType *T) {
     type_name = #Id;                                              \
     break;                                                        \
   }
-#include <clang/Basic/AArch64SVEACLETypes.def>
+#include <clang/Basic/AArch64ACLETypes.def>
 #define IMAGE_TYPE(ImgType, ID, SingletonId, Access, Suffix) \
   case BuiltinType::ID:
 #include <clang/Basic/OpenCLImageTypes.def>

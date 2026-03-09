@@ -1,6 +1,6 @@
---- a/llvm-project/clang/lib/AST/ItaniumMangle.cpp
-+++ b/llvm-project/clang/lib/AST/ItaniumMangle.cpp
-@@ -1240,10 +1240,7 @@ void CXXNameMangler::mangleFloatLiteral(
+--- a/b/llvm-project/clang/lib/AST/ItaniumMangle.cpp	2026-03-05 02:25:16.924857372 -0800
++++ b/llvm-project/clang/lib/AST/ItaniumMangle.cpp	2026-03-05 02:29:33.448188783 -0800
+@@ -1258,10 +1258,7 @@
  }
  
  void CXXNameMangler::mangleFixedPointLiteral() {
@@ -12,7 +12,7 @@
  }
  
  void CXXNameMangler::mangleNullPointer(QualType T) {
-@@ -3822,11 +3819,7 @@ void CXXNameMangler::mangleNeonVectorTyp
+@@ -4018,11 +4015,7 @@
  }
  
  void CXXNameMangler::mangleNeonVectorType(const DependentVectorType *T) {
@@ -25,7 +25,7 @@
  }
  
  static StringRef mangleAArch64VectorBase(const BuiltinType *EltType) {
-@@ -3899,11 +3892,7 @@ void CXXNameMangler::mangleAArch64NeonVe
+@@ -4097,11 +4090,7 @@
    Out << TypeName.length() << TypeName;
  }
  void CXXNameMangler::mangleAArch64NeonVectorType(const DependentVectorType *T) {
@@ -38,7 +38,7 @@
  }
  
  // The AArch64 ACLE specifies that fixed-length SVE vector and predicate types
-@@ -3996,11 +3985,7 @@ void CXXNameMangler::mangleAArch64FixedS
+@@ -4195,11 +4184,7 @@
  
  void CXXNameMangler::mangleAArch64FixedSveVectorType(
      const DependentVectorType *T) {
@@ -51,8 +51,34 @@
  }
  
  void CXXNameMangler::mangleRISCVFixedRVVVectorType(const VectorType *T) {
-@@ -4770,12 +4755,7 @@ recurse:
-   {
+@@ -4298,11 +4283,7 @@
+ 
+ void CXXNameMangler::mangleRISCVFixedRVVVectorType(
+     const DependentVectorType *T) {
+-  DiagnosticsEngine &Diags = Context.getDiags();
+-  unsigned DiagID = Diags.getCustomDiagID(
+-      DiagnosticsEngine::Error,
+-      "cannot mangle this dependent fixed-length RVV vector type yet");
+-  Diags.Report(T->getAttributeLoc(), DiagID);
++  Out << "__unhandled_RISCVFixedRVVVectorType";
+ }
+ 
+ // GNU extension: vector types
+@@ -4845,11 +4826,7 @@
+   // instead. See https://lists.isocpp.org/core/2023/04/14118.php
+   auto HandleSubstitutionFailure =
+       [&](SourceLocation Loc) {
+-        DiagnosticsEngine &Diags = Context.getDiags();
+-        unsigned DiagID = Diags.getCustomDiagID(
+-            DiagnosticsEngine::Error, "cannot mangle this requires-expression "
+-                                      "containing a substitution failure");
+-        Diags.Report(Loc, DiagID);
++        // Suppress error for Infer
+         Out << 'F';
+       };
+ 
+@@ -5048,12 +5025,7 @@
+   case Expr::BuiltinBitCastExprClass: {
      NotPrimaryExpr();
      if (!NullOut) {
 -      // As bad as this diagnostic is, it's better than crashing.
@@ -65,7 +91,7 @@
        return;
      }
      break;
-@@ -4810,12 +4790,7 @@ recurse:
+@@ -5088,12 +5060,7 @@
    // Even gcc-4.5 doesn't mangle this.
    case Expr::BinaryConditionalOperatorClass: {
      NotPrimaryExpr();
@@ -79,24 +105,39 @@
      return;
    }
  
-@@ -5188,18 +5163,11 @@ recurse:
-       return;
-     }
-     case UETT_VecStep: {
--      DiagnosticsEngine &Diags = Context.getDiags();
--      unsigned DiagID = Diags.getCustomDiagID(DiagnosticsEngine::Error,
--                                     "cannot yet mangle vec_step expression");
--      Diags.Report(DiagID);
-+      Out << "__unhandled_UETT_VecStep";
-       return;
-     }
-     case UETT_OpenMPRequiredSimdAlign: {
+@@ -5463,10 +5430,7 @@
+     case UETT_VecStep:
+     case UETT_PtrAuthTypeDiscriminator:
+     case UETT_DataSizeOf: {
 -      DiagnosticsEngine &Diags = Context.getDiags();
 -      unsigned DiagID = Diags.getCustomDiagID(
--          DiagnosticsEngine::Error,
--          "cannot yet mangle __builtin_omp_required_simd_align expression");
--      Diags.Report(DiagID);
-+      Out << "__unhandled_UETT_OpenMPRequiredSimdAlign";
+-          DiagnosticsEngine::Error, "cannot yet mangle %0 expression");
+-      Diags.Report(E->getExprLoc(), DiagID) << getTraitSpelling(SAE->getKind());
++      Out << "__unhandled_UnaryExprOrTypeTraitExpr";
        return;
      }
-     case UETT_VectorElements: {
+     }
+@@ -5966,11 +5930,7 @@
+         "cannot mangle hlsl temporary value; mangling wrong thing?");
+   case Expr::OpenACCAsteriskSizeExprClass: {
+     // We shouldn't ever be able to get here, but diagnose anyway.
+-    DiagnosticsEngine &Diags = Context.getDiags();
+-    unsigned DiagID = Diags.getCustomDiagID(
+-        DiagnosticsEngine::Error,
+-        "cannot yet mangle OpenACC Asterisk Size expression");
+-    Diags.Report(DiagID);
++    Out << "__unhandled_OpenACCAsteriskSizeExpr";
+     return;
+   }
+   }
+@@ -6576,9 +6536,7 @@
+   // of the data members in the union are unnamed), then there is no way for a
+   // program to refer to the anonymous union, and there is therefore no need to
+   // mangle its name. However, we should diagnose this anyway.
+-  unsigned DiagID = Diags.getCustomDiagID(
+-      DiagnosticsEngine::Error, "cannot mangle this unnamed union NTTP yet");
+-  Diags.Report(UnionLoc, DiagID);
++  // Suppress error for Infer
+ 
+   return nullptr;
+ }
