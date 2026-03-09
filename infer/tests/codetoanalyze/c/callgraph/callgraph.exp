@@ -1,10 +1,18 @@
-basic.c:11:10 g -> f
-basic.c:11:21 g -> h
-basic.c:11:32 g -> g
-basic.c:16:10 h -> f
-basic.c:16:21 h -> g
-basic.c:16:32 h -> h
-basic.c:6:10 f -> g
-basic.c:6:21 f -> h
-basic.c:6:32 f -> g
-basic.c:6:43 f -> f
+alias.c:15:13 call_if_aliased ===> set_both [aliases:Dereference(p)=Dereference(q)]
+alias.c:19:3 always_call ===> set_both
+alias.c:19:3 always_call [aliases:Dereference(p)=Dereference(q)] ===> set_both [aliases:Dereference(p)=Dereference(q)]
+alias.c:23:3 call_depending_on_alias ===> call_if_aliased
+alias.c:24:3 call_depending_on_alias ===> always_call
+alias.c:24:3 call_depending_on_alias ===> always_call [aliases:Dereference(p)=Dereference(q)]
+alias.c:29:3 test_aliased ===> call_depending_on_alias
+alias.c:35:3 test_not_aliased ===> call_depending_on_alias
+basic.c:6:10 f ===> g
+basic.c:6:21 f ===> h
+basic.c:6:32 f ===> g
+basic.c:6:43 f ===> f
+basic.c:11:10 g ===> f
+basic.c:11:21 g ===> h
+basic.c:11:32 g ===> g
+basic.c:16:10 h ===> f
+basic.c:16:21 h ===> g
+basic.c:16:32 h ===> h

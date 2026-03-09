@@ -11,16 +11,14 @@ include $(TESTS_DIR)/base.make
 
 SOURCES = $(wildcard *.c)
 
-JQ_QUERY = '.[] | .[0][1].c_name[0] as $$caller | .[1][][1].main.non_disj[] | select(type == "object") | "\(.loc.file[1]):\(.loc.line):\(.loc.col) \($$caller) -> \(.proc_name[1].c_name[0])"'
-
 default: test
 
 infer-out/specialized_call_graph.json: $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(INFER_BIN) -q -- clang -c $(SOURCES)
 	$(QUIET)$(INFER_BIN) debug --procedures --dump-json-specialized-call-graph
 
-callgraph.exp.test: infer-out/specialized_call_graph.json
-	$(QUIET)jq -r $(JQ_QUERY) $< | sort > $@
+callgraph.exp.test: infer-out/specialized_call_graph.json parse_json_callgraph.py
+	$(QUIET)python3 parse_json_callgraph.py $< > $@
 
 .PHONY: test
 test: callgraph.exp.test
