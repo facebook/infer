@@ -807,6 +807,9 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
     in
     List.exists results ~f
   in
+  let record_direct_call ?(specialization = Specialization.Pulse.bottom) non_disj =
+    NonDisjDomain.add_specialized_direct_callee callee_pname specialization call_loc non_disj
+  in
   let call_as_unknown () =
     let results, (non_disj, contradiction) =
       call_aux_unknown disjunct_limit analysis_data path call_loc callee_pname ~ret ~actuals
@@ -829,9 +832,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
         (IRAttributes.load_exn callee_pname)
         exec_states non_disj_callee astate non_disj_caller
     in
-    let non_disj =
-      NonDisjDomain.add_specialized_direct_callee callee_pname specialization call_loc non_disj
-    in
+    let non_disj = record_direct_call ~specialization non_disj in
     (results, non_disj, contradiction)
   in
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_reached
@@ -962,6 +963,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
                   ~is_pulse_specialization_limit_reached ~specialization already_given summary
                   astate )
   in
+  let non_disj_caller = record_direct_call non_disj_caller in
   match analyze_dependency callee_pname with
   | Ok summary ->
       let is_pulse_specialization_limit_reached =

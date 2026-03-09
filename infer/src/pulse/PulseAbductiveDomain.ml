@@ -2206,6 +2206,12 @@ module Summary = struct
 
   type t = summary [@@deriving compare, equal, yojson_of]
 
+  let yojson_of_t summary =
+    if Config.dump_json_specialized_call_graph then
+      TransitiveInfo.yojson_of_t summary.transitive_info
+    else yojson_of_t summary
+
+
   let unsafe_from_join = Fn.id
 
   let pp = pp_ ~is_summary:true

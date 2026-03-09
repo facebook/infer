@@ -1433,6 +1433,14 @@ and dump_json_summaries =
     ~default:false
 
 
+and dump_json_specialized_call_graph =
+  CLOpt.mk_bool ~long:"dump-json-specialized-call-graph"
+    ~in_help:InferCommand.[(Debug, manual_debug_procedures)]
+    "Directly output the json export of the specialized call graph in \
+     <output-dir>/specialized_call_graph.json"
+    ~default:false
+
+
 and dynamic_dispatch_json_file_path =
   CLOpt.mk_path_opt ~long:"dynamic-dispatch-json-file-path"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
@@ -4182,6 +4190,8 @@ and dump_duplicate_symbols = !dump_duplicate_symbols
 
 and dump_json_summaries = !dump_json_summaries
 
+and dump_json_specialized_call_graph = !dump_json_specialized_call_graph
+
 and dump_llair = !dump_llair
 
 and dump_llair_text = !dump_llair_text
@@ -4466,7 +4476,7 @@ and print_types = !print_types
 
 and print_using_diff = !print_using_diff
 
-and procedures = !procedures || !dump_json_summaries
+and procedures = !procedures || !dump_json_summaries || !dump_json_specialized_call_graph
 
 and procedures_attributes = !procedures_attributes
 
@@ -4486,7 +4496,9 @@ and procedures_source_file = !procedures_source_file
 
 and procedures_summary = !procedures_summary
 
-and procedures_summary_json = !procedures_summary_json || !dump_json_summaries
+and procedures_summary_json =
+  !procedures_summary_json || !dump_json_summaries || !dump_json_specialized_call_graph
+
 
 and procedures_summary_skip_empty = !procedures_summary_skip_empty
 

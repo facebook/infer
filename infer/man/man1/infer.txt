@@ -738,6 +738,12 @@ OPTIONS
            more than one file. (Conversely: --no-dump-duplicate-symbols)
            See also infer-capture(1).
 
+       --dump-json-specialized-call-graph
+           Activates: Directly output the json export of the specialized call
+           graph in <output-dir>/specialized_call_graph.json (Conversely:
+           --no-dump-json-specialized-call-graph)
+           See also infer-debug(1).
+
        --dump-json-summaries
            Activates: Directly output the json export of each analyzed
            procedures in <output-dir>/all_summaries.json (Conversely:

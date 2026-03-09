@@ -659,6 +659,11 @@ module InterDom = struct
     map (TransitiveInfo.add_specialized_direct_callee procname specialisation loc)
 
 
+  let yojson_of_t info_or_top =
+    let info = match info_or_top with Top -> TransitiveInfo.bottom | NonTop info -> info in
+    TransitiveInfo.yojson_of_t info
+
+
   let apply_summary ~callee_pname ~call_loc ~summary ~skip_transitive_accesses non_disj =
     match (non_disj, summary) with
     | Top, _ | _, Top ->
@@ -908,6 +913,8 @@ let apply_summary ~callee_pname ~call_loc ~skip_transitive_accesses (non_disj : 
 
 module Summary = struct
   type t = summary
+
+  let yojson_of_t {transitive_info} = InterDom.yojson_of_t transitive_info
 
   let pp fmt {transitive_info; has_dropped_disjuncts; astate} =
     F.fprintf fmt "over-approx:@[%a@]@\n%a%s"

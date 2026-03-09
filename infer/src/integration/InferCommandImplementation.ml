@@ -54,7 +54,13 @@ let debug () =
             let filename = Filename.concat Config.results_dir "all_summaries.json" in
             Utils.with_file_out filename ~f:(fun channel -> f_json channel proc_names)
           in
+          let output_specialized_call_graph proc_names =
+            let filename = Filename.concat Config.results_dir "specialized_call_graph.json" in
+            Utils.with_file_out filename ~f:(fun channel -> f_json channel proc_names)
+          in
           if Config.dump_json_summaries then Procedures.get_all ~filter () |> output_all_summaries
+          else if Config.dump_json_specialized_call_graph then
+            Procedures.get_all ~filter () |> output_specialized_call_graph
           else
             Option.iter
               (Procedures.select_proc_names_interactive ~filter)

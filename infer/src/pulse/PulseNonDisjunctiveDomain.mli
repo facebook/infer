@@ -61,7 +61,7 @@ type summary
 val make_summary : ProcAttributes.t -> Location.t -> t -> summary
 
 module Summary : sig
-  type t = summary
+  type t = summary [@@deriving yojson_of]
 
   val bottom : t
 

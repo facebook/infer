@@ -47,7 +47,7 @@ type t =
   ; has_transitive_missed_captures: AbstractDomain.BooleanOr.t
         (** true iff one the callees of this function has at least one transitively missing type.
             This does not take into account the local [direct_missed_captures] set above. *) }
-[@@deriving compare, equal]
+[@@deriving compare, equal, yojson_of]
 
 include AbstractDomain.WithBottom with type t := t
 

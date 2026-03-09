@@ -302,6 +302,8 @@ val dump_duplicate_symbols : bool
 
 val dump_json_summaries : bool
 
+val dump_json_specialized_call_graph : bool
+
 val dump_llair : bool
 
 val dump_llair_text : bool

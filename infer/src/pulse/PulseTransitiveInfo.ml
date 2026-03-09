@@ -109,7 +109,9 @@ end
 
 module DirectCallee = struct
   type t = {proc_name: Procname.t; specialization: Specialization.Pulse.t; loc: Location.t}
-  [@@deriving equal, compare]
+  [@@deriving equal, compare, yojson_of]
+
+  type direct_callee = t [@@deriving yojson_of]
 
   let pp fmt {proc_name; specialization} =
     F.fprintf fmt "%a (specialized for %a)" Procname.pp proc_name Specialization.Pulse.pp
@@ -124,6 +126,8 @@ module DirectCallee = struct
 
       let pp = pp
     end)
+
+    let yojson_of_t set = [%yojson_of: direct_callee list] (elements set)
   end
 end
 
@@ -137,6 +141,8 @@ type t =
   ; direct_missed_captures: MissedCaptures.t
   ; has_transitive_missed_captures: AbstractDomain.BooleanOr.t }
 [@@deriving abstract_domain, compare, equal]
+
+let yojson_of_t {direct_callees} = DirectCallee.Set.yojson_of_t direct_callees
 
 let pp fmt
     {accesses; callees; direct_callees; direct_missed_captures; has_transitive_missed_captures} =

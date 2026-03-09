@@ -47,6 +47,11 @@ DEBUG GLOBAL TYPE ENVIRONMENT
            --no-global-tenv)
 
 DEBUG PROCEDURES
+       --dump-json-specialized-call-graph
+           Activates: Directly output the json export of the specialized call
+           graph in <output-dir>/specialized_call_graph.json (Conversely:
+           --no-dump-json-specialized-call-graph)
+
        --dump-json-summaries
            Activates: Directly output the json export of each analyzed
            procedures in <output-dir>/all_summaries.json (Conversely:
