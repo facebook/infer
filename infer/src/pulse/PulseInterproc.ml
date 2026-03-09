@@ -158,6 +158,7 @@ module Unsafe : sig
               make sure we actually do, so in case something goes wrong we don't just continue with
               a broken (partial) summary application. *)
     ; callee_pre: BaseDomain.t  (** the pre-condition of the callee summary being applied *)
+    ; callee_post: BaseDomain.t  (** the post-condition of the callee summary being applied *)
     ; call_location: Location.t  (** the source location of the call site *)
     ; callee_proc_name: Procname.t  (** the name of the procedure being called *)
     ; callee_summary: AbductiveDomain.Summary.t  (** the summary of the callee being applied *)
@@ -231,6 +232,7 @@ end = struct
     ; array_indices_to_visit: callee_index_to_visit list
     ; first_error: AbstractValue.t option
     ; callee_pre: BaseDomain.t
+    ; callee_post: BaseDomain.t
     ; call_location: Location.t
     ; callee_proc_name: Procname.t
     ; callee_summary: AbductiveDomain.Summary.t
@@ -292,6 +294,7 @@ let pp_call_state fmt
      ; array_indices_to_visit
      ; first_error
      ; callee_pre= _
+     ; callee_post= _
      ; call_location= _
      ; callee_proc_name= _
      ; callee_summary= _
@@ -474,6 +477,8 @@ let visit call_state ~addr_callee cell_id ~addr_hist_caller path =
              variables, but record that they are equal. *)
           UnsafeMemory.mem addr_callee call_state.callee_pre.BaseDomain.heap
           && UnsafeMemory.mem addr_callee' call_state.callee_pre.BaseDomain.heap
+          || UnsafeMemory.mem addr_callee call_state.callee_post.BaseDomain.heap
+             && UnsafeMemory.mem addr_callee' call_state.callee_post.BaseDomain.heap
         then
           match (LazyHeapPath.force path, LazyHeapPath.force path') with
           | Some path, Some path' ->
@@ -907,8 +912,7 @@ let rec record_post_for_address path ~addr_callee ~addr_hist_caller call_state =
         Ok call_state
     | Some ((edges_callee_post, _) as cell_callee_post) ->
         let edges_pre_opt =
-          UnsafeMemory.find_opt addr_callee
-            (AbductiveDomain.Summary.get_pre call_state.callee_summary).BaseDomain.heap
+          UnsafeMemory.find_opt addr_callee call_state.callee_pre.BaseDomain.heap
         in
         let call_state_after_post =
           if is_cell_read_only ~edges_pre_opt ~cell_post:cell_callee_post then (
@@ -936,7 +940,7 @@ let apply_post_from_callee_pre path call_state =
           record_post_for_address path ~addr_callee ~addr_hist_caller call_state
       | None ->
           Ok call_state )
-    (AbductiveDomain.Summary.get_pre call_state.callee_summary).heap (Ok call_state)
+    call_state.callee_pre.heap (Ok call_state)
 
 
 let apply_post_from_callee_post path call_state =
@@ -1060,8 +1064,7 @@ let apply_unknown_effects call_state =
         false
     | Some (addr_callee, _) ->
         let edges_callee_pre =
-          UnsafeMemory.find_opt addr_callee
-            (AbductiveDomain.Summary.get_pre call_state.callee_summary).heap
+          UnsafeMemory.find_opt addr_callee call_state.callee_pre.heap
           |> Option.value ~default:BaseMemory.Edges.empty
         in
         let edges_callee_post =
@@ -1251,13 +1254,10 @@ let check_config_usage_at_call location ~pre:{BaseDomain.attrs= pre_attrs} subst
     subst astate
 
 
-let check_all_taint_valid path astate {subst; call_location; callee_proc_name; callee_summary} =
+let check_all_taint_valid path astate {subst; call_location; callee_proc_name; callee_pre} =
   to_caller_subst_fold_astate_result
     (fun addr_pre ((_, hist_caller) as addr_hist_caller) astate ->
-      let sinks =
-        UnsafeAttributes.get_must_not_be_tainted addr_pre
-          (AbductiveDomain.Summary.get_pre callee_summary).attrs
-      in
+      let sinks = UnsafeAttributes.get_must_not_be_tainted addr_pre callee_pre.attrs in
       let trace_via_call trace =
         Trace.ViaCall
           {in_call= trace; f= Call callee_proc_name; location= call_location; history= hist_caller}
@@ -1296,6 +1296,7 @@ let apply_summary analysis_data path ~callee_proc_name call_location ~callee_sum
       ; array_indices_to_visit= []
       ; first_error= None
       ; callee_pre= AbductiveDomain.Summary.get_pre callee_summary
+      ; callee_post= AbductiveDomain.Summary.get_post callee_summary
       ; call_location
       ; callee_proc_name
       ; callee_summary

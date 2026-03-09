@@ -98,14 +98,14 @@ int test_alias(int* p, int* q) {
   return (*p == *q);
 }
 
-void FN_call_test_alias_bad(int* x) {
+void call_test_alias_bad(int* x) {
   if (test_alias(x, x)) {
     int* p = NULL;
     *p = 42;
   };
 }
 
-void FP_call_test_alias_good(int* x) {
+void call_test_alias_good(int* x) {
   if (!test_alias(x, x)) {
     int* p = NULL;
     *p = 42;
@@ -118,14 +118,14 @@ int test_unalias(int* p, int* q) {
   return (*p != *q);
 }
 
-void FN_call_test_unalias_bad(int* x) {
+void call_test_unalias_bad(int* x) {
   if (!test_unalias(x, x)) {
     int* p = NULL;
     *p = 42;
   };
 }
 
-void FP_call_test_unalias_good(int* x) {
+void call_test_unalias_good(int* x) {
   if (test_unalias(x, x)) {
     int* p = NULL;
     *p = 42;
