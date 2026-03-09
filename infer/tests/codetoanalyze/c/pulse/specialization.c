@@ -91,3 +91,43 @@ void call_may_double_free_if_alias_bad() {
 
   may_double_free_if_alias(z, z);
 }
+
+int test_alias(int* p, int* q) {
+  *q = 2;
+  *p = 1;
+  return (*p == *q);
+}
+
+void FN_call_test_alias_bad(int* x) {
+  if (test_alias(x, x)) {
+    int* p = NULL;
+    *p = 42;
+  };
+}
+
+void FP_call_test_alias_good(int* x) {
+  if (!test_alias(x, x)) {
+    int* p = NULL;
+    *p = 42;
+  };
+}
+
+int test_unalias(int* p, int* q) {
+  *q = 2;
+  *p = 1;
+  return (*p != *q);
+}
+
+void FN_call_test_unalias_bad(int* x) {
+  if (!test_unalias(x, x)) {
+    int* p = NULL;
+    *p = 42;
+  };
+}
+
+void FP_call_test_unalias_good(int* x) {
+  if (test_unalias(x, x)) {
+    int* p = NULL;
+    *p = 42;
+  };
+}
