@@ -17,11 +17,31 @@ def get_proc_name(proc):
     raise ValueError(f"Unexpected proc_name kind: {kind!r}, expected 'C'")
 
 
+def format_access(access):
+    """Format an access kind, using * for Dereference."""
+    if access == "Dereference":
+        return "*"
+    return access
+
+
 def format_heap_path(path_elem):
-    """Format a heap path element like Dereference(p)."""
+    """Format a heap path element, simplifying *(&x) to just x and FieldAccess with Dereference to ->."""
     access = path_elem[0]
-    var = path_elem[1][1]["plain"]
-    return f"{access}({var})"
+    inner = path_elem[1]
+    if inner[0] == "Pvar":
+        var = inner[1]["plain"]
+        if access == "Dereference":
+            return var
+        return f"{format_access(access)}(&{var})"
+    if inner[0] == "FieldAccess":
+        field_name = inner[1][0]["field_name"]
+        sub_elem = inner[1][1]
+        if sub_elem[0] == "Dereference":
+            deref_inner = format_heap_path(sub_elem)
+            return f"{format_access(access)}({deref_inner}->{field_name})"
+        sub_path = format_heap_path(sub_elem)
+        return f"{format_access(access)}(FieldAccess({field_name},{sub_path}))"
+    return f"{format_access(access)}({inner})"
 
 
 def format_dynamic_type(dt):
