@@ -159,7 +159,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfc(var1: float
       n22:*__infer_swift_type<TSd> = load n21.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[13:0]
       n19 = load &var4 @[13:0]
       store n22.__infer_swift_type<TSd>.field_0 <- n19 @[13:0]
-      n23 = load &self @[14:9]
+      n23:*__infer_swift_type<T5Hello7BCNCellC,BCNCell> = load &self @[14:9]
       n24 = load &$s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvpWvd @[14:9]
       store n23.__infer_swift_type<T5Hello7BCNCellC,BCNCell>.nuxContentView <- 0 @[13:0]
       n27 = load &self @[13:0]
@@ -274,7 +274,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(coder: *
       ret n22 @[13:0]
       
   #3::ret: @[14:9]
-      n3 = load &self @[14:9]
+      n3:*__infer_swift_type<T5Hello7BCNCellC,BCNCell> = load &self @[14:9]
       n4 = load &$s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvpWvd @[14:9]
       store n3.__infer_swift_type<T5Hello7BCNCellC,BCNCell>.nuxContentView <- 0 @[13:0]
       n7 = load &self @[13:0]

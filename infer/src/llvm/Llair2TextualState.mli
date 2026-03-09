@@ -105,6 +105,7 @@ module ProcState : sig
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
     ; mutable selector_map: string Textual.Ident.Map.t
     ; mutable class_type_map: Textual.TypeName.t VarMap.t
+    ; inferred_types: Textual.Typ.t Hashtbl.M(Int).t (* Map of Reg.id -> Typ.t *)
     ; module_state: ModuleState.t }
 
   val init :
@@ -113,6 +114,7 @@ module ProcState : sig
     -> loc:Textual.Location.t
     -> formals:formal_data VarMap.t
     -> module_state:ModuleState.t
+    -> inferred_types:Textual.Typ.t IStd.Hashtbl.M(IStd.Int).t
     -> t
 
   val mk_fresh_id : ?reg:Llair.Reg.t -> t -> IdentMap.key

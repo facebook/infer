@@ -1289,7 +1289,10 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         Metadata.propagate ~proc_state id exp ~is_load:true ;
         ProcState.update_id_offset ~proc_state id exp ;
         ProcState.update_ids_move ~proc_state id None ~loaded_var:true ~deref_needed:false ;
-        let textual_instr = Textual.Instr.Load {id; exp; typ= None; loc} in
+        let inferred_typ = Hashtbl.find proc_state.inferred_types (Reg.id reg) in
+        Option.iter inferred_typ ~f:(fun t ->
+            ProcState.update_ids_types ~proc_state id (Textual.Typ.mk_without_attributes t) ) ;
+        let textual_instr = Textual.Instr.Load {id; exp; typ= inferred_typ; loc} in
         textual_instr :: List.append ptr_instrs textual_instrs
     | Store {ptr; exp}
       when Textual.Lang.is_swift lang && is_store_formal_to_local ~proc_state ptr exp ->
@@ -1887,9 +1890,13 @@ let translate_code source_file ~module_state proc_descs (procdecl : Textual.Proc
           formals_list formals_types ~init:Textual.VarName.Map.empty
   in
   let loc = procdecl.qualified_name.Textual.QualifiedProcName.name.Textual.ProcName.loc in
+  let inferred_types =
+    if should_translate then Llair2TextualTypeInference.infer_func module_state func
+    else Hashtbl.create (module Int)
+  in
   let proc_state =
     ProcState.init ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
-      ~formals:formals_map ~module_state
+      ~formals:formals_map ~module_state ~inferred_types
   in
   let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
   let result_type =

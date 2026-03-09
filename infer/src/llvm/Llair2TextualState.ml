@@ -128,9 +128,10 @@ module ProcState = struct
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
     ; mutable selector_map: string Textual.Ident.Map.t
     ; mutable class_type_map: Textual.TypeName.t VarMap.t
+    ; inferred_types: Textual.Typ.t Hashtbl.M(Int).t (* Map of Reg.id -> Typ.t *)
     ; module_state: ModuleState.t }
 
-  let init ~qualified_name ~sourcefile ~loc ~formals ~module_state =
+  let init ~qualified_name ~sourcefile ~loc ~formals ~module_state ~inferred_types =
     { qualified_name
     ; sourcefile
     ; loc
@@ -148,6 +149,7 @@ module ProcState = struct
     ; metadata_address_ids= Textual.Ident.Set.empty
     ; selector_map= Textual.Ident.Map.empty
     ; class_type_map= VarMap.empty
+    ; inferred_types
     ; module_state }
 
 
@@ -358,6 +360,7 @@ use the substitution in the code later on. *)
     ; metadata_address_ids= Textual.Ident.Set.empty
     ; selector_map= Textual.Ident.Map.empty
     ; class_type_map= VarMap.empty
+    ; inferred_types= Hashtbl.create (module Int)
     ; module_state }
 
 
