@@ -24,6 +24,18 @@ def format_heap_path(path_elem):
     return f"{access}({var})"
 
 
+def format_dynamic_type(dt):
+    """Format a dynamic type entry like Dereference(f):add."""
+    heap_path, typ = dt
+    path_str = format_heap_path(heap_path)
+    kind = typ[0]
+    if kind == "CFunction":
+        type_str = "::".join(typ[1]["c_name"])
+    else:
+        type_str = str(typ[1])
+    return f"{path_str}:{type_str}"
+
+
 def format_specialization(spec):
     """Format specialization as [aliases:...] or [types:...]."""
     aliases = spec.get("aliases")
@@ -34,8 +46,7 @@ def format_specialization(spec):
             groups.append("=".join(format_heap_path(p) for p in alias_group))
         return " [aliases:" + ",".join(groups) + "]"
     if dynamic_types:
-        types = [dt[1][1] for dt in dynamic_types]
-        return " [types:" + ",".join(types) + "]"
+        return " [types:" + ",".join(format_dynamic_type(dt) for dt in dynamic_types) + "]"
     return ""
 
 

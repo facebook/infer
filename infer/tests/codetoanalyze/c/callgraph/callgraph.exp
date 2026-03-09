@@ -16,3 +16,17 @@ basic.c:11:32 g ===> g
 basic.c:16:10 h ===> f
 basic.c:16:21 h ===> g
 basic.c:16:32 h ===> h
+fun_ptr.c:7:40 invoke0 [types:Dereference(g):add] ===> add
+fun_ptr.c:7:40 invoke0 [types:Dereference(g):mul] ===> mul
+fun_ptr.c:9:40 invoke1 [types:Dereference(g):add] ===> add
+fun_ptr.c:9:40 invoke1 [types:Dereference(g):mul] ===> mul
+fun_ptr.c:11:62 apply [types:Dereference(f):invoke0] ===> invoke0
+fun_ptr.c:11:62 apply [types:Dereference(f):invoke0,Dereference(g):add] ===> invoke0 [types:Dereference(g):add]
+fun_ptr.c:11:62 apply [types:Dereference(f):invoke0,Dereference(g):mul] ===> invoke0 [types:Dereference(g):mul]
+fun_ptr.c:11:62 apply [types:Dereference(f):invoke1] ===> invoke1
+fun_ptr.c:11:62 apply [types:Dereference(f):invoke1,Dereference(g):add] ===> invoke1 [types:Dereference(g):add]
+fun_ptr.c:11:62 apply [types:Dereference(f):invoke1,Dereference(g):mul] ===> invoke1 [types:Dereference(g):mul]
+fun_ptr.c:13:27 test_add_0 ===> apply [types:Dereference(f):invoke0,Dereference(g):add]
+fun_ptr.c:15:27 test_add_1 ===> apply [types:Dereference(f):invoke1,Dereference(g):add]
+fun_ptr.c:17:27 test_mul_0 ===> apply [types:Dereference(f):invoke0,Dereference(g):mul]
+fun_ptr.c:19:27 test_mul_1 ===> apply [types:Dereference(f):invoke1,Dereference(g):mul]
