@@ -49,47 +49,71 @@ let loc_of (loc : Location.t) =
   ; col= loc.col }
 
 
-let direct_callees_of (non_disj : NonDisjDomain.Summary.t) =
-  match NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj with
-  | None ->
-      []
-  | Some transitive_info ->
-      TransitiveInfo.DirectCallee.Set.fold
-        (fun (dc : TransitiveInfo.DirectCallee.t) acc ->
-          { Specialized_call_graph_t.callee_name= Procname.to_string dc.proc_name
-          ; callee_specialization= specialization_of dc.specialization
-          ; call_location= loc_of dc.loc }
-          :: acc )
-        transitive_info.direct_callees []
-
-
-let node_of caller_name spec (s : PulseSummary.summary) =
-  { Specialized_call_graph_t.caller_name
-  ; caller_specialization= specialization_of spec
-  ; callees= direct_callees_of s.non_disj }
-
-
-let build_and_append_nodes acc proc_name (pulse_summary : PulseSummary.t) =
-  let caller_name = Procname.to_string proc_name in
-  let main = node_of caller_name Specialization.Pulse.bottom pulse_summary.main in
-  let specialized =
-    Specialization.Pulse.Map.fold
-      (fun spec s acc -> node_of caller_name spec s :: acc)
-      pulse_summary.specialized acc
-  in
-  main :: specialized
-
-
 module JsonBuilder = struct
-  type t = Specialized_call_graph_t.node list
+  type t =
+    { nodes: Specialized_call_graph_t.node list
+    ; hashtbl: (Specialization.Pulse.t, int) Stdlib.Hashtbl.t
+    ; mutable fresh: int }
 
-  let make () = []
+  let get_specialization_index builder specialization =
+    match Stdlib.Hashtbl.find_opt builder.hashtbl specialization with
+    | Some index ->
+        index
+    | None ->
+        let index = builder.fresh in
+        Stdlib.Hashtbl.add builder.hashtbl specialization index ;
+        builder.fresh <- index + 1 ;
+        index
 
-  let add nodes proc_name pulse_summary =
-    Option.value_map pulse_summary ~default:nodes ~f:(build_and_append_nodes nodes proc_name)
+
+  let make () = {nodes= []; hashtbl= Stdlib.Hashtbl.create 17; fresh= 0}
+
+  let direct_callees_of builder (non_disj : NonDisjDomain.Summary.t) =
+    match NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj with
+    | None ->
+        []
+    | Some transitive_info ->
+        TransitiveInfo.DirectCallee.Set.fold
+          (fun (dc : TransitiveInfo.DirectCallee.t) acc ->
+            { Specialized_call_graph_t.callee_name= Procname.to_string dc.proc_name
+            ; callee_context= get_specialization_index builder dc.specialization
+            ; call_location= loc_of dc.loc }
+            :: acc )
+          transitive_info.direct_callees []
 
 
-  let finalize nodes = Specialized_call_graph_j.string_of_call_graph nodes
+  let node_of builder caller_name specialization (summary : PulseSummary.summary) =
+    let caller : Specialized_call_graph_t.caller =
+      {caller_name; caller_context= get_specialization_index builder specialization}
+    in
+    {Specialized_call_graph_t.caller; callees= direct_callees_of builder summary.non_disj}
+
+
+  let add_summary builder proc_name (pulse_summary : PulseSummary.t) =
+    let caller_name = Procname.to_string proc_name in
+    let main = node_of builder caller_name Specialization.Pulse.bottom pulse_summary.main in
+    let specialized =
+      Specialization.Pulse.Map.fold
+        (fun spec s acc -> node_of builder caller_name spec s :: acc)
+        pulse_summary.specialized builder.nodes
+    in
+    {builder with nodes= main :: specialized}
+
+
+  let add builder proc_name pulse_summary =
+    Option.value_map pulse_summary ~default:builder ~f:(add_summary builder proc_name)
+
+
+  let contexts_of hashtbl =
+    let len = Stdlib.Hashtbl.length hashtbl in
+    let contexts = Array.create ~len Specialization.Pulse.bottom in
+    Stdlib.Hashtbl.iter (fun specialization index -> contexts.(index) <- specialization) hashtbl ;
+    List.of_array contexts |> List.map ~f:specialization_of
+
+
+  let finalize {nodes; hashtbl} =
+    let call_graph : Specialized_call_graph_t.call_graph = {nodes; contexts= contexts_of hashtbl} in
+    Specialized_call_graph_j.string_of_call_graph call_graph
 end
 
 let get_missed_captures ~get_summary entry_nodes =

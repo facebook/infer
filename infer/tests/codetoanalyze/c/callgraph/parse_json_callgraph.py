@@ -67,15 +67,15 @@ def format_specialization(spec):
     return ""
 
 
-def extract_edges(caller, non_disj, edges):
+def extract_edges(contexts, caller, callees, edges):
     """Extract call-graph edges from a non_disj list."""
-    for callee_record in non_disj:
+    for callee_record in callees:
         callee = callee_record["callee_name"]
         loc = callee_record["call_location"]
         file = loc["file"]
         line = loc["line"]
         col = loc["col"]
-        spec = callee_record.get("callee_specialization", {})
+        spec = contexts[int(callee_record.get("callee_context", 0))]
         spec_str = format_specialization(spec)
         edges.append((file, line, col, f"{file}:{line}:{col} {caller} ===> {callee}{spec_str}"))
 
@@ -85,12 +85,14 @@ def main():
     with open(path) as f:
         data = json.load(f)
 
+    nodes = data["nodes"]
+    contexts = data["contexts"]
     edges = []
-    for node in data:
-        caller = node["caller_name"]
-        caller_spec = node.get("caller_specialization", {})
-        effective_caller = caller + format_specialization(caller_spec)
-        extract_edges(effective_caller, node.get("callees", []), edges)
+    for node in nodes:
+        caller = node["caller"]
+        caller_spec = contexts[int(caller["caller_context"])]
+        effective_caller = caller["caller_name"] + format_specialization(caller_spec)
+        extract_edges(contexts, effective_caller, node.get("callees", []), edges)
 
     edges.sort(key=lambda e: (e[0], e[1], e[2]))
     for _, _, _, edge in edges:

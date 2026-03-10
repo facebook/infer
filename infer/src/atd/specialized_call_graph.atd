@@ -22,27 +22,34 @@ type dynamic_type_entry = {
   typ: string;
 }
 
-type specialization = {
-  ?aliases: heap_path list list option;
-  ~dynamic_types <ocaml default="[]">: dynamic_type_entry list;
-}
-
 type loc = {
   file: string;
   line: int;
   col: int;
 }
 
-type direct_callee = {
+type callee = {
   callee_name: string;
-  callee_specialization: specialization;
+  callee_context: int;
   call_location: loc;
 }
 
-type node = {
+type caller = {
   caller_name: string;
-  caller_specialization: specialization;
-  ~callees <ocaml default="[]">: direct_callee list;
+  caller_context: int;
 }
 
-type call_graph = node list
+type node = {
+  caller: caller;
+  ~callees <ocaml default="[]">: callee list;
+}
+
+type specialization = {
+  ?aliases: heap_path list list option;
+  ~dynamic_types <ocaml default="[]">: dynamic_type_entry list;
+}
+
+type call_graph = {
+  nodes: node list;
+  contexts: specialization list
+}
