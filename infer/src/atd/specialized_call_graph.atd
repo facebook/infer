@@ -1,26 +1,4 @@
-(* Auto-generated JSON schema for specialized call graph export.
-   See InferCommandImplementation.ml for the serialization logic. *)
-
-type fieldname = {
-  class_name: string;
-  field_name: string;
-}
-
-type heap_path = [
-  | Pvar of string
-  | FieldAccess of field_access
-  | Dereference of heap_path
-]
-
-type field_access = {
-  field: fieldname;
-  base: heap_path;
-}
-
-type dynamic_type_entry = {
-  path: heap_path;
-  typ: string;
-}
+(* Auto-generated JSON schema for specialized call graph export. *)
 
 type loc = {
   file: string;
@@ -44,10 +22,7 @@ type node = {
   ~callees <ocaml default="[]">: callee list;
 }
 
-type specialization = {
-  ?aliases: heap_path list list option;
-  ~dynamic_types <ocaml default="[]">: dynamic_type_entry list;
-}
+type specialization = string
 
 type call_graph = {
   nodes: node list;

@@ -42,7 +42,7 @@ module Pulse = struct
 
     let pp fmt aliases =
       let pp_alias fmt alias = Pp.seq ~sep:" = " HeapPath.pp fmt alias in
-      Pp.seq ~sep:"@,&& " pp_alias fmt aliases
+      Pp.seq ~sep:" && " pp_alias fmt aliases
   end
 
   module DynamicTypes = struct
@@ -51,8 +51,12 @@ module Pulse = struct
     let yojson_of_t map = [%yojson_of: (HeapPath.t * Typ.name) list] (HeapPath.Map.bindings map)
 
     let pp fmt dtypes =
-      if not (HeapPath.Map.is_empty dtypes) then
-        F.fprintf fmt "@[dynamic_types: %a@]" (HeapPath.Map.pp ~pp_value:Typ.Name.pp) dtypes
+      if not (HeapPath.Map.is_empty dtypes) then (
+        F.fprintf fmt "dynamic_types: {" ;
+        HeapPath.Map.iter
+          (fun path value -> F.fprintf fmt "%a: %a;" HeapPath.pp path Typ.Name.pp value)
+          dtypes ;
+        F.fprintf fmt "}" )
   end
 
   type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t}
@@ -68,11 +72,11 @@ module Pulse = struct
     | None ->
         ()
     | Some aliases ->
-        F.fprintf fmt "@[alias: %a@]@ " Aliases.pp aliases
+        F.fprintf fmt "alias: %a " Aliases.pp aliases
 
 
   let pp fmt {aliases; dynamic_types} =
-    F.fprintf fmt "@[%a%a@]" pp_aliases aliases DynamicTypes.pp dynamic_types
+    F.fprintf fmt "%a%a" pp_aliases aliases DynamicTypes.pp dynamic_types
 
 
   module Set = PrettyPrintable.MakePPSet (struct

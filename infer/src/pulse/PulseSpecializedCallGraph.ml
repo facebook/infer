@@ -9,39 +9,10 @@ open! IStd
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
+module F = Format
 module Node = SpecializedProcname
 module NodeMap = SpecializedProcname.Map
 module NodeSet = SpecializedProcname.Set
-
-let heap_path_of (hp : Specialization.HeapPath.t) =
-  let rec aux = function
-    | Specialization.HeapPath.Pvar pvar ->
-        `Pvar (Mangled.to_string (Pvar.get_name pvar))
-    | Specialization.HeapPath.FieldAccess (fieldname, base) ->
-        `FieldAccess
-          { Specialized_call_graph_t.field=
-              { class_name= Typ.Name.name (Fieldname.get_class_name fieldname)
-              ; field_name= Fieldname.get_field_name fieldname }
-          ; base= aux base }
-    | Specialization.HeapPath.Dereference base ->
-        `Dereference (aux base)
-  in
-  aux hp
-
-
-let specialization_of (spec : Specialization.Pulse.t) =
-  let aliases =
-    Option.map spec.aliases ~f:(fun alias_groups ->
-        List.map alias_groups ~f:(List.map ~f:heap_path_of) )
-  in
-  let dynamic_types =
-    Specialization.HeapPath.Map.fold
-      (fun path typ acc ->
-        {Specialized_call_graph_t.path= heap_path_of path; typ= Typ.Name.name typ} :: acc )
-      spec.dynamic_types []
-  in
-  {Specialized_call_graph_t.aliases; dynamic_types}
-
 
 let loc_of (loc : Location.t) =
   { Specialized_call_graph_t.file= SourceFile.to_string ~force_relative:true loc.file
@@ -104,11 +75,16 @@ module JsonBuilder = struct
     Option.value_map pulse_summary ~default:builder ~f:(add_summary builder proc_name)
 
 
+  let string_of_specialization specialization =
+    if Specialization.Pulse.is_bottom specialization then ""
+    else F.asprintf " [%a]" Specialization.Pulse.pp specialization
+
+
   let contexts_of hashtbl =
     let len = Stdlib.Hashtbl.length hashtbl in
     let contexts = Array.create ~len Specialization.Pulse.bottom in
     Stdlib.Hashtbl.iter (fun specialization index -> contexts.(index) <- specialization) hashtbl ;
-    List.of_array contexts |> List.map ~f:specialization_of
+    List.of_array contexts |> List.map ~f:string_of_specialization
 
 
   let finalize {nodes; hashtbl} =
