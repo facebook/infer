@@ -1,0 +1,53 @@
+# Final ULLBC before serialization:
+
+// Full name: core::ops::drop::Drop
+#[lang_item("drop")]
+pub trait Drop<Self>
+{
+    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
+    vtable: core::ops::drop::Drop::{vtable}
+}
+
+pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
+where
+    [@TraitClause0]: Drop<Self>,
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>}::drop
+pub fn {impl Drop for alloc::boxed::Box<T>}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>))
+
+// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>}
+impl<T, A> Drop for alloc::boxed::Box<T> {
+    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>}::drop<'_0_0, T, A>
+    vtable: {impl Drop for alloc::boxed::Box<T>}::{vtable}<T, A>
+}
+
+// Full name: box::main
+fn main()
+{
+    let @0: (); // return
+    let b@1: alloc::boxed::Box<i32>; // local
+
+    bb0: {
+        storage_live(b@1);
+        b@1 := @BoxNew<i32>(const (42 : i32)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        @0 := ();
+        drop[{impl Drop for alloc::boxed::Box<T>}<i32, Global>] b@1;
+        storage_dead(b@1);
+        @0 := ();
+        return;
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+}
+
+
+

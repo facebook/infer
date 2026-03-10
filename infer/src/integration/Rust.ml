@@ -8,10 +8,10 @@ open! IStd
 module L = Logging
 module F = Format
 
-let dump_textual_file file module_ =
+let dump_textual_file ?(step = "") file module_ =
   let filename =
-    let suffix = "sil" in
-    let textual_filename = TextualSil.to_filename file in
+    let suffix = ".sil" in
+    let textual_filename = TextualSil.to_filename file ^ step in
     IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) textual_filename suffix
   in
   TextualSil.dump_module ~show_location:true ~filename module_
@@ -25,9 +25,9 @@ let dump_textual_test_file file module_ =
 
 let run_charon json_file prog args =
   let escaped_cmd = List.map ~f:Escape.escape_shell args |> String.concat ~sep:" " in
-  let redirected_cmd =
-    F.sprintf "charon %s --ullbc --dest-file %s -- %s" prog json_file escaped_cmd
-  in
+  (* infer <infer args> -- rustc <charon args> -- <rustc args> *)
+  (* e.g. infer -g -- rustc --start-from=main -- file.rs *)
+  let redirected_cmd = F.sprintf "charon %s --ullbc --dest-file %s %s" prog json_file escaped_cmd in
   let {IUnix.Process_info.stdin; stdout; stderr; pid} =
     IUnix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
   in
@@ -51,6 +51,27 @@ let compile prog args =
         output error
   | Ok () ->
       json_file
+
+
+let textual_to_sil file =
+  let open IResult.Let_syntax in
+  let open TextualParser in
+  let* sourcefile, textual_parsed = TextualFile.parse file in
+  let* textual_verified = TextualFile.verify sourcefile textual_parsed in
+  TextualFile.textual_to_sil sourcefile textual_verified
+
+
+let load_textual_models filenames =
+  let acc_tenv = Tenv.create () in
+  List.iter filenames ~f:(fun filename ->
+      L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
+      match textual_to_sil (StandaloneFile filename) with
+      | Ok sil ->
+          TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+          Tenv.merge ~src:sil.tenv ~dst:acc_tenv
+      | Error (sourcefile, errs) ->
+          List.iter errs ~f:(L.external_error "%a@\n" (TextualParser.pp_error sourcefile)) ) ;
+  acc_tenv
 
 
 (* 
@@ -88,6 +109,7 @@ let capture_file json_filename =
         L.die UserError "%s: %s" err (Yojson.Basic.to_string json)
   in
   let sourcefile = Textual.SourceFile.create file_name in
+  if Config.debug_mode || Config.dump_textual then dump_textual_file json_filename textual ;
   let verified_textual =
     match TextualVerification.verify_strict textual with
     | Ok vt ->
@@ -99,7 +121,7 @@ let capture_file json_filename =
   in
   let transformed_textual, decls = TextualTransform.run_exn Rust verified_textual in
   if Config.debug_mode || Config.dump_textual then
-    dump_textual_file json_filename transformed_textual ;
+    dump_textual_file json_filename transformed_textual ~step:"transformed" ;
   if Config.frontend_tests then dump_textual_test_file json_filename transformed_textual ;
   let cfg, tenv =
     match TextualSil.module_to_sil Rust transformed_textual decls with
@@ -110,7 +132,9 @@ let capture_file json_filename =
           (F.pp_print_list (Textual.pp_transform_error sourcefile))
           err
   in
+  let textual_model_tenv = load_textual_models [Config.lib_dir ^/ "rust" ^/ "models.sil"] in
   let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
+  Tenv.merge ~src:textual_model_tenv ~dst:sil.tenv ;
   TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
   Tenv.Global.store ~normalize:false sil.tenv
 
