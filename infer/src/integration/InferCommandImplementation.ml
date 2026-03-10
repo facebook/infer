@@ -45,18 +45,34 @@ let debug () =
             Summary.OnDisk.get ~lazy_payloads:false AnalysisRequest.all proc_name
             |> Option.map ~f:Summary.yojson_of_t
           in
-          let f_json channel proc_names =
+          let output_summaries_json channel proc_names =
             Yojson.Safe.to_channel channel (`List (List.filter_map ~f:json_of_summary proc_names)) ;
-            Out_channel.newline stdout ;
-            Out_channel.flush stdout
+            Out_channel.newline channel ;
+            Out_channel.flush channel
           in
           let output_all_summaries proc_names =
             let filename = Filename.concat Config.results_dir "all_summaries.json" in
-            Utils.with_file_out filename ~f:(fun channel -> f_json channel proc_names)
+            Utils.with_file_out filename ~f:(fun channel ->
+                output_summaries_json channel proc_names )
           in
           let output_specialized_call_graph proc_names =
+            let nodes_of proc_name =
+              let open IOption.Let_syntax in
+              let* (summary : Summary.t) =
+                Summary.OnDisk.get ~lazy_payloads:false AnalysisRequest.all proc_name
+              in
+              let+ pulse_summary = SafeLazy.force_option summary.payloads.pulse in
+              PulseSpecializedCallGraph.nodes_of proc_name pulse_summary
+            in
+            let nodes =
+              List.concat_map proc_names ~f:(fun proc_name ->
+                  nodes_of proc_name |> Option.value ~default:[] )
+            in
             let filename = Filename.concat Config.results_dir "specialized_call_graph.json" in
-            Utils.with_file_out filename ~f:(fun channel -> f_json channel proc_names)
+            Utils.with_file_out filename ~f:(fun channel ->
+                Out_channel.output_string channel (PulseSpecializedCallGraph.to_json nodes) ;
+                Out_channel.newline channel ;
+                Out_channel.flush channel )
           in
           if Config.dump_json_summaries then Procedures.get_all ~filter () |> output_all_summaries
           else if Config.dump_json_specialized_call_graph then
@@ -64,7 +80,9 @@ let debug () =
           else
             Option.iter
               (Procedures.select_proc_names_interactive ~filter)
-              ~f:(if Config.procedures_summary_json then f_json stdout else f_console_output)
+              ~f:
+                ( if Config.procedures_summary_json then output_summaries_json stdout
+                  else f_console_output )
         else if Config.procedures_call_graph then
           let files_to_graph =
             match SourceFile.read_config_files_to_analyze () with

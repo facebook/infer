@@ -130,3 +130,17 @@
  (deps report_block_list_spec.atd)
  (action
   (run atdgen -t %{deps})))
+
+; ATD for specialized_call_graph
+
+(rule
+ (targets specialized_call_graph_j.ml specialized_call_graph_j.mli)
+ (deps specialized_call_graph.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets specialized_call_graph_t.ml specialized_call_graph_t.mli)
+ (deps specialized_call_graph.atd)
+ (action
+  (run atdgen -t %{deps})))

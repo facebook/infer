@@ -9,51 +9,48 @@ import json
 import sys
 
 
-def get_proc_name(proc):
-    """Extract a human-readable name from a proc_name structure."""
-    kind = proc[0]
-    if kind == "C":
-        return "::".join(proc[1]["c_name"])
-    raise ValueError(f"Unexpected proc_name kind: {kind!r}, expected 'C'")
+def format_heap_path(hp):
+    """Format a heap path from ATD-generated JSON.
 
+    ATD variants are encoded as ["Tag", payload]:
+      ["Pvar", "x"]
+      ["FieldAccess", {"field": {"class_name": "...", "field_name": "f"}, "base": <hp>}]
+      ["Dereference", <hp>]
 
-def format_access(access):
-    """Format an access kind, using * for Dereference."""
-    if access == "Dereference":
-        return "*"
-    return access
-
-
-def format_heap_path(path_elem):
-    """Format a heap path element, simplifying *(&x) to just x and FieldAccess with Dereference to ->."""
-    access = path_elem[0]
-    inner = path_elem[1]
-    if inner[0] == "Pvar":
-        var = inner[1]["plain"]
-        if access == "Dereference":
-            return var
-        return f"{format_access(access)}(&{var})"
-    if inner[0] == "FieldAccess":
-        field_name = inner[1][0]["field_name"]
-        sub_elem = inner[1][1]
-        if sub_elem[0] == "Dereference":
-            deref_inner = format_heap_path(sub_elem)
-            return f"{format_access(access)}({deref_inner}->{field_name})"
-        sub_path = format_heap_path(sub_elem)
-        return f"{format_access(access)}(FieldAccess({field_name},{sub_path}))"
-    return f"{format_access(access)}({inner})"
+    We produce a compact C-like notation:
+      Pvar(x)                           -> x
+      Dereference(Pvar(x))              -> x
+      FieldAccess(f, Dereference(Pvar(x))) -> x->f
+      Dereference(FieldAccess(f, Dereference(Pvar(x)))) -> *(x->f)
+    """
+    tag = hp[0]
+    payload = hp[1]
+    if tag == "Pvar":
+        return payload
+    if tag == "Dereference":
+        inner_tag = payload[0]
+        if inner_tag == "Pvar":
+            # Dereference(Pvar(x)) -> just "x"
+            return payload[1]
+        if inner_tag == "FieldAccess":
+            # Dereference(FieldAccess(f, base))
+            field_name = payload[1]["field"]["field_name"]
+            base = payload[1]["base"]
+            base_str = format_heap_path(base)
+            return f"*({base_str}->{field_name})"
+        inner_str = format_heap_path(payload)
+        return f"*({inner_str})"
+    if tag == "FieldAccess":
+        field_name = payload["field"]["field_name"]
+        base_str = format_heap_path(payload["base"])
+        return f"{base_str}->{field_name}"
+    return str(hp)
 
 
 def format_dynamic_type(dt):
     """Format a dynamic type entry like Dereference(f):add."""
-    heap_path, typ = dt
-    path_str = format_heap_path(heap_path)
-    kind = typ[0]
-    if kind == "CFunction":
-        type_str = "::".join(typ[1]["c_name"])
-    else:
-        type_str = str(typ[1])
-    return f"{path_str}:{type_str}"
+    path_str = format_heap_path(dt["path"])
+    return f"{path_str}:{dt['typ']}"
 
 
 def format_specialization(spec):
@@ -73,14 +70,12 @@ def format_specialization(spec):
 def extract_edges(caller, non_disj, edges):
     """Extract call-graph edges from a non_disj list."""
     for callee_record in non_disj:
-        if isinstance(callee_record, str):
-            continue
-        callee = get_proc_name(callee_record["proc_name"])
-        loc = callee_record["loc"]
-        file = loc["file"][1] if isinstance(loc["file"], list) else loc["file"]
+        callee = callee_record["callee_name"]
+        loc = callee_record["call_location"]
+        file = loc["file"]
         line = loc["line"]
         col = loc["col"]
-        spec = callee_record.get("specialization", {})
+        spec = callee_record.get("callee_specialization", {})
         spec_str = format_specialization(spec)
         edges.append((file, line, col, f"{file}:{line}:{col} {caller} ===> {callee}{spec_str}"))
 
@@ -91,18 +86,11 @@ def main():
         data = json.load(f)
 
     edges = []
-    for entry in data:
-        caller_proc, summaries = entry
-        caller = get_proc_name(caller_proc)
-
-        for checker_name, summary in summaries:
-            if checker_name != "pulse":
-                continue
-            extract_edges(caller, summary["main"].get("non_disj", []), edges)
-            for specialized_entry in summary.get("specialized", []):
-                specialization, specialized_summary = specialized_entry
-                specialized_caller = caller + format_specialization(specialization)
-                extract_edges(specialized_caller, specialized_summary.get("non_disj", []), edges)
+    for node in data:
+        caller = node["caller_name"]
+        caller_spec = node.get("caller_specialization", {})
+        effective_caller = caller + format_specialization(caller_spec)
+        extract_edges(effective_caller, node.get("callees", []), edges)
 
     edges.sort(key=lambda e: (e[0], e[1], e[2]))
     for _, _, _, edge in edges:

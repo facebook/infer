@@ -13,6 +13,75 @@ module Node = SpecializedProcname
 module NodeMap = SpecializedProcname.Map
 module NodeSet = SpecializedProcname.Set
 
+let heap_path_of (hp : Specialization.HeapPath.t) =
+  let rec aux = function
+    | Specialization.HeapPath.Pvar pvar ->
+        `Pvar (Mangled.to_string (Pvar.get_name pvar))
+    | Specialization.HeapPath.FieldAccess (fieldname, base) ->
+        `FieldAccess
+          { Specialized_call_graph_t.field=
+              { class_name= Typ.Name.name (Fieldname.get_class_name fieldname)
+              ; field_name= Fieldname.get_field_name fieldname }
+          ; base= aux base }
+    | Specialization.HeapPath.Dereference base ->
+        `Dereference (aux base)
+  in
+  aux hp
+
+
+let specialization_of (spec : Specialization.Pulse.t) =
+  let aliases =
+    Option.map spec.aliases ~f:(fun alias_groups ->
+        List.map alias_groups ~f:(List.map ~f:heap_path_of) )
+  in
+  let dynamic_types =
+    Specialization.HeapPath.Map.fold
+      (fun path typ acc ->
+        {Specialized_call_graph_t.path= heap_path_of path; typ= Typ.Name.name typ} :: acc )
+      spec.dynamic_types []
+  in
+  {Specialized_call_graph_t.aliases; dynamic_types}
+
+
+let loc_of (loc : Location.t) =
+  { Specialized_call_graph_t.file= SourceFile.to_string ~force_relative:true loc.file
+  ; line= loc.line
+  ; col= loc.col }
+
+
+let direct_callees_of (non_disj : NonDisjDomain.Summary.t) =
+  match NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj with
+  | None ->
+      []
+  | Some transitive_info ->
+      TransitiveInfo.DirectCallee.Set.fold
+        (fun (dc : TransitiveInfo.DirectCallee.t) acc ->
+          { Specialized_call_graph_t.callee_name= Procname.to_string dc.proc_name
+          ; callee_specialization= specialization_of dc.specialization
+          ; call_location= loc_of dc.loc }
+          :: acc )
+        transitive_info.direct_callees []
+
+
+let node_of caller_name spec (s : PulseSummary.summary) =
+  { Specialized_call_graph_t.caller_name
+  ; caller_specialization= specialization_of spec
+  ; callees= direct_callees_of s.non_disj }
+
+
+let nodes_of proc_name (pulse_summary : PulseSummary.t) =
+  let caller_name = Procname.to_string proc_name in
+  let main = node_of caller_name Specialization.Pulse.bottom pulse_summary.main in
+  let specialized =
+    Specialization.Pulse.Map.fold
+      (fun spec s acc -> node_of caller_name spec s :: acc)
+      pulse_summary.specialized []
+  in
+  main :: specialized
+
+
+let to_json entries = Specialized_call_graph_j.string_of_call_graph entries
+
 let get_missed_captures ~get_summary entry_nodes =
   let from_execution (exec_state : ExecutionDomain.summary) =
     match exec_state with
