@@ -56,21 +56,20 @@ let debug () =
                 output_summaries_json channel proc_names )
           in
           let output_specialized_call_graph proc_names =
-            let nodes_of proc_name =
-              let open IOption.Let_syntax in
-              let* (summary : Summary.t) =
-                Summary.OnDisk.get ~lazy_payloads:false AnalysisRequest.all proc_name
-              in
-              let+ pulse_summary = SafeLazy.force_option summary.payloads.pulse in
-              PulseSpecializedCallGraph.nodes_of proc_name pulse_summary
-            in
-            let nodes =
-              List.concat_map proc_names ~f:(fun proc_name ->
-                  nodes_of proc_name |> Option.value ~default:[] )
+            let builder = PulseSpecializedCallGraph.JsonBuilder.make () in
+            let builder =
+              List.fold proc_names ~init:builder ~f:(fun builder proc_name ->
+                  PulseSpecializedCallGraph.JsonBuilder.add builder proc_name
+                    (let open IOption.Let_syntax in
+                     let* (summary : Summary.t) =
+                       Summary.OnDisk.get ~lazy_payloads:false AnalysisRequest.all proc_name
+                     in
+                     SafeLazy.force_option summary.payloads.pulse ) )
             in
             let filename = Filename.concat Config.results_dir "specialized_call_graph.json" in
             Utils.with_file_out filename ~f:(fun channel ->
-                Out_channel.output_string channel (PulseSpecializedCallGraph.to_json nodes) ;
+                Out_channel.output_string channel
+                  (PulseSpecializedCallGraph.JsonBuilder.finalize builder) ;
                 Out_channel.newline channel ;
                 Out_channel.flush channel )
           in

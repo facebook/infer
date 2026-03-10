@@ -69,18 +69,28 @@ let node_of caller_name spec (s : PulseSummary.summary) =
   ; callees= direct_callees_of s.non_disj }
 
 
-let nodes_of proc_name (pulse_summary : PulseSummary.t) =
+let build_and_append_nodes acc proc_name (pulse_summary : PulseSummary.t) =
   let caller_name = Procname.to_string proc_name in
   let main = node_of caller_name Specialization.Pulse.bottom pulse_summary.main in
   let specialized =
     Specialization.Pulse.Map.fold
       (fun spec s acc -> node_of caller_name spec s :: acc)
-      pulse_summary.specialized []
+      pulse_summary.specialized acc
   in
   main :: specialized
 
 
-let to_json entries = Specialized_call_graph_j.string_of_call_graph entries
+module JsonBuilder = struct
+  type t = Specialized_call_graph_t.node list
+
+  let make () = []
+
+  let add nodes proc_name pulse_summary =
+    Option.value_map pulse_summary ~default:nodes ~f:(build_and_append_nodes nodes proc_name)
+
+
+  let finalize nodes = Specialized_call_graph_j.string_of_call_graph nodes
+end
 
 let get_missed_captures ~get_summary entry_nodes =
   let from_execution (exec_state : ExecutionDomain.summary) =

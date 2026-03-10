@@ -7,12 +7,17 @@
 
 open! IStd
 
-val nodes_of : Procname.t -> PulseSummary.t -> Specialized_call_graph_t.node list
-(** builds call graph nodes for the given procedure from its Pulse summary, one per specialization
-*)
+module JsonBuilder : sig
+  type t
 
-val to_json : Specialized_call_graph_t.call_graph -> string
-(** serializes a call graph as a JSON string *)
+  val make : unit -> t
+  (** initialize builder *)
+
+  val add : t -> Procname.t -> PulseSummary.t option -> t
+
+  val finalize : t -> string
+  (** serializes a call graph as a JSON string *)
+end
 
 val get_missed_captures :
      get_summary:(Procname.t -> PulseSummary.t option)
