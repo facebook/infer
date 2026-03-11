@@ -161,6 +161,10 @@ let size_of = function
       8
 
 
+let is_class_bound_tuple typ =
+  match typ with Tuple {elts} -> Int.equal (IArray.length elts) 2 | _ -> false
+
+
 let offset_length_of_elt typ idx =
   match typ with
   | Array {elt} ->

@@ -528,6 +528,47 @@ let to_textual_not_exp op exp1 exp2 =
       None
 
 
+let extract_struct_name_opt module_state llair_typ =
+  let ModuleState.{lang; mangled_map; struct_map; _} = module_state in
+  match llair_typ with
+  | Llair.Typ.Struct {name} ->
+      Some
+        (TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name)
+  | Llair.Typ.Tuple _ -> (
+    match Type.to_textual_typ lang ~mangled_map ~struct_map llair_typ with
+    | Textual.Typ.(Ptr (Struct name, _)) ->
+        Some name
+    | _ ->
+        None )
+  | _ ->
+      None
+
+
+let resolve_real_type proc_state llair_exp llair_typ original_typ_name =
+  let inferred_llair_typ =
+    match llair_exp with
+    | Llair.Exp.Reg {id; _} ->
+        Hashtbl.find proc_state.ProcState.inferred_types id
+    | _ ->
+        None
+  in
+  match inferred_llair_typ with
+  | Some (Textual.Typ.Ptr (Struct name, _)) when Llair.Typ.is_class_bound_tuple llair_typ ->
+      (name, true)
+  | _ ->
+      (original_typ_name, false)
+
+
+let inject_load_type field_instrs typ_name =
+  let expected_typ = Textual.Typ.mk_ptr (Struct typ_name) in
+  List.map field_instrs ~f:(fun instr ->
+      match instr with
+      | Textual.Instr.Load {id; exp= load_exp; typ= _; loc= load_loc} ->
+          Textual.Instr.Load {id; exp= load_exp; typ= Some expected_typ; loc= load_loc}
+      | _ ->
+          instr )
+
+
 let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : Llair.Exp.t) :
     Textual.Exp.t * Textual.Typ.t option * Textual.Instr.t list =
   let ModuleState.{struct_map; mangled_map; lang; _} = proc_state.module_state in
@@ -637,49 +678,29 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       let textual_typ = Option.value typ_opt ~default:textual_typ in
       (textual_exp, Some textual_typ, [])
-  | Ap1 (Select offset, typ, llair_exp) -> (
-      let typ_name =
-        match typ with
-        | Struct {name} ->
-            Some
-              (TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
-                 name )
-        | Tuple _ -> (
-          match Type.to_textual_typ lang ~mangled_map ~struct_map typ with
-          | Textual.Typ.(Ptr (Struct name, _)) ->
-              Some name
-          | _ ->
-              None )
-        | _ ->
-            None
-      in
-      match typ_name with
-      | None ->
-          undef_exp ~sourcefile:proc_state.sourcefile ~loc ~proc:proc_state.qualified_name exp
-      | Some typ_name ->
-          let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state llair_exp in
-          let typ_name, n =
-            translate_optional_protocol_witness ~proc_state exp exp_typ typ_name offset
-          in
-          let field =
-            if Llair.Typ.is_tuple typ && Int.equal n offset then Field.tuple_field_of_pos typ_name n
-            else Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name n
-          in
-          let field_instrs, exp = add_deref ~proc_state exp loc in
-          (* Inject the expected type into the Load instruction *)
-          let expected_typ = Textual.Typ.mk_ptr (Struct typ_name) in
-          let field_instrs =
-            List.map field_instrs ~f:(fun instr ->
-                match instr with
-                | Textual.Instr.Load {id; exp= load_exp; typ= _; loc= load_loc} ->
-                    Textual.Instr.Load {id; exp= load_exp; typ= Some expected_typ; loc= load_loc}
-                | _ ->
-                    instr )
-          in
-          let instrs = field_instrs @ exp_instrs in
-          let exp = Textual.Exp.Field {exp; field} in
-          let typ = Type.lookup_field_type ~struct_map typ_name field in
-          (exp, typ, instrs) )
+  | Ap1 (Select offset, llair_typ, llair_exp) -> (
+    match extract_struct_name_opt proc_state.module_state llair_typ with
+    | None ->
+        undef_exp ~sourcefile:proc_state.sourcefile ~loc ~proc:proc_state.qualified_name exp
+    | Some original_typ_name ->
+        let exp, exp_typ, exp_instrs = to_textual_exp loc ~proc_state llair_exp in
+        let typ_name, has_real_type =
+          resolve_real_type proc_state llair_exp llair_typ original_typ_name
+        in
+        let typ_name, n =
+          translate_optional_protocol_witness ~proc_state exp exp_typ typ_name offset
+        in
+        let field =
+          if Llair.Typ.is_tuple llair_typ && Int.equal n offset && not has_real_type then
+            Field.tuple_field_of_pos typ_name n
+          else Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name n
+        in
+        let field_instrs, exp = add_deref ~proc_state exp loc in
+        let field_instrs = inject_load_type field_instrs typ_name in
+        let instrs = field_instrs @ exp_instrs in
+        let exp = Textual.Exp.Field {exp; field} in
+        let typ = Type.lookup_field_type ~struct_map typ_name field in
+        (exp, typ, instrs) )
   | Ap1 (GetElementPtr (Static n), _typ, _exp) ->
       let n_arg = Llair.Exp.integer (Llair.Typ.integer ~bits:32 ~byts:4) (Z.of_int n) in
       let exp, _, instrs = to_textual_exp loc ~proc_state n_arg in

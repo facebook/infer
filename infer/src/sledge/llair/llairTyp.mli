@@ -78,6 +78,8 @@ val size_of : t -> int
 (** The number of bytes between adjacent values of the given type, including alignment padding.
     Raises unless is_sized holds. *)
 
+val is_class_bound_tuple : t -> bool
+
 val offset_length_of_elt : t -> int -> int * int
 (** The offset in bytes to, and number of bytes occupied by, the given element of an aggretage type.
     Raises if type is not an aggregate or index is invalid. *)
