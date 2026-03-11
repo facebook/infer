@@ -1,6 +1,6 @@
 (* Auto-generated JSON schema for specialized call graph export. *)
 
-type loc = {
+type location = {
   file: string;
   line: int;
   col: int;
@@ -9,7 +9,7 @@ type loc = {
 type callee = {
   callee_name: string;
   callee_context: int;
-  call_location: loc;
+  call_location: location;
 }
 
 type caller = {

@@ -14,17 +14,25 @@ module Node = SpecializedProcname
 module NodeMap = SpecializedProcname.Map
 module NodeSet = SpecializedProcname.Set
 
-let loc_of (loc : Location.t) =
-  { Specialized_call_graph_t.file= SourceFile.to_string ~force_relative:true loc.file
-  ; line= loc.line
-  ; col= loc.col }
+type location = Specialized_call_graph_t.location = {file: string; line: int; col: int}
 
+type name = string
+
+type callee = Specialized_call_graph_t.callee =
+  {callee_name: name; callee_context: int; call_location: location}
+
+type caller = Specialized_call_graph_t.caller = {caller_name: name; caller_context: int}
+
+type node = Specialized_call_graph_t.node = {caller: caller; callees: callee list}
+
+type specialization = string
+
+type call_graph = Specialized_call_graph_t.call_graph =
+  {nodes: node list; contexts: specialization list}
 
 module JsonBuilder = struct
   type t =
-    { nodes: Specialized_call_graph_t.node list
-    ; hashtbl: (Specialization.Pulse.t, int) Stdlib.Hashtbl.t
-    ; mutable fresh: int }
+    {nodes: node list; hashtbl: (Specialization.Pulse.t, int) Stdlib.Hashtbl.t; mutable fresh: int}
 
   let get_specialization_index builder specialization =
     match Stdlib.Hashtbl.find_opt builder.hashtbl specialization with
@@ -39,6 +47,10 @@ module JsonBuilder = struct
 
   let make () = {nodes= []; hashtbl= Stdlib.Hashtbl.create 17; fresh= 0}
 
+  let location_of (loc : Location.t) =
+    {file= SourceFile.to_string ~force_relative:true loc.file; line= loc.line; col= loc.col}
+
+
   let direct_callees_of builder (non_disj : NonDisjDomain.Summary.t) =
     match NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj with
     | None ->
@@ -46,18 +58,16 @@ module JsonBuilder = struct
     | Some transitive_info ->
         TransitiveInfo.DirectCallee.Set.fold
           (fun (dc : TransitiveInfo.DirectCallee.t) acc ->
-            { Specialized_call_graph_t.callee_name= Procname.to_string dc.proc_name
+            { callee_name= Procname.to_string dc.proc_name
             ; callee_context= get_specialization_index builder dc.specialization
-            ; call_location= loc_of dc.loc }
+            ; call_location= location_of dc.loc }
             :: acc )
           transitive_info.direct_callees []
 
 
   let node_of builder caller_name specialization (summary : PulseSummary.summary) =
-    let caller : Specialized_call_graph_t.caller =
-      {caller_name; caller_context= get_specialization_index builder specialization}
-    in
-    {Specialized_call_graph_t.caller; callees= direct_callees_of builder summary.non_disj}
+    let caller = {caller_name; caller_context= get_specialization_index builder specialization} in
+    {caller; callees= direct_callees_of builder summary.non_disj}
 
 
   let add_summary builder proc_name (pulse_summary : PulseSummary.t) =
@@ -87,10 +97,10 @@ module JsonBuilder = struct
     List.of_array contexts |> List.map ~f:string_of_specialization
 
 
-  let finalize {nodes; hashtbl} =
-    let call_graph : Specialized_call_graph_t.call_graph = {nodes; contexts= contexts_of hashtbl} in
-    Specialized_call_graph_j.string_of_call_graph call_graph
+  let finalize {nodes; hashtbl} = {nodes; contexts= contexts_of hashtbl}
 end
+
+let to_json call_graph = Specialized_call_graph_j.string_of_call_graph call_graph
 
 let get_missed_captures ~get_summary entry_nodes =
   let from_execution (exec_state : ExecutionDomain.summary) =

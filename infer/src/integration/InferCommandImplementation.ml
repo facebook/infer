@@ -68,8 +68,8 @@ let debug () =
             in
             let filename = Filename.concat Config.results_dir "specialized_call_graph.json" in
             Utils.with_file_out filename ~f:(fun channel ->
-                Out_channel.output_string channel
-                  (PulseSpecializedCallGraph.JsonBuilder.finalize builder) ;
+                PulseSpecializedCallGraph.JsonBuilder.finalize builder
+                |> PulseSpecializedCallGraph.to_json |> Out_channel.output_string channel ;
                 Out_channel.newline channel ;
                 Out_channel.flush channel )
           in
