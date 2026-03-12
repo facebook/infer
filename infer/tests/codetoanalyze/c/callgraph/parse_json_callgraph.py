@@ -9,34 +9,31 @@ import json
 import sys
 
 
-def extract_edges(contexts, caller, callees, edges):
-    """Extract call-graph edges from a callees list."""
-    for callee_record in callees:
-        callee = callee_record["callee_name"]
-        loc = callee_record["call_location"]
-        file = loc["file"]
-        line = loc["line"]
-        col = loc["col"]
-        spec_str = contexts[int(callee_record.get("callee_context", 0))]
-        edges.append((file, line, col, f"{file}:{line}:{col} {caller} ===> {callee}{spec_str}"))
-
-
 def main():
     path = sys.argv[1] if len(sys.argv) > 1 else "infer-out/specialized_call_graph.json"
     with open(path) as f:
         data = json.load(f)
 
-    nodes = data["nodes"]
-    contexts = data["contexts"]
-    edges = []
-    for node in nodes:
-        caller = node["caller"]
-        caller_spec_str = contexts[int(caller["caller_context"])]
-        effective_caller = caller["caller_name"] + caller_spec_str
-        extract_edges(contexts, effective_caller, node.get("callees", []), edges)
+    try:
+        edges, contexts = data["edges"], data["contexts"]
+        lines = []
+        for edge in edges:
+            caller = edge["caller"]
+            caller_spec = contexts[caller["context"]]
+            caller_str = caller["name"] + caller_spec
+            for callee_record in edge["callees"]:
+                callee = edges[callee_record["callee"]]["caller"]
+                callee_spec = contexts[callee["context"]]
+                callee_str = callee["name"] + callee_spec
+                loc = callee_record["call_location"]
+                file, line, col = loc["file"], loc["line"], loc["col"]
+                lines.append((file, line, col, f"{file}:{line}:{col} {caller_str} ===> {callee_str}"))
+    except (KeyError, IndexError) as e:
+        print(f"Error: malformed call graph in {path}: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    edges.sort(key=lambda e: (e[0], e[1], e[2]))
-    for _, _, _, edge in edges:
+    lines.sort(key=lambda e: (e[0], e[1], e[2], e[3]))
+    for _, _, _, edge in lines:
         print(edge)
 
 

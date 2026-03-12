@@ -16,36 +16,57 @@ module NodeSet = SpecializedProcname.Set
 
 type location = Specialized_call_graph_t.location = {file: string; line: int; col: int}
 
+type callee = Specialized_call_graph_t.callee = {call_location: location; callee: int}
+
 type name = string
 
-type callee = Specialized_call_graph_t.callee =
-  {callee_name: name; callee_context: int; call_location: location}
-
-type caller = Specialized_call_graph_t.caller = {caller_name: name; caller_context: int}
-
-type node = Specialized_call_graph_t.node = {caller: caller; callees: callee list}
+type node = Specialized_call_graph_t.node = {name: string; context: int}
 
 type specialization = string
 
+type edge = Specialized_call_graph_t.edge = {caller: node; callees: callee list}
+
 type call_graph = Specialized_call_graph_t.call_graph =
-  {nodes: node list; contexts: specialization list}
+  {edges: edge list; contexts: specialization list}
 
 module JsonBuilder = struct
   type t =
-    {nodes: node list; hashtbl: (Specialization.Pulse.t, int) Stdlib.Hashtbl.t; mutable fresh: int}
+    { caller_callees: (int * callee list) list
+    ; node_tbl: (Procname.t * int, int) Stdlib.Hashtbl.t
+    ; mutable next_node: int
+    ; context_tbl: (Specialization.Pulse.t, int) Stdlib.Hashtbl.t
+    ; mutable next_context: int }
 
-  let get_specialization_index builder specialization =
-    match Stdlib.Hashtbl.find_opt builder.hashtbl specialization with
+  let get_context_index builder specialization =
+    match Stdlib.Hashtbl.find_opt builder.context_tbl specialization with
     | Some index ->
         index
     | None ->
-        let index = builder.fresh in
-        Stdlib.Hashtbl.add builder.hashtbl specialization index ;
-        builder.fresh <- index + 1 ;
+        let index = builder.next_context in
+        Stdlib.Hashtbl.add builder.context_tbl specialization index ;
+        builder.next_context <- index + 1 ;
         index
 
 
-  let make () = {nodes= []; hashtbl= Stdlib.Hashtbl.create 17; fresh= 0}
+  let get_node_index builder name context =
+    let key = (name, context) in
+    match Stdlib.Hashtbl.find_opt builder.node_tbl key with
+    | Some index ->
+        index
+    | None ->
+        let index = builder.next_node in
+        Stdlib.Hashtbl.add builder.node_tbl key index ;
+        builder.next_node <- index + 1 ;
+        index
+
+
+  let make () =
+    { caller_callees= []
+    ; node_tbl= Stdlib.Hashtbl.create 17
+    ; next_node= 0
+    ; context_tbl= Stdlib.Hashtbl.create 17
+    ; next_context= 0 }
+
 
   let location_of (loc : Location.t) =
     {file= SourceFile.to_string ~force_relative:true loc.file; line= loc.line; col= loc.col}
@@ -58,27 +79,27 @@ module JsonBuilder = struct
     | Some transitive_info ->
         TransitiveInfo.DirectCallee.Set.fold
           (fun (dc : TransitiveInfo.DirectCallee.t) acc ->
-            { callee_name= Procname.to_string dc.proc_name
-            ; callee_context= get_specialization_index builder dc.specialization
-            ; call_location= location_of dc.loc }
-            :: acc )
+            let callee_context = get_context_index builder dc.specialization in
+            let callee = get_node_index builder dc.proc_name callee_context in
+            {call_location= location_of dc.loc; callee} :: acc )
           transitive_info.direct_callees []
 
 
-  let node_of builder caller_name specialization (summary : PulseSummary.summary) =
-    let caller = {caller_name; caller_context= get_specialization_index builder specialization} in
-    {caller; callees= direct_callees_of builder summary.non_disj}
+  let callees_of_caller builder caller_name specialization (summary : PulseSummary.summary) =
+    let context = get_context_index builder specialization in
+    let caller_index = get_node_index builder caller_name context in
+    let callees = direct_callees_of builder summary.non_disj in
+    (caller_index, callees)
 
 
   let add_summary builder proc_name (pulse_summary : PulseSummary.t) =
-    let caller_name = Procname.to_string proc_name in
-    let main = node_of builder caller_name Specialization.Pulse.bottom pulse_summary.main in
-    let specialized =
+    let main = callees_of_caller builder proc_name Specialization.Pulse.bottom pulse_summary.main in
+    let caller_callees =
       Specialization.Pulse.Map.fold
-        (fun spec s acc -> node_of builder caller_name spec s :: acc)
-        pulse_summary.specialized builder.nodes
+        (fun spec s acc -> callees_of_caller builder proc_name spec s :: acc)
+        pulse_summary.specialized builder.caller_callees
     in
-    {builder with nodes= main :: specialized}
+    {builder with caller_callees= main :: caller_callees}
 
 
   let add builder proc_name pulse_summary =
@@ -90,14 +111,26 @@ module JsonBuilder = struct
     else F.asprintf " [%a]" Specialization.Pulse.pp specialization
 
 
-  let contexts_of hashtbl =
-    let len = Stdlib.Hashtbl.length hashtbl in
-    let contexts = Array.create ~len Specialization.Pulse.bottom in
-    Stdlib.Hashtbl.iter (fun specialization index -> contexts.(index) <- specialization) hashtbl ;
-    List.of_array contexts |> List.map ~f:string_of_specialization
-
-
-  let finalize {nodes; hashtbl} = {nodes; contexts= contexts_of hashtbl}
+  let finalize builder =
+    let nodes_arr = Array.create ~len:builder.next_node ("", 0) in
+    Stdlib.Hashtbl.iter
+      (fun (proc_name, context) index ->
+        nodes_arr.(index) <- (Procname.to_string proc_name, context) )
+      builder.node_tbl ;
+    let callees_per_node = Array.create ~len:builder.next_node [] in
+    List.iter builder.caller_callees ~f:(fun (caller_index, callees) ->
+        callees_per_node.(caller_index) <- callees @ callees_per_node.(caller_index) ) ;
+    let edges =
+      Array.to_list
+        (Array.mapi nodes_arr ~f:(fun i (name, context) ->
+             {caller= {name; context}; callees= callees_per_node.(i)} ) )
+    in
+    let contexts_arr = Array.create ~len:builder.next_context Specialization.Pulse.bottom in
+    Stdlib.Hashtbl.iter
+      (fun specialization index -> contexts_arr.(index) <- specialization)
+      builder.context_tbl ;
+    let contexts = List.of_array contexts_arr |> List.map ~f:string_of_specialization in
+    {edges; contexts}
 end
 
 let to_json call_graph = Specialized_call_graph_j.string_of_call_graph call_graph

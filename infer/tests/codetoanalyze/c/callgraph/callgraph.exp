@@ -2,16 +2,16 @@ alias.c:15:13 call_if_aliased ===> set_both [alias: p -> *  = q -> *  ]
 alias.c:19:3 always_call ===> set_both
 alias.c:19:3 always_call [alias: p -> *  = q -> *  ] ===> set_both [alias: p -> *  = q -> *  ]
 alias.c:23:3 call_depending_on_alias ===> call_if_aliased
-alias.c:24:3 call_depending_on_alias ===> always_call [alias: p -> *  = q -> *  ]
 alias.c:24:3 call_depending_on_alias ===> always_call
+alias.c:24:3 call_depending_on_alias ===> always_call [alias: p -> *  = q -> *  ]
 alias.c:29:3 test_aliased ===> call_depending_on_alias
 alias.c:35:3 test_not_aliased ===> call_depending_on_alias
 alias_box.c:19:25 box_call_if_aliased ===> box_set_both [alias: p -> *  -> val  -> *  = q -> *  -> val  -> *  ]
 alias_box.c:23:3 box_always_call ===> box_set_both
 alias_box.c:23:3 box_always_call [alias: p -> *  -> val  -> *  = q -> *  -> val  -> *  ] ===> box_set_both [alias: p -> *  -> val  -> *  = q -> *  -> val  -> *  ]
 alias_box.c:27:3 box_call_depending_on_alias ===> box_call_if_aliased
-alias_box.c:28:3 box_call_depending_on_alias ===> box_always_call [alias: p -> *  -> val  -> *  = q -> *  -> val  -> *  ]
 alias_box.c:28:3 box_call_depending_on_alias ===> box_always_call
+alias_box.c:28:3 box_call_depending_on_alias ===> box_always_call [alias: p -> *  -> val  -> *  = q -> *  -> val  -> *  ]
 alias_box.c:35:3 box_test_aliased ===> box_call_depending_on_alias
 alias_box.c:43:3 box_test_not_aliased ===> box_call_depending_on_alias
 basic.c:6:10 f ===> g
@@ -24,30 +24,30 @@ basic.c:11:32 g ===> g
 basic.c:16:10 h ===> f
 basic.c:16:21 h ===> g
 basic.c:16:32 h ===> h
-fun_ptr.c:7:40 invoke0 [dynamic_types: {g -> * : function mul;}] ===> mul
 fun_ptr.c:7:40 invoke0 [dynamic_types: {g -> * : function add;}] ===> add
-fun_ptr.c:9:40 invoke1 [dynamic_types: {g -> * : function mul;}] ===> mul
+fun_ptr.c:7:40 invoke0 [dynamic_types: {g -> * : function mul;}] ===> mul
 fun_ptr.c:9:40 invoke1 [dynamic_types: {g -> * : function add;}] ===> add
-fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke1;g -> * : function mul;}] ===> invoke1 [dynamic_types: {g -> * : function mul;}]
-fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke1;g -> * : function add;}] ===> invoke1 [dynamic_types: {g -> * : function add;}]
-fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke1;}] ===> invoke1
-fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke0;g -> * : function mul;}] ===> invoke0 [dynamic_types: {g -> * : function mul;}]
+fun_ptr.c:9:40 invoke1 [dynamic_types: {g -> * : function mul;}] ===> mul
 fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke0;g -> * : function add;}] ===> invoke0 [dynamic_types: {g -> * : function add;}]
+fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke0;g -> * : function mul;}] ===> invoke0 [dynamic_types: {g -> * : function mul;}]
 fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke0;}] ===> invoke0
+fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke1;g -> * : function add;}] ===> invoke1 [dynamic_types: {g -> * : function add;}]
+fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke1;g -> * : function mul;}] ===> invoke1 [dynamic_types: {g -> * : function mul;}]
+fun_ptr.c:11:62 apply [dynamic_types: {f -> * : function invoke1;}] ===> invoke1
 fun_ptr.c:13:27 test_add_0 ===> apply [dynamic_types: {f -> * : function invoke0;g -> * : function add;}]
 fun_ptr.c:15:27 test_add_1 ===> apply [dynamic_types: {f -> * : function invoke1;g -> * : function add;}]
 fun_ptr.c:17:27 test_mul_0 ===> apply [dynamic_types: {f -> * : function invoke0;g -> * : function mul;}]
 fun_ptr.c:19:27 test_mul_1 ===> apply [dynamic_types: {f -> * : function invoke1;g -> * : function mul;}]
-fun_ptr_box.c:18:43 box2_invoke0 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}] ===> box2_mul
 fun_ptr_box.c:18:43 box2_invoke0 [dynamic_types: {g -> *  -> val  -> * : function box2_add;}] ===> box2_add
-fun_ptr_box.c:20:43 box2_invoke1 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}] ===> box2_mul
+fun_ptr_box.c:18:43 box2_invoke0 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}] ===> box2_mul
 fun_ptr_box.c:20:43 box2_invoke1 [dynamic_types: {g -> *  -> val  -> * : function box2_add;}] ===> box2_add
-fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke1;g -> *  -> val  -> * : function box2_mul;}] ===> box2_invoke1 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}]
-fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke1;g -> *  -> val  -> * : function box2_add;}] ===> box2_invoke1 [dynamic_types: {g -> *  -> val  -> * : function box2_add;}]
-fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke1;}] ===> box2_invoke1
-fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke0;g -> *  -> val  -> * : function box2_mul;}] ===> box2_invoke0 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}]
+fun_ptr_box.c:20:43 box2_invoke1 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}] ===> box2_mul
 fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke0;g -> *  -> val  -> * : function box2_add;}] ===> box2_invoke0 [dynamic_types: {g -> *  -> val  -> * : function box2_add;}]
+fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke0;g -> *  -> val  -> * : function box2_mul;}] ===> box2_invoke0 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}]
 fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke0;}] ===> box2_invoke0
+fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke1;g -> *  -> val  -> * : function box2_add;}] ===> box2_invoke1 [dynamic_types: {g -> *  -> val  -> * : function box2_add;}]
+fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke1;g -> *  -> val  -> * : function box2_mul;}] ===> box2_invoke1 [dynamic_types: {g -> *  -> val  -> * : function box2_mul;}]
+fun_ptr_box.c:22:64 box2_apply [dynamic_types: {f -> * : function box2_invoke1;}] ===> box2_invoke1
 fun_ptr_box.c:26:10 box2_test_add_0 ===> box2_apply [dynamic_types: {f -> * : function box2_invoke0;g -> *  -> val  -> * : function box2_add;}]
 fun_ptr_box.c:31:10 box2_test_add_1 ===> box2_apply [dynamic_types: {f -> * : function box2_invoke1;g -> *  -> val  -> * : function box2_add;}]
 fun_ptr_box.c:36:10 box2_test_mul_0 ===> box2_apply [dynamic_types: {f -> * : function box2_invoke0;g -> *  -> val  -> * : function box2_mul;}]

@@ -7,24 +7,21 @@ type location = {
 }
 
 type callee = {
-  callee_name: string;
-  callee_context: int;
   call_location: location;
-}
-
-type caller = {
-  caller_name: string;
-  caller_context: int;
+  callee: int (* index in [edges] *)
 }
 
 type node = {
-  caller: caller;
-  ~callees <ocaml default="[]">: callee list;
+  name: string;
+  context: int (* index in [contexts] *)
 }
 
-type specialization = string
-
+type edge = {
+  caller: node;
+  callees: callee list
+}
+  
 type call_graph = {
-  nodes: node list;
-  contexts: specialization list
+  edges: edge list;
+  contexts: string list
 }

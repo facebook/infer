@@ -9,22 +9,23 @@ open! IStd
 
 type location
 
+type callee = {call_location: location; callee: int}
+
 type name
 
-type callee = {callee_name: name; callee_context: int; call_location: location}
-
-type caller = {caller_name: name; caller_context: int}
-
-type node = {caller: caller; callees: callee list}
+type node = {name: name; context: int}
 
 type specialization = string
+
+type edge = {caller: node; callees: callee list}
 
 (** Readable version of the call graph explored by Pulse during analysis. The graph is
     context-sensitive because of specialization: the same procedure can be analyzed in different
     contexts and may not have the same callees depending on its context. The meaning of context [i]
     can be found in the [i]-th element of the [contexts] field. Context [0] is the default (no
-    specialization). *)
-type call_graph = {nodes: node list; contexts: specialization list}
+    specialization). Each element of [edges] pairs a caller node with its list of callees. The
+    [callee] field in each callee record is an index into [edges] identifying the callee target. *)
+type call_graph = {edges: edge list; contexts: specialization list}
 
 module JsonBuilder : sig
   type t
