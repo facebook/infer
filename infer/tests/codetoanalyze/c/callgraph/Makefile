@@ -32,9 +32,10 @@ callchains.exp.test: infer-out/specialized_call_graph.json parse_json_callgraph.
 .PHONY: test
 test: callgraph.exp.test callchains.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
-	$(call check_no_diff,$(TEST_REL_DIR)/callgraph.exp,$(TEST_REL_DIR)/callgraph.exp.test)
-	$(QUIET)cd $(TESTS_DIR) && \
-	$(call check_no_diff,$(TEST_REL_DIR)/callchains.exp,$(TEST_REL_DIR)/callchains.exp.test)
+	rc=0 ; \
+	$(call check_no_diff,$(TEST_REL_DIR)/callgraph.exp,$(TEST_REL_DIR)/callgraph.exp.test) || rc=1 ; \
+	$(call check_no_diff,$(TEST_REL_DIR)/callchains.exp,$(TEST_REL_DIR)/callchains.exp.test) || rc=1 ; \
+	exit $$rc
 
 .PHONY: replace
 replace: callgraph.exp.test callchains.exp.test
