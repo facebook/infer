@@ -4,12 +4,32 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 open! IStd
 open Llair
 module TypeName = Llair2TextualTypeName
 module Field = Llair2TextualField
 module ModuleState = Llair2TextualState.ModuleState
+module Type = Llair2TextualType
 
+(* Checks protocol suffix (P, _p, _pSg) and unwraps Optional protocols (_pSg -> P).
+   Returns a typed pointer if the name is a protocol, None otherwise. *)
+let resolve_protocol_typ_from_name lang mangled_map struct_map name =
+  let is_p = String.is_suffix name ~suffix:"P" || String.is_suffix name ~suffix:"_p" in
+  let is_opt = String.is_suffix name ~suffix:"_pSg" in
+  if is_p || is_opt then
+    let target_name =
+      if is_opt then String.substr_replace_all name ~pattern:"_pSg" ~with_:"P" else name
+    in
+    let textual_name =
+      TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+        target_name
+    in
+    Some (Textual.Typ.mk_ptr (Struct textual_name))
+  else None
+
+
+(* Solves the Read side: Extracts type from local LLVM casts and unwraps Optionals *)
 let extract_protocol_typ module_state (typ : Llair.Typ.t) =
   let ModuleState.{lang; mangled_map; struct_map; _} = module_state in
   let get_name (t : Llair.Typ.t) =
@@ -23,15 +43,56 @@ let extract_protocol_typ module_state (typ : Llair.Typ.t) =
         None
   in
   match get_name typ with
-  | Some name
-    when String.is_suffix name ~suffix:"P"
-         || String.is_suffix name ~suffix:"_p"
-         || String.is_suffix name ~suffix:"_pSg" ->
-      let textual_name =
+  | Some name ->
+      resolve_protocol_typ_from_name lang mangled_map struct_map name
+  | None ->
+      None
+
+
+(* Solves the Write side: Queries the global struct_map and unwraps Optionals *)
+let extract_field_protocol_typ module_state typ offset =
+  let ModuleState.{lang; mangled_map; struct_map; field_offset_map; _} = module_state in
+  let get_struct_name (t : Llair.Typ.t) =
+    match t with
+    | Llair.Typ.Struct {name; _}
+    | Opaque {name}
+    | Pointer {elt= Struct {name; _}; _}
+    | Pointer {elt= Opaque {name}; _} ->
+        Some name
+    | _ ->
+        None
+  in
+  match get_struct_name typ with
+  | Some name -> (
+    try
+      let struct_name =
         TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
       in
-      Some (Textual.Typ.mk_ptr (Struct textual_name))
-  | _ ->
+      let field = Field.field_of_pos_with_map field_offset_map struct_name offset in
+      match Type.lookup_field_type ~struct_map struct_name field with
+      | Some field_typ -> (
+          let rec get_typ_name t =
+            match t with
+            | Textual.Typ.Struct n ->
+                Some n
+            | Textual.Typ.Ptr (t', _) ->
+                get_typ_name t'
+            | _ ->
+                None
+          in
+          match get_typ_name field_typ with
+          | Some field_struct_name -> (
+            match Textual.TypeName.swift_mangled_name_of_type_name field_struct_name with
+            | Some name_str ->
+                resolve_protocol_typ_from_name lang mangled_map struct_map name_str
+            | None ->
+                None )
+          | None ->
+              None )
+      | None ->
+          None
+    with _ -> None )
+  | None ->
       None
 
 
@@ -88,12 +149,26 @@ let rec infer_from_exp wvd_types protocol_types module_state (exp : Llair.Exp.t)
       ()
 
 
+(* Hooks the global struct_map check into destination registers *)
+let infer_dest_reg_from_exp protocol_types module_state dest_reg exp =
+  match exp with
+  | Llair.Exp.Ap1 ((Select offset | GetElementPtr (Static offset)), typ, _) -> (
+    match extract_field_protocol_typ module_state typ offset with
+    | Some textual_typ ->
+        Hashtbl.set protocol_types ~key:(Llair.Reg.id dest_reg) ~data:textual_typ
+    | None ->
+        () )
+  | _ ->
+      ()
+
+
 let infer_from_inst wvd_types protocol_types load_map module_state (inst : Llair.inst) =
   let infer = infer_from_exp wvd_types protocol_types module_state in
   match inst with
   | Load {reg; ptr} ->
       Option.iter (string_of_ptr ptr) ~f:(fun ptr_key ->
           Hashtbl.set load_map ~key:(Reg.id reg) ~data:ptr_key ) ;
+      infer_dest_reg_from_exp protocol_types module_state reg ptr ;
       infer ptr
   | Store {ptr; exp} | AtomicRMW {ptr; exp} ->
       infer ptr ;
@@ -108,6 +183,7 @@ let infer_from_inst wvd_types protocol_types load_map module_state (inst : Llair
       NS.IArray.iter reg_exps ~f:(fun (reg, exp) ->
           Option.iter (string_of_ptr exp) ~f:(fun ptr_key ->
               Hashtbl.set load_map ~key:(Reg.id reg) ~data:ptr_key ) ;
+          infer_dest_reg_from_exp protocol_types module_state reg exp ;
           infer exp )
   | Alloc _ | Free _ | Nondet _ ->
       ()
@@ -134,21 +210,20 @@ let infer_from_term wvd_types protocol_types module_state (term : Llair.term) =
  *
  * Why is this necessary?
  * LLVM aggressively erases types, reducing Swift existentials and ObjC layouts to
- * generic `ptr_elt` pointers or opaque `{i64, i64}` tuples. Because the frontend
- * translates sequentially, this type erasure causes two major issues:
+ * generic `ptr_elt` pointers or opaque `{i64, i64}` tuples. Because the frontend translates
+ * sequentially, this type erasure causes two major issues:
  * 1. Textual Typechecking: Dynamic `Wvd` accesses fail if the base pointer is untyped.
  * 2. Pulse Memory Graphs: If a payload is written as a generic tuple but later read as
  * a strongly-typed Protocol, Pulse treats them as distinct memory locations, dropping
- * dynamic types.
+ * dynamic types and missing retain cycles.
  *
  * Algorithm:
- * 1. Walk the CFG to find strongly-typed Uses (e.g., `DynamicWvd` arguments) and
- * Protocol types hidden inside `Select`/`GetElementPtr` instructions.
- * 2. Build a `load_map` tracking the structural memory path of each load (e.g., "reg_0_idx_1").
- * 3. Alias Resolution: Flow Protocol types across registers that share the same memory path,
- * ensuring read and write operations are perfectly unified under the same Textual type.
- * 4. Pass the combined map to `ProcState`. During translation, the frontend proactively
- * injects these types to satisfy the typechecker and bridge Pulse's memory aliases.
+ * 1. Walk the CFG to find strongly-typed Uses (e.g., `DynamicWvd` arguments).
+ * 2. Forward Field Inference: Query the global `struct_map` for `Select` operations.
+ * If a field is strongly typed as a Protocol, tag the destination register immediately.
+ * 3. Build a `load_map` tracking structural memory paths (e.g., "reg_0_idx_1").
+ * 4. Alias Resolution: Flow Protocol types across registers sharing the same memory path.
+ * 5. Pass the combined map to `ProcState` for safe translation overriding.
  *)
 let infer_func module_state (func : Llair.func) =
   let wvd_types = Hashtbl.create (module Int) in

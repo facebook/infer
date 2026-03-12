@@ -17,12 +17,12 @@ final class OptMinimalCell {
         contentView = OptDummyMinimalView()
     }
 
-    func configure_opt_bad_fn() {
+    func configure_opt_bad() {
         contentView?.delegate = self
     }
 }
 
-func test_opt_minimal_retain_cycle_bad_fn() {
+func test_opt_minimal_retain_cycle_bad() {
     let cell = OptMinimalCell()
-    cell.configure_opt_bad_fn()
+    cell.configure_opt_bad()
 }
