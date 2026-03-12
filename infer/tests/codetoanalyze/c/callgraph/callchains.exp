@@ -1,35 +1,35 @@
 box2_test_add_0
-┗━━ box2_apply#12
-    ┗━━ box2_invoke0#8
+┗━━ box2_apply#14
+    ┗━━ box2_invoke0#15
         ┗━━ box2_add
 box2_test_add_1
-┗━━ box2_apply#5
-    ┗━━ box2_invoke1#6
+┗━━ box2_apply#19
+    ┗━━ box2_invoke1#20
         ┗━━ box2_add
 box2_test_mul_0
-┗━━ box2_apply#10
-    ┗━━ box2_invoke0#9
+┗━━ box2_apply#16
+    ┗━━ box2_invoke0#17
         ┗━━ box2_mul
 box2_test_mul_1
-┗━━ box2_apply#14
-    ┗━━ box2_invoke1#7
+┗━━ box2_apply#21
+    ┗━━ box2_invoke1#22
         ┗━━ box2_mul
 box_test_aliased
 ┗━━ box_call_depending_on_alias
     ┣━━ box_always_call
     ┃   ┗━━ box_set_both
-    ┣━━ box_always_call#3
-    ┃   ┗━━ box_set_both#4
+    ┣━━ box_always_call#23
+    ┃   ┗━━ box_set_both#24
     ┗━━ box_call_if_aliased
-        ┗━━ box_set_both#4
+        ┗━━ box_set_both#24
 box_test_not_aliased
 ┗━━ box_call_depending_on_alias
     ┣━━ box_always_call
     ┃   ┗━━ box_set_both
-    ┣━━ box_always_call#3
-    ┃   ┗━━ box_set_both#4
+    ┣━━ box_always_call#23
+    ┃   ┗━━ box_set_both#24
     ┗━━ box_call_if_aliased
-        ┗━━ box_set_both#4
+        ┗━━ box_set_both#24
 f
 ┣━━ f (recursive)
 ┣━━ g
@@ -54,12 +54,12 @@ f
     ┃   ┗━━ h (recursive)
     ┗━━ h (recursive)
 test_add_0
-┗━━ apply#18
-    ┗━━ invoke0#19
+┗━━ apply#4
+    ┗━━ invoke0#5
         ┗━━ add
 test_add_1
-┗━━ apply#23
-    ┗━━ invoke1#15
+┗━━ apply#9
+    ┗━━ invoke1#10
         ┗━━ add
 test_aliased
 ┗━━ call_depending_on_alias
@@ -70,12 +70,12 @@ test_aliased
     ┗━━ call_if_aliased
         ┗━━ set_both#2
 test_mul_0
-┗━━ apply#20
-    ┗━━ invoke0#21
+┗━━ apply#6
+    ┗━━ invoke0#7
         ┗━━ mul
 test_mul_1
-┗━━ apply#24
-    ┗━━ invoke1#16
+┗━━ apply#11
+    ┗━━ invoke1#12
         ┗━━ mul
 test_not_aliased
 ┗━━ call_depending_on_alias

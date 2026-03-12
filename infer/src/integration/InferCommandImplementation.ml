@@ -75,7 +75,9 @@ let debug () =
           in
           if Config.dump_json_summaries then Procedures.get_all ~filter () |> output_all_summaries
           else if Config.dump_json_specialized_call_graph then
-            Procedures.get_all ~filter () |> output_specialized_call_graph
+            Procedures.get_all ~filter ()
+            |> List.sort ~compare:Procname.compare
+            |> output_specialized_call_graph
           else
             Option.iter
               (Procedures.select_proc_names_interactive ~filter)
