@@ -3601,6 +3601,12 @@ and textual_sil_keep_going =
     "When converting textual to SIL, keep going even if some elements fail to convert."
 
 
+and textual_hide_instr_types =
+  CLOpt.mk_bool ~long:"textual-hide-instr-types" ~default:false
+    ~in_help:InferCommand.[(Capture, manual_generic)]
+    "Do not print types in Textual load/store instructions to reduce IR visual noise."
+
+
 and threadsafe_aliases =
   CLOpt.mk_json ~long:"threadsafe-aliases"
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
@@ -4974,6 +4980,8 @@ and tenvs_lru_max_size = !tenvs_lru_max_size
 and testing_mode = !testing_mode
 
 and textual_sil_keep_going = !textual_sil_keep_going
+
+and textual_hide_instr_types = !textual_hide_instr_types
 
 and threadsafe_aliases = !threadsafe_aliases
 

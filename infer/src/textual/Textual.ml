@@ -1326,20 +1326,20 @@ module Instr = struct
   let loc = function Load {loc} | Store {loc} | Prune {loc} | Let {loc} -> loc
 
   let pp ?(show_location = false) fmt = function
-    | Load {id; exp; typ= None; loc} ->
-        F.fprintf fmt "%a = load %a%a" Ident.pp id Exp.pp exp
-          (Location.pp_optional show_location)
-          loc
-    | Load {id; exp; typ= Some typ; loc} ->
+    | Load {id; exp; typ= Some typ; loc} when not Config.textual_hide_instr_types ->
         F.fprintf fmt "%a:%a = load %a%a" Ident.pp id Typ.pp typ Exp.pp exp
           (Location.pp_optional show_location)
           loc
-    | Store {exp1; typ= None; exp2; loc} ->
-        F.fprintf fmt "store %a <- %a%a" Exp.pp exp1 Exp.pp exp2
+    | Load {id; exp; loc; _} ->
+        F.fprintf fmt "%a = load %a%a" Ident.pp id Exp.pp exp
           (Location.pp_optional show_location)
           loc
-    | Store {exp1; typ= Some typ; exp2; loc} ->
+    | Store {exp1; typ= Some typ; exp2; loc} when not Config.textual_hide_instr_types ->
         F.fprintf fmt "store %a <- %a:%a%a" Exp.pp exp1 Exp.pp exp2 Typ.pp typ
+          (Location.pp_optional show_location)
+          loc
+    | Store {exp1; exp2; loc} ->
+        F.fprintf fmt "store %a <- %a%a" Exp.pp exp1 Exp.pp exp2
           (Location.pp_optional show_location)
           loc
     | Prune {exp; loc} ->

@@ -2384,6 +2384,12 @@ OPTIONS
            Path to TEnv json file
            See also infer-capture(1).
 
+       --textual-hide-instr-types
+           Activates: Do not print types in Textual load/store instructions
+           to reduce IR visual noise. (Conversely:
+           --no-textual-hide-instr-types)
+           See also infer-capture(1).
+
        --textual-sil-keep-going
            Activates: When converting textual to SIL, keep going even if some
            elements fail to convert. (Conversely:
