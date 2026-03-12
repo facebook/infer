@@ -33,146 +33,171 @@ let add_method_to_class_method_index class_method_index class_name proc_name ind
   Textual.TypeName.Hashtbl.replace class_method_index class_name ((proc_name, index) :: methods)
 
 
+let class_from_global ~lang ~mangled_map ~suffix struct_map global_name =
+  let name =
+    if String.equal suffix witness_protocol_suffix then global_name
+    else
+      let name = String.substr_replace_first global_name ~pattern:"$s" ~with_:"T" in
+      String.chop_suffix_exn name ~suffix
+  in
+  TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
+
+
+let process_func_name ~lang ~mangled_map ~class_method_index ~method_class_index struct_map name
+    ~suffix global offset =
+  let class_name = class_from_global ~lang ~mangled_map ~suffix struct_map global in
+  let proc_name = Textual.ProcName.of_string name in
+  let proc =
+    Textual.QualifiedProcName.
+      {enclosing_class= Enclosing class_name; name= proc_name; metadata= None}
+  in
+  add_method_to_class_method_index class_method_index class_name proc offset ;
+  Textual.ProcName.Hashtbl.replace method_class_index proc_name class_name
+
+
+let process_exp ~lang ~mangled_map ~class_method_index ~method_class_index struct_map global ~suffix
+    (last_offset, carry) exp typ =
+  match typ with
+  | Llair.Typ.Integer {bits} when Int.equal bits 64 ->
+      (last_offset + 1, 0)
+  | Llair.Typ.Integer {bits} when Int.equal bits 32 ->
+      let carry = carry + 2 in
+      if Int.equal carry 4 then (last_offset + 1, 0) else (last_offset, carry)
+  | Llair.Typ.Integer {bits} when Int.equal bits 16 ->
+      let carry = carry + 1 in
+      if Int.equal carry 4 then (last_offset + 1, 0) else (last_offset, carry)
+  | Llair.Typ.Pointer _ ->
+      let offset = last_offset + 1 in
+      ( match exp with
+      | Llair.Exp.FuncName {name} ->
+          process_func_name ~lang ~mangled_map ~class_method_index ~method_class_index struct_map
+            name ~suffix global (offset - 3)
+      | _ ->
+          () ) ;
+      (offset, 0)
+  | _ ->
+      (last_offset, carry)
+
+
+let process_exp_witness_protocol ~lang ~mangled_map ~class_method_index ~method_class_index
+    struct_map global ~suffix offset exp =
+  match exp with
+  | Llair.Exp.FuncName {name} ->
+      process_func_name ~lang ~mangled_map ~class_method_index ~method_class_index struct_map name
+        ~suffix global offset
+  | _ ->
+      ()
+
+
+let collect_class_method_indices ~lang ~mangled_map ~class_method_index ~method_class_index
+    struct_map ~suffix global_name exp =
+  match exp with
+  | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements)
+  | Llair.Exp.ApN (Record, Llair.Typ.Struct {elts}, elements) ->
+      let elements = StdUtils.iarray_to_list elements in
+      let _, types = StdUtils.iarray_to_list elts |> List.unzip in
+      ignore
+        (List.fold2_exn
+           ~f:
+             (process_exp ~lang ~mangled_map ~class_method_index ~method_class_index struct_map
+                global_name ~suffix )
+           ~init:(-1, 0) elements types )
+  | Llair.Exp.ApN (Record, Llair.Typ.Array _, elements) ->
+      let elements = StdUtils.iarray_to_list elements in
+      ignore
+        (List.mapi
+           ~f:
+             (process_exp_witness_protocol ~lang ~mangled_map ~class_method_index
+                ~method_class_index struct_map global_name ~suffix )
+           elements )
+  | _ ->
+      ()
+
+
+let process_wvd_global ~lang ~mangled_map global_name struct_map =
+  if String.is_suffix global_name ~suffix:"Wvd" then
+    let class_name_opt, field_name_str = Field.extract_class_and_field_from_wvd global_name in
+    match class_name_opt with
+    | Some mangled_class ->
+        let class_name =
+          TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+            mangled_class
+        in
+        let field_name = Textual.FieldName.of_string field_name_str in
+        let field_decl =
+          Textual.FieldDecl.
+            { qualified_name= {enclosing_class= class_name; name= field_name}
+            ; typ= Textual.Typ.any_type_swift
+            ; attributes= [] }
+        in
+        let struct_ =
+          match Textual.TypeName.Map.find_opt class_name struct_map with
+          | Some (struct_ : Textual.Struct.t) ->
+              let has_llvm_layout =
+                List.exists struct_.fields ~f:(fun f ->
+                    String.is_prefix
+                      (Textual.FieldName.to_string f.Textual.FieldDecl.qualified_name.name)
+                      ~prefix:"field_" )
+              in
+              if has_llvm_layout then struct_
+              else if
+                List.exists struct_.fields ~f:(fun (field : Textual.FieldDecl.t) ->
+                    Textual.FieldName.equal field.qualified_name.name field_name )
+              then struct_
+              else {struct_ with fields= field_decl :: struct_.fields}
+          | None ->
+              Textual.Struct.{name= class_name; supers= []; fields= [field_decl]; attributes= []}
+        in
+        Textual.TypeName.Map.add class_name struct_ struct_map
+    | None ->
+        struct_map
+  else struct_map
+
+
+let process_global_item ~lang ~mangled_map ~class_method_index ~method_class_index _var global
+    struct_map =
+  match global with
+  | GlobalDefn.{name; init= Some exp_typ} ->
+      let global_name = Global.name name in
+      let struct_map = process_wvd_global ~lang ~mangled_map global_name struct_map in
+      let suffix = "C" ^ class_virtual_table_suffix in
+      if String.is_suffix global_name ~suffix then (
+        let class_name =
+          class_from_global ~lang ~mangled_map ~suffix:class_virtual_table_suffix struct_map
+            global_name
+        in
+        let struct_map =
+          if Textual.TypeName.Map.mem class_name struct_map then struct_map
+          else
+            let struct_ =
+              Textual.Struct.{name= class_name; supers= []; fields= []; attributes= []}
+            in
+            Textual.TypeName.Map.add class_name struct_ struct_map
+        in
+        collect_class_method_indices ~lang ~mangled_map ~class_method_index ~method_class_index
+          struct_map ~suffix:class_virtual_table_suffix global_name (fst exp_typ) ;
+        struct_map )
+      else
+        let suffix = witness_protocol_suffix in
+        if String.is_suffix global_name ~suffix then (
+          let struct_name = TypeName.to_textual_type_name lang global_name in
+          let struct_ =
+            Textual.Struct.{name= struct_name; supers= []; fields= []; attributes= []}
+          in
+          let struct_map = Textual.TypeName.Map.add struct_name struct_ struct_map in
+          collect_class_method_indices ~lang ~mangled_map ~class_method_index ~method_class_index
+            struct_map ~suffix global_name (fst exp_typ) ;
+          struct_map )
+        else struct_map
+  | _ ->
+      struct_map
+
+
 let process_globals lang class_method_index method_class_index ~mangled_map ~struct_map globals_map
     =
-  let class_from_global ~suffix lang struct_map global_name =
-    let name =
-      if String.equal suffix witness_protocol_suffix then global_name
-      else
-        let name = String.substr_replace_first global_name ~pattern:"$s" ~with_:"T" in
-        String.chop_suffix_exn name ~suffix
-    in
-    TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
-  in
-  let process_func_name struct_map name ~suffix global offset =
-    let class_name = class_from_global ~suffix lang struct_map global in
-    let proc_name = Textual.ProcName.of_string name in
-    let proc =
-      Textual.QualifiedProcName.
-        {enclosing_class= Enclosing class_name; name= proc_name; metadata= None}
-    in
-    add_method_to_class_method_index class_method_index class_name proc offset ;
-    Textual.ProcName.Hashtbl.replace method_class_index proc_name class_name
-  in
-  let process_exp struct_map global ~suffix (last_offset, carry) exp typ =
-    match typ with
-    | Llair.Typ.Integer {bits} when Int.equal bits 64 ->
-        (last_offset + 1, 0)
-    | Llair.Typ.Integer {bits} when Int.equal bits 32 ->
-        let carry = carry + 2 in
-        if Int.equal carry 4 then (last_offset + 1, 0) else (last_offset, carry)
-    | Llair.Typ.Integer {bits} when Int.equal bits 16 ->
-        let carry = carry + 1 in
-        if Int.equal carry 4 then (last_offset + 1, 0) else (last_offset, carry)
-    | Llair.Typ.Pointer _ ->
-        let offset = last_offset + 1 in
-        ( match exp with
-        | Llair.Exp.FuncName {name} ->
-            process_func_name struct_map name ~suffix global (offset - 3)
-        | _ ->
-            () ) ;
-        (offset, 0)
-    | _ ->
-        (last_offset, carry)
-  in
-  let process_exp_witness_protocol struct_map global ~suffix offset exp =
-    match exp with
-    | Llair.Exp.FuncName {name} ->
-        process_func_name struct_map name ~suffix global offset
-    | _ ->
-        ()
-  in
-  let collect_class_method_indices struct_map ~suffix global_name exp =
-    match exp with
-    | Llair.Exp.ApN (Record, Llair.Typ.Tuple {elts}, elements)
-    | Llair.Exp.ApN (Record, Llair.Typ.Struct {elts}, elements) ->
-        let elements = StdUtils.iarray_to_list elements in
-        let _, types = StdUtils.iarray_to_list elts |> List.unzip in
-        ignore
-          (List.fold2_exn
-             ~f:(process_exp struct_map ~suffix global_name)
-             ~init:(-1, 0) elements types )
-    | Llair.Exp.ApN (Record, Llair.Typ.Array _, elements) ->
-        let elements = StdUtils.iarray_to_list elements in
-        ignore (List.mapi ~f:(process_exp_witness_protocol struct_map global_name ~suffix) elements)
-    | _ ->
-        ()
-  in
-  let process_wvd_global global_name struct_map =
-    if String.is_suffix global_name ~suffix:"Wvd" then
-      let class_name_opt, field_name_str = Field.extract_class_and_field_from_wvd global_name in
-      match class_name_opt with
-      | Some mangled_class ->
-          let class_name =
-            TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
-              mangled_class
-          in
-          let field_name = Textual.FieldName.of_string field_name_str in
-          let field_decl =
-            Textual.FieldDecl.
-              { qualified_name= {enclosing_class= class_name; name= field_name}
-              ; typ= Textual.Typ.any_type_swift
-              ; attributes= [] }
-          in
-          let struct_ =
-            match Textual.TypeName.Map.find_opt class_name struct_map with
-            | Some (struct_ : Textual.Struct.t) ->
-                let has_llvm_layout =
-                  List.exists struct_.fields ~f:(fun f ->
-                      String.is_prefix
-                        (Textual.FieldName.to_string f.Textual.FieldDecl.qualified_name.name)
-                        ~prefix:"field_" )
-                in
-                if has_llvm_layout then struct_
-                else if
-                  List.exists struct_.fields ~f:(fun (field : Textual.FieldDecl.t) ->
-                      Textual.FieldName.equal field.qualified_name.name field_name )
-                then struct_
-                else {struct_ with fields= field_decl :: struct_.fields}
-            | None ->
-                Textual.Struct.{name= class_name; supers= []; fields= [field_decl]; attributes= []}
-          in
-          Textual.TypeName.Map.add class_name struct_ struct_map
-      | None ->
-          struct_map
-    else struct_map
-  in
-  let process_global _var global struct_map =
-    match global with
-    | GlobalDefn.{name; init= Some exp_typ} ->
-        let global_name = Global.name name in
-        let struct_map = process_wvd_global global_name struct_map in
-        let suffix = "C" ^ class_virtual_table_suffix in
-        if String.is_suffix global_name ~suffix then (
-          let class_name =
-            class_from_global ~suffix:class_virtual_table_suffix lang struct_map global_name
-          in
-          let struct_map =
-            if Textual.TypeName.Map.mem class_name struct_map then struct_map
-            else
-              let struct_ =
-                Textual.Struct.{name= class_name; supers= []; fields= []; attributes= []}
-              in
-              Textual.TypeName.Map.add class_name struct_ struct_map
-          in
-          collect_class_method_indices struct_map global_name (fst exp_typ)
-            ~suffix:class_virtual_table_suffix ;
-          struct_map )
-        else
-          let suffix = witness_protocol_suffix in
-          if String.is_suffix global_name ~suffix then (
-            let struct_name = TypeName.to_textual_type_name lang global_name in
-            let struct_ =
-              Textual.Struct.{name= struct_name; supers= []; fields= []; attributes= []}
-            in
-            let struct_map = Textual.TypeName.Map.add struct_name struct_ struct_map in
-            collect_class_method_indices struct_map global_name (fst exp_typ) ~suffix ;
-            struct_map )
-          else struct_map
-    | _ ->
-        struct_map
-  in
-  Textual.VarName.Map.fold process_global globals_map struct_map
+  Textual.VarName.Map.fold
+    (process_global_item ~lang ~mangled_map ~class_method_index ~method_class_index)
+    globals_map struct_map
 
 
 let to_textual_global ~f_to_textual_loc ~f_to_textual_exp ~module_state sourcefile global =
