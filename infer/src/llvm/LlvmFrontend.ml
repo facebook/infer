@@ -16,11 +16,6 @@ type stats =
 
 let stats = {files_total= 0; files_captured= 0; procs_total= 0; procs_captured= 0}
 
-let init_module_state llair_program lang =
-  stats.procs_total <- Llair.FuncName.Map.length llair_program.Llair.functions ;
-  Llair2Textual.init_module_state llair_program lang
-
-
 module Error = struct
   type errors =
     {verification: TextualVerification.error list; transformation: Textual.transform_error list}
@@ -94,6 +89,10 @@ let language_of_source_file source_file =
   else L.die UserError "Currently the llvm frontend is only enabled for C and Swift programs@."
 
 
+let count_procs (module_ : Textual.Module.t) =
+  List.count module_.decls ~f:(function Textual.Module.Proc _ -> true | _ -> false)
+
+
 let capture_llair source_file module_state =
   stats.files_total <- stats.files_total + 1 ;
   let open IResult.Let_syntax in
@@ -101,6 +100,7 @@ let capture_llair source_file module_state =
   let result =
     let error_state = Error.no_errors in
     let textual = Llair2Textual.translate ~source_file ~module_state in
+    stats.procs_total <- count_procs textual ;
     if should_dump_textual () then dump_textual_file source_file textual ;
     let textual_source_file = Textual.SourceFile.create source_file in
     let* verified_textual, error_state =
@@ -194,7 +194,7 @@ let capture ~sources llvm_bitcode_in =
   let lang = language_of_source_file (List.hd_exn sources) in
   let llvm_program = In_channel.input_all llvm_bitcode_in in
   let llair_program = LlvmSledgeFrontend.translate llvm_program in
-  let module_state = init_module_state llair_program lang in
+  let module_state = Llair2Textual.init_module_state llair_program lang in
   List.iter sources ~f:(fun source_file ->
       textual_version := 0 ;
       if Config.dump_llair then dump_llair llair_program source_file ;
