@@ -20,15 +20,27 @@ infer-out/specialized_call_graph.json: $(SOURCES) $(MAKEFILE_LIST)
 callgraph.exp.test: infer-out/specialized_call_graph.json parse_json_callgraph.py
 	$(QUIET)python3 parse_json_callgraph.py $< > $@
 
+ROOTS = f \
+        test_aliased test_not_aliased \
+        box_test_aliased box_test_not_aliased \
+        test_add_0 test_add_1 test_mul_0 test_mul_1 \
+        box2_test_add_0 box2_test_add_1 box2_test_mul_0 box2_test_mul_1
+
+callchains.exp.test: infer-out/specialized_call_graph.json parse_json_callgraph.py
+	$(QUIET)python3 parse_json_callgraph.py $< paths $(ROOTS) > $@
+
 .PHONY: test
-test: callgraph.exp.test
+test: callgraph.exp.test callchains.exp.test
 	$(QUIET)cd $(TESTS_DIR) && \
 	$(call check_no_diff,$(TEST_REL_DIR)/callgraph.exp,$(TEST_REL_DIR)/callgraph.exp.test)
+	$(QUIET)cd $(TESTS_DIR) && \
+	$(call check_no_diff,$(TEST_REL_DIR)/callchains.exp,$(TEST_REL_DIR)/callchains.exp.test)
 
 .PHONY: replace
-replace: callgraph.exp.test
-	cp $< callgraph.exp
+replace: callgraph.exp.test callchains.exp.test
+	cp callgraph.exp.test callgraph.exp
+	cp callchains.exp.test callchains.exp
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) infer-out callgraph.exp.test *.o
+	$(REMOVE_DIR) infer-out callgraph.exp.test callchains.exp.test *.o
