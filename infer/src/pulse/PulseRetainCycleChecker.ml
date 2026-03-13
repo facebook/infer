@@ -66,11 +66,55 @@ let get_assignment_trace astate addr =
   AddressAttributes.get_written_to addr astate |> Option.map ~f:snd
 
 
+let get_expr_with_fallback astate addr =
+  let value = Decompiler.find addr astate in
+  if DecompilerExpr.is_unknown value then
+    (* Helper to extract type directly from a value *)
+    let get_type v =
+      match PulseArithmetic.get_dynamic_type v astate with
+      | Some {typ= {desc= Tstruct typ_name}} ->
+          Some typ_name
+      | _ ->
+          AddressAttributes.get_static_type v astate
+    in
+    (* 1. Check the address itself.
+       2. If none, check if it points to a typed object (\* -> v24) *)
+    let type_name_opt =
+      match get_type addr with
+      | Some t ->
+          Some t
+      | None ->
+          AbductiveDomain.Memory.fold_edges addr astate ~init:None
+            ~f:(fun acc (access, (accessed_addr, _)) ->
+              match (acc, access) with
+              | None, Access.Dereference ->
+                  get_type accessed_addr
+              | _ ->
+                  acc )
+    in
+    (* Format the type cleanly, catching closures explicitly *)
+    let string_name =
+      match type_name_opt with
+      | Some typ_name ->
+          let type_str = F.asprintf "%a" Typ.Name.pp typ_name in
+          if String.is_substring type_str ~substring:"swift::function" then "Swift closure"
+          else "object of type " ^ type_str
+      | None ->
+          "dynamically allocated object"
+    in
+    (* Create a LOCAL variable Pvar using a dummy function context *)
+    let dummy_procname = Procname.from_string_c_fun "" in
+    let pvar = Pvar.mk (Mangled.from_string string_name) dummy_procname in
+    (* Use Dereference to get the value, which strips the '&' address-of operator *)
+    DecompilerExpr.SourceExpr ((DecompilerExpr.PVar pvar, [DecompilerExpr.Dereference]), Some addr)
+  else value
+
+
 let create_values astate (cycle : cycle_data list) =
   let values : Diagnostic.retain_cycle_data list =
     List.map
       ~f:(fun {addr} ->
-        let value = Decompiler.find addr astate in
+        let value = get_expr_with_fallback astate addr in
         let trace = get_assignment_trace astate addr in
         let location = Option.map ~f:Trace.get_outer_location trace in
         {Diagnostic.expr= value; location; trace} )
@@ -103,7 +147,7 @@ let should_report_cycle astate cycle =
     let not_previously_reported = not (AddressAttributes.is_in_reported_retain_cycle addr astate) in
     let path_condition = astate.AbductiveDomain.path_condition in
     let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
-    let value = Decompiler.find addr astate in
+    let value = get_expr_with_fallback astate addr in
     let is_known =
       if Language.curr_language_is Language.Swift then true
       else not (DecompilerExpr.is_unknown value)
