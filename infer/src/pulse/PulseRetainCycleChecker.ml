@@ -67,31 +67,69 @@ let get_assignment_trace astate addr =
 
 
 let get_expr_with_fallback astate addr =
-  let value = Decompiler.find addr astate in
-  if DecompilerExpr.is_unknown value then
-    (* Helper to extract type directly from a value *)
-    let get_type v =
+  let is_ptr_elt_name typ_name =
+    String.is_substring (F.asprintf "%a" Typ.Name.pp typ_name) ~substring:"ptr_elt"
+  in
+  (* Helper: Extract type, explicitly filtering out 'ptr_elt' placeholders *)
+  let get_type v =
+    let dyn_type_opt =
       match PulseArithmetic.get_dynamic_type v astate with
       | Some {typ= {desc= Tstruct typ_name}} ->
           Some typ_name
+      | Some {typ= {desc= Tptr ({desc= Tstruct typ_name}, _)}} ->
+          Some typ_name
       | _ ->
-          AddressAttributes.get_static_type v astate
+          None
     in
-    (* 1. Check the address itself.
-       2. If none, check if it points to a typed object (\* -> v24) *)
-    let type_name_opt =
-      match get_type addr with
-      | Some t ->
-          Some t
-      | None ->
-          AbductiveDomain.Memory.fold_edges addr astate ~init:None
-            ~f:(fun acc (access, (accessed_addr, _)) ->
-              match (acc, access) with
-              | None, Access.Dereference ->
-                  get_type accessed_addr
-              | _ ->
-                  acc )
-    in
+    match dyn_type_opt with
+    | Some typ_name when not (is_ptr_elt_name typ_name) ->
+        Some typ_name
+    | _ -> (
+      match AddressAttributes.get_static_type v astate with
+      | Some typ_name when not (is_ptr_elt_name typ_name) ->
+          Some typ_name
+      | _ ->
+          None )
+  in
+  (* Search up to 5 edges deep, but ONLY through strictly safe structural boundaries *)
+  let rec find_type_in_graph depth current_addr =
+    match get_type current_addr with
+    | Some t ->
+        Some t
+    | None when depth > 0 ->
+        let current_is_box =
+          lazy
+            ( match AddressAttributes.get_static_type current_addr astate with
+            | Some typ_name ->
+                is_ptr_elt_name typ_name
+            | None ->
+                false )
+        in
+        AbductiveDomain.Memory.fold_edges current_addr astate ~init:None
+          ~f:(fun acc (access, (accessed_addr, _)) ->
+            match acc with
+            | Some _ ->
+                acc
+            | None ->
+                let is_safe =
+                  match access with
+                  | Access.Dereference ->
+                      true
+                  | Access.FieldAccess fn ->
+                      (* ONLY traverse tuple fields if the parent is a compiler box *)
+                      Lazy.force current_is_box
+                      && String.is_prefix (Fieldname.get_field_name fn)
+                           ~prefix:"__infer_tuple_field_"
+                  | _ ->
+                      false
+                in
+                if is_safe then find_type_in_graph (depth - 1) accessed_addr else None )
+    | _ ->
+        None
+  in
+  let value = Decompiler.find addr astate in
+  if DecompilerExpr.is_unknown value then (* Execute the safe bounded search *)
+    let type_name_opt = find_type_in_graph 5 addr in
     (* Format the type cleanly, catching closures explicitly *)
     let string_name =
       match type_name_opt with
@@ -147,11 +185,6 @@ let should_report_cycle astate cycle =
     let not_previously_reported = not (AddressAttributes.is_in_reported_retain_cycle addr astate) in
     let path_condition = astate.AbductiveDomain.path_condition in
     let is_not_null = not (PulseFormula.is_known_zero path_condition addr) in
-    let value = get_expr_with_fallback astate addr in
-    let is_known =
-      if Language.curr_language_is Language.Swift then true
-      else not (DecompilerExpr.is_unknown value)
-    in
     let is_objc_swift_or_block_if_field_access =
       match access with Access.FieldAccess _ -> is_ref_counted_or_block astate addr | _ -> true
     in
@@ -159,10 +192,11 @@ let should_report_cycle astate cycle =
       if Language.curr_language_is Language.Swift then false
       else
         Option.value_map Config.pulse_retain_cycle_blocklist_pattern ~default:false ~f:(fun re ->
+            let value = Decompiler.find addr astate in
             let expr_str = F.asprintf "%a" DecompilerExpr.pp value in
             Str.string_match re expr_str 0 )
     in
-    not_previously_reported && is_not_null && is_known && is_objc_swift_or_block_if_field_access
+    not_previously_reported && is_not_null && is_objc_swift_or_block_if_field_access
     && not blocklisted
   in
   List.exists ~f:is_objc_swift_or_block cycle && List.for_all ~f:addr_in_retain_cycle cycle
