@@ -42,9 +42,8 @@ let verify_common ~restore_ssa module_ =
   let errors, decls_env = TextualDecls.make_decls module_ in
   let errors = List.map errors ~f:(fun x -> DeclaredTwiceError x) in
   if List.is_empty errors then
-    let errors =
-      TextualBasicVerification.run module_ decls_env |> List.map ~f:(fun x -> BasicError x)
-    in
+    let module_, basic_errors = TextualBasicVerification.run module_ decls_env in
+    let errors = List.map basic_errors ~f:(fun x -> BasicError x) in
     if List.is_empty errors then
       match TextualTypeVerification.run ~restore_ssa module_ decls_env with
       | Ok module_ ->

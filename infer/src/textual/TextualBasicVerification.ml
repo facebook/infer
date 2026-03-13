@@ -269,6 +269,89 @@ let verify_decl ~env errors (decl : Module.decl) =
       verify_procdesc errors pdesc
 
 
-let run (module_ : Module.t) env =
+let fix fields_to_fix (module_ : Module.t) =
+  let fix_qualified_fieldname (fieldname : qualified_fieldname) =
+    if FieldName.Set.mem fieldname.name fields_to_fix then
+      {fieldname with enclosing_class= TypeName.wildcard}
+    else fieldname
+  in
+  let rec fix_exp (exp : Exp.t) =
+    let open Exp in
+    match exp with
+    | Var _ | Lvar _ | Const _ | Typ _ ->
+        exp
+    | If {cond; then_; else_} ->
+        If {cond= tranform_bexp cond; then_= fix_exp then_; else_= fix_exp else_}
+    | Load l ->
+        Load {l with exp= fix_exp l.exp}
+    | Field f ->
+        Field {exp= fix_exp f.exp; field= fix_qualified_fieldname f.field}
+    | Index (exp1, exp2) ->
+        Index (fix_exp exp1, fix_exp exp2)
+    | Call {proc; args; kind} ->
+        let args = List.map args ~f:fix_exp in
+        Call {proc; args; kind}
+    | Closure {proc; captured; params; attributes} ->
+        Closure {proc; captured= List.map captured ~f:fix_exp; params; attributes}
+    | Apply {closure; args} ->
+        Apply {closure= fix_exp closure; args= List.map args ~f:fix_exp}
+  and tranform_bexp bexp =
+    let open BoolExp in
+    match bexp with
+    | Exp exp ->
+        Exp (fix_exp exp)
+    | Not bexp ->
+        Not (tranform_bexp bexp)
+    | And (bexp1, bexp2) ->
+        And (tranform_bexp bexp1, tranform_bexp bexp2)
+    | Or (bexp1, bexp2) ->
+        Or (tranform_bexp bexp1, tranform_bexp bexp2)
+  in
+  let fix_instr (instr : Instr.t) =
+    let open Instr in
+    match instr with
+    | Load args ->
+        Load {args with exp= fix_exp args.exp}
+    | Store args ->
+        Store {args with exp1= fix_exp args.exp1; exp2= fix_exp args.exp2}
+    | Prune args ->
+        Prune {args with exp= fix_exp args.exp}
+    | Let args ->
+        Let {args with exp= fix_exp args.exp}
+  in
+  let fix_node (node : Node.t) =
+    (* assuming here that a node_call in a terminator will never have field exprs *)
+    {node with instrs= List.map ~f:fix_instr node.instrs}
+  in
+  let fix_pdesc (pdesc : ProcDesc.t) = {pdesc with nodes= List.map ~f:fix_node pdesc.nodes} in
+  let f decl =
+    let open Module in
+    match (decl : Module.decl) with
+    | Proc pdesc ->
+        Proc (fix_pdesc pdesc)
+    | (Global _ | Struct _ | Procdecl _) as decl ->
+        decl
+  in
+  {module_ with decls= List.map ~f module_.decls}
+
+
+let log_error sourcefile err =
+  let open Textual in
+  let loc = error_loc err in
+  Logging.internal_error "SIL: Consistency Error: %a in %a at %a" pp_error err SourceFile.pp
+    sourcefile Location.pp loc
+
+
+let rec run (module_ : Module.t) env =
   let f = verify_decl ~env in
-  List.fold ~f ~init:[] module_.decls
+  let errors = List.fold ~f ~init:[] module_.decls in
+  let field_errors = List.filter errors ~f:(function UnknownField _ -> true | _ -> false) in
+  let fields_to_fix =
+    List.fold field_errors ~init:FieldName.Set.empty ~f:(fun acc err ->
+        match err with UnknownField field -> FieldName.Set.add field.name acc | _ -> acc )
+  in
+  if FieldName.Set.is_empty fields_to_fix then (module_, errors)
+  else (
+    List.iter field_errors ~f:(log_error module_.sourcefile) ;
+    let module_ = fix fields_to_fix module_ in
+    run module_ env )

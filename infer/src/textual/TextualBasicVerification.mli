@@ -13,4 +13,4 @@ val pp_error : Format.formatter -> error -> unit
 
 val error_loc : error -> Textual.Location.t
 
-val run : Textual.Module.t -> TextualDecls.t -> error list
+val run : Textual.Module.t -> TextualDecls.t -> Textual.Module.t * error list
