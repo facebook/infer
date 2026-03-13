@@ -13,8 +13,6 @@ type t = {mangled: string; plain_name: string option [@ignore]}
 
 let mangled {mangled} = mangled
 
-let pp fmt t = F.pp_print_string fmt (mangled t)
-
 let pp_full fmt {plain_name; mangled} =
   match plain_name with
   | Some plain_name ->
@@ -26,6 +24,8 @@ let pp_full fmt {plain_name; mangled} =
 let pp_plain_name fmt {plain_name; mangled} =
   F.pp_print_string fmt (Option.value plain_name ~default:mangled)
 
+
+let pp fmt t = pp_plain_name fmt t
 
 let to_string = Pp.string_of_pp pp
 
