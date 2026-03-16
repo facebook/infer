@@ -26,7 +26,6 @@ Textual: Type Error: variable x has not been declared in basic.sil at line 125, 
 Textual: Type Error: branch at location line 132, column 2 is given the type int, but the other branch is given a different type float in basic.sil at line 132, column 2
 Textual: Type Error: expression n0 has type int, while a subtype of float was expected in basic.sil at line 133, column 2
 SIL: Consistency Error: function g which can be called with 0 arguments is not declared in error2.sil at line 20, column 9
-SIL: Consistency Error: field cell.n is not declared in error2.sil at line 19, column 13
 SIL: Consistency Error: label lab2 is not declared in function f in error2.sil at line 16, column 8
 SIL: Consistency Error: label lab2 is not declared in function B.f in error_label.sil at line 17, column 8
 Textual: Type Error: expression [&f1:(fun () -> void)] has type (fun () -> void), while a subtype of float was expected in fun_type.sil at line 14, column 8
@@ -42,6 +41,7 @@ SIL: Consistency Error: variadic parameter is not in second-to-last position in 
 SIL: Consistency Error: variadic parameter is not in penultimate position in trait function T.bad in variadic.sil at line 40, column 7
 SIL: Consistency Error: variadic parameter is not in penultimate position in function with_generics_bad which has a reified generics parameter in variadic.sil at line 28, column 7
 SIL: Consistency Error: variadic parameter is not in last position in function f3 in variadic.sil at line 18, column 7
+SIL: Consistency Error: field cell.n is not declared in error2.sil at line 19, column 13
 error1.sil, line 14, column 4: SIL syntax error: unexpected token x
 error3.sil, line 4, column 0: SIL syntax error: unexpected token ^
 error_lit_float.sil, line 10, column 13: SIL syntax error: unexpected token d

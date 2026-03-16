@@ -338,7 +338,7 @@ let fix fields_to_fix (module_ : Module.t) =
 let log_error sourcefile err =
   let open Textual in
   let loc = error_loc err in
-  Logging.internal_error "SIL: Consistency Error: %a in %a at %a" pp_error err SourceFile.pp
+  Logging.internal_error "SIL: Consistency Error: %a in %a at %a@\n" pp_error err SourceFile.pp
     sourcefile Location.pp loc
 
 
