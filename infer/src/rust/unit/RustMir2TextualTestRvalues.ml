@@ -535,13 +535,13 @@ let%expect_test "enum" =
 
     type dummy::Types = {@discriminant: int}
 
-    type dummy::Types@Unit extends dummy::Types = {@discriminant: int}
-
-    type dummy::Types@Value extends dummy::Types = {@discriminant: int; 0: int}
+    type dummy::Types@Named extends dummy::Types = {@discriminant: int; id: int}
 
     type dummy::Types@Tuple extends dummy::Types = {@discriminant: int; 0: int; 1: int}
 
-    type dummy::Types@Named extends dummy::Types = {@discriminant: int; id: int}
+    type dummy::Types@Unit extends dummy::Types = {@discriminant: int}
+
+    type dummy::Types@Value extends dummy::Types = {@discriminant: int; 0: int}
 
     define dummy::main() : void {
       local var_0: void, tunit_1: dummy::Types, tvalue_2: dummy::Types, ttype_3: dummy::Types, tname_4: dummy::Types
@@ -558,6 +558,197 @@ let%expect_test "enum" =
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
+
+    }
+    |}]
+
+
+let%expect_test "enum" =
+  let source =
+    {|
+    fn get_value(t: Types) -> i32 {
+        match t {
+            Types::Unit                => 0,
+            Types::Value(v)            => v,
+            Types::Tuple(a, b)         => a + b,
+            Types::Named { id }        => id,
+        }
+    }
+
+    fn main() {
+        let tunit  = Types::Unit;
+        let tvalue = Types::Value(10);
+        let ttype  = Types::Tuple(20, 30);
+        let tname  = Types::Named { id: 40 };
+
+        let _ = get_value(tunit);   // 0
+        let _ = get_value(tvalue);  // 10
+        let _ = get_value(ttype);   // 50
+        let _ = get_value(tname);   // 40
+    }
+
+    enum Types {
+      Unit,
+      Value(i32),
+      Tuple(i32,i32),
+      Named{id:i32}
+    }
+    |}
+  in
+  test source ;
+  [%expect
+    {|
+    .source_language = "Rust"
+
+    type dummy::Types = {@discriminant: int}
+
+    type dummy::Types@Named extends dummy::Types = {@discriminant: int; id: int}
+
+    type dummy::Types@Tuple extends dummy::Types = {@discriminant: int; 0: int; 1: int}
+
+    type dummy::Types@Unit extends dummy::Types = {@discriminant: int}
+
+    type dummy::Types@Value extends dummy::Types = {@discriminant: int; 0: int}
+
+    define dummy::get_value(t_1: dummy::Types) : int {
+      local var_0: int, var_2: int, v_3: int, a_4: int, b_5: int, var_6: int, var_7: int, var_8: int, id_9: int
+      #node_0:
+          store &var_2 <- &t_1.dummy::Types.@discriminant:int
+          jmp Switch_0__otherwise, Switch_0__0, Switch_0__1, Switch_0__2, Switch_0__3
+
+      #Switch_0__0:
+          n0:int = load &var_2
+          prune __sil_eq(n0, 0)
+          jmp node_1
+
+      #Switch_0__1:
+          n1:int = load &var_2
+          prune __sil_eq(n1, 1)
+          jmp node_2
+
+      #Switch_0__2:
+          n2:int = load &var_2
+          prune __sil_eq(n2, 2)
+          jmp node_3
+
+      #Switch_0__3:
+          n3:int = load &var_2
+          prune __sil_eq(n3, 3)
+          jmp node_4
+
+      #Switch_0__otherwise:
+          n4:int = load &var_2
+          prune __sil_lnot(__sil_eq(n4, 0))
+          n5:int = load &var_2
+          prune __sil_lnot(__sil_eq(n5, 1))
+          n6:int = load &var_2
+          prune __sil_lnot(__sil_eq(n6, 2))
+          n7:int = load &var_2
+          prune __sil_lnot(__sil_eq(n7, 3))
+          jmp node_5
+
+      #node_1:
+          store &var_0 <- 0:int
+          jmp node_6
+
+      #node_2:
+          n8:int = load &t_1.dummy::Types@Value.0
+          store &v_3 <- n8:int
+          n9:int = load &v_3
+          store &var_0 <- n9:int
+          jmp node_7
+
+      #node_3:
+          n10:int = load &t_1.dummy::Types@Tuple.0
+          store &a_4 <- n10:int
+          n11:int = load &t_1.dummy::Types@Tuple.1
+          store &b_5 <- n11:int
+          n12:int = load &a_4
+          store &var_6 <- n12:int
+          n13:int = load &b_5
+          store &var_7 <- n13:int
+          n14:int = load &var_6
+          n15:int = load &var_7
+          store &var_8 <- __sil_plusa_int(n14, n15):int
+          n16:int = load &var_8
+          store &var_0 <- n16:int
+          jmp node_8
+
+      #node_4:
+          n17:int = load &t_1.dummy::Types@Named.id
+          store &id_9 <- n17:int
+          n18:int = load &id_9
+          store &var_0 <- n18:int
+          jmp node_9
+
+      #node_5:
+          unreachable
+
+      #node_6:
+          n19:int = load &var_0
+          ret n19
+
+      #node_7:
+          n20:int = load &var_0
+          ret n20
+
+      #node_8:
+          n21:int = load &var_0
+          ret n21
+
+      #node_9:
+          n22:int = load &var_0
+          ret n22
+
+    }
+
+    define dummy::main() : void {
+      local var_0: void, tunit_1: dummy::Types, tvalue_2: dummy::Types, ttype_3: dummy::Types, tname_4: dummy::Types, var_5: int, var_6: dummy::Types, var_7: int, var_8: dummy::Types, var_9: int, var_10: dummy::Types, var_11: int, var_12: dummy::Types
+      #node_0:
+          store &tunit_1.dummy::Types@Unit.@discriminant <- 0:int
+          store &tvalue_2.dummy::Types@Value.@discriminant <- 1:int
+          store &tvalue_2.dummy::Types@Value.0 <- 10:int
+          store &ttype_3.dummy::Types@Tuple.@discriminant <- 2:int
+          store &ttype_3.dummy::Types@Tuple.0 <- 20:int
+          store &ttype_3.dummy::Types@Tuple.1 <- 30:int
+          store &tname_4.dummy::Types@Named.@discriminant <- 3:int
+          store &tname_4.dummy::Types@Named.id <- 40:int
+          n0:dummy::Types = load &tunit_1
+          store &var_6 <- n0:dummy::Types
+          n1:dummy::Types = load &var_6
+          n2 = dummy::get_value(n1)
+          store &var_5 <- n2:int
+          jmp node_1
+
+      #node_1:
+          n3:dummy::Types = load &tvalue_2
+          store &var_8 <- n3:dummy::Types
+          n4:dummy::Types = load &var_8
+          n5 = dummy::get_value(n4)
+          store &var_7 <- n5:int
+          jmp node_3
+
+      #node_3:
+          n6:dummy::Types = load &ttype_3
+          store &var_10 <- n6:dummy::Types
+          n7:dummy::Types = load &var_10
+          n8 = dummy::get_value(n7)
+          store &var_9 <- n8:int
+          jmp node_4
+
+      #node_4:
+          n9:dummy::Types = load &tname_4
+          store &var_12 <- n9:dummy::Types
+          n10:dummy::Types = load &var_12
+          n11 = dummy::get_value(n10)
+          store &var_11 <- n11:int
+          jmp node_5
+
+      #node_5:
+          store &var_0 <- null:void
+          store &var_0 <- null:void
+          n12:void = load &var_0
+          ret n12
 
     }
     |}]

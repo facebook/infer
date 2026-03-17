@@ -1,0 +1,40 @@
+# Final ULLBC before serialization:
+
+// Full name: enum::Types
+enum Types {
+  Unit,
+  Value(i32),
+  Tuple(i32, i32),
+  Named(id: i32),
+}
+
+// Full name: enum::main
+fn main()
+{
+    let @0: (); // return
+    let tunit@1: Types; // local
+    let tvalue@2: Types; // local
+    let ttype@3: Types; // local
+    let tname@4: Types; // local
+
+    bb0: {
+        storage_live(tunit@1);
+        tunit@1 := Types::Unit {  };
+        storage_live(tvalue@2);
+        tvalue@2 := Types::Value { 0: const (10 : i32) };
+        storage_live(ttype@3);
+        ttype@3 := Types::Tuple { 0: const (20 : i32), 1: const (30 : i32) };
+        storage_live(tname@4);
+        tname@4 := Types::Named { id: const (40 : i32) };
+        @0 := ();
+        storage_dead(tname@4);
+        storage_dead(ttype@3);
+        storage_dead(tvalue@2);
+        storage_dead(tunit@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+
