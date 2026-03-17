@@ -791,6 +791,8 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   let id, call_exp, args_instrs, arg_types =
     to_textual_call_aux ~proc_state ~kind proc call.areturn llair_args loc
   in
+  let proc_name_str = Textual.ProcName.to_string proc.name in
+  Models.update_selector_metadata ~proc_state id call_exp proc_name_str ;
   let call_exp =
     match call_exp with
     | Textual.Exp.Call {proc; args= textual_args} -> (

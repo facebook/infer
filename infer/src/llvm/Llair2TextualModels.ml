@@ -365,3 +365,35 @@ let get_alloc_class_name =
         Some (class_name, Textual.ProcDecl.objc_alloc_name)
     | _ ->
         None
+
+
+let update_selector_metadata ~(proc_state : ProcState.t) id_opt call_exp proc_name =
+  match id_opt with
+  | Some return_id -> (
+      let textual_args = match call_exp with Textual.Exp.Call {args} -> args | _ -> [] in
+      if String.is_substring proc_name ~substring:"builtinStringLiteral" then
+        match textual_args with
+        | Textual.Exp.Const (Str s) :: _ ->
+            ProcState.add_string_literal proc_state return_id s
+        | _ ->
+            ()
+      else if String.is_substring proc_name ~substring:"bridgeToObjectiveC" then
+        match textual_args with
+        | Textual.Exp.Var src_id :: _ ->
+            ProcState.get_string_literal proc_state src_id
+            |> Option.iter ~f:(ProcState.add_string_literal proc_state return_id)
+        | _ ->
+            ()
+      else if String.is_substring proc_name ~substring:"NSSelectorFromString" then
+        match textual_args with
+        | Textual.Exp.Var src_id :: _ -> (
+          match ProcState.get_string_literal proc_state src_id with
+          | Some s ->
+              ProcState.add_selector proc_state return_id s
+          | None ->
+              ProcState.get_last_string_added proc_state
+              |> Option.iter ~f:(ProcState.add_selector proc_state return_id) )
+        | _ ->
+            () )
+  | None ->
+      ()

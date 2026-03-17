@@ -127,6 +127,8 @@ module ProcState = struct
     ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
     ; mutable selector_map: string Textual.Ident.Map.t
+    ; mutable string_map: string Textual.Ident.Map.t
+    ; mutable last_string_added: string option
     ; mutable class_type_map: Textual.TypeName.t VarMap.t
     ; inferred_types: Textual.Typ.t Hashtbl.M(Int).t (* Map of Reg.id -> Typ.t *)
     ; module_state: ModuleState.t }
@@ -148,6 +150,8 @@ module ProcState = struct
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
     ; selector_map= Textual.Ident.Map.empty
+    ; string_map= Textual.Ident.Map.empty
+    ; last_string_added= None
     ; class_type_map= VarMap.empty
     ; inferred_types
     ; module_state }
@@ -232,6 +236,11 @@ module ProcState = struct
         (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:F.pp_print_string))
         (Textual.Ident.Map.bindings selector_map)
     in
+    let pp_string_map fmt string_map =
+      F.fprintf fmt "%a"
+        (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:F.pp_print_string))
+        (Textual.Ident.Map.bindings string_map)
+    in
     let pp_struct_map fmt struct_map =
       let pp_item key value =
         F.fprintf fmt "%a -> @\n%a@\n" Textual.TypeName.pp key Textual.Struct.pp value
@@ -248,6 +257,7 @@ module ProcState = struct
        @[ids_metadata_address: %a@]@;\
        @[ids_types: %a@]@;\
        @[selector_map: %a@]@;\
+       @[string_map: %a@]@;\
        @[id_offset: %a@]@;\
        @[get_element_ptr_offset: %a@]@;\
        ]@]"
@@ -257,7 +267,8 @@ module ProcState = struct
       (Textual.Ident.Set.elements proc_state.metadata_ids)
       (Pp.seq ~sep:"," Textual.Ident.pp)
       (Textual.Ident.Set.elements proc_state.metadata_address_ids)
-      pp_ids proc_state.ids_types pp_selector_map proc_state.selector_map
+      pp_ids proc_state.ids_types pp_selector_map proc_state.selector_map pp_string_map
+      proc_state.string_map
       (Pp.option (Pp.pair ~fst:Textual.Ident.pp ~snd:Int.pp))
       proc_state.id_offset
       (Pp.option (Pp.pair ~fst:Textual.VarName.pp ~snd:Int.pp))
@@ -335,6 +346,18 @@ use the substitution in the code later on. *)
     proc_state.get_element_ptr_offset <- None
 
 
+  (** Records a string literal and updates the "most recent" tracker *)
+  let add_string_literal proc_state id str =
+    proc_state.string_map <- Textual.Ident.Map.add id str proc_state.string_map ;
+    proc_state.last_string_added <- Some str
+
+
+  (** Retrieves the string associated with a specific register *)
+  let get_string_literal proc_state id = Textual.Ident.Map.find_opt id proc_state.string_map
+
+  (** Returns the most recently captured string literal *)
+  let get_last_string_added proc_state = proc_state.last_string_added
+
   let global_proc_state sourcefile loc module_state global_var =
     let global_init_name = Format.sprintf "global_init_%s" global_var in
     let qualified_name =
@@ -359,6 +382,8 @@ use the substitution in the code later on. *)
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
     ; selector_map= Textual.Ident.Map.empty
+    ; string_map= Textual.Ident.Map.empty
+    ; last_string_added= None
     ; class_type_map= VarMap.empty
     ; inferred_types= Hashtbl.create (module Int)
     ; module_state }

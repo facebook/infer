@@ -9,6 +9,7 @@ open! IStd
 open Llair
 module ModuleState = Llair2TextualState.ModuleState
 module ProcState = Llair2TextualState.ProcState
+module IdentMap = Textual.Ident.Map
 
 (* --- Dependency Injection Types --- *)
 
@@ -108,3 +109,6 @@ val get_alloc_class_name :
   -> Textual.ProcName.t
   -> Exp.t list
   -> (Textual.TypeName.t * Textual.QualifiedProcName.t) option
+
+val update_selector_metadata :
+  proc_state:ProcState.t -> IdentMap.key option -> Textual.Exp.t -> label -> unit
