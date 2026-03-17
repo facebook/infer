@@ -682,7 +682,7 @@ let%expect_test "enum" =
           jmp node_9
 
       #node_5:
-          unreachable
+          throw "Undefined Behaviour"
 
       #node_6:
           n19:int = load &var_0
@@ -719,6 +719,7 @@ let%expect_test "enum" =
           n2 = dummy::get_value(n1)
           store &var_5 <- n2:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           n3:dummy::Types = load &tvalue_2
@@ -727,6 +728,10 @@ let%expect_test "enum" =
           n5 = dummy::get_value(n4)
           store &var_7 <- n5:int
           jmp node_3
+          .handlers node_2
+
+      #node_2:
+          throw "UnwindResume"
 
       #node_3:
           n6:dummy::Types = load &ttype_3
@@ -735,6 +740,7 @@ let%expect_test "enum" =
           n8 = dummy::get_value(n7)
           store &var_9 <- n8:int
           jmp node_4
+          .handlers node_2
 
       #node_4:
           n9:dummy::Types = load &tname_4
@@ -743,6 +749,7 @@ let%expect_test "enum" =
           n11 = dummy::get_value(n10)
           store &var_11 <- n11:int
           jmp node_5
+          .handlers node_2
 
       #node_5:
           store &var_0 <- null:void

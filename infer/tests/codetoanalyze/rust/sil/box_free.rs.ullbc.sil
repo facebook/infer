@@ -14,6 +14,7 @@ define box_free::main() : void {
       n0 = __sil_boxnew(50)
       store &x_3 <- n0:*int
       jmp node_1
+      .handlers node_2
       
   #node_1:
       n1:*int = load &x_3
@@ -31,6 +32,9 @@ define box_free::main() : void {
       store &var_0 <- null:void
       n8:void = load &var_0
       ret n8
+      
+  #node_2:
+      throw "UnwindResume"
       
 }
 

@@ -89,7 +89,7 @@ define switch::get_value(t_1: switch::Types) : int {
       jmp node_9
       
   #node_5:
-      unreachable
+      throw "Undefined Behaviour"
       
   #node_6:
       n19:int = load &var_0
@@ -126,6 +126,7 @@ define switch::main() : void {
       n2 = switch::get_value(n1)
       store &var_5 <- n2:int
       jmp node_1
+      .handlers node_2
       
   #node_1:
       n3:switch::Types = load &tvalue_2
@@ -134,6 +135,10 @@ define switch::main() : void {
       n5 = switch::get_value(n4)
       store &var_7 <- n5:int
       jmp node_3
+      .handlers node_2
+      
+  #node_2:
+      throw "UnwindResume"
       
   #node_3:
       n6:switch::Types = load &ttype_3
@@ -142,6 +147,7 @@ define switch::main() : void {
       n8 = switch::get_value(n7)
       store &var_9 <- n8:int
       jmp node_4
+      .handlers node_2
       
   #node_4:
       n9:switch::Types = load &tname_4
@@ -150,6 +156,7 @@ define switch::main() : void {
       n11 = switch::get_value(n10)
       store &var_11 <- n11:int
       jmp node_5
+      .handlers node_2
       
   #node_5:
       store &var_0 <- null:void
