@@ -678,7 +678,7 @@ direct_tests: $(DIRECT_TESTS:%=direct_%_test)
 
 # Custom Swift-only targets (Not included in main 'test' or 'endtoend_test')
 .PHONY: $(SWIFT_DIRECT_TESTS:%=direct_%_test)
-$(SWIFT_DIRECT_TESTS:%=direct_%_test): infer
+$(SWIFT_DIRECT_TESTS:%=direct_%_test): $(INFER_BIN)
 	$(QUIET)$(call silent_on_success,Running Swift local test: $(subst _, ,$@),\
 	$(call silence_make,\
 	$(MAKE) -C \
@@ -686,7 +686,7 @@ $(SWIFT_DIRECT_TESTS:%=direct_%_test): infer
 	  test))
 
 .PHONY: $(SWIFT_DIRECT_TESTS:%=direct_%_replace)
-$(SWIFT_DIRECT_TESTS:%=direct_%_replace): infer
+$(SWIFT_DIRECT_TESTS:%=direct_%_replace): $(INFER_BIN)
 	$(QUIET)$(call silent_on_success,Recording Swift expectations: $(subst _, ,$@),\
 	$(call silence_make,\
 	$(MAKE) -C \
