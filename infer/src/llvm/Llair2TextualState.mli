@@ -63,7 +63,8 @@ module ModuleState : sig
     ; lang: Textual.Lang.t
     ; method_class_index: method_class_index
     ; class_name_offset_map: class_name_offset_map
-    ; field_offset_map: field_offset_map }
+    ; field_offset_map: field_offset_map
+    ; objc_method_index: (string, Textual.QualifiedProcName.t) Hashtbl.t }
 
   val init :
        functions:(Llair.FuncName.t * Llair.func) list
@@ -77,6 +78,7 @@ module ModuleState : sig
     -> method_class_index:method_class_index
     -> class_name_offset_map:class_name_offset_map
     -> field_offset_map:field_offset_map
+    -> objc_method_index:(string, Textual.QualifiedProcName.t) Hashtbl.t
     -> t
 end
 

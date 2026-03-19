@@ -80,10 +80,11 @@ module ModuleState = struct
     ; lang: Textual.Lang.t
     ; method_class_index: method_class_index
     ; class_name_offset_map: class_name_offset_map
-    ; field_offset_map: field_offset_map }
+    ; field_offset_map: field_offset_map
+    ; objc_method_index: (string, Textual.QualifiedProcName.t) Hashtbl.t }
 
   let init ~functions ~struct_map ~mangled_map ~plain_map ~proc_decls ~proc_map ~globals_map ~lang
-      ~method_class_index ~class_name_offset_map ~field_offset_map =
+      ~method_class_index ~class_name_offset_map ~field_offset_map ~objc_method_index =
     { functions
     ; struct_map
     ; mangled_map
@@ -94,7 +95,8 @@ module ModuleState = struct
     ; lang
     ; method_class_index
     ; class_name_offset_map
-    ; field_offset_map }
+    ; field_offset_map
+    ; objc_method_index }
 end
 
 module ProcState = struct

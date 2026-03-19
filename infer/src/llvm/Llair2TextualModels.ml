@@ -251,66 +251,116 @@ let translate_protocol_witness_optional_deinit_copy ~f_to_textual_exp ~f_add_der
   instr :: instrs
 
 
-let resolve_objc_msgSend ~(proc_state : ProcState.t) call_exp arg_types =
-  match call_exp with
-  | Textual.Exp.Call {proc; args= textual_args}
-    when Textual.ProcName.equal
-           (Textual.QualifiedProcName.name proc)
-           (Textual.ProcName.of_string "objc_msgSend") -> (
-    match (textual_args, arg_types) with
-    | receiver_textual :: selector_textual :: rest_textual_args, receiver_type_opt :: _ -> (
-        let receiver_type_opt =
-          match receiver_textual with
-          | Textual.Exp.Var ident -> (
-            match IdentMap.find_opt ident proc_state.ProcState.ids_move with
-            | Some id_data ->
-                Option.map ~f:(fun typ -> typ.Textual.Typ.typ) id_data.ProcState.typ
+(** Peels away __sil_cast calls to find the underlying Identifier *)
+let rec get_base_ident exp =
+  match exp with
+  | Some (Textual.Exp.Var id) ->
+      Some id
+  | Some (Textual.Exp.Call {proc; args; _})
+    when String.is_substring (Textual.ProcName.to_string proc.name) ~substring:"sil_cast" ->
+      (* sil_cast usually has the form: cast<type>(value) *)
+      get_base_ident (List.last args)
+  | _ ->
+      None
+
+
+let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
+  let module_state = proc_state.module_state in
+  (* Extract the receiver (Index 0) *)
+  let receiver = List.hd args |> Option.to_list in
+  (* IMPORTANT: Index 1 is the selector. We MUST skip it.
+     List.drop args 2 starts taking from Index 2 onwards.
+  *)
+  let actual_params = List.drop args 2 in
+  (* 1. Search the objc_method_index for a Swift implementation ($s...To) *)
+  let resolved_qname_opt = Hashtbl.find module_state.objc_method_index method_name in
+  match resolved_qname_opt with
+  | Some qname ->
+      (* CASE: Found a Swift @objc implementation in the LLVM file *)
+      let mangled_str = Textual.ProcName.to_string qname.name in
+      let final_args =
+        if String.is_suffix mangled_str ~suffix:"To" then
+          (* Thunk: (Receiver, Null_Selector, ...Params) *)
+          receiver @ [Textual.Exp.Const Null] @ actual_params
+        else
+          (* Native: (Receiver, ...Params) *)
+          receiver @ actual_params
+      in
+      Textual.Exp.Call {proc= qname; args= final_args; kind= Virtual}
+  | None ->
+      (* CASE: Fallback for ObjC Land (External/SDK) *)
+      let receiver_type_opt = List.hd arg_types in
+      let enclosing_class =
+        match receiver_type_opt with
+        | Some (Some (Textual.Typ.Ptr ((Struct type_name as struct_typ), _)))
+          when not (Textual.Typ.equal struct_typ Textual.Typ.any_type_swift) -> (
+          match Textual.TypeName.swift_plain_name_of_type_name type_name with
+          | Some plain_name ->
+              Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string plain_name)
+          | None -> (
+            match Textual.TypeName.swift_mangled_name_of_type_name type_name with
+            | Some mangled_name ->
+                Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string mangled_name)
             | None ->
-                None )
-          | _ ->
-              receiver_type_opt
-        in
-        let enclosing_class =
-          match receiver_type_opt with
-          | Some (Textual.Typ.Ptr ((Struct type_name as struct_typ), _))
-            when not (Textual.Typ.equal struct_typ Textual.Typ.any_type_swift) -> (
-            match Textual.TypeName.swift_plain_name_of_type_name type_name with
-            | Some plain_name ->
-                Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string plain_name)
-            | None -> (
-              match Textual.TypeName.swift_mangled_name_of_type_name type_name with
-              | Some mangled_name ->
-                  Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string mangled_name)
-              | None ->
-                  Textual.QualifiedProcName.TopLevel ) )
-          | _ ->
-              Textual.QualifiedProcName.TopLevel
-        in
-        let selector_name_opt =
-          match selector_textual with
-          | Textual.Exp.Var id ->
-              Textual.Ident.Map.find_opt id proc_state.selector_map
+                Textual.QualifiedProcName.TopLevel ) )
+        | _ ->
+            Textual.QualifiedProcName.TopLevel
+      in
+      (* Tag as Objective-C so Pulse uses Clang-style naming convention *)
+      let metadata =
+        Some
+          { Textual.QualifiedProcName.lang= Some Textual.Lang.ObjectiveC
+          ; method_kind= Some Textual.QualifiedProcName.InstanceMethod }
+      in
+      let qname =
+        Textual.QualifiedProcName.
+          {name= Textual.ProcName.of_string method_name; enclosing_class; metadata}
+      in
+      let final_args = receiver @ actual_params in
+      Textual.Exp.Call {proc= qname; args= final_args; kind= Virtual}
+
+
+let resolve_objc_msgSend ~proc_state call_exp arg_types =
+  match call_exp with
+  | Textual.Exp.Call {proc; args; _} ->
+      let proc_name = Textual.ProcName.to_string proc.name in
+      if
+        String.is_substring proc_name ~substring:"objc_msgSend"
+        || String.is_substring proc_name ~substring:"performSelector"
+      then
+        let selector_lit_arg = List.nth args 1 in
+        let selector_lit_name =
+          match get_base_ident selector_lit_arg with
+          | Some id ->
+              ProcState.find_selector proc_state id
           | _ ->
               None
         in
-        match selector_name_opt with
+        match selector_lit_name with
+        | Some "performSelector:" -> (
+            let real_method_arg = List.nth args 2 in
+            match get_base_ident real_method_arg with
+            | Some id -> (
+              match ProcState.find_selector proc_state id with
+              | Some method_name ->
+                  (* For performSelector(obj, perf_sel, target_sel), we need to
+                     construct a new args list: [obj, target_sel]
+                     so that rewrite_to_method's 'drop 2' works correctly. *)
+                  let receiver = List.hd args |> Option.to_list in
+                  let target_selector = Option.to_list real_method_arg in
+                  let remaining_args = List.drop args 3 in
+                  let new_args = receiver @ target_selector @ remaining_args in
+                  rewrite_to_method ~proc_state method_name new_args arg_types
+              | None ->
+                  call_exp )
+            | _ ->
+                call_exp )
         | Some method_name ->
-            let metadata =
-              Some
-                Textual.QualifiedProcName.
-                  { lang= Some Textual.Lang.ObjectiveC
-                  ; method_kind= Some Textual.QualifiedProcName.InstanceMethod }
-            in
-            let new_proc =
-              Textual.QualifiedProcName.
-                {enclosing_class; name= Textual.ProcName.of_string method_name; metadata}
-            in
-            let new_args = receiver_textual :: rest_textual_args in
-            Textual.Exp.Call {proc= new_proc; args= new_args; kind= Textual.Exp.Virtual}
+            (* Standard objc_msgSend(obj, sel, ...) matches drop 2 perfectly *)
+            rewrite_to_method ~proc_state method_name args arg_types
         | None ->
-            call_exp )
-    | _ ->
-        call_exp )
+            call_exp
+      else call_exp
   | _ ->
       call_exp
 

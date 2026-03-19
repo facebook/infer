@@ -18,7 +18,11 @@ declare swift_bridgeObjectRetain(*__infer_swift_type<ptr_elt>) : *__infer_swift_
 
 declare swift_bridgeObjectRelease(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
+declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
 declare objc_msgSend() : *__infer_swift_type<ptr_elt>
+
+declare objc_allocWithZone(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare _swift_FORCE_LOAD_$_swift_Builtin_float() : *__infer_swift_type<ptr_elt>
 
@@ -42,99 +46,174 @@ declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*_
 
 declare $sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "testDynamicPropagation" $s5Hello22testDynamicPropagation3objSiyXl_tF(obj: *__infer_swift_type<,$syXlD>) : int {
-  local var8: *__infer_swift_type<TSi>, var7: *__infer_swift_type<AnyObject>, sel: *__infer_swift_type<ptr_elt>, result: *__infer_swift_type<ptr_elt>, methodName: *__infer_swift_type<TSS>
-  #: @[8:22]
-      n4 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("reportStatus", 12, 1) @[8:22]
-      jmp 8::ret @[8:22]
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerCfD(*__infer_swift_type<,MyTracker>) : void
+
+declare $s5Hello9MyTrackerCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "init" $s5Hello9MyTrackerCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,MyTracker>
+
+define .plain_name = "init" $s5Hello9MyTrackerCACycfc(self: *__infer_swift_type<,MyTracker>) : *__infer_swift_type<ptr_elt> {
+  local var4: *__infer_swift_type<objc_super>
+  #: @[7:0]
+      n1 = load &self @[7:0]
+      n4 = $builtins.llvm_init_tuple() @[7:0]
+      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9MyTrackerC,MyTracker>>) @[7:0]
+      n3 = n4 @[7:0]
+      jmp 5::ret @[7:0]
       
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[7:0]
-      unreachable @[7:0]
-      
-  #16::ret: @[9:36]
-      n19 = load n6 @[9:36]
-      n20 = load n8 @[9:36]
-      n21 = $sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF(n19, n20) @[9:36]
-      jmp 17::ret @[9:36]
-      
-  #17::ret: @[9:15]
-      n23 = NSSelectorFromString(n21) @[9:15]
-      jmp 18::ret @[9:15]
-      
-  #18::ret: @[7:0]
-      store &sel <- n23 @[7:0]
-      n25 = load &obj @[7:0]
-      n26 = swift_getObjectType(n25) @[7:0]
-      jmp 19::ret @[7:0]
-      
-  #19::ret: @[7:0]
-      n27 = load &obj @[7:0]
-      n28 = n27 @[7:0]
-      jmp 20::ret @[7:0]
-      
-  #20::ret: @[10:22]
-      n29 = load &L_selector(performSelector:) @[10:22]
-      n30 = load &obj @[10:22]
-      n35 = n30.performSelector:(__sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n23))) @[10:22]
-      jmp 24::ret @[10:22]
-      
-  #24::ret: @[10:22]
-      n36 = $builtins.llvm_nondet() @[10:22]
-      if __sil_eq(__sil_cast(<int>, n35), 0) then jmp 30 else jmp 28::jmp::31 @[7:0]
-      
-  #28::jmp::31: @[7:0]
-      n42 = __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n35)) @[7:0]
-      jmp 31 @[7:0]
-      
-  #30: @[7:0]
-      _ = __sil_assert_fail(null) @[7:0]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[7:0]
-      
-  #31: @[10:35]
-      n45 = n42 @[10:35]
-      jmp 33::ret @[10:35]
-      
-  #33::ret: @[7:0]
-      store &result <- n42 @[7:0]
-      n48 = n42 @[11:12]
-      jmp 34::ret @[11:12]
-      
-  #34::ret: @[11:19]
-      n50:*__infer_swift_type<AnyObject> = load &var7 @[11:19]
-      store n50.__infer_swift_type<AnyObject>.field_0 <- n42 @[11:19]
-      n53:*__infer_swift_type<swift::full_existential_type> = load &$syXlN @[11:19]
-      n51 = load &var8 @[11:19]
-      n52 = load &var7 @[11:19]
-      n54 = load n53.__infer_swift_type<swift::full_existential_type>.field_1 @[11:19]
-      n55 = load &$sSiN @[11:19]
-      n57 = swift_dynamicCast(n51, n52, n54, n55, 7) @[11:19]
-      jmp 36::ret @[11:19]
-      
-  #36::ret: @[11:19]
-      n59:*__infer_swift_type<TSi> = load &var8 @[11:19]
-      n58 = load n59.__infer_swift_type<TSi>.field_0 @[11:19]
-      ret n58 @[11:5]
-      
-  #8::ret: @[8:22]
-      n6 = n4.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[8:22]
-      n8 = n4.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[8:22]
-      n9:*__infer_swift_type<TSS> = load &methodName @[7:0]
-      n10:*__infer_swift_type<Ts11_StringGutsV> = load n9.__infer_swift_type<TSS>.field_0 @[7:0]
-      n11 = n10.__infer_swift_type<Ts11_StringGutsV>.field_0 @[7:0]
-      n13:*__infer_swift_type<Ts13_StringObjectV> = load n11 @[7:0]
-      n14:*__infer_swift_type<Ts6UInt64V,UInt64> = load n13.__infer_swift_type<Ts13_StringObjectV>.field_0 @[7:0]
-      n12 = load n6 @[7:0]
-      store n14.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n12 @[7:0]
-      n16:*__infer_swift_type<Ts13_StringObjectV> = load n11 @[7:0]
-      n15 = load n8 @[7:0]
-      store n16.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n15 @[7:0]
-      n17 = load n8 @[9:36]
-      n18 = n17 @[9:36]
-      jmp 16::ret @[9:36]
+  #5::ret: @[7:0]
+      n6:*__infer_swift_type<objc_super> = load &var4 @[7:0]
+      store n6.__infer_swift_type<objc_super>.field_0 <- n1 @[7:0]
+      n9:*__infer_swift_type<objc_super> = load &var4 @[7:0]
+      n8 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[7:0]
+      store n9.__infer_swift_type<objc_super>.field_1 <- n8 @[7:0]
+      n10 = load &L_selector(init) @[7:0]
+      n11 = load &var4 @[7:0]
+      n13 = $builtins.objc_msgSendSuper2(n11, n10) @[7:0]
+      n14 = $builtins.llvm_nondet() @[7:0]
+      store &self <- n13 @[7:0]
+      n16 = load &self @[7:0]
+      ret n13 @[7:0]
       
 } @?
 
+define .plain_name = "init" $s5Hello9MyTrackerCACycfC(var1: *__infer_swift_type<,$s5Hello9MyTrackerCXMTD>) : *__infer_swift_type<ptr_elt> {
+  #: @[7:0]
+      n1 = load &var1 @[7:0]
+      n2 = __sil_objc_alloc(<NSObject>, n1) @[7:0]
+      jmp 2::ret @[7:0]
+      
+  #2::ret: @[7:0]
+      n3 = load &L_selector(init) @[7:0]
+      n6 = n2.init() @[7:0]
+      jmp 4::ret @[7:0]
+      
+  #4::ret: @[7:0]
+      ret n6 @[7:0]
+      
+} @?
+
+define .plain_name = "reportStatus" $s5Hello9MyTrackerC12reportStatusSiyFTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : int {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = $builtins.llvm_nondet() @[0:0]
+      n4 = load &var1 @[0:0]
+      n5 = __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(n4) @[0:0]
+      jmp 8::ret @[0:0]
+      
+  #8::ret: @[0:0]
+      ret n5 @[0:0]
+      
+} @?
+
+define .plain_name = "reportStatus" .method_offset = "10" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(self: *__infer_swift_type<,MyTracker>) : int {
+  #: @[9:9]
+      ret 5 @[9:9]
+      
+} @?
+
+define .plain_name = "testDynamicPropagation" $s5Hello22testDynamicPropagation3objSiyXl_tF(obj: *__infer_swift_type<,$syXlD>) : int {
+  local var8: *__infer_swift_type<TSi>, var7: *__infer_swift_type<AnyObject>, sel: *__infer_swift_type<ptr_elt>, result: *__infer_swift_type<ptr_elt>, methodName: *__infer_swift_type<TSS>
+  #: @[14:22]
+      n4 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("reportStatus", 12, 1) @[14:22]
+      jmp 8::ret @[14:22]
+      
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[13:0]
+      unreachable @[13:0]
+      
+  #16::ret: @[15:36]
+      n19 = load n6 @[15:36]
+      n20 = load n8 @[15:36]
+      n21 = $sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF(n19, n20) @[15:36]
+      jmp 17::ret @[15:36]
+      
+  #17::ret: @[15:15]
+      n23 = NSSelectorFromString(n21) @[15:15]
+      jmp 18::ret @[15:15]
+      
+  #18::ret: @[13:0]
+      store &sel <- n23 @[13:0]
+      n25 = load &obj @[13:0]
+      n26 = swift_getObjectType(n25) @[13:0]
+      jmp 19::ret @[13:0]
+      
+  #19::ret: @[13:0]
+      n27 = load &obj @[13:0]
+      n28 = n27 @[13:0]
+      jmp 20::ret @[13:0]
+      
+  #20::ret: @[16:22]
+      n29 = load &L_selector(performSelector:) @[16:22]
+      n30 = load &obj @[16:22]
+      n35 = n30.$s5Hello9MyTrackerC12reportStatusSiyFTo(null) @[16:22]
+      jmp 24::ret @[16:22]
+      
+  #24::ret: @[16:22]
+      n36 = $builtins.llvm_nondet() @[16:22]
+      if __sil_eq(__sil_cast(<int>, n35), 0) then jmp 30 else jmp 28::jmp::31 @[13:0]
+      
+  #28::jmp::31: @[13:0]
+      n42 = __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n35)) @[13:0]
+      jmp 31 @[13:0]
+      
+  #30: @[13:0]
+      _ = __sil_assert_fail(null) @[13:0]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[13:0]
+      
+  #31: @[16:35]
+      n45 = n42 @[16:35]
+      jmp 33::ret @[16:35]
+      
+  #33::ret: @[13:0]
+      store &result <- n42 @[13:0]
+      n48 = n42 @[17:12]
+      jmp 34::ret @[17:12]
+      
+  #34::ret: @[17:19]
+      n50:*__infer_swift_type<AnyObject> = load &var7 @[17:19]
+      store n50.__infer_swift_type<AnyObject>.field_0 <- n42 @[17:19]
+      n53:*__infer_swift_type<swift::full_existential_type> = load &$syXlN @[17:19]
+      n51 = load &var8 @[17:19]
+      n52 = load &var7 @[17:19]
+      n54 = load n53.__infer_swift_type<swift::full_existential_type>.field_1 @[17:19]
+      n55 = load &$sSiN @[17:19]
+      n57 = swift_dynamicCast(n51, n52, n54, n55, 7) @[17:19]
+      jmp 36::ret @[17:19]
+      
+  #36::ret: @[17:19]
+      n59:*__infer_swift_type<TSi> = load &var8 @[17:19]
+      n58 = load n59.__infer_swift_type<TSi>.field_0 @[17:19]
+      ret n58 @[17:5]
+      
+  #8::ret: @[14:22]
+      n6 = n4.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[14:22]
+      n8 = n4.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[14:22]
+      n9:*__infer_swift_type<TSS> = load &methodName @[13:0]
+      n10:*__infer_swift_type<Ts11_StringGutsV> = load n9.__infer_swift_type<TSS>.field_0 @[13:0]
+      n11 = n10.__infer_swift_type<Ts11_StringGutsV>.field_0 @[13:0]
+      n13:*__infer_swift_type<Ts13_StringObjectV> = load n11 @[13:0]
+      n14:*__infer_swift_type<Ts6UInt64V,UInt64> = load n13.__infer_swift_type<Ts13_StringObjectV>.field_0 @[13:0]
+      n12 = load n6 @[13:0]
+      store n14.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n12 @[13:0]
+      n16:*__infer_swift_type<Ts13_StringObjectV> = load n11 @[13:0]
+      n15 = load n8 @[13:0]
+      store n16.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n15 @[13:0]
+      n17 = load n8 @[15:36]
+      n18 = n17 @[15:36]
+      jmp 16::ret @[15:36]
+      
+} @?
+
+global symbolic _____ 5Hello9MyTrackerC: *__infer_tuple_class<int,int,int>
+
+global symbolic So8NSObjectC: *__infer_tuple_class<*int,int>
+
 global symbolic $s5Hello7TrackerP: *__infer_tuple_class<*int,int>
+
+global swift_isaMask: *__infer_swift_type<ptr_elt>
+
+global objc_classes_$s5Hello9MyTrackerCN: *__infer_swift_type<ptr_elt>
 
 global llvm::used: **__infer_swift_type<ptr_elt>
 
@@ -154,6 +233,8 @@ global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello: *__infer_swift_type<ptr_
 
 global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
 
+global _objc_empty_cache: *__infer_swift_type<ptr_elt>
+
 global __swift_reflection_version: int
 
 global _PROTOCOL__TtP5Hello7Tracker_: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
@@ -162,11 +243,35 @@ global _PROTOCOL_METHOD_TYPES__TtP5Hello7Tracker_: **__infer_swift_type<ptr_elt>
 
 global _PROTOCOL_INSTANCE_METHODS__TtP5Hello7Tracker_: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
 
+global _PROTOCOLS__TtC5Hello9MyTracker::1: *__infer_tuple_class<int,**__infer_swift_type<ptr_elt>>
+
+global _PROTOCOLS__TtC5Hello9MyTracker: *__infer_tuple_class<int,**__infer_swift_type<ptr_elt>>
+
+global _METACLASS_DATA__TtC5Hello9MyTracker: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _INSTANCE_METHODS__TtC5Hello9MyTracker: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _DATA__TtC5Hello9MyTracker: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global OBJC_METACLASS_$__TtC5Hello9MyTracker: *__infer_swift_type<objc_class>
+
+global OBJC_METACLASS_$_NSObject: *__infer_swift_type<ptr_elt>
+
+global OBJC_CLASS_$_NSObject: *__infer_swift_type<ptr_elt>
+
+global ::str::9::MyTracker: *int
+
 global ::str::7::q16@0:8: int
+
+global ::str::7::@16@0:8: int
 
 global ::str::68::Unexpectedly found nil while implicitly unwrapping an Optional value: *int
 
+global ::str::5::Hello: *int
+
 global ::str::35::Hello/objc_string_propagation::swift: *int
+
+global ::str::20::_TtC5Hello9MyTracker: *int
 
 global ::str::19::_TtP5Hello7Tracker_: *int
 
@@ -178,6 +283,18 @@ global $syXlN: *__infer_swift_type<ptr_elt>
 
 global $sSiN: *__infer_swift_type<ptr_elt>
 
+global $sBOWV: *__infer_swift_type<ptr_elt>
+
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
+
+global $s5Hello9MyTrackerCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>>
+
+global $s5Hello9MyTrackerCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global $s5Hello9MyTrackerCMF: *__infer_tuple_class<int,int,int,int,int>
+
+global $s5Hello9MyTrackerCHn: *__infer_swift_type<swift::type_metadata_record>
+
 global $s5Hello7Tracker_pMF: *__infer_tuple_class<int,int,int,int,int>
 
 global l_OBJC_PROTOCOL_REFERENCE_$__TtP5Hello7Tracker_: *__infer_swift_type<ptr_elt>
@@ -188,9 +305,19 @@ global L_selector_data(reportStatus): *int
 
 global L_selector_data(performSelector:): *int
 
+global L_selector_data(init): *int
+
+global L_selector_data(dealloc): int
+
 global L_selector(performSelector:): *__infer_swift_type<ptr_elt>
 
+global L_selector(init): *__infer_swift_type<ptr_elt>
+
+global L_selector(dealloc): *__infer_swift_type<ptr_elt>
+
 type __infer_swift_type<AnyObject> = {field_0: *__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<T5Hello9MyTrackerC,MyTracker> = {}
 
 type __infer_swift_type<TSS> = {field_0: *__infer_swift_type<Ts11_StringGutsV>}
 
@@ -203,10 +330,27 @@ type __infer_swift_type<Ts13_StringObjectV> = {field_0: *__infer_swift_type<Ts6U
 
 type __infer_swift_type<Ts6UInt64V,UInt64> = {field_0: int}
 
+type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>;
+                                       field_2: *__infer_swift_type<ptr_elt>;
+                                       field_3: *__infer_swift_type<ptr_elt>;
+                                       field_4: int}
+
+type __infer_swift_type<objc_super> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>}
+
 type __infer_swift_type<swift::full_existential_type> = {field_0: *__infer_swift_type<ptr_elt>;
                                                          field_1: *__infer_swift_type<swift::type>}
 
+type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+
+type __infer_swift_type<swift::method_descriptor> = {field_0: int;
+                                                     field_1: int}
+
 type __infer_swift_type<swift::type> = {field_0: int}
+
+type __infer_swift_type<swift::type_metadata_record> = {field_0: int}
 
 type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
 __infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
@@ -227,8 +371,27 @@ __infer_tuple_field_10: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_11: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_12: *__infer_swift_type<ptr_elt>}
 
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: int; __infer_tuple_field_8: int;
+__infer_tuple_field_9: int; __infer_tuple_field_10: int;
+__infer_tuple_field_11: int; __infer_tuple_field_12: int;
+__infer_tuple_field_13: int; __infer_tuple_field_14: int;
+__infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_17: *__infer_swift_type<ptr_elt>}
+
 type __infer_tuple_class<*int,int> = {__infer_tuple_field_0: *int;
                                       __infer_tuple_field_1: int}
+
+type __infer_tuple_class<int,**__infer_swift_type<ptr_elt>> = {__infer_tuple_field_0: int;
+                                                               __infer_tuple_field_1: **__infer_swift_type<ptr_elt>}
 
 type __infer_tuple_class<int,*__infer_swift_type<ptr_elt>> = {__infer_tuple_field_0: int;
                                                               __infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
@@ -237,9 +400,34 @@ type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_e
 __infer_tuple_field_0: int; __infer_tuple_field_1: int;
 __infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>}
 
+type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
+                                         __infer_tuple_field_1: int;
+                                         __infer_tuple_field_2: int}
+
+type __infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_8: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_9: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_10: *__infer_swift_type<ptr_elt>}
+
 type __infer_tuple_class<int,int,int,int,int> = {__infer_tuple_field_0: int;
                                                  __infer_tuple_field_1: int;
                                                  __infer_tuple_field_2: int;
                                                  __infer_tuple_field_3: int;
                                                  __infer_tuple_field_4: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int;
+__infer_tuple_field_13: *__infer_swift_type<swift::method_descriptor>}
 

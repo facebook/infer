@@ -52,7 +52,7 @@ define .plain_name = "init" $sSo6UIViewCABycfcTO(var1: *__infer_swift_type<$sSo6
   #: @[0:0]
       n1 = load &L_selector(init) @[0:0]
       n2 = load &var1 @[0:0]
-      n4 = n2.init() @[0:0]
+      n4 = n2.UIView.init() @[0:0]
       jmp 3::ret @[0:0]
       
   #3::ret: @[0:0]

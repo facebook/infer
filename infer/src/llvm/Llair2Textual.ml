@@ -16,6 +16,7 @@ module State = Llair2TextualState
 module ModuleState = Llair2TextualState.ModuleState
 module ProcState = Llair2TextualState.ProcState
 module Globals = Llair2TextualGlobals
+module Proc = Llair2TextualProc
 module Models = Llair2TextualModels
 module VarMap = Textual.VarName.Map
 module IdentMap = Textual.Ident.Map
@@ -35,6 +36,13 @@ let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~subst
 let is_init_in_swift_overlay mangled_name =
   String.is_prefix mangled_name ~prefix:"$sSo"
   && (String.is_suffix mangled_name ~suffix:"fC" || String.is_suffix mangled_name ~suffix:"TO")
+
+
+let is_objc_thunk_not_init mangled_name =
+  let is_initializer mangled =
+    String.is_suffix mangled ~suffix:"fCTo" || String.is_suffix mangled ~suffix:"fcTo"
+  in
+  String.is_suffix mangled_name ~suffix:"To" && not (is_initializer mangled_name)
 
 
 let to_proc_name_closure_name s =
@@ -121,18 +129,6 @@ let is_loc_default loc =
 let to_textual_loc_instr ~(proc_state : ProcState.t) loc =
   let loc = to_textual_loc ~proc_state loc in
   if is_loc_default loc then proc_state.loc else loc
-
-
-let to_qualified_proc_name ?loc method_class_index func_name =
-  let proc_name = Textual.ProcName.of_string ?loc func_name in
-  let enclosing_class =
-    match Textual.ProcName.Hashtbl.find_opt method_class_index proc_name with
-    | Some class_name ->
-        Textual.QualifiedProcName.Enclosing class_name
-    | None ->
-        Textual.QualifiedProcName.TopLevel
-  in
-  Textual.QualifiedProcName.{enclosing_class; name= proc_name; metadata= None}
 
 
 let to_name_attr func_name =
@@ -771,7 +767,7 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
               || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
             then Textual.ProcDecl.assert_fail_name
             else
-              to_qualified_proc_name proc_state.module_state.method_class_index
+              Proc.to_qualified_proc_name proc_state.module_state.method_class_index
                 (FuncName.name func.Llair.name)
           in
           (proc, Textual.Exp.NonVirtual, None) )
@@ -1241,6 +1237,7 @@ let should_translate plain_name mangled_name lang method_class_index source_file
      and setters or closure bodies, etc and we need to translate them *)
   || is_closure lang mangled_name
   || is_init_in_swift_overlay mangled_name
+  || is_objc_thunk_not_init mangled_name
   || Option.exists
        ~f:(fun name -> String.is_suffix ~suffix:Globals.witness_protocol_suffix name)
        typ_name
@@ -1274,7 +1271,9 @@ let create_offset_attributes class_method_index : attr_map =
 let function_to_proc_decl lang signature_structs method_class_index ~struct_map (func_name, func) =
   let formal_types = to_formal_types lang signature_structs ~struct_map func in
   let loc = to_textual_loc func.Llair.loc in
-  let qualified_name = to_qualified_proc_name method_class_index ~loc (FuncName.name func_name) in
+  let qualified_name =
+    Proc.to_qualified_proc_name method_class_index ~loc (FuncName.name func_name)
+  in
   let plain_name = match lang with Textual.Lang.Swift -> to_name_attr func_name | _ -> None in
   let fun_result_typ =
     Textual.Typ.mk_without_attributes
@@ -1390,7 +1389,7 @@ let update_function_signatures lang class_method_index method_class_index ~mangl
     let procname = procdecl.qualified_name.Textual.QualifiedProcName.name in
     let loc = procname.Textual.ProcName.loc in
     let qualified_name =
-      to_qualified_proc_name ~loc method_class_index (Textual.ProcName.to_string procname)
+      Proc.to_qualified_proc_name ~loc method_class_index (Textual.ProcName.to_string procname)
     in
     let offset_attribute =
       Textual.QualifiedProcName.Map.find_opt qualified_name offset_attributes
@@ -1417,6 +1416,21 @@ let update_function_signatures lang class_method_index method_class_index ~mangl
 let translate_llair_functions source_file ~(module_state : ModuleState.t) =
   let ModuleState.{proc_decls; functions; _} = module_state in
   List.fold2_exn proc_decls functions ~init:[] ~f:(translate_code source_file ~module_state)
+
+
+let populate_objc_method_index proc_decls =
+  let index = Hashtbl.create (module String) in
+  List.iter proc_decls ~f:(fun (decl : Textual.ProcDecl.t) ->
+      List.find_map decl.attributes ~f:Textual.Attr.get_plain_name
+      |> Option.iter ~f:(fun plain ->
+             let qname = decl.qualified_name in
+             let mangled = Textual.ProcName.to_string qname.name in
+             (* Prioritize the thunk ONLY if it's not an initializer.
+            If it IS an initializer, we let the fallback logic
+            in rewrite_to_method handle it as a plain ObjC call.
+         *)
+             if is_objc_thunk_not_init mangled then Hashtbl.set index ~key:plain ~data:qname ) ) ;
+  index
 
 
 let init_module_state (llair_program : Llair.program) lang =
@@ -1450,8 +1464,9 @@ let init_module_state (llair_program : Llair.program) lang =
         Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
           proc_map )
   in
+  let objc_method_index = populate_objc_method_index proc_decls in
   ModuleState.init ~functions ~struct_map ~mangled_map ~plain_map ~proc_decls ~proc_map ~globals_map
-    ~lang ~method_class_index ~class_name_offset_map ~field_offset_map
+    ~lang ~method_class_index ~class_name_offset_map ~field_offset_map ~objc_method_index
 
 
 let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =
