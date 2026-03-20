@@ -103,7 +103,7 @@ struct QueueEntry {
 // Reproduces the FP from cachelib's ThreadPoolJobQueue: after move-constructing
 // a QueueEntry, assigning Job{} to entry.job via operator= was reported as
 // reading an uninitialized value (exec_ inside folly::Function).
-void FP_folly_function_move_assign_ok() {
+void folly_function_move_assign_ok() {
   QueueEntry entry{Job{[] { return JobExitCode::Done; }}};
   // This operator= call was previously a FP (PULSE_UNINITIALIZED_VALUE)
   // because Infer had no model for folly::Function::operator=.

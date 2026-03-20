@@ -1165,6 +1165,9 @@ let simple_matchers =
     ; -"folly" &:: "Function" &:: "Function" $ capt_arg_payload $+ capt_arg
       $--> Function.assign ~desc:"folly::Function::Function"
       |> with_non_disj
+    ; -"folly" &:: "Function" &:: "operator=" $ capt_arg_payload $+ capt_arg
+      $--> Function.assign ~desc:"folly::Function::operator="
+      |> with_non_disj
     ; -"folly" &:: "Function" &:: "~Function" &--> Basic.skip |> with_non_disj
     ; -"std" &:: "function" &:: "operator()" $ capt_arg
       $++$--> Function.operator_call ~deref_lambda_ptr:false
