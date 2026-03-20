@@ -131,7 +131,7 @@ void folly_function_move_assign_call_ok() {
 // Reproduces the FP from folly::CPUThreadPoolExecutor::add and
 // folly::settings::CommandLineParser::Impl::parse: operator bool() reads
 // exec_ which Infer thinks is uninitialized after move construction.
-void FP_folly_function_operator_bool_ok() {
+void folly_function_operator_bool_ok() {
   QueueEntry entry{Job{[] { return JobExitCode::Done; }}};
   if (entry.job) {
     entry.job();
