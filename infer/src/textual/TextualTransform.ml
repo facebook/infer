@@ -1096,10 +1096,12 @@ let remove_effects_in_subexprs lang decls_env module_ =
         let exp, state = flatten_exp loc ~toplevel:true exp state in
         State.push_instr (Let {id; exp; loc}) state
   in
-  let flatten_in_terminator loc (last : Terminator.t) state : Terminator.t * State.t =
+  let rec flatten_in_terminator loc (last : Terminator.t) state : Terminator.t * State.t =
     match last with
     | If {bexp; then_; else_} ->
         let bexp, state = flatten_bexp loc bexp state in
+        let then_, state = flatten_in_terminator loc then_ state in
+        let else_, state = flatten_in_terminator loc else_ state in
         let last = Terminator.If {bexp; then_; else_} in
         let may_need_iteration = terminator_needs_flattening last in
         let state = {state with State.may_need_iteration} in
