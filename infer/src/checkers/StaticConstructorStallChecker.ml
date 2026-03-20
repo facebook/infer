@@ -83,7 +83,7 @@ let report_issue proc_desc err_log trace_elems =
   let kind_to_string kind = match kind with `Call -> "an indirect" | `Dispatch_once -> "a" in
   let message =
     F.asprintf
-      "There is %s call to `disptach_once` at line %a from a static constructor. This could cause \
+      "There is %s call to `dispatch_once` at line %a from a static constructor. This could cause \
        a deadlock."
       (kind_to_string kind) Location.pp loc
   in
