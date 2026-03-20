@@ -12,6 +12,7 @@ type t =
   | AnnotationReachability
   | BufferOverrunAnalysis
   | BufferOverrunChecker
+  | ConfigGating
   | ConfigImpactAnalysis
   | Cost
   | DisjunctiveDemo

@@ -272,6 +272,7 @@ BUILD_SYSTEMS_TESTS += \
 DIRECT_TESTS += \
   java_annotreach \
   java_bufferoverrun \
+  java_config-gating \
   java_dependencies \
   java_fragment-retains-view \
   java_hoisting \

@@ -200,6 +200,7 @@ let all_checkers =
          in
          [(annot_reach, Clang); (annot_reach, Erlang); (annot_reach, Java); (annot_reach, Swift)] )
     }
+  ; {checker= ConfigGating; callbacks= [(intraprocedural ConfigGating.checker, Java)]}
   ; { checker= ConfigImpactAnalysis
     ; callbacks=
         (let checker =

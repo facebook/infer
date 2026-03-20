@@ -1170,6 +1170,12 @@ and compute_captured_context =
     "Compute context information for captured variables in Objective-C blocks"
 
 
+and config_gating_method_patterns =
+  CLOpt.mk_string_list ~long:"config-gating-method" ~meta:"regex"
+    "Register a method as a config read for the config-gating checker. The pattern is matched \
+     against $(b,ClassName.methodName). Use $(b,methodName) alone to match any class."
+
+
 and config_impact_config_field_patterns =
   CLOpt.mk_string_list ~long:"config-impact-config-field-patterns" ~meta:"regex"
     "Register known config fields that have a config value.  The matched name contains class and \
@@ -4111,6 +4117,8 @@ and compaction_if_heap_greater_equal_to_GB_multicore =
 and complete_capture_from = !complete_capture_from
 
 and compute_captured_context = !compute_captured_context
+
+and config_gating_method_patterns = RevList.rev_map !config_gating_method_patterns ~f:Str.regexp
 
 and config_impact_config_field_patterns =
   RevList.rev_map !config_impact_config_field_patterns ~f:Str.regexp

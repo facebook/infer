@@ -13,6 +13,7 @@ type t =
   | AnnotationReachability
   | BufferOverrunAnalysis
   | BufferOverrunChecker
+  | ConfigGating
   | ConfigImpactAnalysis
   | Cost
   | DisjunctiveDemo
@@ -124,6 +125,15 @@ let config_unsafe checker =
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [BufferOverrunAnalysis] }
+  | ConfigGating ->
+      { id= "config-gating"
+      ; kind= UserFacing {title= "Config Gating"; markdown_body= ""}
+      ; support= mk_support_func ~java:ExperimentalSupport ()
+      ; short_documentation=
+          "Determines which config flags gate the execution of each line of code."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
+      ; activates= [] }
   | ConfigImpactAnalysis ->
       { id= "config-impact-analysis"
       ; kind=

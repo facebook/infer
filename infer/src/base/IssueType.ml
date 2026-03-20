@@ -474,6 +474,11 @@ let condition_always_true =
   register_hidden ~enabled:false ~id:"CONDITION_ALWAYS_TRUE" Warning BufferOverrunChecker
 
 
+let config_gated =
+  register ~enabled:true ~category:NoCategory ~id:"CONFIG_GATED" Info ConfigGating
+    ~user_documentation:[%blob "./documentation/issues/CONFIG_GATED.md"]
+
+
 let config_impact_analysis =
   register ~enabled:true ~category:PerfRegression ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT.md"]
