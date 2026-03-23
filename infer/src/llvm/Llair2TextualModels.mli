@@ -25,10 +25,6 @@ type f_add_deref =
   -> Textual.Location.t
   -> Textual.Instr.t list * Textual.Exp.t
 
-type f_reg_to_textual_var = proc_state:ProcState.t -> Reg.t -> Textual.Exp.t * Textual.Typ.t option
-
-type f_reg_to_var_name = Reg.t -> Textual.VarName.t
-
 (* --- Constants & Simple Checks --- *)
 
 val swift_weak_assign : Textual.ProcName.t
@@ -74,8 +70,7 @@ val translate_optional_protocol_witness :
   -> Textual.TypeName.t * int
 
 val translate_boxed_opaque_existential :
-     f_reg_to_textual_var:f_reg_to_textual_var
-  -> f_to_textual_exp:f_to_textual_exp
+     f_to_textual_exp:f_to_textual_exp
   -> f_add_deref:f_add_deref
   -> proc_state:ProcState.t
   -> Textual.Location.t
@@ -95,17 +90,10 @@ val resolve_objc_msgSend :
   proc_state:ProcState.t -> Textual.Exp.t -> Textual.Typ.t option list -> Textual.Exp.t
 
 val save_metadata_type :
-     f_reg_to_textual_var:f_reg_to_textual_var
-  -> f_reg_to_var_name:f_reg_to_var_name
-  -> proc_state:ProcState.t
-  -> 'a call
-  -> Exp.t list
-  -> Textual.QualifiedProcName.t
-  -> unit
+  proc_state:ProcState.t -> 'a call -> Exp.t list -> Textual.QualifiedProcName.t -> unit
 
 val get_alloc_class_name :
-     f_reg_to_var_name:f_reg_to_var_name
-  -> proc_state:ProcState.t
+     proc_state:ProcState.t
   -> Textual.ProcName.t
   -> Exp.t list
   -> (Textual.TypeName.t * Textual.QualifiedProcName.t) option

@@ -11,6 +11,7 @@ module TypeName = Llair2TextualTypeName
 module Field = Llair2TextualField
 module ModuleState = Llair2TextualState.ModuleState
 module ProcState = Llair2TextualState.ProcState
+module Var = Llair2TextualVar
 module IdentMap = Textual.Ident.Map
 
 (* --- Dependency Injection Types --- *)
@@ -25,10 +26,6 @@ type f_add_deref =
   -> Textual.Exp.t
   -> Textual.Location.t
   -> Textual.Instr.t list * Textual.Exp.t
-
-type f_reg_to_textual_var = proc_state:ProcState.t -> Reg.t -> Textual.Exp.t * Textual.Typ.t option
-
-type f_reg_to_var_name = Reg.t -> Textual.VarName.t
 
 let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
 
@@ -206,13 +203,12 @@ let translate_optional_protocol_witness ~proc_state exp exp_typ typ_name n =
       (typ_name, n)
 
 
-let translate_boxed_opaque_existential ~f_reg_to_textual_var ~f_to_textual_exp ~f_add_deref
-    ~proc_state loc llair_args =
+let translate_boxed_opaque_existential ~f_to_textual_exp ~f_add_deref ~proc_state loc llair_args =
   let arg = List.hd_exn llair_args in
   let typ =
     match arg with
     | Llair.Exp.Reg {id; name; typ} -> (
-        let exp, exp_typ = f_reg_to_textual_var ~proc_state (Reg.mk typ id name) in
+        let exp, exp_typ = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
         match (exp, exp_typ) with
         | _, Some _ ->
             exp_typ
@@ -365,19 +361,18 @@ let resolve_objc_msgSend ~proc_state call_exp arg_types =
       call_exp
 
 
-let save_metadata_type ~f_reg_to_textual_var ~f_reg_to_var_name ~proc_state call llair_args
-    (proc : Textual.QualifiedProcName.t) =
+let save_metadata_type ~proc_state call llair_args (proc : Textual.QualifiedProcName.t) =
   if String.equal (Textual.ProcName.to_string proc.name) "swift_getObjCClassFromMetadata" then
     match llair_args with
     | [Llair.Exp.Reg {id; name; typ}] -> (
-        let _, type_opt = f_reg_to_textual_var ~proc_state (Reg.mk typ id name) in
+        let _, type_opt = Var.reg_to_textual_var ~proc_state (Reg.mk typ id name) in
         match type_opt with
         | Some (Textual.Typ.Ptr (Struct type_name, _)) -> (
           match Textual.TypeName.swift_plain_name_of_type_name type_name with
           | Some metatype_string ->
               let actual_type_name = TypeName.extract_class_from_metatype metatype_string in
               Option.iter call.areturn ~f:(fun ret_reg ->
-                  let var_name = f_reg_to_var_name ret_reg in
+                  let var_name = Var.reg_to_var_name ret_reg in
                   ProcState.add_class_type proc_state var_name actual_type_name )
           | None ->
               () )
@@ -394,7 +389,7 @@ let get_alloc_class_name =
   let objc_alloc = Textual.ProcName.of_string "objc_alloc" in
   let objc_allocWithZone = Textual.ProcName.of_string "objc_allocWithZone" in
   let ns_object = Textual.TypeName.of_string "NSObject" in
-  fun ~f_reg_to_var_name ~proc_state proc_name llair_args ->
+  fun ~proc_state proc_name llair_args ->
     match Textual.QualifiedProcName.get_class_name proc_state.ProcState.qualified_name with
     | Some class_name when Textual.ProcName.equal proc_name swift_alloc_object ->
         Some (class_name, Textual.ProcDecl.swift_alloc_name)
@@ -406,7 +401,7 @@ let get_alloc_class_name =
         let tracked_type_opt =
           match llair_args with
           | [Llair.Exp.Reg {id; name; typ}] ->
-              let var_name = f_reg_to_var_name (Reg.mk typ id name) in
+              let var_name = Var.reg_to_var_name (Reg.mk typ id name) in
               ProcState.get_class_type proc_state var_name
           | _ ->
               None
