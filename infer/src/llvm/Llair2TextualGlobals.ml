@@ -200,6 +200,13 @@ let process_globals lang class_method_index method_class_index ~mangled_map ~str
     globals_map struct_map
 
 
+type special_global = WitnessProtocol of string | Standard
+
+let classify_global name =
+  if String.is_suffix name ~suffix:witness_protocol_suffix then WitnessProtocol name
+  else Standard
+
+
 let to_textual_global ~f_to_textual_loc ~f_to_textual_exp ~module_state sourcefile global =
   let ModuleState.{lang; struct_map; mangled_map; _} = module_state in
   let global_ = global.GlobalDefn.name in
@@ -250,3 +257,50 @@ let to_textual_global ~f_to_textual_loc ~f_to_textual_exp ~module_state sourcefi
   in
   let global = Textual.Global.{name; typ; attributes= []; init_exp= None} in
   (global, proc_desc_opt)
+
+
+let rec translate_global ~proc_state ~lang ~struct_map ~mangled_map ~name ~typ =
+  match classify_global name with
+  | WitnessProtocol name ->
+      if
+        Option.is_some
+          (Textual.TypeName.Map.find_opt (Textual.TypeName.mk_swift_type_name name) struct_map)
+      then
+        let class_name =
+          TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
+        in
+        let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
+        let exp =
+          Textual.Exp.Call
+            {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
+        in
+        (exp, None, [])
+      else handle_standard_global ~proc_state ~lang ~struct_map ~mangled_map ~name ~typ
+  | Standard ->
+      handle_standard_global ~proc_state ~lang ~struct_map ~mangled_map ~name ~typ
+
+
+and handle_standard_global ~(proc_state : ProcState.t) ~lang ~struct_map ~mangled_map ~name ~typ =
+  let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
+  let global_info_opt =
+    Textual.VarName.Map.find_opt (Textual.VarName.of_string name)
+      proc_state.module_state.globals_map
+  in
+  let string_opt =
+    Option.bind global_info_opt ~f:(fun g ->
+        Option.bind g.Llair.GlobalDefn.init ~f:(fun (exp, _) -> Llair.Exp.string_of_exp exp) )
+  in
+  let typ_opt =
+    Option.bind global_info_opt ~f:(fun g ->
+        Option.map g.Llair.GlobalDefn.init ~f:(fun (_, t) ->
+            Type.to_textual_typ lang ~mangled_map ~struct_map t ) )
+  in
+  let textual_exp =
+    match string_opt with
+    | Some s ->
+        Textual.Exp.Const (Str s)
+    | None ->
+        Textual.Exp.Lvar (Textual.VarName.of_string name)
+  in
+  let final_typ = Option.value typ_opt ~default:textual_typ in
+  (textual_exp, Some final_typ, [])

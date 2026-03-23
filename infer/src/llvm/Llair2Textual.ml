@@ -425,50 +425,8 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             textual_typ
       in
       (textual_exp, Some typ, [])
-  | Global {name}
-    when String.is_suffix name ~suffix:Globals.witness_protocol_suffix
-         && Option.is_some
-              (Textual.TypeName.Map.find_opt (Textual.TypeName.mk_swift_type_name name) struct_map)
-    ->
-      let class_name =
-        TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map name
-      in
-      let args = [Textual.Exp.Typ (Textual.Typ.Struct class_name)] in
-      let exp =
-        Textual.Exp.Call
-          {proc= Textual.ProcDecl.swift_alloc_name; args; kind= Textual.Exp.NonVirtual}
-      in
-      (exp, None, [])
   | Global {name; typ} ->
-      let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
-      let textual_exp, typ_opt =
-        let string_opt, typ_opt =
-          match
-            VarMap.find_opt (Textual.VarName.of_string name) proc_state.module_state.globals_map
-          with
-          | Some global ->
-              let string_opt =
-                Option.bind
-                  ~f:(fun (exp, _typ) -> Llair.Exp.string_of_exp exp)
-                  global.Llair.GlobalDefn.init
-              in
-              let typ_opt =
-                Option.map
-                  ~f:(fun (_, typ) -> Type.to_textual_typ lang ~mangled_map ~struct_map typ)
-                  global.Llair.GlobalDefn.init
-              in
-              (string_opt, typ_opt)
-          | None ->
-              (None, None)
-        in
-        match string_opt with
-        | Some s ->
-            (Textual.Exp.Const (Str s), typ_opt)
-        | None ->
-            (Textual.Exp.Lvar (Textual.VarName.of_string name), typ_opt)
-      in
-      let textual_typ = Option.value typ_opt ~default:textual_typ in
-      (textual_exp, Some textual_typ, [])
+      Globals.translate_global ~proc_state ~lang ~struct_map ~mangled_map ~name ~typ
   | Ap1 (Select offset, llair_typ, llair_exp) -> (
     match extract_struct_name_opt proc_state.module_state llair_typ with
     | None ->

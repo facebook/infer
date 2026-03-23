@@ -35,3 +35,12 @@ val to_textual_global :
   -> SourceFile.t
   -> Llair.GlobalDefn.t
   -> Textual.Global.t * Textual.Module.decl option
+
+val translate_global :
+     proc_state:ProcState.t
+  -> lang:Textual.Lang.t
+  -> struct_map:Textual.Struct.t Textual.TypeName.Map.t
+  -> mangled_map:Llair2TextualState.mangled_map
+  -> name:string
+  -> typ:Llair.Typ.t
+  -> Textual.Exp.t * Textual.Typ.t option * 'a list
