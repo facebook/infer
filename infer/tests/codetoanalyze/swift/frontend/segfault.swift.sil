@@ -142,13 +142,13 @@ global ::str::1::a: *int
 
 global $sSis25LosslessStringConvertiblesWP: *__infer_swift_type<ptr_elt>
 
-global $sSiN: *__infer_swift_type<ptr_elt>
+global $sSiN: *__infer_swift_type<ptr_elt> = [Some 1002]
 
 global $sSS_SStMD: *__infer_tuple_class<int,int>
 
 global $sSSSHsWP: *__infer_swift_type<ptr_elt>
 
-global $sSSN: *__infer_swift_type<ptr_elt>
+global $sSSN: *__infer_swift_type<ptr_elt> = [Some 1003]
 
 type __infer_swift_type<TSS> = {field_0: *__infer_swift_type<Ts11_StringGutsV>}
 

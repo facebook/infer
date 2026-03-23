@@ -279,9 +279,9 @@ global ::str::12::reportStatus: *int
 
 global ::str::11::Fatal error: *int
 
-global $syXlN: *__infer_swift_type<ptr_elt>
+global $syXlN: *__infer_swift_type<ptr_elt> = [Some 1001]
 
-global $sSiN: *__infer_swift_type<ptr_elt>
+global $sSiN: *__infer_swift_type<ptr_elt> = [Some 1002]
 
 global $sBOWV: *__infer_swift_type<ptr_elt>
 

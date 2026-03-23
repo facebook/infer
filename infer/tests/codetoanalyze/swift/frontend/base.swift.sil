@@ -2905,7 +2905,7 @@ global $sSiSQsWP: *__infer_swift_type<ptr_elt>
 
 global $sSiSHsWP: *__infer_swift_type<ptr_elt>
 
-global $sSiN: *__infer_swift_type<ptr_elt>
+global $sSiN: *__infer_swift_type<ptr_elt> = [Some 1002]
 
 global $sShySSGMD: *__infer_tuple_class<int,int>
 
@@ -2927,7 +2927,7 @@ global $sSY8rawValue03RawB0QzvgTq: *__infer_swift_type<ptr_elt>
 
 global $sSSSHsWP: *__infer_swift_type<ptr_elt>
 
-global $sSSN: *__infer_swift_type<ptr_elt>
+global $sSSN: *__infer_swift_type<ptr_elt> = [Some 1003]
 
 global $sSQMp: *__infer_swift_type<ptr_elt>
 

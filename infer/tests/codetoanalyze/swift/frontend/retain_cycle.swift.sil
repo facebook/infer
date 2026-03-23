@@ -1009,7 +1009,7 @@ global $sSSSQsWP: *__infer_swift_type<ptr_elt>
 
 global $sSSSHsWP: *__infer_swift_type<ptr_elt>
 
-global $sSSN: *__infer_swift_type<ptr_elt>
+global $sSSN: *__infer_swift_type<ptr_elt> = [Some 1003]
 
 global $sSQMp: *__infer_swift_type<ptr_elt>
 

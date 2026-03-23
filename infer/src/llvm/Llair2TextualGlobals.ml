@@ -200,11 +200,34 @@ let process_globals lang class_method_index method_class_index ~mangled_map ~str
     globals_map struct_map
 
 
-type special_global = WitnessProtocol of string | Standard
+type special_global = WitnessProtocol of string | SwiftMetadata of string | Standard
 
 let classify_global name =
   if String.is_suffix name ~suffix:witness_protocol_suffix then WitnessProtocol name
+  else if String.is_prefix name ~prefix:"$s" && String.is_suffix name ~suffix:"N" then
+    SwiftMetadata name
   else Standard
+
+
+(* Unique Identity Tags for Swift Types to help Pulse recognize them *)
+let any_object_tag = 1001
+
+let swift_int_tag = 1002
+
+let swift_string_tag = 1003
+
+(** * Returns a synthetic constant for specific Swift metadata globals. *)
+let get_synthetic_metadata_constant global_name =
+  if String.equal global_name "$syXlN" then
+    (* AnyObject Metadata *)
+    Some (Textual.Exp.Const (Int (Z.of_int any_object_tag)))
+  else if String.equal global_name "$sSiN" then
+    (* Swift.Int Metadata *)
+    Some (Textual.Exp.Const (Int (Z.of_int swift_int_tag)))
+  else if String.equal global_name "$sSSN" then
+    (* Swift.String Metadata *)
+    Some (Textual.Exp.Const (Int (Z.of_int swift_string_tag)))
+  else None
 
 
 let to_textual_global ~f_to_textual_loc ~f_to_textual_exp ~module_state sourcefile global =
@@ -216,6 +239,8 @@ let to_textual_global ~f_to_textual_loc ~f_to_textual_exp ~module_state sourcefi
     match global.GlobalDefn.init with Some (_, typ) -> typ | None -> Global.typ global_
   in
   let typ = Type.to_textual_typ lang ~mangled_map ~struct_map global_typ in
+  (* Initialize Swift metadata globals with their constant Identity Tags *)
+  let init_exp = get_synthetic_metadata_constant global_name in
   let proc_desc_opt =
     if Config.llvm_translate_global_init then
       let loc = f_to_textual_loc global.GlobalDefn.loc in
@@ -255,7 +280,7 @@ let to_textual_global ~f_to_textual_loc ~f_to_textual_exp ~module_state sourcefi
           None
     else None
   in
-  let global = Textual.Global.{name; typ; attributes= []; init_exp= None} in
+  let global = Textual.Global.{name; typ; attributes= []; init_exp} in
   (global, proc_desc_opt)
 
 
@@ -276,6 +301,10 @@ let rec translate_global ~proc_state ~lang ~struct_map ~mangled_map ~name ~typ =
         in
         (exp, None, [])
       else handle_standard_global ~proc_state ~lang ~struct_map ~mangled_map ~name ~typ
+  | SwiftMetadata name ->
+      (* Return the Lvar (pointer). Pulse will load the ID value from this pointer. *)
+      let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
+      (Textual.Exp.Lvar (Textual.VarName.of_string name), Some textual_typ, [])
   | Standard ->
       handle_standard_global ~proc_state ~lang ~struct_map ~mangled_map ~name ~typ
 

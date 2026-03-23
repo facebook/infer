@@ -2936,7 +2936,7 @@ global $sypN: *__infer_swift_type<ptr_elt>
 
 global $sSiSHsWP: *__infer_swift_type<ptr_elt>
 
-global $sSiN: *__infer_swift_type<ptr_elt>
+global $sSiN: *__infer_swift_type<ptr_elt> = [Some 1002]
 
 global $sSayxGs23CustomStringConvertiblesMc: *__infer_swift_type<ptr_elt>
 
@@ -2944,7 +2944,7 @@ global $sSaySSGSayxGs23CustomStringConvertiblesWL: *__infer_swift_type<ptr_elt>
 
 global $sSaySSGMD: *__infer_tuple_class<int,int>
 
-global $sSSN: *__infer_swift_type<ptr_elt>
+global $sSSN: *__infer_swift_type<ptr_elt> = [Some 1003]
 
 global $sSS9imageName_tMD: *__infer_tuple_class<int,int>
 
