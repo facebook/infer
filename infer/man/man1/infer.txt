@@ -389,6 +389,17 @@ OPTIONS
            to the capture database.
            See also infer-debug(1).
 
+       --config-gating
+           Activates: config-gating checker: Determines which config flags
+           gate the execution of each line of code. (Conversely:
+           --no-config-gating)
+           See also infer-analyze(1).
+
+       --config-gating-only
+           Activates: Enable config-gating and disable all other checkers
+           (Conversely: --no-config-gating-only)
+           See also infer-analyze(1).
+
        --config-impact-analysis
            Activates: config-impact-analysis checker: [EXPERIMENTAL] Collects
            function that are called without config checks. (Conversely:
@@ -601,6 +612,7 @@ OPTIONS
              COMPARED_TO_NULL_AND_DEREFERENCED (disabled by default),
              CONDITION_ALWAYS_FALSE (disabled by default),
              CONDITION_ALWAYS_TRUE (disabled by default),
+             CONFIG_GATED (enabled by default),
              CONFIG_IMPACT (enabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
              CONFIG_USAGE (disabled by default),

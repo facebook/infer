@@ -40,6 +40,15 @@ OPTIONS
            reactive analysis should start. Source files should be specified
            relative to project root or be absolute
 
+       --config-gating
+           Activates: config-gating checker: Determines which config flags
+           gate the execution of each line of code. (Conversely:
+           --no-config-gating)
+
+       --config-gating-only
+           Activates: Enable config-gating and disable all other checkers
+           (Conversely: --no-config-gating-only)
+
        --config-impact-analysis
            Activates: config-impact-analysis checker: [EXPERIMENTAL] Collects
            function that are called without config checks. (Conversely:
