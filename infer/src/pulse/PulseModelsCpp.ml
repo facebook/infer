@@ -1290,6 +1290,12 @@ let simple_matchers =
     ; -"folly" &:: "detail" &:: "SingletonHolder" &:: "try_get_fast"
       &++> Basic.unknown_call "folly::detail::SingletonHolder::try_get_fast"
       |> with_non_disj
+    ; -"folly" &:: "Try" &:: "emplace"
+      &++> Basic.unknown_call "folly::Try::emplace"
+      |> with_non_disj
+    ; -"folly" &:: "detail" &:: "TryBase" &:: "TryBase"
+      &++> Basic.unknown_call "folly::detail::TryBase::TryBase"
+      |> with_non_disj
     ; +match_nullable_fn &::.*+++> nullable_model ]
 
 
