@@ -100,3 +100,22 @@ val get_alloc_class_name :
 
 val update_selector_metadata :
   proc_state:ProcState.t -> IdentMap.key option -> Textual.Exp.t -> label -> unit
+
+val try_rewrite_call_to_instrs :
+     proc_state:ProcState.t
+  -> f_to_textual_exp:
+       (   proc_state:ProcState.t
+        -> Textual.Location.t
+        -> 'a
+        -> Textual.Exp.t * 'b * Textual.Instr.t list )
+  -> f_add_deref:
+       (   proc_state:ProcState.t
+        -> Textual.Exp.t
+        -> Textual.Location.t
+        -> Textual.Instr.t list * Textual.Exp.t )
+  -> loc:Textual.Location.t
+  -> call_exp:Textual.Exp.t
+  -> llair_args:'a list
+  -> args_instrs:Textual.Instr.t list
+  -> id:IdentMap.key option
+  -> Textual.Instr.t list option

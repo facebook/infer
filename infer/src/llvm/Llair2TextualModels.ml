@@ -11,6 +11,7 @@ module TypeName = Llair2TextualTypeName
 module Field = Llair2TextualField
 module ModuleState = Llair2TextualState.ModuleState
 module ProcState = Llair2TextualState.ProcState
+module Globals = Llair2TextualGlobals
 module Var = Llair2TextualVar
 module IdentMap = Textual.Ident.Map
 
@@ -442,3 +443,93 @@ let update_selector_metadata ~(proc_state : ProcState.t) id_opt call_exp proc_na
             () )
   | None ->
       ()
+
+
+(** Scans the instruction list to see if [id] was loaded from [global_name] *)
+let is_load_of_global id instrs global_name =
+  List.exists instrs ~f:(function
+    | Textual.Instr.Load {id= load_id; exp= Textual.Exp.Lvar name; _} ->
+        Textual.Ident.equal id load_id && String.equal (Textual.VarName.to_string name) global_name
+    | _ ->
+        false )
+
+
+(** Models the Swift runtime's 'swift_dynamicCast' by unrolling it into direct memory operations.
+
+  In Swift/ObjC interop, values are often wrapped in 'AnyObject' existential containers
+  (boxes). For example, an Int '5' returned from an @objc method is stored inside the
+  container's value buffer (field_0).
+
+  Without this model, Pulse treats the cast as an unknown function, causing the
+  symbolic value '5' to be lost. This model:
+  1. Verifies the destination metadata (e.g., Swift.Int via global $sSiN).
+  2. Generates a 'Load' to extract the raw value from the source AnyObject box.
+  3. Generates a 'Store' to place that value into the destination type's storage.
+  4. Returns a success constant (1) so branching logic in the CFG remains valid.
+
+  This enables end-to-end value tracking through dynamic dispatch and protocol casting.
+*)
+let rewrite_swift_dynamic_cast ~(proc_state : ProcState.t) loc processed_args args_instrs return_id
+    =
+  let module_state = proc_state.module_state in
+  let field_map = module_state.field_offset_map in
+  let any_object_struct = Textual.TypeName.mk_swift_type_name "AnyObject" in
+  let tsi_struct = Textual.TypeName.mk_swift_type_name "TSi" in
+  match processed_args with
+  | [dest_ptr; src_ptr; _src_metadata; dest_metadata_exp; _flags] ->
+      let is_int_metadata =
+        match dest_metadata_exp with
+        | Textual.Exp.Var id ->
+            is_load_of_global id args_instrs Globals.int_metadata_global
+        | _ ->
+            Globals.is_int_metadata_exp dest_metadata_exp
+      in
+      if is_int_metadata then
+        let val_id = ProcState.mk_fresh_id proc_state in
+        let any_object_field0 = Field.field_of_pos_with_map field_map any_object_struct 0 in
+        let tsi_field0 = Field.field_of_pos_with_map field_map tsi_struct 0 in
+        let src_field_exp = Textual.Exp.Field {exp= src_ptr; field= any_object_field0} in
+        (* 1. LOAD: This defines val_id (n51) *)
+        let unbox_load = Textual.Instr.Load {id= val_id; exp= src_field_exp; typ= None; loc} in
+        let dest_field_exp = Textual.Exp.Field {exp= dest_ptr; field= tsi_field0} in
+        (* 2. STORE: This USES val_id (n51) *)
+        let unbox_store =
+          Textual.Instr.Store {exp1= dest_field_exp; typ= None; exp2= Textual.Exp.Var val_id; loc}
+        in
+        (* 3. LET: This sets the return value (n50) *)
+        let ret_instr =
+          match return_id with
+          | Some id ->
+              [Textual.Instr.Let {id= Some id; exp= Textual.Exp.Const (Int Z.one); loc}]
+          | None ->
+              []
+        in
+        [unbox_store; unbox_load] @ ret_instr
+      else []
+  | _ ->
+      []
+
+
+let try_rewrite_call_to_instrs ~proc_state ~f_to_textual_exp ~f_add_deref ~loc ~call_exp ~llair_args
+    ~args_instrs ~id =
+  match (call_exp, llair_args) with
+  (* 1. swift_dynamicCast -> Load/Store unboxing *)
+  | Textual.Exp.Call {proc; args= processed_args}, _
+    when String.is_substring (Textual.ProcName.to_string proc.name) ~substring:"swift_dynamicCast"
+    ->
+      let model_instrs = rewrite_swift_dynamic_cast ~proc_state loc processed_args args_instrs id in
+      if List.is_empty model_instrs then None else Some model_instrs
+  (* 2. swift_weakAssign -> Store *)
+  | Textual.Exp.Call {proc; args= [arg1; arg2]}, _
+    when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
+      let instrs2, arg2_deref = f_add_deref ~proc_state arg2 loc in
+      Some (Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2_deref; loc} :: instrs2)
+  (* 3. Protocol Witness Optional Deinit Copy *)
+  | Textual.Exp.Call {proc}, [exp; ptr]
+    when is_protocol_witness_optional_deinit_copy proc_state.ProcState.module_state.lang
+           (Textual.ProcName.to_string proc.Textual.QualifiedProcName.name) ->
+      Some
+        (translate_protocol_witness_optional_deinit_copy ~f_to_textual_exp ~f_add_deref ~proc_state
+           ptr exp loc )
+  | _ ->
+      None

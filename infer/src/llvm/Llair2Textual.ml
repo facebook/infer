@@ -713,22 +713,15 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   in
   let call_exp = Models.resolve_objc_msgSend ~proc_state call_exp arg_types in
   let instrs =
-    match (call_exp, llair_args) with
-    (* Replace swift_weakAssign with a store instruction. We do not add dereference to the first argument
-       because we are flattenning the structure of weak pointers to be just like normal pointers in infer,
-       whilst in llvm the structures is field_2: *swift::weak}, type swift::weak = {field_0: *ptr_elt} *)
-    | Textual.Exp.Call {proc; args= [arg1; arg2]}, _
-      when Textual.ProcName.equal proc.Textual.QualifiedProcName.name Models.swift_weak_assign ->
-        let instrs2, arg2 = add_deref ~proc_state arg2 loc in
-        Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2; loc} :: instrs2
-    | Textual.Exp.Call {proc}, [exp; ptr]
-      when Models.is_protocol_witness_optional_deinit_copy proc_state.ProcState.module_state.lang
-             (Textual.ProcName.to_string proc.Textual.QualifiedProcName.name) ->
-        Models.translate_protocol_witness_optional_deinit_copy
-          ~f_to_textual_exp:(fun ~proc_state loc exp -> to_textual_exp ~proc_state loc exp)
-          ~f_add_deref:(fun ~proc_state exp loc -> add_deref ~proc_state exp loc)
-          ~proc_state ptr exp loc
-    | _ ->
+    match
+      Models.try_rewrite_call_to_instrs ~proc_state
+        ~f_to_textual_exp:(fun ~proc_state loc exp -> to_textual_exp ~proc_state loc exp)
+        ~f_add_deref:(fun ~proc_state exp loc -> add_deref ~proc_state exp loc)
+        ~loc ~call_exp ~llair_args ~args_instrs ~id
+    with
+    | Some model_instrs ->
+        model_instrs
+    | None ->
         [Textual.Instr.Let {id; exp= call_exp; loc}]
   in
   instrs @ args_instrs

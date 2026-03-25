@@ -66,7 +66,7 @@ func testEndToEndInstanceProtocol_bad() {
     assert(testProtocolInstance(device: proto) != 5)
 }
 
-func testEndToEndInstanceProtocol_good_fp() {
+func testEndToEndInstanceProtocol_good() {
     let manager = DeviceManager()
     // Cast to protocol to force the objc_msgSend path
     let proto: any DeviceProtocol = manager
@@ -79,7 +79,7 @@ func testEndToEndClassProtocol_bad() {
     assert(testProtocolClass(deviceType: protoType) != 10)
 }
 
-func testEndToEndClassProtocol_good_fp() {
+func testEndToEndClassProtocol_good() {
     let manager = DeviceManager()
     let protoType: any DeviceProtocol.Type = type(of: manager)
     assert(testProtocolClass(deviceType: protoType) == 10)

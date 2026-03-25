@@ -210,24 +210,30 @@ let classify_global name =
 
 
 (* Unique Identity Tags for Swift Types to help Pulse recognize them *)
-let any_object_tag = 1001
+let any_object_metadata_global = "$syXlN"
 
-let swift_int_tag = 1002
+let any_object_metadata_tag = 1001
 
-let swift_string_tag = 1003
+let int_metadata_global = "$sSiN"
 
-(** * Returns a synthetic constant for specific Swift metadata globals. *)
+let int_metadata_tag = 1002
+
+let string_metadata_global = "$sSSN"
+
+let string_metadata_tag = 1003
+
 let get_synthetic_metadata_constant global_name =
-  if String.equal global_name "$syXlN" then
-    (* AnyObject Metadata *)
-    Some (Textual.Exp.Const (Int (Z.of_int any_object_tag)))
-  else if String.equal global_name "$sSiN" then
-    (* Swift.Int Metadata *)
-    Some (Textual.Exp.Const (Int (Z.of_int swift_int_tag)))
-  else if String.equal global_name "$sSSN" then
-    (* Swift.String Metadata *)
-    Some (Textual.Exp.Const (Int (Z.of_int swift_string_tag)))
+  if String.equal global_name any_object_metadata_global then
+    Some (Textual.Exp.Const (Int (Z.of_int any_object_metadata_tag)))
+  else if String.equal global_name int_metadata_global then
+    Some (Textual.Exp.Const (Int (Z.of_int int_metadata_tag)))
+  else if String.equal global_name string_metadata_global then
+    Some (Textual.Exp.Const (Int (Z.of_int string_metadata_tag)))
   else None
+
+
+let is_int_metadata_exp exp =
+  match exp with Textual.Exp.Const (Int i) -> Int.equal (Z.to_int i) int_metadata_tag | _ -> false
 
 
 let to_textual_global ~f_to_textual_loc ~f_to_textual_exp ~module_state sourcefile global =

@@ -44,3 +44,11 @@ val translate_global :
   -> name:string
   -> typ:Llair.Typ.t
   -> Textual.Exp.t * Textual.Typ.t option * 'a list
+
+val is_int_metadata_exp : Textual.Exp.t -> bool
+
+val string_metadata_global : string
+
+val int_metadata_global : string
+
+val any_object_metadata_global : string
