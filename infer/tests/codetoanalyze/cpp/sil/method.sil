@@ -1,0 +1,73 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare Point.Point(*Point) : void
+
+declare Point.sum(.lvalue_reference *Point) : int
+
+type Point = {x: int; y: int}
+
+define Point.Point(this: *Point) : void {
+  #node_0: @[8:8]
+      jmp node_1 @[8:8]
+      
+  #node_1: @[8:8]
+      jmp  @[8:8]
+      
+} @[8:8]
+
+define Point.sum(this: *Point) : int {
+  #node_0: @[11:3]
+      jmp node_1 @[11:3]
+      
+  #node_3: @[11:29]
+      jmp  @[11:29]
+      
+  #node_1: @[11:15]
+      n0:*Point = load &this @[11:22]
+      n1:int = load n0.Point.x @[11:22]
+      n2:*Point = load &this @[11:26]
+      n3:int = load n2.Point.y @[11:26]
+      jmp node_2 @[11:26]
+      
+  #node_2: @[11:15]
+      ret __sil_plusa_int(n1, n3) @[11:15]
+      
+} @[11:3]
+
+define use_method() : int {
+  local p: Point
+  #node_0: @[14:1]
+      jmp node_1 @[14:1]
+      
+  #node_6: @[19:1]
+      jmp  @[19:1]
+      
+  #node_4: @[18:3]
+      n0:Point = load &p @[18:10]
+      n1 = Point.sum(&p) @[18:10]
+      jmp node_5 @[18:10]
+      
+  #node_5: @[18:3]
+      ret n1 @[18:3]
+      
+  #node_3: @[17:3]
+      store &p.Point.y <- 2:int @[17:3]
+      jmp node_4 @[17:3]
+      
+  #node_2: @[16:3]
+      store &p.Point.x <- 1:int @[16:3]
+      jmp node_3 @[16:3]
+      
+  #node_1: @[15:3]
+      _ = __sil_metadata_variable_lifetime_begins(&p, <Point>) @[15:3]
+      n2 = Point.Point(&p) @[15:9]
+      jmp node_2 @[15:9]
+      
+} @[14:1]
+

@@ -1,0 +1,93 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare lambda_lambda_cpp_14_HASH.__operator_call(.lvalue_reference *lambda_lambda_cpp_14_HASH, int) : int
+
+declare lambda_lambda_cpp_9_HASH.__operator_call(.lvalue_reference *lambda_lambda_cpp_9_HASH, int) : int
+
+type lambda_lambda_cpp_14_HASH = {__anon_field_0: .lvalue_reference *int}
+
+type lambda_lambda_cpp_9_HASH = {}
+
+define lambda_lambda_cpp_9_HASH.__operator_call(this: *lambda_lambda_cpp_9_HASH, x: int) : int {
+  #node_0: @[9:20]
+      jmp node_1 @[9:20]
+      
+  #node_3: @[9:38]
+      jmp  @[9:38]
+      
+  #node_1: @[9:24]
+      n0:int = load &x @[9:31]
+      jmp node_2 @[9:31]
+      
+  #node_2: @[9:24]
+      ret __sil_plusa_int(n0, 1) @[9:24]
+      
+} @[9:20]
+
+define lambda_lambda_cpp_14_HASH.__operator_call(this: *lambda_lambda_cpp_14_HASH, x: int) : int {
+  #node_0: @[14:22]
+      jmp node_1 @[14:22]
+      
+  #node_3: @[14:40]
+      jmp  @[14:40]
+      
+  #node_1: @[14:26]
+      n0:int = load &x @[14:33]
+      n1:.lvalue_reference *int = load &a @[14:37]
+      n2:int = load n1 @[14:37]
+      jmp node_2 @[14:37]
+      
+  #node_2: @[14:26]
+      ret __sil_plusa_int(n0, n2) @[14:26]
+      
+} @[14:22]
+
+define use_lambda() : void {
+  local y: int, f: lambda_lambda_cpp_9_HASH
+  #node_0: @[8:1]
+      jmp node_1 @[8:1]
+      
+  #node_3: @[11:1]
+      jmp  @[11:1]
+      
+  #node_2: @[10:3]
+      _ = __sil_metadata_variable_lifetime_begins(&y, <int>) @[10:3]
+      n1 = lambda_lambda_cpp_9_HASH.__operator_call(&f, 42) @[10:11]
+      store &y <- n1:int @[10:3]
+      jmp node_3 @[10:3]
+      
+  #node_1: @[9:3]
+      _ = __sil_metadata_variable_lifetime_begins(&f, <lambda_lambda_cpp_9_HASH>) @[9:3]
+      store &f <- "lambda_lambda.cpp:9_HASH::operator()()":lambda_lambda_cpp_9_HASH @[9:3]
+      jmp node_2 @[9:3]
+      
+} @[8:1]
+
+define use_capturing_lambda(a: int) : int {
+  local f: lambda_lambda_cpp_14_HASH
+  #node_0: @[13:1]
+      jmp node_1 @[13:1]
+      
+  #node_4: @[16:1]
+      jmp  @[16:1]
+      
+  #node_2: @[15:3]
+      n1 = lambda_lambda_cpp_14_HASH.__operator_call(&f, 10) @[15:10]
+      jmp node_3 @[15:10]
+      
+  #node_3: @[15:3]
+      ret n1 @[15:3]
+      
+  #node_1: @[14:3]
+      _ = __sil_metadata_variable_lifetime_begins(&f, <lambda_lambda_cpp_14_HASH>) @[14:3]
+      store &f <- "lambda_lambda.cpp:14_HASH::operator()()":lambda_lambda_cpp_14_HASH @[14:3]
+      jmp node_2 @[14:3]
+      
+} @[13:1]
+

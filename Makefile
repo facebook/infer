@@ -78,6 +78,7 @@ DIRECT_TESTS += \
   cpp_pulse-17 \
   cpp_pulse-20 \
   cpp_racerd \
+  cpp_sil \
   cpp_siof \
   cpp_starvation \
 

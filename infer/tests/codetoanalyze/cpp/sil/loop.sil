@@ -1,0 +1,62 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+define sum(n: int) : int {
+  local i: int, s: int
+  #node_0: @[8:1]
+      jmp node_1 @[8:1]
+      
+  #node_11: @[14:1]
+      jmp  @[14:1]
+      
+  #node_6: @[13:3]
+      n0:int = load &s @[13:10]
+      jmp node_10 @[13:10]
+      
+  #node_10: @[13:3]
+      ret n0 @[13:3]
+      
+  #node_9: @[10:3]
+      jmp node_8 @[10:3]
+      
+  #node_2: @[10:8]
+      _ = __sil_metadata_variable_lifetime_begins(&i, <int>) @[10:8]
+      store &i <- 0:int @[10:8]
+      jmp node_9 @[10:8]
+      
+  #node_4: @[10:26]
+      n1:int = load &i @[10:26]
+      store &i <- __sil_plusa_int(n1, 1):int @[10:26]
+      jmp node_9 @[10:26]
+      
+  #node_8: @[10:19]
+      n2:int = load &i @[10:19]
+      n3:int = load &n @[10:23]
+      jmp node_7, node_5 @[10:23]
+      
+  #node_7: @[10:19]
+      prune __sil_lt(n2, n3) @[10:19]
+      jmp node_3 @[10:19]
+      
+  #node_5: @[10:19]
+      prune __sil_lnot(__sil_lt(n2, n3)) @[10:19]
+      jmp node_6 @[10:19]
+      
+  #node_3: @[11:5]
+      n4:int = load &s @[11:9]
+      n5:int = load &i @[11:13]
+      store &s <- __sil_plusa_int(n4, n5):int @[11:5]
+      jmp node_4 @[11:5]
+      
+  #node_1: @[9:3]
+      _ = __sil_metadata_variable_lifetime_begins(&s, <int>) @[9:3]
+      store &s <- 0:int @[9:3]
+      jmp node_2 @[9:3]
+      
+} @[8:1]
+

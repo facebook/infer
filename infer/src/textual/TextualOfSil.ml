@@ -27,13 +27,32 @@ module LocationBridge = struct
     if Int.(line = -1 && col = -1) then Unknown else Known {line; col}
 end
 
+let sanitize_ident s =
+  (* Replace characters that are not valid in textual identifiers.
+     Preserve :: (namespace separator) but replace lone : and . with _.
+     Also replace operator() with __operator_call to avoid ambiguity.
+     Prefix names starting with digits to make them valid identifiers. *)
+  let s =
+    String.substr_replace_all s ~pattern:"operator()" ~with_:"__operator_call"
+    |> String.substr_replace_all ~pattern:"::" ~with_:"\x00\x00"
+    |> String.tr ~target:'.' ~replacement:'_'
+    |> String.tr ~target:':' ~replacement:'_'
+    |> String.tr ~target:'(' ~replacement:'_'
+    |> String.tr ~target:')' ~replacement:'_'
+    |> String.tr ~target:'%' ~replacement:'_'
+    |> String.tr ~target:'?' ~replacement:'_'
+    |> String.substr_replace_all ~pattern:"\x00\x00" ~with_:"::"
+  in
+  match String.unsafe_get s 0 with '0' .. '9' -> "__sil_tmp_" ^ s | _ -> s
+
+
 module VarNameBridge = struct
   open VarName
 
   let of_pvar (lang : Lang.t) (pvar : SilPvar.t) =
     match lang with
     | Java | C ->
-        SilPvar.get_name pvar |> Mangled.to_string |> of_string
+        SilPvar.get_name pvar |> Mangled.to_string |> sanitize_ident |> of_string
     | Hack | Python | Rust | Swift | ObjectiveC ->
         L.die UserError "of_pvar conversion is not supported in %s mode"
           (Textual.Lang.to_string lang)
@@ -47,9 +66,9 @@ module TypeNameBridge = struct
     | JavaClass name ->
         of_string (JavaClassName.to_string name)
     | CStruct name | CUnion name ->
-        of_string (QualifiedCppName.to_qual_string name)
+        of_string (QualifiedCppName.to_qual_string name |> sanitize_ident)
     | CppClass {name} ->
-        of_string (QualifiedCppName.to_qual_string name)
+        of_string (QualifiedCppName.to_qual_string name |> sanitize_ident)
     | _ ->
         L.die InternalError "Textual conversion: unsupported type name %a" SilTyp.Name.pp tname
 
@@ -57,7 +76,7 @@ module TypeNameBridge = struct
   let of_global_pvar (lang : Lang.t) pvar =
     match lang with
     | Java | C ->
-        SilPvar.get_name pvar |> Mangled.to_string |> of_string
+        SilPvar.get_name pvar |> Mangled.to_string |> sanitize_ident |> of_string
     | Hack | Python | Rust | Swift | ObjectiveC ->
         L.die UserError "of_global_pvar conversion is not supported in %s mode"
           (Textual.Lang.to_string lang)
@@ -212,10 +231,19 @@ module ProcDeclBridge = struct
         (* FIXME when adding inheritance *)
         {qualified_name; formals_types= Some formals_types; result_type; attributes}
     | C {c_name} ->
-        let name = QualifiedCppName.to_qual_string c_name |> ProcName.of_string in
+        let name = QualifiedCppName.to_qual_string c_name |> sanitize_ident |> ProcName.of_string in
         let qualified_name : QualifiedProcName.t =
           {enclosing_class= TopLevel; name; metadata= None}
         in
+        { qualified_name
+        ; formals_types= Some (List.map ~f:TypBridge.annotated_of_sil args_typ)
+        ; result_type= TypBridge.annotated_of_sil ret_typ
+        ; attributes= [] }
+    | ObjC_Cpp objc_cpp ->
+        let class_name = Procname.ObjC_Cpp.get_class_type_name objc_cpp |> TypeNameBridge.of_sil in
+        let enclosing_class = QualifiedProcName.Enclosing class_name in
+        let name = objc_cpp.method_name |> sanitize_ident |> ProcName.of_string in
+        let qualified_name : QualifiedProcName.t = {enclosing_class; name; metadata= None} in
         { qualified_name
         ; formals_types= Some (List.map ~f:TypBridge.annotated_of_sil args_typ)
         ; result_type= TypBridge.annotated_of_sil ret_typ
@@ -228,7 +256,7 @@ module FieldDeclBridge = struct
   open FieldDecl
 
   let of_sil f typ is_final =
-    let name = SilFieldname.get_field_name f |> FieldName.of_string in
+    let name = SilFieldname.get_field_name f |> sanitize_ident |> FieldName.of_string in
     let enclosing_class = SilFieldname.get_class_name f |> TypeNameBridge.of_sil in
     let qualified_name : qualified_fieldname = {name; enclosing_class} in
     let attributes = if is_final then [Attr.mk_final] else [] in
@@ -283,7 +311,12 @@ module ExpBridge = struct
         let sil_tname = typename_to_sil lang tname in
         match Tenv.lookup tenv sil_tname with
         | None ->
-            L.die InternalError "type %a not found in type environment" SilTyp.Name.pp sil_tname
+            L.debug Capture Verbose
+              "declare_struct_from_tenv: type %a not found in tenv, declaring empty struct for \
+               textual conversion@\n"
+              SilTyp.Name.pp sil_tname ;
+            let empty_struct : Struct.t = {name= tname; supers= []; fields= []; attributes= []} in
+            TextualDecls.declare_struct decls empty_struct
         | Some struct_ ->
             StructBridge.of_sil tname struct_ |> TextualDecls.declare_struct decls )
 
@@ -301,8 +334,13 @@ module ExpBridge = struct
         call_non_virtual pname [of_sil decls tenv e1; of_sil decls tenv e2]
     | Exn _ ->
         L.die InternalError "Exp Exn translation not supported"
-    | Closure _ ->
-        L.die InternalError "Exp Closure translation not supported"
+    | Closure {name} ->
+        (* TODO: SIL closures and Textual closures have different semantics. A proper translation
+           requires understanding the differences. For now, emit the closure's procedure name as a
+           string constant so dump-textual doesn't crash. *)
+        L.debug Capture Verbose "of_sil: SIL Closure for %a converted to string constant (lossy)@\n"
+          SilProcname.describe name ;
+        Const (Str (F.asprintf "%a" SilProcname.describe name))
     | Const c ->
         Const (ConstBridge.of_sil c)
     | Cast (typ, e) ->
@@ -332,8 +370,8 @@ module ExpBridge = struct
         Field {exp= of_sil decls tenv e; field= fielddecl.qualified_name}
     | Lindex (e1, e2) ->
         Index (of_sil decls tenv e1, of_sil decls tenv e2)
-    | Sizeof _ ->
-        L.die InternalError "Sizeof expression should not appear here, please report"
+    | Sizeof {typ} ->
+        Typ (TypBridge.of_sil typ)
 end
 
 module InstrBridge = struct
@@ -534,7 +572,8 @@ module ProcDescBridge = struct
       | head :: _ when Node.equal head start_node ->
           nodes
       | _ ->
-          L.die InternalError "the start node is not in head"
+          let without_start = List.filter nodes ~f:(fun n -> not (Node.equal n start_node)) in
+          start_node :: without_start
     in
     let start = start_node.label in
     let params =
@@ -544,7 +583,7 @@ module ProcDescBridge = struct
     let locals =
       P.get_locals pdesc
       |> List.map ~f:(fun ({name; typ} : ProcAttributes.var_data) ->
-             let var = Mangled.to_string name |> VarName.of_string in
+             let var = Mangled.to_string name |> sanitize_ident |> VarName.of_string in
              let typ =
                if SilTyp.is_void typ then
                  VarName.Map.find_opt var locals_type
@@ -586,16 +625,26 @@ module ModuleBridge = struct
             let tname = TypeNameBridge.of_sil sil_tname in
             if Option.is_none (TextualDecls.get_struct env tname) then
               StructBridge.of_sil tname sil_struct |> TextualDecls.declare_struct env ) ;
-    let decls =
-      TextualDecls.fold_globals env ~init:decls ~f:(fun decls _ pvar -> Global pvar :: decls)
+    let globals =
+      TextualDecls.fold_globals env ~init:[] ~f:(fun acc _ pvar -> Global pvar :: acc)
+      |> List.sort ~compare:(fun a b ->
+             match (a, b) with Global a, Global b -> VarName.compare a.name b.name | _ -> 0 )
     in
-    let decls =
-      TextualDecls.fold_structs env ~init:decls ~f:(fun decls _ struct_ -> Struct struct_ :: decls)
+    let structs =
+      TextualDecls.fold_structs env ~init:[] ~f:(fun acc _ struct_ -> Struct struct_ :: acc)
+      |> List.sort ~compare:(fun a b ->
+             match (a, b) with Struct a, Struct b -> TypeName.compare a.name b.name | _ -> 0 )
     in
-    let decls =
-      TextualDecls.fold_procdecls env ~init:decls ~f:(fun decls procname ->
-          Procdecl procname :: decls )
+    let procdecls =
+      TextualDecls.fold_procdecls env ~init:[] ~f:(fun acc procname -> Procdecl procname :: acc)
+      |> List.sort ~compare:(fun a b ->
+             match (a, b) with
+             | Procdecl a, Procdecl b ->
+                 QualifiedProcName.compare a.qualified_name b.qualified_name
+             | _ ->
+                 0 )
     in
+    let decls = procdecls @ structs @ globals @ decls in
     let attrs = [Attr.mk_source_language lang] in
     {attrs; decls; sourcefile}
 end

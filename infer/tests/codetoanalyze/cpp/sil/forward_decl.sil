@@ -1,0 +1,39 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare live_across_call() : int
+
+define live_across_call() : int {
+  #node_0: @?
+      jmp  @?
+      
+} @[8:1]
+
+define call_then_use() : int {
+  local x: int
+  #node_0: @[10:1]
+      jmp node_1 @[10:1]
+      
+  #node_4: @[13:1]
+      jmp  @[13:1]
+      
+  #node_2: @[12:3]
+      n0:int = load &x @[12:10]
+      jmp node_3 @[12:10]
+      
+  #node_3: @[12:3]
+      ret __sil_plusa_int(n0, 1) @[12:3]
+      
+  #node_1: @[11:3]
+      _ = __sil_metadata_variable_lifetime_begins(&x, <int>) @[11:3]
+      n1 = live_across_call() @[11:11]
+      store &x <- n1:int @[11:3]
+      jmp node_2 @[11:3]
+      
+} @[10:1]
+

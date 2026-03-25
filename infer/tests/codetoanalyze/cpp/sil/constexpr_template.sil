@@ -1,0 +1,126 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare foo(int) : int
+
+declare X.X(*X) : void
+
+declare X.isZero(.lvalue_reference *X) : int
+
+declare lambda_constexpr_template_cpp_22_HASH.__operator_call(.lvalue_reference *lambda_constexpr_template_cpp_22_HASH, int) : void
+
+type X = {}
+
+type lambda_constexpr_template_cpp_22_HASH = {}
+
+define lambda_constexpr_template_cpp_22_HASH.__operator_call(this: *lambda_constexpr_template_cpp_22_HASH, v: int) : void {
+  #node_0: @[22:11]
+      jmp node_1 @[22:11]
+      
+  #node_2: @[22:23]
+      jmp  @[22:23]
+      
+  #node_1: @[22:15]
+      n0:int = load &v @[22:19]
+      n1 = foo(n0) @[22:15]
+      jmp node_2 @[22:15]
+      
+} @[22:11]
+
+define X.X(this: *X) : void {
+  #node_0: @[11:8]
+      jmp node_1 @[11:8]
+      
+  #node_1: @[11:8]
+      jmp  @[11:8]
+      
+} @[11:8]
+
+define X.isZero(this: *X) : int {
+  #node_0: @[12:3]
+      jmp node_1, node_2 @[12:3]
+      
+  #node_4: @[12:34]
+      jmp  @[12:34]
+      
+  #node_7: @[12:26]
+      jmp node_3 @[12:26]
+      
+  #node_1: @[12:26]
+      prune __sil_eq(3, 0) @[12:26]
+      jmp node_6 @[12:26]
+      
+  #node_2: @[12:26]
+      prune __sil_lnot(__sil_eq(3, 0)) @[12:26]
+      jmp node_5 @[12:26]
+      
+  #node_6: @[12:26]
+      ret 1 @[12:26]
+      
+  #node_5: @[12:26]
+      ret 0 @[12:26]
+      
+  #node_3: @[12:19]
+      jmp node_4 @[12:19]
+      
+} @[12:3]
+
+define use_template() : int {
+  local x: X
+  #node_0: @[15:1]
+      jmp node_1 @[15:1]
+      
+  #node_4: @[18:1]
+      jmp  @[18:1]
+      
+  #node_2: @[17:3]
+      n0:X = load &x @[17:10]
+      n1 = X.isZero(&x) @[17:10]
+      jmp node_3 @[17:10]
+      
+  #node_3: @[17:3]
+      ret n1 @[17:3]
+      
+  #node_1: @[16:3]
+      _ = __sil_metadata_variable_lifetime_begins(&x, <X>) @[16:3]
+      n2 = X.X(&x) @[16:8]
+      jmp node_2 @[16:8]
+      
+} @[15:1]
+
+define use_constexpr_lambda() : void {
+  local __sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0: lambda_constexpr_template_cpp_22_HASH, x: int
+  #node_0: @[20:1]
+      jmp node_1 @[20:1]
+      
+  #node_4: @[23:1]
+      jmp  @[23:1]
+      
+  #node_2: @[22:3]
+      _ = __sil_metadata_variable_lifetime_begins(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, <lambda_constexpr_template_cpp_22_HASH>) @[22:3]
+      store &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0 <- "lambda_constexpr_template.cpp:22_HASH::operator()()":lambda_constexpr_template_cpp_22_HASH @[22:3]
+      jmp node_3 @[22:3]
+      
+  #node_3: @[22:3]
+      n2:int = load &x @[22:25]
+      n3 = lambda_constexpr_template_cpp_22_HASH.__operator_call(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, n2) @[22:3]
+      jmp node_4 @[22:3]
+      
+  #node_1: @[21:3]
+      _ = __sil_metadata_variable_lifetime_begins(&x, <int>) @[21:3]
+      store &x <- 10:int @[21:3]
+      jmp node_2 @[21:3]
+      
+} @[20:1]
+
+define foo(a: int) : int {
+  #node_0: @?
+      jmp  @?
+      
+} @[8:1]
+
