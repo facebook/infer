@@ -341,6 +341,13 @@ module ExpBridge = struct
         L.debug Capture Verbose "of_sil: SIL Closure for %a converted to string constant (lossy)@\n"
           SilProcname.describe name ;
         Const (Str (F.asprintf "%a" SilProcname.describe name))
+    | Const (SilConst.Cfun pname) ->
+        (* Function pointer constants (e.g. &assign_NULL in C): emit the procedure name as a
+           string constant. This is lossy but prevents dump-textual from crashing. *)
+        L.debug Capture Verbose
+          "of_sil: Cfun constant for %a converted to string constant (lossy)@\n"
+          SilProcname.describe pname ;
+        Const (Str (F.asprintf "%a" SilProcname.describe pname))
     | Const c ->
         Const (ConstBridge.of_sil c)
     | Cast (typ, e) ->

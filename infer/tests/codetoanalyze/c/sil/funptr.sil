@@ -1,0 +1,67 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare __call_c_function_ptr((fun _ -> _), *int) : void
+
+declare apply(*(fun _ -> _), *int) : void
+
+define set_to_zero(p: *int) : void {
+  #node_0: @[10:1]
+      jmp node_1 @[10:1]
+      
+  #node_2: @[10:36]
+      jmp  @[10:36]
+      
+  #node_1: @[10:28]
+      n0:*int = load &p @[10:29]
+      store n0 <- 0:int @[10:28]
+      jmp node_2 @[10:28]
+      
+} @[10:1]
+
+define call_funptr() : int {
+  local x: int
+  #node_0: @[12:1]
+      jmp node_1 @[12:1]
+      
+  #node_5: @[16:1]
+      jmp  @[16:1]
+      
+  #node_3: @[15:3]
+      n0:int = load &x @[15:10]
+      jmp node_4 @[15:10]
+      
+  #node_4: @[15:3]
+      ret n0 @[15:3]
+      
+  #node_2: @[14:3]
+      n1 = apply("set_to_zero()", &x) @[14:3]
+      jmp node_3 @[14:3]
+      
+  #node_1: @[13:3]
+      _ = __sil_metadata_variable_lifetime_begins(&x, <int>) @[13:3]
+      store &x <- 1:int @[13:3]
+      jmp node_2 @[13:3]
+      
+} @[12:1]
+
+define apply(f: *(fun _ -> _), p: *int) : void {
+  #node_0: @[8:1]
+      jmp node_1 @[8:1]
+      
+  #node_2: @[8:48]
+      jmp  @[8:48]
+      
+  #node_1: @[8:39]
+      n0:*(fun _ -> _) = load &f @[8:41]
+      n1:*int = load &p @[8:44]
+      n2 = __call_c_function_ptr(n0, n1) @[8:39]
+      jmp node_2 @[8:39]
+      
+} @[8:1]
+
