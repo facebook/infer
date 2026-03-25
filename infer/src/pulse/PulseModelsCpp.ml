@@ -1296,6 +1296,31 @@ let simple_matchers =
     ; -"folly" &:: "detail" &:: "TryBase" &:: "TryBase"
       &++> Basic.unknown_call "folly::detail::TryBase::TryBase"
       |> with_non_disj
+    ; -"folly" &:: "Expected" &:: "hasValue"
+      &--> Basic.nondet ~desc:"folly::Expected::hasValue()"
+      |> with_non_disj
+    ; -"folly" &:: "Expected" &:: "hasError"
+      &--> Basic.nondet ~desc:"folly::Expected::hasError()"
+      |> with_non_disj
+    ; -"folly" &:: "Expected" &:: "value"
+      &++> Basic.unknown_call "folly::Expected::value"
+      |> with_non_disj
+    ; -"folly" &:: "Expected" &:: "operator*"
+      &++> Basic.unknown_call "folly::Expected::operator*"
+      |> with_non_disj
+    ; -"folly" &:: "Expected" &:: "operator_bool"
+      &--> Basic.nondet ~desc:"folly::Expected::operator_bool()"
+      |> with_non_disj
+    ; -"folly" &:: "Expected" &:: "Expected"
+      &++> Basic.unknown_call "folly::Expected::Expected"
+      |> with_non_disj
+    ; -"folly" &:: "Expected" &:: "~Expected" &--> Basic.skip |> with_non_disj
+    ; -"folly" &:: "expected_detail" &:: "ExpectedUnion" &:: "ExpectedUnion"
+      &++> Basic.unknown_call "folly::expected_detail::ExpectedUnion"
+      |> with_non_disj
+    ; -"folly" &:: "expected_detail" &:: "ExpectedStorage" &:: "ExpectedStorage"
+      &++> Basic.unknown_call "folly::expected_detail::ExpectedStorage"
+      |> with_non_disj
     ; +match_nullable_fn &::.*+++> nullable_model ]
 
 
