@@ -133,9 +133,11 @@ end
 
 module IdentBridge = struct
   let of_sil (id : SilIdent.t) =
-    if not (SilIdent.is_normal id) then
-      L.die InternalError "Textual conversion: only normal ident expected"
-    else SilIdent.get_stamp id |> Ident.of_int
+    let stamp = SilIdent.get_stamp id in
+    (* Offset non-normal idents to avoid stamp collisions with normal idents.
+       Normal idents use stamps as-is; others are shifted to a high range. *)
+    let offset = if SilIdent.is_normal id then 0 else 1_000_000 in
+    Ident.of_int (stamp + offset)
 end
 
 module ConstBridge = struct

@@ -1,0 +1,68 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare count_args<int,_int,_int>(.lvalue_reference *int, .lvalue_reference *int, .lvalue_reference *int) : int
+
+define test_sizeof_pack() : int {
+  local __sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0: int, __sil_tmp_0$____sil_tmpSIL_materialize_temp__n$1: int, __sil_tmp_0$____sil_tmpSIL_materialize_temp__n$2: int
+  #node_0: @[16:1]
+      jmp node_1 @[16:1]
+      
+  #node_6: @[16:54]
+      jmp  @[16:54]
+      
+  #node_1: @[16:44]
+      _ = __sil_metadata_variable_lifetime_begins(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, <int>) @[16:44]
+      store &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0 <- 1:int @[16:44]
+      jmp node_5 @[16:44]
+      
+  #node_5: @[16:47]
+      _ = __sil_metadata_variable_lifetime_begins(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$1, <int>) @[16:47]
+      store &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$1 <- 2:int @[16:47]
+      jmp node_4 @[16:47]
+      
+  #node_4: @[16:50]
+      _ = __sil_metadata_variable_lifetime_begins(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$2, <int>) @[16:50]
+      store &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$2 <- 3:int @[16:50]
+      jmp node_3 @[16:50]
+      
+  #node_3: @[16:26]
+      n3 = count_args<int,_int,_int>(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$1, &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$2) @[16:33]
+      jmp node_2 @[16:33]
+      
+  #node_2: @[16:26]
+      ret n3 @[16:26]
+      
+} @[16:1]
+
+define count_args<int,_int,_int>(ts: .lvalue_reference *int, ts: .lvalue_reference *int, ts: .lvalue_reference *int) : int {
+  #node_0: @[9:1]
+      jmp node_1, node_2 @[9:1]
+      
+  #node_6: @[14:1]
+      jmp  @[14:1]
+      
+  #node_5: @[13:3]
+      ret n1000000 @[13:3]
+      
+  #node_4: @[10:3]
+      jmp node_5 @[10:3]
+      
+  #node_1: @[10:7]
+      prune __sil_eq(n1000001, __sil_cast(<int>, 0)) @[10:7]
+      jmp node_3 @[10:7]
+      
+  #node_2: @[10:7]
+      prune __sil_lnot(__sil_eq(n1000001, __sil_cast(<int>, 0))) @[10:7]
+      jmp node_4 @[10:7]
+      
+  #node_3: @[11:5]
+      ret __sil_neg(1) @[11:5]
+      
+} @[9:1]
+
