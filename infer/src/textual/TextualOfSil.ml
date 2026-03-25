@@ -41,6 +41,7 @@ let sanitize_ident s =
     |> String.tr ~target:')' ~replacement:'_'
     |> String.tr ~target:'%' ~replacement:'_'
     |> String.tr ~target:'?' ~replacement:'_'
+    |> String.tr ~target:'-' ~replacement:'_'
     |> String.substr_replace_all ~pattern:"\x00\x00" ~with_:"::"
   in
   match String.unsafe_get s 0 with '0' .. '9' -> "__sil_tmp_" ^ s | _ -> s
