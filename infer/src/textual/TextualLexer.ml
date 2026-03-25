@@ -104,6 +104,12 @@ let build_mainlex keywords =
         mainlex lexbuf
     | "/*" ->
         comment lexbuf
+    | "@[", Plus digit, ":", Plus digit, "]" ->
+        mainlex lexbuf
+    | "@", Plus digit ->
+        mainlex lexbuf
+    | "@?" ->
+        mainlex lexbuf
     | "&" ->
         AMPERSAND
     | "&&" ->
@@ -183,6 +189,8 @@ let build_mainlex keywords =
             PROC_AND_LPAREN (None, String.strip id)
         | _ ->
             L.die InternalError "unexpected lexing error" )
+    | "_" ->
+        WILDCARD
     | ident ->
         let lexeme = Lexbuf.lexeme lexbuf in
         Option.value ~default:(IDENT lexeme) (Map.find keywords lexeme)

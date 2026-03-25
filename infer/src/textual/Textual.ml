@@ -673,6 +673,14 @@ module Typ = struct
 
   let mk_without_attributes typ = {typ; attributes= []}
 
+  let merge_attrs_into_ptr ({typ; attributes} : annotated) =
+    match (typ, attributes) with
+    | Ptr (inner, existing_attrs), _ :: _ ->
+        Ptr (inner, existing_attrs @ attributes)
+    | _ ->
+        typ
+
+
   let any_type_llvm = Struct TypeName.{name= BaseTypeName.swift_any_type_name; args= []}
 
   let any_type_swift = Struct (TypeName.mk_swift_type_name BaseTypeName.swift_any_type_name.value)

@@ -65,6 +65,7 @@
 %token TYPE
 %token UNREACHABLE
 %token VOID
+%token WILDCARD
 
 %token <string> IDENT
 %token <int> LOCAL
@@ -391,12 +392,14 @@ const:
     { Const.Null }
 
 instruction:
-  | id=LOCAL COLON typ=typ EQ LOAD exp=expression
-    { Instr.Load {id= Ident.of_int id; exp; typ=Some typ; loc=location_of_pos $startpos } }
+  | id=LOCAL COLON at=annotated_typ EQ LOAD exp=expression
+    { let typ = Typ.merge_attrs_into_ptr at in
+      Instr.Load {id= Ident.of_int id; exp; typ=Some typ; loc=location_of_pos $startpos } }
   | id=LOCAL EQ LOAD exp=expression
     { Instr.Load {id= Ident.of_int id; exp; typ=None; loc=location_of_pos $startpos } }
-  | STORE exp1=expression ASSIGN exp2=expression COLON typ=typ
-    { Instr.Store {exp1; exp2; typ=Some typ; loc=location_of_pos $startpos } }
+  | STORE exp1=expression ASSIGN exp2=expression COLON at=annotated_typ
+    { let typ = Typ.merge_attrs_into_ptr at in
+      Instr.Store {exp1; exp2; typ=Some typ; loc=location_of_pos $startpos } }
   | STORE exp1=expression ASSIGN exp2=expression
     { Instr.Store {exp1; exp2; typ=None; loc=location_of_pos $startpos } }
   | PRUNE exp=expression
@@ -405,6 +408,8 @@ instruction:
     { Instr.Prune {exp=Exp.not exp; loc=location_of_pos $startpos} }
   | id=LOCAL EQ exp=expression
     { Instr.Let { id= Some (Ident.of_int id); exp; loc=location_of_pos $startpos } }
+  | WILDCARD EQ exp=expression
+    { Instr.Let { id= None; exp; loc=location_of_pos $startpos } }
 
 bool_expression:
   | exp=expression

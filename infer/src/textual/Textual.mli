@@ -283,6 +283,8 @@ module Typ : sig
 
   val mk_without_attributes : t -> annotated
 
+  val merge_attrs_into_ptr : annotated -> t
+
   val any_type_llvm : t
 
   val any_type_swift : t

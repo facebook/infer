@@ -31,8 +31,23 @@ default: test
 
 capture: $(SOURCES:.cpp=.test.sil)
 
+# Verify that the dumped textual can be parsed back (dump-parse roundtrip).
+.PHONY: parse
+parse: capture
+	$(QUIET)error=0; for file in $(SOURCES) ; do \
+	  base=$$(basename $$file .cpp) ; \
+	  if $(INFER_BIN) --capture-textual "$$base.test.sil" 2>&1 \
+	       | grep -q "syntax error" ; then \
+	    echo "PARSE ERROR in $$base.test.sil:" ; \
+	    $(INFER_BIN) --capture-textual "$$base.test.sil" 2>&1 \
+	      | grep "syntax error" ; \
+	    error=1 ; \
+	  fi ; \
+	done ; \
+	if [ $$error = 1 ]; then exit 1; fi
+
 .PHONY: test
-test: capture
+test: capture parse
 	$(QUIET)error=0; for file in $(SOURCES) ; do \
 	  base=$$(basename $$file .cpp) ; \
 	  diff -u "$$base.sil" "$$base.test.sil" || error=1 ; \
