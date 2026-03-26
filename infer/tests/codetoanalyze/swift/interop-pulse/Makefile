@@ -38,11 +38,10 @@ default: test
 $(INFER_OUT)/report.json: $(OBJC_SOURCES) $(SWIFT_SOURCES) $(BRIDGING_HEADER)
 	$(QUIET)$(REMOVE_DIR) $(INFER_OUT)
 	$(QUIET)$(call silent_on_success,Capture Objective-C, \
-	  $(INFER_BIN) capture --results-dir $(INFER_OUT) -- \
-	  clang -c $(OBJC_SOURCES) $(OBJC_CLANG_OPTIONS))
+	  $(INFER_BIN) capture --results-dir $(INFER_OUT) -- clang -c $(OBJC_SOURCES) $(OBJC_CLANG_OPTIONS))
 	$(QUIET)$(call silent_on_success,Generate Swift Bitcode, \
 	  $(SWIFTC) $(SWIFT_OPTIONS) $(foreach src,$(SWIFT_SOURCES),$(abspath $(src))) -emit-bc -o $(BITCODE_FILE))
-$(QUIET)$(call silent_on_success,Ingest Swift Bitcode, \
+	$(QUIET)$(call silent_on_success,Ingest Swift Bitcode, \
 	  $(INFER_BIN) capture --continue --results-dir $(INFER_OUT) \
 	  --llvm-bitcode-file $(abspath $(BITCODE_FILE)) \
 	  $(foreach src,$(SWIFT_SOURCES),--llvm-bitcode-source $(abspath $(src))))
