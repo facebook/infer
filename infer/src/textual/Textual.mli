@@ -382,6 +382,10 @@ module ProcDecl : sig
 
   val is_cast_builtin : QualifiedProcName.t -> bool
 
+  val cfun_name : QualifiedProcName.t
+
+  val is_cfun_builtin : QualifiedProcName.t -> bool
+
   val is_generics_constructor_builtin : QualifiedProcName.t -> bool
 
   val is_instanceof_builtin : QualifiedProcName.t -> bool

@@ -200,6 +200,8 @@ let builtin_generics_constructor = "__sil_generics"
 
 let builtin_cast = "__sil_cast"
 
+let builtin_cfun = "__sil_cfun"
+
 let builtin_get_lazy_class = "__sil_get_lazy_class"
 
 let builtin_instanceof = "__sil_instanceof"
@@ -839,6 +841,8 @@ module ProcDecl = struct
 
   let free_name = make_toplevel_name builtin_free Location.Unknown
 
+  let cfun_name = make_toplevel_name builtin_cfun Location.Unknown
+
   let assert_fail_name = make_toplevel_name builtin_assert_fail Location.Unknown
 
   let allocate_array_name = make_toplevel_name builtin_allocate_array Location.Unknown
@@ -976,6 +980,8 @@ module ProcDecl = struct
     QualifiedProcName.equal assert_fail_name qualified_name
 
 
+  let is_cfun_builtin qualified_name = QualifiedProcName.equal cfun_name qualified_name
+
   let is_allocate_array_builtin qualified_name =
     QualifiedProcName.equal allocate_array_name qualified_name
 
@@ -1004,7 +1010,7 @@ module ProcDecl = struct
 
   let is_side_effect_free_sil_expr ({enclosing_class; name} as qualified_name : QualifiedProcName.t)
       =
-    is_cast_builtin qualified_name
+    is_cast_builtin qualified_name || is_cfun_builtin qualified_name
     ||
     match enclosing_class with
     | TopLevel ->

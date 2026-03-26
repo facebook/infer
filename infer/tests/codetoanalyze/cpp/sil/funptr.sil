@@ -1,0 +1,122 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare __call_c_function_ptr((fun _ -> _), **int) : void
+
+declare apply(*(fun _ -> _), **int) : void
+
+declare set_null() : void
+
+define test_funptr_store() : int {
+  local f: *(fun _ -> _), p: *int, x: int
+  #node_0: @[21:1]
+      jmp node_1 @[21:1]
+      
+  #node_7: @[27:1]
+      jmp  @[27:1]
+      
+  #node_5: @[26:3]
+      n0:*int = load &p @[26:11]
+      n1:int = load n0 @[26:10]
+      jmp node_6 @[26:10]
+      
+  #node_6: @[26:3]
+      ret n1 @[26:3]
+      
+  #node_4: @[25:3]
+      n2:*(fun _ -> _) = load &f @[25:5]
+      n3 = __call_c_function_ptr(n2, &p) @[25:3]
+      jmp node_5 @[25:3]
+      
+  #node_3: @[24:3]
+      _ = __sil_metadata_variable_lifetime_begins(&f, <*(fun _ -> _)>) @[24:3]
+      store &f <- __sil_cfun("set_null"):*(fun _ -> _) @[24:3]
+      jmp node_4 @[24:3]
+      
+  #node_2: @[23:3]
+      _ = __sil_metadata_variable_lifetime_begins(&p, <*int>) @[23:3]
+      store &p <- &x:*int @[23:3]
+      jmp node_3 @[23:3]
+      
+  #node_1: @[22:3]
+      _ = __sil_metadata_variable_lifetime_begins(&x, <int>) @[22:3]
+      store &x <- 1:int @[22:3]
+      jmp node_2 @[22:3]
+      
+} @[21:1]
+
+define test_funptr_call() : int {
+  local p: *int, x: int
+  #node_0: @[14:1]
+      jmp node_1 @[14:1]
+      
+  #node_6: @[19:1]
+      jmp  @[19:1]
+      
+  #node_4: @[18:3]
+      n0:*int = load &p @[18:11]
+      n1:int = load n0 @[18:10]
+      jmp node_5 @[18:10]
+      
+  #node_5: @[18:3]
+      ret n1 @[18:3]
+      
+  #node_3: @[17:3]
+      n2 = apply(__sil_cfun("set_null"), &p) @[17:3]
+      jmp node_4 @[17:3]
+      
+  #node_2: @[16:3]
+      _ = __sil_metadata_variable_lifetime_begins(&p, <*int>) @[16:3]
+      store &p <- &x:*int @[16:3]
+      jmp node_3 @[16:3]
+      
+  #node_1: @[15:3]
+      _ = __sil_metadata_variable_lifetime_begins(&x, <int>) @[15:3]
+      store &x <- 1:int @[15:3]
+      jmp node_2 @[15:3]
+      
+} @[14:1]
+
+define set_null(p: **int) : void {
+  #node_0: @[8:1]
+      jmp node_1 @[8:1]
+      
+  #node_2: @[8:40]
+      jmp  @[8:40]
+      
+  #node_1: @[8:26]
+      n0:**int = load &p @[8:27]
+      store n0 <- 0:*int @[8:26]
+      jmp node_2 @[8:26]
+      
+} @[8:1]
+
+define do_nothing(p: **int) : void {
+  #node_0: @[10:1]
+      jmp node_1 @[10:1]
+      
+  #node_1: @[10:27]
+      jmp  @[10:27]
+      
+} @[10:1]
+
+define apply(f: *(fun _ -> _), p: **int) : void {
+  #node_0: @[12:1]
+      jmp node_1 @[12:1]
+      
+  #node_2: @[12:50]
+      jmp  @[12:50]
+      
+  #node_1: @[12:41]
+      n0:*(fun _ -> _) = load &f @[12:43]
+      n1:**int = load &p @[12:46]
+      n2 = __call_c_function_ptr(n0, n1) @[12:41]
+      jmp node_2 @[12:41]
+      
+} @[12:1]
+

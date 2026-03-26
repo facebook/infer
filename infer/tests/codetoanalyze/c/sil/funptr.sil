@@ -10,6 +10,8 @@ declare __call_c_function_ptr((fun _ -> _), *int) : void
 
 declare apply(*(fun _ -> _), *int) : void
 
+declare set_to_zero() : void
+
 define set_to_zero(p: *int) : void {
   #node_0: @[10:1]
       jmp node_1 @[10:1]
@@ -40,7 +42,7 @@ define call_funptr() : int {
       ret n0 @[15:3]
       
   #node_2: @[14:3]
-      n1 = apply("set_to_zero()", &x) @[14:3]
+      n1 = apply(__sil_cfun("set_to_zero"), &x) @[14:3]
       jmp node_3 @[14:3]
       
   #node_1: @[13:3]

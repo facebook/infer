@@ -345,12 +345,11 @@ module ExpBridge = struct
           SilProcname.describe name ;
         Const (Str (F.asprintf "%a" SilProcname.describe name))
     | Const (SilConst.Cfun pname) ->
-        (* Function pointer constants (e.g. &assign_NULL in C): emit the procedure name as a
-           string constant. This is lossy but prevents dump-textual from crashing. *)
-        L.debug Capture Verbose
-          "of_sil: Cfun constant for %a converted to string constant (lossy)@\n"
-          SilProcname.describe pname ;
-        Const (Str (F.asprintf "%a" SilProcname.describe pname))
+        (* Function pointer constants (e.g. &assign_NULL in C): emit as __sil_cfun(procname)
+           so the procedure identity is preserved through the textual roundtrip. *)
+        let procdecl = ProcDeclBridge.of_sil pname (SilTyp.mk SilTyp.Tvoid) [] in
+        let () = TextualDecls.declare_proc decls (Decl procdecl) in
+        call_non_virtual ProcDecl.cfun_name [Const (Str procdecl.qualified_name.name.value)]
     | Const c ->
         Const (ConstBridge.of_sil c)
     | Cast (typ, e) ->

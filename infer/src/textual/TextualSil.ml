@@ -605,6 +605,8 @@ module ExpBridge = struct
              expression"
       | Call {proc; args= [Typ typ; exp]} when ProcDecl.is_cast_builtin proc ->
           Cast (TypBridge.to_sil lang typ, aux exp)
+      | Call {proc; args= [Const (Str name)]} when ProcDecl.is_cfun_builtin proc ->
+          Const (SilConst.Cfun (SilProcname.C (SilProcname.C.from_string name)))
       | Call {proc; args} -> (
           let nb_args = List.length args in
           let procsig = Exp.call_sig proc nb_args (TextualDecls.lang decls_env) in
