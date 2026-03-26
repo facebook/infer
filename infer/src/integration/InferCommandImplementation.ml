@@ -387,11 +387,8 @@ let sem_diff () =
           Diff.write_from_json ~json_path ~out_path )
   | None, Some index_filename -> (
       let f node =
-        List.iter Config.semdiff_test_actions ~f:(function
-          | `Normalize ->
-              PythonCompareWithoutTypeAnnot.normalize node |> ignore
-          | `Currify ->
-              PythonSourceAstDiff.TestOnly.store_ast node |> ignore )
+        List.iter Config.semdiff_test_actions ~f:(function `Currify ->
+            PythonSourceAstDiff.TestOnly.store_ast node |> ignore )
       in
       match PythonSourceAst.iter_from_index ~f ~index_filename with
       | Ok () ->

@@ -59,7 +59,7 @@ OPTIONS
        --semdiff-previous path
            Previous python program to be analysed by semdiff
 
-       --semdiff-test-actions ,-separated sequence of { normalize | currify }
+       --semdiff-test-actions ,-separated sequence of { currify }
            Specify which action must be performed in each parsed AST during
            semdiff tests
 

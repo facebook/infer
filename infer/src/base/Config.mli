@@ -818,7 +818,7 @@ val semdiff_experimental_eqsat_engine : bool
 
 val semdiff_configuration : string option
 
-val semdiff_test_actions : [`Normalize | `Currify] list
+val semdiff_test_actions : [`Currify] list
 
 val semdiff_test_files_index : string option
 

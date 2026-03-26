@@ -3300,7 +3300,7 @@ and semdiff_test_actions =
   CLOpt.mk_symbol_seq ~long:"semdiff-test-actions" ~eq:PolyVariantEqual.( = )
     "Specify which action must be performed  in each parsed AST during semdiff tests"
     ~in_help:InferCommand.[(SemDiff, manual_generic)]
-    ~symbols:[("normalize", `Normalize); ("currify", `Currify)]
+    ~symbols:[("currify", `Currify)]
     ~default:[]
 
 
