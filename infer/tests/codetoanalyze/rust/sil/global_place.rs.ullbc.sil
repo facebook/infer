@@ -1,0 +1,64 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Rust"
+
+define global_place::succ(i_1: int) : int {
+  local var_0: int, var_2: int, var_3: int
+  #node_0:
+      n0:int = load &i_1
+      store &var_2 <- n0:int
+      n1:int = load &var_2
+      store &var_3 <- __sil_plusa_int(n1, 1):int
+      n2:int = load &var_3
+      store &var_0 <- n2:int
+      n3:int = load &var_0
+      ret n3
+      
+}
+
+define global_place::main() : void {
+  local var_0: void, eleven_1: int, var_2: int
+  #node_0:
+      n0:int = load &GLOBAL@global_place::X
+      n1:int = load &GLOBAL@global_place::Y
+      store &var_2 <- __sil_plusa_int(n0, n1):int
+      n2:int = load &var_2
+      store &eleven_1 <- n2:int
+      store &var_0 <- null:void
+      store &var_0 <- null:void
+      n3:void = load &var_0
+      ret n3
+      
+}
+
+define global_place::X() : int {
+  local var_0: int
+  #node_0:
+      store &var_0 <- 5:int
+      n0:int = load &var_0
+      ret n0
+      
+}
+
+define global_place::Y() : int {
+  local var_0: int
+  #node_0:
+      n0:int = load &GLOBAL@global_place::X
+      n1 = global_place::succ(n0)
+      store &var_0 <- n1:int
+      jmp node_2
+      
+  #node_2:
+      n2:int = load &var_0
+      ret n2
+      
+}
+
+global GLOBAL@global_place::X: int = [Some global_place::X()]
+
+global GLOBAL@global_place::Y: int = [Some global_place::Y()]
+
