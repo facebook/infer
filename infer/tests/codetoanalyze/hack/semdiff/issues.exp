@@ -1,0 +1,3 @@
+previous/different_body_change.php, current/different_body_change.php, SEMDIFF MISMATCH: [(Line 3) -   return "Hello, " . $name;, +   return "Goodbye, " . $name;]
+previous/different_param_rename.php, current/different_param_rename.php, SEMDIFF MISMATCH: [(Line 2) - function foo(string $name): void {, + function foo(string $label): void {,(Line 3) -   echo $name;, +   echo $label;]
+previous/different_statement_added.php, current/different_statement_added.php, SEMDIFF MISMATCH: [(Line 4) +   echo $x;]

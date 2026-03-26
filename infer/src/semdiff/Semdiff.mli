@@ -7,4 +7,13 @@
 
 open! IStd
 
+val python_ast_diff :
+     debug:bool
+  -> config:SemdiffDirectEngine.Rules.t
+  -> ?filename1:string
+  -> ?filename2:string
+  -> string
+  -> string
+  -> Diff.explicit list
+
 val semdiff : config_file:string option -> previous_file:string -> current_file:string -> unit

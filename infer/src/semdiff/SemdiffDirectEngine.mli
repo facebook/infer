@@ -62,8 +62,8 @@ end
 val ast_diff :
      debug:bool
   -> config:Rules.t
-  -> ?filename1:string
-  -> ?filename2:string
-  -> string
-  -> string
+  -> previous_content:string
+  -> current_content:string
+  -> PythonSourceAst.Node.t
+  -> PythonSourceAst.Node.t
   -> Diff.explicit list

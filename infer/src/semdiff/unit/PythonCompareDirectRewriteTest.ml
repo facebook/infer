@@ -12,7 +12,7 @@ let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.p
 
 let ast_diff_equal ?(debug = false) prog1 prog2 =
   let config = PythonSemdiffConfig.missing_python_type_annotations_config in
-  let diffs = SemdiffDirectEngine.ast_diff ~debug ~config prog1 prog2 in
+  let diffs = Semdiff.python_ast_diff ~debug ~config prog1 prog2 in
   List.iter diffs ~f:(F.printf "%a\n" Diff.pp_explicit)
 
 

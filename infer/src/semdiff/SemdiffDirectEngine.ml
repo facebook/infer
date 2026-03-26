@@ -381,20 +381,14 @@ let zip_and_build_diffs config n1 n2 : Diff.t list =
   zip ~left_line:None ~right_line:None ~rewritten:false None [] n1 n2
 
 
-let ast_diff ~debug ~config ?filename1 ?filename2 previous_content current_content =
-  let parse = Ast.build_parser () in
-  match (parse ?filename:filename1 previous_content, parse ?filename:filename2 current_content) with
-  | Error error, _ | Ok _, Error error ->
-      L.user_error "%a" PythonSourceAst.pp_error error ;
-      []
-  | Ok ast1, Ok ast2 ->
-      let diffs =
-        zip_and_build_diffs config ast1 ast2
-        |> Diff.gen_explicit_diffs ~previous_content ~current_content
-      in
-      if debug then (
-        F.printf "AST1: %a\n" Ast.Node.pp ast1 ;
-        F.printf "AST2: %a\n" Ast.Node.pp ast2 ;
-        F.printf "SemDiff:\n" ;
-        List.iter diffs ~f:(fun diff -> F.printf "%a\n" Diff.pp_explicit diff) ) ;
-      diffs
+let ast_diff ~debug ~config ~previous_content ~current_content ast1 ast2 =
+  let diffs =
+    zip_and_build_diffs config ast1 ast2
+    |> Diff.gen_explicit_diffs ~previous_content ~current_content
+  in
+  if debug then (
+    F.printf "AST1: %a\n" Ast.Node.pp ast1 ;
+    F.printf "AST2: %a\n" Ast.Node.pp ast2 ;
+    F.printf "SemDiff:\n" ;
+    List.iter diffs ~f:(fun diff -> F.printf "%a\n" Diff.pp_explicit diff) ) ;
+  diffs
