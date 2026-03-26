@@ -11,9 +11,7 @@ module F = Format
 let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe ()
 
 let ast_diff_equal prog1 prog2 =
-  let diffs =
-    PythonCompareWithoutTypeAnnot.test_ast_diff ~debug:false ~test_eqsat:true prog1 prog2
-  in
+  let diffs = PythonCompareWithoutTypeAnnot.test_ast_diff ~debug:false prog1 prog2 in
   List.iter diffs ~f:(F.printf "%a\n" Diff.pp_explicit)
 
 
@@ -633,7 +631,7 @@ def __init__(self) -> None:
     self.msg : str = "hello"
 |} in
   ast_diff_equal prog1 prog2 ;
-  [%expect {| (DIFF 1 0) |}]
+  [%expect {| |}]
 
 
 let%expect_test "for loop bad" =

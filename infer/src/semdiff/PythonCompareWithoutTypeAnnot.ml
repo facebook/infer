@@ -216,7 +216,7 @@ let make_diffs n1 n2 =
 
 let normalize = Normalize.apply
 
-let ast_diff ~debug ~test_eqsat ?filename1 ?filename2 previous_content current_content =
+let ast_diff ~debug ?filename1 ?filename2 previous_content current_content =
   let parse = build_parser () in
   match (parse ?filename:filename1 previous_content, parse ?filename:filename2 current_content) with
   | Error error, _ | Ok _, Error error ->
@@ -228,10 +228,6 @@ let ast_diff ~debug ~test_eqsat ?filename1 ?filename2 previous_content current_c
       let diffs =
         make_diffs ast1 ast2 |> Diff.gen_explicit_diffs ~previous_content ~current_content
       in
-      if test_eqsat then
-        PythonSourceAstDiff.check_equivalence ~debug:false ~expected:(List.is_empty diffs)
-          original_ast1 original_ast2
-        |> ignore ;
       if debug then (
         F.printf "AST1: %s\n" (Node.to_str ast1) ;
         F.printf "AST2: %s\n" (Node.to_str ast2) ;
@@ -240,29 +236,4 @@ let ast_diff ~debug ~test_eqsat ?filename1 ?filename2 previous_content current_c
       diffs
 
 
-let test_ast_diff ~debug ~test_eqsat src1 src2 = ast_diff ~debug ~test_eqsat src1 src2
-
-let semdiff_with_eqsat ?filename1 ?filename2 previous_content current_content =
-  let parse = build_parser () in
-  match (parse ?filename:filename1 previous_content, parse ?filename:filename2 current_content) with
-  | Error error, _ | Ok _, Error error ->
-      L.user_error "%a" PythonSourceAst.pp_error error ;
-      []
-  | Ok ast1, Ok ast2 ->
-      if PythonSourceAstDiff.check_equivalence ~debug:false ast1 ast2 then []
-      else [Diff.dummy_explicit]
-
-
-let semdiff previous_file current_file =
-  let debug = Config.debug_mode in
-  let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
-  let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
-  let diffs =
-    if Config.semdiff_experimental_eqsat_engine then
-      semdiff_with_eqsat ~filename1:previous_file ~filename2:current_file previous_src current_src
-    else
-      ast_diff ~debug ~test_eqsat:false ~filename1:previous_file ~filename2:current_file
-        previous_src current_src
-  in
-  let out_path = ResultsDir.get_path SemDiff in
-  Diff.write_json ~previous_file ~current_file ~out_path diffs
+let test_ast_diff ~debug src1 src2 = ast_diff ~debug src1 src2

@@ -7,9 +7,7 @@
 
 open! IStd
 
-val test_ast_diff : debug:bool -> test_eqsat:bool -> string -> string -> Diff.explicit list
-
-val semdiff : string -> string -> unit
+val test_ast_diff : debug:bool -> string -> string -> Diff.explicit list
 
 (* for testing only *)
 val normalize : PythonSourceAst.Node.t -> PythonSourceAst.Node.t
