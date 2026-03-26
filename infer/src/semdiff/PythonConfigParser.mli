@@ -7,6 +7,6 @@
 
 open! IStd
 
-val parse_string : ?filename:string -> string -> PythonCompareDirectRewrite.Rules.t
+val parse_string : ?filename:string -> string -> SemdiffDirectEngine.Rules.t
 
-val parse_file : string -> PythonCompareDirectRewrite.Rules.t
+val parse_file : string -> SemdiffDirectEngine.Rules.t

@@ -7,11 +7,11 @@
 
 open! IStd
 module F = Format
-open PythonCompareDirectRewrite
+open SemdiffDirectEngine
 open PythonConfigParser
 
 let%expect_test "test missing_python_type_annotations_config parser" =
-  let rules1 = missing_python_type_annotations_config in
+  let rules1 = PythonSemdiffConfig.missing_python_type_annotations_config in
   let rules2 =
     parse_string
       {|

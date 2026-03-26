@@ -30,6 +30,18 @@ module Pattern : sig
     | AstNode of PythonSourceAst.Node.t
     | Node of {name: Name.t; args: (Name.t * t) list}
     | List of t list
+
+  val var : string -> t
+
+  val null : t
+
+  val str : string -> t
+
+  val int : int -> t
+
+  val list : t list -> t
+
+  val node : string -> (string * t) list -> t
 end
 
 module Condition : sig
@@ -46,8 +58,6 @@ module Rules : sig
 
   val pp : F.formatter -> t -> unit
 end
-
-val missing_python_type_annotations_config : Rules.t
 
 val ast_diff :
      debug:bool

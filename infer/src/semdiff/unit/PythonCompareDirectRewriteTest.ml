@@ -11,8 +11,8 @@ module F = Format
 let () = if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe ()
 
 let ast_diff_equal ?(debug = false) prog1 prog2 =
-  let config = PythonCompareDirectRewrite.missing_python_type_annotations_config in
-  let diffs = PythonCompareDirectRewrite.ast_diff ~debug ~config prog1 prog2 in
+  let config = PythonSemdiffConfig.missing_python_type_annotations_config in
+  let diffs = SemdiffDirectEngine.ast_diff ~debug ~config prog1 prog2 in
   List.iter diffs ~f:(F.printf "%a\n" Diff.pp_explicit)
 
 
@@ -687,8 +687,8 @@ def main():
 
 
 let%expect_test "pp missing_python_type_annotations_config" =
-  let open PythonCompareDirectRewrite in
-  F.printf "%a@." Rules.pp missing_python_type_annotations_config ;
+  let open SemdiffDirectEngine in
+  F.printf "%a@." Rules.pp PythonSemdiffConfig.missing_python_type_annotations_config ;
   [%expect
     {|
     vars: A C L M N T T1 T2 V X

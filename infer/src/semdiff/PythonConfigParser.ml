@@ -9,7 +9,7 @@ open! IStd
 module L = Logging
 module Ast = PythonSourceAst
 open Ast.Node
-open PythonCompareDirectRewrite
+open SemdiffDirectEngine
 
 exception ParseError of {lineno: int option; expected: string}
 
