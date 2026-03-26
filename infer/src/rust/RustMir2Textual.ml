@@ -594,12 +594,12 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
   | StorageLive _ ->
       []
   (* A drop frees the memory of a value once it goes out of scope.
-    The following implementation is a simplified model for drops 
+    The following implementation is a simplified model for drops
     of boxes created by Box::new() of types using the global allocator.
     https://doc.rust-lang.org/1.93.1/alloc/alloc/struct.Global.html
     It assumes that drops are elaborated, it is possible to get the elaborated mir
     by passing --mir=elaborated as charon argument, however this will also change
-    how box types are trated in the current verion. 
+    how box types are trated in the current verion.
     At some point we want to update the charon version to be able to use --precise-drops
     https://rustc-dev-guide.rust-lang.org/mir/drop-elaboration.html
     https://doc.rust-lang.org/1.93.1/alloc/alloc/trait.GlobalAlloc.html#tymethod.dealloc
@@ -705,7 +705,7 @@ let mk_decl crate (fun_decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) :
           (item_meta_to_string crate fun_decl.item_meta)
           s ;
         Some (Textual.Module.Procdecl (mk_procdecl crate fun_decl)) )
-    (* Functions withouth body, they can be among others functions from other crates, 
+    (* Functions withouth body, they can be among others functions from other crates,
     opaque types or trait definitions without default implementations.*)
     | None ->
         Some (Textual.Module.Procdecl (mk_procdecl crate fun_decl))
