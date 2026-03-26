@@ -483,3 +483,28 @@ fn main() {
 
     }
   |}]
+
+
+let%expect_test "string" =
+  let source = {|
+    #[allow(unused)]
+    fn main() {
+      let hello = "hello";
+    }
+  |} in
+  test source ;
+  [%expect
+    {|
+     .source_language = "Rust"
+
+     define dummy::main() : void {
+       local var_0: void, hello_1: *String
+       #node_0:
+           store &hello_1 <- "hello":*String
+           store &var_0 <- null:void
+           store &var_0 <- null:void
+           n0:void = load &var_0
+           ret n0
+
+     }
+     |}]
