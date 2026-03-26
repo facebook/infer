@@ -184,7 +184,8 @@ SWIFT_DIRECT_TESTS += \
   swift_frontend \
   swift_bitcode \
   swift_pulse \
-  swift_multifile
+  swift_multifile \
+  swift_interop-pulse
 
 endif
 
