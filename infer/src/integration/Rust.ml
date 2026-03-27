@@ -135,7 +135,7 @@ let capture_file json_filename =
   let textual_model_tenv = load_textual_models [Config.lib_dir ^/ "rust" ^/ "models.sil"] in
   let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
   Tenv.merge ~src:textual_model_tenv ~dst:sil.tenv ;
-  TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+  TextualParser.TextualFile.capture ~textual_module:transformed_textual ~use_global_tenv:true sil ;
   Tenv.Global.store ~normalize:false sil.tenv
 
 
