@@ -19,4 +19,6 @@ let hack_type_annotations_config : Rules.t =
         ; key=
             [ Name.of_string "function_type"
             ; Name.of_string "parameter_type"
-            ; Name.of_string "property_type" ] } ] }
+            ; Name.of_string "property_type"
+            ; Name.of_string "lambda_type"
+            ; Name.of_string "anonymous_type" ] } ] }
