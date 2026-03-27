@@ -6,7 +6,7 @@
 
 .source_language = "C" @?
 
-declare count_args<int,_int,_int>(.lvalue_reference *int, .lvalue_reference *int, .lvalue_reference *int) : int
+declare count_args_int__int__int_(.lvalue_reference *int, .lvalue_reference *int, .lvalue_reference *int) : int
 
 define test_sizeof_pack() : int {
   local __sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0: int, __sil_tmp_0$____sil_tmpSIL_materialize_temp__n$1: int, __sil_tmp_0$____sil_tmpSIL_materialize_temp__n$2: int
@@ -32,7 +32,7 @@ define test_sizeof_pack() : int {
       jmp node_3 @[16:50]
       
   #node_3: @[16:26]
-      n3 = count_args<int,_int,_int>(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$1, &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$2) @[16:33]
+      n3 = count_args_int__int__int_(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$1, &__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$2) @[16:33]
       jmp node_2 @[16:33]
       
   #node_2: @[16:26]
@@ -40,7 +40,7 @@ define test_sizeof_pack() : int {
       
 } @[16:1]
 
-define count_args<int,_int,_int>(ts: .lvalue_reference *int, ts: .lvalue_reference *int, ts: .lvalue_reference *int) : int {
+define count_args_int__int__int_(ts: .lvalue_reference *int, ts: .lvalue_reference *int, ts: .lvalue_reference *int) : int {
   #node_0: @[9:1]
       jmp node_1, node_2 @[9:1]
       

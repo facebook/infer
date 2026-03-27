@@ -27,6 +27,28 @@ module LocationBridge = struct
     if Int.(line = -1 && col = -1) then Unknown else Known {line; col}
 end
 
+let sanitize_template_args s =
+  (* Detect <...> zones (possibly nested) and replace <, >, comma, space within
+     with underscores so the result is a valid textual identifier. *)
+  if not (String.contains s '<') then s
+  else
+    let buf = Buffer.create (String.length s) in
+    let depth = ref 0 in
+    String.iter s ~f:(fun c ->
+        match c with
+        | '<' ->
+            incr depth ;
+            Buffer.add_char buf '_'
+        | '>' ->
+            depth := max 0 (!depth - 1) ;
+            Buffer.add_char buf '_'
+        | (',' | ' ') when !depth > 0 ->
+            Buffer.add_char buf '_'
+        | _ ->
+            Buffer.add_char buf c ) ;
+    Buffer.contents buf
+
+
 let sanitize_ident s =
   (* Replace characters that are not valid in textual identifiers.
      Preserve :: (namespace separator) but replace lone : and . with _.
@@ -35,6 +57,7 @@ let sanitize_ident s =
   let s =
     String.substr_replace_all s ~pattern:"operator()" ~with_:"__operator_call"
     |> String.substr_replace_all ~pattern:"::" ~with_:"\x00\x00"
+    |> sanitize_template_args
     |> String.tr ~target:'.' ~replacement:'_'
     |> String.tr ~target:':' ~replacement:'_'
     |> String.tr ~target:'(' ~replacement:'_'
