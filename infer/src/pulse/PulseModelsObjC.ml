@@ -457,7 +457,11 @@ let matchers : matcher list =
         $+...$--> Basic.id_first_arg ~desc:"UIView.initWithFrame:"
       ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
         &:: "initWithCoder:" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"UIView.initWithCoder:" ]
+        $+...$--> Basic.id_first_arg ~desc:"UIView.initWithCoder:"
+        (* catch-all for any CLASS.init *)
+      ; +(fun _ _ -> true)
+        &:: "init" <>$ capt_arg_payload
+        $+...$--> Basic.id_first_arg ~desc:"NSObject.init" ]
     |> List.map ~f:(fun matcher ->
            matcher
            |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
