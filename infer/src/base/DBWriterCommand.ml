@@ -17,10 +17,10 @@ module Implementation : DBWriterS.S = struct
       Database.register_statement CaptureDatabase
         {|
           INSERT OR REPLACE INTO source_files
-          VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured)
+          VALUES (:source, :tenv, :integer_type_widths, :proc_names, :freshly_captured, :textual)
         |}
     in
-    fun ~source_file ~tenv ~integer_type_widths ~proc_names ->
+    fun ~source_file ~tenv ~integer_type_widths ~proc_names ~textual ->
       Database.with_registered_statement source_file_store_statement ~f:(fun db store_stmt ->
           Sqlite3.bind store_stmt 1 source_file
           (* :source *)
@@ -37,6 +37,9 @@ module Implementation : DBWriterS.S = struct
           Sqlite3.bind store_stmt 5 (Sqlite3.Data.INT Int64.one)
           (* :freshly_captured *)
           |> SqliteUtils.check_result_code db ~log:"store freshness" ;
+          Sqlite3.bind store_stmt 6 textual
+          (* :textual *)
+          |> SqliteUtils.check_result_code db ~log:"store bind textual" ;
           SqliteUtils.result_unit ~finalize:false ~log:"Cfg.store" db store_stmt )
 
 
@@ -132,7 +135,7 @@ module Implementation : DBWriterS.S = struct
            ~stmt:
              {|
               INSERT OR REPLACE INTO memdb.source_files
-              SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
+              SELECT source_file, type_environment, integer_type_widths, procedure_names, 1, textual
               FROM attached.source_files
             |}
     in
@@ -444,7 +447,8 @@ type t =
       { source_file: Sqlite3.Data.t
       ; tenv: Sqlite3.Data.t
       ; integer_type_widths: Sqlite3.Data.t
-      ; proc_names: Sqlite3.Data.t }
+      ; proc_names: Sqlite3.Data.t
+      ; textual: Sqlite3.Data.t }
   | Checkpoint
   | DeleteAllSpecs
   | DeleteAttributes of {proc_uid: string}
@@ -514,8 +518,8 @@ let to_string = function
 let pp fmt cmd = F.pp_print_string fmt (to_string cmd)
 
 let perform = function
-  | AddSourceFile {source_file; tenv; integer_type_widths; proc_names} ->
-      Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names
+  | AddSourceFile {source_file; tenv; integer_type_widths; proc_names; textual} ->
+      Implementation.add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names ~textual
   | Checkpoint ->
       Implementation.canonicalize ()
   | DeleteAllSpecs ->

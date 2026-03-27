@@ -312,6 +312,10 @@ val dump_llair_text : bool
 
 val dump_textual : bool
 
+val store_textual : bool
+
+val export_textual : string option
+
 val dynamic_dispatch_json_file_path : string option
 
 val erlang_ast_dir : string option

@@ -1429,7 +1429,21 @@ and dump_llair_text =
 and dump_textual =
   CLOpt.mk_bool ~long:"dump-textual"
     "Generate a SIL program from the captured target. A $(i,filename.sil) file is generated for \
-     each $(i,filename.java) file in the target."
+     each $(i,filename.java) file in the target. Also stores the textual SIL in capture.db."
+
+
+and store_textual =
+  CLOpt.mk_bool ~long:"store-textual"
+    "Store textual SIL in capture.db during capture, without writing $(i,.sil) files to disk. Use \
+     $(b,infer debug --export-textual) to extract the stored textual later."
+
+
+and export_textual =
+  CLOpt.mk_string_opt ~long:"export-textual"
+    ~in_help:InferCommand.[(Debug, manual_debug_source_files)]
+    "Export textual SIL from capture.db to the specified output directory. Writes one $(i,.sil) \
+     file per source file and a $(i,manifest.json) mapping source file paths to their $(i,.sil) \
+     filenames. Requires a prior capture with $(b,--dump-textual) or $(b,--store-textual)."
 
 
 and dump_json_summaries =
@@ -4211,6 +4225,10 @@ and dump_llair = !dump_llair
 and dump_llair_text = !dump_llair_text
 
 and dump_textual = !dump_textual
+
+and store_textual = !store_textual
+
+and export_textual = !export_textual
 
 and dynamic_dispatch_json_file_path = !dynamic_dispatch_json_file_path
 

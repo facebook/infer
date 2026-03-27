@@ -60,7 +60,7 @@ let copy_sourcefile =
          (Database.get_database CaptureDatabase)
          {|
             INSERT INTO source_files
-            SELECT source_file, type_environment, integer_type_widths, procedure_names, 1
+            SELECT source_file, type_environment, integer_type_widths, procedure_names, 1, textual
             FROM attached.source_files
             WHERE source_file = :k
               AND NOT EXISTS (SELECT 1 FROM source_files WHERE source_file = :k)

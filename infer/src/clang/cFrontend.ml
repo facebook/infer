@@ -79,15 +79,24 @@ let do_source_file (translation_unit_context : CFrontend_config.translation_unit
   | _ ->
       () ) ;
   L.(debug Capture Verbose) "@\n End building call/cfg graph for '%a'.@\n" SourceFile.pp source_file ;
-  SourceFiles.add source_file cfg (Tenv.FileLocal tenv) (Some integer_type_widths) ;
+  (* Generate textual SIL if requested:
+     --dump-textual: write .sil file to disk AND store in capture.db
+     --store-textual: store in capture.db only (no file on disk) *)
+  let textual =
+    if Config.dump_textual || Config.store_textual then (
+      let filename = Filename.chop_extension (SourceFile.to_abs_path source_file) ^ ".sil" in
+      ( if Config.dump_textual then
+          let ext = if Config.frontend_tests then ".test.sil" else ".sil" in
+          let dump_filename = Filename.chop_extension (SourceFile.to_abs_path source_file) ^ ext in
+          TextualOfSil.from_c source_file dump_filename tenv cfg ) ;
+      Some (TextualOfSil.to_string ~lang:C ~sil_source_file:source_file ~filename tenv cfg) )
+    else None
+  in
+  SourceFiles.add ?textual source_file cfg (Tenv.FileLocal tenv) (Some integer_type_widths) ;
   if Config.debug_mode then Tenv.store_debug_file_for_source source_file tenv ;
   if
     Config.debug_mode || Config.testing_mode || Config.frontend_tests
     || Option.is_some Config.icfg_dotty_outfile
   then DotCfg.emit_frontend_cfg source_file cfg ;
-  ( if Config.dump_textual then
-      let ext = if Config.frontend_tests then ".test.sil" else ".sil" in
-      let filename = Filename.chop_extension (SourceFile.to_abs_path source_file) ^ ext in
-      TextualOfSil.from_c source_file filename tenv cfg ) ;
   L.debug Capture Verbose "Stored on disk:@[<v>%a@]@." Cfg.pp_proc_signatures cfg ;
   ()

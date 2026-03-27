@@ -129,6 +129,12 @@ DEBUG SOURCE FILES
            directory. The exit code will be equal to the number of rows added
            to the capture database.
 
+       --export-textual string
+           Export textual SIL from capture.db to the specified output
+           directory. Writes one .sil file per source file and a
+           manifest.json mapping source file paths to their .sil filenames.
+           Requires a prior capture with --dump-textual or --store-textual.
+
        --extract-capture-from path
            Provide the path to an infer results directory containing a
            capture database. Together with a list of files provided through

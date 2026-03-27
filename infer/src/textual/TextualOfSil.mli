@@ -14,3 +14,12 @@ val from_c : SourceFile.t -> string -> Tenv.t -> Cfg.t -> unit
 val from_java : filename:string -> Tenv.t -> Cfg.t -> unit
 (** generate a .sil file with name [filename] containing all the functions in the given cfg (Java)
 *)
+
+val to_string :
+     lang:Textual.Lang.t
+  -> ?sil_source_file:SourceFile.t
+  -> filename:string
+  -> Tenv.t
+  -> Cfg.t
+  -> string
+(** return textual SIL as a string *)

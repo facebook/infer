@@ -1,0 +1,22 @@
+[
+  {
+    "source": "codetoanalyze/c/export-textual/basic.c",
+    "sil": "basic.sil",
+    "procedures": [ "add", "set_null" ]
+  },
+  {
+    "source": "codetoanalyze/c/export-textual/funptr.c",
+    "sil": "funptr.sil",
+    "procedures": [ "apply", "call_apply" ]
+  },
+  {
+    "source": "codetoanalyze/c/export-textual/subdir/basic.c",
+    "sil": "basic_1.sil",
+    "procedures": [ "subtract" ]
+  },
+  {
+    "source": "codetoanalyze/c/export-textual/subdir/nested.c",
+    "sil": "nested.sil",
+    "procedures": [ "multiply" ]
+  }
+]

@@ -123,11 +123,17 @@ module TextualFile = struct
     Ok {sourcefile; cfg; tenv}
 
 
-  let capture ~use_global_tenv {sourcefile; cfg; tenv} =
+  let capture ?textual_module ~use_global_tenv {sourcefile; cfg; tenv} =
     let sourcefile = Textual.SourceFile.file sourcefile in
     DB.Results_dir.init sourcefile ;
     let per_file_tenv = if use_global_tenv then Tenv.Global else Tenv.FileLocal tenv in
-    SourceFiles.add sourcefile cfg per_file_tenv None ;
+    let textual =
+      if Config.store_textual then
+        Option.map textual_module ~f:(fun m ->
+            Format.asprintf "%a" (Textual.Module.pp ~show_location:true) m )
+      else None
+    in
+    SourceFiles.add ?textual sourcefile cfg per_file_tenv None ;
     if Config.debug_mode then Tenv.store_debug_file_for_source sourcefile tenv ;
     if
       Config.debug_mode || Config.testing_mode || Config.frontend_tests

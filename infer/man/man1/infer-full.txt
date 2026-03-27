@@ -810,6 +810,13 @@ OPTIONS
            library functions. (Conversely: --no-erlang-with-otp-specs)
            See also infer-capture(1).
 
+       --export-textual string
+           Export textual SIL from capture.db to the specified output
+           directory. Writes one .sil file per source file and a
+           manifest.json mapping source file paths to their .sil filenames.
+           Requires a prior capture with --dump-textual or --store-textual.
+           See also infer-debug(1).
+
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
            packages. If set, the analysis will not report non-actionable
@@ -2837,7 +2844,8 @@ INTERNAL OPTIONS
        --dump-textual
            Activates: Generate a SIL program from the captured target. A
            filename.sil file is generated for each filename.java file in the
-           target. (Conversely: --no-dump-textual)
+           target. Also stores the textual SIL in capture.db. (Conversely:
+           --no-dump-textual)
 
        --dynamic-dispatch-json-file-path-reset
            Cancel the effect of --dynamic-dispatch-json-file-path.
@@ -2847,6 +2855,9 @@ INTERNAL OPTIONS
 
        --erlang-ast-dir-reset
            Cancel the effect of --erlang-ast-dir.
+
+       --export-textual-reset
+           Cancel the effect of --export-textual.
 
        --external-java-packages-reset
            Set --external-java-packages to the empty list.
@@ -3545,6 +3556,11 @@ INTERNAL OPTIONS
 
        --stats-dir-previous-reset
            Cancel the effect of --stats-dir-previous.
+
+       --store-textual
+           Activates: Store textual SIL in capture.db during capture, without
+           writing .sil files to disk. Use infer debug --export-textual to
+           extract the stored textual later. (Conversely: --no-store-textual)
 
        --suffix-match-changed-files
            Activates: When computing the set of files to analyze using

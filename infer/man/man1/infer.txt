@@ -810,6 +810,13 @@ OPTIONS
            library functions. (Conversely: --no-erlang-with-otp-specs)
            See also infer-capture(1).
 
+       --export-textual string
+           Export textual SIL from capture.db to the specified output
+           directory. Writes one .sil file per source file and a
+           manifest.json mapping source file paths to their .sil filenames.
+           Requires a prior capture with --dump-textual or --store-textual.
+           See also infer-debug(1).
+
        --external-java-packages +prefix
            Specify a list of Java package prefixes for external Java
            packages. If set, the analysis will not report non-actionable

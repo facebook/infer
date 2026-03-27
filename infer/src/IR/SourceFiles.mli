@@ -7,8 +7,13 @@
 
 open! IStd
 
-val add : SourceFile.t -> Cfg.t -> Tenv.per_file -> IntegerWidths.t option -> unit
-(** Add or replace the row corresponding to the source file into the database. *)
+val add :
+  ?textual:string -> SourceFile.t -> Cfg.t -> Tenv.per_file -> IntegerWidths.t option -> unit
+(** Add or replace the row corresponding to the source file into the database. When [textual] is
+    provided, also stores the textual SIL representation. *)
+
+val get_textual : SourceFile.t -> string option
+(** Get stored textual SIL for the given source file, if any. *)
 
 val get_all : filter:Filtering.source_files_filter -> unit -> SourceFile.t list
 (** get all the source files in the database *)

@@ -704,3 +704,9 @@ let from_java ~filename tenv cfg = from_sil ~lang:Java ~filename tenv cfg
 
 let from_c source_file filename tenv cfg =
   from_sil ~lang:C ~sil_source_file:source_file ~show_location:true ~filename tenv cfg
+
+
+let to_string ~lang ?sil_source_file ~filename tenv cfg =
+  let sourcefile = SourceFile.create filename in
+  let module_ = ModuleBridge.of_sil ?sil_source_file ~sourcefile ~lang tenv cfg in
+  F.asprintf "%t%a" pp_copyright (Module.pp ~show_location:true) module_

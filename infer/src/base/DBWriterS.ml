@@ -14,6 +14,7 @@ module type S = sig
     -> tenv:Sqlite3.Data.t
     -> integer_type_widths:Sqlite3.Data.t
     -> proc_names:Sqlite3.Data.t
+    -> textual:Sqlite3.Data.t
     -> unit
 
   val canonicalize : unit -> unit

@@ -15,7 +15,8 @@ type t =
       { source_file: Sqlite3.Data.t
       ; tenv: Sqlite3.Data.t
       ; integer_type_widths: Sqlite3.Data.t
-      ; proc_names: Sqlite3.Data.t }
+      ; proc_names: Sqlite3.Data.t
+      ; textual: Sqlite3.Data.t }
   | Checkpoint
   | DeleteAllSpecs
   | DeleteAttributes of {proc_uid: string}

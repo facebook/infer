@@ -42,7 +42,10 @@ module TextualFile : sig
   val textual_to_sil :
     Textual.SourceFile.t -> Textual.Module.t -> (sil, Textual.SourceFile.t * error list) result
 
-  val capture : use_global_tenv:bool -> sil -> unit
+  val capture : ?textual_module:Textual.Module.t -> use_global_tenv:bool -> sil -> unit
+  (** Store the captured CFG and tenv in capture.db. When [textual_module] is provided and
+      [--store-textual] is set, the module is pretty-printed and stored in capture.db for later
+      export with [infer debug --export-textual]. *)
 
   val line_map : t -> LineMap.t option [@@warning "-unused-value-declaration"]
 end

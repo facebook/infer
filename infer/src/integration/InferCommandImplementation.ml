@@ -9,9 +9,10 @@ module L = Logging
 module F = Format
 
 let debug () =
-  if not Config.(global_tenv || procedures || source_files) then
+  if not Config.(global_tenv || procedures || source_files || Option.is_some export_textual) then
     L.die UserError
-      "Expected at least one of '--global-tenv', '--procedures' or '--source-files'.@\n"
+      "Expected at least one of '--global-tenv', '--procedures', '--source-files' or \
+       '--export-textual'.@\n"
   else (
     ( if Config.global_tenv then
         match Tenv.Global.load () with
@@ -140,7 +141,60 @@ let debug () =
               (* emit the dot file in captured/... *)
               DotCfg.emit_frontend_cfg source_file cfgs ) ;
           L.result "CFGs written in %s/*/%s@." (ResultsDir.get_path Debug)
-            Config.dotty_frontend_output ) ) )
+            Config.dotty_frontend_output ) ) ) ;
+  (* Export textual SIL from capture.db to an output directory.
+     Writes one .sil file per source file and a manifest.json that maps each source file
+     (relative to project root) to its .sil filename and list of procedure names.
+     Requires a prior capture with --dump-textual or --store-textual. *)
+  Option.iter Config.export_textual ~f:(fun out_dir ->
+      IUnix.mkdir_p out_dir ;
+      (* Sort source files for deterministic output order *)
+      let source_files =
+        SourceFiles.get_all ~filter:(fun _ -> true) () |> List.sort ~compare:SourceFile.compare
+      in
+      (* Track used .sil filenames to handle basename collisions (e.g. src/foo.c and lib/foo.c
+         both have basename "foo" — the second one becomes foo_1.sil) *)
+      let used_names = String.Table.create () in
+      let unique_sil_filename basename =
+        let candidate = basename ^ ".sil" in
+        match Hashtbl.find used_names candidate with
+        | None ->
+            Hashtbl.set used_names ~key:candidate ~data:1 ;
+            candidate
+        | Some n ->
+            Hashtbl.set used_names ~key:candidate ~data:(n + 1) ;
+            F.sprintf "%s_%d.sil" basename n
+      in
+      let manifest = ref [] in
+      List.iter source_files ~f:(fun source_file ->
+          match SourceFiles.get_textual source_file with
+          | Some textual ->
+              let source_path = SourceFile.to_rel_path source_file in
+              let basename = source_path |> Filename.chop_extension |> Filename.basename in
+              let sil_filename = unique_sil_filename basename in
+              let out_path = Filename.concat out_dir sil_filename in
+              Utils.with_file_out out_path ~f:(fun oc -> Out_channel.output_string oc textual) ;
+              let proc_names =
+                SourceFiles.proc_names_of_source source_file |> List.sort ~compare:Procname.compare
+              in
+              let procedures =
+                `List
+                  (List.map proc_names ~f:(fun pname ->
+                       `String (Procname.to_string ~verbosity:Non_verbose pname) ) )
+              in
+              manifest :=
+                `Assoc
+                  [ ("source", `String source_path)
+                  ; ("sil", `String sil_filename)
+                  ; ("procedures", procedures) ]
+                :: !manifest
+          | None ->
+              () ) ;
+      let manifest_path = Filename.concat out_dir "manifest.json" in
+      Utils.with_file_out manifest_path ~f:(fun oc ->
+          Yojson.Safe.pretty_to_channel oc (`List (List.rev !manifest)) ;
+          Out_channel.newline oc ) ;
+      L.result "Exported %d textual SIL files to %s@." (List.length !manifest) out_dir )
 
 
 let explore () =

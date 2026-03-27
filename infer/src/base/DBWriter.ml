@@ -15,8 +15,8 @@ let perform cmd =
   else DBWriterCommand.perform cmd
 
 
-let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names =
-  perform (AddSourceFile {source_file; tenv; integer_type_widths; proc_names})
+let add_source_file ~source_file ~tenv ~integer_type_widths ~proc_names ~textual =
+  perform (AddSourceFile {source_file; tenv; integer_type_widths; proc_names; textual})
 
 
 let canonicalize () = perform Checkpoint

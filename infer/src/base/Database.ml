@@ -33,7 +33,8 @@ let source_files_schema prefix =
         , type_environment BLOB NOT NULL
         , integer_type_widths BLOB
         , procedure_names BLOB NOT NULL
-        , freshly_captured INT NOT NULL )
+        , freshly_captured INT NOT NULL
+        , textual TEXT )
     |}
     prefix
 

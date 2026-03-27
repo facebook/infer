@@ -50,7 +50,7 @@ let proc_names_of_source =
         procs
 
 
-let add source_file cfg tenv integer_type_widths =
+let add ?textual source_file cfg tenv integer_type_widths =
   let tenv, proc_names =
     (* The same source file may get captured several times in a single capture event, for instance
        because it is compiled with different options, or from different symbolic links. This may
@@ -98,6 +98,30 @@ let add source_file cfg tenv integer_type_widths =
     ~tenv:(Tenv.SQLite.serialize tenv)
     ~integer_type_widths:(IntegerWidths.SQLite.serialize integer_type_widths)
     ~proc_names:(Procname.SQLiteList.serialize proc_names)
+    ~textual:
+      (* When --dump-textual or --store-textual is used, the caller passes the textual SIL string.
+         Otherwise NULL is stored, which has no storage cost in SQLite. *)
+      ( match textual with
+      | Some s ->
+          Sqlite3.Data.TEXT s
+      | None ->
+          Sqlite3.Data.NULL )
+
+
+(** Retrieve the textual SIL stored for [source_file], if any. Returns [None] when the file was
+    captured without --dump-textual/--store-textual. *)
+let get_textual =
+  let stmt =
+    Database.register_statement CaptureDatabase
+      "SELECT textual FROM source_files WHERE source_file = :k AND textual IS NOT NULL"
+  in
+  fun source_file ->
+    Database.with_registered_statement stmt ~f:(fun db stmt ->
+        SourceFile.SQLite.serialize source_file
+        |> Sqlite3.bind stmt 1
+        |> SqliteUtils.check_result_code db ~log:"get_textual bind source" ;
+        SqliteUtils.result_single_column_option ~finalize:false ~log:"get_textual" db stmt
+        |> Option.bind ~f:(fun data -> match data with Sqlite3.Data.TEXT s -> Some s | _ -> None) )
 
 
 let get_all ~filter () =
