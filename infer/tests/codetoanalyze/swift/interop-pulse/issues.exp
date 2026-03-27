@@ -1,4 +1,3 @@
-HardwareTests.swift, testObjCClassMethod_good_fp, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testObjCClassMethod_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testObjCInstanceMethod_good_fp, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testObjCInstanceMethod_bad, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []

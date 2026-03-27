@@ -7,7 +7,7 @@
 #import "LegacyHardware.h"
 
 @implementation LegacyHardware
-+ (int)globalHardwareVersion {
++ (int)getHardwareRevision {
   return 101;
 }
 - (int)currentBatteryLevel {

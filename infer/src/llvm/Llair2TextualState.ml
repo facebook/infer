@@ -128,6 +128,8 @@ module ProcState = struct
     ; mutable last_tmp_var: int
     ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
+    ; mutable objc_class_ids: Textual.Ident.Set.t (* Track IDs representing ObjC Class Objects *)
+    ; mutable objc_class_name_map: string Textual.Ident.Map.t (* Map Ident.t -> "LegacyHardware" *)
     ; mutable selector_map: string Textual.Ident.Map.t
     ; mutable string_map: string Textual.Ident.Map.t
     ; mutable last_string_added: string option
@@ -151,6 +153,8 @@ module ProcState = struct
     ; last_tmp_var= 0
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
+    ; objc_class_ids= Textual.Ident.Set.empty
+    ; objc_class_name_map= Textual.Ident.Map.empty
     ; selector_map= Textual.Ident.Map.empty
     ; string_map= Textual.Ident.Map.empty
     ; last_string_added= None
@@ -195,6 +199,23 @@ module ProcState = struct
     Textual.Ident.Set.mem id proc_state.metadata_address_ids
 
 
+  (** Mark an ID as representing an ObjC Class object and optionally store its name (e.g.,
+      "LegacyHardware") *)
+  let mark_as_objc_class ~proc_state id ?name () =
+    proc_state.objc_class_ids <- Textual.Ident.Set.add id proc_state.objc_class_ids ;
+    Option.iter name ~f:(fun name ->
+        proc_state.objc_class_name_map <-
+          Textual.Ident.Map.add id name proc_state.objc_class_name_map )
+
+
+  (** Check if an ID was marked as an ObjC Class (determines + vs -) *)
+  let is_objc_class_id ~proc_state id = Textual.Ident.Set.mem id proc_state.objc_class_ids
+
+  (** Retrieve the specific class name string for an ID (determines the Enclosing class) *)
+  let get_objc_class_name ~proc_state id =
+    Textual.Ident.Map.find_opt id proc_state.objc_class_name_map
+
+
   let add_selector state ident selector =
     state.selector_map <- Textual.Ident.Map.add ident selector state.selector_map
 
@@ -233,7 +254,7 @@ module ProcState = struct
       in
       VarMap.iter pp_item vars
     in
-    let pp_selector_map fmt selector_map =
+    let pp_name_map fmt selector_map =
       F.fprintf fmt "%a"
         (Pp.comma_seq (Pp.pair ~fst:Textual.Ident.pp ~snd:F.pp_print_string))
         (Textual.Ident.Map.bindings selector_map)
@@ -257,6 +278,8 @@ module ProcState = struct
        @[ids_move: %a@]@;\
        @[ids_metadata: %a@]@;\
        @[ids_metadata_address: %a@]@;\
+       @[objc_class_ids: %a@]@;\
+       @[objc_class_name_map: %a@]@;\
        @[ids_types: %a@]@;\
        @[selector_map: %a@]@;\
        @[string_map: %a@]@;\
@@ -269,8 +292,10 @@ module ProcState = struct
       (Textual.Ident.Set.elements proc_state.metadata_ids)
       (Pp.seq ~sep:"," Textual.Ident.pp)
       (Textual.Ident.Set.elements proc_state.metadata_address_ids)
-      pp_ids proc_state.ids_types pp_selector_map proc_state.selector_map pp_string_map
-      proc_state.string_map
+      (Pp.seq ~sep:"," Textual.Ident.pp)
+      (Textual.Ident.Set.elements proc_state.objc_class_ids)
+      pp_name_map proc_state.objc_class_name_map pp_ids proc_state.ids_types pp_name_map
+      proc_state.selector_map pp_string_map proc_state.string_map
       (Pp.option (Pp.pair ~fst:Textual.Ident.pp ~snd:Int.pp))
       proc_state.id_offset
       (Pp.option (Pp.pair ~fst:Textual.VarName.pp ~snd:Int.pp))
@@ -383,6 +408,8 @@ use the substitution in the code later on. *)
     ; last_tmp_var= 0
     ; metadata_ids= Textual.Ident.Set.empty
     ; metadata_address_ids= Textual.Ident.Set.empty
+    ; objc_class_ids= Textual.Ident.Set.empty
+    ; objc_class_name_map= Textual.Ident.Map.empty
     ; selector_map= Textual.Ident.Map.empty
     ; string_map= Textual.Ident.Map.empty
     ; last_string_added= None

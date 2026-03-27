@@ -55,6 +55,8 @@ let boxed_opaque_existentials =
   ; "__swift_project_boxed_opaque_existential_1" ]
 
 
+let objc_class_ref_prefix = "OBJC_CLASS_REF_$_"
+
 let builtin_qual_proc_name =
   let enclosing_class = Textual.(QualifiedProcName.Enclosing (TypeName.of_string "$builtins")) in
   fun name : Textual.QualifiedProcName.t ->
@@ -263,13 +265,15 @@ let rec get_base_ident exp =
 
 let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
   let module_state = proc_state.module_state in
-  (* Extract the receiver (Index 0) *)
-  let receiver = List.hd args |> Option.to_list in
-  (* IMPORTANT: Index 1 is the selector. We MUST skip it.
-     List.drop args 2 starts taking from Index 2 onwards.
-  *)
+  (* 1. Identify the Receiver Identifier (Index 0) *)
+  let receiver_exp_opt = List.hd args in
+  let receiver_id_opt =
+    match receiver_exp_opt with Some (Textual.Exp.Var id) -> Some id | _ -> None
+  in
+  let receiver = Option.to_list receiver_exp_opt in
+  (* 2. Extract parameters (Skipping Index 1, which is the Selector pointer) *)
   let actual_params = List.drop args 2 in
-  (* 1. Search the objc_method_index for a Swift implementation ($s...To) *)
+  (* 3. Check for a direct Swift @objc thunk implementation first *)
   let resolved_qname_opt = Hashtbl.find module_state.objc_method_index method_name in
   match resolved_qname_opt with
   | Some qname ->
@@ -277,44 +281,76 @@ let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
       let mangled_str = Textual.ProcName.to_string qname.name in
       let final_args =
         if String.is_suffix mangled_str ~suffix:"To" then
-          (* Thunk: (Receiver, Null_Selector, ...Params) *)
+          (* Thunk convention: (Receiver, Null_Selector, ...Params) *)
           receiver @ [Textual.Exp.Const Null] @ actual_params
         else
-          (* Native: (Receiver, ...Params) *)
+          (* Native convention: (Receiver, ...Params) *)
           receiver @ actual_params
       in
       Textual.Exp.Call {proc= qname; args= final_args; kind= Virtual}
   | None ->
-      (* CASE: Fallback for ObjC Land (External/SDK) *)
-      let receiver_type_opt = List.hd arg_types in
-      let enclosing_class =
-        match receiver_type_opt with
-        | Some (Some (Textual.Typ.Ptr ((Struct type_name as struct_typ), _)))
-          when not (Textual.Typ.equal struct_typ Textual.Typ.any_type_swift) -> (
-          match Textual.TypeName.swift_plain_name_of_type_name type_name with
-          | Some plain_name ->
-              Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string plain_name)
-          | None -> (
-            match Textual.TypeName.swift_mangled_name_of_type_name type_name with
-            | Some mangled_name ->
-                Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string mangled_name)
-            | None ->
-                Textual.QualifiedProcName.TopLevel ) )
-        | _ ->
-            Textual.QualifiedProcName.TopLevel
+      (* CASE: Fallback for ObjC Land (External/SDK/Captured SIL) *)
+
+      (* 4. Determine if this is a Class Method via our syntactic tracker *)
+      let is_class_method =
+        Option.exists receiver_id_opt ~f:(ProcState.is_objc_class_id ~proc_state)
       in
-      (* Tag as Objective-C so Pulse uses Clang-style naming convention *)
+      (* 5. Resolve the Selector: check if we captured a different name from L_selector *)
+      let final_method_name =
+        match receiver_id_opt |> Option.bind ~f:(ProcState.find_selector proc_state) with
+        | Some selector ->
+            selector
+        | None ->
+            method_name
+      in
+      (* 6. Resolve the Enclosing Class from our syntactic name map *)
+      let enclosing_class =
+        match receiver_id_opt |> Option.bind ~f:(ProcState.get_objc_class_name ~proc_state) with
+        | Some name ->
+            Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string name)
+        | None -> (
+            (* Fallback to LLAIR type environment if syntactic mapping is missing *)
+            let receiver_type_opt = List.hd arg_types in
+            match receiver_type_opt with
+            | Some (Some (Textual.Typ.Ptr ((Struct type_name as struct_typ), _)))
+              when not (Textual.Typ.equal struct_typ Textual.Typ.any_type_swift) ->
+                let name_str =
+                  match Textual.TypeName.swift_plain_name_of_type_name type_name with
+                  | Some plain ->
+                      plain
+                  | None ->
+                      Textual.TypeName.swift_mangled_name_of_type_name type_name
+                      |> Option.value ~default:"UnknownClass"
+                in
+                (* Clean the name: e.g., "LegacyHardware.Type" -> "LegacyHardware" *)
+                let clean_name = String.split name_str ~on:'.' |> List.hd_exn in
+                Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string clean_name)
+            | _ ->
+                Textual.QualifiedProcName.TopLevel )
+      in
+      (* 7. Set the Method Kind for the Procname (+ vs -) *)
+      let method_kind =
+        if is_class_method then Textual.QualifiedProcName.ClassMethod
+        else Textual.QualifiedProcName.InstanceMethod
+      in
       let metadata =
         Some
           { Textual.QualifiedProcName.lang= Some Textual.Lang.ObjectiveC
-          ; method_kind= Some Textual.QualifiedProcName.InstanceMethod }
+          ; method_kind= Some method_kind }
       in
       let qname =
         Textual.QualifiedProcName.
-          {name= Textual.ProcName.of_string method_name; enclosing_class; metadata}
+          {name= Textual.ProcName.of_string final_method_name; enclosing_class; metadata}
       in
-      let final_args = receiver @ actual_params in
-      Textual.Exp.Call {proc= qname; args= final_args; kind= Virtual}
+      (* 8. Adjust Call Kind: Class methods are NonVirtual (static-like) *)
+      let call_kind = if is_class_method then Textual.Exp.NonVirtual else Textual.Exp.Virtual in
+      (* 9. Adjust Arguments: Drop the receiver for ObjC Class Methods (+) *)
+      let final_args =
+        if is_class_method then actual_params
+          (* Match Clang convention: no 'self' for class methods *)
+        else receiver @ actual_params
+      in
+      Textual.Exp.Call {proc= qname; args= final_args; kind= call_kind}
 
 
 let resolve_objc_msgSend ~proc_state call_exp arg_types =
@@ -533,3 +569,42 @@ let try_rewrite_call_to_instrs ~proc_state ~f_to_textual_exp ~f_add_deref ~loc ~
            ptr exp loc )
   | _ ->
       None
+
+
+(** Propagates ObjC Class metadata (Set bit and Class Name string) through identity-like functions
+    like objc_opt_self. *)
+let try_propagate_objc_class ~(proc_state : ProcState.t) proc_name_str id llair_args =
+  if String.equal proc_name_str "objc_opt_self" then
+    Option.iter id ~f:(fun return_id ->
+        let name =
+          List.hd llair_args
+          |> Option.bind ~f:(function
+               | Llair.Exp.Reg {name; id; typ} ->
+                   let arg_id, _ = Var.reg_to_id ~proc_state (Reg.mk typ id name) in
+                   ProcState.get_objc_class_name ~proc_state arg_id
+               | _ ->
+                   None )
+        in
+        ProcState.mark_as_objc_class ~proc_state return_id ?name () )
+
+
+let extract_selector_name name =
+  try
+    let start_pos = String.index_exn name '(' + 1 in
+    let end_pos = String.rindex_exn name ')' in
+    String.sub name ~pos:start_pos ~len:(end_pos - start_pos)
+  with _ -> "unknown_selector"
+
+
+(** Captures ObjC metadata from global pointers during a Load instruction. Handles Class References
+    and Selectors. *)
+let try_capture_objc_metadata ~(proc_state : ProcState.t) id ptr =
+  match ptr with
+  | Llair.Exp.Global {name} when String.is_prefix name ~prefix:objc_class_ref_prefix ->
+      let class_name = String.drop_prefix name (String.length objc_class_ref_prefix) in
+      ProcState.mark_as_objc_class ~proc_state id ~name:class_name ()
+  | Llair.Exp.Global {name} when String.is_substring name ~substring:"L_selector" ->
+      let selector = extract_selector_name name in
+      ProcState.add_selector proc_state id selector
+  | _ ->
+      ()

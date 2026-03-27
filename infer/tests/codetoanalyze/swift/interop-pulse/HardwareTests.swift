@@ -1,14 +1,14 @@
 import Foundation
 
 // --- 1. CLASS METHOD (+) BRIDGE ---
-func testObjCClassMethod_good_fp() {
+func testObjCClassMethod_good() {
     let revision = LegacyHardware.getRevision()
-    assert(revision == 202)
+    assert(revision == 101)
 }
 
 func testObjCClassMethod_bad() {
     let revision = LegacyHardware.getRevision()
-    assert(revision == 999)
+    assert(revision != 101)
 }
 
 // --- 2. INSTANCE METHOD (-) BRIDGE ---

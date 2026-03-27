@@ -692,6 +692,7 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
     to_textual_call_aux ~proc_state ~kind proc call.areturn llair_args loc
   in
   let proc_name_str = Textual.ProcName.to_string proc.name in
+  Models.try_propagate_objc_class ~proc_state proc_name_str id llair_args ;
   Models.update_selector_metadata ~proc_state id call_exp proc_name_str ;
   let call_exp =
     match call_exp with
@@ -815,14 +816,6 @@ let translate_store_in_field_zero ~(proc_state : ProcState.t) exp1 loc typ_name 
   (field_exp, deref_instrs)
 
 
-let extract_selector_name name =
-  try
-    let start_pos = String.index_exn name '(' + 1 in
-    let end_pos = String.rindex_exn name ')' in
-    String.sub name ~pos:start_pos ~len:(end_pos - start_pos)
-  with _ -> "unknown_selector"
-
-
 let cmnd_to_instrs ~(proc_state : ProcState.t) block =
   let ModuleState.{lang; struct_map; mangled_map} = proc_state.module_state in
   let to_instr textual_instrs inst =
@@ -830,14 +823,8 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
     | Load {reg; ptr; loc} ->
         let loc = to_textual_loc_instr ~proc_state loc in
         let id, _ = Var.reg_to_id ~proc_state reg in
-        (* Check if we are loading a selector global *)
-        ( match ptr with
-        | Global {name} when String.is_substring name ~substring:"L_selector" ->
-            let selector = extract_selector_name name in
-            (* Your extraction logic *)
-            ProcState.add_selector proc_state id selector
-        | _ ->
-            () ) ;
+        (* Check if we are loading a selector global or ObjC class name *)
+        Models.try_capture_objc_metadata ~proc_state id ptr ;
         let exp, _, ptr_instrs = to_textual_exp loc ~proc_state ptr in
         (* Taint propagation (Address -> Value) *)
         Models.Metadata.propagate ~proc_state id exp ~is_load:true ;

@@ -105,6 +105,8 @@ module ProcState : sig
     ; mutable last_tmp_var: int
     ; mutable metadata_ids: Textual.Ident.Set.t (* Track IDs representing Swift Metadata *)
     ; mutable metadata_address_ids: Textual.Ident.Set.t (* Stores pointers TO metadata *)
+    ; mutable objc_class_ids: Textual.Ident.Set.t (* Track IDs representing ObjC Class Objects *)
+    ; mutable objc_class_name_map: string Textual.Ident.Map.t (* Map Ident.t -> "LegacyHardware" *)
     ; mutable selector_map: string Textual.Ident.Map.t
     ; mutable string_map: string Textual.Ident.Map.t
     ; mutable last_string_added: string option
@@ -165,6 +167,12 @@ module ProcState : sig
   val mark_as_metadata_address : proc_state:t -> Textual.Ident.t -> unit
 
   val is_metadata_address_id : proc_state:t -> Textual.Ident.t -> bool
+
+  val mark_as_objc_class : proc_state:t -> IdentMap.key -> ?name:string -> unit -> unit
+
+  val is_objc_class_id : proc_state:t -> Textual.Ident.t -> bool
+
+  val get_objc_class_name : proc_state:t -> Textual.Ident.t -> string option
 
   val add_selector : t -> IdentMap.key -> string -> unit
 

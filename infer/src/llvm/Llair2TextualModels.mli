@@ -119,3 +119,8 @@ val try_rewrite_call_to_instrs :
   -> args_instrs:Textual.Instr.t list
   -> id:IdentMap.key option
   -> Textual.Instr.t list option
+
+val try_propagate_objc_class :
+  proc_state:ProcState.t -> label -> IdentMap.key option -> Llair.Exp.t list -> unit
+
+val try_capture_objc_metadata : proc_state:ProcState.t -> IdentMap.key -> Llair.Exp.t -> unit
