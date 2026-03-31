@@ -234,6 +234,7 @@ BUILD_SYSTEMS_TESTS += \
 endif
 
 DIRECT_TESTS += \
+  rust_export-textual \
 	rust_sil
 
 ifeq ($(BUILD_RUST_ANALYZERS),yes)

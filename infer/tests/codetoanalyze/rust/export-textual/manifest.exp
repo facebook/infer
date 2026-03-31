@@ -1,0 +1,9 @@
+[
+  {
+    "source": "example.rs",
+    "sil": "example.sil",
+    "procedures": [
+      "example::main"
+    ]
+  }
+]
