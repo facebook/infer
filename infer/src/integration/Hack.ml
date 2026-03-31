@@ -202,8 +202,9 @@ end = struct
     in
     let res =
       match trans with
-      | Ok sil ->
-          if not Config.hack_verify_capture_only then TextualFile.capture ~use_global_tenv:true sil ;
+      | Ok (sil, textual_module) ->
+          if not Config.hack_verify_capture_only then
+            TextualFile.capture ~textual_module ~use_global_tenv:true sil ;
           Ok sil.tenv
       | Error (sourcefile, errs) ->
           List.iter errs ~f:(log_error sourcefile) ;
@@ -467,8 +468,8 @@ let load_textual_models filenames =
   List.iter filenames ~f:(fun filename ->
       L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
       match textual_to_sil (StandaloneFile filename) with
-      | Ok sil ->
-          TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+      | Ok (sil, textual_module) ->
+          TextualParser.TextualFile.capture ~textual_module ~use_global_tenv:true sil ;
           Tenv.merge ~src:sil.tenv ~dst:acc_tenv
       | Error (sourcefile, errs) ->
           List.iter errs ~f:(L.external_error "%a@\n" (TextualParser.pp_error sourcefile)) ) ;

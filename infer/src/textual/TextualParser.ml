@@ -120,7 +120,7 @@ module TextualFile = struct
       TextualSil.module_to_sil lang module_ decls_env
       |> Result.map_error ~f:(fun errors -> (sourcefile, [TransformError errors]))
     in
-    Ok {sourcefile; cfg; tenv}
+    Ok ({sourcefile; cfg; tenv}, module_)
 
 
   let capture ?textual_module ~use_global_tenv {sourcefile; cfg; tenv} =
@@ -160,8 +160,8 @@ module TextualFrontend = struct
       match translate file with
       | Error (sourcefile, errs) ->
           List.iter errs ~f:(fun error -> L.external_error "%a" (pp_error sourcefile) error)
-      | Ok sil ->
-          TextualFile.capture ~use_global_tenv:true sil ;
+      | Ok (sil, textual_module) ->
+          TextualFile.capture ~textual_module ~use_global_tenv:true sil ;
           Tenv.merge ~src:sil.tenv ~dst:global_tenv
     in
     List.iter files ~f:capture_one ;

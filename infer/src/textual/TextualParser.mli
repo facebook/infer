@@ -40,7 +40,9 @@ module TextualFile : sig
     -> (Textual.Module.t, Textual.SourceFile.t * error list) result
 
   val textual_to_sil :
-    Textual.SourceFile.t -> Textual.Module.t -> (sil, Textual.SourceFile.t * error list) result
+       Textual.SourceFile.t
+    -> Textual.Module.t
+    -> (sil * Textual.Module.t, Textual.SourceFile.t * error list) result
 
   val capture : ?textual_module:Textual.Module.t -> use_global_tenv:bool -> sil -> unit
   (** Store the captured CFG and tenv in capture.db. When [textual_module] is provided and

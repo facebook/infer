@@ -66,8 +66,8 @@ let load_textual_models filenames =
   List.iter filenames ~f:(fun filename ->
       L.debug Capture Quiet "Loading textual models in %s@\n" filename ;
       match textual_to_sil (StandaloneFile filename) with
-      | Ok sil ->
-          TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+      | Ok (sil, textual_module) ->
+          TextualParser.TextualFile.capture ~textual_module ~use_global_tenv:true sil ;
           Tenv.merge ~src:sil.tenv ~dst:acc_tenv
       | Error (sourcefile, errs) ->
           List.iter errs ~f:(L.external_error "%a @." (TextualParser.pp_error sourcefile)) ) ;

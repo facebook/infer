@@ -223,6 +223,7 @@ endif # BUILD_ERLANG_ANALYZERS
 ifneq ($(HACKC),no)
 DIRECT_TESTS += \
   hack_capture \
+  hack_export-textual \
   hack_pulse \
 
 BUILD_SYSTEMS_TESTS += \
