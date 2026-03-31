@@ -137,7 +137,8 @@ let process_file ~is_binary file =
     let sil = {TextualParser.TextualFile.sourcefile; cfg; tenv} in
     if Config.python_skip_db then Ok CapturedSkipDb
     else (
-      TextualParser.TextualFile.capture ~use_global_tenv:true sil ;
+      TextualParser.TextualFile.capture ~textual_module:transformed_textual ~use_global_tenv:true
+        sil ;
       Ok (CapturedTenv tenv) )
 
 

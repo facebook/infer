@@ -243,6 +243,7 @@ ifeq ($(BUILD_PYTHON_ANALYZERS),yes)
 ifneq ($(PYTHON),no)
 DIRECT_TESTS += \
   python_exec \
+  python_export-textual \
   python_pulse \
   python_semdiff \
   python_semdiff-demo \
