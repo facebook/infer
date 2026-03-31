@@ -289,6 +289,7 @@ DIRECT_TESTS += \
   java_litho-required-props \
   java_performance \
   java_performance-exclusive \
+  java_export-textual \
   java_pulse \
   java_purity \
   java_racerd \

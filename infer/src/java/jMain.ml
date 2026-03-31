@@ -17,8 +17,8 @@ let init_global_state source_file =
   JContext.reset_exn_node_table ()
 
 
-let store_icfg source_file cfg =
-  SourceFiles.add source_file cfg Tenv.Global None ;
+let store_icfg ?textual source_file cfg =
+  SourceFiles.add ?textual source_file cfg Tenv.Global None ;
   if Config.debug_mode || Config.frontend_tests then DotCfg.emit_frontend_cfg source_file cfg ;
   ()
 
@@ -29,10 +29,14 @@ let do_source_file program tenv source_basename package_opt source_file =
   L.(debug Capture Medium) "@\nfilename: %a (%s)@." SourceFile.pp source_file source_basename ;
   init_global_state source_file ;
   let cfg = JFrontend.compute_source_icfg program tenv source_basename package_opt source_file in
-  ( if Config.dump_textual then
+  let textual =
+    if Config.dump_textual || Config.store_textual then (
       let filename = Filename.chop_extension (SourceFile.to_abs_path source_file) ^ ".sil" in
-      TextualOfSil.from_java ~filename tenv cfg ) ;
-  store_icfg source_file cfg
+      if Config.dump_textual then TextualOfSil.from_java ~filename tenv cfg ;
+      Some (TextualOfSil.to_string ~lang:Java ~filename tenv cfg) )
+    else None
+  in
+  store_icfg ?textual source_file cfg
 
 
 let do_class tenv program cn node =
