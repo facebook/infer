@@ -131,7 +131,7 @@ let capture_llair source_file module_state =
     if Config.debug_mode then dump_textual_file source_file textual ;
     let sil = {TextualParser.TextualFile.sourcefile= textual_source_file; cfg; tenv} in
     let use_global_tenv = if Textual.Lang.is_swift lang then true else false in
-    TextualParser.TextualFile.capture ~use_global_tenv sil ;
+    TextualParser.TextualFile.capture ~textual_module:transformed_textual ~use_global_tenv sil ;
     ( if use_global_tenv then
         let global_tenv =
           Tenv.Global.load ()

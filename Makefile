@@ -192,6 +192,7 @@ endif
 
 ifneq ($(BUILD_SWIFT_ANALYZERS),no)
 DIRECT_TESTS += \
+  c_export-textual-llvm \
   c_llvm-frontend \
   c_pulse-llvm \
 
