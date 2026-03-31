@@ -575,7 +575,7 @@ end
 module SourceFile : sig
   type t
 
-  val create : ?line_map:LineMap.t -> string -> t
+  val create : ?check_abs_path:bool -> ?line_map:LineMap.t -> string -> t
 
   val line_map : t -> LineMap.t option
 

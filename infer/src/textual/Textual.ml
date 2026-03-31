@@ -96,7 +96,9 @@ end
 module SourceFile = struct
   type t = {file: SourceFile.t; line_map: LineMap.t option [@ignore]} [@@deriving compare]
 
-  let create ?line_map filename = {file= SourceFile.create filename; line_map}
+  let create ?check_abs_path ?line_map filename =
+    {file= SourceFile.create ?check_abs_path filename; line_map}
+
 
   let line_map {line_map} = line_map
 
