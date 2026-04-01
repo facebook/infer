@@ -209,19 +209,27 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
   Container.iter cfg ~fold:CFG.fold_nodes ~f:(fun node ->
       let node_id = CFG.Node.id node in
       match Analyzer.extract_pre node_id invariant_map with
-      | Some ({guards; _} : Domain.t) when not (ConfigGuards.is_empty guards) ->
+      | Some ({guards; _} : Domain.t) ->
           Instrs.iter (CFG.instrs node) ~f:(fun instr ->
               match instr with
               | Sil.Call (_, Exp.Const (Cfun callee), _, loc, _) when not (is_config_method callee)
                 ->
-                  let message =
-                    F.asprintf "Call to %a is gated by: %a" Procname.pp callee ConfigGuards.pp
-                      guards
-                  in
-                  let ltr = [Errlog.make_trace_element 0 loc message []] in
-                  Reporting.log_issue proc_desc err_log ~loc ~ltr ConfigGating
-                    IssueType.config_gated message
+                  if not (ConfigGuards.is_empty guards) then
+                    let message =
+                      F.asprintf "Call to %a is gated by: %a" Procname.pp callee ConfigGuards.pp
+                        guards
+                    in
+                    let ltr = [Errlog.make_trace_element 0 loc message []] in
+                    Reporting.log_issue proc_desc err_log ~loc ~ltr ConfigGating
+                      IssueType.config_gated message
+                  else if Config.config_gating_report_ungated then
+                    let message =
+                      F.asprintf "Call to %a is not gated by any config." Procname.pp callee
+                    in
+                    let ltr = [Errlog.make_trace_element 0 loc message []] in
+                    Reporting.log_issue proc_desc err_log ~loc ~ltr ConfigGating
+                      IssueType.config_ungated message
               | _ ->
                   () )
-      | _ ->
+      | None ->
           () )

@@ -615,6 +615,7 @@ OPTIONS
              CONFIG_GATED (enabled by default),
              CONFIG_IMPACT (enabled by default),
              CONFIG_IMPACT_STRICT (disabled by default),
+             CONFIG_UNGATED (disabled by default),
              CONFIG_USAGE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE (disabled by default),
              CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
@@ -2707,6 +2708,10 @@ INTERNAL OPTIONS
 
        --config-gating-method-reset
            Set --config-gating-method to the empty list.
+
+       --config-gating-report-ungated
+           Activates: Also report call sites that are NOT gated by any config
+           flag. (Conversely: --no-config-gating-report-ungated)
 
        --config-impact-config-field-patterns +regex
            Register known config fields that have a config value. The matched

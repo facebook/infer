@@ -1176,6 +1176,11 @@ and config_gating_method_patterns =
      against $(b,ClassName.methodName). Use $(b,methodName) alone to match any class."
 
 
+and config_gating_report_ungated =
+  CLOpt.mk_bool ~long:"config-gating-report-ungated" ~default:false
+    "Also report call sites that are NOT gated by any config flag."
+
+
 and config_impact_config_field_patterns =
   CLOpt.mk_string_list ~long:"config-impact-config-field-patterns" ~meta:"regex"
     "Register known config fields that have a config value.  The matched name contains class and \
@@ -4134,6 +4139,8 @@ and complete_capture_from = !complete_capture_from
 and compute_captured_context = !compute_captured_context
 
 and config_gating_method_patterns = RevList.rev_map !config_gating_method_patterns ~f:Str.regexp
+
+and config_gating_report_ungated = !config_gating_report_ungated
 
 and config_impact_config_field_patterns =
   RevList.rev_map !config_impact_config_field_patterns ~f:Str.regexp

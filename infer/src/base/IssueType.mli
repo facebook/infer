@@ -140,6 +140,8 @@ val condition_always_true : t
 
 val config_gated : t
 
+val config_ungated : t
+
 val config_impact_analysis : t
 
 val config_impact_analysis_strict : t

@@ -479,6 +479,11 @@ let config_gated =
     ~user_documentation:[%blob "./documentation/issues/CONFIG_GATED.md"]
 
 
+let config_ungated =
+  register ~enabled:false ~category:NoCategory ~id:"CONFIG_UNGATED" Info ConfigGating
+    ~user_documentation:[%blob "./documentation/issues/CONFIG_UNGATED.md"]
+
+
 let config_impact_analysis =
   register ~enabled:true ~category:PerfRegression ~id:"CONFIG_IMPACT" Advice ConfigImpactAnalysis
     ~user_documentation:[%blob "./documentation/issues/CONFIG_IMPACT.md"]
