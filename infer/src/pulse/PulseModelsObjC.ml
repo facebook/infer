@@ -459,7 +459,7 @@ let matchers : matcher list =
         &:: "initWithCoder:" <>$ capt_arg_payload
         $+...$--> Basic.id_first_arg ~desc:"UIView.initWithCoder:"
         (* catch-all for any CLASS.init *)
-      ; +(fun (_tenv, proc_name) _ -> Procname.is_swift proc_name)
+      ; +(fun (_tenv, proc_name) _ -> Procname.is_objc_method proc_name)
         &:: "init" <>$ capt_arg_payload
         $+...$--> Basic.id_first_arg ~desc:"NSObject.init" ]
     |> List.map ~f:(fun matcher ->
