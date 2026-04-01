@@ -39,7 +39,7 @@ let is_hack_file filename =
   String.is_suffix filename ~suffix:".php" || String.is_suffix filename ~suffix:".hack"
 
 
-let semdiff ~config_file ~previous_file ~current_file =
+let semdiff ~config_files ~previous_file ~current_file =
   let debug = Config.debug_mode in
   let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
   let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
@@ -51,9 +51,12 @@ let semdiff ~config_file ~previous_file ~current_file =
       hack_ast_diff ~debug ~config ~previous_file ~current_file previous_src current_src
     else
       let config =
-        Option.value_map config_file
-          ~default:PythonSemdiffConfig.missing_python_type_annotations_config
-          ~f:PythonConfigParser.parse_file
+        match config_files with
+        | [] ->
+            PythonSemdiffConfig.missing_python_type_annotations_config
+        | files ->
+            List.map files ~f:PythonConfigParser.parse_file
+            |> List.reduce_exn ~f:SemdiffDirectEngine.Rules.union
       in
       python_ast_diff ~debug ~config ~filename1:previous_file ~filename2:current_file previous_src
         current_src

@@ -56,6 +56,8 @@ module Rules : sig
 
   type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
 
+  val union : t -> t -> t
+
   val pp : F.formatter -> t -> unit
 end
 

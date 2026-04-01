@@ -236,6 +236,10 @@ module Rules = struct
 
   type t = {ignore: Pattern.t list; rewrite: rule list; accept: rule list} [@@deriving equal]
 
+  let union r1 r2 =
+    {ignore= r1.ignore @ r2.ignore; rewrite= r1.rewrite @ r2.rewrite; accept= r1.accept @ r2.accept}
+
+
   let vars {ignore; rewrite; accept} =
     let open Var.Set in
     let acc =

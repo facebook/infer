@@ -2157,8 +2157,9 @@ OPTIONS
            (Conversely: --no-self-in-block-only)
            See also infer-analyze(1).
 
-       --semdiff-configuration path
-           Use configurable rewriting engine with the given pythom file.
+       --semdiff-configuration +path
+           Use configurable rewriting engine with the given python file. Can
+           be specified multiple times to combine rules from several files.
            See also infer-semdiff(1).
 
        --semdiff-current path
@@ -3475,7 +3476,7 @@ INTERNAL OPTIONS
            Cancel the effect of --select.
 
        --semdiff-configuration-reset
-           Cancel the effect of --semdiff-configuration.
+           Set --semdiff-configuration to the empty list.
 
        --semdiff-current-reset
            Cancel the effect of --semdiff-current.

@@ -16,4 +16,4 @@ val python_ast_diff :
   -> string
   -> Diff.explicit list
 
-val semdiff : config_file:string option -> previous_file:string -> current_file:string -> unit
+val semdiff : config_files:string list -> previous_file:string -> current_file:string -> unit

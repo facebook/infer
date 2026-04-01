@@ -3305,9 +3305,10 @@ and semdiff_experimental_eqsat_engine =
 
 
 and semdiff_configuration =
-  CLOpt.mk_path_opt ~long:"semdiff-configuration" ~meta:"path"
+  CLOpt.mk_path_list ~long:"semdiff-configuration" ~meta:"path"
     ~in_help:InferCommand.[(SemDiff, manual_generic)]
-    "Use configurable rewriting engine with the given pythom file."
+    "Use configurable rewriting engine with the given python file. Can be specified multiple times \
+     to combine rules from several files."
 
 
 and semdiff_test_actions =
@@ -4915,7 +4916,7 @@ and semdiff_test_actions = !semdiff_test_actions
 
 and semdiff_experimental_eqsat_engine = !semdiff_experimental_eqsat_engine
 
-and semdiff_configuration = !semdiff_configuration
+and semdiff_configuration = RevList.to_list !semdiff_configuration
 
 and semdiff_test_files_index = !semdiff_test_files_index
 

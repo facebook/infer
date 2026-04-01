@@ -46,8 +46,9 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
-       --semdiff-configuration path
-           Use configurable rewriting engine with the given pythom file.
+       --semdiff-configuration +path
+           Use configurable rewriting engine with the given python file. Can
+           be specified multiple times to combine rules from several files.
 
        --semdiff-current path
            Current python program to be analysed by semdiff
