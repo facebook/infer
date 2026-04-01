@@ -718,6 +718,9 @@ swift_tests: $(SWIFT_DIRECT_TESTS:%=direct_%_test)
 .PHONY: swift_replace
 swift_replace: $(SWIFT_DIRECT_TESTS:%=direct_%_replace)
 
+.PHONY: swift_clean
+swift_clean: $(SWIFT_DIRECT_TESTS:%=direct_%_clean)
+
 .PHONY: $(BUILD_SYSTEMS_TESTS:%=build_%_test)
 $(BUILD_SYSTEMS_TESTS:%=build_%_test): infer
 	$(QUIET)$(call silent_on_success,Running test: $(subst _, ,$@),\
