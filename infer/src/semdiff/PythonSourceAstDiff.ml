@@ -146,13 +146,15 @@ let gen_all_rules cc : Rewrite.Rule.t list =
     ; {|(Subscript (ctx Load) (slice ?T) (value (Name (ctx Load) (id Optional))))
         ==>
         (BinOp (left ?T) (op BitOr) (right (Constant (kind Null) (value Null))))|}
-      (* TODO: investigate why this rule does not solve test test_field_assign_type
-    ; {|(@DIFF
-         (AnnAssign (annotation Null) (simple 1) (target ?N) (value ?V))
-         (AnnAssign (annotation Null) (simple 0) (target ?N) (value ?V))) ==> __DONE__|} *)
-    ; {|(Assign (targets (List ?N)) (type_comment Null) (value ?V))
+    ; {|(Assign (targets (List (Name (ctx Store) (id ?I)))) (type_comment Null) (value ?V))
         ==>
-        (AnnAssign (annotation Null) (simple 1) (target ?N) (value ?V))|}
+        (AnnAssign (annotation Null) (simple 1) (target (Name (ctx Store) (id ?I))) (value ?V))|}
+    ; {|(Assign (targets (List (Attribute (attr ?A) (ctx Store) (value ?O)))) (type_comment Null) (value ?V))
+        ==>
+        (AnnAssign (annotation Null) (simple 0) (target (Attribute (attr ?A) (ctx Store) (value ?O))) (value ?V))|}
+    ; {|(Assign (targets (List (Subscript (ctx Store) (slice ?S) (value ?O)))) (type_comment Null) (value ?V))
+        ==>
+        (AnnAssign (annotation Null) (simple 0) (target (Subscript (ctx Store) (slice ?S) (value ?O))) (value ?V))|}
     ; {|(If
               (body ?BODY) (orelse ?LIST) (test
                                               (Compare

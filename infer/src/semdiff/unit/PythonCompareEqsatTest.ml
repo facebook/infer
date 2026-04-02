@@ -605,10 +605,6 @@ def foo() -> dict[str, dict[str, Any]]: pass
   [%expect {| different |}]
 
 
-(* Disagrees with DirectRewrite: the Assign->AnnAssign rewrite rule exists in
-   eqsat but does not fire here because the target is an Attribute node
-   (self.msg) rather than a simple Name, and the "simple" field differs (1 vs 0
-   for attribute targets). See TODO in gen_all_rules. *)
 let%expect_test "test_field_assign_type_good" =
   check_equiv
     {|
@@ -619,7 +615,7 @@ def __init__(self):
 def __init__(self) -> None:
     self.msg : str = "hello"
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "for loop bad" =
