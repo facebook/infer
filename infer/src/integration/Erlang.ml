@@ -175,7 +175,7 @@ let process_beams ~project_root beam_list_path =
 
 
 let parse_buck_arguments args =
-  let is_option s = Stdlib.String.starts_with ~prefix:"--" s in
+  let is_option s = Stdlib.String.starts_with ~prefix:"-" s && not (String.equal s "--") in
   let global_options, args = List.split_while args ~f:is_option in
   let args =
     match args with
@@ -184,8 +184,20 @@ let parse_buck_arguments args =
     | _ ->
         L.die UserError "Expecting: [GLOBALOPTIONS] build [BUILDOPTIONS] TARGETS"
   in
-  let build_options, targets = List.partition_tf args ~f:is_option in
-  let build_options = List.filter ~f:(Fn.non (String.equal "--")) build_options in
+  let rec classify rev_options rev_targets = function
+    | [] ->
+        (List.rev rev_options, List.rev rev_targets)
+    | "--" :: rest ->
+        classify rev_options rev_targets rest
+    | flag :: value :: rest
+      when List.mem ~equal:String.equal Buck.parameters_with_argument flag ->
+        classify (value :: flag :: rev_options) rev_targets rest
+    | s :: rest when is_option s ->
+        classify (s :: rev_options) rev_targets rest
+    | s :: rest ->
+        classify rev_options (s :: rev_targets) rest
+  in
+  let build_options, targets = classify [] [] args in
   (global_options, build_options, targets)
 
 
