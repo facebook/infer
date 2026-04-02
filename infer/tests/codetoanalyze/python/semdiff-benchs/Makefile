@@ -6,7 +6,7 @@ CONFIG := $(BENCHDIR)config_12-31-25.py
 
 .PHONY: bench clean
 
-MAX_LINES := 300
+MAX_LINES := 1200
 TIMEOUT := 60
 
 bench: $(PYDANTIC_DIR)

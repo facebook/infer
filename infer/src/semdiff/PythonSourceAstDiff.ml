@@ -135,8 +135,7 @@ let gen_all_rules cc : Rewrite.Rule.t list =
     "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> _epsilon_"
     ; "(Import (names ?N)) ==> _epsilon_"
     ; *)
-      "(@DIFF (returns Null) (returns ?X)) ==> __DONE__"
-    ; "(@DIFF (annotation Null) (annotation ?X)) ==> __DONE__"
+      "(@DIFF Null ?X) ==> ?X"
     ; "(@DIFF (id Any) (id ?X)) ==> __DONE__"
     ; "(@DIFF (id Dict) (id dict)) ==> __DONE__"
     ; "(@DIFF (id FrozenSet) (id frozenset)) ==> __DONE__"
