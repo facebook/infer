@@ -183,7 +183,7 @@ let check_equivalence ?expected ?(debug = false) ast1 ast2 =
   let _rounds = Rewrite.Rule.full_rewrite ~debug cc rules in
   let diffs = get_unresolved_diffs cc in
   let res = List.is_empty diffs in
-  if Option.exists expected ~f:(fun b -> not (Bool.equal b res)) then
+  if (debug && not res) || Option.exists expected ~f:(fun b -> not (Bool.equal b res)) then
     List.iter diffs ~f:(fun (left, right) ->
         F.printf "@[<hv 4>(DIFF@ %a@ %a)@]@." (CC.pp_nested_term cc) left (CC.pp_nested_term cc)
           right ) ;

@@ -8,15 +8,14 @@
 open! IStd
 module L = Logging
 
-let semdiff_with_eqsat ~previous_file ~current_file previous_src current_src =
+let semdiff_with_eqsat ~debug ~previous_file ~current_file previous_src current_src =
   let parse = PythonSourceAst.build_parser () in
   match (parse ~filename:previous_file previous_src, parse ~filename:current_file current_src) with
   | Error error, _ | Ok _, Error error ->
       L.user_error "%a" PythonSourceAst.pp_error error ;
       []
   | Ok ast1, Ok ast2 ->
-      if PythonSourceAstDiff.check_equivalence ~debug:false ast1 ast2 then []
-      else [Diff.dummy_explicit]
+      if PythonSourceAstDiff.check_equivalence ~debug ast1 ast2 then [] else [Diff.dummy_explicit]
 
 
 let python_ast_diff ~debug ~config ?filename1 ?filename2 previous_content current_content =
@@ -45,7 +44,7 @@ let semdiff ~config_files ~previous_file ~current_file =
   let current_src = In_channel.with_file current_file ~f:In_channel.input_all in
   let diffs =
     if Config.semdiff_experimental_eqsat_engine then
-      semdiff_with_eqsat ~previous_file ~current_file previous_src current_src
+      semdiff_with_eqsat ~debug ~previous_file ~current_file previous_src current_src
     else if is_hack_file current_file then
       let config = HackSemdiffConfig.hack_type_annotations_config in
       hack_ast_diff ~debug ~config ~previous_file ~current_file previous_src current_src
