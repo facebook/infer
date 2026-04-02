@@ -536,7 +536,7 @@ def foo(x: Optional[int]) -> None: pass
     {|
 def foo(x: int | None) -> None: pass
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 (* Disagrees with DirectRewrite: same missing Optional rule, plus even with it,
