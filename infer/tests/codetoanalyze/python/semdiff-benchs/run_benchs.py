@@ -25,6 +25,7 @@ import sys
 import tempfile
 import time
 from strip_type_annotations import strip_annotations as strip_source
+from mutate_return import mutate_return
 
 
 def find_python_files(source_dir):
@@ -36,6 +37,12 @@ def find_python_files(source_dir):
             if f.endswith(".py") and "test" not in f.lower():
                 results.append(os.path.join(root, f))
     return results
+
+
+def normalize_source(source):
+    """Normalize Python source through ast.parse + ast.unparse."""
+    tree = ast.parse(source)
+    return ast.unparse(tree)
 
 
 def strip_all_annotations(source_dir, files, stripped_dir):
@@ -52,6 +59,27 @@ def strip_all_annotations(source_dir, files, stripped_dir):
             fh.write("\n")
 
 
+def mutate_all_returns(source_dir, files, mutated_dir):
+    """Mutate deepest return in all files into mutated_dir.
+
+    Returns the set of relative paths that were successfully mutated.
+    """
+    mutated = set()
+    for f in files:
+        rel = os.path.relpath(f, source_dir)
+        unique = rel.replace(os.sep, "__")
+        out = os.path.join(mutated_dir, unique)
+        with open(f) as fh:
+            source = fh.read()
+        result = mutate_return(source)
+        if result is not None:
+            with open(out, "w") as fh:
+                fh.write(result)
+                fh.write("\n")
+            mutated.add(rel)
+    return mutated
+
+
 def parse_egraph_stats(stdout_text):
     """Parse debug output to extract total atoms visited and merges."""
     total_visits = 0
@@ -65,6 +93,9 @@ def parse_egraph_stats(stdout_text):
 
 def run_semdiff(infer, engine, config, previous, current, timeout):
     """Run infer semdiff and return (time_ms, outcome, stats)."""
+    result_file = "infer-out/semdiff.json"
+    if os.path.exists(result_file):
+        os.remove(result_file)
     cmd = [str(infer), "semdiff"]
     if engine == "eqsat":
         cmd.append("--semdiff-experimental-eqsat-engine")
@@ -79,12 +110,16 @@ def run_semdiff(infer, engine, config, previous, current, timeout):
             cmd, timeout=timeout, capture_output=True, check=False, text=True,
         )
         elapsed_ms = int((time.monotonic() - start) * 1000)
-        result_file = "infer-out/semdiff.json"
-        try:
-            with open(result_file) as f:
-                outcome = json.load(f)["outcome"]
-        except (FileNotFoundError, json.JSONDecodeError, KeyError):
-            outcome = "ERROR"
+        if proc.stderr and "FuelExhausted" in proc.stderr:
+            outcome = "FUEL"
+        elif proc.stderr and "Syntax error" in proc.stderr:
+            outcome = "PARSE_ERR"
+        else:
+            try:
+                with open(result_file) as f:
+                    outcome = json.load(f)["outcome"]
+            except (FileNotFoundError, json.JSONDecodeError, KeyError):
+                outcome = "ERROR"
         stats = parse_egraph_stats(proc.stdout) if engine == "eqsat" else None
         return elapsed_ms, outcome, stats
     except subprocess.TimeoutExpired:
@@ -93,15 +128,16 @@ def run_semdiff(infer, engine, config, previous, current, timeout):
 
 
 def fmt_result(ms, outcome):
-    short = {"different": "diff", "TIMEOUT": "T/O", "CRASH": "CRASH", "ERROR": "ERR", "N/A": "N/A"}
+    short = {"different": "diff", "TIMEOUT": "T/O", "CRASH": "CRASH", "ERROR": "ERR",
+             "PARSE_ERR": "PERR", "FUEL": "FUEL", "N/A": "N/A"}
     label = short.get(outcome, outcome)
-    if outcome in ("TIMEOUT", "CRASH", "ERROR", "N/A"):
+    if outcome in ("TIMEOUT", "CRASH", "ERROR", "PARSE_ERR", "N/A"):
         return label
     return f"{label} {ms}ms"
 
 
-def print_tables(results, max_lines):
-    """Print per-file table and summary by size bucket."""
+def print_detail_table(results, max_lines, title=None):
+    """Print per-file detail table."""
     all_files = sorted(results.keys(), key=lambda n: results[n]["lines"])
 
     name_w = max((len(n) for n in all_files), default=20)
@@ -110,29 +146,10 @@ def print_tables(results, max_lines):
     sep = "-" * len(header)
 
     print()
+    if title:
+        print(f"=== {title} ===")
     print(header)
     print(sep)
-
-    buckets = []
-    step = 50
-    lo = 0
-    while lo <= max_lines:
-        hi = min(lo + step - 1, max_lines)
-        if lo == 0:
-            hi = 10
-        buckets.append((lo, hi))
-        lo = hi + 1
-        if step < 100:
-            step = 50 if lo <= 50 else 100
-
-    # Simpler fixed buckets
-    buckets = [(0, 10), (11, 50), (51, 100), (101, 150), (151, 200), (201, 300),
-               (301, 500), (501, 1000), (1001, 10000)]
-    buckets = [(lo, hi) for lo, hi in buckets if lo <= max_lines]
-
-    stats = {b: dict(count=0, d_eq=0, d_diff=0, d_to=0, e_eq=0, e_diff=0, e_to=0,
-                      d_ms_sum=0, e_ms_sum=0, d_ms_n=0, e_ms_n=0)
-             for b in buckets}
 
     for name in all_files:
         r = results[name]
@@ -149,16 +166,35 @@ def print_tables(results, max_lines):
               f"{fmt_result(e_ms, e_out):>14}  {match:>5}"
               f"  {visits:>8} {merges:>7} {rounds:>4}  {vm_ratio:>6}")
 
+
+def print_summary_table(results, max_lines, title=None):
+    """Print summary by size bucket."""
+    all_files = sorted(results.keys(), key=lambda n: results[n]["lines"])
+
+    buckets = [(0, 10), (11, 50), (51, 100), (101, 150), (151, 200), (201, 300),
+               (301, 500), (501, 1000), (1001, 10000)]
+    buckets = [(lo, hi) for lo, hi in buckets if lo <= max_lines]
+
+    stats = {b: dict(count=0, d_eq=0, d_diff=0, d_to=0, e_eq=0, e_diff=0, e_to=0,
+                      d_ms_sum=0, e_ms_sum=0, d_ms_n=0, e_ms_n=0)
+             for b in buckets}
+
+    for name in all_files:
+        r = results[name]
+        lines = r["lines"]
+        d_ms, d_out = r.get("direct", (0, "N/A"))
+        e_ms, e_out = r.get("eqsat", (0, "N/A"))
+
         for lo, hi in buckets:
             if lo <= lines <= hi:
                 s = stats[(lo, hi)]
                 s["count"] += 1
                 s["d_eq"] += d_out == "equal"
                 s["d_diff"] += d_out == "different"
-                s["d_to"] += d_out == "TIMEOUT"
+                s["d_to"] += d_out in ("TIMEOUT", "FUEL")
                 s["e_eq"] += e_out == "equal"
                 s["e_diff"] += e_out == "different"
-                s["e_to"] += e_out == "TIMEOUT"
+                s["e_to"] += e_out in ("TIMEOUT", "FUEL")
                 if d_out != "TIMEOUT":
                     s["d_ms_sum"] += d_ms
                     s["d_ms_n"] += 1
@@ -167,10 +203,12 @@ def print_tables(results, max_lines):
                     s["e_ms_n"] += 1
                 break
 
-    # Summary
     print()
     print("=" * 90)
-    print("SUMMARY BY SIZE BUCKET")
+    if title:
+        print(f"SUMMARY BY SIZE BUCKET — {title}")
+    else:
+        print("SUMMARY BY SIZE BUCKET")
     print("=" * 90)
 
     col = (f"{'Lines':>10}  {'Count':>5}  |  {'eq':>3} {'diff':>4} {'t/o':>3} {'avg':>6}  "
@@ -249,18 +287,31 @@ def main():
 
     print(f"Found {len(files_with_lines)} files (<= {args.max_lines} lines)", file=sys.stderr)
 
-    # Strip annotations into temp dir
+    # Strip annotations and strip+mutate returns into temp dir
     with tempfile.TemporaryDirectory(prefix="semdiff_bench_") as workdir:
         stripped_dir = os.path.join(workdir, "stripped")
+        mutated_dir = os.path.join(workdir, "mutated")
         os.makedirs(stripped_dir)
+        os.makedirs(mutated_dir)
 
+        all_paths = [f for _, f in files_with_lines]
         print("Stripping type annotations...", file=sys.stderr)
-        strip_all_annotations(source_dir, [f for _, f in files_with_lines], stripped_dir)
+        strip_all_annotations(source_dir, all_paths, stripped_dir)
+        print("Mutating return statements...", file=sys.stderr)
+        mutated_rels = mutate_all_returns(source_dir, all_paths, mutated_dir)
+        print(f"  {len(mutated_rels)} files mutated, "
+              f"{len(all_paths) - len(mutated_rels)} skipped (no suitable return)",
+              file=sys.stderr)
 
-        # Run both engines
+        # XP1: correct codemod — stripping type annotations is semantics-preserving,
+        #   so semdiff should report "equal" (previous=stripped, current=original)
+        # XP2: incorrect codemod — mutating a return value changes semantics,
+        #   so semdiff should report "different" (previous=stripped, current=mutated)
         results = {}
+        mut_results = {}
         for engine in ("direct", "eqsat"):
-            print(f"\n=== Running {engine} ===", file=sys.stderr)
+            # XP1: stripped vs original (correct codemod, expect equal)
+            print(f"\n=== Running {engine} (stripped vs original) ===", file=sys.stderr)
             for lines, filepath in files_with_lines:
                 rel = os.path.relpath(filepath, source_dir)
                 unique = rel.replace(os.sep, "__")
@@ -268,7 +319,7 @@ def main():
                 if not os.path.exists(stripped):
                     continue
 
-                ms, outcome, stats = run_semdiff(infer, engine, config, stripped, filepath, args.timeout)
+                ms, outcome, stats = run_semdiff(infer=infer, engine=engine, config=config, previous=stripped, current=filepath, timeout=args.timeout)
                 print(f"  [{engine}] {lines} lines  {ms}ms  {outcome}  {rel}", file=sys.stderr)
 
                 if rel not in results:
@@ -277,7 +328,30 @@ def main():
                 if stats:
                     results[rel]["egraph_stats"] = stats
 
-    print_tables(results, args.max_lines)
+            # XP2: stripped vs mutated (incorrect codemod, expect different)
+            print(f"\n=== Running {engine} (stripped vs mutated) ===", file=sys.stderr)
+            for lines, filepath in files_with_lines:
+                rel = os.path.relpath(filepath, source_dir)
+                if rel not in mutated_rels:
+                    continue
+                unique = rel.replace(os.sep, "__")
+                stripped = os.path.join(stripped_dir, unique)
+                mutated = os.path.join(mutated_dir, unique)
+
+                ms, outcome, stats = run_semdiff(infer=infer, engine=engine, config=config, previous=stripped, current=mutated, timeout=args.timeout)
+                print(f"  [{engine}] {lines} lines  {ms}ms  {outcome}  {rel}", file=sys.stderr)
+
+                if rel not in mut_results:
+                    mut_results[rel] = {"lines": lines}
+                mut_results[rel][engine] = (ms, outcome)
+                if stats:
+                    mut_results[rel]["egraph_stats"] = stats
+
+    # Detail tables first, then both summaries at the end
+    print_detail_table(results, args.max_lines, title="stripped vs original (expect: equal)")
+    print_detail_table(mut_results, args.max_lines, title="stripped vs mutated (expect: different)")
+    print_summary_table(results, args.max_lines, title="stripped vs original (expect: equal)")
+    print_summary_table(mut_results, args.max_lines, title="stripped vs mutated (expect: different)")
 
 
 if __name__ == "__main__":
