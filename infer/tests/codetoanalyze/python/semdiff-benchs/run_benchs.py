@@ -19,6 +19,7 @@ Example:
 import argparse
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -51,19 +52,31 @@ def strip_all_annotations(source_dir, files, stripped_dir):
             fh.write("\n")
 
 
+def parse_egraph_stats(stdout_text):
+    """Parse debug output to extract total atoms visited and merges."""
+    total_visits = 0
+    total_merges = 0
+    for m in re.finditer(r'(\d+) atoms visited, (\d+) merges', stdout_text):
+        total_visits += int(m.group(1))
+        total_merges += int(m.group(2))
+    rounds = len(re.findall(r'full_rewrite - round', stdout_text))
+    return {"visits": total_visits, "merges": total_merges, "rounds": rounds}
+
+
 def run_semdiff(infer, engine, config, previous, current, timeout):
-    """Run infer semdiff and return (time_ms, outcome)."""
+    """Run infer semdiff and return (time_ms, outcome, stats)."""
     cmd = [str(infer), "semdiff"]
     if engine == "eqsat":
         cmd.append("--semdiff-experimental-eqsat-engine")
+        cmd.append("--debug")
     else:
         cmd.extend(["--semdiff-configuration", str(config)])
     cmd.extend(["--semdiff-previous", previous, "--semdiff-current", current])
 
     start = time.monotonic()
     try:
-        subprocess.run(
-            cmd, timeout=timeout, capture_output=True, check=False,
+        proc = subprocess.run(
+            cmd, timeout=timeout, capture_output=True, check=False, text=True,
         )
         elapsed_ms = int((time.monotonic() - start) * 1000)
         result_file = "infer-out/semdiff.json"
@@ -72,10 +85,11 @@ def run_semdiff(infer, engine, config, previous, current, timeout):
                 outcome = json.load(f)["outcome"]
         except (FileNotFoundError, json.JSONDecodeError, KeyError):
             outcome = "ERROR"
-        return elapsed_ms, outcome
+        stats = parse_egraph_stats(proc.stdout) if engine == "eqsat" else None
+        return elapsed_ms, outcome, stats
     except subprocess.TimeoutExpired:
         elapsed_ms = int((time.monotonic() - start) * 1000)
-        return elapsed_ms, "TIMEOUT"
+        return elapsed_ms, "TIMEOUT", None
 
 
 def fmt_result(ms, outcome):
@@ -91,7 +105,8 @@ def print_tables(results, max_lines):
     all_files = sorted(results.keys(), key=lambda n: results[n]["lines"])
 
     name_w = max((len(n) for n in all_files), default=20)
-    header = f"{'File':<{name_w}}  {'Lines':>5}  {'Direct':>14}  {'Eqsat':>14}  {'Match':>5}"
+    header = (f"{'File':<{name_w}}  {'Lines':>5}  {'Direct':>14}  {'Eqsat':>14}  {'Match':>5}"
+              f"  {'Visits':>8} {'Merges':>7} {'Rnds':>4}  {'V/M':>6}")
     sep = "-" * len(header)
 
     print()
@@ -125,8 +140,14 @@ def print_tables(results, max_lines):
         d_ms, d_out = r.get("direct", (0, "N/A"))
         e_ms, e_out = r.get("eqsat", (0, "N/A"))
         match = "yes" if d_out == e_out else "NO"
+        es = r.get("egraph_stats", {})
+        visits = es.get("visits", 0)
+        merges = es.get("merges", 0)
+        rounds = es.get("rounds", 0)
+        vm_ratio = f"{visits / merges:.0f}" if merges > 0 else "-"
         print(f"{name:<{name_w}}  {lines:>5}  {fmt_result(d_ms, d_out):>14}  "
-              f"{fmt_result(e_ms, e_out):>14}  {match:>5}")
+              f"{fmt_result(e_ms, e_out):>14}  {match:>5}"
+              f"  {visits:>8} {merges:>7} {rounds:>4}  {vm_ratio:>6}")
 
         for lo, hi in buckets:
             if lo <= lines <= hi:
@@ -247,12 +268,14 @@ def main():
                 if not os.path.exists(stripped):
                     continue
 
-                ms, outcome = run_semdiff(infer, engine, config, stripped, filepath, args.timeout)
+                ms, outcome, stats = run_semdiff(infer, engine, config, stripped, filepath, args.timeout)
                 print(f"  [{engine}] {lines} lines  {ms}ms  {outcome}  {rel}", file=sys.stderr)
 
                 if rel not in results:
                     results[rel] = {"lines": lines}
                 results[rel][engine] = (ms, outcome)
+                if stats:
+                    results[rel]["egraph_stats"] = stats
 
     print_tables(results, args.max_lines)
 

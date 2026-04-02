@@ -90,7 +90,10 @@ module Pattern = struct
         SubstSet.empty
 
 
+  let visit_count = ref 0
+
   let rec e_match_at_loop ~debug cc subst pat atom =
+    incr visit_count ;
     let atom' = CC.representative cc atom in
     if debug then
       F.printf "e-maching %a with %a (repr is %a)@." pp pat (CC.pp_nested_term cc) atom CC.Atom.pp
@@ -231,6 +234,7 @@ module Rule = struct
 
   let rewrite_once ?(debug = false) cc rules =
     CC.reset_update_count cc ;
+    Pattern.visit_count := 0 ;
     List.iter rules ~f:(fun rule ->
         match rule with
         | Regular {lhs; rhs; exclude} ->
@@ -257,6 +261,8 @@ module Rule = struct
       else (
         if debug then F.printf "full_rewrite - round %d@." round_count ;
         let updates = rewrite_once ~debug cc rules in
+        let visits = !Pattern.visit_count in
+        if debug then F.printf "  %d atoms visited, %d merges@." visits updates ;
         if Int.equal updates 0 then
           (* the last round did not change anything *)
           round_count
