@@ -157,7 +157,7 @@ from typing import Any
 def greet(name: Any) -> str:
     return f"Hello, {name}!"
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_with_missing_type_good" =
@@ -185,7 +185,7 @@ import urllib.parse
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_import_dir_alias_good" =
@@ -199,7 +199,7 @@ import urllib.parse as parse
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_import_from_dir_good" =
@@ -213,7 +213,7 @@ from urllib.parse import quote
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_import_from_dir_alias_good" =
@@ -227,7 +227,7 @@ from urllib.parse import quote as q
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_import_from_dir_alias_bad" =
@@ -260,7 +260,7 @@ def greet(name: str) -> str:
 print(greet("Alice"))
 print(greet.__annotations__)
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_change_async_fun_param_type_good" =
@@ -294,7 +294,7 @@ from typing import Callable
 square: Callable[[int], int] = lambda x: x * x
 print(square(5))
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_change_async_fun_body_bad" =
@@ -423,7 +423,7 @@ from typing import Callable
 
 def foo(f: Callable[..., int]) -> None: pass
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_change_type_case_sensitive_ret_good" =
@@ -434,7 +434,7 @@ def foo() -> Dict[str, str]: pass
     {|
 def foo() -> dict[str, str]: pass
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_change_type_case_sensitive_param_good" =
@@ -445,7 +445,7 @@ def foo(x: Dict[str, str]) -> None: pass
     {|
 def foo(x: dict[str, str]) -> None: pass
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 (* Disagrees with DirectRewrite: eqsat has no rule for user-defined type renames.
@@ -591,7 +591,7 @@ def foo() -> Dict[str, Dict[str, Set[str]]]: pass
     {|
 def foo() -> dict[str, dict[str, set[str]]]: pass
 |} ;
-  [%expect {| equivalent |}]
+  [%expect {| different |}]
 
 
 let%expect_test "test_change_type_case_sensitive_rec_bad" =

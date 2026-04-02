@@ -131,9 +131,11 @@ let parse_rules cc str_rules : Rewrite.Rule.t list =
 let gen_all_rules cc : Rewrite.Rule.t list =
   CC.set_app_right_neutral cc (mk_const cc "_epsilon_") ;
   parse_rules cc
-    [ "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> _epsilon_"
+    [ (* temporarily disabled: import erasure causes spurious cross-diffs
+    "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> _epsilon_"
     ; "(Import (names ?N)) ==> _epsilon_"
-    ; "(@DIFF (returns Null) (returns ?X)) ==> __DONE__"
+    ; *)
+      "(@DIFF (returns Null) (returns ?X)) ==> __DONE__"
     ; "(@DIFF (annotation Null) (annotation ?X)) ==> __DONE__"
     ; "(@DIFF (id Any) (id ?X)) ==> __DONE__"
     ; "(@DIFF (id Dict) (id dict)) ==> __DONE__"
