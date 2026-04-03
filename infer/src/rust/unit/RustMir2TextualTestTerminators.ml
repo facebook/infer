@@ -34,6 +34,10 @@ fn main() {
           n0 = dummy::bar()
           store &var_0 <- n0:void
           jmp node_2
+          .handlers node_1
+
+      #node_1:
+          throw "UnwindResume"
 
       #node_2:
           store &var_0 <- null:void
@@ -58,6 +62,10 @@ fn main() {
           n0 = dummy::foo()
           store &var_0 <- n0:void
           jmp node_2
+          .handlers node_1
+
+      #node_1:
+          throw "UnwindResume"
 
       #node_2:
           store &var_0 <- null:void
@@ -147,12 +155,16 @@ fn main() {
           n0 = dummy::id(10)
           store &x_1 <- n0:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
+
+      #node_2:
+          throw "UnwindResume"
 
     }
     |}]
@@ -211,12 +223,16 @@ fn main() {
           n0 = dummy::ifelse(1, 10, 20)
           store &x_1 <- n0:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
+
+      #node_2:
+          throw "UnwindResume"
 
     }
     |}]
@@ -257,10 +273,14 @@ fn main() {
           n4 = dummy::add(n2, n3)
           store &var_0 <- n4:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           n5:int = load &var_0
           ret n5
+
+      #node_2:
+          throw "UnwindResume"
 
     }
 
@@ -295,12 +315,16 @@ fn main() {
           n4 = dummy::call_with_args(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
+
+      #node_2:
+          throw "UnwindResume"
 
     }
     |}]
@@ -371,12 +395,16 @@ fn main() {
           n2 = dummy::goto_loop(n1)
           store &var_2 <- n2:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3
+
+      #node_2:
+          throw "UnwindResume"
 
     }
     |}]
@@ -455,12 +483,16 @@ fn main() {
           n4 = dummy::goto_with_continue(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
+
+      #node_2:
+          throw "UnwindResume"
 
     }
     |}]
@@ -531,12 +563,16 @@ fn main() {
           n4 = dummy::compare(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
+
+      #node_2:
+          throw "UnwindResume"
 
     }
     |}]
@@ -622,12 +658,16 @@ fn main() {
           n4 = dummy::swi_nested(n2, n3)
           store &var_3 <- n4:int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
           store &var_0 <- null:void
           n5:void = load &var_0
           ret n5
+
+      #node_2:
+          throw "UnwindResume"
 
     }
     |}]

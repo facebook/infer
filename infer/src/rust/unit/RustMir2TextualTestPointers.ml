@@ -306,6 +306,7 @@ let%expect_test "null_pointer" =
           n0 = core::ptr::null()
           store &ptr_1 <- n0:*int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           n1:*int = load &ptr_1
@@ -315,6 +316,9 @@ let%expect_test "null_pointer" =
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3
+
+      #node_2:
+          throw "UnwindResume"
 
     }
 
@@ -350,6 +354,7 @@ let%expect_test "box" =
           n0 = __sil_boxnew(42)
           store &b_1 <- n0:*int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           store &var_0 <- null:void
@@ -358,6 +363,9 @@ let%expect_test "box" =
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3
+
+      #node_2:
+          throw "UnwindResume"
 
     }
 
@@ -394,6 +402,7 @@ let%expect_test "box_memoryleak" =
           n0 = __sil_boxnew(42)
           store &b_1 <- n0:*int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           n1:*int = load &b_1
@@ -402,11 +411,18 @@ let%expect_test "box_memoryleak" =
           n3 = core::mem::forget(n2)
           store &var_0 <- n3:void
           jmp node_3
+          .handlers node_4
+
+      #node_2:
+          throw "UnwindResume"
 
       #node_3:
           store &var_0 <- null:void
           n4:void = load &var_0
           ret n4
+
+      #node_4:
+          throw "UnwindResume"
 
     }
 
@@ -449,6 +465,7 @@ let%expect_test "box_use_after_free" =
           n0 = __sil_boxnew(50)
           store &x_3 <- n0:*int
           jmp node_1
+          .handlers node_2
 
       #node_1:
           n1:*int = load &x_3
@@ -466,6 +483,9 @@ let%expect_test "box_use_after_free" =
           store &var_0 <- null:void
           n8:void = load &var_0
           ret n8
+
+      #node_2:
+          throw "UnwindResume"
 
     }
 

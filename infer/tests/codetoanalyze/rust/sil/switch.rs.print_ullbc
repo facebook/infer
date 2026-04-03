@@ -1,0 +1,169 @@
+# Final ULLBC before serialization:
+
+// Full name: switch::Types
+enum Types {
+  Unit,
+  Value(i32),
+  Tuple(i32, i32),
+  Named(id: i32),
+}
+
+// Full name: switch::get_value
+fn get_value(@1: Types) -> i32
+{
+    let @0: i32; // return
+    let t@1: Types; // arg #1
+    let @2: isize; // anonymous local
+    let v@3: i32; // local
+    let a@4: i32; // local
+    let b@5: i32; // local
+    let @6: i32; // anonymous local
+    let @7: i32; // anonymous local
+    let @8: i32; // anonymous local
+    let id@9: i32; // local
+
+    bb0: {
+        storage_live(@2);
+        storage_live(@8);
+        @2 := @discriminant(t@1);
+        switch move (@2) -> 0 : isize: bb1, 1 : isize: bb2, 2 : isize: bb3, 3 : isize: bb4, otherwise: bb5;
+    }
+
+    bb1: {
+        @0 := const (0 : i32);
+        goto bb6;
+    }
+
+    bb2: {
+        storage_live(v@3);
+        v@3 := copy ((t@1 as variant Types::Value).0);
+        @0 := copy (v@3);
+        storage_dead(v@3);
+        goto bb7;
+    }
+
+    bb3: {
+        storage_live(a@4);
+        a@4 := copy ((t@1 as variant Types::Tuple).0);
+        storage_live(b@5);
+        b@5 := copy ((t@1 as variant Types::Tuple).1);
+        storage_live(@6);
+        @6 := copy (a@4);
+        storage_live(@7);
+        @7 := copy (b@5);
+        @8 := copy (@6) panic.+ copy (@7);
+        @0 := move (@8);
+        storage_dead(@7);
+        storage_dead(@6);
+        storage_dead(b@5);
+        storage_dead(a@4);
+        goto bb8;
+    }
+
+    bb4: {
+        storage_live(id@9);
+        id@9 := copy ((t@1 as variant Types::Named).id);
+        @0 := copy (id@9);
+        storage_dead(id@9);
+        goto bb9;
+    }
+
+    bb5: {
+        undefined_behavior;
+    }
+
+    bb6: {
+        return;
+    }
+
+    bb7: {
+        return;
+    }
+
+    bb8: {
+        return;
+    }
+
+    bb9: {
+        return;
+    }
+}
+
+// Full name: switch::main
+fn main()
+{
+    let @0: (); // return
+    let tunit@1: Types; // local
+    let tvalue@2: Types; // local
+    let ttype@3: Types; // local
+    let tname@4: Types; // local
+    let @5: i32; // anonymous local
+    let @6: Types; // anonymous local
+    let @7: i32; // anonymous local
+    let @8: Types; // anonymous local
+    let @9: i32; // anonymous local
+    let @10: Types; // anonymous local
+    let @11: i32; // anonymous local
+    let @12: Types; // anonymous local
+
+    bb0: {
+        storage_live(tunit@1);
+        tunit@1 := Types::Unit {  };
+        storage_live(tvalue@2);
+        tvalue@2 := Types::Value { 0: const (10 : i32) };
+        storage_live(ttype@3);
+        ttype@3 := Types::Tuple { 0: const (20 : i32), 1: const (30 : i32) };
+        storage_live(tname@4);
+        tname@4 := Types::Named { id: const (40 : i32) };
+        storage_live(@5);
+        storage_live(@6);
+        @6 := move (tunit@1);
+        @5 := get_value(move (@6)) -> bb1 (unwind: bb2);
+    }
+
+    bb1: {
+        storage_dead(@6);
+        storage_dead(@5);
+        storage_live(@7);
+        storage_live(@8);
+        @8 := move (tvalue@2);
+        @7 := get_value(move (@8)) -> bb3 (unwind: bb2);
+    }
+
+    bb2: {
+        unwind_continue;
+    }
+
+    bb3: {
+        storage_dead(@8);
+        storage_dead(@7);
+        storage_live(@9);
+        storage_live(@10);
+        @10 := move (ttype@3);
+        @9 := get_value(move (@10)) -> bb4 (unwind: bb2);
+    }
+
+    bb4: {
+        storage_dead(@10);
+        storage_dead(@9);
+        storage_live(@11);
+        storage_live(@12);
+        @12 := move (tname@4);
+        @11 := get_value(move (@12)) -> bb5 (unwind: bb2);
+    }
+
+    bb5: {
+        storage_dead(@12);
+        storage_dead(@11);
+        @0 := ();
+        storage_dead(tname@4);
+        storage_dead(ttype@3);
+        storage_dead(tvalue@2);
+        storage_dead(tunit@1);
+        @0 := ();
+        return;
+    }
+}
+
+
+
