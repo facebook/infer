@@ -189,8 +189,7 @@ let parse_buck_arguments args =
         (List.rev rev_options, List.rev rev_targets)
     | "--" :: rest ->
         classify rev_options rev_targets rest
-    | flag :: value :: rest
-      when List.mem ~equal:String.equal Buck.parameters_with_argument flag ->
+    | flag :: value :: rest when List.mem ~equal:String.equal Buck.parameters_with_argument flag ->
         classify (value :: flag :: rev_options) rev_targets rest
     | s :: rest when is_option s ->
         classify (s :: rev_options) rev_targets rest

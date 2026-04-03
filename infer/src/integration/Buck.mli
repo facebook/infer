@@ -19,8 +19,9 @@ val wrap_buck_call : label:string -> string list -> string list
     return value is the standard output of the command split on newlines. *)
 
 val parameters_with_argument : string list
-(** Buck command-line flags that consume the following argument as their value (e.g. [-c], [--config],
-    [-j]).  Used to correctly classify flag-value pairs as options rather than targets. *)
+(** Buck command-line flags that consume the following argument as their value (e.g. [-c],
+    [--config], [-j]). Used to correctly classify flag-value pairs as options rather than targets.
+*)
 
 val parse_command_and_targets : BuckMode.t -> string list -> string * string list * string list
 (** parses given buck command, using the buck configuration returned by [config] above and returns a
