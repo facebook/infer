@@ -121,8 +121,8 @@ let prune_eq_one v astate =
 
 let is_known_zero astate v = Formula.is_known_zero astate.AbductiveDomain.path_condition v
 
-let is_manifest summary =
-  Formula.is_manifest (AbductiveDomain.Summary.get_path_condition summary) ~is_allocated:(fun v ->
+let is_manifest ?diagnostic summary =
+  Formula.is_manifest ?diagnostic (AbductiveDomain.Summary.get_path_condition summary) ~is_allocated:(fun v ->
       AbductiveDomain.Summary.is_heap_allocated summary v
       || AbductiveDomain.Summary.get_must_be_valid v summary |> Option.is_some )
   && not (AbductiveDomain.Summary.pre_heap_has_assumptions summary)

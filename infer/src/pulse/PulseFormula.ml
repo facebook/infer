@@ -1092,7 +1092,24 @@ let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
 
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 
-let is_manifest ~is_allocated formula =
+let is_manifest ?diagnostic ~is_allocated formula =
+  let invalid_address_var_opt =
+    match diagnostic with
+    | Some (PulseDiagnostic.AccessToInvalidAddress {invalid_address}) ->
+        PulseDecompilerExpr.abstract_value_of_expr invalid_address
+    | _ ->
+        None
+  in
+  let is_relevant_var x =
+    match invalid_address_var_opt with
+    | Some invalid_var ->
+        (* If we know the variable related to the error, ignore [x!=0] if x is not related to it.
+           For now, just a coarse check: if x is not the invalid var, ignore the condition. *)
+        Var.equal (Formula.get_repr formula.phi x :> Var.t) (Formula.get_repr formula.phi invalid_var :> Var.t)
+    | None ->
+        (* No diagnostic info, fallback to old behavior (everything is relevant) *)
+        true
+  in
   Atom.Map.for_all
     (fun atom depth ->
       let is_ground = not @@ Term.has_var_notin Var.Set.empty @@ Atom.to_term atom in
@@ -1104,7 +1121,7 @@ let is_manifest ~is_allocated formula =
           (* ignore [x≠0] when [x] is known to be allocated: pointers being allocated doesn't make
              an issue latent and we still need to remember that [x≠0] was tested by the program
              explicitly *)
-          is_allocated x
+          is_allocated x || not (is_relevant_var x)
       | None -> (
         match Atom.get_as_disequal_vars atom with
         | Some (x, y) ->
