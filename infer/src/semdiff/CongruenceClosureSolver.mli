@@ -16,7 +16,9 @@ module Atom : sig
   module Set : Stdlib.Set.S with type elt = t
 end
 
-type term = App of Atom.t * Atom.t | Atom of Atom.t
+type enode = {head: Atom.t; children: Atom.t list} [@@deriving equal, hash]
+
+type term = Enode of enode | Atom of Atom.t
 
 val pp_term : F.formatter -> term -> unit
 
@@ -58,7 +60,7 @@ val equiv_atoms : t -> Atom.t -> Atom.t list
 
 val headers_with_arity : t -> (header * int) list
 
-type app_equation = {rhs: Atom.t; left: Atom.t; right: Atom.t}
+type app_equation = {atom: Atom.t; enode: enode}
 
 val equiv_terms : t -> Atom.t -> app_equation list
 

@@ -12,7 +12,7 @@ module CC = CongruenceClosureSolver
 module Rewrite = CongruenceClosureRewrite
 open PythonSourceAst
 
-(* currying AST -> CongruenceClosure terms *)
+(* AST -> CongruenceClosure terms *)
 let mk_const cc header = CC.mk_term cc (CC.mk_header cc header) []
 
 let mk_term cc header args = CC.mk_term cc (CC.mk_header cc header) args
@@ -112,10 +112,12 @@ let get_unresolved_diffs cc =
       let root' = CC.representative cc root in
       if is_only_equivalent_to_diff_terms root' then
         CC.equiv_terms cc root'
-        |> List.fold ~init:acc ~f:(fun acc {CC.left; right= right_arg} ->
-               CC.representative cc left |> CC.equiv_terms cc
-               |> List.fold ~init:acc ~f:(fun acc {CC.right= left_arg} ->
-                      (left_arg, right_arg) :: acc ) )
+        |> List.fold ~init:acc ~f:(fun acc {CC.enode= {children}} ->
+               match children with
+               | [left_arg; right_arg] ->
+                   (left_arg, right_arg) :: acc
+               | _ ->
+                   acc )
       else acc )
 
 

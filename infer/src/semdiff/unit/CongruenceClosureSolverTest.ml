@@ -43,7 +43,8 @@ let pp_nested_term atom = F.printf "%a@." (pp_nested_term !st) atom
 let equiv_atoms atom =
   let l = equiv_atoms !st atom in
   let repr = repr atom in
-  F.printf "%a: {%a} (repr=%a)\n" Atom.pp atom (Pp.comma_seq Atom.pp) l Atom.pp repr
+  let pp = CongruenceClosureSolver.pp_nested_term !st in
+  F.printf "%a: {%a} (repr=%a)\n" pp atom (Pp.comma_seq pp) l pp repr
 
 
 let%expect_test "" =
@@ -55,9 +56,9 @@ let%expect_test "" =
   let e = mk_const "e" in
   let g = mk_const "g" in
   let h = mk_const "h" in
-  merge d (App (g, h)) ;
+  merge d (Enode {head= g; children= [h]}) ;
   merge d (Atom c) ;
-  merge a (App (g, d)) ;
+  merge a (Enode {head= g; children= [d]}) ;
   merge c (Atom e) ;
   merge b (Atom e) ;
   merge h (Atom b) ;
@@ -166,16 +167,17 @@ let%expect_test "show sharing" =
     repr: x is x (repr=x) (roots={x})
           y is y (repr=y) (roots={y})
           z is z (repr=z) (roots={z})
-          plus is plus (repr=plus) (roots={%5,%12})
-          %4 is (plus y) (repr=%4)
-          %5 is (plus y z) (repr=%5)
-          mult is mult (repr=mult) (roots={%8,%9,%10})
-          %7 is (mult x) (repr=%7)
-          %8 is (mult x (plus y z)) (repr=%12)
-          %9 is (mult x z) (repr=%9)
-          %10 is (mult x y) (repr=%10)
-          %11 is (plus (mult x y)) (repr=%11)
-          %12 is (plus (mult x y) (mult x z)) (repr=%12)
+          plus is plus (repr=plus) (roots={(plus y z),(plus (mult x y) (mult x z))})
+          (plus y z) is (plus y z) (repr=(plus y z))
+          mult is mult (repr=mult) (roots={(mult x (plus y z)),(mult x z),
+          (mult x y)})
+          (mult x (plus y z)) is (mult x (plus y z)) (repr=(plus (mult x y) (mult x z)))
+          (mult x z) is (mult x z) (repr=(mult x z))
+          (mult x y) is (mult x y) (repr=(mult x y))
+          (plus (mult x y) (mult x z)) is (plus (mult x y) (mult x z)) (repr=
+          (plus
+              (mult x y)
+              (mult x z)))
     roots[plus] = {(plus y z), (plus (mult x y) (mult x z))}
     roots[mult] = {(mult x z), (mult x y)}
     |}]
@@ -196,8 +198,8 @@ let gen_term_chain size =
       let c1 = mk_const1 (i + size_left) in
       let c2 = mk_const2 (i + size_left) in
       let c1_right, c2_right, eqs, leafs = aux (i + 1 + size_left) (size - size_left) eqs leafs in
-      let term1 = App (c1_left, c1_right) in
-      let term2 = App (c2_left, c2_right) in
+      let term1 = Enode {head= c1_left; children= [c1_right]} in
+      let term2 = Enode {head= c2_left; children= [c2_right]} in
       (c1, c2, (c1, term1) :: (c2, term2) :: eqs, leafs)
   in
   aux 1 size [] []

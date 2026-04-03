@@ -102,32 +102,44 @@ module Pattern = struct
     | Var var ->
         add_or_empty ~debug cc subst var atom'
     | Term {header; args} ->
-        loop_term_args ~debug cc subst header (List.rev args) atom'
+        loop_term_args ~debug cc subst header args atom'
 
 
-  and loop_term_args ~debug cc subst header rev_args atom' =
+  and loop_term_args ~debug cc subst header args atom' =
     if debug then
       F.printf "e-matching term pattern header=%a args=[%a]@." CC.pp_header header (Pp.comma_seq pp)
-        rev_args ;
-    match rev_args with
+        args ;
+    let header_atom' = CC.representative_of_header cc header in
+    match args with
     | [] ->
-        let header_atom' = CC.representative_of_header cc header in
+        (* Constants have no enode (bare header atom), check directly *)
         if phys_equal atom' header_atom' then SubstSet.singleton subst else SubstSet.empty
-    | pat :: rev_args ->
+    | _ ->
         let app_equations = CC.equiv_terms cc atom' in
         if debug then
           F.printf "app_equations(%a) = [%a]@." (CC.pp_nested_term cc) atom'
-            (Pp.comma_seq (fun fmt {CC.rhs} -> CC.pp_nested_term cc fmt rhs))
+            (Pp.comma_seq (fun fmt {CC.atom} -> CC.pp_nested_term cc fmt atom))
             app_equations ;
         List.fold app_equations
-          ~f:(fun acc {CC.left; right} ->
-            let right' = CC.representative cc right in
-            let left' = CC.representative cc left in
-            let substs = e_match_at_loop ~debug cc subst pat right' in
-            SubstSet.fold
-              (fun subst acc ->
-                SubstSet.union (loop_term_args ~debug cc subst header rev_args left') acc )
-              substs acc )
+          ~f:(fun acc {CC.enode= {head; children}} ->
+            let head' = CC.representative cc head in
+            if not (phys_equal head' header_atom') then acc
+            else
+              match
+                List.fold2 args children ~init:(SubstSet.singleton subst)
+                  ~f:(fun substs pat child ->
+                    let child' = CC.representative cc child in
+                    SubstSet.fold
+                      (fun subst acc ->
+                        SubstSet.union (e_match_at_loop ~debug cc subst pat child') acc )
+                      substs SubstSet.empty )
+              with
+              | Ok substs ->
+                  SubstSet.union substs acc
+              | Unequal_lengths ->
+                  (* enode has different arity than pattern, e.g. after a rewrite merged
+                     terms of different arities into the same class; skip it *)
+                  acc )
           ~init:SubstSet.empty
 
 
@@ -142,27 +154,25 @@ module Pattern = struct
 
 
   let e_match_ellipsis_at cc {header; arg} atom =
-    let rec loop kept_arg_atoms subst atom =
-      let matched_atoms =
-        if CC.is_equiv cc atom (header :> CC.Atom.t) then
-          CC.mk_term cc header kept_arg_atoms |> CC.Atom.Set.singleton
-        else CC.Atom.Set.empty
-      in
-      let atom' = CC.representative cc atom in
-      let app_equations = CC.equiv_terms cc atom' in
-      List.fold app_equations
-        ~f:(fun acc {CC.left; right} ->
-          let right' = CC.representative cc right in
-          let left' = CC.representative cc left in
-          let substs = e_match_at_loop ~debug:false cc subst arg right' in
-          if SubstSet.is_empty substs then loop (right' :: kept_arg_atoms) subst left'
-          else
-            SubstSet.fold
-              (fun subst acc -> CC.Atom.Set.union (loop kept_arg_atoms subst left') acc)
-              substs acc )
-        ~init:matched_atoms
-    in
-    loop [] Var.Map.empty atom |> CC.Atom.Set.elements
+    let atom' = CC.representative cc atom in
+    let app_equations = CC.equiv_terms cc atom' in
+    List.fold app_equations ~init:CC.Atom.Set.empty ~f:(fun acc {CC.enode= {head; children}} ->
+        if not (CC.is_equiv cc head (header :> CC.Atom.t)) then acc
+        else
+          (* For each child, either match it against the pattern (and remove it)
+             or keep it. At the end, rebuild with kept children only. *)
+          let rec process acc subst kept remaining =
+            match remaining with
+            | [] ->
+                CC.Atom.Set.add (CC.mk_term cc header (List.rev kept)) acc
+            | child :: rest ->
+                let child' = CC.representative cc child in
+                let substs = e_match_at_loop ~debug:false cc subst arg child' in
+                if SubstSet.is_empty substs then process acc subst (child' :: kept) rest
+                else SubstSet.fold (fun subst acc -> process acc subst kept rest) substs acc
+          in
+          process acc Var.Map.empty [] children )
+    |> CC.Atom.Set.elements
 
 
   let e_match ?(debug = false) cc pat exclude ~f =
@@ -225,11 +235,17 @@ module Rule = struct
       CC.iter_app_roots cc ~f:(fun atom ->
           let atom' = CC.representative cc atom in
           let app_equations = CC.equiv_terms cc atom' in
-          List.iter app_equations ~f:(fun {CC.left; right} ->
-              if CC.is_app_right_neutral cc right && not (CC.is_equiv cc atom' left) then (
+          List.iter app_equations ~f:(fun {CC.enode= {head; children}} ->
+              let filtered =
+                List.filter children ~f:(fun child -> not (CC.is_app_right_neutral cc child))
+              in
+              if
+                List.length filtered < List.length children
+                && not (CC.is_equiv cc atom' (head :> CC.Atom.t))
+              then (
                 if debug then
-                  F.printf "rewrite app_right_neutral on atom %a@." (CC.pp_nested_term cc) right ;
-                CC.merge cc atom' (CC.Atom left) ) ) )
+                  F.printf "rewrite app_right_neutral on atom %a@." (CC.pp_nested_term cc) atom ;
+                CC.merge cc atom' (CC.Enode {head; children= filtered}) ) ) )
 
 
   let rewrite_once ?(debug = false) cc rules =
