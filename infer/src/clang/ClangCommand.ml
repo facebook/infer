@@ -72,6 +72,26 @@ let libcxx_include_to_override_regex =
   Option.map ~f:Str.regexp Config.clang_libcxx_include_to_override_regex
 
 
+let fcp_clang_resource_include_dir =
+  let clang_lib_dir = Config.fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" in
+  lazy
+    ( match Stdlib.Sys.readdir clang_lib_dir |> Array.to_list with
+    | [version] ->
+        let include_dir = clang_lib_dir ^/ version ^/ "include" in
+        if ISys.file_exists include_dir then Some include_dir
+        else (
+          L.external_warning "Clang resource include directory does not exist: %s@\n" include_dir ;
+          None )
+    | versions ->
+        L.external_warning "Expected exactly one version directory in %s, found: [%s]@\n"
+          clang_lib_dir
+          (String.concat ~sep:", " versions) ;
+        None
+    | exception Sys_error msg ->
+        L.external_warning "Cannot read clang resource directory %s: %s@\n" clang_lib_dir msg ;
+        None )
+
+
 (** Filter arguments from [args], looking into argfiles too. [replace_options_arg prev arg] returns
     [arg'], where [arg'] is the new version of [arg] given the preceding arguments (in reverse
     order) [prev]. *)
@@ -141,7 +161,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
 let clang_cc1_cmd_sanitizer cmd =
   let replace_args arg = function
     | Some override_regex when Str.string_match override_regex arg 0 ->
-        Config.fcp_dir ^/ "clang" ^/ "install" ^/ "lib" ^/ "clang" ^/ "18" ^/ "include"
+        Lazy.force fcp_clang_resource_include_dir |> Option.value ~default:arg
     | _ ->
         arg
   in
