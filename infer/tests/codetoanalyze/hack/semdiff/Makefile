@@ -9,28 +9,33 @@ INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/base.make
 
-SOURCES = $(sort $(wildcard previous/*.php))
-BASENAMES = $(notdir $(SOURCES))
+# Each subdirectory contains a config file and previous/current test pairs
+CONFIGS = $(sort $(wildcard */*.py))
+SUBDIRS = $(patsubst %/,%,$(dir $(CONFIGS)))
 
 HH_PARSE = $(shell command -v hh_parse 2>/dev/null)
 
 default: test
 
-# Run semdiff on all file pairs, accumulating results
-issues.exp.test: $(SOURCES) $(wildcard current/*.php) $(INFER_BIN)
+# Run semdiff on all subdirectories, each with its own config
+issues.exp.test: $(wildcard */*.py) $(wildcard */previous/*.php) $(wildcard */current/*.php) $(INFER_BIN)
 ifndef HH_PARSE
 	$(QUIET)echo "hh_parse not found, skipping Hack semdiff tests"
 	$(QUIET)cp issues.exp $@
 else
 	$(QUIET)mkdir -p $(INFER_OUT)
 	$(QUIET)rm -f $@
-	$(QUIET)for f in $(BASENAMES); do \
-		$(INFER_BIN) semdiff --quiet --no-progress-bar \
-			--semdiff-configuration hack_type_annotations.py \
-			--semdiff-previous previous/$$f \
-			--semdiff-current current/$$f \
-			--issues-tests $@ \
-			-o $(INFER_OUT)/$$f.out 2>&1 || true; \
+	$(QUIET)for subdir in $(SUBDIRS); do \
+		config=$$(ls $$subdir/*.py) ; \
+		for f in $$(ls $$subdir/previous/*.php 2>/dev/null | sort); do \
+			base=$$(basename $$f) ; \
+			$(INFER_BIN) semdiff --quiet --no-progress-bar \
+				--semdiff-configuration $$config \
+				--semdiff-previous $$subdir/previous/$$base \
+				--semdiff-current $$subdir/current/$$base \
+				--issues-tests $@ \
+				-o $(INFER_OUT)/$$subdir.$$base.out 2>&1 || true; \
+		done ; \
 	done
 	$(QUIET)sed -i 's|$(CURDIR)/||g' $@
 endif

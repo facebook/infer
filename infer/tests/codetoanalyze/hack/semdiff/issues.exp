@@ -1,3 +1,4 @@
-previous/different_body_change.php, current/different_body_change.php, SEMDIFF MISMATCH: [(Line 3) -   return "Hello, " . $name;, +   return "Goodbye, " . $name;]
-previous/different_param_rename.php, current/different_param_rename.php, SEMDIFF MISMATCH: [(Line 2) - function foo(string $name): void {, + function foo(string $label): void {,(Line 3) -   echo $name;, +   echo $label;]
-previous/different_statement_added.php, current/different_statement_added.php, SEMDIFF MISMATCH: [(Line 4) +   echo $x;]
+graphql_owner/previous/different_graphql_body_change.php, graphql_owner/current/different_graphql_body_change.php, SEMDIFF MISMATCH: [(Line 12) -     return "hello";,(Line 13) +     return "goodbye";]
+type_annotations/previous/different_body_change.php, type_annotations/current/different_body_change.php, SEMDIFF MISMATCH: [(Line 3) -   return "Hello, " . $name;, +   return "Goodbye, " . $name;]
+type_annotations/previous/different_param_rename.php, type_annotations/current/different_param_rename.php, SEMDIFF MISMATCH: [(Line 2) - function foo(string $name): void {, + function foo(string $label): void {,(Line 3) -   echo $name;, +   echo $label;]
+type_annotations/previous/different_statement_added.php, type_annotations/current/different_statement_added.php, SEMDIFF MISMATCH: [(Line 4) +   echo $x;]
