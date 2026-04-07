@@ -45,20 +45,24 @@ let semdiff ~config_files ~previous_file ~current_file =
   let diffs =
     if Config.semdiff_experimental_eqsat_engine then
       semdiff_with_eqsat ~debug ~previous_file ~current_file previous_src current_src
-    else if is_hack_file current_file then
-      let config = HackSemdiffConfig.hack_type_annotations_config in
-      hack_ast_diff ~debug ~config ~previous_file ~current_file previous_src current_src
     else
+      let default_config =
+        if is_hack_file current_file then HackSemdiffConfig.hack_type_annotations_config
+        else PythonSemdiffConfig.missing_python_type_annotations_config
+      in
       let config =
         match config_files with
         | [] ->
-            PythonSemdiffConfig.missing_python_type_annotations_config
+            default_config
         | files ->
             List.map files ~f:PythonConfigParser.parse_file
             |> List.reduce_exn ~f:SemdiffDirectEngine.Rules.union
       in
-      python_ast_diff ~debug ~config ~filename1:previous_file ~filename2:current_file previous_src
-        current_src
+      if is_hack_file current_file then
+        hack_ast_diff ~debug ~config ~previous_file ~current_file previous_src current_src
+      else
+        python_ast_diff ~debug ~config ~filename1:previous_file ~filename2:current_file previous_src
+          current_src
   in
   let out_path = ResultsDir.get_path SemDiff in
   Diff.write_json ~previous_file ~current_file ~out_path diffs

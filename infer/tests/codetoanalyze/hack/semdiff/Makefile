@@ -26,6 +26,7 @@ else
 	$(QUIET)rm -f $@
 	$(QUIET)for f in $(BASENAMES); do \
 		$(INFER_BIN) semdiff --quiet --no-progress-bar \
+			--semdiff-configuration hack_type_annotations.py \
 			--semdiff-previous previous/$$f \
 			--semdiff-current current/$$f \
 			--issues-tests $@ \
