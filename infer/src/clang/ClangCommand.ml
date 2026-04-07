@@ -105,7 +105,7 @@ let filter_and_replace_unsupported_args ?(replace_options_arg = fun _ s -> s) ?(
         (prev_is_block_listed_with_arg, res_rev, changed)
     | _ :: tl when prev_is_block_listed_with_arg ->
         (* in the unlikely event that a block listed flag with arg sits as the last option in some
-           arg file, we need to remove its argument now *)
+         arg file, we need to remove its argument now *)
         aux in_argfiles (false, res_rev, true) tl
     | at_argfile :: tl
       when String.is_prefix at_argfile ~prefix:"@" && not (IString.Set.mem at_argfile in_argfiles)
@@ -218,6 +218,22 @@ let clang_cc1_cmd_sanitizer cmd =
     filter_and_replace_unsupported_args ~replace_options_arg ~post_args:(List.rev post_args_rev)
       ~pre_args:(List.rev pre_args_rev) cmd.argv
   in
+  (* When the bundled clang is used as the driver for -### expansion, it discovers its own libc++
+     headers but may omit the SDK's C++ headers (e.g., cxxabi.h). Pass the SDK's C++ include path
+     via -Xclang so it reaches cc1 as a low-priority fallback, searched after the bundled libc++.
+     This avoids mixing two libc++ versions at the same priority which causes conflicts. *)
+  let clang_arguments =
+    if cmd.is_driver then
+      match value_of_argv_option clang_arguments "-isysroot" with
+      | Some sysroot ->
+          let sdk_cxx_include = sysroot ^/ "usr" ^/ "include" ^/ "c++" ^/ "v1" in
+          if ISys.file_exists sdk_cxx_include then
+            clang_arguments @ ["-Xclang"; "-internal-isystem"; "-Xclang"; sdk_cxx_include]
+          else clang_arguments
+      | None ->
+          clang_arguments
+    else clang_arguments
+  in
   file_arg_cmd_sanitizer {cmd with argv= clang_arguments}
 
 
@@ -263,9 +279,9 @@ let with_plugin_args args =
          [ "-load"
          ; Config.clang_plugin_path
          ; (* (t7400979) this is a workaround to avoid that clang crashes when the -fmodules flag and the
-              YojsonASTExporter plugin are used. Since the -plugin argument disables the generation of .o
-              files, we invoke apple clang again to generate the expected artifacts. This will keep
-              xcodebuild plus all the sub-steps happy. *)
+           YojsonASTExporter plugin are used. Since the -plugin argument disables the generation of .o
+           files, we invoke apple clang again to generate the expected artifacts. This will keep
+           xcodebuild plus all the sub-steps happy. *)
            (if has_flag args "-fmodules" then "-plugin" else "-add-plugin")
          ; plugin_name
          ; plugin_arg_flag
