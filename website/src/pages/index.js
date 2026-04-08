@@ -38,22 +38,23 @@ const features = [
 ];
 
 const poweredByImages = [
-  { url: "https://www.adacore.com", image: "/img/who/adacore.png" },
-  { url: "https://aws.amazon.com", image: "/img/who/aws.svg" },
-  { url: "https://facebook.com", image: "/img/who/facebook.png" },
-  { url: "https://freefem.org", image: "/img/who/freefem.png" },
-  { url: "https://www.instagram.com", image: "/img/who/instagram.png" },
-  { url: "https://www.microsoft.com", image: "/img/who/microsoft.png" },
-  { url: "http://www.mozilla.com", image: "/img/who/mozilla.png" },
-  { url: "https://www.oculus.com", image: "/img/who/oculus.png" },
-  { url: "https://www.sonatype.com", image: "/img/who/sonatype.png" },
+  { url: "https://www.adacore.com", image: "/img/who/adacore.png", name: "Adacore" },
+  { url: "https://aws.amazon.com", image: "/img/who/aws.svg", name: "AWS Amazon" },
+  { url: "https://facebook.com", image: "/img/who/facebook.png", name: "Facebook" },
+  { url: "https://freefem.org", image: "/img/who/freefem.png", name: "FreeFEM" },
+  { url: "https://www.instagram.com", image: "/img/who/instagram.png", name: "Instagram" },
+  { url: "https://www.microsoft.com", image: "/img/who/microsoft.png", name: "Microsoft" },
+  { url: "http://www.mozilla.com", image: "/img/who/mozilla.png", name: "Mozilla" },
+  { url: "https://www.oculus.com", image: "/img/who/oculus.png", name: "Oculus" },
+  { url: "https://www.sonatype.com", image: "/img/who/sonatype.png", name: "Sonatype" },
   {
     url: "/blog/2016/03/17/collaboration-with-spotify",
     image: "/img/who/spotify.png",
+    name: "Spotify",
   },
-  { url: "https://tangramflex.com", image: "/img/who/tangramflex.png" },
-  { url: "https://www.uber.com", image: "/img/who/uber.svg" },
-  { url: "https://www.whatsapp.com", image: "/img/who/whatsapp.svg" },
+  { url: "https://tangramflex.com", image: "/img/who/tangramflex.png", name: "Tangram Flex" },
+  { url: "https://www.uber.com", image: "/img/who/uber.svg", name: "Uber" },
+  { url: "https://www.whatsapp.com", image: "/img/who/whatsapp.svg", name: "WhatsApp" },
 ];
 
 const poweredByItems = [
@@ -207,11 +208,11 @@ function Home() {
             <h2>Who Uses Infer?</h2>
             <div style={{ margin: "4rem 0" }}>
               <div className="row">
-                {poweredByImages.map(({ url, image }, idx) => (
+                {poweredByImages.map(({ url, image, name }, idx) => (
                   <div key={idx} className="col col--2">
                     <div className={styles.whoUsesItems}>
                       <a href={url}>
-                        <img className={styles.poweredByImage} src={image} />
+                        <img className={styles.poweredByImage} src={image} alt={`${name} logo`} />
                       </a>
                     </div>
                   </div>
