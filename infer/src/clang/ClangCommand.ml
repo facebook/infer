@@ -31,6 +31,30 @@ let value_of_argv_option argv opt_name =
   |> snd
 
 
+(** Like [value_of_argv_option] but also searches inside @argfiles recursively. *)
+let rec value_of_argv_option_deep argv opt_name =
+  let strip s =
+    String.strip s |> Utils.strip_balanced_once ~drop:(function '"' | '\'' -> true | _ -> false)
+  in
+  let rec aux prev_arg = function
+    | [] ->
+        None
+    | at_argfile :: tl when String.is_prefix at_argfile ~prefix:"@" -> (
+        let argfile = String.chop_prefix_exn ~prefix:"@" at_argfile in
+        match In_channel.read_lines argfile with
+        | lines ->
+            let result = value_of_argv_option_deep (List.map ~f:strip lines) opt_name in
+            if Option.is_some result then result else aux "" tl
+        | exception _ ->
+            aux "" tl )
+    | arg :: _ when String.equal opt_name prev_arg ->
+        Some arg
+    | arg :: tl ->
+        aux arg tl
+  in
+  aux "" argv
+
+
 let value_of_option {orig_argv} = value_of_argv_option orig_argv
 
 let has_flag {orig_argv} flag = List.exists ~f:(String.equal flag) orig_argv
@@ -221,17 +245,30 @@ let clang_cc1_cmd_sanitizer cmd =
   (* When the bundled clang is used as the driver for -### expansion, it discovers its own libc++
      headers but may omit the SDK's C++ headers (e.g., cxxabi.h). Pass the SDK's C++ include path
      via -Xclang so it reaches cc1 as a low-priority fallback, searched after the bundled libc++.
-     This avoids mixing two libc++ versions at the same priority which causes conflicts. *)
+     This avoids mixing two libc++ versions at the same priority which causes conflicts.
+     Only for C++ compilations: adding c++/v1 to C compilations breaks stdatomic.h via
+     #include_next chains with shared include guards.
+     Note: -isysroot is typically nested inside @argfiles so we must search them recursively. *)
   let clang_arguments =
     if cmd.is_driver then
-      match value_of_argv_option clang_arguments "-isysroot" with
-      | Some sysroot ->
-          let sdk_cxx_include = sysroot ^/ "usr" ^/ "include" ^/ "c++" ^/ "v1" in
-          if ISys.file_exists sdk_cxx_include then
-            clang_arguments @ ["-Xclang"; "-internal-isystem"; "-Xclang"; sdk_cxx_include]
-          else clang_arguments
-      | None ->
-          clang_arguments
+      let lang = value_of_argv_option_deep clang_arguments "-x" in
+      let is_cxx_compilation =
+        match lang with
+        | Some l ->
+            String.is_prefix l ~prefix:"c++" || String.is_suffix l ~suffix:"++"
+        | None ->
+            false
+      in
+      if is_cxx_compilation then
+        match value_of_argv_option_deep clang_arguments "-isysroot" with
+        | Some sysroot ->
+            let sdk_cxx_include = sysroot ^/ "usr" ^/ "include" ^/ "c++" ^/ "v1" in
+            if ISys.file_exists sdk_cxx_include then
+              clang_arguments @ ["-Xclang"; "-internal-isystem"; "-Xclang"; sdk_cxx_include]
+            else clang_arguments
+        | None ->
+            clang_arguments
+      else clang_arguments
     else clang_arguments
   in
   file_arg_cmd_sanitizer {cmd with argv= clang_arguments}
