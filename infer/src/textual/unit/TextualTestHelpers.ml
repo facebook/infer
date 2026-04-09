@@ -90,6 +90,31 @@ let parse_string_and_verify_keep_going text =
       List.iter errors ~f:(F.printf "%a@\n" (TextualParser.pp_error sourcefile))
 
 
+let parse_string_and_verify_keep_going_lenient text =
+  let pp = Textual.Module.pp ~show_location:false in
+  let map_error err = [TextualParser.VerificationError err] in
+  (let open IResult.Let_syntax in
+   let* module_ = TextualParser.parse_string sourcefile text in
+   TextualVerification.verify_keep_going ~lenient:true module_ |> Result.map_error ~f:map_error )
+  |> function
+  | Ok (textual, []) ->
+      F.printf "lenient verification succeeded - no warnings@\n------@\n%a@\n" pp textual ;
+      F.printf "Verifying the transformed module...@\n" ;
+      type_check textual
+  | Ok (textual, errors) ->
+      F.printf "lenient verification succeeded - %d warnings@\n------@\n" (List.length errors) ;
+      List.iter errors
+        ~f:
+          (F.printf "%a@\n"
+             (TextualVerification.pp_error_with_sourcefile textual.Module.sourcefile) ) ;
+      F.printf "------@\n%a@\n" pp textual ;
+      F.printf "Verifying the filtered module...@\n" ;
+      type_check textual
+  | Error errors ->
+      F.printf "lenient verification failed - %d errors@\n------@\n" (List.length errors) ;
+      List.iter errors ~f:(F.printf "%a@\n" (TextualParser.pp_error sourcefile))
+
+
 let show module_ = F.printf "%a" (Module.pp ~show_location:true) module_
 
 let show_result = function

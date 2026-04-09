@@ -17,6 +17,9 @@ val verify_strict : Textual.Module.t -> (Textual.Module.t, error list) result
 (** perform verification (some basic rules, simple type checking, no duplicate declaration) and
     returns a new version (after type inference) *)
 
-val verify_keep_going : Textual.Module.t -> (Textual.Module.t * error list, error list) result
-(** same as [verify_strict], but we try to generate a filtered module that contains a subset of the
-    original input module, but pass the whole verification. *)
+val verify_keep_going :
+  ?lenient:bool -> Textual.Module.t -> (Textual.Module.t * error list, error list) result
+(** Same as [verify_strict], but we try to generate a filtered module that contains a subset of the
+    original input module, but pass the whole verification. When [lenient] is true, basic
+    verification errors (e.g. arity mismatches on undeclared functions) are also treated as
+    recoverable, allowing capture to proceed with warnings. Default is [false]. *)

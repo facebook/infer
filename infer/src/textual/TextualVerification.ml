@@ -38,7 +38,7 @@ let pp_error_with_sourcefile sourcefile fmt err =
         sourcefile
 
 
-let verify_common ~restore_ssa module_ =
+let verify_common ~restore_ssa ~lenient module_ =
   let errors, decls_env = TextualDecls.make_decls module_ in
   let errors = List.map errors ~f:(fun x -> DeclaredTwiceError x) in
   if List.is_empty errors then
@@ -51,14 +51,17 @@ let verify_common ~restore_ssa module_ =
       | Error (errors, module_) ->
           let errors = List.map ~f:(fun x -> TypeError x) errors in
           Error (errors, Some module_)
+    else if lenient then Error (errors, Some module_)
     else Error (errors, None)
   else Error (errors, None)
 
 
-let verify_strict module_ = verify_common ~restore_ssa:false module_ |> Result.map_error ~f:fst
+let verify_strict module_ =
+  verify_common ~restore_ssa:false ~lenient:false module_ |> Result.map_error ~f:fst
 
-let verify_keep_going module_ =
-  match verify_common ~restore_ssa:true module_ with
+
+let verify_keep_going ?(lenient = false) module_ =
+  match verify_common ~restore_ssa:true ~lenient module_ with
   | Ok module_ ->
       Ok (module_, [])
   | Error (errors, Some module_) ->
