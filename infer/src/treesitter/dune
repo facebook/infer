@@ -1,0 +1,37 @@
+; Copyright (c) Facebook, Inc. and its affiliates.
+;
+; This source code is licensed under the MIT license found in the
+; LICENSE file in the root directory of this source tree.
+
+(library
+ (name TreeSitterFrontend)
+ (public_name infer.TreeSitterFrontend)
+ (flags
+  (:standard -open Core -open IStdlib -open IStd -open IBase))
+ (libraries core IStdlib IBase)
+ (foreign_stubs
+  (language c)
+  (names tree_sitter_stubs tree_sitter_runtime tree_sitter_c_grammar)
+  (flags
+   (:include c_flags.sexp)))
+ (preprocess
+  (pps ppx_compare)))
+
+; Generate -I paths pointing to vendored tree-sitter sources.
+; (source_tree vendor) ensures dune tracks the vendor files as dependencies.
+
+(rule
+ (target c_flags.sexp)
+ (deps
+  (source_tree vendor))
+ (action
+  (with-stdout-to
+   %{target}
+   (progn
+    (echo "(-I ")
+    (echo %{project_root})
+    (echo "/src/treesitter/vendor/tree-sitter/include -I ")
+    (echo %{project_root})
+    (echo "/src/treesitter/vendor/tree-sitter/src -I ")
+    (echo %{project_root})
+    (echo "/src/treesitter/vendor/tree-sitter-c/src -std=c11 -fPIC -w)")))))
