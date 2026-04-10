@@ -85,6 +85,7 @@ patches: [
   "4_LLVMGetGEPSourceElementType.patch"
   "5_getAllocatedType.patch"
   "6_LLVMExtractDISubprogramType.patch"
+  "7_LLVMExtractDbgDeclareNames.patch"
 ]
 
 
@@ -133,4 +134,10 @@ extra-source "0_AddOCaml.cmake.patch" {
     "https://raw.githubusercontent.com/ocaml/opam-source-archives/main/patches/llvm/AddOCaml.cmake.patch.18"
   checksum:
     "sha256=a532adaa6938818fbd7f5a49d4de21c0a2d240ecb91636a76b2f745b4b8cb58f"
+}
+extra-source "7_LLVMExtractDbgDeclareNames.patch" {
+  src:
+    "file:///data/users/nikosg/infer/dependencies/llvm/patches/7_LLVMExtractDbgDeclareNames.patch"
+  checksum:
+    "sha256=8617d730825241ae4f90cf2fdaf6dc0b8c1471bc3ed29a6bfbd7aa1cad041619"
 }

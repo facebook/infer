@@ -1,0 +1,140 @@
+commit 0000000000000000000000000000000000000000
+Author: Nikos Gorogiannis <nikosg@meta.com>
+Date:   Thu Apr 10 10:00:00 2026 +0000
+
+    Add LLVMExtractDbgDeclareNames for LLVM 21 debug records
+
+    LLVM 21 removed the legacy llvm.dbg.declare intrinsic format.
+    Debug info is now stored as debug records (#dbg_declare) attached to
+    instructions. Add a C++ wrapper and OCaml binding to extract
+    (storage_value, variable_name) pairs from these debug records.
+
+diff --git a/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c b/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c
+--- a/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c
++++ b/llvm/bindings/ocaml/debuginfo/llvm_wrapper.c
+@@ -5,6 +5,9 @@
+ #include "llvm-c/Support.h"
+ #include "llvm/IR/DebugInfoMetadata.h"
+ #include "llvm/IR/Type.h"
++#include "llvm/IR/DebugProgramInstruction.h"
++#include "llvm/IR/Function.h"
++#include <vector>
+ #include <cstdlib>
+ #include <cstring>
+ #include <llvm/BinaryFormat/Dwarf.h>
+@@ -50,3 +53,44 @@ extern "C" char **LLVMExtractDISubprogramType(void *DISubprogramRef,
+   }
+   return result;
+ }
++
++extern "C" void LLVMExtractDbgDeclareNames(
++    LLVMValueRef Function,
++    unsigned *outCount,
++    LLVMValueRef **outValues,
++    char ***outNames) {
++  llvm::Function *F = llvm::unwrap<llvm::Function>(Function);
++
++  std::vector<LLVMValueRef> values;
++  std::vector<char *> names;
++
++  for (auto &BB : *F) {
++    for (auto &I : BB) {
++      for (auto &DR : I.getDbgRecordRange()) {
++        auto *DVR = llvm::dyn_cast<llvm::DbgVariableRecord>(&DR);
++        if (DVR && DVR->isDbgDeclare()) {
++          llvm::Value *storage = DVR->getVariableLocationOp(0);
++          if (storage) {
++            llvm::StringRef varName = DVR->getVariable()->getName();
++            values.push_back(llvm::wrap(storage));
++            char *nameCopy = (char *)malloc(varName.size() + 1);
++            memcpy(nameCopy, varName.data(), varName.size());
++            nameCopy[varName.size()] = '\0';
++            names.push_back(nameCopy);
++          }
++        }
++      }
++    }
++  }
++
++  *outCount = (unsigned)values.size();
++  if (values.empty()) {
++    *outValues = nullptr;
++    *outNames = nullptr;
++  } else {
++    *outValues = (LLVMValueRef *)malloc(sizeof(LLVMValueRef) * values.size());
++    *outNames = (char **)malloc(sizeof(char *) * values.size());
++    memcpy(*outValues, values.data(), sizeof(LLVMValueRef) * values.size());
++    memcpy(*outNames, names.data(), sizeof(char *) * values.size());
++  }
++}
+diff --git a/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c b/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
+--- a/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
++++ b/llvm/bindings/ocaml/debuginfo/debuginfo_ocaml.c
+@@ -146,6 +146,9 @@
+
+ char **LLVMExtractDISubprogramType(void *DISubprogramRef, unsigned *outLength);
+
++void LLVMExtractDbgDeclareNames(LLVMValueRef Function, unsigned *outCount,
++                                LLVMValueRef **outValues, char ***outNames);
++
+ /* unit -> int */
+ value llvm_debug_metadata_version(value Unit) {
+   return Val_int(LLVMDebugMetadataVersion());
+@@ -353,6 +356,31 @@
+   CAMLreturn(Array);
+ }
+
++value llvm_extract_dbg_declare_names(value Function) {
++  CAMLparam1(Function);
++  CAMLlocal3(Array, Tuple, tmp_string);
++  unsigned Count = 0;
++  LLVMValueRef *Values = NULL;
++  char **Names = NULL;
++
++  LLVMExtractDbgDeclareNames(Value_val(Function), &Count, &Values, &Names);
++
++  Array = caml_alloc_tuple(Count);
++  for (unsigned i = 0; i < Count; ++i) {
++    Tuple = caml_alloc_tuple(2);
++    Store_field(Tuple, 0, to_val(Values[i]));
++    tmp_string = cstr_to_string(Names[i], strlen(Names[i]));
++    Store_field(Tuple, 1, tmp_string);
++    caml_modify(&Field(Array, i), Tuple);
++    free(Names[i]);
++  }
++
++  free(Values);
++  free(Names);
++
++  CAMLreturn(Array);
++}
++
+ value llvm_di_location_get_column(value Location) {
+   return Val_int(LLVMDILocationGetColumn(Metadata_val(Location)));
+ }
+diff --git a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
+--- a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
++++ b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.ml
+@@ -532,6 +532,9 @@
+ external di_subprogram_get_type : Llvm.llmetadata -> string array
+   = "llvm_di_subprogram_get_type"
+
++external extract_dbg_declare_names : Llvm.llvalue -> (Llvm.llvalue * string) array
++  = "llvm_extract_dbg_declare_names"
++
+ external instr_get_debug_loc : Llvm.llvalue -> Llvm.llmetadata option
+   = "llvm_instr_get_debug_loc"
+
+diff --git a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli
+--- a/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli
++++ b/llvm/bindings/ocaml/debuginfo/llvm_debuginfo.mli
+@@ -624,6 +624,10 @@
+ val di_subprogram_get_type : Llvm.llmetadata -> string array
+ (** [di_location_get_type l] Get the types associated with subprogram [m]. *)
+
++val extract_dbg_declare_names : Llvm.llvalue -> (Llvm.llvalue * string) array
++(** [extract_dbg_declare_names f] returns an array of (storage_value, variable_name) pairs
++    from all #dbg_declare records in function [f]. *)
++
+ val instr_get_debug_loc : Llvm.llvalue -> Llvm.llmetadata option
+ (** [instr_get_debug_loc i] Get the debug location for instruction [i]. *)

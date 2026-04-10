@@ -183,31 +183,7 @@ open struct
     let scan_instr i =
       let loc = loc_of_instr i in
       let scope = `Fun (Llvm.block_parent (Llvm.instr_parent i)) in
-      add_sym scope i loc ;
-      match Llvm.instr_opcode i with
-      | Call -> (
-        match Llvm.(value_name (operand i (num_arg_operands i))) with
-        | "llvm.dbg.declare" ->
-            let md = Llvm.(get_mdnode_operands (operand i 0)) in
-            if not (Array.is_empty md) then
-              let metadata_llv = Llvm.operand i 1 in
-              let orig_name = Llvm.operand metadata_llv 1 |> Llvm.string_of_llvalue in
-              let orig_name =
-                match String.chop_prefix orig_name ~pre:"!\"" with
-                | None ->
-                    orig_name
-                | Some name ->
-                    Option.value (String.chop_suffix ~suf:"\"" name) ~default:orig_name
-              in
-              add_sym ~orig_name scope md.(0) loc
-            else
-              Logging.debug Capture Verbose
-                "could not find variable for debug info at %a with metadata %a" Loc.pp loc
-                (List.pp ", " pp_llvalue) (Array.to_list md)
-        | _ ->
-            () )
-      | _ ->
-          ()
+      add_sym scope i loc
     in
     let scan_block b =
       add_sym (`Fun (Llvm.block_parent b)) (Llvm.value_of_block b) Loc.none ;
@@ -216,7 +192,10 @@ open struct
     let scan_function f =
       Llvm.iter_params (fun prm -> add_sym (`Fun f) prm Loc.none) f ;
       add_sym (`Mod (Llvm.global_parent f)) f (loc_of_function f) ;
-      Llvm.iter_blocks scan_block f
+      Llvm.iter_blocks scan_block f ;
+      let dbg_names = Llvm_debuginfo.extract_dbg_declare_names f in
+      Array.iter dbg_names ~f:(fun (storage_llv, orig_name) ->
+          add_sym ~orig_name (`Fun f) storage_llv Loc.none )
     in
     Llvm.iter_globals scan_global m ;
     Llvm.iter_functions scan_function m ;
@@ -1982,8 +1961,6 @@ let translate ?dump_bitcode : string -> Llair.program =
   let llmodule = read_and_parse llcontext input in
   assert (Llvm_analysis.verify_module llmodule |> Option.for_all ~f:invalid_llvm) ;
   Option.for_all ~f:(Llvm_bitwriter.write_bitcode_file llmodule) dump_bitcode |> ignore ;
-  (* TODO: migrate to the new dbg records: https://llvm.org/docs/RemoveDIsDebugInfo.html *)
-  Llvm_debuginfo.set_is_new_dbg_info_format llmodule false ;
   scan_names_and_locs llmodule ;
   let lldatalayout = Llvm_target.DataLayout.of_string (Llvm.data_layout llmodule) in
   check_datalayout llcontext lldatalayout ;

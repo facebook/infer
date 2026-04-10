@@ -45,6 +45,7 @@ patches: [
   "4_LLVMGetGEPSourceElementType.patch"
   "5_getAllocatedType.patch"
   "6_LLVMExtractDISubprogramType.patch"
+  "7_LLVMExtractDbgDeclareNames.patch"
 ]
 synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
@@ -84,5 +85,9 @@ extra-source "5_getAllocatedType.patch" {
 extra-source "6_LLVMExtractDISubprogramType.patch" {
   src: "dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
   checksum: [ "sha256=090e1b70a75c32b378162e82f4e8028a32f5e49cbc004a7dffc27a8d33f8a129"]
+}
+extra-source "7_LLVMExtractDbgDeclareNames.patch" {
+  src: "dependencies/llvm/patches/7_LLVMExtractDbgDeclareNames.patch"
+  checksum: [ "sha256=8617d730825241ae4f90cf2fdaf6dc0b8c1471bc3ed29a6bfbd7aa1cad041619"]
 }
 extra-files: ["install.sh" "sha256=9d4a83c6b661ca4a80289d8a5bc0cddd6dd5d7e25ca9d61a8c358d801e2b8cdf"]
