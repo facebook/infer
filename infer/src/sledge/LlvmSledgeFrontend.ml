@@ -1374,14 +1374,22 @@ let xlate_instr :
             Exp.or_ ~typ old arg
         | Xor ->
             Exp.xor ~typ old arg
-        | Max ->
+        | Max | FMax | FMaximum ->
             choose Exp.gt
-        | Min ->
+        | Min | FMin | FMinimum ->
             choose Exp.lt
         | UMax ->
             choose Exp.ugt
         | UMin ->
             choose Exp.ult
+        | UInc_Wrap ->
+            Exp.add ~typ old (Exp.integer typ Z.one)
+        | UDec_Wrap ->
+            Exp.sub ~typ old (Exp.integer typ Z.one)
+        | USub_Cond ->
+            Exp.sub ~typ old arg
+        | USub_Sat ->
+            Exp.sub ~typ old arg
       in
       emit_inst ~prefix (Inst.atomic_rmw ~reg ~ptr ~exp ~len ~loc)
   | AtomicCmpXchg ->

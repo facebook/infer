@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "llvm"
-version: "19-static-infer"
+version: "21-static-infer"
 synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
 maintainer: "Alan <ahulambda@gmail.com>"
@@ -20,7 +20,7 @@ depends: [
   "conf-bash" {= "1"}
   "conf-cmake" {= "1"}
   "conf-libffi" {= "2.0.0"}
-  "conf-llvm-static" {= "19"}
+  "conf-llvm-static" {= "21"}
   "conf-pkg-config" {= "4"}
   "csexp" {= "1.5.2"}
   "ctypes" {= "0.23.0"}
@@ -90,37 +90,37 @@ patches: [
 
 extra-source "1_add-debug-info.patch" {
   src:
-    "dependencies/llvm/patches/1_add-debug-info.patch"
+    "file:///data/users/nikosg/infer/dependencies/llvm/patches/1_add-debug-info.patch"
   checksum:
     "sha256=562e09a08afc3b4b639ae1b1721ba20d2fe7d2410af11b350602f385b6e1deba"
 }
 extra-source "2_add-LLVMGetAtomicRMWBinOp.patch" {
   src:
-    "dependencies/llvm/patches/2_add-LLVMGetAtomicRMWBinOp.patch"
+    "file:///data/users/nikosg/infer/dependencies/llvm/patches/2_add-LLVMGetAtomicRMWBinOp.patch"
   checksum:
     "sha256=3022e4efccae3b40f67c786e841ab9b0dd918b45b64ff85a7a82e1ad6fe1a321"
 }
 extra-source "3_fix-null-global_initializer.patch" {
   src:
-    "dependencies/llvm/patches/3_fix-null-global_initializer.patch"
+    "file:///data/users/nikosg/infer/dependencies/llvm/patches/3_fix-null-global_initializer.patch"
   checksum:
     "sha256=e2d0faca83e2542454606c544478a2847f27c6dbd9ccf9aa352059e7b1407481"
 }
 extra-source "4_LLVMGetGEPSourceElementType.patch" {
   src:
-    "dependencies/llvm/patches/4_LLVMGetGEPSourceElementType.patch"
+    "file:///data/users/nikosg/infer/dependencies/llvm/patches/4_LLVMGetGEPSourceElementType.patch"
   checksum:
     "sha256=632d24a7bea8076c959f171055d161c7b589b1d961cb5cffda5ebe32602cd85c"
 }
 extra-source "5_getAllocatedType.patch" {
   src:
-    "dependencies/llvm/patches/5_getAllocatedType.patch"
+    "file:///data/users/nikosg/infer/dependencies/llvm/patches/5_getAllocatedType.patch"
   checksum:
     "sha256=a94060caf325bb83592d7563584326300c8afe2b7f1e3b3d6b0a93aa28739fa5"
 }
 extra-source "6_LLVMExtractDISubprogramType.patch" {
   src:
-    "dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
+    "file:///data/users/nikosg/infer/dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
   checksum:
     "sha256=090e1b70a75c32b378162e82f4e8028a32f5e49cbc004a7dffc27a8d33f8a129"
 }

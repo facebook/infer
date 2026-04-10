@@ -11,16 +11,15 @@ depends: [
   "conf-bash" {build}
 ]
 depexts: [
-  ["llvm@19" "zstd"] {os-distribution = "homebrew" & os = "macos"}
-  ["llvm-19"] {os-distribution = "macports" & os = "macos"}
-  ["llvm-19-dev" "zlib1g-dev" "libzstd-dev"] {os-family = "debian"}
-  ["llvm19-dev"] {os-distribution = "alpine"}
-  ["llvm19"] {os-family = "arch"}
-  ["llvm19-devel"] {os-family = "suse" | os-family = "opensuse"}
-  ["llvm19-devel"] {os-distribution = "fedora" & os-version >= "41"}
-  ["llvm-devel"] {os-distribution = "fedora" & os-version = "40"}
-  ["llvm19-devel" "epel-release"] {os-distribution = "centos"}
-  ["devel/llvm19"] {os = "freebsd"}
+  ["llvm@21" "zstd"] {os-distribution = "homebrew" & os = "macos"}
+  ["llvm-21"] {os-distribution = "macports" & os = "macos"}
+  ["llvm-21-dev" "zlib1g-dev" "libzstd-dev"] {os-family = "debian"}
+  ["llvm21-dev"] {os-distribution = "alpine"}
+  ["llvm21"] {os-family = "arch"}
+  ["llvm21-devel"] {os-family = "suse" | os-family = "opensuse"}
+  ["llvm21-devel"] {os-distribution = "fedora"}
+  ["llvm21-devel" "epel-release"] {os-distribution = "centos"}
+  ["devel/llvm21"] {os = "freebsd"}
 ]
 synopsis: "Virtual package relying on llvm static library installation"
 flags: conf

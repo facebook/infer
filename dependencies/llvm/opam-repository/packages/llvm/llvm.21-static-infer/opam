@@ -34,7 +34,7 @@ depends: [
   "ctypes" {>= "0.4"}
   "ctypes-foreign"
   "ocamlfind" {build}
-  "conf-llvm-static" {build & = "19"}
+  "conf-llvm-static" {build & = "21"}
   "conf-cmake" {build}
 ]
 patches: [
@@ -50,9 +50,9 @@ synopsis: "The OCaml bindings distributed with LLVM"
 description: "Note: LLVM should be installed first."
 url {
   src:
-    "https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.4/llvm-project-19.1.4.src.tar.xz"
+    "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.6/llvm-project-21.1.6.src.tar.xz"
   checksum: [
-    "sha256=3aa2d2d2c7553164ad5c6f3b932b31816e422635e18620c9349a7da95b98d811"
+    "sha256=ae67086eb04bed7ca11ab880349b5f1ab6f50e1b88cda376eaf8a845b935762b"
   ]
 }
 extra-source "0_AddOCaml.cmake.patch" {
