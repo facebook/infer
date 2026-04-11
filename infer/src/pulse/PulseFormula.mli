@@ -185,7 +185,7 @@ val as_constant_string : t -> Var.t -> string option
 
 val is_known_non_pointer : t -> Var.t -> bool
 
-val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
+val is_manifest : ?diagnostic:PulseDiagnostic.t -> is_allocated:(Var.t -> bool) -> t -> bool
 (** Some types or errors detected by Pulse require that the state be *manifest*, which corresponds
     to the fact that the error can happen in *any reasonable* calling context (see below). If not,
     the error is flagged as *latent* and not reported until it becomes manifest.

@@ -103,7 +103,7 @@ val prune_eq_one :
 
 val is_known_zero : AbductiveDomain.t -> AbstractValue.t -> bool
 
-val is_manifest : AbductiveDomain.Summary.t -> bool
+val is_manifest : ?diagnostic:Diagnostic.t -> AbductiveDomain.Summary.t -> bool
 (** whether the state is *manifest* according to {!PulseFormula.is_manifest}, with an additional
     condition that some equalities path conditions may be represented implicitly by having several
     edges pointing to the same value in the precondition; if the pre exhibits sharing that means
