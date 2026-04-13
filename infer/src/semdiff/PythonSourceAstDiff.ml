@@ -92,14 +92,11 @@ let parse_rules cc str_rules : Rewrite.Rule.t list =
 
 
 let gen_all_rules cc : Rewrite.Rule.t list =
-  CC.set_app_right_neutral cc (mk_const cc "_epsilon_") ;
   CC.set_diff cc ~diff_header:(CC.mk_header cc diff_header_name) ~resolved:(mk_const cc "__DONE__") ;
   parse_rules cc
-    [ (* temporarily disabled: import erasure causes spurious cross-diffs
-    "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> _epsilon_"
-    ; "(Import (names ?N)) ==> _epsilon_"
-    ; *)
-      "(@DIFF Null ?X) ==> ?X"
+    [ "(List ... (ImportFrom (level ?L) (module ?M) (names ?N)) ...) ==> (List ...)"
+    ; "(List ... (Import (names ?N)) ...) ==> (List ...)"
+    ; "(@DIFF Null ?X) ==> ?X"
     ; "(@DIFF (id Any) (id ?X)) ==> __DONE__"
     ; "(@DIFF (id Dict) (id dict)) ==> __DONE__"
     ; "(@DIFF (id FrozenSet) (id frozenset)) ==> __DONE__"

@@ -238,15 +238,14 @@ def factorial(n):
   let equiv = are_ast_equivalent ast ast_with_ignore [] in
   F.printf "ast == ast_with_ignore? %b (no rules)\n" equiv ;
   let rules : Rewrite.Rule.t list =
-    [ parse_rule "(List ... Null ...) ==> (List ...)"
-    ; parse_rule
-        {|
+    [ parse_rule
+        {| (List ...
               (Expr
                 (value
                   (Call
                     (args List)
                     (func (Name (ctx Load) (id ignore_me)))
-                    (keywords List)))) ==> Null |}
+                    (keywords List)))) ...) ==> (List ...) |}
     ]
   in
   let equiv = are_ast_equivalent ast ast_with_ignore rules in
@@ -256,12 +255,14 @@ def factorial(n):
     {|
     ast == ast_with_ignore? false (no rules)
     ast == ast_with_ignore? true
-     with rules: {(List ... Null ...) ==> (List ...)
-                  (Expr
-                      (value
-                          (Call (args List) (func (Name (ctx Load) (id ignore_me))) (keywords List))))
-                  ==>
-                  Null}
+     with rules: {(List
+                      ... (Expr
+                              (value
+                                  (Call
+                                      (args List) (func (Name (ctx Load) (id ignore_me)))
+                                      (keywords
+                                          List)))) ...) ==>
+                  (List ...)}
     |}]
 
 
@@ -284,9 +285,8 @@ def greet(name):
 |}
   in
   let rules : Rewrite.Rule.t list =
-    [ parse_rule "(List ... Null ...) ==> (List ...)"
-    ; parse_rule "(ImportFrom (level ?L) (module typing) (names ?N)) ==> Null"
-    ; parse_rule "(Import (names ?N)) ==> Null" ]
+    [ parse_rule "(List ... (ImportFrom (level ?L) (module ?M) (names ?N)) ...) ==> (List ...)"
+    ; parse_rule "(List ... (Import (names ?N)) ...) ==> (List ...)" ]
   in
   let equiv = are_ast_equivalent ast1 ast2 rules in
   F.printf "ast1 == ast2? %b@." equiv ;

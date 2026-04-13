@@ -160,18 +160,20 @@ module Pattern = struct
         if not (CC.is_equiv cc head (header :> CC.Atom.t)) then acc
         else
           (* For each child, either match it against the pattern (and remove it)
-             or keep it. At the end, rebuild with kept children only. *)
-          let rec process acc subst kept remaining =
+             or keep it. At the end, rebuild with kept children only.
+             Each child is matched independently (fresh substitution) so that
+             multiple matching children are all removed in one pass. *)
+          let rec process acc kept remaining =
             match remaining with
             | [] ->
                 CC.Atom.Set.add (CC.mk_term cc header (List.rev kept)) acc
             | child :: rest ->
                 let child' = CC.representative cc child in
-                let substs = e_match_at_loop ~debug:false cc subst arg child' in
-                if SubstSet.is_empty substs then process acc subst (child' :: kept) rest
-                else SubstSet.fold (fun subst acc -> process acc subst kept rest) substs acc
+                let substs = e_match_at_loop ~debug:false cc Var.Map.empty arg child' in
+                if SubstSet.is_empty substs then process acc (child' :: kept) rest
+                else process acc kept rest
           in
-          process acc Var.Map.empty [] children )
+          process acc [] children )
     |> CC.Atom.Set.elements
 
 
@@ -230,27 +232,27 @@ module Rule = struct
         0
 
 
-  let rewrite_app_right_neutral ~debug cc =
-    if CC.app_right_neutral_exists cc then
-      CC.iter_app_roots cc ~f:(fun atom ->
-          let atom' = CC.representative cc atom in
-          let app_equations = CC.equiv_terms cc atom' in
-          List.iter app_equations ~f:(fun {CC.enode= {head; children}} ->
-              let filtered =
-                List.filter children ~f:(fun child -> not (CC.is_app_right_neutral cc child))
-              in
-              if
-                List.length filtered < List.length children
-                && not (CC.is_equiv cc atom' (head :> CC.Atom.t))
-              then (
-                if debug then
-                  F.printf "rewrite app_right_neutral on atom %a@." (CC.pp_nested_term cc) atom ;
-                CC.merge cc atom' (CC.Enode {head; children= filtered}) ) ) )
-
-
   (* Diff congruence: directly decompose @DIFF(f(a0,...,an), f(b0,...,bn))
      into f(@DIFF(a0,b0), ..., @DIFF(an,bn)) in the e-graph.
-     Also resolves @DIFF(x, x) to [resolved]. *)
+     Also resolves @DIFF(x, x) to [resolved].
+     When an equivalence class contains multiple enodes with the same header
+     (e.g. a list before and after ellipsis reduction), we only use the
+     smallest (fewest children) to avoid cross-pairing intermediates. *)
+
+  (** For a list of app_equations, keep only the one with fewest children per header. *)
+  let smallest_per_header cc eqs =
+    List.fold eqs ~init:[] ~f:(fun acc {CC.enode= {head; children} as enode} ->
+        let head' = CC.representative cc head in
+        match List.Assoc.find acc ~equal:phys_equal head' with
+        | None ->
+            (head', enode) :: acc
+        | Some {CC.children= prev_children} ->
+            if List.length children < List.length prev_children then
+              List.Assoc.add acc ~equal:phys_equal head' enode
+            else acc )
+    |> List.map ~f:snd
+
+
   let rewrite_diff_congruence ~debug cc =
     match CC.get_diff cc with
     | None ->
@@ -269,10 +271,10 @@ module Rule = struct
                     if debug then F.printf "diff identity: %a@." (CC.pp_nested_term cc) diff_atom ;
                     CC.merge cc diff_atom' (CC.Atom resolved) )
                   else
-                    let left_eqs = CC.equiv_terms cc left' in
-                    let right_eqs = CC.equiv_terms cc right' in
-                    List.iter left_eqs ~f:(fun {CC.enode= {head= lh; children= lc}} ->
-                        List.iter right_eqs ~f:(fun {CC.enode= {head= rh; children= rc}} ->
+                    let left_enodes = CC.equiv_terms cc left' |> smallest_per_header cc in
+                    let right_enodes = CC.equiv_terms cc right' |> smallest_per_header cc in
+                    List.iter left_enodes ~f:(fun {CC.head= lh; children= lc} ->
+                        List.iter right_enodes ~f:(fun {CC.head= rh; children= rc} ->
                             let lh' = CC.representative cc lh in
                             let rh' = CC.representative cc rh in
                             if
@@ -310,7 +312,6 @@ module Rule = struct
             CC.iter_term_roots cc ellipsis.header ~f:(fun atom ->
                 Pattern.e_match_ellipsis_at cc ellipsis atom
                 |> List.iter ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ) ) ;
-    rewrite_app_right_neutral ~debug cc ;
     rewrite_diff_congruence ~debug cc ;
     CC.get_update_count cc
 

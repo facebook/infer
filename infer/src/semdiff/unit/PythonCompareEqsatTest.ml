@@ -17,7 +17,6 @@
      "accept any type change in annotation/returns keys" rule that eqsat lacks
      (test_change_fun_type_ok, test_change_async_fun_type_ok, test_change_assign_type_ok)
    - Missing rules:
-     * Optional[T] <-> T | None rewrite
      * Assign -> AnnAssign for field assignments (test_field_assign_type_good)
      * Quoted type annotations: "Tree" <-> Tree (type_annotation_with_quotes_good)
      * User-defined type renames (test_change_type_case_sensitive_ok)
@@ -157,7 +156,7 @@ from typing import Any
 def greet(name: Any) -> str:
     return f"Hello, {name}!"
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_with_missing_type_good" =
@@ -185,7 +184,7 @@ import urllib.parse
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_import_dir_alias_good" =
@@ -199,7 +198,7 @@ import urllib.parse as parse
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_import_from_dir_good" =
@@ -213,7 +212,7 @@ from urllib.parse import quote
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_import_from_dir_alias_good" =
@@ -227,7 +226,7 @@ from urllib.parse import quote as q
 def main():
     print("Hello World!")
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_import_from_dir_alias_bad" =
@@ -260,7 +259,7 @@ def greet(name: str) -> str:
 print(greet("Alice"))
 print(greet.__annotations__)
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_change_async_fun_param_type_good" =
@@ -294,7 +293,7 @@ from typing import Callable
 square: Callable[[int], int] = lambda x: x * x
 print(square(5))
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_change_async_fun_body_bad" =
@@ -423,7 +422,7 @@ from typing import Callable
 
 def foo(f: Callable[..., int]) -> None: pass
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_change_type_case_sensitive_ret_good" =
@@ -434,7 +433,7 @@ def foo() -> Dict[str, str]: pass
     {|
 def foo() -> dict[str, str]: pass
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_change_type_case_sensitive_param_good" =
@@ -445,7 +444,7 @@ def foo(x: Dict[str, str]) -> None: pass
     {|
 def foo(x: dict[str, str]) -> None: pass
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 (* Disagrees with DirectRewrite: eqsat has no rule for user-defined type renames.
@@ -526,9 +525,8 @@ def foo() -> None:
   [%expect {| different |}]
 
 
-(* Disagrees with DirectRewrite: eqsat has no Optional[T] <-> T|None rewrite
-   rule. Adding one (Subscript(Optional,T) ==> BinOp(T,BitOr,None)) would fix
-   this case. *)
+(* Agrees with DirectRewrite: the Optional[T] <-> T|None rewrite rule
+   (Subscript(Optional,T) ==> BinOp(T,BitOr,None)) handles this case. *)
 let%expect_test "test_change_optional_type_good" =
   check_equiv {|
 def foo(x: Optional[int]) -> None: pass
@@ -539,9 +537,9 @@ def foo(x: int | None) -> None: pass
   [%expect {| equivalent |}]
 
 
-(* Disagrees with DirectRewrite: same missing Optional rule, plus even with it,
-   Optional[int] rewrites to int|None which differs from str|None. DirectRewrite
-   accepts this via its blanket type-change accept rule. *)
+(* Disagrees with DirectRewrite: Optional[int] rewrites to int|None which
+   differs from str|None. DirectRewrite accepts this via its blanket
+   type-change accept rule. *)
 let%expect_test "test_change_optional_type_ok" =
   check_equiv {|
 def foo(x: Optional[int]) -> None: pass
@@ -591,7 +589,7 @@ def foo() -> Dict[str, Dict[str, Set[str]]]: pass
     {|
 def foo() -> dict[str, dict[str, set[str]]]: pass
 |} ;
-  [%expect {| different |}]
+  [%expect {| equivalent |}]
 
 
 let%expect_test "test_change_type_case_sensitive_rec_bad" =

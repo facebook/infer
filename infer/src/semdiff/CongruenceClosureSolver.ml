@@ -162,7 +162,6 @@ type t =
   ; input_app_equations: enode option Dynarray.t
   ; term_roots: Atom.Set.t Dynarray.t
   ; mutable app_roots: Atom.Set.t
-  ; mutable app_right_neutral: Atom.t option
   ; mutable diff: (header * Atom.t) option (* diff_header, resolved *)
   ; hashcons: Atom.state
   ; mutable update_count: int
@@ -179,15 +178,12 @@ let init ~debug =
   ; input_app_equations= Dynarray.create ()
   ; term_roots= Dynarray.create ()
   ; app_roots= Atom.Set.empty
-  ; app_right_neutral= None
   ; diff= None
   ; update_count= 0
   ; hashcons= Atom.init ()
   ; headers_with_arity= HeaderSet.empty
   ; debug }
 
-
-let set_app_right_neutral state atom = state.app_right_neutral <- Some atom
 
 let set_diff state ~diff_header ~resolved = state.diff <- Some (diff_header, resolved)
 
@@ -214,12 +210,6 @@ let is_equiv state atom1 atom2 =
   let atom2' = representative state atom2 in
   phys_equal atom1' atom2'
 
-
-let is_app_right_neutral state atom =
-  Option.exists state.app_right_neutral ~f:(fun atom_neutral -> is_equiv state atom_neutral atom)
-
-
-let app_right_neutral_exists state = Option.is_some state.app_right_neutral
 
 let rec depth state atom =
   let parent = Dynarray.get state.repr atom.Atom.index in

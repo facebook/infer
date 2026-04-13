@@ -52,12 +52,6 @@ val iter_app_roots : t -> f:(Atom.t -> unit) -> unit
 
 val iter_term_roots : t -> header -> f:(Atom.t -> unit) -> unit
 
-val set_app_right_neutral : t -> Atom.t -> unit
-
-val app_right_neutral_exists : t -> bool
-
-val is_app_right_neutral : t -> Atom.t -> bool
-
 val set_diff : t -> diff_header:header -> resolved:Atom.t -> unit
 
 val get_diff : t -> (header * Atom.t) option
