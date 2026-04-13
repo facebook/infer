@@ -20,6 +20,7 @@ module Var = Llair2TextualVar
 module Proc = Llair2TextualProc
 module Models = Llair2TextualModels
 module IdentMap = Textual.Ident.Map
+module Utils = Llair2TextualUtils
 
 type module_state = ModuleState.t
 
@@ -242,14 +243,30 @@ let should_add_deref ~proc_state exp =
       false
 
 
-let update_id_return_type ~(proc_state : ProcState.t) proc id =
-  let proc_decl_opt =
-    Textual.QualifiedProcName.Map.find_opt proc proc_state.module_state.proc_map
-  in
+let update_id_return_type ~(proc_state : ProcState.t) (proc : Textual.QualifiedProcName.t) id =
+  let module_state = proc_state.module_state in
+  let proc_decl_opt = Textual.QualifiedProcName.Map.find_opt proc module_state.proc_map in
   match (id, proc_decl_opt) with
   | Some id, Some proc_decl ->
       let return_typ = proc_decl.Textual.ProcDecl.result_type in
-      ProcState.update_ids_types ~proc_state id return_typ
+      let refined_typ =
+        (* If we have a generic Swift type, try to "look inside" the mangled name *)
+        if Textual.Typ.equal return_typ.Textual.Typ.typ Textual.Typ.any_type_swift then
+          let proc_name_str = Textual.ProcName.to_string proc.name in
+          match Utils.extract_type_from_mangled_proc proc_name_str with
+          | Some class_name ->
+              (* Use the central struct_name_of_mangled_name to reconcile with the module *)
+              let type_name =
+                TypeName.struct_name_of_mangled_name module_state.lang
+                  ~mangled_map:(Some module_state.mangled_map) module_state.struct_map class_name
+              in
+              let struct_typ = Textual.Typ.Struct type_name in
+              Textual.Typ.mk_without_attributes (Textual.Typ.mk_ptr struct_typ)
+          | None ->
+              return_typ
+        else return_typ
+      in
+      ProcState.update_ids_types ~proc_state id refined_typ
   | _ ->
       ()
 

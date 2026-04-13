@@ -12,14 +12,14 @@ func testObjCClassMethod_bad() {
 }
 
 // --- 2. INSTANCE METHOD (-) BRIDGE ---
-func testObjCInstanceMethod_good_fp() {
+func testObjCInstanceMethod_good() {
     let device = LegacyHardware()
     let status = device.getBatteryStatus()
-    assert(status == 88)
+    assert(status == 75)
 }
 
 func testObjCInstanceMethod_bad() {
     let device = LegacyHardware()
     let status = device.getBatteryStatus()
-    assert(status == 0)
+    assert(status != 75)
 }

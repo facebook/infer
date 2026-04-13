@@ -11,6 +11,7 @@ module TypeName = Llair2TextualTypeName
 module Field = Llair2TextualField
 module ModuleState = Llair2TextualState.ModuleState
 module ProcState = Llair2TextualState.ProcState
+module State = Llair2TextualState
 module Globals = Llair2TextualGlobals
 module Var = Llair2TextualVar
 module IdentMap = Textual.Ident.Map
@@ -309,8 +310,16 @@ let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
         | Some name ->
             Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string name)
         | None -> (
-            (* Fallback to LLAIR type environment if syntactic mapping is missing *)
-            let receiver_type_opt = List.hd arg_types in
+            (* 1. Check our IdentMap first (unwrap annotated to simple Textual.Typ.t) *)
+            let manual_type_lookup =
+              receiver_id_opt
+              |> Option.bind ~f:(fun id -> State.IdentMap.find_opt id proc_state.ids_types)
+              |> Option.map ~f:(fun (annotated : Textual.Typ.annotated) -> annotated.typ)
+            in
+            (* 2. Use manual lookup if available, otherwise fallback to arg_types *)
+            let receiver_type_opt =
+              match manual_type_lookup with Some t -> Some (Some t) | None -> List.hd arg_types
+            in
             match receiver_type_opt with
             | Some (Some (Textual.Typ.Ptr ((Struct type_name as struct_typ), _)))
               when not (Textual.Typ.equal struct_typ Textual.Typ.any_type_swift) ->
