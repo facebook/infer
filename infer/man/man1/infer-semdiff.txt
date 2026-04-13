@@ -57,6 +57,10 @@ OPTIONS
            Activates: Use experimental equality saturation rewriting engine.
            (Conversely: --no-semdiff-experimental-eqsat-engine)
 
+       --semdiff-from-json path
+           Read pre-parsed AST pairs from a JSON file (skips parsing, for
+           benchmarking core engines).
+
        --semdiff-previous path
            Previous python program to be analysed by semdiff
 

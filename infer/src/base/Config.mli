@@ -828,6 +828,8 @@ val semdiff_test_actions : [`Currify] list
 
 val semdiff_test_files_index : string option
 
+val semdiff_from_json : string option
+
 val shrink_analysis_db : bool
 
 val siof_check_iostreams : bool

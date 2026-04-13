@@ -428,18 +428,22 @@ let report_diff () =
 
 let sem_diff () =
   let open Config in
-  match (Option.both semdiff_previous semdiff_current, Config.semdiff_test_files_index) with
-  | None, None ->
+  match
+    ( Option.both semdiff_previous semdiff_current
+    , Config.semdiff_test_files_index
+    , Config.semdiff_from_json )
+  with
+  | None, None, None ->
       L.die UserError
-        "Expected '--semdiff-current' and '--semdiff-previous' to be specified, or \
-         '--semdiff-test-files-index' for tests."
-  | Some (previous_file, current_file), None ->
+        "Expected '--semdiff-current' and '--semdiff-previous', '--semdiff-test-files-index', or \
+         '--semdiff-from-json' to be specified."
+  | Some (previous_file, current_file), None, None ->
       let config_files = Config.semdiff_configuration in
       Semdiff.semdiff ~config_files ~previous_file ~current_file ;
       Option.iter Config.issues_tests ~f:(fun out_path ->
           let json_path = ResultsDir.get_path SemDiff in
           Diff.write_from_json ~json_path ~out_path )
-  | None, Some index_filename -> (
+  | None, Some index_filename, None -> (
       let f node =
         List.iter Config.semdiff_test_actions ~f:(function `Currify ->
             PythonSourceAstDiff.TestOnly.store_ast node |> ignore )
@@ -450,7 +454,10 @@ let sem_diff () =
       | Error errors ->
           if Config.semdiff_test_show_syntax_errors then
             List.iter errors ~f:(L.user_error "%a" PythonSourceAst.pp_error) )
-  | Some _, Some _ ->
+  | None, None, Some json_path ->
+      let config_files = Config.semdiff_configuration in
+      Semdiff.semdiff_from_json ~config_files json_path
+  | _ ->
       L.die UserError
-        "option '--semdiff-test-files-index' can not be used at the same time than \
-         '--semdiff-current' and '--semdiff-previous'."
+        "Options '--semdiff-current'/'--semdiff-previous', '--semdiff-test-files-index', and \
+         '--semdiff-from-json' are mutually exclusive."

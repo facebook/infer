@@ -26,6 +26,8 @@ val pp_explicit : F.formatter -> explicit -> unit
 
 val dummy_explicit : explicit
 
+val pair_to_json : previous_file:string -> current_file:string -> explicit list -> Yojson.Safe.t
+
 val write_json :
   previous_file:string -> current_file:string -> out_path:string -> explicit list -> unit
 

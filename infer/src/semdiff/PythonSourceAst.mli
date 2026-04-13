@@ -72,6 +72,8 @@ module Node : sig
   val to_str : ?indent:int -> ?depth:int -> t -> string
 
   val pp : Format.formatter -> t -> unit
+
+  val of_yojson : Yojson.Safe.t -> t
 end
 
 type error

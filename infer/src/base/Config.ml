@@ -3336,6 +3336,12 @@ and semdiff_test_files_index =
     "A file containing a list of newline-separated Python files to run SemDiff tests."
 
 
+and semdiff_from_json =
+  CLOpt.mk_path_opt ~long:"semdiff-from-json" ~meta:"path"
+    ~in_help:InferCommand.[(SemDiff, manual_generic)]
+    "Read pre-parsed AST pairs from a JSON file (skips parsing, for benchmarking core engines)."
+
+
 and shrink_analysis_db =
   CLOpt.mk_bool ~long:"shrink-analysis-db"
     ~in_help:InferCommand.[(Analyze, manual_generic)]
@@ -4928,6 +4934,8 @@ and semdiff_configuration = RevList.to_list !semdiff_configuration
 and semdiff_test_files_index = !semdiff_test_files_index
 
 and semdiff_test_show_syntax_errors = !semdiff_test_show_syntax_errors
+
+and semdiff_from_json = !semdiff_from_json
 
 and shrink_analysis_db = !shrink_analysis_db
 

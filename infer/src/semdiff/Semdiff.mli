@@ -17,3 +17,5 @@ val python_ast_diff :
   -> Diff.explicit list
 
 val semdiff : config_files:string list -> previous_file:string -> current_file:string -> unit
+
+val semdiff_from_json : config_files:string list -> string -> unit

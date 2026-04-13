@@ -144,3 +144,17 @@
  (deps specialized_call_graph.atd)
  (action
   (run atdgen -t %{deps})))
+
+; ATD for semdiff_batch
+
+(rule
+ (targets semdiff_batch_j.ml semdiff_batch_j.mli)
+ (deps semdiff_batch.atd)
+ (action
+  (run atdgen -j -j-std %{deps})))
+
+(rule
+ (targets semdiff_batch_t.ml semdiff_batch_t.mli)
+ (deps semdiff_batch.atd)
+ (action
+  (run atdgen -t %{deps})))

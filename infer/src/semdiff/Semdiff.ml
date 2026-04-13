@@ -38,6 +38,16 @@ let is_hack_file filename =
   String.is_suffix filename ~suffix:".php" || String.is_suffix filename ~suffix:".hack"
 
 
+let resolve_config ~config_files ~is_hack =
+  match config_files with
+  | [] ->
+      if is_hack then HackSemdiffConfig.hack_type_annotations_config
+      else PythonSemdiffConfig.missing_python_type_annotations_config
+  | files ->
+      List.map files ~f:PythonConfigParser.parse_file
+      |> List.reduce_exn ~f:SemdiffDirectEngine.Rules.union
+
+
 let semdiff ~config_files ~previous_file ~current_file =
   let debug = Config.debug_mode in
   let previous_src = In_channel.with_file previous_file ~f:In_channel.input_all in
@@ -46,18 +56,7 @@ let semdiff ~config_files ~previous_file ~current_file =
     if Config.semdiff_experimental_eqsat_engine then
       semdiff_with_eqsat ~debug ~previous_file ~current_file previous_src current_src
     else
-      let default_config =
-        if is_hack_file current_file then HackSemdiffConfig.hack_type_annotations_config
-        else PythonSemdiffConfig.missing_python_type_annotations_config
-      in
-      let config =
-        match config_files with
-        | [] ->
-            default_config
-        | files ->
-            List.map files ~f:PythonConfigParser.parse_file
-            |> List.reduce_exn ~f:SemdiffDirectEngine.Rules.union
-      in
+      let config = resolve_config ~config_files ~is_hack:(is_hack_file current_file) in
       if is_hack_file current_file then
         hack_ast_diff ~debug ~config ~previous_file ~current_file previous_src current_src
       else
@@ -66,3 +65,29 @@ let semdiff ~config_files ~previous_file ~current_file =
   in
   let out_path = ResultsDir.get_path SemDiff in
   Diff.write_json ~previous_file ~current_file ~out_path diffs
+
+
+let semdiff_from_json ~config_files json_path =
+  let debug = Config.debug_mode in
+  let input = Semdiff_batch_j.semdiff_input_of_string (In_channel.read_all json_path) in
+  let is_hack = String.equal input.language "hack" in
+  let config = resolve_config ~config_files ~is_hack in
+  let results =
+    List.map input.pairs ~f:(fun (pair : Semdiff_batch_t.semdiff_pair) ->
+        let parse_side (side : Semdiff_batch_t.semdiff_file) =
+          (side.filename, side.source, PythonSourceAst.Node.of_yojson side.ast)
+        in
+        let prev_file, prev_src, prev_ast = parse_side pair.previous in
+        let curr_file, curr_src, curr_ast = parse_side pair.current in
+        let diffs =
+          if Config.semdiff_experimental_eqsat_engine then
+            if PythonSourceAstDiff.check_equivalence ~debug prev_ast curr_ast then []
+            else [Diff.dummy_explicit]
+          else
+            SemdiffDirectEngine.ast_diff ~debug ~config ~previous_content:prev_src
+              ~current_content:curr_src prev_ast curr_ast
+        in
+        Diff.pair_to_json ~previous_file:prev_file ~current_file:curr_file diffs )
+  in
+  let out_path = ResultsDir.get_path SemDiff in
+  Out_channel.with_file out_path ~f:(fun oc -> Yojson.Safe.to_channel oc (`List results))

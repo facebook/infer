@@ -1,0 +1,24 @@
+(*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
+type json_ast <ocaml module="Yojson.Safe" t="t"> = abstract
+
+type semdiff_file = {
+  filename: string;
+  source: string;
+  ast: json_ast;
+}
+
+type semdiff_pair = {
+  previous: semdiff_file;
+  current: semdiff_file;
+}
+
+type semdiff_input = {
+  language: string;
+  pairs: semdiff_pair list;
+}

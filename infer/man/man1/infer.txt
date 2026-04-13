@@ -2172,6 +2172,11 @@ OPTIONS
            (Conversely: --no-semdiff-experimental-eqsat-engine)
            See also infer-semdiff(1).
 
+       --semdiff-from-json path
+           Read pre-parsed AST pairs from a JSON file (skips parsing, for
+           benchmarking core engines).
+           See also infer-semdiff(1).
+
        --semdiff-previous path
            Previous python program to be analysed by semdiff
            See also infer-semdiff(1).
