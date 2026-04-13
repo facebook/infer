@@ -73,7 +73,7 @@ let%expect_test "" =
   [%expect
     {|
     size=7
-    max_depth=3
+    max_depth=2
     a: {h,b,d,c,e,a} (repr=a)
     b: {b} (repr=a)
     c: {d,c} (repr=a)
@@ -236,7 +236,7 @@ let%expect_test "in order" =
   [%expect {|
     c1=c2? true
     size=32
-    max_depth=3
+    max_depth=1
     |}]
 
 
@@ -257,5 +257,5 @@ let%expect_test "out of order" =
   [%expect {|
     c1=c2? true
     size=32
-    max_depth=6
+    max_depth=1
     |}]

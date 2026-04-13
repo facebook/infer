@@ -200,9 +200,13 @@ let get_update_count state = state.update_count
 let incr_update_count state = state.update_count <- state.update_count + 1
 
 let rec representative state atom =
-  (* TODO: path compression *)
   let parent = Dynarray.get state.repr atom.Atom.index in
-  if phys_equal parent atom then atom else representative state parent
+  if phys_equal parent atom then atom
+  else
+    let root = representative state parent in
+    (* path compression: point directly to root *)
+    if not (phys_equal root parent) then Dynarray.set state.repr atom.Atom.index root ;
+    root
 
 
 let is_equiv state atom1 atom2 =
