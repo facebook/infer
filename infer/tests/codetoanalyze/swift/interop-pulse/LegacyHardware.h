@@ -12,3 +12,7 @@
 // Standard Instance Method (-)
 - (int)getBatteryStatus;
 @end
+
+@interface SomeOtherHardware : NSObject
+- (int)getBatteryStatus;
+@end
