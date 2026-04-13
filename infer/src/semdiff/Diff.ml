@@ -128,13 +128,21 @@ let pp_explicit = F.pp_print_string
 
 let dummy_explicit = "something wrong"
 
+let pair_to_json_with_outcome ~previous_file ~current_file ~outcome =
+  `Assoc
+    [ ("previous", `String previous_file)
+    ; ("current", `String current_file)
+    ; ("outcome", `String outcome)
+    ; ("diff", `List []) ]
+
+
 let pair_to_json ~previous_file ~current_file diffs =
   let outcome = if List.is_empty diffs then "equal" else "different" in
   `Assoc
     [ ("previous", `String previous_file)
     ; ("current", `String current_file)
     ; ("outcome", `String outcome)
-    ; ("diff", `List (List.map ~f:(fun diff -> `String diff) diffs)) ]
+    ; ("diff", `List (List.map ~f:(fun d -> `String d) diffs)) ]
 
 
 let write_json ~previous_file ~current_file ~out_path diffs =

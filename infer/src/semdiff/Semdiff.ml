@@ -79,15 +79,19 @@ let semdiff_from_json ~config_files json_path =
         in
         let prev_file, prev_src, prev_ast = parse_side pair.previous in
         let curr_file, curr_src, curr_ast = parse_side pair.current in
-        let diffs =
+        match
           if Config.semdiff_experimental_eqsat_engine then
             if PythonSourceAstDiff.check_equivalence ~debug prev_ast curr_ast then []
             else [Diff.dummy_explicit]
           else
             SemdiffDirectEngine.ast_diff ~debug ~config ~previous_content:prev_src
               ~current_content:curr_src prev_ast curr_ast
-        in
-        Diff.pair_to_json ~previous_file:prev_file ~current_file:curr_file diffs )
+        with
+        | diffs ->
+            Diff.pair_to_json ~previous_file:prev_file ~current_file:curr_file diffs
+        | exception CongruenceClosureRewrite.Rule.FuelExhausted _ ->
+            Diff.pair_to_json_with_outcome ~previous_file:prev_file ~current_file:curr_file
+              ~outcome:"fuel_exhausted" )
   in
   let out_path = ResultsDir.get_path SemDiff in
   Out_channel.with_file out_path ~f:(fun oc -> Yojson.Safe.to_channel oc (`List results))

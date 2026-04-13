@@ -318,7 +318,7 @@ module Rule = struct
 
   exception FuelExhausted of {round_count: int}
 
-  let full_rewrite ?(debug = false) ?(fuel = 1 lsl 12) cc rules =
+  let full_rewrite ?(debug = false) ?(fuel = 1 lsl 16) cc rules =
     let rec loop fuel round_count =
       if fuel <= 0 then raise (FuelExhausted {round_count})
       else (
