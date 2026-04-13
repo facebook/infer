@@ -163,6 +163,7 @@ type t =
   ; term_roots: Atom.Set.t Dynarray.t
   ; mutable app_roots: Atom.Set.t
   ; mutable app_right_neutral: Atom.t option
+  ; mutable diff: (header * Atom.t) option (* diff_header, resolved *)
   ; hashcons: Atom.state
   ; mutable update_count: int
   ; mutable headers_with_arity: HeaderSet.t
@@ -179,6 +180,7 @@ let init ~debug =
   ; term_roots= Dynarray.create ()
   ; app_roots= Atom.Set.empty
   ; app_right_neutral= None
+  ; diff= None
   ; update_count= 0
   ; hashcons= Atom.init ()
   ; headers_with_arity= HeaderSet.empty
@@ -186,6 +188,10 @@ let init ~debug =
 
 
 let set_app_right_neutral state atom = state.app_right_neutral <- Some atom
+
+let set_diff state ~diff_header ~resolved = state.diff <- Some (diff_header, resolved)
+
+let get_diff state = state.diff
 
 let reset_update_count state = state.update_count <- 0
 
@@ -254,6 +260,8 @@ let set_parents {parents; debug} ({Atom.index} as atom) l =
 let get_input_app_equation {input_app_equations} atom =
   Dynarray.get input_app_equations atom.Atom.index
 
+
+let get_enode = get_input_app_equation
 
 let set_input_app_equation {input_app_equations} atom pair =
   Dynarray.set input_app_equations atom.Atom.index (Some pair)
@@ -397,6 +405,8 @@ let mk_header = mk_atom
 let pp_header = Atom.pp
 
 let representative_of_header = representative
+
+let unsafe_header_of_atom atom = atom
 
 let mk_term state head children =
   match children with

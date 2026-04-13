@@ -36,6 +36,8 @@ val mk_header : t -> string -> header
 
 val mk_term : t -> header -> Atom.t list -> Atom.t
 
+val unsafe_header_of_atom : Atom.t -> header
+
 val merge : t -> Atom.t -> term -> unit
 
 val is_equiv : t -> Atom.t -> Atom.t -> bool
@@ -56,9 +58,15 @@ val app_right_neutral_exists : t -> bool
 
 val is_app_right_neutral : t -> Atom.t -> bool
 
+val set_diff : t -> diff_header:header -> resolved:Atom.t -> unit
+
+val get_diff : t -> (header * Atom.t) option
+
 val equiv_atoms : t -> Atom.t -> Atom.t list
 
 val headers_with_arity : t -> (header * int) list
+
+val get_enode : t -> Atom.t -> enode option
 
 type app_equation = {atom: Atom.t; enode: enode}
 

@@ -248,6 +248,51 @@ module Rule = struct
                 CC.merge cc atom' (CC.Enode {head; children= filtered}) ) ) )
 
 
+  (* Diff congruence: directly decompose @DIFF(f(a0,...,an), f(b0,...,bn))
+     into f(@DIFF(a0,b0), ..., @DIFF(an,bn)) in the e-graph.
+     Also resolves @DIFF(x, x) to [resolved]. *)
+  let rewrite_diff_congruence ~debug cc =
+    match CC.get_diff cc with
+    | None ->
+        ()
+    | Some (diff_header, resolved) ->
+        let diff_header' = CC.representative_of_header cc diff_header in
+        CC.iter_term_roots cc diff_header ~f:(fun diff_atom ->
+            let diff_atom' = CC.representative cc diff_atom in
+            if CC.is_equiv cc diff_atom' resolved then ()
+            else
+              match CC.get_enode cc diff_atom with
+              | Some {children= [left; right]} ->
+                  let left' = CC.representative cc left in
+                  let right' = CC.representative cc right in
+                  if phys_equal left' right' then (
+                    if debug then F.printf "diff identity: %a@." (CC.pp_nested_term cc) diff_atom ;
+                    CC.merge cc diff_atom' (CC.Atom resolved) )
+                  else
+                    let left_eqs = CC.equiv_terms cc left' in
+                    let right_eqs = CC.equiv_terms cc right' in
+                    List.iter left_eqs ~f:(fun {CC.enode= {head= lh; children= lc}} ->
+                        List.iter right_eqs ~f:(fun {CC.enode= {head= rh; children= rc}} ->
+                            let lh' = CC.representative cc lh in
+                            let rh' = CC.representative cc rh in
+                            if
+                              phys_equal lh' rh'
+                              && (not (phys_equal lh' diff_header'))
+                              && Int.equal (List.length lc) (List.length rc)
+                            then (
+                              let diff_children =
+                                List.map2_exn lc rc ~f:(fun l r ->
+                                    CC.mk_term cc diff_header [l; r] )
+                              in
+                              let rhs = CC.mk_term cc (CC.unsafe_header_of_atom lh) diff_children in
+                              if debug then
+                                F.printf "diff congruence: @[%a@ ==> %a@]@." (CC.pp_nested_term cc)
+                                  diff_atom (CC.pp_nested_term cc) rhs ;
+                              CC.merge cc diff_atom' (CC.Atom rhs) ) ) )
+              | _ ->
+                  () )
+
+
   let rewrite_once ?(debug = false) cc rules =
     CC.reset_update_count cc ;
     Pattern.visit_count := 0 ;
@@ -266,6 +311,7 @@ module Rule = struct
                 Pattern.e_match_ellipsis_at cc ellipsis atom
                 |> List.iter ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ) ) ;
     rewrite_app_right_neutral ~debug cc ;
+    rewrite_diff_congruence ~debug cc ;
     CC.get_update_count cc
 
 

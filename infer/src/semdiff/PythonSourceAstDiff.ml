@@ -56,45 +56,6 @@ let build_diff cc ast1 ast2 =
   mk_term cc diff_header_name [atom1; atom2] |> ignore
 
 
-let is_header_equivalent cc (header1 : CC.header) (header2 : CC.header) =
-  CC.is_equiv cc (header1 :> CC.Atom.t) (header2 :> CC.Atom.t)
-
-
-let gen_diff_commutative_rules cc =
-  let open Rewrite in
-  let open Pattern in
-  let mk_args arity prefix =
-    List.init arity ~f:(fun i -> Var (Var.of_string (prefix ^ string_of_int i)))
-  in
-  let resolved = mk_const cc "__DONE__" in
-  let diff_header = CC.mk_header cc diff_header_name in
-  let mk_diff_pattern pat1 pat2 = Term {header= diff_header; args= [pat1; pat2]} in
-  CC.headers_with_arity cc
-  |> List.filter_map ~f:(fun (header, arity) ->
-         if is_header_equivalent cc header diff_header then None
-         else if arity > 0 then
-           let args1 = mk_args arity "X" in
-           let args2 = mk_args arity "Y" in
-           let lhs = mk_diff_pattern (Term {header; args= args1}) (Term {header; args= args2}) in
-           let rhs = Term {header; args= List.map2_exn args1 args2 ~f:mk_diff_pattern} in
-           Some (Rule.Regular {lhs; rhs; exclude= [resolved]})
-         else None )
-
-
-let gen_diff_rules cc =
-  let open Rewrite in
-  let open Pattern in
-  let open Rule in
-  let diff_header = CC.mk_header cc diff_header_name in
-  let resolved_header = CC.mk_header cc "__DONE__" in
-  let x = Var (Var.of_string "X") in
-  Regular
-    { lhs= Term {header= diff_header; args= [x; x]}
-    ; rhs= Term {header= resolved_header; args= []}
-    ; exclude= [] }
-  :: gen_diff_commutative_rules cc
-
-
 let get_unresolved_diffs cc =
   let diff = CC.mk_header cc diff_header_name in
   let is_a_diff_root =
@@ -132,6 +93,7 @@ let parse_rules cc str_rules : Rewrite.Rule.t list =
 
 let gen_all_rules cc : Rewrite.Rule.t list =
   CC.set_app_right_neutral cc (mk_const cc "_epsilon_") ;
+  CC.set_diff cc ~diff_header:(CC.mk_header cc diff_header_name) ~resolved:(mk_const cc "__DONE__") ;
   parse_rules cc
     [ (* temporarily disabled: import erasure causes spurious cross-diffs
     "(ImportFrom (level ?L) (module ?M) (names ?N)) ==> _epsilon_"
@@ -178,7 +140,6 @@ let gen_all_rules cc : Rewrite.Rule.t list =
                                                   (keywords
                                                       List))))|}
     ]
-  @ gen_diff_rules cc
 
 
 let check_equivalence ?expected ?(debug = false) ast1 ast2 =
@@ -203,8 +164,6 @@ module TestOnly = struct
 
 
   let are_ast_equivalent = are_ast_equivalent
-
-  let gen_diff_rules = gen_diff_rules
 
   let gen_all_rules = gen_all_rules
 end

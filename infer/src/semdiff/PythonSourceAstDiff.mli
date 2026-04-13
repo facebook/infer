@@ -22,7 +22,5 @@ module TestOnly : sig
   val are_ast_equivalent :
     CC.t -> PythonSourceAst.Node.t -> PythonSourceAst.Node.t -> Rewrite.Rule.t list -> bool
 
-  val gen_diff_rules : CC.t -> Rewrite.Rule.t list
-
   val gen_all_rules : CC.t -> Rewrite.Rule.t list
 end
