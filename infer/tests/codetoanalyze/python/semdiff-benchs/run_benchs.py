@@ -91,7 +91,7 @@ def parse_egraph_stats(stdout_text):
     return {"visits": total_visits, "merges": total_merges, "rounds": rounds}
 
 
-def run_semdiff(infer, engine, config, previous, current, timeout):
+def run_semdiff(infer, engine, config, previous, current, timeout, debug=False):
     """Run infer semdiff and return (time_ms, outcome, stats)."""
     result_file = "infer-out/semdiff.json"
     if os.path.exists(result_file):
@@ -99,6 +99,7 @@ def run_semdiff(infer, engine, config, previous, current, timeout):
     cmd = [str(infer), "semdiff"]
     if engine == "eqsat":
         cmd.append("--semdiff-experimental-eqsat-engine")
+    if debug:
         cmd.append("--debug")
     else:
         cmd.extend(["--semdiff-configuration", str(config)])
@@ -269,6 +270,8 @@ def main():
                         help="DirectRewrite config file")
     parser.add_argument("--infer", type=str, default="infer",
                         help="Path to infer binary (default: from PATH)")
+    parser.add_argument("--debug", action="store_true", default=False,
+                        help="Pass --debug to infer semdiff (enables egraph stats)")
     args = parser.parse_args()
 
     source_dir = os.path.abspath(args.source_dir)
@@ -319,7 +322,7 @@ def main():
                 if not os.path.exists(stripped):
                     continue
 
-                ms, outcome, stats = run_semdiff(infer=infer, engine=engine, config=config, previous=stripped, current=filepath, timeout=args.timeout)
+                ms, outcome, stats = run_semdiff(infer=infer, engine=engine, config=config, previous=stripped, current=filepath, timeout=args.timeout, debug=args.debug)
                 print(f"  [{engine}] {lines} lines  {ms}ms  {outcome}  {rel}", file=sys.stderr)
 
                 if rel not in results:
@@ -338,7 +341,7 @@ def main():
                 stripped = os.path.join(stripped_dir, unique)
                 mutated = os.path.join(mutated_dir, unique)
 
-                ms, outcome, stats = run_semdiff(infer=infer, engine=engine, config=config, previous=stripped, current=mutated, timeout=args.timeout)
+                ms, outcome, stats = run_semdiff(infer=infer, engine=engine, config=config, previous=stripped, current=mutated, timeout=args.timeout, debug=args.debug)
                 print(f"  [{engine}] {lines} lines  {ms}ms  {outcome}  {rel}", file=sys.stderr)
 
                 if rel not in mut_results:
