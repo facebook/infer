@@ -743,7 +743,7 @@ module Const = struct
     | Null ->
         F.pp_print_string fmt "null"
     | Str str ->
-        F.fprintf fmt "\"%s\"" str
+        F.fprintf fmt "\"%s\"" (String.escaped str)
     | Float f ->
         F.pp_print_float fmt f
 end

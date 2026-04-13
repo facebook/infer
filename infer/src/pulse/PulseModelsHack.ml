@@ -30,7 +30,7 @@ let string_val_field = Fieldname.make hack_string_type_name "val"
 
 let read_string_value address astate = PulseArithmetic.as_constant_string astate address
 
-let replace_backslash_with_colon s = String.tr s ~target:'\\' ~replacement:':'
+let replace_backslash_with_colon s = String.substr_replace_all s ~pattern:"\\" ~with_:"::"
 
 let read_string_value_dsl aval : string option DSL.model_monad =
   let open PulseModelsDSL.Syntax in

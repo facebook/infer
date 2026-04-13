@@ -277,3 +277,98 @@ let%expect_test "conditional expression" =
 
     } @[12:6]
     |}]
+
+
+let%expect_test "string constants with embedded quotes are escaped in output" =
+  let text =
+    {|
+     .source_language = "c"
+
+     declare BIO_printf(*void, *void, *void) : int
+
+     define test(x: *void, y: *void) : int {
+       #b0:
+         n0 = BIO_printf(x, "invalid engine \"%s\"\n", y)
+         ret n0
+     }
+     |}
+  in
+  let m = parse_module_ok ~verify:false text in
+  show m ;
+  [%expect
+    {|
+    .source_language = "c" @[2:5]
+
+    declare BIO_printf(*void, *void, *void) : int
+
+    define test(x: *void, y: *void) : int {
+      #b0: @[7:7]
+          n0 = BIO_printf(x, "invalid engine \"%s\"\n", y) @[8:9]
+          ret n0 @[9:9]
+
+    } @[10:6]
+    |}]
+
+
+let%expect_test "string with unrecognised backslash sequences (e.g. Hack namespaces)" =
+  let text =
+    {|
+     .source_language = "hack"
+
+     declare f(*void) : void
+
+     define test() : void {
+       #b0:
+         n0 = f("\HH\Lib\C")
+         ret null
+     }
+     |}
+  in
+  let m = parse_module_ok ~verify:false text in
+  show m ;
+  [%expect
+    {|
+    .source_language = "hack" @[2:5]
+
+    declare f(*void) : void
+
+    define test() : void {
+      #b0: @[7:7]
+          n0 = f("\\HH\\Lib\\C") @[8:9]
+          ret null @[9:9]
+
+    } @[10:6]
+    |}]
+
+
+let%expect_test "string constant roundtrip preserves special characters" =
+  let text =
+    {|
+     .source_language = "c"
+
+     declare f(*void) : void
+
+     define test() : void {
+       #b0:
+         n0 = f("hello \"world\" \\ \n end")
+         ret null
+     }
+     |}
+  in
+  let m = parse_module_ok ~verify:false text in
+  let printed = F.asprintf "%a" (Module.pp ~show_location:false) m in
+  let m2 = parse_module_ok ~verify:false printed in
+  F.printf "%a" (Module.pp ~show_location:false) m2 ;
+  [%expect
+    {|
+    .source_language = "c"
+
+    declare f(*void) : void
+
+    define test() : void {
+      #b0:
+          n0 = f("hello \"world\" \\ \n end")
+          ret null
+
+    }
+    |}]

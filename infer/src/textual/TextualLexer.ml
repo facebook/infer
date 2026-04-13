@@ -94,6 +94,44 @@ let floating_point_literal =
 
 let blanks = [%sedlex.regexp? Star white_space]
 
+let unescape_string s =
+  let len = String.length s in
+  let buf = Buffer.create len in
+  let rec loop i =
+    if i >= len then Buffer.contents buf
+    else if Char.equal s.[i] '\\' && i + 1 < len then (
+      let c, skip =
+        match s.[i + 1] with
+        | '\\' ->
+            ('\\', 2)
+        | '"' ->
+            ('"', 2)
+        | 'n' ->
+            ('\n', 2)
+        | 'r' ->
+            ('\r', 2)
+        | 't' ->
+            ('\t', 2)
+        | 'b' ->
+            ('\b', 2)
+        | '0' .. '9' when i + 3 < len -> (
+          match int_of_string_opt (String.sub s ~pos:(i + 1) ~len:3) with
+          | Some code when code < 256 ->
+              (Char.of_int_exn code, 4)
+          | _ ->
+              ('\\', 1) )
+        | _ ->
+            ('\\', 1)
+      in
+      Buffer.add_char buf c ;
+      loop (i + skip) )
+    else (
+      Buffer.add_char buf s.[i] ;
+      loop (i + 1) )
+  in
+  loop 0
+
+
 let build_mainlex keywords =
   let rec mainlex (lexbuf : Sedlexing.lexbuf) =
     let open TextualMenhir in
@@ -195,9 +233,10 @@ let build_mainlex keywords =
         let lexeme = Lexbuf.lexeme lexbuf in
         Option.value ~default:(IDENT lexeme) (Map.find keywords lexeme)
     | '"', Star (Compl ('"' | '\\') | '\\', any), '"' ->
-        (* a string literal may contain an escaped double quote *)
+        (* a string literal may contain escape sequences such as backslash-quote *)
         let lexeme = Lexbuf.lexeme lexbuf in
-        STRING (String.sub ~pos:1 ~len:(String.length lexeme - 2) lexeme)
+        let raw = String.sub ~pos:1 ~len:(String.length lexeme - 2) lexeme in
+        STRING (unescape_string raw)
     | eof ->
         EOF
     | any ->
