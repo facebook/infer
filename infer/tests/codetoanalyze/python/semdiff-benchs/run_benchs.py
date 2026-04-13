@@ -10,10 +10,11 @@ Strips type annotations from source files, then compares original vs stripped
 using both engines. Outputs a per-file table and a summary by size bucket.
 
 Usage:
-    python3 run_benchs.py <source_dir> [--max-lines N] [--timeout S] [--config FILE]
+    python3 run_benchs.py <source_dir> [<source_dir>...] [--max-lines N] [--timeout S] [--config FILE]
 
 Example:
     python3 run_benchs.py /tmp/pydantic/pydantic --max-lines 300 --timeout 60
+    python3 run_benchs.py /tmp/pydantic /tmp/fastapi --min-lines 1000 --max-lines 10000 --timeout 60
 """
 
 import argparse
@@ -261,7 +262,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Benchmark semdiff engines (DirectRewrite vs Eqsat)."
     )
-    parser.add_argument("source_dir", help="Directory of Python source files")
+    parser.add_argument("source_dir", nargs="+", help="Directory(ies) of Python source files")
+    parser.add_argument("--min-lines", type=int, default=0,
+                        help="Only benchmark files with at least N lines (default: 0)")
     parser.add_argument("--max-lines", type=int, required=True,
                         help="Only benchmark files with at most N lines")
     parser.add_argument("--timeout", type=int, required=True,
@@ -274,21 +277,23 @@ def main():
                         help="Pass --debug to infer semdiff (enables egraph stats)")
     args = parser.parse_args()
 
-    source_dir = os.path.abspath(args.source_dir)
+    source_dirs = [os.path.abspath(d) for d in args.source_dir]
     infer = args.infer
     config = os.path.abspath(args.config)
 
-    # Find and filter files
-    all_files = find_python_files(source_dir)
+    # Find and filter files across all source dirs
+    # Each entry is (lines, source_dir, filepath)
     files_with_lines = []
-    for f in all_files:
-        with open(f) as fh:
-            lines = sum(1 for _ in fh)
-        if lines <= args.max_lines:
-            files_with_lines.append((lines, f))
+    for source_dir in source_dirs:
+        all_files = find_python_files(source_dir)
+        for f in all_files:
+            with open(f) as fh:
+                lines = sum(1 for _ in fh)
+            if args.min_lines <= lines <= args.max_lines:
+                files_with_lines.append((lines, source_dir, f))
     files_with_lines.sort()
 
-    print(f"Found {len(files_with_lines)} files (<= {args.max_lines} lines)", file=sys.stderr)
+    print(f"Found {len(files_with_lines)} files ({args.min_lines}-{args.max_lines} lines)", file=sys.stderr)
 
     # Strip annotations and strip+mutate returns into temp dir
     with tempfile.TemporaryDirectory(prefix="semdiff_bench_") as workdir:
@@ -297,13 +302,17 @@ def main():
         os.makedirs(stripped_dir)
         os.makedirs(mutated_dir)
 
-        all_paths = [f for _, f in files_with_lines]
-        print("Stripping type annotations...", file=sys.stderr)
-        strip_all_annotations(source_dir, all_paths, stripped_dir)
-        print("Mutating return statements...", file=sys.stderr)
-        mutated_rels = mutate_all_returns(source_dir, all_paths, mutated_dir)
+        for source_dir in source_dirs:
+            paths = [f for _, sd, f in files_with_lines if sd == source_dir]
+            print(f"Stripping type annotations for {os.path.basename(source_dir)}...", file=sys.stderr)
+            strip_all_annotations(source_dir, paths, stripped_dir)
+        mutated_rels = set()
+        for source_dir in source_dirs:
+            paths = [f for _, sd, f in files_with_lines if sd == source_dir]
+            print(f"Mutating return statements for {os.path.basename(source_dir)}...", file=sys.stderr)
+            mutated_rels |= mutate_all_returns(source_dir, paths, mutated_dir)
         print(f"  {len(mutated_rels)} files mutated, "
-              f"{len(all_paths) - len(mutated_rels)} skipped (no suitable return)",
+              f"{len(files_with_lines) - len(mutated_rels)} skipped (no suitable return)",
               file=sys.stderr)
 
         # XP1: correct codemod — stripping type annotations is semantics-preserving,
@@ -315,7 +324,7 @@ def main():
         for engine in ("direct", "eqsat"):
             # XP1: stripped vs original (correct codemod, expect equal)
             print(f"\n=== Running {engine} (stripped vs original) ===", file=sys.stderr)
-            for lines, filepath in files_with_lines:
+            for lines, source_dir, filepath in files_with_lines:
                 rel = os.path.relpath(filepath, source_dir)
                 unique = rel.replace(os.sep, "__")
                 stripped = os.path.join(stripped_dir, unique)
@@ -333,7 +342,7 @@ def main():
 
             # XP2: stripped vs mutated (incorrect codemod, expect different)
             print(f"\n=== Running {engine} (stripped vs mutated) ===", file=sys.stderr)
-            for lines, filepath in files_with_lines:
+            for lines, source_dir, filepath in files_with_lines:
                 rel = os.path.relpath(filepath, source_dir)
                 if rel not in mutated_rels:
                     continue
