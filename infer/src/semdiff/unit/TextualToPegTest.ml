@@ -274,13 +274,17 @@ let pp_proc_peg fmt (proc : Textual.ProcDesc.t) =
       F.fprintf fmt "Error: %s" msg
 
 
-let check_python_equivalence source1 source2 ~proc_name =
+let check_python_equivalence ?(show_textual = true) ?(show_peg = true) source1 source2 ~proc_name =
   let procs1 = python_to_procs source1 in
   let procs2 = python_to_procs source2 in
   let p1 = find_proc procs1 proc_name in
   let p2 = find_proc procs2 proc_name in
-  F.printf "=== Textual 1 ===@.%a@.=== PEG 1 ===@.%a@.@." pp_proc_textual p1 pp_proc_peg p1 ;
-  F.printf "=== Textual 2 ===@.%a@.=== PEG 2 ===@.%a@.@." pp_proc_textual p2 pp_proc_peg p2 ;
+  let pp_proc label p =
+    if show_textual then F.printf "=== Textual %s ===@.%a@." label pp_proc_textual p ;
+    if show_peg then F.printf "=== PEG %s ===@.%a@.@." label pp_proc_peg p
+  in
+  pp_proc "1" p1 ;
+  pp_proc "2" p2 ;
   TextualPegDiff.check_equivalence p1 p2
 
 
@@ -485,6 +489,133 @@ def f():
                 (@seq @state0 $builtins.py_make_none)
                 ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
             ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
+
+        equivalent: true
+        |}]
+
+
+    let%expect_test "if/else: same branches" =
+      let source1 = {|
+def f(c):
+    if c:
+        x = 1
+    else:
+        x = 2
+    return x
+|} in
+      let source2 = {|
+def f(c):
+    if c:
+        x = 1
+    else:
+        x = 2
+    return x
+|} in
+      let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      [%expect
+        {|
+        === PEG 1 ===
+        (@phi
+            ($builtins.py_bool @param:c)
+            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 2)))
+
+        === PEG 2 ===
+        (@phi
+            ($builtins.py_bool @param:c)
+            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 2)))
+
+        equivalent: true
+        |}]
+
+
+    let%expect_test "if/else: identical branches simplify to no branch" =
+      let source1 = {|
+def f(c):
+    if c:
+        x = 1
+    else:
+        x = 1
+    return x
+|} in
+      let source2 = {|
+def f(c):
+    x = 1
+    return x
+|} in
+      let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      [%expect
+        {|
+        === PEG 1 ===
+        (@phi
+            ($builtins.py_bool @param:c)
+            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1)))
+
+        === PEG 2 ===
+        (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+
+        equivalent: true
+        |}]
+
+
+    let%expect_test "dead code: unused assignment before return" =
+      let source1 = {|
+def f():
+    x = 1
+    y = 2
+    return x
+|} in
+      let source2 = {|
+def f():
+    x = 1
+    return x
+|} in
+      let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      [%expect
+        {|
+        === PEG 1 ===
+        (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+
+        === PEG 2 ===
+        (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+
+        equivalent: true
+        |}]
+
+
+    let%expect_test "renamed local variables" =
+      let source1 = {|
+def f(a):
+    x = a + 1
+    return x
+|} in
+      let source2 = {|
+def f(a):
+    y = a + 1
+    return y
+|} in
+      let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      [%expect
+        {|
+        === PEG 1 ===
+        (@ret
+            (@seq
+                (@seq @state0 $builtins.py_make_none)
+                ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
+            ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
+
+        === PEG 2 ===
+        (@ret
+            (@seq
+                (@seq @state0 $builtins.py_make_none)
+                ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
+            ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
 
         equivalent: true
         |}]
