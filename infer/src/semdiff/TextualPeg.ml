@@ -189,6 +189,9 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
         Env.update_locals env locals
     | _ ->
         raise (ConvertError "py_store_fast: malformed arguments") )
+  | Let {id= _; exp= Call {proc}} when is_py_builtin proc "py_nullify_locals" ->
+      (* py_nullify_locals is a compiler artifact, not an observable effect — skip it *)
+      env
   | Let {id; exp} -> (
       let atom = convert_exp env exp in
       let env = match id with Some id -> Env.bind_ident env id atom | None -> env in
