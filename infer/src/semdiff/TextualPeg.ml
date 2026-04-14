@@ -265,8 +265,19 @@ and convert_jump (env : Env.t) ~label ~ssa_args : CC.Atom.t =
       convert_node env target_node
 
 
-and convert_if (env : Env.t) ~bexp:_ ~then_:_ ~else_:_ : CC.Atom.t =
-  mk_const env.cc "@unsupported_if"
+and convert_if (env : Env.t) ~bexp ~then_ ~else_ : CC.Atom.t =
+  let cc = env.cc in
+  let cond = convert_boolexp env bexp in
+  (* Note: locals and state updates from each branch are discarded here.
+     This is fine for now because If terminators always lead to Ret or Jump,
+     so no code reads the env after this point. When loops are added, we will
+     need to return and merge the branch envs with @phi nodes for locals and
+     state so that back-edges see the correct post-branch values. *)
+  let result_then = convert_terminator env then_ in
+  let result_else = convert_terminator env else_ in
+  let result = mk_term cc "@phi" [cond; result_then; result_else] in
+  Equations.add env.equations ~name:"PHI" ~atom:result ~origin:"if" ;
+  result
 
 
 (* ---------- Terminator label iteration ---------- *)
