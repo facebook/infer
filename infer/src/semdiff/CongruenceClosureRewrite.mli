@@ -41,10 +41,12 @@ end
 
 module Rule : sig
   type t =
-    | Regular of {lhs: Pattern.t; rhs: Pattern.t; exclude: CC.Atom.t list}
-    | Ellipsis of Pattern.ellipsis
+    | Regular of {lhs: Pattern.t; rhs: Pattern.t; exclude: CC.Atom.t list; mutable fire_count: int}
+    | Ellipsis of {ellipsis: Pattern.ellipsis; mutable fire_count: int}
 
   val pp : F.formatter -> t -> unit
+
+  val fire_count : t -> int
 
   exception FuelExhausted of {round_count: int}
 

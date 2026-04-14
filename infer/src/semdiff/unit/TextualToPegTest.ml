@@ -233,9 +233,14 @@ let%test_module "textual to peg" =
       in
       let proc1 = get_proc text1 in
       let proc2 = get_proc text2 in
-      let result = TextualPegDiff.check_equivalence proc1 proc2 in
+      let result = TextualPegDiff.check_equivalence ~debug:true proc1 proc2 in
       F.printf "equivalent: %b@." result ;
-      [%expect {| equivalent: true |}]
+      [%expect
+        {|
+        === Rule stats ===
+          (@phi ?C ?X ?X) ==> ?X: fired 1 time(s)
+        equivalent: true
+        |}]
   end )
 
 

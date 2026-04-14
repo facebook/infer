@@ -29,16 +29,20 @@ let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Tex
   match (TextualPeg.convert_proc cc proc1, TextualPeg.convert_proc cc proc2) with
   | Ok (atom1, eqs1), Ok (atom2, eqs2) ->
       let rules = gen_rules cc in
-      let _rounds = Rewrite.Rule.full_rewrite ~debug cc rules in
+      let _rounds = Rewrite.Rule.full_rewrite cc rules in
       let res = CC.is_equiv cc atom1 atom2 in
-      if debug && not res then (
-        F.printf "=== Procedure 1 equations ===@." ;
-        TextualPeg.Equations.pp cc F.std_formatter eqs1 ;
-        F.printf "@.=== Procedure 2 equations ===@." ;
-        TextualPeg.Equations.pp cc F.std_formatter eqs2 ;
-        F.printf "@.NOT EQUIVALENT@." ;
-        F.printf "atom1: %a@." (CC.pp_nested_term cc) atom1 ;
-        F.printf "atom2: %a@." (CC.pp_nested_term cc) atom2 ) ;
+      if debug then (
+        F.printf "=== Rule stats ===@." ;
+        List.iter rules ~f:(fun rule ->
+            F.printf "  %a: fired %d time(s)@." Rewrite.Rule.pp rule (Rewrite.Rule.fire_count rule) ) ;
+        if not res then (
+          F.printf "=== Procedure 1 equations ===@." ;
+          TextualPeg.Equations.pp cc F.std_formatter eqs1 ;
+          F.printf "@.=== Procedure 2 equations ===@." ;
+          TextualPeg.Equations.pp cc F.std_formatter eqs2 ;
+          F.printf "@.NOT EQUIVALENT@." ;
+          F.printf "atom1: %a@." (CC.pp_nested_term cc) atom1 ;
+          F.printf "atom2: %a@." (CC.pp_nested_term cc) atom2 ) ) ;
       res
   | Error msg, _ | _, Error msg ->
       if debug then F.printf "PEG conversion failed: %s@." msg ;

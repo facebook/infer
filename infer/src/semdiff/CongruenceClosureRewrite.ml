@@ -205,15 +205,18 @@ end
 
 module Rule = struct
   type t =
-    | Regular of {lhs: Pattern.t; rhs: Pattern.t; exclude: CC.Atom.t list}
-    | Ellipsis of Pattern.ellipsis
+    | Regular of {lhs: Pattern.t; rhs: Pattern.t; exclude: CC.Atom.t list; mutable fire_count: int}
+    | Ellipsis of {ellipsis: Pattern.ellipsis; mutable fire_count: int}
 
   let pp fmt = function
     | Regular {lhs; rhs} ->
         F.fprintf fmt "@[<hv>%a@ ==>@ %a@]" Pattern.pp lhs Pattern.pp rhs
-    | Ellipsis ellipsis ->
+    | Ellipsis {ellipsis} ->
         F.fprintf fmt "@[<hv>%a ==>@ (%a ...)@]" Pattern.pp_ellipsis ellipsis CC.pp_header
           ellipsis.header
+
+
+  let fire_count = function Regular {fire_count} | Ellipsis {fire_count} -> fire_count
 
 
   let apply_at ?(debug = false) cc rule atom =
@@ -226,7 +229,7 @@ module Rule = struct
             if debug then F.printf "rhs_term = %a@." (CC.pp_nested_term cc) rhs_term ;
             CC.merge cc atom (CC.Atom rhs_term) ) ;
         List.length substs
-    | Ellipsis ellipsis ->
+    | Ellipsis {ellipsis} ->
         Pattern.e_match_ellipsis_at cc ellipsis atom
         |> List.iter ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ;
         0
@@ -300,18 +303,20 @@ module Rule = struct
     Pattern.visit_count := 0 ;
     List.iter rules ~f:(fun rule ->
         match rule with
-        | Regular {lhs; rhs; exclude} ->
+        | Regular ({lhs; rhs; exclude} as r) ->
             Pattern.e_match cc lhs exclude ~f:(fun atom subst ->
                 let rhs_term = Pattern.to_term cc subst rhs in
                 if not (CC.is_equiv cc atom rhs_term) then (
+                  r.fire_count <- r.fire_count + 1 ;
                   if debug then
                     F.printf "rewriting @[<hv>atom %a@ with rule %a@ and subst %a@]@."
                       (CC.pp_nested_term ~depth:5 cc) atom pp rule (pp_subst cc) subst ;
                   CC.merge cc atom (CC.Atom rhs_term) ) )
-        | Ellipsis ellipsis ->
+        | Ellipsis ({ellipsis} as r) ->
             CC.iter_term_roots cc ellipsis.header ~f:(fun atom ->
-                Pattern.e_match_ellipsis_at cc ellipsis atom
-                |> List.iter ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ) ) ;
+                let matches = Pattern.e_match_ellipsis_at cc ellipsis atom in
+                if not (List.is_empty matches) then r.fire_count <- r.fire_count + 1 ;
+                List.iter matches ~f:(fun new_atom -> CC.merge cc atom (CC.Atom new_atom)) ) ) ;
     rewrite_diff_congruence ~debug cc ;
     CC.get_update_count cc
 
@@ -573,9 +578,11 @@ module Parser = struct
   let raw_to_rule cc raw : Rule.t =
     match raw with
     | Regular {lhs; rhs} ->
-        Regular {lhs= raw_to_pattern cc lhs; rhs= raw_to_pattern cc rhs; exclude= []}
+        Regular
+          {lhs= raw_to_pattern cc lhs; rhs= raw_to_pattern cc rhs; exclude= []; fire_count= 0}
     | Ellipsis {header; arg} ->
-        Ellipsis {header= CC.mk_header cc header; arg= raw_to_pattern cc arg}
+        Ellipsis
+          {ellipsis= {header= CC.mk_header cc header; arg= raw_to_pattern cc arg}; fire_count= 0}
 
 
   let parse_pattern cc input : (Pattern.t, error) Stdlib.result =
