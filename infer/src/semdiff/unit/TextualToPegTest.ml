@@ -33,4 +33,46 @@ let%test_module "textual to peg" =
         n0     = ($builtins.py_make_int 42)  [let]
         RET    = (@ret (@seq @state0 ($builtins.py_make_int 42)) ($builtins.py_make_int 42))  [ret]
         PEG: (@ret (@seq @state0 ($builtins.py_make_int 42)) ($builtins.py_make_int 42)) |}]
+
+
+    let%expect_test "store_fast then load_fast" =
+      convert_and_print
+        {|
+        .source_language = "python"
+        define .args = "x" foo(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+          #b0:
+              n1 = locals
+              n2 = $builtins.py_load_fast("x", n1)
+              n3 = $builtins.py_make_int(1)
+              n4 = $builtins.py_binary_add(n2, n3)
+              _ = $builtins.py_store_fast("y", n1, n4)
+              jmp b1
+
+          #b1:
+              n5 = $builtins.py_load_fast("y", n1)
+              ret n5
+        }
+        |} ;
+      [%expect
+        {|
+        === foo ===
+        Equations:
+        x      = @param:x  [param]
+        n1     = (@load (@lvar locals))  [let]
+        n2     = @param:x  [load_fast: locals]
+        n3     = ($builtins.py_make_int 1)  [let]
+        n4     = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [let]
+        y      = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [store_fast: locals]
+        n5     = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [load_fast: locals]
+        RET    = (@ret
+                     (@seq
+                         (@seq @state0 ($builtins.py_make_int 1))
+                         ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
+                     ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))  [ret]
+        PEG: (@ret
+                 (@seq
+                     (@seq @state0 ($builtins.py_make_int 1))
+                     ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
+                 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
+        |}]
   end )

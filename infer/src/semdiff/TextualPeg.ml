@@ -37,6 +37,9 @@ module LocalsMap = struct
 
   let empty = StringMap.empty
 
+  let store t ~name ~atom = StringMap.add name atom t
+
+  let load t ~name = StringMap.find_opt name t
 end
 
 (* ---------- Environment ---------- *)
@@ -56,7 +59,7 @@ module Env = struct
       List.fold params ~init:LocalsMap.empty ~f:(fun acc name ->
           let atom = CC.mk_term cc (CC.mk_header cc ("@param:" ^ name)) [] in
           Equations.add equations ~name ~atom ~origin:"param" ;
-          StringMap.add name atom acc )
+          LocalsMap.store acc ~name ~atom )
     in
     let state = CC.mk_term cc (CC.mk_header cc "@state0") [] in
     {cc; ident_map= T.Ident.Map.empty; locals; state; equations; node_map= T.NodeName.Map.empty}
@@ -69,6 +72,8 @@ module Env = struct
 
 
   let lookup_ident t id = T.Ident.Map.find_opt id t.ident_map
+
+  let update_locals t locals = {t with locals}
 
   let update_state t state = {t with state}
 end
@@ -142,11 +147,48 @@ and convert_boolexp (env : Env.t) (bexp : T.BoolExp.t) : CC.Atom.t =
 
 (* ---------- Recognized Python builtins for locals tracking ---------- *)
 
+(** Try to extract the variable name from a py_store_fast / py_load_fast call. These calls have the
+    form: [$builtins.py_store_fast("name", locals, value)] or
+    [$builtins.py_load_fast("name", locals)]. The first argument is always a string constant with
+    the variable name. *)
+let extract_varname_from_args (args : T.Exp.t list) : string option =
+  match args with Const (Str name) :: _ -> Some name | _ -> None
+
+
+let is_py_builtin proc name =
+  let s = qualified_procname_to_string proc in
+  String.is_suffix s ~suffix:name
+
+
+exception ConvertError of string
+
 (* ---------- Instruction conversion ---------- *)
 
 let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
   let cc = env.cc in
   match instr with
+  | Let {id= Some id; exp= Call {proc; args}} when is_py_builtin proc "py_load_fast" -> (
+    match extract_varname_from_args args with
+    | Some name -> (
+      match LocalsMap.load env.locals ~name with
+      | Some atom ->
+          let id_name = F.asprintf "%a" T.Ident.pp id in
+          Equations.add env.equations ~name:id_name ~atom ~origin:"load_fast: locals" ;
+          {env with ident_map= T.Ident.Map.add id atom env.ident_map}
+      | None ->
+          raise (ConvertError (F.asprintf "py_load_fast: variable %s not found in locals map" name))
+      )
+    | None ->
+        raise (ConvertError "py_load_fast: could not extract variable name from arguments") )
+  | Let {id= None; exp= Call {proc; args}} when is_py_builtin proc "py_store_fast" -> (
+    match args with
+    | Const (Str name) :: _locals :: value :: _ ->
+        let atom = convert_exp env value in
+        let locals = LocalsMap.store env.locals ~name ~atom in
+        Equations.add env.equations ~name ~atom ~origin:"store_fast: locals" ;
+        Env.update_locals env locals
+    | _ ->
+        raise (ConvertError "py_store_fast: malformed arguments") )
   | Let {id; exp} -> (
       let atom = convert_exp env exp in
       let env = match id with Some id -> Env.bind_ident env id atom | None -> env in
@@ -279,6 +321,8 @@ let convert_proc cc (proc : T.ProcDesc.t) : (CC.Atom.t * Equations.t, string) re
     match T.NodeName.Map.find_opt proc.start node_map with
     | None ->
         Error "start node not found"
-    | Some start_node ->
+    | Some start_node -> (
+      try
         let result = convert_node env start_node in
         Ok (result, env.equations)
+      with ConvertError msg -> Error msg )
