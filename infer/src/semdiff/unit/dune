@@ -6,8 +6,8 @@
 (library
  (name SemDiffLinTest)
  (flags
-  (:standard -open IStdlib -open IBase -open SemDiffLib))
- (libraries IStdlib pyml SemDiffLib)
+  (:standard -open IStdlib -open IBase -open SemDiffLib -open Textuallib))
+ (libraries IStdlib pyml SemDiffLib Textuallib)
  (preprocess
   (pps ppx_expect))
  (inline_tests))
