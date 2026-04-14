@@ -5,9 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Textual PEG utilities: conversion helpers and equivalence checking. *)
+(** Semantic equivalence checking of Textual procedures via PEG equality saturation.
+
+    Builds PEGs for two procedures in a shared e-graph, applies rewrite rules to saturation, and
+    checks whether the two root atoms are equivalent. *)
 
 open! IStd
+
+val check_equivalence : ?debug:bool -> Textual.ProcDesc.t -> Textual.ProcDesc.t -> bool
 
 val convert_and_print : ?debug:bool -> string -> unit
 (** Parse a Textual source string, convert each procedure to PEG, print the equations and nested

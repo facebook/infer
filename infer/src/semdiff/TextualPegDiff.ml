@@ -7,7 +7,43 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module CC = CongruenceClosureSolver
+module Rewrite = CongruenceClosureRewrite
+
+let parse_rules cc str_rules : Rewrite.Rule.t list =
+  List.map str_rules ~f:(fun prog ->
+      match Rewrite.parse_rule cc prog with
+      | Ok rule ->
+          rule
+      | Error err ->
+          L.die InternalError "%a" Rewrite.pp_parse_error err )
+
+
+let gen_rules cc : Rewrite.Rule.t list =
+  parse_rules cc [(* phi simplification *) "(@phi ?C ?X ?X) ==> ?X"]
+
+
+let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Textual.ProcDesc.t) =
+  let cc = CC.init ~debug:false in
+  match (TextualPeg.convert_proc cc proc1, TextualPeg.convert_proc cc proc2) with
+  | Ok (atom1, eqs1), Ok (atom2, eqs2) ->
+      let rules = gen_rules cc in
+      let _rounds = Rewrite.Rule.full_rewrite ~debug cc rules in
+      let res = CC.is_equiv cc atom1 atom2 in
+      if debug && not res then (
+        F.printf "=== Procedure 1 equations ===@." ;
+        TextualPeg.Equations.pp cc F.std_formatter eqs1 ;
+        F.printf "@.=== Procedure 2 equations ===@." ;
+        TextualPeg.Equations.pp cc F.std_formatter eqs2 ;
+        F.printf "@.NOT EQUIVALENT@." ;
+        F.printf "atom1: %a@." (CC.pp_nested_term cc) atom1 ;
+        F.printf "atom2: %a@." (CC.pp_nested_term cc) atom2 ) ;
+      res
+  | Error msg, _ | _, Error msg ->
+      if debug then F.printf "PEG conversion failed: %s@." msg ;
+      false
+
 
 let convert_and_print ?(debug = false) text =
   let sourcefile = Textual.SourceFile.create "test.sil" in

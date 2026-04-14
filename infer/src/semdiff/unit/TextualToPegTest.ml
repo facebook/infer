@@ -116,4 +116,124 @@ let%test_module "textual to peg" =
                  (@ret (@seq @state0 ($builtins.py_make_int 1)) ($builtins.py_make_int 1))
                  (@ret (@seq @state0 ($builtins.py_make_int 2)) ($builtins.py_make_int 2)))
         |}]
+
+
+    let%expect_test "equivalence: same semantics, different ident names" =
+      let text1 =
+        {|
+        .source_language = "python"
+        define foo() : int {
+          #b0:
+              n0 = $builtins.py_make_int(42)
+              ret n0
+        }
+        |}
+      in
+      let text2 =
+        {|
+        .source_language = "python"
+        define foo() : int {
+          #b0:
+              n99 = $builtins.py_make_int(42)
+              ret n99
+        }
+        |}
+      in
+      let sourcefile = Textual.SourceFile.create "test.sil" in
+      let get_proc text =
+        match TextualParser.parse_string sourcefile text with
+        | Ok module_ ->
+            List.find_map_exn module_.decls ~f:(fun decl ->
+                match decl with Textual.Module.Proc p -> Some p | _ -> None )
+        | Error _ ->
+            assert false
+      in
+      let proc1 = get_proc text1 in
+      let proc2 = get_proc text2 in
+      let result = TextualPegDiff.check_equivalence proc1 proc2 in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: true |}]
+
+
+    let%expect_test "non-equivalence: different constants" =
+      let text1 =
+        {|
+        .source_language = "python"
+        define foo() : int {
+          #b0:
+              n0 = $builtins.py_make_int(42)
+              ret n0
+        }
+        |}
+      in
+      let text2 =
+        {|
+        .source_language = "python"
+        define foo() : int {
+          #b0:
+              n0 = $builtins.py_make_int(99)
+              ret n0
+        }
+        |}
+      in
+      let sourcefile = Textual.SourceFile.create "test.sil" in
+      let get_proc text =
+        match TextualParser.parse_string sourcefile text with
+        | Ok module_ ->
+            List.find_map_exn module_.decls ~f:(fun decl ->
+                match decl with Textual.Module.Proc p -> Some p | _ -> None )
+        | Error _ ->
+            assert false
+      in
+      let proc1 = get_proc text1 in
+      let proc2 = get_proc text2 in
+      let result = TextualPegDiff.check_equivalence proc1 proc2 in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: false |}]
+
+
+    let%expect_test "phi simplification: identical branches" =
+      let text1 =
+        {|
+        .source_language = "python"
+        define .args = "c" foo(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+          #b0:
+              n1 = locals
+              n2 = $builtins.py_load_fast("c", n1)
+              if n2 then jmp b1 else jmp b2
+
+          #b1:
+              n3 = $builtins.py_make_int(1)
+              ret n3
+
+          #b2:
+              n4 = $builtins.py_make_int(1)
+              ret n4
+        }
+        |}
+      in
+      let text2 =
+        {|
+        .source_language = "python"
+        define foo() : int {
+          #b0:
+              n0 = $builtins.py_make_int(1)
+              ret n0
+        }
+        |}
+      in
+      let sourcefile = Textual.SourceFile.create "test.sil" in
+      let get_proc text =
+        match TextualParser.parse_string sourcefile text with
+        | Ok module_ ->
+            List.find_map_exn module_.decls ~f:(fun decl ->
+                match decl with Textual.Module.Proc p -> Some p | _ -> None )
+        | Error _ ->
+            assert false
+      in
+      let proc1 = get_proc text1 in
+      let proc2 = get_proc text2 in
+      let result = TextualPegDiff.check_equivalence proc1 proc2 in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: true |}]
   end )
