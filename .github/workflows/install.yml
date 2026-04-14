@@ -7,10 +7,8 @@ on:
   pull_request: {}
 
 env:
-  USER_LLVM: "yes"
-  LLVM_CONFIG: "/usr/lib/llvm-19/bin/llvm-config"
   KOTLINC: "no"
-  
+
 jobs:
   create-release:
     name: Create release
@@ -60,8 +58,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          # - macOS-latest
-          - ubuntu-24.04
+          - macOS-latest
+          - ubuntu-26.04
         ocaml-compiler:
           - ocaml-variants.5.3.0+options,ocaml-option-flambda
     runs-on: ${{ matrix.os }}
@@ -71,14 +69,19 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install Required Apt Packages for Ubuntu
-        run: |
-          sudo apt install clang-19 llvm-19 llvm-19-dev libmpfr-dev libsqlite3-dev ninja-build
-          sudo apt clean
         if: runner.os == 'Linux'
+        run: |
+          sudo apt install clang-21 llvm-21 llvm-21-dev libmpfr-dev libsqlite3-dev ninja-build
+          sudo apt clean
+          echo "USER_LLVM=yes" >> $GITHUB_ENV
+          echo "LLVM_CONFIG=/usr/lib/llvm-21/bin/llvm-config" >> $GITHUB_ENV
 
       - name: Install Required Brew Packages for MacOS
-        run: brew install automake jq ninja pkg-config lzlib zlib coreutils
         if: runner.os == 'macOS'
+        run: |
+          brew install automake jq ninja pkg-config lzlib zlib coreutils llvm@21
+          echo "USER_LLVM=yes" >> $GITHUB_ENV
+          echo "LLVM_CONFIG=$(brew --prefix llvm@21)/bin/llvm-config" >> $GITHUB_ENV
 
       - name: Setup Java SDK
         uses: actions/setup-java@v5
