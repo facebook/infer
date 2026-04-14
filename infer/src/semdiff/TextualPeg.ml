@@ -7,6 +7,7 @@
 
 open! IStd
 module F = Format
+module L = Logging
 module CC = CongruenceClosureSolver
 module T = Textual
 
@@ -96,8 +97,7 @@ let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
     | Some atom ->
         atom
     | None ->
-        (* unknown ident -create a fresh named atom *)
-        mk_const cc (F.asprintf "?%a" T.Ident.pp id) )
+        L.die InternalError "TextualPeg: unknown ident %a" T.Ident.pp id )
   | Lvar vname ->
       mk_term cc "@lvar" [mk_const cc (T.VarName.to_string vname)]
   | Const (Int z) ->
@@ -160,8 +160,6 @@ let is_py_builtin proc name =
   String.is_suffix s ~suffix:name
 
 
-exception ConvertError of string
-
 (* ---------- Instruction conversion ---------- *)
 
 let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
@@ -176,10 +174,9 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
           Equations.add env.equations ~name:id_name ~atom ~origin:"load_fast: locals" ;
           {env with ident_map= T.Ident.Map.add id atom env.ident_map}
       | None ->
-          raise (ConvertError (F.asprintf "py_load_fast: variable %s not found in locals map" name))
-      )
+          L.die InternalError "TextualPeg: py_load_fast: variable %s not found in locals map" name )
     | None ->
-        raise (ConvertError "py_load_fast: could not extract variable name from arguments") )
+        L.die InternalError "TextualPeg: py_load_fast: could not extract variable name" )
   | Let {id= None; exp= Call {proc; args}} when is_py_builtin proc "py_store_fast" -> (
     match args with
     | Const (Str name) :: _locals :: value :: _ ->
@@ -188,7 +185,7 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
         Equations.add env.equations ~name ~atom ~origin:"store_fast: locals" ;
         Env.update_locals env locals
     | _ ->
-        raise (ConvertError "py_store_fast: malformed arguments") )
+        L.die InternalError "TextualPeg: py_store_fast: malformed arguments" )
   | Let {id= _; exp= Call {proc}} when is_py_builtin proc "py_nullify_locals" ->
       (* py_nullify_locals is a compiler artifact, not an observable effect — skip it *)
       env
@@ -211,11 +208,8 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
       let eff = mk_term cc "@store" [addr; value] in
       let new_state = mk_term cc "@seq" [env.state; eff] in
       Env.update_state env new_state
-  | Prune {exp} ->
-      let cond = convert_exp env exp in
-      let eff = mk_term cc "@prune" [cond] in
-      let new_state = mk_term cc "@seq" [env.state; eff] in
-      Env.update_state env new_state
+  | Prune _ ->
+      L.die InternalError "TextualPeg: Prune instructions are not supported"
 
 
 (* ---------- Node / terminator conversion ---------- *)
@@ -247,8 +241,7 @@ and convert_terminator (env : Env.t) (term : T.Terminator.t) : CC.Atom.t =
   | Jump [{label; ssa_args}] ->
       convert_jump env ~label ~ssa_args
   | Jump _ ->
-      (* multi-target jump without If -unsupported in Phase 1 *)
-      mk_const cc "@unsupported_jump"
+      L.die InternalError "TextualPeg: multi-target jump is not supported"
   | If {bexp; then_; else_} ->
       convert_if env ~bexp ~then_ ~else_
 
@@ -256,7 +249,7 @@ and convert_terminator (env : Env.t) (term : T.Terminator.t) : CC.Atom.t =
 and convert_jump (env : Env.t) ~label ~ssa_args : CC.Atom.t =
   match T.NodeName.Map.find_opt label env.node_map with
   | None ->
-      mk_const env.cc "@unknown_label"
+      L.die InternalError "TextualPeg: unknown label %a" T.NodeName.pp label
   | Some target_node ->
       (* bind SSA parameters of target node *)
       let env =
@@ -335,8 +328,6 @@ let convert_proc cc (proc : T.ProcDesc.t) : (CC.Atom.t * Equations.t, string) re
     match T.NodeName.Map.find_opt proc.start node_map with
     | None ->
         Error "start node not found"
-    | Some start_node -> (
-      try
+    | Some start_node ->
         let result = convert_node env start_node in
         Ok (result, env.equations)
-      with ConvertError msg -> Error msg )
