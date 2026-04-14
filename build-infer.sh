@@ -42,6 +42,7 @@ function usage() {
   echo "   -h,--help             show this message"
   echo "   --no-opam-lock        do not use the opam/infer.opam.locked file and let opam resolve dependencies"
   echo "   --only-setup-opam     initialize opam, install the opam dependencies of infer, and exit"
+  echo "   --local-opam-switch   create a project-local opam switch (_opam/) to avoid affecting other builds"
   echo "   --user-opam-switch    use the current opam switch to install infer (default: $INFER_OPAM_DEFAULT_SWITCH)"
   echo "   -y,--yes              automatically agree to everything"
   echo "   --                    stop parsing options and pass the remaining ones to ./configure"
@@ -64,6 +65,7 @@ BUILD_RUST=${BUILD_RUST:-no}
 BUILD_SWIFT=${BUILD_SWIFT:-no}
 INTERACTIVE=${INTERACTIVE:-yes}
 JOBS=${JOBS:-$NCPU}
+LOCAL_OPAM_SWITCH=no
 ONLY_SETUP_OPAM=${ONLY_SETUP_OPAM:-no}
 USE_OPAM_LOCK=${USE_OPAM_LOCK:-yes}
 USER_OPAM_SWITCH=no
@@ -132,6 +134,11 @@ while [[ $# -gt 0 ]]; do
       shift
       continue
      ;;
+    --local-opam-switch)
+      LOCAL_OPAM_SWITCH=yes
+      shift
+      continue
+     ;;
     --user-opam-switch)
       USER_OPAM_SWITCH=yes
       shift
@@ -159,6 +166,11 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+if [ "$LOCAL_OPAM_SWITCH" == "yes" ] && [ "$USER_OPAM_SWITCH" == "yes" ]; then
+  echo "ERROR: --local-opam-switch and --user-opam-switch are mutually exclusive" >&2
+  exit 1
+fi
 
 if [ "$BUILD_CLANG" == "no" ] && [ "$BUILD_ERLANG" == "no" ] && \
    [ "$BUILD_HACK" == "no" ] && [ "$BUILD_JAVA" == "no" ] && \
@@ -198,6 +210,16 @@ setup_opam () {
     opam switch set "$INFER_OPAM_SWITCH"
 }
 
+setup_local_opam_switch () {
+    opam var root 1>/dev/null 2>/dev/null || opam init --reinit --bare --no-setup
+    if [ ! -d "$INFER_ROOT/_opam" ]; then
+        echo "creating local opam switch in $INFER_ROOT/_opam... " >&2
+        opam switch create "$INFER_ROOT" --no-install $INFER_OPAM_SWITCH_OPTIONS
+    else
+        echo "using existing local opam switch in $INFER_ROOT/_opam" >&2
+    fi
+}
+
 install_opam_deps () {
     local locked=
     if [ "$USE_OPAM_LOCK" == yes ]; then
@@ -228,14 +250,15 @@ install_opam_deps () {
 # regardless of the LLVM toolchain used to provide the LLVM libraries, we need our own LLVM OCaml
 # bindings to be installed
 setup_local_opam_repo () {
-    opam repo list -s | grep -q local-llvm \
-    && opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository \
+    opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository 2>/dev/null \
     || opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
 }
 
 echo "initializing opam... " >&2
 . "$INFER_ROOT"/scripts/opam_utils.sh
-if [ "$USER_OPAM_SWITCH" == "no" ]; then
+if [ "$LOCAL_OPAM_SWITCH" == "yes" ]; then
+    setup_local_opam_switch
+elif [ "$USER_OPAM_SWITCH" == "no" ]; then
     setup_opam
 fi
 eval $(SHELL=bash opam env)
