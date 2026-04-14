@@ -9,8 +9,8 @@
 
     A PEG is a pure functional representation of an imperative program where control flow is encoded
     as data: branches become [@phi(cond, then, else)] nodes, side effects are ordered by state
-    tokens [@seq(state, effect)], and the procedure result is [@ret(final_state, return_value)].
-    Two programs are semantically equivalent when their PEG roots belong to the same e-class after
+    tokens [@seq(state, effect)], and the procedure result is [@ret(final_state, return_value)]. Two
+    programs are semantically equivalent when their PEG roots belong to the same e-class after
     equality saturation. See Tate et al., "Equality Saturation: a New Approach to Optimization",
     POPL 2009.
 

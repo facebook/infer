@@ -218,7 +218,6 @@ module Rule = struct
 
   let fire_count = function Regular {fire_count} | Ellipsis {fire_count} -> fire_count
 
-
   let apply_at ?(debug = false) cc rule atom =
     match rule with
     | Regular {lhs; rhs} ->
@@ -578,8 +577,7 @@ module Parser = struct
   let raw_to_rule cc raw : Rule.t =
     match raw with
     | Regular {lhs; rhs} ->
-        Regular
-          {lhs= raw_to_pattern cc lhs; rhs= raw_to_pattern cc rhs; exclude= []; fire_count= 0}
+        Regular {lhs= raw_to_pattern cc lhs; rhs= raw_to_pattern cc rhs; exclude= []; fire_count= 0}
     | Ellipsis {header; arg} ->
         Ellipsis
           {ellipsis= {header= CC.mk_header cc header; arg= raw_to_pattern cc arg}; fire_count= 0}
