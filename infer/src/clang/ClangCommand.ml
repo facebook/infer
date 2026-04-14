@@ -243,11 +243,13 @@ let clang_cc1_cmd_sanitizer cmd =
       ~pre_args:(List.rev pre_args_rev) cmd.argv
   in
   (* When the bundled clang is used as the driver for -### expansion, it discovers its own libc++
-     headers but may omit the SDK's C++ headers (e.g., cxxabi.h). Pass the SDK's C++ include path
-     via -Xclang so it reaches cc1 as a low-priority fallback, searched after the bundled libc++.
-     This avoids mixing two libc++ versions at the same priority which causes conflicts.
-     Only for C++ compilations: adding c++/v1 to C compilations breaks stdatomic.h via
-     #include_next chains with shared include guards.
+     headers but may omit the SDK's C++ headers (e.g., cxxabi.h). We cannot simply add the SDK's
+     c++/v1 directory to the include path because this breaks the #include_next chain for
+     stdatomic.h: the clang resource dir's stdatomic.h does #include_next and finds the SDK's
+     c++/v1/stdatomic.h (guarded by _LIBCPP_STDATOMIC_H, already defined), swallowing the C
+     atomics definitions. Instead, we create a temporary directory containing only the needed
+     headers (cxxabi.h and __cxxabi_config.h) symlinked from the SDK, avoiding the conflict.
+     Only for C++ compilations; these headers are not needed for plain C.
      Note: -isysroot is typically nested inside @argfiles so we must search them recursively. *)
   let clang_arguments =
     if cmd.is_driver then
@@ -257,14 +259,27 @@ let clang_cc1_cmd_sanitizer cmd =
         | Some l ->
             String.is_prefix l ~prefix:"c++" || String.is_suffix l ~suffix:"++"
         | None ->
-            false
+            (* No explicit -x flag; check if source file extension implies C++/ObjC++ *)
+            List.exists clang_arguments ~f:(fun arg ->
+                List.exists [".mm"; ".cpp"; ".cc"; ".cxx"; ".c++"; ".C"] ~f:(fun suffix ->
+                    String.is_suffix arg ~suffix ) )
       in
       if is_cxx_compilation then
         match value_of_argv_option_deep clang_arguments "-isysroot" with
         | Some sysroot ->
             let sdk_cxx_include = sysroot ^/ "usr" ^/ "include" ^/ "c++" ^/ "v1" in
-            if ISys.file_exists sdk_cxx_include then
-              clang_arguments @ ["-Xclang"; "-internal-isystem"; "-Xclang"; sdk_cxx_include]
+            let cxxabi_h = sdk_cxx_include ^/ "cxxabi.h" in
+            if ISys.file_exists cxxabi_h then (
+              let tmp_dir = IFilename.temp_dir "infer_cxxabi" "" in
+              let symlink src dst =
+                let src_path = sdk_cxx_include ^/ src in
+                if ISys.file_exists src_path then
+                  try IUnix.symlink ~target:src_path ~link_name:(tmp_dir ^/ dst) ()
+                  with Unix.Unix_error _ -> ()
+              in
+              symlink "cxxabi.h" "cxxabi.h" ;
+              symlink "__cxxabi_config.h" "__cxxabi_config.h" ;
+              clang_arguments @ ["-Xclang"; "-internal-isystem"; "-Xclang"; tmp_dir] )
             else clang_arguments
         | None ->
             clang_arguments
