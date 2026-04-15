@@ -35,16 +35,16 @@
 // For example the following code:
 //      let b = Box::new(10);
 //      let value = *b;
-// By default boxes are handled as pointers by the use of the Deref Trait. ULLBC: 
+// (1) By default boxes are handled as pointers by the use of the Deref Trait. ULLBC: 
 //      `value = copy (*(b@1))`;
-// When using --mir-elaborated boxes are treated as a pointer to Unqiue and then derefenced : 
+// (2) When using --mir-elaborated or --precise-drops boxes are treated as a pointer to Unqiue and then derefenced : 
 //      @3 := transmute<NonNull<i32>, *const i32>(copy ((*(b@1)).0));
 //      value@2 := copy (*(@3));
-// When using --mir-elaborated --raw-boxes boxes are handled as:
+// (3) When using --mir-elaborated --raw-boxes boxes are handled as:
 //      @3 := transmute<NonNull<i32>, *const i32>(copy (((b@1).0).0));
 //      value@2 := copy (*(@3));
-// At some point we want to move to model the --mir-elaborated version since this allows us the get drop-elaboration to
-// get precise information on when a a value is freed.
+// With the default charon arguments defined Rust.ml we model version 2.
+// We do special handling for Box, Unqiue, and NonNull in RustMir2Textual.ml to treat them as pointers.
 define __sil_boxnew(o : int): *int {
   local ptr : *int
   #entry:
@@ -59,4 +59,15 @@ define __sil_boxnew(o : int): *int {
   #invalid:
     unreachable
 
+}
+
+// The function for dropping a box containg a primitive type
+// when using the --desugar-drops.
+// This is a model for the function:
+// alloc::boxed::Box::<i32>::drop_in_place(&Box)
+// 
+define __sil_boxdrop(o : **int): void {
+  #entry:
+    n1 = __sil_free([[&o:**int]:*int])
+    ret null
 }

@@ -420,6 +420,8 @@ module ProcDecl : sig
 
   val boxnew_name : QualifiedProcName.t
 
+  val boxdrop_name : QualifiedProcName.t
+
   val is_allocate_array_builtin : QualifiedProcName.t -> bool
 
   val is_get_lazy_class_builtin : QualifiedProcName.t -> bool

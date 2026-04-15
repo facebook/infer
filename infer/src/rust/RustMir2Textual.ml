@@ -108,9 +108,28 @@ let mk_typename_from_type_decl crate (type_decl : Charon.Generated_Types.type_de
   Textual.TypeName.of_string name
 
 
+(* Model for box drops when using --desugar-drops *)
+let is_box_primitive_drop_in_place crate fun_decl_id =
+  let decl = fun_map_find_id crate fun_decl_id in
+  match (decl.item_meta.name, decl.signature.inputs) with
+  | ( PeIdent ("alloc", _)
+      :: PeIdent ("boxed", _)
+      :: PeIdent ("Box", _)
+      :: _
+      :: PeIdent ("drop_in_place", _)
+      :: _
+    , TRawPtr (TAdt {id= TBuiltin TBox; generics= {types= TLiteral _ :: _}}, _) :: _ ) ->
+      true
+  | _, _ ->
+      false
+
+
 let fun_name_from_fun_operand (crate : Charon.UllbcAst.crate)
     (operand : Charon.Generated_GAst.fn_operand) : Textual.QualifiedProcName.t =
   match operand with
+  | FnOpRegular {kind= FunId (FRegular fun_decl_id)}
+    when is_box_primitive_drop_in_place crate fun_decl_id ->
+      Textual.ProcDecl.boxdrop_name
   | FnOpRegular {kind= FunId (FRegular fun_decl_id)} ->
       let decl = fun_map_find_id crate fun_decl_id in
       mk_qualified_proc_name crate decl.item_meta
@@ -225,6 +244,33 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
   (Textual.ProcDecl.of_binop bin_op, typ)
 
 
+(* Model Unqiue<T> and NonNull<T> as *T *)
+let is_pointer_type crate (name : Charon.Generated_Types.name) =
+  let name = name |> List.map ~f:(name_of_path_element crate) in
+  match name with
+  | "core" :: "ptr" :: "non_null" :: "NonNull" :: _ ->
+      true
+  | "core" :: "ptr" :: "unique" :: "Unique" :: _ ->
+      true
+  | _ ->
+      false
+
+
+let is_ty_decl_pointer_type crate type_decl_id =
+  let type_decl = type_decl_map_find_id crate type_decl_id in
+  is_pointer_type crate type_decl.item_meta.name
+
+
+let is_ty_pointer_type crate (ty : Charon.Generated_Types.ty) =
+  match ty with
+  | TAdt {id= TAdtId type_decl_id} ->
+      is_ty_decl_pointer_type crate type_decl_id
+  | TAdt {id= TBuiltin TBox} ->
+      true
+  | _ ->
+      false
+
+
 let rec mk_struct_args crate (types : Charon.Generated_Types.ty list) =
   List.map types ~f:(fun typ ->
       Textual.TypeName.of_string (Format.asprintf "%a" Textual.Typ.pp (ty_to_textual_typ crate typ)) )
@@ -239,6 +285,14 @@ and mk_tuple_struct_typ crate type_decl_ref =
   Textual.Typ.Struct (mk_tuple_type_name crate type_decl_ref)
 
 
+and mk_ptr_from_generics_types crate (types : Charon.Generated_Types.ty list) =
+  match types with
+  | typ :: _ ->
+      Textual.Typ.mk_ptr (ty_to_textual_typ crate typ)
+  | _ ->
+      Textual.Typ.mk_ptr Textual.Typ.Void
+
+
 and adt_ty_to_textual_typ crate (type_decl_ref : Charon.Generated_Types.type_decl_ref) :
     Textual.Typ.t =
   (* TODO: Implement other adt types *)
@@ -246,6 +300,10 @@ and adt_ty_to_textual_typ crate (type_decl_ref : Charon.Generated_Types.type_dec
   | TTuple ->
       if List.is_empty type_decl_ref.generics.types then Textual.Typ.Void
       else mk_tuple_struct_typ crate type_decl_ref.generics.types
+  | TAdtId type_decl_id
+    when let type_decl = type_decl_map_find_id crate type_decl_id in
+         is_pointer_type crate type_decl.item_meta.name ->
+      mk_ptr_from_generics_types crate type_decl_ref.generics.types
   | TAdtId type_decl_id -> (
       let type_decl = type_decl_map_find_id crate type_decl_id in
       match type_decl.kind with
@@ -257,12 +315,8 @@ and adt_ty_to_textual_typ crate (type_decl_ref : Charon.Generated_Types.type_dec
           Textual.Typ.Struct type_name
       | _ ->
           Textual.Typ.Void )
-  | TBuiltin TBox -> (
-    match type_decl_ref.generics.types with
-    | typ :: _ ->
-        Textual.Typ.mk_ptr (ty_to_textual_typ crate typ)
-    | _ ->
-        Textual.Typ.mk_ptr Textual.Typ.Void )
+  | TBuiltin TBox ->
+      mk_ptr_from_generics_types crate type_decl_ref.generics.types
   | TBuiltin TStr ->
       Textual.Typ.Struct Textual.TypeName.sil_string
 
@@ -377,10 +431,31 @@ let rec mk_exp_from_place ~loc (crate : Charon.UllbcAst.crate) (place_map : plac
   | PlaceLocal var_id ->
       let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
       exp
+  (* This models the --precise-drop versions of Box, Unqiue and NonNull as pointers since the 
+  compiler has some special handling for how it treats Box and NonNull and their ABI are equivalent.
+  For example:
+    let b = Box::new(10);
+    let value = *b;
+  Is lowered in mir to 
+    b_1 = @BoxNew<i32>
+    _3 := transmute<NonNull<i32>, *const i32>(copy (( *(b_1)).0));
+    value_2 := copy ( *(_3));
+  There are two abstractions here:
+  (1) *b_1 is the derefence of the box struct, box that access the underlying unique. 
+  The .0 is then a regular field acces of the unqiue that gets The NonNull.
+  (2) The transmute treats the NonNull struct the same is it's field.
+  This skips the ( *(b_1)) step.
+  *)
+  | PlaceProjection (({ty= TAdt {id= TBuiltin TBox}} as projection_place), Deref)
+    when is_ty_pointer_type crate place.ty ->
+      mk_exp_from_place ~loc crate place_map projection_place
   | PlaceProjection (projection_place, Deref) ->
       let proj_typ = ty_to_textual_typ crate projection_place.ty in
       let exp = mk_exp_from_place ~loc crate place_map projection_place in
       Textual.Exp.Load {exp; typ= Some proj_typ}
+  (* This skips the NonNull<T>.0 and Unqiue<T>.0 step *)
+  | PlaceProjection (projection_place, Field _) when is_ty_pointer_type crate projection_place.ty ->
+      mk_exp_from_place ~loc crate place_map projection_place
   | PlaceProjection (projection_place, Field (ProjAdt (type_decl_id, variant), field_id)) ->
       let exp = mk_exp_from_place ~loc crate place_map projection_place in
       let type_decl = type_decl_map_find_id crate type_decl_id in
@@ -632,21 +707,26 @@ let mk_terminator (crate : Charon.UllbcAst.crate) (idx : int) (place_map : place
   (* A drop frees the memory of a value once it goes out of scope.
     The following implementation is a simplified model for drops 
     of boxes created by Box::new() of types using the global allocator.
+
     https://doc.rust-lang.org/1.93.1/alloc/alloc/struct.Global.html
     https://rustc-dev-guide.rust-lang.org/mir/drop-elaboration.html
     https://doc.rust-lang.org/1.93.1/alloc/alloc/trait.GlobalAlloc.html#tymethod.dealloc
   *)
-  | Drop (Precise, ({ty= TAdt {id= TBuiltin TBox}} as place), _trait_ref, target, on_unwind) ->
-      let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
-      let qualified_free_name = Textual.ProcDecl.free_name in
-      let free_call = Textual.Exp.call_non_virtual qualified_free_name [exp] in
-      let free_instr = Textual.Instr.Let {id= None; exp= free_call; loc} in
-      let on_unwind = mk_label (Charon.Generated_UllbcAst.BlockId.to_int on_unwind) in
-      let target = mk_jump target in
-      ([], [free_instr], target, [on_unwind])
+  | Drop (Precise, place, _trait_ref, target, on_unwind) -> (
+    match place.ty with
+    | TAdt {id= TBuiltin TBox; generics= {types= TLiteral _ :: _}} ->
+        let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
+        let qualified_free_name = Textual.ProcDecl.free_name in
+        let free_call = Textual.Exp.call_non_virtual qualified_free_name [exp] in
+        let free_instr = Textual.Instr.Let {id= None; exp= free_call; loc} in
+        let on_unwind = mk_label (Charon.Generated_UllbcAst.BlockId.to_int on_unwind) in
+        let target = mk_jump target in
+        ([], [free_instr], target, [on_unwind])
+    | ty ->
+        L.die UserError "[ERROR] Unsupported drop for type: @. > %a @." Charon.Types.pp_ty ty )
   | _ ->
-      L.die UserError "[ERROR] Unsupported terminator: %a " Charon.Generated_UllbcAst.pp_terminator
-        terminator
+      L.die UserError "[ERROR] Unsupported terminator: @. > %a @."
+        Charon.Generated_UllbcAst.pp_terminator terminator
 
 
 let mk_field_store_instr_from_rvalue ~loc crate lexp enclosing_class place_map field_id
@@ -682,16 +762,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
   | Assign (lhs, Aggregate (AggregatedAdt ({id= TAdtId type_decl_id}, None, None), ops)) ->
       let lexp = mk_exp_from_place ~loc crate place_map lhs in
       let type_decl = type_decl_map_find_id crate type_decl_id in
-      let fields =
-        match type_decl.kind with
-        | Struct fields ->
-            fields
-        | _ ->
-            L.die UserError
-              "[ERROR] Should not be reachable: Encountered none struct kind even tough variant \
-               and field_id are None. @. > %a @."
-              Charon.Generated_Types.pp_type_decl_kind type_decl.kind
-      in
+      let fields = Charon.TypesUtils.type_decl_get_fields type_decl None in
       let enclosing_class = mk_typename_from_type_decl crate type_decl None in
       mk_field_store_instrs_from_rvalues ~loc crate lexp enclosing_class place_map ops fields
   (* Enum Variant *)
@@ -751,6 +822,10 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
       []
   | StorageLive _ ->
       []
+  | PlaceMention place ->
+      let exp, _ = mk_exp_from_place_load ~loc crate place_map place in
+      let instr = Textual.Instr.Let {id= None; exp; loc} in
+      [instr]
   | s ->
       L.die UserError "[ERROR] Unsupported statement: @. > %a @."
         Charon.Generated_UllbcAst.pp_statement_kind s
