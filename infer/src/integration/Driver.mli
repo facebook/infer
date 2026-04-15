@@ -38,6 +38,7 @@ type mode =
   | RustULLBC of {ullbc_files: string list}
   | Swiftc of {prog: string; args: string list}
   | Textual of {textualfiles: string list}
+  | TreeSitter of {files: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 

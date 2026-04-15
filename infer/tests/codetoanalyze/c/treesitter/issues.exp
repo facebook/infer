@@ -1,0 +1,6 @@
+codetoanalyze/c/treesitter/broken_source.c, null_deref_in_broken_file_Bad, 23, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/c/treesitter/broken_source.c, another_bug_Bad, 31, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/c/treesitter/memory.c, use_after_free_Bad, 15, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `malloc (null case)` (modelled),is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/c/treesitter/memory.c, use_after_free_Bad, 15, USE_AFTER_FREE, no_bucket, ERROR, [invalidation part of the trace starts here,allocated by call to `malloc` (modelled),assigned,was invalidated by call to `free()`,use-after-lifetime part of the trace starts here,allocated by call to `malloc` (modelled),assigned,invalid access occurs here]
+codetoanalyze/c/treesitter/nullptr.c, null_deref_Bad, 11, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/c/treesitter/nullptr.c, arrow_null_deref_Bad, 32, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

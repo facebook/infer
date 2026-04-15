@@ -16,8 +16,14 @@
    -open
    IBase
    -open
+   IR
+   -open
+   Textuallib
+   -open
    TreeSitterFrontend))
- (libraries core IStdlib IBase TreeSitterFrontend)
- (inline_tests)
+ (libraries core IStdlib IBase IR Textuallib TreeSitterFrontend)
+ (inline_tests
+  (executable
+   (link_flags -cclib -lTreeSitterFrontend_stubs)))
  (preprocess
   (pps ppx_expect ppx_inline_test)))

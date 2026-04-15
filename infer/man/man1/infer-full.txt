@@ -2601,6 +2601,13 @@ INTERNAL OPTIONS
        --capture-textual-reset
            Set --capture-textual to the empty list.
 
+       --capture-tree-sitter +path
+           Generate a SIL program from C source files using the bundled
+           tree-sitter C grammar. Only C is currently supported.
+
+       --capture-tree-sitter-reset
+           Set --capture-tree-sitter to the empty list.
+
        --no-censor-report-reset
            Set --no-censor-report to the empty list.
 
@@ -3669,6 +3676,16 @@ INTERNAL OPTIONS
        --trace-wto
            Activates: Emit debug information for the weak topological order
            computation. (Conversely: --no-trace-wto)
+
+       --tree-sitter-preprocessor command
+           Preprocessor command to run on C files before tree-sitter parsing.
+           The command receives the source file as argument and should write
+           preprocessed output to stdout. Example: --tree-sitter-preprocessor
+           'cc -E' or --tree-sitter-preprocessor 'clang -E -Iinclude'. When
+           not set, tree-sitter parses the original source directly.
+
+       --tree-sitter-preprocessor-reset
+           Cancel the effect of --tree-sitter-preprocessor.
 
        --no-unix-fork
            Deactivates: Use the fork(2) system call to spawn sub-processes.

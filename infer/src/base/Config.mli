@@ -184,6 +184,10 @@ val capture_textual : string list
 
 val capture_rust_ullbc : string list
 
+val capture_tree_sitter : string list
+
+val tree_sitter_preprocessor : string option
+
 val censor_report : ((bool * Str.regexp) * (bool * Str.regexp) * string) list
 
 val cfg_json : string option

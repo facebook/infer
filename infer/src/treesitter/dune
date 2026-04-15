@@ -6,9 +6,23 @@
 (library
  (name TreeSitterFrontend)
  (public_name infer.TreeSitterFrontend)
+ (no_dynlink)
+ (c_library_flags (-lTreeSitterFrontend_stubs))
  (flags
-  (:standard -open Core -open IStdlib -open IStd -open IBase))
- (libraries core IStdlib IBase)
+  (:standard
+   -open
+   Core
+   -open
+   IStdlib
+   -open
+   IStd
+   -open
+   IBase
+   -open
+   Textuallib
+   -open
+   IR))
+ (libraries core xmlm IStdlib IBase IR Textuallib)
  (foreign_stubs
   (language c)
   (names tree_sitter_stubs tree_sitter_runtime tree_sitter_c_grammar)

@@ -17,7 +17,7 @@ Printf.sprintf
   (pps ppx_expect))
  (inline_tests
   (executable
-   (link_flags %s %s))))|}
+   (link_flags -cclib -lTreeSitterFrontend_stubs %s %s))))|}
   (if_platform_env "-linkall -cclib -lppx_inline_test_runner_lib_stubs")
   platform_linking_flags
 |> Jbuild_plugin.V1.send

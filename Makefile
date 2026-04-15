@@ -178,6 +178,8 @@ endif
 endif # HAS_OBJC
 endif # BUILD_C_ANALYZERS
 
+DIRECT_TESTS += c_treesitter
+
 ifneq ($(BUILD_SWIFT_ANALYZERS),no)
 # New variable specifically for local Swift testing
 SWIFT_DIRECT_TESTS += \
