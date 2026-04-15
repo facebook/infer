@@ -7,6 +7,7 @@ on:
   pull_request: {}
 
 env:
+  USER_LLVM: "no"
   KOTLINC: "no"
 
 jobs:
@@ -59,7 +60,7 @@ jobs:
       matrix:
         os:
           - macOS-latest
-          - ubuntu-26.04
+          - ubuntu-24.04
         ocaml-compiler:
           - ocaml-variants.5.3.0+options,ocaml-option-flambda
     runs-on: ${{ matrix.os }}
@@ -71,8 +72,11 @@ jobs:
       - name: Install Required Apt Packages for Ubuntu
         if: runner.os == 'Linux'
         run: |
-          sudo apt install clang-21 llvm-21 llvm-21-dev libmpfr-dev libsqlite3-dev ninja-build
-          sudo apt clean
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          sudo add-apt-repository -y "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-21 main"
+          sudo apt-get update
+          sudo apt-get install -y clang-21 llvm-21 llvm-21-dev libmpfr-dev libsqlite3-dev ninja-build
+          sudo apt-get clean
           echo "USER_LLVM=yes" >> $GITHUB_ENV
           echo "LLVM_CONFIG=/usr/lib/llvm-21/bin/llvm-config" >> $GITHUB_ENV
 
