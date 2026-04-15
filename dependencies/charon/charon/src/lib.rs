@@ -21,8 +21,9 @@
 #![feature(if_let_guard)]
 #![feature(impl_trait_in_assoc_type)]
 #![feature(iterator_try_collect)]
-#![feature(trait_alias)]
 #![feature(register_tool)]
+#![feature(trait_alias)]
+#![feature(trivial_bounds)]
 // For when we use charon on itself :3
 #![register_tool(charon)]
 
@@ -42,7 +43,6 @@ pub mod transform;
 // Re-export all the ast modules so we can keep the old import structure.
 pub use ast::{builtins, expressions, gast, llbc_ast, meta, names, types, ullbc_ast, values};
 pub use pretty::formatter;
-pub use transform::{graphs, reorder_decls, ullbc_to_llbc};
 
 /// The version of the crate, as defined in `Cargo.toml`.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

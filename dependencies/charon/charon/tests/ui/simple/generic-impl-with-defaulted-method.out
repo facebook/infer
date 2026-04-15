@@ -26,32 +26,32 @@ where
 pub trait BoolTrait<Self>
 {
     parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn foo<'_0> = foo<'_0_0, Self>[Self]
+    fn foo<'_0_1> = test_crate::BoolTrait::foo<'_0_1, Self>[Self]
     vtable: test_crate::BoolTrait::{vtable}
 }
 
-// Full name: test_crate::BoolTrait::foo
-pub fn foo<'_0, Self>(@1: &'_0 (Self))
+pub fn test_crate::BoolTrait::foo<'_0, Self>(_1: &'_0 Self)
 where
     [@TraitClause0]: BoolTrait<Self>,
 {
-    let @0: (); // return
-    let self@1: &'_ (Self); // arg #1
+    let _0: (); // return
+    let self_1: &'1 Self; // arg #1
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
-pub fn test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}::foo<'_0, T>(@1: &'_0 (Option<T>[@TraitClause0]))
+// Full name: test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}::foo
+pub fn {impl BoolTrait for Option<T>[@TraitClause0]}::foo<'_0, T>(_1: &'_0 Option<T>[@TraitClause0])
 where
     [@TraitClause0]: Sized<T>,
 {
-    let @0: (); // return
-    let self@1: &'_ (Option<T>[@TraitClause0]); // arg #1
+    let _0: (); // return
+    let self_1: &'1 Option<T>[@TraitClause0]; // arg #1
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
@@ -60,8 +60,8 @@ impl<T> BoolTrait for Option<T>[@TraitClause0]
 where
     [@TraitClause0]: Sized<T>,
 {
-    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
-    fn foo<'_0> = test_crate::{impl BoolTrait for Option<T>[@TraitClause0]}::foo<'_0_0, T>[@TraitClause0]
+    parent_clause0 = {built_in impl MetaSized for Option<T>[@TraitClause0]}
+    fn foo<'_0_1> = {impl BoolTrait for Option<T>[@TraitClause0]}::foo<'_0_1, T>[@TraitClause0]
     vtable: {impl BoolTrait for Option<T>[@TraitClause0]}::{vtable}<T>[@TraitClause0]
 }
 

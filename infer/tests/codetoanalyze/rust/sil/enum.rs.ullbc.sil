@@ -20,6 +20,7 @@ type enum::Types@Value extends enum::Types = {@discriminant: int; 0: int}
 define enum::main() : void {
   local var_0: void, tunit_1: enum::Types, tvalue_2: enum::Types, ttype_3: enum::Types, tname_4: enum::Types
   #node_0:
+      store &var_0 <- null:void
       store &tunit_1.enum::Types@Unit.@discriminant <- 0:int
       store &tvalue_2.enum::Types@Value.@discriminant <- 1:int
       store &tvalue_2.enum::Types@Value.0 <- 10:int
@@ -28,7 +29,6 @@ define enum::main() : void {
       store &ttype_3.enum::Types@Tuple.1 <- 30:int
       store &tname_4.enum::Types@Named.@discriminant <- 3:int
       store &tname_4.enum::Types@Named.id <- 40:int
-      store &var_0 <- null:void
       store &var_0 <- null:void
       n0:void = load &var_0
       ret n0

@@ -1,0 +1,249 @@
+# Final LLBC before serialization:
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    fn clone<'_0_1> = core::clone::Clone::clone<'_0_1, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(_1: &'_0 Self) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+= <opaque>
+
+// Full name: core::clone::impls::{impl Clone for usize}::clone
+pub fn {impl Clone for usize}::clone<'_0>(_1: &'_0 usize) -> usize
+= <opaque>
+
+// Full name: core::clone::impls::{impl Clone for usize}
+impl Clone for usize {
+    fn clone<'_0_1> = {impl Clone for usize}::clone<'_0_1>
+    non-dyn-compatible
+}
+
+// Full name: core::cmp::PartialEq
+#[lang_item("eq")]
+pub trait PartialEq<Self, Rhs>
+{
+    fn eq<'_0_1, '_1_1> = core::cmp::PartialEq::eq<'_0_1, '_1_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialEq::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1, Self, Rhs>(_1: &'_0 Self, _2: &'_1 Rhs) -> bool
+where
+    [@TraitClause0]: PartialEq<Self, Rhs>,
+= <opaque>
+
+// Full name: core::cmp::Ordering
+#[lang_item("Ordering")]
+pub enum Ordering {
+  Less,
+  Equal,
+  Greater,
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T> {
+  None,
+  Some(T),
+}
+
+// Full name: core::cmp::PartialOrd
+#[lang_item("partial_ord")]
+pub trait PartialOrd<Self, Rhs>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq<Self, Rhs>
+    fn partial_cmp<'_0_1, '_1_1> = core::cmp::PartialOrd::partial_cmp<'_0_1, '_1_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialOrd::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialord_cmp")]
+pub fn core::cmp::PartialOrd::partial_cmp<'_0, '_1, Self, Rhs>(_1: &'_0 Self, _2: &'_1 Rhs) -> Option<Ordering>
+where
+    [@TraitClause0]: PartialOrd<Self, Rhs>,
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<usize> for usize}::eq
+pub fn {impl PartialEq<usize> for usize}::eq<'_0, '_1>(_1: &'_0 usize, _2: &'_1 usize) -> bool
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<usize> for usize}
+impl PartialEq<usize> for usize {
+    fn eq<'_0_1, '_1_1> = {impl PartialEq<usize> for usize}::eq<'_0_1, '_1_1>
+    vtable: {impl PartialEq<usize> for usize}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialOrd<usize> for usize}::partial_cmp
+pub fn {impl PartialOrd<usize> for usize}::partial_cmp<'_0, '_1>(_1: &'_0 usize, _2: &'_1 usize) -> Option<Ordering>
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialOrd<usize> for usize}
+impl PartialOrd<usize> for usize {
+    parent_clause0 = {impl PartialEq<usize> for usize}
+    fn partial_cmp<'_0_1, '_1_1> = {impl PartialOrd<usize> for usize}::partial_cmp<'_0_1, '_1_1>
+    vtable: {impl PartialOrd<usize> for usize}::{vtable}
+}
+
+// Full name: core::iter::range::Step
+#[lang_item("range_step")]
+pub trait Step<Self>
+{
+    parent_clause0 : [@TraitClause0]: Clone<Self>
+    parent_clause1 : [@TraitClause1]: PartialOrd<Self, Self>
+    fn steps_between<'_0_1, '_1_1> = core::iter::range::Step::steps_between<'_0_1, '_1_1, Self>[Self]
+    fn forward_checked = core::iter::range::Step::forward_checked<Self>[Self]
+    fn backward_checked = core::iter::range::Step::backward_checked<Self>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::iter::range::Step::steps_between<'_0, '_1, Self>(_1: &'_0 Self, _2: &'_1 Self) -> (usize, Option<usize>)
+where
+    [@TraitClause0]: Step<Self>,
+= <opaque>
+
+pub fn core::iter::range::Step::forward_checked<Self>(_1: Self, _2: usize) -> Option<Self>
+where
+    [@TraitClause0]: Step<Self>,
+= <opaque>
+
+pub fn core::iter::range::Step::backward_checked<Self>(_1: Self, _2: usize) -> Option<Self>
+where
+    [@TraitClause0]: Step<Self>,
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}::backward_checked
+pub fn {impl Step for usize}::backward_checked(_1: usize, _2: usize) -> Option<usize>
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}::forward_checked
+pub fn {impl Step for usize}::forward_checked(_1: usize, _2: usize) -> Option<usize>
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}::steps_between
+pub fn {impl Step for usize}::steps_between<'_0, '_1>(_1: &'_0 usize, _2: &'_1 usize) -> (usize, Option<usize>)
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}
+impl Step for usize {
+    parent_clause0 = {impl Clone for usize}
+    parent_clause1 = {impl PartialOrd<usize> for usize}
+    fn steps_between<'_0_1, '_1_1> = {impl Step for usize}::steps_between<'_0_1, '_1_1>
+    fn forward_checked = {impl Step for usize}::forward_checked
+    fn backward_checked = {impl Step for usize}::backward_checked
+    non-dyn-compatible
+}
+
+// Full name: core::ops::range::Range
+#[lang_item("Range")]
+pub struct Range<Idx> {
+  start: Idx,
+  end: Idx,
+}
+
+// Full name: core::iter::traits::iterator::Iterator
+#[lang_item("iterator")]
+pub trait Iterator<Self, Self_Item>
+{
+    fn next<'_0_1> = core::iter::traits::iterator::Iterator::next<'_0_1, Self, Self_Item>[Self]
+    vtable: core::iter::traits::iterator::Iterator::{vtable}<Self_Item>
+}
+
+// Full name: core::iter::range::{impl Iterator<A> for Range<A>}::next
+pub fn {impl Iterator<A> for Range<A>}::next<'_0, A>(_1: &'_0 mut Range<A>) -> Option<A>
+where
+    [@TraitClause0]: Step<A>,
+= <opaque>
+
+// Full name: core::iter::range::{impl Iterator<A> for Range<A>}
+impl<A> Iterator<A> for Range<A>
+where
+    [@TraitClause0]: Step<A>,
+{
+    fn next<'_0_1> = {impl Iterator<A> for Range<A>}::next<'_0_1, A>[@TraitClause0]
+    vtable: {impl Iterator<A> for Range<A>}::{vtable}<A>[@TraitClause0]
+}
+
+// Full name: core::iter::traits::collect::{impl IntoIterator<Clause0_Item, I> for I}::into_iter
+pub fn {impl IntoIterator<Clause0_Item, I> for I}::into_iter<I, Clause0_Item>(_1: I) -> I
+where
+    [@TraitClause0]: Iterator<I, Clause0_Item>,
+= <opaque>
+
+#[lang_item("next")]
+pub fn core::iter::traits::iterator::Iterator::next<'_0, Self, Clause0_Item>(_1: &'_0 mut Self) -> Option<Clause0_Item>
+where
+    [@TraitClause0]: Iterator<Self, Clause0_Item>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::iter
+fn iter(_1: usize)
+{
+    let _0: (); // return
+    let n_1: usize; // arg #1
+    let _2: Range<usize>; // anonymous local
+    let _3: Range<usize>; // anonymous local
+    let _4: usize; // anonymous local
+    let iter_5: Range<usize>; // local
+    let _6: Option<usize>; // anonymous local
+    let _7: &'1 mut Range<usize>; // anonymous local
+    let _8: &'2 mut Range<usize>; // anonymous local
+    let i_9: usize; // local
+
+    _0 = ()
+    storage_live(_2)
+    storage_live(_3)
+    storage_live(_4)
+    _4 = copy n_1
+    _3 = Range { start: const 0 : usize, end: move _4 }
+    storage_dead(_4)
+    _2 = {impl IntoIterator<Clause0_Item, I> for I}::into_iter<Range<usize>, usize>[{impl Iterator<A> for Range<A>}<usize>[{impl Step for usize}]](move _3)
+    storage_dead(_3)
+    storage_live(iter_5)
+    iter_5 = move _2
+    loop {
+        storage_live(_6)
+        storage_live(_7)
+        storage_live(_8)
+        _8 = &mut iter_5
+        _7 = &two-phase-mut (*_8)
+        _6 = {impl Iterator<A> for Range<A>}::next<'4, usize>[{impl Step for usize}](move _7)
+        storage_dead(_7)
+        match _6 {
+            Option::None => {
+                break 0
+            },
+            Option::Some => {
+            },
+        }
+        storage_live(i_9)
+        i_9 = copy (_6 as variant Option::Some).0
+        storage_dead(i_9)
+        storage_dead(_8)
+        storage_dead(_6)
+        continue 0
+    }
+    _0 = ()
+    storage_dead(_8)
+    storage_dead(_6)
+    storage_dead(iter_5)
+    storage_dead(_2)
+    return
+}
+
+
+

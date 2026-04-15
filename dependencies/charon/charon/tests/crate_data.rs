@@ -1,13 +1,18 @@
 #![feature(box_patterns)]
 
+use charon_lib::llbc_ast::*;
 use itertools::Itertools;
 use std::collections::HashMap;
-use std::error::Error;
-
-use charon_lib::llbc_ast::*;
 
 mod util;
 use util::*;
+
+fn translate_with_options(
+    code: impl std::fmt::Display,
+    options: &[&str],
+) -> anyhow::Result<TranslatedCrate> {
+    util::translate_rust_text(code, options)
+}
 
 fn translate(code: impl std::fmt::Display) -> anyhow::Result<TranslatedCrate> {
     util::translate_rust_text(code, &[])
@@ -19,7 +24,7 @@ struct Item<'c> {
     // Not a ref because we do a little hack.
     generics: GenericParams,
     #[expect(dead_code)]
-    kind: AnyTransItem<'c>,
+    kind: ItemRef<'c>,
 }
 
 /// Get all the items for this crate.
@@ -28,10 +33,10 @@ fn items_by_name<'c>(crate_data: &'c TranslatedCrate) -> HashMap<String, Item<'c
         .all_items()
         .map(|item| {
             let mut generics = item.generic_params().clone();
-            if let AnyTransItem::TraitDecl(tdecl) = &item {
+            if let ItemRef::TraitDecl(tdecl) = &item {
                 // We do a little hack.
                 assert!(generics.trait_clauses.is_empty());
-                generics.trait_clauses = tdecl.parent_clauses.clone();
+                generics.trait_clauses = tdecl.implied_clauses.clone();
             }
             Item {
                 name_str: repr_name(crate_data, &item.item_meta().name),
@@ -73,7 +78,7 @@ fn file_name() -> anyhow::Result<()> {
         repr_name(&crate_data, &crate_data.type_decls[1].item_meta.name),
         "core::option::Option"
     );
-    let file_id = crate_data.type_decls[1].item_meta.span.span.file_id;
+    let file_id = crate_data.type_decls[1].item_meta.span.data.file_id;
     let file = &crate_data.files[file_id];
     assert_eq!(file.name.to_string(), "/rustc/library/core/src/option.rs");
     Ok(())
@@ -81,7 +86,7 @@ fn file_name() -> anyhow::Result<()> {
 
 #[test]
 fn spans() -> anyhow::Result<()> {
-    let crate_data = translate(
+    let crate_data = translate_with_options(
         "
         pub fn sum(s: &[u32]) -> u32 {
             let mut sum = 0;
@@ -93,20 +98,25 @@ fn spans() -> anyhow::Result<()> {
             sum
         }
         ",
+        &["--reconstruct-fallible-operations"],
     )?;
-    let function = &crate_data.fun_decls[0];
+    let function = &crate_data.fun_decls[1];
     // Span of the whole function.
     assert_eq!(repr_span(function.item_meta.span), "2:8-10:9");
 
-    let body = function.body.as_ref().unwrap();
-    let body = &body.as_structured().unwrap().body;
+    let body = &function.body.as_structured().unwrap();
     // Span of the function body
-    assert_eq!(repr_span(body.span), "3:16-10:9");
+    assert_eq!(repr_span(body.body.span), "3:16-10:9");
+
+    let sum_var = &body.locals.locals[2];
+    assert_eq!(sum_var.name.as_deref(), Some("sum"));
+    assert_eq!(repr_span(sum_var.span), "3:16-3:23");
 
     let the_loop = body
+        .body
         .statements
         .iter()
-        .find(|st| st.content.is_loop())
+        .find(|st| st.kind.is_loop())
         .unwrap();
     assert_eq!(repr_span(the_loop.span), "5:12-8:13");
 
@@ -184,8 +194,8 @@ fn predicate_origins() -> anyhow::Result<()> {
                 (WhereClauseOnTrait, "Sized"),
                 (WhereClauseOnTrait, "Copy"),
                 (WhereClauseOnTrait, "Default"),
-                (TraitItem(TraitItemName("AssocType".to_owned())), "Sized"),
-                (TraitItem(TraitItemName("AssocType".to_owned())), "Default"),
+                (TraitItem(TraitItemName("AssocType".into())), "Sized"),
+                (TraitItem(TraitItemName("AssocType".into())), "Default"),
             ],
         ),
         // Interesting note: the method definition does not mention the clauses on the trait.
@@ -258,6 +268,8 @@ fn attributes() -> anyhow::Result<()> {
     };
     let crate_data = translate(
         r#"
+        #![feature(stmt_expr_attributes)]
+
         #[clippy::foo]
         #[clippy::foo(arg)]
         #[clippy::foo = "arg"]
@@ -280,7 +292,10 @@ fn attributes() -> anyhow::Result<()> {
 
         #[inline(never)]
         /// This is a doc comment.
-        fn main() {}
+        fn main() {
+            // Attribute on a closure.
+            let _f = #[inline(always)] || 42;
+        }
         "#,
     )?;
     assert_eq!(
@@ -297,20 +312,20 @@ fn attributes() -> anyhow::Result<()> {
         vec!["clippy::foo"]
     );
     assert_eq!(
-        unknown_attrs(&crate_data.global_decls[0].item_meta),
-        vec!["clippy::foo"]
-    );
-    assert_eq!(
         unknown_attrs(&crate_data.global_decls[1].item_meta),
         vec!["clippy::foo"]
     );
-    assert!(unknown_attrs(&crate_data.fun_decls[0].item_meta).is_empty());
     assert_eq!(
-        crate_data.fun_decls[0].item_meta.attr_info.inline,
+        unknown_attrs(&crate_data.global_decls[2].item_meta),
+        vec!["clippy::foo"]
+    );
+    assert!(unknown_attrs(&crate_data.fun_decls[1].item_meta).is_empty());
+    assert_eq!(
+        crate_data.fun_decls[1].item_meta.attr_info.inline,
         Some(InlineAttr::Never)
     );
     assert_eq!(
-        crate_data.fun_decls[0]
+        crate_data.fun_decls[1]
             .item_meta
             .attr_info
             .attributes
@@ -318,6 +333,12 @@ fn attributes() -> anyhow::Result<()> {
             .unwrap(),
         &Attribute::DocComment(" This is a doc comment.".to_owned())
     );
+    // Check that the `inline` attribute on closures gets picked up.
+    let any_inline_always = crate_data
+        .fun_decls
+        .iter()
+        .any(|decl| matches!(decl.item_meta.attr_info.inline, Some(InlineAttr::Always)));
+    assert!(any_inline_always);
     Ok(())
 }
 
@@ -368,26 +389,26 @@ fn discriminants() -> anyhow::Result<()> {
         }
         "#,
     )?;
-    fn get_enum_discriminants(ty: &TypeDecl) -> Vec<ScalarValue> {
+    fn get_enum_discriminants(ty: &TypeDecl) -> Vec<Literal> {
         ty.kind
             .as_enum()
             .unwrap()
             .iter()
-            .map(|v| v.discriminant)
+            .map(|v| v.discriminant.clone())
             .collect()
     }
     assert_eq!(
         get_enum_discriminants(&crate_data.type_decls[0]),
         vec![
-            ScalarValue::Signed(IntTy::Isize, 0),
-            ScalarValue::Signed(IntTy::Isize, 1)
+            Literal::Scalar(ScalarValue::Signed(IntTy::Isize, 0)),
+            Literal::Scalar(ScalarValue::Signed(IntTy::Isize, 1))
         ]
     );
     assert_eq!(
         get_enum_discriminants(&crate_data.type_decls[1]),
         vec![
-            ScalarValue::Unsigned(UIntTy::U32, 3),
-            ScalarValue::Unsigned(UIntTy::U32, 42)
+            Literal::Scalar(ScalarValue::Unsigned(UIntTy::U32, 3)),
+            Literal::Scalar(ScalarValue::Unsigned(UIntTy::U32, 42))
         ]
     );
     Ok(())
@@ -403,6 +424,12 @@ fn rename_attribute() -> anyhow::Result<()> {
 
         #[charon::rename("BoolTest")]
         pub trait BoolTrait {
+            #[charon::rename("AsSoCtY")]
+            type AssocTy;
+
+            #[charon::rename("konst")]
+            const ASSOC_CONST: u32 = 42;
+
             // Required method
             #[charon::rename("getTest")]
             fn get_bool(&self) -> bool;
@@ -416,6 +443,8 @@ fn rename_attribute() -> anyhow::Result<()> {
 
         #[charon::rename("BoolImpl")]
         impl BoolTrait for bool {
+            type AssocTy = ();
+
             fn get_bool(&self) -> bool {
                 *self
             }
@@ -463,12 +492,29 @@ fn rename_attribute() -> anyhow::Result<()> {
     );
 
     assert_eq!(
-        crate_data.fun_decls[0]
-            .item_meta
+        crate_data.trait_decls[0].types[0]
+            .skip_binder
             .attr_info
             .rename
             .as_deref(),
-        Some("BoolFn")
+        Some("AsSoCtY")
+    );
+
+    assert_eq!(
+        crate_data.trait_decls[0].consts[0]
+            .attr_info
+            .rename
+            .as_deref(),
+        Some("konst")
+    );
+
+    assert_eq!(
+        crate_data.trait_decls[0].methods[0]
+            .skip_binder
+            .attr_info
+            .rename
+            .as_deref(),
+        Some("getTest")
     );
 
     assert_eq!(
@@ -477,7 +523,7 @@ fn rename_attribute() -> anyhow::Result<()> {
             .attr_info
             .rename
             .as_deref(),
-        Some("getTest")
+        Some("BoolFn")
     );
 
     assert_eq!(
@@ -486,11 +532,29 @@ fn rename_attribute() -> anyhow::Result<()> {
             .attr_info
             .rename
             .as_deref(),
+        Some("getTest")
+    );
+
+    assert_eq!(
+        crate_data.fun_decls[3]
+            .item_meta
+            .attr_info
+            .rename
+            .as_deref(),
         Some("retTest")
     );
 
     assert_eq!(
-        crate_data.fun_decls[4]
+        crate_data.fun_decls[5]
+            .item_meta
+            .attr_info
+            .rename
+            .as_deref(),
+        Some("retTest")
+    );
+
+    assert_eq!(
+        crate_data.fun_decls[6]
             .item_meta
             .attr_info
             .rename
@@ -544,7 +608,7 @@ fn rename_attribute() -> anyhow::Result<()> {
     );
 
     assert_eq!(
-        crate_data.global_decls[0]
+        crate_data.global_decls[1]
             .item_meta
             .attr_info
             .rename
@@ -585,8 +649,9 @@ fn declaration_groups() -> anyhow::Result<()> {
         "#,
     )?;
 
-    // There are two function items: one for `foo`, one for the initializer of `Trait::FOO`.
-    assert_eq!(crate_data.fun_decls.iter().count(), 2);
+    // There are 3 function items: one for `foo`, one for the initializer of `Trait::FOO`, and
+    // one for the initializer of UNIT_METADATA (always included).
+    assert_eq!(crate_data.fun_decls.iter().count(), 3);
     let decl_groups = crate_data.ordered_decls.unwrap();
     assert_eq!(decl_groups.len(), 6);
 
@@ -633,7 +698,7 @@ fn source_text() -> anyhow::Result<()> {
 }
 
 #[test]
-fn known_trait_method_call() -> Result<(), Box<dyn Error>> {
+fn known_trait_method_call() -> anyhow::Result<()> {
     let crate_data = translate(
         r#"
         #[derive(Default)]
@@ -643,24 +708,23 @@ fn known_trait_method_call() -> Result<(), Box<dyn Error>> {
         }
         "#,
     )?;
-    let function = &crate_data.fun_decls[0];
+    let function = &crate_data.fun_decls[1];
     assert_eq!(
         repr_name(&crate_data, &function.item_meta.name),
         "test_crate::use_default"
     );
-    let body = function.body.as_ref().unwrap();
-    let body = &body.as_structured().unwrap().body;
+    let body = &function.body.as_structured().unwrap().body;
     let [first_stmt, ..] = body.statements.as_slice() else {
         panic!()
     };
-    let RawStatement::Call(call) = &first_stmt.content else {
+    let StatementKind::Call(call) = &first_stmt.kind else {
         panic!()
     };
     let FnOperand::Regular(fn_ptr) = &call.func else {
         panic!()
     };
     // Assert that this call referes to the method directly, without using a trait ref.
-    let FunIdOrTraitMethodRef::Fun(FunId::Regular(id)) = fn_ptr.func.as_ref() else {
+    let FnPtrKind::Fun(FunId::Regular(id)) = fn_ptr.kind.as_ref() else {
         panic!()
     };
     // This is the function that gets called.
@@ -669,8 +733,42 @@ fn known_trait_method_call() -> Result<(), Box<dyn Error>> {
         repr_name(&crate_data, &function.item_meta.name),
         "test_crate::<impl Default for ??>::default"
     );
-    let ItemKind::TraitImpl { .. } = &function.kind else {
+    let ItemSource::TraitImpl { .. } = &function.src else {
         panic!()
     };
+    Ok(())
+}
+
+#[test]
+fn multiple_deserialize() -> anyhow::Result<()> {
+    // Test that deserializing deduplicated values from two different invocations of Charon works
+    // correctly. This is non-obvious because `HashConsId`s will overlap between two invocations,
+    // yet the deserialization side-table is not reset between deserializations. It's however ok
+    // because the second deserialization simply overrides the `HashConsId -> HashCons<T>` mapping
+    // from the first one. This all breaks down if someone tries to deserialize a sub-value of the
+    // whole crate of course.
+    let krate1 = translate(
+        "
+        fn foo(_: bool) {}
+        fn bar(_: bool) {}
+        ",
+    )?;
+    let krate2 = translate(
+        "
+        fn foo(_: u32) {}
+        fn bar(_: u32) {}
+        ",
+    )?;
+    let ty1_1 = krate1.fun_decls[1].signature.inputs[0].clone();
+    let ty1_2 = krate1.fun_decls[2].signature.inputs[0].clone();
+    let ty2_1 = krate2.fun_decls[1].signature.inputs[0].clone();
+    let ty2_2 = krate2.fun_decls[2].signature.inputs[0].clone();
+    assert_eq!(ty1_1.kind().as_literal(), Some(&LiteralTy::Bool));
+    assert_eq!(ty1_2, ty1_1);
+    assert_eq!(
+        ty2_1.kind().as_literal(),
+        Some(&LiteralTy::UInt(UIntTy::U32))
+    );
+    assert_eq!(ty2_2, ty2_1);
     Ok(())
 }

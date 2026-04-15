@@ -1,0 +1,101 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = drop_in_place<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct::drop_in_place
+unsafe fn drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: test_crate::Iterator
+pub trait Iterator<Self, Self_Item>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Item>
+    vtable: test_crate::Iterator::{vtable}<Self_Item>
+}
+
+// Full name: test_crate::IsIterator
+pub trait IsIterator<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::IsIterator::{vtable}
+}
+
+// Full name: test_crate::{impl IsIterator for I}
+impl<I, Clause1_Item> IsIterator for I
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: Iterator<I, Clause1_Item>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    vtable: {impl IsIterator for I}::{vtable}<I>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: test_crate::assert_is_iterator
+fn assert_is_iterator<I>(_1: I)
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: IsIterator<I>,
+{
+    let _0: (); // return
+    let it_1: I; // arg #1
+
+    _0 = ()
+    _0 = ()
+    conditional_drop[{built_in impl Destruct for I}] it_1
+    return
+}
+
+// Full name: test_crate::IntoIterator
+pub trait IntoIterator<Self, Self_Item, Self_IntoIter>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Item>
+    parent_clause2 : [@TraitClause2]: Sized<Self_IntoIter>
+    parent_clause3 : [@TraitClause3]: Iterator<Self_IntoIter, Self_Item>
+    vtable: test_crate::IntoIterator::{vtable}<Self_Item, Self_IntoIter>
+}
+
+// Full name: test_crate::check
+fn check<I, Clause1_Item, Clause1_IntoIter>(_1: Clause1_IntoIter)
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: IntoIterator<I, Clause1_Item, Clause1_IntoIter>,
+{
+    let _0: (); // return
+    let it_1: Clause1_IntoIter; // arg #1
+    let _2: (); // anonymous local
+    let _3: Clause1_IntoIter; // anonymous local
+
+    _0 = ()
+    storage_live(_2)
+    storage_live(_3)
+    _3 = move it_1
+    _2 = assert_is_iterator<Clause1_IntoIter>[@TraitClause1::parent_clause2, {impl IsIterator for I}<Clause1_IntoIter, Clause1_Item>[@TraitClause1::parent_clause2, @TraitClause1::parent_clause3]](move _3)
+    storage_dead(_3)
+    storage_dead(_2)
+    _0 = ()
+    conditional_drop[{built_in impl Destruct for Clause1_IntoIter}] it_1
+    return
+}
+
+
+

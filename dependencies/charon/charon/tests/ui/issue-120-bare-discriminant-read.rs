@@ -1,5 +1,5 @@
 //@ charon-args=--extract-opaque-bodies
-//@ charon-args=--mir_optimized
+//@ charon-args=--mir optimized
 //@ rustc-args=-C opt-level=3
 #![feature(core_intrinsics)]
 #![allow(internal_features)]

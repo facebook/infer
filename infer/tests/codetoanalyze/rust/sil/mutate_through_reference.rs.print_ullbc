@@ -1,22 +1,34 @@
 # Final ULLBC before serialization:
 
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    bb0: {
+        _0 = ();
+        return;
+    }
+}
+
+const UNIT_METADATA: () = @Fun0()
+
 // Full name: mutate_through_reference::main
 fn main()
 {
-    let @0: (); // return
-    let x@1: i32; // local
-    let ptr@2: &'_ mut (i32); // local
+    let _0: (); // return
+    let x_1: i32; // local
+    let ptr_2: &'1 mut i32; // local
 
     bb0: {
-        storage_live(x@1);
-        x@1 := const (10 : i32);
-        storage_live(ptr@2);
-        ptr@2 := &mut x@1;
-        *(ptr@2) := const (20 : i32);
-        @0 := ();
-        storage_dead(ptr@2);
-        storage_dead(x@1);
-        @0 := ();
+        _0 = ();
+        storage_live(x_1);
+        x_1 = const 10 : i32;
+        storage_live(ptr_2);
+        ptr_2 = &mut x_1;
+        (*ptr_2) = const 20 : i32;
+        _0 = ();
+        storage_dead(ptr_2);
+        storage_dead(x_1);
         return;
     }
 }

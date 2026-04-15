@@ -3,9 +3,9 @@
 // Full name: test_cargo_build_script::FOO
 pub fn FOO() -> u8
 {
-    let @0: u8; // return
+    let _0: u8; // return
 
-    @0 := const (42 : u8)
+    _0 = const 42 : u8
     return
 }
 
@@ -15,10 +15,10 @@ pub const FOO: u8 = FOO()
 // Full name: test_cargo_build_script::main
 fn main()
 {
-    let @0: (); // return
+    let _0: (); // return
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 

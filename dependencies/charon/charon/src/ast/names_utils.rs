@@ -11,12 +11,20 @@ impl PathElem {
             _ => false,
         }
     }
+
+    pub fn as_monomorphized(&self) -> Option<&GenericArgs> {
+        let binder = self.as_instantiated()?;
+        binder.params.is_empty().then_some(&binder.skip_binder)
+    }
+    pub fn is_monomorphized(&self) -> bool {
+        self.as_monomorphized().is_some()
+    }
 }
 
 impl Name {
     /// Convert a path like `["std", "alloc", "Box"]` to a name. Needed on occasion when crafting
     /// names that were not present in the original code.
-    pub(crate) fn from_path(path: &[&str]) -> Name {
+    pub fn from_path(path: &[&str]) -> Name {
         Name {
             name: path
                 .iter()
@@ -32,7 +40,7 @@ impl Name {
 
     /// If this item comes from monomorphization, return the arguments used.
     pub fn mono_args(&self) -> Option<&GenericArgs> {
-        Some(self.name.last()?.as_monomorphized()?.as_ref())
+        Some(self.name.last()?.as_monomorphized()?)
     }
 
     /// Compare the name to a constant array.
@@ -59,5 +67,19 @@ impl Name {
     /// This ignores disambiguators.
     pub fn equals_ref_name(&self, ref_name: &[&str]) -> bool {
         self.compare_with_ref_name(true, ref_name)
+    }
+
+    /// Created an instantiated version of this name by putting a `PathElem::Instantiated` last. If
+    /// the item was already instantiated, this merges the two instantiations.
+    pub fn instantiate(mut self, binder: Binder<GenericArgs>) -> Self {
+        if let [.., PathElem::Instantiated(box x)] = self.name.as_mut_slice() {
+            // Put the new args in place; the params are what we want but the args are wrong.
+            let old_args = std::mem::replace(x, binder);
+            // Apply the new args to the old binder to get correct args.
+            x.skip_binder = old_args.apply(&x.skip_binder);
+        } else {
+            self.name.push(PathElem::Instantiated(Box::new(binder)));
+        }
+        self
     }
 }

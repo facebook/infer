@@ -123,6 +123,7 @@ and pattern_elem_to_string (c : print_config) (e : pattern_elem) : string =
       match c.tgt with
       | TkPattern | TkPretty -> "{" ^ ty ^ "}"
       | TkName -> ty)
+  | PWild -> "_"
 
 and expr_to_string (c : print_config) (e : expr) : string =
   match e with
@@ -151,13 +152,22 @@ and expr_to_string (c : print_config) (e : expr) : string =
               | TkPattern | TkPretty -> "[" ^ ty ^ "]"
               | TkName -> "Slice" ^ ty)
           | _ -> raise (Failure "Ill-formed pattern")))
-  | ERef (r, ty, rk) ->
-      let rk =
-        match rk with
-        | RMut -> "mut "
-        | RShared -> ""
-      in
-      "&" ^ region_to_string c r ^ " " ^ rk ^ expr_to_string c ty
+  | ERef (r, ty, rk) -> (
+      match c.tgt with
+      | TkPattern | TkPretty ->
+          let rk =
+            match rk with
+            | RMut -> "mut "
+            | RShared -> ""
+          in
+          "&" ^ region_to_string c r ^ " " ^ rk ^ expr_to_string c ty
+      | TkName ->
+          let rk =
+            match rk with
+            | RMut -> "Mut"
+            | RShared -> "Shared"
+          in
+          rk ^ region_to_string c r ^ expr_to_string c ty)
   | EVar v -> opt_var_to_string c v
   | EArrow (inputs, out) -> (
       let inputs = List.map (expr_to_string c) inputs in
@@ -258,7 +268,7 @@ type match_config = {
 (** Mapped expressions.
 
     The {!MRegion} variant is used when matching generics. *)
-type mexpr = MTy of T.ty | MCg of T.const_generic | MRegion of T.region
+type mexpr = MTy of T.ty | MCg of T.constant_expr | MRegion of T.region
 [@@deriving show]
 
 type region_map = {
@@ -314,10 +324,16 @@ let update_map (find_opt : 'a -> 'm -> 'b option) (add : 'a -> 'b -> 'm -> 'm)
       v = v'
 
 let update_rmap (c : match_config) (m : maps) (id : var) (v : T.region) : bool =
+  (* Treat body variables like erased ones *)
+  let v =
+    match v with
+    | RBody _ -> T.RErased
+    | _ -> v
+  in
   (* When it comes to matching, we treat erased regions like variables. *)
   let is_var =
     match v with
-    | RVar _ | RErased -> true
+    | RVar _ | RBody _ | RErased -> true
     | RStatic -> false
   in
   if c.map_vars_to_vars && not is_var then false
@@ -347,11 +363,11 @@ let update_tmap (c : match_config) (m : maps) (id : var) (v : T.ty) : bool =
   if c.map_vars_to_vars && not is_var then false
   else update_map VarMap.find_opt VarMap.add m.vmap id (MTy v)
 
-let update_cmap (c : match_config) (m : maps) (id : var) (v : T.const_generic) :
+let update_cmap (c : match_config) (m : maps) (id : var) (v : T.constant_expr) :
     bool =
   let is_var =
-    match v with
-    | CgVar _ -> true
+    match v.kind with
+    | CVar _ -> true
     | _ -> false
   in
   if c.map_vars_to_vars && not is_var then false
@@ -370,7 +386,7 @@ let opt_update_tmap (c : match_config) (m : maps) (id : var option) (v : T.ty) :
   | Some id -> update_tmap c m id v
 
 let opt_update_cmap (c : match_config) (m : maps) (id : var option)
-    (v : T.const_generic) : bool =
+    (v : T.constant_expr) : bool =
   match id with
   | None -> true
   | Some id -> update_cmap c m id v
@@ -415,10 +431,11 @@ let match_region (c : match_config) (m : maps) (id : region) (v : T.region) :
     bool =
   match (id, v) with
   | RStatic, RStatic -> true
-  | RVar id, (RVar _ | RErased) ->
+  | RVar id, (RVar _ | RErased | RBody _) ->
       (* When it comes to matching, we treat erased regions like variables *)
       opt_update_rmap c m id v
-  | RVar id, _ -> if c.map_vars_to_vars then false else opt_update_rmap c m id v
+  | RVar id, RStatic ->
+      if c.map_vars_to_vars then false else opt_update_rmap c m id v
   | _ -> false
 
 let match_ref_kind (prk : ref_kind) (rk : T.ref_kind) : bool =
@@ -436,13 +453,35 @@ let match_literal (pl : literal) (l : Values.literal) : bool =
 let rec match_name_with_generics (ctx : 'fun_body ctx) (c : match_config)
     ?(m : maps = mk_empty_maps ()) (p : pattern) (n : T.name)
     (g : T.generic_args) : bool =
+  (* Handle monomorphized matching: if the name ends with a PeInstantiated
+     element, use the monomorphized args and continue matching without that
+     element *)
+  let n, g =
+    match List.rev n with
+    | PeInstantiated binder :: rest_rev ->
+        let mono_args = binder.binder_value in
+        (* In this case, we may still have some late-bound generics in `g`, this could ONLY happen for regions *)
+        let regions_count, types_count, const_generics_count, trait_refs_count =
+          TypesUtils.generic_args_lengths g
+        in
+        assert (
+          types_count = 0 && const_generics_count = 0 && trait_refs_count = 0);
+        (* We additionally append the regions from `g` to the monomorphized args, so that we can match against them. *)
+        let merged_args =
+          if regions_count > 0 then begin
+            (* Late-bound regions are appended after the monomorphized ones. *)
+            { mono_args with regions = mono_args.regions @ g.regions }
+          end
+          else mono_args
+        in
+        (List.rev rest_rev, merged_args)
+    | _ -> (n, g)
+  in
   match (p, n) with
   | [], [] ->
-      raise
-        (Failure
-           "match_name_with_generics: attempt to match empty names and patterns")
+      failwith
+        "match_name_with_generics: attempt to match empty names and patterns"
       (* We shouldn't get there: the names/patterns should be non empty *)
-  | [], [ PeMonomorphized _ ] -> true (* We ignored monomorphizeds *)
   | [ PIdent (pid, pd, pg) ], [ PeIdent (id, d) ] ->
       log#ldebug
         (lazy
@@ -466,6 +505,7 @@ let rec match_name_with_generics (ctx : 'fun_body ctx) (c : match_config)
       | ImplElemTrait impl_id ->
           match_expr_with_trait_impl_id ctx c pty impl_id
           && g = TypesUtils.empty_generic_args)
+  | [ PWild ], [ _ ] -> true
   | PIdent (pid, pd, pg) :: p, PeIdent (id, d) :: n ->
       (* This is not the end: check that the generics are empty *)
       pid = id
@@ -484,6 +524,9 @@ let rec match_name_with_generics (ctx : 'fun_body ctx) (c : match_config)
       | ImplElemTrait impl_id ->
           match_expr_with_trait_impl_id ctx c pty impl_id
           && match_name_with_generics ctx c p n g)
+  | PWild :: p, _ :: n ->
+      (* Wildcard: skip this element in the name *)
+      match_name_with_generics ctx c p n g
   | _ -> false
 
 and match_name (ctx : 'fun_body ctx) (c : match_config) (p : pattern)
@@ -517,11 +560,7 @@ and match_pattern_with_literal_type (pty : pattern) (ty : T.literal_type) : bool
   let ty = literal_type_to_string ty in
   match pty with
   | [ PIdent (ty', _, []) ] when ty = ty' -> true
-  | _ -> false
-
-and match_primitive_adt (pid : primitive_adt) (id : T.type_id) : bool =
-  match (pid, id) with
-  | TTuple, TTuple | TArray, TBuiltin TArray | TSlice, TBuiltin TSlice -> true
+  | [ PWild ] -> true
   | _ -> false
 
 and match_expr_with_ty (ctx : 'fun_body ctx) (c : match_config) (m : maps)
@@ -530,9 +569,33 @@ and match_expr_with_ty (ctx : 'fun_body ctx) (c : match_config) (m : maps)
   | EComp pid, TAdt tref ->
       match_pattern_with_type_id ctx c m pid tref.id tref.generics
   | EComp pid, TLiteral lit -> match_pattern_with_literal_type pid lit
-  | EPrimAdt (pid, pgenerics), TAdt tref ->
-      match_primitive_adt pid tref.id
-      && match_generic_args ctx c m pgenerics tref.generics
+  | EPrimAdt (pid, pgenerics), ty -> begin
+      match (pid, ty) with
+      | TArray, TArray (ty, len) ->
+          let generics : T.generic_args =
+            {
+              types = [ ty ];
+              const_generics = [ len ];
+              regions = [];
+              trait_refs = [];
+            }
+          in
+          match_generic_args ctx c m pgenerics generics
+      | TSlice, TSlice ty ->
+          let generics : T.generic_args =
+            {
+              types = [ ty ];
+              const_generics = [];
+              regions = [];
+              trait_refs = [];
+            }
+          in
+          match_generic_args ctx c m pgenerics generics
+      | TTuple, TAdt tref ->
+          tref.id == TTuple
+          && match_generic_args ctx c m pgenerics tref.generics
+      | _ -> false
+    end
   | ERef (pr, pty, prk), TRef (r, ty, rk) ->
       match_region c m pr r
       && match_expr_with_ty ctx c m pty ty
@@ -545,7 +608,7 @@ and match_expr_with_ty (ctx : 'fun_body ctx) (c : match_config) (m : maps)
       let m =
         maps_push_bound_regions_group_if_nonempty m binder.binder_regions
       in
-      let inputs, output = binder.binder_value in
+      let { T.inputs; output; _ } = binder.binder_value in
       (* Match *)
       List.for_all2 (match_expr_with_ty ctx c m) pinputs inputs
       &&
@@ -596,6 +659,7 @@ and match_trait_decl_ref_item (ctx : 'fun_body ctx) (c : match_config)
     | PIdent (pitem_name, pd, pgenerics) ->
         pitem_name = item_name && pd = 0
         && match_generic_args ctx c (mk_empty_maps ()) pgenerics generics
+    | PWild -> true
     | _ -> false
   else raise (Failure "Unimplemented")
 
@@ -621,27 +685,9 @@ and match_generic_args (ctx : 'fun_body ctx) (c : match_config) (m : maps)
         List.map (fun x -> MCg x) generics.const_generics;
       ]
   in
-  if List.length pgenerics = 0 then true (* Generics can be omitted *)
-  else begin
-    (* Regions can be omitted *)
-    let any_region_pat =
-      List.exists
-        (function
-          | GRegion _ -> true
-          | _ -> false)
-        pgenerics
-    in
-    let pgenerics =
-      if (not (List.length generics.regions = 0)) && not any_region_pat then
-        List.append
-          (List.map (fun _ -> GRegion (RVar None)) generics.regions)
-          pgenerics
-      else pgenerics
-    in
-    if List.length pgenerics = List.length merged_generics then
-      List.for_all2 (match_generic_arg ctx c m) pgenerics merged_generics
-    else false
-  end
+  if List.length pgenerics = List.length merged_generics then
+    List.for_all2 (match_generic_arg ctx c m) pgenerics merged_generics
+  else false
 
 and match_generic_arg (ctx : 'fun_body ctx) (c : match_config) (m : maps)
     (pg : generic_arg) (g : mexpr) : bool =
@@ -654,16 +700,16 @@ and match_generic_arg (ctx : 'fun_body ctx) (c : match_config) (m : maps)
   | GRegion pr, MRegion r -> match_region c m pr r
   | GExpr e, MTy ty -> match_expr_with_ty ctx c m e ty
   | GExpr e, MCg cg -> match_expr_with_const_generic ctx c m e cg
-  | GValue v, MCg (CgValue cg) -> match_literal v cg
+  | GValue v, MCg { kind = CLiteral cg; _ } -> match_literal v cg
   | _ -> false
 
 and match_expr_with_const_generic (ctx : 'fun_body ctx) (c : match_config)
-    (m : maps) (pcg : expr) (cg : T.const_generic) : bool =
-  match (pcg, cg) with
+    (m : maps) (pcg : expr) (cg : T.constant_expr) : bool =
+  match (pcg, cg.kind) with
   | EVar pv, _ -> opt_update_cmap c m pv cg
-  | EComp pat, CgGlobal gid ->
+  | EComp pat, CGlobal gref ->
       (* Lookup the decl and match the name *)
-      let d = T.GlobalDeclId.Map.find gid ctx.crate.global_decls in
+      let d = T.GlobalDeclId.Map.find gref.id ctx.crate.global_decls in
       match_name ctx c pat d.item_meta.name
   | _ -> false
 
@@ -684,7 +730,7 @@ let builtin_fun_id_to_string (fid : T.builtin_fun_id) : string =
 
 let match_fn_ptr (ctx : 'fun_body ctx) (c : match_config) (p : pattern)
     (func : T.fn_ptr) : bool =
-  match func.func with
+  match func.kind with
   | FunId (FBuiltin fid) -> (
       let to_name (s : string list) : T.name =
         List.map (fun s -> T.PeIdent (s, T.Disambiguator.of_int 0)) s
@@ -719,38 +765,31 @@ let match_fn_ptr (ctx : 'fun_body ctx) (c : match_config) (p : pattern)
           let name = builtin_fun_id_to_string fid in
           match_name_with_generics ctx c p (to_name [ name ]) func.generics)
   | FunId (FRegular fid) ->
+      (* Lookup the function decl *)
       let d = Types.FunDeclId.Map.find fid ctx.crate.fun_decls in
       (* Match the pattern on the name of the function. *)
       let match_function_name =
-        match_name_with_generics ctx c p d.item_meta.name func.generics
+        let ret =
+          match_name_with_generics ctx c p d.item_meta.name func.generics
+        in
+        ret
       in
       (* Match the pattern on the trait implementation and method name, if applicable. *)
       let match_trait_ref =
-        match d.kind with
+        match d.src with
         | TraitImplItem (_, trait_ref, method_name, _)
           when c.match_with_trait_decl_refs ->
-            (* FIXME: this is a hack to circumvent the fact that sometimes
-               Charon does not retrieve the proper number of parameters:
-               before doing the substitution, check that the number of generic
-               arguments matches the number of generic parameters.
-            *)
-            if
-              TypesUtils.generic_params_lengths d.signature.generics
-              = TypesUtils.generic_args_lengths func.generics
-            then
-              let subst =
-                Substitute.make_subst_from_generics d.signature.generics
-                  func.generics
-              in
-              let trait_ref =
-                Substitute.trait_decl_ref_substitute subst trait_ref
-              in
-              (* TODO: recover the method generics somehow *)
-              let method_generics = TypesUtils.empty_generic_args in
-              match_trait_decl_ref_item ctx c (mk_empty_maps ()) p
-                { binder_value = trait_ref; binder_regions = [] }
-                method_name method_generics
-            else false
+            let subst =
+              Substitute.make_subst_from_generics d.generics func.generics Self
+            in
+            let trait_ref =
+              Substitute.trait_decl_ref_substitute subst trait_ref
+            in
+            (* TODO: recover the method generics somehow *)
+            let method_generics = TypesUtils.empty_generic_args in
+            match_trait_decl_ref_item ctx c (mk_empty_maps ()) p
+              { binder_value = trait_ref; binder_regions = [] }
+              method_name method_generics
         | _ -> false
       in
       match_function_name || match_trait_ref
@@ -820,9 +859,8 @@ let region_to_pattern (m : constraints) (r : T.region) : region =
            (fun varid map -> T.RegionId.Map.find_opt varid map.rmap)
            var)
   | RStatic -> RStatic
-  | RErased ->
-      (* We do get there when converting function pointers (when we try to
-         detect specific function calls) to patterns. *)
+  | RBody _ | RErased ->
+      (* These regions cannot be named. *)
       RVar None
 
 let type_var_to_pattern (m : constraints) (var : T.type_db_var) : var option =
@@ -836,7 +874,13 @@ let const_generic_var_to_pattern (m : constraints)
     (fun varid map -> T.ConstGenericVarId.Map.find_opt varid map.cmap)
     var
 
-let constraints_map_compute_regions_map (regions : T.region_var list) :
+(** Remove the ['] character in a region name *)
+let remove_region_tick (s : string) : string =
+  if String.length s > 0 && s.[0] = '\'' then
+    String.sub s 1 (String.length s - 1)
+  else s
+
+let constraints_map_compute_regions_map (regions : T.region_param list) :
     var option T.RegionId.Map.t =
   let fresh_id (gen : int ref) : int =
     let id = !gen in
@@ -846,11 +890,11 @@ let constraints_map_compute_regions_map (regions : T.region_var list) :
   let rid_gen = ref 0 in
   T.RegionId.Map.of_list
     (List.map
-       (fun (r : T.region_var) ->
+       (fun (r : T.region_param) ->
          let v =
            match r.name with
            | None -> VarIndex (fresh_id rid_gen)
-           | Some name -> VarName name
+           | Some name -> VarName (remove_region_tick name)
          in
          (r.index, Some v))
        regions)
@@ -860,26 +904,26 @@ let compute_constraints_map (generics : T.generic_params) : constraints =
   let tmap =
     T.TypeVarId.Map.of_list
       (List.map
-         (fun (x : T.type_var) -> (x.index, Some (VarName x.name)))
+         (fun (x : T.type_param) -> (x.index, Some (VarName x.name)))
          generics.types)
   in
   let cmap =
     T.ConstGenericVarId.Map.of_list
       (List.map
-         (fun (x : T.const_generic_var) -> (x.index, Some (VarName x.name)))
+         (fun (x : T.const_generic_param) -> (x.index, Some (VarName x.name)))
          generics.const_generics)
   in
   [ { rmap; tmap; cmap } ]
 
 let constraints_map_push_regions_map (m : constraints)
-    (regions : T.region_var list) : constraints =
+    (regions : T.region_param list) : constraints =
   let rmap = constraints_map_compute_regions_map regions in
   { empty_vars_map with rmap } :: m
 
 (** Push a regions map to the constraints map, if the group of regions is
     non-empty - TODO: do something more precise *)
 let constraints_map_push_regions_map_if_nonempty (m : constraints)
-    (regions : T.region_var list) : constraints =
+    (regions : T.region_param list) : constraints =
   match regions with
   | [] -> m
   | _ -> constraints_map_push_regions_map m regions
@@ -934,7 +978,10 @@ and path_elem_with_generic_args_to_pattern (ctx : 'fun_body ctx)
       | Some args -> [ PIdent (s, d, args) ]
     end
   | PeImpl impl -> [ impl_elem_to_pattern ctx c impl ]
-  | PeMonomorphized _ -> []
+  | PeInstantiated _ ->
+      (* In pattern generation, we skip monomorphized elements since patterns
+         are meant to match the logical structure, not the instantiation details *)
+      []
 
 and impl_elem_to_pattern (ctx : 'fun_body ctx) (c : to_pat_config)
     (impl : T.impl_elem) : pattern_elem =
@@ -969,8 +1016,6 @@ and ty_to_pattern_aux (ctx : 'fun_body ctx) (c : to_pat_config)
             (name_with_generic_args_to_pattern_aux ctx c d.item_meta.name
                (Some generics))
       | TTuple -> EPrimAdt (TTuple, generics)
-      | TBuiltin TArray -> EPrimAdt (TArray, generics)
-      | TBuiltin TSlice -> EPrimAdt (TSlice, generics)
       | TBuiltin TBox -> EComp [ PIdent ("Box", 0, generics) ]
       | TBuiltin TStr -> EComp [ PIdent ("str", 0, generics) ])
   | TVar v -> EVar (type_var_to_pattern m v)
@@ -991,7 +1036,7 @@ and ty_to_pattern_aux (ctx : 'fun_body ctx) (c : to_pat_config)
       let m =
         constraints_map_push_regions_map_if_nonempty m binder.binder_regions
       in
-      let inputs, output = binder.binder_value in
+      let { T.inputs; output; _ } = binder.binder_value in
       let inputs = List.map (ty_to_pattern_aux ctx c m) inputs in
       let output =
         if output = TypesUtils.mk_unit_ty then None
@@ -1001,6 +1046,23 @@ and ty_to_pattern_aux (ctx : 'fun_body ctx) (c : to_pat_config)
   | TError _ -> EVar None
   | TRawPtr (ty, RMut) -> ERawPtr (Mut, ty_to_pattern_aux ctx c m ty)
   | TRawPtr (ty, RShared) -> ERawPtr (Not, ty_to_pattern_aux ctx c m ty)
+  | TArray (ty, len) ->
+      let generics =
+        generic_args_to_pattern ctx c m
+          {
+            types = [ ty ];
+            const_generics = [ len ];
+            regions = [];
+            trait_refs = [];
+          }
+      in
+      EPrimAdt (TArray, generics)
+  | TSlice ty ->
+      let generics =
+        generic_args_to_pattern ctx c m
+          { types = [ ty ]; const_generics = []; regions = []; trait_refs = [] }
+      in
+      EPrimAdt (TSlice, generics)
   | _ ->
       let fmt_env = ctx_to_fmt_env ctx in
       raise
@@ -1040,15 +1102,16 @@ and ty_to_pattern (ctx : 'fun_body ctx) (c : to_pat_config)
   (* Convert the type *)
   ty_to_pattern_aux ctx c m ty
 
-and const_generic_to_pattern (ctx : 'fun_body ctx) (c : to_pat_config)
-    (m : constraints) (cg : T.const_generic) : generic_arg =
-  match cg with
-  | CgVar v -> GExpr (EVar (const_generic_var_to_pattern m v))
-  | CgValue v -> GValue (literal_to_pattern c v)
-  | CgGlobal gid ->
-      let d = T.GlobalDeclId.Map.find gid ctx.crate.global_decls in
+and constant_expr_to_pattern (ctx : 'fun_body ctx) (c : to_pat_config)
+    (m : constraints) (cg : T.constant_expr) : generic_arg =
+  match cg.kind with
+  | CVar v -> GExpr (EVar (const_generic_var_to_pattern m v))
+  | CLiteral v -> GValue (literal_to_pattern c v)
+  | CGlobal gref ->
+      let d = T.GlobalDeclId.Map.find gref.id ctx.crate.global_decls in
       let n = name_to_pattern_aux ctx c d.item_meta.name in
       GExpr (EComp n)
+  | _ -> raise (Failure "TODO")
 
 and generic_args_to_pattern (ctx : 'fun_body ctx) (c : to_pat_config)
     (m : constraints) (generics : T.generic_args) : generic_args =
@@ -1058,7 +1121,7 @@ and generic_args_to_pattern (ctx : 'fun_body ctx) (c : to_pat_config)
   let regions = List.map (region_to_pattern m) regions in
   let types = List.map (ty_to_pattern_aux ctx c m) types in
   let const_generics =
-    List.map (const_generic_to_pattern ctx c m) const_generics
+    List.map (constant_expr_to_pattern ctx c m) const_generics
   in
   List.concat
     [
@@ -1113,7 +1176,7 @@ let fn_ptr_to_pattern (ctx : 'fun_body ctx) (c : to_pat_config)
   let m = compute_constraints_map params in
   let args = generic_args_to_pattern ctx c m func.generics in
   let pat =
-    match func.func with
+    match func.kind with
     | FunId (FBuiltin fid) -> (
         match fid with
         | BoxNew ->
@@ -1249,6 +1312,7 @@ let rec pattern_common_prefix_aux (c : conv_config) (m : conv_map option)
 and pattern_elem_convertible_aux (c : conv_config) (m : conv_map option)
     (p0 : pattern_elem) (p1 : pattern_elem) : (conv_map option, unit) result =
   match (p0, p1) with
+  | PWild, _ | _, PWild -> Ok m
   | PIdent (s0, d0, g0), PIdent (s1, d1, g1) ->
       if s0 = s1 && d0 = d1 then
         match m with
@@ -1440,7 +1504,10 @@ module NameMatcherMap = struct
     let (Node (node_v, children)) = m in
     (* Check if we reached the destination *)
     match name with
-    | [] | [ PeMonomorphized _ ] ->
+    | [] | [ PeInstantiated _ ] ->
+        (* For tree search, we also consider monomorphized elements as terminal
+           since they represent instantiation details, not logical structure.
+           The monomorphized matching is always handled by the calling context. *)
         if g = TypesUtils.empty_generic_args then node_v else None
     | _ ->
         (* Explore the children *)

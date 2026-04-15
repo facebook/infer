@@ -9,6 +9,7 @@
 define basic_array::main() : void {
   local var_0: void, x_1: int[], four_2: int, var_3: int, five_4: int, var_5: int, var_6: int, var_7: int, var_8: int, var_9: int
   #node_0:
+      store &var_0 <- null:void
       store &x_1[0] <- 4:int
       store &x_1[1] <- 5:int
       store &x_1[2] <- 6:int
@@ -32,7 +33,6 @@ define basic_array::main() : void {
       n8:int = load &var_9
       n9:int = load &var_8
       store &x_1[n8] <- n9:int
-      store &var_0 <- null:void
       store &var_0 <- null:void
       n10:void = load &var_0
       ret n10

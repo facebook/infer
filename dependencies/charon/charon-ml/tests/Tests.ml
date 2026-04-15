@@ -11,7 +11,13 @@ let () =
     log#set_level EL.Debug
   with Not_found -> log#set_level EL.Info
 
+let llbc_dir =
+  try Unix.getenv "CHARON_TESTS_DIR" with Not_found -> "../../charon/tests/ui"
+
 (* Call the tests *)
 (* llbc files are copied into the `_build` dir by the `(deps)` rule in `./dune`. *)
-let () = Test_Deserialize.run_tests "test-outputs"
-let () = Test_NameMatcher.run_tests "test-outputs/ml-name-matcher-tests.llbc"
+let () = Test_Deserialize.run_tests llbc_dir
+let () = Test_NameMatcher.run_tests (llbc_dir ^ "/ml-name-matcher-tests.llbc")
+
+let () =
+  Test_NameMatcher.run_tests (llbc_dir ^ "/ml-mono-name-matcher-tests.llbc")
