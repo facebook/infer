@@ -59,7 +59,8 @@ jobs:
       matrix:
         os:
           - macOS-latest
-          - ubuntu-26.04
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
         ocaml-compiler:
           - ocaml-variants.5.3.0+options,ocaml-option-flambda
     runs-on: ${{ matrix.os }}
