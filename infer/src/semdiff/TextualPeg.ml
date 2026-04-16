@@ -52,7 +52,10 @@ module Env = struct
     ; locals: LocalsMap.t
     ; state: CC.Atom.t
     ; equations: Equations.t
-    ; node_map: T.Node.t T.NodeName.Map.t }
+    ; node_map: T.Node.t T.NodeName.Map.t
+    ; loop_headers: T.NodeName.Set.t
+    ; active_loops: T.NodeName.Set.t
+    ; theta_counter: int ref }
 
   let init cc ~params =
     let equations = Equations.empty () in
@@ -63,7 +66,15 @@ module Env = struct
           LocalsMap.store acc ~name ~atom )
     in
     let state = CC.mk_term cc (CC.mk_header cc "@state0") [] in
-    {cc; ident_map= T.Ident.Map.empty; locals; state; equations; node_map= T.NodeName.Map.empty}
+    { cc
+    ; ident_map= T.Ident.Map.empty
+    ; locals
+    ; state
+    ; equations
+    ; node_map= T.NodeName.Map.empty
+    ; loop_headers= T.NodeName.Set.empty
+    ; active_loops= T.NodeName.Set.empty
+    ; theta_counter= ref 0 }
 
 
   let bind_ident t id atom =
@@ -276,6 +287,43 @@ let rec iter_terminator_labels (term : T.Terminator.t) ~f =
       iter_terminator_labels else_ ~f
 
 
+(* ---------- Loop body analysis ---------- *)
+
+(** Collect variable names modified by [py_store_fast] in the loop body. The loop body consists of
+    all nodes reachable from the header's then-branch up to (but not including) the header itself.
+*)
+let collect_loop_stores (env : Env.t) (header_label : T.NodeName.t) : IString.Set.t =
+  let stores = ref IString.Set.empty in
+  let visited = T.NodeName.HashSet.create 16 in
+  let rec walk label =
+    if T.NodeName.equal label header_label || T.NodeName.HashSet.mem visited label then ()
+    else (
+      T.NodeName.HashSet.add label visited ;
+      match T.NodeName.Map.find_opt label env.node_map with
+      | None ->
+          ()
+      | Some node ->
+          List.iter node.instrs ~f:(fun (instr : T.Instr.t) ->
+              match instr with
+              | Let {id= None; exp= Call {proc; args}} when is_py_builtin proc "py_store_fast" -> (
+                match extract_varname_from_args args with
+                | Some name ->
+                    stores := IString.Set.add name !stores
+                | None ->
+                    () )
+              | _ ->
+                  () ) ;
+          iter_terminator_labels node.last ~f:walk )
+  in
+  (* Start from the header's successors (the body path) *)
+  ( match T.NodeName.Map.find_opt header_label env.node_map with
+  | Some header_node ->
+      iter_terminator_labels header_node.last ~f:walk
+  | None ->
+      () ) ;
+  !stores
+
+
 (* ---------- Node / terminator conversion ---------- *)
 
 let rec convert_node (env : Env.t) (node : T.Node.t) : CC.Atom.t * Env.t =
@@ -307,18 +355,24 @@ and convert_terminator (env : Env.t) (term : T.Terminator.t) : CC.Atom.t * Env.t
 
 
 and convert_jump (env : Env.t) ~label ~ssa_args : CC.Atom.t * Env.t =
-  match T.NodeName.Map.find_opt label env.node_map with
-  | None ->
-      L.die InternalError "TextualPeg: unknown label %a" T.NodeName.pp label
-  | Some target_node ->
-      (* bind SSA parameters of target node *)
-      let env =
-        List.fold2_exn target_node.ssa_parameters ssa_args ~init:env
-          ~f:(fun env (id, _typ) arg_exp ->
-            let atom = convert_exp env arg_exp in
-            Env.bind_ident env id atom )
-      in
-      convert_node env target_node
+  if T.NodeName.Set.mem label env.active_loops then
+    (* Back-edge: do not recurse into the header again. Return a sentinel;
+       the caller (convert_loop) will read state/locals from the returned env. *)
+    (mk_const env.cc "@back_edge", env)
+  else if T.NodeName.Set.mem label env.loop_headers then convert_loop env label ~ssa_args
+  else
+    match T.NodeName.Map.find_opt label env.node_map with
+    | None ->
+        L.die InternalError "TextualPeg: unknown label %a" T.NodeName.pp label
+    | Some target_node ->
+        (* bind SSA parameters of target node *)
+        let env =
+          List.fold2_exn target_node.ssa_parameters ssa_args ~init:env
+            ~f:(fun env (id, _typ) arg_exp ->
+              let atom = convert_exp env arg_exp in
+              Env.bind_ident env id atom )
+        in
+        convert_node env target_node
 
 
 and convert_if (env : Env.t) ~bexp ~then_ ~else_ : CC.Atom.t * Env.t =
@@ -331,9 +385,88 @@ and convert_if (env : Env.t) ~bexp ~then_ ~else_ : CC.Atom.t * Env.t =
   (result, env)
 
 
+and convert_loop (env : Env.t) (header_label : T.NodeName.t) ~ssa_args : CC.Atom.t * Env.t =
+  let cc = env.cc in
+  let header_node =
+    match T.NodeName.Map.find_opt header_label env.node_map with
+    | Some n ->
+        n
+    | None ->
+        L.die InternalError "TextualPeg: unknown loop header %a" T.NodeName.pp header_label
+  in
+  (* Bind SSA parameters of header node *)
+  let env =
+    List.fold2_exn header_node.ssa_parameters ssa_args ~init:env ~f:(fun env (id, _typ) arg_exp ->
+        let atom = convert_exp env arg_exp in
+        Env.bind_ident env id atom )
+  in
+  (* 1. Collect variables modified in the loop body *)
+  let modified_vars = collect_loop_stores env header_label in
+  (* 2. Create theta placeholders *)
+  let n = !(env.theta_counter) in
+  env.theta_counter := n + 1 ;
+  let theta_state_placeholder = mk_const cc (F.asprintf "@theta:state:%d" n) in
+  let init_locals = env.locals in
+  let init_state = env.state in
+  let theta_locals, theta_var_placeholders =
+    IString.Set.fold
+      (fun name (locals, placeholders) ->
+        let placeholder = mk_const cc (F.asprintf "@theta:%s:%d" name n) in
+        (LocalsMap.store locals ~name ~atom:placeholder, (name, placeholder) :: placeholders) )
+      modified_vars (env.locals, [])
+  in
+  (* 3. Set up loop env with theta placeholders *)
+  let loop_env =
+    { env with
+      state= theta_state_placeholder
+    ; locals= theta_locals
+    ; active_loops= T.NodeName.Set.add header_label env.active_loops }
+  in
+  (* 4. Process header instructions and terminator *)
+  let loop_env = convert_instrs loop_env header_node.instrs in
+  match header_node.last with
+  | If {bexp; then_; else_} ->
+      let _cond = convert_boolexp loop_env bexp in
+      (* Process body branch — will hit the back-edge and return *)
+      let _body_result, body_env = convert_terminator loop_env then_ in
+      (* 5. Close theta nodes: merge placeholders with @theta(init, body) terms *)
+      let theta_state_term = mk_term cc "@theta" [init_state; body_env.state] in
+      CC.merge cc theta_state_placeholder (CC.Atom theta_state_term) ;
+      Equations.add env.equations
+        ~name:(F.asprintf "\xCE\xB8_state_%d" n)
+        ~atom:theta_state_term ~origin:"theta_close" ;
+      List.iter theta_var_placeholders ~f:(fun (name, placeholder) ->
+          let init_val =
+            match LocalsMap.load init_locals ~name with
+            | Some atom ->
+                atom
+            | None ->
+                mk_const cc "@undef"
+          in
+          let body_val =
+            match LocalsMap.load body_env.locals ~name with
+            | Some atom ->
+                atom
+            | None ->
+                L.die InternalError "TextualPeg: theta variable %s not found after body" name
+          in
+          let theta_term = mk_term cc "@theta" [init_val; body_val] in
+          CC.merge cc placeholder (CC.Atom theta_term) ;
+          Equations.add env.equations
+            ~name:(F.asprintf "\xCE\xB8_%s_%d" name n)
+            ~atom:theta_term ~origin:"theta_close" ) ;
+      (* 6. Process exit branch with theta bindings in effect *)
+      let exit_env = {loop_env with active_loops= env.active_loops} in
+      convert_terminator exit_env else_
+  | _ ->
+      L.die InternalError "TextualPeg: loop header %a must have If terminator" T.NodeName.pp
+        header_label
+
+
 (* ---------- Main entry point ---------- *)
 
-let convert_proc cc (proc : T.ProcDesc.t) : (CC.Atom.t * Equations.t, string) result =
+let convert_proc ?(theta_counter = ref 0) cc (proc : T.ProcDesc.t) :
+    (CC.Atom.t * Equations.t, string) result =
   (* Extract parameter names from .args annotation *)
   let params =
     List.find_map proc.procdecl.attributes ~f:T.Attr.find_python_args |> Option.value ~default:[]
@@ -343,13 +476,13 @@ let convert_proc cc (proc : T.ProcDesc.t) : (CC.Atom.t * Equations.t, string) re
     List.fold proc.nodes ~init:T.NodeName.Map.empty ~f:(fun acc (node : T.Node.t) ->
         T.NodeName.Map.add node.label node acc )
   in
-  (* Check for back-edges via simple visited-set DFS *)
-  let has_back_edge =
+  (* Detect loop headers via DFS: a node is a loop header if it is the target of a back-edge *)
+  let loop_headers =
     let visited = T.NodeName.HashSet.create 16 in
     let in_stack = T.NodeName.HashSet.create 16 in
-    let found_back_edge = ref false in
+    let headers = ref T.NodeName.Set.empty in
     let rec dfs label =
-      if T.NodeName.HashSet.mem in_stack label then found_back_edge := true
+      if T.NodeName.HashSet.mem in_stack label then headers := T.NodeName.Set.add label !headers
       else if not (T.NodeName.HashSet.mem visited label) then (
         T.NodeName.HashSet.add label visited ;
         T.NodeName.HashSet.add label in_stack ;
@@ -361,15 +494,13 @@ let convert_proc cc (proc : T.ProcDesc.t) : (CC.Atom.t * Equations.t, string) re
         T.NodeName.HashSet.remove label in_stack )
     in
     dfs proc.start ;
-    !found_back_edge
+    !headers
   in
-  if has_back_edge then Error "procedure contains loops (back-edges detected)"
-  else
-    let env = Env.init cc ~params in
-    let env = {env with node_map} in
-    match T.NodeName.Map.find_opt proc.start node_map with
-    | None ->
-        Error "start node not found"
-    | Some start_node ->
-        let result, _env = convert_node env start_node in
-        Ok (result, env.equations)
+  let env = Env.init cc ~params in
+  let env = {env with node_map; loop_headers; theta_counter} in
+  match T.NodeName.Map.find_opt proc.start node_map with
+  | None ->
+      Error "start node not found"
+  | Some start_node ->
+      let result, _env = convert_node env start_node in
+      Ok (result, env.equations)

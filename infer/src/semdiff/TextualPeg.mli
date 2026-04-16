@@ -37,7 +37,8 @@ end
 
 (** {2 Construction} *)
 
-val convert_proc : CC.t -> Textual.ProcDesc.t -> (CC.Atom.t * Equations.t, string) result
+val convert_proc :
+  ?theta_counter:int ref -> CC.t -> Textual.ProcDesc.t -> (CC.Atom.t * Equations.t, string) result
 (** [convert_proc cc proc] converts a loop-free Textual procedure into e-graph terms in [cc].
     Returns the root atom and the full equation trace, or [Error msg] for back-edges / unsupported
     constructs. *)

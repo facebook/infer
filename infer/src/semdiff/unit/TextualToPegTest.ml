@@ -232,6 +232,7 @@ let%test_module "textual to peg" =
         {|
         === Rule stats ===
           (@phi ?C ?X ?X) ==> ?X: fired 1 time(s)
+          (@theta ?X ?X) ==> ?X: fired 0 time(s)
         equivalent: true
         |}]
   end )
@@ -743,5 +744,233 @@ def f(x):
                 │           └── globals
                 ├── @None
                 └── @param:x
+        |}]
+
+
+    let%expect_test "simple for loop with py_store_fast/py_load_fast" =
+      convert_and_print
+        {|
+        .source_language = "python"
+        define .args = "l" foo(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+          #b0:
+              n0 = $builtins.py_make_none()
+              n1 = locals
+              n2 = globals
+              n3 = $builtins.py_load_fast("l", n1)
+              n4 = $builtins.py_get_iter(n3)
+              jmp b1
+
+          #b1:
+              n5 = $builtins.py_next_iter(n4)
+              n6 = $builtins.py_has_next_iter(n4)
+              if $builtins.py_bool(n6) then jmp b2 else jmp b3
+
+          #b2:
+              _ = $builtins.py_store_fast("i", n1, n5)
+              n7 = $builtins.py_load_fast("i", n1)
+              n8 = $builtins.py_load_global("print", n2)
+              n9 = $builtins.py_call(n8, n0, n7)
+              jmp b1
+
+          #b3:
+              ret n0
+        }
+        |} ;
+      [%expect
+        {|
+        === foo ===
+        Equations:
+        l      = @param:l  [param]
+        n0     = @None  [let]
+        n1     = (@load (@lvar locals))  [let]
+        n2     = (@load (@lvar globals))  [let]
+        n3     = @param:l  [load_fast: locals]
+        n4     = ($builtins.py_get_iter @param:l)  [let]
+        n5     = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [let]
+        n6     = ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l))  [let]
+        i      = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [store_fast: locals]
+        n7     = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [load_fast: locals]
+        n8     = ($builtins.py_load_global (@str print) (@load (@lvar globals)))  [let]
+        n9     = ($builtins.py_call
+                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                     @None
+                     ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [let]
+        θ_state_0 = (@theta
+                         (@seq @state0 ($builtins.py_get_iter @param:l))
+                         (@seq
+                             (@seq
+                                 (@seq
+                                     (@seq
+                                         @theta:state:0
+                                         ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                                     ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                                 ($builtins.py_load_global (@str print) (@load (@lvar globals))))
+                             ($builtins.py_call
+                                 ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                 @None
+                                 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))))  [theta_close]
+        θ_i_0 = (@theta @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
+        RET    = (@ret
+                     (@seq
+                         (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                         ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                     @None)  [ret]
+        PEG: (@ret
+                 (@seq
+                     (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                     ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                 @None)
+        |}]
+
+
+    let%expect_test "FN loop equivalence: renamed loop variable" =
+      let loop_text var_name =
+        F.asprintf
+          {|
+        .source_language = "python"
+        define .args = "l" foo(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+          #b0:
+              n0 = $builtins.py_make_none()
+              n1 = locals
+              n2 = globals
+              n3 = $builtins.py_load_fast("l", n1)
+              n4 = $builtins.py_get_iter(n3)
+              jmp b1
+
+          #b1:
+              n5 = $builtins.py_next_iter(n4)
+              n6 = $builtins.py_has_next_iter(n4)
+              if $builtins.py_bool(n6) then jmp b2 else jmp b3
+
+          #b2:
+              _ = $builtins.py_store_fast("%s", n1, n5)
+              n7 = $builtins.py_load_fast("%s", n1)
+              n8 = $builtins.py_load_global("print", n2)
+              n9 = $builtins.py_call(n8, n0, n7)
+              jmp b1
+
+          #b3:
+              ret n0
+        }
+        |}
+          var_name var_name
+      in
+      let sourcefile = Textual.SourceFile.create "test.sil" in
+      let get_proc text =
+        match TextualParser.parse_string sourcefile text with
+        | Ok module_ ->
+            List.find_map_exn module_.decls ~f:(fun decl ->
+                match decl with Textual.Module.Proc p -> Some p | _ -> None )
+        | Error _ ->
+            assert false
+      in
+      let proc1 = get_proc (loop_text "i") in
+      let proc2 = get_proc (loop_text "x") in
+      let result = TextualPegDiff.check_equivalence proc1 proc2 in
+      F.printf "equivalent: %b@." result ;
+      (* TODO: FN — theta nodes get unique placeholders per procedure, so the e-graph
+         cannot prove bisimulation between two structurally isomorphic cyclic terms. *)
+      [%expect {| equivalent: false |}]
+
+
+    let%expect_test "python: for loop PEG structure" =
+      let source = {|
+def f(l):
+    for i in l:
+        print(i)
+|} in
+      let procs = python_to_procs source in
+      let p = find_proc procs "f" in
+      F.printf "=== PEG ===@.%a@." pp_proc_peg p ;
+      F.printf "=== Tree ===@.%a" pp_proc_tree p ;
+      [%expect
+        {|
+        === PEG ===
+        (@ret
+            (@seq
+                (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+            @None)
+        === Tree ===
+        @ret
+        ├── @seq
+        │   ├── @seq
+        │   │   ├── @theta:state:0
+        │   │   └── $builtins.py_next_iter
+        │   │       └── $builtins.py_get_iter
+        │   │           └── @param:l
+        │   └── $builtins.py_has_next_iter
+        │       └── $builtins.py_get_iter
+        │           └── @param:l
+        └── @None
+        |}]
+
+
+    let%expect_test "FN python: for loop renamed variable equivalence" =
+      let source1 = {|
+def f(l):
+    for i in l:
+        print(i)
+|} in
+      let source2 = {|
+def f(l):
+    for x in l:
+        print(x)
+|} in
+      let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      (* TODO: FN — theta nodes get unique placeholders per procedure (@theta:state:0 vs
+         @theta:state:1), so the e-graph cannot prove bisimulation between two
+         structurally isomorphic cyclic terms. *)
+      [%expect
+        {|
+        === PEG 1 ===
+        (@ret
+            (@seq
+                (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+            @None)
+
+        === PEG 2 ===
+        (@ret
+            (@seq
+                (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+            @None)
+
+        equivalent: false
+        |}]
+
+
+    let%expect_test "python: for loop different body not equivalent" =
+      let source1 = {|
+def f(l):
+    for i in l:
+        print(i)
+|} in
+      let source2 = {|
+def f(l):
+    for i in l:
+        print(i + 1)
+|} in
+      let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      [%expect
+        {|
+        === PEG 1 ===
+        (@ret
+            (@seq
+                (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+            @None)
+
+        === PEG 2 ===
+        (@ret
+            (@seq
+                (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+            @None)
+
+        equivalent: false
         |}]
   end )

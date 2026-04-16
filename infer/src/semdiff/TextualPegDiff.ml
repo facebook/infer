@@ -21,12 +21,20 @@ let parse_rules cc str_rules : Rewrite.Rule.t list =
 
 
 let gen_rules cc : Rewrite.Rule.t list =
-  parse_rules cc [(* phi simplification *) "(@phi ?C ?X ?X) ==> ?X"]
+  parse_rules cc
+    [ (* phi simplification *)
+      "(@phi ?C ?X ?X) ==> ?X"
+    ; (* theta simplification: loop invariant *)
+      "(@theta ?X ?X) ==> ?X" ]
 
 
 let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Textual.ProcDesc.t) =
   let cc = CC.init ~debug:false in
-  match (TextualPeg.convert_proc cc proc1, TextualPeg.convert_proc cc proc2) with
+  let theta_counter = ref 0 in
+  match
+    ( TextualPeg.convert_proc ~theta_counter cc proc1
+    , TextualPeg.convert_proc ~theta_counter cc proc2 )
+  with
   | Ok (atom1, eqs1), Ok (atom2, eqs2) ->
       let rules = gen_rules cc in
       let _rounds = Rewrite.Rule.full_rewrite cc rules in
