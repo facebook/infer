@@ -227,6 +227,9 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
         Env.update_locals env locals
     | _ ->
         L.die InternalError "TextualPeg: py_store_fast: malformed arguments" )
+  | Let {id; exp= Call {proc}} when is_py_builtin proc "py_make_none" -> (
+      let atom = mk_const cc "@None" in
+      match id with Some id -> Env.bind_ident env id atom | None -> env )
   | Let {id= _; exp= Call {proc}} when is_py_builtin proc "py_nullify_locals" ->
       (* py_nullify_locals is a compiler artifact, not an observable effect — skip it *)
       env

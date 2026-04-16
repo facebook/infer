@@ -537,6 +537,30 @@ def f(c):
         |}]
 
 
+    let%expect_test "py_make_none as constant" =
+      let source1 = {|
+def f():
+    return None
+|} in
+      let source2 = {|
+def f():
+    x = None
+    return x
+|} in
+      let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      [%expect
+        {|
+        === PEG 1 ===
+        (@ret @state0 @None)
+
+        === PEG 2 ===
+        (@ret @state0 @None)
+
+        equivalent: true
+        |}]
+
+
     let%expect_test "if/else: identical branches simplify to no branch" =
       let source1 = {|
 def f(c):
@@ -616,5 +640,108 @@ def f(a):
         (@ret @state0 ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
 
         equivalent: true
+        |}]
+
+
+    let%expect_test "function call: @seq chains effectful calls" =
+      let source = {|
+def f(x):
+    y = g(x)
+    z = h(y)
+    return z
+|} in
+      let procs = python_to_procs source in
+      let p = find_proc procs "f" in
+      F.printf "=== PEG ===@.%a@." pp_proc_peg p ;
+      F.printf "=== Tree ===@.%a" pp_proc_tree p ;
+      [%expect
+        {|
+        === PEG ===
+        (@ret
+            (@seq
+                (@seq
+                    (@seq
+                        (@seq @state0 ($builtins.py_load_global (@str g) (@load (@lvar globals))))
+                        ($builtins.py_call
+                            ($builtins.py_load_global (@str g) (@load (@lvar globals)))
+                            @None
+                            @param:x))
+                    ($builtins.py_load_global (@str h) (@load (@lvar globals))))
+                ($builtins.py_call
+                    ($builtins.py_load_global (@str h) (@load (@lvar globals)))
+                    @None
+                    ($builtins.py_call
+                        ($builtins.py_load_global (@str g) (@load (@lvar globals)))
+                        @None
+                        @param:x)))
+            ($builtins.py_call
+                ($builtins.py_load_global (@str h) (@load (@lvar globals)))
+                @None
+                ($builtins.py_call
+                    ($builtins.py_load_global (@str g) (@load (@lvar globals)))
+                    @None
+                    @param:x)))
+        === Tree ===
+        @ret
+        ├── @seq
+        │   ├── @seq
+        │   │   ├── @seq
+        │   │   │   ├── @seq
+        │   │   │   │   ├── @state0
+        │   │   │   │   └── $builtins.py_load_global
+        │   │   │   │       ├── @str
+        │   │   │   │       │   └── g
+        │   │   │   │       └── @load
+        │   │   │   │           └── @lvar
+        │   │   │   │               └── globals
+        │   │   │   └── $builtins.py_call
+        │   │   │       ├── $builtins.py_load_global
+        │   │   │       │   ├── @str
+        │   │   │       │   │   └── g
+        │   │   │       │   └── @load
+        │   │   │       │       └── @lvar
+        │   │   │       │           └── globals
+        │   │   │       ├── @None
+        │   │   │       └── @param:x
+        │   │   └── $builtins.py_load_global
+        │   │       ├── @str
+        │   │       │   └── h
+        │   │       └── @load
+        │   │           └── @lvar
+        │   │               └── globals
+        │   └── $builtins.py_call
+        │       ├── $builtins.py_load_global
+        │       │   ├── @str
+        │       │   │   └── h
+        │       │   └── @load
+        │       │       └── @lvar
+        │       │           └── globals
+        │       ├── @None
+        │       └── $builtins.py_call
+        │           ├── $builtins.py_load_global
+        │           │   ├── @str
+        │           │   │   └── g
+        │           │   └── @load
+        │           │       └── @lvar
+        │           │           └── globals
+        │           ├── @None
+        │           └── @param:x
+        └── $builtins.py_call
+            ├── $builtins.py_load_global
+            │   ├── @str
+            │   │   └── h
+            │   └── @load
+            │       └── @lvar
+            │           └── globals
+            ├── @None
+            └── $builtins.py_call
+                ├── $builtins.py_load_global
+                │   ├── @str
+                │   │   └── g
+                │   └── @load
+                │       └── @lvar
+                │           └── globals
+                ├── @None
+                └── @param:x
         |}]
   end )
