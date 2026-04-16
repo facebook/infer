@@ -1052,6 +1052,14 @@ def f(x):
                          @theta:state:0
                          ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
                      (@ret @state0 @param:x))  [if]
+        PHI_state = (@phi
+                        ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                        @theta:state:0
+                        @state0)  [if]
+        PHI_x  = (@phi
+                     ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                     ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                     @param:x)  [if]
 
         === PEG ===
         (@phi
@@ -1087,5 +1095,115 @@ def f(x):
             (@ret @state0 @param:x))
 
         equivalent: false
+        |}]
+
+
+    let%expect_test "python: if inside for loop preserves state" =
+      let source =
+        {|
+def f(l, c):
+    for i in l:
+        if c:
+            print(1)
+        else:
+            print(2)
+|}
+      in
+      let procs = python_to_procs source in
+      let p = find_proc procs "f" in
+      F.printf "=== Equations ===@.%a@." pp_proc_eqs p ;
+      F.printf "=== PEG ===@.%a@." pp_proc_peg p ;
+      [%expect
+        {|
+        === Equations ===
+        l      = @param:l  [param]
+        c      = @param:c  [param]
+        n2     = (@load (@lvar globals))  [let]
+        n1     = (@load (@lvar locals))  [let]
+        n0     = @None  [let]
+        n3     = @param:l  [load_fast: locals]
+        n4     = ($builtins.py_get_iter @param:l)  [let]
+        n5     = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [let]
+        n6     = ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l))  [let]
+        i      = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [store_fast: locals]
+        n7     = @param:c  [load_fast: locals]
+        n10    = ($builtins.py_load_global (@str print) (@load (@lvar globals)))  [let]
+        n11    = ($builtins.py_call
+                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                     @None
+                     ($builtins.py_make_int 1))  [let]
+        n8     = ($builtins.py_load_global (@str print) (@load (@lvar globals)))  [let]
+        n9     = ($builtins.py_call
+                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                     @None
+                     ($builtins.py_make_int 2))  [let]
+        PHI    = (@phi ($builtins.py_bool @param:c) @back_edge @back_edge)  [if]
+        PHI_state = (@phi
+                        ($builtins.py_bool @param:c)
+                        (@seq
+                            (@seq
+                                (@seq
+                                    (@seq
+                                        @theta:state:0
+                                        ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                                    ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                                ($builtins.py_load_global (@str print) (@load (@lvar globals))))
+                            ($builtins.py_call
+                                ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                @None
+                                ($builtins.py_make_int 1)))
+                        (@seq
+                            (@seq
+                                (@seq
+                                    (@seq
+                                        @theta:state:0
+                                        ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                                    ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                                ($builtins.py_load_global (@str print) (@load (@lvar globals))))
+                            ($builtins.py_call
+                                ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                @None
+                                ($builtins.py_make_int 2))))  [if]
+        θ_state_0 = (@theta
+                         (@seq @state0 ($builtins.py_get_iter @param:l))
+                         (@phi
+                             ($builtins.py_bool @param:c)
+                             (@seq
+                                 (@seq
+                                     (@seq
+                                         (@seq
+                                             @theta:state:0
+                                             ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                                         ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                                     ($builtins.py_load_global (@str print) (@load (@lvar globals))))
+                                 ($builtins.py_call
+                                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                     @None
+                                     ($builtins.py_make_int 1)))
+                             (@seq
+                                 (@seq
+                                     (@seq
+                                         (@seq
+                                             @theta:state:0
+                                             ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                                         ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                                     ($builtins.py_load_global (@str print) (@load (@lvar globals))))
+                                 ($builtins.py_call
+                                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                     @None
+                                     ($builtins.py_make_int 2)))))  [theta_close]
+        θ_i_0 = (@theta @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
+        RET    = (@ret
+                     (@seq
+                         (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                         ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+                     @None)  [ret]
+
+        === PEG ===
+        (@ret
+            (@seq
+                (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
+                ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
+            @None)
         |}]
   end )

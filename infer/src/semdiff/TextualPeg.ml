@@ -374,11 +374,36 @@ and convert_jump (env : Env.t) ~label ~ssa_args : CC.Atom.t * Env.t =
 and convert_if (env : Env.t) ~bexp ~then_ ~else_ : CC.Atom.t * Env.t =
   let cc = env.cc in
   let cond = convert_boolexp env bexp in
-  let result_then, _env_then = convert_terminator env then_ in
-  let result_else, _env_else = convert_terminator env else_ in
+  let result_then, env_then = convert_terminator env then_ in
+  let result_else, env_else = convert_terminator env else_ in
   let result = mk_term cc "@phi" [cond; result_then; result_else] in
   Equations.add env.equations ~name:"PHI" ~atom:result ~origin:"if" ;
-  (result, env)
+  (* Merge state: create @phi if branches diverged *)
+  let state =
+    if CC.is_equiv cc env_then.state env_else.state then env_then.state
+    else
+      let phi_state = mk_term cc "@phi" [cond; env_then.state; env_else.state] in
+      Equations.add env.equations ~name:"PHI_state" ~atom:phi_state ~origin:"if" ;
+      phi_state
+  in
+  (* Merge locals: create @phi for variables that differ between branches *)
+  let locals =
+    StringMap.merge
+      (fun name v_then v_else ->
+        match (v_then, v_else) with
+        | Some a_then, Some a_else ->
+            if CC.is_equiv cc a_then a_else then Some a_then
+            else
+              let phi = mk_term cc "@phi" [cond; a_then; a_else] in
+              Equations.add env.equations ~name:("PHI_" ^ name) ~atom:phi ~origin:"if" ;
+              Some phi
+        | Some a, None | None, Some a ->
+            Some a
+        | None, None ->
+            None )
+      env_then.locals env_else.locals
+  in
+  (result, {env with state; locals})
 
 
 and convert_loop (env : Env.t) (header_label : T.NodeName.t) ~ssa_args : CC.Atom.t * Env.t =
