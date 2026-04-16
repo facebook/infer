@@ -55,7 +55,8 @@ module Env = struct
     ; node_map: T.Node.t T.NodeName.Map.t
     ; loop_headers: T.NodeName.Set.t
     ; active_loops: T.NodeName.Set.t
-    ; theta_counter: int ref }
+    ; theta_counter: int ref
+    ; loop_counter: int ref }
 
   let init cc ~params =
     let equations = Equations.empty () in
@@ -74,7 +75,8 @@ module Env = struct
     ; node_map= T.NodeName.Map.empty
     ; loop_headers= T.NodeName.Set.empty
     ; active_loops= T.NodeName.Set.empty
-    ; theta_counter= ref 0 }
+    ; theta_counter= ref 0
+    ; loop_counter= ref 0 }
 
 
   let bind_ident t id atom =
@@ -423,16 +425,18 @@ and convert_loop (env : Env.t) (header_label : T.NodeName.t) ~ssa_args : CC.Atom
   in
   (* 1. Collect variables modified in the loop body *)
   let modified_vars = collect_loop_stores env header_label in
-  (* 2. Create theta placeholders *)
-  let n = !(env.theta_counter) in
-  env.theta_counter := n + 1 ;
-  let theta_state_placeholder = mk_const cc (F.asprintf "@theta:state:%d" n) in
+  (* 2. Create theta placeholders (fresh names via theta_counter) and numbered operator (loop_counter) *)
+  let fresh = !(env.theta_counter) in
+  env.theta_counter := fresh + 1 ;
+  let loop_idx = !(env.loop_counter) in
+  env.loop_counter := loop_idx + 1 ;
+  let theta_state_placeholder = mk_const cc (F.asprintf "@theta:state:%d" fresh) in
   let init_locals = env.locals in
   let init_state = env.state in
   let theta_locals, theta_var_placeholders =
     IString.Set.fold
       (fun name (locals, placeholders) ->
-        let placeholder = mk_const cc (F.asprintf "@theta:%s:%d" name n) in
+        let placeholder = mk_const cc (F.asprintf "@theta:%s:%d" name fresh) in
         (LocalsMap.store locals ~name ~atom:placeholder, (name, placeholder) :: placeholders) )
       modified_vars (env.locals, [])
   in
@@ -473,10 +477,11 @@ and convert_loop (env : Env.t) (header_label : T.NodeName.t) ~ssa_args : CC.Atom
   (* Process body branch — will hit the back-edge and return *)
   let _body_result, body_env = convert_terminator loop_env then_ in
   (* 5. Close theta nodes: merge placeholders with @theta(init, body) terms *)
-  let theta_state_term = mk_term cc "@theta" [init_state; body_env.state] in
+  let theta_header = F.asprintf "@theta_%d" loop_idx in
+  let theta_state_term = mk_term cc theta_header [init_state; body_env.state] in
   CC.merge cc theta_state_placeholder (CC.Atom theta_state_term) ;
   Equations.add env.equations
-    ~name:(F.asprintf "\xCE\xB8_state_%d" n)
+    ~name:(F.asprintf "\xCE\xB8_state_%d" fresh)
     ~atom:theta_state_term ~origin:"theta_close" ;
   List.iter theta_var_placeholders ~f:(fun (name, placeholder) ->
       let init_val =
@@ -493,10 +498,10 @@ and convert_loop (env : Env.t) (header_label : T.NodeName.t) ~ssa_args : CC.Atom
         | None ->
             L.die InternalError "TextualPeg: theta variable %s not found after body" name
       in
-      let theta_term = mk_term cc "@theta" [init_val; body_val] in
+      let theta_term = mk_term cc theta_header [init_val; body_val] in
       CC.merge cc placeholder (CC.Atom theta_term) ;
       Equations.add env.equations
-        ~name:(F.asprintf "\xCE\xB8_%s_%d" name n)
+        ~name:(F.asprintf "\xCE\xB8_%s_%d" name fresh)
         ~atom:theta_term ~origin:"theta_close" ) ;
   (* 6. Process exit branch with theta bindings in effect *)
   let exit_env = {loop_env with active_loops= env.active_loops} in
@@ -506,7 +511,7 @@ and convert_loop (env : Env.t) (header_label : T.NodeName.t) ~ssa_args : CC.Atom
 (* ---------- Main entry point ---------- *)
 
 let convert_proc ?(theta_counter = ref 0) cc (proc : T.ProcDesc.t) :
-    (CC.Atom.t * Equations.t, string) result =
+    (CC.Atom.t * Equations.t * int, string) result =
   (* Extract parameter names from .args annotation *)
   let params =
     List.find_map proc.procdecl.attributes ~f:T.Attr.find_python_args |> Option.value ~default:[]
@@ -536,11 +541,12 @@ let convert_proc ?(theta_counter = ref 0) cc (proc : T.ProcDesc.t) :
     dfs proc.start ;
     !headers
   in
+  let loop_counter = ref 0 in
   let env = Env.init cc ~params in
-  let env = {env with node_map; loop_headers; theta_counter} in
+  let env = {env with node_map; loop_headers; theta_counter; loop_counter} in
   match T.NodeName.Map.find_opt proc.start node_map with
   | None ->
       Error "start node not found"
   | Some start_node ->
       let result, _env = convert_node env start_node in
-      Ok (result, env.equations)
+      Ok (result, env.equations, !loop_counter)

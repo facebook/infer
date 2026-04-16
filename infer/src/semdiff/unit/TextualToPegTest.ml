@@ -232,7 +232,6 @@ let%test_module "textual to peg" =
         {|
         === Rule stats ===
           (@phi ?C ?X ?X) ==> ?X: fired 1 time(s)
-          (@theta ?X ?X) ==> ?X: fired 0 time(s)
         equivalent: true
         |}]
   end )
@@ -262,7 +261,7 @@ let pp_proc_textual fmt (proc : Textual.ProcDesc.t) =
 let pp_proc_peg fmt (proc : Textual.ProcDesc.t) =
   let cc = CongruenceClosureSolver.init ~debug:false in
   match TextualPeg.convert_proc cc proc with
-  | Ok (root, _eqs) ->
+  | Ok (root, _eqs, _) ->
       F.fprintf fmt "%a" (CongruenceClosureSolver.pp_nested_term cc) root
   | Error msg ->
       F.fprintf fmt "Error: %s" msg
@@ -271,7 +270,7 @@ let pp_proc_peg fmt (proc : Textual.ProcDesc.t) =
 let pp_proc_eqs fmt (proc : Textual.ProcDesc.t) =
   let cc = CongruenceClosureSolver.init ~debug:false in
   match TextualPeg.convert_proc cc proc with
-  | Ok (_root, eqs) ->
+  | Ok (_root, eqs, _) ->
       TextualPeg.Equations.pp cc fmt eqs
   | Error msg ->
       F.fprintf fmt "Error: %s" msg
@@ -280,7 +279,7 @@ let pp_proc_eqs fmt (proc : Textual.ProcDesc.t) =
 let pp_proc_tree fmt (proc : Textual.ProcDesc.t) =
   let cc = CongruenceClosureSolver.init ~debug:false in
   match TextualPeg.convert_proc cc proc with
-  | Ok (root, _eqs) ->
+  | Ok (root, _eqs, _) ->
       TextualPeg.pp_tree cc fmt root
   | Error msg ->
       F.fprintf fmt "Error: %s" msg
@@ -804,7 +803,7 @@ def f(x):
                      ($builtins.py_load_global (@str print) (@load (@lvar globals)))
                      @None
                      ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [let]
-        θ_state_0 = (@theta
+        θ_state_0 = (@theta_0
                          (@seq @state0 ($builtins.py_get_iter @param:l))
                          (@seq
                              (@seq
@@ -818,7 +817,7 @@ def f(x):
                                  ($builtins.py_load_global (@str print) (@load (@lvar globals)))
                                  @None
                                  ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))))  [theta_close]
-        θ_i_0 = (@theta @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
+        θ_i_0 = (@theta_0 @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
         RET    = (@ret
                      (@seq
                          (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
@@ -1040,8 +1039,8 @@ def f(x):
         n8     = ($builtins.py_compare_gt
                      ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
                      ($builtins.py_make_int 0))  [let]
-        θ_state_0 = (@theta @state0 @theta:state:0)  [theta_close]
-        θ_x_0 = (@theta @param:x ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))  [theta_close]
+        θ_state_0 = (@theta_0 @state0 @theta:state:0)  [theta_close]
+        θ_x_0 = (@theta_0 @param:x ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))  [theta_close]
         n9     = ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))  [load_fast: locals]
         RET    = (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))  [ret]
         n9     = @param:x  [load_fast: locals]
@@ -1164,7 +1163,7 @@ def f(l, c):
                                 ($builtins.py_load_global (@str print) (@load (@lvar globals)))
                                 @None
                                 ($builtins.py_make_int 2))))  [if]
-        θ_state_0 = (@theta
+        θ_state_0 = (@theta_0
                          (@seq @state0 ($builtins.py_get_iter @param:l))
                          (@phi
                              ($builtins.py_bool @param:c)
@@ -1192,7 +1191,7 @@ def f(l, c):
                                      ($builtins.py_load_global (@str print) (@load (@lvar globals)))
                                      @None
                                      ($builtins.py_make_int 2)))))  [theta_close]
-        θ_i_0 = (@theta @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
+        θ_i_0 = (@theta_0 @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
         RET    = (@ret
                      (@seq
                          (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))

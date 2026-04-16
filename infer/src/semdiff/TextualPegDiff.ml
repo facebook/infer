@@ -20,12 +20,9 @@ let parse_rules cc str_rules : Rewrite.Rule.t list =
           L.die InternalError "%a" Rewrite.pp_parse_error err )
 
 
-let gen_rules cc : Rewrite.Rule.t list =
-  parse_rules cc
-    [ (* phi simplification *)
-      "(@phi ?C ?X ?X) ==> ?X"
-    ; (* theta simplification: loop invariant *)
-      "(@theta ?X ?X) ==> ?X" ]
+let gen_rules cc ~theta_count : Rewrite.Rule.t list =
+  let theta_rules = List.init theta_count ~f:(fun i -> F.asprintf "(@theta_%d ?X ?X) ==> ?X" i) in
+  parse_rules cc ("(@phi ?C ?X ?X) ==> ?X" :: theta_rules)
 
 
 let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Textual.ProcDesc.t) =
@@ -35,8 +32,8 @@ let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Tex
     ( TextualPeg.convert_proc ~theta_counter cc proc1
     , TextualPeg.convert_proc ~theta_counter cc proc2 )
   with
-  | Ok (atom1, eqs1), Ok (atom2, eqs2) ->
-      let rules = gen_rules cc in
+  | Ok (atom1, eqs1, loops1), Ok (atom2, eqs2, loops2) ->
+      let rules = gen_rules cc ~theta_count:(max loops1 loops2) in
       let _rounds = Rewrite.Rule.full_rewrite cc rules in
       let res = CC.is_equiv cc atom1 atom2 in
       if debug then (
@@ -68,7 +65,7 @@ let convert_and_print ?(debug = false) text =
       List.iter procs ~f:(fun (proc : Textual.ProcDesc.t) ->
           let cc = CC.init ~debug:false in
           match TextualPeg.convert_proc cc proc with
-          | Ok (root, eqs) ->
+          | Ok (root, eqs, _loop_count) ->
               let name =
                 F.asprintf "%a" Textual.QualifiedProcName.pp proc.procdecl.qualified_name
               in

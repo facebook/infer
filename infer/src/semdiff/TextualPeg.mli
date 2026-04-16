@@ -38,10 +38,14 @@ end
 (** {2 Construction} *)
 
 val convert_proc :
-  ?theta_counter:int ref -> CC.t -> Textual.ProcDesc.t -> (CC.Atom.t * Equations.t, string) result
-(** [convert_proc cc proc] converts a loop-free Textual procedure into e-graph terms in [cc].
-    Returns the root atom and the full equation trace, or [Error msg] for back-edges / unsupported
-    constructs. *)
+     ?theta_counter:int ref
+  -> CC.t
+  -> Textual.ProcDesc.t
+  -> (CC.Atom.t * Equations.t * int, string) result
+(** [convert_proc cc proc] converts a Textual procedure into e-graph terms in [cc]. Returns the root
+    atom, the full equation trace, and the number of loops, or [Error msg] for unsupported
+    constructs. [theta_counter] provides fresh names for recursive variables across procedures
+    sharing the same [cc]. *)
 
 (** {2 Pretty-printing} *)
 
