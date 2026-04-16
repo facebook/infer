@@ -80,6 +80,15 @@ Objective-C source code.
 See `./build-infer.sh --help` for more options, eg `./build-infer.sh`
 on its own will build the analyzers for both Java and C/ObjC.
 
+If you have multiple infer checkouts or other OCaml projects sharing
+the same global opam switch, use `--local-opam-switch` to create a
+project-local switch (stored in `_opam/` within the repo root) that
+won't interfere with other builds:
+
+```sh
+./build-infer.sh --local-opam-switch java
+```
+
 
 ## Install Infer from source without opam
 
