@@ -263,26 +263,41 @@ let convert_instrs env instrs = List.fold instrs ~init:env ~f:convert_instr
 
 (** Process a node's instructions, then recursively process its terminator. Returns the final
     e-graph atom for the result and the updated environment. *)
-let rec convert_node (env : Env.t) (node : T.Node.t) : CC.Atom.t =
+(* ---------- Terminator label iteration ---------- *)
+
+let rec iter_terminator_labels (term : T.Terminator.t) ~f =
+  match term with
+  | Ret _ | Throw _ | Unreachable ->
+      ()
+  | Jump targets ->
+      List.iter targets ~f:(fun {T.Terminator.label} -> f label)
+  | If {then_; else_} ->
+      iter_terminator_labels then_ ~f ;
+      iter_terminator_labels else_ ~f
+
+
+(* ---------- Node / terminator conversion ---------- *)
+
+let rec convert_node (env : Env.t) (node : T.Node.t) : CC.Atom.t * Env.t =
   let env = convert_instrs env node.instrs in
   convert_terminator env node.last
 
 
-and convert_terminator (env : Env.t) (term : T.Terminator.t) : CC.Atom.t =
+and convert_terminator (env : Env.t) (term : T.Terminator.t) : CC.Atom.t * Env.t =
   let cc = env.cc in
   match term with
   | Ret exp ->
       let value = convert_exp env exp in
       let result = mk_term cc "@ret" [env.state; value] in
       Equations.add env.equations ~name:"RET" ~atom:result ~origin:"ret" ;
-      result
+      (result, env)
   | Throw exp ->
       let value = convert_exp env exp in
       let result = mk_term cc "@throw" [env.state; value] in
       Equations.add env.equations ~name:"THROW" ~atom:result ~origin:"throw" ;
-      result
+      (result, env)
   | Unreachable ->
-      mk_const cc "@unreachable"
+      (mk_const cc "@unreachable", env)
   | Jump [{label; ssa_args}] ->
       convert_jump env ~label ~ssa_args
   | Jump _ ->
@@ -291,7 +306,7 @@ and convert_terminator (env : Env.t) (term : T.Terminator.t) : CC.Atom.t =
       convert_if env ~bexp ~then_ ~else_
 
 
-and convert_jump (env : Env.t) ~label ~ssa_args : CC.Atom.t =
+and convert_jump (env : Env.t) ~label ~ssa_args : CC.Atom.t * Env.t =
   match T.NodeName.Map.find_opt label env.node_map with
   | None ->
       L.die InternalError "TextualPeg: unknown label %a" T.NodeName.pp label
@@ -306,32 +321,14 @@ and convert_jump (env : Env.t) ~label ~ssa_args : CC.Atom.t =
       convert_node env target_node
 
 
-and convert_if (env : Env.t) ~bexp ~then_ ~else_ : CC.Atom.t =
+and convert_if (env : Env.t) ~bexp ~then_ ~else_ : CC.Atom.t * Env.t =
   let cc = env.cc in
   let cond = convert_boolexp env bexp in
-  (* Note: locals and state updates from each branch are discarded here.
-     This is fine for now because If terminators always lead to Ret or Jump,
-     so no code reads the env after this point. When loops are added, we will
-     need to return and merge the branch envs with @phi nodes for locals and
-     state so that back-edges see the correct post-branch values. *)
-  let result_then = convert_terminator env then_ in
-  let result_else = convert_terminator env else_ in
+  let result_then, _env_then = convert_terminator env then_ in
+  let result_else, _env_else = convert_terminator env else_ in
   let result = mk_term cc "@phi" [cond; result_then; result_else] in
   Equations.add env.equations ~name:"PHI" ~atom:result ~origin:"if" ;
-  result
-
-
-(* ---------- Terminator label iteration ---------- *)
-
-let rec iter_terminator_labels (term : T.Terminator.t) ~f =
-  match term with
-  | Ret _ | Throw _ | Unreachable ->
-      ()
-  | Jump targets ->
-      List.iter targets ~f:(fun {T.Terminator.label} -> f label)
-  | If {then_; else_} ->
-      iter_terminator_labels then_ ~f ;
-      iter_terminator_labels else_ ~f
+  (result, env)
 
 
 (* ---------- Main entry point ---------- *)
@@ -374,5 +371,5 @@ let convert_proc cc (proc : T.ProcDesc.t) : (CC.Atom.t * Equations.t, string) re
     | None ->
         Error "start node not found"
     | Some start_node ->
-        let result = convert_node env start_node in
+        let result, _env = convert_node env start_node in
         Ok (result, env.equations)
