@@ -404,7 +404,11 @@ module CFrontend_decl_funct (T : CModule_type.CTranslation) : CModule_type.CFron
 
 
   let is_used_in_file (sl_file_class : Clang_ast_t.source_file) ctx_source_file =
-    String.equal (Utils.realpath sl_file_class) ctx_source_file
+    match Utils.realpath ~warn_on_error:false sl_file_class with
+    | resolved ->
+        String.equal resolved ctx_source_file
+    | exception Unix.Unix_error _ ->
+        false
 
 
   let rec store_attributes tenv trans_unit_ctx dec =
