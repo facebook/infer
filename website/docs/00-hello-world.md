@@ -147,6 +147,38 @@ infer run -- gcc -c hello.c
 infer run -- clang -c hello.c
 ```
 
+## Hello world C (tree-sitter, no build system)
+
+The tree-sitter frontend analyzes C files directly, without requiring a
+compiler, headers, or build system. It is useful for quick checks, IDE
+integration, and files that may not compile.
+
+```c
+// hello.c
+#include <stdlib.h>
+
+void test() {
+  int *s = NULL;
+  *s = 42;
+}
+```
+
+```bash
+infer --capture-tree-sitter hello.c --pulse
+```
+
+You should see the following error reported by Infer:
+
+```
+hello.c:6: error: NULLPTR_DEREFERENCE
+  null dereference of `s`
+```
+
+Unlike the clang frontend, tree-sitter does not need headers or a compilation
+database. It parses the source directly and analyzes what it can, even if the
+file has syntax errors or missing includes. For full precision with type-aware
+analysis, use the clang frontend instead (`infer run -- clang -c hello.c`).
+
 ## Hello world Android
 
 To be able to analyze the sample Android app, make sure that you have the
