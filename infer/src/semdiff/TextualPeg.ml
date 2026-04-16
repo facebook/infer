@@ -296,7 +296,7 @@ let collect_loop_stores (env : Env.t) (header_label : T.NodeName.t) : IString.Se
   let stores = ref IString.Set.empty in
   let visited = T.NodeName.HashSet.create 16 in
   let rec walk label =
-    if T.NodeName.equal label header_label || T.NodeName.HashSet.mem visited label then ()
+    if T.NodeName.HashSet.mem visited label then ()
     else (
       T.NodeName.HashSet.add label visited ;
       match T.NodeName.Map.find_opt label env.node_map with
@@ -315,12 +315,8 @@ let collect_loop_stores (env : Env.t) (header_label : T.NodeName.t) : IString.Se
                   () ) ;
           iter_terminator_labels node.last ~f:walk )
   in
-  (* Start from the header's successors (the body path) *)
-  ( match T.NodeName.Map.find_opt header_label env.node_map with
-  | Some header_node ->
-      iter_terminator_labels header_node.last ~f:walk
-  | None ->
-      () ) ;
+  (* Start from the header itself — its instructions may contain stores (e.g. while loops) *)
+  walk header_label ;
   !stores
 
 
@@ -422,45 +418,64 @@ and convert_loop (env : Env.t) (header_label : T.NodeName.t) ~ssa_args : CC.Atom
     ; locals= theta_locals
     ; active_loops= T.NodeName.Set.add header_label env.active_loops }
   in
-  (* 4. Process header instructions and terminator *)
-  let loop_env = convert_instrs loop_env header_node.instrs in
-  match header_node.last with
-  | If {bexp; then_; else_} ->
-      let _cond = convert_boolexp loop_env bexp in
-      (* Process body branch — will hit the back-edge and return *)
-      let _body_result, body_env = convert_terminator loop_env then_ in
-      (* 5. Close theta nodes: merge placeholders with @theta(init, body) terms *)
-      let theta_state_term = mk_term cc "@theta" [init_state; body_env.state] in
-      CC.merge cc theta_state_placeholder (CC.Atom theta_state_term) ;
+  (* 4. Walk from header through single-target jumps until we find an If terminator *)
+  let visited = T.NodeName.HashSet.create 16 in
+  let rec find_loop_if (env : Env.t) (node : T.Node.t) :
+      Env.t * T.BoolExp.t * T.Terminator.t * T.Terminator.t =
+    let env = convert_instrs env node.instrs in
+    match node.last with
+    | If {bexp; then_; else_} ->
+        (env, bexp, then_, else_)
+    | Jump [{label; ssa_args}] when not (T.NodeName.HashSet.mem visited label) -> (
+      match T.NodeName.Map.find_opt label env.node_map with
+      | Some target_node ->
+          T.NodeName.HashSet.add label visited ;
+          let env =
+            List.fold2_exn target_node.ssa_parameters ssa_args ~init:env
+              ~f:(fun env (id, _typ) arg_exp ->
+                let atom = convert_exp env arg_exp in
+                Env.bind_ident env id atom )
+          in
+          find_loop_if env target_node
+      | None ->
+          L.die InternalError "TextualPeg: unknown label %a in loop" T.NodeName.pp label )
+    | _ ->
+        L.die InternalError "TextualPeg: loop header %a: no If terminator found" T.NodeName.pp
+          header_label
+  in
+  let loop_env, bexp, then_, else_ = find_loop_if loop_env header_node in
+  let _cond = convert_boolexp loop_env bexp in
+  (* Process body branch — will hit the back-edge and return *)
+  let _body_result, body_env = convert_terminator loop_env then_ in
+  (* 5. Close theta nodes: merge placeholders with @theta(init, body) terms *)
+  let theta_state_term = mk_term cc "@theta" [init_state; body_env.state] in
+  CC.merge cc theta_state_placeholder (CC.Atom theta_state_term) ;
+  Equations.add env.equations
+    ~name:(F.asprintf "\xCE\xB8_state_%d" n)
+    ~atom:theta_state_term ~origin:"theta_close" ;
+  List.iter theta_var_placeholders ~f:(fun (name, placeholder) ->
+      let init_val =
+        match LocalsMap.load init_locals ~name with
+        | Some atom ->
+            atom
+        | None ->
+            mk_const cc "@undef"
+      in
+      let body_val =
+        match LocalsMap.load body_env.locals ~name with
+        | Some atom ->
+            atom
+        | None ->
+            L.die InternalError "TextualPeg: theta variable %s not found after body" name
+      in
+      let theta_term = mk_term cc "@theta" [init_val; body_val] in
+      CC.merge cc placeholder (CC.Atom theta_term) ;
       Equations.add env.equations
-        ~name:(F.asprintf "\xCE\xB8_state_%d" n)
-        ~atom:theta_state_term ~origin:"theta_close" ;
-      List.iter theta_var_placeholders ~f:(fun (name, placeholder) ->
-          let init_val =
-            match LocalsMap.load init_locals ~name with
-            | Some atom ->
-                atom
-            | None ->
-                mk_const cc "@undef"
-          in
-          let body_val =
-            match LocalsMap.load body_env.locals ~name with
-            | Some atom ->
-                atom
-            | None ->
-                L.die InternalError "TextualPeg: theta variable %s not found after body" name
-          in
-          let theta_term = mk_term cc "@theta" [init_val; body_val] in
-          CC.merge cc placeholder (CC.Atom theta_term) ;
-          Equations.add env.equations
-            ~name:(F.asprintf "\xCE\xB8_%s_%d" name n)
-            ~atom:theta_term ~origin:"theta_close" ) ;
-      (* 6. Process exit branch with theta bindings in effect *)
-      let exit_env = {loop_env with active_loops= env.active_loops} in
-      convert_terminator exit_env else_
-  | _ ->
-      L.die InternalError "TextualPeg: loop header %a must have If terminator" T.NodeName.pp
-        header_label
+        ~name:(F.asprintf "\xCE\xB8_%s_%d" name n)
+        ~atom:theta_term ~origin:"theta_close" ) ;
+  (* 6. Process exit branch with theta bindings in effect *)
+  let exit_env = {loop_env with active_loops= env.active_loops} in
+  convert_terminator exit_env else_
 
 
 (* ---------- Main entry point ---------- *)

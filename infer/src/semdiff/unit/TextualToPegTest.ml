@@ -268,6 +268,15 @@ let pp_proc_peg fmt (proc : Textual.ProcDesc.t) =
       F.fprintf fmt "Error: %s" msg
 
 
+let pp_proc_eqs fmt (proc : Textual.ProcDesc.t) =
+  let cc = CongruenceClosureSolver.init ~debug:false in
+  match TextualPeg.convert_proc cc proc with
+  | Ok (_root, eqs) ->
+      TextualPeg.Equations.pp cc fmt eqs
+  | Error msg ->
+      F.fprintf fmt "Error: %s" msg
+
+
 let pp_proc_tree fmt (proc : Textual.ProcDesc.t) =
   let cc = CongruenceClosureSolver.init ~debug:false in
   match TextualPeg.convert_proc cc proc with
@@ -970,6 +979,112 @@ def f(l):
                 (@seq @theta:state:0 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))
                 ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
             @None)
+
+        equivalent: false
+        |}]
+
+
+    let%expect_test "python: while loop" =
+      let source = {|
+def f(x):
+    while x > 0:
+        x = x - 1
+    return x
+|} in
+      let procs = python_to_procs source in
+      let p = find_proc procs "f" in
+      F.printf "=== Textual ===@.%a@." pp_proc_textual p ;
+      F.printf "=== Equations ===@.%a@." pp_proc_eqs p ;
+      F.printf "=== PEG ===@.%a@." pp_proc_peg p ;
+      [%expect
+        {|
+        === Textual ===
+        define .args = "x" dummy.f(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
+          #b0:
+              n2 = globals
+              n1 = locals
+              n0 = $builtins.py_make_none()
+              n3 = $builtins.py_load_fast("x", n1)
+              n4 = $builtins.py_compare_gt(n3, $builtins.py_make_int(0))
+              if $builtins.py_bool(n4) then jmp b1 else jmp b3
+
+          #b1:
+              n5 = $builtins.py_load_fast("x", n1)
+              n6 = $builtins.py_binary_substract(n5, $builtins.py_make_int(1))
+              _ = $builtins.py_store_fast("x", n1, n6)
+              jmp b2
+
+          #b2:
+              n7 = $builtins.py_load_fast("x", n1)
+              n8 = $builtins.py_compare_gt(n7, $builtins.py_make_int(0))
+              if $builtins.py_bool(n8) then jmp b1 else jmp b3
+
+          #b3:
+              n9 = $builtins.py_load_fast("x", n1)
+              ret n9
+
+        }
+
+
+        === Equations ===
+        x      = @param:x  [param]
+        n2     = (@load (@lvar globals))  [let]
+        n1     = (@load (@lvar locals))  [let]
+        n0     = @None  [let]
+        n3     = @param:x  [load_fast: locals]
+        n4     = ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0))  [let]
+        n5     = @theta:x:0  [load_fast: locals]
+        n6     = ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))  [let]
+        x      = ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))  [store_fast: locals]
+        n7     = ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))  [load_fast: locals]
+        n8     = ($builtins.py_compare_gt
+                     ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                     ($builtins.py_make_int 0))  [let]
+        θ_state_0 = (@theta @state0 @theta:state:0)  [theta_close]
+        θ_x_0 = (@theta @param:x ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))  [theta_close]
+        n9     = ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))  [load_fast: locals]
+        RET    = (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))  [ret]
+        n9     = @param:x  [load_fast: locals]
+        RET    = (@ret @state0 @param:x)  [ret]
+        PHI    = (@phi
+                     ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                     (@ret
+                         @theta:state:0
+                         ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
+                     (@ret @state0 @param:x))  [if]
+
+        === PEG ===
+        (@phi
+            ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+            (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
+            (@ret @state0 @param:x))
+        |}]
+
+
+    let%expect_test "FN python: while loop same function is equivalent to itself" =
+      let source = {|
+def f(x):
+    while x > 0:
+        x = x - 1
+    return x
+|} in
+      let result = check_python_equivalence ~show_textual:false source source ~proc_name:"f" in
+      F.printf "equivalent: %b@." result ;
+      (* TODO: FN — same bisimulation limitation as for loops: unique theta
+         placeholders per procedure prevent equivalence detection. *)
+      [%expect
+        {|
+        === PEG 1 ===
+        (@phi
+            ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+            (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
+            (@ret @state0 @param:x))
+
+        === PEG 2 ===
+        (@phi
+            ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+            (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
+            (@ret @state0 @param:x))
 
         equivalent: false
         |}]
