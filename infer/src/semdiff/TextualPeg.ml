@@ -79,6 +79,36 @@ module Env = struct
   let update_state t state = {t with state}
 end
 
+(* ---------- ASCII tree printer ---------- *)
+
+let pp_tree ?(depth = 32) cc fmt atom =
+  let rec pp depth prefix is_last fmt atom =
+    if depth <= 0 then F.fprintf fmt "%s%s...@." prefix (if is_last then "└── " else "├── ")
+    else
+      let connector = if is_last then "└── " else "├── " in
+      let child_prefix = prefix ^ if is_last then "    " else "│   " in
+      match CC.get_enode cc atom with
+      | Some {head; children= []} ->
+          F.fprintf fmt "%s%s%a@." prefix connector (CC.pp_nested_term cc) head
+      | Some {head; children} ->
+          F.fprintf fmt "%s%s%a@." prefix connector (CC.pp_nested_term cc) head ;
+          let n = List.length children in
+          List.iteri children ~f:(fun i child ->
+              pp (depth - 1) child_prefix (Int.equal i (n - 1)) fmt child )
+      | None ->
+          F.fprintf fmt "%s%s%a@." prefix connector CC.Atom.pp atom
+  in
+  match CC.get_enode cc atom with
+  | Some {head; children= []} ->
+      F.fprintf fmt "%a@." (CC.pp_nested_term cc) head
+  | Some {head; children} ->
+      F.fprintf fmt "%a@." (CC.pp_nested_term cc) head ;
+      let n = List.length children in
+      List.iteri children ~f:(fun i child -> pp (depth - 1) "" (Int.equal i (n - 1)) fmt child)
+  | None ->
+      F.fprintf fmt "%a@." CC.Atom.pp atom
+
+
 (* ---------- Helpers ---------- *)
 
 let mk_const cc name = CC.mk_term cc (CC.mk_header cc name) []

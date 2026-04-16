@@ -267,6 +267,15 @@ let pp_proc_peg fmt (proc : Textual.ProcDesc.t) =
       F.fprintf fmt "Error: %s" msg
 
 
+let pp_proc_tree fmt (proc : Textual.ProcDesc.t) =
+  let cc = CongruenceClosureSolver.init ~debug:false in
+  match TextualPeg.convert_proc cc proc with
+  | Ok (root, _eqs) ->
+      TextualPeg.pp_tree cc fmt root
+  | Error msg ->
+      F.fprintf fmt "Error: %s" msg
+
+
 let check_python_equivalence ?(show_textual = true) ?(show_peg = true) source1 source2 ~proc_name =
   let procs1 = python_to_procs source1 in
   let procs2 = python_to_procs source2 in
@@ -497,6 +506,34 @@ def f(c):
             (@ret @state0 ($builtins.py_make_int 2)))
 
         equivalent: true
+        |}]
+
+
+    let%expect_test "ASCII tree: if/else" =
+      let source = {|
+def f(c):
+    if c:
+        x = 1
+    else:
+        x = 2
+    return x
+|} in
+      let procs = python_to_procs source in
+      let p = find_proc procs "f" in
+      F.printf "%a" pp_proc_tree p ;
+      [%expect
+        {|
+        @phi
+        ├── $builtins.py_bool
+        │   └── @param:c
+        ├── @ret
+        │   ├── @state0
+        │   └── $builtins.py_make_int
+        │       └── 1
+        └── @ret
+            ├── @state0
+            └── $builtins.py_make_int
+                └── 2
         |}]
 
 

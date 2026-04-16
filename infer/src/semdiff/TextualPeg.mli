@@ -41,3 +41,8 @@ val convert_proc : CC.t -> Textual.ProcDesc.t -> (CC.Atom.t * Equations.t, strin
 (** [convert_proc cc proc] converts a loop-free Textual procedure into e-graph terms in [cc].
     Returns the root atom and the full equation trace, or [Error msg] for back-edges / unsupported
     constructs. *)
+
+(** {2 Pretty-printing} *)
+
+val pp_tree : ?depth:int -> CC.t -> Format.formatter -> CC.Atom.t -> unit
+(** [pp_tree cc fmt atom] prints the PEG rooted at [atom] as an ASCII tree. *)
