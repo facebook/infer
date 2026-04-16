@@ -270,9 +270,13 @@ let clang_cc1_cmd_sanitizer cmd =
             let sdk_cxx_include = sysroot ^/ "usr" ^/ "include" ^/ "c++" ^/ "v1" in
             let cxxabi_h = sdk_cxx_include ^/ "cxxabi.h" in
             if ISys.file_exists cxxabi_h then (
+              let sdk_cxx_include_abs =
+                if Filename.is_relative sdk_cxx_include then Unix.getcwd () ^/ sdk_cxx_include
+                else sdk_cxx_include
+              in
               let tmp_dir = IFilename.temp_dir "infer_cxxabi" "" in
               let symlink src dst =
-                let src_path = sdk_cxx_include ^/ src in
+                let src_path = sdk_cxx_include_abs ^/ src in
                 if ISys.file_exists src_path then
                   try IUnix.symlink ~target:src_path ~link_name:(tmp_dir ^/ dst) ()
                   with Unix.Unix_error _ -> ()
