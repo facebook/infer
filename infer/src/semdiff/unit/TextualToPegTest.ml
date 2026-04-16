@@ -31,8 +31,9 @@ let%test_module "textual to peg" =
         === foo ===
         Equations:
         n0     = ($builtins.py_make_int 42)  [let]
-        RET    = (@ret (@seq @state0 ($builtins.py_make_int 42)) ($builtins.py_make_int 42))  [ret]
-        PEG: (@ret (@seq @state0 ($builtins.py_make_int 42)) ($builtins.py_make_int 42)) |}]
+        RET    = (@ret @state0 ($builtins.py_make_int 42))  [ret]
+        PEG: (@ret @state0 ($builtins.py_make_int 42))
+        |}]
 
 
     let%expect_test "store_fast then load_fast" =
@@ -64,16 +65,8 @@ let%test_module "textual to peg" =
         n4     = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [let]
         y      = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [store_fast: locals]
         n5     = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [load_fast: locals]
-        RET    = (@ret
-                     (@seq
-                         (@seq @state0 ($builtins.py_make_int 1))
-                         ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
-                     ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))  [ret]
-        PEG: (@ret
-                 (@seq
-                     (@seq @state0 ($builtins.py_make_int 1))
-                     ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
-                 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
+        RET    = (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))  [ret]
+        PEG: (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
         |}]
 
 
@@ -104,17 +97,17 @@ let%test_module "textual to peg" =
         n1     = (@load (@lvar locals))  [let]
         n2     = @param:c  [load_fast: locals]
         n3     = ($builtins.py_make_int 1)  [let]
-        RET    = (@ret (@seq @state0 ($builtins.py_make_int 1)) ($builtins.py_make_int 1))  [ret]
+        RET    = (@ret @state0 ($builtins.py_make_int 1))  [ret]
         n4     = ($builtins.py_make_int 2)  [let]
-        RET    = (@ret (@seq @state0 ($builtins.py_make_int 2)) ($builtins.py_make_int 2))  [ret]
+        RET    = (@ret @state0 ($builtins.py_make_int 2))  [ret]
         PHI    = (@phi
                      @param:c
-                     (@ret (@seq @state0 ($builtins.py_make_int 1)) ($builtins.py_make_int 1))
-                     (@ret (@seq @state0 ($builtins.py_make_int 2)) ($builtins.py_make_int 2)))  [if]
+                     (@ret @state0 ($builtins.py_make_int 1))
+                     (@ret @state0 ($builtins.py_make_int 2)))  [if]
         PEG: (@phi
                  @param:c
-                 (@ret (@seq @state0 ($builtins.py_make_int 1)) ($builtins.py_make_int 1))
-                 (@ret (@seq @state0 ($builtins.py_make_int 2)) ($builtins.py_make_int 2)))
+                 (@ret @state0 ($builtins.py_make_int 1))
+                 (@ret @state0 ($builtins.py_make_int 2)))
         |}]
 
 
@@ -320,11 +313,7 @@ def f(x):
 
 
         === PEG 1 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
-            ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
+        (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
 
         === Textual 2 ===
         define .args = "x" dummy.f(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
@@ -346,11 +335,7 @@ def f(x):
 
 
         === PEG 2 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
-            ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
+        (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
 
         equivalent: true
         |}]
@@ -383,11 +368,7 @@ def f(x):
 
 
         === PEG 1 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
-            ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
+        (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
 
         === Textual 2 ===
         define .args = "x" dummy.f(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
@@ -403,11 +384,7 @@ def f(x):
 
 
         === PEG 2 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add @param:x ($builtins.py_make_int 2)))
-            ($builtins.py_binary_add @param:x ($builtins.py_make_int 2)))
+        (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 2)))
 
         equivalent: false
         |}]
@@ -454,11 +431,7 @@ def f():
 
 
         === PEG 1 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
-            ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
+        (@ret @state0 ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
 
         === Textual 2 ===
         define dummy.f(globals: *PyGlobals<dummy>, locals: *PyLocals) : *PyObject {
@@ -484,11 +457,7 @@ def f():
 
 
         === PEG 2 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
-            ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
+        (@ret @state0 ($builtins.py_binary_add ($builtins.py_make_int 1) ($builtins.py_make_int 2)))
 
         equivalent: true
         |}]
@@ -518,14 +487,14 @@ def f(c):
         === PEG 1 ===
         (@phi
             ($builtins.py_bool @param:c)
-            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
-            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 2)))
+            (@ret @state0 ($builtins.py_make_int 1))
+            (@ret @state0 ($builtins.py_make_int 2)))
 
         === PEG 2 ===
         (@phi
             ($builtins.py_bool @param:c)
-            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
-            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 2)))
+            (@ret @state0 ($builtins.py_make_int 1))
+            (@ret @state0 ($builtins.py_make_int 2)))
 
         equivalent: true
         |}]
@@ -552,11 +521,11 @@ def f(c):
         === PEG 1 ===
         (@phi
             ($builtins.py_bool @param:c)
-            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
-            (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1)))
+            (@ret @state0 ($builtins.py_make_int 1))
+            (@ret @state0 ($builtins.py_make_int 1)))
 
         === PEG 2 ===
-        (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+        (@ret @state0 ($builtins.py_make_int 1))
 
         equivalent: true
         |}]
@@ -579,10 +548,10 @@ def f():
       [%expect
         {|
         === PEG 1 ===
-        (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+        (@ret @state0 ($builtins.py_make_int 1))
 
         === PEG 2 ===
-        (@ret (@seq @state0 $builtins.py_make_none) ($builtins.py_make_int 1))
+        (@ret @state0 ($builtins.py_make_int 1))
 
         equivalent: true
         |}]
@@ -604,18 +573,10 @@ def f(a):
       [%expect
         {|
         === PEG 1 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
-            ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
+        (@ret @state0 ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
 
         === PEG 2 ===
-        (@ret
-            (@seq
-                (@seq @state0 $builtins.py_make_none)
-                ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
-            ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
+        (@ret @state0 ($builtins.py_binary_add @param:a ($builtins.py_make_int 1)))
 
         equivalent: true
         |}]

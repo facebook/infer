@@ -160,6 +160,17 @@ let is_py_builtin proc name =
   String.is_suffix s ~suffix:name
 
 
+let pure_builtin_prefixes =
+  ["py_make_"; "py_binary_"; "py_unary_"; "py_compare_"; "py_inplace_"; "py_build_tuple"]
+
+
+let is_pure_call proc =
+  let s = qualified_procname_to_string proc in
+  List.exists pure_builtin_prefixes ~f:(fun prefix -> String.is_substring s ~substring:prefix)
+  || is_py_builtin proc "py_bool" || is_py_builtin proc "py_bool_true"
+  || is_py_builtin proc "py_bool_false"
+
+
 (* ---------- Instruction conversion ---------- *)
 
 let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
@@ -192,8 +203,9 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
   | Let {id; exp} -> (
       let atom = convert_exp env exp in
       let env = match id with Some id -> Env.bind_ident env id atom | None -> env in
-      (* side-effectful calls: thread state *)
       match exp with
+      | Call {proc} when is_pure_call proc ->
+          env
       | Call _ ->
           let new_state = mk_term cc "@seq" [env.state; atom] in
           Env.update_state env new_state
