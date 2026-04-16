@@ -3739,10 +3739,10 @@ and trace_wto =
 
 and unix_fork =
   CLOpt.mk_bool ~long:"unix-fork"
-    ~default:(not (Stdlib.( = ) Version.build_platform Version.Windows))
+    ~default:(Stdlib.( = ) Version.build_platform Version.Linux)
     "Use the $(b,fork)(2) system call to spawn sub-processes. Otherwise use the equivalent of \
      $(b,fork)(2) followed by $(b,exec)(3) -- which  is usually slower, but is available on all \
-     OSes."
+     OSes. Defaults to false on macOS and Windows where fork without exec is unsafe."
 
 
 and version =

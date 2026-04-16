@@ -3687,11 +3687,12 @@ INTERNAL OPTIONS
        --tree-sitter-preprocessor-reset
            Cancel the effect of --tree-sitter-preprocessor.
 
-       --no-unix-fork
-           Deactivates: Use the fork(2) system call to spawn sub-processes.
+       --unix-fork
+           Activates: Use the fork(2) system call to spawn sub-processes.
            Otherwise use the equivalent of fork(2) followed by exec(3) --
-           which is usually slower, but is available on all OSes.
-           (Conversely: --unix-fork)
+           which is usually slower, but is available on all OSes. Defaults to
+           false on macOS and Windows where fork without exec is unsafe.
+           (Conversely: --no-unix-fork)
 
        --version-vcs
            Print version control system commit and exit
