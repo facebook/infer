@@ -6,7 +6,6 @@
  *)
 
 open! IStd
-module F = Format
 module L = Logging
 
 let create_cmd (source_file, (compilation_data : CompilationDatabase.compilation_data)) =
@@ -27,16 +26,7 @@ let create_cmd (source_file, (compilation_data : CompilationDatabase.compilation
 
 let invoke_cmd (source_file, (cmd : CompilationDatabase.compilation_data)) =
   let argv = cmd.executable :: cmd.escaped_arguments in
-  ( ( match Spawn.spawn ~cwd:(Path cmd.directory) ~prog:cmd.executable ~argv () with
-    | pid ->
-        !WorkerPoolState.update_status
-          (Some (Mtime_clock.now ()))
-          (SourceFile.to_string source_file) ;
-        IUnix.waitpid (Pid.of_int pid)
-        |> Result.map_error ~f:(fun unix_error ->
-               IUnix.Exit_or_signal.to_string_hum (Error unix_error) )
-    | exception Unix.Unix_error (err, f, arg) ->
-        Error (F.asprintf "%s(%s): %s@." f arg (IUnix.Error.message err)) )
+  ( InferSubprocess.run ~cwd:cmd.directory ~prog:cmd.executable ~argv ()
   |> function
   | Ok () ->
       ()
