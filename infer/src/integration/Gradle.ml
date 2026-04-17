@@ -94,8 +94,13 @@ let capture_gradle_target (out_dir, (javac_data : javac_data)) =
   let args =
     ["capture"; "-j"; "1"; "-o"; out_dir; "--"; "javac"; "@" ^ gradle_files; "@" ^ java_opts]
   in
+  let argv = prog :: args in
   L.debug Capture Verbose "%s %s@." prog (String.concat ~sep:" " args) ;
-  Process.create_process_and_wait ~prog ~args () ;
+  ( match InferSubprocess.run ~prog ~argv () with
+  | Ok () ->
+      ()
+  | Error error ->
+      L.die ExternalError "Error executing: %a@\n%s@." Pp.cli_args argv error ) ;
   None
 
 
