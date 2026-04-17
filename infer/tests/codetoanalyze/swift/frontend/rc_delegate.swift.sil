@@ -1570,8 +1570,7 @@ define .plain_name = "delegate.modify" .method_offset = "5" __infer_swift_type<$
       store &getelementptr_offset_1 <- 13 @[0:0]
       n7 = load &getelementptr_offset_1 @[0:0]
       n8 = $builtins.llvm_nondet() @[0:0]
-      n10 = load n8 @[0:0]
-      n12 = $builtins.llvm_dynamic_call(n7, n10, n5) @[0:0]
+      n12 = $builtins.llvm_dynamic_call(n7, n8, n5) @[0:0]
       jmp 12::ret @[0:0]
       
 } @?
@@ -1908,8 +1907,7 @@ define .plain_name = "delegate.modify" .method_offset = "5" __infer_swift_type<$
       store &getelementptr_offset_1 <- 13 @[0:0]
       n7 = load &getelementptr_offset_1 @[0:0]
       n8 = $builtins.llvm_nondet() @[0:0]
-      n10 = load n8 @[0:0]
-      n12 = $builtins.llvm_dynamic_call(n7, n10, n5) @[0:0]
+      n12 = $builtins.llvm_dynamic_call(n7, n8, n5) @[0:0]
       jmp 12::ret @[0:0]
       
 } @?

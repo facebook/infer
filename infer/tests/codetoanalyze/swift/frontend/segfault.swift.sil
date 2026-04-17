@@ -71,8 +71,7 @@ define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_
       jmp 33::ret @[4:9]
       
   #33::ret: @[4:9]
-      n45:*__infer_tuple_class<*__infer_swift_type<TSS>,*__infer_swift_type<TSS>> = load n40 @[4:9]
-      n46:*__infer_swift_type<TSS> = load n45.__infer_tuple_class<*__infer_swift_type<TSS>,*__infer_swift_type<TSS>>.__infer_tuple_field_0 @[4:9]
+      n46:*__infer_swift_type<TSS> = load n40.__infer_tuple_class<*__infer_swift_type<TSS>,*__infer_swift_type<TSS>>.__infer_tuple_field_0 @[4:9]
       n47:*__infer_swift_type<Ts11_StringGutsV> = load n46.__infer_swift_type<TSS>.field_0 @[4:9]
       n48 = n47.__infer_swift_type<Ts11_StringGutsV>.field_0 @[4:9]
       n51:*__infer_swift_type<Ts13_StringObjectV> = load n48 @[4:9]
@@ -92,8 +91,7 @@ define .plain_name = "test_getelementptr_segfault" $s5Hello27test_getelementptr_
       jmp 42::ret @[4:14]
       
   #42::ret: @[4:14]
-      n62:*__infer_tuple_class<*__infer_swift_type<TSS>,*__infer_swift_type<TSS>> = load n40 @[4:14]
-      n63:*__infer_swift_type<TSS> = load n62.__infer_tuple_class<*__infer_swift_type<TSS>,*__infer_swift_type<TSS>>.__infer_tuple_field_1 @[4:14]
+      n63:*__infer_swift_type<TSS> = load n40.__infer_tuple_class<*__infer_swift_type<TSS>,*__infer_swift_type<TSS>>.__infer_tuple_field_1 @[4:14]
       n64:*__infer_swift_type<Ts11_StringGutsV> = load n63.__infer_swift_type<TSS>.field_0 @[4:14]
       n65 = n64.__infer_swift_type<Ts11_StringGutsV>.field_0 @[4:14]
       n68:*__infer_swift_type<Ts13_StringObjectV> = load n65 @[4:14]

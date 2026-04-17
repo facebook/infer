@@ -210,11 +210,9 @@ let add_deref ~proc_state ?from_call exp loc =
   | Textual.Exp.Var id -> (
       let id_data = IdentMap.find_opt id proc_state.ProcState.ids_move in
       match id_data with
-      | Some {loaded_var= true} ->
+      | Some {loaded_var= true} | Some {deref_needed= false} ->
           ([], exp)
       | Some {deref_needed= true} ->
-          add_load_instr
-      | Some {typ= Some {typ= Textual.Typ.Ptr _}} ->
           add_load_instr
       | _ ->
           ([], exp) )
@@ -234,8 +232,6 @@ let should_add_deref ~proc_state exp =
       | Some {loaded_var= true} ->
           false
       | Some {deref_needed= true} ->
-          true
-      | Some {typ= Some {typ= Textual.Typ.Ptr _}} ->
           true
       | _ ->
           false )

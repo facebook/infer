@@ -1707,8 +1707,7 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n151:*__infer_swift_type<TSa> = load &var19 @[67:30]
       n152:*__infer_swift_type<Ts12_ArrayBufferV> = load n151.__infer_swift_type<TSa>.field_0 @[67:30]
       n153:*__infer_swift_type<Ts14_BridgeStorageV> = load n152.__infer_swift_type<Ts12_ArrayBufferV>.field_0 @[67:30]
-      n150 = load n146 @[67:30]
-      store n153.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n150 @[67:30]
+      store n153.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n146 @[67:30]
       n157 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("_", 1, 1) @[67:72]
       jmp 113::ret @[67:72]
       
