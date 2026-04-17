@@ -116,21 +116,36 @@ jobs:
           echo "value=$(./facebook-clang-plugins/clang/setup.sh --clang-hash)" >> $GITHUB_OUTPUT
 
       - name: Attempt to get clang from the cache
-        id: cache-clang
-        uses: actions/cache@v5
+        id: cache-clang-restore
+        uses: actions/cache/restore@v4
         with:
           path: facebook-clang-plugins/clang/install
           key: clang-${{ runner.os }}-${{ runner.arch }}-${{ steps.clang-hash.outputs.value }}
 
       - name: Record that the clang cache was hit
-        if: steps.cache-clang.outputs.cache-hit == 'true'
+        if: steps.cache-clang-restore.outputs.cache-hit == 'true'
         run: ./facebook-clang-plugins/clang/setup.sh --only-record-install
 
       - name: Build clang on cache misses
-        if: steps.cache-clang.outputs.cache-hit != 'true'
+        if: steps.cache-clang-restore.outputs.cache-hit != 'true'
         run: |
           ./facebook-clang-plugins/clang/src/prepare_clang_src.sh
           CC=clang CXX=clang++ ./facebook-clang-plugins/clang/setup.sh --ninja --sequential-link
+
+      - name: Validate rebuilt clang installation
+        if: steps.cache-clang-restore.outputs.cache-hit != 'true'
+        run: |
+          ./facebook-clang-plugins/clang/setup.sh --only-check-install
+          ./facebook-clang-plugins/clang/install/bin/clang --version
+          ./facebook-clang-plugins/clang/install/bin/clang++ --version
+          ./facebook-clang-plugins/clang/install/bin/llvm-config --version
+
+      - name: Save rebuilt clang to the cache
+        if: steps.cache-clang-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: facebook-clang-plugins/clang/install
+          key: clang-${{ runner.os }}-${{ runner.arch }}-${{ steps.clang-hash.outputs.value }}
 
       - if: runner.os == 'Linux'
         run: ./build-infer.sh --yes --user-opam-switch
