@@ -5,6 +5,7 @@ use crate::names::Name;
 use derive_generic_visitor::{Drive, DriveMut};
 use macros::{EnumAsGetters, EnumIsA, EnumToGetters};
 use serde::{Deserialize, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 use std::path::PathBuf;
 
 generate_index_type!(FileId);
@@ -32,7 +33,7 @@ pub struct Loc {
 
 /// Span information
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
-pub struct RawSpan {
+pub struct SpanData {
     #[charon::rename("file")]
     pub file_id: FileId,
     #[charon::rename("beg_loc")]
@@ -53,10 +54,13 @@ pub struct RawSpan {
     Hash,
     Serialize,
     Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
 #[drive(skip)]
+#[serde_state(stateless)]
 pub struct Span {
     /// The source code span.
     ///
@@ -77,9 +81,9 @@ pub struct Span {
     ///     macro!(); // <-- `span` refers to this location
     /// }
     /// ```
-    pub span: RawSpan,
+    pub data: SpanData,
     /// Where the code actually comes from, in case of macro expansion/inlining/etc.
-    pub generated_from_span: Option<RawSpan>,
+    pub generated_from_span: Option<SpanData>,
 }
 
 /// `#[inline]` built-in attribute.
@@ -112,6 +116,9 @@ pub enum Attribute {
     /// Do not translate the body of this item.
     /// Written `#[charon::opaque]`
     Opaque,
+    /// Do not translate this item at all.
+    /// Written `#[charon::exclude]`
+    Exclude,
     /// Provide a new name that consumers of the llbc can use.
     /// Written `#[charon::rename("new_name")]`
     Rename(String),
@@ -198,13 +205,15 @@ pub enum ItemOpacity {
     /// declared opaque via a command-line argument.
     Opaque,
     /// Translate nothing of this item. The corresponding map will not have an entry for the
-    /// `AnyTransId`. Useful when even the signature of the item causes errors.
+    /// `ItemId`. Useful when even the signature of the item causes errors.
     Invisible,
 }
 
 /// Meta information about an item (function, trait decl, trait impl, type decl, global).
-#[derive(Debug, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
+#[serde_state(stateless)]
 pub struct ItemMeta {
+    #[serde_state(stateful)]
     pub name: Name,
     pub span: Span,
     /// The source code that corresponds to this item.
@@ -243,7 +252,6 @@ pub enum FileName {
     #[drive(skip)] // drive is not implemented for `PathBuf`
     Local(PathBuf),
     /// A "not real" file name (macro, query, etc.)
-    #[charon::opaque]
     NotReal(String),
 }
 

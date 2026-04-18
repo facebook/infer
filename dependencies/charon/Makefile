@@ -53,7 +53,7 @@ doc:
 
 # Build and run the tests
 .PHONY: test
-test: clean-generated build-dev charon-tests charon-ml-tests
+test: charon-ml/src/CharonVersion.ml clean-generated build-dev charon-tests charon-ml-tests
 
 # Run Charon on various test files
 .PHONY: charon-tests
@@ -81,6 +81,10 @@ generate-ml:
 .PHONY: generate-ml-keep-llbc
 generate-ml-keep-llbc:
 	CHARON_ML_REUSE_LLBC=1 $(MAKE) generate-ml
+
+.PHONY: toolchain-commit
+toolchain-commit:
+	@rustc -vV | awk '/^commit-hash/ { print $$2 }'
 
 # Run Charon on rustc's ui test suite
 .PHONY: rustc-tests

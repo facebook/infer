@@ -17,7 +17,7 @@ pub trait Sized<Self>
 pub trait Tuple<Self>
 {
     parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    vtable: core::marker::Tuple::{vtable}
+    non-dyn-compatible
 }
 
 // Full name: core::ops::function::FnOnce
@@ -30,7 +30,7 @@ pub trait FnOnce<Self, Args>
     parent_clause3 : [@TraitClause3]: Sized<Self::Output>
     type Output
     fn call_once = call_once<Self, Args>[Self]
-    non-dyn-compatible
+    vtable: core::ops::function::FnOnce::{vtable}<Args, Self::Output>
 }
 
 // Full name: core::ops::function::FnMut
@@ -41,19 +41,21 @@ pub trait FnMut<Self, Args>
     parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
     parent_clause2 : [@TraitClause2]: Sized<Args>
     parent_clause3 : [@TraitClause3]: Tuple<Args>
-    fn call_mut<'_0> = call_mut<'_0_0, Self, Args>[Self]
-    non-dyn-compatible
+    fn call_mut<'_0_1> = call_mut<'_0_1, Self, Args>[Self]
+    vtable: core::ops::function::FnMut::{vtable}<Args, Self::parent_clause1::Output>
 }
 
 // Full name: core::ops::function::FnMut::call_mut
-pub fn call_mut<'_0, Self, Args>(@1: &'_0 mut (Self), @2: Args) -> @TraitClause0::parent_clause1::Output
+pub fn call_mut<'_0, Self, Args>(_1: &'_0 mut Self, _2: Args) -> @TraitClause0::parent_clause1::Output
 where
     [@TraitClause0]: FnMut<Self, Args>,
+= <opaque>
 
 // Full name: core::ops::function::FnOnce::call_once
-pub fn call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+pub fn call_once<Self, Args>(_1: Self, _2: Args) -> @TraitClause0::Output
 where
     [@TraitClause0]: FnOnce<Self, Args>,
+= <opaque>
 
 // Full name: test_crate::S
 pub struct S<'a, K>
@@ -61,20 +63,20 @@ where
     [@TraitClause0]: Sized<K>,
     K : 'a,
 {
-  x: &'a (K),
+  x: &'a K,
 }
 
 pub fn test_crate::{S<'a, K>[@TraitClause0]}::f<'a, K, F>()
 where
     [@TraitClause0]: Sized<K>,
     [@TraitClause1]: Sized<F>,
-    [@TraitClause2]: for<'_0> FnMut<F, (&'_0_0 (u32))>,
-    for<'_0> @TraitClause2::parent_clause1::Output = (),
+    [@TraitClause2]: for<'_0_1> FnMut<F, (&'_0_1 u32,)>,
+    for<'_0_1> @TraitClause2::parent_clause1::Output = (),
 {
-    let @0: (); // return
+    let _0: (); // return
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
@@ -83,13 +85,13 @@ pub fn g<'a, K, F>()
 where
     [@TraitClause0]: Sized<K>,
     [@TraitClause1]: Sized<F>,
-    [@TraitClause2]: for<'b> FnMut<F, (&'b (u32))>,
+    [@TraitClause2]: for<'b> FnMut<F, (&'b u32,)>,
     for<'b> @TraitClause2::parent_clause1::Output = (),
 {
-    let @0: (); // return
+    let _0: (); // return
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
@@ -99,13 +101,13 @@ pub struct T {}
 pub fn test_crate::{T}::f<F>()
 where
     [@TraitClause0]: Sized<F>,
-    [@TraitClause1]: for<'_0> FnMut<F, (&'_0_0 (u32))>,
-    for<'_0> @TraitClause1::parent_clause1::Output = (),
+    [@TraitClause1]: for<'_0_1> FnMut<F, (&'_0_1 u32,)>,
+    for<'_0_1> @TraitClause1::parent_clause1::Output = (),
 {
-    let @0: (); // return
+    let _0: (); // return
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 

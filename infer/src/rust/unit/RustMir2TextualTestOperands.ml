@@ -23,14 +23,13 @@ fn main() {
     define dummy::main() : void {
       local var_0: void, var_1: float
       #node_0:
-          store &var_1 <- 3.14:float
           store &var_0 <- null:void
+          store &var_1 <- 3.14:float
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
 
     }
-
     |}]
 
 
@@ -48,14 +47,13 @@ fn main() {
     define dummy::main() : void {
       local var_0: void, var_1: int
       #node_0:
-          store &var_1 <- 42:int
           store &var_0 <- null:void
+          store &var_1 <- 42:int
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
 
     }
-
     |}]
 
 
@@ -71,7 +69,7 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, var_1: void
+      local var_0: void
       #node_0:
           store &var_0 <- null:void
           store &var_0 <- null:void
@@ -79,7 +77,6 @@ fn main() {
           ret n0
 
     }
-
     |}]
 
 
@@ -99,16 +96,15 @@ fn main() {
     define dummy::main() : void {
       local var_0: void, x_1: int, y_2: int
       #node_0:
+          store &var_0 <- null:void
           store &x_1 <- 42:int
           n0:int = load &x_1
           store &y_2 <- n0:int
-          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
 
     }
-
     |}]
 
 
@@ -129,14 +125,13 @@ fn main() {
     define dummy::main() : void {
       local var_0: void, x_1: int, y_2: int
       #node_0:
+          store &var_0 <- null:void
           store &x_1 <- 100:int
           n0:int = load &x_1
           store &y_2 <- n0:int
-          store &var_0 <- null:void
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
 
     }
-
     |}]

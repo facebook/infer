@@ -8,6 +8,7 @@ use std::{
 use derive_generic_visitor::{Drive, DriveMut};
 use index_vec::Idx;
 use serde::{Deserialize, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 
 use crate::{ast::*, impl_from_enum};
 
@@ -54,10 +55,9 @@ impl DeBruijnId {
 ///                                  Bound(0, c)                 Bound(1, c)
 /// ```
 ///
-/// To make consumption easier for projects that don't do heavy substitution, a micro-pass at the
-/// end changes the variables bound at the top-level (i.e. in the `GenericParams` of items) to be
-/// `Free`. This is an optional pass, we may add a flag to deactivate it. The example above
-/// becomes:
+/// To make consumption easier for projects that don't do heavy substitution, `--unbind-item-vars`
+/// changes the variables bound at the top-level (i.e. in the `GenericParams` of items) to be
+/// `Free`. The example above becomes:
 /// ```text
 /// fn f<'a, 'b>(x: for<'c> fn(&'b u8, &'c u16, for<'d> fn(&'b u32, &'c u64, &'d u128)) -> u64) {}
 ///      ^^^^^^         ^^       ^       ^          ^^       ^        ^        ^
@@ -67,8 +67,6 @@ impl DeBruijnId {
 ///                                      |                            |
 ///                                  Bound(0, c)                 Bound(1, c)
 /// ```
-///
-/// At the moment only region variables can be bound in a non-top-level binder.
 #[derive(
     Debug,
     PartialEq,
@@ -78,16 +76,16 @@ impl DeBruijnId {
     Hash,
     PartialOrd,
     Ord,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
 pub enum DeBruijnVar<Id> {
     /// A variable attached to the nth binder, counting from the innermost.
-    Bound(DeBruijnId, Id),
-    /// A variable attached to the outermost binder (the one on the item). As explained above, This
-    /// is not used in charon internals, only as a micro-pass before exporting the crate data.
+    Bound(#[serde_state(stateless)] DeBruijnId, Id),
+    /// A variable attached to the outermost binder (the one on the item). This is not used within
+    /// Charon itself, instead ewe insert it at the end if `--unbind-item-vars` is set.
     Free(Id),
 }
 
@@ -103,7 +101,7 @@ generate_index_type!(TraitTypeConstraintId, "TraitTypeConstraint");
 
 /// A type variable in a signature or binder.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
-pub struct TypeVar {
+pub struct TypeParam {
     /// Index identifying the variable among other variables bound at the same level.
     pub index: TypeVarId,
     /// Variable name
@@ -115,30 +113,35 @@ pub struct TypeVar {
 #[derive(
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Drive, DriveMut,
 )]
-pub struct RegionVar {
+pub struct RegionParam {
     /// Index identifying the variable among other variables bound at the same level.
     pub index: RegionId,
     /// Region name
     #[drive(skip)]
     pub name: Option<String>,
+    /// Whether this lifetime is (recursively) used in a `&'a mut T` type. Only `true` if this
+    /// lifetime parameter belongs to an ADT. This is a global analysis that looks even into opaque
+    /// items. When unsure, err on the side of assuming mutability.
+    #[drive(skip)]
+    pub mutability: LifetimeMutability,
 }
 
 /// A const generic variable in a signature or binder.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
-pub struct ConstGenericVar {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
+pub struct ConstGenericParam {
     /// Index identifying the variable among other variables bound at the same level.
     pub index: ConstGenericVarId,
     /// Const generic name
     #[drive(skip)]
     pub name: String,
     /// Type of the const generic
-    pub ty: LiteralTy,
+    pub ty: Ty,
 }
 
 /// A trait predicate in a signature, of the form `Type: Trait<Args>`. This functions like a
 /// variable binder, to which variables of the form `TraitRefKind::Clause` can refer to.
-#[derive(Debug, Clone, Serialize, Deserialize, Drive, DriveMut)]
-pub struct TraitClause {
+#[derive(Debug, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
+pub struct TraitParam {
     /// Index identifying the clause among other clauses bound at the same level.
     pub clause_id: TraitClauseId,
     // TODO: does not need to be an option.
@@ -152,14 +155,14 @@ pub struct TraitClause {
     pub trait_: PolyTraitDeclRef,
 }
 
-impl PartialEq for TraitClause {
+impl PartialEq for TraitParam {
     fn eq(&self, other: &Self) -> bool {
         // Skip `span` and `origin`
         self.clause_id == other.clause_id && self.trait_ == other.trait_
     }
 }
 
-impl std::hash::Hash for TraitClause {
+impl std::hash::Hash for TraitParam {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.clause_id.hash(state);
         self.trait_.hash(state);
@@ -173,7 +176,7 @@ pub type ClauseDbVar = DeBruijnVar<TraitClauseId>;
 
 impl_from_enum!(Region::Var(RegionDbVar));
 impl_from_enum!(TyKind::TypeVar(TypeDbVar));
-impl_from_enum!(ConstGeneric::Var(ConstGenericDbVar));
+impl_from_enum!(ConstantExprKind::Var(ConstGenericDbVar));
 impl_from_enum!(TraitRefKind::Clause(ClauseDbVar));
 impl From<TypeDbVar> for Ty {
     fn from(x: TypeDbVar) -> Self {
@@ -286,9 +289,25 @@ where
     }
 }
 
-impl TypeVar {
-    pub fn new(index: TypeVarId, name: String) -> TypeVar {
-        TypeVar { index, name }
+impl TypeParam {
+    pub fn new(index: TypeVarId, name: String) -> Self {
+        Self { index, name }
+    }
+}
+
+impl RegionParam {
+    pub fn new(index: RegionId, name: Option<String>) -> Self {
+        Self {
+            index,
+            name,
+            mutability: LifetimeMutability::Unknown,
+        }
+    }
+}
+
+impl ConstGenericParam {
+    pub fn new(index: ConstGenericVarId, name: String, ty: Ty) -> Self {
+        Self { index, name, ty }
     }
 }
 
@@ -350,11 +369,11 @@ impl<T> BindingStack<T> {
     pub fn get_var<'a, Id: Idx, Inner>(&'a self, var: DeBruijnVar<Id>) -> Option<&'a Inner::Output>
     where
         T: Borrow<Inner>,
-        Inner: HasVectorOf<Id> + 'a,
+        Inner: HasIdxMapOf<Id> + 'a,
     {
         let (dbid, varid) = self.as_bound_var(var);
         self.get(dbid)
-            .and_then(|x| x.borrow().get_vector().get(varid))
+            .and_then(|x| x.borrow().get_idx_map().get(varid))
     }
     pub fn get_mut(&mut self, id: DeBruijnId) -> Option<&mut T> {
         let index = self.real_index(id)?;

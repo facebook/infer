@@ -1,22 +1,23 @@
-error: Generic associated types are not supported
- --> /rustc/library/core/src/str/pattern.rs:102:5
+error: Error parsing attribute: Unrecognized attribute: `charon::error`
+ --> src/module.rs:5:1
+  |
+5 | #[charon::error]
+  | ^^^^^^^^^^^^^^^^
 
-note: the error occurred when translating `core::str::pattern::Pattern`, which is (transitively) used at the following location(s):
-  --> src/main.rs:16:29
-   |
-16 |     pub fn takes_pattern<T: std::str::pattern::Pattern>() {}
-   |                             --------------------------
-   |
-  ::: src/module.rs:6:13
-   |
- 6 |     let _ = "".contains("");
-   |             ---------------
- 7 |     let _ = crate::opaque::takes_pattern::<&str>();
-   |             --------------------------------------
-error: Item `core::str::pattern::Pattern` caused errors; ignoring.
- --> /rustc/library/core/src/str/pattern.rs:100:1
+error: Error parsing attribute: Unrecognized attribute: `charon::error`
+ --> error-crate/src/lib.rs:4:1
 
-ERROR Charon failed to translate this code (2 errors)
+note: the error occurred when translating `error_crate::CausesError`, which is (transitively) used at the following location(s):
+ --> src/module.rs:7:9
+  |
+7 |     let x = error_crate::CausesError;
+  |         -   ------------------------
+8 |     let _y = error_crate::CausesError;
+  |              ------------------------
+error: Error parsing attribute: Unrecognized attribute: `charon::error`
+ --> error-crate/src/lib.rs:4:1
+
+ERROR Charon failed to translate this code (3 errors)
 error: could not compile `test-cargo` (bin "test-cargo")
 
 Caused by:

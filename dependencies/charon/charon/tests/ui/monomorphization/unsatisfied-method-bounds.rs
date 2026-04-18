@@ -1,4 +1,3 @@
-//@ known-failure
 //@ charon-args=--mono --start-from=crate::main
 trait MyIterator {
     type Item;
@@ -26,6 +25,9 @@ struct B;
 impl MyIterator for B {
     type Item = u8;
 }
+
+// TODO(dyn): test the vtable too
+// fn test_dyn(_: &dyn MyIterator) {}
 
 fn main() {
     A.method();

@@ -71,12 +71,6 @@ let
       duneVersion = "3";
       inherit src;
 
-      OCAMLPARAM = "_,warn-error=+A"; # Turn all warnings into errors.
-      preCheck =
-        if doCheck then ''
-          ln -sf ${charon}/tests-llbc charon-ml/tests/test-outputs
-        '' else
-          "";
       propagatedBuildInputs = with ocamlPackages; [
         core
         ppx_deriving
@@ -89,7 +83,17 @@ let
         unionFind
         ocaml-ng.ocamlPackages_4_14.ppx_tools # to view the output of visitor derivation
       ];
+
+      OCAMLPARAM = "_,warn-error=+A"; # Turn all warnings into errors.
+      CHARON_TESTS_DIR = lib.optionalString doCheck "${charon}/tests-llbc"; # Tell the tests where to find the llbc files.
+
       inherit doCheck;
+      preBuild = ''
+        # This refers to a directory that doesn't exist in the current
+        # environment. We don't need dune here because tests can access the
+        # files directly, so we remove the dependency clause.
+        sed -i 's#(glob_files_rec [^)]*)##' charon-ml/tests/dune
+      '';
 
       passthru = { inherit charon-ml-tests charon-ml-check-fmt; };
     };

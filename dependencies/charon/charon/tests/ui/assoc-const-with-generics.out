@@ -17,23 +17,23 @@ struct V<T, const N : usize>
 where
     [@TraitClause0]: Sized<T>,
 {
-  x: Array<T, const N : usize>,
+  x: [T; N],
 }
 
-fn test_crate::{V<T, const N : usize>[@TraitClause0]}::LEN<T, const N : usize>() -> usize
+fn test_crate::{V<T, N>[@TraitClause0]}::LEN<T, const N : usize>() -> usize
 where
     [@TraitClause0]: Sized<T>,
 {
-    let @0: usize; // return
+    let _0: usize; // return
 
-    @0 := const (const N : usize)
+    _0 = const N
     return
 }
 
-const test_crate::{V<T, const N : usize>[@TraitClause0]}::LEN<T, const N : usize>: usize
+const test_crate::{V<T, N>[@TraitClause0]}::LEN<T, const N : usize>: usize
 where
     [@TraitClause0]: Sized<T>,
- = test_crate::{V<T, const N : usize>[@TraitClause0]}::LEN()
+ = test_crate::{V<T, N>[@TraitClause0]}::LEN()
 
 // Full name: test_crate::HasLen
 trait HasLen<Self>
@@ -43,44 +43,44 @@ trait HasLen<Self>
     non-dyn-compatible
 }
 
-// Full name: test_crate::{impl HasLen for Array<(), const N : usize>}::LEN
-fn {impl HasLen for Array<(), const N : usize>}::LEN<const N : usize>() -> usize
+// Full name: test_crate::{impl HasLen for [(); N]}::LEN
+fn {impl HasLen for [(); N]}::LEN<const N : usize>() -> usize
 {
-    let @0: usize; // return
+    let _0: usize; // return
 
-    @0 := const (const N : usize)
+    _0 = const N
     return
 }
 
-// Full name: test_crate::{impl HasLen for Array<(), const N : usize>}::LEN
-const {impl HasLen for Array<(), const N : usize>}::LEN<const N : usize>: usize = {impl HasLen for Array<(), const N : usize>}::LEN()
+// Full name: test_crate::{impl HasLen for [(); N]}::LEN
+const {impl HasLen for [(); N]}::LEN<const N : usize>: usize = {impl HasLen for [(); N]}::LEN()
 
-// Full name: test_crate::{impl HasLen for Array<(), const N : usize>}
-impl<const N : usize> HasLen for Array<(), const N : usize> {
-    parent_clause0 = MetaSized<Array<(), const N : usize>>
-    const LEN = {impl HasLen for Array<(), const N : usize>}::LEN<const N : usize>
+// Full name: test_crate::{impl HasLen for [(); N]}
+impl<const N : usize> HasLen for [(); N] {
+    parent_clause0 = {built_in impl MetaSized for [(); N]}
+    const LEN = {impl HasLen for [(); N]}::LEN<N>
     non-dyn-compatible
 }
 
-// Full name: test_crate::{impl HasLen for Array<bool, const N : usize>}::LEN
-fn {impl HasLen for Array<bool, const N : usize>}::LEN<const N : usize>() -> usize
+// Full name: test_crate::{impl HasLen for [bool; N]}::LEN
+fn {impl HasLen for [bool; N]}::LEN<const N : usize>() -> usize
 {
-    let @0: usize; // return
-    let @1: usize; // anonymous local
+    let _0: usize; // return
+    let _1: usize; // anonymous local
 
-    storage_live(@1)
-    @1 := const (const N : usize) panic.+ const (1 : usize)
-    @0 := move (@1)
+    storage_live(_1)
+    _1 = const N panic.+ const 1 : usize
+    _0 = move _1
     return
 }
 
-// Full name: test_crate::{impl HasLen for Array<bool, const N : usize>}::LEN
-const {impl HasLen for Array<bool, const N : usize>}::LEN<const N : usize>: usize = {impl HasLen for Array<bool, const N : usize>}::LEN()
+// Full name: test_crate::{impl HasLen for [bool; N]}::LEN
+const {impl HasLen for [bool; N]}::LEN<const N : usize>: usize = {impl HasLen for [bool; N]}::LEN()
 
-// Full name: test_crate::{impl HasLen for Array<bool, const N : usize>}
-impl<const N : usize> HasLen for Array<bool, const N : usize> {
-    parent_clause0 = MetaSized<Array<bool, const N : usize>>
-    const LEN = {impl HasLen for Array<bool, const N : usize>}::LEN<const N : usize>
+// Full name: test_crate::{impl HasLen for [bool; N]}
+impl<const N : usize> HasLen for [bool; N] {
+    parent_clause0 = {built_in impl MetaSized for [bool; N]}
+    const LEN = {impl HasLen for [bool; N]}::LEN<N>
     non-dyn-compatible
 }
 
@@ -98,9 +98,9 @@ where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: HasLen<T>,
 {
-    let @0: usize; // return
+    let _0: usize; // return
 
-    @0 := const (@TraitClause1::LEN)
+    _0 = const @TraitClause1::LEN
     return
 }
 
@@ -117,7 +117,7 @@ where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: HasLen<T>,
 {
-    parent_clause0 = MetaSized<Wrapper<T>[@TraitClause0]>
+    parent_clause0 = {built_in impl MetaSized for Wrapper<T>[@TraitClause0]}
     const LEN = {impl HasLen for Wrapper<T>[@TraitClause0]}::LEN<T>[@TraitClause0, @TraitClause1]
     non-dyn-compatible
 }
@@ -132,51 +132,50 @@ pub trait HasDefaultLen<Self, const M : usize>
 
 pub fn test_crate::HasDefaultLen::LEN<Self, const M : usize>() -> usize
 where
-    [@TraitClause0]: HasDefaultLen<Self, const M : usize>,
+    [@TraitClause0]: HasDefaultLen<Self, M>,
 {
-    let @0: usize; // return
+    let _0: usize; // return
 
-    @0 := const (const M : usize)
+    _0 = const M
     return
 }
 
 pub const test_crate::HasDefaultLen::LEN<Self, const M : usize>: usize
 where
-    [@TraitClause0]: HasDefaultLen<Self, const M : usize>,
+    [@TraitClause0]: HasDefaultLen<Self, M>,
  = test_crate::HasDefaultLen::LEN()
 
-// Full name: test_crate::{impl HasDefaultLen<const N : usize> for Array<(), const N : usize>}
-impl<const N : usize> HasDefaultLen<const N : usize> for Array<(), const N : usize> {
-    parent_clause0 = MetaSized<Array<(), const N : usize>>
-    const LEN = test_crate::HasDefaultLen::LEN<Array<(), const N : usize>, const N : usize>[{impl HasDefaultLen<const N : usize> for Array<(), const N : usize>}<const N : usize>]
+// Full name: test_crate::{impl HasDefaultLen<N> for [(); N]}
+impl<const N : usize> HasDefaultLen<N> for [(); N] {
+    parent_clause0 = {built_in impl MetaSized for [(); N]}
+    const LEN = test_crate::HasDefaultLen::LEN<[(); N], N>[{impl HasDefaultLen<N> for [(); N]}<N>]
     non-dyn-compatible
 }
 
-// Full name: test_crate::{impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}::LEN
-pub fn {impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}::LEN<const N : usize>() -> usize
+// Full name: test_crate::{impl HasDefaultLen<N> for [bool; N]}::LEN
+pub fn {impl HasDefaultLen<N> for [bool; N]}::LEN<const N : usize>() -> usize
 {
-    let @0: usize; // return
-    let @1: bool; // anonymous local
+    let _0: usize; // return
+    let _1: bool; // anonymous local
 
-    storage_live(@1)
-    @1 := const (true)
-    if move (@1) {
-        @0 := const (const N : usize)
+    storage_live(_1)
+    _1 = const true
+    if move _1 {
+        _0 = const N
+    } else {
+        _0 = copy {impl HasDefaultLen<N> for [bool; N]}::LEN<N>
     }
-    else {
-        @0 := const ({impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}<const N : usize>::LEN)
-    }
-    storage_dead(@1)
+    storage_dead(_1)
     return
 }
 
-// Full name: test_crate::{impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}::LEN
-pub const {impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}::LEN<const N : usize>: usize = {impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}::LEN()
+// Full name: test_crate::{impl HasDefaultLen<N> for [bool; N]}::LEN
+pub const {impl HasDefaultLen<N> for [bool; N]}::LEN<const N : usize>: usize = {impl HasDefaultLen<N> for [bool; N]}::LEN()
 
-// Full name: test_crate::{impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}
-impl<const N : usize> HasDefaultLen<const N : usize> for Array<bool, const N : usize> {
-    parent_clause0 = MetaSized<Array<bool, const N : usize>>
-    const LEN = {impl HasDefaultLen<const N : usize> for Array<bool, const N : usize>}::LEN<const N : usize>
+// Full name: test_crate::{impl HasDefaultLen<N> for [bool; N]}
+impl<const N : usize> HasDefaultLen<N> for [bool; N] {
+    parent_clause0 = {built_in impl MetaSized for [bool; N]}
+    const LEN = {impl HasDefaultLen<N> for [bool; N]}::LEN<N>
     non-dyn-compatible
 }
 
@@ -194,12 +193,12 @@ fn ALSO_LEN<Self>() -> usize
 where
     [@TraitClause0]: AlsoHasLen<Self>,
 {
-    let @0: usize; // return
-    let @1: usize; // anonymous local
+    let _0: usize; // return
+    let _1: usize; // anonymous local
 
-    storage_live(@1)
-    @1 := const (@TraitClause0::parent_clause1::LEN) panic.+ const (1 : usize)
-    @0 := move (@1)
+    storage_live(_1)
+    _1 = const @TraitClause0::parent_clause1::LEN panic.+ const 1 : usize
+    _0 = move _1
     return
 }
 
@@ -209,11 +208,11 @@ where
     [@TraitClause0]: AlsoHasLen<Self>,
  = ALSO_LEN()
 
-// Full name: test_crate::{impl AlsoHasLen for Array<(), const N : usize>}
-impl<const N : usize> AlsoHasLen for Array<(), const N : usize> {
-    parent_clause0 = MetaSized<Array<(), const N : usize>>
-    parent_clause1 = {impl HasLen for Array<(), const N : usize>}<const N : usize>
-    const ALSO_LEN = ALSO_LEN<Array<(), const N : usize>>[{impl AlsoHasLen for Array<(), const N : usize>}<const N : usize>]
+// Full name: test_crate::{impl AlsoHasLen for [(); N]}
+impl<const N : usize> AlsoHasLen for [(); N] {
+    parent_clause0 = {built_in impl MetaSized for [(); N]}
+    parent_clause1 = {impl HasLen for [(); N]}<N>
+    const ALSO_LEN = ALSO_LEN<[(); N]>[{impl AlsoHasLen for [(); N]}<N>]
     non-dyn-compatible
 }
 

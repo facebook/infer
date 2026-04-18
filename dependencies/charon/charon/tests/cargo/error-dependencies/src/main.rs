@@ -13,7 +13,7 @@ mod opaque {
     pub fn fun2() {
         crate::module::fun3()
     }
-    pub fn takes_pattern<T: std::str::pattern::Pattern>() {}
+    pub fn erroring_function(_: error_crate::CausesError) {}
 }
 
 fn main() {

@@ -1,0 +1,72 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: test_crate::Link
+pub trait Link<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    vtable: test_crate::Link::{vtable}<T>
+}
+
+// Full name: test_crate::{impl Link<T> for U}
+impl<T, U> Link<T> for U
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+{
+    parent_clause0 = @TraitClause1::parent_clause0
+    parent_clause1 = @TraitClause0
+    vtable: {impl Link<T> for U}::{vtable}<T, U>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: test_crate::Trait
+pub trait Trait<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    type Type<U, [@TraitClause0_1]: Sized<U>>
+    where
+        implied_clause_0 : [@TraitClause0_1]: Sized<Self::Type>
+        implied_clause_1 : [@TraitClause1_1]: Link<Self::Type, T>
+
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Foo
+pub struct Foo {}
+
+// Full name: test_crate::{impl Trait<Option<T>[@TraitClause0]> for Foo}
+impl<T> Trait<Option<T>[@TraitClause0]> for Foo
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = {built_in impl MetaSized for Foo}
+    parent_clause1 = {built_in impl Sized for Option<T>[@TraitClause0]}
+    type Type<U, [@TraitClause0_1]: Sized<U>> = (T, U)
+    non-dyn-compatible
+}
+
+
+

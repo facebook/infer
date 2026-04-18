@@ -1,0 +1,28 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::B
+struct B {
+  y: u32,
+}
+
+// Full name: test_crate::A
+struct A {
+  x: B,
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _1: usize; // anonymous local
+
+    _0 = ()
+    storage_live(_1)
+    _1 = const 0 : usize
+    storage_dead(_1)
+    _0 = ()
+    return
+}
+
+
+

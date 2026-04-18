@@ -5,6 +5,7 @@ open Types
 open TypesUtils
 open GAstUtils
 open Expressions
+open ExpressionsUtils
 open LlbcAst
 
 (* TODO: use Core.Fn.compose *)
@@ -22,11 +23,11 @@ type subst = {
           DeBruijn index. A negative DeBruijn index means that the region is
           locally bound. *)
   ty_subst : TypeVarId.id de_bruijn_var -> ty;
-  cg_subst : ConstGenericVarId.id de_bruijn_var -> const_generic;
+  cg_subst : ConstGenericVarId.id de_bruijn_var -> constant_expr_kind;
       (** Substitution from *local* trait clause to trait instance *)
-  tr_subst : TraitClauseId.id de_bruijn_var -> trait_instance_id;
+  tr_subst : TraitClauseId.id de_bruijn_var -> trait_ref_kind;
       (** Substitution for the [Self] trait instance *)
-  tr_self : trait_instance_id;
+  tr_self : trait_ref_kind;
 }
 
 (* A substitution that applies to a specific binder. Use it with
@@ -34,17 +35,17 @@ type subst = {
 type single_binder_subst = {
   r_sb_subst : RegionId.id -> region;
   ty_sb_subst : TypeVarId.id -> ty;
-  cg_sb_subst : ConstGenericVarId.id -> const_generic;
-  tr_sb_subst : TraitClauseId.id -> trait_instance_id;
+  cg_sb_subst : ConstGenericVarId.id -> constant_expr_kind;
+  tr_sb_subst : TraitClauseId.id -> trait_ref_kind;
       (** Substitution for the [Self] trait instance *)
-  tr_sb_self : trait_instance_id;
+  tr_sb_self : trait_ref_kind;
 }
 
 let empty_subst : subst =
   {
     r_subst = (fun var -> RVar var);
     ty_subst = (fun var -> TVar var);
-    cg_subst = (fun var -> CgVar var);
+    cg_subst = (fun var -> CVar var);
     tr_subst = (fun var -> Clause var);
     tr_self = Self;
   }
@@ -160,11 +161,11 @@ let shift_subst (subst : subst) : subst =
       compose (st_shift_visitor#visit_ty 1) (compose subst.ty_subst decr_db_var);
     cg_subst =
       compose
-        (st_shift_visitor#visit_const_generic 1)
+        (st_shift_visitor#visit_constant_expr_kind 1)
         (compose subst.cg_subst decr_db_var);
     tr_subst =
       compose
-        (st_shift_visitor#visit_trait_instance_id 1)
+        (st_shift_visitor#visit_trait_ref_kind 1)
         (compose subst.tr_subst decr_db_var);
     tr_self = subst.tr_self;
   }
@@ -189,14 +190,14 @@ let st_substitute_visitor =
       (* Crucial: we shift the substitution to be valid under this binder. *)
       let subst = shift_subst subst in
       let binder_regions =
-        self#visit_list self#visit_region_var subst binder_regions
+        self#visit_list self#visit_region_param subst binder_regions
       in
       let binder_value = visit_value subst binder_value in
       { binder_regions; binder_value }
 
     method! visit_RVar (subst : subst) var = subst.r_subst var
     method! visit_TVar (subst : subst) var = subst.ty_subst var
-    method! visit_CgVar (subst : subst) var = subst.cg_subst var
+    method! visit_CVar (subst : subst) var = subst.cg_subst var
     method! visit_Clause (subst : subst) var = subst.tr_subst var
     method! visit_Self (subst : subst) = subst.tr_self
   end
@@ -212,9 +213,9 @@ let trait_decl_ref_substitute (subst : subst) (tr : trait_decl_ref) :
     trait_decl_ref =
   st_substitute_visitor#visit_trait_decl_ref subst tr
 
-let trait_instance_id_substitute (subst : subst) (tr : trait_instance_id) :
-    trait_instance_id =
-  st_substitute_visitor#visit_trait_instance_id subst tr
+let trait_ref_kind_substitute (subst : subst) (tr : trait_ref_kind) :
+    trait_ref_kind =
+  st_substitute_visitor#visit_trait_ref_kind subst tr
 
 let generic_args_substitute (subst : subst) (g : generic_args) : generic_args =
   st_substitute_visitor#visit_generic_args subst g
@@ -241,7 +242,7 @@ let predicates_substitute (subst : subst) (p : generic_params) : generic_params
     regions;
     types;
     const_generics;
-    trait_clauses = List.map (visitor#visit_trait_clause subst) trait_clauses;
+    trait_clauses = List.map (visitor#visit_trait_param subst) trait_clauses;
     regions_outlive =
       List.map
         (visitor#visit_region_binder
@@ -270,9 +271,8 @@ let erase_regions (ty : ty) : ty = ty_substitute erase_regions_subst ty
 let trait_ref_erase_regions (tr : trait_ref) : trait_ref =
   trait_ref_substitute erase_regions_subst tr
 
-let trait_instance_id_erase_regions (tr : trait_instance_id) : trait_instance_id
-    =
-  trait_instance_id_substitute erase_regions_subst tr
+let trait_ref_kind_erase_regions (tr : trait_ref_kind) : trait_ref_kind =
+  trait_ref_kind_substitute erase_regions_subst tr
 
 let generic_args_erase_regions (tr : generic_args) : generic_args =
   generic_args_substitute erase_regions_subst tr
@@ -296,9 +296,9 @@ let make_region_subst (var_ids : RegionId.id list) (regions : region list) :
   let map = RegionId.Map.of_list (List.combine var_ids regions) in
   fun varid -> RegionId.Map.find varid map
 
-let make_region_subst_from_vars (vars : region_var list) (regions : region list)
-    : RegionId.id -> region =
-  make_region_subst (List.map (fun (x : region_var) -> x.index) vars) regions
+let make_region_subst_from_vars (vars : region_param list)
+    (regions : region list) : RegionId.id -> region =
+  make_region_subst (List.map (fun (x : region_param) -> x.index) vars) regions
 
 (** Create a type substitution from a list of type variable ids and a list of
     types (with which to substitute the type variable ids) *)
@@ -307,64 +307,67 @@ let make_type_subst (var_ids : TypeVarId.id list) (tys : ty list) :
   let map = TypeVarId.Map.of_list (List.combine var_ids tys) in
   fun varid -> TypeVarId.Map.find varid map
 
-let make_type_subst_from_vars (vars : type_var list) (tys : ty list) :
+let make_type_subst_from_vars (vars : type_param list) (tys : ty list) :
     TypeVarId.id -> ty =
-  make_type_subst (List.map (fun (x : type_var) -> x.index) vars) tys
+  make_type_subst (List.map (fun (x : type_param) -> x.index) vars) tys
 
 (** Create a const generic substitution from a list of const generic variable
     ids and a list of const generics (with which to substitute the const generic
     variable ids) *)
 let make_const_generic_subst (var_ids : ConstGenericVarId.id list)
-    (cgs : const_generic list) : ConstGenericVarId.id -> const_generic =
+    (cgs : constant_expr_kind list) : ConstGenericVarId.id -> constant_expr_kind
+    =
   let map = ConstGenericVarId.Map.of_list (List.combine var_ids cgs) in
   fun varid -> ConstGenericVarId.Map.find varid map
 
-let make_const_generic_subst_from_vars (vars : const_generic_var list)
-    (cgs : const_generic list) : ConstGenericVarId.id -> const_generic =
+let make_const_generic_subst_from_vars (vars : const_generic_param list)
+    (cgs : constant_expr_kind list) : ConstGenericVarId.id -> constant_expr_kind
+    =
   make_const_generic_subst
-    (List.map (fun (x : const_generic_var) -> x.index) vars)
+    (List.map (fun (x : const_generic_param) -> x.index) vars)
     cgs
 
 (** Create a trait substitution from a list of trait clause ids and a list of
     trait refs *)
 let make_trait_subst (var_ids : TraitClauseId.id list)
-    (trs : trait_instance_id list) : TraitClauseId.id -> trait_instance_id =
+    (trs : trait_ref_kind list) : TraitClauseId.id -> trait_ref_kind =
   let map = TraitClauseId.Map.of_list (List.combine var_ids trs) in
   fun varid -> TraitClauseId.Map.find varid map
 
-let make_trait_subst_from_clauses (clauses : trait_clause list)
-    (trs : trait_ref list) : TraitClauseId.id -> trait_instance_id =
+let make_trait_subst_from_clauses (clauses : trait_param list)
+    (trs : trait_ref list) : TraitClauseId.id -> trait_ref_kind =
   make_trait_subst
-    (List.map (fun (x : trait_clause) -> x.clause_id) clauses)
-    (List.map (fun (x : trait_ref) -> x.trait_id) trs)
+    (List.map (fun (x : trait_param) -> x.clause_id) clauses)
+    (List.map (fun (x : trait_ref) -> x.kind) trs)
 
 let make_sb_subst_from_generics (params : generic_params) (args : generic_args)
-    : single_binder_subst =
+    (tr_self : trait_ref_kind) : single_binder_subst =
   let r_sb_subst = make_region_subst_from_vars params.regions args.regions in
   let ty_sb_subst = make_type_subst_from_vars params.types args.types in
   let cg_sb_subst =
-    make_const_generic_subst_from_vars params.const_generics args.const_generics
+    make_const_generic_subst_from_vars params.const_generics
+      (List.map (fun (c : constant_expr) -> c.kind) args.const_generics)
   in
   let tr_sb_subst =
     make_trait_subst_from_clauses params.trait_clauses args.trait_refs
   in
-  { r_sb_subst; ty_sb_subst; cg_sb_subst; tr_sb_subst; tr_sb_self = Self }
+  { r_sb_subst; ty_sb_subst; cg_sb_subst; tr_sb_subst; tr_sb_self = tr_self }
 
-let make_subst_from_generics (params : generic_params) (args : generic_args) :
-    subst =
-  subst_free_vars (make_sb_subst_from_generics params args)
+let make_subst_from_generics (params : generic_params) (args : generic_args)
+    (tr_self : trait_ref_kind) : subst =
+  subst_free_vars (make_sb_subst_from_generics params args tr_self)
 
 let make_subst_from_generics_erase_regions (params : generic_params)
-    (generics : generic_args) : subst =
+    (generics : generic_args) (tr_self : trait_ref_kind) : subst =
   let generics = generic_args_erase_regions generics in
-  let subst = make_subst_from_generics params generics in
+  let subst = make_subst_from_generics params generics tr_self in
   { subst with r_subst = (fun _ -> RErased) }
 
 (** Instantiate the type variables in an ADT definition, and return, for every
     variant, the list of the types of its fields. *)
 let type_decl_get_instantiated_variants_fields_types (def : type_decl)
     (generics : generic_args) : (VariantId.id option * ty list) list =
-  let subst = make_subst_from_generics def.generics generics in
+  let subst = make_subst_from_generics def.generics generics Self in
   let (variants_fields : (VariantId.id option * field list) list) =
     match def.kind with
     | Enum variants ->
@@ -385,10 +388,7 @@ let type_decl_get_instantiated_variants_fields_types (def : type_decl)
     types of the fields for the chosen variant. *)
 let type_decl_get_instantiated_field_types (def : type_decl)
     (opt_variant_id : VariantId.id option) (generics : generic_args) : ty list =
-  (* Check that there are no clauses - otherwise we might need
-     to normalize the types *)
-  assert (def.generics.trait_clauses = []);
-  let subst = make_subst_from_generics def.generics generics in
+  let subst = make_subst_from_generics def.generics generics Self in
   let fields = type_decl_get_fields def opt_variant_id in
   List.map (fun f -> ty_substitute subst f.field_ty) fields
 
@@ -432,7 +432,7 @@ let fun_body_substitute_in_body (subst : subst) (body : fun_body) :
     local list * block =
   let locals =
     List.map
-      (fun (v : local) -> { v with var_ty = ty_substitute subst v.var_ty })
+      (fun (v : local) -> { v with local_ty = ty_substitute subst v.local_ty })
       body.locals.locals
   in
   let body = block_substitute subst body.body in
@@ -466,17 +466,17 @@ let apply_args_to_binder (args : generic_args) (substitutor : subst -> 'a -> 'a)
     (binder : 'a binder) : 'a =
   substitutor
     (subst_remove_binder_zero
-       (make_sb_subst_from_generics binder.binder_params args))
+       (make_sb_subst_from_generics binder.binder_params args Self))
     binder.binder_value
 
 (** Remove this binder by substituting the provided arguments for each bound
     variable. The `substitutor` argument must be the appropriate
     `st_substitute_visitor` method. *)
-let apply_args_to_item_binder (tr_self : trait_instance_id)
-    (args : generic_args) (substitutor : subst -> 'a -> 'a)
-    (binder : 'a item_binder) : 'a =
-  let subst = make_sb_subst_from_generics binder.item_binder_params args in
-  let subst = { subst with tr_sb_self = tr_self } in
+let apply_args_to_item_binder (tr_self : trait_ref_kind) (args : generic_args)
+    (substitutor : subst -> 'a -> 'a) (binder : 'a item_binder) : 'a =
+  let subst =
+    make_sb_subst_from_generics binder.item_binder_params args tr_self
+  in
   substitutor (subst_free_vars subst) binder.item_binder_value
 
 (** Merge two levels of binders into a single one that binds the concatenated
@@ -526,26 +526,26 @@ let fuse_binders (substitutor : subst -> 'a -> 'a)
   in
 
   (* Finally, merge the two levels. *)
-  let shift_region_var (var : region_var) =
+  let shift_region_param (var : region_param) =
     { var with index = shift_region_varid var.index }
   in
-  let shift_ty_var (var : type_var) =
+  let shift_ty_param (var : type_param) =
     { var with index = shift_ty_varid var.index }
   in
-  let shift_cg_var (var : const_generic_var) =
+  let shift_cg_param (var : const_generic_param) =
     { var with index = shift_cg_varid var.index }
   in
-  let shift_clause_var (var : trait_clause) =
+  let shift_clause_var (var : trait_param) =
     { var with clause_id = shift_clause_varid var.clause_id }
   in
   let params =
     {
       regions =
-        outer_params.regions @ List.map shift_region_var inner_params.regions;
-      types = outer_params.types @ List.map shift_ty_var inner_params.types;
+        outer_params.regions @ List.map shift_region_param inner_params.regions;
+      types = outer_params.types @ List.map shift_ty_param inner_params.types;
       const_generics =
         outer_params.const_generics
-        @ List.map shift_cg_var inner_params.const_generics;
+        @ List.map shift_cg_param inner_params.const_generics;
       trait_clauses =
         outer_params.trait_clauses
         @ List.map shift_clause_var inner_params.trait_clauses;
@@ -560,7 +560,7 @@ let fuse_binders (substitutor : subst -> 'a -> 'a)
   { item_binder_params = params; item_binder_value = bound_val }
 
 (** Helper *)
-let instantiate_method (trait_self : trait_instance_id)
+let instantiate_method (trait_self : trait_ref_kind)
     (item_generics : generic_args) (method_generics : generic_args)
     (bound_fn : fun_decl_ref binder item_binder) : fun_decl_ref =
   let bound_fn =
@@ -575,7 +575,7 @@ let instantiate_method (trait_self : trait_instance_id)
 (** Helper *)
 let instantiate_trait_method (trait_ref : trait_ref) =
   let trait_generics = trait_ref.trait_decl_ref.binder_value.generics in
-  let trait_self = trait_ref.trait_id in
+  let trait_self = trait_ref.kind in
   instantiate_method trait_self trait_generics
 
 (** Like lookup_trait_decl_method, but also correctly substitutes the generics.
@@ -617,8 +617,8 @@ let lookup_method_sig (crate : 'a gcrate) (trait_id : trait_decl_id)
   (* Substitute the signature to be valid under the binder. *)
   let signature =
     st_substitute_visitor#visit_fun_sig
-      (make_subst_from_generics method_decl.signature.generics
-         bound_method.binder_value.generics)
+      (make_subst_from_generics method_decl.generics
+         bound_method.binder_value.generics Self)
       method_decl.signature
   in
   (* Rebind everything *)
@@ -627,22 +627,18 @@ let lookup_method_sig (crate : 'a gcrate) (trait_id : trait_decl_id)
   in
   Some { item_binder_params = trait_params; item_binder_value = bound_sig }
 
-(* Like [lookup_method_sig], but with no binder shenanigans: the returns
-   fun_sig takes as parameters the concatenation of trait generics and method
-   generics. *)
+(* Like [lookup_method_sig], but with no binder shenanigans: the returned
+   binder binds the concatenation of trait generics and method generics. *)
 let lookup_flat_method_sig (crate : 'a gcrate) (trait_id : trait_decl_id)
-    (name : trait_item_name) : fun_sig option =
+    (name : trait_item_name) : bound_fun_sig option =
   let* bound_sig = lookup_method_sig crate trait_id name in
   let bound_sig = fuse_binders st_substitute_visitor#visit_fun_sig bound_sig in
-  let s =
-    { bound_sig.item_binder_value with generics = bound_sig.item_binder_params }
-  in
-  Some s
+  Some bound_sig
 
 (* Lookup the signature of a `Ty::FnDef`. *)
-let lookup_fndef_sig (crate : 'a gcrate) (fn_def : fn_ptr region_binder) :
-    (ty list * ty) region_binder option =
-  match fn_def.binder_value.func with
+let lookup_fndef_sig (crate : 'a gcrate) (fn_ptr : fn_ptr region_binder) :
+    fun_sig region_binder option =
+  match fn_ptr.binder_value.kind with
   | FunId (FRegular fun_decl_id) ->
       let* fun_decl =
         LlbcAst.FunDeclId.Map.find_opt fun_decl_id crate.fun_decls
@@ -650,16 +646,12 @@ let lookup_fndef_sig (crate : 'a gcrate) (fn_def : fn_ptr region_binder) :
       (* Substitute the signature to be valid under the binder. *)
       let fn_sig =
         st_substitute_visitor#visit_fun_sig
-          (make_subst_from_generics fun_decl.signature.generics
-             fn_def.binder_value.generics)
+          (make_subst_from_generics fun_decl.generics
+             fn_ptr.binder_value.generics Self)
           fun_decl.signature
       in
       (* Rebind everything *)
-      Some
-        {
-          binder_regions = fn_def.binder_regions;
-          binder_value = (fn_sig.inputs, fn_sig.output);
-        }
+      Some { binder_regions = fn_ptr.binder_regions; binder_value = fn_sig }
   | _ -> None
 
 (* Construct a set of generic arguments in the scope of `params` that matches
@@ -674,21 +666,20 @@ let bound_identity_args (params : generic_params) : generic_args =
   {
     regions =
       List.map
-        (fun (var : _ indexed_var) -> s.r_sb_subst var.index)
+        (fun (var : region_param) -> s.r_sb_subst var.index)
         params.regions;
     types =
-      List.map
-        (fun (var : _ indexed_var) -> s.ty_sb_subst var.index)
-        params.types;
+      List.map (fun (var : type_param) -> s.ty_sb_subst var.index) params.types;
     const_generics =
       List.map
-        (fun (var : const_generic_var) -> s.cg_sb_subst var.index)
+        (fun (var : const_generic_param) : Types.constant_expr ->
+          { kind = s.cg_sb_subst var.index; ty = var.ty })
         params.const_generics;
     trait_refs =
       List.map
-        (fun (clause : trait_clause) ->
-          let trait_id = s.tr_sb_subst clause.clause_id in
-          { trait_id; trait_decl_ref = clause.trait })
+        (fun (clause : trait_param) ->
+          let kind = s.tr_sb_subst clause.clause_id in
+          { kind; trait_decl_ref = clause.trait })
         params.trait_clauses;
   }
 

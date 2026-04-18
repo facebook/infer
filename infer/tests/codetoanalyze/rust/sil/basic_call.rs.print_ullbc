@@ -3,11 +3,11 @@
 // Full name: basic_call::bar
 fn bar()
 {
-    let @0: (); // return
+    let _0: (); // return
 
     bb0: {
-        @0 := ();
-        @0 := ();
+        _0 = ();
+        _0 = ();
         return;
     }
 }
@@ -15,10 +15,11 @@ fn bar()
 // Full name: basic_call::foo
 fn foo()
 {
-    let @0: (); // return
+    let _0: (); // return
 
     bb0: {
-        @0 := bar() -> bb2 (unwind: bb1);
+        _0 = ();
+        _0 = bar() -> bb2 (unwind: bb1);
     }
 
     bb1: {
@@ -26,7 +27,6 @@ fn foo()
     }
 
     bb2: {
-        @0 := ();
         return;
     }
 }
@@ -34,10 +34,11 @@ fn foo()
 // Full name: basic_call::main
 fn main()
 {
-    let @0: (); // return
+    let _0: (); // return
 
     bb0: {
-        @0 := foo() -> bb2 (unwind: bb1);
+        _0 = ();
+        _0 = foo() -> bb2 (unwind: bb1);
     }
 
     bb1: {
@@ -45,7 +46,6 @@ fn main()
     }
 
     bb2: {
-        @0 := ();
         return;
     }
 }

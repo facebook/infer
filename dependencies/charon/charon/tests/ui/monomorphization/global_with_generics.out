@@ -1,0 +1,69 @@
+# Final LLBC before serialization:
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun1()
+
+// Full name: test_crate::Foo::<bool>
+struct Foo::<bool> {
+  value: bool,
+}
+
+// Full name: test_crate::Foo::<i32>
+struct Foo::<i32> {
+  value: i32,
+}
+
+// Full name: test_crate::FooInt
+fn FooInt() -> Foo::<i32>
+{
+    let _0: Foo::<i32>; // return
+
+    _0 = Foo::<i32> { value: const 0 : i32 }
+    return
+}
+
+// Full name: test_crate::FooInt
+static FooInt: Foo::<i32> = FooInt()
+
+// Full name: test_crate::FooBool
+fn FooBool() -> Foo::<bool>
+{
+    let _0: Foo::<bool>; // return
+
+    _0 = Foo::<bool> { value: const false }
+    return
+}
+
+// Full name: test_crate::FooBool
+static FooBool: Foo::<bool> = FooBool()
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _b_1: bool; // local
+    let _2: &'1 Foo::<bool>; // anonymous local
+    let _3: &'2 Foo::<bool>; // anonymous local
+
+    _0 = ()
+    storage_live(_b_1)
+    storage_live(_2)
+    storage_live(_3)
+    _3 = &FooBool
+    _2 = move _3
+    _b_1 = copy ((*_2)).value
+    storage_dead(_2)
+    _0 = ()
+    storage_dead(_b_1)
+    return
+}
+
+
+

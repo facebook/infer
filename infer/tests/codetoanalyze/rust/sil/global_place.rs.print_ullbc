@@ -3,10 +3,10 @@
 // Full name: global_place::X
 fn X() -> i32
 {
-    let @0: i32; // return
+    let _0: i32; // return
 
     bb0: {
-        @0 := const (5 : i32);
+        _0 = const 5 : i32;
         return;
     }
 }
@@ -15,20 +15,20 @@ fn X() -> i32
 const X: i32 = X()
 
 // Full name: global_place::succ
-fn succ(@1: i32) -> i32
+fn succ(_1: i32) -> i32
 {
-    let @0: i32; // return
-    let i@1: i32; // arg #1
-    let @2: i32; // anonymous local
-    let @3: i32; // anonymous local
+    let _0: i32; // return
+    let i_1: i32; // arg #1
+    let _2: i32; // anonymous local
+    let _3: i32; // anonymous local
 
     bb0: {
-        storage_live(@3);
-        storage_live(@2);
-        @2 := copy (i@1);
-        @3 := copy (@2) panic.+ const (1 : i32);
-        @0 := move (@3);
-        storage_dead(@2);
+        storage_live(_3);
+        storage_live(_2);
+        _2 = copy i_1;
+        _3 = copy _2 panic.+ const 1 : i32;
+        _0 = move _3;
+        storage_dead(_2);
         return;
     }
 }
@@ -36,10 +36,10 @@ fn succ(@1: i32) -> i32
 // Full name: global_place::Y
 fn Y() -> i32
 {
-    let @0: i32; // return
+    let _0: i32; // return
 
     bb0: {
-        @0 := succ(copy (X)) -> bb2 (unwind: bb1);
+        _0 = succ(copy X) -> bb2 (unwind: bb1);
     }
 
     bb1: {
@@ -57,18 +57,18 @@ const Y: i32 = Y()
 // Full name: global_place::main
 fn main()
 {
-    let @0: (); // return
-    let eleven@1: i32; // local
-    let @2: i32; // anonymous local
+    let _0: (); // return
+    let eleven_1: i32; // local
+    let _2: i32; // anonymous local
 
     bb0: {
-        storage_live(@2);
-        storage_live(eleven@1);
-        @2 := copy (X) panic.+ copy (Y);
-        eleven@1 := move (@2);
-        @0 := ();
-        storage_dead(eleven@1);
-        @0 := ();
+        storage_live(_2);
+        _0 = ();
+        storage_live(eleven_1);
+        _2 = copy X panic.+ copy Y;
+        eleven_1 = move _2;
+        _0 = ();
+        storage_dead(eleven_1);
         return;
     }
 }

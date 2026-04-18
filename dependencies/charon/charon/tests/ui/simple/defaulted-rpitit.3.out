@@ -1,0 +1,105 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::iter::sources::empty::Empty
+#[lang_item("IterEmpty")]
+pub opaque type Empty<T>
+where
+    [@TraitClause0]: Sized<T>,
+
+// Full name: core::iter::sources::empty::empty
+pub fn empty<T>() -> Empty<T>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::iter::traits::iterator::Iterator
+#[lang_item("iterator")]
+pub trait Iterator<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Item>
+    type Item
+    fn next<'_0_1> = next<'_0_1, Self>[Self]
+    vtable: core::iter::traits::iterator::Iterator::{vtable}<Self::Item>
+}
+
+// Full name: core::iter::traits::iterator::Iterator::next
+#[lang_item("next")]
+pub fn next<'_0, Self>(_1: &'_0 mut Self) -> Option<@TraitClause0::Item>[@TraitClause0::parent_clause1]
+where
+    [@TraitClause0]: Iterator<Self>,
+= <opaque>
+
+// Full name: test_crate::MyTrait
+pub trait MyTrait<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    type rows_ty<'_0_1, (Self::rows_ty::[@TraitClause1])::Item = T>
+    where
+        implied_clause_0 : [@TraitClause0_1]: Sized<Self::rows_ty>
+        implied_clause_1 : [@TraitClause1_1]: Iterator<Self::rows_ty>
+
+    fn rows<'_0_1> = test_crate::MyTrait::rows<'_0_1, Self, T>[Self]
+    non-dyn-compatible
+}
+
+pub fn test_crate::MyTrait::rows<'_0, Self, T>(_1: &'_0 Self) -> Empty<T>[@TraitClause0::parent_clause1]
+where
+    [@TraitClause0]: MyTrait<Self, T>,
+{
+    let _0: Empty<T>[@TraitClause0::parent_clause1]; // return
+    let self_1: &'1 Self; // arg #1
+
+    _0 = empty<T>[@TraitClause0::parent_clause1]()
+    return
+}
+
+// Full name: test_crate::{impl MyTrait<T> for ()}::rows
+pub fn {impl MyTrait<T> for ()}::rows<'_0, T>(_1: &'_0 ()) -> Empty<T>[{impl MyTrait<T> for ()}<T>[@TraitClause0]::parent_clause1]
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let _0: Empty<T>[{impl MyTrait<T> for ()}<T>[@TraitClause0]::parent_clause1]; // return
+    let self_1: &'1 (); // arg #1
+
+    _0 = empty<T>[{impl MyTrait<T> for ()}<T>[@TraitClause0]::parent_clause1]()
+    return
+}
+
+// Full name: test_crate::{impl MyTrait<T> for ()}
+impl<T> MyTrait<T> for ()
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = {built_in impl MetaSized for ()}
+    parent_clause1 = @TraitClause0
+    type rows_ty<'_0_1, ({impl MyTrait<T> for ()}<T>[@TraitClause0]::rows_ty::[@TraitClause1])::Item = T> = Empty<T>[{impl MyTrait<T> for ()}<T>[@TraitClause0]::parent_clause1]
+    fn rows<'_0_1> = {impl MyTrait<T> for ()}::rows<'_0_1, T>[@TraitClause0]
+    non-dyn-compatible
+}
+
+
+

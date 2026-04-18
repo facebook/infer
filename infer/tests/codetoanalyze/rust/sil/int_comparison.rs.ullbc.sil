@@ -40,6 +40,7 @@ define int_comparison::compare(x_1: int, y_2: int) : int {
 define int_comparison::main() : void {
   local var_0: void, x_1: int, y_2: int, var_3: int, var_4: int, var_5: int
   #node_0:
+      store &var_0 <- null:void
       store &x_1 <- 0:int
       store &y_2 <- 1:int
       n0:int = load &x_1
@@ -50,17 +51,16 @@ define int_comparison::main() : void {
       n3:int = load &var_5
       n4 = int_comparison::compare(n2, n3)
       store &var_3 <- n4:int
-      jmp node_1
-      .handlers node_2
+      jmp node_2
+      .handlers node_1
       
   #node_1:
-      store &var_0 <- null:void
+      throw "UnwindResume"
+      
+  #node_2:
       store &var_0 <- null:void
       n5:void = load &var_0
       ret n5
-      
-  #node_2:
-      throw "UnwindResume"
       
 }
 

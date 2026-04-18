@@ -1,0 +1,63 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::B
+struct B<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  y: u32,
+  t: T,
+}
+
+// Full name: test_crate::A
+struct A<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  x: B<T>[@TraitClause0],
+}
+
+// Full name: test_crate::foo
+fn foo<T>()
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let _0: (); // return
+    let _1: usize; // anonymous local
+    let _2: usize; // anonymous local
+    let _3: usize; // anonymous local
+    let _4: usize; // anonymous local
+    let _5: usize; // anonymous local
+
+    storage_live(_2)
+    storage_live(_5)
+    storage_live(_3)
+    _3 = offset_of(A<T>[@TraitClause0].x)<usize>
+    storage_live(_4)
+    _4 = offset_of(B<T>[@TraitClause0].y)<usize>
+    _5 = copy _3 panic.+ copy _4
+    _2 = move _5
+    storage_dead(_4)
+    storage_dead(_3)
+    _0 = ()
+    storage_live(_1)
+    _1 = move _2
+    storage_dead(_1)
+    _0 = ()
+    return
+}
+
+
+

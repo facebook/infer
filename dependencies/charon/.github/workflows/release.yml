@@ -1,0 +1,109 @@
+name: Release
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  prepare:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag_name: ${{ steps.tag.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Tag
+        id: tag
+        run: |
+          set -eo pipefail
+
+          # Generates a sortable timestamp: YYYY.MM.DD.HHMMSS
+          # We append the SHA for uniqueness.
+          TAG_NAME="build-$(date +'%Y.%m.%d.%H%M%S')-${{ github.sha }}"
+          echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag_name }}
+          prerelease: true
+          make_latest: false
+          generate_release_notes: true
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: prepare
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        # NOTE: We use native runners instead of cross-compiling to work around
+        # https://github.com/rust-lang/rust/issues/132728#issuecomment-2462937687
+        include:
+          - os: ubuntu-latest
+            artifact_name: charon-linux-x86_64
+          - os: macos-15-intel
+            artifact_name: charon-macos-x86_64
+          - os: macos-latest
+            artifact_name: charon-macos-aarch64
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Extract the pinned toolchain from the source of truth.
+      - name: Read toolchain
+        id: toolchain
+        run: |
+          set -eo pipefail
+
+          CHANNEL=$(grep 'channel =' rust-toolchain | cut -d '"' -f 2)
+          echo "channel=$CHANNEL" >> "$GITHUB_OUTPUT"
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.toolchain.outputs.channel }}
+          components: rustc-dev, rust-src, llvm-tools-preview
+
+      - name: Build
+        env:
+          # Ensure static linking for OpenSSL to maximize binary portability.
+          OPENSSL_STATIC: 1
+        run: |
+          set -eo pipefail
+
+          cd charon
+          cargo build --release -p charon
+
+      - name: Package
+        run: |
+          set -eo pipefail
+
+          mkdir -p staging
+          cp charon/target/release/charon staging/
+          cp charon/target/release/charon-driver staging/
+          cd staging
+          tar -czvf ../${{ matrix.artifact_name }}.tar.gz *
+
+      # Verify the binary is functional and correctly statically linked on Linux.
+      # Note that libc (gnu) and `rustc_driver.so` are still dynamically linked.
+      - name: Smoke Test
+        run: |
+          set -eo pipefail
+
+          ./staging/charon --help > /dev/null
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            ldd ./staging/charon-driver 2>&1 | grep rustc_driver
+          fi
+
+      - name: Upload Artifact
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          files: ${{ matrix.artifact_name }}.tar.gz

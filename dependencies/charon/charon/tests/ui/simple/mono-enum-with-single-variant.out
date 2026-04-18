@@ -1,0 +1,25 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::Never
+enum Never {
+}
+
+// Full name: test_crate::MyResult::<Never, u8>
+enum MyResult::<Never, u8> {
+  Ok(Never),
+  Err(u8),
+}
+
+// Full name: test_crate::use_result
+fn use_result(_1: MyResult::<Never, u8>)
+{
+    let _0: (); // return
+    let _1: MyResult::<Never, u8>; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+
+
