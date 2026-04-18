@@ -2,20 +2,32 @@
 use crate::ast::*;
 use derive_generic_visitor::{Drive, DriveMut};
 use macros::{EnumAsGetters, EnumIsA};
-use serde::{Deserialize, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 
 generate_index_type!(Disambiguator);
 
 /// See the comments for [Name]
 #[derive(
-    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut, EnumIsA, EnumAsGetters,
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
+    EnumIsA,
+    EnumAsGetters,
 )]
 #[charon::variants_prefix("Pe")]
 pub enum PathElem {
+    #[serde_state(stateless)]
     Ident(#[drive(skip)] String, Disambiguator),
     Impl(ImplElem),
-    /// This item was obtained by monomorphizing its parent with the given args.
-    Monomorphized(BoxedArgs),
+    /// This item was obtained by instantiating its parent with the given args. The binder binds
+    /// the parameters of the new items. If the binder binds nothing then this is a
+    /// monomorphization.
+    Instantiated(Box<Binder<GenericArgs>>),
 }
 
 /// There are two kinds of `impl` blocks:
@@ -28,7 +40,7 @@ pub enum PathElem {
 ///   impl<T> PartialEq for List<T> { ...}
 ///   ```
 /// We distinguish the two.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, SerializeState, DeserializeState, Drive, DriveMut)]
 #[charon::variants_prefix("ImplElem")]
 pub enum ImplElem {
     Ty(Binder<Ty>),
@@ -70,7 +82,9 @@ pub enum ImplElem {
 /// name clashes anyway. Still, we might want to be more precise in the future.
 ///
 /// Also note that the first path element in the name is always the crate name.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(
+    Debug, Default, Clone, PartialEq, Eq, SerializeState, DeserializeState, Drive, DriveMut,
+)]
 #[serde(transparent)]
 pub struct Name {
     pub name: Vec<PathElem>,

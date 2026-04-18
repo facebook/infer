@@ -12,31 +12,32 @@ pub trait Sized<Self>
     non-dyn-compatible
 }
 
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
 // Full name: core::marker::Tuple
 #[lang_item("tuple_trait")]
 pub trait Tuple<Self>
 {
     parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    vtable: core::marker::Tuple::{vtable}
+    non-dyn-compatible
 }
 
+// Full name: core::mem::drop
 #[lang_item("mem_drop")]
-pub fn core::mem::drop<T>(@1: T)
+pub fn drop<T>(_1: T)
 where
     [@TraitClause0]: Sized<T>,
-
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
-}
-
-pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
+    [@TraitClause1]: Destruct<T>,
+= <opaque>
 
 // Full name: core::ops::function::FnOnce
 #[lang_item("fn_once")]
@@ -48,103 +49,133 @@ pub trait FnOnce<Self, Args>
     parent_clause3 : [@TraitClause3]: Sized<Self::Output>
     type Output
     fn call_once = core::ops::function::FnOnce::call_once<Self, Args>[Self]
-    non-dyn-compatible
+    vtable: core::ops::function::FnOnce::{vtable}<Args, Self::Output>
 }
 
-pub fn core::ops::function::FnOnce::call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+pub fn core::ops::function::FnOnce::call_once<Self, Args>(_1: Self, _2: Args) -> @TraitClause0::Output
 where
     [@TraitClause0]: FnOnce<Self, Args>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
 
 // Full name: test_crate::apply_to_zero_once
-fn apply_to_zero_once<impl FnOnce(u8) -> u8>(@1: impl FnOnce(u8) -> u8) -> u8
+fn apply_to_zero_once<T0>(_1: T0) -> u8
 where
-    [@TraitClause0]: Sized<impl FnOnce(u8) -> u8>,
-    [@TraitClause1]: FnOnce<impl FnOnce(u8) -> u8, (u8)>,
+    [@TraitClause0]: Sized<T0>,
+    [@TraitClause1]: FnOnce<T0, (u8,)>,
     @TraitClause1::Output = u8,
 {
-    let @0: u8; // return
-    let f@1: impl FnOnce(u8) -> u8; // arg #1
-    let @2: impl FnOnce(u8) -> u8; // anonymous local
-    let @3: (u8); // anonymous local
+    let _0: u8; // return
+    let f_1: T0; // arg #1
+    let _2: T0; // anonymous local
+    let _3: (u8,); // anonymous local
 
-    storage_live(@2)
-    @2 := move (f@1)
-    storage_live(@3)
-    @3 := (const (0 : u8))
-    @0 := @TraitClause1::call_once(move (@2), move (@3))
-    storage_dead(@3)
-    storage_dead(@2)
-    drop[Drop<impl FnOnce(u8) -> u8>] f@1
+    storage_live(_2)
+    _2 = move f_1
+    storage_live(_3)
+    _3 = (const 0 : u8,)
+    _0 = @TraitClause1::call_once(move _2, move _3)
+    storage_dead(_3)
+    storage_dead(_2)
+    conditional_drop[{built_in impl Destruct for T0}] f_1
     return
 }
 
 // Full name: test_crate::NotCopy
 struct NotCopy {}
 
+// Full name: test_crate::NotCopy::{impl Destruct for NotCopy}::drop_in_place
+unsafe fn {impl Destruct for NotCopy}::drop_in_place(_1: *mut NotCopy)
+{
+    let _0: (); // return
+    let _1: *mut NotCopy; // arg #1
+    let _2: &'1 mut NotCopy; // anonymous local
+
+    storage_live(_2)
+    _0 = ()
+    _2 = &mut (*_1)
+    return
+}
+
+// Full name: test_crate::NotCopy::{impl Destruct for NotCopy}
+impl Destruct for NotCopy {
+    fn drop_in_place = {impl Destruct for NotCopy}::drop_in_place
+    non-dyn-compatible
+}
+
 // Full name: test_crate::main::closure
 struct closure {
   NotCopy,
 }
 
-// Full name: test_crate::main::{impl FnOnce<(u8)> for closure}::call_once
-fn {impl FnOnce<(u8)> for closure}::call_once(@1: closure, @2: (u8)) -> u8
+// Full name: test_crate::main::{impl FnOnce<(u8,)> for closure}::call_once
+fn {impl FnOnce<(u8,)> for closure}::call_once(_1: closure, _2: (u8,)) -> u8
 {
-    let @0: u8; // return
-    let @1: closure; // arg #1
-    let tupled_args@2: (u8); // arg #2
-    let x@3: u8; // local
-    let @4: (); // anonymous local
-    let @5: NotCopy; // anonymous local
-    let @6: u8; // anonymous local
-    let @7: u8; // anonymous local
+    let _0: u8; // return
+    let _1: closure; // arg #1
+    let tupled_args_2: (u8,); // arg #2
+    let x_3: u8; // local
+    let _4: (); // anonymous local
+    let _5: NotCopy; // anonymous local
+    let _6: u8; // anonymous local
+    let _7: u8; // anonymous local
 
-    storage_live(x@3)
-    storage_live(@7)
-    x@3 := move ((tupled_args@2).0)
-    storage_live(@4)
-    storage_live(@5)
-    @5 := move ((@1).0)
-    @4 := core::mem::drop<NotCopy>[Sized<NotCopy>](move (@5))
-    storage_dead(@5)
-    storage_dead(@4)
-    storage_live(@6)
-    @6 := copy (x@3)
-    @7 := copy (@6) panic.+ const (1 : u8)
-    @0 := move (@7)
-    storage_dead(@6)
+    storage_live(x_3)
+    storage_live(_7)
+    x_3 = move tupled_args_2.0
+    storage_live(_4)
+    storage_live(_5)
+    _5 = move (_1).0
+    _4 = drop<NotCopy>[{built_in impl Sized for NotCopy}, {impl Destruct for NotCopy}](move _5)
+    storage_dead(_5)
+    storage_dead(_4)
+    storage_live(_6)
+    _6 = copy x_3
+    _7 = copy _6 panic.+ const 1 : u8
+    _0 = move _7
+    storage_dead(_6)
     return
 }
 
-// Full name: test_crate::main::{impl FnOnce<(u8)> for closure}
-impl FnOnce<(u8)> for closure {
-    parent_clause0 = MetaSized<closure>
-    parent_clause1 = Sized<(u8)>
-    parent_clause2 = Tuple<(u8)>
-    parent_clause3 = Sized<u8>
+// Full name: test_crate::main::{impl FnOnce<(u8,)> for closure}
+impl FnOnce<(u8,)> for closure {
+    parent_clause0 = {built_in impl MetaSized for closure}
+    parent_clause1 = {built_in impl Sized for (u8,)}
+    parent_clause2 = {built_in impl Tuple for (u8,)}
+    parent_clause3 = {built_in impl Sized for u8}
     type Output = u8
-    fn call_once = {impl FnOnce<(u8)> for closure}::call_once
+    fn call_once = {impl FnOnce<(u8,)> for closure}::call_once
     non-dyn-compatible
 }
 
 // Full name: test_crate::main
 fn main()
 {
-    let @0: (); // return
-    let z@1: NotCopy; // local
-    let @2: u8; // anonymous local
-    let @3: closure; // anonymous local
+    let _0: (); // return
+    let z_1: NotCopy; // local
+    let _2: u8; // anonymous local
+    let _3: closure; // anonymous local
 
-    storage_live(z@1)
-    z@1 := NotCopy {  }
-    storage_live(@2)
-    storage_live(@3)
-    @3 := closure { 0: move (z@1) }
-    @2 := apply_to_zero_once<closure>[Sized<closure>, {impl FnOnce<(u8)> for closure}](move (@3))
-    storage_dead(@3)
-    storage_dead(@2)
-    @0 := ()
-    storage_dead(z@1)
-    @0 := ()
+    _0 = ()
+    storage_live(z_1)
+    z_1 = NotCopy {  }
+    storage_live(_2)
+    storage_live(_3)
+    _3 = closure { 0: move z_1 }
+    _2 = apply_to_zero_once<closure>[{built_in impl Sized for closure}, {impl FnOnce<(u8,)> for closure}](move _3)
+    storage_dead(_3)
+    storage_dead(_2)
+    _0 = ()
+    storage_dead(z_1)
     return
 }
 

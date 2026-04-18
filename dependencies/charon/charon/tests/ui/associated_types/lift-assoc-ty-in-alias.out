@@ -1,0 +1,7 @@
+error: Could not compute the value of Self::Assoc: type aliases are allowed to make use of unproved trait facts. To fix this, add the necessary trait bound to the type alias, ignoring the `type_alias_bounds` warning.
+ --> tests/ui/associated_types/lift-assoc-ty-in-alias.rs:7:1
+  |
+7 | pub type Alias<B> = <B as HasAssoc>::Assoc;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+ERROR Charon failed to translate this code (1 errors)

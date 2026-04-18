@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use macros::EnumAsGetters;
 
 pub static TAB_INCR: &str = "    ";
 
@@ -53,6 +54,48 @@ pub fn repeat_except_first<T: Clone>(x: T) -> impl Iterator<Item = Option<T>> {
     [None].into_iter().chain(std::iter::repeat(Some(x)))
 }
 
+/// An enum to manage potentially-cyclic computations.
+#[derive(Debug, EnumAsGetters)]
+pub enum CycleDetector<T> {
+    /// We haven't analyzed this yet.
+    Unprocessed,
+    /// Sentinel value that we set when starting the computation on an item. If we ever encounter
+    /// this, we know we encountered a loop that we can't handle.
+    Processing,
+    /// Sentinel value we put when encountering a cycle, so we can know that happened.
+    Cyclic,
+    /// The final result of the computation.
+    Processed(T),
+}
+
+impl<T> CycleDetector<T> {
+    /// If this item hadn't been processed, return `true` and record it as `Processing`, otherwise
+    /// return `false`. If this item is already processing, record a cycle.
+    pub fn start_processing(&mut self) -> bool {
+        match self {
+            CycleDetector::Unprocessed => {
+                *self = CycleDetector::Processing;
+                true
+            }
+            CycleDetector::Processing => {
+                *self = CycleDetector::Cyclic;
+                false
+            }
+            CycleDetector::Cyclic | CycleDetector::Processed(_) => false,
+        }
+    }
+
+    pub fn done_processing(&mut self, x: T) {
+        *self = CycleDetector::Processed(x)
+    }
+}
+
+impl<T> Default for CycleDetector<T> {
+    fn default() -> Self {
+        Self::Unprocessed
+    }
+}
+
 pub mod type_map {
     use std::{
         any::{Any, TypeId},
@@ -95,6 +138,22 @@ pub mod type_map {
                 .insert(TypeId::of::<T>(), Box::new(val))
                 .and_then(|val: Box<dyn Mappable>| (val as Box<dyn Any>).downcast().ok())
         }
+
+        pub fn or_insert_with<T: Mappable>(
+            &mut self,
+            f: impl FnOnce() -> M::Value<T>,
+        ) -> &mut M::Value<T> {
+            if self.get::<T>().is_none() {
+                self.insert(f());
+            }
+            self.get_mut::<T>().unwrap()
+        }
+        pub fn or_default<T: Mappable>(&mut self) -> &mut M::Value<T>
+        where
+            M::Value<T>: Default,
+        {
+            self.or_insert_with(|| Default::default())
+        }
     }
 
     impl<M> Default for TypeMap<M> {
@@ -107,109 +166,8 @@ pub mod type_map {
     }
 }
 
-pub mod hash_consing {
-    use derive_generic_visitor::{Drive, DriveMut, Visit, VisitMut};
-
-    use super::type_map::{Mappable, Mapper, TypeMap};
-    use itertools::Either;
-    use serde::{Deserialize, Serialize};
-    use std::collections::HashMap;
-    use std::hash::Hash;
-    use std::ops::ControlFlow;
-    use std::sync::{Arc, LazyLock, RwLock};
-
-    /// Hash-consed data structure: a reference-counted wrapper that guarantees that two equal
-    /// value will be stored at the same address. This makes it possible to use the pointer address
-    /// as a hash value.
-    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-    pub struct HashConsed<T>(Arc<T>);
-
-    impl<T> HashConsed<T> {
-        pub fn inner(&self) -> &T {
-            self.0.as_ref()
-        }
-    }
-
-    impl<T> HashConsed<T>
-    where
-        T: Hash + PartialEq + Eq + Clone + Mappable,
-    {
-        pub fn new(inner: T) -> Self {
-            Self::intern(Either::Left(inner))
-        }
-
-        /// Clones if needed to get mutable access to the inner value.
-        pub fn with_inner_mut<R>(&mut self, f: impl FnOnce(&mut T) -> R) -> R {
-            let kind = Arc::make_mut(&mut self.0);
-            let ret = f(kind);
-            // Re-establish sharing, crucial for the hashing function to be correct.
-            *self = Self::intern(Either::Right(self.0.clone()));
-            ret
-        }
-
-        /// Deduplicate the valuess by hashing them. This deduplication is crucial for the hashing
-        /// function to be correct. This is the only function allowed to create `Self` values.
-        fn intern(inner: Either<T, Arc<T>>) -> Self {
-            struct InternMapper;
-            impl Mapper for InternMapper {
-                type Value<T: Mappable> = HashMap<T, Arc<T>>;
-            }
-            static INTERNED: LazyLock<RwLock<TypeMap<InternMapper>>> =
-                LazyLock::new(|| Default::default());
-
-            if INTERNED.read().unwrap().get::<T>().is_none() {
-                INTERNED.write().unwrap().insert::<T>(Default::default());
-            }
-            let read_guard = INTERNED.read().unwrap();
-            if let Some(inner) = (*read_guard)
-                .get::<T>()
-                .unwrap()
-                .get(inner.as_ref().either(|x| x, |x| x.as_ref()))
-            {
-                Self(inner.clone())
-            } else {
-                drop(read_guard);
-                // We clone the value here in the slow path, which makes it possible to avoid an
-                // allocation in the fast path.
-                let raw_val: T = inner.as_ref().either(T::clone, |x| x.as_ref().clone());
-                let arc: Arc<T> = inner.either(Arc::new, |x| x);
-                INTERNED
-                    .write()
-                    .unwrap()
-                    .get_mut::<T>()
-                    .unwrap()
-                    .insert(raw_val, arc.clone());
-                Self(arc)
-            }
-        }
-    }
-
-    /// Hash the pointer; this is only correct if two identical values of `Self` are guaranteed to
-    /// point to the same memory location, which we carefully enforce above.
-    impl<T> std::hash::Hash for HashConsed<T> {
-        fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-            Arc::as_ptr(&self.0).hash(state);
-        }
-    }
-
-    impl<'s, T, V: Visit<'s, T>> Drive<'s, V> for HashConsed<T> {
-        fn drive_inner(&'s self, v: &mut V) -> ControlFlow<V::Break> {
-            v.visit(self.inner())
-        }
-    }
-    /// Note: this explores the inner value mutably by cloning and re-hashing afterwards.
-    impl<'s, T, V> DriveMut<'s, V> for HashConsed<T>
-    where
-        T: Hash + PartialEq + Eq + Clone + Mappable,
-        V: for<'a> VisitMut<'a, T>,
-    {
-        fn drive_inner_mut(&'s mut self, v: &mut V) -> ControlFlow<V::Break> {
-            self.with_inner_mut(|inner| v.visit(inner))
-        }
-    }
-}
-
 pub mod hash_by_addr {
+    use serde::{Deserialize, Serialize};
     use std::{
         hash::{Hash, Hasher},
         ops::Deref,
@@ -217,7 +175,7 @@ pub mod hash_by_addr {
 
     /// A wrapper around a smart pointer that hashes and compares the contents by the address of
     /// the pointee.
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, Serialize, Deserialize)]
     pub struct HashByAddr<T>(pub T);
 
     impl<T: Deref> HashByAddr<T> {
@@ -241,6 +199,136 @@ pub mod hash_by_addr {
     }
 }
 
+pub mod serialize_map_to_array {
+    use core::{fmt, marker::PhantomData};
+    use std::{
+        collections::hash_map::RandomState,
+        hash::{BuildHasher, Hash},
+    };
+
+    use indexmap::IndexMap as SeqHashMap;
+    use serde::{
+        Deserialize, Deserializer, Serialize,
+        de::{SeqAccess, Visitor},
+        ser::Serializer,
+    };
+    use serde_state::{DeserializeState, SerializeState};
+
+    #[derive(Serialize, Deserialize, SerializeState, DeserializeState)]
+    struct KeyValue<K, V> {
+        key: K,
+        value: V,
+    }
+
+    /// A converter between an `SeqHashMap` and a sequence of named key-value pairs.
+    pub struct SeqHashMapToArray<K, V, U = RandomState>(PhantomData<(K, V, U)>);
+
+    impl<K, V, U> SeqHashMapToArray<K, V, U> {
+        /// Serializes the given `map` to an array of named key-values.
+        pub fn serialize<'a, S>(
+            map: &'a SeqHashMap<K, V, U>,
+            serializer: S,
+        ) -> Result<S::Ok, S::Error>
+        where
+            K: Serialize,
+            V: Serialize,
+            S: Serializer,
+        {
+            serializer.collect_seq(map.into_iter().map(|(key, value)| KeyValue { key, value }))
+        }
+        pub fn serialize_state<'a, S, State: ?Sized>(
+            map: &'a SeqHashMap<K, V, U>,
+            state: &State,
+            serializer: S,
+        ) -> Result<S::Ok, S::Error>
+        where
+            K: SerializeState<State>,
+            V: SerializeState<State>,
+            S: Serializer,
+        {
+            serializer.collect_seq(
+                map.into_iter().map(|(key, value)| {
+                    serde_state::WithState::new(KeyValue { key, value }, state)
+                }),
+            )
+        }
+
+        /// Deserializes from an array of named key-values.
+        pub fn deserialize<'de, D>(deserializer: D) -> Result<SeqHashMap<K, V, U>, D::Error>
+        where
+            K: Deserialize<'de> + Eq + Hash,
+            V: Deserialize<'de>,
+            U: BuildHasher + Default,
+            D: Deserializer<'de>,
+        {
+            struct SeqHashMapToArrayVisitor<K, V, U>(PhantomData<(K, V, U)>);
+
+            impl<'de, K, V, U> Visitor<'de> for SeqHashMapToArrayVisitor<K, V, U>
+            where
+                K: Deserialize<'de> + Eq + Hash,
+                V: Deserialize<'de>,
+                U: BuildHasher + Default,
+            {
+                type Value = SeqHashMap<K, V, U>;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("a list of key-value objects")
+                }
+
+                fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                    let mut map = SeqHashMap::<K, V, U>::default();
+                    while let Some(entry) = seq.next_element::<KeyValue<K, V>>()? {
+                        map.insert(entry.key, entry.value);
+                    }
+                    Ok(map)
+                }
+            }
+            let map =
+                deserializer.deserialize_seq(SeqHashMapToArrayVisitor::<K, V, U>(PhantomData))?;
+            Ok(map.into())
+        }
+        /// Deserializes from an array of named key-values.
+        pub fn deserialize_state<'de, D, State>(
+            state: &State,
+            deserializer: D,
+        ) -> Result<SeqHashMap<K, V, U>, D::Error>
+        where
+            K: DeserializeState<'de, State> + Eq + Hash,
+            V: DeserializeState<'de, State>,
+            U: BuildHasher + Default,
+            D: Deserializer<'de>,
+        {
+            struct SeqHashMapToArrayVisitor<'a, State, K, V, U>(&'a State, PhantomData<(K, V, U)>);
+
+            impl<'de, State, K, V, U> Visitor<'de> for SeqHashMapToArrayVisitor<'_, State, K, V, U>
+            where
+                K: DeserializeState<'de, State> + Eq + Hash,
+                V: DeserializeState<'de, State>,
+                U: BuildHasher + Default,
+            {
+                type Value = SeqHashMap<K, V, U>;
+
+                fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                    formatter.write_str("a list of key-value objects")
+                }
+
+                fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                    let mut map = SeqHashMap::default();
+                    let seed =
+                        serde_state::__private::wrap_deserialize_seed::<KeyValue<K, V>, _>(self.0);
+                    while let Some(entry) = seq.next_element_seed(seed)? {
+                        map.insert(entry.key, entry.value);
+                    }
+                    Ok(map)
+                }
+            }
+            let map = deserializer
+                .deserialize_seq(SeqHashMapToArrayVisitor::<_, K, V, U>(state, PhantomData))?;
+            Ok(map.into())
+        }
+    }
+}
+
 // This is the amount of bytes that need to be left on the stack before increasing the size. It
 // must be at least as large as the stack required by any code that does not call
 // `ensure_sufficient_stack`.
@@ -255,4 +343,41 @@ const STACK_PER_RECURSION: usize = 1024 * 1024; // 1MB
 #[inline]
 pub fn ensure_sufficient_stack<R>(f: impl FnOnce() -> R) -> R {
     stacker::maybe_grow(RED_ZONE, STACK_PER_RECURSION, f)
+}
+
+/// Returns the values of the command-line options that match `find_arg`. The options are built-in
+/// to be of the form `--arg=value` or `--arg value`.
+pub fn arg_values<'a, T: AsRef<str>>(
+    args: &'a [T],
+    needle: &'a str,
+) -> impl Iterator<Item = &'a str> {
+    struct ArgFilter<'a, T> {
+        args: std::slice::Iter<'a, T>,
+        needle: &'a str,
+    }
+    impl<'a, T: AsRef<str>> Iterator for ArgFilter<'a, T> {
+        type Item = &'a str;
+        fn next(&mut self) -> Option<Self::Item> {
+            while let Some(arg) = self.args.next() {
+                let mut split_arg = arg.as_ref().splitn(2, '=');
+                if split_arg.next() == Some(self.needle) {
+                    return match split_arg.next() {
+                        // `--arg=value` form
+                        arg @ Some(_) => arg,
+                        // `--arg value` form
+                        None => self.args.next().map(|x| x.as_ref()),
+                    };
+                }
+            }
+            None
+        }
+    }
+    ArgFilter {
+        args: args.iter(),
+        needle,
+    }
+}
+
+pub fn arg_value<'a, T: AsRef<str>>(args: &'a [T], needle: &'a str) -> Option<&'a str> {
+    arg_values(args, needle).next()
 }

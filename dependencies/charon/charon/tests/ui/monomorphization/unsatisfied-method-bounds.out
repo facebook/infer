@@ -1,48 +1,119 @@
-disabled backtrace
-warning[E9999]: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
-  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:21:1
-   |
-21 | impl MyIterator for A {
-   | ^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: ⚠️ This is a bug in Hax's frontend.
-           Please report this error to https://github.com/hacspec/hax/issues with some context (e.g. the current crate)!
+# Final LLBC before serialization:
 
-disabled backtrace
-warning[E9999]: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
-  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:9:5
-   |
-9  | /     fn flatten(self) -> Flatten<Self>
-10 | |     where
-11 | |         Self: Sized,
-12 | |         Self::Item: Copy,
-   | |_________________________^
-   |
-   = note: ⚠️ This is a bug in Hax's frontend.
-           Please report this error to https://github.com/hacspec/hax/issues with some context (e.g. the current crate)!
+opaque type core::marker::MetaSized::{vtable}
 
-disabled backtrace
-warning[E9999]: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
-  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:18:1
-   |
-18 | struct Flatten<I: MyIterator<Item: Copy>>(I);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: ⚠️ This is a bug in Hax's frontend.
-           Please report this error to https://github.com/hacspec/hax/issues with some context (e.g. the current crate)!
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
 
-error: Error during trait resolution: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
-  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:18:1
-   |
-18 | struct Flatten<I: MyIterator<Item: Copy>>(I);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+fn UNIT_METADATA()
+{
+    let _0: (); // return
 
-error: Error during trait resolution: Could not find a clause for `Binder { value: <std::string::String as std::marker::Copy>, bound_vars: [] }` in the current context: `Unimplemented`
-  --> tests/ui/monomorphization/unsatisfied-method-bounds.rs:18:1
-   |
-18 | struct Flatten<I: MyIterator<Item: Copy>>(I);
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    _0 = ()
+    return
+}
 
-warning: 3 warnings emitted
+const UNIT_METADATA: () = @Fun1()
 
-ERROR Charon failed to translate this code (2 errors)
+struct test_crate::MyIterator::{vtable} {
+  size: usize,
+  align: usize,
+  drop: *const (),
+  method_method: *const (),
+  super_trait_0: &'static core::marker::MetaSized::{vtable},
+}
+
+// Full name: test_crate::MyIterator
+trait MyIterator<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::MyIterator::{vtable}
+}
+
+// Full name: test_crate::A
+struct A {}
+
+// Full name: test_crate::MyIterator::method
+fn method<'_0>(_1: &'_0 A)
+{
+    let _0: (); // return
+    let self_1: &'1 A; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::B
+struct B {}
+
+// Full name: test_crate::MyIterator::method
+fn method<'_0>(_1: &'_0 B)
+{
+    let _0: (); // return
+    let self_1: &'1 B; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::{impl MyIterator for A}
+impl MyIterator for A {
+    parent_clause0 = {built_in impl MetaSized for A}
+    vtable: {impl MyIterator for A}::{vtable}
+}
+
+// Full name: test_crate::{impl MyIterator for B}
+impl MyIterator for B {
+    parent_clause0 = {built_in impl MetaSized for B}
+    vtable: {impl MyIterator for B}::{vtable}
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _1: (); // anonymous local
+    let _2: &'1 A; // anonymous local
+    let _3: (); // anonymous local
+    let _4: &'3 B; // anonymous local
+    let _5: &'4 B; // anonymous local
+    let _6: &'5 A; // anonymous local
+    let _7: &'12 A; // anonymous local
+    let _8: A; // anonymous local
+    let _9: &'13 B; // anonymous local
+    let _10: B; // anonymous local
+
+    storage_live(_7)
+    storage_live(_8)
+    _8 = A {  }
+    _7 = &_8
+    storage_live(_5)
+    storage_live(_6)
+    _0 = ()
+    storage_live(_1)
+    storage_live(_2)
+    _6 = move _7
+    _2 = &(*_6)
+    _1 = {impl MyIterator for A}::method<'8>(move _2)
+    storage_live(_9)
+    storage_live(_10)
+    _10 = B {  }
+    _9 = &_10
+    storage_dead(_2)
+    storage_dead(_1)
+    storage_live(_3)
+    storage_live(_4)
+    _5 = move _9
+    _4 = &(*_5)
+    _3 = {impl MyIterator for B}::method<'11>(move _4)
+    storage_dead(_4)
+    storage_dead(_3)
+    _0 = ()
+    return
+}
+
+
+

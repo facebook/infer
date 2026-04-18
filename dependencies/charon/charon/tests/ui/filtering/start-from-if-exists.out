@@ -1,0 +1,14 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::bar
+fn bar()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+
+

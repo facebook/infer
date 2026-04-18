@@ -29,8 +29,6 @@ module Disambiguator = IdGen ()
 module FunDeclId = IdGen ()
 module BodyId = IdGen ()
 
-type ('id, 'x) vector = 'x list [@@deriving show, ord, eq]
-
 type integer_type = Values.integer_type [@@deriving show, ord, eq]
 type float_type = Values.float_type [@@deriving show, ord, eq]
 type literal_type = Values.literal_type [@@deriving show, ord, eq]
@@ -40,51 +38,7 @@ type literal_type = Values.literal_type [@@deriving show, ord, eq]
    declare it within a visitor group. *)
 type trait_type_constraint_id = TraitTypeConstraintId.id [@@deriving show, ord, eq]
 
-(** We define these types to control the name of the visitor functions *)
-type ('id, 'name) indexed_var = {
-  index : 'id;  (** Unique index identifying the variable *)
-  name : 'name;  (** Variable name *)
-}
-[@@deriving show, ord, eq]
-
 (* __REPLACE0__ *)
-
-(** Ancestor for iter visitor for {!type: Types.ty} *)
-class ['self] iter_ty_base_base =
-  object (self : 'self)
-    inherit [_] iter_const_generic
-
-    method visit_indexed_var
-        : 'id 'name.
-          ('env -> 'id -> unit) ->
-          ('env -> 'name -> unit) ->
-          'env ->
-          ('id, 'name) indexed_var ->
-          unit =
-      fun visit_index visit_name env x ->
-        let { index; name } = x in
-        visit_index env index;
-        visit_name env name
-  end
-
-(** Ancestor for map visitor for {!type: Types.ty} *)
-class virtual ['self] map_ty_base_base =
-  object (self : 'self)
-    inherit [_] map_const_generic
-
-    method visit_indexed_var
-        : 'id 'name.
-          ('env -> 'id -> 'id) ->
-          ('env -> 'name -> 'name) ->
-          'env ->
-          ('id, 'name) indexed_var ->
-          ('id, 'name) indexed_var =
-      fun visit_index visit_name env x ->
-        let { index; name } = x in
-        let index = visit_index env index in
-        let name = visit_name env name in
-        { index; name }
-  end
 
 (* __REPLACE1__ *)
 

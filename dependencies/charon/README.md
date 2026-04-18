@@ -66,7 +66,9 @@ breaking changes in its API are planned. See the [limitations](./docs/limitation
 
 If you use nix, you can directly run `nix run github:AeneasVerif/charon`. Otherwise, read on.
 
-You first need to install [`rustup`](https://www.rust-lang.org/tools/install).
+You first need to install [`rustup`](https://www.rust-lang.org/tools/install) and uninstall any
+`rust` or `cargo` package previously installed in your system, e.g. via `brew`, as they sometimes
+conflict with `rustup`.
 
 As Charon is set up with cargo, rustup will automatically download and install the proper packages
 upon building the project. If you only want to build the Rust project (in `./charon`), run `make
@@ -79,7 +81,8 @@ install OCaml and the proper dependencies.
 We suggest you to follow those [instructions](https://ocaml.org/docs/install.html),
 and install OPAM on the way (same instructions).
 
-For Charon-ML, we use **OCaml 4.14.0**: `opam switch create 4.14.0+options`
+For Charon-ML, we use **OCaml 4.14.0** (`opam switch create 4.14.0+options`) but any
+recent version will do. In particular, **OCaml 5** works.
 
 The dependencies can be installed with `opam install . --deps-only`.
 

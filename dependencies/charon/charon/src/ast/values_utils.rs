@@ -26,6 +26,28 @@ macro_rules! from_le_bytes {
     }
 }
 
+impl Literal {
+    pub fn char_from_le_bytes(bits: u128) -> Self {
+        let b: [u8; 4] = bits.to_le_bytes()[0..4].try_into().unwrap();
+        Literal::Char(std::char::from_u32(u32::from_le_bytes(b)).unwrap())
+    }
+
+    pub fn from_bits(lit_ty: &LiteralTy, bits: u128) -> Option<Self> {
+        match *lit_ty {
+            LiteralTy::Int(int_ty) => Some(Literal::Scalar(ScalarValue::from_bits(
+                IntegerTy::Signed(int_ty),
+                bits,
+            ))),
+            LiteralTy::UInt(uint_ty) => Some(Literal::Scalar(ScalarValue::from_bits(
+                IntegerTy::Unsigned(uint_ty),
+                bits,
+            ))),
+            LiteralTy::Char => Some(Literal::char_from_le_bytes(bits)),
+            _ => None,
+        }
+    }
+}
+
 impl ScalarValue {
     fn ptr_size_max(ptr_size: ByteCount, signed: bool) -> ScalarResult<u128> {
         match ptr_size {
@@ -109,13 +131,17 @@ impl ScalarValue {
         ScalarValue::Unsigned(ty, v)
     }
 
-    pub fn from_uint(ptr_size: ByteCount, ty: UIntTy, v: u128) -> ScalarResult<ScalarValue> {
+    pub fn from_uint(ptr_size: ByteCount, ty: UIntTy, v: u128) -> ScalarResult<Self> {
         if !ScalarValue::uint_is_in_bounds(ptr_size, ty, v) {
             trace!("Not in bounds for {:?}: {}", ty, v);
             Err(ScalarError::OutOfBounds)
         } else {
             Ok(ScalarValue::from_unchecked_uint(ty, v))
         }
+    }
+
+    pub fn mk_usize(ptr_size: ByteCount, v: u64) -> Self {
+        ScalarValue::from_uint(ptr_size, UIntTy::Usize, v as u128).unwrap()
     }
 
     /// When computing the result of binary operations, we convert the values
@@ -201,7 +227,7 @@ impl ScalarValue {
             ScalarValue::Unsigned(uint_ty, _) => LiteralTy::UInt(uint_ty),
         };
         ConstantExpr {
-            value: RawConstantExpr::Literal(Literal::Scalar(self)),
+            kind: ConstantExprKind::Literal(Literal::Scalar(self)),
             ty: TyKind::Literal(literal_ty).into_ty(),
         }
     }

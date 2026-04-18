@@ -41,7 +41,7 @@ type aggregate_kind =
           indicates this is an enum and the aggregate uses that variant. The
           [FieldId], if present, indicates this is a union and the aggregate
           writes into that field. Otherwise this is a struct. *)
-  | AggregatedArray of ty * const_generic
+  | AggregatedArray of ty * constant_expr
       (** We don't put this with the ADT cas because this is the only built-in
           type with aggregates, and it is a primitive type. In particular, it
           makes sense to treat it differently because it has a variable number
@@ -50,7 +50,7 @@ type aggregate_kind =
       (** Construct a raw pointer from a pointer value, and its metadata (can be
           unit, if building a thin pointer). The type is the type of the
           pointee. We lower this to a builtin function call for LLBC in
-          [crate::transform::ops_to_function_calls]. *)
+          [crate::transform::simplify_output::ops_to_function_calls]. *)
 
 (** Binary operations. *)
 and binop =
@@ -139,8 +139,20 @@ and cast_kind =
   | CastTransmute of ty * ty
       (** Reinterprets the bits of a value of one type as another type, i.e.
           exactly what [[std::mem::transmute]] does. *)
+  | CastConcretize of ty * ty
+      (** Converts a receiver type with [dyn Trait<...>] to a concrete type [T],
+          used in vtable method shims. Valid conversions are references, raw
+          pointers, and (optionally) boxes:
+          - [&[mut] dyn Trait<...>] -> [&[mut] T]
+          - [*[mut] dyn Trait<...>] -> [*[mut] T]
+          - [Box<dyn Trait<...>>] -> [Box<T>] when no [--raw-boxes]
 
-and constant_expr = { value : raw_constant_expr; ty : ty }
+          For possible receivers, see:
+          <https://doc.rust-lang.org/reference/items/traits.html#dyn-compatibility>.
+          Other receivers, e.g., [Rc] should be unpacked before the cast and
+          re-boxed after. FIXME(ssyram): but this is not implemented yet,
+          namely, there may still be something like
+          [Rc<dyn Trait<...>> -> Rc<T>] in the types. *)
 
 and field_proj_kind =
   | ProjAdt of type_decl_id * variant_id option
@@ -151,7 +163,13 @@ and field_proj_kind =
 and local_id = (LocalId.id[@visitors.opaque])
 
 (** Nullary operation *)
-and nullop = SizeOf | AlignOf | OffsetOf of (int * field_id) list | UbChecks
+and nullop =
+  | SizeOf
+  | AlignOf
+  | OffsetOf of type_decl_ref * variant_id option * field_id
+  | UbChecks
+  | OverflowChecks
+  | ContractChecks
 
 and operand =
   | Copy of place
@@ -162,13 +180,14 @@ and operand =
 and overflow_mode =
   | OPanic
       (** If this operation overflows, it panics. Only exists in debug mode, for
-          instance in [a + b], and is introduced by the [remove_dynamic_checks]
-          pass. *)
+          instance in [a + b], and only if [--reconstruct-fallible-operations]
+          is passed to Charon. Otherwise the bound check will be explicit. *)
   | OUB
-      (** If this operation overflows, it UBs, for instance in
-          [core::num::unchecked_add]. *)
+      (** If this operation overflows, it is UB; for instance in
+          [core::num::unchecked_add]. This can exists in safe code, but will
+          always be preceded by a bounds check. *)
   | OWrap
-      (** If this operation overflows, it wraps around, for instance in
+      (** If this operation overflows, it wraps around for instance in
           [core::num::wrapping_add], or [a + b] in release mode. *)
 
 and place = { kind : place_kind; ty : ty }
@@ -194,6 +213,14 @@ and projection_elem =
           be used as left-values and right-values. We should never have
           projections to fields of symbolic variants (they should have been
           expanded before through a match). *)
+  | PtrMetadata
+      (** A built-in pointer (a reference, raw pointer, or [Box]) in Rust is
+          always a fat pointer: it contains an address and metadata for the
+          pointed-to place. This metadata is empty for sized types, it's the
+          length for slices, and the vtable for [dyn Trait].
+
+          We consider such pointers to be like a struct with two fields; this
+          represent access to the metadata "field". *)
   | ProjIndex of operand * bool
       (** MIR imposes that the argument to an index projection be a local
           variable, meaning that even constant indices into arrays are let-bound
@@ -213,68 +240,30 @@ and projection_elem =
           - [to]
           - [from_end] *)
 
-(** A constant expression.
-
-    Only the [[RawConstantExpr::Literal]] and [[RawConstantExpr::Var]] cases are
-    left in the final LLBC.
-
-    The other cases come from a straight translation from the MIR:
-
-    [[RawConstantExpr::Adt]] case: It is a bit annoying, but rustc treats some
-    ADT and tuple instances as constants when generating MIR:
-    - an enumeration with one variant and no fields is a constant.
-    - a structure with no field is a constant.
-    - sometimes, Rust stores the initialization of an ADT as a constant (if all
-      the fields are constant) rather than as an aggregated value We later
-      desugar those to regular ADTs, see [regularize_constant_adts.rs].
-
-    [[RawConstantExpr::Global]] case: access to a global variable. We later
-    desugar it to a copy of a place global.
-
-    [[RawConstantExpr::Ref]] case: reference to a constant value. We later
-    desugar it to a separate statement.
-
-    [[RawConstantExpr::FnPtr]] case: a function pointer (to a top-level
-    function).
-
-    Remark: MIR seems to forbid more complex expressions like paths. For
-    instance, reading the constant [a.b] is translated to
-    [{ _1 = const a; _2 = (_1.0) }]. *)
-and raw_constant_expr =
-  | CLiteral of literal
-  | CTraitConst of trait_ref * trait_item_name
-      (** A trait constant.
-
-          Ex.:
-          {@rust[
-            impl Foo for Bar {
-              const C : usize = 32; // <-
-            }
-          ]}
-
-          Remark: trait constants can not be used in types, they are necessarily
-          values. *)
-  | CVar of const_generic_var_id de_bruijn_var  (** A const generic var *)
-  | CFnPtr of fn_ptr  (** Function pointer *)
-  | CRawMemory of int list
-      (** Raw memory value obtained from constant evaluation. Used when a more
-          structured representation isn't possible (e.g. for unions) or just
-          isn't implemented yet. *)
-  | COpaque of string
-      (** A constant expression that Charon still doesn't handle, along with the
-          reason why. *)
-
 (** TODO: we could factor out [Rvalue] and function calls (for LLBC, not ULLBC).
     We can also factor out the unops, binops with the function calls. TODO: move
     the aggregate kind to operands TODO: we should prefix the type variants with
     "R" or "Rv", this would avoid collisions *)
 and rvalue =
   | Use of operand  (** Lifts an operand as an rvalue. *)
-  | RvRef of place * borrow_kind  (** Takes a reference to the given place. *)
-  | RawPtr of place * ref_kind
+  | RvRef of place * borrow_kind * operand
+      (** Takes a reference to the given place. The [Operand] refers to the init
+          value of the metadata, it is [()] if no metadata
+
+          Fields:
+          - [place]
+          - [kind]
+          - [ptr_metadata] *)
+  | RawPtr of place * ref_kind * operand
       (** Takes a raw pointer with the given mutability to the given place. This
           is generated by pointer casts like [&v as *const _] or raw borrow
-          expressions like [&raw const v.] *)
+          expressions like [&raw const v.] Like [Ref], the [Operand] refers to
+          the init value of the metadata, it is [()] if no metadata.
+
+          Fields:
+          - [place]
+          - [kind]
+          - [ptr_metadata] *)
   | BinaryOp of binop * operand * operand
       (** Binary operations (note that we merge "checked" and "unchecked"
           binops) *)
@@ -282,10 +271,10 @@ and rvalue =
   | NullaryOp of nullop * ty  (** Nullary operation (e.g. [size_of]) *)
   | Discriminant of place
       (** Discriminant read. Reads the discriminant value of an enum. The place
-          must have the type of an enum.
-
-          This case is filtered in [crate::transform::remove_read_discriminant]
-      *)
+          must have the type of an enum. The discriminant in question is the one
+          in the [discriminant] field of the corresponding [Variant]. This can
+          be different than the value stored in memory (called [tag]). That one
+          is described by [[DiscriminantLayout]] and [[TagEncoding]]. *)
   | Aggregate of aggregate_kind * operand list
       (** Creates an aggregate value, like a tuple, a struct or an enum:
           {@rust[
@@ -305,20 +294,10 @@ and rvalue =
 
           Remark: in case of closures, the aggregated value groups the closure
           id together with its state. *)
-  | Len of place * ty * const_generic option
-      (** Length of a memory location. The run-time length of e.g. a vector or a
-          slice is represented differently (but pretty-prints the same, FIXME).
-          Should be seen as a function of signature:
-          - [fn<T;N>(&[T;N]) -> usize]
-          - [fn<T>(&[T]) -> usize]
-
-          We store the type argument and the const generic (the latter only for
-          arrays).
-
-          [Len] is automatically introduced by rustc, notably for the bound
-          checks: we eliminate it together with the bounds checks whenever
-          possible. There are however occurrences that we don't eliminate (yet).
-          For instance, for the following Rust code:
+  | Len of place * ty * constant_expr option
+      (** Length of a place of type [[T]] or [[T; N]]. This applies to the place
+          itself, not to a pointer value. This is inserted by rustc in a single
+          case: slice patterns.
           {@rust[
             fn slice_pattern_4(x: &[()]) {
                 match x {
@@ -326,10 +305,8 @@ and rvalue =
                     _ => (),
                 }
             }
-          ]}
-          rustc introduces a check that the length of the slice is exactly equal
-          to 1 and that we preserve. *)
-  | Repeat of operand * ty * const_generic
+          ]} *)
+  | Repeat of operand * ty * constant_expr
       (** [Repeat(x, n)] creates an array where [x] is copied [n] times.
 
           We translate this to a function call for LLBC. *)
@@ -343,16 +320,8 @@ and rvalue =
 and unop =
   | Not
   | Neg of overflow_mode  (** This can overflow, for [-i::MIN]. *)
-  | PtrMetadata
-      (** Retreive the metadata part of a fat pointer. For slices, this
-          retreives their length. *)
   | Cast of cast_kind
       (** Casts are rvalues in MIR, but we treat them as unops. *)
-
-and unsizing_metadata =
-  | MetaLength of const_generic
-  | MetaVTablePtr of trait_ref
-  | MetaUnknown
 [@@deriving
   show,
   eq,

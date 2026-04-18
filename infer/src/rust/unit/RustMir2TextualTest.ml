@@ -10,8 +10,10 @@ module F = Format
 
 let run_charon json_file rust_file args =
   let redirected_cmd =
-    F.sprintf "charon rustc --ullbc --dest-file %s %s -- %s --crate-name \"dummy\"" json_file args
-      rust_file
+    F.sprintf
+      "charon rustc --precise-drops --treat-box-as-builtin --reconstruct-fallible-operations \
+       --ullbc --dest-file %s %s -- %s --crate-name \"dummy\""
+      json_file args rust_file
   in
   let {IUnix.Process_info.stdin; stderr} =
     IUnix.create_process ~prog:"sh" ~args:["-c"; redirected_cmd]
@@ -54,16 +56,16 @@ fn main() {
   test source ;
   [%expect
     {|
-  .source_language = "Rust"
+    .source_language = "Rust"
 
-  define dummy::main() : void {
-    local var_0: void, x_1: int
-    #node_0:
-        store &x_1 <- 42:int
-        store &var_0 <- null:void
-        store &var_0 <- null:void
-        n0:void = load &var_0
-        ret n0
+    define dummy::main() : void {
+      local var_0: void, x_1: int
+      #node_0:
+          store &var_0 <- null:void
+          store &x_1 <- 42:int
+          store &var_0 <- null:void
+          n0:void = load &var_0
+          ret n0
 
-  }
-|}]
+    }
+    |}]

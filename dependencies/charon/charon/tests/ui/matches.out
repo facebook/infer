@@ -12,19 +12,17 @@ pub trait Sized<Self>
     non-dyn-compatible
 }
 
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
 {
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn drop<'_0> = drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
+    fn drop_in_place = drop_in_place<Self>
+    non-dyn-compatible
 }
 
-// Full name: core::ops::drop::Drop::drop
-pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
+// Full name: core::marker::Destruct::drop_in_place
+unsafe fn drop_in_place<Self>(_1: *mut Self)
+= <opaque>
 
 // Full name: test_crate::E1
 pub enum E1 {
@@ -34,33 +32,33 @@ pub enum E1 {
 }
 
 // Full name: test_crate::test1
-pub fn test1(@1: E1) -> bool
+pub fn test1(_1: E1) -> bool
 {
-    let @0: bool; // return
-    let x@1: E1; // arg #1
+    let _0: bool; // return
+    let x_1: E1; // arg #1
 
-    match x@1 {
+    match x_1 {
         E1::V1 | E1::V2 => {
         },
         E1::V3 => {
-            @0 := const (false)
+            _0 = const false
             return
         },
     }
-    @0 := const (true)
+    _0 = const true
     return
 }
 
 // Full name: test_crate::id
-pub fn id<T>(@1: T) -> T
+pub fn id<T>(_1: T) -> T
 where
     [@TraitClause0]: Sized<T>,
 {
-    let @0: T; // return
-    let x@1: T; // arg #1
+    let _0: T; // return
+    let x_1: T; // arg #1
 
-    @0 := move (x@1)
-    drop[Drop<T>] x@1
+    _0 = move x_1
+    conditional_drop[{built_in impl Destruct for T}] x_1
     return
 }
 
@@ -72,78 +70,74 @@ pub enum E2 {
 }
 
 // Full name: test_crate::test2
-pub fn test2(@1: E2) -> u32
+pub fn test2(_1: E2) -> u32
 {
-    let @0: u32; // return
-    let x@1: E2; // arg #1
-    let n@2: u32; // local
+    let _0: u32; // return
+    let x_1: E2; // arg #1
+    let n_2: u32; // local
 
-    match x@1 {
+    match x_1 {
         E2::V1 => {
-            storage_live(n@2)
-            n@2 := copy ((x@1 as variant E2::V1).0)
+            storage_live(n_2)
+            n_2 = copy (x_1 as variant E2::V1).0
         },
         E2::V2 => {
-            storage_live(n@2)
-            n@2 := copy ((x@1 as variant E2::V2).0)
+            storage_live(n_2)
+            n_2 = copy (x_1 as variant E2::V2).0
         },
         E2::V3 => {
-            @0 := const (0 : u32)
+            _0 = const 0 : u32
             return
         },
     }
-    @0 := copy (n@2)
-    storage_dead(n@2)
+    _0 = copy n_2
+    storage_dead(n_2)
     return
 }
 
 // Full name: test_crate::test3
-pub fn test3(@1: E2) -> u32
+pub fn test3(_1: E2) -> u32
 {
-    let @0: u32; // return
-    let x@1: E2; // arg #1
-    let @2: (); // anonymous local
-    let y@3: u32; // local
-    let n@4: u32; // local
-    let z@5: u32; // local
-    let @6: u32; // anonymous local
-    let @7: u32; // anonymous local
-    let @8: u32; // anonymous local
+    let _0: u32; // return
+    let x_1: E2; // arg #1
+    let y_2: u32; // local
+    let n_3: u32; // local
+    let z_4: u32; // local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: u32; // anonymous local
 
-    storage_live(n@4)
-    storage_live(@8)
-    storage_live(@2)
-    storage_dead(@2)
-    storage_live(y@3)
-    match x@1 {
+    storage_live(_7)
+    storage_live(y_2)
+    match x_1 {
         E2::V1 => {
-            storage_live(n@4)
-            n@4 := copy ((x@1 as variant E2::V1).0)
-            y@3 := copy (n@4)
-            storage_dead(n@4)
+            storage_live(n_3)
+            n_3 = copy (x_1 as variant E2::V1).0
+            y_2 = copy n_3
+            storage_dead(n_3)
         },
         E2::V2 => {
-            storage_live(n@4)
-            n@4 := copy ((x@1 as variant E2::V2).0)
-            y@3 := copy (n@4)
-            storage_dead(n@4)
+            storage_live(n_3)
+            n_3 = copy (x_1 as variant E2::V2).0
+            y_2 = copy n_3
+            storage_dead(n_3)
         },
         E2::V3 => {
-            y@3 := const (0 : u32)
+            y_2 = const 0 : u32
         },
     }
-    storage_live(z@5)
-    z@5 := id<u32>[Sized<u32>](const (3 : u32))
-    storage_live(@6)
-    @6 := copy (y@3)
-    storage_live(@7)
-    @7 := copy (z@5)
-    @8 := copy (@6) panic.+ copy (@7)
-    @0 := move (@8)
-    storage_dead(@7)
-    storage_dead(@6)
-    storage_dead(z@5)
-    storage_dead(y@3)
+    storage_live(z_4)
+    z_4 = id<u32>[{built_in impl Sized for u32}](const 3 : u32)
+    storage_live(_5)
+    _5 = copy y_2
+    storage_live(_6)
+    _6 = copy z_4
+    _7 = copy _5 panic.+ copy _6
+    _0 = move _7
+    storage_dead(_6)
+    storage_dead(_5)
+    storage_dead(z_4)
+    storage_dead(y_2)
     return
 }
 

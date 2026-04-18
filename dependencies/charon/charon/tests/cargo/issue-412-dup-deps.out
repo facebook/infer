@@ -1,0 +1,167 @@
+# Final LLBC before serialization:
+
+// Full name: core::fmt::Arguments
+#[lang_item("format_arguments")]
+pub opaque type Arguments<'a>
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::panicking::AssertKind
+pub enum AssertKind {
+  Eq,
+  Ne,
+  Match,
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: mydup::hello
+pub fn hello() -> u32
+{
+    let _0: u32; // return
+
+    _0 = const 1 : u32
+    return
+}
+
+// Full name: mydup::hello
+pub fn hello() -> u32
+{
+    let _0: u32; // return
+
+    _0 = const 2 : u32
+    return
+}
+
+// Full name: issue_412_dup_deps::main
+fn main()
+{
+    let _0: (); // return
+    let a_1: u32; // local
+    let b_2: u32; // local
+    let _3: (&'3 u32, &'4 u32); // anonymous local
+    let _4: &'5 u32; // anonymous local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: u32; // anonymous local
+    let _8: (u32, bool); // anonymous local
+    let _9: &'6 u32; // anonymous local
+    let left_val_10: &'7 u32; // local
+    let right_val_11: &'8 u32; // local
+    let _12: bool; // anonymous local
+    let _13: u32; // anonymous local
+    let _14: u32; // anonymous local
+    let kind_15: AssertKind; // local
+    let _16: AssertKind; // anonymous local
+    let _17: &'9 u32; // anonymous local
+    let _18: &'10 u32; // anonymous local
+    let _19: &'11 u32; // anonymous local
+    let _20: &'12 u32; // anonymous local
+    let _21: Option<Arguments<'19>>[{built_in impl Sized for Arguments<'19>}]; // anonymous local
+    let _22: &'22 u32; // anonymous local
+    let _23: &'31 u32; // anonymous local
+    let _24: u32; // anonymous local
+
+    storage_live(_8)
+    storage_live(_22)
+    _0 = ()
+    storage_live(a_1)
+    a_1 = hello()
+    storage_live(b_2)
+    b_2 = hello()
+    storage_live(_3)
+    storage_live(_4)
+    storage_live(_5)
+    storage_live(_6)
+    _6 = copy a_1
+    storage_live(_7)
+    _7 = copy b_2
+    _8 = copy _6 checked.+ copy _7
+    assert(move _8.1 == false) (overflow) else panic
+    storage_live(_23)
+    storage_live(_24)
+    _24 = const 3 : u32
+    _23 = &_24
+    _5 = move _8.0
+    storage_dead(_7)
+    storage_dead(_6)
+    _4 = &_5
+    storage_live(_9)
+    _22 = move _23
+    _9 = &(*_22)
+    _3 = (move _4, move _9)
+    storage_dead(_9)
+    storage_dead(_4)
+    storage_live(left_val_10)
+    left_val_10 = copy _3.0
+    storage_live(right_val_11)
+    right_val_11 = copy _3.1
+    storage_live(_12)
+    storage_live(_13)
+    _13 = copy (*left_val_10)
+    storage_live(_14)
+    _14 = copy (*right_val_11)
+    _12 = move _13 == move _14
+    if move _12 {
+    } else {
+        storage_dead(_14)
+        storage_dead(_13)
+        storage_live(kind_15)
+        kind_15 = AssertKind::Eq {  }
+        storage_live(_16)
+        _16 = move kind_15
+        storage_live(_17)
+        storage_live(_18)
+        _18 = &(*left_val_10)
+        _17 = &(*_18)
+        storage_live(_19)
+        storage_live(_20)
+        _20 = &(*right_val_11)
+        _19 = &(*_20)
+        storage_live(_21)
+        _21 = Option::None {  }
+        panic(core::panicking::assert_failed)
+    }
+    storage_dead(_14)
+    storage_dead(_13)
+    storage_dead(_12)
+    storage_dead(right_val_11)
+    storage_dead(left_val_10)
+    storage_dead(_5)
+    storage_dead(_3)
+    _0 = ()
+    storage_dead(b_2)
+    storage_dead(a_1)
+    return
+}
+
+
+

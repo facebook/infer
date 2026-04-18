@@ -34,7 +34,7 @@ impl<T> Trait for Option<T>[@TraitClause0]
 where
     [@TraitClause0]: Sized<T>,
 {
-    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
+    parent_clause0 = {built_in impl MetaSized for Option<T>[@TraitClause0]}
     vtable: {impl Trait for Option<T>[@TraitClause0]}::{vtable}<T>[@TraitClause0]
 }
 

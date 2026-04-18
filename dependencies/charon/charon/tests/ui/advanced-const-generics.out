@@ -1,0 +1,248 @@
+# Final LLBC before serialization:
+
+// Full name: core::cmp::PartialEq
+#[lang_item("eq")]
+pub trait PartialEq<Self, Rhs>
+{
+    fn eq<'_0_1, '_1_1> = core::cmp::PartialEq::eq<'_0_1, '_1_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialEq::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1, Self, Rhs>(_1: &'_0 Self, _2: &'_1 Rhs) -> bool
+where
+    [@TraitClause0]: PartialEq<Self, Rhs>,
+= <opaque>
+
+// Full name: core::cmp::Eq
+#[lang_item("Eq")]
+pub trait Eq<Self>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq<Self, Self>
+    fn assert_receiver_is_total_eq<'_0_1> = core::cmp::Eq::assert_receiver_is_total_eq<'_0_1, Self>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::cmp::Eq::assert_receiver_is_total_eq<'_0, Self>(_1: &'_0 Self)
+where
+    [@TraitClause0]: Eq<Self>,
+= <opaque>
+
+// Full name: core::fmt::Error
+pub struct Error {}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+// Full name: core::fmt::Debug
+#[lang_item("Debug")]
+pub trait Debug<Self>
+{
+    fn fmt<'_0_1, '_1_1, '_2_1> = core::fmt::Debug::fmt<'_0_1, '_1_1, '_2_1, Self>[Self]
+    vtable: core::fmt::Debug::{vtable}
+}
+
+pub fn core::fmt::Debug::fmt<'_0, '_1, '_2, Self>(_1: &'_0 Self, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
+where
+    [@TraitClause0]: Debug<Self>,
+= <opaque>
+
+pub fn core::fmt::{Formatter<'a>}::write_str<'a, '_1, '_2>(_1: &'_1 mut Formatter<'a>, _2: &'_2 Str) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
+= <opaque>
+
+// Full name: core::marker::StructuralPartialEq
+#[lang_item("structural_peq")]
+pub trait StructuralPartialEq<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::StructuralPartialEq::{vtable}
+}
+
+// Full name: core::marker::ConstParamTy_
+#[lang_item("const_param_ty")]
+pub trait ConstParamTy_<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: StructuralPartialEq<Self>
+    parent_clause2 : [@TraitClause2]: Eq<Self>
+    non-dyn-compatible
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Foo
+enum Foo {
+  A,
+  B,
+}
+
+// Full name: test_crate::{impl Eq for Foo}::assert_receiver_is_total_eq
+pub fn {impl Eq for Foo}::assert_receiver_is_total_eq<'_0>(_1: &'_0 Foo)
+{
+    let _0: (); // return
+    let self_1: &'1 Foo; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::{impl PartialEq<Foo> for Foo}::eq
+pub fn {impl PartialEq<Foo> for Foo}::eq<'_0, '_1>(_1: &'_0 Foo, _2: &'_1 Foo) -> bool
+{
+    let _0: bool; // return
+    let self_1: &'1 Foo; // arg #1
+    let other_2: &'2 Foo; // arg #2
+    let __self_discr_3: isize; // local
+    let _4: &'3 Foo; // anonymous local
+    let __arg1_discr_5: isize; // local
+    let _6: &'4 Foo; // anonymous local
+    let _7: isize; // anonymous local
+    let _8: isize; // anonymous local
+
+    storage_live(__self_discr_3)
+    storage_live(_4)
+    _4 = &(*self_1)
+    __self_discr_3 = @discriminant((*_4))
+    storage_dead(_4)
+    storage_live(__arg1_discr_5)
+    storage_live(_6)
+    _6 = &(*other_2)
+    __arg1_discr_5 = @discriminant((*_6))
+    storage_dead(_6)
+    storage_live(_7)
+    _7 = copy __self_discr_3
+    storage_live(_8)
+    _8 = copy __arg1_discr_5
+    _0 = move _7 == move _8
+    storage_dead(_8)
+    storage_dead(_7)
+    storage_dead(__arg1_discr_5)
+    storage_dead(__self_discr_3)
+    return
+}
+
+// Full name: test_crate::{impl PartialEq<Foo> for Foo}
+impl PartialEq<Foo> for Foo {
+    fn eq<'_0_1, '_1_1> = {impl PartialEq<Foo> for Foo}::eq<'_0_1, '_1_1>
+    vtable: {impl PartialEq<Foo> for Foo}::{vtable}
+}
+
+// Full name: test_crate::{impl Eq for Foo}
+impl Eq for Foo {
+    parent_clause0 = {impl PartialEq<Foo> for Foo}
+    fn assert_receiver_is_total_eq<'_0_1> = {impl Eq for Foo}::assert_receiver_is_total_eq<'_0_1>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl StructuralPartialEq for Foo}
+impl StructuralPartialEq for Foo {
+    parent_clause0 = {built_in impl MetaSized for Foo}
+    vtable: {impl StructuralPartialEq for Foo}::{vtable}
+}
+
+// Full name: test_crate::{impl ConstParamTy_ for Foo}
+impl ConstParamTy_ for Foo {
+    parent_clause0 = {built_in impl MetaSized for Foo}
+    parent_clause1 = {impl StructuralPartialEq for Foo}
+    parent_clause2 = {impl Eq for Foo}
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl Debug for Foo}::fmt
+pub fn {impl Debug for Foo}::fmt<'_0, '_1, '_2>(_1: &'_0 Foo, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
+{
+    let _0: Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]; // return
+    let self_1: &'1 Foo; // arg #1
+    let f_2: &'5 mut Formatter<'6>; // arg #2
+    let _3: &'7 mut Formatter<'8>; // anonymous local
+    let _4: &'10 Str; // anonymous local
+    let _5: &'11 Str; // anonymous local
+    let _6: &'12 Str; // anonymous local
+
+    storage_live(_3)
+    _3 = &two-phase-mut (*f_2) with_metadata(copy f_2.metadata)
+    storage_live(_4)
+    match (*self_1) {
+        Foo::A => {
+            storage_live(_5)
+            _5 = const "A"
+            _4 = &(*_5) with_metadata(copy _5.metadata)
+            storage_dead(_5)
+        },
+        Foo::B => {
+            storage_live(_6)
+            _6 = const "B"
+            _4 = &(*_6) with_metadata(copy _6.metadata)
+            storage_dead(_6)
+        },
+    }
+    _0 = core::fmt::{Formatter<'a>}::write_str<'16, '19, '20>(move _3, move _4)
+    storage_dead(_4)
+    storage_dead(_3)
+    return
+}
+
+// Full name: test_crate::{impl Debug for Foo}
+impl Debug for Foo {
+    fn fmt<'_0_1, '_1_1, '_2_1> = {impl Debug for Foo}::fmt<'_0_1, '_1_1, '_2_1>
+    vtable: {impl Debug for Foo}::{vtable}
+}
+
+// Full name: test_crate::foo
+fn foo<const X : Foo>() -> Foo
+{
+    let _0: Foo; // return
+
+    _0 = const X
+    return
+}
+
+// Full name: test_crate::bar
+fn bar<const N : usize>()
+{
+    let _0: (); // return
+    let _1: [(); {const}<N>]; // anonymous local
+    let _2: (); // anonymous local
+
+    _0 = ()
+    storage_live(_1)
+    storage_live(_2)
+    _2 = ()
+    _1 = @ArrayRepeat<(), {const}<N>>(move _2)
+    storage_dead(_2)
+    storage_dead(_1)
+    _0 = ()
+    return
+}
+
+
+

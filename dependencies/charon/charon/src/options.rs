@@ -2,6 +2,8 @@
 use annotate_snippets::Level;
 use clap::ValueEnum;
 use indoc::indoc;
+use itertools::Itertools;
+use macros::EnumAsGetters;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
@@ -29,84 +31,85 @@ pub const CHARON_ARGS: &str = "CHARON_ARGS";
 #[charon::rename("cli_options")]
 pub struct CliOpts {
     /// Extract the unstructured LLBC (i.e., don't reconstruct the control-flow)
-    #[clap(long = "ullbc")]
+    #[clap(long)]
     #[serde(default)]
     pub ullbc: bool,
-    /// Compile the package's library
-    #[clap(long = "lib")]
+    /// Whether to precisely translate drops and drop-related code. For this, we add explicit
+    /// `Destruct` bounds to all generic parameters, set the MIR level to at least `elaborated`,
+    /// and attempt to retrieve drop glue for all types.
+    ///
+    /// This option is known to cause panics inside rustc, because their drop handling is not
+    /// design to work on polymorphic types. To silence the warning, pass appropriate `--opaque
+    /// '{impl core::marker::Destruct for some::Type}'` options.
+    ///
+    /// Without this option, drops may be "conditional" and we may lack information about what code
+    /// is run on drop in a given polymorphic function body.
+    #[clap(long)]
     #[serde(default)]
-    pub lib: bool,
-    /// Compile the specified binary
-    #[clap(long = "bin")]
+    pub precise_drops: bool,
+    /// If activated, this skips borrow-checking of the crate.
+    #[clap(long)]
     #[serde(default)]
-    pub bin: Option<String>,
-    /// Deprecated: use `--mir promoted` instead.
-    #[clap(long = "mir_promoted")]
-    #[serde(default)]
-    pub mir_promoted: bool,
-    /// Deprecated: use `--mir optimized` instead.
-    #[clap(long = "mir_optimized")]
-    #[serde(default)]
-    pub mir_optimized: bool,
+    pub skip_borrowck: bool,
     /// The MIR stage to extract. This is only relevant for the current crate; for dpendencies only
     /// MIR optimized is available.
     #[arg(long)]
     pub mir: Option<MirLevel>,
-    /// The input file (the entry point of the crate to extract).
-    /// This is needed if you want to define a custom entry point (to only
-    /// extract part of a crate for instance).
-    #[clap(long = "input", value_parser)]
+    /// Extra flags to pass to rustc.
+    #[clap(long = "rustc-arg")]
     #[serde(default)]
-    pub input_file: Option<PathBuf>,
-    /// Read an llbc file and pretty-print it. This is a terrible API, we should use subcommands.
-    #[clap(long = "read-llbc", value_parser)]
-    #[serde(default)]
-    pub read_llbc: Option<PathBuf>,
-    /// The destination directory. Files will be generated as `<dest_dir>/<crate_name>.{u}llbc`,
-    /// unless `dest_file` is set. `dest_dir` defaults to the current directory.
-    #[clap(long = "dest", value_parser)]
-    #[serde(default)]
-    pub dest_dir: Option<PathBuf>,
-    /// The destination file. By default `<dest_dir>/<crate_name>.llbc`. If this is set we ignore
-    /// `dest_dir`.
-    #[clap(long = "dest-file", value_parser)]
-    #[serde(default)]
-    pub dest_file: Option<PathBuf>,
-    /// If activated, use Polonius' non-lexical lifetimes (NLL) analysis.
-    /// Otherwise, use the standard borrow checker.
-    #[clap(long = "polonius")]
-    #[serde(default)]
-    pub use_polonius: bool,
-    /// If activated, this skips borrow-checking of the crate.
-    #[clap(long = "skip-borrowck")]
-    #[serde(default)]
-    pub skip_borrowck: bool,
+    pub rustc_args: Vec<String>,
+
     /// Monomorphize the items encountered when possible. Generic items found in the crate are
-    /// translated as normal. To only translate a particular call graph, use `--start-from`. This
-    /// uses a different mechanism than `--monomorphize-conservative` which should be a lot more
-    /// complete, but doesn't currently support `dyn Trait`.
+    /// skipped. To only translate a particular call graph, use `--start-from`. Note: this doesn't
+    /// currently support `dyn Trait`.
     #[clap(long, visible_alias = "mono")]
     #[serde(default)]
     pub monomorphize: bool,
-    /// Monomorphize the code, replacing generics with their concrete types. This is less complete
-    /// than `--monomorphize` but at least doesn't crash on `dyn Trait`. This will eventually be
-    /// fully replaced with `--monomorphized`.
+    /// Partially monomorphize items to make it so that no item is ever monomorphized with a
+    /// mutable reference (or type containing one); said differently, so that the presence of
+    /// mutable references in a type is independent of its generics. This is used by Aeneas.
+    #[clap(
+        long,
+        value_name("INCLUDE_TYPES"),
+        num_args(0..=1),
+        require_equals(true),
+        default_missing_value("all"),
+    )]
+    #[serde(default)]
+    pub monomorphize_mut: Option<MonomorphizeMut>,
+
+    /// A list of item paths to use as starting points for the translation. We will translate these
+    /// items and any items they refer to, according to the opacity rules. When absent, we start
+    /// from the path `crate` (which translates the whole crate).
+    #[clap(long, value_delimiter = ',')]
+    #[serde(default)]
+    pub start_from: Vec<String>,
+    /// Same as --start-from, but won't raise an error if a pattern doesn't match any item. This is useful
+    /// when the patterns are generated by a build script and may be out of sync with the code.
+    #[clap(long, value_delimiter = ',')]
+    #[serde(default)]
+    pub start_from_if_exists: Vec<String>,
+    /// Use all the items annotated with the given attribute as starting points for translation
+    /// (except modules).
+    /// If an attribute name is not specified, `verify::start_from` is used.
+    #[clap(
+        long,
+        value_name("ATTRIBUTE"),
+        num_args(0..=1),
+        require_equals(true),
+        default_missing_value("verify::start_from"),
+    )]
+    #[serde(default)]
+    pub start_from_attribute: Option<String>,
+    /// Use all the `pub` items as starting points for translation (except modules).
     #[clap(long)]
     #[serde(default)]
-    pub monomorphize_conservative: bool,
-    /// Usually we skip the bodies of foreign methods and structs with private fields. When this
-    /// flag is on, we don't.
-    #[clap(long = "extract-opaque-bodies")]
-    #[serde(default)]
-    pub extract_opaque_bodies: bool,
-    /// Usually we skip the provided methods that aren't used. When this flag is on, we translate
-    /// them all.
-    #[clap(long = "translate-all-methods")]
-    #[serde(default)]
-    pub translate_all_methods: bool,
+    pub start_from_pub: bool,
+
     /// Whitelist of items to translate. These use the name-matcher syntax.
     #[clap(
-        long = "include",
+        long,
         help = indoc!("
             Whitelist of items to translate. These use the name-matcher syntax (note: this differs
             a bit from the ocaml NameMatcher).
@@ -130,33 +133,41 @@ pub struct CliOpts {
     #[serde(default)]
     #[charon::rename("included")]
     pub include: Vec<String>,
-    /// Blacklist of items to keep opaque. These use the name-matcher syntax.
-    #[clap(
-        long = "opaque",
-        help = "Blacklist of items to keep opaque. Works just like `--include`, see the doc there."
-    )]
+    /// Blacklist of items to keep opaque. Works just like `--include`, see the doc there.
+    #[clap(long)]
     #[serde(default)]
     pub opaque: Vec<String>,
-    /// Blacklist of items to not translate at all. These use the name-matcher syntax.
-    #[clap(
-        long = "exclude",
-        help = "Blacklist of items to not translate at all. Works just like `--include`, see the doc there."
-    )]
+    /// Blacklist of items to not translate at all. Works just like `--include`, see the doc there.
+    #[clap(long)]
     #[serde(default)]
     pub exclude: Vec<String>,
-    /// List of traits for which we transform associated types to type parameters.
-    #[clap(
-        long = "remove-associated-types",
-        help = "List of traits for which we transform associated types to type parameters. \
-        The syntax is like `--include`, see the doc there."
-    )]
+    /// Usually we skip the bodies of foreign methods and structs with private fields. When this
+    /// flag is on, we don't.
+    #[clap(long)]
     #[serde(default)]
-    pub remove_associated_types: Vec<String>,
-    /// Whether to hide the `Sized`, `Sync`, `Send` and `Unpin` marker traits anywhere they show
-    /// up.
-    #[clap(long = "hide-marker-traits")]
+    pub extract_opaque_bodies: bool,
+    /// Usually we skip the provided methods that aren't used. When this flag is on, we translate
+    /// them all.
+    #[clap(long)]
+    #[serde(default)]
+    pub translate_all_methods: bool,
+
+    /// Transform the associate types of traits to be type parameters instead. This takes a list
+    /// of name patterns of the traits to transform, using the same syntax as `--include`.
+    #[clap(long, alias = "remove-associated-types")]
+    #[serde(default)]
+    pub lift_associated_types: Vec<String>,
+    /// Whether to hide various marker traits such as `Sized`, `Sync`, `Send` and `Destruct`
+    /// anywhere they show up. This can considerably speed up translation.
+    #[clap(long)]
     #[serde(default)]
     pub hide_marker_traits: bool,
+    /// Remove trait clauses from type declarations. Must be combined with
+    /// `--remove-associated-types` for type declarations that use trait associated types in their
+    /// fields, otherwise this will result in errors.
+    #[clap(long)]
+    #[serde(default)]
+    pub remove_adt_clauses: bool,
     /// Hide the `A` type parameter on standard library containers (`Box`, `Vec`, etc).
     #[clap(long)]
     #[serde(default)]
@@ -164,107 +175,110 @@ pub struct CliOpts {
     /// Trait method declarations take a `Self: Trait` clause as parameter, so that they can be
     /// reused by multiple trait impls. This however causes trait definitions to be mutually
     /// recursive with their method declarations. This flag removes `Self` clauses that aren't used
-    /// to break this mutual recursion.
+    /// to break this mutual recursion when possible.
     #[clap(long)]
     #[serde(default)]
     pub remove_unused_self_clauses: bool,
-    /// Whether to add `Drop` bounds everywhere to enable proper tracking of what code runs on a
-    /// given `drop` call.
+
+    /// Transform precise drops to the equivalent `drop_in_place(&raw mut p)` call.
     #[clap(long)]
     #[serde(default)]
-    pub add_drop_bounds: bool,
-    /// A list of item paths to use as starting points for the translation. We will translate these
-    /// items and any items they refer to, according to the opacity rules. When absent, we start
-    /// from the path `crate` (which translates the whole crate).
-    #[clap(long = "start-from")]
+    pub desugar_drops: bool,
+    /// Transform array-to-slice unsizing, repeat expressions, and raw pointer construction into
+    /// builtin functions in ULLBC.
+    #[clap(long)]
     #[serde(default)]
-    pub start_from: Vec<String>,
-    /// Do not run cargo; instead, run the driver directly.
-    #[clap(long = "no-cargo")]
+    pub ops_to_function_calls: bool,
+    /// Transform array/slice indexing into builtin functions in ULLBC. Note that this may
+    /// introduce UB since it creates references that were not normally created, including when
+    /// indexing behind a raw pointer.
+    #[clap(long)]
     #[serde(default)]
-    pub no_cargo: bool,
-    /// Extra flags to pass to rustc.
-    #[clap(long = "rustc-flag", alias = "rustc-arg")]
+    pub index_to_function_calls: bool,
+    /// Treat `Box<T>` as if it was a built-in type.
+    #[clap(long)]
     #[serde(default)]
-    pub rustc_args: Vec<String>,
-    /// Extra flags to pass to cargo. Incompatible with `--no-cargo`.
-    #[clap(long = "cargo-arg")]
+    pub treat_box_as_builtin: bool,
+    /// Do not inline or evaluate constants.
+    #[clap(long)]
     #[serde(default)]
-    pub cargo_args: Vec<String>,
-    /// Panic on the first error. This is useful for debugging.
-    #[clap(long = "abort-on-error")]
+    pub raw_consts: bool,
+    /// Replace string literal constants with a constant u8 array that gets unsized,
+    /// expliciting the fact a string constant has a hidden reference.
+    #[clap(long)]
     #[serde(default)]
-    pub abort_on_error: bool,
-    /// Print the errors as warnings
-    #[clap(long = "error-on-warnings", help = "Consider any warnings as errors")]
+    pub unsized_strings: bool,
+    /// Replace "bound checks followed by UB-on-overflow operation" with the corresponding
+    /// panic-on-overflow operation. This loses unwinding information.
+    #[clap(long)]
     #[serde(default)]
-    pub error_on_warnings: bool,
-    #[clap(
-        long = "no-serialize",
-        help = "Don't serialize the final (U)LLBC to a file."
-    )]
+    pub reconstruct_fallible_operations: bool,
+    /// Replace "if x { panic() }" with "assert(x)".
+    #[clap(long)]
     #[serde(default)]
-    pub no_serialize: bool,
-    #[clap(
-        long = "print-original-ullbc",
-        help = "Print the ULLBC immediately after extraction from MIR."
-    )]
+    pub reconstruct_asserts: bool,
+    /// Use `DeBruijnVar::Free` for the variables bound in item signatures, instead of
+    /// `DeBruijnVar::Bound` everywhere. This simplifies the management of generics for projects
+    /// that don't intend to manipulate them too much.
+    #[clap(long)]
+    #[serde(default)]
+    pub unbind_item_vars: bool,
+
+    /// Pretty-print the ULLBC immediately after extraction from MIR.
+    #[clap(long)]
     #[serde(default)]
     pub print_original_ullbc: bool,
-    #[clap(
-        long = "print-ullbc",
-        help = "Print the ULLBC after applying the micro-passes (before serialization/control-flow reconstruction)."
-    )]
+    /// Pretty-print the ULLBC after applying the micro-passes (before serialization/control-flow reconstruction).
+    #[clap(long)]
     #[serde(default)]
     pub print_ullbc: bool,
-    #[clap(
-        long = "print-built-llbc",
-        help = "Print the LLBC just after we built it (i.e., immediately after loop reconstruction)."
-    )]
+    /// Pretty-print the LLBC just after we built it (i.e., immediately after loop reconstruction).
+    #[clap(long)]
     #[serde(default)]
     pub print_built_llbc: bool,
-    #[clap(
-        long = "print-llbc",
-        help = "Print the final LLBC (after all the cleaning micro-passes)."
-    )]
+    /// Pretty-print the final LLBC (after all the cleaning micro-passes).
+    #[clap(long)]
     #[serde(default)]
     pub print_llbc: bool,
-    #[clap(
-        long = "no-merge-goto-chains",
-        help = "Do not merge the chains of gotos in the ULLBC control-flow graph."
-    )]
-    #[serde(default)]
-    pub no_merge_goto_chains: bool,
 
-    #[clap(
-        long = "no-ops-to-function-calls",
-        help = "Do not transform ArrayToSlice, Repeat, and RawPtr aggregates to builtin function calls for ULLBC"
-    )]
+    /// The destination directory. Files will be generated as `<dest_dir>/<crate_name>.{u}llbc`,
+    /// unless `dest_file` is set. `dest_dir` defaults to the current directory.
+    #[clap(long = "dest", value_parser)]
     #[serde(default)]
-    pub no_ops_to_function_calls: bool,
-
-    #[clap(
-        long = "raw-boxes",
-        help = "Do not special-case the translation of `Box<T>` into a builtin ADT."
-    )]
+    pub dest_dir: Option<PathBuf>,
+    /// The destination file. By default `<dest_dir>/<crate_name>.llbc`. If this is set we ignore
+    /// `dest_dir`.
+    #[clap(long, value_parser)]
     #[serde(default)]
-    pub raw_boxes: bool,
+    pub dest_file: Option<PathBuf>,
+    /// Don't deduplicate values (types, trait refs) in the .(u)llbc file. This makes the file easier to inspect.
+    #[clap(long)]
+    #[serde(default)]
+    pub no_dedup_serialized_ast: bool,
+    /// Don't serialize the final (U)LLBC to a file.
+    #[clap(long)]
+    #[serde(default)]
+    pub no_serialize: bool,
+    /// Panic on the first error. This is useful for debugging.
+    #[clap(long)]
+    #[serde(default)]
+    pub abort_on_error: bool,
+    /// Consider any warnings to be errors.
+    #[clap(long)]
+    #[serde(default)]
+    pub error_on_warnings: bool,
 
-    /// Named builtin sets of options. Currently used only for dependent projects, eveentually
-    /// should be replaced with semantically-meaningful presets.
-    #[clap(long = "preset")]
+    /// Named builtin sets of options.
+    #[clap(long)]
     #[arg(value_enum)]
     pub preset: Option<Preset>,
 }
 
 /// The MIR stage to use. This is only relevant for the current crate: for dependencies, only mir
 /// optimized is available (or mir elaborated for consts).
-#[derive(
-    Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize,
-)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize)]
 pub enum MirLevel {
     /// The MIR just after MIR lowering.
-    #[default]
     Built,
     /// The MIR after const promotion. This is the MIR used by the borrow-checker.
     Promoted,
@@ -284,10 +298,24 @@ pub enum Preset {
     /// The default translation used before May 2025. After that, many passes were made optional
     /// and disabled by default.
     OldDefaults,
+    /// Emit the MIR as unmodified as possible. This is very imperfect for now, we should make more
+    /// passes optional.
+    RawMir,
     Aeneas,
     Eurydice,
     Soteria,
     Tests,
+}
+
+#[derive(
+    Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize, Deserialize,
+)]
+pub enum MonomorphizeMut {
+    /// Monomorphize any item instantiated with `&mut`.
+    #[default]
+    All,
+    /// Monomorphize all non-typedecl items instantiated with `&mut`.
+    ExceptTypes,
 }
 
 impl CliOpts {
@@ -295,13 +323,30 @@ impl CliOpts {
         if let Some(preset) = self.preset {
             match preset {
                 Preset::OldDefaults => {
-                    self.hide_allocator = !self.raw_boxes;
+                    self.treat_box_as_builtin = true;
+                    self.hide_allocator = true;
+                    self.ops_to_function_calls = true;
+                    self.index_to_function_calls = true;
+                    self.reconstruct_fallible_operations = true;
+                    self.reconstruct_asserts = true;
+                    self.unbind_item_vars = true;
+                }
+                Preset::RawMir => {
+                    self.extract_opaque_bodies = true;
+                    self.raw_consts = true;
+                    self.ullbc = true;
                 }
                 Preset::Aeneas => {
-                    self.remove_associated_types.push("*".to_owned());
+                    self.lift_associated_types.push("*".to_owned());
+                    self.treat_box_as_builtin = true;
+                    self.ops_to_function_calls = true;
+                    self.index_to_function_calls = true;
+                    self.reconstruct_fallible_operations = true;
+                    self.reconstruct_asserts = true;
                     self.hide_marker_traits = true;
                     self.hide_allocator = true;
                     self.remove_unused_self_clauses = true;
+                    self.unbind_item_vars = true;
                     // Hide drop impls because they often involve nested borrows. which aeneas
                     // doesn't handle yet.
                     self.exclude.push("core::ops::drop::Drop".to_owned());
@@ -310,18 +355,35 @@ impl CliOpts {
                 }
                 Preset::Eurydice => {
                     self.hide_allocator = true;
-                    self.remove_associated_types.push("*".to_owned());
+                    self.treat_box_as_builtin = true;
+                    self.ops_to_function_calls = true;
+                    self.index_to_function_calls = true;
+                    self.reconstruct_fallible_operations = true;
+                    self.reconstruct_asserts = true;
+                    self.lift_associated_types.push("*".to_owned());
+                    self.unbind_item_vars = true;
+                    // Eurydice doesn't support opaque vtables it seems?
+                    self.include.push("core::marker::MetaSized".to_owned());
                 }
                 Preset::Soteria => {
                     self.extract_opaque_bodies = true;
                     self.monomorphize = true;
-                    self.raw_boxes = true;
                     self.mir = Some(MirLevel::Elaborated);
                     self.ullbc = true;
                 }
                 Preset::Tests => {
-                    self.hide_allocator = !self.raw_boxes;
+                    self.no_dedup_serialized_ast = true; // Helps debug
+                    self.treat_box_as_builtin = true;
+                    self.hide_allocator = true;
+                    self.reconstruct_fallible_operations = true;
+                    self.reconstruct_asserts = true;
+                    self.ops_to_function_calls = true;
+                    self.index_to_function_calls = true;
                     self.rustc_args.push("--edition=2021".to_owned());
+                    self.rustc_args
+                        .push("-Zcrate-attr=feature(register_tool)".to_owned());
+                    self.rustc_args
+                        .push("-Zcrate-attr=register_tool(charon)".to_owned());
                     self.exclude.push("core::fmt::Formatter".to_owned());
                 }
             }
@@ -329,105 +391,115 @@ impl CliOpts {
     }
 
     /// Check that the options are meaningful
-    pub fn validate(&self) {
-        assert!(
-            !self.lib || self.bin.is_none(),
-            "Can't use --lib and --bin at the same time"
-        );
-
-        assert!(
-            !self.mir_promoted || !self.mir_optimized,
-            "Can't use --mir_promoted and --mir_optimized at the same time"
-        );
-
-        if self.input_file.is_some() {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--input` is deprecated, use `charon rustc [charon options] -- [rustc options] <input file>` instead",
-            )
-        }
-        if self.no_cargo {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--no-cargo` is deprecated, use `charon rustc [charon options] -- [rustc options] <input file>` instead",
-            )
-        }
-        if self.read_llbc.is_some() {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--read_llbc` is deprecated, use `charon pretty-print <input file>` instead",
-            )
-        }
-        if self.use_polonius {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--polonius` is deprecated, use `--rustc-arg=-Zpolonius` instead",
-            )
-        }
-        if self.mir_optimized {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--mir_optimized` is deprecated, use `--mir optimized` instead",
-            )
-        }
-        if self.mir_promoted {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--mir_promoted` is deprecated, use `--mir promoted` instead",
-            )
-        }
-        if self.lib {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--lib` is deprecated, use `charon cargo -- --lib` instead",
-            )
-        }
-        if self.bin.is_some() {
-            display_unspanned_error(
-                Level::WARNING,
-                "`--bin` is deprecated, use `charon cargo -- --bin <name>` instead",
-            )
-        }
+    pub fn validate(&self) -> anyhow::Result<()> {
         if self.dest_dir.is_some() {
             display_unspanned_error(
                 Level::WARNING,
                 "`--dest` is deprecated, use `--dest-file` instead",
             )
         }
+
+        if self.remove_adt_clauses && self.lift_associated_types.is_empty() {
+            anyhow::bail!(
+                "`--remove-adt-clauses` should be used with `--remove-associated-types='*'` \
+                to avoid missing clause errors",
+            )
+        }
+        if matches!(self.monomorphize_mut, Some(MonomorphizeMut::ExceptTypes))
+            && !self.remove_adt_clauses
+        {
+            anyhow::bail!(
+                "`--monomorphize-mut=except-types` should be used with `--remove-adt-clauses` \
+                to avoid generics mismatches"
+            )
+        }
+        Ok(())
+    }
+}
+
+/// Predicates that determine wihch items to use as starting point for translation.
+#[derive(Debug, Clone, EnumAsGetters)]
+pub enum StartFrom {
+    /// Item identified by a pattern/path. If strict is true, then failing to
+    /// find an item matching the pattern is an error; otherwise, we just ignore this pattern.
+    Pattern { pattern: NamePattern, strict: bool },
+    /// Item annotated with the given attribute.
+    Attribute(String),
+    /// Item marked `pub`. Note that this does not take accessibility into account; a
+    /// non-reexported `pub` item will be included here.
+    Pub,
+}
+
+impl StartFrom {
+    pub fn matches(&self, ctx: &TranslatedCrate, item_meta: &ItemMeta) -> bool {
+        match self {
+            StartFrom::Pattern { pattern, .. } => pattern.matches(ctx, &item_meta.name),
+            StartFrom::Attribute(attr) => item_meta
+                .attr_info
+                .attributes
+                .iter()
+                .filter_map(|a| a.as_unknown())
+                .any(|raw_attr| raw_attr.path == *attr),
+            StartFrom::Pub => item_meta.attr_info.public,
+        }
     }
 }
 
 /// The options that control translation and transformation.
 pub struct TranslateOptions {
+    /// Items from which to start translation.
+    pub start_from: Vec<StartFrom>,
     /// The level at which to extract the MIR
     pub mir_level: MirLevel,
     /// Usually we skip the provided methods that aren't used. When this flag is on, we translate
     /// them all.
     pub translate_all_methods: bool,
-    /// Whether to hide the `Sized`, `Sync`, `Send` and `Unpin` marker traits anywhere they show
-    /// up.
+    /// If `Some(_)`, run the partial mutability monomorphization pass. The contained enum
+    /// indicates whether to partially monomorphize types.
+    pub monomorphize_mut: Option<MonomorphizeMut>,
+    /// Whether to hide various marker traits such as `Sized`, `Sync`, `Send` and `Destruct`
+    /// anywhere they show up.
     pub hide_marker_traits: bool,
+    /// Remove trait clauses attached to type declarations.
+    pub remove_adt_clauses: bool,
     /// Hide the `A` type parameter on standard library containers (`Box`, `Vec`, etc).
     pub hide_allocator: bool,
     /// Remove unused `Self: Trait` clauses on method declarations.
     pub remove_unused_self_clauses: bool,
-    /// Monomorphize functions as a post-processing pass.
-    pub monomorphize_as_pass: bool,
     /// Monomorphize code using hax's instantiation mechanism.
     pub monomorphize_with_hax: bool,
-    /// Transforms ArrayToSlice, Repeat, and RawPtr aggregates to builtin function calls.
-    pub no_ops_to_function_calls: bool,
-    /// Do not merge the chains of gotos.
-    pub no_merge_goto_chains: bool,
+    /// Transform array-to-slice unsizing, repeat expressions, and raw pointer construction into
+    /// builtin functions in ULLBC.
+    pub ops_to_function_calls: bool,
+    /// Transform array/slice indexing into builtin functions in ULLBC.
+    pub index_to_function_calls: bool,
     /// Print the llbc just after control-flow reconstruction.
     pub print_built_llbc: bool,
-    /// Don't special-case the translation of `Box<T>`
-    pub raw_boxes: bool,
+    /// Treat `Box<T>` as if it was a built-in type.
+    pub treat_box_as_builtin: bool,
+    /// Don't inline or evaluate constants.
+    pub raw_consts: bool,
+    /// Replace string literal constants with a constant u8 array that gets unsized,
+    /// expliciting the fact a string constant has a hidden reference.
+    pub unsized_strings: bool,
+    /// Replace "bound checks followed by UB-on-overflow operation" with the corresponding
+    /// panic-on-overflow operation. This loses unwinding information.
+    pub reconstruct_fallible_operations: bool,
+    /// Replace "if x { panic() }" with "assert(x)".
+    pub reconstruct_asserts: bool,
+    // Use `DeBruijnVar::Free` for the variables bound in item signatures.
+    pub unbind_item_vars: bool,
     /// List of patterns to assign a given opacity to. Same as the corresponding `TranslateOptions`
     /// field.
     pub item_opacities: Vec<(NamePattern, ItemOpacity)>,
     /// List of traits for which we transform associated types to type parameters.
-    pub remove_associated_types: Vec<NamePattern>,
+    pub lift_associated_types: Vec<NamePattern>,
+    /// Transform Drop to Call drop_in_place
+    pub desugar_drops: bool,
+    /// Add `Destruct` bounds to all generic params.
+    pub add_destruct_bounds: bool,
+    /// Translate drop glue for poly types, knowing that this may cause ICEs.
+    pub translate_poly_drop_glue: bool,
 }
 
 impl TranslateOptions {
@@ -444,13 +516,42 @@ impl TranslateOptions {
             }
         };
 
-        let mir_level = if options.mir_optimized {
-            MirLevel::Optimized
-        } else if options.mir_promoted {
-            MirLevel::Promoted
-        } else {
-            options.mir.unwrap_or_default()
-        };
+        let mut mir_level = options.mir.unwrap_or(MirLevel::Promoted);
+        if options.precise_drops {
+            mir_level = std::cmp::max(mir_level, MirLevel::Elaborated);
+        }
+
+        let mut start_from = options
+            .start_from
+            .iter()
+            .filter_map(|path| parse_pattern(&path).ok())
+            .map(|p| StartFrom::Pattern {
+                pattern: p,
+                strict: true,
+            })
+            .collect_vec();
+        start_from.extend(
+            options
+                .start_from_if_exists
+                .iter()
+                .filter_map(|path| parse_pattern(&path).ok())
+                .map(|p| StartFrom::Pattern {
+                    pattern: p,
+                    strict: false,
+                }),
+        );
+        if let Some(attr) = options.start_from_attribute.clone() {
+            start_from.push(StartFrom::Attribute(attr));
+        }
+        if options.start_from_pub {
+            start_from.push(StartFrom::Pub);
+        }
+        if start_from.is_empty() {
+            start_from.push(StartFrom::Pattern {
+                pattern: parse_pattern("crate").unwrap(),
+                strict: true,
+            });
+        }
 
         let item_opacities = {
             use ItemOpacity::*;
@@ -490,26 +591,36 @@ impl TranslateOptions {
                 .collect()
         };
 
-        let remove_associated_types = options
-            .remove_associated_types
+        let lift_associated_types = options
+            .lift_associated_types
             .iter()
             .filter_map(|s| parse_pattern(&s).ok())
             .collect();
 
         TranslateOptions {
+            start_from,
             mir_level,
+            monomorphize_mut: options.monomorphize_mut,
             hide_marker_traits: options.hide_marker_traits,
+            remove_adt_clauses: options.remove_adt_clauses,
             hide_allocator: options.hide_allocator,
             remove_unused_self_clauses: options.remove_unused_self_clauses,
-            monomorphize_as_pass: options.monomorphize_conservative,
             monomorphize_with_hax: options.monomorphize,
-            no_merge_goto_chains: options.no_merge_goto_chains,
-            no_ops_to_function_calls: options.no_ops_to_function_calls,
+            ops_to_function_calls: options.ops_to_function_calls,
+            index_to_function_calls: options.index_to_function_calls,
             print_built_llbc: options.print_built_llbc,
             item_opacities,
-            raw_boxes: options.raw_boxes,
-            remove_associated_types,
+            treat_box_as_builtin: options.treat_box_as_builtin,
+            raw_consts: options.raw_consts,
+            unsized_strings: options.unsized_strings,
+            reconstruct_fallible_operations: options.reconstruct_fallible_operations,
+            reconstruct_asserts: options.reconstruct_asserts,
+            lift_associated_types,
+            unbind_item_vars: options.unbind_item_vars,
             translate_all_methods: options.translate_all_methods,
+            desugar_drops: options.desugar_drops,
+            add_destruct_bounds: options.precise_drops,
+            translate_poly_drop_glue: options.precise_drops,
         }
     }
 

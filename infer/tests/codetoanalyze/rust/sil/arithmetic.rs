@@ -20,7 +20,7 @@ fn main() {
     let _ = c - d;
     let _ = c * d;
 
-    let z: u128 = 1;
+    let z: u128 = 10;
     let w: u128 = 2;
 
     let _ = z + w;

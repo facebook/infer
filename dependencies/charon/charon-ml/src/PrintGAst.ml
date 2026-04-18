@@ -3,11 +3,12 @@
 open Types
 open TypesUtils
 open GAst
+open GAstUtils
 open PrintUtils
 open PrintTypes
 open PrintExpressions
 
-let any_decl_id_to_string (id : any_decl_id) : string =
+let item_id_to_string (id : item_id) : string =
   match id with
   | IdFun id -> FunDeclId.to_string id
   | IdGlobal id -> GlobalDeclId.to_string id
@@ -18,7 +19,7 @@ let any_decl_id_to_string (id : any_decl_id) : string =
 let fn_operand_to_string (env : 'a fmt_env) (op : fn_operand) : string =
   match op with
   | FnOpRegular func -> fn_ptr_to_string env func
-  | FnOpMove p -> "move " ^ place_to_string env p
+  | FnOpDynamic op -> "(" ^ operand_to_string env op ^ ")"
 
 let call_to_string (env : 'a fmt_env) (indent : string) (call : call) : string =
   let func = fn_operand_to_string env call.func in
@@ -27,16 +28,23 @@ let call_to_string (env : 'a fmt_env) (indent : string) (call : call) : string =
   let dest = place_to_string env call.dest in
   indent ^ dest ^ " := move " ^ func ^ args
 
-let assertion_to_string (env : 'a fmt_env) (indent : string) (a : assertion) :
-    string =
+let assertion_to_string (env : 'a fmt_env) (a : assertion) : string =
   let cond = operand_to_string env a.cond in
-  if a.expected then indent ^ "assert(" ^ cond ^ ")"
-  else indent ^ "assert(¬" ^ cond ^ ")"
+  if a.expected then "assert(" ^ cond ^ ")" else "assert(¬" ^ cond ^ ")"
+
+let abort_kind_to_string (env : 'a fmt_env) (a : abort_kind) : string =
+  match a with
+  | Panic None -> "panic"
+  | Panic (Some name) -> "panic(" ^ name_to_string env name ^ ")"
+  | UndefinedBehavior -> "undefined_behavior"
+  | UnwindTerminate -> "unwind_terminate"
 
 (** Small helper *)
 let fun_sig_with_name_to_string (env : 'a fmt_env) (indent : string)
     (indent_incr : string) (attribute : string option) (name : string option)
-    (args : local list option) (sg : fun_sig) : string =
+    (args : local list option) (sg : bound_fun_sig) : string =
+  let { item_binder_params = generics; item_binder_value = sg; _ } = sg in
+  let env = fmt_env_replace_generics_and_preds env generics in
   let ty_to_string = ty_to_string env in
 
   (* Unsafe keyword *)
@@ -44,7 +52,7 @@ let fun_sig_with_name_to_string (env : 'a fmt_env) (indent : string)
 
   (* Generics and predicates *)
   let params, clauses =
-    predicates_and_trait_clauses_to_string env indent indent_incr sg.generics
+    predicates_and_trait_clauses_to_string env indent indent_incr generics
   in
   let params =
     if params = [] then "" else "<" ^ String.concat ", " params ^ ">"
@@ -85,7 +93,7 @@ let fun_sig_with_name_to_string (env : 'a fmt_env) (indent : string)
   ^ clauses
 
 let fun_sig_to_string (env : 'a fmt_env) (indent : string)
-    (indent_incr : string) (sg : fun_sig) : string =
+    (indent_incr : string) (sg : fun_sig item_binder) : string =
   fun_sig_with_name_to_string env indent indent_incr None None None sg
 
 let gfun_decl_to_string (env : 'a fmt_env) (indent : string)
@@ -93,7 +101,7 @@ let gfun_decl_to_string (env : 'a fmt_env) (indent : string)
     (body_to_string : 'a fmt_env -> string -> string -> 'body -> string)
     (def : 'body gfun_decl) : string =
   (* Locally update the environment *)
-  let env = fmt_env_update_generics_and_preds env def.signature.generics in
+  let env = fmt_env_replace_generics_and_preds env def.generics in
 
   let sg = def.signature in
 
@@ -102,6 +110,7 @@ let gfun_decl_to_string (env : 'a fmt_env) (indent : string)
 
   (* We print the declaration differently if it is opaque (no body) or transparent
    * (we have access to a body) *)
+  let sg = bound_fun_sig_of_decl def in
   match def.body with
   | None ->
       fun_sig_with_name_to_string env indent indent_incr (Some "opaque")
@@ -119,7 +128,7 @@ let gfun_decl_to_string (env : 'a fmt_env) (indent : string)
         List.map
           (fun var ->
             indent ^ indent_incr ^ local_to_string var ^ " : "
-            ^ ty_to_string env var.var_ty
+            ^ ty_to_string env var.local_ty
             ^ ";")
           body.locals.locals
       in
@@ -138,7 +147,7 @@ let gfun_decl_to_string (env : 'a fmt_env) (indent : string)
 let trait_decl_to_string (env : 'a fmt_env) (indent : string)
     (indent_incr : string) (def : trait_decl) : string =
   (* Locally update the environment *)
-  let env = fmt_env_update_generics_and_preds env def.generics in
+  let env = fmt_env_replace_generics_and_preds env def.generics in
 
   let ty_to_string = ty_to_string env in
 
@@ -162,25 +171,38 @@ let trait_decl_to_string (env : 'a fmt_env) (indent : string)
           indent1 ^ "parent_clause_"
           ^ TraitClauseId.to_string clause.clause_id
           ^ " : "
-          ^ trait_clause_to_string env clause
+          ^ trait_param_to_string env clause
           ^ "\n")
-        def.parent_clauses
+        def.implied_clauses
     in
     let consts =
       List.map
-        (fun (name, ty) ->
-          let ty = ty_to_string ty in
-          indent1 ^ "const " ^ name ^ " : " ^ ty ^ "\n")
+        (fun c ->
+          let ty = ty_to_string c.ty in
+          indent1 ^ "const " ^ c.name ^ " : " ^ ty ^ "\n")
         def.consts
     in
     let types =
-      List.map (fun name -> indent1 ^ "type " ^ name ^ "\n") def.types
+      List.map
+        (fun (bound_ty : trait_assoc_ty binder) ->
+          let env =
+            fmt_env_push_generics_and_preds env bound_ty.binder_params
+          in
+          (* TODO: print clauses too *)
+          let params, _clauses =
+            predicates_and_trait_clauses_to_string env "" "  " def.generics
+          in
+          let params =
+            if params <> [] then "<" ^ String.concat ", " params ^ ">" else ""
+          in
+          indent1 ^ "type " ^ bound_ty.binder_value.name ^ params ^ "\n")
+        def.types
     in
     let methods =
       List.map
-        (fun ((name, f) : _ * fun_decl_ref binder) ->
-          indent1 ^ "fn " ^ name ^ " : "
-          ^ fun_decl_id_to_string env f.binder_value.id
+        (fun (m : trait_method binder) ->
+          indent1 ^ "fn " ^ m.binder_value.name ^ " : "
+          ^ fun_decl_id_to_string env m.binder_value.item.id
           ^ "\n")
         def.methods
     in
@@ -193,9 +215,7 @@ let trait_decl_to_string (env : 'a fmt_env) (indent : string)
 let trait_impl_to_string (env : 'a fmt_env) (indent : string)
     (indent_incr : string) (def : trait_impl) : string =
   (* Locally update the environment *)
-  let env = fmt_env_update_generics_and_preds env def.generics in
-
-  let ty_to_string = ty_to_string env in
+  let env = fmt_env_replace_generics_and_preds env def.generics in
 
   (* Name *)
   let name = name_to_string env def.item_meta.name in
@@ -218,7 +238,7 @@ let trait_impl_to_string (env : 'a fmt_env) (indent : string)
           indent1 ^ "parent_clause" ^ string_of_int i ^ " = "
           ^ trait_ref_to_string env trait_ref
           ^ "\n")
-        def.parent_trait_refs
+        def.implied_trait_refs
     in
     let consts =
       List.map
@@ -229,8 +249,19 @@ let trait_impl_to_string (env : 'a fmt_env) (indent : string)
     in
     let types =
       List.map
-        (fun (name, ty) ->
-          indent1 ^ "type " ^ name ^ " = " ^ ty_to_string ty ^ "\n")
+        (fun (name, bound_ty) ->
+          let env =
+            fmt_env_push_generics_and_preds env bound_ty.binder_params
+          in
+          let params, _clauses =
+            predicates_and_trait_clauses_to_string env "" "  " def.generics
+          in
+          let params =
+            if params <> [] then "<" ^ String.concat ", " params ^ ">" else ""
+          in
+          indent1 ^ "type " ^ name ^ params ^ " = "
+          ^ ty_to_string env bound_ty.binder_value.value
+          ^ "\n")
         def.types
     in
     let env_method ((name, f) : _ * fun_decl_ref binder) =

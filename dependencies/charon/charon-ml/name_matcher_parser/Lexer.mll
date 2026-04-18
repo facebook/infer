@@ -18,6 +18,7 @@ rule token = parse
   | ''' { REGION (index lexbuf) }
   | "true" { TRUE }
   | "false" { FALSE }
+  | "_" { WILDCARD }
   | ident { IDENT (Lexing.lexeme lexbuf) }
   | digit { INT (Z.of_string (Lexing.lexeme lexbuf)) }
   | '(' { LEFT_BRACKET }

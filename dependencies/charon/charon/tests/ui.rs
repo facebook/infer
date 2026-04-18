@@ -9,6 +9,7 @@ use assert_cmd::prelude::{CommandCargoExt, OutputAssertExt};
 use indoc::indoc as unindent;
 use itertools::Itertools;
 use libtest_mimic::Trial;
+use regex::Regex;
 use snapbox::filter::Filter as _;
 use std::{
     error::Error,
@@ -16,11 +17,11 @@ use std::{
     fs::read_to_string,
     path::{Path, PathBuf},
     process::Command,
+    sync::LazyLock,
 };
 use walkdir::{DirEntry, WalkDir};
 
-use util::{Action, compare_or_overwrite};
-
+use util::compare_or_overwrite;
 mod util;
 
 static TESTS_DIR: &str = "tests/ui";
@@ -127,7 +128,7 @@ struct Case {
     magic_comments: MagicComments,
 }
 
-fn setup_test(input_path: PathBuf, action: Action) -> anyhow::Result<Trial> {
+fn setup_test(input_path: PathBuf) -> anyhow::Result<Trial> {
     let name = input_path
         .to_str()
         .unwrap()
@@ -144,10 +145,8 @@ fn setup_test(input_path: PathBuf, action: Action) -> anyhow::Result<Trial> {
         expected,
         magic_comments,
     };
-    let trial = Trial::test(name, move || {
-        perform_test(&case, action).map_err(|err| err.into())
-    })
-    .with_ignored_flag(ignore);
+    let trial = Trial::test(name, move || perform_test(&case).map_err(|err| err.into()))
+        .with_ignored_flag(ignore);
     Ok(trial)
 }
 
@@ -160,7 +159,7 @@ fn path_to_crate_name(path: &Path) -> Option<String> {
     )
 }
 
-fn perform_test(test_case: &Case, action: Action) -> anyhow::Result<()> {
+fn perform_test(test_case: &Case) -> anyhow::Result<()> {
     // Dependencies
     // Vec of (crate name, path to crate.rs, path to libcrate.rlib).
     let deps: Vec<(String, PathBuf, String)> = test_case
@@ -179,6 +178,7 @@ fn perform_test(test_case: &Case, action: Action) -> anyhow::Result<()> {
     for (crate_name, rs_path, rlib_path) in deps.iter() {
         Command::new("rustc")
             .arg("--crate-type=rlib")
+            .arg("-Zalways-encode-mir")
             .arg(format!("--crate-name={crate_name}"))
             .arg("-o")
             .arg(rlib_path)
@@ -231,7 +231,12 @@ fn perform_test(test_case: &Case, action: Action) -> anyhow::Result<()> {
     let stderr = String::from_utf8(output.stderr.clone())?;
     let stdout = String::from_utf8(output.stdout.clone())?;
 
-    let test_output = match test_case.magic_comments.test_kind {
+    // Hide thread id from the output.
+    static RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r"thread '(\w+)' \(\d+\) (panicked|has overflowed)").unwrap());
+    let stderr = RE.replace_all(&stderr, "thread '$1' $2");
+
+    let test_output: &str = match test_case.magic_comments.test_kind {
         TestKind::KnownPanic => {
             if output.status.code() != Some(101) {
                 let status = if output.status.success() {
@@ -243,7 +248,7 @@ fn perform_test(test_case: &Case, action: Action) -> anyhow::Result<()> {
                     "Command: `{cmd_str}`\nCompilation was expected to panic but instead {status}:\n{stderr}"
                 );
             }
-            stderr
+            &stderr
         }
         TestKind::KnownFailure => {
             if output.status.success() || output.status.code() == Some(101) {
@@ -256,7 +261,7 @@ fn perform_test(test_case: &Case, action: Action) -> anyhow::Result<()> {
                     "Command: `{cmd_str}`\nCompilation was expected to fail but instead {status}:\n{stderr}"
                 );
             }
-            stderr
+            &stderr
         }
         TestKind::PrettyLlbc => {
             if !output.status.success() {
@@ -268,13 +273,13 @@ fn perform_test(test_case: &Case, action: Action) -> anyhow::Result<()> {
                 }
                 bail!("Command: `{cmd_str}`\nCompilation failed:\n{stderr}")
             }
-            stdout
+            &stdout
         }
-        TestKind::IgnoreWarnings => stdout,
+        TestKind::IgnoreWarnings => &stdout,
         TestKind::Skip => unreachable!(),
     };
     if test_case.magic_comments.check_output {
-        compare_or_overwrite(action, test_output, &test_case.expected)?;
+        compare_or_overwrite(test_output, &test_case.expected)?;
     } else {
         // Remove the `out` file if there's one from a previous run.
         if test_case.expected.exists() {
@@ -286,12 +291,6 @@ fn perform_test(test_case: &Case, action: Action) -> anyhow::Result<()> {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let action = if std::env::var("IN_CI").as_deref() == Ok("1") {
-        Action::Verify
-    } else {
-        Action::Overwrite
-    };
-
     let root: PathBuf = TESTS_DIR.into();
     let file_filter = |e: &DirEntry| e.file_name().to_str().is_some_and(|s| s.ends_with(".rs"));
     let tests: Vec<_> = WalkDir::new(root)
@@ -303,7 +302,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         })
         .map(|entry| {
             let entry = entry?;
-            let test = setup_test(entry.into_path(), action)?;
+            let test = setup_test(entry.into_path())?;
             anyhow::Result::Ok(test)
         })
         .collect::<anyhow::Result<_>>()?;

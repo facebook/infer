@@ -1,17 +1,17 @@
 //! The translation contexts.
 use super::translate_crate::RustcItem;
 pub use super::translate_crate::{TraitImplSource, TransItemSource, TransItemSourceKind};
-use super::translate_generics::BindingLevel;
+use super::translate_generics::{BindingLevel, LifetimeMutabilityComputer};
 use charon_lib::ast::*;
 use charon_lib::formatter::{FmtCtx, IntoFormatter};
-use charon_lib::ids::Vector;
 use charon_lib::options::TranslateOptions;
-use hax_frontend_exporter::{self as hax, SInto};
+use hax::SInto;
 use rustc_middle::ty::TyCtxt;
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
+use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::{fmt, mem};
@@ -35,26 +35,61 @@ pub struct TranslateCtx<'tcx> {
     /// The translated data.
     pub translated: TranslatedCrate,
 
+    /// Record data for each method whether it is ever used (called or implemented) and the
+    /// `FunDeclId`s of the implementations. We use this to lazily translate methods, so that we
+    /// skip unused default methods of large traits like `Iterator`.
+    ///
+    /// The complete scheme works as follows: by default we enqueue no methods for translation.
+    /// When we find a use of a method, we mark it "used" using `mark_method_as_used`. This
+    /// enqueues all known and future impls of this method. We also mark a method as used if we
+    /// find an implementation of it in a non-opaque impl, and if the method is a required method.
+    pub method_status: IndexMap<TraitDeclId, HashMap<TraitItemName, MethodStatus>>,
+
     /// The map from rustc id to translated id.
-    pub id_map: HashMap<TransItemSource, AnyTransId>,
+    pub id_map: HashMap<TransItemSource, ItemId>,
     /// The reverse map of ids.
-    pub reverse_id_map: HashMap<AnyTransId, TransItemSource>,
+    pub reverse_id_map: HashMap<ItemId, TransItemSource>,
     /// The reverse filename map.
     pub file_to_id: HashMap<FileName, FileId>,
 
     /// Context for tracking and reporting errors.
     pub errors: RefCell<ErrorCtx>,
-    /// The declarations we came accross and which we haven't translated yet. We keep them sorted
-    /// to make the output order a bit more stable.
-    pub items_to_translate: BTreeSet<TransItemSource>,
+    /// The declarations we came accross and which we haven't translated yet.
+    pub items_to_translate: VecDeque<TransItemSource>,
     /// The declaration we've already processed (successfully or not).
     pub processed: HashSet<TransItemSource>,
     /// Stack of the translations currently happening. Used to avoid accidental cycles.
-    pub translate_stack: Vec<AnyTransId>,
+    pub translate_stack: Vec<ItemId>,
     /// Cache the names to compute them only once each.
     pub cached_names: HashMap<RustcItem, Name>,
     /// Cache the `ItemMeta`s to compute them only once each.
     pub cached_item_metas: HashMap<TransItemSource, ItemMeta>,
+    /// Compute which lifetimes are used in a `&'a mut T`. This is a global fixpoint analysis.
+    pub lt_mutability_computer: LifetimeMutabilityComputer,
+    /// Cache translated dyn trait preshims by generic and associated arguments.
+    /// This is used to fetch the unique preshim
+    /// when invoking dyn trait methods (see transform_dyn_trait_calls.rs).
+    pub translated_preshims: HashSet<(TraitDeclId, Vec<Ty>)>,
+}
+
+/// Tracks whether a method is used (i.e. called or (non-opaquely) implemented).
+#[derive(Debug)]
+pub enum MethodStatus {
+    Unused {
+        /// The `FunDeclId`s of the method implementations. Because the method is unused, these
+        /// items are not enqueued for translation yet. When marking the method as used we'll
+        /// enqueue them.
+        implementors: HashSet<FunDeclId>,
+    },
+    Used,
+}
+
+impl Default for MethodStatus {
+    fn default() -> Self {
+        Self::Unused {
+            implementors: Default::default(),
+        }
+    }
 }
 
 /// A translation context for items.
@@ -63,9 +98,11 @@ pub(crate) struct ItemTransCtx<'tcx, 'ctx> {
     /// The definition we are currently extracting.
     pub item_src: TransItemSource,
     /// The id of the definition we are currently extracting, if there is one.
-    pub item_id: Option<AnyTransId>,
+    pub item_id: Option<ItemId>,
     /// The translation context containing the top-level definitions/ids.
     pub t_ctx: &'ctx mut TranslateCtx<'tcx>,
+    /// The Hax context with the current `DefId`.
+    pub hax_state: hax::StateWithOwner<'tcx>,
     /// Whether to consider a `ImplExprAtom::Error` as an error for us. True except inside type
     /// aliases, because rust does not enforce correct trait bounds on type aliases.
     pub error_on_impl_expr_error: bool,
@@ -74,10 +111,8 @@ pub(crate) struct ItemTransCtx<'tcx, 'ctx> {
     /// entry in this stack, with the entry as index `0` being the innermost binder. These
     /// parameters are referenced using [`DeBruijnVar`]; see there for details.
     pub binding_levels: BindingStack<BindingLevel>,
-    /// (For traits only) accumulated implied trait clauses.
-    pub parent_trait_clauses: Vector<TraitClauseId, TraitClause>,
-    /// (For traits only) accumulated trait clauses on associated types.
-    pub item_trait_clauses: HashMap<TraitItemName, Vector<TraitClauseId, TraitClause>>,
+    /// When `Some`, translate any erased lifetime to a fresh `Region::Body` lifetime.
+    pub lifetime_freshener: Option<IndexMap<RegionId, ()>>,
 }
 
 /// Translates `T` into `U` using `hax`'s `SInto` trait, catching any hax panics.
@@ -133,7 +168,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         let def_id = item.def_id();
         let span = self.def_span(def_id);
         if let RustcItem::Mono(item_ref) = item
-            && item_ref.has_param
+            && item_ref.has_non_lt_param
         {
             raise_error!(self, span, "Item is not monomorphic: {item:?}")
         }
@@ -142,6 +177,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         std::panic::catch_unwind(move || match item {
             RustcItem::Poly(def_id) => def_id.full_def(*unwind_safe_s),
             RustcItem::Mono(item_ref) => item_ref.instantiated_full_def(*unwind_safe_s),
+            RustcItem::MonoTrait(def_id) => def_id.full_def(*unwind_safe_s),
         })
         .or_else(|_| raise_error!(self, span, "Hax panicked when translating `{def_id:?}`."))
     }
@@ -149,7 +185,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
     pub(crate) fn with_def_id<F, T>(
         &mut self,
         def_id: &hax::DefId,
-        item_id: Option<AnyTransId>,
+        item_id: Option<ItemId>,
         f: F,
     ) -> T
     where
@@ -157,7 +193,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
     {
         let mut errors = self.errors.borrow_mut();
         let current_def_id = mem::replace(&mut errors.def_id, item_id);
-        let current_def_id_is_local = mem::replace(&mut errors.def_id_is_local, def_id.is_local);
+        let current_def_id_is_local = mem::replace(&mut errors.def_id_is_local, def_id.is_local());
         drop(errors); // important: release the refcell "lock"
         let ret = f(self);
         let mut errors = self.errors.borrow_mut();
@@ -171,23 +207,28 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
     /// Create a new `ExecContext`.
     pub(crate) fn new(
         item_src: TransItemSource,
-        item_id: Option<AnyTransId>,
+        item_id: Option<ItemId>,
         t_ctx: &'ctx mut TranslateCtx<'tcx>,
     ) -> Self {
+        use hax::BaseState;
+        let hax_state_with_id = t_ctx.hax_state.clone().with_hax_owner(&item_src.def_id());
         ItemTransCtx {
             item_src,
             item_id,
             t_ctx,
+            hax_state: hax_state_with_id,
             error_on_impl_expr_error: true,
             binding_levels: Default::default(),
-            parent_trait_clauses: Default::default(),
-            item_trait_clauses: Default::default(),
+            lifetime_freshener: None,
         }
     }
 
     /// Whether to monomorphize items we encounter.
     pub fn monomorphize(&self) -> bool {
-        matches!(self.item_src.item, RustcItem::Mono(..))
+        matches!(
+            self.item_src.item,
+            RustcItem::Mono(..) | RustcItem::MonoTrait(..)
+        )
     }
 
     pub fn span_err(&self, span: Span, msg: &str, level: Level) -> Error {
@@ -198,16 +239,25 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
         &self.t_ctx.hax_state
     }
 
-    pub fn hax_state_with_id(&self) -> hax::StateWithOwner<'tcx> {
-        use hax::BaseState;
-        let def_id = self.item_src.def_id().underlying_rust_def_id();
-        self.t_ctx.hax_state.clone().with_owner_id(def_id)
+    pub fn hax_state_with_id(&self) -> &hax::StateWithOwner<'tcx> {
+        &self.hax_state
+    }
+
+    pub fn catch_sinto<T, U>(&mut self, span: Span, x: &T) -> Result<U, Error>
+    where
+        T: Debug + SInto<hax::StateWithOwner<'tcx>, U>,
+    {
+        self.t_ctx.catch_sinto(&self.hax_state, span, x)
     }
 
     /// Return the definition for this item. This uses the polymorphic or monomorphic definition
-    /// depending on user choice.
+    /// depending on user choice. For `TraitDecl` or `VTable`, we always use polymorphic definitions.
     pub fn hax_def(&mut self, item: &hax::ItemRef) -> Result<Arc<hax::FullDef>, Error> {
-        let item = if self.monomorphize() {
+        let item = if self.monomorphize()
+            && !matches!(
+                self.item_src.kind,
+                TransItemSourceKind::TraitDecl | TransItemSourceKind::VTable
+            ) {
             RustcItem::Mono(item.clone())
         } else {
             RustcItem::Poly(item.def_id.clone())
@@ -217,6 +267,18 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
 
     pub(crate) fn poly_hax_def(&mut self, def_id: &hax::DefId) -> Result<Arc<hax::FullDef>, Error> {
         self.t_ctx.poly_hax_def(def_id)
+    }
+}
+
+impl<'tcx> Deref for ItemTransCtx<'tcx, '_> {
+    type Target = TranslateCtx<'tcx>;
+    fn deref(&self) -> &Self::Target {
+        self.t_ctx
+    }
+}
+impl<'tcx> DerefMut for ItemTransCtx<'tcx, '_> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.t_ctx
     }
 }
 

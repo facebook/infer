@@ -1,11 +1,13 @@
 //! Machinery to resolve a string path into a `DefId`. Based on `clippy_utils::def_path_res`.
 use std::sync::Arc;
 
-use hax_frontend_exporter::{self as hax, BaseState, SInto};
+use anyhow::bail;
+use charon_lib::name_matcher::NamePattern;
+use hax::{BaseState, SInto};
 use itertools::Itertools;
 use rustc_ast::Mutability;
 use rustc_hir::def_id::{CrateNum, DefId, LOCAL_CRATE};
-use rustc_middle::ty::{FloatTy, IntTy, TyCtxt, UintTy, fast_reject::SimplifiedType};
+use rustc_middle::ty::{self, FloatTy, IntTy, TyCtxt, UintTy, fast_reject::SimplifiedType};
 use rustc_span::symbol::Symbol;
 
 fn find_primitive_impls<'tcx>(
@@ -44,7 +46,7 @@ fn find_primitive_impls<'tcx>(
     tcx.incoherent_impls(ty).iter().copied()
 }
 
-/// Resolves a def path like `std::vec::Vec`.
+/// Find the items corresponding to a given pattern. This mostly ignores generics.
 ///
 /// Can return multiple resolutions when there are multiple versions of the same crate, e.g.
 /// `memchr::memchr` could return the functions from both memchr 1.0 and memchr 2.0.
@@ -58,41 +60,121 @@ fn find_primitive_impls<'tcx>(
 /// correspond to an item.
 pub fn def_path_def_ids<'a, 'tcx>(
     s: &impl BaseState<'tcx>,
-    path: &'a [&'a str],
-) -> Result<Vec<DefId>, &'a [&'a str]> {
+    pat: &'a NamePattern,
+    strict: bool,
+) -> anyhow::Result<Vec<DefId>> {
+    use charon_lib::name_matcher::{PatElem, PatTy};
     let tcx = s.base().tcx;
-    let mut items = vec![];
-    for (i, &segment_str) in path.iter().enumerate() {
+    let mut items: Vec<DefId> = vec![];
+    for (i, elem) in pat.elems.iter().enumerate() {
         if i == 0 {
-            let segment = Symbol::intern(segment_str);
-            items = tcx
-                .crates(())
-                .iter()
-                .copied()
-                .chain([LOCAL_CRATE])
-                .filter(move |&num| tcx.crate_name(num) == segment)
-                // Also consider "crate" a valid name for the local crate.
-                .chain(if segment_str == "crate" {
-                    Some(LOCAL_CRATE)
-                } else {
-                    None
-                })
-                .map(CrateNum::as_def_id)
-                .collect_vec();
-            items.extend(find_primitive_impls(tcx, segment_str));
+            match elem {
+                PatElem::Ident { name: elem, .. } => {
+                    let segment = Symbol::intern(elem);
+                    items = tcx
+                        .crates(())
+                        .iter()
+                        .copied()
+                        .chain([LOCAL_CRATE])
+                        // Also consider "crate" to be a valid name for the local crate.
+                        .filter(move |&num| {
+                            tcx.crate_name(num) == segment
+                                || (num == LOCAL_CRATE && elem == "crate")
+                        })
+                        .map(CrateNum::as_def_id)
+                        .collect_vec();
+                    items.extend(find_primitive_impls(tcx, elem));
+                }
+                PatElem::Glob => {
+                    items = tcx
+                        .crates(())
+                        .iter()
+                        .copied()
+                        .chain([LOCAL_CRATE])
+                        .map(CrateNum::as_def_id)
+                        .collect_vec();
+                }
+                PatElem::Impl(impl_pat) => match impl_pat.elems.as_slice() {
+                    [
+                        ..,
+                        PatElem::Ident {
+                            generics,
+                            is_trait: true,
+                            ..
+                        },
+                    ] => match generics.as_slice() {
+                        [] => bail!("malformed trait impl pattern"),
+                        [PatTy::Pat(self_pat)] => {
+                            let impls = def_path_def_ids(s, impl_pat, strict)?
+                                .into_iter()
+                                .flat_map(|trait_def_id| tcx.all_impls(trait_def_id));
+                            match self_pat.elems.as_slice() {
+                                [PatElem::Glob] => {
+                                    items = impls.collect_vec();
+                                }
+                                _ => {
+                                    let self_ty_def_ids = def_path_def_ids(s, self_pat, strict)?;
+                                    items = impls
+                                        .filter(|impl_def_id| {
+                                            let impl_self_ty = tcx
+                                                .impl_trait_ref(impl_def_id)
+                                                .skip_binder()
+                                                .self_ty();
+                                            if let ty::Adt(adt_def, _) = impl_self_ty.kind() {
+                                                self_ty_def_ids.contains(&adt_def.did())
+                                            } else {
+                                                false
+                                            }
+                                        })
+                                        .collect_vec();
+                                }
+                            }
+                        }
+                        [_] => bail!("`--start-from` only supports implementations on named types"),
+                        [_, _, ..] => bail!("`--start-from` does not support trait generics"),
+                    },
+                    [
+                        ..,
+                        PatElem::Ident {
+                            is_trait: false, ..
+                        },
+                    ] => bail!("`--start-from` does not support inherent impls"),
+                    _ => bail!("`--start-from` does not support this impl pattern"),
+                },
+            }
         } else {
-            items = items
-                .into_iter()
-                .flat_map(|def_id| {
-                    let hax_def: Arc<hax::FullDef> = def_id.sinto(s).full_def(s);
-                    hax_def.nameable_children(s)
-                })
-                .filter(|(child_name, _)| *child_name == segment_str)
-                .filter_map(|(_, def_id)| def_id.as_rust_def_id())
-                .collect();
+            let nameable_children = items.iter().copied().flat_map(|def_id| {
+                let hax_def: Arc<hax::FullDef> = def_id.sinto(s).full_def(s);
+                hax_def.nameable_children(s)
+            });
+            match elem {
+                PatElem::Ident { name: elem, .. } => {
+                    items = nameable_children
+                        .filter(|(child_name, _)| child_name.as_str() == elem)
+                        .filter_map(|(_, def_id)| def_id.as_rust_def_id())
+                        .collect();
+                }
+                PatElem::Glob => {
+                    items = nameable_children
+                        .filter_map(|(_, def_id)| def_id.as_rust_def_id())
+                        .collect();
+                }
+                PatElem::Impl(_) => bail!(
+                    "`--start-from` only supports impl patterns if they're the first element of the path"
+                ),
+            }
         }
-        if items.is_empty() {
-            return Err(&path[..=i]);
+        if strict && items.is_empty() {
+            let prefix = NamePattern {
+                elems: pat.elems[..=i].to_vec(),
+            };
+            if i == 0 {
+                bail!(
+                    "path `{prefix}` does not correspond to any item; did you mean `crate::{prefix}`?"
+                )
+            } else {
+                bail!("path `{prefix}` does not correspond to any item")
+            }
         }
     }
     Ok(items)
