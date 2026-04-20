@@ -14,6 +14,7 @@ module ProcState = Llair2TextualState.ProcState
 module State = Llair2TextualState
 module Globals = Llair2TextualGlobals
 module Var = Llair2TextualVar
+module Proc = Llair2TextualProc
 module IdentMap = Textual.Ident.Map
 
 (* --- Dependency Injection Types --- *)
@@ -42,6 +43,8 @@ let swift_get_dynamic_type = SwiftProcname.to_string (SwiftProcname.Builtin Swif
 let swift_metadata_equals = SwiftProcname.to_string (SwiftProcname.Builtin MetadataEquals)
 
 let swift_instantiateConcreteTypeFromMangledName = "__swift_instantiateConcreteTypeFromMangledName"
+
+let objc_msgSend = SwiftProcname.to_string (SwiftProcname.Builtin ObjcMsgSend)
 
 let functions_to_skip =
   List.map ~f:Textual.ProcName.of_string
@@ -289,7 +292,7 @@ let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
           receiver @ actual_params
       in
       Textual.Exp.Call {proc= qname; args= final_args; kind= Virtual}
-  | None ->
+  | None -> (
       (* CASE: Fallback for ObjC Land (External/SDK/Captured SIL) *)
 
       (* 4. Determine if this is a Class Method via our syntactic tracker *)
@@ -305,10 +308,10 @@ let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
             method_name
       in
       (* 6. Resolve the Enclosing Class from our syntactic name map *)
-      let enclosing_class =
+      let enclosing_class_opt =
         match receiver_id_opt |> Option.bind ~f:(ProcState.get_objc_class_name ~proc_state) with
         | Some name ->
-            Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string name)
+            Some (Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string name))
         | None -> (
             (* 1. Check our IdentMap first (unwrap annotated to simple Textual.Typ.t) *)
             let manual_type_lookup =
@@ -333,33 +336,45 @@ let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
                 in
                 (* Clean the name: e.g., "LegacyHardware.Type" -> "LegacyHardware" *)
                 let clean_name = String.split name_str ~on:'.' |> List.hd_exn in
-                Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string clean_name)
+                Some (Textual.QualifiedProcName.Enclosing (Textual.TypeName.of_string clean_name))
             | _ ->
-                Textual.QualifiedProcName.TopLevel )
+                (* Type is erased or unknown *)
+                None )
       in
-      (* 7. Set the Method Kind for the Procname (+ vs -) *)
-      let method_kind =
-        if is_class_method then Textual.QualifiedProcName.ClassMethod
-        else Textual.QualifiedProcName.InstanceMethod
-      in
-      let metadata =
-        Some
-          { Textual.QualifiedProcName.lang= Some Textual.Lang.ObjectiveC
-          ; method_kind= Some method_kind }
-      in
-      let qname =
-        Textual.QualifiedProcName.
-          {name= Textual.ProcName.of_string final_method_name; enclosing_class; metadata}
-      in
-      (* 8. Adjust Call Kind: Class methods are NonVirtual (static-like) *)
-      let call_kind = if is_class_method then Textual.Exp.NonVirtual else Textual.Exp.Virtual in
-      (* 9. Adjust Arguments: Drop the receiver for ObjC Class Methods (+) *)
-      let final_args =
-        if is_class_method then actual_params
-          (* Match Clang convention: no 'self' for class methods *)
-        else receiver @ actual_params
-      in
-      Textual.Exp.Call {proc= qname; args= final_args; kind= call_kind}
+      match enclosing_class_opt with
+      | Some enclosing_class ->
+          (* 7. Set the Method Kind for the Procname (+ vs -) *)
+          let method_kind =
+            if is_class_method then Textual.QualifiedProcName.ClassMethod
+            else Textual.QualifiedProcName.InstanceMethod
+          in
+          let metadata =
+            Some
+              { Textual.QualifiedProcName.lang= Some Textual.Lang.ObjectiveC
+              ; method_kind= Some method_kind }
+          in
+          let qname =
+            Textual.QualifiedProcName.
+              {name= Textual.ProcName.of_string final_method_name; enclosing_class; metadata}
+          in
+          (* 8. Adjust Call Kind: Class methods are NonVirtual (static-like) *)
+          let call_kind = if is_class_method then Textual.Exp.NonVirtual else Textual.Exp.Virtual in
+          (* 9. Adjust Arguments: Drop the receiver for ObjC Class Methods (+) *)
+          let final_args =
+            if is_class_method then actual_params
+              (* Match Clang convention: no 'self' for class methods *)
+            else receiver @ actual_params
+          in
+          Textual.Exp.Call {proc= qname; args= final_args; kind= call_kind}
+      | None ->
+          (* Dynamic path: The type was erased (e.g. AnyObject / Phi node).
+             We emit a call to the builtin objc_msgSend so Pulse can resolve the
+             correct summary using the dynamic type attribute of the receiver. *)
+          let builtin_proc = Proc.builtin_qual_proc_name objc_msgSend in
+          let selector_const = Textual.Exp.Const (Textual.Const.Str final_method_name) in
+          (* Interface for builtin: [receiver, selector, ...params] *)
+          let final_args = receiver @ [selector_const] @ actual_params in
+          Textual.Exp.Call {proc= builtin_proc; args= final_args; kind= NonVirtual} )
 
 
 let resolve_objc_msgSend ~proc_state call_exp arg_types =

@@ -24,13 +24,7 @@ module Utils = Llair2TextualUtils
 
 type module_state = ModuleState.t
 
-let builtin_qual_proc_name =
-  let enclosing_class = Textual.(QualifiedProcName.Enclosing (TypeName.of_string "$builtins")) in
-  fun name : Textual.QualifiedProcName.t ->
-    {enclosing_class; name= Textual.ProcName.of_string name; metadata= None}
-
-
-let undef_proc_name = builtin_qual_proc_name "llvm_nondet"
+let undef_proc_name = Proc.builtin_qual_proc_name "llvm_nondet"
 
 let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~substring:"fU" s
 

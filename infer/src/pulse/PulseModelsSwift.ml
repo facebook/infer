@@ -101,6 +101,45 @@ let dynamic_call arg orig_args () : unit DSL.model_monad =
       closure_call (arg :: orig_args) ()
 
 
+let objc_msgSend receiver selector_arg actual_args () : unit DSL.model_monad =
+  let open DSL.Syntax in
+  (* Helper to build and call the resolved ObjC method *)
+  let dispatch_with_type class_name selector receiver args =
+    let method_args =
+      List.mapi ~f:(fun i arg -> (Format.sprintf "arg_%d" i, arg)) (receiver :: args)
+    in
+    (* Construct the ObjC Procname: -[class_name selector] *)
+    let proc_name =
+      Procname.ObjC_Cpp
+        (Procname.ObjC_Cpp.make class_name selector ObjCInstanceMethod NoTemplate [])
+    in
+    Logging.d_printfln "Dynamic ObjC dispatch: calling %a" Procname.pp proc_name ;
+    let* res = swift_call proc_name method_args in
+    assign_ret res
+  in
+  (* 1. Extract the selector string (e.g., "getBatteryStatus") *)
+  let* selector_opt = as_constant_string selector_arg in
+  match selector_opt with
+  | Some selector -> (
+      (* 2. Get the dynamic type of the receiver (stamped during init) *)
+      let* dynamic_type_data = get_dynamic_type ~ask_specialization:true receiver in
+      match dynamic_type_data with
+      | Some {Formula.typ= {desc= Tstruct name}} ->
+          dispatch_with_type name selector receiver actual_args
+      | _ -> (
+          (* 3. Fallback to static type if dynamic type is missing *)
+          let* static_type = get_static_type receiver in
+          match static_type with
+          | Some (Typ.SwiftClass _ as name) ->
+              dispatch_with_type name selector receiver actual_args
+          | _ ->
+              Logging.d_printfln "ObjC dispatch failed: no type for %a" DSL.pp_aval receiver ;
+              unknown actual_args () ) )
+  | None ->
+      Logging.d_printfln "ObjC dispatch failed: selector is not a constant string" ;
+      unknown actual_args ()
+
+
 let swift_dynamic_type arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* arg1_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg1 in
@@ -214,8 +253,10 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
       | _ ->
           unknown args )
   | ObjcMsgSend ->
-      (* TODO T251645387 *)
-      unknown args
+      let receiver, selector, actual_args =
+        ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s
+      in
+      objc_msgSend receiver selector actual_args
   | ObjcMsgSendSuper2 ->
       unknown args
   | Memcpy ->

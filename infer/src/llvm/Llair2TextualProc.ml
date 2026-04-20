@@ -18,3 +18,9 @@ let to_qualified_proc_name ?loc method_class_index func_name =
         Textual.QualifiedProcName.TopLevel
   in
   Textual.QualifiedProcName.{enclosing_class; name= proc_name; metadata= None}
+
+
+let builtin_qual_proc_name =
+  let enclosing_class = Textual.(QualifiedProcName.Enclosing (TypeName.of_string "$builtins")) in
+  fun name : Textual.QualifiedProcName.t ->
+    {enclosing_class; name= Textual.ProcName.of_string name; metadata= None}

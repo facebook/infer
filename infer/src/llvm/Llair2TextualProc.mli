@@ -12,3 +12,5 @@ val to_qualified_proc_name :
   -> Textual.TypeName.t Textual.ProcName.Hashtbl.t
   -> string
   -> Textual.QualifiedProcName.t
+
+val builtin_qual_proc_name : string -> Textual.QualifiedProcName.t
