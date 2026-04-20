@@ -831,7 +831,7 @@ def f(x):
         |}]
 
 
-    let%expect_test "FN loop equivalence: renamed loop variable" =
+    let%expect_test "loop equivalence: renamed loop variable" =
       let loop_text var_name =
         F.asprintf
           {|
@@ -876,9 +876,7 @@ def f(x):
       let proc2 = get_proc (loop_text "x") in
       let result = TextualPegDiff.check_equivalence proc1 proc2 in
       F.printf "equivalent: %b@." result ;
-      (* TODO: FN — theta nodes get unique placeholders per procedure, so the e-graph
-         cannot prove bisimulation between two structurally isomorphic cyclic terms. *)
-      [%expect {| equivalent: false |}]
+      [%expect {| equivalent: true |}]
 
 
     let%expect_test "python: for loop PEG structure" =
@@ -914,7 +912,7 @@ def f(l):
         |}]
 
 
-    let%expect_test "FN python: for loop renamed variable equivalence" =
+    let%expect_test "python: for loop renamed variable equivalence" =
       let source1 = {|
 def f(l):
     for i in l:
@@ -927,9 +925,6 @@ def f(l):
 |} in
       let result = check_python_equivalence ~show_textual:false source1 source2 ~proc_name:"f" in
       F.printf "equivalent: %b@." result ;
-      (* TODO: FN — theta nodes get unique placeholders per procedure (@theta:state:0 vs
-         @theta:state:1), so the e-graph cannot prove bisimulation between two
-         structurally isomorphic cyclic terms. *)
       [%expect
         {|
         === PEG 1 ===
@@ -946,7 +941,7 @@ def f(l):
                 ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
             @None)
 
-        equivalent: false
+        equivalent: true
         |}]
 
 
@@ -1068,7 +1063,7 @@ def f(x):
         |}]
 
 
-    let%expect_test "FN python: while loop same function is equivalent to itself" =
+    let%expect_test "python: while loop same function is equivalent to itself" =
       let source = {|
 def f(x):
     while x > 0:
@@ -1077,8 +1072,6 @@ def f(x):
 |} in
       let result = check_python_equivalence ~show_textual:false source source ~proc_name:"f" in
       F.printf "equivalent: %b@." result ;
-      (* TODO: FN — same bisimulation limitation as for loops: unique theta
-         placeholders per procedure prevent equivalence detection. *)
       [%expect
         {|
         === PEG 1 ===
@@ -1093,7 +1086,7 @@ def f(x):
             (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
             (@ret @state0 @param:x))
 
-        equivalent: false
+        equivalent: true
         |}]
 
 
@@ -1205,4 +1198,83 @@ def f(l, c):
                 ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l)))
             @None)
         |}]
+
+
+    let%expect_test "python: for loop different function in body not equivalent" =
+      let source1 = {|
+def f(l):
+    for i in l:
+        print(i)
+|} in
+      let source2 = {|
+def f(l):
+    for i in l:
+        len(i)
+|} in
+      let result =
+        check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
+      in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: false |}]
+
+
+    let%expect_test "python: while loop different operation not equivalent" =
+      let source1 = {|
+def f(x):
+    while x > 0:
+        x = x - 1
+    return x
+|} in
+      let source2 = {|
+def f(x):
+    while x > 0:
+        x = x + 1
+    return x
+|} in
+      let result =
+        check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
+      in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: false |}]
+
+
+    let%expect_test "python: while loop different condition not equivalent" =
+      let source1 = {|
+def f(x):
+    while x > 0:
+        x = x - 1
+    return x
+|} in
+      let source2 = {|
+def f(x):
+    while x < 0:
+        x = x - 1
+    return x
+|} in
+      let result =
+        check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
+      in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: false |}]
+
+
+    let%expect_test "python: while loop different init not equivalent" =
+      let source1 = {|
+def f(x):
+    while x > 0:
+        x = x - 1
+    return x
+|} in
+      let source2 = {|
+def f(x):
+    x = x + 1
+    while x > 0:
+        x = x - 1
+    return x
+|} in
+      let result =
+        check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
+      in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: false |}]
   end )

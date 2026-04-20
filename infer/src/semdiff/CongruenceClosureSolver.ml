@@ -261,6 +261,22 @@ let set_input_app_equation {input_app_equations} atom pair =
   Dynarray.set input_app_equations atom.Atom.index (Some pair)
 
 
+let find_class_enode state ~header a =
+  let header_repr = representative state (header :> Atom.t) in
+  let {Atom.index} = representative state a in
+  Dynarray.get state.classes index
+  |> Class.fold ~init:None ~f:(fun acc atom ->
+         match acc with
+         | Some _ ->
+             acc
+         | None -> (
+           match Dynarray.get state.input_app_equations atom.Atom.index with
+           | Some enode when Atom.equal (representative state enode.head) header_repr ->
+               Some enode
+           | _ ->
+               None ) )
+
+
 let equiv_atoms state {Atom.index} =
   Dynarray.get state.classes index |> Class.fold ~init:[] ~f:(fun l a -> a :: l)
 

@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module Atom : sig
-  type t [@@deriving compare]
+  type t [@@deriving compare, equal]
 
   val pp : F.formatter -> t -> unit
 
@@ -61,6 +61,9 @@ val equiv_atoms : t -> Atom.t -> Atom.t list
 val headers_with_arity : t -> (header * int) list
 
 val get_enode : t -> Atom.t -> enode option
+
+val find_class_enode : t -> header:header -> Atom.t -> enode option
+(** [find_class_enode cc ~header a] finds an enode with [header] in the equivalence class of [a]. *)
 
 type app_equation = {atom: Atom.t; enode: enode}
 

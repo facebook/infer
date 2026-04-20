@@ -25,6 +25,73 @@ let gen_rules cc ~theta_count : Rewrite.Rule.t list =
   parse_rules cc ("(@phi ?C ?X ?X) ==> ?X" :: theta_rules)
 
 
+(* Bisimulation: coinductive equivalence check for cyclic PEG terms (@theta).
+   Uses a separate union-find (does not modify the CC) to track assumed equivalences. *)
+module BisimUF = struct
+  module AtomMap = Stdlib.Map.Make (CC.Atom)
+
+  type t = {mutable parent: CC.Atom.t AtomMap.t}
+
+  let create () = {parent= AtomMap.empty}
+
+  let rec find uf a =
+    match AtomMap.find_opt a uf.parent with
+    | None ->
+        a
+    | Some p ->
+        let root = find uf p in
+        if not (phys_equal p root) then uf.parent <- AtomMap.add a root uf.parent ;
+        root
+
+
+  let union uf a b =
+    let ra = find uf a in
+    let rb = find uf b in
+    if not (CC.Atom.equal ra rb) then uf.parent <- AtomMap.add ra rb uf.parent
+
+
+  let is_equiv uf a b = CC.Atom.equal (find uf a) (find uf b)
+end
+
+let bisimilar cc ~(theta_headers : CC.header list) a1 a2 =
+  let uf = BisimUF.create () in
+  let theta_head_set =
+    List.map theta_headers ~f:(fun h -> CC.representative cc (h : CC.header :> CC.Atom.t))
+    |> CC.Atom.Set.of_list
+  in
+  let is_theta_head h = CC.Atom.Set.mem (CC.representative cc h) theta_head_set in
+  let find_enode a =
+    match CC.get_enode cc a with
+    | Some _ as r ->
+        r
+    | None ->
+        List.find_map theta_headers ~f:(fun (header : CC.header) ->
+            CC.find_class_enode cc ~header a )
+  in
+  let rec check a1 a2 =
+    let a1 = CC.representative cc a1 in
+    let a2 = CC.representative cc a2 in
+    CC.Atom.equal a1 a2 || BisimUF.is_equiv uf a1 a2
+    ||
+    match (find_enode a1, find_enode a2) with
+    | Some {head= h1; children= cs1}, Some {head= h2; children= cs2} ->
+        let h1 = CC.representative cc h1 in
+        let h2 = CC.representative cc h2 in
+        CC.Atom.equal h1 h2
+        && Int.equal (List.length cs1) (List.length cs2)
+        &&
+        ( (* coinductive hypothesis: assume equivalence before recursing into children,
+             but only for @theta_N (fixpoint) nodes — these create cycles in the PEG *)
+          if is_theta_head h1 then BisimUF.union uf a1 a2 ;
+          List.for_all2_exn cs1 cs2 ~f:check )
+    | None, None ->
+        false
+    | _ ->
+        false
+  in
+  check a1 a2
+
+
 let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Textual.ProcDesc.t) =
   let cc = CC.init ~debug:false in
   let theta_counter = ref 0 in
@@ -32,10 +99,13 @@ let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Tex
     ( TextualPeg.convert_proc ~theta_counter cc proc1
     , TextualPeg.convert_proc ~theta_counter cc proc2 )
   with
-  | Ok (atom1, eqs1, loops1), Ok (atom2, eqs2, loops2) ->
-      let rules = gen_rules cc ~theta_count:(max loops1 loops2) in
+  | Ok (atom1, eqs1, loops1), Ok (atom2, eqs2, loops2) when Int.equal loops1 loops2 ->
+      let rules = gen_rules cc ~theta_count:loops1 in
       let _rounds = Rewrite.Rule.full_rewrite cc rules in
-      let res = CC.is_equiv cc atom1 atom2 in
+      let theta_headers =
+        List.init loops1 ~f:(fun i -> CC.mk_header cc (F.asprintf "@theta_%d" i))
+      in
+      let res = CC.is_equiv cc atom1 atom2 || bisimilar cc ~theta_headers atom1 atom2 in
       if debug then (
         F.printf "=== Rule stats ===@." ;
         List.iter rules ~f:(fun rule ->
@@ -49,6 +119,9 @@ let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Tex
           F.printf "atom1: %a@." (CC.pp_nested_term cc) atom1 ;
           F.printf "atom2: %a@." (CC.pp_nested_term cc) atom2 ) ) ;
       res
+  | Ok _, Ok _ ->
+      (* loops1 ≠ loops2: different loop structure *)
+      false
   | Error msg, _ | _, Error msg ->
       if debug then F.printf "PEG conversion failed: %s@." msg ;
       false
