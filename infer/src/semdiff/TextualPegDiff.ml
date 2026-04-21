@@ -22,14 +22,13 @@ let parse_rules cc str_rules : Rewrite.Rule.t list =
 
 let enumerate_rules =
   [ (* has_next on enumerate delegates to the underlying iterator *)
-    "($builtins.py_has_next_iter ($builtins.py_get_iter ($builtins.py_call \
-     ($builtins.py_load_global (@str enumerate) ?G) ?N ?L))) ==> ($builtins.py_has_next_iter \
-     ($builtins.py_get_iter ?L))"
+    "($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@enumerate ?L))) ==> \
+     ($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 ?L))"
   ; (* Subscript [1] on enumerate's next element yields the next element of the underlying iterator.
        Subscript [0] (the index) is left unrewritten — when used, it blocks false equivalence. *)
-    "($builtins.py_subscript ($builtins.py_next_iter ($builtins.py_get_iter ($builtins.py_call \
-     ($builtins.py_load_global (@str enumerate) ?G) ?N ?L))) ($builtins.py_make_int 1)) ==> \
-     ($builtins.py_next_iter ($builtins.py_get_iter ?L))" ]
+    "($builtins.py_subscript ($builtins.py_next_iter ?S1 ($builtins.py_get_iter ?S2 (@enumerate \
+     ?L))) ($builtins.py_make_int 1)) ==> ($builtins.py_next_iter ?S1 ($builtins.py_get_iter ?S2 \
+     ?L))" ]
 
 
 let gen_rules cc ~theta_count : Rewrite.Rule.t list =

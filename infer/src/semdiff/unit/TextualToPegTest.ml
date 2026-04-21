@@ -285,7 +285,8 @@ let pp_proc_tree fmt (proc : Textual.ProcDesc.t) =
       F.fprintf fmt "Error: %s" msg
 
 
-let check_python_equivalence ?(show_textual = true) ?(show_peg = true) source1 source2 ~proc_name =
+let check_python_equivalence ?(debug = false) ?(show_textual = true) ?(show_peg = true) source1
+    source2 ~proc_name =
   let procs1 = python_to_procs source1 in
   let procs2 = python_to_procs source2 in
   let p1 = find_proc procs1 proc_name in
@@ -296,7 +297,7 @@ let check_python_equivalence ?(show_textual = true) ?(show_peg = true) source1 s
   in
   pp_proc "1" p1 ;
   pp_proc "2" p2 ;
-  TextualPegDiff.check_equivalence p1 p2
+  TextualPegDiff.check_equivalence ~debug p1 p2
 
 
 let%test_module "python source to peg" =
@@ -1320,7 +1321,7 @@ def f(l):
         check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
       in
       F.printf "equivalent: %b@." result ;
-      [%expect {| equivalent: false |}]
+      [%expect {| equivalent: true |}]
 
 
     let%expect_test "B007: enumerate with both i and x used is not equivalent to plain loop" =

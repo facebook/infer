@@ -226,30 +226,36 @@ let is_reader_call proc =
   || is_py_builtin proc "py_has_next_iter"
 
 
-(* Python functions that are pure when called via py_call.
-   enumerate: creates an iterator wrapper without side effects. *)
-let pure_py_call_targets = ["enumerate"]
-
-(** Check if a py_call invocation is pure by inspecting its first argument (the callee). Recognizes
-    py_call(py_load_global("enumerate", ...), ...) as pure. *)
-let is_pure_py_call (env : Env.t) proc (args : T.Exp.t list) =
-  is_py_builtin proc "py_call"
-  &&
+(** Try to simplify a py_call to a known pure function into a direct PEG term. Returns [Some atom]
+    if the callee is recognized (e.g. enumerate), [None] otherwise. *)
+let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option =
   match args with
   | Var callee_id :: _ -> (
     match Env.lookup_ident env callee_id with
     | Some callee_atom ->
         let s = F.asprintf "%a" (CC.pp_nested_term env.cc) callee_atom in
-        List.exists pure_py_call_targets ~f:(fun target -> String.is_substring s ~substring:target)
+        if String.is_substring s ~substring:"enumerate" then
+          (* py_call(enumerate, none, L) → @enumerate(L): pure iterator wrapper *)
+          let actual_args =
+            (* skip callee and the None argument *)
+            match args with
+            | _ :: _ :: rest ->
+                rest
+            | _ ->
+                []
+          in
+          Some (mk_term env.cc "@enumerate" (List.map actual_args ~f:(convert_exp env)))
+        else None
     | None ->
-        false )
+        None )
   | _ ->
-      false
+      None
 
 
 let classify_call (env : Env.t) proc (args : T.Exp.t list) =
-  if is_pure_call proc || is_pure_py_call env proc args then Pure
+  if is_pure_call proc then Pure
   else if is_reader_call proc then Reader
+  else if is_py_builtin proc "py_call" && Option.is_some (try_simplify_py_call env args) then Pure
   else Writer
 
 
@@ -298,6 +304,8 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
             (* Reader: call(σ, f, x), value depends on σ but state unchanged *)
             let header = qualified_procname_to_string proc in
             mk_term cc header (env.state :: List.map args ~f:(convert_exp env))
+        | Call {proc; args}, Pure when is_py_builtin proc "py_call" -> (
+          match try_simplify_py_call env args with Some atom -> atom | None -> convert_exp env exp )
         | _ ->
             convert_exp env exp
       in
