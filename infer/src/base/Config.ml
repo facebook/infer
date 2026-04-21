@@ -3323,6 +3323,13 @@ and semdiff_experimental_eqsat_engine =
     "Use experimental equality saturation rewriting engine."
 
 
+and semdiff_b007_migration =
+  CLOpt.mk_bool ~long:"semdiff-b007-migration" ~default:false
+    ~in_help:InferCommand.[(SemDiff, manual_generic)]
+    "Check B007 migration: verify that the current program is a valid simplification of the \
+     previous program (remove unused enumerate, dict items to keys/values)."
+
+
 and semdiff_configuration =
   CLOpt.mk_path_list ~long:"semdiff-configuration" ~meta:"path"
     ~in_help:InferCommand.[(SemDiff, manual_generic)]
@@ -4946,6 +4953,8 @@ and semdiff_previous = !semdiff_previous
 and semdiff_test_actions = !semdiff_test_actions
 
 and semdiff_experimental_eqsat_engine = !semdiff_experimental_eqsat_engine
+
+and semdiff_b007_migration = !semdiff_b007_migration
 
 and semdiff_configuration = RevList.to_list !semdiff_configuration
 

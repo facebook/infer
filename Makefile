@@ -251,6 +251,7 @@ DIRECT_TESTS += \
   python_export-textual \
   python_pulse \
   python_semdiff \
+  python_semdiff-b007 \
   python_semdiff-demo \
 
 endif

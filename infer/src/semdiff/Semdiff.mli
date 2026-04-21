@@ -18,4 +18,6 @@ val python_ast_diff :
 
 val semdiff : config_files:string list -> previous_file:string -> current_file:string -> unit
 
+val semdiff_b007_textual : debug:bool -> Textual.Module.t -> Textual.Module.t -> Diff.explicit list
+
 val semdiff_from_json : config_files:string list -> string -> unit

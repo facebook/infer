@@ -426,6 +426,23 @@ let report_diff () =
       |> Option.iter ~f:(fun (previous, current) -> StatsDiff.diff ~previous ~current)
 
 
+let python_file_to_textual file =
+  if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
+  let source = In_channel.with_file file ~f:In_channel.input_all in
+  let code =
+    match FFI.from_string ~source ~filename:file with
+    | Ok code ->
+        code
+    | Error (kind, err) ->
+        L.die kind "FFI error on %s: %a@\n" file FFI.Error.pp_kind err
+  in
+  match PyIR.mk ~debug:false ~path_prefix:None code with
+  | Ok pyir ->
+      PyIR2Textual.mk_module pyir
+  | Error (kind, _loc, err) ->
+      L.die kind "PyIR error on %s: %a@\n" file PyIR.Error.pp_kind err
+
+
 let sem_diff () =
   let open Config in
   match
@@ -438,11 +455,22 @@ let sem_diff () =
         "Expected '--semdiff-current' and '--semdiff-previous', '--semdiff-test-files-index', or \
          '--semdiff-from-json' to be specified."
   | Some (previous_file, current_file), None, None ->
-      let config_files = Config.semdiff_configuration in
-      Semdiff.semdiff ~config_files ~previous_file ~current_file ;
-      Option.iter Config.issues_tests ~f:(fun out_path ->
-          let json_path = ResultsDir.get_path SemDiff in
-          Diff.write_from_json ~json_path ~out_path )
+      if Config.semdiff_b007_migration then (
+        let module_old = python_file_to_textual previous_file in
+        let module_new = python_file_to_textual current_file in
+        let debug = Config.debug_mode in
+        let diffs = Semdiff.semdiff_b007_textual ~debug module_old module_new in
+        let out_path = ResultsDir.get_path SemDiff in
+        Diff.write_json ~previous_file ~current_file ~out_path diffs ;
+        Option.iter Config.issues_tests ~f:(fun out_path ->
+            let json_path = ResultsDir.get_path SemDiff in
+            Diff.write_from_json ~json_path ~out_path ) )
+      else
+        let config_files = Config.semdiff_configuration in
+        Semdiff.semdiff ~config_files ~previous_file ~current_file ;
+        Option.iter Config.issues_tests ~f:(fun out_path ->
+            let json_path = ResultsDir.get_path SemDiff in
+            Diff.write_from_json ~json_path ~out_path )
   | None, Some index_filename, None -> (
       let f node =
         List.iter Config.semdiff_test_actions ~f:(function `Currify ->

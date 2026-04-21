@@ -234,7 +234,7 @@ let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option 
     match Env.lookup_ident env callee_id with
     | Some callee_atom ->
         let s = F.asprintf "%a" (CC.pp_nested_term env.cc) callee_atom in
-        if String.is_substring s ~substring:"enumerate" then
+        if String.is_substring s ~substring:"(@str enumerate)" then
           (* py_call(enumerate, none, L) → @enumerate(L): pure iterator wrapper *)
           let actual_args =
             (* skip callee and the None argument *)

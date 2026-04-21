@@ -826,6 +826,8 @@ val semdiff_test_show_syntax_errors : bool
 
 val semdiff_experimental_eqsat_engine : bool
 
+val semdiff_b007_migration : bool
+
 val semdiff_configuration : string list
 
 val semdiff_test_actions : [`Currify] list
