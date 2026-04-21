@@ -51,6 +51,9 @@ val get_as_const : t -> Q.t option
 val get_as_var : t -> Var.t option
 (** [get_as_var l] is [Some x] if [l=x], else [None] *)
 
+val get_as_var_plus_const : t -> (Var.t * Q.t) option
+(** [get_as_var_plus_const l] is [Some ((q_x,x), q_c)] if [l=q_x*x + q_c], else [None] *)
+
 val get_as_variable_difference : t -> (Var.t * Var.t) option
 (** [get_as_variable_difference l] is [Some (x,y)] if [l=(x-y)] or [l=(y-x)], else [None] *)
 

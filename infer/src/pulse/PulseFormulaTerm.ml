@@ -698,6 +698,38 @@ let simplify_shallow t =
     | Mod (t1, t2) when equal_syntax t1 t2 ->
         (* [t % t = 0] *)
         zero
+    | Mod (t1, (Const m as t2)) | Mod ((Const m as t2), t1) -> (
+        let is_t1_var_plus_const =
+          match t1 with
+          | Add (t, Const q) | Add (Const q, t) ->
+              Some (t, q)
+          | Linear l ->
+              LinArith.get_as_var_plus_const l |> Option.map ~f:(fun (v, c) -> (Var v, c))
+          | _ ->
+              None
+        in
+        let is_t1_var_plus_int =
+          match is_t1_var_plus_const with
+          | None ->
+              L.d_printfln "no" ;
+              None
+          | Some (t, q) -> (
+              L.d_printfln "yes" ;
+              match Q.to_bigint q with Some z -> Some (t, z) | None -> None )
+        in
+        match (is_t1_var_plus_int, Q.to_bigint m) with
+        | Some (t, z), Some m -> (
+            L.d_printfln "still yes" ;
+            match Z.(z mod m) with
+            | Some z_simpl when Z.(equal z_simpl zero) ->
+                Mod (t, t2)
+            | Some z_simpl when Z.(not (equal z z_simpl)) ->
+                Mod (Add (t, Const (Q.of_bigint z_simpl)), t2)
+            | _ ->
+                t )
+        | _ ->
+            L.d_printfln "alas no" ;
+            t )
     | BitAnd (t1, t2) when is_zero t1 || is_zero t2 ->
         zero
     | BitXor (t1, t2) when equal_syntax t1 t2 ->

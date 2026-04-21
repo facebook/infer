@@ -132,6 +132,14 @@ let get_as_var (c, vs) =
   else None
 
 
+let get_as_var_plus_const (c, vs) =
+  match VarMap.is_singleton_or_more vs with
+  | Singleton (x, cx) when Q.is_one cx ->
+      Some (x, c)
+  | _ ->
+      None
+
+
 let get_as_variable_difference (c, vs) =
   if Q.is_zero c then
     (* the coefficient has to be 0 *)

@@ -390,7 +390,7 @@ void FN_while_ge_bad() {
     i++;
 }
 
-void FN_while_even_bad() {
+void while_even_bad() {
   int i = 0;
   while (i % 2 == 0)
     i = i + 2;
@@ -977,5 +977,14 @@ void no_incr_first_iterations_interproc_ok() {
   while (i < 1) {
     incr_if_eq(j, 2, &i);
     j++;
+  }
+}
+
+void FP_string_ok(const char* name) {
+  unsigned hash = 31L;
+  const char* ptr;
+
+  for (ptr = name; *ptr; ptr++) {
+    hash = hash * 33 + *ptr;
   }
 }
