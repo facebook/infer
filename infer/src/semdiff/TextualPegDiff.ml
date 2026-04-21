@@ -20,9 +20,21 @@ let parse_rules cc str_rules : Rewrite.Rule.t list =
           L.die InternalError "%a" Rewrite.pp_parse_error err )
 
 
+let enumerate_rules =
+  [ (* has_next on enumerate delegates to the underlying iterator *)
+    "($builtins.py_has_next_iter ($builtins.py_get_iter ($builtins.py_call \
+     ($builtins.py_load_global (@str enumerate) ?G) ?N ?L))) ==> ($builtins.py_has_next_iter \
+     ($builtins.py_get_iter ?L))"
+  ; (* Subscript [1] on enumerate's next element yields the next element of the underlying iterator.
+       Subscript [0] (the index) is left unrewritten — when used, it blocks false equivalence. *)
+    "($builtins.py_subscript ($builtins.py_next_iter ($builtins.py_get_iter ($builtins.py_call \
+     ($builtins.py_load_global (@str enumerate) ?G) ?N ?L))) ($builtins.py_make_int 1)) ==> \
+     ($builtins.py_next_iter ($builtins.py_get_iter ?L))" ]
+
+
 let gen_rules cc ~theta_count : Rewrite.Rule.t list =
   let theta_rules = List.init theta_count ~f:(fun i -> F.asprintf "(@theta_%d ?X ?X) ==> ?X" i) in
-  parse_rules cc ("(@phi ?C ?X ?X) ==> ?X" :: theta_rules)
+  parse_rules cc (("(@phi ?C ?X ?X) ==> ?X" :: theta_rules) @ enumerate_rules)
 
 
 (* Bisimulation: coinductive equivalence check for cyclic PEG terms (@theta).
@@ -109,7 +121,8 @@ let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Tex
       if debug then (
         F.printf "=== Rule stats ===@." ;
         List.iter rules ~f:(fun rule ->
-            F.printf "  %a: fired %d time(s)@." Rewrite.Rule.pp rule (Rewrite.Rule.fire_count rule) ) ;
+            let count = Rewrite.Rule.fire_count rule in
+            if count > 0 then F.printf "  %a: fired %d time(s)@." Rewrite.Rule.pp rule count ) ;
         if not res then (
           F.printf "=== Procedure 1 equations ===@." ;
           TextualPeg.Equations.pp cc F.std_formatter eqs1 ;

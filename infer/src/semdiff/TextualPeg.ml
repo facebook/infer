@@ -212,6 +212,32 @@ let is_pure_call proc =
   List.exists pure_builtin_prefixes ~f:(fun prefix -> String.is_substring s ~substring:prefix)
   || is_py_builtin proc "py_bool" || is_py_builtin proc "py_bool_true"
   || is_py_builtin proc "py_bool_false"
+  || is_py_builtin proc "py_load_global"
+  || is_py_builtin proc "py_get_iter" || is_py_builtin proc "py_next_iter"
+  || is_py_builtin proc "py_has_next_iter"
+
+
+(* Python functions that are pure when called via py_call.
+   enumerate: creates an iterator wrapper without side effects. In Python, enumerate(iterable)
+   calls iterable.__iter__() which is pure for all standard collection types (list, tuple, dict,
+   set, str, range). Custom __iter__ with side effects is pathological and not seen in practice. *)
+let pure_py_call_targets = ["enumerate"]
+
+(** Check if a py_call invocation is pure by inspecting its first argument (the callee). Recognizes
+    py_call(py_load_global("enumerate", ...), ...) as pure. *)
+let is_pure_py_call (env : Env.t) proc (args : T.Exp.t list) =
+  is_py_builtin proc "py_call"
+  &&
+  match args with
+  | Var callee_id :: _ -> (
+    match Env.lookup_ident env callee_id with
+    | Some callee_atom ->
+        let s = F.asprintf "%a" (CC.pp_nested_term env.cc) callee_atom in
+        List.exists pure_py_call_targets ~f:(fun target -> String.is_substring s ~substring:target)
+    | None ->
+        false )
+  | _ ->
+      false
 
 
 (* ---------- Instruction conversion ---------- *)
@@ -251,6 +277,8 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
       let env = match id with Some id -> Env.bind_ident env id atom | None -> env in
       match exp with
       | Call {proc} when is_pure_call proc ->
+          env
+      | Call {proc; args} when is_pure_py_call env proc args ->
           env
       | Call _ ->
           let new_state = mk_term cc "@seq" [env.state; atom] in
