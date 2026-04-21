@@ -1591,10 +1591,10 @@ end = struct
 
   and propagate_in_term_eqs ~fuel (tx : Term.t) x ((phi, new_eqs) as phi_new_eqs) =
     match subst_target_of_term phi tx with
-    | LinSubst _ | NonLinearTermSubst _ ->
+    | NonLinearTermSubst _ ->
         Debug.p "prop in term eqs tx=%a, x=%a being ignored@\n" (Term.pp Var.pp) tx Var.pp x ;
         Sat phi_new_eqs
-    | (VarSubst _ | QSubst _ | ConstantSubst _) as subst_target_x -> (
+    | (VarSubst _ | QSubst _ | ConstantSubst _ | LinSubst _) as subst_target_x -> (
       match Var.Map.find_opt x phi.term_eqs_occurrences with
       | None ->
           Sat phi_new_eqs
