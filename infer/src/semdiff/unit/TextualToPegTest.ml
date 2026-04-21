@@ -300,6 +300,14 @@ let check_python_equivalence ?(debug = false) ?(show_textual = true) ?(show_peg 
   TextualPegDiff.check_equivalence ~debug p1 p2
 
 
+let check_python_migration ?(debug = false) source_old source_new ~proc_name =
+  let procs_old = python_to_procs source_old in
+  let procs_new = python_to_procs source_new in
+  let p_old = find_proc procs_old proc_name in
+  let p_new = find_proc procs_new proc_name in
+  TextualPegDiff.check_b007_migration ~debug p_old p_new
+
+
 let%test_module "python source to peg" =
   ( module struct
     let%expect_test "same function is equivalent to itself" =
@@ -1394,4 +1402,150 @@ def f(d):
       in
       F.printf "equivalent: %b@." result ;
       [%expect {| equivalent: false |}]
+
+
+    (* --- Directional migration tests (check_migration with accept rules) --- *)
+
+    let%expect_test "migration: unused loop variable renamed to _i" =
+      let source_old = {|
+def f(l):
+    for i in l:
+        print(1)
+|} in
+      let source_new = {|
+def f(l):
+    for _i in l:
+        print(1)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: true |}]
+
+
+    let%expect_test "migration: remove unnecessary enumerate" =
+      let source_old = {|
+def f(l):
+    for i, x in enumerate(l):
+        print(x)
+|} in
+      let source_new = {|
+def f(l):
+    for x in l:
+        print(x)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: true |}]
+
+
+    let%expect_test "migration: dict items() to keys()" =
+      let source_old = {|
+def f(d):
+    for k, v in d.items():
+        print(k)
+|} in
+      let source_new = {|
+def f(d):
+    for k in d.keys():
+        print(k)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: true |}]
+
+
+    let%expect_test "migration: dict items() to values()" =
+      let source_old = {|
+def f(d):
+    for k, v in d.items():
+        print(v)
+|} in
+      let source_new = {|
+def f(d):
+    for v in d.values():
+        print(v)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: true |}]
+
+
+    let%expect_test "migration: reverse direction (keys to items) is rejected" =
+      let source_old = {|
+def f(d):
+    for k in d.keys():
+        print(k)
+|} in
+      let source_new = {|
+def f(d):
+    for k, v in d.items():
+        print(k)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: false |}]
+
+
+    let%expect_test "migration: reverse enumerate (plain to enumerate) is rejected" =
+      let source_old = {|
+def f(l):
+    for x in l:
+        print(x)
+|} in
+      let source_new = {|
+def f(l):
+    for i, x in enumerate(l):
+        print(x)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: false |}]
+
+
+    let%expect_test "migration: reverse dict values() to items() is rejected" =
+      let source_old = {|
+def f(d):
+    for v in d.values():
+        print(v)
+|} in
+      let source_new = {|
+def f(d):
+    for k, v in d.items():
+        print(v)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: false |}]
+
+
+    let%expect_test "migration: enumerate with index used is rejected" =
+      let source_old = {|
+def f(l):
+    for i, x in enumerate(l):
+        print(i, x)
+|} in
+      let source_new = {|
+def f(l):
+    for x in l:
+        print(x)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: false |}]
+
+
+    let%expect_test "migration: different loop body is rejected" =
+      let source_old = {|
+def f(l):
+    for x in l:
+        print(x)
+|} in
+      let source_new = {|
+def f(l):
+    for x in l:
+        print(1)
+|} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: false |}]
   end )

@@ -599,6 +599,10 @@ let parse_pattern = Parser.parse_pattern
 
 let parse_rule = Parser.parse_rule
 
+let e_match_pattern_at = Pattern.e_match_at
+
+let subst_find subst var = Var.Map.find_opt var subst
+
 module TestOnly = struct
   let e_match_pattern_at = Pattern.e_match_at
 

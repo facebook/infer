@@ -55,6 +55,12 @@ module Rule : sig
       @raise FuelExhausted if fuel exhausted before saturation *)
 end
 
+val e_match_pattern_at : ?debug:bool -> CC.t -> Pattern.t -> CC.Atom.t -> subst list
+(** Match a pattern against a specific atom. Returns all valid substitutions. *)
+
+val subst_find : subst -> Var.t -> CC.Atom.t option
+(** Look up a variable binding in a substitution. *)
+
 type parse_error
 
 val pp_parse_error : F.formatter -> parse_error -> unit

@@ -14,6 +14,10 @@ open! IStd
 
 val check_equivalence : ?debug:bool -> Textual.ProcDesc.t -> Textual.ProcDesc.t -> bool
 
+val check_b007_migration : ?debug:bool -> Textual.ProcDesc.t -> Textual.ProcDesc.t -> bool
+(** Directional migration check: verify that [proc_new] is a valid B007 simplification of
+    [proc_old]. Uses accept rules instead of bidirectional rewrites. *)
+
 val convert_and_print : ?debug:bool -> string -> unit
 (** Parse a Textual source string, convert each procedure to PEG, print the equations and nested
     term. For expect tests. *)
