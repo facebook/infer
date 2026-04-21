@@ -667,75 +667,146 @@ def f(x):
         {|
         === PEG ===
         (@ret
-            (@seq
-                (@seq
-                    @state0
-                    ($builtins.py_call
-                        ($builtins.py_load_global (@str g) (@load (@lvar globals)))
-                        @None
-                        @param:x))
+            (@heap
                 ($builtins.py_call
-                    ($builtins.py_load_global (@str h) (@load (@lvar globals)))
+                    (@heap
+                        ($builtins.py_call
+                            @state0
+                            ($builtins.py_load_global @state0 (@str g) (@load (@lvar globals)))
+                            @None
+                            @param:x))
+                    ($builtins.py_load_global
+                        (@heap
+                            ($builtins.py_call
+                                @state0
+                                ($builtins.py_load_global @state0 (@str g) (@load (@lvar globals)))
+                                @None
+                                @param:x))
+                        (@str h)
+                        (@load (@lvar globals)))
                     @None
-                    ($builtins.py_call
-                        ($builtins.py_load_global (@str g) (@load (@lvar globals)))
-                        @None
-                        @param:x)))
-            ($builtins.py_call
-                ($builtins.py_load_global (@str h) (@load (@lvar globals)))
-                @None
+                    (@eval
+                        ($builtins.py_call
+                            @state0
+                            ($builtins.py_load_global @state0 (@str g) (@load (@lvar globals)))
+                            @None
+                            @param:x))))
+            (@eval
                 ($builtins.py_call
-                    ($builtins.py_load_global (@str g) (@load (@lvar globals)))
+                    (@heap
+                        ($builtins.py_call
+                            @state0
+                            ($builtins.py_load_global @state0 (@str g) (@load (@lvar globals)))
+                            @None
+                            @param:x))
+                    ($builtins.py_load_global
+                        (@heap
+                            ($builtins.py_call
+                                @state0
+                                ($builtins.py_load_global @state0 (@str g) (@load (@lvar globals)))
+                                @None
+                                @param:x))
+                        (@str h)
+                        (@load (@lvar globals)))
                     @None
-                    @param:x)))
+                    (@eval
+                        ($builtins.py_call
+                            @state0
+                            ($builtins.py_load_global @state0 (@str g) (@load (@lvar globals)))
+                            @None
+                            @param:x)))))
         === Tree ===
         @ret
-        ├── @seq
-        │   ├── @seq
-        │   │   ├── @state0
-        │   │   └── $builtins.py_call
-        │   │       ├── $builtins.py_load_global
-        │   │       │   ├── @str
-        │   │       │   │   └── g
-        │   │       │   └── @load
-        │   │       │       └── @lvar
-        │   │       │           └── globals
-        │   │       ├── @None
-        │   │       └── @param:x
+        ├── @heap
         │   └── $builtins.py_call
+        │       ├── @heap
+        │       │   └── $builtins.py_call
+        │       │       ├── @state0
+        │       │       ├── $builtins.py_load_global
+        │       │       │   ├── @state0
+        │       │       │   ├── @str
+        │       │       │   │   └── g
+        │       │       │   └── @load
+        │       │       │       └── @lvar
+        │       │       │           └── globals
+        │       │       ├── @None
+        │       │       └── @param:x
         │       ├── $builtins.py_load_global
+        │       │   ├── @heap
+        │       │   │   └── $builtins.py_call
+        │       │   │       ├── @state0
+        │       │   │       ├── $builtins.py_load_global
+        │       │   │       │   ├── @state0
+        │       │   │       │   ├── @str
+        │       │   │       │   │   └── g
+        │       │   │       │   └── @load
+        │       │   │       │       └── @lvar
+        │       │   │       │           └── globals
+        │       │   │       ├── @None
+        │       │   │       └── @param:x
         │       │   ├── @str
         │       │   │   └── h
         │       │   └── @load
         │       │       └── @lvar
         │       │           └── globals
         │       ├── @None
-        │       └── $builtins.py_call
-        │           ├── $builtins.py_load_global
-        │           │   ├── @str
-        │           │   │   └── g
-        │           │   └── @load
-        │           │       └── @lvar
-        │           │           └── globals
-        │           ├── @None
-        │           └── @param:x
-        └── $builtins.py_call
-            ├── $builtins.py_load_global
-            │   ├── @str
-            │   │   └── h
-            │   └── @load
-            │       └── @lvar
-            │           └── globals
-            ├── @None
+        │       └── @eval
+        │           └── $builtins.py_call
+        │               ├── @state0
+        │               ├── $builtins.py_load_global
+        │               │   ├── @state0
+        │               │   ├── @str
+        │               │   │   └── g
+        │               │   └── @load
+        │               │       └── @lvar
+        │               │           └── globals
+        │               ├── @None
+        │               └── @param:x
+        └── @eval
             └── $builtins.py_call
+                ├── @heap
+                │   └── $builtins.py_call
+                │       ├── @state0
+                │       ├── $builtins.py_load_global
+                │       │   ├── @state0
+                │       │   ├── @str
+                │       │   │   └── g
+                │       │   └── @load
+                │       │       └── @lvar
+                │       │           └── globals
+                │       ├── @None
+                │       └── @param:x
                 ├── $builtins.py_load_global
+                │   ├── @heap
+                │   │   └── $builtins.py_call
+                │   │       ├── @state0
+                │   │       ├── $builtins.py_load_global
+                │   │       │   ├── @state0
+                │   │       │   ├── @str
+                │   │       │   │   └── g
+                │   │       │   └── @load
+                │   │       │       └── @lvar
+                │   │       │           └── globals
+                │   │       ├── @None
+                │   │       └── @param:x
                 │   ├── @str
-                │   │   └── g
+                │   │   └── h
                 │   └── @load
                 │       └── @lvar
                 │           └── globals
                 ├── @None
-                └── @param:x
+                └── @eval
+                    └── $builtins.py_call
+                        ├── @state0
+                        ├── $builtins.py_load_global
+                        │   ├── @state0
+                        │   ├── @str
+                        │   │   └── g
+                        │   └── @load
+                        │       └── @lvar
+                        │           └── globals
+                        ├── @None
+                        └── @param:x
         |}]
 
 
@@ -777,25 +848,34 @@ def f(x):
         n1     = (@load (@lvar locals))  [let]
         n2     = (@load (@lvar globals))  [let]
         n3     = @param:l  [load_fast: locals]
-        n4     = ($builtins.py_get_iter @param:l)  [let]
-        n5     = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [let]
-        n6     = ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l))  [let]
-        i      = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [store_fast: locals]
-        n7     = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [load_fast: locals]
-        n8     = ($builtins.py_load_global (@str print) (@load (@lvar globals)))  [let]
-        n9     = ($builtins.py_call
-                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
-                     @None
-                     ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [let]
+        n4     = ($builtins.py_get_iter @state0 @param:l)  [let]
+        n5     = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))  [let]
+        n6     = ($builtins.py_has_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))  [let]
+        i      = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))  [store_fast: locals]
+        n7     = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))  [load_fast: locals]
+        n8     = ($builtins.py_load_global @theta:state:0 (@str print) (@load (@lvar globals)))  [let]
+        n9     = (@eval
+                     ($builtins.py_call
+                         @theta:state:0
+                         ($builtins.py_load_global @theta:state:0 (@str print) (@load (@lvar globals)))
+                         @None
+                         ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))))  [let]
         θ_state_0 = (@theta_0
                          @state0
-                         (@seq
-                             @theta:state:0
+                         (@heap
                              ($builtins.py_call
-                                 ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                 @theta:state:0
+                                 ($builtins.py_load_global
+                                     @theta:state:0
+                                     (@str print)
+                                     (@load (@lvar globals)))
                                  @None
-                                 ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))))  [theta_close]
-        θ_i_0 = (@theta_0 @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
+                                 ($builtins.py_next_iter
+                                     @theta:state:0
+                                     ($builtins.py_get_iter @state0 @param:l)))))  [theta_close]
+        θ_i_0 = (@theta_0
+                     @undef
+                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
         RET    = (@ret @theta:state:0 @None)  [ret]
         PEG: (@ret @theta:state:0 @None)
         |}]
@@ -1056,53 +1136,71 @@ def f(l, c):
         n1     = (@load (@lvar locals))  [let]
         n0     = @None  [let]
         n3     = @param:l  [load_fast: locals]
-        n4     = ($builtins.py_get_iter @param:l)  [let]
-        n5     = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [let]
-        n6     = ($builtins.py_has_next_iter ($builtins.py_get_iter @param:l))  [let]
-        i      = ($builtins.py_next_iter ($builtins.py_get_iter @param:l))  [store_fast: locals]
+        n4     = ($builtins.py_get_iter @state0 @param:l)  [let]
+        n5     = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))  [let]
+        n6     = ($builtins.py_has_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))  [let]
+        i      = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))  [store_fast: locals]
         n7     = @param:c  [load_fast: locals]
-        n10    = ($builtins.py_load_global (@str print) (@load (@lvar globals)))  [let]
-        n11    = ($builtins.py_call
-                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
-                     @None
-                     ($builtins.py_make_int 1))  [let]
-        n8     = ($builtins.py_load_global (@str print) (@load (@lvar globals)))  [let]
-        n9     = ($builtins.py_call
-                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
-                     @None
-                     ($builtins.py_make_int 2))  [let]
+        n10    = ($builtins.py_load_global @theta:state:0 (@str print) (@load (@lvar globals)))  [let]
+        n11    = (@eval
+                     ($builtins.py_call
+                         @theta:state:0
+                         ($builtins.py_load_global @theta:state:0 (@str print) (@load (@lvar globals)))
+                         @None
+                         ($builtins.py_make_int 1)))  [let]
+        n8     = ($builtins.py_load_global @theta:state:0 (@str print) (@load (@lvar globals)))  [let]
+        n9     = (@eval
+                     ($builtins.py_call
+                         @theta:state:0
+                         ($builtins.py_load_global @theta:state:0 (@str print) (@load (@lvar globals)))
+                         @None
+                         ($builtins.py_make_int 2)))  [let]
         PHI    = (@phi ($builtins.py_bool @param:c) @back_edge @back_edge)  [if]
         PHI_state = (@phi
                         ($builtins.py_bool @param:c)
-                        (@seq
-                            @theta:state:0
+                        (@heap
                             ($builtins.py_call
-                                ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                @theta:state:0
+                                ($builtins.py_load_global
+                                    @theta:state:0
+                                    (@str print)
+                                    (@load (@lvar globals)))
                                 @None
                                 ($builtins.py_make_int 1)))
-                        (@seq
-                            @theta:state:0
+                        (@heap
                             ($builtins.py_call
-                                ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                @theta:state:0
+                                ($builtins.py_load_global
+                                    @theta:state:0
+                                    (@str print)
+                                    (@load (@lvar globals)))
                                 @None
                                 ($builtins.py_make_int 2))))  [if]
         θ_state_0 = (@theta_0
                          @state0
                          (@phi
                              ($builtins.py_bool @param:c)
-                             (@seq
-                                 @theta:state:0
+                             (@heap
                                  ($builtins.py_call
-                                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                     @theta:state:0
+                                     ($builtins.py_load_global
+                                         @theta:state:0
+                                         (@str print)
+                                         (@load (@lvar globals)))
                                      @None
                                      ($builtins.py_make_int 1)))
-                             (@seq
-                                 @theta:state:0
+                             (@heap
                                  ($builtins.py_call
-                                     ($builtins.py_load_global (@str print) (@load (@lvar globals)))
+                                     @theta:state:0
+                                     ($builtins.py_load_global
+                                         @theta:state:0
+                                         (@str print)
+                                         (@load (@lvar globals)))
                                      @None
                                      ($builtins.py_make_int 2)))))  [theta_close]
-        θ_i_0 = (@theta_0 @undef ($builtins.py_next_iter ($builtins.py_get_iter @param:l)))  [theta_close]
+        θ_i_0 = (@theta_0
+                     @undef
+                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
         RET    = (@ret @theta:state:0 @None)  [ret]
 
         === PEG ===
@@ -1222,7 +1320,7 @@ def f(l):
         check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
       in
       F.printf "equivalent: %b@." result ;
-      [%expect {| equivalent: true |}]
+      [%expect {| equivalent: false |}]
 
 
     let%expect_test "B007: enumerate with both i and x used is not equivalent to plain loop" =

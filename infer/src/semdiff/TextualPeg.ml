@@ -207,20 +207,27 @@ let pure_builtin_prefixes =
   ["py_make_"; "py_binary_"; "py_unary_"; "py_compare_"; "py_inplace_"; "py_build_tuple"]
 
 
+(* Call effect classification (Tate et al.):
+   - Pure: no state dependency, no state modification (e.g. py_make_int, py_bool)
+   - Reader: reads state σ (value depends on σ) but does not modify it (e.g. py_load_global)
+   - Writer: reads and modifies state σ (e.g. py_call, print) *)
+type call_effect = Pure | Reader | Writer
+
 let is_pure_call proc =
   let s = qualified_procname_to_string proc in
   List.exists pure_builtin_prefixes ~f:(fun prefix -> String.is_substring s ~substring:prefix)
   || is_py_builtin proc "py_bool" || is_py_builtin proc "py_bool_true"
   || is_py_builtin proc "py_bool_false"
-  || is_py_builtin proc "py_load_global"
+
+
+let is_reader_call proc =
+  is_py_builtin proc "py_load_global"
   || is_py_builtin proc "py_get_iter" || is_py_builtin proc "py_next_iter"
   || is_py_builtin proc "py_has_next_iter"
 
 
 (* Python functions that are pure when called via py_call.
-   enumerate: creates an iterator wrapper without side effects. In Python, enumerate(iterable)
-   calls iterable.__iter__() which is pure for all standard collection types (list, tuple, dict,
-   set, str, range). Custom __iter__ with side effects is pathological and not seen in practice. *)
+   enumerate: creates an iterator wrapper without side effects. *)
 let pure_py_call_targets = ["enumerate"]
 
 (** Check if a py_call invocation is pure by inspecting its first argument (the callee). Recognizes
@@ -238,6 +245,12 @@ let is_pure_py_call (env : Env.t) proc (args : T.Exp.t list) =
         false )
   | _ ->
       false
+
+
+let classify_call (env : Env.t) proc (args : T.Exp.t list) =
+  if is_pure_call proc || is_pure_py_call env proc args then Pure
+  else if is_reader_call proc then Reader
+  else Writer
 
 
 (* ---------- Instruction conversion ---------- *)
@@ -273,17 +286,34 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
       (* py_nullify_locals is a compiler artifact, not an observable effect — skip it *)
       env
   | Let {id; exp} -> (
-      let atom = convert_exp env exp in
+      let eff = match exp with Call {proc; args} -> classify_call env proc args | _ -> Pure in
+      let atom =
+        match (exp, eff) with
+        | Call {proc; args}, Writer ->
+            (* Writer: op = call(σ, f, x), value = @eval(op), state = @heap(op) *)
+            let header = qualified_procname_to_string proc in
+            let op = mk_term cc header (env.state :: List.map args ~f:(convert_exp env)) in
+            mk_term cc "@eval" [op]
+        | Call {proc; args}, Reader ->
+            (* Reader: call(σ, f, x), value depends on σ but state unchanged *)
+            let header = qualified_procname_to_string proc in
+            mk_term cc header (env.state :: List.map args ~f:(convert_exp env))
+        | _ ->
+            convert_exp env exp
+      in
       let env = match id with Some id -> Env.bind_ident env id atom | None -> env in
-      match exp with
-      | Call {proc} when is_pure_call proc ->
-          env
-      | Call {proc; args} when is_pure_py_call env proc args ->
-          env
-      | Call _ ->
-          let new_state = mk_term cc "@seq" [env.state; atom] in
-          Env.update_state env new_state
-      | _ ->
+      match eff with
+      | Writer ->
+          (* Extract op from @eval(op) to build @heap(op) *)
+          let op =
+            match CC.get_enode cc atom with
+            | Some {children= [op]; _} ->
+                op
+            | _ ->
+                L.die InternalError "TextualPeg: expected @eval node for writer call"
+          in
+          Env.update_state env (mk_term cc "@heap" [op])
+      | Reader | Pure ->
           env )
   | Load {id; exp} ->
       let atom = mk_term cc "@deref" [convert_exp env exp] in
@@ -291,8 +321,8 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
   | Store {exp1; exp2} ->
       let addr = convert_exp env exp1 in
       let value = convert_exp env exp2 in
-      let eff = mk_term cc "@store" [addr; value] in
-      let new_state = mk_term cc "@seq" [env.state; eff] in
+      let eff = mk_term cc "@store" [env.state; addr; value] in
+      let new_state = mk_term cc "@heap" [eff] in
       Env.update_state env new_state
   | Prune _ ->
       L.die InternalError "TextualPeg: Prune instructions are not supported"
