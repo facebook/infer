@@ -1340,4 +1340,58 @@ def f(l):
       in
       F.printf "equivalent: %b@." result ;
       [%expect {| equivalent: false |}]
+
+
+    let%expect_test "B007: dict items() to keys() when value unused" =
+      let source1 = {|
+def f(d):
+    for k, v in d.items():
+        print(k)
+|} in
+      let source2 = {|
+def f(d):
+    for k in d.keys():
+        print(k)
+|} in
+      let result =
+        check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
+      in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: true |}]
+
+
+    let%expect_test "B007: dict items() to values() when key unused" =
+      let source1 = {|
+def f(d):
+    for k, v in d.items():
+        print(v)
+|} in
+      let source2 = {|
+def f(d):
+    for v in d.values():
+        print(v)
+|} in
+      let result =
+        check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
+      in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: true |}]
+
+
+    let%expect_test "B007: dict items() with both k and v used is not equivalent to keys()" =
+      let source1 = {|
+def f(d):
+    for k, v in d.items():
+        print(k, v)
+|} in
+      let source2 = {|
+def f(d):
+    for k in d.keys():
+        print(k)
+|} in
+      let result =
+        check_python_equivalence ~show_textual:false ~show_peg:false source1 source2 ~proc_name:"f"
+      in
+      F.printf "equivalent: %b@." result ;
+      [%expect {| equivalent: false |}]
   end )

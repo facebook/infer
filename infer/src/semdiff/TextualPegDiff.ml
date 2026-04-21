@@ -31,9 +31,23 @@ let enumerate_rules =
      ?L))" ]
 
 
+let dict_rules =
+  [ (* Subscript [0] on items() next element yields the key = next element of keys() *)
+    "($builtins.py_subscript ($builtins.py_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_items \
+     ?S3 ?D))) ($builtins.py_make_int 0)) ==> ($builtins.py_next_iter ?S1 ($builtins.py_get_iter \
+     ?S2 (@dict_keys ?S3 ?D)))"
+  ; (* Subscript [1] on items() next element yields the value = next element of values() *)
+    "($builtins.py_subscript ($builtins.py_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_items \
+     ?S3 ?D))) ($builtins.py_make_int 1)) ==> ($builtins.py_next_iter ?S1 ($builtins.py_get_iter \
+     ?S2 (@dict_values ?S3 ?D)))"
+  ; (* has_next on items() delegates to keys() (same number of elements) *)
+    "($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_items ?S3 ?D))) ==> \
+     ($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_keys ?S3 ?D)))" ]
+
+
 let gen_rules cc ~theta_count : Rewrite.Rule.t list =
   let theta_rules = List.init theta_count ~f:(fun i -> F.asprintf "(@theta_%d ?X ?X) ==> ?X" i) in
-  parse_rules cc (("(@phi ?C ?X ?X) ==> ?X" :: theta_rules) @ enumerate_rules)
+  parse_rules cc (("(@phi ?C ?X ?X) ==> ?X" :: theta_rules) @ enumerate_rules @ dict_rules)
 
 
 (* Bisimulation: coinductive equivalence check for cyclic PEG terms (@theta).

@@ -252,10 +252,27 @@ let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option 
       None
 
 
+let dict_reader_methods = ["items"; "keys"; "values"]
+
+(** Try to simplify a py_call_method to a known dict reader. Returns [Some atom] if the method is
+    items/keys/values on a dict. These methods read the dict (depend on σ) but do not modify it. *)
+let try_simplify_py_call_method (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option =
+  match args with
+  | Const (Str method_name) :: obj :: _
+    when List.mem dict_reader_methods method_name ~equal:String.equal ->
+      let obj_atom = convert_exp env obj in
+      Some (mk_term env.cc ("@dict_" ^ method_name) [env.state; obj_atom])
+  | _ ->
+      None
+
+
 let classify_call (env : Env.t) proc (args : T.Exp.t list) =
   if is_pure_call proc then Pure
   else if is_reader_call proc then Reader
   else if is_py_builtin proc "py_call" && Option.is_some (try_simplify_py_call env args) then Pure
+  else if
+    is_py_builtin proc "py_call_method" && Option.is_some (try_simplify_py_call_method env args)
+  then Reader
   else Writer
 
 
@@ -300,10 +317,17 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
             let header = qualified_procname_to_string proc in
             let op = mk_term cc header (env.state :: List.map args ~f:(convert_exp env)) in
             mk_term cc "@eval" [op]
-        | Call {proc; args}, Reader ->
-            (* Reader: call(σ, f, x), value depends on σ but state unchanged *)
-            let header = qualified_procname_to_string proc in
-            mk_term cc header (env.state :: List.map args ~f:(convert_exp env))
+        | Call {proc; args}, Reader -> (
+          match
+            if is_py_builtin proc "py_call_method" then try_simplify_py_call_method env args
+            else None
+          with
+          | Some atom ->
+              atom
+          | None ->
+              (* Generic reader: call(σ, f, x), value depends on σ but state unchanged *)
+              let header = qualified_procname_to_string proc in
+              mk_term cc header (env.state :: List.map args ~f:(convert_exp env)) )
         | Call {proc; args}, Pure when is_py_builtin proc "py_call" -> (
           match try_simplify_py_call env args with Some atom -> atom | None -> convert_exp env exp )
         | _ ->
