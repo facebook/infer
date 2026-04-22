@@ -123,10 +123,10 @@ let () =
   if has_results_dir && Config.is_originator then log_environment_info () ;
   if has_results_dir && Config.debug_mode && Config.is_originator then
     L.progress "Logs in %s@." (ResultsDir.get_path Logs) ;
+  if Option.is_some Config.run_as_child then (
+    InferAnalyze.register_active_checkers () ;
+    never_returns (ProcessPool.run_as_child ()) ) ;
   ( match Config.command with
-  | _ when Option.is_some Config.run_as_child ->
-      InferAnalyze.register_active_checkers () ;
-      never_returns (ProcessPool.run_as_child ())
   | _ when Option.is_some Config.java_debug_source_file_info ->
       if Config.java_source_parser_experimental then
         JSourceLocations.debug_on_file (Option.value_exn Config.java_debug_source_file_info)
