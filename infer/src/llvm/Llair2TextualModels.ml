@@ -366,6 +366,22 @@ let rewrite_to_method ~(proc_state : ProcState.t) method_name args arg_types =
             else receiver @ actual_params
           in
           Textual.Exp.Call {proc= qname; args= final_args; kind= call_kind}
+      | None
+        when let known_inits = ["init"; "initWithFrame"; "initWithCoder"] in
+             List.exists known_inits ~f:(fun prefix -> String.is_prefix final_method_name ~prefix)
+        ->
+          let metadata =
+            Some
+              { Textual.QualifiedProcName.lang= Some Textual.Lang.ObjectiveC
+              ; method_kind= Some Textual.QualifiedProcName.InstanceMethod }
+          in
+          let qname =
+            Textual.QualifiedProcName.
+              { name= Textual.ProcName.of_string final_method_name
+              ; enclosing_class= TopLevel
+              ; metadata }
+          in
+          Textual.Exp.Call {proc= qname; args= receiver @ actual_params; kind= Virtual}
       | None ->
           (* Dynamic path: The type was erased (e.g. AnyObject / Phi node).
              We emit a call to the builtin objc_msgSend so Pulse can resolve the
