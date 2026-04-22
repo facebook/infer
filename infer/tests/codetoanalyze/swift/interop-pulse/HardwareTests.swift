@@ -60,3 +60,16 @@ func testConditionalDispatch_False_Path_Bad() {
     let status = testConditionalErasure(condition: false)
      assert(status != 50)
 }
+
+// ------ Implicit nullability
+
+func checkHardware_bad(device: LegacyHardware) {
+    let version = device.getFirmwareVersion()! // Force unwrap
+    print("Version length: \(version.count)")
+}
+
+func testNullability_good(device: LegacyHardware) {
+    // 1. Static call (Resolved in Frontend)
+    let model = device.getModelName()
+    print(model.count) // Safe
+}

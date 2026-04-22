@@ -4,3 +4,4 @@ HardwareTests.swift, testConditionalDispatch_True_Path_Good_FP, 2, PULSE_ASSERTI
 HardwareTests.swift, testConditionalDispatch_True_Path_Bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testConditionalDispatch_False_Path_Good_FP, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testConditionalDispatch_False_Path_Bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+HardwareTests.swift, checkHardware_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
