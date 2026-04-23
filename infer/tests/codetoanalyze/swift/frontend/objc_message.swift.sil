@@ -48,7 +48,7 @@ declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
 
 declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "init" $sSo6UIViewCABycfcTO(var1: *__infer_swift_type<$sSo6UIViewCD,UIView>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" $sSo6UIViewCABycfcTO(var1: *__infer_swift_type<,UIView>) : *__infer_swift_type<ptr_elt> {
   #: @[0:0]
       n1 = load &L_selector(init) @[0:0]
       n2 = load &var1 @[0:0]
@@ -244,7 +244,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfC(var1: float
       
 } @?
 
-declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell>
+declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Optional>
 
 define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(coder: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,BCNCell>) : int {
   local var7: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>
@@ -290,7 +290,7 @@ define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(coder: *
       
 } @?
 
-define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello7BCNCellCXMTD>) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell> {
+define .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello7BCNCellCXMTD>) : *__infer_swift_type<,Optional> {
   #: @[13:0]
       n1 = load &var2 @[13:0]
       n2 = __sil_objc_alloc(<NSObject>, n1) @[13:0]
@@ -321,7 +321,7 @@ define .plain_name = "nuxContentView.set" $s5Hello7BCNCellC14nuxContentViewAA05D
       
 } @?
 
-declare $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvpfi() : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>
+declare $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvpfi() : *__infer_swift_type<,Optional>
 
 define .plain_name = "nuxContentView.get" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvg(self: *__infer_swift_type<,BCNCell>) : int {
   local var4: *int
@@ -340,15 +340,6 @@ define .plain_name = "nuxContentView.modify" $s5Hello7BCNCellC14nuxContentViewAA
   #: @[14:0]
       n1:*__infer_swift_type<$s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvM::Frame> = load &var1 @[14:0]
       n2 = n1.__infer_swift_type<$s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvM::Frame>.field_0 @[14:0]
-      if &var2 then jmp 6 else jmp 5 @[14:0]
-      
-  #5: @[14:0]
-      jmp 7 @[14:0]
-      
-  #6: @[14:0]
-      jmp 7 @[14:0]
-      
-  #7: @[14:0]
       ret null @[14:0]
       
 } @?
@@ -543,7 +534,7 @@ define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcf
       
 } @?
 
-define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello16DummyContentViewCXMTD>) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView> {
+define .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello16DummyContentViewCXMTD>) : *__infer_swift_type<,Optional> {
   #: @[3:0]
       n1 = load &var2 @[3:0]
       n2 = __sil_objc_alloc(<NSObject>, n1) @[3:0]

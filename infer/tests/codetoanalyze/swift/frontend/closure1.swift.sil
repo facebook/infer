@@ -200,15 +200,6 @@ define .plain_name = "closure.modify" $s5Hello18RetainCycleExampleC7closureyycvM
   #: @[0:0]
       n1:*__infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycvM::Frame> = load &var1 @[0:0]
       n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC7closureyycvM::Frame>.field_0 @[0:0]
-      if &var2 then jmp 5 else jmp 4 @[0:0]
-      
-  #4: @[0:0]
-      jmp 6 @[0:0]
-      
-  #5: @[0:0]
-      jmp 6 @[0:0]
-      
-  #6: @[0:0]
       ret null @[0:0]
       
 } @?
@@ -256,15 +247,6 @@ define .plain_name = "id.modify" $s5Hello18RetainCycleExampleC2idSivM::resume::0
   #: @[0:0]
       n1:*__infer_swift_type<$s5Hello18RetainCycleExampleC2idSivM::Frame> = load &var1 @[0:0]
       n2 = n1.__infer_swift_type<$s5Hello18RetainCycleExampleC2idSivM::Frame>.field_0 @[0:0]
-      if &var2 then jmp 5 else jmp 4 @[0:0]
-      
-  #4: @[0:0]
-      jmp 6 @[0:0]
-      
-  #5: @[0:0]
-      jmp 6 @[0:0]
-      
-  #6: @[0:0]
       ret null @[0:0]
       
 } @?

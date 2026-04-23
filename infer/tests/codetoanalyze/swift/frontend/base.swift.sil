@@ -18,6 +18,8 @@ declare swift_getTypeByMangledNameInContext(*__infer_swift_type<ptr_elt>, int, *
 
 declare swift_getObjectType(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
+declare swift_errorRelease(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
 declare swift_deallocPartialClassInstance(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
 
 declare swift_bridgeObjectRetain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
@@ -95,37 +97,37 @@ define $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFxSPys6UInt64V
   #13: @[0:0]
       n23:*__infer_swift_type<TSi> = load &var5 @[0:0]
       n22 = load n23.__infer_swift_type<TSi>.rawValue @[0:0]
-      n26 = __sil_lt(n22, 0) @[0:0]
-      if n26 then jmp 26 else jmp 19 @[0:0]
+      n26 = __sil_ge(n22, 0) @[0:0]
+      if n26 then jmp 20 else jmp 19 @[0:0]
       
   #19: @[0:0]
-      n29 = load &var2 @[0:0]
-      n27 = load &var3 @[0:0]
-      n28 = load &var1 @[0:0]
-      n32 = load &var4 @[0:0]
-      n33 = load &var7 @[0:0]
-      _ = $builtins.llvm_dynamic_call(n27, n28, __sil_cast(<int>, n29), n22, n32, n33) @[0:0]
-      jmp 19::void::ret @[0:0]
+      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45301, 0) @[0:0]
+      jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::1::ret @[0:0]
       
-  #19::jmp::23: @[0:0]
-      n37 = n34 @[0:0]
-      jmp 23 @[0:0]
+  #20: @[0:0]
+      n43 = load &var2 @[0:0]
+      n41 = load &var3 @[0:0]
+      n42 = load &var1 @[0:0]
+      n46 = load &var4 @[0:0]
+      n47 = load &var7 @[0:0]
+      _ = $builtins.llvm_dynamic_call(n41, n42, __sil_cast(<int>, n43), n22, n46, n47) @[0:0]
+      jmp 20::void::ret @[0:0]
       
-  #19::void::ret: @[0:0]
-      n34 = load &var7 @[0:0]
-      if __sil_ne(n34, null) then jmp 19::jmp::23 else jmp 25 @[0:0]
+  #20::jmp::24: @[0:0]
+      n51 = n48 @[0:0]
+      jmp 24 @[0:0]
       
-  #23: @[0:0]
+  #20::void::ret: @[0:0]
+      n48 = load &var7 @[0:0]
+      if __sil_ne(n48, null) then jmp 20::jmp::24 else jmp 26 @[0:0]
+      
+  #24: @[0:0]
       store &var7 <- null @[0:0]
-      store &var7 <- n37 @[0:0]
-      ret null @[0:0]
-      
-  #25: @[0:0]
+      store &var7 <- n51 @[0:0]
       ret null @[0:0]
       
   #26: @[0:0]
-      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45301, 0) @[0:0]
-      jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::1::ret @[0:0]
+      ret null @[0:0]
       
   #9::ret: @[0:0]
       if __sil_eq(__sil_land(n3, 0), 0) then jmp 13 else jmp 12 @[0:0]
@@ -134,7 +136,7 @@ define $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFxSPys6UInt64V
 
 declare $ss2eeoiySbx_xtSYRzSQ8RawValueRpzlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "_finalizeUninitializedArray" $ss27_finalizeUninitializedArrayySayxGABnlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSayxGD>
+declare .plain_name = "_finalizeUninitializedArray" $ss27_finalizeUninitializedArrayySayxGABnlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<Ts12_ArrayBufferV,Array>
 
 declare $ss27_allocateUninitializedArrayySayxG_BptBwlF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -228,110 +230,108 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
       
   #14: @[0:0]
       n6 = load &var5 @[0:0]
-      n8 = __sil_lt(n6, -2147483648) @[0:0]
-      if n8 then jmp 64 else jmp 18 @[0:0]
+      n8 = __sil_ge(n6, -2147483648) @[0:0]
+      if n8 then jmp 19 else jmp 18 @[0:0]
       
   #18: @[0:0]
-      n10 = load &var5 @[0:0]
-      n11 = __sil_lt(2147483647, n10) @[0:0]
-      if n11 then jmp 63 else jmp 21 @[0:0]
-      
-  #21: @?
-      n12 = load &var6 @[0:0]
-      if __sil_eq(n12, 0) then jmp 26 else jmp 24::jmp::27 @[0:0]
-      
-  #24::jmp::27: @[0:0]
-      n14 = load &var6 @[0:0]
-      n15 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n14) @[0:0]
-      jmp 27 @[0:0]
-      
-  #26: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::1::ret @[0:0]
       
-  #27: @[0:0]
-      n17 = load &var7 @[0:0]
-      n19 = __sil_lt(n17, -2147483648) @[0:0]
-      if n19 then jmp 62 else jmp 31 @[0:0]
+  #19: @[0:0]
+      n24 = load &var5 @[0:0]
+      n25 = __sil_ge(2147483647, n24) @[0:0]
+      if n25 then jmp 23 else jmp 22 @[0:0]
       
-  #31: @[0:0]
-      n21 = load &var7 @[0:0]
-      n22 = __sil_lt(2147483647, n21) @[0:0]
-      if n22 then jmp 61 else jmp 34 @[0:0]
-      
-  #34: @?
-      n23 = load &var2 @[0:0]
-      if __sil_eq(n23, 0) then jmp 39 else jmp 37::jmp::40 @[0:0]
-      
-  #37::jmp::40: @[0:0]
-      n25 = load &var2 @[0:0]
-      n26 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n25) @[0:0]
-      jmp 40 @[0:0]
-      
-  #39: @[0:0]
+  #22: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::2::ret @[0:0]
       
-  #40: @[0:0]
-      n28 = load &var3 @[0:0]
-      n30 = __sil_lt(n28, -2147483648) @[0:0]
-      if n30 then jmp 60 else jmp 44 @[0:0]
+  #23: @?
+      n40 = load &var6 @[0:0]
+      if __sil_eq(n40, 0) then jmp 28 else jmp 26::jmp::29 @[0:0]
       
-  #44: @[0:0]
-      n32 = load &var3 @[0:0]
-      n33 = __sil_lt(2147483647, n32) @[0:0]
-      if n33 then jmp 59 else jmp 47 @[0:0]
+  #26::jmp::29: @[0:0]
+      n42 = load &var6 @[0:0]
+      n43 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n42) @[0:0]
+      jmp 29 @[0:0]
       
-  #47: @[0:0]
-      n35 = load &var8 @[0:0]
-      n36 = __sil_lt(4294967295, n35) @[0:0]
-      if n36 then jmp 58 else jmp 51 @[0:0]
-      
-  #51: @[0:0]
-      n38 = load &var9 @[0:0]
-      n39 = __sil_lt(4294967295, n38) @[0:0]
-      if n39 then jmp 57 else jmp 55 @[0:0]
-      
-  #55: @[0:0]
-      n51 = load &var9 @[0:0]
-      n49 = load &var8 @[0:0]
-      n47 = load &var3 @[0:0]
-      n44 = load &var7 @[0:0]
-      n41 = load &var5 @[0:0]
-      _ = _swift_stdlib_reportUnimplementedInitializerInFile(n4, __sil_cast(<int>, n41), n15, __sil_cast(<int>, n44), n26, __sil_cast(<int>, n47), __sil_cast(<int>, n49), __sil_cast(<int>, n51), 0) @[0:0]
-      jmp _swift_stdlib_reportUnimplementedInitializerInFile::void::ret @[0:0]
-      
-  #57: @[0:0]
+  #28: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::3::ret @[0:0]
       
-  #58: @[0:0]
+  #29: @[0:0]
+      n45 = load &var7 @[0:0]
+      n47 = __sil_ge(n45, -2147483648) @[0:0]
+      if n47 then jmp 34 else jmp 33 @[0:0]
+      
+  #33: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::4::ret @[0:0]
       
-  #59: @[0:0]
+  #34: @[0:0]
+      n63 = load &var7 @[0:0]
+      n64 = __sil_ge(2147483647, n63) @[0:0]
+      if n64 then jmp 38 else jmp 37 @[0:0]
+      
+  #37: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::5::ret @[0:0]
       
-  #60: @[0:0]
+  #38: @?
+      n79 = load &var2 @[0:0]
+      if __sil_eq(n79, 0) then jmp 43 else jmp 41::jmp::44 @[0:0]
+      
+  #41::jmp::44: @[0:0]
+      n81 = load &var2 @[0:0]
+      n82 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n81) @[0:0]
+      jmp 44 @[0:0]
+      
+  #43: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::6::ret @[0:0]
       
-  #61: @[0:0]
+  #44: @[0:0]
+      n84 = load &var3 @[0:0]
+      n86 = __sil_ge(n84, -2147483648) @[0:0]
+      if n86 then jmp 49 else jmp 48 @[0:0]
+      
+  #48: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::7::ret @[0:0]
       
-  #62: @[0:0]
+  #49: @[0:0]
+      n102 = load &var3 @[0:0]
+      n103 = __sil_ge(2147483647, n102) @[0:0]
+      if n103 then jmp 53 else jmp 52 @[0:0]
+      
+  #52: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::8::ret @[0:0]
       
-  #63: @[0:0]
+  #53: @[0:0]
+      n118 = $builtins.llvm_nondet() @[0:0]
+      if n118 then jmp 58 else jmp 57 @[0:0]
+      
+  #57: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::9::ret @[0:0]
       
-  #64: @[0:0]
+  #58: @[0:0]
+      n133 = $builtins.llvm_nondet() @[0:0]
+      if n133 then jmp 63 else jmp 62 @[0:0]
+      
+  #62: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::10::ret @[0:0]
+      
+  #63: @[0:0]
+      n159 = load &var9 @[0:0]
+      n157 = load &var8 @[0:0]
+      n155 = load &var3 @[0:0]
+      n152 = load &var7 @[0:0]
+      n149 = load &var5 @[0:0]
+      _ = _swift_stdlib_reportUnimplementedInitializerInFile(n4, __sil_cast(<int>, n149), n43, __sil_cast(<int>, n152), n82, __sil_cast(<int>, n155), __sil_cast(<int>, n157), __sil_cast(<int>, n159), 0) @[0:0]
+      jmp _swift_stdlib_reportUnimplementedInitializerInFile::void::ret @[0:0]
       
   #_swift_stdlib_reportUnimplementedInitializerInFile::void::ret: @[0:0]
       ret null @[0:0]
@@ -339,10 +339,10 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
 } @?
 
 define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_(var1: *__infer_swift_type<ptr_elt>, var2: int, var3: int, var4: int, var5: int, var6: int, var7: int, var8: int, var9: int, var10: int) : void {
-  local var43: *__infer_swift_type<ptr_elt>, var13: *__infer_swift_type<ptr_elt>, var12: *__infer_swift_type<ptr_elt>
+  local var14: *__infer_swift_type<ptr_elt>, var13: *__infer_swift_type<ptr_elt>, var12: *__infer_swift_type<ptr_elt>
   #: @[0:0]
-      store &var12 <- null @[0:0]
-      n2:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var13 @[0:0]
+      store &var14 <- null @[0:0]
+      n2:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var12 @[0:0]
       n3 = n2.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>>.__infer_tuple_field_1 @[0:0]
       n5:*__infer_swift_type<TSRys5UInt8VG> = load n3 @[0:0]
       n4 = load &var7 @[0:0]
@@ -351,7 +351,7 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
       n8:*__infer_swift_type<TSi> = load n7.__infer_swift_type<TSRys5UInt8VG>.field_1 @[0:0]
       n6 = load &var8 @[0:0]
       store n8.__infer_swift_type<TSi>.rawValue <- n6 @[0:0]
-      n9:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var13 @[0:0]
+      n9:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var12 @[0:0]
       n10 = n9.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>>.__infer_tuple_field_2 @[0:0]
       n12:*__infer_swift_type<TSRys5UInt8VG> = load n10 @[0:0]
       n11 = load &var2 @[0:0]
@@ -360,16 +360,17 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
       n15:*__infer_swift_type<TSi> = load n14.__infer_swift_type<TSRys5UInt8VG>.field_1 @[0:0]
       n13 = load &var3 @[0:0]
       store n15.__infer_swift_type<TSi>.rawValue <- n13 @[0:0]
-      n17:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var13 @[0:0]
+      n17:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var12 @[0:0]
       n18:*__infer_swift_type<TSu> = load n17.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>>.__infer_tuple_field_3 @[0:0]
       n16 = load &var9 @[0:0]
       store n18.__infer_swift_type<TSu>.field_0 <- n16 @[0:0]
-      n20:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var13 @[0:0]
+      n20:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>> = load &var12 @[0:0]
       n21:*__infer_swift_type<TSu> = load n20.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSRys5UInt8VG>,*__infer_swift_type<TSu>,*__infer_swift_type<TSu>>.__infer_tuple_field_4 @[0:0]
       n19 = load &var10 @[0:0]
       store n21.__infer_swift_type<TSu>.field_0 <- n19 @[0:0]
       n22 = load &var6 @[0:0]
-      if __sil_eq(__sil_land(n22, 1), 0) then jmp 49 else jmp 27 @[0:0]
+      n24 = __sil_land(n22, 1) @[0:0]
+      if __sil_eq(n24, 0) then jmp 52 else jmp 28 @[0:0]
       
   #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::10::ret: @[0:0]
       unreachable @[0:0]
@@ -378,6 +379,9 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
       unreachable @[0:0]
       
   #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::12::ret: @[0:0]
+      unreachable @[0:0]
+      
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::13::ret: @[0:0]
       unreachable @[0:0]
       
   #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::1::ret: @[0:0]
@@ -413,180 +417,180 @@ define $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverO
   #$ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[0:0]
       unreachable @[0:0]
       
-  #$ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFyt_Tgq5::void::ret: @[0:0]
-      jmp 97 @[0:0]
-      
-  #100: @[0:0]
-      _ = __sil_assert_fail(null) @[0:0]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::6::ret @[0:0]
-      
-  #101: @[0:0]
-      _ = __sil_assert_fail(null) @[0:0]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::7::ret @[0:0]
-      
   #102: @[0:0]
-      _ = __sil_assert_fail(null) @[0:0]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::8::ret @[0:0]
-      
-  #103: @[0:0]
-      _ = __sil_assert_fail(null) @[0:0]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::9::ret @[0:0]
-      
-  #104: @[0:0]
-      _ = __sil_assert_fail(null) @[0:0]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::10::ret @[0:0]
-      
-  #105: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::11::ret @[0:0]
       
-  #106: @[0:0]
-      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45301, 0) @[0:0]
-      jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[0:0]
+  #103: @[0:0]
+      n239 = $builtins.llvm_nondet() @[0:0]
+      if n239 then jmp 108 else jmp 107 @[0:0]
       
   #107: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::12::ret @[0:0]
       
-  #27: @[0:0]
-      n27 = load &var4 @[0:0]
-      n28 = __sil_lt(4294967295, n27) @[0:0]
-      if n28 then jmp 48 else jmp 30 @[0:0]
+  #108: @[0:0]
+      n266 = load &var10 @[0:0]
+      n264 = load &var9 @[0:0]
+      n262 = load &var5 @[0:0]
+      n260 = load &var4 @[0:0]
+      n258 = load &var3 @[0:0]
+      n255 = load &var8 @[0:0]
+      _ = _swift_stdlib_reportUnimplementedInitializerInFile(n115, __sil_cast(<int>, n255), n154, __sil_cast(<int>, n258), __sil_cast(<*__infer_swift_type<ptr_elt>>, n260), __sil_cast(<int>, n262), __sil_cast(<int>, n264), __sil_cast(<int>, n266), 0) @[0:0]
+      jmp 110 @[0:0]
       
-  #30: @?
-      n29 = load &var4 @[0:0]
-      if __sil_lt(__sil_cast(<int>, n29), 55296) then jmp 38 else jmp 33 @[0:0]
+  #110: @[0:0]
+      ret null @[0:0]
       
-  #33: @?
-      n33 = load &var4 @[0:0]
-      if __sil_lt(57343, __sil_cast(<int>, n33)) then jmp 38 else jmp 47 @[0:0]
+  #111: @[0:0]
+      _ = __sil_assert_fail(null) @[0:0]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::13::ret @[0:0]
       
-  #38: @?
-      n50 = load &var4 @[0:0]
-      if __sil_lt(1114111, __sil_cast(<int>, n50)) then jmp 47 else jmp 40 @[0:0]
+  #28: @[0:0]
+      n29 = __sil_ne(n24, 0) @[0:0]
+      if n29 then jmp 32 else jmp 31 @[0:0]
       
-  #40: @[0:0]
-      n52 = $builtins.llvm_nondet() @[0:0]
-      n53:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::noescape::function>> = load &var43 @[0:0]
-      n54 = n53.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::noescape::function>>.__infer_tuple_field_1 @[0:0]
-      n56:*__infer_swift_type<swift::noescape::function> = load n54 @[0:0]
-      store n56.__infer_swift_type<swift::noescape::function>.field_0 <- 
-      fun (var1, var2, var3, var4) -> $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_yAMXEfU_TA(var1, var2, var3, var4) @[0:0]
-      n58:*__infer_swift_type<swift::noescape::function> = load n54 @[0:0]
-      n57 = load &var13 @[0:0]
-      store n58.__infer_swift_type<swift::noescape::function>.field_1 <- n57 @[0:0]
-      n59 = $builtins.llvm_nondet() @[0:0]
-      n63 = load &var4 @[0:0]
-      n60 = load &var1 @[0:0]
-      n62 = load &var43 @[0:0]
-      n66 = load &var12 @[0:0]
-      _ = $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFyt_Tgq5(n60, 
-      fun (var1, var2, var3, var4, var5) -> $ss12StaticStringV14withUTF8BufferyxxSRys5UInt8VGXElFxAFXEfU_yt_Tgq5TA(var1, var2, var3, var4, var5), n62, __sil_cast(<int>, n63), n59, n66) @[0:0]
-      jmp $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFyt_Tgq5::void::ret @[0:0]
-      
-  #47: @[0:0]
+  #31: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[0:0]
       
-  #48: @[0:0]
+  #32: @[0:0]
+      n44 = $builtins.llvm_nondet() @[0:0]
+      if n44 then jmp 36 else jmp 35 @[0:0]
+      
+  #35: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::1::ret @[0:0]
       
-  #49: @?
-      n81 = load &var4 @[0:0]
-      if __sil_eq(n81, 0) then jmp 107 else jmp 51 @[0:0]
+  #36: @?
+      n59 = load &var4 @[0:0]
+      if __sil_lt(__sil_cast(<int>, n59), 55296) then jmp 44 else jmp 39 @[0:0]
       
-  #51: @[0:0]
-      n83 = load &var5 @[0:0]
-      n85 = __sil_lt(n83, 0) @[0:0]
-      if n85 then jmp 106 else jmp 55 @[0:0]
+  #39: @?
+      n63 = load &var4 @[0:0]
+      if __sil_lt(57343, __sil_cast(<int>, n63)) then jmp 44 else jmp 47 @[0:0]
       
-  #55: @?
-      n86 = load &var7 @[0:0]
-      if __sil_eq(n86, 0) then jmp 59 else jmp 57::jmp::60 @[0:0]
+  #44: @[0:0]
+      if $builtins.llvm_nondet() then jmp 48 else jmp 47 @[0:0]
       
-  #57::jmp::60: @[0:0]
-      n88 = load &var7 @[0:0]
-      n89 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n88) @[0:0]
-      jmp 60 @[0:0]
-      
-  #59: @[0:0]
+  #47: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::2::ret @[0:0]
       
-  #60: @[0:0]
-      n91 = load &var8 @[0:0]
-      n93 = __sil_lt(n91, -2147483648) @[0:0]
-      if n93 then jmp 105 else jmp 64 @[0:0]
+  #48: @[0:0]
+      n79:*__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::noescape::function>> = load &var13 @[0:0]
+      n80 = n79.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::noescape::function>>.__infer_tuple_field_1 @[0:0]
+      n82:*__infer_swift_type<swift::noescape::function> = load n80 @[0:0]
+      store n82.__infer_swift_type<swift::noescape::function>.field_0 <- 
+      fun (var1, var2, var3, var4) -> $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_yAMXEfU_TA(var1, var2, var3, var4) @[0:0]
+      n84:*__infer_swift_type<swift::noescape::function> = load n80 @[0:0]
+      n83 = load &var12 @[0:0]
+      store n84.__infer_swift_type<swift::noescape::function>.field_1 <- n83 @[0:0]
+      n85 = $builtins.llvm_nondet() @[0:0]
+      n89 = load &var4 @[0:0]
+      n86 = load &var1 @[0:0]
+      n88 = load &var13 @[0:0]
+      n92 = load &var14 @[0:0]
+      _ = $ss7UnicodeO6ScalarV17withUTF8CodeUnitsyxxSRys5UInt8VGKXEKlFyt_Tgq5(n86, 
+      fun (var1, var2, var3, var4, var5) -> $ss12StaticStringV14withUTF8BufferyxxSRys5UInt8VGXElFxAFXEfU_yt_Tgq5TA(var1, var2, var3, var4, var5), n88, __sil_cast(<int>, n89), n85, n92) @[0:0]
+      jmp 110 @[0:0]
+      
+  #52: @?
+      n93 = load &var4 @[0:0]
+      if __sil_eq(n93, 0) then jmp 111 else jmp 54 @[0:0]
+      
+  #54: @[0:0]
+      n95 = load &var5 @[0:0]
+      n97 = __sil_ge(n95, 0) @[0:0]
+      if n97 then jmp 59 else jmp 58 @[0:0]
+      
+  #58: @[0:0]
+      _ = $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(__sil_cast(<int>, "Fatal error"), 11, 2, __sil_cast(<int>, "UnsafeBufferPointer with negative count"), 39, 2, __sil_cast(<int>, "Swift/arm64-apple-ios-simulator.swiftinterface"), 46, 2, 45301, 0) @[0:0]
+      jmp $ss18_fatalErrorMessage__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[0:0]
+      
+  #59: @?
+      n112 = load &var7 @[0:0]
+      if __sil_eq(n112, 0) then jmp 64 else jmp 62::jmp::65 @[0:0]
+      
+  #62::jmp::65: @[0:0]
+      n114 = load &var7 @[0:0]
+      n115 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n114) @[0:0]
+      jmp 65 @[0:0]
       
   #64: @[0:0]
-      n95 = load &var8 @[0:0]
-      n96 = __sil_lt(2147483647, n95) @[0:0]
-      if n96 then jmp 104 else jmp 67 @[0:0]
-      
-  #67: @?
-      n97 = load &var2 @[0:0]
-      if __sil_eq(n97, 0) then jmp 72 else jmp 70::jmp::73 @[0:0]
-      
-  #70::jmp::73: @[0:0]
-      n99 = load &var2 @[0:0]
-      n100 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n99) @[0:0]
-      jmp 73 @[0:0]
-      
-  #72: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::3::ret @[0:0]
       
-  #73: @[0:0]
-      n102 = load &var3 @[0:0]
-      n104 = __sil_lt(n102, -2147483648) @[0:0]
-      if n104 then jmp 103 else jmp 77 @[0:0]
+  #65: @[0:0]
+      n117 = load &var8 @[0:0]
+      n119 = __sil_ge(n117, -2147483648) @[0:0]
+      if n119 then jmp 70 else jmp 69 @[0:0]
       
-  #77: @[0:0]
-      n106 = load &var3 @[0:0]
-      n107 = __sil_lt(2147483647, n106) @[0:0]
-      if n107 then jmp 102 else jmp 80 @[0:0]
-      
-  #80: @[0:0]
-      n108 = load &var5 @[0:0]
-      n110 = __sil_lt(n108, -2147483648) @[0:0]
-      if n110 then jmp 101 else jmp 84 @[0:0]
-      
-  #84: @[0:0]
-      n112 = load &var5 @[0:0]
-      n113 = __sil_lt(2147483647, n112) @[0:0]
-      if n113 then jmp 100 else jmp 87 @[0:0]
-      
-  #87: @[0:0]
-      n115 = load &var9 @[0:0]
-      n116 = __sil_lt(4294967295, n115) @[0:0]
-      if n116 then jmp 99 else jmp 91 @[0:0]
-      
-  #91: @[0:0]
-      n118 = load &var10 @[0:0]
-      n119 = __sil_lt(4294967295, n118) @[0:0]
-      if n119 then jmp 98 else jmp 95 @[0:0]
-      
-  #95: @[0:0]
-      n132 = load &var10 @[0:0]
-      n130 = load &var9 @[0:0]
-      n128 = load &var5 @[0:0]
-      n126 = load &var4 @[0:0]
-      n124 = load &var3 @[0:0]
-      n121 = load &var8 @[0:0]
-      _ = _swift_stdlib_reportUnimplementedInitializerInFile(n89, __sil_cast(<int>, n121), n100, __sil_cast(<int>, n124), __sil_cast(<*__infer_swift_type<ptr_elt>>, n126), __sil_cast(<int>, n128), __sil_cast(<int>, n130), __sil_cast(<int>, n132), 0) @[0:0]
-      jmp 97 @[0:0]
-      
-  #97: @[0:0]
-      ret null @[0:0]
-      
-  #98: @[0:0]
+  #69: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::4::ret @[0:0]
       
-  #99: @[0:0]
+  #70: @[0:0]
+      n135 = load &var8 @[0:0]
+      n136 = __sil_ge(2147483647, n135) @[0:0]
+      if n136 then jmp 74 else jmp 73 @[0:0]
+      
+  #73: @[0:0]
       _ = __sil_assert_fail(null) @[0:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::5::ret @[0:0]
+      
+  #74: @?
+      n151 = load &var2 @[0:0]
+      if __sil_eq(n151, 0) then jmp 79 else jmp 77::jmp::80 @[0:0]
+      
+  #77::jmp::80: @[0:0]
+      n153 = load &var2 @[0:0]
+      n154 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n153) @[0:0]
+      jmp 80 @[0:0]
+      
+  #79: @[0:0]
+      _ = __sil_assert_fail(null) @[0:0]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::6::ret @[0:0]
+      
+  #80: @[0:0]
+      n156 = load &var3 @[0:0]
+      n158 = __sil_ge(n156, -2147483648) @[0:0]
+      if n158 then jmp 85 else jmp 84 @[0:0]
+      
+  #84: @[0:0]
+      _ = __sil_assert_fail(null) @[0:0]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::7::ret @[0:0]
+      
+  #85: @[0:0]
+      n174 = load &var3 @[0:0]
+      n175 = __sil_ge(2147483647, n174) @[0:0]
+      if n175 then jmp 89 else jmp 88 @[0:0]
+      
+  #88: @[0:0]
+      _ = __sil_assert_fail(null) @[0:0]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::8::ret @[0:0]
+      
+  #89: @[0:0]
+      n190 = load &var5 @[0:0]
+      n192 = __sil_ge(n190, -2147483648) @[0:0]
+      if n192 then jmp 94 else jmp 93 @[0:0]
+      
+  #93: @[0:0]
+      _ = __sil_assert_fail(null) @[0:0]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::9::ret @[0:0]
+      
+  #94: @[0:0]
+      n208 = load &var5 @[0:0]
+      n209 = __sil_ge(2147483647, n208) @[0:0]
+      if n209 then jmp 98 else jmp 97 @[0:0]
+      
+  #97: @[0:0]
+      _ = __sil_assert_fail(null) @[0:0]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::10::ret @[0:0]
+      
+  #98: @[0:0]
+      n224 = $builtins.llvm_nondet() @[0:0]
+      if n224 then jmp 103 else jmp 102 @[0:0]
       
 } @?
 
@@ -668,6 +672,8 @@ declare $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(int, *__infer_swift
 
 declare $sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
+declare $sSQ2eeoiySbx_xtFZTj(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
 declare $sSKsSS7ElementRtzrlE6joined9separatorS2S_tF(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare $sS2hyxGycfC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
@@ -700,7 +706,7 @@ declare $s5Hello8TestSizeVSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_t
 
 declare $s5Hello8TestSizeVSgWOc(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "__derived_struct_equals" $s5Hello8TestSizeVSQAASQ2eeoiySbx_xtFZTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSbD>
+declare .plain_name = "__derived_struct_equals" $s5Hello8TestSizeVSQAASQ2eeoiySbx_xtFZTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Bool>
 
 declare $s5Hello8TestSizeVMa(int) : *__infer_swift_type<ptr_elt>
 
@@ -735,53 +741,58 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
       n8:*__infer_swift_type<TSd> = load n7.__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>.field_0 @[40:0]
       n5 = load &var3 @[40:0]
       store n8.__infer_swift_type<TSd>.field_0 <- n5 @[40:0]
-      n9 = load &var2 @[41:22]
-      n18 = __sil_lnot(__sil_lt(__sil_land(__sil_shiftrt(__sil_cast(<int>, n9), 52), 2047), 2047)) @[41:22]
-      if n18 then jmp 102 else jmp 23 @[41:22]
+      n9 = $builtins.llvm_nondet() @[41:22]
+      if n9 then jmp 100 else jmp 22 @[41:22]
       
   #$ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::1::ret: @[44:47]
-      n108 = load &::str::0:: @[44:47]
-      n111 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n108, 0, 1) @[44:47]
-      jmp 72::ret @[44:47]
+      n90 = load &::str::0:: @[44:47]
+      n93 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n90, 0, 1) @[44:47]
+      jmp 70::ret @[44:47]
       
   #$ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret: @[44:37]
-      n94 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("x", 1, 1) @[44:37]
-      jmp 68::ret @[44:37]
+      n76 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("x", 1, 1) @[44:37]
+      jmp 66::ret @[44:37]
       
   #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[40:0]
-      n103:*__infer_swift_type<TSi> = load &var11 @[40:0]
-      n101 = load &var3 @[40:0]
-      store n103.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n101) @[40:0]
-      n104 = load &var11 @[44:39]
-      n105 = load &$sSiN @[44:39]
-      n106 = load &$sSis23CustomStringConvertiblesWP @[44:39]
-      n107 = load &var9 @[44:39]
-      _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n104, n105, n106, n107) @[44:39]
+      n85:*__infer_swift_type<TSi> = load &var11 @[40:0]
+      n83 = load &var3 @[40:0]
+      store n85.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n83) @[40:0]
+      n86 = load &var11 @[44:39]
+      n87 = load &$sSiN @[44:39]
+      n88 = load &$sSis23CustomStringConvertiblesWP @[44:39]
+      n89 = load &var9 @[44:39]
+      _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n86, n87, n88, n89) @[44:39]
       jmp $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::1::ret @[44:39]
       
   #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::2::ret: @[40:0]
-      n118:*__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation> = load &var9 @[40:0]
-      n119:*__infer_swift_type<TSS> = load n118.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[40:0]
-      n120:*__infer_swift_type<Ts11_StringGutsV,String> = load n119.__infer_swift_type<TSS>.stringValue @[40:0]
-      n121 = n120.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[40:0]
-      n123:*__infer_swift_type<Ts13_StringObjectV,String> = load n121 @[40:0]
-      n124:*__infer_swift_type<Ts6UInt64V,UInt64> = load n123.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[40:0]
-      n122 = load n124.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 @[40:0]
-      n126:*__infer_swift_type<Ts13_StringObjectV,String> = load n121 @[40:0]
-      n125 = load n126.__infer_swift_type<Ts13_StringObjectV,String>.field_1 @[40:0]
-      n128 = n125 @[40:0]
-      jmp 83::ret @[40:0]
+      n100:*__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation> = load &var9 @[40:0]
+      n101:*__infer_swift_type<TSS> = load n100.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[40:0]
+      n102:*__infer_swift_type<Ts11_StringGutsV,String> = load n101.__infer_swift_type<TSS>.stringValue @[40:0]
+      n103 = n102.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[40:0]
+      n105:*__infer_swift_type<Ts13_StringObjectV,String> = load n103 @[40:0]
+      n106:*__infer_swift_type<Ts6UInt64V,UInt64> = load n105.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[40:0]
+      n104 = load n106.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 @[40:0]
+      n108:*__infer_swift_type<Ts13_StringObjectV,String> = load n103 @[40:0]
+      n107 = load n108.__infer_swift_type<Ts13_StringObjectV,String>.field_1 @[40:0]
+      n110 = n107 @[40:0]
+      jmp 81::ret @[40:0]
       
   #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret: @[40:0]
-      n86:*__infer_swift_type<TSi> = load &var10 @[40:0]
-      n84 = load &var2 @[40:0]
-      store n86.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n84) @[40:0]
-      n87 = load &var10 @[44:30]
-      n88 = load &$sSiN @[44:30]
-      n89 = load &$sSis23CustomStringConvertiblesWP @[44:30]
-      n90 = load &var9 @[44:30]
-      _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n87, n88, n89, n90) @[44:30]
+      n68:*__infer_swift_type<TSi> = load &var10 @[40:0]
+      n66 = load &var2 @[40:0]
+      store n68.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n66) @[40:0]
+      n69 = load &var10 @[44:30]
+      n70 = load &$sSiN @[44:30]
+      n71 = load &$sSis23CustomStringConvertiblesWP @[44:30]
+      n72 = load &var9 @[44:30]
+      _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n69, n70, n71, n72) @[44:30]
       jmp $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret @[44:30]
+      
+  #100: @[40:0]
+      unreachable @[40:0]
+      
+  #101: @[40:0]
+      unreachable @[40:0]
       
   #102: @[40:0]
       unreachable @[40:0]
@@ -795,141 +806,134 @@ define .plain_name = "init" $s5Hello8TestSizeV4size4modeACSgSo6CGSizeV_AA0C4Mode
   #105: @[40:0]
       unreachable @[40:0]
       
-  #106: @[40:0]
-      unreachable @[40:0]
+  #22: @[41:22]
+      n11 = load &var2 @[41:22]
+      n14 = __sil_lnot(__sil_lt(1.41142812322e+19, n11)) @[41:22]
+      if n14 then jmp 101 else jmp 26 @[41:22]
       
-  #107: @[40:0]
-      unreachable @[40:0]
+  #26: @[41:22]
+      n15 = load &var2 @[41:22]
+      n19 = __sil_lnot(__sil_lt(n15, 4.89090919532e+18)) @[41:22]
+      if n19 then jmp 102 else jmp 30 @[41:22]
       
-  #23: @[41:22]
-      n20 = load &var2 @[41:22]
-      n23 = __sil_lnot(__sil_lt(1.41142812322e+19, n20)) @[41:22]
-      if n23 then jmp 103 else jmp 27 @[41:22]
+  #30: @[41:20]
+      n22:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[41:20]
+      n23:*__infer_swift_type<TSi> = load n22.__infer_swift_type<T5Hello8TestSizeV,TestSize>.width @[41:20]
+      n20 = load &var2 @[41:20]
+      store n23.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n20) @[41:20]
+      n24 = $builtins.llvm_nondet() @[42:23]
+      if n24 then jmp 103 else jmp 39 @[42:23]
       
-  #27: @[41:22]
-      n24 = load &var2 @[41:22]
-      n28 = __sil_lnot(__sil_lt(n24, 4.89090919532e+18)) @[41:22]
-      if n28 then jmp 104 else jmp 31 @[41:22]
+  #39: @[42:23]
+      n26 = load &var3 @[42:23]
+      n29 = __sil_lnot(__sil_lt(1.41142812322e+19, n26)) @[42:23]
+      if n29 then jmp 104 else jmp 43 @[42:23]
       
-  #31: @[41:20]
-      n31:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[41:20]
-      n32:*__infer_swift_type<TSi> = load n31.__infer_swift_type<T5Hello8TestSizeV,TestSize>.width @[41:20]
-      n29 = load &var2 @[41:20]
-      store n32.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n29) @[41:20]
-      n33 = load &var3 @[42:23]
-      n42 = __sil_lnot(__sil_lt(__sil_land(__sil_shiftrt(__sil_cast(<int>, n33), 52), 2047), 2047)) @[42:23]
-      if n42 then jmp 105 else jmp 41 @[42:23]
+  #43: @[42:23]
+      n30 = load &var3 @[42:23]
+      n34 = __sil_lnot(__sil_lt(n30, 4.89090919532e+18)) @[42:23]
+      if n34 then jmp 105 else jmp 47 @[42:23]
       
-  #41: @[42:23]
-      n44 = load &var3 @[42:23]
-      n47 = __sil_lnot(__sil_lt(1.41142812322e+19, n44)) @[42:23]
-      if n47 then jmp 106 else jmp 45 @[42:23]
+  #47: @[42:21]
+      n37:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[42:21]
+      n38:*__infer_swift_type<TSi> = load n37.__infer_swift_type<T5Hello8TestSizeV,TestSize>.height @[42:21]
+      n35 = load &var3 @[42:21]
+      store n38.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n35) @[42:21]
+      n40:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[43:19]
+      n41:*__infer_swift_type<T5Hello8SizeModeO,SizeMode> = load n40.__infer_swift_type<T5Hello8TestSizeV,TestSize>.mode @[43:19]
+      n39 = load &mode @[43:19]
+      store n41.__infer_swift_type<T5Hello8SizeModeO,SizeMode>.rawValue <- n39 @[43:19]
+      n44 = $ss26DefaultStringInterpolationV15literalCapacity18interpolationCountABSi_SitcfC(1, 2) @[44:28]
+      jmp 53::ret @[44:28]
       
-  #45: @[42:23]
-      n48 = load &var3 @[42:23]
-      n52 = __sil_lnot(__sil_lt(n48, 4.89090919532e+18)) @[42:23]
-      if n52 then jmp 107 else jmp 49 @[42:23]
+  #53::ret: @[44:28]
+      n45:*__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation> = load &var9 @[44:28]
+      n46:*__infer_swift_type<TSS> = load n45.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[44:28]
+      n47:*__infer_swift_type<Ts11_StringGutsV,String> = load n46.__infer_swift_type<TSS>.stringValue @[44:28]
+      n48 = n47.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[44:28]
+      n51:*__infer_swift_type<Ts13_StringObjectV,String> = load n48 @[44:28]
+      n52:*__infer_swift_type<Ts6UInt64V,UInt64> = load n51.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[44:28]
+      n50 = load n44.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[44:28]
+      store n52.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n50 @[44:28]
+      n55:*__infer_swift_type<Ts13_StringObjectV,String> = load n48 @[44:28]
+      n54 = load n44.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:28]
+      store n55.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n54 @[44:28]
+      n56 = load &::str::0:: @[44:28]
+      n59 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n56, 0, 1) @[44:28]
+      jmp 62::ret @[44:28]
       
-  #49: @[42:21]
-      n55:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[42:21]
-      n56:*__infer_swift_type<TSi> = load n55.__infer_swift_type<T5Hello8TestSizeV,TestSize>.height @[42:21]
-      n53 = load &var3 @[42:21]
-      store n56.__infer_swift_type<TSi>.rawValue <- __sil_cast(<int>, n53) @[42:21]
-      n58:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[43:19]
-      n59:*__infer_swift_type<T5Hello8SizeModeO,SizeMode> = load n58.__infer_swift_type<T5Hello8TestSizeV,TestSize>.mode @[43:19]
-      n57 = load &mode @[43:19]
-      store n59.__infer_swift_type<T5Hello8SizeModeO,SizeMode>.rawValue <- n57 @[43:19]
-      n62 = $ss26DefaultStringInterpolationV15literalCapacity18interpolationCountABSi_SitcfC(1, 2) @[44:28]
-      jmp 55::ret @[44:28]
-      
-  #55::ret: @[44:28]
-      n63:*__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation> = load &var9 @[44:28]
-      n64:*__infer_swift_type<TSS> = load n63.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[44:28]
-      n65:*__infer_swift_type<Ts11_StringGutsV,String> = load n64.__infer_swift_type<TSS>.stringValue @[44:28]
-      n66 = n65.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[44:28]
-      n69:*__infer_swift_type<Ts13_StringObjectV,String> = load n66 @[44:28]
-      n70:*__infer_swift_type<Ts6UInt64V,UInt64> = load n69.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[44:28]
-      n68 = load n62.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[44:28]
-      store n70.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n68 @[44:28]
-      n73:*__infer_swift_type<Ts13_StringObjectV,String> = load n66 @[44:28]
-      n72 = load n62.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:28]
-      store n73.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n72 @[44:28]
-      n74 = load &::str::0:: @[44:28]
-      n77 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n74, 0, 1) @[44:28]
-      jmp 64::ret @[44:28]
-      
-  #64::ret: @[44:28]
-      n79 = n77.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:28]
-      n81 = load n77.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[40:0]
-      n82 = load n79 @[40:0]
-      n83 = load &var9 @[40:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n81, n82, n83) @[40:0]
+  #62::ret: @[44:28]
+      n61 = n59.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:28]
+      n63 = load n59.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[40:0]
+      n64 = load n61 @[40:0]
+      n65 = load &var9 @[40:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n63, n64, n65) @[40:0]
       jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret @[40:0]
       
-  #68::ret: @[44:37]
-      n96 = n94.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:37]
-      n98 = load n94.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[40:0]
-      n99 = load n96 @[40:0]
-      n100 = load &var9 @[40:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n98, n99, n100) @[40:0]
+  #66::ret: @[44:37]
+      n78 = n76.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:37]
+      n80 = load n76.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[40:0]
+      n81 = load n78 @[40:0]
+      n82 = load &var9 @[40:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n80, n81, n82) @[40:0]
       jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret @[40:0]
       
-  #72::ret: @[44:47]
-      n113 = n111.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:47]
-      n115 = load n111.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[40:0]
-      n116 = load n113 @[40:0]
-      n117 = load &var9 @[40:0]
-      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n115, n116, n117) @[40:0]
+  #70::ret: @[44:47]
+      n95 = n93.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:47]
+      n97 = load n93.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[40:0]
+      n98 = load n95 @[40:0]
+      n99 = load &var9 @[40:0]
+      _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n97, n98, n99) @[40:0]
       jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::2::ret @[40:0]
       
-  #83::ret: @[40:0]
-      n129 = load &var9 @[40:0]
-      n130 = $ss26DefaultStringInterpolationVWOh(n129) @[40:0]
-      jmp 84::ret @[40:0]
+  #81::ret: @[40:0]
+      n111 = load &var9 @[40:0]
+      n112 = $ss26DefaultStringInterpolationVWOh(n111) @[40:0]
+      jmp 82::ret @[40:0]
       
-  #84::ret: @[44:28]
-      n133 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n122, n125) @[44:28]
-      jmp 85::ret @[44:28]
+  #82::ret: @[44:28]
+      n115 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n104, n107) @[44:28]
+      jmp 83::ret @[44:28]
       
-  #85::ret: @[44:28]
-      n135 = n133.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[44:28]
-      n137 = n133.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:28]
-      n138 = load n137 @[44:26]
-      n139 = n138 @[44:26]
-      jmp 89::ret @[44:26]
+  #83::ret: @[44:28]
+      n117 = n115.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[44:28]
+      n119 = n115.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[44:28]
+      n120 = load n119 @[44:26]
+      n121 = n120 @[44:26]
+      jmp 87::ret @[44:26]
       
-  #89::ret: @[44:26]
-      n140:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[44:26]
-      n141:*__infer_swift_type<TSS> = load n140.__infer_swift_type<T5Hello8TestSizeV,TestSize>.stringValue @[44:26]
-      n142:*__infer_swift_type<Ts11_StringGutsV,String> = load n141.__infer_swift_type<TSS>.stringValue @[44:26]
-      n143 = n142.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[44:26]
-      n145:*__infer_swift_type<Ts13_StringObjectV,String> = load n143 @[44:26]
-      n146:*__infer_swift_type<Ts6UInt64V,UInt64> = load n145.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[44:26]
-      n144 = load n135 @[44:26]
-      store n146.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n144 @[44:26]
-      n148:*__infer_swift_type<Ts13_StringObjectV,String> = load n143 @[44:26]
-      n147 = load n137 @[44:26]
-      store n148.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n147 @[44:26]
-      n149 = load &self @[40:0]
-      n150 = $s5Hello8TestSizeVWOh(n149) @[40:0]
-      jmp 96::ret @[40:0]
+  #87::ret: @[44:26]
+      n122:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &self @[44:26]
+      n123:*__infer_swift_type<TSS> = load n122.__infer_swift_type<T5Hello8TestSizeV,TestSize>.stringValue @[44:26]
+      n124:*__infer_swift_type<Ts11_StringGutsV,String> = load n123.__infer_swift_type<TSS>.stringValue @[44:26]
+      n125 = n124.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[44:26]
+      n127:*__infer_swift_type<Ts13_StringObjectV,String> = load n125 @[44:26]
+      n128:*__infer_swift_type<Ts6UInt64V,UInt64> = load n127.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[44:26]
+      n126 = load n117 @[44:26]
+      store n128.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n126 @[44:26]
+      n130:*__infer_swift_type<Ts13_StringObjectV,String> = load n125 @[44:26]
+      n129 = load n119 @[44:26]
+      store n130.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n129 @[44:26]
+      n131 = load &self @[40:0]
+      n132 = $s5Hello8TestSizeVWOh(n131) @[40:0]
+      jmp 94::ret @[40:0]
       
-  #96::ret: @[40:5]
-      n153:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
-      n151 = load &var2 @[40:5]
-      store n153.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 <- __sil_cast(<int>, n151) @[40:5]
-      n156:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
-      n154 = load &var3 @[40:5]
-      store n156.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, n154) @[40:5]
-      n158:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
-      n157 = load &mode @[40:5]
-      store n158.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 <- n157 @[40:5]
-      n160:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
-      n159 = load n135 @[40:5]
-      store n160.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_3 <- n159 @[40:5]
-      n163:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
-      n161 = load n137 @[40:5]
-      store n163.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 <- __sil_cast(<int>, n161) @[40:5]
+  #94::ret: @[40:5]
+      n135:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
+      n133 = load &var2 @[40:5]
+      store n135.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_0 <- __sil_cast(<int>, n133) @[40:5]
+      n138:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
+      n136 = load &var3 @[40:5]
+      store n138.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_1 <- __sil_cast(<int>, n136) @[40:5]
+      n140:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
+      n139 = load &mode @[40:5]
+      store n140.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_2 <- n139 @[40:5]
+      n142:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
+      n141 = load n117 @[40:5]
+      store n142.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_3 <- n141 @[40:5]
+      n145:*__infer_tuple_class<int,int,int,int,int> = load &var1 @[40:5]
+      n143 = load n119 @[40:5]
+      store n145.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 <- __sil_cast(<int>, n143) @[40:5]
       ret null @[40:5]
       
 } @?
@@ -943,7 +947,7 @@ define .plain_name = "mode.get" $s5Hello8TestSizeV4modeAA0C4ModeOvg(var1: *__inf
       
 } @?
 
-declare .plain_name = "__derived_struct_equals" $s5Hello8TestSizeV23__derived_struct_equalsySbAC_ACtFZ(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSbD>
+declare .plain_name = "__derived_struct_equals" $s5Hello8TestSizeV23__derived_struct_equalsySbAC_ACtFZ(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Bool>
 
 define .plain_name = "stringValue.get" $s5Hello8TestSizeV11stringValueSSvg(var1: *__infer_swift_type<T5Hello8TestSizeV,TestSize>) : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
   #: @[0:0]
@@ -967,7 +971,7 @@ define .plain_name = "stringValue.get" $s5Hello8TestSizeV11stringValueSSvg(var1:
       
 } @?
 
-declare .plain_name = "init" $s5Hello8SizeModeOSYAASY8rawValuexSg03RawE0Qz_tcfCTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello8SizeModeO,SizeMode>
+declare .plain_name = "init" $s5Hello8SizeModeOSYAASY8rawValuexSg03RawE0Qz_tcfCTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Optional>
 
 define .plain_name = "rawValue.get" $s5Hello8SizeModeOSYAASY8rawValue03RawE0QzvgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>, var4: *__infer_swift_type<ptr_elt>) : void {
   #: @[0:0]
@@ -983,7 +987,7 @@ define .plain_name = "rawValue.get" $s5Hello8SizeModeOSYAASY8rawValue03RawE0Qzvg
       
 } @?
 
-declare .plain_name = "==" $s5Hello8SizeModeOSQAASQ2eeoiySbx_xtFZTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSbD>
+declare .plain_name = "==" $s5Hello8SizeModeOSQAASQ2eeoiySbx_xtFZTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Bool>
 
 declare $s5Hello8SizeModeOSHAASQWb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -1027,7 +1031,7 @@ define .plain_name = "rawValue.get" $s5Hello8SizeModeO8rawValueSivg(self: *__inf
       
 } @?
 
-declare .plain_name = "init" $s5Hello8SizeModeO8rawValueACSgSi_tcfC(int) : *__infer_swift_type<T5Hello8SizeModeO,SizeMode>
+declare .plain_name = "init" $s5Hello8SizeModeO8rawValueACSgSi_tcfC(int) : *__infer_swift_type<,Optional>
 
 declare $s5Hello8ImageURLVwxx(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -1154,45 +1158,44 @@ define .plain_name = "my_test" $s5Hello7my_testShySSGyF() : *__infer_swift_type<
       
   #$s5Hello7my_testShySSGyFyAA8ImageURLVXEfU_::void::ret: @[92:28]
       n58 = load &var5 @[92:28]
-      if __sil_ne(n58, null) then jmp 0::jmp::42 else jmp 35 @[92:28]
+      if __sil_ne(n58, null) then jmp 0::jmp::43 else jmp 36 @[92:28]
       
-  #0::jmp::42: @[92:28]
+  #0::jmp::43: @[92:28]
       n70 = n58 @[92:28]
-      jmp 42 @[92:28]
+      jmp 43 @[92:28]
       
-  #11::ret: @[90:35]
-      n16 = n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[90:35]
-      n18 = n14.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[90:35]
-      n19 = load n18 @[90:35]
-      n20 = n19 @[90:35]
-      jmp 14::ret @[90:35]
+  #12::ret: @[90:35]
+      n18 = n16.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[90:35]
+      n20 = n16.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[90:35]
+      n21 = load n20 @[90:35]
+      n22 = n21 @[90:35]
+      jmp 15::ret @[90:35]
       
-  #14::ret: @[90:35]
-      n22:*__infer_swift_type<T5Hello8ImageURLV,ImageURL> = load n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[90:35]
-      n23:*__infer_swift_type<TSS> = load n22.__infer_swift_type<T5Hello8ImageURLV,ImageURL>.field_0 @[90:35]
-      n24:*__infer_swift_type<Ts11_StringGutsV,String> = load n23.__infer_swift_type<TSS>.stringValue @[90:35]
-      n25 = n24.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[90:35]
-      n27:*__infer_swift_type<Ts13_StringObjectV,String> = load n25 @[90:35]
-      n28:*__infer_swift_type<Ts6UInt64V,UInt64> = load n27.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[90:35]
-      n26 = load n16 @[90:35]
-      store n28.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n26 @[90:35]
-      n30:*__infer_swift_type<Ts13_StringObjectV,String> = load n25 @[90:35]
-      n29 = load n18 @[90:35]
-      store n30.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n29 @[90:35]
+  #15::ret: @[90:35]
+      n24:*__infer_swift_type<TSS> = load $builtins.llvm_nondet().__infer_swift_type<T5Hello8ImageURLV,ImageURL>.field_0 @[90:35]
+      n25:*__infer_swift_type<Ts11_StringGutsV,String> = load n24.__infer_swift_type<TSS>.stringValue @[90:35]
+      n26 = n25.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[90:35]
+      n28:*__infer_swift_type<Ts13_StringObjectV,String> = load n26 @[90:35]
+      n29:*__infer_swift_type<Ts6UInt64V,UInt64> = load n28.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[90:35]
+      n27 = load n18 @[90:35]
+      store n29.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n27 @[90:35]
+      n31:*__infer_swift_type<Ts13_StringObjectV,String> = load n26 @[90:35]
+      n30 = load n20 @[90:35]
+      store n31.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n30 @[90:35]
       n33:*__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,int,*int> = load &$s5Hello8ImageURLVMf @[90:34]
-      n32 = load n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[90:34]
+      n32 = load n7 @[90:34]
       n34 = load n33.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,int,*int>.__infer_tuple_field_2 @[90:34]
       n35 = $ss27_finalizeUninitializedArrayySayxGABnlF(n32, n34) @[90:34]
-      jmp 21::ret @[90:34]
+      jmp 22::ret @[90:34]
       
-  #21::ret: @[89:0]
+  #22::ret: @[89:0]
       store &ascendingSizeImageURLs <- n35 @[89:0]
       n37 = load &$sSSN @[91:43]
       n38 = load &$sSSSHsWP @[91:43]
       n39 = $sS2hyxGycfC(n37, n38) @[91:43]
-      jmp 22::ret @[91:43]
+      jmp 23::ret @[91:43]
       
-  #22::ret: @[91:43]
+  #23::ret: @[91:43]
       n41:*__infer_swift_type<TSh> = load &urlIdentifiersToTrack @[91:43]
       n42:*__infer_swift_type<TSh8_VariantV> = load n41.__infer_swift_type<TSh>.field_0 @[91:43]
       n43:*__infer_swift_type<Ts14_BridgeStorageV> = load n42.__infer_swift_type<TSh8_VariantV>.field_0 @[91:43]
@@ -1203,10 +1206,10 @@ define .plain_name = "my_test" $s5Hello7my_testShySSGyF() : *__infer_swift_type<
       n47 = n46.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[92:28]
       n49:*__infer_swift_type<Ts13_StringObjectV,String> = load n47 @[92:28]
       n50:*__infer_swift_type<Ts6UInt64V,UInt64> = load n49.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[92:28]
-      n48 = load n16 @[92:28]
+      n48 = load n18 @[92:28]
       store n50.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n48 @[92:28]
       n52:*__infer_swift_type<Ts13_StringObjectV,String> = load n47 @[92:28]
-      n51 = load n18 @[92:28]
+      n51 = load n20 @[92:28]
       store n52.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n51 @[92:28]
       n53 = $builtins.llvm_nondet() @[89:0]
       n54 = load &var4 @[92:28]
@@ -1215,35 +1218,40 @@ define .plain_name = "my_test" $s5Hello7my_testShySSGyF() : *__infer_swift_type<
       _ = $s5Hello7my_testShySSGyFyAA8ImageURLVXEfU_(n54, n55, n53, n57) @[92:28]
       jmp $s5Hello7my_testShySSGyFyAA8ImageURLVXEfU_::void::ret @[92:28]
       
-  #35: @[96:12]
+  #36: @[96:12]
       n62:*__infer_swift_type<TSh> = load &urlIdentifiersToTrack @[96:12]
       n63:*__infer_swift_type<TSh8_VariantV> = load n62.__infer_swift_type<TSh>.field_0 @[96:12]
       n64:*__infer_swift_type<Ts14_BridgeStorageV> = load n63.__infer_swift_type<TSh8_VariantV>.field_0 @[96:12]
       n61 = load n64.__infer_swift_type<Ts14_BridgeStorageV>.field_0 @[96:12]
       n66 = n61 @[96:12]
-      jmp 40::ret @[96:12]
-      
-  #40::ret: @[96:5]
-      n67 = load &urlIdentifiersToTrack @[96:5]
-      n68 = $sShySSGWOh(n67) @[96:5]
-      jmp 41::ret @[96:5]
+      jmp 41::ret @[96:12]
       
   #41::ret: @[96:5]
+      n67 = load &urlIdentifiersToTrack @[96:5]
+      n68 = $sShySSGWOh(n67) @[96:5]
+      jmp 42::ret @[96:5]
+      
+  #42::ret: @[96:5]
       ret n61 @[96:5]
       
-  #42: @[92:28]
+  #43: @[92:28]
       store &var5 <- null @[92:28]
+      _ = swift_errorRelease(n70) @[89:0]
+      jmp swift_errorRelease::void::ret @[89:0]
+      
+  #5::ret: @[90:34]
+      n7 = n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[90:34]
+      n11 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("https://example.com/image1.jpg", 30, 1) @[90:49]
+      jmp 9::ret @[90:49]
+      
+  #9::ret: @[90:35]
+      n13 = load n11.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[90:35]
+      n15 = load n11.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[90:35]
+      n16 = $s5Hello8ImageURLV3urlACSS_tcfC(n13, n15) @[90:35]
+      jmp 12::ret @[90:35]
+      
+  #swift_errorRelease::void::ret: @[92:28]
       unreachable @[92:28]
-      
-  #5::ret: @[90:49]
-      n9 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("https://example.com/image1.jpg", 30, 1) @[90:49]
-      jmp 8::ret @[90:49]
-      
-  #8::ret: @[90:35]
-      n11 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[90:35]
-      n13 = load n9.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[90:35]
-      n14 = $s5Hello8ImageURLV3urlACSS_tcfC(n11, n13) @[90:35]
-      jmp 11::ret @[90:35]
       
 } @?
 
@@ -1265,7 +1273,7 @@ declare $s5Hello7QualityVWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type
 
 declare $s5Hello7QualityVSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "__derived_struct_equals" $s5Hello7QualityVSQAASQ2eeoiySbx_xtFZTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSbD>
+declare .plain_name = "__derived_struct_equals" $s5Hello7QualityVSQAASQ2eeoiySbx_xtFZTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Bool>
 
 declare $s5Hello7QualityVMa(int) : *__infer_swift_type<ptr_elt>
 
@@ -1280,12 +1288,12 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
   local var6: *__infer_swift_type<TSi>, var5: *__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>, self: *__infer_swift_type<T5Hello7QualityV,Quality>
   #: @?
       n2 = load &value @[51:25]
-      if __sil_lt(0, n2) then jmp 7::jmp::11 else jmp 10::jmp::11 @[51:25]
+      if __sil_lt(0, n2) then jmp 7::jmp::10 else jmp 9::jmp::10 @[51:25]
       
   #$ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret: @[53:38]
       n49 = load &::str::0:: @[53:38]
       n52 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(n49, 0, 1) @[53:38]
-      jmp 29::ret @[53:38]
+      jmp 28::ret @[53:38]
       
   #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret: @[50:0]
       n59:*__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation> = load &var5 @[50:0]
@@ -1298,7 +1306,7 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
       n67:*__infer_swift_type<Ts13_StringObjectV,String> = load n62 @[50:0]
       n66 = load n67.__infer_swift_type<Ts13_StringObjectV,String>.field_1 @[50:0]
       n69 = n66 @[50:0]
-      jmp 40::ret @[50:0]
+      jmp 39::ret @[50:0]
       
   #$ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret: @[53:32]
       n44:*__infer_swift_type<TSi> = load &var6 @[53:32]
@@ -1311,31 +1319,27 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
       _ = $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF(n45, n46, n47, n48) @[53:31]
       jmp $ss26DefaultStringInterpolationV06appendC0yyxs06CustomB11ConvertibleRzlF::void::ret @[53:31]
       
-  #10::jmp::11: @[51:25]
-      n3 = 0 @[51:25]
-      jmp 11 @[51:25]
+  #10: @[51:25]
+      if n3 then jmp 12 else jmp 53::jmp::54 @[51:25]
       
-  #11: @[51:25]
-      if n3 then jmp 13 else jmp 54::jmp::55 @[51:25]
-      
-  #13: @[52:20]
+  #12: @[52:20]
       n17:*__infer_swift_type<T5Hello7QualityV,Quality> = load &self @[52:20]
       n18:*__infer_swift_type<TSi> = load n17.__infer_swift_type<T5Hello7QualityV,Quality>.field_0 @[52:20]
       n16 = load &value @[52:20]
       store n18.__infer_swift_type<TSi>.rawValue <- n16 @[52:20]
       n21 = $ss26DefaultStringInterpolationV15literalCapacity18interpolationCountABSi_SitcfC(1, 1) @[53:28]
-      jmp 16::ret @[53:28]
+      jmp 15::ret @[53:28]
       
-  #13::jmp::55: @[54:5]
+  #12::jmp::54: @[54:5]
       n94 = load n78 @[54:5]
       n93 = load n76 @[54:5]
       n92 = load &value @[54:5]
       n5 = n92 @[54:5]
       n7 = n93 @[54:5]
       n9 = __sil_cast(<int>, n94) @[54:5]
-      jmp 55 @[54:5]
+      jmp 54 @[54:5]
       
-  #16::ret: @[53:28]
+  #15::ret: @[53:28]
       n22:*__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation> = load &var5 @[53:28]
       n23:*__infer_swift_type<TSS> = load n22.__infer_swift_type<Ts26DefaultStringInterpolationV,DefaultStringInterpolation>.field_0 @[53:28]
       n24:*__infer_swift_type<Ts11_StringGutsV,String> = load n23.__infer_swift_type<TSS>.stringValue @[53:28]
@@ -1348,9 +1352,9 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
       n31 = load n21.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[53:28]
       store n32.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n31 @[53:28]
       n36 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("q", 1, 1) @[53:28]
-      jmp 25::ret @[53:28]
+      jmp 24::ret @[53:28]
       
-  #25::ret: @[53:28]
+  #24::ret: @[53:28]
       n38 = n36.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[53:28]
       n40 = load n36.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[50:0]
       n41 = load n38 @[50:0]
@@ -1358,7 +1362,7 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
       _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n40, n41, n42) @[50:0]
       jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::ret @[50:0]
       
-  #29::ret: @[53:38]
+  #28::ret: @[53:38]
       n54 = n52.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[53:38]
       n56 = load n52.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[50:0]
       n57 = load n54 @[50:0]
@@ -1366,23 +1370,23 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
       _ = $ss26DefaultStringInterpolationV13appendLiteralyySSF(n56, n57, n58) @[50:0]
       jmp $ss26DefaultStringInterpolationV13appendLiteralyySSF::void::1::ret @[50:0]
       
-  #40::ret: @[50:0]
+  #39::ret: @[50:0]
       n70 = load &var5 @[50:0]
       n71 = $ss26DefaultStringInterpolationVWOh(n70) @[50:0]
-      jmp 41::ret @[50:0]
+      jmp 40::ret @[50:0]
+      
+  #40::ret: @[53:28]
+      n74 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n63, n66) @[53:28]
+      jmp 41::ret @[53:28]
       
   #41::ret: @[53:28]
-      n74 = $sSS19stringInterpolationSSs013DefaultStringB0V_tcfC(n63, n66) @[53:28]
-      jmp 42::ret @[53:28]
-      
-  #42::ret: @[53:28]
       n76 = n74.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[53:28]
       n78 = n74.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[53:28]
       n79 = load n78 @[53:26]
       n80 = n79 @[53:26]
-      jmp 46::ret @[53:26]
+      jmp 45::ret @[53:26]
       
-  #46::ret: @[53:26]
+  #45::ret: @[53:26]
       n81:*__infer_swift_type<T5Hello7QualityV,Quality> = load &self @[53:26]
       n82:*__infer_swift_type<TSS> = load n81.__infer_swift_type<T5Hello7QualityV,Quality>.field_1 @[53:26]
       n83:*__infer_swift_type<Ts11_StringGutsV,String> = load n82.__infer_swift_type<TSS>.stringValue @[53:26]
@@ -1396,29 +1400,33 @@ define .plain_name = "init" $s5Hello7QualityV5valueACSgSi_tcfC(value: *__infer_s
       store n89.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n88 @[53:26]
       n90 = load &self @[54:5]
       n91 = $s5Hello7QualityVWOh(n90) @[54:5]
-      jmp 13::jmp::55 @[54:5]
+      jmp 12::jmp::54 @[54:5]
       
-  #54::jmp::55: @[50:5]
+  #53::jmp::54: @[50:5]
       n5 = 0 @[50:5]
       n7 = 0 @[50:5]
       n9 = 0 @[50:5]
-      jmp 55 @[50:5]
+      jmp 54 @[50:5]
       
-  #55: @[50:0]
+  #54: @[50:0]
       n11 = $builtins.llvm_init_tuple() @[50:0]
       store n11.__infer_tuple_class<int,int,int>.__infer_tuple_field_0 <- n5 @[50:5]
       store n11.__infer_tuple_class<int,int,int>.__infer_tuple_field_1 <- n7 @[50:5]
       store n11.__infer_tuple_class<int,int,int>.__infer_tuple_field_2 <- n9 @[50:5]
       ret n11 @[50:5]
       
-  #7::jmp::11: @[51:25]
+  #7::jmp::10: @[51:25]
       n97 = load &value @[51:25]
-      n3 = __sil_lnot(__sil_lt(100, n97)) @[51:25]
-      jmp 11 @[51:25]
+      n3 = __sil_ge(100, n97) @[51:25]
+      jmp 10 @[51:25]
+      
+  #9::jmp::10: @[51:25]
+      n3 = 0 @[51:25]
+      jmp 10 @[51:25]
       
 } @?
 
-declare .plain_name = "__derived_struct_equals" $s5Hello7QualityV23__derived_struct_equalsySbAC_ACtFZ(int, int, *__infer_swift_type<ptr_elt>, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,$sSbD>
+declare .plain_name = "__derived_struct_equals" $s5Hello7QualityV23__derived_struct_equalsySbAC_ACtFZ(int, int, *__infer_swift_type<ptr_elt>, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Bool>
 
 define .plain_name = "stringValue.get" $s5Hello7QualityV11stringValueSSvg(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
   #: @[0:0]
@@ -1670,104 +1678,77 @@ define $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfcSbSS_SStXEfU
 } @?
 
 define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfc(size: *__infer_swift_type<ptr_elt>, var2: int, var3: int, var4: int, var5: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
-  local var8: *__infer_swift_type<TSS>, var24: *__infer_swift_type<TSS>, var23: *__infer_swift_type<T5Hello8TestSizeV,TestSize>, var22: *__infer_swift_type<TSS>, var20: *__infer_swift_type<objc_super>, var19: *__infer_swift_type<TSa>, var18: *__infer_swift_type<ptr_elt>, var17: *__infer_swift_type<TSa>, var16: *__infer_swift_type<T5Hello8TestSizeVSg,TestSize>, var14: *__infer_swift_type<T5Hello8TestSizeVSg,TestSize>, var10: *__infer_swift_type<T5Hello8TestSizeVSg,TestSize>, size: *__infer_swift_type<T5Hello8TestSizeV,TestSize>, self: *__infer_swift_type<ptr_elt>, result: *__infer_swift_type<TSa>, quality: *__infer_swift_type<T5Hello7QualityV,Quality>, quality: *__infer_swift_type<T5Hello7QualityVSg,Quality>
+  local var8: *__infer_swift_type<TSS>, var23: *__infer_swift_type<TSS>, var22: *__infer_swift_type<T5Hello8TestSizeV,TestSize>, var21: *__infer_swift_type<TSS>, var19: *__infer_swift_type<objc_super>, var18: *__infer_swift_type<TSa>, var17: *__infer_swift_type<ptr_elt>, var16: *__infer_swift_type<T5Hello8TestSizeVSg,TestSize>, var14: *__infer_swift_type<T5Hello8TestSizeVSg,TestSize>, var10: *__infer_swift_type<T5Hello8TestSizeVSg,TestSize>, size: *__infer_swift_type<T5Hello8TestSizeV,TestSize>, self: *__infer_swift_type<ptr_elt>, result: *__infer_swift_type<TSa>, quality: *__infer_swift_type<T5Hello7QualityV,Quality>, quality: *__infer_swift_type<T5Hello7QualityVSg,Quality>
   #: @[61:0]
       n1 = load &var5 @[61:0]
       n2 = swift_getObjectType(n1) @[61:0]
       jmp 6::ret @[61:0]
       
   #$sSa6appendyyxnF::void::1::ret: @[66:71]
-      jmp 91 @[66:71]
+      jmp 90 @[66:71]
       
   #$sSa6appendyyxnF::void::ret: @[65:62]
       n81 = load &size @[65:62]
       n82 = $s5Hello8TestSizeVWOh(n81) @[65:62]
-      jmp 64 @[65:62]
+      jmp 63 @[65:62]
       
-  #101::ret: @[67:30]
-      n135 = $sSaySSGSayxGSTsWl() @[67:30]
-      jmp 102::ret @[67:30]
+  #103::ret: @[67:72]
+      n147 = n145.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[67:72]
+      n148 = $sSaySSGSayxGSKsWl() @[67:54]
+      jmp 106::ret @[67:54]
       
-  #102::ret: @[67:30]
-      n140 = load &var17 @[67:30]
-      n141 = load &var18 @[67:30]
-      n142 = $sSTsE6sorted2bySay7ElementQzGSbAD_ADtKXE_tKF(fun (var1, var2, var3, var4) -> $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfcSbSS_SStXEfU_(var1, var2, var3, var4), null, n134, n135, n140, n141) @[67:30]
-      jmp 103::ret @[67:30]
+  #106::ret: @[67:54]
+      n150 = load n145.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[67:54]
+      n151 = load n147 @[67:54]
+      n154 = load &var18 @[67:54]
+      n155 = $sSKsSS7ElementRtzrlE6joined9separatorS2S_tF(n150, n151, n124, n148, n154) @[67:54]
+      jmp 107::ret @[67:54]
       
-  #103::ret: @[67:30]
-      n143 = load &var18 @[67:30]
-      if __sil_ne(n143, null) then jmp 91::jmp::138 else jmp 91::jmp::107 @[67:30]
+  #107::ret: @[61:0]
+      n156 = load &var18 @[61:0]
+      n157 = $sSaySSGWOh(n156) @[61:0]
+      jmp 110::ret @[61:0]
       
-  #107: @[61:0]
-      n148 = load &var17 @[61:0]
-      n149 = $sSaySSGWOh(n148) @[61:0]
-      jmp 109::ret @[61:0]
+  #110::ret: @[67:21]
+      n158 = load &$s5Hello5ParamC11stringValueSSvpWvd @[67:21]
+      n160:*__infer_swift_type<TSS> = load n122.__infer_swift_type<T5Hello5ParamC,Param>.stringValue @[67:21]
+      n161:*__infer_swift_type<Ts11_StringGutsV,String> = load n160.__infer_swift_type<TSS>.stringValue @[67:21]
+      n162 = n161.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[67:21]
+      n165:*__infer_swift_type<Ts13_StringObjectV,String> = load n162 @[67:21]
+      n166:*__infer_swift_type<Ts6UInt64V,UInt64> = load n165.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[67:21]
+      n164 = load n155.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[67:21]
+      store n166.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n164 @[67:21]
+      n169:*__infer_swift_type<Ts13_StringObjectV,String> = load n162 @[67:21]
+      n168 = load n155.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[67:21]
+      store n169.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n168 @[67:21]
+      n170 = load &result @[61:0]
+      n171 = $sSaySSGWOh(n170) @[61:0]
+      jmp 118::ret @[61:0]
       
-  #109::ret: @[67:30]
-      n151:*__infer_swift_type<TSa> = load &var19 @[67:30]
-      n152:*__infer_swift_type<Ts12_ArrayBufferV> = load n151.__infer_swift_type<TSa>.field_0 @[67:30]
-      n153:*__infer_swift_type<Ts14_BridgeStorageV> = load n152.__infer_swift_type<Ts12_ArrayBufferV>.field_0 @[67:30]
-      store n153.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n146 @[67:30]
-      n157 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("_", 1, 1) @[67:72]
-      jmp 113::ret @[67:72]
+  #118::ret: @[61:0]
+      n172 = load &self @[61:0]
+      n174:*__infer_swift_type<objc_super> = load &var19 @[61:0]
+      store n174.__infer_swift_type<objc_super>.field_0 <- n172 @[61:0]
+      n176:*__infer_swift_type<objc_super> = load &var19 @[61:0]
+      store n176.__infer_swift_type<objc_super>.field_1 <- n2 @[61:0]
+      n177 = load &L_selector(init) @[61:0]
+      n178 = load &var19 @[61:0]
+      n180 = $builtins.objc_msgSendSuper2(n178, n177) @[61:0]
+      n181 = $builtins.llvm_nondet() @[61:0]
+      store &self <- n180 @[61:0]
+      n183 = load &size @[61:0]
+      n184 = $s5Hello8TestSizeVSgWOh(n183) @[61:0]
+      jmp 126::ret @[61:0]
       
-  #113::ret: @[67:72]
-      n159 = n157.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[67:72]
-      n160 = $sSaySSGSayxGSKsWl() @[67:54]
-      jmp 116::ret @[67:54]
+  #126::ret: @[61:0]
+      n185 = load &self @[61:0]
+      ret n180 @[68:5]
       
-  #116::ret: @[67:54]
-      n162 = load n157.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[67:54]
-      n163 = load n159 @[67:54]
-      n166 = load &var19 @[67:54]
-      n167 = $sSKsSS7ElementRtzrlE6joined9separatorS2S_tF(n162, n163, n134, n160, n166) @[67:54]
-      jmp 117::ret @[67:54]
-      
-  #117::ret: @[61:0]
-      n168 = load &var19 @[61:0]
-      n169 = $sSaySSGWOh(n168) @[61:0]
-      jmp 120::ret @[61:0]
-      
-  #120::ret: @[67:21]
-      n170 = load &$s5Hello5ParamC11stringValueSSvpWvd @[67:21]
-      n172:*__infer_swift_type<TSS> = load n122.__infer_swift_type<T5Hello5ParamC,Param>.stringValue @[67:21]
-      n173:*__infer_swift_type<Ts11_StringGutsV,String> = load n172.__infer_swift_type<TSS>.stringValue @[67:21]
-      n174 = n173.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[67:21]
-      n177:*__infer_swift_type<Ts13_StringObjectV,String> = load n174 @[67:21]
-      n178:*__infer_swift_type<Ts6UInt64V,UInt64> = load n177.__infer_swift_type<Ts13_StringObjectV,String>.field_0 @[67:21]
-      n176 = load n167.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[67:21]
-      store n178.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n176 @[67:21]
-      n181:*__infer_swift_type<Ts13_StringObjectV,String> = load n174 @[67:21]
-      n180 = load n167.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[67:21]
-      store n181.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n180 @[67:21]
-      n182 = load &result @[61:0]
-      n183 = $sSaySSGWOh(n182) @[61:0]
-      jmp 128::ret @[61:0]
-      
-  #128::ret: @[61:0]
-      n184 = load &self @[61:0]
-      n186:*__infer_swift_type<objc_super> = load &var20 @[61:0]
-      store n186.__infer_swift_type<objc_super>.field_0 <- n184 @[61:0]
-      n188:*__infer_swift_type<objc_super> = load &var20 @[61:0]
-      store n188.__infer_swift_type<objc_super>.field_1 <- n2 @[61:0]
-      n189 = load &L_selector(init) @[61:0]
-      n190 = load &var20 @[61:0]
-      n192 = $builtins.objc_msgSendSuper2(n190, n189) @[61:0]
-      n193 = $builtins.llvm_nondet() @[61:0]
-      store &self <- n192 @[61:0]
-      n195 = load &size @[61:0]
-      n196 = $s5Hello8TestSizeVSgWOh(n195) @[61:0]
-      jmp 136::ret @[61:0]
-      
-  #136::ret: @[61:0]
-      n197 = load &self @[61:0]
-      ret n192 @[68:5]
-      
-  #138: @[67:30]
-      store &var18 <- null @[67:30]
+  #128: @[67:30]
+      store &var17 <- null @[67:30]
       unreachable @[67:30]
       
-  #28::ret: @[62:19]
+  #27::ret: @[62:19]
       n14 = load &$s5Hello5ParamC4sizeAA8TestSizeVSgvpWvd @[62:19]
       n16 = load n10.__infer_swift_type<T5Hello5ParamC,Param>.size @[62:19]
       n17 = load &size @[62:19]
@@ -1775,9 +1756,9 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n20:*__infer_swift_type<T5Hello5ParamC,Param> = load &self @[63:9]
       n21 = load &var4 @[63:24]
       n23 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n21) @[63:24]
-      jmp 33::ret @[63:24]
+      jmp 32::ret @[63:24]
       
-  #33::ret: @[63:22]
+  #32::ret: @[63:22]
       n24 = load &$s5Hello5ParamC7qualityAA7QualityVSgvpWvd @[63:22]
       n26 = n20.__infer_swift_type<T5Hello5ParamC,Param>.quality @[63:22]
       n28:*__infer_tuple_class<int,int,int> = load n26 @[63:22]
@@ -1791,20 +1772,20 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       store n32.__infer_tuple_class<int,int,int>.__infer_tuple_field_2 <- n31 @[63:22]
       n34 = load &$sSSN @[64:32]
       n35 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(0, n34) @[64:32]
-      jmp 40::ret @[64:32]
+      jmp 39::ret @[64:32]
       
-  #40::ret: @[64:32]
+  #39::ret: @[64:32]
       n38:*__infer_swift_type<TSa> = load &result @[64:32]
-      n39:*__infer_swift_type<Ts12_ArrayBufferV> = load n38.__infer_swift_type<TSa>.field_0 @[64:32]
-      n40:*__infer_swift_type<Ts14_BridgeStorageV> = load n39.__infer_swift_type<Ts12_ArrayBufferV>.field_0 @[64:32]
+      n39:*__infer_swift_type<Ts12_ArrayBufferV,Array> = load n38.__infer_swift_type<TSa>.field_0 @[64:32]
+      n40:*__infer_swift_type<Ts14_BridgeStorageV> = load n39.__infer_swift_type<Ts12_ArrayBufferV,Array>.field_0 @[64:32]
       n37 = load n35.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[64:32]
       store n40.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n37 @[64:32]
       n41 = load &size @[65:23]
       n42 = load &var16 @[65:23]
       n43 = $s5Hello8TestSizeVSgWOc(n41, n42) @[65:23]
-      jmp 46::ret @[65:23]
+      jmp 45::ret @[65:23]
       
-  #46::ret: @[65:9]
+  #45::ret: @[65:9]
       n44 = load &var10 @[65:9]
       n45 = load &size @[65:9]
       _ = $builtins.memcpy(n44, n45, 40, 0) @[65:9]
@@ -1818,55 +1799,55 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n54 = load n55.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_3 @[65:9]
       n57:*__infer_tuple_class<int,int,int,int,int> = load &var10 @[65:9]
       n56 = load n57.__infer_tuple_class<int,int,int,int,int>.__infer_tuple_field_4 @[65:9]
-      if __sil_eq(n56, 0) then jmp 64 else jmp 59 @[65:9]
+      if __sil_eq(n56, 0) then jmp 63 else jmp 58 @[65:9]
       
-  #59: @[65:9]
+  #58: @[65:9]
       n60 = load &size @[65:9]
       n61 = load &var10 @[65:9]
       _ = $builtins.memcpy(n60, n61, 40, 0) @[65:9]
       n64 = load &size @[65:44]
-      n65 = load &var23 @[65:44]
+      n65 = load &var22 @[65:44]
       n66 = $s5Hello8TestSizeVWOc(n64, n65) @[65:44]
-      jmp 60::ret @[65:44]
+      jmp 59::ret @[65:44]
       
-  #60::ret: @[65:49]
+  #59::ret: @[65:49]
       n68:*__infer_swift_type<T5Hello8TestSizeV,TestSize> = load &size @[65:49]
       n67 = load &var8 @[65:49]
       n69 = load n68.__infer_swift_type<T5Hello8TestSizeV,TestSize>.stringValue @[65:49]
       _ = $builtins.memcpy(n67, n69, 16, 0) @[65:49]
-      n72 = load &var24 @[65:49]
+      n72 = load &var23 @[65:49]
       n73 = load &var8 @[65:49]
       _ = $builtins.memcpy(n72, n73, 16, 0) @[65:49]
       n76 = load &$sSaySSGMD @[65:37]
       n77 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[65:37]
-      jmp 62::ret @[65:37]
+      jmp 61::ret @[65:37]
       
-  #62::ret: @[65:37]
-      n78 = load &var24 @[65:37]
+  #61::ret: @[65:37]
+      n78 = load &var23 @[65:37]
       n80 = load &result @[65:37]
       _ = $sSa6appendyyxnF(n78, n77, n80) @[65:37]
       jmp $sSa6appendyyxnF::void::ret @[65:37]
       
-  #64: @[66:26]
+  #63: @[66:26]
       n83 = load &var4 @[66:26]
       n85 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n83) @[66:26]
-      jmp 66::ret @[66:26]
+      jmp 65::ret @[66:26]
       
-  #66::ret: @?
+  #65::ret: @?
       n86 = load &var4 @[66:9]
-      if __sil_eq(n86, 0) then jmp 91 else jmp 69::jmp::72 @[66:9]
+      if __sil_eq(n86, 0) then jmp 90 else jmp 68::jmp::71 @[66:9]
       
-  #69::jmp::72: @[66:9]
+  #68::jmp::71: @[66:9]
       n92 = load &var4 @[66:9]
       n91 = load &var3 @[66:9]
       n89 = load &var2 @[66:9]
       n88 = n89 @[66:9]
       n90 = n91 @[66:9]
       n93 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n92) @[66:9]
-      jmp 72 @[66:9]
+      jmp 71 @[66:9]
       
   #6::ret: @[61:0]
-      store &var18 <- null @[61:0]
+      store &var17 <- null @[61:0]
       n5:*__infer_tuple_class<int,int,int> = load &quality @[61:0]
       n4 = load &var2 @[61:0]
       store n5.__infer_tuple_class<int,int,int>.__infer_tuple_field_0 <- n4 @[61:0]
@@ -1880,9 +1861,9 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n11 = load &size @[62:21]
       n12 = load &var14 @[62:21]
       n13 = $s5Hello8TestSizeVSgWOc(n11, n12) @[62:21]
-      jmp 28::ret @[62:21]
+      jmp 27::ret @[62:21]
       
-  #72: @[61:0]
+  #71: @[61:0]
       n96:*__infer_swift_type<T5Hello7QualityV,Quality> = load &quality @[61:0]
       n97:*__infer_swift_type<TSi> = load n96.__infer_swift_type<T5Hello7QualityV,Quality>.field_0 @[61:0]
       store n97.__infer_swift_type<TSi>.rawValue <- n88 @[61:0]
@@ -1896,10 +1877,10 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       n106:*__infer_swift_type<Ts13_StringObjectV,String> = load n101 @[61:0]
       store n106.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n93 @[61:0]
       n108 = n93 @[66:50]
-      jmp 84::ret @[66:50]
+      jmp 83::ret @[66:50]
       
-  #84::ret: @[66:58]
-      n109:*__infer_swift_type<TSS> = load &var22 @[66:58]
+  #83::ret: @[66:58]
+      n109:*__infer_swift_type<TSS> = load &var21 @[66:58]
       n110:*__infer_swift_type<Ts11_StringGutsV,String> = load n109.__infer_swift_type<TSS>.stringValue @[66:58]
       n111 = n110.__infer_swift_type<Ts11_StringGutsV,String>.field_0 @[66:58]
       n113:*__infer_swift_type<Ts13_StringObjectV,String> = load n111 @[66:58]
@@ -1909,39 +1890,49 @@ define .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7Quali
       store n116.__infer_swift_type<Ts13_StringObjectV,String>.field_1 <- n93 @[66:58]
       n117 = load &$sSaySSGMD @[66:43]
       n118 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[66:43]
-      jmp 90::ret @[66:43]
+      jmp 89::ret @[66:43]
       
-  #90::ret: @[66:43]
-      n119 = load &var22 @[66:43]
+  #89::ret: @[66:43]
+      n119 = load &var21 @[66:43]
       n121 = load &result @[66:43]
       _ = $sSa6appendyyxnF(n119, n118, n121) @[66:43]
       jmp $sSa6appendyyxnF::void::1::ret @[66:43]
       
-  #91: @[61:0]
+  #90: @[61:0]
       n122:*__infer_swift_type<T5Hello5ParamC,Param> = load &self @[61:0]
-      n124:*__infer_swift_type<TSa> = load &result @[67:23]
-      n125:*__infer_swift_type<Ts12_ArrayBufferV> = load n124.__infer_swift_type<TSa>.field_0 @[67:23]
-      n126:*__infer_swift_type<Ts14_BridgeStorageV> = load n125.__infer_swift_type<Ts12_ArrayBufferV>.field_0 @[67:23]
-      n123 = load n126.__infer_swift_type<Ts14_BridgeStorageV>.field_0 @[67:23]
-      n128 = n123 @[67:23]
-      jmp 97::ret @[67:23]
+      n123 = load &$sSaySSGMD @[67:30]
+      n124 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[67:30]
+      jmp 92::ret @[67:30]
       
-  #91::jmp::107: @[67:30]
-      n146 = n142 @[67:30]
-      jmp 107 @[67:30]
+  #90::jmp::128: @[67:30]
+      n187 = n133 @[67:30]
+      jmp 128 @[67:30]
       
-  #91::jmp::138: @[67:30]
-      n199 = n143 @[67:30]
-      jmp 138 @[67:30]
+  #90::jmp::98: @[67:30]
+      n136 = n132 @[67:30]
+      jmp 98 @[67:30]
       
-  #97::ret: @[61:0]
-      n130:*__infer_swift_type<TSa> = load &var17 @[61:0]
-      n131:*__infer_swift_type<Ts12_ArrayBufferV> = load n130.__infer_swift_type<TSa>.field_0 @[61:0]
-      n132:*__infer_swift_type<Ts14_BridgeStorageV> = load n131.__infer_swift_type<Ts12_ArrayBufferV>.field_0 @[61:0]
-      store n132.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n123 @[61:0]
-      n133 = load &$sSaySSGMD @[67:30]
-      n134 = __sil_swift_alloc(<__infer_swift_type<TSaySSG>>) @[67:30]
-      jmp 101::ret @[67:30]
+  #92::ret: @[67:30]
+      n125 = $sSaySSGSayxGSTsWl() @[67:30]
+      jmp 93::ret @[67:30]
+      
+  #93::ret: @[67:30]
+      n130 = load &result @[67:30]
+      n131 = load &var17 @[67:30]
+      n132 = $sSTsE6sorted2bySay7ElementQzGSbAD_ADtKXE_tKF(fun (var1, var2, var3, var4) -> $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfcSbSS_SStXEfU_(var1, var2, var3, var4), null, n124, n125, n130, n131) @[67:30]
+      jmp 94::ret @[67:30]
+      
+  #94::ret: @[67:30]
+      n133 = load &var17 @[67:30]
+      if __sil_ne(n133, null) then jmp 90::jmp::128 else jmp 90::jmp::98 @[67:30]
+      
+  #98: @[67:30]
+      n139:*__infer_swift_type<TSa> = load &var18 @[67:30]
+      n140:*__infer_swift_type<Ts12_ArrayBufferV,Array> = load n139.__infer_swift_type<TSa>.field_0 @[67:30]
+      n141:*__infer_swift_type<Ts14_BridgeStorageV> = load n140.__infer_swift_type<Ts12_ArrayBufferV,Array>.field_0 @[67:30]
+      store n141.__infer_swift_type<Ts14_BridgeStorageV>.field_0 <- n136 @[67:30]
+      n145 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("_", 1, 1) @[67:72]
+      jmp 103::ret @[67:72]
       
 } @?
 
@@ -2328,7 +2319,7 @@ define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGR
       
 } @?
 
-declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>
+declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Optional>
 
 define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfc(coder: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,BCNTypeaheadSuggestionsCell>) : int {
   local var7: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>
@@ -2371,7 +2362,7 @@ define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7N
       
 } @?
 
-define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello27BCNTypeaheadSuggestionsCellCXMTD>) : *__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell> {
+define .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfC(var1: *__infer_swift_type<,NSCoder>, var2: *__infer_swift_type<,$s5Hello27BCNTypeaheadSuggestionsCellCXMTD>) : *__infer_swift_type<,Optional> {
   #: @[107:0]
       n1 = load &var2 @[107:0]
       n2 = __sil_objc_alloc(<NSObject>, n1) @[107:0]
@@ -2822,6 +2813,8 @@ global ::str::5::Hello: *int
 
 global ::str::57::Unexpectedly found nil while unwrapping an Optional value: *int
 
+global ::str::54::StaticString should have Unicode scalar representation: *int
+
 global ::str::4::size: *int
 
 global ::str::46::Swift/arm64-apple-ios-simulator::swiftinterface: *int
@@ -3062,8 +3055,6 @@ global $s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B56
 
 global $s5Hello27BCNTypeaheadSuggestionsCellC13contentInsets33_F53EAC05E99D25B5675C2A0C9B1F2466LLSo06UIEdgeF0VvpZ: *__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets>
 
-global $s5Hello20kIGDSSpacingStandard_Wz: int
-
 global $s5Hello20kIGDSSpacingStandard12CoreGraphics7CGFloatVvp: *__infer_swift_type<T12CoreGraphics7CGFloatV,CGFloat>
 
 global $s5Hello18TextRendererConfigVMn: *__infer_tuple_class<int,int,int,int,int,int,int>
@@ -3155,7 +3146,7 @@ type __infer_swift_type<TSRys5UInt8VG> = {field_0: *__infer_swift_type<TSPys5UIn
 
 type __infer_swift_type<TSS> = {stringValue: *__infer_swift_type<Ts11_StringGutsV,String>}
 
-type __infer_swift_type<TSa> = {field_0: *__infer_swift_type<Ts12_ArrayBufferV>}
+type __infer_swift_type<TSa> = {field_0: *__infer_swift_type<Ts12_ArrayBufferV,Array>}
 
 type __infer_swift_type<TSd> = {field_0: float}
 
@@ -3185,7 +3176,7 @@ type __infer_swift_type<TSu> = {field_0: int}
 
 type __infer_swift_type<Ts11_StringGutsV,String> = {field_0: *__infer_swift_type<Ts13_StringObjectV,String>}
 
-type __infer_swift_type<Ts12_ArrayBufferV> = {field_0: *__infer_swift_type<Ts14_BridgeStorageV>}
+type __infer_swift_type<Ts12_ArrayBufferV,Array> = {field_0: *__infer_swift_type<Ts14_BridgeStorageV>}
 
 type __infer_swift_type<Ts13_StringObjectV,String> = {field_0: *__infer_swift_type<Ts6UInt64V,UInt64>;
                                                       field_1: *__infer_swift_type<ptr_elt>}
