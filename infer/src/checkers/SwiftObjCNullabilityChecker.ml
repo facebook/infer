@@ -76,7 +76,10 @@ module TransferFunctions = struct
               (* 2. Log to HTML trace for developer debugging *)
               L.d_printfln "Boundary at %a: %a" Location.pp loc CallStatus.pp status ;
               (* 3. Check for issue - No need for complex StatusDomain lifting here *)
-              if CallStatus.equal status Unannotated then
+              if
+                CallStatus.equal status Unannotated
+                && SwiftObjCNullabilityIssue.should_report_at loc
+              then
                 Reporting.log_issue proc_desc err_log ~loc SwiftObjCNullability
                   IssueType.missing_nullability_annotation
                   (SwiftObjCNullabilityIssue.message callee_pname) ;

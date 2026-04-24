@@ -110,7 +110,9 @@ let check_missing_nullability proc_name : unit DSL.model_monad =
          && (not (Annotations.ia_is_nullable attrs.ret_annots))
          && not (Annotations.ia_is_nonnull attrs.ret_annots) ->
       let* {location} = get_data in
-      report (PulseDiagnostic.MissingNullabilityAnnotation {callee= proc_name; location})
+      if SwiftObjCNullabilityIssue.should_report_at location then
+        report (PulseDiagnostic.MissingNullabilityAnnotation {callee= proc_name; location})
+      else ret ()
   | _ ->
       ret ()
 
