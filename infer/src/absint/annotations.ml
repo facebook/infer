@@ -162,6 +162,8 @@ let ia_is_nonnull ia =
     ]
 
 
+let ia_is_nullable ia = ia_ends_with ia nullable
+
 let ia_is_jetbrains_notnull ia = ia_class_name_matches ia jetbrains_not_null
 
 let ia_is_nullsafe_strict ia = ia_ends_with ia nullsafe_strict

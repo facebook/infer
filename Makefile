@@ -188,7 +188,8 @@ SWIFT_DIRECT_TESTS += \
   swift_bitcode \
   swift_pulse \
   swift_multifile \
-  swift_interop-pulse
+  swift_interop-pulse \
+  swift_interop-nullability
 
 endif
 

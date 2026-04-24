@@ -544,8 +544,8 @@ OPTIONS
            Deactivates: Default checkers: --static-constructor-stall-checker,
            --fragment-retains-view, --inefficient-keyset-iterator,
            --liveness, --parameter-not-null-checked, --pulse, --racerd,
-           --siof, --self-in-block, --starvation (Conversely:
-           --default-checkers)
+           --siof, --self-in-block, --starvation, --swift-objc-nullability
+           (Conversely: --default-checkers)
            See also infer-analyze(1).
 
        --dependencies
@@ -657,6 +657,7 @@ OPTIONS
              LOCK_ON_UI_THREAD (disabled by default),
              MEMORY_LEAK_C (enabled by default),
              MEMORY_LEAK_CPP (disabled by default),
+             MISSING_NULLABILITY_ANNOTATION (enabled by default),
              MISSING_REQUIRED_PROP (enabled by default),
              MIXED_SELF_WEAKSELF (enabled by default),
              MODIFIES_IMMUTABLE (enabled by default),
@@ -2412,6 +2413,18 @@ OPTIONS
            @infer-disable-every ISSUE_TYPE1, ISSUE_TYPE2, ... keywords.
            (Conversely: --suppressions)
            See also infer-report(1).
+
+       --no-swift-objc-nullability
+           Deactivates: swift-objc-nullability checker: Detects missing
+           nullability annotations in Objective-C methods called from Swift,
+           which can lead to runtime crashes via Implicitly Unwrapped
+           Optionals. (Conversely: --swift-objc-nullability)
+           See also infer-analyze(1).
+
+       --swift-objc-nullability-only
+           Activates: Enable swift-objc-nullability and disable all other
+           checkers (Conversely: --no-swift-objc-nullability-only)
+           See also infer-analyze(1).
 
        --tenv-json file
            Path to TEnv json file

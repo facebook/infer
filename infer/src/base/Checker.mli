@@ -36,6 +36,7 @@ type t =
   | ScopeLeakage
   | SelfInBlock
   | Starvation
+  | SwiftObjCNullability
   | Topl
 [@@deriving equal, enumerate]
 

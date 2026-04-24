@@ -54,6 +54,8 @@ val ia_is_initializer : Annot.Item.t -> bool
 
 val ia_is_nonnull : Annot.Item.t -> bool
 
+val ia_is_nullable : Annot.Item.t -> bool
+
 val ia_is_jetbrains_notnull : Annot.Item.t -> bool
 
 val ia_is_nullsafe_strict : Annot.Item.t -> bool

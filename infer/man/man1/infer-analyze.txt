@@ -110,8 +110,8 @@ OPTIONS
            Deactivates: Default checkers: --static-constructor-stall-checker,
            --fragment-retains-view, --inefficient-keyset-iterator,
            --liveness, --parameter-not-null-checked, --pulse, --racerd,
-           --siof, --self-in-block, --starvation (Conversely:
-           --default-checkers)
+           --siof, --self-in-block, --starvation, --swift-objc-nullability
+           (Conversely: --default-checkers)
 
        --detach-analysis-dependency
            Activates: Detach analysis dependencies of checkers during the
@@ -447,6 +447,16 @@ OPTIONS
            Activates: Enable static-constructor-stall-checker and disable all
            other checkers (Conversely:
            --no-static-constructor-stall-checker-only)
+
+       --no-swift-objc-nullability
+           Deactivates: swift-objc-nullability checker: Detects missing
+           nullability annotations in Objective-C methods called from Swift,
+           which can lead to runtime crashes via Implicitly Unwrapped
+           Optionals. (Conversely: --swift-objc-nullability)
+
+       --swift-objc-nullability-only
+           Activates: Enable swift-objc-nullability and disable all other
+           checkers (Conversely: --no-swift-objc-nullability-only)
 
        --timeout float
            Time after which any checker should give up analysing the current

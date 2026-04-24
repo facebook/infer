@@ -217,6 +217,8 @@ val lock_on_ui_thread : t
 
 val expensive_loop_invariant_call : t
 
+val missing_nullability_annotation : t
+
 val missing_required_prop : t
 
 val mixed_self_weakself : t

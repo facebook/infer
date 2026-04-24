@@ -679,6 +679,15 @@ let expensive_loop_invariant_call =
     ~user_documentation:[%blob "./documentation/issues/EXPENSIVE_LOOP_INVARIANT_CALL.md"]
 
 
+let missing_nullability_annotation =
+  register ~category:NullPointerDereference ~id:"MISSING_NULLABILITY_ANNOTATION" Error
+    SwiftObjCNullability ~hum:"Missing Nullability Annotation"
+    ~user_documentation:
+      "This Objective-C method is called from Swift but lacks nullability annotations (`_Nullable` \
+       or `_Nonnull`). This causes Swift to import the return value as an implicitly unwrapped \
+       optional, which can lead to runtime crashes if the method returns `nil`."
+
+
 let missing_required_prop =
   register ~category:RuntimeException ~id:"MISSING_REQUIRED_PROP" ~hum:"Missing Required Prop" Error
     LithoRequiredProps ~user_documentation:[%blob "./documentation/issues/MISSING_REQUIRED_PROP.md"]

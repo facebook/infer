@@ -37,6 +37,7 @@ type t =
   | ScopeLeakage
   | SelfInBlock
   | Starvation
+  | SwiftObjCNullability
   | Topl
 [@@deriving compare, equal, enumerate]
 
@@ -370,6 +371,16 @@ let config_unsafe checker =
       ; short_documentation=
           "Detect various kinds of situations when no progress is being made because of \
            concurrency errors."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= true
+      ; activates= [] }
+  | SwiftObjCNullability ->
+      { id= "swift-objc-nullability"
+      ; kind= UserFacing {title= "Swift/Obj-C Nullability"; markdown_body= ""}
+      ; support= mk_support_func ~swift:Support ~clang:Support ()
+      ; short_documentation=
+          "Detects missing nullability annotations in Objective-C methods called from Swift, which \
+           can lead to runtime crashes via Implicitly Unwrapped Optionals."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= true
       ; activates= [] }
