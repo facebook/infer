@@ -73,3 +73,35 @@ func testNullability_good(device: LegacyHardware) {
     let model = device.getModelName()
     print(model.count) // Safe
 }
+
+// --- 5. DYNAMIC DISPATCH NULLABILITY ---
+// When the frontend can't statically resolve the ObjC method, the Pulse
+// objc_msgSend model resolves it and should still flag missing nullability.
+
+func testDynamicNullability_bad(condition: Bool) {
+    let device: AnyObject
+
+    if condition {
+        device = LegacyHardware()
+    } else {
+        device = SomeOtherHardware()
+    }
+
+    // getFirmwareVersion has no _Nullable/_Nonnull annotation on either type.
+    // Frontend sees AnyObject, can't resolve. Pulse's objc_msgSend model
+    // resolves dynamically and should report MISSING_NULLABILITY_ANNOTATION.
+    let _ = device.getFirmwareVersion()
+}
+
+func testDynamicNullability_good(condition: Bool) {
+    let device: AnyObject
+
+    if condition {
+        device = LegacyHardware()
+    } else {
+        device = SomeOtherHardware()
+    }
+
+    // getModelName is annotated _Nonnull on both — no report expected.
+    let _ = device.getModelName()
+}

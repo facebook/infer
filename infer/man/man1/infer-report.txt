@@ -179,6 +179,7 @@ OPTIONS
              MEMORY_LEAK_C (enabled by default),
              MEMORY_LEAK_CPP (disabled by default),
              MISSING_NULLABILITY_ANNOTATION (enabled by default),
+             MISSING_NULLABILITY_ANNOTATION_PULSE (enabled by default),
              MISSING_REQUIRED_PROP (enabled by default),
              MIXED_SELF_WEAKSELF (enabled by default),
              MODIFIES_IMMUTABLE (enabled by default),

@@ -76,13 +76,10 @@ module TransferFunctions = struct
               (* 2. Log to HTML trace for developer debugging *)
               L.d_printfln "Boundary at %a: %a" Location.pp loc CallStatus.pp status ;
               (* 3. Check for issue - No need for complex StatusDomain lifting here *)
-              ( if CallStatus.equal status Unannotated then
-                  let message =
-                    F.asprintf "Method %a is missing nullability annotations on its return type."
-                      Procname.pp callee_pname
-                  in
-                  Reporting.log_issue proc_desc err_log ~loc SwiftObjCNullability
-                    IssueType.missing_nullability_annotation message ) ;
+              if CallStatus.equal status Unannotated then
+                Reporting.log_issue proc_desc err_log ~loc SwiftObjCNullability
+                  IssueType.missing_nullability_annotation
+                  (SwiftObjCNullabilityIssue.message callee_pname) ;
               (* 4. Update the domain state for the Post-State HTML summary *)
               Domain.add loc (StatusDomain.v status) astate
           | None ->

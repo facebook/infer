@@ -25,6 +25,10 @@
 
 @interface SomeOtherHardware : NSObject
 - (int)getBatteryStatus;
+// Missing nullability: Swift sees this as: func getFirmwareVersion() -> String!
+- (NSString*)getFirmwareVersion;
+// SAFE: Swift sees: func getModelName() -> String
+- (NSString* _Nonnull)getModelName;
 @end
 
 #pragma clang diagnostic pop

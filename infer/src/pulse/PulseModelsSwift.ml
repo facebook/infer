@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module IRAttributes = Attributes
 open PulseBasicInterface
 module DSL = PulseModelsDSL
 open PulseModelsImport
@@ -101,6 +102,19 @@ let dynamic_call arg orig_args () : unit DSL.model_monad =
       closure_call (arg :: orig_args) ()
 
 
+let check_missing_nullability proc_name : unit DSL.model_monad =
+  let open DSL.Syntax in
+  match IRAttributes.load proc_name with
+  | Some attrs
+    when Typ.is_pointer attrs.ret_type
+         && (not (Annotations.ia_is_nullable attrs.ret_annots))
+         && not (Annotations.ia_is_nonnull attrs.ret_annots) ->
+      let* {location} = get_data in
+      report (PulseDiagnostic.MissingNullabilityAnnotation {callee= proc_name; location})
+  | _ ->
+      ret ()
+
+
 let objc_msgSend receiver selector_arg actual_args () : unit DSL.model_monad =
   let open DSL.Syntax in
   (* Helper to build and call the resolved ObjC method *)
@@ -114,6 +128,7 @@ let objc_msgSend receiver selector_arg actual_args () : unit DSL.model_monad =
         (Procname.ObjC_Cpp.make class_name selector ObjCInstanceMethod NoTemplate [])
     in
     Logging.d_printfln "Dynamic ObjC dispatch: calling %a" Procname.pp proc_name ;
+    let* () = check_missing_nullability proc_name in
     let* res = swift_call proc_name method_args in
     assign_ret res
   in

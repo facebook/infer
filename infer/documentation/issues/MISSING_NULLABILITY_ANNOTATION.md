@@ -1,0 +1,1 @@
+This Objective-C method is called from Swift but lacks nullability annotations (`_Nullable` or `_Nonnull`). This causes Swift to import the return value as an implicitly unwrapped optional, which can lead to runtime crashes if the method returns `nil`.

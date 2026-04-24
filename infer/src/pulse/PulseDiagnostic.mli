@@ -97,6 +97,7 @@ type t =
   | ErlangError of ErlangError.t
   | InfiniteLoopError of {location: Location.t}
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
+  | MissingNullabilityAnnotation of {callee: Procname.t; location: Location.t}
   | MutualRecursionCycle of
       {cycle: PulseMutualRecursion.t; location: Location.t; is_call_with_same_values: bool}
   | ReadonlySharedPtrParameter of

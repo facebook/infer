@@ -19,4 +19,10 @@
 - (int)getBatteryStatus {
   return 50;
 }
+- (NSString*)getFirmwareVersion {
+  return @"v0.1";
+}
+- (NSString*)getModelName {
+  return @"Other";
+}
 @end

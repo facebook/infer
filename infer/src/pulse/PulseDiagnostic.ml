@@ -206,6 +206,7 @@ type t =
   | ErlangError of ErlangError.t
   | InfiniteLoopError of {location: Location.t}
   | HackCannotInstantiateAbstractClass of {type_name: Typ.Name.t; trace: Trace.t}
+  | MissingNullabilityAnnotation of {callee: Procname.t; location: Location.t}
   | MutualRecursionCycle of
       {cycle: PulseMutualRecursion.t; location: Location.t; is_call_with_same_values: bool}
   | ReadonlySharedPtrParameter of
@@ -267,6 +268,9 @@ let pp fmt diagnostic =
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       F.fprintf fmt "HackCannotInstantiateAbstractClass {@[type_name:%a;@;trace:%a@]" Typ.Name.pp
         type_name (Trace.pp ~pp_immediate) trace
+  | MissingNullabilityAnnotation {callee; location} ->
+      F.fprintf fmt "MissingNullabilityAnnotation {@[callee=%a;@;location=%a@]}" Procname.pp callee
+        Location.pp location
   | MutualRecursionCycle {cycle; location; is_call_with_same_values} ->
       F.fprintf fmt
         "MutualRecursionCycle {@[cycle=%a;@;location=%a;@;is_call_with_same_values=%b@]}"
@@ -381,6 +385,7 @@ let get_location = function
       Trace.get_outer_location allocation_trace
   | ConfigUsage {location}
   | ConstRefableParameter {location}
+  | MissingNullabilityAnnotation {location}
   | MutualRecursionCycle {location}
   | ReadonlySharedPtrParameter {location}
   | ResourceLeak {location}
@@ -434,6 +439,7 @@ let aborts_execution (path : PathContext.t) = function
   | ConstRefableParameter _
   | DynamicTypeMismatch _
   | HackCannotInstantiateAbstractClass _
+  | MissingNullabilityAnnotation _
   | MutualRecursionCycle _
   | ReadonlySharedPtrParameter _
   | ReadUninitialized _
@@ -700,6 +706,8 @@ let get_message_and_suggestion diagnostic =
       F.asprintf "no matching branch in try at %a" Location.pp location |> no_suggestion
   | InfiniteLoopError {location} ->
       F.asprintf "potential infinite loop detected at %a" Location.pp location |> no_suggestion
+  | MissingNullabilityAnnotation {callee} ->
+      SwiftObjCNullabilityIssue.message callee |> no_suggestion
   | HackCannotInstantiateAbstractClass {type_name; trace} ->
       let pp_trace fmt (trace : Trace.t) =
         match trace with
@@ -1193,6 +1201,10 @@ let get_trace = function
           [] ]
   | InfiniteLoopError {location} ->
       [Errlog.make_trace_element 0 location "in loop" []]
+  | MissingNullabilityAnnotation {callee; location} ->
+      [ Errlog.make_trace_element 0 location
+          (F.asprintf "call to unannotated Objective-C method `%a` here" Procname.pp callee)
+          [] ]
 
 
 let get_issue_type ~latent issue_type =
@@ -1211,6 +1223,8 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_cannot_instantiate_abstract_class
   | DynamicTypeMismatch _, false ->
       IssueType.pulse_dynamic_type_mismatch
+  | MissingNullabilityAnnotation _, false ->
+      IssueType.missing_nullability_annotation_pulse
   | ErlangError (Badarg _), _ ->
       IssueType.bad_arg ~latent
   | ErlangError (Badgenerator _), _ ->
@@ -1309,6 +1323,7 @@ let get_issue_type ~latent issue_type =
       | ConstRefableParameter _
       | DynamicTypeMismatch _
       | HackCannotInstantiateAbstractClass _
+      | MissingNullabilityAnnotation _
       | ReadonlySharedPtrParameter _
       | ResourceLeak _
       | RetainCycle _

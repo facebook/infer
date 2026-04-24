@@ -682,10 +682,13 @@ let expensive_loop_invariant_call =
 let missing_nullability_annotation =
   register ~category:NullPointerDereference ~id:"MISSING_NULLABILITY_ANNOTATION" Error
     SwiftObjCNullability ~hum:"Missing Nullability Annotation"
-    ~user_documentation:
-      "This Objective-C method is called from Swift but lacks nullability annotations (`_Nullable` \
-       or `_Nonnull`). This causes Swift to import the return value as an implicitly unwrapped \
-       optional, which can lead to runtime crashes if the method returns `nil`."
+    ~user_documentation:[%blob "./documentation/issues/MISSING_NULLABILITY_ANNOTATION.md"]
+
+
+let missing_nullability_annotation_pulse =
+  register ~category:NullPointerDereference ~id:"MISSING_NULLABILITY_ANNOTATION_PULSE" Error Pulse
+    ~hum:"Missing Nullability Annotation"
+    ~user_documentation:[%blob "./documentation/issues/MISSING_NULLABILITY_ANNOTATION.md"]
 
 
 let missing_required_prop =
