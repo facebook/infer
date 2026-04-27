@@ -213,12 +213,14 @@ let default_return_type (lang : Lang.t) loc =
 
 let wildcard_sil_fieldname lang name =
   match (lang : Lang.t) with
-  | Java | C | Swift | ObjectiveC ->
-      L.die InternalError "a wildcard fieldname is only supported in Hack or Python"
+  | Java | C | ObjectiveC ->
+      L.die InternalError "a wildcard fieldname is only supported in Hack, Python or Swift"
   | Hack ->
       SilFieldname.make (HackClass HackClassName.wildcard) name
   | Python ->
       SilFieldname.make (PythonClass PythonClassName.Wildcard) name
+  | Swift ->
+      SilFieldname.make (SwiftClass (SwiftClassName.of_string "?")) name
   | Rust ->
       L.die InternalError "<NOT YET SUPPORTED>"
 
