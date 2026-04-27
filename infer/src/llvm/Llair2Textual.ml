@@ -110,9 +110,9 @@ let block_to_node_name block =
   Textual.NodeName.of_string name
 
 
-let undef_exp ~sourcefile ~loc ?typ ~proc exp =
+let undef_exp ?(reason = "unsupported exp") ~sourcefile ~loc ?typ ~proc exp =
   let pp_typ fmt typ = Option.iter typ ~f:(fun typ -> F.fprintf fmt ":%a" Textual.Typ.pp typ) in
-  L.internal_error "Llair2Textual: unsupported exp: %a%a in proc %a in %a at %a@\n" Llair.Exp.pp exp
+  L.internal_error "Llair2Textual: %s: %a%a in proc %a in %a at %a@\n" reason Llair.Exp.pp exp
     pp_typ typ Textual.QualifiedProcName.pp proc SourceFile.pp sourcefile Textual.Location.pp loc ;
   (* TODO: should include the arguments here too *)
   (Textual.Exp.Call {proc= undef_proc_name; args= []; kind= NonVirtual}, typ, [])
@@ -414,26 +414,40 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       ProcState.update_var_offset ~proc_state var_name n ;
       let store_instr = Textual.Instr.Store {exp1= new_var; exp2= exp; typ= None; loc} in
       (new_var, None, store_instr :: instrs)
-  | Ap1 (GetElementPtr (DynamicWvd wvd_name), typ, base_ptr) ->
+  | Ap1 (GetElementPtr (DynamicWvd wvd_name), typ, base_ptr) as full_exp -> (
       let base_exp, base_typ_opt, base_instrs = to_textual_exp loc ~proc_state base_ptr in
       let base_deref_instrs, base_exp_deref = add_deref ~proc_state base_exp loc in
       let wvd_class_opt, field_name_str = Field.extract_class_and_field_from_wvd wvd_name in
-      let name = Textual.FieldName.of_string field_name_str in
-      let enclosing_class =
-        match (wvd_class_opt, base_typ_opt) with
-        | Some mangled_class, _ ->
-            TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
-              mangled_class
-        | None, Some (Textual.Typ.Ptr (Struct class_name, _)) ->
-            class_name
-        | _ ->
-            Textual.TypeName.mk_swift_type_name Textual.BaseTypeName.swift_any_type_name.value
-      in
-      let field = {Textual.enclosing_class; name} in
-      let exp = Textual.Exp.Field {exp= base_exp_deref; field} in
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
       let instrs = base_instrs @ base_deref_instrs in
-      (exp, Some textual_typ, instrs)
+      match (wvd_class_opt, field_name_str) with
+      | None, "unknown_field" ->
+          (* The Swift Wvd mangled-name parser could not decode [wvd_name].
+             Emitting a Field with the "unknown_field" sentinel produces a
+             malformed module that later dies in SIL lowering. Fall back to a
+             non-deterministic value so capture can still succeed for the rest
+             of the file. *)
+          let reason = F.asprintf "could not parse Wvd mangled name %s" wvd_name in
+          let undef, _, undef_instrs =
+            undef_exp ~reason ~sourcefile:proc_state.sourcefile ~loc ~typ:textual_typ
+              ~proc:proc_state.qualified_name full_exp
+          in
+          (undef, Some textual_typ, instrs @ undef_instrs)
+      | _ ->
+          let name = Textual.FieldName.of_string field_name_str in
+          let enclosing_class =
+            match (wvd_class_opt, base_typ_opt) with
+            | Some mangled_class, _ ->
+                TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+                  mangled_class
+            | None, Some (Textual.Typ.Ptr (Struct class_name, _)) ->
+                class_name
+            | _ ->
+                Textual.TypeName.mk_swift_type_name Textual.BaseTypeName.swift_any_type_name.value
+          in
+          let field = {Textual.enclosing_class; name} in
+          let exp = Textual.Exp.Field {exp= base_exp_deref; field} in
+          (exp, Some textual_typ, instrs) )
   | Ap1 ((Convert _ | Signed _ | Unsigned _), dst_typ, exp) ->
       (* Signed is the translation of llvm's trunc and SExt and Unsigned is the translation of ZExt, all different types of cast,
        and convert translates other types of cast *)
