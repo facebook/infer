@@ -125,10 +125,18 @@ let to_textual_arith_exp_builtin ~loc ~sourcefile (op : Llair.Exp.op2) (typ : Ll
         Some (PlusA (Some IInt))
     | Add, Pointer _ ->
         Some PlusPI
+    | Add, Float _ ->
+        Some (PlusA None)
     | Sub, Integer _ ->
         Some (MinusA (Some IInt))
+    | Sub, Pointer _ ->
+        Some MinusPI
+    | Sub, Float _ ->
+        Some (MinusA None)
     | Mul, Integer _ ->
         Some (Mult (Some IInt))
+    | Mul, Float _ ->
+        Some (Mult None)
     | Div, Integer _ ->
         Some DivI
     | Div, Float _ ->
@@ -154,11 +162,11 @@ let to_textual_bool_exp_builtin (op : Llair.Exp.op2) =
         Binop.Eq
     | Dq ->
         Binop.Ne
-    | Gt ->
+    | Gt | Ugt ->
         Binop.Gt
-    | Ge ->
+    | Ge | Uge ->
         Binop.Ge
-    | Le ->
+    | Le | Ule ->
         Binop.Le
     | Lt | Ult ->
         Binop.Lt
@@ -482,8 +490,12 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       ( Call {proc; args= [exp1; exp2]; kind= Textual.Exp.NonVirtual}
       , typ1
       , deref_instrs1 @ exp1_instrs @ deref_instrs2 @ exp2_instrs )
-  | Ap2 (((Eq | Dq | Gt | Ge | Le | Lt | Ult | And | Or | Xor | Shl | Lshr | Ashr) as op), _, e1, e2)
-    ->
+  | Ap2
+      ( ( (Eq | Dq | Gt | Ge | Le | Lt | Ugt | Uge | Ule | Ult | And | Or | Xor | Shl | Lshr | Ashr)
+          as op )
+      , _
+      , e1
+      , e2 ) ->
       let exp1, typ1, exp1_instrs = to_textual_exp loc ~proc_state e1 in
       let deref_instrs1, exp1 = add_deref ~proc_state exp1 loc in
       let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state e2 in
