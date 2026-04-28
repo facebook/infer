@@ -421,13 +421,22 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
       let instrs = base_instrs @ base_deref_instrs in
       match (wvd_class_opt, field_name_str) with
-      | None, "unknown_field" ->
-          (* The Swift Wvd mangled-name parser could not decode [wvd_name].
-             Emitting a Field with the "unknown_field" sentinel produces a
-             malformed module that later dies in SIL lowering. Fall back to a
-             non-deterministic value so capture can still succeed for the rest
-             of the file. *)
-          let reason = F.asprintf "could not parse Wvd mangled name %s" wvd_name in
+      | _, "unknown_field" ->
+          (* "unknown_field" is the sentinel emitted by the Swift Wvd
+             mangled-name parser when it could not decode the field-name
+             part of [wvd_name]. Emitting a [Textual.Exp.Field] with this
+             name (regardless of whether the class part parsed) produces a
+             malformed module that later trips the SIL Consistency Error
+             "field <class>.unknown_field is not declared". Fall back to a
+             non-deterministic value so capture can still succeed for the
+             rest of the file. *)
+          let reason =
+            match wvd_class_opt with
+            | None ->
+                F.asprintf "could not parse Wvd mangled name %s" wvd_name
+            | Some _ ->
+                F.asprintf "could not parse field name in Wvd mangled name %s" wvd_name
+          in
           let undef, _, undef_instrs =
             undef_exp ~reason ~sourcefile:proc_state.sourcefile ~loc ~typ:textual_typ
               ~proc:proc_state.qualified_name full_exp
