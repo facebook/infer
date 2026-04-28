@@ -480,7 +480,7 @@ let config_gated =
 
 
 let config_ungated =
-  register ~enabled:false ~category:NoCategory ~id:"CONFIG_UNGATED" Info ConfigGating
+  register ~enabled:true ~category:NoCategory ~id:"CONFIG_UNGATED" Info ConfigGating
     ~user_documentation:[%blob "./documentation/issues/CONFIG_UNGATED.md"]
 
 
