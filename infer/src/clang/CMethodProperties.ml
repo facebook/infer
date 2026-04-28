@@ -53,7 +53,18 @@ let get_return_type method_decl =
   | CXXDestructorDecl (_, _, qt, _, _) ->
       CType.return_type_of_function_type qt
   | ObjCMethodDecl (_, _, omdi) ->
-      omdi.omdi_result_type
+      (* For a property getter, clang strips type sugar (including the [nullable] qualifier) from
+         the synthesized accessor's result type; the qualifier survives only on the linked
+         [ObjCPropertyDecl]'s [opdi_qual_type]. Use the property's qual_type so [sil_annot_of_type]
+         can recover the annotation. *)
+      let is_getter = omdi.omdi_is_property_accessor && List.is_empty omdi.omdi_parameters in
+      if is_getter then
+        match CAst_utils.get_decl_opt_with_decl_ref_opt omdi.omdi_property_decl with
+        | Some (ObjCPropertyDecl (_, _, opdi)) ->
+            opdi.opdi_qual_type
+        | _ ->
+            omdi.omdi_result_type
+      else omdi.omdi_result_type
   | _ ->
       raise CFrontend_errors.Invalid_declaration
 
