@@ -262,16 +262,22 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
     | None ->
         Annot.Item.empty
   in
-  let annot_name_opt =
-    match get_type qt_type_ptr with
+  let rec annot_name_of_type_ptr type_ptr =
+    match get_type type_ptr with
     | Some (AttributedType (_, {ati_attr_kind= TypeNullableAttrKind})) ->
         Some Annotations.nullable
     | Some (AttributedType (_, {ati_attr_kind= TypeNonNullAttrKind})) ->
         Some Annotations.nonnull
+    (* [MacroQualifiedType] always wraps an [AttributedType] (clang invariant); it appears when a
+       macro after the declarator expands to a type-attached attribute (e.g. [annotate]). Look
+       through it so [nullable] survives on properties like
+       [@property(nullable, ...) T *foo NS_SWIFT_UI_ACTOR;]. *)
+    | Some (MacroQualifiedType (_, {qt_type_ptr= inner_ptr})) ->
+        annot_name_of_type_ptr inner_ptr
     | _ ->
         None
   in
-  mk_annot annot_name_opt
+  mk_annot (annot_name_of_type_ptr qt_type_ptr)
 
 
 let qual_type_of_decl_ptr decl_ptr =

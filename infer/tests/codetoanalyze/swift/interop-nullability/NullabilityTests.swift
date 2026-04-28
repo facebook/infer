@@ -16,9 +16,7 @@ func nullableReturn_good(api: LegacyAPI) {
   }
 }
 
-// FP today: the [nullable] qualifier is hidden behind a MacroQualifiedType
-// wrapper on the property's type. Will become _good in the follow-up diff.
-func macroAnnotatedNullableProp_good_FP(api: LegacyAPI) {
+func macroAnnotatedNullableProp_good(api: LegacyAPI) {
   if let s = api.macroAnnotatedNullableProp {
     print(s.count)
   }

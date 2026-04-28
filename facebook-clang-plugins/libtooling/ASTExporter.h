@@ -470,6 +470,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   //  DECLARE_VISITOR(FunctionNoProtoType)
   DECLARE_VISITOR(FunctionProtoType)
   //  DECLARE_VISITOR(InjectedClassNameType)
+  DECLARE_VISITOR(MacroQualifiedType)
   DECLARE_VISITOR(MemberPointerType)
   DECLARE_VISITOR(ObjCObjectPointerType)
   DECLARE_VISITOR(ObjCObjectType)
@@ -5102,6 +5103,18 @@ void ASTExporter<ATDWriter>::VisitFunctionProtoType(
       dumpQualType(paramType);
     }
   }
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::MacroQualifiedTypeTupleSize() {
+  return TypeWithChildInfoTupleSize();
+}
+//@atd #define macro_qualified_type_tuple type_with_child_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitMacroQualifiedType(
+    const MacroQualifiedType *T) {
+  VisitType(T);
+  dumpQualType(T->getUnderlyingType());
 }
 
 template <class ATDWriter>

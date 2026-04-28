@@ -12,9 +12,9 @@
 
 // A macro that expands to a type-attached attribute. When such a macro appears
 // after a property declarator, clang wraps the property type in a
-// MacroQualifiedType layer (see clang/lib/Sema/SemaType.cpp), which today
-// hides the inner _Nullable sugar from the AST exporter — fixed in the
-// follow-up diff.
+// MacroQualifiedType layer (see clang/lib/Sema/SemaType.cpp). The AST exporter
+// now descends through that wrapper so the inner [_Nullable] sugar is visible
+// to Infer.
 #define MY_TYPE_ATTR __attribute__((annotate("my_type_attr")))
 
 @interface LegacyAPI : NSObject
@@ -27,10 +27,9 @@
 // Annotated _Nullable - Swift imports as String?.
 - (NSString* _Nullable)getNullableString;
 
-// @property with [nullable] AND a macro-attached type attribute. Today the
-// [nullable] qualifier is invisible to SwiftObjCNullability and the property
-// is wrongly flagged as unannotated — tracked here as
-// macroAnnotatedNullableProp_good_FP, becomes _good in the follow-up diff.
+// @property with [nullable] AND a macro-attached type attribute. The
+// [nullable] qualifier survives because the AST exporter looks through the
+// MacroQualifiedType wrapper.
 @property(nullable, nonatomic, readonly)
     NSString* macroAnnotatedNullableProp MY_TYPE_ATTR;
 

@@ -1,5 +1,3 @@
-HardwareTests.swift, $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_, 0, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
-HardwareTests.swift, $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_yAMXEfU_, 0, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testObjCClassMethod_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testObjCInstanceMethod_bad, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testConditionalDispatch_True_Path_Good_FP, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
