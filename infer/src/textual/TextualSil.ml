@@ -283,8 +283,21 @@ module TypBridge = struct
 end
 
 module IdentBridge = struct
-  (* TODO: check the Ident generator is ready *)
-  let to_sil id = (SilIdent.create SilIdent.knormal) (Ident.to_int id)
+  let to_sil id =
+    try (SilIdent.create SilIdent.knormal) (Ident.to_int id)
+    with Stdlib.Not_found ->
+      (* [Ident.NameGenerator.update_name_hash] reads the per-domain name-map
+           hashtable. The inlined [Hashtbl.find] in there can raise
+           [Stdlib.Not_found] in a way the surrounding [try/with Stdlib.Not_found]
+           does not catch in optimised builds. Convert to [TextualTransformError]
+           so [Textual.seq_fallible_fold] in [ModuleBridge.to_sil] skips just
+           this procedure instead of failing the whole module translation. *)
+      let msg =
+        lazy
+          (F.asprintf "IdentBridge.to_sil: Ident.NameGenerator raised Not_found for stamp %d"
+             (Ident.to_int id) )
+      in
+      textual_transformation_error Location.Unknown msg
 end
 
 module ConstBridge = struct
