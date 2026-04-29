@@ -6,6 +6,10 @@
 
 .source_language = "Swift" @?
 
+declare swift_endAccess(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_beginAccess(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
 declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare objc_msgSend() : *__infer_swift_type<ptr_elt>
@@ -34,26 +38,30 @@ declare .plain_name = "init" $s5Hello9ObjCClassCACycfcTo(*__infer_swift_type<ptr
 
 define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<,ObjCClass>) : *__infer_swift_type<ptr_elt> {
   local var4: *__infer_swift_type<objc_super>
-  #: @[5:9]
-      n1 = load &self @[5:9]
-      n4 = $builtins.llvm_init_tuple() @[5:15]
-      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>>) @[5:15]
-      n3 = n4 @[5:15]
-      jmp 5::ret @[5:15]
+  #: @[13:23]
+      n1:*__infer_swift_type<T5Hello9ObjCClassC,ObjCClass> = load &self @[13:23]
+      n2 = load &$s5Hello9ObjCClassC5valueSivpWvd @[13:23]
+      n5:*__infer_swift_type<TSi> = load n1.__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.value @[13:36]
+      store n5.__infer_swift_type<TSi>.value <- 0 @[13:36]
+      n6 = load &self @[5:9]
+      n9 = $builtins.llvm_init_tuple() @[5:15]
+      store n9.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>>) @[5:15]
+      n8 = n9 @[5:15]
+      jmp 9::ret @[5:15]
       
-  #5::ret: @[5:15]
-      n6:*__infer_swift_type<objc_super> = load &var4 @[5:15]
-      store n6.__infer_swift_type<objc_super>.field_0 <- n1 @[5:15]
-      n9:*__infer_swift_type<objc_super> = load &var4 @[5:15]
-      n8 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
-      store n9.__infer_swift_type<objc_super>.field_1 <- n8 @[5:15]
-      n10 = load &L_selector(init) @[5:15]
-      n11 = load &var4 @[5:15]
-      n13 = $builtins.objc_msgSendSuper2(n11, n10) @[5:15]
-      n14 = $builtins.llvm_nondet() @[4:0]
-      store &self <- n13 @[4:0]
-      n16 = load &self @[6:5]
-      ret n13 @[6:5]
+  #9::ret: @[5:15]
+      n11:*__infer_swift_type<objc_super> = load &var4 @[5:15]
+      store n11.__infer_swift_type<objc_super>.field_0 <- n6 @[5:15]
+      n14:*__infer_swift_type<objc_super> = load &var4 @[5:15]
+      n13 = load n8.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
+      store n14.__infer_swift_type<objc_super>.field_1 <- n13 @[5:15]
+      n15 = load &L_selector(init) @[5:15]
+      n16 = load &var4 @[5:15]
+      n18 = $builtins.objc_msgSendSuper2(n16, n15) @[5:15]
+      n19 = $builtins.llvm_nondet() @[4:0]
+      store &self <- n18 @[4:0]
+      n21 = load &self @[6:5]
+      ret n18 @[6:5]
       
 } @?
 
@@ -73,9 +81,120 @@ define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<
       
 } @?
 
+define .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivsTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: int) : void {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = $builtins.llvm_nondet() @[0:0]
+      n4 = load &var3 @[0:0]
+      n5 = load &var1 @[0:0]
+      _ = $s5Hello9ObjCClassC5valueSivs(n4, n5) @[0:0]
+      jmp $s5Hello9ObjCClassC5valueSivs::void::ret @[0:0]
+      
+  #$s5Hello9ObjCClassC5valueSivs::void::ret: @[0:0]
+      ret null @[0:0]
+      
+} @?
+
+define .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivs(value: *__infer_swift_type<ptr_elt>, self: *__infer_swift_type<,ObjCClass>) : void {
+  local var6: *int
+  #: @[13:0]
+      n1 = load &$s5Hello9ObjCClassC5valueSivpWvd @[13:0]
+      n2 = load &self @[13:0]
+      n3 = n2.__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.value @[13:0]
+      n5:*__infer_swift_type<TSi> = load n3 @[13:0]
+      n4 = load &value @[13:0]
+      store n5.__infer_swift_type<TSi>.value <- n4 @[13:0]
+      ret null @[13:0]
+      
+} @?
+
+declare $s5Hello9ObjCClassC5valueSivpfi() : int
+
+define .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivgTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : int {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = $builtins.llvm_nondet() @[0:0]
+      n4 = load &var1 @[0:0]
+      n5 = $s5Hello9ObjCClassC5valueSivg(n4) @[0:0]
+      jmp 8::ret @[0:0]
+      
+  #8::ret: @[0:0]
+      ret n5 @[0:0]
+      
+} @?
+
+define .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivg(self: *__infer_swift_type<,ObjCClass>) : int {
+  local var4: *int
+  #: @[13:0]
+      n1 = load &$s5Hello9ObjCClassC5valueSivpWvd @[13:0]
+      n2 = load &self @[13:0]
+      n3 = n2.__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.value @[13:0]
+      n5:*__infer_swift_type<TSi> = load n3 @[13:0]
+      n4 = load n5.__infer_swift_type<TSi>.value @[13:0]
+      ret n4 @[13:0]
+      
+} @?
+
+define .plain_name = "dispatchDynamicSelector" $s5Hello23dispatchDynamicSelectorySbSo8NSObjectC_10ObjectiveC0D0VtF(obj: *__infer_swift_type<,NSObject>, s: *__infer_swift_type<,Selector>) : int {
+  #: @[35:16]
+      n1 = load &L_selector(respondsToSelector:) @[35:16]
+      n4 = load &s @[35:16]
+      n2 = load &obj @[35:16]
+      n7 = n2.NSObject.respondsToSelector:(__sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n4))) @[35:16]
+      jmp 8::ret @[35:16]
+      
+  #8::ret: @[35:5]
+      ret n7 @[35:5]
+      
+} @?
+
+define .plain_name = "performDynamicSelector" $s5Hello22performDynamicSelectorys9UnmanagedVyyXlGSgSo8NSObjectC_10ObjectiveC0D0VtF(obj: *__infer_swift_type<,NSObject>, s: *__infer_swift_type<,Selector>) : *__infer_swift_type<,Optional> {
+  #: @[40:16]
+      n1 = $builtins.llvm_nondet() @[40:16]
+      n2 = load &L_selector(performSelector:) @[40:16]
+      n5 = load &s @[40:16]
+      n3 = load &obj @[40:16]
+      n8 = objc_msgSend(n3, n2, __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n5))) @[40:16]
+      jmp 9::ret @[40:16]
+      
+  #9::ret: @[40:16]
+      n9 = $builtins.llvm_nondet() @[40:16]
+      ret __sil_cast(<int>, n8) @[40:5]
+      
+} @?
+
+define .plain_name = "setValueViaObjC" $s5Hello15setValueViaObjCyyAA0E6CClassC_SitF(c: *__infer_swift_type<,ObjCClass>, v: *__infer_swift_type<ptr_elt>) : void {
+  #: @[23:13]
+      n1 = load &L_selector(setValue:) @[23:13]
+      n2 = load &c @[23:13]
+      n4 = load &v @[23:13]
+      _ = n2.ObjCClass.setValue:(n4) @[23:13]
+      jmp objc_msgSend::void::ret @[23:13]
+      
+  #objc_msgSend::void::ret: @[24:1]
+      ret null @[24:1]
+      
+} @?
+
+define .plain_name = "getValueViaObjC" $s5Hello15getValueViaObjCySiAA0E6CClassCF(c: *__infer_swift_type<,ObjCClass>) : int {
+  #: @[18:14]
+      n1 = load &L_selector(value) @[18:14]
+      n2 = load &c @[18:14]
+      n4 = n2.ObjCClass.value() @[18:14]
+      jmp 4::ret @[18:14]
+      
+  #4::ret: @[18:5]
+      ret n4 @[18:5]
+      
+} @?
+
 global symbolic _____ 5Hello9ObjCClassC: *__infer_tuple_class<int,int,int>
 
 global symbolic So8NSObjectC: *__infer_tuple_class<*int,int>
+
+global symbolic Si: *__infer_tuple_class<*int,int>
 
 global swift_isaMask: *__infer_swift_type<ptr_elt>
 
@@ -103,7 +222,11 @@ global _objc_empty_cache: *__infer_swift_type<ptr_elt>
 
 global __swift_reflection_version: int
 
+global _PROPERTIES__TtC5Hello9ObjCClass: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
 global _METACLASS_DATA__TtC5Hello9ObjCClass: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _IVARS__TtC5Hello9ObjCClass: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
 global _INSTANCE_METHODS__TtC5Hello9ObjCClass: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
 
@@ -117,11 +240,23 @@ global OBJC_CLASS_$_NSObject: *__infer_swift_type<ptr_elt>
 
 global ::str::9::ObjCClass: *int
 
+global ::str::7::q16@0:8: int
+
 global ::str::7::@16@0:8: int
+
+global ::str::5::value: *int
 
 global ::str::5::Hello: *int
 
 global ::str::20::_TtC5Hello9ObjCClass: *int
+
+global ::str::1::q: *int
+
+global ::str::11::Tq,N,Vvalue: *int
+
+global ::str::10::v24@0:8q16: *int
+
+global 0: *int
 
 global $sBOWV: *__infer_swift_type<ptr_elt>
 
@@ -129,21 +264,41 @@ global $s5HelloMXM: *__infer_tuple_class<int,int,int>
 
 global $s5Hello9ObjCClassCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
 
-global $s5Hello9ObjCClassCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+global $s5Hello9ObjCClassCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int>
 
-global $s5Hello9ObjCClassCMF: *__infer_tuple_class<int,int,int,int,int>
+global $s5Hello9ObjCClassCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 
 global $s5Hello9ObjCClassCHn: *__infer_swift_type<swift::type_metadata_record>
+
+global $s5Hello9ObjCClassC5valueSivpWvd: int
+
+global L_selector_data(value): *int
+
+global L_selector_data(setValue:): *int
+
+global L_selector_data(respondsToSelector:): *int
+
+global L_selector_data(performSelector:): *int
 
 global L_selector_data(init): *int
 
 global L_selector_data(dealloc): int
 
+global L_selector(value): *__infer_swift_type<ptr_elt>
+
+global L_selector(setValue:): *__infer_swift_type<ptr_elt>
+
+global L_selector(respondsToSelector:): *__infer_swift_type<ptr_elt>
+
+global L_selector(performSelector:): *__infer_swift_type<ptr_elt>
+
 global L_selector(init): *__infer_swift_type<ptr_elt>
 
 global L_selector(dealloc): *__infer_swift_type<ptr_elt>
 
-type __infer_swift_type<T5Hello9ObjCClassC,ObjCClass> = {}
+type __infer_swift_type<T5Hello9ObjCClassC,ObjCClass> = {value: __infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<TSi> = {value: int}
 
 type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
                                        field_1: *__infer_swift_type<ptr_elt>;
@@ -159,12 +314,16 @@ type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_typ
 
 type __infer_swift_type<swift::type_metadata_record> = {field_0: int}
 
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
+
 type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
 __infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_2: *__infer_swift_type<ptr_elt>}
 
-type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int> = {
 __infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
@@ -177,14 +336,29 @@ __infer_tuple_field_9: int; __infer_tuple_field_10: int;
 __infer_tuple_field_11: int; __infer_tuple_field_12: int;
 __infer_tuple_field_13: int; __infer_tuple_field_14: int;
 __infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
-__infer_tuple_field_16: *__infer_swift_type<ptr_elt>}
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_17: int}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int; __infer_tuple_field_4: int}
 
 type __infer_tuple_class<*int,int> = {__infer_tuple_field_0: *int;
                                       __infer_tuple_field_1: int}
 
+type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>}
+
 type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>> = {
 __infer_tuple_field_0: int; __infer_tuple_field_1: int;
 __infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>}
+
+type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>}
 
 type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
                                          __infer_tuple_field_1: int;
@@ -201,11 +375,14 @@ __infer_tuple_field_8: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_9: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_10: *__infer_swift_type<ptr_elt>}
 
-type __infer_tuple_class<int,int,int,int,int> = {__infer_tuple_field_0: int;
-                                                 __infer_tuple_field_1: int;
-                                                 __infer_tuple_field_2: int;
-                                                 __infer_tuple_field_3: int;
-                                                 __infer_tuple_field_4: int}
+type __infer_tuple_class<int,int,int,int,int,int,int,int> = {__infer_tuple_field_0: int;
+                                                             __infer_tuple_field_1: int;
+                                                             __infer_tuple_field_2: int;
+                                                             __infer_tuple_field_3: int;
+                                                             __infer_tuple_field_4: int;
+                                                             __infer_tuple_field_5: int;
+                                                             __infer_tuple_field_6: int;
+                                                             __infer_tuple_field_7: int}
 
 type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int> = {
 __infer_tuple_field_0: int; __infer_tuple_field_1: int;
