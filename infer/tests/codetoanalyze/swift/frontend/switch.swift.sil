@@ -1,0 +1,285 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare swift_getWitnessTable(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare __swift_noop_void_return(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare __swift_memcpy1_1(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $ss6HasherV7combineyyxSHRzlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $ss10_hashValue3forSix_tSHRzlF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSHsE13_rawHashValue4seedS2i_tF(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello5ColorOwup(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello5ColorOwui(*__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello5ColorOwug(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello5ColorOwst(*__infer_swift_type<ptr_elt>, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello5ColorOwet(*__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "__derived_enum_equals" $s5Hello5ColorOSQAASQ2eeoiySbx_xtFZTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Bool>
+
+declare $s5Hello5ColorOSHAASQWb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "hashValue.get" $s5Hello5ColorOSHAASH9hashValueSivgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : int {
+  #: @[0:0]
+      n2:*__infer_swift_type<T5Hello5ColorO,Color> = load &var1 @[0:0]
+      n1 = load n2.__infer_swift_type<T5Hello5ColorO,Color>.hashValue @[0:0]
+      n4 = $s5Hello5ColorO9hashValueSivg(n1) @[0:0]
+      jmp 6::ret @[0:0]
+      
+  #6::ret: @[0:0]
+      ret n4 @[0:0]
+      
+} @?
+
+declare .plain_name = "hash" $s5Hello5ColorOSHAASH4hash4intoys6HasherVz_tFTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
+
+declare .plain_name = "_rawHashValue" $s5Hello5ColorOSHAASH13_rawHashValue4seedS2i_tFTW(int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : int
+
+declare $s5Hello5ColorOMa(int) : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello5ColorOACSQAAWl() : *__infer_swift_type<ptr_elt>
+
+declare $s5Hello5ColorOACSHAAWl() : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "hashValue.get" $s5Hello5ColorO9hashValueSivg(self: *__infer_swift_type<ptr_elt>) : int {
+  local var4: *__infer_swift_type<T5Hello5ColorO,Color>
+  #: @[0:0]
+      n2:*__infer_swift_type<T5Hello5ColorO,Color> = load &var4 @[0:0]
+      n1 = load &self @[0:0]
+      store n2.__infer_swift_type<T5Hello5ColorO,Color>.hashValue <- n1 @[0:0]
+      n3 = $s5Hello5ColorOACSHAAWl() @[0:0]
+      jmp 5::ret @[0:0]
+      
+  #5::ret: @[0:0]
+      n5:*__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>> = load &$s5Hello5ColorOMf @[0:0]
+      n4 = load &var4 @[0:0]
+      n6 = load n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_2 @[0:0]
+      n8 = $ss10_hashValue3forSix_tSHRzlF(n4, n6, n3) @[0:0]
+      jmp 6::ret @[0:0]
+      
+  #6::ret: @[0:0]
+      ret n8 @[0:0]
+      
+} @?
+
+declare .plain_name = "hash" $s5Hello5ColorO4hash4intoys6HasherVz_tF(*__infer_swift_type<,Hasher>, int) : void
+
+declare .plain_name = "__derived_enum_equals" $s5Hello5ColorO21__derived_enum_equalsySbAC_ACtFZ(int, int) : *__infer_swift_type<,Bool>
+
+define .plain_name = "switch_on_enum" $s5Hello14switch_on_enumySiAA5ColorOF(c: *__infer_swift_type<ptr_elt>) : int {
+  #: @?
+      unreachable @?
+      
+} @?
+
+define .plain_name = "switch_on_bool" $s5Hello14switch_on_boolySiSbF(b: *__infer_swift_type<ptr_elt>) : int {
+  #: @?
+      unreachable @?
+      
+} @?
+
+define .plain_name = "switch_on_int" $s5Hello13switch_on_intyS2iF(x: *__infer_swift_type<ptr_elt>) : int {
+  #: @?
+      n2 = load &x @[7:12]
+      if __sil_eq(0, n2) then jmp 4::jmp::12 else jmp 5 @[7:12]
+      
+  #10::jmp::12: @[10:13]
+      n7 = 30 @[10:13]
+      jmp 12 @[10:13]
+      
+  #11::jmp::12: @[11:14]
+      n7 = 40 @[11:14]
+      jmp 12 @[11:14]
+      
+  #12: @[13:1]
+      ret n7 @[13:1]
+      
+  #4::jmp::12: @[8:13]
+      n7 = 10 @[8:13]
+      jmp 12 @[8:13]
+      
+  #5: @?
+      n4 = load &x @[7:12]
+      if __sil_eq(1, n4) then jmp 7::jmp::12 else jmp 8 @[7:12]
+      
+  #7::jmp::12: @[9:13]
+      n7 = 20 @[9:13]
+      jmp 12 @[9:13]
+      
+  #8: @?
+      n6 = load &x @[7:12]
+      if __sil_eq(2, n6) then jmp 10::jmp::12 else jmp 11::jmp::12 @[7:12]
+      
+} @?
+
+global symbolic _____ 5Hello5ColorO: *__infer_tuple_class<int,int,int>
+
+global llvm::used: **__infer_swift_type<ptr_elt>
+
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
+
+global got::$sSQMp: *__infer_swift_type<ptr_elt>
+
+global got::$sSQ2eeoiySbx_xtFZTq: *__infer_swift_type<ptr_elt>
+
+global got::$sSHSQTb: *__infer_swift_type<ptr_elt>
+
+global got::$sSHMp: *__infer_swift_type<ptr_elt>
+
+global got::$sSH9hashValueSivgTq: *__infer_swift_type<ptr_elt>
+
+global got::$sSH4hash4intoys6HasherVz_tFTq: *__infer_swift_type<ptr_elt>
+
+global got::$sSH13_rawHashValue4seedS2i_tFTq: *__infer_swift_type<ptr_elt>
+
+global associated conformance 5Hello5ColorOSHAASQ: *__infer_tuple_class<int,int,int,int>
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
+
+global __swift_reflection_version: int
+
+global ::str::5::Hello: *int
+
+global ::str::5::Color: *int
+
+global 2: *int
+
+global 1: *int
+
+global 0: *int
+
+global $sSiSHsWP: *__infer_swift_type<ptr_elt>
+
+global $sSiN: *__infer_swift_type<ptr_elt> = [Some 1002]
+
+global $sSQMp: *__infer_swift_type<ptr_elt>
+
+global $sSQ2eeoiySbx_xtFZTq: *__infer_swift_type<ptr_elt>
+
+global $sSHSQTb: *__infer_swift_type<ptr_elt>
+
+global $sSHMp: *__infer_swift_type<ptr_elt>
+
+global $sSH9hashValueSivgTq: *__infer_swift_type<ptr_elt>
+
+global $sSH4hash4intoys6HasherVz_tFTq: *__infer_swift_type<ptr_elt>
+
+global $sSH13_rawHashValue4seedS2i_tFTq: *__infer_swift_type<ptr_elt>
+
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
+
+global $s5Hello5ColorOWV: *__infer_swift_type<swift::enum_vwtable>
+
+global $s5Hello5ColorOSQAAMcMK: **__infer_swift_type<ptr_elt>
+
+global $s5Hello5ColorOSQAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
+
+global $s5Hello5ColorOSQAAHc: int
+
+global $s5Hello5ColorOSHAAMcMK: **__infer_swift_type<ptr_elt>
+
+global $s5Hello5ColorOSHAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int>
+
+global $s5Hello5ColorOSHAAHc: int
+
+global $s5Hello5ColorOMn: *__infer_tuple_class<int,int,int,int,int,int,int>
+
+global $s5Hello5ColorOMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
+
+global $s5Hello5ColorOMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int>
+
+global $s5Hello5ColorOHn: *__infer_swift_type<swift::type_metadata_record>
+
+global $s5Hello5ColorOACSQAAWL: *__infer_swift_type<ptr_elt>
+
+global $s5Hello5ColorOACSHAAWL: *__infer_swift_type<ptr_elt>
+
+type __infer_swift_type<T5Hello5ColorO,Color> = {hashValue: int}
+
+type __infer_swift_type<TSi> = {field_0: int}
+
+type __infer_swift_type<swift::enum_vwtable> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                field_1: *__infer_swift_type<ptr_elt>;
+                                                field_2: *__infer_swift_type<ptr_elt>;
+                                                field_3: *__infer_swift_type<ptr_elt>;
+                                                field_4: *__infer_swift_type<ptr_elt>;
+                                                field_5: *__infer_swift_type<ptr_elt>;
+                                                field_6: *__infer_swift_type<ptr_elt>;
+                                                field_7: *__infer_swift_type<ptr_elt>;
+                                                field_8: int; field_9: int;
+                                                field_10: int; field_11: int;
+                                                field_12: *__infer_swift_type<ptr_elt>;
+                                                field_13: *__infer_swift_type<ptr_elt>;
+                                                field_14: *__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+
+type __infer_swift_type<swift::type_metadata_record> = {field_0: int}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: int;
+__infer_tuple_field_3: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
+                                         __infer_tuple_field_1: int;
+                                         __infer_tuple_field_2: int}
+
+type __infer_tuple_class<int,int,int,int> = {__infer_tuple_field_0: int;
+                                             __infer_tuple_field_1: int;
+                                             __infer_tuple_field_2: int;
+                                             __infer_tuple_field_3: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int> = {__infer_tuple_field_0: int;
+                                                         __infer_tuple_field_1: int;
+                                                         __infer_tuple_field_2: int;
+                                                         __infer_tuple_field_3: int;
+                                                         __infer_tuple_field_4: int;
+                                                         __infer_tuple_field_5: int;
+                                                         __infer_tuple_field_6: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int; __infer_tuple_field_13: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int,int> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int; __infer_tuple_field_13: int;
+__infer_tuple_field_14: int; __infer_tuple_field_15: int;
+__infer_tuple_field_16: int}
+
