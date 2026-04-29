@@ -156,7 +156,7 @@ define .plain_name = "performDynamicSelector" $s5Hello22performDynamicSelectorys
       n2 = load &L_selector(performSelector:) @[40:16]
       n5 = load &s @[40:16]
       n3 = load &obj @[40:16]
-      n8 = objc_msgSend(n3, n2, __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n5))) @[40:16]
+      n8 = $builtins.objc_msgSend(n3, n2, __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n5))) @[40:16]
       jmp 9::ret @[40:16]
       
   #9::ret: @[40:16]

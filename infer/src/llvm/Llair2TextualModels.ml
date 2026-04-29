@@ -409,6 +409,18 @@ let resolve_objc_msgSend ~proc_state call_exp arg_types =
           | _ ->
               None
         in
+        (* When we cannot statically resolve the call to a real method (the
+           selector or its runtime-target arg is a parameter rather than a
+           literal captured from [L_selector_*]), redirect through the
+           [$builtins.objc_msgSend] variadic builtin instead of leaving the
+           call pointing at the LLVM-extern [objc_msgSend()] declaration. The
+           basic verifier accepts the variadic builtin and Pulse can fall back
+           to the receiver's runtime-type attribute for dynamic dispatch
+           (cf. design doc §5.5 step 5). *)
+        let to_builtin () =
+          let builtin_proc = Proc.builtin_qual_proc_name objc_msgSend in
+          Textual.Exp.Call {proc= builtin_proc; args; kind= NonVirtual}
+        in
         match selector_lit_name with
         | Some "performSelector:" -> (
             let real_method_arg = List.nth args 2 in
@@ -425,14 +437,14 @@ let resolve_objc_msgSend ~proc_state call_exp arg_types =
                   let new_args = receiver @ target_selector @ remaining_args in
                   rewrite_to_method ~proc_state method_name new_args arg_types
               | None ->
-                  call_exp )
+                  to_builtin () )
             | _ ->
-                call_exp )
+                to_builtin () )
         | Some method_name ->
             (* Standard objc_msgSend(obj, sel, ...) matches drop 2 perfectly *)
             rewrite_to_method ~proc_state method_name args arg_types
         | None ->
-            call_exp
+            to_builtin ()
       else call_exp
   | _ ->
       call_exp
