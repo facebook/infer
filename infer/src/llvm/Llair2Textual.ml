@@ -1083,8 +1083,38 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
       | [] when Exp.equal key Exp.false_ ->
           (* goto *)
           (to_textual_jump_and_succs ~proc_state ~seen_nodes els, Some loc, [])
-      | _ ->
-          ((Textual.Terminator.Unreachable, None, no_succs), None, [] (* TODO translate Switch *)) )
+      | entries ->
+          (* multi-entry switch: lower as a chain of nested if-then-else,
+             comparing the key against each table entry and falling through
+             to [els]. *)
+          let key_textual, _, key_instrs = to_textual_exp loc ~proc_state key in
+          let key_deref_instrs, key_textual = add_deref ~proc_state key_textual loc in
+          let els_term, els_typ, els_nodes =
+            to_textual_jump_and_succs ~proc_state ~seen_nodes els
+          in
+          let eq_proc = to_textual_bool_exp_builtin Eq in
+          let term, typ_opt, nodes, case_instrs_acc =
+            List.fold_right entries ~init:(els_term, els_typ, els_nodes, [])
+              ~f:(fun (case_exp, jump) (acc_term, acc_typ, acc_nodes, acc_instrs) ->
+                let case_textual, _, case_instrs = to_textual_exp loc ~proc_state case_exp in
+                let case_deref_instrs, case_textual = add_deref ~proc_state case_textual loc in
+                let bexp =
+                  Textual.BoolExp.Exp
+                    (Textual.Exp.Call
+                       { proc= eq_proc
+                       ; args= [key_textual; case_textual]
+                       ; kind= Textual.Exp.NonVirtual } )
+                in
+                let then_term, then_typ, then_nodes =
+                  to_textual_jump_and_succs ~proc_state ~seen_nodes jump
+                in
+                let term = Textual.Terminator.If {bexp; then_= then_term; else_= acc_term} in
+                ( term
+                , Type.join_typ then_typ acc_typ
+                , Textual.Node.Set.union then_nodes acc_nodes
+                , case_instrs @ case_deref_instrs @ acc_instrs ) )
+          in
+          ((term, typ_opt, nodes), Some loc, key_instrs @ key_deref_instrs @ case_instrs_acc) )
   | Iswitch {loc} | Abort {loc} | Unreachable {loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
       ((Textual.Terminator.Unreachable, None, no_succs), Some loc, [])

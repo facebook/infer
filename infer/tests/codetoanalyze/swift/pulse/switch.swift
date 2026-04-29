@@ -25,9 +25,9 @@ func test_switch_int_good() {
     assert(r == 10) // true negative: r is 10
 }
 
-// switch on Bool: hits the multi-entry Llair.Switch case in
-// Llair2Textual.ml and is currently translated as Unreachable, so Pulse
-// has no precise summary for the callee.
+// switch on Bool: lowered as a multi-entry Llair.Switch and translated by
+// Llair2Textual.ml as a chain of nested if-then-else, so Pulse has a
+// precise summary for the callee.
 
 func choose_bool(_ x: Bool) -> Int {
     switch x {
@@ -36,11 +36,9 @@ func choose_bool(_ x: Bool) -> Int {
     }
 }
 
-func test_switch_bool_good_FP() {
+func test_switch_bool_good() {
     let r = choose_bool(true)
-    // false positive: r is 10 so the assertion holds, but Pulse has no
-    // summary for choose_bool (translated as Unreachable) and fires.
-    assert(r == 10)
+    assert(r == 10) // true negative: r is 10
 }
 
 func test_switch_bool_bad() {
@@ -49,7 +47,7 @@ func test_switch_bool_bad() {
 }
 
 // switch on enum: same situation as Bool — multi-entry switch lowered as
-// Unreachable today.
+// a chain of nested if-then-else.
 
 enum Direction {
     case north
@@ -67,11 +65,9 @@ func choose_enum(_ d: Direction) -> Int {
     }
 }
 
-func test_switch_enum_good_FP() {
+func test_switch_enum_good() {
     let r = choose_enum(.north)
-    // false positive: r is 10 so the assertion holds, but Pulse has no
-    // summary for choose_enum (translated as Unreachable) and fires.
-    assert(r == 10)
+    assert(r == 10) // true negative: r is 10
 }
 
 func test_switch_enum_bad() {

@@ -83,13 +83,47 @@ declare .plain_name = "__derived_enum_equals" $s5Hello5ColorO21__derived_enum_eq
 
 define .plain_name = "switch_on_enum" $s5Hello14switch_on_enumySiAA5ColorOF(c: *__infer_swift_type<ptr_elt>) : int {
   #: @?
-      unreachable @?
+      n1 = load &c @[30:10]
+      if __sil_eq(n1, 0) then jmp 4::jmp::7 else if __sil_eq(n1, 1) then jmp 5::jmp::7 else if __sil_eq(n1, 2) then jmp 6::jmp::7 else jmp 3 @[30:10]
+      
+  #3: @[30:10]
+      unreachable @[30:10]
+      
+  #4::jmp::7: @[30:16]
+      n3 = 1 @[30:16]
+      jmp 7 @[30:16]
+      
+  #5::jmp::7: @[31:18]
+      n3 = 2 @[31:18]
+      jmp 7 @[31:18]
+      
+  #6::jmp::7: @[32:17]
+      n3 = 3 @[32:17]
+      jmp 7 @[32:17]
+      
+  #7: @[34:1]
+      ret n3 @[34:1]
       
 } @?
 
 define .plain_name = "switch_on_bool" $s5Hello14switch_on_boolySiSbF(b: *__infer_swift_type<ptr_elt>) : int {
   #: @?
-      unreachable @?
+      n1 = load &b @[17:10]
+      if __sil_eq(n1, 1) then jmp 4::jmp::6 else if __sil_eq(n1, 0) then jmp 5::jmp::6 else jmp 3 @[17:10]
+      
+  #3: @[17:10]
+      unreachable @[17:10]
+      
+  #4::jmp::6: @[17:16]
+      n3 = 1 @[17:16]
+      jmp 6 @[17:16]
+      
+  #5::jmp::6: @[18:17]
+      n3 = 0 @[18:17]
+      jmp 6 @[18:17]
+      
+  #6: @[20:1]
+      ret n3 @[20:1]
       
 } @?
 
