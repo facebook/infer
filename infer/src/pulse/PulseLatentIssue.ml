@@ -119,7 +119,7 @@ let should_report (astate : AbductiveDomain.Summary.t) (diagnostic : Diagnostic.
          decision yet *)
       `ReportNow
   | AccessToInvalidAddress latent ->
-      if PulseArithmetic.is_manifest astate then `ReportNow
+      if PulseArithmetic.is_manifest ~diagnostic astate then `ReportNow
       else `DelayReport (AccessToInvalidAddress latent)
   | ErlangError latent ->
-      if PulseArithmetic.is_manifest astate then `ReportNow else `DelayReport (ErlangError latent)
+      if PulseArithmetic.is_manifest ~diagnostic astate then `ReportNow else `DelayReport (ErlangError latent)
