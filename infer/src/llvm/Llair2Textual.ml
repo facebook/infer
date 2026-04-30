@@ -26,6 +26,27 @@ type module_state = ModuleState.t
 
 let undef_proc_name = Proc.builtin_qual_proc_name "llvm_nondet"
 
+(* Frontend-coverage counters consumed by [LlvmFrontend.log_stats] and shipped to Scuba. *)
+type frontend_stats = {unsupported_exps: int; unsupported_op2s: int}
+
+let frontend_stats_state = ref {unsupported_exps= 0; unsupported_op2s= 0}
+
+let bump_unsupported_exp () =
+  let s = !frontend_stats_state in
+  frontend_stats_state := {s with unsupported_exps= s.unsupported_exps + 1}
+
+
+let bump_unsupported_op2 () =
+  let s = !frontend_stats_state in
+  frontend_stats_state := {s with unsupported_op2s= s.unsupported_op2s + 1}
+
+
+let read_and_reset_frontend_stats () =
+  let s = !frontend_stats_state in
+  frontend_stats_state := {unsupported_exps= 0; unsupported_op2s= 0} ;
+  s
+
+
 let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~substring:"fU" s
 
 let is_init_in_swift_overlay mangled_name =
@@ -114,6 +135,7 @@ let undef_exp ?(reason = "unsupported exp") ~sourcefile ~loc ?typ ~proc exp =
   let pp_typ fmt typ = Option.iter typ ~f:(fun typ -> F.fprintf fmt ":%a" Textual.Typ.pp typ) in
   L.internal_error "Llair2Textual: %s: %a%a in proc %a in %a at %a@\n" reason Llair.Exp.pp exp
     pp_typ typ Textual.QualifiedProcName.pp proc SourceFile.pp sourcefile Textual.Location.pp loc ;
+  bump_unsupported_exp () ;
   (* TODO: should include the arguments here too *)
   (Textual.Exp.Call {proc= undef_proc_name; args= []; kind= NonVirtual}, typ, [])
 
@@ -152,6 +174,7 @@ let to_textual_arith_exp_builtin ~loc ~sourcefile (op : Llair.Exp.op2) (typ : Ll
   | None ->
       L.internal_error "Llair2Textual: unsupported op2: %a in %a at %a@\n" Llair.Exp.pp_op2 op
         SourceFile.pp sourcefile Textual.Location.pp loc ;
+      bump_unsupported_op2 () ;
       undef_proc_name
 
 

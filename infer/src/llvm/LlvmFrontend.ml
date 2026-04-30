@@ -12,9 +12,12 @@ type stats =
   { mutable files_total: int
   ; mutable files_captured: int
   ; mutable procs_total: int
-  ; mutable procs_captured: int }
+  ; mutable procs_captured: int
+  ; mutable funcs_undefined: int }
 
-let stats = {files_total= 0; files_captured= 0; procs_total= 0; procs_captured= 0}
+let stats =
+  {files_total= 0; files_captured= 0; procs_total= 0; procs_captured= 0; funcs_undefined= 0}
+
 
 module Error = struct
   type errors =
@@ -91,6 +94,11 @@ let language_of_source_file source_file =
 
 let count_procs (module_ : Textual.Module.t) =
   List.count module_.decls ~f:(function Textual.Module.Proc _ -> true | _ -> false)
+
+
+let count_undefined_funcs (llair_program : Llair.program) =
+  Llair.FuncName.Map.fold llair_program.functions 0 ~f:(fun ~key:_ ~data:(func : Llair.func) acc ->
+      if Llair.Func.is_undefined func then acc + 1 else acc )
 
 
 let capture_llair source_file module_state =
@@ -179,21 +187,29 @@ let log_stats () =
               L.die InternalError "Expected integer result from query %s" query_str )
   in
   stats.procs_captured <- count_defined_procs () |> Option.value_exn ;
+  let {Llair2Textual.unsupported_exps; unsupported_op2s} =
+    Llair2Textual.read_and_reset_frontend_stats ()
+  in
   StatsLogging.log_many
     [ LogEntry.mk_count ~label:"capture.files_total" ~value:stats.files_total
     ; LogEntry.mk_count ~label:"capture.files_captured" ~value:stats.files_captured
     ; LogEntry.mk_count ~label:"capture.procs_total" ~value:stats.procs_total
-    ; LogEntry.mk_count ~label:"capture.procs_captured" ~value:stats.procs_captured ] ;
+    ; LogEntry.mk_count ~label:"capture.procs_captured" ~value:stats.procs_captured
+    ; LogEntry.mk_count ~label:"capture.llvm.funcs_undefined" ~value:stats.funcs_undefined
+    ; LogEntry.mk_count ~label:"capture.llvm.unsupported_exps" ~value:unsupported_exps
+    ; LogEntry.mk_count ~label:"capture.llvm.unsupported_op2s" ~value:unsupported_op2s ] ;
   stats.files_captured <- 0 ;
   stats.procs_captured <- 0 ;
   stats.files_total <- 0 ;
-  stats.procs_total <- 0
+  stats.procs_total <- 0 ;
+  stats.funcs_undefined <- 0
 
 
 let capture ~sources llvm_bitcode_in =
   let lang = language_of_source_file (List.hd_exn sources) in
   let llvm_program = In_channel.input_all llvm_bitcode_in in
   let llair_program = LlvmSledgeFrontend.translate llvm_program in
+  stats.funcs_undefined <- stats.funcs_undefined + count_undefined_funcs llair_program ;
   let module_state = Llair2Textual.init_module_state llair_program lang in
   List.iter sources ~f:(fun source_file ->
       textual_version := 0 ;
@@ -207,6 +223,7 @@ let capture ~sources llvm_bitcode_in =
 let capture_llair ~source_file ~llair_file =
   Utils.with_file_in llair_file ~f:(fun llair_in ->
       let llair_program : Llair.program = Marshal.from_channel llair_in in
+      stats.funcs_undefined <- stats.funcs_undefined + count_undefined_funcs llair_program ;
       let lang = language_of_source_file source_file in
       let module_state = Llair2Textual.init_module_state llair_program lang in
       capture_llair source_file module_state ) ;
