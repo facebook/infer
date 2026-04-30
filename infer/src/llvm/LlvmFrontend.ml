@@ -191,7 +191,8 @@ let log_stats () =
     Llair2Textual.read_and_reset_frontend_stats ()
   in
   let funcs_unimplemented = LlvmSledgeFrontend.read_and_reset_unimplemented_funcs_count () in
-  StatsLogging.log_many
+  let unimplemented_features = LlvmSledgeFrontend.read_and_reset_unimplemented_features_seen () in
+  let count_entries =
     [ LogEntry.mk_count ~label:"capture.files_total" ~value:stats.files_total
     ; LogEntry.mk_count ~label:"capture.files_captured" ~value:stats.files_captured
     ; LogEntry.mk_count ~label:"capture.procs_total" ~value:stats.procs_total
@@ -199,7 +200,13 @@ let log_stats () =
     ; LogEntry.mk_count ~label:"capture.llvm.funcs_undefined" ~value:stats.funcs_undefined
     ; LogEntry.mk_count ~label:"capture.llvm.funcs_unimplemented" ~value:funcs_unimplemented
     ; LogEntry.mk_count ~label:"capture.llvm.unsupported_exps" ~value:unsupported_exps
-    ; LogEntry.mk_count ~label:"capture.llvm.unsupported_op2s" ~value:unsupported_op2s ] ;
+    ; LogEntry.mk_count ~label:"capture.llvm.unsupported_op2s" ~value:unsupported_op2s ]
+  in
+  let feature_entries =
+    List.map unimplemented_features ~f:(fun feature ->
+        LogEntry.mk_string ~label:"capture.llvm.unimplemented_feature" ~message:feature )
+  in
+  StatsLogging.log_many (count_entries @ feature_entries) ;
   stats.files_captured <- 0 ;
   stats.procs_captured <- 0 ;
   stats.files_total <- 0 ;

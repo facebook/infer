@@ -19,3 +19,7 @@ val read_and_reset_unimplemented_funcs_count : unit -> int
 (** Number of functions whose translation raised [Unimplemented] and was replaced with
     [Func.mk_undefined] since the previous read. Lets [LlvmFrontend.log_stats] separate "we tried
     and gave up" stub-outs from "external declaration, expected" stub-outs. *)
+
+val read_and_reset_unimplemented_features_seen : unit -> string list
+(** Distinct [Unimplemented] feature categories (e.g. "coroutines", "statepoints") seen since the
+    previous read. *)

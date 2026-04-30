@@ -13,4 +13,6 @@ module LlvmSledgeFrontend = struct
   let translate ?dump_bitcode:_ _input = assert false
 
   let read_and_reset_unimplemented_funcs_count () = 0
+
+  let read_and_reset_unimplemented_features_seen () = []
 end

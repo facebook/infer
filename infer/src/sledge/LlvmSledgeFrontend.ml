@@ -28,6 +28,24 @@ let read_and_reset_unimplemented_funcs_count () =
   unimplemented_funcs_count := 0 ;
   n
 
+
+(* Distinct [Unimplemented] feature categories seen since the last drain. The category is
+   the prefix of the feature string before the first ':', stripping the instance-specific
+   LLVM-instruction dump (e.g. "coroutines:@ %!llvm.coro.id..." -> "coroutines"). *)
+let unimplemented_features_seen : (string, unit) Stdlib.Hashtbl.t = Stdlib.Hashtbl.create 8
+
+let bump_unimplemented_feature feature =
+  let category =
+    match Stdlib.String.split_on_char ':' feature with [] -> feature | hd :: _ -> hd
+  in
+  Stdlib.Hashtbl.replace unimplemented_features_seen category ()
+
+
+let read_and_reset_unimplemented_features_seen () =
+  let features = Stdlib.Hashtbl.fold (fun k () acc -> k :: acc) unimplemented_features_seen [] in
+  Stdlib.Hashtbl.clear unimplemented_features_seen ;
+  features
+
 ;;
 
 Exp.demangle :=
@@ -1998,6 +2016,7 @@ let translate ?dump_bitcode : string -> Llair.program =
             with Unimplemented feature ->
               Logging.debug Capture Verbose "Unimplemented feature %s in %s" feature name ;
               incr unimplemented_funcs_count ;
+              bump_unimplemented_feature feature ;
               xlate_function_decl x llf typ Func.mk_undefined
             (* TODO $> Report.unimplemented feature *)
           in

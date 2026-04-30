@@ -13,4 +13,6 @@ module LlvmSledgeFrontend : sig
   val translate : ?dump_bitcode:string -> string -> Llair.program
 
   val read_and_reset_unimplemented_funcs_count : unit -> int
+
+  val read_and_reset_unimplemented_features_seen : unit -> string list
 end
