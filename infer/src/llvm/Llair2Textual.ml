@@ -366,9 +366,13 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       in
       (textual_exp, Some textual_typ, [])
   | Nondet {typ} ->
+      (* Llair's [Nondet] is an intentionally non-deterministic value (LLVM
+         [undef] / uninitialised memory). The shape we want is exactly the
+         [llvm_nondet] builtin call that [undef_exp] also produces, but without
+         the [internal_error] log or the unsupported-exp counter bump — those
+         should be reserved for genuine coverage gaps. *)
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
-      undef_exp ~sourcefile:proc_state.sourcefile ~loc ~proc:proc_state.qualified_name
-        ~typ:textual_typ exp
+      (Textual.Exp.Call {proc= undef_proc_name; args= []; kind= NonVirtual}, Some textual_typ, [])
   | FuncName {name} ->
       let s_exp = Textual.Exp.Const (Str name) in
       let exp =
