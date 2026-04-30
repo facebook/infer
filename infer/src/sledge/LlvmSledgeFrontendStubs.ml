@@ -11,4 +11,6 @@ module LlvmSledgeFrontend = struct
   exception Invalid_llvm of string
 
   let translate ?dump_bitcode:_ _input = assert false
+
+  let read_and_reset_unimplemented_funcs_count () = 0
 end

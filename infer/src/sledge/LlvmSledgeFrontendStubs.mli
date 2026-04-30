@@ -11,4 +11,6 @@ module LlvmSledgeFrontend : sig
   exception Invalid_llvm of string
 
   val translate : ?dump_bitcode:string -> string -> Llair.program
+
+  val read_and_reset_unimplemented_funcs_count : unit -> int
 end

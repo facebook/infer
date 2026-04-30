@@ -15,7 +15,20 @@ let pp_lltype fs t = Format.pp_print_string fs (Llvm.string_of_lltype t)
 (* WARNING: SLOW on instructions and functions *)
 let pp_llvalue fs t = Format.pp_print_string fs (Llvm.string_of_llvalue t)
 
-let pp_llblock fs t = Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t)) ;;
+let pp_llblock fs t = Format.pp_print_string fs (Llvm.string_of_llvalue (Llvm.value_of_block t))
+
+(* Counter of functions where translation raised [Unimplemented] and we fell back to
+   [Func.mk_undefined]. Distinguishes "translation gave up" stub-outs from "external
+   declaration with no body" stub-outs (which are expected, not gaps). Drained by
+   [LlvmFrontend.log_stats]. *)
+let unimplemented_funcs_count = ref 0
+
+let read_and_reset_unimplemented_funcs_count () =
+  let n = !unimplemented_funcs_count in
+  unimplemented_funcs_count := 0 ;
+  n
+
+;;
 
 Exp.demangle :=
   let open Ctypes in
@@ -1984,6 +1997,7 @@ let translate ?dump_bitcode : string -> Llair.program =
             try xlate_function x llf typ
             with Unimplemented feature ->
               Logging.debug Capture Verbose "Unimplemented feature %s in %s" feature name ;
+              incr unimplemented_funcs_count ;
               xlate_function_decl x llf typ Func.mk_undefined
             (* TODO $> Report.unimplemented feature *)
           in

@@ -190,12 +190,14 @@ let log_stats () =
   let {Llair2Textual.unsupported_exps; unsupported_op2s} =
     Llair2Textual.read_and_reset_frontend_stats ()
   in
+  let funcs_unimplemented = LlvmSledgeFrontend.read_and_reset_unimplemented_funcs_count () in
   StatsLogging.log_many
     [ LogEntry.mk_count ~label:"capture.files_total" ~value:stats.files_total
     ; LogEntry.mk_count ~label:"capture.files_captured" ~value:stats.files_captured
     ; LogEntry.mk_count ~label:"capture.procs_total" ~value:stats.procs_total
     ; LogEntry.mk_count ~label:"capture.procs_captured" ~value:stats.procs_captured
     ; LogEntry.mk_count ~label:"capture.llvm.funcs_undefined" ~value:stats.funcs_undefined
+    ; LogEntry.mk_count ~label:"capture.llvm.funcs_unimplemented" ~value:funcs_unimplemented
     ; LogEntry.mk_count ~label:"capture.llvm.unsupported_exps" ~value:unsupported_exps
     ; LogEntry.mk_count ~label:"capture.llvm.unsupported_op2s" ~value:unsupported_op2s ] ;
   stats.files_captured <- 0 ;
