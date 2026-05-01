@@ -3,14 +3,13 @@ use crate::formatter::FmtCtx;
 use crate::pretty::FmtWithCtx;
 use derive_generic_visitor::*;
 use macros::EnumIsA;
-use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
 /// Each `GenericArgs` is meant for a corresponding `GenericParams`; this describes which one.
-#[derive(Debug, Clone, Eq, PartialEq, Hash, Serialize, EnumIsA, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, EnumIsA, Drive, DriveMut)]
 pub enum GenericsSource {
     /// A top-level item.
-    Item(AnyTransId),
+    Item(ItemId),
     /// A trait method.
     Method(TraitDeclId, TraitItemName),
     /// A builtin item like `Box`.
@@ -20,7 +19,7 @@ pub enum GenericsSource {
 }
 
 impl GenericsSource {
-    pub fn item<I: Into<AnyTransId>>(id: I) -> Self {
+    pub fn item<I: Into<ItemId>>(id: I) -> Self {
         Self::Item(id.into())
     }
 
@@ -60,11 +59,11 @@ impl FunId {
         }
     }
 }
-impl FunIdOrTraitMethodRef {
+impl FnPtrKind {
     pub fn generics_target(&self) -> GenericsSource {
         match self {
-            FunIdOrTraitMethodRef::Fun(fun_id) => fun_id.generics_target(),
-            FunIdOrTraitMethodRef::Trait(trait_ref, name, _) => {
+            FnPtrKind::Fun(fun_id) => fun_id.generics_target(),
+            FnPtrKind::Trait(trait_ref, name, _) => {
                 GenericsSource::Method(trait_ref.trait_decl_ref.skip_binder.id, name.clone())
             }
         }

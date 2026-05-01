@@ -1,4 +1,5 @@
 open Types
+open TypesUtils
 open GAst
 
 (** Small utility: list the transitive parents of a region var group. We don't
@@ -41,15 +42,10 @@ let locals_get_input_vars (locals : locals) : local list =
 let fun_body_get_input_vars (fbody : 'body gexpr_body) : local list =
   locals_get_input_vars fbody.locals
 
-(** Like `binder` but for the free variables bound by the generics of an item.
-    This is not present in the charon ast but returned by helpers so we don't
-    forget to substitute. Use `Substitute.apply_args_to_item_binder` to get the
-    correctly-substituted inner value. *)
-type 'a item_binder = {
-  item_binder_params : generic_params;
-  item_binder_value : 'a;
-}
-[@@deriving show, ord]
+(** Get the signature of this function as a bound value, i.e. including its
+    generics parameters. *)
+let bound_fun_sig_of_decl (def : 'a gfun_decl) : bound_fun_sig =
+  { item_binder_params = def.generics; item_binder_value = def.signature }
 
 (** Lookup a method in this trait decl. The two levels of binders in the output
     reflect that there are two binding levels: the trait generics and the method
@@ -57,9 +53,18 @@ type 'a item_binder = {
 let lookup_trait_decl_method (tdecl : trait_decl) (name : trait_item_name) :
     fun_decl_ref binder item_binder option =
   Option.map
-    (fun (_, bound_fn) ->
-      { item_binder_params = tdecl.generics; item_binder_value = bound_fn })
-    (List.find_opt (fun (s, _) -> s = name) tdecl.methods)
+    (fun m ->
+      {
+        item_binder_params = tdecl.generics;
+        item_binder_value =
+          {
+            binder_params = m.binder_params;
+            binder_value = m.binder_value.item;
+          };
+      })
+    (List.find_opt
+       (fun (m : trait_method binder) -> m.binder_value.name = name)
+       tdecl.methods)
 
 (** Lookup a method in this trait impl. The two levels of binders in the output
     reflect that there are two binding levels: the impl generics and the method
@@ -88,7 +93,7 @@ let g_declaration_group_iter (f : 'a -> unit) (g : 'a g_declaration_group) :
   List.iter f ids
 
 (** List all the ids in this declaration group. *)
-let declaration_group_to_list (g : declaration_group) : any_decl_id list =
+let declaration_group_to_list (g : declaration_group) : item_id list =
   match g with
   | FunGroup g -> List.map (fun id -> IdFun id) (g_declaration_group_to_list g)
   | TypeGroup g ->
@@ -168,20 +173,19 @@ let split_declarations_to_group_maps (decls : declaration_group list) :
   let trait_impls = TIG.create_map trait_impls in
   (types, funs, globals, trait_decls, trait_impls, mixed_groups)
 
-module OrderedAnyDeclId : Collections.OrderedType with type t = any_decl_id =
-struct
-  type t = any_decl_id
+module OrderedAnyDeclId : Collections.OrderedType with type t = item_id = struct
+  type t = item_id
 
-  let compare = compare_any_decl_id
-  let to_string = show_any_decl_id
-  let pp_t fmt x = Format.pp_print_string fmt (show_any_decl_id x)
-  let show_t = show_any_decl_id
+  let compare = compare_item_id
+  let to_string = show_item_id
+  let pp_t fmt x = Format.pp_print_string fmt (show_item_id x)
+  let show_t = show_item_id
 end
 
 module AnyDeclIdSet = Collections.MakeSet (OrderedAnyDeclId)
 module AnyDeclIdMap = Collections.MakeMap (OrderedAnyDeclId)
 
-let any_decl_id_to_kind_name (id : any_decl_id) : string =
+let item_id_to_kind_name (id : item_id) : string =
   match id with
   | IdType _ -> "type decl"
   | IdFun _ -> "fun decl"
@@ -209,8 +213,7 @@ class ['self] filter_decl_id =
     method visit_trait_decl_id _ (id : TraitDeclId.id) = Some id
     method visit_trait_impl_id _ (id : TraitImplId.id) = Some id
 
-    method visit_any_decl_id (env : 'a) (id : any_decl_id) : any_decl_id option
-        =
+    method visit_item_id (env : 'a) (id : item_id) : item_id option =
       match id with
       | IdType id ->
           Option.map (fun id -> IdType id) (self#visit_type_decl_id env id)
@@ -249,7 +252,7 @@ class ['self] filter_decl_id =
 
     method visit_mixed_declaration_group env (g : mixed_declaration_group) :
         mixed_declaration_group option =
-      g_declaration_group_filter_map (self#visit_any_decl_id env) g
+      g_declaration_group_filter_map (self#visit_item_id env) g
 
     method visit_declaration_group env (g : declaration_group) :
         declaration_group option =

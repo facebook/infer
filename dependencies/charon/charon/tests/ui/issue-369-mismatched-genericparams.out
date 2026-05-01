@@ -37,7 +37,7 @@ pub trait Try<Self>
     parent_clause1 : [@TraitClause1]: FromResidual<Self, ()>
     parent_clause2 : [@TraitClause2]: Sized<Self::Residual>
     type Residual
-    non-dyn-compatible
+    vtable: test_crate::Try::{vtable}<Self::Residual>
 }
 
 // Full name: test_crate::{impl FromResidual<()> for Option<T>[@TraitClause0]}
@@ -45,8 +45,8 @@ impl<T> FromResidual<()> for Option<T>[@TraitClause0]
 where
     [@TraitClause0]: Sized<T>,
 {
-    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
-    parent_clause1 = Sized<()>
+    parent_clause0 = {built_in impl MetaSized for Option<T>[@TraitClause0]}
+    parent_clause1 = {built_in impl Sized for ()}
     vtable: {impl FromResidual<()> for Option<T>[@TraitClause0]}::{vtable}<T>[@TraitClause0]
 }
 
@@ -55,11 +55,11 @@ impl<T> Try for Option<T>[@TraitClause0]
 where
     [@TraitClause0]: Sized<T>,
 {
-    parent_clause0 = MetaSized<Option<T>[@TraitClause0]>
+    parent_clause0 = {built_in impl MetaSized for Option<T>[@TraitClause0]}
     parent_clause1 = {impl FromResidual<()> for Option<T>[@TraitClause0]}<T>[@TraitClause0]
-    parent_clause2 = Sized<()>
+    parent_clause2 = {built_in impl Sized for ()}
     type Residual = ()
-    non-dyn-compatible
+    vtable: {impl Try for Option<T>[@TraitClause0]}::{vtable}<T>[@TraitClause0]
 }
 
 

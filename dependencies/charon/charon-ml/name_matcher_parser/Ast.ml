@@ -55,6 +55,7 @@ and pattern_elem =
           In order to not use disambiguators everywhere in patterns, we allow
           omitting the disambiguator when it is equal to 0. *)
   | PImpl of expr
+  | PWild  (** A wildcard pattern, that matches anything *)
 
 (** An expression can be a type or a trait ref.
 

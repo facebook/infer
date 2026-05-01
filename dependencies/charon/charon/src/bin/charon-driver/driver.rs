@@ -1,15 +1,16 @@
 //! Run the rustc compiler with our custom options and hooks.
 use crate::CharonFailure;
 use crate::translate::translate_crate;
+use charon_lib::common::arg_value;
 use charon_lib::options::CliOpts;
 use charon_lib::transform::TransformCtx;
+use itertools::Itertools;
 use rustc_driver::{Callbacks, Compilation};
 use rustc_interface::Config;
 use rustc_interface::interface::Compiler;
 use rustc_middle::ty::TyCtxt;
 use rustc_middle::util::Providers;
-use rustc_session::config::{OutputType, OutputTypes, Polonius};
-use std::ops::Deref;
+use rustc_session::config::{OutputType, OutputTypes};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::{env, fmt};
 
@@ -27,6 +28,7 @@ fn set_mir_options(config: &mut Config) {
     config.opts.unstable_opts.always_encode_mir = true;
     config.opts.unstable_opts.mir_opt_level = Some(0);
     config.opts.unstable_opts.mir_emit_retag = true;
+    config.opts.unstable_opts.mir_preserve_ub = true;
     let disabled_mir_passes = ["CheckAlignment"];
     for pass in disabled_mir_passes {
         config
@@ -52,7 +54,7 @@ fn set_skip_borrowck() {
 }
 fn skip_borrowck_if_set(providers: &mut Providers) {
     if SKIP_BORROWCK.load(Ordering::SeqCst) {
-        providers.mir_borrowck = |tcx, _def_id| {
+        providers.queries.mir_borrowck = |tcx, _def_id| {
             // Empty result, which is what is used for custom_mir bodies.
             Ok(tcx.arena.alloc(Default::default()))
         }
@@ -79,9 +81,6 @@ fn setup_compiler(config: &mut Config, options: &CliOpts, do_translate: bool) {
         });
 
         set_no_codegen(config);
-        if options.use_polonius {
-            config.opts.unstable_opts.polonius = Polonius::Legacy;
-        }
     }
     set_mir_options(config);
 }
@@ -93,6 +92,10 @@ pub fn run_rustc_driver(options: &CliOpts) -> Result<Option<TransformCtx>, Charo
     // Retreive the command-line arguments pased to `charon_driver`. The first arg is the path to
     // the current executable, we skip it.
     let mut compiler_args: Vec<String> = env::args().skip(1).collect();
+    trace!(
+        "charon-driver called with args: {}",
+        compiler_args.iter().format(" ")
+    );
 
     // When called using cargo, we tell cargo to use `charon-driver` by setting the `RUSTC_WRAPPER`
     // env var. This uses `charon-driver` for all the crates being compiled.
@@ -107,7 +110,7 @@ pub fn run_rustc_driver(options: &CliOpts) -> Result<Option<TransformCtx>, Charo
     // Currently, we detect this by checking for "--target=", which is never set for host crates.
     // This matches what Miri does, which hopefully makes it reliable enough. This relies on us
     // always invoking cargo itself with `--target`, which `charon` ensures.
-    let is_target = arg_values(&compiler_args, "--target").next().is_some();
+    let is_target = arg_value(&compiler_args, "--target").is_some();
     // Whether this is the crate we want to translate.
     let is_selected_crate = !is_workspace_dependency && is_target;
 
@@ -137,7 +140,8 @@ pub fn run_rustc_driver(options: &CliOpts) -> Result<Option<TransformCtx>, Charo
 /// The callbacks for Charon
 pub struct CharonCallbacks<'a> {
     options: &'a CliOpts,
-    /// This is to be filled during the extraction; it contains the translated crate.
+    /// This is to be filled during the extraction; it contains the translated crate. `None` at the
+    /// start or if we couldn't translate anything.
     transform_ctx: Option<TransformCtx>,
 }
 impl<'a> Callbacks for CharonCallbacks<'a> {
@@ -154,12 +158,13 @@ impl<'a> Callbacks for CharonCallbacks<'a> {
         rustc_hir::def_id::DEF_ID_DEBUG
             .swap(&(def_id_debug as fn(_, &mut fmt::Formatter<'_>) -> _));
 
-        let transform_ctx = translate_crate::translate(
+        self.transform_ctx = translate_crate::translate(
             &self.options,
             tcx,
             compiler.sess.opts.sysroot.path().to_owned(),
-        );
-        self.transform_ctx = Some(transform_ctx);
+        )
+        .ok();
+
         Compilation::Continue
     }
     fn after_analysis<'tcx>(&mut self, _: &Compiler, _: TyCtxt<'tcx>) -> Compilation {
@@ -175,39 +180,6 @@ pub struct RunCompilerNormallyCallbacks<'a> {
 impl<'a> Callbacks for RunCompilerNormallyCallbacks<'a> {
     fn config(&mut self, config: &mut Config) {
         setup_compiler(config, self.options, false);
-    }
-}
-
-/// Returns the values of the command-line options that match `find_arg`. The options are built-in
-/// to be of the form `--arg=value` or `--arg value`.
-fn arg_values<'a, T: Deref<Target = str>>(
-    args: &'a [T],
-    needle: &'a str,
-) -> impl Iterator<Item = &'a str> {
-    struct ArgFilter<'a, T> {
-        args: std::slice::Iter<'a, T>,
-        needle: &'a str,
-    }
-    impl<'a, T: Deref<Target = str>> Iterator for ArgFilter<'a, T> {
-        type Item = &'a str;
-        fn next(&mut self) -> Option<Self::Item> {
-            while let Some(arg) = self.args.next() {
-                let mut split_arg = arg.splitn(2, '=');
-                if split_arg.next() == Some(self.needle) {
-                    return match split_arg.next() {
-                        // `--arg=value` form
-                        arg @ Some(_) => arg,
-                        // `--arg value` form
-                        None => self.args.next().map(|x| x.deref()),
-                    };
-                }
-            }
-            None
-        }
-    }
-    ArgFilter {
-        args: args.iter(),
-        needle,
     }
 }
 

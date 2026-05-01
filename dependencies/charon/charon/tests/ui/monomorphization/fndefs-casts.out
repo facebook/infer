@@ -1,325 +1,268 @@
 # Final LLBC before serialization:
 
-// Full name: core::marker::MetaSized::<u8>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<u8>
+opaque type core::marker::MetaSized::{vtable}
 
-// Full name: core::marker::Sized::<u8>
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
 #[lang_item("sized")]
-pub trait Sized::<u8>
+pub trait Sized<Self>
 {
-    parent_clause0 : [@TraitClause0]: MetaSized::<u8>
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
     non-dyn-compatible
 }
 
-// Full name: core::marker::MetaSized::<char>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<char>
-
-// Full name: core::marker::Sized::<char>
-#[lang_item("sized")]
-pub trait Sized::<char>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<char>
-    non-dyn-compatible
-}
-
-// Full name: core::marker::MetaSized::<u32>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<u32>
-
-// Full name: core::marker::Sized::<u32>
-#[lang_item("sized")]
-pub trait Sized::<u32>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<u32>
-    non-dyn-compatible
-}
-
-// Full name: core::marker::MetaSized::<for<'_0> foo::<u32><'_0_0>>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<for<'_0> foo::<u32><'_0_0>>
-
-// Full name: core::marker::Sized::<for<'_0> foo::<u32><'_0_0>>
-#[lang_item("sized")]
-pub trait Sized::<for<'_0> foo::<u32><'_0_0>>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<for<'_0> foo::<u32><'_0_0>>
-    non-dyn-compatible
-}
-
-// Full name: core::marker::MetaSized::<(&'_ (u32))>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<(&'_ (u32))>
-
-// Full name: core::marker::Sized::<(&'_ (u32))>
-#[lang_item("sized")]
-pub trait Sized::<(&'_ (u32))>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<(&'_ (u32))>
-    non-dyn-compatible
-}
-
-// Full name: core::marker::MetaSized::<()>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<()>
-
-// Full name: core::marker::Sized::<()>
-#[lang_item("sized")]
-pub trait Sized::<()>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<()>
-    non-dyn-compatible
-}
-
-// Full name: core::marker::Tuple::<(&'_ (u32))>
+// Full name: core::marker::Tuple
 #[lang_item("tuple_trait")]
-pub trait Tuple::<(&'_ (u32))>
+pub trait Tuple<Self>
 {
-    parent_clause0 : [@TraitClause0]: MetaSized::<(&'_ (u32))>
-    vtable: core::marker::Tuple::{vtable}::<(&'_ (u32))>
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+opaque type core::ops::function::Fn::{vtable}
+
+opaque type core::ops::function::FnOnce::{vtable}
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    vtable: core::ops::function::FnOnce::{vtable}
+}
+
+opaque type core::ops::function::FnMut::{vtable}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    vtable: core::ops::function::FnMut::{vtable}
+}
+
+// Full name: core::ops::function::Fn
+#[lang_item("fn")]
+pub trait Fn<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnMut<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    vtable: core::ops::function::Fn::{vtable}
 }
 
 // Full name: test_crate::foo::<u32>
-fn foo::<u32><'_0>(@1: &'_0 (u32))
+fn foo::<u32><'a>(_1: &'a u32)
 {
-    let @0: (); // return
-    let x@1: &'_ (u32); // arg #1
+    let _0: (); // return
+    let x_1: &'1 u32; // arg #1
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
-// Full name: core::ops::drop::Drop::<for<'_0> foo::<u32><'_0_0>>
-#[lang_item("drop")]
-pub trait Drop::<for<'_0> foo::<u32><'_0_0>>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<for<'_0> foo::<u32><'_0_0>>
-    fn drop<'_0> = drop::<for<'_0> foo::<u32><'_0_0>><'_0_0>
-    vtable: core::ops::drop::Drop::{vtable}::<for<'_0> foo::<u32><'_0_0>>
-}
-
-// Full name: core::ops::drop::Drop::drop::<for<'_0> foo::<u32><'_0>>
-pub fn drop::<for<'_0> foo::<u32><'_0>><'_0>(@1: &'_0 mut (for<'_0> foo::<u32><'_0_0>))
-
-// Full name: core::ops::function::FnOnce::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-#[lang_item("fn_once")]
-pub trait FnOnce::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<for<'_0> foo::<u32><'_0_0>>
-    parent_clause1 : [@TraitClause1]: Sized::<(&'_ (u32))>
-    parent_clause2 : [@TraitClause2]: Tuple::<(&'_ (u32))>
-    type Output
-    fn call_once = call_once::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-    non-dyn-compatible
-}
-
-// Full name: core::ops::function::FnMut::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-#[lang_item("fn_mut")]
-pub trait FnMut::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<for<'_0> foo::<u32><'_0_0>>
-    parent_clause1 : [@TraitClause1]: FnOnce::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-    parent_clause2 : [@TraitClause2]: Sized::<(&'_ (u32))>
-    parent_clause3 : [@TraitClause3]: Tuple::<(&'_ (u32))>
-    fn call_mut<'_0> = call_mut::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))><'_0_0>
-    non-dyn-compatible
-}
-
-// Full name: core::ops::function::Fn::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-#[lang_item("r#fn")]
-pub trait Fn::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<for<'_0> foo::<u32><'_0_0>>
-    parent_clause1 : [@TraitClause1]: FnMut::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>
-    parent_clause2 : [@TraitClause2]: Sized::<(&'_ (u32))>
-    parent_clause3 : [@TraitClause3]: Tuple::<(&'_ (u32))>
-    fn call<'_0> = call::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))><'_0_0>
-    non-dyn-compatible
-}
-
 // Full name: core::ops::function::Fn::call
-pub fn call<'_0>(@1: &'_0 (for<'_0> foo::<u32><'_0_0>), @2: (&'_ (u32)))
+pub fn call<'_0>(_1: &'_0 for<'a> foo::<u32><'a>, _2: (&'_ u32,))
+= <opaque>
 
-// Full name: core::ops::function::Fn::call::<for<'_0> foo::<u32><'_0>, (&'_ (u32))>
-pub fn call::<for<'_0> foo::<u32><'_0>, (&'_ (u32))><'_0>(@1: &'_0 (for<'_0> foo::<u32><'_0_0>), @2: (&'_ (u32)))
+fn UNIT_METADATA()
+{
+    let _0: (); // return
 
-// Full name: core::ops::function::FnMut::call_mut::<for<'_0> foo::<u32><'_0>, (&'_ (u32))>
-pub fn call_mut::<for<'_0> foo::<u32><'_0>, (&'_ (u32))><'_0>(@1: &'_0 mut (for<'_0> foo::<u32><'_0_0>), @2: (&'_ (u32)))
+    _0 = ()
+    return
+}
 
-// Full name: core::ops::function::FnOnce::call_once::<for<'_0> foo::<u32><'_0>, (&'_ (u32))>
-pub fn call_once::<for<'_0> foo::<u32><'_0>, (&'_ (u32))>(@1: for<'_0> foo::<u32><'_0_0>, @2: (&'_ (u32)))
+const UNIT_METADATA: () = @Fun1()
 
 // Full name: test_crate::foo::<u8>
-fn foo::<u8><'_0>(@1: &'_0 (u8))
+fn foo::<u8><'a>(_1: &'a u8)
 {
-    let @0: (); // return
-    let x@1: &'_ (u8); // arg #1
+    let _0: (); // return
+    let x_1: &'1 u8; // arg #1
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
 // Full name: test_crate::foo::<char>
-fn foo::<char><'_0>(@1: &'_0 (char))
+fn foo::<char><'a>(_1: &'a char)
 {
-    let @0: (); // return
-    let x@1: &'_ (char); // arg #1
+    let _0: (); // return
+    let x_1: &'1 char; // arg #1
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
-// Full name: test_crate::takes_closure::<for<'_0> foo::<u32><'_0>>
-fn takes_closure::<for<'_0> foo::<u32><'_0>>(@1: for<'_0> foo::<u32><'_0_0>)
+// Full name: test_crate::takes_closure::<for<'a> foo::<u32><'a>>
+fn takes_closure::<for<'a> foo::<u32><'a>>(_1: for<'a> foo::<u32><'a>)
 {
-    let @0: (); // return
-    let c@1: for<'_0> foo::<u32><'_0_0>; // arg #1
-    let @2: &'_ (for<'_0> foo::<u32><'_0_0>); // anonymous local
-    let @3: (&'_ (u32)); // anonymous local
-    let @4: &'_ (u32); // anonymous local
-    let @5: &'_ (u32); // anonymous local
-    let @6: u32; // anonymous local
+    let _0: (); // return
+    let c_1: for<'a> foo::<u32><'a>; // arg #1
+    let _2: &'1 for<'a> foo::<u32><'a>; // anonymous local
+    let _3: (&'4 u32,); // anonymous local
+    let _4: &'5 u32; // anonymous local
+    let _5: &'6 u32; // anonymous local
+    let _6: &'7 u32; // anonymous local
+    let _7: &'64 u32; // anonymous local
+    let _8: u32; // anonymous local
 
-    storage_live(@2)
-    @2 := &c@1
-    storage_live(@3)
-    storage_live(@4)
-    storage_live(@5)
-    storage_live(@6)
-    @6 := const (13 : u32)
-    @5 := &@6
-    @4 := &*(@5)
-    @3 := (move (@4))
-    @0 := Fn::<for<'_0> foo::<u32><'_0_0>, (&'_ (u32))>::call<'_>(move (@2), move (@3))
-    storage_dead(@4)
-    storage_dead(@3)
-    storage_dead(@2)
-    storage_dead(@6)
-    storage_dead(@5)
-    drop[Drop::<for<'_0> foo::<u32><'_0_0>>] c@1
-    @0 := ()
+    storage_live(_7)
+    storage_live(_8)
+    _8 = const 13 : u32
+    _7 = &_8
+    storage_live(_6)
+    _0 = ()
+    storage_live(_2)
+    _2 = &c_1
+    storage_live(_3)
+    storage_live(_4)
+    storage_live(_5)
+    _6 = move _7
+    _5 = &(*_6)
+    _4 = &(*_5)
+    _3 = (move _4,)
+    _0 = {built_in impl Fn<(&'13 u32,)> for for<'a> foo::<u32><'a>}::call<'61>(move _2, move _3)
+    storage_dead(_4)
+    storage_dead(_3)
+    storage_dead(_2)
+    storage_dead(_5)
     return
 }
 
 // Full name: test_crate::main
 fn main()
 {
-    let @0: (); // return
-    let fooint1@1: fn<'_0>(&'_0_0 (u8)); // local
-    let fooint2@2: fn<'_0>(&'_0_0 (u8)); // local
-    let foochar@3: fn<'_0>(&'_0_0 (char)); // local
-    let a@4: u8; // local
-    let @5: (); // anonymous local
-    let @6: fn<'_0>(&'_0_0 (u8)); // anonymous local
-    let @7: &'_ (u8); // anonymous local
-    let @8: &'_ (u8); // anonymous local
-    let b@9: u8; // local
-    let @10: (); // anonymous local
-    let @11: fn<'_0>(&'_0_0 (u8)); // anonymous local
-    let @12: &'_ (u8); // anonymous local
-    let @13: &'_ (u8); // anonymous local
-    let @14: (); // anonymous local
-    let @15: fn<'_0>(&'_0_0 (u8)); // anonymous local
-    let @16: &'_ (u8); // anonymous local
-    let @17: &'_ (u8); // anonymous local
-    let @18: (); // anonymous local
-    let @19: fn<'_0>(&'_0_0 (u8)); // anonymous local
-    let @20: &'_ (u8); // anonymous local
-    let @21: &'_ (u8); // anonymous local
-    let @22: (); // anonymous local
-    let @23: fn<'_0>(&'_0_0 (char)); // anonymous local
-    let @24: &'_ (char); // anonymous local
-    let @25: &'_ (char); // anonymous local
-    let @26: char; // anonymous local
-    let @27: (); // anonymous local
+    let _0: (); // return
+    let fooint1_1: fn<'_0_1>(&'_0_1 u8); // local
+    let fooint2_2: fn<'_0_1>(&'_0_1 u8); // local
+    let foochar_3: fn<'_0_1>(&'_0_1 char); // local
+    let a_4: u8; // local
+    let _5: (); // anonymous local
+    let _6: fn<'_0_1>(&'_0_1 u8); // anonymous local
+    let _7: &'1 u8; // anonymous local
+    let _8: &'2 u8; // anonymous local
+    let b_9: u8; // local
+    let _10: (); // anonymous local
+    let _11: fn<'_0_1>(&'_0_1 u8); // anonymous local
+    let _12: &'3 u8; // anonymous local
+    let _13: &'4 u8; // anonymous local
+    let _14: (); // anonymous local
+    let _15: fn<'_0_1>(&'_0_1 u8); // anonymous local
+    let _16: &'5 u8; // anonymous local
+    let _17: &'6 u8; // anonymous local
+    let _18: (); // anonymous local
+    let _19: fn<'_0_1>(&'_0_1 u8); // anonymous local
+    let _20: &'7 u8; // anonymous local
+    let _21: &'8 u8; // anonymous local
+    let _22: (); // anonymous local
+    let _23: fn<'_0_1>(&'_0_1 char); // anonymous local
+    let _24: &'10 char; // anonymous local
+    let _25: &'11 char; // anonymous local
+    let _26: (); // anonymous local
+    let _27: &'12 char; // anonymous local
+    let _28: &'25 char; // anonymous local
+    let _29: char; // anonymous local
 
-    storage_live(fooint1@1)
-    fooint1@1 := cast<for<'_0> foo::<u8><'_0_0>, fn<'_0>(&'_0_0 (u8))>(const (foo::<u8><'_>))
-    storage_live(fooint2@2)
-    fooint2@2 := cast<for<'_0> foo::<u8><'_0_0>, fn<'_0>(&'_0_0 (u8))>(const (foo::<u8><'_>))
-    storage_live(foochar@3)
-    foochar@3 := cast<for<'_0> foo::<char><'_0_0>, fn<'_0>(&'_0_0 (char))>(const (foo::<char><'_>))
-    storage_live(a@4)
-    a@4 := const (11 : u8)
-    storage_live(@5)
-    storage_live(@6)
-    @6 := copy (fooint1@1)
-    storage_live(@7)
-    storage_live(@8)
-    @8 := &a@4
-    @7 := &*(@8)
-    @5 := (move @6)(move (@7))
-    storage_dead(@7)
-    storage_dead(@6)
-    storage_dead(@8)
-    storage_dead(@5)
-    storage_live(b@9)
-    b@9 := const (12 : u8)
-    storage_live(@10)
-    storage_live(@11)
-    @11 := copy (fooint1@1)
-    storage_live(@12)
-    storage_live(@13)
-    @13 := &a@4
-    @12 := &*(@13)
-    @10 := (move @11)(move (@12))
-    storage_dead(@12)
-    storage_dead(@11)
-    storage_dead(@13)
-    storage_dead(@10)
-    storage_live(@14)
-    storage_live(@15)
-    @15 := copy (fooint1@1)
-    storage_live(@16)
-    storage_live(@17)
-    @17 := &b@9
-    @16 := &*(@17)
-    @14 := (move @15)(move (@16))
-    storage_dead(@16)
-    storage_dead(@15)
-    storage_dead(@17)
-    storage_dead(@14)
-    storage_live(@18)
-    storage_live(@19)
-    @19 := copy (fooint2@2)
-    storage_live(@20)
-    storage_live(@21)
-    @21 := &b@9
-    @20 := &*(@21)
-    @18 := (move @19)(move (@20))
-    storage_dead(@20)
-    storage_dead(@19)
-    storage_dead(@21)
-    storage_dead(@18)
-    storage_live(@22)
-    storage_live(@23)
-    @23 := copy (foochar@3)
-    storage_live(@24)
-    storage_live(@25)
-    storage_live(@26)
-    @26 := const (x)
-    @25 := &@26
-    @24 := &*(@25)
-    @22 := (move @23)(move (@24))
-    storage_dead(@24)
-    storage_dead(@23)
-    storage_dead(@26)
-    storage_dead(@25)
-    storage_dead(@22)
-    storage_live(@27)
-    @27 := takes_closure::<for<'_0> foo::<u32><'_0_0>>(const (foo::<u32><'_>))
-    storage_dead(@27)
-    @0 := ()
-    storage_dead(b@9)
-    storage_dead(a@4)
-    storage_dead(foochar@3)
-    storage_dead(fooint2@2)
-    storage_dead(fooint1@1)
-    @0 := ()
+    storage_live(_27)
+    _0 = ()
+    storage_live(fooint1_1)
+    fooint1_1 = cast<for<'a> foo::<u8><'a>, fn<'_0_1>(&'_0_1 u8)>(const foo::<u8><'15>)
+    storage_live(fooint2_2)
+    fooint2_2 = cast<for<'a> foo::<u8><'a>, fn<'_0_1>(&'_0_1 u8)>(const foo::<u8><'17>)
+    storage_live(foochar_3)
+    foochar_3 = cast<for<'a> foo::<char><'a>, fn<'_0_1>(&'_0_1 char)>(const foo::<char><'20>)
+    storage_live(a_4)
+    a_4 = const 11 : u8
+    storage_live(_5)
+    storage_live(_6)
+    _6 = copy fooint1_1
+    storage_live(_7)
+    storage_live(_8)
+    _8 = &a_4
+    _7 = &(*_8)
+    _5 = (move _6)(move _7)
+    storage_dead(_7)
+    storage_dead(_6)
+    storage_dead(_8)
+    storage_dead(_5)
+    storage_live(b_9)
+    b_9 = const 12 : u8
+    storage_live(_10)
+    storage_live(_11)
+    _11 = copy fooint1_1
+    storage_live(_12)
+    storage_live(_13)
+    _13 = &a_4
+    _12 = &(*_13)
+    _10 = (move _11)(move _12)
+    storage_dead(_12)
+    storage_dead(_11)
+    storage_dead(_13)
+    storage_dead(_10)
+    storage_live(_14)
+    storage_live(_15)
+    _15 = copy fooint1_1
+    storage_live(_16)
+    storage_live(_17)
+    _17 = &b_9
+    _16 = &(*_17)
+    _14 = (move _15)(move _16)
+    storage_dead(_16)
+    storage_dead(_15)
+    storage_dead(_17)
+    storage_dead(_14)
+    storage_live(_18)
+    storage_live(_19)
+    _19 = copy fooint2_2
+    storage_live(_20)
+    storage_live(_21)
+    _21 = &b_9
+    _20 = &(*_21)
+    _18 = (move _19)(move _20)
+    storage_live(_28)
+    storage_live(_29)
+    _29 = const x
+    _28 = &_29
+    storage_dead(_20)
+    storage_dead(_19)
+    storage_dead(_21)
+    storage_dead(_18)
+    storage_live(_22)
+    storage_live(_23)
+    _23 = copy foochar_3
+    storage_live(_24)
+    storage_live(_25)
+    _27 = move _28
+    _25 = &(*_27)
+    _24 = &(*_25)
+    _22 = (move _23)(move _24)
+    storage_dead(_24)
+    storage_dead(_23)
+    storage_dead(_25)
+    storage_dead(_22)
+    storage_live(_26)
+    _26 = takes_closure::<for<'a> foo::<u32><'a>>(const foo::<u32><'24>)
+    storage_dead(_26)
+    _0 = ()
+    storage_dead(b_9)
+    storage_dead(a_4)
+    storage_dead(foochar_3)
+    storage_dead(fooint2_2)
+    storage_dead(fooint1_1)
     return
 }
 

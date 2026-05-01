@@ -1,33 +1,50 @@
-error: Generic associated types are not supported
- --> tests/ui/gat-causes-unhandled-ty-clause.rs:4:5
-  |
-4 |     type GAT<T>;
-  |     ^^^^^^^^^^^
+# Final LLBC before serialization:
 
-error: Item `test_crate::HasGAT` caused errors; ignoring.
- --> tests/ui/gat-causes-unhandled-ty-clause.rs:3:1
-  |
-3 | trait HasGAT {
-  | ^^^^^^^^^^^^
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
 
-error: Found unhandled item clause; this is a bug unless the clause is coming from a GAT.
-  --> tests/ui/gat-causes-unhandled-ty-clause.rs:12:1
-   |
-12 | / fn floatify<C>() -> <C::Friend as HasAssoc>::Assoc
-13 | | where
-14 | |     C: HasGAT,
-...  |
-17 | | }
-   | |_^
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
 
-error: Found unhandled item clause; this is a bug unless the clause is coming from a GAT.
-  --> tests/ui/gat-causes-unhandled-ty-clause.rs:12:1
-   |
-12 | / fn floatify<C>() -> <C::Friend as HasAssoc>::Assoc
-13 | | where
-14 | |     C: HasGAT,
-...  |
-17 | | }
-   | |_^
+// Full name: test_crate::HasAssoc
+trait HasAssoc<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Assoc>
+    type Assoc
+    vtable: test_crate::HasAssoc::{vtable}<Self::Assoc>
+}
 
-ERROR Charon failed to translate this code (4 errors)
+// Full name: test_crate::HasGAT
+trait HasGAT<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Friend>
+    parent_clause2 : [@TraitClause2]: HasAssoc<Self::Friend>
+    type GAT<T, [@TraitClause0_1]: Sized<T>>
+    where
+        implied_clause_0 : [@TraitClause0_1]: Sized<Self::GAT>
+
+    type Friend
+    non-dyn-compatible
+}
+
+// Full name: test_crate::floatify
+fn floatify<C>() -> @TraitClause1::parent_clause2::Assoc
+where
+    [@TraitClause0]: Sized<C>,
+    [@TraitClause1]: HasGAT<C>,
+{
+    let _0: @TraitClause1::parent_clause2::Assoc; // return
+
+    panic(core::panicking::panic)
+}
+
+
+

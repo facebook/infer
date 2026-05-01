@@ -1,8 +1,10 @@
 pub mod generator;
-pub mod vector;
+pub mod index_map;
+pub mod index_vec;
 
 pub use generator::Generator;
-pub use vector::Vector;
+pub use index_map::IndexMap;
+pub use index_vec::{Idx, IndexVec};
 
 /// Generate an `Index` index type. We use it because we need manipulate a lot of different indices
 /// (for various kinds of declarations, variables, blocks, etc.).
@@ -18,7 +20,7 @@ macro_rules! generate_index_type {
     };
     ($name:ident, $pretty_name:expr) => {
         index_vec::define_index_type! {
-            #[derive(derive_generic_visitor::Drive, derive_generic_visitor::DriveMut)]
+            #[derive(Default, derive_generic_visitor::Drive, derive_generic_visitor::DriveMut)]
             #[drive(skip)]
             pub struct $name = usize;
             // Must fit in an u32 for serialization.
@@ -41,6 +43,26 @@ macro_rules! generate_index_type {
                 f: &mut std::fmt::Formatter<'_>,
             ) -> std::result::Result<(), std::fmt::Error> {
                 f.write_str(self.index().to_string().as_str())
+            }
+        }
+
+        impl<State: ?Sized> serde_state::SerializeState<State> for $name {
+            fn serialize_state<S: serde::ser::Serializer>(
+                &self,
+                _state: &State,
+                serializer: S,
+            ) -> Result<S::Ok, S::Error> {
+                use serde::Serialize;
+                self.index().serialize(serializer)
+            }
+        }
+        impl<'de, State: ?Sized> serde_state::DeserializeState<'de, State> for $name {
+            fn deserialize_state<D: serde::de::Deserializer<'de>>(
+                _state: &State,
+                deserializer: D,
+            ) -> Result<Self, D::Error> {
+                use serde::Deserialize;
+                usize::deserialize(deserializer).map(Self::from_usize)
             }
         }
     };

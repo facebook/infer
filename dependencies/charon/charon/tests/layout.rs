@@ -1,8 +1,6 @@
 #![feature(box_patterns)]
 use std::path::PathBuf;
 
-use indexmap::IndexMap;
-
 use charon_lib::ast::*;
 
 mod util;
@@ -83,6 +81,11 @@ fn type_layout() -> anyhow::Result<()> {
         }
 
         enum UninhabitedVariant {
+            A(!),
+            B(u32),
+        }
+
+        enum UninhabitedVariant2 {
             A(!, u32),
             B(u32),
         }
@@ -140,6 +143,16 @@ fn type_layout() -> anyhow::Result<()> {
             First = 42,
             Second = 18446744073709551615,
         }
+
+        type SingleVariantButNonZero = Result<!, ()>;
+
+        type NonAdtAlias<T> = T;
+
+        type Tuple = (u32, u32);
+
+        type Usize = usize;
+
+        type Ref<'a> = &'a mut u32;
         "#,
         &[],
     )?;
@@ -149,7 +162,7 @@ fn type_layout() -> anyhow::Result<()> {
         if let Some(layout) = tdecl.layout.as_ref() {
             if layout.discriminant_layout.is_some() {
                 let name = repr_name(&crate_data, &tdecl.item_meta.name);
-                for (var_id, variant) in layout.variant_layouts.iter_indexed() {
+                for (var_id, variant) in layout.variant_layouts.iter_enumerated() {
                     let tag = variant.tag;
                     if layout.is_variant_uninhabited(var_id) {
                         assert_eq!(
@@ -177,7 +190,7 @@ fn type_layout() -> anyhow::Result<()> {
         }
     }
 
-    let layouts: IndexMap<String, Option<Layout>> = crate_data
+    let layouts: SeqHashMap<String, Option<Layout>> = crate_data
         .type_decls
         .iter()
         .filter_map(|tdecl| {
@@ -190,11 +203,6 @@ fn type_layout() -> anyhow::Result<()> {
         .collect();
     let layouts_str = serde_json::to_string_pretty(&layouts)?;
 
-    let action = if std::env::var("IN_CI").as_deref() == Ok("1") {
-        Action::Verify
-    } else {
-        Action::Overwrite
-    };
-    compare_or_overwrite(action, layouts_str, &PathBuf::from("./tests/layout.json"))?;
+    compare_or_overwrite(layouts_str, &PathBuf::from("./tests/layout.json"))?;
     Ok(())
 }

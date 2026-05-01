@@ -1,6 +1,4 @@
 //@ known-failure
-#![feature(register_tool)]
-#![register_tool(charon)]
 #![register_tool(aeneas)]
 
 #[charon::rename("")]

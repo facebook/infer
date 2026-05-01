@@ -1,86 +1,52 @@
 # Final LLBC before serialization:
 
-// Full name: core::marker::MetaSized::<bool>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<bool>
-
-// Full name: core::marker::Sized::<bool>
-#[lang_item("sized")]
-pub trait Sized::<bool>
+fn UNIT_METADATA()
 {
-    parent_clause0 : [@TraitClause0]: MetaSized::<bool>
-    non-dyn-compatible
-}
+    let _0: (); // return
 
-// Full name: core::ops::drop::Drop::<bool>
-#[lang_item("drop")]
-pub trait Drop::<bool>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<bool>
-    fn drop<'_0> = drop::<bool><'_0_0>
-    vtable: core::ops::drop::Drop::{vtable}::<bool>
-}
-
-// Full name: core::ops::drop::Drop::drop::<bool>
-pub fn drop::<bool><'_0>(@1: &'_0 mut (bool))
-
-// Full name: test_crate::Trait::<bool>
-pub trait Trait::<bool>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<bool>
-    fn method<'_0> = test_crate::Trait::method::<bool><'_0_0>
-    vtable: test_crate::Trait::{vtable}::<bool>
-}
-
-pub fn test_crate::Trait::method::<bool><'_0>(@1: &'_0 (bool))
-
-pub fn test_crate::Trait::method<'_0>(@1: &'_0 (bool))
-
-// Full name: test_crate::{impl Trait::<bool>}::method
-pub fn {impl Trait::<bool>}::method<'_0>(@1: &'_0 (bool))
-{
-    let @0: (); // return
-    let self@1: &'_ (bool); // arg #1
-
-    @0 := ()
-    @0 := ()
+    _0 = ()
     return
 }
 
-// Full name: test_crate::{impl Trait::<bool>}
-impl Trait::<bool> {
-    parent_clause0 = MetaSized::<bool>
-    fn method<'_0> = {impl Trait::<bool>}::method<'_0_0>
-    vtable: {impl Trait::<bool>}::{vtable}
+const UNIT_METADATA: () = @Fun1()
+
+// Full name: test_crate::{impl Trait for bool}::method
+pub fn method<'_0>(_1: &'_0 bool)
+{
+    let _0: (); // return
+    let self_1: &'1 bool; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
 }
 
 // Full name: test_crate::do_test::<bool>
-fn do_test::<bool>(@1: bool)
+fn do_test::<bool>(_1: bool)
 {
-    let @0: (); // return
-    let x@1: bool; // arg #1
-    let @2: &'_ (bool); // anonymous local
+    let _0: (); // return
+    let x_1: bool; // arg #1
+    let _2: &'1 bool; // anonymous local
 
-    storage_live(@2)
-    @2 := &x@1
-    @0 := {impl Trait::<bool>}::method<'_>(move (@2))
-    storage_dead(@2)
-    drop[Drop::<bool>] x@1
-    @0 := ()
+    _0 = ()
+    storage_live(_2)
+    _2 = &x_1
+    _0 = method<'3>(move _2)
+    storage_dead(_2)
     return
 }
 
 // Full name: test_crate::main
 fn main()
 {
-    let @0: (); // return
-    let @1: (); // anonymous local
+    let _0: (); // return
+    let _1: (); // anonymous local
 
-    storage_live(@1)
-    @1 := do_test::<bool>(const (true))
-    storage_dead(@1)
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    storage_live(_1)
+    _1 = do_test::<bool>(const true)
+    storage_dead(_1)
+    _0 = ()
     return
 }
 

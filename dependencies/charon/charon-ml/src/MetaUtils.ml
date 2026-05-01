@@ -12,15 +12,15 @@ let loc_max (l0 : loc) (l1 : loc) : loc =
 
 (** See the comments in [meta_utils.rs] in Charon. *)
 let combine_span (m0 : span) (m1 : span) : span option =
-  if m0.span.file = m1.span.file then
-    let span =
+  if m0.data.file = m1.data.file then
+    let data =
       {
-        file = m0.span.file;
-        beg_loc = loc_min m0.span.beg_loc m1.span.beg_loc;
-        end_loc = loc_max m0.span.end_loc m1.span.end_loc;
+        file = m0.data.file;
+        beg_loc = loc_min m0.data.beg_loc m1.data.beg_loc;
+        end_loc = loc_max m0.data.end_loc m1.data.end_loc;
       }
     in
-    Some { span; generated_from_span = None }
+    Some { data; generated_from_span = None }
   else None
 
 (** Safely combine two spans, even if they do not come from the same file - if

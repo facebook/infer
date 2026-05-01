@@ -3,19 +3,19 @@
 // Full name: basic_copy::main
 fn main()
 {
-    let @0: (); // return
-    let x@1: i32; // local
-    let y@2: i32; // local
+    let _0: (); // return
+    let x_1: i32; // local
+    let y_2: i32; // local
 
     bb0: {
-        storage_live(x@1);
-        x@1 := const (42 : i32);
-        storage_live(y@2);
-        y@2 := copy (x@1);
-        @0 := ();
-        storage_dead(y@2);
-        storage_dead(x@1);
-        @0 := ();
+        _0 = ();
+        storage_live(x_1);
+        x_1 = const 42 : i32;
+        storage_live(y_2);
+        y_2 = copy x_1;
+        _0 = ();
+        storage_dead(y_2);
+        storage_dead(x_1);
         return;
     }
 }

@@ -25,11 +25,15 @@ type 'fun_body fmt_env = {
 let of_crate (crate : 'fun_body gcrate) : 'fun_body fmt_env =
   { crate; generics = []; locals = [] }
 
-let fmt_env_update_generics_and_preds (env : 'a fmt_env)
+let fmt_env_push_generics_and_preds (env : 'a fmt_env)
     (generics : generic_params) : 'a fmt_env =
   { env with generics = generics :: env.generics }
 
-let fmt_env_push_regions (env : 'a fmt_env) (regions : region_var list) :
+let fmt_env_replace_generics_and_preds (env : 'a fmt_env)
+    (generics : generic_params) : 'a fmt_env =
+  { env with generics = [ generics ] }
+
+let fmt_env_push_regions (env : 'a fmt_env) (regions : region_param list) :
     'a fmt_env =
   {
     env with
