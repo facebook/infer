@@ -1,0 +1,128 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = drop_in_place<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct::drop_in_place
+unsafe fn drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: core::ptr::const_ptr::{*const T}::cast
+#[lang_item("const_ptr_cast")]
+pub fn cast<T, U>(_1: *const T) -> *const U
+where
+    [@TraitClause0]: Sized<U>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Convert
+trait Convert<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    fn method = test_crate::Convert::method<Self, T>[Self]
+    non-dyn-compatible
+}
+
+fn test_crate::Convert::method<Self, T>(_1: Self) -> T
+where
+    [@TraitClause0]: Convert<Self, T>,
+= <method_without_default_body>
+
+// Full name: test_crate::{impl Convert<&'a [u8; 4 : usize]> for &'a u32}::method
+fn {impl Convert<&'a [u8; 4 : usize]> for &'a u32}::method<'a>(_1: &'a u32) -> &'a [u8; 4 : usize]
+{
+    let _0: &'1 [u8; 4 : usize]; // return
+    let self_1: &'3 u32; // arg #1
+    let _2: &'4 [u8; 4 : usize]; // anonymous local
+    let _3: *const [u8; 4 : usize]; // anonymous local
+    let _4: *const u32; // anonymous local
+
+    storage_live(_2)
+    storage_live(_3)
+    storage_live(_4)
+    _4 = &raw const (*self_1)
+    _3 = cast<u32, [u8; 4 : usize]>[{built_in impl Sized for [u8; 4 : usize]}](move _4)
+    storage_dead(_4)
+    _2 = &(*_3)
+    _0 = &(*_2)
+    storage_dead(_3)
+    storage_dead(_2)
+    return
+}
+
+// Full name: test_crate::{impl Convert<&'a [u8; 4 : usize]> for &'a u32}
+impl<'a> Convert<&'a [u8; 4 : usize]> for &'a u32 {
+    parent_clause0 = {built_in impl Sized for &'_ u32}
+    parent_clause1 = {built_in impl Sized for &'_ [u8; 4 : usize]}
+    fn method = {impl Convert<&'a [u8; 4 : usize]> for &'a u32}::method<'a>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::convert
+fn convert<T, U>(_1: T) -> U
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: Convert<T, U>,
+{
+    let _0: U; // return
+    let x_1: T; // arg #1
+    let _2: T; // anonymous local
+
+    storage_live(_2)
+    _2 = move x_1
+    _0 = @TraitClause2::method(move _2)
+    storage_dead(_2)
+    conditional_drop[{built_in impl Destruct for T}] x_1
+    return
+}
+
+// Full name: test_crate::to_bytes_by_ref
+pub fn to_bytes_by_ref<'b>(_1: &'b u32) -> &'b [u8; 4 : usize]
+{
+    let _0: &'1 [u8; 4 : usize]; // return
+    let s_1: &'3 u32; // arg #1
+    let _2: &'4 [u8; 4 : usize]; // anonymous local
+    let _3: &'5 u32; // anonymous local
+
+    storage_live(_2)
+    storage_live(_3)
+    // Here `convert` is given generics `<&'_ u32, &'_ [u8; 4]>`, which loses the information
+    // that the lifetime is the same by virtue of the trait impl.
+    _3 = copy s_1
+    _2 = convert<&'7 u32, &'7 [u8; 4 : usize]>[{built_in impl Sized for &'7 u32}, {built_in impl Sized for &'7 [u8; 4 : usize]}, {impl Convert<&'a [u8; 4 : usize]> for &'a u32}<'7>](move _3)
+    _0 = &(*_2)
+    storage_dead(_3)
+    storage_dead(_2)
+    return
+}
+
+
+

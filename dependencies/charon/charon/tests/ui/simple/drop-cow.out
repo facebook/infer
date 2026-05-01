@@ -1,0 +1,146 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::borrow::Borrow
+#[lang_item("Borrow")]
+pub trait Borrow<Self, Borrowed>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: MetaSized<Borrowed>
+    parent_clause2 : [@TraitClause2]: Destruct<Self>
+    parent_clause3 : [@TraitClause3]: Destruct<Borrowed>
+    fn borrow<'_0_1> = borrow<'_0_1, Self, Borrowed>[Self]
+    vtable: core::borrow::Borrow::{vtable}<Borrowed>
+}
+
+// Full name: core::borrow::Borrow::borrow
+pub fn borrow<'_0, Self, Borrowed>(_1: &'_0 Self) -> &'_0 Borrowed
+where
+    [@TraitClause0]: Borrow<Self, Borrowed>,
+= <opaque>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: alloc::borrow::ToOwned
+#[lang_item("ToOwned")]
+pub trait ToOwned<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Destruct<Self>
+    parent_clause2 : [@TraitClause2]: Sized<Self::Owned>
+    parent_clause3 : [@TraitClause3]: Borrow<Self::Owned, Self>
+    parent_clause4 : [@TraitClause4]: Destruct<Self::Owned>
+    type Owned
+    fn to_owned<'_0_1> = to_owned<'_0_1, Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: alloc::borrow::ToOwned::to_owned
+#[lang_item("to_owned_method")]
+pub fn to_owned<'_0, Self>(_1: &'_0 Self) -> @TraitClause0::Owned
+where
+    [@TraitClause0]: ToOwned<Self>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Cow
+enum Cow<'a, B>
+where
+    [@TraitClause0]: MetaSized<B>,
+    [@TraitClause1]: ToOwned<B>,
+    [@TraitClause2]: Destruct<B>,
+    B : 'a,
+    B : 'a,
+{
+  Borrowed(&'a B),
+  Owned(@TraitClause1::Owned),
+}
+
+// Full name: test_crate::Cow::{impl Destruct for Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]}::drop_in_place
+unsafe fn {impl Destruct for Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]}::drop_in_place<'a, B>(_1: *mut Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2])
+where
+    [@TraitClause0]: MetaSized<B>,
+    [@TraitClause1]: ToOwned<B>,
+    [@TraitClause2]: Destruct<B>,
+    B : 'a,
+    B : 'a,
+{
+    let _0: (); // return
+    let _1: *mut Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]; // arg #1
+    let _2: &'1 mut Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]; // anonymous local
+
+    storage_live(_2)
+    _0 = ()
+    _2 = &mut (*_1)
+    match (*_2) {
+        Cow::Borrowed => {
+        },
+        _ => {
+            drop[@TraitClause1::parent_clause4] ((*_2) as variant Cow::Owned).0
+            return
+        },
+    }
+    return
+}
+
+// Full name: test_crate::Cow::{impl Destruct for Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]}
+impl<'a, B> Destruct for Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]
+where
+    [@TraitClause0]: MetaSized<B>,
+    [@TraitClause1]: ToOwned<B>,
+    [@TraitClause2]: Destruct<B>,
+    B : 'a,
+    B : 'a,
+{
+    fn drop_in_place = {impl Destruct for Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]}::drop_in_place<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::drop_cow
+fn drop_cow<'a, B>(_1: Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2])
+where
+    [@TraitClause0]: MetaSized<B>,
+    [@TraitClause1]: ToOwned<B>,
+    [@TraitClause2]: Destruct<B>,
+    B : 'a,
+{
+    let _0: (); // return
+    let _1: Cow<'1, B>[@TraitClause0, @TraitClause1, @TraitClause2]; // arg #1
+
+    _0 = ()
+    _0 = ()
+    drop[{impl Destruct for Cow<'a, B>[@TraitClause0, @TraitClause1, @TraitClause2]}<'4, B>[@TraitClause0, @TraitClause1, @TraitClause2]] _1
+    return
+}
+
+
+

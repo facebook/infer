@@ -20,20 +20,78 @@ pub trait Sized<Self>
 #[lang_item("phantom_data")]
 pub struct PhantomData<T> {}
 
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: core::ptr::alignment::Alignment
+pub opaque type Alignment
+
 // Full name: core::mem::SizedTypeProperties
 pub trait SizedTypeProperties<Self>
 {
     parent_clause0 : [@TraitClause0]: Sized<Self>
+    const SIZE : usize
+    const ALIGN : usize
+    const ALIGNMENT : Alignment
     const IS_ZST : bool
     const LAYOUT : Layout
     const MAX_SLICE_LEN : usize
     non-dyn-compatible
 }
 
+// Full name: core::mem::SizedTypeProperties::SIZE
+#[lang_item("mem_size_const")]
+pub fn SIZE<Self>() -> usize
+where
+    [@TraitClause0]: SizedTypeProperties<Self>,
+= <opaque>
+
+// Full name: core::mem::SizedTypeProperties::SIZE
+#[lang_item("mem_size_const")]
+pub const SIZE<Self>: usize
+where
+    [@TraitClause0]: SizedTypeProperties<Self>,
+ = SIZE()
+
+// Full name: core::mem::SizedTypeProperties::ALIGN
+#[lang_item("mem_align_const")]
+pub fn ALIGN<Self>() -> usize
+where
+    [@TraitClause0]: SizedTypeProperties<Self>,
+= <opaque>
+
+// Full name: core::mem::SizedTypeProperties::ALIGN
+#[lang_item("mem_align_const")]
+pub const ALIGN<Self>: usize
+where
+    [@TraitClause0]: SizedTypeProperties<Self>,
+ = ALIGN()
+
+// Full name: core::mem::SizedTypeProperties::ALIGNMENT
+pub fn ALIGNMENT<Self>() -> Alignment
+where
+    [@TraitClause0]: SizedTypeProperties<Self>,
+= <opaque>
+
+// Full name: core::mem::SizedTypeProperties::ALIGNMENT
+pub const ALIGNMENT<Self>: Alignment
+where
+    [@TraitClause0]: SizedTypeProperties<Self>,
+ = ALIGNMENT()
+
 // Full name: core::mem::SizedTypeProperties::IS_ZST
 pub fn IS_ZST<Self>() -> bool
 where
     [@TraitClause0]: SizedTypeProperties<Self>,
+= <opaque>
 
 // Full name: core::mem::SizedTypeProperties::IS_ZST
 pub const IS_ZST<Self>: bool
@@ -45,6 +103,7 @@ where
 pub fn LAYOUT<Self>() -> Layout
 where
     [@TraitClause0]: SizedTypeProperties<Self>,
+= <opaque>
 
 // Full name: core::mem::SizedTypeProperties::LAYOUT
 pub const LAYOUT<Self>: Layout
@@ -56,6 +115,7 @@ where
 pub fn MAX_SLICE_LEN<Self>() -> usize
 where
     [@TraitClause0]: SizedTypeProperties<Self>,
+= <opaque>
 
 // Full name: core::mem::SizedTypeProperties::MAX_SLICE_LEN
 pub const MAX_SLICE_LEN<Self>: usize
@@ -69,40 +129,28 @@ where
     [@TraitClause0]: Sized<T>,
 {
     parent_clause0 = @TraitClause0
+    const SIZE = SIZE<T>[{impl SizedTypeProperties for T}<T>[@TraitClause0]]
+    const ALIGN = ALIGN<T>[{impl SizedTypeProperties for T}<T>[@TraitClause0]]
+    const ALIGNMENT = ALIGNMENT<T>[{impl SizedTypeProperties for T}<T>[@TraitClause0]]
     const IS_ZST = IS_ZST<T>[{impl SizedTypeProperties for T}<T>[@TraitClause0]]
     const LAYOUT = LAYOUT<T>[{impl SizedTypeProperties for T}<T>[@TraitClause0]]
     const MAX_SLICE_LEN = MAX_SLICE_LEN<T>[{impl SizedTypeProperties for T}<T>[@TraitClause0]]
     non-dyn-compatible
 }
 
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
-}
-
-pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
-
-// Full name: core::ptr::drop_in_place
-#[lang_item("drop_in_place")]
-pub unsafe fn drop_in_place<T>(@1: *mut T)
-
-// Full name: core::ptr::non_null::NonNull
-#[lang_item("NonNull")]
-pub opaque type NonNull<T>
-
-// Full name: core::ptr::unique::Unique
-#[lang_item("ptr_unique")]
-pub opaque type Unique<T>
-
 // Full name: alloc::alloc::Global
 #[lang_item("global_alloc_ty")]
 pub struct Global {}
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}::drop_in_place
+unsafe fn {impl Destruct for Global}::drop_in_place(_1: *mut Global)
+= <opaque>
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}
+impl Destruct for Global {
+    fn drop_in_place = {impl Destruct for Global}::drop_in_place
+    non-dyn-compatible
+}
 
 // Full name: alloc::raw_vec::RawVec
 opaque type RawVec<T, A>
@@ -116,9 +164,11 @@ where
     [@TraitClause0]: Sized<A>,
 
 // Full name: alloc::raw_vec::{RawVecInner<A>[@TraitClause0]}::with_capacity_in
-fn with_capacity_in<A>(@1: usize, @2: A, @3: Layout) -> RawVecInner<A>[@TraitClause0]
+fn with_capacity_in<A>(_1: usize, _2: A, _3: Layout) -> RawVecInner<A>[@TraitClause0]
 where
     [@TraitClause0]: Sized<A>,
+    [@TraitClause2]: Destruct<A>,
+= <opaque>
 
 // Full name: alloc::vec::Vec
 #[lang_item("Vec")]
@@ -131,86 +181,62 @@ where
   len: usize,
 }
 
-// Full name: alloc::vec::{Vec<T>[@TraitClause0, Sized<Global>]}::with_capacity
+// Full name: alloc::vec::Vec::{impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}::drop_in_place
+unsafe fn {impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}::drop_in_place<T, A>(_1: *mut Vec<T>[@TraitClause0, @TraitClause1])
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+= <missing>
+
+// Full name: alloc::vec::Vec::{impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Destruct for Vec<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    fn drop_in_place = {impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}::drop_in_place<T, A>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+// Full name: alloc::vec::{Vec<T>[@TraitClause0, {built_in impl Sized for Global}]}::with_capacity
 #[lang_item("vec_with_capacity")]
-pub fn with_capacity<T>(@1: usize) -> Vec<T>[@TraitClause0, Sized<Global>]
+pub fn with_capacity<T>(_1: usize) -> Vec<T>[@TraitClause0, {built_in impl Sized for Global}]
 where
     [@TraitClause0]: Sized<T>,
 {
-    let @0: Vec<T>[@TraitClause0, Sized<Global>]; // return
-    let capacity@1: usize; // arg #1
-    let @2: RawVec<T, Global>[@TraitClause0, Sized<Global>]; // anonymous local
-    let @3: RawVecInner<Global>[Sized<Global>]; // anonymous local
-    let @4: Global; // anonymous local
-    let @5: PhantomData<T>; // anonymous local
+    let _0: Vec<T>[@TraitClause0, {built_in impl Sized for Global}]; // return
+    let capacity_1: usize; // arg #1
+    let _2: RawVec<T, Global>[@TraitClause0, {built_in impl Sized for Global}]; // anonymous local
+    let _3: RawVecInner<Global>[{built_in impl Sized for Global}]; // anonymous local
+    let _4: PhantomData<T>; // anonymous local
+    let _5: Global; // anonymous local
 
-    storage_live(@4)
-    storage_live(@5)
-    storage_live(@2)
-    storage_live(@3)
-    @4 := Global {  }
-    @3 := with_capacity_in<Global>[Sized<Global>](move (capacity@1), move (@4), const ({impl SizedTypeProperties for T}<T>[@TraitClause0]::LAYOUT))
-    @5 := PhantomData {  }
-    @2 := RawVec { 0: move (@3), 1: move (@5) }
-    storage_dead(@3)
-    @0 := Vec { buf: move (@2), len: const (0 : usize) }
-    storage_dead(@2)
+    storage_live(_2)
+    storage_live(_3)
+    storage_live(_5)
+    _5 = Global {  }
+    _3 = with_capacity_in<Global>[{built_in impl Sized for Global}, {impl Destruct for Global}](move capacity_1, move _5, const {impl SizedTypeProperties for T}<T>[@TraitClause0]::LAYOUT)
+    storage_live(_4)
+    _4 = PhantomData {  }
+    _2 = RawVec { 0: move _3, 1: move _4 }
+    storage_dead(_3)
+    _0 = Vec { buf: move _2, len: const 0 : usize }
+    storage_dead(_2)
     return
-}
-
-// Full name: alloc::vec::{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop
-pub fn {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (Vec<T>[@TraitClause0, @TraitClause1]))
-where
-    [@TraitClause0]: Sized<T>,
-    [@TraitClause1]: Sized<A>,
-{
-    let @0: (); // return
-    let self@1: &'_ mut (Vec<T>[@TraitClause0, @TraitClause1]); // arg #1
-    let @2: *mut Slice<T>; // anonymous local
-    let data@3: *mut T; // local
-    let len@4: usize; // local
-    let @5: NonNull<u8>; // anonymous local
-
-    storage_live(@2)
-    storage_live(data@3)
-    storage_live(@5)
-    @5 := copy (((((*(self@1)).buf).0).0).0)
-    data@3 := transmute<NonNull<u8>, *mut T>(copy (@5))
-    storage_dead(@5)
-    storage_live(len@4)
-    len@4 := copy ((*(self@1)).len)
-    @2 := @PtrFromPartsMut<'_, Slice<T>>(copy (data@3), copy (len@4))
-    storage_dead(len@4)
-    storage_dead(data@3)
-    @0 := drop_in_place<Slice<T>>(move (@2))
-    storage_dead(@2)
-    @0 := ()
-    return
-}
-
-// Full name: alloc::vec::{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}
-impl<T, A> Drop for Vec<T>[@TraitClause0, @TraitClause1]
-where
-    [@TraitClause0]: Sized<T>,
-    [@TraitClause1]: Sized<A>,
-{
-    parent_clause0 = MetaSized<Vec<T>[@TraitClause0, @TraitClause1]>
-    fn drop<'_0> = {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
-    vtable: {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
 }
 
 // Full name: test_crate::vec
 fn vec()
 {
-    let @0: (); // return
-    let @1: Vec<u32>[Sized<u32>, Sized<Global>]; // anonymous local
+    let _0: (); // return
+    let _1: Vec<u32>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]; // anonymous local
 
-    storage_live(@1)
-    @1 := with_capacity<u32>[Sized<u32>](const (42 : usize))
-    drop[{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}<u32, Global>[Sized<u32>, Sized<Global>]] @1
-    storage_dead(@1)
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    storage_live(_1)
+    _1 = with_capacity<u32>[{built_in impl Sized for u32}](const 42 : usize)
+    conditional_drop[{impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}<u32, Global>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]] _1
+    storage_dead(_1)
+    _0 = ()
     return
 }
 

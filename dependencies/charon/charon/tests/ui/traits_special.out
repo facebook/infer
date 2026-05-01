@@ -30,37 +30,38 @@ pub trait From<Self, T>
     parent_clause1 : [@TraitClause1]: Sized<T>
     parent_clause2 : [@TraitClause2]: Sized<Self::Error>
     type Error
-    fn from<[@TraitClause0]: Sized<Self>> = test_crate::From::from<Self, T>[Self, @TraitClause0_0]
-    non-dyn-compatible
+    fn from<[@TraitClause0_1]: Sized<Self>> = test_crate::From::from<Self, T>[Self, @TraitClause0_1]
+    vtable: test_crate::From::{vtable}<T, Self::Error>
 }
 
-pub fn test_crate::From::from<Self, T>(@1: T) -> Result<Self, @TraitClause0::Error>[@TraitClause1, @TraitClause0::parent_clause2]
+pub fn test_crate::From::from<Self, T>(_1: T) -> Result<Self, @TraitClause0::Error>[@TraitClause1, @TraitClause0::parent_clause2]
 where
     [@TraitClause0]: From<Self, T>,
     [@TraitClause1]: Sized<Self>,
+= <method_without_default_body>
 
-// Full name: test_crate::{impl From<&'_0 (bool)> for bool}::from
-pub fn {impl From<&'_0 (bool)> for bool}::from<'_0>(@1: &'_0 (bool)) -> Result<bool, ()>[Sized<bool>, Sized<()>]
+// Full name: test_crate::{impl From<&'_0 bool> for bool}::from
+pub fn {impl From<&'_0 bool> for bool}::from<'_0>(_1: &'_0 bool) -> Result<bool, ()>[{built_in impl Sized for bool}, {built_in impl Sized for ()}]
 {
-    let @0: Result<bool, ()>[Sized<bool>, Sized<()>]; // return
-    let v@1: &'_ (bool); // arg #1
-    let @2: bool; // anonymous local
+    let _0: Result<bool, ()>[{built_in impl Sized for bool}, {built_in impl Sized for ()}]; // return
+    let v_1: &'1 bool; // arg #1
+    let _2: bool; // anonymous local
 
-    storage_live(@2)
-    @2 := copy (*(v@1))
-    @0 := Result::Ok { 0: move (@2) }
-    storage_dead(@2)
+    storage_live(_2)
+    _2 = copy (*v_1)
+    _0 = Result::Ok { 0: move _2 }
+    storage_dead(_2)
     return
 }
 
-// Full name: test_crate::{impl From<&'_0 (bool)> for bool}
-impl<'_0> From<&'_0 (bool)> for bool {
-    parent_clause0 = MetaSized<bool>
-    parent_clause1 = Sized<&'_ (bool)>
-    parent_clause2 = Sized<()>
+// Full name: test_crate::{impl From<&'_0 bool> for bool}
+impl<'_0> From<&'_0 bool> for bool {
+    parent_clause0 = {built_in impl MetaSized for bool}
+    parent_clause1 = {built_in impl Sized for &'_ bool}
+    parent_clause2 = {built_in impl Sized for ()}
     type Error = ()
-    fn from = {impl From<&'_0 (bool)> for bool}::from<'_0>
-    non-dyn-compatible
+    fn from = {impl From<&'_0 bool> for bool}::from<'_0>
+    vtable: {impl From<&'_0 bool> for bool}::{vtable}<'_0>
 }
 
 

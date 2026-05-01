@@ -14,8 +14,35 @@ and block_of_json (ctx : of_json_ctx) (js : json) : (block, string) result =
         Ok ({ span; statements } : block)
     | _ -> Error "")
 
-and raw_statement_of_json (ctx : of_json_ctx) (js : json) :
-    (raw_statement, string) result =
+and statement_of_json (ctx : of_json_ctx) (js : json) :
+    (statement, string) result =
+  combine_error_msgs js __FUNCTION__
+    (match js with
+    | `Assoc
+        [
+          ("span", span);
+          ("id", id);
+          ("kind", kind);
+          ("comments_before", comments_before);
+        ] ->
+        let* span = span_of_json ctx span in
+        let* statement_id = statement_id_of_json ctx id in
+        let* kind = statement_kind_of_json ctx kind in
+        let* comments_before =
+          list_of_json string_of_json ctx comments_before
+        in
+        Ok ({ span; statement_id; kind; comments_before } : statement)
+    | _ -> Error "")
+
+and statement_id_of_json (ctx : of_json_ctx) (js : json) :
+    (statement_id, string) result =
+  combine_error_msgs js __FUNCTION__
+    (match js with
+    | x -> StatementId.id_of_json ctx x
+    | _ -> Error "")
+
+and statement_kind_of_json (ctx : of_json_ctx) (js : json) :
+    (statement_kind, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with
     | `Assoc [ ("Assign", `List [ x_0; x_1 ]) ] ->
@@ -37,16 +64,21 @@ and raw_statement_of_json (ctx : of_json_ctx) (js : json) :
     | `Assoc [ ("StorageDead", storage_dead) ] ->
         let* storage_dead = local_id_of_json ctx storage_dead in
         Ok (StorageDead storage_dead)
-    | `Assoc [ ("Deinit", deinit) ] ->
-        let* deinit = place_of_json ctx deinit in
-        Ok (Deinit deinit)
-    | `Assoc [ ("Drop", `List [ x_0; x_1 ]) ] ->
+    | `Assoc [ ("PlaceMention", place_mention) ] ->
+        let* place_mention = place_of_json ctx place_mention in
+        Ok (PlaceMention place_mention)
+    | `Assoc [ ("Drop", `List [ x_0; x_1; x_2 ]) ] ->
         let* x_0 = place_of_json ctx x_0 in
         let* x_1 = trait_ref_of_json ctx x_1 in
-        Ok (Drop (x_0, x_1))
-    | `Assoc [ ("Assert", assert_) ] ->
+        let* x_2 = drop_kind_of_json ctx x_2 in
+        Ok (Drop (x_0, x_1, x_2))
+    | `Assoc
+        [
+          ("Assert", `Assoc [ ("assert", assert_); ("on_failure", on_failure) ]);
+        ] ->
         let* assert_ = assertion_of_json ctx assert_ in
-        Ok (Assert assert_)
+        let* on_failure = abort_kind_of_json ctx on_failure in
+        Ok (Assert (assert_, on_failure))
     | `Assoc [ ("Call", call) ] ->
         let* call = call_of_json ctx call in
         Ok (Call call)
@@ -72,33 +104,6 @@ and raw_statement_of_json (ctx : of_json_ctx) (js : json) :
         Ok (Error error)
     | _ -> Error "")
 
-and statement_of_json (ctx : of_json_ctx) (js : json) :
-    (statement, string) result =
-  combine_error_msgs js __FUNCTION__
-    (match js with
-    | `Assoc
-        [
-          ("span", span);
-          ("id", id);
-          ("content", content);
-          ("comments_before", comments_before);
-        ] ->
-        let* span = span_of_json ctx span in
-        let* statement_id = statement_id_of_json ctx id in
-        let* content = raw_statement_of_json ctx content in
-        let* comments_before =
-          list_of_json string_of_json ctx comments_before
-        in
-        Ok ({ span; statement_id; content; comments_before } : statement)
-    | _ -> Error "")
-
-and statement_id_of_json (ctx : of_json_ctx) (js : json) :
-    (statement_id, string) result =
-  combine_error_msgs js __FUNCTION__
-    (match js with
-    | x -> StatementId.id_of_json ctx x
-    | _ -> Error "")
-
 and switch_of_json (ctx : of_json_ctx) (js : json) : (switch, string) result =
   combine_error_msgs js __FUNCTION__
     (match js with
@@ -109,10 +114,10 @@ and switch_of_json (ctx : of_json_ctx) (js : json) : (switch, string) result =
         Ok (If (x_0, x_1, x_2))
     | `Assoc [ ("SwitchInt", `List [ x_0; x_1; x_2; x_3 ]) ] ->
         let* x_0 = operand_of_json ctx x_0 in
-        let* x_1 = integer_type_of_json ctx x_1 in
+        let* x_1 = literal_type_of_json ctx x_1 in
         let* x_2 =
           list_of_json
-            (pair_of_json (list_of_json scalar_value_of_json) block_of_json)
+            (pair_of_json (list_of_json literal_of_json) block_of_json)
             ctx x_2
         in
         let* x_3 = block_of_json ctx x_3 in

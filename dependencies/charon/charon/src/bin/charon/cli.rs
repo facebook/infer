@@ -5,13 +5,8 @@ use std::path::PathBuf;
 #[derive(Debug, Parser)]
 #[clap(name = "Charon")]
 pub struct Cli {
-    // Makes CliOpts parsable.
-    // This should be removed once subcommands are fully implemented.
-    #[command(flatten)]
-    pub opts: CliOpts,
-
     #[command(subcommand)]
-    pub command: Option<Charon>,
+    pub command: Charon,
 }
 
 #[derive(Debug, Subcommand)]
@@ -26,18 +21,6 @@ pub enum Charon {
     PrettyPrint(PrettyPrintArgs),
     /// Print the version.
     Version,
-}
-
-impl Charon {
-    pub fn name(&self) -> &str {
-        match self {
-            Charon::Rustc(..) => "rustc",
-            Charon::Cargo(..) => "cargo",
-            Charon::ToolchainPath(..) => "toolchain-path",
-            Charon::PrettyPrint(..) => "pretty-print",
-            Charon::Version => "version",
-        }
-    }
 }
 
 /// Read a llbc or ullbc file and pretty print it.

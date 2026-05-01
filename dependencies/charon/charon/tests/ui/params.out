@@ -17,33 +17,33 @@ pub trait Sized<Self>
 pub struct Global {}
 
 // Full name: test_crate::test_static
-fn test_static(@1: &'static (u32)) -> &'static (u32)
+fn test_static(_1: &'static u32) -> &'static u32
 {
-    let @0: &'_ (u32); // return
-    let x@1: &'_ (u32); // arg #1
+    let _0: &'1 u32; // return
+    let x_1: &'2 u32; // arg #1
 
-    @0 := copy (x@1)
+    _0 = copy x_1
     return
 }
 
 // Full name: test_crate::SStatic
 struct SStatic {
-  x: &'static (u32),
+  x: &'static u32,
 }
 
 // Full name: test_crate::E0
-enum E0<'a, 'b, T1, T2>
+enum E0<mut 'a, mut 'b, T1, T2>
 where
     [@TraitClause0]: Sized<T1>,
     [@TraitClause1]: Sized<T2>,
     T1 : 'a,
     T2 : 'b,
 {
-  V1(&'a mut (T1), &'b mut (T2)),
+  V1(&'a mut T1, &'b mut T2),
 }
 
 // Full name: test_crate::E1
-enum E1<'a, 'b, T1, T2>
+enum E1<mut 'a, mut 'b, T1, T2>
 where
     [@TraitClause0]: Sized<T1>,
     [@TraitClause1]: Sized<T2>,
@@ -52,12 +52,12 @@ where
     T2 : 'a,
     T1 : 'b,
 {
-  V1(&'a mut (T1), &'b mut (T2)),
-  V2(alloc::boxed::Box<E1<'a, 'b, T2, T1>[@TraitClause1, @TraitClause0]>[MetaSized<E1<'_, '_, T2, T1>[@TraitClause1, @TraitClause0]>, Sized<Global>]),
+  V1(&'a mut T1, &'b mut T2),
+  V2(alloc::boxed::Box<E1<'a, 'b, T2, T1>[@TraitClause1, @TraitClause0]>[{built_in impl MetaSized for E1<'_, '_, T2, T1>[@TraitClause1, @TraitClause0]}, {built_in impl Sized for Global}]),
 }
 
 // Full name: test_crate::E2
-enum E2<'a, 'b, T1, T2>
+enum E2<mut 'a, mut 'b, T1, T2>
 where
     [@TraitClause0]: Sized<T1>,
     [@TraitClause1]: Sized<T2>,
@@ -66,12 +66,12 @@ where
     T1 : 'b,
     T2 : 'a,
 {
-  V1(&'a mut (T1), &'b mut (T2)),
-  V3(alloc::boxed::Box<E2<'b, 'a, T1, T2>[@TraitClause0, @TraitClause1]>[MetaSized<E2<'_, '_, T1, T2>[@TraitClause0, @TraitClause1]>, Sized<Global>]),
+  V1(&'a mut T1, &'b mut T2),
+  V3(alloc::boxed::Box<E2<'b, 'a, T1, T2>[@TraitClause0, @TraitClause1]>[{built_in impl MetaSized for E2<'_, '_, T1, T2>[@TraitClause0, @TraitClause1]}, {built_in impl Sized for Global}]),
 }
 
 // Full name: test_crate::E3
-enum E3<'a, 'b, 'c, T1, T2>
+enum E3<mut 'a, mut 'b, 'c, T1, T2>
 where
     [@TraitClause0]: Sized<T1>,
     [@TraitClause1]: Sized<T2>,
@@ -84,14 +84,14 @@ where
     'a : 'c,
     'b : 'c,
 {
-  V1(&'a mut (T1), &'b mut (T2)),
-  V2(alloc::boxed::Box<E3<'a, 'b, 'c, T2, T1>[@TraitClause1, @TraitClause0]>[MetaSized<E3<'_, '_, '_, T2, T1>[@TraitClause1, @TraitClause0]>, Sized<Global>]),
-  V3(alloc::boxed::Box<E3<'b, 'a, 'c, T1, T2>[@TraitClause0, @TraitClause1]>[MetaSized<E3<'_, '_, '_, T1, T2>[@TraitClause0, @TraitClause1]>, Sized<Global>]),
-  V4(&'c (&'a (T1))),
+  V1(&'a mut T1, &'b mut T2),
+  V2(alloc::boxed::Box<E3<'a, 'b, 'c, T2, T1>[@TraitClause1, @TraitClause0]>[{built_in impl MetaSized for E3<'_, '_, '_, T2, T1>[@TraitClause1, @TraitClause0]}, {built_in impl Sized for Global}]),
+  V3(alloc::boxed::Box<E3<'b, 'a, 'c, T1, T2>[@TraitClause0, @TraitClause1]>[{built_in impl MetaSized for E3<'_, '_, '_, T1, T2>[@TraitClause0, @TraitClause1]}, {built_in impl Sized for Global}]),
+  V4(&'c &'a T1),
 }
 
 // Full name: test_crate::E4
-enum E4<'a, 'b, 'c, T1, T2, T3>
+enum E4<mut 'a, mut 'b, 'c, T1, T2, T3>
 where
     [@TraitClause0]: Sized<T1>,
     [@TraitClause1]: Sized<T2>,
@@ -106,14 +106,14 @@ where
     'a : 'c,
     'b : 'c,
 {
-  V1(&'a mut (T1), &'b mut (T2)),
-  V2(alloc::boxed::Box<E4<'a, 'b, 'c, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>[MetaSized<E4<'_, '_, '_, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>, Sized<Global>]),
-  V3(alloc::boxed::Box<E4<'b, 'a, 'c, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>[MetaSized<E4<'_, '_, '_, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>, Sized<Global>]),
-  V4(&'c (&'a (T3))),
+  V1(&'a mut T1, &'b mut T2),
+  V2(alloc::boxed::Box<E4<'a, 'b, 'c, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>[{built_in impl MetaSized for E4<'_, '_, '_, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]}, {built_in impl Sized for Global}]),
+  V3(alloc::boxed::Box<E4<'b, 'a, 'c, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>[{built_in impl MetaSized for E4<'_, '_, '_, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]}, {built_in impl Sized for Global}]),
+  V4(&'c &'a T3),
 }
 
 // Full name: test_crate::E5
-enum E5<'a, 'b, 'c, T1, T2, T3>
+enum E5<mut 'a, mut 'b, 'c, T1, T2, T3>
 where
     [@TraitClause0]: Sized<T1>,
     [@TraitClause1]: Sized<T2>,
@@ -128,21 +128,21 @@ where
     'c : 'a,
     'c : 'b,
 {
-  V1(&'a mut (T1), &'b mut (T2)),
-  V2(alloc::boxed::Box<E5<'a, 'b, 'c, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>[MetaSized<E5<'_, '_, '_, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>, Sized<Global>]),
-  V3(alloc::boxed::Box<E5<'b, 'a, 'c, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>[MetaSized<E5<'_, '_, '_, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>, Sized<Global>]),
-  V4(&'a (&'c (T3))),
+  V1(&'a mut T1, &'b mut T2),
+  V2(alloc::boxed::Box<E5<'a, 'b, 'c, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]>[{built_in impl MetaSized for E5<'_, '_, '_, T2, T1, T3>[@TraitClause1, @TraitClause0, @TraitClause2]}, {built_in impl Sized for Global}]),
+  V3(alloc::boxed::Box<E5<'b, 'a, 'c, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]>[{built_in impl MetaSized for E5<'_, '_, '_, T1, T2, T3>[@TraitClause0, @TraitClause1, @TraitClause2]}, {built_in impl Sized for Global}]),
+  V4(&'a &'c T3),
 }
 
 // Full name: test_crate::S1
-struct S1<'a, 'b, 'c, 'd>
+struct S1<mut 'a, mut 'b, mut 'c, 'd>
 where
     'c : 'a,
     'd : 'b,
     'd : 'a,
     'c : 'b,
 {
-  x: E1<'a, 'b, &'c mut (u32), &'d (u32)>[Sized<&'_ mut (u32)>, Sized<&'_ (u32)>],
+  x: E1<'a, 'b, &'c mut u32, &'d u32>[{built_in impl Sized for &'_ mut u32}, {built_in impl Sized for &'_ u32}],
 }
 
 

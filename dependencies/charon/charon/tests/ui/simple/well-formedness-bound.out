@@ -1,0 +1,50 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::get
+pub fn get<'a>(_1: &'a u32) -> Option<&'a u32>[{built_in impl Sized for &'_ u32}]
+{
+    let _0: Option<&'6 u32>[{built_in impl Sized for &'6 u32}]; // return
+    let x_1: &'9 u32; // arg #1
+    let _2: &'10 u32; // anonymous local
+
+    storage_live(_2)
+    _2 = &(*x_1)
+    _0 = Option::Some { 0: move _2 }
+    storage_dead(_2)
+    return
+}
+
+
+

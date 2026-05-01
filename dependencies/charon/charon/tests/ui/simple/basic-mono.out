@@ -1,0 +1,42 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::foo::<10 : usize>
+fn foo::<10 : usize>()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::bar::<u32>
+fn bar::<u32>()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _1: (); // anonymous local
+    let _2: (); // anonymous local
+
+    _0 = ()
+    storage_live(_1)
+    _1 = foo::<10 : usize>()
+    storage_dead(_1)
+    storage_live(_2)
+    _2 = bar::<u32>()
+    storage_dead(_2)
+    _0 = ()
+    return
+}
+
+
+

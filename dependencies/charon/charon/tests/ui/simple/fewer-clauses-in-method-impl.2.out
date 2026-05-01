@@ -1,9 +1,57 @@
-error: Mismatched method generics:
-       params:   
-       supplied: [@TraitDecl2<()>]
-  --> tests/ui/simple/fewer-clauses-in-method-impl.2.rs:14:5
-   |
-14 |     <() as Trait>::method()
-   |     ^^^^^^^^^^^^^^^^^^^^^^^
+# Final LLBC before serialization:
 
-ERROR Charon failed to translate this code (1 errors)
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn method<[@TraitClause0_1]: Sized<Self>> = test_crate::Trait::method<Self>[Self, @TraitClause0_1]
+    vtable: test_crate::Trait::{vtable}
+}
+
+fn test_crate::Trait::method<Self>()
+where
+    [@TraitClause0]: Trait<Self>,
+    [@TraitClause1]: Sized<Self>,
+= <method_without_default_body>
+
+// Full name: test_crate::{impl Trait for ()}::method
+fn {impl Trait for ()}::method()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for ()}
+impl Trait for () {
+    parent_clause0 = {built_in impl MetaSized for ()}
+    fn method = {impl Trait for ()}::method
+    vtable: {impl Trait for ()}::{vtable}
+}
+
+// Full name: test_crate::main
+pub fn main()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = {impl Trait for ()}::method()
+    return
+}
+
+
+

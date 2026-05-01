@@ -24,12 +24,10 @@ jobs:
           # Find toolchain path
           export TOOLCHAIN=$(rustc --print sysroot)
           echo "toolchain=\"$TOOLCHAIN\""
-          # Remove rustc book
-          rm $TOOLCHAIN/share/doc/rust/html/rustc -rf
           # Download rustc API docs
           rustup component add rustc-docs
           # Move the docs to deployment path
-          mv $TOOLCHAIN/share/doc/rust/html/rustc charon/target/doc/rustc
+          mv $TOOLCHAIN/share/doc/rust/html/rustc-docs charon/target/doc/rustc
 
       - name: Prepare index.html
         run: |

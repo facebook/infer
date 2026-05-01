@@ -1,0 +1,230 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+#[lang_item("meta_sized")]
+pub trait core::marker::MetaSized::<&_ mut _><'_0, T0>
+
+#[lang_item("sized")]
+pub trait core::marker::Sized::<&_ mut _><'_0, T0>
+{
+    parent_clause0 : [@TraitClause0]: core::marker::MetaSized::<&_ mut _><'_0, T0>
+    non-dyn-compatible
+}
+
+#[lang_item("meta_sized")]
+pub trait core::marker::MetaSized::<Option<&_ mut _>><'_0, T0>
+
+#[lang_item("sized")]
+pub trait core::marker::Sized::<Option<&_ mut _>><'_0, T0>
+{
+    parent_clause0 : [@TraitClause0]: core::marker::MetaSized::<Option<&_ mut _>><'_0, T0>
+    non-dyn-compatible
+}
+
+#[lang_item("meta_sized")]
+pub trait core::marker::MetaSized::<Option<Option<&_ mut _>>><'_0, T0>
+
+#[lang_item("sized")]
+pub trait core::marker::Sized::<Option<Option<&_ mut _>>><'_0, T0>
+{
+    parent_clause0 : [@TraitClause0]: core::marker::MetaSized::<Option<Option<&_ mut _>>><'_0, T0>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = drop_in_place<Self>
+    non-dyn-compatible
+}
+
+#[lang_item("destruct")]
+pub trait core::marker::Destruct::<&_ mut _><'_0, T0>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place::<&_ mut _><'_0, T0>
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T> {
+  None,
+  Some(T),
+}
+
+#[lang_item("destruct")]
+pub trait core::marker::Destruct::<Option<&_ mut _>><'_0, T0>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place::<Option<&_ mut _>><'_0, T0>
+    non-dyn-compatible
+}
+
+#[lang_item("destruct")]
+pub trait core::marker::Destruct::<Option<Option<&_ mut _>>><'_0, T0>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place::<Option<Option<&_ mut _>>><'_0, T0>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct::drop_in_place
+unsafe fn drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+unsafe fn core::marker::Destruct::drop_in_place::<&_ mut _><'_0, T0>(_1: *mut &'_0 mut T0)
+= <opaque>
+
+unsafe fn core::marker::Destruct::drop_in_place::<Option<&_ mut _>><'_0, T0>(_1: *mut Option<&'_0 mut T0>)
+= <opaque>
+
+unsafe fn core::marker::Destruct::drop_in_place::<Option<Option<&_ mut _>>><'_0, T0>(_1: *mut Option<Option<&'_0 mut T0>>)
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::identity
+fn identity<T>(_1: T) -> T
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let _0: T; // return
+    let x_1: T; // arg #1
+
+    _0 = move x_1
+    conditional_drop[{built_in impl Destruct for T}] x_1
+    return
+}
+
+fn test_crate::identity::<&_ mut _><'_0, T0>(_1: &'_0 mut T0) -> &'_0 mut T0
+where
+    [@TraitClause0]: core::marker::Sized::<&_ mut _><'_0, T0>,
+{
+    let _0: &'_0 mut T0; // return
+    let x_1: &'_0 mut T0; // arg #1
+
+    _0 = move x_1
+    conditional_drop[{built_in impl core::marker::Destruct::<&_ mut _><'_0> for T0}] x_1
+    return
+}
+
+fn test_crate::identity::<Option<&_ mut _>><'_0, T0>(_1: Option<&'_0 mut T0>) -> Option<&'_0 mut T0>
+where
+    [@TraitClause0]: core::marker::Sized::<Option<&_ mut _>><'_0, T0>,
+{
+    let _0: Option<&'_0 mut T0>; // return
+    let x_1: Option<&'_0 mut T0>; // arg #1
+
+    _0 = move x_1
+    conditional_drop[{built_in impl core::marker::Destruct::<Option<&_ mut _>><'_0> for T0}] x_1
+    return
+}
+
+fn test_crate::identity::<Option<Option<&_ mut _>>><'_0, T0>(_1: Option<Option<&'_0 mut T0>>) -> Option<Option<&'_0 mut T0>>
+where
+    [@TraitClause0]: core::marker::Sized::<Option<Option<&_ mut _>>><'_0, T0>,
+{
+    let _0: Option<Option<&'_0 mut T0>>; // return
+    let x_1: Option<Option<&'_0 mut T0>>; // arg #1
+
+    _0 = move x_1
+    conditional_drop[{built_in impl core::marker::Destruct::<Option<Option<&_ mut _>>><'_0> for T0}] x_1
+    return
+}
+
+// Full name: test_crate::use_id_mut
+fn use_id_mut<X, A>(_1: A)
+where
+    [@TraitClause0]: Sized<X>,
+    [@TraitClause1]: Sized<A>,
+{
+    let _0: (); // return
+    let x_1: A; // arg #1
+    let _2: &'1 u32; // anonymous local
+    let _3: &'2 u32; // anonymous local
+    let _4: &'4 mut u32; // anonymous local
+    let _5: &'5 mut u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: Option<&'11 mut u32>; // anonymous local
+    let _8: Option<&'14 mut u32>; // anonymous local
+    let _9: &'17 mut u32; // anonymous local
+    let _10: u32; // anonymous local
+    let _11: Option<Option<&'45 mut A>>; // anonymous local
+    let _12: Option<Option<&'54 mut A>>; // anonymous local
+    let _13: Option<&'63 mut A>; // anonymous local
+    let _14: &'66 mut A; // anonymous local
+    let _15: &'67 u32; // anonymous local
+    let _16: &'212 u32; // anonymous local
+    let _17: u32; // anonymous local
+
+    storage_live(_16)
+    storage_live(_17)
+    _17 = const 0 : u32
+    _16 = &_17
+    storage_live(_15)
+    _0 = ()
+    storage_live(_2)
+    storage_live(_3)
+    _15 = move _16
+    _3 = &(*_15)
+    _2 = identity<&'69 u32>[{built_in impl Sized for &'69 u32}](move _3)
+    storage_dead(_3)
+    storage_dead(_2)
+    storage_live(_4)
+    storage_live(_5)
+    storage_live(_6)
+    _6 = const 0 : u32
+    _5 = &mut _6
+    _4 = test_crate::identity::<&_ mut _><'74, u32>[{built_in impl core::marker::Sized::<&_ mut _><'74> for u32}](move _5)
+    storage_dead(_5)
+    storage_dead(_6)
+    storage_dead(_4)
+    storage_live(_7)
+    storage_live(_8)
+    storage_live(_9)
+    storage_live(_10)
+    _10 = const 0 : u32
+    _9 = &mut _10
+    _8 = Option::Some { 0: move _9 }
+    storage_dead(_9)
+    _7 = test_crate::identity::<Option<&_ mut _>><'84, u32>[{built_in impl core::marker::Sized::<Option<&_ mut _>><'84> for u32}](move _8)
+    storage_dead(_8)
+    storage_dead(_10)
+    storage_dead(_7)
+    storage_live(_11)
+    storage_live(_12)
+    storage_live(_13)
+    storage_live(_14)
+    _14 = &mut x_1
+    _13 = Option::Some { 0: move _14 }
+    storage_dead(_14)
+    _12 = Option::Some { 0: move _13 }
+    storage_dead(_13)
+    _11 = test_crate::identity::<Option<Option<&_ mut _>>><'131, A>[{built_in impl core::marker::Sized::<Option<Option<&_ mut _>>><'131> for A}](move _12)
+    storage_dead(_12)
+    storage_dead(_11)
+    _0 = ()
+    conditional_drop[{built_in impl Destruct for A}] x_1
+    return
+}
+
+
+

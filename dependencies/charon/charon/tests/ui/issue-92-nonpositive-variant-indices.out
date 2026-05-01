@@ -10,24 +10,24 @@ enum Ordering {
 // Full name: test_crate::main
 fn main()
 {
-    let @0: (); // return
-    let @1: Ordering; // anonymous local
+    let _0: (); // return
+    let _1: Ordering; // anonymous local
 
-    storage_live(@1)
-    @1 := Ordering::Less {  }
-    match @1 {
+    _0 = ()
+    storage_live(_1)
+    _1 = Ordering::Less {  }
+    match _1 {
         Ordering::Less => {
-            @0 := ()
+            _0 = ()
         },
         Ordering::Equal => {
-            @0 := ()
+            _0 = ()
         },
         Ordering::Greater => {
-            @0 := ()
+            _0 = ()
         },
     }
-    storage_dead(@1)
-    @0 := ()
+    storage_dead(_1)
     return
 }
 

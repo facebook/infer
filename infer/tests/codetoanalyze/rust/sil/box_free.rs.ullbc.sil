@@ -9,36 +9,41 @@
 type alloc::alloc::Global = {}
 
 define box_free::main() : void {
-  local var_0: void, ptr_1: *int, var_2: void, x_3: *int, var_4: *int, var_5: *int, ub_6: int
+  local var_0: void, ptr_1: *int, x_2: *int, var_3: *int, var_4: *int, ub_5: int, var_6: *int
   #node_0:
+      store &var_0 <- null:void
       n0 = __sil_boxnew(50)
-      store &x_3 <- n0:*int
-      jmp node_1
-      .handlers node_2
+      store &x_2 <- n0:*int
+      jmp node_2
+      .handlers node_1
       
   #node_1:
-      n1:*int = load &x_3
-      store &var_5 <- n1:*int
-      n2:*int = load &var_5
-      store &var_4 <- n2:*int
-      n3:*int = load &var_4
-      store &ptr_1 <- n3:*int
-      n4:*int = load &x_3
-      n5 = __sil_free(n4)
-      n6:*int = load &ptr_1
-      n7:int = load n6
-      store &ub_6 <- n7:int
-      store &var_0 <- null:void
-      store &var_0 <- null:void
-      n8:void = load &var_0
-      ret n8
+      throw "UnwindResume"
       
   #node_2:
+      n1:*int = load &x_2
+      store &var_6 <- __sil_cast(<*int>, n1):*int
+      n2:*int = load &var_6
+      store &var_4 <- n2:*int
+      n3:*int = load &var_4
+      store &var_3 <- n3:*int
+      n4:*int = load &var_3
+      store &ptr_1 <- n4:*int
+      n5:*int = load &x_2
+      n6 = __sil_free(n5)
+      jmp node_3
+      .handlers node_4
+      
+  #node_3:
+      n7:*int = load &ptr_1
+      n8:int = load n7
+      store &ub_5 <- n8:int
+      store &var_0 <- null:void
+      n9:void = load &var_0
+      ret n9
+      
+  #node_4:
       throw "UnwindResume"
       
 }
-
-declare core::ops::drop::Drop::drop(*void) : void
-
-declare alloc::boxed::{core::ops::drop::Drop for alloc::boxed::Box<T>}::drop(**void) : void
 

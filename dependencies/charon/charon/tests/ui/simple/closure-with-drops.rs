@@ -1,4 +1,4 @@
-//@ charon-args=--add-drop-bounds
+//@ charon-args=--precise-drops
 fn foo<T>(x: T) {
     let _ = || drop(x);
 }

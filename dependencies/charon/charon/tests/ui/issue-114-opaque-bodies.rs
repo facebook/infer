@@ -1,4 +1,5 @@
 //@ charon-args=--extract-opaque-bodies
+//@ charon-arg=--opaque={impl core::marker::Destruct for alloc::vec::Vec}
 //@ aux-crate=issue-114-opaque-bodies-aux.rs
 
 fn use_inlines() -> u32 {

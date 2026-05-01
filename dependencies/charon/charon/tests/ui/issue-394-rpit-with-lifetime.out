@@ -12,12 +12,22 @@ pub trait Sized<Self>
     non-dyn-compatible
 }
 
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
 // Full name: core::marker::Tuple
 #[lang_item("tuple_trait")]
 pub trait Tuple<Self>
 {
     parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    vtable: core::marker::Tuple::{vtable}
+    non-dyn-compatible
 }
 
 // Full name: core::ops::function::FnOnce
@@ -30,7 +40,7 @@ pub trait FnOnce<Self, Args>
     parent_clause3 : [@TraitClause3]: Sized<Self::Output>
     type Output
     fn call_once = core::ops::function::FnOnce::call_once<Self, Args>[Self]
-    non-dyn-compatible
+    vtable: core::ops::function::FnOnce::{vtable}<Args, Self::Output>
 }
 
 // Full name: core::ops::function::FnMut
@@ -41,18 +51,8 @@ pub trait FnMut<Self, Args>
     parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
     parent_clause2 : [@TraitClause2]: Sized<Args>
     parent_clause3 : [@TraitClause3]: Tuple<Args>
-    fn call_mut<'_0> = core::ops::function::FnMut::call_mut<'_0_0, Self, Args>[Self]
-    non-dyn-compatible
-}
-
-// Full name: core::option::Option
-#[lang_item("Option")]
-pub enum Option<T>
-where
-    [@TraitClause0]: Sized<T>,
-{
-  None,
-  Some(T),
+    fn call_mut<'_0_1> = core::ops::function::FnMut::call_mut<'_0_1, Self, Args>[Self]
+    vtable: core::ops::function::FnMut::{vtable}<Args, Self::parent_clause1::Output>
 }
 
 // Full name: core::iter::sources::from_fn::FromFn
@@ -61,95 +61,115 @@ where
     [@TraitClause0]: Sized<F>,
 
 // Full name: core::iter::sources::from_fn::from_fn
-pub fn from_fn<T, F>(@1: F) -> FromFn<F>[@TraitClause1]
+pub fn from_fn<T, F>(_1: F) -> FromFn<F>[@TraitClause1]
 where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Sized<F>,
     [@TraitClause2]: FnMut<F, ()>,
     @TraitClause2::parent_clause1::Output = Option<T>[@TraitClause0],
+= <opaque>
 
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
 {
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn drop<'_0> = drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
 }
 
-// Full name: core::ops::drop::Drop::drop
-pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
 
-pub fn core::ops::function::FnMut::call_mut<'_0, Self, Args>(@1: &'_0 mut (Self), @2: Args) -> @TraitClause0::parent_clause1::Output
+pub fn core::ops::function::FnMut::call_mut<'_0, Self, Args>(_1: &'_0 mut Self, _2: Args) -> @TraitClause0::parent_clause1::Output
 where
     [@TraitClause0]: FnMut<Self, Args>,
+= <opaque>
 
-pub fn core::ops::function::FnOnce::call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+pub fn core::ops::function::FnOnce::call_once<Self, Args>(_1: Self, _2: Args) -> @TraitClause0::Output
 where
     [@TraitClause0]: FnOnce<Self, Args>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
 
 // Full name: test_crate::sparse_transitions::closure
 struct closure<'a> {}
 
-// Full name: test_crate::sparse_transitions::{impl FnMut<()> for closure<'_>}::call_mut
-fn {impl FnMut<()> for closure<'_>}::call_mut<'a, '_1>(@1: &'_1 mut (closure<'_>), @2: ()) -> Option<u8>[Sized<u8>]
+// Full name: test_crate::sparse_transitions::{impl FnMut<()> for closure<'a>}::call_mut
+fn {impl FnMut<()> for closure<'a>}::call_mut<'a, '_1>(_1: &'_1 mut closure<'a>, _2: ()) -> Option<u8>[{built_in impl Sized for u8}]
 {
-    let @0: Option<u8>[Sized<u8>]; // return
-    let @1: &'_ mut (closure<'_>); // arg #1
-    let tupled_args@2: (); // arg #2
+    let _0: Option<u8>[{built_in impl Sized for u8}]; // return
+    let _1: &'1 mut closure<'a>; // arg #1
+    let tupled_args_2: (); // arg #2
 
-    @0 := Option::None {  }
+    _0 = Option::None {  }
     return
 }
 
-// Full name: test_crate::sparse_transitions::{impl FnOnce<()> for closure<'_>}::call_once
-fn {impl FnOnce<()> for closure<'_>}::call_once<'a>(@1: closure<'_>, @2: ()) -> Option<u8>[Sized<u8>]
-{
-    let @0: Option<u8>[Sized<u8>]; // return
-    let @1: closure<'_>; // arg #1
-    let @2: (); // arg #2
-    let @3: &'_ mut (closure<'_>); // anonymous local
+// Full name: test_crate::sparse_transitions::closure::{impl Destruct for closure<'a>}::drop_in_place
+unsafe fn {impl Destruct for closure<'a>}::drop_in_place<'a>(_1: *mut closure<'a>)
+= <missing>
 
-    storage_live(@3)
-    @3 := &mut @1
-    @0 := {impl FnMut<()> for closure<'_>}::call_mut<'_, '_>(move (@3), move (@2))
-    drop[Drop<closure<'_>>] @1
-    return
-}
-
-// Full name: test_crate::sparse_transitions::{impl FnOnce<()> for closure<'_>}
-impl<'a> FnOnce<()> for closure<'_> {
-    parent_clause0 = MetaSized<closure<'_>>
-    parent_clause1 = Sized<()>
-    parent_clause2 = Tuple<()>
-    parent_clause3 = Sized<Option<u8>[Sized<u8>]>
-    type Output = Option<u8>[Sized<u8>]
-    fn call_once = {impl FnOnce<()> for closure<'_>}::call_once<'a>
+// Full name: test_crate::sparse_transitions::closure::{impl Destruct for closure<'a>}
+impl<'a> Destruct for closure<'a> {
+    fn drop_in_place = {impl Destruct for closure<'a>}::drop_in_place<'a>
     non-dyn-compatible
 }
 
-// Full name: test_crate::sparse_transitions::{impl FnMut<()> for closure<'_>}
-impl<'a> FnMut<()> for closure<'_> {
-    parent_clause0 = MetaSized<closure<'_>>
-    parent_clause1 = {impl FnOnce<()> for closure<'_>}<'_>
-    parent_clause2 = Sized<()>
-    parent_clause3 = Tuple<()>
-    fn call_mut<'_0> = {impl FnMut<()> for closure<'_>}::call_mut<'a, '_0_0>
+// Full name: test_crate::sparse_transitions::{impl FnOnce<()> for closure<'a>}::call_once
+fn {impl FnOnce<()> for closure<'a>}::call_once<'a>(_1: closure<'a>, _2: ()) -> Option<u8>[{built_in impl Sized for u8}]
+{
+    let _0: Option<u8>[{built_in impl Sized for u8}]; // return
+    let _1: closure<'a>; // arg #1
+    let _2: (); // arg #2
+    let _3: &'1 mut closure<'a>; // anonymous local
+
+    storage_live(_3)
+    _3 = &mut _1
+    _0 = {impl FnMut<()> for closure<'a>}::call_mut<'a, '5>(move _3, move _2)
+    drop[{impl Destruct for closure<'a>}<'a>] _1
+    return
+}
+
+// Full name: test_crate::sparse_transitions::{impl FnOnce<()> for closure<'a>}
+impl<'a> FnOnce<()> for closure<'a> {
+    parent_clause0 = {built_in impl MetaSized for closure<'a>}
+    parent_clause1 = {built_in impl Sized for ()}
+    parent_clause2 = {built_in impl Tuple for ()}
+    parent_clause3 = {built_in impl Sized for Option<u8>[{built_in impl Sized for u8}]}
+    type Output = Option<u8>[{built_in impl Sized for u8}]
+    fn call_once = {impl FnOnce<()> for closure<'a>}::call_once<'a>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::sparse_transitions::{impl FnMut<()> for closure<'a>}
+impl<'a> FnMut<()> for closure<'a> {
+    parent_clause0 = {built_in impl MetaSized for closure<'a>}
+    parent_clause1 = {impl FnOnce<()> for closure<'a>}<'a>
+    parent_clause2 = {built_in impl Sized for ()}
+    parent_clause3 = {built_in impl Tuple for ()}
+    fn call_mut<'_0_1> = {impl FnMut<()> for closure<'a>}::call_mut<'a, '_0_1>
     non-dyn-compatible
 }
 
 // Full name: test_crate::sparse_transitions
-fn sparse_transitions<'a>() -> FromFn<closure<'a>>[Sized<closure<'_>>]
+fn sparse_transitions<'a>() -> FromFn<closure<'a>>[{built_in impl Sized for closure<'_>}]
 {
-    let @0: FromFn<closure<'_>>[Sized<closure<'_>>]; // return
-    let @1: closure<'_>; // anonymous local
+    let _0: FromFn<closure<'6>>[{built_in impl Sized for closure<'6>}]; // return
+    let _1: closure<'9>; // anonymous local
 
-    storage_live(@1)
-    @1 := closure {  }
-    @0 := from_fn<u8, closure<'_>>[Sized<u8>, Sized<closure<'_>>, {impl FnMut<()> for closure<'_>}<'_>](move (@1))
-    storage_dead(@1)
+    storage_live(_1)
+    _1 = closure {  }
+    _0 = from_fn<u8, closure<'11>>[{built_in impl Sized for u8}, {built_in impl Sized for closure<'11>}, {impl FnMut<()> for closure<'a>}<'11>](move _1)
+    storage_dead(_1)
     return
 }
 

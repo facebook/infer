@@ -1,0 +1,147 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args, Self_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self_Output>
+    fn call_once = call_once<Self, Args, Self_Output>[Self]
+    vtable: core::ops::function::FnOnce::{vtable}<Args, Self_Output>
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args, Self_Clause1_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args, Self_Clause1_Output>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0_1> = call_mut<'_0_1, Self, Args, Self_Clause1_Output>[Self]
+    vtable: core::ops::function::FnMut::{vtable}<Args, Self_Clause1_Output>
+}
+
+// Full name: core::ops::function::Fn
+#[lang_item("fn")]
+pub trait Fn<Self, Args, Self_Clause1_Clause1_Output>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnMut<Self, Args, Self_Clause1_Clause1_Output>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call<'_0_1> = core::ops::function::Fn::call<'_0_1, Self, Args, Self_Clause1_Clause1_Output>[Self]
+    vtable: core::ops::function::Fn::{vtable}<Args, Self_Clause1_Clause1_Output>
+}
+
+pub fn core::ops::function::Fn::call<'_0, Self, Args, Clause0_Clause1_Clause1_Output>(_1: &'_0 Self, _2: Args) -> Clause0_Clause1_Clause1_Output
+where
+    [@TraitClause0]: Fn<Self, Args, Clause0_Clause1_Clause1_Output>,
+= <opaque>
+
+// Full name: core::ops::function::FnMut::call_mut
+pub fn call_mut<'_0, Self, Args, Clause0_Clause1_Output>(_1: &'_0 mut Self, _2: Args) -> Clause0_Clause1_Output
+where
+    [@TraitClause0]: FnMut<Self, Args, Clause0_Clause1_Output>,
+= <opaque>
+
+// Full name: core::ops::function::FnOnce::call_once
+pub fn call_once<Self, Args, Clause0_Output>(_1: Self, _2: Args) -> Clause0_Output
+where
+    [@TraitClause0]: FnOnce<Self, Args, Clause0_Output>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Trait
+pub trait Trait<Self, Self_Foo>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Foo>
+    parent_clause2 : [@TraitClause2]: Fn<Self_Foo, (), ()>
+    fn call<'_0_1> = test_crate::Trait::call<'_0_1, Self, Self_Foo>[Self]
+    vtable: test_crate::Trait::{vtable}<Self_Foo>
+}
+
+pub fn test_crate::Trait::call<'_0, Self, Clause0_Foo>(_1: &'_0 Self)
+where
+    [@TraitClause0]: Trait<Self, Clause0_Foo>,
+= <method_without_default_body>
+
+// Full name: test_crate::{impl Trait<F> for F}::call
+pub fn {impl Trait<F> for F}::call<'_0, F>(_1: &'_0 F)
+where
+    [@TraitClause0]: Fn<F, (), ()>,
+    [@TraitClause1]: Sized<F>,
+{
+    let _0: (); // return
+    let self_1: &'1 F; // arg #1
+    let _2: &'2 F; // anonymous local
+    let _3: (); // anonymous local
+
+    _0 = ()
+    storage_live(_2)
+    _2 = &(*self_1)
+    storage_live(_3)
+    _3 = ()
+    _0 = @TraitClause0::call<'4>(move _2, move _3)
+    storage_dead(_3)
+    storage_dead(_2)
+    return
+}
+
+// Full name: test_crate::{impl Trait<F> for F}
+impl<F> Trait<F> for F
+where
+    [@TraitClause0]: Fn<F, (), ()>,
+    [@TraitClause1]: Sized<F>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    parent_clause1 = @TraitClause1
+    parent_clause2 = @TraitClause0
+    fn call<'_0_1> = {impl Trait<F> for F}::call<'_0_1, F>[@TraitClause0, @TraitClause1]
+    vtable: {impl Trait<F> for F}::{vtable}<F>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: test_crate::use_foo
+pub fn use_foo()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+
+

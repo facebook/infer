@@ -1,8 +1,9 @@
-use crate::ids::Vector;
-use crate::{ast::*, common::hash_consing::HashConsed};
+use crate::ast::*;
+use crate::ids::{IndexMap, IndexVec};
 use derive_generic_visitor::*;
 use macros::{EnumAsGetters, EnumIsA, EnumToGetters, VariantIndexArity, VariantName};
 use serde::{Deserialize, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 
 mod vars;
 pub use vars::*;
@@ -18,8 +19,8 @@ pub use vars::*;
     Ord,
     EnumIsA,
     EnumAsGetters,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
@@ -29,6 +30,8 @@ pub enum Region {
     Var(RegionDbVar),
     /// Static region
     Static,
+    /// Body-local region, considered existentially-bound at the level of a body.
+    Body(RegionId),
     /// Erased region
     Erased,
 }
@@ -40,8 +43,7 @@ pub enum Region {
 /// definition. Note that every path designated by `TraitInstanceId` refers
 /// to a *trait instance*, which is why the [`TraitRefKind::Clause`] variant may seem redundant
 /// with some of the other variants.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Drive, DriveMut)]
-#[charon::rename("TraitInstanceId")]
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
 pub enum TraitRefKind {
     /// A specific top-level implementation item.
     TraitImpl(TraitImplRef),
@@ -97,7 +99,6 @@ pub enum TraitRefKind {
     ///                         clause 1 from item W (from local clause 0)
     /// }
     /// ```
-    #[charon::opaque]
     ItemClause(Box<TraitRef>, TraitItemName, TraitClauseId),
 
     /// The implicit `Self: Trait` clause. Present inside trait declarations, including trait
@@ -109,17 +110,18 @@ pub enum TraitRefKind {
     /// `Sized`. This morally points to an invisible `impl` block; as such it contains
     /// the information we may need from one.
     BuiltinOrAuto {
-        trait_decl_ref: PolyTraitDeclRef,
+        #[drive(skip)]
+        builtin_data: BuiltinImplData,
         /// Exactly like the same field on `TraitImpl`: the `TraitRef`s required to satisfy the
         /// implied predicates on the trait declaration. E.g. since `FnMut: FnOnce`, a built-in `T:
         /// FnMut` impl would have a `TraitRef` for `T: FnOnce`.
-        parent_trait_refs: Vector<TraitClauseId, TraitRef>,
+        parent_trait_refs: IndexMap<TraitClauseId, TraitRef>,
         /// The values of the associated types for this trait.
-        types: Vec<(TraitItemName, Ty, Vector<TraitClauseId, TraitRef>)>,
+        types: Vec<(TraitItemName, TraitAssocTyImpl)>,
     },
 
     /// The automatically-generated implementation for `dyn Trait`.
-    Dyn(PolyTraitDeclRef),
+    Dyn,
 
     /// For error reporting.
     #[charon::rename("UnknownTrait")]
@@ -127,10 +129,42 @@ pub enum TraitRefKind {
     Unknown(String),
 }
 
-/// A reference to a trait
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Drive, DriveMut)]
-pub struct TraitRef {
-    #[charon::rename("trait_id")]
+/// Describes a built-in impl. Mostly lists the implemented trait, sometimes with more details
+/// about the contents of the implementation.
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
+#[charon::variants_prefix("Builtin")]
+pub enum BuiltinImplData {
+    // Marker traits (without methods).
+    Sized,
+    MetaSized,
+    Tuple,
+    Pointee,
+    DiscriminantKind,
+    // Auto traits (defined with `auto trait ...`).
+    Auto,
+
+    // Traits with methods.
+    /// An impl of `Destruct` for a type with no drop glue.
+    NoopDestruct,
+    /// An impl of `Destruct` for a type parameter, which we could not resolve because
+    /// `--add-drop-bounds` was not set.
+    UntrackedDestruct,
+    Fn,
+    FnMut,
+    FnOnce,
+    Copy,
+    Clone,
+}
+
+/// A reference to a trait.
+///
+/// This type is hash-consed, `TraitRefContents` contains the actual data.
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
+#[serde_state(state_implements = HashConsSerializerState)] // Avoid corecursive impls due to perfect derive
+pub struct TraitRef(pub HashConsed<TraitRefContents>);
+
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
+pub struct TraitRefContents {
     pub kind: TraitRefKind,
     /// Not necessary, but useful
     pub trait_decl_ref: PolyTraitDeclRef,
@@ -144,7 +178,7 @@ pub struct TraitRef {
 /// ```
 ///
 /// The substitution is: `[String, bool]`.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
 pub struct TraitDeclRef {
     pub id: TraitDeclId,
     pub generics: BoxedArgs,
@@ -154,14 +188,14 @@ pub struct TraitDeclRef {
 pub type PolyTraitDeclRef = RegionBinder<TraitDeclRef>;
 
 /// A reference to a tait impl, using the provided arguments.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
 pub struct TraitImplRef {
     pub id: TraitImplId,
     pub generics: BoxedArgs,
 }
 
 /// .0 outlives .1
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct OutlivesPred<T, U>(pub T, pub U);
 
 pub type RegionOutlives = OutlivesPred<Region, Region>;
@@ -174,7 +208,7 @@ pub type TypeOutlives = OutlivesPred<Ty, Region>;
 /// T : Foo<S = String>
 ///         ^^^^^^^^^^
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct TraitTypeConstraint {
     pub trait_ref: TraitRef,
     pub type_name: TraitItemName,
@@ -182,33 +216,35 @@ pub struct TraitTypeConstraint {
 }
 
 /// A set of generic arguments.
-#[derive(Clone, Eq, PartialEq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Clone, Eq, PartialEq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct GenericArgs {
-    pub regions: Vector<RegionId, Region>,
-    pub types: Vector<TypeVarId, Ty>,
-    pub const_generics: Vector<ConstGenericVarId, ConstGeneric>,
+    pub regions: IndexMap<RegionId, Region>,
+    pub types: IndexMap<TypeVarId, Ty>,
+    pub const_generics: IndexMap<ConstGenericVarId, ConstantExpr>,
     // TODO: rename to match [GenericParams]?
-    pub trait_refs: Vector<TraitClauseId, TraitRef>,
+    pub trait_refs: IndexMap<TraitClauseId, TraitRef>,
 }
 
 pub type BoxedArgs = Box<GenericArgs>;
 
 /// A value of type `T` bound by regions. We should use `binder` instead but this causes name clash
 /// issues in the derived ocaml visitors.
-/// TODO: merge with `binder`
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct RegionBinder<T> {
     #[charon::rename("binder_regions")]
-    pub regions: Vector<RegionId, RegionVar>,
+    #[serde_state(stateless)]
+    pub regions: IndexMap<RegionId, RegionParam>,
     /// Named this way to highlight accesses to the inner value that might be handling parameters
     /// incorrectly. Prefer using helper methods.
     #[charon::rename("binder_value")]
     pub skip_binder: T,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 #[charon::variants_prefix("BK")]
 pub enum BinderKind {
+    /// The parameters of a generic associated type.
+    TraitType(TraitDeclId, TraitItemName),
     /// The parameters of a trait method. Used in the `methods` lists in trait decls and trait
     /// impls.
     TraitMethod(TraitDeclId, TraitItemName),
@@ -223,7 +259,7 @@ pub enum BinderKind {
 /// A value of type `T` bound by generic parameters. Used in any context where we're adding generic
 /// parameters that aren't on the top-level item, e.g. `for<'a>` clauses (uses `RegionBinder` for
 /// now), trait methods, GATs (TODO).
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct Binder<T> {
     #[charon::rename("binder_params")]
     pub params: GenericParams,
@@ -244,23 +280,29 @@ pub struct Binder<T> {
 /// be filled. We group in a different place the predicates which are not
 /// trait clauses, because those enforce constraints but do not need to
 /// be filled with witnesses/instances.
-#[derive(Default, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+// FIXME: we use `IndexMap` instead of `IndexVec` because the `remove_marker_traits` pass would
+// otherwise need to renumber clauses across the whole crate and that was too painful.
+#[derive(
+    Default, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut,
+)]
 pub struct GenericParams {
-    pub regions: Vector<RegionId, RegionVar>,
-    pub types: Vector<TypeVarId, TypeVar>,
-    pub const_generics: Vector<ConstGenericVarId, ConstGenericVar>,
+    #[serde_state(stateless)]
+    pub regions: IndexMap<RegionId, RegionParam>,
+    #[serde_state(stateless)]
+    pub types: IndexMap<TypeVarId, TypeParam>,
+    pub const_generics: IndexMap<ConstGenericVarId, ConstGenericParam>,
     // TODO: rename to match [GenericArgs]?
-    pub trait_clauses: Vector<TraitClauseId, TraitClause>,
+    pub trait_clauses: IndexMap<TraitClauseId, TraitParam>,
     /// The first region in the pair outlives the second region
     pub regions_outlive: Vec<RegionBinder<RegionOutlives>>,
     /// The type outlives the region
     pub types_outlive: Vec<RegionBinder<TypeOutlives>>,
     /// Constraints over trait associated types
-    pub trait_type_constraints: Vector<TraitTypeConstraintId, RegionBinder<TraitTypeConstraint>>,
+    pub trait_type_constraints: IndexMap<TraitTypeConstraintId, RegionBinder<TraitTypeConstraint>>,
 }
 
 /// Where a given predicate came from.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub enum PredicateOrigin {
     // Note: we use this for globals too, but that's only available with an unstable feature.
     // ```
@@ -315,7 +357,7 @@ pub type ByteCount = u64;
 pub struct VariantLayout {
     /// The offset of each field.
     #[drive(skip)]
-    pub field_offsets: Vector<FieldId, ByteCount>,
+    pub field_offsets: IndexVec<FieldId, ByteCount>,
     /// Whether the variant is uninhabited, i.e. has any valid possible value.
     /// Note that uninhabited types can have arbitrary layouts.
     #[drive(skip)]
@@ -368,7 +410,6 @@ pub struct Layout {
     #[drive(skip)]
     pub align: Option<ByteCount>,
     /// The discriminant's layout, if any. Only relevant for types with multiple variants.
-    ///
     #[drive(skip)]
     pub discriminant_layout: Option<DiscriminantLayout>,
     /// Whether the type is uninhabited, i.e. has any valid value at all.
@@ -378,28 +419,64 @@ pub struct Layout {
     pub uninhabited: bool,
     /// Map from `VariantId` to the corresponding field layouts. Structs are modeled as having
     /// exactly one variant, unions as having no variant.
-    pub variant_layouts: Vector<VariantId, VariantLayout>,
+    pub variant_layouts: IndexVec<VariantId, VariantLayout>,
 }
-
-/// A placeholder for the vtable of a trait object.
-/// To be implemented in the future when `dyn Trait` is fully supported.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut)]
-pub struct VTable;
 
 /// The metadata stored in a pointer. That's the information stored in pointers alongside
 /// their address. It's empty for `Sized` types, and interesting for unsized
 /// aka dynamically-sized types.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, SerializeState, DeserializeState, Drive, DriveMut, Hash)]
+#[serde_state(default_state = ())]
 pub enum PtrMetadata {
     /// Types that need no metadata, namely `T: Sized` types.
     #[charon::rename("NoMetadata")]
     None,
-    /// Metadata for `[T]`, `str`, and user-defined types
-    /// that directly or indirectly contain one of these two.
+    /// Metadata for `[T]` and `str`, and user-defined types
+    /// that directly or indirectly contain one of the two.
+    /// Of type `usize`.
+    /// Notably, length for `[T]` denotes the number of elements in the slice.
+    /// While for `str` it denotes the number of bytes in the string.
     Length,
-    /// Metadata for `dyn Trait` and user-defined types
-    /// that directly or indirectly contain a `dyn Trait`.
-    VTable(VTable),
+    /// Metadata for `dyn Trait`, referring to the vtable struct,
+    /// also for user-defined types that directly or indirectly contain a `dyn Trait`.
+    /// Of type `&'static vtable`
+    VTable(TypeDeclRef),
+    /// Unknown due to generics, but will inherit from the given type.
+    /// This is consistent with `<Ty as Pointee>::Metadata`.
+    /// Of type `TyKind::Metadata(Ty)`.
+    InheritFrom(Ty),
+}
+
+/// Describes which layout algorithm is used for representing the corresponding type.
+/// Depends on the `#[repr(...)]` used.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ReprAlgorithm {
+    /// The default layout algorithm. Used without an explicit `ŗepr` or for `repr(Rust)`.
+    Rust,
+    /// The C layout algorithm as enforced by `repr(C)`.
+    C,
+}
+
+/// Describes modifiers to the alignment and packing of the corresponding type.
+/// Represents `repr(align(n))` and `repr(packed(n))`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum AlignmentModifier {
+    Align(ByteCount),
+    Pack(ByteCount),
+}
+
+/// The representation options as annotated by the user.
+///
+/// NOTE: This does not include less common/unstable representations such as `#[repr(simd)]`
+/// or the compiler internal `#[repr(linear)]`. Similarly, enum discriminant representations
+/// are encoded in [`Variant::discriminant`] and [`DiscriminantLayout`] instead.
+/// This only stores whether the discriminant type was derived from an explicit annotation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ReprOptions {
+    pub repr_algo: ReprAlgorithm,
+    pub align_modif: Option<AlignmentModifier>,
+    pub transparent: bool,
+    pub explicit_discr_type: bool,
 }
 
 /// A type declaration.
@@ -415,7 +492,7 @@ pub enum PtrMetadata {
 ///
 /// A type can only be an ADT (structure or enumeration), as type aliases are
 /// inlined in MIR.
-#[derive(Debug, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct TypeDecl {
     #[drive(skip)]
     pub def_id: TypeDeclId,
@@ -423,29 +500,32 @@ pub struct TypeDecl {
     pub item_meta: ItemMeta,
     pub generics: GenericParams,
     /// The context of the type: distinguishes top-level items from closure-related items.
-    pub src: ItemKind,
+    pub src: ItemSource,
     /// The type kind: enum, struct, or opaque.
     pub kind: TypeDeclKind,
     /// The layout of the type. Information may be partial because of generics or dynamically-
     /// sized types. If rustc cannot compute a layout, it is `None`.
+    #[serde_state(stateless)]
     pub layout: Option<Layout>,
     /// The metadata associated with a pointer to the type.
-    /// This is `None` if we could not compute it because of generics.
-    /// The information is *accurate* if it is `Some`
-    ///     while if it is `None`, it may still be theoretically computable
-    ///     but due to some limitation to be fixed, we are unable to obtain the info.
-    /// See `translate_types::{impl ItemTransCtx}::translate_ptr_metadata` for more details.
-    pub ptr_metadata: Option<PtrMetadata>,
+    pub ptr_metadata: PtrMetadata,
+    /// The representation options of this type declaration as annotated by the user.
+    /// Is `None` for foreign type declarations.
+    #[drive(skip)]
+    #[serde_state(stateless)]
+    pub repr: Option<ReprOptions>,
 }
 
 generate_index_type!(VariantId, "Variant");
 generate_index_type!(FieldId, "Field");
 
-#[derive(Debug, Clone, EnumIsA, EnumAsGetters, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(
+    Debug, Clone, EnumIsA, EnumAsGetters, SerializeState, DeserializeState, Drive, DriveMut,
+)]
 pub enum TypeDeclKind {
-    Struct(Vector<FieldId, Field>),
-    Enum(Vector<VariantId, Variant>),
-    Union(Vector<FieldId, Field>),
+    Struct(IndexVec<FieldId, Field>),
+    Enum(IndexVec<VariantId, Variant>),
+    Union(IndexVec<FieldId, Field>),
     /// An opaque type.
     ///
     /// Either a local type marked as opaque, or an external type.
@@ -460,7 +540,8 @@ pub enum TypeDeclKind {
     Error(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
+#[serde_state(stateless)]
 pub struct Variant {
     pub span: Span,
     #[drive(skip)]
@@ -468,14 +549,16 @@ pub struct Variant {
     #[charon::rename("variant_name")]
     #[drive(skip)]
     pub name: String,
-    pub fields: Vector<FieldId, Field>,
-    /// The discriminant value outputted by `std::mem::discriminant` for this variant. This is
-    /// different than the discriminant stored in memory (the one controlled by `repr`).
-    /// That one is described by [`DiscriminantLayout`] and [`TagEncoding`].
-    pub discriminant: ScalarValue,
+    #[serde_state(stateful)]
+    pub fields: IndexVec<FieldId, Field>,
+    /// The discriminant value outputted by `std::mem::discriminant` for this variant. This can be
+    /// different than the value stored in memory (called `tag`). That one is described by
+    /// [`DiscriminantLayout`] and [`TagEncoding`].
+    pub discriminant: Literal,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
+#[serde_state(stateless)]
 pub struct Field {
     pub span: Span,
     #[drive(skip)]
@@ -484,6 +567,7 @@ pub struct Field {
     #[drive(skip)]
     pub name: Option<String>,
     #[charon::rename("field_ty")]
+    #[serde_state(stateful)]
     pub ty: Ty,
 }
 
@@ -594,15 +678,33 @@ pub enum FloatTy {
     EnumIsA,
     Serialize,
     Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
     Ord,
     PartialOrd,
 )]
 #[charon::variants_prefix("R")]
+#[serde_state(stateless)]
 pub enum RefKind {
     Mut,
     Shared,
+}
+
+/// The nature of locations where a given lifetime parameter is used. If this lifetime ever flows
+/// to be used as the lifetime of a mutable reference `&'a mut` then we consider it mutable.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, EnumIsA,
+)]
+#[charon::variants_prefix("Lt")]
+pub enum LifetimeMutability {
+    /// A lifetime that is used for a mutable reference.
+    Mutable,
+    /// A lifetime used only in shared references.
+    Shared,
+    /// A lifetime for which we couldn't/didn't compute mutability.
+    Unknown,
 }
 
 /// Type identifier.
@@ -617,8 +719,8 @@ pub enum RefKind {
     VariantName,
     EnumAsGetters,
     EnumIsA,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
     Hash,
@@ -642,11 +744,12 @@ pub enum TypeId {
     /// the [Ty] type. We decided to move them to built-in types as it allows
     /// for more uniform treatment throughout the codebase.
     #[charon::rename("TBuiltin")]
+    #[serde_state(stateless)]
     Builtin(BuiltinTy),
 }
 
 /// Reference to a type declaration or builtin type.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct TypeDeclRef {
     pub id: TypeId,
     pub generics: BoxedArgs,
@@ -665,6 +768,8 @@ pub struct TypeDeclRef {
     VariantIndexArity,
     Serialize,
     Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
     Hash,
@@ -673,6 +778,7 @@ pub struct TypeDeclRef {
 )]
 #[charon::rename("LiteralType")]
 #[charon::variants_prefix("T")]
+#[serde_state(stateless)]
 pub enum LiteralTy {
     Int(IntTy),
     UInt(UIntTy),
@@ -681,67 +787,13 @@ pub enum LiteralTy {
     Char,
 }
 
-/// Const Generic Values. Either a primitive value, or a variable corresponding to a primitve value
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    Clone,
-    VariantName,
-    EnumIsA,
-    EnumAsGetters,
-    VariantIndexArity,
-    Serialize,
-    Deserialize,
-    Drive,
-    DriveMut,
-    Hash,
-)]
-#[charon::variants_prefix("Cg")]
-pub enum ConstGeneric {
-    /// A global constant
-    Global(GlobalDeclId),
-    /// A const generic variable
-    Var(ConstGenericDbVar),
-    /// A concrete value
-    Value(Literal),
-}
-
 /// A type.
 ///
 /// Warning: the `DriveMut` impls of `Ty` needs to clone and re-hash the modified type to maintain
 /// the hash-consing invariant. This is expensive, avoid visiting types mutably when not needed.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
-pub struct Ty(HashConsed<TyKind>);
-
-impl Ty {
-    pub fn new(kind: TyKind) -> Self {
-        Ty(HashConsed::new(kind))
-    }
-
-    pub fn kind(&self) -> &TyKind {
-        self.0.inner()
-    }
-
-    pub fn with_kind_mut<R>(&mut self, f: impl FnOnce(&mut TyKind) -> R) -> R {
-        self.0.with_inner_mut(f)
-    }
-}
-
-impl<'s, V: Visit<'s, TyKind>> Drive<'s, V> for Ty {
-    fn drive_inner(&'s self, v: &mut V) -> std::ops::ControlFlow<V::Break> {
-        self.0.drive_inner(v)
-    }
-}
-/// This explores the type mutably by cloning and re-hashing afterwards.
-impl<'s, V> DriveMut<'s, V> for Ty
-where
-    for<'a> V: VisitMut<'a, TyKind>,
-{
-    fn drive_inner_mut(&'s mut self, v: &mut V) -> std::ops::ControlFlow<V::Break> {
-        self.0.drive_inner_mut(v)
-    }
-}
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SerializeState, DeserializeState, Drive, DriveMut)]
+#[serde_state(state_implements = HashConsSerializerState)] // Avoid corecursive impls due to perfect derive
+pub struct Ty(pub HashConsed<TyKind>);
 
 #[derive(
     Debug,
@@ -754,13 +806,12 @@ where
     EnumAsGetters,
     EnumToGetters,
     VariantIndexArity,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
 #[charon::variants_prefix("T")]
-#[charon::rename("Ty")]
 pub enum TyKind {
     /// An ADT.
     /// Note that here ADTs are very general. They can be:
@@ -812,7 +863,7 @@ pub enum TyKind {
     /// contains a callable function.
     /// This is a function signature with limited generics: it only supports lifetime generics, not
     /// other kinds of generics.
-    FnPtr(RegionBinder<(Vec<Ty>, Ty)>),
+    FnPtr(RegionBinder<FunSig>),
     /// The unique type associated with each function item. Each function item is given
     /// a unique generic type that takes as input the function's early-bound generics. This type
     /// is not generally nameable in Rust; it's a ZST (there's a unique value), and a value of that type
@@ -822,6 +873,13 @@ pub enum TyKind {
     /// variables (those that could appear in a function pointer type like `for<'a> fn(&'a u32)`),
     /// we need to bind them here.
     FnDef(RegionBinder<FnPtr>),
+    /// As a marker of taking out metadata from a given type
+    /// The internal type is assumed to be a type variable
+    PtrMetadata(Ty),
+    /// An array type `[T; N]`
+    Array(Ty, Box<ConstantExpr>),
+    /// A slice type `[T]`
+    Slice(Ty),
     /// A type that could not be computed or was incorrect.
     #[drive(skip)]
     Error(String),
@@ -859,10 +917,6 @@ pub enum BuiltinTy {
     /// Boxes are de facto a primitive type.
     Box,
     /// Primitive type
-    Array,
-    /// Primitive type
-    Slice,
-    /// Primitive type
     Str,
 }
 
@@ -898,8 +952,9 @@ impl ClosureKind {
 }
 
 /// Additional information for closures.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct ClosureInfo {
+    #[serde_state(stateless)]
     pub kind: ClosureKind,
     /// The `FnOnce` implementation of this closure -- always exists.
     pub fn_once_impl: RegionBinder<TraitImplRef>,
@@ -908,22 +963,21 @@ pub struct ClosureInfo {
     /// The `Fn` implementation of this closure, if any.
     pub fn_impl: Option<RegionBinder<TraitImplRef>>,
     /// The signature of the function that this closure represents.
-    pub signature: RegionBinder<(Vec<Ty>, Ty)>,
+    pub signature: RegionBinder<FunSig>,
 }
 
 /// A function signature.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct FunSig {
     /// Is the function unsafe or not
     #[drive(skip)]
     pub is_unsafe: bool,
-    pub generics: GenericParams,
     pub inputs: Vec<Ty>,
     pub output: Ty,
 }
 
 /// The contents of a `dyn Trait` type.
-#[derive(Debug, Clone, Hash, PartialEq, Eq, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct DynPredicate {
     /// This binder binds a single type `T`, which is considered existentially quantified. The
     /// predicates in the binder apply to `T` and represent the `dyn Trait` constraints.

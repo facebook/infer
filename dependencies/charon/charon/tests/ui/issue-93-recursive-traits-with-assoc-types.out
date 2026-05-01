@@ -19,7 +19,7 @@ pub trait Trait1<Self>
     parent_clause1 : [@TraitClause1]: Sized<Self::T>
     parent_clause2 : [@TraitClause2]: Trait2<Self::T>
     type T
-    non-dyn-compatible
+    vtable: test_crate::Trait1::{vtable}<Self::T>
 }
 
 // Full name: test_crate::Trait2
@@ -29,7 +29,7 @@ pub trait Trait2<Self>
     parent_clause1 : [@TraitClause1]: Trait1<Self>
     parent_clause2 : [@TraitClause2]: Sized<Self::U>
     type U
-    non-dyn-compatible
+    vtable: test_crate::Trait2::{vtable}<Self::U, Self::parent_clause1::T>
 }
 
 

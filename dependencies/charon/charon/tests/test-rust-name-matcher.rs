@@ -30,9 +30,7 @@ fn parse_pattern_attr(a: &Attribute) -> Option<(bool, Pattern)> {
     }
 }
 
-#[test]
-fn test_name_matcher() -> anyhow::Result<()> {
-    let crate_data = util::translate_rust_text(&std::fs::read_to_string(TEST_FILE)?, &[])?;
+fn test_crate_data(crate_data: &TranslatedCrate) -> anyhow::Result<()> {
     let fmt_ctx = &crate_data.into_fmt();
 
     for item in crate_data.all_items() {
@@ -63,4 +61,13 @@ fn test_name_matcher() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+#[test]
+fn test_name_matcher() -> anyhow::Result<()> {
+    let code = &std::fs::read_to_string(TEST_FILE)?;
+    let crate_data = util::translate_rust_text(code, &[])?;
+    test_crate_data(&crate_data)?;
+    let mono_crate_data = util::translate_rust_text(code, &["--monomorphize"])?;
+    test_crate_data(&mono_crate_data)
 }
