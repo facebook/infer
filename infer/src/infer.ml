@@ -62,7 +62,7 @@ let setup () =
   in
   if has_result_dir then (
     DBWriter.start () ;
-    if Config.is_originator then ResultsDir.RunState.add_run_to_sequence () ) ;
+    if CLOpt.is_originator [@warning "-3"] then ResultsDir.RunState.add_run_to_sequence () ) ;
   has_result_dir
 
 
