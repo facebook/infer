@@ -24,6 +24,7 @@
 <a href="#DESCRIPTION">DESCRIPTION</a><br>
 <a href="#OPTIONS">OPTIONS</a><br>
 <a href="#ANALYSIS SCHEDULER OPTIONS">ANALYSIS SCHEDULER OPTIONS</a><br>
+<a href="#ANDROID OPTIONS">ANDROID OPTIONS</a><br>
 <a href="#BUFFER OVERRUN OPTIONS">BUFFER OVERRUN OPTIONS</a><br>
 <a href="#CLANG OPTIONS">CLANG OPTIONS</a><br>
 <a href="#ERLANG OPTIONS">ERLANG OPTIONS</a><br>
@@ -101,10 +102,12 @@ checkers (Conversely:
 
 <p style="margin-left:17%;">Activates: <i>bufferoverrun</i>
 checker: InferBO is a detector for out-of-bounds array
-accesses. (Conversely: <b>--no-bufferoverrun</b>)</p>
+accesses.</p>
 
-
-<p style="margin-left:11%;"><b>--bufferoverrun-only</b></p>
+<p style="margin-left:11%;"><b>DEPRECATED</b>: Use Pulse
+instead. <br>
+(Conversely: <b>--no-bufferoverrun</b>) <b><br>
+--bufferoverrun-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
 <i>bufferoverrun</i> and disable all other checkers
@@ -117,6 +120,20 @@ accesses. (Conversely: <b>--no-bufferoverrun</b>)</p>
 list of source files from which reactive analysis should
 start. Source files should be specified relative to project
 root or be absolute</p>
+
+<p style="margin-left:11%;"><b>--config-gating</b></p>
+
+<p style="margin-left:17%;">Activates: <i>config-gating</i>
+checker: Determines which config flags gate the execution of
+each line of code. (Conversely:
+<b>--no-config-gating</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--config-gating-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+<i>config-gating</i> and disable all other checkers
+(Conversely: <b>--no-config-gating-only</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--config-impact-analysis</b></p>
@@ -216,9 +233,9 @@ reporting. (Conversely: <b>--deduplicate</b>)</p>
 <b>--fragment-retains-view</b>,
 <b>--inefficient-keyset-iterator</b>, <b>--liveness</b>,
 <b>--parameter-not-null-checked</b>, <b>--pulse</b>,
-<b>--racerd</b>, <b>--siof</b>, <b>--self-in-block</b>,
-<b>--starvation</b> (Conversely:
-<b>--default-checkers</b>)</p>
+<b>--racerd</b>, <b>--self-in-block</b>,
+<b>--starvation</b>, <b>--swift-objc-nullability</b>
+(Conversely: <b>--default-checkers</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--detach-analysis-dependency</b></p>
@@ -288,6 +305,10 @@ checker: Detects functions with potential side-effects. Same
 as &quot;purity&quot;, but implemented on top of Pulse.</p>
 
 <p style="margin-left:11%;"><i>ACTIVATES</i>: <i>pulse</i>
+<b><br>
+DEPRECATED</b>: This checker is deprecated and will be
+removed in a <br>
+future release. <br>
 (Conversely: <b>--no-impurity</b>) <b><br>
 --impurity-only</b></p>
 
@@ -406,11 +427,13 @@ dependencies that cannot be found. (Conversely:
 
 <p style="margin-left:17%;">Activates: <i>loop-hoisting</i>
 checker: Detect opportunities to hoist function calls that
-are invariant outside of loop bodies for efficiency.
-(Conversely: <b>--no-loop-hoisting</b>)</p>
+are invariant outside of loop bodies for efficiency.</p>
 
-
-<p style="margin-left:11%;"><b>--loop-hoisting-only</b></p>
+<p style="margin-left:11%;"><b>DEPRECATED</b>: This checker
+is deprecated and will be removed in a <br>
+future release. <br>
+(Conversely: <b>--no-loop-hoisting</b>) <b><br>
+--loop-hoisting-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable
 <i>loop-hoisting</i> and disable all other checkers
@@ -473,6 +496,13 @@ cannot annotate them accordingly.</p>
 
 <p style="margin-left:17%;">Macro for executing Objective-C
 blocks safely.</p>
+
+
+<p style="margin-left:11%;"><b>--ondemand-callchain-limit</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">If enabled, the number of
+consecutive recursive ondemand call is bounded</p>
 
 
 <p style="margin-left:11%;"><b>--ondemand-recursion-restart-limit</b>
@@ -557,10 +587,13 @@ and disable all other checkers (Conversely:
 
 <p style="margin-left:17%;">Activates: <i>purity</i>
 checker: Detects pure (side-effect-free) functions. A
-different implementation of &quot;impurity&quot;.
-(Conversely: <b>--no-purity</b>)</p>
+different implementation of &quot;impurity&quot;.</p>
 
-<p style="margin-left:11%;"><b>--purity-only</b></p>
+<p style="margin-left:11%;"><b>DEPRECATED</b>: This checker
+is deprecated and will be removed in a <br>
+future release. <br>
+(Conversely: <b>--no-purity</b>) <b><br>
+--purity-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable <i>purity</i>
 and disable all other checkers (Conversely:
@@ -681,14 +714,17 @@ all SIL instructions in all procedure bodies conform to a
 <i>sil-validation</i> and disable all other checkers
 (Conversely: <b>--no-sil-validation-only</b>)</p>
 
-<p style="margin-left:11%;"><b>--no-siof</b></p>
+<p style="margin-left:11%;"><b>--siof</b></p>
 
-<p style="margin-left:17%;">Deactivates: <i>siof</i>
-checker: Catches Static Initialization Order Fiascos in C++,
-that can lead to subtle, compiler-version-dependent errors.
-(Conversely: <b>--siof</b>)</p>
+<p style="margin-left:17%;">Activates: <i>siof</i> checker:
+Catches Static Initialization Order Fiascos in C++, that can
+lead to subtle, compiler-version-dependent errors.</p>
 
-<p style="margin-left:11%;"><b>--siof-only</b></p>
+<p style="margin-left:11%;"><b>DEPRECATED</b>: This checker
+is deprecated and will be removed in a <br>
+future release. <br>
+(Conversely: <b>--no-siof</b>) <b><br>
+--siof-only</b></p>
 
 <p style="margin-left:17%;">Activates: Enable <i>siof</i>
 and disable all other checkers (Conversely:
@@ -754,12 +790,29 @@ dispatch_once is called from a static constructor.
 other checkers (Conversely:
 <b>--no-static-constructor-stall-checker-only</b>)</p>
 
+
+<p style="margin-left:11%;"><b>--no-swift-objc-nullability</b></p>
+
+<p style="margin-left:17%;">Deactivates:
+<i>swift-objc-nullability</i> checker: Detects missing
+nullability annotations in Objective-C methods called from
+Swift, which can lead to runtime crashes via Implicitly
+Unwrapped Optionals. (Conversely:
+<b>--swift-objc-nullability</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--swift-objc-nullability-only</b></p>
+
+<p style="margin-left:17%;">Activates: Enable
+<i>swift-objc-nullability</i> and disable all other checkers
+(Conversely: <b>--no-swift-objc-nullability-only</b>)</p>
+
 <p style="margin-left:11%;"><b>--timeout</b>
 <i>float</i></p>
 
 <p style="margin-left:17%;">Time after which any checker
 should give up analysing the current function or method, in
-seconds. Not implemented for multicore mode</p>
+seconds. Defaults to 120 seconds.</p>
 
 
 <p style="margin-left:11%;"><b>--top-longest-proc-duration-size</b>
@@ -870,6 +923,19 @@ this mechanism gives a higher chance of success compared
 with having to read the previous results database
 successfully as fewer datatypes are involved. (Conversely:
 <b>--no-store-analysis-schedule</b>)</p>
+
+<h2>ANDROID OPTIONS
+<a name="ANDROID OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--android-view-class-list</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">A class C is considered a view
+when it has a supertype that matches one of these classes.
+The default is [&lsquo;android.view.View&lsquo;].</p>
 
 <h2>BUFFER OVERRUN OPTIONS
 <a name="BUFFER OVERRUN OPTIONS"></a>
@@ -1059,26 +1125,57 @@ in the trace that are nested in some loop. (Conversely:
 <p style="margin-left:11%;"><b>--annotation-reachability-custom-models</b>
 <i>json</i></p>
 
-<p style="margin-left:17%;">Specify a map from annotations
-to lists of regexps to treat matching methods as if they had
-the annotation.</p>
+<p style="margin-left:17%;">Use regular expressions to
+treat methods as if they were annotated. The format is a map
+from</p>
 
-<p style="margin-left:11%;">Example format:
-{&quot;Annotation&quot;:
-[&quot;com\\.Myclass\\.foo.*&quot;]} <b><br>
+<p style="margin-left:11%;">annotations to objects with an
+&quot;allow&quot; and &quot;block&quot; field, <br>
+which are both lists of regular <br>
+expressions. A method is treated as annotated if any <br>
+matcher in the allow list matches AND <br>
+none of the matchers in the block list matches. If there
+<br>
+are only &quot;allow&quot; matchers, a list <br>
+can be given instead of the object. <br>
+Example 1: {&quot;Annotation&quot;:
+[&quot;com\\.Myclass\\.foo.*&quot;]} <br>
+Example 2: {&quot;Annotation&quot;: {&quot;allow&quot;:
+[&quot;foo.*&quot;], &quot;block&quot;: <br>
+[&quot;foobar&quot;]}} <b><br>
 --annotation-reachability-custom-pairs</b> <i>json</i></p>
 
 <p style="margin-left:17%;">Specify custom sources/sinks,
 and optionally sanitizers for the annotation reachability
-checker</p>
+checker.</p>
 
-<p style="margin-left:11%;">Example format: for custom
-annotations <br>
+<p style="margin-left:11%;">The optional
+&quot;minimize_sinks&quot; (default: true) and <br>
+&quot;minimize_sources&quot; (default: false) flags control
+path <br>
+minimization. <br>
+When &quot;minimize_sinks&quot; is true, paths where a
+prefix is also a <br>
+source-to-sink path are not reported. For example if there
+is a <br>
+source() -&gt; sink1() -&gt; sink2() path then only source()
+-&gt; sink1() <br>
+will be reported. <br>
+When &quot;minimize_sources&quot; is true, paths where a
+suffix is also a <br>
+source-to-sink path are not reported. For example if there
+is a <br>
+source1() -&gt; source2() -&gt; sink() path then only
+source2() -&gt; <br>
+sink() will be reported. <br>
+Example format: for custom annotations <br>
 com.my.annotation.{Source1,Source2,Sink1,Sanitizer1} <br>
 { &quot;sources&quot; : [&quot;Source1&quot;,
 &quot;Source2&quot;], &quot;sinks&quot; :
 [&quot;Sink1&quot;], <br>
-&quot;sanitizers&quot;: [&quot;Sanitizer1&quot;] } <b><br>
+&quot;sanitizers&quot;: [&quot;Sanitizer1&quot;],
+&quot;minimize_sources&quot;: true, <br>
+&quot;minimize_sinks&quot;: false } <b><br>
 --annotation-reachability-expensive</b></p>
 
 <p style="margin-left:17%;">Activates: check if methods
@@ -1086,25 +1183,6 @@ annotated with @PerformanceCritical can call expensive
 methods (annotated @Expensive or modeled, with annotation
 reachability checker) (Conversely:
 <b>--no-annotation-reachability-expensive</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--no-annotation-reachability-minimize-sinks</b></p>
-
-<p style="margin-left:17%;">Deactivates: do not report
-paths where a prefix is also a source to sink path. For
-example if there is a source() -&gt; sink1() -&gt; sink2()
-path then only source() -&gt; sink1() will be reported.
-(Conversely:
-<b>--annotation-reachability-minimize-sinks</b>)</p>
-
-
-<p style="margin-left:11%;"><b>--annotation-reachability-minimize-sources</b></p>
-
-<p style="margin-left:17%;">Activates: do not report paths
-where a suffix is also a source to sink path. For example if
-there is a source1() -&gt; source2() -&gt; sink() path then
-only source2() -&gt; sink() will be reported. (Conversely:
-<b>--no-annotation-reachability-minimize-sources</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--annotation-reachability-no-allocation</b></p>
@@ -1261,6 +1339,13 @@ increase the current number of Pulse disjuncts. (Conversely:
 pulse will only explore one path. Can be used on
 pathologically large procedures to prevent too-big states
 from being produced.</p>
+
+<p style="margin-left:11%;"><b>--pulse-eternal</b></p>
+
+<p style="margin-left:17%;">Activates: [EXPERIMENTAL]
+latest iteration of the non-termination loop prover based on
+the UNTER under-approximate theory (Conversely:
+<b>--no-pulse-eternal</b>)</p>
 
 
 <p style="margin-left:11%;"><b>--pulse-inline-global-init-func-pointer</b></p>
@@ -1537,6 +1622,16 @@ disjunctive reasoning of Pulse. (Conversely:
 elements and structure fields to keep track of for a given
 address.</p>
 
+
+<p style="margin-left:11%;"><b>--pulse-retain-cycle-blocklist-pattern</b>
+<i>string</i></p>
+
+<p style="margin-left:17%;">Skip reporting retain cycles
+which include an expression that matches this pattern. It is
+useful when developers use naming conventions to signal that
+certain variables are expected to be part of a retain
+cycle.</p>
+
 <p style="margin-left:11%;"><b>--pulse-skip-procedures</b>
 <i>regex</i></p>
 
@@ -1740,6 +1835,9 @@ specified values <br>
 - &quot;allocation&quot;: <i>(for taint sources only)</i>
 <br>
 match allocations of the exact class name supplied <br>
+- &quot;builtin&quot;: match a substring of the builtin name
+(currently <br>
+only for Hack) <br>
 - &quot;block_passed_to&quot;: <i>(for taint sources
 only)</i> <br>
 match a substring of the procedure name that the block is
@@ -1794,6 +1892,27 @@ source shouldn't be flagged. <b><br>
 
 <p style="margin-left:17%;">Stop exploring new paths after
 <i>int</i> loop iterations</p>
+
+
+<p style="margin-left:11%;"><b>--python-async-function-naming-convention-regex</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Consider any function call that
+matches as returning an unawaited value</p>
+
+
+<p style="margin-left:11%;"><b>--python-async-method-naming-convention-regex</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Consider any method call that
+matches as returning an unawaited value</p>
+
+
+<p style="margin-left:11%;"><b>--python-decorator-modelled-as-await-async</b>
+<i>+string</i></p>
+
+<p style="margin-left:17%;">Any decorator that should be
+modelled as the await_async decorator.</p>
 
 <h2>RACERD CHECKER OPTIONS
 <a name="RACERD CHECKER OPTIONS"></a>

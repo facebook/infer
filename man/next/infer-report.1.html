@@ -244,8 +244,10 @@ COMPARED_TO_NULL_AND_DEREFERENCED (disabled by default),
 <br>
 CONDITION_ALWAYS_FALSE (disabled by default), <br>
 CONDITION_ALWAYS_TRUE (disabled by default), <br>
+CONFIG_GATED (enabled by default), <br>
 CONFIG_IMPACT (enabled by default), <br>
 CONFIG_IMPACT_STRICT (disabled by default), <br>
+CONFIG_UNGATED (enabled by default), <br>
 CONFIG_USAGE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE (disabled by default), <br>
 CONSTANT_ADDRESS_DEREFERENCE_LATENT (disabled by default),
@@ -274,6 +276,7 @@ INFERBO_ALLOC_IS_ZERO (enabled by default), <br>
 INFERBO_ALLOC_MAY_BE_BIG (enabled by default), <br>
 INFERBO_ALLOC_MAY_BE_NEGATIVE (enabled by default), <br>
 INFINITE_EXECUTION_TIME (disabled by default), <br>
+INFINITE_LOOP (disabled by default), <br>
 INFINITE_RECURSION (disabled by default), <br>
 INTEGER_OVERFLOW_L1 (enabled by default), <br>
 INTEGER_OVERFLOW_L2 (enabled by default), <br>
@@ -290,6 +293,9 @@ LOCK_CONSISTENCY_VIOLATION (enabled by default), <br>
 LOCK_ON_UI_THREAD (disabled by default), <br>
 MEMORY_LEAK_C (enabled by default), <br>
 MEMORY_LEAK_CPP (disabled by default), <br>
+MISSING_NULLABILITY_ANNOTATION (enabled by default), <br>
+MISSING_NULLABILITY_ANNOTATION_PULSE (enabled by default),
+<br>
 MISSING_REQUIRED_PROP (enabled by default), <br>
 MIXED_SELF_WEAKSELF (enabled by default), <br>
 MODIFIES_IMMUTABLE (enabled by default), <br>
@@ -454,9 +460,10 @@ qualifier | suggestion | severity | line | column |
 procedure | <br>
 procedure_start_line | file | bug_trace | key | hash |
 line_offset | <br>
-qualifier_contains_potential_exception_note | taint_extra |
-<br>
-transitive_callees_extra | suppressed | autofix }</i></p>
+qualifier_contains_potential_exception_note | <br>
+may_depend_on_an_unknown_value | taint_extra |
+transitive_callees_extra <br>
+| suppressed | autofix }</i></p>
 
 <p style="margin-left:17%;">Fields to emit with
 <b>--issues-tests</b></p>
@@ -641,7 +648,14 @@ additional documentation.</p>
 
 
 
-<p style="margin-left:11%; margin-top: 1em"><b>--pulse-report-flows-from-taint-source</b>
+<p style="margin-left:11%; margin-top: 1em"><b>--pulse-report-assert</b></p>
+
+<p style="margin-left:17%;">Activates: Reports Assertion
+Error in a failed assertion. Used in C code. (Conversely:
+<b>--no-pulse-report-assert</b>)</p>
+
+
+<p style="margin-left:11%;"><b>--pulse-report-flows-from-taint-source</b>
 <i>procname</i></p>
 
 <p style="margin-left:17%;">Report data flows which
@@ -653,6 +667,14 @@ originate at taint source <b>procname</b></p>
 
 <p style="margin-left:17%;">Report data flows which pass
 through taint sink <b>procname</b></p>
+
+
+<p style="margin-left:11%;"><b>--pulse-report-issues-reachable-from</b>
+<i>+regex</i></p>
+
+<p style="margin-left:17%;">Re-raise issues that Pulse was
+able to propagate all the way to procedures matching one of
+the given regexes</p>
 
 <h2>ENVIRONMENT
 <a name="ENVIRONMENT"></a>

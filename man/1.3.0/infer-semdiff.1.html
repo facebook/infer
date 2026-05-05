@@ -1,0 +1,210 @@
+<!-- Creator     : groff version 1.22.4 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta name="generator" content="groff -Thtml, see www.gnu.org">
+<meta http-equiv="Content-Type" content="text/html; charset=US-ASCII">
+<meta name="Content-Style" content="text/css">
+<style type="text/css">
+       p       { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       pre     { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       table   { margin-top: 0; margin-bottom: 0; vertical-align: top }
+       h1      { text-align: center }
+</style>
+<title>infer-semdiff</title>
+
+</head>
+<body>
+
+<h1 align="center">infer-semdiff</h1>
+
+<a href="#NAME">NAME</a><br>
+<a href="#SYNOPSIS">SYNOPSIS</a><br>
+<a href="#DESCRIPTION">DESCRIPTION</a><br>
+<a href="#OPTIONS">OPTIONS</a><br>
+<a href="#ENVIRONMENT">ENVIRONMENT</a><br>
+<a href="#FILES">FILES</a><br>
+<a href="#SEE ALSO">SEE ALSO</a><br>
+
+<hr>
+
+
+<h2>NAME
+<a name="NAME"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">infer-semdiff -
+compute the semantic differences between two Python
+programs</p>
+
+<h2>SYNOPSIS
+<a name="SYNOPSIS"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>infer
+semdiff --semdiff-previous</b> <i>file</i>
+<b>--semdiff-current</b> <i>file [options]</i></p>
+
+<h2>DESCRIPTION
+<a name="DESCRIPTION"></a>
+</h2>
+
+
+<p style="margin-left:11%; margin-top: 1em">Given two
+python programs <i>current</i> and <i>previous</i>, compute
+the a report informing if the programs are semantically
+equal. The report is stored in the &quot;semdiff.json&quot;
+file inside the standard infer output folder</p>
+
+<h2>OPTIONS
+<a name="OPTIONS"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>--debug</b>,<b>-g</b></p>
+
+<p style="margin-left:17%;">Activates: Debug mode (also
+sets <b>--debug-level 2</b>, <b>--developer-mode</b>,
+<b>--print-buckets</b>, <b>--print-types</b>,
+<b>--reports-include-ml-loc</b>,
+<b>--no-only-cheap-debug</b>, <b>--trace-error</b>,
+<b>--write-html</b>) (Conversely: <b>--no-debug</b> |
+<b>-G</b>)</p>
+
+<p style="margin-left:11%;"><b>--debug-level</b>
+<i>level</i></p>
+
+<p style="margin-left:17%;">Debug level (sets
+<b>--bo-debug</b> <i>level</i>,
+<b>--debug-level-analysis</b> <i>level</i>,
+<b>--debug-level-capture</b> <i>level</i>):</p>
+
+<p style="margin-left:11%;">- 0: only basic debugging
+enabled <br>
+- 1: verbose debugging enabled <br>
+- 2: very verbose debugging enabled <b><br>
+--debug-level-analysis</b> <i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the analysis.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:11%;"><b>--debug-level-capture</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the capture.
+See <b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:11%;"><b>--debug-level-report</b>
+<i>int</i></p>
+
+<p style="margin-left:17%;">Debug level for the report. See
+<b>--debug-level</b> for accepted values.</p>
+
+<p style="margin-left:11%;"><b>--help</b></p>
+
+<p style="margin-left:17%;">Show this manual</p>
+
+<p style="margin-left:11%;"><b>--help-format</b> <i>{ auto
+| groff | pager | plain }</i></p>
+
+<p style="margin-left:17%;">Show this help in the specified
+format. <b>auto</b> sets the format to <b>plain</b> if the
+environment variable <b>TERM</b> is &quot;dumb&quot; or
+undefined, and to <b>pager</b> otherwise.</p>
+
+<p style="margin-left:11%;"><b>--help-full</b></p>
+
+<p style="margin-left:17%;">Show this manual with all
+internal options in the INTERNAL OPTIONS section</p>
+
+<p style="margin-left:11%;"><b>--semdiff-configuration</b>
+<i>+path</i></p>
+
+<p style="margin-left:17%;">Use configurable rewriting
+engine with the given python file. Can be specified multiple
+times to combine rules from several files.</p>
+
+<p style="margin-left:11%;"><b>--semdiff-current</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Current python program to be
+analysed by semdiff</p>
+
+
+<p style="margin-left:11%;"><b>--semdiff-experimental-eqsat-engine</b></p>
+
+<p style="margin-left:17%;">Activates: Use experimental
+equality saturation rewriting engine. (Conversely:
+<b>--no-semdiff-experimental-eqsat-engine</b>)</p>
+
+<p style="margin-left:11%;"><b>--semdiff-from-json</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Read pre-parsed AST pairs from
+a JSON file (skips parsing, for benchmarking core
+engines).</p>
+
+<p style="margin-left:11%;"><b>--semdiff-previous</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">Previous python program to be
+analysed by semdiff</p>
+
+<p style="margin-left:11%;"><b>--semdiff-test-actions</b>
+<i>,-separated sequence of { currify }</i></p>
+
+<p style="margin-left:17%;">Specify which action must be
+performed in each parsed AST during semdiff tests</p>
+
+
+<p style="margin-left:11%;"><b>--semdiff-test-files-index</b>
+<i>path</i></p>
+
+<p style="margin-left:17%;">A file containing a list of
+newline-separated Python files to run SemDiff tests.</p>
+
+
+<p style="margin-left:11%;"><b>--semdiff-test-show-syntax-errors</b></p>
+
+<p style="margin-left:17%;">Activates: List all syntax
+errors (location and explanation) the Python source parser
+encountered. (Conversely:
+<b>--no-semdiff-test-show-syntax-errors</b>)</p>
+
+<h2>ENVIRONMENT
+<a name="ENVIRONMENT"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>INFER_ARGS</b>,
+<b>INFERCONFIG</b>, <b>INFER_STRICT_MODE</b></p>
+
+<p style="margin-left:17%;">See the ENVIRONMENT section in
+the manual of <b>infer</b>(1).</p>
+
+<h2>FILES
+<a name="FILES"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>.inferconfig</b></p>
+
+<p style="margin-left:17%;">See the FILES section in the
+manual of <b>infer</b>(1).</p>
+
+<h2>SEE ALSO
+<a name="SEE ALSO"></a>
+</h2>
+
+
+
+<p style="margin-left:11%; margin-top: 1em"><b>infer-reportdiff</b>(1)</p>
+<hr>
+</body>
+</html>
