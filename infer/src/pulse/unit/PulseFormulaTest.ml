@@ -592,7 +592,7 @@ let%test_module "inequalities" =
       test (lt x (i 2) = i 0 && x =. i 2) ;
       [%expect
         {|
-        conditions: {x = 2}
+        conditions: {[a1+2] = 2}
         phi: var_eqs: a1=v6
              && linear_eqs: a1 = 0 ∧ x = 2
              && term_eqs: 0=a1∧2=x
@@ -698,7 +698,7 @@ let%test_module "conjunctive normal form" =
         conditions: (empty)
         phi: var_eqs: v6=v7
              && linear_eqs: x = a1+1 ∧ v6 = 1
-             && term_eqs: 1=v6∧[a1+1]=x∧(0<x)=v6∧(0≤x)=v6
+             && term_eqs: 1=v6∧[a1+1]=x∧(0≤[a1+1])=v6
              && intervals: v8≠0
              && atoms: {v8 ≠ 0}
         |}]
@@ -829,7 +829,7 @@ let%test_module "join" =
       test (w = y + z - i 4 && (x >. w || x >. w)) ;
       [%expect
         {|
-        conditions: {[-x+w] < 0}
+        conditions: {[-x+v6-4] < 0}
         phi: var_eqs: w=v7
              && linear_eqs: x = v6+a1-3 ∧ y = -z+v6 ∧ w = v6-4
              && term_eqs: [v6-4]=w∧[v6+a1-3]=x∧[-z+v6]=y
@@ -852,6 +852,61 @@ let%test_module "join" =
     let%expect_test _ =
       test (x =. s "toto" || x =. s "titi") ;
       [%expect {| conditions: (empty) phi: (empty) |}]
+  end )
+
+
+let%test_module "modulo" =
+  ( module struct
+    let%expect_test _ =
+      test (i 4 mod i 2 <> i 0) ;
+      [%expect {| UNSAT: ([Some =0] != [Some =0]) UNSAT according to concrete intervals |}]
+
+
+    let%expect_test _ =
+      test ((x + i 4) mod i 2 = i 0) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: linear_eqs: x = v6-4 ∧ v7 = 0
+             && term_eqs: 0=v7∧[v6-4]=x∧(v6 mod 2)=v7
+             && intervals: v7=0
+        |}]
+
+
+    let%expect_test _ =
+      test ((x + i 4) mod i 2 = i 0 && x mod i 2 = i 1) ;
+      [%expect {| UNSAT: intersection =1*=0 |}]
+
+
+    let%expect_test _ =
+      test ((x + i 4) mod i 2 <> x mod i 2) ;
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 0 ≠ 0 |}]
+
+
+    let%expect_test _ =
+      test ((x + i 4) mod y <> x mod y) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: linear_eqs: x = v6-4
+             && term_eqs: [v6-4]=x∧(v6 mod y)=v7∧([v6-4] mod y)=v8
+             && atoms: {[v7-v8] ≠ 0}
+        |}]
+
+
+    let%expect_test _ =
+      test ((x + i 2) mod i 2 = i 0 && x mod i 2 <> i 0) ;
+      [%expect {| UNSAT: intersection ≠0*=0 |}]
+
+
+    let%expect_test _ =
+      test (y = (x + i 3) mod i 3 && x mod i 3 <> y) ;
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 0 ≠ 0 |}]
+
+
+    let%expect_test _ =
+      test (y = (x - i 3) mod i 3 && x mod i 3 <> y) ;
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 0 ≠ 0 |}]
   end )
 
 
