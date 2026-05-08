@@ -1156,6 +1156,7 @@ end = struct
                 (* replace vars by constants when available to possibly trigger further
                      simplifications in atoms. This is not actually needed for [term_eqs]. *)
                 QSubst q ) )
+      |> Term.simplify_linear
     in
     Debug.p "normalized term is %a@\n" (Term.pp Var.pp) t' ;
     t'
@@ -1223,18 +1224,24 @@ end = struct
             else Sat (phi, new_eqs)
           in
           match Var.Map.find_opt v phi.linear_eqs with
-          | None ->
+          | None -> (
               (* add to the [term_eqs] relation only when we also add to [linear_eqs] *)
               let* phi, new_eqs =
                 solve_normalized_term_eq_no_lin ~fuel new_eqs (Term.Linear l) v phi
               in
               (* the rep might be changed by [solve_normalized_term_eq_no_lin] *)
               let v = (get_repr phi v :> Var.t) in
+              let l = normalize_linear phi l in
               let new_eqs = add_lin_eq_to_new_eqs v l new_eqs in
-              (* this can break the invariant that variables in the domain of [linear_eqs] do not
+              LinArith.solve_eq (normalize_linear phi l1) (normalize_linear phi l2)
+              >>= function
+              | None ->
+                  Sat (phi, new_eqs)
+              | Some (v, l) ->
+                  (* this can break the invariant that variables in the domain of [linear_eqs] do not
                    appear in the range of [linear_eqs], restore it *)
-              add_linear_eq_and_solve_new_eq_opt ~fuel new_eqs v l phi
-              >>= propagate_linear_eq ~fuel v l
+                  add_linear_eq_and_solve_new_eq_opt ~fuel new_eqs v l phi
+                  >>= propagate_linear_eq ~fuel v l )
           | Some l' when not (LinArith.equal l l') ->
               (* This is the only step that consumes fuel: discovering an equality [l = l']: because we
                    do not record these anywhere (except when their consequence can be recorded as [y =

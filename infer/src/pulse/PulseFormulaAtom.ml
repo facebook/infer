@@ -296,6 +296,7 @@ let eval_syntactically_equal_terms atom =
 
 
 let rec eval_with_normalized_terms ~is_neq_zero (atom : t) =
+  Debug.p "eval_with_normalized_terms %a@\n" (pp_with_pp_var Var.pp) atom ;
   match eval_const_shallow atom with
   | Some True ->
       Sat (Some [])
