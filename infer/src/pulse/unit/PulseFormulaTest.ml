@@ -863,6 +863,17 @@ let%test_module "modulo" =
 
 
     let%expect_test _ =
+      test (y = eq y (i 1) && x = y + i 1 && x = w + i 2) ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: var_eqs: x=v7=v8 ∧ y=v6
+             && linear_eqs: x = w +2 ∧ y = w +1
+             && term_eqs: [w +1]=y∧[w +2]=x∧([w +1]=1)=y
+        |}]
+
+
+    let%expect_test _ =
       test ((x + i 4) mod i 2 = i 0) ;
       [%expect
         {|
