@@ -1,0 +1,424 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare swift_task_switch(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+declare swift_task_dealloc(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_task_alloc(int) : *__infer_swift_type<ptr_elt>
+
+declare swift_retain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_release(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_getWitnessTable(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_endAccess(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_defaultActor_initialize(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_defaultActor_destroy(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_defaultActor_deallocate(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_deallocClassInstance(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+declare swift_beginAccess(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_allocObject(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swift_Builtin_float() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftXPC() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftObjectiveC() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftFoundation() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftDispatch() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare $sSceySceBecfC(int, int) : *__infer_swift_type<ptr_elt>
+
+declare $sScMMa(int) : *__infer_swift_type<ptr_elt>
+
+declare $sScM6sharedScMvgZ(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sScA15unownedExecutorScevgTj(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sS2cMScAsWl() : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter8AAGUtilsCfd(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .method_offset = "-2" __infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>.$s16AsyncActorGetter8AAGUtilsCfD(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter8AAGUtilsCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter8AAGUtilsCACycfc(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .method_offset = "11" __infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>.$s16AsyncActorGetter8AAGUtilsCACycfC(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter8AAGUtilsC7counterSivs(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "counter.get" $s16AsyncActorGetter8AAGUtilsC7counterSivg(var1: *__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>) : int {
+  local var3: *int
+  #: @[0:0]
+      n1:*__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils> = load &var1 @[0:0]
+      n2 = n1.__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>.counter @[0:0]
+      n4:*__infer_swift_type<TSi> = load n2 @[0:0]
+      n3 = load n4.__infer_swift_type<TSi>.field_0 @[0:0]
+      ret n3 @[0:0]
+      
+} @?
+
+declare $s16AsyncActorGetter43test_actor_property_access_no_cycle_good_FPyyYaFTY2_(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter43test_actor_property_access_no_cycle_good_FPyyYaFTY0_(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter43test_actor_property_access_no_cycle_good_FPyyYaFTQ1_(*__infer_swift_type<ptr_elt>, int) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter43test_actor_property_access_no_cycle_good_FPyyYaF(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter10AAGHandlerCfd(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .method_offset = "-2" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerCfD(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "unownedExecutor.get" $s16AsyncActorGetter10AAGHandlerCScAAAScA15unownedExecutorScevgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,int> {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = $s16AsyncActorGetter10AAGHandlerC15unownedExecutorScevg(n1) @[0:0]
+      jmp 4::ret @[0:0]
+      
+  #4::ret: @[0:0]
+      n3 = $builtins.llvm_init_tuple() @[0:0]
+      n5 = load n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[0:0]
+      store n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n5 @[0:0]
+      n7 = load n2.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[0:0]
+      store n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n7 @[0:0]
+      ret n3 @[0:0]
+      
+} @?
+
+declare $s16AsyncActorGetter10AAGHandlerCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter10AAGHandlerC5utilsAcA8AAGUtilsC_tcfc(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .method_offset = "15" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerC5utilsAcA8AAGUtilsC_tcfC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .method_offset = "13" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvs(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "utils.get" .method_offset = "12" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvg(var1: *__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>) : *__infer_swift_type<ptr_elt> {
+  local var3: *int
+  #: @[0:0]
+      n1:*__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler> = load &var1 @[0:0]
+      n2 = n1.__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.utils @[0:0]
+      n3 = load n2 @[0:0]
+      n4 = $builtins.llvm_nondet() @[0:0]
+      ret n3 @[0:0]
+      
+} @?
+
+declare $s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvM::resume::0(*__infer_swift_type<ptr_elt>, int) : *__infer_swift_type<ptr_elt>
+
+declare .method_offset = "14" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter10AAGHandlerC27read_utils_no_cycle_good_FPSiyYaFTY0_(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $s16AsyncActorGetter10AAGHandlerC27read_utils_no_cycle_good_FPSiyYaF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "unownedExecutor.get" $s16AsyncActorGetter10AAGHandlerC15unownedExecutorScevg(self: *__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>) : *__infer_tuple_class<int,int> {
+  #: @[0:0]
+      n1 = load &self @[0:0]
+      n4 = $sSceySceBecfC(__sil_cast(<int>, n1), 0) @[0:0]
+      jmp 4::ret @[0:0]
+      
+  #4::ret: @[0:0]
+      n5 = $builtins.llvm_init_tuple() @[0:0]
+      n7 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[0:0]
+      store n5.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n7 @[0:0]
+      n9 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[0:0]
+      store n5.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n9 @[0:0]
+      ret n5 @[0:0]
+      
+} @?
+
+global symbolic _____ 16AsyncActorGetter8AAGUtilsC: *__infer_tuple_class<int,int,int>
+
+global symbolic _____ 16AsyncActorGetter10AAGHandlerC: *__infer_tuple_class<int,int,int>
+
+global symbolic Si: *__infer_tuple_class<*int,int>
+
+global symbolic BD: *__infer_tuple_class<*int,int>
+
+global objc_classes_$s16AsyncActorGetter8AAGUtilsCN: *__infer_swift_type<ptr_elt>
+
+global objc_classes_$s16AsyncActorGetter10AAGHandlerCN: *__infer_swift_type<ptr_elt>
+
+global llvm::used: **__infer_swift_type<ptr_elt>
+
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
+
+global got::$sScAMp: *__infer_swift_type<ptr_elt>
+
+global got::$sScA15unownedExecutorScevgTq: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swift_Builtin_float_$_AsyncActorGetter: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftXPC_$_AsyncActorGetter: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftObjectiveC_$_AsyncActorGetter: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftFoundation_$_AsyncActorGetter: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftDispatch_$_AsyncActorGetter: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_AsyncActorGetter: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_AsyncActorGetter: *__infer_swift_type<ptr_elt>
+
+global _objc_empty_cache: *__infer_swift_type<ptr_elt>
+
+global __swift_reflection_version: int
+
+global __swift_async_ret_functlets: *int
+
+global __swift_async_entry_functlets: *int
+
+global _METACLASS_DATA__TtC16AsyncActorGetter8AAGUtils: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _METACLASS_DATA__TtC16AsyncActorGetter10AAGHandler: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _IVARS__TtC16AsyncActorGetter8AAGUtils: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
+
+global _IVARS__TtC16AsyncActorGetter10AAGHandler: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
+
+global _DATA__TtC16AsyncActorGetter8AAGUtils: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _DATA__TtC16AsyncActorGetter10AAGHandler: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global OBJC_METACLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
+
+global OBJC_CLASS_$__TtCs12_SwiftObject: *__infer_swift_type<ptr_elt>
+
+global ::str::8::AAGUtils: *int
+
+global ::str::7::counter: int
+
+global ::str::5::utils: *int
+
+global ::str::34::_TtC16AsyncActorGetter10AAGHandler: *int
+
+global ::str::31::_TtC16AsyncActorGetter8AAGUtils: *int
+
+global ::str::16::AsyncActorGetter: *int
+
+global ::str::13::$defaultActor: *int
+
+global ::str::10::AAGHandler: *int
+
+global ::str::0::: int
+
+global 2: *int
+
+global 1: *int
+
+global 0: int
+
+global $sScMScAsMc: *__infer_swift_type<ptr_elt>
+
+global $sScAMp: *__infer_swift_type<ptr_elt>
+
+global $sScA15unownedExecutorScevgTq: *__infer_swift_type<ptr_elt>
+
+global $sS2cMScAsWL: *__infer_swift_type<ptr_elt>
+
+global $sBoWV: *__infer_swift_type<ptr_elt>
+
+global $s16AsyncActorGetterMXM: *__infer_tuple_class<int,int,int>
+
+global $s16AsyncActorGetter8AAGUtilsCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>>
+
+global $s16AsyncActorGetter8AAGUtilsCMm: *__infer_swift_type<objc_class>
+
+global $s16AsyncActorGetter8AAGUtilsCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>
+
+global $s16AsyncActorGetter8AAGUtilsCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
+
+global $s16AsyncActorGetter8AAGUtilsCHn: *__infer_swift_type<swift::type_metadata_record>
+
+global $s16AsyncActorGetter8AAGUtilsC7counterSivpWvd: int
+
+global $s16AsyncActorGetter43test_actor_property_access_no_cycle_good_FPyyYaFTu: *__infer_swift_type<swift::async_func_pointer>
+
+global $s16AsyncActorGetter10AAGHandlerCScAAAMcMK: **__infer_swift_type<ptr_elt>
+
+global $s16AsyncActorGetter10AAGHandlerCScAAAMc: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
+
+global $s16AsyncActorGetter10AAGHandlerCScAAAHc: int
+
+global $s16AsyncActorGetter10AAGHandlerCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
+
+global $s16AsyncActorGetter10AAGHandlerCMm: *__infer_swift_type<objc_class>
+
+global $s16AsyncActorGetter10AAGHandlerCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global $s16AsyncActorGetter10AAGHandlerCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
+
+global $s16AsyncActorGetter10AAGHandlerCHn: *__infer_swift_type<swift::type_metadata_record>
+
+global $s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvpWvd: int
+
+global $s16AsyncActorGetter10AAGHandlerC27read_utils_no_cycle_good_FPSiyYaFTu: *__infer_swift_type<swift::async_func_pointer>
+
+type __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler> = {
+field_0: *__infer_swift_type<swift::refcounted>;
+field_1: *__infer_swift_type<swift::defaultactor>;
+utils: *__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils> = {field_0: *__infer_swift_type<swift::refcounted>;
+                                                                   counter: *__infer_swift_type<TSi>}
+
+type __infer_swift_type<TSi> = {field_0: int}
+
+type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>;
+                                       field_2: *__infer_swift_type<ptr_elt>;
+                                       field_3: *__infer_swift_type<ptr_elt>;
+                                       field_4: int}
+
+type __infer_swift_type<swift::async_func_pointer> = {field_0: int;
+                                                      field_1: int}
+
+type __infer_swift_type<swift::defaultactor> = {field_0: **__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+
+type __infer_swift_type<swift::method_descriptor> = {field_0: int;
+                                                     field_1: int}
+
+type __infer_swift_type<swift::refcounted> = {field_0: *__infer_swift_type<ptr_elt>;
+                                              field_1: int}
+
+type __infer_swift_type<swift::type_metadata_record> = {field_0: int}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: int; __infer_tuple_field_8: int;
+__infer_tuple_field_9: int; __infer_tuple_field_10: int;
+__infer_tuple_field_11: int; __infer_tuple_field_12: int;
+__infer_tuple_field_13: int; __infer_tuple_field_14: int;
+__infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_17: int;
+__infer_tuple_field_18: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: int; __infer_tuple_field_8: int;
+__infer_tuple_field_9: int; __infer_tuple_field_10: int;
+__infer_tuple_field_11: int; __infer_tuple_field_12: int;
+__infer_tuple_field_13: int; __infer_tuple_field_14: int;
+__infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_17: int; __infer_tuple_field_18: int;
+__infer_tuple_field_19: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_20: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_21: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_22: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_23: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int; __infer_tuple_field_4: int}
+
+type __infer_tuple_class<*int,int> = {__infer_tuple_field_0: *int;
+                                      __infer_tuple_field_1: int}
+
+type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
+                                     __infer_tuple_field_1: int}
+
+type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>}
+
+type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
+                                         __infer_tuple_field_1: int;
+                                         __infer_tuple_field_2: int}
+
+type __infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_8: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_9: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_10: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int> = {__infer_tuple_field_0: int;
+                                                             __infer_tuple_field_1: int;
+                                                             __infer_tuple_field_2: int;
+                                                             __infer_tuple_field_3: int;
+                                                             __infer_tuple_field_4: int;
+                                                             __infer_tuple_field_5: int;
+                                                             __infer_tuple_field_6: int;
+                                                             __infer_tuple_field_7: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int;
+__infer_tuple_field_13: *__infer_swift_type<swift::method_descriptor>}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int;
+__infer_tuple_field_13: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_14: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_15: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_16: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_17: *__infer_swift_type<swift::method_descriptor>}
+
