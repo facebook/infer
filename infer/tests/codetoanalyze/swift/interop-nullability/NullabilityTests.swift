@@ -134,3 +134,29 @@ func nilCoalesceDefault_safeUse_FP(api: LegacyAPI) -> Int {
   let s = api.getUnannotatedString() ?? ""
   return s.count
 }
+
+// Optional-returning passthrough: the only use of the unannotated
+// result is to return it through an `-> T?` signature. Swift's type
+// system already forces every caller to handle nil, so there is no
+// crash risk. Should not fire MISSING_NULLABILITY_ANNOTATION; pinned
+// `_FP` until handled.
+func optionalGetterPassthrough_safeUse_FP(api: LegacyAPI) -> String? {
+  return api.getUnannotatedString()
+}
+
+// Same passthrough idiom with a one-line let binding between the call
+// and the return. Source-equivalent; pinned `_FP` until handled.
+func optionalGetterPassthroughViaLet_safeUse_FP(api: LegacyAPI) -> String? {
+  let s = api.getUnannotatedString()
+  return s
+}
+
+// Negative case: same Optional-returning shape, but the body
+// dereferences the unannotated result mid-body. The deref is a real
+// risk and MUST still be reported -- pins the suppression's blast
+// radius.
+func optionalGetterDerefMidBody_bad(api: LegacyAPI) -> Int? {
+  let s = api.getUnannotatedString()
+  let n = s!.count
+  return n
+}

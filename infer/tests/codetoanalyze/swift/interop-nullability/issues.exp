@@ -4,3 +4,6 @@ NullabilityTests.swift, swiftRefinedNullableString_good_FP, 1, MISSING_NULLABILI
 NullabilityTests.swift, classMethodUnannotated_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, guardLetReturnNil_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, nilCoalesceDefault_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
+NullabilityTests.swift, optionalGetterPassthrough_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
+NullabilityTests.swift, optionalGetterPassthroughViaLet_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
+NullabilityTests.swift, optionalGetterDerefMidBody_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
