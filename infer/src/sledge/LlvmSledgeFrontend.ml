@@ -1459,8 +1459,13 @@ let xlate_instr :
       let unmangled_name = get_unmangled_name llcallee in
       let name_segs = String.split_on_char fname ~by:'.' in
       let skip msg =
-        if StringS.add ignored_callees fname then
+        if StringS.add ignored_callees fname then (
           Logging.debug Capture Verbose "ignoring uninterpreted %s %s at %a" msg fname Loc.pp loc ;
+          (* Surface unmodelled callees (per-process deduped on [fname]) to
+             the [internal_error] stats stream so we can rank which extern
+             functions are worth modelling next. *)
+          StatsLogging.log_message ~label:"internal_error"
+            ~message:(Format.asprintf "LlvmFrontend: skipped uninterpreted %s call: %s" msg fname) ) ;
         let reg = xlate_name_opt x instr in
         emit_inst (Inst.nondet ~reg ~msg:fname ~loc)
       in
