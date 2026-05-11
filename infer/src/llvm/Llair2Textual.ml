@@ -436,8 +436,32 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             Field.tuple_field_of_pos typ_name n
           else Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name n
         in
-        let field_instrs, exp = add_deref ~proc_state exp loc in
-        let field_instrs = inject_load_type field_instrs typ_name in
+        (* When the inner expression is a move-bound register holding the address
+           of an inline payload-bearing enum, the GEP'd address IS the inline E
+           — there's no separate boxed pointer to load through. The [Field]
+           projection below uses that address directly, so skip the synthetic
+           load that [add_deref] would otherwise insert. *)
+        let skip_deref_for_inline_enum =
+          match exp with
+          | Textual.Exp.Var ptr_id ->
+              IdentMap.find_opt ptr_id proc_state.ProcState.ids_move
+              |> Option.bind ~f:(fun (data : ProcState.id_data) -> data.typ)
+              |> Option.exists ~f:(fun annot ->
+                     match annot.Textual.Typ.typ with
+                     | Textual.Typ.Struct name ->
+                         Textual.TypeName.swift_mangled_name_of_type_name name
+                         |> Option.exists ~f:Type.is_enum_mangled_name
+                     | _ ->
+                         false )
+          | _ ->
+              false
+        in
+        let field_instrs, exp =
+          if skip_deref_for_inline_enum then ([], exp)
+          else
+            let field_instrs, exp = add_deref ~proc_state exp loc in
+            (inject_load_type field_instrs typ_name, exp)
+        in
         let instrs = field_instrs @ exp_instrs in
         let exp = Textual.Exp.Field {exp; field} in
         let typ = Type.lookup_field_type ~struct_map typ_name field in
@@ -984,6 +1008,30 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let exp2, _, exp2_instrs = to_textual_exp loc ~proc_state exp in
         let exp2_deref_instrs, exp2 = add_deref ~proc_state exp2 loc in
         let exp1, typ_exp1, exp1_instrs = to_textual_exp loc ~proc_state ptr in
+        (* Move-bound registers carry only the LLVM opaque pointer at the [Reg]
+           lookup, but the move handler stashed the typed RHS expression in
+           [ids_move]. Recover that type so the inline-enum arm below can fire
+           on stores through a register that points at an inline E. The
+           recovered field type [Struct E] is re-wrapped as [*E] to share the
+           same [Ptr (Struct ...)] match shape with the other arms. *)
+        let typ_exp1 =
+          match (exp1, typ_exp1) with
+          | Textual.Exp.Var id, _ -> (
+            match IdentMap.find_opt id proc_state.ProcState.ids_move with
+            | Some {typ= Some annot; _} -> (
+              match annot.Textual.Typ.typ with
+              | Textual.Typ.Struct _ as inline_typ
+                when Type.is_ptr_enum (Textual.Typ.mk_ptr inline_typ) ->
+                  Some (Textual.Typ.mk_ptr inline_typ)
+              | typ when Type.is_ptr_enum typ ->
+                  Some typ
+              | _ ->
+                  typ_exp1 )
+            | _ ->
+                typ_exp1 )
+          | _ ->
+              typ_exp1
+        in
         let exp1, exp1_deref_instrs =
           (* In llvm when we store the struct (or an optional int) without accessing any fields,
           it means the first field. The first field of a struct is always at offset 0, so the base
@@ -995,6 +1043,22 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
           | _, Some (Textual.Typ.Ptr (Textual.Typ.Struct typ_name, _) as typ_exp)
             when Type.is_int_optional typ_exp ->
               translate_store_in_field_zero ~(proc_state : ProcState.t) exp1 loc typ_name
+          | ( (Textual.Exp.Var _ | Textual.Exp.Field _)
+            , Some (Textual.Typ.Ptr (Textual.Typ.Struct typ_name, _) as typ_exp) )
+            when Type.is_ptr_enum typ_exp ->
+              (* Inline payload-bearing enum: with the field declared inline,
+                 a raw scalar store at the GEP'd enum address writes the
+                 enum's first inline field. LLVM doesn't bother with the
+                 [GEP E,0,0] for that write, so wrap explicitly with
+                 [.E.field_0] to keep the store target well-typed. *)
+              let field_exp =
+                Textual.Exp.Field
+                  { exp= exp1
+                  ; field=
+                      Field.field_of_pos_with_map proc_state.module_state.field_offset_map typ_name
+                        0 }
+              in
+              (field_exp, [])
           | _ ->
               (exp1, [])
         in

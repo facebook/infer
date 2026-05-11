@@ -74,12 +74,44 @@ and to_textual_tuple_name lang ~mangled_map ~struct_map elements =
   Textual.TypeName.mk_swift_tuple_type_name textual_types
 
 
+let is_enum_mangled_name name = String.is_suffix ~suffix:"O" name
+
+(* Llair represents Swift enum layouts as [Struct] with one element per logical
+   field. A raw-value enum (e.g. [enum E: Int { case a, b }]) has just the tag
+   element, so [elts] has length 1. A payload-bearing enum (e.g. [enum E { case
+   x; case y(Int) }]) has at least one payload element plus the tag, so [elts]
+   has length >= 2. The latter is laid out *inline* inside its parent struct;
+   the former is treated as a boxed scalar by the rest of the translation. *)
+let is_payload_bearing_enum_llair_typ (typ : Llair.Typ.t) =
+  match typ with
+  | Struct {name; elts; _} ->
+      is_enum_mangled_name name && NS.IArray.length elts > 1
+  | _ ->
+      false
+
+
 let to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
   let to_textual_field_decl pos (_, typ) =
     let qualified_name =
       if tuple then Field.tuple_field_of_pos struct_name pos else Field.field_of_pos struct_name pos
     in
     let textual_typ = to_textual_typ lang ~mangled_map:None ~struct_map typ in
+    (* When the field's element is an inline payload-bearing enum, the field's
+       value type is the enum itself rather than a pointer-to-enum slot. Emit
+       the decl as [Struct E] so a [Field] projection on the parent yields
+       [*E] (the address of the inline enum), matching what the GEP returns at
+       the LLVM level. *)
+    let textual_typ =
+      match textual_typ with
+      | Textual.Typ.Ptr (Textual.Typ.Struct name, _) when is_payload_bearing_enum_llair_typ typ -> (
+        match Textual.TypeName.swift_mangled_name_of_type_name name with
+        | Some mangled_name when is_enum_mangled_name mangled_name ->
+            Textual.Typ.Struct name
+        | _ ->
+            textual_typ )
+      | _ ->
+          textual_typ
+    in
     let attributes, textual_typ =
       match Textual.TypeName.swift_mangled_name_of_type_name struct_name with
       | Some "Any" when Int.equal pos 0 ->
@@ -126,7 +158,7 @@ let is_ptr_enum typ =
   | Textual.Typ.Ptr (Textual.Typ.Struct name, _) -> (
     match Textual.TypeName.swift_mangled_name_of_type_name name with
     | Some mangled_name ->
-        String.is_suffix ~suffix:"O" mangled_name
+        is_enum_mangled_name mangled_name
     | None ->
         false )
   | _ ->

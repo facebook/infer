@@ -62,10 +62,10 @@ define .plain_name = "loop" $s5Hello4loop33_6F95A330116302188B682B8438F3ADBFLL6e
       
   #$s10Foundation4DateVACycfC::void::ret: @[49:0]
       store &getelementptr_offset_1 <- 1 @[49:0]
-      n84 = load &getelementptr_offset_1 @[49:0]
-      n86 = load &var15 @[49:0]
-      n87 = load n5 @[49:0]
-      _ = $builtins.llvm_dynamic_call(n84, n86, n87) @[49:0]
+      n83 = load &getelementptr_offset_1 @[49:0]
+      n85 = load &var15 @[49:0]
+      n86 = load n5 @[49:0]
+      _ = $builtins.llvm_dynamic_call(n83, n85, n86) @[49:0]
       jmp 56::void::ret @[49:0]
       
   #$ss16IndexingIteratorV4next7ElementQzSgyF::void::ret: @[49:0]
@@ -112,7 +112,7 @@ define .plain_name = "loop" $s5Hello4loop33_6F95A330116302188B682B8438F3ADBFLL6e
       jmp 25::ret @[49:0]
       
   #22::jmp::76: @[51:5]
-      n98 = n24 @[51:5]
+      n97 = n24 @[51:5]
       jmp 76 @[51:5]
       
   #25::ret: @[49:0]
@@ -137,9 +137,8 @@ define .plain_name = "loop" $s5Hello4loop33_6F95A330116302188B682B8438F3ADBFLL6e
       store n59.__infer_swift_type<Ts5Int32V,Int32>.field_0 <- n48 @[49:0]
       n60:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &event @[49:0]
       n61 = n60.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_3 @[49:0]
-      store n61 <- n50 @[49:0]
-      n64:*__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL> = load n61 @[49:0]
-      store n64.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- n52 @[49:0]
+      store n61.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_0 <- n50 @[49:0]
+      store n61.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- n52 @[49:0]
       if __sil_eq(n52, 1) then jmp 51 else jmp 53::jmp::70 @[53:14]
       
   #51: @[53:14]
@@ -149,56 +148,56 @@ define .plain_name = "loop" $s5Hello4loop33_6F95A330116302188B682B8438F3ADBFLL6e
       unreachable @[53:14]
       
   #53::jmp::70: @[53:14]
-      n67 = n50 @[53:14]
+      n66 = n50 @[53:14]
       jmp 72::jmp::73 @[53:14]
       
   #54: @[54:21]
-      n83 = load &var15 @[54:21]
-      _ = $s10Foundation4DateVACycfC(n83) @[54:21]
+      n82 = load &var15 @[54:21]
+      _ = $s10Foundation4DateVACycfC(n82) @[54:21]
       jmp $s10Foundation4DateVACycfC::void::ret @[54:21]
       
   #56::void::ret: @[55:19]
-      n88 = $builtins.llvm_init_tuple() @[55:19]
-      n90 = n88.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[55:19]
-      n92 = n88.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[55:19]
-      if n92 then jmp 79 else jmp 61 @[55:19]
+      n87 = $builtins.llvm_init_tuple() @[55:19]
+      n89 = n87.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[55:19]
+      n91 = n87.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[55:19]
+      if n91 then jmp 79 else jmp 61 @[55:19]
       
   #61: @[55:19]
-      n94:*__infer_swift_type<TSi> = load &count @[55:19]
-      n93 = load n90 @[55:19]
-      store n94.__infer_swift_type<TSi>.field_0 <- n93 @[55:19]
+      n93:*__infer_swift_type<TSi> = load &count @[55:19]
+      n92 = load n89 @[55:19]
+      store n93.__infer_swift_type<TSi>.field_0 <- n92 @[55:19]
       jmp 61::jmp::73 @[49:0]
       
   #61::jmp::73: @[49:0]
-      n96 = load n90 @[49:0]
-      n95 = load n90 @[49:0]
-      n69 = n95 @[49:0]
-      n71 = n96 @[49:0]
+      n95 = load n89 @[49:0]
+      n94 = load n89 @[49:0]
+      n68 = n94 @[49:0]
+      n70 = n95 @[49:0]
       jmp 73 @[49:0]
       
   #72: @[58:13]
       jmp 72::jmp::73 @[58:13]
       
   #72::jmp::73: @[58:13]
-      n69 = n24 @[58:13]
-      n71 = n26 @[58:13]
+      n68 = n24 @[58:13]
+      n70 = n26 @[58:13]
       jmp 73::jmp::22 @[58:13]
       
   #73: @[60:5]
       jmp 73::jmp::22 @[60:5]
       
   #73::jmp::22: @[60:5]
-      n24 = n69 @[60:5]
-      n26 = n71 @[60:5]
+      n24 = n68 @[60:5]
+      n26 = n70 @[60:5]
       jmp 22 @[60:5]
       
   #76: @[49:0]
-      n100 = load &var5 @[49:0]
-      n101 = $ss16IndexingIteratorVySay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGGWOh(n100) @[49:0]
+      n99 = load &var5 @[49:0]
+      n100 = $ss16IndexingIteratorVySay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGGWOh(n99) @[49:0]
       jmp 78::ret @[49:0]
       
   #78::ret: @[61:5]
-      ret n98 @[61:5]
+      ret n97 @[61:5]
       
   #79: @[49:0]
       unreachable @[49:0]
@@ -252,14 +251,13 @@ define .plain_name = "init" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVADyc
       store n6.__infer_swift_type<Ts5Int32V,Int32>.field_0 <- 0 @[43:30]
       n7:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &self @[44:9]
       n8 = n7.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_3 @[44:9]
-      n11:*__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL> = load n8 @[44:25]
-      store n11.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- 1 @[44:25]
-      n12 = $builtins.llvm_init_tuple() @[45:13]
-      store n12.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_0 <- 0 @[45:13]
-      store n12.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_1 <- 0 @[45:13]
-      store n12.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_2 <- 0 @[45:13]
-      store n12.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_3 <- 1 @[45:13]
-      ret n12 @[45:13]
+      store n8.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- 1 @[44:25]
+      n11 = $builtins.llvm_init_tuple() @[45:13]
+      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_0 <- 0 @[45:13]
+      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_1 <- 0 @[45:13]
+      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_2 <- 0 @[45:13]
+      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_3 <- 1 @[45:13]
+      ret n11 @[45:13]
       
 } @?
 
@@ -285,10 +283,9 @@ define .plain_name = "eventType.set" $s5Hello1S33_6F95A330116302188B682B8438F3AD
       n1:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &var3 @[0:0]
       n2 = n1.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_3 @[0:0]
       n3 = load &var1 @[0:0]
-      store n2 <- n3 @[0:0]
-      n5:*__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL> = load n2 @[0:0]
+      store n2.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_0 <- n3 @[0:0]
       n4 = load &var2 @[0:0]
-      store n5.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- n4 @[0:0]
+      store n2.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- n4 @[0:0]
       ret null @[0:0]
       
 } @?
@@ -459,7 +456,7 @@ field_0: int; field_1: int}
 type __infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = {
 field_0: *__infer_swift_type<Ts5Int64V,Int64>;
 field_1: *__infer_swift_type<Ts5Int32V,Int32>; field_2: *int;
-field_3: *__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>}
+field_3: __infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>}
 
 type __infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVSg,F3ADBFLL> = {
 field_0: *int; field_1: int}
