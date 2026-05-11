@@ -85,19 +85,17 @@ func factoryInit_safeUse() {
   }
 }
 
-// `+new` and convention-named factories currently fire
-// MISSING_NULLABILITY even when the Swift caller handles the optional
-// safely via `if let`. Whether this is the right behavior is a
-// shipping-readiness question -- technically the declaration is missing
-// an annotation, but Swift already forces the user to handle nil, so
-// there's no crash risk. Pinned as `_FP` to flag the open question.
-func factoryNew_safeUse_FP() {
+// `+new` and convention-named factories return an unannotated pointer,
+// but the Swift caller handles the optional safely via `if let`. The
+// frontend's null-check inference pass sees the caller's null check and
+// suppresses MISSING_NULLABILITY here.
+func factoryNew_safeUse() {
   if let api = FactoryAPI.new() {
     print(api)
   }
 }
 
-func factoryClassMethod_safeUse_FP() {
+func factoryClassMethod_safeUse() {
   if let api = FactoryAPI.factoryInstance() {
     print(api)
   }

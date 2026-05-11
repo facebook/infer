@@ -1,6 +1,4 @@
 NullabilityTests.swift, unannotatedReturn_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, macroAnnotatedUnannotatedProp_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, swiftRefinedNullableString_good_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
-NullabilityTests.swift, factoryNew_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
-NullabilityTests.swift, factoryClassMethod_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, classMethodUnannotated_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
