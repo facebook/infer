@@ -120,3 +120,17 @@ func classMethodUnannotated_bad() {
   let s = ClassMethodAPI.classGetUnannotatedString()!
   print(s.count)
 }
+
+// Safe-handling idiom: caller short-circuits on nil. Should not
+// fire MISSING_NULLABILITY_ANNOTATION; pinned `_FP` until handled.
+func guardLetReturnNil_safeUse_FP(api: LegacyAPI) -> Int? {
+  guard let s = api.getUnannotatedString() else { return nil }
+  return s.count
+}
+
+// Safe-handling idiom: caller substitutes a default for nil. Should
+// not fire MISSING_NULLABILITY_ANNOTATION; pinned `_FP` until handled.
+func nilCoalesceDefault_safeUse_FP(api: LegacyAPI) -> Int {
+  let s = api.getUnannotatedString() ?? ""
+  return s.count
+}
