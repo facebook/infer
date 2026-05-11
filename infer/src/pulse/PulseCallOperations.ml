@@ -13,6 +13,18 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 
+(* Per-process dedup set for the [Config.pulse_log_unknown_callees] log path
+   below. Bounds volume so the flag can be left on by default without
+   flooding the stats stream: at most one entry per unique callee per
+   [infer] process.
+
+   NOT thread-safe: [Procname.HashSet] uses a non-locking [Hashtbl]. Today
+   Pulse runs sequentially within a process, so concurrent [add]/[mem] on
+   this set is not exercised. If Pulse ever moves to in-process parallelism,
+   wrap this in a [Mutex] (or switch to a thread-safe set) — without it the
+   only failure mode is occasional duplicate log events, not a crash. *)
+let logged_unknown_callees = Procname.HashSet.create 256
+
 let is_ptr_to_const formal_typ_opt = Option.exists formal_typ_opt ~f:Typ.is_ptr_to_const
 
 let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
@@ -602,6 +614,15 @@ let call_aux_unknown limit ({InterproceduralAnalysis.tenv} as analysis_data) pat
       ~loc:(F.asprintf "%a" Location.pp_file_pos call_loc)
       ~message:
         (Format.asprintf "Unmodeled Function[Pulse] : %a" Procname.pp_without_templates callee_pname) ;
+  if
+    Config.pulse_log_unknown_callees
+    && not (Procname.HashSet.mem logged_unknown_callees callee_pname)
+  then (
+    Procname.HashSet.add callee_pname logged_unknown_callees ;
+    StatsLogging.log_message_with_location ~label:"unmodeled_callee_pulse"
+      ~loc:(F.asprintf "%a" Location.pp_file_pos call_loc)
+      ~message:
+        (Format.asprintf "Unmodeled Callee[Pulse]: %a" Procname.pp_without_templates callee_pname) ) ;
   Option.iter Config.pulse_log_unknown_calls_sampled ~f:(fun sample_rate ->
       StatsLogging.log_message_with_location_sampled
         ~label:(lazy "unmodeled_function_operation_pulse")

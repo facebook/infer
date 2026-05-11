@@ -2455,6 +2455,12 @@ and pulse_log_unknown_calls =
   CLOpt.mk_bool ~long:"pulse-log-unknown-calls" "log calls to unknown functions in pulse in stats"
 
 
+and pulse_log_unknown_callees =
+  CLOpt.mk_bool ~long:"pulse-log-unknown-callees"
+    "log each unique callee Pulse cannot model, once per [infer] process; suitable for default-on \
+     enable since volume is bounded by the number of unique unmodelled callees per process"
+
+
 and pulse_log_unknown_calls_sampled =
   CLOpt.mk_int_opt ~long:"pulse-log-unknown-calls-sampled"
     "log calls to unknown functions in pulse in stats with specified sample rate bound to avoid \
@@ -4630,6 +4636,8 @@ and pulse_intraprocedural_only = !pulse_intraprocedural_only
 and pulse_log_summary_count = !pulse_log_summary_count
 
 and pulse_log_unknown_calls = !pulse_log_unknown_calls
+
+and pulse_log_unknown_callees = !pulse_log_unknown_callees
 
 and pulse_log_unknown_calls_sampled = !pulse_log_unknown_calls_sampled
 

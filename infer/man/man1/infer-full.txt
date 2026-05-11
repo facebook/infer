@@ -3220,6 +3220,12 @@ INTERNAL OPTIONS
            experimentations only. (Conversely:
            --no-pulse-intraprocedural-only)
 
+       --pulse-log-unknown-callees
+           Activates: log each unique callee Pulse cannot model, once per
+           [infer] process; suitable for default-on enable since volume is
+           bounded by the number of unique unmodelled callees per process
+           (Conversely: --no-pulse-log-unknown-callees)
+
        --pulse-log-unknown-calls
            Activates: log calls to unknown functions in pulse in stats
            (Conversely: --no-pulse-log-unknown-calls)

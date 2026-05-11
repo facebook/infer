@@ -618,6 +618,8 @@ val pulse_log_summary_count : bool
 
 val pulse_log_unknown_calls : bool
 
+val pulse_log_unknown_callees : bool
+
 val pulse_log_unknown_calls_sampled : int option
 
 val pulse_max_cfg_size : int
