@@ -274,3 +274,89 @@ let%expect_test "Swift **ptr_elt satisfies *float return" =
     Veryfing the transformed module...
     verification succeeded
     |}]
+
+
+(* [CGVector] (struct of 2 [CGFloat]s) and [UIEdgeInsets] (struct of 4
+   [CGFloat]s) follow the same logic as [CGPoint]/[CGSize]/[CGRect]: simple
+   value structs whose memory layout is layout-compatible with a [*CGFloat]
+   at the address of their first field. The two patterns below mirror what
+   we observe in production logs (METAGeometrySwift extensions for CGVector,
+   IGSticker UI helpers for UIEdgeInsets). *)
+let text_cgvector_double_ptr_as_float_ptr =
+  {|
+       .source_language = "swift"
+       .source_file = "fake.sil"
+
+       declare make_cgvector_pp() : **__infer_swift_type<struct::CGVector>
+
+       define returns_cgvector_pp_as_float_p() : *float {
+         #start:
+           n0 = make_cgvector_pp()
+           ret n0
+       }
+       |}
+
+
+let%expect_test "Swift **CGVector satisfies *float return" =
+  parse_string_and_verify_keep_going text_cgvector_double_ptr_as_float_ptr ;
+  [%expect
+    {|
+    verification succeeded - no warnings
+    ------
+    .source_language = "swift"
+
+    .source_file = "fake.sil"
+
+    declare make_cgvector_pp() : **__infer_swift_type<struct::CGVector>
+
+    define returns_cgvector_pp_as_float_p() : *float {
+      #start:
+          n0 = make_cgvector_pp()
+          ret n0
+
+    }
+
+
+    Veryfing the transformed module...
+    verification succeeded
+    |}]
+
+
+let text_uiedgeinsets_pp_satisfied_by_float_pp =
+  {|
+       .source_language = "swift"
+       .source_file = "fake.sil"
+
+       declare make_float_pp() : **float
+
+       define returns_float_pp_as_uiedgeinsets_pp() : **__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets> {
+         #start:
+           n0 = make_float_pp()
+           ret n0
+       }
+       |}
+
+
+let%expect_test "Swift **UIEdgeInsets return slot accepts **float" =
+  parse_string_and_verify_keep_going text_uiedgeinsets_pp_satisfied_by_float_pp ;
+  [%expect
+    {|
+    verification succeeded - no warnings
+    ------
+    .source_language = "swift"
+
+    .source_file = "fake.sil"
+
+    declare make_float_pp() : **float
+
+    define returns_float_pp_as_uiedgeinsets_pp() : **__infer_swift_type<TSo12UIEdgeInsetsV,UIEdgeInsets> {
+      #start:
+          n0 = make_float_pp()
+          ret n0
+
+    }
+
+
+    Veryfing the transformed module...
+    verification succeeded
+    |}]

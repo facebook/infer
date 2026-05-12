@@ -22,18 +22,18 @@ let is_any_type_llvm lang typ =
   || (Textual.Lang.is_swift lang && Typ.equal typ Textual.Typ.any_type_swift)
 
 
-(* The CG geometry value types ([CGPoint], [CGSize], [CGRect]) are simple
-   Swift/ObjC structs whose only fields are [CGFloat]s (2, 2 and 4 of them
-   respectively). The Textual frontend currently does not always model the
-   GEP/field-selection that turns a [*CGPoint] into a pointer to its first
-   [CGFloat] field, so the verifier sees the raw struct pointer flowing into
-   a [*float] slot (or vice versa). At the byte-layout level these are
-   compatible — a [*CGPoint] points at the same address as the [*CGFloat] of
-   its first member — so we tolerate them here for the same reason we
-   tolerate plain [CGFloat]/[TSf]/[TSd]: the alternative is a noisy stream
-   of false-positive verifier rejections that a proper frontend fix has not
-   yet replaced. *)
-let cg_geometry_struct_names = ["CGPoint"; "CGSize"; "CGRect"]
+(* The CG geometry value types ([CGPoint], [CGSize], [CGRect], [CGVector]) and
+   [UIEdgeInsets] are simple Swift/ObjC structs whose only fields are
+   [CGFloat]s (2, 2, 4, 2, and 4 of them respectively). The Textual frontend
+   currently does not always model the GEP/field-selection that turns a
+   [*CGPoint] into a pointer to its first [CGFloat] field, so the verifier
+   sees the raw struct pointer flowing into a [*float] slot (or vice versa).
+   At the byte-layout level these are compatible — a [*CGPoint] points at the
+   same address as the [*CGFloat] of its first member — so we tolerate them
+   here for the same reason we tolerate plain [CGFloat]/[TSf]/[TSd]: the
+   alternative is a noisy stream of false-positive verifier rejections that a
+   proper frontend fix has not yet replaced. *)
+let cg_geometry_struct_names = ["CGPoint"; "CGSize"; "CGRect"; "CGVector"; "UIEdgeInsets"]
 
 let is_cg_geometry_name name =
   List.exists cg_geometry_struct_names ~f:(fun s -> String.is_substring name ~substring:s)
