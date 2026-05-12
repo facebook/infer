@@ -1881,6 +1881,47 @@ let xlate_function_decl x llfunc typ k =
     | None ->
         (IArray.empty, None)
   in
+  (* Override the type of any [swiftasync] parameter to be opaque [Typ.ptr].
+     Swift's IRGen emits async function continuation thunks (mangled with
+     suffix [TY\d+_] / [TQ\d+_]) where the first parameter has the
+     [swiftasync] calling-convention attribute. The DWARF debug info names
+     this parameter "self" and types it as the user-visible Swift type, but
+     at runtime the value is a pointer to the Async Frame struct (the
+     continuation's spilled state) with [self] embedded inside it at a
+     non-zero offset. Trusting the DI type causes [Llair2Textual] to lower
+     the thunk's GEPs through the user type instead of the Frame, which in
+     turn lets Pulse build a fictional self-referential aliasing chain that
+     fires a spurious [RETAIN_CYCLE]. Marking the parameter as opaque
+     defeats the typed field-projection on the body and keeps the byte
+     offsets unstructured, which is what they actually denote. *)
+  let formals_types =
+    let llparams = Llvm.params llfunc in
+    let llparam_count = Array.length llparams in
+    let swiftasync_kind = Llvm.enum_attr_kind "swiftasync" in
+    IArray.mapi formals_types ~f:(fun i ty ->
+        if i >= llparam_count then ty
+        else
+          let attrs = Llvm.function_attrs llfunc (Llvm.AttrIndex.Param i) in
+          let is_swiftasync =
+            Array.exists attrs ~f:(fun attr ->
+                (* The OCaml bindings' [repr_of_attr] [assert false]s on
+                   attribute kinds it doesn't model (e.g. type-attrs and
+                   constant-range-attrs introduced in newer LLVM), so guard
+                   the call. *)
+                match Llvm.repr_of_attr attr with
+                | Llvm.AttrRepr.Enum (k, _) ->
+                    Poly.(k = swiftasync_kind)
+                | Llvm.AttrRepr.String _ ->
+                    false
+                | exception Assert_failure _ ->
+                    false )
+          in
+          (* Setting the signature type to the empty string makes
+             [signature_type_to_textual_typ] return [None], which falls back
+             to the parameter's LLVM-derived (opaque-pointer) type — exactly
+             what the [swiftasync] continuation context actually is. *)
+          if is_swiftasync then "" else ty )
+  in
   let freturn =
     match typ with
     | Pointer {elt= Function {return= Some typ; _}} ->

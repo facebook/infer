@@ -1,1 +1,0 @@
-fbobjc/Tools/infer/tests/codetoanalyze/swift/pulse/AsyncActorGetter/RcAsyncActorGetter.swift, read_utils_no_cycle_good_FP, 0, RETAIN_CYCLE, no_bucket, ERROR, [assignment of self->field_0->field_2 part of the trace starts here,parameter `self` of read_utils_no_cycle_good_FP,assigned,retain cycle here]
