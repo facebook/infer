@@ -227,6 +227,16 @@ let register_closure_holder _callback captured_env : model =
   assign_ret holder
 
 
+let block_copy_identity block : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> assign_ret block
+
+
+let block_release_skip _block : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> ret ()
+
+
 let alloc size_exp () : unit DSL.model_monad =
   let open DSL.Syntax in
   (* 1. Extract the exact type directly from the LLVM sizeof AST! *)
@@ -335,6 +345,8 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"external_register_handler" <>$ capt_arg_payload $+ capt_arg_payload
-    $--> register_closure_holder ]
+    $--> register_closure_holder
+  ; -"_Block_copy" <>$ capt_arg_payload $--> block_copy_identity
+  ; -"_Block_release" <>$ capt_arg_payload $--> block_release_skip ]
   |> List.map ~f:(fun matcher ->
          matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )
