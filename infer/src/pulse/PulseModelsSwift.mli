@@ -10,4 +10,7 @@ open PulseModelsImport
 val matchers : matcher list
 
 val builtins_matcher :
-  SwiftProcname.builtin -> PulseModelsDSL.aval list -> unit -> unit PulseModelsDSL.model_monad
+     SwiftProcname.builtin
+  -> PulseBasicInterface.ValueOrigin.t FuncArg.t list
+  -> unit
+  -> unit PulseModelsDSL.model_monad

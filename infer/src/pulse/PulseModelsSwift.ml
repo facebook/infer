@@ -200,17 +200,15 @@ let metadata_equals arg1 arg2 () : unit DSL.model_monad =
       assign_ret unknown_bool
 
 
-let alloc size_exp : model =
+let alloc size_exp () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   (* 1. Extract the exact type directly from the LLVM sizeof AST! *)
   let typ =
     match size_exp with
     | Exp.Sizeof {typ} ->
         if Typ.is_pointer typ then Typ.strip_ptr typ else typ
     | _ ->
-        Logging.die InternalError "Expected sizeof expression in __swift_alloc"
+        Logging.die InternalError "Expected sizeof expression in swift_allocObject"
   in
   (* 2. Create the main object memory space *)
   let* allocated_obj = fresh () in
@@ -227,10 +225,8 @@ let alloc size_exp : model =
   assign_ret allocated_obj
 
 
-let objc_alloc_from_swift size_exp class_ptr : model =
+let objc_alloc_from_swift size_exp class_ptr () : unit DSL.model_monad =
   let open DSL.Syntax in
-  start_model
-  @@ fun () ->
   (* 1. Extract the static fallback type from the LLVM sizeof AST *)
   let static_typ_opt =
     match size_exp with
@@ -261,8 +257,10 @@ let objc_alloc_from_swift size_exp class_ptr : model =
   assign_ret allocated_obj
 
 
-let builtins_matcher builtin args : unit -> unit DSL.model_monad =
+let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
+    unit -> unit DSL.model_monad =
   let builtin_s = SwiftProcname.show_builtin builtin in
+  let args = List.map func_args ~f:(fun fa -> FuncArg.arg_payload fa |> ValueOrigin.addr_hist) in
   match (builtin : SwiftProcname.builtin) with
   | NonDet ->
       unknown args
@@ -289,6 +287,14 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
       objc_msgSend receiver selector actual_args
   | ObjcMsgSendSuper2 ->
       unknown args
+  | ObjcAllocFromSwift -> (
+    match (func_args, args) with
+    | size :: _, _ :: class_ptr :: _ ->
+        objc_alloc_from_swift (FuncArg.exp size) class_ptr
+    | _ ->
+        unknown args )
+  | SwiftAlloc -> (
+    match func_args with size :: _ -> alloc (FuncArg.exp size) | _ -> unknown args )
   | Memcpy ->
       unknown args
   | MetadataEquals ->
@@ -299,12 +305,4 @@ let builtins_matcher builtin args : unit -> unit DSL.model_monad =
       swift_dynamic_type arg1 arg2
 
 
-let matchers : matcher list =
-  let open ProcnameDispatcher.Call in
-  [ (* Capture the raw AST to retain the static type during allocation *)
-    +BuiltinDecl.(match_builtin __swift_alloc) <>$ capt_exp $--> alloc
-    (* Capture the static type AND the dynamic class pointer for ObjC from Swift allocs *)
-  ; +BuiltinDecl.(match_builtin __objc_alloc_from_swift)
-    <>$ capt_exp $+ capt_arg_payload $--> objc_alloc_from_swift ]
-  |> List.map ~f:(fun matcher ->
-         matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )
+let matchers : matcher list = []

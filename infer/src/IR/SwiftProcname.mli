@@ -16,6 +16,8 @@ type builtin =
   | NonDet
   | ObjcMsgSend
   | ObjcMsgSendSuper2
+  | ObjcAllocFromSwift  (** Swift-driven ObjC allocation, takes [(sizeof typ, dynamic class)]. *)
+  | SwiftAlloc  (** Swift class allocation, takes a single [sizeof typ] arg. *)
   | SwiftGetDynamicType
   | MetadataEquals  (** Used to compare metadata of two types. *)
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]

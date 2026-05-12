@@ -718,7 +718,8 @@ module InstrBridge = struct
           if ProcDecl.is_allocate_object_builtin proc then
             SilExp.Const (SilConst.Cfun BuiltinDecl.__new)
           else if ProcDecl.is_swift_alloc_builtin proc then
-            SilExp.Const (SilConst.Cfun BuiltinDecl.__swift_alloc)
+            SilExp.Const
+              (SilConst.Cfun (Procname.Swift (SwiftProcname.mk_builtin SwiftProcname.SwiftAlloc)))
           else SilExp.Const (SilConst.Cfun BuiltinDecl.malloc)
         in
         Call ((ret, class_type), builtin_name, args, loc, CallFlags.default)
@@ -737,7 +738,11 @@ module InstrBridge = struct
         let args = [(sizeof, class_type); (dynamic_class_sil_exp, StdTyp.void_star)] in
         let ret = IdentBridge.to_sil id in
         let loc = LocationBridge.to_sil sourcefile loc in
-        let builtin_name = SilExp.Const (SilConst.Cfun BuiltinDecl.__objc_alloc_from_swift) in
+        let builtin_name =
+          SilExp.Const
+            (SilConst.Cfun
+               (Procname.Swift (SwiftProcname.mk_builtin SwiftProcname.ObjcAllocFromSwift)) )
+        in
         Call ((ret, class_type), builtin_name, args, loc, CallFlags.default)
     | Let {id= Some id; exp= Call {proc; args= [exp]}; loc} when ProcDecl.is_free_builtin proc ->
         let ret = IdentBridge.to_sil id in

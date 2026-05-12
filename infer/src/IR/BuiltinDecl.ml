@@ -188,8 +188,6 @@ let __new_array = create_procname "__new_array"
 
 let __objc_alloc_no_fail = create_procname "__objc_alloc_no_fail"
 
-let __objc_alloc_from_swift = create_procname "__objc_alloc_from_swift"
-
 let __objc_cast = create_procname "__objc_cast"
 
 let __objc_dictionary_literal =
@@ -259,7 +257,5 @@ let objc_autorelease_pool_push = create_procname "_objc_autoreleasePoolPush"
 let objc_cpp_throw = create_procname "__infer_objc_cpp_throw"
 
 let zero_initialization = create_procname "__infer_zero_initialization"
-
-let __swift_alloc = create_procname "swift_allocObject"
 
 let match_builtin builtin _ s = String.equal s (Procname.get_method builtin)

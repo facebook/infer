@@ -17,6 +17,8 @@ type builtin =
   | NonDet
   | ObjcMsgSend
   | ObjcMsgSendSuper2
+  | ObjcAllocFromSwift  (** Swift-driven ObjC allocation, takes [(sizeof typ, dynamic class)]. *)
+  | SwiftAlloc  (** Swift class allocation, takes a single [sizeof typ] arg. *)
   | SwiftGetDynamicType
   | MetadataEquals  (** Used to compare metadata of two types. *)
 [@@deriving compare, equal, yojson_of, sexp, hash, normalize, enumerate]
@@ -46,6 +48,10 @@ let show_builtin = function
       "objc_msgSend"
   | ObjcMsgSendSuper2 ->
       "objc_msgSendSuper2"
+  | ObjcAllocFromSwift ->
+      "__objc_alloc_from_swift"
+  | SwiftAlloc ->
+      "swift_allocObject"
   | Memcpy ->
       "memcpy"
   | SwiftGetDynamicType ->
