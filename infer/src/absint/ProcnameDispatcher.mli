@@ -162,6 +162,16 @@ module Call : sig
       with type ('context, 'f, 'arg_payload) dispatcher =
         'context -> Procname.t -> 'arg_payload FuncArg.t list -> 'f option
 
+  val make_dispatcher :
+       ?swift_matchers:('context, 'f, 'arg_payload) matcher list
+    -> ('context, 'f, 'arg_payload) matcher list
+    -> ('context, 'f, 'arg_payload) dispatcher
+  (** Combines matchers to create a dispatcher. [swift_matchers] holds matchers intended to fire on
+      [Procname.Swift] call sites (typically [PulseModelsSwift.matchers]); it is consulted ONLY for
+      [Procname.Swift _] call sites — the main matcher list never fires on Swift, so loose
+      name-based matchers there (e.g. ObjC's bare ["init"]) cannot accidentally match Swift methods
+      sharing the name. *)
+
   val merge_dispatchers :
        ('context, 'f, 'arg_payload) dispatcher
     -> ('context, 'f, 'arg_payload) dispatcher

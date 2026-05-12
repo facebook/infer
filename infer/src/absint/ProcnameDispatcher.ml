@@ -25,6 +25,8 @@ type c = Procname.C.t
 
 type csharp = Procname.CSharp.t
 
+type swift = SwiftProcname.t
+
 type objc_cpp = Procname.ObjC_Cpp.t
 
 type erlang = Procname.Erlang.t
@@ -90,6 +92,25 @@ let templated_name_of_csharp csharp =
   let qual_name =
     QualifiedCppName.of_list
       [Procname.CSharp.get_class_name csharp; Procname.CSharp.get_method csharp]
+  in
+  (qual_name, [])
+
+
+(* Project a Swift procname onto a [(qual_name, template_args)] pair so it
+   participates in the standard name-matching machinery. Top-level
+   functions land at depth 1 (just the function name); class methods at
+   depth 2 ([class_name; method_name]). Builtins are dispatched
+   separately via [PulseModels.dispatch_builtins], so they map to an
+   empty qualified name (which won't match any [- "..."] matcher). *)
+let templated_name_of_swift (swift : swift) =
+  let qual_name =
+    match swift with
+    | Function {function_name} ->
+        QualifiedCppName.of_list [Mangled.to_string function_name]
+    | ClassMethod {class_name; method_name} ->
+        QualifiedCppName.of_list [Typ.Name.name class_name; Mangled.to_string method_name]
+    | Builtin _ ->
+        QualifiedCppName.empty
   in
   (qual_name, [])
 
@@ -426,7 +447,8 @@ module Call = struct
     ; on_hack: 'context -> 'f_in -> hack -> 'f_out option
     ; on_java: 'context -> 'f_in -> java -> 'f_out option
     ; on_erlang: 'context -> 'f_in -> erlang -> 'f_out option
-    ; on_csharp: 'context -> 'f_in -> csharp -> 'f_out option }
+    ; on_csharp: 'context -> 'f_in -> csharp -> 'f_out option
+    ; on_swift: 'context -> 'f_in -> swift -> 'f_out option }
 
   type ('context, 'f_in, 'f_out, 'arg_payload) on_args =
     'context -> 'f_in * 'arg_payload FuncArg.t list -> ('f_out * 'arg_payload FuncArg.t list) option
@@ -459,13 +481,15 @@ module Call = struct
     ; on_hack: 'context -> hack -> 'arg_payload FuncArg.t list -> 'f option
     ; on_java: 'context -> java -> 'arg_payload FuncArg.t list -> 'f option
     ; on_erlang: 'context -> erlang -> 'arg_payload FuncArg.t list -> 'f option
-    ; on_csharp: 'context -> csharp -> 'arg_payload FuncArg.t list -> 'f option }
+    ; on_csharp: 'context -> csharp -> 'arg_payload FuncArg.t list -> 'f option
+    ; on_swift: 'context -> swift -> 'arg_payload FuncArg.t list -> 'f option }
 
   let map_matcher matcher ~f : (_, _, _) matcher =
     let transform_for_lang lang_matcher ctx lang args =
       lang_matcher ctx lang args |> Option.map ~f
     in
-    let ({on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp} : (_, _, _) matcher) =
+    let ({on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp; on_swift} : (_, _, _) matcher)
+        =
       matcher
     in
     { on_objc_cpp= transform_for_lang on_objc_cpp
@@ -473,7 +497,8 @@ module Call = struct
     ; on_hack= transform_for_lang on_hack
     ; on_java= transform_for_lang on_java
     ; on_erlang= transform_for_lang on_erlang
-    ; on_csharp= transform_for_lang on_csharp }
+    ; on_csharp= transform_for_lang on_csharp
+    ; on_swift= transform_for_lang on_swift }
 
 
   let contramap_arg_payload matcher ~f =
@@ -484,7 +509,8 @@ module Call = struct
     ; on_hack= transform_for_lang matcher.on_hack
     ; on_java= transform_for_lang matcher.on_java
     ; on_erlang= transform_for_lang matcher.on_erlang
-    ; on_csharp= transform_for_lang matcher.on_csharp }
+    ; on_csharp= transform_for_lang matcher.on_csharp
+    ; on_swift= transform_for_lang matcher.on_swift }
 
 
   type ('context, 'f, 'arg_payload) pre_result =
@@ -539,6 +565,12 @@ module Call = struct
         -> 'f_in
         -> csharp
         -> 'arg_payload FuncArg.t list
+        -> ('context, 'f_out, 'arg_payload) pre_result
+    ; on_swift:
+           'context
+        -> 'f_in
+        -> swift
+        -> 'arg_payload FuncArg.t list
         -> ('context, 'f_out, 'arg_payload) pre_result }
 
   type ('context, 'f, 'arg_payload) dispatcher =
@@ -567,8 +599,13 @@ module Call = struct
       let on_csharp context f (csharp : csharp) =
         on_templated_name context f (templated_name_of_csharp csharp)
       in
+      let on_swift context f (swift : swift) =
+        on_templated_name context f (templated_name_of_swift swift)
+      in
       let on_objc_cpp context f objc_cpp = on_objc_cpp context f objc_cpp in
-      let on_proc : _ proc_matcher = {on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp} in
+      let on_proc : _ proc_matcher =
+        {on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp; on_swift}
+      in
       {on_proc; on_args}
 
 
@@ -588,7 +625,9 @@ module Call = struct
       -> ('context, 'f_proc_out, 'f_out, 'arg_payload) func_args_end
       -> ('context, 'f_in, 'f_out, 'arg_payload) all_args_matcher =
    fun m func_args_end ->
-    let {on_proc= {on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp}; on_args} = m in
+    let {on_proc= {on_c; on_hack; on_java; on_erlang; on_csharp; on_swift; on_objc_cpp}; on_args} =
+      m
+    in
     let on_c context f c args =
       on_c context f c |> pre_bind_opt ~f:(func_args_end ~on_args context args)
     in
@@ -604,10 +643,13 @@ module Call = struct
     let on_csharp context f csharp args =
       on_csharp context f csharp |> pre_bind_opt ~f:(func_args_end ~on_args context args)
     in
+    let on_swift context f swift args =
+      on_swift context f swift |> pre_bind_opt ~f:(func_args_end ~on_args context args)
+    in
     let on_objc_cpp context f objc_cpp args =
       on_objc_cpp context f objc_cpp |> pre_bind_opt ~f:(func_args_end ~on_args context args)
     in
-    {on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp}
+    {on_c; on_hack; on_java; on_erlang; on_csharp; on_swift; on_objc_cpp}
 
 
   let make_matcher :
@@ -615,8 +657,8 @@ module Call = struct
       -> 'f_in
       -> ('context, 'f_out, 'arg_payload) matcher =
    fun m f ->
-    let ({on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp} : (_, _, _, _) all_args_matcher)
-        =
+    let ({on_c; on_hack; on_java; on_erlang; on_csharp; on_swift; on_objc_cpp}
+          : (_, _, _, _) all_args_matcher ) =
       m
     in
     let on_objc_cpp context objc_cpp args =
@@ -673,13 +715,29 @@ module Call = struct
       | RetryWith {on_csharp} ->
           on_csharp context csharp args
     in
-    {on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp}
+    let on_swift context swift args =
+      match on_swift context f swift args with
+      | DoesNotMatch ->
+          None
+      | Matches res ->
+          Some res
+      | RetryWith {on_swift} ->
+          on_swift context swift args
+    in
+    {on_objc_cpp; on_c; on_hack; on_java; on_erlang; on_csharp; on_swift}
 
 
-  (** Simple implementation of a dispatcher, could be optimized later *)
+  (** Simple implementation of a dispatcher, could be optimized later.
+
+      [swift_matchers] holds matchers intended to fire on [Procname.Swift] call sites (typically
+      [PulseModelsSwift.matchers]). It is consulted ONLY for [Procname.Swift _] call sites — the
+      main matcher list never fires on Swift, so loose name-based matchers there (e.g. ObjC's bare
+      ["init"]) cannot accidentally match Swift methods sharing the name. *)
   let make_dispatcher :
-      ('context, 'f, 'arg_payload) matcher list -> ('context, 'f, 'arg_payload) dispatcher =
-   fun matchers ->
+         ?swift_matchers:('context, 'f, 'arg_payload) matcher list
+      -> ('context, 'f, 'arg_payload) matcher list
+      -> ('context, 'f, 'arg_payload) dispatcher =
+   fun ?(swift_matchers = []) matchers ->
     let on_objc_cpp context objc_cpp args =
       List.find_map matchers ~f:(fun (matcher : _ matcher) ->
           matcher.on_objc_cpp context objc_cpp args )
@@ -699,6 +757,10 @@ module Call = struct
     let on_csharp context csharp args =
       List.find_map matchers ~f:(fun (matcher : _ matcher) -> matcher.on_csharp context csharp args)
     in
+    let on_swift context swift args =
+      List.find_map swift_matchers ~f:(fun (matcher : _ matcher) ->
+          matcher.on_swift context swift args )
+    in
     fun context procname args ->
       let match_procname procname =
         match (procname : Procname.t) with
@@ -714,6 +776,8 @@ module Call = struct
             on_erlang context erlang args
         | CSharp csharp ->
             on_csharp context csharp args
+        | Swift swift ->
+            on_swift context swift args
         | _ ->
             None
       in
@@ -980,7 +1044,8 @@ module Call = struct
     let on_erlang _context erlang _args = on_procname (Erlang erlang) in
     let on_objc_cpp _context objc_cpp _args = on_procname (ObjC_Cpp objc_cpp) in
     let on_csharp _context csharp _args = on_procname (CSharp csharp) in
-    {on_c; on_hack; on_java; on_erlang; on_csharp; on_objc_cpp}
+    let on_swift _context swift _args = on_procname (Swift swift) in
+    {on_c; on_hack; on_java; on_erlang; on_csharp; on_swift; on_objc_cpp}
 
 
   let ( $! ) path_matcher () = args_begin path_matcher
@@ -1145,6 +1210,10 @@ module ProcName = struct
       let templated_name = templated_name_of_csharp csharp in
       on_templated_name context templated_name
     in
+    let on_swift context (swift : SwiftProcname.t) =
+      let templated_name = templated_name_of_swift swift in
+      on_templated_name context templated_name
+    in
     let on_c context (c : c) =
       let template_args = template_args_of_template_spec_info c.c_template_args in
       let templated_name = (c.c_name, template_args) in
@@ -1164,6 +1233,8 @@ module ProcName = struct
           on_java context java
       | CSharp cs ->
           on_csharp context cs
+      | Swift swift ->
+          on_swift context swift
       | _ ->
           None
 end

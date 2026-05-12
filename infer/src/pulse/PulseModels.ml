@@ -11,14 +11,14 @@ open PulseModelsImport
 
 module ProcNameDispatcher = struct
   let dispatch : (Tenv.t * Procname.t, model, ValueOrigin.t) ProcnameDispatcher.Call.dispatcher =
-    ProcnameDispatcher.Call.make_dispatcher
+    ProcnameDispatcher.Call.make_dispatcher ~swift_matchers:PulseModelsSwift.matchers
       ( FbPulseModels.matchers @ PulseModelsCSharp.matchers
       @ PulseModelsObjC.transfer_ownership_matchers @ PulseModelsCpp.abort_matchers
       @ PulseModelsAndroid.matchers @ PulseModelsC.matchers @ PulseModelsCpp.matchers
       @ PulseModelsErlang.matchers @ PulseModelsGenericArrayBackedCollection.matchers
       @ PulseModelsHack.matchers @ PulseModelsJava.matchers @ PulseModelsObjC.matchers
-      @ PulseModelsSwift.matchers @ PulseModelsOptional.matchers @ PulseModelsSmartPointers.matchers
-      @ PulseModelsLocks.matchers @ Basic.matchers )
+      @ PulseModelsOptional.matchers @ PulseModelsSmartPointers.matchers @ PulseModelsLocks.matchers
+      @ Basic.matchers )
 end
 
 let dispatch tenv proc_name args =
