@@ -200,6 +200,33 @@ let metadata_equals arg1 arg2 () : unit DSL.model_monad =
       assign_ret unknown_bool
 
 
+(* Model the "framework registers a handler" shape: a function takes a
+   closure (split by Swift's calling convention into a function-pointer
+   and its captured-environment) and returns an opaque holder that
+   strongly retains the closure. Used for canonical Swift framework
+   APIs (Timer / NotificationCenter / Combine sink /
+   DispatchSourceTimer) that store a closure on a returned object the
+   caller stashes on `self`. Without this model Pulse never establishes
+   the holder->captured_env edge, so retain cycles closing through the
+   captured `self` are missed. *)
+let register_closure_holder _callback captured_env : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let holder_class = Typ.SwiftClass (SwiftClassName.of_string "__infer_closure_holder") in
+  (* `~is_weak:false` makes the field a Strong access so PulseRefCounting
+     classifies the holder->captured_env edge correctly when the
+     retain-cycle checker traverses it; otherwise the field has no weak/
+     strong info and the cycle's access type is reported as Unknown. *)
+  let field = Fieldname.make ~is_weak:false holder_class "captured_env" in
+  let* holder = fresh () in
+  let* () = and_positive holder in
+  let* () = allocation SwiftAlloc holder in
+  let* () = and_dynamic_type_is holder (Typ.mk_struct holder_class) in
+  let* () = store_field ~ref:holder field captured_env in
+  assign_ret holder
+
+
 let alloc size_exp () : unit DSL.model_monad =
   let open DSL.Syntax in
   (* 1. Extract the exact type directly from the LLVM sizeof AST! *)
@@ -305,4 +332,9 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
       swift_dynamic_type arg1 arg2
 
 
-let matchers : matcher list = []
+let matchers : matcher list =
+  let open ProcnameDispatcher.Call in
+  [ -"external_register_handler" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> register_closure_holder ]
+  |> List.map ~f:(fun matcher ->
+         matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )
