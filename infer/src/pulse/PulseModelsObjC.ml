@@ -311,158 +311,155 @@ let matchers : matcher list =
       &:: "performAsCurrentTraitCollection:" $ capt_arg $++$--> call_objc_block
     ; +BuiltinDecl.(match_builtin __call_objc_block) $ capt_arg $++$--> call_objc_block ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
-  @ ( [ -"init" <>$ capt_arg_payload $+...$--> Basic.id_first_arg ~desc:"NSObject.init"
-      ; -"initWithFrame:" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"NSObject.initWithFrame:"
-      ; -"initWithCoder:" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"NSObject.initWithCoder:"
-      ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
-        <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
-      ; -"CFRelease" <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
-      ; +match_regexp_opt Config.pulse_model_release_pattern
-        <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
-      ; -"CFAutorelease" <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
-      ; -"CFBridgingRelease" <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
-      ; +BuiltinDecl.(match_builtin __objc_bridge_transfer)
-        <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
-      ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> alloc_no_fail
-      ; +BuiltinDecl.(match_builtin __objc_get_ref_count) <>$ capt_arg_payload $--> get_ref_count
-      ; +BuiltinDecl.(match_builtin __objc_set_ref_count)
-        <>$ capt_arg_payload $+ capt_arg_payload $--> set_ref_count
-      ; +class_match_prefix "NS"
-        &:: "init" <>$ capt_arg_payload
-        $--> Basic.id_first_arg ~desc:"NSObject.init"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
-        &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> construct_string
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
-        &:: "initWithFormat:" <>$ any_arg $+ capt_arg_payload
-        $+...$--> check_arg_not_nil ~desc:"NSString.initWithFormat:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
-        &:: "stringWithFormat:" <>$ capt_arg_payload
-        $+...$--> check_arg_not_nil ~desc:"NSString.stringWithFormat:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
-        &:: "stringWithString:" <>$ capt_arg_payload
-        $--> check_arg_not_nil ~desc:"NSString.stringWithString:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSAttributedString")
-        &:: "initWithString:" <>$ any_arg $+ capt_arg_payload
-        $--> check_arg_not_nil ~desc:"NSAttributedString.initWithString:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
-        &:: "stringByAppendingString:" <>$ any_arg $+ capt_arg_payload
-        $--> check_arg_not_nil ~desc:"NSString.stringByAppendingString:"
-      ; +BuiltinDecl.(match_builtin objc_insert_key)
-        <>$ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Key
-               ~desc:"key insertion into collection literal"
-      ; +BuiltinDecl.(match_builtin objc_insert_value)
-        <>$ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value
-               ~desc:"value insertion into collection literal"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
-        &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
-        $--> insertion_into_collection_key_and_value ~desc:"NSMutableDictionary.setObject:forKey:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
-        &:: "setObject:forKeyedSubscript:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Key
-               ~desc:"mutableDictionary[someKey] = value"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
-        &:: "removeObjectForKey:" <>$ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Key
-               ~desc:"NSMutableDictionary.removeObjectForKey"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
-        &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Key
-               ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
-        &:: "arrayWithArray:" <>$ capt_arg_payload
-        $--> create_array_backed_with_modelled_array ~desc:"NSArray.arrayWithArray:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
-        &:: "initWithArray:" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> init_array_backed_with_modelled_array ~desc:"NSArray.initWithArray:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-        &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value
-               ~desc:"NSMutableArray.addObject:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-        &:: "insertObject:atIndex:" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
-        $--> insert_object_at ~disallow_nil_obj:true ~desc:"NSMutableArray.insertObject:atIndex:"
-      ; ( +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-        &:: "replaceObjectAtIndex:withObject:" <>$ capt_arg_payload $+ capt_arg_payload
-        $+ capt_arg_payload
-        $--> fun collection index obj ->
-        insert_object_at collection obj index ~disallow_nil_obj:true
-          ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:" )
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-        &:: "setObject:atIndexedSubscript:" <>$ capt_arg_payload $+ capt_arg_payload
-        $+ capt_arg_payload
-        $--> insert_object_at ~disallow_nil_obj:true
-               ~desc:"NSMutableArray.setObject:atIndexedSubscript:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
-        &:: "objectAtIndex:" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> object_at ~implement_nil_messaging:true ~desc:"NSArray.objectAtIndex:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
-        &:: "objectAtIndexedSubscript:" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> object_at ~implement_nil_messaging:true ~desc:"NSArray.objectAtIndexedSubscript:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-        &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value
-               ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
-        &:: "addObject:" <>$ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value
-               ~desc:"NSMutableSet.addObject:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
-        &:: "removeObject:" <>$ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value
-               ~desc:"NSMutableSet.removeObject:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-        &:: "removeObjectsAtIndexes:" <>$ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Key
-               ~desc:"NSMutableArray.removeObjectsAtIndexes:"
-      ; ( +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
-        &:: "replaceObjectsAtIndexes:withObjects:" <>$ any_arg $+ capt_arg_payload
-        $+ capt_arg_payload
-        $--> fun k v ->
-        insertion_into_collection_key_and_value v k
-          ~desc:"NSMutableArray.replaceObjectsAtIndexes:withObjects:" )
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
-        &:: "dictionaryWithObject:forKey:" <>$ capt_arg_payload $+ capt_arg_payload
-        $--> insertion_into_collection_key_and_value
-               ~desc:"NSDictionary.dictionaryWithObject:forKey:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
-        &:: "sharedKeySetForKeys:" <>$ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Key
-               ~desc:"NSDictionary.sharedKeySetForKeys"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
-        &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
-        $--> read_from_collection ~desc:"NSDictionary.objectForKey"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
-        &:: "objectForKeyedSubscript:" <>$ any_arg $+ capt_arg_payload
-        $--> read_from_collection ~desc:"NSDictionary.objectForKeyedSubscript"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
-        &:: "setWithObject:" <>$ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSSet.setWithObject"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
-        &:: "setByAddingObject:" <>$ any_arg $+ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value
-               ~desc:"NSSet.setByAddingObject"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
-        &:: "arrayWithObject:" <>$ capt_arg_payload
-        $--> insertion_into_collection_key_or_value ~value_kind:`Value
-               ~desc:"NSArray.arrayWithObject"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIViewController")
-        &:: "initWithNibName:bundle:" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"UIViewController.initWithNibName:bundle:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
-        &:: "initWithFrame:" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"UIView.initWithFrame:"
-      ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
-        &:: "initWithCoder:" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"UIView.initWithCoder:"
-        (* catch-all for any CLASS.init *)
-      ; +(fun (_tenv, proc_name) _ -> Procname.is_objc_method proc_name)
-        &:: "init" <>$ capt_arg_payload
-        $+...$--> Basic.id_first_arg ~desc:"NSObject.init" ]
-    |> List.map ~f:(fun matcher ->
-           matcher
-           |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
-           |> ProcnameDispatcher.Call.map_matcher ~f:lift_model ) )
+  @
+  let objc_only_name name =
+    ~+(fun (_tenv, proc_name) n -> String.equal n name && Procname.is_objc_method proc_name)
+  in
+  [ objc_only_name "init" <>$ capt_arg_payload $+...$--> Basic.id_first_arg ~desc:"NSObject.init"
+  ; objc_only_name "initWithFrame:" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"NSObject.initWithFrame:"
+  ; objc_only_name "initWithCoder:" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"NSObject.initWithCoder:"
+  ; +map_context_tenv PatternMatch.ObjectiveC.is_core_graphics_release
+    <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
+  ; -"CFRelease" <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
+  ; +match_regexp_opt Config.pulse_model_release_pattern
+    <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
+  ; -"CFAutorelease" <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
+  ; -"CFBridgingRelease" <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
+  ; +BuiltinDecl.(match_builtin __objc_bridge_transfer)
+    <>$ capt_arg_payload $--> CoreFoundation.cf_bridging_release
+  ; +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $--> alloc_no_fail
+  ; +BuiltinDecl.(match_builtin __objc_get_ref_count) <>$ capt_arg_payload $--> get_ref_count
+  ; +BuiltinDecl.(match_builtin __objc_set_ref_count)
+    <>$ capt_arg_payload $+ capt_arg_payload $--> set_ref_count
+  ; +class_match_prefix "NS"
+    &:: "init" <>$ capt_arg_payload
+    $--> Basic.id_first_arg ~desc:"NSObject.init"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+    &:: "stringWithUTF8String:" <>$ capt_arg_payload $--> construct_string
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+    &:: "initWithFormat:" <>$ any_arg $+ capt_arg_payload
+    $+...$--> check_arg_not_nil ~desc:"NSString.initWithFormat:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+    &:: "stringWithFormat:" <>$ capt_arg_payload
+    $+...$--> check_arg_not_nil ~desc:"NSString.stringWithFormat:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+    &:: "stringWithString:" <>$ capt_arg_payload
+    $--> check_arg_not_nil ~desc:"NSString.stringWithString:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSAttributedString")
+    &:: "initWithString:" <>$ any_arg $+ capt_arg_payload
+    $--> check_arg_not_nil ~desc:"NSAttributedString.initWithString:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSString")
+    &:: "stringByAppendingString:" <>$ any_arg $+ capt_arg_payload
+    $--> check_arg_not_nil ~desc:"NSString.stringByAppendingString:"
+  ; +BuiltinDecl.(match_builtin objc_insert_key)
+    <>$ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Key
+           ~desc:"key insertion into collection literal"
+  ; +BuiltinDecl.(match_builtin objc_insert_value)
+    <>$ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value
+           ~desc:"value insertion into collection literal"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+    &:: "setObject:forKey:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
+    $--> insertion_into_collection_key_and_value ~desc:"NSMutableDictionary.setObject:forKey:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+    &:: "setObject:forKeyedSubscript:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Key
+           ~desc:"mutableDictionary[someKey] = value"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+    &:: "removeObjectForKey:" <>$ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Key
+           ~desc:"NSMutableDictionary.removeObjectForKey"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableDictionary")
+    &:: "dictionaryWithSharedKeySet:" <>$ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Key
+           ~desc:"NSMutableDictionary.dictionaryWithSharedKeySet"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
+    &:: "arrayWithArray:" <>$ capt_arg_payload
+    $--> create_array_backed_with_modelled_array ~desc:"NSArray.arrayWithArray:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
+    &:: "initWithArray:" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> init_array_backed_with_modelled_array ~desc:"NSArray.initWithArray:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+    &:: "addObject:" <>$ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSMutableArray.addObject:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+    &:: "insertObject:atIndex:" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> insert_object_at ~disallow_nil_obj:true ~desc:"NSMutableArray.insertObject:atIndex:"
+  ; ( +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+    &:: "replaceObjectAtIndex:withObject:" <>$ capt_arg_payload $+ capt_arg_payload
+    $+ capt_arg_payload
+    $--> fun collection index obj ->
+    insert_object_at collection obj index ~disallow_nil_obj:true
+      ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:" )
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+    &:: "setObject:atIndexedSubscript:" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload
+    $--> insert_object_at ~disallow_nil_obj:true
+           ~desc:"NSMutableArray.setObject:atIndexedSubscript:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
+    &:: "objectAtIndex:" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> object_at ~implement_nil_messaging:true ~desc:"NSArray.objectAtIndex:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
+    &:: "objectAtIndexedSubscript:" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> object_at ~implement_nil_messaging:true ~desc:"NSArray.objectAtIndexedSubscript:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+    &:: "replaceObjectAtIndex:withObject:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value
+           ~desc:"NSMutableArray.replaceObjectAtIndex:withObject:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
+    &:: "addObject:" <>$ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSMutableSet.addObject:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableSet")
+    &:: "removeObject:" <>$ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value
+           ~desc:"NSMutableSet.removeObject:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+    &:: "removeObjectsAtIndexes:" <>$ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Key
+           ~desc:"NSMutableArray.removeObjectsAtIndexes:"
+  ; ( +map_context_tenv (PatternMatch.ObjectiveC.implements "NSMutableArray")
+    &:: "replaceObjectsAtIndexes:withObjects:" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload
+    $--> fun k v ->
+    insertion_into_collection_key_and_value v k
+      ~desc:"NSMutableArray.replaceObjectsAtIndexes:withObjects:" )
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+    &:: "dictionaryWithObject:forKey:" <>$ capt_arg_payload $+ capt_arg_payload
+    $--> insertion_into_collection_key_and_value ~desc:"NSDictionary.dictionaryWithObject:forKey:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+    &:: "sharedKeySetForKeys:" <>$ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Key
+           ~desc:"NSDictionary.sharedKeySetForKeys"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+    &:: "objectForKey:" <>$ any_arg $+ capt_arg_payload
+    $--> read_from_collection ~desc:"NSDictionary.objectForKey"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSDictionary")
+    &:: "objectForKeyedSubscript:" <>$ any_arg $+ capt_arg_payload
+    $--> read_from_collection ~desc:"NSDictionary.objectForKeyedSubscript"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
+    &:: "setWithObject:" <>$ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSSet.setWithObject"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSSet")
+    &:: "setByAddingObject:" <>$ any_arg $+ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSSet.setByAddingObject"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "NSArray")
+    &:: "arrayWithObject:" <>$ capt_arg_payload
+    $--> insertion_into_collection_key_or_value ~value_kind:`Value ~desc:"NSArray.arrayWithObject"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIViewController")
+    &:: "initWithNibName:bundle:" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"UIViewController.initWithNibName:bundle:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
+    &:: "initWithFrame:" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"UIView.initWithFrame:"
+  ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UIView")
+    &:: "initWithCoder:" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"UIView.initWithCoder:"
+    (* catch-all for any CLASS.init *)
+  ; +(fun (_tenv, proc_name) _ -> Procname.is_objc_method proc_name)
+    &:: "init" <>$ capt_arg_payload
+    $+...$--> Basic.id_first_arg ~desc:"NSObject.init" ]
+  |> List.map ~f:(fun matcher ->
+         matcher
+         |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+         |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )
