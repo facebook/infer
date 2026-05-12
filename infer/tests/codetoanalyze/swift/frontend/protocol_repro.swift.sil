@@ -1,0 +1,495 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare swift_getTypeByMangledNameInContext(*__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_getObjectType(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_bridgeObjectRelease(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare objc_opt_self(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare objc_msgSend() : *__infer_swift_type<ptr_elt>
+
+declare objc_allocWithZone(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swift_Builtin_float() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftXPC() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftObjectiveC() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftFoundation() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftDispatch() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare __swift_instantiateConcreteTypeFromMangledName(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $ss27_allocateUninitializedArrayySayxG_BptBwlF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSD17dictionaryLiteralSDyxq_Gx_q_td_tcfC(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $sSD10FoundationE19_bridgeToObjectiveCSo12NSDictionaryCyF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>.$s5Hello9SwipeInfoCfD(*__infer_swift_type<,SwipeInfo>) : void
+
+declare $s5Hello9SwipeInfoCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "init" $s5Hello9SwipeInfoCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,SwipeInfo>
+
+define .plain_name = "init" $s5Hello9SwipeInfoCACycfc(var1: *__infer_swift_type<,SwipeInfo>) : *__infer_swift_type<ptr_elt> {
+  local var5: *__infer_swift_type<objc_super>, self: *__infer_swift_type<ptr_elt>
+  #: @[21:0]
+      n1 = load &var1 @[21:0]
+      n2 = swift_getObjectType(n1) @[21:0]
+      jmp 2::ret @[21:0]
+      
+  #2::ret: @[21:0]
+      n3 = load &self @[21:0]
+      n5:*__infer_swift_type<objc_super> = load &var5 @[21:0]
+      store n5.__infer_swift_type<objc_super>.field_0 <- n3 @[21:0]
+      n7:*__infer_swift_type<objc_super> = load &var5 @[21:0]
+      store n7.__infer_swift_type<objc_super>.field_1 <- n2 @[21:0]
+      n8 = load &L_selector(init) @[21:0]
+      n9 = load &var5 @[21:0]
+      n11 = $builtins.objc_msgSendSuper2(n9, n8) @[21:0]
+      n12 = n11 @[21:0]
+      store &self <- n11 @[21:0]
+      n14 = load &self @[21:0]
+      ret n11 @[21:0]
+      
+} @?
+
+define .plain_name = "init" $s5Hello9SwipeInfoCACycfC(var1: *__infer_swift_type<,$s5Hello9SwipeInfoCXMTD>) : *__infer_swift_type<ptr_elt> {
+  #: @[21:0]
+      n1 = load &var1 @[21:0]
+      n2 = __sil_objc_alloc(<NSObject>, n1) @[21:0]
+      jmp 2::ret @[21:0]
+      
+  #2::ret: @[21:0]
+      n3 = load &L_selector(init) @[21:0]
+      n6 = n2.init() @[21:0]
+      jmp 4::ret @[21:0]
+      
+  #4::ret: @[21:0]
+      ret n6 @[21:0]
+      
+} @?
+
+define .plain_name = "translationInWindow.get" $s5Hello9SwipeInfoC19translationInWindowSo7CGPointVvgTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<struct::CGPoint> {
+  local var4: *__infer_tuple_class<float,float>
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = &var1 @[0:0]
+      n4 = load &var1 @[0:0]
+      n5 = $s5Hello9SwipeInfoC19translationInWindowSo7CGPointVvg(n4) @[0:0]
+      jmp 9::ret @[0:0]
+      
+  #9::ret: @[0:0]
+      n6 = $builtins.llvm_init_tuple() @[0:0]
+      n8 = load n5.__infer_tuple_class<float,float>.__infer_tuple_field_0 @[0:0]
+      store n6.__infer_tuple_class<float,float>.__infer_tuple_field_0 <- n8 @[0:0]
+      n10 = load n5.__infer_tuple_class<float,float>.__infer_tuple_field_1 @[0:0]
+      store n6.__infer_tuple_class<float,float>.__infer_tuple_field_1 <- n10 @[0:0]
+      store &var4 <- n6 @[0:0]
+      n12 = load &var4 @[0:0]
+      ret n12 @[0:0]
+      
+} @?
+
+define .plain_name = "translationInWindow.get" $s5Hello9SwipeInfoC19translationInWindowSo7CGPointVvg(self: *__infer_swift_type<,SwipeInfo>) : *__infer_swift_type<,CGPoint> {
+  #: @[22:67]
+      ret $builtins.llvm_nondet() @[22:67]
+      
+} @?
+
+define .plain_name = "analyticsExtras" $s5Hello9SwipeInfoC15analyticsExtrasSDySSSo8NSObject_pGyFTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = &var1 @[0:0]
+      n4 = load &var1 @[0:0]
+      n5 = $s5Hello9SwipeInfoC15analyticsExtrasSDySSSo8NSObject_pGyF(n4) @[0:0]
+      jmp 8::ret @[0:0]
+      
+  #10::ret: @[0:0]
+      n13 = n12 @[0:0]
+      ret n13 @[0:0]
+      
+  #8::ret: @[0:0]
+      n6 = load &$sSo8NSObject_pMD @[0:0]
+      n7 = __sil_swift_alloc(<__infer_swift_type<TSo8NSObject_p>>) @[0:0]
+      jmp 9::ret @[0:0]
+      
+  #9::ret: @[0:0]
+      n9 = load &$sSSN @[0:0]
+      n11 = load &$sSSSHsWP @[0:0]
+      n12 = $sSD10FoundationE19_bridgeToObjectiveCSo12NSDictionaryCyF(n5, n9, n7, n11) @[0:0]
+      jmp 10::ret @[0:0]
+      
+} @?
+
+define .plain_name = "analyticsExtras" $s5Hello9SwipeInfoC15analyticsExtrasSDySSSo8NSObject_pGyF(self: *__infer_swift_type<,SwipeInfo>) : *__infer_swift_type<ptr_elt> {
+  #: @[24:16]
+      n1 = load &$sSS_So8NSObject_ptMD @[24:16]
+      n2 = __sil_swift_alloc(<__infer_swift_type<TSS_So8NSObject_pt>>) @[24:16]
+      jmp 3::ret @[24:16]
+      
+  #3::ret: @[24:16]
+      n5 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(0, n2) @[24:16]
+      jmp 4::ret @[24:16]
+      
+  #4::ret: @[24:16]
+      n6 = load &$sSo8NSObject_pMD @[24:16]
+      n7 = __sil_swift_alloc(<__infer_swift_type<TSo8NSObject_p>>) @[24:16]
+      jmp 7::ret @[24:16]
+      
+  #7::ret: @[24:16]
+      n9 = load n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[24:16]
+      n10 = load &$sSSN @[24:16]
+      n12 = load &$sSSSHsWP @[24:16]
+      n13 = $sSD17dictionaryLiteralSDyxq_Gx_q_td_tcfC(n9, n10, n7, n12) @[24:16]
+      jmp 8::ret @[24:16]
+      
+  #8::ret: @[24:9]
+      ret n13 @[24:9]
+      
+} @?
+
+global symbolic _____ 5Hello9SwipeInfoC: *__infer_tuple_class<int,int,int>
+
+global symbolic So8NSObject_p: *__infer_tuple_class<*int,int>
+
+global symbolic So8NSObjectC: *__infer_tuple_class<*int,int>
+
+global symbolic SS_So8NSObject_pt: *__infer_tuple_class<*int,int>
+
+global symbolic $s5Hello15GestureProviderP: *__infer_tuple_class<*int,int>
+
+global swift_isaMask: *__infer_swift_type<ptr_elt>
+
+global objc_classes_$s5Hello9SwipeInfoCN: *__infer_swift_type<ptr_elt>
+
+global llvm::used: **__infer_swift_type<ptr_elt>
+
+global llvm::compiler::used: **__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swift_Builtin_float_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftXPC_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftObjectiveC_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftFoundation_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftDispatch_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCoreFoundation_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
+
+global _objc_empty_cache: *__infer_swift_type<ptr_elt>
+
+global __swift_reflection_version: int
+
+global _PROTOCOL__TtP5Hello15GestureProvider_: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _PROTOCOL_PROTOCOLS__TtP5Hello15GestureProvider_: *__infer_tuple_class<int,**__infer_swift_type<ptr_elt>>
+
+global _PROTOCOL_PROPERTIES__TtP5Hello15GestureProvider_: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _PROTOCOL_PROPERTIES_NSObject: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _PROTOCOL_NSObject: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _PROTOCOL_METHOD_TYPES__TtP5Hello15GestureProvider_: **__infer_swift_type<ptr_elt>
+
+global _PROTOCOL_METHOD_TYPES_NSObject: **__infer_swift_type<ptr_elt>
+
+global _PROTOCOL_INSTANCE_METHODS__TtP5Hello15GestureProvider_: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _PROTOCOL_INSTANCE_METHODS_OPT_NSObject: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _PROTOCOL_INSTANCE_METHODS_NSObject: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _PROTOCOLS__TtC5Hello9SwipeInfo::1: *__infer_tuple_class<int,**__infer_swift_type<ptr_elt>>
+
+global _PROTOCOLS__TtC5Hello9SwipeInfo: *__infer_tuple_class<int,**__infer_swift_type<ptr_elt>>
+
+global _PROPERTIES__TtC5Hello9SwipeInfo: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _METACLASS_DATA__TtC5Hello9SwipeInfo: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _INSTANCE_METHODS__TtC5Hello9SwipeInfo: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>>
+
+global _DATA__TtC5Hello9SwipeInfo: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global OBJC_METACLASS_$__TtC5Hello9SwipeInfo: *__infer_swift_type<objc_class>
+
+global OBJC_METACLASS_$_NSObject: *__infer_swift_type<ptr_elt>
+
+global OBJC_CLASS_$_NSObject: *__infer_swift_type<ptr_elt>
+
+global ::str::9::SwipeInfo: *int
+
+global ::str::8::Vv16@0:8: *int
+
+global ::str::8::NSObject: *int
+
+global ::str::7::q16@0:8: int
+
+global ::str::7::Q16@0:8: int
+
+global ::str::7::B16@0:8: int
+
+global ::str::7::@16@0:8: int
+
+global ::str::7::#16@0:8: int
+
+global ::str::6::Tq,N,R: *int
+
+global ::str::6::T#,N,R: *int
+
+global ::str::5::Hello: *int
+
+global ::str::4::hash: *int
+
+global ::str::28::_TtP5Hello15GestureProvider_: *int
+
+global ::str::21::@"NSDictionary"16@0:8: *int
+
+global ::str::20::_TtC5Hello9SwipeInfo: *int
+
+global ::str::20::B24@0:8@"Protocol"16: *int
+
+global ::str::19::translationInWindow: *int
+
+global ::str::18::{CGPoint=dd}16@0:8: *int
+
+global ::str::17::^{_NSZone=}16@0:8: *int
+
+global ::str::17::T{CGPoint=dd},N,R: *int
+
+global ::str::17::@"NSString"16@0:8: *int
+
+global ::str::16::debugDescription: *int
+
+global ::str::16::T@"NSString",N,R: *int
+
+global ::str::16::@40@0:8:16@24@32: *int
+
+global ::str::13::@32@0:8:16@24: *int
+
+global ::str::11::description: *int
+
+global ::str::10::superclass: *int
+
+global ::str::10::B24@0:8@16: *int
+
+global ::str::10::B24@0:8:16: *int
+
+global ::str::10::B24@0:8#16: *int
+
+global ::str::10::@24@0:8:16: *int
+
+global $sSo8NSObject_pMD: *__infer_tuple_class<int,int>
+
+global $sSS_So8NSObject_ptMD: *__infer_tuple_class<int,int>
+
+global $sSSSHsWP: *__infer_swift_type<ptr_elt>
+
+global $sSSN: *__infer_swift_type<ptr_elt> = [Some 1003]
+
+global $sBOWV: *__infer_swift_type<ptr_elt>
+
+global $s5HelloMXM: *__infer_tuple_class<int,int,int>
+
+global $s5Hello9SwipeInfoCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int>
+
+global $s5Hello9SwipeInfoCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global $s5Hello9SwipeInfoCMF: *__infer_tuple_class<int,int,int,int,int>
+
+global $s5Hello9SwipeInfoCHn: *__infer_swift_type<swift::type_metadata_record>
+
+global $s5Hello9SwipeInfoC19translationInWindowSo7CGPointVvpMV: *__infer_tuple_class<int>
+
+global $s5Hello15GestureProvider_pMF: *__infer_tuple_class<int,int,int,int,int>
+
+global l_OBJC_PROTOCOL_REFERENCE_$__TtP5Hello15GestureProvider_: *__infer_swift_type<ptr_elt>
+
+global l_OBJC_PROTOCOL_REFERENCE_$_NSObject: *__infer_swift_type<ptr_elt>
+
+global l_OBJC_LABEL_PROTOCOL_$__TtP5Hello15GestureProvider_: *__infer_swift_type<ptr_elt>
+
+global l_OBJC_LABEL_PROTOCOL_$_NSObject: *__infer_swift_type<ptr_elt>
+
+global L_selector_data(zone): *int
+
+global L_selector_data(translationInWindow): *int
+
+global L_selector_data(superclass): *int
+
+global L_selector_data(self): *int
+
+global L_selector_data(retainCount): *int
+
+global L_selector_data(retain): *int
+
+global L_selector_data(respondsToSelector:): *int
+
+global L_selector_data(release): int
+
+global L_selector_data(performSelector:withObject:withObject:): *int
+
+global L_selector_data(performSelector:withObject:): *int
+
+global L_selector_data(performSelector:): *int
+
+global L_selector_data(isProxy): int
+
+global L_selector_data(isMemberOfClass:): *int
+
+global L_selector_data(isKindOfClass:): *int
+
+global L_selector_data(isEqual:): *int
+
+global L_selector_data(init): *int
+
+global L_selector_data(hash): *int
+
+global L_selector_data(description): *int
+
+global L_selector_data(debugDescription): *int
+
+global L_selector_data(dealloc): int
+
+global L_selector_data(conformsToProtocol:): *int
+
+global L_selector_data(class): *int
+
+global L_selector_data(autorelease): *int
+
+global L_selector_data(analyticsExtras): *int
+
+global L_selector(init): *__infer_swift_type<ptr_elt>
+
+global L_selector(dealloc): *__infer_swift_type<ptr_elt>
+
+type __infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo> = {}
+
+type __infer_swift_type<objc_class> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>;
+                                       field_2: *__infer_swift_type<ptr_elt>;
+                                       field_3: *__infer_swift_type<ptr_elt>;
+                                       field_4: int}
+
+type __infer_swift_type<objc_super> = {field_0: *__infer_swift_type<ptr_elt>;
+                                       field_1: *__infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<struct::CGPoint> = {field_0: float; field_1: float}
+
+type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+
+type __infer_swift_type<swift::type_metadata_record> = {field_0: int}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_11: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_12: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: int; __infer_tuple_field_8: int;
+__infer_tuple_field_9: int; __infer_tuple_field_10: int;
+__infer_tuple_field_11: int; __infer_tuple_field_12: int;
+__infer_tuple_field_13: int; __infer_tuple_field_14: int;
+__infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*int,int> = {__infer_tuple_field_0: *int;
+                                      __infer_tuple_field_1: int}
+
+type __infer_tuple_class<float,float> = {__infer_tuple_field_0: float;
+                                         __infer_tuple_field_1: float}
+
+type __infer_tuple_class<int> = {__infer_tuple_field_0: int}
+
+type __infer_tuple_class<int,**__infer_swift_type<ptr_elt>> = {__infer_tuple_field_0: int;
+                                                               __infer_tuple_field_1: **__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
+                                     __infer_tuple_field_1: int}
+
+type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>}
+
+type __infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: **__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>}
+
+type __infer_tuple_class<int,int,int> = {__infer_tuple_field_0: int;
+                                         __infer_tuple_field_1: int;
+                                         __infer_tuple_field_2: int}
+
+type __infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_8: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_9: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_10: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<int,int,int,int,int> = {__infer_tuple_field_0: int;
+                                                 __infer_tuple_field_1: int;
+                                                 __infer_tuple_field_2: int;
+                                                 __infer_tuple_field_3: int;
+                                                 __infer_tuple_field_4: int}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int}
+

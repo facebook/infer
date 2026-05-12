@@ -626,7 +626,6 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let rcd_exp, _, rcd_instrs = to_textual_exp loc ~proc_state rcd in
       let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state elt in
       let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
-      let elt_instrs = List.append elt_instrs elt_deref_instrs in
       let textual_typ = Type.to_textual_typ lang ~mangled_map ~struct_map typ in
       let type_name =
         match textual_typ with
@@ -643,7 +642,13 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
       let store_instr =
         Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
       in
-      (rcd_exp, Some textual_typ, List.append (List.append rcd_instrs elt_instrs) [store_instr])
+      (* Return in reverse-execution order, matching the convention used by the
+         [cmnd_to_instrs] consumers: instr at position 0 runs LAST in execution.
+         Concrete exec order is: compute [rcd_instrs], compute [elt_instrs],
+         materialise the elt via [elt_deref_instrs], then [store_instr].
+         Sub-results [rcd_instrs] and [elt_instrs] are themselves rev-exec
+         from the recursive [to_textual_exp]. *)
+      (rcd_exp, Some textual_typ, (store_instr :: elt_deref_instrs) @ elt_instrs @ rcd_instrs)
   | Ap3 (Conditional, _typ, cond_exp, then_exp, else_exp) ->
       let cond_exp, _, cond_instrs = to_textual_bool_exp loc ~proc_state cond_exp in
       let then_exp, _, then_instrs = to_textual_exp loc ~proc_state then_exp in
@@ -672,11 +677,19 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             Textual.Exp.call_non_virtual proc []
           in
           let rcd_store_instr = Textual.Instr.Let {id= Some id; exp= undef_exp; loc} in
-          (* for each element in the record we set the value to a field of the record variable. *)
+          (* For each element in the record, set the value to a field of the
+             record variable. Returned [instrs] is in reverse-execution order
+             (instr at position 0 runs LAST), matching the convention used by
+             [cmnd_to_instrs] consumers and by the [Ap2 (Update ...)] case
+             above. Concrete forward-exec for one element is: compute
+             [elt_instrs], materialise via [elt_deref_instrs], then
+             [store_instr] at the field. Earlier elements run first, so their
+             (rev-exec) blocks go AFTER later ones in the list;
+             [rcd_store_instr] runs first overall, so it sits at the very
+             tail. *)
           let to_textual_exp_index idx acc_instrs element =
             let elt_exp, _, elt_instrs = to_textual_exp loc ~proc_state element in
             let elt_deref_instrs, elt_exp_deref = add_deref ~proc_state elt_exp loc in
-            let elt_instrs = List.append elt_instrs elt_deref_instrs in
             let field =
               if Llair.Typ.is_tuple typ then Field.tuple_field_of_pos type_name idx
               else
@@ -686,9 +699,9 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
             let store_instr =
               Textual.Instr.Store {exp1= index_exp; exp2= elt_exp_deref; typ= None; loc}
             in
-            List.append acc_instrs (List.append elt_instrs [store_instr])
+            ((store_instr :: elt_deref_instrs) @ elt_instrs) @ acc_instrs
           in
-          let instrs = rcd_store_instr :: List.foldi ~f:to_textual_exp_index ~init:[] elements in
+          let instrs = List.foldi ~f:to_textual_exp_index ~init:[rcd_store_instr] elements in
           (rcd_exp, Some textual_typ, instrs) )
   | _ ->
       undef_exp ~sourcefile:proc_state.sourcefile ~loc ~proc:proc_state.qualified_name exp
@@ -1217,7 +1230,13 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
       let loc = to_textual_loc_instr ~proc_state loc_ in
       let textual_exp, textual_typ_opt, instrs = to_textual_exp loc ~proc_state exp in
       let exp_deref_instrs, textual_exp = add_deref ~proc_state textual_exp loc in
-      let instrs = List.append instrs exp_deref_instrs in
+      (* [to_textual_exp] returns [instrs] in reverse-execution order (matching
+         the [cmnd_to_instrs] accumulator convention). [block_to_node_and_succs]
+         appends our [term_instrs] onto the body in forward-execution order
+         (post-[List.rev] from [cmnd_to_instrs]), so reverse [instrs] here. The
+         single-instruction [exp_deref_instrs] is appended last in exec order
+         and so comes after the reversed [instrs]. *)
+      let instrs = List.rev instrs @ exp_deref_instrs in
       ((Textual.Terminator.Ret textual_exp, textual_typ_opt, no_succs), Some loc, instrs)
   | Return {exp= None; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
@@ -1242,7 +1261,9 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
           let term = Textual.Terminator.If {bexp; then_; else_} in
           let nodes = Textual.Node.Set.union zero_nodes els_nodes in
           let typ_opt = Type.join_typ if_typ else_typ in
-          ((term, typ_opt, nodes), Some loc, instrs)
+          (* [instrs] from [to_textual_bool_exp] is rev-exec; reverse for
+             [block_to_node_and_succs]'s forward-exec append. *)
+          ((term, typ_opt, nodes), Some loc, List.rev instrs)
       | [] when Exp.equal key Exp.false_ ->
           (* goto *)
           (to_textual_jump_and_succs ~proc_state ~seen_nodes els, Some loc, [])
@@ -1272,9 +1293,11 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
                 ( term
                 , Type.join_typ then_typ acc_typ
                 , Textual.Node.Set.union then_nodes acc_nodes
-                , case_instrs @ case_deref_instrs @ acc_instrs ) )
+                , (List.rev case_instrs @ case_deref_instrs) @ acc_instrs ) )
           in
-          ((term, typ_opt, nodes), Some loc, key_instrs @ key_deref_instrs @ case_instrs_acc) )
+          ( (term, typ_opt, nodes)
+          , Some loc
+          , (List.rev key_instrs @ key_deref_instrs) @ case_instrs_acc ) )
   | Iswitch {loc} | Abort {loc} | Unreachable {loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
       ((Textual.Terminator.Unreachable, None, no_succs), Some loc, [])
