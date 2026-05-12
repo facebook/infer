@@ -159,3 +159,25 @@ func optionalGetterDerefMidBody_bad(api: LegacyAPI) -> Int? {
   let n = s!.count
   return n
 }
+
+// Optional-chain on the direct call result: `?.` short-circuits on
+// nil, so no deref happens regardless of the unannotated callee's
+// nullability. Should not fire MISSING_NULLABILITY_ANNOTATION; pinned
+// `_FP` until handled.
+func optionalChainOnDirectCall_safeUse_FP(api: LegacyAPI) {
+  let _ = api.getUnannotatedString()?.count
+}
+
+// Same `?.` idiom with the call result bound to a local first.
+// Source-equivalent; pinned `_FP` until handled.
+func optionalChainViaLet_safeUse_FP(api: LegacyAPI) {
+  let s = api.getUnannotatedString()
+  let _ = s?.count
+}
+
+// Negative case: same `?.`-eligible call, but the caller force-unwraps
+// the result instead of chaining. Real crash risk, MUST still be
+// reported -- pins the Pattern-2 recogniser's blast radius.
+func optionalChainEligibleButForceUnwrapped_bad(api: LegacyAPI) {
+  let _ = api.getUnannotatedString()!.count
+}

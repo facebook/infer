@@ -5,3 +5,6 @@ NullabilityTests.swift, classMethodUnannotated_bad, 1, MISSING_NULLABILITY_ANNOT
 NullabilityTests.swift, guardLetReturnNil_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, nilCoalesceDefault_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, optionalGetterDerefMidBody_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
+NullabilityTests.swift, optionalChainOnDirectCall_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
+NullabilityTests.swift, optionalChainViaLet_safeUse_FP, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
+NullabilityTests.swift, optionalChainEligibleButForceUnwrapped_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
