@@ -112,11 +112,12 @@ module ProcState : sig
     ; mutable last_string_added: string option
     ; mutable class_type_map: Textual.TypeName.t VarMap.t
     ; inferred_types: Textual.Typ.t Hashtbl.M(Int).t (* Map of Reg.id -> Typ.t *)
-    ; as_cast_msg_sends: (int, unit) Hashtbl.t
-          (* Reg.ids of objc_msgSend [areturn]s whose result is consumed by a
-             [_bridgeToObjectiveC] call -- the LLAIR signature of an [as?] cast.
-             Translation injects [Nullable] into [caller_ret_annots] for these
-             calls so SwiftObjCNullability does not report on them. *)
+    ; nullability_hint_msg_sends: (int, unit) Hashtbl.t
+          (* Reg.ids of objc_msgSend [areturn]s whose downstream CFG carries a
+             structural nullability signal -- either an [as?]-cast re-bridge
+             or an [Optional<T>] passthrough getter. Translation injects
+             [Nullable] into [caller_ret_annots] for these calls so
+             SwiftObjCNullability does not report on them. *)
     ; module_state: ModuleState.t }
 
   val init :
@@ -126,7 +127,7 @@ module ProcState : sig
     -> formals:formal_data VarMap.t
     -> module_state:ModuleState.t
     -> inferred_types:Textual.Typ.t IStd.Hashtbl.M(IStd.Int).t
-    -> as_cast_msg_sends:(int, unit) IStd.Hashtbl.t
+    -> nullability_hint_msg_sends:(int, unit) IStd.Hashtbl.t
     -> t
 
   val mk_fresh_id : ?reg:Llair.Reg.t -> t -> IdentMap.key

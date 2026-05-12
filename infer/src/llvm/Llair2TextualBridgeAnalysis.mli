@@ -6,12 +6,23 @@
  *)
 open! IStd
 
-val find_msgsends_feeding_bridge_to_objc : Llair.func -> (int, unit) Base.Hashtbl.t
+val find_msgsends_with_recoverable_nullability : Llair.func -> (int, unit) Base.Hashtbl.t
 (** For a Swift LLAIR proc, return the set (keyed by [Llair.Reg.id]) of [objc_msgSend] /
-    [performSelector] [areturn] registers whose result is consumed by a Swift [_bridgeToObjectiveC]
-    call reachable through the local CFG.
+    [performSelector] [areturn] registers whose downstream CFG carries a structural signal that lets
+    the Llair->Textual translator recover a [Nullable] annotation on the call. Two shapes qualify,
+    both detected in a single forward walk per seed:
 
-    This is the LLAIR-level signature of an [as?] cast in Swift source: the sequence [objc_msgSend]
-    -> [_unconditionallyBridgeFromObjectiveC...Sg] -> null check -> [_bridgeToObjectiveC]. Plain
-    [let s = api.f()], [let s = api.f()!] and [if let s = api.f()] do not emit the trailing
-    re-bridge. *)
+    - [as?]-cast re-bridge: some path from the seed reaches a [_bridgeToObjectiveC] call through
+      [_unconditionallyBridgeFromObjectiveC] + ARC retain/release helpers. Source-level signature of
+      [if let s = api.f() as? T { ... }].
+
+    - Optional-passthrough getter: every path from the seed reaches a value-returning [Return]
+      through the same transparent chain, AND at least one path traverses
+      [_unconditionallyBridgeFromObjectiveC]. Source-level signature of
+      [func g() -> T? { return api.f() }] (Pattern 1, ~56% of fbobjc MNA prod volume).
+
+    Both shapes are sound to suppress: the [as?] caller has already typed the result as Optional and
+    the passthrough caller's [-> T?] return type forces every chained caller to handle nil.
+    Force-unwraps, method calls on the bridged value, multi-use bindings, void-return discards,
+    [_assertionFailure] crashes, and other non-transparent uses on any path disqualify the seed so
+    genuine misuse stays reported. *)

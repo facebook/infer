@@ -135,16 +135,16 @@ module ProcState = struct
     ; mutable last_string_added: string option
     ; mutable class_type_map: Textual.TypeName.t VarMap.t
     ; inferred_types: Textual.Typ.t Hashtbl.M(Int).t (* Map of Reg.id -> Typ.t *)
-    ; as_cast_msg_sends: (int, unit) Hashtbl.t
-          (* Reg.ids of objc_msgSend [areturn]s whose result is consumed by a
-             [_bridgeToObjectiveC] call -- the LLAIR signature of an [as?]
-             cast. Translation injects [Nullable] into [caller_ret_annots] for
-             these calls so the SwiftObjCNullability checker treats the result
-             as Optional. *)
+    ; nullability_hint_msg_sends: (int, unit) Hashtbl.t
+          (* Reg.ids of objc_msgSend [areturn]s whose downstream CFG carries a
+             structural nullability signal -- either an [as?]-cast re-bridge
+             or an [Optional<T>] passthrough getter. Translation injects
+             [Nullable] into [caller_ret_annots] for these calls so
+             SwiftObjCNullability does not report on them. *)
     ; module_state: ModuleState.t }
 
   let init ~qualified_name ~sourcefile ~loc ~formals ~module_state ~inferred_types
-      ~as_cast_msg_sends =
+      ~nullability_hint_msg_sends =
     { qualified_name
     ; sourcefile
     ; loc
@@ -167,7 +167,7 @@ module ProcState = struct
     ; last_string_added= None
     ; class_type_map= VarMap.empty
     ; inferred_types
-    ; as_cast_msg_sends
+    ; nullability_hint_msg_sends
     ; module_state }
 
 
@@ -427,7 +427,7 @@ use the substitution in the code later on. *)
     ; last_string_added= None
     ; class_type_map= VarMap.empty
     ; inferred_types= Hashtbl.create (module Int)
-    ; as_cast_msg_sends= Hashtbl.create (module Int)
+    ; nullability_hint_msg_sends= Hashtbl.create (module Int)
     ; module_state }
 
 

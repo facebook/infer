@@ -138,15 +138,14 @@ func nilCoalesceDefault_safeUse_FP(api: LegacyAPI) -> Int {
 // Optional-returning passthrough: the only use of the unannotated
 // result is to return it through an `-> T?` signature. Swift's type
 // system already forces every caller to handle nil, so there is no
-// crash risk. Should not fire MISSING_NULLABILITY_ANNOTATION; pinned
-// `_FP` until handled.
-func optionalGetterPassthrough_safeUse_FP(api: LegacyAPI) -> String? {
+// crash risk. Should not fire MISSING_NULLABILITY_ANNOTATION.
+func optionalGetterPassthrough_safeUse_good(api: LegacyAPI) -> String? {
   return api.getUnannotatedString()
 }
 
 // Same passthrough idiom with a one-line let binding between the call
-// and the return. Source-equivalent; pinned `_FP` until handled.
-func optionalGetterPassthroughViaLet_safeUse_FP(api: LegacyAPI) -> String? {
+// and the return. Source-equivalent; should not fire either.
+func optionalGetterPassthroughViaLet_safeUse_good(api: LegacyAPI) -> String? {
   let s = api.getUnannotatedString()
   return s
 }

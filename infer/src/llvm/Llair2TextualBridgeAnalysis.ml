@@ -13,17 +13,38 @@ let is_msgsend_callee name =
   || String.is_substring name ~substring:"performSelector"
 
 
+(* The two structural signals an [objc_msgSend]'s downstream CFG can carry,
+   either of which lets the Llair->Textual translator recover a [Nullable]
+   annotation on the call:
+
+   - [as?]-cast re-bridge: some path from the seed reaches a
+     [_bridgeToObjectiveC] call through the standard [Optional<T>] bridge +
+     ARC chain. Source-level: [if let s = api.f() as? T { ... }].
+
+   - Optional-passthrough getter: every path from the seed reaches a
+     value-returning [Return] through the same transparent chain, AND at
+     least one path traverses [_unconditionallyBridgeFromObjectiveC] (so the
+     Optional really gets boxed). Source-level:
+     [func g() -> T? { return api.f() }] or its trivial let-binding variant.
+
+   The two are mutually exclusive: [_bridgeToObjectiveC] is non-transparent
+   for the passthrough check (it means the Optional is being used further,
+   not just returned), so a re-bridge match disqualifies passthrough on
+   that path. *)
+
 let is_bridge_to_objc_callee name = String.is_substring name ~substring:"bridgeToObjectiveC"
 
-(* Calls we're willing to walk THROUGH while looking for [_bridgeToObjectiveC]. The
-   [as?]-cast lowering inserts these between the seed [objc_msgSend] and the target
-   re-bridge: [_unconditionallyBridgeFromObjectiveC...Sg] for the Optional bridge,
-   and the various ARC retain/release helpers. Stopping at any other call avoids
-   bleeding into unrelated code that happens to share the proc. *)
-let is_transparent_callee name =
+let is_bridge_from_objc_callee name =
   String.is_substring name ~substring:"BridgeFromObjectiveC"
   || String.is_substring name ~substring:"bridgeFromObjectiveC"
-  || String.is_substring name ~substring:"objc_retain"
+
+
+(* Calls the walker can pass through without losing either signal: ARC
+   retain/release helpers that accompany the [Optional<T>] packaging. The
+   bridge-from helpers above are tracked separately because the passthrough
+   signal needs to know one was seen. *)
+let is_arc_helper_callee name =
+  String.is_substring name ~substring:"objc_retain"
   || String.is_substring name ~substring:"objc_release"
   || String.is_substring name ~substring:"swift_retain"
   || String.is_substring name ~substring:"swift_release"
@@ -37,36 +58,76 @@ let callee_name (callee : Llair.callee) =
       None
 
 
-(* Starting from [start_block], BFS forward through the local CFG. If any
-   reachable block's terminator is a [Call] to a [_bridgeToObjectiveC] function,
-   return [true]. Stop a branch at any non-bridge / non-transparent call so we
-   stay in the tight neighborhood of the seed [objc_msgSend]. *)
-let reaches_bridge_to_objc start_block =
+type outcome =
+  { reaches_re_bridge: bool
+        (* [_bridgeToObjectiveC] reachable on some path through transparent
+           calls -- the [as?]-cast signature *)
+  ; passthrough: bool option
+        (* [Some saw_bridge_from] if every path from here reaches a
+           value-returning [Return] through transparent calls only;
+           [saw_bridge_from] is true iff at least one such path traversed
+           [_unconditionallyBridgeFromObjectiveC]. [None] if any path stops
+           at a non-transparent [Call], a void [Return], a [Throw], or
+           similar -- i.e. the seed's result is not a clean Optional
+           passthrough. *)
+  }
+
+let no_outcome = {reaches_re_bridge= false; passthrough= None}
+
+let combine_passthrough p q =
+  match (p, q) with None, _ | _, None -> None | Some a, Some b -> Some (a || b)
+
+
+(* Single forward CFG walk from [start_block] computing both signals. *)
+let classify_msgsend_destiny start_block =
   let visited = Hash_set.create (module String) in
   let rec visit (b : Llair.block) =
-    if Hash_set.mem visited b.lbl then false
+    if Hash_set.mem visited b.lbl then
+      (* Loops contribute the safe identity to both fields: false to the
+         existential bridge check, [Some false] (saw no bridge yet, but the
+         path doesn't escape via this back-edge) to the passthrough check. *)
+      {reaches_re_bridge= false; passthrough= Some false}
     else (
       Hash_set.add visited b.lbl ;
       match b.term with
+      | Return {exp= Some _; _} ->
+          {reaches_re_bridge= false; passthrough= Some false}
+      | Return {exp= None; _} | Throw _ | Abort _ | Unreachable _ ->
+          no_outcome
       | Call {callee; return; _} -> (
         match callee_name callee with
         | Some name when is_bridge_to_objc_callee name ->
-            true
-        | Some name when is_transparent_callee name ->
+            (* Re-bridge succeeds for [as?]-cast; disqualifies passthrough. *)
+            {reaches_re_bridge= true; passthrough= None}
+        | Some name when is_bridge_from_objc_callee name ->
+            let r = visit return.dst in
+            { reaches_re_bridge= r.reaches_re_bridge
+            ; passthrough= (match r.passthrough with Some _ -> Some true | None -> None) }
+        | Some name when is_arc_helper_callee name ->
             visit return.dst
         | _ ->
-            false )
+            no_outcome )
       | Switch {tbl; els; _} ->
-          NS.IArray.exists tbl ~f:(fun (_, (jump : Llair.jump)) -> visit jump.dst) || visit els.dst
+          NS.IArray.fold tbl (visit els.dst) ~f:(fun (_, (jump : Llair.jump)) acc ->
+              let r = visit jump.dst in
+              { reaches_re_bridge= acc.reaches_re_bridge || r.reaches_re_bridge
+              ; passthrough= combine_passthrough acc.passthrough r.passthrough } )
       | Iswitch {tbl; _} ->
-          NS.IArray.exists tbl ~f:(fun (jump : Llair.jump) -> visit jump.dst)
-      | Return _ | Throw _ | Abort _ | Unreachable _ ->
-          false )
+          NS.IArray.fold tbl {reaches_re_bridge= false; passthrough= Some false}
+            ~f:(fun (jump : Llair.jump) acc ->
+              let r = visit jump.dst in
+              { reaches_re_bridge= acc.reaches_re_bridge || r.reaches_re_bridge
+              ; passthrough= combine_passthrough acc.passthrough r.passthrough } ) )
   in
   visit start_block
 
 
-let find_msgsends_feeding_bridge_to_objc (func : Llair.func) =
+let has_recoverable_nullability outcome =
+  outcome.reaches_re_bridge
+  || match outcome.passthrough with Some saw_bridge_from -> saw_bridge_from | None -> false
+
+
+let find_msgsends_with_recoverable_nullability (func : Llair.func) =
   let result = Hashtbl.create (module Int) in
   let visited = Hash_set.create (module String) in
   let rec visit_block (b : Llair.block) =
@@ -76,7 +137,7 @@ let find_msgsends_feeding_bridge_to_objc (func : Llair.func) =
       | Call {callee; areturn= Some areturn; return; _} -> (
         match callee_name callee with
         | Some name when is_msgsend_callee name ->
-            if reaches_bridge_to_objc return.dst then
+            if has_recoverable_nullability (classify_msgsend_destiny return.dst) then
               Hashtbl.set result ~key:(Reg.id areturn) ~data:()
         | _ ->
             () )

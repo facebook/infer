@@ -880,13 +880,14 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
   let call_exp = Models.resolve_objc_msgSend ~proc_state call_exp arg_types in
   let call_exp =
     (* If the original LLAIR [objc_msgSend] [areturn] was identified by the
-       bridge-analysis prepass as feeding an [as?]-cast (re-bridge to ObjC),
-       attach a [Nullable] caller_ret_annots so SwiftObjCNullability does not
-       report on the call. *)
+       bridge-analysis prepass as carrying a structural nullability signal
+       (an [as?]-cast re-bridge or an [Optional<T>] passthrough getter),
+       attach a [Nullable] caller_ret_annots so SwiftObjCNullability does
+       not report on the call. *)
     match (call.areturn, call_exp) with
     | Some areturn, Textual.Exp.Call ({caller_ret_annots; _} as call_record)
       when List.is_empty caller_ret_annots
-           && Hashtbl.mem proc_state.ProcState.as_cast_msg_sends (Llair.Reg.id areturn) ->
+           && Hashtbl.mem proc_state.ProcState.nullability_hint_msg_sends (Llair.Reg.id areturn) ->
         Textual.Exp.Call {call_record with caller_ret_annots= [Annot.nullable]}
     | _ ->
         call_exp
@@ -1471,13 +1472,14 @@ let translate_code source_file ~module_state proc_descs (procdecl : Textual.Proc
     if should_translate then Llair2TextualTypeInference.infer_func module_state func
     else Hashtbl.create (module Int)
   in
-  let as_cast_msg_sends =
-    if should_translate then Llair2TextualBridgeAnalysis.find_msgsends_feeding_bridge_to_objc func
+  let nullability_hint_msg_sends =
+    if should_translate then
+      Llair2TextualBridgeAnalysis.find_msgsends_with_recoverable_nullability func
     else Hashtbl.create (module Int)
   in
   let proc_state =
     ProcState.init ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
-      ~formals:formals_map ~module_state ~inferred_types ~as_cast_msg_sends
+      ~formals:formals_map ~module_state ~inferred_types ~nullability_hint_msg_sends
   in
   let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
   let result_type =
