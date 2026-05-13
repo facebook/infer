@@ -847,14 +847,20 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
   in
   let call_specialized specialization
       {PulseSummary.pre_post_list= exec_states; non_disj= non_disj_callee} astate =
-    let results, (non_disj, contradiction) =
-      call_aux disjunct_limit analysis_data path call_loc callee_pname ret actuals call_kind
-        call_flags
-        (IRAttributes.load_exn callee_pname)
-        exec_states non_disj_callee astate non_disj_caller
-    in
-    let non_disj = record_direct_call ~specialization non_disj in
-    (results, non_disj, contradiction)
+    match IRAttributes.load callee_pname with
+    | None ->
+        L.d_printfln_escaped ~color:Orange
+          "[pulse] callee %a has a Pulse summary but no IR attributes; treating as unknown call"
+          Procname.pp callee_pname ;
+        let results, non_disj = call_as_unknown () in
+        (results, non_disj, None)
+    | Some attrs ->
+        let results, (non_disj, contradiction) =
+          call_aux disjunct_limit analysis_data path call_loc callee_pname ret actuals call_kind
+            call_flags attrs exec_states non_disj_callee astate non_disj_caller
+        in
+        let non_disj = record_direct_call ~specialization non_disj in
+        (results, non_disj, contradiction)
   in
   let rec iter_call ~max_iteration ~nth_iteration ~is_pulse_specialization_limit_reached
       ?(specialization = Specialization.Pulse.bottom) already_given summary astate =
