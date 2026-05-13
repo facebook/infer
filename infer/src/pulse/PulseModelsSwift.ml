@@ -208,16 +208,14 @@ let metadata_equals arg1 arg2 () : unit DSL.model_monad =
    DispatchSourceTimer) that store a closure on a returned object the
    caller stashes on `self`. Without this model Pulse never establishes
    the holder->captured_env edge, so retain cycles closing through the
-   captured `self` are missed. *)
+   captured `self` are missed. The body mirrors [PulseModelsObjC.block_holder]
+   (intentionally duplicated: matchers and bodies are colocated per
+   Pulse's per-language module convention). *)
 let register_closure_holder _callback captured_env : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
   let holder_class = Typ.SwiftClass (SwiftClassName.of_string "__infer_closure_holder") in
-  (* `~is_weak:false` makes the field a Strong access so PulseRefCounting
-     classifies the holder->captured_env edge correctly when the
-     retain-cycle checker traverses it; otherwise the field has no weak/
-     strong info and the cycle's access type is reported as Unknown. *)
   let field = Fieldname.make ~is_weak:false holder_class "captured_env" in
   let* holder = fresh () in
   let* () = and_positive holder in

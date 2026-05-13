@@ -10,6 +10,7 @@ open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
+module DSL = PulseModelsDSL
 module GenericArrayBackedCollection = PulseModelsGenericArrayBackedCollection
 
 module CoreFoundation = struct
@@ -293,6 +294,33 @@ let transfer_ownership_matchers : matcher list =
          |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )
 
 
+(* Model the "framework retains a block" shape for ObjC framework APIs:
+   a fresh holder strongly retains [captured_env] (the heap-copied ObjC
+   block produced by [_Block_copy]) and is returned to the caller.
+   Without this model Pulse never establishes the holder->captured_env
+   edge, so retain cycles closing through the block's captured `self`
+   are missed (Timer / NotificationCenter / AVPlayer / ...). The body
+   mirrors [PulseModelsSwift.register_closure_holder] (intentionally
+   duplicated: matchers and bodies are colocated per Pulse's
+   per-language module convention). *)
+let block_holder captured_env : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let holder_class = Typ.SwiftClass (SwiftClassName.of_string "__infer_closure_holder") in
+  (* `~is_weak:false` makes the field a Strong access so PulseRefCounting
+     classifies the holder->captured_env edge correctly when the
+     retain-cycle checker traverses it; otherwise the field has no weak/
+     strong info and the cycle's access type is reported as Unknown. *)
+  let field = Fieldname.make ~is_weak:false holder_class "captured_env" in
+  let* holder = fresh () in
+  let* () = and_positive holder in
+  let* () = allocation SwiftAlloc holder in
+  let* () = and_dynamic_type_is holder (Typ.mk_struct holder_class) in
+  let* () = store_field ~ref:holder field captured_env in
+  assign_ret holder
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
@@ -303,13 +331,24 @@ let matchers : matcher list =
   let class_match_prefix prefix (_tenv, proc_name) _ =
     Procname.get_objc_class_name proc_name |> Option.exists ~f:(String.is_prefix ~prefix)
   in
+  let class_match_name name (_tenv, proc_name) _ =
+    Procname.get_objc_class_name proc_name |> Option.exists ~f:(String.equal name)
+  in
   let map_context_tenv f (x, _) = f x in
   ( [ -"dispatch_sync" <>$ any_arg $+ capt_arg $++$--> call_objc_block
     ; -"dispatch_async" <>$ any_arg $+ capt_arg $++$--> call_objc_block
     ; -"dispatch_once" <>$ any_arg $+ capt_arg $++$--> call_objc_block
     ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UITraitCollection")
       &:: "performAsCurrentTraitCollection:" $ capt_arg $++$--> call_objc_block
-    ; +BuiltinDecl.(match_builtin __call_objc_block) $ capt_arg $++$--> call_objc_block ]
+    ; +BuiltinDecl.(match_builtin __call_objc_block) $ capt_arg $++$--> call_objc_block
+      (* NSTimer.scheduledTimerWithTimeInterval:repeats:block: retains the
+         block on the returned Timer; the user typically stores the Timer
+         on `self`, closing a `self -> timer -> block -> captured self`
+         cycle. The model establishes the timer->block strong edge so
+         PulseRefCounting can see the cycle. *)
+    ; +class_match_name "NSTimer"
+      &:: "scheduledTimerWithTimeInterval:repeats:block:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+      $--> block_holder ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
   @
   let objc_only_name name =
