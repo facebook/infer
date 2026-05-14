@@ -61,6 +61,24 @@ let is_objc_thunk_not_init mangled_name =
   String.is_suffix mangled_name ~suffix:"To" && not (is_initializer mangled_name)
 
 
+(* Swift async continuation thunks have empty `loc.file` so they don't pass the
+   source-file equality check, but their bodies are needed for retain-cycle
+   analysis on async methods. The mangled suffixes are `_TY<n>_` (resume after
+   suspend) and `_TQ<n>_` (await continuation). *)
+let is_async_continuation_thunk mangled_name =
+  let len = String.length mangled_name in
+  if len < 5 || not (Char.equal mangled_name.[len - 1] '_') then false
+  else
+    (* Walk backwards over digits *)
+    let rec digits_end i =
+      if i < 0 then -1 else match mangled_name.[i] with '0' .. '9' -> digits_end (i - 1) | _ -> i
+    in
+    let after_digits = digits_end (len - 2) in
+    after_digits >= 1
+    && (Char.equal mangled_name.[after_digits] 'Y' || Char.equal mangled_name.[after_digits] 'Q')
+    && Char.equal mangled_name.[after_digits - 1] 'T'
+
+
 let to_proc_name_closure_name s =
   Textual.QualifiedProcName.
     {enclosing_class= TopLevel; name= Textual.ProcName.of_string s; metadata= None}
@@ -1376,6 +1394,7 @@ let should_translate plain_name mangled_name lang method_class_index source_file
   || is_closure lang mangled_name
   || is_init_in_swift_overlay mangled_name
   || is_objc_thunk_not_init mangled_name
+  || (Textual.Lang.is_swift lang && is_async_continuation_thunk mangled_name)
   || Option.exists
        ~f:(fun name -> String.is_suffix ~suffix:Globals.witness_protocol_suffix name)
        typ_name
