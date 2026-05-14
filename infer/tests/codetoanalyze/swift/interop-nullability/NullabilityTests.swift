@@ -174,6 +174,30 @@ func optionalGetterDerefMidBody_bad(api: LegacyAPI) -> Int? {
   return n
 }
 
+// Argument-position passthrough: the unannotated call result flows
+// directly into another function's Optional<T> parameter. Swift bridges
+// `T! -> T?` at the call boundary with no deref, so the receiving
+// function safely sees an Optional and MISSING_NULLABILITY should not
+// fire on the original call.
+func consumeOptional(_ s: String?) {
+  print(s ?? "default")
+}
+
+func argPositionPassthroughOptional_safeUse_good(api: LegacyAPI) {
+  consumeOptional(api.getUnannotatedString())
+}
+
+// Negative case: the receiving param is non-Optional, so Swift force-unwraps
+// `T! -> T` at the call boundary. Real crash risk -- pins the Pattern 5
+// recogniser's blast radius.
+func consumeNonOptional(_ s: String) {
+  print(s)
+}
+
+func argPositionForceUnwrappedAtCall_bad(api: LegacyAPI) {
+  consumeNonOptional(api.getUnannotatedString())
+}
+
 // Multi-branch passthrough: the unannotated call sits in one arm of an
 // if/else returning Optional<T>; the other arm returns a different
 // Optional. The result still funnels through `-> T?` with no deref, so

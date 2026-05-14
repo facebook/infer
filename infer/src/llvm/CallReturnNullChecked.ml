@@ -100,12 +100,35 @@ let is_memcpy_callee (callee : Exp.t) =
       false
 
 
+(* Calls that don't count as user "consuming" the value -- ARC plumbing, the bridge call itself,
+   and the helpers for retain/release that move ownership without touching the payload. Used to
+   gate the arg-position-passthrough check (Pattern 5) so we don't mark on transparent helpers. *)
+let is_transparent_helper_callee (callee : Exp.t) =
+  match callee with
+  | Const (Const.Cfun pname) ->
+      let name = Procname.to_string pname in
+      String.is_substring name ~substring:"BridgeFromObjectiveC"
+      || String.is_substring name ~substring:"bridgeFromObjectiveC"
+      || String.is_substring name ~substring:"objc_retain"
+      || String.is_substring name ~substring:"objc_release"
+      || String.is_substring name ~substring:"swift_retain"
+      || String.is_substring name ~substring:"swift_release"
+      || String.is_substring name ~substring:"swift_bridgeObjectRetain"
+      || String.is_substring name ~substring:"swift_bridgeObjectRelease"
+      || String.equal name "memcpy"
+      || String.equal name "llvm_init_tuple"
+  | _ ->
+      false
+
+
 let process pdesc =
   let id_origin : Ident.t IdentTbl.t = IdentTbl.create 32 in
   let pvar_origin : Ident.t PvarTbl.t = PvarTbl.create 16 in
   let pvar_field_origin : Ident.t PvarFieldTbl.t = PvarFieldTbl.create 8 in
   let id_to_pvar : Pvar.t IdentTbl.t = IdentTbl.create 16 in
   let checked = IdentHashSet.create 8 in
+  let force_unwrapped = IdentHashSet.create 8 in
+  let arg_consumed = IdentHashSet.create 8 in
   let copy_pvar_fields ~src ~dst =
     PvarFieldTbl.iter
       (fun (p, f) r -> if Pvar.equal p src then PvarFieldTbl.replace pvar_field_origin (dst, f) r)
@@ -113,32 +136,47 @@ let process pdesc =
   in
   let visit_instr node (instr : Sil.instr) =
     match instr with
-    | Call ((ret_id, _), callee, args, _, _) -> (
+    | Call ((ret_id, _), callee, args, _, _) ->
         IdentTbl.replace id_origin ret_id ret_id ;
-        if is_bridge_from_objc_callee callee then
-          match args with
-          | (arg_exp, _) :: _ -> (
-            match strip_casts arg_exp with
-            | Exp.Var src -> (
-              match IdentTbl.find_opt id_origin src with
-              | Some r ->
-                  IdentTbl.replace id_origin ret_id r
-              | None ->
+        ( if is_bridge_from_objc_callee callee then
+            match args with
+            | (arg_exp, _) :: _ -> (
+              match strip_casts arg_exp with
+              | Exp.Var src -> (
+                match IdentTbl.find_opt id_origin src with
+                | Some r ->
+                    IdentTbl.replace id_origin ret_id r
+                | None ->
+                    () )
+              | _ ->
                   () )
             | _ ->
-                () )
-          | _ ->
-              ()
-        else if is_memcpy_callee callee then
-          match args with
-          | (Exp.Var dst_id, _) :: (Exp.Var src_id, _) :: _ -> (
-            match (IdentTbl.find_opt id_to_pvar dst_id, IdentTbl.find_opt id_to_pvar src_id) with
-            | Some dst_pvar, Some src_pvar ->
-                copy_pvar_fields ~src:src_pvar ~dst:dst_pvar
+                ()
+          else if is_memcpy_callee callee then
+            match args with
+            | (Exp.Var dst_id, _) :: (Exp.Var src_id, _) :: _ -> (
+              match (IdentTbl.find_opt id_to_pvar dst_id, IdentTbl.find_opt id_to_pvar src_id) with
+              | Some dst_pvar, Some src_pvar ->
+                  copy_pvar_fields ~src:src_pvar ~dst:dst_pvar
+              | _ ->
+                  () )
             | _ ->
-                () )
-          | _ ->
-              () )
+                () ) ;
+        (* Pattern 5: a non-transparent Call consuming the propagated value as a Var arg
+           means the bridged Optional<T> flows safely into the callee's parameter. Record
+           the origin in [arg_consumed]; we'll mark it [checked] only if it's not also
+           [force_unwrapped] elsewhere in this proc. *)
+        if not (is_transparent_helper_callee callee) then
+          List.iter args ~f:(fun (arg_exp, _) ->
+              match strip_casts arg_exp with
+              | Exp.Var v -> (
+                match IdentTbl.find_opt id_origin v with
+                | Some origin when not (Ident.equal v origin) ->
+                    IdentHashSet.add origin arg_consumed
+                | _ ->
+                    () )
+              | _ ->
+                  () )
     | Load {id; e= Var src} -> (
       match IdentTbl.find_opt id_origin src with
       | Some r ->
@@ -195,9 +233,12 @@ let process pdesc =
             (* Raw ret_id Prune ([if let]): require trivial else. *)
             if eq_branch_satisfies node ~check:node_is_trivial_else then IdentHashSet.add r checked
         | Some r ->
-            (* Propagated id Prune (chain / [??] / guard-let): tolerate non-fatal Calls. *)
+            (* Propagated id Prune (chain / [??] / guard-let): tolerate non-fatal Calls.
+               If the eq-branch contains a fatal call (force-unwrap), poison [r] so any
+               concurrent Pattern 5 arg-consumption check on the same origin is skipped. *)
             if eq_branch_satisfies node ~check:node_has_no_fatal_call then
               IdentHashSet.add r checked
+            else IdentHashSet.add r force_unwrapped
         | None ->
             () )
       | None ->
@@ -227,6 +268,10 @@ let process pdesc =
       if not (Poly.equal prev cur) then loop cur (n + 1) )
   in
   loop (snapshot ()) 0 ;
+  (* Pattern 5 finalisation: a call whose propagated value flowed into another Call's args
+     gets marked, unless that same origin was also force-unwrapped (poisoned) elsewhere. *)
+  IdentHashSet.iter arg_consumed (fun origin ->
+      if not (IdentHashSet.mem force_unwrapped origin) then IdentHashSet.add origin checked ) ;
   if IdentHashSet.is_empty checked then ()
   else
     let _ : bool =
