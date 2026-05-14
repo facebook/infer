@@ -384,7 +384,37 @@ let matchers : matcher list =
          instance-method procname `NSNotificationCenter.addObserverFor...`. *)
     ; +class_match_name "NSNotificationCenter"
       &:: "addObserverForName:object:queue:usingBlock:" <>$ any_arg $+ any_arg $+ any_arg $+ any_arg
-      $+ capt_arg_payload $--> block_holder ]
+      $+ capt_arg_payload $--> block_holder
+      (* Foundation/UIKit singleton accessors: same shape as the
+         NSNotificationCenter.defaultCenter model above. Without a typed
+         return value, [PulseModelsSwift.objc_msgSend]'s dynamic dispatch
+         can't resolve subsequent instance-method calls on the singleton
+         (it falls back to [unknown]), so any future ObjC instance-method
+         model on these receivers would silently never fire. Pure
+         infrastructure: typing each accessor unblocks downstream
+         matchers as they're added (e.g. observer/timer/operation
+         registration through these singletons). *)
+    ; +class_match_name "UIApplication"
+      &:: "sharedApplication"
+      <>$$--> fresh_with_objc_type "UIApplication"
+    ; +class_match_name "NSFileManager"
+      &:: "defaultManager"
+      <>$$--> fresh_with_objc_type "NSFileManager"
+    ; +class_match_name "NSUserDefaults"
+      &:: "standardUserDefaults"
+      <>$$--> fresh_with_objc_type "NSUserDefaults"
+    ; +class_match_name "NSBundle" &:: "mainBundle" <>$$--> fresh_with_objc_type "NSBundle"
+    ; +class_match_name "NSURLSession"
+      &:: "sharedSession"
+      <>$$--> fresh_with_objc_type "NSURLSession"
+    ; +class_match_name "NSProcessInfo"
+      &:: "processInfo"
+      <>$$--> fresh_with_objc_type "NSProcessInfo"
+    ; +class_match_name "NSRunLoop" &:: "currentRunLoop" <>$$--> fresh_with_objc_type "NSRunLoop"
+    ; +class_match_name "NSRunLoop" &:: "mainRunLoop" <>$$--> fresh_with_objc_type "NSRunLoop"
+    ; +class_match_name "NSOperationQueue"
+      &:: "mainQueue"
+      <>$$--> fresh_with_objc_type "NSOperationQueue" ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
   @
   let objc_only_name name =
