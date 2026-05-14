@@ -7,6 +7,36 @@
 open! IStd
 module L = Logging
 
+(* Derive the matching shared libpython path from the interpreter location.
+   `pyml`'s `Py.initialize ~interpreter` queries the interpreter's
+   `sysconfig` for the library — but for some Python builds (e.g.
+   fbcode's `/usr/local/fbcode/platform010/bin/python3.12`)
+   `sysconfig.LDLIBRARY` reports a static archive (`libpython3.X.a`), so
+   pyml falls back to scanning standard system paths and picks
+   `/lib64/libpython3.X.so.1.0`. That system shared lib often depends on a
+   newer libc than the FB-vendored libm shipped alongside the
+   interpreter, causing dlopen to fail with "GLIBC_2.NN not found". The
+   matching shared lib is actually present at
+   `<prefix>/lib/libpython<X.Y>.so.1.0` next to the interpreter — explicitly
+   point pyml at it via `?library_name`. Returns `None` for interpreters
+   that don't follow this layout (system Python etc); pyml's default
+   behaviour then takes over. *)
+let derive_libpython_from_interpreter interpreter =
+  let basename = Filename.basename interpreter in
+  let dirname = Filename.dirname interpreter in
+  match String.chop_prefix basename ~prefix:"python" with
+  | Some version when not (String.is_empty version) ->
+      let prefix_dir = Filename.dirname dirname in
+      let candidate =
+        Filename.concat
+          (Filename.concat prefix_dir "lib")
+          (Printf.sprintf "libpython%s.so.1.0" version)
+      in
+      if ISys.file_exists ~follow_symlinks:true candidate then Some candidate else None
+  | _ ->
+      None
+
+
 type kind = Bytecode of {files: string list} | Files of {prog: string; args: string list}
 
 module Error = struct
@@ -67,7 +97,9 @@ module Interpreter = struct
 
 
   let run files =
-    Py.initialize ~interpreter:Version.python_exe () ;
+    let interpreter = Version.python_exe in
+    let library_name = derive_libpython_from_interpreter interpreter in
+    Py.initialize ?library_name ~interpreter () ;
     ( match process_files files with
     | Error (file, err) ->
         Error.format_error file err ;
@@ -162,6 +194,7 @@ type not_captured_reason = SkippedBlocked | SkippedTooManyImports | Error
 let capture_files ~is_binary files =
   let n_files = List.length files in
   let interpreter = Config.python_exe |> Option.value ~default:Version.python_exe in
+  let library_name = derive_libpython_from_interpreter interpreter in
   let child_action, child_prologue, child_epilogue =
     let child_tenv = Tenv.create () in
     let child_action file =
@@ -192,7 +225,7 @@ let capture_files ~is_binary files =
       DBWriterProcess.override_use_daemon false ;
       Database.create_db capture_db CaptureDatabase ;
       Database.new_database_connection capture_db CaptureDatabase ;
-      Py.initialize ~interpreter ()
+      Py.initialize ?library_name ~interpreter ()
     in
     let child_epilogue worker_id =
       let worker_out_dir_abspath = ResultsDir.get_path Temporary ^/ worker_out_dir_name worker_id in
