@@ -174,6 +174,55 @@ func optionalGetterDerefMidBody_bad(api: LegacyAPI) -> Int? {
   return n
 }
 
+// Multi-branch passthrough: the unannotated call sits in one arm of an
+// if/else returning Optional<T>; the other arm returns a different
+// Optional. The result still funnels through `-> T?` with no deref, so
+// the recogniser must extend its single-branch coverage to here too.
+func multiBranchPassthrough_safeUse_good(api: LegacyAPI, useApi: Bool, fallback: String?) -> String? {
+  if useApi {
+    return api.getUnannotatedString()
+  } else {
+    return fallback
+  }
+}
+
+// Same shape with an Optional-chain receiver in the call arm.
+func multiBranchPassthroughOptionalChain_safeUse_good(api: LegacyAPI?, useApi: Bool, fallback: String?) -> String? {
+  if useApi {
+    return api?.getUnannotatedString()
+  } else {
+    return fallback
+  }
+}
+
+// Three-branch variant: if / else if / fall-through `return nil` adds a
+// third merge predecessor to the join block.
+func threeBranchPassthroughOptionalChain_safeUse_good(api: LegacyAPI?, useFlagA: Bool, useFlagB: Bool, fallback: String?) -> String? {
+  if useFlagA {
+    return api?.getUnannotatedString()
+  } else if useFlagB {
+    return fallback
+  }
+  return nil
+}
+
+// Computed property `var foo: T? { ... }` -- a class getter rather
+// than a top-level func, so the SIL signature has the implicit `self`.
+class MultiBranchPassthroughGetter {
+  let api: LegacyAPI?
+  let fallback: String?
+  init(api: LegacyAPI?, fallback: String?) { self.api = api; self.fallback = fallback }
+
+  var multiBranchGetter_safeUse_good: String? {
+    if api != nil {
+      return api?.getUnannotatedString()
+    } else if fallback != nil {
+      return fallback
+    }
+    return nil
+  }
+}
+
 // Optional-chain on the direct call result: `?.` short-circuits on
 // nil, so no deref happens regardless of the unannotated callee's
 // nullability. Should not fire MISSING_NULLABILITY_ANNOTATION.
