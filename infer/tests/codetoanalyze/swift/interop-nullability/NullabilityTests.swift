@@ -121,11 +121,25 @@ func classMethodUnannotated_bad() {
   print(s.count)
 }
 
-// Safe-handling idiom: caller short-circuits on nil. Should not
-// fire MISSING_NULLABILITY_ANNOTATION; pinned `_FP` until handled.
-func guardLetReturnNil_safeUse_FP(api: LegacyAPI) -> Int? {
+// Safe-handling idiom: caller short-circuits on nil. The post-bridge
+// `guard let` null check makes the subsequent use safe.
+func guardLetReturnNil_safeUse_good(api: LegacyAPI) -> Int? {
   guard let s = api.getUnannotatedString() else { return nil }
   return s.count
+}
+
+// Same idiom with a non-trivial else: a non-fatal logging call before
+// the value-returning Return. Mirrors the dominant fbobjc shape:
+// `guard let X = e else { FBReportMustFix(...); return false }`.
+@inline(never)
+func nonFatalLog(_ msg: String) { print(msg) }
+
+func guardLetWithLogReturnFalse_safeUse_good(api: LegacyAPI) -> Bool {
+  guard let s = api.getUnannotatedString() else {
+    nonFatalLog("getUnannotatedString returned nil")
+    return false
+  }
+  return s.count > 0
 }
 
 // Safe-handling idiom: caller substitutes a default for nil. Should
@@ -162,15 +176,14 @@ func optionalGetterDerefMidBody_bad(api: LegacyAPI) -> Int? {
 
 // Optional-chain on the direct call result: `?.` short-circuits on
 // nil, so no deref happens regardless of the unannotated callee's
-// nullability. Should not fire MISSING_NULLABILITY_ANNOTATION; pinned
-// `_FP` until handled.
-func optionalChainOnDirectCall_safeUse_FP(api: LegacyAPI) {
+// nullability. Should not fire MISSING_NULLABILITY_ANNOTATION.
+func optionalChainOnDirectCall_safeUse_good(api: LegacyAPI) {
   let _ = api.getUnannotatedString()?.count
 }
 
 // Same `?.` idiom with the call result bound to a local first.
-// Source-equivalent; pinned `_FP` until handled.
-func optionalChainViaLet_safeUse_FP(api: LegacyAPI) {
+// Source-equivalent; should not fire either.
+func optionalChainViaLet_safeUse_good(api: LegacyAPI) {
   let s = api.getUnannotatedString()
   let _ = s?.count
 }
