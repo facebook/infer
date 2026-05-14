@@ -28,10 +28,12 @@ include $(TESTS_DIR)/infer.make
 infer-out/report.json: $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Running pulse on handcrafted LL in $(TEST_REL_DIR),\
 	  $(REMOVE_DIR) $(@D) && \
+	  first=1 ; \
 	  for src in $(SOURCES) ; do \
 	    base=$${src%.ll} ; \
 	    src_path=$$(cat $$base.source) ; \
-	    $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) capture \
+	    if [ $$first -eq 1 ] ; then continue_flag="" ; first=0 ; else continue_flag="--continue" ; fi ; \
+	    $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) capture $$continue_flag \
 	      --llvm-bitcode-file $$src --llvm-bitcode-source $$src_path ; \
 	  done ; \
 	  $(INFER_BIN) --results-dir $(@D) $(INFER_OPTIONS) analyze )
