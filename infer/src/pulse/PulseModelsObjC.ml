@@ -321,6 +321,23 @@ let block_holder captured_env : model =
   assign_ret holder
 
 
+(* Return a fresh allocated value with a stamped ObjC dynamic type. Used to
+   model unmodelled ObjC singleton accessors (e.g. `+[NSNotificationCenter
+   defaultCenter]`) so that subsequent instance-method calls on the result
+   resolve through [PulseModelsSwift.objc_msgSend]'s dynamic dispatch
+   instead of falling back to [unknown]. *)
+let fresh_with_objc_type class_name : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let typ = Typ.mk (Typ.Tstruct (Typ.Name.Objc.from_string class_name)) in
+  let* v = fresh () in
+  let* () = and_positive v in
+  let* () = allocation ObjCAlloc v in
+  let* () = and_dynamic_type_is v typ in
+  assign_ret v
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
@@ -348,7 +365,26 @@ let matchers : matcher list =
          PulseRefCounting can see the cycle. *)
     ; +class_match_name "NSTimer"
       &:: "scheduledTimerWithTimeInterval:repeats:block:" <>$ any_arg $+ any_arg $+ capt_arg_payload
-      $--> block_holder ]
+      $--> block_holder
+      (* +[NSNotificationCenter defaultCenter] returns the singleton.
+         Without a typed return value, [PulseModelsSwift.objc_msgSend]'s
+         dynamic dispatch can't resolve subsequent instance-method calls
+         on [.default], so retain-cycle detection through
+         `addObserverForName:object:queue:usingBlock:` never fires. The
+         model returns a fresh value with dynamic type NSNotificationCenter
+         so the dispatch resolves. *)
+    ; +class_match_name "NSNotificationCenter"
+      &:: "defaultCenter"
+      <>$$--> fresh_with_objc_type "NSNotificationCenter"
+      (* -[NSNotificationCenter addObserverForName:object:queue:usingBlock:]
+         retains the block on the returned observer token; the token is
+         typically stored on `self.observer`, closing the same shape of
+         cycle as NSTimer above. The call lands here via [objc_msgSend]'s
+         dynamic dispatch in [PulseModelsSwift], which constructs the
+         instance-method procname `NSNotificationCenter.addObserverFor...`. *)
+    ; +class_match_name "NSNotificationCenter"
+      &:: "addObserverForName:object:queue:usingBlock:" <>$ any_arg $+ any_arg $+ any_arg $+ any_arg
+      $+ capt_arg_payload $--> block_holder ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
   @
   let objc_only_name name =
