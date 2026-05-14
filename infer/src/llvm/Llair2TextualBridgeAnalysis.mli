@@ -9,8 +9,7 @@ open! IStd
 val find_msgsends_with_recoverable_nullability : Llair.func -> (int, unit) Base.Hashtbl.t
 (** For a Swift LLAIR proc, return the set (keyed by [Llair.Reg.id]) of [objc_msgSend] /
     [performSelector] [areturn] registers whose downstream CFG carries a structural signal that lets
-    the Llair->Textual translator recover a [Nullable] annotation on the call. Two shapes qualify,
-    both detected in a single forward walk per seed:
+    the Llair->Textual translator recover a [Nullable] annotation on the call. Two shapes qualify:
 
     - [as?]-cast re-bridge: some path from the seed reaches a [_bridgeToObjectiveC] call through
       [_unconditionallyBridgeFromObjectiveC] + ARC retain/release helpers. Source-level signature of
@@ -19,10 +18,12 @@ val find_msgsends_with_recoverable_nullability : Llair.func -> (int, unit) Base.
     - Optional-passthrough getter: every path from the seed reaches a value-returning [Return]
       through the same transparent chain, AND at least one path traverses
       [_unconditionallyBridgeFromObjectiveC]. Source-level signature of
-      [func g() -> T? { return api.f() }] (Pattern 1, ~56% of fbobjc MNA prod volume).
+      [func g() -> T? { return api.f() }].
 
-    Both shapes are sound to suppress: the [as?] caller has already typed the result as Optional and
-    the passthrough caller's [-> T?] return type forces every chained caller to handle nil.
-    Force-unwraps, method calls on the bridged value, multi-use bindings, void-return discards,
-    [_assertionFailure] crashes, and other non-transparent uses on any path disqualify the seed so
-    genuine misuse stays reported. *)
+    Both shapes are sound to suppress: the [as?] caller has already typed the result as Optional,
+    and the passthrough caller's [-> T?] return forces every chained caller to handle nil.
+
+    Optional-chain ([?.]), [guard let X = e else { return nil }], and [e ?? default] are recognised
+    at the SIL level by [CallReturnNullChecked] (it sets [cf_return_null_checked]). Both consumers
+    ([SwiftObjCNullabilityChecker] and [PulseModelsSwift]) gate MNA on either [cf_caller_ret_annots]
+    or [cf_return_null_checked], so the two preanalyses compose. *)

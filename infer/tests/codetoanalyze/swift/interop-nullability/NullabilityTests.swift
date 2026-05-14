@@ -142,9 +142,9 @@ func guardLetWithLogReturnFalse_safeUse_good(api: LegacyAPI) -> Bool {
   return s.count > 0
 }
 
-// Safe-handling idiom: caller substitutes a default for nil. Should
-// not fire MISSING_NULLABILITY_ANNOTATION; pinned `_FP` until handled.
-func nilCoalesceDefault_safeUse_FP(api: LegacyAPI) -> Int {
+// Safe-handling idiom: caller substitutes a default for nil. The
+// post-bridge `??` null check covers any subsequent use.
+func nilCoalesceDefault_safeUse_good(api: LegacyAPI) -> Int {
   let s = api.getUnannotatedString() ?? ""
   return s.count
 }

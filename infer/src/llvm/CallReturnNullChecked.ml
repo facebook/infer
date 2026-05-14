@@ -8,14 +8,24 @@
 open! IStd
 module IdentTbl = Stdlib.Hashtbl.Make (Ident)
 module PvarTbl = Stdlib.Hashtbl.Make (Pvar)
+
+module PvarField = struct
+  type t = Pvar.t * Fieldname.t
+
+  let equal (p1, f1) (p2, f2) = Pvar.equal p1 p2 && Fieldname.equal f1 f2
+
+  let hash (p, f) = Hashtbl.hash (Pvar.hash p, Fieldname.hash f)
+end
+
+module PvarFieldTbl = Stdlib.Hashtbl.Make (PvarField)
 module IdentHashSet = HashSet.Make (Ident)
 
 (* For every [Sil.Call] in the procdesc, set [CallFlags.cf_return_null_checked = true] when the
-   caller safely handles a nil result via [if let], [?.], or [guard let .. else].
+   caller safely handles a nil result via [if let], [?.], [guard let .. else], or [??].
 
-   Flow-insensitive may-analysis: track the call's ret_id forward through Loads/Stores and the
-   Optional bridge call; mark when a downstream [Prune] gates use of the propagated value. Tables
-   iterated to fixpoint via snapshot equality. *)
+   Flow-insensitive may-analysis: track the call's ret_id forward through Loads/Stores, the
+   Optional bridge call, tuple packing, and [memcpy]; mark when a downstream [Prune] gates use of
+   the propagated value. Tables iterated to fixpoint via snapshot equality. *)
 
 let is_null_or_zero (e : Exp.t) = Exp.is_null_literal e || Exp.is_zero e
 
@@ -81,10 +91,26 @@ let is_bridge_from_objc_callee (callee : Exp.t) =
       false
 
 
+(* Swift's [??] lowers via [memcpy] between sibling tuple pvars; copy field origins src -> dst. *)
+let is_memcpy_callee (callee : Exp.t) =
+  match callee with
+  | Const (Const.Cfun pname) ->
+      String.equal (Procname.to_string pname) "memcpy"
+  | _ ->
+      false
+
+
 let process pdesc =
   let id_origin : Ident.t IdentTbl.t = IdentTbl.create 32 in
   let pvar_origin : Ident.t PvarTbl.t = PvarTbl.create 16 in
+  let pvar_field_origin : Ident.t PvarFieldTbl.t = PvarFieldTbl.create 8 in
+  let id_to_pvar : Pvar.t IdentTbl.t = IdentTbl.create 16 in
   let checked = IdentHashSet.create 8 in
+  let copy_pvar_fields ~src ~dst =
+    PvarFieldTbl.iter
+      (fun (p, f) r -> if Pvar.equal p src then PvarFieldTbl.replace pvar_field_origin (dst, f) r)
+      pvar_field_origin
+  in
   let visit_instr node (instr : Sil.instr) =
     match instr with
     | Call ((ret_id, _), callee, args, _, _) -> (
@@ -102,6 +128,16 @@ let process pdesc =
             | _ ->
                 () )
           | _ ->
+              ()
+        else if is_memcpy_callee callee then
+          match args with
+          | (Exp.Var dst_id, _) :: (Exp.Var src_id, _) :: _ -> (
+            match (IdentTbl.find_opt id_to_pvar dst_id, IdentTbl.find_opt id_to_pvar src_id) with
+            | Some dst_pvar, Some src_pvar ->
+                copy_pvar_fields ~src:src_pvar ~dst:dst_pvar
+            | _ ->
+                () )
+          | _ ->
               () )
     | Load {id; e= Var src} -> (
       match IdentTbl.find_opt id_origin src with
@@ -110,18 +146,26 @@ let process pdesc =
       | None ->
           () )
     | Load {id; e= Lvar pvar} -> (
-      match PvarTbl.find_opt pvar_origin pvar with
-      | Some r ->
-          IdentTbl.replace id_origin id r
-      | None ->
-          () )
-    | Load {id; e= Lfield ({exp= Var src; _}, _, _)} -> (
-      (* Tuple-field load on the bridge result: propagate src's origin. *)
-      match IdentTbl.find_opt id_origin src with
-      | Some r ->
-          IdentTbl.replace id_origin id r
-      | None ->
-          () )
+        IdentTbl.replace id_to_pvar id pvar ;
+        match PvarTbl.find_opt pvar_origin pvar with
+        | Some r ->
+            IdentTbl.replace id_origin id r
+        | None ->
+            () )
+    | Load {id; e= Lfield ({exp= Var src; _}, fname, _)} ->
+        (* Tuple-field load: prefer pvar_field_origin, fall back to src's own origin. *)
+        let fresh_origin =
+          match IdentTbl.find_opt id_to_pvar src with
+          | Some pvar -> (
+            match PvarFieldTbl.find_opt pvar_field_origin (pvar, fname) with
+            | Some r ->
+                Some r
+            | None ->
+                IdentTbl.find_opt id_origin src )
+          | None ->
+              IdentTbl.find_opt id_origin src
+        in
+        Option.iter fresh_origin ~f:(IdentTbl.replace id_origin id)
     | Store {e1= Lvar pvar; e2} -> (
       match strip_casts e2 with
       | Var id -> (
@@ -129,6 +173,17 @@ let process pdesc =
         | Some r ->
             PvarTbl.replace pvar_origin pvar r
         | None ->
+            () )
+      | _ ->
+          () )
+    | Store {e1= Lfield ({exp= Var dst_id; _}, fname, _); e2} -> (
+      (* [*n$dst_id.field = n$id]: record field origin under dst_id's source pvar. *)
+      match strip_casts e2 with
+      | Var id -> (
+        match (IdentTbl.find_opt id_to_pvar dst_id, IdentTbl.find_opt id_origin id) with
+        | Some pvar, Some r ->
+            PvarFieldTbl.replace pvar_field_origin (pvar, fname) r
+        | _ ->
             () )
       | _ ->
           () )
@@ -140,7 +195,7 @@ let process pdesc =
             (* Raw ret_id Prune ([if let]): require trivial else. *)
             if eq_branch_satisfies node ~check:node_is_trivial_else then IdentHashSet.add r checked
         | Some r ->
-            (* Propagated id Prune (chain / guard-let): tolerate non-fatal Calls. *)
+            (* Propagated id Prune (chain / [??] / guard-let): tolerate non-fatal Calls. *)
             if eq_branch_satisfies node ~check:node_has_no_fatal_call then
               IdentHashSet.add r checked
         | None ->
@@ -155,12 +210,13 @@ let process pdesc =
       (fun node -> Procdesc.Node.get_instrs node |> Instrs.iter ~f:(visit_instr node))
       pdesc
   in
-  (* Snapshot id_origin and pvar_origin: cardinality alone misses value-only updates (e.g. bridge
+  (* Snapshot all four tables: cardinality alone misses value-only updates (e.g. bridge
      propagation overwriting [id_origin[ret]] from [ret] to its origin). *)
   let snapshot () =
     let dump_id tbl = IdentTbl.fold (fun k v acc -> (k, v) :: acc) tbl [] in
     let dump_pvar tbl = PvarTbl.fold (fun k v acc -> (k, v) :: acc) tbl [] in
-    (dump_id id_origin, dump_pvar pvar_origin)
+    let dump_pvarfield tbl = PvarFieldTbl.fold (fun k v acc -> (k, v) :: acc) tbl [] in
+    (dump_id id_origin, dump_pvar pvar_origin, dump_pvarfield pvar_field_origin, dump_id id_to_pvar)
   in
   let max_iter = 16 in
   let rec loop prev n =
