@@ -424,6 +424,25 @@ let is_combine_sink _ n =
   String.is_substring n ~substring:"Combine" && String.is_substring n ~substring:"sink"
 
 
+(* GCD `DispatchWorkItem.init(qos:flags:block:)`. The 3-arg call site lays out as
+   `init(uninit_self, block, metatype)`, where [block] is the heap-copied closure
+   value (post `_Block_copy`) carrying the captured-self path via
+   `__infer_tuple_field_1.field_1`. The user almost always stashes the resulting
+   work item on `self` (otherwise it can't be cancelled / re-scheduled), closing
+   `self -> _workItem -> token -> _captured_env -> block -> __infer_tuple_field_1
+    -> field_1 -> self`. We substitute the work-item return value with a
+   [register_closure_holder]-shaped holder whose `_captured_env` strong field
+   points at the block. *)
+let is_dispatch_workitem_init _ n =
+  String.is_substring n ~substring:"WorkItem" && String.is_substring n ~substring:"block"
+
+
+let dispatch_workitem_init block = register_closure_holder block block
+
+let is_dispatch_queue_async _ n =
+  String.is_substring n ~substring:"OS_dispatch_queue" && String.is_substring n ~substring:"async"
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"external_register_handler" <>$ capt_arg_payload $+ capt_arg_payload
@@ -439,7 +458,9 @@ let matchers : matcher list =
   ; ~+is_kvo_observe $ any_arg $+ any_arg $+ capt_arg_payload $+ capt_arg_payload
     $+...$--> register_closure_holder
   ; ~+is_combine_sink $ capt_arg_payload $+ capt_arg_payload $+...$--> register_closure_holder
+  ; ~+is_dispatch_workitem_init $ any_arg $+ capt_arg_payload $+...$--> dispatch_workitem_init
   ; ~+is_dispatch_source_state_setter <>--> skip_with_fresh_ret
+  ; ~+is_dispatch_queue_async <>--> skip_with_fresh_ret
   ; -"swift_getObjectType" <>--> skip_with_fresh_ret ]
   |> List.map ~f:(fun matcher ->
          matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )

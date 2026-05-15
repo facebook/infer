@@ -2,11 +2,11 @@
 //
 // Cycle: `self -> _workItem -> item -> block -> captured self -> self`.
 //
-// The BAD case closes a real retain cycle but Pulse currently has no
-// model for `DispatchWorkItem.init(qos:flags:block:)`, so the cycle isn't
-// visible at the `self.workItem = item` store. Hence the `_FN` suffix on
-// `test_dispatch_workitem_self_capture_bad_FN`; the next diff in the
-// stack adds the model and drops the suffix.
+// The BAD case closes a real retain cycle through
+// `DispatchWorkItem.init(qos:flags:block:)`; the matcher in PulseModelsSwift
+// substitutes the work item with a closure-holder whose `_captured_env`
+// strong field points back at the heap-copied block (which itself carries the
+// captured-self path), closing the cycle at the `self.workItem = item` store.
 
 import Dispatch
 
@@ -39,7 +39,7 @@ final class DispatchWorkItemWeakHolderGood: @unchecked Sendable {
     }
 }
 
-func test_dispatch_workitem_self_capture_bad_FN() {
+func test_dispatch_workitem_self_capture_bad() {
     let h = DispatchWorkItemCycleHolder()
     h.startBad()
 }
