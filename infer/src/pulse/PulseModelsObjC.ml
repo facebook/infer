@@ -321,6 +321,22 @@ let block_holder captured_env : model =
   assign_ret holder
 
 
+(* Setter-style model for ObjC framework methods that take a block but don't
+   return a token the user stashes — instead the receiver itself retains the
+   block (e.g. `-[NSOperationQueue addOperationWithBlock:]`). The user already
+   holds the receiver via some property on `self`; the model attaches the
+   heap-copied block as a strong field on the receiver so the cycle
+   `self -> _<receiver_property> -> receiver -> __infer_attached_block -> block
+    -> __infer_tuple_field_1 -> field_1 -> self` becomes visible. The block
+   value already carries the captured-self path (preserved by the `_Block_copy`
+   model from D104407063). *)
+let attach_block_to_receiver receiver block : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  store_field ~deref:false ~ref:receiver PulseOperations.ModeledField.objc_attached_block block
+
+
 (* Return a fresh allocated value with a stamped ObjC dynamic type. Used to
    model unmodelled ObjC singleton accessors (e.g. `+[NSNotificationCenter
    defaultCenter]`) so that subsequent instance-method calls on the result
@@ -435,7 +451,16 @@ let matchers : matcher list =
     ; +class_match_name "NSRunLoop" &:: "mainRunLoop" <>$$--> fresh_with_objc_type "NSRunLoop"
     ; +class_match_name "NSOperationQueue"
       &:: "mainQueue"
-      <>$$--> fresh_with_objc_type "NSOperationQueue" ]
+      <>$$--> fresh_with_objc_type "NSOperationQueue"
+      (* `-[NSOperationQueue addOperationWithBlock:]` retains the block on the
+         queue while the operation is queued; the queue is typically a property
+         of `self` (e.g. `let queue = OperationQueue()`), and the block captures
+         self, closing
+         `self -> _queue -> queue -> __infer_attached_block -> block
+          -> captured self -> self`. *)
+    ; +class_match_name "NSOperationQueue"
+      &:: "addOperationWithBlock:" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> attach_block_to_receiver ]
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist) )
   @
   let objc_only_name name =

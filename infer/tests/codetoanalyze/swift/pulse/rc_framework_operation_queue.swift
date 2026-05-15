@@ -4,12 +4,8 @@
 //          -> captured self -> self`.
 //
 // The BAD case closes a real retain cycle (the queue is a property of
-// `self`; the queue retains the block while the operation is queued; the
-// block captures `self`). Pulse currently has no model for
-// `-[NSOperationQueue addOperationWithBlock:]`, so the cycle isn't visible
-// at the addOperation call. Hence the `_FN` suffix on
-// `test_operation_queue_self_capture_bad_FN`; the next diff in the stack
-// adds the model and drops the suffix.
+// `self`; the queue retains the block via the model's `__infer_attached_block`
+// strong field; the block captures `self`).
 
 import Foundation
 
@@ -37,7 +33,7 @@ final class OperationQueueWeakHolderGood: @unchecked Sendable {
     }
 }
 
-func test_operation_queue_self_capture_bad_FN() {
+func test_operation_queue_self_capture_bad() {
     let h = OperationQueueCycleHolder()
     h.startBad()
 }

@@ -133,6 +133,13 @@ module ModeledField = struct
   (* Strong field on receiver pointing at a `setCancelHandler`-style block. *)
   let swift_cancel_handler =
     Fieldname.make ~is_weak:false swift_attached_handler_class "__infer_cancel_handler"
+
+
+  (* Strong field on receiver pointing at a generic attached block (e.g.
+     `-[NSOperationQueue addOperationWithBlock:]` — methods that take a block
+     and don't return a token; the receiver itself retains the block). *)
+  let objc_attached_block =
+    Fieldname.make ~is_weak:false swift_attached_handler_class "__infer_attached_block"
 end
 
 let fold_reachable_from ~f args astate =
