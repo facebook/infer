@@ -249,10 +249,15 @@ let extract_class_and_field_from_wvd mangled =
                          "reactionBubbleView" with "Bubble" back-referenced from an earlier name).
                          We don't expand substitutions, so reading the literal `0<n>` as length=n
                          produces a truncated wrong field name. Two distinct properties on the
-                         same class can then collide on the truncated common prefix and confuse
-                         downstream analyses (false retain cycles, etc.). Use the whole mangled
-                         suffix as an opaque-but-unique field name instead — readability suffers
-                         in textual dumps, but every property keeps its own identity. *)
+                         same class would then collide on the truncated common prefix and confuse
+                         downstream analyses (false retain cycles, etc.).
+
+                         Disambiguate by hashing the full mangled suffix to a short hex tag so
+                         two distinct properties keep distinct identities. When the suffix
+                         contains a long-enough lowercase letter run (typically the un-compressed
+                         literal portion of the property name, e.g. "reaction" or "viewScreenshot"),
+                         prepend it as a human-readable hint so the field is recognisable in
+                         textual dumps and Pulse trace messages. *)
                       let is_substitution_compressed =
                         String.length prop_len_str > 1 && Char.equal (String.get prop_len_str 0) '0'
                       in
@@ -262,7 +267,28 @@ let extract_class_and_field_from_wvd mangled =
                           String.map suffix ~f:(fun c ->
                               if Char.is_alphanum c || Char.equal c '_' then c else '_' )
                         in
-                        Some (class_name, "field_" ^ sanitized)
+                        let hash_tag =
+                          String.sub (Utils.string_crc_hex32 sanitized) ~pos:0 ~len:8
+                        in
+                        (* The leading [0<n>] block names the literal-prefix portion of the
+                           property name (Swift back-references the rest from the substitution
+                           table). [int_of_string_opt] silently drops the leading 0, so [prop_len]
+                           is exactly the length of that literal prefix. *)
+                        let literal_hint =
+                          match int_of_string_opt prop_len_str with
+                          | Some prop_len when prop_len > 0 && end_prop_digits + prop_len <= len ->
+                              Some (String.sub mangled ~pos:end_prop_digits ~len:prop_len)
+                          | _ ->
+                              None
+                        in
+                        let field_name =
+                          match literal_hint with
+                          | Some hint ->
+                              "field_" ^ hint ^ "_" ^ hash_tag
+                          | None ->
+                              "field_" ^ hash_tag
+                        in
+                        Some (class_name, field_name)
                       else
                         match int_of_string_opt prop_len_str with
                         | Some prop_len ->

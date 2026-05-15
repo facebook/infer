@@ -17,7 +17,7 @@ define $s4Test14ViewControllerC10navbarViewAA0c6NavbarF0CvgAGyXEfU_(self: *__inf
       
   #m_resp::ret: @[0:0]
       n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[0:0]
-      n8 = swift_allocObject(n5, 24, 7) @[0:0]
+      n8 = __sil_swift_alloc(<__infer_swift_type<__infer_swift_alloc_unknown_type>>) @[0:0]
       jmp nav::ret @[0:0]
       
   #nav::ret: @[0:0]
