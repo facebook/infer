@@ -215,7 +215,7 @@ let register_closure_holder _callback captured_env : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let holder_class = Typ.SwiftClass (SwiftClassName.of_string "__infer_closure_holder") in
+  let holder_class = Typ.SwiftClass SwiftClassName.swift_alloc_unknown_type in
   let field = Fieldname.make ~is_weak:false holder_class "captured_env" in
   let* holder = fresh () in
   let* () = and_positive holder in
@@ -237,7 +237,7 @@ let block_release_skip _block : model =
 
 let alloc size_exp () : unit DSL.model_monad =
   let open DSL.Syntax in
-  (* 1. Extract the exact type directly from the LLVM sizeof AST! *)
+  (* 1. Extract the exact type directly from the sizeof AST *)
   let typ =
     match size_exp with
     | Exp.Sizeof {typ} ->
@@ -251,13 +251,24 @@ let alloc size_exp () : unit DSL.model_monad =
   let* () = and_positive allocated_obj in
   let* () = allocation SwiftAlloc allocated_obj in
   let* () = and_dynamic_type_is allocated_obj typ in
-  (* 4. Create the symbolic metatype/vtable pointer (the isa pointer) *)
-  let* meta_addr = fresh ~more:"swift_isa_vtable_pointer" () in
-  let* () = and_dynamic_type_is meta_addr typ in
-  (* 5. Emulate Swift ABI: Write the metatype to the base address (offset 0) *)
-  let* () = store ~ref:allocated_obj meta_addr in
-  (* 6. Bind the fully constructed object to the return variable *)
-  assign_ret allocated_obj
+  match typ.desc with
+  | Tstruct (SwiftClass name) when SwiftClassName.equal name SwiftClassName.swift_alloc_unknown_type
+    ->
+      (* Placeholder type emitted by the frontend when [swift_allocObject] was called
+         outside a Swift-class context and the layout could not be recovered.  Skip the
+         isa-pointer / offset-0 store: we don't know the object's layout, so we don't
+         invent one.  The address is still tracked with [SwiftAlloc] provenance so
+         PulseRefCounting can classify edges through it. *)
+      Stats.incr_pulse_swift_alloc_unknown_type () ;
+      assign_ret allocated_obj
+  | _ ->
+      (* 4. Create the symbolic metatype/vtable pointer (the isa pointer) *)
+      let* meta_addr = fresh ~more:"swift_isa_vtable_pointer" () in
+      let* () = and_dynamic_type_is meta_addr typ in
+      (* 5. Emulate Swift ABI: write the metatype to the base address (offset 0) *)
+      let* () = store ~ref:allocated_obj meta_addr in
+      (* 6. Bind the fully constructed object to the return variable *)
+      assign_ret allocated_obj
 
 
 let objc_alloc_from_swift size_exp class_ptr () : unit DSL.model_monad =

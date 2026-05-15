@@ -244,6 +244,7 @@ type t =
   ; pulse_interrupted_loops: IntCounter.t Atomic.t
   ; pulse_unknown_calls: IntCounter.t Atomic.t
   ; pulse_unknown_calls_on_hack_resource: IntCounter.t Atomic.t
+  ; pulse_swift_alloc_unknown_type: IntCounter.t Atomic.t
   ; pulse_summaries_contradictions: IntCounter.t Atomic.t
   ; pulse_summaries_unsat_for_caller: IntCounter.t Atomic.t
   ; pulse_summaries_unsat_for_caller_percent: IntCounter.t Atomic.t
@@ -318,6 +319,7 @@ let pp fmt stats =
     ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
     ~pulse_disjuncts_dropped:(pp_int_field fmt) ~pulse_interrupted_loops:(pp_int_field fmt)
     ~pulse_unknown_calls:(pp_int_field fmt) ~pulse_unknown_calls_on_hack_resource:(pp_int_field fmt)
+    ~pulse_swift_alloc_unknown_type:(pp_int_field fmt)
     ~pulse_summaries_contradictions:(pp_int_field fmt)
     ~pulse_summaries_count:(pp_pulse_summaries_count fmt)
     ~pulse_summaries_count_0_continue_program:(pp_int_field fmt)
@@ -494,6 +496,8 @@ let add_pulse_interrupted_loops n = add Fields.pulse_interrupted_loops n
 let incr_pulse_unknown_calls () = incr Fields.pulse_unknown_calls
 
 let incr_pulse_unknown_calls_on_hack_resource () = incr Fields.pulse_unknown_calls_on_hack_resource
+
+let incr_pulse_swift_alloc_unknown_type () = incr Fields.pulse_swift_alloc_unknown_type
 
 let incr_pulse_summaries_contradictions () = incr Fields.pulse_summaries_contradictions
 

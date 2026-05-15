@@ -48,6 +48,10 @@ val incr_pulse_unknown_calls : unit -> unit
 
 val incr_pulse_unknown_calls_on_hack_resource : unit -> unit
 
+val incr_pulse_swift_alloc_unknown_type : unit -> unit
+(** a [swift_allocObject] call reached the Pulse model but the size argument was not a [Sizeof]
+    expression, so we could not recover the dynamic type of the allocated object *)
+
 val incr_pulse_summaries_contradictions : unit -> unit
 
 val incr_pulse_summaries_unsat_for_caller : unit -> unit

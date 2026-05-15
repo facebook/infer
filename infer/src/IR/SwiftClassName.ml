@@ -27,3 +27,6 @@ let of_string ?plain_name mangled =
       L.die InternalError "Swift classname was given empty plain name for %s" mangled
   | _ ->
       {mangled; plain_name}
+
+
+let swift_alloc_unknown_type = of_string "__infer_swift_alloc_unknown_type"

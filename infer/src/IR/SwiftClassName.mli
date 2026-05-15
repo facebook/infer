@@ -22,3 +22,8 @@ val mangled : t -> string
 val of_string : ?plain_name:string -> string -> t
 (** make a class name out of its mangled name and optionally its [plain_name] NB only non-empty
     [plain_names] can be used *)
+
+val swift_alloc_unknown_type : t
+(** placeholder class name for Swift heap allocations whose dynamic type the frontend could not
+    recover (e.g. unmodelled [swift_allocObject] calls without a [Sizeof] size argument). Used as a
+    stable type token so PulseRefCounting can classify edges through the object. *)

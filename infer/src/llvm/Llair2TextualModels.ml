@@ -480,10 +480,21 @@ let get_alloc_class_name =
   let objc_alloc = Textual.ProcName.of_string "objc_alloc" in
   let objc_allocWithZone = Textual.ProcName.of_string "objc_allocWithZone" in
   let ns_object = Textual.TypeName.of_string "NSObject" in
+  let swift_alloc_unknown_type =
+    Textual.TypeName.mk_swift_type_name
+      (SwiftClassName.mangled SwiftClassName.swift_alloc_unknown_type)
+  in
   fun ~proc_state proc_name llair_args ->
     match Textual.QualifiedProcName.get_class_name proc_state.ProcState.qualified_name with
     | Some class_name when Textual.ProcName.equal proc_name swift_alloc_object ->
         Some (class_name, Textual.ProcDecl.swift_alloc_name)
+    | None when Textual.ProcName.equal proc_name swift_alloc_object ->
+        (* [swift_allocObject] called outside a Swift-class method context, e.g. for a
+           closure environment lowered from a [partial_apply].  We have no recovered
+           type for the object, so route through [swift_alloc] with a placeholder so
+           Pulse can still track the resulting heap object instead of letting the raw
+           call go through unmodelled. *)
+        Some (swift_alloc_unknown_type, Textual.ProcDecl.swift_alloc_name)
     | _
       when Textual.ProcName.equal proc_name alloc_with_zone
            || Textual.ProcName.equal proc_name alloc
