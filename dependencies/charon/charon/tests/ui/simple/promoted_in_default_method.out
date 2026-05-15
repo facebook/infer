@@ -1,0 +1,51 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Thing
+trait Thing<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn foo = foo<Self>[Self]
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Thing::foo
+fn foo<Self>()
+where
+    [@TraitClause0]: Thing<Self>,
+{
+    let _0: (); // return
+    let _1: &'1 i32; // anonymous local
+    let _2: &'2 i32; // anonymous local
+    let _3: &'4 i32; // anonymous local
+    let _4: i32; // anonymous local
+
+    storage_live(_3)
+    storage_live(_4)
+    _4 = const 42 : i32
+    _3 = &_4
+    storage_live(_2)
+    _0 = ()
+    storage_live(_1)
+    _2 = move _3
+    _1 = &(*_2)
+    storage_dead(_1)
+    _0 = ()
+    return
+}
+
+
+

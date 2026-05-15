@@ -1,0 +1,29 @@
+error: internal compiler error: /rustc-dev/efc9e1b50cbf2cede7ebe25f0a1fc64fd8b3e942/compiler/rustc_middle/src/ty/sty.rs:352:13: cannot find `K/#0` in param-env: ParamEnv {
+                                    caller_bounds: [
+                                        Binder { value: HostEffectPredicate { trait_ref: <T as std::marker::Destruct>, constness: Maybe }, bound_vars: [] },
+                                        Binder { value: TraitPredicate(<T as std::marker::Destruct>, polarity:Positive), bound_vars: [] },
+                                    ],
+                                }
+
+
+thread 'rustc' panicked at /rustc-dev/efc9e1b50cbf2cede7ebe25f0a1fc64fd8b3e942/compiler/rustc_middle/src/ty/sty.rs:352:13:
+Box<dyn Any>
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: rustc panicked while retrieving drop glue. This is known to happen with `--precise-drops`; to silence this warning, pass `--opaque '{impl core::marker::Destruct for test_crate::PortableHash}'` to charon
+ --> tests/ui/simple/drop-glue-with-const-generic.rs:5:1
+  |
+5 | / struct PortableHash<const K: usize> {
+6 | |     shake128_state: [KeccakState; K],
+7 | |     make_non_trivial: Box<u32>,
+8 | | }
+  | |_^
+
+error: Item `test_crate::PortableHash` caused errors; ignoring.
+ --> tests/ui/simple/drop-glue-with-const-generic.rs:5:1
+  |
+5 | struct PortableHash<const K: usize> {
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+error: aborting due to 1 previous error
+
+ERROR Code failed to compile

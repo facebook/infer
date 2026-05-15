@@ -1,0 +1,36 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let f_1: fn(); // local
+    let _2: (); // anonymous local
+    let _3: fn(); // anonymous local
+
+    _0 = ()
+    storage_live(f_1)
+    f_1 = cast<foo, fn()>(const foo)
+    storage_live(_2)
+    storage_live(_3)
+    _3 = copy f_1
+    _2 = (move _3)()
+    storage_dead(_3)
+    storage_dead(_2)
+    _0 = ()
+    storage_dead(f_1)
+    return
+}
+
+
+

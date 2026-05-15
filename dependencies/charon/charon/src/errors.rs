@@ -7,8 +7,11 @@ use itertools::Itertools;
 use macros::VariantIndexArity;
 use petgraph::algo::dijkstra::dijkstra;
 use petgraph::prelude::DiGraphMap;
+use serde::{Deserialize, Serialize};
 use std::cmp::{Ord, PartialOrd};
 use std::collections::{HashMap, HashSet};
+
+const BACKTRACE_ON_ERR: bool = false;
 
 #[macro_export]
 macro_rules! register_error {
@@ -70,16 +73,26 @@ macro_rules! sanity_check {
 pub use sanity_check;
 
 /// Common error used during the translation.
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Error {
     pub span: Span,
     pub msg: String,
 }
 
 impl Error {
+    pub fn new(span: Span, msg: String) -> Self {
+        Self { span, msg }
+    }
+    pub fn dummy() -> Self {
+        Self {
+            span: Span::dummy(),
+            msg: String::new(),
+        }
+    }
+
     pub(crate) fn render(&self, krate: &TranslatedCrate, level: Level) -> String {
         use annotate_snippets::*;
-        let span = self.span.span;
+        let span = self.span.data;
 
         let mut group = Group::with_title(level.title(&self.msg));
         let origin;
@@ -95,13 +108,21 @@ impl Error {
                 // Show just the file and line/col.
                 let origin = Origin::path(&origin)
                     .line(span.beg.line)
-                    .char_column(span.beg.col + 1)
-                    .primary(true);
+                    .char_column(span.beg.col + 1);
                 group = group.element(origin);
             }
         }
 
         Renderer::styled().render(&[group]).to_string()
+    }
+}
+
+impl<T: ToString> From<T> for Error {
+    fn from(err: T) -> Self {
+        Self {
+            span: Span::dummy(),
+            msg: err.to_string(),
+        }
     }
 }
 
@@ -121,7 +142,7 @@ pub fn display_unspanned_error(level: Level, msg: &str) {
 /// (transitively) lead to the extraction of those problematic dependencies.
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DepSource {
-    pub src_id: AnyTransId,
+    pub src_id: ItemId,
     /// The location where the id was referred to. We store `None` for external dependencies as we
     /// don't want to show these to the users.
     pub span: Option<Span>,
@@ -130,9 +151,9 @@ pub struct DepSource {
 /// For tracing error dependencies.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, VariantIndexArity)]
 enum DepNode {
-    External(AnyTransId),
+    External(ItemId),
     /// We use the span information only for local references
-    Local(AnyTransId, Span),
+    Local(ItemId, Span),
 }
 
 /// Graph of dependencies between erroring definitions and the definitions they came from.
@@ -180,13 +201,13 @@ pub struct ErrorCtx {
     pub error_on_warnings: bool,
 
     /// The ids of the external_declarations for which extraction we encountered errors.
-    pub external_decls_with_errors: HashSet<AnyTransId>,
+    pub external_decls_with_errors: HashSet<ItemId>,
     /// Graph of dependencies between items: there is an edge from item `a` to item `b` if `b`
     /// registered the id for `a` during its translation. Because we only use this to report errors
     /// on external items, we only record edges where `a` is an external item.
     external_dep_graph: DepGraph,
     /// The id of the definition we are exploring, used to track the source of errors.
-    pub def_id: Option<AnyTransId>,
+    pub def_id: Option<ItemId>,
     /// Whether the definition being explored is local to the crate or not.
     pub def_id_is_local: bool,
     /// The number of errors encountered so far.
@@ -223,6 +244,10 @@ impl ErrorCtx {
     ) -> Error {
         let error = Error { span, msg };
         anstream::eprintln!("{}\n", error.render(krate, level));
+        if BACKTRACE_ON_ERR {
+            let backtrace = std::backtrace::Backtrace::force_capture();
+            eprintln!("{backtrace}\n");
+        }
         error
     }
 
@@ -259,7 +284,7 @@ impl ErrorCtx {
     pub fn register_dep_source(
         &mut self,
         src: &Option<DepSource>,
-        item_id: AnyTransId,
+        item_id: ItemId,
         is_local: bool,
     ) {
         if let Some(src) = src
@@ -280,7 +305,7 @@ impl ErrorCtx {
     /// In case errors happened when extracting the definitions coming from the external
     /// dependencies, print a detailed report to explain to the user which dependencies were
     /// problematic, and where they are used in the code.
-    pub fn report_external_dep_error(&self, krate: &TranslatedCrate, id: AnyTransId) {
+    pub fn report_external_dep_error(&self, krate: &TranslatedCrate, id: ItemId) {
         use annotate_snippets::*;
 
         // Use `Dijkstra's` algorithm to find the local items reachable from the current non-local
@@ -296,7 +321,7 @@ impl ErrorCtx {
                 DepNode::External(_) => None,
                 DepNode::Local(_, span) => Some(*span),
             })
-            .into_group_map_by(|span| span.span.file_id);
+            .into_group_map_by(|span| span.data.file_id);
 
         // Collect to a `Vec` to be able to sort it and to borrow `origin` (needed by
         // `Snippet::source`).
@@ -321,7 +346,7 @@ impl ErrorCtx {
                 .annotations(
                     spans
                         .iter()
-                        .map(|span| AnnotationKind::Context.span(span.span.to_byte_range(source))),
+                        .map(|span| AnnotationKind::Context.span(span.data.to_byte_range(source))),
                 )
         });
 

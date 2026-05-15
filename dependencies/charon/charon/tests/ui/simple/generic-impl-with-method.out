@@ -16,24 +16,25 @@ pub trait Sized<Self>
 pub trait Trait<Self>
 {
     parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn method<'_0> = test_crate::Trait::method<'_0_0, Self>[Self]
+    fn method<'_0_1> = test_crate::Trait::method<'_0_1, Self>[Self]
     vtable: test_crate::Trait::{vtable}
 }
 
-pub fn test_crate::Trait::method<'_0, Self>(@1: &'_0 (Self))
+pub fn test_crate::Trait::method<'_0, Self>(_1: &'_0 Self)
 where
     [@TraitClause0]: Trait<Self>,
+= <method_without_default_body>
 
 // Full name: test_crate::{impl Trait for T}::method
-pub fn {impl Trait for T}::method<'_0, T>(@1: &'_0 (T))
+pub fn {impl Trait for T}::method<'_0, T>(_1: &'_0 T)
 where
     [@TraitClause0]: Sized<T>,
 {
-    let @0: (); // return
-    let self@1: &'_ (T); // arg #1
+    let _0: (); // return
+    let self_1: &'1 T; // arg #1
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
@@ -43,7 +44,7 @@ where
     [@TraitClause0]: Sized<T>,
 {
     parent_clause0 = @TraitClause0::parent_clause0
-    fn method<'_0> = {impl Trait for T}::method<'_0_0, T>[@TraitClause0]
+    fn method<'_0_1> = {impl Trait for T}::method<'_0_1, T>[@TraitClause0]
     vtable: {impl Trait for T}::{vtable}<T>[@TraitClause0]
 }
 

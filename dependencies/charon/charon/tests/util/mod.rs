@@ -22,13 +22,14 @@ pub enum Action {
     Overwrite,
 }
 
-/// Depending on `action`, either check that the contents of `path` matches `output`, or overwrite
-/// the file with the given output.
-pub fn compare_or_overwrite(
-    action: Action,
-    output: String,
-    path: &Path,
-) -> snapbox::assert::Result<()> {
+/// If `IN_CI=1`, check that the contents of `path` matches `output`, otherwise overwrite the file
+/// with the given output.
+pub fn compare_or_overwrite(output: impl AsRef<str>, path: &Path) -> snapbox::assert::Result<()> {
+    let action = if std::env::var("IN_CI").as_deref() == Ok("1") {
+        Action::Verify
+    } else {
+        Action::Overwrite
+    };
     let output = strip_ansi_escapes::strip_str(output);
     let actual = snapbox::Data::text(output);
     let actual = snapbox::filter::FilterNewlines.filter(actual);
@@ -119,14 +120,14 @@ pub fn repr_name(crate_data: &TranslatedCrate, n: &Name) -> String {
                 },
                 ImplElem::Ty(..) => "<inherent impl>".to_string(),
             },
-            PathElem::Monomorphized(..) => "<mono>".to_string(),
+            PathElem::Instantiated(..) => "<mono>".to_string(),
         })
         .join("::")
 }
 
 pub fn repr_span(span: Span) -> String {
-    let raw_span = span.span;
-    format!("{}-{}", raw_span.beg, raw_span.end)
+    let span_data = span.data;
+    format!("{}-{}", span_data.beg, span_data.end)
 }
 
 pub fn trait_name(crate_data: &TranslatedCrate, trait_id: TraitDeclId) -> &str {

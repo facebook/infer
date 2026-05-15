@@ -68,36 +68,35 @@ let run_tests (folder : string) : unit =
             let ptr_size = m.target_information.target_pointer_size in
             Types.TypeDeclId.Map.iter
               (fun _ (ty_decl : Types.type_decl) ->
-                match ty_decl.Types.layout with
-                | Some layout ->
-                    if Option.is_some layout.discriminant_layout then
-                      let name =
-                        PrintTypes.name_to_string print_ctx
-                          ty_decl.item_meta.name
-                      in
-                      Types.VariantId.iteri
-                        (fun var_id _ ->
-                          let variant_layout =
-                            Types.VariantId.nth layout.variant_layouts var_id
-                          in
-                          let tag = variant_layout.tag in
-                          if variant_layout.uninhabited then
-                            assert_eq tag None name print_scalar_value_opt
-                          else
-                            match tag with
-                            | None -> () (* Must be the untagged variant *)
-                            | Some tag ->
-                                let roundtrip_var_id =
-                                  TypesUtils.get_variant_from_tag ptr_size
-                                    ty_decl tag
-                                in
-                                assert_eq roundtrip_var_id (Some var_id)
-                                  (name ^ " with tag: "
-                                  ^ print_scalar_value_opt (Some tag))
-                                  print_var_id_opt)
-                        layout.variant_layouts
-                    else ()
-                | None -> ())
+                match (ty_decl.kind, ty_decl.Types.layout) with
+                | Enum _, Some layout
+                  when Option.is_some layout.discriminant_layout -> begin
+                    let name =
+                      PrintTypes.name_to_string print_ctx ty_decl.item_meta.name
+                    in
+                    Types.VariantId.iteri
+                      (fun var_id _ ->
+                        let variant_layout =
+                          Types.VariantId.nth layout.variant_layouts var_id
+                        in
+                        let tag = variant_layout.tag in
+                        if variant_layout.uninhabited then
+                          assert_eq tag None name print_scalar_value_opt
+                        else
+                          match tag with
+                          | None -> () (* Must be the untagged variant *)
+                          | Some tag ->
+                              let roundtrip_var_id =
+                                TypesUtils.get_variant_from_tag ptr_size ty_decl
+                                  tag
+                              in
+                              assert_eq roundtrip_var_id (Some var_id)
+                                (name ^ " with tag: "
+                                ^ print_scalar_value_opt (Some tag))
+                                print_var_id_opt)
+                      layout.variant_layouts
+                  end
+                | _ -> () (* Not an enum *))
               m.type_decls;
             (* Test that pretty-printing doesn't crash *)
             let printed = PrintLlbcAst.Crate.crate_to_string m in

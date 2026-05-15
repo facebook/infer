@@ -24,7 +24,7 @@ let option_some_id = VariantId.of_int 1
 
 module RegionGroupId = IdGen ()
 
-type region_group_id = RegionGroupId.id [@@deriving show, ord]
+type region_group_id = RegionGroupId.id [@@deriving show, eq, ord]
 
 (** A group of regions.
 
@@ -48,7 +48,7 @@ type region_var_groups = region_var_group list [@@deriving show]
 type ety = ty
 
 (** Type with non-erased regions (this only has an informative purpose) *)
-and rty = ty [@@deriving show, ord]
+and rty = ty [@@deriving show, eq, ord]
 
 and region_outlives = (region, region) outlives_pred
 and type_outlives = (ty, region) outlives_pred

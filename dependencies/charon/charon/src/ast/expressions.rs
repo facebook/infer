@@ -4,9 +4,11 @@ use crate::ast::*;
 use derive_generic_visitor::{Drive, DriveMut};
 use macros::{EnumAsGetters, EnumIsA, EnumToGetters, VariantIndexArity, VariantName};
 use serde::{Deserialize, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 use std::vec::Vec;
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, PartialEq, Eq, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
+#[serde_state(state_implements = HashConsSerializerState)] // Avoid corecursive impls due to perfect derive
 pub struct Place {
     pub kind: PlaceKind,
     pub ty: Ty,
@@ -20,8 +22,8 @@ pub struct Place {
     EnumIsA,
     EnumAsGetters,
     EnumToGetters,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
@@ -53,8 +55,8 @@ pub enum PlaceKind {
     EnumAsGetters,
     EnumToGetters,
     VariantName,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
@@ -66,6 +68,13 @@ pub enum ProjectionElem {
     /// We should never have projections to fields of symbolic variants (they
     /// should have been expanded before through a match).
     Field(FieldProjKind, FieldId),
+    /// A built-in pointer (a reference, raw pointer, or `Box`) in Rust is always a fat pointer: it
+    /// contains an address and metadata for the pointed-to place. This metadata is empty for sized
+    /// types, it's the length for slices, and the vtable for `dyn Trait`.
+    ///
+    /// We consider such pointers to be like a struct with two fields; this represent access to the
+    /// metadata "field".
+    PtrMetadata,
     /// MIR imposes that the argument to an index projection be a local variable, meaning
     /// that even constant indices into arrays are let-bound as separate variables.
     /// We **eliminate** this variant in a micro-pass for LLBC.
@@ -94,8 +103,8 @@ pub enum ProjectionElem {
     Clone,
     EnumIsA,
     EnumAsGetters,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
@@ -149,37 +158,64 @@ pub enum BorrowKind {
 
 /// Unary operation
 #[derive(
-    Debug, PartialEq, Eq, Clone, EnumIsA, VariantName, Serialize, Deserialize, Drive, DriveMut,
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    EnumIsA,
+    VariantName,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
 )]
 #[charon::rename("Unop")]
 pub enum UnOp {
     Not,
     /// This can overflow, for `-i::MIN`.
     #[drive(skip)]
+    #[serde_state(stateless)]
     Neg(OverflowMode),
-    /// Retreive the metadata part of a fat pointer. For slices, this retreives their length.
-    PtrMetadata,
     /// Casts are rvalues in MIR, but we treat them as unops.
     Cast(CastKind),
 }
 
 /// Nullary operation
 #[derive(
-    Debug, PartialEq, Eq, Clone, EnumIsA, VariantName, Serialize, Deserialize, Drive, DriveMut,
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    EnumIsA,
+    VariantName,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
 )]
 #[charon::rename("Nullop")]
 pub enum NullOp {
     SizeOf,
     AlignOf,
-    #[drive(skip)]
-    OffsetOf(Vec<(usize, FieldId)>),
+    OffsetOf(TypeDeclRef, Option<VariantId>, FieldId),
     UbChecks,
+    OverflowChecks,
+    ContractChecks,
 }
 
 /// For all the variants: the first type gives the source type, the second one gives
 /// the destination type.
 #[derive(
-    Debug, PartialEq, Eq, Clone, EnumIsA, VariantName, Serialize, Deserialize, Drive, DriveMut,
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    EnumIsA,
+    VariantName,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
 )]
 #[charon::variants_prefix("Cast")]
 pub enum CastKind {
@@ -197,15 +233,45 @@ pub enum CastKind {
     /// Reinterprets the bits of a value of one type as another type, i.e. exactly what
     /// [`std::mem::transmute`] does.
     Transmute(Ty, Ty),
+    /// Converts a receiver type with `dyn Trait<...>` to a concrete type `T`, used in vtable method shims.
+    /// Valid conversions are references, raw pointers, and (optionally) boxes:
+    /// - `&[mut] dyn Trait<...>` -> `&[mut] T`
+    /// - `*[mut] dyn Trait<...>` -> `*[mut] T`
+    /// - `Box<dyn Trait<...>>` -> `Box<T>` when no `--raw-boxes`
+    ///
+    /// For possible receivers, see: <https://doc.rust-lang.org/reference/items/traits.html#dyn-compatibility>.
+    /// Other receivers, e.g., `Rc` should be unpacked before the cast and re-boxed after.
+    /// FIXME(ssyram): but this is not implemented yet, namely, there may still be
+    ///     something like `Rc<dyn Trait<...>> -> Rc<T>` in the types.
+    Concretize(Ty, Ty),
 }
 
 #[derive(
-    Debug, PartialEq, Eq, Clone, EnumIsA, VariantName, Serialize, Deserialize, Drive, DriveMut,
+    Debug,
+    PartialEq,
+    Eq,
+    Clone,
+    EnumIsA,
+    VariantName,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
+    Hash,
 )]
 #[charon::variants_prefix("Meta")]
 pub enum UnsizingMetadata {
-    Length(ConstGeneric),
-    VTablePtr(TraitRef),
+    /// Cast from `[T; N]` to `[T]`.
+    Length(Box<ConstantExpr>),
+    /// Cast from a sized value to a `dyn Trait` value. The `TraitRef` is the proof of the `dyn
+    /// Trait` predicate; the constant expression is a reference to the vtable `static` value.
+    VTable(TraitRef, Box<ConstantExpr>),
+    /// Cast from `dyn Trait` to `dyn OtherTrait`. The fields indicate how to retreive the vtable:
+    /// it's always either the same we already had, or the vtable for a (possibly nested) supertrait.
+    ///
+    /// Note that we cheat in one case: when upcasting to a marker trait (e.g. `dyn Trait -> dyn
+    /// Sized`), we keep the current vtable.
+    VTableUpcast(Vec<FieldId>),
     Unknown,
 }
 
@@ -213,20 +279,33 @@ pub enum UnsizingMetadata {
 #[charon::variants_prefix("O")]
 pub enum OverflowMode {
     /// If this operation overflows, it panics. Only exists in debug mode, for instance in
-    /// `a + b`, and is introduced by the `remove_dynamic_checks` pass.
+    /// `a + b`, and only if `--reconstruct-fallible-operations` is passed to Charon. Otherwise the
+    /// bound check will be explicit.
     Panic,
-    /// If this operation overflows, it UBs, for instance in `core::num::unchecked_add`.
+    /// If this operation overflows, it is UB; for instance in `core::num::unchecked_add`. This can
+    /// exists in safe code, but will always be preceded by a bounds check.
     UB,
-    /// If this operation overflows, it wraps around, for instance in `core::num::wrapping_add`,
+    /// If this operation overflows, it wraps around for instance in `core::num::wrapping_add`,
     /// or `a + b` in release mode.
     Wrap,
 }
 
 /// Binary operations.
 #[derive(
-    Debug, PartialEq, Eq, Copy, Clone, EnumIsA, VariantName, Serialize, Deserialize, Drive, DriveMut,
+    Debug,
+    PartialEq,
+    Eq,
+    Copy,
+    Clone,
+    EnumIsA,
+    VariantName,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
 )]
 #[charon::rename("Binop")]
+#[serde_state(stateless)]
 pub enum BinOp {
     BitXor,
     BitAnd,
@@ -276,11 +355,12 @@ pub enum BinOp {
     EnumToGetters,
     EnumAsGetters,
     VariantName,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
+#[serde_state(state_implements = HashConsSerializerState)] // Avoid corecursive impls due to perfect derive
 pub enum Operand {
     Copy(Place),
     Move(Place),
@@ -299,12 +379,13 @@ pub enum Operand {
     EnumIsA,
     EnumAsGetters,
     VariantName,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
 #[charon::variants_prefix("F")]
+#[serde_state(stateless)]
 pub enum FunId {
     /// A "regular" function (function local to the crate, external function
     /// not treated as a primitive one).
@@ -345,22 +426,23 @@ impl From<BuiltinFunId> for FunId {
     DriveMut,
 )]
 pub enum BuiltinFunId {
-    /// `alloc::boxed::Box::new`
+    /// Used instead of `alloc::boxed::Box::new` when `--treat-box-as-builtin` is set.
     BoxNew,
-    /// Cast an array as a slice.
+    /// Cast `&[T; N]` to `&[T]`.
     ///
-    /// Converted from `UnOp::ArrayToSlice`
+    /// This is used instead of unsizing coercions when `--ops-to-function-calls` is set.
     ArrayToSliceShared,
-    /// Cast an array as a slice.
+    /// Cast `&mut [T; N]` to `&mut [T]`.
     ///
-    /// Converted from `UnOp::ArrayToSlice`
+    /// This is used instead of unsizing coercions when `--ops-to-function-calls` is set.
     ArrayToSliceMut,
     /// `repeat(n, x)` returns an array where `x` has been replicated `n` times.
     ///
-    /// We introduce this when desugaring the `ArrayRepeat` rvalue.
+    /// This is used instead of `Rvalue::ArrayRepeat` when `--ops-to-function-calls` is set.
     ArrayRepeat,
-    /// Converted from indexing `ProjectionElem`s. The signature depends on the parameters. It
-    /// could look like:
+    /// A built-in funciton introduced instead of array/slice place indexing when
+    /// `--index-to-function-calls` is set. The signature depends on the parameters. It could look
+    /// like:
     /// - `fn ArrayIndexShared<T,N>(&[T;N], usize) -> &T`
     /// - `fn SliceIndexShared<T>(&[T], usize) -> &T`
     /// - `fn ArraySubSliceShared<T,N>(&[T;N], usize, usize) -> &[T]`
@@ -370,7 +452,7 @@ pub enum BuiltinFunId {
     /// Build a raw pointer, from a data pointer and metadata. The metadata can be unit, if
     /// building a thin pointer.
     ///
-    /// Converted from [AggregateKind::RawPtr]
+    /// This is used instead of `AggregateKind::RawPtr` when `--ops-to-function-calls` is set.
     PtrFromParts(RefKind),
 }
 
@@ -391,14 +473,15 @@ pub struct BuiltinIndexOp {
 }
 
 /// Reference to a function declaration or builtin function.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
 pub struct MaybeBuiltinFunDeclRef {
     pub id: FunId,
     pub generics: BoxedArgs,
+    pub trait_ref: Option<TraitRef>,
 }
 
 /// Reference to a trait method.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, PartialEq, Eq, Hash, Drive, DriveMut)]
 pub struct TraitMethodRef {
     pub trait_ref: TraitRef,
     pub name: TraitItemName,
@@ -409,9 +492,18 @@ pub struct TraitMethodRef {
 }
 
 #[derive(
-    Debug, Clone, PartialEq, Eq, EnumAsGetters, Serialize, Deserialize, Drive, DriveMut, Hash,
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    EnumAsGetters,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
+    Hash,
 )]
-pub enum FunIdOrTraitMethodRef {
+pub enum FnPtrKind {
     #[charon::rename("FunId")]
     Fun(FunId),
     /// If a trait: the reference to the trait and the id of the trait method.
@@ -421,40 +513,59 @@ pub enum FunIdOrTraitMethodRef {
     Trait(TraitRef, TraitItemName, FunDeclId),
 }
 
-impl From<FunId> for FunIdOrTraitMethodRef {
+impl From<FunId> for FnPtrKind {
     fn from(id: FunId) -> Self {
         Self::Fun(id)
     }
 }
-impl From<FunDeclId> for FunIdOrTraitMethodRef {
+impl From<FunDeclId> for FnPtrKind {
     fn from(id: FunDeclId) -> Self {
         Self::Fun(id.into())
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Serialize, Deserialize, Drive, DriveMut, Hash)]
+#[derive(Debug, PartialEq, Eq, Clone, SerializeState, DeserializeState, Drive, DriveMut, Hash)]
 pub struct FnPtr {
-    pub func: Box<FunIdOrTraitMethodRef>,
+    pub kind: Box<FnPtrKind>,
     pub generics: BoxedArgs,
 }
 
 impl From<FunDeclRef> for FnPtr {
     fn from(fn_ref: FunDeclRef) -> Self {
-        FnPtr {
-            func: Box::new(fn_ref.id.into()),
-            generics: fn_ref.generics,
-        }
+        FnPtr::new(fn_ref.id.into(), fn_ref.generics)
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, SerializeState, DeserializeState, Drive, DriveMut, Hash)]
+#[charon::variants_prefix("Prov")]
+pub enum Provenance {
+    Global(GlobalDeclRef),
+    Function(FunDeclRef),
+    Unknown,
+}
+
+/// A byte, in the MiniRust sense: it can either be uninitialized, a concrete u8 value,
+/// or part of a pointer with provenance (e.g. to a global or a function)
+#[derive(Debug, PartialEq, Eq, Clone, SerializeState, DeserializeState, Drive, DriveMut, Hash)]
+pub enum Byte {
+    /// An uninitialized byte
+    Uninit,
+    /// A concrete byte value
+    Value(u8),
+    /// A byte that is part of a pointer with provenance. The u8 is the offset within the
+    /// pointer. Note that we do not have an actual value for this pointer byte, unlike
+    /// MiniRust, as that is non-deterministic.
+    Provenance(Provenance, u8),
 }
 
 /// A constant expression.
 ///
-/// Only the [`RawConstantExpr::Literal`] and [`RawConstantExpr::Var`]
+/// Only the [`ConstantExprKind::Literal`] and [`ConstantExprKind::Var`]
 /// cases are left in the final LLBC.
 ///
 /// The other cases come from a straight translation from the MIR:
 ///
-/// [`RawConstantExpr::Adt`] case:
+/// [`ConstantExprKind::Adt`] case:
 /// It is a bit annoying, but rustc treats some ADT and tuple instances as
 /// constants when generating MIR:
 /// - an enumeration with one variant and no fields is a constant.
@@ -463,13 +574,13 @@ impl From<FunDeclRef> for FnPtr {
 ///   (if all the fields are constant) rather than as an aggregated value
 /// We later desugar those to regular ADTs, see [regularize_constant_adts.rs].
 ///
-/// [`RawConstantExpr::Global`] case: access to a global variable. We later desugar it to
+/// [`ConstantExprKind::Global`] case: access to a global variable. We later desugar it to
 /// a copy of a place global.
 ///
-/// [`RawConstantExpr::Ref`] case: reference to a constant value. We later desugar it to a separate
+/// [`ConstantExprKind::Ref`] case: reference to a constant value. We later desugar it to a separate
 /// statement.
 ///
-/// [`RawConstantExpr::FnPtr`] case: a function pointer (to a top-level function).
+/// [`ConstantExprKind::FnPtr`] case: a function pointer (to a top-level function).
 ///
 /// Remark:
 /// MIR seems to forbid more complex expressions like paths. For instance,
@@ -483,13 +594,14 @@ impl From<FunDeclRef> for FnPtr {
     VariantName,
     EnumIsA,
     EnumAsGetters,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
 )]
 #[charon::variants_prefix("C")]
-pub enum RawConstantExpr {
+pub enum ConstantExprKind {
+    #[serde_state(stateless)]
     Literal(Literal),
     /// In most situations:
     /// Enumeration with one variant with no fields, structure with
@@ -498,9 +610,7 @@ pub enum RawConstantExpr {
     /// Less frequently: arbitrary ADT values.
     ///
     /// We eliminate this case in a micro-pass.
-    #[charon::opaque]
     Adt(Option<VariantId>, Vec<ConstantExpr>),
-    #[charon::opaque]
     Array(Vec<ConstantExpr>),
     /// The value is a top-level constant/static.
     ///
@@ -520,10 +630,8 @@ pub enum RawConstantExpr {
     ///   let l = V::<N, T>::LEN; // We need to provided a substitution here
     /// }
     /// ```
-    #[charon::opaque]
     Global(GlobalDeclRef),
-    ///
-    /// A trait constant.
+    /// A trait associated constant.
     ///
     /// Ex.:
     /// ```text
@@ -531,42 +639,45 @@ pub enum RawConstantExpr {
     ///   const C : usize = 32; // <-
     /// }
     /// ```
-    ///
-    /// Remark: trait constants can not be used in types, they are necessarily
-    /// values.
     TraitConst(TraitRef, TraitItemName),
+    /// A reference to the vtable `static` item for this trait ref. This can be normalized for
+    /// cases where we do emit a vtable item. That's not always the case for builtin traits, e.g.
+    /// for `MetaSized`.
+    VTableRef(TraitRef),
     /// A shared reference to a constant value.
     ///
     /// We eliminate this case in a micro-pass.
-    #[charon::opaque]
-    Ref(Box<ConstantExpr>),
+    Ref(Box<ConstantExpr>, Option<UnsizingMetadata>),
     /// A pointer to a mutable static.
     ///
     /// We eliminate this case in a micro-pass.
-    #[charon::opaque]
-    Ptr(RefKind, Box<ConstantExpr>),
+    Ptr(RefKind, Box<ConstantExpr>, Option<UnsizingMetadata>),
     /// A const generic var
     Var(ConstGenericDbVar),
-    /// Function pointer
+    /// Function definition -- this is a ZST constant
+    FnDef(FnPtr),
+    /// A function pointer to a function item; this is an actual pointer to that function item.
+    ///
+    /// We eliminate this case in a micro-pass.
     FnPtr(FnPtr),
     /// A pointer with no provenance (e.g. 0 for the null pointer)
     ///
     /// We eliminate this case in a micro-pass.
     #[drive(skip)]
-    #[charon::opaque]
     PtrNoProvenance(u128),
     /// Raw memory value obtained from constant evaluation. Used when a more structured
     /// representation isn't possible (e.g. for unions) or just isn't implemented yet.
     #[drive(skip)]
-    RawMemory(Vec<u8>),
+    RawMemory(Vec<Byte>),
     /// A constant expression that Charon still doesn't handle, along with the reason why.
     #[drive(skip)]
     Opaque(String),
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
+#[serde_state(state_implements = HashConsSerializerState)] // Avoid corecursive impls due to perfect derive
 pub struct ConstantExpr {
-    pub value: RawConstantExpr,
+    pub kind: ConstantExprKind,
     pub ty: Ty,
 }
 
@@ -575,17 +686,36 @@ pub struct ConstantExpr {
 /// TODO: move the aggregate kind to operands
 /// TODO: we should prefix the type variants with "R" or "Rv", this would avoid collisions
 #[derive(
-    Debug, Clone, EnumToGetters, EnumAsGetters, EnumIsA, Serialize, Deserialize, Drive, DriveMut,
+    Debug,
+    Clone,
+    EnumToGetters,
+    EnumAsGetters,
+    EnumIsA,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
 )]
 pub enum Rvalue {
     /// Lifts an operand as an rvalue.
     Use(Operand),
     /// Takes a reference to the given place.
+    /// The `Operand` refers to the init value of the metadata, it is `()` if no metadata
     #[charon::rename("RvRef")]
-    Ref(Place, BorrowKind),
+    Ref {
+        place: Place,
+        #[serde_state(stateless)]
+        kind: BorrowKind,
+        ptr_metadata: Operand,
+    },
     /// Takes a raw pointer with the given mutability to the given place. This is generated by
     /// pointer casts like `&v as *const _` or raw borrow expressions like `&raw const v.`
-    RawPtr(Place, RefKind),
+    /// Like `Ref`, the `Operand` refers to the init value of the metadata, it is `()` if no metadata.
+    RawPtr {
+        place: Place,
+        kind: RefKind,
+        ptr_metadata: Operand,
+    },
     /// Binary operations (note that we merge "checked" and "unchecked" binops)
     BinaryOp(BinOp, Operand, Operand),
     /// Unary operation (e.g. not, neg)
@@ -593,9 +723,9 @@ pub enum Rvalue {
     /// Nullary operation (e.g. `size_of`)
     NullaryOp(NullOp, Ty),
     /// Discriminant read. Reads the discriminant value of an enum. The place must have the type of
-    /// an enum.
-    ///
-    /// This case is filtered in [crate::transform::remove_read_discriminant]
+    /// an enum. The discriminant in question is the one in the `discriminant` field of the
+    /// corresponding `Variant`. This can be different than the value stored in memory (called
+    /// `tag`). That one is described by [`DiscriminantLayout`] and [`TagEncoding`].
     Discriminant(Place),
     /// Creates an aggregate value, like a tuple, a struct or an enum:
     /// ```text
@@ -616,18 +746,8 @@ pub enum Rvalue {
     /// Remark: in case of closures, the aggregated value groups the closure id
     /// together with its state.
     Aggregate(AggregateKind, Vec<Operand>),
-    /// Length of a memory location. The run-time length of e.g. a vector or a slice is
-    /// represented differently (but pretty-prints the same, FIXME).
-    /// Should be seen as a function of signature:
-    /// - `fn<T;N>(&[T;N]) -> usize`
-    /// - `fn<T>(&[T]) -> usize`
-    ///
-    /// We store the type argument and the const generic (the latter only for arrays).
-    ///
-    /// `Len` is automatically introduced by rustc, notably for the bound checks:
-    /// we eliminate it together with the bounds checks whenever possible.
-    /// There are however occurrences that we don't eliminate (yet).
-    /// For instance, for the following Rust code:
+    /// Length of a place of type `[T]` or `[T; N]`. This applies to the place itself, not to a
+    /// pointer value. This is inserted by rustc in a single case: slice patterns.
     /// ```text
     /// fn slice_pattern_4(x: &[()]) {
     ///     match x {
@@ -636,13 +756,11 @@ pub enum Rvalue {
     ///     }
     /// }
     /// ```
-    /// rustc introduces a check that the length of the slice is exactly equal
-    /// to 1 and that we preserve.
-    Len(Place, Ty, Option<ConstGeneric>),
+    Len(Place, Ty, Option<Box<ConstantExpr>>),
     /// `Repeat(x, n)` creates an array where `x` is copied `n` times.
     ///
     /// We translate this to a function call for LLBC.
-    Repeat(Operand, Ty, ConstGeneric),
+    Repeat(Operand, Ty, Box<ConstantExpr>),
     /// Transmutes a `*mut u8` (obtained from `malloc`) into shallow-initialized `Box<T>`. This
     /// only appears as part of lowering `Box::new()` in some cases. We reconstruct the original
     /// `Box::new()` call, but sometimes may fail to do so, leaking the expression.
@@ -669,7 +787,7 @@ pub enum Rvalue {
 /// initialization, `ls` is initialized to `⊥`, then this `⊥` is expanded to
 /// `Cons (⊥, ⊥)` upon the first assignment, at which point we can initialize
 /// the field 0, etc.).
-#[derive(Debug, Clone, VariantIndexArity, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, VariantIndexArity, SerializeState, DeserializeState, Drive, DriveMut)]
 #[charon::variants_prefix("Aggregated")]
 pub enum AggregateKind {
     /// A struct, enum or union aggregate. The `VariantId`, if present, indicates this is an enum
@@ -679,9 +797,9 @@ pub enum AggregateKind {
     /// We don't put this with the ADT cas because this is the only built-in type
     /// with aggregates, and it is a primitive type. In particular, it makes
     /// sense to treat it differently because it has a variable number of fields.
-    Array(Ty, ConstGeneric),
+    Array(Ty, Box<ConstantExpr>),
     /// Construct a raw pointer from a pointer value, and its metadata (can be unit, if building
     /// a thin pointer). The type is the type of the pointee.
-    /// We lower this to a builtin function call for LLBC in [crate::transform::ops_to_function_calls].
+    /// We lower this to a builtin function call for LLBC in [crate::transform::simplify_output::ops_to_function_calls].
     RawPtr(Ty, RefKind),
 }

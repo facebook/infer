@@ -1,38 +1,51 @@
 # Final LLBC before serialization:
 
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
 // Full name: test_crate::main
 fn main()
 {
-    let @0: (); // return
-    let y@1: &'_ (Slice<u8>); // local
-    let z@2: *const u8; // local
-    let @3: *const Slice<u8>; // anonymous local
-    let @4: usize; // anonymous local
-    let @5: *const u8; // anonymous local
-    let @6: Slice<u8>; // anonymous local
-    let @7: &'_ (Slice<u8>); // anonymous local
+    let _0: (); // return
+    let y_1: &'1 [u8]; // local
+    let z_2: *const u8; // local
+    let _3: *const [u8]; // anonymous local
+    let _4: usize; // anonymous local
+    let _5: *const u8; // anonymous local
+    let _6: [u8; 3 : usize]; // anonymous local
+    let _7: &'_ [u8; 3 : usize]; // anonymous local
+    let _8: &'2 [u8]; // anonymous local
 
-    storage_live(@6)
-    storage_live(@7)
-    storage_live(y@1)
-    @6 := [const (0 : u8), const (1 : u8), const (2 : u8)]
-    @7 := &@6
-    y@1 := move (@7)
-    storage_live(z@2)
-    storage_live(@3)
-    @3 := &raw const *(y@1)
-    z@2 := cast<*const Slice<u8>, *const u8>(move (@3))
-    storage_dead(@3)
-    storage_live(@4)
-    storage_live(@5)
-    @5 := copy (z@2)
-    @4 := cast<*const u8, usize>(move (@5))
-    storage_dead(@5)
-    storage_dead(@4)
-    @0 := ()
-    storage_dead(z@2)
-    storage_dead(y@1)
-    @0 := ()
+    _0 = ()
+    storage_live(y_1)
+    storage_live(_6)
+    _6 = [const 0 : u8, const 1 : u8, const 2 : u8]
+    storage_live(_7)
+    _7 = &_6
+    storage_live(_8)
+    _8 = @ArrayToSliceShared<'_, u8, 3 : usize>(move _7)
+    y_1 = move _8
+    storage_live(z_2)
+    storage_live(_3)
+    _3 = &raw const (*y_1) with_metadata(copy y_1.metadata)
+    z_2 = cast<*const [u8], *const u8>(move _3)
+    storage_dead(_3)
+    storage_live(_4)
+    storage_live(_5)
+    _5 = copy z_2
+    _4 = cast<*const u8, usize>(move _5)
+    storage_dead(_5)
+    storage_dead(_4)
+    _0 = ()
+    storage_dead(z_2)
+    storage_dead(y_1)
     return
 }
 

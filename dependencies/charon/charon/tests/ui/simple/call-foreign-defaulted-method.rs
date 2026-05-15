@@ -1,6 +1,4 @@
 //! This tests that we order decl methods _after_ the trait.
-#![feature(register_tool)]
-#![register_tool(charon)]
 use foo::Trait;
 fn main() {
     let _ = ().defaulted();

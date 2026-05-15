@@ -1,0 +1,112 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::foo::inner1
+fn inner1()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::foo::Trait
+trait Trait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::foo::Trait::{vtable}
+}
+
+// Full name: test_crate::foo::{impl Trait for ()}
+impl Trait for () {
+    parent_clause0 = {built_in impl MetaSized for ()}
+    vtable: {impl Trait for ()}::{vtable}
+}
+
+// Full name: test_crate::Bar
+struct Bar {}
+
+// Full name: test_crate::{Bar}::bar
+fn bar<'_0>(_1: &'_0 Bar)
+{
+    let _0: (); // return
+    let self_1: &'1 Bar; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::{Bar}::bar::inner2
+fn inner2()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module::_
+fn _()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module::_
+const _: () = _()
+
+// Full name: test_crate::module::_::inner3
+fn inner3()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module::baz
+fn baz()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module::baz::inner4
+fn inner4()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module::opaque
+fn opaque()
+= <opaque>
+
+
+

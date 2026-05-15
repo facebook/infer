@@ -1,0 +1,7 @@
+error: Error parsing attribute: `start_from` on modules has no effect
+ --> tests/ui/filtering/start_from_on_module.rs:2:1
+  |
+2 | #[charon::start_from]
+  | ^^^^^^^^^^^^^^^^^^^^^
+
+ERROR Charon failed to translate this code (1 errors)

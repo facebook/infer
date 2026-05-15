@@ -1,0 +1,43 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub opaque type String
+
+// Full name: alloc::string::String::{impl Destruct for String}
+impl Destruct for String {    non-dyn-compatible
+}
+
+// Full name: alloc::string::{impl ToString for Str}::to_string::<Str>
+pub fn to_string::<Str><'_0>(_1: &'_0 Str) -> String
+= <opaque>
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let a_1: String; // local
+    let _2: &'1 Str; // anonymous local
+    let _3: &'2 Str; // anonymous local
+
+    _0 = ()
+    storage_live(a_1)
+    storage_live(_2)
+    storage_live(_3)
+    _3 = const "Hello, world!"
+    _2 = &(*_3) with_metadata(copy _3.metadata)
+    a_1 = to_string::<Str><'5>(move _2)
+    storage_dead(_2)
+    storage_dead(_3)
+    _0 = ()
+    conditional_drop[{impl Destruct for String}] a_1
+    storage_dead(a_1)
+    return
+}
+
+
+

@@ -1,0 +1,75 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::rej_sample
+fn rej_sample<'_0>(_1: &'_0 [u8]) -> usize
+{
+    let _0: usize; // return
+    let a_1: &'1 [u8]; // arg #1
+    let sampled_2: usize; // local
+    let _3: bool; // anonymous local
+    let _4: u8; // anonymous local
+    let _5: usize; // anonymous local
+    let _6: bool; // anonymous local
+    let _7: u8; // anonymous local
+    let _8: usize; // anonymous local
+    let _9: usize; // anonymous local
+    let _10: usize; // anonymous local
+    let _11: &'_ [u8]; // anonymous local
+    let _12: &'_ u8; // anonymous local
+    let _13: &'_ [u8]; // anonymous local
+    let _14: &'_ u8; // anonymous local
+
+    storage_live(_9)
+    storage_live(_10)
+    storage_live(sampled_2)
+    sampled_2 = const 0 : usize
+    storage_live(_3)
+    storage_live(_4)
+    storage_live(_5)
+    _5 = const 0 : usize
+    storage_live(_13)
+    _13 = &(*a_1) with_metadata(copy a_1.metadata)
+    storage_live(_14)
+    _14 = @SliceIndexShared<'_, u8>(move _13, copy _5)
+    _4 = copy (*_14)
+    _3 = move _4 < const 42 : u8
+    if move _3 {
+        storage_dead(_5)
+        storage_dead(_4)
+        storage_live(_6)
+        storage_live(_7)
+        storage_live(_8)
+        _8 = const 1 : usize
+        storage_live(_11)
+        _11 = &(*a_1) with_metadata(copy a_1.metadata)
+        storage_live(_12)
+        _12 = @SliceIndexShared<'_, u8>(move _11, copy _8)
+        _7 = copy (*_12)
+        _6 = move _7 < const 16 : u8
+        if move _6 {
+            storage_dead(_8)
+            storage_dead(_7)
+            _9 = copy sampled_2 panic.+ const 100 : usize
+            sampled_2 = move _9
+        } else {
+            storage_dead(_8)
+            storage_dead(_7)
+            // This statement is duplicated.
+            _10 = copy sampled_2 panic.+ const 101 : usize
+            sampled_2 = move _10
+        }
+    } else {
+        storage_dead(_5)
+        storage_dead(_4)
+        _10 = copy sampled_2 panic.+ const 101 : usize
+        sampled_2 = move _10
+    }
+    storage_dead(_6)
+    storage_dead(_3)
+    _0 = copy sampled_2
+    storage_dead(sampled_2)
+    return
+}
+
+
+

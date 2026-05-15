@@ -1,17 +1,5 @@
 # Final LLBC before serialization:
 
-// Full name: core::marker::MetaSized::<u8>
-#[lang_item("meta_sized")]
-pub trait MetaSized::<u8>
-
-// Full name: core::marker::Sized::<u8>
-#[lang_item("sized")]
-pub trait Sized::<u8>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized::<u8>
-    non-dyn-compatible
-}
-
 // Full name: core::option::Option::<u8>
 #[lang_item("Option")]
 pub enum Option::<u8> {
@@ -19,35 +7,45 @@ pub enum Option::<u8> {
   Some(u8),
 }
 
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
 // Full name: test_crate::init_option
 fn init_option()
 {
-    let @0: (); // return
-    let a@1: Array<Option::<u8>, 6 : usize>; // local
-    let @2: Option::<u8>; // anonymous local
-    let b@3: Option::<u8>; // local
-    let @4: usize; // anonymous local
-    let @5: &'_ (Array<Option::<u8>, 6 : usize>); // anonymous local
-    let @6: &'_ (Option::<u8>); // anonymous local
+    let _0: (); // return
+    let a_1: [Option::<u8>; 6 : usize]; // local
+    let _2: Option::<u8>; // anonymous local
+    let b_3: Option::<u8>; // local
+    let _4: usize; // anonymous local
+    let _5: &'_ [Option::<u8>; 6 : usize]; // anonymous local
+    let _6: &'_ Option::<u8>; // anonymous local
 
-    storage_live(a@1)
-    storage_live(@2)
-    @2 := Option::<u8>::Some { 0: const (4 : u8) }
-    a@1 := @ArrayRepeat<'_, Option::<u8>, 6 : usize>(move (@2))
-    storage_dead(@2)
-    storage_live(b@3)
-    storage_live(@4)
-    @4 := const (0 : usize)
-    storage_live(@5)
-    @5 := &a@1
-    storage_live(@6)
-    @6 := @ArrayIndexShared<'_, Option::<u8>, 6 : usize>(move (@5), copy (@4))
-    b@3 := copy (*(@6))
-    storage_dead(@4)
-    @0 := ()
-    storage_dead(b@3)
-    storage_dead(a@1)
-    @0 := ()
+    _0 = ()
+    storage_live(a_1)
+    storage_live(_2)
+    _2 = Option::<u8>::Some { 0: const 4 : u8 }
+    a_1 = @ArrayRepeat<Option::<u8>, 6 : usize>(move _2)
+    storage_dead(_2)
+    storage_live(b_3)
+    storage_live(_4)
+    _4 = const 0 : usize
+    storage_live(_5)
+    _5 = &a_1
+    storage_live(_6)
+    _6 = @ArrayIndexShared<'_, Option::<u8>, 6 : usize>(move _5, copy _4)
+    b_3 = copy (*_6)
+    storage_dead(_4)
+    _0 = ()
+    storage_dead(b_3)
+    storage_dead(a_1)
     return
 }
 

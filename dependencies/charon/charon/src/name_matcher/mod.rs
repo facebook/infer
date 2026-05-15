@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 use itertools::{EitherOrBoth, Itertools};
 use serde::{Deserialize, Serialize};
 
-use crate::ast::*;
+use crate::{ast::*, formatter::IntoFormatter, pretty::FmtWithCtx};
 
 mod parser;
 
@@ -11,11 +11,11 @@ pub use Pattern as NamePattern;
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Pattern {
-    elems: Vec<PatElem>,
+    pub elems: Vec<PatElem>,
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-enum PatElem {
+pub enum PatElem {
     /// An identifier, optionally with generic arguments. E.g. `std` or `Box<_>`.
     Ident {
         name: String,
@@ -31,7 +31,7 @@ enum PatElem {
 }
 
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
-enum PatTy {
+pub enum PatTy {
     /// A path, like `my_crate::foo::Type<_, usize>`
     Pat(Pattern),
     /// `&T`, `&mut T`
@@ -52,7 +52,7 @@ impl Pattern {
         self.matches_with_generics(ctx, name, None)
     }
 
-    pub fn matches_item(&self, ctx: &TranslatedCrate, item: AnyTransItem<'_>) -> bool {
+    pub fn matches_item(&self, ctx: &TranslatedCrate, item: ItemRef<'_>) -> bool {
         let generics = item.identity_args();
         let name = &item.item_meta().name;
         self.matches_with_generics(ctx, name, Some(&generics))
@@ -65,6 +65,30 @@ impl Pattern {
         args: Option<&GenericArgs>,
     ) -> bool {
         let mut scrutinee_elems = name.name.as_slice();
+        let mut args: Option<GenericArgs> = args.cloned();
+        if let [prefix @ .., PathElem::Instantiated(mono_args)] = scrutinee_elems {
+            // In this case, we may still have some late-bound generics in `args`, this could ONLY happen for regions
+            assert!(
+                args.is_none()
+                    || args.as_ref().unwrap().len() == args.as_ref().unwrap().regions.elem_count(),
+                "In pattern \"{}\" matching against name \"{}\": we have both monomorphized generics {} and regular generics {}",
+                self,
+                name.with_ctx(&ctx.into_fmt()),
+                mono_args.skip_binder.with_ctx(&ctx.into_fmt()),
+                args.unwrap().with_ctx(&ctx.into_fmt())
+            );
+            // We additionally append the regions from `args` to the monomorphized args, so that we
+            // can match against them. We can ignore the binder because binding levels shouldn't
+            // affect matching.
+            let mut mono_args = mono_args.skip_binder.clone();
+            if let Some(args) = args {
+                // Late-bound regions are appended after the monomorphized ones.
+                mono_args.regions.extend(args.regions.into_iter());
+            }
+            scrutinee_elems = prefix;
+            args = Some(mono_args);
+        };
+        let args = args.as_ref();
         // Patterns that start with an impl block match that impl block anywhere. In such a case we
         // truncate the scrutinee name to start with the rightmost impl in its name. This isn't
         // fully precise in case of impls within impls, but we'll ignore that.
@@ -121,6 +145,26 @@ impl Pattern {
                     TypeId::Tuple => false,
                 }
             }
+            TyKind::Array(ty, len) => {
+                let type_name = Name::from_path(&["Array"]);
+                let args = GenericArgs {
+                    regions: [].into(),
+                    types: [ty.clone()].into(),
+                    const_generics: [*len.clone()].into(),
+                    trait_refs: [].into(),
+                };
+                self.matches_with_generics(ctx, &type_name, Some(&args))
+            }
+            TyKind::Slice(ty) => {
+                let type_name = Name::from_path(&["Slice"]);
+                let args = GenericArgs {
+                    regions: [].into(),
+                    types: [ty.clone()].into(),
+                    const_generics: [].into(),
+                    trait_refs: [].into(),
+                };
+                self.matches_with_generics(ctx, &type_name, Some(&args))
+            }
             TyKind::TypeVar(..)
             | TyKind::Literal(..)
             | TyKind::Never
@@ -130,11 +174,12 @@ impl Pattern {
             | TyKind::DynTrait(..)
             | TyKind::FnPtr(..)
             | TyKind::FnDef(..)
+            | TyKind::PtrMetadata(..)
             | TyKind::Error(..) => false,
         }
     }
 
-    pub fn matches_const(&self, _ctx: &TranslatedCrate, _c: &ConstGeneric) -> bool {
+    pub fn matches_const(&self, _ctx: &TranslatedCrate, _c: &ConstantExpr) -> bool {
         if let [PatElem::Glob] = self.elems.as_slice() {
             return true;
         }
@@ -257,7 +302,7 @@ impl PatTy {
         }
     }
 
-    pub fn matches_const(&self, ctx: &TranslatedCrate, c: &ConstGeneric) -> bool {
+    pub fn matches_const(&self, ctx: &TranslatedCrate, c: &ConstantExpr) -> bool {
         match self {
             PatTy::Pat(p) => p.matches_const(ctx, c),
             PatTy::Ref(..) => false,

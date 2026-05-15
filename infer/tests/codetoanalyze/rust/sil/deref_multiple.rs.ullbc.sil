@@ -7,21 +7,25 @@
 .source_language = "Rust"
 
 define deref_multiple::main() : void {
-  local var_0: void, x_1: int, ref_1_2: *int, ref_2_3: **int, ref_3_4: ***int, y_5: int
+  local var_0: void, x_1: int, ref_1_2: *int, ref_2_3: **int, ref_3_4: ***int, y_5: int, var_6: **int, var_7: *int
   #node_0:
+      store &var_0 <- null:void
       store &x_1 <- 42:int
       store &ref_1_2 <- &x_1:*int
       store &ref_2_3 <- &ref_1_2:**int
       store &ref_3_4 <- &ref_2_3:***int
       n0:***int = load &ref_3_4
       n1:**int = load n0
-      n2:*int = load n1
-      n3:int = load n2
-      store &y_5 <- n3:int
+      store &var_6 <- n1:**int
+      n2:**int = load &var_6
+      n3:*int = load n2
+      store &var_7 <- n3:*int
+      n4:*int = load &var_7
+      n5:int = load n4
+      store &y_5 <- n5:int
       store &var_0 <- null:void
-      store &var_0 <- null:void
-      n4:void = load &var_0
-      ret n4
+      n6:void = load &var_0
+      ret n6
       
 }
 

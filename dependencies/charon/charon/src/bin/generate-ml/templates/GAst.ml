@@ -21,7 +21,7 @@ module TraitClauseId = Types.TraitClauseId
 (* Imports *)
 type builtin_fun_id = Types.builtin_fun_id [@@deriving show, ord]
 type fun_id = Types.fun_id [@@deriving show, ord]
-type fun_id_or_trait_method_ref = Types.fun_id_or_trait_method_ref [@@deriving show, ord]
+type fn_ptr_kind = Types.fn_ptr_kind [@@deriving show, ord]
 type fun_decl_id = Types.fun_decl_id [@@deriving show, ord]
 
 (* __REPLACE0__ *)

@@ -14,10 +14,10 @@ module Ast = struct
 
   let rec statement_to_string (env : fmt_env) (indent : string)
       (indent_incr : string) (st : statement) : string =
-    raw_statement_to_string env indent indent_incr st.content
+    statement_kind_to_string env indent indent_incr st.kind
 
-  and raw_statement_to_string (env : fmt_env) (indent : string)
-      (indent_incr : string) (st : raw_statement) : string =
+  and statement_kind_to_string (env : fmt_env) (indent : string)
+      (indent_incr : string) (st : statement_kind) : string =
     match st with
     | Assign (p, rv) ->
         indent ^ place_to_string env p ^ " := " ^ rvalue_to_string env rv
@@ -35,9 +35,13 @@ module Ast = struct
         indent ^ "storage_live " ^ local_id_to_string env var_id
     | StorageDead var_id ->
         indent ^ "storage_dead " ^ local_id_to_string env var_id
-    | Deinit p -> indent ^ "deinit " ^ place_to_string env p
-    | Drop (p, _) -> indent ^ "drop " ^ place_to_string env p
-    | Assert a -> assertion_to_string env indent a
+    | PlaceMention place -> indent ^ "_ := " ^ place_to_string env place
+    | Drop (p, _, _) -> indent ^ "drop " ^ place_to_string env p
+    | Assert (asrt, abort_kind) ->
+        indent
+        ^ assertion_to_string env asrt
+        ^ " else "
+        ^ abort_kind_to_string env abort_kind
     | Call call -> call_to_string env indent call
     | Abort (Panic _) -> indent ^ "panic"
     | Abort UndefinedBehavior -> indent ^ "undefined_behavior"
@@ -67,7 +71,7 @@ module Ast = struct
               List.map
                 (fun (svl, be) ->
                   let svl =
-                    List.map (fun sv -> "| " ^ scalar_value_to_string sv) svl
+                    List.map (fun sv -> "| " ^ literal_to_string sv) svl
                   in
                   let svl = String.concat " " svl in
                   indent ^ svl ^ " => {\n" ^ inner_to_string2 be ^ "\n"
@@ -117,9 +121,7 @@ module Ast = struct
     String.concat ";\n"
       (List.map (statement_to_string env indent indent_incr) b.statements)
 
-  let fun_sig_to_string (env : fmt_env) (indent : string) (indent_incr : string)
-      (sg : fun_sig) : string =
-    fun_sig_to_string env indent indent_incr sg
+  let fun_sig_to_string = fun_sig_to_string
 
   let fun_decl_to_string (env : fmt_env) (indent : string)
       (indent_incr : string) (def : fun_decl) : string =
@@ -128,7 +130,7 @@ module Ast = struct
   let global_decl_to_string (env : fmt_env) (indent : string)
       (_indent_incr : string) (def : global_decl) : string =
     (* Locally update the generics and the predicates *)
-    let env = fmt_env_update_generics_and_preds env def.generics in
+    let env = fmt_env_replace_generics_and_preds env def.generics in
     let params, clauses =
       predicates_and_trait_clauses_to_string env "" "  " def.generics
     in
@@ -142,7 +144,7 @@ module Ast = struct
     (* Type *)
     let ty = ty_to_string env def.ty in
 
-    let body_id = fun_decl_id_to_string env def.body in
+    let body_id = fun_decl_id_to_string env def.init in
     indent ^ "global " ^ name ^ params ^ clauses ^ " : " ^ ty ^ " = " ^ body_id
 end
 
@@ -156,6 +158,14 @@ module Crate = struct
   let crate_fun_decl_to_string (m : crate) (d : fun_decl) : string =
     let env = crate_to_fmt_env m in
     fun_decl_to_string env "" "  " d
+
+  let crate_type_decl_id_to_string (m : crate) (id : type_decl_id) : string =
+    let env = crate_to_fmt_env m in
+    type_decl_id_to_string env id
+
+  let crate_name_to_string (m : crate) (x : name) : string =
+    let env = crate_to_fmt_env m in
+    name_to_string env x
 
   let crate_to_string (m : crate) : string =
     let env = crate_to_fmt_env m in

@@ -102,6 +102,12 @@ fn shr_i32_manual_cast(x: i32, y: i32) -> i32 {
     x >> (y as u32)
 }
 
+fn index_slice_ignore_value(x: &[u32]) {
+    // FIXME: Bug: the bound check is removed but the place is not mentioned, so the translated
+    // function doesn't panic on empty slices anymore.
+    let _ = x[0];
+}
+
 // Checking the simplification of binop operations *inside* global constants.
 // Even in release mode, rustc inserts additional checks inside constant bodies.
 pub const _: isize = 1 + 1;

@@ -3,6 +3,7 @@ pub mod expressions;
 pub mod expressions_utils;
 pub mod gast;
 pub mod gast_utils;
+pub mod hash_cons;
 pub mod krate;
 pub mod llbc_ast;
 pub mod llbc_ast_utils;
@@ -20,13 +21,17 @@ pub mod visitor;
 
 // Re-export everything except llbc/ullbc, for convenience.
 pub use crate::errors::Error;
-pub use crate::ids::Vector;
+pub use crate::ids::IndexMap;
 pub use builtins::*;
+pub use derive_generic_visitor::Visitor;
 pub use expressions::*;
 pub use gast::*;
+pub use hash_cons::*;
+pub use indexmap::{IndexMap as SeqHashMap, IndexSet as SeqHashSet};
 pub use krate::*;
 pub use meta::*;
 pub use names::*;
+pub use std::ops::ControlFlow;
 pub use types::*;
 pub use types_utils::*;
 pub use values::*;

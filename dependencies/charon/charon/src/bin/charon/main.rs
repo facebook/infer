@@ -29,14 +29,9 @@
 //! them in a specific environment variable, so that charon-driver can
 //! deserialize them later and use them to guide the extraction in the
 //! callbacks.
-#![feature(register_tool)]
-// For when we use charon on itself
-#![register_tool(charon)]
-
-use annotate_snippets::Level;
 use anyhow::Result;
 use charon_lib::{
-    errors::display_unspanned_error,
+    common::arg_value,
     logger,
     options::{CHARON_ARGS, CliOpts},
 };
@@ -45,8 +40,6 @@ use cli::{Charon, Cli};
 use std::{env, process::ExitStatus};
 use toolchain::toolchain_path;
 
-#[macro_use]
-extern crate anyhow;
 #[macro_use]
 extern crate charon_lib;
 
@@ -60,97 +53,55 @@ pub fn main() -> Result<()> {
 
     // Parse the command-line
     let cli = Cli::parse();
-    if let Some(subcommand) = &cli.command
-        && cli.opts != CliOpts::default()
-    {
-        let subcommand = subcommand.name();
-        bail!(
-            "Cli options must be written after the chosen subcommand: `charon {subcommand} [OPTIONS]`"
-        );
-    }
     let exit_status = match cli.command {
-        Some(Charon::PrettyPrint(pretty_print)) => {
+        Charon::PrettyPrint(pretty_print) => {
             let krate = charon_lib::deserialize_llbc(&pretty_print.file)?;
             println!("{krate}");
             ExitStatus::default()
         }
-        Some(Charon::Cargo(mut subcmd_cargo)) => {
-            let mut options = subcmd_cargo.opts;
-            options.cargo_args.append(&mut subcmd_cargo.cargo);
-            translate_with_cargo(options)?
-        }
-        Some(Charon::Rustc(mut subcmd_rustc)) => {
+        Charon::Cargo(subcmd_cargo) => translate_with_cargo(subcmd_cargo.opts, subcmd_cargo.cargo)?,
+        Charon::Rustc(mut subcmd_rustc) => {
             let mut options = subcmd_rustc.opts;
             options.rustc_args.append(&mut subcmd_rustc.rustc);
             translate_without_cargo(options)?
         }
-        Some(Charon::ToolchainPath(_)) => {
+        Charon::ToolchainPath(_) => {
             let path = toolchain_path()?;
             println!("{}", path.display());
             ExitStatus::default()
         }
-        Some(Charon::Version) => {
+        Charon::Version => {
             println!("{}", charon_lib::VERSION);
             ExitStatus::default()
-        }
-        // Legacy calling syntax.
-        None => {
-            display_unspanned_error(
-                Level::WARNING,
-                "this way of calling charon is deprecated;\
-                use `charon cargo [CHARON OPTIONS] [-- CARGO OPTIONS]` instead",
-            );
-            let options = cli.opts;
-            if let Some(llbc_file) = options.read_llbc {
-                let krate = charon_lib::deserialize_llbc(&llbc_file)?;
-                println!("{krate}");
-                ExitStatus::default()
-            } else if options.no_cargo {
-                translate_without_cargo(options)?
-            } else {
-                translate_with_cargo(options)?
-            }
         }
     };
 
     handle_exit_status(exit_status)
 }
 
-fn translate_with_cargo(mut options: CliOpts) -> anyhow::Result<ExitStatus> {
+fn translate_with_cargo(
+    mut options: CliOpts,
+    cargo_args: Vec<String>,
+) -> anyhow::Result<ExitStatus> {
     ensure_rustup();
     if let Some(toml) = toml_config::read_toml() {
         options = toml.apply(options);
     }
-    options.validate();
-    if options.input_file.is_some() {
-        panic!("Option `--input` is only available for `charon rustc`");
-    }
+    options.validate()?;
     let mut cmd = toolchain::in_toolchain("cargo")?;
     cmd.env("RUSTC_WRAPPER", toolchain::driver_path());
     cmd.env("CHARON_USING_CARGO", "1");
     cmd.env_remove("CARGO_PRIMARY_PACKAGE");
     cmd.env(CHARON_ARGS, serde_json::to_string(&options).unwrap());
     cmd.arg("build");
-    let is_specified = |arg| {
-        let mut iter = options.cargo_args.iter();
-        iter.any(|input| input.starts_with(arg))
-    };
-    if !is_specified("--target") {
+    if arg_value(&cargo_args, "--target").is_none() {
         // Make sure the build target is explicitly set. This is needed to detect which crates are
         // proc-macro/build-script in `charon-driver`.
         cmd.arg("--target");
         cmd.arg(&get_rustc_version()?.host);
     }
-    if !is_specified("--lib") && options.lib {
-        cmd.arg("--lib");
-    }
-    if !is_specified("--bin") {
-        if let Some(bin) = &options.bin {
-            cmd.arg("--bin");
-            cmd.arg(bin);
-        }
-    }
-    cmd.args(options.cargo_args);
+    cmd.args(cargo_args);
+    trace!("running {cmd:?}");
     Ok(cmd
         .spawn()
         .expect("could not run cargo")
@@ -160,10 +111,7 @@ fn translate_with_cargo(mut options: CliOpts) -> anyhow::Result<ExitStatus> {
 
 fn translate_without_cargo(mut options: CliOpts) -> anyhow::Result<ExitStatus> {
     ensure_rustup();
-    options.validate();
-    if !options.cargo_args.is_empty() {
-        bail!("Option `--cargo-arg` is not compatible with `--no-cargo` or `charon rustc`")
-    }
+    options.validate()?;
     let mut cmd = toolchain::driver_cmd()?;
     let is_specified = |arg| {
         let mut iter = options.rustc_args.iter();
@@ -177,9 +125,6 @@ fn translate_without_cargo(mut options: CliOpts) -> anyhow::Result<ExitStatus> {
     }
     cmd.args(std::mem::take(&mut options.rustc_args));
     cmd.env(CHARON_ARGS, serde_json::to_string(&options).unwrap());
-    if let Some(input_file) = &options.input_file {
-        cmd.arg(input_file);
-    }
     Ok(cmd
         .spawn()
         .expect("could not run charon-driver")

@@ -6,7 +6,7 @@ use index_vec::Idx;
 
 use crate::ast::*;
 use crate::common::TAB_INCR;
-use crate::ids::Vector;
+use crate::ids::IndexMap;
 use crate::pretty::FmtWithCtx;
 
 pub trait IntoFormatter {
@@ -23,18 +23,21 @@ pub trait AstFormatter: Sized {
 
     fn get_crate(&self) -> Option<&TranslatedCrate>;
 
+    fn no_generics<'a>(&'a self) -> Self::Reborrow<'a>;
     fn set_generics<'a>(&'a self, generics: &'a GenericParams) -> Self::Reborrow<'a>;
     fn set_locals<'a>(&'a self, locals: &'a Locals) -> Self::Reborrow<'a>;
     fn push_binder<'a>(&'a self, new_params: Cow<'a, GenericParams>) -> Self::Reborrow<'a>;
     fn push_bound_regions<'a>(
         &'a self,
-        regions: &'a Vector<RegionId, RegionVar>,
+        regions: &'a IndexMap<RegionId, RegionParam>,
     ) -> Self::Reborrow<'a> {
         self.push_binder(Cow::Owned(GenericParams {
             regions: regions.clone(),
             ..Default::default()
         }))
     }
+    /// Return the depth of binders we're under.
+    fn binder_depth(&self) -> usize;
 
     fn increase_indent<'a>(&'a self) -> Self::Reborrow<'a>;
     fn indent(&self) -> String;
@@ -48,9 +51,9 @@ pub trait AstFormatter: Sized {
         fmt_var: impl Fn(&T) -> Option<String>,
     ) -> fmt::Result
     where
-        GenericParams: HasVectorOf<Id, Output = T>;
+        GenericParams: HasIdxMapOf<Id, Output = T>;
 
-    fn format_enum_variant(
+    fn format_enum_variant_name(
         &self,
         f: &mut fmt::Formatter<'_>,
         type_id: TypeDeclId,
@@ -64,7 +67,17 @@ pub trait AstFormatter: Sized {
         } else {
             &variant_id.to_pretty_string()
         };
-        write!(f, "{}::{variant}", type_id.with_ctx(self))
+        write!(f, "{variant}")
+    }
+    fn format_enum_variant(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+        type_id: TypeDeclId,
+        variant_id: VariantId,
+    ) -> fmt::Result {
+        write!(f, "{}::", type_id.with_ctx(self))?;
+        self.format_enum_variant_name(f, type_id, variant_id)?;
+        Ok(())
     }
 
     fn format_field_name(
@@ -118,6 +131,12 @@ impl<'c> AstFormatter for FmtCtx<'c> {
         self.translated
     }
 
+    fn no_generics<'a>(&'a self) -> Self::Reborrow<'a> {
+        FmtCtx {
+            generics: BindingStack::empty(),
+            ..self.reborrow()
+        }
+    }
     fn set_generics<'a>(&'a self, generics: &'a GenericParams) -> Self::Reborrow<'a> {
         FmtCtx {
             generics: BindingStack::new(Cow::Borrowed(generics)),
@@ -134,6 +153,9 @@ impl<'c> AstFormatter for FmtCtx<'c> {
         let mut ret = self.reborrow();
         ret.generics.push(new_params);
         ret
+    }
+    fn binder_depth(&self) -> usize {
+        self.generics.len()
     }
 
     fn increase_indent<'a>(&'a self) -> Self::Reborrow<'a> {
@@ -152,7 +174,7 @@ impl<'c> AstFormatter for FmtCtx<'c> {
         {
             write!(f, "{v}")
         } else {
-            write!(f, "{}", id.to_pretty_string())
+            write!(f, "_{id}")
         }
     }
 
@@ -164,7 +186,7 @@ impl<'c> AstFormatter for FmtCtx<'c> {
         fmt_var: impl Fn(&T) -> Option<String>,
     ) -> fmt::Result
     where
-        GenericParams: HasVectorOf<Id, Output = T>,
+        GenericParams: HasIdxMapOf<Id, Output = T>,
     {
         if self.generics.is_empty() {
             return write!(f, "{var_prefix}{var}");
@@ -176,10 +198,11 @@ impl<'c> AstFormatter for FmtCtx<'c> {
                 None => {
                     write!(f, "{var_prefix}")?;
                     let (dbid, varid) = self.generics.as_bound_var(var);
-                    if dbid == self.generics.depth() {
+                    let depth = self.generics.depth().index - dbid.index;
+                    if depth == 0 {
                         write!(f, "{varid}")
                     } else {
-                        write!(f, "{var}")
+                        write!(f, "{varid}_{depth}")
                     }
                 }
             },
@@ -192,7 +215,7 @@ impl<'a> FmtCtx<'a> {
         FmtCtx::default()
     }
 
-    pub fn get_item(&self, id: AnyTransId) -> Result<AnyTransItem<'_>, Option<&Name>> {
+    pub fn get_item(&self, id: ItemId) -> Result<ItemRef<'_>, Option<&Name>> {
         let Some(translated) = &self.translated else {
             return Err(None);
         };
@@ -202,7 +225,7 @@ impl<'a> FmtCtx<'a> {
     }
 
     /// Print the whole definition.
-    pub fn format_decl_id(&self, id: impl Into<AnyTransId>) -> String {
+    pub fn format_decl_id(&self, id: impl Into<ItemId>) -> String {
         let id = id.into();
         match self.get_item(id) {
             Ok(d) => d.to_string_with_ctx(self),

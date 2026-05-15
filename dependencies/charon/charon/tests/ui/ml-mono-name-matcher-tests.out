@@ -1,0 +1,197 @@
+# Final LLBC before serialization:
+
+// Full name: core::ops::range::RangeFrom::<usize>
+#[lang_item("RangeFrom")]
+pub struct RangeFrom::<usize> {
+  start: usize,
+}
+
+// Full name: core::option::Option::<i32>
+#[lang_item("Option")]
+pub enum Option::<i32> {
+  None,
+  Some(i32),
+}
+
+// Full name: core::option::{Option::<i32>}::is_some::<i32>
+pub fn is_some::<i32><'_0>(_1: &'_0 Option::<i32>) -> bool
+= <opaque>
+
+// Full name: core::slice::index::{impl Index<RangeFrom::<usize>> for [bool]}::index::<bool, RangeFrom::<usize>>
+pub fn index::<bool, RangeFrom::<usize>><'_0>(_1: &'_0 [bool], _2: RangeFrom::<usize>) -> &'_0 [bool]
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::foo::bar
+fn bar()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let _0: (); // return
+    let _1: bool; // anonymous local
+    let _2: &'1 Option::<i32>; // anonymous local
+    let slice_3: &'3 [bool]; // local
+    let _4: &'5 [bool; 1 : usize]; // anonymous local
+    let _5: &'6 [bool; 1 : usize]; // anonymous local
+    let _6: &'7 [bool]; // anonymous local
+    let _7: &'8 [bool]; // anonymous local
+    let _8: &'9 [bool]; // anonymous local
+    let _9: RangeFrom::<usize>; // anonymous local
+    let _10: &'10 [bool; 1 : usize]; // anonymous local
+    let _11: &'11 Option::<i32>; // anonymous local
+    let _12: &'19 Option::<i32>; // anonymous local
+    let _13: Option::<i32>; // anonymous local
+    let _14: &'20 [bool; 1 : usize]; // anonymous local
+    let _15: [bool; 1 : usize]; // anonymous local
+
+    storage_live(_12)
+    storage_live(_13)
+    _13 = Option::<i32>::Some { 0: const 0 : i32 }
+    _12 = &_13
+    storage_live(_10)
+    storage_live(_11)
+    _0 = ()
+    storage_live(_1)
+    storage_live(_2)
+    _11 = move _12
+    _2 = &(*_11)
+    _1 = is_some::<i32><'14>(move _2)
+    storage_live(_14)
+    storage_live(_15)
+    _15 = [const false]
+    _14 = &_15
+    storage_dead(_2)
+    storage_dead(_1)
+    storage_live(slice_3)
+    storage_live(_4)
+    storage_live(_5)
+    _10 = move _14
+    _5 = &(*_10)
+    _4 = &(*_5)
+    slice_3 = @ArrayToSliceShared<'_, bool, 1 : usize>(move _4)
+    storage_dead(_4)
+    storage_dead(_5)
+    storage_live(_6)
+    storage_live(_7)
+    storage_live(_8)
+    _8 = &(*slice_3) with_metadata(copy slice_3.metadata)
+    storage_live(_9)
+    _9 = RangeFrom::<usize> { start: const 1 : usize }
+    _7 = index::<bool, RangeFrom::<usize>><'18>(move _8, move _9)
+    storage_dead(_9)
+    storage_dead(_8)
+    _6 = &(*_7) with_metadata(copy _7.metadata)
+    storage_dead(_6)
+    _0 = ()
+    storage_dead(_7)
+    storage_dead(slice_3)
+    return
+}
+
+fn test_crate::funs_with_disambiguator::f#1() -> u32
+{
+    let _0: u32; // return
+
+    _0 = const 1 : u32
+    return
+}
+
+fn test_crate::funs_with_disambiguator::f() -> u32
+{
+    let _0: u32; // return
+
+    _0 = const 0 : u32
+    return
+}
+
+// Full name: test_crate::funs_with_disambiguator
+fn funs_with_disambiguator(_1: bool) -> u32
+{
+    let _0: u32; // return
+    let b_1: bool; // arg #1
+    let _2: bool; // anonymous local
+
+    storage_live(_2)
+    _2 = copy b_1
+    if move _2 {
+        _0 = test_crate::funs_with_disambiguator::f()
+    } else {
+        _0 = test_crate::funs_with_disambiguator::f#1()
+    }
+    storage_dead(_2)
+    return
+}
+
+// Full name: test_crate::MonoContainer::<i32>
+struct MonoContainer::<i32> {
+  item: i32,
+}
+
+// Full name: test_crate::MonoContainer::<&'_ Str>
+struct MonoContainer::<&'_ Str> {
+  item: &'_ Str,
+}
+
+fn test_crate::{MonoContainer::<i32>}::create::<i32>(_1: i32) -> MonoContainer::<i32>
+{
+    let _0: MonoContainer::<i32>; // return
+    let item_1: i32; // arg #1
+    let _2: i32; // anonymous local
+
+    storage_live(_2)
+    _2 = move item_1
+    _0 = MonoContainer::<i32> { item: move _2 }
+    storage_dead(_2)
+    return
+}
+
+fn test_crate::{MonoContainer::<&'_ Str>}::create::<&'_ Str>(_1: &'_ Str) -> MonoContainer::<&'_ Str>
+{
+    let _0: MonoContainer::<&'_ Str>; // return
+    let item_1: &'0 Str; // arg #1
+    let _2: &'1 Str; // anonymous local
+
+    storage_live(_2)
+    _2 = move item_1
+    _0 = MonoContainer::<&'_ Str> { item: move _2 }
+    storage_dead(_2)
+    return
+}
+
+// Full name: test_crate::mono_usage
+fn mono_usage()
+{
+    let _0: (); // return
+    let _container1_1: MonoContainer::<i32>; // local
+    let _container2_2: MonoContainer::<&'_ Str>; // local
+
+    _0 = ()
+    storage_live(_container1_1)
+    _container1_1 = test_crate::{MonoContainer::<i32>}::create::<i32>(const 42 : i32)
+    storage_live(_container2_2)
+    _container2_2 = test_crate::{MonoContainer::<&'_ Str>}::create::<&'_ Str>(const "test")
+    _0 = ()
+    storage_dead(_container2_2)
+    storage_dead(_container1_1)
+    return
+}
+
+
+

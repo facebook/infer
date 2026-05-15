@@ -1,12 +1,15 @@
 //! Translate information about items: name, attributes, etc.
+use itertools::Itertools;
+use rustc_middle::mir;
+use rustc_span::RemapPathScopeComponents;
+use std::cmp::Ord;
+use std::path::{Component, PathBuf};
+
 use super::translate_crate::RustcItem;
 use super::translate_ctx::*;
 use super::translate_generics::BindingLevel;
 use charon_lib::ast::*;
-use hax_frontend_exporter::{self as hax, DefPathItem};
-use itertools::Itertools;
-use std::cmp::Ord;
-use std::path::{Component, PathBuf};
+use hax::{DefPathItem, SInto};
 
 // Spans
 impl<'tcx, 'ctx> TranslateCtx<'tcx> {
@@ -31,12 +34,11 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         }
     }
 
-    pub fn translate_filename(&mut self, name: &hax::FileName) -> meta::FileName {
+    pub fn translate_filename(&mut self, name: rustc_span::FileName) -> meta::FileName {
         match name {
-            hax::FileName::Real(name) => {
-                use hax::RealFileName;
-                match name {
-                    RealFileName::LocalPath(path) => {
+            rustc_span::FileName::Real(name) => {
+                match name.local_path() {
+                    Some(path) => {
                         let path = if let Ok(path) = path.strip_prefix(&self.sysroot) {
                             // The path to files in the standard library may be full paths to somewhere
                             // in the sysroot. This may depend on how the toolchain is installed
@@ -53,14 +55,31 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
                                 rewritten_path
                             }
                         } else {
-                            path.clone()
+                            // Find the cargo home directory: according to cargo docs and having a
+                            // look at the cargo source, it's either the `$CARGO_HOME` var or
+                            // `$HOME/.cargo`
+                            let cargo_home = std::env::var("CARGO_HOME")
+                                .map(PathBuf::from)
+                                .ok()
+                                .or_else(|| std::env::home_dir().map(|p| p.join(".cargo")));
+                            if let Some(cargo_home) = cargo_home
+                                && let Ok(path) = path.strip_prefix(cargo_home)
+                            {
+                                // Avoid some more machine-dependent paths in the llbc output.
+                                let mut rewritten_path: PathBuf = "/cargo".into();
+                                rewritten_path.extend(path);
+                                rewritten_path
+                            } else {
+                                path.into()
+                            }
                         };
                         FileName::Local(path)
                     }
-                    RealFileName::Remapped { virtual_name, .. } => {
+                    None => {
                         // We use the virtual name because it is always available.
                         // That name normally starts with `/rustc/<hash>/`. For our purposes we hide
                         // the hash.
+                        let virtual_name = name.path(RemapPathScopeComponents::MACRO);
                         let mut components_iter = virtual_name.components();
                         if let Some(
                             [
@@ -78,7 +97,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
                                 .collect();
                             FileName::Virtual(path_without_hash)
                         } else {
-                            FileName::Virtual(virtual_name.clone())
+                            FileName::Virtual(virtual_name.into())
                         }
                     }
                 }
@@ -89,71 +108,74 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         }
     }
 
-    pub fn translate_raw_span(&mut self, rspan: &hax::Span) -> meta::RawSpan {
-        let filename = self.translate_filename(&rspan.filename);
-        let rust_span = rspan.rust_span_data.unwrap().span();
+    pub fn translate_span_data(&mut self, span: rustc_span::Span) -> meta::SpanData {
+        let smap: &rustc_span::source_map::SourceMap = self.tcx.sess.psess.source_map();
+        let filename = smap.span_to_filename(span);
+        let filename = self.translate_filename(filename);
+        let span = span;
         let file_id = match &filename {
             FileName::NotReal(_) => {
                 // For now we forbid not real filenames
                 unimplemented!();
             }
-            FileName::Virtual(_) | FileName::Local(_) => self.register_file(filename, rust_span),
+            FileName::Virtual(_) | FileName::Local(_) => self.register_file(filename, span),
         };
 
-        fn convert_loc(loc: &hax::Loc) -> Loc {
+        let convert_loc = |pos: rustc_span::BytePos| -> Loc {
+            let loc = smap.lookup_char_pos(pos);
             Loc {
                 line: loc.line,
-                col: loc.col,
+                col: loc.col_display,
             }
-        }
-        let beg = convert_loc(&rspan.lo);
-        let end = convert_loc(&rspan.hi);
+        };
+        let beg = convert_loc(span.lo());
+        let end = convert_loc(span.hi());
 
         // Put together
-        meta::RawSpan { file_id, beg, end }
+        meta::SpanData { file_id, beg, end }
     }
 
     /// Compute span data from a Rust source scope
     pub fn translate_span_from_source_info(
         &mut self,
-        source_scopes: &hax::IndexVec<hax::SourceScope, hax::SourceScopeData>,
-        source_info: &hax::SourceInfo,
+        source_scopes: &rustc_index::IndexVec<mir::SourceScope, mir::SourceScopeData>,
+        source_info: &mir::SourceInfo,
     ) -> Span {
         // Translate the span
-        let span = self.translate_raw_span(&source_info.span);
+        let data = self.translate_span_data(source_info.span);
 
         // Lookup the top-most inlined parent scope.
         let mut parent_span = None;
         let mut scope_data = &source_scopes[source_info.scope];
         while let Some(parent_scope) = scope_data.inlined_parent_scope {
             scope_data = &source_scopes[parent_scope];
-            parent_span = Some(&scope_data.span);
+            parent_span = Some(scope_data.span);
         }
 
         if let Some(parent_span) = parent_span {
-            let parent_span = self.translate_raw_span(parent_span);
+            let parent_span = self.translate_span_data(parent_span);
             Span {
-                span: parent_span,
-                generated_from_span: Some(span),
+                data: parent_span,
+                generated_from_span: Some(data),
             }
         } else {
             Span {
-                span,
+                data,
                 generated_from_span: None,
             }
         }
     }
 
-    pub(crate) fn translate_span_from_hax(&mut self, span: &hax::Span) -> Span {
+    pub(crate) fn translate_span(&mut self, span: &rustc_span::Span) -> Span {
         Span {
-            span: self.translate_raw_span(span),
+            data: self.translate_span_data(*span),
             generated_from_span: None,
         }
     }
 
     pub(crate) fn def_span(&mut self, def_id: &hax::DefId) -> Span {
         let span = def_id.def_span(&self.hax_state);
-        self.translate_span_from_hax(&span)
+        self.translate_span(&span)
     }
 }
 
@@ -165,7 +187,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         item: &RustcItem,
     ) -> Result<Option<PathElem>, Error> {
         let def_id = item.def_id();
-        let path_elem = def_id.path_item();
+        let path_elem = def_id.path_item(&self.hax_state);
         // Disambiguator disambiguates identically-named (but distinct) identifiers. This happens
         // notably with macros and inherent impl blocks.
         let disambiguator = Disambiguator::new(path_elem.disambiguator as usize);
@@ -174,13 +196,15 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
             DefPathItem::CrateRoot { name, .. } => {
                 // Sanity check
                 error_assert!(self, span, path_elem.disambiguator == 0);
-                Some(PathElem::Ident(name.clone(), disambiguator))
+                Some(PathElem::Ident(name.to_string(), disambiguator))
             }
             // We map the three namespaces onto a single one. We can always disambiguate by looking
             // at the definition.
             DefPathItem::TypeNs(symbol)
             | DefPathItem::ValueNs(symbol)
-            | DefPathItem::MacroNs(symbol) => Some(PathElem::Ident(symbol, disambiguator)),
+            | DefPathItem::MacroNs(symbol) => {
+                Some(PathElem::Ident(symbol.to_string(), disambiguator))
+            }
             DefPathItem::Impl => {
                 let full_def = self.hax_def_for_item(item)?;
                 // Two cases, depending on whether the impl block is
@@ -192,12 +216,14 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
                         // We need to convert the type, which may contain quantified
                         // substs and bounds. In order to properly do so, we introduce
                         // a body translation context.
-                        let mut bt_ctx = ItemTransCtx::new(
-                            TransItemSource::new(item.clone(), TransItemSourceKind::InherentImpl),
-                            None,
-                            self,
-                        );
-                        bt_ctx.translate_def_generics(span, &full_def)?;
+                        let item_src =
+                            TransItemSource::new(item.clone(), TransItemSourceKind::InherentImpl);
+                        let mut bt_ctx = ItemTransCtx::new(item_src, None, self);
+                        bt_ctx.translate_item_generics(
+                            span,
+                            &full_def,
+                            &TransItemSourceKind::InherentImpl,
+                        )?;
                         let ty = bt_ctx.translate_ty(span, &ty)?;
                         ImplElem::Ty(Binder {
                             kind: BinderKind::InherentImplBlock,
@@ -300,7 +326,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         let def_id = item.def_id();
         trace!("Computing name for `{def_id:?}`");
 
-        let parent_name = if let Some(parent_id) = &def_id.parent {
+        let parent_name = if let Some(parent_id) = def_id.parent(&self.hax_state) {
             let def = self.hax_def_for_item(item)?;
             if matches!(item, RustcItem::Mono(..))
                 && let Some(parent_item) = def.typing_parent(&self.hax_state)
@@ -332,9 +358,18 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
             self.name_for_item(&src.item)?
         };
         match &src.kind {
+            // Nothing to do for the real items.
+            TransItemSourceKind::Type
+            | TransItemSourceKind::Fun
+            | TransItemSourceKind::Global
+            | TransItemSourceKind::TraitImpl(TraitImplSource::Normal)
+            | TransItemSourceKind::TraitDecl
+            | TransItemSourceKind::InherentImpl
+            | TransItemSourceKind::Module => {}
+
             TransItemSourceKind::TraitImpl(
                 kind @ (TraitImplSource::Closure(..)
-                | TraitImplSource::DropGlue
+                | TraitImplSource::ImplicitDestruct
                 | TraitImplSource::TraitAlias),
             ) => {
                 if let TraitImplSource::Closure(..) = kind {
@@ -343,14 +378,22 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
                 let impl_id = self.register_and_enqueue(&None, src.clone()).unwrap();
                 name.name.push(PathElem::Impl(ImplElem::Trait(impl_id)));
             }
+            TransItemSourceKind::DefaultedMethod(_, method_name) => {
+                name.name.push(PathElem::Ident(
+                    method_name.to_string(),
+                    Disambiguator::ZERO,
+                ));
+            }
             TransItemSourceKind::ClosureMethod(kind) => {
                 let fn_name = kind.method_name().to_string();
                 name.name
                     .push(PathElem::Ident(fn_name, Disambiguator::ZERO));
             }
-            TransItemSourceKind::DropGlueMethod => {
-                name.name
-                    .push(PathElem::Ident("drop".to_string(), Disambiguator::ZERO));
+            TransItemSourceKind::DropInPlaceMethod(..) => {
+                name.name.push(PathElem::Ident(
+                    "drop_in_place".to_string(),
+                    Disambiguator::ZERO,
+                ));
             }
             TransItemSourceKind::ClosureAsFnCast => {
                 name.name
@@ -362,7 +405,34 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
                 name.name
                     .push(PathElem::Ident("{vtable}".into(), Disambiguator::ZERO));
             }
-            _ => {}
+            TransItemSourceKind::VTableMethod => {
+                name.name.push(PathElem::Ident(
+                    "{vtable_method}".into(),
+                    Disambiguator::ZERO,
+                ));
+            }
+            TransItemSourceKind::VTableDropShim => {
+                name.name.push(PathElem::Ident(
+                    "{vtable_drop_shim}".into(),
+                    Disambiguator::ZERO,
+                ));
+            }
+            TransItemSourceKind::VTableDropPreShim => {
+                name.name.push(PathElem::Ident(
+                    "{vtable_drop_preshim}".into(),
+                    Disambiguator::ZERO,
+                ));
+            }
+            TransItemSourceKind::VTableMethodPreShim(_, method_name) => {
+                name.name.push(PathElem::Ident(
+                    method_name.to_string(),
+                    Disambiguator::ZERO,
+                ));
+                name.name.push(PathElem::Ident(
+                    "{vtable_method_preshim}".into(),
+                    Disambiguator::ZERO,
+                ));
+            }
         }
         Ok(name)
     }
@@ -374,16 +444,66 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         if let RustcItem::Mono(item_ref) = &src.item
             && !item_ref.generic_args.is_empty()
         {
+            // For preshim functions in Mono mode, we compute their generic and associative arguments,
+            // which are appended to the name of these functions.
+            let is_preshim = matches!(
+                src.kind,
+                TransItemSourceKind::VTableDropPreShim
+                    | TransItemSourceKind::VTableMethodPreShim(..)
+            );
+
             let trans_id = self.register_no_enqueue(&None, src).unwrap();
             let span = self.def_span(&item_ref.def_id);
             let mut bt_ctx = ItemTransCtx::new(src.clone(), trans_id, self);
-            bt_ctx.binding_levels.push(BindingLevel::new(true));
-            let args = bt_ctx.translate_generic_args(
-                span,
-                &item_ref.generic_args,
-                &item_ref.impl_exprs,
-            )?;
-            name.name.push(PathElem::Monomorphized(Box::new(args)));
+            bt_ctx.binding_levels.push(BindingLevel::new());
+
+            let trait_def = bt_ctx.t_ctx.hax_def_for_item(&src.item)?;
+            let mut assoc_types = None;
+
+            // fetch associative arguments
+            if let hax::FullDefKind::Trait { items, .. } = trait_def.kind() {
+                for item in items {
+                    if matches!(item.kind, hax::AssocKind::Type { .. }) {
+                        let item_def_id = &item.def_id;
+                        // This is ok because dyn-compatible methods don't have generics.
+                        let item_def = bt_ctx.hax_def(
+                            &trait_def
+                                .this()
+                                .with_def_id(bt_ctx.hax_state(), item_def_id),
+                        )?;
+                        if let hax::FullDefKind::AssocTy {
+                            implied_predicates, ..
+                        } = item_def.kind()
+                        {
+                            if let Some(pred) = implied_predicates.predicates.first() {
+                                if let hax::ClauseKind::Trait(p) = &pred.clause.kind.value {
+                                    assoc_types = Some(p.trait_ref.generic_args.clone());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // fetch generic arguments
+            let mut substs = item_ref.generic_args.clone();
+
+            if !(is_preshim && item_ref.generic_args.len() == 1 && matches!(assoc_types, None)) {
+                // For preshim functions, skip the first argument, which is the dyn trait type.
+                let args = if is_preshim {
+                    if let Some(mut assoc_types) = assoc_types {
+                        substs.append(&mut assoc_types);
+                    }
+                    bt_ctx.translate_generic_args(span, &substs[1..], &item_ref.impl_exprs)?
+                } else {
+                    bt_ctx.translate_generic_args(span, &substs, &item_ref.impl_exprs)?
+                };
+                name.name.push(PathElem::Instantiated(Box::new(Binder {
+                    params: GenericParams::empty(),
+                    skip_binder: args,
+                    kind: BinderKind::Other,
+                })));
+            }
         }
         Ok(name)
     }
@@ -406,7 +526,13 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
             } => associated_item,
             _ => panic!("Unexpected def for associated item: {def:?}"),
         };
-        Ok(TraitItemName(assoc.name.clone().unwrap_or_default()))
+        Ok(TraitItemName(
+            assoc
+                .name
+                .as_ref()
+                .map(|n| n.to_string().into())
+                .unwrap_or_default(),
+        ))
     }
 
     pub(crate) fn opacity_for_name(&self, name: &Name) -> ItemOpacity {
@@ -416,34 +542,142 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
 
 // Attributes
 impl<'tcx, 'ctx> TranslateCtx<'tcx> {
+    /// Parse a raw attribute to recognize our special `charon::*`, `aeneas::*` and `verify::*` attributes.
+    fn parse_attr_from_raw(
+        &mut self,
+        def_id: &hax::DefId,
+        raw_attr: RawAttribute,
+    ) -> Result<Attribute, String> {
+        // If the attribute path has two components, the first of which is `charon` or `aeneas`, we
+        // try to parse it. Otherwise we return `Unknown`.
+        let path = raw_attr.path.split("::").collect_vec();
+        let attr_name = if let &[path_start, attr_name] = path.as_slice()
+            && (path_start == "charon" || path_start == "aeneas" || path_start == "verify")
+        {
+            attr_name
+        } else {
+            return Ok(Attribute::Unknown(raw_attr));
+        };
+
+        match self.parse_special_attr(def_id, attr_name, &raw_attr)? {
+            Some(parsed) => Ok(parsed),
+            None => Err(format!(
+                "Unrecognized attribute: `{}`",
+                raw_attr.to_string()
+            )),
+        }
+    }
+
+    /// Parse a `charon::*`, `aeneas::*` or `verify::*` attribute.
+    fn parse_special_attr(
+        &mut self,
+        def_id: &hax::DefId,
+        attr_name: &str,
+        raw_attr: &RawAttribute,
+    ) -> Result<Option<Attribute>, String> {
+        let args = raw_attr.args.as_deref();
+        let parsed = match attr_name {
+            // `#[charon::opaque]`
+            "opaque" if args.is_none() => Attribute::Opaque,
+            // `#[charon::opaque]`
+            "exclude" if args.is_none() => Attribute::Exclude,
+            // `#[charon::rename("new_name")]`
+            "rename" if let Some(attr) = args => {
+                let Some(attr) = attr
+                    .strip_prefix("\"")
+                    .and_then(|attr| attr.strip_suffix("\""))
+                else {
+                    return Err(format!(
+                        "the new name should be between quotes: `rename(\"{attr}\")`."
+                    ));
+                };
+
+                if attr.is_empty() {
+                    return Err(format!("attribute `rename` should not be empty"));
+                }
+
+                let first_char = attr.chars().nth(0).unwrap();
+                let is_identifier = (first_char.is_alphabetic() || first_char == '_')
+                    && attr.chars().all(|c| c.is_alphanumeric() || c == '_');
+                if !is_identifier {
+                    return Err(format!(
+                        "attribute `rename` should contain a valid identifier"
+                    ));
+                }
+
+                Attribute::Rename(attr.to_string())
+            }
+            // `#[charon::variants_prefix("T")]`
+            "variants_prefix" if let Some(attr) = args => {
+                let Some(attr) = attr
+                    .strip_prefix("\"")
+                    .and_then(|attr| attr.strip_suffix("\""))
+                else {
+                    return Err(format!(
+                        "the name should be between quotes: `variants_prefix(\"{attr}\")`."
+                    ));
+                };
+
+                Attribute::VariantsPrefix(attr.to_string())
+            }
+            // `#[charon::variants_suffix("T")]`
+            "variants_suffix" if let Some(attr) = args => {
+                let Some(attr) = attr
+                    .strip_prefix("\"")
+                    .and_then(|attr| attr.strip_suffix("\""))
+                else {
+                    return Err(format!(
+                        "the name should be between quotes: `variants_suffix(\"{attr}\")`."
+                    ));
+                };
+
+                Attribute::VariantsSuffix(attr.to_string())
+            }
+            // `#[verify::start_from]`
+            "start_from" => {
+                if matches!(def_id.kind, hax::DefKind::Mod) {
+                    return Err(format!("`start_from` on modules has no effect"));
+                }
+                Attribute::Unknown(raw_attr.clone())
+            }
+            // `#[verify::test]`: mark a function for test extraction
+            "test" if args.is_none() => Attribute::Unknown(raw_attr.clone()),
+            _ => return Ok(None),
+        };
+        Ok(Some(parsed))
+    }
+
     /// Translates a rust attribute. Returns `None` if the attribute is a doc comment (rustc
     /// encodes them as attributes). For now we use `String`s for `Attributes`.
-    pub(crate) fn translate_attribute(&mut self, attr: &hax::Attribute) -> Option<Attribute> {
-        use hax::Attribute as Haxttribute;
-        use hax::AttributeKind as HaxttributeKind;
+    pub(crate) fn translate_attribute(
+        &mut self,
+        def_id: &hax::DefId,
+        attr: &rustc_hir::Attribute,
+    ) -> Option<Attribute> {
+        use rustc_hir as hir;
+        use rustc_hir::attrs as hir_attrs;
         match attr {
-            Haxttribute::Parsed(HaxttributeKind::DocComment { comment, .. }) => {
+            hir::Attribute::Parsed(hir_attrs::AttributeKind::DocComment { comment, .. }) => {
                 Some(Attribute::DocComment(comment.to_string()))
             }
-            Haxttribute::Parsed(_) => None,
-            Haxttribute::Unparsed(attr) => {
+            hir::Attribute::Parsed(_) => None,
+            hir::Attribute::Unparsed(attr) => {
                 let raw_attr = RawAttribute {
-                    path: attr.path.clone(),
+                    path: attr.path.to_string(),
                     args: match &attr.args {
-                        hax::AttrArgs::Empty => None,
-                        hax::AttrArgs::Delimited(args) => Some(args.tokens.clone()),
-                        hax::AttrArgs::Eq { expr, .. } => self
-                            .tcx
-                            .sess
-                            .source_map()
-                            .span_to_snippet(expr.span.rust_span_data.unwrap().span())
-                            .ok(),
+                        hir::AttrArgs::Empty => None,
+                        hir::AttrArgs::Delimited(args) => {
+                            Some(rustc_ast_pretty::pprust::tts_to_string(&args.tokens))
+                        }
+                        hir::AttrArgs::Eq { expr, .. } => {
+                            self.tcx.sess.source_map().span_to_snippet(expr.span).ok()
+                        }
                     },
                 };
-                match Attribute::parse_from_raw(raw_attr) {
+                match self.parse_attr_from_raw(def_id, raw_attr) {
                     Ok(a) => Some(a),
                     Err(msg) => {
-                        let span = self.translate_span_from_hax(&attr.span);
+                        let span = self.translate_span(&attr.span.sinto(&self.hax_state));
                         register_error!(self, span, "Error parsing attribute: {msg}");
                         None
                     }
@@ -454,15 +688,15 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
 
     pub(crate) fn translate_inline(&self, def: &hax::FullDef) -> Option<InlineAttr> {
         match def.kind() {
-            hax::FullDefKind::Fn { inline, .. } | hax::FullDefKind::AssocFn { inline, .. } => {
-                match inline {
-                    hax::InlineAttr::None => None,
-                    hax::InlineAttr::Hint => Some(InlineAttr::Hint),
-                    hax::InlineAttr::Never => Some(InlineAttr::Never),
-                    hax::InlineAttr::Always => Some(InlineAttr::Always),
-                    hax::InlineAttr::Force { .. } => Some(InlineAttr::Always),
-                }
-            }
+            hax::FullDefKind::Fn { inline, .. }
+            | hax::FullDefKind::AssocFn { inline, .. }
+            | hax::FullDefKind::Closure { inline, .. } => match inline {
+                hax::InlineAttr::None => None,
+                hax::InlineAttr::Hint => Some(InlineAttr::Hint),
+                hax::InlineAttr::Never => Some(InlineAttr::Never),
+                hax::InlineAttr::Always => Some(InlineAttr::Always),
+                hax::InlineAttr::Force { .. } => Some(InlineAttr::Always),
+            },
             _ => None,
         }
     }
@@ -474,14 +708,14 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         let attributes = def
             .attributes
             .iter()
-            .filter_map(|attr| self.translate_attribute(&attr))
+            .filter_map(|attr| self.translate_attribute(def.def_id(), &attr))
             .collect_vec();
 
         let rename = {
             let mut renames = attributes.iter().filter_map(|a| a.as_rename()).cloned();
             let rename = renames.next();
             if renames.next().is_some() {
-                let span = self.translate_span_from_hax(&def.span);
+                let span = self.translate_span(&def.span);
                 register_error!(
                     self,
                     span,
@@ -506,8 +740,7 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
     /// Whether this item is in an `extern { .. }` block, in which case it has no body.
     pub(crate) fn is_extern_item(&mut self, def: &hax::FullDef) -> bool {
         def.def_id()
-            .parent
-            .as_ref()
+            .parent(&self.hax_state)
             .is_some_and(|parent| matches!(parent.kind, hax::DefKind::ForeignMod { .. }))
     }
 
@@ -523,20 +756,25 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
             return item_meta.clone();
         }
         let span = def.source_span.as_ref().unwrap_or(&def.span);
-        let span = self.translate_span_from_hax(span);
-        let is_local = def.def_id().is_local;
-        let (attr_info, lang_item) = if item_src.is_derived_item() {
-            (AttrInfo::default(), None)
-        } else {
+        let span = self.translate_span(span);
+        let is_local = def.def_id().is_local();
+        let (attr_info, lang_item) = if !item_src.is_derived_item()
+            || matches!(item_src.kind, TransItemSourceKind::ClosureMethod(..))
+        {
             let attr_info = self.translate_attr_info(def);
             let lang_item = def
                 .lang_item
                 .clone()
-                .or_else(|| def.diagnostic_item.clone());
+                .or_else(|| def.diagnostic_item.clone())
+                .map(|s| s.to_string());
             (attr_info, lang_item)
+        } else {
+            (AttrInfo::default(), None)
         };
 
-        let opacity = if self.is_extern_item(def)
+        let opacity = if attr_info.attributes.iter().any(|attr| attr.is_exclude()) {
+            ItemOpacity::Invisible.max(name_opacity)
+        } else if self.is_extern_item(def)
             || attr_info.attributes.iter().any(|attr| attr.is_opaque())
         {
             // Force opaque in these cases.
@@ -557,15 +795,5 @@ impl<'tcx, 'ctx> TranslateCtx<'tcx> {
         self.cached_item_metas
             .insert(item_src.clone(), item_meta.clone());
         item_meta
-    }
-}
-
-impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
-    pub(crate) fn translate_span_from_hax(&mut self, rspan: &hax::Span) -> Span {
-        self.t_ctx.translate_span_from_hax(rspan)
-    }
-
-    pub(crate) fn def_span(&mut self, def_id: &hax::DefId) -> Span {
-        self.t_ctx.def_span(def_id)
     }
 }

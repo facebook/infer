@@ -1,0 +1,13 @@
+error: Error parsing attribute: Unrecognized attribute: `charon::error`
+  --> tests/ui/simple/conditional-method.rs:17:1
+   |
+17 | #[charon::error] // trigger an error so we get the stderr output
+   | ^^^^^^^^^^^^^^^^
+
+error: Error parsing attribute: Unrecognized attribute: `charon::error`
+  --> tests/ui/simple/conditional-method.rs:17:1
+   |
+17 | #[charon::error] // trigger an error so we get the stderr output
+   | ^^^^^^^^^^^^^^^^
+
+ERROR Charon failed to translate this code (2 errors)

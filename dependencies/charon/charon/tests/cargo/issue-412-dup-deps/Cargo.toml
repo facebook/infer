@@ -1,0 +1,8 @@
+[package]
+name = "issue-412-dup-deps"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mydup1 = { package = "mydup", path = "dep-v1" }
+mydup2 = { package = "mydup", path = "dep-v2" }

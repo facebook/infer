@@ -1,0 +1,67 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Ref
+pub struct Ref<'a, B>
+where
+    [@TraitClause0]: Sized<B>,
+    B : 'a,
+{
+  &'a B,
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _1: &'3 Ref<'4, ()>[{built_in impl Sized for ()}]; // anonymous local
+    let _2: &'9 Ref<'10, ()>[{built_in impl Sized for ()}]; // anonymous local
+    let _3: &'14 Ref<'15, ()>[{built_in impl Sized for ()}]; // anonymous local
+    let _4: Ref<'16, ()>[{built_in impl Sized for ()}]; // anonymous local
+    let _5: &'18 (); // anonymous local
+    let _6: &'19 (); // anonymous local
+    let _7: (); // anonymous local
+
+    storage_live(_3)
+    storage_live(_4)
+    storage_live(_5)
+    storage_live(_6)
+    storage_live(_7)
+    _7 = ()
+    _6 = &_7
+    _5 = &(*_6)
+    _4 = Ref { 0: move _5 }
+    _3 = &_4
+    storage_live(_2)
+    _0 = ()
+    storage_live(_1)
+    _2 = move _3
+    _1 = &(*_2)
+    storage_dead(_1)
+    _0 = ()
+    return
+}
+
+
+

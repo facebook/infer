@@ -1,5 +1,6 @@
 //@ charon-args=--monomorphize
 //@ charon-args=--start-from=crate::main
+//@ charon-args=--remove-associated-types *
 // Ensures closures are monomorphized and replaced with static function calls
 
 struct Thing;

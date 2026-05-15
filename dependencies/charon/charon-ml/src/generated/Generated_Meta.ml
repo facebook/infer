@@ -46,6 +46,8 @@ type attr_info = {
 and attribute =
   | AttrOpaque
       (** Do not translate the body of this item. Written [#[charon::opaque]] *)
+  | AttrExclude
+      (** Do not translate this item at all. Written [#[charon::exclude]] *)
   | AttrRename of string
       (** Provide a new name that consumers of the llbc can use. Written
           [#[charon::rename("new_name")]] *)
@@ -73,6 +75,7 @@ and file_name =
   | Virtual of path_buf  (** A remapped path (namely paths into stdlib) *)
   | Local of path_buf
       (** A local path (a file coming from the current crate for instance) *)
+  | NotReal of string  (** A "not real" file name (macro, query, etc.) *)
 
 (** [#[inline]] built-in attribute. *)
 and inline_attr =
@@ -93,12 +96,9 @@ and raw_attribute = {
           different delimiters or the [path = lit] case. *)
 }
 
-(** Span information *)
-and raw_span = { file : file_id; beg_loc : loc; end_loc : loc }
-
 (** Meta information about a piece of code (block, statement, etc.) *)
 and span = {
-  span : raw_span;
+  data : span_data;
       (** The source code span.
 
           If this meta information is for a statement/terminator coming from a
@@ -118,8 +118,11 @@ and span = {
                 macro!(); // <-- [span] refers to this location
             }
           ]} *)
-  generated_from_span : raw_span option;
+  generated_from_span : span_data option;
       (** Where the code actually comes from, in case of macro
           expansion/inlining/etc. *)
 }
+
+(** Span information *)
+and span_data = { file : file_id; beg_loc : loc; end_loc : loc }
 [@@deriving show, ord, eq]

@@ -1,7 +1,6 @@
 //! This file groups everything which is linked to implementations about [crate::meta]
 use crate::meta::*;
 use crate::names::{Disambiguator, Name, PathElem};
-use itertools::Itertools;
 use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::iter::Iterator;
@@ -53,16 +52,16 @@ impl Loc {
     }
 }
 
-impl RawSpan {
+impl SpanData {
     pub fn dummy() -> Self {
-        RawSpan {
+        SpanData {
             file_id: FileId::from_raw(0),
             beg: Loc::dummy(),
             end: Loc::dummy(),
         }
     }
 
-    /// Value with which we order `RawSpans`s.
+    /// Value with which we order `SpanDatas`s.
     fn sort_key(&self) -> impl Ord {
         (self.file_id, self.beg, self.end)
     }
@@ -73,12 +72,12 @@ impl RawSpan {
 }
 
 /// Manual impls because `SpanData` is not orderable.
-impl PartialOrd for RawSpan {
+impl PartialOrd for SpanData {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(self.cmp(other))
     }
 }
-impl Ord for RawSpan {
+impl Ord for SpanData {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.sort_key().cmp(&other.sort_key())
     }
@@ -87,7 +86,7 @@ impl Ord for RawSpan {
 impl Span {
     pub fn dummy() -> Self {
         Span {
-            span: RawSpan::dummy(),
+            data: SpanData::dummy(),
             generated_from_span: None,
         }
     }
@@ -97,18 +96,18 @@ impl Span {
 /// span-information of, say, a sequence).
 pub fn combine_span(m0: &Span, m1: &Span) -> Span {
     // Merge the spans
-    if m0.span.file_id == m1.span.file_id {
-        let span = RawSpan {
-            file_id: m0.span.file_id,
-            beg: Loc::min(&m0.span.beg, &m1.span.beg),
-            end: Loc::max(&m0.span.end, &m1.span.end),
+    if m0.data.file_id == m1.data.file_id {
+        let data = SpanData {
+            file_id: m0.data.file_id,
+            beg: Loc::min(&m0.data.beg, &m1.data.beg),
+            end: Loc::max(&m0.data.end, &m1.data.end),
         };
 
         // We don't attempt to merge the "generated from" spans: they might
         // come from different files, and even if they come from the same files
         // they might come from different macros, etc.
         Span {
-            span,
+            data,
             generated_from_span: None,
         }
     } else {
@@ -121,7 +120,7 @@ pub fn combine_span(m0: &Span, m1: &Span) -> Span {
 /// Combine all the span information in a slice.
 pub fn combine_span_iter<'a, T: Iterator<Item = &'a Span>>(mut ms: T) -> Span {
     // The iterator should have a next element
-    let mut mc: Span = *ms.next().unwrap();
+    let mut mc: Span = ms.next().copied().unwrap_or_default();
     for m in ms {
         mc = combine_span(&mc, m);
     }
@@ -138,89 +137,19 @@ impl FileName {
     }
 }
 
-impl Attribute {
-    /// Parse a raw attribute to recognize our special `charon::*` and `aeneas::*` attributes.
-    pub fn parse_from_raw(raw_attr: RawAttribute) -> Result<Self, String> {
-        // If the attribute path has two components, the first of which is `charon` or `aeneas`, we
-        // try to parse it. Otherwise we return `Unknown`.
-        let path = raw_attr.path.split("::").collect_vec();
-        let attr_name = if let &[path_start, attr_name] = path.as_slice()
-            && (path_start == "charon" || path_start == "aeneas")
-        {
-            attr_name
-        } else {
-            return Ok(Self::Unknown(raw_attr));
-        };
-
-        match Self::parse_special_attr(attr_name, raw_attr.args.as_deref())? {
-            Some(parsed) => Ok(parsed),
-            None => Err(format!(
-                "Unrecognized attribute: `{}`",
-                raw_attr.to_string()
-            )),
+impl AttrInfo {
+    pub fn dummy_private() -> Self {
+        AttrInfo {
+            public: false,
+            ..Default::default()
         }
     }
 
-    /// Parse a `charon::*` or `aeneas::*` attribute.
-    fn parse_special_attr(attr_name: &str, args: Option<&str>) -> Result<Option<Self>, String> {
-        let parsed = match attr_name {
-            // `#[charon::opaque]`
-            "opaque" if args.is_none() => Self::Opaque,
-            // `#[charon::rename("new_name")]`
-            "rename" if let Some(attr) = args => {
-                let Some(attr) = attr
-                    .strip_prefix("\"")
-                    .and_then(|attr| attr.strip_suffix("\""))
-                else {
-                    return Err(format!(
-                        "the new name should be between quotes: `rename(\"{attr}\")`."
-                    ));
-                };
-
-                if attr.is_empty() {
-                    return Err(format!("attribute `rename` should not be empty"));
-                }
-
-                let first_char = attr.chars().nth(0).unwrap();
-                let is_identifier = (first_char.is_alphabetic() || first_char == '_')
-                    && attr.chars().all(|c| c.is_alphanumeric() || c == '_');
-                if !is_identifier {
-                    return Err(format!(
-                        "attribute `rename` should contain a valid identifier"
-                    ));
-                }
-
-                Self::Rename(attr.to_string())
-            }
-            // `#[charon::variants_prefix("T")]`
-            "variants_prefix" if let Some(attr) = args => {
-                let Some(attr) = attr
-                    .strip_prefix("\"")
-                    .and_then(|attr| attr.strip_suffix("\""))
-                else {
-                    return Err(format!(
-                        "the name should be between quotes: `variants_prefix(\"{attr}\")`."
-                    ));
-                };
-
-                Self::VariantsPrefix(attr.to_string())
-            }
-            // `#[charon::variants_suffix("T")]`
-            "variants_suffix" if let Some(attr) = args => {
-                let Some(attr) = attr
-                    .strip_prefix("\"")
-                    .and_then(|attr| attr.strip_suffix("\""))
-                else {
-                    return Err(format!(
-                        "the name should be between quotes: `variants_suffix(\"{attr}\")`."
-                    ));
-                };
-
-                Self::VariantsSuffix(attr.to_string())
-            }
-            _ => return Ok(None),
-        };
-        Ok(Some(parsed))
+    pub fn dummy_public() -> Self {
+        AttrInfo {
+            public: true,
+            ..Default::default()
+        }
     }
 }
 

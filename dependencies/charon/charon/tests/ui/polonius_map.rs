@@ -1,4 +1,4 @@
-//@ charon-args=--polonius
+//@ rustc-args=-Zpolonius
 #![allow(dead_code)]
 use std::collections::HashMap;
 

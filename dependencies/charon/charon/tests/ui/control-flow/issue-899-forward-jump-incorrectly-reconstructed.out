@@ -1,0 +1,88 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::condition
+fn condition(_1: u32) -> bool
+{
+    let _0: bool; // return
+    let _x_1: u32; // arg #1
+
+    _0 = const true
+    return
+}
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::bar
+fn bar()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::absorb_full
+fn absorb_full()
+{
+    let _0: (); // return
+    let _1: (); // anonymous local
+    let _2: bool; // anonymous local
+    let _3: bool; // anonymous local
+    let _4: bool; // anonymous local
+
+    _0 = ()
+    storage_live(_1)
+    storage_live(_2)
+    // bb0
+    // bb1
+    _2 = condition(const 1 : u32)
+    if move _2 {
+        storage_live(_3)
+        // bb3
+        _3 = condition(const 2 : u32)
+        if move _3 {
+            // bb7
+            _1 = foo()
+            // bb8
+            storage_dead(_3)
+        } else {
+            storage_dead(_3)
+            // bb10
+            storage_dead(_2)
+            storage_dead(_1)
+            // bb6
+            // bb12
+            // unconditional break, the `loop` is only for fwd jumping
+            // bb13
+            _0 = bar()
+            return
+        }
+    } else {
+        _1 = ()
+    }
+    storage_dead(_2)
+    storage_dead(_1)
+    storage_live(_4)
+    _4 = condition(const 3 : u32)
+    if move _4 {
+    } else {
+        storage_dead(_4)
+        _0 = bar()
+        return
+    }
+    _0 = ()
+    storage_dead(_4)
+    return
+}
+
+
+

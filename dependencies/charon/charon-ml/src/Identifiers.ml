@@ -36,8 +36,21 @@ module type Id = sig
   type generator
 
   module Ord : C.OrderedType with type t = id
-  module Set : C.Set with type elt = id
-  module Map : C.Map with type key = id
+
+  module Set : sig
+    include C.Set
+
+    val add_in_place : id -> t ref -> unit
+  end
+  with type elt = id
+
+  module Map : sig
+    include C.Map
+
+    val add_in_place : id -> 'a -> 'a t ref -> unit
+  end
+  with type key = id
+
   module InjSubst : C.InjMap with type key = id and type elem = id
 
   val zero : id
@@ -57,6 +70,11 @@ module type Id = sig
       from integers. *)
   val fresh_marked_stateful_generator :
     unit -> generator ref * Set.t ref * (int -> unit) * (unit -> id)
+
+  (** Similar to [fresh_marked_stateful_generator], but initializes the set of
+      marked ids with the provided set of ids *)
+  val fresh_stateful_generator_with_marked :
+    Set.t -> generator ref * Set.t ref * (int -> unit) * (unit -> id)
 
   val mk_stateful_generator : generator -> generator ref * (unit -> id)
   val mk_stateful_generator_starting_at_id : id -> generator ref * (unit -> id)
@@ -117,6 +135,10 @@ module type Id = sig
 
   (** See the comments for {!nth} *)
   val iteri : (id -> 'a -> unit) -> 'a list -> unit
+
+  (** Transforms a list into a map, where each map key is he index that the
+      element had in the list. *)
+  val map_of_indexed_list : 'a option list -> 'a Map.t
 end
 
 (** Generative functor for identifiers.
@@ -138,8 +160,18 @@ module IdGen () : Id = struct
     let show_t = show_id
   end
 
-  module Set = C.MakeSet (Ord)
-  module Map = C.MakeMap (Ord)
+  module Set = struct
+    include C.MakeSet (Ord)
+
+    let add_in_place id s = s := add id !s
+  end
+
+  module Map = struct
+    include C.MakeMap (Ord)
+
+    let add_in_place id x m = m := add id x !m
+  end
+
   module InjSubst = C.MakeInjMap (Ord) (Ord)
 
   let zero = 0
@@ -169,15 +201,18 @@ module IdGen () : Id = struct
 
   exception FoundMarked of id
 
-  let fresh_marked_stateful_generator () =
+  let fresh_stateful_generator_with_marked (marked : Set.t) =
     let counter, fresh = fresh_stateful_generator () in
-    let marked = ref Set.empty in
+    let marked = ref marked in
     let fresh () =
       let id = fresh () in
       if Set.mem id !marked then raise (FoundMarked id) else id
     in
     let insert_from_int i = marked := Set.add i !marked in
     (counter, marked, insert_from_int, fresh)
+
+  let fresh_marked_stateful_generator () =
+    fresh_stateful_generator_with_marked Set.empty
 
   let fresh gen = (gen, incr gen)
   let to_int x = x
@@ -207,4 +242,15 @@ module IdGen () : Id = struct
     aux 1 ls
 
   let iteri = List.iteri
+
+  let map_of_indexed_list (list : 'a option list) : 'a Map.t =
+    Map.of_list
+      (List.filter_map
+         (fun x -> x)
+         (mapi
+            (fun i x ->
+              match x with
+              | None -> None
+              | Some x -> Some (i, x))
+            list))
 end

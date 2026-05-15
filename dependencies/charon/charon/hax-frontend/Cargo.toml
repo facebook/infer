@@ -1,0 +1,23 @@
+[package]
+name = "hax-frontend-exporter"
+edition = "2024"
+version = "0.3.5"
+authors = ["hax Authors"]
+license = "Apache-2.0"
+homepage = "https://github.com/hacspec/hax"
+description = "Provides mirrors of the algebraic data types used in the Rust compilers, removing indirections and inlining various pieces of information."
+
+[package.metadata.rust-analyzer]
+rustc_private=true
+
+[dependencies]
+itertools = "0.11.0"
+tracing = { version = "0.1", features = [
+     "max_level_trace",
+     "release_max_level_trace",
+] }
+
+hax-adt-into = { path = "./adt-into", version = "=0.3.5" }
+paste = "1.0.11"
+extension-traits = "1.0.1"
+lazy_static = "1.4.0"

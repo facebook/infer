@@ -1,0 +1,596 @@
+# Final ULLBC before serialization:
+
+// Full name: core::cmp::Ordering
+#[lang_item("Ordering")]
+pub enum Ordering {
+  Less,
+  Equal,
+  Greater,
+}
+
+// Full name: core::cmp::impls::{impl Ord for u32}::cmp
+pub fn {impl Ord for u32}::cmp<'_0, '_1>(_1: &'_0 u32, _2: &'_1 u32) -> Ordering
+= <opaque>
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::hint::select_unpredictable
+pub fn select_unpredictable<T>(_1: bool, _2: T, _3: T) -> T
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Destruct<T>,
+= <opaque>
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: core::marker::Tuple
+#[lang_item("tuple_trait")]
+pub trait Tuple<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::ops::function::FnOnce
+#[lang_item("fn_once")]
+pub trait FnOnce<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Args>
+    parent_clause2 : [@TraitClause2]: Tuple<Args>
+    parent_clause3 : [@TraitClause3]: Sized<Self::Output>
+    type Output
+    fn call_once = core::ops::function::FnOnce::call_once<Self, Args>[Self]
+    vtable: core::ops::function::FnOnce::{vtable}<Args, Self::Output>
+}
+
+// Full name: core::ops::function::FnMut
+#[lang_item("fn_mut")]
+pub trait FnMut<Self, Args>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
+    parent_clause2 : [@TraitClause2]: Sized<Args>
+    parent_clause3 : [@TraitClause3]: Tuple<Args>
+    fn call_mut<'_0_1> = core::ops::function::FnMut::call_mut<'_0_1, Self, Args>[Self]
+    vtable: core::ops::function::FnMut::{vtable}<Args, Self::parent_clause1::Output>
+}
+
+pub fn core::ops::function::FnMut::call_mut<'_0, Self, Args>(_1: &'_0 mut Self, _2: Args) -> @TraitClause0::parent_clause1::Output
+where
+    [@TraitClause0]: FnMut<Self, Args>,
+= <opaque>
+
+pub fn core::ops::function::FnOnce::call_once<Self, Args>(_1: Self, _2: Args) -> @TraitClause0::Output
+where
+    [@TraitClause0]: FnOnce<Self, Args>,
+= <opaque>
+
+// Full name: core::result::Result
+#[lang_item("Result")]
+pub enum Result<T, E>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<E>,
+{
+  Ok(T),
+  Err(E),
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    bb0: {
+        _0 = ();
+        return;
+    }
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+fn core::hint::assert_unchecked::precondition_check(_1: bool)
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}::get_unchecked::precondition_check
+fn {impl SliceIndex<[T]> for usize}::get_unchecked::precondition_check(_1: usize, _2: usize)
+= <opaque>
+
+// Full name: core::slice::{[T]}::binary_search_by
+pub fn binary_search_by<'a, T, F>(_1: &'a [T], _2: F) -> Result<usize, usize>[{built_in impl Sized for usize}, {built_in impl Sized for usize}]
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<F>,
+    [@TraitClause2]: FnMut<F, (&'a T,)>,
+    @TraitClause2::parent_clause1::Output = Ordering,
+{
+    let _0: Result<usize, usize>[{built_in impl Sized for usize}, {built_in impl Sized for usize}]; // return
+    let self_1: &'1 [T]; // arg #1
+    let f_2: F; // arg #2
+    let size_3: usize; // local
+    let _4: usize; // anonymous local
+    let base_5: usize; // local
+    let _6: bool; // anonymous local
+    let _7: usize; // anonymous local
+    let half_8: usize; // local
+    let _9: usize; // anonymous local
+    let mid_10: usize; // local
+    let _11: usize; // anonymous local
+    let cmp_12: Ordering; // local
+    let _13: &'3 mut F; // anonymous local
+    let _14: (&'6 T,); // anonymous local
+    let _15: &'7 T; // anonymous local
+    let _16: usize; // anonymous local
+    let _17: bool; // anonymous local
+    let cmp_18: Ordering; // local
+    let _19: &'10 mut F; // anonymous local
+    let _20: (&'11 T,); // anonymous local
+    let _21: &'12 T; // anonymous local
+    let index_22: usize; // local
+    let cond_23: bool; // local
+    let _24: usize; // anonymous local
+    let result_25: usize; // local
+    let _26: usize; // anonymous local
+    let _27: bool; // anonymous local
+    let cond_28: bool; // local
+    let _29: *const T; // anonymous local
+    let _30: (); // anonymous local
+    let _31: usize; // anonymous local
+    let _32: bool; // anonymous local
+    let _33: usize; // anonymous local
+    let _34: i8; // anonymous local
+    let _35: *const T; // anonymous local
+    let _36: (); // anonymous local
+    let _37: usize; // anonymous local
+    let _38: usize; // anonymous local
+    let _39: i8; // anonymous local
+    let _40: (); // anonymous local
+    let _41: (); // anonymous local
+    let _42: bool; // anonymous local
+    let _43: bool; // anonymous local
+    let _44: bool; // anonymous local
+    let _45: bool; // anonymous local
+    let _46: Result<usize, usize>[{built_in impl Sized for usize}, {built_in impl Sized for usize}]; // anonymous local
+
+    bb0: {
+        storage_live(base_5);
+        storage_live(half_8);
+        storage_live(mid_10);
+        storage_live(_15);
+        storage_live(_21);
+        storage_live(result_25);
+        storage_live(_30);
+        storage_live(_36);
+        storage_live(_38);
+        storage_live(_39);
+        storage_live(_40);
+        storage_live(_41);
+        storage_live(size_3);
+        size_3 = copy self_1.metadata;
+        storage_live(_4);
+        _4 = copy size_3;
+        switch copy _4 -> 0 : usize: bb1, otherwise: bb2;
+    }
+
+    bb1: {
+        storage_dead(_4);
+        storage_live(_46);
+        _46 = Result::Err { 0: const 0 : usize };
+        _0 = move _46;
+        storage_dead(size_3);
+        drop[{built_in impl Destruct for F}] f_2 -> bb31 (unwind: bb3);
+    }
+
+    bb2: {
+        storage_dead(_4);
+        base_5 = const 0 : usize;
+        goto bb4;
+    }
+
+    bb3: {
+        unwind_continue;
+    }
+
+    bb4: {
+        storage_live(_6);
+        storage_live(_7);
+        _7 = copy size_3;
+        _6 = move _7 > const 1 : usize;
+        if move _6 -> bb5 else -> bb6;
+    }
+
+    bb5: {
+        storage_dead(_7);
+        storage_live(_9);
+        _9 = copy size_3;
+        half_8 = move _9 ub./ const 2 : usize;
+        storage_dead(_9);
+        storage_live(_11);
+        _11 = copy base_5;
+        mid_10 = move _11 wrap.+ copy half_8;
+        storage_dead(_11);
+        storage_live(cmp_12);
+        storage_live(_13);
+        _13 = &mut f_2;
+        storage_live(_14);
+        storage_live(_29);
+        storage_live(_42);
+        _42 = ub_checks<bool>;
+        if move _42 -> bb7 else -> bb8;
+    }
+
+    bb6: {
+        storage_dead(_7);
+        storage_dead(_6);
+        storage_live(cmp_18);
+        storage_live(_19);
+        _19 = &mut f_2;
+        storage_live(_20);
+        storage_live(index_22);
+        index_22 = copy base_5;
+        storage_live(_35);
+        storage_live(_43);
+        _43 = ub_checks<bool>;
+        if move _43 -> bb9 else -> bb10;
+    }
+
+    bb7: {
+        storage_live(_31);
+        _31 = copy self_1.metadata;
+        _30 = {impl SliceIndex<[T]> for usize}::get_unchecked::precondition_check(copy mid_10, move _31) -> bb12 (unwind: bb11);
+    }
+
+    bb8: {
+        storage_live(_32);
+        storage_live(_33);
+        _33 = copy self_1.metadata;
+        _32 = copy mid_10 < move _33;
+        storage_dead(_33);
+        assert(move _32 == true) else undefined_behavior;
+        storage_dead(_32);
+        _29 = &raw const (*self_1)[copy mid_10];
+        _15 = &(*_29);
+        storage_dead(_29);
+        _14 = (copy _15,);
+        cmp_12 = @TraitClause2::call_mut<'19>(move _13, move _14) -> bb14 (unwind: bb13);
+    }
+
+    bb9: {
+        storage_live(_37);
+        _37 = copy self_1.metadata;
+        _36 = {impl SliceIndex<[T]> for usize}::get_unchecked::precondition_check(copy index_22, move _37) -> bb16 (unwind: bb15);
+    }
+
+    bb10: {
+        _38 = copy self_1.metadata;
+        _35 = &raw const (*self_1)[copy index_22];
+        _21 = &(*_35);
+        storage_dead(_35);
+        storage_dead(index_22);
+        _20 = (copy _21,);
+        cmp_18 = @TraitClause2::call_mut<'24>(move _19, move _20) -> bb17 (unwind: bb13);
+    }
+
+    bb11: {
+        undefined_behavior;
+    }
+
+    bb12: {
+        storage_dead(_31);
+        goto bb8;
+    }
+
+    bb13: {
+        drop[{built_in impl Destruct for F}] f_2 -> bb18 (unwind: bb19);
+    }
+
+    bb14: {
+        storage_dead(_14);
+        storage_dead(_13);
+        storage_live(_16);
+        storage_live(_17);
+        storage_live(_34);
+        _34 = @discriminant(cmp_12);
+        _17 = copy _34 == const 1 : i8;
+        storage_dead(_34);
+        _16 = select_unpredictable<usize>[{built_in impl Sized for usize}, {built_in impl Destruct for usize}](move _17, move base_5, move mid_10) -> bb20 (unwind: bb13);
+    }
+
+    bb15: {
+        undefined_behavior;
+    }
+
+    bb16: {
+        storage_dead(_37);
+        goto bb10;
+    }
+
+    bb17: {
+        storage_dead(_20);
+        storage_dead(_19);
+        _39 = @discriminant(cmp_18);
+        switch copy _39 -> 0 : i8: bb21, otherwise: bb22;
+    }
+
+    bb18: {
+        unwind_continue;
+    }
+
+    bb19: {
+        unwind_terminate;
+    }
+
+    bb20: {
+        storage_dead(_17);
+        base_5 = move _16;
+        storage_dead(_16);
+        size_3 = copy size_3 wrap.- copy half_8;
+        storage_dead(cmp_12);
+        storage_dead(_6);
+        goto bb4;
+    }
+
+    bb21: {
+        storage_live(cond_23);
+        storage_live(_24);
+        _24 = copy base_5;
+        cond_23 = move _24 < copy _38;
+        storage_dead(_24);
+        storage_live(_44);
+        _44 = ub_checks<bool>;
+        if move _44 -> bb23 else -> bb24;
+    }
+
+    bb22: {
+        storage_live(_26);
+        storage_live(_27);
+        _27 = copy _39 == const -1 : i8;
+        _26 = cast<bool, usize>(move _27);
+        storage_dead(_27);
+        result_25 = move base_5 wrap.+ move _26;
+        storage_dead(_26);
+        storage_live(cond_28);
+        cond_28 = copy result_25 <= copy _38;
+        storage_live(_45);
+        _45 = ub_checks<bool>;
+        if move _45 -> bb25 else -> bb26;
+    }
+
+    bb23: {
+        _40 = core::hint::assert_unchecked::precondition_check(copy cond_23) -> bb24 (unwind: bb27);
+    }
+
+    bb24: {
+        assert(copy cond_23 == true) else undefined_behavior;
+        storage_dead(cond_23);
+        _0 = Result::Ok { 0: move base_5 };
+        goto bb28;
+    }
+
+    bb25: {
+        _41 = core::hint::assert_unchecked::precondition_check(copy cond_28) -> bb26 (unwind: bb29);
+    }
+
+    bb26: {
+        assert(copy cond_28 == true) else undefined_behavior;
+        storage_dead(cond_28);
+        _0 = Result::Err { 0: copy result_25 };
+        goto bb28;
+    }
+
+    bb27: {
+        undefined_behavior;
+    }
+
+    bb28: {
+        storage_dead(cmp_18);
+        storage_dead(size_3);
+        drop[{built_in impl Destruct for F}] f_2 -> bb32 (unwind: bb30);
+    }
+
+    bb29: {
+        undefined_behavior;
+    }
+
+    bb30: {
+        unwind_continue;
+    }
+
+    bb31: {
+        return;
+    }
+
+    bb32: {
+        return;
+    }
+}
+
+// Full name: test_crate::main::closure
+struct closure {}
+
+// Full name: test_crate::main::{impl FnMut<(&'_ u32,)> for closure}::call_mut
+fn {impl FnMut<(&'_ u32,)> for closure}::call_mut<'_0, '_1>(_1: &'_1 mut closure, _2: (&'_0 u32,)) -> Ordering
+{
+    let _0: Ordering; // return
+    let _1: &'1 mut closure; // arg #1
+    let tupled_args_2: (&'_0 u32,); // arg #2
+    let x_3: &'2 u32; // local
+    let _4: &'3 u32; // anonymous local
+    let _5: &'4 u32; // anonymous local
+    let _6: &'5 u32; // anonymous local
+    let _7: &'6 u32; // anonymous local
+    let _8: &'12 u32; // anonymous local
+    let _9: u32; // anonymous local
+
+    bb0: {
+        storage_live(_8);
+        storage_live(_9);
+        _9 = const 3 : u32;
+        _8 = &_9;
+        storage_live(x_3);
+        storage_live(_7);
+        x_3 = move tupled_args_2.0;
+        storage_live(_4);
+        _4 = &(*x_3);
+        storage_live(_5);
+        storage_live(_6);
+        _7 = move _8;
+        _6 = &(*_7);
+        _5 = &(*_6);
+        _0 = {impl Ord for u32}::cmp<'10, '11>(move _4, move _5) -> bb2 (unwind: bb1);
+    }
+
+    bb1: {
+        unwind_continue;
+    }
+
+    bb2: {
+        storage_dead(_6);
+        storage_dead(_5);
+        storage_dead(_4);
+        return;
+    }
+}
+
+// Full name: test_crate::main::closure::{impl Destruct for closure}::drop_in_place
+unsafe fn {impl Destruct for closure}::drop_in_place(_1: *mut closure)
+= <missing>
+
+// Full name: test_crate::main::closure::{impl Destruct for closure}
+impl Destruct for closure {
+    fn drop_in_place = {impl Destruct for closure}::drop_in_place
+    non-dyn-compatible
+}
+
+// Full name: test_crate::main::{impl FnOnce<(&'_ u32,)> for closure}::call_once
+fn {impl FnOnce<(&'_ u32,)> for closure}::call_once<'_0>(_1: closure, _2: (&'_0 u32,)) -> Ordering
+{
+    let _0: Ordering; // return
+    let _1: closure; // arg #1
+    let _2: (&'0 u32,); // arg #2
+    let _3: &'2 mut closure; // anonymous local
+
+    bb0: {
+        storage_live(_3);
+        _3 = &mut _1;
+        _0 = {impl FnMut<(&'_ u32,)> for closure}::call_mut<'_0, '8>(move _3, move _2) -> bb2 (unwind: bb1);
+    }
+
+    bb1: {
+        drop[{impl Destruct for closure}] _1 -> bb3 (unwind: bb4);
+    }
+
+    bb2: {
+        drop[{impl Destruct for closure}] _1 -> bb6 (unwind: bb5);
+    }
+
+    bb3: {
+        unwind_continue;
+    }
+
+    bb4: {
+        unwind_terminate;
+    }
+
+    bb5: {
+        unwind_continue;
+    }
+
+    bb6: {
+        return;
+    }
+}
+
+// Full name: test_crate::main::{impl FnOnce<(&'_ u32,)> for closure}
+impl<'_0> FnOnce<(&'_ u32,)> for closure {
+    parent_clause0 = {built_in impl MetaSized for closure}
+    parent_clause1 = {built_in impl Sized for (&'_ u32,)}
+    parent_clause2 = {built_in impl Tuple for (&'_ u32,)}
+    parent_clause3 = {built_in impl Sized for Ordering}
+    type Output = Ordering
+    fn call_once = {impl FnOnce<(&'_ u32,)> for closure}::call_once<'_0>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::main::{impl FnMut<(&'_ u32,)> for closure}
+impl<'_0> FnMut<(&'_ u32,)> for closure {
+    parent_clause0 = {built_in impl MetaSized for closure}
+    parent_clause1 = {impl FnOnce<(&'_ u32,)> for closure}<'_0>
+    parent_clause2 = {built_in impl Sized for (&'_ u32,)}
+    parent_clause3 = {built_in impl Tuple for (&'_ u32,)}
+    fn call_mut<'_0_1> = {impl FnMut<(&'_ u32,)> for closure}::call_mut<'_0, '_0_1>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let a_1: [u32; 5 : usize]; // local
+    let b_2: &'1 [u32]; // local
+    let _3: &'3 [u32; 5 : usize]; // anonymous local
+    let _4: &'4 [u32; 5 : usize]; // anonymous local
+    let res_5: Result<usize, usize>[{built_in impl Sized for usize}, {built_in impl Sized for usize}]; // local
+    let _6: &'5 [u32]; // anonymous local
+    let _7: &'6 [u32; 5 : usize]; // anonymous local
+    let _8: closure; // anonymous local
+
+    bb0: {
+        _0 = ();
+        storage_live(a_1);
+        a_1 = [const 1 : u32, const 2 : u32, const 3 : u32, const 4 : u32, const 5 : u32];
+        storage_live(b_2);
+        storage_live(_3);
+        storage_live(_4);
+        _4 = &a_1;
+        _3 = &(*_4);
+        b_2 = unsize_cast<&'3 [u32; 5 : usize], &'7 [u32], 5 : usize>(move _3);
+        storage_dead(_3);
+        storage_dead(_4);
+        storage_live(res_5);
+        storage_live(_6);
+        storage_live(_7);
+        _7 = &a_1;
+        _6 = unsize_cast<&'6 [u32; 5 : usize], &'8 [u32], 5 : usize>(move _7);
+        storage_dead(_7);
+        storage_live(_8);
+        _8 = closure {  };
+        res_5 = binary_search_by<'9, u32, closure>[{built_in impl Sized for u32}, {built_in impl Sized for closure}, {impl FnMut<(&'_ u32,)> for closure}<'13>](move _6, move _8) -> bb2 (unwind: bb1);
+    }
+
+    bb1: {
+        unwind_continue;
+    }
+
+    bb2: {
+        storage_dead(_8);
+        storage_dead(_6);
+        _0 = ();
+        storage_dead(res_5);
+        storage_dead(b_2);
+        storage_dead(a_1);
+        return;
+    }
+}
+
+
+

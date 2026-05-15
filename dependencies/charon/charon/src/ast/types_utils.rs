@@ -1,14 +1,16 @@
 //! This file groups everything which is linked to implementations about [crate::types]
 use crate::ast::*;
-use crate::ids::Vector;
+use crate::ids::IndexMap;
 use derive_generic_visitor::*;
+use itertools::Itertools;
+use std::borrow::Cow;
 use std::collections::HashSet;
 use std::convert::Infallible;
 use std::fmt::Debug;
 use std::iter::Iterator;
 use std::mem;
 
-impl TraitClause {
+impl TraitParam {
     /// Constructs the trait ref that refers to this clause.
     pub fn identity_tref(&self) -> TraitRef {
         self.identity_tref_at_depth(DeBruijnId::zero())
@@ -16,10 +18,10 @@ impl TraitClause {
 
     /// Like `identity_tref` but uses variables bound at the given depth.
     pub fn identity_tref_at_depth(&self, depth: DeBruijnId) -> TraitRef {
-        TraitRef {
-            kind: TraitRefKind::Clause(DeBruijnVar::bound(depth, self.clause_id)),
-            trait_decl_ref: self.trait_.clone().move_under_binders(depth),
-        }
+        TraitRef::new(
+            TraitRefKind::Clause(DeBruijnVar::bound(depth, self.clause_id)),
+            self.trait_.clone().move_under_binders(depth),
+        )
     }
 }
 
@@ -106,22 +108,117 @@ impl GenericParams {
             types: self
                 .types
                 .map_ref_indexed(|id, _| TyKind::TypeVar(DeBruijnVar::bound(depth, id)).into_ty()),
-            const_generics: self
-                .const_generics
-                .map_ref_indexed(|id, _| ConstGeneric::Var(DeBruijnVar::bound(depth, id))),
+            const_generics: self.const_generics.map_ref_indexed(|id, c| ConstantExpr {
+                ty: c.ty.clone(),
+                kind: ConstantExprKind::Var(DeBruijnVar::bound(depth, id)),
+            }),
             trait_refs: self
                 .trait_clauses
                 .map_ref(|clause| clause.identity_tref_at_depth(depth)),
         }
     }
+
+    /// Take the predicates from the another `GenericParams`. This assumes the clause ids etc are
+    /// already consistent.
+    pub fn take_predicates_from(&mut self, other: GenericParams) {
+        assert!(!other.has_explicits());
+        let num_clauses = self.trait_clauses.slot_count();
+        let GenericParams {
+            regions: _,
+            types: _,
+            const_generics: _,
+            trait_clauses,
+            regions_outlive,
+            types_outlive,
+            trait_type_constraints,
+        } = other;
+        self.trait_clauses
+            .extend(trait_clauses.into_iter().update(|clause| {
+                clause.clause_id += num_clauses;
+            }));
+        self.regions_outlive.extend(regions_outlive);
+        self.types_outlive.extend(types_outlive);
+        self.trait_type_constraints.extend(trait_type_constraints);
+    }
+
+    /// Take the predicates from the another `GenericParams`. This assumes that the two
+    /// `GenericParams` are independent, hence will shift clause ids if `other` has any
+    /// trait refs that reference its own clauses.
+    pub fn merge_predicates_from(&mut self, mut other: GenericParams) {
+        // Drop the explicits params.
+        other.types.clear();
+        other.regions.clear();
+        other.const_generics.clear();
+        // The contents of `other` may refer to its own trait clauses, so we must shift clause ids.
+        struct ShiftClausesVisitor(usize);
+        impl VarsVisitor for ShiftClausesVisitor {
+            fn visit_clause_var(&mut self, v: ClauseDbVar) -> Option<TraitRefKind> {
+                if let DeBruijnVar::Bound(DeBruijnId::ZERO, clause_id) = v {
+                    // Replace clause 0 and decrement the others.
+                    Some(TraitRefKind::Clause(DeBruijnVar::Bound(
+                        DeBruijnId::ZERO,
+                        clause_id + self.0,
+                    )))
+                } else {
+                    None
+                }
+            }
+        }
+        let num_clauses = self.trait_clauses.slot_count();
+        other.visit_vars(&mut ShiftClausesVisitor(num_clauses));
+        self.take_predicates_from(other);
+    }
 }
 
 impl<T> Binder<T> {
+    /// Wrap the value in an empty binder, shifting variables appropriately.
+    pub fn empty(kind: BinderKind, x: T) -> Self
+    where
+        T: TyVisitable,
+    {
+        Binder {
+            params: Default::default(),
+            skip_binder: x.move_under_binder(),
+            kind,
+        }
+    }
     pub fn new(kind: BinderKind, params: GenericParams, skip_binder: T) -> Self {
         Self {
             params,
             skip_binder,
             kind,
+        }
+    }
+
+    /// Whether this binder binds any variables.
+    pub fn binds_anything(&self) -> bool {
+        !self.params.is_empty()
+    }
+
+    /// Retreive the contents of this binder if the binder binds no variables. This is the invers
+    /// of `Binder::empty`.
+    pub fn get_if_binds_nothing(&self) -> Option<T>
+    where
+        T: TyVisitable + Clone,
+    {
+        self.params
+            .is_empty()
+            .then(|| self.skip_binder.clone().move_from_under_binder().unwrap())
+    }
+
+    pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Binder<U> {
+        Binder {
+            params: self.params,
+            skip_binder: f(self.skip_binder),
+            kind: self.kind.clone(),
+        }
+    }
+
+    pub fn map_ref<U>(&self, f: impl FnOnce(&T) -> U) -> Binder<U> {
+        Binder {
+            params: self.params.clone(),
+            skip_binder: f(&self.skip_binder),
+            kind: self.kind.clone(),
         }
     }
 
@@ -176,8 +273,8 @@ impl<T: AstVisitable> Binder<Binder<T>> {
                     *id += self.shift_by.types.slot_count();
                 }
             }
-            fn enter_const_generic(&mut self, x: &mut ConstGeneric) {
-                if let ConstGeneric::Var(var) = x
+            fn enter_constant_expr(&mut self, x: &mut ConstantExpr) {
+                if let ConstantExprKind::Var(ref mut var) = x.kind
                     && let Some(id) = var.bound_at_depth_mut(self.binder_depth)
                 {
                     *id += self.shift_by.const_generics.slot_count();
@@ -286,22 +383,22 @@ impl<T> RegionBinder<T> {
     }
 
     /// Substitute the bound variables with the given lifetimes.
-    pub fn apply(self, regions: Vector<RegionId, Region>) -> T
+    pub fn apply(self, regions: IndexMap<RegionId, Region>) -> T
     where
-        T: AstVisitable,
+        T: TyVisitable,
     {
         assert_eq!(regions.slot_count(), self.regions.slot_count());
         let args = GenericArgs {
             regions,
             ..GenericArgs::empty()
         };
-        self.skip_binder.substitute(&args)
+        self.skip_binder.substitute_inner_binder(&args)
     }
 
     /// Substitute the bound variables with erased lifetimes.
     pub fn erase(self) -> T
     where
-        T: AstVisitable,
+        T: TyVisitable,
     {
         let regions = self.regions.map_ref_indexed(|_, _| Region::Erased);
         self.apply(regions)
@@ -343,7 +440,7 @@ impl GenericArgs {
         }
     }
 
-    pub fn new_for_builtin(types: Vector<TypeVarId, Ty>) -> Self {
+    pub fn new_for_builtin(types: IndexMap<TypeVarId, Ty>) -> Self {
         GenericArgs {
             types,
             ..Self::empty()
@@ -351,10 +448,10 @@ impl GenericArgs {
     }
 
     pub fn new(
-        regions: Vector<RegionId, Region>,
-        types: Vector<TypeVarId, Ty>,
-        const_generics: Vector<ConstGenericVarId, ConstGeneric>,
-        trait_refs: Vector<TraitClauseId, TraitRef>,
+        regions: IndexMap<RegionId, Region>,
+        types: IndexMap<TypeVarId, Ty>,
+        const_generics: IndexMap<ConstGenericVarId, ConstantExpr>,
+        trait_refs: IndexMap<TraitClauseId, TraitRef>,
     ) -> Self {
         Self {
             regions,
@@ -364,7 +461,7 @@ impl GenericArgs {
         }
     }
 
-    pub fn new_types(types: Vector<TypeVarId, Ty>) -> Self {
+    pub fn new_types(types: IndexMap<TypeVarId, Ty>) -> Self {
         Self {
             types,
             ..Self::empty()
@@ -495,6 +592,12 @@ impl LiteralTy {
     }
 }
 
+impl From<LiteralTy> for Ty {
+    fn from(value: LiteralTy) -> Self {
+        TyKind::Literal(value).into_ty()
+    }
+}
+
 /// A value of type `T` bound by the generic parameters of item
 /// `item`. Used when dealing with multiple items at a time, to
 /// ensure we don't mix up generics.
@@ -551,7 +654,7 @@ where
         args: ItemBinder<OtherItem, &GenericArgs>,
     ) -> ItemBinder<OtherItem, T>
     where
-        ItemId: Into<AnyTransId>,
+        ItemId: Into<ItemId>,
         T: TyVisitable,
     {
         args.map_bound(|args| self.val.substitute(args))
@@ -569,9 +672,29 @@ impl<T> ItemBinder<CurrentItem, T> {
 }
 
 impl Ty {
+    pub fn new(kind: TyKind) -> Self {
+        Ty(HashConsed::new(kind))
+    }
+
+    pub fn kind(&self) -> &TyKind {
+        self.0.inner()
+    }
+
+    pub fn with_kind_mut<R>(&mut self, f: impl FnOnce(&mut TyKind) -> R) -> R {
+        self.0.with_inner_mut(f)
+    }
+
     /// Return the unit type
     pub fn mk_unit() -> Ty {
         Self::mk_tuple(vec![])
+    }
+
+    pub fn mk_bool() -> Ty {
+        TyKind::Literal(LiteralTy::Bool).into()
+    }
+
+    pub fn mk_usize() -> Ty {
+        TyKind::Literal(LiteralTy::UInt(UIntTy::Usize)).into()
     }
 
     pub fn mk_tuple(tys: Vec<Ty>) -> Ty {
@@ -582,12 +705,12 @@ impl Ty {
         .into_ty()
     }
 
+    pub fn mk_array(ty: Ty, len: ConstantExpr) -> Ty {
+        TyKind::Array(ty, Box::new(len)).into_ty()
+    }
+
     pub fn mk_slice(ty: Ty) -> Ty {
-        TyKind::Adt(TypeDeclRef {
-            id: TypeId::Builtin(BuiltinTy::Slice),
-            generics: Box::new(GenericArgs::new_for_builtin(vec![ty].into())),
-        })
-        .into_ty()
+        TyKind::Slice(ty).into_ty()
     }
     /// Return true if it is actually unit (i.e.: 0-tuple)
     pub fn is_unit(&self) -> bool {
@@ -613,6 +736,13 @@ impl Ty {
         matches!(self.kind(), TyKind::Literal(LiteralTy::Int(_)))
     }
 
+    pub fn is_str(&self) -> bool {
+        match self.kind() {
+            TyKind::Adt(ty_ref) if let TypeId::Builtin(BuiltinTy::Str) = ty_ref.id => true,
+            _ => false,
+        }
+    }
+
     /// Return true if the type is Box
     pub fn is_box(&self) -> bool {
         match self.kind() {
@@ -630,18 +760,75 @@ impl Ty {
         }
     }
 
-    pub fn as_array_or_slice(&self) -> Option<&Ty> {
+    pub fn get_ptr_metadata(&self, translated: &TranslatedCrate) -> PtrMetadata {
+        let ref ty_decls = translated.type_decls;
         match self.kind() {
-            TyKind::Adt(ty_ref)
-                if let TypeId::Builtin(BuiltinTy::Array | BuiltinTy::Slice) = ty_ref.id =>
-            {
-                Some(&ty_ref.generics.types[0])
+            TyKind::Adt(ty_ref) => {
+                // there are two cases:
+                // 1. if the declared type has a fixed metadata, just returns it
+                // 2. if it depends on some other types or the generic itself
+                match ty_ref.id {
+                    TypeId::Adt(type_decl_id) => {
+                        let Some(decl) = ty_decls.get(type_decl_id) else {
+                            return PtrMetadata::InheritFrom(self.clone());
+                        };
+                        match decl.ptr_metadata.clone().substitute(&ty_ref.generics) {
+                            // if it depends on some type, recursion with the binding env
+                            PtrMetadata::InheritFrom(ty) => ty.get_ptr_metadata(translated),
+                            // otherwise, simply return it
+                            meta => meta,
+                        }
+                    }
+                    // the metadata of a tuple is simply the last field
+                    TypeId::Tuple => {
+                        match ty_ref.generics.types.iter().last() {
+                            // `None` refers to the unit type `()`
+                            None => PtrMetadata::None,
+                            // Otherwise, simply recurse
+                            Some(ty) => ty.get_ptr_metadata(translated),
+                        }
+                    }
+                    // Box is a pointer like ref & raw ptr, hence no metadata
+                    TypeId::Builtin(BuiltinTy::Box) => PtrMetadata::None,
+                    // `str` has metadata length
+                    TypeId::Builtin(BuiltinTy::Str) => PtrMetadata::Length,
+                }
             }
+            TyKind::DynTrait(pred) => match pred.vtable_ref(translated) {
+                Some(vtable) => PtrMetadata::VTable(vtable),
+                None => PtrMetadata::InheritFrom(self.clone()),
+            },
+            // `[T]` has metadata length
+            TyKind::Slice(..) => PtrMetadata::Length,
+            TyKind::TraitType(..) | TyKind::TypeVar(_) => PtrMetadata::InheritFrom(self.clone()),
+            TyKind::Literal(_)
+            | TyKind::Never
+            | TyKind::Ref(..)
+            | TyKind::RawPtr(..)
+            | TyKind::FnPtr(..)
+            | TyKind::FnDef(..)
+            | TyKind::Array(..)
+            | TyKind::Error(_) => PtrMetadata::None,
+            // The metadata itself must be Sized, hence must with `PtrMetadata::None`
+            TyKind::PtrMetadata(_) => PtrMetadata::None,
+        }
+    }
+
+    pub fn as_ref_or_ptr(&self) -> Option<&Ty> {
+        match self.kind() {
+            TyKind::RawPtr(ty, _) | TyKind::Ref(_, ty, _) => Some(ty),
             _ => None,
         }
     }
 
-    pub fn as_tuple(&self) -> Option<&Vector<TypeVarId, Ty>> {
+    pub fn as_array_or_slice(&self) -> Option<&Ty> {
+        match self.kind() {
+            TyKind::Slice(ty) | TyKind::Array(ty, _) => Some(ty),
+            _ => None,
+        }
+    }
+
+    pub fn as_tuple(&self) -> Option<&IndexMap<TypeVarId, Ty>> {
         match self.kind() {
             TyKind::Adt(ty_ref) if let TypeId::Tuple = ty_ref.id => Some(&ty_ref.generics.types),
             _ => None,
@@ -700,22 +887,79 @@ impl TraitDeclRef {
 }
 
 impl TraitRef {
+    pub fn new(kind: TraitRefKind, trait_decl_ref: PolyTraitDeclRef) -> Self {
+        TraitRefContents {
+            kind,
+            trait_decl_ref,
+        }
+        .intern()
+    }
+
     pub fn new_builtin(
         trait_id: TraitDeclId,
         ty: Ty,
-        parents: Vector<TraitClauseId, TraitRef>,
+        parents: IndexMap<TraitClauseId, TraitRef>,
+        builtin_data: BuiltinImplData,
     ) -> Self {
         let trait_decl_ref = RegionBinder::empty(TraitDeclRef {
             id: trait_id,
             generics: Box::new(GenericArgs::new_types([ty].into())),
         });
-        TraitRef {
-            kind: TraitRefKind::BuiltinOrAuto {
-                trait_decl_ref: trait_decl_ref.clone(),
+        Self::new(
+            TraitRefKind::BuiltinOrAuto {
+                builtin_data,
                 parent_trait_refs: parents,
                 types: Default::default(),
             },
             trait_decl_ref,
+        )
+    }
+
+    pub fn trait_id(&self) -> TraitDeclId {
+        self.trait_decl_ref.skip_binder.id
+    }
+
+    /// Get mutable access to the contents. This cloned the value and will re-intern the modified
+    /// value at the end of the function.
+    pub fn with_contents_mut<R>(&mut self, f: impl FnOnce(&mut TraitRefContents) -> R) -> R {
+        self.0.with_inner_mut(f)
+    }
+}
+impl TraitRefContents {
+    pub fn intern(self) -> TraitRef {
+        TraitRef(HashConsed::new(self))
+    }
+}
+
+impl std::ops::Deref for TraitRef {
+    type Target = TraitRefContents;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl BuiltinImplData {
+    pub fn as_closure_kind(&self) -> Option<ClosureKind> {
+        match self {
+            BuiltinImplData::FnOnce => Some(ClosureKind::FnOnce),
+            BuiltinImplData::FnMut => Some(ClosureKind::FnMut),
+            BuiltinImplData::Fn => Some(ClosureKind::Fn),
+            _ => None,
+        }
+    }
+}
+
+impl PtrMetadata {
+    pub fn into_type(self) -> Ty {
+        match self {
+            PtrMetadata::None => Ty::mk_unit(),
+            PtrMetadata::Length => Ty::mk_usize(),
+            PtrMetadata::VTable(type_decl_ref) => Ty::new(TyKind::Ref(
+                Region::Static,
+                Ty::new(TyKind::Adt(type_decl_ref)),
+                RefKind::Shared,
+            )),
+            PtrMetadata::InheritFrom(ty) => Ty::new(TyKind::PtrMetadata(ty)),
         }
     }
 }
@@ -754,6 +998,28 @@ impl Variant {
     }
 }
 
+impl DynPredicate {
+    /// Get a reference to the vtable type that corresponds to this predicate.
+    pub fn vtable_ref(&self, translated: &TranslatedCrate) -> Option<TypeDeclRef> {
+        let dyn_ty = TyKind::DynTrait(self.clone()).into_ty();
+        // The first clause is the one relevant for the vtable. We're extracting it from our binder
+        // so must give a value for the `Self` type.
+        let relevant_tref = self.binder.params.trait_clauses[0]
+            .trait_
+            .clone()
+            .erase()
+            .substitute(&GenericArgs::new_types([dyn_ty].into_iter().collect()));
+
+        // Get the vtable ref from the trait decl
+        let trait_decl = translated.trait_decls.get(relevant_tref.id)?;
+        let vtable_ref = trait_decl
+            .vtable
+            .clone()?
+            .substitute_with_self(&relevant_tref.generics, &TraitRefKind::Dyn);
+        Some(vtable_ref)
+    }
+}
+
 impl RefKind {
     pub fn mutable(x: bool) -> Self {
         if x { Self::Mut } else { Self::Shared }
@@ -765,13 +1031,16 @@ impl RefKind {
 /// skipped, and all the seen De Bruijn indices will count from the outside of the value. The
 /// returned value, if any, will be put in place of the variable.
 pub trait VarsVisitor {
+    fn visit_erased_region(&mut self) -> Option<Region> {
+        None
+    }
     fn visit_region_var(&mut self, _v: RegionDbVar) -> Option<Region> {
         None
     }
     fn visit_type_var(&mut self, _v: TypeDbVar) -> Option<Ty> {
         None
     }
-    fn visit_const_generic_var(&mut self, _v: ConstGenericDbVar) -> Option<ConstGeneric> {
+    fn visit_const_generic_var(&mut self, _v: ConstGenericDbVar) -> Option<ConstantExprKind> {
         None
     }
     fn visit_clause_var(&mut self, _v: ClauseDbVar) -> Option<TraitRefKind> {
@@ -787,15 +1056,40 @@ pub trait VarsVisitor {
 #[derive(Visitor)]
 pub(crate) struct SubstVisitor<'a> {
     generics: &'a GenericArgs,
-    self_ref: &'a TraitRefKind,
+    self_ref: Option<&'a TraitRefKind>,
+    /// Whether to substitute explicit variables only (types, regions, const generics).
+    explicits_only: bool,
+    had_error: bool,
 }
 impl<'a> SubstVisitor<'a> {
-    pub(crate) fn new(generics: &'a GenericArgs, self_ref: &'a TraitRefKind) -> Self {
-        Self { generics, self_ref }
+    pub(crate) fn new(
+        generics: &'a GenericArgs,
+        self_ref: Option<&'a TraitRefKind>,
+        explicits_only: bool,
+    ) -> Self {
+        Self {
+            generics,
+            self_ref,
+            explicits_only,
+            had_error: false,
+        }
+    }
+
+    pub fn visit<T: TyVisitable>(mut self, mut x: T) -> Result<T, GenericsMismatch> {
+        let _ = x.visit_vars(&mut self);
+        if self.had_error {
+            Err(GenericsMismatch)
+        } else {
+            Ok(x)
+        }
     }
 
     /// Returns the value for this variable, if any.
-    fn process_var<Id, T>(&self, var: DeBruijnVar<Id>, get: impl Fn(Id) -> &'a T) -> Option<T>
+    fn process_var<Id, T>(
+        &mut self,
+        var: DeBruijnVar<Id>,
+        get: impl Fn(Id) -> Option<&'a T>,
+    ) -> Option<T>
     where
         Id: Copy,
         T: Clone + TyVisitable,
@@ -807,7 +1101,13 @@ impl<'a> SubstVisitor<'a> {
                     // This is bound outside the binder we're substituting for.
                     DeBruijnVar::Bound(dbid, varid).into()
                 } else {
-                    get(varid).clone()
+                    match get(varid) {
+                        Some(v) => v.clone(),
+                        None => {
+                            self.had_error = true;
+                            return None;
+                        }
+                    }
                 })
             }
             DeBruijnVar::Free(..) => None,
@@ -816,21 +1116,33 @@ impl<'a> SubstVisitor<'a> {
 }
 impl VarsVisitor for SubstVisitor<'_> {
     fn visit_region_var(&mut self, v: RegionDbVar) -> Option<Region> {
-        self.process_var(v, |id| &self.generics[id])
+        self.process_var(v, |id| self.generics.regions.get(id))
     }
     fn visit_type_var(&mut self, v: TypeDbVar) -> Option<Ty> {
-        self.process_var(v, |id| &self.generics[id])
+        self.process_var(v, |id| self.generics.types.get(id))
     }
-    fn visit_const_generic_var(&mut self, v: ConstGenericDbVar) -> Option<ConstGeneric> {
-        self.process_var(v, |id| &self.generics[id])
+    fn visit_const_generic_var(&mut self, v: ConstGenericDbVar) -> Option<ConstantExprKind> {
+        self.process_var(v, |id| {
+            self.generics.const_generics.get(id).map(|c| &c.kind)
+        })
     }
     fn visit_clause_var(&mut self, v: ClauseDbVar) -> Option<TraitRefKind> {
-        self.process_var(v, |id| &self.generics[id].kind)
+        if self.explicits_only {
+            None
+        } else {
+            self.process_var(v, |id| Some(&self.generics.trait_refs.get(id)?.kind))
+        }
     }
     fn visit_self_clause(&mut self) -> Option<TraitRefKind> {
-        Some(self.self_ref.clone())
+        Some(self.self_ref.cloned().expect(
+            "used `substitute` on an item coming from a trait; \
+            use `substitute_with_self` or `substitute_inner_binder` instead.",
+        ))
     }
 }
+
+#[derive(Debug)]
+pub struct GenericsMismatch;
 
 /// Types that are involved at the type-level and may be substituted around.
 pub trait TyVisitable: Sized + AstVisitable {
@@ -843,26 +1155,30 @@ pub trait TyVisitable: Sized + AstVisitable {
             v: &'v mut V,
             depth: DeBruijnId,
         }
+        impl<V> VisitorWithBinderDepth for Wrap<'_, V> {
+            fn binder_depth_mut(&mut self) -> &mut DeBruijnId {
+                &mut self.depth
+            }
+        }
         impl<V: VarsVisitor> VisitAstMut for Wrap<'_, V> {
-            fn enter_region_binder<T: AstVisitable>(&mut self, _: &mut RegionBinder<T>) {
-                self.depth = self.depth.incr()
-            }
-            fn exit_region_binder<T: AstVisitable>(&mut self, _: &mut RegionBinder<T>) {
-                self.depth = self.depth.decr()
-            }
-            fn enter_binder<T: AstVisitable>(&mut self, _: &mut Binder<T>) {
-                self.depth = self.depth.incr()
-            }
-            fn exit_binder<T: AstVisitable>(&mut self, _: &mut Binder<T>) {
-                self.depth = self.depth.decr()
+            fn visit<'a, T: AstVisitable>(&'a mut self, x: &mut T) -> ControlFlow<Self::Break> {
+                VisitWithBinderDepth::new(self).visit(x)
             }
 
             fn exit_region(&mut self, r: &mut Region) {
-                if let Region::Var(var) = r
-                    && let Some(var) = var.move_out_from_depth(self.depth)
-                    && let Some(new_r) = self.v.visit_region_var(var)
-                {
-                    *r = new_r.move_under_binders(self.depth);
+                match r {
+                    Region::Var(var)
+                        if let Some(var) = var.move_out_from_depth(self.depth)
+                            && let Some(new_r) = self.v.visit_region_var(var) =>
+                    {
+                        *r = new_r.move_under_binders(self.depth);
+                    }
+                    Region::Erased | Region::Body(..)
+                        if let Some(new_r) = self.v.visit_erased_region() =>
+                    {
+                        *r = new_r.move_under_binders(self.depth);
+                    }
+                    _ => (),
                 }
             }
             fn exit_ty(&mut self, ty: &mut Ty) {
@@ -873,20 +1189,12 @@ pub trait TyVisitable: Sized + AstVisitable {
                     *ty = new_ty.move_under_binders(self.depth);
                 }
             }
-            fn exit_const_generic(&mut self, cg: &mut ConstGeneric) {
-                if let ConstGeneric::Var(var) = cg
-                    && let Some(var) = var.move_out_from_depth(self.depth)
-                    && let Some(new_cg) = self.v.visit_const_generic_var(var)
-                {
-                    *cg = new_cg.move_under_binders(self.depth);
-                }
-            }
             fn exit_constant_expr(&mut self, ce: &mut ConstantExpr) {
-                if let RawConstantExpr::Var(var) = &mut ce.value
+                if let ConstantExprKind::Var(var) = &mut ce.kind
                     && let Some(var) = var.move_out_from_depth(self.depth)
                     && let Some(new_cg) = self.v.visit_const_generic_var(var)
                 {
-                    ce.value = new_cg.move_under_binders(self.depth).into();
+                    ce.kind = new_cg.move_under_binders(self.depth);
                 }
             }
             fn exit_trait_ref_kind(&mut self, kind: &mut TraitRefKind) {
@@ -907,19 +1215,49 @@ pub trait TyVisitable: Sized + AstVisitable {
                 }
             }
         }
-        let _ = self.drive_mut(&mut Wrap {
+        Wrap {
             v,
             depth: DeBruijnId::zero(),
-        });
+        }
+        .visit(self);
     }
 
+    /// Substitute the generic variables inside `self` by replacing them with the provided values.
+    /// Note: if `self` is an item that comes from a `TraitDecl`, you must use
+    /// `substitute_with_self` or `substitute_inner_binder`, otherwise you'll get panics.
     fn substitute(self, generics: &GenericArgs) -> Self {
+        SubstVisitor::new(generics, None, false)
+            .visit(self)
+            .unwrap()
+    }
+    /// Substitute the generic variables inside `self` by replacing them with the provided values.
+    /// This is appropriate when substituting an inner binder.
+    fn substitute_inner_binder(self, generics: &GenericArgs) -> Self {
         self.substitute_with_self(generics, &TraitRefKind::SelfId)
     }
+    /// Substitute only the type, region and const generic args.
+    fn substitute_explicits(self, generics: &GenericArgs) -> Self {
+        SubstVisitor::new(generics, None, true).visit(self).unwrap()
+    }
+    /// Substitute the generic variables as well as the `TraitRefKind::SelfId` trait ref.
+    fn substitute_with_self(self, generics: &GenericArgs, self_ref: &TraitRefKind) -> Self {
+        self.try_substitute_with_self(generics, self_ref).unwrap()
+    }
+    /// Substitute the generic variables as well as the `TraitRefKind::SelfId` trait ref.
+    fn substitute_with_tref(self, tref: &TraitRef) -> Self {
+        let pred = tref.trait_decl_ref.clone().erase();
+        self.substitute_with_self(&pred.generics, &tref.kind)
+    }
 
-    fn substitute_with_self(mut self, generics: &GenericArgs, self_ref: &TraitRefKind) -> Self {
-        let _ = self.visit_vars(&mut SubstVisitor::new(generics, self_ref));
-        self
+    fn try_substitute(self, generics: &GenericArgs) -> Result<Self, GenericsMismatch> {
+        SubstVisitor::new(generics, None, false).visit(self)
+    }
+    fn try_substitute_with_self(
+        self,
+        generics: &GenericArgs,
+        self_ref: &TraitRefKind,
+    ) -> Result<Self, GenericsMismatch> {
+        SubstVisitor::new(generics, Some(self_ref), false).visit(self)
     }
 
     /// Move under one binder.
@@ -1004,6 +1342,91 @@ pub trait TyVisitable: Sized + AstVisitable {
             depth: DeBruijnId::zero(),
         })
     }
+
+    /// Replace all the erased regions by the output of the provided function. Binders levels are
+    /// handled automatically.
+    fn replace_erased_regions(mut self, f: impl FnMut() -> Region) -> Self {
+        #[derive(Visitor)]
+        struct RefreshErasedRegions<F>(F);
+        impl<F: FnMut() -> Region> VarsVisitor for RefreshErasedRegions<F> {
+            fn visit_erased_region(&mut self) -> Option<Region> {
+                Some((self.0)())
+            }
+        }
+        self.visit_vars(&mut RefreshErasedRegions(f));
+        self
+    }
+}
+
+/// A value of type `T` applied to some `GenericArgs`, except we havent applied them yet to avoid a
+/// deep clone.
+#[derive(Debug, Clone)]
+pub struct Substituted<'a, T> {
+    pub val: &'a T,
+    pub generics: Cow<'a, GenericArgs>,
+    pub trait_self: Option<&'a TraitRefKind>,
+}
+
+impl<'a, T> Substituted<'a, T> {
+    pub fn new(val: &'a T, generics: &'a GenericArgs) -> Self {
+        Self {
+            val,
+            generics: Cow::Borrowed(generics),
+            trait_self: None,
+        }
+    }
+    pub fn new_for_trait(
+        val: &'a T,
+        generics: &'a GenericArgs,
+        trait_self: &'a TraitRefKind,
+    ) -> Self {
+        Self {
+            val,
+            generics: Cow::Borrowed(generics),
+            trait_self: Some(trait_self),
+        }
+    }
+    pub fn new_for_trait_ref(val: &'a T, tref: &'a TraitRef) -> Self {
+        Self {
+            val,
+            generics: Cow::Owned(*tref.trait_decl_ref.clone().erase().generics),
+            trait_self: Some(&tref.kind),
+        }
+    }
+
+    pub fn rebind<U>(&self, val: &'a U) -> Substituted<'a, U> {
+        Substituted {
+            val,
+            generics: self.generics.clone(),
+            trait_self: self.trait_self.clone(),
+        }
+    }
+
+    pub fn substitute(&self) -> T
+    where
+        T: TyVisitable + Clone,
+    {
+        self.try_substitute().unwrap()
+    }
+    pub fn try_substitute(&self) -> Result<T, GenericsMismatch>
+    where
+        T: TyVisitable + Clone,
+    {
+        match self.trait_self {
+            None => self.val.clone().try_substitute(&self.generics),
+            Some(trait_self) => self
+                .val
+                .clone()
+                .try_substitute_with_self(&self.generics, trait_self),
+        }
+    }
+
+    pub fn iter<Item: 'a>(&self) -> impl Iterator<Item = Substituted<'a, Item>>
+    where
+        &'a T: IntoIterator<Item = &'a Item>,
+    {
+        self.val.into_iter().map(move |x| self.rebind(x))
+    }
 }
 
 impl TypeDecl {
@@ -1022,7 +1445,7 @@ impl TypeDecl {
         let variant_for_tag =
             layout
                 .variant_layouts
-                .iter_indexed()
+                .iter_enumerated()
                 .find_map(|(id, variant_layout)| {
                     if variant_layout.tag == Some(tag) {
                         Some(id)
@@ -1039,6 +1462,27 @@ impl TypeDecl {
             TagEncoding::Niche { untagged_variant } => variant_for_tag.or(Some(*untagged_variant)),
         }
     }
+
+    pub fn is_c_repr(&self) -> bool {
+        self.repr
+            .as_ref()
+            .is_some_and(|repr| repr.repr_algo == ReprAlgorithm::C)
+    }
+
+    pub fn get_field_by_name(
+        &self,
+        variant: Option<VariantId>,
+        field_name: &str,
+    ) -> Option<(FieldId, &Field)> {
+        let fields = match &self.kind {
+            TypeDeclKind::Struct(fields) | TypeDeclKind::Union(fields) => fields,
+            TypeDeclKind::Enum(variants) => &variants[variant.unwrap()].fields,
+            _ => return None,
+        };
+        fields
+            .iter_indexed()
+            .find(|(_, field)| field.name.as_deref() == Some(field_name))
+    }
 }
 
 impl Layout {
@@ -1051,15 +1495,30 @@ impl Layout {
     }
 }
 
+impl ReprOptions {
+    /// Whether this representation options guarantee a fixed
+    /// field ordering for the type.
+    ///
+    /// Since we don't support `repr(simd)` or `repr(linear)` yet, this is
+    /// the case if it's either `repr(C)` or an explicit discriminant type for
+    /// an enum with fields (if it doesn't have fields, this obviously doesn't matter anyway).
+    ///
+    /// Cf. <https://doc.rust-lang.org/reference/type-layout.html#r-layout.repr.c.struct>
+    /// and <https://doc.rust-lang.org/reference/type-layout.html#r-layout.repr.primitive.adt>.
+    pub fn guarantees_fixed_field_order(&self) -> bool {
+        self.repr_algo == ReprAlgorithm::C || self.explicit_discr_type
+    }
+}
+
 impl<T: AstVisitable> TyVisitable for T {}
 
-impl Eq for TraitClause {}
+impl Eq for TraitParam {}
 
 mk_index_impls!(GenericArgs.regions[RegionId]: Region);
 mk_index_impls!(GenericArgs.types[TypeVarId]: Ty);
-mk_index_impls!(GenericArgs.const_generics[ConstGenericVarId]: ConstGeneric);
+mk_index_impls!(GenericArgs.const_generics[ConstGenericVarId]: ConstantExpr);
 mk_index_impls!(GenericArgs.trait_refs[TraitClauseId]: TraitRef);
-mk_index_impls!(GenericParams.regions[RegionId]: RegionVar);
-mk_index_impls!(GenericParams.types[TypeVarId]: TypeVar);
-mk_index_impls!(GenericParams.const_generics[ConstGenericVarId]: ConstGenericVar);
-mk_index_impls!(GenericParams.trait_clauses[TraitClauseId]: TraitClause);
+mk_index_impls!(GenericParams.regions[RegionId]: RegionParam);
+mk_index_impls!(GenericParams.types[TypeVarId]: TypeParam);
+mk_index_impls!(GenericParams.const_generics[ConstGenericVarId]: ConstGenericParam);
+mk_index_impls!(GenericParams.trait_clauses[TraitClauseId]: TraitParam);

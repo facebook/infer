@@ -2,7 +2,6 @@
 //! on each of them.
 //!
 //! This test requires a feature flag. To run, call `make test-popular-crates`.
-#![feature(path_add_extension)]
 #![cfg(feature = "popular-crates-test")]
 use anyhow::{Context, Result, bail};
 use assert_cmd::prelude::CommandCargoExt;

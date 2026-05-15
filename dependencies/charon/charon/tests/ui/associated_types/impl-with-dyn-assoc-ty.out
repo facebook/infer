@@ -1,0 +1,50 @@
+# Final LLBC before serialization:
+
+opaque type core::marker::MetaSized::{vtable}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+struct test_crate::DynableTrait::{vtable}<Ty0> {
+  size: usize,
+  align: usize,
+  drop: unsafe fn(*mut (dyn DynableTrait<Ty0>)),
+  super_trait_0: &'static core::marker::MetaSized::{vtable},
+}
+
+// Full name: test_crate::DynableTrait
+trait DynableTrait<Self, Self_DynableTraitType>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_DynableTraitType>
+    vtable: test_crate::DynableTrait::{vtable}<Self_DynableTraitType>
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self, Self_TraitType, Self_Clause2_DynableTraitType>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: MetaSized<Self_TraitType>
+    parent_clause2 : [@TraitClause2]: DynableTrait<Self_TraitType, Self_Clause2_DynableTraitType>
+    vtable: test_crate::Trait::{vtable}<Self_TraitType>
+}
+
+// Full name: test_crate::{impl Trait<(dyn DynableTrait<()> + 'static), ()> for ()}
+impl Trait<(dyn DynableTrait<()> + 'static), ()> for () {
+    parent_clause0 = {built_in impl MetaSized for ()}
+    parent_clause1 = {built_in impl MetaSized for (dyn DynableTrait<()>)}
+    parent_clause2 = DynableTrait<(dyn DynableTrait<()>), ()>
+    vtable: {impl Trait<(dyn DynableTrait<()> + 'static), ()> for ()}::{vtable}
+}
+
+
+

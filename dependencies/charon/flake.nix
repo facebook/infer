@@ -8,7 +8,7 @@
     rust-overlay = {
       # We pin a specific commit because we require a relatively recent version
       # and flake dependents don't look at our flake.lock.
-      url = "github:oxalica/rust-overlay/0751b65633a1785743ca44fd7c14a633c54c1f91";
+      url = "github:oxalica/rust-overlay/5177426d9f8f7f1827001c9749b9a9c5570d456b";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     crane.url = "github:ipetkov/crane";
@@ -27,6 +27,20 @@
         ocamlformat = pkgs.ocamlPackages.ocamlformat_0_27_0;
 
         charon = pkgs.callPackage ./nix/charon.nix { inherit craneLib rustToolchain; };
+        charon-unwrapped = pkgs.callPackage ./nix/charon.nix { inherit craneLib rustToolchain; enableWrapping = false; };
+        charon-portable = pkgs.runCommand "charon-portable" { } ''
+          mkdir -p $out/bin
+          cp ${charon-unwrapped}/bin/charon $out/bin/charon
+          cp ${charon-unwrapped}/bin/charon-driver $out/bin/charon-driver
+
+          if [[ "${pkgs.stdenv.hostPlatform.system}" == *"linux"* ]]; then
+            for f in $out/bin/*; do
+              chmod +w $f
+              ${pkgs.patchelf}/bin/patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 $f || true
+              ${pkgs.patchelf}/bin/patchelf --remove-rpath $f || true
+            done
+          fi
+        '';
         charon-ml = pkgs.callPackage ./nix/charon-ml.nix { inherit charon; };
 
         # Check rust files are correctly formatted.
@@ -70,24 +84,25 @@
 
         # A utility that extracts the llbc of a crate using charon. This uses
         # `crane` to handle dependencies and toolchain management.
-        extractCrateWithCharon = { name, src, charonFlags ? "", craneExtraArgs ? { } }:
+        extractCrateWithCharon = { name, src, charonArgs ? "", cargoArgs ? "", craneExtraArgs ? { } }:
           craneLib.buildPackage ({
-            inherit name;
+            name = "${name}.llbc";
             src = pkgs.lib.cleanSourceWith {
               inherit src;
               filter = path: type: (craneLib.filterCargoSources path type);
             };
             cargoArtifacts = craneLib.buildDepsOnly { inherit src; };
             buildPhase = ''
-              ${charon}/bin/charon ${charonFlags} --dest $out/llbc
+              ${charon}/bin/charon cargo ${charonArgs} --dest-file $out -- ${cargoArgs}
             '';
             dontInstall = true;
+            doCheck = false;
           } // craneExtraArgs);
       in
       {
         packages = {
-          inherit charon charon-ml rustToolchain;
-          inherit (rustc-tests) toolchain_commit rustc-tests;
+          inherit charon charon-unwrapped charon-portable charon-ml rustToolchain;
+          inherit (rustc-tests) rustc-tests;
           default = charon;
         };
         devShells.default = pkgs.mkShell {
@@ -127,7 +142,7 @@
         };
         devShells.ci = pkgs.mkShell {
           packages = [
-            pkgs.gitAndTools.gh
+            pkgs.gh
             pkgs.jq
             pkgs.python3
             pkgs.toml2json

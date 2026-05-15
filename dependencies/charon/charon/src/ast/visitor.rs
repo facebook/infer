@@ -13,9 +13,8 @@
 use std::{any::Any, collections::HashMap};
 
 use crate::ast::*;
+use crate::ids::{Idx, IndexVec};
 use derive_generic_visitor::*;
-use index_vec::Idx;
-use indexmap::IndexMap;
 
 /// An overrideable visitor trait that can be used to conveniently traverse the whole contents of
 /// an item. This is useful when e.g. dealing with types, which show up pretty much everywhere in
@@ -39,19 +38,24 @@ use indexmap::IndexMap;
     // Defines the `Visit[Mut]` traits and the `drive[_mut]` method that drives them.
     visitor(drive(&VisitAst)),
     visitor(drive_mut(&mut VisitAstMut)),
+    // Types that we ignore.
+    skip(()),
     // Types that we unconditionally explore.
     drive(
-        AbortKind, Assert, BinOp, Body, BorrowKind, BuiltinFunId, BuiltinIndexOp, BuiltinTy, Call,
-        CastKind, ClosureInfo, ClosureKind, ConstGenericVar, ConstGenericVarId,
+        AbortKind, Assert, BinOp, BorrowKind, BuiltinAssertKind, BuiltinFunId, BuiltinIndexOp, BuiltinTy,
+        Call, CastKind, ClosureInfo, ClosureKind, ConstGenericParam, ConstGenericVarId,
         Disambiguator, DynPredicate, Field, FieldId, FieldProjKind, FloatTy, FloatValue,
-        FnOperand, FunId, FunIdOrTraitMethodRef, FunSig, ImplElem, IntegerTy, IntTy, UIntTy, Literal, LiteralTy,
-        llbc_ast::ExprBody, llbc_ast::RawStatement, llbc_ast::Switch,
-        Locals, Name, NullOp, Opaque, Operand, PathElem, PlaceKind, ProjectionElem, RawConstantExpr,
-        RefKind, RegionId, RegionVar, ScalarValue, TraitItemName,
-        TranslatedCrate, TypeDeclKind, TypeId, TypeVar, TypeVarId, llbc_ast::StatementId,
-        ullbc_ast::BlockData, ullbc_ast::BlockId, ullbc_ast::ExprBody, ullbc_ast::RawStatement,
-        ullbc_ast::RawTerminator, ullbc_ast::SwitchTargets,
-        UnOp, UnsizingMetadata, Local, Variant, VariantId, LocalId, CopyNonOverlapping, Layout, VariantLayout, PtrMetadata, VTable,
+        FnOperand, FunId, FnPtrKind, FunSig, ImplElem, IntegerTy, IntTy, UIntTy, Literal, LiteralTy,
+        llbc_ast::ExprBody, llbc_ast::StatementKind, llbc_ast::Switch,
+        Locals, Name, NullOp, Operand, PathElem, PlaceKind, ProjectionElem, ConstantExprKind,
+        RefKind, RegionId, RegionParam, ScalarValue, TraitItemName,
+        TranslatedCrate, TypeDeclKind, TypeId, TypeParam, TypeVarId, llbc_ast::StatementId,
+        ullbc_ast::BlockData, ullbc_ast::BlockId, ullbc_ast::ExprBody, ullbc_ast::StatementKind,
+        ullbc_ast::TerminatorKind, ullbc_ast::SwitchTargets,
+        UnOp, UnsizingMetadata, Local, Variant, VariantId, LocalId, CopyNonOverlapping, Layout, VariantLayout, PtrMetadata,
+        TraitAssocTy, TraitAssocConst, TraitMethod, TraitAssocTyImpl,
+        ItemByVal, VTableField,
+        for<Id: AstVisitable> DeclRef<Id>, ItemId,
         for<T: AstVisitable> Box<T>,
         for<T: AstVisitable> Option<T>,
         for<A: AstVisitable, B: AstVisitable> (A, B),
@@ -59,20 +63,22 @@ use indexmap::IndexMap;
         for<A: AstVisitable, B: AstVisitable> Result<A, B>,
         for<A: AstVisitable, B: AstVisitable> OutlivesPred<A, B>,
         for<T: AstVisitable> Vec<T>,
-        for<I: Idx, T: AstVisitable> Vector<I, T>,
+        for<T: AstVisitable + HashConsable> HashConsed<T>,
+        for<I: Idx, T: AstVisitable> IndexMap<I, T>,
+        for<I: Idx, T: AstVisitable> IndexVec<I, T>,
     ),
     // Types for which we call the corresponding `visit_$ty` method, which by default explores the
     // type but can be overridden.
     override(
-        DeBruijnId, Ty, TyKind, Region, ConstGeneric, TraitRef, TraitRefKind,
-        TypeDeclRef, FunDeclRef, MaybeBuiltinFunDeclRef, TraitMethodRef, GlobalDeclRef, TraitDeclRef, TraitImplRef,
-        GenericArgs, GenericParams, TraitClause, TraitClauseId, TraitTypeConstraint, Place, Rvalue,
+        DeBruijnId, Ty, TyKind, Region, TraitRef, TraitRefContents, TraitRefKind,
+        TypeDeclRef, FunDeclRef, TraitMethodRef, GlobalDeclRef, TraitDeclRef, TraitImplRef,
+        GenericArgs, GenericParams, TraitParam, TraitClauseId, TraitTypeConstraint, Place, Rvalue, Body,
         for<T: AstVisitable + Idx> DeBruijnVar<T>,
         for<T: AstVisitable> RegionBinder<T>,
         for<T: AstVisitable> Binder<T>,
         llbc_block: llbc_ast::Block, llbc_statement: llbc_ast::Statement,
         ullbc_statement: ullbc_ast::Statement, ullbc_terminator: ullbc_ast::Terminator,
-        AggregateKind, FnPtr, ItemKind, ItemMeta, Span, ConstantExpr,
+        AggregateKind, FnPtr, ItemSource, ItemMeta, Span, ConstantExpr,
         FunDeclId, GlobalDeclId, TypeDeclId, TraitDeclId, TraitImplId,
         FunDecl, GlobalDecl, TypeDecl, TraitDecl, TraitImpl,
     )
@@ -109,7 +115,7 @@ impl<K: Any, T: AstVisitable> AstVisitable for HashMap<K, T> {
 }
 
 /// Manual impl that only visits the values
-impl<K: Any, T: AstVisitable> AstVisitable for IndexMap<K, T> {
+impl<K: Any, T: AstVisitable> AstVisitable for SeqHashMap<K, T> {
     fn drive<V: VisitAst>(&self, v: &mut V) -> ControlFlow<V::Break> {
         for x in self.values() {
             v.visit(x)?;
@@ -142,32 +148,33 @@ impl<K: Any, T: AstVisitable> AstVisitable for IndexMap<K, T> {
     visitor(drive_body_mut(&mut VisitBodyMut)),
     // Types that are ignored when encountered.
     skip(
-        AbortKind, BinOp, BorrowKind, ConstantExpr, ConstGeneric, FieldId, FieldProjKind,
-        TypeDeclRef, FunDeclId, FunIdOrTraitMethodRef, GenericArgs, GlobalDeclRef, IntegerTy, IntTy, UIntTy,
-        NullOp, RefKind, ScalarValue, Span, Ty, TypeDeclId, TypeId, UnOp, VariantId, LocalId,
-        TraitRef,
+        AbortKind, BinOp, BorrowKind, BuiltinAssertKind, ConstantExpr, FieldId, FieldProjKind,
+        TypeDeclRef, FunDeclId, FnPtrKind, GenericArgs, GlobalDeclRef, IntegerTy, IntTy, UIntTy,
+        NullOp, RefKind, ScalarValue, Span, Ty, TypeDeclId, TypeId, UnOp, VariantId,
+        TraitRef, LiteralTy, Literal, RegionId, ()
     ),
     // Types that we unconditionally explore.
     drive(
         Assert, PlaceKind,
-        llbc_ast::ExprBody, llbc_ast::RawStatement, llbc_ast::Switch,
-        ullbc_ast::BlockData, ullbc_ast::ExprBody, ullbc_ast::RawStatement,
-        ullbc_ast::RawTerminator, ullbc_ast::SwitchTargets, CopyNonOverlapping,
+        llbc_ast::ExprBody, llbc_ast::StatementKind, llbc_ast::Switch,
+        ullbc_ast::BlockData, ullbc_ast::ExprBody, ullbc_ast::StatementKind,
+        ullbc_ast::TerminatorKind, ullbc_ast::SwitchTargets, CopyNonOverlapping,
         llbc_ast::StatementId,
-        Body, Opaque, Locals, Local,
+        Body, Local,
         for<T: BodyVisitable> Box<T>,
         for<T: BodyVisitable> Option<T>,
         for<T: BodyVisitable, E: BodyVisitable> Result<T, E>,
         for<A: BodyVisitable, B: BodyVisitable> (A, B),
         for<A: BodyVisitable, B: BodyVisitable, C: BodyVisitable> (A, B, C),
         for<T: BodyVisitable> Vec<T>,
-        for<I: Idx, T: BodyVisitable> Vector<I, T>,
+        for<I: Idx, T: BodyVisitable> IndexMap<I, T>,
+        for<I: Idx, T: BodyVisitable> IndexVec<I, T>,
     ),
     // Types for which we call the corresponding `visit_$ty` method, which by default explores the
     // type but can be overridden.
     override(
         AggregateKind, Call, FnOperand, FnPtr,
-        Operand, Place, ProjectionElem, Rvalue,
+        Operand, Place, ProjectionElem, Rvalue, Locals, LocalId,
         llbc_block: llbc_ast::Block,
         llbc_statement: llbc_ast::Statement,
         ullbc_statement: ullbc_ast::Statement,
@@ -409,9 +416,9 @@ mod wrappers {
     }
 
     pub trait VisitorWithItem: VisitAst {
-        fn enter_item(&mut self, _item: AnyTransItem<'_>) {}
-        fn exit_item(&mut self, _item: AnyTransItem<'_>) {}
-        fn visit_item(&mut self, item: AnyTransItem<'_>) -> ControlFlow<Self::Break> {
+        fn enter_item(&mut self, _item: ItemRef<'_>) {}
+        fn exit_item(&mut self, _item: ItemRef<'_>) {}
+        fn visit_item(&mut self, item: ItemRef<'_>) -> ControlFlow<Self::Break> {
             self.enter_item(item);
             item.drive(self)?;
             self.exit_item(item);
@@ -419,9 +426,9 @@ mod wrappers {
         }
     }
     pub trait VisitorWithItemMut: VisitAstMut {
-        fn enter_item(&mut self, _item: AnyTransItemMut<'_>) {}
-        fn exit_item(&mut self, _item: AnyTransItemMut<'_>) {}
-        fn visit_item(&mut self, mut item: AnyTransItemMut<'_>) -> ControlFlow<Self::Break> {
+        fn enter_item(&mut self, _item: ItemRefMut<'_>) {}
+        fn exit_item(&mut self, _item: ItemRefMut<'_>) {}
+        fn visit_item(&mut self, mut item: ItemRefMut<'_>) -> ControlFlow<Self::Break> {
             self.enter_item(item.reborrow());
             item.drive_mut(self)?;
             self.exit_item(item);
@@ -440,19 +447,19 @@ mod wrappers {
             x.drive(self.inner())
         }
         fn visit_fun_decl(&mut self, x: &FunDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItem::Fun(x))
+            self.0.visit_item(ItemRef::Fun(x))
         }
         fn visit_type_decl(&mut self, x: &TypeDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItem::Type(x))
+            self.0.visit_item(ItemRef::Type(x))
         }
         fn visit_global_decl(&mut self, x: &GlobalDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItem::Global(x))
+            self.0.visit_item(ItemRef::Global(x))
         }
         fn visit_trait_decl(&mut self, x: &TraitDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItem::TraitDecl(x))
+            self.0.visit_item(ItemRef::TraitDecl(x))
         }
         fn visit_trait_impl(&mut self, x: &TraitImpl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItem::TraitImpl(x))
+            self.0.visit_item(ItemRef::TraitImpl(x))
         }
     }
     impl<V: VisitAstMut + VisitorWithItemMut> VisitAstMut for VisitWithItem<V> {
@@ -463,19 +470,19 @@ mod wrappers {
             x.drive_mut(self.inner())
         }
         fn visit_fun_decl(&mut self, x: &mut FunDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItemMut::Fun(x))
+            self.0.visit_item(ItemRefMut::Fun(x))
         }
         fn visit_type_decl(&mut self, x: &mut TypeDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItemMut::Type(x))
+            self.0.visit_item(ItemRefMut::Type(x))
         }
         fn visit_global_decl(&mut self, x: &mut GlobalDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItemMut::Global(x))
+            self.0.visit_item(ItemRefMut::Global(x))
         }
         fn visit_trait_decl(&mut self, x: &mut TraitDecl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItemMut::TraitDecl(x))
+            self.0.visit_item(ItemRefMut::TraitDecl(x))
         }
         fn visit_trait_impl(&mut self, x: &mut TraitImpl) -> ControlFlow<Self::Break> {
-            self.0.visit_item(AnyTransItemMut::TraitImpl(x))
+            self.0.visit_item(ItemRefMut::TraitImpl(x))
         }
     }
 
@@ -508,26 +515,26 @@ mod wrappers {
     impl<V: VisitAst + VisitorWithBinderStack> VisitorWithItem
         for DontLeakImplDetails<VisitWithBinderStack<V>>
     {
-        fn enter_item(&mut self, item: AnyTransItem<'_>) {
+        fn enter_item(&mut self, item: ItemRef<'_>) {
             self.0
                 .0
                 .binder_stack_mut()
                 .push(item.generic_params().clone());
         }
-        fn exit_item(&mut self, _item: AnyTransItem<'_>) {
+        fn exit_item(&mut self, _item: ItemRef<'_>) {
             self.0.0.binder_stack_mut().pop();
         }
     }
     impl<V: VisitAstMut + VisitorWithBinderStack> VisitorWithItemMut
         for DontLeakImplDetails<VisitWithBinderStack<V>>
     {
-        fn enter_item(&mut self, item: AnyTransItemMut<'_>) {
+        fn enter_item(&mut self, item: ItemRefMut<'_>) {
             self.0
                 .0
                 .binder_stack_mut()
                 .push(item.as_ref().generic_params().clone());
         }
-        fn exit_item(&mut self, _item: AnyTransItemMut<'_>) {
+        fn exit_item(&mut self, _item: ItemRefMut<'_>) {
             self.0.0.binder_stack_mut().pop();
         }
     }
@@ -621,7 +628,7 @@ mod wrappers {
     }
 
     impl<V: VisitAst + VisitorWithSpan> VisitorWithItem for DontLeakImplDetails<VisitWithSpan<V>> {
-        fn visit_item(&mut self, item: AnyTransItem<'_>) -> ControlFlow<Self::Break> {
+        fn visit_item(&mut self, item: ItemRef<'_>) -> ControlFlow<Self::Break> {
             let old_span = mem::replace(self.0.0.current_span(), item.item_meta().span);
             item.drive(self)?;
             *self.0.0.current_span() = old_span;
@@ -631,7 +638,7 @@ mod wrappers {
     impl<V: VisitAstMut + VisitorWithSpan> VisitorWithItemMut
         for DontLeakImplDetails<VisitWithSpan<V>>
     {
-        fn visit_item(&mut self, mut item: AnyTransItemMut<'_>) -> ControlFlow<Self::Break> {
+        fn visit_item(&mut self, mut item: ItemRefMut<'_>) -> ControlFlow<Self::Break> {
             let span = item.as_ref().item_meta().span;
             let old_span = mem::replace(self.0.0.current_span(), span);
             item.drive_mut(self)?;
@@ -674,7 +681,7 @@ mod wrappers {
         {
             x.drive(self.inner())
         }
-        fn visit_trait_clause(&mut self, x: &TraitClause) -> ControlFlow<Self::Break> {
+        fn visit_trait_param(&mut self, x: &TraitParam) -> ControlFlow<Self::Break> {
             match x.span {
                 Some(span) => self.visit_inner_track_span(x, span),
                 None => self.visit_inner(x),
@@ -703,7 +710,7 @@ mod wrappers {
         {
             x.drive_mut(self.inner())
         }
-        fn visit_trait_clause(&mut self, x: &mut TraitClause) -> ControlFlow<Self::Break> {
+        fn visit_trait_param(&mut self, x: &mut TraitParam) -> ControlFlow<Self::Break> {
             match x.span {
                 Some(span) => self.visit_inner_mut_track_span(x, span),
                 None => self.visit_inner(x),

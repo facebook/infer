@@ -1,5 +1,3 @@
-#![feature(register_tool)]
-#![register_tool(charon)]
 use std::fmt::Display;
 
 // Opaque because we don't support unsize coercions.

@@ -1,4 +1,3 @@
-//@ known-failure
 //! Regression test minimized from the rustc test suite. This used to cause a panic.
 trait HasGAT {
     type GAT<T>;

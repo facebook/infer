@@ -1,5 +1,3 @@
-#![feature(register_tool)]
-#![register_tool(charon)]
 //! Test that we scope things properly.
 
 trait Trait<'a> {

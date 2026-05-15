@@ -1,0 +1,28 @@
+error: failed to parse pattern `std::iter:once` (expected eof at :once)
+
+error: when processing starting pattern `start_from_errors::module1`: path `start_from_errors` does not correspond to any item; did you mean `crate::start_from_errors`?
+
+error: when processing starting pattern `module2`: path `module2` does not correspond to any item; did you mean `crate::module2`?
+
+error: Cannot register item `core::ops::deref::Deref::Target` with kind `AssocTy`
+ --> /rustc/library/core/src/ops/deref.rs:144:5
+
+error: when processing starting pattern `{impl crate::Type}`: `--start-from` does not support inherent impls
+ --> /rustc/library/core/src/ops/deref.rs:0:1
+
+error: when processing starting pattern `{impl crate::Trait for &crate::Type}`: `--start-from` only supports implementations on named types
+ --> /rustc/library/core/src/ops/deref.rs:0:1
+
+error: when processing starting pattern `{impl crate::Trait for crate::MissingType}`: path `crate::MissingType` does not correspond to any item
+ --> /rustc/library/core/src/ops/deref.rs:0:1
+
+error: when processing starting pattern `{impl crate::Trait<_> for _}`: `--start-from` does not support trait generics
+ --> /rustc/library/core/src/ops/deref.rs:0:1
+
+error: when processing starting pattern `{impl crate::Trait for crate::Type}::missing_method`: path `{impl crate::Trait for crate::Type}::missing_method` does not correspond to any item
+ --> /rustc/library/core/src/ops/deref.rs:0:1
+
+error: when processing starting pattern `crate::{impl crate::Trait for crate::Type}`: `--start-from` only supports impl patterns if they're the first element of the path
+ --> /rustc/library/core/src/ops/deref.rs:0:1
+
+ERROR Code failed to compile

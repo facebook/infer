@@ -1,0 +1,52 @@
+# Final ULLBC before serialization:
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _1: [i32; 3 : usize]; // anonymous local
+    let _2: usize; // anonymous local
+    let _3: i32; // anonymous local
+    let _4: i32; // anonymous local
+    let x_5: i8; // local
+    let _6: i8; // anonymous local
+    let _7: i8; // anonymous local
+    let _8: i32; // anonymous local
+    let _9: i32; // anonymous local
+
+    bb0: {
+        storage_live(_4);
+        _0 = ();
+        storage_live(_1);
+        _1 = [const 1 : i32, const 2 : i32, const 3 : i32];
+        storage_live(_2);
+        _2 = const 0 : usize;
+        _ = _1[copy _2];
+        storage_dead(_2);
+        storage_dead(_1);
+        storage_live(_3);
+        _4 = const 5 : i32 panic.* const 10 : i32;
+        _3 = move _4;
+        storage_dead(_3);
+        storage_live(x_5);
+        x_5 = const 127 : i8;
+        storage_live(_6);
+        storage_live(_7);
+        _7 = copy x_5;
+        _6 = panic.-(move _7);
+        storage_dead(_7);
+        storage_dead(_6);
+        storage_live(_8);
+        _8 = const 1 : i32 panic./ const 0 : i32;
+        storage_dead(_8);
+        storage_live(_9);
+        _9 = const 1 : i32 panic.% const 0 : i32;
+        storage_dead(_9);
+        _0 = ();
+        storage_dead(x_5);
+        return;
+    }
+}
+
+
+

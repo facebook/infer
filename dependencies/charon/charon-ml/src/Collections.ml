@@ -33,6 +33,24 @@ module List = struct
     let ls, _ = split_at ls (j - i) in
     ls
 
+  (** Split into chunks of last [n] (but the last chunk whose length can be < n)
+  *)
+  let rec chunks n ls =
+    if n <= 0 then invalid_arg "chunks: chunk size must be positive"
+    else
+      match ls with
+      | [] -> []
+      | _ ->
+          let rec take_n acc k xs =
+            if k = 0 then (List.rev acc, xs)
+            else
+              match xs with
+              | [] -> (List.rev acc, [])
+              | x :: xs -> take_n (x :: acc) (k - 1) xs
+          in
+          let chunk, rest = take_n [] n ls in
+          chunk :: chunks n rest
+
   (** Pop the last element of a list
 
       Raise [Failure] if the list is empty. *)
@@ -128,7 +146,7 @@ module List = struct
       (l2 : 'c list) : 'd list =
     match (l0, l1, l2) with
     | [], [], [] -> []
-    | a :: l0, b :: l1, c :: l3 -> f a b c :: map3 f l0 l1 l2
+    | a :: l0, b :: l1, c :: l2 -> f a b c :: map3 f l0 l1 l2
     | _ ->
         raise
           (Invalid_argument "List.combine3 expects lists of the same length")
@@ -137,7 +155,7 @@ module List = struct
       ('a * 'b * 'c) list =
     match (l0, l1, l2) with
     | [], [], [] -> []
-    | a :: l0, b :: l1, c :: l3 -> (a, b, c) :: combine3 l0 l1 l2
+    | a :: l0, b :: l1, c :: l2 -> (a, b, c) :: combine3 l0 l1 l2
     | _ ->
         raise
           (Invalid_argument "List.combine3 expects lists of the same length")
@@ -164,6 +182,15 @@ module List = struct
     | (a, b, c, d, e) :: l ->
         let l0, l1, l2, l3, l4 = split5 l in
         (a :: l0, b :: l1, c :: l2, d :: l3, e :: l4)
+
+  let fold_left_map2 :
+      ('acc -> 'a -> 'b -> 'acc * 'c) ->
+      'acc ->
+      'a list ->
+      'b list ->
+      'acc * 'c list =
+   fun f acc l0 l1 ->
+    fold_left_map (fun acc (a, b) -> f acc a b) acc (List.combine l0 l1)
 end
 
 module type OrderedType = sig
@@ -198,6 +225,10 @@ module type Map = sig
 
   (** Add a binding in the map, failing if the binding already exists *)
   val add_strict : key -> 'a -> 'a t -> 'a t
+
+  (** Add a binding in the map, failing if the binding already exists and maps
+      to a value which is different from the one given as input *)
+  val add_strict_or_unchanged : key -> 'a -> 'a t -> 'a t
 
   val add_list : (key * 'a) list -> 'a t -> 'a t
   val of_list : (key * 'a) list -> 'a t
@@ -239,6 +270,13 @@ module MakeMap (Ord : OrderedType) : Map with type key = Ord.t = struct
 
   let add_strict k v m =
     assert (not (mem k m));
+    add k v m
+
+  let add_strict_or_unchanged k v m =
+    assert (
+      match find_opt k m with
+      | None -> true
+      | Some v' -> v = v');
     add k v m
 
   let add_list bl m = List.fold_left (fun s (key, e) -> add key e s) m bl
@@ -412,6 +450,7 @@ module type InjMap = sig
 
   val empty : t
   val is_empty : t -> bool
+  val to_map : t -> elem Map.t
   val mem : key -> t -> bool
   val add : key -> elem -> t -> t
   val singleton : key -> elem -> t
@@ -481,6 +520,7 @@ module MakeInjMap (Key : OrderedType) (Elem : OrderedType) :
 
   let empty = { map = Map.empty; elems = Set.empty }
   let is_empty m = Map.is_empty m.map
+  let to_map m = m.map
   let mem k m = Map.mem k m.map
 
   let add k e m =

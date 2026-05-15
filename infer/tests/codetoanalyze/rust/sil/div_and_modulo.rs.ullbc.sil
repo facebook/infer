@@ -9,6 +9,7 @@
 define div_and_modulo::main() : void {
   local var_0: void, a_1: int, b_2: int, var_3: int, var_4: int, var_5: int, var_6: int, var_7: int, var_8: int, c_9: int, d_10: int, var_11: int, var_12: int, var_13: int, var_14: int, var_15: int, var_16: int, e_17: int, f_18: int, var_19: int, var_20: int, var_21: int, var_22: int, var_23: int, var_24: int
   #node_0:
+      store &var_0 <- null:void
       store &a_1 <- 7:int
       store &b_2 <- 3:int
       n0:int = load &a_1
@@ -57,7 +58,6 @@ define div_and_modulo::main() : void {
       n22:int = load &var_23
       n23:int = load &var_24
       store &var_22 <- __sil_mod(n22, n23):int
-      store &var_0 <- null:void
       store &var_0 <- null:void
       n24:void = load &var_0
       ret n24

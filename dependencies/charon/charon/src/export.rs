@@ -1,28 +1,77 @@
 use crate::ast::*;
 use crate::transform::TransformCtx;
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 use std::fs::File;
 use std::path::Path;
 
 /// The data of a generic crate. We serialize this to pass it to `charon-ml`, so this must be as
 /// stable as possible. This is used for both ULLBC and LLBC.
-#[derive(Serialize, Deserialize)]
-#[serde(rename = "Crate")]
+#[derive(SerializeState, DeserializeState)]
 pub struct CrateData {
     /// The version of charon currently being used. `charon-ml` inspects this and errors if it is
     /// trying to read an incompatible version (for now we compare versions for equality).
-    #[serde(deserialize_with = "ensure_version")]
-    pub charon_version: String,
+    #[serde_state(stateless)]
+    pub charon_version: CharonVersion,
     pub translated: TranslatedCrate,
-    #[serde(skip)]
+    #[serde_state(stateless)]
+    #[charon::opaque] // Don't change, this would break version detection for old charon-ml
     /// If there were errors, this contains only a partial description of the input crate.
     pub has_errors: bool,
+}
+
+impl Serialize for CrateData {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        if self.translated.options.no_dedup_serialized_ast {
+            self.serialize_state(&(), serializer)
+        } else {
+            let state = HashConsDedupSerializer::default();
+            self.serialize_state(&state, serializer)
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for CrateData {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        // Always provide the state, just in case.
+        let state = HashConsDedupSerializer::default();
+        Self::deserialize_state(&state, deserializer)
+    }
+}
+
+#[derive(Serialize)]
+pub struct CharonVersion(pub String);
+
+impl<'de> Deserialize<'de> for CharonVersion {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use serde::de::Error;
+        let version = String::deserialize(deserializer)?;
+        if version != crate::VERSION {
+            return Err(D::Error::custom(format!(
+                "Incompatible version of charon: \
+                this program supports llbc emitted by charon v{} \
+                but attempted to read a file emitted by charon v{}",
+                crate::VERSION,
+                version,
+            )));
+        }
+        Ok(CharonVersion(version))
+    }
 }
 
 impl CrateData {
     pub fn new(ctx: TransformCtx) -> Self {
         CrateData {
-            charon_version: crate::VERSION.to_owned(),
+            charon_version: CharonVersion(crate::VERSION.to_owned()),
             has_errors: ctx.has_errors(),
             translated: ctx.translated,
         }
@@ -49,10 +98,11 @@ impl CrateData {
             return Err(());
         };
         // Write to the file.
-        match serde_json::to_writer(&outfile, self) {
+        let res = serde_json::to_writer(&outfile, self);
+        match res {
             Ok(()) => {}
             Err(err) => {
-                error!("Could not write to `{target_filename:?}`: {err:?}");
+                error!("Could not serialize to `{target_filename:?}`: {err:?}");
                 return Err(());
             }
         }
@@ -70,19 +120,4 @@ impl CrateData {
         }
         Ok(())
     }
-}
-
-fn ensure_version<'de, D: Deserializer<'de>>(d: D) -> Result<String, D::Error> {
-    use serde::de::Error;
-    let version = String::deserialize(d)?;
-    if version != crate::VERSION {
-        return Err(D::Error::custom(format!(
-            "Incompatible version of charon: \
-            this program supports llbc emitted by charon v{} \
-            but attempted to read a file emitted by charon v{}",
-            crate::VERSION,
-            version,
-        )));
-    }
-    Ok(version)
 }

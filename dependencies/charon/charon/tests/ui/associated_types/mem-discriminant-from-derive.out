@@ -1,0 +1,161 @@
+# Final LLBC before serialization:
+
+// Full name: core::cmp::PartialEq
+#[lang_item("eq")]
+pub trait PartialEq<Self, Rhs>
+{
+    fn eq<'_0_1, '_1_1> = core::cmp::PartialEq::eq<'_0_1, '_1_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialEq::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1, Self, Rhs>(_1: &'_0 Self, _2: &'_1 Rhs) -> bool
+where
+    [@TraitClause0]: PartialEq<Self, Rhs>,
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<u8> for u8}::eq
+pub fn {impl PartialEq<u8> for u8}::eq<'_0, '_1>(_1: &'_0 u8, _2: &'_1 u8) -> bool
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<u8> for u8}
+impl PartialEq<u8> for u8 {
+    fn eq<'_0_1, '_1_1> = {impl PartialEq<u8> for u8}::eq<'_0_1, '_1_1>
+    vtable: {impl PartialEq<u8> for u8}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialEq<&'_0 B> for &'_1 A}::eq
+pub fn {impl PartialEq<&'_0 B> for &'_1 A}::eq<'_0, '_1, '_2, '_3, A, B>(_1: &'_2 &'_1 A, _2: &'_3 &'_0 B) -> bool
+where
+    [@TraitClause0]: PartialEq<A, B>,
+= <opaque>
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::StructuralPartialEq
+#[lang_item("structural_peq")]
+pub trait StructuralPartialEq<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::marker::StructuralPartialEq::{vtable}
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Enum
+enum Enum {
+  Some(u8),
+  None,
+}
+
+// Full name: test_crate::{impl StructuralPartialEq for Enum}
+impl StructuralPartialEq for Enum {
+    parent_clause0 = {built_in impl MetaSized for Enum}
+    vtable: {impl StructuralPartialEq for Enum}::{vtable}
+}
+
+// Full name: test_crate::{impl PartialEq<Enum> for Enum}::eq
+pub fn {impl PartialEq<Enum> for Enum}::eq<'_0, '_1>(_1: &'_0 Enum, _2: &'_1 Enum) -> bool
+{
+    let _0: bool; // return
+    let self_1: &'1 Enum; // arg #1
+    let other_2: &'2 Enum; // arg #2
+    let __self_discr_3: isize; // local
+    let _4: &'3 Enum; // anonymous local
+    let __arg1_discr_5: isize; // local
+    let _6: &'4 Enum; // anonymous local
+    let _7: bool; // anonymous local
+    let _8: isize; // anonymous local
+    let _9: isize; // anonymous local
+    let _10: (&'7 Enum, &'8 Enum); // anonymous local
+    let _11: &'9 Enum; // anonymous local
+    let _12: &'10 Enum; // anonymous local
+    let __self_0_13: &'12 u8; // local
+    let __arg1_0_14: &'13 u8; // local
+    let _15: &'16 &'17 u8; // anonymous local
+    let _16: &'18 &'19 u8; // anonymous local
+
+    storage_live(__self_discr_3)
+    storage_live(_4)
+    _4 = &(*self_1)
+    __self_discr_3 = @discriminant((*_4))
+    storage_dead(_4)
+    storage_live(__arg1_discr_5)
+    storage_live(_6)
+    _6 = &(*other_2)
+    __arg1_discr_5 = @discriminant((*_6))
+    storage_dead(_6)
+    storage_live(_7)
+    storage_live(_8)
+    _8 = copy __self_discr_3
+    storage_live(_9)
+    _9 = copy __arg1_discr_5
+    _7 = move _8 == move _9
+    if move _7 {
+        storage_dead(_9)
+        storage_dead(_8)
+        storage_live(_10)
+        storage_live(_11)
+        _11 = copy self_1
+        storage_live(_12)
+        _12 = copy other_2
+        _10 = (move _11, move _12)
+        storage_dead(_12)
+        storage_dead(_11)
+        match (*_10.0) {
+            Enum::Some => {
+                match (*_10.1) {
+                    Enum::Some => {
+                        storage_live(__self_0_13)
+                        __self_0_13 = &((*_10.0) as variant Enum::Some).0
+                        storage_live(__arg1_0_14)
+                        __arg1_0_14 = &((*_10.1) as variant Enum::Some).0
+                        storage_live(_15)
+                        _15 = &__self_0_13
+                        storage_live(_16)
+                        _16 = &__arg1_0_14
+                        _0 = {impl PartialEq<&'_0 B> for &'_1 A}::eq<'28, '29, '32, '33, u8, u8>[{impl PartialEq<u8> for u8}](move _15, move _16)
+                        storage_dead(_16)
+                        storage_dead(_15)
+                        storage_dead(__arg1_0_14)
+                        storage_dead(__self_0_13)
+                    },
+                    _ => {
+                        _0 = const true
+                    },
+                }
+            },
+            _ => {
+                _0 = const true
+            },
+        }
+        storage_dead(_10)
+    } else {
+        storage_dead(_9)
+        storage_dead(_8)
+        _0 = const false
+    }
+    storage_dead(_7)
+    storage_dead(__arg1_discr_5)
+    storage_dead(__self_discr_3)
+    return
+}
+
+// Full name: test_crate::{impl PartialEq<Enum> for Enum}
+impl PartialEq<Enum> for Enum {
+    fn eq<'_0_1, '_1_1> = {impl PartialEq<Enum> for Enum}::eq<'_0_1, '_1_1>
+    vtable: {impl PartialEq<Enum> for Enum}::{vtable}
+}
+
+
+

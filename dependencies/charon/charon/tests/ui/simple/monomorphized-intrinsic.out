@@ -1,0 +1,80 @@
+# Final LLBC before serialization:
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::E1
+enum E1 {
+  A,
+  B,
+}
+
+// Full name: test_crate::E2
+enum E2 {
+  A,
+  B,
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _1: isize; // anonymous local
+    let _2: &'1 E1; // anonymous local
+    let _3: &'2 E1; // anonymous local
+    let _4: isize; // anonymous local
+    let _5: &'4 E2; // anonymous local
+    let _6: &'5 E2; // anonymous local
+    let _7: &'6 E2; // anonymous local
+    let _8: &'7 E1; // anonymous local
+    let _9: &'14 E1; // anonymous local
+    let _10: E1; // anonymous local
+    let _11: &'15 E2; // anonymous local
+    let _12: E2; // anonymous local
+
+    storage_live(_9)
+    storage_live(_10)
+    // We detect these in a pass; this test makes sure we don't mess up the generics in `--mono`
+    // mode.
+    _10 = E1::A {  }
+    _9 = &_10
+    storage_live(_7)
+    storage_live(_8)
+    _0 = ()
+    storage_live(_1)
+    storage_live(_2)
+    storage_live(_3)
+    _8 = move _9
+    _3 = &(*_8)
+    _2 = &(*_3)
+    _1 = @discriminant((*_2))
+    storage_live(_11)
+    storage_live(_12)
+    _12 = E2::A {  }
+    _11 = &_12
+    storage_dead(_2)
+    storage_dead(_3)
+    storage_dead(_1)
+    storage_live(_4)
+    storage_live(_5)
+    storage_live(_6)
+    _7 = move _11
+    _6 = &(*_7)
+    _5 = &(*_6)
+    _4 = @discriminant((*_5))
+    storage_dead(_5)
+    storage_dead(_6)
+    storage_dead(_4)
+    _0 = ()
+    return
+}
+
+
+

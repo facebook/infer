@@ -1,5 +1,8 @@
 //@ charon-args=--extract-opaque-bodies
 //@ charon-args=--opaque core::ptr::copy_nonoverlapping::precondition_check
+//@ charon-args=--opaque core::alloc::layout::_::new
+//@ charon-args=--opaque core::alloc::layout::_::from_size_align_unchecked
+//@ charon-args=--opaque core::alloc::layout::Layout
 
 use std::mem;
 use std::ptr;

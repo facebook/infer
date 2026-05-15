@@ -6,6 +6,7 @@ open Ast
 %token <Ast.var option> VAR // For types and const generics
 %token <Ast.var option> REGION
 %token <Z.t> INT
+%token WILDCARD
 %token STATIC_REGION
 %token SEP TRUE FALSE
 %token LEFT_BRACKET RIGHT_BRACKET
@@ -38,6 +39,7 @@ pattern:
   | e=pattern_elem SEP n=pattern { e :: n }
 
 pattern_elem:
+  | WILDCARD { PWild }
   // (Instantiated) identifier
   | id=IDENT { PIdent (id, 0, []) }
   | id=IDENT; HASH; disamb=INT { PIdent (id, Z.to_int disamb, []) }

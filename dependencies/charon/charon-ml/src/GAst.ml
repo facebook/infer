@@ -24,14 +24,15 @@ type trait_declaration_group = TraitDeclId.id g_declaration_group
 [@@deriving show]
 
 type trait_impl_group = TraitImplId.id g_declaration_group [@@deriving show]
-type mixed_declaration_group = any_decl_id g_declaration_group [@@deriving show]
+type mixed_declaration_group = item_id g_declaration_group [@@deriving show]
 
 (* Hand-written because the rust equivalent isn't generic *)
 type 'body gfun_decl = {
   def_id : FunDeclId.id;
   item_meta : item_meta;
+  generics : generic_params;
   signature : fun_sig;
-  kind : item_kind;
+  src : item_source;
   is_global_initializer : GlobalDeclId.id option;
   body : 'body gexpr_body option;
 }
@@ -53,5 +54,6 @@ type 'fun_body gcrate = {
   global_decls : global_decl GlobalDeclId.Map.t;
   trait_decls : trait_decl TraitDeclId.Map.t;
   trait_impls : trait_impl TraitImplId.Map.t;
+  unit_metadata : global_decl_ref;
 }
 [@@deriving show]

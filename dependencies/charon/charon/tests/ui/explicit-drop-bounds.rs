@@ -1,4 +1,4 @@
-//@ charon-args=--add-drop-bounds
+//@ charon-args=--precise-drops
 trait Trait<T> {
     type Type;
     fn foo<U>(x: U) {}

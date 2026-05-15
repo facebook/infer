@@ -1,0 +1,72 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}::drop_in_place
+unsafe fn {impl Destruct for Global}::drop_in_place(_1: *mut Global)
+= <opaque>
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}
+impl Destruct for Global {
+    fn drop_in_place = {impl Destruct for Global}::drop_in_place
+    non-dyn-compatible
+}
+
+// Full name: test_crate::KeccakState
+struct KeccakState {}
+
+// Full name: test_crate::PortableHash
+struct PortableHash<const K : usize> {
+  shake128_state: [KeccakState; K],
+  make_non_trivial: alloc::boxed::Box<u32>[{built_in impl MetaSized for u32}, {built_in impl Sized for Global}, {built_in impl Destruct for u32}, {impl Destruct for Global}],
+}
+
+// Full name: test_crate::PortableHash::{impl Destruct for PortableHash<K>}::drop_in_place
+unsafe fn {impl Destruct for PortableHash<K>}::drop_in_place<const K : usize>(_1: *mut PortableHash<K>)
+= <opaque>
+
+// Full name: test_crate::PortableHash::{impl Destruct for PortableHash<K>}
+impl<const K : usize> Destruct for PortableHash<K> {
+    fn drop_in_place = {impl Destruct for PortableHash<K>}::drop_in_place<K>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::foo
+fn foo(_1: PortableHash<42 : usize>)
+{
+    let _0: (); // return
+    let _1: PortableHash<42 : usize>; // arg #1
+
+    _0 = ()
+    _0 = ()
+    drop[{impl Destruct for PortableHash<K>}<42 : usize>] _1
+    return
+}
+
+
+

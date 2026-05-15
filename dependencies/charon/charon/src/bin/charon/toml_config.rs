@@ -17,16 +17,6 @@ pub struct TomlConfig {
 #[derive(Debug, Default, Deserialize)]
 pub struct CharonTomlConfig {
     #[serde(default)]
-    pub lib: bool,
-    #[serde(default)]
-    pub bin: Option<String>,
-    #[serde(default)]
-    pub mir_promoted: bool,
-    #[serde(default)]
-    pub mir_optimized: bool,
-    #[serde(default)]
-    pub polonius: bool,
-    #[serde(default)]
     pub extract_opaque_bodies: bool,
     #[serde(default)]
     pub include: Vec<String>,
@@ -34,8 +24,6 @@ pub struct CharonTomlConfig {
     pub opaque: Vec<String>,
     #[serde(default)]
     pub exclude: Vec<String>,
-    #[serde(default)]
-    pub no_merge_goto_chains: bool,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -48,17 +36,11 @@ impl TomlConfig {
     /// Applies the options specified in the toml file to the cli options. In case of conflict, cli
     /// options take precedence.
     pub(crate) fn apply(self, mut config: CliOpts) -> CliOpts {
-        config.lib |= self.charon.lib;
-        config.bin = config.bin.or(self.charon.bin);
-        config.mir_promoted |= self.charon.mir_promoted;
-        config.mir_optimized |= self.charon.mir_optimized;
-        config.use_polonius |= self.charon.polonius;
         config.extract_opaque_bodies |= self.charon.extract_opaque_bodies;
         config.include.extend(self.charon.include);
         config.opaque.extend(self.charon.opaque);
         config.exclude.extend(self.charon.exclude);
         config.rustc_args.extend(self.rustc.flags);
-        config.no_merge_goto_chains |= self.charon.no_merge_goto_chains;
         config
     }
 }

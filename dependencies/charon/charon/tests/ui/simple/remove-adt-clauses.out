@@ -1,0 +1,47 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self, Self_Type>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_Type>
+    vtable: test_crate::Trait::{vtable}<Self_Type>
+}
+
+// Full name: test_crate::{impl Trait<bool> for u32}
+impl Trait<bool> for u32 {
+    parent_clause0 = {built_in impl MetaSized for u32}
+    parent_clause1 = {built_in impl Sized for bool}
+    vtable: {impl Trait<bool> for u32}::{vtable}
+}
+
+// Full name: test_crate::Foo
+struct Foo<T, Clause1_Type> {
+  Clause1_Type,
+}
+
+// Full name: test_crate::foo
+fn foo(_1: Foo<u32, bool>)
+{
+    let _0: (); // return
+    let _x_1: Foo<u32, bool>; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+
+

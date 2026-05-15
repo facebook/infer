@@ -3,6 +3,9 @@ use assert_cmd::prelude::CommandCargoExt;
 use itertools::Itertools;
 use std::{path::PathBuf, process::Command};
 
+mod util;
+use util::*;
+
 fn charon<T>(args: &[&str], dir: &str, f: impl FnOnce(String, String) -> Result<T>) -> Result<T> {
     let cmd_str = std::iter::once("charon")
         .chain(args.iter().copied())
@@ -61,6 +64,14 @@ fn charon_version() -> Result<()> {
 }
 
 #[test]
+fn charon_help_output() -> Result<()> {
+    charon(&["help", "rustc"], ".", |stdout, _| {
+        compare_or_overwrite(stdout, &PathBuf::from("./tests/help-output.txt"))?;
+        Ok(())
+    })
+}
+
+#[test]
 fn charon_cargo_p_crate2() -> Result<()> {
     charon(
         &["cargo", "--print-llbc", "--", "-p", "crate2", "--quiet"],
@@ -104,12 +115,6 @@ fn charon_cargo_features() -> Result<()> {
             "Output of `{cmd}` is:\n{stdout:?}\nIt doesn't contain {main:?}."
         );
 
-        let count_fn = stdout.matches("fn").count();
-        ensure!(
-            count_fn == 1,
-            "Output of `{cmd}` is:\n{stdout:?}\nThe count of `fn` should only be one."
-        );
-
         ensure!(
             !stdout.contains(take_mut),
             "Output of `{cmd}` is:\n{stdout:?}\nIt shouldn't contain {take_mut:?}."
@@ -123,7 +128,6 @@ fn charon_cargo_target() -> Result<()> {
     let target = "riscv64gc-unknown-none-elf";
 
     let dir = "tests/cargo/multi-targets";
-    let fn_ = "pub fn";
 
     #[cfg(target_family = "unix")]
     charon(&["cargo", "--print-llbc"], dir, |stdout, cmd| {
@@ -131,12 +135,6 @@ fn charon_cargo_target() -> Result<()> {
         ensure!(
             stdout.contains(main),
             "Output of `{cmd}` is:\n{stdout:?}\nIt doesn't contain {main:?}."
-        );
-
-        let count_fn = stdout.matches(fn_).count();
-        ensure!(
-            count_fn == 1,
-            "Output of `{cmd}` is:\n{stdout:?}\nThe count of {fn_:?} should only be one."
         );
         Ok(())
     })?;
@@ -148,12 +146,6 @@ fn charon_cargo_target() -> Result<()> {
             stdout.contains(main),
             "Output of `{cmd}` is:\n{stdout:?}\nIt doesn't contain {main:?}."
         );
-
-        let count_fn = stdout.matches(fn_).count();
-        ensure!(
-            count_fn == 1,
-            "Output of `{cmd}` is:\n{stdout:?}\nThe count of {fn_:?} should only be one."
-        );
         Ok(())
     })?;
 
@@ -164,14 +156,32 @@ fn charon_cargo_target() -> Result<()> {
             stdout.contains(main),
             "Output of `{cmd}` is:\n{stdout:?}\nIt doesn't contain {main:?}."
         );
-
-        let count_fn = stdout.matches(fn_).count();
-        ensure!(
-            count_fn == 1,
-            "Output of `{cmd}` is:\n{stdout:?}\nThe count of {fn_:?} should only be one."
-        );
         Ok(())
     })
+}
+
+#[test]
+fn charon_cargo_target_dir() -> Result<()> {
+    // Regression test for #938.
+    charon(
+        &[
+            "cargo",
+            "--print-llbc",
+            "--",
+            "-p",
+            "crate2",
+            "--target-dir=target/foo",
+        ],
+        "tests/cargo/workspace",
+        |stdout, cmd| {
+            let search = "pub fn extra_random_number";
+            ensure!(
+                stdout.contains(search),
+                "Output of `{cmd}` is:\n{stdout:?}\nIt doesn't contain {search:?}."
+            );
+            Ok(())
+        },
+    )
 }
 
 #[test]
@@ -186,12 +196,6 @@ fn charon_rustc() -> Result<()> {
         ensure!(
             stdout.contains(fn_),
             "Output of `{cmd}` is:\n{stdout:?}\nIt doesn't contain {fn_:?}."
-        );
-
-        let count_fn = stdout.matches("fn").count();
-        ensure!(
-            count_fn == 1,
-            "Output of `{cmd}` is:\n{stdout:?}\nThe count of `fn` should only be one."
         );
         Ok(())
     })
@@ -251,30 +255,6 @@ fn handle_multi_trailing_rs_args() {
     let err = charon(args, "tests/ui", |_, _| Ok(())).unwrap_err();
     let err = format!("{err:?}");
     assert!(err.contains("invalid character '.' in crate name"), "{err}");
-}
-
-#[test]
-fn rustc_input_duplicated() {
-    let input = "arrays.rs";
-    let args = &["rustc", "--print-llbc", "--input", input, "--", input];
-    let err = charon(args, "tests/ui", |_, _| Ok(())).unwrap_err();
-    let pat = "error: multiple input filenames provided (first two filenames are `arrays.rs` and `arrays.rs`)";
-    let err = format!("{err:?}");
-    assert!(err.contains(pat), "{err}");
-}
-
-#[test]
-fn charon_input() -> Result<()> {
-    let input = "arrays.rs";
-    let args = &[
-        "rustc",
-        "--print-llbc",
-        "--input",
-        input,
-        "--",
-        "--crate-type=lib",
-    ];
-    charon(args, "tests/ui", |_, _| Ok(()))
 }
 
 #[test]

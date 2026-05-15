@@ -5,6 +5,7 @@
 , makeWrapper
 , rustToolchain
 , stdenv
+, enableWrapping ? true
 , zlib
 }:
 
@@ -43,7 +44,7 @@ craneLib.buildPackage (
     # properly. On mac we also have to tell `charon-driver` where to find
     # the rustc_driver dynamic library; this is done automatically on
     # linux.
-    postFixup =
+    postFixup = lib.optionalString enableWrapping (
       ''
         wrapProgram $out/bin/charon \
           --set CHARON_TOOLCHAIN_IS_IN_PATH 1 \
@@ -53,7 +54,8 @@ craneLib.buildPackage (
       + (lib.optionalString stdenv.isDarwin ''
         # Ensures `charon-driver` finds the dylibs correctly.
         install_name_tool -add_rpath "${rustToolchain}/lib" "$out/bin/charon-driver"
-      '');
+      '')
+    );
     checkPhaseCargoCommand = ''
       CHARON_TOOLCHAIN_IS_IN_PATH=1 IN_CI=1 cargo test --profile release --locked
       # We also re-generate the ocaml files.

@@ -1,5 +1,4 @@
-//@ rustc-args=--target armebv7r-none-eabi
-// To run, first install target armebv7r-none-eabi with `rustup target add armebv7r-none-eabi`
+//@ rustc-args=--target powerpc64-unknown-linux-gnu
 #![no_std]
 
 const S: [u8; 16] = 0x12345678901234567890123456789012u128.to_ne_bytes();

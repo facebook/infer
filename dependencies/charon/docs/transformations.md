@@ -28,7 +28,7 @@ things.
 Note that for historical reasons Charon removes mentions of the `Allocator` trait regardless of this
 setting. This should eventually be changed, open an issue if you have a need for it.
 
-Note that today this is implemented by calling `Vector::remove` to remove the entry in the
+Note that today this is implemented by calling `IndexMap::remove` to remove the entry in the
 `trait_clauses`/`trait_refs` vectors. This abuses the confusion between newtype-indexed vectors and
 newtype-indexed maps we have in Charon, which can cause annoying footguns. See
 https://github.com/AeneasVerif/charon/issues/490.

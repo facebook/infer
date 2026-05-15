@@ -1,0 +1,44 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: test_crate::module2::do_translate
+fn do_translate()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module2::Type1
+struct Type1 {}
+
+// Full name: test_crate::module2::{impl Trait1 for Type1}::method
+fn {impl Trait1 for Type1}::method()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module2::Trait2
+trait Trait2<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::module2::Trait2::{vtable}
+}
+
+// Full name: test_crate::module2::{impl Trait2 for Type1}
+impl Trait2 for Type1 {
+    parent_clause0 = {built_in impl MetaSized for Type1}
+    vtable: {impl Trait2 for Type1}::{vtable}
+}
+
+
+

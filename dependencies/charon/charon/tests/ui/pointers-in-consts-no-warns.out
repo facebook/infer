@@ -3,13 +3,13 @@
 // Full name: test_crate::DISGUISED_INT
 fn DISGUISED_INT() -> *const ()
 {
-    let @0: *const (); // return
-    let @1: *const (); // anonymous local
+    let _0: *const (); // return
+    let _1: *const (); // anonymous local
 
-    storage_live(@1)
-    @1 := cast<i32, *const ()>(const (42 : i32))
-    @0 := copy (@1)
-    storage_dead(@1)
+    storage_live(_1)
+    _1 = cast<i32, *const ()>(const 42 : i32)
+    _0 = copy _1
+    storage_dead(_1)
     return
 }
 
@@ -19,22 +19,21 @@ const DISGUISED_INT: *const () = DISGUISED_INT()
 // Full name: test_crate::bar
 pub fn bar()
 {
-    let @0: (); // return
-    let @1: *const (); // anonymous local
-    let @2: bool; // anonymous local
+    let _0: (); // return
+    let _1: *const (); // anonymous local
+    let _2: bool; // anonymous local
 
-    storage_live(@2)
-    storage_live(@1)
-    @1 := cast<usize, *const ()>(const (43 : usize))
-    @2 := const (Opaque(`ConstantExprKind::Cast {{..}}`)) == copy (@1)
-    if move (@2) {
-        @0 := ()
+    storage_live(_2)
+    _0 = ()
+    storage_live(_1)
+    _1 = cast<usize, *const ()>(const 43 : usize)
+    _2 = const Opaque(`ConstantExprKind::Cast {{..}}`) == copy _1
+    if move _2 {
+        _0 = ()
+    } else {
+        _0 = ()
     }
-    else {
-        @0 := ()
-    }
-    storage_dead(@1)
-    @0 := ()
+    storage_dead(_1)
     return
 }
 

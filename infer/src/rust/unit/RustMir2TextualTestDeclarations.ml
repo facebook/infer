@@ -48,12 +48,12 @@ fn main() {
     define dummy::main() : void {
       local var_0: void, eleven_1: int, var_2: int
       #node_0:
+          store &var_0 <- null:void
           n0:int = load &GLOBAL@dummy::X
           n1:int = load &GLOBAL@dummy::Y
           store &var_2 <- __sil_plusa_int(n0, n1):int
           n2:int = load &var_2
           store &eleven_1 <- n2:int
-          store &var_0 <- null:void
           store &var_0 <- null:void
           n3:void = load &var_0
           ret n3

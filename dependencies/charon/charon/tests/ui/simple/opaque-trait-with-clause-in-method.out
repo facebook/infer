@@ -32,10 +32,10 @@ where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Iterator<T>,
 {
-    let @0: (); // return
+    let _0: (); // return
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 

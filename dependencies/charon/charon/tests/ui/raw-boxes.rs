@@ -1,6 +1,7 @@
+//@ no-default-options
 //@ charon-args=--extract-opaque-bodies
-//@ charon-args=--raw-boxes
 //@ charon-args=--mir elaborated
+//@ charon-args=--exclude core::fmt::Formatter
 
 unsafe fn foo() {
     let b = Box::new(42);

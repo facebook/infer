@@ -12,6 +12,7 @@ include $(TESTS_DIR)/infer.make
 SOURCES = $(sort $(wildcard *.ullbc))
 RUSTSOURCES = $(wildcard *.rs)
 CAPTURE_CMD = $(patsubst %.rs.ullbc, --capture-rust-ullbc %.rs.ullbc,$(SOURCES))
+CHARON_OPTIONS = --precise-drops --treat-box-as-builtin --reconstruct-fallible-operations
 
 default: test
 
@@ -29,5 +30,5 @@ charon:
 		if [ -e "$$file.args" ]; then \
     		args=$$(cat "$$file.args"); \
 		fi; \
-		charon rustc --print-ullbc --ullbc --dest-file $$file.ullbc $$args -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
+		charon rustc $(CHARON_OPTIONS) --print-ullbc --ullbc --dest-file $$file.ullbc $$args -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
 	done; fi

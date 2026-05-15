@@ -1,21 +1,23 @@
-use crate::translate::translate_predicates::PredicateLocation;
-
-use super::translate_ctx::ItemTransCtx;
-use charon_lib::ast::*;
-use charon_lib::common::hash_by_addr::HashByAddr;
-use hax_frontend_exporter as hax;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Debug;
-use std::sync::Arc;
+use std::mem;
+
+use hax::{BaseState, Symbol};
+use rustc_middle::ty;
+
+use super::translate_ctx::{ItemTransCtx, TraitImplSource, TransItemSourceKind};
+use charon_lib::ast::*;
+use charon_lib::common::CycleDetector;
+use charon_lib::ids::IndexVec;
 
 /// A level of binding for type-level variables. Each item has a top-level binding level
 /// corresponding to the parameters and clauses to the items. We may then encounter inner binding
 /// levels in the following cases:
 /// - `for<..>` binders in predicates;
 /// - `fn<..>` function pointer types;
-/// - `dyn Trait` types, represented as `dyn<T: Trait>` (TODO);
-/// - types in a trait declaration or implementation block (TODO);
-/// - methods in a trait declaration or implementation block (TODO).
+/// - `dyn Trait` types, represented as `dyn<T: Trait>`;
+/// - types in a trait declaration or implementation block;
+/// - methods in a trait declaration or implementation block.
 ///
 /// At each level, we store two things: a `GenericParams` that contains the parameters bound at
 /// this level, and various maps from the rustc-internal indices to our indices.
@@ -23,56 +25,72 @@ use std::sync::Arc;
 pub(crate) struct BindingLevel {
     /// The parameters and predicates bound at this level.
     pub params: GenericParams,
-    /// Whether this binder corresponds to an item (method, type) or not (`for<..>` predicate, `fn`
-    /// pointer, etc). This indicates whether it corresponds to a rustc `ParamEnv` and therefore
-    /// whether we should resolve rustc variables there.
-    pub is_item_binder: bool,
     /// Rust makes the distinction between early and late-bound region parameters. We do not make
     /// this distinction, and merge early and late bound regions. For details, see:
     /// <https://smallcultfollowing.com/babysteps/blog/2013/10/29/intermingled-parameter-lists/>
     /// <https://smallcultfollowing.com/babysteps/blog/2013/11/04/intermingled-parameter-lists/>
     ///
     /// The map from rust early regions to translated region indices.
-    pub early_region_vars: std::collections::BTreeMap<hax::EarlyParamRegion, RegionId>,
+    pub early_region_vars: HashMap<hax::EarlyParamRegion, RegionId>,
     /// The map from rust late/bound regions to translated region indices.
     pub bound_region_vars: Vec<RegionId>,
-    /// The regions added for by-ref upvars, in order of upvars.
-    pub by_ref_upvar_regions: Vec<RegionId>,
+    /// Region added for the lifetime bound in the signature of the `call`/`call_mut` methods.
+    pub closure_call_method_region: Option<RegionId>,
     /// The map from rust type variable indices to translated type variable indices.
     pub type_vars_map: HashMap<u32, TypeVarId>,
-    /// The map from rust const generic variables to translate const generic variable indices.
+    /// The map from rust const generic variables to translated const generic variable indices.
     pub const_generic_vars_map: HashMap<u32, ConstGenericVarId>,
-    /// Cache the translation of types. This harnesses the deduplication of `TyKind` that hax does.
+    /// The map from trait predicates to translated trait clause indices.
+    pub trait_preds: HashMap<hax::GenericPredicateId, TraitClauseId>,
+    /// The types of the captured variables, when we're translating a closure item. This is
+    /// translated early because this translation requires adding new lifetime generics to the
+    /// current binder.
+    pub closure_upvar_tys: Option<IndexVec<FieldId, Ty>>,
+    /// The regions we added for the upvars.
+    pub closure_upvar_regions: Vec<RegionId>,
+    /// RPITIT can cause region names to be reused. To avoid clashes in our output, we rename
+    /// duplicate names.
+    pub used_region_names: HashSet<Symbol>,
+    /// Cache the translation of types. This harnesses the deduplication of `Ty` that hax does.
     // Important: we can't reuse type caches from earlier binders as the new binder may change what
     // a given variable resolves to.
-    pub type_trans_cache: HashMap<HashByAddr<Arc<hax::TyKind>>, Ty>,
+    pub type_trans_cache: HashMap<hax::Ty, Ty>,
 }
 
 /// Small helper: we ignore some region names (when they are equal to "'_")
-fn translate_region_name(s: String) -> Option<String> {
+fn translate_region_name(s: hax::Symbol) -> Option<String> {
+    let s = s.to_string();
     if s == "'_" { None } else { Some(s) }
 }
 
 impl BindingLevel {
-    pub(crate) fn new(is_item_binder: bool) -> Self {
+    pub(crate) fn new() -> Self {
         Self {
-            is_item_binder,
             ..Default::default()
         }
     }
 
     /// Important: we must push all the early-bound regions before pushing any other region.
-    pub(crate) fn push_early_region(&mut self, region: hax::EarlyParamRegion) -> RegionId {
-        let name = translate_region_name(region.name.clone());
+    pub(crate) fn push_early_region(
+        &mut self,
+        region: hax::EarlyParamRegion,
+        mutability: LifetimeMutability,
+    ) -> RegionId {
+        let name = if self.used_region_names.insert(region.name) {
+            translate_region_name(region.name)
+        } else {
+            None
+        };
         // Check that there are no late-bound regions
         assert!(
             self.bound_region_vars.is_empty(),
             "Early regions must be translated before late ones"
         );
-        let rid = self
-            .params
-            .regions
-            .push_with(|index| RegionVar { index, name });
+        let rid = self.params.regions.push_with(|index| RegionParam {
+            index,
+            name,
+            mutability,
+        });
         self.early_region_vars.insert(region, rid);
         rid
     }
@@ -82,40 +100,56 @@ impl BindingLevel {
         use hax::BoundRegionKind::*;
         let name = match region {
             Anon => None,
-            NamedAnon(symbol) | Named(_, symbol) => translate_region_name(symbol.clone()),
+            NamedForPrinting(symbol) | Named(_, symbol) => translate_region_name(symbol),
             ClosureEnv => Some("@env".to_owned()),
         };
         let rid = self
             .params
             .regions
-            .push_with(|index| RegionVar { index, name });
+            .push_with(|index| RegionParam::new(index, name));
         self.bound_region_vars.push(rid);
         rid
     }
 
-    /// Add a region for a by_ref upvar in a closure.
+    /// Add a region for an upvar in a closure.
     pub fn push_upvar_region(&mut self) -> RegionId {
         // We musn't push to `bound_region_vars` because that will contain the higher-kinded
-        // signature lifetimes if any and they must be lookup-able.
+        // signature lifetimes (if any) and they must be lookup-able.
         let region_id = self
             .params
             .regions
-            .push_with(|index| RegionVar { index, name: None });
-        self.by_ref_upvar_regions.push(region_id);
+            .push_with(|index| RegionParam::new(index, None));
+        self.closure_upvar_regions.push(region_id);
         region_id
     }
 
-    pub(crate) fn push_type_var(&mut self, rid: u32, name: String) -> TypeVarId {
-        let var_id = self.params.types.push_with(|index| TypeVar { index, name });
+    pub(crate) fn push_type_var(&mut self, rid: u32, name: hax::Symbol) -> TypeVarId {
+        // Type vars comping from `impl Trait` arguments have as their name the whole `impl Trait`
+        // expression. We turn it into an identifier.
+        let mut name = name.to_string();
+        if name
+            .chars()
+            .any(|c| !(c.is_ascii_alphanumeric() || c == '_'))
+        {
+            name = format!("T{rid}")
+        }
+        let var_id = self
+            .params
+            .types
+            .push_with(|index| TypeParam { index, name });
         self.type_vars_map.insert(rid, var_id);
         var_id
     }
 
-    pub(crate) fn push_const_generic_var(&mut self, rid: u32, ty: LiteralTy, name: String) {
+    pub(crate) fn push_const_generic_var(&mut self, rid: u32, ty: Ty, name: hax::Symbol) {
         let var_id = self
             .params
             .const_generics
-            .push_with(|index| ConstGenericVar { index, name, ty });
+            .push_with(|index| ConstGenericParam {
+                index,
+                name: name.to_string(),
+                ty,
+            });
         self.const_generic_vars_map.insert(rid, var_id);
     }
 
@@ -149,7 +183,6 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
         assert_eq!(self.binding_levels.len(), 1);
         self.innermost_binder()
     }
-
     /// Get the only binding level. Panics if there are other binding levels.
     pub(crate) fn the_only_binder_mut(&mut self) -> &mut BindingLevel {
         assert_eq!(self.binding_levels.len(), 1);
@@ -159,15 +192,26 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
     pub(crate) fn outermost_binder(&self) -> &BindingLevel {
         self.binding_levels.outermost()
     }
-
+    pub(crate) fn outermost_binder_mut(&mut self) -> &mut BindingLevel {
+        self.binding_levels.outermost_mut()
+    }
     pub(crate) fn innermost_binder(&self) -> &BindingLevel {
         self.binding_levels.innermost()
     }
-
     pub(crate) fn innermost_binder_mut(&mut self) -> &mut BindingLevel {
         self.binding_levels.innermost_mut()
     }
 
+    pub(crate) fn outermost_generics(&self) -> &GenericParams {
+        &self.outermost_binder().params
+    }
+    #[expect(dead_code)]
+    pub(crate) fn outermost_generics_mut(&mut self) -> &mut GenericParams {
+        &mut self.outermost_binder_mut().params
+    }
+    pub(crate) fn innermost_generics(&self) -> &GenericParams {
+        &self.innermost_binder().params
+    }
     pub(crate) fn innermost_generics_mut(&mut self) -> &mut GenericParams {
         &mut self.innermost_binder_mut().params
     }
@@ -248,34 +292,12 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
     pub(crate) fn lookup_clause_var(
         &mut self,
         span: Span,
-        mut id: usize,
+        id: &hax::GenericPredicateId,
     ) -> Result<ClauseDbVar, Error> {
-        // The clause indices returned by hax count clauses in order, starting from the parentmost.
-        // While adding clauses to a binding level we already need to translate types and clauses,
-        // so the innermost item binder may not have all the clauses yet. Hence for that binder we
-        // ignore the clause count.
-        let innermost_item_binder_id = self
-            .binding_levels
-            .iter_enumerated()
-            .find(|(_, bl)| bl.is_item_binder)
-            .unwrap()
-            .0;
-        // Iterate over the binders, starting from the outermost.
-        for (dbid, bl) in self.binding_levels.iter_enumerated().rev() {
-            let num_clauses_bound_at_this_level = bl.params.trait_clauses.elem_count();
-            if id < num_clauses_bound_at_this_level || dbid == innermost_item_binder_id {
-                let id = TraitClauseId::from_usize(id);
-                return Ok(DeBruijnVar::bound(dbid, id));
-            } else {
-                id -= num_clauses_bound_at_this_level
-            }
-        }
-        // Actually unreachable
-        raise_error!(
-            self,
+        self.lookup_param(
             span,
-            "Unexpected error: could not find clause variable {}",
-            id
+            |bl| bl.trait_preds.get(id).copied(),
+            || format!("the trait clause variable {id:?}"),
         )
     }
 
@@ -293,51 +315,69 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
                     index: param.index,
                     name: param.name.clone(),
                 };
-                let _ = self.innermost_binder_mut().push_early_region(region);
+                let mutability = self
+                    .t_ctx
+                    .lt_mutability_computer
+                    .compute_lifetime_mutability(
+                        &self.hax_state,
+                        self.item_src.def_id(),
+                        param.index,
+                    );
+                let _ = self
+                    .innermost_binder_mut()
+                    .push_early_region(region, mutability);
             }
             hax::GenericParamDefKind::Type { .. } => {
                 let _ = self
                     .innermost_binder_mut()
-                    .push_type_var(param.index, param.name.clone());
+                    .push_type_var(param.index, param.name);
             }
             hax::GenericParamDefKind::Const { ty, .. } => {
                 let span = self.def_span(&param.def_id);
                 // The type should be primitive, meaning it shouldn't contain variables,
                 // non-primitive adts, etc. As a result, we can use an empty context.
                 let ty = self.translate_ty(span, ty)?;
-                match ty.kind().as_literal() {
-                    Some(ty) => self.innermost_binder_mut().push_const_generic_var(
-                        param.index,
-                        *ty,
-                        param.name.clone(),
-                    ),
-                    None => raise_error!(
-                        self,
-                        span,
-                        "Constant parameters of non-literal type are not supported"
-                    ),
-                }
+                self.innermost_binder_mut()
+                    .push_const_generic_var(param.index, ty, param.name);
             }
         }
 
         Ok(())
     }
 
-    /// Add the generics and predicates of this item and its parents to the current context.
-    #[tracing::instrument(skip(self, span))]
-    fn push_generics_for_def(
+    // The parameters (and in particular the lifetimes) are split between
+    // early bound and late bound parameters. See those blog posts for explanations:
+    // https://smallcultfollowing.com/babysteps/blog/2013/10/29/intermingled-parameter-lists/
+    // https://smallcultfollowing.com/babysteps/blog/2013/11/04/intermingled-parameter-lists/
+    // Note that only lifetimes can be late bound at the moment.
+    //
+    // [TyCtxt.generics_of] gives us the early-bound parameters. We add the late-bound parameters
+    // here.
+    fn push_late_bound_generics_for_def(
         &mut self,
-        span: Span,
+        _span: Span,
         def: &hax::FullDef,
-        is_parent: bool,
     ) -> Result<(), Error> {
+        if let hax::FullDefKind::Fn { sig, .. } | hax::FullDefKind::AssocFn { sig, .. } = def.kind()
+        {
+            let innermost_binder = self.innermost_binder_mut();
+            assert!(innermost_binder.bound_region_vars.is_empty());
+            innermost_binder.push_params_from_binder(sig.rebind(()))?;
+        }
+        Ok(())
+    }
+
+    /// Add the generics and predicates of this item and its parents to the current context.
+    #[tracing::instrument(skip(self, span, def))]
+    fn push_generics_for_def(&mut self, span: Span, def: &hax::FullDef) -> Result<(), Error> {
+        trace!("{:?}", def.param_env());
         // Add generics from the parent item, recursively (recursivity is important for closures,
         // as they can be nested).
         if let Some(parent_item) = def.typing_parent(self.hax_state()) {
             let parent_def = self.hax_def(&parent_item)?;
-            self.push_generics_for_def(span, &parent_def, true)?;
+            self.push_generics_for_def(span, &parent_def)?;
         }
-        self.push_generics_for_def_without_parents(span, def, !is_parent, !is_parent)?;
+        self.push_generics_for_def_without_parents(span, def)?;
         Ok(())
     }
 
@@ -347,8 +387,6 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
         &mut self,
         _span: Span,
         def: &hax::FullDef,
-        include_late_bound: bool,
-        include_assoc_ty_clauses: bool,
     ) -> Result<(), Error> {
         use hax::FullDefKind;
         if let Some(param_env) = def.param_env() {
@@ -361,6 +399,7 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
                 | FullDefKind::AssocTy { .. } => PredicateOrigin::WhereClauseOnType,
                 FullDefKind::Fn { .. }
                 | FullDefKind::AssocFn { .. }
+                | FullDefKind::Closure { .. }
                 | FullDefKind::Const { .. }
                 | FullDefKind::AssocConst { .. }
                 | FullDefKind::Static { .. } => PredicateOrigin::WhereClauseOnFn,
@@ -370,141 +409,73 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
                 FullDefKind::Trait { .. } | FullDefKind::TraitAlias { .. } => {
                     PredicateOrigin::WhereClauseOnTrait
                 }
-                _ => panic!("Unexpected def: {def:?}"),
+                _ => panic!("Unexpected def: {:?}", def.def_id().kind),
             };
-            self.register_predicates(
-                &param_env.predicates,
-                origin.clone(),
-                &PredicateLocation::Base,
-            )?;
-            // Also register implied predicates.
-            if let FullDefKind::Trait {
-                implied_predicates, ..
-            }
-            | FullDefKind::TraitAlias {
-                implied_predicates, ..
-            }
-            | FullDefKind::AssocTy {
-                implied_predicates, ..
-            } = &def.kind
-            {
-                self.register_predicates(implied_predicates, origin, &PredicateLocation::Parent)?;
-            }
-
-            if let hax::FullDefKind::Trait { items, .. } = &def.kind
-                && include_assoc_ty_clauses
-                && !self.monomorphize()
-            {
-                // Also add the predicates on associated types.
-                // FIXME(gat): don't skip GATs.
-                // FIXME: don't mix up implied and required predicates.
-                for assoc in items {
-                    let item_def = self.poly_hax_def(&assoc.def_id)?;
-                    if let hax::FullDefKind::AssocTy {
-                        param_env,
-                        implied_predicates,
-                        ..
-                    } = item_def.kind()
-                        && param_env.generics.params.is_empty()
-                    {
-                        let name = self.t_ctx.translate_trait_item_name(item_def.def_id())?;
-                        self.register_predicates(
-                            &implied_predicates,
-                            PredicateOrigin::TraitItem(name.clone()),
-                            &PredicateLocation::Item(name),
-                        )?;
-                    }
-                }
-            }
-        }
-
-        if let hax::FullDefKind::Closure { args, .. } = def.kind()
-            && include_late_bound
-        {
-            // Add the lifetime generics coming from the by-ref upvars.
-            args.upvar_tys.iter().for_each(|ty| {
-                if matches!(
-                    ty.kind(),
-                    hax::TyKind::Ref(
-                        hax::Region {
-                            kind: hax::RegionKind::ReErased
-                        },
-                        ..
-                    )
-                ) {
-                    self.the_only_binder_mut().push_upvar_region();
-                }
-            });
-        }
-
-        // The parameters (and in particular the lifetimes) are split between
-        // early bound and late bound parameters. See those blog posts for explanations:
-        // https://smallcultfollowing.com/babysteps/blog/2013/10/29/intermingled-parameter-lists/
-        // https://smallcultfollowing.com/babysteps/blog/2013/11/04/intermingled-parameter-lists/
-        // Note that only lifetimes can be late bound.
-        //
-        // [TyCtxt.generics_of] gives us the early-bound parameters. We add the late-bound
-        // parameters here.
-        let signature = match &def.kind {
-            hax::FullDefKind::Fn { sig, .. } => Some(sig),
-            hax::FullDefKind::AssocFn { sig, .. } => Some(sig),
-            _ => None,
-        };
-        if let Some(signature) = signature
-            && include_late_bound
-        {
-            let innermost_binder = self.innermost_binder_mut();
-            assert!(innermost_binder.bound_region_vars.is_empty());
-            innermost_binder.push_params_from_binder(signature.rebind(()))?;
+            self.register_predicates(&param_env.predicates, origin.clone())?;
         }
 
         Ok(())
     }
 
-    /// Translate the generics and predicates of this item and its parents.
-    /// This adds generic parameters and predicates to the current environment (as a binder in `self.binding_levels`).
-    /// This is necessary to translate types that depend on these generics (such as `Ty` and `TraitRef`).
-    /// The constructed `GenericParams` can be recovered at the end using `self.into_generics()` and stored in the translated item.
-    pub(crate) fn translate_def_generics(
+    /// Translate the generics and predicates of this item and its parents. This adds generic
+    /// parameters and predicates to the current environment (as a binder in
+    /// `self.binding_levels`). The constructed `GenericParams` can be recovered at the end using
+    /// `self.into_generics()` and stored in the translated item.
+    ///
+    /// On top of the generics introduced by `push_generics_for_def`, this adds extra parameters
+    /// required by the `TransItemSourceKind`.
+    pub fn translate_item_generics(
         &mut self,
         span: Span,
         def: &hax::FullDef,
+        kind: &TransItemSourceKind,
     ) -> Result<(), Error> {
         assert!(self.binding_levels.len() == 0);
-        self.binding_levels.push(BindingLevel::new(true));
-        self.push_generics_for_def(span, def, false)?;
+        self.binding_levels.push(BindingLevel::new());
+        self.push_generics_for_def(span, def)?;
+        self.push_late_bound_generics_for_def(span, def)?;
+
+        if let hax::FullDefKind::Closure { args, .. } = def.kind() {
+            // Add the lifetime generics coming from the upvars. We translate the upvar types early
+            // to know what lifetimes are needed.
+            let upvar_tys = self.translate_closure_upvar_tys(span, args)?;
+            // Add new lifetimes params to replace the erased ones.
+            let upvar_tys = upvar_tys.replace_erased_regions(|| {
+                let region_id = self.the_only_binder_mut().push_upvar_region();
+                Region::Var(DeBruijnVar::new_at_zero(region_id))
+            });
+            self.the_only_binder_mut().closure_upvar_tys = Some(upvar_tys);
+
+            // Add the lifetime generics coming from the higher-kindedness of the signature.
+            if let TransItemSourceKind::TraitImpl(TraitImplSource::Closure(..))
+            | TransItemSourceKind::ClosureMethod(..)
+            | TransItemSourceKind::ClosureAsFnCast = kind
+            {
+                self.the_only_binder_mut()
+                    .push_params_from_binder(args.fn_sig.rebind(()))?;
+            }
+            if let TransItemSourceKind::ClosureMethod(ClosureKind::Fn | ClosureKind::FnMut) = kind {
+                // Add the lifetime generics coming from the method itself.
+                let rid = self
+                    .the_only_binder_mut()
+                    .params
+                    .regions
+                    .push_with(|index| RegionParam::new(index, None));
+                self.the_only_binder_mut().closure_call_method_region = Some(rid);
+            }
+        }
+
         self.innermost_binder_mut().params.check_consistency();
         Ok(())
     }
 
-    /// Translate the generics and predicates of this item without its parents.
-    pub(crate) fn translate_def_generics_without_parents(
-        &mut self,
-        span: Span,
-        def: &hax::FullDef,
-    ) -> Result<(), Error> {
-        self.binding_levels.push(BindingLevel::new(true));
-        self.push_generics_for_def_without_parents(span, def, true, true)?;
-        self.innermost_binder().params.check_consistency();
-        Ok(())
-    }
-
-    /// Push a new binding level corresponding to the provided `def` for the duration of the inner
-    /// function call.
-    pub(crate) fn translate_binder_for_def<F, U>(
-        &mut self,
-        span: Span,
-        kind: BinderKind,
-        def: &hax::FullDef,
-        f: F,
-    ) -> Result<Binder<U>, Error>
+    /// Push a new binding level, run the provided function inside it, then return the bound value.
+    pub(crate) fn inside_binder<F, U>(&mut self, kind: BinderKind, f: F) -> Result<Binder<U>, Error>
     where
         F: FnOnce(&mut Self) -> Result<U, Error>,
     {
         assert!(!self.binding_levels.is_empty());
-
-        // Register the type-level parameters. This pushes a new binding level.
-        self.translate_def_generics_without_parents(span, def)?;
+        self.binding_levels.push(BindingLevel::new());
 
         // Call the continuation. Important: do not short-circuit on error here.
         let res = f(self);
@@ -520,6 +491,30 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
         })
     }
 
+    /// Push a new binding level corresponding to the provided `def` for the duration of the inner
+    /// function call.
+    pub(crate) fn translate_binder_for_def<F, U>(
+        &mut self,
+        span: Span,
+        kind: BinderKind,
+        def: &hax::FullDef,
+        f: F,
+    ) -> Result<Binder<U>, Error>
+    where
+        F: FnOnce(&mut Self) -> Result<U, Error>,
+    {
+        let inner_hax_state = self.t_ctx.hax_state.clone().with_hax_owner(&def.def_id());
+        let outer_hax_state = mem::replace(&mut self.hax_state, inner_hax_state);
+        let ret = self.inside_binder(kind, |this| {
+            this.push_generics_for_def_without_parents(span, def)?;
+            this.push_late_bound_generics_for_def(span, def)?;
+            this.innermost_binder().params.check_consistency();
+            f(this)
+        });
+        self.hax_state = outer_hax_state;
+        ret
+    }
+
     /// Push a group of bound regions and call the continuation.
     /// We use this when diving into a `for<'a>`, or inside an arrow type (because
     /// it contains universally quantified regions).
@@ -532,28 +527,127 @@ impl<'tcx, 'ctx> ItemTransCtx<'tcx, 'ctx> {
     where
         F: FnOnce(&mut Self, &T) -> Result<U, Error>,
     {
-        assert!(!self.binding_levels.is_empty());
-
-        // Register the variables
-        let mut binding_level = BindingLevel::new(false);
-        binding_level.push_params_from_binder(binder.rebind(()))?;
-        self.binding_levels.push(binding_level);
-
-        // Call the continuation. Important: do not short-circuit on error here.
-        let res = f(self, binder.hax_skip_binder_ref());
-
-        // Reset
-        let regions = self.binding_levels.pop().unwrap().params.regions;
-
-        // Return
-        res.map(|skip_binder| RegionBinder {
-            regions,
-            skip_binder,
+        let binder = self.inside_binder(BinderKind::Other, |this| {
+            this.innermost_binder_mut()
+                .push_params_from_binder(binder.rebind(()))?;
+            f(this, binder.hax_skip_binder_ref())
+        })?;
+        // Convert to a region-only binder.
+        Ok(RegionBinder {
+            regions: binder.params.regions,
+            skip_binder: binder.skip_binder,
         })
     }
 
     pub(crate) fn into_generics(mut self) -> GenericParams {
         assert!(self.binding_levels.len() == 1);
         self.binding_levels.pop().unwrap().params
+    }
+}
+
+/// Struct to compute the "mutability" of each lifetime.
+#[derive(Default)]
+pub struct LifetimeMutabilityComputer {
+    lt_mutability: HashMap<hax::DefId, CycleDetector<HashSet<u32>>>,
+}
+
+impl LifetimeMutabilityComputer {
+    /// Compute the mutability of one lifetime.
+    pub(crate) fn compute_lifetime_mutability<'tcx>(
+        &mut self,
+        s: &impl BaseState<'tcx>,
+        item: &hax::DefId,
+        index: u32,
+    ) -> LifetimeMutability {
+        match self.compute_lifetime_mutabilities(s, item) {
+            Some(set) => {
+                if set.contains(&index) {
+                    LifetimeMutability::Mutable
+                } else {
+                    LifetimeMutability::Shared
+                }
+            }
+            None => LifetimeMutability::Unknown,
+        }
+    }
+
+    /// Compute the "mutability" of each lifetime, i.e. whether this lifetime is used in a `&'a mut
+    /// T` type or not. Returns a set of the known-mutable lifetimes for this ADT.
+    fn compute_lifetime_mutabilities<'tcx>(
+        &mut self,
+        s: &impl BaseState<'tcx>,
+        item: &hax::DefId,
+    ) -> Option<&HashSet<u32>> {
+        if !matches!(
+            item.kind,
+            hax::DefKind::Struct | hax::DefKind::Enum | hax::DefKind::Union
+        ) {
+            return None;
+        }
+        if self
+            .lt_mutability
+            .entry(item.clone())
+            .or_default()
+            .start_processing()
+        {
+            use hax::SInto;
+            use ty::{TypeSuperVisitable, TypeVisitable};
+
+            struct LtMutabilityVisitor<'a, S> {
+                s: &'a S,
+                computer: &'a mut LifetimeMutabilityComputer,
+                set: HashSet<u32>,
+            }
+            impl<'tcx, S: BaseState<'tcx>> ty::TypeVisitor<ty::TyCtxt<'tcx>> for LtMutabilityVisitor<'_, S> {
+                fn visit_ty(&mut self, ty: ty::Ty<'tcx>) {
+                    match ty.kind() {
+                        ty::Ref(r, _, ty::Mutability::Mut)
+                            if let ty::RegionKind::ReEarlyParam(r) = r.kind() =>
+                        {
+                            self.set.insert(r.index);
+                        }
+                        ty::Adt(adt, args) => {
+                            let item = adt.did().sinto(self.s);
+                            if let Some(mutabilities) =
+                                self.computer.compute_lifetime_mutabilities(self.s, &item)
+                            {
+                                for arg in args.iter() {
+                                    if let Some(r) = arg.as_region()
+                                        && let ty::RegionKind::ReEarlyParam(r) = r.kind()
+                                        && mutabilities.contains(&r.index)
+                                    {
+                                        self.set.insert(r.index);
+                                    }
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                    ty.super_visit_with(self)
+                }
+            }
+            let mut visitor = LtMutabilityVisitor {
+                s,
+                computer: self,
+                set: HashSet::new(),
+            };
+
+            let tcx = s.base().tcx;
+            let def_id = item.real_rust_def_id();
+            let adt_def = tcx.adt_def(def_id);
+            let generics = ty::GenericArgs::identity_for_item(tcx, def_id);
+            for variant in adt_def.variants() {
+                for field in &variant.fields {
+                    field.ty(tcx, generics).visit_with(&mut visitor);
+                }
+            }
+            let set = visitor.set;
+
+            self.lt_mutability
+                .get_mut(item)
+                .unwrap()
+                .done_processing(set);
+        }
+        self.lt_mutability.get(item)?.as_processed()
     }
 }

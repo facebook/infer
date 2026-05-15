@@ -10,6 +10,7 @@ INFER_OPTIONS =
 SOURCES = $(sort $(wildcard *.rs.ullbc))
 CAPTURE_CMD = $(patsubst %.rs.ullbc, --capture-rust-ullbc %.rs.ullbc,$(SOURCES))
 RUSTSOURCES = $(wildcard *.rs)
+CHARON_OPTIONS = --precise-drops --treat-box-as-builtin --reconstruct-fallible-operations
 
 include $(TESTS_DIR)/base.make
 
@@ -25,7 +26,7 @@ default: test
 		if [ -e "$$file.args" ]; then \
     		args=$$(cat "$$file.args"); \
 		fi; \
-		charon rustc --print-ullbc --ullbc --dest-file /dev/null $$args -- $$file --allow unused > $$file.test.print_ullbc || error=1 ; \
+		charon rustc $(CHARON_OPTIONS) --print-ullbc --ullbc --dest-file /dev/null $$args -- $$file --allow unused > $$file.test.print_ullbc || error=1 ; \
 	done; fi
 
 %.ullbc: %.rs
@@ -35,7 +36,7 @@ default: test
 		if [ -e "$$file.args" ]; then \
     		args=$$(cat "$$file.args"); \
 		fi; \
-		charon rustc --ullbc --dest-file $$file.test.ullbc $$args -- $$file --allow unused || error=1 ; \
+		charon rustc $(CHARON_OPTIONS) --ullbc --dest-file $$file.test.ullbc $$args -- $$file --allow unused || error=1 ; \
 	done; fi
 
 %.test.sil: %.ullbc
@@ -84,5 +85,5 @@ charon:
 		if [ -e "$$file.args" ]; then \
     		args=$$(cat "$$file.args"); \
 		fi; \
-		charon rustc --print-ullbc --ullbc --dest-file $$file.ullbc $$args -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
+		charon rustc $(CHARON_OPTIONS) --print-ullbc --ullbc --dest-file $$file.ullbc $$args -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
 	done; fi

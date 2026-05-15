@@ -1,0 +1,1963 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::Clone
+#[lang_item("clone")]
+pub trait Clone<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    fn clone<'_0_1> = core::clone::Clone::clone<'_0_1, Self>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("clone_fn")]
+pub fn core::clone::Clone::clone<'_0, Self>(_1: &'_0 Self) -> Self
+where
+    [@TraitClause0]: Clone<Self>,
+= <opaque>
+
+// Full name: core::clone::impls::{impl Clone for i32}::clone
+pub fn {impl Clone for i32}::clone<'_0>(_1: &'_0 i32) -> i32
+= <opaque>
+
+// Full name: core::clone::impls::{impl Clone for i32}
+impl Clone for i32 {
+    parent_clause0 = {built_in impl Sized for i32}
+    fn clone<'_0_1> = {impl Clone for i32}::clone<'_0_1>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::impls::{impl Clone for usize}::clone
+pub fn {impl Clone for usize}::clone<'_0>(_1: &'_0 usize) -> usize
+= <opaque>
+
+// Full name: core::clone::impls::{impl Clone for usize}
+impl Clone for usize {
+    parent_clause0 = {built_in impl Sized for usize}
+    fn clone<'_0_1> = {impl Clone for usize}::clone<'_0_1>
+    non-dyn-compatible
+}
+
+// Full name: core::clone::impls::{impl Clone for u32}::clone
+pub fn {impl Clone for u32}::clone<'_0>(_1: &'_0 u32) -> u32
+= <opaque>
+
+// Full name: core::clone::impls::{impl Clone for u32}
+impl Clone for u32 {
+    parent_clause0 = {built_in impl Sized for u32}
+    fn clone<'_0_1> = {impl Clone for u32}::clone<'_0_1>
+    non-dyn-compatible
+}
+
+// Full name: core::cmp::PartialEq
+#[lang_item("eq")]
+pub trait PartialEq<Self, Rhs>
+{
+    fn eq<'_0_1, '_1_1> = core::cmp::PartialEq::eq<'_0_1, '_1_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialEq::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialeq_eq")]
+pub fn core::cmp::PartialEq::eq<'_0, '_1, Self, Rhs>(_1: &'_0 Self, _2: &'_1 Rhs) -> bool
+where
+    [@TraitClause0]: PartialEq<Self, Rhs>,
+= <opaque>
+
+// Full name: core::cmp::Ordering
+#[lang_item("Ordering")]
+pub enum Ordering {
+  Less,
+  Equal,
+  Greater,
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::cmp::PartialOrd
+#[lang_item("partial_ord")]
+pub trait PartialOrd<Self, Rhs>
+{
+    parent_clause0 : [@TraitClause0]: PartialEq<Self, Rhs>
+    fn partial_cmp<'_0_1, '_1_1> = core::cmp::PartialOrd::partial_cmp<'_0_1, '_1_1, Self, Rhs>[Self]
+    vtable: core::cmp::PartialOrd::{vtable}<Rhs>
+}
+
+#[lang_item("cmp_partialord_cmp")]
+pub fn core::cmp::PartialOrd::partial_cmp<'_0, '_1, Self, Rhs>(_1: &'_0 Self, _2: &'_1 Rhs) -> Option<Ordering>[{built_in impl Sized for Ordering}]
+where
+    [@TraitClause0]: PartialOrd<Self, Rhs>,
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<i32> for i32}::eq
+pub fn {impl PartialEq<i32> for i32}::eq<'_0, '_1>(_1: &'_0 i32, _2: &'_1 i32) -> bool
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<i32> for i32}
+impl PartialEq<i32> for i32 {
+    fn eq<'_0_1, '_1_1> = {impl PartialEq<i32> for i32}::eq<'_0_1, '_1_1>
+    vtable: {impl PartialEq<i32> for i32}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialEq<usize> for usize}::eq
+pub fn {impl PartialEq<usize> for usize}::eq<'_0, '_1>(_1: &'_0 usize, _2: &'_1 usize) -> bool
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<usize> for usize}
+impl PartialEq<usize> for usize {
+    fn eq<'_0_1, '_1_1> = {impl PartialEq<usize> for usize}::eq<'_0_1, '_1_1>
+    vtable: {impl PartialEq<usize> for usize}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialEq<u32> for u32}::eq
+pub fn {impl PartialEq<u32> for u32}::eq<'_0, '_1>(_1: &'_0 u32, _2: &'_1 u32) -> bool
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialEq<u32> for u32}
+impl PartialEq<u32> for u32 {
+    fn eq<'_0_1, '_1_1> = {impl PartialEq<u32> for u32}::eq<'_0_1, '_1_1>
+    vtable: {impl PartialEq<u32> for u32}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialOrd<i32> for i32}::partial_cmp
+pub fn {impl PartialOrd<i32> for i32}::partial_cmp<'_0, '_1>(_1: &'_0 i32, _2: &'_1 i32) -> Option<Ordering>[{built_in impl Sized for Ordering}]
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialOrd<i32> for i32}
+impl PartialOrd<i32> for i32 {
+    parent_clause0 = {impl PartialEq<i32> for i32}
+    fn partial_cmp<'_0_1, '_1_1> = {impl PartialOrd<i32> for i32}::partial_cmp<'_0_1, '_1_1>
+    vtable: {impl PartialOrd<i32> for i32}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialOrd<usize> for usize}::partial_cmp
+pub fn {impl PartialOrd<usize> for usize}::partial_cmp<'_0, '_1>(_1: &'_0 usize, _2: &'_1 usize) -> Option<Ordering>[{built_in impl Sized for Ordering}]
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialOrd<usize> for usize}
+impl PartialOrd<usize> for usize {
+    parent_clause0 = {impl PartialEq<usize> for usize}
+    fn partial_cmp<'_0_1, '_1_1> = {impl PartialOrd<usize> for usize}::partial_cmp<'_0_1, '_1_1>
+    vtable: {impl PartialOrd<usize> for usize}::{vtable}
+}
+
+// Full name: core::cmp::impls::{impl PartialOrd<u32> for u32}::partial_cmp
+pub fn {impl PartialOrd<u32> for u32}::partial_cmp<'_0, '_1>(_1: &'_0 u32, _2: &'_1 u32) -> Option<Ordering>[{built_in impl Sized for Ordering}]
+= <opaque>
+
+// Full name: core::cmp::impls::{impl PartialOrd<u32> for u32}
+impl PartialOrd<u32> for u32 {
+    parent_clause0 = {impl PartialEq<u32> for u32}
+    fn partial_cmp<'_0_1, '_1_1> = {impl PartialOrd<u32> for u32}::partial_cmp<'_0_1, '_1_1>
+    vtable: {impl PartialOrd<u32> for u32}::{vtable}
+}
+
+// Full name: core::iter::range::Step
+#[lang_item("range_step")]
+pub trait Step<Self>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Clone<Self>
+    parent_clause2 : [@TraitClause2]: PartialOrd<Self, Self>
+    fn steps_between<'_0_1, '_1_1> = core::iter::range::Step::steps_between<'_0_1, '_1_1, Self>[Self]
+    fn forward_checked = core::iter::range::Step::forward_checked<Self>[Self]
+    fn backward_checked = core::iter::range::Step::backward_checked<Self>[Self]
+    non-dyn-compatible
+}
+
+pub fn core::iter::range::Step::steps_between<'_0, '_1, Self>(_1: &'_0 Self, _2: &'_1 Self) -> (usize, Option<usize>[{built_in impl Sized for usize}])
+where
+    [@TraitClause0]: Step<Self>,
+= <opaque>
+
+pub fn core::iter::range::Step::forward_checked<Self>(_1: Self, _2: usize) -> Option<Self>[@TraitClause0::parent_clause0]
+where
+    [@TraitClause0]: Step<Self>,
+= <opaque>
+
+pub fn core::iter::range::Step::backward_checked<Self>(_1: Self, _2: usize) -> Option<Self>[@TraitClause0::parent_clause0]
+where
+    [@TraitClause0]: Step<Self>,
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}::backward_checked
+pub fn {impl Step for usize}::backward_checked(_1: usize, _2: usize) -> Option<usize>[{built_in impl Sized for usize}]
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}::forward_checked
+pub fn {impl Step for usize}::forward_checked(_1: usize, _2: usize) -> Option<usize>[{built_in impl Sized for usize}]
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}::steps_between
+pub fn {impl Step for usize}::steps_between<'_0, '_1>(_1: &'_0 usize, _2: &'_1 usize) -> (usize, Option<usize>[{built_in impl Sized for usize}])
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for usize}
+impl Step for usize {
+    parent_clause0 = {built_in impl Sized for usize}
+    parent_clause1 = {impl Clone for usize}
+    parent_clause2 = {impl PartialOrd<usize> for usize}
+    fn steps_between<'_0_1, '_1_1> = {impl Step for usize}::steps_between<'_0_1, '_1_1>
+    fn forward_checked = {impl Step for usize}::forward_checked
+    fn backward_checked = {impl Step for usize}::backward_checked
+    non-dyn-compatible
+}
+
+// Full name: core::iter::range::{impl Step for u32}::backward_checked
+pub fn {impl Step for u32}::backward_checked(_1: u32, _2: usize) -> Option<u32>[{built_in impl Sized for u32}]
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for u32}::forward_checked
+pub fn {impl Step for u32}::forward_checked(_1: u32, _2: usize) -> Option<u32>[{built_in impl Sized for u32}]
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for u32}::steps_between
+pub fn {impl Step for u32}::steps_between<'_0, '_1>(_1: &'_0 u32, _2: &'_1 u32) -> (usize, Option<usize>[{built_in impl Sized for usize}])
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for u32}
+impl Step for u32 {
+    parent_clause0 = {built_in impl Sized for u32}
+    parent_clause1 = {impl Clone for u32}
+    parent_clause2 = {impl PartialOrd<u32> for u32}
+    fn steps_between<'_0_1, '_1_1> = {impl Step for u32}::steps_between<'_0_1, '_1_1>
+    fn forward_checked = {impl Step for u32}::forward_checked
+    fn backward_checked = {impl Step for u32}::backward_checked
+    non-dyn-compatible
+}
+
+// Full name: core::iter::range::{impl Step for i32}::backward_checked
+pub fn {impl Step for i32}::backward_checked(_1: i32, _2: usize) -> Option<i32>[{built_in impl Sized for i32}]
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for i32}::forward_checked
+pub fn {impl Step for i32}::forward_checked(_1: i32, _2: usize) -> Option<i32>[{built_in impl Sized for i32}]
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for i32}::steps_between
+pub fn {impl Step for i32}::steps_between<'_0, '_1>(_1: &'_0 i32, _2: &'_1 i32) -> (usize, Option<usize>[{built_in impl Sized for usize}])
+= <opaque>
+
+// Full name: core::iter::range::{impl Step for i32}
+impl Step for i32 {
+    parent_clause0 = {built_in impl Sized for i32}
+    parent_clause1 = {impl Clone for i32}
+    parent_clause2 = {impl PartialOrd<i32> for i32}
+    fn steps_between<'_0_1, '_1_1> = {impl Step for i32}::steps_between<'_0_1, '_1_1>
+    fn forward_checked = {impl Step for i32}::forward_checked
+    fn backward_checked = {impl Step for i32}::backward_checked
+    non-dyn-compatible
+}
+
+// Full name: core::ops::range::Range
+#[lang_item("Range")]
+pub struct Range<Idx>
+where
+    [@TraitClause0]: Sized<Idx>,
+{
+  start: Idx,
+  end: Idx,
+}
+
+// Full name: core::iter::traits::iterator::Iterator
+#[lang_item("iterator")]
+pub trait Iterator<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self::Item>
+    type Item
+    fn next<'_0_1> = core::iter::traits::iterator::Iterator::next<'_0_1, Self>[Self]
+    vtable: core::iter::traits::iterator::Iterator::{vtable}<Self::Item>
+}
+
+// Full name: core::iter::range::{impl Iterator for Range<A>[@TraitClause0]}::next
+pub fn {impl Iterator for Range<A>[@TraitClause0]}::next<'_0, A>(_1: &'_0 mut Range<A>[@TraitClause0]) -> Option<A>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<A>,
+    [@TraitClause1]: Step<A>,
+= <opaque>
+
+// Full name: core::iter::range::{impl Iterator for Range<A>[@TraitClause0]}
+impl<A> Iterator for Range<A>[@TraitClause0]
+where
+    [@TraitClause0]: Sized<A>,
+    [@TraitClause1]: Step<A>,
+{
+    parent_clause0 = {built_in impl MetaSized for Range<A>[@TraitClause0]}
+    parent_clause1 = @TraitClause0
+    type Item = A
+    fn next<'_0_1> = {impl Iterator for Range<A>[@TraitClause0]}::next<'_0_1, A>[@TraitClause0, @TraitClause1]
+    vtable: {impl Iterator for Range<A>[@TraitClause0]}::{vtable}<A>[@TraitClause0, @TraitClause1]
+}
+
+// Full name: core::iter::traits::collect::{impl IntoIterator for I}::into_iter
+pub fn {impl IntoIterator for I}::into_iter<I>(_1: I) -> I
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: Iterator<I>,
+= <opaque>
+
+#[lang_item("next")]
+pub fn core::iter::traits::iterator::Iterator::next<'_0, Self>(_1: &'_0 mut Self) -> Option<@TraitClause0::Item>[@TraitClause0::parent_clause1]
+where
+    [@TraitClause0]: Iterator<Self>,
+= <opaque>
+
+// Full name: core::slice::index::private_slice_index::Sealed
+pub trait Sealed<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: core::slice::index::private_slice_index::Sealed::{vtable}
+}
+
+// Full name: core::slice::index::private_slice_index::{impl Sealed for usize}
+impl Sealed for usize {
+    parent_clause0 = {built_in impl MetaSized for usize}
+    vtable: {impl Sealed for usize}::{vtable}
+}
+
+// Full name: core::slice::index::SliceIndex
+#[lang_item("SliceIndex")]
+pub trait SliceIndex<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sealed<Self>
+    parent_clause2 : [@TraitClause2]: MetaSized<T>
+    parent_clause3 : [@TraitClause3]: MetaSized<Self::Output>
+    type Output
+    fn get<'_0_1> = core::slice::index::SliceIndex::get<'_0_1, Self, T>[Self]
+    fn get_mut<'_0_1> = core::slice::index::SliceIndex::get_mut<'_0_1, Self, T>[Self]
+    fn get_unchecked = core::slice::index::SliceIndex::get_unchecked<Self, T>[Self]
+    fn get_unchecked_mut = core::slice::index::SliceIndex::get_unchecked_mut<Self, T>[Self]
+    fn index<'_0_1> = core::slice::index::SliceIndex::index<'_0_1, Self, T>[Self]
+    fn index_mut<'_0_1> = core::slice::index::SliceIndex::index_mut<'_0_1, Self, T>[Self]
+    vtable: core::slice::index::SliceIndex::{vtable}<T, Self::Output>
+}
+
+pub fn core::slice::index::SliceIndex::get<'_0, Self, T>(_1: Self, _2: &'_0 T) -> Option<&'_0 @TraitClause0::Output>[{built_in impl Sized for &'_0 @TraitClause0::Output}]
+where
+    [@TraitClause0]: SliceIndex<Self, T>,
+= <opaque>
+
+pub fn core::slice::index::SliceIndex::get_mut<'_0, Self, T>(_1: Self, _2: &'_0 mut T) -> Option<&'_0 mut @TraitClause0::Output>[{built_in impl Sized for &'_0 mut @TraitClause0::Output}]
+where
+    [@TraitClause0]: SliceIndex<Self, T>,
+= <opaque>
+
+pub unsafe fn core::slice::index::SliceIndex::get_unchecked<Self, T>(_1: Self, _2: *const T) -> *const @TraitClause0::Output
+where
+    [@TraitClause0]: SliceIndex<Self, T>,
+= <opaque>
+
+pub unsafe fn core::slice::index::SliceIndex::get_unchecked_mut<Self, T>(_1: Self, _2: *mut T) -> *mut @TraitClause0::Output
+where
+    [@TraitClause0]: SliceIndex<Self, T>,
+= <opaque>
+
+pub fn core::slice::index::SliceIndex::index<'_0, Self, T>(_1: Self, _2: &'_0 T) -> &'_0 @TraitClause0::Output
+where
+    [@TraitClause0]: SliceIndex<Self, T>,
+= <opaque>
+
+pub fn core::slice::index::SliceIndex::index_mut<'_0, Self, T>(_1: Self, _2: &'_0 mut T) -> &'_0 mut @TraitClause0::Output
+where
+    [@TraitClause0]: SliceIndex<Self, T>,
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}::index_mut
+pub fn {impl SliceIndex<[T]> for usize}::index_mut<'_0, T>(_1: usize, _2: &'_0 mut [T]) -> &'_0 mut T
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}::index
+pub fn {impl SliceIndex<[T]> for usize}::index<'_0, T>(_1: usize, _2: &'_0 [T]) -> &'_0 T
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}::get_unchecked_mut
+pub unsafe fn {impl SliceIndex<[T]> for usize}::get_unchecked_mut<T>(_1: usize, _2: *mut [T]) -> *mut T
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}::get_unchecked
+pub unsafe fn {impl SliceIndex<[T]> for usize}::get_unchecked<T>(_1: usize, _2: *const [T]) -> *const T
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}::get_mut
+pub fn {impl SliceIndex<[T]> for usize}::get_mut<'_0, T>(_1: usize, _2: &'_0 mut [T]) -> Option<&'_0 mut T>[{built_in impl Sized for &'_0 mut T}]
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}::get
+pub fn {impl SliceIndex<[T]> for usize}::get<'_0, T>(_1: usize, _2: &'_0 [T]) -> Option<&'_0 T>[{built_in impl Sized for &'_0 T}]
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: core::slice::index::{impl SliceIndex<[T]> for usize}
+impl<T> SliceIndex<[T]> for usize
+where
+    [@TraitClause0]: Sized<T>,
+{
+    parent_clause0 = {built_in impl MetaSized for usize}
+    parent_clause1 = {impl Sealed for usize}
+    parent_clause2 = {built_in impl MetaSized for [T]}
+    parent_clause3 = @TraitClause0::parent_clause0
+    type Output = T
+    fn get<'_0_1> = {impl SliceIndex<[T]> for usize}::get<'_0_1, T>[@TraitClause0]
+    fn get_mut<'_0_1> = {impl SliceIndex<[T]> for usize}::get_mut<'_0_1, T>[@TraitClause0]
+    fn get_unchecked = {impl SliceIndex<[T]> for usize}::get_unchecked<T>[@TraitClause0]
+    fn get_unchecked_mut = {impl SliceIndex<[T]> for usize}::get_unchecked_mut<T>[@TraitClause0]
+    fn index<'_0_1> = {impl SliceIndex<[T]> for usize}::index<'_0_1, T>[@TraitClause0]
+    fn index_mut<'_0_1> = {impl SliceIndex<[T]> for usize}::index_mut<'_0_1, T>[@TraitClause0]
+    vtable: {impl SliceIndex<[T]> for usize}::{vtable}<T>[@TraitClause0]
+}
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::vec::Vec
+#[lang_item("Vec")]
+pub opaque type Vec<T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<type_error("removed allocator parameter")>,
+
+pub fn alloc::vec::{Vec<T>[@TraitClause0, @TraitClause1]}::len<'_0, T, A>(_1: &'_0 Vec<T>[@TraitClause0, @TraitClause1]) -> usize
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+= <opaque>
+
+// Full name: alloc::vec::{impl IndexMut<I> for Vec<T>[@TraitClause0, @TraitClause2]}::index_mut
+pub fn {impl IndexMut<I> for Vec<T>[@TraitClause0, @TraitClause2]}::index_mut<'_0, T, I, A>(_1: &'_0 mut Vec<T>[@TraitClause0, @TraitClause2], _2: I) -> &'_0 mut @TraitClause3::Output
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<I>,
+    [@TraitClause2]: Sized<A>,
+    [@TraitClause3]: SliceIndex<I, [T]>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::test_loop1
+pub fn test_loop1(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let s_3: u32; // local
+    let _4: bool; // anonymous local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: u32; // anonymous local
+    let _8: u32; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: u32; // anonymous local
+
+    storage_live(_8)
+    storage_live(_9)
+    storage_live(_10)
+    storage_live(i_2)
+    i_2 = const 0 : u32
+    storage_live(s_3)
+    s_3 = const 0 : u32
+    loop {
+        storage_live(_4)
+        storage_live(_5)
+        _5 = copy i_2
+        storage_live(_6)
+        _6 = copy max_1
+        _4 = move _5 < move _6
+        if move _4 {
+            storage_dead(_6)
+            storage_dead(_5)
+            storage_live(_7)
+            _7 = copy i_2
+            _8 = copy s_3 panic.+ copy _7
+            s_3 = move _8
+            storage_dead(_7)
+            _9 = copy i_2 panic.+ const 1 : u32
+            i_2 = move _9
+            storage_dead(_4)
+            continue 0
+        } else {
+            break 0
+        }
+    }
+    storage_dead(_6)
+    storage_dead(_5)
+    storage_dead(_4)
+    _10 = copy s_3 panic.* const 2 : u32
+    s_3 = move _10
+    _0 = copy s_3
+    storage_dead(s_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::test_loop2
+pub fn test_loop2(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let s_3: u32; // local
+    let _4: bool; // anonymous local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: bool; // anonymous local
+    let _8: u32; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: u32; // anonymous local
+    let _11: u32; // anonymous local
+
+    storage_live(_10)
+    storage_live(_11)
+    storage_live(i_2)
+    i_2 = const 0 : u32
+    storage_live(s_3)
+    s_3 = const 0 : u32
+    loop {
+        storage_live(_4)
+        storage_live(_5)
+        _5 = copy i_2
+        storage_live(_6)
+        _6 = copy max_1
+        _4 = move _5 < move _6
+        if move _4 {
+            storage_dead(_6)
+            storage_dead(_5)
+            storage_live(_7)
+            storage_live(_8)
+            _8 = copy i_2
+            _7 = move _8 == const 17 : u32
+            if move _7 {
+                storage_dead(_8)
+                storage_dead(_7)
+                break 0
+            } else {
+            }
+            storage_dead(_8)
+            storage_dead(_7)
+            storage_live(_9)
+            _9 = copy i_2
+            _10 = copy s_3 panic.+ copy _9
+            s_3 = move _10
+            storage_dead(_9)
+            _11 = copy i_2 panic.+ const 1 : u32
+            i_2 = move _11
+            storage_dead(_4)
+            continue 0
+        } else {
+            storage_dead(_6)
+            storage_dead(_5)
+            break 0
+        }
+    }
+    storage_dead(_4)
+    _0 = copy s_3
+    storage_dead(s_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::test_loop3
+pub fn test_loop3(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let j_3: u32; // local
+    let s_4: u32; // local
+    let _5: bool; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: u32; // anonymous local
+    let _8: bool; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: u32; // anonymous local
+    let _11: bool; // anonymous local
+    let _12: u32; // anonymous local
+    let _13: u32; // anonymous local
+    let _14: u32; // anonymous local
+    let _15: u32; // anonymous local
+    let _16: u32; // anonymous local
+    let _17: u32; // anonymous local
+    let _18: u32; // anonymous local
+    let _19: u32; // anonymous local
+    let _20: u32; // anonymous local
+    let _21: u32; // anonymous local
+
+    storage_live(_15)
+    storage_live(_17)
+    storage_live(_18)
+    storage_live(_20)
+    storage_live(_21)
+    storage_live(i_2)
+    i_2 = const 0 : u32
+    storage_live(j_3)
+    j_3 = const 0 : u32
+    storage_live(s_4)
+    s_4 = const 0 : u32
+    loop {
+        storage_live(_5)
+        storage_live(_6)
+        _6 = copy i_2
+        storage_live(_7)
+        _7 = copy max_1
+        _5 = move _6 < move _7
+        if move _5 {
+            storage_dead(_7)
+            storage_dead(_6)
+            loop {
+                storage_live(_8)
+                storage_live(_9)
+                _9 = copy j_3
+                storage_live(_10)
+                _10 = copy max_1
+                _8 = move _9 < move _10
+                if move _8 {
+                    storage_dead(_10)
+                    storage_dead(_9)
+                    storage_live(_11)
+                    storage_live(_12)
+                    storage_live(_13)
+                    _13 = copy i_2
+                    storage_live(_14)
+                    _14 = copy j_3
+                    _15 = copy _13 panic.+ copy _14
+                    _12 = move _15
+                    storage_dead(_14)
+                    storage_dead(_13)
+                    _11 = move _12 == const 17 : u32
+                    if move _11 {
+                    } else {
+                        storage_dead(_12)
+                        storage_dead(_11)
+                        storage_live(_16)
+                        _16 = copy i_2
+                        _17 = copy s_4 panic.+ copy _16
+                        s_4 = move _17
+                        storage_dead(_16)
+                        _18 = copy j_3 panic.+ const 1 : u32
+                        j_3 = move _18
+                        storage_dead(_8)
+                        storage_dead(_5)
+                        continue 1
+                    }
+                    storage_dead(_12)
+                    storage_dead(_11)
+                    storage_dead(_8)
+                    continue 0
+                } else {
+                    break 0
+                }
+            }
+            storage_dead(_10)
+            storage_dead(_9)
+            storage_dead(_8)
+            j_3 = const 0 : u32
+            storage_live(_19)
+            _19 = copy i_2
+            _20 = copy s_4 panic.+ copy _19
+            s_4 = move _20
+            storage_dead(_19)
+            _21 = copy i_2 panic.+ const 1 : u32
+            i_2 = move _21
+            storage_dead(_5)
+            continue 0
+        } else {
+            break 0
+        }
+    }
+    storage_dead(_7)
+    storage_dead(_6)
+    storage_dead(_5)
+    _0 = copy s_4
+    storage_dead(s_4)
+    storage_dead(j_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::test_loop4
+pub fn test_loop4(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let j_3: u32; // local
+    let s_4: u32; // local
+    let _5: bool; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: u32; // anonymous local
+    let _8: bool; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: u32; // anonymous local
+    let _11: bool; // anonymous local
+    let _12: u32; // anonymous local
+    let _13: u32; // anonymous local
+    let _14: u32; // anonymous local
+    let _15: u32; // anonymous local
+    let _16: u32; // anonymous local
+    let _17: u32; // anonymous local
+    let _18: u32; // anonymous local
+    let _19: u32; // anonymous local
+    let _20: u32; // anonymous local
+    let _21: u32; // anonymous local
+
+    storage_live(_15)
+    storage_live(_17)
+    storage_live(_18)
+    storage_live(_20)
+    storage_live(_21)
+    storage_live(i_2)
+    i_2 = const 1 : u32
+    storage_live(j_3)
+    j_3 = const 0 : u32
+    storage_live(s_4)
+    s_4 = const 0 : u32
+    loop {
+        storage_live(_5)
+        storage_live(_6)
+        _6 = copy i_2
+        storage_live(_7)
+        _7 = copy max_1
+        _5 = move _6 < move _7
+        if move _5 {
+            storage_dead(_7)
+            storage_dead(_6)
+            loop {
+                storage_live(_8)
+                storage_live(_9)
+                _9 = copy j_3
+                storage_live(_10)
+                _10 = copy max_1
+                _8 = move _9 < move _10
+                if move _8 {
+                    storage_dead(_10)
+                    storage_dead(_9)
+                    storage_live(_11)
+                    storage_live(_12)
+                    storage_live(_13)
+                    _13 = copy i_2
+                    storage_live(_14)
+                    _14 = copy j_3
+                    _15 = copy _13 panic.+ copy _14
+                    _12 = move _15
+                    storage_dead(_14)
+                    storage_dead(_13)
+                    _11 = move _12 == const 17 : u32
+                    if move _11 {
+                    } else {
+                        storage_dead(_12)
+                        storage_dead(_11)
+                        storage_live(_16)
+                        _16 = copy i_2
+                        _17 = copy s_4 panic.+ copy _16
+                        s_4 = move _17
+                        storage_dead(_16)
+                        _18 = copy j_3 panic.+ const 1 : u32
+                        j_3 = move _18
+                        storage_dead(_8)
+                        break 1
+                    }
+                    storage_dead(_12)
+                    storage_dead(_11)
+                    storage_dead(_8)
+                    continue 0
+                } else {
+                    break 0
+                }
+            }
+            storage_dead(_10)
+            storage_dead(_9)
+            storage_dead(_8)
+            j_3 = const 0 : u32
+            storage_live(_19)
+            _19 = copy i_2
+            _20 = copy s_4 panic.+ copy _19
+            s_4 = move _20
+            storage_dead(_19)
+            _21 = copy i_2 panic.+ const 1 : u32
+            i_2 = move _21
+            storage_dead(_5)
+            continue 0
+        } else {
+            storage_dead(_7)
+            storage_dead(_6)
+            break 0
+        }
+    }
+    storage_dead(_5)
+    _0 = copy s_4
+    storage_dead(s_4)
+    storage_dead(j_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::test_loop5
+pub fn test_loop5(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let j_3: u32; // local
+    let s_4: u32; // local
+    let _5: bool; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: u32; // anonymous local
+    let _8: bool; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: u32; // anonymous local
+    let _11: u32; // anonymous local
+    let _12: u32; // anonymous local
+    let _13: u32; // anonymous local
+    let _14: u32; // anonymous local
+    let _15: u32; // anonymous local
+    let _16: u32; // anonymous local
+
+    storage_live(_12)
+    storage_live(_13)
+    storage_live(_15)
+    storage_live(_16)
+    storage_live(i_2)
+    i_2 = const 0 : u32
+    storage_live(j_3)
+    j_3 = const 0 : u32
+    storage_live(s_4)
+    s_4 = const 0 : u32
+    loop {
+        storage_live(_5)
+        storage_live(_6)
+        _6 = copy i_2
+        storage_live(_7)
+        _7 = copy max_1
+        _5 = move _6 < move _7
+        if move _5 {
+            storage_dead(_7)
+            storage_dead(_6)
+            loop {
+                storage_live(_8)
+                storage_live(_9)
+                _9 = copy j_3
+                storage_live(_10)
+                _10 = copy max_1
+                _8 = move _9 < move _10
+                if move _8 {
+                    storage_dead(_10)
+                    storage_dead(_9)
+                    storage_live(_11)
+                    _11 = copy j_3
+                    _12 = copy s_4 panic.+ copy _11
+                    s_4 = move _12
+                    storage_dead(_11)
+                    _13 = copy j_3 panic.+ const 1 : u32
+                    j_3 = move _13
+                    storage_dead(_8)
+                    continue 0
+                } else {
+                    break 0
+                }
+            }
+            storage_dead(_10)
+            storage_dead(_9)
+            storage_dead(_8)
+            storage_live(_14)
+            _14 = copy i_2
+            _15 = copy s_4 panic.+ copy _14
+            s_4 = move _15
+            storage_dead(_14)
+            _16 = copy i_2 panic.+ const 1 : u32
+            i_2 = move _16
+            storage_dead(_5)
+            continue 0
+        } else {
+            break 0
+        }
+    }
+    storage_dead(_7)
+    storage_dead(_6)
+    storage_dead(_5)
+    _0 = copy s_4
+    storage_dead(s_4)
+    storage_dead(j_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::test_loop6
+pub fn test_loop6(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let s_3: u32; // local
+    let _4: bool; // anonymous local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: bool; // anonymous local
+    let _8: u32; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: u32; // anonymous local
+    let _11: u32; // anonymous local
+    let _12: u32; // anonymous local
+
+    storage_live(_10)
+    storage_live(_11)
+    storage_live(_12)
+    storage_live(i_2)
+    i_2 = const 0 : u32
+    storage_live(s_3)
+    s_3 = const 0 : u32
+    loop {
+        storage_live(_4)
+        storage_live(_5)
+        _5 = copy i_2
+        storage_live(_6)
+        _6 = copy max_1
+        _4 = move _5 < move _6
+        if move _4 {
+            storage_dead(_6)
+            storage_dead(_5)
+            storage_live(_7)
+            storage_live(_8)
+            _8 = copy i_2
+            _7 = move _8 > const 3 : u32
+            if move _7 {
+                storage_dead(_8)
+                storage_dead(_7)
+                break 0
+            } else {
+            }
+            storage_dead(_8)
+            storage_dead(_7)
+            storage_live(_9)
+            _9 = copy i_2
+            _10 = copy s_3 panic.+ copy _9
+            s_3 = move _10
+            storage_dead(_9)
+            _11 = copy i_2 panic.+ const 1 : u32
+            i_2 = move _11
+            storage_dead(_4)
+            continue 0
+        } else {
+            storage_dead(_6)
+            storage_dead(_5)
+            break 0
+        }
+    }
+    storage_dead(_4)
+    // All the below nodes are exit candidates (each of them is referenced twice)
+    _12 = copy s_3 panic.+ const 1 : u32
+    s_3 = move _12
+    _0 = copy s_3
+    storage_dead(s_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::test_loop7
+pub fn test_loop7(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let s_3: u32; // local
+    let _4: bool; // anonymous local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: bool; // anonymous local
+    let _8: u32; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: bool; // anonymous local
+    let _11: u32; // anonymous local
+    let _12: u32; // anonymous local
+    let _13: u32; // anonymous local
+    let _14: u32; // anonymous local
+    let _15: u32; // anonymous local
+
+    storage_live(_13)
+    storage_live(_14)
+    storage_live(_15)
+    storage_live(i_2)
+    i_2 = const 0 : u32
+    storage_live(s_3)
+    s_3 = const 0 : u32
+    storage_live(_4)
+    storage_live(_5)
+    _5 = copy i_2
+    storage_live(_6)
+    _6 = copy max_1
+    _4 = move _5 < move _6
+    if move _4 {
+        storage_dead(_6)
+        storage_dead(_5)
+        loop {
+            storage_live(_7)
+            storage_live(_8)
+            _8 = copy i_2
+            storage_live(_9)
+            _9 = copy max_1
+            _7 = move _8 < move _9
+            if move _7 {
+                storage_dead(_9)
+                storage_dead(_8)
+                storage_live(_10)
+                storage_live(_11)
+                _11 = copy i_2
+                _10 = move _11 > const 3 : u32
+                if move _10 {
+                    storage_dead(_11)
+                    storage_dead(_10)
+                    break 0
+                } else {
+                    storage_dead(_11)
+                    storage_dead(_10)
+                    storage_live(_12)
+                    _12 = copy i_2
+                    _13 = copy s_3 panic.+ copy _12
+                    s_3 = move _13
+                    storage_dead(_12)
+                    _14 = copy i_2 panic.+ const 1 : u32
+                    i_2 = move _14
+                    storage_dead(_7)
+                    continue 0
+                }
+            } else {
+                storage_dead(_9)
+                storage_dead(_8)
+                break 0
+            }
+        }
+        storage_dead(_7)
+    } else {
+        storage_dead(_6)
+        storage_dead(_5)
+        s_3 = const 2 : u32
+    }
+    storage_dead(_4)
+    _15 = copy s_3 panic.+ const 1 : u32
+    s_3 = move _15
+    _0 = copy s_3
+    storage_dead(s_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::test_loops
+pub fn test_loops()
+{
+    let _0: (); // return
+    let x_1: u32; // local
+    let _2: bool; // anonymous local
+    let _3: u32; // anonymous local
+    let x_4: u32; // local
+    let _5: bool; // anonymous local
+    let _6: u32; // anonymous local
+    let x_7: u32; // local
+    let _8: bool; // anonymous local
+    let _9: u32; // anonymous local
+    let x_10: u32; // local
+    let _11: bool; // anonymous local
+    let _12: u32; // anonymous local
+    let x_13: u32; // local
+    let _14: bool; // anonymous local
+    let _15: u32; // anonymous local
+    let x_16: u32; // local
+    let _17: bool; // anonymous local
+    let _18: u32; // anonymous local
+
+    _0 = ()
+    storage_live(x_1)
+    x_1 = test_loop1(const 2 : u32)
+    storage_live(_2)
+    storage_live(_3)
+    _3 = copy x_1
+    _2 = move _3 == const 2 : u32
+    if move _2 {
+    } else {
+        storage_dead(_3)
+        panic(core::panicking::panic)
+    }
+    storage_dead(_3)
+    storage_dead(_2)
+    storage_live(x_4)
+    x_4 = test_loop2(const 2 : u32)
+    storage_live(_5)
+    storage_live(_6)
+    _6 = copy x_4
+    _5 = move _6 == const 1 : u32
+    if move _5 {
+    } else {
+        storage_dead(_6)
+        panic(core::panicking::panic)
+    }
+    storage_dead(_6)
+    storage_dead(_5)
+    storage_live(x_7)
+    x_7 = test_loop3(const 2 : u32)
+    storage_live(_8)
+    storage_live(_9)
+    _9 = copy x_7
+    _8 = move _9 == const 3 : u32
+    if move _8 {
+    } else {
+        storage_dead(_9)
+        panic(core::panicking::panic)
+    }
+    storage_dead(_9)
+    storage_dead(_8)
+    storage_live(x_10)
+    x_10 = test_loop4(const 20 : u32)
+    storage_live(_11)
+    storage_live(_12)
+    _12 = copy x_10
+    _11 = move _12 == const 1 : u32
+    if move _11 {
+    } else {
+        storage_dead(_12)
+        panic(core::panicking::panic)
+    }
+    storage_dead(_12)
+    storage_dead(_11)
+    storage_live(x_13)
+    x_13 = test_loop5(const 2 : u32)
+    storage_live(_14)
+    storage_live(_15)
+    _15 = copy x_13
+    _14 = move _15 == const 2 : u32
+    if move _14 {
+    } else {
+        storage_dead(_15)
+        panic(core::panicking::panic)
+    }
+    storage_dead(_15)
+    storage_dead(_14)
+    storage_live(x_16)
+    x_16 = test_loop6(const 2 : u32)
+    storage_live(_17)
+    storage_live(_18)
+    _18 = copy x_16
+    _17 = move _18 == const 2 : u32
+    if move _17 {
+    } else {
+        storage_dead(_18)
+        panic(core::panicking::panic)
+    }
+    storage_dead(_18)
+    storage_dead(_17)
+    _0 = ()
+    storage_dead(x_16)
+    storage_dead(x_13)
+    storage_dead(x_10)
+    storage_dead(x_7)
+    storage_dead(x_4)
+    storage_dead(x_1)
+    return
+}
+
+// Full name: test_crate::nested_loops_enum
+pub fn nested_loops_enum(_1: usize, _2: usize) -> usize
+{
+    let _0: usize; // return
+    let step_out_1: usize; // arg #1
+    let step_in_2: usize; // arg #2
+    let s_3: usize; // local
+    let _4: Range<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _5: Range<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let iter_6: Range<i32>[{built_in impl Sized for i32}]; // local
+    let _7: Option<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _8: &'1 mut Range<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _9: &'2 mut Range<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _10: usize; // anonymous local
+    let _11: Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _12: Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _13: usize; // anonymous local
+    let iter_14: Range<usize>[{built_in impl Sized for usize}]; // local
+    let _15: Option<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _16: &'4 mut Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _17: &'5 mut Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _18: Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _19: Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _20: usize; // anonymous local
+    let iter_21: Range<usize>[{built_in impl Sized for usize}]; // local
+    let _22: Option<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _23: &'6 mut Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _24: &'7 mut Range<usize>[{built_in impl Sized for usize}]; // anonymous local
+    let _25: usize; // anonymous local
+
+    storage_live(_10)
+    storage_live(_25)
+    storage_live(s_3)
+    s_3 = const 0 : usize
+    storage_live(_4)
+    storage_live(_5)
+    _5 = Range { start: const 0 : i32, end: const 128 : i32 }
+    _4 = {impl IntoIterator for I}::into_iter<Range<i32>[{built_in impl Sized for i32}]>[{built_in impl Sized for Range<i32>[{built_in impl Sized for i32}]}, {impl Iterator for Range<A>[@TraitClause0]}<i32>[{built_in impl Sized for i32}, {impl Step for i32}]](move _5)
+    storage_dead(_5)
+    storage_live(iter_6)
+    iter_6 = move _4
+    loop {
+        storage_live(_7)
+        storage_live(_8)
+        storage_live(_9)
+        _9 = &mut iter_6
+        _8 = &two-phase-mut (*_9)
+        _7 = {impl Iterator for Range<A>[@TraitClause0]}::next<'9, i32>[{built_in impl Sized for i32}, {impl Step for i32}](move _8)
+        storage_dead(_8)
+        match _7 {
+            Option::None => {
+                break 0
+            },
+            Option::Some => {
+            },
+        }
+        _10 = copy s_3 panic.+ const 1 : usize
+        s_3 = move _10
+        storage_dead(_9)
+        storage_dead(_7)
+        continue 0
+    }
+    storage_dead(_9)
+    storage_dead(_7)
+    storage_dead(iter_6)
+    storage_dead(_4)
+    storage_live(_11)
+    storage_live(_12)
+    storage_live(_13)
+    _13 = copy step_out_1
+    _12 = Range { start: const 0 : usize, end: move _13 }
+    storage_dead(_13)
+    _11 = {impl IntoIterator for I}::into_iter<Range<usize>[{built_in impl Sized for usize}]>[{built_in impl Sized for Range<usize>[{built_in impl Sized for usize}]}, {impl Iterator for Range<A>[@TraitClause0]}<usize>[{built_in impl Sized for usize}, {impl Step for usize}]](move _12)
+    storage_dead(_12)
+    storage_live(iter_14)
+    iter_14 = move _11
+    loop {
+        storage_live(_15)
+        storage_live(_16)
+        storage_live(_17)
+        _17 = &mut iter_14
+        _16 = &two-phase-mut (*_17)
+        _15 = {impl Iterator for Range<A>[@TraitClause0]}::next<'11, usize>[{built_in impl Sized for usize}, {impl Step for usize}](move _16)
+        storage_dead(_16)
+        match _15 {
+            Option::None => {
+                break 0
+            },
+            Option::Some => {
+            },
+        }
+        storage_live(_18)
+        storage_live(_19)
+        storage_live(_20)
+        _20 = copy step_in_2
+        _19 = Range { start: const 0 : usize, end: move _20 }
+        storage_dead(_20)
+        _18 = {impl IntoIterator for I}::into_iter<Range<usize>[{built_in impl Sized for usize}]>[{built_in impl Sized for Range<usize>[{built_in impl Sized for usize}]}, {impl Iterator for Range<A>[@TraitClause0]}<usize>[{built_in impl Sized for usize}, {impl Step for usize}]](move _19)
+        storage_dead(_19)
+        storage_live(iter_21)
+        iter_21 = move _18
+        loop {
+            storage_live(_22)
+            storage_live(_23)
+            storage_live(_24)
+            _24 = &mut iter_21
+            _23 = &two-phase-mut (*_24)
+            _22 = {impl Iterator for Range<A>[@TraitClause0]}::next<'13, usize>[{built_in impl Sized for usize}, {impl Step for usize}](move _23)
+            storage_dead(_23)
+            match _22 {
+                Option::None => {
+                    break 0
+                },
+                Option::Some => {
+                },
+            }
+            _25 = copy s_3 panic.+ const 1 : usize
+            s_3 = move _25
+            storage_dead(_24)
+            storage_dead(_22)
+            continue 0
+        }
+        storage_dead(_24)
+        storage_dead(_22)
+        storage_dead(iter_21)
+        storage_dead(_18)
+        storage_dead(_17)
+        storage_dead(_15)
+        continue 0
+    }
+    storage_dead(_17)
+    storage_dead(_15)
+    storage_dead(iter_14)
+    storage_dead(_11)
+    _0 = copy s_3
+    storage_dead(s_3)
+    return
+}
+
+// Full name: test_crate::loop_inside_if
+pub fn loop_inside_if(_1: bool, _2: u32) -> u32
+{
+    let _0: u32; // return
+    let b_1: bool; // arg #1
+    let n_2: u32; // arg #2
+    let _3: bool; // anonymous local
+    let s_4: u32; // local
+    let _5: Range<u32>[{built_in impl Sized for u32}]; // anonymous local
+    let _6: Range<u32>[{built_in impl Sized for u32}]; // anonymous local
+    let _7: u32; // anonymous local
+    let iter_8: Range<u32>[{built_in impl Sized for u32}]; // local
+    let _9: Option<u32>[{built_in impl Sized for u32}]; // anonymous local
+    let _10: &'1 mut Range<u32>[{built_in impl Sized for u32}]; // anonymous local
+    let _11: &'2 mut Range<u32>[{built_in impl Sized for u32}]; // anonymous local
+    let i_12: u32; // local
+    let _13: u32; // anonymous local
+    let _14: u32; // anonymous local
+
+    storage_live(_14)
+    storage_live(_3)
+    _3 = copy b_1
+    if move _3 {
+        storage_live(s_4)
+        s_4 = const 0 : u32
+        storage_live(_5)
+        storage_live(_6)
+        storage_live(_7)
+        _7 = copy n_2
+        _6 = Range { start: const 0 : u32, end: move _7 }
+        storage_dead(_7)
+        _5 = {impl IntoIterator for I}::into_iter<Range<u32>[{built_in impl Sized for u32}]>[{built_in impl Sized for Range<u32>[{built_in impl Sized for u32}]}, {impl Iterator for Range<A>[@TraitClause0]}<u32>[{built_in impl Sized for u32}, {impl Step for u32}]](move _6)
+        storage_dead(_6)
+        storage_live(iter_8)
+        iter_8 = move _5
+        loop {
+            storage_live(_9)
+            storage_live(_10)
+            storage_live(_11)
+            _11 = &mut iter_8
+            _10 = &two-phase-mut (*_11)
+            _9 = {impl Iterator for Range<A>[@TraitClause0]}::next<'4, u32>[{built_in impl Sized for u32}, {impl Step for u32}](move _10)
+            storage_dead(_10)
+            match _9 {
+                Option::None => {
+                    break 0
+                },
+                Option::Some => {
+                    storage_live(i_12)
+                    i_12 = copy (_9 as variant Option::Some).0
+                    storage_live(_13)
+                    _13 = copy i_12
+                    _14 = copy s_4 panic.+ copy _13
+                    s_4 = move _14
+                    storage_dead(_13)
+                    storage_dead(i_12)
+                    storage_dead(_11)
+                    storage_dead(_9)
+                    continue 0
+                },
+            }
+        }
+        storage_dead(_11)
+        storage_dead(_9)
+        storage_dead(iter_8)
+        storage_dead(_5)
+        _0 = copy s_4
+        storage_dead(s_4)
+    } else {
+        _0 = const 0 : u32
+    }
+    storage_dead(_3)
+    return
+}
+
+pub fn test_crate::sum(_1: u32) -> u32
+{
+    let _0: u32; // return
+    let max_1: u32; // arg #1
+    let i_2: u32; // local
+    let s_3: u32; // local
+    let _4: bool; // anonymous local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: u32; // anonymous local
+    let _8: u32; // anonymous local
+    let _9: u32; // anonymous local
+    let _10: u32; // anonymous local
+
+    storage_live(_8)
+    storage_live(_9)
+    storage_live(_10)
+    storage_live(i_2)
+    i_2 = const 0 : u32
+    storage_live(s_3)
+    s_3 = const 0 : u32
+    loop {
+        storage_live(_4)
+        storage_live(_5)
+        _5 = copy i_2
+        storage_live(_6)
+        _6 = copy max_1
+        _4 = move _5 < move _6
+        if move _4 {
+            storage_dead(_6)
+            storage_dead(_5)
+            storage_live(_7)
+            _7 = copy i_2
+            _8 = copy s_3 panic.+ copy _7
+            s_3 = move _8
+            storage_dead(_7)
+            _9 = copy i_2 panic.+ const 1 : u32
+            i_2 = move _9
+            storage_dead(_4)
+            continue 0
+        } else {
+            break 0
+        }
+    }
+    storage_dead(_6)
+    storage_dead(_5)
+    storage_dead(_4)
+    _10 = copy s_3 panic.* const 2 : u32
+    s_3 = move _10
+    _0 = copy s_3
+    storage_dead(s_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::sum_array
+pub fn sum_array<const N : usize>(_1: [u32; N]) -> u32
+{
+    let _0: u32; // return
+    let a_1: [u32; N]; // arg #1
+    let i_2: usize; // local
+    let s_3: u32; // local
+    let _4: bool; // anonymous local
+    let _5: usize; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: usize; // anonymous local
+    let _8: u32; // anonymous local
+    let _9: usize; // anonymous local
+    let _10: &'_ [u32; N]; // anonymous local
+    let _11: &'_ u32; // anonymous local
+
+    storage_live(_8)
+    storage_live(_9)
+    storage_live(i_2)
+    i_2 = const 0 : usize
+    storage_live(s_3)
+    s_3 = const 0 : u32
+    loop {
+        storage_live(_4)
+        storage_live(_5)
+        _5 = copy i_2
+        _4 = move _5 < const N
+        if move _4 {
+            storage_dead(_5)
+            storage_live(_6)
+            storage_live(_7)
+            _7 = copy i_2
+            storage_live(_10)
+            _10 = &a_1
+            storage_live(_11)
+            _11 = @ArrayIndexShared<'_, u32, N>(move _10, copy _7)
+            _6 = copy (*_11)
+            _8 = copy s_3 panic.+ copy _6
+            s_3 = move _8
+            storage_dead(_6)
+            storage_dead(_7)
+            _9 = copy i_2 panic.+ const 1 : usize
+            i_2 = move _9
+            storage_dead(_4)
+            continue 0
+        } else {
+            break 0
+        }
+    }
+    storage_dead(_5)
+    storage_dead(_4)
+    _0 = copy s_3
+    storage_dead(s_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::clear
+pub fn clear<'_0>(_1: &'_0 mut Vec<u32>[{built_in impl Sized for u32}, {built_in impl Sized for Global}])
+{
+    let _0: (); // return
+    let v_1: &'1 mut Vec<u32>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]; // arg #1
+    let i_2: usize; // local
+    let _3: bool; // anonymous local
+    let _4: usize; // anonymous local
+    let _5: usize; // anonymous local
+    let _6: &'3 Vec<u32>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]; // anonymous local
+    let _7: &'5 mut u32; // anonymous local
+    let _8: &'6 mut Vec<u32>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]; // anonymous local
+    let _9: usize; // anonymous local
+    let _10: usize; // anonymous local
+
+    storage_live(_10)
+    _0 = ()
+    storage_live(i_2)
+    i_2 = const 0 : usize
+    loop {
+        storage_live(_3)
+        storage_live(_4)
+        _4 = copy i_2
+        storage_live(_5)
+        storage_live(_6)
+        _6 = &(*v_1)
+        _5 = alloc::vec::{Vec<T>[@TraitClause0, @TraitClause1]}::len<'8, u32, Global>[{built_in impl Sized for u32}, {built_in impl Sized for Global}](move _6)
+        storage_dead(_6)
+        _3 = move _4 < move _5
+        if move _3 {
+        } else {
+            break 0
+        }
+        storage_dead(_5)
+        storage_dead(_4)
+        storage_live(_7)
+        storage_live(_8)
+        _8 = &mut (*v_1)
+        storage_live(_9)
+        _9 = copy i_2
+        _7 = {impl IndexMut<I> for Vec<T>[@TraitClause0, @TraitClause2]}::index_mut<'10, u32, usize, Global>[{built_in impl Sized for u32}, {built_in impl Sized for usize}, {built_in impl Sized for Global}, {impl SliceIndex<[T]> for usize}<u32>[{built_in impl Sized for u32}]](move _8, move _9)
+        storage_dead(_9)
+        storage_dead(_8)
+        (*_7) = const 0 : u32
+        storage_dead(_7)
+        _10 = copy i_2 panic.+ const 1 : usize
+        i_2 = move _10
+        storage_dead(_3)
+        continue 0
+    }
+    storage_dead(_5)
+    storage_dead(_4)
+    _0 = ()
+    storage_dead(_3)
+    storage_dead(i_2)
+    return
+}
+
+// Full name: test_crate::List
+pub enum List<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  Cons(T, alloc::boxed::Box<List<T>[@TraitClause0]>[{built_in impl MetaSized for List<T>[@TraitClause0]}, {built_in impl Sized for Global}]),
+  Nil,
+}
+
+// Full name: test_crate::get_elem_mut
+pub fn get_elem_mut<'_0>(_1: &'_0 mut List<usize>[{built_in impl Sized for usize}], _2: usize) -> &'_0 mut usize
+{
+    let _0: &'1 mut usize; // return
+    let ls_1: &'3 mut List<usize>[{built_in impl Sized for usize}]; // arg #1
+    let x_2: usize; // arg #2
+    let y_3: &'4 mut usize; // local
+    let tl_4: &'6 mut alloc::boxed::Box<List<usize>[{built_in impl Sized for usize}]>[{built_in impl MetaSized for List<usize>[{built_in impl Sized for usize}]}, {built_in impl Sized for Global}]; // local
+    let _5: bool; // anonymous local
+    let _6: usize; // anonymous local
+    let _7: usize; // anonymous local
+    let _8: &'7 mut List<usize>[{built_in impl Sized for usize}]; // anonymous local
+
+    loop {
+        match (*ls_1) {
+            List::Cons => {
+                storage_live(y_3)
+                y_3 = &mut ((*ls_1) as variant List::Cons).0
+                storage_live(tl_4)
+                tl_4 = &mut ((*ls_1) as variant List::Cons).1
+                storage_live(_5)
+                storage_live(_6)
+                _6 = copy (*y_3)
+                storage_live(_7)
+                _7 = copy x_2
+                _5 = move _6 == move _7
+                if move _5 {
+                    storage_dead(_7)
+                    storage_dead(_6)
+                    _0 = &mut (*y_3)
+                    storage_dead(_5)
+                    storage_dead(tl_4)
+                    storage_dead(y_3)
+                    return
+                } else {
+                }
+                storage_dead(_7)
+                storage_dead(_6)
+                storage_live(_8)
+                _8 = &mut (*(*tl_4))
+                ls_1 = move _8
+                storage_dead(_8)
+                storage_dead(_5)
+                storage_dead(tl_4)
+                storage_dead(y_3)
+                continue 0
+            },
+            List::Nil => {
+                panic(core::panicking::panic)
+            },
+        }
+    }
+}
+
+// Full name: test_crate::list_nth_mut_loop_with_id
+pub fn list_nth_mut_loop_with_id<'_0, T>(_1: &'_0 mut List<T>[@TraitClause0], _2: u32) -> &'_0 mut T
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let _0: &'1 mut T; // return
+    let ls_1: &'3 mut List<T>[@TraitClause0]; // arg #1
+    let i_2: u32; // arg #2
+    let x_3: &'4 mut T; // local
+    let tl_4: &'6 mut alloc::boxed::Box<List<T>[@TraitClause0]>[{built_in impl MetaSized for List<T>[@TraitClause0]}, {built_in impl Sized for Global}]; // local
+    let _5: bool; // anonymous local
+    let _6: u32; // anonymous local
+    let _7: &'7 mut List<T>[@TraitClause0]; // anonymous local
+    let _8: u32; // anonymous local
+
+    storage_live(_8)
+    loop {
+        match (*ls_1) {
+            List::Cons => {
+                storage_live(x_3)
+                x_3 = &mut ((*ls_1) as variant List::Cons).0
+                storage_live(tl_4)
+                tl_4 = &mut ((*ls_1) as variant List::Cons).1
+                storage_live(_5)
+                storage_live(_6)
+                _6 = copy i_2
+                _5 = move _6 == const 0 : u32
+                if move _5 {
+                    storage_dead(_6)
+                    _0 = &mut (*x_3)
+                    storage_dead(_5)
+                    storage_dead(tl_4)
+                    storage_dead(x_3)
+                    return
+                } else {
+                }
+                storage_dead(_6)
+                storage_live(_7)
+                _7 = &mut (*(*tl_4))
+                ls_1 = move _7
+                storage_dead(_7)
+                _8 = copy i_2 panic.- const 1 : u32
+                i_2 = move _8
+                storage_dead(_5)
+                storage_dead(tl_4)
+                storage_dead(x_3)
+                continue 0
+            },
+            _ => {
+                break 0
+            },
+        }
+    }
+    panic(core::panicking::panic)
+}
+
+// Full name: test_crate::loop_break_1
+pub fn loop_break_1()
+{
+    let _0: (); // return
+    let x_1: i32; // local
+    let _2: bool; // anonymous local
+
+    _0 = ()
+    storage_live(x_1)
+    x_1 = const 0 : i32
+    loop {
+        x_1 = const 1 : i32
+        storage_live(_2)
+        _2 = const true
+        if move _2 {
+            break 0
+        } else {
+            storage_dead(_2)
+            x_1 = const 3 : i32
+            continue 0
+        }
+    }
+    x_1 = const 2 : i32
+    storage_dead(_2)
+    x_1 = const 4 : i32
+    _0 = ()
+    storage_dead(x_1)
+    return
+}
+
+// Full name: test_crate::loop_break_2
+pub fn loop_break_2()
+{
+    let _0: (); // return
+    let x_1: i32; // local
+    let _2: bool; // anonymous local
+
+    _0 = ()
+    storage_live(x_1)
+    x_1 = const 0 : i32
+    loop {
+        x_1 = const 1 : i32
+        storage_live(_2)
+        _2 = const true
+        if move _2 {
+            break 0
+        } else {
+            storage_dead(_2)
+            x_1 = const 3 : i32
+            continue 0
+        }
+    }
+    storage_dead(_2)
+    x_1 = const 2 : i32
+    x_1 = const 4 : i32
+    _0 = ()
+    storage_dead(x_1)
+    return
+}
+
+// Full name: test_crate::interleaved_loops
+pub fn interleaved_loops()
+{
+    let _0: (); // return
+    let x_1: i32; // local
+    let _2: bool; // anonymous local
+    let _3: bool; // anonymous local
+
+    _0 = ()
+    storage_live(x_1)
+    x_1 = const 0 : i32
+    loop {
+        x_1 = const 1 : i32
+        loop {
+            x_1 = const 2 : i32
+            storage_live(_2)
+            _2 = const true
+            if move _2 {
+                break 0
+            } else {
+                storage_dead(_2)
+                x_1 = const 4 : i32
+                storage_live(_3)
+                _3 = const true
+                if move _3 {
+                } else {
+                    break 1
+                }
+                x_1 = const 5 : i32
+                storage_dead(_3)
+                continue 0
+            }
+        }
+        x_1 = const 3 : i32
+        storage_dead(_2)
+        continue 0
+    }
+    storage_dead(_3)
+    x_1 = const 6 : i32
+    x_1 = const 8 : i32
+    _0 = ()
+    storage_dead(x_1)
+    return
+}
+
+// Full name: test_crate::interleaved_loops2
+pub fn interleaved_loops2()
+{
+    let _0: (); // return
+    let x_1: i32; // local
+    let _2: bool; // anonymous local
+    let _3: bool; // anonymous local
+
+    _0 = ()
+    storage_live(x_1)
+    x_1 = const 0 : i32
+    loop {
+        x_1 = const 1 : i32
+        loop {
+            x_1 = const 2 : i32
+            storage_live(_2)
+            _2 = const true
+            if move _2 {
+                break 0
+            } else {
+                // This node is interesting: it can reach a backward edge to 'b in the forward
+                // graph, but not one to 'a. If we're not careful, we could think it's an exit node
+                // for 'a.
+                x_1 = const 4 : i32
+                storage_live(_3)
+                _3 = const true
+                if move _3 {
+                    break 1
+                } else {
+                }
+                storage_dead(_3)
+                storage_dead(_2)
+                x_1 = const 5 : i32
+                continue 0
+            }
+        }
+        x_1 = const 3 : i32
+        storage_dead(_2)
+        continue 0
+    }
+    storage_dead(_3)
+    storage_dead(_2)
+    x_1 = const 7 : i32
+    _0 = ()
+    storage_dead(x_1)
+    return
+}
+
+// Full name: test_crate::loop_after_loop
+pub fn loop_after_loop()
+{
+    let _0: (); // return
+    let x_1: i32; // local
+    let _2: bool; // anonymous local
+    let _3: i32; // anonymous local
+    let _4: bool; // anonymous local
+    let _5: i32; // anonymous local
+
+    _0 = ()
+    storage_live(x_1)
+    x_1 = const 0 : i32
+    loop {
+        storage_live(_2)
+        storage_live(_3)
+        _3 = copy x_1
+        _2 = move _3 > const 13 : i32
+        if move _2 {
+            storage_dead(_3)
+            x_1 = const 1 : i32
+            storage_dead(_2)
+            continue 0
+        } else {
+            break 0
+        }
+    }
+    storage_dead(_3)
+    storage_dead(_2)
+    x_1 = const 2 : i32
+    loop {
+        storage_live(_4)
+        storage_live(_5)
+        _5 = copy x_1
+        _4 = move _5 > const 13 : i32
+        if move _4 {
+            storage_dead(_5)
+            x_1 = const 3 : i32
+            storage_dead(_4)
+            continue 0
+        } else {
+            break 0
+        }
+    }
+    storage_dead(_5)
+    storage_dead(_4)
+    x_1 = const 4 : i32
+    _0 = ()
+    storage_dead(x_1)
+    return
+}
+
+// Full name: test_crate::trick_exit_computation
+pub fn trick_exit_computation()
+{
+    let _0: (); // return
+    let x_1: i32; // local
+
+    _0 = ()
+    storage_live(x_1)
+    x_1 = const 0 : i32
+    loop {
+        x_1 = const 1 : i32
+        loop {
+            x_1 = const 2 : i32
+            switch copy x_1 {
+                0 : i32 => {
+                    // This makes the algorithm pick the outer break as loop exit, making the reconstructed
+                    // cfg much worse than with fewer branches.
+                    x_1 = const 3 : i32
+                    break 0
+                },
+                1 : i32 => {
+                    x_1 = const 4 : i32
+                    break 0
+                },
+                2 : i32 => {
+                    x_1 = const 5 : i32
+                    break 0
+                },
+                3 : i32 => {
+                    x_1 = const 6 : i32
+                    break 0
+                },
+                4 : i32 => {
+                    x_1 = const 7 : i32
+                    break 0
+                },
+                5 : i32 => {
+                    x_1 = const 8 : i32
+                    x_1 = const 11 : i32
+                    continue 1
+                },
+                6 : i32 => {
+                    x_1 = const 9 : i32
+                    x_1 = const 11 : i32
+                    continue 1
+                },
+                _ => {
+                    x_1 = const 10 : i32
+                    continue 0
+                },
+            }
+        }
+        break 0
+    }
+    x_1 = const 12 : i32
+    _0 = ()
+    storage_dead(x_1)
+    return
+}
+
+
+

@@ -69,11 +69,11 @@ impl StatementId {
 }
 
 impl Statement {
-    pub fn new(span: Span, content: RawStatement) -> Self {
+    pub fn new(span: Span, kind: StatementKind) -> Self {
         Statement {
             span,
             id: StatementId::fresh(),
-            content,
+            kind,
             comments_before: vec![],
         }
     }
@@ -130,15 +130,6 @@ impl Block {
     /// Apply a function to all the statements, in a top-down manner.
     pub fn visit_statements<F: FnMut(&mut Statement)>(&mut self, f: F) {
         let _ = BlockVisitor::new(|_| {}, f).visit(self);
-    }
-
-    /// Apply a transformer to all the statements, in a bottom-up manner.
-    ///
-    /// The transformer should:
-    /// - mutate the current statement in place
-    /// - return the sequence of statements to introduce before the current statement
-    pub fn transform<F: FnMut(&mut Statement) -> Vec<Statement>>(&mut self, mut f: F) {
-        self.transform_sequences(|slice| f(&mut slice[0]));
     }
 
     /// Apply a transformer to all the statements, in a bottom-up manner. Compared to `transform`,

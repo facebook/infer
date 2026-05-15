@@ -1,0 +1,87 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = drop_in_place<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct::drop_in_place
+unsafe fn drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Foo
+pub trait Foo<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    fn foo = foo<Self, T>[Self]
+    vtable: test_crate::Foo::{vtable}<T>
+}
+
+// Full name: test_crate::Foo::foo
+pub fn foo<Self, T>(_1: Self) -> T
+where
+    [@TraitClause0]: Foo<Self, T>,
+= <method_without_default_body>
+
+// Full name: test_crate::Bar
+pub trait Bar<'a, Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    type Type<'b>
+    where
+        implied_clause_0 : [@TraitClause0_1]: Sized<Self::Type>
+        implied_clause_1 : [@TraitClause1_1]: for<'c> Foo<Self::Type, &'a &'b &'c ()>
+
+    non-dyn-compatible
+}
+
+// Full name: test_crate::bar
+pub fn bar<'x, 'y, 'z, T>(_1: @TraitClause1::Type) -> &'x &'y &'z ()
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Bar<'x, T>,
+{
+    let _0: &'6 &'7 &'8 (); // return
+    let x_1: @TraitClause1::Type; // arg #1
+    let _2: &'11 &'12 &'13 (); // anonymous local
+    let _3: @TraitClause1::Type; // anonymous local
+
+    storage_live(_2)
+    storage_live(_3)
+    _3 = move x_1
+    _2 = (@TraitClause1::Type::[@TraitClause1])::foo(move _3)
+    _0 = &(*_2)
+    storage_dead(_3)
+    storage_dead(_2)
+    conditional_drop[{built_in impl Destruct for @TraitClause1::Type}] x_1
+    return
+}
+
+
+

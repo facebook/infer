@@ -23,7 +23,7 @@ pub trait Sized<Self>
 pub trait Clone<Self>
 {
     parent_clause0 : [@TraitClause0]: Sized<Self>
-    fn clone<'_0> = core::clone::Clone::clone<'_0_0, Self>[Self]
+    fn clone<'_0_1> = core::clone::Clone::clone<'_0_1, Self>[Self]
     non-dyn-compatible
 }
 
@@ -37,34 +37,38 @@ pub trait Copy<Self>
 }
 
 // Full name: core::cell::{Cell<T>[@TraitClause0::parent_clause0]}::get
-pub fn get<'_0, T>(@1: &'_0 (Cell<T>[@TraitClause0::parent_clause0])) -> T
+pub fn get<'_0, T>(_1: &'_0 Cell<T>[@TraitClause0::parent_clause0]) -> T
 where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Copy<T>,
+= <opaque>
 
 // Full name: core::cell::{Cell<T>[@TraitClause0]}::get_mut
-pub fn get_mut<'_0, T>(@1: &'_0 mut (Cell<T>[@TraitClause0])) -> &'_0 mut (T)
+pub fn get_mut<'_0, T>(_1: &'_0 mut Cell<T>[@TraitClause0]) -> &'_0 mut T
 where
     [@TraitClause0]: MetaSized<T>,
+= <opaque>
 
 #[lang_item("clone_fn")]
-pub fn core::clone::Clone::clone<'_0, Self>(@1: &'_0 (Self)) -> Self
+pub fn core::clone::Clone::clone<'_0, Self>(_1: &'_0 Self) -> Self
 where
     [@TraitClause0]: Clone<Self>,
+= <opaque>
 
 // Full name: core::clone::impls::{impl Clone for u32}::clone
-pub fn {impl Clone for u32}::clone<'_0>(@1: &'_0 (u32)) -> u32
+pub fn {impl Clone for u32}::clone<'_0>(_1: &'_0 u32) -> u32
+= <opaque>
 
 // Full name: core::clone::impls::{impl Clone for u32}
 impl Clone for u32 {
-    parent_clause0 = Sized<u32>
-    fn clone<'_0> = {impl Clone for u32}::clone<'_0_0>
+    parent_clause0 = {built_in impl Sized for u32}
+    fn clone<'_0_1> = {impl Clone for u32}::clone<'_0_1>
     non-dyn-compatible
 }
 
 // Full name: core::marker::{impl Copy for u32}
 impl Copy for u32 {
-    parent_clause0 = MetaSized<u32>
+    parent_clause0 = {built_in impl MetaSized for u32}
     parent_clause1 = {impl Clone for u32}
     non-dyn-compatible
 }
@@ -73,31 +77,36 @@ impl Copy for u32 {
 #[lang_item("destruct")]
 pub trait Destruct<Self>
 {
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    vtable: core::marker::Destruct::{vtable}
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
 }
 
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
 #[lang_item("mem_swap")]
-pub fn core::mem::swap<'_0, '_1, T>(@1: &'_0 mut (T), @2: &'_1 mut (T))
+pub fn core::mem::swap<'_0, '_1, T>(_1: &'_0 mut T, _2: &'_1 mut T)
 where
     [@TraitClause0]: Sized<T>,
+= <opaque>
 
 // Full name: core::num::niche_types::NonZeroU32Inner
 pub opaque type NonZeroU32Inner
 
 // Full name: core::num::niche_types::{impl Clone for NonZeroU32Inner}::clone
-pub fn {impl Clone for NonZeroU32Inner}::clone<'_0>(@1: &'_0 (NonZeroU32Inner)) -> NonZeroU32Inner
+pub fn {impl Clone for NonZeroU32Inner}::clone<'_0>(_1: &'_0 NonZeroU32Inner) -> NonZeroU32Inner
+= <opaque>
 
 // Full name: core::num::niche_types::{impl Clone for NonZeroU32Inner}
 impl Clone for NonZeroU32Inner {
-    parent_clause0 = Sized<NonZeroU32Inner>
-    fn clone<'_0> = {impl Clone for NonZeroU32Inner}::clone<'_0_0>
+    parent_clause0 = {built_in impl Sized for NonZeroU32Inner}
+    fn clone<'_0_1> = {impl Clone for NonZeroU32Inner}::clone<'_0_1>
     non-dyn-compatible
 }
 
 // Full name: core::num::niche_types::{impl Copy for NonZeroU32Inner}
 impl Copy for NonZeroU32Inner {
-    parent_clause0 = MetaSized<NonZeroU32Inner>
+    parent_clause0 = {built_in impl MetaSized for NonZeroU32Inner}
     parent_clause1 = {impl Clone for NonZeroU32Inner}
     non-dyn-compatible
 }
@@ -123,16 +132,16 @@ pub trait ZeroablePrimitive<Self>
 
 // Full name: core::num::nonzero::{impl Sealed for u32}
 impl Sealed for u32 {
-    parent_clause0 = MetaSized<u32>
+    parent_clause0 = {built_in impl MetaSized for u32}
     vtable: {impl Sealed for u32}::{vtable}
 }
 
 // Full name: core::num::nonzero::{impl ZeroablePrimitive for u32}
 impl ZeroablePrimitive for u32 {
-    parent_clause0 = Sized<u32>
+    parent_clause0 = {built_in impl Sized for u32}
     parent_clause1 = {impl Copy for u32}
     parent_clause2 = {impl Sealed for u32}
-    parent_clause3 = Sized<NonZeroU32Inner>
+    parent_clause3 = {built_in impl Sized for NonZeroU32Inner}
     parent_clause4 = {impl Copy for NonZeroU32Inner}
     type NonZeroInner = NonZeroU32Inner
     non-dyn-compatible
@@ -155,33 +164,32 @@ where
   Some(T),
 }
 
-pub fn core::num::nonzero::{NonZero<T>[@TraitClause0, @TraitClause1]}::new<T>(@1: T) -> Option<NonZero<T>[@TraitClause0, @TraitClause1]>[Sized<NonZero<T>[@TraitClause0, @TraitClause1]>]
+pub fn core::num::nonzero::{NonZero<T>[@TraitClause0, @TraitClause1]}::new<T>(_1: T) -> Option<NonZero<T>[@TraitClause0, @TraitClause1]>[{built_in impl Sized for NonZero<T>[@TraitClause0, @TraitClause1]}]
 where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: ZeroablePrimitive<T>,
-
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
-}
-
-pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
+= <opaque>
 
 // Full name: core::option::{Option<T>[@TraitClause0]}::unwrap
 #[lang_item("option_unwrap")]
-pub fn unwrap<T>(@1: Option<T>[@TraitClause0]) -> T
+pub fn unwrap<T>(_1: Option<T>[@TraitClause0]) -> T
 where
     [@TraitClause0]: Sized<T>,
+= <opaque>
 
 // Full name: alloc::alloc::Global
 #[lang_item("global_alloc_ty")]
 pub struct Global {}
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}::drop_in_place
+unsafe fn {impl Destruct for Global}::drop_in_place(_1: *mut Global)
+= <opaque>
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}
+impl Destruct for Global {
+    fn drop_in_place = {impl Destruct for Global}::drop_in_place
+    non-dyn-compatible
+}
 
 // Full name: alloc::vec::Vec
 #[lang_item("Vec")]
@@ -190,130 +198,143 @@ where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Sized<type_error("removed allocator parameter")>,
 
-#[lang_item("vec_new")]
-pub fn alloc::vec::{Vec<T>[@TraitClause0, Sized<Global>]}::new<T>() -> Vec<T>[@TraitClause0, Sized<Global>]
-where
-    [@TraitClause0]: Sized<T>,
-
-// Full name: alloc::vec::{Vec<T>[@TraitClause0, @TraitClause1]}::push
-pub fn push<'_0, T, A>(@1: &'_0 mut (Vec<T>[@TraitClause0, @TraitClause1]), @2: T)
+// Full name: alloc::vec::Vec::{impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}::drop_in_place
+unsafe fn {impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}::drop_in_place<T, A>(_1: *mut Vec<T>[@TraitClause0, @TraitClause1])
 where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Sized<A>,
+= <opaque>
 
-// Full name: alloc::vec::{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop
-pub fn {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop<'_0, T, A>(@1: &'_0 mut (Vec<T>[@TraitClause0, @TraitClause1]))
-where
-    [@TraitClause0]: Sized<T>,
-    [@TraitClause1]: Sized<A>,
-
-// Full name: alloc::vec::{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}
-impl<T, A> Drop for Vec<T>[@TraitClause0, @TraitClause1]
+// Full name: alloc::vec::Vec::{impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Destruct for Vec<T>[@TraitClause0, @TraitClause1]
 where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Sized<A>,
 {
-    parent_clause0 = MetaSized<Vec<T>[@TraitClause0, @TraitClause1]>
-    fn drop<'_0> = {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1]
-    vtable: {impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}::{vtable}<T, A>[@TraitClause0, @TraitClause1]
+    fn drop_in_place = {impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}::drop_in_place<T, A>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
 }
 
-pub fn test_crate::swap<'a, T>(@1: &'a mut (T), @2: &'a mut (T))
+#[lang_item("vec_new")]
+pub fn alloc::vec::{Vec<T>[@TraitClause0, {built_in impl Sized for Global}]}::new<T>() -> Vec<T>[@TraitClause0, {built_in impl Sized for Global}]
+where
+    [@TraitClause0]: Sized<T>,
+= <opaque>
+
+// Full name: alloc::vec::{Vec<T>[@TraitClause0, @TraitClause1]}::push
+pub fn push<'_0, T, A>(_1: &'_0 mut Vec<T>[@TraitClause0, @TraitClause1], _2: T)
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+    [@TraitClause3]: Destruct<A>,
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+pub fn test_crate::swap<'a, T>(_1: &'a mut T, _2: &'a mut T)
 where
     [@TraitClause0]: Sized<T>,
 {
-    let @0: (); // return
-    let x@1: &'_ mut (T); // arg #1
-    let y@2: &'_ mut (T); // arg #2
-    let @3: &'_ mut (T); // anonymous local
-    let @4: &'_ mut (T); // anonymous local
+    let _0: (); // return
+    let x_1: &'1 mut T; // arg #1
+    let y_2: &'2 mut T; // arg #2
+    let _3: &'3 mut T; // anonymous local
+    let _4: &'4 mut T; // anonymous local
 
-    storage_live(@3)
-    @3 := &two-phase-mut *(x@1)
-    storage_live(@4)
-    @4 := &two-phase-mut *(y@2)
-    @0 := core::mem::swap<'_, '_, T>[@TraitClause0](move (@3), move (@4))
-    storage_dead(@4)
-    storage_dead(@3)
-    @0 := ()
+    _0 = ()
+    storage_live(_3)
+    _3 = &two-phase-mut (*x_1)
+    storage_live(_4)
+    _4 = &two-phase-mut (*y_2)
+    _0 = core::mem::swap<'7, '8, T>[@TraitClause0](move _3, move _4)
+    storage_dead(_4)
+    storage_dead(_3)
     return
 }
 
 // Full name: test_crate::test_new_non_zero_u32
-pub fn test_new_non_zero_u32(@1: u32) -> NonZero<u32>[Sized<u32>, {impl ZeroablePrimitive for u32}]
+pub fn test_new_non_zero_u32(_1: u32) -> NonZero<u32>[{built_in impl Sized for u32}, {impl ZeroablePrimitive for u32}]
 {
-    let @0: NonZero<u32>[Sized<u32>, {impl ZeroablePrimitive for u32}]; // return
-    let x@1: u32; // arg #1
-    let @2: Option<NonZero<u32>[Sized<u32>, {impl ZeroablePrimitive for u32}]>[Sized<NonZero<u32>[Sized<u32>, {impl ZeroablePrimitive for u32}]>]; // anonymous local
-    let @3: u32; // anonymous local
+    let _0: NonZero<u32>[{built_in impl Sized for u32}, {impl ZeroablePrimitive for u32}]; // return
+    let x_1: u32; // arg #1
+    let _2: Option<NonZero<u32>[{built_in impl Sized for u32}, {impl ZeroablePrimitive for u32}]>[{built_in impl Sized for NonZero<u32>[{built_in impl Sized for u32}, {impl ZeroablePrimitive for u32}]}]; // anonymous local
+    let _3: u32; // anonymous local
 
-    storage_live(@2)
-    storage_live(@3)
-    @3 := copy (x@1)
-    @2 := core::num::nonzero::{NonZero<T>[@TraitClause0, @TraitClause1]}::new<u32>[Sized<u32>, {impl ZeroablePrimitive for u32}](move (@3))
-    storage_dead(@3)
-    @0 := unwrap<NonZero<u32>[Sized<u32>, {impl ZeroablePrimitive for u32}]>[Sized<NonZero<u32>[Sized<u32>, {impl ZeroablePrimitive for u32}]>](move (@2))
-    storage_dead(@2)
+    storage_live(_2)
+    storage_live(_3)
+    _3 = copy x_1
+    _2 = core::num::nonzero::{NonZero<T>[@TraitClause0, @TraitClause1]}::new<u32>[{built_in impl Sized for u32}, {impl ZeroablePrimitive for u32}](move _3)
+    storage_dead(_3)
+    _0 = unwrap<NonZero<u32>[{built_in impl Sized for u32}, {impl ZeroablePrimitive for u32}]>[{built_in impl Sized for NonZero<u32>[{built_in impl Sized for u32}, {impl ZeroablePrimitive for u32}]}](move _2)
+    storage_dead(_2)
     return
 }
 
 // Full name: test_crate::test_vec_push
 pub fn test_vec_push()
 {
-    let @0: (); // return
-    let v@1: Vec<u32>[Sized<u32>, Sized<Global>]; // local
-    let @2: (); // anonymous local
-    let @3: &'_ mut (Vec<u32>[Sized<u32>, Sized<Global>]); // anonymous local
+    let _0: (); // return
+    let v_1: Vec<u32>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]; // local
+    let _2: (); // anonymous local
+    let _3: &'1 mut Vec<u32>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]; // anonymous local
 
-    storage_live(v@1)
-    v@1 := alloc::vec::{Vec<T>[@TraitClause0, Sized<Global>]}::new<u32>[Sized<u32>]()
-    storage_live(@2)
-    storage_live(@3)
-    @3 := &two-phase-mut v@1
-    @2 := push<'_, u32, Global>[Sized<u32>, Sized<Global>](move (@3), const (0 : u32))
-    storage_dead(@3)
-    storage_dead(@2)
-    @0 := ()
-    drop[{impl Drop for Vec<T>[@TraitClause0, @TraitClause1]}<u32, Global>[Sized<u32>, Sized<Global>]] v@1
-    storage_dead(v@1)
-    @0 := ()
+    _0 = ()
+    storage_live(v_1)
+    v_1 = alloc::vec::{Vec<T>[@TraitClause0, {built_in impl Sized for Global}]}::new<u32>[{built_in impl Sized for u32}]()
+    storage_live(_2)
+    storage_live(_3)
+    _3 = &two-phase-mut v_1
+    _2 = push<'3, u32, Global>[{built_in impl Sized for u32}, {built_in impl Sized for Global}, {impl Destruct for Global}](move _3, const 0 : u32)
+    storage_dead(_3)
+    storage_dead(_2)
+    _0 = ()
+    conditional_drop[{impl Destruct for Vec<T>[@TraitClause0, @TraitClause1]}<u32, Global>[{built_in impl Sized for u32}, {built_in impl Sized for Global}]] v_1
+    storage_dead(v_1)
     return
 }
 
 // Full name: test_crate::use_get
-pub fn use_get<'_0>(@1: &'_0 (Cell<u32>[MetaSized<u32>])) -> u32
+pub fn use_get<'_0>(_1: &'_0 Cell<u32>[{built_in impl MetaSized for u32}]) -> u32
 {
-    let @0: u32; // return
-    let rc@1: &'_ (Cell<u32>[MetaSized<u32>]); // arg #1
-    let @2: &'_ (Cell<u32>[MetaSized<u32>]); // anonymous local
+    let _0: u32; // return
+    let rc_1: &'1 Cell<u32>[{built_in impl MetaSized for u32}]; // arg #1
+    let _2: &'2 Cell<u32>[{built_in impl MetaSized for u32}]; // anonymous local
 
-    storage_live(@2)
-    @2 := &*(rc@1)
-    @0 := get<'_, u32>[Sized<u32>, {impl Copy for u32}](move (@2))
-    storage_dead(@2)
+    storage_live(_2)
+    _2 = &(*rc_1)
+    _0 = get<'4, u32>[{built_in impl Sized for u32}, {impl Copy for u32}](move _2)
+    storage_dead(_2)
     return
 }
 
 // Full name: test_crate::incr
-pub fn incr<'_0>(@1: &'_0 mut (Cell<u32>[MetaSized<u32>]))
+pub fn incr<'_0>(_1: &'_0 mut Cell<u32>[{built_in impl MetaSized for u32}])
 {
-    let @0: (); // return
-    let rc@1: &'_ mut (Cell<u32>[MetaSized<u32>]); // arg #1
-    let @2: &'_ mut (u32); // anonymous local
-    let @3: &'_ mut (Cell<u32>[MetaSized<u32>]); // anonymous local
-    let @4: u32; // anonymous local
+    let _0: (); // return
+    let rc_1: &'1 mut Cell<u32>[{built_in impl MetaSized for u32}]; // arg #1
+    let _2: &'3 mut u32; // anonymous local
+    let _3: &'4 mut Cell<u32>[{built_in impl MetaSized for u32}]; // anonymous local
+    let _4: u32; // anonymous local
 
-    storage_live(@4)
-    storage_live(@2)
-    storage_live(@3)
-    @3 := &two-phase-mut *(rc@1)
-    @2 := get_mut<'_, u32>[MetaSized<u32>](move (@3))
-    storage_dead(@3)
-    @4 := copy (*(@2)) panic.+ const (1 : u32)
-    *(@2) := move (@4)
-    storage_dead(@2)
-    @0 := ()
-    @0 := ()
+    storage_live(_4)
+    _0 = ()
+    storage_live(_2)
+    storage_live(_3)
+    _3 = &two-phase-mut (*rc_1)
+    _2 = get_mut<'6, u32>[{built_in impl MetaSized for u32}](move _3)
+    storage_dead(_3)
+    _4 = copy (*_2) panic.+ const 1 : u32
+    (*_2) = move _4
+    storage_dead(_2)
+    _0 = ()
     return
 }
 

@@ -1,6 +1,7 @@
 open Collections
 open Types
 open Utils
+open ValuesUtils
 
 module RegionOrderedType : OrderedType with type t = region = struct
   type t = region
@@ -13,6 +14,18 @@ end
 
 module RegionMap = Collections.MakeMap (RegionOrderedType)
 module RegionSet = Collections.MakeSet (RegionOrderedType)
+
+(** Like `binder` but for the free variables bound by the generics of an item.
+    This is not present in the charon ast but returned by helpers so we don't
+    forget to substitute. Use `Substitute.apply_args_to_item_binder` to get the
+    correctly-substituted inner value. *)
+type 'a item_binder = {
+  item_binder_params : generic_params;
+  item_binder_value : 'a;
+}
+[@@deriving show, ord]
+
+type bound_fun_sig = fun_sig item_binder
 
 let to_name (ls : string list) : name =
   List.map (fun s -> PeIdent (s, Disambiguator.zero)) ls
@@ -95,36 +108,22 @@ let ty_as_builtin_adt (ty : ty) : builtin_ty * generic_args =
   | Some (id, generics) -> (id, generics)
   | None -> raise (Failure "Unreachable")
 
-let ty_as_opt_array (ty : ty) : (ty * const_generic) option =
-  match ty_as_builtin_adt_opt ty with
-  | None -> None
-  | Some (id, generics) -> (
-      match (id, generics) with
-      | ( TArray,
-          {
-            types = [ ty ];
-            const_generics = [ n ];
-            regions = [];
-            trait_refs = [];
-          } ) -> Some (ty, n)
-      | _ -> None)
+let ty_as_opt_array (ty : ty) : (ty * constant_expr) option =
+  match ty with
+  | TArray (ty, len) -> Some (ty, len)
+  | _ -> None
 
 let ty_is_array (ty : ty) : bool = Option.is_some (ty_as_opt_array ty)
 
-let ty_as_array (ty : ty) : ty * const_generic =
+let ty_as_array (ty : ty) : ty * constant_expr =
   match ty_as_opt_array ty with
   | Some (ty, n) -> (ty, n)
   | None -> raise (Failure "Unreachable")
 
 let ty_as_opt_slice (ty : ty) : ty option =
-  match ty_as_builtin_adt_opt ty with
-  | None -> None
-  | Some (id, generics) -> (
-      match (id, generics) with
-      | ( TSlice,
-          { types = [ ty ]; const_generics = []; regions = []; trait_refs = [] }
-        ) -> Some ty
-      | _ -> None)
+  match ty with
+  | TSlice ty -> Some ty
+  | _ -> None
 
 let ty_is_slice (ty : ty) : bool = Option.is_some (ty_as_opt_slice ty)
 
@@ -167,12 +166,12 @@ let integer_as_literal (int_ty : integer_type) : literal_type =
   | Signed int_ty -> TInt int_ty
   | Unsigned int_ty -> TUInt int_ty
 
-let const_generic_as_literal (cg : const_generic) : Values.literal =
-  match cg with
-  | CgValue v -> v
+let constant_expr_as_literal (c : constant_expr) : Values.literal =
+  match c.kind with
+  | CLiteral v -> v
   | _ -> raise (Failure "Unreachable")
 
-let trait_instance_id_as_trait_impl (id : trait_instance_id) :
+let trait_instance_id_as_trait_impl (id : trait_ref_kind) :
     trait_impl_id * generic_args =
   match id with
   | TraitImpl impl_ref -> (impl_ref.id, impl_ref.generics)
@@ -198,7 +197,7 @@ let empty_generic_args : generic_args =
   { regions = []; types = []; const_generics = []; trait_refs = [] }
 
 let mk_generic_args (regions : region list) (types : ty list)
-    (const_generics : const_generic list) (trait_refs : trait_ref list) :
+    (const_generics : constant_expr list) (trait_refs : trait_ref list) :
     generic_args =
   { regions; types; const_generics; trait_refs }
 
@@ -218,20 +217,21 @@ let empty_generic_params : generic_params =
 
 let generic_args_of_params span (generics : generic_params) : generic_args =
   let regions =
-    List.map (fun (v : region_var) -> RVar (Free v.index)) generics.regions
+    List.map (fun (v : region_param) -> RVar (Free v.index)) generics.regions
   in
   let types =
-    List.map (fun (v : type_var) -> TVar (Free v.index)) generics.types
+    List.map (fun (v : type_param) -> TVar (Free v.index)) generics.types
   in
   let const_generics =
     List.map
-      (fun (v : const_generic_var) -> CgVar (Free v.index))
+      (fun (v : const_generic_param) ->
+        { kind = CVar (Free v.index); ty = v.ty })
       generics.const_generics
   in
   let trait_refs =
     List.map
-      (fun (c : trait_clause) ->
-        { trait_id = Clause (Free c.clause_id); trait_decl_ref = c.trait })
+      (fun (c : trait_param) ->
+        { kind = Clause (Free c.clause_id); trait_decl_ref = c.trait })
       generics.trait_clauses
   in
   { regions; types; const_generics; trait_refs }
@@ -272,15 +272,19 @@ let mk_box_ty (ty : ty) : ty =
 
 (* TODO: move region set manipulation to aeneas *)
 
-(** Check if a region is in a set of regions.
+(** Check if a free region is in a set of regions.
 
     This function should be used on non-erased and non-bound regions. For
     sanity, we raise exceptions if this is not the case. *)
-let region_in_set (r : region) (rset : RegionId.Set.t) : bool =
+let region_in_set ?(allow_erased = false) (r : region) (rset : RegionId.Set.t) :
+    bool =
   match r with
   | RStatic -> false
-  | RErased ->
-      raise (Failure "region_in_set shouldn't be called on erased regions")
+  | RErased | RBody _ ->
+      if allow_erased then false
+      else
+        raise
+          (Failure "region_in_set shouldn't be called on erased or body regions")
   | RVar (Bound _) ->
       raise (Failure "region_in_set shouldn't be called on bound regions")
   | RVar (Free id) -> RegionId.Set.mem id rset
@@ -294,69 +298,6 @@ let region_is_erased (r : region) : bool =
   match r with
   | RErased -> true
   | _ -> false
-
-(** Return the set of regions in an type - TODO: add static?
-
-    This function should be used on non-erased and non-bound regions. For
-    sanity, we raise exceptions if this is not the case. *)
-let ty_regions (ty : ty) : RegionId.Set.t =
-  let s = ref RegionId.Set.empty in
-  let add_region (r : region) =
-    match r with
-    | RStatic -> () (* TODO: static? *)
-    | RErased ->
-        raise (Failure "ty_regions shouldn't be called on erased regions")
-    | RVar (Bound _) ->
-        raise (Failure "region_in_set shouldn't be called on bound regions")
-    | RVar (Free id) -> s := RegionId.Set.add id !s
-  in
-  let obj =
-    object
-      inherit [_] iter_ty
-      method! visit_region _env r = add_region r
-    end
-  in
-  (* Explore the type *)
-  obj#visit_ty () ty;
-  (* Return the set of accumulated regions *)
-  !s
-
-(* TODO: merge with ty_has_regions_in_set *)
-let ty_regions_intersect (ty : ty) (regions : RegionId.Set.t) : bool =
-  let ty_regions = ty_regions ty in
-  not (RegionId.Set.disjoint ty_regions regions)
-
-(** Check if a {!type:Charon.Types.ty} contains regions from a given set *)
-let ty_has_regions_in_pred (pred : region -> bool) (ty : ty) : bool =
-  let obj =
-    object
-      inherit [_] iter_ty
-      method! visit_region _ r = if pred r then raise Found
-    end
-  in
-  try
-    obj#visit_ty () ty;
-    false
-  with Found -> true
-
-(** Check if a {!type:Charon.Types.ty} contains regions from a given set *)
-let ty_has_regions_in_set (rset : RegionId.Set.t) (ty : ty) : bool =
-  ty_has_regions_in_pred (fun r -> region_in_set r rset) ty
-
-(** Check if a type has free (i.e., non erased) regions.
-
-    This is useful in particular when using normalized projection types (types
-    where all the regions of interest are free regions, and the other regions
-    are erased, that we use for instance to project the borrows belonging to a
-    symbolic value into different region abstractions): the projection over a
-    symbolic value intersects a region abstraction if its projection type has
-    some free regions (or in other words, if not all the regions appearing in
-    the type are erased). *)
-let ty_has_free_regions (ty : ty) : bool =
-  ty_has_regions_in_pred region_is_free ty
-
-let ty_has_erased_regions (ty : ty) : bool =
-  ty_has_regions_in_pred region_is_erased ty
 
 let generic_args_lengths (args : generic_args) : int * int * int * int =
   let { regions; types; const_generics; trait_refs } = args in
@@ -386,7 +327,7 @@ let get_variant_from_tag ptr_size ty_decl (tag : Values.scalar_value) =
       match variants with
       | [] -> None
       | hd_variant :: _ -> (
-          let discr_ty = Scalars.get_ty hd_variant.discriminant in
+          let discr = hd_variant.discriminant in
           let rec find_mapi f i = function
             | [] -> None
             | v :: tl ->
@@ -398,11 +339,15 @@ let get_variant_from_tag ptr_size ty_decl (tag : Values.scalar_value) =
           | Direct -> begin
               assert (discr_layout.tag_ty = Scalars.get_ty tag);
               let discr =
-                match
-                  Scalars.mk_scalar ptr_size discr_ty (Scalars.get_val tag)
-                with
-                | Ok sv -> Some sv
-                | Error _ -> None
+                match integer_type_of_literal discr with
+                | Some intty -> begin
+                    match
+                      Scalars.mk_scalar ptr_size intty (Scalars.get_val tag)
+                    with
+                    | Ok sv -> Some (Values.VScalar sv)
+                    | Error _ -> None
+                  end
+                | None -> None
               in
               find_mapi (fun i v -> Some v.discriminant = discr) 0 variants
             end

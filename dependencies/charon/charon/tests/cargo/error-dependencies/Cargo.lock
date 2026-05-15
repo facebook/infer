@@ -3,5 +3,12 @@
 version = 4
 
 [[package]]
+name = "error-crate"
+version = "0.1.0"
+
+[[package]]
 name = "test-cargo"
 version = "0.1.0"
+dependencies = [
+ "error-crate",
+]

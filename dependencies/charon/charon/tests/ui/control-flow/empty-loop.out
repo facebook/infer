@@ -1,0 +1,15 @@
+# Final LLBC before serialization:
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+
+    _0 = ()
+    loop {
+        continue 0
+    }
+}
+
+
+

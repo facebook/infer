@@ -1,0 +1,166 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::convert::From
+#[lang_item("From")]
+pub trait From<Self, T>
+{
+    parent_clause0 : [@TraitClause0]: Sized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<T>
+    fn from = core::convert::From::from<Self, T>[Self]
+    non-dyn-compatible
+}
+
+#[lang_item("from_fn")]
+pub fn core::convert::From::from<Self, T>(_1: T) -> Self
+where
+    [@TraitClause0]: From<Self, T>,
+= <opaque>
+
+// Full name: core::convert::{impl Into<U> for T}::into
+pub fn {impl Into<U> for T}::into<T, U>(_1: T) -> U
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<U>,
+    [@TraitClause2]: From<U, T>,
+{
+    let _0: U; // return
+    let self_1: T; // arg #1
+
+    _0 = @TraitClause2::from(move self_1)
+    return
+}
+
+// Full name: core::convert::num::{impl From<u32> for u64}::from
+pub fn {impl From<u32> for u64}::from(_1: u32) -> u64
+{
+    let _0: u64; // return
+    let small_1: u32; // arg #1
+
+    _0 = cast<u32, u64>(copy small_1)
+    return
+}
+
+// Full name: core::convert::num::{impl From<u32> for u64}
+impl From<u32> for u64 {
+    parent_clause0 = {built_in impl Sized for u64}
+    parent_clause1 = {built_in impl Sized for u32}
+    fn from = {impl From<u32> for u64}::from
+    non-dyn-compatible
+}
+
+// Full name: core::option::Option
+#[lang_item("Option")]
+pub enum Option<T>
+where
+    [@TraitClause0]: Sized<T>,
+{
+  None,
+  Some(T),
+}
+
+// Full name: core::option::{Option<T>[@TraitClause0]}::is_some
+pub fn is_some<'_0, T>(_1: &'_0 Option<T>[@TraitClause0]) -> bool
+where
+    [@TraitClause0]: Sized<T>,
+{
+    let _0: bool; // return
+    let self_1: &'1 Option<T>[@TraitClause0]; // arg #1
+    let _2: isize; // anonymous local
+
+    storage_live(_2)
+    _2 = @discriminant((*self_1))
+    _0 = copy _2 == const 1 : isize
+    return
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::foo
+fn foo()
+{
+    let _0: (); // return
+    let _1: bool; // anonymous local
+    let _2: &'1 Option<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _3: u64; // anonymous local
+    let _4: &'3 [i32]; // anonymous local
+    let _5: &'5 i32; // anonymous local
+    let _6: &'6 i32; // anonymous local
+    let _7: &'7 i32; // anonymous local
+    let _8: &'8 Option<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _9: &'15 Option<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _10: Option<i32>[{built_in impl Sized for i32}]; // anonymous local
+    let _11: &'16 i32; // anonymous local
+    let _12: i32; // anonymous local
+
+    storage_live(_9)
+    storage_live(_10)
+    _10 = Option::Some { 0: const 0 : i32 }
+    _9 = &_10
+    storage_live(_7)
+    storage_live(_8)
+    _0 = ()
+    storage_live(_1)
+    storage_live(_2)
+    _8 = move _9
+    _2 = &(*_8)
+    _1 = is_some<'11, i32>[{built_in impl Sized for i32}](move _2)
+    storage_dead(_2)
+    storage_dead(_1)
+    storage_live(_3)
+    _3 = {impl Into<U> for T}::into<u32, u64>[{built_in impl Sized for u32}, {built_in impl Sized for u64}, {impl From<u32> for u64}](const 42 : u32)
+    storage_live(_11)
+    storage_live(_12)
+    _12 = const 0 : i32
+    _11 = &_12
+    storage_dead(_3)
+    storage_live(_4)
+    storage_live(_5)
+    storage_live(_6)
+    _7 = move _11
+    _6 = &(*_7)
+    _5 = &(*_6)
+    _4 = from_ref<'14, i32>[{built_in impl Sized for i32}](move _5)
+    storage_dead(_5)
+    storage_dead(_6)
+    storage_dead(_4)
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module::dont_translate_body
+fn dont_translate_body()
+= <opaque>
+
+// Full name: test_crate::exclude_me
+fn exclude_me()
+= <opaque>
+
+// Full name: test_crate::Struct
+struct Struct {}
+
+// Full name: test_crate::extern_fn
+unsafe fn extern_fn(_1: i32)
+= <opaque>
+
+
+

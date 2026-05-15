@@ -1,0 +1,99 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::boxed::Box::{impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop_in_place
+unsafe fn {impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop_in_place<T, A>(_1: *mut alloc::boxed::Box<T>[@TraitClause0, @TraitClause1])
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+= <opaque>
+
+// Full name: alloc::boxed::Box::{impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}
+impl<T, A> Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]
+where
+    [@TraitClause0]: MetaSized<T>,
+    [@TraitClause1]: Sized<A>,
+{
+    fn drop_in_place = {impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}::drop_in_place<T, A>[@TraitClause0, @TraitClause1]
+    non-dyn-compatible
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: test_crate::Thing
+pub enum Thing {
+  A(alloc::boxed::Box<()>[{built_in impl MetaSized for ()}, {built_in impl Sized for Global}]),
+}
+
+// Full name: test_crate::Thing::{impl Destruct for Thing}::drop_in_place
+unsafe fn {impl Destruct for Thing}::drop_in_place(_1: *mut Thing)
+{
+    let _0: (); // return
+    let _1: *mut Thing; // arg #1
+    let _2: &'1 mut Thing; // anonymous local
+
+    storage_live(_2)
+    _0 = ()
+    _2 = &mut (*_1)
+    match (*_2) {
+        _ => {
+        },
+    }
+    drop[{impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1]}<(), Global>[{built_in impl MetaSized for ()}, {built_in impl Sized for Global}]] ((*_2) as variant Thing::A).0
+    return
+}
+
+// Full name: test_crate::Thing::{impl Destruct for Thing}
+impl Destruct for Thing {
+    fn drop_in_place = {impl Destruct for Thing}::drop_in_place
+    non-dyn-compatible
+}
+
+// Full name: test_crate::foo
+fn foo(_1: Thing)
+{
+    let _0: (); // return
+    let _1: Thing; // arg #1
+
+    _0 = ()
+    _0 = ()
+    conditional_drop[{impl Destruct for Thing}] _1
+    return
+}
+
+
+

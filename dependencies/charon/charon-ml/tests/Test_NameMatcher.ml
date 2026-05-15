@@ -65,21 +65,28 @@ let name_map_tests () =
    And the same with `fail` instead of `pass` for negative tests.
 *)
 module PatternTest = struct
-  type t = { pattern : pattern; call_idx : int option; success : bool }
+  type t = {
+    pattern : pattern option;
+    pattern_to_name : string option;
+    call_idx : int option;
+    success : bool;
+  }
 
   type env = {
     ctx : LlbcAst.block ctx;
+    file_name : string;
     match_config : match_config;
     fmt_env : PrintLlbcAst.fmt_env;
     print_config : print_config;
     to_pat_config : to_pat_config;
   }
 
-  let mk_env (ctx : LlbcAst.block ctx) : env =
+  let mk_env (ctx : LlbcAst.block ctx) file_name : env =
     let tgt = TkPattern in
     let match_with_trait_decl_refs = true in
     {
       ctx;
+      file_name;
       match_config = { map_vars_to_vars = false; match_with_trait_decl_refs };
       print_config = { tgt };
       fmt_env = ctx_to_fmt_env ctx;
@@ -94,7 +101,11 @@ module PatternTest = struct
         ^ PrintTypes.raw_attribute_to_string attribute
         ^ "`")
     in
-    if attribute.path = "pattern::pass" || attribute.path = "pattern::fail" then
+    let is_pattern_test =
+      attribute.path = "pattern::pass" || attribute.path = "pattern::fail"
+    in
+    let is_pattern_to_name_test = attribute.path = "pattern::to_name" in
+    if is_pattern_test || is_pattern_to_name_test then
       match attribute.args with
       | None -> fail ()
       | Some arg -> begin
@@ -103,12 +114,18 @@ module PatternTest = struct
           in
           match Re.exec_opt re arg with
           | Some groups ->
-              let success = attribute.path = "pattern::pass" in
+              let success =
+                is_pattern_to_name_test || attribute.path = "pattern::pass"
+              in
               let call_idx =
                 Option.map int_of_string (Re.Group.get_opt groups 2)
               in
-              let pattern = parse_pattern (Re.Group.get groups 3) in
-              Some { pattern; call_idx; success }
+              let pattern = Re.Group.get groups 3 in
+              let pattern, pattern_to_name =
+                if is_pattern_test then (Some (parse_pattern pattern), None)
+                else (None, Some pattern)
+              in
+              Some { pattern; pattern_to_name; call_idx; success }
           | None -> fail ()
         end
     else None
@@ -119,14 +136,13 @@ module PatternTest = struct
       match test.call_idx with
       | None ->
           let generics =
-            TypesUtils.generic_args_of_params decl.item_meta.span
-              decl.signature.generics
+            TypesUtils.generic_args_of_params decl.item_meta.span decl.generics
           in
-          Types.{ func = FunId (FRegular decl.def_id); generics }
+          Types.{ kind = FunId (FRegular decl.def_id); generics }
       | Some idx ->
           (* Find the nth function call in the function body. *)
           let rec list_stmt_calls (statement : statement) : call list =
-            match statement.content with
+            match statement.kind with
             | Call call -> [ call ]
             | Switch (If (_, st1, st2)) ->
                 list_block_calls st1 @ list_block_calls st2
@@ -145,7 +161,7 @@ module PatternTest = struct
               (fun call ->
                 match call.func with
                 | FnOpRegular fn_ptr -> fn_ptr
-                | FnOpMove _ ->
+                | FnOpDynamic _ ->
                     failwith
                       "Indirect calls are unsupported un name matcher tests")
               calls
@@ -153,19 +169,45 @@ module PatternTest = struct
           List.nth fn_ptrs idx
     in
     let match_success =
-      match_fn_ptr env.ctx env.match_config test.pattern fn_ptr
+      match test.pattern with
+      | Some pattern -> match_fn_ptr env.ctx env.match_config pattern fn_ptr
+      | None -> true
+    in
+    let pattern_name, pattern_to_name_success =
+      match test.pattern_to_name with
+      | Some tgt_name ->
+          assert test.success;
+          let pattern =
+            name_to_pattern env.ctx env.to_pat_config decl.item_meta.name
+          in
+          let name = pattern_to_string { tgt = TkName } pattern in
+          (Some (pattern, name), tgt_name = name)
+      | None -> (None, true)
     in
     if test.success && not match_success then (
-      log#error "Pattern %s failed to match function %s\n"
-        (pattern_to_string env.print_config test.pattern)
-        (pattern_to_string env.print_config
-           (fn_ptr_to_pattern env.ctx env.to_pat_config decl.signature.generics
-              fn_ptr));
+      let fn_ptr =
+        try fn_ptr_to_pattern env.ctx env.to_pat_config decl.generics fn_ptr
+        with _ -> [ PIdent ("ERROR", 0, []) ]
+      in
+      log#error "Pattern %s failed to match function %s (in `%s`)\n"
+        (pattern_to_string env.print_config (Option.get test.pattern))
+        (pattern_to_string env.print_config fn_ptr)
+        env.file_name;
       false)
     else if (not test.success) && match_success then (
       log#error "Pattern %s matches function %s but shouldn't\n"
-        (pattern_to_string env.print_config test.pattern)
+        (pattern_to_string env.print_config (Option.get test.pattern))
         (PrintTypes.name_to_string env.fmt_env decl.item_meta.name);
+      false)
+    else if test.success && not pattern_to_name_success then (
+      let pattern, name = Option.get pattern_name in
+      log#error
+        "Pattern '%s' converted to name is '%s' but is expected to be '%s' (in \
+         %s)\n"
+        (pattern_to_string env.print_config pattern)
+        name
+        (Option.get test.pattern_to_name)
+        env.file_name;
       false)
     else true
 end
@@ -188,7 +230,7 @@ let annotated_rust_tests test_file =
 
   (* We look through all declarations for our special attributes and check each case. *)
   let ctx = ctx_from_crate crate in
-  let env = PatternTest.mk_env ctx in
+  let env = PatternTest.mk_env ctx test_file in
   let all_pass =
     T.FunDeclId.Map.for_all
       (fun _ (decl : fun_decl) ->

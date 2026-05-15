@@ -1,0 +1,43 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: test_crate::T1
+trait T1<Self, Self_A>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Sized<Self_A>
+    vtable: test_crate::T1::{vtable}<Self_A>
+}
+
+// Full name: test_crate::T2
+trait T2<Self, Self_Clause1_A>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: T1<Self, Self_Clause1_A>
+    vtable: test_crate::T2::{vtable}<Self_Clause1_A>
+}
+
+// Full name: test_crate::{impl T2<Clause1_A> for I}
+impl<I, Clause1_A> T2<Clause1_A> for I
+where
+    [@TraitClause0]: Sized<I>,
+    [@TraitClause1]: T1<I, Clause1_A>,
+{
+    parent_clause0 = @TraitClause0::parent_clause0
+    parent_clause1 = @TraitClause1
+    vtable: {impl T2<Clause1_A> for I}::{vtable}<I>[@TraitClause0, @TraitClause1]
+}
+
+
+

@@ -1,0 +1,136 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Sized
+#[lang_item("sized")]
+pub trait Sized<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    non-dyn-compatible
+}
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+// Full name: alloc::alloc::Global
+#[lang_item("global_alloc_ty")]
+pub struct Global {}
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}::drop_in_place
+unsafe fn {impl Destruct for Global}::drop_in_place(_1: *mut Global)
+= <opaque>
+
+// Full name: alloc::alloc::Global::{impl Destruct for Global}
+impl Destruct for Global {
+    fn drop_in_place = {impl Destruct for Global}::drop_in_place
+    non-dyn-compatible
+}
+
+// Full name: alloc::vec::Vec
+#[lang_item("Vec")]
+pub opaque type Vec<T>
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<type_error("removed allocator parameter")>,
+    [@TraitClause3]: Destruct<T>,
+    [@TraitClause4]: Destruct<type_error("removed allocator parameter")>,
+
+// Full name: alloc::string::String
+#[lang_item("String")]
+pub struct String {
+  vec: Vec<u8>[{built_in impl Sized for u8}, {built_in impl Sized for Global}, {built_in impl Destruct for u8}, {impl Destruct for Global}],
+}
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: alloc::vec::Vec::{impl Destruct for Vec<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop_in_place
+unsafe fn {impl Destruct for Vec<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop_in_place<T, A>(_1: *mut Vec<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4])
+where
+    [@TraitClause0]: Sized<T>,
+    [@TraitClause1]: Sized<A>,
+    [@TraitClause3]: Destruct<T>,
+    [@TraitClause4]: Destruct<A>,
+= <opaque>
+
+// Full name: alloc::string::String::{impl Destruct for String}::drop_in_place
+unsafe fn {impl Destruct for String}::drop_in_place(_1: *mut String)
+{
+    let _0: (); // return
+    let _1: *mut String; // arg #1
+    let _2: &'1 mut String; // anonymous local
+    let drop_arg_3: *mut Vec<u8>[{built_in impl Sized for u8}, {built_in impl Sized for Global}, {built_in impl Destruct for u8}, {impl Destruct for Global}]; // local
+    let drop_ret_4: (); // local
+
+    storage_live(_2)
+    _0 = ()
+    _2 = &mut (*_1)
+    storage_live(drop_arg_3)
+    drop_arg_3 = &raw mut ((*_2)).vec
+    storage_live(drop_ret_4)
+    drop_ret_4 = {impl Destruct for Vec<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop_in_place<u8, Global>[{built_in impl Sized for u8}, {built_in impl Sized for Global}, {built_in impl Destruct for u8}, {impl Destruct for Global}](move drop_arg_3)
+    return
+}
+
+// Full name: alloc::string::{String}::new
+#[lang_item("string_new")]
+pub fn new() -> String
+= <opaque>
+
+// Full name: test_crate::use_string
+fn use_string(_1: String)
+{
+    let _0: (); // return
+    let _1: String; // arg #1
+    let drop_arg_2: *mut String; // local
+    let drop_ret_3: (); // local
+
+    _0 = ()
+    _0 = ()
+    storage_live(drop_arg_2)
+    drop_arg_2 = &raw mut _1
+    storage_live(drop_ret_3)
+    drop_ret_3 = {impl Destruct for String}::drop_in_place(move drop_arg_2)
+    return
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let _s_1: String; // local
+    let drop_arg_2: *mut String; // local
+    let drop_ret_3: (); // local
+
+    _0 = ()
+    storage_live(_s_1)
+    _s_1 = new()
+    _0 = ()
+    storage_live(drop_arg_2)
+    drop_arg_2 = &raw mut _s_1
+    storage_live(drop_ret_3)
+    drop_ret_3 = {impl Destruct for String}::drop_in_place(move drop_arg_2)
+    storage_dead(_s_1)
+    return
+}
+
+
+

@@ -3,31 +3,31 @@
 // Full name: shifts::main
 fn main()
 {
-    let @0: (); // return
-    let @1: u8; // anonymous local
-    let @2: u8; // anonymous local
-    let x@3: i8; // local
-    let @4: i8; // anonymous local
-    let @5: i8; // anonymous local
+    let _0: (); // return
+    let _1: u8; // anonymous local
+    let _2: u8; // anonymous local
+    let x_3: i8; // local
+    let _4: i8; // anonymous local
+    let _5: i8; // anonymous local
 
     bb0: {
-        storage_live(@1);
-        @1 := const (1 : u8) panic.<< const (3 : i32);
-        storage_dead(@1);
-        storage_live(@2);
-        @2 := const (128 : u8) panic.>> const (7 : i32);
-        storage_dead(@2);
-        storage_live(x@3);
-        x@3 := const (-2 : i8);
-        storage_live(@4);
-        storage_live(@5);
-        @5 := copy (x@3);
-        @4 := move (@5) panic.>> const (1 : i32);
-        storage_dead(@5);
-        storage_dead(@4);
-        @0 := ();
-        storage_dead(x@3);
-        @0 := ();
+        _0 = ();
+        storage_live(_1);
+        _1 = const 1 : u8 panic.<< const 3 : i32;
+        storage_dead(_1);
+        storage_live(_2);
+        _2 = const 128 : u8 panic.>> const 7 : i32;
+        storage_dead(_2);
+        storage_live(x_3);
+        x_3 = const -2 : i8;
+        storage_live(_4);
+        storage_live(_5);
+        _5 = copy x_3;
+        _4 = move _5 panic.>> const 1 : i32;
+        storage_dead(_5);
+        storage_dead(_4);
+        _0 = ();
+        storage_dead(x_3);
         return;
     }
 }

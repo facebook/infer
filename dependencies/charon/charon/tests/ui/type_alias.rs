@@ -1,6 +1,6 @@
 use std::borrow::Cow;
-// type Foo = usize;
-// type Generic<'a, T> = &'a T;
-// type Generic2<'a, T: Clone> = Cow<'a, [T]>;
-// type GenericWithoutBound<'a, T> = Cow<'a, [T]>;
-struct Generic2<'a, T: Clone>(Cow<'a, [T]>);
+
+pub type Usize = usize;
+pub type Generic<'a, T> = &'a T;
+pub type Generic2<'a, T: Clone> = Cow<'a, [T]>;
+pub type GenericWithoutBound<'a, T> = Cow<'a, [T]>;

@@ -1,29 +1,26 @@
 # Final LLBC before serialization:
 
-struct core::cmp::PartialEq::{vtable}<Rhs> {
-  size: usize,
-  align: usize,
-  drop: fn(*mut (dyn exists<_dyn> [@TraitClause0]: PartialEq<_dyn, Rhs> + _dyn : '_)),
-  method_eq: fn<'_0, '_1>(&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: PartialEq<_dyn, Rhs> + _dyn : '_)), &'_0_1 (Rhs)) -> bool,
-  method_ne: fn<'_0, '_1>(&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: PartialEq<_dyn, Rhs> + _dyn : '_)), &'_0_1 (Rhs)) -> bool,
-}
+opaque type core::cmp::PartialEq::{vtable}<Rhs>
 
 // Full name: core::cmp::PartialEq
 #[lang_item("eq")]
 pub trait PartialEq<Self, Rhs>
 {
-    fn eq<'_0, '_1> = eq<'_0_0, '_0_1, Self, Rhs>[Self]
+    fn eq<'_0_1, '_1_1> = eq<'_0_1, '_1_1, Self, Rhs>[Self]
     vtable: core::cmp::PartialEq::{vtable}<Rhs>
 }
 
 // Full name: core::cmp::PartialEq::eq
 #[lang_item("cmp_partialeq_eq")]
-pub fn eq<'_0, '_1, Self, Rhs>(@1: &'_0 (Self), @2: &'_1 (Rhs)) -> bool
+pub fn eq<'_0, '_1, Self, Rhs>(_1: &'_0 Self, _2: &'_1 Rhs) -> bool
 where
     [@TraitClause0]: PartialEq<Self, Rhs>,
+= <opaque>
 
 // Full name: core::fmt::Error
 pub struct Error {}
+
+opaque type core::fmt::Display::{vtable}
 
 // Full name: core::marker::MetaSized
 #[lang_item("meta_sized")]
@@ -48,33 +45,29 @@ where
   Err(E),
 }
 
-struct core::fmt::Display::{vtable} {
-  size: usize,
-  align: usize,
-  drop: fn(*mut (dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)),
-  method_fmt: fn<'_0, '_1, '_2>(&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)), &'_0_1 mut (Formatter<'_0_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>],
-}
-
 // Full name: core::fmt::Display
 #[lang_item("Display")]
 pub trait Display<Self>
 {
-    fn fmt<'_0, '_1, '_2> = fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    fn fmt<'_0_1, '_1_1, '_2_1> = fmt<'_0_1, '_1_1, '_2_1, Self>[Self]
     vtable: core::fmt::Display::{vtable}
 }
 
 // Full name: core::fmt::Display::fmt
-pub fn fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+pub fn fmt<'_0, '_1, '_2, Self>(_1: &'_0 Self, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
 where
     [@TraitClause0]: Display<Self>,
+= <opaque>
 
 // Full name: core::marker::Tuple
 #[lang_item("tuple_trait")]
 pub trait Tuple<Self>
 {
     parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    vtable: core::marker::Tuple::{vtable}
+    non-dyn-compatible
 }
+
+opaque type core::ops::function::Fn::{vtable}<Args, Ty0>
 
 // Full name: core::ops::function::FnOnce
 #[lang_item("fn_once")]
@@ -86,7 +79,7 @@ pub trait FnOnce<Self, Args>
     parent_clause3 : [@TraitClause3]: Sized<Self::Output>
     type Output
     fn call_once = call_once<Self, Args>[Self]
-    non-dyn-compatible
+    vtable: core::ops::function::FnOnce::{vtable}<Args, Self::Output>
 }
 
 // Full name: core::ops::function::FnMut
@@ -97,36 +90,39 @@ pub trait FnMut<Self, Args>
     parent_clause1 : [@TraitClause1]: FnOnce<Self, Args>
     parent_clause2 : [@TraitClause2]: Sized<Args>
     parent_clause3 : [@TraitClause3]: Tuple<Args>
-    fn call_mut<'_0> = call_mut<'_0_0, Self, Args>[Self]
-    non-dyn-compatible
+    fn call_mut<'_0_1> = call_mut<'_0_1, Self, Args>[Self]
+    vtable: core::ops::function::FnMut::{vtable}<Args, Self::parent_clause1::Output>
 }
 
 // Full name: core::ops::function::Fn
-#[lang_item("r#fn")]
+#[lang_item("fn")]
 pub trait Fn<Self, Args>
 {
     parent_clause0 : [@TraitClause0]: MetaSized<Self>
     parent_clause1 : [@TraitClause1]: FnMut<Self, Args>
     parent_clause2 : [@TraitClause2]: Sized<Args>
     parent_clause3 : [@TraitClause3]: Tuple<Args>
-    fn call<'_0> = call<'_0_0, Self, Args>[Self]
-    non-dyn-compatible
+    fn call<'_0_1> = call<'_0_1, Self, Args>[Self]
+    vtable: core::ops::function::Fn::{vtable}<Args, Self::parent_clause1::parent_clause1::Output>
 }
 
 // Full name: core::ops::function::Fn::call
-pub fn call<'_0, Self, Args>(@1: &'_0 (Self), @2: Args) -> @TraitClause0::parent_clause1::parent_clause1::Output
+pub fn call<'_0, Self, Args>(_1: &'_0 Self, _2: Args) -> @TraitClause0::parent_clause1::parent_clause1::Output
 where
     [@TraitClause0]: Fn<Self, Args>,
+= <opaque>
 
 // Full name: core::ops::function::FnMut::call_mut
-pub fn call_mut<'_0, Self, Args>(@1: &'_0 mut (Self), @2: Args) -> @TraitClause0::parent_clause1::Output
+pub fn call_mut<'_0, Self, Args>(_1: &'_0 mut Self, _2: Args) -> @TraitClause0::parent_clause1::Output
 where
     [@TraitClause0]: FnMut<Self, Args>,
+= <opaque>
 
 // Full name: core::ops::function::FnOnce::call_once
-pub fn call_once<Self, Args>(@1: Self, @2: Args) -> @TraitClause0::Output
+pub fn call_once<Self, Args>(_1: Self, _2: Args) -> @TraitClause0::Output
 where
     [@TraitClause0]: FnOnce<Self, Args>,
+= <opaque>
 
 // Full name: core::option::Option
 #[lang_item("Option")]
@@ -146,83 +142,61 @@ pub struct Global {}
 #[lang_item("String")]
 pub opaque type String
 
-// Full name: alloc::string::ToString
-#[lang_item("ToString")]
-pub trait ToString<Self>
-{
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn to_string<'_0> = alloc::string::ToString::to_string<'_0_0, Self>[Self]
-    vtable: alloc::string::ToString::{vtable}
-}
-
-#[lang_item("to_string_method")]
-pub fn alloc::string::ToString::to_string<'_0, Self>(@1: &'_0 (Self)) -> String
-where
-    [@TraitClause0]: ToString<Self>,
-
 // Full name: alloc::string::{impl ToString for T}::to_string
-pub fn {impl ToString for T}::to_string<'_0, T>(@1: &'_0 (T)) -> String
+pub fn {impl ToString for T}::to_string<'_0, T>(_1: &'_0 T) -> String
 where
     [@TraitClause0]: MetaSized<T>,
     [@TraitClause1]: Display<T>,
-
-// Full name: alloc::string::{impl ToString for T}
-impl<T> ToString for T
-where
-    [@TraitClause0]: MetaSized<T>,
-    [@TraitClause1]: Display<T>,
-{
-    parent_clause0 = @TraitClause0
-    fn to_string<'_0> = {impl ToString for T}::to_string<'_0_0, T>[@TraitClause0, @TraitClause1]
-    vtable: {impl ToString for T}::{vtable}<T>[@TraitClause0, @TraitClause1]
-}
+= <opaque>
 
 // Full name: test_crate::construct
-fn construct<T>(@1: T) -> alloc::boxed::Box<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : 'static)>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Sized<Global>]
+fn construct<T>(_1: T) -> alloc::boxed::Box<(dyn Display + 'static)>[{built_in impl MetaSized for (dyn Display)}, {built_in impl Sized for Global}]
 where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Display<T>,
     T : 'static,
+= <opaque>
 
 // Full name: test_crate::destruct
-fn destruct<'_0>(@1: &'_0 ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_0))) -> String
+fn destruct<'_0>(_1: &'_0 (dyn Display + '_0)) -> String
 {
-    let @0: String; // return
-    let x@1: &'_ ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)); // arg #1
-    let @2: &'_ ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)); // anonymous local
+    let _0: String; // return
+    let x_1: &'3 (dyn Display + '4); // arg #1
+    let _2: &'5 (dyn Display + '6); // anonymous local
 
-    storage_live(@2)
-    @2 := &*(x@1)
-    @0 := {impl ToString for T}::to_string<'_, (dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>[MetaSized<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>, Display<(dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_)>](move (@2))
-    storage_dead(@2)
+    storage_live(_2)
+    _2 = &(*x_1) with_metadata(copy x_1.metadata)
+    _0 = {impl ToString for T}::to_string<'14, (dyn Display + '8)>[{built_in impl MetaSized for (dyn Display + '10)}, Display<(dyn Display + '12)>](move _2)
+    storage_dead(_2)
     return
 }
 
 // Full name: test_crate::combine
 fn combine()
+= <opaque>
 
 // Full name: test_crate::foo
-fn foo<'_0, '_1, T>(@1: &'_0 ((dyn exists<_dyn> [@TraitClause0]: for<'a> Fn<_dyn, (&'a (T))> + _dyn : 'static + for<'a> @TraitClause1_0::parent_clause1::parent_clause1::Output = T)), @2: &'_1 ((dyn exists<_dyn> [@TraitClause0]: PartialEq<_dyn, Option<T>[@TraitClause0]> + _dyn : '_1)))
+fn foo<'_0, '_1, T>(_1: &'_0 (dyn for<'a> Fn<(&'a T,), parent_clause1::parent_clause1::Output = T> + 'static), _2: &'_1 (dyn PartialEq<Option<T>[@TraitClause0]> + '_1))
 where
     [@TraitClause0]: Sized<T>,
 {
-    let @0: (); // return
-    let @1: &'_ ((dyn exists<_dyn> [@TraitClause0]: for<'a> Fn<_dyn, (&'a (T))> + _dyn : '_ + for<'a> @TraitClause1_0::parent_clause1::parent_clause1::Output = T)); // arg #1
-    let @2: &'_ ((dyn exists<_dyn> [@TraitClause0]: PartialEq<_dyn, Option<T>[@TraitClause0]> + _dyn : '_)); // arg #2
+    let _0: (); // return
+    let _1: &'10 (dyn for<'a> Fn<(&'a T,), parent_clause1::parent_clause1::Output = T> + '11); // arg #1
+    let _2: &'16 (dyn PartialEq<Option<T>[@TraitClause0]> + '17); // arg #2
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 
 // Full name: test_crate::bar
-fn bar<'_0>(@1: &'_0 ((dyn exists<_dyn> [@TraitClause0]: for<'_0> Fn<_dyn, (&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_2_0)))> + _dyn : '_0 + for<'_0> @TraitClause1_0::parent_clause1::parent_clause1::Output = ())))
+fn bar<'_0>(_1: &'_0 (dyn for<'_0_2> Fn<(&'_0_2 (dyn Display + '_0_2),), parent_clause1::parent_clause1::Output = ()> + '_0))
 {
-    let @0: (); // return
-    let @1: &'_ ((dyn exists<_dyn> [@TraitClause0]: for<'_0> Fn<_dyn, (&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: Display<_dyn> + _dyn : '_2_0)))> + _dyn : '_ + for<'_0> @TraitClause1_0::parent_clause1::parent_clause1::Output = ())); // arg #1
+    let _0: (); // return
+    let _1: &'19 (dyn for<'_0_2> Fn<(&'_0_2 (dyn Display + '_0_2),), parent_clause1::parent_clause1::Output = ()> + '20); // arg #1
 
-    @0 := ()
-    @0 := ()
+    _0 = ()
+    _0 = ()
     return
 }
 

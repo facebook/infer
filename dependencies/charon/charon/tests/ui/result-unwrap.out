@@ -13,9 +13,9 @@ pub struct FormattingOptions {
 // Full name: core::fmt::flags::DEBUG_LOWER_HEX_FLAG
 fn DEBUG_LOWER_HEX_FLAG() -> u32
 {
-    let @0: u32; // return
+    let _0: u32; // return
 
-    @0 := const (1 : u32) panic.<< const (25 : i32)
+    _0 = const 1 : u32 panic.<< const 25 : i32
     return
 }
 
@@ -25,9 +25,9 @@ const DEBUG_LOWER_HEX_FLAG: u32 = DEBUG_LOWER_HEX_FLAG()
 // Full name: core::fmt::flags::DEBUG_UPPER_HEX_FLAG
 fn DEBUG_UPPER_HEX_FLAG() -> u32
 {
-    let @0: u32; // return
+    let _0: u32; // return
 
-    @0 := const (1 : u32) panic.<< const (26 : i32)
+    _0 = const 1 : u32 panic.<< const 26 : i32
     return
 }
 
@@ -60,193 +60,141 @@ where
 struct core::fmt::Debug::{vtable} {
   size: usize,
   align: usize,
-  drop: fn(*mut (dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)),
-  method_fmt: fn<'_0, '_1, '_2>(&'_0_0 ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)), &'_0_1 mut (Formatter<'_0_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>],
+  drop: unsafe fn(*mut (dyn Debug)),
+  method_fmt: fn<'_0_1, '_1_1, '_2_1>(&'_0_1 (dyn Debug), &'_1_1 mut Formatter<'_2_1>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}],
 }
 
 // Full name: core::fmt::Debug
 #[lang_item("Debug")]
 pub trait Debug<Self>
 {
-    fn fmt<'_0, '_1, '_2> = core::fmt::Debug::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
+    fn fmt<'_0_1, '_1_1, '_2_1> = core::fmt::Debug::fmt<'_0_1, '_1_1, '_2_1, Self>[Self]
     vtable: core::fmt::Debug::{vtable}
 }
 
-pub fn core::fmt::Debug::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+pub fn core::fmt::Debug::fmt<'_0, '_1, '_2, Self>(_1: &'_0 Self, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
 where
     [@TraitClause0]: Debug<Self>,
-
-// Full name: core::fmt::Display
-#[lang_item("Display")]
-pub trait Display<Self>
-{
-    fn fmt<'_0, '_1, '_2> = core::fmt::Display::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
-    vtable: core::fmt::Display::{vtable}
-}
-
-pub fn core::fmt::Display::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
-where
-    [@TraitClause0]: Display<Self>,
-
-// Full name: core::fmt::LowerHex
-pub trait LowerHex<Self>
-{
-    fn fmt<'_0, '_1, '_2> = core::fmt::LowerHex::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
-    vtable: core::fmt::LowerHex::{vtable}
-}
-
-pub fn core::fmt::LowerHex::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
-where
-    [@TraitClause0]: LowerHex<Self>,
-
-// Full name: core::fmt::UpperHex
-pub trait UpperHex<Self>
-{
-    fn fmt<'_0, '_1, '_2> = core::fmt::UpperHex::fmt<'_0_0, '_0_1, '_0_2, Self>[Self]
-    vtable: core::fmt::UpperHex::{vtable}
-}
-
-pub fn core::fmt::UpperHex::fmt<'_0, '_1, '_2, Self>(@1: &'_0 (Self), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
-where
-    [@TraitClause0]: UpperHex<Self>,
+= <method_without_default_body>
 
 // Full name: core::fmt::num::{impl LowerHex for u32}::fmt
-pub fn {impl LowerHex for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
-
-// Full name: core::fmt::num::{impl LowerHex for u32}
-impl LowerHex for u32 {
-    fn fmt<'_0, '_1, '_2> = {impl LowerHex for u32}::fmt<'_0_0, '_0_1, '_0_2>
-    vtable: {impl LowerHex for u32}::{vtable}
-}
+pub fn {impl LowerHex for u32}::fmt<'_0, '_1, '_2>(_1: &'_0 u32, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
+= <missing>
 
 // Full name: core::fmt::num::{impl UpperHex for u32}::fmt
-pub fn {impl UpperHex for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
-
-// Full name: core::fmt::num::{impl UpperHex for u32}
-impl UpperHex for u32 {
-    fn fmt<'_0, '_1, '_2> = {impl UpperHex for u32}::fmt<'_0_0, '_0_1, '_0_2>
-    vtable: {impl UpperHex for u32}::{vtable}
-}
+pub fn {impl UpperHex for u32}::fmt<'_0, '_1, '_2>(_1: &'_0 u32, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
+= <missing>
 
 // Full name: core::fmt::num::imp::{impl Display for u32}::fmt
-pub fn {impl Display for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+pub fn {impl Display for u32}::fmt<'_0, '_1, '_2>(_1: &'_0 u32, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
+= <missing>
 
 // Full name: core::fmt::num::{impl Debug for u32}::fmt
-pub fn {impl Debug for u32}::fmt<'_0, '_1, '_2>(@1: &'_0 (u32), @2: &'_1 mut (Formatter<'_2>)) -> Result<(), Error>[Sized<()>, Sized<Error>]
+pub fn {impl Debug for u32}::fmt<'_0, '_1, '_2>(_1: &'_0 u32, _2: &'_1 mut Formatter<'_2>) -> Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]
 {
-    let @0: Result<(), Error>[Sized<()>, Sized<Error>]; // return
-    let self@1: &'_ (u32); // arg #1
-    let f@2: &'_ mut (Formatter<'_>); // arg #2
-    let @3: u32; // anonymous local
-    let @4: u32; // anonymous local
-    let @5: u32; // anonymous local
-    let @6: u32; // anonymous local
+    let _0: Result<(), Error>[{built_in impl Sized for ()}, {built_in impl Sized for Error}]; // return
+    let self_1: &'1 u32; // arg #1
+    let f_2: &'5 mut Formatter<'6>; // arg #2
+    let _3: u32; // anonymous local
+    let _4: u32; // anonymous local
+    let _5: u32; // anonymous local
+    let _6: u32; // anonymous local
 
-    storage_live(@3)
-    storage_live(@4)
-    @4 := copy (((*(f@2)).0).flags)
-    @3 := move (@4) & copy (DEBUG_LOWER_HEX_FLAG)
-    storage_dead(@4)
-    switch move (@3) {
+    storage_live(_3)
+    storage_live(_4)
+    _4 = copy (((*f_2)).0).flags
+    _3 = move _4 & copy DEBUG_LOWER_HEX_FLAG
+    storage_dead(_4)
+    switch copy _3 {
         0 : u32 => {
         },
         _ => {
-            storage_dead(@3)
-            @0 := {impl LowerHex for u32}::fmt<'_, '_, '_>(move (self@1), move (f@2))
+            storage_dead(_3)
+            _0 = {impl LowerHex for u32}::fmt<'12, '13, '14>(move self_1, move f_2)
             return
         },
     }
-    storage_dead(@3)
-    storage_live(@5)
-    storage_live(@6)
-    @6 := copy (((*(f@2)).0).flags)
-    @5 := move (@6) & copy (DEBUG_UPPER_HEX_FLAG)
-    storage_dead(@6)
-    switch move (@5) {
+    storage_dead(_3)
+    storage_live(_5)
+    storage_live(_6)
+    _6 = copy (((*f_2)).0).flags
+    _5 = move _6 & copy DEBUG_UPPER_HEX_FLAG
+    storage_dead(_6)
+    switch copy _5 {
         0 : u32 => {
-            storage_dead(@5)
-            @0 := {impl Display for u32}::fmt<'_, '_, '_>(move (self@1), move (f@2))
         },
         _ => {
-            storage_dead(@5)
-            @0 := {impl UpperHex for u32}::fmt<'_, '_, '_>(move (self@1), move (f@2))
+            storage_dead(_5)
+            _0 = {impl UpperHex for u32}::fmt<'24, '25, '26>(move self_1, move f_2)
+            return
         },
     }
+    storage_dead(_5)
+    _0 = {impl Display for u32}::fmt<'18, '19, '20>(move self_1, move f_2)
     return
 }
 
 // Full name: core::fmt::num::{impl Debug for u32}
 impl Debug for u32 {
-    fn fmt<'_0, '_1, '_2> = {impl Debug for u32}::fmt<'_0_0, '_0_1, '_0_2>
+    fn fmt<'_0_1, '_1_1, '_2_1> = {impl Debug for u32}::fmt<'_0_1, '_1_1, '_2_1>
     vtable: {impl Debug for u32}::{vtable}
 }
 
-// Full name: core::fmt::num::imp::{impl Display for u32}
-impl Display for u32 {
-    fn fmt<'_0, '_1, '_2> = {impl Display for u32}::fmt<'_0_0, '_0_1, '_0_2>
-    vtable: {impl Display for u32}::{vtable}
-}
-
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
+fn UNIT_METADATA()
 {
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn drop<'_0> = drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
+    let _0: (); // return
+
+    _0 = ()
+    return
 }
 
-// Full name: core::ops::drop::Drop::drop
-pub fn drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
+const UNIT_METADATA: () = @Fun0()
 
 // Full name: core::result::unwrap_failed
-fn unwrap_failed<'_0, '_1>(@1: &'_0 (Str), @2: &'_1 ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_1))) -> !
+fn unwrap_failed<'_0, '_1>(_1: &'_0 Str, _2: &'_1 (dyn Debug + '_1)) -> !
+= <missing>
 
-pub fn core::result::{Result<T, E>[@TraitClause0, @TraitClause1]}::unwrap<T, E>(@1: Result<T, E>[@TraitClause0, @TraitClause1]) -> T
+pub fn core::result::{Result<T, E>[@TraitClause0, @TraitClause1]}::unwrap<T, E>(_1: Result<T, E>[@TraitClause0, @TraitClause1]) -> T
 where
     [@TraitClause0]: Sized<T>,
     [@TraitClause1]: Sized<E>,
     [@TraitClause2]: Debug<E>,
 {
-    let t@0: T; // return
-    let self@1: Result<T, E>[@TraitClause0, @TraitClause1]; // arg #1
-    let e@2: E; // local
-    let @3: !; // anonymous local
-    let @4: &'_ ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)); // anonymous local
-    let @5: &'_ (E); // anonymous local
+    let t_0: T; // return
+    let self_1: Result<T, E>[@TraitClause0, @TraitClause1]; // arg #1
+    let e_2: E; // local
+    let _3: !; // anonymous local
+    let _4: &'3 (dyn Debug + '4); // anonymous local
+    let _5: &'6 E; // anonymous local
 
-    storage_live(e@2)
-    storage_live(@3)
-    storage_live(@4)
-    storage_live(@5)
-    match self@1 {
+    storage_live(_3)
+    storage_live(_5)
+    match self_1 {
         Result::Ok => {
         },
         Result::Err => {
-            storage_live(e@2)
-            e@2 := move ((self@1 as variant Result::Err).0)
-            storage_live(@4)
-            @5 := &e@2
-            @4 := unsize_cast<&'_ (E), &'_ ((dyn exists<_dyn> [@TraitClause0]: Debug<_dyn> + _dyn : '_)), @TraitClause2>(copy (@5))
-            @3 := unwrap_failed<'_, '_>(const ("called `Result::unwrap()` on an `Err` value"), move (@4))
+            storage_live(e_2)
+            e_2 = move (self_1 as variant Result::Err).0
+            storage_live(_4)
+            _5 = &e_2
+            _4 = unsize_cast<&'6 E, &'7 (dyn Debug + '8), &vtable_of(@TraitClause2)>(copy _5)
+            _3 = unwrap_failed<'11, '12>(const "called `Result::unwrap()` on an `Err` value", move _4)
         },
     }
-    t@0 := move ((self@1 as variant Result::Ok).0)
+    t_0 = move (self_1 as variant Result::Ok).0
     return
 }
 
-fn test_crate::unwrap(@1: Result<u32, u32>[Sized<u32>, Sized<u32>]) -> u32
+fn test_crate::unwrap(_1: Result<u32, u32>[{built_in impl Sized for u32}, {built_in impl Sized for u32}]) -> u32
 {
-    let @0: u32; // return
-    let res@1: Result<u32, u32>[Sized<u32>, Sized<u32>]; // arg #1
-    let @2: Result<u32, u32>[Sized<u32>, Sized<u32>]; // anonymous local
+    let _0: u32; // return
+    let res_1: Result<u32, u32>[{built_in impl Sized for u32}, {built_in impl Sized for u32}]; // arg #1
+    let _2: Result<u32, u32>[{built_in impl Sized for u32}, {built_in impl Sized for u32}]; // anonymous local
 
-    storage_live(@2)
-    @2 := copy (res@1)
-    @0 := core::result::{Result<T, E>[@TraitClause0, @TraitClause1]}::unwrap<u32, u32>[Sized<u32>, Sized<u32>, {impl Debug for u32}](move (@2))
-    storage_dead(@2)
+    storage_live(_2)
+    _2 = copy res_1
+    _0 = core::result::{Result<T, E>[@TraitClause0, @TraitClause1]}::unwrap<u32, u32>[{built_in impl Sized for u32}, {built_in impl Sized for u32}, {impl Debug for u32}](move _2)
+    storage_dead(_2)
     return
 }
 

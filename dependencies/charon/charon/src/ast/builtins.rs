@@ -17,8 +17,6 @@ impl BuiltinTy {
         let name: &[_] = match self {
             BuiltinTy::Box => &["alloc", "boxed", "Box"],
             BuiltinTy::Str => &["Str"],
-            BuiltinTy::Array => &["Array"],
-            BuiltinTy::Slice => &["Slice"],
         };
         Name::from_path(name)
     }

@@ -1,70 +1,75 @@
 # Final ULLBC before serialization:
 
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
-{
-    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
-}
+// Full name: core::ptr::non_null::NonNull
+#[lang_item("NonNull")]
+pub opaque type NonNull<T>
 
-pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
+// Full name: core::ptr::unique::Unique
+pub opaque type Unique<T>
 
 // Full name: alloc::alloc::Global
 #[lang_item("global_alloc_ty")]
 pub struct Global {}
 
-// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>}::drop
-pub fn {impl Drop for alloc::boxed::Box<T>}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>))
+fn UNIT_METADATA()
+{
+    let _0: (); // return
 
-// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>}
-impl<T, A> Drop for alloc::boxed::Box<T> {
-    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>}::drop<'_0_0, T, A>
-    vtable: {impl Drop for alloc::boxed::Box<T>}::{vtable}<T, A>
+    bb0: {
+        _0 = ();
+        return;
+    }
 }
+
+const UNIT_METADATA: () = @Fun0()
 
 // Full name: box_free::main
 fn main()
 {
-    let @0: (); // return
-    let ptr@1: *const i32; // local
-    let @2: (); // anonymous local
-    let x@3: alloc::boxed::Box<i32>; // local
-    let @4: *const i32; // anonymous local
-    let @5: &'_ (i32); // anonymous local
-    let ub@6: i32; // local
+    let _0: (); // return
+    let ptr_1: *const i32; // local
+    let x_2: alloc::boxed::Box<i32>; // local
+    let _3: *const i32; // anonymous local
+    let _4: &'1 i32; // anonymous local
+    let ub_5: i32; // local
+    let _6: *const i32; // anonymous local
 
     bb0: {
-        storage_live(ptr@1);
-        storage_live(@2);
-        storage_live(x@3);
-        x@3 := @BoxNew<i32>(const (50 : i32)) -> bb1 (unwind: bb2);
+        storage_live(_6);
+        _0 = ();
+        storage_live(ptr_1);
+        storage_live(x_2);
+        x_2 = @BoxNew<i32>(const 50 : i32) -> bb2 (unwind: bb1);
     }
 
     bb1: {
-        storage_live(@4);
-        storage_live(@5);
-        @5 := &*(x@3);
-        @4 := &raw const *(@5);
-        ptr@1 := move (@4);
-        storage_dead(@4);
-        storage_dead(@5);
-        // Box is freed here since borrowchecker does not keep track of raw pointer
-        drop[{impl Drop for alloc::boxed::Box<T>}<i32, Global>] x@3;
-        storage_dead(x@3);
-        storage_dead(@2);
-        storage_live(ub@6);
-        ub@6 := copy (*(ptr@1));
-        @0 := ();
-        storage_dead(ub@6);
-        storage_dead(ptr@1);
-        @0 := ();
-        return;
+        unwind_continue;
     }
 
     bb2: {
+        storage_live(_3);
+        storage_live(_4);
+        _6 = transmute<NonNull<i32>, *const i32>(copy ((*x_2)).0);
+        _4 = &(*_6);
+        _3 = &raw const (*_4);
+        ptr_1 = move _3;
+        storage_dead(_3);
+        storage_dead(_4);
+        // Box is freed here since borrowchecker does not keep track of raw pointer
+        drop[{impl#2}<i32, Global>] x_2 -> bb3 (unwind: bb4);
+    }
+
+    bb3: {
+        storage_dead(x_2);
+        storage_live(ub_5);
+        ub_5 = copy (*ptr_1);
+        _0 = ();
+        storage_dead(ub_5);
+        storage_dead(ptr_1);
+        return;
+    }
+
+    bb4: {
         unwind_continue;
     }
 }

@@ -2,56 +2,52 @@
 
 // Full name: core::mem::forget
 #[lang_item("mem_forget")]
-pub fn forget<T>(@1: T)
+pub fn forget<T>(_1: T)
 {
-    let @0: (); // return
-    let t@1: T; // arg #1
+    let _0: (); // return
+    let t_1: T; // arg #1
 
     bb0: {
-        @0 := ();
+        _0 = ();
         return;
     }
 }
 
-// Full name: alloc::alloc::Global
-#[lang_item("global_alloc_ty")]
-pub struct Global {}
-
 // Full name: box_leak::main
 fn main()
 {
-    let @0: (); // return
-    let b@1: alloc::boxed::Box<i32>; // local
-    let @2: (); // anonymous local
-    let @3: alloc::boxed::Box<i32>; // anonymous local
+    let _0: (); // return
+    let b_1: alloc::boxed::Box<i32>; // local
+    let _2: (); // anonymous local
+    let _3: alloc::boxed::Box<i32>; // anonymous local
 
     bb0: {
-        storage_live(b@1);
-        b@1 := @BoxNew<i32>(const (42 : i32)) -> bb1 (unwind: bb2);
+        _0 = ();
+        storage_live(b_1);
+        b_1 = @BoxNew<i32>(const 42 : i32) -> bb2 (unwind: bb1);
     }
 
     bb1: {
-        storage_live(@2);
-        storage_live(@3);
-        @3 := move (b@1);
-        @2 := forget<alloc::boxed::Box<i32>>(move (@3)) -> bb3 (unwind: bb4);
+        unwind_continue;
     }
 
     bb2: {
-        unwind_continue;
+        storage_live(_2);
+        storage_live(_3);
+        _3 = move b_1;
+        _2 = forget<alloc::boxed::Box<i32>>(move _3) -> bb4 (unwind: bb3);
     }
 
     bb3: {
-        storage_dead(@3);
-        storage_dead(@2);
-        @0 := ();
-        storage_dead(b@1);
-        @0 := ();
-        return;
+        unwind_continue;
     }
 
     bb4: {
-        unwind_continue;
+        storage_dead(_3);
+        storage_dead(_2);
+        _0 = ();
+        storage_dead(b_1);
+        return;
     }
 }
 

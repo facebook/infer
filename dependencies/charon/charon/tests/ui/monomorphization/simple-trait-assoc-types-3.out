@@ -1,0 +1,288 @@
+# Final LLBC before serialization:
+
+opaque type core::marker::MetaSized::{vtable}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+struct test_crate::Trait::{vtable} {
+  size: usize,
+  align: usize,
+  drop: *const (),
+  method_comsume: *const (),
+  super_trait_0: &'static core::marker::MetaSized::{vtable},
+}
+
+// Full name: test_crate::Trait
+trait Trait<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::Trait::{vtable}
+}
+
+// Full name: test_crate::Trait::{vtable_drop_preshim}::<bool>
+unsafe fn {vtable_drop_preshim}::<bool>(_1: *mut (dyn Trait<Item = bool>))
+{
+    let ret_0: (); // return
+    let dyn_self_1: *mut (dyn Trait<Item = bool> + '0); // arg #1
+    let erased_drop_shim_ptr_2: *const (); // local
+    let drop_shim_ptr_3: unsafe fn(*mut (dyn Trait<Item = bool> + '1)); // local
+
+    ret_0 = ()
+    storage_live(erased_drop_shim_ptr_2)
+    storage_live(drop_shim_ptr_3)
+    erased_drop_shim_ptr_2 = copy ((*dyn_self_1.metadata)).drop
+    drop_shim_ptr_3 = cast<*const (), unsafe fn(*mut (dyn Trait<Item = bool> + '4))>(move erased_drop_shim_ptr_2)
+    ret_0 = (move drop_shim_ptr_3)(move dyn_self_1)
+    return
+}
+
+// Full name: test_crate::Trait::comsume::{vtable_method_preshim}::<bool>
+fn {vtable_method_preshim}::<bool><'_0>(_1: &'_0 (dyn Trait<Item = bool>))
+{
+    let ret_0: (); // return
+    let dyn_self_1: &'_0 (dyn Trait<Item = bool> + '0); // arg #1
+    let erased_method_comsume_shim_ptr_2: *const (); // local
+    let method_comsume_shim_ptr_3: fn<'_0_1>(&'_0_1 (dyn Trait<Item = bool> + '1)); // local
+
+    ret_0 = ()
+    storage_live(erased_method_comsume_shim_ptr_2)
+    storage_live(method_comsume_shim_ptr_3)
+    erased_method_comsume_shim_ptr_2 = copy ((*dyn_self_1.metadata)).method_comsume
+    method_comsume_shim_ptr_3 = cast<*const (), fn<'_0_1>(&'_0_1 (dyn Trait<Item = bool> + '4))>(move erased_method_comsume_shim_ptr_2)
+    ret_0 = (move method_comsume_shim_ptr_3)(move dyn_self_1)
+    return
+}
+
+fn test_crate::Trait::comsume<'_0>(_1: &'_0 (dyn Trait<Item = bool>))
+= <method_without_default_body>
+
+// Full name: test_crate::{impl Trait for i32}::comsume
+fn {impl Trait for i32}::comsume<'_0>(_1: &'_0 i32)
+{
+    let _0: (); // return
+    let self_1: &'1 i32; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for i32}::comsume::{vtable_method}
+fn {impl Trait for i32}::comsume::{vtable_method}<'_0>(_1: &'_0 (dyn Trait<Item = bool>))
+{
+    let _0: (); // return
+    let _1: &'_0 (dyn Trait<Item = bool> + '0); // arg #1
+    let _2: &'_0 i32; // anonymous local
+
+    _0 = ()
+    storage_live(_2)
+    _2 = concretize<&'_0 (dyn Trait<Item = bool> + '1), &'_0 i32>(move _1)
+    _0 = {impl Trait for i32}::comsume<'_0>(move _2)
+    return
+}
+
+// Full name: test_crate::{impl Trait for i32}::{vtable_drop_shim}
+unsafe fn {impl Trait for i32}::{vtable_drop_shim}(_1: *mut (dyn Trait<Item = bool>))
+{
+    let ret_0: (); // return
+    let dyn_self_1: *mut (dyn Trait<Item = bool> + '0); // arg #1
+    let target_self_2: *mut i32; // local
+
+    ret_0 = ()
+    storage_live(target_self_2)
+    target_self_2 = concretize<*mut (dyn Trait<Item = bool> + '1), *mut i32>(move dyn_self_1)
+    return
+}
+
+// Full name: test_crate::{impl Trait for i32}::{vtable}
+fn {impl Trait for i32}::{vtable}() -> test_crate::Trait::{vtable}
+{
+    let ret_0: test_crate::Trait::{vtable}; // return
+    let size_1: usize; // local
+    let align_2: usize; // local
+    let drop_3: unsafe fn(*mut (dyn Trait<Item = bool> + '0)); // local
+    let erased_drop_4: *const (); // local
+    let comsume_5: fn<'_0_1>(&'_0_1 (dyn Trait<Item = bool> + '1)); // local
+    let erased_comsume_6: *const (); // local
+
+    storage_live(size_1)
+    size_1 = size_of<i32>
+    storage_live(align_2)
+    align_2 = align_of<i32>
+    storage_live(drop_3)
+    storage_live(erased_drop_4)
+    drop_3 = const {impl Trait for i32}::{vtable_drop_shim}
+    erased_drop_4 = cast<unsafe fn(*mut (dyn Trait<Item = bool> + '4)), *const ()>(move drop_3)
+    storage_live(comsume_5)
+    storage_live(erased_comsume_6)
+    comsume_5 = const {impl Trait for i32}::comsume::{vtable_method}<'7>
+    erased_comsume_6 = cast<fn<'_0_1>(&'_0_1 (dyn Trait<Item = bool> + '9)), *const ()>(move comsume_5)
+    ret_0 = test_crate::Trait::{vtable} { size: move size_1, align: move align_2, drop: move erased_drop_4, method_comsume: move erased_comsume_6, super_trait_0: const &vtable_of({built_in impl MetaSized for i32}) }
+    return
+}
+
+// Full name: test_crate::{impl Trait for i32}::{vtable}
+static {impl Trait for i32}::{vtable}: test_crate::Trait::{vtable} = {impl Trait for i32}::{vtable}()
+
+// Full name: test_crate::{impl Trait for i32}
+impl Trait for i32 {
+    parent_clause0 = {built_in impl MetaSized for i32}
+    vtable: {impl Trait for i32}::{vtable}
+}
+
+// Full name: test_crate::{impl Trait for usize}::comsume
+fn {impl Trait for usize}::comsume<'_0>(_1: &'_0 usize)
+{
+    let _0: (); // return
+    let self_1: &'1 usize; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::{impl Trait for usize}::comsume::{vtable_method}
+fn {impl Trait for usize}::comsume::{vtable_method}<'_0>(_1: &'_0 (dyn Trait<Item = bool>))
+{
+    let _0: (); // return
+    let _1: &'_0 (dyn Trait<Item = bool> + '0); // arg #1
+    let _2: &'_0 usize; // anonymous local
+
+    _0 = ()
+    storage_live(_2)
+    _2 = concretize<&'_0 (dyn Trait<Item = bool> + '1), &'_0 usize>(move _1)
+    _0 = {impl Trait for usize}::comsume<'_0>(move _2)
+    return
+}
+
+// Full name: test_crate::{impl Trait for usize}::{vtable_drop_shim}
+unsafe fn {impl Trait for usize}::{vtable_drop_shim}(_1: *mut (dyn Trait<Item = bool>))
+{
+    let ret_0: (); // return
+    let dyn_self_1: *mut (dyn Trait<Item = bool> + '0); // arg #1
+    let target_self_2: *mut usize; // local
+
+    ret_0 = ()
+    storage_live(target_self_2)
+    target_self_2 = concretize<*mut (dyn Trait<Item = bool> + '1), *mut usize>(move dyn_self_1)
+    return
+}
+
+// Full name: test_crate::{impl Trait for usize}::{vtable}
+fn {impl Trait for usize}::{vtable}() -> test_crate::Trait::{vtable}
+{
+    let ret_0: test_crate::Trait::{vtable}; // return
+    let size_1: usize; // local
+    let align_2: usize; // local
+    let drop_3: unsafe fn(*mut (dyn Trait<Item = bool> + '0)); // local
+    let erased_drop_4: *const (); // local
+    let comsume_5: fn<'_0_1>(&'_0_1 (dyn Trait<Item = bool> + '1)); // local
+    let erased_comsume_6: *const (); // local
+
+    storage_live(size_1)
+    size_1 = size_of<usize>
+    storage_live(align_2)
+    align_2 = align_of<usize>
+    storage_live(drop_3)
+    storage_live(erased_drop_4)
+    drop_3 = const {impl Trait for usize}::{vtable_drop_shim}
+    erased_drop_4 = cast<unsafe fn(*mut (dyn Trait<Item = bool> + '4)), *const ()>(move drop_3)
+    storage_live(comsume_5)
+    storage_live(erased_comsume_6)
+    comsume_5 = const {impl Trait for usize}::comsume::{vtable_method}<'7>
+    erased_comsume_6 = cast<fn<'_0_1>(&'_0_1 (dyn Trait<Item = bool> + '9)), *const ()>(move comsume_5)
+    ret_0 = test_crate::Trait::{vtable} { size: move size_1, align: move align_2, drop: move erased_drop_4, method_comsume: move erased_comsume_6, super_trait_0: const &vtable_of({built_in impl MetaSized for usize}) }
+    return
+}
+
+// Full name: test_crate::{impl Trait for usize}::{vtable}
+static {impl Trait for usize}::{vtable}: test_crate::Trait::{vtable} = {impl Trait for usize}::{vtable}()
+
+// Full name: test_crate::{impl Trait for usize}
+impl Trait for usize {
+    parent_clause0 = {built_in impl MetaSized for usize}
+    vtable: {impl Trait for usize}::{vtable}
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let a_1: &'3 (dyn Trait<Item = bool> + '4); // local
+    let _2: &'6 i32; // anonymous local
+    let _3: &'7 i32; // anonymous local
+    let _4: (); // anonymous local
+    let _5: &'8 (dyn Trait<Item = bool> + '9); // anonymous local
+    let b_6: &'10 (dyn Trait<Item = bool> + '11); // local
+    let _7: &'13 usize; // anonymous local
+    let _8: &'14 usize; // anonymous local
+    let _9: (); // anonymous local
+    let _10: &'15 (dyn Trait<Item = bool> + '16); // anonymous local
+    let _11: &'17 usize; // anonymous local
+    let _12: &'18 i32; // anonymous local
+    let _13: &'35 i32; // anonymous local
+    let _14: i32; // anonymous local
+    let _15: &'36 usize; // anonymous local
+    let _16: usize; // anonymous local
+
+    storage_live(_13)
+    storage_live(_14)
+    _14 = const 42 : i32
+    _13 = &_14
+    storage_live(_11)
+    storage_live(_12)
+    _0 = ()
+    storage_live(a_1)
+    storage_live(_2)
+    storage_live(_3)
+    _12 = move _13
+    _3 = &(*_12)
+    _2 = &(*_3)
+    a_1 = unsize_cast<&'6 i32, &'20 (dyn Trait<Item = bool> + '21), &{impl Trait for i32}::{vtable}>(move _2)
+    storage_dead(_2)
+    storage_dead(_3)
+    storage_live(_4)
+    storage_live(_5)
+    _5 = &(*a_1) with_metadata(copy a_1.metadata)
+    _4 = {vtable_method_preshim}::<bool><'_>(move _5)
+    storage_live(_15)
+    storage_live(_16)
+    _16 = const 42 : usize
+    _15 = &_16
+    storage_dead(_5)
+    storage_dead(_4)
+    storage_live(b_6)
+    storage_live(_7)
+    storage_live(_8)
+    _11 = move _15
+    _8 = &(*_11)
+    _7 = &(*_8)
+    b_6 = unsize_cast<&'13 usize, &'28 (dyn Trait<Item = bool> + '29), &{impl Trait for usize}::{vtable}>(move _7)
+    storage_dead(_7)
+    storage_dead(_8)
+    storage_live(_9)
+    storage_live(_10)
+    _10 = &(*b_6) with_metadata(copy b_6.metadata)
+    _9 = {vtable_method_preshim}::<bool><'_>(move _10)
+    storage_dead(_10)
+    storage_dead(_9)
+    _0 = ()
+    storage_dead(b_6)
+    storage_dead(a_1)
+    return
+}
+
+
+

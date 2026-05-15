@@ -1,0 +1,188 @@
+# Final LLBC before serialization:
+
+opaque type core::marker::Send::{vtable}
+
+// Full name: core::marker::Send
+#[lang_item("Send")]
+pub trait Send<Self>
+
+opaque type core::marker::MetaSized::{vtable}
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
+{
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
+}
+
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    _0 = ()
+    return
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+struct test_crate::MyTrait::{vtable} {
+  size: usize,
+  align: usize,
+  drop: unsafe fn(*mut (dyn MyTrait)),
+  method_foo: fn<'_0_1>(&'_0_1 (dyn MyTrait)),
+  super_trait_0: &'static core::marker::MetaSized::{vtable},
+  super_trait_1: &'static core::marker::Send::{vtable},
+}
+
+// Full name: test_crate::MyTrait
+pub trait MyTrait<Self>
+where
+    Self : 'static,
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    parent_clause1 : [@TraitClause1]: Send<Self>
+    fn foo<'_0_1> = test_crate::MyTrait::foo<'_0_1, Self>[Self]
+    vtable: test_crate::MyTrait::{vtable}
+}
+
+pub fn test_crate::MyTrait::foo<'_0, Self>(_1: &'_0 Self)
+where
+    [@TraitClause0]: MyTrait<Self>,
+= <method_without_default_body>
+
+// Full name: test_crate::MyStruct
+pub struct MyStruct {}
+
+// Full name: test_crate::MyStruct::{impl Destruct for MyStruct}::drop_in_place
+unsafe fn {impl Destruct for MyStruct}::drop_in_place(_1: *mut MyStruct)
+{
+    let _0: (); // return
+    let _1: *mut MyStruct; // arg #1
+    let _2: &'1 mut MyStruct; // anonymous local
+
+    storage_live(_2)
+    _0 = ()
+    _2 = &mut (*_1)
+    return
+}
+
+// Full name: test_crate::MyStruct::{impl Destruct for MyStruct}
+impl Destruct for MyStruct {
+    fn drop_in_place = {impl Destruct for MyStruct}::drop_in_place
+    non-dyn-compatible
+}
+
+// Full name: test_crate::{impl MyTrait for MyStruct}::foo
+pub fn {impl MyTrait for MyStruct}::foo<'_0>(_1: &'_0 MyStruct)
+{
+    let _0: (); // return
+    let self_1: &'1 MyStruct; // arg #1
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::{impl MyTrait for MyStruct}::foo::{vtable_method}
+fn {vtable_method}<'_0>(_1: &'_0 (dyn MyTrait))
+{
+    let _0: (); // return
+    let _1: &'_0 (dyn MyTrait + '0); // arg #1
+    let _2: &'_0 MyStruct; // anonymous local
+
+    _0 = ()
+    storage_live(_2)
+    _2 = concretize<&'_0 (dyn MyTrait + '1), &'_0 MyStruct>(move _1)
+    _0 = {impl MyTrait for MyStruct}::foo<'_0>(move _2)
+    return
+}
+
+// Full name: test_crate::{impl MyTrait for MyStruct}::{vtable_drop_shim}
+unsafe fn {vtable_drop_shim}(_1: *mut (dyn MyTrait))
+{
+    let ret_0: (); // return
+    let dyn_self_1: *mut (dyn MyTrait + '0); // arg #1
+    let target_self_2: *mut MyStruct; // local
+
+    ret_0 = ()
+    storage_live(target_self_2)
+    target_self_2 = concretize<*mut (dyn MyTrait + '1), *mut MyStruct>(move dyn_self_1)
+    drop[{impl Destruct for MyStruct}] (*target_self_2)
+    return
+}
+
+// Full name: test_crate::{impl MyTrait for MyStruct}::{vtable}
+fn {impl MyTrait for MyStruct}::{vtable}() -> test_crate::MyTrait::{vtable}
+{
+    let ret_0: test_crate::MyTrait::{vtable}; // return
+    let size_1: usize; // local
+    let align_2: usize; // local
+
+    storage_live(size_1)
+    size_1 = size_of<MyStruct>
+    storage_live(align_2)
+    align_2 = align_of<MyStruct>
+    ret_0 = test_crate::MyTrait::{vtable} { size: move size_1, align: move align_2, drop: const {vtable_drop_shim}, method_foo: const {vtable_method}<'1>, super_trait_0: const &vtable_of({built_in impl MetaSized for MyStruct}), super_trait_1: const &vtable_of({built_in impl Send for MyStruct}) }
+    return
+}
+
+// Full name: test_crate::{impl MyTrait for MyStruct}::{vtable}
+static {impl MyTrait for MyStruct}::{vtable}: test_crate::MyTrait::{vtable} = {impl MyTrait for MyStruct}::{vtable}()
+
+// Full name: test_crate::{impl MyTrait for MyStruct}
+impl MyTrait for MyStruct {
+    parent_clause0 = {built_in impl MetaSized for MyStruct}
+    parent_clause1 = {built_in impl Send for MyStruct}
+    fn foo<'_0_1> = {impl MyTrait for MyStruct}::foo<'_0_1>
+    vtable: {impl MyTrait for MyStruct}::{vtable}
+}
+
+// Full name: test_crate::main
+fn main()
+{
+    let _0: (); // return
+    let x_1: &'3 (dyn MyTrait + '4); // local
+    let _2: &'6 MyStruct; // anonymous local
+    let _3: &'7 MyStruct; // anonymous local
+    let _4: (); // anonymous local
+    let _5: &'8 (dyn MyTrait + '9); // anonymous local
+    let _6: &'10 MyStruct; // anonymous local
+    let _7: &'19 MyStruct; // anonymous local
+    let _8: MyStruct; // anonymous local
+
+    storage_live(_7)
+    storage_live(_8)
+    _8 = MyStruct {  }
+    _7 = &_8
+    storage_live(_6)
+    _0 = ()
+    storage_live(x_1)
+    storage_live(_2)
+    storage_live(_3)
+    _6 = move _7
+    _3 = &(*_6)
+    _2 = &(*_3)
+    x_1 = unsize_cast<&'6 MyStruct, &'12 (dyn MyTrait + '13), &{impl MyTrait for MyStruct}::{vtable}>(move _2)
+    storage_dead(_2)
+    storage_dead(_3)
+    storage_live(_4)
+    storage_live(_5)
+    _5 = &(*x_1) with_metadata(copy x_1.metadata)
+    _4 = (copy ((*_5.metadata)).method_foo)(move _5)
+    storage_dead(_5)
+    storage_dead(_4)
+    _0 = ()
+    storage_dead(x_1)
+    return
+}
+
+
+

@@ -14,10 +14,10 @@ module Ast = struct
 
   let rec statement_to_string (env : fmt_env) (indent : string) (st : statement)
       : string =
-    raw_statement_to_string env indent st.content
+    statement_kind_to_string env indent st.kind
 
-  and raw_statement_to_string (env : fmt_env) (indent : string)
-      (st : raw_statement) : string =
+  and statement_kind_to_string (env : fmt_env) (indent : string)
+      (st : statement_kind) : string =
     match st with
     | Assign (p, rv) ->
         indent ^ place_to_string env p ^ " := " ^ rvalue_to_string env rv
@@ -27,13 +27,16 @@ module Ast = struct
         indent ^ "set_discriminant(" ^ place_to_string env p ^ ", "
         ^ variant_id_to_pretty_string variant_id
         ^ ")"
-    | Assert a -> assertion_to_string env indent a
+    | Assert (asrt, abort_kind) ->
+        indent
+        ^ assertion_to_string env asrt
+        ^ " else "
+        ^ abort_kind_to_string env abort_kind
     | StorageLive var_id ->
         indent ^ "storage_live " ^ local_id_to_string env var_id
     | StorageDead var_id ->
         indent ^ "storage_dead " ^ local_id_to_string env var_id
-    | Deinit p -> indent ^ "deinit " ^ place_to_string env p
-    | Drop (p, _) -> indent ^ "drop " ^ place_to_string env p
+    | PlaceMention place -> indent ^ "_ := " ^ place_to_string env place
     | CopyNonOverlapping { src; dst; count } ->
         indent ^ "copy_non_overlapping(" ^ operand_to_string env src ^ ", "
         ^ operand_to_string env dst ^ ", "
@@ -51,7 +54,7 @@ module Ast = struct
         let branches =
           List.map
             (fun (sv, bid) ->
-              scalar_value_to_string sv ^ " -> " ^ block_id_to_string bid ^ "; ")
+              literal_to_string sv ^ " -> " ^ block_id_to_string bid ^ "; ")
             branches
         in
         let branches = String.concat "" branches in
@@ -60,10 +63,10 @@ module Ast = struct
 
   let rec terminator_to_string (env : fmt_env) (indent : string)
       (st : terminator) : string =
-    raw_terminator_to_string env indent st.content
+    terminator_kind_to_string env indent st.kind
 
-  and raw_terminator_to_string (env : fmt_env) (indent : string)
-      (st : raw_terminator) : string =
+  and terminator_kind_to_string (env : fmt_env) (indent : string)
+      (st : terminator_kind) : string =
     match st with
     | Goto bid -> indent ^ "goto " ^ block_id_to_string bid
     | Switch (op, tgts) ->
@@ -71,6 +74,14 @@ module Ast = struct
         ^ switch_to_string indent tgts
     | Call (call, tgt, unwind) ->
         call_to_string env indent call
+        ^ " -> " ^ block_id_to_string tgt ^ "(unwind:"
+        ^ block_id_to_string unwind ^ ")"
+    | Drop (_, p, _, tgt, unwind) ->
+        indent ^ "drop " ^ place_to_string env p ^ " -> "
+        ^ block_id_to_string tgt ^ "(unwind:" ^ block_id_to_string unwind ^ ")"
+    | TAssert (asrt, tgt, unwind) ->
+        indent
+        ^ assertion_to_string env asrt
         ^ " -> " ^ block_id_to_string tgt ^ "(unwind:"
         ^ block_id_to_string unwind ^ ")"
     | Abort _ -> indent ^ "panic"
@@ -102,7 +113,7 @@ module Ast = struct
   let global_decl_to_string (env : fmt_env) (indent : string)
       (indent_incr : string) (def : global_decl) : string =
     (* Locally update the generics and the predicates *)
-    let env = fmt_env_update_generics_and_preds env def.generics in
+    let env = fmt_env_replace_generics_and_preds env def.generics in
     let params, clauses =
       predicates_and_trait_clauses_to_string env "" "  " def.generics
     in
@@ -113,7 +124,7 @@ module Ast = struct
     let name = name_to_string env def.item_meta.name in
     let ty = ty_to_string env def.ty in
 
-    let body_id = fun_decl_id_to_string env def.body in
+    let body_id = fun_decl_id_to_string env def.init in
     indent ^ "global " ^ name ^ params ^ clauses ^ " : " ^ ty ^ " = " ^ body_id
 end
 

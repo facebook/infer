@@ -10,15 +10,23 @@ pub use super::llbc_ast_utils::*;
 pub use crate::ast::*;
 use derive_generic_visitor::{Drive, DriveMut};
 use macros::{EnumAsGetters, EnumIsA, EnumToGetters, VariantIndexArity, VariantName};
-use serde::{Deserialize, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 
 generate_index_type!(StatementId);
 
 /// A raw statement: a statement without meta data.
 #[derive(
-    Debug, Clone, EnumIsA, EnumToGetters, EnumAsGetters, Serialize, Deserialize, Drive, DriveMut,
+    Debug,
+    Clone,
+    EnumIsA,
+    EnumToGetters,
+    EnumAsGetters,
+    SerializeState,
+    DeserializeState,
+    Drive,
+    DriveMut,
 )]
-pub enum RawStatement {
+pub enum StatementKind {
     /// Assigns an `Rvalue` to a `Place`. e.g. `let y = x;` could become
     /// `y := move x` which is represented as `Assign(y, Rvalue::Use(Operand::Move(x)))`.
     Assign(Place, Rvalue),
@@ -36,15 +44,20 @@ pub enum RawStatement {
     /// a no-op. A local may not have a `StorageDead` in the function's body, in which case it
     /// is implicitly deallocated at the end of the function.
     StorageDead(LocalId),
-    Deinit(Place),
+    /// A place is mentioned, but not accessed. The place itself must still be valid though, so
+    /// this statement is not a no-op: it can trigger UB if the place's projections are not valid
+    /// (e.g. because they go out of bounds).
+    PlaceMention(Place),
     /// Drop the value at the given place.
     ///
-    /// For MIR built and promoted, this is a conditional drop: the value will only be dropped if
-    /// it has not already been moved out. For MIR elaborated and optimized, this is a real drop.
-    ///
-    /// This drop is then equivalent to a call to `std::ptr::drop_in_place(&raw mut place)`.
-    Drop(Place, TraitRef),
-    Assert(Assert),
+    /// Depending on `DropKind`, this may be a real call to `drop_in_place`, or a conditional call
+    /// that should only happen if the place has not been moved out of. See the docs of `DropKind`
+    /// for more details; to get precise drops use `--precise-drops`.
+    Drop(Place, TraitRef, #[drive(skip)] DropKind),
+    Assert {
+        assert: Assert,
+        on_failure: AbortKind,
+    },
     Call(Call),
     /// Panic also handles "unreachable". We keep the name of the panicking function that was
     /// called.
@@ -72,21 +85,22 @@ pub enum RawStatement {
     Error(String),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
 pub struct Statement {
     pub span: Span,
     /// Integer uniquely identifying this statement among the statmeents in the current body. To
     /// simplify things we generate globally-fresh ids when creating a new `Statement`.
     #[charon::rename("statement_id")]
     pub id: StatementId,
-    pub content: RawStatement,
+    pub kind: StatementKind,
     /// Comments that precede this statement.
     // This is filled in a late pass after all the control-flow manipulation.
     #[drive(skip)]
     pub comments_before: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Drive, DriveMut)]
+#[derive(Debug, Clone, SerializeState, DeserializeState, Drive, DriveMut)]
+#[serde_state(state_implements = HashConsSerializerState)] // Avoid corecursive impls due to perfect derive
 pub struct Block {
     pub span: Span,
     pub statements: Vec<Statement>,
@@ -98,8 +112,8 @@ pub struct Block {
     EnumIsA,
     EnumToGetters,
     EnumAsGetters,
-    Serialize,
-    Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
     VariantName,
@@ -127,10 +141,10 @@ pub enum Switch {
     ///   E::V3 => ...
     /// }
     /// ```
-    SwitchInt(Operand, IntegerTy, Vec<(Vec<ScalarValue>, Block)>, Block),
+    SwitchInt(Operand, LiteralTy, Vec<(Vec<Literal>, Block)>, Block),
     /// A match over an ADT.
     ///
-    /// The match statement is introduced in [crate::transform::remove_read_discriminant]
+    /// The match statement is introduced in [crate::transform::resugar::reconstruct_matches]
     /// (whenever we find a discriminant read, we merge it with the subsequent
     /// switch into a match).
     Match(Place, Vec<(Vec<VariantId>, Block)>, Option<Block>),

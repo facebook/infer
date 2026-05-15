@@ -5,6 +5,7 @@ use core::hash::Hash;
 use derive_generic_visitor::{Drive, DriveMut};
 use macros::{EnumAsGetters, EnumIsA, VariantIndexArity, VariantName};
 use serde::{Deserialize, Serialize};
+use serde_state::{DeserializeState, SerializeState};
 
 // We need to manipulate a lot of indices for the types, variables, definitions,
 // etc. In order not to confuse them, we define an index type for every one of
@@ -27,6 +28,8 @@ generate_index_type!(LocalId, "");
     EnumAsGetters,
     Serialize,
     Deserialize,
+    SerializeState,
+    DeserializeState,
     Drive,
     DriveMut,
     Hash,
@@ -34,6 +37,7 @@ generate_index_type!(LocalId, "");
     Ord,
 )]
 #[charon::variants_prefix("V")]
+#[serde_state(stateless)]
 pub enum Literal {
     Scalar(ScalarValue),
     Float(FloatValue),

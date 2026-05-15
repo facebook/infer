@@ -1,0 +1,79 @@
+# Final LLBC before serialization:
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+fn test_crate::module1::do_translate()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+fn test_crate::module1::do_translate_glob()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+fn test_crate::module2::do_translate()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+fn test_crate::module2::do_translate_glob()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+fn test_crate::hidden_module::do_translate_glob()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::hidden_module::Type1
+struct Type1 {}
+
+// Full name: test_crate::hidden_module::{impl Trait1 for Type1}::method
+fn {impl Trait1 for Type1}::method()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::hidden_module::Trait2
+trait Trait2<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    vtable: test_crate::hidden_module::Trait2::{vtable}
+}
+
+// Full name: test_crate::hidden_module::{impl Trait2 for Type1}
+impl Trait2 for Type1 {
+    parent_clause0 = {built_in impl MetaSized for Type1}
+    vtable: {impl Trait2 for Type1}::{vtable}
+}
+
+
+

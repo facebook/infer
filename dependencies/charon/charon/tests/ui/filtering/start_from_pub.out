@@ -1,0 +1,82 @@
+# Final LLBC before serialization:
+
+// Full name: core::fmt::Arguments
+#[lang_item("format_arguments")]
+pub opaque type Arguments<'a>
+
+// Full name: core::fmt::{Arguments<'a>}::from_str
+pub fn from_str<'a>(_1: &'static Str) -> Arguments<'a>
+= <opaque>
+
+// Full name: core::marker::MetaSized
+#[lang_item("meta_sized")]
+pub trait MetaSized<Self>
+
+// Full name: std::io::stdio::_print
+pub fn _print<'_0>(_1: Arguments<'_0>)
+= <opaque>
+
+pub fn test_crate::module1::do_translate()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+pub fn test_crate::module2::do_translate()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module2::Type1
+pub struct Type1 {}
+
+// Full name: test_crate::module2::Trait1
+pub trait Trait1<Self>
+{
+    parent_clause0 : [@TraitClause0]: MetaSized<Self>
+    fn method = test_crate::module2::Trait1::method<Self>[Self]
+    non-dyn-compatible
+}
+
+pub fn test_crate::module2::Trait1::method<Self>()
+where
+    [@TraitClause0]: Trait1<Self>,
+= <method_without_default_body>
+
+// Full name: test_crate::module2::{impl Trait1 for Type1}::method
+pub fn {impl Trait1 for Type1}::method()
+{
+    let _0: (); // return
+
+    _0 = ()
+    _0 = ()
+    return
+}
+
+// Full name: test_crate::module2::{impl Trait1 for Type2}::method
+pub fn {impl Trait1 for Type2}::method()
+{
+    let _0: (); // return
+    let _1: (); // anonymous local
+    let _2: Arguments<'1>; // anonymous local
+
+    _0 = ()
+    storage_live(_1)
+    storage_live(_2)
+    _2 = from_str<'2>(const "don't translate this!\n")
+    _1 = _print<'6>(move _2)
+    storage_dead(_2)
+    storage_dead(_1)
+    _0 = ()
+    return
+}
+
+
+

@@ -37,12 +37,6 @@ jobs:
           fetch-depth: 0 # deep clone in order to get access to other commits
       - run: nix develop '.#ci' --command ./scripts/ci-check-version-number.sh
 
-  check-hax-commit:
-    runs-on: [self-hosted, linux, nix]
-    steps:
-      - uses: actions/checkout@v4
-      - run: nix develop '.#ci' --command ./scripts/ci-check-hax-commit.sh
-
   # Choose which commit to use for each project. By default we use the latest
   # from the main branch, but this can be overridden with a command in the PR
   # description.
@@ -106,29 +100,3 @@ jobs:
               --override-input charon github:aeneasverif/charon/$CHARON \
               --override-input eurydice github:aeneasverif/eurydice/$EURYDICE
           ./check.sh eurydice
-
-  kyber:
-    needs: [eurydice, select-dep-versions]
-    runs-on: [self-hosted, linux, nix]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: Inria-Prosecco/circus-green
-      - env:
-          CHARON: ${{needs.select-dep-versions.outputs.charon}}
-          EURYDICE: ${{needs.select-dep-versions.outputs.eurydice}}
-          LIBCRUX: ${{needs.select-dep-versions.outputs.libcrux}}
-        run: |
-          echo 'Using the eurydice and libcrux commits selected by `select-dep-versions`'
-          nix flake update --refresh \
-              charon eurydice \
-              --override-input charon github:aeneasverif/charon/$CHARON \
-              --override-input eurydice github:aeneasverif/eurydice/$EURYDICE
-          # Use the last-known-good libcrux version unless overridden.
-          if [[ -n "$LIBCRUX" ]]; then
-              nix flake update --refresh libcrux \
-                  --override-input libcrux github:cryspen/libcrux/$LIBCRUX
-              nix develop --command ./update-cargo-lock.sh libcrux
-          fi
-          ./check.sh ml-kem-small
-          # ./check.sh ml-dsa-small

@@ -12,108 +12,102 @@ pub trait Sized<Self>
     non-dyn-compatible
 }
 
-// Full name: core::ops::drop::Drop
-#[lang_item("drop")]
-pub trait Drop<Self>
+// Full name: core::marker::Destruct
+#[lang_item("destruct")]
+pub trait Destruct<Self>
 {
-    parent_clause0 : [@TraitClause0]: MetaSized<Self>
-    fn drop<'_0> = core::ops::drop::Drop::drop<'_0_0, Self>[Self]
-    vtable: core::ops::drop::Drop::{vtable}
+    fn drop_in_place = core::marker::Destruct::drop_in_place<Self>
+    non-dyn-compatible
 }
 
-pub fn core::ops::drop::Drop::drop<'_0, Self>(@1: &'_0 mut (Self))
-where
-    [@TraitClause0]: Drop<Self>,
+unsafe fn core::marker::Destruct::drop_in_place<Self>(_1: *mut Self)
+= <opaque>
 
 // Full name: alloc::alloc::Global
 #[lang_item("global_alloc_ty")]
 pub struct Global {}
 
-// Full name: alloc::alloc::Global::{impl Drop for Global}::drop
-fn {impl Drop for Global}::drop<'_0>(@1: &'_0 mut (Global))
+// Full name: alloc::alloc::Global::{impl Destruct for Global}::drop_in_place
+unsafe fn {impl Destruct for Global}::drop_in_place(_1: *mut Global)
+= <opaque>
 
-// Full name: alloc::alloc::Global::{impl Drop for Global}
-impl Drop for Global {
-    parent_clause0 = MetaSized<Global>
-    fn drop<'_0> = {impl Drop for Global}::drop<'_0_0>
+// Full name: alloc::alloc::Global::{impl Destruct for Global}
+impl Destruct for Global {
+    fn drop_in_place = {impl Destruct for Global}::drop_in_place
     non-dyn-compatible
 }
 
-// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop
-pub fn {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop<'_0, T, A>(@1: &'_0 mut (alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]))
+// Full name: alloc::boxed::Box::{impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop_in_place
+unsafe fn {impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop_in_place<T, A>(_1: *mut alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4])
 where
     [@TraitClause0]: MetaSized<T>,
     [@TraitClause1]: Sized<A>,
-    [@TraitClause3]: Drop<T>,
-    [@TraitClause4]: Drop<A>,
+    [@TraitClause3]: Destruct<T>,
+    [@TraitClause4]: Destruct<A>,
+= <opaque>
 
-// Full name: alloc::boxed::{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}
-impl<T, A> Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]
+// Full name: alloc::boxed::Box::{impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}
+impl<T, A> Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]
 where
     [@TraitClause0]: MetaSized<T>,
     [@TraitClause1]: Sized<A>,
-    [@TraitClause3]: Drop<T>,
-    [@TraitClause4]: Drop<A>,
+    [@TraitClause3]: Destruct<T>,
+    [@TraitClause4]: Destruct<A>,
 {
-    parent_clause0 = MetaSized<alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]>
-    fn drop<'_0> = {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop<'_0_0, T, A>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]
-    vtable: {impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::{vtable}<T, A>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]
+    fn drop_in_place = {impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}::drop_in_place<T, A>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]
+    non-dyn-compatible
 }
 
 // Full name: test_crate::use_box
-fn use_box(@1: alloc::boxed::Box<u32>[MetaSized<u32>, Sized<Global>, Drop<u32>, {impl Drop for Global}])
+fn use_box(_1: alloc::boxed::Box<u32>[{built_in impl MetaSized for u32}, {built_in impl Sized for Global}, {built_in impl Destruct for u32}, {impl Destruct for Global}])
 {
-    let @0: (); // return
-    let @1: alloc::boxed::Box<u32>[MetaSized<u32>, Sized<Global>, Drop<u32>, {impl Drop for Global}]; // arg #1
+    let _0: (); // return
+    let _1: alloc::boxed::Box<u32>[{built_in impl MetaSized for u32}, {built_in impl Sized for Global}, {built_in impl Destruct for u32}, {impl Destruct for Global}]; // arg #1
 
-    @0 := ()
-    drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}<u32, Global>[MetaSized<u32>, Sized<Global>, Drop<u32>, {impl Drop for Global}]] @1
-    @0 := ()
+    _0 = ()
+    _0 = ()
+    drop[{impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}<u32, Global>[{built_in impl MetaSized for u32}, {built_in impl Sized for Global}, {built_in impl Destruct for u32}, {impl Destruct for Global}]] _1
     return
 }
 
 // Full name: test_crate::main
 fn main()
 {
-    let @0: (); // return
-    let b@1: alloc::boxed::Box<u32>[MetaSized<u32>, Sized<Global>, Drop<u32>, {impl Drop for Global}]; // local
-    let @2: bool; // anonymous local
-    let @3: (); // anonymous local
-    let @4: alloc::boxed::Box<u32>[MetaSized<u32>, Sized<Global>, Drop<u32>, {impl Drop for Global}]; // anonymous local
-    let @5: bool; // anonymous local
+    let _0: (); // return
+    let b_1: alloc::boxed::Box<u32>[{built_in impl MetaSized for u32}, {built_in impl Sized for Global}, {built_in impl Destruct for u32}, {impl Destruct for Global}]; // local
+    let _2: bool; // anonymous local
+    let _3: (); // anonymous local
+    let _4: alloc::boxed::Box<u32>[{built_in impl MetaSized for u32}, {built_in impl Sized for Global}, {built_in impl Destruct for u32}, {impl Destruct for Global}]; // anonymous local
+    let _5: bool; // anonymous local
 
-    storage_live(@3)
-    storage_live(@4)
-    storage_live(@5)
-    @5 := const (false)
-    storage_live(b@1)
-    @5 := const (true)
-    b@1 := @BoxNew<u32>[Sized<u32>, Drop<u32>](const (1 : u32))
-    storage_live(@2)
-    @2 := const (false)
-    if move (@2) {
-        storage_live(@3)
-        storage_live(@4)
-        @5 := const (false)
-        @4 := move (b@1)
-        @3 := use_box(move (@4))
-        storage_dead(@4)
-        storage_dead(@3)
-        @0 := ()
+    storage_live(_5)
+    _0 = ()
+    _5 = const false
+    storage_live(b_1)
+    _5 = const true
+    b_1 = @BoxNew<u32>[{built_in impl Sized for u32}, {built_in impl Destruct for u32}](const 1 : u32)
+    storage_live(_2)
+    _2 = const false
+    if move _2 {
+        storage_live(_3)
+        storage_live(_4)
+        _5 = const false
+        _4 = move b_1
+        _3 = use_box(move _4)
+        storage_dead(_4)
+        storage_dead(_3)
+        _0 = ()
+    } else {
+        _0 = ()
     }
-    else {
-        @0 := ()
-    }
-    storage_dead(@2)
+    storage_dead(_2)
     // `b` is dropped implicitly here
-    if copy (@5) {
-        drop[{impl Drop for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}<u32, Global>[MetaSized<u32>, Sized<Global>, Drop<u32>, {impl Drop for Global}]] b@1
+    if copy _5 {
+        drop[{impl Destruct for alloc::boxed::Box<T>[@TraitClause0, @TraitClause1, @TraitClause3, @TraitClause4]}<u32, Global>[{built_in impl MetaSized for u32}, {built_in impl Sized for Global}, {built_in impl Destruct for u32}, {impl Destruct for Global}]] b_1
+    } else {
     }
-    else {
-    }
-    @5 := const (false)
-    storage_dead(b@1)
-    @0 := ()
+    _5 = const false
+    storage_dead(b_1)
     return
 }
 
