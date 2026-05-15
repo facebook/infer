@@ -4,11 +4,11 @@
 // Cycle: `self -> _observation -> token -> _changeHandler -> closure
 //          -> captured self -> self`.
 //
-// The BAD case closes a real retain cycle but Pulse currently has no
-// model for the Foundation `_KeyValueCodingAndObserving.observe` extension,
-// so the cycle isn't visible at the `self.observation = result` store.
-// Hence the `_FN` suffix on `test_kvo_closure_self_capture_bad_FN`; the
-// next diff in the stack adds the model and drops the suffix.
+// The BAD case closes a real retain cycle through the Foundation
+// `_KeyValueCodingAndObserving.observe` extension; the matcher in
+// PulseModelsSwift wraps the call in a closure-holder whose
+// `_captured_env` strong field points back at `self`, closing the cycle
+// at the `self.observation = result` store.
 
 import Foundation
 
@@ -43,7 +43,7 @@ final class KVOClosureWeakHolderGood: @unchecked Sendable {
     }
 }
 
-func test_kvo_closure_self_capture_bad_FN() {
+func test_kvo_closure_self_capture_bad() {
     let h = KVOClosureCycleHolder()
     h.startBad()
 }

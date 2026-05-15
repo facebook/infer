@@ -398,6 +398,21 @@ let skip_with_fresh_ret : model =
   assign_ret v
 
 
+(* Swift KVO closure form: `NSObject.observe(_:options:changeHandler:)`
+   (Foundation extension on `_KeyValueCodingAndObserving`). The 6-arg call
+   site lays out as
+   `observe(keypath, options, callback, captured_env, witness, subject)`,
+   where `captured_env` arrives directly typed as the calling-proc's `self`
+   (no `_Block_copy` wrapping; this is a Swift closure, not an ObjC block).
+   The call returns an `NSKeyValueObservation` token that the user almost
+   always stashes on `self` (otherwise observation stops on token-deinit),
+   closing `self -> _observation -> token -> _captured_env -> self`. The
+   existing [register_closure_holder] body fits this shape directly. *)
+let is_kvo_observe _ n =
+  String.is_substring n ~substring:"_KeyValueCodingAndObserving"
+  && String.is_substring n ~substring:"observe"
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"external_register_handler" <>$ capt_arg_payload $+ capt_arg_payload
@@ -410,6 +425,8 @@ let matchers : matcher list =
   ; ~+is_dispatch_source_set_cancel_handler
     $ any_arg $+ any_arg $+ capt_arg_payload $+ any_arg $+ capt_arg_payload
     $+...$--> dispatch_source_set_cancel_handler
+  ; ~+is_kvo_observe $ any_arg $+ any_arg $+ capt_arg_payload $+ capt_arg_payload
+    $+...$--> register_closure_holder
   ; ~+is_dispatch_source_state_setter <>--> skip_with_fresh_ret
   ; -"swift_getObjectType" <>--> skip_with_fresh_ret ]
   |> List.map ~f:(fun matcher ->
