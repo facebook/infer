@@ -413,6 +413,17 @@ let is_kvo_observe _ n =
   && String.is_substring n ~substring:"observe"
 
 
+(* Combine `Publisher.sink(receiveValue:)` (Failure == Never overload). The 5-arg
+   call site lays out as `sink(callback, captured_env, witness, witness, publisher)`,
+   where `captured_env` arrives directly typed as the calling-proc's `self`. The
+   call returns an `AnyCancellable` that the user almost always stashes on `self`
+   (or in a `Set<AnyCancellable>` on `self`), closing
+   `self -> _cancellable -> token -> _captured_env -> self`. The existing
+   [register_closure_holder] body fits this shape directly. *)
+let is_combine_sink _ n =
+  String.is_substring n ~substring:"Combine" && String.is_substring n ~substring:"sink"
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"external_register_handler" <>$ capt_arg_payload $+ capt_arg_payload
@@ -427,6 +438,7 @@ let matchers : matcher list =
     $+...$--> dispatch_source_set_cancel_handler
   ; ~+is_kvo_observe $ any_arg $+ any_arg $+ capt_arg_payload $+ capt_arg_payload
     $+...$--> register_closure_holder
+  ; ~+is_combine_sink $ capt_arg_payload $+ capt_arg_payload $+...$--> register_closure_holder
   ; ~+is_dispatch_source_state_setter <>--> skip_with_fresh_ret
   ; -"swift_getObjectType" <>--> skip_with_fresh_ret ]
   |> List.map ~f:(fun matcher ->

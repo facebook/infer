@@ -2,11 +2,11 @@
 //
 // Cycle: `self -> _cancellable -> token -> _captured_env -> self`.
 //
-// The BAD case closes a real retain cycle but Pulse currently has no model
-// for `Combine.Publisher.sink(receiveValue:)`, so the cycle isn't visible
-// at the `self.cancellable = result` store. Hence the `_FN` suffix on
-// `test_combine_sink_self_capture_bad_FN`; the next diff in the stack adds
-// the model and drops the suffix.
+// The BAD case closes a real retain cycle through the Combine
+// `Publisher.sink(receiveValue:)` extension; the matcher in PulseModelsSwift
+// wraps the call in a closure-holder whose `_captured_env` strong field
+// points back at `self`, closing the cycle at the
+// `self.cancellable = result` store.
 
 import Combine
 import Foundation
@@ -38,7 +38,7 @@ final class CombineSinkWeakHolderGood: @unchecked Sendable {
     }
 }
 
-func test_combine_sink_self_capture_bad_FN() {
+func test_combine_sink_self_capture_bad() {
     let h = CombineSinkCycleHolder()
     h.startBad()
 }
