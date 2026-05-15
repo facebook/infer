@@ -3,11 +3,12 @@
 // Cycle: `self -> _task -> task -> _completionHandler -> closure
 //          -> captured self -> self`.
 //
-// The BAD case closes a real retain cycle but Pulse currently has no
-// model for `URLSession.dataTask(with:completionHandler:)`, so the
-// cycle isn't visible at the `self.task = result` store. Hence the
-// `_FN` suffix on `test_url_session_self_capture_bad_FN`; the next
-// diff in the stack adds the model and drops the suffix.
+// The BAD case closes a real retain cycle through
+// `URLSession.dataTask(with:completionHandler:)`; the matcher in
+// PulseModelsObjC wraps the call in a closure-holder whose `_captured_env`
+// strong field points back at the heap-copied completion block (which itself
+// carries the captured-self path), closing the cycle at the
+// `self.task = result` store.
 
 import Foundation
 
@@ -37,7 +38,7 @@ final class URLSessionTaskWeakHolderGood: @unchecked Sendable {
     }
 }
 
-func test_url_session_self_capture_bad_FN(url: URL) {
+func test_url_session_self_capture_bad(url: URL) {
     let h = URLSessionTaskCycleHolder()
     h.startBad(url: url)
 }

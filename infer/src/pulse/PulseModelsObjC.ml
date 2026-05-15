@@ -407,6 +407,15 @@ let matchers : matcher list =
     ; +class_match_name "NSURLSession"
       &:: "sharedSession"
       <>$$--> fresh_with_objc_type "NSURLSession"
+      (* -[NSURLSession dataTaskWithURL:completionHandler:] retains the
+         completion block on the returned `URLSessionDataTask`; the task is
+         typically stored on `self.task`, closing the same shape of cycle as
+         NSTimer / NotificationCenter above. The call lands here via
+         [objc_msgSend]'s dynamic dispatch in [PulseModelsSwift], which
+         constructs the instance-method procname `NSURLSession.dataTaskWith...`. *)
+    ; +class_match_name "NSURLSession"
+      &:: "dataTaskWithURL:completionHandler:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+      $--> block_holder
     ; +class_match_name "NSProcessInfo"
       &:: "processInfo"
       <>$$--> fresh_with_objc_type "NSProcessInfo"
