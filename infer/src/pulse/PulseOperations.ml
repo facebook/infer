@@ -116,6 +116,23 @@ module ModeledField = struct
   let internal_ref_count = Fieldname.make pulse_model_type "__infer_model_reference_count"
 
   let delegated_release = Fieldname.make pulse_model_type "__infer_model_delegated_release"
+
+  (* Synthetic Pulse class type for the strong field a setter-style retain-cycle
+     model attaches to a receiver (e.g. DispatchSource holding its event/cancel
+     handler block). Treated as a Swift class so [PulseRetainCycleChecker.is_ref_counted_or_block]
+     accepts it as a cycle node. *)
+  let swift_attached_handler_class =
+    Typ.SwiftClass (SwiftClassName.of_string "__infer_attached_handler")
+
+
+  (* Strong field on receiver pointing at a `setEventHandler`-style block. *)
+  let swift_event_handler =
+    Fieldname.make ~is_weak:false swift_attached_handler_class "__infer_event_handler"
+
+
+  (* Strong field on receiver pointing at a `setCancelHandler`-style block. *)
+  let swift_cancel_handler =
+    Fieldname.make ~is_weak:false swift_attached_handler_class "__infer_cancel_handler"
 end
 
 let fold_reachable_from ~f args astate =

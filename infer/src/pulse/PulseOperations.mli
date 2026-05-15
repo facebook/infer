@@ -43,6 +43,14 @@ module ModeledField : sig
 
   val delegated_release : Fieldname.t
   (** Modeled field for resource release delegation *)
+
+  val swift_event_handler : Fieldname.t
+  (** Strong field a setter-style retain-cycle model attaches to a receiver to point at a
+      `setEventHandler`-style callback block (e.g. [DispatchSourceProtocol.setEventHandler]). *)
+
+  val swift_cancel_handler : Fieldname.t
+  (** Strong field a setter-style retain-cycle model attaches to a receiver to point at a
+      `setCancelHandler`-style callback block (e.g. [DispatchSourceProtocol.setCancelHandler]). *)
 end
 
 val conservatively_initialize_args : AbstractValue.t list -> t -> t

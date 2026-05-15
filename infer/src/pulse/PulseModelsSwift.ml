@@ -340,11 +340,77 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
       swift_dynamic_type arg1 arg2
 
 
+(* Setter-style model for `DispatchSourceProtocol.{setEventHandler, setCancelHandler}
+   (qos:flags:handler:)`. At the SIL level the 5-arg call is
+   `(_, _, block, _, receiver)`:
+     - args 0,1: type-introspection helpers (witness/metatype)
+     - arg 2:    the heap-copied closure block (post `_Block_copy`)
+     - arg 3:    `swift_getObjectType(receiver)`
+     - arg 4:    the receiver (the dispatch source itself, returned by makeTimerSource)
+   We capture arg2 and arg4, stamp receiver as OS_dispatch_source ObjcClass so
+   PulseRetainCycleChecker treats it as ref-counted, and stash the block as a
+   strong field on receiver under [field]. The closure value already carries
+   the captured-self path via `__infer_tuple_field_1.field_1` (preserved by the
+   `_Block_copy` model). *)
+let dispatch_source_set_handler ~field receiver block : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let recv_class = Typ.Name.Objc.from_string "OS_dispatch_source" in
+  let* () = and_dynamic_type_is receiver (Typ.mk_struct recv_class) in
+  store_field ~deref:false ~ref:receiver field block
+
+
+let dispatch_source_set_event_handler block receiver =
+  dispatch_source_set_handler ~field:PulseOperations.ModeledField.swift_event_handler receiver block
+
+
+let dispatch_source_set_cancel_handler block receiver =
+  dispatch_source_set_handler ~field:PulseOperations.ModeledField.swift_cancel_handler receiver
+    block
+
+
+let is_dispatch_source_set_event_handler _ n =
+  String.is_substring n ~substring:"OS_dispatch_source"
+  && String.is_substring n ~substring:"setEventHandler"
+
+
+let is_dispatch_source_set_cancel_handler _ n =
+  String.is_substring n ~substring:"OS_dispatch_source"
+  && String.is_substring n ~substring:"setCancelHandler"
+
+
+let is_dispatch_source_state_setter _ n =
+  String.is_substring n ~substring:"OS_dispatch_source"
+  && (String.is_substring n ~substring:"resume" || String.is_substring n ~substring:"schedule")
+
+
+(* No-op for Dispatch source state-setters and the type-introspection runtime
+   helper. Without these, Pulse treats them as unknown calls and havocs their
+   arguments — clobbering the `__infer_event_handler` strong edge that
+   [dispatch_source_set_handler] just established on the source, which breaks
+   the retain-cycle traversal at the subsequent `self.timer = source` store. *)
+let skip_with_fresh_ret : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* v = fresh () in
+  assign_ret v
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"external_register_handler" <>$ capt_arg_payload $+ capt_arg_payload
     $--> register_closure_holder
   ; -"_Block_copy" <>$ capt_arg_payload $--> block_copy_identity
-  ; -"_Block_release" <>$ capt_arg_payload $--> block_release_skip ]
+  ; -"_Block_release" <>$ capt_arg_payload $--> block_release_skip
+  ; ~+is_dispatch_source_set_event_handler
+    $ any_arg $+ any_arg $+ capt_arg_payload $+ any_arg $+ capt_arg_payload
+    $+...$--> dispatch_source_set_event_handler
+  ; ~+is_dispatch_source_set_cancel_handler
+    $ any_arg $+ any_arg $+ capt_arg_payload $+ any_arg $+ capt_arg_payload
+    $+...$--> dispatch_source_set_cancel_handler
+  ; ~+is_dispatch_source_state_setter <>--> skip_with_fresh_ret
+  ; -"swift_getObjectType" <>--> skip_with_fresh_ret ]
   |> List.map ~f:(fun matcher ->
          matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )

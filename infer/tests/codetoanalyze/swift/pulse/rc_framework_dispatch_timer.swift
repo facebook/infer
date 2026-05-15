@@ -4,11 +4,10 @@
 // Cycle: `self -> _timer -> source -> _{event,cancel}_handler -> closure
 //          -> captured self -> self`.
 //
-// Both BAD cases close a real retain cycle but Pulse currently has no model
-// for the Swift Dispatch overlay's set{Event,Cancel}Handler, so the strong
-// `source -> handler` edge is never established and the cycle isn't visible
-// at the `self.timer = source` store. Hence the `_FN` suffix on the test
-// functions; the next diff in the stack adds the model and drops the suffix.
+// Both BAD cases close a real retain cycle through the Swift Dispatch overlay's
+// `set{Event,Cancel}Handler` block-retention; the matchers in PulseModelsSwift
+// stash the block as a strong field on the source under `__infer_{event,cancel}_handler`,
+// closing the cycle at the `self.timer = source` store.
 
 import Dispatch
 
@@ -76,12 +75,12 @@ final class DispatchTimerCancelWeakHolderGood: @unchecked Sendable {
     }
 }
 
-func test_dispatch_timer_self_capture_bad_FN() {
+func test_dispatch_timer_self_capture_bad() {
     let h = DispatchTimerCycleHolder()
     h.startBad()
 }
 
-func test_dispatch_timer_cancel_self_capture_bad_FN() {
+func test_dispatch_timer_cancel_self_capture_bad() {
     let h = DispatchTimerCancelCycleHolder()
     h.startBad()
 }
