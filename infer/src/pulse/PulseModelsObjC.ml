@@ -416,6 +416,18 @@ let matchers : matcher list =
     ; +class_match_name "NSURLSession"
       &:: "dataTaskWithURL:completionHandler:" <>$ any_arg $+ any_arg $+ capt_arg_payload
       $--> block_holder
+      (* Sibling overloads of `dataTaskWithURL:completionHandler:` — same shape
+         (block stored on the returned task, task stored on self), just
+         different selectors and payload-arg type. *)
+    ; +class_match_name "NSURLSession"
+      &:: "dataTaskWithRequest:completionHandler:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+      $--> block_holder
+    ; +class_match_name "NSURLSession"
+      &:: "downloadTaskWithURL:completionHandler:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+      $--> block_holder
+    ; +class_match_name "NSURLSession"
+      &:: "downloadTaskWithRequest:completionHandler:" <>$ any_arg $+ any_arg $+ capt_arg_payload
+      $--> block_holder
     ; +class_match_name "NSProcessInfo"
       &:: "processInfo"
       <>$$--> fresh_with_objc_type "NSProcessInfo"

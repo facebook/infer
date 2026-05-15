@@ -6,11 +6,11 @@
 // Cycle: `self -> _task -> task -> _completionHandler -> closure
 //          -> captured self -> self`.
 //
-// Each BAD case closes a real retain cycle but Pulse currently has no
-// model for the corresponding selector, so the cycle isn't visible at
-// the `self.task = result` store. Hence the `_FN` suffixes on the BAD
-// test functions; the next diff in the stack adds the matchers and
-// drops the suffixes.
+// Each BAD case closes a real retain cycle through the corresponding
+// selector; the matchers in PulseModelsObjC wrap each call in a
+// closure-holder whose `_captured_env` strong field points back at the
+// heap-copied completion block (which itself carries the captured-self
+// path), closing the cycle at the `self.task = result` store.
 
 import Foundation
 
@@ -62,7 +62,7 @@ final class URLSessionDownloadTaskWeakHolderGood: @unchecked Sendable {
     }
 }
 
-func test_url_session_data_task_request_self_capture_bad_FN(req: URLRequest) {
+func test_url_session_data_task_request_self_capture_bad(req: URLRequest) {
     let h = URLSessionDataTaskRequestCycleHolder()
     h.startBad(req: req)
 }
@@ -72,7 +72,7 @@ func test_url_session_data_task_request_weak_self_capture_good(req: URLRequest) 
     g.startGood(req: req)
 }
 
-func test_url_session_download_task_self_capture_bad_FN(url: URL) {
+func test_url_session_download_task_self_capture_bad(url: URL) {
     let h = URLSessionDownloadTaskCycleHolder()
     h.startBad(url: url)
 }
