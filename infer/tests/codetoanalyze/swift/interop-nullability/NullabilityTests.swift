@@ -198,6 +198,28 @@ func argPositionForceUnwrappedAtCall_bad(api: LegacyAPI) {
   consumeNonOptional(api.getUnannotatedString())
 }
 
+// Closure-return passthrough: the unannotated call result flows into a
+// closure body's Return slot whose declared type is Optional<T>. The
+// closure body lowers to a separate procedure with an `-> T?` signature,
+// so the existing Llair passthrough recogniser already handles it like
+// any other top-level passthrough getter -- no SIL change needed.
+func closureReturnPassthrough_safeUse_good(api: LegacyAPI) -> String? {
+  let f: () -> String? = { return api.getUnannotatedString() }
+  return f()
+}
+
+func closureCompactMap_safeUse_good(apis: [LegacyAPI]) -> [String] {
+  return apis.compactMap { $0.getUnannotatedString() }
+}
+
+// Negative case: the closure return type is non-Optional, so Swift force-
+// unwraps `T! -> T` at the closure's return boundary. Real crash risk; the
+// MNA report fires on the closure body's mangled procname.
+func closureReturnIntoNonOptional_bad(api: LegacyAPI) -> String {
+  let f: () -> String = { return api.getUnannotatedString() }
+  return f()
+}
+
 // Multi-branch passthrough: the unannotated call sits in one arm of an
 // if/else returning Optional<T>; the other arm returns a different
 // Optional. The result still funnels through `-> T?` with no deref, so

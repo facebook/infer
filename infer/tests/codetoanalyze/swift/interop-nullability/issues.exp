@@ -4,4 +4,5 @@ NullabilityTests.swift, swiftRefinedNullableString_good_FP, 1, MISSING_NULLABILI
 NullabilityTests.swift, classMethodUnannotated_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, optionalGetterDerefMidBody_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, argPositionForceUnwrappedAtCall_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
+NullabilityTests.swift, $s5Hello32closureReturnIntoNonOptional_bad3apiSSSo9LegacyAPIC_tFSSycfU_, 0, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
 NullabilityTests.swift, optionalChainEligibleButForceUnwrapped_bad, 1, MISSING_NULLABILITY_ANNOTATION, no_bucket, ERROR, []
