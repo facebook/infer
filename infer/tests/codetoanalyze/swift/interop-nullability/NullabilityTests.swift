@@ -198,6 +198,27 @@ func argPositionForceUnwrappedAtCall_bad(api: LegacyAPI) {
   consumeNonOptional(api.getUnannotatedString())
 }
 
+// Manual non-binding null check `if e != nil { ... }` -- the developer
+// explicitly defends against the unannotated callee returning nil but uses
+// a non-binding `!= nil` instead of `if let X = e`. Without further use of
+// the value the call is safe; the recogniser marks it via the
+// raw-ret_id-Prune branch (Optional packaging eq-branch with no fatal Call).
+func nonBindingNullCheck_safeUse_good(api: LegacyAPI) -> Bool {
+  return api.getUnannotatedString() != nil
+}
+
+// Negative case: same `if e != nil` shape followed by a force-unwrap on a
+// SECOND call to the same method. Each call has its own ret_id; the second
+// call's force-unwrap is a real TP (the property need not be deterministic
+// across calls). Pins the Pattern 7 recogniser's blast radius: the first
+// call's `!= nil` check is suppressed, the second call's `!.count` still fires.
+func nonBindingNullCheckBeforeForceUnwrap_partialBad(api: LegacyAPI) -> Int {
+  if api.getUnannotatedString() != nil {
+    return api.getUnannotatedString()!.count
+  }
+  return 0
+}
+
 // Closure-return passthrough: the unannotated call result flows into a
 // closure body's Return slot whose declared type is Optional<T>. The
 // closure body lowers to a separate procedure with an `-> T?` signature,

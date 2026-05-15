@@ -129,6 +129,7 @@ let process pdesc =
   let checked = IdentHashSet.create 8 in
   let force_unwrapped = IdentHashSet.create 8 in
   let arg_consumed = IdentHashSet.create 8 in
+  let raw_prune_safe = IdentHashSet.create 8 in
   let copy_pvar_fields ~src ~dst =
     PvarFieldTbl.iter
       (fun (p, f) r -> if Pvar.equal p src then PvarFieldTbl.replace pvar_field_origin (dst, f) r)
@@ -230,8 +231,14 @@ let process pdesc =
       | Some id -> (
         match IdentTbl.find_opt id_origin id with
         | Some r when Ident.equal id r ->
-            (* Raw ret_id Prune ([if let]): require trivial else. *)
+            (* Raw ret_id Prune. [if let X = e { ... }] (trivial else) marks immediately;
+               [if e != nil { ... }] (Optional-packaging Stores in eq-branch but no fatal
+               Call) is deferred to [raw_prune_safe] and committed only if the same origin
+               isn't [force_unwrapped] elsewhere in the proc -- otherwise an immediate
+               same-call force-unwrap (`let s = e!`) would slip through this arm. *)
             if eq_branch_satisfies node ~check:node_is_trivial_else then IdentHashSet.add r checked
+            else if eq_branch_satisfies node ~check:node_has_no_fatal_call then
+              IdentHashSet.add r raw_prune_safe
         | Some r ->
             (* Propagated id Prune (chain / [??] / guard-let): tolerate non-fatal Calls.
                If the eq-branch contains a fatal call (force-unwrap), poison [r] so any
@@ -268,9 +275,14 @@ let process pdesc =
       if not (Poly.equal prev cur) then loop cur (n + 1) )
   in
   loop (snapshot ()) 0 ;
-  (* Pattern 5 finalisation: a call whose propagated value flowed into another Call's args
-     gets marked, unless that same origin was also force-unwrapped (poisoned) elsewhere. *)
+  (* Finalisation. Both [arg_consumed] (Pattern 5) and [raw_prune_safe] (Pattern 7's
+     [if e != nil] check) are committed unless the same origin was also force-unwrapped
+     (poisoned) elsewhere in the proc -- e.g. `let s = e!` has the Optional-packaging
+     Prune (raw_prune_safe) AND a propagated-id Prune with `__assert_fail`
+     (force_unwrapped); the poison wins. *)
   IdentHashSet.iter arg_consumed (fun origin ->
+      if not (IdentHashSet.mem force_unwrapped origin) then IdentHashSet.add origin checked ) ;
+  IdentHashSet.iter raw_prune_safe (fun origin ->
       if not (IdentHashSet.mem force_unwrapped origin) then IdentHashSet.add origin checked ) ;
   if IdentHashSet.is_empty checked then ()
   else
