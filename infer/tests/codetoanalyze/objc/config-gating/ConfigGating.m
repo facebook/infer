@@ -55,6 +55,18 @@ void doSomethingElse(void) {}
   }
 }
 
+// Blocklisted callee: should not be reported even when ungated
+- (void)test_blocklisted {
+  NSString* dummy = [NSString stringWithUTF8String:"hello"];
+  (void)dummy;
+  NSMutableArray* arr = [[NSMutableArray alloc] init];
+  [arr addObject:@"item"];
+  NSUInteger count = [arr count];
+  (void)count;
+  id val = [arr objectAtIndex:0];
+  (void)val;
+}
+
 // Not gated: doSomething is called unconditionally
 - (void)not_gated_ok {
   doSomething();

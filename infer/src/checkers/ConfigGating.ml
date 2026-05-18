@@ -106,16 +106,42 @@ module Domain = struct
     ; mem= Mem.widen ~prev:prev.mem ~next:next.mem ~num_iters }
 end
 
+let qualified_name procname =
+  match Procname.get_class_name procname with
+  | Some class_name ->
+      class_name ^ "." ^ Procname.get_method procname
+  | None ->
+      Procname.get_method procname
+
+
+let blocklisted_callee_patterns =
+  [ ( Language.Clang
+    , List.map ~f:Str.regexp
+        [ "^NSObject\\."
+        ; "^NSString\\."
+        ; "^NSArray\\."
+        ; "^NSMutableArray\\."
+        ; "^UIView\\."
+        ; "^UIViewController\\."
+        ; "^__infer_skip$"
+        ; "^__objc_alloc_no_fail$" ]
+    ) ]
+
+
+let is_blocklisted_callee callee =
+  let lang = Procname.get_language callee in
+  match List.Assoc.find blocklisted_callee_patterns ~equal:Language.equal lang with
+  | Some patterns ->
+      let name = qualified_name callee in
+      List.exists patterns ~f:(fun re -> Str.string_match re name 0)
+  | None ->
+      false
+
+
 (** Check whether a callee matches any of the configured config-gating method patterns. The callee
     is matched as "ClassName.methodName" against each regex pattern. *)
 let is_config_method procname =
-  let qualified =
-    match Procname.get_class_name procname with
-    | Some class_name ->
-        class_name ^ "." ^ Procname.get_method procname
-    | None ->
-        Procname.get_method procname
-  in
+  let qualified = qualified_name procname in
   List.exists Config.config_gating_method_patterns ~f:(fun re ->
       match Str.search_forward re qualified 0 with _ -> true | exception Stdlib.Not_found -> false )
 
@@ -212,8 +238,8 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
       | Some ({guards; _} : Domain.t) ->
           Instrs.iter (CFG.instrs node) ~f:(fun instr ->
               match instr with
-              | Sil.Call (_, Exp.Const (Cfun callee), _, loc, _) when not (is_config_method callee)
-                ->
+              | Sil.Call (_, Exp.Const (Cfun callee), _, loc, _)
+                when (not (is_config_method callee)) && not (is_blocklisted_callee callee) ->
                   if not (ConfigGuards.is_empty guards) then
                     let message =
                       F.asprintf "Call to %a is gated by: %a" Procname.pp callee ConfigGuards.pp
