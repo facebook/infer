@@ -65,6 +65,20 @@ void doSomethingElse(void) {}
   (void)count;
   id val = [arr objectAtIndex:0];
   (void)val;
+  NSDictionary* dict = @{@"key" : @"value"};
+  (void)dict;
+  void (^block)(void) = ^{
+  };
+  block();
+  NSNumber* num = [NSNumber numberWithInteger:42];
+  NSInteger intVal = [num integerValue];
+  (void)intVal;
+  BOOL boolVal = [num boolValue];
+  (void)boolVal;
+  NSMutableSet* set = [NSMutableSet set];
+  [set addObject:@"item"];
+  BOOL contains = [set containsObject:@"item"];
+  (void)contains;
 }
 
 // Not gated: doSomething is called unconditionally

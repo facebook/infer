@@ -121,11 +121,25 @@ let blocklisted_callee_patterns =
         ; "^NSString\\."
         ; "^NSArray\\."
         ; "^NSMutableArray\\."
+        ; "^NSDictionary\\."
+        ; "^NSMutableDictionary\\."
+        ; "^NSNumber\\."
+        ; "^NSSet\\."
+        ; "^NSMutableSet\\."
+        ; "^NSOrderedSet\\."
+        ; "^NSMutableOrderedSet\\."
+        ; "^NSEnumerator\\."
         ; "^UIView\\."
         ; "^UIViewController\\."
+        ; "^__call_objc_block$"
         ; "^__infer_skip$"
-        ; "^__objc_alloc_no_fail$" ]
-    ) ]
+        ; "^__instanceof$"
+        ; "^__objc_alloc_no_fail$"
+        ; "^_objc_autoreleasePoolPop$"
+        ; "^_objc_autoreleasePoolPush$"
+        ; "^_objc_insertKey$"
+        ; "^_objc_insertValue$"
+        ; "^objc_lookUpClass$" ] ) ]
 
 
 let is_blocklisted_callee callee =
