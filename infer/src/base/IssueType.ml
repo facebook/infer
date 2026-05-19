@@ -785,6 +785,14 @@ let nullptr_dereference_in_nullsafe_class =
     ~user_documentation:[%blob "./documentation/issues/NULLPTR_DEREFERENCE.md"]
 
 
+let swift_npe =
+  (* Disabled by default while the Swift Optional model is in development;
+     enable with [--enable-issue-type SWIFT_NPE] for fixture iteration. *)
+  register_with_latent ~enabled:false ~category:NullPointerDereference ~id:"SWIFT_NPE"
+    ~hum:"Swift Null Dereference" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/SWIFT_NPE.md"]
+
+
 let optional_empty_access =
   register_with_latent ~category:RuntimeException ~id:"OPTIONAL_EMPTY_ACCESS" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/OPTIONAL_EMPTY_ACCESS.md"]

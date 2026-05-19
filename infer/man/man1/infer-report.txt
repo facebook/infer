@@ -252,6 +252,8 @@ OPTIONS
              STATIC_INITIALIZATION_ORDER_FIASCO (enabled by default),
              STRICT_MODE_VIOLATION (enabled by default),
              STRONG_SELF_NOT_CHECKED (enabled by default),
+             SWIFT_NPE (disabled by default),
+             SWIFT_NPE_LATENT (disabled by default),
              TAINT_ERROR (enabled by default),
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),

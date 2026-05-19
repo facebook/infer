@@ -63,6 +63,8 @@ Issue types in this category:
 - [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS](/docs/next/all-issue-types#nullptr_dereference_in_nullsafe_class)
 - [NULLPTR_DEREFERENCE_IN_NULLSAFE_CLASS_LATENT](/docs/next/all-issue-types#nullptr_dereference_in_nullsafe_class_latent)
 - [NULLPTR_DEREFERENCE_LATENT](/docs/next/all-issue-types#nullptr_dereference_latent)
+- [SWIFT_NPE](/docs/next/all-issue-types#swift_npe)
+- [SWIFT_NPE_LATENT](/docs/next/all-issue-types#swift_npe_latent)
 
 ## Perf regression
 

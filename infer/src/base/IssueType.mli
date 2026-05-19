@@ -257,6 +257,8 @@ val nullptr_dereference : latent:bool -> t
 
 val nullptr_dereference_in_nullsafe_class : latent:bool -> t
 
+val swift_npe : latent:bool -> t
+
 val optional_empty_access : latent:bool -> t
 
 val pulse_assertion_error : t
