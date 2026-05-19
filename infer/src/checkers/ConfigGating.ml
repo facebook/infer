@@ -119,6 +119,7 @@ let blocklisted_callee_patterns =
     , List.map ~f:Str.regexp
         [ "^NSObject\\."
         ; "^NSString\\."
+        ; "^NSMutableString\\."
         ; "^NSArray\\."
         ; "^NSMutableArray\\."
         ; "^NSDictionary\\."
