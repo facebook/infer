@@ -1,0 +1,15 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare $s8Consumer10setHandleryy7Definer6ButtonC_yyctF(*__infer_swift_type<ptr_elt>, int) : *__infer_swift_type<ptr_elt>
+
+global $s7Definer6ButtonC10tapHandleryycSgvpWvd: *__infer_swift_type<ptr_elt>
+
+type __infer_swift_type<T7Definer6ButtonC,Button> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+
