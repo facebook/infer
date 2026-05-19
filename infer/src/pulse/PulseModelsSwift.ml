@@ -112,9 +112,13 @@ let check_missing_nullability proc_name : unit DSL.model_monad =
          that the caller treats the result as [Optional<T>] even when the ObjC
          method itself is unannotated). *)
       let combined_annots = call_flags.CallFlags.cf_caller_ret_annots @ attrs.ret_annots in
+      (* [_Null_unspecified] is an explicit annotation, not a missing one: maintainers write it to
+         expose the return as a Swift implicitly-unwrapped Optional. Treat it as annotated to keep
+         the Pulse-side detector in sync with [SwiftObjCNullabilityChecker]. *)
       if
         (not (Annotations.ia_is_nullable combined_annots))
         && (not (Annotations.ia_is_nonnull combined_annots))
+        && (not (Annotations.ia_is_null_unspecified combined_annots))
         && not call_flags.CallFlags.cf_return_null_checked
       then
         if

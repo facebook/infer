@@ -310,3 +310,11 @@ func optionalChainViaLet_safeUse_good(api: LegacyAPI) {
 func optionalChainEligibleButForceUnwrapped_bad(api: LegacyAPI) {
   let _ = api.getUnannotatedString()!.count
 }
+
+// Explicit `_Null_unspecified` modifier on the callee. The maintainer
+// deliberately exposed the return as a Swift IUO; reporting the call
+// site as a "missing annotation" would be noise the maintainer would
+// never act on. Must NOT fire.
+func explicitlyUnspecifiedChained_good(api: ExplicitlyUnspecifiedAPI) {
+  let _ = api.getExplicitlyUnspecifiedString().count
+}

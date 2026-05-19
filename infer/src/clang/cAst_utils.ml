@@ -268,6 +268,14 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
         Some Annotations.nullable
     | Some (AttributedType (_, {ati_attr_kind= TypeNonNullAttrKind})) ->
         Some Annotations.nonnull
+    (* [TypeNullUnspecifiedAttrKind] is the clang AST marker for an explicitly written
+       [_Null_unspecified] / [null_unspecified] modifier. It's syntactically distinct from the
+       absence of any nullability annotation -- the latter produces no [AttributedType] wrapper at
+       all -- and the difference matters: maintainers write the modifier deliberately to expose a
+       return as a Swift implicitly-unwrapped Optional. Preserve it here so checkers can treat it
+       as a deliberate API contract rather than a missing annotation. *)
+    | Some (AttributedType (_, {ati_attr_kind= TypeNullUnspecifiedAttrKind})) ->
+        Some Annotations.null_unspecified
     (* [MacroQualifiedType] always wraps an [AttributedType] (clang invariant); it appears when a
        macro after the declarator expands to a type-attached attribute (e.g. [annotate]). Look
        through it so [nullable] survives on properties like

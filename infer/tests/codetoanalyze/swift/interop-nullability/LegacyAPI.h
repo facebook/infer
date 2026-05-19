@@ -95,4 +95,14 @@ NS_ASSUME_NONNULL_END
 + (NSString*)classGetUnannotatedString;
 @end
 
+// Explicit [_Null_unspecified] modifier. Clang distinguishes this from the
+// absence of any nullability annotation (the former wraps the type in an
+// [AttributedType] with [TypeNullUnspecifiedAttrKind]; the latter has no
+// wrapper), and the difference is a deliberate API contract: maintainers
+// write the modifier to expose the return as a Swift implicitly-unwrapped
+// Optional. The checker should treat it as annotated, not as missing.
+@interface ExplicitlyUnspecifiedAPI : NSObject
+- (NSString* _Null_unspecified)getExplicitlyUnspecifiedString;
+@end
+
 #pragma clang diagnostic pop

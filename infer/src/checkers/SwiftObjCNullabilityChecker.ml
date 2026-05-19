@@ -64,7 +64,15 @@ module TransferFunctions = struct
          that the caller treats the result as [Optional<T>] even when the ObjC
          method itself is unannotated). *)
       let combined_annots = call_flags.cf_caller_ret_annots @ attrs.ret_annots in
-      if Annotations.ia_is_nullable combined_annots || Annotations.ia_is_nonnull combined_annots
+      (* [_Null_unspecified] is an explicit maintainer choice to expose the return as a Swift
+         implicitly-unwrapped Optional (e.g. IGListKit's [IGListSectionController.collectionContext]
+         is declared [null_unspecified] precisely so idiomatic Swift consumers are not forced into
+         [as!] / [fatalError]). Treat it as a deliberate annotation, not as the "missing annotation"
+         case the checker exists to catch. *)
+      if
+        Annotations.ia_is_nullable combined_annots
+        || Annotations.ia_is_nonnull combined_annots
+        || Annotations.ia_is_null_unspecified combined_annots
       then CallStatus.Annotated
       else CallStatus.Unannotated
 

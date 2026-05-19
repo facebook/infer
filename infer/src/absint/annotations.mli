@@ -23,6 +23,8 @@ val no_allocation : string
 
 val nullable : string
 
+val null_unspecified : string
+
 val nonnull : string
 
 val performance_critical : string
@@ -55,6 +57,12 @@ val ia_is_initializer : Annot.Item.t -> bool
 val ia_is_nonnull : Annot.Item.t -> bool
 
 val ia_is_nullable : Annot.Item.t -> bool
+
+val ia_is_null_unspecified : Annot.Item.t -> bool
+(** Whether [ia] carries an explicit Objective-C [_Null_unspecified] modifier. This is distinct from
+    the absence of any nullability annotation: maintainers write [_Null_unspecified] (or
+    [null_unspecified] on a [@property]) deliberately to expose a return as a Swift
+    implicitly-unwrapped Optional. *)
 
 val ia_is_jetbrains_notnull : Annot.Item.t -> bool
 

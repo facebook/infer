@@ -41,6 +41,8 @@ let no_allocation = "NoAllocation"
 
 let nullable = "Nullable"
 
+let null_unspecified = "NullUnspecified"
+
 let nullsafe_strict = "NullsafeStrict"
 
 let nullsafe = "Nullsafe"
@@ -163,6 +165,8 @@ let ia_is_nonnull ia =
 
 
 let ia_is_nullable ia = ia_ends_with ia nullable
+
+let ia_is_null_unspecified ia = ia_ends_with ia null_unspecified
 
 let ia_is_jetbrains_notnull ia = ia_class_name_matches ia jetbrains_not_null
 
