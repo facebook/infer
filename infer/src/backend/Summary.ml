@@ -296,6 +296,21 @@ module OnDisk = struct
              f spec )
 
 
+  let iter_metadata ~f =
+    let db = Database.get_database AnalysisDatabase in
+    (* NB the order is deterministic, but it is over a serialised value, so it is arbitrary *)
+    Sqlite3.prepare db
+      {|
+      SELECT summary_metadata
+      FROM specs
+      ORDER BY proc_uid ASC
+      |}
+    |> Container.iter ~fold:(SqliteUtils.result_fold_rows db ~log:"iter over metadata")
+         ~f:(fun stmt ->
+           let summary_metadata = Sqlite3.column stmt 0 |> SummaryMetadata.SQLite.deserialize in
+           f summary_metadata )
+
+
   let iter_filtered_report_summaries ~filter ~f =
     let db = Database.get_database AnalysisDatabase in
     let dummy_source_file = SourceFile.invalid __FILE__ in

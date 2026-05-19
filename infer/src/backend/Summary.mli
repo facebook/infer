@@ -42,6 +42,16 @@ val pp_html : SourceFile.t -> Format.formatter -> t -> unit
 val pp_text : Format.formatter -> t -> unit
 (** Print the summary in text format *)
 
+module SummaryMetadata : sig
+  (** Lightweight metadata associated with a summary, without payloads or error log. *)
+  type t =
+    { sessions: int
+    ; stats: Stats.t
+    ; proc_name: Procname.t
+    ; dependencies: Dependencies.complete
+    ; is_complete_result: bool }
+end
+
 module OnDisk : sig
   val clear_cache : unit -> unit
   (** Remove all the elements from the cache of summaries *)
@@ -68,6 +78,10 @@ module OnDisk : sig
 
   val iter_specs : f:(t -> unit) -> unit
   (** Iterates over all stored summaries *)
+
+  val iter_metadata : f:(SummaryMetadata.t -> unit) -> unit
+  (** Iterates over the metadata of all stored summaries, without loading the rest of the summary
+      (payloads, error log). Prefer this over [iter_specs] whenever only metadata is needed. *)
 
   val iter_report_summaries_from_config :
        f:

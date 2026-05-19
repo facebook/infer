@@ -37,14 +37,8 @@ let create_caller_table () =
       | Some callers ->
           caller :: callers )
   in
-  Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_name; dependencies} ->
-      let {Dependencies.summary_loads; other_proc_names} =
-        match dependencies with
-        | Complete c ->
-            c
-        | Partial ->
-            L.die InternalError "deserialized summary with incomplete dependencies"
-      in
+  Summary.OnDisk.iter_metadata ~f:(fun {Summary.SummaryMetadata.proc_name; dependencies} ->
+      let {Dependencies.summary_loads; other_proc_names} = dependencies in
       List.iter summary_loads ~f:(fun callee -> record ~callee ~caller:proc_name) ;
       List.iter other_proc_names ~f:(fun callee -> record ~callee ~caller:proc_name) ) ;
   L.debug Report Verbose "@;@[Caller table: @[%a@]@]@." pp_caller_table caller_table ;

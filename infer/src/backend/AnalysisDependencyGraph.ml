@@ -25,14 +25,8 @@ let build ~changed_files =
   in
   let deleted_procs = ref [] in
   (* First, build a reverse analysis callgraph [graph] and tenv dependency map [tenv_deps]. *)
-  Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_name; dependencies} ->
-      let {Dependencies.summary_loads; other_proc_names; used_tenv_sources} =
-        match dependencies with
-        | Complete c ->
-            c
-        | Partial ->
-            L.die InternalError "deserialized summary with incomplete dependencies"
-      in
+  Summary.OnDisk.iter_metadata ~f:(fun {Summary.SummaryMetadata.proc_name; dependencies} ->
+      let {Dependencies.summary_loads; other_proc_names; used_tenv_sources} = dependencies in
       let is_deleted_proc =
         match Attributes.load proc_name with
         | None ->
@@ -137,14 +131,8 @@ let invalidate ~changed_files =
 
 
 let iter_on_disk_dependencies ~f =
-  Summary.OnDisk.iter_specs ~f:(fun {Summary.proc_name; dependencies} ->
-      let {Dependencies.summary_loads; recursion_edges} =
-        match dependencies with
-        | Complete c ->
-            c
-        | Partial ->
-            L.die InternalError "deserialized summary with incomplete dependencies"
-      in
+  Summary.OnDisk.iter_metadata ~f:(fun {Summary.SummaryMetadata.proc_name; dependencies} ->
+      let {Dependencies.summary_loads; recursion_edges} = dependencies in
       f proc_name summary_loads recursion_edges )
 
 
