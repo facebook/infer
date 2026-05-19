@@ -132,13 +132,18 @@ let blocklisted_callee_patterns =
         ; "^UI[A-Z].*\\."
         ; "^__call_objc_block$"
         ; "^__infer_skip$"
+        ; "^_os_log_internal$"
         ; "^__instanceof$"
         ; "^__objc_alloc_no_fail$"
         ; "^_objc_autoreleasePoolPop$"
         ; "^_objc_autoreleasePoolPush$"
         ; "^_objc_insertKey$"
         ; "^_objc_insertValue$"
-        ; "^objc_lookUpClass$" ] ) ]
+        ; "^dladdr$"
+        ; "^dlopen$"
+        ; "^dlsym$"
+        ; "^objc_lookUpClass$"
+        ; "^os_log_create$" ] ) ]
 
 
 let is_blocklisted_callee callee =
