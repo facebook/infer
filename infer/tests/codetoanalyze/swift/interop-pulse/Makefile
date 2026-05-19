@@ -12,3 +12,6 @@ INFER_OPTIONS = \
 
 # Pull in the logic and defaults
 include $(TESTS_DIR)/swift-interop.make
+
+# Multiple Swift sources compiled to a single bitcode module.
+SWIFT_OPTIONS += -whole-module-optimization
