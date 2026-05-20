@@ -70,7 +70,16 @@ declare .method_offset = "11" __infer_swift_type<T16AsyncActorGetter8AAGUtilsC,A
 
 declare $s16AsyncActorGetter8AAGUtilsC7counterSivs(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "counter.get" $s16AsyncActorGetter8AAGUtilsC7counterSivg(*__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>) : int
+define .plain_name = "counter.get" $s16AsyncActorGetter8AAGUtilsC7counterSivg(var1: *__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>) : int {
+  local var3: *int
+  #: @[0:0]
+      n1:*__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils> = load &var1 @[0:0]
+      n2 = n1.__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>.counter @[0:0]
+      n4:*__infer_swift_type<TSi> = load n2 @[0:0]
+      n3 = load n4.__infer_swift_type<TSi>.field_0 @[0:0]
+      ret n3 @[0:0]
+      
+} @?
 
 declare $s16AsyncActorGetter43test_actor_property_access_no_cycle_good_FPyyYaFTY2_(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -84,7 +93,21 @@ declare $s16AsyncActorGetter10AAGHandlerCfd(*__infer_swift_type<ptr_elt>) : *__i
 
 declare .method_offset = "-2" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerCfD(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "unownedExecutor.get" $s16AsyncActorGetter10AAGHandlerCScAAAScA15unownedExecutorScevgTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,UnownedSerialExecutor>
+define .plain_name = "unownedExecutor.get" $s16AsyncActorGetter10AAGHandlerCScAAAScA15unownedExecutorScevgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<int,int> {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = $s16AsyncActorGetter10AAGHandlerC15unownedExecutorScevg(n1) @[0:0]
+      jmp 4::ret @[0:0]
+      
+  #4::ret: @[0:0]
+      n3 = $builtins.llvm_init_tuple() @[0:0]
+      n5 = load n2.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[0:0]
+      store n3.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n5 @[0:0]
+      n7 = load n2.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[0:0]
+      store n3.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n7 @[0:0]
+      ret n3 @[0:0]
+      
+} @?
 
 declare $s16AsyncActorGetter10AAGHandlerCMa(int) : *__infer_swift_type<ptr_elt>
 
@@ -94,7 +117,16 @@ declare .method_offset = "15" __infer_swift_type<T16AsyncActorGetter10AAGHandler
 
 declare .method_offset = "13" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvs(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "utils.get" .method_offset = "12" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvg(*__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>) : *__infer_swift_type<T16AsyncActorGetter8AAGUtilsC,AAGUtils>
+define .plain_name = "utils.get" .method_offset = "12" __infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.$s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvg(var1: *__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>) : *__infer_swift_type<ptr_elt> {
+  local var3: *int
+  #: @[0:0]
+      n1:*__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler> = load &var1 @[0:0]
+      n2 = n1.__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>.utils @[0:0]
+      n3 = load n2 @[0:0]
+      n4 = $builtins.llvm_nondet() @[0:0]
+      ret n3 @[0:0]
+      
+} @?
 
 declare $s16AsyncActorGetter10AAGHandlerC5utilsAA8AAGUtilsCvM::resume::0(*__infer_swift_type<ptr_elt>, int) : *__infer_swift_type<ptr_elt>
 
@@ -104,7 +136,21 @@ declare $s16AsyncActorGetter10AAGHandlerC27read_utils_no_cycle_good_FPSiyYaFTY0_
 
 declare $s16AsyncActorGetter10AAGHandlerC27read_utils_no_cycle_good_FPSiyYaF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "unownedExecutor.get" $s16AsyncActorGetter10AAGHandlerC15unownedExecutorScevg(*__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>) : *__infer_swift_type<,UnownedSerialExecutor>
+define .plain_name = "unownedExecutor.get" $s16AsyncActorGetter10AAGHandlerC15unownedExecutorScevg(self: *__infer_swift_type<T16AsyncActorGetter10AAGHandlerC,AAGHandler>) : *__infer_tuple_class<int,int> {
+  #: @[0:0]
+      n1 = load &self @[0:0]
+      n4 = $sSceySceBecfC(__sil_cast(<int>, n1), 0) @[0:0]
+      jmp 4::ret @[0:0]
+      
+  #4::ret: @[0:0]
+      n5 = $builtins.llvm_init_tuple() @[0:0]
+      n7 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[0:0]
+      store n5.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n7 @[0:0]
+      n9 = load n4.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[0:0]
+      store n5.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n9 @[0:0]
+      ret n5 @[0:0]
+      
+} @?
 
 global symbolic _____ 16AsyncActorGetter8AAGUtilsC: *__infer_tuple_class<int,int,int>
 

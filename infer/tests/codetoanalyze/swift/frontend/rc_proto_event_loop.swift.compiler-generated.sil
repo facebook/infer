@@ -52,185 +52,9 @@ declare $sSlss16IndexingIteratorVyxG0B0RtzrlE04makeB0ACyF(*__infer_swift_type<pt
 
 declare $sSay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGSayxGSlsWl() : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "loop" $s5Hello4loop33_6F95A330116302188B682B8438F3ADBFLL6eventsSiSayAA1SACLLVG_tF(events: *__infer_swift_type<Ts12_ArrayBufferV,Array>) : int {
-  local var7: *__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVSg,F3ADBFLL>, var6: *__infer_swift_type<TSa>, var5: *__infer_swift_type<Ts16IndexingIteratorVySay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGG>, var15: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void, event: *__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>, count: *__infer_swift_type<TSi>
-  #: @[49:0]
-      n3 = $builtins.llvm_init_tuple() @[49:0]
-      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T10Foundation4DateV,Date>>) @[49:0]
-      n2 = n3 @[49:0]
-      jmp 8::ret @[49:0]
-      
-  #$s10Foundation4DateVACycfC::void::ret: @[49:0]
-      store &getelementptr_offset_1 <- 1 @[49:0]
-      n83 = load &getelementptr_offset_1 @[49:0]
-      n85 = load &var15 @[49:0]
-      n86 = load n5 @[49:0]
-      _ = $builtins.llvm_dynamic_call(n83, n85, n86) @[49:0]
-      jmp 56::void::ret @[49:0]
-      
-  #$ss16IndexingIteratorV4next7ElementQzSgyF::void::ret: @[49:0]
-      n34:*__infer_tuple_class<int,int,int,int> = load &var7 @[49:0]
-      n33 = load n34.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_0 @[49:0]
-      n36:*__infer_tuple_class<int,int,int,int> = load &var7 @[49:0]
-      n35 = load n36.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_1 @[49:0]
-      n38:*__infer_tuple_class<int,int,int,int> = load &var7 @[49:0]
-      n37 = load n38.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_2 @[49:0]
-      n40:*__infer_tuple_class<int,int,int,int> = load &var7 @[49:0]
-      n39 = load n40.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_3 @[49:0]
-      n42:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVSg,F3ADBFLL> = load &var7 @[49:0]
-      n41 = load n42.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVSg,F3ADBFLL>.field_1 @[49:0]
-      if __sil_eq(n41, 1) then jmp 22::jmp::76 else jmp 37::jmp::39 @[51:5]
-      
-  #16::ret: @[51:18]
-      n14:*__infer_swift_type<TSa> = load &var6 @[51:18]
-      n15:*__infer_swift_type<Ts12_ArrayBufferV,Array> = load n14.__infer_swift_type<TSa>.field_0 @[51:18]
-      n16:*__infer_swift_type<Ts14_BridgeStorageV,S> = load n15.__infer_swift_type<Ts12_ArrayBufferV,Array>.field_0 @[51:18]
-      n13 = load &events @[51:18]
-      store n16.__infer_swift_type<Ts14_BridgeStorageV,S>.field_0 <- n13 @[51:18]
-      n17 = load &$sSay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGMD @[49:0]
-      n18 = __sil_swift_alloc(<__infer_swift_type<TSay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVG>>) @[49:0]
-      jmp 20::ret @[49:0]
-      
-  #1::jmp::22: @[51:5]
-      n24 = 0 @[51:5]
-      n26 = 0 @[51:5]
-      jmp 22 @[51:5]
-      
-  #20::ret: @[49:0]
-      n19 = $sSay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGSayxGSlsWl() @[49:0]
-      jmp 21::ret @[49:0]
-      
-  #21::ret: @[49:0]
-      n20 = load &var5 @[49:0]
-      n23 = load &var6 @[49:0]
-      _ = $sSlss16IndexingIteratorVyxG0B0RtzrlE04makeB0ACyF(n20, n18, n19, n23) @[49:0]
-      jmp 1::jmp::22 @[49:0]
-      
-  #22: @[49:0]
-      n28 = load &$ss16IndexingIteratorVySay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGGMD @[49:0]
-      n29 = __sil_swift_alloc(<__infer_swift_type<Ts16IndexingIteratorVySay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGG>>) @[49:0]
-      jmp 25::ret @[49:0]
-      
-  #22::jmp::76: @[51:5]
-      n97 = n24 @[51:5]
-      jmp 76 @[51:5]
-      
-  #25::ret: @[49:0]
-      n30 = load &var7 @[49:0]
-      n32 = load &var5 @[49:0]
-      _ = $ss16IndexingIteratorV4next7ElementQzSgyF(n30, n29, n32) @[49:0]
-      jmp $ss16IndexingIteratorV4next7ElementQzSgyF::void::ret @[49:0]
-      
-  #37::jmp::39: @[51:5]
-      n45 = n33 @[51:5]
-      n48 = __sil_cast(<int>, n35) @[51:5]
-      n50 = n37 @[51:5]
-      n52 = n39 @[51:5]
-      jmp 39 @[51:5]
-      
-  #39: @[49:0]
-      n55:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &event @[49:0]
-      n56:*__infer_swift_type<Ts5Int64V,Int64> = load n55.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_0 @[49:0]
-      store n56.__infer_swift_type<Ts5Int64V,Int64>.field_0 <- n45 @[49:0]
-      n58:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &event @[49:0]
-      n59:*__infer_swift_type<Ts5Int32V,Int32> = load n58.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_1 @[49:0]
-      store n59.__infer_swift_type<Ts5Int32V,Int32>.field_0 <- n48 @[49:0]
-      n60:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &event @[49:0]
-      n61 = n60.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_3 @[49:0]
-      store n61.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_0 <- n50 @[49:0]
-      store n61.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- n52 @[49:0]
-      if __sil_eq(n52, 1) then jmp 51 else jmp 53::jmp::70 @[53:14]
-      
-  #51: @[53:14]
-      if __sil_eq(n50, 0) then jmp 72 else if __sil_eq(n50, 1) then jmp 54 else if __sil_eq(n50, 2) then jmp 72 else if __sil_eq(n50, 3) then jmp 72 else if __sil_eq(n50, 4) then jmp 72 else if __sil_eq(n50, 5) then jmp 72 else if __sil_eq(n50, 6) then jmp 72 else if __sil_eq(n50, 7) then jmp 72 else jmp 52 @[53:14]
-      
-  #52: @[53:14]
-      unreachable @[53:14]
-      
-  #53::jmp::70: @[53:14]
-      n66 = n50 @[53:14]
-      jmp 72::jmp::73 @[53:14]
-      
-  #54: @[54:21]
-      n82 = load &var15 @[54:21]
-      _ = $s10Foundation4DateVACycfC(n82) @[54:21]
-      jmp $s10Foundation4DateVACycfC::void::ret @[54:21]
-      
-  #56::void::ret: @[55:19]
-      n87 = $builtins.llvm_init_tuple() @[55:19]
-      n89 = n87.__infer_tuple_class<int,int>.__infer_tuple_field_0 @[55:19]
-      n91 = n87.__infer_tuple_class<int,int>.__infer_tuple_field_1 @[55:19]
-      if n91 then jmp 79 else jmp 61 @[55:19]
-      
-  #61: @[55:19]
-      n93:*__infer_swift_type<TSi> = load &count @[55:19]
-      n92 = load n89 @[55:19]
-      store n93.__infer_swift_type<TSi>.field_0 <- n92 @[55:19]
-      jmp 61::jmp::73 @[49:0]
-      
-  #61::jmp::73: @[49:0]
-      n95 = load n89 @[49:0]
-      n94 = load n89 @[49:0]
-      n68 = n94 @[49:0]
-      n70 = n95 @[49:0]
-      jmp 73 @[49:0]
-      
-  #72: @[58:13]
-      jmp 72::jmp::73 @[58:13]
-      
-  #72::jmp::73: @[58:13]
-      n68 = n24 @[58:13]
-      n70 = n26 @[58:13]
-      jmp 73::jmp::22 @[58:13]
-      
-  #73: @[60:5]
-      jmp 73::jmp::22 @[60:5]
-      
-  #73::jmp::22: @[60:5]
-      n24 = n68 @[60:5]
-      n26 = n70 @[60:5]
-      jmp 22 @[60:5]
-      
-  #76: @[49:0]
-      n99 = load &var5 @[49:0]
-      n100 = $ss16IndexingIteratorVySay5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVGGWOh(n99) @[49:0]
-      jmp 78::ret @[49:0]
-      
-  #78::ret: @[61:5]
-      ret n97 @[61:5]
-      
-  #79: @[49:0]
-      unreachable @[49:0]
-      
-  #8::ret: @[49:0]
-      n5 = n2.__infer_swift_type<swift::metadata_response>.field_0 @[49:0]
-      n6 = load $builtins.llvm_nondet() @[49:0]
-      n7 = load n6.__infer_swift_type<swift::vwtable>.field_8 @[49:0]
-      n10:*__infer_swift_type<TSi> = load &count @[50:17]
-      store n10.__infer_swift_type<TSi>.field_0 <- 0 @[50:17]
-      n11 = load &events @[51:18]
-      n12 = n11 @[51:18]
-      jmp 16::ret @[51:18]
-      
-} @?
+declare .plain_name = "loop" $s5Hello4loop33_6F95A330116302188B682B8438F3ADBFLL6eventsSiSayAA1SACLLVG_tF(*__infer_swift_type<Ts12_ArrayBufferV,Array>) : int
 
-define .plain_name = "test_payload_enum_in_iter_switch_no_cycle_good_FP" $s5Hello49test_payload_enum_in_iter_switch_no_cycle_good_FPSiyF() : int {
-  #: @[65:18]
-      n2:*__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,int,int,int,*int> = load &$s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVMf @[65:18]
-      n3 = load n2.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,int,int,int,*int>.__infer_tuple_field_2 @[65:18]
-      n4 = $ss27_allocateUninitializedArrayySayxG_BptBwlF(0, n3) @[65:18]
-      jmp 1::ret @[65:18]
-      
-  #1::ret: @[65:18]
-      n6 = n4.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[65:18]
-      n7 = load n6 @[65:5]
-      n8 = $s5Hello4loop33_6F95A330116302188B682B8438F3ADBFLL6eventsSiSayAA1SACLLVG_tF(n7) @[65:5]
-      jmp 4::ret @[65:5]
-      
-  #4::ret: @[66:1]
-      ret n8 @[66:1]
-      
-} @?
+declare .plain_name = "test_payload_enum_in_iter_switch_no_cycle_good_FP" $s5Hello49test_payload_enum_in_iter_switch_no_cycle_good_FPSiyF() : int
 
 declare $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVwst(*__infer_swift_type<ptr_elt>, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -240,38 +64,64 @@ declare $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVwCP(*__infer_swift_type<
 
 declare $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVMa(int) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "init" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVADycfC() : *__infer_tuple_class<int,int,int,int> {
-  local self: *__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>
-  #: @[42:28]
-      n2:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &self @[42:28]
-      n3:*__infer_swift_type<Ts5Int64V,Int64> = load n2.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_0 @[42:28]
-      store n3.__infer_swift_type<Ts5Int64V,Int64>.field_0 <- 0 @[42:28]
-      n5:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &self @[43:30]
-      n6:*__infer_swift_type<Ts5Int32V,Int32> = load n5.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_1 @[43:30]
-      store n6.__infer_swift_type<Ts5Int32V,Int32>.field_0 <- 0 @[43:30]
-      n7:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &self @[44:9]
-      n8 = n7.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_3 @[44:9]
-      store n8.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- 1 @[44:25]
-      n11 = $builtins.llvm_init_tuple() @[45:13]
-      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_0 <- 0 @[45:13]
-      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_1 <- 0 @[45:13]
-      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_2 <- 0 @[45:13]
-      store n11.__infer_tuple_class<int,int,int,int>.__infer_tuple_field_3 <- 1 @[45:13]
-      ret n11 @[45:13]
+declare .plain_name = "init" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLVADycfC() : *__infer_swift_type<Ts14_BridgeStorageV,S>
+
+define .plain_name = "timestamp.set" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9timestamps5Int64Vvs(var1: int, var2: *__infer_swift_type<Ts14_BridgeStorageV,S>) : void {
+  #: @[0:0]
+      n2:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &var2 @[0:0]
+      n3:*__infer_swift_type<Ts5Int64V,Int64> = load n2.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_0 @[0:0]
+      n1 = load &var1 @[0:0]
+      store n3.__infer_swift_type<Ts5Int64V,Int64>.field_0 <- n1 @[0:0]
+      ret null @[0:0]
       
 } @?
 
-declare .plain_name = "timestamp.set" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9timestamps5Int64Vvs(int, *__infer_swift_type<Ts14_BridgeStorageV,S>) : void
+define .plain_name = "timestamp.get" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9timestamps5Int64Vvg(var1: int, var2: int, var3: int, var4: int) : int {
+  #: @?
+      n1 = load &var1 @[0:0]
+      ret n1 @[0:0]
+      
+} @?
 
-declare .plain_name = "timestamp.get" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9timestamps5Int64Vvg(int, int, int, int) : *__infer_swift_type<Ts5Int64V,Int64>
+define .plain_name = "eventType.set" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9eventTypeAA1EACLLOvs(var1: int, var2: int, var3: *__infer_swift_type<ptr_elt>) : void {
+  #: @[0:0]
+      n1:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &var3 @[0:0]
+      n2 = n1.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_3 @[0:0]
+      n3 = load &var1 @[0:0]
+      store n2.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_0 <- n3 @[0:0]
+      n4 = load &var2 @[0:0]
+      store n2.__infer_swift_type<T5Hello1E33_6F95A330116302188B682B8438F3ADBFLLO,F3ADBFLL>.field_1 <- n4 @[0:0]
+      ret null @[0:0]
+      
+} @?
 
-declare .plain_name = "eventType.set" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9eventTypeAA1EACLLOvs(int, int, *__infer_swift_type<ptr_elt>) : void
+define .plain_name = "eventType.get" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9eventTypeAA1EACLLOvg(var1: int, var2: int, var3: int, var4: int) : *__infer_tuple_class<int,int> {
+  #: @[0:0]
+      n1 = $builtins.llvm_init_tuple() @[0:0]
+      n2 = load &var3 @[0:0]
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_0 <- n2 @[0:0]
+      n3 = load &var4 @[0:0]
+      store n1.__infer_tuple_class<int,int>.__infer_tuple_field_1 <- n3 @[0:0]
+      ret n1 @[0:0]
+      
+} @?
 
-declare .plain_name = "eventType.get" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV9eventTypeAA1EACLLOvg(int, int, int, int) : *__infer_swift_type<,E>
+define .plain_name = "batterLevel.set" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV11batterLevels5Int32Vvs(var1: int, var2: *__infer_swift_type<Ts14_BridgeStorageV,S>) : void {
+  #: @[0:0]
+      n2:*__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL> = load &var2 @[0:0]
+      n3:*__infer_swift_type<Ts5Int32V,Int32> = load n2.__infer_swift_type<T5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV,F3ADBFLL>.field_1 @[0:0]
+      n1 = load &var1 @[0:0]
+      store n3.__infer_swift_type<Ts5Int32V,Int32>.field_0 <- n1 @[0:0]
+      ret null @[0:0]
+      
+} @?
 
-declare .plain_name = "batterLevel.set" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV11batterLevels5Int32Vvs(int, *__infer_swift_type<Ts14_BridgeStorageV,S>) : void
-
-declare .plain_name = "batterLevel.get" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV11batterLevels5Int32Vvg(int, int, int, int) : *__infer_swift_type<Ts5Int32V,Int32>
+define .plain_name = "batterLevel.get" $s5Hello1S33_6F95A330116302188B682B8438F3ADBFLLV11batterLevels5Int32Vvg(var1: int, var2: int, var3: int, var4: int) : int {
+  #: @?
+      n1 = load &var2 @[0:0]
+      ret n1 @[0:0]
+      
+} @?
 
 declare $s5Hello1E33_6F95A330116302188B682B8438F3ADBFLLOwup(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 

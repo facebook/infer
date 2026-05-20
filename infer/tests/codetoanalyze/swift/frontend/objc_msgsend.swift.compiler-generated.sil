@@ -36,135 +36,52 @@ declare $s5Hello9ObjCClassCMa(int) : *__infer_swift_type<ptr_elt>
 
 declare .plain_name = "init" $s5Hello9ObjCClassCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,ObjCClass>
 
-define .plain_name = "init" $s5Hello9ObjCClassCACycfc(self: *__infer_swift_type<,ObjCClass>) : *__infer_swift_type<ptr_elt> {
-  local var4: *__infer_swift_type<objc_super>
-  #: @[13:23]
-      n1:*__infer_swift_type<T5Hello9ObjCClassC,ObjCClass> = load &self @[13:23]
-      n2 = load &$s5Hello9ObjCClassC5valueSivpWvd @[13:23]
-      n5:*__infer_swift_type<TSi> = load n1.__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.value @[13:36]
-      store n5.__infer_swift_type<TSi>.value <- 0 @[13:36]
-      n6 = load &self @[5:9]
-      n9 = $builtins.llvm_init_tuple() @[5:15]
-      store n9.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>>) @[5:15]
-      n8 = n9 @[5:15]
-      jmp 9::ret @[5:15]
+declare .plain_name = "init" $s5Hello9ObjCClassCACycfc(*__infer_swift_type<,ObjCClass>) : *__infer_swift_type<,ObjCClass>
+
+declare .plain_name = "init" $s5Hello9ObjCClassCACycfC(*__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<,ObjCClass>
+
+define .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivsTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: int) : void {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = &var1 @[0:0]
+      n4 = load &var3 @[0:0]
+      n5 = load &var1 @[0:0]
+      _ = $s5Hello9ObjCClassC5valueSivs(n4, n5) @[0:0]
+      jmp $s5Hello9ObjCClassC5valueSivs::void::ret @[0:0]
       
-  #9::ret: @[5:15]
-      n11:*__infer_swift_type<objc_super> = load &var4 @[5:15]
-      store n11.__infer_swift_type<objc_super>.field_0 <- n6 @[5:15]
-      n14:*__infer_swift_type<objc_super> = load &var4 @[5:15]
-      n13 = load n8.__infer_swift_type<swift::metadata_response>.field_0 @[5:15]
-      store n14.__infer_swift_type<objc_super>.field_1 <- n13 @[5:15]
-      n15 = load &L_selector(init) @[5:15]
-      n16 = load &var4 @[5:15]
-      n18 = $builtins.objc_msgSendSuper2(n16, n15) @[5:15]
-      n19 = n18 @[4:0]
-      store &self <- n18 @[4:0]
-      n21 = load &self @[6:5]
-      ret n18 @[6:5]
+  #$s5Hello9ObjCClassC5valueSivs::void::ret: @[0:0]
+      ret null @[0:0]
       
 } @?
 
-define .plain_name = "init" $s5Hello9ObjCClassCACycfC(var1: *__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[4:0]
-      n1 = load &var1 @[4:0]
-      n2 = __sil_objc_alloc(<NSObject>, n1) @[4:0]
-      jmp 2::ret @[4:0]
-      
-  #2::ret: @[4:0]
-      n3 = load &L_selector(init) @[4:0]
-      n6 = n2.init() @[4:0]
-      jmp 4::ret @[4:0]
-      
-  #4::ret: @[4:0]
-      ret n6 @[4:0]
-      
-} @?
-
-declare .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivsTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, int) : void
-
-define .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivs(var1: int, self: *__infer_swift_type<,ObjCClass>) : void {
-  local var6: *int, value: *__infer_swift_type<ptr_elt>
-  #: @[13:0]
-      n1 = load &$s5Hello9ObjCClassC5valueSivpWvd @[13:0]
-      n2 = load &self @[13:0]
-      n3 = n2.__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.value @[13:0]
-      n5:*__infer_swift_type<TSi> = load n3 @[13:0]
-      n4 = load &var1 @[13:0]
-      store n5.__infer_swift_type<TSi>.value <- n4 @[13:0]
-      ret null @[13:0]
-      
-} @?
+declare .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivs(int, *__infer_swift_type<,ObjCClass>) : void
 
 declare $s5Hello9ObjCClassC5valueSivpfi() : int
 
-declare .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivgTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : int
-
-define .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivg(self: *__infer_swift_type<,ObjCClass>) : int {
-  local var4: *int
-  #: @[13:0]
-      n1 = load &$s5Hello9ObjCClassC5valueSivpWvd @[13:0]
-      n2 = load &self @[13:0]
-      n3 = n2.__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.value @[13:0]
-      n5:*__infer_swift_type<TSi> = load n3 @[13:0]
-      n4 = load n5.__infer_swift_type<TSi>.value @[13:0]
-      ret n4 @[13:0]
+define .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivgTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : int {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = &var1 @[0:0]
+      n4 = load &var1 @[0:0]
+      n5 = $s5Hello9ObjCClassC5valueSivg(n4) @[0:0]
+      jmp 8::ret @[0:0]
+      
+  #8::ret: @[0:0]
+      ret n5 @[0:0]
       
 } @?
 
-define .plain_name = "dispatchDynamicSelector" $s5Hello23dispatchDynamicSelectorySbSo8NSObjectC_10ObjectiveC0D0VtF(obj: *__infer_swift_type<,NSObject>, s: *__infer_swift_type<,Selector>) : int {
-  #: @[35:16]
-      n1 = load &L_selector(respondsToSelector:) @[35:16]
-      n4 = load &s @[35:16]
-      n2 = load &obj @[35:16]
-      n7 = n2.NSObject.respondsToSelector:(__sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n4))) @[35:16]
-      jmp 8::ret @[35:16]
-      
-  #8::ret: @[35:5]
-      ret n7 @[35:5]
-      
-} @?
+declare .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivg(*__infer_swift_type<,ObjCClass>) : int
 
-define .plain_name = "performDynamicSelector" $s5Hello22performDynamicSelectorys9UnmanagedVyyXlGSgSo8NSObjectC_10ObjectiveC0D0VtF(obj: *__infer_swift_type<,NSObject>, s: *__infer_swift_type<,Selector>) : *__infer_swift_type<,Optional> {
-  #: @[40:16]
-      n1 = &obj @[40:16]
-      n2 = load &L_selector(performSelector:) @[40:16]
-      n5 = load &s @[40:16]
-      n3 = load &obj @[40:16]
-      n8 = $builtins.objc_msgSend(n3, n2, __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n5))) @[40:16]
-      jmp 9::ret @[40:16]
-      
-  #9::ret: @[40:16]
-      n9 = &obj @[40:16]
-      ret __sil_cast(<int>, n8) @[40:5]
-      
-} @?
+declare .plain_name = "dispatchDynamicSelector" $s5Hello23dispatchDynamicSelectorySbSo8NSObjectC_10ObjectiveC0D0VtF(*__infer_swift_type<,NSObject>, *__infer_swift_type<,Selector>) : *__infer_swift_type<,Bool>
 
-define .plain_name = "setValueViaObjC" $s5Hello15setValueViaObjCyyAA0E6CClassC_SitF(c: *__infer_swift_type<,ObjCClass>, var2: int) : void {
-  local v: *__infer_swift_type<ptr_elt>
-  #: @[23:13]
-      n1 = load &L_selector(setValue:) @[23:13]
-      n2 = load &c @[23:13]
-      n4 = load &var2 @[23:13]
-      _ = n2.ObjCClass.setValue:(n4) @[23:13]
-      jmp objc_msgSend::void::ret @[23:13]
-      
-  #objc_msgSend::void::ret: @[24:1]
-      ret null @[24:1]
-      
-} @?
+declare .plain_name = "performDynamicSelector" $s5Hello22performDynamicSelectorys9UnmanagedVyyXlGSgSo8NSObjectC_10ObjectiveC0D0VtF(*__infer_swift_type<,NSObject>, *__infer_swift_type<,Selector>) : *__infer_swift_type<,Optional>
 
-define .plain_name = "getValueViaObjC" $s5Hello15getValueViaObjCySiAA0E6CClassCF(c: *__infer_swift_type<,ObjCClass>) : int {
-  #: @[18:14]
-      n1 = load &L_selector(value) @[18:14]
-      n2 = load &c @[18:14]
-      n4 = n2.ObjCClass.value() @[18:14]
-      jmp 4::ret @[18:14]
-      
-  #4::ret: @[18:5]
-      ret n4 @[18:5]
-      
-} @?
+declare .plain_name = "setValueViaObjC" $s5Hello15setValueViaObjCyyAA0E6CClassC_SitF(*__infer_swift_type<,ObjCClass>, int) : void
+
+declare .plain_name = "getValueViaObjC" $s5Hello15getValueViaObjCySiAA0E6CClassCF(*__infer_swift_type<,ObjCClass>) : int
 
 global symbolic _____ 5Hello9ObjCClassC: *__infer_tuple_class<int,int,int>
 

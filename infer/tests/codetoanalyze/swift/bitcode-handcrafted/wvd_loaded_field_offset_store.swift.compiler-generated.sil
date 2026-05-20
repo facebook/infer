@@ -1,0 +1,39 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare swift_allocObject(*__infer_swift_type<ptr_elt>, int, int) : *__infer_swift_type<ptr_elt>
+
+define $s4Test14ViewControllerC10navbarViewAA0c6NavbarF0CvgAGyXEfU_(self: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
+  #: @[0:0]
+      n3 = $builtins.llvm_init_tuple() @[0:0]
+      store n3.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T4Test10NavbarViewC,NavbarView>>) @[0:0]
+      n2 = n3 @[0:0]
+      jmp m_resp::ret @[0:0]
+      
+  #m_resp::ret: @[0:0]
+      n5 = load n2.__infer_swift_type<swift::metadata_response>.field_0 @[0:0]
+      n8 = __sil_swift_alloc(<__infer_swift_type<__infer_swift_alloc_unknown_type>>) @[0:0]
+      jmp nav::ret @[0:0]
+      
+  #nav::ret: @[0:0]
+      n9 = load &$s4Test10NavbarViewC8delegateAA0bC8Delegate_pSgvpWvd @[0:0]
+      n10 = load &self @[0:0]
+      store n8.__infer_swift_type<T4Test10NavbarViewC,NavbarView>.delegate <- n10 @[0:0]
+      ret n8 @[0:0]
+      
+} @?
+
+declare $s4Test10NavbarViewCMa(int) : *__infer_swift_type<ptr_elt>
+
+global $s4Test10NavbarViewC8delegateAA0bC8Delegate_pSgvpWvd: int
+
+type __infer_swift_type<T4Test10NavbarViewC,NavbarView> = {delegate: __infer_swift_type<ptr_elt>}
+
+type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
+                                                     field_1: int}
+

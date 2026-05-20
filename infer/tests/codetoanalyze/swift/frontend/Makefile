@@ -33,6 +33,9 @@ print: capture
 test: capture
 	$(QUIET)error=0; for file in $(SOURCES) ; do \
 	  diff -u "$$file.sil" "$$file.test.sil" || error=1 ; \
+	  if [ -f "$$file.compiler-generated.sil" ] || [ -f "$$file.compiler-generated.test.sil" ] ; then \
+	    diff -u "$$file.compiler-generated.sil" "$$file.compiler-generated.test.sil" || error=1 ; \
+	  fi ; \
 	done ; \
 	if [ $$error = 1 ]; then exit 1; fi
 
@@ -40,6 +43,9 @@ test: capture
 replace: capture
 	$(QUIET)for file in $(SOURCES) ; do \
 	  mv $$file.test.sil $$file.sil ; \
+	  if [ -f "$$file.compiler-generated.test.sil" ] ; then \
+	    mv "$$file.compiler-generated.test.sil" "$$file.compiler-generated.sil" ; \
+	  fi ; \
 	done
 
 .PHONY: clean

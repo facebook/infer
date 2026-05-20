@@ -34,7 +34,17 @@ declare .plain_name = "__derived_enum_equals" $s5Hello5ColorOSQAASQ2eeoiySbx_xtF
 
 declare $s5Hello5ColorOSHAASQWb(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "hashValue.get" $s5Hello5ColorOSHAASH9hashValueSivgTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : int
+define .plain_name = "hashValue.get" $s5Hello5ColorOSHAASH9hashValueSivgTW(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: *__infer_swift_type<ptr_elt>) : int {
+  #: @[0:0]
+      n2:*__infer_swift_type<T5Hello5ColorO,Color> = load &var1 @[0:0]
+      n1 = load n2.__infer_swift_type<T5Hello5ColorO,Color>.hashValue @[0:0]
+      n4 = $s5Hello5ColorO9hashValueSivg(n1) @[0:0]
+      jmp 6::ret @[0:0]
+      
+  #6::ret: @[0:0]
+      ret n4 @[0:0]
+      
+} @?
 
 declare .plain_name = "hash" $s5Hello5ColorOSHAASH4hash4intoys6HasherVz_tFTW(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
@@ -46,94 +56,36 @@ declare $s5Hello5ColorOACSQAAWl() : *__infer_swift_type<ptr_elt>
 
 declare $s5Hello5ColorOACSHAAWl() : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "hashValue.get" $s5Hello5ColorO9hashValueSivg(int) : int
+define .plain_name = "hashValue.get" $s5Hello5ColorO9hashValueSivg(var1: int) : int {
+  local var4: *__infer_swift_type<T5Hello5ColorO,Color>, self: *__infer_swift_type<ptr_elt>
+  #: @[0:0]
+      n2:*__infer_swift_type<T5Hello5ColorO,Color> = load &var4 @[0:0]
+      n1 = load &var1 @[0:0]
+      store n2.__infer_swift_type<T5Hello5ColorO,Color>.hashValue <- n1 @[0:0]
+      n3 = $s5Hello5ColorOACSHAAWl() @[0:0]
+      jmp 5::ret @[0:0]
+      
+  #5::ret: @[0:0]
+      n5:*__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>> = load &$s5Hello5ColorOMf @[0:0]
+      n4 = load &var4 @[0:0]
+      n6 = load n5.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_2 @[0:0]
+      n8 = $ss10_hashValue3forSix_tSHRzlF(n4, n6, n3) @[0:0]
+      jmp 6::ret @[0:0]
+      
+  #6::ret: @[0:0]
+      ret n8 @[0:0]
+      
+} @?
 
 declare .plain_name = "hash" $s5Hello5ColorO4hash4intoys6HasherVz_tF(*__infer_swift_type<,Hasher>, int) : void
 
 declare .plain_name = "__derived_enum_equals" $s5Hello5ColorO21__derived_enum_equalsySbAC_ACtFZ(int, int) : *__infer_swift_type<,Bool>
 
-define .plain_name = "switch_on_enum" $s5Hello14switch_on_enumySiAA5ColorOF(var1: int) : int {
-  local c: *__infer_swift_type<ptr_elt>
-  #: @?
-      n1 = load &var1 @[30:10]
-      if __sil_eq(n1, 0) then jmp 4::jmp::7 else if __sil_eq(n1, 1) then jmp 5::jmp::7 else if __sil_eq(n1, 2) then jmp 6::jmp::7 else jmp 3 @[30:10]
-      
-  #3: @[30:10]
-      unreachable @[30:10]
-      
-  #4::jmp::7: @[30:16]
-      n3 = 1 @[30:16]
-      jmp 7 @[30:16]
-      
-  #5::jmp::7: @[31:18]
-      n3 = 2 @[31:18]
-      jmp 7 @[31:18]
-      
-  #6::jmp::7: @[32:17]
-      n3 = 3 @[32:17]
-      jmp 7 @[32:17]
-      
-  #7: @[34:1]
-      ret n3 @[34:1]
-      
-} @?
+declare .plain_name = "switch_on_enum" $s5Hello14switch_on_enumySiAA5ColorOF(int) : int
 
-define .plain_name = "switch_on_bool" $s5Hello14switch_on_boolySiSbF(var1: int) : int {
-  local b: *__infer_swift_type<ptr_elt>
-  #: @?
-      n1 = load &var1 @[17:10]
-      if __sil_eq(n1, 1) then jmp 4::jmp::6 else if __sil_eq(n1, 0) then jmp 5::jmp::6 else jmp 3 @[17:10]
-      
-  #3: @[17:10]
-      unreachable @[17:10]
-      
-  #4::jmp::6: @[17:16]
-      n3 = 1 @[17:16]
-      jmp 6 @[17:16]
-      
-  #5::jmp::6: @[18:17]
-      n3 = 0 @[18:17]
-      jmp 6 @[18:17]
-      
-  #6: @[20:1]
-      ret n3 @[20:1]
-      
-} @?
+declare .plain_name = "switch_on_bool" $s5Hello14switch_on_boolySiSbF(int) : int
 
-define .plain_name = "switch_on_int" $s5Hello13switch_on_intyS2iF(var1: int) : int {
-  local x: *__infer_swift_type<ptr_elt>
-  #: @?
-      n2 = load &var1 @[7:12]
-      if __sil_eq(0, n2) then jmp 4::jmp::12 else jmp 5 @[7:12]
-      
-  #10::jmp::12: @[10:13]
-      n7 = 30 @[10:13]
-      jmp 12 @[10:13]
-      
-  #11::jmp::12: @[11:14]
-      n7 = 40 @[11:14]
-      jmp 12 @[11:14]
-      
-  #12: @[13:1]
-      ret n7 @[13:1]
-      
-  #4::jmp::12: @[8:13]
-      n7 = 10 @[8:13]
-      jmp 12 @[8:13]
-      
-  #5: @?
-      n4 = load &var1 @[7:12]
-      if __sil_eq(1, n4) then jmp 7::jmp::12 else jmp 8 @[7:12]
-      
-  #7::jmp::12: @[9:13]
-      n7 = 20 @[9:13]
-      jmp 12 @[9:13]
-      
-  #8: @?
-      n6 = load &var1 @[7:12]
-      if __sil_eq(2, n6) then jmp 10::jmp::12 else jmp 11::jmp::12 @[7:12]
-      
-} @?
+declare .plain_name = "switch_on_int" $s5Hello13switch_on_intyS2iF(int) : int
 
 global symbolic _____ 5Hello5ColorO: *__infer_tuple_class<int,int,int>
 

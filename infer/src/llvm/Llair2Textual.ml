@@ -1412,22 +1412,30 @@ let is_undefined func =
       false
 
 
-let should_translate plain_name mangled_name lang method_class_index source_file (loc : Llair.Loc.t)
-    =
+(* The literal string swiftc emits in LLVM debug info for synthetic procedures
+   ([<compiler-generated>]). Matched against the [file] field of a proc's DI loc
+   to decide whether the proc belongs to a real source or a compiler-generated one.
+   Swift-frontend specific, hence local to this module. *)
+let compiler_generated_di_marker = "<compiler-generated>"
+
+(* A proc's LLVM debug info is "compiler-generated" when it has no real source file —
+   either the [file] field is empty or it's the literal [<compiler-generated>] marker
+   that swiftc emits for synthetic thunks (partial-apply, autoclosure bodies, async
+   continuations, overlay initializers, ObjC bridging thunks, witness-table accessors). *)
+let is_compiler_generated_loc lang (loc : Llair.Loc.t) =
   let file =
     if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
     else loc.Llair.Loc.file
   in
-  let source_file_loc = SourceFile.create file in
-  let proc_name = Textual.ProcName.of_string mangled_name in
-  let typ_name = Textual.ProcName.Hashtbl.find_opt method_class_index proc_name in
-  let typ_name =
-    Option.bind ~f:(fun name -> Textual.TypeName.swift_mangled_name_of_type_name name) typ_name
-  in
-  SourceFile.equal source_file source_file_loc
-  (* the loc in these methods is empty but these are getters
-     and setters or closure bodies, etc and we need to translate them *)
-  || is_closure lang mangled_name
+  String.is_empty file || String.equal file compiler_generated_di_marker
+
+
+(* Predicate matching procedures whose body must be translated even though their DI
+   doesn't point at any user source file. We collect all of these into a single
+   synthetic [<compiler-generated>] Textual module so each one is translated once
+   instead of once per source-file capture pass. *)
+let matches_synthetic_filter plain_name mangled_name lang typ_name =
+  is_closure lang mangled_name
   || is_init_in_swift_overlay mangled_name
   || is_objc_thunk_not_init mangled_name
   || (Textual.Lang.is_swift lang && is_async_continuation_thunk mangled_name)
@@ -1439,6 +1447,31 @@ let should_translate plain_name mangled_name lang method_class_index source_file
          String.is_substring ~substring:Field.get_suffix plain_name
          || String.is_substring ~substring:Field.set_suffix plain_name
          || String.is_substring ~substring:Field.modify_suffix plain_name )
+
+
+type translate_mode = User_pass of SourceFile.t | Compiler_generated_pass
+
+let should_translate ~mode plain_name mangled_name lang method_class_index (loc : Llair.Loc.t) =
+  let file =
+    if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
+    else loc.Llair.Loc.file
+  in
+  let source_file_loc = SourceFile.create file in
+  let proc_name = Textual.ProcName.of_string mangled_name in
+  let typ_name = Textual.ProcName.Hashtbl.find_opt method_class_index proc_name in
+  let typ_name =
+    Option.bind ~f:(fun name -> Textual.TypeName.swift_mangled_name_of_type_name name) typ_name
+  in
+  let is_synthetic = is_compiler_generated_loc lang loc in
+  let synthetic_match = matches_synthetic_filter plain_name mangled_name lang typ_name in
+  match mode with
+  | User_pass source_file ->
+      (* In the per-source-file pass, translate procs whose DI matches this source
+         file. Synthetic-DI procs (empty / <compiler-generated>) are skipped here and
+         handled exclusively by the compiler-generated pass. *)
+      (not is_synthetic) && (SourceFile.equal source_file source_file_loc || synthetic_match)
+  | Compiler_generated_pass ->
+      is_synthetic && synthetic_match
 
 
 type attr_map = Textual.Attr.t Textual.QualifiedProcName.Map.t
@@ -1502,13 +1535,13 @@ let update_formals_list formals_list formals_map =
   List.map ~f:update_formal formals_list
 
 
-let translate_code source_file ~module_state proc_descs (procdecl : Textual.ProcDecl.t)
-    (func_name, func) =
+let translate_code ~mode ~sourcefile_for_proc_state ~module_state proc_descs
+    (procdecl : Textual.ProcDecl.t) (func_name, func) =
   let ModuleState.{lang; method_class_index} = module_state in
   let should_translate =
-    should_translate
+    should_translate ~mode
       (FuncName.unmangled_name func_name)
-      (FuncName.name func_name) lang method_class_index source_file func.Llair.loc
+      (FuncName.name func_name) lang method_class_index func.Llair.loc
   in
   let formals_list = List.map ~f:Var.reg_to_var_name (StdUtils.iarray_to_list func.Llair.formals) in
   let formals_map =
@@ -1534,8 +1567,8 @@ let translate_code source_file ~module_state proc_descs (procdecl : Textual.Proc
     else Hashtbl.create (module Int)
   in
   let proc_state =
-    ProcState.init ~qualified_name:procdecl.qualified_name ~sourcefile:source_file ~loc
-      ~formals:formals_map ~module_state ~inferred_types ~nullability_hint_msg_sends
+    ProcState.init ~qualified_name:procdecl.qualified_name ~sourcefile:sourcefile_for_proc_state
+      ~loc ~formals:formals_map ~module_state ~inferred_types ~nullability_hint_msg_sends
   in
   let ret_typ, nodes = if should_translate then func_to_nodes ~proc_state func else (None, []) in
   let result_type =
@@ -1612,9 +1645,10 @@ let update_function_signatures lang class_method_index method_class_index ~mangl
   List.map functions ~f:(update_proc_decl offset_attributes)
 
 
-let translate_llair_functions source_file ~(module_state : ModuleState.t) =
+let translate_llair_functions ~mode ~sourcefile_for_proc_state ~(module_state : ModuleState.t) =
   let ModuleState.{proc_decls; functions; _} = module_state in
-  List.fold2_exn proc_decls functions ~init:[] ~f:(translate_code source_file ~module_state)
+  List.fold2_exn proc_decls functions ~init:[]
+    ~f:(translate_code ~mode ~sourcefile_for_proc_state ~module_state)
 
 
 let populate_objc_method_index proc_decls =
@@ -1683,7 +1717,10 @@ let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =
         (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
       globals_map ([], [])
   in
-  let procs = translate_llair_functions source_file_ ~module_state in
+  let procs =
+    translate_llair_functions ~mode:(User_pass source_file_) ~sourcefile_for_proc_state:source_file_
+      ~module_state
+  in
   let structs =
     Textual.TypeName.Map.bindings struct_map
     |> List.map ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)
@@ -1692,3 +1729,43 @@ let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =
   let attrs = [Textual.Attr.mk_source_language lang] in
   let sourcefile = Textual.SourceFile.create source_file in
   Textual.Module.{attrs; decls; sourcefile}
+
+
+(* Translate just the compiler-generated procedures (Swift partial-apply thunks,
+   autoclosure bodies, async continuations, overlay initializers, ObjC bridging
+   thunks, witness-table accessors) into a canonical Textual module attributed to
+   [SourceFile.compiler_generated ~bitcode_id]. Called once per capture run, outside
+   the per-source-file loop. Returns [None] when there are no compiler-generated
+   procs to translate (so callers can skip downstream verification / SIL conversion).
+   Struct and global declarations are emitted alongside the procs so SIL verification
+   sees every referenced name; the same decls also appear in the per-source-file
+   modules but last-write-wins on the global tenv makes the duplication harmless. *)
+let translate_compiler_generated ~bitcode_id ~(module_state : ModuleState.t) :
+    Textual.Module.t option =
+  let ModuleState.{struct_map; globals_map; lang} = module_state in
+  let sourcefile_for_proc_state = SourceFile.compiler_generated ~bitcode_id in
+  let procs =
+    translate_llair_functions ~mode:Compiler_generated_pass ~sourcefile_for_proc_state ~module_state
+  in
+  let has_any_proc = List.exists procs ~f:(function Textual.Module.Proc _ -> true | _ -> false) in
+  if not has_any_proc then None
+  else
+    let globals, proc_descs =
+      Textual.VarName.Map.fold
+        (fun _ global (globals, proc_descs) ->
+          let global, proc_desc_opt =
+            Globals.to_textual_global ~f_to_textual_loc:(to_textual_loc ?proc_state:None)
+              ~f_to_textual_exp:(fun ~proc_state loc exp -> to_textual_exp ~proc_state loc exp)
+              ~module_state sourcefile_for_proc_state global
+          in
+          (Textual.Module.Global global :: globals, Option.to_list proc_desc_opt @ proc_descs) )
+        globals_map ([], [])
+    in
+    let structs =
+      Textual.TypeName.Map.bindings struct_map
+      |> List.map ~f:(fun (_, struct_) -> Textual.Module.Struct struct_)
+    in
+    let decls = procs @ proc_descs @ globals @ structs in
+    let attrs = [Textual.Attr.mk_source_language lang] in
+    let sourcefile = Textual.SourceFile.create (SourceFile.to_string sourcefile_for_proc_state) in
+    Some Textual.Module.{attrs; decls; sourcefile}

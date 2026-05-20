@@ -52,148 +52,27 @@ declare $s5Hello9MyTrackerCMa(int) : *__infer_swift_type<ptr_elt>
 
 declare .plain_name = "init" $s5Hello9MyTrackerCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,MyTracker>
 
-define .plain_name = "init" $s5Hello9MyTrackerCACycfc(self: *__infer_swift_type<,MyTracker>) : *__infer_swift_type<ptr_elt> {
-  local var4: *__infer_swift_type<objc_super>
-  #: @[7:0]
-      n1 = load &self @[7:0]
-      n4 = $builtins.llvm_init_tuple() @[7:0]
-      store n4.__infer_swift_type<swift::metadata_response>.field_0 <- __sil_swift_alloc(<__infer_swift_type<T5Hello9MyTrackerC,MyTracker>>) @[7:0]
-      n3 = n4 @[7:0]
-      jmp 5::ret @[7:0]
+declare .plain_name = "init" $s5Hello9MyTrackerCACycfc(*__infer_swift_type<,MyTracker>) : *__infer_swift_type<,MyTracker>
+
+declare .plain_name = "init" $s5Hello9MyTrackerCACycfC(*__infer_swift_type<,$s5Hello9MyTrackerCXMTD>) : *__infer_swift_type<,MyTracker>
+
+define .plain_name = "reportStatus" $s5Hello9MyTrackerC12reportStatusSiyFTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : int {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n2 = load &swift_isaMask @[0:0]
+      n3 = &var1 @[0:0]
+      n4 = load &var1 @[0:0]
+      n5 = __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(n4) @[0:0]
+      jmp 8::ret @[0:0]
       
-  #5::ret: @[7:0]
-      n6:*__infer_swift_type<objc_super> = load &var4 @[7:0]
-      store n6.__infer_swift_type<objc_super>.field_0 <- n1 @[7:0]
-      n9:*__infer_swift_type<objc_super> = load &var4 @[7:0]
-      n8 = load n3.__infer_swift_type<swift::metadata_response>.field_0 @[7:0]
-      store n9.__infer_swift_type<objc_super>.field_1 <- n8 @[7:0]
-      n10 = load &L_selector(init) @[7:0]
-      n11 = load &var4 @[7:0]
-      n13 = $builtins.objc_msgSendSuper2(n11, n10) @[7:0]
-      n14 = n13 @[7:0]
-      store &self <- n13 @[7:0]
-      n16 = load &self @[7:0]
-      ret n13 @[7:0]
+  #8::ret: @[0:0]
+      ret n5 @[0:0]
       
 } @?
 
-define .plain_name = "init" $s5Hello9MyTrackerCACycfC(var1: *__infer_swift_type<,$s5Hello9MyTrackerCXMTD>) : *__infer_swift_type<ptr_elt> {
-  #: @[7:0]
-      n1 = load &var1 @[7:0]
-      n2 = __sil_objc_alloc(<NSObject>, n1) @[7:0]
-      jmp 2::ret @[7:0]
-      
-  #2::ret: @[7:0]
-      n3 = load &L_selector(init) @[7:0]
-      n6 = n2.init() @[7:0]
-      jmp 4::ret @[7:0]
-      
-  #4::ret: @[7:0]
-      ret n6 @[7:0]
-      
-} @?
+declare .plain_name = "reportStatus" .method_offset = "10" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(*__infer_swift_type<,MyTracker>) : int
 
-declare .plain_name = "reportStatus" $s5Hello9MyTrackerC12reportStatusSiyFTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : int
-
-define .plain_name = "reportStatus" .method_offset = "10" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(self: *__infer_swift_type<,MyTracker>) : int {
-  #: @[9:9]
-      ret 5 @[9:9]
-      
-} @?
-
-define .plain_name = "testDynamicPropagation" $s5Hello22testDynamicPropagation3objSiyXl_tF(obj: *__infer_swift_type<,$syXlD>) : int {
-  local var8: *__infer_swift_type<TSi>, var7: *__infer_swift_type<AnyObject>, sel: *__infer_swift_type<ptr_elt>, result: *__infer_swift_type<ptr_elt>, methodName: *__infer_swift_type<TSS>
-  #: @[14:22]
-      n4 = $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC("reportStatus", 12, 1) @[14:22]
-      jmp 8::ret @[14:22]
-      
-  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[13:0]
-      unreachable @[13:0]
-      
-  #16::ret: @[15:36]
-      n19 = load n6 @[15:36]
-      n20 = load n8 @[15:36]
-      n21 = $sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF(n19, n20) @[15:36]
-      jmp 17::ret @[15:36]
-      
-  #17::ret: @[15:15]
-      n23 = NSSelectorFromString(n21) @[15:15]
-      jmp 18::ret @[15:15]
-      
-  #18::ret: @[13:0]
-      store &sel <- n23 @[13:0]
-      n25 = load &obj @[13:0]
-      n26 = swift_getObjectType(n25) @[13:0]
-      jmp 19::ret @[13:0]
-      
-  #19::ret: @[13:0]
-      n27 = load &obj @[13:0]
-      n28 = n27 @[13:0]
-      jmp 20::ret @[13:0]
-      
-  #20::ret: @[16:22]
-      n29 = load &L_selector(performSelector:) @[16:22]
-      n30 = load &obj @[16:22]
-      n35 = n30.$s5Hello9MyTrackerC12reportStatusSiyFTo(null) @[16:22]
-      jmp 24::ret @[16:22]
-      
-  #24::ret: @[16:22]
-      n36 = &obj @[16:22]
-      if __sil_eq(__sil_cast(<int>, n35), 0) then jmp 30 else jmp 28::jmp::31 @[13:0]
-      
-  #28::jmp::31: @[13:0]
-      n42 = __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n35)) @[13:0]
-      jmp 31 @[13:0]
-      
-  #30: @[13:0]
-      _ = __sil_assert_fail(null) @[13:0]
-      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[13:0]
-      
-  #31: @[16:35]
-      n45 = n42 @[16:35]
-      jmp 33::ret @[16:35]
-      
-  #33::ret: @[13:0]
-      store &result <- n42 @[13:0]
-      n48 = n42 @[17:12]
-      jmp 34::ret @[17:12]
-      
-  #34::ret: @[17:19]
-      n50:*__infer_swift_type<AnyObject> = load &var7 @[17:19]
-      store n50.__infer_swift_type<AnyObject>.field_0 <- n42 @[17:19]
-      n53:*__infer_swift_type<swift::full_existential_type> = load &$syXlN @[17:19]
-      n51 = load &var8 @[17:19]
-      n52 = load &var7 @[17:19]
-      n54 = load n53.__infer_swift_type<swift::full_existential_type>.field_1 @[17:19]
-      n55 = load &$sSiN @[17:19]
-      n57 = 1 @[17:19]
-      n58 = load n52.__infer_swift_type<AnyObject>.field_0 @[17:19]
-      store n51.__infer_swift_type<TSi>.field_0 <- n58 @[17:19]
-      jmp 36::ret @[17:19]
-      
-  #36::ret: @[17:19]
-      n60:*__infer_swift_type<TSi> = load &var8 @[17:19]
-      n59 = load n60.__infer_swift_type<TSi>.field_0 @[17:19]
-      ret n59 @[17:5]
-      
-  #8::ret: @[14:22]
-      n6 = n4.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 @[14:22]
-      n8 = n4.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 @[14:22]
-      n9:*__infer_swift_type<TSS> = load &methodName @[13:0]
-      n10:*__infer_swift_type<Ts11_StringGutsV> = load n9.__infer_swift_type<TSS>.field_0 @[13:0]
-      n11 = n10.__infer_swift_type<Ts11_StringGutsV>.field_0 @[13:0]
-      n13:*__infer_swift_type<Ts13_StringObjectV> = load n11 @[13:0]
-      n14:*__infer_swift_type<Ts6UInt64V,UInt64> = load n13.__infer_swift_type<Ts13_StringObjectV>.field_0 @[13:0]
-      n12 = load n6 @[13:0]
-      store n14.__infer_swift_type<Ts6UInt64V,UInt64>.field_0 <- n12 @[13:0]
-      n16:*__infer_swift_type<Ts13_StringObjectV> = load n11 @[13:0]
-      n15 = load n8 @[13:0]
-      store n16.__infer_swift_type<Ts13_StringObjectV>.field_1 <- n15 @[13:0]
-      n17 = load n8 @[15:36]
-      n18 = n17 @[15:36]
-      jmp 16::ret @[15:36]
-      
-} @?
+declare .plain_name = "testDynamicPropagation" $s5Hello22testDynamicPropagation3objSiyXl_tF(*__infer_swift_type<,$syXlD>) : int
 
 global symbolic _____ 5Hello9MyTrackerC: *__infer_tuple_class<int,int,int>
 

@@ -101,6 +101,80 @@ let count_undefined_funcs (llair_program : Llair.program) =
       if Llair.Func.is_undefined func then acc + 1 else acc )
 
 
+(* Translate and capture the compiler-generated Textual module containing all
+   synthetic thunks (Swift partial-apply / autoclosure body / async continuation /
+   overlay initializer / ObjC bridging / witness-table accessor) emitted for a
+   single bitcode. Called once per capture batch so each such procedure is
+   translated under a single canonical sourcefile per bitcode (in production: one
+   per target) instead of being re-translated once per user .swift / .c file. *)
+let capture_compiler_generated ~bitcode_id ~lang module_state =
+  match Llair2Textual.translate_compiler_generated ~bitcode_id ~module_state with
+  | None ->
+      ()
+  | Some textual -> (
+      stats.files_total <- stats.files_total + 1 ;
+      let open IResult.Let_syntax in
+      let textual_source_file =
+        Textual.SourceFile.create (SourceFile.to_string (SourceFile.compiler_generated ~bitcode_id))
+      in
+      let result =
+        let error_state = Error.no_errors in
+        if should_dump_textual () then (
+          (* Dump alongside the per-source [.sil] files so frontend tests can diff
+             the compiler-generated procs too. Filename derived from [bitcode_id] +
+             a [.compiler-generated] suffix so it can't collide with any
+             per-source dump. Reset [textual_version] so the dump lands at
+             [.sil] / [.test.sil] rather than carrying a [.vN.] suffix inherited
+             from the last source-file's debug dumps. *)
+          textual_version := 0 ;
+          dump_textual_file (bitcode_id ^ ".compiler-generated") textual ) ;
+        let* verified_textual, error_state =
+          let f = Error.add_verification_errors error_state textual_source_file in
+          match TextualVerification.verify_keep_going textual with
+          | Ok (textual, errors) ->
+              Ok (textual, f errors)
+          | Error errors ->
+              Error (f errors)
+        in
+        let* (transformed_textual, decls), error_state =
+          let f = Error.add_transformation_errors error_state textual_source_file in
+          match TextualTransform.run lang verified_textual with
+          | Ok result ->
+              Ok (result, error_state)
+          | Error errors ->
+              Error (f errors)
+        in
+        let* (cfg, tenv), error_state =
+          let f = Error.add_transformation_errors error_state textual_source_file in
+          match TextualSil.module_to_sil lang transformed_textual decls with
+          | Ok (cfg, tenv) ->
+              Ok ((cfg, tenv), error_state)
+          | Error errors ->
+              Error (f errors)
+        in
+        if Textual.Lang.is_swift lang then Cfg.iter_sorted cfg ~f:CallReturnNullChecked.process ;
+        let sil = {TextualParser.TextualFile.sourcefile= textual_source_file; cfg; tenv} in
+        let use_global_tenv = if Textual.Lang.is_swift lang then true else false in
+        TextualParser.TextualFile.capture ~textual_module:transformed_textual ~use_global_tenv sil ;
+        ( if use_global_tenv then
+            let global_tenv =
+              Tenv.Global.load ()
+              |> Option.value_or_thunk ~default:(fun () ->
+                     let tenv = Tenv.create () in
+                     Tenv.Global.set (Some tenv) ;
+                     tenv )
+            in
+            Tenv.merge ~src:tenv ~dst:global_tenv ) ;
+        stats.files_captured <- stats.files_captured + 1 ;
+        Ok error_state
+      in
+      match result with
+      | Ok warnings ->
+          Error.format_error warnings
+      | Error err ->
+          Error.format_error err )
+
+
 let capture_llair source_file module_state =
   stats.files_total <- stats.files_total + 1 ;
   let open IResult.Let_syntax in
@@ -215,6 +289,15 @@ let log_stats () =
   stats.funcs_undefined <- 0
 
 
+(* Identifier for the bitcode being captured: stable per-capture-invocation, used as
+   the prefix on the compiler-generated sourcefile sentinel and on the dumped
+   [<id>.compiler-generated.sil] filename. We don't have the bitcode file path
+   (piped in production), so derive from the first source — in tests each .swift
+   compiles to its own bitcode and the source name is the natural id; in
+   production each target compiles to one bitcode and the first source is at
+   least a stable per-target string. *)
+let bitcode_id_of_sources sources = List.hd_exn sources
+
 let capture ~sources llvm_bitcode_in =
   let lang = language_of_source_file (List.hd_exn sources) in
   let llvm_program = In_channel.input_all llvm_bitcode_in in
@@ -226,6 +309,7 @@ let capture ~sources llvm_bitcode_in =
       if Config.dump_llair then dump_llair llair_program source_file ;
       if Config.dump_llair_text then dump_llair_text llair_program source_file ;
       capture_llair source_file module_state ) ;
+  capture_compiler_generated ~bitcode_id:(bitcode_id_of_sources sources) ~lang module_state ;
   log_stats ()
 
 
@@ -236,5 +320,6 @@ let capture_llair ~source_file ~llair_file =
       stats.funcs_undefined <- stats.funcs_undefined + count_undefined_funcs llair_program ;
       let lang = language_of_source_file source_file in
       let module_state = Llair2Textual.init_module_state llair_program lang in
-      capture_llair source_file module_state ) ;
+      capture_llair source_file module_state ;
+      capture_compiler_generated ~bitcode_id:source_file ~lang module_state ) ;
   log_stats ()
