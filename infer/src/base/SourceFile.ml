@@ -36,6 +36,8 @@ module Hash = Stdlib.Hashtbl.Make (T)
 module HashSet = HashSet.Make (T)
 module Cache = Concurrent.MakeCache (T)
 
+let compiler_generated_suffix = ":compiler-generated"
+
 let realpath_if_exists path = try Utils.realpath path with Unix.Unix_error _ -> path
 
 let project_root_real = realpath_if_exists Config.project_root
@@ -148,6 +150,8 @@ let recreate_hashed_buck_out_path_rel rel_path =
 
 let to_string ?(force_relative = false) fname =
   match fname with
+  | RelativeProjectRoot path when String.is_suffix path ~suffix:compiler_generated_suffix ->
+      path
   | Invalid {ml_source_file} ->
       "DUMMY from " ^ ml_source_file
   | RelativeProjectRootAndWorkspace {workspace_rel_root= foreign_rel_project_root; rel_path} ->
@@ -226,6 +230,15 @@ let to_rel_path fname =
 let invalid ml_source_file = Invalid {ml_source_file}
 
 let is_invalid = function Invalid _ -> true | _ -> false
+
+let compiler_generated ~bitcode_id = RelativeProjectRoot (bitcode_id ^ compiler_generated_suffix)
+
+let is_compiler_generated = function
+  | RelativeProjectRoot path ->
+      String.is_suffix path ~suffix:compiler_generated_suffix
+  | _ ->
+      false
+
 
 let is_under_project_root = function
   | Invalid {ml_source_file} ->

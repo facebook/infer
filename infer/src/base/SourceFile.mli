@@ -25,6 +25,16 @@ module Cache : Concurrent.CacheS with type key = t
 val is_invalid : t -> bool
 (** Is the source file the invalid source file? *)
 
+val compiler_generated : bitcode_id:string -> t
+(** Sentinel source file for compiler-generated procedures whose LLVM debug info has no real source
+    file (e.g. Swift partial-apply thunks, autoclosure bodies, ObjC bridging thunks, overlay
+    initializers, async continuation thunks, witness-table accessors). One sentinel per bitcode file
+    — in production each target has its own bitcode and therefore its own canonical
+    compiler-generated module. Renders as [<bitcode_id>:compiler-generated]. *)
+
+val is_compiler_generated : t -> bool
+(** True iff the source file is a [compiler_generated] sentinel (any bitcode id). *)
+
 val read_config_changed_files : unit -> Set.t option
 (** return the list of changed files as read from Config.changed_files_index. NOTE: it may include
     extra source_files if --changed-files-index contains paths to header files. *)
