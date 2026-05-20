@@ -76,7 +76,23 @@ declare __swift_assign_boxed_opaque_existential_1(*__infer_swift_type<ptr_elt>, 
 
 declare $syXlSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() : *__infer_swift_type<,String>
+define $ss6assert__4file4lineySbyXK_SSyXKs12StaticStringVSutFfA0_SSycfu_() : *__infer_tuple_class<int,*__infer_swift_type<ptr_elt>> {
+  local var2: *__infer_swift_type<ptr_elt>
+  #: @[0:0]
+      store &var2 <- -2305843009213693952 @[0:0]
+      n2 = load &var2 @[0:0]
+      n4 = n2 @[0:0]
+      jmp 3::ret @[0:0]
+      
+  #3::ret: @[0:0]
+      n5 = $builtins.llvm_nondet() @[0:0]
+      n6 = $builtins.llvm_init_tuple() @[0:0]
+      store n6.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- 0 @[0:0]
+      store n6.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n5 @[0:0]
+      store n6.__infer_tuple_class<int,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n2 @[0:0]
+      ret n6 @[0:0]
+      
+} @?
 
 declare $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_SSAHSus6UInt32VtF(int, int, int, int, *__infer_swift_type<ptr_elt>, int, int, int, int, int) : *__infer_swift_type<ptr_elt>
 

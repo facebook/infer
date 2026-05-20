@@ -47,7 +47,15 @@ let read_and_reset_frontend_stats () =
   s
 
 
-let is_closure lang s = Textual.Lang.is_swift lang && String.is_substring ~substring:"fU" s
+(* Swift closure bodies. Mangled with `fU<n>_` for explicit closures and
+   `fu<n>_` for implicit/autoclosures (e.g. the body Swift synthesises around
+   `Task(operation: self.runAsync)`). Both have empty / `<compiler-generated>`
+   DI but their bodies must be translated for retain-cycle analysis to see
+   captured-self stores. *)
+let is_closure lang s =
+  Textual.Lang.is_swift lang
+  && (String.is_substring ~substring:"fU" s || String.is_substring ~substring:"fu" s)
+
 
 let is_init_in_swift_overlay mangled_name =
   String.is_prefix mangled_name ~prefix:"$sSo"
@@ -77,6 +85,34 @@ let is_async_continuation_thunk mangled_name =
     after_digits >= 1
     && (Char.equal mangled_name.[after_digits] 'Y' || Char.equal mangled_name.[after_digits] 'Q')
     && Char.equal mangled_name.[after_digits - 1] 'T'
+
+
+(* Swift partial-apply forwarder thunks. Emitted whenever a method or closure
+   reference is bound to its arguments — e.g. `Task(operation: self.runAsync)`,
+   `someCallback = self.method`. The thunk captures `self` and forwards the call,
+   which is exactly the shape we need for retain-cycle analysis. The thunk has
+   `<compiler-generated>` DI so it fails the source-file equality check.
+
+   Mangled suffix is `TA`, optionally followed by an async-continuation suffix
+   `T[YQ]<n>_` for partial applies of async functions. *)
+let is_partial_apply_thunk mangled_name =
+  let len = String.length mangled_name in
+  let ends_with_TA i =
+    i >= 1 && Char.equal mangled_name.[i] 'A' && Char.equal mangled_name.[i - 1] 'T'
+  in
+  if len < 2 then false
+  else if ends_with_TA (len - 1) then true
+  else if len >= 5 && Char.equal mangled_name.[len - 1] '_' then
+    (* Check for `TA` followed by `T[YQ]<n>_` continuation suffix *)
+    let rec digits_end i =
+      if i < 0 then -1 else match mangled_name.[i] with '0' .. '9' -> digits_end (i - 1) | _ -> i
+    in
+    let after_digits = digits_end (len - 2) in
+    after_digits >= 3
+    && (Char.equal mangled_name.[after_digits] 'Y' || Char.equal mangled_name.[after_digits] 'Q')
+    && Char.equal mangled_name.[after_digits - 1] 'T'
+    && ends_with_TA (after_digits - 2)
+  else false
 
 
 let to_proc_name_closure_name s =
@@ -1395,6 +1431,7 @@ let should_translate plain_name mangled_name lang method_class_index source_file
   || is_init_in_swift_overlay mangled_name
   || is_objc_thunk_not_init mangled_name
   || (Textual.Lang.is_swift lang && is_async_continuation_thunk mangled_name)
+  || (Textual.Lang.is_swift lang && is_partial_apply_thunk mangled_name)
   || Option.exists
        ~f:(fun name -> String.is_suffix ~suffix:Globals.witness_protocol_suffix name)
        typ_name
