@@ -121,6 +121,8 @@ let blocklisted_callee_patterns =
         ; "^UI[A-Z].*\\."
         ; "^__builtin_"
         ; "^__inline_"
+        ; "^dispatch_"
+        ; "^_dispatch_"
         ; "^__call_objc_block$"
         ; "^__infer_skip$"
         ; "^_os_log_internal$"
