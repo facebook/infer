@@ -276,9 +276,21 @@ let check_retain_cycles tenv location addresses orig_astate =
                     seen
                 in
                 let location =
-                  Option.value_map trace
-                    ~f:(fun trace -> Trace.get_outer_location trace)
-                    ~default:location
+                  (* The trace's outer location points at the writing instruction. When
+                     the write lives in a compiler-generated thunk (Swift partial-apply
+                     / autoclosure body / async continuation / ObjC bridging thunk /
+                     overlay init / witness-table accessor), that location's file is a
+                     [SourceFile.compiler_generated] sentinel (one per bitcode) — not
+                     useful to the product engineer reading the report. Fall back to
+                     the cycle's detection site (the analyzed procedure's store / call
+                     location) so the report lands in a real user file. *)
+                  match trace with
+                  | None ->
+                      location
+                  | Some trace ->
+                      let trace_loc = Trace.get_outer_location trace in
+                      if SourceFile.is_compiler_generated trace_loc.Location.file then location
+                      else trace_loc
                 in
                 let diagnostic = Diagnostic.RetainCycle {values; location; unknown_access_type} in
                 Recoverable (astate, [ReportableError {astate; diagnostic}])
