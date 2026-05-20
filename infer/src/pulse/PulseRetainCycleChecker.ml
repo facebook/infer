@@ -127,8 +127,37 @@ let get_expr_with_fallback astate addr =
     | _ ->
         None
   in
+  (* Names that the LLVM/Llair frontend assigns to compiler-introduced SSA
+     temporaries: bare [varN], [__TEMP N], [getelementptr_offset_N], and
+     fields prefixed [__infer_tuple_field_]. These leak into retain-cycle
+     traces as e.g. [var21->field_1] or [swift_allocObject().__infer_tuple_field_3],
+     which are unactionable to a product engineer reading the report. Treat
+     such decompiled values as effectively unknown so the type-recovery
+     fallback below runs and produces a more informative label like
+     [object of type Foo] or [Swift closure]. *)
+  let is_synthetic_temp_pvar pvar =
+    let name = Mangled.to_string (Pvar.get_name pvar) in
+    String.is_prefix name ~prefix:"var"
+    && String.length name > 3
+    && String.for_all (String.sub name ~pos:3 ~len:(String.length name - 3)) ~f:Char.is_digit
+    || String.is_prefix name ~prefix:"__TEMP"
+    || String.is_prefix name ~prefix:"getelementptr_offset_"
+  in
+  let is_synthetic_decompiled value =
+    match (value : DecompilerExpr.t) with
+    | SourceExpr ((DecompilerExpr.PVar pvar, accesses), _) ->
+        is_synthetic_temp_pvar pvar
+        || List.exists accesses ~f:(function
+             | DecompilerExpr.FieldAccess fn ->
+                 String.is_prefix (Fieldname.get_field_name fn) ~prefix:"__infer_tuple_field_"
+             | _ ->
+                 false )
+    | _ ->
+        false
+  in
   let value = Decompiler.find addr astate in
-  if DecompilerExpr.is_unknown value then (* Execute the safe bounded search *)
+  if DecompilerExpr.is_unknown value || is_synthetic_decompiled value then
+    (* Execute the safe bounded search *)
     let type_name_opt = find_type_in_graph 5 addr in
     (* Format the type cleanly, catching closures explicitly *)
     let string_name =
