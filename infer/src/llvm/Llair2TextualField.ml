@@ -228,23 +228,50 @@ let extract_class_and_field_from_wvd mangled =
           else
             let len_str = String.sub mangled ~pos ~len:(end_digits - pos) in
             match int_of_string_opt len_str with
-            | Some str_len ->
+            | Some str_len -> (
                 let str_end = end_digits + str_len in
                 if str_end >= len then None
                 else
                   let next_char = mangled.[str_end] in
-                  if Char.equal next_char 'C' || Char.equal next_char 'V' then
-                    let class_part_len = str_end - 2 + 1 in
-                    let class_part = String.sub mangled ~pos:2 ~len:class_part_len in
-                    let class_name = "T" ^ class_part in
-                    let prop_pos = str_end + 1 in
-                    let end_prop_digits = consume_digits prop_pos in
-                    if Int.equal prop_pos end_prop_digits then None
-                    else
-                      let prop_len_str =
-                        String.sub mangled ~pos:prop_pos ~len:(end_prop_digits - prop_pos)
-                      in
-                      (* A leading '0' on a multi-digit length prefix is Swift's marker for a
+                  (* When the length-prefixed name is followed by a Swift substitution
+                     back-reference (typically `A<idx>`, where `<idx>` is a single base-36
+                     char) and *then* the class/struct marker, treat the whole
+                     `<length-prefix><name><A><idx><C/V>` chunk as the class designator
+                     so the property segment that follows is parsed correctly. Without
+                     this, the recursive `parse` step walks past the marker and the parser
+                     ends up returning `unknown_field`.
+
+                     Concretely covers the parent-namespace back-reference shape
+                     `<class>AAC<property>...Wvd` exercised by
+                     [wvd_substitution_parent_namespace]. The two-char skip (`A` + one
+                     index char) is the common production shape; the sibling
+                     [wvd_substitution_nested] pattern (where the substitution is part of
+                     a *nested-type* expansion) is still handled by the existing
+                     non-digit fallthrough in `parse pos+1` and does not need this
+                     skip. *)
+                  let class_marker_pos =
+                    if Char.equal next_char 'C' || Char.equal next_char 'V' then Some str_end
+                    else if
+                      Char.equal next_char 'A'
+                      && str_end + 2 < len
+                      && ( Char.equal mangled.[str_end + 2] 'C'
+                         || Char.equal mangled.[str_end + 2] 'V' )
+                    then Some (str_end + 2)
+                    else None
+                  in
+                  match class_marker_pos with
+                  | Some cv_pos -> (
+                      let class_part_len = cv_pos - 2 + 1 in
+                      let class_part = String.sub mangled ~pos:2 ~len:class_part_len in
+                      let class_name = "T" ^ class_part in
+                      let prop_pos = cv_pos + 1 in
+                      let end_prop_digits = consume_digits prop_pos in
+                      if Int.equal prop_pos end_prop_digits then None
+                      else
+                        let prop_len_str =
+                          String.sub mangled ~pos:prop_pos ~len:(end_prop_digits - prop_pos)
+                        in
+                        (* A leading '0' on a multi-digit length prefix is Swift's marker for a
                          word-substitution-compressed identifier (e.g. "08reactionC4View" encodes
                          "reactionBubbleView" with "Bubble" back-referenced from an earlier name).
                          We don't expand substitutions, so reading the literal `0<n>` as length=n
@@ -258,45 +285,50 @@ let extract_class_and_field_from_wvd mangled =
                          literal portion of the property name, e.g. "reaction" or "viewScreenshot"),
                          prepend it as a human-readable hint so the field is recognisable in
                          textual dumps and Pulse trace messages. *)
-                      let is_substitution_compressed =
-                        String.length prop_len_str > 1 && Char.equal (String.get prop_len_str 0) '0'
-                      in
-                      if is_substitution_compressed then
-                        let suffix = String.sub mangled ~pos:prop_pos ~len:(len - prop_pos) in
-                        let sanitized =
-                          String.map suffix ~f:(fun c ->
-                              if Char.is_alphanum c || Char.equal c '_' then c else '_' )
+                        let is_substitution_compressed =
+                          String.length prop_len_str > 1
+                          && Char.equal (String.get prop_len_str 0) '0'
                         in
-                        let hash_tag =
-                          String.sub (Utils.string_crc_hex32 sanitized) ~pos:0 ~len:8
-                        in
-                        (* The leading [0<n>] block names the literal-prefix portion of the
+                        if is_substitution_compressed then
+                          let suffix = String.sub mangled ~pos:prop_pos ~len:(len - prop_pos) in
+                          let sanitized =
+                            String.map suffix ~f:(fun c ->
+                                if Char.is_alphanum c || Char.equal c '_' then c else '_' )
+                          in
+                          let hash_tag =
+                            String.sub (Utils.string_crc_hex32 sanitized) ~pos:0 ~len:8
+                          in
+                          (* The leading [0<n>] block names the literal-prefix portion of the
                            property name (Swift back-references the rest from the substitution
                            table). [int_of_string_opt] silently drops the leading 0, so [prop_len]
                            is exactly the length of that literal prefix. *)
-                        let literal_hint =
+                          let literal_hint =
+                            match int_of_string_opt prop_len_str with
+                            | Some prop_len when prop_len > 0 && end_prop_digits + prop_len <= len
+                              ->
+                                Some (String.sub mangled ~pos:end_prop_digits ~len:prop_len)
+                            | _ ->
+                                None
+                          in
+                          let field_name =
+                            match literal_hint with
+                            | Some hint ->
+                                "field_" ^ hint ^ "_" ^ hash_tag
+                            | None ->
+                                "field_" ^ hash_tag
+                          in
+                          Some (class_name, field_name)
+                        else
                           match int_of_string_opt prop_len_str with
-                          | Some prop_len when prop_len > 0 && end_prop_digits + prop_len <= len ->
-                              Some (String.sub mangled ~pos:end_prop_digits ~len:prop_len)
-                          | _ ->
-                              None
-                        in
-                        let field_name =
-                          match literal_hint with
-                          | Some hint ->
-                              "field_" ^ hint ^ "_" ^ hash_tag
+                          | Some prop_len ->
+                              let prop_name =
+                                String.sub mangled ~pos:end_prop_digits ~len:prop_len
+                              in
+                              Some (class_name, prop_name)
                           | None ->
-                              "field_" ^ hash_tag
-                        in
-                        Some (class_name, field_name)
-                      else
-                        match int_of_string_opt prop_len_str with
-                        | Some prop_len ->
-                            let prop_name = String.sub mangled ~pos:end_prop_digits ~len:prop_len in
-                            Some (class_name, prop_name)
-                        | None ->
-                            None
-                  else parse str_end
+                              None )
+                  | None ->
+                      parse str_end )
             | None ->
                 None
       in
