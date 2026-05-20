@@ -148,13 +148,16 @@ let blocklisted_callee_patterns =
 
 
 let is_blocklisted_callee callee =
+  let name = qualified_name callee in
   let lang = Procname.get_language callee in
-  match List.Assoc.find blocklisted_callee_patterns ~equal:Language.equal lang with
-  | Some patterns ->
-      let name = qualified_name callee in
-      List.exists patterns ~f:(fun re -> Str.string_match re name 0)
-  | None ->
-      false
+  let hardcoded =
+    match List.Assoc.find blocklisted_callee_patterns ~equal:Language.equal lang with
+    | Some patterns ->
+        List.exists patterns ~f:(fun re -> Str.string_match re name 0)
+    | None ->
+        false
+  in
+  hardcoded || List.exists Config.config_gating_blocklist ~f:(fun re -> Str.string_match re name 0)
 
 
 (** Check whether a callee matches any of the configured config-gating method patterns. The callee

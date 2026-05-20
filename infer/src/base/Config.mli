@@ -228,6 +228,8 @@ val complete_capture_from : string option
 
 val compute_captured_context : bool
 
+val config_gating_blocklist : Str.regexp list
+
 val config_gating_method_patterns : Str.regexp list
 
 val config_gating_report_ungated : bool

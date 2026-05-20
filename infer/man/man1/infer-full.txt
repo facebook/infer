@@ -398,9 +398,26 @@ OPTIONS
            --no-config-gating)
            See also infer-analyze(1).
 
+       --config-gating-blocklist +regex
+           Blocklist a callee from config-gating reports. The pattern is
+           matched against ClassName.methodName (or just functionName for
+           plain functions). Can be specified multiple times.
+           See also infer-analyze(1).
+
+       --config-gating-method +regex
+           Register a method as a config read for the config-gating checker.
+           The pattern is matched against ClassName.methodName. Use
+           methodName alone to match any class.
+           See also infer-analyze(1).
+
        --config-gating-only
            Activates: Enable config-gating and disable all other checkers
            (Conversely: --no-config-gating-only)
+           See also infer-analyze(1).
+
+       --config-gating-report-ungated
+           Activates: Also report call sites that are NOT gated by any config
+           flag. (Conversely: --no-config-gating-report-ungated)
            See also infer-analyze(1).
 
        --config-impact-analysis
@@ -2754,17 +2771,11 @@ INTERNAL OPTIONS
            Deactivates: Compute context information for captured variables in
            Objective-C blocks (Conversely: --compute-captured-context)
 
-       --config-gating-method +regex
-           Register a method as a config read for the config-gating checker.
-           The pattern is matched against ClassName.methodName. Use
-           methodName alone to match any class.
+       --config-gating-blocklist-reset
+           Set --config-gating-blocklist to the empty list.
 
        --config-gating-method-reset
            Set --config-gating-method to the empty list.
-
-       --config-gating-report-ungated
-           Activates: Also report call sites that are NOT gated by any config
-           flag. (Conversely: --no-config-gating-report-ungated)
 
        --config-impact-config-field-patterns +regex
            Register known config fields that have a config value. The matched

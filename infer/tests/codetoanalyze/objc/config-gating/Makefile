@@ -14,7 +14,8 @@ INFER_OPTIONS = --config-gating-only --debug-exceptions \
   --config-gating-method 'Config\.isEnabled:' \
   --config-gating-method 'Config\.getValue:' \
   --config-gating-method 'Config\.featureEnabled' \
-  --config-gating-report-ungated
+  --config-gating-report-ungated \
+  --config-gating-blocklist 'thisShouldBeBlocklisted'
 INFERPRINT_OPTIONS = --issues-tests
 
 SOURCES = $(wildcard *.m)

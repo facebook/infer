@@ -48,9 +48,23 @@ OPTIONS
            gate the execution of each line of code. (Conversely:
            --no-config-gating)
 
+       --config-gating-blocklist +regex
+           Blocklist a callee from config-gating reports. The pattern is
+           matched against ClassName.methodName (or just functionName for
+           plain functions). Can be specified multiple times.
+
+       --config-gating-method +regex
+           Register a method as a config read for the config-gating checker.
+           The pattern is matched against ClassName.methodName. Use
+           methodName alone to match any class.
+
        --config-gating-only
            Activates: Enable config-gating and disable all other checkers
            (Conversely: --no-config-gating-only)
+
+       --config-gating-report-ungated
+           Activates: Also report call sites that are NOT gated by any config
+           flag. (Conversely: --no-config-gating-report-ungated)
 
        --config-impact-analysis
            Activates: config-impact-analysis checker: [EXPERIMENTAL] Collects

@@ -1184,14 +1184,24 @@ and compute_captured_context =
     "Compute context information for captured variables in Objective-C blocks"
 
 
+and config_gating_blocklist =
+  CLOpt.mk_string_list ~long:"config-gating-blocklist" ~meta:"regex"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
+    "Blocklist a callee from config-gating reports. The pattern is matched against \
+     $(b,ClassName.methodName) (or just $(b,functionName) for plain functions). Can be specified \
+     multiple times."
+
+
 and config_gating_method_patterns =
   CLOpt.mk_string_list ~long:"config-gating-method" ~meta:"regex"
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Register a method as a config read for the config-gating checker. The pattern is matched \
      against $(b,ClassName.methodName). Use $(b,methodName) alone to match any class."
 
 
 and config_gating_report_ungated =
   CLOpt.mk_bool ~long:"config-gating-report-ungated" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_generic)]
     "Also report call sites that are NOT gated by any config flag."
 
 
@@ -4174,6 +4184,8 @@ and compaction_if_heap_greater_equal_to_GB_multicore =
 and complete_capture_from = !complete_capture_from
 
 and compute_captured_context = !compute_captured_context
+
+and config_gating_blocklist = RevList.rev_map !config_gating_blocklist ~f:Str.regexp
 
 and config_gating_method_patterns = RevList.rev_map !config_gating_method_patterns ~f:Str.regexp
 

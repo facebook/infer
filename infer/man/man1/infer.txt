@@ -398,9 +398,26 @@ OPTIONS
            --no-config-gating)
            See also infer-analyze(1).
 
+       --config-gating-blocklist +regex
+           Blocklist a callee from config-gating reports. The pattern is
+           matched against ClassName.methodName (or just functionName for
+           plain functions). Can be specified multiple times.
+           See also infer-analyze(1).
+
+       --config-gating-method +regex
+           Register a method as a config read for the config-gating checker.
+           The pattern is matched against ClassName.methodName. Use
+           methodName alone to match any class.
+           See also infer-analyze(1).
+
        --config-gating-only
            Activates: Enable config-gating and disable all other checkers
            (Conversely: --no-config-gating-only)
+           See also infer-analyze(1).
+
+       --config-gating-report-ungated
+           Activates: Also report call sites that are NOT gated by any config
+           flag. (Conversely: --no-config-gating-report-ungated)
            See also infer-analyze(1).
 
        --config-impact-analysis

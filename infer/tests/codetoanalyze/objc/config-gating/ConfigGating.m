@@ -40,6 +40,8 @@ void doSomething(void) {}
 
 void doSomethingElse(void) {}
 
+void thisShouldBeBlocklisted(void) {}
+
 @interface ConfigGating : NSObject {
   Configs* configs;
 }
@@ -79,6 +81,11 @@ void doSomethingElse(void) {}
   [set addObject:@"item"];
   BOOL contains = [set containsObject:@"item"];
   (void)contains;
+}
+
+// Blocklisted via --config-gating-blocklist: should not be reported
+- (void)test_cli_blocklisted {
+  thisShouldBeBlocklisted();
 }
 
 // Not gated: doSomething is called unconditionally
