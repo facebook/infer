@@ -117,20 +117,10 @@ let qualified_name procname =
 let blocklisted_callee_patterns =
   [ ( Language.Clang
     , List.map ~f:Str.regexp
-        [ "^NSObject\\."
-        ; "^NSString\\."
-        ; "^NSMutableString\\."
-        ; "^NSArray\\."
-        ; "^NSMutableArray\\."
-        ; "^NSDictionary\\."
-        ; "^NSMutableDictionary\\."
-        ; "^NSNumber\\."
-        ; "^NSSet\\."
-        ; "^NSMutableSet\\."
-        ; "^NSOrderedSet\\."
-        ; "^NSMutableOrderedSet\\."
-        ; "^NSEnumerator\\."
+        [ "^NS[A-Z].*\\."
         ; "^UI[A-Z].*\\."
+        ; "^__builtin_"
+        ; "^__inline_"
         ; "^__call_objc_block$"
         ; "^__infer_skip$"
         ; "^_os_log_internal$"
