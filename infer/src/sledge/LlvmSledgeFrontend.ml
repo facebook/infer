@@ -534,7 +534,7 @@ let ends_with ~suffix s =
   && String.equal (String.sub s ~pos:(len_s - len_suffix) ~len:len_suffix) suffix
 
 
-let get_wvd_global op =
+let rec get_wvd_global op =
   match Llvm.classify_value op with
   | Llvm.ValueKind.Instruction _ -> (
     match Llvm.instr_opcode op with
@@ -546,6 +546,13 @@ let get_wvd_global op =
             if ends_with ~suffix:"Wvd" name then Some ptr else None
         | _ ->
             None )
+    | Llvm.Opcode.SExt | Llvm.Opcode.ZExt | Llvm.Opcode.Trunc | Llvm.Opcode.BitCast ->
+        (* swiftc typically loads a Wvd offset as i32 and sign- or zero-extends it to i64
+           before consuming it in the GEP. Peel through the integer cast (and bitcast) so
+           the Wvd load is still visible to the GEP-translation site; without this peel,
+           the GEP falls back to [Llair.Exp.nondet] and downstream Pulse loses the field's
+           heap edge entirely. *)
+        get_wvd_global (Llvm.operand op 0)
     | _ ->
         None )
   | _ ->

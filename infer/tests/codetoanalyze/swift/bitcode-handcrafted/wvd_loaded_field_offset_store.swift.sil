@@ -23,7 +23,7 @@ define $s4Test14ViewControllerC10navbarViewAA0c6NavbarF0CvgAGyXEfU_(self: *__inf
   #nav::ret: @[0:0]
       n9 = load &$s4Test10NavbarViewC8delegateAA0bC8Delegate_pSgvpWvd @[0:0]
       n10 = load &self @[0:0]
-      store $builtins.llvm_nondet() <- n10 @[0:0]
+      store n8.__infer_swift_type<T4Test10NavbarViewC,NavbarView>.delegate <- n10 @[0:0]
       ret n8 @[0:0]
       
 } @?

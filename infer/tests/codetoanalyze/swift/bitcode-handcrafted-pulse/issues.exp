@@ -1,0 +1,1 @@
+infer/tests/codetoanalyze/swift/bitcode-handcrafted-pulse/rc_wvd_loaded_field_offset.swift, setupBad, 3, RETAIN_CYCLE, no_bucket, ERROR, [assignment of self->inner part of the trace starts here,parameter `self` of setupBad,assigned,assignment of inner->delegate part of the trace starts here,parameter `inner` of setupBad,assigned,retain cycle here]
