@@ -6,6 +6,14 @@
 
 .source_language = "Swift" @?
 
+declare swift_unknownObjectWeakLoadStrong(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_unknownObjectWeakInit(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_unknownObjectWeakDestroy(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare swift_unknownObjectWeakAssign(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
 declare swift_unknownObjectRetain(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare swift_unknownObjectRelease(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
@@ -73,6 +81,8 @@ declare __swift_destroy_boxed_opaque_existential_1(*__infer_swift_type<ptr_elt>)
 declare __swift_coroFrameAllocStub(int, int) : *__infer_swift_type<ptr_elt>
 
 declare __swift_assign_boxed_opaque_existential_1(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $syXlSgXwWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare $syXlSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
@@ -262,6 +272,127 @@ declare .plain_name = "test_type_of_different_types_bad" $s5Hello32test_type_of_
 declare .plain_name = "test_value_nil3_good" $s5Hello20test_value_nil3_goodySiAA15ContentViewType_pSgF(*__infer_swift_type<,Optional>) : int
 
 declare .plain_name = "test_value_nil2_good" $s5Hello20test_value_nil2_goodSiyF() : int
+
+declare .plain_name = "read_weak_delegate" $s5Hello18read_weak_delegate1hyXlSgAA18WeakDelegateHolderC_tF(*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>) : *__infer_swift_type<,Optional>
+
+declare .plain_name = "deinit" $s5Hello18WeakDelegateHolderCfd(*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>) : *__infer_swift_type<,$sBoD>
+
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.$s5Hello18WeakDelegateHolderCfD(*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>) : void
+
+declare $s5Hello18WeakDelegateHolderCMa(int) : *__infer_swift_type<ptr_elt>
+
+declare .plain_name = "init" $s5Hello18WeakDelegateHolderCACycfc(*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>) : *__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>
+
+declare .plain_name = "init" .method_offset = "14" __infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.$s5Hello18WeakDelegateHolderCACycfC(*__infer_swift_type<,$s5Hello18WeakDelegateHolderCXMTD>) : *__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>
+
+define .plain_name = "delegate.set" .method_offset = "12" __infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.$s5Hello18WeakDelegateHolderC8delegateyXlSgvs(var1: int, var2: *__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>) : void {
+  local var4: *int
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n3 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n1) @[0:0]
+      jmp 5::ret @[0:0]
+      
+  #5::ret: @[0:0]
+      n4:*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder> = load &var2 @[0:0]
+      n5 = n4.__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.delegate @[0:0]
+      n8 = load &var1 @[0:0]
+      n6:*__infer_tuple_class<*__infer_swift_type<swift::weak>> = load n5 @[0:0]
+      n7 = load n6.__infer_tuple_class<*__infer_swift_type<swift::weak>>.__infer_tuple_field_0 @[0:0]
+      n10 = swift_unknownObjectWeakAssign(n7, __sil_cast(<*__infer_swift_type<ptr_elt>>, n8)) @[0:0]
+      jmp 9::ret @[0:0]
+      
+  #9::ret: @[0:0]
+      ret null @[0:0]
+      
+} @?
+
+declare $s5Hello18WeakDelegateHolderC8delegateyXlSgvpfi() : *__infer_swift_type<,Optional>
+
+define .plain_name = "delegate.get" .method_offset = "11" __infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.$s5Hello18WeakDelegateHolderC8delegateyXlSgvg(var1: *__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>) : *__infer_swift_type<,Optional> {
+  local var3: *int
+  #: @[0:0]
+      n1:*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder> = load &var1 @[0:0]
+      n2 = n1.__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.delegate @[0:0]
+      n3:*__infer_tuple_class<*__infer_swift_type<swift::weak>> = load n2 @[0:0]
+      n4 = load n3.__infer_tuple_class<*__infer_swift_type<swift::weak>>.__infer_tuple_field_0 @[0:0]
+      n5 = n4 @[0:0]
+      jmp 5::ret @[0:0]
+      
+  #5::ret: @[0:0]
+      ret __sil_cast(<int>, n5) @[0:0]
+      
+} @?
+
+define .plain_name = "delegate.modify" $s5Hello18WeakDelegateHolderC8delegateyXlSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
+  #: @[0:0]
+      n1 = load &var1 @[0:0]
+      n3 = n1.__infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame>.field_0 @[0:0]
+      n5 = n1.__infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame>.field_1 @[0:0]
+      if &var2 then jmp 15 else jmp 6 @[0:0]
+      
+  #13::ret: @[0:0]
+      jmp 27 @[0:0]
+      
+  #15: @[0:0]
+      n15 = load n1.__infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame>.field_2 @[0:0]
+      n17 = load n5 @[0:0]
+      n20 = __sil_cast(<*__infer_swift_type<ptr_elt>>, n17) @[0:0]
+      jmp 21::ret @[0:0]
+      
+  #21::ret: @[0:0]
+      n22:*__infer_tuple_class<*__infer_swift_type<swift::weak>> = load n15.__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.delegate @[0:0]
+      n23 = load n22.__infer_tuple_class<*__infer_swift_type<swift::weak>>.__infer_tuple_field_0 @[0:0]
+      n26 = swift_unknownObjectWeakAssign(n23, __sil_cast(<*__infer_swift_type<ptr_elt>>, n17)) @[0:0]
+      jmp 24::ret @[0:0]
+      
+  #24::ret: @[0:0]
+      n27 = load n5 @[0:0]
+      n28 = $syXlSgWOh(n27) @[0:0]
+      jmp 26::ret @[0:0]
+      
+  #26::ret: @[0:0]
+      jmp 27 @[0:0]
+      
+  #27: @[0:0]
+      ret null @[0:0]
+      
+  #6: @[0:0]
+      n6 = load n1.__infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame>.field_2 @[0:0]
+      n8 = load n5 @[0:0]
+      n10:*__infer_tuple_class<*__infer_swift_type<swift::weak>> = load n6.__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.delegate @[0:0]
+      n11 = load n10.__infer_tuple_class<*__infer_swift_type<swift::weak>>.__infer_tuple_field_0 @[0:0]
+      n14 = swift_unknownObjectWeakAssign(n11, __sil_cast(<*__infer_swift_type<ptr_elt>>, n8)) @[0:0]
+      jmp 13::ret @[0:0]
+      
+} @?
+
+define .plain_name = "delegate.modify" .method_offset = "13" __infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.$s5Hello18WeakDelegateHolderC8delegateyXlSgvM(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> {
+  #: @[0:0]
+      n3 = __swift_coroFrameAllocStub(40, 23114) @[0:0]
+      jmp 3::ret @[0:0]
+      
+  #3::ret: @[0:0]
+      store &var1 <- n3 @[0:0]
+      n6 = n3.__infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame>.field_0 @[0:0]
+      n8 = n3.__infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame>.field_1 @[0:0]
+      n9 = load &var2 @[0:0]
+      store n3.__infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame>.field_2 <- n9 @[0:0]
+      n11:*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder> = load &var2 @[0:0]
+      n12 = n11.__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>.delegate @[0:0]
+      n13:*__infer_tuple_class<*__infer_swift_type<swift::weak>> = load n12 @[0:0]
+      n14 = load n13.__infer_tuple_class<*__infer_swift_type<swift::weak>>.__infer_tuple_field_0 @[0:0]
+      n15 = n14 @[0:0]
+      jmp 9::ret @[0:0]
+      
+  #9::ret: @[0:0]
+      store n8 <- __sil_cast(<int>, n15) @[0:0]
+      n18 = $builtins.llvm_init_tuple() @[0:0]
+      store n18.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_0 <- "$s5Hello18WeakDelegateHolderC8delegateyXlSgvM.resume.0" @[0:0]
+      n20 = load n8 @[0:0]
+      store n18.__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>.__infer_tuple_field_1 <- n20 @[0:0]
+      ret n18 @[0:0]
+      
+} @?
 
 declare .plain_name = "deinit" $s5Hello16DummyContentViewCfd(*__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : *__infer_swift_type<,$sBoD>
 
@@ -717,6 +848,8 @@ declare .plain_name = "test_type_of_same_type_good" $s5Hello018test_type_of_same
 
 declare .plain_name = "test_type_of_same_type_bad" $s5Hello018test_type_of_same_C4_badyyF() : void
 
+global symbolic yXlSgXw: *__infer_tuple_class<*int,int>
+
 global symbolic yXlSg: *__infer_tuple_class<*int,int>
 
 global symbolic ______pSg 5Hello15ContentViewTypeP: *__infer_tuple_class<int,int,*int,int>
@@ -728,6 +861,8 @@ global symbolic _____ 5Hello5UtilsV: *__infer_tuple_class<int,int,int>
 global symbolic _____ 5Hello5Cell2C: *__infer_tuple_class<int,int,int>
 
 global symbolic _____ 5Hello4CellC: *__infer_tuple_class<int,int,int>
+
+global symbolic _____ 5Hello18WeakDelegateHolderC: *__infer_tuple_class<int,int,int>
 
 global symbolic _____ 5Hello16DummyContentViewC: *__infer_tuple_class<int,int,int>
 
@@ -742,6 +877,8 @@ global symbolic $s5Hello15ContentViewTypeP: *__infer_tuple_class<*int,int>
 global objc_classes_$s5Hello5Cell2CN: *__infer_swift_type<ptr_elt>
 
 global objc_classes_$s5Hello4CellCN: *__infer_swift_type<ptr_elt>
+
+global objc_classes_$s5Hello18WeakDelegateHolderCN: *__infer_swift_type<ptr_elt>
 
 global objc_classes_$s5Hello16DummyContentViewCN: *__infer_swift_type<ptr_elt>
 
@@ -789,6 +926,8 @@ global _METACLASS_DATA__TtC5Hello5Cell2: *__infer_tuple_class<int,int,int,int,*_
 
 global _METACLASS_DATA__TtC5Hello4Cell: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
+global _METACLASS_DATA__TtC5Hello18WeakDelegateHolder: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
 global _METACLASS_DATA__TtC5Hello16DummyContentView: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
 global _METACLASS_DATA__TtC5Hello13MyContentView: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
@@ -799,6 +938,8 @@ global _IVARS__TtC5Hello5Cell2: *__infer_tuple_class<int,int,**__infer_tuple_cla
 
 global _IVARS__TtC5Hello4Cell: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
+global _IVARS__TtC5Hello18WeakDelegateHolder: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
+
 global _IVARS__TtC5Hello16DummyContentView: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
 
 global _IVARS__TtC5Hello13MyContentView: *__infer_tuple_class<int,int,**__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int>>
@@ -808,6 +949,8 @@ global _IVARS__TtC5Hello12CreationCell: *__infer_tuple_class<int,int,**__infer_t
 global _DATA__TtC5Hello5Cell2: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
 global _DATA__TtC5Hello4Cell: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global _DATA__TtC5Hello18WeakDelegateHolder: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
 global _DATA__TtC5Hello16DummyContentView: *__infer_tuple_class<int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
 
@@ -829,6 +972,8 @@ global ::str::5::Cell2: *int
 
 global ::str::4::Cell: *int
 
+global ::str::30::_TtC5Hello18WeakDelegateHolder: *int
+
 global ::str::28::_TtC5Hello16DummyContentView: *int
 
 global ::str::25::_TtC5Hello13MyContentView: *int
@@ -836,6 +981,8 @@ global ::str::25::_TtC5Hello13MyContentView: *int
 global ::str::24::_TtC5Hello12CreationCell: *int
 
 global ::str::23::Hello/rc_delegate::swift: *int
+
+global ::str::18::WeakDelegateHolder: *int
 
 global ::str::16::_TtC5Hello5Cell2: *int
 
@@ -898,6 +1045,18 @@ global $s5Hello4CellCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
 global $s5Hello4CellCHn: *__infer_swift_type<swift::type_metadata_record>
 
 global $s5Hello4CellC11contentViewAA07ContentD4Type_pvpWvd: int
+
+global $s5Hello18WeakDelegateHolderCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
+
+global $s5Hello18WeakDelegateHolderCMm: *__infer_swift_type<objc_class>
+
+global $s5Hello18WeakDelegateHolderCMf: *__infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>>
+
+global $s5Hello18WeakDelegateHolderCMF: *__infer_tuple_class<int,int,int,int,int,int,int,int>
+
+global $s5Hello18WeakDelegateHolderCHn: *__infer_swift_type<swift::type_metadata_record>
+
+global $s5Hello18WeakDelegateHolderC8delegateyXlSgvpWvd: int
 
 global $s5Hello16DummyContentViewCMn: *__infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>>
 
@@ -983,6 +1142,10 @@ field_0: *int; field_1: *__infer_swift_type<ptr_elt>}
 type __infer_swift_type<$s5Hello16DummyContentViewCAA0cD4TypeAAWP> = {
 }
 
+type __infer_swift_type<$s5Hello18WeakDelegateHolderC8delegateyXlSgvM::Frame> = {
+field_0: *int; field_1: *__infer_swift_type<TyXlSg>;
+field_2: *__infer_swift_type<ptr_elt>}
+
 type __infer_swift_type<$s5Hello4CellC11contentViewAA07ContentD4Type_pvM::Frame> = {
 field_0: *int}
 
@@ -1004,6 +1167,10 @@ type __infer_swift_type<T5Hello15ContentViewType_pSg> = {field_0: *int}
 type __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView> = {
 field_0: *__infer_swift_type<swift::refcounted>;
 delegate: *__infer_swift_type<TyXlSg>}
+
+type __infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder> = {
+field_0: *__infer_swift_type<swift::refcounted>;
+delegate: *__infer_tuple_class<*__infer_swift_type<swift::weak>>}
 
 type __infer_swift_type<T5Hello4CellC,Cell> = {field_0: *__infer_swift_type<swift::refcounted>;
                                                contentView: *__infer_swift_type<T5Hello15ContentViewTypeP,ContentViewType>}
@@ -1059,6 +1226,8 @@ type __infer_swift_type<swift::vwtable> = {field_0: *__infer_swift_type<ptr_elt>
                                            field_8: int; field_9: int;
                                            field_10: int; field_11: int}
 
+type __infer_swift_type<swift::weak> = {field_0: *__infer_swift_type<ptr_elt>}
+
 type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
 __infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_1: *__infer_swift_type<ptr_elt>}
@@ -1079,6 +1248,26 @@ __infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_16: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_17: int;
 __infer_tuple_field_18: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
+__infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_2: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_3: int;
+__infer_tuple_field_4: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_5: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_6: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_7: int; __infer_tuple_field_8: int;
+__infer_tuple_field_9: int; __infer_tuple_field_10: int;
+__infer_tuple_field_11: int; __infer_tuple_field_12: int;
+__infer_tuple_field_13: int; __infer_tuple_field_14: int;
+__infer_tuple_field_15: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_16: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_17: int;
+__infer_tuple_field_18: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_19: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_20: *__infer_swift_type<ptr_elt>;
+__infer_tuple_field_21: *__infer_swift_type<ptr_elt>}
 
 type __infer_tuple_class<*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,int,int,int,int,int,int,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,int,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>,*__infer_swift_type<ptr_elt>> = {
 __infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
@@ -1113,6 +1302,8 @@ __infer_tuple_field_0: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_1: *__infer_swift_type<ptr_elt>;
 __infer_tuple_field_2: int;
 __infer_tuple_field_3: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*__infer_swift_type<swift::weak>> = {__infer_tuple_field_0: .weak *__infer_swift_type<ptr_elt>}
 
 type __infer_tuple_class<*int,int> = {__infer_tuple_field_0: *int;
                                       __infer_tuple_field_1: int}
@@ -1189,6 +1380,19 @@ __infer_tuple_field_8: int; __infer_tuple_field_9: int;
 __infer_tuple_field_10: int; __infer_tuple_field_11: int;
 __infer_tuple_field_12: int;
 __infer_tuple_field_13: *__infer_swift_type<swift::method_descriptor>}
+
+type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>> = {
+__infer_tuple_field_0: int; __infer_tuple_field_1: int;
+__infer_tuple_field_2: int; __infer_tuple_field_3: int;
+__infer_tuple_field_4: int; __infer_tuple_field_5: int;
+__infer_tuple_field_6: int; __infer_tuple_field_7: int;
+__infer_tuple_field_8: int; __infer_tuple_field_9: int;
+__infer_tuple_field_10: int; __infer_tuple_field_11: int;
+__infer_tuple_field_12: int;
+__infer_tuple_field_13: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_14: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_15: *__infer_swift_type<swift::method_descriptor>;
+__infer_tuple_field_16: *__infer_swift_type<swift::method_descriptor>}
 
 type __infer_tuple_class<int,int,int,int,int,int,int,int,int,int,int,int,int,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>,*__infer_swift_type<swift::method_descriptor>> = {
 __infer_tuple_field_0: int; __infer_tuple_field_1: int;

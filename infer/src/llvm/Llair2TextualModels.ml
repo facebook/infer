@@ -50,6 +50,7 @@ let functions_to_skip =
   List.map ~f:Textual.ProcName.of_string
     [ "swift_unknownObjectRetain"
     ; "swift_weakLoadStrong"
+    ; "swift_unknownObjectWeakLoadStrong"
     ; "swift_bridgeObjectRetain"
     ; "swift_getObjCClassFromMetadata" ]
 
