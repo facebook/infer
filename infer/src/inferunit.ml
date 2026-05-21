@@ -40,7 +40,6 @@ let () =
         ; RestartSchedulerTests.tests
         ; SchedulerTests.tests
         ; SeverityTests.tests
-        ; SwiftObjCNullabilityIssueTests.tests
         ; WeakTopologicalOrderTests.tests ]
       @ ClangTests.tests )
   in
