@@ -191,15 +191,10 @@ SWIFT_DIRECT_TESTS += \
   swift_pulse \
   swift_multifile \
   swift_interop-pulse \
-  swift_interop-nullability
-
-endif
-
-ifneq ($(BUILD_SWIFT_ANALYZERS),no)
-DIRECT_TESTS += \
+  swift_interop-nullability \
   c_export-textual-llvm \
   c_llvm-frontend \
-  c_pulse-llvm \
+  c_pulse-llvm
 
 endif
 
