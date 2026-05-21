@@ -149,13 +149,13 @@ let process_wvd_global ~lang ~mangled_map global_name struct_map =
 
 let process_wvd_globals ~lang ~mangled_map globals_map struct_map =
   Textual.VarName.Map.fold
-    (fun _var global struct_map ->
-      match global with
-      | GlobalDefn.{name; init= Some _} ->
-          let global_name = Global.name name in
-          process_wvd_global ~lang ~mangled_map global_name struct_map
-      | _ ->
-          struct_map )
+    (fun _var GlobalDefn.{name; _} struct_map ->
+      (* Process both defined and externally-declared globals: a cross-module
+         Wvd reference arrives in this module as an extern (no initializer),
+         but its mangled name still carries the (class, field) pair that the
+         receiver struct decl needs. [process_wvd_global] already filters by
+         the "Wvd" suffix on the global name. *)
+      process_wvd_global ~lang ~mangled_map (Global.name name) struct_map )
     globals_map struct_map
 
 

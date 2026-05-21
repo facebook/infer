@@ -10,6 +10,7 @@ declare $s8Consumer10setHandleryy7Definer6ButtonC_yyctF(*__infer_swift_type<ptr_
 
 global $s7Definer6ButtonC10tapHandleryycSgvpWvd: *__infer_swift_type<ptr_elt>
 
-type __infer_swift_type<T7Definer6ButtonC,Button> = {field_0: *__infer_swift_type<ptr_elt>;
+type __infer_swift_type<T7Definer6ButtonC,Button> = {tapHandler: __infer_swift_type<ptr_elt>;
+                                                     field_0: *__infer_swift_type<ptr_elt>;
                                                      field_1: int}
 
