@@ -40,6 +40,8 @@ let llvm_init_tuple = "llvm_init_tuple"
 
 let swift_get_dynamic_type = SwiftProcname.to_string (SwiftProcname.Builtin SwiftGetDynamicType)
 
+let swift_get_object_type = "swift_getObjectType"
+
 let swift_metadata_equals = SwiftProcname.to_string (SwiftProcname.Builtin MetadataEquals)
 
 let swift_instantiateConcreteTypeFromMangledName = "__swift_instantiateConcreteTypeFromMangledName"
@@ -153,6 +155,7 @@ module Metadata = struct
     let proc_name_str = Textual.ProcName.to_string proc.name in
     if
       String.equal proc_name_str swift_get_dynamic_type
+      || String.equal proc_name_str swift_get_object_type
       || String.equal proc_name_str swift_instantiateConcreteTypeFromMangledName
       || String.is_substring ~substring:"Cm" proc_name_str
     then Option.iter return_id ~f:(fun id -> ProcState.mark_as_metadata ~proc_state id) ;

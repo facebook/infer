@@ -79,7 +79,7 @@ func test_anyobject_type_of_same_type_bad() {
     assert(type(of: x) != DerivedViewA.self)
 }
 
-func test_anyobject_type_of_same_type_good_FP() {
+func test_anyobject_type_of_same_type_good() {
     let x: AnyObject = DerivedViewA()
     // type(of: x) == DerivedViewA.self -> True (Good)
     assert(type(of: x) == DerivedViewA.self)
@@ -91,7 +91,7 @@ func test_anyobject_type_of_different_types_bad() {
     assert(type(of: x) == DerivedViewB.self)
 }
 
-func test_anyobject_type_of_different_types_good_FP() {
+func test_anyobject_type_of_different_types_good() {
     let x: AnyObject = DerivedViewA()
     // type(of: x) != DerivedViewB.self -> True (Good)
     assert(type(of: x) != DerivedViewB.self)

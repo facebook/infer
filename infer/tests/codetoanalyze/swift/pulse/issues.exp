@@ -61,6 +61,4 @@ codetoanalyze/swift/pulse/switch.swift, test_switch_enum_bad, 2, PULSE_ASSERTION
 codetoanalyze/swift/pulse/type_of.swift, test_class_type_of_same_type_bad, 6, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/type_of.swift, test_class_type_of_different_types_bad, 6, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/type_of.swift, test_anyobject_type_of_same_type_bad, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
-codetoanalyze/swift/pulse/type_of.swift, test_anyobject_type_of_same_type_good_FP, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/type_of.swift, test_anyobject_type_of_different_types_bad, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
-codetoanalyze/swift/pulse/type_of.swift, test_anyobject_type_of_different_types_good_FP, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []

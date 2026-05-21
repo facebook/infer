@@ -183,6 +183,20 @@ let swift_dynamic_type arg1 arg2 () : unit DSL.model_monad =
       assign_ret res
 
 
+let swift_get_object_type arg : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let* arg_dynamic_type_data = get_dynamic_type ~ask_specialization:true arg in
+  match arg_dynamic_type_data with
+  | None ->
+      unknown [arg] ()
+  | Some {Formula.typ= arg_dynamic_type} ->
+      let* res = fresh () in
+      let* () = and_dynamic_type_is res arg_dynamic_type in
+      assign_ret res
+
+
 let derived_enum_equals arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* res = binop Binop.Eq arg1 arg2 in
@@ -476,6 +490,6 @@ let matchers : matcher list =
   ; ~+is_dispatch_workitem_init $ any_arg $+ capt_arg_payload $+...$--> dispatch_workitem_init
   ; ~+is_dispatch_source_state_setter <>--> skip_with_fresh_ret
   ; ~+is_dispatch_queue_async <>--> skip_with_fresh_ret
-  ; -"swift_getObjectType" <>--> skip_with_fresh_ret ]
+  ; -"swift_getObjectType" <>$ capt_arg_payload $--> swift_get_object_type ]
   |> List.map ~f:(fun matcher ->
          matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )
