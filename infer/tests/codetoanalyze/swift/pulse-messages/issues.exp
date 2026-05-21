@@ -1,0 +1,9 @@
+codetoanalyze/swift/pulse-messages/retain_cycle_basic.swift, setPartners_bad, 20, 15, ERROR, RETAIN_CYCLE, Retain cycle found at line 20, column 15 between the following objects: 
+  1) x->partner, assigned on line 19
+  2) y->partner, assigned on line 20., 
+codetoanalyze/swift/pulse-messages/retain_cycle_self_capture.swift, Holder.setupBad_bad, 17, 18, ERROR, RETAIN_CYCLE, Retain cycle found at line 17, column 18 between the following objects: 
+  1) self->onAction
+  2) object of type class Holder, assigned on line 17., 
+codetoanalyze/swift/pulse-messages/retain_cycle_static_helper.swift, ParentVC.wireUp_bad, 36, 24, ERROR, RETAIN_CYCLE, Retain cycle found at line 36, column 24 between the following objects: 
+  1) makeStrongChild().owner, assigned on line 35
+  2) self->heldChild, assigned on line 36., 

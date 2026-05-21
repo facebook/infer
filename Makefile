@@ -189,6 +189,7 @@ SWIFT_DIRECT_TESTS += \
   swift_bitcode-handcrafted \
   swift_bitcode-handcrafted-pulse \
   swift_pulse \
+  swift_pulse-messages \
   swift_multifile \
   swift_interop-pulse \
   swift_interop-nullability \
