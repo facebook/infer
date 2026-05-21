@@ -100,6 +100,21 @@ let is_memcpy_callee (callee : Exp.t) =
       false
 
 
+(* The Swift frontend emits a defensive raw-ret_id Prune around every [objc_msgSend] result to
+   support dynamic dispatch: the non-null arm calls the IUO bridge, the null arm stores zeros into
+   the result temps. The shape is syntactically identical to a user-written [if e != nil { ... }],
+   but the [objc_msgSend] callee is a tell-tale: typed direct Swift->ObjC calls do not get this
+   defensive lowering. Mark these ret_ids so the [raw_prune_safe] arm can skip them and avoid
+   suppressing real MISSING_NULLABILITY findings on bare-result-discarded dynamic dispatch
+   (e.g. [let _ = device.foo()] where [device: AnyObject]). *)
+let is_objc_msgSend_callee (callee : Exp.t) =
+  match callee with
+  | Const (Const.Cfun pname) ->
+      String.is_substring (Procname.to_string pname) ~substring:"objc_msgSend"
+  | _ ->
+      false
+
+
 (* Calls that don't count as user "consuming" the value -- ARC plumbing, the bridge call itself,
    and the helpers for retain/release that move ownership without touching the payload. Used to
    gate the arg-position-passthrough check (Pattern 5) so we don't mark on transparent helpers. *)
@@ -130,6 +145,7 @@ let process pdesc =
   let force_unwrapped = IdentHashSet.create 8 in
   let arg_consumed = IdentHashSet.create 8 in
   let raw_prune_safe = IdentHashSet.create 8 in
+  let from_objc_msgSend = IdentHashSet.create 4 in
   let copy_pvar_fields ~src ~dst =
     PvarFieldTbl.iter
       (fun (p, f) r -> if Pvar.equal p src then PvarFieldTbl.replace pvar_field_origin (dst, f) r)
@@ -139,6 +155,7 @@ let process pdesc =
     match instr with
     | Call ((ret_id, _), callee, args, _, _) ->
         IdentTbl.replace id_origin ret_id ret_id ;
+        if is_objc_msgSend_callee callee then IdentHashSet.add ret_id from_objc_msgSend ;
         ( if is_bridge_from_objc_callee callee then
             match args with
             | (arg_exp, _) :: _ -> (
@@ -235,10 +252,16 @@ let process pdesc =
                [if e != nil { ... }] (Optional-packaging Stores in eq-branch but no fatal
                Call) is deferred to [raw_prune_safe] and committed only if the same origin
                isn't [force_unwrapped] elsewhere in the proc -- otherwise an immediate
-               same-call force-unwrap (`let s = e!`) would slip through this arm. *)
-            if eq_branch_satisfies node ~check:node_is_trivial_else then IdentHashSet.add r checked
-            else if eq_branch_satisfies node ~check:node_has_no_fatal_call then
-              IdentHashSet.add r raw_prune_safe
+               same-call force-unwrap (`let s = e!`) would slip through this arm.
+
+               Skip both arms entirely when the call is [objc_msgSend]: the Swift frontend
+               emits the same Prune shape defensively around every dynamic-dispatch result,
+               so it never reflects a user-written null check there. *)
+            if not (IdentHashSet.mem from_objc_msgSend r) then
+              if eq_branch_satisfies node ~check:node_is_trivial_else then
+                IdentHashSet.add r checked
+              else if eq_branch_satisfies node ~check:node_has_no_fatal_call then
+                IdentHashSet.add r raw_prune_safe
         | Some r ->
             (* Propagated id Prune (chain / [??] / guard-let): tolerate non-fatal Calls.
                If the eq-branch contains a fatal call (force-unwrap), poison [r] so any
