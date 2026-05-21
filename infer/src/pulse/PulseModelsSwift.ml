@@ -197,6 +197,58 @@ let swift_get_object_type arg : model =
       assign_ret res
 
 
+(* Models for the Swift / Foundation [String] <-> [NSString] bridges.
+   At the IR level the bridge calls fall through to Pulse's unknown-callee
+   path, leaving the result with no dynamic type — which then defeats
+   downstream [objc_msgSend] dispatch on the bridged value.  Returning a
+   fresh, non-null value with the appropriate dynamic type is the minimum
+   needed to keep the post-bridge value tracking and method dispatch
+   working.  Content preservation via [internal_string] (mirroring
+   [PulseModelsObjC.construct_string]) is a richer follow-up.
+
+   The matchers use substring predicates (mirroring [is_combine_sink])
+   rather than exact mangled-name strings: the underscored protocol-method
+   names plus [NSString] are stable across Swift versions and across
+   generic specialisations, while the surrounding mangling suffix is not. *)
+
+let is_string_bridge_to_nsstring _ n =
+  String.is_substring n ~substring:"_bridgeToObjectiveC"
+  && String.is_substring n ~substring:"NSString"
+
+
+let is_string_bridge_from_nsstring _ n =
+  String.is_substring n ~substring:"_unconditionallyBridgeFromObjectiveC"
+  && String.is_substring n ~substring:"NSString"
+
+
+(* Returns a fresh, non-null value stamped with the given dynamic type.
+   The bridge models share this shape and nothing pre-existing in
+   [PulseModelsDSL] / [PulseModelsSwift] / [PulseModelsObjC] bundles the
+   three steps without also stamping an allocator attribute (which would
+   be wrong for a value that already exists on the heap before the
+   bridge call). *)
+let fresh_typed_nonnull typ : DSL.aval DSL.model_monad =
+  let open DSL.Syntax in
+  let* v = fresh () in
+  let* () = and_positive v in
+  let* () = and_dynamic_type_is v typ in
+  ret v
+
+
+let nsstring_typ = Typ.mk_struct (Typ.SwiftClass (SwiftClassName.of_string "NSString"))
+
+let swift_string_typ = Typ.mk_struct (Typ.SwiftClass (SwiftClassName.of_string "TSS"))
+
+let string_bridge_to_nsstring _arg1 _arg2 : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> fresh_typed_nonnull nsstring_typ >>= assign_ret
+
+
+let string_bridge_from_nsstring _arg : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> fresh_typed_nonnull swift_string_typ >>= assign_ret
+
+
 let derived_enum_equals arg1 arg2 () : unit DSL.model_monad =
   let open DSL.Syntax in
   let* res = binop Binop.Eq arg1 arg2 in
@@ -490,6 +542,9 @@ let matchers : matcher list =
   ; ~+is_dispatch_workitem_init $ any_arg $+ capt_arg_payload $+...$--> dispatch_workitem_init
   ; ~+is_dispatch_source_state_setter <>--> skip_with_fresh_ret
   ; ~+is_dispatch_queue_async <>--> skip_with_fresh_ret
-  ; -"swift_getObjectType" <>$ capt_arg_payload $--> swift_get_object_type ]
+  ; -"swift_getObjectType" <>$ capt_arg_payload $--> swift_get_object_type
+  ; ~+is_string_bridge_to_nsstring $ capt_arg_payload $+ capt_arg_payload
+    $+...$--> string_bridge_to_nsstring
+  ; ~+is_string_bridge_from_nsstring $ capt_arg_payload $+...$--> string_bridge_from_nsstring ]
   |> List.map ~f:(fun matcher ->
          matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )

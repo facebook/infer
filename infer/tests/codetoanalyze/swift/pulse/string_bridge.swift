@@ -35,7 +35,7 @@ func test_bridge_to_nsstring_different_type_bad() {
     assert(type(of: ns) == UnrelatedClass.self)
 }
 
-func test_bridge_to_nsstring_different_type_good_FP() {
+func test_bridge_to_nsstring_different_type_good() {
     let s = "hello"
     let ns: AnyObject = s as NSString
     // type(of: ns) != UnrelatedClass.self -> True (Good)
