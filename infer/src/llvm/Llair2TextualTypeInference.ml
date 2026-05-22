@@ -279,12 +279,35 @@ let record_alloc_object_call ~metadata_class_map ~protocol_types module_state
       ()
 
 
+(* Seed [protocol_types] with each formal's Swift class type, recovered from
+   [func.formals_types] (populated from the DWARF subprogram).  This survives the
+   opaque-pointer erasure that [-O] inlining introduces on byte-offset GEPs of
+   [self], and lets the downstream alias-resolution propagate a typed receiver
+   to the inlined accessor body. *)
+let seed_formals_from_signature ~protocol_types module_state (func : Llair.func) =
+  let ModuleState.{plain_map; _} = module_state in
+  let formals = StdUtils.iarray_to_list func.formals in
+  let formals_types = StdUtils.iarray_to_list func.formals_types in
+  match List.zip formals formals_types with
+  | List.Or_unequal_lengths.Unequal_lengths ->
+      ()
+  | List.Or_unequal_lengths.Ok pairs ->
+      List.iter pairs ~f:(fun (reg, sig_type) ->
+          match TypeName.struct_name_of_plain_name plain_map sig_type with
+          | Some struct_name ->
+              let typ = Textual.Typ.mk_ptr (Textual.Typ.Struct struct_name) in
+              Hashtbl.set protocol_types ~key:(Llair.Reg.id reg) ~data:typ
+          | None ->
+              () )
+
+
 let infer_func module_state (func : Llair.func) =
   let wvd_types = Hashtbl.create (module Int) in
   let protocol_types = Hashtbl.create (module Int) in
   let metadata_class_map = Hashtbl.create (module Int) in
   let load_reg_map = Hashtbl.create (module Int) in
   let visited = Hash_set.create (module String) in
+  seed_formals_from_signature ~protocol_types module_state func ;
   let rec visit_block (b : Llair.block) =
     if not (Hash_set.mem visited b.lbl) then (
       Hash_set.add visited b.lbl ;

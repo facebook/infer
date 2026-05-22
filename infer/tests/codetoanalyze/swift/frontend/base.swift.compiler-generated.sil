@@ -953,37 +953,37 @@ declare .plain_name = "test1" $s5Hello5test1yS2i_SitF(int, int) : int
 
 declare .plain_name = "Param" $s5Hello5ParamCfETo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello5ParamC,Param>.$s5Hello5ParamCfD(*__infer_swift_type<,Param>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello5ParamC,Param>.$s5Hello5ParamCfD(*__infer_swift_type<T5Hello5ParamC,Param>) : void
 
 declare $s5Hello5ParamCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $s5Hello5ParamCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamCACycfc(*__infer_swift_type<,Param>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamCACycfc(*__infer_swift_type<T5Hello5ParamC,Param>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamCACycfC(*__infer_swift_type<,$s5Hello5ParamCXMTD>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamCACycfC(*__infer_swift_type<,$s5Hello5ParamCXMTD>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "quality.get" $s5Hello5ParamC7qualityAA7QualityVSgvg(*__infer_swift_type<,Param>) : *__infer_swift_type<,Optional>
+declare .plain_name = "quality.get" $s5Hello5ParamC7qualityAA7QualityVSgvg(*__infer_swift_type<T5Hello5ParamC,Param>) : *__infer_swift_type<,Optional>
 
 declare .plain_name = "size.get" $s5Hello5ParamC4sizeAA8TestSizeVSgvg(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Optional>
 
 declare $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfcSbSS_SStXEfU_(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Bool>
 
-declare .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfc(*__infer_swift_type<ptr_elt>, int, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfc(*__infer_swift_type<ptr_elt>, int, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" .method_offset = "13" __infer_swift_type<T5Hello5ParamC,Param>.$s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfC(*__infer_swift_type<ptr_elt>, int, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" .method_offset = "13" __infer_swift_type<T5Hello5ParamC,Param>.$s5Hello5ParamC4size7qualityAcA8TestSizeVSg_AA7QualityVSgtcfC(*__infer_swift_type<ptr_elt>, int, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float, int) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float, int) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtcfc(float, float, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtcfc(float, float, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtcfC(float, float, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamC4size4modeACSo6CGSizeV_AA8SizeModeOtcfC(float, float, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float, int, int) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float, int, int) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfc(float, float, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfc(float, float, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
-declare .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfC(float, float, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Param>
+declare .plain_name = "init" $s5Hello5ParamC4size4mode7qualityACSo6CGSizeV_AA8SizeModeOSitcfC(float, float, int, int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello5ParamC,Param>
 
 define .plain_name = "stringValue.get" $s5Hello5ParamC11stringValueSSvgTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   #: @[0:0]
@@ -1007,23 +1007,23 @@ define .plain_name = "stringValue.get" $s5Hello5ParamC11stringValueSSvgTo(var1: 
       
 } @?
 
-declare .plain_name = "stringValue.get" $s5Hello5ParamC11stringValueSSvg(*__infer_swift_type<,Param>) : *__infer_swift_type<Ts11_StringGutsV,String>
+declare .plain_name = "stringValue.get" $s5Hello5ParamC11stringValueSSvg(*__infer_swift_type<T5Hello5ParamC,Param>) : *__infer_swift_type<Ts11_StringGutsV,String>
 
 declare .plain_name = "test" $s5Hello4testSfyF() : *__infer_swift_type<,Float>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>.$s5Hello27BCNTypeaheadSuggestionsCellCfD(*__infer_swift_type<,BCNTypeaheadSuggestionsCell>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>.$s5Hello27BCNTypeaheadSuggestionsCellCfD(*__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>) : void
 
 declare $s5Hello27BCNTypeaheadSuggestionsCellCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<,BCNTypeaheadSuggestionsCell>
+declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>
 
-declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGRectV_tcfc(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,BCNTypeaheadSuggestionsCell>
+declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGRectV_tcfc(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>
 
-declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGRectV_tcfC(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,BCNTypeaheadSuggestionsCell>
+declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5frameACSo6CGRectV_tcfC(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>
 
 declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Optional>
 
-declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfc(*__infer_swift_type<,NSCoder>, *__infer_swift_type<,BCNTypeaheadSuggestionsCell>) : *__infer_swift_type<,Optional>
+declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfc(*__infer_swift_type<,NSCoder>, *__infer_swift_type<T5Hello27BCNTypeaheadSuggestionsCellC,BCNTypeaheadSuggestionsCell>) : *__infer_swift_type<,Optional>
 
 declare .plain_name = "init" $s5Hello27BCNTypeaheadSuggestionsCellC5coderACSgSo7NSCoderC_tcfC(*__infer_swift_type<,NSCoder>, *__infer_swift_type<,$s5Hello27BCNTypeaheadSuggestionsCellCXMTD>) : *__infer_swift_type<,Optional>
 

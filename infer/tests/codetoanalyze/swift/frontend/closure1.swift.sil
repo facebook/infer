@@ -180,7 +180,7 @@ declare .plain_name = "id.modify" .method_offset = "14" __infer_swift_type<T5Hel
 define $s5Hello16testWithClosure2SiyFyAA18RetainCycleExampleCcfU_(obj: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local getelementptr_offset_1: *void
   #: @[41:16]
-      n1 = load &obj @[41:16]
+      n1:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &obj @[41:16]
       store &getelementptr_offset_1 <- 13 @[41:16]
       n2 = load &getelementptr_offset_1 @[41:16]
       n5 = load &obj @[41:16]
@@ -207,7 +207,7 @@ declare $s5Hello15testWithClosureSiyFySicfU_TA(int, *__infer_swift_type<ptr_elt>
 define $s5Hello15testWithClosureSiyFySicfU_(var1: int, obj: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local n: *__infer_swift_type<ptr_elt>, getelementptr_offset_1: *void
   #: @[28:16]
-      n1 = load &obj @[28:16]
+      n1:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &obj @[28:16]
       store &getelementptr_offset_1 <- 13 @[28:16]
       n2 = load &getelementptr_offset_1 @[28:16]
       n4 = load &var1 @[28:16]
@@ -256,7 +256,7 @@ declare $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_TA(*__infer_swift_t
 define $s5Hello12createObjectAA18RetainCycleExampleCyFyycfU_(obj: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local getelementptr_offset_1: *void
   #: @[10:28]
-      n1 = load &obj @[10:28]
+      n1:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &obj @[10:28]
       store &getelementptr_offset_1 <- 13 @[10:28]
       n2 = load &getelementptr_offset_1 @[10:28]
       n5 = load &obj @[10:28]

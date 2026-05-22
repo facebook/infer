@@ -40,15 +40,15 @@ declare $sSD17dictionaryLiteralSDyxq_Gx_q_td_tcfC(*__infer_swift_type<ptr_elt>, 
 
 declare $sSD10FoundationE19_bridgeToObjectiveCSo12NSDictionaryCyF(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>.$s5Hello9SwipeInfoCfD(*__infer_swift_type<,SwipeInfo>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>.$s5Hello9SwipeInfoCfD(*__infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>) : void
 
 declare $s5Hello9SwipeInfoCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $s5Hello9SwipeInfoCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,SwipeInfo>
+declare .plain_name = "init" $s5Hello9SwipeInfoCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>
 
-declare .plain_name = "init" $s5Hello9SwipeInfoCACycfc(*__infer_swift_type<,SwipeInfo>) : *__infer_swift_type<,SwipeInfo>
+declare .plain_name = "init" $s5Hello9SwipeInfoCACycfc(*__infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>) : *__infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>
 
-declare .plain_name = "init" $s5Hello9SwipeInfoCACycfC(*__infer_swift_type<,$s5Hello9SwipeInfoCXMTD>) : *__infer_swift_type<,SwipeInfo>
+declare .plain_name = "init" $s5Hello9SwipeInfoCACycfC(*__infer_swift_type<,$s5Hello9SwipeInfoCXMTD>) : *__infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>
 
 define .plain_name = "translationInWindow.get" $s5Hello9SwipeInfoC19translationInWindowSo7CGPointVvgTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<struct::CGPoint> {
   local var4: *__infer_tuple_class<float,float>
@@ -72,7 +72,7 @@ define .plain_name = "translationInWindow.get" $s5Hello9SwipeInfoC19translationI
       
 } @?
 
-declare .plain_name = "translationInWindow.get" $s5Hello9SwipeInfoC19translationInWindowSo7CGPointVvg(*__infer_swift_type<,SwipeInfo>) : *__infer_swift_type<,CGPoint>
+declare .plain_name = "translationInWindow.get" $s5Hello9SwipeInfoC19translationInWindowSo7CGPointVvg(*__infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>) : *__infer_swift_type<,CGPoint>
 
 define .plain_name = "analyticsExtras" $s5Hello9SwipeInfoC15analyticsExtrasSDySSSo8NSObject_pGyFTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt> {
   #: @[0:0]
@@ -100,7 +100,7 @@ define .plain_name = "analyticsExtras" $s5Hello9SwipeInfoC15analyticsExtrasSDySS
       
 } @?
 
-declare .plain_name = "analyticsExtras" $s5Hello9SwipeInfoC15analyticsExtrasSDySSSo8NSObject_pGyF(*__infer_swift_type<,SwipeInfo>) : *__infer_swift_type<,Dictionary>
+declare .plain_name = "analyticsExtras" $s5Hello9SwipeInfoC15analyticsExtrasSDySSSo8NSObject_pGyF(*__infer_swift_type<T5Hello9SwipeInfoC,SwipeInfo>) : *__infer_swift_type<,Dictionary>
 
 global symbolic _____ 5Hello9SwipeInfoC: *__infer_tuple_class<int,int,int>
 

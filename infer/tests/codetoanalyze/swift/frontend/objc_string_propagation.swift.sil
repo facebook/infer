@@ -46,13 +46,13 @@ declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*_
 
 declare $sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerCfD(*__infer_swift_type<,MyTracker>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerCfD(*__infer_swift_type<T5Hello9MyTrackerC,MyTracker>) : void
 
 declare $s5Hello9MyTrackerCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $s5Hello9MyTrackerCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,MyTracker>
+declare .plain_name = "init" $s5Hello9MyTrackerCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello9MyTrackerC,MyTracker>
 
-define .plain_name = "init" $s5Hello9MyTrackerCACycfc(self: *__infer_swift_type<,MyTracker>) : *__infer_swift_type<ptr_elt> {
+define .plain_name = "init" $s5Hello9MyTrackerCACycfc(self: *__infer_swift_type<T5Hello9MyTrackerC,MyTracker>) : *__infer_swift_type<ptr_elt> {
   local var4: *__infer_swift_type<objc_super>
   #: @[7:0]
       n1 = load &self @[7:0]
@@ -95,7 +95,7 @@ define .plain_name = "init" $s5Hello9MyTrackerCACycfC(var1: *__infer_swift_type<
 
 declare .plain_name = "reportStatus" $s5Hello9MyTrackerC12reportStatusSiyFTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : int
 
-define .plain_name = "reportStatus" .method_offset = "10" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(self: *__infer_swift_type<,MyTracker>) : int {
+define .plain_name = "reportStatus" .method_offset = "10" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(self: *__infer_swift_type<T5Hello9MyTrackerC,MyTracker>) : int {
   #: @[9:9]
       ret 5 @[9:9]
       

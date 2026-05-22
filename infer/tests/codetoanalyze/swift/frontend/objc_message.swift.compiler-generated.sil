@@ -64,51 +64,51 @@ declare .plain_name = "init" $sSo6UIViewCABycfC(*__infer_swift_type<,$sSo6UIView
 
 declare .plain_name = "BCNCell" $s5Hello7BCNCellCfETo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7BCNCellC,BCNCell>.$s5Hello7BCNCellCfD(*__infer_swift_type<,BCNCell>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello7BCNCellC,BCNCell>.$s5Hello7BCNCellCfD(*__infer_swift_type<T5Hello7BCNCellC,BCNCell>) : void
 
 declare $s5Hello7BCNCellCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "configure" $s5Hello7BCNCellC9configureyyF(*__infer_swift_type<,BCNCell>) : void
+declare .plain_name = "configure" $s5Hello7BCNCellC9configureyyF(*__infer_swift_type<T5Hello7BCNCellC,BCNCell>) : void
 
-declare .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<,BCNCell>
+declare .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell>
 
-declare .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfc(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,BCNCell>
+declare .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfc(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell>
 
-declare .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfC(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,BCNCell>
+declare .plain_name = "init" $s5Hello7BCNCellC5frameACSo6CGRectV_tcfC(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello7BCNCellC,BCNCell>
 
 declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,Optional>
 
-declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(*__infer_swift_type<,NSCoder>, *__infer_swift_type<,BCNCell>) : *__infer_swift_type<,Optional>
+declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfc(*__infer_swift_type<,NSCoder>, *__infer_swift_type<T5Hello7BCNCellC,BCNCell>) : *__infer_swift_type<,Optional>
 
 declare .plain_name = "init" $s5Hello7BCNCellC5coderACSgSo7NSCoderC_tcfC(*__infer_swift_type<,NSCoder>, *__infer_swift_type<,$s5Hello7BCNCellCXMTD>) : *__infer_swift_type<,Optional>
 
-declare .plain_name = "nuxContentView.set" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvs(int, *__infer_swift_type<,BCNCell>) : void
+declare .plain_name = "nuxContentView.set" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvs(int, *__infer_swift_type<T5Hello7BCNCellC,BCNCell>) : void
 
 declare $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvpfi() : *__infer_swift_type<,Optional>
 
-declare .plain_name = "nuxContentView.get" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvg(*__infer_swift_type<,BCNCell>) : *__infer_swift_type<,Optional>
+declare .plain_name = "nuxContentView.get" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvg(*__infer_swift_type<T5Hello7BCNCellC,BCNCell>) : *__infer_swift_type<,Optional>
 
 declare .plain_name = "nuxContentView.modify" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvM::resume::0(*__infer_swift_type<ptr_elt>, int) : void
 
 declare .plain_name = "nuxContentView.modify" $s5Hello7BCNCellC14nuxContentViewAA05DummydE0CSgvM(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : void
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCfD(*__infer_swift_type<,DummyContentView>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewCfD(*__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : void
 
 declare $s5Hello16DummyContentViewCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
 declare $s5Hello16DummyContentViewCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "configure" .method_offset = "10" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewC9configureyyF(*__infer_swift_type<,DummyContentView>) : void
+declare .plain_name = "configure" .method_offset = "10" __infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>.$s5Hello16DummyContentViewC9configureyyF(*__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : void
 
-declare .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<,DummyContentView>
+declare .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *float) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>
 
-declare .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfc(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,DummyContentView>
+declare .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfc(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>
 
-declare .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfC(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,DummyContentView>
+declare .plain_name = "init" $s5Hello16DummyContentViewC5frameACSo6CGRectV_tcfC(float, float, float, float, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>
 
 declare .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfc(*__infer_swift_type<,NSCoder>, *__infer_swift_type<,DummyContentView>) : *__infer_swift_type<,Optional>
+declare .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfc(*__infer_swift_type<,NSCoder>, *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>) : *__infer_swift_type<,Optional>
 
 declare .plain_name = "init" $s5Hello16DummyContentViewC5coderACSgSo7NSCoderC_tcfC(*__infer_swift_type<,NSCoder>, *__infer_swift_type<,$s5Hello16DummyContentViewCXMTD>) : *__infer_swift_type<,Optional>
 
@@ -116,7 +116,7 @@ declare $s5Hello12BCNViewUtilsVMa(int) : *__infer_swift_type<ptr_elt>
 
 declare .plain_name = "init" $s5Hello12BCNViewUtilsVACycfC() : *__infer_swift_type<,BCNViewUtils>
 
-declare .plain_name = "contentViewForVariant" $s5Hello12BCNViewUtilsV21contentViewForVariantAA012DummyContentE0CyFZ() : *__infer_swift_type<,DummyContentView>
+declare .plain_name = "contentViewForVariant" $s5Hello12BCNViewUtilsV21contentViewForVariantAA012DummyContentE0CyFZ() : *__infer_swift_type<T5Hello16DummyContentViewC,DummyContentView>
 
 global symbolic _____Sg 5Hello16DummyContentViewC: *__infer_tuple_class<int,int,*int,int>
 

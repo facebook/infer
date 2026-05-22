@@ -46,15 +46,15 @@ declare $sSS21_builtinStringLiteral17utf8CodeUnitCount7isASCIISSBp_BwBi1_tcfC(*_
 
 declare $sSS10FoundationE19_bridgeToObjectiveCSo8NSStringCyF(int, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerCfD(*__infer_swift_type<,MyTracker>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerCfD(*__infer_swift_type<T5Hello9MyTrackerC,MyTracker>) : void
 
 declare $s5Hello9MyTrackerCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $s5Hello9MyTrackerCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,MyTracker>
+declare .plain_name = "init" $s5Hello9MyTrackerCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello9MyTrackerC,MyTracker>
 
-declare .plain_name = "init" $s5Hello9MyTrackerCACycfc(*__infer_swift_type<,MyTracker>) : *__infer_swift_type<,MyTracker>
+declare .plain_name = "init" $s5Hello9MyTrackerCACycfc(*__infer_swift_type<T5Hello9MyTrackerC,MyTracker>) : *__infer_swift_type<T5Hello9MyTrackerC,MyTracker>
 
-declare .plain_name = "init" $s5Hello9MyTrackerCACycfC(*__infer_swift_type<,$s5Hello9MyTrackerCXMTD>) : *__infer_swift_type<,MyTracker>
+declare .plain_name = "init" $s5Hello9MyTrackerCACycfC(*__infer_swift_type<,$s5Hello9MyTrackerCXMTD>) : *__infer_swift_type<T5Hello9MyTrackerC,MyTracker>
 
 define .plain_name = "reportStatus" $s5Hello9MyTrackerC12reportStatusSiyFTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>) : int {
   #: @[0:0]
@@ -70,7 +70,7 @@ define .plain_name = "reportStatus" $s5Hello9MyTrackerC12reportStatusSiyFTo(var1
       
 } @?
 
-declare .plain_name = "reportStatus" .method_offset = "10" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(*__infer_swift_type<,MyTracker>) : int
+declare .plain_name = "reportStatus" .method_offset = "10" __infer_swift_type<T5Hello9MyTrackerC,MyTracker>.$s5Hello9MyTrackerC12reportStatusSiyF(*__infer_swift_type<T5Hello9MyTrackerC,MyTracker>) : int
 
 declare .plain_name = "testDynamicPropagation" $s5Hello22testDynamicPropagation3objSiyXl_tF(*__infer_swift_type<,$syXlD>) : int
 

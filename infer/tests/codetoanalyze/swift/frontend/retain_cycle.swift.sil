@@ -358,7 +358,7 @@ declare .plain_name = "init" $s5Hello9TransportC15ConnectionStateO8rawValueAESgS
 define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T5Hello9TransportC,Transport>.$s5Hello9TransportC14onDisconnectedyyF(self: *__infer_swift_type<T5Hello9TransportC,Transport>) : void {
   local var4: *__infer_swift_type<T5Hello17TransportDelegate_pSg>, getelementptr_offset_9: *void, getelementptr_offset_8: *void, getelementptr_offset_7: *void, getelementptr_offset_6: *void, getelementptr_offset_5: *void, getelementptr_offset_4: *void, getelementptr_offset_3: *void, getelementptr_offset_2: *void, getelementptr_offset_1: *void
   #: @[30:19]
-      n1 = load &self @[30:19]
+      n1:*__infer_swift_type<T5Hello9TransportC,Transport> = load &self @[30:19]
       store &getelementptr_offset_1 <- 14 @[30:19]
       n2 = load &getelementptr_offset_1 @[30:19]
       n5 = load &self @[30:19]
@@ -384,7 +384,7 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       jmp 16::ret @[33:27]
       
   #16::ret: @[33:25]
-      n23 = load &self @[33:25]
+      n23:*__infer_swift_type<T5Hello9TransportC,Transport> = load &self @[33:25]
       store &getelementptr_offset_4 <- 17 @[33:25]
       n24 = load &getelementptr_offset_4 @[33:25]
       n27 = load &self @[33:25]
@@ -392,7 +392,7 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       jmp 19::void::ret @[33:25]
       
   #19::void::ret: @[34:9]
-      n28 = load &self @[34:9]
+      n28:*__infer_swift_type<T5Hello9TransportC,Transport> = load &self @[34:9]
       store &getelementptr_offset_5 <- 16 @[34:9]
       n29 = load &getelementptr_offset_5 @[34:9]
       n31 = load &self @[34:9]
@@ -409,7 +409,7 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       jmp 28::void::ret @[34:34]
       
   #28::void::ret: @[35:17]
-      n42 = load &self @[35:17]
+      n42:*__infer_swift_type<T5Hello9TransportC,Transport> = load &self @[35:17]
       store &getelementptr_offset_7 <- 19 @[35:17]
       n43 = load &getelementptr_offset_7 @[35:17]
       n45 = load &self @[35:17]
@@ -451,7 +451,7 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       jmp 50::ret @[29:0]
       
   #50::ret: @[35:42]
-      n75 = load &self @[35:42]
+      n75:*__infer_swift_type<T5Hello9TransportC,Transport> = load &self @[35:42]
       store &getelementptr_offset_8 <- 13 @[35:42]
       n76 = load &getelementptr_offset_8 @[35:42]
       n78 = load &self @[35:42]
@@ -488,7 +488,7 @@ define .plain_name = "onDisconnected" .method_offset = "23" __infer_swift_type<T
       jmp 60 @[29:0]
       
   #6::void::ret: @[32:9]
-      n6 = load &self @[32:9]
+      n6:*__infer_swift_type<T5Hello9TransportC,Transport> = load &self @[32:9]
       store &getelementptr_offset_2 <- 16 @[32:9]
       n7 = load &getelementptr_offset_2 @[32:9]
       n9 = load &self @[32:9]

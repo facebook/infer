@@ -677,7 +677,7 @@ define .plain_name = "setting_jane" .method_offset = "16" __infer_swift_type<T5H
   local getelementptr_offset_1: *void
   #: @[77:23]
       n1 = $builtins.llvm_nondet() @[77:23]
-      n2 = load &self @[77:21]
+      n2:*__infer_swift_type<T5Hello6PersonC,Person> = load &self @[77:21]
       store &getelementptr_offset_1 <- 13 @[77:21]
       n3 = load &getelementptr_offset_1 @[77:21]
       n5 = load &jane @[77:21]
@@ -920,7 +920,7 @@ define .plain_name = "test_retain_cycle_person1_bad" $s5Hello29test_retain_cycle
       jmp 8::void::ret @[93:17]
       
   #8::void::ret: @[94:17]
-      n9 = load &jane @[94:17]
+      n9:*__infer_swift_type<T5Hello6PersonC,Person> = load &jane @[94:17]
       store &getelementptr_offset_2 <- 13 @[94:17]
       n10 = load &getelementptr_offset_2 @[94:17]
       n13 = load &jane @[94:17]
@@ -1317,7 +1317,7 @@ define .plain_name = "test_retain_cycle_bad" $s5Hello21test_retain_cycle_badyyAA
   local getelementptr_offset_2: *void, getelementptr_offset_1: *void
   #: @[82:19]
       n1 = $builtins.llvm_nondet() @[82:19]
-      n2 = load &john @[82:17]
+      n2:*__infer_swift_type<T5Hello6PersonC,Person> = load &john @[82:17]
       store &getelementptr_offset_1 <- 13 @[82:17]
       n3 = load &getelementptr_offset_1 @[82:17]
       n5 = load &jane @[82:17]
@@ -1330,7 +1330,7 @@ define .plain_name = "test_retain_cycle_bad" $s5Hello21test_retain_cycle_badyyAA
       
   #8::void::ret: @[83:19]
       n7 = $builtins.llvm_nondet() @[83:19]
-      n8 = load &jane @[83:17]
+      n8:*__infer_swift_type<T5Hello6PersonC,Person> = load &jane @[83:17]
       store &getelementptr_offset_2 <- 13 @[83:17]
       n9 = load &getelementptr_offset_2 @[83:17]
       n11 = load &john @[83:17]
@@ -1487,7 +1487,7 @@ declare $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_TA(*__infer_swift
 define $s5Hello18RetainCycleExampleC15setupClosureBadyyFyycfU_(self: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local getelementptr_offset_1: *void
   #: @[190:21]
-      n1 = load &self @[190:21]
+      n1:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &self @[190:21]
       store &getelementptr_offset_1 <- 13 @[190:21]
       n2 = load &getelementptr_offset_1 @[190:21]
       n5 = load &self @[190:21]
@@ -1503,7 +1503,7 @@ define .plain_name = "setupClosureBad" .method_offset = "18" __infer_swift_type<
   local getelementptr_offset_1: *void
   #: @[187:0]
       n1 = $builtins.llvm_nondet() @[187:0]
-      n2 = load &self @[189:17]
+      n2:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &self @[189:17]
       store &getelementptr_offset_1 <- 16 @[189:17]
       n3 = load &getelementptr_offset_1 @[189:17]
       n7 = load &self @[189:17]
@@ -1587,7 +1587,7 @@ define .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T
       n6 = $builtins.llvm_nondet() @[195:26]
       n7 = $builtins.llvm_nondet() @[194:0]
       n8 = $builtins.llvm_nondet() @[194:0]
-      n9 = load &self @[195:16]
+      n9:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &self @[195:16]
       store &getelementptr_offset_1 <- 16 @[195:16]
       n10 = load &getelementptr_offset_1 @[195:16]
       n16 = load &self @[195:16]
@@ -1820,7 +1820,7 @@ define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA10IndividualC_ADtF(j
   local getelementptr_offset_2: *void, getelementptr_offset_1: *void
   #: @[108:19]
       n1 = $builtins.llvm_nondet() @[108:19]
-      n2 = load &john @[108:17]
+      n2:*__infer_swift_type<T5Hello10IndividualC,Individual> = load &john @[108:17]
       store &getelementptr_offset_1 <- 13 @[108:17]
       n3 = load &getelementptr_offset_1 @[108:17]
       n5 = load &jane @[108:17]
@@ -1833,7 +1833,7 @@ define .plain_name = "set_spouses" $s5Hello11set_spousesyyAA10IndividualC_ADtF(j
       
   #9::void::ret: @[109:19]
       n8 = $builtins.llvm_nondet() @[109:19]
-      n9 = load &jane @[109:17]
+      n9:*__infer_swift_type<T5Hello10IndividualC,Individual> = load &jane @[109:17]
       store &getelementptr_offset_2 <- 13 @[109:17]
       n10 = load &getelementptr_offset_2 @[109:17]
       n12 = load &john @[109:17]

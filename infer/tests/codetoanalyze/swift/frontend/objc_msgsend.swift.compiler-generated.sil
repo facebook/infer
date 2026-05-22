@@ -30,15 +30,15 @@ declare _swift_FORCE_LOAD_$_swiftCoreFoundation() : *__infer_swift_type<ptr_elt>
 
 declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.$s5Hello9ObjCClassCfD(*__infer_swift_type<,ObjCClass>) : void
+declare .plain_name = "deinit" .method_offset = "-2" __infer_swift_type<T5Hello9ObjCClassC,ObjCClass>.$s5Hello9ObjCClassCfD(*__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>) : void
 
 declare $s5Hello9ObjCClassCMa(int) : *__infer_swift_type<ptr_elt>
 
-declare .plain_name = "init" $s5Hello9ObjCClassCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<,ObjCClass>
+declare .plain_name = "init" $s5Hello9ObjCClassCACycfcTo(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>
 
-declare .plain_name = "init" $s5Hello9ObjCClassCACycfc(*__infer_swift_type<,ObjCClass>) : *__infer_swift_type<,ObjCClass>
+declare .plain_name = "init" $s5Hello9ObjCClassCACycfc(*__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>) : *__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>
 
-declare .plain_name = "init" $s5Hello9ObjCClassCACycfC(*__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<,ObjCClass>
+declare .plain_name = "init" $s5Hello9ObjCClassCACycfC(*__infer_swift_type<,$s5Hello9ObjCClassCXMTD>) : *__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>
 
 define .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivsTo(var1: *__infer_swift_type<ptr_elt>, var2: *__infer_swift_type<ptr_elt>, var3: int) : void {
   #: @[0:0]
@@ -55,7 +55,7 @@ define .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivsTo(var1: *__infer_
       
 } @?
 
-declare .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivs(int, *__infer_swift_type<,ObjCClass>) : void
+declare .plain_name = "value.set" $s5Hello9ObjCClassC5valueSivs(int, *__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>) : void
 
 declare $s5Hello9ObjCClassC5valueSivpfi() : int
 
@@ -73,15 +73,15 @@ define .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivgTo(var1: *__infer_
       
 } @?
 
-declare .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivg(*__infer_swift_type<,ObjCClass>) : int
+declare .plain_name = "value.get" $s5Hello9ObjCClassC5valueSivg(*__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>) : int
 
 declare .plain_name = "dispatchDynamicSelector" $s5Hello23dispatchDynamicSelectorySbSo8NSObjectC_10ObjectiveC0D0VtF(*__infer_swift_type<,NSObject>, *__infer_swift_type<,Selector>) : *__infer_swift_type<,Bool>
 
 declare .plain_name = "performDynamicSelector" $s5Hello22performDynamicSelectorys9UnmanagedVyyXlGSgSo8NSObjectC_10ObjectiveC0D0VtF(*__infer_swift_type<,NSObject>, *__infer_swift_type<,Selector>) : *__infer_swift_type<,Optional>
 
-declare .plain_name = "setValueViaObjC" $s5Hello15setValueViaObjCyyAA0E6CClassC_SitF(*__infer_swift_type<,ObjCClass>, int) : void
+declare .plain_name = "setValueViaObjC" $s5Hello15setValueViaObjCyyAA0E6CClassC_SitF(*__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>, int) : void
 
-declare .plain_name = "getValueViaObjC" $s5Hello15getValueViaObjCySiAA0E6CClassCF(*__infer_swift_type<,ObjCClass>) : int
+declare .plain_name = "getValueViaObjC" $s5Hello15getValueViaObjCySiAA0E6CClassCF(*__infer_swift_type<T5Hello9ObjCClassC,ObjCClass>) : int
 
 global symbolic _____ 5Hello9ObjCClassC: *__infer_tuple_class<int,int,int>
 

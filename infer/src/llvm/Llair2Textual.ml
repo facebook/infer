@@ -1675,12 +1675,16 @@ let init_module_state (llair_program : Llair.program) lang =
     translate_llair_function_signatures lang method_class_index struct_map functions
   in
   let mangled_map = Llair2TextualTypeName.compute_mangled_map struct_map in
-  let plain_map = Llair2TextualTypeName.compute_plain_map struct_map in
   let class_method_index = Textual.TypeName.Hashtbl.create 16 in
   let struct_map =
     Globals.process_globals lang class_method_index method_class_index ~mangled_map ~struct_map
       globals_map
   in
+  (* [plain_map] must be computed after [process_globals], which is where the
+     [Textual.TypeName.t] keys in [struct_map] gain their plain-name annotations
+     (the second positional arg). Computing it earlier produces an empty map and
+     silently breaks downstream [struct_name_of_plain_name] lookups. *)
+  let plain_map = Llair2TextualTypeName.compute_plain_map struct_map in
   let proc_decls =
     update_function_signatures lang class_method_index method_class_index ~mangled_map ~struct_map
       ~plain_map proc_decls

@@ -1338,7 +1338,7 @@ define .plain_name = "test_value_nil2_good" $s5Hello20test_value_nil2_goodSiyF()
 define .plain_name = "read_weak_delegate" $s5Hello18read_weak_delegate1hyXlSgAA18WeakDelegateHolderC_tF(h: *__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder>) : int {
   local getelementptr_offset_1: *void
   #: @[204:14]
-      n1 = load &h @[204:14]
+      n1:*__infer_swift_type<T5Hello18WeakDelegateHolderC,WeakDelegateHolder> = load &h @[204:14]
       store &getelementptr_offset_1 <- 11 @[204:14]
       n2 = load &getelementptr_offset_1 @[204:14]
       n4 = load &h @[204:14]
