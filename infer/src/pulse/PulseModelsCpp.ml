@@ -900,6 +900,22 @@ module Thrift = struct
   let field_ref ~name tgt src : model =
     let open PulseModelsDSL.Syntax in
     start_named_model ("apache::thrift::" ^ name) @@ fun () -> store ~ref:tgt src
+
+
+  let field_ref_star ~name this : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model ("apache::thrift::" ^ name ^ "::operator*")
+    @@ fun () ->
+    let* inner = load this in
+    assign_ret inner
+
+
+  let field_ref_arrow ~name this : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model ("apache::thrift::" ^ name ^ "::operator->")
+    @@ fun () ->
+    let* inner = load this in
+    assign_ret inner
 end
 
 let folly_co_yield_co_error : model =
@@ -1118,9 +1134,13 @@ let map_matchers =
 
 let thrift_matchers =
   let open ProcnameDispatcher.Call in
-  List.map Typ.thrift_field_refs ~f:(fun field_ref ->
-      -"apache" &:: "thrift" &:: field_ref &:: field_ref $ capt_arg_payload $+ capt_arg_payload
-      $+...$--> Thrift.field_ref ~name:field_ref )
+  List.concat_map Typ.thrift_field_refs ~f:(fun field_ref ->
+      [ -"apache" &:: "thrift" &:: field_ref &:: field_ref $ capt_arg_payload $+ capt_arg_payload
+        $+...$--> Thrift.field_ref ~name:field_ref
+      ; -"apache" &:: "thrift" &:: field_ref &:: "operator*" $ capt_arg_payload
+        $--> Thrift.field_ref_star ~name:field_ref
+      ; -"apache" &:: "thrift" &:: field_ref &:: "operator->" <>$ capt_arg_payload
+        $--> Thrift.field_ref_arrow ~name:field_ref ] )
 
 
 let simple_matchers =
