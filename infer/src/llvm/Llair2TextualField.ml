@@ -162,23 +162,43 @@ let estimate_field_byte_size (typ : Textual.Typ.t) =
       8
 
 
-let lookup_field_by_byte_offset struct_map type_name byte_offset =
-  if byte_offset < swift_class_header_bytes then None
-  else
-    match Textual.TypeName.Map.find_opt type_name struct_map with
+let lookup_field_by_byte_offset ?field_byte_offset_map struct_map type_name byte_offset =
+  (* Fast path: if the Wvd descriptor for this (class, byte_offset) is in scope,
+     use it directly. Bypasses [estimate_field_byte_size]'s assumptions about
+     pointer sizes / header layout, which are wrong for classes with non-pointer
+     stored properties (e.g. [Int8], [Bool], [CGRect]). *)
+  let from_byte_map =
+    match field_byte_offset_map with
     | None ->
         None
-    | Some (textual_struct : Textual.Struct.t) ->
-        let rec walk fields cursor =
-          match fields with
-          | [] ->
-              None
-          | (field_decl : Textual.FieldDecl.t) :: rest ->
-              if Int.equal cursor byte_offset then Some field_decl.qualified_name
-              else if cursor > byte_offset then None
-              else walk rest (cursor + estimate_field_byte_size field_decl.typ)
-        in
-        walk textual_struct.fields swift_class_header_bytes
+    | Some m -> (
+        let key = State.FieldOffset.{class_name= type_name; offset= byte_offset} in
+        match State.FieldOffsetMap.find_opt m key with
+        | Some field_name ->
+            Some Textual.{enclosing_class= type_name; name= field_name}
+        | None ->
+            None )
+  in
+  match from_byte_map with
+  | Some _ ->
+      from_byte_map
+  | None -> (
+      if byte_offset < swift_class_header_bytes then None
+      else
+        match Textual.TypeName.Map.find_opt type_name struct_map with
+        | None ->
+            None
+        | Some (textual_struct : Textual.Struct.t) ->
+            let rec walk fields cursor =
+              match fields with
+              | [] ->
+                  None
+              | (field_decl : Textual.FieldDecl.t) :: rest ->
+                  if Int.equal cursor byte_offset then Some field_decl.qualified_name
+                  else if cursor > byte_offset then None
+                  else walk rest (cursor + estimate_field_byte_size field_decl.typ)
+            in
+            walk textual_struct.fields swift_class_header_bytes )
 
 
 let tuple_field_prefix = "__infer_tuple_field_"
@@ -340,3 +360,37 @@ let extract_class_and_field_from_wvd mangled =
       (* Cache the parsed result for all future O(1) lookups *)
       Hashtbl.set wvd_cache ~key:mangled ~data:result ;
       result
+
+
+(** Build a [(class_name, byte_offset) → FieldName.t] map from Wvd field-offset descriptor globals:
+    every Wvd global whose initialiser is a constant byte offset gives us the property's exact
+    layout offset directly. This is the most reliable source of byte-offset ↔ field-name
+    correspondence and bypasses the fragile [estimate_field_byte_size] walk used as a fallback.
+    Externally- declared Wvds (no initializer) are skipped: they survive translation as a
+    declaration but we don't know their numeric offset until the defining module is in scope. *)
+let build_field_byte_offset_map lang ~mangled_map struct_map globals_map =
+  let m = State.FieldOffsetMap.create 64 in
+  Textual.VarName.Map.iter
+    (fun _var Llair.GlobalDefn.{name; init; _} ->
+      let global_name = Llair.Global.name name in
+      if String.is_suffix global_name ~suffix:"Wvd" then
+        let class_opt, field_name_str = extract_class_and_field_from_wvd global_name in
+        let offset_opt =
+          match init with
+          | Some (Llair.Exp.Integer {data; _}, _) ->
+              Some (NS.Z.to_int data)
+          | _ ->
+              None
+        in
+        match (class_opt, offset_opt) with
+        | Some mangled_class, Some offset when not (String.equal field_name_str "unknown_field") ->
+            let class_name =
+              TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+                mangled_class
+            in
+            let key = State.FieldOffset.{class_name; offset} in
+            State.FieldOffsetMap.replace m key (Textual.FieldName.of_string field_name_str)
+        | _ ->
+            () )
+    globals_map ;
+  m

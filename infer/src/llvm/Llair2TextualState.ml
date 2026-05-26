@@ -42,6 +42,13 @@ module FieldOffsetMap = Stdlib.Hashtbl.Make (FieldOffset)
 
 type field_offset_map = Textual.FieldName.t FieldOffsetMap.t
 
+(* Maps [(class_name, byte_offset)] → [FieldName.t] for Swift class properties whose
+   Wvd field-offset descriptor was a constant in this module (i.e. the property's
+   defining module is in-tree). Used to recover field names from byte-offset GEPs
+   that the optimiser stripped, without having to walk the struct's fields with an
+   error-prone byte-size estimator. *)
+type field_byte_offset_map = Textual.FieldName.t FieldOffsetMap.t
+
 module ClassMethodIndex = struct
   type t = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
 
@@ -81,10 +88,12 @@ module ModuleState = struct
     ; method_class_index: method_class_index
     ; class_name_offset_map: class_name_offset_map
     ; field_offset_map: field_offset_map
+    ; field_byte_offset_map: field_byte_offset_map
     ; objc_method_index: (string, Textual.QualifiedProcName.t) Hashtbl.t }
 
   let init ~functions ~struct_map ~mangled_map ~plain_map ~proc_decls ~proc_map ~globals_map ~lang
-      ~method_class_index ~class_name_offset_map ~field_offset_map ~objc_method_index =
+      ~method_class_index ~class_name_offset_map ~field_offset_map ~field_byte_offset_map
+      ~objc_method_index =
     { functions
     ; struct_map
     ; mangled_map
@@ -96,6 +105,7 @@ module ModuleState = struct
     ; method_class_index
     ; class_name_offset_map
     ; field_offset_map
+    ; field_byte_offset_map
     ; objc_method_index }
 end
 

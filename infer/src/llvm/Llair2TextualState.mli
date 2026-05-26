@@ -43,6 +43,8 @@ module FieldOffsetMap : Stdlib.Hashtbl.S with type key = FieldOffset.t
 
 type field_offset_map = Textual.FieldName.t FieldOffsetMap.t
 
+type field_byte_offset_map = Textual.FieldName.t FieldOffsetMap.t
+
 module ClassMethodIndex : sig
   type t = (Textual.QualifiedProcName.t * int) list Textual.TypeName.Hashtbl.t
 
@@ -64,6 +66,7 @@ module ModuleState : sig
     ; method_class_index: method_class_index
     ; class_name_offset_map: class_name_offset_map
     ; field_offset_map: field_offset_map
+    ; field_byte_offset_map: field_byte_offset_map
     ; objc_method_index: (string, Textual.QualifiedProcName.t) Hashtbl.t }
 
   val init :
@@ -78,6 +81,7 @@ module ModuleState : sig
     -> method_class_index:method_class_index
     -> class_name_offset_map:class_name_offset_map
     -> field_offset_map:field_offset_map
+    -> field_byte_offset_map:field_byte_offset_map
     -> objc_method_index:(string, Textual.QualifiedProcName.t) Hashtbl.t
     -> t
 end

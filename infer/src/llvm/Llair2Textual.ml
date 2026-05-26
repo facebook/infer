@@ -560,7 +560,11 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
         | None ->
             None
         | Some struct_name -> (
-          match Field.lookup_field_by_byte_offset struct_map struct_name n with
+          match
+            Field.lookup_field_by_byte_offset
+              ~field_byte_offset_map:proc_state.module_state.field_byte_offset_map struct_map
+              struct_name n
+          with
           | None ->
               None
           | Some field ->
@@ -1697,6 +1701,9 @@ let init_module_state (llair_program : Llair.program) lang =
   in
   let struct_map = Type.update_struct_map_with_field_names field_offset_map struct_map in
   let struct_map = Globals.process_wvd_globals ~lang ~mangled_map globals_map struct_map in
+  let field_byte_offset_map =
+    Field.build_field_byte_offset_map lang ~mangled_map struct_map globals_map
+  in
   let proc_map =
     List.fold proc_decls ~init:Textual.QualifiedProcName.Map.empty ~f:(fun proc_map proc_decl ->
         Textual.QualifiedProcName.Map.add proc_decl.Textual.ProcDecl.qualified_name proc_decl
@@ -1704,7 +1711,8 @@ let init_module_state (llair_program : Llair.program) lang =
   in
   let objc_method_index = populate_objc_method_index proc_decls in
   ModuleState.init ~functions ~struct_map ~mangled_map ~plain_map ~proc_decls ~proc_map ~globals_map
-    ~lang ~method_class_index ~class_name_offset_map ~field_offset_map ~objc_method_index
+    ~lang ~method_class_index ~class_name_offset_map ~field_offset_map ~field_byte_offset_map
+    ~objc_method_index
 
 
 let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =

@@ -27,12 +27,16 @@ val swift_class_header_bytes : int
     Textual structs. *)
 
 val lookup_field_by_byte_offset :
-  State.struct_map -> Textual.TypeName.t -> int -> Textual.qualified_fieldname option
+     ?field_byte_offset_map:State.field_byte_offset_map
+  -> State.struct_map
+  -> Textual.TypeName.t
+  -> int
+  -> Textual.qualified_fieldname option
 (** Given a Swift class struct typename and an LLVM byte offset, return the qualified field that
-    starts exactly at that offset, or [None] if no field's start aligns with [byte_offset]. Walks
-    the struct's declared fields from [swift_class_header_bytes], advancing the cursor by each
-    field's estimated byte size. Conservative: returns [None] for unknown struct names, for offsets
-    falling inside the header, and for offsets that don't land on a field boundary. *)
+    starts exactly at that offset, or [None] if no field's start aligns with [byte_offset]. Prefers
+    the [field_byte_offset_map] (populated from Wvd field-offset descriptor globals) when supplied,
+    falling back to walking the struct's declared fields from [swift_class_header_bytes] with a
+    conservative per-field byte-size estimator. *)
 
 val tuple_field_of_pos : Textual.TypeName.t -> int -> Textual.qualified_fieldname
 
@@ -45,5 +49,12 @@ module OffsetIndex : sig
     -> (FuncName.t * func) list
     -> Textual.FieldName.t State.FieldOffsetMap.t
 end
+
+val build_field_byte_offset_map :
+     Textual.Lang.t
+  -> mangled_map:State.mangled_map
+  -> State.struct_map
+  -> State.globals_map
+  -> State.field_byte_offset_map
 
 val extract_class_and_field_from_wvd : string -> string option * string
