@@ -281,6 +281,43 @@ let extract_class_and_field_from_wvd mangled =
                   in
                   match class_marker_pos with
                   | Some cv_pos -> (
+                      (* Handle nested Swift classes (e.g. [BCNPublicViewCountShareCardSheet.Controller]
+                         mangled as [...ShareCardSheetC10ControllerC<property>...Wvd]).
+                         After the first class/struct marker, if what follows is another
+                         [<length-prefix><name><C/V>] chunk, it's a nested class continuation
+                         (not the property), so extend the class designator through it. Repeat
+                         until the next chunk is no longer a length-prefix-followed-by-C/V.
+
+                         Skip extension when the next length prefix starts with [0] — that's
+                         Swift's substitution-compression marker on the PROPERTY name (e.g.
+                         [<class>C08embeddedC0AA<idx>C...] for property [embeddedWidget] whose
+                         type happens to be a class), and the [C] mid-stream is part of the
+                         field's type signature, not a nested-class boundary. *)
+                      let rec extend_through_nested_classes cv_pos =
+                        let next_pos = cv_pos + 1 in
+                        if next_pos >= len then cv_pos
+                        else
+                          let end_d = consume_digits next_pos in
+                          if Int.equal next_pos end_d then cv_pos
+                          else
+                            let len_str =
+                              String.sub mangled ~pos:next_pos ~len:(end_d - next_pos)
+                            in
+                            if String.length len_str > 1 && Char.equal (String.get len_str 0) '0'
+                            then cv_pos
+                            else
+                              match int_of_string_opt len_str with
+                              | None ->
+                                  cv_pos
+                              | Some n ->
+                                  let s_end = end_d + n in
+                                  if s_end >= len then cv_pos
+                                  else if
+                                    Char.equal mangled.[s_end] 'C' || Char.equal mangled.[s_end] 'V'
+                                  then extend_through_nested_classes s_end
+                                  else cv_pos
+                      in
+                      let cv_pos = extend_through_nested_classes cv_pos in
                       let class_part_len = cv_pos - 2 + 1 in
                       let class_part = String.sub mangled ~pos:2 ~len:class_part_len in
                       let class_name = "T" ^ class_part in
