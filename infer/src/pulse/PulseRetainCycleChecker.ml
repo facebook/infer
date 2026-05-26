@@ -292,6 +292,24 @@ let check_retain_cycles tenv location addresses orig_astate =
                       if SourceFile.is_compiler_generated trace_loc.Location.file then location
                       else trace_loc
                 in
+                (* Same idea applied per-step: an individual [ViaCall]/[Immediate] node
+                   (or any [ValueHistory] event nested under it) whose location lives in
+                   compiler-generated code would render in the Errlog as an unactionable
+                   [<bitcode_id>:compiler-generated:0:0] entry in the IDE / Phabricator
+                   inline lint view. Replace each such location with the closest enclosing
+                   non-sentinel location, falling back to the report's primary [location]
+                   only at the outermost level. This keeps trace-step navigation coherent:
+                   clicking a synthetic step lands the cursor at the user-code site that
+                   called into the synthetic frame, not back at the headline. *)
+                let values =
+                  List.map values ~f:(fun (v : Diagnostic.retain_cycle_data) ->
+                      let trace =
+                        Option.map
+                          ~f:(Trace.redact_compiler_generated_locations ~fallback:location)
+                          v.trace
+                      in
+                      {v with trace} )
+                in
                 let diagnostic = Diagnostic.RetainCycle {values; location; unknown_access_type} in
                 Recoverable (astate, [ReportableError {astate; diagnostic}])
             | [] ->

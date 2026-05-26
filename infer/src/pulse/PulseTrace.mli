@@ -31,6 +31,17 @@ val get_outer_location : t -> Location.t
 (** skip histories and go straight to the where the action is: either the action itself or the call
     that leads to the action *)
 
+val map_locations : f:(Location.t -> Location.t) -> t -> t
+(** Apply [f] to every [Location.t] occurring inside the trace ([Immediate]/[ViaCall] step locations
+    and every location reached through the embedded value histories). Used to redact synthetic
+    locations that would otherwise leak into user-visible error traces. *)
+
+val redact_compiler_generated_locations : fallback:Location.t -> t -> t
+(** Replace every [Location.t] inside the trace whose file is a [SourceFile.is_compiler_generated]
+    sentinel with the closest enclosing non-sentinel location, falling back to [fallback] at the
+    outermost level. Used so trace-step navigation (IDE / Phabricator) anchors compiler-generated
+    frames at the caller's site rather than jumping back to a single fallback line on every step. *)
+
 val get_start_location : t -> Location.t
 (** initial step in the history if not empty, or else same as {!get_outer_location} *)
 

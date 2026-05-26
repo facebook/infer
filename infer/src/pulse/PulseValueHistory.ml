@@ -156,6 +156,135 @@ let of_cell_ids_in_map hist_map ids =
   match hists with [] -> None | [hist] -> Some hist | _ :: _ :: _ -> Some (multiplex hists)
 
 
+let rec map_event_locations ~f event =
+  match event with
+  | Allocation {f= ce; location; timestamp} ->
+      Allocation {f= ce; location= f location; timestamp}
+  | Assignment (location, timestamp) ->
+      Assignment (f location, timestamp)
+  | Call {f= ce; location; in_call; timestamp} ->
+      Call {f= ce; location= f location; in_call= map_locations ~f in_call; timestamp}
+  | Capture {captured_as; mode; location; timestamp} ->
+      Capture {captured_as; mode; location= f location; timestamp}
+  | ConditionPassed {if_kind; is_then_branch; location; timestamp} ->
+      ConditionPassed {if_kind; is_then_branch; location= f location; timestamp}
+  | ClassObjectInitialization (tname, location, timestamp) ->
+      ClassObjectInitialization (tname, f location, timestamp)
+  | CppTemporaryCreated (location, timestamp) ->
+      CppTemporaryCreated (f location, timestamp)
+  | FormalDeclared (pvar, location, timestamp) ->
+      FormalDeclared (pvar, f location, timestamp)
+  | Invalidated (inv, location, timestamp) ->
+      Invalidated (inv, f location, timestamp)
+  | NilMessaging (location, timestamp) ->
+      NilMessaging (f location, timestamp)
+  | Returned (location, timestamp) ->
+      Returned (f location, timestamp)
+  | StructFieldAddressCreated (fns, location, timestamp) ->
+      StructFieldAddressCreated (fns, f location, timestamp)
+  | TaintSource (ti, location, timestamp) ->
+      TaintSource (ti, f location, timestamp)
+  | TaintPropagated (location, timestamp) ->
+      TaintPropagated (f location, timestamp)
+  | VariableAccessed (pvar, location, timestamp) ->
+      VariableAccessed (pvar, f location, timestamp)
+  | VariableDeclared (pvar, location, timestamp) ->
+      VariableDeclared (pvar, f location, timestamp)
+
+
+and map_locations ~f hist =
+  match hist with
+  | Epoch ->
+      Epoch
+  | Sequence (event, hist) ->
+      Sequence (map_event_locations ~f event, map_locations ~f hist)
+  | BinaryOp (op, h1, h2) ->
+      BinaryOp (op, map_locations ~f h1, map_locations ~f h2)
+  | FromCellIds (ids, hist) ->
+      FromCellIds (ids, map_locations ~f hist)
+  | Multiplex hists ->
+      Multiplex (List.map ~f:(map_locations ~f) hists)
+  | UnknownCall {f= ce; actuals; location; timestamp} ->
+      UnknownCall
+        {f= ce; actuals= List.map ~f:(map_locations ~f) actuals; location= f location; timestamp}
+
+
+(* Parent-aware variant: see [redact_compiler_generated_locations] below. *)
+let rec redact_event_compiler_generated_locations ~parent event =
+  let resolve loc = if SourceFile.is_compiler_generated loc.Location.file then parent else loc in
+  match event with
+  | Allocation {f= ce; location; timestamp} ->
+      Allocation {f= ce; location= resolve location; timestamp}
+  | Assignment (location, timestamp) ->
+      Assignment (resolve location, timestamp)
+  | Call {f= ce; location; in_call; timestamp} ->
+      let location = resolve location in
+      Call
+        { f= ce
+        ; location
+        ; in_call= redact_compiler_generated_locations ~fallback:location in_call
+        ; timestamp }
+  | Capture {captured_as; mode; location; timestamp} ->
+      Capture {captured_as; mode; location= resolve location; timestamp}
+  | ConditionPassed {if_kind; is_then_branch; location; timestamp} ->
+      ConditionPassed {if_kind; is_then_branch; location= resolve location; timestamp}
+  | ClassObjectInitialization (tname, location, timestamp) ->
+      ClassObjectInitialization (tname, resolve location, timestamp)
+  | CppTemporaryCreated (location, timestamp) ->
+      CppTemporaryCreated (resolve location, timestamp)
+  | FormalDeclared (pvar, location, timestamp) ->
+      FormalDeclared (pvar, resolve location, timestamp)
+  | Invalidated (inv, location, timestamp) ->
+      Invalidated (inv, resolve location, timestamp)
+  | NilMessaging (location, timestamp) ->
+      NilMessaging (resolve location, timestamp)
+  | Returned (location, timestamp) ->
+      Returned (resolve location, timestamp)
+  | StructFieldAddressCreated (fns, location, timestamp) ->
+      StructFieldAddressCreated (fns, resolve location, timestamp)
+  | TaintSource (ti, location, timestamp) ->
+      TaintSource (ti, resolve location, timestamp)
+  | TaintPropagated (location, timestamp) ->
+      TaintPropagated (resolve location, timestamp)
+  | VariableAccessed (pvar, location, timestamp) ->
+      VariableAccessed (pvar, resolve location, timestamp)
+  | VariableDeclared (pvar, location, timestamp) ->
+      VariableDeclared (pvar, resolve location, timestamp)
+
+
+(** Companion to [map_locations] that replaces each compiler-generated [Location.t] with the closest
+    enclosing non-sentinel location rather than rewriting every step to a single fallback. See
+    [PulseTrace.redact_compiler_generated_locations] for the rationale (trace-step navigation UX in
+    IDE / Phabricator). [Call.in_call] and [UnknownCall.actuals] inherit the *resolved* call site as
+    their new parent, so nested compiler-generated frames inside a real user call stick at the user
+    call's site, not at the top-level [fallback]. *)
+and redact_compiler_generated_locations ~fallback hist =
+  let resolve loc = if SourceFile.is_compiler_generated loc.Location.file then fallback else loc in
+  match hist with
+  | Epoch ->
+      Epoch
+  | Sequence (event, hist) ->
+      Sequence
+        ( redact_event_compiler_generated_locations ~parent:fallback event
+        , redact_compiler_generated_locations ~fallback hist )
+  | BinaryOp (op, h1, h2) ->
+      BinaryOp
+        ( op
+        , redact_compiler_generated_locations ~fallback h1
+        , redact_compiler_generated_locations ~fallback h2 )
+  | FromCellIds (ids, hist) ->
+      FromCellIds (ids, redact_compiler_generated_locations ~fallback hist)
+  | Multiplex hists ->
+      Multiplex (List.map ~f:(redact_compiler_generated_locations ~fallback) hists)
+  | UnknownCall {f= ce; actuals; location; timestamp} ->
+      let location = resolve location in
+      UnknownCall
+        { f= ce
+        ; actuals= List.map ~f:(redact_compiler_generated_locations ~fallback:location) actuals
+        ; location
+        ; timestamp }
+
+
 let location_of_event = function
   | Allocation {location}
   | Assignment (location, _)

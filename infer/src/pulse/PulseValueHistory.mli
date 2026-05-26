@@ -112,6 +112,17 @@ val iter : t -> f:(iter_event -> unit) -> unit
 
 val location_of_event : event -> Location.t
 
+val map_locations : f:(Location.t -> Location.t) -> t -> t
+(** Apply [f] to every [Location.t] occurring inside the history (top-level events, locations inside
+    [Call.in_call] and [UnknownCall.actuals], etc.). Used to redact synthetic locations that would
+    otherwise leak into user-visible error traces. *)
+
+val redact_compiler_generated_locations : fallback:Location.t -> t -> t
+(** Companion to {!map_locations} that replaces each compiler-generated [Location.t] with the
+    closest enclosing non-sentinel location rather than rewriting every step to a single [fallback].
+    [Call.in_call] and [UnknownCall.actuals] inherit the resolved call site as the parent for their
+    contents. *)
+
 val timestamp_of_event : event -> Timestamp.t [@@warning "-unused-value-declaration"]
 (* used in unit tests *)
 

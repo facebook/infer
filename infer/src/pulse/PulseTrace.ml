@@ -17,6 +17,49 @@ type t =
 
 let get_outer_location = function Immediate {location; _} | ViaCall {location; _} -> location
 
+let rec map_locations ~f trace =
+  match trace with
+  | Immediate {location; history} ->
+      Immediate {location= f location; history= ValueHistory.map_locations ~f history}
+  | ViaCall {f= call_event; location; history; in_call} ->
+      ViaCall
+        { f= call_event
+        ; location= f location
+        ; history= ValueHistory.map_locations ~f history
+        ; in_call= map_locations ~f in_call }
+
+
+(** Replace every [Location.t] inside the trace whose file is a compiler-generated sentinel with the
+    closest enclosing non-sentinel location, falling back to [fallback] at the outermost level.
+
+    The {!IDE / Phabricator inline lint} trace-stepper opens the file at the location of each trace
+    step the reader clicks. A plain mapping that rewrites every compiler-generated step to a single
+    [fallback] (e.g. the headline) makes the cursor jump back to the same line on every such step.
+    Instead we walk structurally and inherit the parent location: synthetic frames "stick" at the
+    closest enclosing user-code site, which is the caller's [ViaCall.location] / [Call.location] /
+    [UnknownCall.location] / [Immediate.location] that the reader was just looking at. *)
+let redact_compiler_generated_locations ~fallback trace =
+  let resolve ~parent loc =
+    if SourceFile.is_compiler_generated loc.Location.file then parent else loc
+  in
+  let rec walk ~parent trace =
+    match trace with
+    | Immediate {location; history} ->
+        let location = resolve ~parent location in
+        Immediate
+          { location
+          ; history= ValueHistory.redact_compiler_generated_locations ~fallback:location history }
+    | ViaCall {f= call_event; location; history; in_call} ->
+        let location = resolve ~parent location in
+        ViaCall
+          { f= call_event
+          ; location
+          ; history= ValueHistory.redact_compiler_generated_locations ~fallback:location history
+          ; in_call= walk ~parent:location in_call }
+  in
+  walk ~parent:fallback trace
+
+
 let get_outer_history = function Immediate {history; _} | ViaCall {history; _} -> history
 
 let get_cell_ids trace = ValueHistory.get_cell_ids (get_outer_history trace)

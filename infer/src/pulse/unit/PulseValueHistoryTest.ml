@@ -86,3 +86,119 @@ let%test_module "iteration order" =
       |> iter_print_history ;
       [%expect {|ev0;ev1;ev2;ev3;ev4;ev5;ev6;ev7;ev8;ev9;ev10|}]
   end )
+
+
+(* Coverage for [ValueHistory.redact_compiler_generated_locations] and
+   [PulseTrace.redact_compiler_generated_locations]: replace every [Location.t] whose [file] is
+   a [SourceFile.is_compiler_generated] sentinel with the closest enclosing non-sentinel location,
+   with the report's [fallback] used only at the outermost level. User-code locations are
+   preserved verbatim. *)
+let%test_module "redact_compiler_generated_locations" =
+  ( module struct
+    module Trace = PulseTrace
+
+    let synth_file = SourceFile.compiler_generated ~bitcode_id:"bc"
+
+    let user_file = SourceFile.invalid "u.swift"
+
+    let mk_loc file line = {Location.dummy with file; line}
+
+    let synth_loc line = mk_loc synth_file line
+
+    let user_loc line = mk_loc user_file line
+
+    let fallback = user_loc 100
+
+    let ev_at loc t = ValueHistory.Assignment (loc, timestamp_of_int t)
+
+    let history_loc h =
+      (* helper: peek the head event's location (only used in tests below where there's one event) *)
+      match (h : ValueHistory.t) with
+      | Sequence (event, _) ->
+          ValueHistory.location_of_event event
+      | _ ->
+          Location.dummy
+
+
+    let f = CallEvent.Model "f"
+
+    let%test "history: synthetic top-level event redacts to fallback" =
+      let h = ValueHistory.singleton (ev_at (synth_loc 1) 0) in
+      let h' = ValueHistory.redact_compiler_generated_locations ~fallback h in
+      Location.equal (history_loc h') fallback
+
+
+    let%test "history: user top-level event is preserved verbatim" =
+      let loc = user_loc 5 in
+      let h = ValueHistory.singleton (ev_at loc 0) in
+      let h' = ValueHistory.redact_compiler_generated_locations ~fallback h in
+      Location.equal (history_loc h') loc
+
+
+    let%test "history: synthetic event inside Call.in_call inherits the user-code Call site" =
+      let inner_synth = ValueHistory.singleton (ev_at (synth_loc 1) 0) in
+      let call_loc = user_loc 7 in
+      let call_ev =
+        ValueHistory.Call
+          {f; location= call_loc; in_call= inner_synth; timestamp= timestamp_of_int 1}
+      in
+      let h = ValueHistory.singleton call_ev in
+      let h' = ValueHistory.redact_compiler_generated_locations ~fallback h in
+      match (h' : ValueHistory.t) with
+      | Sequence (Call {in_call; location}, _) ->
+          (* the Call's own location stays user, the inner synthetic event inherits it as parent *)
+          Location.equal location call_loc && Location.equal (history_loc in_call) call_loc
+      | _ ->
+          false
+
+
+    let%test "history: synthetic Call with synthetic body inherits fallback at the outermost level"
+        =
+      let inner_synth = ValueHistory.singleton (ev_at (synth_loc 1) 0) in
+      let call_ev =
+        ValueHistory.Call
+          {f; location= synth_loc 2; in_call= inner_synth; timestamp= timestamp_of_int 1}
+      in
+      let h = ValueHistory.singleton call_ev in
+      let h' = ValueHistory.redact_compiler_generated_locations ~fallback h in
+      match (h' : ValueHistory.t) with
+      | Sequence (Call {in_call; location}, _) ->
+          Location.equal location fallback && Location.equal (history_loc in_call) fallback
+      | _ ->
+          false
+
+
+    let%test "trace: ViaCall with user location + synthetic Immediate inside, inner uses parent" =
+      let inner_loc = synth_loc 1 in
+      let outer_loc = user_loc 8 in
+      let inner = Trace.Immediate {location= inner_loc; history= ValueHistory.epoch} in
+      let trace =
+        Trace.ViaCall {f; location= outer_loc; history= ValueHistory.epoch; in_call= inner}
+      in
+      let trace' = Trace.redact_compiler_generated_locations ~fallback trace in
+      match trace' with
+      | ViaCall {location; in_call= Immediate {location= inner_loc'; _}; _} ->
+          Location.equal location outer_loc && Location.equal inner_loc' outer_loc
+      | _ ->
+          false
+
+
+    let%test "trace: synthetic ViaCall location falls back, propagating to inner Immediate too" =
+      let inner = Trace.Immediate {location= synth_loc 1; history= ValueHistory.epoch} in
+      let trace =
+        Trace.ViaCall {f; location= synth_loc 2; history= ValueHistory.epoch; in_call= inner}
+      in
+      let trace' = Trace.redact_compiler_generated_locations ~fallback trace in
+      match trace' with
+      | ViaCall {location; in_call= Immediate {location= inner_loc'; _}; _} ->
+          Location.equal location fallback && Location.equal inner_loc' fallback
+      | _ ->
+          false
+
+
+    let%test "trace: Immediate user location preserved verbatim" =
+      let loc = user_loc 9 in
+      let trace = Trace.Immediate {location= loc; history= ValueHistory.epoch} in
+      let trace' = Trace.redact_compiler_generated_locations ~fallback trace in
+      match trace' with Immediate {location; _} -> Location.equal location loc | _ -> false
+  end )
