@@ -409,6 +409,13 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
         objc_alloc_from_swift (FuncArg.exp size) class_ptr
     | _ ->
         unknown args )
+  | OptionalInitNone | OptionalInitSome ->
+      (* TODO(swift-optional-model): replace this stub with a model that writes the
+         [__infer_swift_optional_payload] field on the receiver so that subsequent
+         unwrap models can use [check_valid] to fire [SWIFT_NPE].  Until the
+         construction-site rewrite in the frontend lands, no caller emits these
+         builtins, so havocing is harmless. *)
+      unknown args
   | SwiftAlloc -> (
     match func_args with size :: _ -> alloc (FuncArg.exp size) | _ -> unknown args )
   | Memcpy ->

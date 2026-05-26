@@ -17,6 +17,8 @@ type builtin =
   | ObjcMsgSend
   | ObjcMsgSendSuper2
   | ObjcAllocFromSwift  (** Swift-driven ObjC allocation, takes [(sizeof typ, dynamic class)]. *)
+  | OptionalInitNone  (** Swift [Optional<T>] construction of [.none]. *)
+  | OptionalInitSome  (** Swift [Optional<T>] construction of [.some(payload)]. *)
   | SwiftAlloc  (** Swift class allocation, takes a single [sizeof typ] arg. *)
   | SwiftGetDynamicType
   | MetadataEquals  (** Used to compare metadata of two types. *)

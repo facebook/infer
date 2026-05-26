@@ -18,6 +18,8 @@ type builtin =
   | ObjcMsgSend
   | ObjcMsgSendSuper2
   | ObjcAllocFromSwift  (** Swift-driven ObjC allocation, takes [(sizeof typ, dynamic class)]. *)
+  | OptionalInitNone  (** Swift [Optional<T>] construction of [.none]. *)
+  | OptionalInitSome  (** Swift [Optional<T>] construction of [.some(payload)]. *)
   | SwiftAlloc  (** Swift class allocation, takes a single [sizeof typ] arg. *)
   | SwiftGetDynamicType
   | MetadataEquals  (** Used to compare metadata of two types. *)
@@ -50,6 +52,10 @@ let show_builtin = function
       "objc_msgSendSuper2"
   | ObjcAllocFromSwift ->
       "__objc_alloc_from_swift"
+  | OptionalInitNone ->
+      "__swift_optional_init_none"
+  | OptionalInitSome ->
+      "__swift_optional_init_some"
   | SwiftAlloc ->
       "swift_allocObject"
   | Memcpy ->
