@@ -119,6 +119,7 @@ let blocklisted_callee_patterns =
     , List.map ~f:Str.regexp
         [ "^NS[A-Z].*\\."
         ; "^UI[A-Z].*\\."
+        ; "^NSStringFrom"
         ; "^__builtin_"
         ; "^__inline_"
         ; "^dispatch_"
