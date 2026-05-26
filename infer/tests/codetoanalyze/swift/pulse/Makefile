@@ -8,6 +8,7 @@ SWIFT_OPTIONS = -whole-module-optimization
 INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --jobs 1 --pulse-report-assert --enable-issue-type PULSE_ASSERTION_ERROR \
+  --pulse-retain-cycle-blocklist-pattern ".*[Rr]etain.*" \
 
 
 INFERPRINT_OPTIONS = --issues-tests
