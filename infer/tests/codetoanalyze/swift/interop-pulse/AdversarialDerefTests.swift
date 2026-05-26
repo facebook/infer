@@ -49,6 +49,30 @@ func unsafelyUnwrappedNil_bad_FN() {
   _ = x.unsafelyUnwrapped
 }
 
+// Statically [.some(_)] -- expected to stay silent under any model.
+func unsafelyUnwrappedSome_good() {
+  let x: Int? = .some(5)
+  _ = x.unsafelyUnwrapped
+}
+
+// Class-typed payload variant (`Optional<String>`).
+func unsafelyUnwrappedNilString_bad_FN() {
+  let x: String? = nil
+  _ = x.unsafelyUnwrapped
+}
+
+func unsafelyUnwrappedSomeString_good() {
+  let x: String? = .some("hi")
+  _ = x.unsafelyUnwrapped
+}
+
+// Receiver flows from an unmodelled extern: heap can't prove `.none`,
+// so any nil-deref checker should stay silent.
+func unsafelyUnwrappedUnknown_good(api: LegacyAPI) {
+  let x: String? = api.getNullableString()
+  _ = x.unsafelyUnwrapped
+}
+
 // MARK: - Likely-FP `_good` cases (must NOT fire)
 
 // `[weak self]` closure with `?.` -- nil-safe by construction.
