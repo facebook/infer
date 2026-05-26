@@ -44,6 +44,12 @@ module ModeledField : sig
   val delegated_release : Fieldname.t
   (** Modeled field for resource release delegation *)
 
+  val swift_optional_marker : Fieldname.t
+  (** Validity marker for a Swift [Optional<T>]. *)
+
+  val swift_optional_value : Fieldname.t
+  (** Payload of a Swift [Optional<T>]. *)
+
   val swift_event_handler : Fieldname.t
   (** Strong field a setter-style retain-cycle model attaches to a receiver to point at a
       `setEventHandler`-style callback block (e.g. [DispatchSourceProtocol.setEventHandler]). *)

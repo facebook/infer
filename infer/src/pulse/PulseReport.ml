@@ -131,8 +131,8 @@ let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed 
       ; transitive_callees
       ; transitive_missed_captures }
     in
-    (* [Diagnostic.get_issue_type] wrapper to report different type of issue for
-       nullptr dereferences in Java classes annotated with @Nullsafe if requested *)
+    (* Remap to a different issue type for nullptr derefs in @Nullsafe Java classes,
+       and for Swift unwraps of a [.none] Optional (-> SWIFT_NPE). *)
     let get_issue_type tenv ~latent diagnostic proc_desc =
       let original_issue_type = Diagnostic.get_issue_type diagnostic ~latent in
       if IssueType.equal original_issue_type (IssueType.nullptr_dereference ~latent) then
@@ -141,6 +141,12 @@ let do_report {InterproceduralAnalysis.tenv; proc_desc; err_log} ~is_suppressed 
           when is_nullptr_dereference_in_nullsafe_class tenv ~is_nullptr_dereference:true jn
                && Config.pulse_nullsafe_report_npe_as_separate_issue_type ->
             IssueType.nullptr_dereference_in_nullsafe_class ~latent
+        | _ ->
+            original_issue_type
+      else if IssueType.equal original_issue_type (IssueType.optional_empty_access ~latent) then
+        match Procdesc.get_proc_name proc_desc with
+        | Procname.Swift _ ->
+            IssueType.swift_npe ~latent
         | _ ->
             original_issue_type
       else original_issue_type

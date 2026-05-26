@@ -373,6 +373,26 @@ let objc_alloc_from_swift size_exp class_ptr () : unit DSL.model_monad =
   assign_ret allocated_obj
 
 
+(* Swift [Optional<T>] construction: [.none] invalidates the marker, [.some]
+   stores the payload. *)
+let swift_optional_init_none opt : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* {path; location} = get_data in
+  let* marker = fresh () in
+  let* () = store_field ~deref:false ~ref:opt ModeledField.swift_optional_marker marker in
+  let* () = and_eq_int marker IntLit.zero in
+  exec_command (fun astate ->
+      PulseOperations.invalidate path UntraceableAccess location OptionalEmpty marker astate )
+
+
+let swift_optional_init_some opt payload : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* marker = fresh () in
+  let* () = and_positive marker in
+  let* () = store_field ~deref:false ~ref:opt ModeledField.swift_optional_marker marker in
+  store_field ~deref:false ~ref:opt ModeledField.swift_optional_value payload
+
+
 let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
     unit -> unit DSL.model_monad =
   let builtin_s = SwiftProcname.show_builtin builtin in
@@ -409,13 +429,14 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
         objc_alloc_from_swift (FuncArg.exp size) class_ptr
     | _ ->
         unknown args )
-  | OptionalInitNone | OptionalInitSome ->
-      (* TODO(swift-optional-model): replace this stub with a model that writes the
-         [__infer_swift_optional_payload] field on the receiver so that subsequent
-         unwrap models can use [check_valid] to fire [SWIFT_NPE].  Until the
-         construction-site rewrite in the frontend lands, no caller emits these
-         builtins, so havocing is harmless. *)
-      unknown args
+  | OptionalInitNone -> (
+    match args with [opt] -> fun () -> swift_optional_init_none opt | _ -> unknown args )
+  | OptionalInitSome -> (
+    match args with
+    | [opt; payload] ->
+        fun () -> swift_optional_init_some opt payload
+    | _ ->
+        unknown args )
   | SwiftAlloc -> (
     match func_args with size :: _ -> alloc (FuncArg.exp size) | _ -> unknown args )
   | Memcpy ->

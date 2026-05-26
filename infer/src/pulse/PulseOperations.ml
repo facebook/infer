@@ -117,6 +117,12 @@ module ModeledField = struct
 
   let delegated_release = Fieldname.make pulse_model_type "__infer_model_delegated_release"
 
+  (* Validity marker of a Swift [Optional<T>]: invalidated for [.none], positive for [.some]. *)
+  let swift_optional_marker = Fieldname.make pulse_model_type "__infer_swift_optional_marker"
+
+  (* Payload of a Swift [Optional<T>]. *)
+  let swift_optional_value = Fieldname.make pulse_model_type "__infer_swift_optional_value"
+
   (* Synthetic Pulse class type for the strong field a setter-style retain-cycle
      model attaches to a receiver (e.g. DispatchSource holding its event/cancel
      handler block). Treated as a Swift class so [PulseRetainCycleChecker.is_ref_counted_or_block]
