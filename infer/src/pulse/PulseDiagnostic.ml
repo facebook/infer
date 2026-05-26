@@ -1279,8 +1279,11 @@ let get_issue_type ~latent issue_type =
       IssueType.pulse_unawaited_awaitable
   | ResourceLeak {resource= HackBuilderResource _}, false ->
       IssueType.pulse_unfinished_builder
-  | RetainCycle {unknown_access_type}, false ->
-      if unknown_access_type then IssueType.retain_cycle_no_weak_info else IssueType.retain_cycle
+  | RetainCycle {unknown_access_type; location}, false ->
+      if SourceFile.is_compiler_generated location.Location.file then
+        IssueType.retain_cycle_unactionable
+      else if unknown_access_type then IssueType.retain_cycle_no_weak_info
+      else IssueType.retain_cycle
   | StackVariableAddressEscape _, false ->
       IssueType.stack_variable_address_escape
   | TaintFlow {flow_kind= TaintedFlow}, _ ->

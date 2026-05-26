@@ -907,6 +907,15 @@ let retain_cycle =
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]
 
 
+(* Internal companion to [retain_cycle] for cycles whose headline location resolves to a
+   [SourceFile.is_compiler_generated] sentinel — the cycle is real but has no actionable
+   [file:line] for a product engineer. Disabled by default; observable via
+   [--enable-issue-type RETAIN_CYCLE_UNACTIONABLE]. See [PulseDiagnostic.get_issue_type]. *)
+let retain_cycle_unactionable =
+  register ~enabled:false ~category:ResourceLeak ~id:"RETAIN_CYCLE_UNACTIONABLE" Error Pulse
+    ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE_UNACTIONABLE.md"]
+
+
 let retain_cycle_no_weak_info =
   register ~enabled:false ~category:ResourceLeak ~id:"RETAIN_CYCLE_NO_WEAK_INFO" Error Pulse
     ~user_documentation:[%blob "./documentation/issues/RETAIN_CYCLE.md"]

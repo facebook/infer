@@ -243,6 +243,7 @@ OPTIONS
              REGEX_OP_ON_UI_THREAD (enabled by default),
              RETAIN_CYCLE (enabled by default),
              RETAIN_CYCLE_NO_WEAK_INFO (disabled by default),
+             RETAIN_CYCLE_UNACTIONABLE (disabled by default),
              SCOPE_LEAKAGE (enabled by default),
              SELF_IN_BLOCK_PASSED_TO_INIT (enabled by default),
              SENSITIVE_DATA_FLOW (disabled by default),

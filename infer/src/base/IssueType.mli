@@ -293,6 +293,8 @@ val regex_op_on_ui_thread : t
 
 val retain_cycle : t
 
+val retain_cycle_unactionable : t
+
 val retain_cycle_no_weak_info : t
 
 val scope_leakage : t
