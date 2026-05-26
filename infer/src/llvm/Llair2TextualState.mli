@@ -27,6 +27,12 @@ type plain_map = Textual.TypeName.t IString.Map.t
 
 type method_class_index = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
+(** Maps a class name to the set of real source files in which that class has a procedure with
+    non-empty DI loc. Built once per module from the Llair function list, used by
+    [should_translate]'s synthetic-broadcast fallback to avoid emitting the same accessor into every
+    source-file capture pass. *)
+type class_files_map = SourceFile.Set.t Textual.TypeName.Hashtbl.t
+
 module ClassNameOffset : sig
   type t = {class_name: Textual.TypeName.t; offset: int}
 end
@@ -64,6 +70,7 @@ module ModuleState : sig
     ; globals_map: globals_map
     ; lang: Textual.Lang.t
     ; method_class_index: method_class_index
+    ; class_files_map: class_files_map
     ; class_name_offset_map: class_name_offset_map
     ; field_offset_map: field_offset_map
     ; field_byte_offset_map: field_byte_offset_map
@@ -79,6 +86,7 @@ module ModuleState : sig
     -> globals_map:globals_map
     -> lang:Textual.Lang.t
     -> method_class_index:method_class_index
+    -> class_files_map:class_files_map
     -> class_name_offset_map:class_name_offset_map
     -> field_offset_map:field_offset_map
     -> field_byte_offset_map:field_byte_offset_map

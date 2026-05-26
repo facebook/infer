@@ -1455,25 +1455,44 @@ let matches_synthetic_filter plain_name mangled_name lang typ_name =
 
 type translate_mode = User_pass of SourceFile.t | Compiler_generated_pass
 
-let should_translate ~mode plain_name mangled_name lang method_class_index (loc : Llair.Loc.t) =
+let should_translate ~mode plain_name mangled_name lang method_class_index class_files_map
+    (loc : Llair.Loc.t) =
   let file =
     if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
     else loc.Llair.Loc.file
   in
   let source_file_loc = SourceFile.create file in
   let proc_name = Textual.ProcName.of_string mangled_name in
-  let typ_name = Textual.ProcName.Hashtbl.find_opt method_class_index proc_name in
+  let class_typ_name = Textual.ProcName.Hashtbl.find_opt method_class_index proc_name in
   let typ_name =
-    Option.bind ~f:(fun name -> Textual.TypeName.swift_mangled_name_of_type_name name) typ_name
+    Option.bind class_typ_name ~f:(fun name ->
+        Textual.TypeName.swift_mangled_name_of_type_name name )
   in
   let is_synthetic = is_compiler_generated_loc lang loc in
   let synthetic_match = matches_synthetic_filter plain_name mangled_name lang typ_name in
+  (* A [synthetic_match] proc (e.g. a [.get]/[.set]/[.modify] accessor whose DI
+     points at a real but irrelevant file) should only be broadcast into the
+     per-source-file pass for the file(s) where its enclosing class is defined.
+     Otherwise the accessor gets emitted into every [User_pass], and Pulse's
+     report attribution lands on whichever pass deduplicates last. When the
+     class has no recoverable source file (top-level free functions, true
+     unknowns) we fall back to the current broadcast behaviour. *)
+  let synthetic_match_for_this_file source_file =
+    if not synthetic_match then false
+    else
+      match Option.bind class_typ_name ~f:(Textual.TypeName.Hashtbl.find_opt class_files_map) with
+      | Some files when not (SourceFile.Set.is_empty files) ->
+          SourceFile.Set.mem source_file files
+      | _ ->
+          true
+  in
   match mode with
   | User_pass source_file ->
       (* In the per-source-file pass, translate procs whose DI matches this source
          file. Synthetic-DI procs (empty / <compiler-generated>) are skipped here and
          handled exclusively by the compiler-generated pass. *)
-      (not is_synthetic) && (SourceFile.equal source_file source_file_loc || synthetic_match)
+      (not is_synthetic)
+      && (SourceFile.equal source_file source_file_loc || synthetic_match_for_this_file source_file)
   | Compiler_generated_pass ->
       is_synthetic && synthetic_match
 
@@ -1541,11 +1560,11 @@ let update_formals_list formals_list formals_map =
 
 let translate_code ~mode ~sourcefile_for_proc_state ~module_state proc_descs
     (procdecl : Textual.ProcDecl.t) (func_name, func) =
-  let ModuleState.{lang; method_class_index} = module_state in
+  let ModuleState.{lang; method_class_index; class_files_map} = module_state in
   let should_translate =
     should_translate ~mode
       (FuncName.unmangled_name func_name)
-      (FuncName.name func_name) lang method_class_index func.Llair.loc
+      (FuncName.name func_name) lang method_class_index class_files_map func.Llair.loc
   in
   let formals_list = List.map ~f:Var.reg_to_var_name (StdUtils.iarray_to_list func.Llair.formals) in
   let formals_map =
@@ -1696,6 +1715,31 @@ let init_module_state (llair_program : Llair.program) lang =
   let class_name_offset_map =
     State.ClassMethodIndex.fill_class_name_offset_map class_method_index
   in
+  (* Build class -> source files map for [should_translate]'s
+     synthetic-broadcast fallback. Iterate the Llair functions; for each function
+     with a real DI source file, look up its enclosing class via
+     [method_class_index] and record (class, file). A class can land in multiple
+     files (e.g. extensions split across modules), so we accumulate sets. *)
+  let class_files_map = Textual.TypeName.Hashtbl.create 16 in
+  List.iter functions ~f:(fun (func_name, (func : Llair.func)) ->
+      if not (is_compiler_generated_loc lang func.loc) then
+        let proc_name = Textual.ProcName.of_string (FuncName.name func_name) in
+        match Textual.ProcName.Hashtbl.find_opt method_class_index proc_name with
+        | None ->
+            ()
+        | Some class_name ->
+            let file =
+              if Textual.Lang.is_c lang then func.loc.Llair.Loc.dir ^ "/" ^ func.loc.Llair.Loc.file
+              else func.loc.Llair.Loc.file
+            in
+            let source_file = SourceFile.create file in
+            let prev =
+              Option.value
+                (Textual.TypeName.Hashtbl.find_opt class_files_map class_name)
+                ~default:SourceFile.Set.empty
+            in
+            Textual.TypeName.Hashtbl.replace class_files_map class_name
+              (SourceFile.Set.add source_file prev) ) ;
   let field_offset_map =
     Field.OffsetIndex.build_field_offset_map ~mangled_map ~plain_map lang struct_map functions
   in
@@ -1711,8 +1755,8 @@ let init_module_state (llair_program : Llair.program) lang =
   in
   let objc_method_index = populate_objc_method_index proc_decls in
   ModuleState.init ~functions ~struct_map ~mangled_map ~plain_map ~proc_decls ~proc_map ~globals_map
-    ~lang ~method_class_index ~class_name_offset_map ~field_offset_map ~field_byte_offset_map
-    ~objc_method_index
+    ~lang ~method_class_index ~class_files_map ~class_name_offset_map ~field_offset_map
+    ~field_byte_offset_map ~objc_method_index
 
 
 let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =

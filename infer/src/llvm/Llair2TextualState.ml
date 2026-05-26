@@ -25,6 +25,8 @@ type plain_map = Textual.TypeName.t IString.Map.t
 
 type method_class_index = Textual.TypeName.t Textual.ProcName.Hashtbl.t
 
+type class_files_map = SourceFile.Set.t Textual.TypeName.Hashtbl.t
+
 module ClassNameOffset = struct
   type t = {class_name: Textual.TypeName.t; offset: int} [@@deriving compare, hash, equal]
 end
@@ -86,14 +88,15 @@ module ModuleState = struct
     ; globals_map: globals_map
     ; lang: Textual.Lang.t
     ; method_class_index: method_class_index
+    ; class_files_map: class_files_map
     ; class_name_offset_map: class_name_offset_map
     ; field_offset_map: field_offset_map
     ; field_byte_offset_map: field_byte_offset_map
     ; objc_method_index: (string, Textual.QualifiedProcName.t) Hashtbl.t }
 
   let init ~functions ~struct_map ~mangled_map ~plain_map ~proc_decls ~proc_map ~globals_map ~lang
-      ~method_class_index ~class_name_offset_map ~field_offset_map ~field_byte_offset_map
-      ~objc_method_index =
+      ~method_class_index ~class_files_map ~class_name_offset_map ~field_offset_map
+      ~field_byte_offset_map ~objc_method_index =
     { functions
     ; struct_map
     ; mangled_map
@@ -103,6 +106,7 @@ module ModuleState = struct
     ; globals_map
     ; lang
     ; method_class_index
+    ; class_files_map
     ; class_name_offset_map
     ; field_offset_map
     ; field_byte_offset_map
