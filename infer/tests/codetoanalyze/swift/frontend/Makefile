@@ -15,13 +15,11 @@ CLEAN_EXTRA = $(foreach source,$(SOURCES),$(basename $(notdir $(source))).o)
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/swift-base.make
 
-.NOTPARALLEL:
-
 default: test
 
 %.test.sil: %.swift $(SWIFT_DEPS) $(HEADERS)
 	$(QUIET)$(call silent_on_success,Testing the infer/swift frontend in $(TEST_REL_DIR),\
-	  $(INFER_BIN) capture --frontend-tests --dump-textual --project-root $(TESTS_DIR) $(INFER_OPTIONS) -- \
+	  $(INFER_BIN) capture --results-dir infer-out-$(basename $(notdir $<)) --frontend-tests --dump-textual --project-root $(TESTS_DIR) $(INFER_OPTIONS) -- \
 	    $(SWIFTC) $(SWIFT_OPTIONS) $<)
 
 capture: $(SOURCES:.swift=.test.sil)
@@ -50,4 +48,4 @@ replace: capture
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) infer-out *.test.sil $(CLEAN_EXTRA)
+	$(REMOVE_DIR) infer-out infer-out-* *.test.sil $(CLEAN_EXTRA)

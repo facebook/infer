@@ -13,13 +13,11 @@ CLEAN_EXTRA = *.test.sil
 
 include $(TESTS_DIR)/base.make
 
-.NOTPARALLEL:
-
 default: test
 
 %.test.sil: %.ll
 	$(QUIET)$(call silent_on_success,Testing handcrafted LL capture in $(TEST_REL_DIR),\
-	  $(INFER_BIN) capture $(INFER_OPTIONS) --llvm-bitcode-file $< --llvm-bitcode-source $* )
+	  $(INFER_BIN) capture --results-dir infer-out-$(basename $(notdir $*)) $(INFER_OPTIONS) --llvm-bitcode-file $< --llvm-bitcode-source $* )
 
 
 capture: $(SOURCES:.ll=.test.sil)
@@ -50,4 +48,4 @@ replace: capture
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) infer-out *.test.sil $(CLEAN_EXTRA)
+	$(REMOVE_DIR) infer-out infer-out-* *.test.sil $(CLEAN_EXTRA)

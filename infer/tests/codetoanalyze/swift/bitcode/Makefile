@@ -15,13 +15,11 @@ CLEAN_EXTRA = *.o *.test.sil
 include $(TESTS_DIR)/base.make
 include $(TESTS_DIR)/swift-base.make
 
-.NOTPARALLEL:
-
 default: test
 
 %.test.sil: %.swift %.o
 	$(QUIET)$(call silent_on_success,Testing direct bitcode capture in $(TEST_REL_DIR),\
-	  $(INFER_BIN) capture $(INFER_OPTIONS) --llvm-bitcode-file $*.o --llvm-bitcode-source $*.swift )
+	  $(INFER_BIN) capture --results-dir infer-out-$(basename $(notdir $<)) $(INFER_OPTIONS) --llvm-bitcode-file $*.o --llvm-bitcode-source $*.swift )
 
 
 capture: $(SOURCES:.swift=.test.sil)
@@ -44,4 +42,4 @@ replace: capture
 
 .PHONY: clean
 clean:
-	$(REMOVE_DIR) infer-out *.test.sil $(CLEAN_EXTRA)
+	$(REMOVE_DIR) infer-out infer-out-* *.test.sil $(CLEAN_EXTRA)

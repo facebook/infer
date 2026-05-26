@@ -17,11 +17,9 @@ CLEAN_EXTRA = *.o *.dot *.test.sil
 
 include $(TESTS_DIR)/base.make
 
-.NOTPARALLEL:
-
 default: test
 
-$(SIL_FILES): $(SOURCES) $(SWIFT_DEPS)
+$(SIL_FILES) &: $(SOURCES) $(SWIFT_DEPS)
 	$(QUIET)$(call silent_on_success,Testing the infer/swift frontend in $(TEST_REL_DIR),\
 	  $(INFER_BIN) capture --frontend-tests --dump-textual $(INFER_OPTIONS) -- \
 	    $(SWIFTC) $(SWIFT_OPTIONS) $(SOURCES))
