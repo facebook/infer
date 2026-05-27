@@ -1053,6 +1053,121 @@ let translate_store_in_field_zero ~(proc_state : ProcState.t) exp1 loc typ_name 
   (field_exp, deref_instrs)
 
 
+(* Rewrite Optional discriminator stores into calls to [__swift_optional_init_{none,some}].
+   Recognises both the [Sg]-class shape (e.g. [Int?]) and the 2-component
+   [__infer_tuple_class<int,int>] shape (e.g. [String?]). *)
+let base_is_load_of_sg_pvar ~(proc_state : ProcState.t) ~exp1_instrs base_exp textual_instrs =
+  (* Find the [Load { id= base_var_id; exp= Lvar pvar }] that produced [base_var_id] and
+     check whether [pvar]'s declared local type ends in [Sg]. *)
+  match base_exp with
+  | Textual.Exp.Var base_id -> (
+      let check_instr instr =
+        match (instr : Textual.Instr.t) with
+        | Load {id; exp= Textual.Exp.Lvar pvar; _} when Textual.Ident.equal id base_id ->
+            Textual.VarName.Map.find_opt pvar proc_state.ProcState.locals
+            |> Option.bind ~f:(fun (annot : Textual.Typ.annotated) ->
+                   match annot.typ with
+                   | Textual.Typ.Ptr (Textual.Typ.Struct typ_name, _) ->
+                       Textual.TypeName.swift_mangled_name_of_type_name typ_name
+                   | _ ->
+                       None )
+            |> Option.value_map ~default:None ~f:(fun mangled ->
+                   if String.is_suffix mangled ~suffix:"Sg" then Some () else None )
+        | _ ->
+            None
+      in
+      match List.find_map exp1_instrs ~f:check_instr with
+      | Some _ as result ->
+          result
+      | None ->
+          List.find_map textual_instrs ~f:check_instr )
+  | _ ->
+      None
+
+
+let try_rewrite_optional_discriminator_store ~proc_state ~exp1 ~exp2 ~loc ~exp1_instrs
+    textual_instrs =
+  let open IOption.Let_syntax in
+  let* (field : Textual.qualified_fieldname), base_exp =
+    match exp1 with Textual.Exp.Field {exp= base_exp; field} -> Some (field, base_exp) | _ -> None
+  in
+  let* () =
+    Option.some_if
+      ( String.equal field.name.value "field_1"
+      || String.equal field.name.value "__infer_tuple_field_1" )
+      ()
+  in
+  (* Sg-class: tag 1 = none, 0 = some.  Tuple-class: 0 = none, non-zero = some. *)
+  let class_is_sg =
+    Textual.TypeName.swift_mangled_name_of_type_name field.enclosing_class
+    |> Option.exists ~f:(String.is_suffix ~suffix:"Sg")
+  in
+  let is_tuple_field_1 = String.equal field.name.value "__infer_tuple_field_1" in
+  let is_two_component_tuple =
+    Textual.BaseTypeName.equal field.enclosing_class.name
+      Textual.BaseTypeName.swift_tuple_class_name
+    && match field.enclosing_class.args with [_; _] -> true | _ -> false
+  in
+  let* shape =
+    if class_is_sg && String.equal field.name.value "field_1" then Some `Sg_shape
+    else if is_tuple_field_1 && is_two_component_tuple then
+      Option.map (base_is_load_of_sg_pvar ~proc_state ~exp1_instrs base_exp textual_instrs)
+        ~f:(fun () -> `Tuple_shape )
+    else None
+  in
+  let* discriminator =
+    match (shape, exp2) with
+    | `Sg_shape, Textual.Exp.Const (Int z) when Z.equal z Z.zero ->
+        Some `Some_
+    | `Sg_shape, Textual.Exp.Const (Int z) when Z.equal z Z.one ->
+        Some `None_
+    | `Tuple_shape, Textual.Exp.Const (Int z) when Z.equal z Z.zero ->
+        (* tag = 0 -> none *)
+        Some `None_
+    | `Tuple_shape, Textual.Exp.Const (Int z) when not (Z.equal z Z.zero) ->
+        Some `Some_
+    | _ ->
+        None
+  in
+  let init_call proc args =
+    let exp = Textual.Exp.call_non_virtual (Models.builtin_qual_proc_name proc) args in
+    Textual.Instr.Let {id= None; exp; loc}
+  in
+  match discriminator with
+  | `None_ ->
+      let call_instr =
+        init_call (SwiftProcname.show_builtin SwiftProcname.OptionalInitNone) [base_exp]
+      in
+      Some (call_instr, textual_instrs)
+  | `Some_ ->
+      let is_field_0_store_of_same_class instr =
+        match (instr : Textual.Instr.t) with
+        | Store
+            { exp1=
+                Textual.Exp.Field
+                  { exp= _
+                  ; field= {Textual.enclosing_class= ec; name= ({value; _} : Textual.FieldName.t)}
+                  } } ->
+            (* Adjacent payload write (fresh load SSA names are common). *)
+            Textual.TypeName.equal ec field.enclosing_class
+            && (String.equal value "field_0" || String.equal value "__infer_tuple_field_0")
+        | _ ->
+            false
+      in
+      let payload, tail =
+        match textual_instrs with
+        | (Textual.Instr.Store {exp2= payload} as head) :: rest
+          when is_field_0_store_of_same_class head ->
+            (payload, rest)
+        | _ ->
+            (Textual.Exp.Const (Textual.Const.Int Z.one), textual_instrs)
+      in
+      let call_instr =
+        init_call (SwiftProcname.show_builtin SwiftProcname.OptionalInitSome) [base_exp; payload]
+      in
+      Some (call_instr, tail)
+
+
 let cmnd_to_instrs ~(proc_state : ProcState.t) block =
   let ModuleState.{lang; struct_map; mangled_map} = proc_state.module_state in
   let to_instr textual_instrs inst =
@@ -1138,8 +1253,28 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
           if remove_store_zero_in_class typ_exp1 exp2 then None
           else Some (Textual.Instr.Store {exp1; typ= None; exp2; loc})
         in
-        (Option.to_list textual_instr_opt @ exp2_deref_instrs @ exp2_instrs)
-        @ exp1_instrs @ exp1_deref_instrs @ textual_instrs
+        (* Swift Optional [.none]/[.some(_)] construction: if the store we'd emit is a
+           discriminator-write on an [Sg]-suffixed (Optional) class field, rewrite it to a
+           call to one of the [__swift_optional_init_{none,some}] builtins.  See
+           [try_rewrite_optional_discriminator_store]. *)
+        let head_instrs, tail_instrs =
+          if Textual.Lang.is_swift lang then
+            match textual_instr_opt with
+            | Some _ -> (
+              match
+                try_rewrite_optional_discriminator_store ~proc_state ~exp1 ~exp2 ~loc ~exp1_instrs
+                  textual_instrs
+              with
+              | Some (replacement_instr, new_tail) ->
+                  ([replacement_instr], new_tail)
+              | None ->
+                  (Option.to_list textual_instr_opt, textual_instrs) )
+            | None ->
+                ([], textual_instrs)
+          else (Option.to_list textual_instr_opt, textual_instrs)
+        in
+        (head_instrs @ exp2_deref_instrs @ exp2_instrs)
+        @ exp1_instrs @ exp1_deref_instrs @ tail_instrs
     | Alloc {reg} ->
         let reg_var_name = Var.reg_to_var_name reg in
         let ptr_typ = Type.to_textual_typ lang ~mangled_map ~struct_map (Reg.typ reg) in

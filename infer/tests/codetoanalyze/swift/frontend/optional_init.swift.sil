@@ -1,0 +1,56 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "sink" $s5Hello4sinkyySiSgF(var1: int, var2: int) : void {
+  local x: *__infer_swift_type<TSiSg>
+  #: @[12:0]
+      n2:*__infer_swift_type<TSiSg> = load &x @[12:0]
+      n1 = load &var2 @[12:0]
+      store n2.__infer_swift_type<TSiSg>.field_1 <- n1 @[12:0]
+      ret null @[14:1]
+      
+} @?
+
+define .plain_name = "optional_some" $s5Hello13optional_someyyF() : void {
+  local x: *__infer_swift_type<TSiSg>
+  #: @[21:0]
+      n2 = load &x @[21:0]
+      n4:*__infer_swift_type<TSiSg> = load &x @[21:0]
+      _ = $builtins.__swift_optional_init_some(n4, 42) @[21:0]
+      _ = $s5Hello4sinkyySiSgF(42, 0) @[23:3]
+      jmp $s5Hello4sinkyySiSgF::void::ret @[23:3]
+      
+  #$s5Hello4sinkyySiSgF::void::ret: @[24:1]
+      ret null @[24:1]
+      
+} @?
+
+define .plain_name = "optional_none" $s5Hello13optional_noneyyF() : void {
+  local x: *__infer_swift_type<TSiSg>
+  #: @[16:0]
+      n2 = load &x @[16:0]
+      n4:*__infer_swift_type<TSiSg> = load &x @[16:0]
+      _ = $builtins.__swift_optional_init_none(n4) @[16:0]
+      _ = $s5Hello4sinkyySiSgF(0, 1) @[18:3]
+      jmp $s5Hello4sinkyySiSgF::void::ret @[18:3]
+      
+  #$s5Hello4sinkyySiSgF::void::ret: @[19:1]
+      ret null @[19:1]
+      
+} @?
+
+global llvm::used: **__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
+
+global __swift_reflection_version: int
+
+type __infer_swift_type<TSiSg> = {field_0: int; field_1: int}
+
