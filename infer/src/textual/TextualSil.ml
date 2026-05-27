@@ -82,7 +82,7 @@ module TypeNameBridge = struct
         L.die InternalError "to_python_class_name failed"
 
 
-  let to_swift_class_name value : SwiftClassName.t =
+  let rec to_swift_class_name value : SwiftClassName.t =
     match value with
     | {name; args} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_type_name ->
         let mangled_name, plain_name =
@@ -100,8 +100,17 @@ module TypeNameBridge = struct
               if String.is_empty name then None else Some name )
         in
         SwiftClassName.of_string ?plain_name (Textual.BaseTypeName.to_string mangled_name.name)
-    | {name} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name ->
-        SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
+    | {name; args} when Textual.BaseTypeName.equal name Textual.BaseTypeName.swift_tuple_class_name
+      ->
+        (* Preserve the tuple-class type arguments so the Tenv carries a distinct entry per
+           parameter shape — in particular, weak attributes attached to [__infer_tuple_class<*
+           refcounted, *weak>] are not overwritten by a sibling [__infer_tuple_class<*refcounted,
+           *int>]'s strong fields. Each arg is recursively converted when it's a Swift class /
+           tuple itself; otherwise (primitive / pointer / opaque) we fall back to a singleton
+           [SwiftClassName] whose mangled name is the textual rendering of the arg, which is
+           enough to make the parent's [SwiftClassName.t] structurally distinct. *)
+        let args = List.map args ~f:to_swift_class_name_of_arg in
+        SwiftClassName.of_string ~args (Textual.BaseTypeName.to_string name)
     | {name} when TypeName.equal value TypeName.sil_string ->
         SwiftClassName.of_string (Textual.BaseTypeName.to_string name)
     | {name= {loc}} ->
@@ -111,6 +120,18 @@ module TypeNameBridge = struct
                value Location.pp loc )
         in
         textual_transformation_error loc msg
+
+
+  and to_swift_class_name_of_arg (arg : TypeName.t) : SwiftClassName.t =
+    if
+      Textual.BaseTypeName.equal arg.name Textual.BaseTypeName.swift_type_name
+      || Textual.BaseTypeName.equal arg.name Textual.BaseTypeName.swift_tuple_class_name
+    then to_swift_class_name arg
+    else
+      (* Fallback: render the whole arg [TypeName.t] (base name + nested args) as a string and
+         wrap it in a leaf SwiftClassName. The textual rendering captures everything needed to
+         distinguish [*refcounted] from [*weak] or [*int]. *)
+      SwiftClassName.of_string (F.asprintf "%a" TypeName.pp arg)
 
 
   let to_sil (lang : Lang.t) ({name= {value}; args} as typ) : SilTyp.Name.t =
