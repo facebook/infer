@@ -54,7 +54,8 @@ let functions_to_skip =
     ; "swift_weakLoadStrong"
     ; "swift_unknownObjectWeakLoadStrong"
     ; "swift_bridgeObjectRetain"
-    ; "swift_getObjCClassFromMetadata" ]
+    ; "swift_getObjCClassFromMetadata"
+    ; "objc_opt_self" ]
 
 
 let boxed_opaque_existentials =
