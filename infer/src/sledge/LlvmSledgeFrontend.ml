@@ -1267,6 +1267,23 @@ let xlate_builtin_inst emit_inst x name_segs instr num_actuals loc =
       let reg = xlate_name x instr in
       let msg = "__llair_choice" in
       emit_inst (Inst.nondet ~reg:(Some reg) ~msg ~loc)
+  | ["$sSq17unsafelyUnwrappedxvg"]
+  (* Swift [Optional<T>.unsafelyUnwrapped]: stable mangled symbol the
+     Swift compiler emits for the getter on every [Optional<T>]. The
+     name has no dot so it lands as a single [name_segs] element and
+     can't be auto-bij'd (the [$] prefix isn't a valid OCaml variant
+     tag character). Map it to the typed builtin here so downstream
+     analyses receive [Inst.Builtin] instead of a generic call to a
+     mangled name. *)
+    ->
+      let reg = xlate_name_opt x instr in
+      let xlate_arg i pre =
+        let pre_i, arg_i = xlate_value x (Llvm.operand instr i) in
+        (arg_i, pre_i @ pre)
+      in
+      let prefix, args = Iter.fold_map ~f:xlate_arg Iter.(0 -- (num_actuals - 1)) [] in
+      let args = IArray.of_iter args in
+      emit_inst ~prefix (Inst.builtin ~reg ~name:`swift_optional_unsafelyUnwrapped ~args ~loc)
   | ["__llair_alloc" (* void* __llair_alloc(unsigned size) *)] ->
       let reg = xlate_name x instr in
       let num_operand = Llvm.operand instr 0 in

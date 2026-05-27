@@ -41,6 +41,8 @@ val llvm_init_tuple : string
 
 val swift_metadata_equals : string
 
+val swift_optional_unsafely_unwrapped : string
+
 val builtin_qual_proc_name : string -> Textual.QualifiedProcName.t
 
 val is_protocol_witness_optional_deinit_copy : Textual.Lang.t -> string -> bool

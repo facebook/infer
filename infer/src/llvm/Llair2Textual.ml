@@ -888,15 +888,13 @@ and to_textual_call ~(proc_state : ProcState.t) (call : 'a Llair.call) =
       | Some name when String.equal name Models.derived_enum_equals ->
           (Models.builtin_qual_proc_name Models.derived_enum_equals, Textual.Exp.NonVirtual, None)
       | _ ->
+          let name = FuncName.name func.Llair.name in
           let proc =
             if
-              String.equal (FuncName.name func.Llair.name)
-                (Procname.get_method BuiltinDecl.__assert_fail)
-              || String.is_substring ~substring:"assertionFailure" (FuncName.name func.Llair.name)
+              String.equal name (Procname.get_method BuiltinDecl.__assert_fail)
+              || String.is_substring ~substring:"assertionFailure" name
             then Textual.ProcDecl.assert_fail_name
-            else
-              Proc.to_qualified_proc_name proc_state.module_state.method_class_index
-                (FuncName.name func.Llair.name)
+            else Proc.to_qualified_proc_name proc_state.module_state.method_class_index name
           in
           (proc, Textual.Exp.NonVirtual, None) )
     | Indirect {ptr} ->
@@ -1358,6 +1356,18 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
             Textual.Instr.Let {id; exp; loc} :: (exp_instrs @ textual_instrs)
         | _ ->
             assert false )
+    | Builtin {reg; name; args; loc}
+      when Textual.Lang.is_swift lang && Llair.Builtin.equal name `swift_optional_unsafelyUnwrapped
+      ->
+        (* [Optional<T>.unsafelyUnwrapped]: recognised at the LLVM
+           frontend and routed to the Pulse builtin via the
+           [SwiftProcname.Builtin] path used by [OptionalInit{None,Some}]. *)
+        let loc = to_textual_loc ~proc_state loc in
+        let args = StdUtils.iarray_to_list args in
+        let call_textual_instrs =
+          to_textual_builtin ~proc_state reg Models.swift_optional_unsafely_unwrapped args loc
+        in
+        List.append call_textual_instrs textual_instrs
     | Builtin {reg; name; args; loc} ->
         let loc = to_textual_loc ~proc_state loc in
         let name = Llair.Builtin.to_name name in

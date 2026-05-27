@@ -46,6 +46,10 @@ let swift_metadata_equals = SwiftProcname.to_string (SwiftProcname.Builtin Metad
 
 let swift_instantiateConcreteTypeFromMangledName = "__swift_instantiateConcreteTypeFromMangledName"
 
+let swift_optional_unsafely_unwrapped =
+  SwiftProcname.to_string (SwiftProcname.Builtin OptionalUnsafelyUnwrapped)
+
+
 let objc_msgSend = SwiftProcname.to_string (SwiftProcname.Builtin ObjcMsgSend)
 
 let functions_to_skip =

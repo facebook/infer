@@ -393,6 +393,21 @@ let swift_optional_init_some opt payload : unit DSL.model_monad =
   store_field ~deref:false ~ref:opt ModeledField.swift_optional_value payload
 
 
+(* Swift [Optional<T>.unsafelyUnwrapped]: indirect-return ABI
+   [getter(ret_buf, type_meta, receiver)].  Fires SWIFT_NPE on [.none],
+   returns the payload value. *)
+let swift_unsafely_unwrapped receiver : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* marker =
+    load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_marker)
+  in
+  let* () = check_valid (ValueOrigin.unknown marker) in
+  let* payload =
+    load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_value)
+  in
+  assign_ret payload
+
+
 let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
     unit -> unit DSL.model_monad =
   let builtin_s = SwiftProcname.show_builtin builtin in
@@ -435,6 +450,12 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
     match args with
     | [opt; payload] ->
         fun () -> swift_optional_init_some opt payload
+    | _ ->
+        unknown args )
+  | OptionalUnsafelyUnwrapped -> (
+    match args with
+    | [_ret_buf; _type_meta; receiver] ->
+        fun () -> swift_unsafely_unwrapped receiver
     | _ ->
         unknown args )
   | SwiftAlloc -> (
@@ -552,24 +573,6 @@ let is_dispatch_queue_async _ n =
   String.is_substring n ~substring:"OS_dispatch_queue" && String.is_substring n ~substring:"async"
 
 
-(* Swift [Optional<T>.unsafelyUnwrapped]: indirect-return ABI
-   [getter(_, _, receiver)].  Fires SWIFT_NPE on [.none], returns the payload. *)
-let is_swift_unsafely_unwrapped _ n = String.is_substring n ~substring:"unsafelyUnwrapped"
-
-let swift_unsafely_unwrapped receiver : model =
-  let open DSL.Syntax in
-  start_model
-  @@ fun () ->
-  let* marker =
-    load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_marker)
-  in
-  let* () = check_valid (ValueOrigin.unknown marker) in
-  let* payload =
-    load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_value)
-  in
-  assign_ret payload
-
-
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"external_register_handler" <>$ capt_arg_payload $+ capt_arg_payload
@@ -588,8 +591,6 @@ let matchers : matcher list =
   ; ~+is_dispatch_workitem_init $ any_arg $+ capt_arg_payload $+...$--> dispatch_workitem_init
   ; ~+is_dispatch_source_state_setter <>--> skip_with_fresh_ret
   ; ~+is_dispatch_queue_async <>--> skip_with_fresh_ret
-  ; ~+is_swift_unsafely_unwrapped <>$ any_arg $+ any_arg $+ capt_arg_payload
-    $+...$--> swift_unsafely_unwrapped
   ; -"swift_getObjectType" <>$ capt_arg_payload $--> swift_get_object_type
   ; ~+is_string_bridge_to_nsstring $ capt_arg_payload $+ capt_arg_payload
     $+...$--> string_bridge_to_nsstring

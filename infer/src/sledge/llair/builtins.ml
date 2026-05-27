@@ -40,5 +40,6 @@ type t =
     `cct_point
   | (* Swift *)
     `objc_msgSendSuper2
-  | `swift_getDynamicType ]
+  | `swift_getDynamicType
+  | `swift_optional_unsafelyUnwrapped ]
 [@@deriving compare, equal, sexp_of, enumerate]
