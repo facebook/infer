@@ -42,9 +42,8 @@ func asCastNilToClass_bad() {
   let _ = x as! NSString
 }
 
-// `Optional.unsafelyUnwrapped` is the documented unsafe-fast unwrap.
-// Currently silently missed -- Pulse has no model for it.
-func unsafelyUnwrappedNil_bad_FN() {
+// `Optional.unsafelyUnwrapped`: SWIFT_NPE on a proven [.none] receiver.
+func unsafelyUnwrappedNil_bad() {
   let x: Int? = nil
   _ = x.unsafelyUnwrapped
 }
@@ -56,7 +55,7 @@ func unsafelyUnwrappedSome_good() {
 }
 
 // Class-typed payload variant (`Optional<String>`).
-func unsafelyUnwrappedNilString_bad_FN() {
+func unsafelyUnwrappedNilString_bad() {
   let x: String? = nil
   _ = x.unsafelyUnwrapped
 }
@@ -71,6 +70,17 @@ func unsafelyUnwrappedSomeString_good() {
 func unsafelyUnwrappedUnknown_good(api: LegacyAPI) {
   let x: String? = api.getNullableString()
   _ = x.unsafelyUnwrapped
+}
+
+// The payload should propagate through unwrap, so a static [.some(5)] receiver
+// followed by [10 / unwrapped] should be silent.  Currently the model returns
+// the payload only via the SIL return slot but Swift's indirect-return ABI
+// reads from [(*ret_buf).field_0], so Pulse sees an uninitialised int and
+// fires a spurious assertion error.  Locked here as a regression target for
+// the follow-up that writes the payload to ret_buf's field_0.
+func unsafelyUnwrappedPayloadPropagates_good_FP() {
+  let x: Int? = .some(5)
+  _ = 10 / x.unsafelyUnwrapped
 }
 
 // MARK: - Likely-FP `_good` cases (must NOT fire)
