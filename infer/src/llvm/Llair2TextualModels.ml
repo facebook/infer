@@ -32,6 +32,8 @@ type f_add_deref =
 
 let swift_weak_assign = Textual.ProcName.of_string "swift_weakAssign"
 
+let swift_weak_init = Textual.ProcName.of_string "swift_weakInit"
+
 let llvm_dynamic_call = Textual.ProcName.of_string "llvm_dynamic_call"
 
 let derived_enum_equals = "__derived_enum_equals"
@@ -629,9 +631,19 @@ let try_rewrite_call_to_instrs ~proc_state ~f_to_textual_exp ~f_add_deref ~loc ~
     ->
       let model_instrs = rewrite_swift_dynamic_cast ~proc_state loc processed_args args_instrs id in
       if List.is_empty model_instrs then None else Some model_instrs
-  (* 2. swift_weakAssign -> Store *)
+  (* 2. swift_weakAssign / swift_weakInit -> Store.
+
+     Both initialise / overwrite a [weak<T>] slot. swiftc emits [swift_weakInit] for the FIRST
+     write to a freshly-allocated slot (e.g. in a closure context allocated via
+     [swift_allocObject]) and [swift_weakAssign] for subsequent writes. Functionally, both are
+     Store instructions writing the RHS into the LHS slot; modelling them identically here makes
+     the write visible to Pulse where today the [swift_weakInit] write is invisible (the call is
+     translated to a non-deterministic nullary instruction by the sledge frontend's previous skip
+     list). *)
   | Textual.Exp.Call {proc; args= [arg1; arg2]}, _
-    when Textual.ProcName.equal proc.Textual.QualifiedProcName.name swift_weak_assign ->
+    when List.mem
+           [swift_weak_assign; swift_weak_init]
+           proc.Textual.QualifiedProcName.name ~equal:Textual.ProcName.equal ->
       let instrs2, arg2_deref = f_add_deref ~proc_state arg2 loc in
       Some (Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2_deref; loc} :: instrs2)
   (* 3. Protocol Witness Optional Deinit Copy *)

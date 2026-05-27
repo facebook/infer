@@ -1500,7 +1500,6 @@ let xlate_instr :
         ; "swift_bridgeObjectRelease"
         ; "swift_beginAccess"
         ; "swift_endAccess"
-        ; "swift_weakInit"
         ; "swift_deallocPartialClassInstance"
         ; "__swift_destroy_boxed_opaque_existential_1" ]
       in

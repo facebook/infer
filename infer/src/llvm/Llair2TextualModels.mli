@@ -29,6 +29,8 @@ type f_add_deref =
 
 val swift_weak_assign : Textual.ProcName.t
 
+val swift_weak_init : Textual.ProcName.t
+
 val llvm_dynamic_call : Textual.ProcName.t
 
 val derived_enum_equals : string

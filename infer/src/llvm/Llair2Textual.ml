@@ -807,11 +807,12 @@ and to_textual_call_aux ~(proc_state : ProcState.t) ~kind (proc : Textual.Qualif
         let exp, typ, instrs = to_textual_exp loc ~proc_state ?generate_typ_exp exp in
         let deref_instrs, deref_exp =
           (* So far it looks like for C the load operations are already there when needed. *)
+          let skip_deref_for = [Models.swift_weak_assign; Models.swift_weak_init] in
           if
             Textual.Lang.is_swift proc_state.module_state.lang
             && not
-                 (Textual.ProcName.equal proc.Textual.QualifiedProcName.name
-                    Models.swift_weak_assign )
+                 (List.mem skip_deref_for proc.Textual.QualifiedProcName.name
+                    ~equal:Textual.ProcName.equal )
           then add_deref ~proc_state ~from_call:true exp loc
           else ([], exp)
         in

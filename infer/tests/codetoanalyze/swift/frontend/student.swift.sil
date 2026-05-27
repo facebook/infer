@@ -1585,13 +1585,17 @@ define .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T
       
   #3::ret: @[195:26]
       n6 = $builtins.llvm_nondet() @[195:26]
-      n7 = $builtins.llvm_nondet() @[194:0]
-      n8 = $builtins.llvm_nondet() @[194:0]
-      n9:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &self @[195:16]
+      n8 = load &self @[194:0]
+      store n5.__infer_tuple_class<*__infer_swift_type<swift::refcounted>,*__infer_swift_type<swift::weak>>.__infer_tuple_field_1 <- __sil_cast(<*__infer_swift_type<ptr_elt>>, __sil_cast(<int>, n8)) @[194:0]
+      jmp 8::ret @[194:0]
+      
+  #8::ret: @[194:0]
+      n12 = $builtins.llvm_nondet() @[194:0]
+      n13:*__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample> = load &self @[195:16]
       store &getelementptr_offset_1 <- 16 @[195:16]
-      n10 = load &getelementptr_offset_1 @[195:16]
-      n16 = load &self @[195:16]
-      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n5), n16) @[195:16]
+      n14 = load &getelementptr_offset_1 @[195:16]
+      n20 = load &self @[195:16]
+      _ = __sil_cast(<int>, fun (var1) -> $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_TA(var1)).__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC7closureyycSgvs(__sil_cast(<int>, n5), n20) @[195:16]
       jmp 14::void::ret @[195:16]
       
 } @?
@@ -1866,13 +1870,17 @@ declare .plain_name = "age.get" $s5Hello10IndividualC3ageSivg(*__infer_swift_typ
 define .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfc(var1: int, self: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<T5Hello10IndividualC,Individual> {
   local age: *__infer_swift_type<ptr_elt>
   #: @[102:0]
-      n1 = $builtins.llvm_nondet() @[102:0]
-      n3:*__infer_swift_type<T5Hello10IndividualC,Individual> = load &self @[103:18]
-      n4:*__infer_swift_type<TSi> = load n3.__infer_swift_type<T5Hello10IndividualC,Individual>.age @[103:18]
-      n2 = load &var1 @[103:18]
-      store n4.__infer_swift_type<TSi>.field_0 <- n2 @[103:18]
-      n5 = load &self @[104:5]
-      ret n5 @[104:5]
+      n1:*__infer_swift_type<T5Hello10IndividualC,Individual> = load &self @[102:0]
+      store n1.__infer_swift_type<T5Hello10IndividualC,Individual>.spouse <- null @[102:0]
+      jmp 6::ret @[102:0]
+      
+  #6::ret: @[103:18]
+      n5:*__infer_swift_type<T5Hello10IndividualC,Individual> = load &self @[103:18]
+      n6:*__infer_swift_type<TSi> = load n5.__infer_swift_type<T5Hello10IndividualC,Individual>.age @[103:18]
+      n4 = load &var1 @[103:18]
+      store n6.__infer_swift_type<TSi>.field_0 <- n4 @[103:18]
+      n7 = load &self @[104:5]
+      ret n7 @[104:5]
       
 } @?
 
