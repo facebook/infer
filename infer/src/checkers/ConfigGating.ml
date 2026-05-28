@@ -136,8 +136,12 @@ let blocklisted_callee_patterns =
         ; "os_log_create$" ] )
   ; ( Language.Java
     , List.map ~f:Str.regexp
-        [(* Java and Kotlin standard libraries are never config-related *) "java\\."; "kotlin\\."]
-    ) ]
+        [ (* Java and Kotlin standard libraries are never config-related *)
+          "java\\."
+        ; "kotlin\\."
+        ; (* Android SDK and AndroidX/Jetpack *)
+          "android\\."
+        ; "androidx\\." ] ) ]
 
 
 let is_blocklisted_callee callee =
