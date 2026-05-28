@@ -31,6 +31,13 @@ val process_wvd_globals :
   -> Llair2TextualState.struct_map
   -> Llair2TextualState.struct_map
 
+val mark_weak_fields_from_swift_weak_assigns :
+     lang:Textual.Lang.t
+  -> mangled_map:Llair2TextualState.mangled_map
+  -> (Llair.FuncName.t * Llair.func) list
+  -> Llair2TextualState.struct_map
+  -> Llair2TextualState.struct_map
+
 val to_textual_global :
      f_to_textual_loc:(Llair.Loc.t -> Textual.Location.t)
   -> f_to_textual_exp:

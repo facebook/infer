@@ -159,6 +159,65 @@ let process_wvd_globals ~lang ~mangled_map globals_map struct_map =
     globals_map struct_map
 
 
+(** Recover the [weak] attribute on a cross-module class property by scanning [swift_weakAssign]
+    callsites for the [DynamicWvd] descriptor in their first argument and marking the named field
+    weak. Must run after [process_wvd_globals] so the field decl already exists in [struct_map]. *)
+let mark_weak_fields_from_swift_weak_assigns ~lang ~mangled_map functions struct_map =
+  let mark_field struct_map mangled_class field_name_str =
+    let class_name =
+      TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
+        mangled_class
+    in
+    match Textual.TypeName.Map.find_opt class_name struct_map with
+    | None ->
+        struct_map
+    | Some (struct_ : Textual.Struct.t) ->
+        let already_weak fd = List.exists fd.Textual.FieldDecl.attributes ~f:Textual.Attr.is_weak in
+        let changed, updated =
+          List.fold_map struct_.fields ~init:false ~f:(fun changed fd ->
+              if
+                String.equal fd.Textual.FieldDecl.qualified_name.name.value field_name_str
+                && not (already_weak fd)
+              then
+                ( true
+                , { fd with
+                    Textual.FieldDecl.attributes=
+                      Textual.Attr.mk_weak :: fd.Textual.FieldDecl.attributes } )
+              else (changed, fd) )
+        in
+        if changed then
+          Textual.TypeName.Map.add class_name {struct_ with fields= updated} struct_map
+        else struct_map
+  in
+  let find_wvd_in_arg (e : Llair.Exp.t) =
+    match e with Ap1 (GetElementPtr (DynamicWvd wvd_name), _, _) -> Some wvd_name | _ -> None
+  in
+  let scan_call struct_map (call : Llair.callee Llair.call) =
+    match call.callee with
+    | Direct {func; _} when String.equal (FuncName.name func.Llair.name) "swift_weakAssign" -> (
+        let actuals = StdUtils.iarray_to_list call.actuals in
+        match actuals with
+        | first_arg :: _ -> (
+          match find_wvd_in_arg first_arg with
+          | Some wvd_name -> (
+              let class_opt, field_name_str = Field.extract_class_and_field_from_wvd wvd_name in
+              match class_opt with
+              | Some mangled_class when not (String.equal field_name_str "unknown_field") ->
+                  mark_field struct_map mangled_class field_name_str
+              | _ ->
+                  struct_map )
+          | None ->
+              struct_map )
+        | [] ->
+            struct_map )
+    | _ ->
+        struct_map
+  in
+  List.fold functions ~init:struct_map ~f:(fun struct_map (_, (func : Llair.func)) ->
+      Func.fold_cfg func struct_map ~f:(fun (block : Llair.block) struct_map ->
+          match block.term with Call call -> scan_call struct_map call | _ -> struct_map ) )
+
+
 let process_global_item ~lang ~mangled_map ~class_method_index ~method_class_index _var global
     struct_map =
   match global with

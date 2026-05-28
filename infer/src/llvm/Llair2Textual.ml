@@ -1891,6 +1891,9 @@ let init_module_state (llair_program : Llair.program) lang =
   in
   let struct_map = Type.update_struct_map_with_field_names field_offset_map struct_map in
   let struct_map = Globals.process_wvd_globals ~lang ~mangled_map globals_map struct_map in
+  let struct_map =
+    Globals.mark_weak_fields_from_swift_weak_assigns ~lang ~mangled_map functions struct_map
+  in
   let field_byte_offset_map =
     Field.build_field_byte_offset_map lang ~mangled_map struct_map globals_map
   in
