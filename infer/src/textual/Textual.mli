@@ -529,6 +529,8 @@ module Terminator : sig
     | Jump of node_call list  (** non empty list *)
     | Throw of Exp.t
     | Unreachable
+
+  val pp : Format.formatter -> t -> unit
 end
 
 [@@@warning "-unused-module"]
