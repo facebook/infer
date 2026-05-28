@@ -64,12 +64,71 @@ let sir_loop =
     , S.Return {label= nn "ret"; exp= T.Exp.Const (T.Const.Int (Z.of_int 0))} )
 
 
+(* nested loops + multiple ifs:
+   outer_loop { a0; if c { a1; inner_loop { a2; if c then break else { a3; continue } }; a4; continue_outer } else { a5; break_outer } }; ret *)
+let sir_nested =
+  S.Seq
+    ( S.Loop
+        { label= nn "outer"
+        ; body=
+            S.Seq
+              ( S.Instrs {label= nn "a0"; instrs= [mk_let 0]}
+              , S.If
+                  { label= nn "t0"
+                  ; bexp= bexp0
+                  ; then_=
+                      S.Seq
+                        ( S.Instrs {label= nn "a1"; instrs= [mk_let 1]}
+                        , S.Seq
+                            ( S.Loop
+                                { label= nn "inner"
+                                ; body=
+                                    S.Seq
+                                      ( S.Instrs {label= nn "a2"; instrs= [mk_let 2]}
+                                      , S.If
+                                          { label= nn "t1"
+                                          ; bexp= bexp0
+                                          ; then_= S.Branch 0
+                                          ; else_=
+                                              S.Seq
+                                                ( S.Instrs {label= nn "a3"; instrs= [mk_let 3]}
+                                                , S.Branch 1 ) } ) }
+                            , S.Seq (S.Instrs {label= nn "a4"; instrs= [mk_let 4]}, S.Branch 1) ) )
+                  ; else_= S.Instrs {label= nn "a5"; instrs= [mk_let 5]} } ) }
+    , S.Return {label= nn "ret"; exp= T.Exp.Const (T.Const.Int (Z.of_int 0))} )
+
+
 let pp_rpo nodes start =
   let rpo = S.reverse_postorder nodes start in
   let sorted =
     T.NodeName.Map.bindings rpo |> List.sort ~compare:(fun (_, a) (_, b) -> Int.compare a b)
   in
   List.iter sorted ~f:(fun (name, n) -> F.printf "%d: %a@." n T.NodeName.pp name)
+
+
+let pp_domtree nodes start =
+  let idom = S.compute_idom nodes start in
+  let children = S.dominator_children idom in
+  let rpo = S.reverse_postorder nodes start in
+  let sort_by_rpo names =
+    List.sort names ~compare:(fun a b ->
+        Int.compare (T.NodeName.Map.find a rpo) (T.NodeName.Map.find b rpo) )
+  in
+  let rec pp_children ~prefix kids =
+    let n = List.length kids in
+    List.iteri kids ~f:(fun i kid ->
+        let is_last = Int.equal i (n - 1) in
+        let connector = if is_last then "└── " else "├── " in
+        let child_prefix = prefix ^ if is_last then "    " else "│   " in
+        F.printf "%s%s%a@." prefix connector T.NodeName.pp kid ;
+        let grandkids =
+          sort_by_rpo (T.NodeName.Map.find_opt kid children |> Option.value ~default:[])
+        in
+        pp_children ~prefix:child_prefix grandkids )
+  in
+  F.printf "%a@." T.NodeName.pp start ;
+  let kids = sort_by_rpo (T.NodeName.Map.find_opt start children |> Option.value ~default:[]) in
+  pp_children ~prefix:"" kids
 
 
 let%test_module "structured IR" =
@@ -191,5 +250,121 @@ let%test_module "structured IR" =
         2: test
         3: cont
         4: ret
+        |}]
+
+
+    let%expect_test "domtree straight-line" =
+      let nodes, start = S.to_cfg sir_straight in
+      pp_domtree nodes start ;
+      [%expect {|
+        entry
+        └── ret
+        |}]
+
+
+    let%expect_test "domtree diamond" =
+      let nodes, start = S.to_cfg sir_diamond in
+      pp_domtree nodes start ;
+      [%expect {|
+        cond
+        ├── else_
+        ├── then_
+        └── ret
+        |}]
+
+
+    let%expect_test "domtree loop" =
+      let nodes, start = S.to_cfg sir_loop in
+      pp_domtree nodes start ;
+      [%expect
+        {|
+        loop
+        └── body
+            └── test
+                ├── cont
+                └── ret
+        |}]
+
+
+    let%expect_test "nested pp" =
+      pp_sir sir_nested ;
+      [%expect
+        {|
+        loop
+          n0 = "action_0"
+          if n0 then
+            n1 = "action_1"
+            loop
+              n2 = "action_2"
+              if n0 then
+                branch 0
+
+              else
+                n3 = "action_3"
+                branch 1
+
+
+            n4 = "action_4"
+            branch 1
+
+          else
+            n5 = "action_5"
+
+
+        ret 0
+        |}]
+
+
+    let%expect_test "nested to_cfg" =
+      pp_cfg sir_nested ;
+      [%expect
+        {|
+        #outer:
+            jmp a0
+        #a0:
+            n0 = "action_0"
+            jmp t0
+        #t0:
+            if n0 then jmp a1 else jmp a5
+        #a1:
+            n1 = "action_1"
+            jmp inner
+        #inner:
+            jmp a2
+        #a2:
+            n2 = "action_2"
+            jmp t1
+        #t1:
+            if n0 then jmp a4 else jmp a3
+        #a3:
+            n3 = "action_3"
+            jmp inner
+        #a4:
+            n4 = "action_4"
+            jmp outer
+        #a5:
+            n5 = "action_5"
+            jmp ret
+        #ret:
+            ret 0
+        |}]
+
+
+    let%expect_test "domtree nested" =
+      let nodes, start = S.to_cfg sir_nested in
+      pp_domtree nodes start ;
+      [%expect
+        {|
+        outer
+        └── a0
+            └── t0
+                ├── a5
+                │   └── ret
+                └── a1
+                    └── inner
+                        └── a2
+                            └── t1
+                                ├── a3
+                                └── a4
         |}]
   end )

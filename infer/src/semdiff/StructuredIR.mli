@@ -34,3 +34,14 @@ val to_cfg : t -> Textual.Node.t list * Textual.NodeName.t
 val reverse_postorder : Textual.Node.t list -> Textual.NodeName.t -> int Textual.NodeName.Map.t
 (** [reverse_postorder nodes start] computes a reverse postorder numbering of the CFG. The entry
     node [start] gets number 0; larger numbers are further from the entry. *)
+
+val compute_idom :
+  Textual.Node.t list -> Textual.NodeName.t -> Textual.NodeName.t Textual.NodeName.Map.t
+(** [compute_idom nodes start] computes immediate dominators using Cooper, Harvey & Kennedy's
+    iterative algorithm. Returns a map from each node to its immediate dominator. The entry node
+    maps to itself. *)
+
+val dominator_children :
+  Textual.NodeName.t Textual.NodeName.Map.t -> Textual.NodeName.t list Textual.NodeName.Map.t
+(** [dominator_children idom] inverts the immediate-dominator map to produce a map from each node to
+    its children in the dominator tree. *)
