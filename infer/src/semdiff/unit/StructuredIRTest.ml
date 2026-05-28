@@ -98,6 +98,128 @@ let sir_nested =
     , S.Return {label= nn "ret"; exp= T.Exp.Const (T.Const.Int (Z.of_int 0))} )
 
 
+(* Merge node B into its unique predecessor A when A ends with an unconditional jump to B.
+   Keeps the label of A, concatenates instructions, uses B's terminator. *)
+let coalesce_cfg ~start nodes =
+  let pred_count =
+    List.fold nodes ~init:T.NodeName.Map.empty ~f:(fun acc (node : T.Node.t) ->
+        let succs = S.successor_labels node.last in
+        List.fold succs ~init:acc ~f:(fun acc succ ->
+            let n = T.NodeName.Map.find_opt succ acc |> Option.value ~default:0 in
+            T.NodeName.Map.add succ (n + 1) acc ) )
+  in
+  let node_map =
+    List.fold nodes ~init:T.NodeName.Map.empty ~f:(fun acc (node : T.Node.t) ->
+        T.NodeName.Map.add node.label node acc )
+  in
+  let can_absorb target =
+    (not (T.NodeName.equal target start))
+    && T.NodeName.Map.find_opt target pred_count |> Option.exists ~f:(fun n -> Int.equal n 1)
+  in
+  let absorbed = T.NodeName.HashSet.create 16 in
+  let merge_into (a : T.Node.t) =
+    match a.last with
+    | Jump [{T.Terminator.label= target; ssa_args= []}] when can_absorb target ->
+        let b = T.NodeName.Map.find target node_map in
+        T.NodeName.HashSet.add target absorbed ;
+        {a with instrs= a.instrs @ b.instrs; last= b.last}
+    | _ ->
+        a
+  in
+  let rec fix node =
+    let node' = merge_into node in
+    if phys_equal node node' then node else fix node'
+  in
+  List.filter_map nodes ~f:(fun (node : T.Node.t) ->
+      if T.NodeName.HashSet.mem absorbed node.label then None else Some (fix node) )
+
+
+let pp_nodes nodes =
+  let buf = Buffer.create 256 in
+  let fmt = F.formatter_of_buffer buf in
+  let node_map =
+    List.fold nodes ~init:T.NodeName.Map.empty ~f:(fun acc (node : T.Node.t) ->
+        T.NodeName.Map.add node.label node acc )
+  in
+  T.NodeName.Map.iter
+    (fun _label (node : T.Node.t) ->
+      F.fprintf fmt "#%a:@." T.NodeName.pp node.label ;
+      List.iter node.instrs ~f:(fun instr ->
+          F.fprintf fmt "    %a@." (T.Instr.pp ~show_location:false) instr ) ;
+      F.fprintf fmt "    %a@." T.Terminator.pp node.last )
+    node_map ;
+  F.pp_print_flush fmt () ;
+  Buffer.contents buf
+
+
+(* Remove empty nodes (no instructions, unconditional jump) using union-find.
+   Step 1: build parent map — empty non-start nodes point to their jump target
+   Step 2: find with path compression resolves chains
+   Step 3: rewrite all terminators using find
+   Step 4: remove dead nodes (no predecessor) *)
+let bypass_empty_nodes ~start nodes =
+  (* step 1: union-find parent map *)
+  let parent = ref T.NodeName.Map.empty in
+  let merge label target = parent := T.NodeName.Map.add label target !parent in
+  let rec find label =
+    match T.NodeName.Map.find_opt label !parent with
+    | None ->
+        label
+    | Some target ->
+        let root = find target in
+        if not (T.NodeName.equal root target) then merge label root ;
+        root
+  in
+  List.iter nodes ~f:(fun (node : T.Node.t) ->
+      match (node.instrs, node.last) with
+      | [], Jump [{T.Terminator.label= target; ssa_args= []}]
+        when not (T.NodeName.equal node.label start) ->
+          merge node.label target
+      | _ ->
+          () ) ;
+  if T.NodeName.Map.is_empty !parent then nodes
+  else
+    (* step 3: rewrite terminators *)
+    let rewrite_call {T.Terminator.label; ssa_args} = {T.Terminator.label= find label; ssa_args} in
+    let rec rewrite_term (term : T.Terminator.t) =
+      match term with
+      | Jump targets ->
+          T.Terminator.Jump (List.map targets ~f:rewrite_call)
+      | If {bexp; then_; else_} ->
+          T.Terminator.If {bexp; then_= rewrite_term then_; else_= rewrite_term else_}
+      | (Ret _ | Throw _ | Unreachable) as t ->
+          t
+    in
+    let nodes =
+      List.map nodes ~f:(fun (node : T.Node.t) -> {node with last= rewrite_term node.last})
+    in
+    (* step 4: remove dead nodes *)
+    let referenced = T.NodeName.HashSet.create 16 in
+    T.NodeName.HashSet.add start referenced ;
+    List.iter nodes ~f:(fun (node : T.Node.t) ->
+        List.iter (S.successor_labels node.last) ~f:(fun succ ->
+            T.NodeName.HashSet.add succ referenced ) ) ;
+    List.filter nodes ~f:(fun (node : T.Node.t) -> T.NodeName.HashSet.mem referenced node.label)
+
+
+let normalize_cfg ~start nodes = bypass_empty_nodes ~start (coalesce_cfg ~start nodes)
+
+let check_roundtrip proc =
+  let start = proc.T.ProcDesc.start in
+  let sir = S.of_cfg proc.T.ProcDesc.nodes start in
+  F.printf "@[<v>%a@]@." S.pp sir ;
+  let roundtripped, rt_start = S.to_cfg sir in
+  let roundtripped = normalize_cfg ~start:rt_start roundtripped in
+  let rt_str = pp_nodes roundtripped in
+  let orig_str = pp_nodes proc.T.ProcDesc.nodes in
+  if String.equal orig_str rt_str then F.printf "roundtrip: OK@."
+  else
+    let orig_norm_str = pp_nodes (normalize_cfg ~start proc.T.ProcDesc.nodes) in
+    if String.equal orig_norm_str rt_str then
+      F.printf "roundtrip: OK (after normalising original)@."
+    else F.printf "roundtrip: MISMATCH@.--- original@.%s--- roundtrip@.%s" orig_norm_str rt_str
+
+
 let pp_rpo nodes start =
   let rpo = S.reverse_postorder nodes start in
   let sorted =
@@ -415,5 +537,348 @@ let%test_module "structured IR" =
           else
             n1 = "action_1"
             branch 1
+        |}]
+  end )
+
+
+let python_to_proc source ~proc_name =
+  let procs = ref [] in
+  PyIR.test source ~run:(fun pyir ->
+      let textual = PyIR2Textual.mk_module pyir in
+      List.iter textual.decls ~f:(fun decl ->
+          match decl with T.Module.Proc p -> procs := p :: !procs | _ -> () ) ) ;
+  List.find_exn !procs ~f:(fun (proc : T.ProcDesc.t) ->
+      String.is_suffix
+        (F.asprintf "%a" T.QualifiedProcName.pp proc.procdecl.qualified_name)
+        ~suffix:proc_name )
+
+
+let%test_module "roundtrip Python → Textual → of_cfg → to_cfg → coalesce" =
+  ( module struct
+    let%expect_test "straight-line" =
+      let proc = python_to_proc {|
+def foo():
+    return 42
+|} ~proc_name:"foo" in
+      check_roundtrip proc ;
+      [%expect
+        {|
+        n2 = globals
+        n1 = locals
+        n0 = $builtins.py_make_none()
+        ret $builtins.py_make_int(42)
+
+        roundtrip: OK
+        |}]
+
+
+    let%expect_test "if-then-else" =
+      let proc =
+        python_to_proc
+          {|
+def foo(c):
+    if c:
+        x = 1
+    else:
+        x = 2
+    return x
+|}
+          ~proc_name:"foo"
+      in
+      check_roundtrip proc ;
+      [%expect
+        {|
+        n2 = globals
+        n1 = locals
+        n0 = $builtins.py_make_none()
+        n3 = $builtins.py_load_fast("c", n1)
+        if $builtins.py_bool(n3) then
+          _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(1))
+          n5 = $builtins.py_load_fast("x", n1)
+          _ = $builtins.py_nullify_locals(n1, "x")
+          ret n5
+
+        else
+          _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(2))
+          n4 = $builtins.py_load_fast("x", n1)
+          _ = $builtins.py_nullify_locals(n1, "x")
+          ret n4
+
+
+        roundtrip: OK (after normalising original)
+        |}]
+
+
+    let%expect_test "while loop" =
+      let proc =
+        python_to_proc {|
+def foo(c):
+    while c:
+        x = 1
+    return 0
+|} ~proc_name:"foo"
+      in
+      check_roundtrip proc ;
+      [%expect
+        {|
+        block
+          n2 = globals
+          n1 = locals
+          n0 = $builtins.py_make_none()
+          n3 = $builtins.py_load_fast("c", n1)
+          if $builtins.py_bool(n3) then
+            loop
+              _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(1))
+              n4 = $builtins.py_load_fast("c", n1)
+              if $builtins.py_bool(n4) then
+                branch 1
+
+              else
+                branch 3
+
+
+
+          else
+            branch 1
+
+
+        _ = $builtins.py_nullify_locals(n1, "x")
+        ret $builtins.py_make_int(0)
+
+        roundtrip: OK (after normalising original)
+        |}]
+
+
+    let%expect_test "nested if" =
+      let proc =
+        python_to_proc
+          {|
+def foo(a, b):
+    if a:
+        if b:
+            x = 1
+        else:
+            x = 2
+    else:
+        x = 3
+    return x
+|}
+          ~proc_name:"foo"
+      in
+      check_roundtrip proc ;
+      [%expect
+        {|
+        n2 = globals
+        n1 = locals
+        n0 = $builtins.py_make_none()
+        n3 = $builtins.py_load_fast("a", n1)
+        if $builtins.py_bool(n3) then
+          n5 = $builtins.py_load_fast("b", n1)
+          if $builtins.py_bool(n5) then
+            _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(1))
+            n7 = $builtins.py_load_fast("x", n1)
+            _ = $builtins.py_nullify_locals(n1, "x")
+            ret n7
+
+          else
+            _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(2))
+            n6 = $builtins.py_load_fast("x", n1)
+            _ = $builtins.py_nullify_locals(n1, "x")
+            ret n6
+
+
+        else
+          _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(3))
+          n4 = $builtins.py_load_fast("x", n1)
+          _ = $builtins.py_nullify_locals(n1, "x")
+          ret n4
+
+
+        roundtrip: OK (after normalising original)
+        |}]
+
+
+    let%expect_test "sequential ifs" =
+      let proc =
+        python_to_proc
+          {|
+def foo(a, b):
+    if a:
+        x = 1
+    else:
+        x = 2
+    if b:
+        y = 3
+    else:
+        y = 4
+    return y
+|}
+          ~proc_name:"foo"
+      in
+      check_roundtrip proc ;
+      [%expect
+        {|
+        block
+          n2 = globals
+          n1 = locals
+          n0 = $builtins.py_make_none()
+          n3 = $builtins.py_load_fast("a", n1)
+          if $builtins.py_bool(n3) then
+            _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(1))
+            branch 1
+
+          else
+            _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(2))
+            branch 1
+
+
+        n4 = $builtins.py_load_fast("b", n1)
+        if $builtins.py_bool(n4) then
+          _ = $builtins.py_store_fast("y", n1, $builtins.py_make_int(3))
+          n6 = $builtins.py_load_fast("y", n1)
+          _ = $builtins.py_nullify_locals(n1, "x", "y")
+          ret n6
+
+        else
+          _ = $builtins.py_store_fast("y", n1, $builtins.py_make_int(4))
+          n5 = $builtins.py_load_fast("y", n1)
+          _ = $builtins.py_nullify_locals(n1, "x", "y")
+          ret n5
+
+
+        roundtrip: OK (after normalising original)
+        |}]
+
+
+    let%expect_test "loop with nested if" =
+      let proc =
+        python_to_proc
+          {|
+def foo(items):
+    s = 0
+    for x in items:
+        if x > 0:
+            s += x
+    return s
+|}
+          ~proc_name:"foo"
+      in
+      check_roundtrip proc ;
+      [%expect
+        {|
+        n2 = globals
+        n1 = locals
+        n0 = $builtins.py_make_none()
+        _ = $builtins.py_store_fast("s", n1, $builtins.py_make_int(0))
+        n3 = $builtins.py_load_fast("items", n1)
+        n4 = $builtins.py_get_iter(n3)
+        loop
+          n5 = $builtins.py_next_iter(n4)
+          n6 = $builtins.py_has_next_iter(n4)
+          if $builtins.py_bool(n6) then
+            _ = $builtins.py_store_fast("x", n1, n5)
+            block
+              n8 = $builtins.py_load_fast("x", n1)
+              n9 = $builtins.py_compare_gt(n8, $builtins.py_make_int(0))
+              if $builtins.py_bool(n9) then
+                n10 = $builtins.py_load_fast("s", n1)
+                n11 = $builtins.py_load_fast("x", n1)
+                n12 = $builtins.py_inplace_add(n10, n11)
+                _ = $builtins.py_store_fast("s", n1, n12)
+                branch 1
+
+              else
+                branch 1
+
+
+            branch 1
+
+          else
+            n7 = $builtins.py_load_fast("s", n1)
+            _ = $builtins.py_nullify_locals(n1, "s", "x")
+            ret n7
+
+
+
+        roundtrip: OK (after normalising original)
+        |}]
+
+
+    let%expect_test "while with break and continue" =
+      let proc =
+        python_to_proc
+          {|
+def foo(n):
+    i = 0
+    while i < n:
+        i += 1
+        if i == 3:
+            continue
+        if i == 7:
+            break
+        print(i)
+    print(i)
+    return i
+|}
+          ~proc_name:"foo"
+      in
+      check_roundtrip proc ;
+      [%expect
+        {|
+        n2 = globals
+        n1 = locals
+        n0 = $builtins.py_make_none()
+        _ = $builtins.py_store_fast("i", n1, $builtins.py_make_int(0))
+        loop
+          block
+            n3 = $builtins.py_load_fast("i", n1)
+            n4 = $builtins.py_load_fast("n", n1)
+            n5 = $builtins.py_compare_lt(n3, n4)
+            if $builtins.py_bool(n5) then
+              loop
+                n6 = $builtins.py_load_fast("i", n1)
+                n7 = $builtins.py_inplace_add(n6, $builtins.py_make_int(1))
+                _ = $builtins.py_store_fast("i", n1, n7)
+                n8 = $builtins.py_load_fast("i", n1)
+                n9 = $builtins.py_compare_eq(n8, $builtins.py_make_int(3))
+                if $builtins.py_bool(n9) then
+                  branch 4
+
+                else
+                  n10 = $builtins.py_load_fast("i", n1)
+                  n11 = $builtins.py_compare_eq(n10, $builtins.py_make_int(7))
+                  if $builtins.py_bool(n11) then
+                    branch 4
+
+                  else
+                    n12 = $builtins.py_load_global("print", n2)
+                    n13 = $builtins.py_load_fast("i", n1)
+                    n14 = $builtins.py_call(n12, n0, n13)
+                    n15 = $builtins.py_load_fast("i", n1)
+                    n16 = $builtins.py_load_fast("n", n1)
+                    n17 = $builtins.py_compare_lt(n15, n16)
+                    if $builtins.py_bool(n17) then
+                      branch 3
+
+                    else
+                      branch 5
+
+
+
+
+
+            else
+              branch 1
+
+
+          n18 = $builtins.py_load_global("print", n2)
+          n19 = $builtins.py_load_fast("i", n1)
+          n20 = $builtins.py_call(n18, n0, n19)
+          n21 = $builtins.py_load_fast("i", n1)
+          _ = $builtins.py_nullify_locals(n1, "i")
+          ret n21
+
+
+        roundtrip: OK (after normalising original)
         |}]
   end )
