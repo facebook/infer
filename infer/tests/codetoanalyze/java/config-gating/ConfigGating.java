@@ -54,6 +54,16 @@ public class ConfigGating {
     doSomething();
   }
 
+  // Blocklisted callees: string operations should not be reported
+  void test_blocklisted_strings() {
+    StringBuilder sb = new StringBuilder();
+    sb.append("hello");
+    sb.append(42);
+    String result = sb.toString();
+    int len = result.length();
+    boolean eq = result.equals("hello42");
+  }
+
   // Blocklisted callees: collection operations should not be reported
   void test_blocklisted_collections() {
     List<String> list = new ArrayList<>();

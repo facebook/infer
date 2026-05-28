@@ -140,6 +140,11 @@ let blocklisted_callee_patterns =
           "kotlin\\.jvm\\.internal\\.Intrinsics\\."
         ; "kotlin\\.jvm\\.internal\\.TypeIntrinsics\\."
         ; "kotlin\\.coroutines\\.intrinsics\\.IntrinsicsKt"
+        ; (* String / StringBuilder / CharSequence *)
+          "java\\.lang\\.String\\."
+        ; "java\\.lang\\.StringBuilder\\."
+        ; "java\\.lang\\.StringBuffer\\."
+        ; "java\\.lang\\.CharSequence\\."
         ; (* Java collections: core interfaces *)
           "java\\.util\\.List\\."
         ; "java\\.util\\.Map\\."
