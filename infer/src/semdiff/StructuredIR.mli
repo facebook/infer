@@ -31,6 +31,8 @@ val to_cfg : t -> Textual.Node.t list * Textual.NodeName.t
 (** Convert structured IR back to a Textual CFG (list of basic blocks + start label). Used for
     round-trip testing. *)
 
+val successor_labels : Textual.Terminator.t -> Textual.NodeName.t list
+
 val reverse_postorder : Textual.Node.t list -> Textual.NodeName.t -> int Textual.NodeName.Map.t
 (** [reverse_postorder nodes start] computes a reverse postorder numbering of the CFG. The entry
     node [start] gets number 0; larger numbers are further from the entry. *)
@@ -45,3 +47,7 @@ val dominator_children :
   Textual.NodeName.t Textual.NodeName.Map.t -> Textual.NodeName.t list Textual.NodeName.Map.t
 (** [dominator_children idom] inverts the immediate-dominator map to produce a map from each node to
     its children in the dominator tree. *)
+
+val of_cfg : Textual.Node.t list -> Textual.NodeName.t -> t
+(** [of_cfg nodes start] translates a Textual CFG into structured IR using Ramsey's doTree
+    algorithm. Produces Wasm-style [t] with [Block], [Loop], [If], and [Branch] depth counting. *)

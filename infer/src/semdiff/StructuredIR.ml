@@ -204,3 +204,143 @@ let dominator_children idom =
         let existing = T.NodeName.Map.find_opt parent acc |> Option.value ~default:[] in
         T.NodeName.Map.add parent (child :: existing) acc )
     idom T.NodeName.Map.empty
+
+
+(* ---------- CFG → Structured IR (Ramsey's doTree) ---------- *)
+
+type context_entry = LoopHeadedBy of T.NodeName.t | BlockFollowedBy of T.NodeName.t | IfExit
+
+let of_cfg nodes start =
+  let node_map = build_node_map nodes in
+  let pred_map = build_pred_map nodes in
+  let rpo = reverse_postorder nodes start in
+  let dtree = dominator_children (compute_idom nodes start) in
+  let loop_headers = T.NodeName.HashSet.create 16 in
+  List.iter nodes ~f:(fun (node : T.Node.t) ->
+      List.iter (successor_labels node.last) ~f:(fun succ ->
+          match (T.NodeName.Map.find_opt node.label rpo, T.NodeName.Map.find_opt succ rpo) with
+          | Some src_rpo, Some tgt_rpo when tgt_rpo <= src_rpo ->
+              T.NodeName.HashSet.add succ loop_headers
+          | _ ->
+              () ) ) ;
+  let is_loop_header label = T.NodeName.HashSet.mem loop_headers label in
+  let is_merge label =
+    let preds = T.NodeName.Map.find_opt label pred_map |> Option.value ~default:[] in
+    let forward_preds =
+      List.filter preds ~f:(fun p ->
+          match (T.NodeName.Map.find_opt p rpo, T.NodeName.Map.find_opt label rpo) with
+          | Some p_rpo, Some l_rpo ->
+              p_rpo < l_rpo
+          | _ ->
+              true )
+    in
+    List.length forward_preds >= 2
+  in
+  let dtree_kids label = T.NodeName.Map.find_opt label dtree |> Option.value ~default:[] in
+  let sort_by_rpo labels =
+    List.sort labels ~compare:(fun a b ->
+        Int.compare (T.NodeName.Map.find a rpo) (T.NodeName.Map.find b rpo) )
+  in
+  let is_backward source target =
+    match (T.NodeName.Map.find_opt source rpo, T.NodeName.Map.find_opt target rpo) with
+    | Some s, Some t ->
+        t <= s
+    | _ ->
+        false
+  in
+  let gen = ref 0 in
+  let fresh_label () =
+    let n = !gen in
+    gen := n + 1 ;
+    T.NodeName.of_string (F.asprintf "n_%d" n)
+  in
+  let index target context =
+    let rec aux i = function
+      | [] ->
+          L.die InternalError "of_cfg: br target %a not found in context" T.NodeName.pp target
+      | (LoopHeadedBy l | BlockFollowedBy l) :: _ when T.NodeName.equal l target ->
+          i
+      | _ :: rest ->
+          aux (i + 1) rest
+    in
+    aux 0 context
+  in
+  let rec do_tree label ~context =
+    match T.NodeName.Map.find_opt label node_map with
+    | None ->
+        Instrs {label; instrs= []}
+    | Some node ->
+        let kids = dtree_kids label in
+        let merge_kids = sort_by_rpo (List.filter kids ~f:is_merge) in
+        let is_loop =
+          is_loop_header label
+          && not
+               (List.exists context ~f:(function
+                 | LoopHeadedBy l ->
+                     T.NodeName.equal l label
+                 | _ ->
+                     false ))
+        in
+        let context' = if is_loop then LoopHeadedBy label :: context else context in
+        let with_merges = node_within label node merge_kids ~context:context' in
+        if is_loop then Loop {label; body= with_merges} else with_merges
+  and node_within label node merge_kids ~context =
+    match merge_kids with
+    | [] ->
+        translate_node label node ~context
+    | y_n :: ys ->
+        let inner = node_within label node ys ~context:(BlockFollowedBy y_n :: context) in
+        let y_translation = do_tree y_n ~context in
+        Seq (Block inner, y_translation)
+  and translate_node label (node : T.Node.t) ~context =
+    match (node.instrs, node.last) with
+    | [], Ret exp ->
+        Return {label; exp}
+    | [], Throw exp ->
+        Throw {label; exp}
+    | [], Jump [{label= target; _}] ->
+        do_branch label target ~context
+    | [], If {bexp; then_; else_} ->
+        If
+          { label
+          ; bexp
+          ; then_= translate_branch label then_ ~context:(IfExit :: context)
+          ; else_= translate_branch label else_ ~context:(IfExit :: context) }
+    | instrs, Ret exp ->
+        Seq (Instrs {label; instrs}, Return {label= fresh_label (); exp})
+    | instrs, Throw exp ->
+        Seq (Instrs {label; instrs}, Throw {label= fresh_label (); exp})
+    | instrs, Jump [{label= target; _}] ->
+        Seq (Instrs {label; instrs}, do_branch label target ~context)
+    | instrs, If {bexp; then_; else_} ->
+        Seq
+          ( Instrs {label; instrs}
+          , If
+              { label= fresh_label ()
+              ; bexp
+              ; then_= translate_branch label then_ ~context:(IfExit :: context)
+              ; else_= translate_branch label else_ ~context:(IfExit :: context) } )
+    | _, (Unreachable | Jump _) ->
+        Instrs {label; instrs= node.instrs}
+  and translate_branch source (term : T.Terminator.t) ~context =
+    match term with
+    | Jump [{label= target; _}] ->
+        do_branch source target ~context
+    | Ret exp ->
+        Return {label= fresh_label (); exp}
+    | Throw exp ->
+        Throw {label= fresh_label (); exp}
+    | If {bexp; then_; else_} ->
+        If
+          { label= fresh_label ()
+          ; bexp
+          ; then_= translate_branch source then_ ~context:(IfExit :: context)
+          ; else_= translate_branch source else_ ~context:(IfExit :: context) }
+    | Unreachable | Jump _ ->
+        Instrs {label= fresh_label (); instrs= []}
+  and do_branch source target ~context =
+    if is_backward source target then Branch (index target context)
+    else if is_merge target then Branch (index target context)
+    else do_tree target ~context
+  in
+  do_tree start ~context:[]

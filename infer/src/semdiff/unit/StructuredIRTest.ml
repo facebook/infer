@@ -367,4 +367,53 @@ let%test_module "structured IR" =
                                 ├── a3
                                 └── a4
         |}]
+
+
+    let pp_of_cfg nodes start =
+      let sir = S.of_cfg nodes start in
+      F.printf "@[<v>%a@]@." S.pp sir
+
+
+    let%expect_test "of_cfg straight-line" =
+      let nodes, start = S.to_cfg sir_straight in
+      pp_of_cfg nodes start ;
+      [%expect {|
+        n0 = "action_0"
+        ret 42
+        |}]
+
+
+    let%expect_test "of_cfg diamond" =
+      let nodes, start = S.to_cfg sir_diamond in
+      pp_of_cfg nodes start ;
+      [%expect
+        {|
+        block
+          if n0 then
+            n1 = "action_1"
+            branch 1
+
+          else
+            n2 = "action_2"
+            branch 1
+
+
+        ret 0
+        |}]
+
+
+    let%expect_test "of_cfg loop" =
+      let nodes, start = S.to_cfg sir_loop in
+      pp_of_cfg nodes start ;
+      [%expect
+        {|
+        loop
+          n0 = "action_0"
+          if n0 then
+            ret 0
+
+          else
+            n1 = "action_1"
+            branch 1
+        |}]
   end )
