@@ -30,3 +30,7 @@ val pp : Format.formatter -> t -> unit
 val to_cfg : t -> Textual.Node.t list * Textual.NodeName.t
 (** Convert structured IR back to a Textual CFG (list of basic blocks + start label). Used for
     round-trip testing. *)
+
+val reverse_postorder : Textual.Node.t list -> Textual.NodeName.t -> int Textual.NodeName.Map.t
+(** [reverse_postorder nodes start] computes a reverse postorder numbering of the CFG. The entry
+    node [start] gets number 0; larger numbers are further from the entry. *)

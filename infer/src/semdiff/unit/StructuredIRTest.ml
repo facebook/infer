@@ -64,6 +64,14 @@ let sir_loop =
     , S.Return {label= nn "ret"; exp= T.Exp.Const (T.Const.Int (Z.of_int 0))} )
 
 
+let pp_rpo nodes start =
+  let rpo = S.reverse_postorder nodes start in
+  let sorted =
+    T.NodeName.Map.bindings rpo |> List.sort ~compare:(fun (_, a) (_, b) -> Int.compare a b)
+  in
+  List.iter sorted ~f:(fun (name, n) -> F.printf "%d: %a@." n T.NodeName.pp name)
+
+
 let%test_module "structured IR" =
   ( module struct
     let%expect_test "straight-line pp" =
@@ -150,5 +158,38 @@ let%test_module "structured IR" =
             jmp loop
         #ret:
             ret 0
+        |}]
+
+
+    let%expect_test "RPO straight-line" =
+      let nodes, start = S.to_cfg sir_straight in
+      pp_rpo nodes start ;
+      [%expect {|
+        0: entry
+        1: ret
+        |}]
+
+
+    let%expect_test "RPO diamond" =
+      let nodes, start = S.to_cfg sir_diamond in
+      pp_rpo nodes start ;
+      [%expect {|
+        0: cond
+        1: else_
+        2: then_
+        3: ret
+        |}]
+
+
+    let%expect_test "RPO loop" =
+      let nodes, start = S.to_cfg sir_loop in
+      pp_rpo nodes start ;
+      [%expect
+        {|
+        0: loop
+        1: body
+        2: test
+        3: cont
+        4: ret
         |}]
   end )

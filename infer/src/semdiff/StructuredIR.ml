@@ -101,3 +101,41 @@ let rec to_cfg_aux (sir : t) ~(exit : label) ~(loop_exits : label list) :
 let to_cfg sir =
   let exit = T.NodeName.of_string "exit" in
   to_cfg_aux sir ~exit ~loop_exits:[]
+
+
+(* ---------- Graph utilities for CFG → Structured IR ---------- *)
+
+let successor_labels term =
+  let rec collect acc (term : T.Terminator.t) =
+    match term with
+    | Ret _ | Throw _ | Unreachable ->
+        acc
+    | Jump targets ->
+        List.fold targets ~init:acc ~f:(fun acc {T.Terminator.label} -> label :: acc)
+    | If {then_; else_; _} ->
+        collect (collect acc then_) else_
+  in
+  collect [] term |> List.rev
+
+
+let build_node_map nodes =
+  List.fold nodes ~init:T.NodeName.Map.empty ~f:(fun acc (node : T.Node.t) ->
+      T.NodeName.Map.add node.label node acc )
+
+
+let reverse_postorder nodes start =
+  let node_map = build_node_map nodes in
+  let visited = T.NodeName.HashSet.create 16 in
+  let rec dfs acc label =
+    if T.NodeName.HashSet.mem visited label then acc
+    else (
+      T.NodeName.HashSet.add label visited ;
+      let acc =
+        Option.fold (T.NodeName.Map.find_opt label node_map) ~init:acc
+          ~f:(fun acc (node : T.Node.t) -> List.fold (successor_labels node.last) ~init:acc ~f:dfs )
+      in
+      label :: acc )
+  in
+  let rpo_list = dfs [] start in
+  List.foldi rpo_list ~init:T.NodeName.Map.empty ~f:(fun i acc label ->
+      T.NodeName.Map.add label i acc )
