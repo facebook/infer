@@ -139,6 +139,7 @@ let blocklisted_callee_patterns =
         [ (* Java and Kotlin standard libraries are never config-related *)
           "java\\."
         ; "kotlin\\."
+        ; "kotlinx\\."
         ; (* Android SDK and AndroidX/Jetpack *)
           "android\\."
         ; "androidx\\."
