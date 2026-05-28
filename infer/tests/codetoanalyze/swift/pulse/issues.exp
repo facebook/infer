@@ -1,6 +1,7 @@
 codetoanalyze/swift/pulse/enums.swift, using_enums_with_defaultPadding_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/enums.swift:compiler-generated, $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_, 0, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/enums.swift:compiler-generated, $ss25_unimplementedInitializer9className04initD04file4line6columns5NeverOs12StaticStringV_A2JS2utFySRys5UInt8VGXEfU_yAMXEfU_yAMXEfU_, 0, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+codetoanalyze/swift/pulse/objc_copy.swift, test_copy_dispatch_bad, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/objc_interop1.swift, testSummaryInstance_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/objc_interop1.swift, testInteropClass_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 codetoanalyze/swift/pulse/objc_interop1.swift, testEndToEndInstanceProtocol_bad, 4, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []

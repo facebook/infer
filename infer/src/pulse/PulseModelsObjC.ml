@@ -354,6 +354,34 @@ let fresh_with_objc_type class_name : model =
   assign_ret v
 
 
+(* Model for `-[NSObject copy]` and its overrides on every subclass. The
+   returned object is a fresh, owned (+1 retain count) instance whose
+   per-field state mirrors the receiver's at the call site. We use
+   [PulseOperations.shallow_copy] to allocate a new address that shares
+   the receiver's post-cell (field bindings + per-address attributes,
+   including taint and dynamic-type constraints) -- semantically the
+   same shape as [-[NSObject copyWithZone:]]'s default member-wise
+   copy, and what most [NSCopying] conformers implement. The copy is
+   then stamped [ObjCAlloc] so ARC ownership and leak tracking work.
+
+   Crucially, taint and value attributes on the receiver flow through
+   to the copy -- which is what Pulse's unknown-callee fallback also
+   does, so removing the unmodelled-callee event does not regress
+   any taint analysis built on top of [-copy]. *)
+let nsobject_copy receiver : model_no_non_disj =
+ fun {path; location; ret= ret_id, _} astate ->
+  let event = Hist.call_event path location "NSObject.copy" in
+  let<*> astate, obj_copy =
+    PulseOperations.shallow_copy ~ask_specialization:true path location receiver astate
+  in
+  let copy_addr = fst obj_copy in
+  let copy_hist = Hist.add_event event (snd obj_copy) in
+  let astate = PulseOperations.allocate ObjCAlloc location copy_addr astate in
+  let astate = PulseOperations.write_id ret_id (copy_addr, copy_hist) astate in
+  let<++> astate = PulseArithmetic.and_positive copy_addr astate in
+  astate
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
@@ -609,7 +637,13 @@ let matchers : matcher list =
     (* catch-all for any CLASS.init *)
   ; +(fun (_tenv, proc_name) _ -> Procname.is_objc_method proc_name)
     &:: "init" <>$ capt_arg_payload
-    $+...$--> Basic.id_first_arg ~desc:"NSObject.init" ]
+    $+...$--> Basic.id_first_arg ~desc:"NSObject.init"
+    (* catch-all for any CLASS.copy on an ObjC instance method. Falls
+       through to a shallow-copy model that preserves field bindings,
+       attributes, and taint from the receiver. *)
+  ; +(fun (_tenv, proc_name) _ ->
+       Procname.is_objc_method proc_name && Procname.is_objc_instance_method proc_name )
+    &:: "copy" <>$ capt_arg_payload $--> nsobject_copy ]
   |> List.map ~f:(fun matcher ->
          matcher
          |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
