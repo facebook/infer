@@ -141,7 +141,9 @@ let blocklisted_callee_patterns =
         ; "kotlin\\."
         ; (* Android SDK and AndroidX/Jetpack *)
           "android\\."
-        ; "androidx\\." ] ) ]
+        ; "androidx\\."
+        ; (* org.json (JSONObject, JSONArray) *)
+          "org\\.json\\." ] ) ]
 
 
 let is_blocklisted_callee callee =
