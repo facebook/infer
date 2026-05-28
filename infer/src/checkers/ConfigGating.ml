@@ -136,7 +136,11 @@ let blocklisted_callee_patterns =
         ; "os_log_create$" ] )
   ; ( Language.Java
     , List.map ~f:Str.regexp
-        [ (* Java collections: core interfaces *)
+        [ (* Kotlin null-check intrinsics *)
+          "kotlin\\.jvm\\.internal\\.Intrinsics\\."
+        ; "kotlin\\.jvm\\.internal\\.TypeIntrinsics\\."
+        ; "kotlin\\.coroutines\\.intrinsics\\.IntrinsicsKt"
+        ; (* Java collections: core interfaces *)
           "java\\.util\\.List\\."
         ; "java\\.util\\.Map\\."
         ; "java\\.util\\.Set\\."
