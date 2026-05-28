@@ -241,7 +241,9 @@ let wildcard_sil_fieldname lang name =
   | Python ->
       SilFieldname.make (PythonClass PythonClassName.Wildcard) name
   | Swift ->
-      SilFieldname.make (SwiftClass (SwiftClassName.of_string "?")) name
+      (* A field reaching the wildcard fallback is by construction not a declared weak field, so
+         default [is_weak:false] rather than [None]. *)
+      SilFieldname.make ~is_weak:false (SwiftClass (SwiftClassName.of_string "?")) name
   | Rust ->
       L.die InternalError "<NOT YET SUPPORTED>"
 
