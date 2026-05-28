@@ -133,7 +133,47 @@ let blocklisted_callee_patterns =
         ; "^dlopen$"
         ; "^dlsym$"
         ; "^objc_lookUpClass$"
-        ; "^os_log_create$" ] ) ]
+        ; "^os_log_create$" ] )
+  ; ( Language.Java
+    , List.map ~f:Str.regexp
+        [ (* Java collections: core interfaces *)
+          "^java\\.util\\.List\\."
+        ; "^java\\.util\\.Map\\."
+        ; "^java\\.util\\.Set\\."
+        ; "^java\\.util\\.Collection\\."
+        ; "^java\\.lang\\.Iterable\\."
+        ; "^java\\.util\\.Iterator\\."
+        ; "^java\\.util\\.Queue\\."
+        ; "^java\\.util\\.Deque\\."
+        ; (* Java collections: common implementations *)
+          "^java\\.util\\.ArrayList\\."
+        ; "^java\\.util\\.LinkedList\\."
+        ; "^java\\.util\\.HashMap\\."
+        ; "^java\\.util\\.LinkedHashMap\\."
+        ; "^java\\.util\\.TreeMap\\."
+        ; "^java\\.util\\.HashSet\\."
+        ; "^java\\.util\\.LinkedHashSet\\."
+        ; "^java\\.util\\.TreeSet\\."
+        ; "^java\\.util\\.ArrayDeque\\."
+        ; "^java\\.util\\.PriorityQueue\\."
+        ; "^java\\.util\\.Collections\\."
+        ; (* Java collections: abstract bases *)
+          "^java\\.util\\.AbstractList\\."
+        ; "^java\\.util\\.AbstractMap\\."
+        ; "^java\\.util\\.AbstractSet\\."
+        ; "^java\\.util\\.AbstractCollection\\."
+        ; (* Java collections: concurrent *)
+          "^java\\.util\\.concurrent\\.ConcurrentHashMap\\."
+        ; "^java\\.util\\.concurrent\\.CopyOnWriteArrayList\\."
+        ; "^java\\.util\\.concurrent\\.CopyOnWriteArraySet\\."
+        ; (* Java collections: legacy *)
+          "^java\\.util\\.Stack\\."
+        ; "^java\\.util\\.Vector\\."
+        ; "^java\\.util\\.Hashtable\\."
+        ; "^java\\.util\\.WeakHashMap\\."
+        ; "^java\\.util\\.IdentityHashMap\\."
+        ; "^java\\.util\\.EnumMap\\."
+        ; "^java\\.util\\.EnumSet\\." ] ) ]
 
 
 let is_blocklisted_callee callee =

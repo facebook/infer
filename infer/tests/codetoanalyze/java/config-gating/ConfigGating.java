@@ -7,6 +7,10 @@
 
 package codetoanalyze.java.configgating;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
 public class ConfigGating {
 
   // Stub: recognized as a config read by the checker
@@ -48,6 +52,17 @@ public class ConfigGating {
     }
     // After the join, code is NOT gated (both branches merged)
     doSomething();
+  }
+
+  // Blocklisted callees: collection operations should not be reported
+  void test_blocklisted_collections() {
+    List<String> list = new ArrayList<>();
+    list.add("item");
+    int size = list.size();
+
+    HashMap<String, String> map = new HashMap<>();
+    map.put("key", "value");
+    String val = map.get("key");
   }
 
   // Config stored in a variable before being checked
