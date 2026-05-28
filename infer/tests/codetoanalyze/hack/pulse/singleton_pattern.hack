@@ -34,11 +34,11 @@ class Singleton {
   }
 
   public static function get(): C {
-    if (!self::$instance) {
+    if (self::$instance is null) {
       self::$instance = new C(Utils::getUser());
     }
 
-    return self::$instance;
+    return self::$instance as nonnull;
   }
 
   public static function resetInstance(): void {

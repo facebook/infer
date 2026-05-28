@@ -24,28 +24,28 @@ function testBoolGood(SensitiveClass $sc): void {
 
 function testNullBad(SensitiveClass $sc): void {
   $a = null;
-  if (!$a) {
+  if ($a is null) {
     \Level1\taintSink($sc);
   }
 }
 
 function testNullGood(SensitiveClass $sc): void {
   $a = new A();
-  if (!$a) {
+  if ($a is null) {
     \Level1\taintSink($sc);
   }
 }
 
 function testNotNullGood(SensitiveClass $sc): void {
   $a = null;
-  if ($a) {
+  if ($a is nonnull) {
     \Level1\taintSink($sc);
   }
 }
 
 function testNotNullBad(SensitiveClass $sc): void {
   $a = new A();
-  if ($a) {
+  if ($a is nonnull) {
     \Level1\taintSink($sc);
   }
 }

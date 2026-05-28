@@ -105,7 +105,7 @@ class VariadicUsingSplat {
   public static function expectedJustNonNullTestBad(): void {
     $taint = \Level1\taintSource();
     $args = vec[true];
-    if ($args) {
+    if ($args is nonnull) {
       \Level1\taintSink($taint);
     }
   }
