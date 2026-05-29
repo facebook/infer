@@ -12,7 +12,7 @@ module CC = CongruenceClosureSolver
 module T = Textual
 module S = StructuredIR
 
-(* ---------- Duplicated helpers from TextualPeg ---------- *)
+(* ---------- Helpers ---------- *)
 
 module StringMap = IString.Map
 
