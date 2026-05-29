@@ -2849,23 +2849,81 @@ a local strong pointer that has been assigned `weakSelf`.
 *Category: [Null pointer dereference](/docs/next/all-categories#null-pointer-dereference). Reported as "Swift Null Dereference" by [pulse](/docs/next/checker-pulse).*
 
 Pulse detected a Swift code path that reads from an Optional value known
-to be `nil`. Examples:
+to be `nil`. The dereference itself is unsafe -- not the surrounding
+type annotation.
 
-- Force-unwrap of an Optional whose `nil` case is reachable
-  (`let x: Int? = nil; let _ = x!`).
-- Member access on an Implicitly Unwrapped Optional (`T!`) when the
-  underlying value is `nil`.
-- A call to `Optional.unsafelyUnwrapped` whose receiver is `nil`.
+The check is Swift-specific and considers an unwrap unsafe only when the
+`.none` case is reachable along some path. Unwraps on values that are
+known `.some` (literal payload, prior `if let` / `guard let` binding,
+`??` default) are silent. Unknown receivers (e.g. the result of an
+unmodelled extern call) are also silent.
 
-A `SWIFT_NPE` report means the dereference itself is unsafe -- not that
-the surrounding annotation is missing. Suggested fixes:
+## Force-unwrap of an Optional whose `nil` case is reachable
 
-- Bind the Optional with `if let` or `guard let` before use.
-- Provide a default with `??`.
-- Use the `?.` chain to short-circuit on `nil`.
-- If the value cannot be `nil` by contract, change the type from `T?` to
-  `T` (or annotate the Objective-C source as `_Nonnull`) so the
-  guarantee is expressed in the signature.
+```swift
+func unwrapsKnownNil_bad() {
+  let x: Int? = nil
+  _ = x!                 // SWIFT_NPE: x is known .none here
+}
+```
+
+Fix by binding the value before use:
+
+```swift
+func unwrapsKnownNil_good() {
+  let x: Int? = nil
+  if let v = x {
+    _ = v                 // OK: only reached on the .some branch
+  }
+}
+```
+
+Or provide a default:
+
+```swift
+func defaultsToZero_good() {
+  let x: Int? = nil
+  let _ = x ?? 0          // OK: no force-unwrap
+}
+```
+
+## Implicitly Unwrapped Optional (`T!`) whose underlying value is `nil`
+
+`T!` types are written as non-optional but compile to `Optional<T>` and
+trap on access if the value is `nil`.
+
+```swift
+func iuoFromBridge_bad(api: LegacyAPI) {
+  let s: String! = api.getUnannotatedString()   // ObjC returns nullable
+  _ = s.count                                   // SWIFT_NPE on .none
+}
+```
+
+Treat the value as a regular Optional and bind it explicitly:
+
+```swift
+func iuoBound_good(api: LegacyAPI) {
+  guard let s = api.getUnannotatedString() else { return }
+  _ = s.count                                   // OK
+}
+```
+
+If the underlying source can be annotated, mark the ObjC return
+`_Nonnull` (or change the Swift type from `T?` / `T!` to `T`) so the
+guarantee shows up in the signature.
+
+## `Optional.unsafelyUnwrapped` on a known-`nil` receiver
+
+```swift
+func unsafelyUnwrappedNil_bad() {
+  let x: Int? = nil
+  _ = x.unsafelyUnwrapped       // SWIFT_NPE
+}
+```
+
+`unsafelyUnwrapped` has the same trap semantics as `!` but skips the
+runtime check in optimised builds. Prefer the same fixes as above
+(`if let`, `guard let`, `??`).
 
 ## SWIFT_NPE_LATENT
 
