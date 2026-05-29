@@ -221,6 +221,13 @@ let is_string_bridge_from_nsstring _ n =
   && String.is_substring n ~substring:"NSString"
 
 
+(* Matches the Swift String initialiser used to construct a String from
+   a static string literal: [String.init(_builtinStringLiteral:
+   utf8CodeUnitCount: isASCII:)]. Llair2Textual's selector-tracking pass
+   already detects this name with the same substring; reuse the same
+   probe here for Pulse. *)
+let is_builtin_string_literal_init _ n = String.is_substring n ~substring:"builtinStringLiteral"
+
 (* Returns a fresh, non-null value stamped with the given dynamic type.
    The bridge models share this shape and nothing pre-existing in
    [PulseModelsDSL] / [PulseModelsSwift] / [PulseModelsObjC] bundles the
@@ -245,6 +252,16 @@ let string_bridge_to_nsstring _arg1 _arg2 : model =
 
 
 let string_bridge_from_nsstring _arg : model =
+  let open DSL.Syntax in
+  start_model @@ fun () -> fresh_typed_nonnull swift_string_typ >>= assign_ret
+
+
+(* [String.init(_builtinStringLiteral:utf8CodeUnitCount:isASCII:)] is
+   the initialiser emitted for every Swift static string literal. We
+   don't propagate the literal's bytes here — the selector-tracking
+   side-channel in [Llair2TextualModels] handles that for the cases
+   where it matters (e.g. NSSelectorFromString). *)
+let builtin_string_literal_init : model =
   let open DSL.Syntax in
   start_model @@ fun () -> fresh_typed_nonnull swift_string_typ >>= assign_ret
 
@@ -594,6 +611,7 @@ let matchers : matcher list =
   ; -"swift_getObjectType" <>$ capt_arg_payload $--> swift_get_object_type
   ; ~+is_string_bridge_to_nsstring $ capt_arg_payload $+ capt_arg_payload
     $+...$--> string_bridge_to_nsstring
-  ; ~+is_string_bridge_from_nsstring $ capt_arg_payload $+...$--> string_bridge_from_nsstring ]
+  ; ~+is_string_bridge_from_nsstring $ capt_arg_payload $+...$--> string_bridge_from_nsstring
+  ; ~+is_builtin_string_literal_init <>--> builtin_string_literal_init ]
   |> List.map ~f:(fun matcher ->
          matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )
