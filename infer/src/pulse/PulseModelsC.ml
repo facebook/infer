@@ -115,6 +115,19 @@ let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
       (res, non_disj)
 
 
+(* `pthread_once(control, init)` runs the `init` callback exactly once
+   across all threads sharing `control`. For Pulse's value-tracking we
+   treat it as an unconditional invocation of `init`: the side-effects
+   of the initialiser (e.g. setting a global) MUST be visible to
+   callers for the canonical lazy-init / singleton pattern to be
+   provable. We don't model the once-guard itself.
+
+   The `int` return value (0 on success) is left to whatever
+   [call_c_function_ptr] writes for the inner call's return (typically
+   void / non-deterministic). Most production callers ignore the
+   return; a more precise treatment can be added later if needed. *)
+let pthread_once init_func : model = call_c_function_ptr init_func []
+
 (** a few models from (g)libc and beyond *)
 include struct
   open DSL.Syntax
@@ -659,6 +672,7 @@ let matchers : matcher list =
   ; (-"pause" $$--> start_model @@ fun () -> assign_ret @= int (-1))
   ; (-"printf" &--> start_model @@ fun () -> assign_ret @= fresh ())
   ; -"pthread_exit" <>$ any_arg $+ any_arg $--> Basic.early_exit
+  ; -"pthread_once" <>$ any_arg $+ capt_arg $--> pthread_once
   ; -"putc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"puts" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"read" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> read_model
