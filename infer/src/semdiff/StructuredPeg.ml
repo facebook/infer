@@ -343,8 +343,8 @@ let rec convert (env : Env.t) (sir : S.t) : convert_result =
       convert_if env ~bexp ~then_ ~else_
   | Block body ->
       convert_block env body
-  | Loop _ ->
-      L.die InternalError "StructuredPeg: Loop not yet supported"
+  | Loop {body; _} ->
+      convert_loop env body
 
 
 and convert_if (env : Env.t) ~bexp ~then_ ~else_ : convert_result =
@@ -352,6 +352,17 @@ and convert_if (env : Env.t) ~bexp ~then_ ~else_ : convert_result =
   let cond = convert_boolexp env bexp in
   let result_then = convert env then_ in
   let result_else = convert env else_ in
+  (* If creates a nesting level: decrement Exit depths like Block *)
+  let decrement = function
+    | Normal _ as r ->
+        r
+    | Exit (0, env_exit) ->
+        Normal (mk_const cc "@unit", env_exit)
+    | Exit (n, env_exit) ->
+        Exit (n - 1, env_exit)
+  in
+  let result_then = decrement result_then in
+  let result_else = decrement result_else in
   match (result_then, result_else) with
   | Normal (atom_then, env_then), Normal (atom_else, env_else) ->
       let result = mk_term cc "@phi" [cond; atom_then; atom_else] in
@@ -376,6 +387,96 @@ and convert_block (env : Env.t) (body : S.t) : convert_result =
       Normal (mk_const env.cc "@unit", env_exit)
   | Exit (n, env_exit) ->
       Exit (n - 1, env_exit)
+
+
+and convert_loop (env : Env.t) (body : S.t) : convert_result =
+  let cc = env.cc in
+  (* step 1: collect variables modified in the loop body *)
+  let modified_vars = collect_modified_vars body in
+  (* step 2: create theta placeholders *)
+  let fresh = !(env.theta_counter) in
+  env.theta_counter := fresh + 1 ;
+  let loop_idx = !(env.loop_counter) in
+  env.loop_counter := loop_idx + 1 ;
+  let theta_state_placeholder = mk_const cc (F.asprintf "@theta:state:%d" fresh) in
+  let init_locals = env.locals in
+  let init_state = env.state in
+  let theta_locals, theta_var_placeholders =
+    IString.Set.fold
+      (fun name (locals, placeholders) ->
+        let placeholder = mk_const cc (F.asprintf "@theta:%s:%d" name fresh) in
+        (LocalsMap.store locals ~name ~atom:placeholder, (name, placeholder) :: placeholders) )
+      modified_vars (env.locals, [])
+  in
+  (* step 3: process body with theta placeholders *)
+  let loop_env = {env with state= theta_state_placeholder; locals= theta_locals} in
+  let body_result = convert loop_env body in
+  (* step 4: close theta nodes *)
+  let theta_header = F.asprintf "@theta_%d" loop_idx in
+  let close_thetas (body_env : Env.t) =
+    let theta_state_term = mk_term cc theta_header [init_state; body_env.state] in
+    CC.merge cc theta_state_placeholder (CC.Atom theta_state_term) ;
+    Equations.add env.equations
+      ~name:(F.asprintf "\xCE\xB8_state_%d" fresh)
+      ~atom:theta_state_term ~origin:"theta_close" ;
+    List.iter theta_var_placeholders ~f:(fun (name, placeholder) ->
+        let init_val =
+          match LocalsMap.load init_locals ~name with
+          | Some atom ->
+              atom
+          | None ->
+              mk_const cc "@undef"
+        in
+        let body_val =
+          match LocalsMap.load body_env.locals ~name with
+          | Some atom ->
+              atom
+          | None ->
+              L.die InternalError "StructuredPeg: theta variable %s not found after body" name
+        in
+        let theta_term = mk_term cc theta_header [init_val; body_val] in
+        CC.merge cc placeholder (CC.Atom theta_term) ;
+        Equations.add env.equations
+          ~name:(F.asprintf "\xCE\xB8_%s_%d" name fresh)
+          ~atom:theta_term ~origin:"theta_close" )
+  in
+  match body_result with
+  | Exit (0, body_env) ->
+      (* back-edge: close thetas and continue as if the loop exited normally *)
+      close_thetas body_env ;
+      Normal (mk_const cc "@unit", {loop_env with Env.state= theta_state_placeholder})
+  | Exit (n, body_env) ->
+      (* exit beyond loop: close thetas and propagate *)
+      close_thetas body_env ;
+      Exit (n - 1, body_env)
+  | Normal (_atom, body_env) ->
+      (* body fell through = back-edge in Wasm semantics *)
+      close_thetas body_env ;
+      Normal (mk_const cc "@unit", {loop_env with Env.state= theta_state_placeholder})
+
+
+(* Walk StructuredIR to collect py_store_fast variable names *)
+and collect_modified_vars (sir : S.t) : IString.Set.t =
+  match sir with
+  | Instrs {instrs; _} ->
+      List.fold instrs ~init:IString.Set.empty ~f:(fun acc (instr : T.Instr.t) ->
+          match instr with
+          | Let {id= None; exp= Call {proc; args}} when is_py_builtin proc "py_store_fast" -> (
+            match extract_varname_from_args args with
+            | Some name ->
+                IString.Set.add name acc
+            | None ->
+                acc )
+          | _ ->
+              acc )
+  | Seq (a, b) ->
+      IString.Set.union (collect_modified_vars a) (collect_modified_vars b)
+  | Block body | Loop {body; _} ->
+      collect_modified_vars body
+  | If {then_; else_; _} ->
+      IString.Set.union (collect_modified_vars then_) (collect_modified_vars else_)
+  | Return _ | Throw _ | Branch _ ->
+      IString.Set.empty
 
 
 (* ---------- Main entry point ---------- *)

@@ -9,6 +9,7 @@ open! IStd
 module F = Format
 module T = Textual
 module CC = CongruenceClosureSolver
+module S = StructuredIR
 
 let python_to_proc source ~proc_name =
   let procs = ref [] in
@@ -81,5 +82,92 @@ def foo(c):
             ($builtins.py_bool @param:c)
             (@ret @state0 ($builtins.py_make_int 1))
             (@ret @state0 ($builtins.py_make_int 2)))
+        |}]
+
+
+    let%expect_test "while loop" =
+      check_peg
+        {|
+def foo(n):
+    i = 0
+    while i < n:
+        i += 1
+    return i
+|}
+        ~proc_name:"foo" ;
+      [%expect
+        {|
+        --- equations ---
+        n      = @param:n  [param]
+        n2     = (@load (@lvar globals))  [let]
+        n1     = (@load (@lvar locals))  [let]
+        n0     = @None  [let]
+        i      = ($builtins.py_make_int 0)  [store_fast: locals]
+        n3     = ($builtins.py_make_int 0)  [load_fast: locals]
+        n4     = @param:n  [load_fast: locals]
+        n5     = ($builtins.py_compare_lt ($builtins.py_make_int 0) @param:n)  [let]
+        n6     = @theta:i:0  [load_fast: locals]
+        n7     = ($builtins.py_inplace_add @theta:i:0 ($builtins.py_make_int 1))  [let]
+        i      = ($builtins.py_inplace_add @theta:i:0 ($builtins.py_make_int 1))  [store_fast: locals]
+        n8     = ($builtins.py_inplace_add @theta:i:0 ($builtins.py_make_int 1))  [load_fast: locals]
+        n9     = @param:n  [load_fast: locals]
+        n10    = ($builtins.py_compare_lt
+                     ($builtins.py_inplace_add @theta:i:0 ($builtins.py_make_int 1))
+                     @param:n)  [let]
+        θ_state_0 = (@theta_0 @state0 @theta:state:0)  [theta_close]
+        θ_i_0 = (@theta_0
+                     ($builtins.py_make_int 0)
+                     ($builtins.py_inplace_add @theta:i:0 ($builtins.py_make_int 1)))  [theta_close]
+        n11    = ($builtins.py_make_int 0)  [load_fast: locals]
+        --- root ---
+        (@ret @state0 ($builtins.py_make_int 0))
+        |}]
+
+
+    let%expect_test "for loop with accumulator" =
+      check_peg
+        {|
+def foo(items):
+    s = 0
+    for x in items:
+        s += x
+    return s
+|}
+        ~proc_name:"foo" ;
+      [%expect
+        {|
+        --- equations ---
+        items  = @param:items  [param]
+        n2     = (@load (@lvar globals))  [let]
+        n1     = (@load (@lvar locals))  [let]
+        n0     = @None  [let]
+        s      = ($builtins.py_make_int 0)  [store_fast: locals]
+        n3     = @param:items  [load_fast: locals]
+        n4     = ($builtins.py_get_iter @state0 @param:items)  [let]
+        n5     = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items))  [let]
+        n6     = ($builtins.py_has_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items))  [let]
+        x      = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items))  [store_fast: locals]
+        n8     = @theta:s:0  [load_fast: locals]
+        n9     = ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items))  [load_fast: locals]
+        n10    = ($builtins.py_inplace_add
+                     @theta:s:0
+                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items)))  [let]
+        s      = ($builtins.py_inplace_add
+                     @theta:s:0
+                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items)))  [store_fast: locals]
+        n7     = @theta:s:0  [load_fast: locals]
+        θ_state_0 = (@theta_0 @state0 @theta:state:0)  [theta_close]
+        θ_x_0 = (@theta_0
+                     @undef
+                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items)))  [theta_close]
+        θ_s_0 = (@theta_0
+                     ($builtins.py_make_int 0)
+                     ($builtins.py_inplace_add
+                         @theta:s:0
+                         ($builtins.py_next_iter
+                             @theta:state:0
+                             ($builtins.py_get_iter @state0 @param:items))))  [theta_close]
+        --- root ---
+        @unit
         |}]
   end )
