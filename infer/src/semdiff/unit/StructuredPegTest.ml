@@ -188,28 +188,14 @@ def foo(items):
         θ_state_0 = (@theta_0 @state0 @theta:state:0)  [theta_close]
         θ_x_0 = (@theta_0
                      @undef
-                     (@phi
-                         ($builtins.py_bool
-                             ($builtins.py_has_next_iter
-                                 @theta:state:0
-                                 ($builtins.py_get_iter @state0 @param:items)))
-                         ($builtins.py_next_iter
-                             @theta:state:0
-                             ($builtins.py_get_iter @state0 @param:items))
-                         @theta:x:0))  [theta_close]
+                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items)))  [theta_close]
         θ_s_0 = (@theta_0
                      ($builtins.py_make_int 0)
-                     (@phi
-                         ($builtins.py_bool
-                             ($builtins.py_has_next_iter
-                                 @theta:state:0
-                                 ($builtins.py_get_iter @state0 @param:items)))
-                         ($builtins.py_inplace_add
-                             @theta:s:0
-                             ($builtins.py_next_iter
-                                 @theta:state:0
-                                 ($builtins.py_get_iter @state0 @param:items)))
-                         @theta:s:0))  [theta_close]
+                     ($builtins.py_inplace_add
+                         @theta:s:0
+                         ($builtins.py_next_iter
+                             @theta:state:0
+                             ($builtins.py_get_iter @state0 @param:items))))  [theta_close]
         --- root ---
         (@ret @theta:state:0 @theta:s:0)
         |}]
@@ -333,7 +319,8 @@ def foo(n):
         |}]
 
 
-    (* identical roots; thetas differ due to inner loop artifact from Python compiler *)
+    (* identical roots and thetas: the back-edge env defines the theta step, so no spurious
+       @phi from merging the continue branch with the loop-exit branch *)
     let%expect_test "for loop" =
       compare_pipelines
         {|
@@ -363,28 +350,14 @@ def foo(items):
         θ_state_0 = (@theta_0 @state0 @theta:state:0)
         θ_x_0 = (@theta_0
                      @undef
-                     (@phi
-                         ($builtins.py_bool
-                             ($builtins.py_has_next_iter
-                                 @theta:state:0
-                                 ($builtins.py_get_iter @state0 @param:items)))
-                         ($builtins.py_next_iter
-                             @theta:state:0
-                             ($builtins.py_get_iter @state0 @param:items))
-                         @theta:x:0))
+                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items)))
         θ_s_0 = (@theta_0
                      ($builtins.py_make_int 0)
-                     (@phi
-                         ($builtins.py_bool
-                             ($builtins.py_has_next_iter
-                                 @theta:state:0
-                                 ($builtins.py_get_iter @state0 @param:items)))
-                         ($builtins.py_inplace_add
-                             @theta:s:0
-                             ($builtins.py_next_iter
-                                 @theta:state:0
-                                 ($builtins.py_get_iter @state0 @param:items)))
-                         @theta:s:0))
+                     ($builtins.py_inplace_add
+                         @theta:s:0
+                         ($builtins.py_next_iter
+                             @theta:state:0
+                             ($builtins.py_get_iter @state0 @param:items))))
         root: (@ret @theta:state:0 @theta:s:0)
         |}]
 

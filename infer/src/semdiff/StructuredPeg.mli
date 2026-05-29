@@ -22,3 +22,13 @@ val convert_proc :
   -> (CongruenceClosureSolver.Atom.t * Equations.t * int, string) result
 (** [convert_proc cc proc] converts a Textual procedure to a PEG via StructuredIR. Returns the root
     atom, equation trace, and number of loops. *)
+
+val pp_tree :
+     ?depth:int
+  -> CongruenceClosureSolver.t
+  -> Format.formatter
+  -> CongruenceClosureSolver.Atom.t
+  -> unit
+[@@warning "-unused-value-declaration"]
+(** [pp_tree cc fmt atom] prints the PEG rooted at [atom] as an ASCII tree. Used only by unit tests.
+*)

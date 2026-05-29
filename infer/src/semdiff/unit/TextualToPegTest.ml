@@ -31,7 +31,6 @@ let%test_module "textual to peg" =
         === foo ===
         Equations:
         n0     = ($builtins.py_make_int 42)  [let]
-        RET    = (@ret @state0 ($builtins.py_make_int 42))  [ret]
         PEG: (@ret @state0 ($builtins.py_make_int 42))
         |}]
 
@@ -65,7 +64,6 @@ let%test_module "textual to peg" =
         n4     = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [let]
         y      = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [store_fast: locals]
         n5     = ($builtins.py_binary_add @param:x ($builtins.py_make_int 1))  [load_fast: locals]
-        RET    = (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))  [ret]
         PEG: (@ret @state0 ($builtins.py_binary_add @param:x ($builtins.py_make_int 1)))
         |}]
 
@@ -97,13 +95,7 @@ let%test_module "textual to peg" =
         n1     = (@load (@lvar locals))  [let]
         n2     = @param:c  [load_fast: locals]
         n3     = ($builtins.py_make_int 1)  [let]
-        RET    = (@ret @state0 ($builtins.py_make_int 1))  [ret]
         n4     = ($builtins.py_make_int 2)  [let]
-        RET    = (@ret @state0 ($builtins.py_make_int 2))  [ret]
-        PHI    = (@phi
-                     @param:c
-                     (@ret @state0 ($builtins.py_make_int 1))
-                     (@ret @state0 ($builtins.py_make_int 2)))  [if]
         PEG: (@phi
                  @param:c
                  (@ret @state0 ($builtins.py_make_int 1))
@@ -260,7 +252,7 @@ let pp_proc_textual fmt (proc : Textual.ProcDesc.t) =
 
 let pp_proc_peg fmt (proc : Textual.ProcDesc.t) =
   let cc = CongruenceClosureSolver.init ~debug:false in
-  match TextualPeg.convert_proc cc proc with
+  match StructuredPeg.convert_proc cc proc with
   | Ok (root, _eqs, _) ->
       F.fprintf fmt "%a" (CongruenceClosureSolver.pp_nested_term cc) root
   | Error msg ->
@@ -269,18 +261,18 @@ let pp_proc_peg fmt (proc : Textual.ProcDesc.t) =
 
 let pp_proc_eqs fmt (proc : Textual.ProcDesc.t) =
   let cc = CongruenceClosureSolver.init ~debug:false in
-  match TextualPeg.convert_proc cc proc with
+  match StructuredPeg.convert_proc cc proc with
   | Ok (_root, eqs, _) ->
-      TextualPeg.Equations.pp cc fmt eqs
+      StructuredPeg.Equations.pp cc fmt eqs
   | Error msg ->
       F.fprintf fmt "Error: %s" msg
 
 
 let pp_proc_tree fmt (proc : Textual.ProcDesc.t) =
   let cc = CongruenceClosureSolver.init ~debug:false in
-  match TextualPeg.convert_proc cc proc with
+  match StructuredPeg.convert_proc cc proc with
   | Ok (root, _eqs, _) ->
-      TextualPeg.pp_tree cc fmt root
+      StructuredPeg.pp_tree cc fmt root
   | Error msg ->
       F.fprintf fmt "Error: %s" msg
 
@@ -885,7 +877,6 @@ def f(x):
         θ_i_0 = (@theta_0
                      @undef
                      ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
-        RET    = (@ret @theta:state:0 @None)  [ret]
         PEG: (@ret @theta:state:0 @None)
         |}]
 
@@ -1067,30 +1058,39 @@ def f(x):
                      ($builtins.py_make_int 0))  [let]
         θ_state_0 = (@theta_0 @state0 @theta:state:0)  [theta_close]
         θ_x_0 = (@theta_0 @param:x ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))  [theta_close]
-        n9     = ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))  [load_fast: locals]
-        RET    = (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))  [ret]
-        n9     = @param:x  [load_fast: locals]
-        RET    = (@ret @state0 @param:x)  [ret]
-        PHI    = (@phi
+        n9     = (@phi
                      ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
-                     (@ret
-                         @theta:state:0
-                         ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
-                     (@ret @state0 @param:x))  [if]
-        PHI_state = (@phi
-                        ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
-                        @theta:state:0
-                        @state0)  [if]
-        PHI_x  = (@phi
-                     ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
-                     ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
-                     @param:x)  [if]
+                     (@exit_value
+                         @theta:x:0
+                         (@not
+                             ($builtins.py_bool
+                                 ($builtins.py_compare_gt
+                                     ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                                     ($builtins.py_make_int 0)))))
+                     @param:x)  [load_fast: locals]
 
         === PEG ===
-        (@phi
-            ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
-            (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
-            (@ret @state0 @param:x))
+        (@ret
+            (@phi
+                ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                (@exit_value
+                    @theta:state:0
+                    (@not
+                        ($builtins.py_bool
+                            ($builtins.py_compare_gt
+                                ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                                ($builtins.py_make_int 0)))))
+                @state0)
+            (@phi
+                ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                (@exit_value
+                    @theta:x:0
+                    (@not
+                        ($builtins.py_bool
+                            ($builtins.py_compare_gt
+                                ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                                ($builtins.py_make_int 0)))))
+                @param:x))
         |}]
 
 
@@ -1106,16 +1106,50 @@ def f(x):
       [%expect
         {|
         === PEG 1 ===
-        (@phi
-            ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
-            (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
-            (@ret @state0 @param:x))
+        (@ret
+            (@phi
+                ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                (@exit_value
+                    @theta:state:0
+                    (@not
+                        ($builtins.py_bool
+                            ($builtins.py_compare_gt
+                                ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                                ($builtins.py_make_int 0)))))
+                @state0)
+            (@phi
+                ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                (@exit_value
+                    @theta:x:0
+                    (@not
+                        ($builtins.py_bool
+                            ($builtins.py_compare_gt
+                                ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                                ($builtins.py_make_int 0)))))
+                @param:x))
 
         === PEG 2 ===
-        (@phi
-            ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
-            (@ret @theta:state:0 ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1)))
-            (@ret @state0 @param:x))
+        (@ret
+            (@phi
+                ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                (@exit_value
+                    @theta:state:0
+                    (@not
+                        ($builtins.py_bool
+                            ($builtins.py_compare_gt
+                                ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                                ($builtins.py_make_int 0)))))
+                @state0)
+            (@phi
+                ($builtins.py_bool ($builtins.py_compare_gt @param:x ($builtins.py_make_int 0)))
+                (@exit_value
+                    @theta:x:0
+                    (@not
+                        ($builtins.py_bool
+                            ($builtins.py_compare_gt
+                                ($builtins.py_binary_substract @theta:x:0 ($builtins.py_make_int 1))
+                                ($builtins.py_make_int 0)))))
+                @param:x))
 
         equivalent: true
         |}]
@@ -1164,27 +1198,6 @@ def f(l, c):
                          ($builtins.py_load_global @theta:state:0 (@str print) (@load (@lvar globals)))
                          @None
                          ($builtins.py_make_int 2)))  [let]
-        PHI    = (@phi ($builtins.py_bool @param:c) @back_edge @back_edge)  [if]
-        PHI_state = (@phi
-                        ($builtins.py_bool @param:c)
-                        (@heap
-                            ($builtins.py_call
-                                @theta:state:0
-                                ($builtins.py_load_global
-                                    @theta:state:0
-                                    (@str print)
-                                    (@load (@lvar globals)))
-                                @None
-                                ($builtins.py_make_int 1)))
-                        (@heap
-                            ($builtins.py_call
-                                @theta:state:0
-                                ($builtins.py_load_global
-                                    @theta:state:0
-                                    (@str print)
-                                    (@load (@lvar globals)))
-                                @None
-                                ($builtins.py_make_int 2))))  [if]
         θ_state_0 = (@theta_0
                          @state0
                          (@phi
@@ -1210,7 +1223,6 @@ def f(l, c):
         θ_i_0 = (@theta_0
                      @undef
                      ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
-        RET    = (@ret @theta:state:0 @None)  [ret]
 
         === PEG ===
         (@ret @theta:state:0 @None)
@@ -1433,6 +1445,40 @@ def f(l):
     for x in l:
         print(x)
 |} in
+      let result = check_python_migration source_old source_new ~proc_name:"f" in
+      F.printf "migration accepted: %b@." result ;
+      [%expect {| migration accepted: true |}]
+
+
+    let%expect_test "migration: complex loop body, remove enumerate" =
+      let source_old =
+        {|
+def f(l):
+    total = 0
+    for i, x in enumerate(l):
+        y = g(x)
+        if y > 0:
+            total = total + y
+            print(x, y)
+        else:
+            h(x)
+    return total
+|}
+      in
+      let source_new =
+        {|
+def f(l):
+    total = 0
+    for x in l:
+        y = g(x)
+        if y > 0:
+            total = total + y
+            print(x, y)
+        else:
+            h(x)
+    return total
+|}
+      in
       let result = check_python_migration source_old source_new ~proc_name:"f" in
       F.printf "migration accepted: %b@." result ;
       [%expect {| migration accepted: true |}]

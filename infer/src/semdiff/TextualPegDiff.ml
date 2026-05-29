@@ -223,8 +223,8 @@ let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Tex
   let cc = CC.init ~debug:false in
   let theta_counter = ref 0 in
   match
-    ( TextualPeg.convert_proc ~theta_counter cc proc1
-    , TextualPeg.convert_proc ~theta_counter cc proc2 )
+    ( StructuredPeg.convert_proc ~theta_counter cc proc1
+    , StructuredPeg.convert_proc ~theta_counter cc proc2 )
   with
   | Ok (atom1, eqs1, loops1), Ok (atom2, eqs2, loops2) when Int.equal loops1 loops2 ->
       let rules = gen_rules cc ~theta_count:loops1 in
@@ -240,9 +240,9 @@ let check_equivalence ?(debug = false) (proc1 : Textual.ProcDesc.t) (proc2 : Tex
             if count > 0 then F.printf "  %a: fired %d time(s)@." Rewrite.Rule.pp rule count ) ;
         if not res then (
           F.printf "=== Procedure 1 equations ===@." ;
-          TextualPeg.Equations.pp cc F.std_formatter eqs1 ;
+          StructuredPeg.Equations.pp cc F.std_formatter eqs1 ;
           F.printf "@.=== Procedure 2 equations ===@." ;
-          TextualPeg.Equations.pp cc F.std_formatter eqs2 ;
+          StructuredPeg.Equations.pp cc F.std_formatter eqs2 ;
           F.printf "@.NOT EQUIVALENT@." ;
           F.printf "atom1: %a@." (CC.pp_nested_term cc) atom1 ;
           F.printf "atom2: %a@." (CC.pp_nested_term cc) atom2 ) ) ;
@@ -260,8 +260,8 @@ let check_b007_migration ?(debug = false) (proc_old : Textual.ProcDesc.t)
   let cc = CC.init ~debug:false in
   let theta_counter = ref 0 in
   match
-    ( TextualPeg.convert_proc ~theta_counter cc proc_old
-    , TextualPeg.convert_proc ~theta_counter cc proc_new )
+    ( StructuredPeg.convert_proc ~theta_counter cc proc_old
+    , StructuredPeg.convert_proc ~theta_counter cc proc_new )
   with
   | Ok (atom_old, eqs_old, loops_old), Ok (atom_new, eqs_new, loops_new)
     when Int.equal loops_old loops_new ->
@@ -283,9 +283,9 @@ let check_b007_migration ?(debug = false) (proc_old : Textual.ProcDesc.t)
             if count > 0 then F.printf "  %a: fired %d time(s)@." Rewrite.Rule.pp rule count ) ;
         if not res then (
           F.printf "=== Procedure OLD equations ===@." ;
-          TextualPeg.Equations.pp cc F.std_formatter eqs_old ;
+          StructuredPeg.Equations.pp cc F.std_formatter eqs_old ;
           F.printf "@.=== Procedure NEW equations ===@." ;
-          TextualPeg.Equations.pp cc F.std_formatter eqs_new ;
+          StructuredPeg.Equations.pp cc F.std_formatter eqs_new ;
           F.printf "@.MIGRATION NOT ACCEPTED@." ;
           F.printf "atom_old: %a@." (CC.pp_nested_term cc) atom_old ;
           F.printf "atom_new: %a@." (CC.pp_nested_term cc) atom_new ) ) ;
@@ -307,14 +307,14 @@ let convert_and_print ?(debug = false) text =
       in
       List.iter procs ~f:(fun (proc : Textual.ProcDesc.t) ->
           let cc = CC.init ~debug:false in
-          match TextualPeg.convert_proc cc proc with
+          match StructuredPeg.convert_proc cc proc with
           | Ok (root, eqs, _loop_count) ->
               let name =
                 F.asprintf "%a" Textual.QualifiedProcName.pp proc.procdecl.qualified_name
               in
               F.printf "=== %s ===@." name ;
               F.printf "Equations:@." ;
-              TextualPeg.Equations.pp cc F.std_formatter eqs ;
+              StructuredPeg.Equations.pp cc F.std_formatter eqs ;
               F.printf "PEG: %a@.@." (CC.pp_nested_term cc) root
           | Error msg ->
               F.printf "Error: %s@." msg ) ;

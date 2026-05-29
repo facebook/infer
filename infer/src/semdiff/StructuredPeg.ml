@@ -91,6 +91,36 @@ let mk_term cc name args = CC.mk_term cc (CC.mk_header cc name) args
 
 let qualified_procname_to_string proc = F.asprintf "%a" T.QualifiedProcName.pp proc
 
+(* ---------- ASCII tree printer ---------- *)
+
+let pp_tree ?(depth = 32) cc fmt atom =
+  let rec pp depth prefix is_last fmt atom =
+    if depth <= 0 then F.fprintf fmt "%s%s...@." prefix (if is_last then "└── " else "├── ")
+    else
+      let connector = if is_last then "└── " else "├── " in
+      let child_prefix = prefix ^ if is_last then "    " else "│   " in
+      match CC.get_enode cc atom with
+      | Some {head; children= []} ->
+          F.fprintf fmt "%s%s%a@." prefix connector (CC.pp_nested_term cc) head
+      | Some {head; children} ->
+          F.fprintf fmt "%s%s%a@." prefix connector (CC.pp_nested_term cc) head ;
+          let n = List.length children in
+          List.iteri children ~f:(fun i child ->
+              pp (depth - 1) child_prefix (Int.equal i (n - 1)) fmt child )
+      | None ->
+          F.fprintf fmt "%s%s%a@." prefix connector CC.Atom.pp atom
+  in
+  match CC.get_enode cc atom with
+  | Some {head; children= []} ->
+      F.fprintf fmt "%a@." (CC.pp_nested_term cc) head
+  | Some {head; children} ->
+      F.fprintf fmt "%a@." (CC.pp_nested_term cc) head ;
+      let n = List.length children in
+      List.iteri children ~f:(fun i child -> pp (depth - 1) "" (Int.equal i (n - 1)) fmt child)
+  | None ->
+      F.fprintf fmt "%a@." CC.Atom.pp atom
+
+
 (* ---------- Expression conversion ---------- *)
 
 let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
@@ -383,7 +413,14 @@ and convert_if (env : Env.t) ~bexp ~then_ ~else_ : convert_result =
       let merged = merge_envs env ~cond ~env_then ~env_else in
       Normal (result, merged)
   | Exit e1, Exit e2 when Int.equal e1.depth e2.depth ->
-      let result = mk_term cc "@phi" [cond; e1.atom; e2.atom] in
+      (* Both branches exit to the same target, so they reconverge there: merge their envs.
+         A back-edge sentinel carries no value, so collapse it rather than building a
+         @phi over @back_edge (which would leak the sentinel into the result). *)
+      let result =
+        if is_back_edge e1.atom then e2.atom
+        else if is_back_edge e2.atom then e1.atom
+        else mk_term cc "@phi" [cond; e1.atom; e2.atom]
+      in
       let merged = merge_envs env ~cond ~env_then:e1.env ~env_else:e2.env in
       Exit {depth= e1.depth; atom= result; cond_stack= e1.cond_stack; env= merged}
   | Normal (_atom_normal, env_normal), Exit e ->
@@ -400,7 +437,15 @@ and convert_if (env : Env.t) ~bexp ~then_ ~else_ : convert_result =
         else mk_term cc "@phi" [cond; e1.atom; e2.atom]
       in
       let min_exit, max_exit = if e1.depth <= e2.depth then (e1, e2) else (e2, e1) in
-      let merged = merge_envs env ~cond ~env_then:e1.env ~env_else:e2.env in
+      (* A back-edge branch is the loop's continue path: its env defines the loop recurrence
+         (the theta step), so it must propagate verbatim. The other branch's exit value is
+         already captured in [result], so its env is not needed here. Only when neither branch
+         is a back-edge does control genuinely reconverge — then merge. *)
+      let merged =
+        if is_back_edge e1.atom then e1.env
+        else if is_back_edge e2.atom then e2.env
+        else merge_envs env ~cond ~env_then:e1.env ~env_else:e2.env
+      in
       let cond_stack =
         if is_back_edge min_exit.atom then
           (if Int.equal min_exit.depth e1.depth then mk_term cc "@not" [cond] else cond)

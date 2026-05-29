@@ -32,8 +32,6 @@ module CC = CongruenceClosureSolver
 module Equations : sig
   type t
 
-  val pp : CC.t -> Format.formatter -> t -> unit
-
   val pp_thetas : CC.t -> Format.formatter -> t -> unit
 end
 
@@ -48,10 +46,3 @@ val convert_proc :
     atom, the full equation trace, and the number of loops, or [Error msg] for unsupported
     constructs. [theta_counter] provides fresh names for recursive variables across procedures
     sharing the same [cc]. *)
-
-(** {2 Pretty-printing} *)
-
-val pp_tree : ?depth:int -> CC.t -> Format.formatter -> CC.Atom.t -> unit
-[@@warning "-unused-value-declaration"]
-(** [pp_tree cc fmt atom] prints the PEG rooted at [atom] as an ASCII tree. Used only by unit tests.
-*)
