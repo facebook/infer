@@ -20,6 +20,9 @@ type builtin =
   | OptionalInitNone  (** Swift [Optional<T>] construction of [.none]. *)
   | OptionalInitSome  (** Swift [Optional<T>] construction of [.some(payload)]. *)
   | OptionalUnsafelyUnwrapped  (** Swift [Optional<T>.unsafelyUnwrapped]. *)
+  | OptionalForceUnwrapTrap
+      (** Swift Optional force-unwrap (postfix [!]) trap: emitted on the proven-[.none] branch of
+          the [if eq(disc, 0) then assert_fail] idiom. *)
   | SwiftAlloc  (** Swift class allocation, takes a single [sizeof typ] arg. *)
   | SwiftGetDynamicType
   | MetadataEquals  (** Used to compare metadata of two types. *)

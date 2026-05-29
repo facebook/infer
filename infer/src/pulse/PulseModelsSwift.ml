@@ -502,6 +502,9 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
         fun () -> swift_unsafely_unwrapped ret_buf type_meta receiver
     | _ ->
         unknown args )
+  | OptionalForceUnwrapTrap ->
+      (* Stub: real model added in the next diff. *)
+      unknown args
   | SwiftAlloc -> (
     match func_args with size :: _ -> alloc (FuncArg.exp size) | _ -> unknown args )
   | Memcpy ->
