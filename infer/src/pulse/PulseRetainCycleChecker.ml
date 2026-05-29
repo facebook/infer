@@ -169,7 +169,19 @@ let get_expr_with_fallback astate addr =
           "dynamically allocated object"
       | Some typ_name ->
           let type_str = F.asprintf "%a" Typ.Name.pp typ_name in
+          let is_tuple_class =
+            match typ_name with
+            | Typ.SwiftClass name ->
+                String.equal (SwiftClassName.mangled name) "__infer_tuple_class"
+            | _ ->
+                false
+          in
           if String.is_substring type_str ~substring:"swift::function" then "Swift closure"
+          else if is_tuple_class then
+            (* Synthetic [Textual.swift_tuple_class_name]. Reached only when args
+               contain no [swift::function] — tuple-wrapped closures take the
+               [Swift closure] branch above. *)
+            "Swift tuple"
           else "object of type " ^ type_str
     in
     (* Create a LOCAL variable Pvar using a dummy function context *)
