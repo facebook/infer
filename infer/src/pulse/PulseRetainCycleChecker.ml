@@ -162,12 +162,15 @@ let get_expr_with_fallback astate addr =
     (* Format the type cleanly, catching closures explicitly *)
     let string_name =
       match type_name_opt with
+      | None ->
+          "dynamically allocated object"
+      | Some (Typ.SwiftClass name)
+        when SwiftClassName.equal name SwiftClassName.swift_alloc_unknown_type ->
+          "dynamically allocated object"
       | Some typ_name ->
           let type_str = F.asprintf "%a" Typ.Name.pp typ_name in
           if String.is_substring type_str ~substring:"swift::function" then "Swift closure"
           else "object of type " ^ type_str
-      | None ->
-          "dynamically allocated object"
     in
     (* Create a LOCAL variable Pvar using a dummy function context *)
     let dummy_procname = Procname.from_string_c_fun "" in
