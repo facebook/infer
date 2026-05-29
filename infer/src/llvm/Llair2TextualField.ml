@@ -16,6 +16,20 @@ let set_suffix = ".set"
 
 let modify_suffix = ".modify"
 
+(** Synthetic structural types whose layout is shared across modules and whose field-position-0 has
+    no class-specific meaning. Selects on these types are not class-property accesses, so they must
+    be skipped by [OffsetIndex.extract_offset_and_type_from_exp] — otherwise a getter that unpacks
+    one of them (e.g. a Swift property getter returning a closure value, which unpacks the
+    [(fn_ptr, captured_env)] pair before returning) would register a
+    [(synthetic_type, 0) -> property_name] entry in [field_offset_map], polluting every later
+    Field-position-0 lookup on that synthetic type with a field name from an unrelated class. The
+    existing [swift_any_type_name] exclusion is the same idea for the [ptr_elt] opaque pointer. *)
+let is_synthetic_structural_type name =
+  String.equal Textual.BaseTypeName.swift_any_type_name.value name
+  || String.equal "swift::function" name
+  || String.equal "objc_block" name
+
+
 module OffsetIndex = struct
   (** Extract field name from getter method's unmangled name. E.g., "age.get" -> Some "age", "foo"
       -> None *)
@@ -41,8 +55,7 @@ module OffsetIndex = struct
       | None -> (
         (* This is the innermost Select, use it if it has a struct type *)
         match (typ, inner_exp, formals, formals_types) with
-        | Llair.Typ.Struct {name; _}, _, _, _
-          when not (String.equal Textual.BaseTypeName.swift_any_type_name.value name) ->
+        | Llair.Typ.Struct {name; _}, _, _, _ when not (is_synthetic_structural_type name) ->
             Some
               ( TypeName.struct_name_of_mangled_name lang ~mangled_map:(Some mangled_map) struct_map
                   name
