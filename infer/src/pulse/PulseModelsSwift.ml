@@ -452,6 +452,25 @@ let swift_unsafely_unwrapped ret_buf type_meta receiver : unit DSL.model_monad =
   assign_ret payload
 
 
+(* Swift Optional force-unwrap (postfix [!]) trap: emitted by the frontend on
+   the proven-[.none] branch of the [if eq(disc, 0) then __sil_assert_fail]
+   idiom. Marks the Optional's marker as [OptionalEmpty]-invalidated and
+   immediately accesses it -- triggers [OPTIONAL_EMPTY_ACCESS] which the
+   [PulseReport.get_issue_type] hook remaps to [SWIFT_NPE] for Swift
+   procnames. *)
+let swift_optional_force_unwrap_trap opt : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* {path; location} = get_data in
+  let* marker = fresh () in
+  let* () = store_field ~deref:false ~ref:opt ModeledField.swift_optional_marker marker in
+  let* () = and_eq_int marker IntLit.zero in
+  let* () =
+    exec_command (fun astate ->
+        PulseOperations.invalidate path UntraceableAccess location OptionalEmpty marker astate )
+  in
+  check_valid (ValueOrigin.unknown marker)
+
+
 let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
     unit -> unit DSL.model_monad =
   let builtin_s = SwiftProcname.show_builtin builtin in
@@ -502,9 +521,8 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
         fun () -> swift_unsafely_unwrapped ret_buf type_meta receiver
     | _ ->
         unknown args )
-  | OptionalForceUnwrapTrap ->
-      (* Stub: real model added in the next diff. *)
-      unknown args
+  | OptionalForceUnwrapTrap -> (
+    match args with [opt] -> fun () -> swift_optional_force_unwrap_trap opt | _ -> unknown args )
   | SwiftAlloc -> (
     match func_args with size :: _ -> alloc (FuncArg.exp size) | _ -> unknown args )
   | Memcpy ->
