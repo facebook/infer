@@ -33,6 +33,8 @@ module Equations : sig
   type t
 
   val pp : CC.t -> Format.formatter -> t -> unit
+
+  val pp_thetas : CC.t -> Format.formatter -> t -> unit
 end
 
 (** {2 Construction} *)

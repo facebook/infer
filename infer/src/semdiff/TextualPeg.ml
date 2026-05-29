@@ -27,6 +27,12 @@ module Equations = struct
   let pp cc fmt t =
     List.iter (entries t) ~f:(fun {name; atom; origin} ->
         F.fprintf fmt "@[<h>%-6s = %a  [%s]@]@." name (CC.pp_nested_term cc) atom origin )
+
+
+  let pp_thetas cc fmt t =
+    List.iter (entries t) ~f:(fun {name; atom; _} ->
+        if String.is_prefix name ~prefix:"\xCE\xB8" then
+          F.fprintf fmt "@[<h>%-6s = %a@]@." name (CC.pp_nested_term cc) atom )
 end
 
 (* ---------- Locals map ---------- *)

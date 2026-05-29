@@ -30,6 +30,12 @@ module Equations = struct
   let pp cc fmt t =
     List.iter (entries t) ~f:(fun {name; atom; origin} ->
         F.fprintf fmt "@[<h>%-6s = %a  [%s]@]@." name (CC.pp_nested_term cc) atom origin )
+
+
+  let pp_thetas cc fmt t =
+    List.iter (entries t) ~f:(fun {name; atom; _} ->
+        if String.is_prefix name ~prefix:"\xCE\xB8" then
+          F.fprintf fmt "@[<h>%-6s = %a@]@." name (CC.pp_nested_term cc) atom )
 end
 
 module LocalsMap = struct
@@ -319,7 +325,9 @@ let merge_envs (env : Env.t) ~cond ~(env_then : Env.t) ~(env_else : Env.t) =
 
 (* ---------- StructuredIR → PEG conversion ---------- *)
 
-type convert_result = Normal of CC.Atom.t * Env.t | Exit of int * Env.t
+type exit_info = {depth: int; atom: CC.Atom.t; cond_stack: CC.Atom.t list; env: Env.t}
+
+type convert_result = Normal of CC.Atom.t * Env.t | Exit of exit_info
 
 let rec convert (env : Env.t) (sir : S.t) : convert_result =
   let cc = env.cc in
@@ -332,13 +340,13 @@ let rec convert (env : Env.t) (sir : S.t) : convert_result =
   | Return {exp; _} ->
       let value = convert_exp env exp in
       let result = mk_term cc "@ret" [env.state; value] in
-      Normal (result, env)
+      Exit {depth= Int.max_value; atom= result; cond_stack= []; env}
   | Throw {exp; _} ->
       let value = convert_exp env exp in
       let result = mk_term cc "@throw" [env.state; value] in
-      Normal (result, env)
+      Exit {depth= Int.max_value; atom= result; cond_stack= []; env}
   | Branch depth ->
-      Exit (depth, env)
+      Exit {depth; atom= mk_const env.cc "@back_edge"; cond_stack= []; env}
   | If {bexp; then_; else_; _} ->
       convert_if env ~bexp ~then_ ~else_
   | Block body ->
@@ -352,41 +360,64 @@ and convert_if (env : Env.t) ~bexp ~then_ ~else_ : convert_result =
   let cond = convert_boolexp env bexp in
   let result_then = convert env then_ in
   let result_else = convert env else_ in
-  (* If creates a nesting level: decrement Exit depths like Block *)
+  (* If creates a nesting level: decrement Exit depths *)
   let decrement = function
     | Normal _ as r ->
         r
-    | Exit (0, env_exit) ->
-        Normal (mk_const cc "@unit", env_exit)
-    | Exit (n, env_exit) ->
-        Exit (n - 1, env_exit)
+    | Exit ({depth= 0; _} as e) ->
+        Normal (e.atom, e.env)
+    | Exit e ->
+        Exit {e with depth= e.depth - 1}
   in
   let result_then = decrement result_then in
   let result_else = decrement result_else in
+  let back_edge = mk_const cc "@back_edge" in
+  let is_back_edge atom = CC.is_equiv cc atom back_edge in
   match (result_then, result_else) with
   | Normal (atom_then, env_then), Normal (atom_else, env_else) ->
-      let result = mk_term cc "@phi" [cond; atom_then; atom_else] in
+      let result =
+        if is_back_edge atom_then then atom_else
+        else if is_back_edge atom_else then atom_then
+        else mk_term cc "@phi" [cond; atom_then; atom_else]
+      in
       let merged = merge_envs env ~cond ~env_then ~env_else in
       Normal (result, merged)
-  | Exit (n1, env_then), Exit (n2, env_else) when Int.equal n1 n2 ->
-      let merged = merge_envs env ~cond ~env_then ~env_else in
-      Exit (n1, merged)
-  | Normal (_atom, _env_normal), Exit (n, env_exit) ->
-      Exit (n, env_exit)
-  | Exit (n, env_exit), Normal (_atom, _env_normal) ->
-      Exit (n, env_exit)
-  | Exit (n1, _), Exit (n2, _) ->
-      Exit (Int.min n1 n2, env)
+  | Exit e1, Exit e2 when Int.equal e1.depth e2.depth ->
+      let result = mk_term cc "@phi" [cond; e1.atom; e2.atom] in
+      let merged = merge_envs env ~cond ~env_then:e1.env ~env_else:e2.env in
+      Exit {depth= e1.depth; atom= result; cond_stack= e1.cond_stack; env= merged}
+  | Normal (_atom_normal, env_normal), Exit e ->
+      let not_cond = mk_term cc "@not" [cond] in
+      let merged = merge_envs env ~cond ~env_then:env_normal ~env_else:e.env in
+      Exit {depth= e.depth; atom= e.atom; cond_stack= not_cond :: e.cond_stack; env= merged}
+  | Exit e, Normal (_atom_normal, env_normal) ->
+      let merged = merge_envs env ~cond ~env_then:e.env ~env_else:env_normal in
+      Exit {depth= e.depth; atom= e.atom; cond_stack= cond :: e.cond_stack; env= merged}
+  | Exit e1, Exit e2 ->
+      let result =
+        if is_back_edge e1.atom then e2.atom
+        else if is_back_edge e2.atom then e1.atom
+        else mk_term cc "@phi" [cond; e1.atom; e2.atom]
+      in
+      let min_exit, max_exit = if e1.depth <= e2.depth then (e1, e2) else (e2, e1) in
+      let merged = merge_envs env ~cond ~env_then:e1.env ~env_else:e2.env in
+      let cond_stack =
+        if is_back_edge min_exit.atom then
+          (if Int.equal min_exit.depth e1.depth then mk_term cc "@not" [cond] else cond)
+          :: max_exit.cond_stack
+        else max_exit.cond_stack
+      in
+      Exit {depth= min_exit.depth; atom= result; cond_stack; env= merged}
 
 
 and convert_block (env : Env.t) (body : S.t) : convert_result =
   match convert env body with
   | Normal _ as result ->
       result
-  | Exit (0, env_exit) ->
-      Normal (mk_const env.cc "@unit", env_exit)
-  | Exit (n, env_exit) ->
-      Exit (n - 1, env_exit)
+  | Exit {depth= 0; atom; env= env_exit; _} ->
+      Normal (atom, env_exit)
+  | Exit e ->
+      Exit {e with depth= e.depth - 1}
 
 
 and convert_loop (env : Env.t) (body : S.t) : convert_result =
@@ -440,19 +471,42 @@ and convert_loop (env : Env.t) (body : S.t) : convert_result =
           ~name:(F.asprintf "\xCE\xB8_%s_%d" name fresh)
           ~atom:theta_term ~origin:"theta_close" )
   in
+  (* step 5: build exit condition from cond_stack and create @exit_value(θ, cond) *)
+  let close_and_exit ~cond_stack body_env =
+    close_thetas body_env ;
+    let exit_cond =
+      match cond_stack with
+      | [] ->
+          None
+      | [c] ->
+          Some c
+      | first :: rest ->
+          Some (List.fold rest ~init:first ~f:(fun acc c -> mk_term cc "@and" [acc; c]))
+    in
+    let mk_exit_value placeholder =
+      match exit_cond with
+      | Some cond ->
+          mk_term cc "@exit_value" [placeholder; cond]
+      | None ->
+          mk_term cc "@exit_value" [placeholder]
+    in
+    let exit_state = mk_exit_value theta_state_placeholder in
+    let exit_locals =
+      List.fold theta_var_placeholders ~init:loop_env.locals ~f:(fun locals (name, placeholder) ->
+          LocalsMap.store locals ~name ~atom:(mk_exit_value placeholder) )
+    in
+    {loop_env with Env.state= exit_state; locals= exit_locals}
+  in
   match body_result with
-  | Exit (0, body_env) ->
-      (* back-edge: close thetas and continue as if the loop exited normally *)
-      close_thetas body_env ;
-      Normal (mk_const cc "@unit", {loop_env with Env.state= theta_state_placeholder})
-  | Exit (n, body_env) ->
-      (* exit beyond loop: close thetas and propagate *)
-      close_thetas body_env ;
-      Exit (n - 1, body_env)
-  | Normal (_atom, body_env) ->
-      (* body fell through = back-edge in Wasm semantics *)
-      close_thetas body_env ;
-      Normal (mk_const cc "@unit", {loop_env with Env.state= theta_state_placeholder})
+  | Exit {depth= 0; atom; cond_stack; env= body_env} ->
+      let exit_env = close_and_exit ~cond_stack body_env in
+      Normal (atom, exit_env)
+  | Exit ({depth; _} as e) ->
+      let exit_env = close_and_exit ~cond_stack:e.cond_stack e.env in
+      Exit {depth= depth - 1; atom= e.atom; cond_stack= []; env= exit_env}
+  | Normal (atom, body_env) ->
+      let exit_env = close_and_exit ~cond_stack:[] body_env in
+      Normal (atom, exit_env)
 
 
 (* Walk StructuredIR to collect py_store_fast variable names *)
@@ -492,5 +546,5 @@ let convert_proc ?(theta_counter = ref 0) cc (proc : T.ProcDesc.t) :
   match convert env sir with
   | Normal (result, env) ->
       Ok (result, env.equations, !(env.loop_counter))
-  | Exit _ ->
-      Error "StructuredPeg: top-level Branch (should not happen)"
+  | Exit {atom= result; env; _} ->
+      Ok (result, env.equations, !(env.loop_counter))

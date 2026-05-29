@@ -11,6 +11,8 @@ module Equations : sig
   type t
 
   val pp : CongruenceClosureSolver.t -> Format.formatter -> t -> unit
+
+  val pp_thetas : CongruenceClosureSolver.t -> Format.formatter -> t -> unit
 end
 
 val convert_proc :
