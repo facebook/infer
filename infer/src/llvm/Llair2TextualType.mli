@@ -39,6 +39,12 @@ val is_compatible : Textual.Typ.t -> Textual.Typ.t -> bool
 
 val translate_types_env : Textual.Lang.t -> Llair.Typ.t list -> ProcState.struct_map
 
+val inject_synthetic_closure_decls : Textual.Lang.t -> ProcState.struct_map -> ProcState.struct_map
+(** Inject struct decls for synthetic closure-shaped types ([swift::function]) that LLAIR references
+    structurally but does not always emit in a given source file's [typ_defns]. Idempotent and
+    decl-preserving: only inserts when the type name is not already present in the input
+    [struct_map]. *)
+
 val is_enum_mangled_name : string -> bool
 
 val is_ptr_struct : Textual.Typ.t -> bool

@@ -164,6 +164,9 @@ type __infer_swift_type<Ts14_BridgeStorageV> = {field_0: *__infer_swift_type<ptr
 
 type __infer_swift_type<Ts6UInt64V,UInt64> = {field_0: int}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+
 type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
                                                      field_1: int}
 

@@ -54,3 +54,6 @@ global __swift_reflection_version: int
 
 type __infer_swift_type<TSiSg> = {field_0: int; field_1: int}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+

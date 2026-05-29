@@ -220,6 +220,37 @@ let translate_types_env lang (types_defns : Llair.Typ.t list) =
   List.fold ~f:translate_types_defn types_defns ~init:Textual.TypeName.Map.empty
 
 
+(** Canonical layout of the [swift::function] closure value: a two-element record holding the
+    function pointer and the captured-environment pointer, both opaque ([ptr_elt*]). *)
+let synthetic_swift_function_struct lang =
+  let name = "swift::function" in
+  let struct_name = TypeName.to_textual_type_name lang name in
+  let ptr_elt_typ = Textual.Typ.mk_ptr Textual.Typ.any_type_swift in
+  let mk_field pos =
+    let qualified_name =
+      { Textual.enclosing_class= struct_name
+      ; name= Textual.FieldName.of_string (Printf.sprintf "field_%d" pos) }
+    in
+    Textual.FieldDecl.{qualified_name; typ= ptr_elt_typ; attributes= []}
+  in
+  ( struct_name
+  , {Textual.Struct.name= struct_name; supers= []; fields= [mk_field 0; mk_field 1]; attributes= []}
+  )
+
+
+(** Inject struct decls for synthetic closure-shaped types that LLAIR references structurally but
+    does not always emit in a given source file's [typ_defns]. Only adds an entry when the type is
+    not already present in [struct_map], so a defining-module decl from [translate_types_env] is
+    never overwritten. *)
+let inject_synthetic_closure_decls lang struct_map =
+  if not (Textual.Lang.is_swift lang) then struct_map
+  else
+    let synthetic_decls = [synthetic_swift_function_struct lang] in
+    List.fold synthetic_decls ~init:struct_map ~f:(fun acc (struct_name, struct_) ->
+        if Textual.TypeName.Map.mem struct_name acc then acc
+        else Textual.TypeName.Map.add struct_name struct_ acc )
+
+
 let rec join (typ1 : Textual.Typ.t) (typ2 : Textual.Typ.t) : Textual.Typ.t =
   match (typ1, typ2) with
   | Int, Int ->

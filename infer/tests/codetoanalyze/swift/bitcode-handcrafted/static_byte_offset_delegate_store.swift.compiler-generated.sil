@@ -33,6 +33,9 @@ global $s4Test10NavbarViewC8delegateAA0bC8Delegate_pSgvpWvd: int
 
 type __infer_swift_type<T4Test10NavbarViewC,NavbarView> = {delegate: __infer_swift_type<ptr_elt>}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+
 type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
                                                      field_1: int}
 

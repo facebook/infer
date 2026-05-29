@@ -10,3 +10,6 @@ global $s14OuterContainerAAC8delegateAA0bC8Delegate_pSgvpWvd: int
 
 type __infer_swift_type<T14OuterContainerAAC> = {delegate: __infer_swift_type<ptr_elt>}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+

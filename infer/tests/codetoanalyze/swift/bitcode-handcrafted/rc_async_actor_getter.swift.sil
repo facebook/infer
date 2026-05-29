@@ -255,6 +255,9 @@ type __infer_swift_type<swift::async_func_pointer> = {field_0: int;
 
 type __infer_swift_type<swift::defaultactor> = {field_0: **__infer_swift_type<ptr_elt>}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+
 type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
                                                      field_1: int}
 

@@ -332,6 +332,9 @@ type __infer_swift_type<objc_super> = {field_0: *__infer_swift_type<ptr_elt>;
 type __infer_swift_type<swift::full_existential_type> = {field_0: *__infer_swift_type<ptr_elt>;
                                                          field_1: *__infer_swift_type<swift::type>}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+
 type __infer_swift_type<swift::metadata_response> = {field_0: *__infer_swift_type<ptr_elt>;
                                                      field_1: int}
 

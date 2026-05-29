@@ -10,3 +10,6 @@ global $s8Recorder05AudioB9ViewModelC4nameSSvpWvd: int
 
 type __infer_swift_type<T8Recorder05AudioB9ViewModelC,ViewModel> = {name: __infer_swift_type<ptr_elt>}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+

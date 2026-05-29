@@ -14,3 +14,6 @@ type __infer_swift_type<T7Definer6ButtonC,Button> = {tapHandler: __infer_swift_t
                                                      field_0: *__infer_swift_type<ptr_elt>;
                                                      field_1: int}
 
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+

@@ -1894,6 +1894,14 @@ let init_module_state (llair_program : Llair.program) lang =
   let struct_map =
     Globals.mark_weak_fields_from_swift_weak_assigns ~lang ~mangled_map functions struct_map
   in
+  (* Add struct decls for synthetic closure-shaped types ([swift::function]) so
+     every per-source-file textual module declares the closure layout. Without
+     this, [TextualBasicVerification.fix] sees [UnknownField] on closure field
+     accesses in modules whose [typ_defns] didn't happen to include the type,
+     rewrites the enclosing class to [wildcard], and routes the field through
+     [wildcard_sil_fieldname] — which drops [is_weak] and demotes any retain
+     cycle crossing the field to [RETAIN_CYCLE_NO_WEAK_INFO]. *)
+  let struct_map = Llair2TextualType.inject_synthetic_closure_decls lang struct_map in
   let field_byte_offset_map =
     Field.build_field_byte_offset_map lang ~mangled_map struct_map globals_map
   in
