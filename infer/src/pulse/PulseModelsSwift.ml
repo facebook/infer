@@ -412,8 +412,13 @@ let swift_optional_init_some opt payload : unit DSL.model_monad =
 
 (* Swift [Optional<T>.unsafelyUnwrapped]: indirect-return ABI
    [getter(ret_buf, type_meta, receiver)].  Fires SWIFT_NPE on [.none],
-   returns the payload value. *)
-let swift_unsafely_unwrapped receiver : unit DSL.model_monad =
+   writes the payload to [ret_buf.field_0] (the field's enclosing class is
+   the Optional's payload type, recovered from [type_meta]'s dynamic type by
+   stripping the [Sg] Optional suffix) and also assigns the payload to the
+   SIL return slot.  Both writes matter: Swift's indirect-return ABI uses
+   ret_buf for value-typed payloads, while reference-typed unwraps may
+   consume the SIL return value. *)
+let swift_unsafely_unwrapped ret_buf type_meta receiver : unit DSL.model_monad =
   let open DSL.Syntax in
   let* marker =
     load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_marker)
@@ -421,6 +426,28 @@ let swift_unsafely_unwrapped receiver : unit DSL.model_monad =
   let* () = check_valid (ValueOrigin.unknown marker) in
   let* payload =
     load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_value)
+  in
+  let* type_meta_data = get_dynamic_type ~ask_specialization:false type_meta in
+  let payload_class =
+    match type_meta_data with
+    | Some {Formula.typ= {desc= Typ.Tstruct (Typ.SwiftClass swift_name)}} ->
+        (* The type_meta arg is allocated with the Optional class [TSiSg / TSSSg / ...];
+           strip the trailing [Sg] to get the payload's class [TSi / TSS / ...]. *)
+        let mangled = SwiftClassName.mangled swift_name in
+        if String.is_suffix mangled ~suffix:"Sg" then
+          let payload_mangled = String.drop_suffix mangled 2 in
+          Some (Typ.SwiftClass (SwiftClassName.of_string payload_mangled))
+        else None
+    | _ ->
+        None
+  in
+  let* () =
+    match payload_class with
+    | Some payload_class ->
+        let field_0 = Fieldname.make payload_class "field_0" in
+        store_field ~ref:ret_buf field_0 payload
+    | None ->
+        ret ()
   in
   assign_ret payload
 
@@ -471,8 +498,8 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
         unknown args )
   | OptionalUnsafelyUnwrapped -> (
     match args with
-    | [_ret_buf; _type_meta; receiver] ->
-        fun () -> swift_unsafely_unwrapped receiver
+    | [ret_buf; type_meta; receiver] ->
+        fun () -> swift_unsafely_unwrapped ret_buf type_meta receiver
     | _ ->
         unknown args )
   | SwiftAlloc -> (

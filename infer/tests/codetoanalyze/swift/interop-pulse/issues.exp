@@ -5,7 +5,6 @@ AdversarialDerefTests.swift, arrayFirstForceUnwrap_bad, 2, PULSE_ASSERTION_ERROR
 AdversarialDerefTests.swift, asCastNilToClass_bad, 0, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 AdversarialDerefTests.swift, unsafelyUnwrappedNil_bad, 2, SWIFT_NPE, no_bucket, ERROR, [invalidation part of the trace starts here,in call to `__swift_optional_init_none` (modelled),is assigned an empty value,use-after-lifetime part of the trace starts here,in call to `__swift_optional_init_none` (modelled),invalid access occurs here]
 AdversarialDerefTests.swift, unsafelyUnwrappedNilString_bad, 2, SWIFT_NPE, no_bucket, ERROR, [invalidation part of the trace starts here,in call to `__swift_optional_init_none` (modelled),is assigned an empty value,use-after-lifetime part of the trace starts here,in call to `__swift_optional_init_none` (modelled),invalid access occurs here]
-AdversarialDerefTests.swift, unsafelyUnwrappedPayloadPropagates_good_FP, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 AdversarialDerefTests.swift, guardLetFatalError_good_FP, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testObjCClassMethod_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 HardwareTests.swift, testObjCInstanceMethod_bad, 3, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []

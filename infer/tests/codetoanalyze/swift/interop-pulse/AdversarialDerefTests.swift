@@ -72,13 +72,10 @@ func unsafelyUnwrappedUnknown_good(api: LegacyAPI) {
   _ = x.unsafelyUnwrapped
 }
 
-// The payload should propagate through unwrap, so a static [.some(5)] receiver
-// followed by [10 / unwrapped] should be silent.  Currently the model returns
-// the payload only via the SIL return slot but Swift's indirect-return ABI
-// reads from [(*ret_buf).field_0], so Pulse sees an uninitialised int and
-// fires a spurious assertion error.  Locked here as a regression target for
-// the follow-up that writes the payload to ret_buf's field_0.
-func unsafelyUnwrappedPayloadPropagates_good_FP() {
+// The payload propagates through unwrap: with the receiver statically [.some(5)],
+// the unwrapped value is tracked as 5 and the impossible division-by-zero branch
+// is pruned.
+func unsafelyUnwrappedPayloadPropagates_good() {
   let x: Int? = .some(5)
   _ = 10 / x.unsafelyUnwrapped
 }
