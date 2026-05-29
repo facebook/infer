@@ -836,7 +836,7 @@ uninstall:
 	  $(DESTDIR)$(mandir)/man1/$(notdir $(manual)))
 
 .PHONY: test_clean
-test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
+test_clean: $(DIRECT_TESTS:%=direct_%_clean) $(SWIFT_DIRECT_TESTS:%=direct_%_clean) $(BUILD_SYSTEMS_TESTS:%=build_%_clean)
 
 .PHONY: install
 install: infer $(INFER_GROFF_MANUALS_GZIPPED)
