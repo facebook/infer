@@ -515,6 +515,9 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
         fun () -> swift_optional_init_some opt payload
     | _ ->
         unknown args )
+  | OptionalInitSg | OptionalInitTuple ->
+      (* Stub: real path-splitting model added in the next diff. *)
+      unknown args
   | OptionalUnsafelyUnwrapped -> (
     match args with
     | [ret_buf; type_meta; receiver] ->

@@ -19,6 +19,13 @@ type builtin =
   | ObjcAllocFromSwift  (** Swift-driven ObjC allocation, takes [(sizeof typ, dynamic class)]. *)
   | OptionalInitNone  (** Swift [Optional<T>] construction of [.none]. *)
   | OptionalInitSome  (** Swift [Optional<T>] construction of [.some(payload)]. *)
+  | OptionalInitSg
+      (** Swift [Optional<T>] construction from a symbolic discriminator, [Sg]-class shape (e.g.
+          [Int?]). Path-splits on the tag value: [tag = 1] is [.none], [tag = 0] is [.some]. *)
+  | OptionalInitTuple
+      (** Swift [Optional<T>] construction from a symbolic discriminator, 2-component
+          [__infer_tuple_class<int,int>] shape (e.g. [String?]). Path-splits on the tag value:
+          [tag = 0] is [.none], non-zero is [.some]. *)
   | OptionalUnsafelyUnwrapped  (** Swift [Optional<T>.unsafelyUnwrapped]. *)
   | OptionalForceUnwrapTrap
       (** Swift Optional force-unwrap (postfix [!]) trap: emitted on the proven-[.none] branch of
