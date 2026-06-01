@@ -40,6 +40,35 @@ type access_expr =
   | Array of access_expr * access_expr option
   | Parens of access_expr
 
+(* [Llair2TextualField] emits Swift fields whose mangled property name uses
+   substitution compression as [field_<hint>_<hex>], where [<hex>] is an
+   8-char CRC disambiguator and [<hint>] is the literal-prefix portion of
+   the source property name. The [field_] prefix and the hash are
+   frontend-internal; the bare hint matches the source-level field name. *)
+let strip_wildcard_swift_field_name name =
+  match String.chop_prefix name ~prefix:"field_" with
+  | None ->
+      name
+  | Some rest -> (
+    match String.rsplit2 rest ~on:'_' with
+    | Some (hint, hash)
+      when String.length hint > 0
+           && Int.equal (String.length hash) 8
+           && String.for_all hash ~f:(fun c ->
+                  Char.is_digit c || Char.between c ~low:'a' ~high:'f' ) ->
+        hint
+    | _ ->
+        name )
+
+
+let pp_field fmt field =
+  if Fieldname.is_capture_field_in_closure field then Fieldname.pp fmt field
+  else
+    let name = Fieldname.get_field_name field in
+    let stripped = strip_wildcard_swift_field_name name in
+    if String.equal stripped name then Fieldname.pp fmt field else F.fprintf fmt "%s" stripped
+
+
 let rec pp_access_expr fmt access_expr =
   let pp_field_acces_expr fmt access_expr sep field =
     let pp_access_expr fmt access_expr =
@@ -49,7 +78,7 @@ let rec pp_access_expr fmt access_expr =
       | _ ->
           pp_access_expr fmt access_expr
     in
-    F.fprintf fmt "%a%s%a" pp_access_expr access_expr sep Fieldname.pp field
+    F.fprintf fmt "%a%s%a" pp_access_expr access_expr sep pp_field field
   in
   let pp_call ~with_class fmt call =
     let java_or_objc =
