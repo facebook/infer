@@ -19,12 +19,8 @@ class Card {
     }
 }
 
-// Strong: Owner.card -> Card. Unowned-back: Card.owner -> Owner.
-// No retain cycle should be reported, but Pulse currently treats `unowned`
-// stored properties as strong references and falsely fires a RETAIN_CYCLE
-// here — hence the `_FP` suffix. The closure-capture form below
-// (`[unowned self]`) is modelled correctly.
-func test_unowned_property_no_cycle_good_FP() {
+// Strong: Owner.card -> Card. Unowned-back: Card.owner -> Owner. No retain cycle.
+func test_unowned_property_no_cycle_good() {
     let owner = Owner(id: 1)
     let card = Card(number: 1234, owner: owner)
     owner.card = card

@@ -121,7 +121,13 @@ let to_textual_field_decls lang ~struct_map ~tuple struct_name fields =
         match textual_typ with
         | Textual.Typ.(Ptr (Struct name, _)) -> (
           match Textual.TypeName.swift_mangled_name_of_type_name name with
-          | Some mangled_name when String.equal mangled_name "swift::weak" ->
+          | Some mangled_name
+            when String.equal mangled_name "swift::weak"
+                 || String.equal mangled_name "swift::unowned" ->
+              (* Treat [unowned] identically to [weak] for cycle detection: both are non-owning
+                 back-references that should stop traversal in [PulseRetainCycleChecker]. The
+                 Swift runtime distinction (weak nils on dealloc, unowned traps) is irrelevant to
+                 the retain-cycle classifier. *)
               let textual_typ = Textual.Typ.(mk_ptr Textual.Typ.any_type_swift) in
               ([Textual.Attr.mk_weak], textual_typ)
           | _ ->
