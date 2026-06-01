@@ -410,6 +410,37 @@ let swift_optional_init_some opt payload : unit DSL.model_monad =
   store_field ~deref:false ~ref:opt ModeledField.swift_optional_value payload
 
 
+(* [.some] with no known payload value: used by the symbolic-discriminator
+   path-split below, where the construction site doesn't carry an adjacent
+   [field_0] store to harvest the payload from.  The marker is still
+   positive so downstream unwraps see [.some] semantics; the payload field
+   is left unmodelled (any subsequent [load] returns a fresh symbolic
+   value, matching Pulse's default for unwritten fields). *)
+let swift_optional_init_some_unknown opt : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* marker = fresh () in
+  let* () = and_positive marker in
+  store_field ~deref:false ~ref:opt ModeledField.swift_optional_marker marker
+
+
+(* Symbolic-discriminator path-split: prune on the tag value and dispatch
+   to the literal-[.none] / unknown-[.some] semantics on each branch.
+   The two shape-specific entry points below pin the [.none] tag value:
+   [Sg]-class shape uses [tag = 1] for [.none], 2-component tuple shape
+   uses [tag = 0]. *)
+let swift_optional_init_path_split opt tag none_value : unit DSL.model_monad =
+  let open DSL.Syntax in
+  disj
+    [ (let* () = prune_eq_int tag none_value in
+       swift_optional_init_none opt )
+    ; (let* () = prune_ne_int tag none_value in
+       swift_optional_init_some_unknown opt ) ]
+
+
+let swift_optional_init_sg opt tag = swift_optional_init_path_split opt tag IntLit.one
+
+let swift_optional_init_tuple opt tag = swift_optional_init_path_split opt tag IntLit.zero
+
 (* Swift [Optional<T>.unsafelyUnwrapped]: indirect-return ABI
    [getter(ret_buf, type_meta, receiver)].  Fires SWIFT_NPE on [.none],
    writes the payload to [ret_buf.field_0] (the field's enclosing class is
@@ -515,9 +546,10 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
         fun () -> swift_optional_init_some opt payload
     | _ ->
         unknown args )
-  | OptionalInitSg | OptionalInitTuple ->
-      (* Stub: real path-splitting model added in the next diff. *)
-      unknown args
+  | OptionalInitSg -> (
+    match args with [opt; tag] -> fun () -> swift_optional_init_sg opt tag | _ -> unknown args )
+  | OptionalInitTuple -> (
+    match args with [opt; tag] -> fun () -> swift_optional_init_tuple opt tag | _ -> unknown args )
   | OptionalUnsafelyUnwrapped -> (
     match args with
     | [ret_buf; type_meta; receiver] ->
