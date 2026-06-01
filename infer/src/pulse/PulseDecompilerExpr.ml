@@ -69,6 +69,16 @@ let pp_field fmt field =
     if String.equal stripped name then Fieldname.pp fmt field else F.fprintf fmt "%s" stripped
 
 
+(* Swift tuple positional element. Llair/Textual emits them as fields named
+   [__infer_tuple_field_N]; render with Swift's source-level tuple syntax. *)
+let tuple_field_position name =
+  match String.chop_prefix name ~prefix:"__infer_tuple_field_" with
+  | Some n when String.length n > 0 && String.for_all n ~f:Char.is_digit ->
+      Some n
+  | _ ->
+      None
+
+
 let rec pp_access_expr fmt access_expr =
   let pp_field_acces_expr fmt access_expr sep field =
     let pp_access_expr fmt access_expr =
@@ -78,7 +88,13 @@ let rec pp_access_expr fmt access_expr =
       | _ ->
           pp_access_expr fmt access_expr
     in
-    F.fprintf fmt "%a%s%a" pp_access_expr access_expr sep pp_field field
+    match tuple_field_position (Fieldname.get_field_name field) with
+    | Some n ->
+        (* Override the [->] arrow separator: tuple elements read more
+           naturally with Swift's [.N] positional syntax. *)
+        F.fprintf fmt "%a.%s" pp_access_expr access_expr n
+    | None ->
+        F.fprintf fmt "%a%s%a" pp_access_expr access_expr sep pp_field field
   in
   let pp_call ~with_class fmt call =
     let java_or_objc =
