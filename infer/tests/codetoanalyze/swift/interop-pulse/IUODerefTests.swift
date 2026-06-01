@@ -159,3 +159,24 @@ func pureOptionalChain_good() {
   let x: String? = nil
   let _ = x?.count
 }
+
+// MARK: - Interprocedural Optional flows (exercise the symbolic-discriminator
+// path-split on [Sg]-class storage)
+
+// Helper that unconditionally unwraps its parameter.  Currently silent: the
+// frontend rewrite that emits `__swift_optional_init_sg` on the
+// symbolic-discriminator path isn't here yet, so the path-split model doesn't
+// run and Pulse can't see the `.none` branch.  Flipped to a real
+// `_bad` (helper-level SWIFT_NPE) in the diff that lands the rewrite.
+@inline(never)
+func unwrapInner_bad_FN(_ x: Int?) -> Int { x.unsafelyUnwrapped }
+
+// Caller passes literal nil.  Will stay silent even after the helper starts
+// firing -- Pulse doesn't re-fire at the caller once the helper has reported.
+func interprocUnwrapNil_bad_FN() {
+  _ = unwrapInner_bad_FN(nil)
+}
+
+func interprocUnwrapSome_good() {
+  _ = unwrapInner_bad_FN(5)
+}
