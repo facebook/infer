@@ -781,4 +781,28 @@ public class NullPointerExceptions {
     }
     b.x = 0;
   }
+
+  int test1_useless_branch_npe_Bad() {
+    int i = 0;
+    int [] arr = null;
+    if (!(System.out == null)) {
+    } else {
+    }
+    if ((arr == null)) {
+      return arr[i]; // <-should report (FN)
+    }
+    return 0;
+  }
+
+  int test2_useless_branch_npe_Ok() {
+    int i = 0;
+    int [] arr = new int[]{1};
+    if (!(System.out == null)) {
+    } else {
+    }
+    if ((arr == null)) {
+      return arr[i];
+    }
+    return 0;
+  }
 }
