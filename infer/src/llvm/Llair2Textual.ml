@@ -1125,7 +1125,18 @@ let try_rewrite_optional_discriminator_store ~proc_state ~exp1 ~exp2 ~loc ~exp1_
         Some `None_
     | `Tuple_shape, Textual.Exp.Const (Int z) when not (Z.equal z Z.zero) ->
         Some `Some_
-    | _ ->
+    | `Sg_shape, _ ->
+        (* Symbolic discriminator on [Sg]-class storage: emit the
+           path-split builtin and let Pulse prune on the runtime tag
+           value.  Covers interprocedural Optional flows where the by-value
+           ABI reconstructs the Optional locally with a parameter-derived
+           tag.  Tuple-shape writes do NOT path-split here because the
+           bridge synthesises literal-[.some] Optionals via a runtime
+           tuple load whose tag looks symbolic in SIL but is semantically
+           constant -- a tuple-shape path-split injects a spurious
+           [.none]-disjunct that downstream unwrap models then fire on. *)
+        Some `Symbolic
+    | `Tuple_shape, _ ->
         None
   in
   let init_call proc args =
@@ -1165,6 +1176,12 @@ let try_rewrite_optional_discriminator_store ~proc_state ~exp1 ~exp2 ~loc ~exp1_
         init_call (SwiftProcname.show_builtin SwiftProcname.OptionalInitSome) [base_exp; payload]
       in
       Some (call_instr, tail)
+  | `Symbolic ->
+      (* Always [Sg]-shape here (tuple-shape symbolic case returns None above). *)
+      let call_instr =
+        init_call (SwiftProcname.show_builtin SwiftProcname.OptionalInitSg) [base_exp; exp2]
+      in
+      Some (call_instr, textual_instrs)
 
 
 let cmnd_to_instrs ~(proc_state : ProcState.t) block =

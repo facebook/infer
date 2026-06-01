@@ -163,20 +163,22 @@ func pureOptionalChain_good() {
 // MARK: - Interprocedural Optional flows (exercise the symbolic-discriminator
 // path-split on [Sg]-class storage)
 
-// Helper that unconditionally unwraps its parameter.  Currently silent: the
-// frontend rewrite that emits `__swift_optional_init_sg` on the
-// symbolic-discriminator path isn't here yet, so the path-split model doesn't
-// run and Pulse can't see the `.none` branch.  Flipped to a real
-// `_bad` (helper-level SWIFT_NPE) in the diff that lands the rewrite.
+// Helper that unconditionally unwraps its parameter.  Pulse reports
+// `SWIFT_NPE` on the helper itself: the symbolic-discriminator path-split now
+// fires (`__swift_optional_init_sg` runs at the symbolic-tag site), so the
+// `.none` branch of the path-split is reachable in the helper's local
+// analysis -- effectively documenting the helper's "caller must pass .some"
+// contract.
 @inline(never)
-func unwrapInner_bad_FN(_ x: Int?) -> Int { x.unsafelyUnwrapped }
+func unwrapInner_bad(_ x: Int?) -> Int { x.unsafelyUnwrapped }
 
-// Caller passes literal nil.  Will stay silent even after the helper starts
-// firing -- Pulse doesn't re-fire at the caller once the helper has reported.
+// Caller passes literal nil.  Stays silent -- Pulse doesn't re-fire at the
+// caller once the helper has reported (caller-site `SWIFT_NPE` would be nicer
+// but is a known follow-up).
 func interprocUnwrapNil_bad_FN() {
-  _ = unwrapInner_bad_FN(nil)
+  _ = unwrapInner_bad(nil)
 }
 
 func interprocUnwrapSome_good() {
-  _ = unwrapInner_bad_FN(5)
+  _ = unwrapInner_bad(5)
 }

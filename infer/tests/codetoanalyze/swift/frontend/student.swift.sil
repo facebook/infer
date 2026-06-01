@@ -1780,7 +1780,7 @@ define .plain_name = "test_optional" $s5Hello13test_optionalyS2iSgF(var1: int, v
   #: @[118:0]
       n2:*__infer_swift_type<TSiSg> = load &age @[118:0]
       n1 = load &var2 @[118:0]
-      store n2.__infer_swift_type<TSiSg>.field_1 <- n1 @[118:0]
+      _ = $builtins.__swift_optional_init_sg(n2, n1) @[118:0]
       n3 = load &var2 @[119:5]
       if __sil_eq(n3, 1) then jmp 10::jmp::11 else jmp 7::jmp::8 @[119:5]
       

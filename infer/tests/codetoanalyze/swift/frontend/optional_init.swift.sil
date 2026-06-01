@@ -13,7 +13,7 @@ define .plain_name = "sink" $s5Hello4sinkyySiSgF(var1: int, var2: int) : void {
   #: @[12:0]
       n2:*__infer_swift_type<TSiSg> = load &x @[12:0]
       n1 = load &var2 @[12:0]
-      store n2.__infer_swift_type<TSiSg>.field_1 <- n1 @[12:0]
+      _ = $builtins.__swift_optional_init_sg(n2, n1) @[12:0]
       ret null @[14:1]
       
 } @?
