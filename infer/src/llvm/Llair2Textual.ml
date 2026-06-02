@@ -1184,8 +1184,9 @@ let try_rewrite_optional_discriminator_store ~proc_state ~exp1 ~exp2 ~loc ~exp1_
       Some (call_instr, textual_instrs)
 
 
-let cmnd_to_instrs ~(proc_state : ProcState.t) block =
+let cmnd_to_instrs ~(proc_state : ProcState.t) ~metadata_extract_loads block =
   let ModuleState.{lang; struct_map; mangled_map} = proc_state.module_state in
+  let is_metadata_extract reg = Llair2TextualMetadataLoad.mem reg metadata_extract_loads in
   let to_instr textual_instrs inst =
     match inst with
     | Load {reg; ptr; loc} ->
@@ -1201,8 +1202,43 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
         let inferred_typ = Hashtbl.find proc_state.inferred_types (Reg.id reg) in
         Option.iter inferred_typ ~f:(fun t ->
             ProcState.update_ids_types ~proc_state id (Textual.Typ.mk_without_attributes t) ) ;
+        (* Metadata-extract idiom: [load %X] where [%X] is a formal-Reg and the
+           loaded value is used only as the value operand of Stores. The LLVM
+           SSA value [%X] is the parameter (a pointer); [load %X] reads through
+           it. Textual's slot convention gives the parameter value with a single
+           Load on [&var_X], so we add an extra deref to actually read at *X.
+           Classification is done function-wide in [Llair2TextualMetadataLoad];
+           do not relax the use-only-in-Stores predicate without also reworking
+           the [__sil_cast (ptr-to-inferred_typ) (Var tmp_id)] shape below: the
+           cast bridges [tmp_id : *formal_typ] to the pointer-to-inferred_typ
+           the outer Load's verifier expects, and only typechecks because
+           [tmp_id] holds the slot value of a formal whose type is recovered. *)
+        let extra_deref_instrs, exp =
+          match ptr with
+          | Llair.Exp.Reg {name; id= reg_id; typ= reg_typ} when is_metadata_extract reg -> (
+              let var_name = Var.reg_to_var_name (Reg.mk reg_typ reg_id name) in
+              match Textual.VarName.Map.find_opt var_name proc_state.formals with
+              | Some {ProcState.typ= formal_typ; _} ->
+                  let tmp_id = Var.add_fresh_id ~proc_state () in
+                  let tmp_load =
+                    Textual.Instr.Load {id= tmp_id; exp; typ= Some formal_typ.Textual.Typ.typ; loc}
+                  in
+                  ProcState.update_ids_types ~proc_state tmp_id formal_typ ;
+                  let casted_exp =
+                    match inferred_typ with
+                    | Some t ->
+                        Textual.Exp.cast (Textual.Typ.mk_ptr t) (Textual.Exp.Var tmp_id)
+                    | None ->
+                        Textual.Exp.Var tmp_id
+                  in
+                  ([tmp_load], casted_exp)
+              | None ->
+                  ([], exp) )
+          | _ ->
+              ([], exp)
+        in
         let textual_instr = Textual.Instr.Load {id; exp; typ= inferred_typ; loc} in
-        textual_instr :: List.append ptr_instrs textual_instrs
+        textual_instr :: List.append extra_deref_instrs (List.append ptr_instrs textual_instrs)
     | Store {ptr; exp}
       when Textual.Lang.is_swift lang && is_store_formal_to_local ~proc_state ptr exp ->
         textual_instrs
@@ -1425,7 +1461,8 @@ let cmnd_to_instrs ~(proc_state : ProcState.t) block =
   (instrs, first_loc, last_loc)
 
 
-let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =
+let rec to_textual_jump_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads (jump : Llair.jump)
+    =
   let block = jump.dst in
   let node_label = block_to_node_name block in
   let node_label, typ_opt, succs =
@@ -1434,7 +1471,7 @@ let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =
       (node_label, None, Textual.Node.Set.empty)
     else
       let (node : Textual.Node.t), typ_opt, nodes =
-        block_to_node_and_succs ~proc_state ~seen_nodes block
+        block_to_node_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads block
       in
       (node.label, typ_opt, nodes)
   in
@@ -1442,12 +1479,14 @@ let rec to_textual_jump_and_succs ~proc_state ~seen_nodes jump =
   (Textual.Terminator.Jump [node_call], typ_opt, succs)
 
 
-and to_terminator_and_succs ~proc_state ~seen_nodes term =
+and to_terminator_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads term =
   let no_succs = Textual.Node.Set.empty in
   match term with
   | Call {return; loc} ->
       let loc = to_textual_loc_instr ~proc_state loc in
-      (to_textual_jump_and_succs ~proc_state ~seen_nodes return, Some loc, [])
+      ( to_textual_jump_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads return
+      , Some loc
+      , [] )
   | Return {exp= Some exp; loc= loc_} ->
       let loc = to_textual_loc_instr ~proc_state loc_ in
       let textual_exp, textual_typ_opt, instrs = to_textual_exp loc ~proc_state exp in
@@ -1477,9 +1516,11 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
           (* if then else *)
           let bexp, _, instrs = to_textual_bool_exp loc ~proc_state key in
           let else_, else_typ, zero_nodes =
-            to_textual_jump_and_succs ~proc_state ~seen_nodes zero_jump
+            to_textual_jump_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads zero_jump
           in
-          let then_, if_typ, els_nodes = to_textual_jump_and_succs ~proc_state ~seen_nodes els in
+          let then_, if_typ, els_nodes =
+            to_textual_jump_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads els
+          in
           let term = Textual.Terminator.If {bexp; then_; else_} in
           let nodes = Textual.Node.Set.union zero_nodes els_nodes in
           let typ_opt = Type.join_typ if_typ else_typ in
@@ -1488,7 +1529,9 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
           ((term, typ_opt, nodes), Some loc, List.rev instrs)
       | [] when Exp.equal key Exp.false_ ->
           (* goto *)
-          (to_textual_jump_and_succs ~proc_state ~seen_nodes els, Some loc, [])
+          ( to_textual_jump_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads els
+          , Some loc
+          , [] )
       | entries ->
           (* multi-entry switch: lower as a chain of nested if-then-else,
              comparing the key against each table entry and falling through
@@ -1496,7 +1539,7 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
           let key_textual, _, key_instrs = to_textual_exp loc ~proc_state key in
           let key_deref_instrs, key_textual = add_deref ~proc_state key_textual loc in
           let els_term, els_typ, els_nodes =
-            to_textual_jump_and_succs ~proc_state ~seen_nodes els
+            to_textual_jump_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads els
           in
           let eq_proc = to_textual_bool_exp_builtin Eq in
           let term, typ_opt, nodes, case_instrs_acc =
@@ -1509,7 +1552,7 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
                     (Textual.Exp.call_non_virtual eq_proc [key_textual; case_textual])
                 in
                 let then_term, then_typ, then_nodes =
-                  to_textual_jump_and_succs ~proc_state ~seen_nodes jump
+                  to_textual_jump_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads jump
                 in
                 let term = Textual.Terminator.If {bexp; then_= then_term; else_= acc_term} in
                 ( term
@@ -1526,12 +1569,12 @@ and to_terminator_and_succs ~proc_state ~seen_nodes term =
 
 
 (* TODO still various parts of the node left to be translated *)
-and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) =
+and block_to_node_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads (block : Llair.block) =
   let node_name = block_to_node_name block in
-  let instrs, first_loc, last_loc = cmnd_to_instrs ~proc_state block in
+  let instrs, first_loc, last_loc = cmnd_to_instrs ~proc_state ~metadata_extract_loads block in
   Textual.NodeName.HashSet.add node_name seen_nodes ;
   let (terminator, typ_opt, succs), term_loc_opt, term_instrs =
-    to_terminator_and_succs ~proc_state ~seen_nodes block.term
+    to_terminator_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads block.term
   in
   let instrs = List.append instrs term_instrs in
   let last_loc =
@@ -1566,7 +1609,10 @@ and block_to_node_and_succs ~proc_state ~seen_nodes (block : Llair.block) =
 
 let func_to_nodes ~proc_state func =
   let seen_nodes = Textual.NodeName.HashSet.create 16 in
-  let _, typ_opt, nodes = block_to_node_and_succs ~proc_state ~seen_nodes func.Llair.entry in
+  let metadata_extract_loads = Llair2TextualMetadataLoad.classify ~proc_state func in
+  let _, typ_opt, nodes =
+    block_to_node_and_succs ~proc_state ~seen_nodes ~metadata_extract_loads func.Llair.entry
+  in
   (typ_opt, Textual.Node.Set.to_list nodes)
 
 
