@@ -868,8 +868,8 @@ let%test_module "modulo" =
         {|
         conditions: (empty)
         phi: var_eqs: x=v7=v8 ∧ y=v6
-             && linear_eqs: x = w +2 ∧ y = w +1
-             && term_eqs: [w +1]=y∧[w +2]=x∧([w +1]=1)=y
+             && linear_eqs: x = w+2 ∧ y = w+1
+             && term_eqs: [w+1]=y∧[w+2]=x∧([w+1]=1)=y
         |}]
 
 
