@@ -124,7 +124,16 @@ let pp_flow_kind fmt flow_kind =
       F.fprintf fmt "flow from a taint source"
 
 
-type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
+type retain_cycle_data =
+  { expr: DecompilerExpr.t
+  ; location: Location.t option
+  ; trace: Trace.t option
+  ; is_captured_env_of_closure: bool
+        (** Opportunistically set by [PulseRetainCycleChecker.create_values] when the cycle reaches
+            this node via the captured-environment slot ([__infer_tuple_field_1]) of a Swift closure
+            tuple ([__infer_tuple_class<…, swift::function<…>>]). The renderer uses this to swap the
+            trailing positional access for a [captured environment of <parent>] phrasing that
+            matches the source-level closure-capture concept. *) }
 [@@deriving compare, equal, yojson_of]
 
 type resource =
@@ -528,10 +537,21 @@ let flows_to_decompiled_expr (decompiler_expr : DecompilerExpr.t) ({value_tuple}
       None
 
 
+let pp_retain_cycle_expr fmt {expr; is_captured_env_of_closure} =
+  let stripped = DecompilerExpr.drop_trailing_tuple_field_position expr in
+  if is_captured_env_of_closure && not (DecompilerExpr.equal stripped expr) then
+    (* Only relabel when there is an actual trailing positional access to strip;
+       otherwise we'd render an awkward "captured environment of <synthetic
+       type name>" when the cycle-node expression is just [get_expr_with_fallback]'s
+       typename fallback rather than a real access path. *)
+    F.fprintf fmt "captured environment of %a" DecompilerExpr.pp stripped
+  else DecompilerExpr.pp fmt expr
+
+
 let pp_retain_cycle fmt values =
-  List.iteri values ~f:(fun i {expr; location} ->
-      F.fprintf fmt "@\n  %d) %a" (i + 1) DecompilerExpr.pp expr ;
-      Option.iter location ~f:(fun loc -> F.fprintf fmt ", assigned on line %d" loc.Location.line) )
+  List.iteri values ~f:(fun i (v : retain_cycle_data) ->
+      F.fprintf fmt "@\n  %d) %a" (i + 1) pp_retain_cycle_expr v ;
+      Option.iter v.location ~f:(fun loc -> F.fprintf fmt ", assigned on line %d" loc.Location.line) )
 
 
 let get_message_and_suggestion diagnostic =
@@ -1142,7 +1162,7 @@ let get_trace = function
   | RetainCycle {values; location} ->
       let errlog = [Errlog.make_trace_element 0 location "retain cycle here" []] in
       List.fold_right ~init:errlog
-        ~f:(fun {expr; trace} errlog ->
+        ~f:(fun ({expr; trace; _} as v) errlog ->
           match trace with
           | Some trace ->
               if not (DecompilerExpr.includes_captured_variable expr) then
@@ -1152,12 +1172,12 @@ let get_trace = function
                     trace errlog
                 in
                 let s =
-                  F.asprintf "assignment of %a part of the trace starts here" DecompilerExpr.pp expr
+                  F.asprintf "assignment of %a part of the trace starts here" pp_retain_cycle_expr v
                 in
                 let trace_loc = Trace.get_start_location trace in
                 Errlog.make_trace_element 0 trace_loc s [] :: errlog
               else
-                let s = F.asprintf "%a here" DecompilerExpr.pp expr in
+                let s = F.asprintf "%a here" pp_retain_cycle_expr v in
                 let trace_loc = Trace.get_start_location trace in
                 Errlog.make_trace_element 0 trace_loc s [] :: errlog
           | None ->

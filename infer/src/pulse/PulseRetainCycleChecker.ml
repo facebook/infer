@@ -192,15 +192,67 @@ let get_expr_with_fallback astate addr =
   else value
 
 
-let create_values astate (cycle : cycle_data list) =
+(* True iff [addr] is currently typed as a Swift closure tuple — i.e. an
+   [__infer_tuple_class<…, swift::function<…>>] instance — using whichever of
+   [dynamic_type] / [static_type] is available. The closure-holder shapes in
+   [PulseModelsSwift] stamp this on the parent of a captured-environment access. *)
+(* The [__infer_tuple_class] synthetic class is emitted by the Swift frontend
+   for the calling-convention tuple that backs every escaping closure
+   ([(function_pointer, captured_environment)]). It is occasionally also used
+   for source-level Swift tuples, but those are value types whose elements
+   can't independently participate in a reference cycle, so encountering
+   [__infer_tuple_field_1] of a [__infer_tuple_class] inside a detected cycle
+   is, in practice, the captured-environment slot of a closure. We don't
+   additionally require the args to mention [swift::function] because the
+   frontend recovery of those args is unreliable (prod sometimes surfaces them
+   as e.g. [<int,int>]). *)
+let is_swift_closure_tuple astate addr =
+  let typ_name_opt =
+    match PulseArithmetic.get_dynamic_type addr astate with
+    | Some {typ= {desc= Tstruct typ_name}} ->
+        Some typ_name
+    | _ ->
+        AddressAttributes.get_static_type addr astate
+  in
+  match typ_name_opt with
+  | Some (Typ.SwiftClass name) ->
+      String.equal (SwiftClassName.mangled name) "__infer_tuple_class"
+  | _ ->
+      false
+
+
+(* The cycle is a circular list: [cycle.(i).access] is the edge taken FROM
+   [cycle.(i)] TO reach [cycle.((i + 1) mod n)]. So when [cycle.(i).access] is
+   [__infer_tuple_field_1] the captured-environment node is [cycle.((i + 1) mod
+   n)] and its closure-tuple parent is [cycle.(i)]. Returns an address-keyed
+   lookup so that [remove_non_objc_swift_objects] (run before [create_values])
+   doesn't break the index-based pairing. *)
+let captured_env_flags_for_cycle astate (cycle : cycle_data list) =
+  let cycle_arr = Array.of_list cycle in
+  let n = Array.length cycle_arr in
+  if Int.equal n 0 then AbstractValue.Map.empty
+  else
+    Array.foldi cycle_arr ~init:AbstractValue.Map.empty ~f:(fun i acc {addr= parent_addr; access} ->
+        match access with
+        | Access.FieldAccess fn
+          when String.equal (Fieldname.get_field_name fn) "__infer_tuple_field_1"
+               && is_swift_closure_tuple astate parent_addr ->
+            let captured_env_addr = cycle_arr.((i + 1) mod n).addr in
+            AbstractValue.Map.add captured_env_addr true acc
+        | _ ->
+            acc )
+
+
+let create_values astate ~captured_env_flags (cycle : cycle_data list) =
   let values : Diagnostic.retain_cycle_data list =
-    List.map
-      ~f:(fun {addr} ->
+    List.map cycle ~f:(fun {addr} ->
         let value = get_expr_with_fallback astate addr in
         let trace = get_assignment_trace astate addr in
         let location = Option.map ~f:Trace.get_outer_location trace in
-        {Diagnostic.expr= value; location; trace} )
-      cycle
+        let is_captured_env_of_closure =
+          AbstractValue.Map.find_opt addr captured_env_flags |> Option.value ~default:false
+        in
+        {Diagnostic.expr= value; location; trace; is_captured_env_of_closure} )
   in
   let sorted_values =
     List.sort
@@ -211,13 +263,13 @@ let create_values astate (cycle : cycle_data list) =
       values
   in
   List.map
-    ~f:(fun {Diagnostic.expr; location; trace} ->
+    ~f:(fun {Diagnostic.expr; location; trace; is_captured_env_of_closure} ->
       let location =
         if DecompilerExpr.includes_captured_variable expr || DecompilerExpr.includes_block expr then
           None
         else location
       in
-      {Diagnostic.expr; location; trace} )
+      {Diagnostic.expr; location; trace; is_captured_env_of_closure} )
     sorted_values
 
 
@@ -278,8 +330,9 @@ let check_retain_cycles tenv location addresses orig_astate =
         if should_report_cycle astate cycle then (
           Logging.d_printfln "Found cycle:\n \t%a" (Pp.seq ~sep:" -> \n\t" pp_cycle_data) cycle ;
           let unknown_access_type = cycle_include_unknown_weak cycle in
+          let captured_env_flags = captured_env_flags_for_cycle astate cycle in
           let cycle = remove_non_objc_swift_objects cycle astate in
-          let values = create_values astate cycle in
+          let values = create_values astate ~captured_env_flags cycle in
           if List.exists ~f:(fun {Diagnostic.trace} -> Option.is_some trace) values then
             match List.rev values with
             | {Diagnostic.trace} :: _ ->

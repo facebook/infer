@@ -44,3 +44,9 @@ val yojson_of_t : t -> Yojson.Safe.t
 val reset_abstract_value : t -> t
 (** forget the underlying abstract value in the argument:
     [abstract_value_of_expr (reset_abstract_value expr)] is [None] *)
+
+val drop_trailing_tuple_field_position : t -> t
+(** If the expression ends with a Swift positional tuple-field access (a [FieldAccess] whose
+    fieldname is [__infer_tuple_field_<N>]), return the expression with that trailing access
+    dropped; otherwise return the input unchanged. Used by the retain-cycle renderer to surface the
+    closure-tuple parent when the cycle reaches a captured-environment slot. *)

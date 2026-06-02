@@ -256,6 +256,14 @@ let yojson_of_t expr = `String (F.asprintf "%a" pp expr)
 
 let is_unknown = function Unknown _ -> true | SourceExpr _ -> false
 
+let drop_trailing_tuple_field_position = function
+  | SourceExpr ((base, FieldAccess fn :: rest), av)
+    when Option.is_some (tuple_field_position (Fieldname.get_field_name fn)) ->
+      SourceExpr ((base, rest), av)
+  | expr ->
+      expr
+
+
 let reset_abstract_value expr =
   if Option.is_none (abstract_value_of_expr expr) then expr
   else

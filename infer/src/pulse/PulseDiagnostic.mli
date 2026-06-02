@@ -70,7 +70,11 @@ end
 
 type flow_kind = TaintedFlow | FlowToSink | FlowFromSource [@@deriving equal]
 
-type retain_cycle_data = {expr: DecompilerExpr.t; location: Location.t option; trace: Trace.t option}
+type retain_cycle_data =
+  { expr: DecompilerExpr.t
+  ; location: Location.t option
+  ; trace: Trace.t option
+  ; is_captured_env_of_closure: bool }
 [@@deriving equal]
 
 type resource =
