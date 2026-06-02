@@ -21,15 +21,31 @@ let pp_cycle_data fmt cycle_data =
     cycle_data.access PulseRefCounting.pp_access_type cycle_data.access_type
 
 
+(* A Swift enum is a value type and can never participate in a retain cycle. Swift's name
+   mangling encodes the type kind with a single-letter suffix on the mangled name: [C] for
+   class, [O] for enum, [V] for struct, [P] for protocol. When the dynamic-type stamp on an
+   abstract address is a [SwiftClass _] whose mangled name ends in [O], treat it as a value
+   type for cycle classification — otherwise the cycle checker walks through enum payloads as
+   if they were ref-counted heap edges and reports bogus 2-cycles like [FilterValue → FilterValue]
+   in pattern-match sites. *)
+let is_swift_enum_class typ_name =
+  match (typ_name : Typ.Name.t) with
+  | SwiftClass scn ->
+      String.is_suffix (SwiftClassName.mangled scn) ~suffix:"O"
+  | _ ->
+      false
+
+
 let is_ref_counted_or_block astate addr =
-  AddressAttributes.get_static_type addr astate
-  |> Option.exists ~f:(fun typ_name ->
-         Typ.Name.is_objc_class typ_name || Typ.Name.is_swift_class typ_name )
+  let is_refcounted_swift_or_objc typ_name =
+    (Typ.Name.is_objc_class typ_name || Typ.Name.is_swift_class typ_name)
+    && not (is_swift_enum_class typ_name)
+  in
+  AddressAttributes.get_static_type addr astate |> Option.exists ~f:is_refcounted_swift_or_objc
   ||
   match PulseArithmetic.get_dynamic_type addr astate with
   | Some {typ= {desc= Tstruct typ_name}} ->
-      Typ.Name.is_objc_class typ_name || Typ.Name.is_objc_block typ_name
-      || Typ.Name.is_swift_class typ_name
+      is_refcounted_swift_or_objc typ_name || Typ.Name.is_objc_block typ_name
   | _ ->
       false
 
