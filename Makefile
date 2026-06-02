@@ -180,6 +180,9 @@ endif # BUILD_C_ANALYZERS
 
 DIRECT_TESTS += c_treesitter
 
+# muLang tutorial frontend end-to-end test (infer/src/textual/TutoFrontend.ml).
+DIRECT_TESTS += textual_tuto
+
 ifneq ($(BUILD_SWIFT_ANALYZERS),no)
 # New variable specifically for local Swift testing
 SWIFT_DIRECT_TESTS += \

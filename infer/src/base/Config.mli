@@ -184,6 +184,8 @@ val capture_textual : string list
 
 val capture_rust_ullbc : string list
 
+val capture_toylang : string list
+
 val capture_tree_sitter : string list
 
 val tree_sitter_preprocessor : string option

@@ -1006,6 +1006,12 @@ and capture_textual =
     "Generate a SIL program from a textual representation given in .sil files."
 
 
+and capture_toylang =
+  CLOpt.mk_path_list ~long:"capture-toylang" ~meta:"path"
+    "Generate a SIL program from ToyLang ($(i,.toy)) source files using the tutorial frontend (see \
+     infer/src/textual/TutoFrontend.ml). For documentation/tutorial purposes."
+
+
 and capture_tree_sitter =
   CLOpt.mk_path_list ~long:"capture-tree-sitter" ~meta:"path"
     "Generate a SIL program from C source files using the bundled tree-sitter C grammar. Only C is \
@@ -4114,6 +4120,8 @@ and capture_llair = !capture_llair
 and capture_textual = RevList.to_list !capture_textual
 
 and capture_rust_ullbc = RevList.to_list !capture_rust_ullbc
+
+and capture_toylang = RevList.to_list !capture_toylang
 
 and capture_tree_sitter = RevList.to_list !capture_tree_sitter
 

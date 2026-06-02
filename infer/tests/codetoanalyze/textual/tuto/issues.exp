@@ -1,0 +1,2 @@
+codetoanalyze/textual/tuto/bug.toy, allocNoFreeBad, 26, MEMORY_LEAK_CPP, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `new` here,memory becomes unreachable here]
+codetoanalyze/textual/tuto/bug.toy, derefNilBad, 32, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

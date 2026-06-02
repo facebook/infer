@@ -39,6 +39,7 @@ type mode =
   | Swiftc of {prog: string; args: string list}
   | Textual of {textualfiles: string list}
   | TreeSitter of {files: string list}
+  | ToyLang of {files: string list}
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 

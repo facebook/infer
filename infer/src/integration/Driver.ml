@@ -40,6 +40,8 @@ type mode =
   | Swiftc of {prog: string; args: string list}
   | Textual of {textualfiles: string list}
   | TreeSitter of {files: string list}
+  | ToyLang of {files: string list}
+      (** ToyLang tutorial frontend, see [ToyLang] / [TutoFrontend] *)
   | XcodeBuild of {prog: string; args: string list}
   | XcodeXcpretty of {prog: string; args: string list}
 
@@ -121,6 +123,8 @@ let pp_mode fmt = function
         F.fprintf fmt "Textual capture mode:@\nfiles = %a" Pp.cli_args textualfiles )
   | TreeSitter {files} ->
       F.fprintf fmt "TreeSitter capture mode:@\nfiles = %a" Pp.cli_args files
+  | ToyLang {files} ->
+      F.fprintf fmt "ToyLang capture mode:@\nfiles = %a" Pp.cli_args files
   | XcodeBuild {prog; args} ->
       F.fprintf fmt "XcodeBuild driver mode:@\nprog = '%s'@\nargs = %a" prog Pp.cli_args args
   | XcodeXcpretty {prog; args} ->
@@ -251,6 +255,9 @@ let capture ~changed_files mode =
       | TreeSitter {files} ->
           L.progress "Capturing using tree-sitter...@." ;
           TreeSitter.capture ~files
+      | ToyLang {files} ->
+          L.progress "Capturing using the ToyLang tutorial frontend...@." ;
+          ToyLang.capture ~files
       | XcodeBuild {prog; args} ->
           L.progress "Capturing in xcodebuild mode...@." ;
           XcodeBuild.capture ~prog ~args
@@ -496,6 +503,8 @@ let mode_of_build_command build_cmd (buck_mode : BuckMode.t option) =
       RustULLBC {ullbc_files= Config.capture_rust_ullbc}
   | [] when not (List.is_empty Config.capture_tree_sitter) ->
       TreeSitter {files= Config.capture_tree_sitter}
+  | [] when not (List.is_empty Config.capture_toylang) ->
+      ToyLang {files= Config.capture_toylang}
   | [] -> (
       let textualfiles = Config.capture_textual in
       match (Config.clang_compilation_dbs, textualfiles, Config.capture_llair) with

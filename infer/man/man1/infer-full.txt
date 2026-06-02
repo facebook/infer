@@ -2660,6 +2660,14 @@ INTERNAL OPTIONS
        --capture-textual-reset
            Set --capture-textual to the empty list.
 
+       --capture-toylang +path
+           Generate a SIL program from ToyLang (.toy) source files using the
+           tutorial frontend (see infer/src/textual/TutoFrontend.ml). For
+           documentation/tutorial purposes.
+
+       --capture-toylang-reset
+           Set --capture-toylang to the empty list.
+
        --capture-tree-sitter +path
            Generate a SIL program from C source files using the bundled
            tree-sitter C grammar. Only C is currently supported.

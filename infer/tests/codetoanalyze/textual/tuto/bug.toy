@@ -1,0 +1,32 @@
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+// End-to-end test for the ToyLang tutorial frontend (infer/src/textual/TutoFrontend.ml).
+// Captured with `infer --capture-toylang bug.toy` and analysed by Pulse.
+
+// returns the larger of a and b
+fun max(a, b) {
+  if (a < b) { return b; } else { return a; }
+}
+
+// pure arithmetic, no heap: Pulse reports nothing here.
+fun addOk(a, b) {
+  var x = a + b;
+  return x;
+}
+
+// allocates a cell but never frees it (ToyLang has no free): Pulse reports MEMORY_LEAK_CPP.
+// Also exercises alloc, a store through a pointer, and a function call.
+fun allocNoFreeBad() {
+  var p = alloc();
+  *p = max(3, 7);
+  return *p;
+}
+
+// q is the null pointer, so *q dereferences null: Pulse reports NULLPTR_DEREFERENCE.
+fun derefNilBad() {
+  var q = nil;
+  return *q;
+}
