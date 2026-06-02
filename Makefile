@@ -191,6 +191,7 @@ SWIFT_DIRECT_TESTS += \
   swift_bitcode \
   swift_bitcode-handcrafted \
   swift_bitcode-handcrafted-pulse \
+  swift_bitcode-handcrafted-pulse-messages \
   swift_pulse \
   swift_pulse-messages \
   swift_multifile \

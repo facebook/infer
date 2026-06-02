@@ -548,8 +548,59 @@ let pp_retain_cycle_expr fmt {expr; is_captured_env_of_closure} =
   else DecompilerExpr.pp fmt expr
 
 
+(* The errlog fragment a single cycle node contributes to the bug trace: its
+   "assignment of ... part of the trace starts here" header plus the sub-trace
+   leading to it. Shared between the qualifier dedup (which hashes it) and the
+   bug-trace builder (which emits it). *)
+let retain_cycle_fragment ({expr; trace; _} as v) =
+  match trace with
+  | None ->
+      []
+  | Some trace ->
+      let trace_loc = Trace.get_start_location trace in
+      if not (DecompilerExpr.includes_captured_variable expr) then
+        let inner =
+          Trace.add_to_errlog ~nesting:1
+            ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
+            trace []
+        in
+        let s =
+          F.asprintf "assignment of %a part of the trace starts here" pp_retain_cycle_expr v
+        in
+        Errlog.make_trace_element 0 trace_loc s [] :: inner
+      else
+        let s = F.asprintf "%a here" pp_retain_cycle_expr v in
+        [Errlog.make_trace_element 0 trace_loc s []]
+
+
+(* Signature identifying a cycle node for dedup purposes: the rendered
+   participant expression plus the rendered trace step descriptions. Source
+   locations are deliberately excluded so that two nodes that render identically
+   and have the same trace compare equal even though they are distinct abstract
+   values allocated on different lines. *)
+let retain_cycle_signature v =
+  let fragment = retain_cycle_fragment v in
+  let step_descriptions =
+    List.map fragment ~f:(fun (e : Errlog.loc_trace_elem) ->
+        Printf.sprintf "%d:%s" e.Errlog.lt_level e.Errlog.lt_description )
+  in
+  let trace_signature = String.concat step_descriptions ~sep:"\n" in
+  let expr_signature = F.asprintf "%a" pp_retain_cycle_expr v in
+  expr_signature ^ "\x00" ^ trace_signature
+
+
+(* Only *consecutive* equal-signature nodes are collapsed: a run of
+   indistinguishable hops is the noise we want to remove, whereas two
+   identically-rendered nodes separated by a distinct node are genuinely
+   different positions in the cycle and must both be shown. *)
+let dedup_adjacent_retain_cycle_values values =
+  let same_signature a b = String.equal (retain_cycle_signature a) (retain_cycle_signature b) in
+  List.remove_consecutive_duplicates values ~which_to_keep:`First ~equal:same_signature
+
+
 let pp_retain_cycle fmt values =
-  List.iteri values ~f:(fun i (v : retain_cycle_data) ->
+  let deduped = dedup_adjacent_retain_cycle_values values in
+  List.iteri deduped ~f:(fun i (v : retain_cycle_data) ->
       F.fprintf fmt "@\n  %d) %a" (i + 1) pp_retain_cycle_expr v ;
       Option.iter v.location ~f:(fun loc -> F.fprintf fmt ", assigned on line %d" loc.Location.line) )
 
@@ -1160,29 +1211,15 @@ let get_trace = function
              (F.asprintf "%s becomes unreachable here" (resource_type_s resource))
              [] ]
   | RetainCycle {values; location} ->
-      let errlog = [Errlog.make_trace_element 0 location "retain cycle here" []] in
-      List.fold_right ~init:errlog
-        ~f:(fun ({expr; trace; _} as v) errlog ->
-          match trace with
-          | Some trace ->
-              if not (DecompilerExpr.includes_captured_variable expr) then
-                let errlog =
-                  Trace.add_to_errlog ~nesting:1
-                    ~pp_immediate:(fun fmt -> F.fprintf fmt "assigned")
-                    trace errlog
-                in
-                let s =
-                  F.asprintf "assignment of %a part of the trace starts here" pp_retain_cycle_expr v
-                in
-                let trace_loc = Trace.get_start_location trace in
-                Errlog.make_trace_element 0 trace_loc s [] :: errlog
-              else
-                let s = F.asprintf "%a here" pp_retain_cycle_expr v in
-                let trace_loc = Trace.get_start_location trace in
-                Errlog.make_trace_element 0 trace_loc s [] :: errlog
-          | None ->
-              errlog )
-        values
+      let base = [Errlog.make_trace_element 0 location "retain cycle here" []] in
+      (* Same adjacent-dedup as the qualifier (see [retain_cycle_signature]):
+         a run of indistinguishable cycle nodes — identical participant
+         rendering and identical trace, differing only by abstract value /
+         source location — collapses to a single sub-trace instead of
+         repeating it once per node. *)
+      let deduped = dedup_adjacent_retain_cycle_values values in
+      let fragments = List.map deduped ~f:retain_cycle_fragment in
+      List.fold_right fragments ~init:base ~f:(fun fragment errlog -> fragment @ errlog)
   | StackVariableAddressEscape {history; location; _} ->
       ValueHistory.add_to_errlog ~nesting:0 history
       @@

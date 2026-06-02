@@ -1,0 +1,4 @@
+infer/tests/codetoanalyze/swift/bitcode-handcrafted-pulse-messages/rc_coalesce_unknown_holders.swift, setupBad, 11, 5, ERROR, RETAIN_CYCLE, [assignment of &self part of the trace starts here,in call to `external_register_handler` (modelled),assigned,assignment of dynamically allocated object part of the trace starts here,in call to `external_register_handler` (modelled),assigned,assignment of self->holder part of the trace starts here,parameter `self` of setupBad,assigned,retain cycle here], Retain cycle found at line 11, column 5 between the following objects: 
+  1) &self, assigned on line 8
+  2) dynamically allocated object, assigned on line 9
+  3) self->holder, assigned on line 11., 
