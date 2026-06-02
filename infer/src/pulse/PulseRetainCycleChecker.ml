@@ -82,6 +82,40 @@ let get_assignment_trace astate addr =
   AddressAttributes.get_written_to addr astate |> Option.map ~f:snd
 
 
+(* Swift stdlib mnemonic shorthand (Si, SS, Sb, Sd, Sf, Su) — and Optional
+   wrapping via the [Sg] suffix — that the length-prefix-based heuristic
+   demangler in [SwiftClassName.demangle_mangled] can't reach because there
+   is no [<digit>+<name>] token to extract. Render-time only: does not
+   modify the underlying [SwiftClassName.t], so frontend code that
+   pattern-matches on the stdlib suffixes (e.g. [Sg] for Optional
+   classification, [Sa] for Array, etc.) continues to see the raw mangled
+   token. Returns [None] for shapes outside this small whitelist so the
+   caller can fall back to whichever rendering it was going to use. *)
+let demangle_swift_stdlib_mnemonic mangled =
+  let strip_t s = String.chop_prefix s ~prefix:"T" |> Option.value ~default:s in
+  let rec aux s =
+    match s with
+    | "Si" ->
+        Some "Int"
+    | "Su" ->
+        Some "UInt"
+    | "SS" ->
+        Some "String"
+    | "Sb" ->
+        Some "Bool"
+    | "Sd" ->
+        Some "Double"
+    | "Sf" ->
+        Some "Float"
+    | _ when String.is_suffix s ~suffix:"Sg" ->
+        let prefix = String.chop_suffix_exn s ~suffix:"Sg" in
+        Option.map (aux prefix) ~f:(fun inner -> inner ^ "?")
+    | _ ->
+        None
+  in
+  aux (strip_t mangled)
+
+
 let get_expr_with_fallback astate addr =
   let is_ptr_elt_name typ_name =
     String.is_substring (F.asprintf "%a" Typ.Name.pp typ_name) ~substring:"ptr_elt"
@@ -183,7 +217,7 @@ let get_expr_with_fallback astate addr =
       | Some (Typ.SwiftClass name)
         when SwiftClassName.equal name SwiftClassName.swift_alloc_unknown_type ->
           "dynamically allocated object"
-      | Some typ_name ->
+      | Some typ_name -> (
           let type_str = F.asprintf "%a" Typ.Name.pp typ_name in
           let is_tuple_class =
             match typ_name with
@@ -192,13 +226,25 @@ let get_expr_with_fallback astate addr =
             | _ ->
                 false
           in
+          let stdlib_mnemonic_name =
+            match typ_name with
+            | Typ.SwiftClass name ->
+                demangle_swift_stdlib_mnemonic (SwiftClassName.mangled name)
+            | _ ->
+                None
+          in
           if String.is_substring type_str ~substring:"swift::function" then "Swift closure"
           else if is_tuple_class then
             (* Synthetic [Textual.swift_tuple_class_name]. Reached only when args
                contain no [swift::function] — tuple-wrapped closures take the
                [Swift closure] branch above. *)
             "Swift tuple"
-          else "object of type " ^ type_str
+          else
+            match stdlib_mnemonic_name with
+            | Some name ->
+                "object of type " ^ name
+            | None ->
+                "object of type " ^ type_str )
     in
     (* Create a LOCAL variable Pvar using a dummy function context *)
     let dummy_procname = Procname.from_string_c_fun "" in
