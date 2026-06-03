@@ -63,6 +63,11 @@ let sanitise_buck_out_gen_hashed_path =
 let from_abs_path ?(warn_on_error = true) fname =
   if Filename.is_relative fname then
     L.(die InternalError) "Path '%s' is relative, when absolute path was expected." fname ;
+  (* A compiler-generated sentinel (see [compiler_generated]) has no on-disk file by
+     construction, so don't warn when [realpath] fails to resolve it. *)
+  let warn_on_error =
+    warn_on_error && not (String.is_suffix fname ~suffix:compiler_generated_suffix)
+  in
   (* try to get realpath of source file. Use original if it fails *)
   let fname_real = try Utils.realpath ~warn_on_error fname with Unix.Unix_error _ -> fname in
   match
@@ -276,7 +281,7 @@ let from_rel_path ?(warn_on_error = true) fname =
         let rel_path, new_root = Utils.normalize_path_from ~root:workspace_rel_root fname in
         RelativeProjectRootAndWorkspace {workspace_rel_root= new_root; rel_path}
   in
-  ( if warn_on_error then
+  ( if warn_on_error && not (String.is_suffix fname ~suffix:compiler_generated_suffix) then
       try Utils.realpath ~warn_on_error (to_abs_path file) |> ignore with Unix.Unix_error _ -> () ) ;
   file
 
