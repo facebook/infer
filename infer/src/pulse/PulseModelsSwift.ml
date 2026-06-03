@@ -568,9 +568,13 @@ let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :
   | MetadataEquals ->
       let arg1, arg2, _ = ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s in
       metadata_equals arg1 arg2
-  | SwiftGetDynamicType ->
-      let arg1, arg2, _ = ProcnameDispatcherBuiltins.expect_at_least_2_args args builtin_s in
-      swift_dynamic_type arg1 arg2
+  | SwiftGetDynamicType -> (
+    (* degrade to [unknown] on a <2-arg call instead of aborting analysis *)
+    match args with
+    | arg1 :: arg2 :: _ ->
+        swift_dynamic_type arg1 arg2
+    | _ ->
+        unknown args )
 
 
 (* Setter-style model for `DispatchSourceProtocol.{setEventHandler, setCancelHandler}
