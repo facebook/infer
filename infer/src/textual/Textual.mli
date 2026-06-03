@@ -178,10 +178,13 @@ module QualifiedProcName : sig
   module Hashtbl : Hashtbl.S with type key = t
 end
 
-type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t} [@@deriving equal]
+type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
+[@@deriving equal, compare]
 (* field name [name] must be declared in type [enclosing_class] *)
 
 val pp_qualified_fieldname : F.formatter -> qualified_fieldname -> unit
+
+module QualifiedFieldNameSet : Stdlib.Set.S with type elt = qualified_fieldname
 
 module Attr : sig
   type t = {name: string; values: string list; loc: Location.t}

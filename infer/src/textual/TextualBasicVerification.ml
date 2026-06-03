@@ -271,7 +271,7 @@ let verify_decl ~env errors (decl : Module.decl) =
 
 let fix fields_to_fix (module_ : Module.t) =
   let fix_qualified_fieldname (fieldname : qualified_fieldname) =
-    if FieldName.Set.mem fieldname.name fields_to_fix then
+    if QualifiedFieldNameSet.mem fieldname fields_to_fix then
       {fieldname with enclosing_class= TypeName.wildcard}
     else fieldname
   in
@@ -347,10 +347,10 @@ let rec run (module_ : Module.t) env =
   let errors = List.fold ~f ~init:[] module_.decls in
   let field_errors = List.filter errors ~f:(function UnknownField _ -> true | _ -> false) in
   let fields_to_fix =
-    List.fold field_errors ~init:FieldName.Set.empty ~f:(fun acc err ->
-        match err with UnknownField field -> FieldName.Set.add field.name acc | _ -> acc )
+    List.fold field_errors ~init:QualifiedFieldNameSet.empty ~f:(fun acc err ->
+        match err with UnknownField field -> QualifiedFieldNameSet.add field acc | _ -> acc )
   in
-  if FieldName.Set.is_empty fields_to_fix then (module_, errors)
+  if QualifiedFieldNameSet.is_empty fields_to_fix then (module_, errors)
   else (
     List.iter field_errors ~f:(log_error module_.sourcefile) ;
     let module_ = fix fields_to_fix module_ in

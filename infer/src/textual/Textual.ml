@@ -450,12 +450,19 @@ module QualifiedProcName = struct
   end)
 end
 
-type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t} [@@deriving equal]
+type qualified_fieldname = {enclosing_class: TypeName.t; name: FieldName.t}
+[@@deriving equal, compare]
 (* field name [name] must be declared in type [enclosing_class] *)
 
 let pp_qualified_fieldname fmt ({enclosing_class; name} : qualified_fieldname) =
   F.fprintf fmt "%a%a" TypeName.pp enclosing_class FieldName.pp name
 
+
+module QualifiedFieldNameSet = Stdlib.Set.Make (struct
+  type t = qualified_fieldname
+
+  let compare = compare_qualified_fieldname
+end)
 
 module VarName : sig
   type t [@@deriving compare, equal, hash]
