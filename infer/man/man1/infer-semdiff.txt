@@ -46,6 +46,14 @@ OPTIONS
            Show this manual with all internal options in the INTERNAL OPTIONS
            section
 
+       --semdiff-b006-migration
+           Activates: Check B006 migration: verify that the current program
+           is a valid rewrite of the previous program where a mutable default
+           argument has been replaced by None plus an "if p is None: p =
+           <literal>" guard. Equivalence holds under the assumption that
+           explicitly-passed arguments are not None. (Conversely:
+           --no-semdiff-b006-migration)
+
        --semdiff-b007-migration
            Activates: Check B007 migration: verify that the current program
            is a valid simplification of the previous program (remove unused

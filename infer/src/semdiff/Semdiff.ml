@@ -101,6 +101,34 @@ let semdiff_b007_textual ~debug (module_old : Textual.Module.t) (module_new : Te
   if all_accepted then [] else [Diff.dummy_explicit]
 
 
+let semdiff_b006_textual ~debug (module_old : Textual.Module.t) (module_new : Textual.Module.t) =
+  let procs_old = extract_procs module_old in
+  let procs_new = extract_procs module_new in
+  let all_accepted =
+    List.for_all procs_old ~f:(fun proc_old ->
+        let name = proc_fun_name proc_old in
+        if is_module_body name then true
+        else
+          match List.find procs_new ~f:(fun p -> String.equal (proc_fun_name p) name) with
+          | None ->
+              if debug then L.user_error "Procedure %s not found in current file@." name ;
+              true (* procedure removed — not a migration concern *)
+          | Some proc_new -> (
+              let defaults_old = StructuredPeg.extract_defaults module_old proc_old in
+              let defaults_new = StructuredPeg.extract_defaults module_new proc_new in
+              match
+                TextualPegDiff.check_b006_migration ~debug ~defaults_old ~defaults_new proc_old
+                  proc_new
+              with
+              | result ->
+                  result
+              | exception CongruenceClosureRewrite.Rule.FuelExhausted _ ->
+                  if debug then L.user_error "Fuel exhausted for procedure %s@." name ;
+                  false ) )
+  in
+  if all_accepted then [] else [Diff.dummy_explicit]
+
+
 let semdiff_from_json ~config_files json_path =
   let debug = Config.debug_mode in
   let input = Semdiff_batch_j.semdiff_input_of_string (In_channel.read_all json_path) in

@@ -452,16 +452,19 @@ let sem_diff () =
         "Expected '--semdiff-current' and '--semdiff-previous', '--semdiff-test-files-index', or \
          '--semdiff-from-json' to be specified."
   | Some (previous_file, current_file), None, None ->
-      if Config.semdiff_b007_migration then (
+      let run_textual_migration migration_fn =
         let module_old = python_file_to_textual previous_file in
         let module_new = python_file_to_textual current_file in
         let debug = Config.debug_mode in
-        let diffs = Semdiff.semdiff_b007_textual ~debug module_old module_new in
+        let diffs = migration_fn ~debug module_old module_new in
         let out_path = ResultsDir.get_path SemDiff in
         Diff.write_json ~previous_file ~current_file ~out_path diffs ;
         Option.iter Config.issues_tests ~f:(fun out_path ->
             let json_path = ResultsDir.get_path SemDiff in
-            Diff.write_from_json ~json_path ~out_path ) )
+            Diff.write_from_json ~json_path ~out_path )
+      in
+      if Config.semdiff_b007_migration then run_textual_migration Semdiff.semdiff_b007_textual
+      else if Config.semdiff_b006_migration then run_textual_migration Semdiff.semdiff_b006_textual
       else
         let config_files = Config.semdiff_configuration in
         Semdiff.semdiff ~config_files ~previous_file ~current_file ;

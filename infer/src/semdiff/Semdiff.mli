@@ -22,4 +22,6 @@ val semdiff : config_files:string list -> previous_file:string -> current_file:s
 
 val semdiff_b007_textual : debug:bool -> Textual.Module.t -> Textual.Module.t -> Diff.explicit list
 
+val semdiff_b006_textual : debug:bool -> Textual.Module.t -> Textual.Module.t -> Diff.explicit list
+
 val semdiff_from_json : config_files:string list -> string -> unit

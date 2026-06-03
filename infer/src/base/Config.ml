@@ -3345,6 +3345,15 @@ and semdiff_experimental_eqsat_engine =
     "Use experimental equality saturation rewriting engine."
 
 
+and semdiff_b006_migration =
+  CLOpt.mk_bool ~long:"semdiff-b006-migration" ~default:false
+    ~in_help:InferCommand.[(SemDiff, manual_generic)]
+    "Check B006 migration: verify that the current program is a valid rewrite of the previous \
+     program where a mutable default argument has been replaced by None plus an \"if p is None: p \
+     = <literal>\" guard. Equivalence holds under the assumption that explicitly-passed arguments \
+     are not None."
+
+
 and semdiff_b007_migration =
   CLOpt.mk_bool ~long:"semdiff-b007-migration" ~default:false
     ~in_help:InferCommand.[(SemDiff, manual_generic)]
@@ -4981,6 +4990,8 @@ and semdiff_previous = !semdiff_previous
 and semdiff_test_actions = !semdiff_test_actions
 
 and semdiff_experimental_eqsat_engine = !semdiff_experimental_eqsat_engine
+
+and semdiff_b006_migration = !semdiff_b006_migration
 
 and semdiff_b007_migration = !semdiff_b007_migration
 
