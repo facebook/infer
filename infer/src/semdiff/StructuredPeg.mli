@@ -17,11 +17,14 @@ end
 
 val convert_proc :
      ?theta_counter:int ref
+  -> ?defaults:Textual.Exp.t IString.Map.t
   -> CongruenceClosureSolver.t
   -> Textual.ProcDesc.t
   -> (CongruenceClosureSolver.Atom.t * Equations.t * int, string) result
 (** [convert_proc cc proc] converts a Textual procedure to a PEG via StructuredIR. Returns the root
-    atom, equation trace, and number of loops. *)
+    atom, equation trace, and number of loops. [defaults] maps parameter names to their default
+    expression; such parameters are modelled as [@phi(@is_default(p), default, @arg(p))] to make the
+    calling convention explicit (used for B006 migration checking). *)
 
 val extract_defaults : Textual.Module.t -> Textual.ProcDesc.t -> Textual.Exp.t IString.Map.t
 (** [extract_defaults module_ proc] recovers the default value expression of each parameter of

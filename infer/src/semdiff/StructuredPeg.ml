@@ -142,6 +142,8 @@ let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
       mk_term cc "@str" [mk_const cc s]
   | Const (Float f) ->
       mk_const cc (Float.to_string f)
+  | Call {proc} when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_make_none" ->
+      mk_const cc "@None"
   | Load {exp= inner_exp} ->
       mk_term cc "@load" [convert_exp env inner_exp]
   | Field {exp= inner_exp; field} ->
@@ -190,8 +192,19 @@ let is_py_builtin proc name =
   String.is_suffix s ~suffix:name
 
 
+(* Empty/literal container construction is modelled as pure: the only impurity is allocation
+   identity (a fresh object each call), which is exactly the cross-call aliasing the B006 "surprise"
+   relies on — and which we deliberately ignore. *)
 let pure_builtin_prefixes =
-  ["py_make_"; "py_binary_"; "py_unary_"; "py_compare_"; "py_inplace_"; "py_build_tuple"]
+  [ "py_make_"
+  ; "py_binary_"
+  ; "py_unary_"
+  ; "py_compare_"
+  ; "py_inplace_"
+  ; "py_build_tuple"
+  ; "py_build_list"
+  ; "py_build_map"
+  ; "py_build_set" ]
 
 
 type call_effect = Pure | Reader | Writer
@@ -674,13 +687,33 @@ let extract_defaults (module_ : T.Module.t) (proc : T.ProcDesc.t) : T.Exp.t Stri
 
 (* ---------- Main entry point ---------- *)
 
-let convert_proc ?(theta_counter = ref 0) cc (proc : T.ProcDesc.t) :
+(* Model a parameter [p] that has a default expression [d] as
+     @phi(@is_default(p), <d>, @arg(p))
+   where @arg(p) is the explicitly-passed argument and @is_default(p) is true when the caller
+   omitted the argument. This makes the calling convention explicit so that two functions differing
+   only by their defaults (e.g. a B006 codemod) can be related. *)
+let model_default_params (env : Env.t) (defaults : T.Exp.t StringMap.t) : Env.t =
+  let cc = env.cc in
+  StringMap.fold
+    (fun name d (env : Env.t) ->
+      let default_atom = convert_exp env d in
+      let arg = mk_term cc "@arg" [mk_const cc name] in
+      let is_default = mk_term cc "@is_default" [mk_const cc name] in
+      let atom = mk_term cc "@phi" [is_default; default_atom; arg] in
+      Equations.add env.equations ~name ~atom ~origin:"param-default" ;
+      let locals = LocalsMap.store env.locals ~name ~atom in
+      {env with locals} )
+    defaults env
+
+
+let convert_proc ?(theta_counter = ref 0) ?(defaults = StringMap.empty) cc (proc : T.ProcDesc.t) :
     (CC.Atom.t * Equations.t * int, string) result =
   let params =
     List.find_map proc.procdecl.attributes ~f:T.Attr.find_python_args |> Option.value ~default:[]
   in
   let env = Env.init cc ~params in
   let env = {env with theta_counter} in
+  let env = model_default_params env defaults in
   let sir = S.of_cfg proc.nodes proc.start in
   match convert env sir with
   | Normal (result, env) ->

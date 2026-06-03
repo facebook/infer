@@ -34,6 +34,58 @@ let dump_defaults source ~proc_name =
   else IString.Map.iter (fun name exp -> F.printf "%s = %a@." name T.Exp.pp exp) defaults
 
 
+(* Convert a proc to a PEG with its defaults modelled, and print the root. *)
+let peg_with_defaults source ~proc_name =
+  let module_ = python_to_module source in
+  let proc = find_proc module_ proc_name in
+  let defaults = StructuredPeg.extract_defaults module_ proc in
+  let cc = CongruenceClosureSolver.init ~debug:false in
+  match StructuredPeg.convert_proc ~defaults cc proc with
+  | Ok (root, _eqs, _) ->
+      F.printf "%a@." (CongruenceClosureSolver.pp_nested_term cc) root
+  | Error msg ->
+      F.printf "ERROR: %s@." msg
+
+
+let%test_module "B006 parameter modelling" =
+  ( module struct
+    let%expect_test "list default -> phi(is_default, build_list, arg)" =
+      peg_with_defaults {|
+def f(b=[]):
+    return b
+|} ~proc_name:"f" ;
+      [%expect {| (@ret @state0 (@phi (@is_default b) $builtins.py_build_list (@arg b))) |}]
+
+
+    let%expect_test "None default -> phi(is_default, None, arg)" =
+      peg_with_defaults {|
+def f(b=None):
+    return b
+|} ~proc_name:"f" ;
+      [%expect {| (@ret @state0 (@phi (@is_default b) @None (@arg b))) |}]
+
+
+    let%expect_test "None default with codemod guard" =
+      peg_with_defaults
+        {|
+def f(b=None):
+    if b is None:
+        b = []
+    return b
+|}
+        ~proc_name:"f" ;
+      [%expect
+        {|
+        (@ret
+            @state0
+            (@phi
+                ($builtins.py_bool ($builtins.py_compare_is (@phi (@is_default b) @None (@arg b)) @None))
+                $builtins.py_build_list
+                (@phi (@is_default b) @None (@arg b))))
+        |}]
+  end )
+
+
 let%test_module "B006 default extraction" =
   ( module struct
     let%expect_test "mutable list default" =
