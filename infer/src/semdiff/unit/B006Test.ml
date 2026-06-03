@@ -8,6 +8,8 @@
 open! IStd
 module F = Format
 module T = Textual
+module CC = CongruenceClosureSolver
+module Rewrite = CongruenceClosureRewrite
 
 let python_to_module source : T.Module.t =
   let modules = ref [] in
@@ -45,6 +47,87 @@ let peg_with_defaults source ~proc_name =
       F.printf "%a@." (CongruenceClosureSolver.pp_nested_term cc) root
   | Error msg ->
       F.printf "ERROR: %s@." msg
+
+
+(* ---------- Per-rule tests (rewrite-engine level) ---------- *)
+
+(* The structural B006 rules cannot be isolated with Python source (a single B006 example fires all
+   of them together), so each rule is exercised directly: build the left-hand term, apply just that
+   rule, and check it became equivalent to the expected right-hand term. The rule text is shared
+   with production via TextualPegDiff.b006_named_rules. *)
+
+let mk cc name args = CC.mk_term cc (CC.mk_header cc name) args
+
+let cst cc name = mk cc name []
+
+let check_rule label ~lhs ~rhs =
+  let cc = CC.init ~debug:false in
+  let rule =
+    match
+      Rewrite.parse_rule cc
+        (List.Assoc.find_exn TextualPegDiff.b006_named_rules label ~equal:String.equal)
+    with
+    | Ok r ->
+        r
+    | Error _ ->
+        assert false
+  in
+  let l = lhs cc and r = rhs cc in
+  let applied = Rewrite.TestOnly.apply_rule_at cc rule l in
+  F.printf "%s: applied=%d equiv=%b@." label applied (CC.is_equiv cc l r)
+
+
+let%test_module "B006 rewrite rules" =
+  ( module struct
+    let%expect_test "bool-is: py_bool(x is y) = x is y" =
+      check_rule "bool-is"
+        ~lhs:(fun cc ->
+          mk cc "$builtins.py_bool" [mk cc "$builtins.py_compare_is" [cst cc "x"; cst cc "y"]] )
+        ~rhs:(fun cc -> mk cc "$builtins.py_compare_is" [cst cc "x"; cst cc "y"]) ;
+      [%expect {| bool-is: applied=1 equiv=true |}]
+
+
+    let%expect_test "is-distribute: (phi c a b) is None = phi c (a is None) (b is None)" =
+      check_rule "is-distribute"
+        ~lhs:(fun cc ->
+          mk cc "$builtins.py_compare_is"
+            [mk cc "@phi" [cst cc "c"; cst cc "a"; cst cc "b"]; cst cc "@None"] )
+        ~rhs:(fun cc ->
+          mk cc "@phi"
+            [ cst cc "c"
+            ; mk cc "$builtins.py_compare_is" [cst cc "a"; cst cc "@None"]
+            ; mk cc "$builtins.py_compare_is" [cst cc "b"; cst cc "@None"] ] ) ;
+      [%expect {| is-distribute: applied=1 equiv=true |}]
+
+
+    let%expect_test "is-none-none: None is None = true" =
+      check_rule "is-none-none"
+        ~lhs:(fun cc -> mk cc "$builtins.py_compare_is" [cst cc "@None"; cst cc "@None"])
+        ~rhs:(fun cc -> cst cc "@true") ;
+      [%expect {| is-none-none: applied=1 equiv=true |}]
+
+
+    let%expect_test "arg-not-none: (@arg b) is None = false [semi-correct]" =
+      check_rule "arg-not-none"
+        ~lhs:(fun cc -> mk cc "$builtins.py_compare_is" [mk cc "@arg" [cst cc "b"]; cst cc "@None"])
+        ~rhs:(fun cc -> cst cc "@false") ;
+      [%expect {| arg-not-none: applied=1 equiv=true |}]
+
+
+    let%expect_test "bool-id: phi(c, true, false) = c" =
+      check_rule "bool-id"
+        ~lhs:(fun cc -> mk cc "@phi" [cst cc "c"; cst cc "@true"; cst cc "@false"])
+        ~rhs:(fun cc -> cst cc "c") ;
+      [%expect {| bool-id: applied=1 equiv=true |}]
+
+
+    let%expect_test "phi-same-cond: phi(c, a, phi(c, x, b)) = phi(c, a, b)" =
+      check_rule "phi-same-cond"
+        ~lhs:(fun cc ->
+          mk cc "@phi" [cst cc "c"; cst cc "a"; mk cc "@phi" [cst cc "c"; cst cc "x"; cst cc "b"]] )
+        ~rhs:(fun cc -> mk cc "@phi" [cst cc "c"; cst cc "a"; cst cc "b"]) ;
+      [%expect {| phi-same-cond: applied=1 equiv=true |}]
+  end )
 
 
 let%test_module "B006 parameter modelling" =

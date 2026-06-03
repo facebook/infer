@@ -20,6 +20,9 @@ val check_b007_migration : ?debug:bool -> Textual.ProcDesc.t -> Textual.ProcDesc
 (** Directional migration check: verify that [proc_new] is a valid B007 simplification of
     [proc_old]. Uses accept rules instead of bidirectional rewrites. *)
 
+val b006_named_rules : (string * string) list
+(** The B006 rewrite rules as (label, rule text) pairs. Exposed for per-rule unit testing. *)
+
 val convert_and_print : ?debug:bool -> string -> unit
 [@@warning "-unused-value-declaration"]
 (** Parse a Textual source string, convert each procedure to PEG, print the equations and nested

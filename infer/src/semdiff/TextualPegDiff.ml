@@ -45,6 +45,29 @@ let dict_rules =
      ($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_keys ?S3 ?D)))" ]
 
 
+(* B006 (mutable default argument) rewrite rules. Parameters with a default are modelled as
+   @phi(@is_default(p), <default>, @arg(p)) (see StructuredPeg). These rules normalise the codemod's
+   "if p is None: p = <literal>" guard against that model so the migrated and original functions
+   converge. The pair (label, rule) keeps a single source of truth shared with the unit tests. *)
+let b006_named_rules : (string * string) list =
+  [ (* py_bool of an "is" comparison is redundant (the comparison already returns a bool) *)
+    ( "bool-is"
+    , "($builtins.py_bool ($builtins.py_compare_is ?X ?Y)) ==> ($builtins.py_compare_is ?X ?Y)" )
+  ; (* push an "is None" test through a @phi *)
+    ( "is-distribute"
+    , "($builtins.py_compare_is (@phi ?C ?A ?B) @None) ==> (@phi ?C ($builtins.py_compare_is ?A \
+       @None) ($builtins.py_compare_is ?B @None))" )
+  ; (* None is None *)
+    ("is-none-none", "($builtins.py_compare_is @None @None) ==> @true")
+  ; (* SEMI-CORRECT: a non-default (explicitly-passed) argument is assumed not to be None. This is
+       the "correct execution" hypothesis — unsound only when a caller passes None explicitly. *)
+    ("arg-not-none", "($builtins.py_compare_is (@arg ?X) @None) ==> @false")
+  ; (* phi(c, true, false) = c for a boolean condition c *)
+    ("bool-id", "(@phi ?C @true @false) ==> ?C")
+  ; (* collapse a redundant re-test of the same condition in the else branch *)
+    ("phi-same-cond", "(@phi ?C ?A (@phi ?C ?X ?B)) ==> (@phi ?C ?A ?B)") ]
+
+
 (* Structural simplification only: @phi and @theta invariant rules *)
 let gen_structural_rules cc ~theta_count : Rewrite.Rule.t list =
   let theta_rules = List.init theta_count ~f:(fun i -> F.asprintf "(@theta_%d ?X ?X) ==> ?X" i) in
