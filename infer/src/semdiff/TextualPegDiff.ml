@@ -320,6 +320,48 @@ let check_b007_migration ?(debug = false) (proc_old : Textual.ProcDesc.t)
       false
 
 
+(* All rules for B006 checking: structural (@phi/@theta) simplification plus the B006 rules. *)
+let gen_b006_rules cc ~theta_count : Rewrite.Rule.t list =
+  gen_structural_rules cc ~theta_count @ parse_rules cc (List.map b006_named_rules ~f:snd)
+
+
+let check_b006_migration ?(debug = false) ~defaults_old ~defaults_new
+    (proc_old : Textual.ProcDesc.t) (proc_new : Textual.ProcDesc.t) =
+  let cc = CC.init ~debug:false in
+  let theta_counter = ref 0 in
+  match
+    ( StructuredPeg.convert_proc ~theta_counter ~defaults:defaults_old cc proc_old
+    , StructuredPeg.convert_proc ~theta_counter ~defaults:defaults_new cc proc_new )
+  with
+  | Ok (atom_old, eqs_old, loops_old), Ok (atom_new, eqs_new, loops_new)
+    when Int.equal loops_old loops_new ->
+      let rules = gen_b006_rules cc ~theta_count:loops_old in
+      let _rounds = Rewrite.Rule.full_rewrite cc rules in
+      let theta_headers =
+        List.init loops_old ~f:(fun i -> CC.mk_header cc (F.asprintf "@theta_%d" i))
+      in
+      let res = CC.is_equiv cc atom_old atom_new || bisimilar cc ~theta_headers atom_old atom_new in
+      if debug then (
+        F.printf "=== Rule stats ===@." ;
+        List.iter rules ~f:(fun rule ->
+            let count = Rewrite.Rule.fire_count rule in
+            if count > 0 then F.printf "  %a: fired %d time(s)@." Rewrite.Rule.pp rule count ) ;
+        if not res then (
+          F.printf "=== Procedure OLD equations ===@." ;
+          StructuredPeg.Equations.pp cc F.std_formatter eqs_old ;
+          F.printf "@.=== Procedure NEW equations ===@." ;
+          StructuredPeg.Equations.pp cc F.std_formatter eqs_new ;
+          F.printf "@.MIGRATION NOT ACCEPTED@." ;
+          F.printf "atom_old: %a@." (CC.pp_nested_term cc) atom_old ;
+          F.printf "atom_new: %a@." (CC.pp_nested_term cc) atom_new ) ) ;
+      res
+  | Ok _, Ok _ ->
+      false
+  | Error msg, _ | _, Error msg ->
+      if debug then F.printf "PEG conversion failed: %s@." msg ;
+      false
+
+
 let convert_and_print ?(debug = false) text =
   let sourcefile = Textual.SourceFile.create "test.sil" in
   match TextualParser.parse_string sourcefile text with

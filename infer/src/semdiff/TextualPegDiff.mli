@@ -23,6 +23,19 @@ val check_b007_migration : ?debug:bool -> Textual.ProcDesc.t -> Textual.ProcDesc
 val b006_named_rules : (string * string) list
 (** The B006 rewrite rules as (label, rule text) pairs. Exposed for per-rule unit testing. *)
 
+val check_b006_migration :
+     ?debug:bool
+  -> defaults_old:Textual.Exp.t IString.Map.t
+  -> defaults_new:Textual.Exp.t IString.Map.t
+  -> Textual.ProcDesc.t
+  -> Textual.ProcDesc.t
+  -> bool
+(** Directional migration check for B006 (mutable default argument): verify that [proc_new] is a
+    valid simplification of [proc_old], where a mutable default has been replaced by [None] plus an
+    "if p is None: p = <literal>" guard. [defaults_old]/[defaults_new] are the parameter default
+    maps (from {!StructuredPeg.extract_defaults}). Equivalence holds under the correct-execution
+    hypothesis that explicitly-passed arguments are not [None]. *)
+
 val convert_and_print : ?debug:bool -> string -> unit
 [@@warning "-unused-value-declaration"]
 (** Parse a Textual source string, convert each procedure to PEG, print the equations and nested

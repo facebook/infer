@@ -169,6 +169,146 @@ def f(b=None):
   end )
 
 
+(* ---------- End-to-end migration checks (Python source) ---------- *)
+
+let check_b006 ?(debug = false) source_old source_new ~proc_name =
+  let mold = python_to_module source_old in
+  let mnew = python_to_module source_new in
+  let pold = find_proc mold proc_name in
+  let pnew = find_proc mnew proc_name in
+  let defaults_old = StructuredPeg.extract_defaults mold pold in
+  let defaults_new = StructuredPeg.extract_defaults mnew pnew in
+  let accepted = TextualPegDiff.check_b006_migration ~debug ~defaults_old ~defaults_new pold pnew in
+  F.printf "accepted: %b@." accepted
+
+
+let%test_module "B006 migration" =
+  ( module struct
+    let%expect_test "list default: trivial body" =
+      check_b006
+        {|
+def f(b=[]):
+    return b
+|}
+        {|
+def f(b=None):
+    if b is None:
+        b = []
+    return b
+|}
+        ~proc_name:"f" ;
+      [%expect {| accepted: true |}]
+
+
+    let%expect_test "list default: body uses b" =
+      check_b006
+        {|
+def f(b=[]):
+    b.append(1)
+    return b
+|}
+        {|
+def f(b=None):
+    if b is None:
+        b = []
+    b.append(1)
+    return b
+|}
+        ~proc_name:"f" ;
+      [%expect {| accepted: true |}]
+
+
+    let%expect_test "dict default" =
+      check_b006
+        {|
+def f(b={}):
+    return b
+|}
+        {|
+def f(b=None):
+    if b is None:
+        b = {}
+    return b
+|}
+        ~proc_name:"f" ;
+      [%expect {| accepted: true |}]
+
+
+    (* The codemod must preserve the default literal: [] replaced by {} is rejected. *)
+    let%expect_test "wrong default literal is rejected" =
+      check_b006
+        {|
+def f(b=[]):
+    return b
+|}
+        {|
+def f(b=None):
+    if b is None:
+        b = {}
+    return b
+|}
+        ~proc_name:"f" ;
+      [%expect {| accepted: false |}]
+
+
+    (* A different body is rejected. *)
+    let%expect_test "different body is rejected" =
+      check_b006
+        {|
+def f(b=[]):
+    return b
+|}
+        {|
+def f(b=None):
+    if b is None:
+        b = []
+    return 0
+|}
+        ~proc_name:"f" ;
+      [%expect {| accepted: false |}]
+
+
+    (* ---- Semi-correctness of the arg-not-none rule ----
+       These pairs are ACCEPTED, yet they are NOT observationally equivalent: a caller passing
+       None explicitly observes a difference. We accept them anyway under the correct-execution
+       hypothesis (passing None for a mutable-default parameter is considered misuse). *)
+
+    (* f(None): OLD returns None, NEW returns []. Accepted because (@arg b) is None -> false. *)
+    let%expect_test "SEMI-CORRECT: f(None) divergence is accepted" =
+      check_b006
+        {|
+def f(b=[]):
+    return b
+|}
+        {|
+def f(b=None):
+    if b is None:
+        b = []
+    return b
+|}
+        ~proc_name:"f" ;
+      [%expect {| accepted: true |}]
+
+
+    (* OLD `return b is None`: f(None) -> True, f([1]) -> False. NEW always returns False.
+       The check accepts (both normalise to False under arg-not-none), masking the f(None) case. *)
+    let%expect_test "SEMI-CORRECT: observable None test is accepted" =
+      check_b006
+        {|
+def f(b=[]):
+    return b is None
+|}
+        {|
+def f(b=None):
+    if b is None:
+        b = []
+    return b is None
+|}
+        ~proc_name:"f" ;
+      [%expect {| accepted: true |}]
+  end )
+
+
 let%test_module "B006 default extraction" =
   ( module struct
     let%expect_test "mutable list default" =
