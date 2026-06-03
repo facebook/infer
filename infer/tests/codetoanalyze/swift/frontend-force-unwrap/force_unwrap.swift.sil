@@ -1,0 +1,110 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "Swift" @?
+
+declare swift_getTypeByMangledNameInContext(*__infer_swift_type<ptr_elt>, int, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare _swift_FORCE_LOAD_$_swiftCompatibility56() : *__infer_swift_type<ptr_elt>
+
+declare __swift_instantiateConcreteTypeFromMangledName(*__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+declare $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF(int, int, int, int, int, int, int, int, int, int, int) : *__infer_swift_type<ptr_elt>
+
+declare $sSq17unsafelyUnwrappedxvg(*__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>, *__infer_swift_type<ptr_elt>) : *__infer_swift_type<ptr_elt>
+
+define .plain_name = "constFoldedForceUnwrap" $s5Hello22constFoldedForceUnwrapSiyF() : int {
+  local x: *__infer_swift_type<TSiSg>
+  #: @[13:0]
+      n2 = load &x @[13:0]
+      n4:*__infer_swift_type<TSiSg> = load &x @[13:0]
+      _ = $builtins.__swift_optional_init_none(n4) @[13:0]
+      _ = __sil_assert_fail(null) @[15:11]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[15:11]
+      
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[13:0]
+      unreachable @[13:0]
+      
+} @?
+
+define .plain_name = "pathSplitForceUnwrap" $s5Hello20pathSplitForceUnwrapyS2iSgF(var1: int, var2: int) : int {
+  local x: *__infer_swift_type<TSiSg>, var6: *__infer_swift_type<TSi>, var5: *__infer_swift_type<TSiSg>
+  #: @[21:0]
+      n2:*__infer_swift_type<TSiSg> = load &x @[21:0]
+      n1 = load &var2 @[21:0]
+      _ = $builtins.__swift_optional_init_sg(n2, n1) @[21:0]
+      n4:*__infer_swift_type<TSiSg> = load &var5 @[22:12]
+      n3 = load &var2 @[22:12]
+      _ = $builtins.__swift_optional_init_sg(n4, n3) @[22:12]
+      n5 = load &$sSiSgMD @[22:12]
+      n6 = __sil_swift_alloc(<__infer_swift_type<TSiSg>>) @[22:12]
+      jmp 8::ret @[22:12]
+      
+  #8::ret: @[22:12]
+      n7 = load &var6 @[22:12]
+      n9 = load &var5 @[22:12]
+      _ = $builtins.__swift_optional_unsafely_unwrapped(n7, n6, n9) @[22:12]
+      n11:*__infer_swift_type<TSi> = load &var6 @[22:12]
+      n10 = load n11.__infer_swift_type<TSi>.field_0 @[22:12]
+      ret n10 @[22:3]
+      
+} @?
+
+define .plain_name = "diamondForceUnwrap" $s5Hello18diamondForceUnwrapyS2iSgF(var1: int, var2: int) : int {
+  local x: *__infer_swift_type<TSiSg>
+  #: @[8:0]
+      n2:*__infer_swift_type<TSiSg> = load &x @[8:0]
+      n1 = load &var2 @[8:0]
+      _ = $builtins.__swift_optional_init_sg(n2, n1) @[8:0]
+      n3 = load &var2 @[9:11]
+      if __sil_eq(n3, 1) then jmp 7 else jmp 6::jmp::8 @[9:11]
+      
+  #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[8:0]
+      unreachable @[8:0]
+      
+  #6::jmp::8: @[9:11]
+      n6 = load &var1 @[9:11]
+      n5 = n6 @[9:11]
+      jmp 8 @[9:11]
+      
+  #7: @[9:11]
+      _ = __sil_assert_fail(null) @[9:11]
+      jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[9:11]
+      
+  #8: @[9:3]
+      ret n5 @[9:3]
+      
+} @?
+
+global symbolic SiSg: *__infer_tuple_class<*int,int>
+
+global llvm::used: **__infer_swift_type<ptr_elt>
+
+global _swift_FORCE_LOAD_$_swiftCompatibility56_$_Hello: *__infer_swift_type<ptr_elt>
+
+global __swift_reflection_version: int
+
+global ::str::57::Unexpectedly found nil while unwrapping an Optional value: *int
+
+global ::str::24::Hello/force_unwrap::swift: *int
+
+global ::str::11::Fatal error: *int
+
+global $sSiSgMD: *__infer_tuple_class<int,int>
+
+type __infer_swift_type<TSi> = {field_0: int}
+
+type __infer_swift_type<TSiSg> = {field_0: int; field_1: int}
+
+type __infer_swift_type<swift::function> = {field_0: *__infer_swift_type<ptr_elt>;
+                                            field_1: *__infer_swift_type<ptr_elt>}
+
+type __infer_tuple_class<*int,int> = {__infer_tuple_field_0: *int;
+                                      __infer_tuple_field_1: int}
+
+type __infer_tuple_class<int,int> = {__infer_tuple_field_0: int;
+                                     __infer_tuple_field_1: int}
+

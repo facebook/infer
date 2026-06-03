@@ -182,3 +182,65 @@ func interprocUnwrapNil_bad_FN() {
 func interprocUnwrapSome_good() {
   _ = unwrapInner_bad(5)
 }
+
+// MARK: - Interprocedural force-unwrap flows
+
+// Helper uses postfix `!` (force-unwrap diamond shape) on its parameter.
+// Pulse reports `SWIFT_NPE` on the helper itself -- same shape as
+// `unwrapInner_bad` above, but exercising the diamond recogniser rather than
+// `.unsafelyUnwrapped`.
+@inline(never)
+func forceUnwrapInner_bad(_ x: Int?) -> Int { x! }
+
+// Caller passes literal nil.  Helper-level `SWIFT_NPE` above already covers
+// the contract violation; caller-side `SWIFT_NPE` is a known FN.
+func interprocForceUnwrapNil_bad_FN() {
+  _ = forceUnwrapInner_bad(nil)
+}
+
+func interprocForceUnwrapSome_good() {
+  _ = forceUnwrapInner_bad(5)
+}
+
+// Helper returns a nil Optional; the force-unwrap happens at the caller.
+// Pulse should fire `SWIFT_NPE` at the caller-side `!` since the helper's
+// summary says the return is `.none`.
+@inline(never)
+func returnNilOptional_helper() -> Int? { nil }
+
+func unwrapReturnedNil_bad() {
+  _ = returnNilOptional_helper()!
+}
+
+@inline(never)
+func returnSomeOptional_helper() -> Int? { 5 }
+
+func unwrapReturnedSome_good() {
+  _ = returnSomeOptional_helper()!
+}
+
+// Helper passes an Optional through unchanged; caller force-unwraps.  Pulse
+// should fire at the caller -- the Optional's value flows through the helper
+// summary into the caller, where the force-unwrap is the actual deref site.
+@inline(never)
+func passOptional_helper(_ x: Int?) -> Int? { x }
+
+func interprocPassthroughNil_bad() {
+  _ = passOptional_helper(nil)!
+}
+
+func interprocPassthroughSome_good() {
+  _ = passOptional_helper(5)!
+}
+
+// Helper handles `nil` itself via `guard let`; the force-unwrap never runs
+// when the input is nil.  Caller passing nil must stay silent.
+@inline(never)
+func guardedUnwrap_good(_ x: Int?) -> Int {
+  guard let v = x else { return 0 }
+  return v
+}
+
+func interprocGuardedUnwrap_good() {
+  _ = guardedUnwrap_good(nil)
+}

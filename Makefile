@@ -188,6 +188,7 @@ ifneq ($(BUILD_SWIFT_ANALYZERS),no)
 SWIFT_DIRECT_TESTS += \
   swift_annotreach \
   swift_frontend \
+  swift_frontend-force-unwrap \
   swift_bitcode \
   swift_bitcode-handcrafted \
   swift_bitcode-handcrafted-pulse \

@@ -21,3 +21,6 @@ IUODerefTests.swift, dynamicDispatchForceUnwrap_bad, 1, PULSE_ASSERTION_ERROR, n
 IUODerefTests.swift, nullableForceUnwrap_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 IUODerefTests.swift, pureOptionalForceUnwrap_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 IUODerefTests.swift, unwrapInner_bad, 0, SWIFT_NPE, no_bucket, ERROR, [invalidation part of the trace starts here,in call to `__swift_optional_init_sg` (modelled),is assigned an empty value,use-after-lifetime part of the trace starts here,in call to `__swift_optional_init_sg` (modelled),invalid access occurs here]
+IUODerefTests.swift, forceUnwrapInner_bad, 0, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+IUODerefTests.swift, unwrapReturnedNil_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
+IUODerefTests.swift, interprocPassthroughNil_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
