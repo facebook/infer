@@ -95,21 +95,23 @@ let trace_disc_to_optional_storage ~defs id =
   walk_id Textual.Ident.Set.empty id
 
 
-(* Match [eq(<expr>, 0)] or [eq(0, <expr>)] (the [__sil_eq] / [eq]
-   cast-builtins).  Returns the [<expr>] on success; the caller traces
-   further through any Load / cast chain. *)
-let extract_eq_zero_disc (exp : Textual.Exp.t) =
+(* Match [eq(<expr>, K)] or [eq(K, <expr>)] for [K] in [{0, 1}] (the [__sil_eq] / [eq]
+   cast-builtins).  Returns the [<expr>] on success; the caller traces further through any Load /
+   cast chain.  Both constants are accepted because the [.none] tag value depends on the Optional
+   shape: [Sg]-class uses [tag = 1] for [.none], 2-component tuple uses [tag = 0]. *)
+let extract_eq_disc (exp : Textual.Exp.t) =
   match exp with
   | Textual.Exp.Call {proc; args; _} when Textual.ProcDecl.to_binop proc |> Option.is_some -> (
       let is_eq_op =
         Textual.ProcDecl.to_binop proc |> Option.exists ~f:(fun op -> Binop.equal op Binop.Eq)
       in
+      let is_zero_or_one z = Z.equal z Z.zero || Z.equal z Z.one in
       if not is_eq_op then None
       else
         match args with
-        | [lhs; Textual.Exp.Const (Textual.Const.Int z)] when Z.equal z Z.zero ->
+        | [lhs; Textual.Exp.Const (Textual.Const.Int z)] when is_zero_or_one z ->
             Some lhs
-        | [Textual.Exp.Const (Textual.Const.Int z); lhs] when Z.equal z Z.zero ->
+        | [Textual.Exp.Const (Textual.Const.Int z); lhs] when is_zero_or_one z ->
             Some lhs
         | _ ->
             None )
@@ -127,7 +129,7 @@ let extract_force_unwrap_branch (term : Textual.Terminator.t) =
   match term with
   | If {bexp= Exp eq_exp; then_; else_} ->
       let open IOption.Let_syntax in
-      let* disc_exp = extract_eq_zero_disc eq_exp in
+      let* disc_exp = extract_eq_disc eq_exp in
       let* trap_label = extract_single_jump then_ in
       let* continue_label = extract_single_jump else_ in
       Some (disc_exp, trap_label, continue_label)
@@ -234,6 +236,34 @@ let rewrite_init_none_trap_in_node ~nodes_by_label (node : Textual.Node.t) =
     {node with instrs= rewrite [] node.instrs}
 
 
+(* [True] iff the procname matches one of the symbolic-discriminator
+   path-split init builtins [__swift_optional_init_sg] or
+   [__swift_optional_init_tuple] emitted by [Llair2Textual] on
+   symbolic-discriminator construction sites. *)
+let is_init_path_split_call (proc : Textual.QualifiedProcName.t) =
+  let names =
+    [SwiftProcname.OptionalInitSg; SwiftProcname.OptionalInitTuple]
+    |> List.map ~f:(fun b ->
+           (Llair2TextualModels.builtin_qual_proc_name (SwiftProcname.show_builtin b)).name )
+  in
+  List.exists names ~f:(fun name -> Textual.ProcName.equal proc.name name)
+
+
+(* Scan [node.instrs] for an [__swift_optional_init_{sg,tuple}(opt, _)] call and return
+   [Some opt] if found.  The first argument is the Optional storage; the second is the runtime
+   tag (whose value the path-split model prunes on).  When a force-unwrap diamond's discriminator
+   trace fails (e.g. the discriminator is the tag arg of a path-split call rather than a load of
+   [field_1]), this is the fallback that recovers the Optional storage. *)
+let find_path_split_storage_in_node (node : Textual.Node.t) =
+  List.find_map node.instrs ~f:(fun (instr : Textual.Instr.t) ->
+      match instr with
+      | Textual.Instr.Let {exp= Textual.Exp.Call {proc; args= opt_exp :: _; _}; _}
+        when is_init_path_split_call proc ->
+          Some opt_exp
+      | _ ->
+          None )
+
+
 let rewrite_proc (proc : Textual.ProcDesc.t) : Textual.ProcDesc.t =
   let nodes = proc.nodes in
   let nodes_by_label = NodeNameTbl.create (List.length nodes) in
@@ -252,7 +282,7 @@ let rewrite_proc (proc : Textual.ProcDesc.t) : Textual.ProcDesc.t =
       | Some (disc_exp, trap_label, _continue_label) -> (
         match NodeNameTbl.find_opt nodes_by_label trap_label with
         | Some trap_node when is_trap_block ~nodes_by_label trap_node -> (
-            let opt_storage =
+            let from_field_load =
               match disc_exp with
               | Textual.Exp.Var disc_id ->
                   trace_disc_to_optional_storage ~defs disc_id
@@ -261,6 +291,19 @@ let rewrite_proc (proc : Textual.ProcDesc.t) : Textual.ProcDesc.t =
                   trace_disc_to_optional_storage ~defs inner
               | _ ->
                   None
+            in
+            (* Fallback for the symbolic-discriminator path: when the
+               discriminator is the tag arg of a
+               [__swift_optional_init_{sg,tuple}(opt, tag)] call in this same
+               block, the path-split model has already pruned on [tag] so the
+               trap branch IS the [.none] branch.  Recover the Optional
+               storage from the init call's first arg. *)
+            let opt_storage =
+              match from_field_load with
+              | Some _ ->
+                  from_field_load
+              | None ->
+                  find_path_split_storage_in_node node
             in
             match opt_storage with
             | Some opt_exp ->

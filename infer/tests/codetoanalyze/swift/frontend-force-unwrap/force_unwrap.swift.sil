@@ -71,7 +71,7 @@ define .plain_name = "diamondForceUnwrap" $s5Hello18diamondForceUnwrapyS2iSgF(va
       jmp 8 @[9:11]
       
   #7: @[9:11]
-      _ = __sil_assert_fail(null) @[9:11]
+      _ = $builtins.__swift_optional_force_unwrap_trap(n2) @[9:11]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[9:11]
       
   #8: @[9:3]
