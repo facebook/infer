@@ -578,6 +578,100 @@ and collect_modified_vars (sir : S.t) : IString.Set.t =
       IString.Set.empty
 
 
+(* ---------- Default-argument extraction (for B006) ---------- *)
+
+(* In CPython, default argument values are evaluated at the function-definition site, not in the
+   function body. The frontend emits them in the enclosing __module_body__ as the second argument
+   of py_make_function. To reason about defaults we recover, for each parameter that has one, the
+   (self-contained) default expression. *)
+
+let is_module_body_name name = String.is_substring name ~substring:"__module_body__"
+
+(* Map each SSA ident defined in [proc] to its defining expression. *)
+let build_ident_def_map (proc : T.ProcDesc.t) : T.Exp.t T.Ident.Map.t =
+  List.fold proc.nodes ~init:T.Ident.Map.empty ~f:(fun acc (node : T.Node.t) ->
+      List.fold node.instrs ~init:acc ~f:(fun acc (instr : T.Instr.t) ->
+          match instr with Let {id= Some id; exp; _} -> T.Ident.Map.add id exp acc | _ -> acc ) )
+
+
+(* Inline SSA idents to obtain a self-contained expression (module body is acyclic SSA). *)
+let rec resolve_exp (defs : T.Exp.t T.Ident.Map.t) (exp : T.Exp.t) : T.Exp.t =
+  match exp with
+  | Var id -> (
+    match T.Ident.Map.find_opt id defs with Some e -> resolve_exp defs e | None -> exp )
+  | Load {exp; typ} ->
+      Load {exp= resolve_exp defs exp; typ}
+  | Field {exp; field} ->
+      Field {exp= resolve_exp defs exp; field}
+  | Index (e1, e2) ->
+      Index (resolve_exp defs e1, resolve_exp defs e2)
+  | Call {proc; args; kind; caller_ret_annots} ->
+      Call {proc; args= List.map args ~f:(resolve_exp defs); kind; caller_ret_annots}
+  | Apply {closure; args} ->
+      Apply {closure= resolve_exp defs closure; args= List.map args ~f:(resolve_exp defs)}
+  | If {cond; then_; else_} ->
+      If {cond; then_= resolve_exp defs then_; else_= resolve_exp defs else_}
+  | Closure _ | Const _ | Lvar _ | Typ _ ->
+      exp
+
+
+(* Find the defaults tuple passed to py_make_function for [target] in the module body. *)
+let find_make_function_defaults (module_body : T.ProcDesc.t) (target : T.QualifiedProcName.t)
+    (defs : T.Exp.t T.Ident.Map.t) : T.Exp.t list option =
+  List.find_map module_body.nodes ~f:(fun (node : T.Node.t) ->
+      List.find_map node.instrs ~f:(fun (instr : T.Instr.t) ->
+          match instr with
+          | Let {exp= Call {proc; args}; _} when is_py_builtin proc "py_make_function" -> (
+            match args with
+            | closure_arg :: defaults_arg :: _ -> (
+              match resolve_exp defs closure_arg with
+              | Closure {proc= cproc} when T.QualifiedProcName.equal cproc target -> (
+                match resolve_exp defs defaults_arg with
+                | Call {proc= tproc; args= elems} when is_py_builtin tproc "py_build_tuple" ->
+                    Some elems
+                | _ ->
+                    Some [] )
+              | _ ->
+                  None )
+            | _ ->
+                None )
+          | _ ->
+              None ) )
+
+
+(* For procedure [proc] in [module_], return the map (parameter name -> default expression),
+   restricted to parameters that actually have a default. Positional defaults bind to the last
+   parameters. *)
+let extract_defaults (module_ : T.Module.t) (proc : T.ProcDesc.t) : T.Exp.t StringMap.t =
+  let params =
+    List.find_map proc.procdecl.attributes ~f:T.Attr.find_python_args |> Option.value ~default:[]
+  in
+  let target = proc.procdecl.qualified_name in
+  let module_body =
+    List.find_map module_.decls ~f:(function
+      | T.Module.Proc p
+        when is_module_body_name (qualified_procname_to_string p.procdecl.qualified_name) ->
+          Some p
+      | _ ->
+          None )
+  in
+  match module_body with
+  | None ->
+      StringMap.empty
+  | Some mb -> (
+      let defs = build_ident_def_map mb in
+      match find_make_function_defaults mb target defs with
+      | None | Some [] ->
+          StringMap.empty
+      | Some defaults ->
+          let n = List.length params and k = List.length defaults in
+          if k > n then StringMap.empty
+          else
+            let with_defaults = List.drop params (n - k) in
+            List.fold2_exn with_defaults defaults ~init:StringMap.empty ~f:(fun acc name d ->
+                StringMap.add name d acc ) )
+
+
 (* ---------- Main entry point ---------- *)
 
 let convert_proc ?(theta_counter = ref 0) cc (proc : T.ProcDesc.t) :
