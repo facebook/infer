@@ -307,7 +307,7 @@ let block_holder captured_env : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
-  let holder_class = Typ.SwiftClass (SwiftClassName.of_string "__infer_closure_holder") in
+  let holder_class = Typ.SwiftClass SwiftClassName.swift_alloc_unknown_type in
   (* `~is_weak:false` makes the field a Strong access so PulseRefCounting
      classifies the holder->captured_env edge correctly when the
      retain-cycle checker traverses it; otherwise the field has no weak/
