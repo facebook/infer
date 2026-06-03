@@ -146,7 +146,7 @@ define .plain_name = "testDynamicPropagation" $s5Hello22testDynamicPropagation3o
       jmp 31 @[13:0]
       
   #30: @[13:0]
-      _ = __sil_assert_fail(null) @[13:0]
+      _ = $builtins.__swift_optional_force_unwrap_trap(n35) @[13:0]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[13:0]
       
   #31: @[16:35]

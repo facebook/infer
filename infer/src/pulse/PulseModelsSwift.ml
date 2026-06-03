@@ -493,13 +493,16 @@ let swift_optional_force_unwrap_trap opt : unit DSL.model_monad =
   let open DSL.Syntax in
   let* {path; location} = get_data in
   let* marker = fresh () in
-  let* () = store_field ~deref:false ~ref:opt ModeledField.swift_optional_marker marker in
   let* () = and_eq_int marker IntLit.zero in
   let* () =
     exec_command (fun astate ->
         PulseOperations.invalidate path UntraceableAccess location OptionalEmpty marker astate )
   in
-  check_valid (ValueOrigin.unknown marker)
+  let* () = check_valid (ValueOrigin.unknown marker) in
+  (* Best-effort: attach the marker to [opt] for nicer trace context.  Last so a path where
+     [opt] is constrained to be null (e.g. the raw-pointer null-check shape from an [as!] cast)
+     doesn't get killed before the report fires. *)
+  store_field ~deref:false ~ref:opt ModeledField.swift_optional_marker marker
 
 
 let builtins_matcher builtin (func_args : ValueOrigin.t FuncArg.t list) :

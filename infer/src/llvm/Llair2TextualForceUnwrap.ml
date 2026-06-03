@@ -292,18 +292,33 @@ let rewrite_proc (proc : Textual.ProcDesc.t) : Textual.ProcDesc.t =
               | _ ->
                   None
             in
-            (* Fallback for the symbolic-discriminator path: when the
-               discriminator is the tag arg of a
-               [__swift_optional_init_{sg,tuple}(opt, tag)] call in this same
-               block, the path-split model has already pruned on [tag] so the
-               trap branch IS the [.none] branch.  Recover the Optional
-               storage from the init call's first arg. *)
-            let opt_storage =
+            (* Fallback for the symbolic-discriminator path: when the discriminator is the tag arg
+               of a [__swift_optional_init_{sg,tuple}(opt, tag)] call in this same block, the
+               path-split model has already pruned on [tag] so the trap branch IS the [.none]
+               branch.  Recover the Optional storage from the init call's first arg. *)
+            let from_path_split =
               match from_field_load with
               | Some _ ->
                   from_field_load
               | None ->
                   find_path_split_storage_in_node node
+            in
+            (* Last-resort fallback for the raw-pointer null-check shape ([as!] force-cast over a
+               dynamic-dispatch result; user-written [precondition(x != nil)] patterns).  The
+               discriminator is [cast(<int>, X)] with no surrounding Optional storage in the SIL --
+               [X] is the raw pointer being checked.  The trap model's [check_valid] fires
+               [SWIFT_NPE] regardless of [opt]'s validity, so passing [X] works even when [X] is
+               constrained to be null. *)
+            let from_raw_pointer =
+              match disc_exp with
+              | Textual.Exp.Call {proc; args= [_typ; (Textual.Exp.Var _ as raw)]; _}
+                when Textual.ProcDecl.is_cast_builtin proc ->
+                  Some raw
+              | _ ->
+                  None
+            in
+            let opt_storage =
+              match from_path_split with Some _ -> from_path_split | None -> from_raw_pointer
             in
             match opt_storage with
             | Some opt_exp ->
