@@ -2004,7 +2004,7 @@ let translate ~source_file ~(module_state : ModuleState.t) : Textual.Module.t =
   let decls = procs @ proc_descs @ globals @ structs in
   let attrs = [Textual.Attr.mk_source_language lang] in
   let sourcefile = Textual.SourceFile.create source_file in
-  Textual.Module.{attrs; decls; sourcefile}
+  Llair2TextualForceUnwrap.rewrite_module Textual.Module.{attrs; decls; sourcefile}
 
 
 (* Translate just the compiler-generated procedures (Swift partial-apply thunks,
@@ -2044,4 +2044,4 @@ let translate_compiler_generated ~bitcode_id ~(module_state : ModuleState.t) :
     let decls = procs @ proc_descs @ globals @ structs in
     let attrs = [Textual.Attr.mk_source_language lang] in
     let sourcefile = Textual.SourceFile.create (SourceFile.to_string sourcefile_for_proc_state) in
-    Some Textual.Module.{attrs; decls; sourcefile}
+    Some (Llair2TextualForceUnwrap.rewrite_module Textual.Module.{attrs; decls; sourcefile})

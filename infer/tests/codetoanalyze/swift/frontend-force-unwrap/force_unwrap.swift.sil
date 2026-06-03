@@ -22,7 +22,7 @@ define .plain_name = "constFoldedForceUnwrap" $s5Hello22constFoldedForceUnwrapSi
       n2 = load &x @[13:0]
       n4:*__infer_swift_type<TSiSg> = load &x @[13:0]
       _ = $builtins.__swift_optional_init_none(n4) @[13:0]
-      _ = __sil_assert_fail(null) @[15:11]
+      _ = $builtins.__swift_optional_force_unwrap_trap(n4) @[15:11]
       jmp $ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret @[15:11]
       
   #$ss17_assertionFailure__4file4line5flagss5NeverOs12StaticStringV_A2HSus6UInt32VtF::void::ret: @[13:0]

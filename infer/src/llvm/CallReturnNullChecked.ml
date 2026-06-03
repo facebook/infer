@@ -54,13 +54,16 @@ let node_is_trivial_else node =
          match instr with Store _ | Call _ -> false | _ -> true )
 
 
-(* Force-unwrap / fatalError lowers to [__assert_fail] / [_assertionFailure]. *)
+(* Force-unwrap / fatalError lowers to [__assert_fail] / [_assertionFailure]; the
+   [Llair2TextualForceUnwrap] pass rewrites the recognised force-unwrap trap call to
+   [__swift_optional_force_unwrap_trap], which is equally fatal for this analysis. *)
 let is_fatal_callee (callee : Exp.t) =
   match callee with
   | Const (Const.Cfun pname) ->
       let name = Procname.to_string pname in
       String.is_substring name ~substring:"__assert_fail"
       || String.is_substring name ~substring:"assertionFailure"
+      || String.is_substring name ~substring:"__swift_optional_force_unwrap_trap"
   | _ ->
       false
 
