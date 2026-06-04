@@ -1197,6 +1197,14 @@ end = struct
     r
 
 
+  (* TODO: should we check if [φ ⊢ atom] (i.e. whether [φ ∧ ¬atom] is unsat) in [normalize_atom],
+       or is [normalize_atom] already just as strong? *)
+  let normalize_atom phi (atom : Atom.t) =
+    let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
+    Debug.p "Normalizer.normalize_atom atom'=%a@\n" (Atom.pp_with_pp_var Var.pp) atom' ;
+    Atom.eval ~is_neq_zero:(is_neq_zero phi) atom'
+
+
   (** add [l1 = l2] to [phi.linear_eqs] and resolves consequences of that new fact
 
       [l1] and [l2] should have already been through {!normalize_linear} (w.r.t. [phi]) *)
@@ -1903,14 +1911,6 @@ end = struct
 
 
   and and_var_linarith v l (phi, new_eqs) = solve_lin_eq new_eqs l (LinArith.of_var v) phi
-
-  (* TODO: should we check if [φ ⊢ atom] (i.e. whether [φ ∧ ¬atom] is unsat) in [normalize_atom],
-       or is [normalize_atom] already just as strong? *)
-  and normalize_atom phi (atom : Atom.t) =
-    let atom' = Atom.map_terms atom ~f:(fun t -> normalize_var_const phi t) in
-    Debug.p "Normalizer.normalize_atom atom'=%a@\n" (Atom.pp_with_pp_var Var.pp) atom' ;
-    Atom.eval ~is_neq_zero:(is_neq_zero phi) atom'
-
 
   (** return [(new_linear_equalities, phi ∧ atom)], where [new_linear_equalities] is [true] if
       [phi.linear_eqs] was changed as a result *)
