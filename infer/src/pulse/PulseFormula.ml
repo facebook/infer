@@ -323,8 +323,6 @@ let prune_atom ~depth atom (formula, new_eqs) ~add_term =
     Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms ~orig_atom:atom
       ~add_term
   in
-  (* Sticking this call in slightly hopefully *)
-  let* phi, new_eqs = Formula.Normalizer.propagate_atom atom (phi, new_eqs) in
   let conditions =
     List.fold normalized_atoms ~init:formula.conditions ~f:(fun conditions atom ->
         add_condition (atom, depth) conditions )

@@ -408,6 +408,11 @@ let get_as_var_neq_zero = function
       (* match [x≠0] or [x>0]. Note that [0] is represented as a [Const _] when normalized but
            variables will usually (always?) be represented by [LinArith _] in normalized formulas *)
       Term.get_as_var t
+  | Equal (Linear l, Var x) | Equal (Var x, Linear l) ->
+      let l_c = LinArith.get_constant_part l in
+      if Q.(l_c > zero) && PolyVariantEqual.(LinArith.classify_minimized_maximized l = `Minimized)
+      then Some x
+      else None
   | _ ->
       None
 

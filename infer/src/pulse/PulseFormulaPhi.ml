@@ -1068,6 +1068,8 @@ module Normalizer : sig
   (** use with the result of {!normalize_atom} in place of {!and_atom} *)
 
   val and_atom : Atom.t -> t * new_eqs -> add_term:bool -> (t * new_eqs) SatUnsat.t
+  (** [and_atom atom (phi, new_eqs)] is
+      [SatUnsat.(normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs))] *)
 
   val and_dynamic_type :
     Var.t -> Typ.t -> ?source_file:SourceFile.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
@@ -1075,11 +1077,6 @@ module Normalizer : sig
   val and_below : Var.t -> Typ.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
   val and_notbelow : Var.t -> Typ.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
-
-  val propagate_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
-
-  (** [and_atom atom (phi, new_eqs)] is
-      [SatUnsat.(normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs))] *)
 end = struct
   (* Use the monadic notations when normalizing formulas. *)
   open SatUnsat.Import
@@ -1104,7 +1101,7 @@ end = struct
     let base_fuel = 10 in
     try f ~fuel:base_fuel
     with OutOfFuel (phi, new_eqs, why) ->
-      L.d_printfln "%t" why ;
+      L.d_printfln "RAN OUT OF FUEL: %t" why ;
       Sat (phi, new_eqs)
 
 
@@ -1790,7 +1787,9 @@ end = struct
 
 
   and propagate_term_eq ~fuel tx x phi_new_eqs =
-    propagate_in_term_eqs ~fuel tx x phi_new_eqs >>= propagate_in_atoms ~fuel tx x
+    propagate_in_term_eqs ~fuel tx x phi_new_eqs
+    >>= propagate_in_atoms ~fuel tx x
+    >>= propagate_atom (Atom.Equal (tx, Var x))
 
 
   and propagate_linear_eq ~fuel x lx phi_new_eqs =
