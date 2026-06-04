@@ -1172,6 +1172,31 @@ end = struct
         new_eqs
 
 
+  let propagate_in_const_eqs x y (phi, new_eqs) =
+    Debug.p "[propagate_in_const_eqs] %a=%a@\n  @[" Var.pp x Var.pp y ;
+    let r =
+      match Var.Map.find_opt x phi.const_eqs with
+      | None ->
+          Sat (phi, new_eqs)
+      | Some c -> (
+          let phi = remove_const_eq x phi in
+          match Var.Map.find_opt y phi.const_eqs with
+          | None ->
+              let+ phi = add_const_eq y c phi in
+              (phi, new_eqs)
+          | Some c' ->
+              if Term.equal_syntax c c' then Sat (phi, new_eqs)
+              else
+                let reason () =
+                  F.asprintf "propagating equates distinct const terms %a and %a" (Term.pp Var.pp) c
+                    (Term.pp Var.pp) c'
+                in
+                Unsat {reason; source= __POS__} )
+    in
+    Debug.p "@]end [propagate_in_const_eqs] %a=%a@\n" Var.pp x Var.pp y ;
+    r
+
+
   (** add [l1 = l2] to [phi.linear_eqs] and resolves consequences of that new fact
 
       [l1] and [l2] should have already been through {!normalize_linear} (w.r.t. [phi]) *)
@@ -1401,31 +1426,6 @@ end = struct
         (* substitute [v_old -> v_new] in [phi.linear_eqs] while maintaining the [linear_eqs]
              invariant *)
         propagate_var_eq ~fuel v_old v_new (phi, new_eqs)
-
-
-  and propagate_in_const_eqs x y (phi, new_eqs) =
-    Debug.p "[propagate_in_const_eqs] %a=%a@\n  @[" Var.pp x Var.pp y ;
-    let r =
-      match Var.Map.find_opt x phi.const_eqs with
-      | None ->
-          Sat (phi, new_eqs)
-      | Some c -> (
-          let phi = remove_const_eq x phi in
-          match Var.Map.find_opt y phi.const_eqs with
-          | None ->
-              let+ phi = add_const_eq y c phi in
-              (phi, new_eqs)
-          | Some c' ->
-              if Term.equal_syntax c c' then Sat (phi, new_eqs)
-              else
-                let reason () =
-                  F.asprintf "propagating equates distinct const terms %a and %a" (Term.pp Var.pp) c
-                    (Term.pp Var.pp) c'
-                in
-                Unsat {reason; source= __POS__} )
-    in
-    Debug.p "@]end [propagate_in_const_eqs] %a=%a@\n" Var.pp x Var.pp y ;
-    r
 
 
   and propagate_in_linear_eqs_domain ~fuel v_old l (phi, new_eqs) =
