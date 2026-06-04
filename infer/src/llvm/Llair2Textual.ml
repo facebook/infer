@@ -1767,6 +1767,55 @@ let update_formals_list formals_list formals_map =
   List.map ~f:update_formal formals_list
 
 
+let loc_file lang (loc : Llair.Loc.t) =
+  if Textual.Lang.is_c lang then loc.Llair.Loc.dir ^ "/" ^ loc.Llair.Loc.file
+  else loc.Llair.Loc.file
+
+
+(* A real source file, i.e. not empty and not the [<compiler-generated>] DI marker. *)
+let is_real_di_file f =
+  (not (String.is_empty f)) && not (String.equal f compiler_generated_di_marker)
+
+
+(* Distinct real source files on the function body's instruction [DILocation]s (whole CFG). *)
+let func_instr_files lang (func : Llair.func) =
+  Llair.Func.fold_cfg func IString.Set.empty ~f:(fun block acc ->
+      StdUtils.iarray_to_list block.Llair.cmnd
+      |> List.fold ~init:acc ~f:(fun acc inst ->
+             let f = loc_file lang (Inst.loc inst) in
+             if is_real_di_file f then IString.Set.add f acc else acc ) )
+
+
+(* [accessor] for [.get]/[.set]/[.modify] property accessors, [function] otherwise. *)
+let func_flavor func_name =
+  match FuncName.unmangled_name func_name with
+  | Some n
+    when String.is_substring n ~substring:Field.get_suffix
+         || String.is_substring n ~substring:Field.set_suffix
+         || String.is_substring n ~substring:Field.modify_suffix ->
+      "accessor"
+  | _ ->
+      "function"
+
+
+(* Scuba probe (T273760556 / T273770363): the DISubprogram file [should_translate] routes by can be
+   one the body never references, anchoring reports in the wrong file. Fire when it's on no body
+   instruction. *)
+let log_disubprogram_file_mismatch lang func_name (func : Llair.func) =
+  let func_file = loc_file lang func.Llair.loc in
+  if is_real_di_file func_file then
+    let instr_files = func_instr_files lang func in
+    if (not (IString.Set.is_empty instr_files)) && not (IString.Set.mem func_file instr_files) then (
+      StatsLogging.log_count ~label:"swift_disubprogram_file_mismatch" ~value:1 ;
+      StatsLogging.log_message_with_location ~label:"swift_disubprogram_file_mismatch"
+        ~loc:(Format.asprintf "%s:%d" func_file func.Llair.loc.Llair.Loc.line)
+        ~message:
+          (Format.asprintf "proc=%s flavor=%s subprogram=%s:%d instr_files=[%s]"
+             (FuncName.name func_name) (func_flavor func_name) func_file
+             func.Llair.loc.Llair.Loc.line
+             (String.concat ~sep:"," (IString.Set.elements instr_files)) ) )
+
+
 let translate_code ~mode ~sourcefile_for_proc_state ~module_state proc_descs
     (procdecl : Textual.ProcDecl.t) (func_name, func) =
   let ModuleState.{lang; method_class_index; class_files_map} = module_state in
@@ -1775,6 +1824,8 @@ let translate_code ~mode ~sourcefile_for_proc_state ~module_state proc_descs
       (FuncName.unmangled_name func_name)
       (FuncName.name func_name) lang method_class_index class_files_map func.Llair.loc
   in
+  if should_translate && Textual.Lang.is_swift lang then
+    log_disubprogram_file_mismatch lang func_name func ;
   let formals_list = List.map ~f:Var.reg_to_var_name (StdUtils.iarray_to_list func.Llair.formals) in
   let formals_map =
     match procdecl.Textual.ProcDecl.formals_types with
