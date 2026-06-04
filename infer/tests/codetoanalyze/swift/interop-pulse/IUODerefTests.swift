@@ -244,3 +244,32 @@ func guardedUnwrap_good(_ x: Int?) -> Int {
 func interprocGuardedUnwrap_good() {
   _ = guardedUnwrap_good(nil)
 }
+
+// MARK: - Out-of-scope shapes (must NOT fire SWIFT_NPE)
+
+// `try!` of a throwing call is an unhandled-error force-try, not a nil
+// dereference: it lowers to `swift_unexpectedError` on the `error != nil`
+// branch, a different shape from the Optional force-unwrap trap. Pins that the
+// recogniser leaves it alone -- it must not be miscategorised as SWIFT_NPE.
+enum ForceTryError: Error { case boom }
+
+@inline(never)
+func mayThrow(_ shouldThrow: Bool) throws -> Int {
+  if shouldThrow { throw ForceTryError.boom }
+  return 1
+}
+
+func tryForceUnwrap_noSwiftNPE() -> Int {
+  return try! mayThrow(true)
+}
+
+// `.map` / `.flatMap` on an Optional propagate the Optional without
+// force-unwrapping; `??` substitutes a default. None can trap, so none should
+// fire SWIFT_NPE.
+func optionalMap_good(_ x: Int?) -> Int? {
+  return x.map { $0 + 1 }
+}
+
+func optionalFlatMap_good(_ x: Int?) -> Int? {
+  return x.flatMap { Optional($0 + 1) }
+}
