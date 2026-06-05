@@ -1143,6 +1143,18 @@ let thrift_matchers =
         $--> Thrift.field_ref_arrow ~name:field_ref ] )
 
 
+(* A FATAL [android::base::LogMessage]'s destructor aborts via a function-pointer
+   aborter Pulse can't follow, so model the FATAL construction as non-returning to
+   prune the failing branch of [CHECK(x)]. [FATAL] is the last [LogSeverity]
+   enumerator (6); [FATAL_WITHOUT_ABORT] (5) must not match. *)
+let log_message_fatal severity : model =
+  let open PulseModelsDSL.Syntax in
+  let fatal = IntLit.of_int 6 in
+  start_model
+  @@ fun () ->
+  disj [prune_eq_int severity fatal @@> lift_to_monad Basic.early_exit; prune_ne_int severity fatal]
+
+
 let simple_matchers =
   let open ProcnameDispatcher.Call in
   let match_nullable_fn (_tenv, proc_name) _ =
@@ -1151,7 +1163,9 @@ let simple_matchers =
         Str.string_match r s 0 )
   in
   map_matchers @ thrift_matchers
-  @ [ +BuiltinDecl.(match_builtin __builtin_add_overflow)
+  @ [ -"android" &:: "base" &:: "LogMessage" &:: "LogMessage" $ any_arg $+ any_arg $+ any_arg
+      $+ capt_arg_payload $+...$--> log_message_fatal
+    ; +BuiltinDecl.(match_builtin __builtin_add_overflow)
       <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> add_overflow
       |> with_non_disj
     ; +BuiltinDecl.(match_builtin __builtin_mul_overflow)

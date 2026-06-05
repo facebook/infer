@@ -80,10 +80,9 @@ class LogMessage {
           .stream()                                                       \
               << "Check failed: " #x << " "
 
-// FALSE POSITIVE (before the LogMessage FATAL-constructor model): `CHECK` aborts
-// when `p` is null, so `*p` is unreachable with a null `p`, yet Pulse reports
-// COMPARED_TO_NULL_AND_DEREFERENCED here.
-void check_then_deref_good_FP(int* p) {
+// `CHECK` aborts when `p` is null, so `*p` is unreachable with a null `p`. The
+// LogMessage FATAL-constructor model prunes that branch, so Pulse reports nothing.
+void check_then_deref_ok(int* p) {
   CHECK(p != nullptr) << "p must not be null";
   *p = 42;
 }
