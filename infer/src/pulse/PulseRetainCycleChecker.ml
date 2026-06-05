@@ -305,10 +305,25 @@ let captured_env_flags_for_cycle astate (cycle : cycle_data list) =
             acc )
 
 
+(* A retain-cycle participant that is a bare program variable (e.g. [self], or an
+   ObjC notification [observer] token) is decompiled as the *address* of that variable
+   and renders as [&self] / [&observer]. The address-of is an implementation detail
+   here -- the cycle is between the *objects*, not the stack slots -- and it is also
+   inconsistent with how field participants ([self->field]) and ObjC [self] are shown.
+   Append a [Dereference] so it renders as [self] / [observer]. (Same trick the
+   type-recovery fallback in [get_expr_with_fallback] already uses to strip the [&].) *)
+let strip_leading_address_of (expr : DecompilerExpr.t) : DecompilerExpr.t =
+  match expr with
+  | SourceExpr (((DecompilerExpr.PVar _ as base), []), v) ->
+      SourceExpr ((base, [DecompilerExpr.Dereference]), v)
+  | _ ->
+      expr
+
+
 let create_values astate ~captured_env_flags (cycle : cycle_data list) =
   let values : Diagnostic.retain_cycle_data list =
     List.map cycle ~f:(fun {addr} ->
-        let value = get_expr_with_fallback astate addr in
+        let value = get_expr_with_fallback astate addr |> strip_leading_address_of in
         let trace = get_assignment_trace astate addr in
         let location = Option.map ~f:Trace.get_outer_location trace in
         let is_captured_env_of_closure =
