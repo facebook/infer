@@ -127,20 +127,18 @@ func switchSomeBinding_good(api: LegacyAPI) -> Int {
   }
 }
 
-// MARK: - Safe optional access on a proven-[.none] value (FP)
+// MARK: - Safe optional access on a proven-[.none] value (FP regression)
 
 // A callee that provably returns nil, read back through a *safe* unwrap. These
-// are the shapes that dominated the first real-app SWIFT_NPE run: none of them
-// involves an explicit `!`, so none should ever fire SWIFT_NPE. Optional
-// chaining / nil-coalescing are already silent; `guard let` / `if let` followed
-// by a field access on the binding currently FP (the `.none` Optional reaches
-// the safe-unwrap branch). The `_FP` cases are fixed by the follow-up model
-// change; this diff pins the current behaviour.
+// are the shapes that dominated the first real-app SWIFT_NPE run: none involves
+// an explicit `!`, so none must fire any nil-deref issue. Optional chaining /
+// nil-coalescing, and `guard let` / `if let` followed by a field access on the
+// binding, all stay silent now that `.none` construction no longer invalidates
+// the Optional object and the frontend drops the null `.none` payload store.
 struct BoxAdv { let value: Int? }
 func returnsNilBoxAdv() -> BoxAdv? { return nil }
 func returnsNilIntAdv() -> Int? { return nil }
 
-// Optional chaining / nil-coalescing on a proven-`.none`: already silent.
 func optionalChainProvenNil_good() -> Int {
   let b: BoxAdv? = returnsNilBoxAdv()
   return b?.value ?? 0
@@ -151,14 +149,12 @@ func coalesceProvenNil_good() -> Int {
   return x ?? 0
 }
 
-// `guard let` / `if let` then a field access on the binding: currently a
-// spurious SWIFT_NPE on the proven-`.none` value.
-func guardLetProvenNil_good_FP() -> Int {
+func guardLetProvenNil_good() -> Int {
   guard let b = returnsNilBoxAdv() else { return -1 }
   return b.value ?? 0
 }
 
-func ifLetProvenNil_good_FP() -> Int {
+func ifLetProvenNil_good() -> Int {
   if let b = returnsNilBoxAdv(), let v = b.value { return v }
   return 0
 }

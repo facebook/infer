@@ -191,6 +191,49 @@ let is_init_none_call (proc : Textual.QualifiedProcName.t) =
       .name
 
 
+(* In-block peephole: drop the literal-null payload store the frontend emits for a
+   [.none] construction.  A [.none] payload is meaningless, but the frontend writes
+   it as [store <opt>.field_0 <- 0]; on a by-value return that null is marshaled
+   into the [.some] branch of safe-unwrap lowering ([guard let] / [if let]) and
+   dereferenced there (a spurious NULLPTR_DEREFERENCE).  Removing the store leaves
+   the payload symbolic, so the (infeasible) [.some] branch reads an unknown value
+   and stays silent.  [.none]-ness is still recorded by [__swift_optional_init_none]. *)
+let drop_none_payload_store_in_node (node : Textual.Node.t) =
+  (* SSA id -> local var, for [Load {id; exp= Lvar v}] in this node. *)
+  let var_of_id id =
+    List.find_map node.instrs ~f:(function
+      | Textual.Instr.Load {id= lid; exp= Textual.Exp.Lvar v; _} when Textual.Ident.equal lid id ->
+          Some v
+      | _ ->
+          None )
+  in
+  (* Locals constructed as [.none] in this node. *)
+  let none_vars =
+    List.filter_map node.instrs ~f:(function
+      | Textual.Instr.Let {exp= Textual.Exp.Call {proc; args= [Textual.Exp.Var id]; _}; _}
+        when is_init_none_call proc ->
+          var_of_id id
+      | _ ->
+          None )
+  in
+  if List.is_empty none_vars then node
+  else
+    let is_none_payload_store instr =
+      match (instr : Textual.Instr.t) with
+      | Store
+          { exp1= Textual.Exp.Field {exp= Textual.Exp.Var base; field= {name= {value; _}; _}}
+          ; exp2
+          ; _ }
+        when (String.equal value "field_0" || String.equal value "__infer_tuple_field_0")
+             && Textual.Exp.is_zero_exp exp2 ->
+          Option.value_map (var_of_id base) ~default:false ~f:(fun v ->
+              List.mem none_vars v ~equal:Textual.VarName.equal )
+      | _ ->
+          false
+    in
+    {node with instrs= List.filter node.instrs ~f:(fun i -> not (is_none_payload_store i))}
+
+
 (* [True] iff [node] terminates at an unreachable block (directly or via
    a single Jump to a block whose only terminator is Unreachable). *)
 let node_terminates_at_unreachable ~nodes_by_label (node : Textual.Node.t) =
@@ -337,6 +380,7 @@ let rewrite_proc (proc : Textual.ProcDesc.t) : Textual.ProcDesc.t =
             node )
   in
   let new_nodes = List.map new_nodes ~f:(rewrite_init_none_trap_in_node ~nodes_by_label) in
+  let new_nodes = List.map new_nodes ~f:drop_none_payload_store_in_node in
   if phys_equal new_nodes nodes then proc else {proc with nodes= new_nodes}
 
 

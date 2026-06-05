@@ -390,16 +390,18 @@ let objc_alloc_from_swift size_exp class_ptr () : unit DSL.model_monad =
   assign_ret allocated_obj
 
 
-(* Swift [Optional<T>] construction: [.none] invalidates the marker, [.some]
-   stores the payload. *)
+(* Swift [Optional<T>] construction: [.none] pins the marker to [0], [.some]
+   stores the payload and a positive marker.  [.none] records none-ness as a
+   marker *value* (not an object invalidation): safe-unwrap lowering -- [guard
+   let] / [if let] / optional chaining -- reads the optional's fields without
+   going through an unwrap model, so an invalidation here would fire on those
+   safe reads (SWIFT_NPE FP).  The unwrap models below raise on a provably-[0]
+   marker instead. *)
 let swift_optional_init_none opt : unit DSL.model_monad =
   let open DSL.Syntax in
-  let* {path; location} = get_data in
   let* marker = fresh () in
   let* () = store_field ~deref:false ~ref:opt ModeledField.swift_optional_marker marker in
-  let* () = and_eq_int marker IntLit.zero in
-  exec_command (fun astate ->
-      PulseOperations.invalidate path UntraceableAccess location OptionalEmpty marker astate )
+  and_eq_int marker IntLit.zero
 
 
 let swift_optional_init_some opt payload : unit DSL.model_monad =
@@ -441,46 +443,64 @@ let swift_optional_init_sg opt tag = swift_optional_init_path_split opt tag IntL
 
 let swift_optional_init_tuple opt tag = swift_optional_init_path_split opt tag IntLit.zero
 
+(* Raise [OPTIONAL_EMPTY_ACCESS] (remapped to SWIFT_NPE for Swift procnames) by
+   invalidating [marker] and immediately accessing it.  Shared by the unwrap
+   models so the empty access happens at the unwrap site, not at construction. *)
+let swift_optional_report_empty marker : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* {path; location} = get_data in
+  let* () =
+    exec_command (fun astate ->
+        PulseOperations.invalidate path UntraceableAccess location OptionalEmpty marker astate )
+  in
+  check_valid (ValueOrigin.unknown marker)
+
+
 (* Swift [Optional<T>.unsafelyUnwrapped]: indirect-return ABI
-   [getter(ret_buf, type_meta, receiver)].  Fires SWIFT_NPE on [.none],
-   writes the payload to [ret_buf.field_0] (the field's enclosing class is
-   the Optional's payload type, recovered from [type_meta]'s dynamic type by
-   stripping the [Sg] Optional suffix) and also assigns the payload to the
-   SIL return slot.  Both writes matter: Swift's indirect-return ABI uses
-   ret_buf for value-typed payloads, while reference-typed unwraps may
-   consume the SIL return value. *)
+   [getter(ret_buf, type_meta, receiver)].  Fires SWIFT_NPE on a provably-[.none]
+   receiver (marker pinned to [0]; symbolic markers from unknown optionals stay
+   silent), writes the payload to [ret_buf.field_0] (the field's enclosing class
+   is the Optional's payload type, recovered from [type_meta]'s dynamic type by
+   stripping the [Sg] Optional suffix) and also assigns the payload to the SIL
+   return slot.  Both writes matter: Swift's indirect-return ABI uses ret_buf for
+   value-typed payloads, while reference-typed unwraps may consume the SIL return
+   value. *)
 let swift_unsafely_unwrapped ret_buf type_meta receiver : unit DSL.model_monad =
   let open DSL.Syntax in
   let* marker =
     load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_marker)
   in
-  let* () = check_valid (ValueOrigin.unknown marker) in
-  let* payload =
-    load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_value)
-  in
-  let* type_meta_data = get_dynamic_type ~ask_specialization:false type_meta in
-  let payload_class =
-    match type_meta_data with
-    | Some {Formula.typ= {desc= Typ.Tstruct (Typ.SwiftClass swift_name)}} ->
-        (* The type_meta arg is allocated with the Optional class [TSiSg / TSSSg / ...];
-           strip the trailing [Sg] to get the payload's class [TSi / TSS / ...]. *)
-        let mangled = SwiftClassName.mangled swift_name in
-        if String.is_suffix mangled ~suffix:"Sg" then
-          let payload_mangled = String.drop_suffix mangled 2 in
-          Some (Typ.SwiftClass (SwiftClassName.of_string payload_mangled))
-        else None
-    | _ ->
-        None
-  in
-  let* () =
-    match payload_class with
-    | Some payload_class ->
-        let field_0 = Fieldname.make payload_class "field_0" in
-        store_field ~ref:ret_buf field_0 payload
-    | None ->
-        ret ()
-  in
-  assign_ret payload
+  let* marker_const = as_constant_int marker in
+  match marker_const with
+  | Some 0 ->
+      swift_optional_report_empty marker
+  | _ ->
+      let* payload =
+        load_access ~deref:false receiver (FieldAccess ModeledField.swift_optional_value)
+      in
+      let* type_meta_data = get_dynamic_type ~ask_specialization:false type_meta in
+      let payload_class =
+        match type_meta_data with
+        | Some {Formula.typ= {desc= Typ.Tstruct (Typ.SwiftClass swift_name)}} ->
+            (* The type_meta arg is allocated with the Optional class [TSiSg / TSSSg / ...];
+               strip the trailing [Sg] to get the payload's class [TSi / TSS / ...]. *)
+            let mangled = SwiftClassName.mangled swift_name in
+            if String.is_suffix mangled ~suffix:"Sg" then
+              let payload_mangled = String.drop_suffix mangled 2 in
+              Some (Typ.SwiftClass (SwiftClassName.of_string payload_mangled))
+            else None
+        | _ ->
+            None
+      in
+      let* () =
+        match payload_class with
+        | Some payload_class ->
+            let field_0 = Fieldname.make payload_class "field_0" in
+            store_field ~ref:ret_buf field_0 payload
+        | None ->
+            ret ()
+      in
+      assign_ret payload
 
 
 (* Swift Optional force-unwrap (postfix [!]) trap: emitted by the frontend on
@@ -491,14 +511,9 @@ let swift_unsafely_unwrapped ret_buf type_meta receiver : unit DSL.model_monad =
    procnames. *)
 let swift_optional_force_unwrap_trap opt : unit DSL.model_monad =
   let open DSL.Syntax in
-  let* {path; location} = get_data in
   let* marker = fresh () in
   let* () = and_eq_int marker IntLit.zero in
-  let* () =
-    exec_command (fun astate ->
-        PulseOperations.invalidate path UntraceableAccess location OptionalEmpty marker astate )
-  in
-  let* () = check_valid (ValueOrigin.unknown marker) in
+  let* () = swift_optional_report_empty marker in
   (* Best-effort: attach the marker to [opt] for nicer trace context.  Last so a path where
      [opt] is constrained to be null (e.g. the raw-pointer null-check shape from an [as!] cast)
      doesn't get killed before the report fires. *)
