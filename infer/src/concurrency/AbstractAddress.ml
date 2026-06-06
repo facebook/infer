@@ -109,7 +109,7 @@ let pp_with_base pp_base fmt (base, accesses) =
   pp_rev_accesses fmt (List.rev accesses)
 
 
-(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparision
+(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparison
  * as we cannot add that ignore there due to issues with Siof
  * similar hack to D51588007 *)
 module SVar = struct

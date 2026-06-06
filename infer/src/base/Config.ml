@@ -441,7 +441,7 @@ let exe_usage =
 (* HOWTO define a new command line and config file option.
 
    1. Add an entry in the following let...and...and... binding.  See the documentation in
-      [CommandLineOption.mli], and use the existing options as a guide.  Preferably the identifer
+      [CommandLineOption.mli], and use the existing options as a guide.  Preferably the identifier
       and long option name are the same modulo underscores versus hyphens.
 
       E.g. [and new_option = CLOpt.mk_bool ~long:"new-option"]
