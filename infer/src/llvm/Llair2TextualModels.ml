@@ -645,6 +645,8 @@ let try_rewrite_call_to_instrs ~proc_state ~f_to_textual_exp ~f_add_deref ~loc ~
            [swift_weak_assign; swift_weak_init]
            proc.Textual.QualifiedProcName.name ~equal:Textual.ProcName.equal ->
       let instrs2, arg2_deref = f_add_deref ~proc_state arg2 loc in
+      (* a weak-init in a closure body is a weak capture ([weak self]) *)
+      proc_state.ProcState.captures_self_weakly <- true ;
       Some (Textual.Instr.Store {exp1= arg1; typ= None; exp2= arg2_deref; loc} :: instrs2)
   (* 3. Protocol Witness Optional Deinit Copy *)
   | Textual.Exp.Call {proc}, [exp; ptr]

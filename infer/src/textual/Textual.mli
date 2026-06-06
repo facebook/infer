@@ -209,6 +209,8 @@ module Attr : sig
 
   val is_closure_wrapper : t -> bool
 
+  val is_weak_self_capture : t -> bool
+
   val is_hack_wrapper : t -> bool
 
   val is_final : t -> bool
@@ -248,6 +250,8 @@ module Attr : sig
   val mk_async : t
 
   val mk_closure_wrapper : t
+
+  val mk_weak_self_capture : t
 
   val mk_trait : t
 

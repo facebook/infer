@@ -287,6 +287,21 @@ let metadata_equals arg1 arg2 () : unit DSL.model_monad =
       assign_ret unknown_bool
 
 
+(* Whether the closure weak-captures self ([weak self]). The callback handed to
+   [register_closure_holder] is usually a partial-apply forwarder whose mangled name is the real
+   body's name + [TA]; strip that suffix so we look up the body's cached attribute. *)
+let closure_captures_self_weakly mangled =
+  let s = Mangled.to_string mangled in
+  let body = Option.value (String.chop_suffix s ~suffix:"TA") ~default:s in
+  match
+    IRAttributes.load (Procname.Swift (SwiftProcname.mk_function (Mangled.from_string body)))
+  with
+  | Some attrs ->
+      attrs.ProcAttributes.swift_captures_self_weakly
+  | None ->
+      false
+
+
 (* Model the "framework registers a handler" shape: a function takes a
    closure (split by Swift's calling convention into a function-pointer
    and its captured-environment) and returns an opaque holder that
@@ -297,13 +312,22 @@ let metadata_equals arg1 arg2 () : unit DSL.model_monad =
    the holder->captured_env edge, so retain cycles closing through the
    captured `self` are missed. The body mirrors [PulseModelsObjC.block_holder]
    (intentionally duplicated: matchers and bodies are colocated per
-   Pulse's per-language module convention). *)
-let register_closure_holder _callback captured_env : model =
+   Pulse's per-language module convention). The captured-env edge is made weak when the
+   callback weak-captures self ([weak self]), otherwise a spurious retain cycle is reported. *)
+let register_closure_holder callback captured_env : model =
   let open DSL.Syntax in
   start_model
   @@ fun () ->
+  let* callback_dyn = get_dynamic_type ~ask_specialization:true callback in
+  let captures_self_weakly =
+    match callback_dyn with
+    | Some {Formula.typ= {desc= Typ.Tstruct (SwiftClosure csig)}} ->
+        closure_captures_self_weakly csig
+    | _ ->
+        false
+  in
   let holder_class = Typ.SwiftClass SwiftClassName.swift_alloc_unknown_type in
-  let field = Fieldname.make ~is_weak:false holder_class "captured_env" in
+  let field = Fieldname.make ~is_weak:captures_self_weakly holder_class "captured_env" in
   let* holder = fresh () in
   let* () = and_positive holder in
   let* () = allocation SwiftAlloc holder in

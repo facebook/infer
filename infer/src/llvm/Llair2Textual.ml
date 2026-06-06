@@ -1870,7 +1870,12 @@ let translate_code ~mode ~sourcefile_for_proc_state ~module_state proc_descs
     Option.map procdecl.formals_types ~f:(fun formals_types ->
         update_formals_types params_types formals_types )
   in
-  let procdecl = {procdecl with result_type; formals_types} in
+  let attributes =
+    if proc_state.ProcState.captures_self_weakly then
+      Textual.Attr.mk_weak_self_capture :: procdecl.Textual.ProcDecl.attributes
+    else procdecl.Textual.ProcDecl.attributes
+  in
+  let procdecl = {procdecl with result_type; formals_types; attributes} in
   let is_deinit () = Option.exists (FuncName.unmangled_name func_name) ~f:(String.equal "deinit") in
   if is_undefined func || (not should_translate) || (Textual.Lang.is_swift lang && is_deinit ())
   then Textual.Module.Procdecl procdecl :: proc_descs

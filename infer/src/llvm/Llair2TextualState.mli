@@ -122,6 +122,8 @@ module ProcState : sig
     ; mutable selector_map: string Textual.Ident.Map.t
     ; mutable string_map: string Textual.Ident.Map.t
     ; mutable last_string_added: string option
+    ; mutable captures_self_weakly: bool
+          (* the proc weak-initialises a captured value ([weak self] capture) *)
     ; mutable class_type_map: Textual.TypeName.t VarMap.t
     ; inferred_types: Textual.Typ.t Hashtbl.M(Int).t (* Map of Reg.id -> Typ.t *)
     ; nullability_hint_msg_sends: (int, unit) Hashtbl.t

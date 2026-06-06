@@ -562,6 +562,10 @@ module Attr = struct
     String.equal name "closure_wrapper" && List.is_empty values
 
 
+  let is_weak_self_capture {name; values} =
+    String.equal name "weak_self_capture" && List.is_empty values
+
+
   let is_const {name; values} = String.equal name "constant" && List.is_empty values
 
   let is_curry {name; values} = String.equal name "curry" && List.is_empty values
@@ -589,6 +593,8 @@ module Attr = struct
   let mk_async = mk "async"
 
   let mk_closure_wrapper = mk "closure_wrapper"
+
+  let mk_weak_self_capture = mk "weak_self_capture"
 
   let ptr_lvalue_reference = mk "lvalue_reference"
 

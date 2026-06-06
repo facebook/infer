@@ -147,6 +147,8 @@ module ProcState = struct
     ; mutable selector_map: string Textual.Ident.Map.t
     ; mutable string_map: string Textual.Ident.Map.t
     ; mutable last_string_added: string option
+    ; mutable captures_self_weakly: bool
+          (* the proc weak-initialises a captured value ([weak self] capture) *)
     ; mutable class_type_map: Textual.TypeName.t VarMap.t
     ; inferred_types: Textual.Typ.t Hashtbl.M(Int).t (* Map of Reg.id -> Typ.t *)
     ; nullability_hint_msg_sends: (int, unit) Hashtbl.t
@@ -179,6 +181,7 @@ module ProcState = struct
     ; selector_map= Textual.Ident.Map.empty
     ; string_map= Textual.Ident.Map.empty
     ; last_string_added= None
+    ; captures_self_weakly= false
     ; class_type_map= VarMap.empty
     ; inferred_types
     ; nullability_hint_msg_sends
@@ -439,6 +442,7 @@ use the substitution in the code later on. *)
     ; selector_map= Textual.Ident.Map.empty
     ; string_map= Textual.Ident.Map.empty
     ; last_string_added= None
+    ; captures_self_weakly= false
     ; class_type_map= VarMap.empty
     ; inferred_types= Hashtbl.create (module Int)
     ; nullability_hint_msg_sends= Hashtbl.create (module Int)

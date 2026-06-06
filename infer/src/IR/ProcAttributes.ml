@@ -105,6 +105,7 @@ type t =
   ; is_csharp_synchronized_method: bool  (** the procedure is a C# synchronized method *)
   ; is_async: bool
   ; is_closure_wrapper: bool
+  ; swift_captures_self_weakly: bool
   ; is_hack_wrapper: bool
   ; block_as_arg_attributes: block_as_arg_attributes option
         (** Present if the procedure is an Objective-C block that has been passed to a given method
@@ -195,6 +196,7 @@ let default translation_unit proc_name =
   ; is_csharp_synchronized_method= false
   ; is_async= false
   ; is_closure_wrapper= false
+  ; swift_captures_self_weakly= false
   ; is_hack_wrapper= false
   ; block_as_arg_attributes= None
   ; is_no_return= false
@@ -248,6 +250,7 @@ let pp f
      ; is_csharp_synchronized_method
      ; is_async
      ; is_closure_wrapper
+     ; swift_captures_self_weakly
      ; is_hack_wrapper
      ; block_as_arg_attributes
      ; is_no_return
@@ -315,6 +318,8 @@ let pp f
     is_csharp_synchronized_method f () ;
   pp_bool_default ~default:default.is_async "is_async" is_async f () ;
   pp_bool_default ~default:default.is_closure_wrapper "is_closure_wrapper" is_closure_wrapper f () ;
+  pp_bool_default ~default:default.swift_captures_self_weakly "swift_captures_self_weakly"
+    swift_captures_self_weakly f () ;
   pp_bool_default ~default:default.is_hack_wrapper "is_hack_wrapper" is_hack_wrapper f () ;
   if
     not
