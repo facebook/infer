@@ -30,7 +30,7 @@ module DefaultCallPrinter : CallPrinter
 module type TraceElem = sig
   type elem_t
 
-  (** An [elem] which occured at [loc], after the chain of steps (usually calls) in [trace]. *)
+  (** An [elem] which occurred at [loc], after the chain of steps (usually calls) in [trace]. *)
   type t = private {elem: elem_t; loc: Location.t; trace: CallSite.t list}
 
   (** Both [pp] and [describe] simply call the same function on the trace element. *)

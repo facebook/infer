@@ -46,7 +46,7 @@ type t = private
   ; visibility: visibility
   ; user_documentation: string option
   ; mutable default_severity: severity
-        (** used for documentation but can be overriden at report time *)
+        (** used for documentation but can be overridden at report time *)
   ; mutable enabled: bool
   ; mutable hum: string }
 [@@deriving compare]

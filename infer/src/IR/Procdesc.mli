@@ -310,7 +310,7 @@ val iter_instrs : (Node.t -> Sil.instr -> unit) -> t -> unit
 
 val replace_instrs : t -> f:(Node.t -> Sil.instr -> Sil.instr) -> bool
 (** Map and replace the instructions to be executed. Returns true if at least one substitution
-    occured. *)
+    occurred. *)
 
 val replace_instrs_using_context :
      t
@@ -319,7 +319,7 @@ val replace_instrs_using_context :
   -> context_at_node:(Node.t -> 'a)
   -> bool
 (** Map and replace the instructions to be executed using a context that we built with previous
-    instructions in the node. Returns true if at least one substitution occured. *)
+    instructions in the node. Returns true if at least one substitution occurred. *)
 
 val replace_instrs_by_using_context :
      t

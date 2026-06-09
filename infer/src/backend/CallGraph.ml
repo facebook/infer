@@ -112,7 +112,7 @@ let add_edge ({node_map} as graph) pname ~successor:successor_pname =
   let id = get_or_set_id graph pname in
   let successor = get_or_set_id graph successor_pname in
   let node = get_or_init_node node_map id pname in
-  (* initialize successor node if it isn't already initalized *)
+  (* initialize successor node if it isn't already initialized *)
   get_or_init_node node_map successor successor_pname |> ignore ;
   Node.add_successor node successor
 

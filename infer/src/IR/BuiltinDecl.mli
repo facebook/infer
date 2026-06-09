@@ -115,7 +115,7 @@ val __builtin_cxx_co_return : Procname.t
 val __builtin_cxx_co_await : Procname.t
 
 val __get_lazy_class : t
-(** returns the a LazyClass representation of its arguement (a type name). A LazyClass represents a
+(** returns the a LazyClass representation of its argument (a type name). A LazyClass represents a
     class that we know the name of but don't necessarily know if the class has been defined
     somewhere. *)
 
