@@ -39,6 +39,25 @@ let parse_mangled_identifier_core mangled =
       parse 0 "" 0 )
 
 
+(** A function-local or private nominal type carries a *local discriminator* [L<disc>] (where
+    [<disc>] is the anonymous [_] or a positional number) right before its kind char, so e.g. a
+    class declared inside a function mangles with suffix [L_C] rather than [C]. Strip that leading
+    discriminator so the bare kind char is left for the nominal-instance suffix check. [L] is the
+    Swift ABI's local-discriminator introducer specifically, so this never strips a
+    metadata/function marker (those are [M]/[W]/[X]/[T]-led). *)
+let strip_local_discriminator suffix =
+  match String.chop_prefix suffix ~prefix:"L" with
+  | None ->
+      suffix
+  | Some rest ->
+      let rest = String.chop_prefix_if_exists rest ~prefix:"_" in
+      let first_nondigit =
+        String.lfindi rest ~f:(fun _ c -> not (Char.is_digit c))
+        |> Option.value ~default:(String.length rest)
+      in
+      String.drop_prefix rest first_nondigit
+
+
 (** Generalized heuristic to extract the plain class name from a Swift mangled name. It finds the
     *last* length-prefixed string in the mangling. *)
 let demangle_swift_class_name (mangled : string) : string =
@@ -59,7 +78,9 @@ let demangle_swift_class_name (mangled : string) : string =
       (* Extract whatever is left in the string after our parsed name *)
       let suffix = String.sub mangled ~pos:last_end ~len:(String.length mangled - last_end) in
       let clean_suffix =
-        String.chop_suffix_if_exists suffix ~suffix:"*" |> String.chop_suffix_if_exists ~suffix:"D"
+        String.chop_suffix_if_exists suffix ~suffix:"*"
+        |> String.chop_suffix_if_exists ~suffix:"D"
+        |> strip_local_discriminator
       in
       (* In the Swift ABI, after the length-prefixed identifier, the mangler appends a type kind.
          If the string represents metadata, functions, or coroutines, it will have a complex
