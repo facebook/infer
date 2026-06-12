@@ -436,7 +436,6 @@ let%expect_test "box_memoryleak" =
     |}]
 
 
-(* TODO: Support for precise box drops will be added in the next commit *)
 let%expect_test "box_use_after_free" =
   let source =
     {|
@@ -458,4 +457,57 @@ let%expect_test "box_use_after_free" =
        --start-from=crate::main"
     source ;
   [%expect
-    {| Test failed: expression [&x_2:*int] has type *int, while a pointer of struct type was expected |}]
+    {|
+    .source_language = "Rust"
+
+    type alloc::alloc::Global = {}
+
+    type core::marker::PhantomData::<i32> = {}
+
+    type core::ptr::non_null::NonNull::<i32> = {pointer: *int}
+
+    type core::ptr::unique::Unique::<i32> = {pointer: *void; _marker: core::marker::PhantomData::<i32>}
+
+    define dummy::main() : void {
+      local var_0: void, ptr_1: *int, x_2: *int, var_3: *int, var_4: *int, ub_5: int, var_6: *int
+      #node_0:
+          store &var_0 <- null:void
+          n0 = __sil_boxnew(50)
+          store &x_2 <- n0:*int
+          jmp node_2
+          .handlers node_1
+
+      #node_1:
+          throw "UnwindResume"
+
+      #node_2:
+          n1:*void = load &x_2
+          store &var_6 <- __sil_cast(<*int>, n1):*int
+          n2:*int = load &var_6
+          store &var_4 <- n2:*int
+          n3:*int = load &var_4
+          store &var_3 <- n3:*int
+          n4:*int = load &var_3
+          store &ptr_1 <- n4:*int
+          n5:*int = load &x_2
+          n6 = __sil_free(n5)
+          jmp node_3
+          .handlers node_4
+
+      #node_3:
+          n7:*int = load &ptr_1
+          n8:int = load n7
+          store &ub_5 <- n8:int
+          store &var_0 <- null:void
+          n9:void = load &var_0
+          ret n9
+
+      #node_4:
+          throw "UnwindResume"
+
+    }
+
+    declare alloc::alloc::Global::{TraitImpl@1}::drop_in_place(*alloc::alloc::Global) : void
+
+    declare alloc::boxed::Box::{TraitImpl@2}::drop_in_place::<i32, alloc::alloc::Global>(**int) : void
+    |}]
