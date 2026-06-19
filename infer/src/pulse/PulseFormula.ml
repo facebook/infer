@@ -319,8 +319,8 @@ let prune_atom ~depth atom (formula, new_eqs) ~add_term =
   Debug.p "prune atom %a in %a@\n" (Atom.pp_with_pp_var Var.pp) atom pp formula ;
   let* normalized_atoms = Formula.Normalizer.normalize_atom formula.phi atom in
   let* phi, new_eqs =
-    Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms
-      ~orig_atom:[atom] ~add_term
+    Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms ~orig_atom:atom
+      ~add_term
   in
   (* Sticking this call in slightly hopefully *)
   let* phi, new_eqs = Formula.Normalizer.propagate_atom atom (phi, new_eqs) in

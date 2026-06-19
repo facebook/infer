@@ -268,7 +268,7 @@ module Normalizer : sig
   val normalize_atom : t -> Atom.t -> Atom.t list SatUnsat.t
 
   val and_normalized_atoms :
-    t * new_eqs -> Atom.t list -> orig_atom:Atom.t list -> add_term:bool -> (t * new_eqs) SatUnsat.t
+    t * new_eqs -> Atom.t list -> orig_atom:Atom.t -> add_term:bool -> (t * new_eqs) SatUnsat.t
   (** use with the result of {!normalize_atom} in place of {!and_atom} *)
 
   val and_atom : Atom.t -> t * new_eqs -> add_term:bool -> (t * new_eqs) SatUnsat.t

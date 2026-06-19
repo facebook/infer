@@ -1064,7 +1064,7 @@ module Normalizer : sig
   val normalize_atom : t -> Atom.t -> Atom.t list SatUnsat.t
 
   val and_normalized_atoms :
-    t * new_eqs -> Atom.t list -> orig_atom:Atom.t list -> add_term:bool -> (t * new_eqs) SatUnsat.t
+    t * new_eqs -> Atom.t list -> orig_atom:Atom.t -> add_term:bool -> (t * new_eqs) SatUnsat.t
   (** use with the result of {!normalize_atom} in place of {!and_atom} *)
 
   val and_atom : Atom.t -> t * new_eqs -> add_term:bool -> (t * new_eqs) SatUnsat.t
@@ -1631,11 +1631,9 @@ end = struct
                                 let* phi, new_eqs = and_below var typ (phi, new_eqs) in
                                 if not nullable then (
                                   Debug.p "adding %a not equal to zero" Var.pp var ;
-                                  let* atoms =
-                                    Atom.eval ~is_neq_zero:(is_neq_zero phi)
-                                      (NotEqual (Var var, Term.zero))
-                                  in
-                                  and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                  let atom = Atom.NotEqual (Var var, Term.zero) in
+                                  let* atoms = Atom.eval ~is_neq_zero:(is_neq_zero phi) atom in
+                                  and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atom
                                     ~add_term:true
                                   >>| snd )
                                 else Sat (phi, new_eqs) )
@@ -1651,11 +1649,9 @@ end = struct
                                 Debug.p "prop in term_eq adding notbelow@\n" ;
                                 let* phi, new_eqs = and_notbelow var typ (phi, new_eqs) in
                                 if nullable then
-                                  let* atoms =
-                                    Atom.eval ~is_neq_zero:(is_neq_zero phi)
-                                      (NotEqual (Var var, Term.zero))
-                                  in
-                                  and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                  let atom = Atom.NotEqual (Var var, Term.zero) in
+                                  let* atoms = Atom.eval ~is_neq_zero:(is_neq_zero phi) atom in
+                                  and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atom
                                     ~add_term:true
                                   >>| snd
                                 else Sat (phi, new_eqs) )
@@ -1667,9 +1663,9 @@ end = struct
                               Sat (phi, new_eqs)
                         in
                         (* Now check if the new equality on [x] introduced contradictions in [t=x] or new atoms *)
+                        let atom = Atom.Equal (t, Term.simplify_linear tx) in
                         let* atoms_opt =
-                          Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                            (Equal (t, Term.simplify_linear tx))
+                          Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi) atom
                         in
                         match atoms_opt with
                         | None ->
@@ -1685,8 +1681,7 @@ end = struct
                             Debug.p "Found new atoms %a@\n"
                               (Pp.seq ~sep:"," (Atom.pp_with_pp_var Var.pp))
                               atoms ;
-                            and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
-                              ~add_term:true
+                            and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atom ~add_term:true
                             >>| snd )
                     | Domain | DomainAndRange -> (
                         let* phi, new_eqs = phi_new_eqs_sat in
@@ -1730,16 +1725,16 @@ end = struct
                         | None -> (
                             (* resolve whether the term is some atoms in disguise *)
                             let ty = normalize_var_const phi (Var y) in
+                            let atom = Atom.Equal (t', ty) in
                             let* atoms_opt =
-                              Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                                (Equal (t', ty))
+                              Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi) atom
                             in
                             match atoms_opt with
                             | Some atoms ->
                                 Debug.p "adding atoms %a instead of term_eq@\n"
                                   (Pp.seq ~sep:"," (Atom.pp_with_pp_var Var.pp))
                                   atoms ;
-                                and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                                and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atom
                                   ~add_term:true
                                 >>| snd
                             | None -> (
@@ -1839,11 +1834,9 @@ end = struct
                           let* phi, new_eqs =
                             if not nullable then (
                               Debug.p "also adding greater than zero" ;
-                              let* atoms =
-                                Atom.eval ~is_neq_zero:(is_neq_zero phi)
-                                  (LessThan (Term.zero, Var var))
-                              in
-                              and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms
+                              let atom = Atom.LessThan (Term.zero, Var var) in
+                              let* atoms = Atom.eval ~is_neq_zero:(is_neq_zero phi) atom in
+                              and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atom
                                 ~add_term:true
                               >>| snd )
                             else Sat (phi, new_eqs)
@@ -1852,10 +1845,10 @@ end = struct
                       | None ->
                           Sat (phi, new_eqs)
                     in
+                    let atom = Atom.Equal (t, Var v) in
                     let* atoms_opt =
                       (* TODO: double-check eval_with_normalized_terms does the intended thing here *)
-                      Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi)
-                        (Equal (t, Var v))
+                      Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi) atom
                     in
                     match atoms_opt with
                     | None ->
@@ -1864,7 +1857,7 @@ end = struct
                         Debug.p "Found new atoms thanks to %a≠0: [%a]@\n" Var.pp v
                           (Pp.seq ~sep:"," (Atom.pp_with_pp_var Var.pp))
                           atoms ;
-                        and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms ~add_term:true
+                        and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atom ~add_term:true
                         >>| snd ) )
               in_term_eqs (Sat phi_new_eqs) )
 
@@ -1952,7 +1945,7 @@ end = struct
   and and_normalized_atoms (phi, new_eqs) atoms ~orig_atom ~add_term =
     let upd_phi =
       if add_term && Config.pulse_experimental_infinite_loop_checker then
-        and_termcond_atoms phi orig_atom
+        and_termcond_atoms phi [orig_atom]
       else phi
     in
     SatUnsat.list_fold atoms
@@ -1963,7 +1956,7 @@ end = struct
 
 
   and and_atom atom (phi, new_eqs) ~add_term =
-    normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs) ~orig_atom:[atom] ~add_term
+    normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs) ~orig_atom:atom ~add_term
 
 
   and and_var_is_zero v (phi, neweqs) =
@@ -2002,14 +1995,13 @@ end = struct
       normalize_var_const phi (Term.Var v') |> Atom.eval_term ~is_neq_zero:(is_neq_zero phi)
     in
     let* phi, new_eqs =
-      let* atoms_opt =
-        Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi) (Equal (t', t_v))
-      in
+      let atom = Atom.Equal (t', t_v) in
+      let* atoms_opt = Atom.eval_with_normalized_terms ~is_neq_zero:(is_neq_zero phi) atom in
       match atoms_opt with
       | None ->
           Sat (phi, new_eqs)
       | Some atoms ->
-          and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atoms ~add_term:true >>| snd
+          and_normalized_atoms (phi, new_eqs) atoms ~orig_atom:atom ~add_term:true >>| snd
     in
     solve_normalized_term_eq ~fuel new_eqs t' v' phi
 
