@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "infer"
-version: "1.2.0"
+version: "1.3.0"
 synopsis: "A multi-language static analyzer"
 maintainer: "the infer team"
 authors: "Meta"
@@ -47,7 +47,7 @@ depends: [
   "cppo" {= "1.8.0"}
   "csexp" {= "1.5.2"}
   "ctypes" {= "0.23.0"}
-  "dune" {= "3.17.2"}
+  "dune" {= "3.23.1"}
   "dune-configurator" {= "3.18.2"}
   "easy-format" {= "1.3.4"}
   "easy_logging" {= "0.8.2"}
@@ -139,7 +139,7 @@ depends: [
   "ppx_yojson_conv_lib" {= "v0.17.0"}
   "ppxlib" {= "0.35.0"}
   "ppxlib_jane" {= "v0.17.2"}
-  "pyml" {= "20220905"}
+  "pyml" {= "20250807"}
   "re" {= "1.12.0"}
   "react" {= "1.2.2"}
   "result" {= "1.5"}
@@ -152,16 +152,17 @@ depends: [
   "spawn" {= "v0.17.0"}
   "splittable_random" {= "v0.17.0"}
   "sqlite3" {= "5.3.1"}
+  "stdcompat" {= "21.1"}
   "stdio" {= "v0.17.0"}
   "stdlib-shims" {= "0.3.0"}
   "tdigest" {= "2.2.1"}
   "time_now" {= "v0.17.0"}
-  "topkg" {= "1.0.8"}
+  "topkg" {= "1.1.1"}
   "trie" {= "1.0.0"}
   "typerep" {= "v0.17.1"}
   "uchar" {= "0.0.2"}
   "unionFind" {= "20250818"}
-  "utop" {= "2.16.0" & with-test}
+  "utop" {= "2.17.0" & with-test}
   "uucp" {= "16.0.0"}
   "uuseg" {= "16.0.0"}
   "uutf" {= "1.0.4"}
