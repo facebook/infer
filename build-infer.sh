@@ -293,6 +293,8 @@ if [ "$BUILD_PYTHON" == "no" ]; then
 fi
 if [ "$BUILD_RUST" == "no" ]; then
   CONFIGURE_PREPEND_OPTS+=" --disable-rust-analyzers"
+else
+  CONFIGURE_PREPEND_OPTS+=" --enable-rust-analyzers"
 fi
 if [ "$BUILD_SWIFT" == "no" ]; then
   CONFIGURE_PREPEND_OPTS+=" --disable-swift-analyzers"
