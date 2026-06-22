@@ -1482,7 +1482,7 @@ let xlate_instr :
       let num_actuals = num_actuals instr lltyp llcallee in
       let fname = Llvm.value_name llcallee in
       let unmangled_name = get_unmangled_name llcallee in
-      let name_segs = String.split_on_char fname ~by:'.' in
+      let name_segs = String.split_on_char fname ~sep:'.' in
       let skip msg =
         if StringS.add ignored_callees fname then (
           Logging.debug Capture Verbose "ignoring uninterpreted %s %s at %a" msg fname Loc.pp loc ;
@@ -1562,7 +1562,7 @@ let xlate_instr :
       let num_actuals = num_actuals instr lltyp llcallee in
       let fname = Llvm.value_name llcallee in
       let unmangled_name = get_unmangled_name llcallee in
-      let name_segs = String.split_on_char fname ~by:'.' in
+      let name_segs = String.split_on_char fname ~sep:'.' in
       let return_blk = Llvm.get_normal_dest instr in
       let unwind_blk = Llvm.get_unwind_dest instr in
       (* builtins *)

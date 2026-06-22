@@ -249,8 +249,13 @@ install_opam_deps () {
 # regardless of the LLVM toolchain used to provide the LLVM libraries, we need our own LLVM OCaml
 # bindings to be installed
 setup_local_opam_repo () {
-    opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository 2>/dev/null \
-    || opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
+    # `opam repo set-url` only refreshes the URL of an existing repo definition; it
+    # does NOT select the repo for the current switch. A freshly created switch (e.g.
+    # after an OCaml upgrade) would therefore never see the local LLVM packages and
+    # `opam install llvm.<version>` would fail. So always `opam repo add` as well to
+    # make sure the repo is selected for the current switch (it is idempotent).
+    opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository 2>/dev/null || true
+    opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
 }
 
 echo "initializing opam... " >&2

@@ -27,6 +27,7 @@ let destruct_stats_field_type ~loc pld_type =
   | Ptyp_variant _
   | Ptyp_poly _
   | Ptyp_package _
+  | Ptyp_open _
   | Ptyp_extension _ ->
       Error
         (Location.error_extensionf ~loc

@@ -63,6 +63,7 @@ let hash_normalize_of_core_type ~loc ct =
   | Ptyp_variant _
   | Ptyp_poly _
   | Ptyp_package _
+  | Ptyp_open _
   | Ptyp_extension _ ->
       raise
         (BadType
