@@ -22,6 +22,11 @@ let rec mk_test_fork_proof test =
 
 let () =
   let open OUnit2 in
+  (* OUnit's default runner forks worker processes to run tests in parallel. On platforms where
+     [fork(2)] without [exec] is unsafe (macOS, Windows -- the same condition as [Config.unix_fork]),
+     the forked workers crash (e.g. SIGBUS), so fall back to the sequential in-process runner there.
+     [run_test_tt_main] reads [OUNIT_RUNNER] from the environment when it builds its configuration. *)
+  if not Config.unix_fork then IUnix.putenv ~key:"OUNIT_RUNNER" ~data:"sequential" ;
   let tests =
     (* OUnit runs tests in parallel using fork(2) *)
     List.map ~f:mk_test_fork_proof

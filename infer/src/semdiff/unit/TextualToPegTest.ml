@@ -954,21 +954,21 @@ def f(x):
                          @None
                          ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l))))  [let]
         θ_state_0 = (@theta_0
-                         @state0
-                         (@heap
-                             ($builtins.py_call
-                                 @theta:state:0
-                                 ($builtins.py_load_global
-                                     @theta:state:0
-                                     (@str print)
-                                     (@load (@lvar globals)))
-                                 @None
-                                 ($builtins.py_next_iter
-                                     @theta:state:0
-                                     ($builtins.py_get_iter @state0 @param:l)))))  [theta_close]
+                        @state0
+                        (@heap
+                            ($builtins.py_call
+                                @theta:state:0
+                                ($builtins.py_load_global
+                                    @theta:state:0
+                                    (@str print)
+                                    (@load (@lvar globals)))
+                                @None
+                                ($builtins.py_next_iter
+                                    @theta:state:0
+                                    ($builtins.py_get_iter @state0 @param:l)))))  [theta_close]
         θ_i_0 = (@theta_0
-                     @undef
-                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
+                    @undef
+                    ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
         PEG: (@ret @theta:state:0 @None)
         |}]
 
@@ -1291,30 +1291,30 @@ def f(l, c):
                          @None
                          ($builtins.py_make_int 2)))  [let]
         θ_state_0 = (@theta_0
-                         @state0
-                         (@phi
-                             ($builtins.py_bool @param:c)
-                             (@heap
-                                 ($builtins.py_call
-                                     @theta:state:0
-                                     ($builtins.py_load_global
-                                         @theta:state:0
-                                         (@str print)
-                                         (@load (@lvar globals)))
-                                     @None
-                                     ($builtins.py_make_int 1)))
-                             (@heap
-                                 ($builtins.py_call
-                                     @theta:state:0
-                                     ($builtins.py_load_global
-                                         @theta:state:0
-                                         (@str print)
-                                         (@load (@lvar globals)))
-                                     @None
-                                     ($builtins.py_make_int 2)))))  [theta_close]
+                        @state0
+                        (@phi
+                            ($builtins.py_bool @param:c)
+                            (@heap
+                                ($builtins.py_call
+                                    @theta:state:0
+                                    ($builtins.py_load_global
+                                        @theta:state:0
+                                        (@str print)
+                                        (@load (@lvar globals)))
+                                    @None
+                                    ($builtins.py_make_int 1)))
+                            (@heap
+                                ($builtins.py_call
+                                    @theta:state:0
+                                    ($builtins.py_load_global
+                                        @theta:state:0
+                                        (@str print)
+                                        (@load (@lvar globals)))
+                                    @None
+                                    ($builtins.py_make_int 2)))))  [theta_close]
         θ_i_0 = (@theta_0
-                     @undef
-                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
+                    @undef
+                    ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:l)))  [theta_close]
 
         === PEG ===
         (@ret @theta:state:0 @None)

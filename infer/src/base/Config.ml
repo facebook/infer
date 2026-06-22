@@ -408,7 +408,10 @@ let implicit_sdk_root =
 
 (** whether the infer executable looks like we are just running infer unit tests *)
 let is_running_unit_test =
+  (* dune <3.18 named the runner [inline_test_runner...]; newer dune uses
+     [inline-test-runner.exe], so match both spellings *)
   String.is_substring ~substring:"inline_test_runner" exe_basename
+  || String.is_substring ~substring:"inline-test-runner" exe_basename
   || String.is_substring ~substring:"inferunit" exe_basename
   || String.equal "run.exe" exe_basename
   || String.equal "run.bc" exe_basename

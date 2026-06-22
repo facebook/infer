@@ -593,10 +593,7 @@ let%test_module "inequalities" =
       [%expect
         {|
         conditions: {[a1+2] = 2}
-        phi: var_eqs: a1=v6
-             && linear_eqs: a1 = 0 ∧ x = 2
-             && term_eqs: 0=a1∧2=x
-             && intervals: a1=0 ∧ x=2
+        phi: var_eqs: a1=v6 && linear_eqs: a1 = 0 ∧ x = 2 && term_eqs: 0=a1∧2=x && intervals: a1=0 ∧ x=2
         |}]
   end )
 
@@ -878,9 +875,7 @@ let%test_module "modulo" =
       [%expect
         {|
         conditions: (empty)
-        phi: linear_eqs: x = v6-4 ∧ v7 = 0
-             && term_eqs: 0=v7∧[v6-4]=x∧(v6 mod 2)=v7
-             && intervals: v7=0
+        phi: linear_eqs: x = v6-4 ∧ v7 = 0 && term_eqs: 0=v7∧[v6-4]=x∧(v6 mod 2)=v7 && intervals: v7=0
         |}]
 
 
