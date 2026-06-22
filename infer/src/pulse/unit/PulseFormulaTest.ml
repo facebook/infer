@@ -547,7 +547,7 @@ let%test_module "inequalities" =
 
     let%expect_test "simple contradiction" =
       test (x < y && x >= y) ;
-      [%expect {| UNSAT: -a1-1≥0 is false |}]
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: [a1+1] ≤ 0 |}]
 
 
     let%expect_test "add to tableau with pivot" =
@@ -564,7 +564,7 @@ let%test_module "inequalities" =
 
     let%expect_test "add to tableau with pivot then unsat" =
       test (x >= i 0 && y >= i 0 && z >= i 0 && x + y >= i 2 && z - y <= i (-3) && y < i 1) ;
-      [%expect {|UNSAT: tableau|}]
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 0 = [a3+a5+3] |}]
 
 
     let%expect_test "contradiction using pivot" =
@@ -574,7 +574,7 @@ let%test_module "inequalities" =
 
     let%expect_test "constant propagation to tableau" =
       test (x < i 34 && y < i 2 * x && x = i 32 && y = i 64) ;
-      [%expect {|UNSAT: tableau|}]
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 64 = [-a2+63] |}]
 
 
     let%expect_test "tableau simplified away by constant propagation" =
@@ -642,13 +642,13 @@ let%test_module "conjunctive normal form" =
   ( module struct
     let%expect_test _ =
       test (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
-      [%expect {| UNSAT: -a1-1≥0 is false |}]
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 0 ≤ [-a1-1] |}]
 
 
     (* same as above with <> 0 instead of = 1 *)
     let%expect_test _ =
       test (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
-      [%expect {| UNSAT: -a1-1≥0 is false |}]
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 0 ≤ [-a1-1] |}]
 
 
     let%expect_test "(x ≠ 0 ∨ y ≠ 0) && x = 0  => y ≠ 0" =

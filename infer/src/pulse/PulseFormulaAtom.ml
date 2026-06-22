@@ -206,43 +206,55 @@ and get_as_embedded_atoms ~is_neq_zero atom =
       None
 
 
+(* [atom] is [Equal/LessEqual/LessThan/NotEqual (Linear l, Const q)] with [q=0] (usually) *)
+let eval_const_linear_atom atom l q =
+  match (atom, LinArith.classify_minimized_maximized l, LinArith.get_constant_part l) with
+  (* l = q *)
+  | Equal _, `Maximized, q' (* l <= q' *) when Q.(q > q') ->
+      Some False
+  | Equal _, `Minimized, q' (* l >= q' *) when Q.(q < q') ->
+      Some False
+  (* Is l <= q? *)
+  | LessEqual _, `Maximized, q' (* l <= q' *) when Q.(q' <= q) ->
+      Some True
+  | LessEqual _, `Minimized, q' (* l >= q' *) when Q.(q' >= q) ->
+      if Q.(q' > q) then Some False else Some (Atom (Equal (Linear l, Const q)))
+  (* Is l < q? *)
+  | LessThan _, `Maximized, q' (* l <= q' *) when Q.(q' < q) ->
+      Some True
+  | LessThan _, `Minimized, q' (* l >= q' *) when Q.(q' >= q) ->
+      Some False
+  | _ ->
+      None
+
+
 let eval_const_shallow atom =
+  let some_eval_result_of_bool b = Some (eval_result_of_bool b) in
   match atom with
   | LessEqual (Const c1, Const c2) ->
-      Q.leq c1 c2 |> eval_result_of_bool
-  (* [A+c' ≥ c] with [A ≥ 0] (as happens if [l] is restricted and minimized) is always true if [c'
-       ≥ c] *)
-  | LessEqual (Const c, Linear l)
-    when LinArith.is_restricted l && LinArith.is_minimized l
-         && Q.geq (LinArith.get_constant_part l) c ->
-      True
-  (* [A+c' > c] with [A ≥ 0] is always true if [c' > c] *)
-  | LessThan (Const c, Linear l)
-    when LinArith.is_restricted l && LinArith.is_minimized l
-         && Q.gt (LinArith.get_constant_part l) c ->
-      True
-  (* NOTE: the corresponding contradiction cases, eg [A+c' ≤ c], [A ≥ 0], and [c' > c], as well as
-       other more substle reasoning, are handled by the tableau and need not be duplicated here. The
-       [True] cases above are included to avoid cluttering the formula with tautologies as these
-       (in)equalities are added in other parts of the formula than the tableau too otherwise (in
-       particular [linear_eqs] and [term_eqs]), which are not equipped to discover they are
-       trivial. *)
+      Q.leq c1 c2 |> some_eval_result_of_bool
   | LessThan (Const c1, Const c2) ->
-      Q.lt c1 c2 |> eval_result_of_bool
+      Q.lt c1 c2 |> some_eval_result_of_bool
   | Equal (Const c1, Const c2) ->
-      Q.equal c1 c2 |> eval_result_of_bool
+      Q.equal c1 c2 |> some_eval_result_of_bool
   | NotEqual (Const c1, Const c2) ->
-      Q.not_equal c1 c2 |> eval_result_of_bool
+      Q.not_equal c1 c2 |> some_eval_result_of_bool
   | LessEqual (String s1, String s2) ->
-      String.compare s1 s2 <= 0 |> eval_result_of_bool
+      String.compare s1 s2 <= 0 |> some_eval_result_of_bool
   | LessThan (String s1, String s2) ->
-      String.compare s1 s2 < 0 |> eval_result_of_bool
+      String.compare s1 s2 < 0 |> some_eval_result_of_bool
   | Equal (String s1, String s2) ->
-      String.equal s1 s2 |> eval_result_of_bool
+      String.equal s1 s2 |> some_eval_result_of_bool
   | NotEqual (String s1, String s2) ->
-      (not (String.equal s1 s2)) |> eval_result_of_bool
-  | _ ->
-      Atom atom
+      (not (String.equal s1 s2)) |> some_eval_result_of_bool
+  | _ -> (
+    match get_terms atom with
+    | Linear l, Const q ->
+        eval_const_linear_atom atom l q
+    | Const q, Linear l ->
+        eval_const_linear_atom atom (LinArith.minus l) Q.(-q)
+    | _ ->
+        None )
 
 
 let var_terms_to_linear atom =
@@ -285,14 +297,14 @@ let eval_syntactically_equal_terms atom =
 
 let rec eval_with_normalized_terms ~is_neq_zero (atom : t) =
   match eval_const_shallow atom with
-  | True ->
+  | Some True ->
       Sat (Some [])
-  | False ->
+  | Some False ->
       let reason () =
         F.asprintf "UNSAT atom according to eval_const_shallow: %a" (pp_with_pp_var Var.pp) atom
       in
       Unsat {reason; source= __POS__}
-  | Atom atom -> (
+  | (None | Some (Atom _)) as eval_const_shallow_result -> (
     match get_as_linear atom with
     | Some atom' ->
         let+ atoms' = eval_with_normalized_terms ~is_neq_zero atom' in
@@ -309,10 +321,10 @@ let rec eval_with_normalized_terms ~is_neq_zero (atom : t) =
                 (pp_with_pp_var Var.pp) atom
             in
             Unsat {reason; source= __POS__}
-        | Atom _atom ->
+        | Atom _ ->
             (* HACK: [eval_syntactically_equal_terms] return [Atom _] only when it didn't manage
                  to normalize anything *)
-            Sat None )
+            if Option.is_some eval_const_shallow_result then Sat (Some [atom]) else Sat None )
       | Some atoms ->
           Debug.p "Found that %a is equivalent to embedded atoms %a@\n" (pp_with_pp_var Var.pp) atom
             (Pp.seq ~sep:"," (pp_with_pp_var Var.pp))

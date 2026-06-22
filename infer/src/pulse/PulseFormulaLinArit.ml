@@ -224,8 +224,10 @@ let solve_for_unrestricted w l =
 let classify_minimized_maximized (_, vs) =
   let all_pos, all_neg =
     VarMap.fold
-      (fun _ coeff (all_pos, all_neg) ->
-        (Q.(coeff >= zero) && all_pos, Q.(coeff <= zero) && all_neg) )
+      (fun v coeff (all_pos, all_neg) ->
+        let is_restricted = Var.is_restricted v in
+        ( (is_restricted && all_pos && Q.(coeff >= zero))
+        , is_restricted && all_neg && Q.(coeff <= zero) ) )
       vs (true, true)
   in
   match (all_pos, all_neg) with
