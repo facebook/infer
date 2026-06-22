@@ -96,8 +96,12 @@ let mapper =
                 } )
             ; ( Nolabel
               , ( { pexp_desc=
-                      Pexp_fun
-                        (Nolabel, None, {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)}, body)
+                      Pexp_function
+                        ( [ { pparam_desc=
+                                Pparam_val
+                                  (Nolabel, None, {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)}) } ]
+                        , None
+                        , Pfunction_body body )
                   } as arg ) ) ] )
       (* [%dbg] dbg_args (fun () -> body) *)
       | Pexp_apply
@@ -105,8 +109,12 @@ let mapper =
                 Pexp_apply ({pexp_desc= Pexp_extension ({txt= "dbg"; loc}, PStr [])}, dbg_args) }
           , [ ( Nolabel
               , ( { pexp_desc=
-                      Pexp_fun
-                        (Nolabel, None, {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)}, body)
+                      Pexp_function
+                        ( [ { pparam_desc=
+                                Pparam_val
+                                  (Nolabel, None, {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)}) } ]
+                        , None
+                        , Pfunction_body body )
                   } as arg ) ) ] ) ->
           if not !debug then self#expression body
           else

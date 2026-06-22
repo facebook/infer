@@ -40,7 +40,11 @@ let dup_formatter fmt1 fmt2 =
         ; out_spaces=
             (fun n ->
               out_funs1.out_spaces n ;
-              out_funs2.out_spaces n ) } )
+              out_funs2.out_spaces n )
+          (* [out_width] (since OCaml 5.4) measures the display width of a
+             substring; it is a property of the string, not the output, so
+             forwarding to one formatter is enough. *)
+        ; out_width= out_funs1.out_width } )
 
 
 (* can be set up to emit to a file later on *)
@@ -92,7 +96,12 @@ let mk_file_formatter file_fmt category0 =
         out_functions_orig.out_spaces n
       in
       F.formatter_of_out_functions
-        {F.out_string; out_flush= out_functions_orig.out_flush; out_indent; out_newline; out_spaces} )
+        { F.out_string
+        ; out_flush= out_functions_orig.out_flush
+        ; out_indent
+        ; out_newline
+        ; out_spaces
+        ; out_width= out_functions_orig.out_width } )
 
 
 let color_console ?(use_stdout = false) scheme =

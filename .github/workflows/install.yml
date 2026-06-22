@@ -64,7 +64,7 @@ jobs:
           - macOS-latest
           - ubuntu-24.04
         ocaml-compiler:
-          - ocaml-variants.5.3.0+options,ocaml-option-flambda
+          - ocaml-variants.5.4.1+options,ocaml-option-flambda
     runs-on: ${{ matrix.os }}
 
     steps:

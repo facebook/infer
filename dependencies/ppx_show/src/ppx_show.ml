@@ -332,11 +332,17 @@ let pp_of_type_decl ~with_path (td : type_declaration) : value_binding =
         [%e printer]] in
     let printer = Tools.poly_fun_of_type_decl td printer in
     let constraint_ =
-      Ast_helper.Typ.poly (td.ptype_params |> List.map begin
-        fun (ty, _) : string Location.loc ->
-          { loc = ty.ptyp_loc; txt = Tools.var_of_type ty }
-      end)
-        (type_of_type_decl td) in
+      (* OCaml 5.4 forbids an empty explicit universal quantification
+         ([Ptyp_poly ([], _)]), so only wrap in [Typ.poly] when the type
+         actually has parameters. *)
+      let vars =
+        td.ptype_params |> List.map begin
+          fun (ty, _) : string Location.loc ->
+            { loc = ty.ptyp_loc; txt = Tools.var_of_type ty }
+        end in
+      match vars with
+      | [] -> type_of_type_decl td
+      | _ :: _ -> Ast_helper.Typ.poly vars (type_of_type_decl td) in
     Ast_helper.Vb.mk
       ~attrs:[Ast_helper.Attr.mk
         { loc; txt = "ocaml.warning" } (PStr [%str "-39"])]

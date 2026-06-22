@@ -91,7 +91,7 @@ let path_of_type_decl ~path (td : type_declaration) =
   | Some { ptyp_desc = Ptyp_constr ({ txt = lid; _ }, _); _ } ->
     begin match lid with
     | Lident _ -> []
-    | Ldot (lid, _) -> Ocaml_common.Longident.flatten lid
+    | Ldot (lid, _) -> Longident.flatten_exn lid
     | Lapply _ -> assert false
     end
   | _ -> path
