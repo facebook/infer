@@ -199,8 +199,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     keep_ident_counter ~f:(fun () ->
         CAst_utils.get_decl_opt_with_decl_ref decl_ref
         |> Option.iter ~f:(fun decl ->
-               F.translate_one_declaration context.translation_unit_context context.tenv context.cfg
-                 `Translation decl ) )
+            F.translate_one_declaration context.translation_unit_context context.tenv context.cfg
+              `Translation decl ) )
 
 
   let create_var_exp_tmp_var trans_state expr_info ~clang_pointer ~var_name =
@@ -1961,8 +1961,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let this_res_trans_destruct = mk_trans_result (obj_sil, this_qual_type) empty_control in
         get_destructor_decl_ref base
         |> Option.map ~f:(fun base_destructor_decl_ref ->
-               cxx_destructor_call_trans trans_state stmt_info this_res_trans_destruct
-                 base_destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:true ) )
+            cxx_destructor_call_trans trans_state stmt_info this_res_trans_destruct
+              base_destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:true ) )
 
 
   and add_this_instrs_if_result_non_empty res_trans this_res_trans =
@@ -2047,8 +2047,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               let this_res_trans_destruct = mk_trans_result (field_exp, field_typ) empty_control in
               get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
               |> Option.map ~f:(fun destructor_decl_ref ->
-                     cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                       destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false )
+                  cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+                    destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false )
           | _ ->
               assert false )
       in
@@ -2087,8 +2087,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
             get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
             |> Option.map ~f:(fun destructor_decl_ref ->
-                   cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                     destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false ) )
+                cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+                  destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false ) )
       in
       if List.is_empty all_res_trans then None
       else
@@ -4274,9 +4274,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let destruct_res_trans =
           get_destructor_decl_ref deleted_type.Clang_ast_t.qt_type_ptr
           |> Option.map ~f:(fun destructor_decl_ref ->
-                 cxx_destructor_call_trans trans_state_pri destruct_stmt_info
-                   this_res_trans_destruct destructor_decl_ref ~is_injected_destructor:false
-                   ~is_inner_destructor:false )
+              cxx_destructor_call_trans trans_state_pri destruct_stmt_info this_res_trans_destruct
+                destructor_decl_ref ~is_injected_destructor:false ~is_inner_destructor:false )
         in
         result_trans_param :: (Option.to_list destruct_res_trans @ [call_res_trans])
         (* --- END OF DEAD CODE --- *)
@@ -4465,7 +4464,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let args =
       type_info_objc :: (field_exp, void_typ)
       :: Option.value_map ~default:[] res_trans_subexpr ~f:(fun trans_result ->
-             [trans_result.return] )
+          [trans_result.return] )
     in
     let call_instr = Sil.Call ((ret_id, typ), sil_fun, args, sil_loc, CallFlags.default) in
     let res_control = {empty_control with instrs= [call_instr]} in

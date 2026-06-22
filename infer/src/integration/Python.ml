@@ -159,7 +159,7 @@ let process_file ~is_binary file =
     let transformed_textual =
       PyIRTypeInference.gen_module_default_type pyir
       |> Option.value_map ~default:transformed_textual ~f:(fun pyir_type ->
-             PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
+          PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
     in
     if Config.debug_mode then dump_textual_file ~version:2 file transformed_textual ;
     let* cfg, tenv =
@@ -184,9 +184,9 @@ let capture_file ~is_binary file = process_file ~is_binary file
 let write_infer_deps out_dirs =
   ResultsDir.get_path CaptureDependencies
   |> Utils.with_file_out ~f:(fun out_channel ->
-         Array.iter out_dirs ~f:(fun out_dir_opt ->
-             Option.iter out_dir_opt ~f:(fun out_dir ->
-                 Out_channel.output_string out_channel (Printf.sprintf "-\t-\t%s\n" out_dir) ) ) )
+      Array.iter out_dirs ~f:(fun out_dir_opt ->
+          Option.iter out_dir_opt ~f:(fun out_dir ->
+              Out_channel.output_string out_channel (Printf.sprintf "-\t-\t%s\n" out_dir) ) ) )
 
 
 type not_captured_reason = SkippedBlocked | SkippedTooManyImports | Error

@@ -62,12 +62,12 @@ let get_instantiated_cost
       let fun_arg_list = List.map args ~f:(fun (exp, typ) -> {FuncArg.exp; typ; arg_payload= ()}) in
       CostModels.Call.dispatch tenv pname fun_arg_list
       |> Option.value_map ~default:NoModel ~f:(fun model ->
-             let model_env =
-               let node_hash = ProcCfg.InstrNode.hash node in
-               BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv
-                 integer_type_widths inferbo_get_summary
-             in
-             model CostUtils.CostModelEnv.{get_summary; model_env} ~ret inferbo_mem |> get_symbolic )
+          let model_env =
+            let node_hash = ProcCfg.InstrNode.hash node in
+            BufferOverrunUtils.ModelEnv.mk_model_env pname ~node_hash loc tenv integer_type_widths
+              inferbo_get_summary
+          in
+          model CostUtils.CostModelEnv.{get_summary; model_env} ~ret inferbo_mem |> get_symbolic )
 
 
 let prepare_call_args

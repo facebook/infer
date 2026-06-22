@@ -131,12 +131,12 @@ let recreate_hashed_buck_out_path_abs =
     try
       Stdlib.Sys.readdir buck_out_gen_abs
       |> Array.find_map ~f:(fun entry ->
-             let root = buck_out_gen_abs ^/ entry in
-             let full_path = root ^/ path in
-             if ISys.file_exists full_path then (
-               last_matched_hash_path := Some root ;
-               Some full_path )
-             else None )
+          let root = buck_out_gen_abs ^/ entry in
+          let full_path = root ^/ path in
+          if ISys.file_exists full_path then (
+            last_matched_hash_path := Some root ;
+            Some full_path )
+          else None )
     with Sys_error _ -> None
   in
   fun path ->
@@ -176,8 +176,8 @@ let to_string ?(force_relative = false) fname =
          let+ pos = String.substr_index path ~pattern:isysroot_suffix in
          "${XCODE_ISYSROOT}" ^ String.subo ~pos:(pos + String.length isysroot_suffix) path )
         |> IOption.if_none_eval ~f:(fun () ->
-               Option.value_exn
-                 (Utils.filename_to_relative ~force_full_backtrack:true ~root:project_root_real path) )
+            Option.value_exn
+              (Utils.filename_to_relative ~force_full_backtrack:true ~root:project_root_real path) )
       else path
 
 

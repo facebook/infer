@@ -106,12 +106,12 @@ module BoTrace = struct
           false
       | Elem {kind= elem; from} ->
           ( match elem with
-          | Assign locs ->
-              PowLoc.exists_str ~f locs
-          | Parameter l ->
-              Loc.exists_str ~f l
-          | _ ->
-              false )
+            | Assign locs ->
+                PowLoc.exists_str ~f locs
+            | Parameter l ->
+                Loc.exists_str ~f l
+            | _ ->
+                false )
           || helper from
       | Call {caller; callee} ->
           helper caller || helper callee

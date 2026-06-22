@@ -53,19 +53,19 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_pure_by_de
   | IContainer.Singleton node ->
       Procdesc.Node.get_instrs node
       |> Instrs.exists ~f:(function
-           | Sil.Load {id; e= exp_rhs} when equals_var id && is_exp_invariant exp_rhs ->
-               true
-           | Sil.Store {e1= exp_lhs; e2= exp_rhs}
-             when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
-               true
-           | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
-               PurityDomain.is_pure
-                 (get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname)
-               &&
-               (* check if all params are invariant *)
-               List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
-           | _ ->
-               false )
+        | Sil.Load {id; e= exp_rhs} when equals_var id && is_exp_invariant exp_rhs ->
+            true
+        | Sil.Store {e1= exp_lhs; e2= exp_rhs}
+          when Exp.equal exp_lhs (Var.to_exp var) && is_exp_invariant exp_rhs ->
+            true
+        | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) when equals_var id ->
+            PurityDomain.is_pure
+              (get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname)
+            &&
+            (* check if all params are invariant *)
+            List.for_all ~f:(fun (exp, _) -> is_exp_invariant exp) args
+        | _ ->
+            false )
   | _ ->
       false
 
@@ -73,8 +73,8 @@ let is_def_unique_and_satisfy tenv var (loop_nodes : LoopNodes.t) ~is_pure_by_de
 let is_exp_invariant inv_vars invalidated_vars loop_nodes reaching_defs exp =
   Var.get_all_vars_in_exp exp
   |> Sequence.for_all ~f:(fun var ->
-         (not (InvalidatedVars.mem var invalidated_vars))
-         && (InvariantVars.mem var inv_vars || is_defined_outside loop_nodes reaching_defs var) )
+      (not (InvalidatedVars.mem var invalidated_vars))
+      && (InvariantVars.mem var inv_vars || is_defined_outside loop_nodes reaching_defs var) )
 
 
 let get_vars_in_loop loop_nodes =
@@ -125,30 +125,30 @@ let get_ptr_vars_in_defn_path node loop_head var =
         let processed_pairs' = ProcessedPairSet.add (var, node) processed_pairs in
         Var.get_all_vars_in_exp exp_rhs
         |> Sequence.fold ~init ~f:(fun acc rhs_var ->
-               aux node rhs_var processed_pairs' (InvalidatedVars.add rhs_var acc) )
+            aux node rhs_var processed_pairs' (InvalidatedVars.add rhs_var acc) )
       in
       let acc =
         Procdesc.Node.get_instrs node
         |> Instrs.fold ~init:acc ~f:(fun acc instr ->
-               match instr with
-               | Sil.Load {id; e= exp_rhs; typ}
-                 when Var.equal var (Var.of_id id) && is_non_primitive typ ->
-                   invalidate_exp exp_rhs acc
-               | Sil.Store {e1= Exp.Lvar pvar; typ; e2= exp_rhs}
-                 when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
-                   invalidate_exp exp_rhs acc
-               | _ ->
-                   acc )
+            match instr with
+            | Sil.Load {id; e= exp_rhs; typ}
+              when Var.equal var (Var.of_id id) && is_non_primitive typ ->
+                invalidate_exp exp_rhs acc
+            | Sil.Store {e1= Exp.Lvar pvar; typ; e2= exp_rhs}
+              when Var.equal var (Var.of_pvar pvar) && is_non_primitive typ ->
+                invalidate_exp exp_rhs acc
+            | _ ->
+                acc )
       in
       if Procdesc.Node.equal node loop_head then acc
       else
         Procdesc.Node.get_preds node
         |> List.fold_left ~init:acc ~f:(fun acc node_pre ->
-               match Procdesc.Node.get_kind node_pre with
-               | Stmt_node _ ->
-                   aux node_pre var (ProcessedPairSet.add (var, node) processed_pairs) acc
-               | _ ->
-                   acc )
+            match Procdesc.Node.get_kind node_pre with
+            | Stmt_node _ ->
+                aux node_pre var (ProcessedPairSet.add (var, node) processed_pairs) acc
+            | _ ->
+                acc )
   in
   aux node var ProcessedPairSet.empty InvalidatedVars.empty
 
@@ -161,10 +161,10 @@ let get_vars_to_invalidate node loop_head args modified_params invalidated_vars 
         debug "Invalidate %a \n" Exp.pp arg_exp ;
         Var.get_all_vars_in_exp arg_exp
         |> Sequence.fold ~init:acc ~f:(fun acc var ->
-               if is_non_primitive typ then
-                 let dep_vars = get_ptr_vars_in_defn_path node loop_head var in
-                 InvalidatedVars.union dep_vars (InvalidatedVars.add var acc)
-               else acc ) )
+            if is_non_primitive typ then
+              let dep_vars = get_ptr_vars_in_defn_path node loop_head var in
+              InvalidatedVars.union dep_vars (InvalidatedVars.add var acc)
+            else acc ) )
       else acc )
     args
 
@@ -182,14 +182,13 @@ let all_unmodeled_modified tenv loop_nodes ~get_callee_purity =
     (fun node acc ->
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
-             match instr with
-             | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _)
-               when is_not_modeled tenv callee_pname && not (is_pure get_callee_purity callee_pname)
-               ->
-                 debug "Invalidate unmodeled %a \n" Ident.pp id ;
-                 InvalidatedVars.add (Var.of_id id) acc
-             | _ ->
-                 acc ) )
+          match instr with
+          | Sil.Call ((id, _), Const (Cfun callee_pname), _, _, _)
+            when is_not_modeled tenv callee_pname && not (is_pure get_callee_purity callee_pname) ->
+              debug "Invalidate unmodeled %a \n" Ident.pp id ;
+              InvalidatedVars.add (Var.of_id id) acc
+          | _ ->
+              acc ) )
     loop_nodes InvalidatedVars.empty
 
 
@@ -202,29 +201,29 @@ let get_invalidated_vars_in_loop tenv loop_head ~is_pure_by_default ~get_callee_
     (fun node acc ->
       Procdesc.Node.get_instrs node
       |> Instrs.fold ~init:acc ~f:(fun acc instr ->
-             match instr with
-             | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) -> (
-                 let purity = get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname in
-                 PurityDomain.(
-                   match purity with
-                   | Top ->
-                       (* modified global *)
-                       (* if one of the callees modifies a global static
+          match instr with
+          | Sil.Call ((id, _), Const (Cfun callee_pname), args, _, _) -> (
+              let purity = get_purity tenv ~is_pure_by_default ~get_callee_purity callee_pname in
+              PurityDomain.(
+                match purity with
+                | Top ->
+                    (* modified global *)
+                    (* if one of the callees modifies a global static
                           variable, invalidate all unmodeled function calls + args *)
-                       let all_params = PurityDomain.all_params_modified args in
-                       let invalidated_args =
-                         get_vars_to_invalidate node loop_head args all_params
-                           (InvalidatedVars.add (Var.of_id id) acc)
-                       in
-                       InvalidatedVars.union invalidated_args (force all_unmodeled_modified)
-                   | NonTop modified_params ->
-                       if ModifiedParamIndices.is_empty modified_params then (*pure*)
-                         acc
-                       else
-                         get_vars_to_invalidate node loop_head args modified_params
-                           (InvalidatedVars.add (Var.of_id id) acc) ) )
-             | _ ->
-                 acc ) )
+                    let all_params = PurityDomain.all_params_modified args in
+                    let invalidated_args =
+                      get_vars_to_invalidate node loop_head args all_params
+                        (InvalidatedVars.add (Var.of_id id) acc)
+                    in
+                    InvalidatedVars.union invalidated_args (force all_unmodeled_modified)
+                | NonTop modified_params ->
+                    if ModifiedParamIndices.is_empty modified_params then (*pure*)
+                      acc
+                    else
+                      get_vars_to_invalidate node loop_head args modified_params
+                        (InvalidatedVars.add (Var.of_id id) acc) ) )
+          | _ ->
+              acc ) )
     loop_nodes InvalidatedVars.empty
 
 
@@ -242,20 +241,19 @@ let get_inv_vars_in_loop tenv reaching_defs_invariant_map ~is_pure_by_default ~g
       let loop_head_id = Procdesc.Node.get_id loop_head in
       ReachingDefs.extract_post loop_head_id reaching_defs_invariant_map
       |> Option.map ~f:(fun reaching_defs ->
-             ReachingDefs.ReachingDefsMap.find_opt var reaching_defs
-             |> Option.map ~f:(fun def_nodes ->
-                    let in_loop_defs = LoopNodes.inter loop_nodes def_nodes in
-                    (* reaching definition is outside of the loop *)
-                    if LoopNodes.is_empty in_loop_defs then (InvariantVars.add var inv_vars, true)
-                    else if
-                      (* its definition is unique and invariant *)
-                      is_def_unique_and_satisfy tenv var def_nodes ~is_pure_by_default
-                        ~get_callee_purity
-                        (is_exp_invariant inv_vars invalidated_vars loop_nodes reaching_defs)
-                    then (InvariantVars.add var inv_vars, true)
-                    else (inv_vars, false) )
-             |> Option.value (* if a var is not declared, it must be invariant *)
-                  ~default:(inv_vars, false) )
+          ReachingDefs.ReachingDefsMap.find_opt var reaching_defs
+          |> Option.map ~f:(fun def_nodes ->
+              let in_loop_defs = LoopNodes.inter loop_nodes def_nodes in
+              (* reaching definition is outside of the loop *)
+              if LoopNodes.is_empty in_loop_defs then (InvariantVars.add var inv_vars, true)
+              else if
+                (* its definition is unique and invariant *)
+                is_def_unique_and_satisfy tenv var def_nodes ~is_pure_by_default ~get_callee_purity
+                  (is_exp_invariant inv_vars invalidated_vars loop_nodes reaching_defs)
+              then (InvariantVars.add var inv_vars, true)
+              else (inv_vars, false) )
+          |> Option.value (* if a var is not declared, it must be invariant *)
+               ~default:(inv_vars, false) )
       |> Option.value ~default:(inv_vars, false)
   in
   let vars_in_loop = get_vars_in_loop loop_nodes in

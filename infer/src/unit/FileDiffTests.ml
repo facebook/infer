@@ -22,7 +22,7 @@ let test_unixdiff_process_raw_directives_with_valid_input =
   [ ("test_unixdiff_process_raw_directives_1", "UOOU", UnixDiffTest.[Unchanged; Old; Old; Unchanged])
   ; ("test_unixdiff_process_raw_directives_2", "", []) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
+      name >:: create_test test_input expected_output )
 
 
 let test_unixdiff_process_raw_directives_with_invalid_input =
@@ -43,7 +43,7 @@ let test_unixdiff_process_raw_directives_with_invalid_input =
     , " U"
     , Logging.InferUserError "Unexpected char in input sequence. Failed parsing" ) ]
   |> List.map ~f:(fun (name, test_input, expected_exception) ->
-         name >:: create_test test_input expected_exception )
+      name >:: create_test test_input expected_exception )
 
 
 let test_unixdiff_pp =
@@ -57,7 +57,7 @@ let test_unixdiff_pp =
   [ ("test_unixdiff_pp_1", UnixDiffTest.[Unchanged; Old; Old; Unchanged], "UOOU")
   ; ("test_unixdiff_pp_2", [], "") ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
+      name >:: create_test test_input expected_output )
 
 
 module FileDiffTest = FileDiff.VISIBLE_FOR_TESTING_DO_NOT_USE_DIRECTLY
@@ -238,7 +238,7 @@ let test_parse_directives_with_valid_input =
     *)
   ; ("test_parse_directives_with_valid_input_17", o 2 @ n 1 @ u 2, [1]) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
+      name >:: create_test test_input expected_output )
 
 
 let test_parse_unix_diff_with_valid_input =
@@ -253,7 +253,7 @@ let test_parse_unix_diff_with_valid_input =
   in
   [("test_parse_unix_diff_1", "OONUU", [1]); ("test_parse_unix_diff_2", "UOONUONN", [2; 4; 5])]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
+      name >:: create_test test_input expected_output )
 
 
 let tests =

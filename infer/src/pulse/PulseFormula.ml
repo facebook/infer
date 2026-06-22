@@ -111,20 +111,20 @@ module Intervals = struct
     Debug.p "Intervals.incorporate_new_eqs %a@\n" Formula.pp_new_eqs new_eqs ;
     RevList.to_list new_eqs
     |> SatUnsat.list_fold ~init:formula.phi.intervals ~f:(fun intervals new_eq ->
-           Debug.p "intervals incorporating %a@\n" Formula.pp_new_eq new_eq ;
-           match new_eq with
-           | Formula.EqZero v ->
-               Formula.add_interval_ v (CItv.equal_to IntLit.zero) intervals
-           | Formula.Equal (v_old, v_new) -> (
-             match Var.Map.find_opt v_old intervals with
-             | None ->
-                 Sat intervals
-             | Some intv_old ->
-                 Debug.p "found old interval for %a: %a@\n" Var.pp v_old CItv.pp intv_old ;
-                 Var.Map.remove v_old intervals
-                 (* this will take care of taking the intersection of the intervals if [v_new]
+        Debug.p "intervals incorporating %a@\n" Formula.pp_new_eq new_eq ;
+        match new_eq with
+        | Formula.EqZero v ->
+            Formula.add_interval_ v (CItv.equal_to IntLit.zero) intervals
+        | Formula.Equal (v_old, v_new) -> (
+          match Var.Map.find_opt v_old intervals with
+          | None ->
+              Sat intervals
+          | Some intv_old ->
+              Debug.p "found old interval for %a: %a@\n" Var.pp v_old CItv.pp intv_old ;
+              Var.Map.remove v_old intervals
+              (* this will take care of taking the intersection of the intervals if [v_new]
                     already had an interval associated to it too *)
-                 |> Formula.add_interval_ v_new intv_old ) )
+              |> Formula.add_interval_ v_new intv_old ) )
     >>| update_formula formula
 
 
@@ -191,18 +191,18 @@ module Intervals = struct
         let refine v_opt i_better_opt formula_new_eqs =
           Option.both v_opt i_better_opt
           |> Option.fold ~init:(Sat formula_new_eqs) ~f:(fun formula_new_eqs (v, i_better) ->
-                 Debug.p "Refining interval for %a to %a@\n" Var.pp v CItv.pp i_better ;
-                 let* formula, new_eqs = formula_new_eqs in
-                 let* phi = Formula.add_interval v i_better formula.phi in
-                 let* phi, new_eqs =
-                   match Var.Map.find v phi.Formula.intervals |> CItv.to_singleton with
-                   | None ->
-                       Sat (phi, new_eqs)
-                   | Some i ->
-                       Formula.Normalizer.and_var_term v (Term.of_intlit i) (phi, new_eqs)
-                 in
-                 let+ formula = incorporate_new_eqs new_eqs {formula with phi} in
-                 (formula, new_eqs) )
+              Debug.p "Refining interval for %a to %a@\n" Var.pp v CItv.pp i_better ;
+              let* formula, new_eqs = formula_new_eqs in
+              let* phi = Formula.add_interval v i_better formula.phi in
+              let* phi, new_eqs =
+                match Var.Map.find v phi.Formula.intervals |> CItv.to_singleton with
+                | None ->
+                    Sat (phi, new_eqs)
+                | Some i ->
+                    Formula.Normalizer.and_var_term v (Term.of_intlit i) (phi, new_eqs)
+              in
+              let+ formula = incorporate_new_eqs new_eqs {formula with phi} in
+              (formula, new_eqs) )
         in
         let formula =
           if Config.pulse_experimental_infinite_loop_checker then
@@ -410,9 +410,9 @@ module DynamicTypes = struct
           else if
             InstanceOf.is_concrete_or_abstract typ
             && List.exists below ~f:(fun t' ->
-                   InstanceOf.is_concrete_or_abstract t'
-                   && (not (InstanceOf.is_subtype typ t'))
-                   && not (InstanceOf.is_subtype t' typ) )
+                InstanceOf.is_concrete_or_abstract t'
+                && (not (InstanceOf.is_subtype typ t'))
+                && not (InstanceOf.is_subtype t' typ) )
           then (* inconsistent *) if (not nullable) || known_non_zero then Some Term.zero else None
           else None
 
@@ -796,13 +796,13 @@ module DeadVariables = struct
       new_vs := rest ;
       Stdlib.Hashtbl.find_opt graph v
       |> Option.iter ~f:(fun vs' ->
-             Var.Set.iter
-               (fun v' ->
-                 if not (Stdlib.Hashtbl.mem reachable v') then (
-                   (* [v'] seen for the first time: we need to explore it *)
-                   Stdlib.Hashtbl.replace reachable v' () ;
-                   new_vs := v' :: !new_vs ) )
-               vs' )
+          Var.Set.iter
+            (fun v' ->
+              if not (Stdlib.Hashtbl.mem reachable v') then (
+                (* [v'] seen for the first time: we need to explore it *)
+                Stdlib.Hashtbl.replace reachable v' () ;
+                new_vs := v' :: !new_vs ) )
+            vs' )
     done ;
     Stdlib.Hashtbl.to_seq_keys reachable |> Var.Set.of_seq
 

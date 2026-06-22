@@ -383,7 +383,7 @@ module Bound = struct
     | Linear (i, se) ->
         Z.(equal i one)
         && Option.value_map (SymLinear.get_one_symbol_opt se) ~default:false ~f:(fun sym ->
-               Symb.SymbolPath.equal (Symb.SymbolPath.normal path) (Symb.Symbol.path sym) )
+            Symb.SymbolPath.equal (Symb.SymbolPath.normal path) (Symb.Symbol.path sym) )
     | _ ->
         false
 

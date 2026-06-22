@@ -107,7 +107,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     Exp.program_vars e
     |> Sequence.fold ~init:GlobalVarSet.empty ~f:(fun gset g ->
-           if is_dangerous_global g then GlobalVarSet.add g gset else gset )
+        if is_dangerous_global g then GlobalVarSet.add g gset else gset )
 
 
   let add_globals astate loc globals =
@@ -189,8 +189,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               let dangerous_accesses =
                 SiofTrace.sinks trace
                 |> SiofTrace.Sinks.filter (fun sink ->
-                       SiofTrace.Sink.kind sink
-                       |> Staged.unstage (filter_global_accesses already_initialized) )
+                    SiofTrace.Sink.kind sink
+                    |> Staged.unstage (filter_global_accesses already_initialized) )
               in
               let callsite = CallSite.make callee_pname loc in
               let sinks =

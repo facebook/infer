@@ -88,15 +88,15 @@ let find_pivotable_to v t =
       else
         LinArith.get_coefficient v l
         |> Option.bind ~f:(fun coeff ->
-               if Q.(coeff < zero) then
-                 let q_c = LinArith.get_constant_part l in
-                 let gain = Q.(-(q_c / coeff)) in
-                 if
-                   Container.for_all ~iter:(Container.iter ~fold:LinArith.fold) l
-                     ~f:(fun (_, coeff') -> Q.(coeff' >= zero || -(q_c / coeff') >= gain) )
-                 then Some (u, (v, coeff))
-                 else None
-               else None ) )
+            if Q.(coeff < zero) then
+              let q_c = LinArith.get_constant_part l in
+              let gain = Q.(-(q_c / coeff)) in
+              if
+                Container.for_all ~iter:(Container.iter ~fold:LinArith.fold) l
+                  ~f:(fun (_, coeff') -> Q.(coeff' >= zero || -(q_c / coeff') >= gain) )
+              then Some (u, (v, coeff))
+              else None
+            else None ) )
     t None
 
 
@@ -108,6 +108,6 @@ let find_pivot l t =
 let pivot l t =
   find_pivot l t
   |> Option.map ~f:(fun (u', v') ->
-         Debug.p "found pivot: %a <- %a@\n" Var.pp u' Var.pp (fst v') ;
-         let l_u' = Var.Map.find u' t in
-         do_pivot u' l_u' v' (Var.Map.remove u' t) )
+      Debug.p "found pivot: %a <- %a@\n" Var.pp u' Var.pp (fst v') ;
+      let l_u' = Var.Map.find u' t in
+      do_pivot u' l_u' v' (Var.Map.remove u' t) )

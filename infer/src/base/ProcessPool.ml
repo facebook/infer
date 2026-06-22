@@ -262,7 +262,7 @@ let process_updates pool buffer =
   (* abort everything if some child has died unexpectedly *)
   has_dead_child pool
   |> Option.iter ~f:(fun (slot, status) ->
-         one_child_died pool ~slot (IUnix.Exit_or_signal.to_string_hum status) ) ;
+      one_child_died pool ~slot (IUnix.Exit_or_signal.to_string_hum status) ) ;
   wait_for_updates pool buffer |> List.iter ~f:(fun update -> process_update pool update) ;
   if not (pool.tasks.is_empty ()) then send_work_to_idle_children pool
 

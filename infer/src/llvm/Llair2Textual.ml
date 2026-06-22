@@ -501,12 +501,12 @@ let rec to_textual_exp ~(proc_state : ProcState.t) loc ?generate_typ_exp (exp : 
               IdentMap.find_opt ptr_id proc_state.ProcState.ids_move
               |> Option.bind ~f:(fun (data : ProcState.id_data) -> data.typ)
               |> Option.exists ~f:(fun annot ->
-                     match annot.Textual.Typ.typ with
-                     | Textual.Typ.Struct name ->
-                         Textual.TypeName.swift_mangled_name_of_type_name name
-                         |> Option.exists ~f:Type.is_enum_mangled_name
-                     | _ ->
-                         false )
+                  match annot.Textual.Typ.typ with
+                  | Textual.Typ.Struct name ->
+                      Textual.TypeName.swift_mangled_name_of_type_name name
+                      |> Option.exists ~f:Type.is_enum_mangled_name
+                  | _ ->
+                      false )
           | _ ->
               false
         in
@@ -1065,13 +1065,13 @@ let base_is_load_of_sg_pvar ~(proc_state : ProcState.t) ~exp1_instrs base_exp te
         | Load {id; exp= Textual.Exp.Lvar pvar; _} when Textual.Ident.equal id base_id ->
             Textual.VarName.Map.find_opt pvar proc_state.ProcState.locals
             |> Option.bind ~f:(fun (annot : Textual.Typ.annotated) ->
-                   match annot.typ with
-                   | Textual.Typ.Ptr (Textual.Typ.Struct typ_name, _) ->
-                       Textual.TypeName.swift_mangled_name_of_type_name typ_name
-                   | _ ->
-                       None )
+                match annot.typ with
+                | Textual.Typ.Ptr (Textual.Typ.Struct typ_name, _) ->
+                    Textual.TypeName.swift_mangled_name_of_type_name typ_name
+                | _ ->
+                    None )
             |> Option.value_map ~default:None ~f:(fun mangled ->
-                   if String.is_suffix mangled ~suffix:"Sg" then Some () else None )
+                if String.is_suffix mangled ~suffix:"Sg" then Some () else None )
         | _ ->
             None
       in
@@ -1657,9 +1657,9 @@ let matches_synthetic_filter plain_name mangled_name lang typ_name =
        ~f:(fun name -> String.is_suffix ~suffix:Globals.witness_protocol_suffix name)
        typ_name
   || Option.exists plain_name ~f:(fun plain_name ->
-         String.is_substring ~substring:Field.get_suffix plain_name
-         || String.is_substring ~substring:Field.set_suffix plain_name
-         || String.is_substring ~substring:Field.modify_suffix plain_name )
+      String.is_substring ~substring:Field.get_suffix plain_name
+      || String.is_substring ~substring:Field.set_suffix plain_name
+      || String.is_substring ~substring:Field.modify_suffix plain_name )
 
 
 type translate_mode = User_pass of SourceFile.t | Compiler_generated_pass
@@ -1782,8 +1782,8 @@ let func_instr_files lang (func : Llair.func) =
   Llair.Func.fold_cfg func IString.Set.empty ~f:(fun block acc ->
       StdUtils.iarray_to_list block.Llair.cmnd
       |> List.fold ~init:acc ~f:(fun acc inst ->
-             let f = loc_file lang (Inst.loc inst) in
-             if is_real_di_file f then IString.Set.add f acc else acc ) )
+          let f = loc_file lang (Inst.loc inst) in
+          if is_real_di_file f then IString.Set.add f acc else acc ) )
 
 
 (* [accessor] for [.get]/[.set]/[.modify] property accessors, [function] otherwise. *)
@@ -1944,13 +1944,13 @@ let populate_objc_method_index proc_decls =
   List.iter proc_decls ~f:(fun (decl : Textual.ProcDecl.t) ->
       List.find_map decl.attributes ~f:Textual.Attr.get_plain_name
       |> Option.iter ~f:(fun plain ->
-             let qname = decl.qualified_name in
-             let mangled = Textual.ProcName.to_string qname.name in
-             (* Prioritize the thunk ONLY if it's not an initializer.
+          let qname = decl.qualified_name in
+          let mangled = Textual.ProcName.to_string qname.name in
+          (* Prioritize the thunk ONLY if it's not an initializer.
             If it IS an initializer, we let the fallback logic
             in rewrite_to_method handle it as a plain ObjC call.
          *)
-             if is_objc_thunk_not_init mangled then Hashtbl.set index ~key:plain ~data:qname ) ) ;
+          if is_objc_thunk_not_init mangled then Hashtbl.set index ~key:plain ~data:qname ) ) ;
   index
 
 

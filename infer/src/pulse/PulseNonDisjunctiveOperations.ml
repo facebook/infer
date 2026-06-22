@@ -253,7 +253,7 @@ let continue_fold_map astates ~init ~f =
   List.fold_map astates ~init ~f:(fun acc exec_state ->
       continue_bind exec_state ~f:(fun astate -> f acc astate)
       |> Option.value_map ~default:(acc, exec_state) ~f:(fun (acc, astate) ->
-             (acc, ExecutionDomain.continue astate) ) )
+          (acc, ExecutionDomain.continue astate) ) )
 
 
 (* [astates_before] represents the state after we eval the args but before we apply the callee. This is needed so that we can distinguish if source points to an unowned address ( this, global or reference parameter) before the copy is executed. *)
@@ -269,7 +269,7 @@ let is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_re
         (fun var this_vo ->
           ( Var.is_this var || Var.is_global var
           || List.exists proc_lvalue_ref_parameters ~f:(fun (pvar, _) ->
-                 Var.equal (Var.of_pvar pvar) var ) )
+              Var.equal (Var.of_pvar pvar) var ) )
           &&
           let reachable_addresses_from_unowned =
             AbductiveDomain.reachable_addresses_from
@@ -292,17 +292,17 @@ let is_copied_from_address_reachable_from_unowned ~is_captured_by_ref ~is_interm
   | CopyCtor | CopyInGetDefault ->
       false )
   && Option.exists source_addr_typ_opt ~f:(fun (source_addr, source_expr, _) ->
-         ( match source_expr with
-         | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
-             Pvar.is_this pvar || Pvar.is_global pvar || is_captured_by_ref pvar
-         | DecompilerExpr.SourceExpr ((ReturnValue (Call pname), _), _)
-           when Procname.is_std_move pname ->
-             (* When [std::move] is used explicitly, we can say the source is owned. *)
-             false
-         | _ ->
-             (* When the source is unclear, we conservatively conclude it is unowned. *)
-             true )
-         || is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_ref_parameters )
+      ( match source_expr with
+        | DecompilerExpr.SourceExpr ((PVar pvar, _), _) ->
+            Pvar.is_this pvar || Pvar.is_global pvar || is_captured_by_ref pvar
+        | DecompilerExpr.SourceExpr ((ReturnValue (Call pname), _), _)
+          when Procname.is_std_move pname ->
+            (* When [std::move] is used explicitly, we can say the source is owned. *)
+            false
+        | _ ->
+            (* When the source is unclear, we conservatively conclude it is unowned. *)
+            true )
+      || is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_ref_parameters )
 
 
 let add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters integer_type_widths
@@ -379,36 +379,35 @@ let add_copies_to_pvar_or_field ~is_captured_by_ref proc_lvalue_ref_parameters i
       (* NOTE: Before running get_copied_and_source, we need to evaluate exp first to update the decompiler map in the abstract state. *)
       try_eval path location exp astate
       |> Option.bind ~f:(fun (astate, copy_addr) ->
-             let get_copy_spec, astate, source_addr_typ_opt =
-               get_copied_and_source path rest_args node location from astate
-             in
-             if
-               is_copied_from_address_reachable_from_unowned ~is_captured_by_ref
-                 ~is_intermediate:false source_addr_typ_opt ~from proc_lvalue_ref_parameters
-                 ~astates_before
-             then
-               (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
-               None
-             else
-               let astate', source_addr_opt, source_expr_opt =
-                 Option.value_map source_addr_typ_opt ~default:(astate, None, None)
-                   ~f:(fun (source_addr, source, _) ->
-                     ( AddressAttributes.add_one source_addr (CopiedInto (IntoField {field})) astate
-                       |> AddressAttributes.add_one copy_addr
-                            (SourceOriginOfCopy
-                               { source= source_addr
-                               ; is_const_ref= Typ.is_const_reference_on_source source_typ } )
-                     , Some source_addr
-                     , match (source : DecompilerExpr.t) with
-                       | SourceExpr (source_expr, _) ->
-                           Some source_expr
-                       | Unknown _ ->
-                           None ) )
-               in
-               Some
-                 ( NonDisjDomain.add_field field ~source_addr_opt (get_copy_spec source_expr_opt)
-                     astate_n
-                 , astate' ) )
+          let get_copy_spec, astate, source_addr_typ_opt =
+            get_copied_and_source path rest_args node location from astate
+          in
+          if
+            is_copied_from_address_reachable_from_unowned ~is_captured_by_ref ~is_intermediate:false
+              source_addr_typ_opt ~from proc_lvalue_ref_parameters ~astates_before
+          then
+            (* If source is copy assigned from a member field/global, we cannot suggest move as other procedures might access it. *)
+            None
+          else
+            let astate', source_addr_opt, source_expr_opt =
+              Option.value_map source_addr_typ_opt ~default:(astate, None, None)
+                ~f:(fun (source_addr, source, _) ->
+                  ( AddressAttributes.add_one source_addr (CopiedInto (IntoField {field})) astate
+                    |> AddressAttributes.add_one copy_addr
+                         (SourceOriginOfCopy
+                            { source= source_addr
+                            ; is_const_ref= Typ.is_const_reference_on_source source_typ } )
+                  , Some source_addr
+                  , match (source : DecompilerExpr.t) with
+                    | SourceExpr (source_expr, _) ->
+                        Some source_expr
+                    | Unknown _ ->
+                        None ) )
+            in
+            Some
+              ( NonDisjDomain.add_field field ~source_addr_opt (get_copy_spec source_expr_opt)
+                  astate_n
+              , astate' ) )
   | _ ->
       None
 
@@ -604,7 +603,7 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
   let is_written_after_copy addr =
     AddressAttributes.get_written_to addr astate
     |> Option.exists ~f:(fun ((timestamp : Timestamp.t), _) ->
-           (copy_timestamp :> int) < (timestamp :> int) )
+        (copy_timestamp :> int) < (timestamp :> int) )
   in
   let rec aux ~addr_to_explore ~visited =
     match addr_to_explore with
@@ -680,15 +679,15 @@ let mark_modified_copies_and_parameters_on_abductive vars astate astate_n =
   let mark_modified_copy var default =
     Stack.find_opt var astate
     |> Option.value_map ~default ~f:(fun vo ->
-           let address = ValueOrigin.value vo in
-           let source_addr_opt = AddressAttributes.get_source_origin_of_copy address astate in
-           let copied_into = get_copied_into var in
-           mark_modified_address_at ~address ~source_addr_opt ~copied_into Copy astate default )
+        let address = ValueOrigin.value vo in
+        let source_addr_opt = AddressAttributes.get_source_origin_of_copy address astate in
+        let copied_into = get_copied_into var in
+        mark_modified_address_at ~address ~source_addr_opt ~copied_into Copy astate default )
   in
   let mark_modified_parameter var default =
     Stack.find_opt var astate
     |> Option.value_map ~default ~f:(fun vo ->
-           mark_modified_parameter_at ~address:(ValueOrigin.value vo) ~var astate default )
+        mark_modified_parameter_at ~address:(ValueOrigin.value vo) ~var astate default )
   in
   List.fold vars ~init:astate_n ~f:(fun astate_n var ->
       let astate_n = mark_modified_parameter var astate_n in

@@ -130,10 +130,10 @@ module FileOrProcMatcher = struct
         and method_name = Procname.Java.get_method pname_java in
         IString.Map.find_opt class_name pattern_map
         |> Option.exists ~f:(fun class_patterns ->
-               List.exists
-                 ~f:(fun p ->
-                   match p.method_name with None -> true | Some m -> String.equal m method_name )
-                 class_patterns )
+            List.exists
+              ~f:(fun p ->
+                match p.method_name with None -> true | Some m -> String.equal m method_name )
+              class_patterns )
       in
       fun _ proc_name ->
         match proc_name with Procname.Java pname_java -> do_java pname_java | _ -> false

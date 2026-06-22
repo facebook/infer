@@ -143,6 +143,6 @@ let matchers : matcher list =
   ; -"std" &:: "shared_lock" &:: "owns_lock" &::.*--> Basic.skip
   ; -"std" &:: "shared_lock" &:: "operator_bool" &::.*--> Basic.skip ]
   |> List.map ~f:(fun matcher ->
-         matcher
-         |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
-         |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )
+      matcher
+      |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+      |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )

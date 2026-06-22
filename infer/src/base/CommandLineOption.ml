@@ -235,8 +235,8 @@ let add parse_mode sections desc =
           |> List.sort ~compare:InferCommand.compare
           |> List.remove_consecutive_duplicates ~equal:InferCommand.equal
           |> List.map ~f:(fun cmd ->
-                 let exe = InferCommand.to_exe_name cmd in
-                 Printf.sprintf "$(b,%s)(1)" (Cmdliner.Manpage.escape exe) )
+              let exe = InferCommand.to_exe_name cmd in
+              Printf.sprintf "$(b,%s)(1)" (Cmdliner.Manpage.escape exe) )
           |> oxford_comma
         in
         {desc with doc= Printf.sprintf "%s\nSee also %s." desc.doc commands}

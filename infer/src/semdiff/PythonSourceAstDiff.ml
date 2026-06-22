@@ -74,11 +74,7 @@ let get_unresolved_diffs cc =
       if is_only_equivalent_to_diff_terms root' then
         CC.equiv_terms cc root'
         |> List.fold ~init:acc ~f:(fun acc {CC.enode= {children}} ->
-               match children with
-               | [left_arg; right_arg] ->
-                   (left_arg, right_arg) :: acc
-               | _ ->
-                   acc )
+            match children with [left_arg; right_arg] -> (left_arg, right_arg) :: acc | _ -> acc )
       else acc )
 
 

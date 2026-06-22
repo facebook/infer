@@ -390,11 +390,11 @@ let report_errors analysis_data path location errors =
   let open SatUnsat.Import in
   List.rev errors
   |> List.fold ~init:(Sat None) ~f:(fun sat_result error ->
-         match sat_result with
-         | Unsat _ | Sat (Some _) ->
-             sat_result
-         | Sat None ->
-             report_error analysis_data path location error )
+      match sat_result with
+      | Unsat _ | Sat (Some _) ->
+          sat_result
+      | Sat None ->
+          report_error analysis_data path location error )
 
 
 let report_exec_results analysis_data path location results =

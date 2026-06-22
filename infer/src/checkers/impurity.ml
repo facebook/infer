@@ -202,16 +202,16 @@ let report_immutable_field_modifications tenv impurity_astate proc_desc err_log 
   let loc = Procdesc.get_loc proc_desc in
   ImpurityDomain.get_modified_immutables_opt tenv impurity_astate
   |> Option.iter ~f:(fun (modified_params, modified_globals) ->
-         let immutable_fun_desc =
-           F.asprintf "Function %a modifies immutable fields" Procname.pp proc_name
-         in
-         let immutable_fun_ltr = Errlog.make_trace_element 0 loc immutable_fun_desc [] in
-         let ltr =
-           immutable_fun_ltr
-           :: add_modified_ltr Formal modified_params (add_modified_ltr Global modified_globals [])
-         in
-         Reporting.log_issue proc_desc err_log ~loc ~ltr Impurity IssueType.modifies_immutable
-           immutable_fun_desc )
+      let immutable_fun_desc =
+        F.asprintf "Function %a modifies immutable fields" Procname.pp proc_name
+      in
+      let immutable_fun_ltr = Errlog.make_trace_element 0 loc immutable_fun_desc [] in
+      let ltr =
+        immutable_fun_ltr
+        :: add_modified_ltr Formal modified_params (add_modified_ltr Global modified_globals [])
+      in
+      Reporting.log_issue proc_desc err_log ~loc ~ltr Impurity IssueType.modifies_immutable
+        immutable_fun_desc )
 
 
 let report_impure_pulse proc_desc err_log ~desc =

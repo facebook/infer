@@ -310,9 +310,9 @@ let rec get_executor_thread_annotation_constraint tenv (receiver : HilExp.Access
       |> Option.bind
            ~f:(List.find ~f:(fun (fld : Struct.field) -> Fieldname.equal fld.name field_name))
       |> Option.bind ~f:(fun {Struct.annot} ->
-             if Annotations.(ia_ends_with annot for_ui_thread) then Some ForUIThread
-             else if Annotations.(ia_ends_with annot for_non_ui_thread) then Some ForNonUIThread
-             else None )
+          if Annotations.(ia_ends_with annot for_ui_thread) then Some ForUIThread
+          else if Annotations.(ia_ends_with annot for_non_ui_thread) then Some ForNonUIThread
+          else None )
   | Dereference prefix ->
       get_executor_thread_annotation_constraint tenv prefix
   | _ ->
@@ -349,11 +349,11 @@ let get_returned_executor tenv callee actuals =
     lazy
       ( Attributes.load callee
       |> Option.exists ~f:(fun (attrs : ProcAttributes.t) ->
-             match attrs.ret_type.Typ.desc with
-             | Tstruct tname | Typ.Tptr ({desc= Tstruct tname}, _) ->
-                 PatternMatch.is_subtype_of_str tenv tname executor_type_str
-             | _ ->
-                 false ) )
+          match attrs.ret_type.Typ.desc with
+          | Tstruct tname | Typ.Tptr ({desc= Tstruct tname}, _) ->
+              PatternMatch.is_subtype_of_str tenv tname executor_type_str
+          | _ ->
+              false ) )
   in
   match (callee, actuals) with
   | Procname.Java java_pname, [] -> (

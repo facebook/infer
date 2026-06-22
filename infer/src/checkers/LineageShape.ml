@@ -1161,7 +1161,7 @@ end = struct
       let shape_structures =
         iter_hashtbl shape_structures
         |> Iter.map2 (fun shape structure ->
-               (translate_shape_id shape, translate_structure structure) )
+            (translate_shape_id shape, translate_structure structure) )
         |> caml_hashtbl_of_iter_exn
       in
       let formals =

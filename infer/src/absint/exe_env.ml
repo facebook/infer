@@ -48,7 +48,7 @@ let get_proc_tenv pname =
   | _ ->
       get_proc_source pname |> get_source_tenv
       |> Option.value_or_thunk ~default:(fun () ->
-             L.die InternalError "exe_env: could not find tenv for %a@\n" Procname.pp pname )
+          L.die InternalError "exe_env: could not find tenv for %a@\n" Procname.pp pname )
 
 
 let get_integer_type_widths pname =

@@ -387,8 +387,8 @@ def foo(self, x: int) -> int:
   Rewrite.Rule.full_rewrite !st [] |> ignore ;
   Diff.get_unresolved_diffs !st
   |> List.iter ~f:(fun (left, right) ->
-         F.printf "@[<hv 4>(DIFF@ %a@ %a)@]@." (CC.pp_nested_term !st) left (CC.pp_nested_term !st)
-           right ) ;
+      F.printf "@[<hv 4>(DIFF@ %a@ %a)@]@." (CC.pp_nested_term !st) left (CC.pp_nested_term !st)
+        right ) ;
   [%expect
     {|
     (DIFF Any int)
@@ -431,6 +431,6 @@ def foo(self, x: int) -> int:
   Rewrite.Rule.full_rewrite !st rules |> ignore ;
   Diff.get_unresolved_diffs !st
   |> List.iter ~f:(fun (left, right) ->
-         F.printf "@[<hv 4>(DIFF@ %a@ %a)@]@." (CC.pp_nested_term !st) left (CC.pp_nested_term !st)
-           right ) ;
+      F.printf "@[<hv 4>(DIFF@ %a@ %a)@]@." (CC.pp_nested_term !st) left (CC.pp_nested_term !st)
+        right ) ;
   [%expect {| |}]

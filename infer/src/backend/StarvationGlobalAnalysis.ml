@@ -45,11 +45,11 @@ let iter_summary ~f ({payloads; proc_name} : Summary.t) =
   let open Domain in
   Payloads.starvation payloads |> SafeLazy.force_option
   |> Option.iter ~f:(fun (payload : summary) ->
-         let tenv = Exe_env.get_proc_tenv proc_name in
-         if should_report tenv proc_name then iter_critical_pairs_of_summary (f proc_name) payload ;
-         ScheduledWorkDomain.iter
-           (iter_critical_pairs_of_scheduled_work (f proc_name))
-           payload.scheduled_work )
+      let tenv = Exe_env.get_proc_tenv proc_name in
+      if should_report tenv proc_name then iter_critical_pairs_of_summary (f proc_name) payload ;
+      ScheduledWorkDomain.iter
+        (iter_critical_pairs_of_scheduled_work (f proc_name))
+        payload.scheduled_work )
 
 
 module WorkHashSet = struct
@@ -81,27 +81,27 @@ let report work_set =
     TaskBar.refresh task_bar ;
     Summary.OnDisk.get analysis_req procname
     |> Option.fold ~init ~f:(fun acc summary ->
-           let pattrs = Attributes.load_exn procname in
-           let tenv = Exe_env.get_proc_tenv procname in
-           let acc =
-             Starvation.report_on_pair
-               ~analyze_ondemand:(fun pname ->
-                 Ondemand.analyze_proc_name analysis_req ~caller_summary:summary pname
-                 |> AnalysisResult.to_option
-                 |> Option.bind ~f:(fun summary ->
-                        SafeLazy.force_option summary.Summary.payloads.starvation ) )
-               tenv pattrs pair acc
-           in
-           Event.get_acquired_locks pair.elem.event
-           |> List.fold ~init:acc ~f:(fun acc lock ->
-                  let should_report_starvation =
-                    CriticalPair.is_uithread pair && not (Procname.is_constructor procname)
-                  in
-                  WorkHashSet.fold
-                    (fun (other_procname, (other_pair : CriticalPair.t)) acc ->
-                      Starvation.report_on_parallel_composition ~should_report_starvation tenv
-                        pattrs pair lock other_procname other_pair acc )
-                    work_set acc ) )
+        let pattrs = Attributes.load_exn procname in
+        let tenv = Exe_env.get_proc_tenv procname in
+        let acc =
+          Starvation.report_on_pair
+            ~analyze_ondemand:(fun pname ->
+              Ondemand.analyze_proc_name analysis_req ~caller_summary:summary pname
+              |> AnalysisResult.to_option
+              |> Option.bind ~f:(fun summary ->
+                  SafeLazy.force_option summary.Summary.payloads.starvation ) )
+            tenv pattrs pair acc
+        in
+        Event.get_acquired_locks pair.elem.event
+        |> List.fold ~init:acc ~f:(fun acc lock ->
+            let should_report_starvation =
+              CriticalPair.is_uithread pair && not (Procname.is_constructor procname)
+            in
+            WorkHashSet.fold
+              (fun (other_procname, (other_pair : CriticalPair.t)) acc ->
+                Starvation.report_on_parallel_composition ~should_report_starvation tenv pattrs pair
+                  lock other_procname other_pair acc )
+              work_set acc ) )
   in
   WorkHashSet.fold wrap_report work_set Starvation.ReportMap.empty
   |> Starvation.ReportMap.store_multi_file ;

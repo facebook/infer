@@ -114,12 +114,11 @@ let create_results_dir () =
   if non_empty_directory_exists Config.results_dir then
     RunState.load_and_validate ()
     |> Result.iter_error ~f:(fun error ->
-           if Config.force_delete_results_dir then (
-             L.user_warning "WARNING: %s@\n" error ;
-             L.progress "Deleting results dir because --force-delete-results-dir was passed@." ;
-             remove_results_dir () )
-           else
-             L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
+        if Config.force_delete_results_dir then (
+          L.user_warning "WARNING: %s@\n" error ;
+          L.progress "Deleting results dir because --force-delete-results-dir was passed@." ;
+          remove_results_dir () )
+        else L.die UserError "ERROR: %s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
   IUnix.mkdir_p Config.results_dir ;
   IUnix.mkdir_p (get_path Temporary) ;
   prepare_logging_and_db () ;
@@ -132,7 +131,7 @@ let assert_results_dir advice =
         "ERROR: No results directory at '%s': %s@\nERROR: %s@." Config.results_dir err advice ) ;
   RunState.load_and_validate ()
   |> Result.iter_error ~f:(fun error ->
-         L.die UserError "%s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
+      L.die UserError "%s@\nPlease remove '%s' and try again" error Config.results_dir ) ;
   prepare_logging_and_db () ;
   ()
 

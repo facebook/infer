@@ -55,21 +55,21 @@ module Syntax = struct
    fun data astate non_disj ->
     x data astate non_disj
     |> NonDisjDomain.bind ~f:(fun exec non_disj ->
-           match exec with
-           | Ok (ContinueProgram (a, astate)) ->
-               f a data astate non_disj
-           | Recoverable (ContinueProgram (a, astate), err) ->
-               let execs, non_disj = f a data astate non_disj in
-               let execs = List.map ~f:(PulseResult.append_errors err) execs in
-               (execs, non_disj)
-           | Ok (Other (ContinueProgram _)) | Recoverable (Other (ContinueProgram _), _) ->
-               L.die InternalError "DSL.Other should never contains ContinueProgram"
-           | Ok (Other exec) ->
-               ([Ok (Other exec)], non_disj)
-           | Recoverable (Other exec, err) ->
-               ([Recoverable (Other exec, err)], non_disj)
-           | FatalError _ as err ->
-               ([err], non_disj) )
+        match exec with
+        | Ok (ContinueProgram (a, astate)) ->
+            f a data astate non_disj
+        | Recoverable (ContinueProgram (a, astate), err) ->
+            let execs, non_disj = f a data astate non_disj in
+            let execs = List.map ~f:(PulseResult.append_errors err) execs in
+            (execs, non_disj)
+        | Ok (Other (ContinueProgram _)) | Recoverable (Other (ContinueProgram _), _) ->
+            L.die InternalError "DSL.Other should never contains ContinueProgram"
+        | Ok (Other exec) ->
+            ([Ok (Other exec)], non_disj)
+        | Recoverable (Other exec, err) ->
+            ([Recoverable (Other exec, err)], non_disj)
+        | FatalError _ as err ->
+            ([err], non_disj) )
 
 
   let ( let* ) a f = bind a f
@@ -1075,10 +1075,10 @@ let unsafe_to_astate_transformer unsat_info (monad : 'a model_monad) :
   | [res] ->
       PulseResult.ok res
       |> Option.value_map ~default:unsat ~f:(function
-           | ContinueProgram (a, astate) ->
-               Sat (a, astate)
-           | _ ->
-               unsat )
+        | ContinueProgram (a, astate) ->
+            Sat (a, astate)
+        | _ ->
+            unsat )
   | [] ->
       unsat
   | _ ->

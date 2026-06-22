@@ -344,12 +344,12 @@ let zip_and_build_diffs config n1 n2 : Diff.t list =
         fold_if_same_shape header1 fields1 header2 fields2 ~init:acc
           ~f:(zip ~left_line ~right_line ~rewritten:false)
         |> Option.value_or_thunk ~default:(fun () ->
-               if rewritten then
-                 Diff.append_removed_lines left_line end_left_line
-                   (Diff.append_added_lines right_line end_right_line acc)
-               else
-                 zip ~left_line:saved_left_line ~right_line:saved_right_line ~rewritten:true key acc
-                   (Run.rewrite config n1) (Run.rewrite config n2) )
+            if rewritten then
+              Diff.append_removed_lines left_line end_left_line
+                (Diff.append_added_lines right_line end_right_line acc)
+            else
+              zip ~left_line:saved_left_line ~right_line:saved_right_line ~rewritten:true key acc
+                (Run.rewrite config n1) (Run.rewrite config n2) )
     | List l1, List l2 ->
         let l1 = List.filter l1 ~f:(Run.dont_ignore config) in
         let l2 = List.filter l2 ~f:(Run.dont_ignore config) in

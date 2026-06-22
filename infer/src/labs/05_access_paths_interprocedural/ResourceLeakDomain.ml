@@ -86,7 +86,7 @@ let rec path_of_exp ((held, id_map) as astate) ((exp : Exp.t), typ) =
   | Lfield ({exp= exp'}, field_name, typ') ->
       path_of_exp astate (exp', typ')
       |> Option.map ~f:(fun (astate, access_path') ->
-             (astate, AccessPath.append access_path' [FieldAccess field_name]) )
+          (astate, AccessPath.append access_path' [FieldAccess field_name]) )
   | Cast (dest_typ, exp') ->
       path_of_exp astate (exp', dest_typ)
   | Lindex _ ->

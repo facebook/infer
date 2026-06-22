@@ -430,10 +430,9 @@ let sanity_check config =
   let is_illegal_id_char c = match c with 'a' .. 'z' | '-' -> false | _ -> true in
   String.find config.id ~f:is_illegal_id_char
   |> Option.iter ~f:(fun c ->
-         L.die InternalError
-           "Illegal character '%c' in id: '%s'. Checker ids must be easy to pass on the command \
-            line."
-           c config.id ) ;
+      L.die InternalError
+        "Illegal character '%c' in id: '%s'. Checker ids must be easy to pass on the command line."
+        c config.id ) ;
   ( match config.kind with
   | UserFacingDeprecated _ when config.enabled_by_default ->
       L.die InternalError "Checker %s is both deprecated and enabled by default." config.id

@@ -889,7 +889,7 @@ module Attributes = struct
       | Some kinds_to_remove -> (
           let taint_map =
             get_by_rank Attribute.must_not_be_tainted_rank attrs
-              ~dest:(function [@warning "-partial-match"] MustNotBeTainted map -> map )
+              ~dest:(function[@warning "-partial-match"] MustNotBeTainted map -> map )
           in
           match taint_map with
           | None ->
@@ -912,19 +912,19 @@ module Attributes = struct
   let is_in_reported_retain_cycle = mem_by_rank Attribute.in_reported_retain_cycle_rank
 
   let get_invalid =
-    get_by_rank Attribute.invalid_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.invalid_rank ~dest:(function[@warning "-partial-match"]
         | Invalid (invalidation, trace) -> (invalidation, trace) )
 
 
   let get_propagate_taint_from =
-    get_by_rank Attribute.propagate_taint_from_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.propagate_taint_from_rank ~dest:(function[@warning "-partial-match"]
         | PropagateTaintFrom (reason, taints_in) -> (reason, taints_in) )
 
 
   let remove_propagate_taint_from = remove_by_rank Attribute.propagate_taint_from_rank
 
   let get_returned_from_unknown =
-    get_by_rank Attribute.returned_from_unknown ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.returned_from_unknown ~dest:(function[@warning "-partial-match"]
         | ReturnedFromUnknown values -> values )
 
 
@@ -933,7 +933,7 @@ module Attributes = struct
   let is_awaited_awaitable = mem_by_rank Attribute.awaited_awaitable_rank
 
   let get_hack_builder =
-    get_by_rank Attribute.hack_builder_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.hack_builder_rank ~dest:(function[@warning "-partial-match"]
         | Attribute.HackBuilder builderstate -> builderstate )
 
 
@@ -964,39 +964,39 @@ module Attributes = struct
   let is_must_be_awaited = mem_by_rank Attribute.must_be_awaited_rank
 
   let get_must_be_valid =
-    get_by_rank Attribute.must_be_valid_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.must_be_valid_rank ~dest:(function[@warning "-partial-match"]
         | Attribute.MustBeValid (timestamp, trace, reason) -> (timestamp, trace, reason) )
 
 
   let remove_must_be_valid = remove_by_rank Attribute.must_be_valid_rank
 
   let get_written_to =
-    get_by_rank Attribute.written_to_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.written_to_rank ~dest:(function[@warning "-partial-match"]
         | WrittenTo (timestamp, trace) -> (timestamp, trace) )
 
 
   let get_closure_proc_name =
-    get_by_rank Attribute.closure_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.closure_rank ~dest:(function[@warning "-partial-match"]
         | Closure proc_name -> proc_name )
 
 
   let get_config_usage =
-    get_by_rank Attribute.config_usage_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.config_usage_rank ~dest:(function[@warning "-partial-match"]
         | ConfigUsage config -> config )
 
 
   let get_used_as_branch_cond =
-    get_by_rank Attribute.used_as_branch_cond_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.used_as_branch_cond_rank ~dest:(function[@warning "-partial-match"]
         | UsedAsBranchCond (pname, location, trace) -> (pname, location, trace) )
 
 
   let get_copied_into =
-    get_by_rank Attribute.copied_into_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.copied_into_rank ~dest:(function[@warning "-partial-match"]
         | CopiedInto copied_into -> copied_into )
 
 
   let get_copied_return =
-    get_by_rank Attribute.copied_return_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.copied_return_rank ~dest:(function[@warning "-partial-match"]
         | CopiedReturn {source; is_const_ref; from; copied_location} ->
         (source, is_const_ref, from, copied_location) )
 
@@ -1004,12 +1004,12 @@ module Attributes = struct
   let remove_copied_return = remove_by_rank Attribute.copied_return_rank
 
   let get_source_origin_of_copy =
-    get_by_rank Attribute.copy_origin_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.copy_origin_rank ~dest:(function[@warning "-partial-match"]
         | SourceOriginOfCopy {source; is_const_ref} -> (source, is_const_ref) )
 
 
   let get_address_of_stack_variable =
-    get_by_rank Attribute.address_of_stack_variable_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.address_of_stack_variable_rank ~dest:(function[@warning "-partial-match"]
         | AddressOfStackVariable (var, loc, history) -> (var, loc, history) )
 
 
@@ -1020,7 +1020,7 @@ module Attributes = struct
   let is_std_vector_reserved = mem_by_rank Attribute.std_vector_reserve_rank
 
   let get_last_lookup =
-    get_by_rank Attribute.last_lookup_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.last_lookup_rank ~dest:(function[@warning "-partial-match"]
         | LastLookup value -> value )
 
 
@@ -1049,14 +1049,14 @@ module Attributes = struct
   let remove_uninitialized = remove_by_rank Attribute.uninitialized_rank
 
   let get_allocation =
-    get_by_rank Attribute.allocated_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.allocated_rank ~dest:(function[@warning "-partial-match"]
         | Allocated (allocator, trace) -> (allocator, trace) )
 
 
   let remove_allocation = remove_by_rank Attribute.allocated_rank
 
   let get_unknown_effect =
-    get_by_rank Attribute.unknown_effect_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.unknown_effect_rank ~dest:(function[@warning "-partial-match"]
         | UnknownEffect (call, hist) -> (call, hist) )
 
 
@@ -1065,17 +1065,17 @@ module Attributes = struct
   let is_dict_contain_const_keys = mem_by_rank Attribute.dict_contain_const_keys_rank
 
   let get_must_be_initialized =
-    get_by_rank Attribute.must_be_initialized_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.must_be_initialized_rank ~dest:(function[@warning "-partial-match"]
         | MustBeInitialized (timestamp, trace) -> (timestamp, trace) )
 
 
   let get_static_type =
-    get_by_rank Attribute.static_type_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.static_type_rank ~dest:(function[@warning "-partial-match"]
         | StaticType typ -> typ )
 
 
   let get_unreachable_at =
-    get_by_rank Attribute.unreachable_at_rank ~dest:(function [@warning "-partial-match"]
+    get_by_rank Attribute.unreachable_at_rank ~dest:(function[@warning "-partial-match"]
         | UnreachableAt location -> location )
 
 

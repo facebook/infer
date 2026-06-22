@@ -174,11 +174,11 @@ let process_procdesc tenv proc_name proc_desc =
   if Procdesc.is_defined proc_desc && Procname.is_objc_dealloc proc_name then
     get_struct_procname tenv proc_name
     |> Option.iter ~f:(fun Struct.{fields} ->
-           let formals = Procdesc.get_formals proc_desc in
-           let self = List.find ~f:(fun (var, _, _) -> Mangled.equal var Mangled.self) formals in
-           Option.iter self ~f:(fun (self, typ, _) ->
-               let self_var = Pvar.mk self proc_name in
-               process_dealloc proc_desc fields (self_var, typ) ) )
+        let formals = Procdesc.get_formals proc_desc in
+        let self = List.find ~f:(fun (var, _, _) -> Mangled.equal var Mangled.self) formals in
+        Option.iter self ~f:(fun (self, typ, _) ->
+            let self_var = Pvar.mk self proc_name in
+            process_dealloc proc_desc fields (self_var, typ) ) )
 
 
 let process cfg tenv = Procname.Hash.iter (process_procdesc tenv) cfg

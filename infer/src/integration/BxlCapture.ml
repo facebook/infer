@@ -45,7 +45,7 @@ let get_buck2_root_relative_changed_files () =
       List.fold existing_absolute_paths ~init:[] ~f:(fun acc abs_file_path ->
           Utils.filename_to_relative ~root:abs_buck2_root abs_file_path
           |> Option.fold ~init:acc ~f:(fun acc path_rel_to_buck2_root ->
-                 path_rel_to_buck2_root :: acc ) )
+              path_rel_to_buck2_root :: acc ) )
 
 
 let run_capture buck2_build_cmd =
@@ -91,11 +91,11 @@ let capture build_cmd =
     let args_to_store =
       ["--"]
       @ Option.value_map Config.buck_dependency_depth ~default:[] ~f:(fun depth ->
-            [Printf.sprintf "--depth=%i" depth] )
+          [Printf.sprintf "--depth=%i" depth] )
       @ Option.value_map Config.buck2_infertoolchain_target ~default:[] ~f:(fun target ->
-            ["--infer-toolchain"; target] )
+          ["--infer-toolchain"; target] )
       @ Option.value_map Config.buck2_inferconfig_target ~default:[] ~f:(fun target ->
-            ["--inferconfig"; target] )
+          ["--inferconfig"; target] )
       @ (if Config.keep_going then ["--keep-going=true"] else [])
       @ (if Config.buck_swift then ["--swift=true"] else [])
       @ (if Config.buck_swift_keep_going then ["--swift-keep-going=true"] else [])

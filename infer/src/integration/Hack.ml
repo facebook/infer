@@ -373,11 +373,11 @@ let process_output_in_parallel ic =
   let worker_outs =
     ProcessPool.run runner
     |> Array.mapi ~f:(fun worker_num out_path ->
-           match out_path with
-           | Some out_path ->
-               (worker_num, out_path)
-           | None ->
-               L.die ExternalError "Worker %d did't return a path to its output folder" worker_num )
+        match out_path with
+        | Some out_path ->
+            (worker_num, out_path)
+        | None ->
+            L.die ExternalError "Worker %d did't return a path to its output folder" worker_num )
   in
   CaptureWorker.write_infer_deps worker_outs ;
   if not Config.hack_verify_capture_only then (
@@ -385,7 +385,7 @@ let process_output_in_parallel ic =
     let tenv =
       Tenv.Global.load ()
       |> Option.value_or_thunk ~default:(fun () ->
-             L.die InternalError "Global tenv not found after capture merge" )
+          L.die InternalError "Global tenv not found after capture merge" )
     in
     L.progress "Finished capture: success %d files, error %d files.@\n" !n_captured !n_error ;
     ( if Config.debug_level_capture > 0 then (

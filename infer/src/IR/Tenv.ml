@@ -458,7 +458,7 @@ let is_hack_model source_file =
   let source_file = SourceFile.to_abs_path source_file in
   String.is_suffix source_file ~suffix:Config.default_hack_builtin_models_rel
   || List.exists (Config.hack_builtin_models :: Config.hack_models) ~f:(fun hack_model ->
-         String.equal source_file hack_model )
+      String.equal source_file hack_model )
 
 
 let resolve_method ?(is_virtual = false) ~method_exists tenv class_name proc_name =

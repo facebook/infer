@@ -141,13 +141,13 @@ module LongestProcDurationHeap = struct
   let to_log_entries ~field_name:_ heap =
     to_list heap
     |> List.foldi ~init:[] ~f:(fun i acc DurationItem.{duration_us; file; pname} ->
-           LogEntry.mk_time
-             ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%d" i)
-             ~duration_us
-           :: LogEntry.mk_string
-                ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_name_%d" i)
-                ~message:(F.sprintf "%s:%s" file pname)
-           :: acc )
+        LogEntry.mk_time
+          ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_%d" i)
+          ~duration_us
+        :: LogEntry.mk_string
+             ~label:(F.sprintf "backend_stats.longest_proc_duration_heap_name_%d" i)
+             ~message:(F.sprintf "%s:%s" file pname)
+        :: acc )
 
 
   let init = Heap.create ~dummy:DurationItem.dummy 10

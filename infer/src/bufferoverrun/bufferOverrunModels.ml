@@ -1844,8 +1844,8 @@ module File = struct
           Loc.append_field loc BufferOverrunField.java_list_files_length
           |> Loc.get_path
           |> Option.value_map ~default:mem ~f:(fun path ->
-                 let length = Itv.of_normal_path ~unsigned:true path in
-                 JavaClass.decl_array model_env ~ret length mem )
+              let length = Itv.of_normal_path ~unsigned:true path in
+              JavaClass.decl_array model_env ~ret length mem )
       | Empty | More ->
           mem
     in

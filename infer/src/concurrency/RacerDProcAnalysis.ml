@@ -186,10 +186,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | [access_expr] ->
         HilExp.eval_boolean_exp access_expr assume_exp
         |> Option.value_map ~default:astate ~f:(fun bool_value ->
-               (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
+            (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
                   add the constraint that the choice must be [bool_value] to the state *)
-               AttributeMapDomain.get access_expr astate.attribute_map
-               |> apply_choice bool_value astate )
+            AttributeMapDomain.get access_expr astate.attribute_map
+            |> apply_choice bool_value astate )
     | _ ->
         astate
 
@@ -270,18 +270,18 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
       in
       Procdesc.get_formals proc_desc
       |> List.foldi ~init:OwnershipDomain.empty ~f:(fun index acc (name, typ, _) ->
-             let base =
-               AccessPath.base_of_pvar (Pvar.mk name proc_name) typ |> AccessExpression.base
-             in
-             if is_injected then
-               (* if a constructor is called via DI, all of its formals will be freshly allocated and
+          let base =
+            AccessPath.base_of_pvar (Pvar.mk name proc_name) typ |> AccessExpression.base
+          in
+          if is_injected then
+            (* if a constructor is called via DI, all of its formals will be freshly allocated and
                   therefore owned. we assume that constructors annotated with [@Inject] will only be
                   called via DI or using fresh parameters. *)
-               add_owned_formal acc base
-             else if is_initializer && Int.equal 0 index then
-               (* express that the constructor owns [this] *)
-               add_owned_formal acc base
-             else add_conditionally_owned_formal acc base index )
+            add_owned_formal acc base
+          else if is_initializer && Int.equal 0 index then
+            (* express that the constructor owns [this] *)
+            add_owned_formal acc base
+          else add_conditionally_owned_formal acc base index )
     in
     let initial = {initial with ownership; threads; locks} in
     let formals = FormalMap.make proc_attrs in

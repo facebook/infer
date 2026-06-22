@@ -144,8 +144,8 @@ let gen_type kind name procdesc =
           let acc =
             String.chop_suffix module_name ~suffix:"__init__"
             |> Option.value_map ~default:acc ~f:(fun module_name ->
-                   let module_name = module_name ^ attr_name0 in
-                   add_import_from lhs ~module_name ~attr_name acc )
+                let module_name = module_name ^ attr_name0 in
+                add_import_from lhs ~module_name ~attr_name acc )
           in
           find_next_declaration acc instrs
       | Let {lhs; rhs= Function {qual_name}} ->
@@ -211,12 +211,12 @@ let gen_type kind name procdesc =
   let rec find_declarations acc nodes_map nodename =
     NodeName.Map.find_opt nodename nodes_map
     |> Option.value_map ~default:acc ~f:(fun {Node.stmts; last} ->
-           let acc = find_next_declaration acc stmts in
-           match last with
-           | Terminator.Jump {label} ->
-               find_declarations acc nodes_map label
-           | _ ->
-               acc )
+        let acc = find_next_declaration acc stmts in
+        match last with
+        | Terminator.Jump {label} ->
+            find_declarations acc nodes_map label
+        | _ ->
+            acc )
   in
   let {CFG.nodes; entry} = procdesc in
   let {var_types} = find_declarations empty nodes entry in

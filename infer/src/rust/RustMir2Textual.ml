@@ -396,9 +396,9 @@ let mk_locals crate (locals : Charon.Generated_GAst.local list) (arg_count : int
   (* Extracts the local variable names from locals list, excluding the return value and the arguments *)
   List.take locals 1 @ List.drop locals (1 + arg_count)
   |> List.map ~f:(fun (local : Charon.Generated_GAst.local) ->
-         let id = local.index in
-         let varname = place_map_find_id place_map id in
-         (varname, Textual.Typ.mk_without_attributes (ty_to_textual_typ crate local.local_ty)) )
+      let id = local.index in
+      let varname = place_map_find_id place_map id in
+      (varname, Textual.Typ.mk_without_attributes (ty_to_textual_typ crate local.local_ty)) )
 
 
 let mk_const_exp _crate (value : Charon.Generated_Types.constant_expr_kind) : Textual.Exp.t =
@@ -967,11 +967,11 @@ let mk_tuple_type crate (local : Charon.Generated_GAst.local) =
         let fields =
           generics.types
           |> List.mapi ~f:(fun i typ ->
-                 let attributes = [] in
-                 let name = Textual.FieldName.of_string (Int.to_string i) in
-                 let qualified_name = {Textual.enclosing_class= tuple_type_name; name} in
-                 let typ = ty_to_textual_typ crate typ in
-                 {Textual.FieldDecl.typ; qualified_name; attributes} )
+              let attributes = [] in
+              let name = Textual.FieldName.of_string (Int.to_string i) in
+              let qualified_name = {Textual.enclosing_class= tuple_type_name; name} in
+              let typ = ty_to_textual_typ crate typ in
+              {Textual.FieldDecl.typ; qualified_name; attributes} )
         in
         [{Textual.Struct.name= tuple_type_name; supers= []; fields; attributes= []}]
     | TRef (_, ty, _) | TRawPtr (ty, _) ->
@@ -1032,7 +1032,7 @@ let mk_module (crate : Charon.UllbcAst.crate) ~file_name : Textual.Module.t =
   let proc_decls =
     Charon.Generated_Types.FunDeclId.Map.values fun_decls
     |> List.filter ~f:(fun (decl : Charon.UllbcAst.blocks Charon.GAst.gfun_decl) ->
-           filter_unit_metadata crate decl.item_meta )
+        filter_unit_metadata crate decl.item_meta )
     |> List.filter_map ~f:(fun proc -> mk_decl crate proc)
   in
   (* The crate does not store tuple types in it declerations
@@ -1047,7 +1047,7 @@ let mk_module (crate : Charon.UllbcAst.crate) ~file_name : Textual.Module.t =
   let global_vars =
     Charon.Generated_Expressions.GlobalDeclId.Map.values crate.global_decls
     |> List.filter ~f:(fun (decl : Charon.Generated_GAst.global_decl) ->
-           filter_unit_metadata crate decl.item_meta )
+        filter_unit_metadata crate decl.item_meta )
     |> List.map ~f:(mk_global crate)
   in
   let decls = type_decls @ proc_decls @ tuple_decls @ global_vars in

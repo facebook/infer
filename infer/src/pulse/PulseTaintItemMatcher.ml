@@ -424,16 +424,14 @@ let match_procedure_target tenv astate matches path location return_opt ~has_add
                 in
                 Stack.find_opt return astate
                 |> Option.fold ~init:acc ~f:(fun (_, tainted) return_vo ->
-                       let return_value = ValueOrigin.addr_hist return_vo in
-                       let taint =
-                         { TaintItem.value_tuple=
-                             Basic {value= potential_taint_value; origin= ReturnValue}
-                         ; kinds }
-                       in
-                       let value_origin =
-                         ValueOrigin.OnStack {var= return; addr_hist= return_value}
-                       in
-                       (astate, {taint; value_origin; typ= return_typ; exp= None} :: tainted) ) ) )
+                    let return_value = ValueOrigin.addr_hist return_vo in
+                    let taint =
+                      { TaintItem.value_tuple=
+                          Basic {value= potential_taint_value; origin= ReturnValue}
+                      ; kinds }
+                    in
+                    let value_origin = ValueOrigin.OnStack {var= return; addr_hist= return_value} in
+                    (astate, {taint; value_origin; typ= return_typ; exp= None} :: tainted) ) ) )
     | (AllArguments | ArgumentPositions _ | AllArgumentsButPositions _ | ArgumentsMatchingTypes _)
       as taint_target ->
         L.d_printf "matching actuals... " ;

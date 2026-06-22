@@ -160,9 +160,9 @@ let capture_compiler_generated ~bitcode_id ~lang module_state =
             let global_tenv =
               Tenv.Global.load ()
               |> Option.value_or_thunk ~default:(fun () ->
-                     let tenv = Tenv.create () in
-                     Tenv.Global.set (Some tenv) ;
-                     tenv )
+                  let tenv = Tenv.create () in
+                  Tenv.Global.set (Some tenv) ;
+                  tenv )
             in
             Tenv.merge ~src:tenv ~dst:global_tenv ) ;
         stats.files_captured <- stats.files_captured + 1 ;
@@ -219,9 +219,9 @@ let capture_llair source_file module_state =
         let global_tenv =
           Tenv.Global.load ()
           |> Option.value_or_thunk ~default:(fun () ->
-                 let tenv = Tenv.create () in
-                 Tenv.Global.set (Some tenv) ;
-                 tenv )
+              let tenv = Tenv.create () in
+              Tenv.Global.set (Some tenv) ;
+              tenv )
         in
         Tenv.merge ~src:tenv ~dst:global_tenv ) ;
     stats.files_captured <- stats.files_captured + 1 ;

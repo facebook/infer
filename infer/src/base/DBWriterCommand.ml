@@ -372,8 +372,14 @@ module Implementation : DBWriterS.S = struct
       in
       fun payload_id -> IString.Map.find (PayloadId.Variants.to_name payload_id) stmts
     in
-    fun ?(transaction = false) analysis_req ~proc_uid ~proc_name ~merge_pulse_payload
-        ~merge_report_summary ~merge_summary_metadata ->
+    fun ?(transaction = false)
+      analysis_req
+      ~proc_uid
+      ~proc_name
+      ~merge_pulse_payload
+      ~merge_report_summary
+      ~merge_summary_metadata
+    ->
       let proc_uid_hash = String.hash proc_uid in
       IInt.Hash.find_opt specs_overwrite_counts proc_uid_hash
       |> Option.value_map ~default:0 ~f:(( + ) 1)

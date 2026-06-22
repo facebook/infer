@@ -992,19 +992,19 @@ module Internal = struct
         (fun addr attrs acc ->
           Attributes.get_address_of_stack_variable attrs
           |> Option.value_map ~default:acc ~f:(fun (var, location, history) ->
-                 let get_local_typ_opt pvar =
-                   List.find_map locals ~f:(fun ProcAttributes.{name; typ; modify_in_block} ->
-                       if (not modify_in_block) && Mangled.equal name (Pvar.get_name pvar) then
-                         Some typ
-                       else None )
-                 in
-                 match var with
-                 | Var.ProgramVar pvar when not (Pvar.is_artificial pvar) ->
-                     get_local_typ_opt pvar
-                     |> Option.value_map ~default:acc
-                          ~f:(add_out_of_scope_attribute addr pvar location history acc)
-                 | _ ->
-                     acc ) )
+              let get_local_typ_opt pvar =
+                List.find_map locals ~f:(fun ProcAttributes.{name; typ; modify_in_block} ->
+                    if (not modify_in_block) && Mangled.equal name (Pvar.get_name pvar) then
+                      Some typ
+                    else None )
+              in
+              match var with
+              | Var.ProgramVar pvar when not (Pvar.is_artificial pvar) ->
+                  get_local_typ_opt pvar
+                  |> Option.value_map ~default:acc
+                       ~f:(add_out_of_scope_attribute addr pvar location history acc)
+              | _ ->
+                  acc ) )
         attrs attrs
     in
     if phys_equal attrs attrs' then astate
@@ -1275,8 +1275,8 @@ module Internal = struct
           let get_non_empty_cell addr astate =
             find_cell_opt addr astate
             |> Option.filter ~f:(fun (edges, attrs) ->
-                   not (BaseMemory.Edges.is_empty edges && Attributes.is_empty attrs)
-                   (* this can happen because of [register_address] or because we don't care to delete empty
+                not (BaseMemory.Edges.is_empty edges && Attributes.is_empty attrs)
+                (* this can happen because of [register_address] or because we don't care to delete empty
                       edges when removing edges *) )
           in
           let lhs_cell_opt = get_non_empty_cell addr_lhs lhs in
@@ -1890,16 +1890,16 @@ let filter_live_addresses ~is_dead_root potential_leak_addrs astate =
     let formal_values =
       BaseStack.to_seq pre.stack
       |> Seq.flat_map (fun (_, formal_vo) ->
-             let addr = CanonValue.canon astate (ValueOrigin.value formal_vo) in
-             match BaseMemory.find_opt addr pre.heap with
-             | None ->
-                 Seq.empty
-             | Some edges ->
-                 BaseMemory.Edges.to_seq edges
-                 |> Seq.map (fun (_access, (value, _)) ->
-                        let value = CanonValue.canon astate value in
-                        mark_reachable value ;
-                        value ) )
+          let addr = CanonValue.canon astate (ValueOrigin.value formal_vo) in
+          match BaseMemory.find_opt addr pre.heap with
+          | None ->
+              Seq.empty
+          | Some edges ->
+              BaseMemory.Edges.to_seq edges
+              |> Seq.map (fun (_access, (value, _)) ->
+                  let value = CanonValue.canon astate value in
+                  mark_reachable value ;
+                  value ) )
     in
     collect_reachable_from formal_values `Pre
   in
@@ -1916,7 +1916,7 @@ let mark_potential_leaks location ~dead_roots astate =
   let allocated_reachable_from_dead_root =
     reachable_addresses ~var_filter:is_dead_root astate `Post
     |> CanonValue.Set.filter (fun addr ->
-           SafeAttributes.get_allocation addr astate |> Option.is_some )
+        SafeAttributes.get_allocation addr astate |> Option.is_some )
   in
   match filter_live_addresses ~is_dead_root allocated_reachable_from_dead_root astate with
   | exception NoLeak ->
@@ -2346,8 +2346,8 @@ module Summary = struct
           ( if CanonValue.Set.mem addr addresses && not (CanonValue.Set.mem addr already_found) then
               mk_heap_path var rev_accesses
               |> Option.value_map ~default:(heap_paths, already_found) ~f:(fun heap_path ->
-                     ( Specialization.HeapPath.Map.add heap_path (downcast addr) heap_paths
-                     , CanonValue.Set.add addr already_found ) )
+                  ( Specialization.HeapPath.Map.add heap_path (downcast addr) heap_paths
+                  , CanonValue.Set.add addr already_found ) )
             else (heap_paths, already_found) ) )
     |> snd |> fst
 

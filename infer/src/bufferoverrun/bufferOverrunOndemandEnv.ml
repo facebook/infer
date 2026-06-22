@@ -86,12 +86,12 @@ let mk pdesc =
       | BoField.(Field {fn; prefix= x} | StarField {last_field= fn; prefix= x}) ->
           may_last_field x
           && Option.value_map ~default:true (typ_of_param_path x) ~f:(fun parent_typ ->
-                 match parent_typ.Typ.desc with
-                 | Tstruct typename ->
-                     let opt_struct = Tenv.lookup tenv typename in
-                     Option.exists opt_struct ~f:(fun str -> is_last_field fn str.Struct.fields)
-                 | _ ->
-                     true )
+              match parent_typ.Typ.desc with
+              | Tstruct typename ->
+                  let opt_struct = Tenv.lookup tenv typename in
+                  Option.exists opt_struct ~f:(fun str -> is_last_field fn str.Struct.fields)
+              | _ ->
+                  true )
     in
     let entry_location = Procdesc.Node.get_loc (Procdesc.get_start_node pdesc) in
     let class_name = Procname.get_class_type_name pname in

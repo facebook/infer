@@ -43,13 +43,13 @@ let process_gradle_output_line =
   fun ((seen, target_dirs) as acc) line ->
     String.substr_index line ~pattern:arg_start_pattern
     |> Option.value_map ~default:acc ~f:(fun pos ->
-           let content = String.drop_prefix line (pos + String.length arg_start_pattern) in
-           L.debug Capture Verbose "Processing: %s@." content ;
-           if IString.Set.mem content seen then acc
-           else
-             let javac_data = parse_gradle_line ~kotlin:Config.kotlin_capture ~line:content in
-             let out_dir = IFilename.temp_dir capture_output_template "" in
-             (IString.Set.add content seen, (out_dir, javac_data) :: target_dirs) )
+        let content = String.drop_prefix line (pos + String.length arg_start_pattern) in
+        L.debug Capture Verbose "Processing: %s@." content ;
+        if IString.Set.mem content seen then acc
+        else
+          let javac_data = parse_gradle_line ~kotlin:Config.kotlin_capture ~line:content in
+          let out_dir = IFilename.temp_dir capture_output_template "" in
+          (IString.Set.add content seen, (out_dir, javac_data) :: target_dirs) )
 
 
 let run_gradle ~prog ~args =
@@ -115,8 +115,8 @@ let run_infer_capture target_data =
 let write_rev_infer_deps rev_target_data =
   ResultsDir.get_path CaptureDependencies
   |> Utils.with_file_out ~f:(fun out_channel ->
-         List.rev_map rev_target_data ~f:(fun (out_dir, _) -> Printf.sprintf "-\t-\t%s" out_dir)
-         |> Out_channel.output_lines out_channel )
+      List.rev_map rev_target_data ~f:(fun (out_dir, _) -> Printf.sprintf "-\t-\t%s" out_dir)
+      |> Out_channel.output_lines out_channel )
 
 
 let log_environment_info ~prog =

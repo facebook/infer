@@ -867,19 +867,19 @@ val to_string : ?sep:string -> ('a -> string) -> 'a t -> string
     Example: copy a file ["a"] into file ["b"], removing blank lines:
 
     {[
-      Iterator.(IO.lines_of "a" |> filter (fun l -> l <> "") |> IO.write_lines "b")
+    Iterator.(IO.lines_of "a" |> filter (fun l -> l <> "") |> IO.write_lines "b")
     ]}
 
     By chunks of [4096] bytes:
 
     {[
-      Iterator.IO.(chunks_of ~size:4096 "a" |> write_to "b")
+    Iterator.IO.(chunks_of ~size:4096 "a" |> write_to "b")
     ]}
 
     Read the lines of a file into a list:
 
     {[
-      Iterator.IO.lines "a" |> Iterator.to_list
+    Iterator.IO.lines "a" |> Iterator.to_list
     ]}
     @since 0.5.1 *)
 

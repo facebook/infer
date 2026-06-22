@@ -461,7 +461,7 @@ module Basic = struct
     ; +match_taint_source Config.pulse_taint_skip_sources
       &::.*++> unknown_call "modelled as skip due to configuration option" ]
     |> List.map ~f:(fun matcher ->
-           matcher
-           |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
-           |> with_non_disj )
+        matcher
+        |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+        |> with_non_disj )
 end

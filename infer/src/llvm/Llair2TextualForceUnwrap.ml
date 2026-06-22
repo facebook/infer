@@ -287,7 +287,7 @@ let is_init_path_split_call (proc : Textual.QualifiedProcName.t) =
   let names =
     [SwiftProcname.OptionalInitSg; SwiftProcname.OptionalInitTuple]
     |> List.map ~f:(fun b ->
-           (Llair2TextualModels.builtin_qual_proc_name (SwiftProcname.show_builtin b)).name )
+        (Llair2TextualModels.builtin_qual_proc_name (SwiftProcname.show_builtin b)).name )
   in
   List.exists names ~f:(fun name -> Textual.ProcName.equal proc.name name)
 

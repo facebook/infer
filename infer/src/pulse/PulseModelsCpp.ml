@@ -65,13 +65,13 @@ let placement_new =
   fun actuals {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "<placement new>()" in
     ( match (List.rev actuals : _ FuncArg.t list) with
-    | {typ= {desc= Tstruct (CppClass {name})}} :: _
-      when QualifiedCppName.Match.match_qualifiers std_nothrow_t_matcher name ->
-        PulseOperations.havoc_id ret_id (Hist.single_event event) astate
-    | {arg_payload= address, hist} :: _ ->
-        PulseOperations.write_id ret_id (address, Hist.add_event event hist) astate
-    | _ ->
-        PulseOperations.havoc_id ret_id (Hist.single_event event) astate )
+      | {typ= {desc= Tstruct (CppClass {name})}} :: _
+        when QualifiedCppName.Match.match_qualifiers std_nothrow_t_matcher name ->
+          PulseOperations.havoc_id ret_id (Hist.single_event event) astate
+      | {arg_payload= address, hist} :: _ ->
+          PulseOperations.write_id ret_id (address, Hist.add_event event hist) astate
+      | _ ->
+          PulseOperations.havoc_id ret_id (Hist.single_event event) astate )
     |> Basic.ok_continue
 
 

@@ -218,12 +218,12 @@ module Modules = struct
     let get_cfg qual_name =
       QualName.Map.find_opt qual_name cfgs
       |> Option.value_or_thunk ~default:(fun () ->
-             L.die InternalError "no cfg with name %a" QualName.pp qual_name )
+          L.die InternalError "no cfg with name %a" QualName.pp qual_name )
     in
     let get_module_status module_name =
       Ident.Hashtbl.find_opt bodies module_name
       |> Option.value_or_thunk ~default:(fun () ->
-             L.die InternalError "import: no module body with name %a" Ident.pp module_name )
+          L.die InternalError "import: no module body with name %a" Ident.pp module_name )
     in
     let mark_as_initialized module_name value =
       if not (Ident.Hashtbl.mem bodies module_name) then
@@ -244,8 +244,8 @@ let run_files modules =
       let get_node node_name =
         NodeName.Map.find_opt node_name nodes
         |> Option.value_or_thunk ~default:(fun () ->
-               L.die InternalError "exec_cfg: in cfg %a, no node with name %a" Ident.pp co_name
-                 NodeName.pp node_name )
+            L.die InternalError "exec_cfg: in cfg %a, no node with name %a" Ident.pp co_name
+              NodeName.pp node_name )
       in
       let entry_node = get_node entry in
       let {SSAEnv.get= ssa_get; set= ssa_set} =
@@ -284,8 +284,8 @@ let run_files modules =
         | Var {scope= Name; ident} ->
             locals_get_opt ident
             |> Option.value_or_thunk ~default:(fun () ->
-                   globals_get_opt ident
-                   |> Option.value_or_thunk ~default:(fun () -> builtins_get ident) )
+                globals_get_opt ident
+                |> Option.value_or_thunk ~default:(fun () -> builtins_get ident) )
         | Temp ssa ->
             ssa_get ssa
         | ImportName {name} ->

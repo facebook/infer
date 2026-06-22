@@ -55,7 +55,7 @@ let strip_wildcard_swift_field_name name =
       when String.length hint > 0
            && Int.equal (String.length hash) 8
            && String.for_all hash ~f:(fun c ->
-                  Char.is_digit c || Char.between c ~low:'a' ~high:'f' ) ->
+               Char.is_digit c || Char.between c ~low:'a' ~high:'f' ) ->
         hint
     | _ ->
         name )

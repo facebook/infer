@@ -884,15 +884,14 @@ let exec_instr scope_env tenv analyze_dependency instr =
   | Call ((ret_id, _), call_exp, actuals, loc, _) ->
       procname_of_exp call_exp
       |> Option.value_map ~default:[] ~f:(fun callee_pname ->
-             (* Check for a scope-generator procname and only if this fails use the summary. *)
-             let opt_typename = Scope.of_generator_procname tenv callee_pname in
-             match opt_typename with
-             | Some gen_typename ->
-                 let generator_scope = Scope.make_for_generator gen_typename callee_pname loc in
-                 [(Var.of_id ret_id, generator_scope)]
-             | None ->
-                 apply_summary tenv (Some loc) callee_pname analyze_dependency (Exp.Var ret_id)
-                   actuals )
+          (* Check for a scope-generator procname and only if this fails use the summary. *)
+          let opt_typename = Scope.of_generator_procname tenv callee_pname in
+          match opt_typename with
+          | Some gen_typename ->
+              let generator_scope = Scope.make_for_generator gen_typename callee_pname loc in
+              [(Var.of_id ret_id, generator_scope)]
+          | None ->
+              apply_summary tenv (Some loc) callee_pname analyze_dependency (Exp.Var ret_id) actuals )
   | _ ->
       []
 

@@ -169,7 +169,7 @@ module Set = struct
   let sum_items t =
     t.sums
     |> ARList.fold_unordered ~init:ARList.empty ~f:(fun acc sum ->
-           sum |> Sum.items |> ARList.of_list |> ARList.append acc )
+        sum |> Sum.items |> ARList.of_list |> ARList.append acc )
     |> IContainer.to_rev_list ~fold:ARList.fold_unordered
     |> List.dedup_and_sort ~compare:Item.compare
 

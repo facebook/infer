@@ -667,11 +667,11 @@ let try_propagate_objc_class ~(proc_state : ProcState.t) proc_name_str id llair_
         let name =
           List.hd llair_args
           |> Option.bind ~f:(function
-               | Llair.Exp.Reg {name; id; typ} ->
-                   let arg_id, _ = Var.reg_to_id ~proc_state (Reg.mk typ id name) in
-                   ProcState.get_objc_class_name ~proc_state arg_id
-               | _ ->
-                   None )
+            | Llair.Exp.Reg {name; id; typ} ->
+                let arg_id, _ = Var.reg_to_id ~proc_state (Reg.mk typ id name) in
+                ProcState.get_objc_class_name ~proc_state arg_id
+            | _ ->
+                None )
         in
         ProcState.mark_as_objc_class ~proc_state return_id ?name () )
 

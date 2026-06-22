@@ -248,8 +248,8 @@ let instrs_get_normal_vars instrs =
   let do_instr res instr =
     Sil.exps_of_instr instr
     |> List.fold_left ~init:res ~f:(fun res e ->
-           Exp.free_vars e
-           |> Sequence.filter ~f:Ident.is_normal
-           |> Ident.hashqueue_of_sequence ~init:res )
+        Exp.free_vars e
+        |> Sequence.filter ~f:Ident.is_normal
+        |> Ident.hashqueue_of_sequence ~init:res )
   in
   fold ~init:(Ident.HashQueue.create ()) ~f:do_instr instrs |> Ident.HashQueue.keys

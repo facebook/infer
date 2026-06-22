@@ -51,7 +51,7 @@ let prune_compares_to_null (instr : Sil.instr) =
 let node_is_trivial_else node =
   Procdesc.Node.get_instrs node
   |> Instrs.for_all ~f:(fun (instr : Sil.instr) ->
-         match instr with Store _ | Call _ -> false | _ -> true )
+      match instr with Store _ | Call _ -> false | _ -> true )
 
 
 (* Force-unwrap / fatalError lowers to [__assert_fail] / [_assertionFailure]; the
@@ -72,7 +72,7 @@ let is_fatal_callee (callee : Exp.t) =
 let node_has_no_fatal_call node =
   Procdesc.Node.get_instrs node
   |> Instrs.for_all ~f:(fun (instr : Sil.instr) ->
-         match instr with Call (_, callee, _, _, _) -> not (is_fatal_callee callee) | _ -> true )
+      match instr with Call (_, callee, _, _, _) -> not (is_fatal_callee callee) | _ -> true )
 
 
 let eq_branch_satisfies node ~check =

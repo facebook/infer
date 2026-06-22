@@ -151,18 +151,17 @@ let report_unnecessary_parameter_copies ({InterproceduralAnalysis.proc_desc; ten
   if is_not_implicit_or_copy_ctor_assignment pname then
     PulseNonDisjunctiveDomain.get_const_refable_parameters non_disj_astate
     |> List.iter ~f:(fun (param, typ, location) ->
-           if is_type_copiable tenv typ then
-             let diagnostic =
-               if Typ.is_shared_pointer typ then
-                 if NonDisjDomain.is_lifetime_extended param non_disj_astate then None
-                 else
-                   let used_locations = NonDisjDomain.get_loaded_locations param non_disj_astate in
-                   Some
-                     (Diagnostic.ReadonlySharedPtrParameter {param; typ; location; used_locations})
-               else Some (Diagnostic.ConstRefableParameter {param; typ; location})
-             in
-             Option.iter diagnostic ~f:(fun diagnostic ->
-                 PulseReport.report analysis_data ~is_suppressed:false ~latent:false diagnostic ) )
+        if is_type_copiable tenv typ then
+          let diagnostic =
+            if Typ.is_shared_pointer typ then
+              if NonDisjDomain.is_lifetime_extended param non_disj_astate then None
+              else
+                let used_locations = NonDisjDomain.get_loaded_locations param non_disj_astate in
+                Some (Diagnostic.ReadonlySharedPtrParameter {param; typ; location; used_locations})
+            else Some (Diagnostic.ConstRefableParameter {param; typ; location})
+          in
+          Option.iter diagnostic ~f:(fun diagnostic ->
+              PulseReport.report analysis_data ~is_suppressed:false ~latent:false diagnostic ) )
 
 
 let heap_size () = (Gc.quick_stat ()).heap_words
@@ -173,7 +172,7 @@ let current_specialization = AnalysisGlobalState.make_dls ~init:(fun () -> None)
 let pp_space_specialization fmt =
   DLS.get current_specialization
   |> Option.iter ~f:(function _, Specialization.Pulse specialization ->
-         F.fprintf fmt " (specialized: %a)" Specialization.Pulse.pp specialization )
+      F.fprintf fmt " (specialized: %a)" Specialization.Pulse.pp specialization )
 
 
 module PulseTransferFunctions = struct
@@ -534,21 +533,21 @@ module PulseTransferFunctions = struct
   let modify_receiver_if_hack_function_reference path location astate callee_pname func_args =
     let open IOption.Let_syntax in
     ( match func_args with
-    | ({FuncArg.arg_payload= value} as arg) :: args
-      when Option.exists callee_pname ~f:Procname.is_hack_late_binding ->
-        let function_addr_hist = ValueOrigin.addr_hist value in
-        let* dynamic_type_name, _ = function_addr_hist |> fst |> get_dynamic_type_name astate in
-        if Typ.Name.Hack.is_generated_curry dynamic_type_name then
-          let this_field = Fieldname.make dynamic_type_name "this" in
-          let+ astate, class_object =
-            PulseOperations.eval_deref_access path Read location function_addr_hist
-              (FieldAccess this_field) astate
-            |> PulseResult.ok
-          in
-          (astate, {arg with arg_payload= ValueOrigin.unknown class_object} :: args)
-        else None
-    | _ ->
-        None )
+      | ({FuncArg.arg_payload= value} as arg) :: args
+        when Option.exists callee_pname ~f:Procname.is_hack_late_binding ->
+          let function_addr_hist = ValueOrigin.addr_hist value in
+          let* dynamic_type_name, _ = function_addr_hist |> fst |> get_dynamic_type_name astate in
+          if Typ.Name.Hack.is_generated_curry dynamic_type_name then
+            let this_field = Fieldname.make dynamic_type_name "this" in
+            let+ astate, class_object =
+              PulseOperations.eval_deref_access path Read location function_addr_hist
+                (FieldAccess this_field) astate
+              |> PulseResult.ok
+            in
+            (astate, {arg with arg_payload= ValueOrigin.unknown class_object} :: args)
+          else None
+      | _ ->
+          None )
     |> Option.value ~default:(astate, func_args)
 
 
@@ -610,10 +609,10 @@ module PulseTransferFunctions = struct
     let res =
       is_receiver_hack_builder tenv astate pname receiver
       && List.exists Config.hack_builder_patterns ~f:(fun Config.{receiver_finalizers} ->
-             Option.exists receiver_finalizers ~f:(fun receiver_finalizers ->
-                 let pname = Procname.get_method pname in
-                 List.exists receiver_finalizers ~f:(fun finalizer_prefix ->
-                     String.is_prefix pname ~prefix:finalizer_prefix ) ) )
+          Option.exists receiver_finalizers ~f:(fun receiver_finalizers ->
+              let pname = Procname.get_method pname in
+              List.exists receiver_finalizers ~f:(fun finalizer_prefix ->
+                  String.is_prefix pname ~prefix:finalizer_prefix ) ) )
     in
     L.d_printfln "doing builder finalizer check, result is %b" res ;
     res
@@ -837,7 +836,7 @@ module PulseTransferFunctions = struct
           | None ->
               PulseModels.dispatch tenv callee_pname func_args
               |> Option.value_map ~default:NoModel ~f:(fun model ->
-                     OCamlModel (model, callee_pname) ) ) )
+                  OCamlModel (model, callee_pname) ) ) )
       | None ->
           (* unresolved function pointer, etc.: skip *)
           NoModel
@@ -955,11 +954,11 @@ module PulseTransferFunctions = struct
               PulseTaintOperations.call tenv path call_loc ret ~call_was_unknown call_event
                 func_args astate
               |> PulseResult.map ~f:(fun astate ->
-                     match PulseOperations.read_id (fst ret) astate with
-                     | Some (rv, _) when is_python_async ->
-                         PulseOperations.allocate Attribute.Awaitable call_loc rv astate
-                     | _ ->
-                         astate )
+                  match PulseOperations.read_id (fst ret) astate with
+                  | Some (rv, _) when is_python_async ->
+                      PulseOperations.allocate Attribute.Awaitable call_loc rv astate
+                  | _ ->
+                      astate )
             in
             ContinueProgram astate
         | ExceptionRaised astate ->
@@ -1044,15 +1043,15 @@ module PulseTransferFunctions = struct
     let get_dealloc (var, typ) =
       Typ.name typ
       |> Option.bind ~f:(fun name ->
-             let cls_typ = Typ.mk (Typ.Tstruct name) in
-             match Var.get_ident var with
-             | Some id when Typ.is_objc_class cls_typ ->
-                 let ret_id = Ident.create_fresh Ident.knormal in
-                 let dealloc = Procname.make_objc_dealloc name in
-                 let typ = Typ.mk_ptr cls_typ in
-                 Some (ret_id, id, typ, dealloc)
-             | _ ->
-                 None )
+          let cls_typ = Typ.mk (Typ.Tstruct name) in
+          match Var.get_ident var with
+          | Some id when Typ.is_objc_class cls_typ ->
+              let ret_id = Ident.create_fresh Ident.knormal in
+              let dealloc = Procname.make_objc_dealloc name in
+              let typ = Typ.mk_ptr cls_typ in
+              Some (ret_id, id, typ, dealloc)
+          | _ ->
+              None )
     in
     List.filter_map ~f:get_dealloc dynamic_types_unreachable
 
@@ -1386,7 +1385,7 @@ module PulseTransferFunctions = struct
           let astate_n =
             Exp.program_vars lhs_exp
             |> Sequence.fold ~init:astate_n ~f:(fun astate_n pvar ->
-                   NonDisjDomain.set_store loc timestamp pvar astate_n )
+                NonDisjDomain.set_store loc timestamp pvar astate_n )
           in
           let result =
             let** astate, rhs_value_origin =
@@ -1752,7 +1751,7 @@ let initial tenv proc_attrs specialization location =
   let initial_astate =
     AbductiveDomain.mk_initial tenv proc_attrs
     |> Option.value_map specialization ~default:Fun.id ~f:(fun spec ->
-           PulseSpecialization.apply spec location )
+        PulseSpecialization.apply spec location )
     |> PulseSummary.initial_with_positive_self proc_attrs
     |> PulseTaintOperations.taint_initial tenv proc_attrs
     |> set_uninitialize_prop path tenv proc_attrs
@@ -1905,9 +1904,9 @@ let python_register_info_per_source_lines proc_desc initial invariant_map =
       let id = Procdesc.Node.get_id node in
       DisjunctiveAnalyzer.extract_post id invariant_map
       |> Option.iter ~f:(fun inv ->
-             let loc = Procdesc.Node.get_loc node in
-             let info = get_info inv in
-             SourcePrinter.add_info_after ~sourcefile:loc.file ~line:loc.line ~info ) )
+          let loc = Procdesc.Node.get_loc node in
+          let info = get_info inv in
+          SourcePrinter.add_info_after ~sourcefile:loc.file ~line:loc.line ~info ) )
 
 
 let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data) =

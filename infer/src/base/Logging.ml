@@ -41,7 +41,7 @@ let dup_formatter fmt1 fmt2 =
             (fun n ->
               out_funs1.out_spaces n ;
               out_funs2.out_spaces n )
-          (* [out_width] (since OCaml 5.4) measures the display width of a
+            (* [out_width] (since OCaml 5.4) measures the display width of a
              substring; it is a property of the string, not the output, so
              forwarding to one formatter is enough. *)
         ; out_width= out_funs1.out_width } )

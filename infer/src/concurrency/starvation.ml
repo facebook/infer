@@ -38,17 +38,17 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let f_resolve_id var =
       Domain.VarDomain.get var astate.var_state
       |> Option.bind ~f:(function
-           | StarvationDomain.AccessExpressionOrConst.AE exp ->
-               Some exp
-           | StarvationDomain.AccessExpressionOrConst.Const exp ->
-               ( match !constant_var with
-               | None ->
-                   ()
-               | Some _e ->
-                   L.internal_error "Double resolved id %a in expression %a@\n" (Const.pp Pp.text)
-                     exp Exp.pp silexp ) ;
-               constant_var := Some exp ;
-               None )
+        | StarvationDomain.AccessExpressionOrConst.AE exp ->
+            Some exp
+        | StarvationDomain.AccessExpressionOrConst.Const exp ->
+            ( match !constant_var with
+            | None ->
+                ()
+            | Some _e ->
+                L.internal_error "Double resolved id %a in expression %a@\n" (Const.pp Pp.text) exp
+                  Exp.pp silexp ) ;
+            constant_var := Some exp ;
+            None )
     in
     let hil = HilExp.of_sil ~include_array_indexes:false ~f_resolve_id ~add_deref silexp typ in
     let hil = match !constant_var with None -> hil | Some c -> HilExp.Constant c in
@@ -91,10 +91,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       AttributeDomain.find_opt acc_exp acc.attributes
       |> Option.bind ~f:(function Attribute.FutureDoneGuard future -> Some future | _ -> None)
       |> Option.value_map ~default:acc ~f:(fun future ->
-             let attributes =
-               AttributeDomain.add future (Attribute.FutureDoneState bool_value) acc.attributes
-             in
-             {acc with attributes} )
+          let attributes =
+            AttributeDomain.add future (Attribute.FutureDoneState bool_value) acc.attributes
+          in
+          {acc with attributes} )
     in
     let astate =
       match HilExp.get_access_exprs assume_exp with
@@ -124,11 +124,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let open Domain in
     AttributeDomain.find_opt exp astate.attributes
     |> IOption.if_none_evalopt ~f:(fun () ->
-           StarvationModels.get_executor_thread_annotation_constraint tenv exp
-           |> Option.map ~f:(fun constr -> Attribute.WorkScheduler constr) )
+        StarvationModels.get_executor_thread_annotation_constraint tenv exp
+        |> Option.map ~f:(fun constr -> Attribute.WorkScheduler constr) )
     |> IOption.if_none_evalopt ~f:(fun () ->
-           StarvationModels.get_run_method_from_runnable tenv exp
-           |> Option.map ~f:(fun procname -> Attribute.Runnable procname) )
+        StarvationModels.get_run_method_from_runnable tenv exp
+        |> Option.map ~f:(fun procname -> Attribute.Runnable procname) )
 
 
   let do_work_scheduling tenv callee actuals loc (astate : Domain.t) =
@@ -165,10 +165,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       get_access_expr rhs_exp
       |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate)
       |> Option.value_map ~default:astate ~f:(fun attribute ->
-             let attributes =
-               Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes
-             in
-             {astate with attributes} )
+          let attributes = Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes in
+          {astate with attributes} )
     in
     if HilExp.is_null_literal rhs_exp then astate
     else Domain.set_non_null formals lhs_access_exp astate
@@ -230,21 +228,21 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         match actuals_acc_exps with
         | Some receiver :: rest ->
             ( match rest with
-            | Some exp1 :: Some exp2 :: _ ->
-                (* two additional arguments, either could be a runnable, see docs *)
-                [exp1; exp2]
-            | Some runnable :: _ ->
-                (* either just one argument, or more but 2nd is not an access expression *)
-                [runnable]
-            | _ ->
-                [] )
+              | Some exp1 :: Some exp2 :: _ ->
+                  (* two additional arguments, either could be a runnable, see docs *)
+                  [exp1; exp2]
+              | Some runnable :: _ ->
+                  (* either just one argument, or more but 2nd is not an access expression *)
+                  [runnable]
+              | _ ->
+                  [] )
             |> List.map ~f:(fun r () -> StarvationModels.get_run_method_from_runnable tenv r)
             |> IList.eval_until_first_some
             |> Option.map ~f:(fun procname ->
-                   let attributes =
-                     AttributeDomain.add receiver (Runnable procname) astate.attributes
-                   in
-                   {astate with attributes} )
+                let attributes =
+                  AttributeDomain.add receiver (Runnable procname) astate.attributes
+                in
+                {astate with attributes} )
         | _ ->
             None
       else None
@@ -269,9 +267,9 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         ; get_mainLooper_summary
         ; get_callee_summary ]
       |> Option.map ~f:(fun summary ->
-             let subst = Lock.make_subst formals actuals in
-             let callsite = CallSite.make callee loc in
-             Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary )
+          let subst = Lock.make_subst formals actuals in
+          let callsite = CallSite.make callee loc in
+          Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
@@ -293,7 +291,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let astate =
       get_access_expr_or_const rhs_hil_exp
       |> Option.value_map ~default:astate ~f:(fun acc_exp ->
-             {astate with var_state= Domain.VarDomain.set lhs_var acc_exp astate.var_state} )
+          {astate with var_state= Domain.VarDomain.set lhs_var acc_exp astate.var_state} )
     in
     let lhs_hil_acc_exp = HilExp.AccessExpression.base lhs in
     do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate
@@ -371,7 +369,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         hilexp_of_sil ~add_deref:true astate e1 (Typ.mk_ptr typ)
         |> get_access_expr
         |> Option.value_map ~default:astate ~f:(fun lhs_hil_acc_exp ->
-               do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate )
+            do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate )
     | Call (_, Const (Cfun callee), actuals, _, _)
       when should_skip_analysis tenv callee (hilexp_of_sils ~add_deref:false astate actuals) ->
         astate
@@ -745,11 +743,11 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
   let f acc mthd =
     Attributes.load mthd
     |> Option.value_map ~default:acc ~f:(fun other_attrs ->
-           if should_report other_attrs then
-             analyze_ondemand mthd
-             |> Option.map ~f:(fun payload -> (mthd, payload))
-             |> Option.fold ~init:acc ~f
-           else acc )
+        if should_report other_attrs then
+          analyze_ondemand mthd
+          |> Option.map ~f:(fun payload -> (mthd, payload))
+          |> Option.fold ~init:acc ~f
+        else acc )
   in
   let methods = List.map methods ~f:Struct.name_of_tenv_method in
   List.fold methods ~init ~f
@@ -942,16 +940,16 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
           List.fold locks ~init:report_map ~f:(fun acc lock ->
               Lock.root_class lock
               |> Option.value_map ~default:acc ~f:(fun other_class ->
-                     (* get the class of the root variable of the lock in the lock acquisition
+                  (* get the class of the root variable of the lock in the lock acquisition
                         and retrieve all the summaries of the methods of that class;
                         then, report on the parallel composition of the current pair and any pair in these
                         summaries that can indeed run in parallel *)
-                     fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
-                       ~f:(fun acc (other_pname, summary) ->
-                         Domain.fold_critical_pairs_of_summary
-                           (report_on_parallel_composition ~should_report_starvation tenv pattrs
-                              pair lock other_pname )
-                           summary acc ) ) ) )
+                  fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
+                    ~f:(fun acc (other_pname, summary) ->
+                      Domain.fold_critical_pairs_of_summary
+                        (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
+                           lock other_pname )
+                        summary acc ) ) ) )
   | _ ->
       report_map
 
@@ -974,8 +972,8 @@ let reporting {InterproceduralAnalysis.procedures; analyze_file_dependency} =
       | Some attributes ->
           analyze_file_dependency procname |> AnalysisResult.to_option
           |> Option.value_map ~default:report_map ~f:(fun summary ->
-                 let tenv = Exe_env.get_proc_tenv procname in
-                 if should_report attributes then report_on_proc tenv attributes report_map summary
-                 else report_map )
+              let tenv = Exe_env.get_proc_tenv procname in
+              if should_report attributes then report_on_proc tenv attributes report_map summary
+              else report_map )
     in
     List.fold procedures ~init:ReportMap.empty ~f:report_procedure |> ReportMap.issue_log_of

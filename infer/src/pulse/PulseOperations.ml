@@ -19,30 +19,30 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
   let* astate =
     AddressAttributes.check_valid path ?must_be_valid_reason access_trace address astate
     |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-           ReportableError
-             { diagnostic=
-                 Diagnostic.AccessToInvalidAddress
-                   { calling_context= []
-                   ; invalid_address= Decompiler.find address astate
-                   ; invalidation
-                   ; invalidation_trace
-                   ; access_trace
-                   ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
-                   ; must_be_valid_reason }
-             ; astate } )
+        ReportableError
+          { diagnostic=
+              Diagnostic.AccessToInvalidAddress
+                { calling_context= []
+                ; invalid_address= Decompiler.find address astate
+                ; invalidation
+                ; invalidation_trace
+                ; access_trace
+                ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
+                ; must_be_valid_reason }
+          ; astate } )
     |> AccessResult.of_result path
   in
   match access_mode with
   | Read ->
       AddressAttributes.check_initialized path access_trace address astate
       |> Result.map_error ~f:(fun typ ->
-             ReportableError
-               { diagnostic=
-                   Diagnostic.ReadUninitialized {typ; calling_context= []; trace= access_trace}
-               ; astate } )
+          ReportableError
+            { diagnostic=
+                Diagnostic.ReadUninitialized {typ; calling_context= []; trace= access_trace}
+            ; astate } )
       |> AccessResult.of_result_f path ~f:(fun _ ->
-             (* do not report further uninitialized reads errors on this value *)
-             AddressAttributes.initialize address astate )
+          (* do not report further uninitialized reads errors on this value *)
+          AddressAttributes.initialize address astate )
   | Write ->
       Ok (AddressAttributes.initialize address astate)
   | NoAccess ->
@@ -409,7 +409,7 @@ let is_non_this_param pdesc vo astate =
   is_pvar vo astate ~f:(fun pvar ->
       (not (Pvar.is_this pvar))
       && List.exists (Procdesc.get_pvar_formals pdesc) ~f:(fun (formal, _) ->
-             Pvar.equal formal pvar ) )
+          Pvar.equal formal pvar ) )
 
 
 let is_constructor pdesc = Procname.is_constructor (Procdesc.get_proc_name pdesc)
@@ -823,7 +823,7 @@ let rec deep_copy ?depth_max ({PathContext.timestamp} as path) location addr_his
       let astate =
         AddressAttributes.find_opt `Post (fst addr_hist_src) astate
         |> Option.value_map ~default:astate ~f:(fun src_attrs ->
-               AddressAttributes.add_all (fst copy) src_attrs astate )
+            AddressAttributes.add_all (fst copy) src_attrs astate )
       in
       (astate, copy)
 
@@ -841,20 +841,20 @@ let check_address_escape escape_location proc_desc path address history astate =
   let check_address_of_cpp_temporary () =
     AddressAttributes.find_opt `Post address astate
     |> Option.value_map ~default:(Result.Ok ()) ~f:(fun attrs ->
-           IContainer.iter_result ~fold:Attributes.fold attrs ~f:(fun attr ->
-               match attr with
-               | Attribute.AddressOfCppTemporary (variable, _)
-                 when not (is_assigned_to_global address astate) ->
-                   (* The returned address corresponds to a C++ temporary. It will have gone out of
+        IContainer.iter_result ~fold:Attributes.fold attrs ~f:(fun attr ->
+            match attr with
+            | Attribute.AddressOfCppTemporary (variable, _)
+              when not (is_assigned_to_global address astate) ->
+                (* The returned address corresponds to a C++ temporary. It will have gone out of
                       scope by now except if it was bound to a global. *)
-                   Error
-                     (ReportableError
-                        { diagnostic=
-                            Diagnostic.StackVariableAddressEscape
-                              {variable; location= escape_location; history}
-                        ; astate } )
-               | _ ->
-                   Ok () ) )
+                Error
+                  (ReportableError
+                     { diagnostic=
+                         Diagnostic.StackVariableAddressEscape
+                           {variable; location= escape_location; history}
+                     ; astate } )
+            | _ ->
+                Ok () ) )
   in
   let check_address_of_stack_variable () =
     IContainer.iter_result

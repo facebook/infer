@@ -435,13 +435,13 @@ module Subst = struct
     if varify then
       Textual.Ident.Map.find_opt id eqs
       |> Option.value_map ~default ~f:(function
-           | Exp.(Load {exp= Lvar var; typ= Some typ}) ->
-               let typ = Some typ in
-               let exp2 = mk_rhs typ in
-               Instr.Store {exp1= Exp.Lvar var; typ; exp2; loc}
-           | exp ->
-               L.die InternalError "varify is not compatible with equation %a=%a" Textual.Ident.pp
-                 id Exp.pp exp )
+        | Exp.(Load {exp= Lvar var; typ= Some typ}) ->
+            let typ = Some typ in
+            let exp2 = mk_rhs typ in
+            Instr.Store {exp1= Exp.Lvar var; typ; exp2; loc}
+        | exp ->
+            L.die InternalError "varify is not compatible with equation %a=%a" Textual.Ident.pp id
+              Exp.pp exp )
     else default
 
 
@@ -646,9 +646,9 @@ module TransformClosures = struct
     let procdecl = closure.procdecl in
     let attributes =
       Textual.Attr.mk_closure_wrapper
-      :: (* in Python, we transfert the 'args' and 'async' attributes from the 'closure' proc to the generated 'call' proc *)
-         List.filter procdecl.attributes ~f:(fun attr ->
-             Option.is_some (Textual.Attr.find_python_args attr) || Textual.Attr.is_async attr )
+      (* in Python, we transfert the 'args' and 'async' attributes from the 'closure' proc to the generated 'call' proc *)
+      :: List.filter procdecl.attributes ~f:(fun attr ->
+          Option.is_some (Textual.Attr.find_python_args attr) || Textual.Attr.is_async attr )
     in
     let unresolved_qualified_name = closure_call_qualified_procname loc in
     let qualified_name = {unresolved_qualified_name with enclosing_class= Enclosing typename} in
@@ -826,8 +826,8 @@ module RemoveIf = struct
             in
             succs node.Node.last
             |> List.fold ~init:map ~f:(fun map ({label} : Terminator.node_call) ->
-                   let count = get label map in
-                   NodeName.Map.add label (count + 1) map ) )
+                let count = get label map in
+                NodeName.Map.add label (count + 1) map ) )
       in
       fun label -> get label map
     in

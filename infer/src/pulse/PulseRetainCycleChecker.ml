@@ -198,10 +198,10 @@ let get_expr_with_fallback astate addr =
     | SourceExpr ((DecompilerExpr.PVar pvar, accesses), _) ->
         is_synthetic_temp_pvar pvar
         || List.exists accesses ~f:(function
-             | DecompilerExpr.FieldAccess fn ->
-                 String.is_prefix (Fieldname.get_field_name fn) ~prefix:"__infer_tuple_field_"
-             | _ ->
-                 false )
+          | DecompilerExpr.FieldAccess fn ->
+              String.is_prefix (Fieldname.get_field_name fn) ~prefix:"__infer_tuple_field_"
+          | _ ->
+              false )
     | _ ->
         false
   in

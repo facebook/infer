@@ -345,8 +345,8 @@ module AccessSnapshot = struct
       | Some actual ->
           AccessExpression.append ~onto:actual exp
           |> Option.map ~f:(fun new_exp ->
-                 map t ~f:(fun elem ->
-                     {elem with access= Access.map ~f:(fun _ -> new_exp) elem.access} ) ) )
+              map t ~f:(fun elem ->
+                  {elem with access= Access.map ~f:(fun _ -> new_exp) elem.access} ) ) )
 
 
   let update_callee_access threads locks actuals_ownership (snapshot : t) =
@@ -436,7 +436,7 @@ module OwnershipDomain = struct
       List.nth actuals formal_index
       (* simply skip formal if we cannot find its actual, as opposed to assuming non-ownership *)
       |> Option.fold ~init ~f:(fun acc expr ->
-             OwnershipAbstractValue.join acc (ownership_of_expr ownership expr) )
+          OwnershipAbstractValue.join acc (ownership_of_expr ownership expr) )
     in
     let ret_ownership_wrt_actuals =
       match return_ownership with
@@ -453,16 +453,16 @@ module Attribute = struct
 
   let pp fmt t =
     ( match t with
-    | Nothing ->
-        "Nothing"
-    | Functional ->
-        "Functional"
-    | OnMainThread ->
-        "OnMainThread"
-    | LockHeld ->
-        "LockHeld"
-    | Synchronized ->
-        "Synchronized" )
+      | Nothing ->
+          "Nothing"
+      | Functional ->
+          "Functional"
+      | OnMainThread ->
+          "OnMainThread"
+      | LockHeld ->
+          "LockHeld"
+      | Synchronized ->
+          "Synchronized" )
     |> F.pp_print_string fmt
 
 

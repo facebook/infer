@@ -61,7 +61,7 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
   let collect_vars_in_exp exp loop_head =
     Var.get_all_vars_in_exp exp
     |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc cvar ->
-           ControlDepSet.add {cvar; loop_head} acc )
+        ControlDepSet.add {cvar; loop_head} acc )
 
 
   let find_vars_in_decl id loop_head _ = function
@@ -79,36 +79,36 @@ module TransferFunctionsControlDeps (CFG : ProcCfg.S) = struct
     let program_control_vars =
       Exp.program_vars exp
       |> Sequence.fold ~init:ControlDepSet.empty ~f:(fun acc pvar ->
-             ControlDepSet.add {cvar= Var.of_pvar pvar; loop_head} acc )
+          ControlDepSet.add {cvar= Var.of_pvar pvar; loop_head} acc )
     in
     Exp.free_vars exp
     |> Sequence.fold ~init:program_control_vars ~f:(fun acc id ->
-           match
-             Procdesc.Node.find_in_node_or_preds prune_node ~f:(find_vars_in_decl id loop_head)
-           with
-           | Some deps ->
-               ControlDepSet.union deps acc
-           | None -> (
-             (* the variables in the prune node do not appear in
+        match
+          Procdesc.Node.find_in_node_or_preds prune_node ~f:(find_vars_in_decl id loop_head)
+        with
+        | Some deps ->
+            ControlDepSet.union deps acc
+        | None -> (
+          (* the variables in the prune node do not appear in
                 predecessor nodes. This could happen if the variable
                 is defined in a dangling node due to a frontend
                 issue (when reading from a global variable). In that
                 case, we find that node among all the nodes of the
                 cfg and pick up the control variables. *)
-             match
-               List.find_map nodes ~f:(fun node ->
-                   if Procdesc.Node.is_dangling node then
-                     let instrs = Procdesc.Node.get_instrs node in
-                     Instrs.find_map instrs ~f:(find_vars_in_decl id loop_head prune_node)
-                   else None )
-             with
-             | Some deps ->
-                 ControlDepSet.union deps acc
-             | None ->
-                 L.debug Analysis Quiet
-                   "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp
-                   id Exp.pp exp ;
-                 acc ) )
+          match
+            List.find_map nodes ~f:(fun node ->
+                if Procdesc.Node.is_dangling node then
+                  let instrs = Procdesc.Node.get_instrs node in
+                  Instrs.find_map instrs ~f:(find_vars_in_decl id loop_head prune_node)
+                else None )
+          with
+          | Some deps ->
+              ControlDepSet.union deps acc
+          | None ->
+              L.debug Analysis Quiet
+                "Failed to get the definition of the control variable %a in exp %a \n" Ident.pp id
+                Exp.pp exp ;
+              acc ) )
 
 
   (* extract vars from the prune instructions in the node *)
@@ -201,9 +201,9 @@ let compute_control_vars control_invariant_map loop_inv_map node =
   let deps = ControlMap.empty in
   ControlDepAnalyzer.extract_post node_id control_invariant_map
   |> Option.map ~f:(fun control_deps ->
-         (* loop_inv_map: loop head -> variables that are invariant in the loop *)
-         L.(debug Analysis Medium)
-           "@\n>>> Control dependencies of node %a : %a @\n" Procdesc.Node.pp node ControlDepSet.pp
-           control_deps ;
-         remove_invariant_vars control_deps loop_inv_map )
+      (* loop_inv_map: loop head -> variables that are invariant in the loop *)
+      L.(debug Analysis Medium)
+        "@\n>>> Control dependencies of node %a : %a @\n" Procdesc.Node.pp node ControlDepSet.pp
+        control_deps ;
+      remove_invariant_vars control_deps loop_inv_map )
   |> Option.value ~default:deps

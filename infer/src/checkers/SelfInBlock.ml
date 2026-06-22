@@ -770,7 +770,7 @@ let report_issues proc_desc err_log domain reported_strongSelfNotChecked =
   let domain_bindings =
     Vars.bindings domain
     |> List.sort ~compare:(fun (_, {DomainData.loc= loc1}) (_, {DomainData.loc= loc2}) ->
-           Location.compare loc1 loc2 )
+        Location.compare loc1 loc2 )
   in
   let var_lists = {selfList= []; weakSelfList= []} in
   let var_lists, reported_strongSelfNotChecked =

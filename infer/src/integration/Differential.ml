@@ -159,7 +159,7 @@ module CostsSummary = struct
     let json_degrees =
       DegreeMap.bindings paired_counts.degrees
       |> List.map ~f:(fun (key, {current; previous}) ->
-             `Assoc [("degree", `Int key); ("current", `Int current); ("previous", `Int previous)] )
+          `Assoc [("degree", `Int key); ("current", `Int current); ("previous", `Int previous)] )
     in
     let create_assoc current previous =
       `Assoc [("current", `Int current); ("previous", `Int previous)]
@@ -417,10 +417,8 @@ module ConfigImpactItem = struct
     let unchecked_callees =
       UncheckedCallees.elements unchecked_callees
       |> List.stable_sort ~compare:(fun x y ->
-             (* Known expensive callees come first. *)
-             compare_bool
-               (UncheckedCallee.is_known_expensive y)
-               (UncheckedCallee.is_known_expensive x) )
+          (* Known expensive callees come first. *)
+          compare_bool (UncheckedCallee.is_known_expensive y) (UncheckedCallee.is_known_expensive x) )
     in
     let qualifier =
       Format.asprintf

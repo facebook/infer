@@ -63,6 +63,7 @@ Exp.demangle :=
       let demangled = cxa_demangle mangled null_ptr_char null_ptr_size_t status in
       if !@status = 0 then demangled else None
     else None
+;;
 
 exception Invalid_llvm of string
 
@@ -801,275 +802,275 @@ and xlate_opcode : x -> Llvm.llvalue -> Llvm.Opcode.t -> Inst.t list * Exp.t =
     binary (fun ?typ e f -> Exp.or_ ~typ:Typ.bool (Exp.uno ?typ e f) (mk ?typ e f))
   in
   ( match opcode with
-  | Trunc
-  | ZExt
-  | SExt
-  | FPToUI
-  | FPToSI
-  | UIToFP
-  | SIToFP
-  | FPTrunc
-  | FPExt
-  | PtrToInt
-  | IntToPtr
-  | BitCast
-  | AddrSpaceCast ->
-      convert opcode
-  | ICmp -> (
-    match Option.get_exn (Llvm.icmp_predicate llv) with
-    | Eq ->
-        binary Exp.eq
-    | Ne ->
-        binary Exp.dq
-    | Sgt ->
-        binary Exp.gt
-    | Sge ->
-        binary Exp.ge
-    | Slt ->
-        binary Exp.lt
-    | Sle ->
-        binary Exp.le
-    | Ugt ->
-        binary Exp.ugt
-    | Uge ->
-        binary Exp.uge
-    | Ult ->
-        binary Exp.ult
-    | Ule ->
-        binary Exp.ule )
-  | FCmp -> (
-    match Llvm.fcmp_predicate llv with
-    | None | Some False ->
-        binary (fun ?typ:_ _ _ -> Exp.false_)
-    | Some Oeq ->
-        binary Exp.eq
-    | Some Ogt ->
-        binary Exp.gt
-    | Some Oge ->
-        binary Exp.ge
-    | Some Olt ->
-        binary Exp.lt
-    | Some Ole ->
-        binary Exp.le
-    | Some One ->
-        binary Exp.dq
-    | Some Ord ->
-        binary Exp.ord
-    | Some Uno ->
-        binary Exp.uno
-    | Some Ueq ->
-        unordered_or Exp.eq
-    | Some Ugt ->
-        unordered_or Exp.gt
-    | Some Uge ->
-        unordered_or Exp.ge
-    | Some Ult ->
-        unordered_or Exp.lt
-    | Some Ule ->
-        unordered_or Exp.le
-    | Some Une ->
-        unordered_or Exp.dq
-    | Some True ->
-        binary (fun ?typ:_ _ _ -> Exp.true_) )
-  | Add | FAdd ->
-      binary Exp.add
-  | Sub | FSub ->
-      binary Exp.sub
-  | FNeg ->
-      unary (fun ?(typ = Lazy.force typ) x -> Exp.sub ~typ (Exp.float typ "0.0") x)
-  | Mul | FMul ->
-      binary Exp.mul
-  | SDiv | FDiv ->
-      binary Exp.div
-  | UDiv ->
-      binary Exp.udiv
-  | SRem | FRem ->
-      binary Exp.rem
-  | URem ->
-      binary Exp.urem
-  | Shl ->
-      binary Exp.shl
-  | LShr ->
-      binary Exp.lshr
-  | AShr ->
-      binary Exp.ashr
-  | And ->
-      binary Exp.and_
-  | Or ->
-      binary Exp.or_
-  | Xor ->
-      binary Exp.xor
-  | Select ->
-      let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 1)) in
-      let pre_0, cnd = xlate_rand 0 in
-      let pre_1, thn = xlate_rand 1 in
-      let pre_2, els = xlate_rand 2 in
-      (pre_0 @ pre_1 @ pre_2, Exp.conditional typ ~cnd ~thn ~els)
-  | ExtractElement | InsertElement -> (
-      let typ =
-        let lltyp = Llvm.type_of (Llvm.operand llv 0) in
-        let llelt = Llvm.element_type lltyp in
-        let elt = xlate_type x llelt in
-        let len = Llvm.vector_size lltyp in
-        let bits = bit_size_of x lltyp in
-        let byts = size_of x lltyp in
-        Typ.array ~elt ~len ~bits ~byts
-      in
-      let idx i =
-        match xlate_rand i with
-        | pre, Integer {data} ->
-            (pre, Z.to_int data)
-        | _ ->
-            todo "vector operations: %a" pp_llvalue llv ()
-      in
-      let pre_0, rcd = xlate_rand 0 in
-      match opcode with
-      | ExtractElement ->
-          let pre_1, idx_1 = idx 1 in
-          (pre_0 @ pre_1, Exp.select typ rcd idx_1)
-      | InsertElement ->
-          let pre_1, elt = xlate_rand 1 in
-          let pre_2, idx_2 = idx 2 in
-          (pre_0 @ pre_1 @ pre_2, Exp.update typ ~rcd idx_2 ~elt)
-      | _ ->
-          assert false )
-  | ExtractValue | InsertValue ->
-      let pre_0, agg = xlate_rand 0 in
-      let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
-      let indices = Llvm.indices llv in
-      let num = Array.length indices in
-      let rec xlate_indices pre0 i rcd typ =
-        let rcd_i, typ_i, upd =
-          match (typ : Typ.t) with
-          | Tuple {elts} | Struct {elts} ->
-              ( Exp.select typ rcd indices.(i)
-              , snd (IArray.get elts indices.(i))
-              , Exp.update typ ~rcd indices.(i) )
-          | Array {elt} ->
-              (Exp.select typ rcd indices.(i), elt, Exp.update typ ~rcd indices.(i))
+    | Trunc
+    | ZExt
+    | SExt
+    | FPToUI
+    | FPToSI
+    | UIToFP
+    | SIToFP
+    | FPTrunc
+    | FPExt
+    | PtrToInt
+    | IntToPtr
+    | BitCast
+    | AddrSpaceCast ->
+        convert opcode
+    | ICmp -> (
+      match Option.get_exn (Llvm.icmp_predicate llv) with
+      | Eq ->
+          binary Exp.eq
+      | Ne ->
+          binary Exp.dq
+      | Sgt ->
+          binary Exp.gt
+      | Sge ->
+          binary Exp.ge
+      | Slt ->
+          binary Exp.lt
+      | Sle ->
+          binary Exp.le
+      | Ugt ->
+          binary Exp.ugt
+      | Uge ->
+          binary Exp.uge
+      | Ult ->
+          binary Exp.ult
+      | Ule ->
+          binary Exp.ule )
+    | FCmp -> (
+      match Llvm.fcmp_predicate llv with
+      | None | Some False ->
+          binary (fun ?typ:_ _ _ -> Exp.false_)
+      | Some Oeq ->
+          binary Exp.eq
+      | Some Ogt ->
+          binary Exp.gt
+      | Some Oge ->
+          binary Exp.ge
+      | Some Olt ->
+          binary Exp.lt
+      | Some Ole ->
+          binary Exp.le
+      | Some One ->
+          binary Exp.dq
+      | Some Ord ->
+          binary Exp.ord
+      | Some Uno ->
+          binary Exp.uno
+      | Some Ueq ->
+          unordered_or Exp.eq
+      | Some Ugt ->
+          unordered_or Exp.gt
+      | Some Uge ->
+          unordered_or Exp.ge
+      | Some Ult ->
+          unordered_or Exp.lt
+      | Some Ule ->
+          unordered_or Exp.le
+      | Some Une ->
+          unordered_or Exp.dq
+      | Some True ->
+          binary (fun ?typ:_ _ _ -> Exp.true_) )
+    | Add | FAdd ->
+        binary Exp.add
+    | Sub | FSub ->
+        binary Exp.sub
+    | FNeg ->
+        unary (fun ?(typ = Lazy.force typ) x -> Exp.sub ~typ (Exp.float typ "0.0") x)
+    | Mul | FMul ->
+        binary Exp.mul
+    | SDiv | FDiv ->
+        binary Exp.div
+    | UDiv ->
+        binary Exp.udiv
+    | SRem | FRem ->
+        binary Exp.rem
+    | URem ->
+        binary Exp.urem
+    | Shl ->
+        binary Exp.shl
+    | LShr ->
+        binary Exp.lshr
+    | AShr ->
+        binary Exp.ashr
+    | And ->
+        binary Exp.and_
+    | Or ->
+        binary Exp.or_
+    | Xor ->
+        binary Exp.xor
+    | Select ->
+        let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 1)) in
+        let pre_0, cnd = xlate_rand 0 in
+        let pre_1, thn = xlate_rand 1 in
+        let pre_2, els = xlate_rand 2 in
+        (pre_0 @ pre_1 @ pre_2, Exp.conditional typ ~cnd ~thn ~els)
+    | ExtractElement | InsertElement -> (
+        let typ =
+          let lltyp = Llvm.type_of (Llvm.operand llv 0) in
+          let llelt = Llvm.element_type lltyp in
+          let elt = xlate_type x llelt in
+          let len = Llvm.vector_size lltyp in
+          let bits = bit_size_of x lltyp in
+          let byts = size_of x lltyp in
+          Typ.array ~elt ~len ~bits ~byts
+        in
+        let idx i =
+          match xlate_rand i with
+          | pre, Integer {data} ->
+              (pre, Z.to_int data)
           | _ ->
-              (Llair.Exp.nondet typ, typ, Exp.update typ ~rcd indices.(i))
+              todo "vector operations: %a" pp_llvalue llv ()
         in
-        let update_or_return elt ret =
-          match[@warning "-partial-match"] opcode with
-          | InsertValue ->
-              let pre, elt = Lazy.force elt in
-              (pre0 @ pre, upd ~elt)
-          | ExtractValue ->
-              (pre0, ret)
+        let pre_0, rcd = xlate_rand 0 in
+        match opcode with
+        | ExtractElement ->
+            let pre_1, idx_1 = idx 1 in
+            (pre_0 @ pre_1, Exp.select typ rcd idx_1)
+        | InsertElement ->
+            let pre_1, elt = xlate_rand 1 in
+            let pre_2, idx_2 = idx 2 in
+            (pre_0 @ pre_1 @ pre_2, Exp.update typ ~rcd idx_2 ~elt)
+        | _ ->
+            assert false )
+    | ExtractValue | InsertValue ->
+        let pre_0, agg = xlate_rand 0 in
+        let typ = xlate_type x (Llvm.type_of (Llvm.operand llv 0)) in
+        let indices = Llvm.indices llv in
+        let num = Array.length indices in
+        let rec xlate_indices pre0 i rcd typ =
+          let rcd_i, typ_i, upd =
+            match (typ : Typ.t) with
+            | Tuple {elts} | Struct {elts} ->
+                ( Exp.select typ rcd indices.(i)
+                , snd (IArray.get elts indices.(i))
+                , Exp.update typ ~rcd indices.(i) )
+            | Array {elt} ->
+                (Exp.select typ rcd indices.(i), elt, Exp.update typ ~rcd indices.(i))
+            | _ ->
+                (Llair.Exp.nondet typ, typ, Exp.update typ ~rcd indices.(i))
+          in
+          let update_or_return elt ret =
+            match[@warning "-partial-match"] opcode with
+            | InsertValue ->
+                let pre, elt = Lazy.force elt in
+                (pre0 @ pre, upd ~elt)
+            | ExtractValue ->
+                (pre0, ret)
+          in
+          if i < num - 1 then
+            let pre, elt = xlate_indices pre0 (i + 1) rcd_i typ_i in
+            update_or_return (lazy (pre, elt)) elt
+          else
+            let pre_elt = lazy (xlate_rand 1) in
+            update_or_return pre_elt rcd_i
         in
-        if i < num - 1 then
-          let pre, elt = xlate_indices pre0 (i + 1) rcd_i typ_i in
-          update_or_return (lazy (pre, elt)) elt
-        else
-          let pre_elt = lazy (xlate_rand 1) in
-          update_or_return pre_elt rcd_i
-      in
-      xlate_indices pre_0 0 agg typ
-  | GetElementPtr ->
-      if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
-        todo "vector operations: %a" pp_llvalue llv () ;
-      let len = Llvm.num_operands llv in
-      assert (len > 0 || invalid_llvm (Llvm.string_of_llvalue llv)) ;
-      if len = 1 then convert BitCast
-      else if
-        Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
-        && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Struct
-        && len > 2
-      then
-        let lltyp1 = Llvm.get_gep_source_element_type llv in
-        let op2 = Llvm.operand llv 2 in
-        let _, ptr = xlate_value x (Llvm.operand llv 0) in
-        let typ = xlate_type x lltyp1 in
-        let exp =
-          match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op2) with
-          | Some n ->
-              Llair.Exp.select typ ptr n
-          | None ->
-              Llair.Exp.nondet typ
-        in
-        ([], exp)
-      else if
-        Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
-        && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Pointer
-        && Int.equal len 2
-      then
-        let lltyp1 = Llvm.get_gep_source_element_type llv in
-        let op1 = Llvm.operand llv 1 in
-        let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
-        let typ = xlate_type x lltyp1 in
-        let exp =
-          match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op1) with
-          | Some n ->
-              Llair.Exp.gep typ ptr n
-          | None ->
-              Llair.Exp.nondet typ
-        in
-        ([], exp)
-      else if
-        Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
-        && ( Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Pointer
-           || Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Integer )
-        && Int.equal len 2
-      then
-        let lltyp1 = Llvm.get_gep_source_element_type llv in
-        let op1 = Llvm.operand llv 1 in
-        let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
-        let typ = xlate_type x lltyp1 in
-        let exp =
-          match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op1) with
-          | Some n ->
-              (* Static byte offset on an opaque pointer (e.g. [getelementptr i8, ptr X, i64 N]
+        xlate_indices pre_0 0 agg typ
+    | GetElementPtr ->
+        if Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Vector then
+          todo "vector operations: %a" pp_llvalue llv () ;
+        let len = Llvm.num_operands llv in
+        assert (len > 0 || invalid_llvm (Llvm.string_of_llvalue llv)) ;
+        if len = 1 then convert BitCast
+        else if
+          Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
+          && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Struct
+          && len > 2
+        then
+          let lltyp1 = Llvm.get_gep_source_element_type llv in
+          let op2 = Llvm.operand llv 2 in
+          let _, ptr = xlate_value x (Llvm.operand llv 0) in
+          let typ = xlate_type x lltyp1 in
+          let exp =
+            match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op2) with
+            | Some n ->
+                Llair.Exp.select typ ptr n
+            | None ->
+                Llair.Exp.nondet typ
+          in
+          ([], exp)
+        else if
+          Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
+          && Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Pointer
+          && Int.equal len 2
+        then
+          let lltyp1 = Llvm.get_gep_source_element_type llv in
+          let op1 = Llvm.operand llv 1 in
+          let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
+          let typ = xlate_type x lltyp1 in
+          let exp =
+            match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op1) with
+            | Some n ->
+                Llair.Exp.gep typ ptr n
+            | None ->
+                Llair.Exp.nondet typ
+          in
+          ([], exp)
+        else if
+          Poly.equal (Llvm.classify_type (Llvm.type_of llv)) Pointer
+          && ( Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Pointer
+             || Poly.equal (Llvm.classify_type (Llvm.get_gep_source_element_type llv)) Integer )
+          && Int.equal len 2
+        then
+          let lltyp1 = Llvm.get_gep_source_element_type llv in
+          let op1 = Llvm.operand llv 1 in
+          let instrs, ptr = xlate_value x (Llvm.operand llv 0) in
+          let typ = xlate_type x lltyp1 in
+          let exp =
+            match Option.bind ~f:Int64.unsigned_to_int (Llvm.int64_of_const op1) with
+            | Some n ->
+                (* Static byte offset on an opaque pointer (e.g. [getelementptr i8, ptr X, i64 N]
                  emitted when [-O] inlines a Swift accessor and erases the struct type from the
                  GEP).  Modelled as [GetElementPtr (StaticByteOffset n)] so [Llair2Textual] can
                  resolve [n] to a typed field via a struct-derived byte-offset map; downstream
                  it falls back to [llvm_nondet] (the prior behavior) when no field matches. *)
-              Llair.Exp.gep_byte typ ptr n
-          | None -> (
-            (* --- Intercept dynamic Swift Wvd offsets using our new IR node --- *)
-            match get_wvd_global op1 with
-            | Some wvd_ptr ->
-                let wvd_name = Llvm.value_name wvd_ptr in
-                Llair.Exp.gep_wvd typ ptr wvd_name
-            | None ->
-                Llair.Exp.nondet typ )
-        in
-        (instrs, exp)
-      else
-        (* TODO *)
-        ([], Llair.Exp.nondet (xlate_type x (Llvm.type_of llv)))
-  | ShuffleVector ->
-      todo "vector operations: %a" pp_llvalue llv ()
-  | Freeze ->
-      xlate_value x (Llvm.operand llv 0)
-  | Invalid
-  | Ret
-  | Br
-  | Switch
-  | IndirectBr
-  | Invoke
-  | Invalid2
-  | Unreachable
-  | Alloca
-  | Load
-  | Store
-  | PHI
-  | Call
-  | CallBr
-  | UserOp1
-  | UserOp2
-  | Fence
-  | AtomicRMW
-  | AtomicCmpXchg
-  | Resume
-  | LandingPad
-  | CleanupRet
-  | CatchRet
-  | CatchPad
-  | CleanupPad
-  | CatchSwitch
-  | VAArg ->
-      ([], Llair.Exp.nondet (xlate_type x (Llvm.type_of llv))) )
+                Llair.Exp.gep_byte typ ptr n
+            | None -> (
+              (* --- Intercept dynamic Swift Wvd offsets using our new IR node --- *)
+              match get_wvd_global op1 with
+              | Some wvd_ptr ->
+                  let wvd_name = Llvm.value_name wvd_ptr in
+                  Llair.Exp.gep_wvd typ ptr wvd_name
+              | None ->
+                  Llair.Exp.nondet typ )
+          in
+          (instrs, exp)
+        else
+          (* TODO *)
+          ([], Llair.Exp.nondet (xlate_type x (Llvm.type_of llv)))
+    | ShuffleVector ->
+        todo "vector operations: %a" pp_llvalue llv ()
+    | Freeze ->
+        xlate_value x (Llvm.operand llv 0)
+    | Invalid
+    | Ret
+    | Br
+    | Switch
+    | IndirectBr
+    | Invoke
+    | Invalid2
+    | Unreachable
+    | Alloca
+    | Load
+    | Store
+    | PHI
+    | Call
+    | CallBr
+    | UserOp1
+    | UserOp2
+    | Fence
+    | AtomicRMW
+    | AtomicCmpXchg
+    | Resume
+    | LandingPad
+    | CleanupRet
+    | CatchRet
+    | CatchPad
+    | CleanupPad
+    | CatchSwitch
+    | VAArg ->
+        ([], Llair.Exp.nondet (xlate_type x (Llvm.type_of llv))) )
   |>
   [%Dbg.retn fun {pf} -> pf "%a" pp_prefix_exp]
 
@@ -1969,27 +1970,29 @@ let xlate_function : x -> Llvm.llvalue -> Typ.t -> Llair.func =
   xlate_function_decl x llf typ
   @@ fun ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc ->
   ( match Llvm.block_begin llf with
-  | Before entry_blk ->
-      let pop = pop_stack_frame_of_function x llf entry_blk in
-      let[@warning "-partial-match"] (entry_block :: entry_blocks) = xlate_block pop x entry_blk in
-      let entry =
-        let {Llair.lbl; cmnd; term} = entry_block in
-        Block.mk ~lbl ~cmnd ~term
-      in
-      let cfg =
-        let rec trav_blocks rev_cfg prev =
-          match Llvm.block_succ prev with
-          | Before blk ->
-              trav_blocks (List.rev_append (xlate_block pop x blk) rev_cfg) blk
-          | At_end _ ->
-              IArray.of_list_rev rev_cfg
+    | Before entry_blk ->
+        let pop = pop_stack_frame_of_function x llf entry_blk in
+        let[@warning "-partial-match"] (entry_block :: entry_blocks) =
+          xlate_block pop x entry_blk
         in
-        trav_blocks (List.rev entry_blocks) entry_blk
-      in
-      Func.mk ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~entry ~cfg ~loc
-  | At_end _ ->
-      report_undefined llf name ;
-      Func.mk_undefined ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc )
+        let entry =
+          let {Llair.lbl; cmnd; term} = entry_block in
+          Block.mk ~lbl ~cmnd ~term
+        in
+        let cfg =
+          let rec trav_blocks rev_cfg prev =
+            match Llvm.block_succ prev with
+            | Before blk ->
+                trav_blocks (List.rev_append (xlate_block pop x blk) rev_cfg) blk
+            | At_end _ ->
+                IArray.of_list_rev rev_cfg
+          in
+          trav_blocks (List.rev entry_blocks) entry_blk
+        in
+        Func.mk ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~entry ~cfg ~loc
+    | At_end _ ->
+        report_undefined llf name ;
+        Func.mk_undefined ~name ~formals ~formals_types ~freturn ~freturn_type ~fthrow ~loc )
   |>
   [%Dbg.retn fun {pf} -> pf "@\n%a" Func.pp]
 

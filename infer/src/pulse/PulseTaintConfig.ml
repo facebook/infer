@@ -33,9 +33,9 @@ module Kind = struct
        between equal kinds *)
     ( StringHash.find_opt all_kinds name
     |> Option.value_or_thunk ~default:(fun () ->
-           let v = {name; is_data_flow_only= false} in
-           StringHash.replace all_kinds name v ;
-           v ) )
+        let v = {name; is_data_flow_only= false} in
+        StringHash.replace all_kinds name v ;
+        v ) )
       .name
 
 

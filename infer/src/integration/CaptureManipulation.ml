@@ -83,7 +83,7 @@ let copy_sourcefile_with_procedures file =
   let file_updated = copy_sourcefile file in
   SourceFiles.proc_names_of_source file
   |> List.fold ~init:file_updated ~f:(fun acc procname ->
-         copy_procedure_with_uid ~proc_uid:(Procname.to_unique_id procname) || acc )
+      copy_procedure_with_uid ~proc_uid:(Procname.to_unique_id procname) || acc )
 
 
 let get_sourcefile_and_callees =
@@ -120,7 +120,7 @@ let copy_sourcefile_with_procedures_recursively acc file =
   copy_sourcefile file |> ignore ;
   SourceFiles.proc_names_of_source file
   |> List.iter ~f:(fun procname ->
-         copy_procedure_and_callees acc ~proc_uid:(Procname.to_unique_id procname) |> ignore )
+      copy_procedure_and_callees acc ~proc_uid:(Procname.to_unique_id procname) |> ignore )
 
 
 let extract ~files ~input_capture_path =

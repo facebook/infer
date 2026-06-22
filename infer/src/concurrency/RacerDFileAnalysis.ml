@@ -177,13 +177,13 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
   let field_is_annotated_guardedby field_name {Struct.name= f; annot= a} =
     Fieldname.equal f field_name
     && List.exists a ~f:(fun (annot : Annot.t) ->
-           Annotations.annot_ends_with annot Annotations.guarded_by
-           &&
-           match annot.parameters with
-           | [param] ->
-               not (Annot.has_matching_str_value ~pred:is_uitthread param.value)
-           | _ ->
-               false )
+        Annotations.annot_ends_with annot Annotations.guarded_by
+        &&
+        match annot.parameters with
+        | [param] ->
+            not (Annot.has_matching_str_value ~pred:is_uitthread param.value)
+        | _ ->
+            false )
   in
   (not snapshot.elem.lock)
   && RacerDDomain.AccessSnapshot.is_write snapshot
@@ -202,8 +202,8 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
         PatternMatch.is_subtype tenv base_name classname
         && Tenv.lookup tenv base_name
            |> Option.exists ~f:(fun ({fields; statics} : Struct.t) ->
-                  let f fld = field_is_annotated_guardedby field_name fld in
-                  List.exists fields ~f || List.exists statics ~f )
+               let f fld = field_is_annotated_guardedby field_name fld in
+               List.exists fields ~f || List.exists statics ~f )
     | _ ->
         false )
   | _ ->
@@ -432,9 +432,9 @@ let report_on_unprotected_read_java_csharp accesses acc (reported_access : repor
   in
   List.find ~f:is_conflict accesses
   |> Option.value_map ~default:acc ~f:(fun conflict ->
-         let make_description = make_read_write_race_description ~read_is_sync:false conflict in
-         let report_kind = ReadWriteRace conflict.snapshot in
-         report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
+      let make_description = make_read_write_race_description ~read_is_sync:false conflict in
+      let report_kind = ReadWriteRace conflict.snapshot in
+      report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
 
 
 (** protected read. report unprotected writes and opposite protected writes as conflicts *)
@@ -452,10 +452,10 @@ let report_on_protected_read_java_csharp accesses acc (reported_access : reporte
   in
   List.find accesses ~f:is_conflict
   |> Option.value_map ~default:acc ~f:(fun conflict ->
-         (* protected read with conflicting unprotected write(s). warn. *)
-         let make_description = make_read_write_race_description ~read_is_sync:true conflict in
-         let report_kind = ReadWriteRace conflict.snapshot in
-         report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
+      (* protected read with conflicting unprotected write(s). warn. *)
+      let make_description = make_read_write_race_description ~read_is_sync:true conflict in
+      let report_kind = ReadWriteRace conflict.snapshot in
+      report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
 
 
 (** main reporting hook for Java & C# *)
@@ -493,9 +493,9 @@ let report_unsafe_access_objc_cpp accesses acc ({snapshot} as reported_access) =
       in
       List.find ~f:is_conflict accesses
       |> Option.value_map ~default:acc ~f:(fun conflict ->
-             let make_description = make_read_write_race_description ~read_is_sync:false conflict in
-             let report_kind = ReadWriteRace conflict.snapshot in
-             report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
+          let make_description = make_read_write_race_description ~read_is_sync:false conflict in
+          let report_kind = ReadWriteRace conflict.snapshot in
+          report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
   | Read _ | ContainerRead _ ->
       (* Do not report protected reads for ObjC_Cpp *)
       acc
@@ -572,30 +572,30 @@ let report_unsafe_accesses ~issue_log classname aggregated_access_map =
 let should_report_on_proc proc_name =
   Attributes.load proc_name
   |> Option.exists ~f:(fun attrs ->
-         let tenv = Exe_env.get_proc_tenv proc_name in
-         let is_not_private = not ProcAttributes.(equal_access (get_access attrs) Private) in
-         match (proc_name : Procname.t) with
-         | CSharp _ ->
-             is_not_private
-         | Java java_pname ->
-             (* return true if procedure is at an abstraction boundary or reporting has been explicitly
+      let tenv = Exe_env.get_proc_tenv proc_name in
+      let is_not_private = not ProcAttributes.(equal_access (get_access attrs) Private) in
+      match (proc_name : Procname.t) with
+      | CSharp _ ->
+          is_not_private
+      | Java java_pname ->
+          (* return true if procedure is at an abstraction boundary or reporting has been explicitly
                 requested via @ThreadSafe in java *)
-             RacerDModels.is_thread_safe_method proc_name tenv
-             || is_not_private
-                && (not (Procname.Java.is_class_initializer java_pname))
-                && (not (Procname.Java.is_autogen_method java_pname))
-                && not Annotations.(attrs_return_annot_ends_with attrs visibleForTesting)
-         | ObjC_Cpp _ when Procname.is_cpp_lambda proc_name ->
-             (* do not report on lambdas; they are essentially private though do not appear as such *)
-             false
-         | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
-             is_not_private
-         | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod; class_name} ->
-             Tenv.lookup tenv class_name
-             |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
-                    List.mem ~equal:Procname.equal exported_objc_methods proc_name )
-         | _ ->
-             false )
+          RacerDModels.is_thread_safe_method proc_name tenv
+          || is_not_private
+             && (not (Procname.Java.is_class_initializer java_pname))
+             && (not (Procname.Java.is_autogen_method java_pname))
+             && not Annotations.(attrs_return_annot_ends_with attrs visibleForTesting)
+      | ObjC_Cpp _ when Procname.is_cpp_lambda proc_name ->
+          (* do not report on lambdas; they are essentially private though do not appear as such *)
+          false
+      | ObjC_Cpp {kind= CPPMethod _ | CPPConstructor _ | CPPDestructor _} ->
+          is_not_private
+      | ObjC_Cpp {kind= ObjCClassMethod | ObjCInstanceMethod; class_name} ->
+          Tenv.lookup tenv class_name
+          |> Option.exists ~f:(fun {Struct.exported_objc_methods} ->
+              List.mem ~equal:Procname.equal exported_objc_methods proc_name )
+      | _ ->
+          false )
 
 
 (* create a map from [abstraction of a memory loc] -> accesses that
@@ -652,12 +652,12 @@ let aggregate_by_class {InterproceduralAnalysis.procedures; analyze_file_depende
   List.fold procedures ~init:Typ.Name.Map.empty ~f:(fun acc procname ->
       Procname.get_class_type_name procname
       |> Option.bind ~f:(fun classname ->
-             analyze_file_dependency procname |> AnalysisResult.to_option
-             |> Option.map ~f:(fun summary ->
-                    Typ.Name.Map.update classname
-                      (fun summaries_opt ->
-                        Some ((procname, summary) :: Option.value ~default:[] summaries_opt) )
-                      acc ) )
+          analyze_file_dependency procname |> AnalysisResult.to_option
+          |> Option.map ~f:(fun summary ->
+              Typ.Name.Map.update classname
+                (fun summaries_opt ->
+                  Some ((procname, summary) :: Option.value ~default:[] summaries_opt) )
+                acc ) )
       |> Option.value ~default:acc )
   |> Typ.Name.Map.filter should_report_on_class
 
@@ -679,16 +679,16 @@ let get_synchronized_container_fields_of analyze tenv classname =
   in
   Tenv.lookup tenv classname
   |> Option.value_map ~default:[] ~f:(fun (tstruct : Struct.t) ->
-         List.map ~f:Struct.name_of_tenv_method tstruct.methods
-         |> List.rev_filter ~f:(function
-              | Procname.Java j ->
-                  Procname.Java.(is_class_initializer j || is_constructor j)
-              | _ ->
-                  false ) )
+      List.map ~f:Struct.name_of_tenv_method tstruct.methods
+      |> List.rev_filter ~f:(function
+        | Procname.Java j ->
+            Procname.Java.(is_class_initializer j || is_constructor j)
+        | _ ->
+            false ) )
   |> List.rev_filter_map ~f:(fun proc_name -> analyze proc_name |> AnalysisResult.to_option)
   |> List.rev_map ~f:(fun (summary : summary) -> summary.attributes)
   |> List.fold ~init:Fieldname.Set.empty ~f:(fun acc attributes ->
-         AttributeMapDomain.fold add_synchronized_container_field attributes acc )
+      AttributeMapDomain.fold add_synchronized_container_field attributes acc )
 
 
 module TypeNameCache = Concurrent.MakeCache (Typ.Name)

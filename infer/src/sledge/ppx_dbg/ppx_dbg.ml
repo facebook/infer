@@ -25,22 +25,20 @@
     For example, this enables writing
 
     {[
-      let func arg =
-        [%dbg]
-          ~call:(fun {pf} -> pf "@ %a" pp_arg_type arg)
-          ~retn:(fun {pf} -> pf "%a" pp_result_type)
-        @@ fun () -> func arg
+    let func arg =
+      [%dbg] ~call:(fun {pf} -> pf "@ %a" pp_arg_type arg) ~retn:(fun {pf} -> pf "%a" pp_result_type)
+      @@ fun () -> func arg
     ]}
 
     or
 
     {[
-      let func arg =
-        [%Dbg.call fun {pf} -> pf "@ %a" pp_arg_type arg]
-        ;
-        func arg
-        |>
-        [%Dbg.retn fun {pf} -> pf "%a" pp_result_type]
+    let func arg =
+      [%Dbg.call fun {pf} -> pf "@ %a" pp_arg_type arg]
+      ;
+      func arg
+      |>
+      [%Dbg.retn fun {pf} -> pf "%a" pp_result_type]
     ]}
 
     to trace calls to [func] in debug mode while completely compiling out the debug code in
@@ -61,6 +59,7 @@ Driver.Cookies.add_simple_handler "ppx_dbg_enabled" Ast_pattern.__ ~f:(function
       debug := true
   | _ ->
       () )
+;;
 
 let expand_debug ~ctxt =
   let loc = Expansion_context.Extension.extension_point_loc ctxt in
@@ -75,7 +74,7 @@ let debug_extension =
 
 let debug_rule = Context_free.Rule.extension debug_extension ;;
 
-Driver.register_transformation ~rules:[debug_rule] "debug"
+Driver.register_transformation ~rules:[debug_rule] "debug" ;;
 
 let mapper =
   object (self)
@@ -99,10 +98,11 @@ let mapper =
                       Pexp_function
                         ( [ { pparam_desc=
                                 Pparam_val
-                                  (Nolabel, None, {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)}) } ]
+                                  ( Nolabel
+                                  , None
+                                  , {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)} ) } ]
                         , None
-                        , Pfunction_body body )
-                  } as arg ) ) ] )
+                        , Pfunction_body body ) } as arg ) ) ] )
       (* [%dbg] dbg_args (fun () -> body) *)
       | Pexp_apply
           ( { pexp_desc=
@@ -112,10 +112,11 @@ let mapper =
                       Pexp_function
                         ( [ { pparam_desc=
                                 Pparam_val
-                                  (Nolabel, None, {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)}) } ]
+                                  ( Nolabel
+                                  , None
+                                  , {ppat_desc= Ppat_construct ({txt= Lident "()"}, None)} ) } ]
                         , None
-                        , Pfunction_body body )
-                  } as arg ) ) ] ) ->
+                        , Pfunction_body body ) } as arg ) ) ] ) ->
           if not !debug then self#expression body
           else
             pexp_apply ~loc:exp.pexp_loc (evar ~loc "Dbg.dbg")

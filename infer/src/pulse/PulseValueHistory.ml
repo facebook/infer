@@ -467,26 +467,26 @@ let pp_event_no_location fmt event =
         Pvar.pp_value_non_verbose captured_as
   | ConditionPassed {if_kind; is_then_branch} ->
       ( match (is_then_branch, if_kind) with
-      | true, Ik_if ->
-          "taking \"then\" branch"
-      | false, Ik_if ->
-          "taking \"else\" branch"
-      | true, (Ik_for | Ik_while | Ik_dowhile) ->
-          "loop condition is true; entering loop body"
-      | false, (Ik_for | Ik_while | Ik_dowhile) ->
-          "loop condition is false; leaving loop"
-      | true, Ik_switch ->
-          "switch condition is true, entering switch case"
-      | false, Ik_switch ->
-          "switch condition is false, skipping switch case"
-      | true, Ik_compexch ->
-          "pointer contains expected value; writing desired to pointer"
-      | false, Ik_compexch ->
-          "pointer does not contain expected value; writing to expected"
-      | true, (Ik_bexp | Ik_land_lor) ->
-          "condition is true"
-      | false, (Ik_bexp | Ik_land_lor) ->
-          "condition is false" )
+        | true, Ik_if ->
+            "taking \"then\" branch"
+        | false, Ik_if ->
+            "taking \"else\" branch"
+        | true, (Ik_for | Ik_while | Ik_dowhile) ->
+            "loop condition is true; entering loop body"
+        | false, (Ik_for | Ik_while | Ik_dowhile) ->
+            "loop condition is false; leaving loop"
+        | true, Ik_switch ->
+            "switch condition is true, entering switch case"
+        | false, Ik_switch ->
+            "switch condition is false, skipping switch case"
+        | true, Ik_compexch ->
+            "pointer contains expected value; writing desired to pointer"
+        | false, Ik_compexch ->
+            "pointer does not contain expected value; writing to expected"
+        | true, (Ik_bexp | Ik_land_lor) ->
+            "condition is true"
+        | false, (Ik_bexp | Ik_land_lor) ->
+            "condition is false" )
       |> F.pp_print_string fmt
   | ClassObjectInitialization (tname, _, _) ->
       F.fprintf fmt "initialization of object class %a" Typ.Name.pp tname

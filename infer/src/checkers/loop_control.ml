@@ -49,9 +49,9 @@ let remove_prune_node_pairs exit_nodes guard_nodes =
   L.(debug Analysis Medium) "Except exit nodes: [%a]\n" GuardNodes.pp except_exit_nodes ;
   except_exit_nodes
   |> GuardNodes.filter (fun node ->
-         is_prune node
-         && Procdesc.Node.get_siblings node |> Sequence.hd
-            |> Option.exists ~f:(fun sibling -> not (GuardNodes.mem sibling except_exit_nodes)) )
+      is_prune node
+      && Procdesc.Node.get_siblings node |> Sequence.hd
+         |> Option.exists ~f:(fun sibling -> not (GuardNodes.mem sibling except_exit_nodes)) )
   |> GuardNodes.union exit_nodes
 
 

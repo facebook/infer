@@ -108,7 +108,7 @@ let record_srcfile_dep src_file =
   DLS.get currently_under_analysis
   |> Option.bind ~f:(Procname.Hash.find_opt (DLS.get deps_in_progress))
   |> Option.iter ~f:(fun {partial_used_tenv_sources} ->
-         SourceFile.HashSet.add src_file partial_used_tenv_sources )
+      SourceFile.HashSet.add src_file partial_used_tenv_sources )
 
 
 let clear () =

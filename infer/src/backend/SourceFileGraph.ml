@@ -79,12 +79,12 @@ module G = struct
     let process_callee_of_file source_counts source callee =
       Procname.Hash.find_opt proc_index callee
       |> Option.filter ~f:(fun callee_source ->
-             (* avoid self-loops *) not (SourceFile.equal source callee_source) )
+          (* avoid self-loops *) not (SourceFile.equal source callee_source) )
       |> Option.iter ~f:(fun callee_source ->
-             let previous_count =
-               SourceFile.Hash.find_opt source_counts callee_source |> Option.value ~default:0
-             in
-             SourceFile.Hash.replace source_counts callee_source (1 + previous_count) )
+          let previous_count =
+            SourceFile.Hash.find_opt source_counts callee_source |> Option.value ~default:0
+          in
+          SourceFile.Hash.replace source_counts callee_source (1 + previous_count) )
     in
     let create_callee_edges source callee_source count =
       E.create source count callee_source |> add_edge_e g ;
@@ -168,9 +168,9 @@ module Dagify = struct
       let res =
         G.succ_e g v
         |> List.find_map ~f:(fun e' ->
-               let v' = G.E.dst e' in
-               let path' = e' :: path in
-               find_cycle_min_edge g finished path' nodes_in_path' v' )
+            let v' = G.E.dst e' in
+            let path' = e' :: path in
+            find_cycle_min_edge g finished path' nodes_in_path' v' )
       in
       if Option.is_none res then SourceFile.Hash.add finished v () ;
       res

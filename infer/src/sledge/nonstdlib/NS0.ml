@@ -194,6 +194,7 @@ module Invariant = struct
           Sexp.List [Atom "Invariant.Violation"; sexp_of_exn exn; sexp_of_position pos; payload]
       | exn ->
           Sexp.Atom (Printexc.to_string exn) )
+  ;;
 
   let invariant here t sexp_of_t f =
     assert (
@@ -223,6 +224,7 @@ register_sexp_of_exn
         Sexp.List [Atom "Replay"; sexp_of_exn exn; payload]
     | exn ->
         Sexp.Atom (Printexc.to_string exn) )
+;;
 
 let fail = Dbg.fail
 

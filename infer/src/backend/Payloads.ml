@@ -77,9 +77,7 @@ let all_fields =
     ~starvation:(fun f -> mk f Starvation StarvationDomain.pp_summary)
   (* sorted to help serialization, see {!SQLite.serialize} below *)
   |> List.sort ~compare:(fun (F {payload_id= payload_id1}) (F {payload_id= payload_id2}) ->
-         Int.compare
-           (PayloadId.Variants.to_rank payload_id1)
-           (PayloadId.Variants.to_rank payload_id2) )
+      Int.compare (PayloadId.Variants.to_rank payload_id1) (PayloadId.Variants.to_rank payload_id2) )
 
 
 let pp pe proc_name fmt payloads =
@@ -87,18 +85,18 @@ let pp pe proc_name fmt payloads =
   List.iter all_fields ~f:(fun (F {field; payload_id; pp}) ->
       Field.get field payloads |> SafeLazy.force_option
       |> Option.iter ~f:(fun x ->
-             (match pe.Pp.kind with HTML when not !is_first -> F.fprintf fmt "<hr>" | _ -> ()) ;
-             is_first := false ;
-             let pp_name fmt name =
-               match pe.Pp.kind with
-               | HTML ->
-                   F.fprintf fmt "<h3>%s</h3>" name
-               | TEXT ->
-                   F.fprintf fmt "%s:" name
-             in
-             F.fprintf fmt "%a %a@\n" pp_name
-               (PayloadId.Variants.to_name payload_id)
-               (pp pe proc_name) x ) )
+          (match pe.Pp.kind with HTML when not !is_first -> F.fprintf fmt "<hr>" | _ -> ()) ;
+          is_first := false ;
+          let pp_name fmt name =
+            match pe.Pp.kind with
+            | HTML ->
+                F.fprintf fmt "<h3>%s</h3>" name
+            | TEXT ->
+                F.fprintf fmt "%s:" name
+          in
+          F.fprintf fmt "%a %a@\n" pp_name
+            (PayloadId.Variants.to_name payload_id)
+            (pp pe proc_name) x ) )
 
 
 let empty =

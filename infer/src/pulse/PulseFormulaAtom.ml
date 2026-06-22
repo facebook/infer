@@ -161,8 +161,8 @@ let rec atoms_of_term ~is_neq_zero ~negated ?(force_to_atom = false) t =
   in
   aux ~negated ~force_to_atom t
   |> Option.map ~f:(fun atoms ->
-         List.concat_map atoms ~f:(fun atom ->
-             get_as_embedded_atoms ~is_neq_zero atom |> Option.value ~default:[atom] ) )
+      List.concat_map atoms ~f:(fun atom ->
+          get_as_embedded_atoms ~is_neq_zero atom |> Option.value ~default:[atom] ) )
 
 
 (** similar to [atoms_of_term] but takes an atom and "flattens" it to possibly several atoms whose

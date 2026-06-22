@@ -166,13 +166,12 @@ let extract_valid_issue_types s =
   |> List.filter ~f:(fun s -> s |> String.is_empty |> not)
   |> ret
   >>= result_list_filter ~f:(fun s ->
-          let* valid = valid_issue_type s in
-          let+ () =
-            if not valid then
-              error (fun () -> F.asprintf "%s not a valid issue_type / wildcard@\n" s)
-            else ret ()
-          in
-          valid )
+      let* valid = valid_issue_type s in
+      let+ () =
+        if not valid then error (fun () -> F.asprintf "%s not a valid issue_type / wildcard@\n" s)
+        else ret ()
+      in
+      valid )
   >>| IString.Set.of_list
 
 
@@ -229,11 +228,11 @@ let pp_parse_result fmt parse_result = pp_parse_result pp fmt parse_result
 let first_key_match ~suppressions s =
   IString.Map.to_seq suppressions
   |> Seq.find (fun (k, _) ->
-         match IString.Map.find_opt k !regex_cache with
-         | Some rx ->
-             Str.string_match rx s 0
-         | None ->
-             false )
+      match IString.Map.find_opt k !regex_cache with
+      | Some rx ->
+          Str.string_match rx s 0
+      | None ->
+          false )
   |> Option.map ~f:snd
 
 

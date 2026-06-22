@@ -55,8 +55,12 @@ let sanitize_qualifier qualifier =
 let compute_hash =
   let num_regexp = Str.regexp ":[0-9]+\\(_[0-9a-f]+\\)?" in
   let hack_closure_num_regexp = Str.regexp "[0-9]*\\.__invoke$" in
-  fun ~(severity : string) ~(bug_type : string) ~(proc_name : Procname.t) ~(file : string)
-      ~(qualifier : string) ->
+  fun ~(severity : string)
+    ~(bug_type : string)
+    ~(proc_name : Procname.t)
+    ~(file : string)
+    ~(qualifier : string)
+  ->
     let base_filename = Filename.basename file in
     let hashable_procedure_name = Procname.hashable_name proc_name in
     let location_independent_proc_name =
@@ -85,16 +89,16 @@ let loc_trace_to_jsonbug_record trace_list =
     in
     Location.get_macro_file_line_opt trace_item.Errlog.lt_loc
     |> Option.value_map ~default:[trace] ~f:(fun (macro_source, macro_line) ->
-           let trace = {trace with Jsonbug_j.description= "macro expanded here"} in
-           let macro_trace =
-             { Jsonbug_j.level= trace_item.Errlog.lt_level
-             ; filename=
-                 SourceFile.to_string ~force_relative:Config.report_force_relative_path macro_source
-             ; line_number= macro_line
-             ; column_number= -1
-             ; description= trace_item.Errlog.lt_description }
-           in
-           [trace; macro_trace] )
+        let trace = {trace with Jsonbug_j.description= "macro expanded here"} in
+        let macro_trace =
+          { Jsonbug_j.level= trace_item.Errlog.lt_level
+          ; filename=
+              SourceFile.to_string ~force_relative:Config.report_force_relative_path macro_source
+          ; line_number= macro_line
+          ; column_number= -1
+          ; description= trace_item.Errlog.lt_description }
+        in
+        [trace; macro_trace] )
   in
   let record_list = List.concat_map ~f:trace_item_to_record trace_list in
   record_list

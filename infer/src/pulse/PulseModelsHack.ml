@@ -132,23 +132,23 @@ module Vec = struct
         ; (last_read_field_name, last_read) ]
     in
     ( match args with
-    | [] ->
-        store_field ~ref:vec snd_field dummy
-    | arg1 :: rest -> (
-        store_field ~ref:vec fst_field arg1
-        @@>
-        match rest with
-        | [] ->
-            ret ()
-        | arg2 :: rest -> (
-            store_field ~ref:vec snd_field arg2
-            @@>
-            match rest with
-            | [] ->
-                ret ()
-            (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
-            | rest ->
-                list_iter rest ~f:deep_clean_hack_value ) ) )
+      | [] ->
+          store_field ~ref:vec snd_field dummy
+      | arg1 :: rest -> (
+          store_field ~ref:vec fst_field arg1
+          @@>
+          match rest with
+          | [] ->
+              ret ()
+          | arg2 :: rest -> (
+              store_field ~ref:vec snd_field arg2
+              @@>
+              match rest with
+              | [] ->
+                  ret ()
+              (* Do "fake" await on the values we drop on the floor. TODO: mark reachable too? *)
+              | rest ->
+                  list_iter rest ~f:deep_clean_hack_value ) ) )
     @@> ret vec
 
 
@@ -455,51 +455,52 @@ let get_initialized_class_object (type_name : Typ.name) : DSL.aval DSL.model_mon
   let open DSL.Syntax in
   let* class_object = get_static_companion_dsl ~model_desc:"lazy_class_initialize" type_name in
   ( match type_name with
-  | HackClass class_name -> (
-      let* {analysis_data= {tenv}} = get_data in
-      let all_supers =
-        Tenv.fold_supers ~ignore_require_extends:true tenv type_name ~init:[]
-          ~f:(fun name _struct_opt accum -> name :: accum )
-      in
-      L.d_printfln "supers list = %a" (Pp.seq Typ.Name.pp) all_supers ;
-      (* Set constinit_called attribute all the way up the hierarchy.
+    | HackClass class_name -> (
+        let* {analysis_data= {tenv}} = get_data in
+        let all_supers =
+          Tenv.fold_supers ~ignore_require_extends:true tenv type_name ~init:[]
+            ~f:(fun name _struct_opt accum -> name :: accum )
+        in
+        L.d_printfln "supers list = %a" (Pp.seq Typ.Name.pp) all_supers ;
+        (* Set constinit_called attribute all the way up the hierarchy.
          The set of types on which the attribute is set should always be
          upwards closed.
          The final values returned correspond to the original type_name, at
          the bottom *)
-      let* is_constinit_called_and_static_companion_opt =
-        list_fold all_supers ~init:None ~f:(fun _accum type_name ->
-            let pvar = get_static_companion_var type_name in
-            let exp = Exp.Lvar pvar in
-            let* static_companion = read exp in
-            let* is_constinit_called = is_hack_constinit_called static_companion in
-            let* () =
-              if not is_constinit_called then set_hack_constinit_called static_companion else ret ()
-            in
-            ret (Some (is_constinit_called, static_companion, pvar, exp)) )
-      in
-      match is_constinit_called_and_static_companion_opt with
-      | None ->
-          ret ()
-      | Some (is_constinit_called, static_companion, pvar, exp) ->
-          if is_constinit_called then (
-            L.d_printfln "skipping consinit call on %a" Typ.Name.pp type_name ;
-            ret () )
-          else (
-            L.d_printfln "calling consinit on %a" Typ.Name.pp type_name ;
-            (* If constinit wasn't previously called on type_name, call it. The code emitted by hackc will
+        let* is_constinit_called_and_static_companion_opt =
+          list_fold all_supers ~init:None ~f:(fun _accum type_name ->
+              let pvar = get_static_companion_var type_name in
+              let exp = Exp.Lvar pvar in
+              let* static_companion = read exp in
+              let* is_constinit_called = is_hack_constinit_called static_companion in
+              let* () =
+                if not is_constinit_called then set_hack_constinit_called static_companion
+                else ret ()
+              in
+              ret (Some (is_constinit_called, static_companion, pvar, exp)) )
+        in
+        match is_constinit_called_and_static_companion_opt with
+        | None ->
+            ret ()
+        | Some (is_constinit_called, static_companion, pvar, exp) ->
+            if is_constinit_called then (
+              L.d_printfln "skipping consinit call on %a" Typ.Name.pp type_name ;
+              ret () )
+            else (
+              L.d_printfln "calling consinit on %a" Typ.Name.pp type_name ;
+              (* If constinit wasn't previously called on type_name, call it. The code emitted by hackc will
                 itself call other constinits up the hierarchy, so no looping needed here *)
-            let ret_id = Ident.create_none () in
-            let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
-            let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
-            let constinit_pname = Procname.get_hack_static_constinit ~is_trait class_name in
-            let typ = Typ.mk_struct type_name in
-            let arg_payload =
-              ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= static_companion}
-            in
-            dispatch_call (ret_id, ret_typ) constinit_pname [{exp; typ; arg_payload}] ) )
-  | _ ->
-      ret () )
+              let ret_id = Ident.create_none () in
+              let ret_typ = Typ.mk_ptr (Typ.mk_struct mixed_type_name) in
+              let is_trait = Option.exists (Tenv.lookup tenv type_name) ~f:Struct.is_hack_trait in
+              let constinit_pname = Procname.get_hack_static_constinit ~is_trait class_name in
+              let typ = Typ.mk_struct type_name in
+              let arg_payload =
+                ValueOrigin.OnStack {var= Var.of_pvar pvar; addr_hist= static_companion}
+              in
+              dispatch_call (ret_id, ret_typ) constinit_pname [{exp; typ; arg_payload}] ) )
+    | _ ->
+        ret () )
   @@> ret class_object
 
 
@@ -627,10 +628,10 @@ module Dict = struct
     let open DSL.Syntax in
     let* field = field_of_string_value key in
     ( match field with
-    | None ->
-        remove_dict_contain_const_keys dict
-    | Some field ->
-        store_field ~ref:dict field value )
+      | None ->
+          remove_dict_contain_const_keys dict
+      | Some field ->
+          store_field ~ref:dict field value )
     @@> assign_ret dict
 
 
@@ -680,10 +681,10 @@ module Dict = struct
         in
         let* field = field_of_string_value key in
         ( match field with
-        | None ->
-            remove_dict_contain_const_keys inner_dict @@> deep_clean_hack_value value
-        | Some field ->
-            store_field field ~ref:inner_dict value )
+          | None ->
+              remove_dict_contain_const_keys inner_dict @@> deep_clean_hack_value value
+          | Some field ->
+              store_field field ~ref:inner_dict value )
         @@> assign_ret copy
     | _ when List.length args > 2 ->
         L.d_printfln "multidimensional copy on write not implemented yet" ;

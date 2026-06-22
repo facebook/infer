@@ -103,20 +103,20 @@ let list_checkers () =
   L.result "@[<v>" ;
   Checker.all
   |> List.iter ~f:(fun checker ->
-         let ({ Checker.id
-              ; kind
-              ; support
-              ; short_documentation= _ (* only list in [show_checkers] *)
-              ; cli_flags= _ (* only list in [show_checkers] *)
-              ; enabled_by_default
-              ; activates }
-              [@warning "+missing-record-field-pattern"] ) =
-           Checker.config checker
-         in
-         L.result "%s:%s:%s:%s:%b:%a@;" id (string_of_checker_kind kind)
-           (string_of_support (support Clang))
-           (string_of_support (support Java))
-           enabled_by_default (Pp.seq ~sep:"," pp_checker_name) activates ) ;
+      let ({ Checker.id
+           ; kind
+           ; support
+           ; short_documentation= _ (* only list in [show_checkers] *)
+           ; cli_flags= _ (* only list in [show_checkers] *)
+           ; enabled_by_default
+           ; activates }
+           [@warning "+missing-record-field-pattern"] ) =
+        Checker.config checker
+      in
+      L.result "%s:%s:%s:%s:%b:%a@;" id (string_of_checker_kind kind)
+        (string_of_support (support Clang))
+        (string_of_support (support Java))
+        enabled_by_default (Pp.seq ~sep:"," pp_checker_name) activates ) ;
   L.result "@]%!"
 
 
@@ -152,7 +152,7 @@ let all_issues =
     ( IssueType.all_issues ()
     |> List.filter ~f:(fun {IssueType.user_documentation} -> Option.is_some user_documentation)
     |> List.sort ~compare:(fun {IssueType.unique_id= id1} {IssueType.unique_id= id2} ->
-           String.compare id1 id2 ) )
+        String.compare id1 id2 ) )
 
 
 let all_issues_website ~website_root =
@@ -206,11 +206,11 @@ let list_categories () =
   L.result "@[<v>" ;
   IssueType.all_of_category
   |> List.iter ~f:(fun category ->
-         L.result "%s:" (IssueType.string_of_category category) ;
-         for_each_issue_type_of_category category ~f:(fun ~is_first {IssueType.unique_id} ->
-             if not is_first then L.result "," ;
-             L.result "%s" unique_id ) ;
-         L.result "@;" ) ;
+      L.result "%s:" (IssueType.string_of_category category) ;
+      for_each_issue_type_of_category category ~f:(fun ~is_first {IssueType.unique_id} ->
+          if not is_first then L.result "," ;
+          L.result "%s" unique_id ) ;
+      L.result "@;" ) ;
   L.result "@]%!"
 
 
@@ -276,9 +276,9 @@ let show_issue_type (issue_type : IssueType.t) =
       let first_line = ref true in
       String.split_lines documentation
       |> List.iter ~f:(fun line ->
-             if not !first_line then L.result "@\n" ;
-             first_line := false ;
-             L.result "%s" line ) ;
+          if not !first_line then L.result "@\n" ;
+          first_line := false ;
+          L.result "%s" line ) ;
       L.result "@]@\n"
 
 

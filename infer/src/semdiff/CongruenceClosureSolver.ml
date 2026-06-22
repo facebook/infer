@@ -266,15 +266,15 @@ let find_class_enode state ~header a =
   let {Atom.index} = representative state a in
   Dynarray.get state.classes index
   |> Class.fold ~init:None ~f:(fun acc atom ->
-         match acc with
-         | Some _ ->
-             acc
-         | None -> (
-           match Dynarray.get state.input_app_equations atom.Atom.index with
-           | Some enode when Atom.equal (representative state enode.head) header_repr ->
-               Some enode
-           | _ ->
-               None ) )
+      match acc with
+      | Some _ ->
+          acc
+      | None -> (
+        match Dynarray.get state.input_app_equations atom.Atom.index with
+        | Some enode when Atom.equal (representative state enode.head) header_repr ->
+            Some enode
+        | _ ->
+            None ) )
 
 
 let equiv_atoms state {Atom.index} =
@@ -284,11 +284,11 @@ let equiv_atoms state {Atom.index} =
 let equiv_terms state {Atom.index} =
   Dynarray.get state.classes index
   |> Class.fold ~init:[] ~f:(fun l atom ->
-         match Dynarray.get state.input_app_equations atom.Atom.index with
-         | None ->
-             l
-         | Some enode ->
-             {atom; enode} :: l )
+      match Dynarray.get state.input_app_equations atom.Atom.index with
+      | None ->
+          l
+      | Some enode ->
+          {atom; enode} :: l )
 
 
 let add_parents state atom app_equation =

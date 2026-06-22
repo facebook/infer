@@ -57,7 +57,7 @@ let test_file_renamings_from_json =
     , "A"
     , Raise (Yojson.Json_error "Line 1, bytes 0-1:\nInvalid token 'A'") ) ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
+      name >:: create_test test_input expected_output )
 
 
 let test_file_renamings_find_previous =
@@ -80,7 +80,7 @@ let test_file_renamings_find_previous =
   [ ("test_file_renamings_find_previous_with_existing_value", "ccc.java", "DDD.java")
   ; ("test_file_renamings_find_previous_with_existing_value", "abc.java", "abc.java") ]
   |> List.map ~f:(fun (name, test_input, expected_output) ->
-         name >:: create_test test_input expected_output )
+      name >:: create_test test_input expected_output )
 
 
 let test_relative_complements =
@@ -141,7 +141,7 @@ let test_relative_complements =
     , ([1; 0; 0; 0], [], []) )
   ; ("test_relative_complements_with_empty_lists3", (fun _ -> true), ([], []), ([], [], [])) ]
   |> List.map ~f:(fun (name, pred, test_input, expected_output) ->
-         name >:: create_test pred test_input expected_output )
+      name >:: create_test pred test_input expected_output )
 
 
 let test_skip_duplicated_types_on_filenames =
@@ -224,7 +224,7 @@ let test_interesting_paths_filter =
         ; SourceFile.create ~check_rel_path:false "file_whatever.java" ]
     , [] ) ]
   |> List.map ~f:(fun (name, interesting_paths, expected_output) ->
-         name >:: create_test interesting_paths expected_output )
+      name >:: create_test interesting_paths expected_output )
 
 
 let tests =
