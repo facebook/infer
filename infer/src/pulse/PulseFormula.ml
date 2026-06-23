@@ -13,6 +13,7 @@ module SatUnsat = PulseSatUnsat
 module Debug = PulseFormulaDebug
 module Var = PulseFormulaVar
 open SatUnsat.Import
+open PolyVariantEqual
 module LinArith = PulseFormulaLinArit
 module Tableau = PulseFormulaTableau
 module Term = PulseFormulaTerm
@@ -901,36 +902,56 @@ let simplify ~precondition_vocabulary ~keep formula =
   (formula, live_vars, RevList.empty)
 
 
-let debug_pp_sequent lhs (instantiated, subst) exists rhs =
-  let pp_rhs fmt formula =
-    Term.VarMap.pp_with_pp_var Var.pp fmt (Formula.subst_term_eqs subst formula.phi)
-  in
-  Var.throwaway_context
-  @@ fun () ->
-  let exists = Var.Set.filter (fun v -> not @@ Var.Map.mem v instantiated) exists in
-  L.d_printfln_escaped "%a ?⊢? ∃%a. %a"
-    (Formula.pp_term_eqs_with_pp_var Var.pp)
-    lhs.phi Var.Set.pp exists pp_rhs rhs
+module Implication : sig
+  (* declare a signature to make sure OCaml is aware the exceptions are internal and can be erased *)
+
+  val implies_conditions_up_to :
+       subst:Var.t Var.Map.t
+    -> t
+    -> implies:t
+    -> (unit, [> `Contradiction of SatUnsat.unsat_info | `NotImplied of Formula.t * Atom.t]) result
+
+  val compatible_conditions : t -> t -> (unit, [> `Contradiction of SatUnsat.unsat_info]) result
+end = struct
+  (* propagate non-implication and contradictions faster using these exceptions *)
+  exception NotImplied of Formula.t * Atom.t
+
+  exception Contradiction of unsat_info
+
+  let sat_value_exn (norm : 'a SatUnsat.t) =
+    match norm with Unsat unsat_info -> raise_notrace (Contradiction unsat_info) | Sat x -> x
 
 
-(** translate each variable in [formula_foreign] according to [subst] then prove that each
-    translated condition is implied by [formula0] *)
-let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
-  let subst_map = ref subst0 in
-  let subst v =
-    match Var.Map.find_opt v !subst_map with
-    | Some v' ->
-        v'
-    | None ->
-        let v' = Var.mk_fresh () in
-        subst_map := Var.Map.add v v' !subst_map ;
-        v'
-  in
-  let f_subst v =
-    let v' = subst v in
-    Term.VarSubst v'
-  in
-  (* HEURISTIC: all RHS atoms that transitively relate RHS variables that have been unified to
+  let debug_pp_sequent lhs (instantiated, subst) exists rhs =
+    let pp_rhs fmt formula =
+      Term.VarMap.pp_with_pp_var Var.pp fmt (Formula.subst_term_eqs subst formula.phi)
+    in
+    Var.throwaway_context
+    @@ fun () ->
+    let exists = Var.Set.filter (fun v -> not @@ Var.Map.mem v instantiated) exists in
+    L.d_printfln_escaped "%a ?⊢? ∃%a. %a"
+      (Formula.pp_term_eqs_with_pp_var Var.pp)
+      lhs.phi Var.Set.pp exists pp_rhs rhs
+
+
+  (** translate each variable in [formula_foreign] according to [subst] then prove that each
+      translated condition is implied by [formula0] *)
+  let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
+    let subst_map = ref subst0 in
+    let subst v =
+      match Var.Map.find_opt v !subst_map with
+      | Some v' ->
+          v'
+      | None ->
+          let v' = Var.mk_fresh () in
+          subst_map := Var.Map.add v v' !subst_map ;
+          v'
+    in
+    let f_subst v =
+      let v' = subst v in
+      Term.VarSubst v'
+    in
+    (* HEURISTIC: all RHS atoms that transitively relate RHS variables that have been unified to
      variables from the LHS should be conjoined to the LHS as they are likely to reflect expressions
      constructed from these variables and not facts to be established in a universal way.
 
@@ -986,105 +1007,146 @@ let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
      ]}
      v]
  *)
-  let vars_to_reify =
-    DeadVariables.get_reachable_from
-      (DeadVariables.build_var_graph formula0.phi)
-      (Var.Map.to_seq !subst_map |> Seq.map fst |> Var.Set.of_seq)
-  in
-  subst_map :=
-    Var.Set.fold
-      (fun v subst_map ->
-        if Var.Map.mem v subst_map then subst_map else Var.Map.add v (Var.mk_fresh ()) subst_map )
-      vars_to_reify !subst_map ;
-  debug_pp_sequent formula0 (subst0, !subst_map) vars_to_reify formula_foreign ;
-  (* propagate non-implication and contradictions faster using these exceptions *)
-  let exception NotImplied of Formula.t * Atom.t in
-  let exception Contradiction of unsat_info in
-  let sat_value_exn (norm : 'a SatUnsat.t) =
-    match norm with Unsat unsat_info -> raise_notrace (Contradiction unsat_info) | Sat x -> x
-  in
-  (* TODO: instead of matching atoms/terms with two or more existentially quantified variables,
+    let vars_to_reify =
+      DeadVariables.get_reachable_from
+        (DeadVariables.build_var_graph formula0.phi)
+        (Var.Map.to_seq !subst_map |> Seq.map fst |> Var.Set.of_seq)
+    in
+    subst_map :=
+      Var.Set.fold
+        (fun v subst_map ->
+          if Var.Map.mem v subst_map then subst_map else Var.Map.add v (Var.mk_fresh ()) subst_map )
+        vars_to_reify !subst_map ;
+    debug_pp_sequent formula0 (subst0, !subst_map) vars_to_reify formula_foreign ;
+    (* TODO: instead of matching atoms/terms with two or more existentially quantified variables,
      match "bindings": variables that are just intermediate variables representing a term ultimately
      built from variables in [subst0]. *)
-  let should_be_conjoined acc v =
-    match acc with
-    | `FoundNone ->
-        `FoundOne v
-    | `FoundTwo ->
-        `FoundTwo
-    | `FoundOne v' ->
-        if Var.equal v v' then acc else `FoundTwo
-  in
-  let and_term_eqs phi_foreign phi =
-    IContainer.fold_of_pervasives_map_fold Formula.term_eqs_fold phi_foreign ~init:phi
-      ~f:(fun phi (t_foreign, v_foreign) ->
-        match
-          Term.fold_variables t_foreign
-            ~init:(should_be_conjoined `FoundNone v_foreign)
-            ~f:should_be_conjoined
-        with
-        | `FoundTwo ->
+    let should_be_conjoined acc v =
+      match acc with
+      | `FoundNone ->
+          `FoundOne v
+      | `FoundTwo ->
+          `FoundTwo
+      | `FoundOne v' ->
+          if Var.equal v v' then acc else `FoundTwo
+    in
+    let and_term_eqs ?(filter = fun _ _ -> true) phi_foreign phi =
+      IContainer.fold_of_pervasives_map_fold Formula.term_eqs_fold phi_foreign ~init:phi
+        ~f:(fun phi (t_foreign, v_foreign) ->
+          if filter t_foreign v_foreign then
             let t = Term.subst_variables t_foreign ~f:f_subst in
             let phi, _new_eqs =
               Formula.Normalizer.and_var_term (subst v_foreign) t (phi, RevList.empty)
               |> sat_value_exn
             in
             phi
-        | _ ->
-            phi )
-  in
-  let and_atoms atoms_foreign phi =
-    IContainer.fold_of_pervasives_set_fold Atom.Set.fold atoms_foreign ~init:phi
-      ~f:(fun phi atom_foreign ->
-        match Atom.fold_variables atom_foreign ~init:`FoundNone ~f:should_be_conjoined with
-        | `FoundTwo ->
+          else phi )
+    in
+    let and_atoms ?(filter = fun _ -> true) atoms_foreign phi =
+      Seq.fold_left
+        (fun phi atom_foreign ->
+          if filter atom_foreign then
             let atom = Atom.subst_variables atom_foreign ~f:f_subst in
             let phi, _new_eqs =
               Formula.Normalizer.and_atom atom (phi, RevList.empty) ~add_term:false |> sat_value_exn
             in
             phi
-        | _ ->
-            phi )
-  in
-  let assert_atom phi atom =
-    match Formula.Normalizer.and_atom (Atom.nnot atom) (phi, RevList.empty) ~add_term:false with
-    | Unsat unsat_info ->
-        L.d_printfln_escaped "implies %a by %a" (Atom.pp_with_pp_var Var.pp) atom
-          SatUnsat.pp_unsat_info unsat_info ;
-        ()
-    | Sat _ ->
-        raise (NotImplied (phi, atom))
-  in
-  let implies_atoms phi atoms_foreign =
-    Stdlib.Seq.iter
-      (fun atom_foreign -> Atom.subst_variables atom_foreign ~f:f_subst |> assert_atom phi)
-      atoms_foreign
-  in
-  let implies_terms phi terms =
-    Stdlib.Seq.concat_map
-      (fun term ->
-        Option.value_exn
-          (Atom.atoms_of_term ~is_neq_zero:(Formula.is_neq_zero phi) ~force_to_atom:true
-             ~negated:false term )
-        |> ListLabels.to_seq )
-      terms
-    |> implies_atoms phi
-  in
-  try
-    (* first use the HEURISTIC above to add some of the formula as facts *)
-    let phi =
-      and_term_eqs formula_foreign.phi formula0.phi |> and_atoms formula_foreign.phi.atoms
+          else phi )
+        phi atoms_foreign
     in
-    (* try to imply each atom in the conditions *)
-    implies_atoms phi (formula_foreign.conditions |> Atom.Map.to_seq |> Seq.map fst) ;
-    implies_terms phi (formula_foreign.phi.term_conditions2 |> Term.Set.to_seq) ;
-    Ok ()
-  with
-  | NotImplied (phi, atom) ->
-      Error (`NotImplied (phi, atom))
-  | Contradiction unsat_info ->
-      Error (`Contradiction unsat_info)
+    let assert_atom phi atom =
+      match Formula.Normalizer.and_atom (Atom.nnot atom) (phi, RevList.empty) ~add_term:false with
+      | Unsat unsat_info ->
+          L.d_printfln_escaped "implies %a by %a" (Atom.pp_with_pp_var Var.pp) atom
+            SatUnsat.pp_unsat_info unsat_info ;
+          ()
+      | Sat _ ->
+          raise (NotImplied (phi, atom))
+    in
+    let implies_atoms phi atoms_foreign =
+      Stdlib.Seq.iter
+        (fun atom_foreign -> Atom.subst_variables atom_foreign ~f:f_subst |> assert_atom phi)
+        atoms_foreign
+    in
+    let implies_terms phi terms =
+      Stdlib.Seq.concat_map
+        (fun term ->
+          Option.value_exn
+            (Atom.atoms_of_term ~is_neq_zero:(Formula.is_neq_zero phi) ~force_to_atom:true
+               ~negated:false term )
+          |> ListLabels.to_seq )
+        terms
+      |> implies_atoms phi
+    in
+    try
+      (* first use the HEURISTIC above to add some of the formula as facts *)
+      let phi =
+        and_term_eqs
+          ~filter:(fun t_foreign v_foreign ->
+            Term.fold_variables t_foreign
+              ~init:(should_be_conjoined `FoundNone v_foreign)
+              ~f:should_be_conjoined
+            = `FoundTwo )
+          formula_foreign.phi formula0.phi
+        |> and_atoms
+             ~filter:(fun atom_foreign ->
+               Atom.fold_variables atom_foreign ~init:`FoundNone ~f:should_be_conjoined = `FoundTwo )
+             (formula_foreign.phi.atoms |> Atom.Set.to_seq)
+      in
+      (* try to imply each atom in the conditions *)
+      implies_atoms phi (formula_foreign.conditions |> Atom.Map.to_seq |> Seq.map fst) ;
+      implies_terms phi (formula_foreign.phi.term_conditions2 |> Term.Set.to_seq) ;
+      Ok ()
+    with
+    | NotImplied (phi, atom) ->
+        Error (`NotImplied (phi, atom))
+    | Contradiction unsat_info ->
+        Error (`Contradiction unsat_info)
 
+
+  let compatible_conditions formula1 formula2 =
+    let and_term_eqs phi' phi =
+      IContainer.fold_of_pervasives_map_fold Formula.term_eqs_fold phi' ~init:phi
+        ~f:(fun phi (t, v) ->
+          let phi, _new_eqs =
+            Formula.Normalizer.and_var_term v t (phi, RevList.empty) |> sat_value_exn
+          in
+          phi )
+    in
+    let and_atoms atoms phi =
+      Seq.fold_left
+        (fun phi atom ->
+          let phi, _new_eqs =
+            Formula.Normalizer.and_atom atom (phi, RevList.empty) ~add_term:false |> sat_value_exn
+          in
+          phi )
+        phi atoms
+    in
+    let and_terms terms phi =
+      let atoms =
+        Seq.concat_map
+          (fun term ->
+            Option.value_exn
+              (Atom.atoms_of_term ~is_neq_zero:(Formula.is_neq_zero phi) ~force_to_atom:true
+                 ~negated:false term )
+            |> ListLabels.to_seq )
+          terms
+      in
+      and_atoms atoms phi
+    in
+    try
+      let phi =
+        and_term_eqs formula2.phi formula1.phi
+        |> and_atoms (formula2.phi.atoms |> Atom.Set.to_seq)
+        |> and_atoms (formula2.conditions |> Atom.Map.to_seq |> Seq.map fst)
+        |> and_terms (formula2.phi.term_conditions2 |> Term.Set.to_seq)
+      in
+      L.d_printfln "result is SAT: @[%a@]" (Formula.pp_with_pp_var Var.pp) phi ;
+      Ok ()
+    with Contradiction unsat_info -> Error (`Contradiction unsat_info)
+end
+
+include Implication
 
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 

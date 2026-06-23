@@ -210,6 +210,8 @@ val implies_conditions_up_to :
   -> implies:t
   -> (unit, [> `Contradiction of SatUnsat.unsat_info | `NotImplied of Formula.t * Atom.t]) result
 
+val compatible_conditions : t -> t -> (unit, [> `Contradiction of SatUnsat.unsat_info]) result
+
 val fold_variables : (t, Var.t, 'acc) Container.fold
 (** note: each variable mentioned in the formula is visited at least once, possibly more *)
 
