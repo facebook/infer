@@ -5,13 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-// works - OK
 void empty_function_ok() { return; }
 
-// works - OK
 void one_liner_ok(int x) { x++; }
 
-// works - OK
 void two_liner_ok(int x) {
   x++;
   return;
@@ -23,7 +20,6 @@ re:
   goto re;
 }
 
-/* pulse-inf: works -- empty path condition, no bug */
 void simple_loop0_ok() {
   int y = 0;
   while (y < 100)
@@ -37,7 +33,6 @@ void simple_loop0_bad() {
     x++;
 }
 
-// pulse-inf ok no loop
 void simple_goto_ok(int y) {
   y++;
   goto end;
@@ -49,7 +44,6 @@ void entry_point_calling_bad() {
   simple_loop0_bad();
 }
 
-/* pulse-inf: Able to flag bug */
 void conditional_goto0_bad(int y) {
 re:
   if (y == 100)
@@ -67,7 +61,6 @@ re:
     return;
 }
 
-/* pulse-inf: works good, find bug */
 void fcall(int y) { y++; }
 
 void loop_call_bad(int y) {
@@ -92,7 +85,6 @@ label:
   goto label;
 }
 
-/* pulse-inf: works good */
 void loop_pointer_ok(int* x, int y) {
   int* z = x;
   // int y = 1;
@@ -103,7 +95,7 @@ void loop_pointer_ok(int* x, int y) {
     }
 }
 
-/* pulse-inf: works good */
+/* pulse-inf used to find bug */
 void FN_loop_pointer_bad(int* x, int y) {
   int* z = x;
   // int y = 1;
@@ -114,7 +106,6 @@ void FN_loop_pointer_bad(int* x, int y) {
     }
 }
 
-/* pulse-inf: works good */
 void var_goto_ok(int y) {
   int x = 42;
   goto end;
@@ -123,7 +114,6 @@ end:
   return;
 }
 
-/* pulse-inf: works good */
 void loop_conditional_bad(int y) {
   int x = 0;
   while (y < 100)
@@ -184,7 +174,7 @@ void FN_two_nested_fst_bad(int k) {
   return r;
 }
 
-void FN_two_nested_snd_bad(int k) {
+void two_nested_snd_bad(int k) {
   int r = 0;
   for (int i = 0; i < k; i++)
     for (int j = 0; j < k; r++)
@@ -213,7 +203,6 @@ void nested_loop_cond_ok(int y) {
   }
 }
 
-/* pulse inf works */
 void simple_loop_bad(int x) {
   int y = 1;
   while (x != 3)
@@ -323,7 +312,6 @@ re:
     return;
 }
 
-/* pulse-inf: works good! no bug */
 void loop_with_break_ok(int y) {
   y = 0;
   while (y < 100)
@@ -333,7 +321,6 @@ void loop_with_break_ok(int y) {
       y++;
 }
 
-/* pulse-inf: works good! no bug */
 void loop_with_break_var1_ok(int y) {
   y = 0;
   while (y < 100)
@@ -344,7 +331,6 @@ void loop_with_break_var1_ok(int y) {
       y++;
 }
 
-/* pulse-inf: works good! no bug */
 void loop_with_break_var2_ok(int y) {
   while (y < 100)
     if (y == 50) {
@@ -354,7 +340,6 @@ void loop_with_break_var2_ok(int y) {
       y++;
 }
 
-/* pulse-inf: works! no bug */
 void loop_with_break_var3_ok(int y) {
   while (y < 100)
     if (y == 50)
@@ -363,7 +348,6 @@ void loop_with_break_var3_ok(int y) {
       y++;
 }
 
-/* pulse-inf: works! no bug */
 void loop_with_return_ok(int y) {
   while (y < 100)
     if (y == 50) {
@@ -373,7 +357,6 @@ void loop_with_return_ok(int y) {
       y++;
 }
 
-/* pulse-inf: works! no bug */
 void loop_with_return_ok_var1(int y) {
   while (y < 100)
     if (y == 50)
@@ -382,7 +365,6 @@ void loop_with_return_ok_var1(int y) {
       y++;
 }
 
-/* pulse-inf: works good! no bug */
 void loop_with_return_var2_ok(int y) {
   y = 0;
   while (y < 100)
@@ -393,7 +375,6 @@ void loop_with_return_var2_ok(int y) {
       y++;
 }
 
-/* pulse-inf: works good! no bug */
 void loop_with_return_var3_ok(int y) {
   y = 0;
   while (y < 100)
@@ -452,7 +433,6 @@ int loop_repeated_ok(int i) {
   return (val);
 }
 
-/* pulse-inf: False negative -- maybe augment the numiters in pulseinf config */
 // From: Gupta POPL 2008 - "Proving non-termination"
 int FN_bsearch_gupta08_bad(int a[], int k, unsigned int lo, unsigned int hi) {
   unsigned int mid;
@@ -470,14 +450,12 @@ int FN_bsearch_gupta08_bad(int a[], int k, unsigned int lo, unsigned int hi) {
   return -1;
 }
 
-/* pulseinf: works fine - no bug detected */
 // Cook et al. 2006 - TERMINATOR fails to prove termination
 typedef struct s_list {
   int value;
   struct s_list* next;
 } list_t;
 
-/* pulse-inf: works good, no bug */
 static void list_iter_cook06_ok(list_t* p) {
   int tot = 0;
   do {
@@ -486,7 +464,6 @@ static void list_iter_cook06_ok(list_t* p) {
   } while (p != 0);
 }
 
-/* pulse-inf: works good, no bug */
 static void list_iter_cook06_variant_ok(list_t* p) {
   int tot = 0;
   while (p != 0) {
@@ -495,7 +472,6 @@ static void list_iter_cook06_variant_ok(list_t* p) {
   }
 }
 
-/* pulse-inf: works good - no bug */
 static void list_iter_cook06_variant2_ok(list_t* p) {
   int tot;
   for (tot = 0; p != 0; p = p->next) {
@@ -503,7 +479,6 @@ static void list_iter_cook06_variant2_ok(list_t* p) {
   }
 }
 
-/* pulse-inf: works good - no bug */
 // Cook et al. 2006 - TERMINATOR proves termination
 void two_ints_loop_cook06_ok(int x, int y) {
   if (y >= 1)
@@ -530,7 +505,6 @@ int Ack(int x, int y) {
 
 #include <stdlib.h>
 
-/* pulse-inf: works good! no bug */
 int nondet() { return (rand()); }
 int benchmark_nondet_cook06_ok() {
   int x = nondet();
@@ -570,7 +544,6 @@ int benchmark_nondet_cook06_ok() {
   return (0);
 }
 
-/* pulseinf: works good - no bug detected */
 // Cook et al. 2006 - termination with non determinism
 // #include <stdlib.h>
 // int nondet() { return (rand()); }
@@ -630,7 +603,6 @@ void FN_nondet_loop_bad(int z) {
 
 /* From: AProVE: Non-termination proving for C Programs (Hensel et al. TACAS
  * 2022)*/
-/* pulse-inf: Works good! (flag bug at regular widening threshold) */
 void hensel_tacas22_bad(int x, int y) {
   y = 0;
   while (x > 0) {
@@ -646,14 +618,12 @@ void hensel_tacas22_bad(int x, int y) {
 void foo(int* x) { (*x)--; }
 
 /* Derived from Harris'10 */
-/* Pulseinf: no bug */
 void interproc_terminating_harris10_ok(int x) {
   while (x > 0)
     foo(&x);
 }
 
 /* Derived from Harris'10 */
-/* Pulseinf: no bug */
 void interproc_terminating_harris10_cond_ok(int x) {
   while (x > 0) {
     if (nondet())
@@ -667,7 +637,7 @@ void interproc_terminating_harris10_cond_ok(int x) {
  * program */
 /* TERMINATOR unable to find bug */
 /* TREX find bug in 5sec */
-/* pulse-inf: works good! Detect the bug! */
+/* pulse-inf: used to detect the bug! */
 void FN_loop_non_terminating_harris10_bad(int x, int d, int z) {
   d = 0;
   z = 0;
@@ -752,7 +722,6 @@ void array_iter_bad(int array[], int len) {
 }
 
 // Iterate over an array - no bug
-/* Pulse-Inf: works good */
 void iterate_arraysize_ok(int array[256]) {
   unsigned int i = 0;
   while (i < (sizeof(*array) / sizeof(array[0]))) {
@@ -762,7 +731,6 @@ void iterate_arraysize_ok(int array[256]) {
 }
 
 // Iterate over an array using a bitmask to compute array value
-/* Pulse-Inf: no bug - works good */
 void iterate_bitmask_ok(int array[256], int len) {
   unsigned int i = 0;
   while (i < len) {
@@ -772,7 +740,6 @@ void iterate_bitmask_ok(int array[256], int len) {
 }
 
 // Iterate over an array using a bitmask to compute array index
-/* Pulse-Inf: no bug - works good */
 void iterate_bitmask2_ok(int array[256], int len) {
   unsigned int i = 0;
   unsigned int j = 0;
@@ -824,7 +791,6 @@ void iterate_bitshift_bad(int array[256]) {
 }
 
 // Iterate over an array using a bitshift to compute array index
-/* Pulse-inf: no bug - good */
 void iterate_bitshift1_ok(int array[256], int len) {
   unsigned int i = 1;
   while (i < len) {
@@ -834,7 +800,6 @@ void iterate_bitshift1_ok(int array[256], int len) {
 }
 
 // Iterate over an array using a bitshift to compute array index
-/* Pulse-inf: no bug - good */
 void iterate_bitshift2_ok(int array[256], unsigned char i) {
   while (i != 0) {
     array[i] = i;
@@ -853,7 +818,6 @@ void iterate_intoverflow_ok(int len) {
 /* Pulse-infinite: false negative: unable to reason about unbounded index
  * stuttering in the loop */
 /* To verify: this should work even with low widen threshold */
-/* FALSE NEGATIVE */
 void FN_iterate_modulus_bad(int array[256], unsigned int len, unsigned int i) {
   while (i < len) {
     i = i % 2;
@@ -864,7 +828,6 @@ void FN_iterate_modulus_bad(int array[256], unsigned int len, unsigned int i) {
 
 /* From: zlib */
 /* Iterate computing a crc value - terminates no bug */
-/* Pulse-inf: no bug - good */
 #define W 8
 
 void iterate_crc_ok() {
@@ -878,7 +841,6 @@ void iterate_crc_ok() {
 
 /* From: libpng */
 /* Test from libpng with typedefs */
-/* Expected result: no bug */
 void png_palette_ok(int val) {
   int num;
   int i;
@@ -894,16 +856,15 @@ void png_palette_ok(int val) {
 }
 
 /* Peter O'Hearn's test - not terminate */
-/* Pulse-Inf: OK - find bug  */
 void simple_loop_equal_bad() {
   int x = 42;
   while (x == x)
     x = x + 1;
 }
 
-/* Pulse-Inf: OK! Find bug */
 int compute_increment(int k) { return (k % 2 ? 1 : 0); }
 
+/* Pulse-Inf: OK! Find bug */
 void FN_loop_fcall_add_inductive_bad() {
   int i;
   int incr;
@@ -911,8 +872,6 @@ void FN_loop_fcall_add_inductive_bad() {
     incr = compute_increment(i);
 }
 
-/* Used to be source of FP! not anymore */
-/* Pulseinf now works good: no bug */
 void allocate_all_in_array_ok(int* array[]) {
   for (int i = 0; i < 2; i++) {
     array[i] = malloc(sizeof(int));
@@ -920,7 +879,6 @@ void allocate_all_in_array_ok(int* array[]) {
 }
 
 /* Infinite Goto in loop */
-/* Pulseinf: FN */
 void goto_in_loop_bad() {
   int i = 0;
 

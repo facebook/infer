@@ -71,10 +71,6 @@ end
 (** represents the inferred pre-condition at each program point, biabduction style *)
 module PreDomain : BaseDomainSig_ = PostDomain
 
-type 'astate loop_invariant_under_inference =
-  {header: Procdesc.Node.id; previous_astate_at_header: 'astate list}
-[@@deriving compare, equal]
-
 (* see documentation in this file's .mli *)
 type t =
   { post: PostDomain.t
@@ -86,9 +82,12 @@ type t =
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])
   ; recursive_calls: (PulseMutualRecursion.Set.t[@yojson.opaque])
   ; loop_header_info: (PulseLoopHeaderInfo.t[@yojson.opaque])
-  ; loop_invariant_under_inference: (t loop_invariant_under_inference option[@yojson.opaque])
+  ; loop_invariant_under_inference: (loop_invariant_under_inference option[@yojson.opaque])
   ; unknown_values: bool
   ; skipped_calls: SkippedCalls.t }
+
+and loop_invariant_under_inference =
+  {header: (Procdesc.Node.id[@yojson.opaque]); previous_astate_at_header: t list}
 [@@deriving compare, equal, yojson_of]
 
 let pp_ ~is_summary f
@@ -173,15 +172,11 @@ let record_call_resolution ~caller callsite_loc call_kind resolution astate =
   {astate with transitive_info}
 
 
-let set_loop_invariant_under_inference header astate =
-  L.d_printfln "Abstract states at loop head %a:@\n  @[%a@]@\n" Procdesc.Node.pp_id header pp astate ;
-  {astate with loop_invariant_under_inference= Some {previous_astate_at_header= [astate]; header}}
-
-
 let enable_multiple_astates_pre_header = false
 
 let add_loop_invariant_under_inference header astate =
-  if enable_multiple_astates_pre_header then
+  L.d_printfln "Abstract states at loop head %a:@\n  @[%a@]@\n" Procdesc.Node.pp_id header pp astate ;
+  if Option.is_none astate.loop_invariant_under_inference || enable_multiple_astates_pre_header then
     let {previous_astate_at_header; header} =
       Option.value astate.loop_invariant_under_inference
         ~default:{previous_astate_at_header= []; header}
@@ -192,13 +187,9 @@ let add_loop_invariant_under_inference header astate =
   else astate
 
 
-let is_loop_invariant_under_inference id {loop_invariant_under_inference= opt} =
+let get_loop_invariant_under_inference id {loop_invariant_under_inference= opt} =
   Option.bind opt ~f:(fun {previous_astate_at_header; header} ->
       if Procdesc.Node.equal_id id header then Some previous_astate_at_header else None )
-
-
-let is_some_loop_invariant_under_inference {loop_invariant_under_inference= opt} =
-  Option.is_some opt
 
 
 let map_decompiler astate ~f = {astate with decompiler= f astate.decompiler}

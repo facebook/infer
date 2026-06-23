@@ -17,5 +17,7 @@ let debug = false
 let dummy_formatter = F.make_formatter (fun _ _ _ -> ()) (fun () -> ())
 
 let p fmt =
-  if debug then if Config.is_running_unit_test then F.printf fmt else L.d_printf fmt
+  if debug then
+    if Config.is_running_unit_test then F.printf fmt
+    else F.kasprintf (fun s -> L.d_printf "%s" (Escape.escape_xml s)) fmt
   else F.ifprintf dummy_formatter fmt

@@ -15,4 +15,4 @@ val implies : AbductiveDomain.t -> AbductiveDomain.t -> bool
     whether it is possible to satisfy the loop conditions again. If so, following the UNTER theory,
     an infinite loop is detected. *)
 
-val abstract : PulseLoopHeaderInfo.id -> AbductiveDomain.t -> AbductiveDomain.t
+val abstract : AbductiveDomain.t -> AbductiveDomain.t

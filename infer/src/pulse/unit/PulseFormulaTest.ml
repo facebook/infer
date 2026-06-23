@@ -264,7 +264,7 @@ let test_implies_conditions phi1 phi2 =
   match implies_conditions_up_to ~subst:named_vars_id_subst phi1 ~implies:phi2 with
   | Ok () ->
       F.printf "implies conditions"
-  | Error (`NotImplied atom) ->
+  | Error (`NotImplied (_, atom)) ->
       F.printf "Not implied atom: %a" (PulseFormulaAtom.pp_with_pp_var pp_var) atom
   | Error (`Contradiction {reason}) ->
       F.printf "Contradiction %s" (reason ())
@@ -292,9 +292,7 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       test (x < y) ;
-      [%expect
-        {|
-        conditions: (empty) phi: linear_eqs: x = y -a1 -1 && term_eqs: [y -a1 -1]=x|}]
+      [%expect {| conditions: (empty) phi: linear_eqs: x = y-a1-1 && term_eqs: [y-a1-1]=x |}]
 
 
     let%expect_test _ =
@@ -363,9 +361,10 @@ let%test_module "normalization" =
       [%expect
         {|
         conditions: (empty)
-        phi: linear_eqs: x = -v6 +v8 -1 ∧ v7 = v8 -1 ∧ v10 = 0
-             && term_eqs: 0=v10∧[-v6 +v8 -1]=x∧[v8 -1]=v7∧(z×v8)=v9∧(v×y)=v6∧(v9÷w)=v10
-             && intervals: v10=0|}]
+        phi: linear_eqs: x = -v6+v8-1 ∧ v7 = v8-1 ∧ v10 = 0
+             && term_eqs: 0=v10∧[-v6+v8-1]=x∧[v8-1]=v7∧(z×v8)=v9∧(v×y)=v6∧(v9÷w)=v10
+             && intervals: v10=0
+        |}]
 
 
     (* check that this becomes all linear equalities *)
@@ -375,9 +374,10 @@ let%test_module "normalization" =
         {|
         conditions: (empty)
         phi: var_eqs: v8=v9=v10
-             && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
-             && term_eqs: (-1)=v7∧0=v8∧[-v6 -1]=x∧[1/3·v6]=y
-             && intervals: v8=0|}]
+             && linear_eqs: x = -v6-1 ∧ y = 1/3·v6 ∧ v7 = -1 ∧ v8 = 0
+             && term_eqs: (-1)=v7∧0=v8∧[-v6-1]=x∧[1/3·v6]=y
+             && intervals: v8=0
+        |}]
 
 
     (* check that this becomes all linear equalities thanks to constant propagation *)
@@ -387,9 +387,8 @@ let%test_module "normalization" =
         {|
         conditions: (empty)
         phi: var_eqs: v8=v9=v10
-             && linear_eqs: x = -v6 -1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3
-                             ∧ v7 = -1 ∧ v8 = 0
-             && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6 -1]=x∧[1/3·v6]=y
+             && linear_eqs: x = -v6-1 ∧ y = 1/3·v6 ∧ z = 12 ∧ w = 1 ∧ v = 3 ∧ v7 = -1 ∧ v8 = 0
+             && term_eqs: (-1)=v7∧0=v8∧1=w∧3=v∧12=z∧[-v6-1]=x∧[1/3·v6]=y
              && intervals: z=12 ∧ w=1 ∧ v=3 ∧ v8=0
         |}]
 
@@ -401,11 +400,11 @@ let%test_module "normalization" =
         {|
         conditions: (empty)
         phi: var_eqs: z=v7
-             && linear_eqs: x = 2 ∧ y = -42 ∧ z = w +2 ∧ v6 = 4
-             && term_eqs: (-42)=y∧2=x∧4=v6∧[w +2]=z
+             && linear_eqs: x = 2 ∧ y = -42 ∧ z = w+2 ∧ v6 = 4
+             && term_eqs: (-42)=y∧2=x∧4=v6∧[w+2]=z
              && intervals: y=-42 ∧ v6=4
-             && atoms: {is_int([w +2]) = 1}
-|}]
+             && atoms: {is_int([w+2]) = 1}
+        |}]
 
 
     let%expect_test _ =
@@ -465,28 +464,30 @@ let%test_module "variable elimination" =
       simplify ~keep:[y_var; z_var] (x = y + z && w = x - y && v = w + i 1 && v = i 0) ;
       [%expect
         {|
-          Formula:
-            conditions: (empty)
-            phi: var_eqs: x=v6 ∧ z=w=v7 ∧ v=v8
-                 && linear_eqs: x = y -1 ∧ z = -1 ∧ v = 0
-                 && term_eqs: (-1)=z∧0=v∧[y -1]=x
-                 && intervals: v=0
-          Result: changed
-            conditions: (empty) phi: term_eqs: (-1)=z∧[y -1]=x|}]
+        Formula:
+          conditions: (empty)
+          phi: var_eqs: x=v6 ∧ z=w=v7 ∧ v=v8
+               && linear_eqs: x = y-1 ∧ z = -1 ∧ v = 0
+               && term_eqs: (-1)=z∧0=v∧[y-1]=x
+               && intervals: v=0
+        Result: changed
+          conditions: (empty) phi: term_eqs: (-1)=z∧[y-1]=x
+        |}]
 
 
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y + z && w + x + y = i 0 && v = w + i 1) ;
       [%expect
         {|
-          Formula:
-            conditions: (empty)
-            phi: var_eqs: x=v6 ∧ v=v9
-                 && linear_eqs: x = -v +v7 +1 ∧ y = -v7 ∧ z = -v +2·v7 +1 ∧ w = v -1 ∧ v8 = 0
-                 && term_eqs: 0=v8∧[v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z
-                 && intervals: v8=0
-          Result: changed
-            conditions: (empty) phi: term_eqs: [v -1]=w∧[-v7]=y∧[-v +v7 +1]=x∧[-v +2·v7 +1]=z|}]
+        Formula:
+          conditions: (empty)
+          phi: var_eqs: x=v6 ∧ v=v9
+               && linear_eqs: x = -v+v7+1 ∧ y = -v7 ∧ z = -v+2·v7+1 ∧ w = v-1 ∧ v8 = 0
+               && term_eqs: 0=v8∧[v-1]=w∧[-v7]=y∧[-v+v7+1]=x∧[-v+2·v7+1]=z
+               && intervals: v8=0
+        Result: changed
+          conditions: (empty) phi: term_eqs: [v-1]=w∧[-v7]=y∧[-v+v7+1]=x∧[-v+2·v7+1]=z
+        |}]
 
 
     let%expect_test _ =
@@ -494,9 +495,10 @@ let%test_module "variable elimination" =
       [%expect
         {|
         Formula:
-          conditions: (empty) phi: var_eqs: x=w=v6 ∧ y=z && linear_eqs: x = y +4 && term_eqs: [y +4]=x
+          conditions: (empty) phi: var_eqs: x=w=v6 ∧ y=z && linear_eqs: x = y+4 && term_eqs: [y+4]=x
         Result: changed
-          conditions: (empty) phi: term_eqs: [y +4]=x|}]
+          conditions: (empty) phi: term_eqs: [y+4]=x
+        |}]
   end )
 
 
@@ -529,8 +531,8 @@ let%test_module "non-linear simplifications" =
         {|
         conditions: (empty)
         phi: var_eqs: z=v8 ∧ w=v7
-             && linear_eqs: x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6 -3
-             && term_eqs: 2=y∧[v6 -3]=w∧[1/4·v6]=x∧[1/2·v6]=z
+             && linear_eqs: x = 1/4·v6 ∧ y = 2 ∧ z = 1/2·v6 ∧ w = v6-3
+             && term_eqs: 2=y∧[v6-3]=w∧[1/4·v6]=x∧[1/2·v6]=z
              && intervals: y=2
         |}]
   end )
@@ -545,7 +547,7 @@ let%test_module "inequalities" =
 
     let%expect_test "simple contradiction" =
       test (x < y && x >= y) ;
-      [%expect {|UNSAT: -a1 -1≥0 is false|}]
+      [%expect {| UNSAT: -a1-1≥0 is false |}]
 
 
     let%expect_test "add to tableau with pivot" =
@@ -554,9 +556,10 @@ let%test_module "inequalities" =
         {|
         conditions: (empty)
         phi: var_eqs: a3=z ∧ a2=y ∧ a1=x
-             && linear_eqs: a2 = a3 +a5 +3 ∧ a1 = -a3 +a4 -a5 -1 ∧ v6 = a4 +2 ∧ v7 = -a5 -3
-             && term_eqs: [-a5 -3]=v7∧[-a3 +a4 -a5 -1]=a1∧[a4 +2]=v6∧[a3 +a5 +3]=a2
-             && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3 |}]
+             && linear_eqs: a2 = a3+a5+3 ∧ a1 = -a3+a4-a5-1 ∧ v6 = a4+2 ∧ v7 = -a5-3
+             && term_eqs: [-a5-3]=v7∧[-a3+a4-a5-1]=a1∧[a4+2]=v6∧[a3+a5+3]=a2
+             && intervals: a3≥0 ∧ a2≥0 ∧ a1≥0 ∧ v6≥2 ∧ v7≤-3
+        |}]
 
 
     let%expect_test "add to tableau with pivot then unsat" =
@@ -639,13 +642,13 @@ let%test_module "conjunctive normal form" =
   ( module struct
     let%expect_test _ =
       test (and_ (ge x (i 0)) (lt x (i 0)) = i 1) ;
-      [%expect {|UNSAT: -a1 -1≥0 is false|}]
+      [%expect {| UNSAT: -a1-1≥0 is false |}]
 
 
     (* same as above with <> 0 instead of = 1 *)
     let%expect_test _ =
       test (and_ (ge x (i 0)) (lt x (i 0)) <> i 0) ;
-      [%expect {|UNSAT: -a1 -1≥0 is false|}]
+      [%expect {| UNSAT: -a1-1≥0 is false |}]
 
 
     let%expect_test "(x ≠ 0 ∨ y ≠ 0) && x = 0  => y ≠ 0" =
@@ -694,8 +697,8 @@ let%test_module "conjunctive normal form" =
         {|
         conditions: (empty)
         phi: var_eqs: v6=v7
-             && linear_eqs: x = a1 +1 ∧ v6 = 1
-             && term_eqs: 1=v6∧[a1 +1]=x∧(0<x)=v6∧(0≤x)=v6
+             && linear_eqs: x = a1+1 ∧ v6 = 1
+             && term_eqs: 1=v6∧[a1+1]=x∧(0<x)=v6∧(0≤x)=v6
              && intervals: v8≠0
              && atoms: {v8 ≠ 0}
         |}]
@@ -782,7 +785,7 @@ let%test_module "join" =
 
     let%expect_test _ =
       test (x =. y + i 1 || x =. y + i 1) ;
-      [%expect {| conditions: (empty) phi: linear_eqs: x = y +1 && term_eqs: [y +1]=x |}]
+      [%expect {| conditions: (empty) phi: linear_eqs: x = y+1 && term_eqs: [y+1]=x |}]
 
 
     let%expect_test _ =
@@ -812,7 +815,7 @@ let%test_module "join" =
 
     let%expect_test _ =
       test (w = y * z && (x =. w || x =. w)) ;
-      [%expect {| conditions: {[x -w] = 0} phi: var_eqs: x=w=v6 && term_eqs: (y×z)=x |}]
+      [%expect {| conditions: {[x-w] = 0} phi: var_eqs: x=w=v6 && term_eqs: (y×z)=x |}]
 
 
     (* doesn't work as well as the previous test when the non-linear term is evaluated (twice)
@@ -826,10 +829,10 @@ let%test_module "join" =
       test (w = y + z - i 4 && (x >. w || x >. w)) ;
       [%expect
         {|
-        conditions: {[-x +w] < 0}
+        conditions: {[-x+w] < 0}
         phi: var_eqs: w=v7
-             && linear_eqs: x = v6 +a1 -3 ∧ y = -z +v6 ∧ w = v6 -4
-             && term_eqs: [v6 -4]=w∧[v6 +a1 -3]=x∧[-z +v6]=y
+             && linear_eqs: x = v6+a1-3 ∧ y = -z+v6 ∧ w = v6-4
+             && term_eqs: [v6-4]=w∧[v6+a1-3]=x∧[-z+v6]=y
         |}]
 
 
@@ -838,10 +841,7 @@ let%test_module "join" =
     let%expect_test _ =
       test (x >. y + z - i 4 || x >. y + z - i 4) ;
       [%expect
-        {|
-        conditions: (empty)
-        phi: linear_eqs: y = -z +v7 +4 ∧ v6 = v7 +4 && term_eqs: [-z +v7 +4]=y∧[v7 +4]=v6
-        |}]
+        {| conditions: (empty) phi: linear_eqs: y = -z+v7+4 ∧ v6 = v7+4 && term_eqs: [-z+v7+4]=y∧[v7+4]=v6 |}]
 
 
     let%expect_test _ =

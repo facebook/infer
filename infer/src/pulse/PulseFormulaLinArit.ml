@@ -48,7 +48,7 @@ let pp pp_var fmt (c, vs) =
     let pp_c fmt c =
       if not (Q.is_zero c) then
         let plusminus, c_pos = if Q.geq c Q.zero then ('+', c) else ('-', Q.neg c) in
-        F.fprintf fmt " %c%a" plusminus Q.pp_print c_pos
+        F.fprintf fmt "@,%c%a" plusminus Q.pp_print c_pos
     in
     let is_first = ref true in
     let pp_coeff fmt q =
@@ -58,7 +58,7 @@ let pp pp_var fmt (c, vs) =
       if not (Q.is_one abs_q) then F.fprintf fmt "%a·" Q.pp_print abs_q
     in
     let pp_vs fmt vs =
-      Pp.collection ~sep:"@;"
+      Pp.collection ~sep:"@,"
         ~fold:(IContainer.fold_of_pervasives_map_fold VarMap.fold)
         (fun fmt (v, q) ->
           F.fprintf fmt "%a%a" pp_coeff q pp_var v ;

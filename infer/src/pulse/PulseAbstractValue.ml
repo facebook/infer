@@ -49,6 +49,15 @@ let compare_unrestricted_first v1 v2 =
   else compare v1 v2
 
 
+let throwaway_context thunk =
+  let v = DLS.get next_fresh in
+  let a = DLS.get next_fresh_restricted in
+  let result = thunk () in
+  DLS.set next_fresh v ;
+  DLS.set next_fresh_restricted a ;
+  result
+
+
 module PPKey = struct
   type nonrec t = t [@@deriving compare]
 

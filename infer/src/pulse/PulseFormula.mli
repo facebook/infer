@@ -7,8 +7,9 @@
 
 open! IStd
 module F = Format
-module Atom = PulseFormulaAtom
 module SatUnsat = PulseSatUnsat
+module Atom = PulseFormulaAtom
+module Formula = PulseFormulaPhi
 module Var = PulseFormulaVar
 
 (* Pulse-infinite added *)
@@ -52,10 +53,6 @@ module Term : sig
   [@@deriving compare, equal, yojson_of]
 
   module Set : Stdlib.Set.S
-end
-
-module Formula : sig
-  type t [@@deriving compare, equal, yojson_of]
 end
 
 type t =
@@ -211,7 +208,7 @@ val implies_conditions_up_to :
      subst:Var.t Var.Map.t
   -> t
   -> implies:t
-  -> (unit, [> `Contradiction of SatUnsat.unsat_info | `NotImplied of Atom.t]) result
+  -> (unit, [> `Contradiction of SatUnsat.unsat_info | `NotImplied of Formula.t * Atom.t]) result
 
 val fold_variables : (t, Var.t, 'acc) Container.fold
 (** note: each variable mentioned in the formula is visited at least once, possibly more *)

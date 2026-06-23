@@ -35,6 +35,8 @@ val compare_unrestricted_first : t -> t -> int
 (** an alternative comparison function that sorts unrestricted variables before restricted variables
 *)
 
+val throwaway_context : (unit -> 'a) -> 'a
+
 module Set : PrettyPrintable.PPSet with type elt = t
 
 module Map : sig

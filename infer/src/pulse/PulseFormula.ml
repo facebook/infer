@@ -319,8 +319,8 @@ let prune_atom ~depth atom (formula, new_eqs) ~add_term =
   Debug.p "prune atom %a in %a@\n" (Atom.pp_with_pp_var Var.pp) atom pp formula ;
   let* normalized_atoms = Formula.Normalizer.normalize_atom formula.phi atom in
   let* phi, new_eqs =
-    Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms
-      ~orig_atom:[atom] ~add_term
+    Formula.Normalizer.and_normalized_atoms (formula.phi, new_eqs) normalized_atoms ~orig_atom:atom
+      ~add_term
   in
   (* Sticking this call in slightly hopefully *)
   let* phi, new_eqs = Formula.Normalizer.propagate_atom atom (phi, new_eqs) in
@@ -901,8 +901,20 @@ let simplify ~precondition_vocabulary ~keep formula =
   (formula, live_vars, RevList.empty)
 
 
-(** translate each variable in [formula_foreign] according to [f] then prove that each translated
-    fact is implied by [formula0] *)
+let debug_pp_sequent lhs (instantiated, subst) exists rhs =
+  let pp_rhs fmt formula =
+    Term.VarMap.pp_with_pp_var Var.pp fmt (Formula.subst_term_eqs subst formula.phi)
+  in
+  Var.throwaway_context
+  @@ fun () ->
+  let exists = Var.Set.filter (fun v -> not @@ Var.Map.mem v instantiated) exists in
+  L.d_printfln_escaped "%a ?⊢? ∃%a. %a"
+    (Formula.pp_term_eqs_with_pp_var Var.pp)
+    lhs.phi Var.Set.pp exists pp_rhs rhs
+
+
+(** translate each variable in [formula_foreign] according to [subst] then prove that each
+    translated condition is implied by [formula0] *)
 let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
   let subst_map = ref subst0 in
   let subst v =
@@ -974,7 +986,7 @@ let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
      ]}
      v]
  *)
-  let vars_to_existentially_quantify =
+  let vars_to_reify =
     DeadVariables.get_reachable_from
       (DeadVariables.build_var_graph formula0.phi)
       (Var.Map.to_seq !subst_map |> Seq.map fst |> Var.Set.of_seq)
@@ -983,9 +995,10 @@ let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
     Var.Set.fold
       (fun v subst_map ->
         if Var.Map.mem v subst_map then subst_map else Var.Map.add v (Var.mk_fresh ()) subst_map )
-      vars_to_existentially_quantify !subst_map ;
+      vars_to_reify !subst_map ;
+  debug_pp_sequent formula0 (subst0, !subst_map) vars_to_reify formula_foreign ;
   (* propagate non-implication and contradictions faster using these exceptions *)
-  let exception NotImplied of Atom.t in
+  let exception NotImplied of Formula.t * Atom.t in
   let exception Contradiction of unsat_info in
   let sat_value_exn (norm : 'a SatUnsat.t) =
     match norm with Unsat unsat_info -> raise_notrace (Contradiction unsat_info) | Sat x -> x
@@ -1040,7 +1053,7 @@ let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
           SatUnsat.pp_unsat_info unsat_info ;
         ()
     | Sat _ ->
-        raise (NotImplied atom)
+        raise (NotImplied (phi, atom))
   in
   let implies_atoms phi atoms_foreign =
     Stdlib.Seq.iter
@@ -1067,8 +1080,8 @@ let implies_conditions_up_to ~subst:subst0 formula0 ~implies:formula_foreign =
     implies_terms phi (formula_foreign.phi.term_conditions2 |> Term.Set.to_seq) ;
     Ok ()
   with
-  | NotImplied atom ->
-      Error (`NotImplied atom)
+  | NotImplied (phi, atom) ->
+      Error (`NotImplied (phi, atom))
   | Contradiction unsat_info ->
       Error (`Contradiction unsat_info)
 
