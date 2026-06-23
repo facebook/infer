@@ -272,6 +272,8 @@ module Normalizer : sig
   (** use with the result of {!normalize_atom} in place of {!and_atom} *)
 
   val and_atom : Atom.t -> t * new_eqs -> add_term:bool -> (t * new_eqs) SatUnsat.t
+  (** [and_atom atom (phi, new_eqs)] is
+      [SatUnsat.(normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs))] *)
 
   val and_dynamic_type :
     Var.t -> Typ.t -> ?source_file:SourceFile.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
@@ -279,11 +281,6 @@ module Normalizer : sig
   val and_below : Var.t -> Typ.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
 
   val and_notbelow : Var.t -> Typ.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
-
-  val propagate_atom : Atom.t -> t * new_eqs -> (t * new_eqs) SatUnsat.t
-
-  (** [and_atom atom (phi, new_eqs)] is
-      [SatUnsat.(normalize_atom phi atom >>= and_normalized_atoms (phi, new_eqs))] *)
 end
 
 val is_neq_zero : t -> Term.t -> bool

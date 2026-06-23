@@ -132,6 +132,14 @@ let get_as_var (c, vs) =
   else None
 
 
+let get_as_var_plus_const (c, vs) =
+  match VarMap.is_singleton_or_more vs with
+  | Singleton (x, cx) when Q.is_one cx ->
+      Some (x, c)
+  | _ ->
+      None
+
+
 let get_as_variable_difference (c, vs) =
   if Q.is_zero c then
     (* the coefficient has to be 0 *)
@@ -224,8 +232,10 @@ let solve_for_unrestricted w l =
 let classify_minimized_maximized (_, vs) =
   let all_pos, all_neg =
     VarMap.fold
-      (fun _ coeff (all_pos, all_neg) ->
-        (Q.(coeff >= zero) && all_pos, Q.(coeff <= zero) && all_neg) )
+      (fun v coeff (all_pos, all_neg) ->
+        let is_restricted = Var.is_restricted v in
+        ( (is_restricted && all_pos && Q.(coeff >= zero))
+        , is_restricted && all_neg && Q.(coeff <= zero) ) )
       vs (true, true)
   in
   match (all_pos, all_neg) with
