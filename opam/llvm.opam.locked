@@ -25,13 +25,14 @@ depends: [
   "csexp" {= "1.5.2"}
   "ctypes" {= "0.23.0"}
   "ctypes-foreign" {= "0.23.0"}
-  "dune" {= "3.17.2"}
+  "dune" {= "3.23.1"}
   "dune-configurator" {= "3.18.2"}
   "integers" {= "0.7.0"}
   "ocaml" {= "5.3.0"}
   "ocaml-compiler" {= "5.3.0"}
   "ocaml-config" {= "3"}
   "ocaml-option-flambda" {= "1"}
+  "ocaml-option-fp" {= "1"}
   "ocaml-variants" {= "5.3.0+options"}
   "ocamlfind" {= "1.9.8"}
   "stdlib-shims" {= "0.3.0"}
@@ -90,37 +91,37 @@ patches: [
 
 extra-source "1_add-debug-info.patch" {
   src:
-    "file:///data/users/nikosg/infer/dependencies/llvm/patches/1_add-debug-info.patch"
+    "file:///home/dpichardie/git/infer/dependencies/llvm/patches/1_add-debug-info.patch"
   checksum:
     "sha256=562e09a08afc3b4b639ae1b1721ba20d2fe7d2410af11b350602f385b6e1deba"
 }
 extra-source "2_add-LLVMGetAtomicRMWBinOp.patch" {
   src:
-    "file:///data/users/nikosg/infer/dependencies/llvm/patches/2_add-LLVMGetAtomicRMWBinOp.patch"
+    "file:///home/dpichardie/git/infer/dependencies/llvm/patches/2_add-LLVMGetAtomicRMWBinOp.patch"
   checksum:
     "sha256=3022e4efccae3b40f67c786e841ab9b0dd918b45b64ff85a7a82e1ad6fe1a321"
 }
 extra-source "3_fix-null-global_initializer.patch" {
   src:
-    "file:///data/users/nikosg/infer/dependencies/llvm/patches/3_fix-null-global_initializer.patch"
+    "file:///home/dpichardie/git/infer/dependencies/llvm/patches/3_fix-null-global_initializer.patch"
   checksum:
     "sha256=e2d0faca83e2542454606c544478a2847f27c6dbd9ccf9aa352059e7b1407481"
 }
 extra-source "4_LLVMGetGEPSourceElementType.patch" {
   src:
-    "file:///data/users/nikosg/infer/dependencies/llvm/patches/4_LLVMGetGEPSourceElementType.patch"
+    "file:///home/dpichardie/git/infer/dependencies/llvm/patches/4_LLVMGetGEPSourceElementType.patch"
   checksum:
     "sha256=632d24a7bea8076c959f171055d161c7b589b1d961cb5cffda5ebe32602cd85c"
 }
 extra-source "5_getAllocatedType.patch" {
   src:
-    "file:///data/users/nikosg/infer/dependencies/llvm/patches/5_getAllocatedType.patch"
+    "file:///home/dpichardie/git/infer/dependencies/llvm/patches/5_getAllocatedType.patch"
   checksum:
     "sha256=a94060caf325bb83592d7563584326300c8afe2b7f1e3b3d6b0a93aa28739fa5"
 }
 extra-source "6_LLVMExtractDISubprogramType.patch" {
   src:
-    "file:///data/users/nikosg/infer/dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
+    "file:///home/dpichardie/git/infer/dependencies/llvm/patches/6_LLVMExtractDISubprogramType.patch"
   checksum:
     "sha256=090e1b70a75c32b378162e82f4e8028a32f5e49cbc004a7dffc27a8d33f8a129"
 }
@@ -136,7 +137,7 @@ extra-source "0_AddOCaml.cmake.patch" {
 }
 extra-source "7_LLVMExtractDbgDeclareNames.patch" {
   src:
-    "file:///data/users/nikosg/infer/dependencies/llvm/patches/7_LLVMExtractDbgDeclareNames.patch"
+    "file:///home/dpichardie/git/infer/dependencies/llvm/patches/7_LLVMExtractDbgDeclareNames.patch"
   checksum:
     "sha256=8617d730825241ae4f90cf2fdaf6dc0b8c1471bc3ed29a6bfbd7aa1cad041619"
 }

@@ -25,7 +25,7 @@ issues.exp.test: $(SOURCES) $(wildcard current/*.py) $(INFER_BIN)
 			--issues-tests $@ \
 			-o $(INFER_OUT)/$$f.out 2>&1 || true; \
 	done
-	$(QUIET)sed -i 's|$(CURDIR)/||g' $@
+	$(QUIET)sed 's|$(CURDIR)/||g' $@ > $@.tmp && mv $@.tmp $@
 
 .PHONY: analyze
 analyze: issues.exp.test
