@@ -1,0 +1,49 @@
+py.ml: OCaml bindings for Python
+
+py.ml provides OCaml bindings for Python 2 and Python
+3. This library subsumes the pycaml library, which is no longer
+actively maintained.
+
+Homepage: http://pyml.gforge.inria.fr
+
+Documentation: http://pyml.gforge.inria.fr/doc
+
+Git: git clone http://pyml.gforge.inria.fr/pyml.git
+
+Git Repository Browser: http://pyml.gforge.inria.fr/browser
+
+Tracker for bug reports and feature requests:
+http://pyml.gforge.inria.fr/tracker
+
+OPAM: opam install pyml
+
+The Python library is linked at runtime and the same executable can be
+run in a Python 2 or a Python 3 environment. py.ml does not
+require any Python library at compile time.
+The only compile time dependency is Stdcompat to ensure compatibility
+with all OCaml compiler versions from 3.12:
+https://github.com/thierry-martinez/stdcompat/
+
+
+Bindings are split in three modules:
+
+- Py provides the initialization functions and some high-level
+  bindings, with error handling and naming conventions closer to OCaml
+  usages.
+
+- Pycaml provides a signature close to the old Pycaml
+  module, so as to ease migration.
+
+- Pywrappers provides low-level bindings, which follow closely the
+  conventions of the C bindings for Python. Submodules
+  Pywrappers.Python2 and Pywrappers.Python3 contain version-specific
+  bindings.
+
+Custom top-level
+
+A custom top-level with the C bindings can be compiled by make pymltop.
+
+If you have utop and ocamlfind, you can make pymlutop.
+
+For OPAM users: pymltop is installed by default by opam install pyml.
+pymlutop is installed whenever utop is available.

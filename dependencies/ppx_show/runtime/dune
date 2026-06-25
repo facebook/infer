@@ -1,0 +1,3 @@
+(library
+  (name ppx_show_runtime)
+  (public_name ppx_show.runtime))

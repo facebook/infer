@@ -196,17 +196,7 @@ let capture_files ~is_binary files =
   let interpreter = Config.python_exe |> Option.value ~default:Version.python_exe in
   let library_name = derive_libpython_from_interpreter interpreter in
   let child_action, child_prologue, child_epilogue =
-    (* The tenv is created in the child's prologue rather than captured here: it embeds a mutex
-       (a [Custom] runtime value) that cannot be marshalled to the worker processes when the pool
-       is spawned rather than forked (e.g. on macOS). *)
-    let child_tenv = ref None in
-    let get_child_tenv () =
-      match !child_tenv with
-      | Some tenv ->
-          tenv
-      | None ->
-          L.die InternalError "Python capture worker tenv accessed before its prologue ran@\n"
-    in
+    let child_tenv = Tenv.create () in
     let child_action file =
       if is_file_block_listed file then Some SkippedBlocked
       else
@@ -214,7 +204,7 @@ let capture_files ~is_binary files =
         !WorkerPoolState.update_status (Some t0) file ;
         match capture_file ~is_binary file with
         | Ok (CapturedTenv file_tenv) ->
-            Tenv.merge ~src:file_tenv ~dst:(get_child_tenv ()) ;
+            Tenv.merge ~src:file_tenv ~dst:child_tenv ;
             None
         | Ok CapturedSkipDb ->
             None
@@ -235,7 +225,6 @@ let capture_files ~is_binary files =
       DBWriterProcess.override_use_daemon false ;
       Database.create_db capture_db CaptureDatabase ;
       Database.new_database_connection capture_db CaptureDatabase ;
-      child_tenv := Some (Tenv.create ()) ;
       Py.initialize ?library_name ~interpreter ()
     in
     let child_epilogue worker_id =
@@ -245,7 +234,7 @@ let capture_files ~is_binary files =
       in
       L.debug Capture Quiet "Epilogue: writing child %a tenv to %s@\n" ProcessPool.Worker.pp_id
         worker_id tenv_path ;
-      Tenv.write (get_child_tenv ()) (DB.filename_from_string tenv_path) ;
+      Tenv.write child_tenv (DB.filename_from_string tenv_path) ;
       Py.finalize () ;
       worker_out_dir_abspath
     in

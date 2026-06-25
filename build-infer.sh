@@ -228,6 +228,8 @@ install_opam_deps () {
 
     opam pin add --no-action charon "$INFER_ROOT"/dependencies/charon
     opam pin add --no-action name_matcher_parser "$INFER_ROOT"/dependencies/charon
+    opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
+    opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
     # camlzip checks that it is within the required version that the zip/jar file declares as
     # needed to decompress it:
     #   https://github.com/xavierleroy/camlzip/blob/dd86042ac5eba8ba21e3d98b2f3e3dd82fc14033/zip.ml#L197-L198

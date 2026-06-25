@@ -264,10 +264,7 @@ let rec new_py_constant obj =
       let s = Py.String.to_string obj in
       Ok (PYCString s)
     with Py.E _ -> Ok PYCInvalidUnicode )
-  | Unknown | Iter | Set ->
-      (* Recent [pyml] classifies [frozenset] constants (the only set-like values that can appear
-         as bytecode constants) as [Iter] or [Set]; older versions reported them as [Unknown]. In
-         all cases we fall back to inspecting the runtime type name below. *)
+  | Unknown ->
       let ty = Py.Object.get_type obj in
       let* class_name = read_string "__name__" ty in
       if String.equal "complex" class_name then
@@ -288,7 +285,7 @@ let rec new_py_constant obj =
   | Float ->
       let f = Py.Float.to_float obj in
       Ok (PYCFloat f)
-  | Callable | Capsule | Closure | Dict | List | Module | Type ->
+  | Callable | Capsule | Closure | Dict | List | Module | Type | Iter | Set ->
       Error (L.InternalError, Error.UnknownByteCodeConstant ty)
 
 
