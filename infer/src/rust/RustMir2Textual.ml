@@ -244,6 +244,42 @@ let proc_name_from_binop (op : Charon.Generated_Expressions.binop) (typ : Textua
   (Textual.ProcDecl.of_binop bin_op, typ)
 
 
+let add_borrow_mut (borrow_kind : Charon.Generated_Expressions.borrow_kind) attrs =
+  match borrow_kind with
+  | BMut | BTwoPhaseMut | BUniqueImmutable ->
+      Textual.Attr.ptr_rust_mut :: attrs
+  | _ ->
+      Textual.Attr.ptr_rust_const :: attrs
+
+
+let add_ref_mut (ref_kind : Charon.Generated_Types.ref_kind) attrs =
+  match ref_kind with
+  | RMut ->
+      Textual.Attr.ptr_rust_mut :: attrs
+  | _ ->
+      Textual.Attr.ptr_rust_const :: attrs
+
+
+let get_rvalue_ptr_attrs (rvalue : Charon.Generated_Expressions.rvalue) =
+  match rvalue with
+  | RawPtr (_, ref_kind, _) ->
+      add_ref_mut ref_kind [Textual.Attr.ptr_rust_raw]
+  | RvRef (_, borrow_kind, _) ->
+      add_borrow_mut borrow_kind [Textual.Attr.ptr_rust_reference]
+  | _ ->
+      []
+
+
+let get_ty_ptr_attrs (rust_ty : Charon.Generated_Types.ty) =
+  match rust_ty with
+  | TRef (_, _, ref_kind) ->
+      add_ref_mut ref_kind [Textual.Attr.ptr_rust_reference]
+  | TRawPtr (_, ref_kind) ->
+      add_ref_mut ref_kind [Textual.Attr.ptr_rust_raw]
+  | _ ->
+      []
+
+
 (* Model Unqiue<T> and NonNull<T> as *T *)
 let is_pointer_type crate (name : Charon.Generated_Types.name) =
   let name = name |> List.map ~f:(name_of_path_element crate) in
@@ -329,7 +365,7 @@ and ty_to_textual_typ crate (rust_ty : Charon.Generated_Types.ty) : Textual.Typ.
   | TLiteral (TFloat _) ->
       Textual.Typ.Float
   | TRawPtr (ty, _) | TRef (_, ty, _) ->
-      Textual.Typ.mk_ptr (ty_to_textual_typ crate ty)
+      Textual.Typ.Ptr (ty_to_textual_typ crate ty, get_ty_ptr_attrs rust_ty)
   | TAdt type_decl_ref ->
       adt_ty_to_textual_typ crate type_decl_ref
   (* Generics *)
@@ -560,11 +596,11 @@ let mk_exp_from_rvalue ~loc crate (rvalue : Charon.Generated_Expressions.rvalue)
   | RvRef ({kind= PlaceLocal var_id; ty}, _, _metadata) ->
       let typ = ty_to_textual_typ crate ty in
       let exp = Textual.Exp.Lvar (place_map_find_id place_map var_id) in
-      (exp, Textual.Typ.mk_ptr typ)
+      (exp, Textual.Typ.Ptr (typ, get_rvalue_ptr_attrs rvalue))
   | RawPtr (place, _, _metadata) | RvRef (place, _, _metadata) ->
       let typ = ty_to_textual_typ crate place.ty in
       let exp = mk_exp_from_place ~loc crate place_map place in
-      (exp, Textual.Typ.mk_ptr typ)
+      (exp, Textual.Typ.Ptr (typ, get_rvalue_ptr_attrs rvalue))
   | Aggregate (kind, ops) -> (
       (* TODO: Handle non-empty aggregates as well *)
       let exps = List.map ~f:(fun op -> mk_exp_from_operand ~loc crate place_map op |> fst) ops in

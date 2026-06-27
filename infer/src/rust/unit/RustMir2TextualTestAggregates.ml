@@ -264,11 +264,11 @@ fn main() {
     type dummy::Adder = {}
 
     define dummy::main() : void {
-      local var_0: void, adder_1: dummy::Adder, three_2: int, var_3: *dummy::Adder
+      local var_0: void, adder_1: dummy::Adder, three_2: int, var_3: .rust_mut = "const" .rust_pointer = "reference" *dummy::Adder
       #node_0:
           store &var_0 <- null:void
-          store &var_3 <- &adder_1:*dummy::Adder
-          n0:*dummy::Adder = load &var_3
+          store &var_3 <- &adder_1:.rust_mut = "const" .rust_pointer = "reference" *dummy::Adder
+          n0:.rust_mut = "const" .rust_pointer = "reference" *dummy::Adder = load &var_3
           n1 = dummy::{dummy::Adder}::add(n0, 1, 2)
           store &three_2 <- n1:int
           jmp node_2
@@ -284,7 +284,7 @@ fn main() {
 
     }
 
-    define dummy::{dummy::Adder}::add(self_1: *dummy::Adder, a_2: int, b_3: int) : int {
+    define dummy::{dummy::Adder}::add(self_1: .rust_mut = "const" .rust_pointer = "reference" *dummy::Adder, a_2: int, b_3: int) : int {
       local var_0: int, var_4: int, var_5: int, var_6: int
       #node_0:
           n0:int = load &a_2

@@ -24,12 +24,12 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, x_1: int, ref_x_2: *int, y_3: int
+      local var_0: void, x_1: int, ref_x_2: .rust_mut = "const" .rust_pointer = "reference" *int, y_3: int
       #node_0:
           store &var_0 <- null:void
           store &x_1 <- 42:int
-          store &ref_x_2 <- &x_1:*int
-          n0:*int = load &ref_x_2
+          store &ref_x_2 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &ref_x_2
           n1:int = load n0
           store &y_3 <- n1:int
           store &var_0 <- null:void
@@ -58,20 +58,20 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, x_1: int, ref_1_2: *int, ref_2_3: **int, ref_3_4: ***int, y_5: int, var_6: **int, var_7: *int
+      local var_0: void, x_1: int, ref_1_2: .rust_mut = "const" .rust_pointer = "reference" *int, ref_2_3: .rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int, ref_3_4: .rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int, y_5: int, var_6: .rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int, var_7: .rust_mut = "const" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &x_1 <- 42:int
-          store &ref_1_2 <- &x_1:*int
-          store &ref_2_3 <- &ref_1_2:**int
-          store &ref_3_4 <- &ref_2_3:***int
-          n0:***int = load &ref_3_4
-          n1:**int = load n0
-          store &var_6 <- n1:**int
-          n2:**int = load &var_6
-          n3:*int = load n2
-          store &var_7 <- n3:*int
-          n4:*int = load &var_7
+          store &ref_1_2 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          store &ref_2_3 <- &ref_1_2:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int
+          store &ref_3_4 <- &ref_2_3:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int
+          n0:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load &ref_3_4
+          n1:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load n0
+          store &var_6 <- n1:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int
+          n2:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load &var_6
+          n3:.rust_mut = "const" .rust_pointer = "reference" *int = load n2
+          store &var_7 <- n3:.rust_mut = "const" .rust_pointer = "reference" *int
+          n4:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_7
           n5:int = load n4
           store &y_5 <- n5:int
           store &var_0 <- null:void
@@ -96,13 +96,13 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, y_1: int, x_2: *int, var_3: *int
+      local var_0: void, y_1: int, x_2: .rust_mut = "mut" .rust_pointer = "pointer" *int, var_3: .rust_mut = "mut" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &y_1 <- 10:int
-          store &var_3 <- &y_1:*int
-          n0:*int = load &var_3
-          store &x_2 <- n0:*int
+          store &var_3 <- &y_1:.rust_mut = "mut" .rust_pointer = "reference" *int
+          n0:.rust_mut = "mut" .rust_pointer = "reference" *int = load &var_3
+          store &x_2 <- n0:.rust_mut = "mut" .rust_pointer = "pointer" *int
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -125,11 +125,11 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, y_1: int, x_2: *int
+      local var_0: void, y_1: int, x_2: .rust_mut = "mut" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &y_1 <- 10:int
-          store &x_2 <- &y_1:*int
+          store &x_2 <- &y_1:.rust_mut = "mut" .rust_pointer = "reference" *int
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
@@ -152,13 +152,13 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, y_1: int, x_2: *int, var_3: *int
+      local var_0: void, y_1: int, x_2: .rust_mut = "const" .rust_pointer = "pointer" *int, var_3: .rust_mut = "const" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &y_1 <- 10:int
-          store &var_3 <- &y_1:*int
-          n0:*int = load &var_3
-          store &x_2 <- n0:*int
+          store &var_3 <- &y_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_3
+          store &x_2 <- n0:.rust_mut = "const" .rust_pointer = "pointer" *int
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -181,11 +181,11 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, y_1: int, x_2: *int
+      local var_0: void, y_1: int, x_2: .rust_mut = "const" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &y_1 <- 10:int
-          store &x_2 <- &y_1:*int
+          store &x_2 <- &y_1:.rust_mut = "const" .rust_pointer = "reference" *int
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
@@ -209,15 +209,15 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, x_1: int, y_2: *int, var_3: *int, var_4: *int
+      local var_0: void, x_1: int, y_2: .rust_mut = "const" .rust_pointer = "reference" *int, var_3: .rust_mut = "const" .rust_pointer = "reference" *int, var_4: .rust_mut = "const" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &x_1 <- 42:int
-          store &var_4 <- &x_1:*int
-          n0:*int = load &var_4
-          store &var_3 <- n0:*int
-          n1:*int = load &var_3
-          store &y_2 <- n1:*int
+          store &var_4 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_4
+          store &var_3 <- n0:.rust_mut = "const" .rust_pointer = "reference" *int
+          n1:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_3
+          store &y_2 <- n1:.rust_mut = "const" .rust_pointer = "reference" *int
           store &var_0 <- null:void
           n2:void = load &var_0
           ret n2
@@ -240,13 +240,13 @@ fn main() {
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, x_1: int, ptr_2: *int, y_3: *int
+      local var_0: void, x_1: int, ptr_2: .rust_mut = "const" .rust_pointer = "reference" *int, y_3: .rust_mut = "const" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &x_1 <- 42:int
-          store &ptr_2 <- &x_1:*int
-          n0:*int = load &ptr_2
-          store &y_3 <- n0:*int
+          store &ptr_2 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &ptr_2
+          store &y_3 <- n0:.rust_mut = "const" .rust_pointer = "reference" *int
           store &var_0 <- null:void
           n1:void = load &var_0
           ret n1
@@ -271,12 +271,12 @@ let%expect_test "mutate_through_reference" =
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, x_1: int, ptr_2: *int
+      local var_0: void, x_1: int, ptr_2: .rust_mut = "mut" .rust_pointer = "reference" *int
       #node_0:
           store &var_0 <- null:void
           store &x_1 <- 10:int
-          store &ptr_2 <- &x_1:*int
-          n0:*int = load &ptr_2
+          store &ptr_2 <- &x_1:.rust_mut = "mut" .rust_pointer = "reference" *int
+          n0:.rust_mut = "mut" .rust_pointer = "reference" *int = load &ptr_2
           store n0 <- 20:int
           store &var_0 <- null:void
           n1:void = load &var_0
@@ -301,11 +301,11 @@ let%expect_test "null_pointer" =
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, ptr_1: *int, x_2: int
+      local var_0: void, ptr_1: .rust_mut = "const" .rust_pointer = "pointer" *int, x_2: int
       #node_0:
           store &var_0 <- null:void
           n0 = core::ptr::null()
-          store &ptr_1 <- n0:*int
+          store &ptr_1 <- n0:.rust_mut = "const" .rust_pointer = "pointer" *int
           jmp node_2
           .handlers node_1
 
@@ -313,7 +313,7 @@ let%expect_test "null_pointer" =
           throw "UnwindResume"
 
       #node_2:
-          n1:*int = load &ptr_1
+          n1:.rust_mut = "const" .rust_pointer = "pointer" *int = load &ptr_1
           n2:int = load n1
           store &x_2 <- n2:int
           store &var_0 <- null:void
@@ -322,13 +322,13 @@ let%expect_test "null_pointer" =
 
     }
 
-    define core::ptr::null() : *void {
-      local var_0: *void, var_1: *void
+    define core::ptr::null() : .rust_mut = "const" .rust_pointer = "pointer" *void {
+      local var_0: .rust_mut = "const" .rust_pointer = "pointer" *void, var_1: .rust_mut = "const" .rust_pointer = "pointer" *void
       #node_0:
-          store &var_1 <- __sil_cast(<*void>, 0):*void
-          n0:*void = load &var_1
-          store &var_0 <- n0:*void
-          n1:*void = load &var_0
+          store &var_1 <- __sil_cast(<.rust_mut = "const" .rust_pointer = "pointer" *void>, 0):.rust_mut = "const" .rust_pointer = "pointer" *void
+          n0:.rust_mut = "const" .rust_pointer = "pointer" *void = load &var_1
+          store &var_0 <- n0:.rust_mut = "const" .rust_pointer = "pointer" *void
+          n1:.rust_mut = "const" .rust_pointer = "pointer" *void = load &var_0
           ret n1
 
     }
@@ -464,12 +464,12 @@ let%expect_test "box_use_after_free" =
 
     type core::marker::PhantomData::<i32> = {}
 
-    type core::ptr::non_null::NonNull::<i32> = {pointer: *int}
+    type core::ptr::non_null::NonNull::<i32> = {pointer: .rust_mut = "const" .rust_pointer = "pointer" *int}
 
     type core::ptr::unique::Unique::<i32> = {pointer: *void; _marker: core::marker::PhantomData::<i32>}
 
     define dummy::main() : void {
-      local var_0: void, ptr_1: *int, x_2: *int, var_3: *int, var_4: *int, ub_5: int, var_6: *int
+      local var_0: void, ptr_1: .rust_mut = "const" .rust_pointer = "pointer" *int, x_2: *int, var_3: .rust_mut = "const" .rust_pointer = "pointer" *int, var_4: .rust_mut = "const" .rust_pointer = "reference" *int, ub_5: int, var_6: .rust_mut = "const" .rust_pointer = "pointer" *int
       #node_0:
           store &var_0 <- null:void
           n0 = __sil_boxnew(50)
@@ -482,20 +482,20 @@ let%expect_test "box_use_after_free" =
 
       #node_2:
           n1:*void = load &x_2
-          store &var_6 <- __sil_cast(<*int>, n1):*int
-          n2:*int = load &var_6
-          store &var_4 <- n2:*int
-          n3:*int = load &var_4
-          store &var_3 <- n3:*int
-          n4:*int = load &var_3
-          store &ptr_1 <- n4:*int
+          store &var_6 <- __sil_cast(<.rust_mut = "const" .rust_pointer = "pointer" *int>, n1):.rust_mut = "const" .rust_pointer = "pointer" *int
+          n2:.rust_mut = "const" .rust_pointer = "pointer" *int = load &var_6
+          store &var_4 <- n2:.rust_mut = "const" .rust_pointer = "reference" *int
+          n3:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_4
+          store &var_3 <- n3:.rust_mut = "const" .rust_pointer = "pointer" *int
+          n4:.rust_mut = "const" .rust_pointer = "pointer" *int = load &var_3
+          store &ptr_1 <- n4:.rust_mut = "const" .rust_pointer = "pointer" *int
           n5:*int = load &x_2
           n6 = __sil_free(n5)
           jmp node_3
           .handlers node_4
 
       #node_3:
-          n7:*int = load &ptr_1
+          n7:.rust_mut = "const" .rust_pointer = "pointer" *int = load &ptr_1
           n8:int = load n7
           store &ub_5 <- n8:int
           store &var_0 <- null:void
@@ -507,7 +507,48 @@ let%expect_test "box_use_after_free" =
 
     }
 
-    declare alloc::alloc::Global::{TraitImpl@1}::drop_in_place(*alloc::alloc::Global) : void
+    declare alloc::alloc::Global::{TraitImpl@1}::drop_in_place(.rust_mut = "mut" .rust_pointer = "pointer" *alloc::alloc::Global) : void
 
-    declare alloc::boxed::Box::{TraitImpl@2}::drop_in_place::<i32, alloc::alloc::Global>(**int) : void
+    declare alloc::boxed::Box::{TraitImpl@2}::drop_in_place::<i32, alloc::alloc::Global>(.rust_mut = "mut" .rust_pointer = "pointer" **int) : void
+    |}]
+
+
+let%expect_test "pointer_attributes" =
+  let source =
+    {|
+#[allow(unused)]
+fn main() {
+    let x = 1;
+    let mut y = 2;
+    let shared = &x;
+    let exclusive = &mut y;
+    let raw_const = &x as *const i32;
+    let raw_mut = &mut y as *mut i32;
+}
+|}
+  in
+  test source ;
+  [%expect
+    {|
+    .source_language = "Rust"
+
+    define dummy::main() : void {
+      local var_0: void, x_1: int, y_2: int, shared_3: .rust_mut = "const" .rust_pointer = "reference" *int, exclusive_4: .rust_mut = "mut" .rust_pointer = "reference" *int, raw_const_5: .rust_mut = "const" .rust_pointer = "pointer" *int, var_6: .rust_mut = "const" .rust_pointer = "reference" *int, raw_mut_7: .rust_mut = "mut" .rust_pointer = "pointer" *int, var_8: .rust_mut = "mut" .rust_pointer = "reference" *int
+      #node_0:
+          store &var_0 <- null:void
+          store &x_1 <- 1:int
+          store &y_2 <- 2:int
+          store &shared_3 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          store &exclusive_4 <- &y_2:.rust_mut = "mut" .rust_pointer = "reference" *int
+          store &var_6 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_6
+          store &raw_const_5 <- n0:.rust_mut = "const" .rust_pointer = "pointer" *int
+          store &var_8 <- &y_2:.rust_mut = "mut" .rust_pointer = "reference" *int
+          n1:.rust_mut = "mut" .rust_pointer = "reference" *int = load &var_8
+          store &raw_mut_7 <- n1:.rust_mut = "mut" .rust_pointer = "pointer" *int
+          store &var_0 <- null:void
+          n2:void = load &var_0
+          ret n2
+
+    }
     |}]

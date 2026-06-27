@@ -498,10 +498,10 @@ let%expect_test "string" =
     .source_language = "Rust"
 
     define dummy::main() : void {
-      local var_0: void, hello_1: *String
+      local var_0: void, hello_1: .rust_mut = "const" .rust_pointer = "reference" *String
       #node_0:
           store &var_0 <- null:void
-          store &hello_1 <- "hello":*String
+          store &hello_1 <- "hello":.rust_mut = "const" .rust_pointer = "reference" *String
           store &var_0 <- null:void
           n0:void = load &var_0
           ret n0
