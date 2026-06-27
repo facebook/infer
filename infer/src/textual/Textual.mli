@@ -229,6 +229,14 @@ module Attr : sig
 
   val is_const : t -> bool
 
+  val is_rust_reference : t -> bool
+
+  val is_rust_raw : t -> bool
+
+  val is_rust_mut : t -> bool
+
+  val is_rust_const : t -> bool
+
   val mk_python_args : string list -> t
 
   val find_python_args : t -> string list option
@@ -254,6 +262,14 @@ module Attr : sig
   val mk_weak_self_capture : t
 
   val mk_trait : t
+
+  val ptr_rust_reference : t
+
+  val ptr_rust_raw : t
+
+  val ptr_rust_mut : t
+
+  val ptr_rust_const : t
 
   val mk_plain_name : string -> t
 

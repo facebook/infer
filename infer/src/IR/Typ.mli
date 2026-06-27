@@ -64,6 +64,8 @@ val mk_type_quals :
 
 val is_const : type_quals -> bool
 
+val is_reference_on_source : type_quals -> bool
+
 val is_restrict : type_quals -> bool
 
 val is_volatile : type_quals -> bool

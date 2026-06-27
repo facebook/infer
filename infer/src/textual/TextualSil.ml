@@ -252,8 +252,12 @@ module TypBridge = struct
   open Typ
 
   let rec to_sil lang ?(attrs = []) (typ : t) : SilTyp.t =
-    let is_const = List.exists attrs ~f:Textual.Attr.is_const in
-    let quals = SilTyp.mk_type_quals ~is_const () in
+    let ptr_attrs = match typ with Ptr (_, a) -> a | _ -> [] in
+    let has_rust_ref = List.exists ptr_attrs ~f:Textual.Attr.is_rust_reference in
+    let has_rust_const = List.exists ptr_attrs ~f:Textual.Attr.is_rust_const in
+    let is_const = List.exists attrs ~f:Textual.Attr.is_const || has_rust_const in
+    let is_reference = has_rust_ref in
+    let quals = SilTyp.mk_type_quals ~is_const ~is_reference () in
     let desc : SilTyp.desc =
       match typ with
       | Int ->
