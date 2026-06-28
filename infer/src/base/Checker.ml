@@ -39,6 +39,7 @@ type t =
   | Starvation
   | SwiftObjCNullability
   | Topl
+  | TreeBorrows
 [@@deriving compare, equal, enumerate]
 
 type support = NoSupport | ExperimentalSupport | Support
@@ -411,6 +412,20 @@ let config_unsafe checker =
       ; short_documentation=
           "Detect errors based on user-provided state machines describing temporal properties over \
            multiple objects."
+      ; cli_flags= Some {deprecated= []; show_in_help= true}
+      ; enabled_by_default= false
+      ; activates= [Pulse] }
+  | TreeBorrows ->
+      { id= "tree-borrows"
+      ; kind=
+          UserFacing
+            { title= "Tree Borrows"
+            ; markdown_body=
+                "Detects undefined behaviour under Rust's Tree Borrows aliasing discipline, as a \
+                 sub-domain of Pulse. Prototype, Rust-only, off by default." }
+      ; support= mk_support_func ~rust:ExperimentalSupport ()
+      ; short_documentation=
+          "A Rust-only aliasing checker that reports undefined behaviour."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [Pulse] }
