@@ -322,7 +322,7 @@ let wait_all pool =
 let compaction_if_heap_greater_equal_to_words =
   (* we don't try hard to avoid overflow, apart from assuming that word size
      divides 1024 perfectly, thus multiplying with a smaller factor *)
-  Config.compaction_if_heap_greater_equal_to_GB * 1024 * 1024 * (1024 / Sys.word_size_in_bits)
+  Config.compaction_if_heap_greater_equal_to_GB * 1024 * 1024 * 8 * (1024 / Sys.word_size_in_bits)
 
 
 let do_compaction_if_needed () =
@@ -330,7 +330,7 @@ let do_compaction_if_needed () =
   let heap_words = stat.Stdlib.Gc.heap_words in
   if heap_words >= compaction_if_heap_greater_equal_to_words then (
     L.log_task "Triggering compaction, heap size= %d GB@\n"
-      (heap_words * Sys.word_size_in_bits / 1024 / 1024 / 1024) ;
+      (heap_words * Sys.word_size_in_bits / 8 / 1024 / 1024 / 1024) ;
     Gc.compact () )
   else ()
 

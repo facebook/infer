@@ -173,7 +173,7 @@ let do_compaction_if_needed =
   let last_compaction_time = ref (Mtime_clock.counter ()) in
   let min_compaction_interval = Mtime.Span.(1 * s) in
   let compaction_if_heap_greater_equal_to_words =
-    Config.compaction_if_heap_greater_equal_to_GB_multicore * 1024 * 1024
+    Config.compaction_if_heap_greater_equal_to_GB_multicore * 1024 * 1024 * 8
     * (1024 / Sys.word_size_in_bits)
   in
   let min_time_elapsed_between_compactions () =
@@ -186,7 +186,7 @@ let do_compaction_if_needed =
       let heap_words = stat.Stdlib.Gc.heap_words in
       if heap_words >= compaction_if_heap_greater_equal_to_words then (
         L.debug Analysis Quiet "Triggering compaction, heap size= %d GB@\n"
-          (heap_words * Sys.word_size_in_bits / 1024 / 1024 / 1024) ;
+          (heap_words * Sys.word_size_in_bits / 8 / 1024 / 1024 / 1024) ;
         Gc.compact () ;
         last_compaction_time := Mtime_clock.counter () )
   in
