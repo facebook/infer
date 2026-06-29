@@ -3896,7 +3896,7 @@ let inferconfig_file =
 
 
 let set_gc_params () =
-  let minor_heap_size_mb = if !multicore then min 64 !minor_heap_size_mb else !minor_heap_size_mb in
+  let minor_heap_size_mb = if !multicore then max 64 !minor_heap_size_mb else !minor_heap_size_mb in
   let ctrl = Gc.get () in
   let words_of_Mb nMb = nMb * 1024 * 1024 * 8 / Sys.word_size_in_bits in
   let new_size nMb = max ctrl.minor_heap_size (words_of_Mb nMb) in
