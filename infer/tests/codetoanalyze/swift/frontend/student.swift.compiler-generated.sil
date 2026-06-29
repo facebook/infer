@@ -994,7 +994,7 @@ declare $s5Hello10IndividualCSgWOh(*__infer_swift_type<ptr_elt>) : *__infer_swif
 
 declare $s5Hello10IndividualCMa(int) : *__infer_swift_type<ptr_elt>
 
-define .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: int, var2: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
+define .weak_self_capture .plain_name = "spouse.set" .method_offset = "13" __infer_swift_type<T5Hello10IndividualC,Individual>.$s5Hello10IndividualC6spouseACSgvs(var1: int, var2: *__infer_swift_type<T5Hello10IndividualC,Individual>) : void {
   local var4: *int
   #: @[0:0]
       n1 = $builtins.llvm_nondet() @[0:0]
@@ -1025,7 +1025,7 @@ define .plain_name = "spouse.get" .method_offset = "12" __infer_swift_type<T5Hel
       
 } @?
 
-define .plain_name = "spouse.modify" $s5Hello10IndividualC6spouseACSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
+define .weak_self_capture .plain_name = "spouse.modify" $s5Hello10IndividualC6spouseACSgvM::resume::0(var1: *__infer_swift_type<ptr_elt>, var2: int) : void {
   #: @[0:0]
       n1 = load &var1 @[0:0]
       n3 = n1.__infer_swift_type<$s5Hello10IndividualC6spouseACSgvM::Frame>.field_0 @[0:0]

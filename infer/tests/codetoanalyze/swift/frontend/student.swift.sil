@@ -1572,7 +1572,7 @@ define $s5Hello18RetainCycleExampleC14setupClosureOkyyFyycfU_(var1: *__infer_swi
       
 } @?
 
-define .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(self: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
+define .weak_self_capture .plain_name = "setupClosureOk" .method_offset = "19" __infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>.$s5Hello18RetainCycleExampleC14setupClosureOkyyF(self: *__infer_swift_type<T5Hello18RetainCycleExampleC,RetainCycleExample>) : void {
   local getelementptr_offset_1: *void
   #: @[194:0]
       n1:*__infer_swift_type<swift::full_boxmetadata> = load &metadata @[194:0]
@@ -1867,7 +1867,7 @@ declare .plain_name = "spouse.modify" .method_offset = "14" __infer_swift_type<T
 
 declare .plain_name = "age.get" $s5Hello10IndividualC3ageSivg(*__infer_swift_type<T5Hello10IndividualC,Individual>) : int
 
-define .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfc(var1: int, self: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<T5Hello10IndividualC,Individual> {
+define .weak_self_capture .plain_name = "init" $s5Hello10IndividualC3ageACSi_tcfc(var1: int, self: *__infer_swift_type<T5Hello10IndividualC,Individual>) : *__infer_swift_type<T5Hello10IndividualC,Individual> {
   local age: *__infer_swift_type<ptr_elt>
   #: @[102:0]
       n1:*__infer_swift_type<T5Hello10IndividualC,Individual> = load &self @[102:0]
