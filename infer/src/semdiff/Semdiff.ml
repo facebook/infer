@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module F = Format
 module L = Logging
 
 let semdiff_with_eqsat ~debug ~previous_file ~current_file previous_src current_src =
@@ -78,6 +79,16 @@ let proc_fun_name (proc : Textual.ProcDesc.t) =
 
 let is_module_body name = String.is_substring name ~substring:"__module_body__"
 
+(* A procedure a codemod did not touch is trivially equivalent. Comparing the location-free
+   pretty-print is a cheap sufficient check (locations don't affect semantics) that lets us skip the
+   PEG conversion + bisimulation entirely for unchanged functions — the vast majority in a typical
+   file — avoiding their (sometimes >60s) cost. *)
+let proc_structurally_equal proc_old proc_new =
+  String.equal
+    (F.asprintf "%a" (Textual.ProcDesc.pp ~show_location:false) proc_old)
+    (F.asprintf "%a" (Textual.ProcDesc.pp ~show_location:false) proc_new)
+
+
 let semdiff_b007_textual ~debug (module_old : Textual.Module.t) (module_new : Textual.Module.t) =
   let procs_old = extract_procs module_old in
   let procs_new = extract_procs module_new in
@@ -91,12 +102,14 @@ let semdiff_b007_textual ~debug (module_old : Textual.Module.t) (module_new : Te
               if debug then L.user_error "Procedure %s not found in current file@." name ;
               true (* procedure removed — not a migration concern *)
           | Some proc_new -> (
-            match TextualPegDiff.check_b007_migration ~debug proc_old proc_new with
-            | result ->
-                result
-            | exception CongruenceClosureRewrite.Rule.FuelExhausted _ ->
-                if debug then L.user_error "Fuel exhausted for procedure %s@." name ;
-                false ) )
+              if proc_structurally_equal proc_old proc_new then true
+              else
+                match TextualPegDiff.check_b007_migration ~debug proc_old proc_new with
+                | result ->
+                    result
+                | exception CongruenceClosureRewrite.Rule.FuelExhausted _ ->
+                    if debug then L.user_error "Fuel exhausted for procedure %s@." name ;
+                    false ) )
   in
   if all_accepted then [] else [Diff.dummy_explicit]
 
@@ -114,17 +127,19 @@ let semdiff_b006_textual ~debug (module_old : Textual.Module.t) (module_new : Te
               if debug then L.user_error "Procedure %s not found in current file@." name ;
               true (* procedure removed — not a migration concern *)
           | Some proc_new -> (
-              let defaults_old = StructuredPeg.extract_defaults module_old proc_old in
-              let defaults_new = StructuredPeg.extract_defaults module_new proc_new in
-              match
-                TextualPegDiff.check_b006_migration ~debug ~defaults_old ~defaults_new proc_old
-                  proc_new
-              with
-              | result ->
-                  result
-              | exception CongruenceClosureRewrite.Rule.FuelExhausted _ ->
-                  if debug then L.user_error "Fuel exhausted for procedure %s@." name ;
-                  false ) )
+              if proc_structurally_equal proc_old proc_new then true
+              else
+                let defaults_old = StructuredPeg.extract_defaults module_old proc_old in
+                let defaults_new = StructuredPeg.extract_defaults module_new proc_new in
+                match
+                  TextualPegDiff.check_b006_migration ~debug ~defaults_old ~defaults_new proc_old
+                    proc_new
+                with
+                | result ->
+                    result
+                | exception CongruenceClosureRewrite.Rule.FuelExhausted _ ->
+                    if debug then L.user_error "Fuel exhausted for procedure %s@." name ;
+                    false ) )
   in
   if all_accepted then [] else [Diff.dummy_explicit]
 
