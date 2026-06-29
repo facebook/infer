@@ -265,6 +265,22 @@ let of_cfg nodes start =
     in
     aux 0 context
   in
+  (* Desugar Textual SSA block parameters into plain assignments at the jump site: a
+     [jmp target(arg0, ...)] reaching a block [#target(p0, ...)] is modelled as [p_i = arg_i]
+     executed on the edge. Combined with the @phi merge of idents at join points, this gives the
+     standard phi semantics without a dedicated phi node in the structured IR. *)
+  let ssa_param_bindings (nc : T.Terminator.node_call) : T.Instr.t list =
+    match T.NodeName.Map.find_opt nc.label node_map with
+    | Some tnode when not (List.is_empty tnode.ssa_parameters) -> (
+      match List.zip tnode.ssa_parameters nc.ssa_args with
+      | Ok pairs ->
+          List.map pairs ~f:(fun ((id, _typ), arg) ->
+              T.Instr.Let {id= Some id; exp= arg; loc= T.Location.Unknown} )
+      | Unequal_lengths ->
+          [] )
+    | _ ->
+        []
+  in
   let rec do_tree label ~context =
     match T.NodeName.Map.find_opt label node_map with
     | None ->
@@ -298,8 +314,12 @@ let of_cfg nodes start =
         Return {label; exp}
     | [], Throw exp ->
         Throw {label; exp}
-    | [], Jump [{label= target; _}] ->
-        do_branch label target ~context
+    | [], Jump [nc] -> (
+      match ssa_param_bindings nc with
+      | [] ->
+          do_branch label nc.label ~context
+      | bindings ->
+          Seq (Instrs {label; instrs= bindings}, do_branch label nc.label ~context) )
     | [], If {bexp; then_; else_} ->
         If
           { label
@@ -310,8 +330,9 @@ let of_cfg nodes start =
         Seq (Instrs {label; instrs}, Return {label= fresh_label (); exp})
     | instrs, Throw exp ->
         Seq (Instrs {label; instrs}, Throw {label= fresh_label (); exp})
-    | instrs, Jump [{label= target; _}] ->
-        Seq (Instrs {label; instrs}, do_branch label target ~context)
+    | instrs, Jump [nc] ->
+        Seq
+          (Instrs {label; instrs= instrs @ ssa_param_bindings nc}, do_branch label nc.label ~context)
     | instrs, If {bexp; then_; else_} ->
         Seq
           ( Instrs {label; instrs}
@@ -324,8 +345,12 @@ let of_cfg nodes start =
         Instrs {label; instrs= node.instrs}
   and translate_branch source (term : T.Terminator.t) ~context =
     match term with
-    | Jump [{label= target; _}] ->
-        do_branch source target ~context
+    | Jump [nc] -> (
+      match ssa_param_bindings nc with
+      | [] ->
+          do_branch source nc.label ~context
+      | bindings ->
+          Seq (Instrs {label= source; instrs= bindings}, do_branch source nc.label ~context) )
     | Ret exp ->
         Return {label= fresh_label (); exp}
     | Throw exp ->

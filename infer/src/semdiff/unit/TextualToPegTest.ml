@@ -103,6 +103,54 @@ let%test_module "textual to peg" =
         |}]
 
 
+    (* Regression test for SSA block parameters: a merge block declares an SSA parameter (#b3(n4))
+       bound by the predecessors' jump arguments (jmp b3(value)) — how the Python frontend lowers a
+       conditional value (e.g. `v = a if c else b`). The jump args are desugared into per-edge
+       assignments and reconverge as a @phi at the join; before that support, n4 was never bound and
+       conversion died with "unknown ident n4". *)
+    let%expect_test "if branch with ssa block parameter (phi via jump args)" =
+      convert_and_print
+        {|
+        .source_language = "python"
+        define .args = "c" foo(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+          #b0:
+              n1 = locals
+              n2 = $builtins.py_load_fast("c", n1)
+              if $builtins.py_bool(n2) then jmp b1 else jmp b2
+
+          #b1:
+              jmp b3($builtins.py_make_string("Y"))
+
+          #b2:
+              jmp b3($builtins.py_make_string("N"))
+
+          #b3(n4: *PyObject):
+              _ = $builtins.py_store_fast("v", n1, n4)
+              ret n4
+        }
+        |} ;
+      [%expect
+        {|
+        === foo ===
+        Equations:
+        c      = @param:c  [param]
+        n1     = (@load (@lvar locals))  [let]
+        n2     = @param:c  [load_fast: locals]
+        n4     = ($builtins.py_make_string (@str Y))  [let]
+        n4     = ($builtins.py_make_string (@str N))  [let]
+        v      = (@phi
+                     ($builtins.py_bool @param:c)
+                     ($builtins.py_make_string (@str Y))
+                     ($builtins.py_make_string (@str N)))  [store_fast: locals]
+        PEG: (@ret
+                 @state0
+                 (@phi
+                     ($builtins.py_bool @param:c)
+                     ($builtins.py_make_string (@str Y))
+                     ($builtins.py_make_string (@str N))))
+        |}]
+
+
     let%expect_test "equivalence: same semantics, different ident names" =
       let text1 =
         {|
