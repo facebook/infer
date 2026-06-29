@@ -287,7 +287,11 @@ let of_cfg nodes start =
         Instrs {label; instrs= []}
     | Some node ->
         let kids = dtree_kids label in
-        let merge_kids = sort_by_rpo (List.filter kids ~f:is_merge) in
+        (* Merge children are nested as blocks with [node_within] making the list head the OUTERMOST
+           block. A forward edge between two merges goes from the smaller-rpo to the larger-rpo node
+           (e.g. the b13 -> b14 chain of `if a and b:`), so the larger-rpo merge must be the outer
+           block to stay reachable from the inner one. Hence descending rpo order. *)
+        let merge_kids = sort_by_rpo (List.filter kids ~f:is_merge) |> List.rev in
         let is_loop =
           is_loop_header label
           && not
