@@ -103,6 +103,98 @@ let%test_module "textual to peg" =
         |}]
 
 
+    (* Regression test for SSA block parameters: a merge block declares an SSA parameter (#b3(n4))
+       bound by the predecessors' jump arguments (jmp b3(value)) — how the Python frontend lowers a
+       conditional value (e.g. `v = a if c else b`). The jump args are desugared into per-edge
+       assignments and reconverge as a @phi at the join; before that support, n4 was never bound and
+       conversion died with "unknown ident n4". *)
+    let%expect_test "if branch with ssa block parameter (phi via jump args)" =
+      convert_and_print
+        {|
+        .source_language = "python"
+        define .args = "c" foo(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+          #b0:
+              n1 = locals
+              n2 = $builtins.py_load_fast("c", n1)
+              if $builtins.py_bool(n2) then jmp b1 else jmp b2
+
+          #b1:
+              jmp b3($builtins.py_make_string("Y"))
+
+          #b2:
+              jmp b3($builtins.py_make_string("N"))
+
+          #b3(n4: *PyObject):
+              _ = $builtins.py_store_fast("v", n1, n4)
+              ret n4
+        }
+        |} ;
+      [%expect
+        {|
+        === foo ===
+        Equations:
+        c      = @param:c  [param]
+        n1     = (@load (@lvar locals))  [let]
+        n2     = @param:c  [load_fast: locals]
+        n4     = ($builtins.py_make_string (@str Y))  [let]
+        n4     = ($builtins.py_make_string (@str N))  [let]
+        v      = (@phi
+                     ($builtins.py_bool @param:c)
+                     ($builtins.py_make_string (@str Y))
+                     ($builtins.py_make_string (@str N)))  [store_fast: locals]
+        PEG: (@ret
+                 @state0
+                 (@phi
+                     ($builtins.py_bool @param:c)
+                     ($builtins.py_make_string (@str Y))
+                     ($builtins.py_make_string (@str N))))
+        |}]
+
+
+    (* Regression test for chained merge blocks (e.g. `if a and b:`): b3 is a merge of b0/b1 and
+       itself jumps to b4, another merge (of b2/b3). The forward edge b3 -> b4 requires b4 to be the
+       OUTER block of the two, otherwise of_cfg died with "br target b4 not found in context". *)
+    let%expect_test "chained merge blocks (if a and b)" =
+      convert_and_print
+        {|
+        .source_language = "python"
+        define foo(globals: *PyGlobals, locals: *PyLocals) : *PyObject {
+          #b0:
+              n1 = locals
+              n2 = $builtins.py_make_int(0)
+              if $builtins.py_bool(n2) then jmp b1 else jmp b3
+
+          #b1:
+              n3 = $builtins.py_make_int(1)
+              if $builtins.py_bool(n3) then jmp b2 else jmp b3
+
+          #b2:
+              _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(1))
+              jmp b4
+
+          #b3:
+              _ = $builtins.py_store_fast("x", n1, $builtins.py_make_int(2))
+              jmp b4
+
+          #b4:
+              n4 = $builtins.py_load_fast("x", n1)
+              ret n4
+        }
+        |} ;
+      [%expect
+        {|
+        === foo ===
+        Equations:
+        n1     = (@load (@lvar locals))  [let]
+        n2     = ($builtins.py_make_int 0)  [let]
+        n3     = ($builtins.py_make_int 1)  [let]
+        x      = ($builtins.py_make_int 1)  [store_fast: locals]
+        x      = ($builtins.py_make_int 2)  [store_fast: locals]
+        n4     = ($builtins.py_make_int 2)  [load_fast: locals]
+        PEG: (@ret @state0 ($builtins.py_make_int 2))
+        |}]
+
+
     let%expect_test "equivalence: same semantics, different ident names" =
       let text1 =
         {|

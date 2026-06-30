@@ -363,7 +363,22 @@ let merge_envs (env : Env.t) ~cond ~(env_then : Env.t) ~(env_else : Env.t) =
             None )
       env_then.locals env_else.locals
   in
-  {env with Env.state; locals}
+  (* SSA idents (incl. desugared block parameters) bound differently on each branch reconverge as a
+     @phi, exactly like named locals. Without this the join would drop one branch's binding and a
+     use after the merge would fail with "unknown ident". *)
+  let ident_map =
+    T.Ident.Map.merge
+      (fun _id a b ->
+        match (a, b) with
+        | Some x, Some y ->
+            if CC.is_equiv cc x y then Some x else Some (mk_term cc "@phi" [cond; x; y])
+        | (Some _ as x), None | None, (Some _ as x) ->
+            x
+        | None, None ->
+            None )
+      env_then.ident_map env_else.ident_map
+  in
+  {env with Env.state; locals; ident_map}
 
 
 (* ---------- StructuredIR → PEG conversion ---------- *)

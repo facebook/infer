@@ -426,8 +426,13 @@ let report_diff () =
 let python_file_to_textual file =
   if not (Py.is_initialized ()) then Py.initialize ~interpreter:Version.python_exe () ;
   let source = In_channel.with_file file ~f:In_channel.input_all in
+  (* Compile both sides under the same canonical filename. The filename becomes the module name,
+     which is embedded in the qualified names of nested procedures (comprehensions, generator
+     expressions, lambdas). Using the real path ("previous/f.py" vs "current/f.py") would make every
+     such nested name differ between the two sides, so any function containing a comprehension would
+     never compare equal — a pervasive false positive for the semdiff migration checks. *)
   let code =
-    match FFI.from_string ~source ~filename:file with
+    match FFI.from_string ~source ~filename:"semdiff_module.py" with
     | Ok code ->
         code
     | Error (kind, err) ->
