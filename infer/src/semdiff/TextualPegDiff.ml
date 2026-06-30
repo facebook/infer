@@ -45,6 +45,23 @@ let dict_rules =
      ($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_keys ?S3 ?D)))" ]
 
 
+(* has_next over items()/keys()/values() (resp. enumerate L / L) all agree because the lengths agree.
+   Canonicalising them to a single form lets the OUTER loop's has_next bridge in nested-loop bodies,
+   where it sits under matching get_iter/has_next wrappers and is never reached by the directional
+   accept rules. These are applied ONLY as rewrites for the migration check (length is direction-
+   independent); the VALUE projection stays directional via the accept rules, so a reverse migration
+   — whose value access does not match an accept rule — is still rejected. Canonicalising to a SINGLE
+   target (keys) is essential: two targets would leave keys()/values() e-nodes in one class and the
+   structural bisimulation could pick different ones per side and wrongly diverge. *)
+let b007_has_next_bridges =
+  [ "($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@enumerate ?L))) ==> \
+     ($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 ?L))"
+  ; "($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_items ?S3 ?D))) ==> \
+     ($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_keys ?S3 ?D)))"
+  ; "($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_values ?S3 ?D))) ==> \
+     ($builtins.py_has_next_iter ?S1 ($builtins.py_get_iter ?S2 (@dict_keys ?S3 ?D)))" ]
+
+
 (* B006 (mutable default argument) rewrite rules. Parameters with a default are modelled as
    @phi(@is_default(p), <default>, @arg(p)) (see StructuredPeg). These rules normalise the codemod's
    "if p is None: p = <literal>" guard against that model so the migrated and original functions
@@ -78,6 +95,12 @@ let gen_structural_rules cc ~theta_count : Rewrite.Rule.t list =
 let gen_rules cc ~theta_count : Rewrite.Rule.t list =
   let theta_rules = List.init theta_count ~f:(fun i -> F.asprintf "(@theta_%d ?X ?X) ==> ?X" i) in
   parse_rules cc (("(@phi ?C ?X ?X) ==> ?X" :: theta_rules) @ enumerate_rules @ dict_rules)
+
+
+(* Rules for the directional B007 migration check: structural simplification plus the has_next
+   length-bridges only. The value projection stays handled by the (directional) accept rules. *)
+let gen_b007_rules cc ~theta_count : Rewrite.Rule.t list =
+  gen_structural_rules cc ~theta_count @ parse_rules cc b007_has_next_bridges
 
 
 (* Bisimulation: coinductive equivalence check for cyclic PEG terms (@theta).
@@ -288,8 +311,10 @@ let check_b007_migration ?(debug = false) (proc_old : Textual.ProcDesc.t)
   with
   | Ok (atom_old, eqs_old, loops_old), Ok (atom_new, eqs_new, loops_new)
     when Int.equal loops_old loops_new ->
-      (* Only structural simplification rules — no B007-specific bidirectional rewrites *)
-      let rules = gen_structural_rules cc ~theta_count:loops_old in
+      (* Structural simplification plus the has_next length-bridges (see [gen_b007_rules]). The
+         has_next bridges as rewrites handle the outer loop of a nested body, which the directional
+         accept rules cannot reach; the value projection stays directional via the accept rules. *)
+      let rules = gen_b007_rules cc ~theta_count:loops_old in
       let _rounds = Rewrite.Rule.full_rewrite cc rules in
       let theta_headers =
         List.init loops_old ~f:(fun i -> CC.mk_header cc (F.asprintf "@theta_%d" i))
