@@ -259,6 +259,7 @@ OPTIONS
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              TOPL_ERROR_LATENT (disabled by default),
+             TREE_BORROWS_UB (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              USE_AFTER_DELETE (enabled by default),
              USE_AFTER_DELETE_LATENT (disabled by default),
