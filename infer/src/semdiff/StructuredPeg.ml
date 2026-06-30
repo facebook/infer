@@ -91,6 +91,21 @@ let mk_term cc name args = CC.mk_term cc (CC.mk_header cc name) args
 
 let qualified_procname_to_string proc = F.asprintf "%a" T.QualifiedProcName.pp proc
 
+(* An empty container constructor -- set()/dict()/list()/tuple() -- builds the same value as the
+   corresponding literal ({}, [], ()) ; the only difference is allocation identity, deliberately
+   ignored for B006. Model it as the pure empty-container builtin so that a default constructed in
+   the module body (recovered as prev's default) and the same value rebuilt in the migrated guard
+   body (curr) are equal regardless of their state context -- and so that dict() ~ {} and list() ~
+   []. [callee_repr] is the printed callee atom, which contains e.g. [(@str set)]. *)
+let empty_constructor_builtin callee_repr =
+  let is name = String.is_substring callee_repr ~substring:(Printf.sprintf "(@str %s)" name) in
+  if is "set" then Some "$builtins.py_build_set"
+  else if is "dict" then Some "$builtins.py_build_map"
+  else if is "list" then Some "$builtins.py_build_list"
+  else if is "tuple" then Some "$builtins.py_build_tuple"
+  else None
+
+
 (* ---------- ASCII tree printer ---------- *)
 
 let pp_tree ?(depth = 32) cc fmt atom =
@@ -151,6 +166,26 @@ let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
       mk_term cc "@field" [convert_exp env inner_exp; mk_const cc field_name]
   | Index (e1, e2) ->
       mk_term cc "@index" [convert_exp env e1; convert_exp env e2]
+  | Call {proc; args= callee :: rest}
+    when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_call"
+         && List.for_all rest ~f:(fun e ->
+                match e with
+                | T.Exp.Call {proc= p} ->
+                    String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_none"
+                | _ ->
+                    false ) -> (
+      (* An empty container constructor call set()/dict()/list()/tuple() (no positional args, only an
+         optional None kwargs placeholder). The statement-level conversion handles this via
+         try_simplify_py_call, but a recovered default expression is converted here, so apply the
+         same canonicalisation to the pure empty-container builtin. *)
+      let callee_atom = convert_exp env callee in
+      match empty_constructor_builtin (F.asprintf "%a" (CC.pp_nested_term cc) callee_atom) with
+      | Some builtin ->
+          mk_term cc builtin []
+      | None ->
+          mk_term cc
+            (qualified_procname_to_string proc)
+            (callee_atom :: List.map rest ~f:(convert_exp env)) )
   | Call {proc; args}
     when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_make_function" -> (
       (* A B006 codemod rewrites a parameter's default value (e.g. [] -> None) and its type
@@ -244,9 +279,11 @@ let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option 
     match Env.lookup_ident env callee_id with
     | Some callee_atom ->
         let s = F.asprintf "%a" (CC.pp_nested_term env.cc) callee_atom in
+        let actual_args = match args with _ :: _ :: rest -> rest | _ -> [] in
         if String.is_substring s ~substring:"(@str enumerate)" then
-          let actual_args = match args with _ :: _ :: rest -> rest | _ -> [] in
           Some (mk_term env.cc "@enumerate" (List.map actual_args ~f:(convert_exp env)))
+        else if List.is_empty actual_args then
+          Option.map (empty_constructor_builtin s) ~f:(fun builtin -> mk_term env.cc builtin [])
         else None
     | None ->
         None )
