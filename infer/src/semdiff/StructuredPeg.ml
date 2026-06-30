@@ -151,6 +151,22 @@ let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
       mk_term cc "@field" [convert_exp env inner_exp; mk_const cc field_name]
   | Index (e1, e2) ->
       mk_term cc "@index" [convert_exp env e1; convert_exp env e2]
+  | Call {proc; args}
+    when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_make_function" -> (
+      (* A B006 codemod rewrites a parameter's default value (e.g. [] -> None) and its type
+         annotation (T -> Optional[T]). Both are baked into py_make_function's arguments
+         (default_values, default_values_kw, annotations) at the definition site, i.e. the enclosing
+         module body or class body. The default's actual effect is modelled inside the callee via
+         @phi(@is_default, ...), so these definition-site arguments are redundant here and would only
+         make the enclosing proc diverge spuriously (the class body of a migrated method is not the
+         skipped __module_body__). Keep the closure (function identity) and the captured cells; drop
+         the defaults/kwdefaults/annotations. *)
+      let header = qualified_procname_to_string proc in
+      match args with
+      | closure :: _default_values :: _default_values_kw :: _annotations :: cells ->
+          mk_term cc header (convert_exp env closure :: List.map cells ~f:(convert_exp env))
+      | _ ->
+          mk_term cc header (List.map args ~f:(convert_exp env)) )
   | Call {proc; args} ->
       let header = qualified_procname_to_string proc in
       mk_term cc header (List.map args ~f:(convert_exp env))
@@ -609,11 +625,10 @@ and collect_modified_vars (sir : S.t) : IString.Set.t =
 (* ---------- Default-argument extraction (for B006) ---------- *)
 
 (* In CPython, default argument values are evaluated at the function-definition site, not in the
-   function body. The frontend emits them in the enclosing __module_body__ as the second argument
-   of py_make_function. To reason about defaults we recover, for each parameter that has one, the
-   (self-contained) default expression. *)
-
-let is_module_body_name name = String.is_substring name ~substring:"__module_body__"
+   function body. The frontend emits them in the enclosing scope (the __module_body__ for a
+   top-level function, or the class body for a method) as the second argument of py_make_function.
+   To reason about defaults we recover, for each parameter that has one, the (self-contained)
+   default expression. *)
 
 (* Map each SSA ident defined in [proc] to its defining expression. *)
 let build_ident_def_map (proc : T.ProcDesc.t) : T.Exp.t T.Ident.Map.t =
@@ -675,29 +690,59 @@ let extract_defaults (module_ : T.Module.t) (proc : T.ProcDesc.t) : T.Exp.t Stri
     List.find_map proc.procdecl.attributes ~f:T.Attr.find_python_args |> Option.value ~default:[]
   in
   let target = proc.procdecl.qualified_name in
-  let module_body =
+  (* The py_make_function that bakes in [target]'s defaults lives in the enclosing scope: the
+     __module_body__ for a top-level function, or the class body proc for a method. Scan every proc
+     to find it (the class body is itself a RegularFunction, not the skipped __module_body__). *)
+  let defaults =
     List.find_map module_.decls ~f:(function
-      | T.Module.Proc p
-        when is_module_body_name (qualified_procname_to_string p.procdecl.qualified_name) ->
-          Some p
+      | T.Module.Proc p ->
+          let defs = build_ident_def_map p in
+          find_make_function_defaults p target defs
       | _ ->
           None )
   in
-  match module_body with
-  | None ->
+  match defaults with
+  | None | Some [] ->
       StringMap.empty
-  | Some mb -> (
-      let defs = build_ident_def_map mb in
-      match find_make_function_defaults mb target defs with
-      | None | Some [] ->
-          StringMap.empty
-      | Some defaults ->
-          let n = List.length params and k = List.length defaults in
-          if k > n then StringMap.empty
-          else
-            let with_defaults = List.drop params (n - k) in
-            List.fold2_exn with_defaults defaults ~init:StringMap.empty ~f:(fun acc name d ->
-                StringMap.add name d acc ) )
+  | Some defaults ->
+      let n = List.length params and k = List.length defaults in
+      if k > n then StringMap.empty
+      else
+        let with_defaults = List.drop params (n - k) in
+        List.fold2_exn with_defaults defaults ~init:StringMap.empty ~f:(fun acc name d ->
+            StringMap.add name d acc )
+
+
+(* A class body proc is a definition-site scope, just like __module_body__: it constructs the class
+   namespace, baking in the methods' default values and parameter type annotations (and
+   __qualname__/__module__). A B006 codemod legitimately perturbs those (default [] -> None,
+   annotation T -> Optional[T]), so comparing the class body would diverge spuriously. Identify class
+   bodies as the py_make_function closure target passed as the first argument of py_build_class. *)
+let find_class_body_procs (module_ : T.Module.t) : T.QualifiedProcName.t list =
+  List.fold module_.decls ~init:[] ~f:(fun acc decl ->
+      match decl with
+      | T.Module.Proc p ->
+          let defs = build_ident_def_map p in
+          List.fold p.nodes ~init:acc ~f:(fun acc (node : T.Node.t) ->
+              List.fold node.instrs ~init:acc ~f:(fun acc (instr : T.Instr.t) ->
+                  match instr with
+                  | Let {exp= Call {proc; args}; _} when is_py_builtin proc "py_build_class" -> (
+                    match args with
+                    | class_fn :: _ -> (
+                      match resolve_exp defs class_fn with
+                      | Call {proc= mfp; args= Closure {proc= cproc} :: _}
+                        when is_py_builtin mfp "py_make_function" ->
+                          cproc :: acc
+                      | Closure {proc= cproc} ->
+                          cproc :: acc
+                      | _ ->
+                          acc )
+                    | _ ->
+                        acc )
+                  | _ ->
+                      acc ) )
+      | _ ->
+          acc )
 
 
 (* ---------- Main entry point ---------- *)
