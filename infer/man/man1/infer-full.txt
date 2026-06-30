@@ -758,6 +758,7 @@ OPTIONS
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              TOPL_ERROR_LATENT (disabled by default),
+             TREE_BORROWS_UB (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              USE_AFTER_DELETE (enabled by default),
              USE_AFTER_DELETE_LATENT (disabled by default),
@@ -2517,6 +2518,17 @@ OPTIONS
            --no-topl-only)
            See also infer-analyze(1).
 
+       --tree-borrows
+           Activates: tree-borrows checker: A Rust-only aliasing checker that
+           reports undefined behaviour.
+           ACTIVATES: pulse (Conversely: --no-tree-borrows)
+           See also infer-analyze(1).
+
+       --tree-borrows-only
+           Activates: Enable tree-borrows and disable all other checkers
+           (Conversely: --no-tree-borrows-only)
+           See also infer-analyze(1).
+
        --version
            Print version information and exit
            See also infer-run(1).
@@ -3763,12 +3775,12 @@ INTERNAL OPTIONS
        --tree-sitter-preprocessor-reset
            Cancel the effect of --tree-sitter-preprocessor.
 
-       --no-unix-fork
-           Deactivates: Use the fork(2) system call to spawn sub-processes.
+       --unix-fork
+           Activates: Use the fork(2) system call to spawn sub-processes.
            Otherwise use the equivalent of fork(2) followed by exec(3) --
            which is usually slower, but is available on all OSes. Defaults to
            false on macOS and Windows where fork without exec is unsafe.
-           (Conversely: --unix-fork)
+           (Conversely: --no-unix-fork)
 
        --version-vcs
            Print version control system commit and exit

@@ -508,6 +508,15 @@ OPTIONS
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)
 
+       --tree-borrows
+           Activates: tree-borrows checker: A Rust-only aliasing checker that
+           reports undefined behaviour.
+           ACTIVATES: pulse (Conversely: --no-tree-borrows)
+
+       --tree-borrows-only
+           Activates: Enable tree-borrows and disable all other checkers
+           (Conversely: --no-tree-borrows-only)
+
        --write-html
            Activates: Produce html debug output for the analyses in
            infer-out/captured. This shows the abstract state of all analyses

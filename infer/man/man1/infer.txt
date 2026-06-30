@@ -758,6 +758,7 @@ OPTIONS
              THREAD_SAFETY_VIOLATION (enabled by default),
              TOPL_ERROR (enabled by default),
              TOPL_ERROR_LATENT (disabled by default),
+             TREE_BORROWS_UB (enabled by default),
              UNREACHABLE_CODE (enabled by default),
              USE_AFTER_DELETE (enabled by default),
              USE_AFTER_DELETE_LATENT (disabled by default),
@@ -2515,6 +2516,17 @@ OPTIONS
        --topl-only
            Activates: Enable topl and disable all other checkers (Conversely:
            --no-topl-only)
+           See also infer-analyze(1).
+
+       --tree-borrows
+           Activates: tree-borrows checker: A Rust-only aliasing checker that
+           reports undefined behaviour.
+           ACTIVATES: pulse (Conversely: --no-tree-borrows)
+           See also infer-analyze(1).
+
+       --tree-borrows-only
+           Activates: Enable tree-borrows and disable all other checkers
+           (Conversely: --no-tree-borrows-only)
            See also infer-analyze(1).
 
        --version
