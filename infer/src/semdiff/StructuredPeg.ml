@@ -348,8 +348,16 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
           Equations.add env.equations ~name:id_name ~atom ~origin:"load_fast: locals" ;
           {env with ident_map= T.Ident.Map.add id atom env.ident_map}
       | None ->
-          L.die InternalError "StructuredPeg: py_load_fast: variable %s not found in locals map"
-            name )
+          (* Defensive: a name may be loaded without being seeded in the locals map -- e.g. *args /
+             **kwargs (not listed in python_args), or a name read on a path before its first store.
+             Rather than abort the whole file, model it as an opaque parameter-like value and seed it,
+             so the analysis degrades gracefully. It is the same on both sides, so the equivalence
+             verdict is preserved. *)
+          let atom = mk_term cc ("@param:" ^ name) [] in
+          let id_name = F.asprintf "%a" T.Ident.pp id in
+          Equations.add env.equations ~name:id_name ~atom ~origin:"load_fast: opaque (unseeded)" ;
+          let locals = LocalsMap.store env.locals ~name ~atom in
+          {env with locals; ident_map= T.Ident.Map.add id atom env.ident_map} )
     | None ->
         L.die InternalError "StructuredPeg: py_load_fast: could not extract variable name" )
   | Let {id= None; exp= Call {proc; args}} when is_py_builtin proc "py_store_fast" -> (
@@ -769,22 +777,54 @@ let rec resolve_exp ?(extends = T.Ident.Map.empty) (defs : T.Exp.t T.Ident.Map.t
       exp
 
 
-(* Find the defaults tuple passed to py_make_function for [target] in the module body. *)
+(* Find the positional defaults tuple and the keyword-only defaults map passed to py_make_function
+   for [target] in the enclosing scope. Returns (positional default exprs, keyword-only (name,
+   default) pairs). The kwonly defaults come from py_make_function's third argument (kwdefaults),
+   shaped as py_build_map(py_make_string k1, v1, py_make_string k2, v2, ...). *)
 let find_make_function_defaults ?(extends = T.Ident.Map.empty) (module_body : T.ProcDesc.t)
-    (target : T.QualifiedProcName.t) (defs : T.Exp.t T.Ident.Map.t) : T.Exp.t list option =
+    (target : T.QualifiedProcName.t) (defs : T.Exp.t T.Ident.Map.t) :
+    (T.Exp.t list * (string * T.Exp.t) list) option =
+  let parse_kwdefaults e =
+    match e with
+    | T.Exp.Call {proc; args} when is_py_builtin proc "py_build_map" ->
+        let rec pairs = function
+          | k :: v :: rest -> (
+            match k with
+            | T.Exp.Call {proc= p; args= [T.Exp.Const (Str name)]}
+              when is_py_builtin p "py_make_string" ->
+                (name, v) :: pairs rest
+            | _ ->
+                pairs rest )
+          | _ ->
+              []
+        in
+        pairs args
+    | _ ->
+        []
+  in
   List.find_map module_body.nodes ~f:(fun (node : T.Node.t) ->
       List.find_map node.instrs ~f:(fun (instr : T.Instr.t) ->
           match instr with
           | Let {exp= Call {proc; args}; _} when is_py_builtin proc "py_make_function" -> (
             match args with
-            | closure_arg :: defaults_arg :: _ -> (
+            | closure_arg :: defaults_arg :: rest -> (
               match resolve_exp ~extends defs closure_arg with
-              | Closure {proc= cproc} when T.QualifiedProcName.equal cproc target -> (
-                match resolve_exp ~extends defs defaults_arg with
-                | Call {proc= tproc; args= elems} when is_py_builtin tproc "py_build_tuple" ->
-                    Some elems
-                | _ ->
-                    Some [] )
+              | Closure {proc= cproc} when T.QualifiedProcName.equal cproc target ->
+                  let pos =
+                    match resolve_exp ~extends defs defaults_arg with
+                    | Call {proc= tproc; args= elems} when is_py_builtin tproc "py_build_tuple" ->
+                        elems
+                    | _ ->
+                        []
+                  in
+                  let kw =
+                    match rest with
+                    | kwd :: _ ->
+                        parse_kwdefaults (resolve_exp ~extends defs kwd)
+                    | _ ->
+                        []
+                  in
+                  Some (pos, kw)
               | _ ->
                   None )
             | _ ->
@@ -814,15 +854,21 @@ let extract_defaults (module_ : T.Module.t) (proc : T.ProcDesc.t) : T.Exp.t Stri
           None )
   in
   match defaults with
-  | None | Some [] ->
+  | None ->
       StringMap.empty
-  | Some defaults ->
-      let n = List.length params and k = List.length defaults in
-      if k > n then StringMap.empty
-      else
-        let with_defaults = List.drop params (n - k) in
-        List.fold2_exn with_defaults defaults ~init:StringMap.empty ~f:(fun acc name d ->
-            StringMap.add name d acc )
+  | Some (pos, kw) ->
+      (* Positional defaults bind to the last [k] positional parameters. *)
+      let acc =
+        let n = List.length params and k = List.length pos in
+        if Int.equal k 0 || k > n then StringMap.empty
+        else
+          List.fold2_exn (List.drop params (n - k)) pos ~init:StringMap.empty
+            ~f:(fun acc name d -> StringMap.add name d acc)
+      in
+      (* Keyword-only defaults are keyed by name (these params are not in [python_args], which lists
+         only the positional co_argcount ones — hence they must be seeded here or a load_fast of them
+         would miss). *)
+      List.fold kw ~init:acc ~f:(fun acc (name, d) -> StringMap.add name d acc)
 
 
 (* A class body proc is a definition-site scope, just like __module_body__: it constructs the class
