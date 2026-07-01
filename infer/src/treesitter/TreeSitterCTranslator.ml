@@ -1369,7 +1369,7 @@ let translate_func_decl (decl_node : cst_node) : Textual.Module.decl option =
         String.equal d.tag "function_declarator"
         || String.equal d.tag "pointer_declarator"
            && Option.exists (find_field d.children "declarator") ~f:(fun inner ->
-                  String.equal inner.tag "function_declarator" )
+               String.equal inner.tag "function_declarator" )
     | None ->
         false
   in

@@ -58,14 +58,13 @@ let realloc_common ~null_case ~desc allocator pointer size : model =
  fun data astate non_disj ->
   free pointer data astate non_disj
   |> NonDisjDomain.bind ~f:(fun result non_disj ->
-         let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
-         let<*> exec_state = result in
-         match (exec_state : ExecutionDomain.t) with
-         | ContinueProgram astate ->
-             alloc_common ~null_case ~initialize:false ~desc allocator (Some size) data astate
-               non_disj
-         | ExceptionRaised _ | Stopped _ ->
-             ([Ok exec_state], non_disj) )
+      let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
+      let<*> exec_state = result in
+      match (exec_state : ExecutionDomain.t) with
+      | ContinueProgram astate ->
+          alloc_common ~null_case ~initialize:false ~desc allocator (Some size) data astate non_disj
+      | ExceptionRaised _ | Stopped _ ->
+          ([Ok exec_state], non_disj) )
 
 
 let realloc = realloc_common ~desc:"realloc" CRealloc

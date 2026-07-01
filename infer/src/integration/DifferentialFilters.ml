@@ -176,9 +176,9 @@ let interesting_paths_filter (interesting_paths : SourceFile.t list option) =
       let interesting_paths_set =
         paths
         |> List.filter_map ~f:(fun p ->
-               if (not (SourceFile.is_invalid p)) && SourceFile.is_under_project_root p then
-                 Some (SourceFile.to_string p)
-               else None )
+            if (not (SourceFile.is_invalid p)) && SourceFile.is_under_project_root p then
+              Some (SourceFile.to_string p)
+            else None )
         |> IString.Set.of_list
       in
       fun ~do_log report ->

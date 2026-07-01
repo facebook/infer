@@ -58,7 +58,7 @@ end = struct
   let pp_actives fmt =
     DLS.get currently_analyzed
     |> AnalysisTargets.iteri ~f:(fun ~key:target ~data:_ ->
-           F.fprintf fmt "%a,@," SpecializedProcname.pp target.Elt.active )
+        F.fprintf fmt "%a,@," SpecializedProcname.pp target.Elt.active )
 
 
   let mem active =
@@ -257,12 +257,11 @@ let run_proc_analysis tenv analysis_req specialization_context ?caller_pname cal
        subsequent replay analyses can pick them up too *)
     DLS.get edges_to_ignore
     |> Option.iter ~f:(fun edges_to_ignore ->
-           Procname.Map.find_opt callee_pname edges_to_ignore
-           |> Option.iter ~f:(fun recursive_callees ->
-                  Procname.Set.iter
-                    (fun callee ->
-                      Dependencies.record_pname_dep ~caller:callee_pname RecursionEdge callee )
-                    recursive_callees ) ) ;
+        Procname.Map.find_opt callee_pname edges_to_ignore
+        |> Option.iter ~f:(fun recursive_callees ->
+            Procname.Set.iter
+              (fun callee -> Dependencies.record_pname_dep ~caller:callee_pname RecursionEdge callee)
+              recursive_callees ) ) ;
     let summary = Summary.OnDisk.store analysis_req summary in
     ActiveProcedures.remove {proc_name= callee_pname; specialization} ;
     if Option.is_some specialization then Stats.incr_summary_specializations () ;
@@ -541,7 +540,7 @@ let rec analyze_callee_can_raise_recursion (analysis_req : AnalysisRequest.t) ~s
             analyze_callee analysis_req ~specialization:None ?caller_summary ~from_file_analysis
               callee_pname
             |> Result.bind ~f:(fun summary ->
-                   analyze_callee_aux (Some (summary, specialization)) |> AnalysisResult.of_option )
+                analyze_callee_aux (Some (summary, specialization)) |> AnalysisResult.of_option )
         | `AddNewSpecialization (summary, specialization) ->
             analyze_callee_aux (Some (summary, specialization)) |> AnalysisResult.of_option
         | `UnknownProcedure ->

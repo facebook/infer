@@ -160,7 +160,7 @@ let compute_idom nodes start =
         else if not (T.NodeName.Map.mem node.label rpo) then None
         else Some node.label )
     |> List.sort ~compare:(fun a b ->
-           Int.compare (T.NodeName.Map.find a rpo) (T.NodeName.Map.find b rpo) )
+        Int.compare (T.NodeName.Map.find a rpo) (T.NodeName.Map.find b rpo) )
   in
   let idom = ref (T.NodeName.Map.singleton start start) in
   (* walk up the dominator tree from b1 and b2 until they meet *)

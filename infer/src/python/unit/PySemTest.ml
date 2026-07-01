@@ -58,7 +58,7 @@ and pp_pclass fmt = function
 and pp_dictionnary fmt dict =
   StringHashtble.to_seq dict |> ListLabels.of_seq
   |> PrettyPrintable.pp_collection fmt ~pp_item:(fun fmt (key, v) ->
-         F.fprintf fmt "%s: %a" key pp_pval v )
+      F.fprintf fmt "%s: %a" key pp_pval v )
 
 
 type code_object =

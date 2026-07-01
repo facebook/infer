@@ -823,11 +823,11 @@ let get_message_and_suggestion diagnostic =
             | _ ->
                 None )
           |> IOption.if_none_evalopt ~f:(fun () ->
-                 Trace.find_map_last trace ~f:(function
-                   | FormalDeclared (pvar, _, _) ->
-                       Some pvar
-                   | _ ->
-                       None ) )
+              Trace.find_map_last trace ~f:(function
+                | FormalDeclared (pvar, _, _) ->
+                    Some pvar
+                | _ ->
+                    None ) )
           |> Option.map ~f:(F.asprintf "%a" Pvar.pp_value_non_verbose)
         in
         let declared_fields =
@@ -873,11 +873,11 @@ let get_message_and_suggestion diagnostic =
             F.fprintf fmt " during the call to %a" CallEvent.describe f
       in
       ( match typ with
-      | Value ->
-          F.asprintf "%t is read without initialization%t" pp_access_path pp_location
-      | Const _ | DictMissingKey _ ->
-          F.asprintf "%t doesn't seem to be initialized. This will cause a runtime error%t"
-            pp_access_path pp_location )
+        | Value ->
+            F.asprintf "%t is read without initialization%t" pp_access_path pp_location
+        | Const _ | DictMissingKey _ ->
+            F.asprintf "%t doesn't seem to be initialized. This will cause a runtime error%t"
+              pp_access_path pp_location )
       |> no_suggestion
   | ResourceLeak {resource; location; allocation_trace} -> (
       let allocation_line =
@@ -1047,14 +1047,14 @@ let get_trace_calling_context calling_context errlog =
   | (_, first_call_loc) :: _ ->
       add_errlog_header ~nesting:0 ~title:"calling context starts here" first_call_loc
       @@ ( (* errlog is built in the reverse order so reverse everything first *)
-           List.fold (List.rev calling_context)
-             ~init:(errlog, List.length calling_context - 1)
-             ~f:(fun (errlog, depth) (call, loc) ->
-               ( Errlog.make_trace_element depth loc
-                   (F.asprintf "in call to %a" CallEvent.pp call)
-                   []
-                 :: errlog
-               , depth - 1 ) )
+             List.fold (List.rev calling_context)
+               ~init:(errlog, List.length calling_context - 1)
+               ~f:(fun (errlog, depth) (call, loc) ->
+                 ( Errlog.make_trace_element depth loc
+                     (F.asprintf "in call to %a" CallEvent.pp call)
+                     []
+                   :: errlog
+                 , depth - 1 ) )
          |> fst )
 
 
@@ -1192,7 +1192,7 @@ let get_trace = function
       let nesting = 0 in
       Errlog.make_trace_element nesting location (get_param_typ param typ) []
       :: List.map used_locations ~f:(fun used_location ->
-             Errlog.make_trace_element nesting used_location "used" [] )
+          Errlog.make_trace_element nesting used_location "used" [] )
   | ReadUninitialized {calling_context; trace} ->
       get_trace_calling_context calling_context
       @@ Trace.add_to_errlog ~nesting:0

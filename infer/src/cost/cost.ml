@@ -83,18 +83,16 @@ module InstrBasicCostWithReason = struct
   let dispatch_func_ptr_call {inferbo_invariant_map; integer_type_widths} instr_node fun_exp =
     BufferOverrunAnalysis.extract_pre (InstrCFG.Node.id instr_node) inferbo_invariant_map
     |> Option.bind ~f:(fun inferbo_mem ->
-           let func_ptrs =
-             BufferOverrunSemantics.eval integer_type_widths fun_exp inferbo_mem
-             |> BufferOverrunDomain.Val.get_func_ptrs
-           in
-           match FuncPtr.Set.is_singleton_or_more func_ptrs with
-           | Singleton (Path path) ->
-               let symbolic_cost =
-                 BasicCost.of_func_ptr path |> BasicCostWithReason.of_basic_cost
-               in
-               Some (CostDomain.construct ~f:(fun _ -> symbolic_cost))
-           | _ ->
-               None )
+        let func_ptrs =
+          BufferOverrunSemantics.eval integer_type_widths fun_exp inferbo_mem
+          |> BufferOverrunDomain.Val.get_func_ptrs
+        in
+        match FuncPtr.Set.is_singleton_or_more func_ptrs with
+        | Singleton (Path path) ->
+            let symbolic_cost = BasicCost.of_func_ptr path |> BasicCostWithReason.of_basic_cost in
+            Some (CostDomain.construct ~f:(fun _ -> symbolic_cost))
+        | _ ->
+            None )
     |> Option.value ~default:CostDomain.unit_cost_atomic_operation
 
 
@@ -123,13 +121,13 @@ module InstrBasicCostWithReason = struct
       | Some {CostDomain.post= callee_cost_record}, Some callee_formals ->
           CostDomain.find_opt kind callee_cost_record
           |> Option.map ~f:(fun callee_cost ->
-                 let get_closure_callee_cost pname =
-                   get_summary pname
-                   |> Option.map ~f:(fun {CostDomain.post} -> CostDomain.get_cost_kind kind post)
-                 in
-                 instantiate_cost ~get_closure_callee_cost ~default_closure_cost integer_type_widths
-                   ~inferbo_caller_mem:inferbo_mem ~callee_pname ~callee_formals ~args
-                   ~captured_vars ~callee_cost ~loc:location )
+              let get_closure_callee_cost pname =
+                get_summary pname
+                |> Option.map ~f:(fun {CostDomain.post} -> CostDomain.get_cost_kind kind post)
+              in
+              instantiate_cost ~get_closure_callee_cost ~default_closure_cost integer_type_widths
+                ~inferbo_caller_mem:inferbo_mem ~callee_pname ~callee_formals ~args ~captured_vars
+                ~callee_cost ~loc:location )
       | _ ->
           None
     in
@@ -349,7 +347,7 @@ let get_cost_summary ~is_on_ui_thread astate = {CostDomain.post= astate; is_on_u
 let just_throws_exception proc_desc =
   Procdesc.get_nodes proc_desc |> List.length <= 5
   && Procdesc.fold_instrs proc_desc ~init:false ~f:(fun acc _node instr ->
-         match instr with Sil.Store {e1= Lvar pvar; e2= Exn _} -> Pvar.is_return pvar | _ -> acc )
+      match instr with Sil.Store {e1= Lvar pvar; e2= Exn _} -> Pvar.is_return pvar | _ -> acc )
 
 
 let checker ({InterproceduralAnalysis.proc_desc; analyze_dependency; tenv} as analysis_data) =

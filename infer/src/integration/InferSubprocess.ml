@@ -43,7 +43,7 @@ let raw_env () =
   let other_env =
     Array.to_list (Unix.environment ())
     |> List.filter ~f:(fun entry ->
-           not (String.is_prefix ~prefix:(CLOpt.args_env_var ^ "=") entry) )
+        not (String.is_prefix ~prefix:(CLOpt.args_env_var ^ "=") entry) )
   in
   (CLOpt.args_env_var ^ "=" ^ sanitized_infer_args) :: other_env
 

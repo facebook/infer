@@ -113,7 +113,7 @@ end = struct
           let map_or_true = Option.value_map ~default:true in
           map_or_true class_names ~f:match_class_name
           && map_or_true method_names ~f:(function mn ->
-                 List.mem ~equal:String.equal mn method_name )
+              List.mem ~equal:String.equal mn method_name )
           && map_or_true class_name_regex ~f:match_class_name_regex
           && map_or_true method_name_regex ~f:match_method_name_regex
           && map_or_true annotations ~f:(proc_name_has_annotation tenv procname)
@@ -288,19 +288,19 @@ let report_errors ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
             () ) ;
       NonDisjDomain.Summary.get_transitive_info_if_not_top non_disj
       |> Option.iter ~f:(fun {PulseTransitiveInfo.accesses; callees; direct_missed_captures} ->
-             PulseTrace.Set.iter (report callees direct_missed_captures) accesses ;
-             if !nothing_reported && pulse_transitive_access_verbose then
-               let call_trace : PulseTrace.t =
-                 Immediate {location= Location.dummy; history= PulseValueHistory.epoch}
-               in
-               let transitive_callees = callees in
-               let transitive_missed_captures = direct_missed_captures in
-               PulseReport.report analysis_data ~is_suppressed:false ~latent:false
-                 (TransitiveAccess
-                    { tag= "NO ACCESS FOUND"
-                    ; description= ""
-                    ; call_trace
-                    ; transitive_callees
-                    ; transitive_missed_captures } ) )
+          PulseTrace.Set.iter (report callees direct_missed_captures) accesses ;
+          if !nothing_reported && pulse_transitive_access_verbose then
+            let call_trace : PulseTrace.t =
+              Immediate {location= Location.dummy; history= PulseValueHistory.epoch}
+            in
+            let transitive_callees = callees in
+            let transitive_missed_captures = direct_missed_captures in
+            PulseReport.report analysis_data ~is_suppressed:false ~latent:false
+              (TransitiveAccess
+                 { tag= "NO ACCESS FOUND"
+                 ; description= ""
+                 ; call_trace
+                 ; transitive_callees
+                 ; transitive_missed_captures } ) )
   | None ->
       ()

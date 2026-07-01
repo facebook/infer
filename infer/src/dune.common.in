@@ -43,15 +43,14 @@ let platform_linking_flags =
     if_platform_env
       (Printf.sprintf "-noautolink %s %s %s "
          ( if swift then
-             "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) \
-              (:include %{project_root}/src/linking-flags-llvm.sexp) "
+             "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) (:include \
+              %{project_root}/src/linking-flags-llvm.sexp) "
            else "" )
          "(:include %{project_root}/src/linking-flags.sexp)"
          "-cclib -Wl,-Bstatic -cclib -lzstd -cclib -Wl,-Bdynamic" )
-    ~else_:(
-       if swift && swift_llvm then
-        "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) \
-        (:include %{project_root}/src/linking-flags-llvm.sexp) \
-        (:include %{project_root}/src/linking-flags-llvm-swift.sexp) "
-      else
-       "") ;;
+      ~else_:
+        ( if swift && swift_llvm then
+            "(:include %{project_root}/src/sledge/llvm-config_ldflags.sexp) (:include \
+             %{project_root}/src/linking-flags-llvm.sexp) (:include \
+             %{project_root}/src/linking-flags-llvm-swift.sexp) "
+          else "" )

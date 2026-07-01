@@ -31,7 +31,7 @@ let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
   if
     (Config.pulse_experimental_track_all_unknown_calls || not (List.is_empty actuals))
     && Option.value_map callee_pname_opt ~default:true ~f:(fun pname ->
-           not (Procname.is_constructor pname) )
+        not (Procname.is_constructor pname) )
   then
     AbductiveDomain.AddressAttributes.add_one ret_val
       (ReturnedFromUnknown (List.map actuals ~f:(fun ((v, _), _) -> v)))
@@ -52,16 +52,16 @@ let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
 let is_const_version pname_method (other_method : Struct.tenv_method) =
   String.equal pname_method (Procname.get_method other_method.name)
   && Option.exists (IRAttributes.load other_method.name) ~f:(fun attr ->
-         attr.ProcAttributes.is_cpp_const_member_fun )
+      attr.ProcAttributes.is_cpp_const_member_fun )
 
 
 let is_const_version_available tenv pname =
   Procname.get_class_type_name pname
   |> Option.exists ~f:(fun name ->
-         Tenv.lookup tenv name
-         |> Option.exists ~f:(fun Struct.{methods} ->
-                let pname_method = Procname.get_method pname in
-                List.exists ~f:(is_const_version pname_method) methods ) )
+      Tenv.lookup tenv name
+      |> Option.exists ~f:(fun Struct.{methods} ->
+          let pname_method = Procname.get_method pname in
+          List.exists ~f:(is_const_version pname_method) methods ) )
 
 
 let matches_iter =
@@ -173,7 +173,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
           Option.exists callee_pname_opt ~f:(fun p ->
               Procname.is_constructor p
               || Option.exists (IRAttributes.load p) ~f:(fun attrs ->
-                     attrs.ProcAttributes.is_cpp_copy_assignment )
+                  attrs.ProcAttributes.is_cpp_copy_assignment )
               || Procname.is_destructor p )
         then astate
         else
@@ -212,7 +212,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
                 some_resource_found
                 || AddressAttributes.get_allocation_attr reachable_actual astate
                    |> Option.exists ~f:(fun (attr, _) ->
-                          Attribute.is_hack_resource attr || Attribute.is_python_resource attr )
+                       Attribute.is_hack_resource attr || Attribute.is_python_resource attr )
               in
               (some_resource_found, AddressAttributes.remove_allocation_attr reachable_actual astate) )
         in
@@ -263,24 +263,24 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
   L.d_printfln ~color:Orange "skipping unknown procedure %a" (Pp.option Procname.pp)
     callee_pname_opt ;
   ( match (actuals, formals_opt) with
-  | actual_typ :: _, _ when Option.exists callee_pname_opt ~f:Procname.is_constructor ->
-      (* when the callee is an unknown constructor, havoc the first arg (the constructed object)
+    | actual_typ :: _, _ when Option.exists callee_pname_opt ~f:Procname.is_constructor ->
+        (* when the callee is an unknown constructor, havoc the first arg (the constructed object)
          only *)
-      let formal_opt = Option.bind formals_opt ~f:List.hd in
-      havoc_actual_if_ptr actual_typ formal_opt astate
-  | _, None ->
-      havoc_actuals_without_typ_info astate
-  | _, Some formals -> (
-      let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
-      match
-        List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ formal ->
-            havoc_actual_if_ptr actual_typ (Some formal) astate )
-      with
-      | Unequal_lengths ->
-          print_arity_mismatch_message callee_pname_opt ~formals ~actuals ;
-          havoc_actuals_without_typ_info astate
-      | Ok result ->
-          result ) )
+        let formal_opt = Option.bind formals_opt ~f:List.hd in
+        havoc_actual_if_ptr actual_typ formal_opt astate
+    | _, None ->
+        havoc_actuals_without_typ_info astate
+    | _, Some formals -> (
+        let actuals = trim_actuals_if_var_arg callee_pname_opt ~actuals ~formals in
+        match
+          List.fold2 actuals formals ~init:astate ~f:(fun astate actual_typ formal ->
+              havoc_actual_if_ptr actual_typ (Some formal) astate )
+        with
+        | Unequal_lengths ->
+            print_arity_mismatch_message callee_pname_opt ~formals ~actuals ;
+            havoc_actuals_without_typ_info astate
+        | Ok result ->
+            result ) )
   |> add_skipped_proc
 
 

@@ -168,7 +168,7 @@ let rec get_procentry decls procsig =
          the corresponding arity and then for its 'unknown formals' variation. *)
       ProcSig.Hashtbl.find_opt decls.procs procsig
       |> IOption.if_none_evalopt ~f:(fun () ->
-             get_procentry decls (ProcSig.Hack {qualified_name; arity= None}) )
+          get_procentry decls (ProcSig.Hack {qualified_name; arity= None}) )
   | ProcSig.Hack {arity= None; _} | ProcSig.Other _ ->
       ProcSig.Hashtbl.find_opt decls.procs procsig
 
@@ -188,7 +188,7 @@ let is_defined_in_a_trait decls_env {Textual.QualifiedProcName.enclosing_class} 
   | Enclosing typename ->
       get_struct decls_env typename
       |> Option.value_map ~default:false ~f:(fun {Textual.Struct.attributes} ->
-             List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some )
+          List.find ~f:Textual.Attr.is_trait attributes |> Option.is_some )
   | TopLevel ->
       false
 
@@ -215,10 +215,10 @@ let get_procdecl decls procsig nb_args =
   let non_variadic_case =
     get_procentry decls procsig
     |> Option.map ~f:(fun entry ->
-           let generics_status =
-             ProcEntry.desc entry |> Option.value_map ~default:Reified ~f:generics_status
-           in
-           (NotVariadic, generics_status, ProcEntry.decl entry) )
+        let generics_status =
+          ProcEntry.desc entry |> Option.value_map ~default:Reified ~f:generics_status
+        in
+        (NotVariadic, generics_status, ProcEntry.decl entry) )
   in
   match get_variadic_procdesc decls procname with
   | Some procdesc ->
@@ -432,22 +432,22 @@ let get_undefined_types decls =
   (* Collect type names from Procdecls  *)
   ProcSig.Hashtbl.to_seq_values decls.procs
   |> Seq.iter (fun (proc : ProcEntry.t) ->
-         let procdecl = ProcEntry.decl proc in
-         register_annotated_typ procdecl.result_type referenced_tnames ;
-         let formals_types = Option.value procdecl.formals_types ~default:[] in
-         register_annotated_typs formals_types referenced_tnames ;
-         Option.iter (ProcEntry.desc proc) ~f:(fun pdesc ->
-             let types = get_procdesc_referenced_types pdesc in
-             register_tnames types referenced_tnames ) ) ;
+      let procdecl = ProcEntry.decl proc in
+      register_annotated_typ procdecl.result_type referenced_tnames ;
+      let formals_types = Option.value procdecl.formals_types ~default:[] in
+      register_annotated_typs formals_types referenced_tnames ;
+      Option.iter (ProcEntry.desc proc) ~f:(fun pdesc ->
+          let types = get_procdesc_referenced_types pdesc in
+          register_tnames types referenced_tnames ) ) ;
   (* Collect type names from Structs  *)
   TypeName.Hashtbl.to_seq_values decls.structs
   |> Seq.iter (fun (s : Struct.t) ->
-         register_tname s.name referenced_tnames ;
-         register_tname s.name defined_tnames ;
-         register_tnames s.supers referenced_tnames ;
-         List.iter s.fields ~f:(fun (field : FieldDecl.t) ->
-             register_tname field.qualified_name.enclosing_class referenced_tnames ;
-             register_typ field.typ referenced_tnames ) ) ;
+      register_tname s.name referenced_tnames ;
+      register_tname s.name defined_tnames ;
+      register_tnames s.supers referenced_tnames ;
+      List.iter s.fields ~f:(fun (field : FieldDecl.t) ->
+          register_tname field.qualified_name.enclosing_class referenced_tnames ;
+          register_typ field.typ referenced_tnames ) ) ;
   (* TODO(arr): collect types from expressions such as alloc and cast. We'll need to extend the
      decls with ProcDescs to have access to expressions. *)
   TypeName.HashSet.remove_all (TypeName.HashSet.iter defined_tnames) referenced_tnames ;

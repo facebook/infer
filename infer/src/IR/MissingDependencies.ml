@@ -38,16 +38,16 @@ let save ts =
     Utils.with_file_out (get_missing_procs_filename ()) ~f:(fun channel ->
         ProcUidSet.iter t.procedures
         |> Iter.iter (fun p ->
-               Out_channel.output_string channel p ;
-               Out_channel.newline channel ) ) ;
+            Out_channel.output_string channel p ;
+            Out_channel.newline channel ) ) ;
     Utils.with_file_out (get_missing_sources_filename ()) ~f:(fun channel ->
         SourceFile.HashSet.iter t.sources
         |> Iter.iter (fun s ->
-               let[@warning "-partial-match"] (Sqlite3.Data.TEXT serialized_sourcefile) =
-                 SourceFile.SQLite.serialize s
-               in
-               Out_channel.output_string channel serialized_sourcefile ;
-               Out_channel.newline channel ) ) )
+            let[@warning "-partial-match"] (Sqlite3.Data.TEXT serialized_sourcefile) =
+              SourceFile.SQLite.serialize s
+            in
+            Out_channel.output_string channel serialized_sourcefile ;
+            Out_channel.newline channel ) ) )
 
 
 let load () =
@@ -59,8 +59,8 @@ let load () =
   Utils.read_file (get_missing_sources_filename ())
   |> Result.ok_or_failwith
   |> List.iter ~f:(fun serialised_sourcefile ->
-         let sourcefile = SourceFile.SQLite.deserialize (Sqlite3.Data.TEXT serialised_sourcefile) in
-         SourceFile.HashSet.add sourcefile sources ) ;
+      let sourcefile = SourceFile.SQLite.deserialize (Sqlite3.Data.TEXT serialised_sourcefile) in
+      SourceFile.HashSet.add sourcefile sources ) ;
   {procedures; sources}
 
 

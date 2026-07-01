@@ -19,10 +19,10 @@ let add_info position ~sourcefile ~line ~info =
   let per_lines_before, per_lines_after =
     SourceFile.Hash.find_opt tbl sourcefile
     |> Option.value_or_thunk ~default:(fun () ->
-           let per_lines_after_tbl = IInt.Hash.create 1 in
-           let per_lines_before_tbl = IInt.Hash.create 1 in
-           SourceFile.Hash.replace tbl sourcefile (per_lines_before_tbl, per_lines_after_tbl) ;
-           (per_lines_before_tbl, per_lines_after_tbl) )
+        let per_lines_after_tbl = IInt.Hash.create 1 in
+        let per_lines_before_tbl = IInt.Hash.create 1 in
+        SourceFile.Hash.replace tbl sourcefile (per_lines_before_tbl, per_lines_after_tbl) ;
+        (per_lines_before_tbl, per_lines_after_tbl) )
   in
   match position with
   | Before ->
@@ -46,12 +46,12 @@ let write_all () =
       in
       Filename.concat output_dir filename
       |> Utils.with_file_out ~f:(fun channel ->
-             let print_one_line line_number raw_line =
-               IInt.Hash.find_opt per_lines_before_tbl line_number
-               |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info) ;
-               Printf.fprintf channel "%s\n" raw_line ;
-               IInt.Hash.find_opt per_lines_after_tbl line_number
-               |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info)
-             in
-             LineReader.iteri linereader sourcefile ~f:print_one_line ) )
+          let print_one_line line_number raw_line =
+            IInt.Hash.find_opt per_lines_before_tbl line_number
+            |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info) ;
+            Printf.fprintf channel "%s\n" raw_line ;
+            IInt.Hash.find_opt per_lines_after_tbl line_number
+            |> Option.iter ~f:(fun info -> Printf.fprintf channel "%s\n" info)
+          in
+          LineReader.iteri linereader sourcefile ~f:print_one_line ) )
     (DLS.get infos_per_sourcefiles_and_lines)

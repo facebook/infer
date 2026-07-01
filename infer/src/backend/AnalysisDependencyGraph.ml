@@ -57,14 +57,14 @@ let build ~changed_files =
     (fun sf ->
       SourceFile.Hash.find_opt tenv_deps sf
       |> Option.iter ~f:(fun sf_tenv_deps ->
-             Procname.HashSet.iter sf_tenv_deps (CallGraph.flag_reachable graph) ) ;
+          Procname.HashSet.iter sf_tenv_deps (CallGraph.flag_reachable graph) ) ;
       SourceFile.Hash.find procs_in_changed_files sf
       |> Procname.Set.iter (fun pname ->
-             match Attributes.load pname with
-             | None ->
-                 CallGraph.flag_reachable graph pname
-             | Some attrs ->
-                 if attrs.changed then CallGraph.flag_reachable graph pname ) )
+          match Attributes.load pname with
+          | None ->
+              CallGraph.flag_reachable graph pname
+          | Some attrs ->
+              if attrs.changed then CallGraph.flag_reachable graph pname ) )
     changed_files ;
   graph
 

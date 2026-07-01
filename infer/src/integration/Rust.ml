@@ -92,8 +92,8 @@ let filename_from_json json =
     |> Yojson.Basic.Util.member "translated"
     |> Yojson.Basic.Util.member "files" |> Yojson.Basic.Util.to_list
     |> List.map ~f:(fun file ->
-           Yojson.Basic.Util.member "name" file
-           |> Yojson.Basic.Util.member "Local" |> Yojson.Basic.Util.to_string )
+        Yojson.Basic.Util.member "name" file
+        |> Yojson.Basic.Util.member "Local" |> Yojson.Basic.Util.to_string )
     |> List.hd
   in
   match file_name with

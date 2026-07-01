@@ -332,7 +332,7 @@ module NonNegativeNonTopPolynomial = struct
     phys_equal lhs rhs
     || (NonNegativeInt.leq ~lhs:lhs.const ~rhs:rhs.const && M.le ~le_elt:leq lhs.terms rhs.terms)
     || Option.exists (int_ub lhs) ~f:(fun lhs_ub ->
-           NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs) )
+        NonNegativeInt.leq ~lhs:lhs_ub ~rhs:(int_lb rhs) )
 
 
   let rec xcompare ~lhs ~rhs =
@@ -772,7 +772,7 @@ module NonNegativePolynomial = struct
         NonNegativeNonTopPolynomial.subst callee_pname location p eval_sym eval_func_ptrs
           get_closure_callee_cost ~default_closure_cost
         |> make_trace_set ~map_above:(fun (symbol, bound_trace) ->
-               TopTrace.unbounded_symbol ~location ~symbol bound_trace )
+            TopTrace.unbounded_symbol ~location ~symbol bound_trace )
 
 
   let degree p =

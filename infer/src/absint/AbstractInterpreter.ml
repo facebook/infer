@@ -344,8 +344,8 @@ struct
         if Config.pulse_eternal then
           AnalysisState.get_node ()
           |> Option.iter ~f:(fun node ->
-                 L.debug Analysis Quiet "[LOOP INVARIANT]     widen at %a = %a@\n" Procdesc.Node.pp
-                   node pp_active_in_disjs (fst next) ) ;
+              L.debug Analysis Quiet "[LOOP INVARIANT]     widen at %a = %a@\n" Procdesc.Node.pp
+                node pp_active_in_disjs (fst next) ) ;
         res
 
 

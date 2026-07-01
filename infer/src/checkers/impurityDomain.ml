@@ -66,13 +66,13 @@ let filter_modifies_immutable tenv ~f =
               implements_immutable_map tenv class_name
               || Tenv.lookup tenv class_name
                  |> Option.exists ~f:(fun mstruct ->
-                        f mstruct
-                        |> List.exists ~f:(fun {Struct.name= fieldname; typ= _typ; annot} ->
-                               String.equal
-                                 (Fieldname.get_field_name fieldname)
-                                 (Fieldname.get_field_name fname)
-                               && Annotations.ia_has_annotation_with annot (fun annot ->
-                                      Annotations.annot_ends_with annot Annotations.immutable ) ) )
+                     f mstruct
+                     |> List.exists ~f:(fun {Struct.name= fieldname; typ= _typ; annot} ->
+                         String.equal
+                           (Fieldname.get_field_name fieldname)
+                           (Fieldname.get_field_name fname)
+                         && Annotations.ia_has_annotation_with annot (fun annot ->
+                             Annotations.annot_ends_with annot Annotations.immutable ) ) )
           | _ ->
               false ) )
 

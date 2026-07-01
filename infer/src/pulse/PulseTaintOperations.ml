@@ -632,10 +632,10 @@ let compute_taint_propagation_for_unknown_calls_generic tenv proc_name_opt retur
     , {FuncArg.typ= {desc= Tptr ({desc= Tstruct receiver_typename}, _)}} :: _ )
     when (not is_static)
          && Option.exists (Procname.get_class_type_name proc_name) ~f:(fun class_typename ->
-                Typ.Name.equal return_typename class_typename
-                && PatternMatch.supertype_exists tenv
-                     (fun type_name _struct -> Typ.Name.equal class_typename type_name)
-                     receiver_typename ) ->
+             Typ.Name.equal return_typename class_typename
+             && PatternMatch.supertype_exists tenv
+                  (fun type_name _struct -> Typ.Name.equal class_typename type_name)
+                  receiver_typename ) ->
       (* if the receiver and return type are the same, propagate to both. we're assuming the call
          is one of the common "builder-style" methods that both updates and returns the
          receiver *)

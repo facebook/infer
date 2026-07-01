@@ -580,8 +580,8 @@ let mk_procdesc proc_kind
           let args =
             exp_locals
             :: List.init (nb_vars - co_argcount) ~f:(fun i ->
-                   let name = co_varnames.(i + co_argcount) in
-                   exp_of_ident_str name )
+                let name = co_varnames.(i + co_argcount) in
+                exp_of_ident_str name )
           in
           instrs @ [Textual.Instr.Let {id= None; exp= call_builtin "py_nullify_locals" args; loc}]
       | _ ->

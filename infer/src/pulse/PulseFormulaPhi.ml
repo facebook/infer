@@ -615,9 +615,9 @@ end = struct
           else if
             InstanceOf.is_concrete_or_abstract t
             && List.exists below ~f:(fun t' ->
-                   InstanceOf.is_concrete_or_abstract t'
-                   && (not (InstanceOf.is_subtype t t'))
-                   && not (InstanceOf.is_subtype t' t) )
+                InstanceOf.is_concrete_or_abstract t'
+                && (not (InstanceOf.is_subtype t t'))
+                && not (InstanceOf.is_subtype t' t) )
           then (
             Debug.p "inconsistent concrete upper bounds %a and <something>, zeroing"
               (Typ.pp Pp.text) t ;
@@ -1039,7 +1039,7 @@ let fold_variables
 let is_neq_zero phi t =
   Term.get_as_var t
   |> Option.exists ~f:(fun v ->
-         Var.Map.find_opt v phi.intervals |> Option.exists ~f:CItv.is_not_equal_to_zero )
+      Var.Map.find_opt v phi.intervals |> Option.exists ~f:CItv.is_not_equal_to_zero )
   || Atom.Set.mem (NotEqual (t, Term.zero)) phi.atoms
   || Atom.Set.mem (LessThan (Term.zero, t)) phi.atoms
 
@@ -1305,7 +1305,7 @@ end = struct
         in
         LinArith.get_variables l
         |> SatUnsat.seq_fold ~init:(phi, new_eqs) ~f:(fun (phi, new_eqs) v ->
-               merge_vars ~fuel new_eqs w v phi )
+            merge_vars ~fuel new_eqs w v phi )
     | (`Positive | `Zero), (`Minimized | `Constant) ->
         (* [w = l_c + k1·v1 + ... + kn·vn], all coeffs [ki] are ≥0 (and so are all possible
               values of all [vi]s since they are restricted variables), hence any possible value

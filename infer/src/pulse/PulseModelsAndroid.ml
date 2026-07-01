@@ -51,6 +51,6 @@ let matchers : matcher list =
     &:: "isEmpty" <>$ capt_arg_payload
     $--> text_utils_is_empty ~desc:"TextUtils.isEmpty" ]
   |> List.map ~f:(fun matcher ->
-         matcher
-         |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
-         |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )
+      matcher
+      |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+      |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )

@@ -101,8 +101,8 @@ module Lock = struct
     | Procname.Java _ ->
         FormalMap.get_formal_base 0 formals
         |> Option.bind ~f:(fun base ->
-               let hilexp = HilExp.(AccessExpression (AccessExpression.base base)) in
-               make formals hilexp )
+            let hilexp = HilExp.(AccessExpression (AccessExpression.base base)) in
+            make formals hilexp )
     | _ ->
         L.die InternalError "Non-Java methods cannot be synchronized.@\n"
 
@@ -638,11 +638,11 @@ module CriticalPair = struct
     if ThreadDomain.can_run_in_parallel (get_thread lhs) (get_thread rhs) then
       Event.get_acquired_locks rhs.elem.event
       |> List.find ~f:(fun rhs_lock ->
-             (not (Lock.equal_across_threads tenv lhs_lock rhs_lock))
-             && Acquisitions.lock_is_held_in_other_thread tenv rhs_lock lhs.elem.acquisitions
-             && Acquisitions.lock_is_held_in_other_thread tenv lhs_lock rhs.elem.acquisitions
-             && Acquisitions.no_locks_common_across_threads tenv lhs.elem.acquisitions
-                  rhs.elem.acquisitions )
+          (not (Lock.equal_across_threads tenv lhs_lock rhs_lock))
+          && Acquisitions.lock_is_held_in_other_thread tenv rhs_lock lhs.elem.acquisitions
+          && Acquisitions.lock_is_held_in_other_thread tenv lhs_lock rhs.elem.acquisitions
+          && Acquisitions.no_locks_common_across_threads tenv lhs.elem.acquisitions
+               rhs.elem.acquisitions )
     else None
 
 
@@ -707,10 +707,10 @@ module CriticalPair = struct
       |> Option.bind ~f:(filter_out_reentrant_relocks (Some tenv) existing_acquisitions)
       |> Option.bind ~f:(apply_caller_thread caller_thread)
       |> Option.map ~f:(fun callee_pair ->
-             let f (elem : CriticalPairElement.t) =
-               {elem with acquisitions= Acquisitions.union existing_acquisitions elem.acquisitions}
-             in
-             map ~f callee_pair )
+          let f (elem : CriticalPairElement.t) =
+            {elem with acquisitions= Acquisitions.union existing_acquisitions elem.acquisitions}
+          in
+          map ~f callee_pair )
       |> Option.map ~f:(fun callee_pair -> with_callsite callee_pair call_site)
 
 
@@ -1025,8 +1025,8 @@ let wait_on_monitor ~loc formals actuals astate =
   | exp :: _ ->
       Lock.make formals exp
       |> Option.value_map ~default:astate ~f:(fun lock ->
-             let new_event = Event.make_object_wait lock astate.thread in
-             make_call_with_event new_event ~loc astate )
+          let new_event = Event.make_object_wait lock astate.thread in
+          make_call_with_event new_event ~loc astate )
   | _ ->
       astate
 
@@ -1072,21 +1072,21 @@ let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
 let remove_guard astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
   |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-         let locks = FlatLock.get lock_opt |> Option.to_list in
-         let astate = release astate locks in
-         {astate with guard_map= GuardToLockMap.remove_guard astate.guard_map guard} )
+      let locks = FlatLock.get lock_opt |> Option.to_list in
+      let astate = release astate locks in
+      {astate with guard_map= GuardToLockMap.remove_guard astate.guard_map guard} )
 
 
 let unlock_guard astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
   |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-         FlatLock.get lock_opt |> Option.to_list |> release astate )
+      FlatLock.get lock_opt |> Option.to_list |> release astate )
 
 
 let lock_guard ~procname ~loc tenv astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
   |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-         FlatLock.get lock_opt |> Option.to_list |> acquire ~tenv astate ~procname ~loc )
+      FlatLock.get lock_opt |> Option.to_list |> acquire ~tenv astate ~procname ~loc )
 
 
 let schedule_work loc thread_constraint astate procname =

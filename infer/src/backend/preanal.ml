@@ -119,7 +119,7 @@ module ReplaceObjCCopy = struct
   let process tenv pdesc ret_id_typ callee args loc flags =
     get_copy_kind_opt callee
     |> Option.bind ~f:(fun copy_kind ->
-           get_replaced_instr copy_kind pdesc tenv args ret_id_typ loc flags )
+        get_replaced_instr copy_kind pdesc tenv args ret_id_typ loc flags )
 end
 
 module ReplaceObjCOverridden = struct
@@ -145,9 +145,9 @@ module ReplaceObjCOverridden = struct
       ~caller_class_name:(Procname.get_class_type_name caller)
       ~callee args
     |> Option.map ~f:(fun overridden_method ->
-           Logging.d_printfln_escaped "Replace overridden method %a to %a" Procname.pp callee
-             Procname.pp overridden_method ;
-           Sil.Call (ret_id_typ, Const (Cfun overridden_method), args, loc, flags) )
+        Logging.d_printfln_escaped "Replace overridden method %a to %a" Procname.pp callee
+          Procname.pp overridden_method ;
+        Sil.Call (ret_id_typ, Const (Cfun overridden_method), args, loc, flags) )
 end
 
 module ReplaceObjCMethodCall = struct
@@ -468,12 +468,12 @@ module NoReturn = struct
   let has_noreturn_call tenv node =
     Procdesc.Node.get_instrs node
     |> Instrs.exists ~f:(fun (instr : Sil.instr) ->
-           match instr with
-           | Call (_, Const (Cfun proc_name), _, _, _) ->
-               Attributes.is_no_return proc_name
-               || NoReturnModels.dispatch tenv proc_name |> Option.value ~default:false
-           | _ ->
-               false )
+        match instr with
+        | Call (_, Const (Cfun proc_name), _, _, _) ->
+            Attributes.is_no_return proc_name
+            || NoReturnModels.dispatch tenv proc_name |> Option.value ~default:false
+        | _ ->
+            false )
 
 
   let process tenv proc_desc =

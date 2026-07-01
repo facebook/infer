@@ -40,9 +40,9 @@ let lookup dispatch_call dispatch_key json =
         has_dispatch_key dispatch_key m
       else false )
   |> Option.map ~f:(fun x ->
-         json |> Yojson.Basic.Util.member x
-         |> Yojson.Basic.Util.member dispatch_key
-         |> Yojson.Basic.Util.to_string )
+      json |> Yojson.Basic.Util.member x
+      |> Yojson.Basic.Util.member dispatch_key
+      |> Yojson.Basic.Util.to_string )
 
 
 let get_replaced_method_name call_opt key json =

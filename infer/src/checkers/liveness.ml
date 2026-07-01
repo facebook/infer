@@ -179,7 +179,7 @@ module TransferFunctions (LConfig : LivenessConfig) (CFG : ProcCfg.S) = struct
     in
     Exp.program_vars exp
     |> Sequence.fold ~init:astate' ~f:(fun astate_acc pvar ->
-           Domain.add (Var.of_pvar pvar) astate_acc )
+        Domain.add (Var.of_pvar pvar) astate_acc )
 
 
   let add_live_actuals actuals astate_acc =
@@ -399,7 +399,7 @@ let checker {IntraproceduralAnalysis.proc_desc; err_log} =
     List.find locals ~f:(fun local_data ->
         Mangled.equal (Pvar.get_name pvar) local_data.ProcAttributes.name )
     |> Option.exists ~f:(fun local ->
-           local.ProcAttributes.is_constexpr || local.ProcAttributes.is_declared_unused )
+        local.ProcAttributes.is_constexpr || local.ProcAttributes.is_declared_unused )
   in
   let is_block_listed pvar =
     match Config.liveness_block_list_var_regex with

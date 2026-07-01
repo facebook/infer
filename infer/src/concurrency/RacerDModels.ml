@@ -478,19 +478,19 @@ let should_flag_interface_call tenv exps call_flags pname =
   let is_java_library java_pname =
     Procname.Java.get_package java_pname
     |> Option.exists ~f:(fun package_name ->
-           String.is_prefix ~prefix:"java." package_name
-           || String.is_prefix ~prefix:"android." package_name
-           || String.is_prefix ~prefix:"com.google." package_name )
+        String.is_prefix ~prefix:"java." package_name
+        || String.is_prefix ~prefix:"android." package_name
+        || String.is_prefix ~prefix:"com.google." package_name )
   in
   let receiver_is_not_safe exps tenv =
     List.hd exps
     |> Option.bind ~f:(fun exp -> HilExp.get_access_exprs exp |> List.hd)
     |> Option.map ~f:HilExp.AccessExpression.truncate
     |> Option.exists ~f:(function
-         | Some (receiver_prefix, receiver_access) ->
-             not (is_safe_access receiver_access receiver_prefix tenv)
-         | _ ->
-             true )
+      | Some (receiver_prefix, receiver_access) ->
+          not (is_safe_access receiver_access receiver_prefix tenv)
+      | _ ->
+          true )
   in
   let implements_threadsafe_interface java_pname tenv =
     (* generated classes implementing this interface are always threadsafe *)
@@ -670,5 +670,5 @@ let is_kotlin_coroutine_generated classname =
   Tenv.Global.load ()
   |> Option.bind ~f:(fun tenv -> Tenv.lookup tenv classname)
   |> Option.exists ~f:(fun (tstruct : Struct.t) ->
-         List.mem tstruct.supers ~equal:Typ.Name.equal
-           StdTyp.Name.Java.kotlin_coroutines_jvm_internal_restrictedsuspendlambda )
+      List.mem tstruct.supers ~equal:Typ.Name.equal
+        StdTyp.Name.Java.kotlin_coroutines_jvm_internal_restrictedsuspendlambda )

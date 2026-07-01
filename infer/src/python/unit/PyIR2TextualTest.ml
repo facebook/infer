@@ -26,7 +26,7 @@ let run pyir =
     let transformed_textual =
       PyIRTypeInference.gen_module_default_type pyir
       |> Option.value_map ~default:transformed_textual ~f:(fun pyir_type ->
-             PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
+          PyIR2Textual.add_pyir_type pyir_type ~module_name transformed_textual )
     in
     F.printf "FINAL TRANSFORMATIONS@\n" ;
     show transformed_textual

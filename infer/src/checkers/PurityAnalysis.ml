@@ -36,10 +36,10 @@ module TransferFunctions = struct
       (fun loc modified_acc ->
         AbsLoc.Loc.get_path loc
         |> Option.value_map ~default:modified_acc ~f:(fun path ->
-               Symb.SymbolPath.get_pvar path
-               |> Option.value_map ~default:modified_acc ~f:(fun pvar ->
-                      debug "Add alias of %a -> %a " Var.pp var (Pvar.pp Pp.text) pvar ;
-                      ModifiedVarSet.add (Var.of_pvar pvar) modified_acc ) ) )
+            Symb.SymbolPath.get_pvar path
+            |> Option.value_map ~default:modified_acc ~f:(fun pvar ->
+                debug "Add alias of %a -> %a " Var.pp var (Pvar.pp Pp.text) pvar ;
+                ModifiedVarSet.add (Var.of_pvar pvar) modified_acc ) ) )
       pow_locs default
 
 

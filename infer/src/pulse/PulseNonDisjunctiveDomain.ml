@@ -248,7 +248,7 @@ module CalleeWithUnknown = struct
     | V {copy_tgt= Some (Lvar pvar); callee} ->
         Pvar.is_global pvar
         && Option.exists (IRAttributes.load callee) ~f:(fun attrs ->
-               attrs.ProcAttributes.is_cpp_copy_assignment )
+            attrs.ProcAttributes.is_cpp_copy_assignment )
     | V _ ->
         false
     | Unknown ->
@@ -380,11 +380,11 @@ module IntraDomElt = struct
     let is_passed_to_non_destructor_after_copy =
       PassedTo.find source_var passed_to
       |> CalleesWithLoc.exists (fun callee tracked_loc ->
-             match callee with
-             | V {callee} ->
-                 is_after_copy tracked_loc && not (Procname.is_destructor callee)
-             | Unknown ->
-                 false )
+          match callee with
+          | V {callee} ->
+              is_after_copy tracked_loc && not (Procname.is_destructor callee)
+          | Unknown ->
+              false )
     in
     let is_loaded_after_copy = Loads.get_loaded_locations source_var loads |> is_after_copy in
     let is_stored_after_copy = Stores.find pvar stores |> is_after_copy in
@@ -835,8 +835,8 @@ let add_specialized_direct_callee procname specialisation loc non_disj =
 let bind (execs, non_disj) ~f =
   List.rev execs
   |> List.fold ~init:([], bottom) ~f:(fun (acc, joined_non_disj) elt ->
-         let l, new_non_disj = f elt non_disj in
-         (l @ acc, join joined_non_disj new_non_disj) )
+      let l, new_non_disj = f elt non_disj in
+      (l @ acc, join joined_non_disj new_non_disj) )
 
 
 (* start executing each disjunct with an empty non-disjunctive domain; the non-disjunctive state

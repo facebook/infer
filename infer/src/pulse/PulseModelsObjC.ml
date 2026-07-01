@@ -289,9 +289,9 @@ let transfer_ownership_matchers : matcher list =
   :: transfer_ownership_namespace_matchers
   @ transfer_ownership_name_matchers
   |> List.map ~f:(fun matcher ->
-         matcher
-         |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
-         |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )
+      matcher
+      |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+      |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )
 
 
 (* Model the "framework retains a block" shape for ObjC framework APIs:
@@ -645,6 +645,6 @@ let matchers : matcher list =
        Procname.is_objc_method proc_name && Procname.is_objc_instance_method proc_name )
     &:: "copy" <>$ capt_arg_payload $--> nsobject_copy ]
   |> List.map ~f:(fun matcher ->
-         matcher
-         |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
-         |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )
+      matcher
+      |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist
+      |> ProcnameDispatcher.Call.map_matcher ~f:lift_model )

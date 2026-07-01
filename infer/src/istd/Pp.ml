@@ -172,10 +172,10 @@ let cli_args_with_verbosity ~verbose fmt args =
     List.iter args ~f:(fun arg ->
         String.chop_prefix ~prefix:"@" arg
         |> Option.iter ~f:(fun argfile ->
-               if not !at_least_one then (
-                 F.fprintf fmt "@[<hov2>  " ;
-                 at_least_one := true ) ;
-               pp_argfile in_argfiles fmt argfile ) ) ;
+            if not !at_least_one then (
+              F.fprintf fmt "@[<hov2>  " ;
+              at_least_one := true ) ;
+            pp_argfile in_argfiles fmt argfile ) ) ;
     if !at_least_one then F.fprintf fmt "@]@\n"
   and pp_argfile in_argfiles fmt fname =
     if not (IString.Set.mem fname in_argfiles) then

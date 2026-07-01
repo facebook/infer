@@ -67,20 +67,20 @@ let incorporate_new_eqs new_eqs unification =
        during summary creation) *)
   RevList.to_list new_eqs
   |> List.fold ~init:{unification with astate} ~f:(fun unification new_eq ->
-         match (new_eq : Formula.new_eq) with
-         | EqZero _ ->
-             unification
-         | Equal (v_old, v_new) -> (
-           match AddressMap.find_opt v_old unification.rev_subst with
-           | None ->
-               unification
-           | Some v_rhs_old ->
-               (* TODO: there could already be a binding for [v_new], we should do something
+      match (new_eq : Formula.new_eq) with
+      | EqZero _ ->
+          unification
+      | Equal (v_old, v_new) -> (
+        match AddressMap.find_opt v_old unification.rev_subst with
+        | None ->
+            unification
+        | Some v_rhs_old ->
+            (* TODO: there could already be a binding for [v_new], we should do something
                     similar to [visit] if so *)
-               let rev_subst =
-                 AddressMap.remove v_old unification.rev_subst |> AddressMap.add v_new v_rhs_old
-               in
-               {unification with rev_subst} ) )
+            let rev_subst =
+              AddressMap.remove v_old unification.rev_subst |> AddressMap.add v_new v_rhs_old
+            in
+            {unification with rev_subst} ) )
 
 
 let to_lhs_value unification x = to_lhs_value_ unification.astate unification.subst x

@@ -999,10 +999,10 @@ module CFG = struct
     let nodes =
       NodeName.Map.find_opt entry nodes
       |> Option.value_map ~default:nodes ~f:(fun ({first_loc; stmts} as entry_node : Node.t) ->
-             let entry_node =
-               {entry_node with stmts= (first_loc, Let {lhs= 0; rhs= Exp.Const Const.None}) :: stmts}
-             in
-             NodeName.Map.add entry entry_node nodes )
+          let entry_node =
+            {entry_node with stmts= (first_loc, Let {lhs= 0; rhs= Exp.Const Const.None}) :: stmts}
+          in
+          NodeName.Map.add entry entry_node nodes )
     in
     {nodes; entry; code_info= CodeInfo.of_code code}
 end
@@ -2878,7 +2878,7 @@ let optionally_set_predecessor ~from ~offset map =
 let change_successors_because_of_subroutine_return ~from ~return map =
   IMap.find_opt from map
   |> Option.value_map ~default:map ~f:(fun {instructions} ->
-         IMap.add from {successors= [(return, 0, Nop)]; instructions; predecessors= []} map )
+      IMap.add from {successors= [(return, 0, Nop)]; instructions; predecessors= []} map )
 
 
 let build_topological_order cfg_skeleton_without_predecessors =

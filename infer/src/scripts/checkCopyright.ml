@@ -267,17 +267,17 @@ let tuareg_magic_style_line = "(* -*- tuareg -*- *)"
 let comment_style_of_filename fname =
   List.Assoc.find com_style_of_lang ~equal:Filename.check_suffix fname
   |> Option.map ~f:(function
-       | Resolved comment_type ->
-           comment_type
-       | Dune ->
-           (* a dune file is in OCaml syntax if and only if its first line is a tuareg style line *)
-           let first_line =
-             In_channel.with_file fname ~f:(fun ic -> In_channel.input_line ic)
-             |> Option.map ~f:String.strip
-           in
-           if Option.exists first_line ~f:(fun line -> String.equal line tuareg_magic_style_line)
-           then comment_style_ocaml
-           else comment_style_lisp )
+    | Resolved comment_type ->
+        comment_type
+    | Dune ->
+        (* a dune file is in OCaml syntax if and only if its first line is a tuareg style line *)
+        let first_line =
+          In_channel.with_file fname ~f:(fun ic -> In_channel.input_line ic)
+          |> Option.map ~f:String.strip
+        in
+        if Option.exists first_line ~f:(fun line -> String.equal line tuareg_magic_style_line) then
+          comment_style_ocaml
+        else comment_style_lisp )
 
 
 let output_diff ~fname lines ?notice_range ?(monoidics = false) ?(ropas = false) com_style =

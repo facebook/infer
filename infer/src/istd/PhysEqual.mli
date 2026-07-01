@@ -13,16 +13,16 @@ open! IStd
     such as variant type, tuple or record construction. Instead of writing
 
     {[
-      let a = deconstruct a0 in
-      let b = deconstruct b0 in
-      let res = f a b in
-      if phys_equal res a then a0 else if phys_equal res b then b0 else construct res
+    let a = deconstruct a0 in
+    let b = deconstruct b0 in
+    let res = f a b in
+    if phys_equal res a then a0 else if phys_equal res b then b0 else construct res
     ]}
 
     Simply write
 
     {[
-      PhysEqual.optim2 ~res:(construct (f a b)) a0 b0
+    PhysEqual.optim2 ~res:(construct (f a b)) a0 b0
     ]} *)
 
 val optim1 : res:'a -> 'a -> 'a

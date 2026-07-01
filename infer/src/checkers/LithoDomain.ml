@@ -131,8 +131,8 @@ module Created = struct
           | CreatedLocation.ByParameter path ->
               SubstPathMap.find_opt path map
               |> Option.value_map ~default:acc ~f:(fun caller_path ->
-                     Option.value_map (find_opt caller_path caller) ~default:acc
-                       ~f:(fun caller_created -> append caller_return caller_created acc ) )
+                  Option.value_map (find_opt caller_path caller) ~default:acc
+                    ~f:(fun caller_created -> append caller_return caller_created acc ) )
         in
         CreatedLocations.fold accum_subst callee_returns acc )
 

@@ -104,10 +104,10 @@ module BuildMethodSignature = struct
           in
           let typ =
             ( match CAst_utils.get_decl_from_typ_ptr qt.qt_type_ptr with
-            | Some (CXXRecordDecl _) | Some (ClassTemplateSpecializationDecl _) ->
-                Ast_expressions.create_reference_qual_type qt
-            | _ ->
-                qt )
+              | Some (CXXRecordDecl _) | Some (ClassTemplateSpecializationDecl _) ->
+                  Ast_expressions.create_reference_qual_type qt
+              | _ ->
+                  qt )
             |> qual_type_to_sil_type tenv
           in
           let is_pointer_to_const = CType.is_pointer_to_const qt in
@@ -685,11 +685,11 @@ and add_record tenv decl_info definition_decl record_decl_info ?cxx_record_decl_
           get_superclass_list_cpp tenv definition_decl
           (* Mitigation: Sometimes the list of super classes includes the root type. *)
           |> List.filter ~f:(fun super ->
-                 let is_sil_typename = Typ.Name.equal sil_typename super in
-                 if is_sil_typename then
-                   Logging.internal_error "The type %a has a super class of itself.@\n" Typ.Name.pp
-                     sil_typename ;
-                 not is_sil_typename )
+              let is_sil_typename = Typ.Name.equal sil_typename super in
+              if is_sil_typename then
+                Logging.internal_error "The type %a has a super class of itself.@\n" Typ.Name.pp
+                  sil_typename ;
+              not is_sil_typename )
         in
         let annots =
           if Typ.Name.Cpp.is_class sil_typename then Annot.Class.cpp

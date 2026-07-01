@@ -17,8 +17,8 @@ DEPENDENCIES_DIR="$INFER_ROOT/facebook/dependencies"
 PLATFORM="$(uname)"
 SANDCASTLE=${SANDCASTLE:-}
 NCPU="$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 1)"
-INFER_OPAM_DEFAULT_SWITCH="5.3.0+flambda"
-INFER_OPAM_DEFAULT_SWITCH_OPTIONS="--package=ocaml-variants.5.3.0+options,ocaml-option-flambda"
+INFER_OPAM_DEFAULT_SWITCH="5.4.1+flambda"
+INFER_OPAM_DEFAULT_SWITCH_OPTIONS="--package=ocaml-variants.5.4.1+options,ocaml-option-flambda"
 INFER_OPAM_SWITCH=${INFER_OPAM_SWITCH:-$INFER_OPAM_DEFAULT_SWITCH}
 INFER_OPAM_SWITCH_OPTIONS=${INFER_OPAM_SWITCH_OPTIONS:-$INFER_OPAM_DEFAULT_SWITCH_OPTIONS}
 PLUGIN_DIR="$INFER_ROOT/facebook-clang-plugins"
@@ -228,6 +228,8 @@ install_opam_deps () {
 
     opam pin add --no-action charon "$INFER_ROOT"/dependencies/charon
     opam pin add --no-action name_matcher_parser "$INFER_ROOT"/dependencies/charon
+    opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
+    opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
     # camlzip checks that it is within the required version that the zip/jar file declares as
     # needed to decompress it:
     #   https://github.com/xavierleroy/camlzip/blob/dd86042ac5eba8ba21e3d98b2f3e3dd82fc14033/zip.ml#L197-L198
@@ -247,8 +249,13 @@ install_opam_deps () {
 # regardless of the LLVM toolchain used to provide the LLVM libraries, we need our own LLVM OCaml
 # bindings to be installed
 setup_local_opam_repo () {
-    opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository 2>/dev/null \
-    || opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
+    # `opam repo set-url` only refreshes the URL of an existing repo definition; it
+    # does NOT select the repo for the current switch. A freshly created switch (e.g.
+    # after an OCaml upgrade) would therefore never see the local LLVM packages and
+    # `opam install llvm.<version>` would fail. So always `opam repo add` as well to
+    # make sure the repo is selected for the current switch (it is idempotent).
+    opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository 2>/dev/null || true
+    opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
 }
 
 echo "initializing opam... " >&2

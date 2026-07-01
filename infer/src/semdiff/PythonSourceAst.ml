@@ -115,8 +115,6 @@ module Node = struct
 
   let find_field field_name fields = StringMap.find_opt field_name fields
 
-  exception UnsupportedJsonType of Yojson.Safe.t
-
   let rec of_yojson (j : Yojson.Safe.t) : t =
     match j with
     | `Assoc fields ->
@@ -136,8 +134,6 @@ module Node = struct
     | `Intlit str ->
         (* Large integers will just be handled as string. It will restrict our abilty to reason on them, except for exact matching *)
         Str str
-    | _ ->
-        raise (UnsupportedJsonType j)
 
 
   let rec to_str ?(indent = 0) ?(depth = Int.max_value) (node : t) : string =
@@ -279,9 +275,6 @@ let run ~f filename =
       None
   | Error error ->
       Some error
-  | exception Node.UnsupportedJsonType j ->
-      L.internal_error "[semdiff] unsupported JSON type in file %s: %a\n" filename Yojson.Safe.pp j ;
-      None
   | exception Py.E (error_type, error_value) ->
       L.internal_error "[semdiff] error while parsing file %s:\n  type:%s\n  value: %s\n" filename
         (Py.Object.to_string error_type) (Py.Object.to_string error_value) ;

@@ -743,4 +743,4 @@ let matchers : matcher list =
   ; ~+is_string_bridge_from_nsstring $ capt_arg_payload $+...$--> string_bridge_from_nsstring
   ; ~+is_builtin_string_literal_init <>--> builtin_string_literal_init ]
   |> List.map ~f:(fun matcher ->
-         matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )
+      matcher |> ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist )

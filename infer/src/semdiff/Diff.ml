@@ -68,8 +68,8 @@ let merge_changes removed added =
 let pp_content fmt ~prefix content =
   String.split_on_chars ~on:['\n'] content
   |> List.iteri ~f:(fun i line ->
-         let i = i + 1 in
-         F.fprintf fmt "%s%2d %s@." (prefix i) i line )
+      let i = i + 1 in
+      F.fprintf fmt "%s%2d %s@." (prefix i) i line )
 
 
 let pp fmt ~previous_content ~current_content diffs =

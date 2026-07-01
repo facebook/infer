@@ -17,7 +17,7 @@ let mk_interprocedural_t analysis_req ~f_analyze_dep ~get_payload
   let analyze_dependency ?specialization proc_name =
     Ondemand.analyze_proc_name analysis_req ?specialization ~caller_summary proc_name
     |> Result.bind ~f:(fun {Summary.payloads} ->
-           f_analyze_dep (get_payload payloads) |> AnalysisResult.of_option )
+        f_analyze_dep (get_payload payloads) |> AnalysisResult.of_option )
   in
   { InterproceduralAnalysis.proc_desc
   ; tenv
@@ -87,7 +87,7 @@ let interprocedural_file payload_field checker {Callbacks.procedures; source_fil
       (Payloads.analysis_request_of_field payload_field)
       proc_name
     |> Result.bind ~f:(fun {Summary.payloads; _} ->
-           Field.get payload_field payloads |> SafeLazy.force_option |> AnalysisResult.of_option )
+        Field.get payload_field payloads |> SafeLazy.force_option |> AnalysisResult.of_option )
   in
   checker {InterproceduralAnalysis.procedures; source_file; analyze_file_dependency}
 

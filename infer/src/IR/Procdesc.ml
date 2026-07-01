@@ -213,9 +213,9 @@ module Node = struct
   let get_siblings node =
     get_preds node
     |> ISequence.gen_sequence_list ~f:(fun parent ->
-           get_succs parent |> Sequence.of_list
-           |> Sequence.filter ~f:(fun n -> not (equal node n))
-           |> Sequence.Generator.of_sequence )
+        get_succs parent |> Sequence.of_list
+        |> Sequence.filter ~f:(fun n -> not (equal node n))
+        |> Sequence.Generator.of_sequence )
     |> Sequence.Generator.run
 
 
@@ -1125,9 +1125,9 @@ module Loop = struct
   let get_loop_head_to_source_nodes cfg =
     get_back_edges cfg
     |> List.fold ~init:NodeMap.empty ~f:(fun loop_head_to_source_list {source; target} ->
-           NodeMap.update target
-             (function Some source_list -> Some (source :: source_list) | None -> Some [source])
-             loop_head_to_source_list )
+        NodeMap.update target
+          (function Some source_list -> Some (source :: source_list) | None -> Some [source])
+          loop_head_to_source_list )
 
 
   let get_loop_head_to_loop_nodes loop_head_to_source_nodes_map =

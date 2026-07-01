@@ -272,9 +272,9 @@ module TransferFunctions = struct
   let java_store_linked_list_next locs v mem =
     PowLoc.get_linked_list_next ~lhs:locs ~rhs:(Dom.Val.get_all_locs v)
     |> Option.value_map ~default:mem ~f:(fun loc ->
-           let linked_list_index = Loc.append_field loc BufferOverrunField.java_linked_list_index in
-           let v = Dom.Mem.find linked_list_index mem |> Dom.Val.plus_a Dom.Val.Itv.one in
-           Dom.Mem.add_heap linked_list_index v mem )
+        let linked_list_index = Loc.append_field loc BufferOverrunField.java_linked_list_index in
+        let v = Dom.Mem.find linked_list_index mem |> Dom.Val.plus_a Dom.Val.Itv.one in
+        Dom.Mem.add_heap linked_list_index v mem )
 
 
   let modeled_load_of_empty_collection_opt =

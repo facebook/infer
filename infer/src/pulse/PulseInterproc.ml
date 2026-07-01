@@ -65,14 +65,14 @@ end = struct
         (* Note: Specialization.HeapPath.t are reversed *)
         List.rev stack
         |> List.fold_left ~init:(Some (HeapPath.Pvar pvar)) ~f:(fun opt_path access ->
-               Option.bind opt_path ~f:(fun path ->
-                   match access with
-                   | Access.FieldAccess fieldname ->
-                       Some (HeapPath.FieldAccess (fieldname, path))
-                   | Access.Dereference ->
-                       Some (HeapPath.Dereference path)
-                   | _ ->
-                       None ) )
+            Option.bind opt_path ~f:(fun path ->
+                match access with
+                | Access.FieldAccess fieldname ->
+                    Some (HeapPath.FieldAccess (fieldname, path))
+                | Access.Dereference ->
+                    Some (HeapPath.Dereference path)
+                | _ ->
+                    None ) )
 end
 
 type callee_index_to_visit =
@@ -257,20 +257,20 @@ end = struct
        during summary creation) *)
     RevList.to_list new_eqs
     |> List.fold ~init:{call_state with astate} ~f:(fun call_state new_eq ->
-           match (new_eq : Formula.new_eq) with
-           | EqZero _ ->
-               call_state
-           | Equal (v_old, v_new) -> (
-             match AddressMap.find_opt v_old call_state.rev_subst with
-             | None ->
-                 call_state
-             | Some v_callee_old ->
-                 (* TODO: there could already be a binding for [v_new], we should do something
+        match (new_eq : Formula.new_eq) with
+        | EqZero _ ->
+            call_state
+        | Equal (v_old, v_new) -> (
+          match AddressMap.find_opt v_old call_state.rev_subst with
+          | None ->
+              call_state
+          | Some v_callee_old ->
+              (* TODO: there could already be a binding for [v_new], we should do something
                     similar to [visit] if so *)
-                 let rev_subst =
-                   AddressMap.remove v_old call_state.rev_subst |> AddressMap.add v_new v_callee_old
-                 in
-                 {call_state with rev_subst} ) )
+              let rev_subst =
+                AddressMap.remove v_old call_state.rev_subst |> AddressMap.add v_new v_callee_old
+              in
+              {call_state with rev_subst} ) )
 end
 
 include Unsafe
@@ -1196,52 +1196,51 @@ let check_all_valid path call_state =
       (* smaller timestamp first *)
       Timestamp.compare (timestamp_of_check check1) (timestamp_of_check check2) )
   |> List.fold_result ~init:call_state.astate ~f:(fun astate ((addr_caller, hist_caller), check) ->
-         let mk_access_trace callee_access_trace =
-           Trace.ViaCall
-             { in_call= callee_access_trace
-             ; f= Call callee_proc_name
-             ; location= call_location
-             ; history= hist_caller }
-         in
-         match check with
-         | `MustBeAwaited -> (
-           match AddressAttributes.get_unawaited_awaitable addr_caller astate with
-           | None ->
-               Ok astate
-           | Some allocation_trace ->
-               Error
-                 (AccessResult.ReportableError
-                    { diagnostic=
-                        ResourceLeak
-                          {resource= Awaitable; allocation_trace; location= call_state.call_location}
-                    ; astate } ) )
-         | `MustBeValid (_timestamp, callee_access_trace, must_be_valid_reason) ->
-             let access_trace = mk_access_trace callee_access_trace in
-             AddressAttributes.check_valid path access_trace addr_caller astate
-             |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
-                    L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp
-                      addr_caller ;
-                    AccessResult.ReportableError
-                      { diagnostic=
-                          AccessToInvalidAddress
-                            { calling_context= []
-                            ; invalid_address= Decompiler.find addr_caller astate
-                            ; invalidation
-                            ; invalidation_trace
-                            ; access_trace
-                            ; may_depend_on_an_unknown_value=
-                                call_state.astate.AbductiveDomain.unknown_values
-                            ; must_be_valid_reason }
-                      ; astate } )
-         | `MustBeInitialized (_timestamp, callee_access_trace) ->
-             let access_trace = mk_access_trace callee_access_trace in
-             AddressAttributes.check_initialized path access_trace addr_caller astate
-             |> Result.map_error ~f:(fun typ ->
-                    L.d_printfln ~color:Red "ERROR: caller's %a is uninitialized!" AbstractValue.pp
-                      addr_caller ;
-                    AccessResult.ReportableError
-                      { diagnostic= ReadUninitialized {typ; calling_context= []; trace= access_trace}
-                      ; astate } ) )
+      let mk_access_trace callee_access_trace =
+        Trace.ViaCall
+          { in_call= callee_access_trace
+          ; f= Call callee_proc_name
+          ; location= call_location
+          ; history= hist_caller }
+      in
+      match check with
+      | `MustBeAwaited -> (
+        match AddressAttributes.get_unawaited_awaitable addr_caller astate with
+        | None ->
+            Ok astate
+        | Some allocation_trace ->
+            Error
+              (AccessResult.ReportableError
+                 { diagnostic=
+                     ResourceLeak
+                       {resource= Awaitable; allocation_trace; location= call_state.call_location}
+                 ; astate } ) )
+      | `MustBeValid (_timestamp, callee_access_trace, must_be_valid_reason) ->
+          let access_trace = mk_access_trace callee_access_trace in
+          AddressAttributes.check_valid path access_trace addr_caller astate
+          |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
+              L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
+              AccessResult.ReportableError
+                { diagnostic=
+                    AccessToInvalidAddress
+                      { calling_context= []
+                      ; invalid_address= Decompiler.find addr_caller astate
+                      ; invalidation
+                      ; invalidation_trace
+                      ; access_trace
+                      ; may_depend_on_an_unknown_value=
+                          call_state.astate.AbductiveDomain.unknown_values
+                      ; must_be_valid_reason }
+                ; astate } )
+      | `MustBeInitialized (_timestamp, callee_access_trace) ->
+          let access_trace = mk_access_trace callee_access_trace in
+          AddressAttributes.check_initialized path access_trace addr_caller astate
+          |> Result.map_error ~f:(fun typ ->
+              L.d_printfln ~color:Red "ERROR: caller's %a is uninitialized!" AbstractValue.pp
+                addr_caller ;
+              AccessResult.ReportableError
+                { diagnostic= ReadUninitialized {typ; calling_context= []; trace= access_trace}
+                ; astate } ) )
 
 
 let check_config_usage_at_call location ~pre:{BaseDomain.attrs= pre_attrs} subst astate =

@@ -64,10 +64,6 @@ module TenvMerger = struct
         (Domain.spawn (fun () ->
              Database.new_database_connections Primary ;
              merge_global_tenvs ~normalize:true infer_deps_file ) )
-    else if not Config.unix_fork then
-      (* [fork] without a following [exec] is unsafe on some platforms (e.g. macOS), so do the
-         merge synchronously instead of in a forked child. *)
-      `Inline infer_deps_file
     else
       match IUnix.fork () with
       | `In_the_child ->
@@ -80,9 +76,6 @@ module TenvMerger = struct
   let wait = function
     | `DomainWorker domain ->
         Domain.join domain
-    | `Inline infer_deps_file ->
-        merge_global_tenvs ~normalize:true infer_deps_file ;
-        Tenv.Global.force_load () |> ignore
     | `ForkWorker child_pid -> (
       match IUnix.waitpid child_pid with
       | Error _ as err ->

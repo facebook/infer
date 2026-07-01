@@ -346,24 +346,24 @@ let is_android_lifecycle_method tenv pname =
   let package_starts_with_android procname =
     Procname.get_class_type_name procname
     |> Option.exists ~f:(fun typename ->
-           match (typename : Typ.Name.t) with
-           | CUnion _
-           | CStruct _
-           | CppClass _
-           | CSharpClass _
-           | ErlangType _
-           | HackClass _
-           | ObjcClass _
-           | ObjcProtocol _
-           | PythonClass _
-           | SwiftClass _
-           | ObjcBlock _
-           | CFunction _
-           | SwiftClosure _ ->
-               false
-           | JavaClass java_class_name ->
-               JavaClassName.package java_class_name
-               |> Option.exists ~f:(String.is_prefix ~prefix:"android") )
+        match (typename : Typ.Name.t) with
+        | CUnion _
+        | CStruct _
+        | CppClass _
+        | CSharpClass _
+        | ErlangType _
+        | HackClass _
+        | ObjcClass _
+        | ObjcProtocol _
+        | PythonClass _
+        | SwiftClass _
+        | ObjcBlock _
+        | CFunction _
+        | SwiftClosure _ ->
+            false
+        | JavaClass java_class_name ->
+            JavaClassName.package java_class_name
+            |> Option.exists ~f:(String.is_prefix ~prefix:"android") )
   in
   let overrides_android_method tenv pname =
     PatternMatch.override_exists package_starts_with_android tenv pname

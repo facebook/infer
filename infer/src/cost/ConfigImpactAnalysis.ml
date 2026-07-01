@@ -731,18 +731,17 @@ module Dom = struct
   let prune e ({condition_checks; mem} as astate) =
     get_config_check_prune ~is_true_branch:true e mem
     |> Option.value_map ~default:astate ~f:(function
-         | `Unconditional (config, branch) ->
-             { astate with
-               condition_checks= ConditionChecks.add_config config branch condition_checks }
-         | `TempBool condition_checks' ->
-             { astate with
-               condition_checks= ConditionChecks.add_all condition_checks' ~into:condition_checks }
-         | `Conditional (conds, branch) ->
-             { astate with
-               condition_checks=
-                 LatentConfigs.fold
-                   (fun config acc -> ConditionChecks.add_latent_config config branch acc)
-                   conds condition_checks } )
+      | `Unconditional (config, branch) ->
+          {astate with condition_checks= ConditionChecks.add_config config branch condition_checks}
+      | `TempBool condition_checks' ->
+          { astate with
+            condition_checks= ConditionChecks.add_all condition_checks' ~into:condition_checks }
+      | `Conditional (conds, branch) ->
+          { astate with
+            condition_checks=
+              LatentConfigs.fold
+                (fun config acc -> ConditionChecks.add_latent_config config branch acc)
+                conds condition_checks } )
 
 
   type known_expensiveness = FbGKInteraction.known_expensiveness = KnownCheap | KnownExpensive
@@ -1121,8 +1120,8 @@ module TransferFunctions = struct
     let callee =
       get_kotlin_lazy_method ~caller:(Procdesc.get_proc_name proc_desc) ~callee
       |> Option.value_map ~default:callee ~f:(fun invoke ->
-             Logging.d_printfln_escaped "Replace (%a) to (%a)" Procname.pp callee Procname.pp invoke ;
-             invoke )
+          Logging.d_printfln_escaped "Replace (%a) to (%a)" Procname.pp callee Procname.pp invoke ;
+          invoke )
     in
     match FbGKInteraction.get_config_check ~is_param tenv callee args with
     | Some (`Config config) ->

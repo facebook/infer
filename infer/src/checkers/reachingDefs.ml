@@ -61,7 +61,7 @@ let init_reaching_defs_with_formals pdesc =
   let start_node_defs = Defs.singleton (Procdesc.get_start_node pdesc) in
   Procdesc.get_pvar_formals pdesc
   |> List.fold_left ~init:ReachingDefsMap.empty ~f:(fun acc (pvar, _) ->
-         ReachingDefsMap.add (Var.of_pvar pvar) start_node_defs acc )
+      ReachingDefsMap.add (Var.of_pvar pvar) start_node_defs acc )
 
 
 module Analyzer = AbstractInterpreter.MakeRPO (TransferFunctionsReachingDefs (NodeCFG))

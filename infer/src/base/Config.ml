@@ -408,6 +408,8 @@ let implicit_sdk_root =
 
 (** whether the infer executable looks like we are just running infer unit tests *)
 let is_running_unit_test =
+  (* dune <3.18 named the runner [inline_test_runner...]; newer dune uses
+     [inline-test-runner.exe], so match both spellings *)
   String.is_substring ~substring:"inline_test_runner" exe_basename
   || String.is_substring ~substring:"inline-test-runner" exe_basename
   || String.is_substring ~substring:"inferunit" exe_basename
@@ -3880,7 +3882,7 @@ let parse_inferconfig_path_arg () =
   Array.rev_inplace argv ;
   Array.findi argv ~f:(fun _ arg -> String.equal full_arg arg)
   |> Option.bind ~f:(fun (index, _) ->
-         if index > 0 then Some (Array.get argv (index - 1)) else None )
+      if index > 0 then Some (Array.get argv (index - 1)) else None )
 
 
 let inferconfig_file =
@@ -4885,14 +4887,14 @@ and python_async_method_naming_convention_regex =
 and python_decorator_modelled_as_await_async =
   RevList.to_list !python_decorator_modelled_as_await_async
   |> List.fold ~init:IString.PairSet.empty ~f:(fun set str ->
-         match String.substr_index_all str ~may_overlap:false ~pattern:"::" |> List.last with
-         | None ->
-             set
-         | Some last_pos ->
-             let length = String.length str in
-             let attribute_name = String.sub str ~pos:(last_pos + 2) ~len:(length - last_pos - 2) in
-             let module_name = String.sub str ~pos:0 ~len:last_pos in
-             IString.PairSet.add (module_name, attribute_name) set )
+      match String.substr_index_all str ~may_overlap:false ~pattern:"::" |> List.last with
+      | None ->
+          set
+      | Some last_pos ->
+          let length = String.length str in
+          let attribute_name = String.sub str ~pos:(last_pos + 2) ~len:(length - last_pos - 2) in
+          let module_name = String.sub str ~pos:0 ~len:last_pos in
+          IString.PairSet.add (module_name, attribute_name) set )
 
 
 and python_files_index = !python_files_index

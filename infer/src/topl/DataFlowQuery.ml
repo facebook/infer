@@ -86,15 +86,15 @@ let parse_condition path json =
     type [Yojson.Safe.t].
 
     {[
-      parse_assoc path record_name ["a"; "b"]
-        [("c_opt", `Null); ("d_opt", `Int 1)]
-        [("a", json_a); ("c_opt", json_c); ("b", json_b)]
+    parse_assoc path record_name ["a"; "b"]
+      [("c_opt", `Null); ("d_opt", `Int 1)]
+      [("a", json_a); ("c_opt", json_c); ("b", json_b)]
     ]}
 
     returns
 
     {[
-      Some ([("a", json_a); ("b", json_b)], [("c_opt", json_c); ("d_opt", `Int 1)])
+    Some ([("a", json_a); ("b", json_b)], [("c_opt", json_c); ("d_opt", `Int 1)])
     ]}
 
     Fields "a" and "b" are mandatory; fields "c_opt" and "d_opt" are optional, which is why the

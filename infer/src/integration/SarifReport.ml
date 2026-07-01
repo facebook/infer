@@ -25,9 +25,9 @@ module ReportSummary = struct
     in
     IssueHash.to_seq issue_type_counts
     |> Seq.iter (fun (issue_type, (_, issue_type_hum)) ->
-           if !is_first_rule_item then is_first_rule_item := false else F.pp_print_char fmt ',' ;
-           let issue_string = string_of_issue ~issue_type ~issue_type_hum in
-           F.pp_print_string fmt issue_string )
+        if !is_first_rule_item then is_first_rule_item := false else F.pp_print_char fmt ',' ;
+        let issue_string = string_of_issue ~issue_type ~issue_type_hum in
+        F.pp_print_string fmt issue_string )
 
 
   let add_issue summary (jsonbug : Jsonbug_t.jsonbug) =

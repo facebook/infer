@@ -361,9 +361,9 @@ module OnDisk = struct
     (* Make sure the summary in memory gets the updated err_log *)
     find_in_cache (proc_name, AnalysisRequest.all)
     |> Option.iter ~f:(fun summary ->
-           (* side-effects galore! no need to do anything except run [Errlog.merge] to update all
+        (* side-effects galore! no need to do anything except run [Errlog.merge] to update all
               existing copies of this summary's error log *)
-           Errlog.merge ~into:summary.err_log err_log |> ignore ) ;
+        Errlog.merge ~into:summary.err_log err_log |> ignore ) ;
     let report_summary = ReportSummary.of_err_log proc_name err_log in
     DBWriter.update_report_summary ~proc_uid:(Procname.to_unique_id proc_name)
       ~merge_report_summary:(ReportSummary.SQLite.serialize report_summary)

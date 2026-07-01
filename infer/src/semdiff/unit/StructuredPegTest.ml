@@ -116,8 +116,8 @@ def foo(n):
                      @param:n)  [let]
         θ_state_0 = (@theta_0 @state0 @theta:state:0)  [theta_close]
         θ_i_0 = (@theta_0
-                     ($builtins.py_make_int 0)
-                     ($builtins.py_inplace_add @theta:i:0 ($builtins.py_make_int 1)))  [theta_close]
+                    ($builtins.py_make_int 0)
+                    ($builtins.py_inplace_add @theta:i:0 ($builtins.py_make_int 1)))  [theta_close]
         n11    = (@phi
                      ($builtins.py_bool ($builtins.py_compare_lt ($builtins.py_make_int 0) @param:n))
                      (@exit_value
@@ -187,15 +187,15 @@ def foo(items):
         n7     = @theta:s:0  [load_fast: locals]
         θ_state_0 = (@theta_0 @state0 @theta:state:0)  [theta_close]
         θ_x_0 = (@theta_0
-                     @undef
-                     ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items)))  [theta_close]
+                    @undef
+                    ($builtins.py_next_iter @theta:state:0 ($builtins.py_get_iter @state0 @param:items)))  [theta_close]
         θ_s_0 = (@theta_0
-                     ($builtins.py_make_int 0)
-                     ($builtins.py_inplace_add
-                         @theta:s:0
-                         ($builtins.py_next_iter
-                             @theta:state:0
-                             ($builtins.py_get_iter @state0 @param:items))))  [theta_close]
+                    ($builtins.py_make_int 0)
+                    ($builtins.py_inplace_add
+                        @theta:s:0
+                        ($builtins.py_next_iter
+                            @theta:state:0
+                            ($builtins.py_get_iter @state0 @param:items))))  [theta_close]
         --- root ---
         (@ret @theta:state:0 @theta:s:0)
         |}]

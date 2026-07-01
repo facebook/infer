@@ -80,10 +80,10 @@ let report_missing_required_prop proc_desc err_log prop parent_typename ~create_
     make_single_trace create_loc message
     :: make_single_trace create_loc create_message
     :: List.map call_chain ~f:(fun Domain.MethodCallPrefix.{procname; location} ->
-           let call_msg =
-             F.asprintf "calls %a" (Procname.pp_simplified_string ~withclass:false) procname
-           in
-           Errlog.make_trace_element 0 location call_msg [] )
+        let call_msg =
+          F.asprintf "calls %a" (Procname.pp_simplified_string ~withclass:false) procname
+        in
+        Errlog.make_trace_element 0 location call_msg [] )
   in
   Reporting.log_issue proc_desc err_log ~loc:create_loc ~ltr LithoRequiredProps
     IssueType.missing_required_prop message
@@ -323,6 +323,6 @@ let checker ({InterproceduralAnalysis.proc_desc; tenv} as analysis_data) =
   let initial = Domain.init tenv proc_name (Procdesc.get_pvar_formals proc_desc) ret_path in
   Analyzer.compute_post (init_analysis_data analysis_data) ~initial proc_desc
   |> Option.map ~f:(fun post ->
-         let is_void_func = Typ.is_void ret_typ in
-         let post = Domain.get_summary ~is_void_func post in
-         if should_report proc_name tenv then report analysis_data post else post )
+      let is_void_func = Typ.is_void ret_typ in
+      let post = Domain.get_summary ~is_void_func post in
+      if should_report proc_name tenv then report analysis_data post else post )

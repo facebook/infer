@@ -47,9 +47,9 @@ module ReportSummary = struct
         if Int.equal count2 count1 then String.compare issue_type2 issue_type1
         else Int.compare count2 count1 )
     |> List.iter ~f:(fun (issue_type, (count, issue_type_hum)) ->
-           let issue_string = string_of_issue ~issue_type ~issue_type_hum in
-           pp_n_spaces (max_issue_length - String.length issue_string) fmt ;
-           F.fprintf fmt "  %s: %d@\n" issue_string count )
+        let issue_string = string_of_issue ~issue_type ~issue_type_hum in
+        pp_n_spaces (max_issue_length - String.length issue_string) fmt ;
+        F.fprintf fmt "  %s: %d@\n" issue_string count )
 
 
   let add_issue summary (jsonbug : Jsonbug_t.jsonbug) =
@@ -151,10 +151,10 @@ let create_from_json ~quiet ~console_limit ~report_txt ~report_json =
       let summary =
         List.filter report ~f:is_user_visible
         |> List.foldi ~init:(ReportSummary.mk_empty ()) ~f:(fun i summary jsonbug ->
-               let summary' = ReportSummary.add_issue summary jsonbug in
-               one_issue_to_report_txt report_txt_fmt (i, jsonbug) ;
-               one_issue_to_console ~console_limit i jsonbug ;
-               summary' )
+            let summary' = ReportSummary.add_issue summary jsonbug in
+            one_issue_to_report_txt report_txt_fmt (i, jsonbug) ;
+            one_issue_to_console ~console_limit i jsonbug ;
+            summary' )
       in
       let n_issues = summary.n_issues in
       if Int.equal n_issues 0 then (

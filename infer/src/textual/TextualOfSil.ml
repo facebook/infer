@@ -617,20 +617,20 @@ module ProcDescBridge = struct
     let locals =
       P.get_locals pdesc
       |> List.map ~f:(fun ({name; typ} : ProcAttributes.var_data) ->
-             let var = Mangled.to_string name |> sanitize_ident |> VarName.of_string in
-             let typ =
-               if SilTyp.is_void typ then
-                 VarName.Map.find_opt var locals_type
-                 |> Option.value
-                      ~default:
-                        ( match lang with
-                        | Lang.Java ->
-                            Typ.(mk_ptr (Struct TypeNameBridge.java_lang_object))
-                        | _ ->
-                            Typ.Void )
-               else TypBridge.of_sil typ
-             in
-             (var, Typ.mk_without_attributes typ) )
+          let var = Mangled.to_string name |> sanitize_ident |> VarName.of_string in
+          let typ =
+            if SilTyp.is_void typ then
+              VarName.Map.find_opt var locals_type
+              |> Option.value
+                   ~default:
+                     ( match lang with
+                     | Lang.Java ->
+                         Typ.(mk_ptr (Struct TypeNameBridge.java_lang_object))
+                     | _ ->
+                         Typ.Void )
+            else TypBridge.of_sil typ
+          in
+          (var, Typ.mk_without_attributes typ) )
     in
     let exit_loc = P.get_loc pdesc |> LocationBridge.of_sil in
     let fresh_ident = None in
@@ -662,21 +662,21 @@ module ModuleBridge = struct
     let globals =
       TextualDecls.fold_globals env ~init:[] ~f:(fun acc _ pvar -> Global pvar :: acc)
       |> List.sort ~compare:(fun a b ->
-             match (a, b) with Global a, Global b -> VarName.compare a.name b.name | _ -> 0 )
+          match (a, b) with Global a, Global b -> VarName.compare a.name b.name | _ -> 0 )
     in
     let structs =
       TextualDecls.fold_structs env ~init:[] ~f:(fun acc _ struct_ -> Struct struct_ :: acc)
       |> List.sort ~compare:(fun a b ->
-             match (a, b) with Struct a, Struct b -> TypeName.compare a.name b.name | _ -> 0 )
+          match (a, b) with Struct a, Struct b -> TypeName.compare a.name b.name | _ -> 0 )
     in
     let procdecls =
       TextualDecls.fold_procdecls env ~init:[] ~f:(fun acc procname -> Procdecl procname :: acc)
       |> List.sort ~compare:(fun a b ->
-             match (a, b) with
-             | Procdecl a, Procdecl b ->
-                 QualifiedProcName.compare a.qualified_name b.qualified_name
-             | _ ->
-                 0 )
+          match (a, b) with
+          | Procdecl a, Procdecl b ->
+              QualifiedProcName.compare a.qualified_name b.qualified_name
+          | _ ->
+              0 )
     in
     let decls = procdecls @ structs @ globals @ decls in
     let attrs = [Attr.mk_source_language lang] in
