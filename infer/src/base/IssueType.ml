@@ -1071,7 +1071,7 @@ let weak_self_in_noescape_block =
 
 let tree_borrows_ub =
   register ~category:MemoryError ~id:"TREE_BORROWS_UB" Error TreeBorrows
-  ~user_documentation:[%blob "./documentation/issues/TREE_BORROWS.md"]
+    ~user_documentation:[%blob "./documentation/issues/TREE_BORROWS.md"]
 
 
 let lineage_flow =

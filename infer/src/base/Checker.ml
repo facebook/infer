@@ -424,8 +424,7 @@ let config_unsafe checker =
                 "Detects undefined behaviour under Rust's Tree Borrows aliasing discipline, as a \
                  sub-domain of Pulse. Prototype, Rust-only, off by default." }
       ; support= mk_support_func ~rust:ExperimentalSupport ()
-      ; short_documentation=
-          "A Rust-only aliasing checker that reports undefined behaviour."
+      ; short_documentation= "A Rust-only aliasing checker that reports undefined behaviour."
       ; cli_flags= Some {deprecated= []; show_in_help= true}
       ; enabled_by_default= false
       ; activates= [Pulse] }
