@@ -331,7 +331,28 @@ let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option 
           Some (mk_term env.cc "@enumerate" (List.map actual_args ~f:(convert_exp env)))
         else if List.is_empty actual_args then
           Option.map (empty_constructor_builtin s) ~f:(fun builtin -> mk_term env.cc builtin [])
-        else None
+        else (
+          (* A keyword dict constructor dict(k1=v1, ..., kn=vn) == the literal {k1: v1, ...}: it is
+             py_call(dict, py_build_tuple(k1,...,kn), v1,...,vn). Model it as the same pure
+             py_build_map the literal produces, so it matches whether the codemod keeps dict(...) or
+             rewrites it to {...}. (Mirrors the convert_exp case, for the statement path.) *)
+          match args with
+          | _ :: T.Exp.Call {proc= tproc; args= kwnames} :: vals
+            when String.is_substring s ~substring:"(@str dict)"
+                 && String.is_suffix (qualified_procname_to_string tproc) ~suffix:"py_build_tuple"
+                 && Int.equal (List.length kwnames) (List.length vals)
+                 && List.for_all kwnames ~f:(function
+                      | T.Exp.Call {proc= p} ->
+                          String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_string"
+                      | _ ->
+                          false ) ->
+              let pairs =
+                List.concat_map (List.zip_exn kwnames vals) ~f:(fun (k, v) ->
+                    [convert_exp env k; convert_exp env v] )
+              in
+              Some (mk_term env.cc "$builtins.py_build_map" pairs)
+          | _ ->
+              None )
     | None ->
         None )
   | _ ->
