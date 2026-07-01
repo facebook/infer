@@ -172,29 +172,55 @@ let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
       mk_term cc "@field" [convert_exp env inner_exp; mk_const cc field_name]
   | Index (e1, e2) ->
       mk_term cc "@index" [convert_exp env e1; convert_exp env e2]
-  | Call {proc; args= callee :: rest}
-    when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_call"
-         && List.for_all rest ~f:(fun e ->
-                match e with
-                | T.Exp.Call {proc= p} ->
-                    String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_none"
-                | _ ->
-                    false ) -> (
-      (* An empty container constructor call set()/dict()/list()/tuple() (no positional args, only an
-         optional None kwargs placeholder). The statement-level conversion handles this via
-         try_simplify_py_call, but a recovered default expression is converted here, so apply the
-         same canonicalisation to the pure empty-container builtin. *)
-      let callee_atom = convert_exp env callee in
-      match
-        empty_constructor_builtin
-          (F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth cc) callee_atom)
-      with
-      | Some builtin ->
-          mk_term cc builtin []
-      | None ->
-          mk_term cc
-            (qualified_procname_to_string proc)
-            (callee_atom :: List.map rest ~f:(convert_exp env)) )
+  | Call {proc; args}
+    when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_call" -> (
+      let generic () =
+        mk_term cc (qualified_procname_to_string proc) (List.map args ~f:(convert_exp env))
+      in
+      let callee_is s callee =
+        String.is_substring
+          (F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth cc) (convert_exp env callee))
+          ~substring:(Printf.sprintf "(@str %s)" s)
+      in
+      match args with
+      | callee :: T.Exp.Call {proc= tproc; args= kwnames} :: vals
+        when String.is_suffix (qualified_procname_to_string tproc) ~suffix:"py_build_tuple"
+             && (not (List.is_empty vals))
+             && Int.equal (List.length kwnames) (List.length vals)
+             && List.for_all kwnames ~f:(function
+                  | T.Exp.Call {proc= p} ->
+                      String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_string"
+                  | _ ->
+                      false )
+             && callee_is "dict" callee ->
+          (* A keyword dict constructor dict(k1=v1, ..., kn=vn) is equivalent to the literal
+             {k1: v1, ..., kn: vn}. It is compiled as py_call(dict, py_build_tuple(k1,...,kn),
+             v1,...,vn); rewrite it to the same pure py_build_map(k1, v1, ..., kn, vn) the literal
+             produces, so a codemod that turns a dict(...) default into a {...} literal is equivalent. *)
+          let pairs =
+            List.concat_map (List.zip_exn kwnames vals) ~f:(fun (k, v) ->
+                [convert_exp env k; convert_exp env v] )
+          in
+          mk_term cc "$builtins.py_build_map" pairs
+      | callee :: rest
+        when List.for_all rest ~f:(function
+               | T.Exp.Call {proc= p} ->
+                   String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_none"
+               | _ ->
+                   false ) -> (
+          (* An empty container constructor call set()/dict()/list()/tuple() (no positional args, only
+             an optional None kwargs placeholder). Canonicalise to the pure empty-container builtin,
+             matching how the statement-level try_simplify_py_call handles the guard body. *)
+          match
+            empty_constructor_builtin
+              (F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth cc) (convert_exp env callee))
+          with
+          | Some builtin ->
+              mk_term cc builtin []
+          | None ->
+              generic () )
+      | _ ->
+          generic () )
   | Call {proc; args}
     when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_make_function" -> (
       (* A B006 codemod rewrites a parameter's default value (e.g. [] -> None) and its type
