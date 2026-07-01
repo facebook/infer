@@ -273,6 +273,14 @@ let is_reader_call proc =
   || is_py_builtin proc "py_has_next_iter"
 
 
+(* CPython compiles a list/set/dict display of >=3 constant elements to an empty BUILD_x followed by
+   an in-place X_EXTEND / X_UPDATE of a constant tuple/map. These in-place updates mutate the fresh
+   container, so their effect belongs to the container's value, not to the heap. We model them as
+   pure so a container built this way has its elements in its value term (see convert_instr). *)
+let container_update_ops = ["py_list_extend"; "py_set_update"; "py_dict_update"; "py_dict_merge"]
+
+let is_container_update proc = List.exists container_update_ops ~f:(is_py_builtin proc)
+
 let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option =
   match args with
   | Var callee_id :: _ -> (
@@ -345,6 +353,19 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
       match id with Some id -> Env.bind_ident env id atom | None -> env )
   | Let {id= _; exp= Call {proc}} when is_py_builtin proc "py_nullify_locals" ->
       env
+  | Let {id; exp= Call {proc; args= [Var target; iterable]}} when is_container_update proc ->
+      (* In-place X_EXTEND / X_UPDATE of a freshly built container (the >=3-element literal idiom).
+         Rebind the container ident to a pure <update>(container, iterable) value term, without
+         threading state, so its elements live in the value -- matching a default recovered as the
+         same expression (see resolve_exp / build_extend_map). Allocation identity is ignored for
+         B006. The update returns None, but binding [id] to the updated container is harmless and
+         convenient. *)
+      let header = qualified_procname_to_string proc in
+      let container_atom = convert_exp env (Var target) in
+      let iterable_atom = convert_exp env iterable in
+      let atom = mk_term cc header [container_atom; iterable_atom] in
+      let env = Env.bind_ident env target atom in
+      Option.value_map id ~default:env ~f:(fun id -> Env.bind_ident env id atom)
   | Let {id; exp} -> (
       let eff = match exp with Call {proc; args} -> classify_call env proc args | _ -> Pure in
       let atom =
@@ -674,39 +695,79 @@ let build_ident_def_map (proc : T.ProcDesc.t) : T.Exp.t T.Ident.Map.t =
           match instr with Let {id= Some id; exp; _} -> T.Ident.Map.add id exp acc | _ -> acc ) )
 
 
-(* Inline SSA idents to obtain a self-contained expression (module body is acyclic SSA). *)
-let rec resolve_exp (defs : T.Exp.t T.Ident.Map.t) (exp : T.Exp.t) : T.Exp.t =
+(* Map each container ident to the in-place X_EXTEND / X_UPDATE calls applied to it, in order. Used
+   to recover the elements of a >=3-element list/set/dict literal, whose elements are added by such
+   updates rather than being part of the BUILD_x expression (see resolve_exp). *)
+let build_extend_map (proc : T.ProcDesc.t) : T.Exp.t list T.Ident.Map.t =
+  List.fold proc.nodes ~init:T.Ident.Map.empty ~f:(fun acc (node : T.Node.t) ->
+      List.fold node.instrs ~init:acc ~f:(fun acc (instr : T.Instr.t) ->
+          match instr with
+          | Let {exp= Call {proc= p; args= Var target :: _} as call; _} when is_container_update p
+            ->
+              let prev = Option.value (T.Ident.Map.find_opt target acc) ~default:[] in
+              T.Ident.Map.add target (prev @ [call]) acc
+          | _ ->
+              acc ) )
+
+
+(* Inline SSA idents to obtain a self-contained expression (module body is acyclic SSA). When an
+   ident denotes a container that is then updated in place (the >=3-element literal idiom), fold the
+   recorded updates back into the expression so the recovered value carries its elements. *)
+let rec resolve_exp ?(extends = T.Ident.Map.empty) (defs : T.Exp.t T.Ident.Map.t) (exp : T.Exp.t) :
+    T.Exp.t =
   match exp with
   | Var id -> (
-    match T.Ident.Map.find_opt id defs with Some e -> resolve_exp defs e | None -> exp )
+      let base =
+        match T.Ident.Map.find_opt id defs with
+        | Some e ->
+            resolve_exp ~extends defs e
+        | None ->
+            exp
+      in
+      match T.Ident.Map.find_opt id extends with
+      | Some updates ->
+          List.fold updates ~init:base ~f:(fun acc update ->
+              match update with
+              | T.Exp.Call {proc; args= _container :: rest; kind; caller_ret_annots} ->
+                  T.Exp.Call
+                    { proc
+                    ; args= acc :: List.map rest ~f:(resolve_exp ~extends defs)
+                    ; kind
+                    ; caller_ret_annots }
+              | _ ->
+                  acc )
+      | None ->
+          base )
   | Load {exp; typ} ->
-      Load {exp= resolve_exp defs exp; typ}
+      Load {exp= resolve_exp ~extends defs exp; typ}
   | Field {exp; field} ->
-      Field {exp= resolve_exp defs exp; field}
+      Field {exp= resolve_exp ~extends defs exp; field}
   | Index (e1, e2) ->
-      Index (resolve_exp defs e1, resolve_exp defs e2)
+      Index (resolve_exp ~extends defs e1, resolve_exp ~extends defs e2)
   | Call {proc; args; kind; caller_ret_annots} ->
-      Call {proc; args= List.map args ~f:(resolve_exp defs); kind; caller_ret_annots}
+      Call {proc; args= List.map args ~f:(resolve_exp ~extends defs); kind; caller_ret_annots}
   | Apply {closure; args} ->
-      Apply {closure= resolve_exp defs closure; args= List.map args ~f:(resolve_exp defs)}
+      Apply
+        { closure= resolve_exp ~extends defs closure
+        ; args= List.map args ~f:(resolve_exp ~extends defs) }
   | If {cond; then_; else_} ->
-      If {cond; then_= resolve_exp defs then_; else_= resolve_exp defs else_}
+      If {cond; then_= resolve_exp ~extends defs then_; else_= resolve_exp ~extends defs else_}
   | Closure _ | Const _ | Lvar _ | Typ _ ->
       exp
 
 
 (* Find the defaults tuple passed to py_make_function for [target] in the module body. *)
-let find_make_function_defaults (module_body : T.ProcDesc.t) (target : T.QualifiedProcName.t)
-    (defs : T.Exp.t T.Ident.Map.t) : T.Exp.t list option =
+let find_make_function_defaults ?(extends = T.Ident.Map.empty) (module_body : T.ProcDesc.t)
+    (target : T.QualifiedProcName.t) (defs : T.Exp.t T.Ident.Map.t) : T.Exp.t list option =
   List.find_map module_body.nodes ~f:(fun (node : T.Node.t) ->
       List.find_map node.instrs ~f:(fun (instr : T.Instr.t) ->
           match instr with
           | Let {exp= Call {proc; args}; _} when is_py_builtin proc "py_make_function" -> (
             match args with
             | closure_arg :: defaults_arg :: _ -> (
-              match resolve_exp defs closure_arg with
+              match resolve_exp ~extends defs closure_arg with
               | Closure {proc= cproc} when T.QualifiedProcName.equal cproc target -> (
-                match resolve_exp defs defaults_arg with
+                match resolve_exp ~extends defs defaults_arg with
                 | Call {proc= tproc; args= elems} when is_py_builtin tproc "py_build_tuple" ->
                     Some elems
                 | _ ->
@@ -734,7 +795,8 @@ let extract_defaults (module_ : T.Module.t) (proc : T.ProcDesc.t) : T.Exp.t Stri
     List.find_map module_.decls ~f:(function
       | T.Module.Proc p ->
           let defs = build_ident_def_map p in
-          find_make_function_defaults p target defs
+          let extends = build_extend_map p in
+          find_make_function_defaults ~extends p target defs
       | _ ->
           None )
   in
