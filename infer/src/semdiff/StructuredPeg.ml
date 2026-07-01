@@ -106,6 +106,12 @@ let empty_constructor_builtin callee_repr =
   else None
 
 
+(* Depth used when printing a callee atom to recover its shallow [(@str name)]. A small cap keeps the
+   print cheap even when the callee carries a deep, hash-consed state-threading DAG -- a full print
+   expands that DAG as a tree (see pp_nested_term) and dominates conversion time on large functions. *)
+let callee_name_depth = 6
+
+
 (* ---------- ASCII tree printer ---------- *)
 
 let pp_tree ?(depth = 32) cc fmt atom =
@@ -179,7 +185,10 @@ let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
          try_simplify_py_call, but a recovered default expression is converted here, so apply the
          same canonicalisation to the pure empty-container builtin. *)
       let callee_atom = convert_exp env callee in
-      match empty_constructor_builtin (F.asprintf "%a" (CC.pp_nested_term cc) callee_atom) with
+      match
+        empty_constructor_builtin
+          (F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth cc) callee_atom)
+      with
       | Some builtin ->
           mk_term cc builtin []
       | None ->
@@ -286,7 +295,11 @@ let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option 
   | Var callee_id :: _ -> (
     match Env.lookup_ident env callee_id with
     | Some callee_atom ->
-        let s = F.asprintf "%a" (CC.pp_nested_term env.cc) callee_atom in
+        (* Only the shallow callee name [(@str X)] matters here. Cap the print depth: a full print
+           would exponentially expand the deep, hash-consed state-threading DAG carried by the
+           callee (e.g. py_load_global's state argument), which dominates conversion time on large
+           functions. *)
+        let s = F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth env.cc) callee_atom in
         let actual_args = match args with _ :: _ :: rest -> rest | _ -> [] in
         if String.is_substring s ~substring:"(@str enumerate)" then
           Some (mk_term env.cc "@enumerate" (List.map actual_args ~f:(convert_exp env)))
