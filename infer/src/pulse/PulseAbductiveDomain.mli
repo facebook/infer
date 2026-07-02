@@ -65,6 +65,8 @@ type t = private
   ; decompiler: Decompiler.t
   ; topl: PulseTopl.state
         (** state at of the Topl monitor at the current program point, when Topl is enabled *)
+  ; tree_borrows: PulseTreeBorrows.state
+        (** state of the Tree Borrows checker at the current program point, when it is enabled *)
   ; need_dynamic_type_specialization: AbstractValue.Set.t
         (** a set of abstract values that are used as receiver of method calls in the instructions
             reached so far *)

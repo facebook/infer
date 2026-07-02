@@ -78,6 +78,7 @@ type t =
   ; path_condition: Formula.t
   ; decompiler: (Decompiler.t[@yojson.opaque] [@ignore])
   ; topl: (PulseTopl.state[@yojson.opaque])
+  ; tree_borrows: (PulseTreeBorrows.state[@yojson.opaque])
   ; need_dynamic_type_specialization: (AbstractValue.Set.t[@yojson.opaque])
   ; transitive_info: (TransitiveInfo.t[@yojson.opaque])
   ; recursive_calls: (PulseMutualRecursion.Set.t[@yojson.opaque])
@@ -100,6 +101,7 @@ let pp_ ~is_summary f
      ; need_dynamic_type_specialization
      ; transitive_info
      ; topl
+     ; tree_borrows
      ; recursive_calls
      ; loop_header_info
      ; loop_invariant_under_inference
@@ -129,11 +131,13 @@ let pp_ ~is_summary f
      loop_header_info=%a@;\
      %tunknown_values=%b@;\
      skipped_calls=%a@;\
-     Topl=%a@]"
+     Topl=%a@;\
+     TreeBorrows=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
     need_dynamic_type_specialization TransitiveInfo.pp transitive_info PulseMutualRecursion.Set.pp
     recursive_calls PulseLoopHeaderInfo.pp loop_header_info pp_loop_invariant_under_inference
-    unknown_values SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    unknown_values SkippedCalls.pp skipped_calls PulseTopl.pp_state topl PulseTreeBorrows.pp
+    tree_borrows
 
 
 let pp = pp_ ~is_summary:false
@@ -1543,6 +1547,7 @@ let empty =
   ; decompiler= Decompiler.empty
   ; need_dynamic_type_specialization= AbstractValue.Set.empty
   ; topl= PulseTopl.start () (* TODO: this defeats the laziness of Topl.automaton *)
+  ; tree_borrows= PulseTreeBorrows.start ()
   ; transitive_info= TransitiveInfo.bottom
   ; recursive_calls= PulseMutualRecursion.Set.empty
   ; loop_header_info= PulseLoopHeaderInfo.empty
@@ -1560,6 +1565,7 @@ let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_
   ; decompiler
   ; need_dynamic_type_specialization
   ; topl
+  ; tree_borrows= PulseTreeBorrows.start ()
   ; transitive_info
   ; recursive_calls
   ; loop_header_info

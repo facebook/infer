@@ -1372,6 +1372,16 @@ module PulseTransferFunctions = struct
               PulseTransitiveAccessChecker.record_load rhs_exp loc astates
             else astates
           in
+          let astates =
+            if Config.is_checker_enabled TreeBorrows then
+              List.map astates ~f:(function
+                | ContinueProgram astate ->
+                    ContinueProgram
+                      (PulseTreeBorrowsOperations.exec_load ~id:lhs_id ~e:rhs_exp ~typ ~loc astate)
+                | other ->
+                    other )
+            else astates
+          in
           (List.take astates limit, path, non_disj)
       | Store {e1= lhs_exp; e2= rhs_exp; loc; typ} ->
           (* [*lhs_exp := rhs_exp] *)
@@ -1427,6 +1437,11 @@ module PulseTransferFunctions = struct
             let astate =
               if Topl.is_active () then
                 topl_store_step tenv path loc ~lhs:lhs_exp ~rhs:rhs_exp astate
+              else astate
+            in
+            let astate =
+              if Config.is_checker_enabled TreeBorrows then
+                PulseTreeBorrowsOperations.exec_store ~lhs:lhs_exp ~rhs:rhs_exp ~typ ~loc astate
               else astate
             in
             match lhs_exp with
