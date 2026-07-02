@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -1065,5 +1066,24 @@ public class ResourceLeaks {
     MyResource r;
     r = new MyResource(new FileInputStream("testing.txt"));
     r.indirectCallToUnknownClose();
+  }
+  // Optional resource tests (issue #1951)
+
+  // The FileInputStream wrapped by the Optional is never closed -> leak.
+  public void optionalOfNotClosedBad(boolean b) throws IOException {
+    Optional<FileInputStream> stream;
+    if (b) {
+      stream = Optional.of(new FileInputStream("file.txt"));
+    }
+  }
+
+  // Retrieving the wrapped stream and closing it releases the resource.
+  public void optionalOfClosedOk() throws IOException {
+    Optional<FileInputStream> stream = Optional.of(new FileInputStream("file.txt"));
+    stream.get().close();
+  }
+
+  public void optionalOfNullableNotClosedBad() throws IOException {
+    Optional<FileInputStream> stream = Optional.ofNullable(new FileInputStream("file.txt"));
   }
 }

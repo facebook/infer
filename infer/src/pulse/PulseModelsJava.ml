@@ -602,6 +602,31 @@ module Boolean = struct
     assign_ret res
 end
 
+module Optional = struct
+  let internal_value = mk_java_field "java.util" "Optional" "__infer_model_backing_optional"
+
+  let init this init_value : model =
+    let open DSL.Syntax in
+    start_model @@ fun () -> store_field ~ref:this internal_value init_value
+
+
+  let of_ init_value : model =
+    let open DSL.Syntax in
+    start_model
+    @@ fun () ->
+    let* res = fresh () in
+    let* () = lift_to_monad (init res init_value) in
+    assign_ret res
+
+
+  let get this : model =
+    let open DSL.Syntax in
+    start_model
+    @@ fun () ->
+    let* value = load_access this (FieldAccess internal_value) in
+    assign_ret value
+end
+
 module Preconditions = struct
   let check_not_null (address, hist) : model_no_non_disj =
    fun {location; path; ret= ret_id, _} astate ->
@@ -818,6 +843,12 @@ let matchers : matcher list =
     &:: "booleanValue" <>$ capt_arg_payload $--> Boolean.boolean_val
   ; +map_context_tenv (PatternMatch.Java.implements_lang "Boolean")
     &:: "valueOf" <>$ capt_arg_payload $--> Boolean.value_of
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.Optional")
+    &:: "of" <>$ capt_arg_payload $--> Optional.of_
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.Optional")
+    &:: "ofNullable" <>$ capt_arg_payload $--> Optional.of_
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.Optional")
+    &:: "get" <>$ capt_arg_payload $--> Optional.get
   ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
     &:: "checkNotNull" $ capt_arg_payload $+...$--> Preconditions.check_not_null |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements_google "common.base.Preconditions")
