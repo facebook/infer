@@ -29,12 +29,13 @@ fn main() {
           store &var_0 <- null:void
           store &x_1 <- 42:int
           store &ref_x_2 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
-          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &ref_x_2
-          n1:int = load n0
-          store &y_3 <- n1:int
+          n0 = __rust_retag(&ref_x_2, &x_1, 0)
+          n1:.rust_mut = "const" .rust_pointer = "reference" *int = load &ref_x_2
+          n2:int = load n1
+          store &y_3 <- n2:int
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n3:void = load &var_0
+          ret n3
 
     }
     |}]
@@ -63,20 +64,23 @@ fn main() {
           store &var_0 <- null:void
           store &x_1 <- 42:int
           store &ref_1_2 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0 = __rust_retag(&ref_1_2, &x_1, 0)
           store &ref_2_3 <- &ref_1_2:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int
+          n1 = __rust_retag(&ref_2_3, &ref_1_2, 0)
           store &ref_3_4 <- &ref_2_3:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int
-          n0:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load &ref_3_4
-          n1:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load n0
-          store &var_6 <- n1:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int
-          n2:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load &var_6
-          n3:.rust_mut = "const" .rust_pointer = "reference" *int = load n2
-          store &var_7 <- n3:.rust_mut = "const" .rust_pointer = "reference" *int
-          n4:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_7
-          n5:int = load n4
-          store &y_5 <- n5:int
+          n2 = __rust_retag(&ref_3_4, &ref_2_3, 0)
+          n3:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load &ref_3_4
+          n4:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load n3
+          store &var_6 <- n4:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int
+          n5:.rust_mut = "const" .rust_pointer = "reference" *.rust_mut = "const" .rust_pointer = "reference" *int = load &var_6
+          n6:.rust_mut = "const" .rust_pointer = "reference" *int = load n5
+          store &var_7 <- n6:.rust_mut = "const" .rust_pointer = "reference" *int
+          n7:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_7
+          n8:int = load n7
+          store &y_5 <- n8:int
           store &var_0 <- null:void
-          n6:void = load &var_0
-          ret n6
+          n9:void = load &var_0
+          ret n9
 
     }
     |}]
@@ -101,11 +105,12 @@ fn main() {
           store &var_0 <- null:void
           store &y_1 <- 10:int
           store &var_3 <- &y_1:.rust_mut = "mut" .rust_pointer = "reference" *int
-          n0:.rust_mut = "mut" .rust_pointer = "reference" *int = load &var_3
-          store &x_2 <- n0:.rust_mut = "mut" .rust_pointer = "pointer" *int
+          n0 = __rust_retag(&var_3, &y_1, 1)
+          n1:.rust_mut = "mut" .rust_pointer = "reference" *int = load &var_3
+          store &x_2 <- n1:.rust_mut = "mut" .rust_pointer = "pointer" *int
           store &var_0 <- null:void
-          n1:void = load &var_0
-          ret n1
+          n2:void = load &var_0
+          ret n2
 
     }
     |}]
@@ -130,9 +135,10 @@ fn main() {
           store &var_0 <- null:void
           store &y_1 <- 10:int
           store &x_2 <- &y_1:.rust_mut = "mut" .rust_pointer = "reference" *int
+          n0 = __rust_retag(&x_2, &y_1, 1)
           store &var_0 <- null:void
-          n0:void = load &var_0
-          ret n0
+          n1:void = load &var_0
+          ret n1
 
     }
     |}]
@@ -157,11 +163,12 @@ fn main() {
           store &var_0 <- null:void
           store &y_1 <- 10:int
           store &var_3 <- &y_1:.rust_mut = "const" .rust_pointer = "reference" *int
-          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_3
-          store &x_2 <- n0:.rust_mut = "const" .rust_pointer = "pointer" *int
+          n0 = __rust_retag(&var_3, &y_1, 0)
+          n1:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_3
+          store &x_2 <- n1:.rust_mut = "const" .rust_pointer = "pointer" *int
           store &var_0 <- null:void
-          n1:void = load &var_0
-          ret n1
+          n2:void = load &var_0
+          ret n2
 
     }
     |}]
@@ -186,9 +193,10 @@ fn main() {
           store &var_0 <- null:void
           store &y_1 <- 10:int
           store &x_2 <- &y_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0 = __rust_retag(&x_2, &y_1, 0)
           store &var_0 <- null:void
-          n0:void = load &var_0
-          ret n0
+          n1:void = load &var_0
+          ret n1
 
     }
     |}]
@@ -214,13 +222,18 @@ fn main() {
           store &var_0 <- null:void
           store &x_1 <- 42:int
           store &var_4 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
-          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_4
-          store &var_3 <- n0:.rust_mut = "const" .rust_pointer = "reference" *int
-          n1:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_3
-          store &y_2 <- n1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0 = __rust_retag(&var_4, &x_1, 0)
+          n1:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_4
+          store &var_3 <- n1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n2:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_4
+          n3 = __rust_retag(&var_3, n2, 0)
+          n4:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_3
+          store &y_2 <- n4:.rust_mut = "const" .rust_pointer = "reference" *int
+          n5:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_3
+          n6 = __rust_retag(&y_2, n5, 0)
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n7:void = load &var_0
+          ret n7
 
     }
     |}]
@@ -245,11 +258,14 @@ fn main() {
           store &var_0 <- null:void
           store &x_1 <- 42:int
           store &ptr_2 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
-          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &ptr_2
-          store &y_3 <- n0:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0 = __rust_retag(&ptr_2, &x_1, 0)
+          n1:.rust_mut = "const" .rust_pointer = "reference" *int = load &ptr_2
+          store &y_3 <- n1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n2:.rust_mut = "const" .rust_pointer = "reference" *int = load &ptr_2
+          n3 = __rust_retag(&y_3, n2, 0)
           store &var_0 <- null:void
-          n1:void = load &var_0
-          ret n1
+          n4:void = load &var_0
+          ret n4
 
     }
     |}]
@@ -276,11 +292,12 @@ let%expect_test "mutate_through_reference" =
           store &var_0 <- null:void
           store &x_1 <- 10:int
           store &ptr_2 <- &x_1:.rust_mut = "mut" .rust_pointer = "reference" *int
-          n0:.rust_mut = "mut" .rust_pointer = "reference" *int = load &ptr_2
-          store n0 <- 20:int
+          n0 = __rust_retag(&ptr_2, &x_1, 1)
+          n1:.rust_mut = "mut" .rust_pointer = "reference" *int = load &ptr_2
+          store n1 <- 20:int
           store &var_0 <- null:void
-          n1:void = load &var_0
-          ret n1
+          n2:void = load &var_0
+          ret n2
 
     }
     |}]
@@ -485,22 +502,24 @@ let%expect_test "box_use_after_free" =
           store &var_6 <- __sil_cast(<.rust_mut = "const" .rust_pointer = "pointer" *int>, n1):.rust_mut = "const" .rust_pointer = "pointer" *int
           n2:.rust_mut = "const" .rust_pointer = "pointer" *int = load &var_6
           store &var_4 <- n2:.rust_mut = "const" .rust_pointer = "reference" *int
-          n3:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_4
-          store &var_3 <- n3:.rust_mut = "const" .rust_pointer = "pointer" *int
-          n4:.rust_mut = "const" .rust_pointer = "pointer" *int = load &var_3
-          store &ptr_1 <- n4:.rust_mut = "const" .rust_pointer = "pointer" *int
-          n5:*int = load &x_2
-          n6 = __sil_free(n5)
+          n3:.rust_mut = "const" .rust_pointer = "pointer" *int = load &var_6
+          n4 = __rust_retag(&var_4, n3, 0)
+          n5:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_4
+          store &var_3 <- n5:.rust_mut = "const" .rust_pointer = "pointer" *int
+          n6:.rust_mut = "const" .rust_pointer = "pointer" *int = load &var_3
+          store &ptr_1 <- n6:.rust_mut = "const" .rust_pointer = "pointer" *int
+          n7:*int = load &x_2
+          n8 = __sil_free(n7)
           jmp node_3
           .handlers node_4
 
       #node_3:
-          n7:.rust_mut = "const" .rust_pointer = "pointer" *int = load &ptr_1
-          n8:int = load n7
-          store &ub_5 <- n8:int
+          n9:.rust_mut = "const" .rust_pointer = "pointer" *int = load &ptr_1
+          n10:int = load n9
+          store &ub_5 <- n10:int
           store &var_0 <- null:void
-          n9:void = load &var_0
-          ret n9
+          n11:void = load &var_0
+          ret n11
 
       #node_4:
           throw "UnwindResume"
@@ -539,16 +558,20 @@ fn main() {
           store &x_1 <- 1:int
           store &y_2 <- 2:int
           store &shared_3 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
+          n0 = __rust_retag(&shared_3, &x_1, 0)
           store &exclusive_4 <- &y_2:.rust_mut = "mut" .rust_pointer = "reference" *int
+          n1 = __rust_retag(&exclusive_4, &y_2, 1)
           store &var_6 <- &x_1:.rust_mut = "const" .rust_pointer = "reference" *int
-          n0:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_6
-          store &raw_const_5 <- n0:.rust_mut = "const" .rust_pointer = "pointer" *int
+          n2 = __rust_retag(&var_6, &x_1, 0)
+          n3:.rust_mut = "const" .rust_pointer = "reference" *int = load &var_6
+          store &raw_const_5 <- n3:.rust_mut = "const" .rust_pointer = "pointer" *int
           store &var_8 <- &y_2:.rust_mut = "mut" .rust_pointer = "reference" *int
-          n1:.rust_mut = "mut" .rust_pointer = "reference" *int = load &var_8
-          store &raw_mut_7 <- n1:.rust_mut = "mut" .rust_pointer = "pointer" *int
+          n4 = __rust_retag(&var_8, &y_2, 1)
+          n5:.rust_mut = "mut" .rust_pointer = "reference" *int = load &var_8
+          store &raw_mut_7 <- n5:.rust_mut = "mut" .rust_pointer = "pointer" *int
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n6:void = load &var_0
+          ret n6
 
     }
     |}]

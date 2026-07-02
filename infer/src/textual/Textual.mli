@@ -449,6 +449,8 @@ module ProcDecl : sig
 
   val boxdrop_name : QualifiedProcName.t
 
+  val rust_retag_name : QualifiedProcName.t
+
   val is_allocate_array_builtin : QualifiedProcName.t -> bool
 
   val is_get_lazy_class_builtin : QualifiedProcName.t -> bool

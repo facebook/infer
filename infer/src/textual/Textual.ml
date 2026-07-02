@@ -212,6 +212,8 @@ let builtin_boxnew = "__sil_boxnew"
 
 let builtin_boxdrop = "__sil_boxdrop"
 
+let builtin_rust_retag = "__rust_retag"
+
 module BaseTypeName : sig
   include NAME
 
@@ -904,6 +906,8 @@ module ProcDecl = struct
 
   let boxdrop_name = make_toplevel_name builtin_boxdrop Location.Unknown
 
+  let rust_retag_name = make_toplevel_name builtin_rust_retag Location.Unknown
+
   let unop_table : (Unop.t * string) list =
     [(Neg, "__sil_neg"); (BNot, "__sil_bnot"); (LNot, "__sil_lnot")]
 
@@ -1103,7 +1107,9 @@ module ProcDecl = struct
     [builtin_assert_fail; builtin_swift_alloc; builtin_objc_alloc] @ unop_builtins @ binop_builtins
 
 
-  let builtins_rust = [builtin_free; builtin_malloc; builtin_boxnew; builtin_boxdrop]
+  let builtins_rust =
+    [builtin_free; builtin_malloc; builtin_boxnew; builtin_boxdrop; builtin_rust_retag]
+
 
   let is_builtin (proc : QualifiedProcName.t) lang =
     match lang with

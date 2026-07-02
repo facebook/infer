@@ -766,7 +766,7 @@ module Call = struct
         match (procname : Procname.t) with
         | ObjC_Cpp objc_cpp ->
             on_objc_cpp context objc_cpp args
-        | C c ->
+        | C c | Rust c ->
             on_c context c args
         | Hack hack ->
             on_hack context hack args

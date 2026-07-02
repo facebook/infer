@@ -268,9 +268,10 @@ fn main() {
       #node_0:
           store &var_0 <- null:void
           store &var_3 <- &adder_1:.rust_mut = "const" .rust_pointer = "reference" *dummy::Adder
-          n0:.rust_mut = "const" .rust_pointer = "reference" *dummy::Adder = load &var_3
-          n1 = dummy::{dummy::Adder}::add(n0, 1, 2)
-          store &three_2 <- n1:int
+          n0 = __rust_retag(&var_3, &adder_1, 0)
+          n1:.rust_mut = "const" .rust_pointer = "reference" *dummy::Adder = load &var_3
+          n2 = dummy::{dummy::Adder}::add(n1, 1, 2)
+          store &three_2 <- n2:int
           jmp node_2
           .handlers node_1
 
@@ -279,8 +280,8 @@ fn main() {
 
       #node_2:
           store &var_0 <- null:void
-          n2:void = load &var_0
-          ret n2
+          n3:void = load &var_0
+          ret n3
 
     }
 

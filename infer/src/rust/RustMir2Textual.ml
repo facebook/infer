@@ -778,6 +778,25 @@ let mk_field_store_instrs_from_rvalues ~loc crate lexp enclosing_class place_map
   |> List.mapi ~f:(mk_field_store_instr_from_rvalue ~loc crate lexp enclosing_class place_map)
 
 
+let mk_retag_instrs ~loc (rhs : Charon.Generated_Expressions.rvalue) ~(dst : Textual.Exp.t)
+    ~(borrowed : Textual.Exp.t) : Textual.Instr.t list =
+  let mk_retag ~is_mut =
+    let bool_exp b = Textual.Exp.Const (Textual.Const.Int (if b then Z.one else Z.zero)) in
+    let call =
+      Textual.Exp.call_non_virtual Textual.ProcDecl.rust_retag_name [dst; borrowed; bool_exp is_mut]
+    in
+    [Textual.Instr.Let {id= None; exp= call; loc}]
+  in
+  match rhs with
+  | RvRef (_, borrow_kind, _) ->
+      let is_mut =
+        match borrow_kind with BMut | BTwoPhaseMut | BUniqueImmutable -> true | _ -> false
+      in
+      mk_retag ~is_mut
+  | _ ->
+      []
+
+
 let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_UllbcAst.statement) :
     Textual.Instr.t list =
   let loc = location_from_span statement.span in
@@ -851,7 +870,7 @@ let mk_instr crate (place_map : place_map_ty) (statement : Charon.Generated_Ullb
       let exp1 = mk_exp_from_place ~loc crate place_map lhs in
       let exp2, typ = mk_exp_from_rvalue ~loc crate rhs place_map in
       let store_instr = Textual.Instr.Store {exp1; typ= Some typ; exp2; loc} in
-      [store_instr]
+      store_instr :: mk_retag_instrs ~loc rhs ~dst:exp1 ~borrowed:exp2
   | StorageDead _ ->
       []
   | StorageLive _ ->
