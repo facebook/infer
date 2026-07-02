@@ -92,10 +92,15 @@ let proc_structurally_equal proc_old proc_new =
 let semdiff_b007_textual ~debug (module_old : Textual.Module.t) (module_new : Textual.Module.t) =
   let procs_old = extract_procs module_old in
   let procs_new = extract_procs module_new in
+  let class_bodies = StructuredPeg.find_class_body_procs module_old in
+  let is_class_body proc =
+    List.mem class_bodies proc.Textual.ProcDesc.procdecl.qualified_name
+      ~equal:Textual.QualifiedProcName.equal
+  in
   let all_accepted =
     List.for_all procs_old ~f:(fun proc_old ->
         let name = proc_fun_name proc_old in
-        if is_module_body name then true
+        if is_module_body name || is_class_body proc_old then true
         else
           match List.find procs_new ~f:(fun p -> String.equal (proc_fun_name p) name) with
           | None ->
@@ -117,10 +122,15 @@ let semdiff_b007_textual ~debug (module_old : Textual.Module.t) (module_new : Te
 let semdiff_b006_textual ~debug (module_old : Textual.Module.t) (module_new : Textual.Module.t) =
   let procs_old = extract_procs module_old in
   let procs_new = extract_procs module_new in
+  let class_bodies = StructuredPeg.find_class_body_procs module_old in
+  let is_class_body proc =
+    List.mem class_bodies proc.Textual.ProcDesc.procdecl.qualified_name
+      ~equal:Textual.QualifiedProcName.equal
+  in
   let all_accepted =
     List.for_all procs_old ~f:(fun proc_old ->
         let name = proc_fun_name proc_old in
-        if is_module_body name then true
+        if is_module_body name || is_class_body proc_old then true
         else
           match List.find procs_new ~f:(fun p -> String.equal (proc_fun_name p) name) with
           | None ->

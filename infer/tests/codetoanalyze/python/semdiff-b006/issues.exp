@@ -1,2 +1,7 @@
 previous/different_body.py, current/different_body.py, SEMDIFF MISMATCH: [something wrong]
+previous/different_dict_kwargs_value.py, current/different_dict_kwargs_value.py, SEMDIFF MISMATCH: [something wrong]
+previous/different_kwonly_wrong_guard.py, current/different_kwonly_wrong_guard.py, SEMDIFF MISMATCH: [something wrong]
+previous/different_list_wrong_contents.py, current/different_list_wrong_contents.py, SEMDIFF MISMATCH: [something wrong]
+previous/different_method_wrong_guard.py, current/different_method_wrong_guard.py, SEMDIFF MISMATCH: [something wrong]
+previous/different_set_constructor_wrong_guard.py, current/different_set_constructor_wrong_guard.py, SEMDIFF MISMATCH: [something wrong]
 previous/different_wrong_literal.py, current/different_wrong_literal.py, SEMDIFF MISMATCH: [something wrong]

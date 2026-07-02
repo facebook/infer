@@ -131,6 +131,13 @@ module BisimUF = struct
   let is_equiv uf a b = CC.Atom.equal (find uf a) (find uf b)
 end
 
+module AtomPairSet = Stdlib.Set.Make (struct
+  type t = CC.Atom.t * CC.Atom.t
+
+  let compare (a1, b1) (a2, b2) =
+    match CC.Atom.compare a1 a2 with 0 -> CC.Atom.compare b1 b2 | c -> c
+end)
+
 let bisimilar cc ~(theta_headers : CC.header list) a1 a2 =
   let uf = BisimUF.create () in
   let theta_head_set =
@@ -146,26 +153,35 @@ let bisimilar cc ~(theta_headers : CC.header list) a1 a2 =
         List.find_map theta_headers ~f:(fun (header : CC.header) ->
             CC.find_class_enode cc ~header a )
   in
+  (* Memoise pairs already proven equivalent. The PEG is a DAG (shared state-threading subterms), so
+     without this the recursion re-explores shared children exponentially. Caching only positive
+     results is sound and monotone: [uf] (the coinductive hypothesis) only grows, so a pair proven
+     equivalent stays equivalent. *)
+  let proven = ref AtomPairSet.empty in
   let rec check a1 a2 =
     let a1 = CC.representative cc a1 in
     let a2 = CC.representative cc a2 in
-    CC.Atom.equal a1 a2 || BisimUF.is_equiv uf a1 a2
-    ||
-    match (find_enode a1, find_enode a2) with
-    | Some {head= h1; children= cs1}, Some {head= h2; children= cs2} ->
-        let h1 = CC.representative cc h1 in
-        let h2 = CC.representative cc h2 in
-        CC.Atom.equal h1 h2
-        && Int.equal (List.length cs1) (List.length cs2)
-        &&
-        ( (* coinductive hypothesis: assume equivalence before recursing into children,
-             but only for @theta_N (fixpoint) nodes — these create cycles in the PEG *)
-          if is_theta_head h1 then BisimUF.union uf a1 a2 ;
-          List.for_all2_exn cs1 cs2 ~f:check )
-    | None, None ->
-        false
-    | _ ->
-        false
+    if CC.Atom.equal a1 a2 || BisimUF.is_equiv uf a1 a2 || AtomPairSet.mem (a1, a2) !proven then true
+    else
+      let r =
+        match (find_enode a1, find_enode a2) with
+        | Some {head= h1; children= cs1}, Some {head= h2; children= cs2} ->
+            let h1 = CC.representative cc h1 in
+            let h2 = CC.representative cc h2 in
+            CC.Atom.equal h1 h2
+            && Int.equal (List.length cs1) (List.length cs2)
+            &&
+            ( (* coinductive hypothesis: assume equivalence before recursing into children,
+                 but only for @theta_N (fixpoint) nodes — these create cycles in the PEG *)
+              if is_theta_head h1 then BisimUF.union uf a1 a2 ;
+              List.for_all2_exn cs1 cs2 ~f:check )
+        | None, None ->
+            false
+        | _ ->
+            false
+      in
+      if r then proven := AtomPairSet.add (a1, a2) !proven ;
+      r
   in
   check a1 a2
 

@@ -91,6 +91,27 @@ let mk_term cc name args = CC.mk_term cc (CC.mk_header cc name) args
 
 let qualified_procname_to_string proc = F.asprintf "%a" T.QualifiedProcName.pp proc
 
+(* An empty container constructor -- set()/dict()/list()/tuple() -- builds the same value as the
+   corresponding literal ({}, [], ()) ; the only difference is allocation identity, deliberately
+   ignored for B006. Model it as the pure empty-container builtin so that a default constructed in
+   the module body (recovered as prev's default) and the same value rebuilt in the migrated guard
+   body (curr) are equal regardless of their state context -- and so that dict() ~ {} and list() ~
+   []. [callee_repr] is the printed callee atom, which contains e.g. [(@str set)]. *)
+let empty_constructor_builtin callee_repr =
+  let is name = String.is_substring callee_repr ~substring:(Printf.sprintf "(@str %s)" name) in
+  if is "set" then Some "$builtins.py_build_set"
+  else if is "dict" then Some "$builtins.py_build_map"
+  else if is "list" then Some "$builtins.py_build_list"
+  else if is "tuple" then Some "$builtins.py_build_tuple"
+  else None
+
+
+(* Depth used when printing a callee atom to recover its shallow [(@str name)]. A small cap keeps the
+   print cheap even when the callee carries a deep, hash-consed state-threading DAG -- a full print
+   expands that DAG as a tree (see pp_nested_term) and dominates conversion time on large functions. *)
+let callee_name_depth = 6
+
+
 (* ---------- ASCII tree printer ---------- *)
 
 let pp_tree ?(depth = 32) cc fmt atom =
@@ -151,6 +172,71 @@ let rec convert_exp (env : Env.t) (exp : T.Exp.t) : CC.Atom.t =
       mk_term cc "@field" [convert_exp env inner_exp; mk_const cc field_name]
   | Index (e1, e2) ->
       mk_term cc "@index" [convert_exp env e1; convert_exp env e2]
+  | Call {proc; args}
+    when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_call" -> (
+      let generic () =
+        mk_term cc (qualified_procname_to_string proc) (List.map args ~f:(convert_exp env))
+      in
+      let callee_is s callee =
+        String.is_substring
+          (F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth cc) (convert_exp env callee))
+          ~substring:(Printf.sprintf "(@str %s)" s)
+      in
+      match args with
+      | callee :: T.Exp.Call {proc= tproc; args= kwnames} :: vals
+        when String.is_suffix (qualified_procname_to_string tproc) ~suffix:"py_build_tuple"
+             && (not (List.is_empty vals))
+             && Int.equal (List.length kwnames) (List.length vals)
+             && List.for_all kwnames ~f:(function
+                  | T.Exp.Call {proc= p} ->
+                      String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_string"
+                  | _ ->
+                      false )
+             && callee_is "dict" callee ->
+          (* A keyword dict constructor dict(k1=v1, ..., kn=vn) is equivalent to the literal
+             {k1: v1, ..., kn: vn}. It is compiled as py_call(dict, py_build_tuple(k1,...,kn),
+             v1,...,vn); rewrite it to the same pure py_build_map(k1, v1, ..., kn, vn) the literal
+             produces, so a codemod that turns a dict(...) default into a {...} literal is equivalent. *)
+          let pairs =
+            List.concat_map (List.zip_exn kwnames vals) ~f:(fun (k, v) ->
+                [convert_exp env k; convert_exp env v] )
+          in
+          mk_term cc "$builtins.py_build_map" pairs
+      | callee :: rest
+        when List.for_all rest ~f:(function
+               | T.Exp.Call {proc= p} ->
+                   String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_none"
+               | _ ->
+                   false ) -> (
+          (* An empty container constructor call set()/dict()/list()/tuple() (no positional args, only
+             an optional None kwargs placeholder). Canonicalise to the pure empty-container builtin,
+             matching how the statement-level try_simplify_py_call handles the guard body. *)
+          match
+            empty_constructor_builtin
+              (F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth cc) (convert_exp env callee))
+          with
+          | Some builtin ->
+              mk_term cc builtin []
+          | None ->
+              generic () )
+      | _ ->
+          generic () )
+  | Call {proc; args}
+    when String.is_suffix (qualified_procname_to_string proc) ~suffix:"py_make_function" -> (
+      (* A B006 codemod rewrites a parameter's default value (e.g. [] -> None) and its type
+         annotation (T -> Optional[T]). Both are baked into py_make_function's arguments
+         (default_values, default_values_kw, annotations) at the definition site, i.e. the enclosing
+         module body or class body. The default's actual effect is modelled inside the callee via
+         @phi(@is_default, ...), so these definition-site arguments are redundant here and would only
+         make the enclosing proc diverge spuriously (the class body of a migrated method is not the
+         skipped __module_body__). Keep the closure (function identity) and the captured cells; drop
+         the defaults/kwdefaults/annotations. *)
+      let header = qualified_procname_to_string proc in
+      match args with
+      | closure :: _default_values :: _default_values_kw :: _annotations :: cells ->
+          mk_term cc header (convert_exp env closure :: List.map cells ~f:(convert_exp env))
+      | _ ->
+          mk_term cc header (List.map args ~f:(convert_exp env)) )
   | Call {proc; args} ->
       let header = qualified_procname_to_string proc in
       mk_term cc header (List.map args ~f:(convert_exp env))
@@ -222,16 +308,51 @@ let is_reader_call proc =
   || is_py_builtin proc "py_has_next_iter"
 
 
+(* CPython compiles a list/set/dict display of >=3 constant elements to an empty BUILD_x followed by
+   an in-place X_EXTEND / X_UPDATE of a constant tuple/map. These in-place updates mutate the fresh
+   container, so their effect belongs to the container's value, not to the heap. We model them as
+   pure so a container built this way has its elements in its value term (see convert_instr). *)
+let container_update_ops = ["py_list_extend"; "py_set_update"; "py_dict_update"; "py_dict_merge"]
+
+let is_container_update proc = List.exists container_update_ops ~f:(is_py_builtin proc)
+
 let try_simplify_py_call (env : Env.t) (args : T.Exp.t list) : CC.Atom.t option =
   match args with
   | Var callee_id :: _ -> (
     match Env.lookup_ident env callee_id with
     | Some callee_atom ->
-        let s = F.asprintf "%a" (CC.pp_nested_term env.cc) callee_atom in
+        (* Only the shallow callee name [(@str X)] matters here. Cap the print depth: a full print
+           would exponentially expand the deep, hash-consed state-threading DAG carried by the
+           callee (e.g. py_load_global's state argument), which dominates conversion time on large
+           functions. *)
+        let s = F.asprintf "%a" (CC.pp_nested_term ~depth:callee_name_depth env.cc) callee_atom in
+        let actual_args = match args with _ :: _ :: rest -> rest | _ -> [] in
         if String.is_substring s ~substring:"(@str enumerate)" then
-          let actual_args = match args with _ :: _ :: rest -> rest | _ -> [] in
           Some (mk_term env.cc "@enumerate" (List.map actual_args ~f:(convert_exp env)))
-        else None
+        else if List.is_empty actual_args then
+          Option.map (empty_constructor_builtin s) ~f:(fun builtin -> mk_term env.cc builtin [])
+        else (
+          (* A keyword dict constructor dict(k1=v1, ..., kn=vn) == the literal {k1: v1, ...}: it is
+             py_call(dict, py_build_tuple(k1,...,kn), v1,...,vn). Model it as the same pure
+             py_build_map the literal produces, so it matches whether the codemod keeps dict(...) or
+             rewrites it to {...}. (Mirrors the convert_exp case, for the statement path.) *)
+          match args with
+          | _ :: T.Exp.Call {proc= tproc; args= kwnames} :: vals
+            when String.is_substring s ~substring:"(@str dict)"
+                 && String.is_suffix (qualified_procname_to_string tproc) ~suffix:"py_build_tuple"
+                 && Int.equal (List.length kwnames) (List.length vals)
+                 && List.for_all kwnames ~f:(function
+                      | T.Exp.Call {proc= p} ->
+                          String.is_suffix (qualified_procname_to_string p) ~suffix:"py_make_string"
+                      | _ ->
+                          false ) ->
+              let pairs =
+                List.concat_map (List.zip_exn kwnames vals) ~f:(fun (k, v) ->
+                    [convert_exp env k; convert_exp env v] )
+              in
+              Some (mk_term env.cc "$builtins.py_build_map" pairs)
+          | _ ->
+              None )
     | None ->
         None )
   | _ ->
@@ -274,8 +395,16 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
           Equations.add env.equations ~name:id_name ~atom ~origin:"load_fast: locals" ;
           {env with ident_map= T.Ident.Map.add id atom env.ident_map}
       | None ->
-          L.die InternalError "StructuredPeg: py_load_fast: variable %s not found in locals map"
-            name )
+          (* Defensive: a name may be loaded without being seeded in the locals map -- e.g. *args /
+             **kwargs (not listed in python_args), or a name read on a path before its first store.
+             Rather than abort the whole file, model it as an opaque parameter-like value and seed it,
+             so the analysis degrades gracefully. It is the same on both sides, so the equivalence
+             verdict is preserved. *)
+          let atom = mk_term cc ("@param:" ^ name) [] in
+          let id_name = F.asprintf "%a" T.Ident.pp id in
+          Equations.add env.equations ~name:id_name ~atom ~origin:"load_fast: opaque (unseeded)" ;
+          let locals = LocalsMap.store env.locals ~name ~atom in
+          {env with locals; ident_map= T.Ident.Map.add id atom env.ident_map} )
     | None ->
         L.die InternalError "StructuredPeg: py_load_fast: could not extract variable name" )
   | Let {id= None; exp= Call {proc; args}} when is_py_builtin proc "py_store_fast" -> (
@@ -292,6 +421,19 @@ let convert_instr (env : Env.t) (instr : T.Instr.t) : Env.t =
       match id with Some id -> Env.bind_ident env id atom | None -> env )
   | Let {id= _; exp= Call {proc}} when is_py_builtin proc "py_nullify_locals" ->
       env
+  | Let {id; exp= Call {proc; args= [Var target; iterable]}} when is_container_update proc ->
+      (* In-place X_EXTEND / X_UPDATE of a freshly built container (the >=3-element literal idiom).
+         Rebind the container ident to a pure <update>(container, iterable) value term, without
+         threading state, so its elements live in the value -- matching a default recovered as the
+         same expression (see resolve_exp / build_extend_map). Allocation identity is ignored for
+         B006. The update returns None, but binding [id] to the updated container is harmless and
+         convenient. *)
+      let header = qualified_procname_to_string proc in
+      let container_atom = convert_exp env (Var target) in
+      let iterable_atom = convert_exp env iterable in
+      let atom = mk_term cc header [container_atom; iterable_atom] in
+      let env = Env.bind_ident env target atom in
+      Option.value_map id ~default:env ~f:(fun id -> Env.bind_ident env id atom)
   | Let {id; exp} -> (
       let eff = match exp with Call {proc; args} -> classify_call env proc args | _ -> Pure in
       let atom =
@@ -609,11 +751,10 @@ and collect_modified_vars (sir : S.t) : IString.Set.t =
 (* ---------- Default-argument extraction (for B006) ---------- *)
 
 (* In CPython, default argument values are evaluated at the function-definition site, not in the
-   function body. The frontend emits them in the enclosing __module_body__ as the second argument
-   of py_make_function. To reason about defaults we recover, for each parameter that has one, the
-   (self-contained) default expression. *)
-
-let is_module_body_name name = String.is_substring name ~substring:"__module_body__"
+   function body. The frontend emits them in the enclosing scope (the __module_body__ for a
+   top-level function, or the class body for a method) as the second argument of py_make_function.
+   To reason about defaults we recover, for each parameter that has one, the (self-contained)
+   default expression. *)
 
 (* Map each SSA ident defined in [proc] to its defining expression. *)
 let build_ident_def_map (proc : T.ProcDesc.t) : T.Exp.t T.Ident.Map.t =
@@ -622,43 +763,115 @@ let build_ident_def_map (proc : T.ProcDesc.t) : T.Exp.t T.Ident.Map.t =
           match instr with Let {id= Some id; exp; _} -> T.Ident.Map.add id exp acc | _ -> acc ) )
 
 
-(* Inline SSA idents to obtain a self-contained expression (module body is acyclic SSA). *)
-let rec resolve_exp (defs : T.Exp.t T.Ident.Map.t) (exp : T.Exp.t) : T.Exp.t =
+(* Map each container ident to the in-place X_EXTEND / X_UPDATE calls applied to it, in order. Used
+   to recover the elements of a >=3-element list/set/dict literal, whose elements are added by such
+   updates rather than being part of the BUILD_x expression (see resolve_exp). *)
+let build_extend_map (proc : T.ProcDesc.t) : T.Exp.t list T.Ident.Map.t =
+  List.fold proc.nodes ~init:T.Ident.Map.empty ~f:(fun acc (node : T.Node.t) ->
+      List.fold node.instrs ~init:acc ~f:(fun acc (instr : T.Instr.t) ->
+          match instr with
+          | Let {exp= Call {proc= p; args= Var target :: _} as call; _} when is_container_update p
+            ->
+              let prev = Option.value (T.Ident.Map.find_opt target acc) ~default:[] in
+              T.Ident.Map.add target (prev @ [call]) acc
+          | _ ->
+              acc ) )
+
+
+(* Inline SSA idents to obtain a self-contained expression (module body is acyclic SSA). When an
+   ident denotes a container that is then updated in place (the >=3-element literal idiom), fold the
+   recorded updates back into the expression so the recovered value carries its elements. *)
+let rec resolve_exp ?(extends = T.Ident.Map.empty) (defs : T.Exp.t T.Ident.Map.t) (exp : T.Exp.t) :
+    T.Exp.t =
   match exp with
   | Var id -> (
-    match T.Ident.Map.find_opt id defs with Some e -> resolve_exp defs e | None -> exp )
+      let base =
+        match T.Ident.Map.find_opt id defs with
+        | Some e ->
+            resolve_exp ~extends defs e
+        | None ->
+            exp
+      in
+      match T.Ident.Map.find_opt id extends with
+      | Some updates ->
+          List.fold updates ~init:base ~f:(fun acc update ->
+              match update with
+              | T.Exp.Call {proc; args= _container :: rest; kind; caller_ret_annots} ->
+                  T.Exp.Call
+                    { proc
+                    ; args= acc :: List.map rest ~f:(resolve_exp ~extends defs)
+                    ; kind
+                    ; caller_ret_annots }
+              | _ ->
+                  acc )
+      | None ->
+          base )
   | Load {exp; typ} ->
-      Load {exp= resolve_exp defs exp; typ}
+      Load {exp= resolve_exp ~extends defs exp; typ}
   | Field {exp; field} ->
-      Field {exp= resolve_exp defs exp; field}
+      Field {exp= resolve_exp ~extends defs exp; field}
   | Index (e1, e2) ->
-      Index (resolve_exp defs e1, resolve_exp defs e2)
+      Index (resolve_exp ~extends defs e1, resolve_exp ~extends defs e2)
   | Call {proc; args; kind; caller_ret_annots} ->
-      Call {proc; args= List.map args ~f:(resolve_exp defs); kind; caller_ret_annots}
+      Call {proc; args= List.map args ~f:(resolve_exp ~extends defs); kind; caller_ret_annots}
   | Apply {closure; args} ->
-      Apply {closure= resolve_exp defs closure; args= List.map args ~f:(resolve_exp defs)}
+      Apply
+        { closure= resolve_exp ~extends defs closure
+        ; args= List.map args ~f:(resolve_exp ~extends defs) }
   | If {cond; then_; else_} ->
-      If {cond; then_= resolve_exp defs then_; else_= resolve_exp defs else_}
+      If {cond; then_= resolve_exp ~extends defs then_; else_= resolve_exp ~extends defs else_}
   | Closure _ | Const _ | Lvar _ | Typ _ ->
       exp
 
 
-(* Find the defaults tuple passed to py_make_function for [target] in the module body. *)
-let find_make_function_defaults (module_body : T.ProcDesc.t) (target : T.QualifiedProcName.t)
-    (defs : T.Exp.t T.Ident.Map.t) : T.Exp.t list option =
+(* Find the positional defaults tuple and the keyword-only defaults map passed to py_make_function
+   for [target] in the enclosing scope. Returns (positional default exprs, keyword-only (name,
+   default) pairs). The kwonly defaults come from py_make_function's third argument (kwdefaults),
+   shaped as py_build_map(py_make_string k1, v1, py_make_string k2, v2, ...). *)
+let find_make_function_defaults ?(extends = T.Ident.Map.empty) (module_body : T.ProcDesc.t)
+    (target : T.QualifiedProcName.t) (defs : T.Exp.t T.Ident.Map.t) :
+    (T.Exp.t list * (string * T.Exp.t) list) option =
+  let parse_kwdefaults e =
+    match e with
+    | T.Exp.Call {proc; args} when is_py_builtin proc "py_build_map" ->
+        let rec pairs = function
+          | k :: v :: rest -> (
+            match k with
+            | T.Exp.Call {proc= p; args= [T.Exp.Const (Str name)]}
+              when is_py_builtin p "py_make_string" ->
+                (name, v) :: pairs rest
+            | _ ->
+                pairs rest )
+          | _ ->
+              []
+        in
+        pairs args
+    | _ ->
+        []
+  in
   List.find_map module_body.nodes ~f:(fun (node : T.Node.t) ->
       List.find_map node.instrs ~f:(fun (instr : T.Instr.t) ->
           match instr with
           | Let {exp= Call {proc; args}; _} when is_py_builtin proc "py_make_function" -> (
             match args with
-            | closure_arg :: defaults_arg :: _ -> (
-              match resolve_exp defs closure_arg with
-              | Closure {proc= cproc} when T.QualifiedProcName.equal cproc target -> (
-                match resolve_exp defs defaults_arg with
-                | Call {proc= tproc; args= elems} when is_py_builtin tproc "py_build_tuple" ->
-                    Some elems
-                | _ ->
-                    Some [] )
+            | closure_arg :: defaults_arg :: rest -> (
+              match resolve_exp ~extends defs closure_arg with
+              | Closure {proc= cproc} when T.QualifiedProcName.equal cproc target ->
+                  let pos =
+                    match resolve_exp ~extends defs defaults_arg with
+                    | Call {proc= tproc; args= elems} when is_py_builtin tproc "py_build_tuple" ->
+                        elems
+                    | _ ->
+                        []
+                  in
+                  let kw =
+                    match rest with
+                    | kwd :: _ ->
+                        parse_kwdefaults (resolve_exp ~extends defs kwd)
+                    | _ ->
+                        []
+                  in
+                  Some (pos, kw)
               | _ ->
                   None )
             | _ ->
@@ -675,29 +888,66 @@ let extract_defaults (module_ : T.Module.t) (proc : T.ProcDesc.t) : T.Exp.t Stri
     List.find_map proc.procdecl.attributes ~f:T.Attr.find_python_args |> Option.value ~default:[]
   in
   let target = proc.procdecl.qualified_name in
-  let module_body =
+  (* The py_make_function that bakes in [target]'s defaults lives in the enclosing scope: the
+     __module_body__ for a top-level function, or the class body proc for a method. Scan every proc
+     to find it (the class body is itself a RegularFunction, not the skipped __module_body__). *)
+  let defaults =
     List.find_map module_.decls ~f:(function
-      | T.Module.Proc p
-        when is_module_body_name (qualified_procname_to_string p.procdecl.qualified_name) ->
-          Some p
+      | T.Module.Proc p ->
+          let defs = build_ident_def_map p in
+          let extends = build_extend_map p in
+          find_make_function_defaults ~extends p target defs
       | _ ->
           None )
   in
-  match module_body with
+  match defaults with
   | None ->
       StringMap.empty
-  | Some mb -> (
-      let defs = build_ident_def_map mb in
-      match find_make_function_defaults mb target defs with
-      | None | Some [] ->
-          StringMap.empty
-      | Some defaults ->
-          let n = List.length params and k = List.length defaults in
-          if k > n then StringMap.empty
-          else
-            let with_defaults = List.drop params (n - k) in
-            List.fold2_exn with_defaults defaults ~init:StringMap.empty ~f:(fun acc name d ->
-                StringMap.add name d acc ) )
+  | Some (pos, kw) ->
+      (* Positional defaults bind to the last [k] positional parameters. *)
+      let acc =
+        let n = List.length params and k = List.length pos in
+        if Int.equal k 0 || k > n then StringMap.empty
+        else
+          List.fold2_exn (List.drop params (n - k)) pos ~init:StringMap.empty
+            ~f:(fun acc name d -> StringMap.add name d acc)
+      in
+      (* Keyword-only defaults are keyed by name (these params are not in [python_args], which lists
+         only the positional co_argcount ones — hence they must be seeded here or a load_fast of them
+         would miss). *)
+      List.fold kw ~init:acc ~f:(fun acc (name, d) -> StringMap.add name d acc)
+
+
+(* A class body proc is a definition-site scope, just like __module_body__: it constructs the class
+   namespace, baking in the methods' default values and parameter type annotations (and
+   __qualname__/__module__). A B006 codemod legitimately perturbs those (default [] -> None,
+   annotation T -> Optional[T]), so comparing the class body would diverge spuriously. Identify class
+   bodies as the py_make_function closure target passed as the first argument of py_build_class. *)
+let find_class_body_procs (module_ : T.Module.t) : T.QualifiedProcName.t list =
+  List.fold module_.decls ~init:[] ~f:(fun acc decl ->
+      match decl with
+      | T.Module.Proc p ->
+          let defs = build_ident_def_map p in
+          List.fold p.nodes ~init:acc ~f:(fun acc (node : T.Node.t) ->
+              List.fold node.instrs ~init:acc ~f:(fun acc (instr : T.Instr.t) ->
+                  match instr with
+                  | Let {exp= Call {proc; args}; _} when is_py_builtin proc "py_build_class" -> (
+                    match args with
+                    | class_fn :: _ -> (
+                      match resolve_exp defs class_fn with
+                      | Call {proc= mfp; args= Closure {proc= cproc} :: _}
+                        when is_py_builtin mfp "py_make_function" ->
+                          cproc :: acc
+                      | Closure {proc= cproc} ->
+                          cproc :: acc
+                      | _ ->
+                          acc )
+                    | _ ->
+                        acc )
+                  | _ ->
+                      acc ) )
+      | _ ->
+          acc )
 
 
 (* ---------- Main entry point ---------- *)
