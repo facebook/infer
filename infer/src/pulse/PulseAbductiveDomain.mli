@@ -86,6 +86,10 @@ val leq : lhs:t -> rhs:t -> bool
 
 val pp : Format.formatter -> t -> unit
 
+val get_tree_borrows : t -> PulseTreeBorrows.state
+
+val set_tree_borrows : PulseTreeBorrows.state -> t -> t
+
 val mk_initial : Tenv.t -> ProcAttributes.t -> t
 
 val are_same_values_as_pre_formals :

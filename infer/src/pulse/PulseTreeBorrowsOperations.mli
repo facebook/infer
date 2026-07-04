@@ -6,10 +6,22 @@
  *)
 
 open! IStd
-module AbductiveDomain = PulseAbductiveDomain
 
 val exec_load :
-  id:Ident.t -> e:Exp.t -> typ:Typ.t -> loc:Location.t -> AbductiveDomain.t -> AbductiveDomain.t
+     id:Ident.t
+  -> e:Exp.t
+  -> typ:Typ.t
+  -> loc:Location.t
+  -> PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t
 
 val exec_store :
-  lhs:Exp.t -> rhs:Exp.t -> typ:Typ.t -> loc:Location.t -> AbductiveDomain.t -> AbductiveDomain.t
+     lhs:Exp.t
+  -> rhs:Exp.t
+  -> typ:Typ.t
+  -> loc:Location.t
+  -> PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t
+
+val exec_retag :
+  dst_exp:Exp.t -> src_exp:Exp.t -> is_mut:bool -> PulseAbductiveDomain.t -> PulseAbductiveDomain.t
