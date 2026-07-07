@@ -1,0 +1,67 @@
+name: Close stale issues
+
+# Marks and closes issues that have had no activity for a long time.
+# Runs daily; also runnable on demand via the Actions tab.
+#
+# Policy (tuned for Infer's large, aged backlog):
+#   - Issues inactive for 18 months are marked `stale` with a warning comment.
+#   - If no activity follows for another 30 days, they are closed.
+#   - Any new comment removes the `stale` label and resets the clock.
+#   - Issues carrying triage/roadmap labels are exempted entirely.
+#   - Assigned issues are exempted.
+#   - Pull requests are NOT touched (days-before-pr-stale: -1).
+#
+# NOTE: actions/stale cannot exempt issues by reaction count. To protect
+# high-interest issues that have reactions but no recent comments, apply the
+# `pinned` label to them (it is in exempt-issue-labels below).
+
+on:
+  schedule:
+    # 07:30 UTC every day
+    - cron: "30 7 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    if: github.repository == 'facebook/infer'
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # ~18 months of inactivity before an issue is marked stale.
+          days-before-issue-stale: 540
+          # 30 more days after being marked stale before it is closed.
+          days-before-issue-close: 30
+          # Never touch pull requests.
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+
+          stale-issue-label: "stale"
+          # Issues with any of these labels are never marked stale.
+          exempt-issue-labels: "pinned,help wanted,wishlist,good first task,enhancement,new-check,security"
+          # Skip assigned issues (someone is presumably working on them).
+          exempt-all-issue-assignees: true
+
+          stale-issue-message: >
+            This issue has had no activity for 18 months, so it is being marked
+            as stale. If it is still relevant, please leave a comment (ideally
+            confirming it reproduces on a current release of Infer, with a
+            minimal example) and the `stale` label will be removed. Otherwise it
+            will be closed in 30 days. Thank you for your contributions.
+
+          close-issue-message: >
+            Closing this issue as it has been inactive for 18 months plus a
+            30-day stale period. This is an automated cleanup and is not a
+            judgment on the report's validity. If it still reproduces on a
+            current release of Infer, please reopen or file a new issue with a
+            minimal reproducer. Thanks!
+
+          # Process oldest issues first; cap per-run API usage.
+          ascending: true
+          operations-per-run: 200
+          # Enable so the bot won't re-flag an issue it just cleaned.
+          remove-stale-when-updated: true
