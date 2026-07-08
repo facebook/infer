@@ -1,0 +1,48 @@
+# Final ULLBC before serialization:
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    bb0: {
+        _0 = ();
+        return;
+    }
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: struct_disjoint_ok::S
+struct S {
+  a: i32,
+  b: i32,
+}
+
+// Full name: struct_disjoint_ok::main
+fn main()
+{
+    let _0: (); // return
+    let s_1: S; // local
+    let ra_2: &'1 mut i32; // local
+    let rb_3: &'2 mut i32; // local
+
+    bb0: {
+        _0 = ();
+        storage_live(s_1);
+        s_1 = S { a: const 0 : i32, b: const 0 : i32 };
+        storage_live(ra_2);
+        ra_2 = &mut (s_1).a;
+        storage_live(rb_3);
+        rb_3 = &mut (s_1).b;
+        (*ra_2) = const 1 : i32;
+        (*rb_3) = const 2 : i32;
+        _0 = ();
+        storage_dead(rb_3);
+        storage_dead(ra_2);
+        storage_dead(s_1);
+        return;
+    }
+}
+
+
+

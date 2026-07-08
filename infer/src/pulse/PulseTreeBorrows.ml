@@ -22,6 +22,7 @@ module Tag = struct
   end
 
   module Map = Stdlib.Map.Make (Key)
+  module Set = Stdlib.Set.Make (Key)
 
   module Info = struct
     type t = {protector: bool; borrowed_cell: AbstractValue.t option} [@@deriving compare, equal]
@@ -46,6 +47,105 @@ end
 
 module Access = struct
   type t = Read | Write
+end
+
+module Rel = struct
+  type t = Local | Foreign | Unrelated
+end
+
+module Ub = struct
+  type t =
+    | Disabled_local_read
+    | Disabled_local_read_protected
+    | Frozen_local_write
+    | Frozen_local_write_protected
+    | Disabled_local_write
+    | Disabled_local_write_protected
+    | ResC_local_write
+    | Unique_foreign_read_protected
+    | Foreign_write_protected
+
+  let pp fmt = function
+    | Disabled_local_read ->
+        F.pp_print_string fmt "read through a Disabled tag"
+    | Disabled_local_read_protected ->
+        F.pp_print_string fmt "read through a protected Disabled tag"
+    | Frozen_local_write ->
+        F.pp_print_string fmt "write through a Frozen tag"
+    | Frozen_local_write_protected ->
+        F.pp_print_string fmt "write through a protected Frozen tag"
+    | Disabled_local_write ->
+        F.pp_print_string fmt "write through a Disabled tag"
+    | Disabled_local_write_protected ->
+        F.pp_print_string fmt "write through a protected Disabled tag"
+    | ResC_local_write ->
+        F.pp_print_string fmt "write through a ReservedConflicted tag"
+    | Unique_foreign_read_protected ->
+        F.pp_print_string fmt "foreign read of a protected Unique tag"
+    | Foreign_write_protected ->
+        F.pp_print_string fmt "foreign write to a protected tag"
+end
+
+module Trans = struct
+  let fire_local (perm : Perm.t) ~(protector : bool) (access : Access.t) : (Perm.t, Ub.t) Result.t =
+    match (access, perm, protector) with
+    | Read, Reserved, _ ->
+        Ok Perm.Reserved
+    | Read, Unique, _ ->
+        Ok Perm.Unique
+    | Read, Frozen, _ ->
+        Ok Perm.Frozen
+    | Read, ReservedConflicted, _ ->
+        Ok Perm.ReservedConflicted
+    | Read, Disabled, false ->
+        Error Ub.Disabled_local_read
+    | Read, Disabled, true ->
+        Error Ub.Disabled_local_read_protected
+    | Write, Reserved, _ ->
+        Ok Perm.Unique
+    | Write, Unique, _ ->
+        Ok Perm.Unique
+    | Write, Frozen, false ->
+        Error Ub.Frozen_local_write
+    | Write, Frozen, true ->
+        Error Ub.Frozen_local_write_protected
+    | Write, Disabled, false ->
+        Error Ub.Disabled_local_write
+    | Write, Disabled, true ->
+        Error Ub.Disabled_local_write_protected
+    | Write, ReservedConflicted, _ ->
+        Error Ub.ResC_local_write
+
+
+  let fire_foreign (perm : Perm.t) ~(protector : bool) (access : Access.t) : (Perm.t, Ub.t) Result.t
+      =
+    match (access, perm, protector) with
+    | Read, Reserved, false ->
+        Ok Perm.Reserved
+    | Read, Unique, false ->
+        Ok Perm.Frozen
+    | Read, Frozen, false ->
+        Ok Perm.Frozen
+    | Read, Disabled, false ->
+        Ok Perm.Disabled
+    | Read, ReservedConflicted, false ->
+        Ok Perm.ReservedConflicted
+    | Read, Reserved, true ->
+        Ok Perm.ReservedConflicted
+    | Read, Unique, true ->
+        Error Ub.Unique_foreign_read_protected
+    | Read, Frozen, true ->
+        Ok Perm.Frozen
+    | Read, Disabled, true ->
+        Ok Perm.Disabled
+    | Read, ReservedConflicted, true ->
+        Ok Perm.ReservedConflicted
+    | Write, _, false ->
+        Ok Perm.Disabled
+    | Write, Disabled, true ->
+        Ok Perm.Disabled
+    | Write, _, true ->
+        Error Ub.Foreign_write_protected
 end
 
 module Operand = struct
@@ -100,10 +200,34 @@ module St = struct
 
   let set_parent state tag p = {state with parent= Tag.Map.add tag p state.parent}
 
+  let parent_of state tag = try Tag.Map.find tag state.parent with Stdlib.Not_found -> None
+
+  let tag_info_of state tag =
+    try Tag.Map.find tag state.tag_infos
+    with Stdlib.Not_found -> {Tag.Info.protector= false; borrowed_cell= None}
+
+
+  let protector_of state tag = (tag_info_of state tag).Tag.Info.protector
+
   let entries_at state av = try AVMap.find av state.tags_at with Stdlib.Not_found -> Tag.Map.empty
 
   let set_entry state av tag perm =
     {state with tags_at= AVMap.add av (Tag.Map.add tag perm (entries_at state av)) state.tags_at}
+
+
+  let adopt_borrowed_cell state tag av =
+    let info = tag_info_of state tag in
+    match info.Tag.Info.borrowed_cell with
+    | Some _ ->
+        state
+    | None ->
+        let state =
+          { state with
+            tag_infos= Tag.Map.add tag {info with Tag.Info.borrowed_cell= Some av} state.tag_infos
+          }
+        in
+        if Tag.Map.mem tag (entries_at state av) then state
+        else set_entry state av tag Perm.Reserved
 
 
   let bind_pointer_tag state av tag = {state with pointer_tag= AVMap.add av tag state.pointer_tag}
@@ -186,7 +310,7 @@ let start () = {st= St.empty; errors= []}
 
 let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> AbstractValue.t list)
     ~(bind : AbstractValue.t option) ~(is_mut : bool) ~(src : Operand.t)
-    ~(borrowed_cell : AbstractValue.t) : St.t =
+    ~(borrowed_cell : AbstractValue.t) : St.t * Tag.t option =
   let st = St.propagate_along_path st src.Operand.cells in
   let parent_opt =
     match src with
@@ -199,23 +323,107 @@ let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> Abs
         None
   in
   match parent_opt with
-  | None -> (
-    match bind with Some av -> St.drop_pointer_tag st av | None -> st )
-  | Some (parent_tag, st) -> (
+  | None ->
+      ((match bind with Some av -> St.drop_pointer_tag st av | None -> st), None)
+  | Some (parent_tag, st) ->
       let initial_perm = if is_mut then Perm.Reserved else Perm.Frozen in
       let tag, st = St.tag_fresh st ~protector ~borrowed_cell:(Some borrowed_cell) in
       let st = St.set_parent st tag (Some parent_tag) in
       let st, sub_object = St.sub_object_cells st ~succs borrowed_cell in
       let st = List.fold sub_object ~init:st ~f:(fun st a -> St.set_entry st a tag initial_perm) in
-      match bind with Some av -> St.bind_pointer_tag st av tag | None -> st )
+      let st = match bind with Some av -> St.bind_pointer_tag st av tag | None -> st in
+      (st, Some tag)
 
 
-(* Fire a memory access through the pointer designated by [target]. This is where Tree Borrows
-   checks read/write permissions and detects undefined behavior. *)
+let is_errored (state : state) = not (List.is_empty state.errors)
+
+let add_error (state : state) error = {state with errors= error :: state.errors}
+
+let root_of (st : St.t) tag =
+  let rec go t = match St.parent_of st t with Some p -> go p | None -> t in
+  go tag
+
+
+let local_set_of (st : St.t) through =
+  let rec chain acc t =
+    let acc = Tag.Set.add t acc in
+    match St.parent_of st t with Some p -> chain acc p | None -> acc
+  in
+  chain Tag.Set.empty through
+
+
+let fire_at_loc (state : state) ~(loc : Location.t) ~(local_set : Tag.Set.t) ~(through : Tag.t)
+    (av : AbstractValue.t) (acc : Access.t) : state =
+  if is_errored state then state
+  else
+    let through_root = root_of state.st through in
+    Tag.Map.fold
+      (fun t perm state ->
+        if is_errored state then state
+        else
+          let rel =
+            if Tag.Set.mem t local_set then Rel.Local
+            else if Tag.equal (root_of state.st t) through_root then Rel.Foreign
+            else Rel.Unrelated
+          in
+          match rel with
+          | Rel.Unrelated ->
+              state
+          | (Rel.Local | Rel.Foreign) as rel -> (
+              let protector = St.protector_of state.st t in
+              let fire =
+                match rel with Rel.Foreign -> Trans.fire_foreign | _ -> Trans.fire_local
+              in
+              match fire perm ~protector acc with
+              | Ok perm' ->
+                  {state with st= St.set_entry state.st av t perm'}
+              | Error ub ->
+                  add_error state {loc; description= F.asprintf "%a" Ub.pp ub} ) )
+      (St.entries_at state.st av) state
+
+
+let access_through ?(access_path = []) ~(succs : AbstractValue.t -> AbstractValue.t list)
+    (state : state) ~(loc : Location.t) ~(through : Tag.t) ~(av : AbstractValue.t) (acc : Access.t)
+    : state =
+  if is_errored state then state
+  else
+    let st = St.propagate_along_path state.st access_path in
+    let st = St.adopt_borrowed_cell st through av in
+    let st, touched = St.sub_object_cells st ~succs av in
+    let local_set = local_set_of st through in
+    let state = {state with st} in
+    List.fold touched ~init:state ~f:(fun state a ->
+        fire_at_loc state ~loc ~local_set ~through a acc )
+
+
+let tag_at_base (st : St.t) base_av =
+  match AVMap.find_opt base_av st.St.object_root with
+  | Some t ->
+      Some t
+  | None ->
+      AVMap.find_opt base_av st.St.pointer_tag
+
+
+let resolve_access_target (st : St.t) ~(target : Operand.t) : (Tag.t * AbstractValue.t) option =
+  let through =
+    match target with
+    | {Operand.root= Some id} ->
+        IdentMap.find_opt id st.St.temps
+    | {Operand.root= None; cells= base :: _} ->
+        tag_at_base st base
+    | _ ->
+        None
+  in
+  match (through, Operand.last_cell target) with Some t, Some av -> Some (t, av) | _ -> None
+
+
 let exec_access ~(acc : Access.t) ~(target : Operand.t)
     ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
-  ignore (acc, target, succs, loc) ;
-  state
+  match resolve_access_target state.st ~target with
+  | None ->
+      state
+  | Some (through, av) ->
+      access_through ~access_path:target.Operand.cells ~succs state ~loc ~through ~av acc
 
 
 let exec_retag ~(dst : Operand.t) ~(src : Operand.t) ~(is_mut : bool) ~(protected : bool)
@@ -223,12 +431,17 @@ let exec_retag ~(dst : Operand.t) ~(src : Operand.t) ~(is_mut : bool) ~(protecte
   match Operand.last_cell src with
   | None ->
       state
-  | Some borrowed_cell ->
-      let st =
+  | Some borrowed_cell -> (
+      let st, new_tag =
         do_reborrow ~protector:protected state.st ~succs ~bind:(Operand.leaf dst) ~is_mut ~src
           ~borrowed_cell
       in
-      exec_access ~acc:Access.Read ~target:dst ~succs ~loc {state with st}
+      let state = {state with st} in
+      match new_tag with
+      | Some tag ->
+          access_through ~succs state ~loc ~through:tag ~av:borrowed_cell Access.Read
+      | None ->
+          state )
 
 
 let classify_typ (typ : Typ.t) = match typ.desc with Tptr (_, _) -> `Pointer | _ -> `Other
@@ -276,14 +489,6 @@ let report_errors proc_desc err_log (state : state) : unit =
   List.iter (List.rev state.errors) ~f:(fun {loc; description} ->
       Reporting.log_issue proc_desc err_log ~loc Checker.TreeBorrows IssueType.tree_borrows_ub
         description )
-
-
-let tag_of_pointer av (state : state) = AVMap.find_opt av state.st.St.pointer_tag
-
-let parent_of tag (state : state) = Option.join (Tag.Map.find_opt tag state.st.St.parent)
-
-let perm_at ~cell tag (state : state) =
-  Option.bind (AVMap.find_opt cell state.st.St.tags_at) ~f:(Tag.Map.find_opt tag)
 
 
 let pp fmt ({st; errors= _} : state) =

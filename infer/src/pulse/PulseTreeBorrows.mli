@@ -74,9 +74,3 @@ val exec_store :
   -> state
 
 val report_errors : Procdesc.t -> Errlog.t -> state -> unit
-
-val tag_of_pointer : AbstractValue.t -> state -> Tag.t option
-
-val parent_of : Tag.t -> state -> Tag.t option
-
-val perm_at : cell:AbstractValue.t -> Tag.t -> state -> Perm.t option

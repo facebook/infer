@@ -1,0 +1,34 @@
+# Copyright (c) Facebook, Inc. and its affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+
+TESTS_DIR = ../../..
+INFER_OUT ?= infer-out$(TEST_SUFFIX)
+INFERPRINT_OPTIONS = --issues-tests
+
+include $(TESTS_DIR)/infer.make
+
+SOURCES = $(sort $(wildcard *.ullbc))
+RUSTSOURCES = $(wildcard *.rs)
+CAPTURE_CMD = $(patsubst %.rs.ullbc, --capture-rust-ullbc %.rs.ullbc,$(SOURCES))
+CHARON_OPTIONS = --precise-drops --treat-box-as-builtin --reconstruct-fallible-operations
+
+default: test
+
+$(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN)
+	$(INFER_BIN) --quiet --no-progress-bar --debug-exceptions \
+		--dump-duplicate-symbols \
+		--tree-borrows \
+		-o $(INFER_OUT) $(CAPTURE_CMD)
+
+.PHONY: charon
+charon:
+	$(QUIET)if [ "$(BUILD_RUST_ANALYZERS)" = "yes" ]; then \
+	error=0; for file in $(RUSTSOURCES) ; do \
+		args=""; \
+		if [ -e "$$file.args" ]; then \
+    		args=$$(cat "$$file.args"); \
+		fi; \
+		charon rustc $(CHARON_OPTIONS) --print-ullbc --ullbc --dest-file $$file.ullbc $$args -- $$file --allow unused > $$file.print_ullbc || error=1 ; \
+	done; fi

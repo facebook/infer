@@ -245,7 +245,8 @@ DIRECT_TESTS += \
 
 ifeq ($(BUILD_RUST_ANALYZERS),yes)
 DIRECT_TESTS += \
-  rust_pulse
+  rust_pulse \
+  rust_treeborrows
 endif
 
 ifeq ($(BUILD_PYTHON_ANALYZERS),yes)
