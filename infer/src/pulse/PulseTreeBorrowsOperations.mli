@@ -24,4 +24,11 @@ val exec_store :
   -> PulseAbductiveDomain.t
 
 val exec_retag :
-  dst_exp:Exp.t -> src_exp:Exp.t -> is_mut:bool -> PulseAbductiveDomain.t -> PulseAbductiveDomain.t
+     dst_exp:Exp.t
+  -> src_exp:Exp.t
+  -> is_mut:bool
+  -> loc:Location.t
+  -> PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t
+
+val report_errors : Procdesc.t -> Errlog.t -> PulseAbductiveDomain.Summary.summary -> unit

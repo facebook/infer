@@ -44,6 +44,10 @@ module Perm = struct
         F.pp_print_string fmt "ReservedConflicted"
 end
 
+module Access = struct
+  type t = Read | Write
+end
+
 module Operand = struct
   (** how a value is designated in an instruction: through a temporary [root] identifier and/or an
       access path of memory cells *)
@@ -110,6 +114,23 @@ module St = struct
     else state
 
 
+  let bind_temp state id tag = {state with temps= IdentMap.add id tag state.temps}
+
+  let drop_temp state id =
+    if IdentMap.mem id state.temps then {state with temps= IdentMap.remove id state.temps}
+    else state
+
+
+  (** The tag a value carries. For a loaded temporary it is its recorded tag, for a place it is the
+      tag held by its leaf cell *)
+  let tag_of_operand state (op : Operand.t) : Tag.t option =
+    match op.Operand.root with
+    | Some id ->
+        IdentMap.find_opt id state.temps
+    | None ->
+        Option.bind (Operand.last_cell op) ~f:(fun leaf -> AVMap.find_opt leaf state.pointer_tag)
+
+
   let ensure_object_root state base_av =
     match AVMap.find_opt base_av state.object_root with
     | Some owner ->
@@ -157,9 +178,11 @@ module St = struct
     go state (AVSet.singleton av) [av] [av]
 end
 
-type state = St.t [@@deriving compare, equal]
+type error = {loc: Location.t; description: string} [@@deriving compare, equal]
 
-let start () = St.empty
+type state = {st: St.t; errors: error list} [@@deriving compare, equal]
+
+let start () = {st= St.empty; errors= []}
 
 let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> AbstractValue.t list)
     ~(bind : AbstractValue.t option) ~(is_mut : bool) ~(src : Operand.t)
@@ -187,25 +210,83 @@ let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> Abs
       match bind with Some av -> St.bind_pointer_tag st av tag | None -> st )
 
 
+(* Fire a memory access through the pointer designated by [target]. This is where Tree Borrows
+   checks read/write permissions and detects undefined behavior. *)
+let exec_access ~(acc : Access.t) ~(target : Operand.t)
+    ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
+  ignore (acc, target, succs, loc) ;
+  state
+
+
 let exec_retag ~(dst : Operand.t) ~(src : Operand.t) ~(is_mut : bool) ~(protected : bool)
-    ~(succs : AbstractValue.t -> AbstractValue.t list) (st : state) : state =
-  match List.last src.Operand.cells with
+    ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
+  match Operand.last_cell src with
   | None ->
-      st
+      state
   | Some borrowed_cell ->
-      do_reborrow ~protector:protected st ~succs ~bind:(Operand.leaf dst) ~is_mut ~src
-        ~borrowed_cell
+      let st =
+        do_reborrow ~protector:protected state.st ~succs ~bind:(Operand.leaf dst) ~is_mut ~src
+          ~borrowed_cell
+      in
+      exec_access ~acc:Access.Read ~target:dst ~succs ~loc {state with st}
 
 
-let tag_of_pointer av (st : state) = AVMap.find_opt av st.St.pointer_tag
+let classify_typ (typ : Typ.t) = match typ.desc with Tptr (_, _) -> `Pointer | _ -> `Other
 
-let parent_of tag (st : state) = Option.join (Tag.Map.find_opt tag st.St.parent)
+let exec_load ~(id : Ident.t) ~(typ : Typ.t) ~(src : Operand.t)
+    ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
+  match classify_typ typ with
+  | `Other ->
+      exec_access ~acc:Access.Read ~target:src ~succs ~loc state
+  | `Pointer ->
+      let st =
+        match
+          Option.bind (Operand.last_cell src) ~f:(fun av ->
+              AVMap.find_opt av state.st.St.pointer_tag )
+        with
+        | Some tag ->
+            St.bind_temp state.st id tag
+        | None ->
+            St.drop_temp state.st id
+      in
+      {state with st}
 
-let perm_at ~cell tag (st : state) =
-  Option.bind (AVMap.find_opt cell st.St.tags_at) ~f:(Tag.Map.find_opt tag)
+
+let exec_store ~(lhs : Operand.t) ~(rhs : Operand.t) ~(typ : Typ.t)
+    ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
+  match classify_typ typ with
+  | `Other ->
+      exec_access ~acc:Access.Write ~target:lhs ~succs ~loc state
+  | `Pointer ->
+      let st =
+        match Operand.last_cell lhs with
+        | None ->
+            state.st
+        | Some cell -> (
+          match St.tag_of_operand state.st rhs with
+          | Some tag ->
+              St.bind_pointer_tag state.st cell tag
+          | None ->
+              St.drop_pointer_tag state.st cell )
+      in
+      {state with st}
 
 
-let pp fmt (st : state) =
+let report_errors proc_desc err_log (state : state) : unit =
+  List.iter (List.rev state.errors) ~f:(fun {loc; description} ->
+      Reporting.log_issue proc_desc err_log ~loc Checker.TreeBorrows IssueType.tree_borrows_ub
+        description )
+
+
+let tag_of_pointer av (state : state) = AVMap.find_opt av state.st.St.pointer_tag
+
+let parent_of tag (state : state) = Option.join (Tag.Map.find_opt tag state.st.St.parent)
+
+let perm_at ~cell tag (state : state) =
+  Option.bind (AVMap.find_opt cell state.st.St.tags_at) ~f:(Tag.Map.find_opt tag)
+
+
+let pp fmt ({st; errors= _} : state) =
   if Int.equal st.St.next_tag 0 then F.pp_print_string fmt "()"
   else
     let pp_parent fmt (tag, parent_opt) =

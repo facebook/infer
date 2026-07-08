@@ -506,6 +506,8 @@ module Summary : sig
 
   val get_topl : summary -> PulseTopl.state
 
+  val get_tree_borrows : summary -> PulseTreeBorrows.state
+
   val heap_paths_that_need_dynamic_type_specialization :
     summary -> AbstractValue.t Specialization.HeapPath.Map.t
 

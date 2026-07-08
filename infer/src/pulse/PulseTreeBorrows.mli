@@ -51,8 +51,29 @@ val exec_retag :
   -> is_mut:bool
   -> protected:bool
   -> succs:(AbstractValue.t -> AbstractValue.t list)
+  -> loc:Location.t
   -> state
   -> state
+
+val exec_load :
+     id:Ident.t
+  -> typ:Typ.t
+  -> src:Operand.t
+  -> succs:(AbstractValue.t -> AbstractValue.t list)
+  -> loc:Location.t
+  -> state
+  -> state
+
+val exec_store :
+     lhs:Operand.t
+  -> rhs:Operand.t
+  -> typ:Typ.t
+  -> succs:(AbstractValue.t -> AbstractValue.t list)
+  -> loc:Location.t
+  -> state
+  -> state
+
+val report_errors : Procdesc.t -> Errlog.t -> state -> unit
 
 val tag_of_pointer : AbstractValue.t -> state -> Tag.t option
 

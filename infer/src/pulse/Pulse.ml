@@ -28,6 +28,16 @@ let report_topl_errors {InterproceduralAnalysis.proc_desc; err_log} summary =
   List.iter ~f summary
 
 
+let report_tree_borrows_errors {InterproceduralAnalysis.proc_desc; err_log} summary =
+  let f = function
+    | ContinueProgram astate ->
+        PulseTreeBorrowsOperations.report_errors proc_desc err_log astate
+    | _ ->
+        ()
+  in
+  List.iter ~f summary
+
+
 let is_hack_async tenv pname =
   match IRAttributes.load pname with
   | None ->
@@ -1982,6 +1992,8 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc} as analysi
         if Config.pulse_transitive_access_enabled then
           PulseTransitiveAccessChecker.report_errors analysis_data summary ;
         report_topl_errors analysis_data summary.pre_post_list ;
+        if Config.is_checker_enabled TreeBorrows then
+          report_tree_borrows_errors analysis_data summary.pre_post_list ;
         if not (has_0_continue_program summary) then (
           (* Do not report unnecessary copy issue when no continue program, because it may have
              missed the statements that modify copied objects. *)

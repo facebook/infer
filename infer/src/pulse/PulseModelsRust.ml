@@ -18,7 +18,8 @@ let retag (dst_exp : Exp.t) (src_exp : Exp.t) (is_mut_exp : Exp.t) : model =
     let is_mut =
       match is_mut_exp with Exp.Const (Const.Cint i) -> not (IntLit.iszero i) | _ -> false
     in
-    exec_command (PulseTreeBorrowsOperations.exec_retag ~dst_exp ~src_exp ~is_mut)
+    let* {location} = get_data in
+    exec_command (PulseTreeBorrowsOperations.exec_retag ~dst_exp ~src_exp ~is_mut ~loc:location)
 
 
 let matchers : matcher list =

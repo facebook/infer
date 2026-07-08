@@ -2229,6 +2229,8 @@ module Summary = struct
 
   let get_topl {topl} = topl
 
+  let get_tree_borrows {tree_borrows} = tree_borrows
+
   let get_recursive_calls {recursive_calls} = recursive_calls
 
   let contains_unknown_values {unknown_values} = unknown_values
