@@ -425,7 +425,7 @@ _ACEOF
     rm -f conftest.java
     _USER_JAVA_HOME=$($JAVA -cp . conftest)
     if rm -f conftest.class; then
-       [javac_version_10_or_more=`echo "$JAVA_MAJOR_VERSION" | grep -q -e '^1[0-9]' && echo yes`]
+       [javac_version_10_or_more=`echo "$JAVA_MAJOR_VERSION" | grep -q -e '^[1-9][0-9]\+$' && echo yes`]
        if test "x$javac_version_10_or_more" = "xyes"; then
           USER_JAVA_HOME=$_USER_JAVA_HOME
        else
