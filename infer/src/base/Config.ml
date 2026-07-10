@@ -190,6 +190,8 @@ let max_widens = 10000
 
 let kotlin_source_extension = ".kt"
 
+let sarif_source_root = "%srcroot%"
+
 (* Allow lists for C++ library functions *)
 
 let std_allow_listed_cpp_methods =

@@ -92,6 +92,9 @@ val max_widens : int
 
 val os_type : os_type [@@warning "-unused-value-declaration"]
 
+val sarif_source_root : string
+(** URI base id used as the source root placeholder in SARIF reports *)
+
 val pp_version : Format.formatter -> unit -> unit
 
 val wrappers_dir : string
