@@ -39,7 +39,42 @@ let rec initialize_heap_path heap_path astate =
       Memory.eval_edge src_addr Dereference astate
 
 
-let apply {Specialization.Pulse.aliases; dynamic_types} location astate =
+(* Well-known global that bridges specialization (seeds the caller's variadic actuals)
+   and the C `va_start`/`va_arg` models (read them back). See #1937. *)
+let va_args_global_pvar = Pvar.mk_global (Mangled.from_string "__infer_va_args_global")
+
+(* Seed the global va-args array with the caller's extra (variadic) actuals so that,
+   during specialized re-analysis of a C variadic callee, each `va_arg` read connects
+   to the corresponding caller argument. *)
+let seed_variadic_actuals variadic_actuals location astate =
+  match variadic_actuals with
+  | [] ->
+      astate
+  | _ ->
+      let astate, global_addr =
+        let opt =
+          Stack.find_opt (Var.of_pvar va_args_global_pvar) astate
+          |> Option.map ~f:ValueOrigin.addr_hist
+        in
+        match opt with
+        | Some ah ->
+            (astate, ah)
+        | None ->
+            let ah = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
+            (astate, ah)
+      in
+      List.foldi variadic_actuals ~init:astate ~f:(fun k astate heap_path ->
+          let astate, actual_ah = initialize_heap_path heap_path astate in
+          let index = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
+          let astate =
+            PulseArithmetic.and_eq_int (fst index) (IntLit.of_int k) astate
+            |> PulseOperationResult.sat_ok |> Option.value ~default:astate
+          in
+          let access = Access.ArrayAccess (StdTyp.void, fst index) in
+          Memory.add_edge PathContext.initial global_addr access actual_ah location astate )
+
+
+let apply {Specialization.Pulse.aliases; dynamic_types; variadic_actuals} location astate =
   let astate =
     Option.value_map aliases ~default:astate ~f:(fun aliases ->
         List.fold aliases ~init:astate ~f:(fun astate alias ->
@@ -58,4 +93,5 @@ let apply {Specialization.Pulse.aliases; dynamic_types} location astate =
         PulseArithmetic.and_dynamic_type_is_unsafe addr typ location astate )
       dynamic_types astate
   in
+  let astate = seed_variadic_actuals variadic_actuals location astate in
   astate
