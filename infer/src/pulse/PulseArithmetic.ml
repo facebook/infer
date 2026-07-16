@@ -128,7 +128,9 @@ let is_manifest summary =
   && not (AbductiveDomain.Summary.pre_heap_has_assumptions summary)
 
 
-let and_is_int v astate = map_path_condition astate ~f:(fun phi -> Formula.and_is_int v phi)
+let and_is_int v ikind astate =
+  map_path_condition astate ~f:(fun phi -> Formula.and_is_int v ikind phi)
+
 
 let and_equal_instanceof v1 v2 t ?(nullable = false) astate =
   map_path_condition astate ~f:(fun phi -> Formula.and_equal_instanceof v1 v2 t ~nullable phi)

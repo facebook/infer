@@ -112,7 +112,8 @@ val is_manifest : AbductiveDomain.Summary.t -> bool
     the documentation for {!PulseFormula.is_manifest} and
     {!PulseAbductiveDomain.Summary.pre_heap_has_assumptions}) *)
 
-val and_is_int : AbstractValue.t -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
+val and_is_int :
+  AbstractValue.t -> Typ.ikind -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 
 val and_equal_instanceof :
      AbstractValue.t

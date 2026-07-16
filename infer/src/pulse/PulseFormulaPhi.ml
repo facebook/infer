@@ -1049,7 +1049,7 @@ let is_non_pointer {var_eqs; linear_eqs; intervals; atoms} var =
   Option.exists (Var.Map.find_opt repr linear_eqs) ~f:(fun v ->
       Option.is_some (LinArith.get_as_const v) )
   || Option.exists (Var.Map.find_opt repr intervals) ~f:CItv.is_non_pointer
-  || Atom.Set.mem (Equal (IsInt (Var repr), Term.one)) atoms
+  || Atom.Set.mem (Equal (IsInt (Var repr, Typ.IInt (* ignored *)), Term.one)) atoms
 
 
 (** module that breaks invariants more often that the rest, with an interface that is safer to use

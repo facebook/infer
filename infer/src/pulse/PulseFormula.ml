@@ -288,8 +288,8 @@ let and_equal_vars v1 v2 formula =
 
 let and_not_equal = and_mk_atom Ne
 
-let and_is_int v formula =
-  let atom = Atom.equal (IsInt (Var v)) Term.one in
+let and_is_int v ikind formula =
+  let atom = Atom.equal (IsInt (Var v, ikind)) Term.one in
   and_atom atom formula ~add_term:false
 
 

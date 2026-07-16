@@ -49,7 +49,7 @@ module Term : sig
     | BitXor of t * t
     | StringConcat of t * t
     | IsInstanceOf of {var: Var.t; typ: Typ.t; nullable: bool}
-    | IsInt of t
+    | IsInt of t * Typ.ikind
   [@@deriving compare, equal, yojson_of]
 
   module Set : Stdlib.Set.S
@@ -140,7 +140,7 @@ val and_equal_binop : Var.t -> Binop.t -> operand -> operand -> t -> (t * new_eq
 
 val and_equal_string_concat : Var.t -> operand -> operand -> t -> (t * new_eqs) SatUnsat.t
 
-val and_is_int : Var.t -> t -> (t * new_eqs) SatUnsat.t
+val and_is_int : Var.t -> Typ.ikind -> t -> (t * new_eqs) SatUnsat.t
 
 val prune_binop :
      ?depth:int
