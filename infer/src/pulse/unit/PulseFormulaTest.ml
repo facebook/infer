@@ -415,7 +415,7 @@ let%test_module "normalization" =
 
     let%expect_test _ =
       test (is_int x_var IInt && x + x = i 5) ;
-      [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 = 1|}]
+      [%expect {| UNSAT: UNSAT atom according to eval_const_shallow: 0 = 1 |}]
   end )
 
 
