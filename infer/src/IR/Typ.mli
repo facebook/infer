@@ -35,6 +35,8 @@ val ikind_is_char : ikind -> bool
 val ikind_is_unsigned : ikind -> bool
 (** Check whether the integer kind is unsigned *)
 
+val ikind_to_string : ikind -> string
+
 (** Kinds of floating-point numbers *)
 type fkind = FFloat  (** [float] *) | FDouble  (** [double] *) | FLongDouble  (** [long double] *)
 [@@deriving compare]

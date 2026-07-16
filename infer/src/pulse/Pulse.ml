@@ -1234,8 +1234,12 @@ module PulseTransferFunctions = struct
       , PulseNonDisjunctiveOperations.mark_modified_copies_and_parameters vars astates astate_n )
 
 
-  let and_is_int_if_integer_type typ v astate =
-    if Typ.is_int typ then PulseArithmetic.and_is_int v astate else Sat (Ok astate)
+  let and_is_int_if_integer_type (typ : Typ.t) v astate =
+    match typ.desc with
+    | Tint ikind ->
+        PulseArithmetic.and_is_int v ikind astate
+    | _ ->
+        Sat (Ok astate)
 
 
   let check_modified_before_destructor args call_exp astate astate_n =
@@ -1308,6 +1312,13 @@ module PulseTransferFunctions = struct
       instr
 
 
+  let and_type_info tenv path loc typ rhs_exp rhs_vo astate =
+    let rhs_addr = ValueOrigin.value rhs_vo in
+    and_is_int_if_integer_type typ rhs_addr astate
+    >>|| PulseOperations.hack_propagates_type_on_load tenv path loc rhs_exp rhs_addr
+    >>|| PulseOperations.add_static_type_objc_swift_class tenv typ rhs_addr loc
+
+
   let exec_instr_aux limit ({PathContext.timestamp} as path) (astate : ExecutionDomain.t)
       (astate_n : NonDisjDomain.t) ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
       cfg_node (instr : Sil.instr) : ExecutionDomain.t list * PathContext.t * NonDisjDomain.t =
@@ -1343,10 +1354,7 @@ module PulseTransferFunctions = struct
                    let++ astate, addr_hist = model {path; location= loc} astate in
                    (astate, ValueOrigin.unknown addr_hist)
              in
-             let rhs_addr = ValueOrigin.value rhs_vo in
-             and_is_int_if_integer_type typ rhs_addr astate
-             >>|| PulseOperations.hack_propagates_type_on_load tenv path loc rhs_exp rhs_addr
-             >>|| PulseOperations.add_static_type_objc_swift_class tenv typ rhs_addr loc
+             and_type_info tenv path loc typ rhs_exp rhs_vo astate
              >>|| PulseOperations.write_load_id lhs_id rhs_vo )
             |> SatUnsat.to_list
             |> PulseReport.report_results analysis_data path loc

@@ -85,7 +85,7 @@ type t =
   | BitXor of t * t
   | StringConcat of t * t
   | IsInstanceOf of {var: Var.t; typ: Typ.t; nullable: bool}
-  | IsInt of t
+  | IsInt of t * (Typ.ikind[@ignore])
 [@@deriving compare, equal, yojson_of]
 
 let equal_syntax = equal
@@ -196,8 +196,8 @@ and pp_no_paren pp_var fmt = function
   | IsInstanceOf {var; typ; nullable} ->
       F.fprintf fmt "%a instanceof %a nullable=%a" pp_var var (Typ.pp_full Pp.text) typ
         Format.pp_print_bool nullable
-  | IsInt t ->
-      F.fprintf fmt "is_int(%a)" (pp_no_paren pp_var) t
+  | IsInt (t, ikind) ->
+      F.fprintf fmt "is_int(%a, %s)" (pp_no_paren pp_var) t (Typ.ikind_to_string ikind)
 
 
 let pp = pp_paren ~needs_paren
@@ -349,7 +349,7 @@ let fold_map_direct_subterms t ~init ~f =
       let t' = if !changed then FunctionApplication {f= t_f'; actuals= actuals'} else t in
       (acc, t')
   (* one sub-term *)
-  | Minus sub_t | BitNot sub_t | Not sub_t | IsInt sub_t ->
+  | Minus sub_t | BitNot sub_t | Not sub_t | IsInt (sub_t, _) ->
       let acc, sub_t' = f init sub_t in
       let t' =
         if phys_equal sub_t sub_t' then t
@@ -361,8 +361,8 @@ let fold_map_direct_subterms t ~init ~f =
               BitNot sub_t'
           | Not _ ->
               Not sub_t'
-          | IsInt _ ->
-              IsInt sub_t'
+          | IsInt (_, ikind) ->
+              IsInt (sub_t', ikind)
       in
       (acc, t')
   (* two sub-terms *)
@@ -546,7 +546,8 @@ let eval_const_shallow_ t0 =
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
-    | IsInt t' ->
+    | IsInt (t', _ikind) ->
+        (* TODO: use [_ikind] to derive contradictions based on storage size *)
         q_map t' (fun q ->
             if Z.(equal one) (Q.den q) then (* an integer *) Q.one
             else (

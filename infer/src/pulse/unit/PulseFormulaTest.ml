@@ -55,8 +55,8 @@ let instanceof typ x_var y_var phi =
   phi
 
 
-let is_int x phi =
-  let+ phi, _new_eqs = and_is_int x phi in
+let is_int x typ phi =
+  let+ phi, _new_eqs = and_is_int x typ phi in
   phi
 
 
@@ -395,7 +395,13 @@ let%test_module "normalization" =
 
     (* expected: [is_int(x)] and [is_int(y)] get simplified away, [is_int(z)] is kept around *)
     let%expect_test _ =
-      test (is_int x_var && x + x = i 4 && is_int y_var && y = i (-42) && is_int z_var && z = x + w) ;
+      test
+        ( is_int x_var IInt
+        && x + x = i 4
+        && is_int y_var IInt
+        && y = i (-42)
+        && is_int z_var IInt
+        && z = x + w ) ;
       [%expect
         {|
         conditions: (empty)
@@ -403,12 +409,12 @@ let%test_module "normalization" =
              && linear_eqs: x = 2 ∧ y = -42 ∧ z = w+2 ∧ v6 = 4
              && term_eqs: (-42)=y∧2=x∧4=v6∧[w+2]=z
              && intervals: y=-42 ∧ v6=4
-             && atoms: {is_int([w+2]) = 1}
+             && atoms: {is_int([w+2], int) = 1}
         |}]
 
 
     let%expect_test _ =
-      test (is_int x_var && x + x = i 5) ;
+      test (is_int x_var IInt && x + x = i 5) ;
       [%expect {|UNSAT: UNSAT atom according to eval_const_shallow: 0 = 1|}]
   end )
 
