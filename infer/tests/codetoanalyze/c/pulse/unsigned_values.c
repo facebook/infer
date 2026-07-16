@@ -11,7 +11,7 @@
 
 unsigned int returnUnsigned();
 
-void FP_nonnegative_int_ok() {
+void nonnegative_int_ok() {
   unsigned int x = returnUnsigned();
   if (x < 0) {
     // unreachable
@@ -35,7 +35,7 @@ void signed_int_bad() {
 
 unsigned int* returnUnsignedPointer();
 
-void FP_nonnegative_int_ptr_ok() {
+void nonnegative_int_ptr_ok() {
   unsigned int* x = returnUnsignedPointer();
   if (*x < 0) {
     // unreachable
@@ -64,7 +64,7 @@ struct foo {
 
 struct foo* returnFoo();
 
-void FP_nonnegative_field_ok() {
+void nonnegative_field_ok() {
   struct foo* x = returnFoo();
   if (x->unsigned_int < 0) {
     // unreachable
@@ -86,7 +86,7 @@ void signed_field_bad() {
 
 unsigned int* returnUnsignedArray();
 
-int FP_nonnegative_array_ok() {
+int nonnegative_array_ok() {
   unsigned int* a = returnUnsignedArray();
   if (a[0] < 0) {
     // unreachable

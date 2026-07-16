@@ -14,3 +14,5 @@ val tenv : unit -> Tenv.t option [@@warning "-unused-value-declaration"]
 val tenv_exn : unit -> Tenv.t
 
 val set_tenv_global_for_testing : Tenv.t -> unit [@@warning "-unused-value-declaration"]
+
+val integer_widths : unit -> IntegerWidths.t option

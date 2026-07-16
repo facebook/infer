@@ -294,8 +294,7 @@ re:
   }
 }
 
-/* pulse-inf: FP due to Pulse computing arithmetic on Q rather than BV */
-void FP_loop_signedarith_ok(int y) {
+void loop_signedarith_ok(int y) {
   while (y > 0x7fffffff) {
     y++;
     y--;
@@ -303,8 +302,7 @@ void FP_loop_signedarith_ok(int y) {
   return;
 }
 
-/* pulse-inf: FP due to Pulse computing arithmetic on Q rather than BV */
-void FP_goto_signedarith_ok(int y) {
+void goto_signedarith_ok(int y) {
 re:
   if (y > 0x7fffffffffffffff)
     goto re;

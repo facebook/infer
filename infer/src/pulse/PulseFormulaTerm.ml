@@ -519,6 +519,15 @@ let has_var_notin vars t =
   Container.exists t ~iter:iter_variables ~f:(fun v -> not (Var.Set.mem v vars))
 
 
+let value_is_compatible_with_type z (ikind : Typ.ikind) =
+  match PulseContext.integer_widths () with
+  | None ->
+      false
+  | Some integer_widths ->
+      let lower_bound, upper_bound = IntegerWidths.range_of_ikind integer_widths ikind in
+      Z.(leq lower_bound z && leq z upper_bound)
+
+
 (** reduce to a constant when the direct sub-terms are constants *)
 let eval_const_shallow_ t0 =
   let map_const t f = match t with Const c -> f c | _ -> t0 in
@@ -546,13 +555,18 @@ let eval_const_shallow_ t0 =
         t0
     | Linear l ->
         LinArith.get_as_const l |> Option.value_map ~default:t0 ~f:(fun c -> Const c)
-    | IsInt (t', _ikind) ->
-        (* TODO: use [_ikind] to derive contradictions based on storage size *)
+    | IsInt (t', ikind) ->
         q_map t' (fun q ->
-            if Z.(equal one) (Q.den q) then (* an integer *) Q.one
+            if Z.(equal one) (Q.den q) then
+              (* an integer *)
+              let z = Q.num q in
+              if value_is_compatible_with_type z ikind then Q.one
+              else (
+                L.d_printfln ~color:Orange "CONTRADICTION: %a with incompatible size" (pp Var.pp) t0 ;
+                Q.zero )
             else (
               (* a non-integer rational *)
-              L.d_printfln ~color:Orange "CONTRADICTION: is_int(%a)" Q.pp_print q ;
+              L.d_printfln ~color:Orange "CONTRADICTION: %a on non-int value" (pp Var.pp) t0 ;
               Q.zero ) )
     | Minus t' ->
         q_map t' Q.(mul minus_one)
@@ -641,6 +655,7 @@ let eval_const_shallow t =
 (* defend in depth against exceptions and debug *)
 let simplify_shallow t =
   let exception Undefined in
+  let exception UnsatExn of unsat_info in
   let rec simplify_shallow_or_raise t =
     match t with
     | Var _ | Const _ ->
@@ -773,14 +788,66 @@ let simplify_shallow t =
     | Not (Or (t1, t2)) ->
         (* prefer conjunctive normal form *)
         simplify_shallow_or_raise (And (Not t1, Not t2))
+    | IsInt (Linear l, ikind) -> (
+      match LinArith.classify_minimized_maximized l with
+      | `Minimized -> (
+          let lower_bound = LinArith.get_constant_part l in
+          match PulseContext.integer_widths () with
+          | None ->
+              t
+          | Some integer_widths ->
+              let _, ikind_upper_bound = IntegerWidths.range_of_ikind integer_widths ikind in
+              if Q.(gt lower_bound (of_bigint ikind_upper_bound)) then
+                let reason () =
+                  F.asprintf "out of bound integer of type %s: lower bound %a > %a"
+                    (Typ.ikind_to_string ikind) Q.pp_print lower_bound Z.pp_print ikind_upper_bound
+                in
+                raise_notrace (UnsatExn {reason; source= __POS__})
+              else t )
+      | `Maximized -> (
+          let upper_bound = LinArith.get_constant_part l in
+          match PulseContext.integer_widths () with
+          | None ->
+              t
+          | Some integer_widths ->
+              let ikind_lower_bound, _ = IntegerWidths.range_of_ikind integer_widths ikind in
+              if Q.(lt upper_bound (of_bigint ikind_lower_bound)) then
+                let reason () =
+                  F.asprintf "out of bound integer of type %s: upper bound %a < %a"
+                    (Typ.ikind_to_string ikind) Q.pp_print upper_bound Z.pp_print ikind_lower_bound
+                in
+                raise_notrace (UnsatExn {reason; source= __POS__})
+              else t )
+      | `Constant -> (
+          let value = LinArith.get_constant_part l in
+          match PulseContext.integer_widths () with
+          | None ->
+              t
+          | Some integer_widths ->
+              let ikind_lower_bound, ikind_upper_bound =
+                IntegerWidths.range_of_ikind integer_widths ikind
+              in
+              if
+                Q.(lt value (of_bigint ikind_lower_bound))
+                || Q.(gt value (of_bigint ikind_upper_bound))
+              then
+                let reason () =
+                  F.asprintf "out of bound integer of type %s: value %a" (Typ.ikind_to_string ikind)
+                    Q.pp_print value
+                in
+                raise_notrace (UnsatExn {reason; source= __POS__})
+              else t )
+      | `Neither ->
+          t )
     | _ ->
         t
   in
-  let t' = try Z.protect simplify_shallow_or_raise t with Undefined -> None in
-  match t' with
-  | None ->
+  match Z.protect simplify_shallow_or_raise t with
+  | (exception Undefined) | None ->
       let reason () = F.asprintf "Undefined result when simplifying %a" (pp_no_paren Var.pp) t in
       Unsat {reason; source= __POS__}
+  | exception UnsatExn unsat_info ->
+      Unsat unsat_info
   | Some (Const q) when not (Q.is_rational q) ->
       let reason () =
         F.asprintf "Non-rational result %a when simplifying %a" Q.pp_print q (pp_no_paren Var.pp) t
