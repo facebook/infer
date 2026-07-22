@@ -64,6 +64,11 @@ module TenvMerger = struct
         (Domain.spawn (fun () ->
              Database.new_database_connections Primary ;
              merge_global_tenvs ~normalize:true infer_deps_file ) )
+    else if not Config.unix_fork then
+      (* [fork(2)] without [exec] is unsafe on macOS and Windows (the same condition as
+         [Config.unix_fork]) and crashes the child with SIGBUS. Run the merge in-process there: it is
+         a single sequential task, so no parallelism is lost. *)
+      `SequentialWorker (merge_global_tenvs ~normalize:true infer_deps_file)
     else
       match IUnix.fork () with
       | `In_the_child ->
@@ -74,6 +79,8 @@ module TenvMerger = struct
 
 
   let wait = function
+    | `SequentialWorker () ->
+        Tenv.Global.force_load () |> ignore
     | `DomainWorker domain ->
         Domain.join domain
     | `ForkWorker child_pid -> (
