@@ -300,6 +300,120 @@ module St = struct
           go state visited (List.rev_append children order) (rest @ children)
     in
     go state (AVSet.singleton av) [av] [av]
+
+
+  let perm_severity (p : Perm.t) =
+    match p with
+    | Perm.Reserved ->
+        0
+    | Perm.ReservedConflicted ->
+        1
+    | Perm.Unique ->
+        2
+    | Perm.Frozen ->
+        3
+    | Perm.Disabled ->
+        4
+
+
+  let perm_join a b = if perm_severity a >= perm_severity b then a else b
+
+  let redirect_tag state ~from ~to_ =
+    let sub t = if Tag.equal t from then to_ else t in
+    let parent =
+      Tag.Map.map
+        (function Some p when Tag.equal p from -> Some to_ | other -> other)
+        (Tag.Map.remove from state.parent)
+    in
+    let tags_at =
+      AVMap.map
+        (fun entries ->
+          match Tag.Map.find_opt from entries with
+          | None ->
+              entries
+          | Some p ->
+              let entries = Tag.Map.remove from entries in
+              Tag.Map.update to_
+                (function None -> Some p | Some p0 -> Some (perm_join p0 p))
+                entries )
+        state.tags_at
+    in
+    let pointer_tag = AVMap.map sub state.pointer_tag in
+    let temps = IdentMap.map sub state.temps in
+    let object_root = AVMap.map sub state.object_root in
+    {state with parent; tags_at; pointer_tag; temps; object_root}
+
+
+  let merge_owner_trees state ~survivor ~victim =
+    let ms = tag_info_of state survivor and mv = tag_info_of state victim in
+    let merged =
+      { Tag.Info.protector= ms.Tag.Info.protector || mv.Tag.Info.protector
+      ; borrowed_cell=
+          ( match ms.Tag.Info.borrowed_cell with
+          | Some _ ->
+              ms.Tag.Info.borrowed_cell
+          | None ->
+              mv.Tag.Info.borrowed_cell ) }
+    in
+    let tag_infos = Tag.Map.add survivor merged (Tag.Map.remove victim state.tag_infos) in
+    redirect_tag {state with tag_infos} ~from:victim ~to_:survivor
+
+
+  let canonicalize_owners state ~f =
+    let tags_at =
+      AVMap.fold
+        (fun av entries m ->
+          let av' = f av in
+          match AVMap.find_opt av' m with
+          | None ->
+              AVMap.add av' entries m
+          | Some entries0 ->
+              AVMap.add av' (Tag.Map.union (fun _ p0 p -> Some (perm_join p0 p)) entries0 entries) m )
+        state.tags_at AVMap.empty
+    in
+    let pointer_tag =
+      AVMap.fold
+        (fun av tag m ->
+          let av' = f av in
+          match AVMap.find_opt av' m with
+          | Some tag0 when not (Tag.equal tag0 tag) ->
+              AVMap.remove av' m
+          | _ ->
+              AVMap.add av' tag m )
+        state.pointer_tag AVMap.empty
+    in
+    let tag_infos =
+      Tag.Map.map
+        (fun m -> {m with Tag.Info.borrowed_cell= Option.map m.Tag.Info.borrowed_cell ~f})
+        state.tag_infos
+    in
+    let state = {state with tags_at; pointer_tag; tag_infos} in
+    let object_root, merges =
+      AVMap.fold
+        (fun av tag (m, ms) ->
+          let av' = f av in
+          match AVMap.find_opt av' m with
+          | Some tag0 when not (Tag.equal tag0 tag) ->
+              let s, v = if Tag.compare tag0 tag <= 0 then (tag0, tag) else (tag, tag0) in
+              (AVMap.add av' s m, (s, v) :: ms)
+          | _ ->
+              (AVMap.add av' tag m, ms) )
+        state.object_root (AVMap.empty, [])
+    in
+    let state = {state with object_root} in
+    let resolve redirects t =
+      let rec go t = match Tag.Map.find_opt t redirects with Some t' -> go t' | None -> t in
+      go t
+    in
+    let state, redirects =
+      List.fold merges ~init:(state, Tag.Map.empty) ~f:(fun (st, rd) (s, v) ->
+          let s = resolve rd s and v = resolve rd v in
+          if Tag.equal s v then (st, rd)
+          else
+            let s, v = if Tag.compare s v <= 0 then (s, v) else (v, s) in
+            (merge_owner_trees st ~survivor:s ~victim:v, Tag.Map.add v s rd) )
+    in
+    {state with object_root= AVMap.map (resolve redirects) state.object_root}
 end
 
 type error = {loc: Location.t; description: string} [@@deriving compare, equal]
@@ -307,6 +421,8 @@ type error = {loc: Location.t; description: string} [@@deriving compare, equal]
 type state = {st: St.t; errors: error list} [@@deriving compare, equal]
 
 let start () = {st= St.empty; errors= []}
+
+let canonicalize ~f (state : state) : state = {state with st= St.canonicalize_owners state.st ~f}
 
 let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> AbstractValue.t list)
     ~(bind : AbstractValue.t option) ~(is_mut : bool) ~(src : Operand.t)

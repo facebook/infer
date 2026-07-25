@@ -12,6 +12,10 @@ module Operand = PulseTreeBorrows.Operand
 
 let get_var_repr astate v = Formula.get_var_repr astate.AbductiveDomain.path_condition v
 
+let canonicalize_tb astate =
+  PulseTreeBorrows.canonicalize ~f:(get_var_repr astate) (AbductiveDomain.get_tree_borrows astate)
+
+
 let succs_of_heap ~get_var_repr heap av =
   match UnsafeMemory.find_opt av heap with
   | None ->
@@ -100,8 +104,7 @@ let operand_of_exp astate exp : Operand.t =
 let exec_load ~id ~e ~typ ~loc (astate : AbductiveDomain.t) =
   let src = operand_of_exp astate e in
   AbductiveDomain.set_tree_borrows
-    (PulseTreeBorrows.exec_load ~id ~typ ~src ~succs:(succs_of astate) ~loc
-       (AbductiveDomain.get_tree_borrows astate) )
+    (PulseTreeBorrows.exec_load ~id ~typ ~src ~succs:(succs_of astate) ~loc (canonicalize_tb astate))
     astate
 
 
@@ -110,7 +113,7 @@ let exec_store ~lhs ~rhs ~typ ~loc (astate : AbductiveDomain.t) =
   let rhs = operand_of_exp astate rhs in
   AbductiveDomain.set_tree_borrows
     (PulseTreeBorrows.exec_store ~lhs ~rhs ~typ ~succs:(succs_of astate) ~loc
-       (AbductiveDomain.get_tree_borrows astate) )
+       (canonicalize_tb astate) )
     astate
 
 
@@ -124,5 +127,5 @@ let exec_retag ~dst_exp ~src_exp ~is_mut ~loc (astate : AbductiveDomain.t) =
   let src = operand_of_exp astate src_exp in
   AbductiveDomain.set_tree_borrows
     (PulseTreeBorrows.exec_retag ~dst ~src ~is_mut ~protected:false ~succs:(succs_of astate) ~loc
-       (AbductiveDomain.get_tree_borrows astate) )
+       (canonicalize_tb astate) )
     astate
