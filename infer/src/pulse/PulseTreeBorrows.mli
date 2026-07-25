@@ -73,4 +73,6 @@ val exec_store :
   -> state
   -> state
 
+val canonicalize : f:(AbstractValue.t -> AbstractValue.t) -> state -> state
+
 val report_errors : Procdesc.t -> Errlog.t -> state -> unit
