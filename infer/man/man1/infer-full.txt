@@ -1827,6 +1827,11 @@ OPTIONS
            }
            See also infer-analyze(1).
 
+       --pulse-taint-policy-as-issue-type
+           Activates: Use taint policy name as reported issue type in Pulse
+           (Conversely: --no-pulse-taint-policy-as-issue-type)
+           See also infer-analyze(1).
+
        --pulse-taint-propagators json
            Quick way to specify simple propagators as a JSON objects. See
            --pulse-taint-sources for the fields format documentation.

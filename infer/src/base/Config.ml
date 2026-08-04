@@ -2875,6 +2875,12 @@ where <kinds> are specified in taint source/sanitizer/sink matchers (see $(b,--p
 }|}
 
 
+and pulse_taint_policy_as_issue_type =
+  CLOpt.mk_bool ~long:"pulse-taint-policy-as-issue-type"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Use taint policy name as reported issue type in Pulse"
+
+
 and pulse_taint_propagators =
   CLOpt.mk_json ~long:"pulse-taint-propagators"
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4859,6 +4865,8 @@ and pulse_taint_config =
 and pulse_taint_opaque_files = RevList.to_list !pulse_taint_opaque_files
 
 and pulse_taint_follow_field_accesses = !pulse_taint_follow_field_accesses
+
+and pulse_taint_policy_as_issue_type = !pulse_taint_policy_as_issue_type
 
 and pulse_taint_short_traces = !pulse_taint_short_traces
 
