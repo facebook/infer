@@ -727,6 +727,8 @@ val pulse_taint_follow_field_accesses : bool
 
 val pulse_taint_opaque_files : string list
 
+val pulse_taint_policy_as_issue_type : bool
+
 val pulse_taint_short_traces : bool
 
 val pulse_taint_skip_sources : bool

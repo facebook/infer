@@ -282,6 +282,30 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         else (Some autofix_fst, Some autofixes_converted, None)
 
 
+  (** Regex pattern to extract policy name out of a pulse qualifier message. *)
+  let policy_pattern = Str.regexp {|\([^.]+\)\.|}
+
+  (** If configured using Config.pulse_taint_policy_as_issue_type, for pulse taint issues extracts
+      the policy name out of the qualifier message. Otherwise the default issue_type.hum is
+      provided. *)
+  let get_hum (issue_type : IssueType.t) qualifier : string =
+    if Config.pulse_taint_policy_as_issue_type && IssueType.(equal taint_error) issue_type then
+      try
+        ignore (Str.search_forward policy_pattern qualifier 0) ;
+        Str.matched_group 1 qualifier
+      with Stdlib.Not_found -> issue_type.hum
+    else issue_type.hum
+
+
+  (** If configured using Config.pulse_taint_policy_as_issue_type, for pulse taint issues converts
+      hum to uppercase and replaces special characters by `_`. Otherwise the default
+      issue_type.unique_id is provided. *)
+  let get_unique_id (issue_type : IssueType.t) hum : string =
+    if Config.pulse_taint_policy_as_issue_type && IssueType.(equal taint_error) issue_type then
+      Str.global_replace (Str.regexp "[, -]") "_" (String.uppercase hum)
+    else issue_type.unique_id
+
+
   let to_string ({error_filter; proc_name; proc_location_opt; err_key; err_data} : elt) =
     let source_file, procedure_start_line =
       match proc_location_opt with
@@ -307,9 +331,6 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
           (Errlog.category_override err_data)
           ~default:(IssueType.string_of_category err_key.issue_type.category)
       in
-      let bug_type =
-        Option.value (Errlog.issue_type_override err_data) ~default:err_key.issue_type.unique_id
-      in
       let file =
         SourceFile.to_string ~force_relative:Config.report_force_relative_path source_file
       in
@@ -323,6 +344,14 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
       let qualifier = error_desc_to_qualifier_string err_key.err_desc in
       let suggestion = error_desc_to_suggestion_string err_key.err_desc in
       let autofix, autofixes, autofix_candidates = get_autofixes err_data proc_name in
+      let bug_type_hum = get_hum err_key.issue_type qualifier in
+      (* an issue type explicitly set on the taint policy takes precedence over the issue type
+         derived from the policy name by [--pulse-taint-policy-as-issue-type] *)
+      let bug_type =
+        Option.value
+          (Errlog.issue_type_override err_data)
+          ~default:(get_unique_id err_key.issue_type bug_type_hum)
+      in
       let suppressed =
         Config.suppressions
         && is_suppressed source_file ~issue_type:bug_type ~line:err_data.loc.Location.line
@@ -349,7 +378,7 @@ module JsonIssuePrinter = MakeJsonListPrinter (struct
         ; hash= compute_hash ~severity ~bug_type ~proc_name ~file ~qualifier
         ; dotty= error_desc_to_dotty_string err_key.err_desc
         ; infer_source_loc= json_ml_loc
-        ; bug_type_hum= err_key.issue_type.hum
+        ; bug_type_hum
         ; traceview_id= None
         ; censored_reason= censored_reason ~issue_id:bug_type source_file
         ; access= err_data.access

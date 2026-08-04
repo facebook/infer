@@ -1,0 +1,25 @@
+{
+  "pulse-taint-policies": [
+    {
+      "short_description": "User-controlled Input to Vulnerable Sink",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["Vulnerable Sink"],
+          "sanitizer_kinds": ["Sanitizer"]
+        }
+      ]
+    }
+  ],
+  "pulse-taint-sources": [
+    { "procedure": "inferSecretSource" },
+    { "procedure": "userControlledSource", "kinds": ["User-controlled Input"] }
+  ],
+  "pulse-taint-sinks": [
+    { "procedure": "inferSensitiveSink" },
+    { "procedure": "vulnerableSink", "kinds": ["Vulnerable Sink"] }
+  ],
+  "pulse-taint-sanitizers": [
+    { "procedure": "sanitizeInput", "kinds": ["Sanitizer"] }
+  ]
+}
