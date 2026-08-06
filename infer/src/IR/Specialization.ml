@@ -59,13 +59,24 @@ module Pulse = struct
         F.fprintf fmt "}" )
   end
 
-  type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t}
+  module VariadicActuals = struct
+    (* the caller's extra (variadic) actual arguments, in order, as heap paths, used to
+       specialize a C variadic callee so that its `va_arg` reads connect to them *)
+    type t = HeapPath.t list [@@deriving equal, compare, hash, sexp, yojson_of]
+
+    let pp fmt actuals =
+      if not (List.is_empty actuals) then
+        F.fprintf fmt "variadic_actuals: [%a] " (Pp.seq ~sep:"; " HeapPath.pp) actuals
+  end
+
+  type t =
+    {aliases: Aliases.t option; dynamic_types: DynamicTypes.t; variadic_actuals: VariadicActuals.t}
   [@@deriving equal, compare, hash, sexp, yojson_of]
 
-  let bottom = {aliases= None; dynamic_types= HeapPath.Map.empty}
+  let bottom = {aliases= None; dynamic_types= HeapPath.Map.empty; variadic_actuals= []}
 
-  let is_bottom {aliases; dynamic_types} =
-    Option.is_none aliases && HeapPath.Map.is_empty dynamic_types
+  let is_bottom {aliases; dynamic_types; variadic_actuals} =
+    Option.is_none aliases && HeapPath.Map.is_empty dynamic_types && List.is_empty variadic_actuals
 
 
   let pp_aliases fmt = function
@@ -75,8 +86,9 @@ module Pulse = struct
         F.fprintf fmt "alias: %a " Aliases.pp aliases
 
 
-  let pp fmt {aliases; dynamic_types} =
-    F.fprintf fmt "%a%a" pp_aliases aliases DynamicTypes.pp dynamic_types
+  let pp fmt {aliases; dynamic_types; variadic_actuals} =
+    F.fprintf fmt "%a%a%a" pp_aliases aliases DynamicTypes.pp dynamic_types VariadicActuals.pp
+      variadic_actuals
 
 
   module Set = PrettyPrintable.MakePPSet (struct

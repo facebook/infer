@@ -276,3 +276,8 @@ codetoanalyze/c/pulse/var_arg.c, sum_one_then_npe_bad, 3, NULLPTR_DEREFERENCE, n
 codetoanalyze/c/pulse/var_arg.c, FP_sum_then_unreachable_npe_ok, 4, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/var_arg.c, unknown_sum_one_then_npe_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
 codetoanalyze/c/pulse/var_arg.c, unknown_sum_four_then_npe_bad, 3, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/c/pulse/var_arg.c, FP_va_arg_out_param_no_leak_ok, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `v` declared here,read to uninitialized value occurs here]
+codetoanalyze/c/pulse/var_arg.c, FP_va_arg_two_out_params_no_leak_ok, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `v` declared here,read to uninitialized value occurs here]
+codetoanalyze/c/pulse/var_arg.c, FP_va_arg_two_out_params_no_leak_ok, 4, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `u` declared here,read to uninitialized value occurs here]
+codetoanalyze/c/pulse/var_arg.c, FP_va_arg_out_param_loop_no_leak_ok, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `v` declared here,read to uninitialized value occurs here]
+codetoanalyze/c/pulse/var_arg.c, FP_va_multi_malloc_out_params_ok, 3, PULSE_UNINITIALIZED_VALUE, no_bucket, ERROR, [variable `v` declared here,read to uninitialized value occurs here]

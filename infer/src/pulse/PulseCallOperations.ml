@@ -998,9 +998,30 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
       in
       let max_iteration = Config.pulse_specialization_iteration_limit in
       let already_given = Specialization.Pulse.Set.empty in
+      (* #1937: for a C variadic callee called with extra (variadic) actuals, request an
+         initial specialization carrying those actuals as heap paths so that the callee's
+         [va_arg] reads connect to them (see PulseSpecialization.seed_variadic_actuals). *)
+      let variadic_specialization =
+        let is_variadic =
+          Option.exists (IRAttributes.load callee_pname) ~f:(fun a ->
+              a.ProcAttributes.is_clang_variadic )
+        in
+        match formals_opt with
+        | Some formals when is_variadic && List.length actuals > List.length formals ->
+            let n_extra = List.length actuals - List.length formals in
+            let paths =
+              List.init n_extra ~f:(fun k ->
+                  Specialization.HeapPath.Pvar
+                    (Pvar.mk_global
+                       (Mangled.from_string (Printf.sprintf "__infer_va_actual_%d" k)) ) )
+            in
+            {Specialization.Pulse.bottom with variadic_actuals= paths}
+        | _ ->
+            Specialization.Pulse.bottom
+      in
       let res, summary_used, non_disj, contradiction, resolution_status =
         iter_call ~max_iteration ~nth_iteration:0 ~is_pulse_specialization_limit_reached
-          already_given summary.PulseSummary.main astate
+          ~specialization:variadic_specialization already_given summary.PulseSummary.main astate
       in
       let has_continue_program =
         has_continue_program res || not (NonDisjDomain.astate_is_bottom non_disj)
