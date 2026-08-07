@@ -10,7 +10,8 @@ INFER_OPTIONS = \
   --report-suppress-errors DATA_FLOW_TO_SINK \
   --pulse-specialization-partial \
   --pulse-transitive-access-config TransitiveAccessConfig.json \
-  --pulse-monitor-transitive-callees --pulse-monitor-transitive-missed-captures
+  --pulse-monitor-transitive-callees --pulse-monitor-transitive-missed-captures \
+  --pulse-taint-policy-as-issue-type
 INFERPRINT_OPTIONS = --issues-tests
 SOURCES = $(wildcard *.java taint/*.java)
 
