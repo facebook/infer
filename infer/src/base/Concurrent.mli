@@ -22,6 +22,8 @@ module Queue : sig
   (** Dequeues an item if available, does not block. *)
 
   val wait_until_non_empty : 'a t -> unit
+
+  val clear : 'a t -> unit
 end
 
 module type Hashtbl = sig

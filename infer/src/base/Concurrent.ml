@@ -40,6 +40,9 @@ module Queue = struct
         wait_until_non_empty_loop () )
     in
     IMutex.critical_section t.mutex ~f:wait_until_non_empty_loop
+
+
+  let clear t = IMutex.critical_section t.mutex ~f:(fun () -> Queue.clear t.queue)
 end
 
 module type Hashtbl = sig

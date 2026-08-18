@@ -38,7 +38,8 @@ type ('work, 'final, 'result) t =
   ; workers: ('work, 'final) worker Array.t
   ; message_queue: 'result worker_message Concurrent.Queue.t
   ; task_bar: TaskBar.t
-  ; tasks: ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t }
+  ; tasks: ('work, 'result, WorkerPoolState.worker_id) TaskGenerator.t
+  ; workers_already_stopped: bool ref }
 
 let update_status task_bar ~slot t status =
   match Config.progress_bar with
@@ -88,6 +89,27 @@ let child ~f ~child_prologue ~child_epilogue ~command_queue ~message_queue worke
   result
 
 
+let stop_workers workers_already_stopped workers =
+  Array.iter workers ~f:(fun {command_queue} ->
+      Concurrent.Queue.clear command_queue ;
+      Concurrent.Queue.enqueue GoHome command_queue ) ;
+  let results =
+    Array.init (Array.length workers) ~f:(fun worker_id ->
+        Domain.join workers.(worker_id).domain |> Option.some )
+  in
+  workers_already_stopped := true ;
+  results
+
+
+let epilogue workers_already_stopped workers task_bar =
+ fun () ->
+  if !workers_already_stopped then ()
+  else (
+    L.progress "Waiting for spawned domains to terminate...@." ;
+    ignore @@ stop_workers workers_already_stopped workers ;
+    TaskBar.finish task_bar )
+
+
 let create :
        jobs:int
     -> child_prologue:(Worker.id -> unit)
@@ -100,6 +122,11 @@ let create :
   DBWriter.use_multicore := true ;
   DBWriter.start () ;
   let message_queue = Concurrent.Queue.create () in
+  let previously_blocked_signals =
+    (* Block SIGINT until all domains spawned, so that they ignore it and only 
+       terminate when the orchestrator says so. *)
+    Unix.sigprocmask ~mode:SIG_BLOCK [Stdlib.Sys.sigint]
+  in
   let workers =
     Array.init jobs ~f:(fun id ->
         let command_queue = Concurrent.Queue.create () in
@@ -111,11 +138,18 @@ let create :
         {domain; command_queue; state= Idle} )
   in
   let task_bar = TaskBar.create ~jobs in
+  let workers_already_stopped = ref false in
+  (* Ensure that SIGINT will gracefully terminate the workers *)
+  Epilogues.register
+    ~f:(epilogue workers_already_stopped workers task_bar)
+    ~description:"Stop worker domains." ;
+  (* Restore previous signal mask for the primary domain *)
+  ignore @@ Unix.sigprocmask ~mode:SIG_SETMASK previously_blocked_signals ;
   (WorkerPoolState.update_status :=
      fun t status ->
        let slot = WorkerPoolState.get_in_child () |> Option.value_exn in
        update_status ~slot task_bar t status ) ;
-  {jobs; workers; message_queue; tasks= tasks (); task_bar}
+  {jobs; workers; message_queue; tasks= tasks (); task_bar; workers_already_stopped}
 
 
 let handle_worker_message pool = function
@@ -194,12 +228,8 @@ let do_compaction_if_needed =
 
 
 let run pool =
-  let rec run_inner pool =
-    if pool.tasks.is_empty () then (
-      Array.iter pool.workers ~f:(fun {command_queue} ->
-          Concurrent.Queue.enqueue GoHome command_queue ) ;
-      Array.init (Array.length pool.workers) ~f:(fun worker_id ->
-          Domain.join pool.workers.(worker_id).domain |> Option.some ) )
+  let rec run_inner () =
+    if pool.tasks.is_empty () then stop_workers pool.workers_already_stopped pool.workers
     else (
       handle_all_messages pool ;
       send_work_to_idle_workers pool ;
@@ -207,11 +237,11 @@ let run pool =
       if some_workers_processing pool then Concurrent.Queue.wait_until_non_empty pool.message_queue
       else Domain.cpu_relax () ;
       do_compaction_if_needed () ;
-      run_inner pool )
+      run_inner () )
   in
   let total_tasks = pool.tasks.remaining_tasks () in
   TaskBar.set_tasks_total pool.task_bar total_tasks ;
   TaskBar.tasks_done_reset pool.task_bar ;
-  let results = run_inner pool in
+  let results = run_inner () in
   TaskBar.finish pool.task_bar ;
   results
