@@ -119,7 +119,10 @@ let load_from_verbose_output =
          4. [wrote path/to/File.java] leaves `path/to/File.java` in match group 6 (from java 11)*)
       "\\[wrote \
        \\(DirectoryFileObject\\[%s:\\(.*\\)\\|\\(\\(Regular\\|Simple\\)FileObject\\[\\(.*\\)\\)\\]\\|\\(.*\\)\\)\\]"
-      Config.javac_classes_out
+      (* the classes directory is a filesystem path (defaults to the project root), so it must be
+         quoted before being embedded in a regex, otherwise paths containing regex metacharacters
+         such as '+' (e.g. a project named [c++]) make [Str.regexp] raise [Parse_error] *)
+      (Str.quote Config.javac_classes_out)
     |> Str.regexp
   in
   let source_filename_re =
