@@ -36,4 +36,29 @@ class StringTest {
     String t = new String(s);
     char c = t.charAt(5);
   }
+
+  void split_with_negative_limit_Good() {
+    String s = "a,b";
+    String[] parts = s.split(",", -1);
+    int[] xs = new int[parts.length];
+  }
+
+  void split_with_zero_limit_Good() {
+    String s = "a,b";
+    String[] parts = s.split(",", 0);
+    int[] xs = new int[parts.length];
+  }
+
+  void split_with_positive_limit_Good() {
+    String s = "a,b";
+    String[] parts = s.split(",", 2);
+    int[] xs = new int[parts.length];
+  }
+
+  void split_no_limit_Good() {
+    String s = "a,b";
+    String[] parts = s.split(",");
+    int[] xs = new int[parts.length];
+  }
+
 }

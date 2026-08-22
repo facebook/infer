@@ -1638,13 +1638,20 @@ module JavaString = struct
     {exec; check= no_check}
 
 
-  let split_with_limit limit_exp =
+  (** [String.split(regex, limit)]. Non-positive [limit] behaves like [split]. Positive [limit] caps
+      the result length. Allocate from the receiver string; [limit] is not an array size. *)
+  let split_with_limit string_exp limit_exp =
     let exec ({integer_type_widths} as model_env) ~ret mem =
-      let dummy_exp = Exp.zero in
-      let length =
-        Sem.eval integer_type_widths dummy_exp mem |> range_itv_one_max_one_mone |> Dom.Val.of_itv
+      let from_string =
+        ArrObjCommon.eval_size model_env string_exp ~fn mem |> range_itv_one_max_one_mone
       in
-      malloc_and_set_length limit_exp model_env ~ret length mem
+      let limit_itv = Sem.eval integer_type_widths limit_exp mem |> Dom.Val.get_itv in
+      let length_itv =
+        if Boolean.is_true (Itv.gt_sem limit_itv Itv.zero) then
+          Itv.set_lb Itv.Bound.one (Itv.min_sem ~use_minmax_bound:true from_string limit_itv)
+        else from_string
+      in
+      malloc_and_set_length string_exp model_env ~ret (Dom.Val.of_itv length_itv) mem
     in
     {exec; check= no_check}
 
@@ -2349,7 +2356,7 @@ module Call = struct
         &:: "replace" <>$ capt_exp $+ any_arg_of_prim_typ int_typ $+ any_arg_of_prim_typ int_typ
         $--> JavaString.replace
       ; +PatternMatch.Java.implements_lang "String"
-        &:: "split" <>$ any_arg $+ any_arg $+ capt_exp $--> JavaString.split_with_limit
+        &:: "split" <>$ capt_exp $+ any_arg $+ capt_exp $--> JavaString.split_with_limit
       ; +PatternMatch.Java.implements_lang "String"
         &:: "split" <>$ capt_exp $+ any_arg $--> JavaString.split
       ; +PatternMatch.Java.implements_lang "String"
