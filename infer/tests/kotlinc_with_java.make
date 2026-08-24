@@ -16,7 +16,7 @@ CLEAN_EXTRA = *.class META-INF
 
 PROJECT_ROOT ?= $(TESTS_DIR)
 
-JAVAC_FLAGS = -g -source 8 -target 8
+JAVAC_FLAGS = -g --release 21
 
 KOTLINC_FLAGS = -nowarn
 

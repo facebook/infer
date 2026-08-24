@@ -11,7 +11,7 @@ include $(TESTS_DIR)/java.make
 
 CLEAN_EXTRA = *.class
 
-JAVAC_FLAGS = -g -source 8 -target 8
+JAVAC_FLAGS = -g --release 21
 
 .PHONY: capture
 capture: $(SOURCES) $(INFER_BIN)
