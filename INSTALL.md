@@ -17,7 +17,7 @@ is required to compile everything from source.
 - opam >= 2.0.0 (instructions [here](https://opam.ocaml.org/doc/Install.html#OSX))
 - sqlite
 - pkg-config
-- Java (only needed for the Java analysis)
+- Java >= 21 (only needed for the Java analysis)
 - CMake (only needed for the C/Objective-C analysis)
 - Ninja (optional, if you wish to use sequential linking when building the
   C/Objective-C analysis)
@@ -44,7 +44,7 @@ is required to compile everything from source.
 
 - opam >= 2.0.0
 - pkg-config
-- Java (only needed for the Java analysis)
+- Java >= 21 (only needed for the Java analysis)
 - gcc >= 5.X or clang >= 3.4 (only needed for the C/Objective-C analysis)
 - autoconf >= 2.63 and automake >= 1.11.1 (if building from git)
 - CMake (only needed for the C/Objective-C analysis)
