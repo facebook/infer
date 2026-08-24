@@ -431,6 +431,11 @@
       "kinds": ["SQLWrite"],
       "taint_target": ["ArgumentPositions", [0]]
     },
+    { "class_names": ["java.sql.Connection"],
+      "method_names": ["prepareStatement", "prepareCall"],
+      "kinds": ["SQLInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
     { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.loggingSink1",
       "kinds": ["Logging"],
       "taint_target": ["ArgumentPositions", [1]] },
