@@ -33,6 +33,8 @@ let windows = is_yes "@WINDOWS_BUILD@"
 
 let darwin = String.equal "@BUILD_PLATFORM@" "Darwin"
 
+let arm64 = String.equal "@BUILD_ARCH@" "aarch64"
+
 let if_platform_env ?(else_ = "") s =
   match Sys.getenv_opt "PLATFORM_ENV" with Some pe when String.length pe > 0 -> s | _ -> else_
 
