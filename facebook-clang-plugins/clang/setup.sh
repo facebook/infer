@@ -276,7 +276,10 @@ popd # build
 popd # $TMP
 
 # On Linux, copy __config_site to install directory. This way we don't need additional -I statements
-CONFIG_SITE="$CLANG_PREFIX/include/x86_64-unknown-linux-gnu/c++/v1/__config_site"
+# Ask the freshly built clang for its default target triple so this resolves on
+# any host architecture (x86_64, aarch64, ...) instead of hardcoding x86_64.
+CLANG_TARGET=$("$CLANG_PREFIX/bin/clang" -dumpmachine)
+CONFIG_SITE="$CLANG_PREFIX/include/$CLANG_TARGET/c++/v1/__config_site"
 if [[ "$PLATFORM" = "Linux" ]] && [[ -f "$CONFIG_SITE" ]]; then
     cp -f "$CONFIG_SITE" "$CLANG_PREFIX/include/c++/v1/__config_site"
 fi
