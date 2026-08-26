@@ -224,6 +224,8 @@ sledge/llvm-config_ldflags.sexp: $(LLVM_OCAML_SENTINEL)
 endif
 
 
+BUILD_ARCH := $(shell uname -m)
+
 $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	TMPFILE=$$(mktemp $@.tmp.XXXX); \
 	INFER_GIT_COMMIT=$$(git --work-tree=$(ROOT_DIR) --git-dir=$(ROOT_DIR)/.git rev-parse --short HEAD || printf "unknown"); \
@@ -243,6 +245,7 @@ $(GENERATED_FROM_AUTOCONF): $(MAKEFILE_LIST)
 	  -e "s|@BUILD_JAVA_ANALYZERS[@]|$(BUILD_JAVA_ANALYZERS)|g" \
 	  -e "s|@BUILD_PYTHON_ANALYZERS[@]|$(BUILD_PYTHON_ANALYZERS)|g" \
 	  -e "s|@BUILD_PLATFORM[@]|$(BUILD_PLATFORM)|g" \
+	  -e "s|@BUILD_ARCH[@]|$(BUILD_ARCH)|g" \
 	  -e "s|@BUILD_RUST_ANALYZERS[@]|$(BUILD_RUST_ANALYZERS)|g" \
 	  -e "s|@BUILD_SWIFT_ANALYZERS[@]|$(BUILD_SWIFT_ANALYZERS)|g" \
 	  -e "s|@OPAMSWITCH[@]|$(OPAMSWITCH)|g" \

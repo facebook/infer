@@ -39,8 +39,11 @@ let strict_flags =
 
 
 (* OCaml 5.2 on macos with -O3 can lead to compilation failing
-   https://github.com/ocaml/ocaml/issues/13596 *)
-let ocamlopt_flags_val = if darwin then "(:standard -O2)" else "(:standard -O3)"
+   https://github.com/ocaml/ocaml/issues/13596
+   On aarch64 Linux, -O3 inlines so aggressively into infer.ml that a conditional
+   branch in the resulting object exceeds the assembler's +/-1MB range
+   ("conditional branch out of range"), so use -O2 there too. *)
+let ocamlopt_flags_val = if darwin || arm64 then "(:standard -O2)" else "(:standard -O3)"
 
 let env_stanza =
   Format.sprintf
