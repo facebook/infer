@@ -24,13 +24,22 @@ on:
 permissions:
   issues: write
   pull-requests: read
+  # actions/stale is stateful: when a run hits operations-per-run it records
+  # the issues it already handled in an Actions cache entry named `_state`, and
+  # deletes that entry once it has worked through the whole backlog. Deleting a
+  # cache entry requires `actions: write`. Without it the delete fails with
+  # "Error delete _state: [403] Resource not accessible by integration", the
+  # entry never expires, and every subsequent run skips the same issues
+  # ("issue skipped due being processed during the previous run") -- so they
+  # are marked stale but can never progress to being closed.
+  actions: write
 
 jobs:
   stale:
     runs-on: ubuntu-latest
     if: github.repository == 'facebook/infer'
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           # ~18 months of inactivity before an issue is marked stale.
           days-before-issue-stale: 540
