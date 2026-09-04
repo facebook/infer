@@ -1090,7 +1090,7 @@ In C, Infer reports memory leaks when objects are created with `malloc` and not
 freed. For example:
 
 ```c
--(void) memory_leak_bug {
+void memory_leak_bug () {
     struct Person *p = malloc(sizeof(struct Person));
 }
 ```
