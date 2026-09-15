@@ -28,18 +28,28 @@ let type_matches tenv actual_typ types =
       false
 
 
+let dispatch_class_name class_name =
+  if Language.curr_language_is Hack && Typ.Name.Hack.is_static_companion class_name then
+    (* in Hack, instance and static method are dispatched in the class and in its static companion,
+       but they can not appear in both *)
+    Typ.Name.Hack.static_companion_origin class_name
+  else class_name
+
+
 let class_names_match tenv class_names class_name =
   Option.exists class_name ~f:(fun class_name ->
-      let class_name =
-        if Language.curr_language_is Hack && Typ.Name.Hack.is_static_companion class_name then
-          (* in Hack, instance and static method are dispatched in the class and in its static
-             companion, but they can not appear in both *)
-          Typ.Name.Hack.static_companion_origin class_name
-        else class_name
-      in
       PatternMatch.supertype_exists tenv
         (fun class_name _ -> List.mem ~equal:String.equal class_names (Typ.Name.name class_name))
-        class_name )
+        (dispatch_class_name class_name) )
+
+
+let supertype_names tenv class_name =
+  Option.value_map class_name ~default:IString.Set.empty ~f:(fun class_name ->
+      Tenv.fold_supers tenv (dispatch_class_name class_name) ~init:IString.Set.empty
+        ~f:(fun class_name struct_opt acc ->
+          (* keep only the types [PatternMatch.supertype_exists] would apply its predicate to,
+             otherwise matchers would also match classes missing from the type environment *)
+          if Option.is_some struct_opt then IString.Set.add (Typ.Name.name class_name) acc else acc ) )
 
 
 let taint_procedure_target_matches tenv taint_target actual_index actual_typ =
@@ -149,52 +159,65 @@ let check_class_annotation tenv class_name_opt annotation annotation_values =
 let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name actuals =
   let open TaintConfig.Unit in
   let is_hack_builtin = Procname.is_hack_builtins proc_name in
+  let class_name = Procname.get_class_type_name proc_name in
+  let method_name = Procname.get_method proc_name in
+  let is_objc_block = Procname.is_objc_block proc_name in
+  let proc_name_s = lazy (get_proc_name_s proc_name) in
+  let proc_name_s_for_regex =
+    lazy
+      (let proc_name_s = Lazy.force proc_name_s in
+       if Procname.is_objc_method proc_name then
+         match String.split proc_name_s ~on:':' with fst :: _ -> fst | _ -> proc_name_s
+       else proc_name_s )
+  in
+  let block_passed_to_proc_name_s =
+    Option.map block_passed_to ~f:(fun block_passed_to_proc_name ->
+        lazy (get_proc_name_s block_passed_to_proc_name) )
+  in
+  let source_file =
+    Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
+  in
+  let procedure_return_type_match method_return_type_names =
+    Option.exists proc_attributes ~f:(fun attrs ->
+        type_matches tenv attrs.ProcAttributes.ret_type method_return_type_names )
+  in
+  let class_supertype_names = lazy (supertype_names tenv class_name) in
+  let class_names_match class_names =
+    let supertype_names = Lazy.force class_supertype_names in
+    List.exists class_names ~f:(fun class_name -> IString.Set.mem class_name supertype_names)
+  in
   List.filter_map matchers ~f:(fun matcher ->
-      let class_name = Procname.get_class_type_name proc_name in
-      let proc_name_s = get_proc_name_s proc_name in
-      let procedure_return_type_match method_return_type_names =
-        Option.exists proc_attributes ~f:(fun attrs ->
-            type_matches tenv attrs.ProcAttributes.ret_type method_return_type_names )
-      in
       let procedure_name_matches =
         (* We handle builtins separately as in general we do not intend to report on builtin calls
            Usually those errors would not be actionable *)
         if is_hack_builtin then
           match matcher.procedure_matcher with
           | BuiltinName {name} ->
-              String.equal name proc_name_s
+              String.equal name (Lazy.force proc_name_s)
           | _ ->
               false
         else
           match matcher.procedure_matcher with
           | ProcedureName {name} ->
-              String.is_substring ~substring:name proc_name_s
+              String.is_substring ~substring:name (Lazy.force proc_name_s)
           | ProcedureNameRegex {name_regex; exclude_in; exclude_names} ->
-              let source_file =
-                Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
-              in
-              let proc_name_s =
-                if Procname.is_objc_method proc_name then
-                  match String.split proc_name_s ~on:':' with fst :: _ -> fst | _ -> proc_name_s
-                else proc_name_s
-              in
-              check_regex name_regex proc_name_s ?source_file exclude_in exclude_names
+              check_regex name_regex
+                (Lazy.force proc_name_s_for_regex)
+                ?source_file exclude_in exclude_names
           | ClassNameRegex {name_regex; exclude_in; exclude_names} ->
               check_regex_class tenv class_name name_regex exclude_in exclude_names proc_attributes
           | ClassAndMethodNames {class_names; method_names} ->
-              class_names_match tenv class_names class_name
-              && List.mem ~equal:String.equal method_names (Procname.get_method proc_name)
+              List.mem ~equal:String.equal method_names method_name && class_names_match class_names
           | ClassNameAndMethodRegex {class_names; method_name_regex; exclude_in; exclude_names} ->
-              class_names_match tenv class_names class_name
-              && check_regex method_name_regex proc_name_s exclude_in exclude_names
+              class_names_match class_names
+              && check_regex method_name_regex (Lazy.force proc_name_s) exclude_in exclude_names
           | ClassRegexAndMethodRegex {class_name_regex; method_name_regex; exclude_in; exclude_names}
             ->
               check_regex_class tenv class_name class_name_regex exclude_in exclude_names
                 proc_attributes
-              && check_regex method_name_regex proc_name_s exclude_in exclude_names
+              && check_regex method_name_regex (Lazy.force proc_name_s) exclude_in exclude_names
           | ClassAndMethodReturnTypeNames {class_names; method_return_type_names} ->
-              class_names_match tenv class_names class_name
-              && procedure_return_type_match method_return_type_names
+              class_names_match class_names && procedure_return_type_match method_return_type_names
           | ClassRegexAndMethodReturnTypeNames
               {class_name_regex; method_return_type_names; exclude_in; exclude_names} ->
               check_regex_class tenv class_name class_name_regex exclude_in exclude_names
@@ -212,10 +235,9 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
               check_class_annotation tenv class_name annotation annotation_values
               && check_regex_class tenv class_name class_name_regex exclude_in exclude_names
                    proc_attributes
-              && check_regex method_name_regex proc_name_s exclude_in exclude_names
+              && check_regex method_name_regex (Lazy.force proc_name_s) exclude_in exclude_names
           | OverridesOfClassWithAnnotation {annotation} ->
-              Option.exists (Procname.get_class_type_name proc_name) ~f:(fun procedure_class_name ->
-                  let method_name = Procname.get_method proc_name in
+              Option.exists class_name ~f:(fun procedure_class_name ->
                   PatternMatch.supertype_exists tenv
                     (fun class_name _ ->
                       Option.exists (Tenv.lookup tenv class_name)
@@ -234,23 +256,17 @@ let procedure_matches tenv matchers ?block_passed_to ?proc_attributes proc_name 
               false
       in
       let block_passed_to_matches =
-        match (matcher.procedure_matcher, block_passed_to) with
-        | Block {name}, Some block_passed_to_proc_name ->
-            let proc_name_s = get_proc_name_s block_passed_to_proc_name in
-            String.is_substring ~substring:name proc_name_s
-        | BlockNameRegex {name_regex; exclude_in}, Some block_passed_to_proc_name ->
-            let proc_name_s = get_proc_name_s block_passed_to_proc_name in
-            let source_file =
-              Option.map ~f:(fun attr -> attr.ProcAttributes.loc.Location.file) proc_attributes
-            in
-            check_regex name_regex ?source_file proc_name_s exclude_in None
+        match (matcher.procedure_matcher, block_passed_to_proc_name_s) with
+        | Block {name}, Some block_passed_to_proc_name_s ->
+            String.is_substring ~substring:name (Lazy.force block_passed_to_proc_name_s)
+        | BlockNameRegex {name_regex; exclude_in}, Some block_passed_to_proc_name_s ->
+            check_regex name_regex ?source_file
+              (Lazy.force block_passed_to_proc_name_s)
+              exclude_in None
         | _ ->
             false
       in
-      if
-        (procedure_name_matches && not (Procname.is_objc_block proc_name))
-        || block_passed_to_matches
-      then
+      if (procedure_name_matches && not is_objc_block) || block_passed_to_matches then
         let actuals_match =
           List.for_all matcher.arguments ~f:(fun {Pulse_config_t.index; type_matches= types} ->
               List.nth actuals index
