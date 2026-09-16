@@ -406,6 +406,57 @@ include struct
   let assertion_error _ : model = start_model @@ fun () -> report_assert_error
 
   let unreachable_path _ : model = start_model @@ fun () -> unreachable
+
+  (* Variadic (`va_list`) modeling for #1937. The `va_list` carries a monotonic cursor;
+     each pointer-typed `va_arg` reads the next element of a global array that is seeded
+     at specialised summary application with the caller's extra (variadic) actuals, so
+     that writes through variadic out-parameters are connected back to the caller. *)
+
+  (* Evaluate a global variable to an abstract value inside a DSL model. *)
+  let eval_read_global pvar : DSL.aval DSL.model_monad =
+    let open DSL.Syntax in
+    let* {PulseModelsImport.path; location} = get_data in
+    exec_operation (fun astate ->
+        let astate, ah = PulseOperations.eval_var path location pvar astate in
+        (ah, astate) )
+
+
+  let va_list_typ = Typ.CStruct (QualifiedCppName.of_qual_string "__infer_va_list")
+
+  let va_list_cursor = Fieldname.make va_list_typ "__infer_va_cursor"
+
+  (* The well-known global that specialization seeds with the caller's variadic actuals
+     (see PulseSpecialization.seed_variadic_actuals). va_arg reads successive elements. *)
+  let va_args_global = Pvar.mk_global (Mangled.from_string "__infer_va_args_global")
+
+  (* va_start: initialise the va_list cursor to 0. The backing array of variadic actuals
+     lives in the [va_args_global] global, seeded at specialised summary application. *)
+  let va_start_model va_list : model =
+    start_model
+    @@ fun () ->
+    let* zero = int 0 in
+    store_field ~ref:(to_aval va_list) va_list_cursor zero
+
+
+  (* va_arg: for a POINTER-typed read, return [va_args_global\[cursor\]] (the seeded caller
+     actual) and advance the cursor; this connects out-parameter writes to the caller. For a
+     non-pointer read (e.g. [va_arg(a, int)]), return a fresh unconstrained value so that
+     value-returning variadic functions (e.g. a summing [sum(int n, ...)]) are unaffected. *)
+  let va_arg_model va_list : model =
+    start_model
+    @@ fun () ->
+    let* {PulseModelsImport.ret= _, ret_typ} = get_data in
+    let va = to_aval va_list in
+    if Typ.is_pointer ret_typ then
+      let* cursor = load_access va (FieldAccess va_list_cursor) in
+      let* args = eval_read_global va_args_global in
+      let* elem = load_access args (ArrayAccess (StdTyp.void, fst cursor)) in
+      let* next = binop_int (Binop.PlusA None) cursor IntLit.one in
+      store_field ~ref:va va_list_cursor next @@> assign_ret elem
+    else assign_ret @= fresh ()
+
+
+  let va_end_model va_list : model = start_model @@ fun () -> check_valid va_list
 end
 
 (** Reference: https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
@@ -560,6 +611,10 @@ let matchers : matcher list =
   let taint_ret_from_arg arg = start_model @@ fun () -> data_dependency_to_ret [arg] in
   let map_context_tenv f (x, _) = f x in
   [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> free
+  ; +BuiltinDecl.(match_builtin __builtin_va_start)
+    <>$ capt_arg_payload $+ any_arg $--> va_start_model
+  ; +BuiltinDecl.(match_builtin __builtin_va_arg) <>$ capt_arg_payload $--> va_arg_model
+  ; +BuiltinDecl.(match_builtin __builtin_va_end) <>$ capt_arg_payload $--> va_end_model
   ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> free
   ; -"realloc" <>$ capt_arg $+ capt_exp $--> realloc ~null_case:true
   ; +match_regexp_opt Config.pulse_model_realloc_pattern

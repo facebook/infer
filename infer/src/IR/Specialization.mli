@@ -32,12 +32,18 @@ module Pulse : sig
     type t = Typ.name HeapPath.Map.t [@@deriving equal, compare]
   end
 
+  module VariadicActuals : sig
+    (** the extra variadic actual arguments, in order, as heap paths *)
+    type t = HeapPath.t list [@@deriving equal, compare]
+  end
+
   (** currently [aliases=None] means we did not detect any alias when applying the previous summary
       and this specialization will not introduce any alias assumption.
 
       [aliases=Some []] means something went wrong... We have detected some aliases when applying
       the last summary, but we were not able to phrase it in term of parameters equalities. *)
-  type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t}
+  type t =
+    {aliases: Aliases.t option; dynamic_types: DynamicTypes.t; variadic_actuals: VariadicActuals.t}
   [@@deriving equal, compare, yojson_of]
 
   val bottom : t
