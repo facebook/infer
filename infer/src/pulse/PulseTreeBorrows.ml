@@ -11,6 +11,7 @@ module AbstractValue = PulseAbstractValue
 module AVMap = AbstractValue.Map
 module AVSet = AbstractValue.Set
 module IdentMap = Stdlib.Map.Make (Ident)
+module TBSpec = Specialization.Pulse.TreeBorrows
 
 module Tag = struct
   type t = int [@@deriving compare, equal]
@@ -29,24 +30,10 @@ module Tag = struct
   end
 end
 
-module Perm = struct
-  type t = Reserved | Unique | Frozen | Disabled | ReservedConflicted [@@deriving compare, equal]
-
-  let pp fmt = function
-    | Reserved ->
-        F.pp_print_string fmt "Reserved"
-    | Unique ->
-        F.pp_print_string fmt "Unique"
-    | Frozen ->
-        F.pp_print_string fmt "Frozen"
-    | Disabled ->
-        F.pp_print_string fmt "Disabled"
-    | ReservedConflicted ->
-        F.pp_print_string fmt "ReservedConflicted"
-end
+module Perm = TBSpec.Perm
 
 module Access = struct
-  type t = Read | Write
+  type t = Read | Write [@@deriving compare, equal]
 end
 
 module Rel = struct
@@ -175,6 +162,10 @@ module St = struct
     ; pointer_tag: Tag.t AVMap.t  (** the tag currently held by each pointer cell *)
     ; temps: Tag.t IdentMap.t  (** the tag carried by loaded temporaries *)
     ; object_root: Tag.t AVMap.t  (** owner tag of each borrowed-from cell *)
+    ; local_refs: Tag.Set.t Tag.Map.t
+    ; formal_tags: Tag.t Pvar.Map.t  (** the tag at entry for each reference argument *)
+    ; entry_pre: (TBSpec.t[@ignore])
+    ; access_log: (Access.t * Tag.t * AbstractValue.t * Location.t) list
     ; next_tag: int }
   [@@deriving compare, equal]
 
@@ -185,6 +176,10 @@ module St = struct
     ; pointer_tag= AVMap.empty
     ; temps= IdentMap.empty
     ; object_root= AVMap.empty
+    ; local_refs= Tag.Map.empty
+    ; formal_tags= Pvar.Map.empty
+    ; entry_pre= TBSpec.bottom
+    ; access_log= []
     ; next_tag= 0 }
 
 
@@ -201,6 +196,16 @@ module St = struct
   let set_parent state tag p = {state with parent= Tag.Map.add tag p state.parent}
 
   let parent_of state tag = try Tag.Map.find tag state.parent with Stdlib.Not_found -> None
+
+  let rec is_ancestor state ~ancestor ~descendant =
+    Tag.equal ancestor descendant
+    ||
+    match parent_of state descendant with
+    | Some p ->
+        is_ancestor state ~ancestor ~descendant:p
+    | None ->
+        false
+
 
   let tag_info_of state tag =
     try Tag.Map.find tag state.tag_infos
@@ -229,6 +234,45 @@ module St = struct
         if Tag.Map.mem tag (entries_at state av) then state
         else set_entry state av tag Perm.Reserved
 
+
+  let perm_at state tag av = Tag.Map.find_opt tag (entries_at state av)
+
+  let own_perm state tag =
+    let info = tag_info_of state tag in
+    match
+      Option.bind info.Tag.Info.borrowed_cell ~f:(fun av ->
+          Tag.Map.find_opt tag (entries_at state av) )
+    with
+    | Some perm ->
+        perm
+    | None ->
+        Perm.Reserved
+
+
+  let local_refs_of state tag =
+    try Tag.Map.find tag state.local_refs with Stdlib.Not_found -> Tag.Set.empty
+
+
+  let add_local_ref state ~tag ~local_to =
+    let cur = local_refs_of state tag in
+    {state with local_refs= Tag.Map.add tag (Tag.Set.add local_to cur) state.local_refs}
+
+
+  let set_formal_tag state pvar tag =
+    {state with formal_tags= Pvar.Map.add pvar tag state.formal_tags}
+
+
+  let formal_tag_of state pvar = Pvar.Map.find_opt pvar state.formal_tags
+
+  let set_entry_pre state pre = {state with entry_pre= pre}
+
+  let entry_pre_of state = state.entry_pre
+
+  let log_access state access tag ~av ~loc =
+    {state with access_log= (access, tag, av, loc) :: state.access_log}
+
+
+  let global_log state = List.rev state.access_log
 
   let bind_pointer_tag state av tag = {state with pointer_tag= AVMap.add av tag state.pointer_tag}
 
@@ -341,20 +385,33 @@ module St = struct
     let pointer_tag = AVMap.map sub state.pointer_tag in
     let temps = IdentMap.map sub state.temps in
     let object_root = AVMap.map sub state.object_root in
-    {state with parent; tags_at; pointer_tag; temps; object_root}
+    let local_refs =
+      Tag.Map.fold
+        (fun t refs m ->
+          let t = sub t in
+          let refs = Tag.Set.fold (fun r s -> Tag.Set.add (sub r) s) refs Tag.Set.empty in
+          let refs = Tag.Set.remove t refs in
+          if Tag.Set.is_empty refs then m
+          else
+            let prev = try Tag.Map.find t m with Stdlib.Not_found -> Tag.Set.empty in
+            Tag.Map.add t (Tag.Set.union prev refs) m )
+        state.local_refs Tag.Map.empty
+    in
+    let formal_tags = Pvar.Map.map sub state.formal_tags in
+    let access_log = List.map state.access_log ~f:(fun (a, t, av, l) -> (a, sub t, av, l)) in
+    { state with
+      parent
+    ; tags_at
+    ; pointer_tag
+    ; temps
+    ; object_root
+    ; local_refs
+    ; formal_tags
+    ; access_log }
 
 
   let merge_owner_trees state ~survivor ~victim =
-    let ms = tag_info_of state survivor and mv = tag_info_of state victim in
-    let merged =
-      { Tag.Info.protector= ms.Tag.Info.protector || mv.Tag.Info.protector
-      ; borrowed_cell=
-          ( match ms.Tag.Info.borrowed_cell with
-          | Some _ ->
-              ms.Tag.Info.borrowed_cell
-          | None ->
-              mv.Tag.Info.borrowed_cell ) }
-    in
+    let merged = tag_info_of state survivor in
     let tag_infos = Tag.Map.add survivor merged (Tag.Map.remove victim state.tag_infos) in
     redirect_tag {state with tag_infos} ~from:victim ~to_:survivor
 
@@ -387,7 +444,8 @@ module St = struct
         (fun m -> {m with Tag.Info.borrowed_cell= Option.map m.Tag.Info.borrowed_cell ~f})
         state.tag_infos
     in
-    let state = {state with tags_at; pointer_tag; tag_infos} in
+    let access_log = List.map state.access_log ~f:(fun (a, t, av, l) -> (a, t, f av, l)) in
+    let state = {state with tags_at; pointer_tag; tag_infos; access_log} in
     let object_root, merges =
       AVMap.fold
         (fun av tag (m, ms) ->
@@ -424,6 +482,8 @@ let start () = {st= St.empty; errors= []}
 
 let canonicalize ~f (state : state) : state = {state with st= St.canonicalize_owners state.st ~f}
 
+let initial_perm_of_mut is_mut = if is_mut then Perm.Reserved else Perm.Frozen
+
 let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> AbstractValue.t list)
     ~(bind : AbstractValue.t option) ~(is_mut : bool) ~(src : Operand.t)
     ~(borrowed_cell : AbstractValue.t) : St.t * Tag.t option =
@@ -442,7 +502,7 @@ let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> Abs
   | None ->
       ((match bind with Some av -> St.drop_pointer_tag st av | None -> st), None)
   | Some (parent_tag, st) ->
-      let initial_perm = if is_mut then Perm.Reserved else Perm.Frozen in
+      let initial_perm = initial_perm_of_mut is_mut in
       let tag, st = St.tag_fresh st ~protector ~borrowed_cell:(Some borrowed_cell) in
       let st = St.set_parent st tag (Some parent_tag) in
       let st, sub_object = St.sub_object_cells st ~succs borrowed_cell in
@@ -462,20 +522,24 @@ let root_of (st : St.t) tag =
 
 let local_set_of (st : St.t) through =
   let rec chain acc t =
-    let acc = Tag.Set.add t acc in
+    let acc = t :: acc in
     match St.parent_of st t with Some p -> chain acc p | None -> acc
   in
-  chain Tag.Set.empty through
+  List.fold (chain [] through) ~init:Tag.Set.empty ~f:(fun s t ->
+      Tag.Set.union (Tag.Set.add t s) (St.local_refs_of st t) )
 
 
 let fire_at_loc (state : state) ~(loc : Location.t) ~(local_set : Tag.Set.t) ~(through : Tag.t)
-    (av : AbstractValue.t) (acc : Access.t) : state =
+    ~(arg_tags : Tag.Set.t) (av : AbstractValue.t) (acc : Access.t) : state =
   if is_errored state then state
   else
     let through_root = root_of state.st through in
     Tag.Map.fold
       (fun t perm state ->
         if is_errored state then state
+        else if
+          Tag.Set.mem t arg_tags && (not (Tag.equal t through)) && not (St.protector_of state.st t)
+        then state
         else
           let rel =
             if Tag.Set.mem t local_set then Rel.Local
@@ -498,9 +562,9 @@ let fire_at_loc (state : state) ~(loc : Location.t) ~(local_set : Tag.Set.t) ~(t
       (St.entries_at state.st av) state
 
 
-let access_through ?(access_path = []) ~(succs : AbstractValue.t -> AbstractValue.t list)
-    (state : state) ~(loc : Location.t) ~(through : Tag.t) ~(av : AbstractValue.t) (acc : Access.t)
-    : state =
+let access_through ?(access_path = []) ?(arg_tags = Tag.Set.empty)
+    ~(succs : AbstractValue.t -> AbstractValue.t list) (state : state) ~(loc : Location.t)
+    ~(through : Tag.t) ~(av : AbstractValue.t) (acc : Access.t) : state =
   if is_errored state then state
   else
     let st = St.propagate_along_path state.st access_path in
@@ -508,8 +572,11 @@ let access_through ?(access_path = []) ~(succs : AbstractValue.t -> AbstractValu
     let st, touched = St.sub_object_cells st ~succs av in
     let local_set = local_set_of st through in
     let state = {state with st} in
-    List.fold touched ~init:state ~f:(fun state a ->
-        fire_at_loc state ~loc ~local_set ~through a acc )
+    let state =
+      List.fold touched ~init:state ~f:(fun state a ->
+          fire_at_loc state ~loc ~local_set ~through ~arg_tags a acc )
+    in
+    if is_errored state then state else {state with st= St.log_access state.st acc through ~av ~loc}
 
 
 let tag_at_base (st : St.t) base_av =
@@ -560,25 +627,42 @@ let exec_retag ~(dst : Operand.t) ~(src : Operand.t) ~(is_mut : bool) ~(protecte
           state )
 
 
-let classify_typ (typ : Typ.t) = match typ.desc with Tptr (_, _) -> `Pointer | _ -> `Other
+let classify_typ (typ : Typ.t) =
+  match typ.Typ.desc with
+  | Tptr (_, _) ->
+      let is_mut = not (Typ.is_const typ.Typ.quals) in
+      if Typ.is_reference_on_source typ.Typ.quals then `Reference is_mut else `RawPtr is_mut
+  | _ ->
+      `Other
+
+
+let initial_perm_of_shape = function
+  | `Reference m ->
+      initial_perm_of_mut m
+  | `RawPtr _ ->
+      Perm.Reserved
+
 
 let exec_load ~(id : Ident.t) ~(typ : Typ.t) ~(src : Operand.t)
     ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
   match classify_typ typ with
   | `Other ->
       exec_access ~acc:Access.Read ~target:src ~succs ~loc state
-  | `Pointer ->
-      let st =
-        match
-          Option.bind (Operand.last_cell src) ~f:(fun av ->
-              AVMap.find_opt av state.st.St.pointer_tag )
-        with
-        | Some tag ->
-            St.bind_temp state.st id tag
-        | None ->
-            St.drop_temp state.st id
-      in
-      {state with st}
+  | `Reference _ | `RawPtr _ ->
+      let state = exec_access ~acc:Access.Read ~target:src ~succs ~loc state in
+      if is_errored state then state
+      else
+        let st =
+          match
+            Option.bind (Operand.last_cell src) ~f:(fun av ->
+                AVMap.find_opt av state.st.St.pointer_tag )
+          with
+          | Some tag ->
+              St.bind_temp state.st id tag
+          | None ->
+              St.drop_temp state.st id
+        in
+        {state with st}
 
 
 let exec_store ~(lhs : Operand.t) ~(rhs : Operand.t) ~(typ : Typ.t)
@@ -586,19 +670,379 @@ let exec_store ~(lhs : Operand.t) ~(rhs : Operand.t) ~(typ : Typ.t)
   match classify_typ typ with
   | `Other ->
       exec_access ~acc:Access.Write ~target:lhs ~succs ~loc state
-  | `Pointer ->
-      let st =
-        match Operand.last_cell lhs with
-        | None ->
-            state.st
-        | Some cell -> (
-          match St.tag_of_operand state.st rhs with
-          | Some tag ->
-              St.bind_pointer_tag state.st cell tag
+  | `Reference _ | `RawPtr _ ->
+      let state = exec_access ~acc:Access.Write ~target:lhs ~succs ~loc state in
+      if is_errored state then state
+      else
+        let st =
+          match Operand.last_cell lhs with
           | None ->
-              St.drop_pointer_tag state.st cell )
+              state.st
+          | Some cell -> (
+            match St.tag_of_operand state.st rhs with
+            | Some tag ->
+                St.bind_pointer_tag state.st cell tag
+            | None ->
+                St.drop_pointer_tag state.st cell )
+        in
+        {state with st}
+
+
+let entry_pre (state : state) = St.entry_pre_of state.st
+
+let rel_to_spec : Rel.t -> TBSpec.Rel.t option = function
+  | Rel.Local ->
+      Some TBSpec.Rel.Local
+  | Rel.Foreign ->
+      Some TBSpec.Rel.Foreign
+  | Rel.Unrelated ->
+      None
+
+
+let write_cover (st : St.t) ~(tag : Tag.t) ~(perm : Perm.t)
+    ~(borrowed_cell : AbstractValue.t option) ~(succs : AbstractValue.t -> AbstractValue.t list) :
+    St.t =
+  match borrowed_cell with
+  | None ->
+      st
+  | Some borrowed_cell ->
+      let st = St.set_entry st borrowed_cell tag perm in
+      let st, sub_object = St.sub_object_cells st ~succs borrowed_cell in
+      List.fold sub_object ~init:st ~f:(fun st a ->
+          if Tag.Map.mem tag (St.entries_at st a) then st else St.set_entry st a tag perm )
+
+
+let perm_of_formal (tree_borrows : TBSpec.t) i (typ : Typ.t) : Perm.t option =
+  match classify_typ typ with
+  | (`Reference _ | `RawPtr _) as shape ->
+      Some
+        ( match
+            List.Assoc.find tree_borrows.TBSpec.perms (TBSpec.ArgIndex.of_int i)
+              ~equal:TBSpec.ArgIndex.equal
+          with
+        | Some perm ->
+            perm
+        | None ->
+            initial_perm_of_shape shape )
+  | `Other ->
+      None
+
+
+let init_formals (formals : (Pvar.t * Typ.t) list) ~(cell_of : Pvar.t -> AbstractValue.t option)
+    ~(borrowed_cell_of : Pvar.t -> AbstractValue.t option) ~(tree_borrows : TBSpec.t)
+    ~(succs : AbstractValue.t -> AbstractValue.t list) (state : state) : state =
+  let rels = tree_borrows.TBSpec.rels in
+  let idx = TBSpec.ArgIndex.to_int in
+  let local_pair a b =
+    List.exists rels ~f:(fun (i, j, r) ->
+        Int.equal (idx i) a && Int.equal (idx j) b && TBSpec.Rel.equal r TBSpec.Rel.Local )
+  in
+  let mutual_local a b = local_pair a b && local_pair b a in
+  let any_rel a b =
+    List.exists rels ~f:(fun (i, j, _) ->
+        (Int.equal (idx i) a && Int.equal (idx j) b) || (Int.equal (idx i) b && Int.equal (idx j) a) )
+  in
+  let state, _seeded =
+    List.foldi formals ~init:(state, []) ~f:(fun i (state, seeded) (pvar, typ) ->
+        match classify_typ typ with
+        | `Other ->
+            (state, seeded)
+        | (`Reference _ | `RawPtr _) as shape -> (
+            let is_ref = match shape with `Reference _ -> true | `RawPtr _ -> false in
+            let record (state : state) tag =
+              let st = St.set_formal_tag state.st pvar tag in
+              let st =
+                match cell_of pvar with Some c -> St.bind_pointer_tag st c tag | None -> st
+              in
+              ({state with st}, (i, tag) :: seeded)
+            in
+            match
+              List.find_map seeded ~f:(fun (j, tj) -> if mutual_local i j then Some tj else None)
+            with
+            | Some tj ->
+                record state tj
+            | None ->
+                let ti, st = St.tag_fresh state.st ~protector:is_ref ~borrowed_cell:None in
+                let st =
+                  match
+                    List.find_map seeded ~f:(fun (j, tj) -> if any_rel i j then Some tj else None)
+                  with
+                  | Some tj ->
+                      St.set_parent st ti (Some (root_of st tj))
+                  | None ->
+                      let owner, st = St.tag_fresh st ~protector:false ~borrowed_cell:None in
+                      St.set_parent st ti (Some owner)
+                in
+                record {state with st} ti ) )
+  in
+  let formal_tag pvar = St.formal_tag_of state.st pvar in
+  let pvar_of k = Option.map (List.nth formals (idx k)) ~f:fst in
+  let state =
+    List.fold rels ~init:state ~f:(fun state (i, j, rel) ->
+        match rel with
+        | TBSpec.Rel.Foreign ->
+            state
+        | TBSpec.Rel.Local -> (
+          match (Option.bind (pvar_of i) ~f:formal_tag, Option.bind (pvar_of j) ~f:formal_tag) with
+          | Some ti, Some tj when not (Tag.equal ti tj) ->
+              {state with st= St.add_local_ref state.st ~tag:ti ~local_to:tj}
+          | _ ->
+              state ) )
+  in
+  let state =
+    List.foldi formals ~init:state ~f:(fun i (state : state) (pvar, typ) ->
+        match (perm_of_formal tree_borrows i typ, St.formal_tag_of state.st pvar) with
+        | Some perm, Some tag ->
+            let borrowed_cell = borrowed_cell_of pvar in
+            let st =
+              match borrowed_cell with
+              | Some av ->
+                  St.adopt_borrowed_cell state.st tag av
+              | None ->
+                  state.st
+            in
+            {state with st= write_cover st ~tag ~perm ~borrowed_cell ~succs}
+        | _ ->
+            state )
+  in
+  let entry_pre =
+    let perms =
+      List.filter_mapi formals ~f:(fun i (pvar, _) ->
+          Option.map (St.formal_tag_of state.st pvar) ~f:(fun tag ->
+              (TBSpec.ArgIndex.of_int i, St.own_perm state.st tag) ) )
+    in
+    {tree_borrows with TBSpec.perms}
+  in
+  {state with st= St.set_entry_pre state.st entry_pre}
+
+
+let rel_of (st : St.t) a b : Rel.t =
+  if Tag.equal a b then Rel.Local
+  else if not (Tag.equal (root_of st a) (root_of st b)) then Rel.Unrelated
+  else if Tag.Set.mem b (local_set_of st a) then Rel.Local
+  else Rel.Foreign
+
+
+let precondition_of_actuals (state : state) (actuals : Operand.t list) : TBSpec.t =
+  let indexed =
+    List.filter_mapi actuals ~f:(fun i op ->
+        Option.map (St.tag_of_operand state.st op) ~f:(fun tag -> (i, tag)) )
+  in
+  let perms =
+    List.map indexed ~f:(fun (i, tag) -> (TBSpec.ArgIndex.of_int i, St.own_perm state.st tag))
+  in
+  let rels =
+    List.concat_map indexed ~f:(fun (i, ti) ->
+        List.filter_map indexed ~f:(fun (j, tj) ->
+            if Int.equal i j then None
+            else
+              Option.map
+                (rel_to_spec (rel_of state.st ti tj))
+                ~f:(fun r -> (TBSpec.ArgIndex.of_int i, TBSpec.ArgIndex.of_int j, r)) ) )
+  in
+  {TBSpec.perms; rels}
+
+
+let perm_spec_needed ~(formals : (Pvar.t * Typ.t) list) (tb_pre : TBSpec.t) : bool =
+  List.exists tb_pre.TBSpec.perms ~f:(fun (i, perm) ->
+      match List.nth formals (TBSpec.ArgIndex.to_int i) with
+      | Some (_, ftyp) -> (
+        match classify_typ ftyp with
+        | (`Reference _ | `RawPtr _) as shape ->
+            not (Perm.equal perm (initial_perm_of_shape shape))
+        | `Other ->
+            false )
+      | None ->
+          false )
+
+
+let exec_call ~(callee_state : state) ~(callee_pdesc : Procdesc.t)
+    ~(subst : AbstractValue.t -> AbstractValue.t option)
+    ~(callee_edges : (AbstractValue.t * AbstractValue.t) list)
+    ~(callee_ret_cell : AbstractValue.t option) ~(args : Operand.t list) ~(ret_id : Ident.t)
+    ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
+  if is_errored state then state
+  else
+    let callee_st = callee_state.st in
+    let formals = Procdesc.get_pvar_formals callee_pdesc in
+    let zipped = match List.zip formals args with Ok z -> z | Unequal_lengths -> [] in
+    let retag_arg (state : state) parent ~is_ref ~is_mut =
+      match (St.tag_info_of state.st parent).Tag.Info.borrowed_cell with
+      | None ->
+          (state, parent)
+      | Some borrowed_cell ->
+          let tag, st =
+            St.tag_fresh state.st ~protector:is_ref ~borrowed_cell:(Some borrowed_cell)
+          in
+          let st = St.set_parent st tag (Some parent) in
+          let st, sub_object = St.sub_object_cells st ~succs borrowed_cell in
+          let st =
+            List.fold sub_object ~init:st ~f:(fun st a ->
+                St.set_entry st a tag (initial_perm_of_mut is_mut) )
+          in
+          let state =
+            access_through ~succs {state with st} ~loc ~through:tag ~av:borrowed_cell Access.Read
+          in
+          (state, tag)
+    in
+    let state, formal_to_caller =
+      List.fold zipped ~init:(state, []) ~f:(fun (state, acc) ((pvar, ftyp), op) ->
+          let shape = classify_typ ftyp in
+          match (shape, St.formal_tag_of callee_st pvar, St.tag_of_operand state.st op) with
+          | (`Reference is_mut | `RawPtr is_mut), Some ftag, Some parent ->
+              let is_ref =
+                (match shape with `Reference _ -> true | `RawPtr _ | `Other -> false)
+                && match ftyp.Typ.desc with Tptr ({desc= Tvoid}, _) -> false | _ -> true
+              in
+              let state, ctag = retag_arg state parent ~is_ref ~is_mut in
+              (state, (ftag, ctag) :: acc)
+          | _ ->
+              (state, acc) )
+    in
+    let formal_to_caller = List.rev formal_to_caller in
+    let arg_tags =
+      List.fold formal_to_caller ~init:Tag.Set.empty ~f:(fun s (_, ct) -> Tag.Set.add ct s)
+    in
+    let deepest_formal_ancestor callee_tag =
+      formal_to_caller
+      |> List.filter ~f:(fun (ftag, _) ->
+          St.is_ancestor callee_st ~ancestor:ftag ~descendant:callee_tag )
+      |> List.max_elt ~compare:(fun (t1, _) (t2, _) ->
+          if Tag.equal t1 t2 then 0
+          else if St.is_ancestor callee_st ~ancestor:t2 ~descendant:t1 then 1
+          else -1 )
+    in
+    let route callee_tag = Option.map (deepest_formal_ancestor callee_tag) ~f:snd in
+    let perm_of ct =
+      match St.own_perm callee_st ct with Perm.ReservedConflicted -> Perm.Reserved | p -> p
+    in
+    let borrowed_cell_of ct =
+      Option.bind (St.tag_info_of callee_st ct).Tag.Info.borrowed_cell ~f:subst
+    in
+    let materialize_chain st ~from_formal ~to_tag ~root =
+      let rec collect ct acc =
+        if Tag.equal ct from_formal then acc
+        else
+          match St.parent_of callee_st ct with Some p -> collect p (ct :: acc) | None -> ct :: acc
+      in
+      List.fold (collect to_tag []) ~init:(st, root) ~f:(fun (st, parent) ct ->
+          let borrowed_cell = borrowed_cell_of ct in
+          let t_c, st = St.tag_fresh st ~protector:false ~borrowed_cell in
+          let st = St.set_parent st t_c (Some parent) in
+          let st =
+            match borrowed_cell with Some av -> St.set_entry st av t_c (perm_of ct) | None -> st
+          in
+          (st, t_c) )
+    in
+    let state =
+      let st =
+        List.fold callee_edges ~init:state.st ~f:(fun st (a, b) ->
+            match (subst a, subst b) with
+            | Some a', Some b' ->
+                St.propagate_entries st ~parent_av:a' ~child_av:b'
+            | _ ->
+                st )
       in
       {state with st}
+    in
+    let state =
+      List.fold (St.global_log callee_st) ~init:state
+        ~f:(fun (state : state) (access, callee_t, callee_av, callee_loc) ->
+          if is_errored state then state
+          else
+            match (route callee_t, subst callee_av) with
+            | Some caller_tag, Some av ->
+                let loc = if Location.equal callee_loc Location.dummy then loc else callee_loc in
+                access_through ~arg_tags ~succs state ~loc ~through:caller_tag ~av access
+            | _ ->
+                state )
+    in
+    let state =
+      List.fold formal_to_caller ~init:state ~f:(fun (state : state) (ftag, ctag) ->
+          if is_errored state then state
+          else
+            let st = state.st in
+            let releasing = St.protector_of st ctag in
+            let unconflict (p : Perm.t) =
+              if releasing then match p with Perm.ReservedConflicted -> Perm.Reserved | p -> p
+              else p
+            in
+            let st =
+              if releasing then
+                { st with
+                  St.tags_at= AVMap.map (fun entries -> Tag.Map.remove ctag entries) st.St.tags_at
+                }
+              else st
+            in
+            let st =
+              AVMap.fold
+                (fun callee_av entries st ->
+                  match (Tag.Map.find_opt ftag entries, subst callee_av) with
+                  | Some perm, Some av ->
+                      let perm =
+                        if releasing then unconflict perm
+                        else
+                          match St.perm_at st ctag av with
+                          | Some p0 ->
+                              St.perm_join p0 perm
+                          | None ->
+                              perm
+                      in
+                      St.set_entry st av ctag perm
+                  | _ ->
+                      st )
+                callee_st.St.tags_at st
+            in
+            let info = St.tag_info_of st ctag in
+            let st =
+              { st with
+                St.tag_infos=
+                  Tag.Map.add ctag
+                    { info with
+                      Tag.Info.protector= (if releasing then false else info.Tag.Info.protector) }
+                    st.St.tag_infos }
+            in
+            {state with st} )
+    in
+    let state =
+      List.fold formal_to_caller ~init:state ~f:(fun (state : state) (ftag, _) ->
+          if is_errored state then state
+          else
+            match
+              Option.bind (St.tag_info_of callee_st ftag).Tag.Info.borrowed_cell ~f:(fun pointee ->
+                  Option.both (AVMap.find_opt pointee callee_st.St.pointer_tag) (Some pointee) )
+            with
+            | None ->
+                state
+            | Some (escaping_tag, callee_pointee) -> (
+              match (deepest_formal_ancestor escaping_tag, subst callee_pointee) with
+              | Some (formal_anc, caller_anc), Some caller_pointee
+                when not (Tag.equal formal_anc ftag) ->
+                  let st, last_tag =
+                    materialize_chain state.st ~from_formal:formal_anc ~to_tag:escaping_tag
+                      ~root:caller_anc
+                  in
+                  {state with st= St.bind_pointer_tag st caller_pointee last_tag}
+              | _ ->
+                  state ) )
+    in
+    if is_errored state then state
+    else
+      match
+        Option.bind callee_ret_cell ~f:(fun av -> AVMap.find_opt av callee_st.St.pointer_tag)
+      with
+      | None ->
+          state
+      | Some callee_ret_tag -> (
+        match deepest_formal_ancestor callee_ret_tag with
+        | None ->
+            state
+        | Some (formal_tag, caller_arg_tag) ->
+            let st, last_tag =
+              materialize_chain state.st ~from_formal:formal_tag ~to_tag:callee_ret_tag
+                ~root:caller_arg_tag
+            in
+            {state with st= St.bind_temp st ret_id last_tag} )
 
 
 let report_errors proc_desc err_log (state : state) : unit =
