@@ -30,10 +30,11 @@ let report_topl_errors {InterproceduralAnalysis.proc_desc; err_log} summary =
 
 let report_tree_borrows_errors {InterproceduralAnalysis.proc_desc; err_log} summary =
   let f = function
-    | ContinueProgram astate ->
+    | ContinueProgram astate | ExceptionRaised astate ->
         PulseTreeBorrowsOperations.report_errors proc_desc err_log astate
-    | _ ->
-        ()
+    | Stopped stopped ->
+        PulseTreeBorrowsOperations.report_errors proc_desc err_log
+          (ExecutionDomain.summary_of_stopped_execution stopped)
   in
   List.iter ~f summary
 
@@ -1771,6 +1772,21 @@ let add_dynamic_type_on_params_with_final_type tenv {ProcAttributes.proc_name; f
   else astate
 
 
+let tree_borrows_init_formals proc_attrs specialization astate =
+  if Config.is_checker_enabled TreeBorrows then
+    let tree_borrows =
+      match specialization with
+      | Some spec ->
+          spec.Specialization.Pulse.tree_borrows
+      | None ->
+          Specialization.Pulse.TreeBorrows.bottom
+    in
+    PulseTreeBorrowsOperations.init_formals
+      (ProcAttributes.get_pvar_formals proc_attrs)
+      ~tree_borrows astate
+  else astate
+
+
 let initial tenv proc_attrs specialization location =
   let path = PathContext.initial in
   let initial_astate =
@@ -1782,6 +1798,7 @@ let initial tenv proc_attrs specialization location =
     |> set_uninitialize_prop path tenv proc_attrs
     |> assume_notnull_params proc_attrs
     |> add_dynamic_type_on_params_with_final_type tenv proc_attrs
+    |> tree_borrows_init_formals proc_attrs specialization
   in
   [(ContinueProgram initial_astate, path)]
 

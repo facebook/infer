@@ -7,6 +7,12 @@
 
 open! IStd
 
+val init_formals :
+     (Pvar.t * Typ.t) list
+  -> tree_borrows:Specialization.Pulse.TreeBorrows.t
+  -> PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t
+
 val exec_load :
      id:Ident.t
   -> e:Exp.t

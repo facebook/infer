@@ -11,18 +11,6 @@ module AbstractValue = PulseAbstractValue
 
 (** Abstract state of the Tree Borrows checker. *)
 
-module Tag : sig
-  type t [@@deriving compare, equal]
-
-  val pp : F.formatter -> t -> unit
-end
-
-module Perm : sig
-  type t = Reserved | Unique | Frozen | Disabled | ReservedConflicted [@@deriving compare, equal]
-
-  val pp : F.formatter -> t -> unit
-end
-
 module Operand : sig
   (** how a value is designated in an instruction: through a temporary identifier and/or an access
       path of memory cells *)
@@ -74,5 +62,33 @@ val exec_store :
   -> state
 
 val canonicalize : f:(AbstractValue.t -> AbstractValue.t) -> state -> state
+
+val init_formals :
+     (Pvar.t * Typ.t) list
+  -> cell_of:(Pvar.t -> AbstractValue.t option)
+  -> borrowed_cell_of:(Pvar.t -> AbstractValue.t option)
+  -> tree_borrows:Specialization.Pulse.TreeBorrows.t
+  -> succs:(AbstractValue.t -> AbstractValue.t list)
+  -> state
+  -> state
+
+val entry_pre : state -> Specialization.Pulse.TreeBorrows.t
+
+val precondition_of_actuals : state -> Operand.t list -> Specialization.Pulse.TreeBorrows.t
+
+val perm_spec_needed : formals:(Pvar.t * Typ.t) list -> Specialization.Pulse.TreeBorrows.t -> bool
+
+val exec_call :
+     callee_state:state
+  -> callee_pdesc:Procdesc.t
+  -> subst:(AbstractValue.t -> AbstractValue.t option)
+  -> callee_edges:(AbstractValue.t * AbstractValue.t) list
+  -> callee_ret_cell:AbstractValue.t option
+  -> args:Operand.t list
+  -> ret_id:Ident.t
+  -> succs:(AbstractValue.t -> AbstractValue.t list)
+  -> loc:Location.t
+  -> state
+  -> state
 
 val report_errors : Procdesc.t -> Errlog.t -> state -> unit

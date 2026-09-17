@@ -101,6 +101,29 @@ let operand_of_exp astate exp : Operand.t =
   match walk exp with Some op -> op | None -> Operand.untracked
 
 
+let init_formals formals ~tree_borrows (astate : AbductiveDomain.t) =
+  let get_var_repr = get_var_repr astate in
+  let post = (astate.AbductiveDomain.post :> BaseDomain.t) in
+  let cell_of pvar =
+    Option.map
+      (UnsafeStack.find_opt (Var.of_pvar pvar) post.stack)
+      ~f:(fun vo -> get_var_repr (fst (ValueOrigin.addr_hist vo)))
+  in
+  let pointee_of pvar =
+    Option.bind
+      (UnsafeStack.find_opt (Var.of_pvar pvar) post.stack)
+      ~f:(fun vo ->
+        UnsafeMemory.find_edge_opt ~get_var_repr
+          (fst (ValueOrigin.addr_hist vo))
+          Dereference post.heap
+        |> Option.map ~f:(fun (p, _) -> get_var_repr p) )
+  in
+  AbductiveDomain.set_tree_borrows
+    (PulseTreeBorrows.init_formals formals ~cell_of ~borrowed_cell_of:pointee_of ~tree_borrows
+       ~succs:(succs_of astate) (canonicalize_tb astate) )
+    astate
+
+
 let exec_load ~id ~e ~typ ~loc (astate : AbductiveDomain.t) =
   let src = operand_of_exp astate e in
   AbductiveDomain.set_tree_borrows

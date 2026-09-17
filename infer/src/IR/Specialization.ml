@@ -59,13 +59,69 @@ module Pulse = struct
         F.fprintf fmt "}" )
   end
 
-  type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t}
+  module TreeBorrows = struct
+    module ArgIndex = struct
+      type t = int [@@deriving equal, compare, hash, sexp, yojson_of]
+
+      let of_int i = i
+
+      let to_int i = i
+
+      let pp fmt i = F.pp_print_int fmt i
+    end
+
+    module Perm = struct
+      type t = Reserved | Unique | Frozen | Disabled | ReservedConflicted
+      [@@deriving equal, compare, hash, sexp, yojson_of]
+
+      let pp fmt = function
+        | Reserved ->
+            F.pp_print_string fmt "Reserved"
+        | Unique ->
+            F.pp_print_string fmt "Unique"
+        | Frozen ->
+            F.pp_print_string fmt "Frozen"
+        | Disabled ->
+            F.pp_print_string fmt "Disabled"
+        | ReservedConflicted ->
+            F.pp_print_string fmt "ReservedConflicted"
+    end
+
+    module Rel = struct
+      type t = Local | Foreign [@@deriving equal, compare, hash, sexp, yojson_of]
+
+      let pp fmt = function
+        | Local ->
+            F.pp_print_string fmt "Local"
+        | Foreign ->
+            F.pp_print_string fmt "Foreign"
+    end
+
+    type t = {perms: (ArgIndex.t * Perm.t) list; rels: (ArgIndex.t * ArgIndex.t * Rel.t) list}
+    [@@deriving equal, compare, hash, sexp, yojson_of]
+
+    let bottom = {perms= []; rels= []}
+
+    let is_bottom {perms; rels} = List.is_empty perms && List.is_empty rels
+
+    let pp fmt ({perms; rels} as tb) =
+      if not (is_bottom tb) then (
+        F.fprintf fmt "tb: {" ;
+        List.iter perms ~f:(fun (i, p) -> F.fprintf fmt "perm(%a)=%a;" ArgIndex.pp i Perm.pp p) ;
+        List.iter rels ~f:(fun (i, j, r) ->
+            F.fprintf fmt "rel(%a,%a)=%a;" ArgIndex.pp i ArgIndex.pp j Rel.pp r ) ;
+        F.fprintf fmt "} " )
+  end
+
+  type t = {aliases: Aliases.t option; dynamic_types: DynamicTypes.t; tree_borrows: TreeBorrows.t}
   [@@deriving equal, compare, hash, sexp, yojson_of]
 
-  let bottom = {aliases= None; dynamic_types= HeapPath.Map.empty}
+  let bottom = {aliases= None; dynamic_types= HeapPath.Map.empty; tree_borrows= TreeBorrows.bottom}
 
-  let is_bottom {aliases; dynamic_types} =
-    Option.is_none aliases && HeapPath.Map.is_empty dynamic_types
+  let is_bottom {aliases; dynamic_types; tree_borrows} =
+    Option.is_none aliases
+    && HeapPath.Map.is_empty dynamic_types
+    && TreeBorrows.is_bottom tree_borrows
 
 
   let pp_aliases fmt = function
@@ -75,8 +131,9 @@ module Pulse = struct
         F.fprintf fmt "alias: %a " Aliases.pp aliases
 
 
-  let pp fmt {aliases; dynamic_types} =
-    F.fprintf fmt "%a%a" pp_aliases aliases DynamicTypes.pp dynamic_types
+  let pp fmt {aliases; dynamic_types; tree_borrows} =
+    F.fprintf fmt "%a%a%a" pp_aliases aliases DynamicTypes.pp dynamic_types TreeBorrows.pp
+      tree_borrows
 
 
   module Set = PrettyPrintable.MakePPSet (struct
