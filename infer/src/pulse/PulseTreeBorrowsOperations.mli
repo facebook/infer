@@ -37,4 +37,21 @@ val exec_retag :
   -> PulseAbductiveDomain.t
   -> PulseAbductiveDomain.t
 
+val compute_specialization :
+     formals:(Pvar.t * Typ.t) list
+  -> Exp.t list
+  -> PulseAbductiveDomain.t
+  -> Specialization.Pulse.t option
+
+val graft_call :
+     callee_summary:PulseAbductiveDomain.Summary.t
+  -> callee_pname:Procname.t
+  -> tb_arg_exps:Exp.t list
+  -> subst_map:(PulseAbstractValue.t * PulseValueHistory.t) PulseAbstractValue.Map.t
+  -> ret_id:Ident.t
+  -> loc:Location.t
+  -> caller:PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t
+  -> PulseAbductiveDomain.t
+
 val report_errors : Procdesc.t -> Errlog.t -> PulseAbductiveDomain.Summary.summary -> unit

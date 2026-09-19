@@ -76,6 +76,11 @@ val entry_pre : state -> Specialization.Pulse.TreeBorrows.t
 
 val precondition_of_actuals : state -> Operand.t list -> Specialization.Pulse.TreeBorrows.t
 
+val spec_fits :
+     caller_pre:Specialization.Pulse.TreeBorrows.t
+  -> callee_pre:Specialization.Pulse.TreeBorrows.t
+  -> bool
+
 val perm_spec_needed : formals:(Pvar.t * Typ.t) list -> Specialization.Pulse.TreeBorrows.t -> bool
 
 val exec_call :

@@ -29,6 +29,9 @@ type contradiction = private
   | DynamicTypeNeeded of AbstractValue.t Specialization.HeapPath.Map.t
       (** A map [path -> value] such that each path leads to a value (in the caller space) that
           requires dynamic type specialization *)
+  | TreeBorrowsNeeded of Specialization.Pulse.t
+      (** the callee summary assumed something about its reference parameters that the actual
+          arguments do not satisfy. It must be re-analysed under this specialization *)
   | CapturedFormalActualLength of
       { captured_formals: (Pvar.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
@@ -41,6 +44,10 @@ val pp_contradiction : Format.formatter -> contradiction -> unit
 
 val is_dynamic_type_needed_contradiction :
   contradiction -> AbstractValue.t Specialization.HeapPath.Map.t option
+
+val is_tree_borrows_needed_contradiction : contradiction -> Specialization.Pulse.t option
+
+val tree_borrows_needed : Specialization.Pulse.t -> contradiction
 
 val merge_contradictions : contradiction option -> contradiction option -> contradiction option
 (** applying a summary in the caller context may lead to a contradiction; if the summary is a

@@ -286,8 +286,9 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
 
 let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
     ({PathContext.timestamp} as path) callee_proc_name call_loc call_flags callee_exec_state ~ret
-    ~captured_formals ~captured_actuals ~formals ~actuals astate =
+    ~captured_formals ~captured_actuals ~formals ~actuals ~(tb_arg_exps : Exp.t list) astate =
   let open ExecutionDomain in
+  let caller_astate = astate in
   let copy_to_caller_return_variable astate return_val_opt =
     (* Copies the return value of the callee into the return register of the caller.
         We use this function when the callee throws an exception.
@@ -364,7 +365,15 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
   in
   match callee_exec_state with
   | ContinueProgram astate ->
-      map_call_result astate ~f:(fun _return_val_opt _subst astate ->
+      let callee_summary = astate in
+      map_call_result astate ~f:(fun _return_val_opt (subst, _hist_map) astate ->
+          let astate =
+            if Config.is_checker_enabled TreeBorrows then
+              PulseTreeBorrowsOperations.graft_call ~callee_summary ~callee_pname:callee_proc_name
+                ~tb_arg_exps ~subst_map:subst ~ret_id:(fst ret) ~loc:call_loc ~caller:caller_astate
+                astate
+            else astate
+          in
           Sat (Ok (ContinueProgram astate)) )
   | ExceptionRaised astate ->
       (* If the callee throws, then store the return value of the callee (the exception object)
@@ -501,9 +510,30 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
                          , [] ) ) ) ) )
 
 
+let tree_borrows_contradiction ~(formals : (Pvar.t * Typ.t) list) ~(tb_arg_exps : Exp.t list)
+    ~exec_states_callee (astate_caller : AbductiveDomain.t) : PulseInterproc.contradiction option =
+  if Config.is_checker_enabled TreeBorrows && not (List.is_empty tb_arg_exps) then
+    match PulseTreeBorrowsOperations.compute_specialization ~formals tb_arg_exps astate_caller with
+    | None ->
+        None
+    | Some requested_spec ->
+        let callee_entry_pre =
+          List.find_map exec_states_callee ~f:(function ContinueProgram s -> Some s | _ -> None)
+          |> Option.value_map ~default:Specialization.Pulse.TreeBorrows.bottom ~f:(fun s ->
+              PulseTreeBorrows.entry_pre (AbductiveDomain.Summary.get_tree_borrows s) )
+        in
+        if
+          PulseTreeBorrows.spec_fits ~caller_pre:requested_spec.Specialization.Pulse.tree_borrows
+            ~callee_pre:callee_entry_pre
+        then None
+        else Some (PulseInterproc.tree_borrows_needed requested_spec)
+  else None
+
+
 let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc
     callee_pname ret actuals call_kind call_flags (callee_proc_attrs : ProcAttributes.t)
-    exec_states_callee non_disj_callee (astate_caller : AbductiveDomain.t) non_disj_caller =
+    exec_states_callee non_disj_callee (astate_caller : AbductiveDomain.t) non_disj_caller
+    ~(tb_arg_exps : Exp.t list) =
   let formals =
     List.map callee_proc_attrs.formals ~f:(fun (mangled, typ, _) ->
         (Pvar.mk mangled callee_pname, typ) )
@@ -558,7 +588,7 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
           Timer.check_timeout () ;
           match
             apply_callee analysis_data path callee_pname call_loc call_flags callee_exec_state
-              ~captured_formals ~captured_actuals ~formals ~actuals ~ret astate
+              ~captured_formals ~captured_actuals ~formals ~actuals ~tb_arg_exps ~ret astate
           with
           | Unsat unsat_info, new_contradiction ->
               SatUnsat.log_unsat unsat_info ;
@@ -579,7 +609,7 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
           match
             apply_callee analysis_data path callee_pname call_loc call_flags
               (ContinueProgram callee_astate_over_approx) ~captured_formals ~captured_actuals
-              ~formals ~actuals ~ret astate
+              ~formals ~actuals ~tb_arg_exps ~ret astate
           with
           | Sat (Ok (ContinueProgram post)), _new_contradiction ->
               NonBottom (post, path)
@@ -595,6 +625,13 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
         NonDisjDomain.join_to_astate non_disj_caller non_disj
     | _ ->
         non_disj
+  in
+  let contradiction =
+    match contradiction with
+    | Some _ ->
+        contradiction
+    | None ->
+        tree_borrows_contradiction ~formals ~tb_arg_exps ~exec_states_callee astate_caller
   in
   (posts, (non_disj, contradiction))
 
@@ -652,7 +689,7 @@ let call_aux_unknown limit ({InterproceduralAnalysis.tenv} as analysis_data) pat
              ~f:(fun nil_summary ->
                call_aux limit analysis_data path call_loc callee_pname ret actuals call_kind
                  call_flags proc_attrs [nil_summary] NonDisjDomain.Summary.bottom astate
-                 non_disj_caller )
+                 non_disj_caller ~tb_arg_exps:[] )
       in
       ( result_unknown @ result_unknown_nil
       , (NonDisjDomain.join non_disj non_disj_nil, contradiction) )
@@ -816,8 +853,8 @@ let check_uninit_method ({InterproceduralAnalysis.tenv} as analysis_data) call_l
 
 
 let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analysis_data) path
-    call_loc ?unresolved_reason callee_pname ~ret ~actuals ~formals_opt call_kind call_flags
-    (astate : AbductiveDomain.t) non_disj_caller =
+    call_loc ?unresolved_reason ?(tb_arg_exps : Exp.t list = []) callee_pname ~ret ~actuals
+    ~formals_opt call_kind call_flags (astate : AbductiveDomain.t) non_disj_caller =
   let has_continue_program results =
     let f one_result =
       match one_result with
@@ -857,7 +894,7 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
     | Some attrs ->
         let results, (non_disj, contradiction) =
           call_aux disjunct_limit analysis_data path call_loc callee_pname ret actuals call_kind
-            call_flags attrs exec_states non_disj_callee astate non_disj_caller
+            call_flags attrs exec_states non_disj_callee astate non_disj_caller ~tb_arg_exps
         in
         let non_disj = record_direct_call ~specialization non_disj in
         (results, non_disj, contradiction)
@@ -915,32 +952,45 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
             in
             L.d_printfln "requesting alias specialization %a" Specialization.Pulse.pp specialization ;
             (`MoreSpecialization specialization, false, AbstractValue.Set.empty)
-        | `NoAliasSpecializationRequired ->
-            let already_specialized = specialization.Specialization.Pulse.dynamic_types in
-            L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
-                match
-                  maybe_dynamic_type_specialization_is_needed already_specialized contradiction
-                    astate
-                with
-                | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
-                    let specialization_is_fully_satisfied =
-                      AbstractValue.Set.is_empty needs_from_caller
-                    in
-                    if not specialization_is_fully_satisfied then
-                      L.d_printfln
-                        "[specialization] not enough dyntypes information in the caller context. \
-                         Missing = %a"
-                        AbstractValue.Set.pp needs_from_caller ;
-                    let specialization =
-                      {specialization with Specialization.Pulse.dynamic_types= dyntypes_map}
-                    in
-                    ( `MoreSpecialization specialization
-                    , (not specialization_is_fully_satisfied)
-                      && not Config.pulse_specialization_partial
-                    , needs_from_caller )
-                | `UseCurrentSummary ->
-                    L.d_printfln "abort, using current summary" ;
-                    (`NoMoreSpecialization, false, AbstractValue.Set.empty) )
+        | `NoAliasSpecializationRequired -> (
+          match
+            Option.bind contradiction ~f:PulseInterproc.is_tree_borrows_needed_contradiction
+          with
+          | Some requested_spec ->
+              let specialization =
+                { specialization with
+                  Specialization.Pulse.tree_borrows=
+                    requested_spec.Specialization.Pulse.tree_borrows }
+              in
+              L.d_printfln "requesting Tree Borrows specialization %a" Specialization.Pulse.pp
+                specialization ;
+              (`MoreSpecialization specialization, false, AbstractValue.Set.empty)
+          | None ->
+              let already_specialized = specialization.Specialization.Pulse.dynamic_types in
+              L.with_indent ~collapsible:true "checking dynamic type specialization" ~f:(fun () ->
+                  match
+                    maybe_dynamic_type_specialization_is_needed already_specialized contradiction
+                      astate
+                  with
+                  | `NeedSpecialization (dyntypes_map, needs_from_caller) ->
+                      let specialization_is_fully_satisfied =
+                        AbstractValue.Set.is_empty needs_from_caller
+                      in
+                      if not specialization_is_fully_satisfied then
+                        L.d_printfln
+                          "[specialization] not enough dyntypes information in the caller context. \
+                           Missing = %a"
+                          AbstractValue.Set.pp needs_from_caller ;
+                      let specialization =
+                        {specialization with Specialization.Pulse.dynamic_types= dyntypes_map}
+                      in
+                      ( `MoreSpecialization specialization
+                      , (not specialization_is_fully_satisfied)
+                        && not Config.pulse_specialization_partial
+                      , needs_from_caller )
+                  | `UseCurrentSummary ->
+                      L.d_printfln "abort, using current summary" ;
+                      (`NoMoreSpecialization, false, AbstractValue.Set.empty) ) )
       in
       match more_specialization with
       | `NoMoreSpecialization ->
