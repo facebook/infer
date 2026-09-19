@@ -490,8 +490,15 @@ let do_reborrow ~(protector : bool) (st : St.t) ~(succs : AbstractValue.t -> Abs
   let st = St.propagate_along_path st src.Operand.cells in
   let parent_opt =
     match src with
-    | {Operand.root= Some id} ->
-        Option.map (IdentMap.find_opt id st.St.temps) ~f:(fun t -> (t, st))
+    | {Operand.root= Some id} -> (
+      match IdentMap.find_opt id st.St.temps with
+      | Some t ->
+          Some (t, st)
+      | None ->
+          if AVMap.mem borrowed_cell st.St.object_root then None
+          else
+            let owner, st = St.ensure_object_root st borrowed_cell in
+            Some (owner, st) )
     | {Operand.root= None; cells= base :: _} ->
         let owner, st = St.ensure_object_root st base in
         Some (owner, st)
@@ -668,9 +675,15 @@ let exec_load ~(id : Ident.t) ~(typ : Typ.t) ~(src : Operand.t)
 let exec_store ~(lhs : Operand.t) ~(rhs : Operand.t) ~(typ : Typ.t)
     ~(succs : AbstractValue.t -> AbstractValue.t list) ~(loc : Location.t) (state : state) : state =
   match classify_typ typ with
-  | `Other ->
-      exec_access ~acc:Access.Write ~target:lhs ~succs ~loc state
-  | `Reference _ | `RawPtr _ ->
+  | `Other -> (
+      let state = exec_access ~acc:Access.Write ~target:lhs ~succs ~loc state in
+      match (typ.Typ.desc, Operand.last_cell lhs) with
+      | (Tstruct _ | Tarray _), Some cell when not (is_errored state) ->
+          let st, sub_object = St.sub_object_cells state.st ~succs cell in
+          {state with st= List.fold sub_object ~init:st ~f:St.drop_pointer_tag}
+      | _ ->
+          state )
+  | (`Reference _ | `RawPtr _) as shape ->
       let state = exec_access ~acc:Access.Write ~target:lhs ~succs ~loc state in
       if is_errored state then state
       else
@@ -679,10 +692,14 @@ let exec_store ~(lhs : Operand.t) ~(rhs : Operand.t) ~(typ : Typ.t)
           | None ->
               state.st
           | Some cell -> (
-            match St.tag_of_operand state.st rhs with
-            | Some tag ->
+            match (St.tag_of_operand state.st rhs, shape, rhs) with
+            | Some tag, _, _ ->
                 St.bind_pointer_tag state.st cell tag
-            | None ->
+            | None, `RawPtr _, {Operand.root= None; cells= base :: _ as path} ->
+                let st = St.propagate_along_path state.st path in
+                let owner, st = St.ensure_object_root st base in
+                St.bind_pointer_tag st cell owner
+            | None, _, _ ->
                 St.drop_pointer_tag state.st cell )
         in
         {state with st}
@@ -841,6 +858,16 @@ let precondition_of_actuals (state : state) (actuals : Operand.t list) : TBSpec.
                 ~f:(fun r -> (TBSpec.ArgIndex.of_int i, TBSpec.ArgIndex.of_int j, r)) ) )
   in
   {TBSpec.perms; rels}
+
+
+let spec_fits ~(caller_pre : TBSpec.t) ~(callee_pre : TBSpec.t) : bool =
+  let callee_pre =
+    { callee_pre with
+      TBSpec.perms=
+        List.filter callee_pre.TBSpec.perms ~f:(fun (i, _) ->
+            List.Assoc.mem caller_pre.TBSpec.perms i ~equal:TBSpec.ArgIndex.equal ) }
+  in
+  TBSpec.equal caller_pre callee_pre
 
 
 let perm_spec_needed ~(formals : (Pvar.t * Typ.t) list) (tb_pre : TBSpec.t) : bool =

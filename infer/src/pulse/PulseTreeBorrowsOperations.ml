@@ -140,6 +140,85 @@ let exec_store ~lhs ~rhs ~typ ~loc (astate : AbductiveDomain.t) =
     astate
 
 
+let callee_entry_edges callee_summary callee_pdesc =
+  let pre = AbductiveDomain.Summary.get_pre callee_summary in
+  let succs av = succs_of_heap ~get_var_repr:Fn.id pre.BaseDomain.heap av in
+  let roots =
+    Procdesc.get_pvar_formals callee_pdesc
+    |> List.filter_map ~f:(fun (pvar, _) ->
+        Option.bind
+          (UnsafeStack.find_opt (Var.of_pvar pvar) pre.BaseDomain.stack)
+          ~f:(fun vo ->
+            UnsafeMemory.find_edge_opt ~get_var_repr:Fn.id
+              (fst (ValueOrigin.addr_hist vo))
+              Dereference pre.BaseDomain.heap
+            |> Option.map ~f:fst ) )
+  in
+  let rec go visited acc frontier =
+    match frontier with
+    | [] ->
+        List.rev acc
+    | a :: rest ->
+        let children = succs a |> List.filter ~f:(fun c -> not (AbstractValue.Set.mem c visited)) in
+        let visited = List.fold children ~init:visited ~f:(fun v c -> AbstractValue.Set.add c v) in
+        let acc = List.fold children ~init:acc ~f:(fun acc c -> (a, c) :: acc) in
+        go visited acc (rest @ children)
+  in
+  go (AbstractValue.Set.of_list roots) [] roots
+
+
+let actual_operands actuals astate = List.map actuals ~f:(fun e -> operand_of_exp astate e)
+
+let precondition_of_actuals actuals astate =
+  PulseTreeBorrows.precondition_of_actuals (canonicalize_tb astate) (actual_operands actuals astate)
+
+
+let exec_call ~callee_summary ~callee_pdesc
+    ~(subst_map : (AbstractValue.t * ValueHistory.t) AbstractValue.Map.t) ~args ~ret_id ~loc astate
+    =
+  let get_var_repr = get_var_repr astate in
+  let subst av =
+    AbstractValue.Map.find_opt av subst_map
+    |> Option.map ~f:(fun (caller_av, _hist) -> get_var_repr caller_av)
+  in
+  let callee_state = AbductiveDomain.Summary.get_tree_borrows callee_summary in
+  let callee_edges = callee_entry_edges callee_summary callee_pdesc in
+  let callee_ret_cell =
+    let post = AbductiveDomain.Summary.get_post callee_summary in
+    UnsafeStack.find_opt (Var.of_pvar (Procdesc.get_ret_var callee_pdesc)) post.BaseDomain.stack
+    |> Option.map ~f:(fun vo -> fst (ValueOrigin.addr_hist vo))
+  in
+  AbductiveDomain.set_tree_borrows
+    (PulseTreeBorrows.exec_call ~callee_state ~callee_pdesc ~subst ~callee_edges ~callee_ret_cell
+       ~args:(actual_operands args astate) ~ret_id ~succs:(succs_of astate) ~loc
+       (canonicalize_tb astate) )
+    astate
+
+
+let compute_specialization ~(formals : (Pvar.t * Typ.t) list) (actuals : Exp.t list) astate :
+    Specialization.Pulse.t option =
+  let tb_pre = precondition_of_actuals actuals astate in
+  let needs_spec =
+    (not (List.is_empty tb_pre.Specialization.Pulse.TreeBorrows.rels))
+    || PulseTreeBorrows.perm_spec_needed ~formals tb_pre
+  in
+  if needs_spec then Some {Specialization.Pulse.bottom with tree_borrows= tb_pre} else None
+
+
+let graft_call ~callee_summary ~callee_pname ~tb_arg_exps ~subst_map ~ret_id ~loc ~caller post =
+  let caller_pre = precondition_of_actuals tb_arg_exps caller in
+  let callee_pre =
+    PulseTreeBorrows.entry_pre (AbductiveDomain.Summary.get_tree_borrows callee_summary)
+  in
+  if not (PulseTreeBorrows.spec_fits ~caller_pre ~callee_pre) then post
+  else
+    match Procdesc.load callee_pname with
+    | None ->
+        post
+    | Some callee_pdesc ->
+        exec_call ~callee_summary ~callee_pdesc ~subst_map ~args:tb_arg_exps ~ret_id ~loc post
+
+
 let report_errors proc_desc err_log summary =
   PulseTreeBorrows.report_errors proc_desc err_log
     (AbductiveDomain.Summary.get_tree_borrows summary)
