@@ -1527,6 +1527,13 @@ OPTIONS
            states from being produced.
            See also infer-analyze(1).
 
+       --pulse-default-taint-config
+           Activates: Load the default taint configuration for standard
+           libraries shipped with infer, in addition to the ones given with
+           --pulse-taint-config. (Conversely:
+           --no-pulse-default-taint-config)
+           See also infer-analyze(1).
+
        --pulse-eternal
            Activates: [EXPERIMENTAL] latest iteration of the non-termination
            loop prover based on the UNTER under-approximate theory

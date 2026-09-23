@@ -11,6 +11,7 @@ INFER_OPTIONS = \
   --pulse-report-issues-for-tests --inline-func-pointer-for-testing "mockptr_" \
   --report-suppress-errors DATA_FLOW_TO_SINK \
   --report-suppress-errors SENSITIVE_DATA_FLOW \
+  --pulse-default-taint-config \
   --pulse-taint-config ../.infertaintconfig \
   --pulse-taint-config taint/.infertaintconfig \
   --dynamic-dispatch-json-file-path taint/dispatch.json \
