@@ -350,7 +350,7 @@ let default_hack_builtin_models = lib_dir ^/ "hack" ^/ "models.sil"
 
 let default_hack_builtin_models_rel = "lib" ^/ "hack" ^/ "models.sil"
 
-let pulse_default_taint_config = config_dir ^/ "taint"
+let pulse_default_taint_config_dir = config_dir ^/ "taint"
 
 (* Normalize the path *)
 
@@ -2407,6 +2407,13 @@ and pulse_cut_to_one_path_procedures_pattern =
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
     "Regex of methods for which pulse will only explore one path. Can be used on pathologically \
      large procedures to prevent too-big states from being produced."
+
+
+and pulse_default_taint_config =
+  CLOpt.mk_bool ~long:"pulse-default-taint-config"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Load the default taint configuration for standard libraries shipped with infer, in addition \
+     to the ones given with $(b,--pulse-taint-config)."
 
 
 and pulse_final_types_are_exact =
@@ -4845,8 +4852,12 @@ and pulse_taint_config =
         combine_fields Pulse_config_j.data_flow_kinds_of_string "pulse-taint-data-flow-kinds"
           taint_config.data_flow_kinds }
   in
-  List.fold (pulse_default_taint_config :: RevList.to_list !pulse_taint_config)
-    ~init:base_taint_config ~f:(fun taint_config path ->
+  let taint_config_paths = RevList.to_list !pulse_taint_config in
+  let taint_config_paths =
+    if !pulse_default_taint_config then pulse_default_taint_config_dir :: taint_config_paths
+    else taint_config_paths
+  in
+  List.fold taint_config_paths ~init:base_taint_config ~f:(fun taint_config path ->
       match (Unix.stat path).st_kind with
       | S_DIR ->
           Utils.fold_files ~init:taint_config
