@@ -727,24 +727,20 @@ let simplify_shallow t =
         let is_t1_var_plus_int =
           match is_t1_var_plus_const with
           | None ->
-              L.d_printfln "no" ;
               None
           | Some (t, q) -> (
-              L.d_printfln "yes" ;
-              match Q.to_bigint q with Some z -> Some (t, z) | None -> None )
+            match Q.to_bigint q with Some z -> Some (t, z) | None -> None )
         in
         match (is_t1_var_plus_int, Q.to_bigint m) with
         | Some (t, z), Some m -> (
-            L.d_printfln "still yes" ;
-            match Z.(z mod m) with
-            | Some z_simpl when Z.(equal z_simpl zero) ->
-                Mod (t, t2)
-            | Some z_simpl when Z.(not (equal z z_simpl)) ->
-                Mod (Add (t, Const (Q.of_bigint z_simpl)), t2)
-            | _ ->
-                t )
+          match Z.(z mod m) with
+          | Some z_simpl when Z.(equal z_simpl zero) ->
+              Mod (t, t2)
+          | Some z_simpl when Z.(not (equal z z_simpl)) ->
+              Mod (Add (t, Const (Q.of_bigint z_simpl)), t2)
+          | _ ->
+              t )
         | _ ->
-            L.d_printfln "alas no" ;
             t )
     | BitAnd (t1, t2) when is_zero t1 || is_zero t2 ->
         zero
