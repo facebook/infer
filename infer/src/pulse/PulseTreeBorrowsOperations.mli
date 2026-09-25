@@ -39,6 +39,7 @@ val exec_retag :
 
 val compute_specialization :
      formals:(Pvar.t * Typ.t) list
+  -> loc:Location.t
   -> Exp.t list
   -> PulseAbductiveDomain.t
   -> Specialization.Pulse.t option

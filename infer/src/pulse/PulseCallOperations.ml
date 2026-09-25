@@ -511,9 +511,13 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
 
 
 let tree_borrows_contradiction ~(formals : (Pvar.t * Typ.t) list) ~(tb_arg_exps : Exp.t list)
-    ~exec_states_callee (astate_caller : AbductiveDomain.t) : PulseInterproc.contradiction option =
+    ~call_loc ~exec_states_callee (astate_caller : AbductiveDomain.t) :
+    PulseInterproc.contradiction option =
   if Config.is_checker_enabled TreeBorrows && not (List.is_empty tb_arg_exps) then
-    match PulseTreeBorrowsOperations.compute_specialization ~formals tb_arg_exps astate_caller with
+    match
+      PulseTreeBorrowsOperations.compute_specialization ~formals ~loc:call_loc tb_arg_exps
+        astate_caller
+    with
     | None ->
         None
     | Some requested_spec ->
@@ -631,7 +635,7 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
     | Some _ ->
         contradiction
     | None ->
-        tree_borrows_contradiction ~formals ~tb_arg_exps ~exec_states_callee astate_caller
+        tree_borrows_contradiction ~formals ~tb_arg_exps ~call_loc ~exec_states_callee astate_caller
   in
   (posts, (non_disj, contradiction))
 

@@ -169,8 +169,9 @@ let callee_entry_edges callee_summary callee_pdesc =
 
 let actual_operands actuals astate = List.map actuals ~f:(fun e -> operand_of_exp astate e)
 
-let precondition_of_actuals actuals astate =
-  PulseTreeBorrows.precondition_of_actuals (canonicalize_tb astate) (actual_operands actuals astate)
+let precondition_of_actuals ~formals ~loc actuals astate =
+  PulseTreeBorrows.precondition_of_actuals ~formals ~succs:(succs_of astate) ~loc
+    (canonicalize_tb astate) (actual_operands actuals astate)
 
 
 let exec_call ~callee_summary ~callee_pdesc
@@ -195,28 +196,41 @@ let exec_call ~callee_summary ~callee_pdesc
     astate
 
 
-let compute_specialization ~(formals : (Pvar.t * Typ.t) list) (actuals : Exp.t list) astate :
+let compute_specialization ~(formals : (Pvar.t * Typ.t) list) ~loc (actuals : Exp.t list) astate :
     Specialization.Pulse.t option =
-  let tb_pre = precondition_of_actuals actuals astate in
-  let needs_spec =
-    (not (List.is_empty tb_pre.Specialization.Pulse.TreeBorrows.rels))
-    || PulseTreeBorrows.perm_spec_needed ~formals tb_pre
-  in
-  if needs_spec then Some {Specialization.Pulse.bottom with tree_borrows= tb_pre} else None
+  match precondition_of_actuals ~formals ~loc actuals astate with
+  | None ->
+      None
+  | Some tb_pre ->
+      let needs_spec =
+        (not (List.is_empty tb_pre.Specialization.Pulse.TreeBorrows.rels))
+        || PulseTreeBorrows.perm_spec_needed ~formals tb_pre
+      in
+      if needs_spec then Some {Specialization.Pulse.bottom with tree_borrows= tb_pre} else None
 
 
 let graft_call ~callee_summary ~callee_pname ~tb_arg_exps ~subst_map ~ret_id ~loc ~caller post =
-  let caller_pre = precondition_of_actuals tb_arg_exps caller in
-  let callee_pre =
-    PulseTreeBorrows.entry_pre (AbductiveDomain.Summary.get_tree_borrows callee_summary)
-  in
-  if not (PulseTreeBorrows.spec_fits ~caller_pre ~callee_pre) then post
-  else
-    match Procdesc.load callee_pname with
-    | None ->
-        post
-    | Some callee_pdesc ->
+  match Procdesc.load callee_pname with
+  | None ->
+      post
+  | Some callee_pdesc ->
+      let fits =
+        match
+          precondition_of_actuals
+            ~formals:(Procdesc.get_pvar_formals callee_pdesc)
+            ~loc tb_arg_exps caller
+        with
+        | None ->
+            true
+        | Some caller_pre ->
+            PulseTreeBorrows.spec_fits ~caller_pre
+              ~callee_pre:
+                (PulseTreeBorrows.entry_pre
+                   (AbductiveDomain.Summary.get_tree_borrows callee_summary) )
+      in
+      if fits then
         exec_call ~callee_summary ~callee_pdesc ~subst_map ~args:tb_arg_exps ~ret_id ~loc post
+      else post
 
 
 let report_errors proc_desc err_log summary =
