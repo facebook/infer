@@ -1228,7 +1228,11 @@ let show_manual ?(scrub_defaults = false) ?internal_section format default_doc c
     ; `Blocks option_blocks
     ; `Blocks command_doc.manual_after_options ]
   in
-  Cmdliner.Manpage.print format Format.std_formatter (command_doc.title, blocks) ;
+  (* Since 2.0, Cmdliner passes a user's LESS to the pager instead of its default FRX, so users
+     would need an explicit -R in their shell's LESS to avoid seeing groff's escape sequences.
+     Hiding LESS keeps FRX. *)
+  let env var = if String.equal var "LESS" then None else Sys.getenv var in
+  Cmdliner.Manpage.print ~env format Format.std_formatter (command_doc.title, blocks) ;
   ()
 
 
