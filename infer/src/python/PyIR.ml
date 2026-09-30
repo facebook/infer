@@ -938,14 +938,6 @@ module CodeInfo = struct
     ; is_async: bool
     ; is_generator: bool }
 
-  let is_async = function
-    | {FFI.Instruction.opname= "GEN_START"; arg= 1} :: _
-    | {FFI.Instruction.opname= "RETURN_GENERATOR"} :: _ ->
-        true
-    | _ ->
-        false
-
-
   let of_code
       { FFI.Code.co_name
       ; co_firstlineno
@@ -957,14 +949,13 @@ module CodeInfo = struct
       ; co_cellvars
       ; co_freevars
       ; co_names
-      ; co_varnames
-      ; instructions } =
+      ; co_varnames } =
     { co_name= Ident.mk co_name
     ; co_firstlineno
     ; has_star_arguments= co_flags land 0x04 <> 0
     ; has_star_keywords= co_flags land 0x08 <> 0
     ; is_generator= co_flags land 0x20 <> 0
-    ; is_async= is_async instructions
+    ; is_async= co_flags land 0x80 <> 0
     ; co_nlocals
     ; co_argcount
     ; co_posonlyargcount

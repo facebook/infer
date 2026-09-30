@@ -20,5 +20,5 @@ def main():
     print(dict([("x", 10)], y=20, z=30))
 
 
-def fp_dict_comp_ok():
+def dict_comp_ok():
     print(dict((i, i**2) for i in range(3)))

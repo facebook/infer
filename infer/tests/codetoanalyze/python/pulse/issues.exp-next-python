@@ -67,7 +67,6 @@ async_typing.py, async_typing.await_condition_is_none_bad, 3, PULSE_UNAWAITED_AW
 async_typing.py, async_typing.await_condition_bool_none_bad, 5, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_typing.py, async_typing.fp_await_condition_val_equal_ok, 6, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 async_typing.py, async_typing.await_condition_phys_equal_bad, 6, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
-builtins.py, builtins.fp_dict_comp_ok, 1, PULSE_UNAWAITED_AWAITABLE, no_bucket, ERROR, [allocation part of the trace starts here,allocated by async call here,awaitable becomes unreachable here]
 cyclic_import.py, cyclic_import.__module_body__, 5, MUTUAL_RECURSION_CYCLE, no_bucket, WARNING, [`cyclic_import.__module_body__` makes a recursive call to `cyclic_import.__module_body__`]
 demo_basic_oo/demo0.py, demo_basic_oo::demo0.assert_bad, 1, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
 demo_basic_oo/demo1.py, demo_basic_oo::demo1.a_cow_can_not_quack_bad, 2, PULSE_ASSERTION_ERROR, no_bucket, ERROR, []
