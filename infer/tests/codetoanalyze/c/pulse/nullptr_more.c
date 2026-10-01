@@ -53,7 +53,7 @@ void exit_if_null_ok(struct Person* htbl) {
   int x = htbl->age;
 }
 
-void FPuseafterfree_no_check_for_null_after_realloc_bad() {
+void no_check_for_null_after_realloc_bad() {
   int* p;
   p = (int*)malloc(sizeof(int) * 5);
   if (p) {
@@ -61,7 +61,7 @@ void FPuseafterfree_no_check_for_null_after_realloc_bad() {
   }
   int* q = (int*)realloc(p, sizeof(int) * 10);
   if (!q)
-    free(p); // FP
+    free(p);
   q[7] = 0; // NULL dereference
   free(q);
 }

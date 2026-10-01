@@ -19,20 +19,20 @@ let invalidate path access_path location cause addr_trace : unit DSL.model_monad
   PulseOperations.invalidate path access_path location cause addr_trace |> exec_command
 
 
-let alloc_common_dsl ~null_case ~initialize allocator size_exp_opt : unit DSL.model_monad =
+let return_null_dsl : unit DSL.model_monad =
   let open DSL.Syntax in
   let* {path; location; ret= ret_id, _} = get_data in
+  let* ret_addr = fresh ~more:"(null case)" () in
+  assign_ret ret_addr @@> and_eq_int ret_addr IntLit.zero
+  @@> invalidate path
+        (StackAddress (Var.of_id ret_id, snd ret_addr))
+        location (ConstantDereference IntLit.zero) ret_addr
+
+
+let alloc_common_dsl ~null_case ~initialize allocator size_exp_opt : unit DSL.model_monad =
+  let open DSL.Syntax in
   let astate_alloc = Basic.return_alloc_not_null allocator ~initialize size_exp_opt in
-  if null_case then
-    let result_null =
-      let* ret_addr = fresh ~more:"(null case)" () in
-      assign_ret ret_addr @@> and_eq_int ret_addr IntLit.zero
-      @@> invalidate path
-            (StackAddress (Var.of_id ret_id, snd ret_addr))
-            location (ConstantDereference IntLit.zero) ret_addr
-    in
-    disj [astate_alloc; result_null]
-  else astate_alloc
+  if null_case then disj [astate_alloc; return_null_dsl] else astate_alloc
 
 
 let alloc_common ~null_case ~initialize ~desc allocator size_exp_opt : model =
@@ -54,17 +54,18 @@ let custom_alloc_not_null desc model_data astate =
     None model_data astate
 
 
+(* A failed realloc returns NULL and leaves the original block allocated, so only the success case
+   frees [pointer]. A zero [size] is not special-cased: C17 leaves it implementation-defined (glibc
+   and scudo free [pointer] and return NULL) and C23 makes it undefined. *)
 let realloc_common ~null_case ~desc allocator pointer size : model =
- fun data astate non_disj ->
-  free pointer data astate non_disj
-  |> NonDisjDomain.bind ~f:(fun result non_disj ->
-      let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
-      let<*> exec_state = result in
-      match (exec_state : ExecutionDomain.t) with
-      | ContinueProgram astate ->
-          alloc_common ~null_case ~initialize:false ~desc allocator (Some size) data astate non_disj
-      | ExceptionRaised _ | Stopped _ ->
-          ([Ok exec_state], non_disj) )
+  let open DSL.Syntax in
+  start_named_model desc
+  @@ fun () ->
+  let success =
+    lift_to_monad (free pointer)
+    @@> alloc_common_dsl ~null_case:false ~initialize:false allocator (Some size)
+  in
+  if null_case then disj [success; return_null_dsl] else success
 
 
 let realloc = realloc_common ~desc:"realloc" CRealloc
