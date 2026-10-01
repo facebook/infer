@@ -379,6 +379,24 @@ include struct
     @@ fun () -> check_valid haystack @@> check_valid needle @@> null_or_nonneg_non_det_ret ()
 
 
+  (* [*endptr] gets a fresh non-NULL pointer rather than [str] itself, which would make the usual
+     [end == str] check (nothing parsed) always true and prune the success path. *)
+  let strtol str endptr : model =
+    start_model
+    @@ fun () ->
+    let* () = check_valid str in
+    let* end_ = fresh () in
+    let* () =
+      disj
+        [ prune_eq_zero (to_aval endptr)
+        ; prune_ne_zero (to_aval endptr)
+          @@> and_positive end_
+          @@> store ~ref:(to_aval endptr) end_
+          @@> data_dependency (ValueOrigin.unknown end_) [str] ]
+    in
+    (assign_ret @= fresh ()) @@> data_dependency_to_ret [str]
+
+
   let time tloc =
     start_model
     @@ fun () ->
@@ -717,12 +735,9 @@ let matchers : matcher list =
     $--> compose2 valid_args2 (ignore_args2 non_det_ret)
   ; -"strstr" <>$ capt_arg_payload $+ capt_arg_payload $--> strstr
   ; -"strtcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strcpy
-  ; -"strtod" <>$ capt_arg_payload $+ any_arg
-    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
-  ; -"strtol" <>$ capt_arg_payload $+ any_arg $+ any_arg
-    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
-  ; -"strtoul" <>$ capt_arg_payload $+ any_arg $+ any_arg
-    $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
+  ; -"strtod" <>$ capt_arg_payload $+ capt_arg_payload $--> strtol
+  ; -"strtol" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strtol
+  ; -"strtoul" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strtol
   ; -"strupr" <>$ capt_arg_payload $--> compose1 valid_arg ret_arg
   ; -"time" <>$ capt_arg_payload $--> time
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
