@@ -23,6 +23,6 @@ struct node {
 void create_cycle_impure(struct node* x) { x->next = x; }
 
 void invalidate_local_impure(int** pp) {
-  int t = 0xdeadbeef;
+  int t = 0xbeef;
   *pp = &t; // <-- potential bug here since t goes out of scope
 }
