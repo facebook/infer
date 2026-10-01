@@ -410,6 +410,8 @@ let should_analyze_proc =
            ; "folly::ThreadLocal"
            ; "folly::detail::SingletonHolder"
            ; "std::atomic"
+           ; (* libc++ and libstdc++ define most [std::atomic] members in [std::__atomic_base] *)
+             "std::__atomic"
            ; "std::vector" ] )
     in
     function
