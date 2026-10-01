@@ -97,6 +97,13 @@
           "sanitizer_kinds": ["StringConcatenation"],
           "sink_kinds": ["ClassLoading"] }
       ]
+    },
+    { "short_description": "Server-Side Request Forgery",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["URLEncoding"],
+          "sink_kinds": ["SSRF"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -297,6 +304,21 @@
       "kinds": ["ShellExec"],
       "taint_target": ["ArgumentPositions", [0]]
     },
+    { "class_names": ["java.net.URL"],
+      "method_names": ["getContent", "openConnection", "openStream"],
+      "kinds": ["SSRF"],
+      "taint_target": "InstanceReference"
+    },
+    { "class_names": ["java.net.http.HttpRequest", "java.net.http.HttpRequest$Builder"],
+      "method_names": ["newBuilder", "uri"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["javax.imageio.ImageIO"],
+      "method_names": ["read"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.net.URL"]]
+    },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["addBatch", "execute"],
       "kinds": ["SQLInjection"],
@@ -326,6 +348,10 @@
     { "class_names": ["java.lang.StringBuilder"],
       "method_names": ["append"],
       "kinds": ["StringConcatenation"]
+    },
+    { "class_names": ["java.net.URLEncoder"],
+      "method_names": ["encode"],
+      "kinds": ["URLEncoding"]
     }
   ]
 }
