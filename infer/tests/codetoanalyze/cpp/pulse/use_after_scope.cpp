@@ -10,7 +10,7 @@
 #include <utility>
 
 void invalidate_local_ok(int** pp) {
-  int t = 0xdeadbeef;
+  int t = 0xbeef;
   *pp = &t; // <-- potential bug here since t goes out of scope
 }
 
