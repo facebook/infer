@@ -107,6 +107,10 @@ void* realloc_wrapper(void* p, size_t size) { return realloc(p, size); }
 void realloc_free_ok() {
   int* p = (int*)malloc(sizeof(int));
   int* q = realloc_wrapper(p, sizeof(int));
+  if (!q) {
+    free(p);
+    return;
+  }
   free(q);
 }
 
@@ -132,12 +136,20 @@ void user_malloc_leak_bad() { int* x = (int*)a_malloc(sizeof(int)); }
 void test_config_options_1_ok() {
   int* p = (int*)malloc(sizeof(int));
   int* q = my_realloc(p, sizeof(int));
+  if (!q) {
+    my_free(p);
+    return;
+  }
   my_free(q);
 }
 
 void test_config_options_2_ok() {
   int* p = (int*)my_malloc(sizeof(int));
   int* q = realloc(p, sizeof(int));
+  if (!q) {
+    my_free(p);
+    return;
+  }
   my_free(q);
 }
 

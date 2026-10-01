@@ -13,7 +13,7 @@ void simple_leak_bad() {
   p = (int*)malloc(sizeof(int));
 }
 
-void FN_common_realloc_leak_bad() {
+void common_realloc_leak_bad() {
   int *p, *q;
   p = (int*)malloc(sizeof(int));
   q = (int*)realloc(p, sizeof(int) * 42);
@@ -22,7 +22,7 @@ void FN_common_realloc_leak_bad() {
     free(q);
 }
 
-void FN_common_realloc_leak2_bad() {
+void common_realloc_leak2_bad() {
   float *p, *q;
   p = (float*)malloc(sizeof(float));
   q = (float*)realloc(p, sizeof(float) * 42);
