@@ -74,7 +74,18 @@ val init_formals :
 
 val entry_pre : state -> Specialization.Pulse.TreeBorrows.t
 
-val precondition_of_actuals : state -> Operand.t list -> Specialization.Pulse.TreeBorrows.t
+val precondition_of_actuals :
+     formals:(Pvar.t * Typ.t) list
+  -> succs:(AbstractValue.t -> AbstractValue.t list)
+  -> loc:Location.t
+  -> state
+  -> Operand.t list
+  -> Specialization.Pulse.TreeBorrows.t option
+
+val spec_fits :
+     caller_pre:Specialization.Pulse.TreeBorrows.t
+  -> callee_pre:Specialization.Pulse.TreeBorrows.t
+  -> bool
 
 val perm_spec_needed : formals:(Pvar.t * Typ.t) list -> Specialization.Pulse.TreeBorrows.t -> bool
 

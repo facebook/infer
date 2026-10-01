@@ -340,6 +340,7 @@ type contradiction =
       ; call_state: call_state }
   | AliasingWithAllAliases of HeapPath.t list list
   | DynamicTypeNeeded of AbstractValue.t HeapPath.Map.t
+  | TreeBorrowsNeeded of Specialization.Pulse.t
   | CapturedFormalActualLength of
       { captured_formals: (Pvar.t * Typ.t) list
       ; captured_actuals: ((AbstractValue.t * ValueHistory.t) * Typ.t) list }
@@ -364,6 +365,8 @@ let pp_contradiction fmt = function
       F.fprintf fmt "Heap paths %a need to give their dynamic types"
         (HeapPath.Map.pp ~pp_value:AbstractValue.pp)
         heap_paths
+  | TreeBorrowsNeeded _ ->
+      F.fprintf fmt "Tree Borrows precondition mismatch"
   | CapturedFormalActualLength {captured_formals; captured_actuals} ->
       F.fprintf fmt "captured formals have length %d but captured actuals have length %d"
         (List.length captured_formals) (List.length captured_actuals)
@@ -377,7 +380,7 @@ let pp_contradiction fmt = function
 let log_contradiction = function
   | Aliasing _ | AliasingWithAllAliases _ ->
       Stats.incr_pulse_aliasing_contradictions ()
-  | DynamicTypeNeeded _ ->
+  | DynamicTypeNeeded _ | TreeBorrowsNeeded _ ->
       ()
   | FormalActualLength _ ->
       Stats.incr_pulse_args_length_contradictions ()
@@ -392,11 +395,21 @@ let is_dynamic_type_needed_contradiction = function
       Some heap_paths
   | Aliasing _
   | AliasingWithAllAliases _
+  | TreeBorrowsNeeded _
   | CapturedFormalActualLength _
   | FormalActualLength _
   | PathCondition _ ->
       None
 
+
+let is_tree_borrows_needed_contradiction = function
+  | TreeBorrowsNeeded spec ->
+      Some spec
+  | _ ->
+      None
+
+
+let tree_borrows_needed spec = TreeBorrowsNeeded spec
 
 exception Contradiction of contradiction
 
