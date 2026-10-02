@@ -841,7 +841,7 @@ end = struct
       source_map
 end
 
-let should_report_deadlock_on_current_proc current_elem endpoint_elem =
+let should_report_deadlock_on_current_proc ~found_by_other_side current_elem endpoint_elem =
   let open Domain in
   (not Config.deduplicate)
   ||
@@ -856,10 +856,15 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
       (* first elem is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur since we don't search the class for static locks *)
       List.exists ~f:Lock.is_class_object endpoint_locks
+      || (not (found_by_other_side ()))
       ||
       match List.compare Lock.compare_wrt_reporting endpoint_locks current_locks with
       | 0 ->
-          Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
+          (* the events of two calls to the same procedure have the same location *)
+          [%compare: Location.t * Lock.t list]
+            (current_elem.CriticalPair.loc, current_locks)
+            (endpoint_elem.CriticalPair.loc, endpoint_locks)
+          < 0
       | c ->
           c < 0 )
 
@@ -881,25 +886,81 @@ let should_report attrs =
   should_report' procname
 
 
-let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
-  let methods =
-    Tenv.lookup tenv clazz
-    |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
-  in
-  let f acc mthd =
-    Attributes.load mthd
-    |> Option.value_map ~default:acc ~f:(fun other_attrs ->
-        if should_report other_attrs then
-          analyze_ondemand mthd
-          |> Option.map ~f:(fun payload -> (mthd, payload))
-          |> Option.fold ~init:acc ~f
-        else acc )
-  in
-  let methods = List.map methods ~f:Struct.name_of_tenv_method in
-  List.fold methods ~init ~f
+let get_class_methods tenv clazz =
+  Tenv.lookup tenv clazz
+  |> Option.value_map ~default:[] ~f:(fun tstruct ->
+      List.map tstruct.Struct.methods ~f:Struct.name_of_tenv_method )
 
 
 let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access attrs) Private
+
+(* initializers of globals normally run before any thread is started *)
+let is_global_initializer pname = Option.is_some (Procname.get_global_name_of_initializer pname)
+
+(** the summary of [pname] if it can be the other side of a report *)
+let get_reportable_summary analyze_ondemand pname =
+  Attributes.load pname
+  |> Option.bind ~f:(fun attrs ->
+      if should_report attrs && not (is_private attrs || is_global_initializer pname) then
+        analyze_ondemand pname
+      else None )
+
+
+(** the reportable procedures of the file under analysis, with their critical pairs indexed by the
+    locks they hold, so that the pairs holding a lock equal across threads to a given lock are among
+    those indexed by it *)
+module FilePeers : sig
+  type t
+
+  val empty : t
+
+  val make : Domain.summary Procname.Map.t -> t
+
+  val mem : Procname.t -> t -> bool
+
+  val fold_pairs_holding :
+       Tenv.t
+    -> Domain.Lock.t
+    -> t
+    -> init:'a
+    -> f:(Procname.t -> Domain.CriticalPair.t -> 'a -> 'a)
+    -> 'a
+end = struct
+  module LockMap = PrettyPrintable.MakePPMap (Domain.Lock)
+
+  type t =
+    { summaries: Domain.summary Procname.Map.t
+    ; pairs_by_held_lock: (Procname.t * Domain.CriticalPair.t) list LockMap.t }
+
+  let empty = {summaries= Procname.Map.empty; pairs_by_held_lock= LockMap.empty}
+
+  let make summaries =
+    let open Domain in
+    let add_pair pname tenv (pair : CriticalPair.t) pairs_by_held_lock =
+      Acquisitions.elements pair.elem.acquisitions
+      |> List.map ~f:(fun (acquisition : Acquisition.t) ->
+          Lock.normalise_across_threads tenv acquisition.elem.lock )
+      |> List.dedup_and_sort ~compare:Lock.compare
+      |> List.fold ~init:pairs_by_held_lock ~f:(fun acc lock ->
+          LockMap.update lock
+            (fun pairs -> Some ((pname, pair) :: Option.value pairs ~default:[]))
+            acc )
+    in
+    let add_summary pname summary acc =
+      fold_critical_pairs_of_summary (add_pair pname (Exe_env.get_proc_tenv pname)) summary acc
+    in
+    { summaries
+    ; pairs_by_held_lock=
+        Procname.Map.fold add_summary summaries LockMap.empty |> LockMap.map List.rev }
+
+
+  let mem pname {summaries} = Procname.Map.mem pname summaries
+
+  let fold_pairs_holding tenv lock {pairs_by_held_lock} ~init ~f =
+    LockMap.find_opt (Domain.Lock.normalise_across_threads tenv lock) pairs_by_held_lock
+    |> Option.value ~default:[]
+    |> List.fold ~init ~f:(fun acc (pname, pair) -> f pname pair acc)
+end
 
 (* Note about how many times we report a deadlock: normally twice, at each trace starting point.
    Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
@@ -907,67 +968,94 @@ let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access at
    then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
    inner class but this is no longer obvious in the path, because of nested-class path normalisation.
    The net effect of the above issues is that we will only see these locks in conflicting pairs
-   once, as opposed to twice with all other deadlock pairs. *)
+   once, as opposed to twice with all other deadlock pairs. For C/C++/ObjC, we also look in the
+   summaries of the procedures of the current file, so a deadlock with a procedure of another file
+   may also be seen only once. *)
 
-(** report warnings possible on the parallel composition of two threads/critical pairs
-    [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)
+(** whether reporting on [other_pname] also finds its deadlock with the current procedure [pname] on
+    [other_lock], so that only one of them needs to report it. For C/C++/ObjC, it only searches the
+    procedures of the file of [other_pname] ([file_peers] if [other_pname] is one of them) and the
+    methods of the class at the root of the lock. *)
+let is_found_by_other_side tenv ~file_peers pname other_pname other_lock =
+  Config.starvation_whole_program
+  || (not (Procname.is_clang pname))
+  || FilePeers.mem other_pname file_peers
+  || Domain.Lock.root_class other_lock
+     |> Option.exists ~f:(fun clazz ->
+         List.mem (get_class_methods tenv clazz) pname ~equal:Procname.equal )
+
+
+(** report warnings possible on the parallel composition of two threads/critical pairs of
+    non-private procedures; [should_report_starvation] means [pair] is on the UI thread and not on a
+    constructor *)
+let report_on_parallel_composition_non_private ~should_report_starvation ~file_peers tenv pattrs
+    pair lock other_pname other_pair report_map =
+  let open Domain in
+  let pname = ProcAttributes.get_proc_name pattrs in
+  let make_trace_and_loc () =
+    let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " pname pair in
+    let second_trace = CriticalPair.make_trace ~header:"[Trace 2] " other_pname other_pair in
+    let ltr = first_trace @ second_trace in
+    let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
+    (ltr, loc)
+  in
+  if CriticalPair.can_run_in_parallel pair other_pair then
+    let acquisitions = other_pair.CriticalPair.elem.acquisitions in
+    match other_pair.CriticalPair.elem.event with
+    | (Ipc _ | MayBlock _ | RegexOp _) as event
+      when should_report_starvation
+           && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
+        let error_message =
+          Format.asprintf
+            "%a runs on UI thread and%a, which may be held by another thread which %a. This may \
+             regress scroll performance or cause ANRs."
+            pname_pp pname Lock.pp_locks lock Event.describe event
+        in
+        let ltr, loc = make_trace_and_loc () in
+        ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
+    | MonitorWait {lock= monitor_lock}
+      when should_report_starvation
+           && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
+           && not (Lock.equal lock monitor_lock) ->
+        let error_message =
+          Format.asprintf
+            "%a runs on UI thread and%a, which may be held by another thread which %a. This may \
+             regress scroll performance or cause ANRs."
+            pname_pp pname Lock.pp_locks lock Event.describe other_pair.CriticalPair.elem.event
+        in
+        let ltr, loc = make_trace_and_loc () in
+        ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
+    | LockAcquire _ -> (
+      match CriticalPair.may_deadlock tenv ~lhs:pair ~lhs_lock:lock ~rhs:other_pair with
+      | Some other_lock
+        when should_report_deadlock_on_current_proc
+               ~found_by_other_side:(fun () ->
+                 is_found_by_other_side tenv ~file_peers pname other_pname other_lock )
+               pair other_pair ->
+          let error_message =
+            Format.asprintf
+              "%a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse orders." pname_pp
+              pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
+          in
+          let ltr, loc = make_trace_and_loc () in
+          ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
+      | _ ->
+          report_map )
+    | _ ->
+        report_map
+  else report_map
+
+
 let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock other_pname
     other_pair report_map =
   if is_private pattrs || Attributes.load other_pname |> Option.exists ~f:is_private then report_map
   else
-    let open Domain in
-    let pname = ProcAttributes.get_proc_name pattrs in
-    let make_trace_and_loc () =
-      let first_trace = CriticalPair.make_trace ~header:"[Trace 1] " pname pair in
-      let second_trace = CriticalPair.make_trace ~header:"[Trace 2] " other_pname other_pair in
-      let ltr = first_trace @ second_trace in
-      let loc = CriticalPair.get_earliest_lock_or_call_loc ~procname:pname pair in
-      (ltr, loc)
-    in
-    if CriticalPair.can_run_in_parallel pair other_pair then
-      let acquisitions = other_pair.CriticalPair.elem.acquisitions in
-      match other_pair.CriticalPair.elem.event with
-      | (Ipc _ | MayBlock _ | RegexOp _) as event
-        when should_report_starvation
-             && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions ->
-          let error_message =
-            Format.asprintf
-              "%a runs on UI thread and%a, which may be held by another thread which %a. This may \
-               regress scroll performance or cause ANRs."
-              pname_pp pname Lock.pp_locks lock Event.describe event
-          in
-          let ltr, loc = make_trace_and_loc () in
-          ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
-      | MonitorWait {lock= monitor_lock}
-        when should_report_starvation
-             && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
-             && not (Lock.equal lock monitor_lock) ->
-          let error_message =
-            Format.asprintf
-              "%a runs on UI thread and%a, which may be held by another thread which %a. This may \
-               regress scroll performance or cause ANRs."
-              pname_pp pname Lock.pp_locks lock Event.describe other_pair.CriticalPair.elem.event
-          in
-          let ltr, loc = make_trace_and_loc () in
-          ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
-      | LockAcquire _ -> (
-        match CriticalPair.may_deadlock tenv ~lhs:pair ~lhs_lock:lock ~rhs:other_pair with
-        | Some other_lock when should_report_deadlock_on_current_proc pair other_pair ->
-            let error_message =
-              Format.asprintf
-                "%a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse orders." pname_pp
-                pname pname_pp other_pname Lock.describe lock Lock.describe other_lock
-            in
-            let ltr, loc = make_trace_and_loc () in
-            ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
-        | _ ->
-            report_map )
-      | _ ->
-          report_map
-    else report_map
+    report_on_parallel_composition_non_private ~should_report_starvation ~file_peers:FilePeers.empty
+      tenv pattrs pair lock other_pname other_pair report_map
 
 
-let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) report_map =
+let report_on_pair_with_file_peers ~analyze_ondemand ~file_peers tenv pattrs
+    (pair : Domain.CriticalPair.t) report_map =
   let open Domain in
   let pname = ProcAttributes.get_proc_name pattrs in
   let event = pair.elem.event in
@@ -1082,33 +1170,61 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
           ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
       | None when Config.starvation_whole_program ->
           report_map
+      | None when Acquisitions.is_empty pair.elem.acquisitions && not should_report_starvation ->
+          (* a deadlock needs the other thread to take a lock held in [pair] *)
+          report_map
+      | None when is_global_initializer pname ->
+          report_map
       | None ->
           List.fold locks ~init:report_map ~f:(fun acc lock ->
+              (* report on the parallel composition of the current pair and the pairs that can
+                 indeed run in parallel among those of the procedures of the current file holding
+                 [lock] and those of the methods of the class of the root variable of [lock] *)
+              let report_on_other_pair =
+                report_on_parallel_composition_non_private ~should_report_starvation ~file_peers
+                  tenv pattrs pair lock
+              in
+              let acc =
+                FilePeers.fold_pairs_holding tenv lock file_peers ~init:acc ~f:report_on_other_pair
+              in
               Lock.root_class lock
-              |> Option.value_map ~default:acc ~f:(fun other_class ->
-                  (* get the class of the root variable of the lock in the lock acquisition
-                        and retrieve all the summaries of the methods of that class;
-                        then, report on the parallel composition of the current pair and any pair in these
-                        summaries that can indeed run in parallel *)
-                  fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
-                    ~f:(fun acc (other_pname, summary) ->
-                      Domain.fold_critical_pairs_of_summary
-                        (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
-                           lock other_pname )
-                        summary acc ) ) ) )
+              |> Option.value_map ~default:[] ~f:(get_class_methods tenv)
+              |> List.fold ~init:acc ~f:(fun acc other_pname ->
+                  if FilePeers.mem other_pname file_peers then acc
+                  else
+                    get_reportable_summary analyze_ondemand other_pname
+                    |> Option.fold ~init:acc ~f:(fun acc summary ->
+                        Domain.fold_critical_pairs_of_summary
+                          (report_on_other_pair other_pname)
+                          summary acc ) ) ) )
   | _ ->
       report_map
+
+
+let report_on_pair ~analyze_ondemand tenv pattrs pair report_map =
+  report_on_pair_with_file_peers ~analyze_ondemand ~file_peers:FilePeers.empty tenv pattrs pair
+    report_map
 
 
 let reporting {InterproceduralAnalysis.procedures; analyze_file_dependency} =
   if Config.starvation_whole_program then IssueLog.empty
   else
+    let analyze_ondemand proc_name =
+      analyze_file_dependency proc_name |> AnalysisResult.to_option
+    in
+    let file_peers =
+      (* in C/C++/ObjC, locks are often globals or fields of structs without methods, and are taken
+         in functions that are not methods of the class at the root of the lock *)
+      List.fold procedures ~init:Procname.Map.empty ~f:(fun acc pname ->
+          if Procname.is_clang pname then
+            get_reportable_summary analyze_ondemand pname
+            |> Option.value_map ~default:acc ~f:(fun summary -> Procname.Map.add pname summary acc)
+          else acc )
+      |> FilePeers.make
+    in
     let report_on_proc tenv pattrs report_map payload =
       Domain.fold_critical_pairs_of_summary
-        (report_on_pair
-           ~analyze_ondemand:(fun proc_name ->
-             analyze_file_dependency proc_name |> AnalysisResult.to_option )
-           tenv pattrs )
+        (report_on_pair_with_file_peers ~analyze_ondemand ~file_peers tenv pattrs)
         payload report_map
     in
     let report_procedure report_map procname =

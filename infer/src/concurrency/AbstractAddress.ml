@@ -214,6 +214,22 @@ let equal_across_threads tenv t1 t2 =
       equal t1 t2
 
 
+let normalise_across_threads tenv t =
+  match t with
+  | Parameter {path= (var, typ), accesses} ->
+      (* only the last field is kept, so any relation that preserves it stays within one key *)
+      let _, accesses = inner_class_normalise tenv (typ, accesses) in
+      let last_field =
+        List.rev accesses
+        |> List.find ~f:(fun (access : access) ->
+            match access with FieldAccess _ -> true | _ -> false )
+        |> Option.to_list
+      in
+      Parameter {index= 0; path= ((var, StdTyp.void), last_field)}
+  | Global _ | Class _ ->
+      t
+
+
 let is_class_object = function Class _ -> true | _ -> false
 
 let rec make formal_map (hilexp : HilExp.t) =
