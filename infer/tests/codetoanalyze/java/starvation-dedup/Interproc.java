@@ -33,6 +33,26 @@ class Interproc {
   }
 
   synchronized void reentrant2Ok() {}
+
+  Object mFirst = new Object();
+  Object mSecond = new Object();
+
+  private static void lockInOrder(Object x, Object y) {
+    synchronized (x) {
+      synchronized (y) {
+      }
+    }
+  }
+
+  // deadlock with sameHelperOtherWayBad(), whose second lock is taken at the same line, reported
+  // once
+  void sameHelperOneWayBad() {
+    lockInOrder(mFirst, mSecond);
+  }
+
+  void sameHelperOtherWayBad() {
+    lockInOrder(mSecond, mFirst);
+  }
 }
 
 class InterprocA {

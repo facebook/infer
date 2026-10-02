@@ -134,8 +134,12 @@ module Lock = struct
   let is_recursive tenv lock =
     (* We default to recursive if the type can't be found or looks malformed.
        This reduces self-deadlock FPs. *)
-    match get_typ tenv lock with
-    | Some {Typ.desc= Tptr ({desc= Tstruct name}, _) | Tstruct name} ->
+    let rec strip_pointers (typ : Typ.t) =
+      match typ.desc with Tptr (typ, _) -> strip_pointers typ | _ -> typ
+    in
+    (* eg the lock [&g] on a global [std::mutex g] has type [std::mutex&*] *)
+    match get_typ tenv lock |> Option.map ~f:strip_pointers with
+    | Some {Typ.desc= Tstruct name} ->
         ConcurrencyModels.is_recursive_lock_type name
     | Some typ ->
         (* weird type passed as a lock, return default *)
