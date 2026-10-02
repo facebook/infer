@@ -239,6 +239,8 @@ module Unsafe : sig
 
   val term_eqs_fold : (Term.t -> Var.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
 
+  val term_eqs_fold_function_applications : (Term.t -> Var.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+
   val term_eqs_iter : (Term.t -> Var.t -> unit) -> t -> unit
 
   val term_eqs_exists : (Term.t -> Var.t -> bool) -> t -> bool
@@ -420,6 +422,26 @@ end = struct
 
   let term_eqs_fold f phi init =
     Term.VarMap.fold (fun t x acc -> f t (get_repr_as_var phi x) acc) phi.term_eqs init
+
+
+  let term_eqs_fold_function_applications f phi init =
+    (* terms are compared on their constructors first so function applications are contiguous in
+       [term_eqs]: start from the first one instead of going through all the terms, which can be
+       numerous (eg one per integer constant) *)
+    let is_function_application (t : Term.t) =
+      match t with FunctionApplication _ -> true | _ -> false
+    in
+    let is_function_application_or_after t =
+      is_function_application t
+      || Term.compare t (FunctionApplication {f= Term.zero; actuals= []}) > 0
+    in
+    match Term.VarMap.find_first_opt is_function_application_or_after phi.term_eqs with
+    | None ->
+        init
+    | Some (first, _) ->
+        Term.VarMap.to_seq_from first phi.term_eqs
+        |> Seq.take_while (fun (t, _) -> is_function_application t)
+        |> Seq.fold_left (fun acc (t, x) -> f t (get_repr_as_var phi x) acc) init
 
 
   let term_eqs_iter f phi = Term.VarMap.iter (fun t x -> f t (get_repr_as_var phi x)) phi.term_eqs
