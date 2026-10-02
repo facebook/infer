@@ -1217,7 +1217,13 @@ let check_all_valid path call_state =
                  ; astate } ) )
       | `MustBeValid (_timestamp, callee_access_trace, must_be_valid_reason) ->
           let access_trace = mk_access_trace callee_access_trace in
-          AddressAttributes.check_valid path access_trace addr_caller astate
+          (* a file descriptor passed by the caller, e.g. the constant [STDIN_FILENO], must not be
+             checked as a pointer, neither here nor in the callers of the caller *)
+          let caller_must_be_valid_reason =
+            Option.filter must_be_valid_reason ~f:Invalidation.is_file_descriptor_reason
+          in
+          AddressAttributes.check_valid path ?must_be_valid_reason:caller_must_be_valid_reason
+            access_trace addr_caller astate
           |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
               L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
               AccessResult.ReportableError

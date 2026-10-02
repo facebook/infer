@@ -680,7 +680,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _
     | SwiftAlloc, _
-    | FileDescriptor _, Some (FClose _, _) ->
+    | FileDescriptor _, Some ((FClose _ | HandedOverToStream _), _) ->
         true
     | JavaResource _, _ | CSharpResource _, _ | HackBuilderResource _, _ | Awaitable, _ ->
         is_released
@@ -876,6 +876,14 @@ module Attributes = struct
             in
             update (MustNotBeTainted (TaintSinkMap.union aux new_sinks sinks)) attrs
       | Invalid (OptionalEmpty, _) | WrittenTo _ ->
+          update value attrs
+      | MustBeValid (_, _, Some Invalidation.FileDescriptorRelease)
+        when Option.exists (find_rank attrs must_be_valid_rank) ~f:(function
+               | MustBeValid (_, _, Some Invalidation.FileDescriptorUse) ->
+                   true
+               | _ ->
+                   false ) ->
+          (* releasing the descriptor is invalid in more cases than using it, e.g. after [fdopen] *)
           update value attrs
       | _ ->
           add attrs value

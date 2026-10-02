@@ -40,3 +40,24 @@ struct parser;
 static int accept(struct parser* p, int token, void* ctx) { return token; }
 
 void accept_user_function_ok(struct parser* p) { accept(p, 0, NULL); }
+
+struct conn {
+  int fd;
+};
+
+static int send(struct conn* c, const void* buf, int len, int flags) {
+  return c->fd;
+}
+
+int send_user_function_null_bad() { return send(NULL, "x", 1, 0); }
+
+static int close(struct conn* c) { return c->fd; }
+
+void close_user_function_after_free_bad() {
+  struct conn* c = malloc(sizeof(struct conn));
+  if (c == NULL) {
+    return;
+  }
+  free(c);
+  close(c);
+}
