@@ -114,11 +114,11 @@ let fgets str_exp num_exp =
   {exec; check}
 
 
-let malloc ~can_be_zero size_exp =
+let alloc ~get_info ~can_be_zero size_exp =
   let exec ({pname; caller_pname; node_hash; location; tenv; integer_type_widths} as model_env)
       ~ret:(id, _) mem =
     let size_exp = BiabductionProp.exp_normalize_noabs tenv size_exp in
-    let typ, stride, length0, dyn_length = get_malloc_info size_exp in
+    let typ, stride, length0, dyn_length = get_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let path =
@@ -171,6 +171,8 @@ let malloc ~can_be_zero size_exp =
   {exec; check}
 
 
+let malloc ~can_be_zero size_exp = alloc ~get_info:get_malloc_info ~can_be_zero size_exp
+
 let calloc size_exp stride_exp =
   let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, stride_exp) in
   malloc byte_size_exp
@@ -180,7 +182,7 @@ let memcpy dest_exp src_exp size_exp =
   let exec _ ~ret:_ mem =
     let dest_loc = Sem.eval_locs dest_exp mem in
     let v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
-    Dom.Mem.update_mem dest_loc v mem
+    Dom.Mem.update_mem dest_loc v mem |> BoUtils.Exec.forget_c_strlen dest_loc
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
       ~last_included:true mem location cond_set
@@ -191,7 +193,7 @@ let memcpy dest_exp src_exp size_exp =
 
 
 let memset arr_exp size_exp =
-  let exec _ ~ret:_ mem = mem
+  let exec _ ~ret:_ mem = BoUtils.Exec.forget_c_strlen (Sem.eval_locs arr_exp mem) mem
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:arr_exp ~byte_index_exp:size_exp
       ~last_included:true mem location cond_set
@@ -236,8 +238,38 @@ let strncpy dest_exp src_exp size_exp =
     let dest_strlen_loc = PowLoc.of_c_strlen (Sem.eval_locs dest_exp mem) in
     let strlen = Dom.Mem.find_set (PowLoc.of_c_strlen (Sem.eval_locs src_exp mem)) mem in
     mem |> memcpy_exec model_env ~ret |> Dom.Mem.update_mem dest_strlen_loc strlen
+  and check ({location; integer_type_widths} as model_env) mem cond_set =
+    let src_strlen = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+    let strlen_itv = Dom.Val.get_itv src_strlen in
+    let is_bounded strlen =
+      (* callers do not substitute symbols such as the length of the string in a local array that
+         no string operation wrote *)
+      let ub = Itv.ItvPure.ub strlen in
+      (not (Itv.Bound.is_pinf ub))
+      && not
+           (Symb.SymbolSet.exists
+              (fun s -> Symb.SymbolPath.is_field_of_var (Symb.Symbol.path s))
+              (Itv.Bound.get_symbols ub) )
+    in
+    match strlen_itv with
+    | NonBottom strlen when is_bounded strlen ->
+        (* strncpy stops reading the source at its null character *)
+        let size = Sem.eval integer_type_widths size_exp mem in
+        let read_size =
+          Itv.min_sem ~use_minmax_bound:true (Itv.incr strlen_itv) (Dom.Val.get_itv size)
+        in
+        let traces = Trace.Set.join (Dom.Val.get_traces size) (Dom.Val.get_traces src_strlen) in
+        let latest_prune = Dom.Mem.get_latest_prune mem in
+        BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
+          ~last_included:true mem location cond_set
+        |> BoUtils.Check.array_access_byte
+             ~arr:(Sem.eval_arr integer_type_widths src_exp mem)
+             ~idx:(Dom.Val.of_itv ~traces read_size)
+             ~is_plus:true ~last_included:true ~latest_prune location
+    | _ ->
+        memcpy_check model_env mem cond_set
   in
-  {exec; check= memcpy_check}
+  {exec; check}
 
 
 let strcat dest_exp src_exp =
@@ -660,12 +692,25 @@ module StdVector = struct
         Dom.Val.set_array_length location ~length:new_size v )
 
 
+  let get_stride integer_type_widths elt_typ =
+    match elt_typ.Typ.desc with
+    | Tint ikind ->
+        Some (IntegerWidths.width_of_ikind integer_type_widths ikind / 8)
+    | Tfloat FFloat ->
+        Some 4
+    | Tfloat FDouble ->
+        Some 8
+    | _ ->
+        None
+
+
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_size elt_typ {exp= vec_exp; typ= vec_typ} size_exp =
-    let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
+    let {check} = malloc ~can_be_zero:true size_exp in
     let exec ({pname; caller_pname; node_hash; integer_type_widths; location} as model_env)
         ~ret:((id, _) as ret) mem =
-      let mem = malloc_exec model_env ~ret mem in
+      let get_info length = (elt_typ, get_stride integer_type_widths elt_typ, length, None) in
+      let mem = (alloc ~get_info ~can_be_zero:true size_exp).exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
       let deref_of_vec =
         Allocsite.make pname ~caller_pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
@@ -705,7 +750,7 @@ module StdVector = struct
 
   (* The (10) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_initializer_list elt_typ {exp= vec_exp; typ= vec_typ} lst_exp =
-    let exec {pname; caller_pname; node_hash; location} ~ret:_ mem =
+    let exec {pname; caller_pname; node_hash; location; integer_type_widths} ~ret:_ mem =
       let arr_blk =
         let internal_locs =
           Sem.eval_locs lst_exp mem |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
@@ -728,8 +773,9 @@ module StdVector = struct
           ~represents_multiple_values:true
       in
       let v =
-        Dom.Val.of_c_array_alloc arr_as ~stride:None ~offset:Itv.zero
-          ~size:(ArrayBlk.get_size arr_blk) ~traces
+        Dom.Val.of_c_array_alloc arr_as
+          ~stride:(get_stride integer_type_widths elt_typ)
+          ~offset:Itv.zero ~size:(ArrayBlk.get_size arr_blk) ~traces
       in
       let vec_elt_locs = arr_as |> Loc.of_allocsite |> PowLoc.singleton in
       let lst_elem_v = Dom.Mem.find_set (ArrayBlk.get_pow_loc arr_blk) mem in
