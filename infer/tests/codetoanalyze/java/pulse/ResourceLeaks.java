@@ -199,7 +199,7 @@ public class ResourceLeaks {
     }
   }
 
-  public static void FN_twoResourcesRandomAccessFileBad() throws IOException {
+  public static void twoResourcesRandomAccessFileBad() throws IOException {
     RandomAccessFile a = null;
     RandomAccessFile b = null;
     try {
@@ -226,6 +226,21 @@ public class ResourceLeaks {
         if (b != null) b.close();
       } catch (Exception e) {
       }
+    }
+  }
+
+  // Repro for facebook/infer#2104: RandomAccessFile constructors were not modeled as
+  // allocating resources, so bare leaks were false negatives.
+  public static void randomAccessFileNotClosedBad() throws IOException {
+    new RandomAccessFile("file.txt", "r");
+  }
+
+  public static void randomAccessFileClosedOk() throws IOException {
+    RandomAccessFile f = null;
+    try {
+      f = new RandomAccessFile("file.txt", "r");
+    } finally {
+      if (f != null) f.close();
     }
   }
 

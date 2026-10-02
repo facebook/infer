@@ -676,7 +676,7 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __set_mem_attribute) <>$ any_arg $--> Basic.skip |> with_non_disj
   ; +map_context_tenv
        (PatternMatch.Java.implements_one_of
-          ["java.io.FileInputStream"; "java.io.FileOutputStream"] )
+          ["java.io.FileInputStream"; "java.io.FileOutputStream"; "java.io.RandomAccessFile"] )
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.FileNotFoundException"
     |> with_non_disj
