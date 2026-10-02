@@ -130,6 +130,7 @@ module Attribute : sig
     | LockHeld  (** boolean is true if a lock, not counted as held until then, is currently held *)
     | GuardLockHeld  (** boolean is true if the lock of a guard is currently held *)
     | Synchronized  (** the object is a synchronized data structure *)
+    | Callable of Procname.t  (** holds a function or a closure *)
 end
 
 module AttributeMapDomain : sig
@@ -142,11 +143,15 @@ module AttributeMapDomain : sig
 
   val is_functional : t -> AccessExpression.t -> bool
 
+  val get_callable : t -> AccessExpression.t -> Procname.t option
+
   val propagate_assignment : AccessExpression.t -> HilExp.t -> t -> t
   (** propagate attributes from the leaves to the root of an RHS Hil expression *)
 end
 
 module NeverReturns : AbstractDomain.S
+
+module ThreadEntries : AbstractDomain.FiniteSetS with type elt = Procname.t
 
 type t =
   { threads: ThreadsDomain.t  (** current thread: main, background, or unknown *)
@@ -157,7 +162,8 @@ type t =
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.t  (** map of access paths to ownership predicates *)
   ; attribute_map: AttributeMapDomain.t
-        (** map of access paths to attributes such as owned, functional, ... *) }
+        (** map of access paths to attributes such as owned, functional, ... *)
+  ; thread_entries: ThreadEntries.t  (** procedures started as new threads *) }
 
 include AbstractDomain.S with type t := t
 
@@ -175,7 +181,8 @@ type summary =
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t
-  ; attributes: AttributeMapDomain.t }
+  ; attributes: AttributeMapDomain.t
+  ; thread_entries: ThreadEntries.t }
 
 val empty_summary : summary
 
@@ -216,5 +223,7 @@ val release_lock : only_acquired:bool -> t -> t
     [LockDomain.release_acquired_lock]) *)
 
 val lock_if_true : guard:bool -> HilExp.access_expression -> t -> t
+
+val add_thread_entry : Procname.t -> t -> t
 
 val branch_never_returns : unit -> t

@@ -160,10 +160,28 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     Option.value_map work_opt ~default:astate ~f:schedule_work
 
 
+  (** schedule the C++ methods and lambdas started as threads, for per-file reporting to treat them
+      as non-private (C functions are never private) *)
+  let do_thread_start callee actuals loc (astate : Domain.t) =
+    let get_callable exp =
+      Domain.AttributeDomain.find_opt exp astate.attributes
+      |> Option.bind ~f:(function Domain.Attribute.Runnable procname -> Some procname | _ -> None)
+    in
+    match ConcurrencyModels.get_thread_start_routine ~get_callable callee actuals with
+    | Some (ObjC_Cpp _ as routine) when not Config.starvation_whole_program ->
+        Domain.schedule_work loc StarvationModels.ForNonUIThread astate routine
+    | _ ->
+        astate
+
+
   let do_assignment tenv formals lhs_access_exp rhs_exp (astate : Domain.t) =
     let astate =
-      get_access_expr rhs_exp
-      |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate)
+      ( match (rhs_exp : HilExp.t) with
+        | Constant (Cfun procname) | Closure (procname, _) ->
+            Some (Domain.Attribute.Runnable procname)
+        | _ ->
+            get_access_expr rhs_exp
+            |> Option.bind ~f:(fun exp -> get_exp_attributes tenv exp astate) )
       |> Option.value_map ~default:astate ~f:(fun attribute ->
           let attributes = Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes in
           {astate with attributes} )
@@ -422,7 +440,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | NoEffect ->
             (* in C++/Obj C we only care about deadlocks, not starvation errors *)
             let ret_exp = HilExp.AccessExpression.base ret_base in
-            do_call analysis_data ret_exp callee actuals loc astate )
+            do_thread_start callee actuals loc astate
+            |> do_call analysis_data ret_exp callee actuals loc )
     | Call ((id, _), _, _, _, _) ->
         (* call havocs LHS *)
         Domain.remove_dead_vars astate [Var.of_id id]
@@ -753,7 +772,11 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
   List.fold methods ~init ~f
 
 
-let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access attrs) Private
+(** private procedures are reported on through their callers, unless they are started as threads *)
+let is_private ~thread_entries attrs =
+  ProcAttributes.equal_access (ProcAttributes.get_access attrs) Private
+  && not (Procname.Set.mem (ProcAttributes.get_proc_name attrs) thread_entries)
+
 
 (* Note about how many times we report a deadlock: normally twice, at each trace starting point.
    Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
@@ -765,9 +788,12 @@ let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access at
 
 (** report warnings possible on the parallel composition of two threads/critical pairs
     [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)
-let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock other_pname
-    other_pair report_map =
-  if is_private pattrs || Attributes.load other_pname |> Option.exists ~f:is_private then report_map
+let report_on_parallel_composition ?(thread_entries = Procname.Set.empty) ~should_report_starvation
+    tenv pattrs pair lock other_pname other_pair report_map =
+  if
+    is_private ~thread_entries pattrs
+    || Attributes.load other_pname |> Option.exists ~f:(is_private ~thread_entries)
+  then report_map
   else
     let open Domain in
     let pname = ProcAttributes.get_proc_name pattrs in
@@ -821,14 +847,15 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
     else report_map
 
 
-let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) report_map =
+let report_on_pair ?(thread_entries = Procname.Set.empty) ~analyze_ondemand tenv pattrs
+    (pair : Domain.CriticalPair.t) report_map =
   let open Domain in
   let pname = ProcAttributes.get_proc_name pattrs in
   let event = pair.elem.event in
   let should_report_starvation =
     CriticalPair.is_uithread pair && not (Procname.is_constructor pname)
   in
-  let is_not_private = not (is_private pattrs) in
+  let is_not_private = not (is_private ~thread_entries pattrs) in
   let make_trace_and_loc () =
     let loc = CriticalPair.get_loc pair in
     let ltr = CriticalPair.make_trace ~include_acquisitions:false pname pair in
@@ -947,22 +974,34 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
                   fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
                     ~f:(fun acc (other_pname, summary) ->
                       Domain.fold_critical_pairs_of_summary
-                        (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
-                           lock other_pname )
+                        (report_on_parallel_composition ~thread_entries ~should_report_starvation
+                           tenv pattrs pair lock other_pname )
                         summary acc ) ) ) )
   | _ ->
       report_map
 
 
+(** C++ methods and lambdas started as threads by the given procedures *)
+let get_thread_entries analyze_ondemand procedures =
+  List.fold procedures ~init:Procname.Set.empty ~f:(fun acc procname ->
+      analyze_ondemand procname
+      |> Option.fold ~init:acc ~f:(fun acc ({scheduled_work} : Domain.summary) ->
+          Domain.ScheduledWorkDomain.fold
+            (fun {procname= entry} acc ->
+              match (entry : Procname.t) with ObjC_Cpp _ -> Procname.Set.add entry acc | _ -> acc )
+            scheduled_work acc ) )
+
+
 let reporting {InterproceduralAnalysis.procedures; analyze_file_dependency} =
   if Config.starvation_whole_program then IssueLog.empty
   else
+    let analyze_ondemand proc_name =
+      analyze_file_dependency proc_name |> AnalysisResult.to_option
+    in
+    let thread_entries = get_thread_entries analyze_ondemand procedures in
     let report_on_proc tenv pattrs report_map payload =
       Domain.fold_critical_pairs_of_summary
-        (report_on_pair
-           ~analyze_ondemand:(fun proc_name ->
-             analyze_file_dependency proc_name |> AnalysisResult.to_option )
-           tenv pattrs )
+        (report_on_pair ~thread_entries ~analyze_ondemand tenv pattrs)
         payload report_map
     in
     let report_procedure report_map procname =
