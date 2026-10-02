@@ -14,3 +14,10 @@ void init_variable_array(int len) {
   int x = 2 * len;
   int a[len + x + 1];
 }
+
+void init_array_filler() {
+  int a[4] = {1};
+  int* b[3] = {};
+  int c[4] = {[1] = 1};
+  int d[100] = {1, 2};
+}

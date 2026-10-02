@@ -2993,8 +2993,40 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let init_field idx stmt =
       init_expr_trans trans_state (lh_exp idx, field_typ) stmt_info (Some stmt)
     in
-    (* rest of fields when length(stmts) < size is ignored *)
     List.mapi ~f:init_field stmts
+
+
+  (** Initialize with [array_filler] the elements of the array [var_exp] of type [array_typ] that
+      follow its [nb_explicit] explicit initializers, translated as [explicit_inits]. *)
+  and initListExpr_array_filler_trans trans_state stmt_info array_filler ~nb_explicit var_exp
+      array_typ explicit_inits =
+    match (array_filler, array_typ.Typ.desc) with
+    | Some (`NoInitExpr _), _ ->
+        (* the remaining elements keep the value of the object being updated *)
+        explicit_inits
+    | Some filler, Tarray {elt; length= Some length} -> (
+        let nb_filled = IntLit.sub length (IntLit.of_int nb_explicit) in
+        if IntLit.leq nb_filled IntLit.zero then explicit_inits
+        else if IntLit.leq nb_filled (IntLit.of_int Config.clang_compound_literal_init_limit) then
+          let fill i =
+            let idx_exp = Exp.Const (Const.Cint (IntLit.of_int (nb_explicit + i))) in
+            init_expr_trans trans_state (Exp.Lindex (var_exp, idx_exp), elt) stmt_info (Some filler)
+          in
+          explicit_inits @ List.init (IntLit.to_int_exn nb_filled) ~f:fill
+        else
+          match filler with
+          | `ImplicitValueInitExpr (filler_stmt_info, _, _) ->
+              (* too many elements to fill one by one: zero-initialize the whole array, which
+                 [implicitValueInitExpr_trans] translates to a builtin call, before the explicit
+                 initializers *)
+              implicitValueInitExpr_trans
+                {trans_state with var_exp_typ= Some (var_exp, array_typ)}
+                filler_stmt_info
+              :: explicit_inits
+          | _ ->
+              explicit_inits )
+    | _ ->
+        explicit_inits
 
 
   and initListExpr_struct_trans trans_state stmt_info stmts init_expr_typ var_exp var_typ =
@@ -3081,7 +3113,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         {:http://en.cppreference.com/w/cpp/language/zero_initialization} Decision which case happens
         is based on the type of the InitListExpr *)
   and initListExpr_trans ({context= {tenv}} as trans_state) stmt_info
-      ({Clang_ast_t.ei_qual_type} as expr_info) stmts =
+      ({Clang_ast_t.ei_qual_type} as expr_info) stmts array_filler =
     let var_exp, var_typ =
       match trans_state.var_exp_typ with
       | Some var_exp_typ ->
@@ -3090,9 +3122,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           create_var_exp_tmp_var trans_state expr_info ~var_name:"SIL_init_list__"
             ~clang_pointer:stmt_info.Clang_ast_t.si_pointer
     in
-    if List.is_empty stmts then
+    if List.is_empty stmts && Option.is_none array_filler then
       (* perform zero initialization of a primitive type, record types will have
-         ImplicitValueInitExpr nodes *)
+         ImplicitValueInitExpr nodes and array types an array filler *)
       let return_exp = Exp.zero_of_type var_typ |> Option.value ~default:Exp.zero in
       let return = (return_exp, var_typ) in
       mk_trans_result return empty_control
@@ -3110,6 +3142,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         match init_expr_typ.Typ.desc with
         | Tarray {elt} ->
             initListExpr_array_trans trans_state_pri init_stmt_info stmts var_exp elt
+            |> initListExpr_array_filler_trans trans_state_pri init_stmt_info array_filler
+                 ~nb_explicit:(List.length stmts) var_exp init_expr_typ
         | Tstruct _ ->
             initListExpr_struct_trans trans_state_pri init_stmt_info stmts init_expr_typ var_exp
               var_typ
@@ -5218,8 +5252,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxBindTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
     | `CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
         compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info
-    | `InitListExpr (stmt_info, stmts, expr_info) ->
-        initListExpr_trans trans_state stmt_info expr_info stmts
+    | `InitListExpr (stmt_info, stmts, expr_info, {ilei_array_filler}) ->
+        initListExpr_trans trans_state stmt_info expr_info stmts ilei_array_filler
     | `CXXDynamicCastExpr (stmt_info, stmts, _, _, qual_type, _) ->
         cxxDynamicCastExpr_trans trans_state stmt_info stmts qual_type
     | `CXXDefaultArgExpr (_, _, _, default_expr_info)

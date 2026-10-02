@@ -629,7 +629,7 @@ TranslationUnitDecl None:None:None None:None:None
   NamespaceDecl tests/namespace_decl.cpp:17:1 tests/namespace_decl.cpp:19:1
   UsingDirectiveDecl tests/namespace_decl.cpp:17:11 tests/namespace_decl.cpp:17:11
   TypedefDecl tests/namespace_decl.cpp:17:11 tests/namespace_decl.cpp:17:11
-64 98 
+64 99 
 TranslationUnitDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
   TypedefDecl None:None:None None:None:None
@@ -796,6 +796,7 @@ TranslationUnitDecl None:None:None None:None:None
             CXXConstructExpr
               IntegerLiteral
               IntegerLiteral
+            CXXConstructExpr
         VarDecl tests/new.cpp:41:3 tests/new.cpp:41:52
           CXXNewExpr
             ImplicitCastExpr
@@ -810,6 +811,7 @@ TranslationUnitDecl None:None:None None:None:None
               CXXConstructExpr
                 IntegerLiteral
                 IntegerLiteral
+              CXXConstructExpr
   FunctionDecl tests/new.cpp:45:1 tests/new.cpp:47:1
      ParmVarDecl tests/new.cpp:45:20 tests/new.cpp:45:34
      ParmVarDecl tests/new.cpp:45:40 tests/new.cpp:45:46

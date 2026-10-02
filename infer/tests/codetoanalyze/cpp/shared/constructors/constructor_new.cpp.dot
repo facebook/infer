@@ -314,7 +314,7 @@ digraph cfg {
 	
 
 	 "int_array_init#constructor_new#14.69a63438c3aee293_5" -> "int_array_init#constructor_new#14.69a63438c3aee293_6" ;
-"int_array_init#constructor_new#14.69a63438c3aee293_6" [label="6:  CXXNewExpr \n   *n$10[0]:int=1 [line 83, column 26]\n  *n$10[1]:int=2 [line 83, column 26]\n  *n$10[2]:int=3 [line 83, column 26]\n  *n$10[3]:int=4 [line 83, column 26]\n  *n$10[4]:int=5 [line 83, column 26]\n  *n$10[5]:int=6 [line 83, column 26]\n  *n$10[6]:int=7 [line 83, column 26]\n  *n$10[7]:int=8 [line 83, column 26]\n  *n$10[8]:int=9 [line 83, column 26]\n  *n$10[9]:int=10 [line 83, column 26]\n " shape="box"]
+"int_array_init#constructor_new#14.69a63438c3aee293_6" [label="6:  CXXNewExpr \n   n$11=_fun___infer_zero_initialization(n$10:int[100*4]) [line 83, column 54]\n  *n$10[0]:int=1 [line 83, column 26]\n  *n$10[1]:int=2 [line 83, column 26]\n  *n$10[2]:int=3 [line 83, column 26]\n  *n$10[3]:int=4 [line 83, column 26]\n  *n$10[4]:int=5 [line 83, column 26]\n  *n$10[5]:int=6 [line 83, column 26]\n  *n$10[6]:int=7 [line 83, column 26]\n  *n$10[7]:int=8 [line 83, column 26]\n  *n$10[8]:int=9 [line 83, column 26]\n  *n$10[9]:int=10 [line 83, column 26]\n " shape="box"]
 	
 
 	 "int_array_init#constructor_new#14.69a63438c3aee293_6" -> "int_array_init#constructor_new#14.69a63438c3aee293_8" ;

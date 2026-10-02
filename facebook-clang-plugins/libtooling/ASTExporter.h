@@ -381,7 +381,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(FixedPointLiteral)
   DECLARE_VISITOR(FloatingLiteral)
   DECLARE_VISITOR(StringLiteral)
-  //    DECLARE_VISITOR(InitListExpr)
+  DECLARE_VISITOR(InitListExpr)
   DECLARE_VISITOR(UnaryOperator)
   DECLARE_VISITOR(UnaryExprOrTypeTraitExpr)
   DECLARE_VISITOR(MemberExpr)
@@ -3615,6 +3615,29 @@ void ASTExporter<ATDWriter>::VisitStringLiteral(const StringLiteral *Str) {
     OF.emitString(Str->getBytes()
                       .substr(i * Options.maxStringSize, Options.maxStringSize)
                       .str());
+  }
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::InitListExprTupleSize() {
+  return ExprTupleSize() + 1;
+}
+//@atd #define init_list_expr_tuple expr_tuple * init_list_expr_info
+//@atd type init_list_expr_info = {
+//@atd   ?array_filler : stmt option;
+//@atd } <ocaml field_prefix="ilei_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitInitListExpr(const InitListExpr *Node) {
+  VisitExpr(Node);
+
+  // The array filler initializes the elements that follow the explicit
+  // initializers. It is not one of the children.
+  const Expr *Filler = Node->getArrayFiller();
+  ObjectScope Scope(OF, 0 + (bool)Filler);
+
+  if (Filler) {
+    OF.emitTag("array_filler");
+    dumpStmt(Filler);
   }
 }
 
