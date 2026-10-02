@@ -440,9 +440,10 @@ class ReturnedGuard {
     }
   }
 
-  // in C++11 the temporary that a copy-initialisation is made from releases the
-  // lock at the end of the full-expression, so no guard is recognised
-  void FN_copy_init_bad() {
+  // relies on C++17's guaranteed copy elision: in C++11 the temporary that the
+  // copy-initialisation is made from releases the lock at the end of the
+  // full-expression, so no guard is recognised
+  void copy_init_bad() {
     Releaser lock1 = lock_1();
     RefGuard lock2(mutex_2);
   }

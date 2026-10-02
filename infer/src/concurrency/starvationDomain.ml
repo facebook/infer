@@ -393,10 +393,6 @@ module Event = struct
           Some (LockAcquire {lock_acquire with locks}) )
 
 
-  let has_recursive_lock tenv event =
-    get_acquired_locks event |> List.exists ~f:(Lock.is_recursive tenv)
-
-
   let is_blocking_call = function
     | LockAcquire _ | MustNotOccurUnderLock _ ->
         (* lock taking is not a method call (though it may block) and [MustNotOccurUnderLock] calls not necessarily blocking *)
@@ -756,8 +752,7 @@ module CriticalPair = struct
     | Some tenv, LockAcquire {locks; thread} -> (
         let filtered_locks =
           IList.filter_changed locks ~f:(fun lock ->
-              (not (Acquisitions.lock_is_held lock held_locks))
-              || not (Event.has_recursive_lock tenv pair.elem.event) )
+              (not (Acquisitions.lock_is_held lock held_locks)) || not (Lock.is_recursive tenv lock) )
         in
         match filtered_locks with
         | [] ->
@@ -917,14 +912,18 @@ module NullLocsCriticalPairs = struct
       set CriticalPairs.empty
 end
 
-module FlatLock = AbstractDomain.Flat (Lock)
+module FlatLocks = AbstractDomain.Flat (struct
+  type t = Lock.t list [@@deriving equal]
+
+  let pp = Pp.comma_seq Lock.pp
+end)
 
 module GuardToLockMap = struct
-  include AbstractDomain.InvertedMap (HilExp) (FlatLock)
+  include AbstractDomain.InvertedMap (HilExp) (FlatLocks)
 
   let remove_guard astate guard = remove guard astate
 
-  let add_guard astate ~guard ~lock = add guard (FlatLock.v lock) astate
+  let add_guard astate ~guard ~locks = add guard (FlatLocks.v locks) astate
 end
 
 module Attribute = struct
@@ -1159,15 +1158,15 @@ let release ({lock_state} as astate) locks =
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
-let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
-  let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in
-  if acquire_now then acquire ~tenv astate ~procname ~loc [lock] else astate
+let add_guard ~acquire_now ~procname ~loc tenv astate guard locks =
+  let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~locks astate.guard_map} in
+  if acquire_now then acquire ~tenv astate ~procname ~loc locks else astate
 
 
 let remove_guard astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
-  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-      let locks = FlatLock.get lock_opt |> Option.to_list in
+  |> Option.value_map ~default:astate ~f:(fun locks_opt ->
+      let locks = FlatLocks.get locks_opt |> Option.value ~default:[] in
       let astate = release astate locks in
       {astate with guard_map= GuardToLockMap.remove_guard astate.guard_map guard} )
 
@@ -1176,14 +1175,14 @@ let is_guard astate guard = GuardToLockMap.mem guard astate.guard_map
 
 let unlock_guard astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
-  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-      FlatLock.get lock_opt |> Option.to_list |> release astate )
+  |> Option.value_map ~default:astate ~f:(fun locks_opt ->
+      FlatLocks.get locks_opt |> Option.value ~default:[] |> release astate )
 
 
 let lock_guard ~procname ~loc tenv astate guard =
   GuardToLockMap.find_opt guard astate.guard_map
-  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-      FlatLock.get lock_opt |> Option.to_list |> acquire ~tenv astate ~procname ~loc )
+  |> Option.value_map ~default:astate ~f:(fun locks_opt ->
+      FlatLocks.get locks_opt |> Option.value ~default:[] |> acquire ~tenv astate ~procname ~loc )
 
 
 let schedule_work loc thread_constraint astate procname =
@@ -1296,7 +1295,7 @@ let summary_of_astate : Procdesc.t -> t -> summary =
   (* Interprocedural handling of guards is not implemented, so we remove guarded locks from
      summary *)
   let astate_without_guard =
-    GuardToLockMap.fold (fun guard _lock acc -> unlock_guard acc guard) astate.guard_map astate
+    GuardToLockMap.fold (fun guard _locks acc -> unlock_guard acc guard) astate.guard_map astate
   in
   { critical_pairs=
       NullLocsCriticalPairs.to_critical_pairs astate.lock_state astate.lazily_initalized

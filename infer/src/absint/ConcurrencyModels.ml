@@ -13,7 +13,7 @@ type lock_effect =
   | Unlock of HilExp.t list
   | LockedIfTrue of HilExp.t list
   | LockedIfZero of HilExp.t list
-  | GuardConstruct of {guard: HilExp.t; lock: HilExp.t; acquire_now: bool}
+  | GuardConstruct of {guard: HilExp.t; locks: HilExp.t list; acquire_now: bool}
   | GuardLock of HilExp.t
   | GuardLockedIfTrue of HilExp.t
   | GuardUnlock of HilExp.t
@@ -40,9 +40,9 @@ let make_guard_construct procname = function
       (* constructor is called without a mutex *)
       NoEffect
   | [guard; lock] ->
-      GuardConstruct {guard; lock; acquire_now= true}
+      GuardConstruct {guard; locks= [lock]; acquire_now= true}
   | [guard; lock; _defer_lock] ->
-      GuardConstruct {guard; lock; acquire_now= false}
+      GuardConstruct {guard; locks= [lock]; acquire_now= false}
   | actuals ->
       L.internal_error "Cannot parse guard constructor call %a(%a)@\n" Procname.pp procname
         (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
@@ -200,7 +200,6 @@ end = struct
       implement the mutex interface even though only [shared_lock] and [unique_lock] do, for
       simplicity. The comments summarise which methods are implemented. *)
   let guards =
-    (* TODO std::scoped_lock *)
     [ (* no lock/unlock *)
       "android::Mutex::Autolock"
     ; (* no lock/unlock *)
@@ -221,7 +220,8 @@ end = struct
       "folly::SpinLockGuard"
     ; (* no lock/unlock *)
       "std::lock_guard"
-    ; "std::scoped_lock"
+    ; (* no lock/unlock, see [make_scoped_lock_construct] for the constructor *)
+      "std::scoped_lock"
     ; (* everything *)
       "std::shared_lock"
     ; (* everything *)
@@ -277,6 +277,35 @@ end = struct
     , make_trylock ~f:get_guard_trylock )
 
 
+  let is_scoped_lock_constructor = mk_matcher ["std::scoped_lock::scoped_lock"]
+
+  let is_adopt_lock_tag =
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::adopt_lock_t"] in
+    function
+    | HilExp.AccessExpression access_exp -> (
+      (* the tag is passed by value, as (the address of) a temporary copy of [std::adopt_lock] *)
+      match HilExp.AccessExpression.get_base access_exp with
+      | _, {desc= Tstruct name | Tptr ({desc= Tstruct name}, _)} ->
+          QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name)
+      | _ ->
+          false )
+    | _ ->
+        false
+
+
+  (** Unlike the other guards, [std::scoped_lock] takes any number of mutexes, optionally preceded
+      by [std::adopt_lock] when they are already held. Otherwise it acquires them all at once, with
+      the deadlock-avoidance algorithm of [std::lock]. *)
+  let make_scoped_lock_construct = function
+    | guard :: tag :: (_ :: _ as locks) when is_adopt_lock_tag tag ->
+        GuardConstruct {guard; locks; acquire_now= false}
+    | guard :: (lock :: _ as locks) when not (is_adopt_lock_tag lock) ->
+        GuardConstruct {guard; locks; acquire_now= true}
+    | _ ->
+        (* [std::scoped_lock<>] holds no mutex *)
+        NoEffect
+
+
   let get_lock_effect pname actuals =
     let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
     if is_std_lock pname then make_lock pname actuals
@@ -284,6 +313,7 @@ end = struct
     else if is_unlock pname then make_unlock pname fst_arg
     else if is_trylock pname then make_trylock pname fst_arg
     else if is_zero_trylock pname then make_zero_trylock pname fst_arg
+    else if is_scoped_lock_constructor pname then make_scoped_lock_construct actuals
     else if is_guard_constructor pname then make_guard_construct pname actuals
     else if is_guard_lock pname then make_guard_lock pname actuals
     else if is_guard_unlock pname then make_guard_unlock pname actuals

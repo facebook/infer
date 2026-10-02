@@ -371,7 +371,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
               let astate =
                 do_call ~ignore_lock_state:true analysis_data lhs callee actuals loc astate
               in
-              Domain.add_guard ~acquire_now:true ~procname ~loc tenv astate obj lock
+              Domain.add_guard ~acquire_now:true ~procname ~loc tenv astate obj [lock]
           | None ->
               do_call ~release_held_locks:is_constructor analysis_data lhs callee actuals loc astate
           )
@@ -539,13 +539,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             do_lock locks loc astate
         | GuardLock guard ->
             Domain.lock_guard tenv astate guard ~procname ~loc
-        | GuardConstruct {guard; lock; acquire_now} -> (
-          match get_lock_path lock with
-          | Some lock_path ->
-              Domain.add_guard tenv astate guard lock_path ~acquire_now ~procname ~loc
-          | None ->
+        | GuardConstruct {guard; locks; acquire_now} ->
+            let lock_paths = List.filter_map locks ~f:get_lock_path in
+            if List.length lock_paths < List.length locks then
               log_parse_error "Couldn't parse lock in guard constructor" callee actuals ;
-              astate )
+            if List.is_empty lock_paths then astate
+            else Domain.add_guard tenv astate guard lock_paths ~acquire_now ~procname ~loc
         | Unlock locks ->
             do_unlock locks astate
         | GuardUnlock guard ->
