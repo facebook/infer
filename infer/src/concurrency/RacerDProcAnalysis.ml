@@ -148,6 +148,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else astate
 
 
+  let process_for_thread_start callee_pname actuals (astate : Domain.t) =
+    ConcurrencyModels.get_thread_start_routine callee_pname actuals
+      ~get_callable:(Domain.AttributeMapDomain.get_callable astate.attribute_map)
+    |> Option.value_map ~default:astate ~f:(fun routine -> Domain.add_thread_entry routine astate)
+
+
   let process_for_noreturn callee_pname (astate : Domain.t) =
     if Attributes.is_no_return callee_pname then Domain.branch_never_returns () else astate
 
@@ -157,6 +163,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let ret_access_exp = AccessExpression.base ret_base in
     process_for_unannotated_interface_call tenv formals call_flags callee_pname actuals loc astate
     |> process_for_thread_assert_effect ret_access_exp callee_pname
+    |> process_for_thread_start callee_pname actuals
     |> process_lock_effect_or_summary analyze_dependency proc_desc tenv formals ret_access_exp
          callee_pname actuals loc
     |> process_for_functional_values tenv ret_access_exp callee_pname
@@ -209,7 +216,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
           in
           {acc with threads}
-      | Attribute.(Functional | Nothing | Synchronized) ->
+      | Attribute.(Functional | Nothing | Synchronized | Callable _) ->
           acc
     in
     let astate = add_access tenv formals loc ~is_write:false astate assume_exp in

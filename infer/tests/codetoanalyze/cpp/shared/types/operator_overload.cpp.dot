@@ -26,11 +26,11 @@ digraph cfg {
 "div0_inheritted_op#38977169870107.349c69d7e8317217_2" [label="2: Exit div0_inheritted_op \n  " color=yellow style=filled]
 	
 
-"div0_inheritted_op#38977169870107.349c69d7e8317217_3" [label="3:  Return Stmt \n   n$1=*&y:Y& [line 40, column 14]\n  n$2=_fun_X::operator[](n$1:Y&,0:int) [line 40, column 14]\n " shape="box"]
+"div0_inheritted_op#38977169870107.349c69d7e8317217_3" [label="3:  Return Stmt \n   n$0=*&y:Y& [line 40, column 14]\n  n$1=_fun_X::operator[](n$0:Y&,0:int) [line 40, column 14]\n " shape="box"]
 	
 
 	 "div0_inheritted_op#38977169870107.349c69d7e8317217_3" -> "div0_inheritted_op#38977169870107.349c69d7e8317217_4" ;
-"div0_inheritted_op#38977169870107.349c69d7e8317217_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 40, column 3]\n " shape="box"]
+"div0_inheritted_op#38977169870107.349c69d7e8317217_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 40, column 3]\n " shape="box"]
 	
 
 	 "div0_inheritted_op#38977169870107.349c69d7e8317217_4" -> "div0_inheritted_op#38977169870107.349c69d7e8317217_2" ;
@@ -68,7 +68,7 @@ digraph cfg {
 	
 
 	 "div0_method_op#164586340103275013.9f8c8af0fef3459b_4" -> "div0_method_op#164586340103275013.9f8c8af0fef3459b_2" ;
-"div0_method_op#164586340103275013.9f8c8af0fef3459b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 20, column 3]\n  n$2=*&x:X& [line 20, column 11]\n  n$3=_fun_X::operator[](n$2:X&,0:int) [line 20, column 11]\n  *&v:int=n$3 [line 20, column 3]\n " shape="box"]
+"div0_method_op#164586340103275013.9f8c8af0fef3459b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 20, column 3]\n  n$1=*&x:X& [line 20, column 11]\n  n$2=_fun_X::operator[](n$1:X&,0:int) [line 20, column 11]\n  *&v:int=n$2 [line 20, column 3]\n " shape="box"]
 	
 
 	 "div0_method_op#164586340103275013.9f8c8af0fef3459b_5" -> "div0_method_op#164586340103275013.9f8c8af0fef3459b_3" ;
@@ -79,11 +79,11 @@ digraph cfg {
 "div0_method_op_ptr#10912550985860.096d01aa199facb5_2" [label="2: Exit div0_method_op_ptr \n  " color=yellow style=filled]
 	
 
-"div0_method_op_ptr#10912550985860.096d01aa199facb5_3" [label="3:  Return Stmt \n   n$1=*&x:X* [line 24, column 45]\n  n$2=_fun_X::operator[](n$1:X&,0:int) [line 24, column 43]\n " shape="box"]
+"div0_method_op_ptr#10912550985860.096d01aa199facb5_3" [label="3:  Return Stmt \n   n$0=*&x:X* [line 24, column 45]\n  n$1=_fun_X::operator[](n$0:X&,0:int) [line 24, column 43]\n " shape="box"]
 	
 
 	 "div0_method_op_ptr#10912550985860.096d01aa199facb5_3" -> "div0_method_op_ptr#10912550985860.096d01aa199facb5_4" ;
-"div0_method_op_ptr#10912550985860.096d01aa199facb5_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 24, column 32]\n " shape="box"]
+"div0_method_op_ptr#10912550985860.096d01aa199facb5_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 24, column 32]\n " shape="box"]
 	
 
 	 "div0_method_op_ptr#10912550985860.096d01aa199facb5_4" -> "div0_method_op_ptr#10912550985860.096d01aa199facb5_2" ;
@@ -94,11 +94,11 @@ digraph cfg {
 "div1_method_op#543966324959376189.a2cc6fb171f5c009_2" [label="2: Exit div1_method_op \n  " color=yellow style=filled]
 	
 
-"div1_method_op#543966324959376189.a2cc6fb171f5c009_3" [label="3:  Return Stmt \n   n$1=*&x:X& [line 43, column 39]\n  n$2=_fun_X::operator[](n$1:X&,1:int) [line 43, column 39]\n " shape="box"]
+"div1_method_op#543966324959376189.a2cc6fb171f5c009_3" [label="3:  Return Stmt \n   n$0=*&x:X& [line 43, column 39]\n  n$1=_fun_X::operator[](n$0:X&,1:int) [line 43, column 39]\n " shape="box"]
 	
 
 	 "div1_method_op#543966324959376189.a2cc6fb171f5c009_3" -> "div1_method_op#543966324959376189.a2cc6fb171f5c009_4" ;
-"div1_method_op#543966324959376189.a2cc6fb171f5c009_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$2) [line 43, column 28]\n " shape="box"]
+"div1_method_op#543966324959376189.a2cc6fb171f5c009_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 43, column 28]\n " shape="box"]
 	
 
 	 "div1_method_op#543966324959376189.a2cc6fb171f5c009_4" -> "div1_method_op#543966324959376189.a2cc6fb171f5c009_2" ;

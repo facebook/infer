@@ -1,0 +1,64 @@
+// 
+// Copyright (c) Facebook, Inc. and its affiliates.
+//
+// This source code is licensed under the MIT license found in the
+// LICENSE file in the root directory of this source tree.
+
+.source_language = "C" @?
+
+declare C.method() : void
+
+declare C.static_method() : void
+
+type C = {}
+
+define C.method(this: *C) : void {
+  #node_0: @[9:3]
+      jmp node_1 @[9:3]
+      
+  #node_1: @[9:18]
+      jmp  @[9:18]
+      
+} @[9:3]
+
+define C.static_method(x: int) : int {
+  #node_0: @[10:3]
+      jmp node_1 @[10:3]
+      
+  #node_3: @[10:47]
+      jmp  @[10:47]
+      
+  #node_1: @[10:37]
+      n0:int = load &x @[10:44]
+      jmp node_2 @[10:44]
+      
+  #node_2: @[10:37]
+      ret n0 @[10:37]
+      
+} @[10:3]
+
+define method_values() : void {
+  local static_method_no_address: *(fun _ -> _), static_method: *(fun _ -> _), method: void
+  #node_0: @[13:1]
+      jmp node_1 @[13:1]
+      
+  #node_4: @[17:1]
+      jmp  @[17:1]
+      
+  #node_3: @[16:3]
+      _ = __sil_metadata_variable_lifetime_begins(&static_method_no_address, <*(fun _ -> _)>) @[16:3]
+      store &static_method_no_address <- __sil_cfun("static_method"):*(fun _ -> _) @[16:3]
+      jmp node_4 @[16:3]
+      
+  #node_2: @[15:3]
+      _ = __sil_metadata_variable_lifetime_begins(&static_method, <*(fun _ -> _)>) @[15:3]
+      store &static_method <- __sil_cfun("static_method"):*(fun _ -> _) @[15:3]
+      jmp node_3 @[15:3]
+      
+  #node_1: @[14:3]
+      _ = __sil_metadata_variable_lifetime_begins(&method, <void>) @[14:3]
+      store &method <- __sil_cfun("method"):void @[14:3]
+      jmp node_2 @[14:3]
+      
+} @[13:1]
+

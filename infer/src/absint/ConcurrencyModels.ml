@@ -102,6 +102,12 @@ module Clang : sig
   val get_lock_effect : Procname.t -> HilExp.t list -> lock_effect
 
   val is_recursive_lock_type : QualifiedCppName.t -> bool
+
+  val get_thread_start_routine :
+       get_callable:(HilExp.AccessExpression.t -> Procname.t option)
+    -> Procname.t
+    -> HilExp.t list
+    -> Procname.t option
 end = struct
   type lock_model =
     { classname: string [@default ""]
@@ -276,6 +282,66 @@ end = struct
     else if is_guard_destructor pname then make_guard_destructor pname actuals
     else if is_guard_trylock pname then make_guard_trylock pname actuals
     else NoEffect
+
+
+  let is_pthread_create = mk_matcher ["pthread_create"]
+
+  let is_thread_constructor = mk_matcher ["std::thread::thread"; "std::jthread::jthread"]
+
+  let is_async = mk_matcher ["std::async"]
+
+  let is_emplace_back =
+    mk_matcher ["std::deque::emplace_back"; "std::list::emplace_back"; "std::vector::emplace_back"]
+
+
+  let is_container_of_threads =
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::jthread"; "std::thread"] in
+    fun pname ->
+      match Procname.get_class_type_name pname with
+      | Some (Typ.CppClass {template_spec_info= Template {args= TType {desc= Tstruct elt} :: _}}) ->
+          QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name elt)
+      | _ ->
+          false
+
+
+  (** [std::launch::deferred] is 2 in libc++ and libstdc++ *)
+  let rec is_deferred_policy (exp : HilExp.t) =
+    match exp with
+    | Constant (Cint i) ->
+        IntLit.to_int i |> Option.exists ~f:(Int.equal 2)
+    | Cast (_, exp) ->
+        is_deferred_policy exp
+    | _ ->
+        false
+
+
+  let get_thread_start_routine ~get_callable pname actuals =
+    let rec get_routine (exp : HilExp.t) =
+      match exp with
+      | Constant (Cfun routine) | Closure (routine, _) ->
+          Some routine
+      | Cast (_, exp) ->
+          get_routine exp
+      | AccessExpression (AddressOf access_exp) | AccessExpression access_exp ->
+          get_callable access_exp
+      | _ ->
+          None
+    in
+    match actuals with
+    | [_thread; _attr; routine; _arg] when is_pthread_create pname ->
+        get_routine routine
+    | _this :: routine :: _ when is_thread_constructor pname ->
+        get_routine routine
+    | _this :: routine :: _ when is_emplace_back pname && is_container_of_threads pname ->
+        get_routine routine
+    | policy :: _ when is_async pname && is_deferred_policy policy ->
+        (* the task runs in the thread that waits for its result *)
+        None
+    | fst_actual :: snd_actual :: _ when is_async pname ->
+        (* [std::async(f, args...)] or [std::async(policy, f, args...)] *)
+        List.find_map [fst_actual; snd_actual] ~f:get_routine
+    | _ ->
+        None
 end
 
 module Java : sig
@@ -329,6 +395,8 @@ let get_lock_effect pname actuals =
   | _ ->
       NoEffect
 
+
+let get_thread_start_routine = Clang.get_thread_start_routine
 
 let get_current_class_and_annotated_superclasses is_annot tenv pname =
   match pname with

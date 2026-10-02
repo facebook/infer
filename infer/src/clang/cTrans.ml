@@ -567,7 +567,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
-    let name_info, decl_ptr, _ = CAst_utils.get_info_from_decl_ref decl_ref in
+    let name_info, decl_ptr, qual_type = CAst_utils.get_info_from_decl_ref decl_ref in
     let decl_opt = CAst_utils.get_function_decl_with_body decl_ptr in
     Option.iter ~f:(call_translation context) decl_opt ;
     let method_name = CAst_utils.get_unqualified_name name_info in
@@ -582,32 +582,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       | None ->
           (* might happen for methods that are not exported yet (some templates) *)
           true
-    in
-    let this_exp_typ, this_instrs =
-      if is_instance_method then
-        match
-          decl_ref_context
-          (* the result exps of [context] may contain expr for 'this' parameter: if it comes from
-             CXXMemberCallExpr it will be there if it comes from CXXOperatorCallExpr it won't be
-             there and will be added later In case of CXXMemberCallExpr it's possible that type of
-             'this' parameter won't have a pointer - if that happens add a pointer to type of the
-             object *)
-        with
-        | MemberOrIvar {return= (exp, {Typ.desc= Tptr (typ, _)}) as return}
-        (* We need to add a dereference before a method call to find null dereferences when
-           calling a method with null *)
-          when decl_kind <> `CXXConstructor ->
-            let no_id = Ident.create_none () in
-            let extra_instrs = [Sil.Load {id= no_id; e= exp; typ; loc= sil_loc}] in
-            (return, extra_instrs)
-        | MemberOrIvar {return= (_, {Typ.desc= Tptr _}) as return} ->
-            (return, [])
-        | MemberOrIvar {return= exp, typ} ->
-            ((exp, Typ.mk (Tptr (typ, Typ.Pk_lvalue_reference))), [])
-        | DeclRefExpr ->
-            (mk_fresh_void_exp_typ (), [])
-      else (* don't add 'this' expression for static methods. *)
-        (mk_fresh_void_exp_typ (), [])
     in
     (* unlike field access, for method calls there is no need to expand class type use qualified
        method name for builtin matching, but use unqualified name elsewhere *)
@@ -641,6 +615,34 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           else
             CMethod_trans.create_procdesc_with_pointer context decl_ptr (Some class_typename)
               method_name
+    in
+    let this_exp_typ, this_instrs =
+      match
+        decl_ref_context
+        (* the result exps of [context] may contain expr for 'this' parameter: if it comes from
+           CXXMemberCallExpr it will be there if it comes from CXXOperatorCallExpr it won't be there
+           and will be added later In case of CXXMemberCallExpr it's possible that type of 'this'
+           parameter won't have a pointer - if that happens add a pointer to type of the object *)
+      with
+      | DeclRefExpr ->
+          (* the method is named without an object, as in [&C::method] or [C::static_method]: when
+             used as a value, the expression is the method itself; calls use [method_name] *)
+          let typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
+          ((Exp.Const (Const.Cfun pname), typ), [])
+      | MemberOrIvar _ when not is_instance_method ->
+          (* don't add 'this' expression for static methods. *)
+          (mk_fresh_void_exp_typ (), [])
+      | MemberOrIvar {return= (exp, {Typ.desc= Tptr (typ, _)}) as return}
+      (* We need to add a dereference before a method call to find null dereferences when calling a
+         method with null *)
+        when decl_kind <> `CXXConstructor ->
+          let no_id = Ident.create_none () in
+          let extra_instrs = [Sil.Load {id= no_id; e= exp; typ; loc= sil_loc}] in
+          (return, extra_instrs)
+      | MemberOrIvar {return= (_, {Typ.desc= Tptr _}) as return} ->
+          (return, [])
+      | MemberOrIvar {return= exp, typ} ->
+          ((exp, Typ.mk (Tptr (typ, Typ.Pk_lvalue_reference))), [])
     in
     let is_cpp_call_virtual =
       match ms_opt with Some {CMethodSignature.is_cpp_virtual} -> is_cpp_virtual | None -> false
