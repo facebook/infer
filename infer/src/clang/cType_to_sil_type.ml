@@ -317,5 +317,8 @@ and qual_type_to_sil_type ?attr_info ?from_block translate_decl tenv qual_type =
       qual_type.Clang_ast_t.qt_type_ptr
   in
   let is_reference = CType.is_reference_type qual_type in
-  let quals = Typ.mk_type_quals ~is_reference ~is_const:qual_type.Clang_ast_t.qt_is_const () in
+  let quals =
+    Typ.mk_type_quals ~is_reference ~is_const:qual_type.Clang_ast_t.qt_is_const
+      ~is_volatile:qual_type.Clang_ast_t.qt_is_volatile ()
+  in
   Typ.mk ~quals desc

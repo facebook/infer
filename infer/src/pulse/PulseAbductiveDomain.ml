@@ -756,6 +756,10 @@ module Internal = struct
       BaseAddressAttributes.has_unknown_effect addr (astate.post :> base_domain).attrs
 
 
+    let is_global_initializer_called addr astate =
+      BaseAddressAttributes.is_global_initializer_called addr (astate.post :> base_domain).attrs
+
+
     let is_hack_constinit_called addr astate =
       BaseAddressAttributes.is_hack_constinit_called addr (astate.post :> base_domain).attrs
   end
@@ -2387,6 +2391,28 @@ module Summary = struct
       |> ignore ;
       false
     with AssumptionDetected -> true
+
+
+  let reads_global ~f astate =
+    let {BaseDomain.stack; heap} = (astate.pre :> BaseDomain.t) in
+    (* reading a cell adds a dereference edge to the pre, whereas taking the address of a field or
+       array element only adds the access edges leading to it *)
+    let rec reads_cell seen addr =
+      (not (AbstractValue.Set.mem addr seen))
+      && Option.exists (RawMemory.find_opt addr heap) ~f:(fun edges ->
+          let seen = AbstractValue.Set.add addr seen in
+          RawMemory.Edges.exists edges ~f:(fun (access, (addr, _)) ->
+              match access with
+              | Dereference ->
+                  true
+              | FieldAccess _ | ArrayAccess _ ->
+                  reads_cell seen addr ) )
+    in
+    RawStack.exists
+      (fun var vo ->
+        Option.exists (Var.get_pvar var) ~f
+        && reads_cell AbstractValue.Set.empty (ValueOrigin.value vo) )
+      stack
 end
 
 module Topl = struct
@@ -2824,6 +2850,10 @@ module AddressAttributes = struct
 
   let has_unknown_effect v astate =
     SafeAttributes.has_unknown_effect (CanonValue.canon' astate v) astate
+
+
+  let is_global_initializer_called v astate =
+    SafeAttributes.is_global_initializer_called (CanonValue.canon' astate v) astate
 
 
   let is_hack_constinit_called v astate =

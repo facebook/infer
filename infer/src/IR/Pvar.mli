@@ -58,6 +58,12 @@ val is_constant_array : t -> bool
 val is_const : t -> bool
 (** Check if the pvar has a const type *)
 
+val is_volatile : t -> bool
+(** Check if the pvar has a volatile type *)
+
+val is_weak : t -> bool
+(** Check if the pvar is declared weak, so that its definition may be replaced at link time *)
+
 val is_local : t -> bool
 (** Check if the pvar is a (non-static) local var *)
 
@@ -108,6 +114,8 @@ val mk_global :
   -> ?is_static_global:bool
   -> ?is_constant_array:bool
   -> ?is_const:bool
+  -> ?is_volatile:bool
+  -> ?is_weak:bool
   -> ?translation_unit:SourceFile.t
   -> ?template_args:Typ.template_spec_info
   -> Mangled.t

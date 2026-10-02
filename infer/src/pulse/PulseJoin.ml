@@ -214,6 +214,7 @@ let join_one_sided_attribute (attr : Attribute.t) =
   | Closure _
   | CSharpResourceReleased
   | DictContainConstKeys
+  | GlobalInitializerCalled
   | HackConstinitCalled
   | Initialized
   | JavaResourceReleased
@@ -271,6 +272,7 @@ let join_two_sided_attribute join_state (attr1 : Attribute.t) (attr2 : Attribute
   | CSharpResourceReleased, CSharpResourceReleased
   | DictContainConstKeys, DictContainConstKeys
   | EndOfCollection, EndOfCollection
+  | GlobalInitializerCalled, GlobalInitializerCalled
   | HackConstinitCalled, HackConstinitCalled
   | InReportedRetainCycle, InReportedRetainCycle
   | Initialized, Initialized
