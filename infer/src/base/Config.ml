@@ -3021,7 +3021,8 @@ and pulse_transitive_access_config =
 and pulse_unsafe_malloc =
   CLOpt.mk_bool ~long:"pulse-unsafe-malloc"
     ~in_help:InferCommand.[(Analyze, manual_clang)]
-    "Assume that malloc(3) never returns null."
+    "Assume that malloc(3) and non-throwing C++ new-expressions such as new (std::nothrow) T never \
+     return null."
 
 
 and pulse_widen_threshold =

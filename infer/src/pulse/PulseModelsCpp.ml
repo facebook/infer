@@ -60,19 +60,62 @@ let new_array type_name : model_no_non_disj =
   astate
 
 
+(** [actuals] are the size of the object followed by the placement arguments of the new-expression.
+    The frontend does not call the [operator new] that the new-expression selects, so the object is
+    only known to be constructed in place when exactly one placement argument is a [void*], as in
+    [new (buf) T]; otherwise it comes from an allocation function we do not see.
+
+    The frontend sets [cf_return_null_checked] when it only initializes the object if the result is
+    not null, i.e. when the allocation function may return null. *)
 let placement_new =
   let std_nothrow_t_matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::nothrow_t"] in
-  fun actuals {path; location; ret= ret_id, _} astate ->
+  let is_nothrow_t {FuncArg.typ} =
+    match typ.Typ.desc with
+    | Tstruct (CppClass {name}) ->
+        QualifiedCppName.Match.match_qualifiers std_nothrow_t_matcher name
+    | _ ->
+        false
+  in
+  let placement_new_no_alloc ~null_checked placement_args : model_no_non_disj =
+   fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location "<placement new>()" in
-    ( match (List.rev actuals : _ FuncArg.t list) with
-      | {typ= {desc= Tstruct (CppClass {name})}} :: _
-        when QualifiedCppName.Match.match_qualifiers std_nothrow_t_matcher name ->
-          PulseOperations.havoc_id ret_id (Hist.single_event event) astate
-      | {arg_payload= address, hist} :: _ ->
-          PulseOperations.write_id ret_id (address, Hist.add_event event hist) astate
-      | _ ->
-          PulseOperations.havoc_id ret_id (Hist.single_event event) astate )
-    |> Basic.ok_continue
+    match List.filter placement_args ~f:(fun {FuncArg.typ} -> Typ.is_pointer_to_void typ) with
+    | [{FuncArg.arg_payload= address, hist}] ->
+        let astate = PulseOperations.write_id ret_id (address, Hist.add_event event hist) astate in
+        (* Unless it is known to be null, assume that the storage is not: the null check of the
+           result would otherwise skip the initialization whenever the storage is unknown. This is
+           not needed without a null check, and constraining a storage that comes from a parameter
+           would make callers that pass null infeasible instead of reporting the null dereference
+           in the constructor. *)
+        if null_checked && not (PulseArithmetic.is_known_zero astate address) then
+          let<++> astate = PulseArithmetic.and_positive address astate in
+          astate
+        else Basic.ok_continue astate
+    | _ when null_checked && List.exists placement_args ~f:is_nothrow_t ->
+        (* a non-throwing allocation that may return null, e.g. with an explicit alignment *)
+        PulseOperations.havoc_id ret_id (Hist.single_event event) astate |> Basic.ok_continue
+    | _ ->
+        (* assume that the allocation function succeeds *)
+        let ret_addr = AbstractValue.mk_fresh () in
+        let<++> astate = PulseArithmetic.and_positive ret_addr astate in
+        PulseOperations.write_id ret_id (ret_addr, Hist.single_event event) astate
+  in
+  fun actuals ({call_flags} as model_data) astate ->
+    let null_checked = call_flags.CallFlags.cf_return_null_checked in
+    match (actuals : _ FuncArg.t list) with
+    | [{exp= size_exp}; nothrow] when null_checked && is_nothrow_t nothrow ->
+        let allocator, desc =
+          match (size_exp : Exp.t) with
+          | BinOp (Mult _, Sizeof _, _) ->
+              (Attribute.CppNewArray, "new[](std::nothrow)")
+          | _ ->
+              (Attribute.CppNew, "new(std::nothrow)")
+        in
+        PulseModelsC.alloc_common ~null_case:(not Config.pulse_unsafe_malloc) ~initialize:true ~desc
+          allocator (Some size_exp) model_data astate
+    | _ ->
+        let placement_args = List.tl actuals |> Option.value ~default:[] in
+        lift_model (placement_new_no_alloc ~null_checked placement_args) model_data astate
 
 
 let infer_structured_binding var {FuncArg.exp= arg; arg_payload} _ astate =
@@ -1180,7 +1223,7 @@ let simple_matchers =
       <>$ capt_exp $+ capt_arg $--> infer_structured_binding |> with_non_disj
     ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_
     ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $--> new_array |> with_non_disj
-    ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __placement_new) &++> placement_new
     ; -"apache" &:: "thrift"
       &::+ (fun _ s -> Typ.is_thrift_field_ref_str s)
       &:: "operator=" &--> Basic.skip |> with_non_disj

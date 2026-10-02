@@ -5678,6 +5678,7 @@
                     }
                   },
                   {
+                    "should_null_check" : true,
                     "initializer_expr" : 203,
                     "placement_args" : [
                       204,
@@ -5905,6 +5906,7 @@
                         }
                       },
                       {
+                        "should_null_check" : true,
                         "initializer_expr" : 203,
                         "placement_args" : [
                           204,
