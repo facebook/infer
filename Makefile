@@ -14,7 +14,7 @@ MAKE_SOURCE = $(MAKE) -C $(SRC_DIR)
 ifeq ($(BUILD_C_ANALYZERS),yes)
 BUILD_SYSTEMS_TESTS += \
   backtrack_level \
-  clang_compilation_db_escaped clang_compilation_db_relpath \
+  clang_compilation_db_escaped clang_compilation_db_headers clang_compilation_db_relpath \
   clang_multiple_files \
   clang_skip_analysis_in_path \
   clang_translation \
@@ -25,6 +25,7 @@ BUILD_SYSTEMS_TESTS += \
   clang_with_MD_flag \
   deduplicate_template_warnings \
   delete_results_dir \
+  differential_changed_header \
   disjunctive_domain \
   duplicate_symbols \
   extract_capture \
@@ -45,6 +46,7 @@ BUILD_SYSTEMS_TESTS += \
   tracebugs \
   utf8_in_procname \
   incremental_analysis_add_procedure \
+  incremental_analysis_change_header \
   incremental_analysis_change_procedure \
   incremental_analysis_change_tenv \
   incremental_analysis_file_level_change \

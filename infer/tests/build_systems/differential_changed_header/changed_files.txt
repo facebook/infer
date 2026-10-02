@@ -1,0 +1,2 @@
+src/widget.h
+src/new_user.cpp

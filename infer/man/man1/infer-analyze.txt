@@ -41,7 +41,16 @@ OPTIONS
        --changed-files-index file
            Specify the file containing the list of source files from which
            reactive analysis should start. Source files should be specified
-           relative to project root or be absolute
+           relative to project root or be absolute. For a header file in the
+           list, the source file with the same name in the same directory is
+           analyzed too, if it exists, and, for each procedure defined in the
+           header, so is a captured source file that contains it, unless the
+           list already selects one. These source files are analyzed in full
+           and all their issues are reported. Changes to headers that define
+           no procedures (types, declarations, macros) select no other source
+           file. With --compilation-database, only the source files selected
+           by the list are captured, so the list should also contain source
+           files that include the changed headers.
 
        --config-gating
            Activates: config-gating checker: Determines which config flags

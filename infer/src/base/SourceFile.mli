@@ -43,6 +43,10 @@ val read_config_files_to_analyze : unit -> Set.t option
 (** return the list of files as read from Config.files_to_analyze_index. NOTE: it may include extra
     source_files if --changed-files-index contains paths to header files. *)
 
+val is_changed : changed_files:Set.t -> t -> bool
+(** whether the file is one of [changed_files] or, with [--suffix-match-changed-files], whether the
+    path of one of them is a suffix of its path *)
+
 val invalid : string -> t
 (** Invalid source file *)
 
@@ -61,6 +65,10 @@ val create : ?check_abs_path:bool -> ?check_rel_path:bool -> string -> t
 
 val is_under_project_root : t -> bool
 (** Returns true if the file is under the project root or the workspace directory if it exists *)
+
+val is_header : t -> bool
+(** whether the file has the extension of a C/C++/Objective-C header, including files of inline or
+    template definitions such as [.inl] or [.ipp] *)
 
 val of_header : ?warn_on_error:bool -> t -> t option
 (** Return approximate source file corresponding to the parameter if it's header file and file

@@ -254,10 +254,19 @@ let is_under_project_root = function
       false
 
 
+let header_exts = ["h"; "hh"; "hpp"; "hxx"]
+
+let is_header source_file =
+  snd (Filename.split_extension (to_string source_file))
+  |> Option.exists ~f:(fun ext ->
+      List.mem ~equal:String.equal
+        ("h++" :: "inc" :: "inl" :: "ipp" :: "tcc" :: "tpp" :: header_exts)
+        (String.lowercase ext) )
+
+
 let of_header ?(warn_on_error = true) header_file =
   let abs_path = to_abs_path header_file in
   let source_exts = ["c"; "cc"; "cpp"; "cxx"; "m"; "mm"] in
-  let header_exts = ["h"; "hh"; "hpp"; "hxx"] in
   match Filename.split_extension abs_path with
   | file_no_ext, Some ext when List.mem ~equal:String.equal header_exts ext ->
       List.find_map source_exts ~f:(fun ext ->
@@ -341,6 +350,13 @@ let read_config_files_to_analyze =
            files_to_analyze_opt )
   in
   fun () -> Lazy.force result
+
+
+let is_changed ~changed_files source_file =
+  if Config.suffix_match_changed_files then
+    let path = to_rel_path source_file in
+    Set.exists (fun file -> String.is_suffix ~suffix:(to_rel_path file) path) changed_files
+  else Set.mem source_file changed_files
 
 
 let is_matching patterns source_file =
