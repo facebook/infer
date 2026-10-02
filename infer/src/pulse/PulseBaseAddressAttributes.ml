@@ -356,6 +356,10 @@ let has_unknown_effect address attrs =
   |> Option.exists ~f:(fun attribute -> Option.is_some (Attributes.get_unknown_effect attribute))
 
 
+let is_global_initializer_called address attrs =
+  Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_global_initializer_called
+
+
 let is_hack_constinit_called address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_hack_constinit_called
 
@@ -528,6 +532,8 @@ module type S = sig
   val get_address_of_stack_variable : key -> t -> (Var.t * Location.t * ValueHistory.t) option
 
   val has_unknown_effect : key -> t -> bool
+
+  val is_global_initializer_called : key -> t -> bool
 
   val is_hack_constinit_called : key -> t -> bool
 end
