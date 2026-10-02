@@ -112,7 +112,7 @@ end = struct
     ; trylock: string list [@default []]
     ; trylock_zero: string list [@default []]  (** trylocks that return zero on success *)
     ; unlock: string list [@default []]
-    ; recursive: bool [@default true] }
+    ; recursive: bool option [@default None] }
   [@@deriving of_yojson]
 
   type lock_model_cfg = lock_model list [@@deriving of_yojson]
@@ -124,10 +124,10 @@ end = struct
       ; trylock= ["try_lock"]
       ; trylock_zero= []
       ; unlock= ["unlock"]
-      ; recursive= false }
+      ; recursive= Some false }
     in
     let c_rec =
-      {classname= ""; lock= []; trylock= []; trylock_zero= []; unlock= []; recursive= true}
+      {classname= ""; lock= []; trylock= []; trylock_zero= []; unlock= []; recursive= Some true}
     in
     let shd =
       { def with
@@ -141,8 +141,13 @@ end = struct
       ; trylock= ["attemptRead"; "attemptWrite"]
       ; unlock= ["release"] }
     in
+    let lock_type = {c_rec with recursive= Some false} in
     let config_locks = lock_model_cfg_of_yojson Config.lock_model in
     [ {c_rec with lock= ["pthread_mutex_lock"]; unlock= ["pthread_mutex_unlock"]}
+    ; (* recursive only when initialised with the [PTHREAD_MUTEX_RECURSIVE] attribute, which is not
+         tracked; [_opaque_pthread_mutex_t] is the Darwin name *)
+      {lock_type with classname= "pthread_mutex_t"}
+    ; {lock_type with classname= "_opaque_pthread_mutex_t"}
     ; {def with classname= "android::Mutex"; trylock= []; trylock_zero= ["timedLock"; "tryLock"]}
     ; { def with
         classname= "apache::thrift::concurrency::Monitor"
@@ -152,6 +157,8 @@ end = struct
     ; {rwm with classname= "apache::thrift::concurrency::ReadWriteMutex"}
     ; {shd with classname= "boost::shared_mutex"}
     ; {def with classname= "boost::mutex"}
+    ; {def with classname= "boost::recursive_mutex"; recursive= Some true}
+    ; {def with classname= "boost::recursive_timed_mutex"; recursive= Some true}
     ; {def with classname= "folly::detail::distributed_mutex::DistributedMutex"}
     ; {def with classname= "folly::MicroSpinLock"}
     ; {shd with classname= "folly::RWSpinLock"}
@@ -159,22 +166,34 @@ end = struct
     ; {shd with classname= "folly::SharedMutexImpl"}
     ; {def with classname= "folly::SpinLock"}
     ; {def with classname= "std::mutex"}
-    ; {def with classname= "std::recursive_mutex"; recursive= true}
-    ; {def with classname= "std::recursive_timed_mutex"; recursive= true}
+    ; {def with classname= "std::recursive_mutex"; recursive= Some true}
+    ; {def with classname= "std::recursive_timed_mutex"; recursive= Some true}
     ; {shd with classname= "std::shared_mutex"}
     ; {def with classname= "std::timed_mutex"} ]
     @ config_locks
 
 
-  let is_recursive_lock_type qname =
-    let qname_str = QualifiedCppName.to_qual_string qname in
-    match List.find lock_models ~f:(fun mdl -> String.equal qname_str mdl.classname) with
-    | None ->
-        L.internal_error
-          "is_recursive_lock_type: Could not find lock type %s, will assume recursive@\n" qname_str ;
-        true
-    | Some mdl ->
-        mdl.recursive
+  let is_recursive_lock_type =
+    (* user models come last in [lock_models] so their [recursive] overrides the built-in one *)
+    let recursive_of_classname =
+      List.fold lock_models ~init:IString.Map.empty ~f:(fun acc {classname; recursive} ->
+          if String.is_empty classname then acc
+          else
+            IString.Map.update classname
+              (fun previous ->
+                Some (Option.first_some recursive previous |> Option.value ~default:true) )
+              acc )
+    in
+    fun qname ->
+      let qname_str = QualifiedCppName.to_qual_string qname in
+      match IString.Map.find_opt qname_str recursive_of_classname with
+      | None ->
+          L.debug Analysis Medium
+            "is_recursive_lock_type: Could not find lock type %s, will assume recursive@\n"
+            qname_str ;
+          true
+      | Some recursive ->
+          recursive
 
 
   let mk_matcher methods =
@@ -453,9 +472,9 @@ let runs_on_ui_thread tenv pname =
   is_android_lifecycle_method tenv pname || annotated_as_uithread_equivalent tenv pname
 
 
-let is_recursive_lock_type = function
-  | Typ.CppClass {name} ->
+let is_recursive_lock_type (typename : Typ.name) =
+  match typename with
+  | CppClass {name} | CStruct name | CUnion name ->
       Clang.is_recursive_lock_type name
   | _ ->
-      (* non-C++ lock types are always considered recursive *)
       true

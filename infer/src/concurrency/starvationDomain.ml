@@ -134,8 +134,16 @@ module Lock = struct
   let is_recursive tenv lock =
     (* We default to recursive if the type can't be found or looks malformed.
        This reduces self-deadlock FPs. *)
-    match get_typ tenv lock with
-    | Some {Typ.desc= Tptr ({desc= Tstruct name}, _) | Tstruct name} ->
+    let rec strip_pointers (typ : Typ.t) =
+      match typ.desc with Tptr (typ, _) -> strip_pointers typ | _ -> typ
+    in
+    (* elements of an array of locks are all the same address, but two acquisitions may take
+       distinct locks, eg with lock striping *)
+    has_array_access lock
+    ||
+    (* eg the lock [&g] on a global [std::mutex g] has type [std::mutex&*] *)
+    match get_typ tenv lock |> Option.map ~f:strip_pointers with
+    | Some {Typ.desc= Tstruct name} ->
         ConcurrencyModels.is_recursive_lock_type name
     | Some typ ->
         (* weird type passed as a lock, return default *)
@@ -759,7 +767,11 @@ module CriticalPair = struct
     if ignore_blocking_calls && is_blocking_call callee_pair then None
     else
       apply_subst subst callee_pair
-      |> Option.bind ~f:(filter_out_reentrant_relocks (Some tenv) existing_acquisitions)
+      |> Option.bind ~f:(fun pair ->
+          (* the substitution can make a lock held in the callee equal to the acquired one *)
+          filter_out_reentrant_relocks (Some tenv)
+            (Acquisitions.union existing_acquisitions pair.elem.acquisitions)
+            pair )
       |> Option.bind ~f:(apply_caller_thread caller_thread)
       |> Option.map ~f:(fun callee_pair ->
           let f (elem : CriticalPairElement.t) =

@@ -1,4 +1,8 @@
 {
   "force-delete-results-dir": true,
-  "lock-model": [{"lock": ["pthread_mutex_lock1"]}]
+  "lock-model": [
+    {"lock": ["pthread_mutex_lock1"]},
+    {"classname": "pthread_mutex_t", "recursive": true},
+    {"classname": "_opaque_pthread_mutex_t", "recursive": true}
+  ]
 }

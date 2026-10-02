@@ -49,6 +49,9 @@ val is_class_object : t -> bool
 (** is the address a Java class object such as in [synchronized(MyClass.class){}] or
     [static synchronized void foo()] *)
 
+val has_array_access : t -> bool
+(** does the path access an array element? Array indices are not part of addresses. *)
+
 (** A substitution from formal position indices to address options. [None] is used to for actuals
     that cannot be resolved to an address (eg local-rooted paths or arithmetic expressions). *)
 type subst

@@ -32,7 +32,7 @@ class PtrGuard {
   std::mutex* m_;
 };
 
-// pthread mutexes are treated as recursive
+// pthread mutexes are not recursive
 class PthreadGuard {
  public:
   explicit PthreadGuard(pthread_mutex_t* m) : m_(m) { pthread_mutex_lock(m_); }
@@ -247,6 +247,18 @@ class WithPthreadGuard {
  private:
   pthread_mutex_t mutex_1;
   pthread_mutex_t mutex_2;
+};
+
+// array elements are assumed to be distinct locks, eg with lock striping
+class WithStripeGuards {
+ public:
+  void guard_two_stripes_ok(int i, int j) {
+    PthreadGuard lock1(&stripes_[i]);
+    PthreadGuard lock2(&stripes_[j]);
+  }
+
+ private:
+  pthread_mutex_t stripes_[16];
 };
 
 class WithNestedGuard {
