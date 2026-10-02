@@ -534,13 +534,30 @@ public class ResourceLeaks {
 
   // Socket tests
 
-  public void FN_socketNotClosedBad() {
+  // Repro for facebook/infer#2120 / former FN_socketNotClosedBad: Socket constructors
+  // were not modeled as allocating resources.
+  public void socketNotClosedBad() {
     Socket socket = new Socket();
+  }
+
+  public void socketNotClosedAfterGetOutputStreamWriteBad() throws IOException {
+    Socket socket = new Socket("localhost", 8080);
+    socket.getOutputStream().write(42);
   }
 
   public void socketClosedOk() throws IOException {
     Socket socket = new Socket();
     socket.close();
+  }
+
+  public void socketClosedAfterGetOutputStreamWriteOk() throws IOException {
+    Socket socket = null;
+    try {
+      socket = new Socket("localhost", 8080);
+      socket.getOutputStream().write(42);
+    } finally {
+      if (socket != null) socket.close();
+    }
   }
 
   // Socket InputStream tests
