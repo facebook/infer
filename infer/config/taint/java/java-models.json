@@ -6,15 +6,9 @@
           "sink_kinds": ["CreateIntent"] }
       ]
     },
-    { "short_description": "Untrusted file creation",
+    { "short_description": "Path Traversal",
       "taint_flows": [
-        { "source_kinds": ["Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sink_kinds": ["CreateFile"] }
-      ]
-    },
-    { "short_description": "Untrusted file creation risk",
-      "taint_flows": [
-        { "source_kinds": ["Endpoint"],
+        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["CreateFile"] }
       ]
     },
@@ -42,16 +36,10 @@
           "sink_kinds": ["JavaScript"] }
       ]
     },
-    { "short_description": "SQL injection risk",
+    { "short_description": "SQL Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sink_kinds": ["SQLInjection"] }
-      ]
-    },
-    { "short_description": "User-controlled SQL risk",
-      "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sink_kinds": ["SQLRead", "SQLWrite"] }
+          "sink_kinds": ["SQLInjection", "SQLRead", "SQLWrite"] }
       ]
     },
     { "short_description": "Insecure Intent handling",
@@ -72,15 +60,9 @@
           "sink_kinds": ["Logging"] }
       ]
     },
-    { "short_description": "Shell Injection",
+    { "short_description": "OS Command Injection",
       "taint_flows": [
-        { "source_kinds": ["Intent", "UserControlledString", "UserControlledURI"],
-          "sink_kinds": ["ShellExec"] }
-      ]
-    },
-    { "short_description": "Shell Injection risk",
-      "taint_flows": [
-        { "source_kinds": ["Endpoint"],
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["ShellExec"] }
       ]
     },
