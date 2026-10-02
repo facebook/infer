@@ -257,21 +257,22 @@ val add_guard :
   -> Tenv.t
   -> t
   -> HilExp.t
-  -> Lock.t
+  -> Lock.t list
   -> t
-(** Install a mapping from the guard expression to the lock provided, and optionally lock it. *)
+(** Install a mapping from the guard expression to the locks provided, and optionally lock them
+    simultaneously. *)
 
 val lock_guard : procname:Procname.t -> loc:Location.t -> Tenv.t -> t -> HilExp.t -> t
-(** Acquire the lock the guard was constructed with. *)
+(** Acquire the locks the guard was constructed with. *)
 
 val is_guard : t -> HilExp.t -> bool
 (** Whether a guard was constructed on the expression and not destroyed yet. *)
 
 val remove_guard : t -> HilExp.t -> t
-(** Destroy the guard and release its lock. *)
+(** Destroy the guard and release its locks. *)
 
 val unlock_guard : t -> HilExp.t -> t
-(** Release the lock the guard was constructed with. *)
+(** Release the locks the guard was constructed with. *)
 
 val schedule_work :
   Location.t -> StarvationModels.scheduler_thread_constraint -> t -> Procname.t -> t
