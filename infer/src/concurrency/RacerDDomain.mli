@@ -156,7 +156,8 @@ type t =
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.t  (** map of access paths to ownership predicates *)
   ; attribute_map: AttributeMapDomain.t
-        (** map of access paths to attributes such as owned, functional, ... *) }
+        (** map of access paths to attributes such as owned, functional, ... *)
+  ; return_alias: ReturnAliasDomain.t  (** what the procedure returns, if it is an access path *) }
 
 include AbstractDomain.S with type t := t
 
@@ -174,6 +175,8 @@ type summary =
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t
+  ; return_alias: AccessExpression.t option
+        (** access expression over the formals or globals whose value is returned *)
   ; attributes: AttributeMapDomain.t }
 
 val empty_summary : summary

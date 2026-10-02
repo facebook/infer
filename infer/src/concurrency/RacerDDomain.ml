@@ -582,7 +582,8 @@ type t =
   ; never_returns: NeverReturns.t
   ; accesses: AccessDomain.t
   ; ownership: OwnershipDomain.t
-  ; attribute_map: AttributeMapDomain.t }
+  ; attribute_map: AttributeMapDomain.t
+  ; return_alias: ReturnAliasDomain.t }
 [@@deriving abstract_domain]
 
 let initial =
@@ -592,7 +593,8 @@ let initial =
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
-  {threads; locks; never_returns; accesses; ownership; attribute_map}
+  let return_alias = ReturnAliasDomain.bottom in
+  {threads; locks; never_returns; accesses; ownership; attribute_map; return_alias}
 
 
 type summary =
@@ -602,6 +604,7 @@ type summary =
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t
+  ; return_alias: AccessExpression.t option
   ; attributes: AttributeMapDomain.t }
 
 let empty_summary =
@@ -611,28 +614,42 @@ let empty_summary =
   ; accesses= AccessDomain.bottom
   ; return_ownership= OwnershipAbstractValue.unowned
   ; return_attribute= Attribute.top
+  ; return_alias= None
   ; attributes= AttributeMapDomain.top }
 
 
 let pp_summary fmt
-    {threads; locks; never_returns; accesses; return_ownership; return_attribute; attributes} =
+    { threads
+    ; locks
+    ; never_returns
+    ; accesses
+    ; return_ownership
+    ; return_attribute
+    ; return_alias
+    ; attributes } =
   F.fprintf fmt
     "@\n\
      Threads: %a, Locks: %a, NeverReturns: %a @\n\
      Accesses %a @\n\
      Ownership: %a @\n\
      Return Attribute: %a @\n\
+     Return Alias: %a @\n\
      Attributes: %a @\n"
     ThreadsDomain.pp threads LockDomain.pp locks NeverReturns.pp never_returns AccessDomain.pp
     accesses OwnershipAbstractValue.pp return_ownership Attribute.pp return_attribute
-    AttributeMapDomain.pp attributes
+    (Pp.option AccessExpression.pp) return_alias AttributeMapDomain.pp attributes
 
 
-let pp fmt {threads; locks; never_returns; accesses; ownership; attribute_map} =
+let pp fmt {threads; locks; never_returns; accesses; ownership; attribute_map; return_alias} =
   F.fprintf fmt
-    "Threads: %a, Locks: %a, NeverReturns: %a @\nAccesses %a @\nOwnership: %a @\nAttributes: %a @\n"
+    "Threads: %a, Locks: %a, NeverReturns: %a @\n\
+     Accesses %a @\n\
+     Ownership: %a @\n\
+     Attributes: %a @\n\
+     Return Alias: %a @\n"
     ThreadsDomain.pp threads LockDomain.pp locks NeverReturns.pp never_returns AccessDomain.pp
-    accesses OwnershipDomain.pp ownership AttributeMapDomain.pp attribute_map
+    accesses OwnershipDomain.pp ownership AttributeMapDomain.pp attribute_map ReturnAliasDomain.pp
+    return_alias
 
 
 let add_unannotated_call_access formals pname actuals loc (astate : t) =
@@ -646,7 +663,7 @@ let add_unannotated_call_access formals pname actuals loc (astate : t) =
 
 
 let astate_to_summary proc_desc formals
-    {threads; locks; never_returns; accesses; ownership; attribute_map} =
+    {threads; locks; never_returns; accesses; ownership; attribute_map; return_alias} =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let return_var_exp =
     AccessExpression.base
@@ -669,11 +686,46 @@ let astate_to_summary proc_desc formals
         attribute_map
     else AttributeMapDomain.top
   in
+  let return_alias =
+    (* the paths read to compute the value of [exp], or its address if [address] *)
+    let rec read_paths ~address (exp : AccessExpression.t) =
+      match exp with
+      | Base _ ->
+          []
+      | FieldOffset (prefix, _) | ArrayOffset (prefix, _, _) ->
+          let paths = read_paths ~address:true prefix in
+          if address then paths else exp :: paths
+      | Dereference prefix ->
+          read_paths ~address:false prefix
+      | AddressOf prefix ->
+          read_paths ~address:true prefix
+    in
+    (* a caller resolving the returned value to the alias reads these paths again, holding only the
+       caller's locks *)
+    let is_read_under_lock alias =
+      let paths = read_paths ~address:false alias in
+      AccessDomain.exists
+        (fun ({elem= {access; lock}} : AccessSnapshot.t) ->
+          LockDomain.is_locked lock
+          && List.mem paths (Access.get_access_exp access) ~equal:AccessExpression.equal )
+        accesses
+    in
+    ReturnAliasDomain.to_summary proc_desc return_alias
+    |> Option.filter ~f:(fun alias -> not (is_read_under_lock alias))
+  in
   if Procname.is_destructor proc_name then
     (* destructors seldom run concurrently with other methods, so only keep the effect on locks, e.g.
        a RAII guard releasing its lock *)
     {empty_summary with locks}
-  else {threads; locks; never_returns; accesses; return_ownership; return_attribute; attributes}
+  else
+    { threads
+    ; locks
+    ; never_returns
+    ; accesses
+    ; return_ownership
+    ; return_attribute
+    ; return_alias
+    ; attributes }
 
 
 let add_access tenv formals loc ~is_write (astate : t) exp =
@@ -759,7 +811,8 @@ let branch_never_returns () =
   ; ownership= OwnershipDomain.empty
   ; attribute_map=
       (* this is incorrect, as there is no identity element for an inverted set *)
-      AttributeMapDomain.empty }
+      AttributeMapDomain.empty
+  ; return_alias= ReturnAliasDomain.bottom }
 
 
 let integrate_summary formals ~callee_proc_attrs summary ret_access_exp callee_pname actuals loc
