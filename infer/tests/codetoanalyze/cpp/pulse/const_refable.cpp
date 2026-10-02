@@ -17,6 +17,8 @@ class Optional {
  public:
   Optional(const Optional& src);
   bool has_value();
+  Value* operator->();
+  const Value* operator->() const;
 
  private:
   Value v;
@@ -125,6 +127,19 @@ int folly_optional_string_bad(folly::Optional<std::string> s_opt) {
     return 42;
   }
   return 0;
+}
+
+bool folly_optional_string_access_bad(folly::Optional<std::string> s_opt) {
+  return s_opt->empty();
+}
+
+bool is_empty_string(const folly::Optional<std::string>& s_opt) {
+  return s_opt->empty();
+}
+
+bool folly_optional_string_access_in_callee_bad(
+    folly::Optional<std::string> s_opt) {
+  return is_empty_string(s_opt);
 }
 
 struct StructWithInt {
