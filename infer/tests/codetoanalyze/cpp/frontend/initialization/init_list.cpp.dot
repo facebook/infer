@@ -1,5 +1,28 @@
 /* @generated */
 digraph cfg {
+"array_filler_init#init_list#16485.449e7867460145f0_1" [label="1: Start init_list::array_filler_init\nFormals: \nLocals:  large:int[100*4] objects:init_list::C[2*32] records:init_list::Y[3*24] pointers:int*[3*8] \n  " color=yellow style=filled]
+	
+
+	 "array_filler_init#init_list#16485.449e7867460145f0_1" -> "array_filler_init#init_list#16485.449e7867460145f0_6" ;
+"array_filler_init#init_list#16485.449e7867460145f0_2" [label="2: Exit init_list::array_filler_init \n  " color=yellow style=filled]
+	
+
+"array_filler_init#init_list#16485.449e7867460145f0_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(large:int[100*4]); [line 58, column 3]\n  n$0=_fun___infer_zero_initialization(&large:int[100*4]) [line 58, column 24]\n  *&large[0]:int=1 [line 58, column 20]\n  *&large[1]:int=2 [line 58, column 20]\n " shape="box"]
+	
+
+	 "array_filler_init#init_list#16485.449e7867460145f0_3" -> "array_filler_init#init_list#16485.449e7867460145f0_2" ;
+"array_filler_init#init_list#16485.449e7867460145f0_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(objects:init_list::C[2*32]); [line 57, column 3]\n  *&objects[0].z:int=0 [line 57, column 19]\n  n$2=_fun_init_list::C::C(&objects[0]:init_list::C*) [line 57, column 19]\n  *&objects[1].z:int=0 [line 57, column 19]\n  n$1=_fun_init_list::C::C(&objects[1]:init_list::C*) [line 57, column 19]\n " shape="box"]
+	
+
+	 "array_filler_init#init_list#16485.449e7867460145f0_4" -> "array_filler_init#init_list#16485.449e7867460145f0_3" ;
+"array_filler_init#init_list#16485.449e7867460145f0_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(records:init_list::Y[3*24]); [line 56, column 3]\n  *&records[0].z:int=1 [line 56, column 19]\n  *&records[0].x.a:int=0 [line 56, column 21]\n  *&records[0].x.p:int*=null [line 56, column 21]\n  *&records[1].z:int=0 [line 56, column 22]\n  *&records[1].x.a:int=0 [line 56, column 22]\n  *&records[1].x.p:int*=null [line 56, column 22]\n  *&records[2].z:int=0 [line 56, column 22]\n  *&records[2].x.a:int=0 [line 56, column 22]\n  *&records[2].x.p:int*=null [line 56, column 22]\n " shape="box"]
+	
+
+	 "array_filler_init#init_list#16485.449e7867460145f0_5" -> "array_filler_init#init_list#16485.449e7867460145f0_4" ;
+"array_filler_init#init_list#16485.449e7867460145f0_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(pointers:int*[3*8]); [line 55, column 3]\n  *&pointers[0]:int*=null [line 55, column 23]\n  *&pointers[1]:int*=null [line 55, column 23]\n  *&pointers[2]:int*=null [line 55, column 23]\n " shape="box"]
+	
+
+	 "array_filler_init#init_list#16485.449e7867460145f0_6" -> "array_filler_init#init_list#16485.449e7867460145f0_5" ;
 "init_in_binop#init_list#834825007.7adaa67964536570_1" [label="1: Start init_list::init_in_binop\nFormals:  x:int\nLocals:  0$?%__sil_tmpSIL_init_list__n$1:int \n  " color=yellow style=filled]
 	
 
@@ -30,7 +53,7 @@ digraph cfg {
 	
 
 	 "list_init#init_list#1834885446634.0126b9f1f80f91b7_5" -> "list_init#init_list#1834885446634.0126b9f1f80f91b7_4" ;
-"list_init#init_list#1834885446634.0126b9f1f80f91b7_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(ti:int[4*4]); [line 46, column 3]\n  *&ti[0]:int=1 [line 46, column 15]\n  *&ti[1]:int=2 [line 46, column 15]\n " shape="box"]
+"list_init#init_list#1834885446634.0126b9f1f80f91b7_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(ti:int[4*4]); [line 46, column 3]\n  *&ti[0]:int=1 [line 46, column 15]\n  *&ti[1]:int=2 [line 46, column 15]\n  *&ti[2]:int=0 [line 46, column 19]\n  *&ti[3]:int=0 [line 46, column 19]\n " shape="box"]
 	
 
 	 "list_init#init_list#1834885446634.0126b9f1f80f91b7_6" -> "list_init#init_list#1834885446634.0126b9f1f80f91b7_5" ;

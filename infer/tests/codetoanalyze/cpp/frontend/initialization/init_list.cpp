@@ -51,4 +51,11 @@ void list_init() {
 
 void init_in_binop(int x) { x = -x & ~int{0}; }
 
+void array_filler_init() {
+  int* pointers[3] = {};
+  Y records[3] = {{1}};
+  C objects[2] = {};
+  int large[100] = {1, 2};
+}
+
 } // namespace init_list
