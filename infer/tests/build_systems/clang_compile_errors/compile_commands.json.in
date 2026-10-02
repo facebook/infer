@@ -1,0 +1,7 @@
+[
+   {
+      "command" : "clang++ -c undeduced_auto.cpp",
+      "directory" : "%pwd%/../codetoanalyze/clang_compile_errors",
+      "file" : "undeduced_auto.cpp"
+   }
+]
