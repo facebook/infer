@@ -148,6 +148,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         typ
 
 
+  (** the object and the pointer to member of [obj.*pm] or [ptr->*pm], possibly in parentheses *)
+  let rec ptr_to_member_operands : Clang_ast_t.stmt -> (Clang_ast_t.stmt * Clang_ast_t.stmt) option
+      = function
+    | `ParenExpr (_, [stmt], _) ->
+        ptr_to_member_operands stmt
+    | `BinaryOperator (_, [obj; member_ptr], _, {Clang_ast_t.boi_kind= `PtrMemD | `PtrMemI}) ->
+        Some (obj, member_ptr)
+    | _ ->
+        None
+
+
   (** Execute translation and then possibly adjust the type of the result of translation: In C++,
       when expression returns reference to type T, it will be lvalue to T, not T&, but infer needs
       it to be T& *)
@@ -958,12 +969,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ->
         var_deref_trans trans_state stmt_info decl_ref
     | (`Field | `ObjCIvar), MemberOrIvar pre_trans_result ->
-        (* a field outside of constructor initialization is probably a pointer to member, which we
-           do not support *)
         field_deref_trans trans_state ~is_implicit_self stmt_info pre_trans_result decl_ref
           ~is_constructor_init ~is_member_of_const
     | (`CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor), _ ->
         method_deref_trans trans_state ~context decl_ref stmt_info decl_kind
+    | (`Field | `IndirectField), DeclRefExpr ->
+        (* the operand of [&C::field]: as for [&C::method], the value of the pointer to member is
+           not modelled *)
+        mk_trans_result (mk_fresh_void_exp_typ ()) empty_control
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "Decl ref expression %a with pointer %d still needs to be translated"
@@ -1094,6 +1107,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         [res_trans_e1.control; res_trans_e2.control; {empty_control with instrs}]
         |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
         |> mk_trans_result res_trans_e1.return
+    | [obj; member_ptr], _, (`PtrMemD | `PtrMemI) ->
+        (* access to a data member; calls through pointers to member functions are translated in
+           [cxxMemberCallExpr_trans] *)
+        ptr_to_member_trans trans_state_pri stmt_info ~obj ~member_ptr `Access res_typ node_name
+    | [lhs; rhs], _, `Assign when Option.is_some (ptr_to_member_operands lhs) ->
+        let obj, member_ptr = Option.value_exn (ptr_to_member_operands lhs) in
+        ptr_to_member_trans trans_state_pri stmt_info ~obj ~member_ptr (`Assign rhs) res_typ
+          node_name
     | [s1; s2], _, `Comma ->
         let ({control= {instrs}} as res_trans) =
           CTrans_utils.PriorityNode.force_sequential sil_loc node_name trans_state stmt_info
@@ -1722,6 +1743,88 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ~return:res_trans_call.return all_res_trans
 
 
+  (** Pointers to members are not modelled. For [obj.*pm], [ptr->*pm] and calls [(obj.*pm)(args)],
+      the object, passed by reference, and the pointer to member are passed to an unknown function,
+      which may thus modify the object.
+
+      - For a data member, the unknown function returns an unknown offset and the member is the
+        lvalue [obj[offset]], so that values stored in it remain reachable from the object. For an
+        assignment [obj.*pm = rhs], the value of [rhs] is passed to the unknown function too: the
+        member it is stored in is unknown, so a resource stored there could otherwise be reported as
+        leaked when the object releases its members by name.
+      - For a call through a pointer to member function, the unknown function is
+        [__infer_ptr_to_member_call], which, unlike [__infer_skip], is not considered pure. The
+        arguments of the call are passed to it too, and it returns the result of the call. As for
+        regular method calls, the object is dereferenced first. *)
+  and ptr_to_member_trans trans_state_pri stmt_info ~obj ~member_ptr use ret_typ node_name =
+    let context = trans_state_pri.context in
+    let sil_loc =
+      CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+    in
+    let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+    let instruction' = exec_with_glvalue_as_reference instruction trans_state_param in
+    let res_trans_rhs =
+      match use with
+      | `Assign rhs ->
+          [exec_with_block_priority_exception instruction trans_state_param rhs stmt_info]
+      | `Access | `Call _ ->
+          []
+    in
+    let res_trans_obj = instruction' obj in
+    let res_trans_member_ptr = instruction trans_state_param member_ptr in
+    let res_trans_args =
+      match use with `Call args -> List.map args ~f:instruction' | `Access | `Assign _ -> []
+    in
+    let obj_exp, obj_typ = res_trans_obj.return in
+    let sil_fun =
+      let callee =
+        match use with
+        | `Access | `Assign _ ->
+            BuiltinDecl.__infer_skip
+        | `Call _ ->
+            BuiltinDecl.__infer_ptr_to_member_call
+      in
+      Exp.Const (Const.Cfun callee)
+    in
+    let actuals =
+      collect_returns ((res_trans_obj :: res_trans_member_ptr :: res_trans_args) @ res_trans_rhs)
+    in
+    let deref_obj_instrs, res_trans_call =
+      match use with
+      | `Access | `Assign _ ->
+          let offset = Ident.create_fresh Ident.knormal in
+          let member_exp = Exp.Lindex (obj_exp, Exp.Var offset) in
+          let call_instr =
+            Sil.Call ((offset, StdTyp.int), sil_fun, actuals, sil_loc, CallFlags.default)
+          in
+          let store_instrs =
+            List.map res_trans_rhs ~f:(fun {return= rhs_exp, _} ->
+                Sil.Store {e1= member_exp; typ= ret_typ; e2= rhs_exp; loc= sil_loc} )
+          in
+          ( []
+          , mk_trans_result (member_exp, ret_typ)
+              {empty_control with instrs= call_instr :: store_instrs} )
+      | `Call _ ->
+          let deref_obj_instrs =
+            match obj_typ.Typ.desc with
+            | Tptr (typ, _) ->
+                [Sil.Load {id= Ident.create_none (); e= obj_exp; typ; loc= sil_loc}]
+            | _ ->
+                []
+          in
+          ( deref_obj_instrs
+          , create_call_instr trans_state_pri ret_typ sil_fun actuals sil_loc CallFlags.default
+              ~is_inherited_ctor:false )
+    in
+    (* the right operand of an assignment is sequenced before the left one *)
+    List.map
+      (res_trans_rhs @ (res_trans_obj :: res_trans_member_ptr :: res_trans_args))
+      ~f:(fun {control} -> control)
+    @ [{empty_control with instrs= deref_obj_instrs}; res_trans_call.control]
+    |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+    |> mk_trans_result res_trans_call.return
+
+
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
     (* Structure is the following: *)
@@ -1733,13 +1836,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     (* claim priority if no ancestors has claimed priority before *)
-    let trans_state_callee = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
-    let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
-    let is_cpp_call_virtual = result_trans_callee.is_cpp_call_virtual in
     let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
-    cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si function_type
-      ~is_injected_destructor:false ~is_cpp_call_virtual None ~is_inherited_ctor:false
+    match ptr_to_member_operands fun_exp_stmt with
+    | Some (obj, member_ptr) ->
+        let node_name =
+          Procdesc.Node.Call
+            (Exp.to_string (Exp.Const (Const.Cfun BuiltinDecl.__infer_ptr_to_member_call)))
+        in
+        ptr_to_member_trans trans_state_pri si ~obj ~member_ptr (`Call params_stmt) function_type
+          node_name
+    | None ->
+        let trans_state_callee = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
+        let is_cpp_call_virtual = result_trans_callee.is_cpp_call_virtual in
+        cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
+          function_type ~is_injected_destructor:false ~is_cpp_call_virtual None
+          ~is_inherited_ctor:false
 
 
   and cxxConstructExpr_trans

@@ -27,10 +27,34 @@ struct List {
   E* E::*next_ptr;
 };
 
-void skip() { List<item> l(&item::next); }
+void construct_with_ptr_to_member() { List<item> l(&item::next); }
 
 void noskip(List<item> l) {
   item i;
   l.add(&i);
   l.add_byref(i);
 }
+
+void assign_parenthesized_ptr_to_member(item& i, int item::*pm) {
+  (i.*pm) = 0;
+}
+
+struct Handler {};
+
+int call_ptr_to_member_function(Handler* h, int (Handler::*f)(int)) {
+  return (h->*f)(42);
+}
+
+item call_ptr_to_member_function_returning_struct(Handler& h,
+                                                  item (Handler::*f)()) {
+  return (h.*f)();
+}
+
+struct WithUnion {
+  union {
+    int i;
+    float f;
+  };
+};
+
+void ptr_to_anonymous_union_member() { int WithUnion::*pm = &WithUnion::i; }
