@@ -112,6 +112,12 @@ val is_manifest : AbductiveDomain.Summary.t -> bool
     the documentation for {!PulseFormula.is_manifest} and
     {!PulseAbductiveDomain.Summary.pre_heap_has_assumptions}) *)
 
+val is_manifest_disjunction : AbductiveDomain.Summary.t list -> bool
+(** whether the disjunction of the states is manifest even if none of them is, for instance when an
+    error happens after a call to a function that branches on a global variable, in one state for
+    each outcome of the branch. This is the case when the conditions of one of the states that are
+    compatible with it being manifest imply that one of the states applies. *)
+
 val and_is_int :
   AbstractValue.t -> Typ.ikind -> AbductiveDomain.t -> AbductiveDomain.t AccessResult.t SatUnsat.t
 

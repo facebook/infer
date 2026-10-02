@@ -165,6 +165,15 @@ val as_constant_string : t -> Var.t -> string option
 
 val is_known_non_pointer : t -> Var.t -> bool
 
+val get_constant_condition_depth : t -> Var.t -> int option
+(** the smallest call depth of the conditions of the form [a·v+b=c] (for constants [a], [b], and
+    [c]) if any, i.e. of the conditions that make [v] equal to a constant on their own (see
+    [is_manifest]) *)
+
+val raise_depth_of_conditions_on : Var.t -> depth:int -> t -> t
+(** [raise_depth_of_conditions_on v ~depth phi] makes the conditions that mention [v] come from a
+    call depth of at least [depth] (see [is_manifest]) *)
+
 val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
 (** Some types or errors detected by Pulse require that the state be *manifest*, which corresponds
     to the fact that the error can happen in *any reasonable* calling context (see below). If not,
@@ -192,7 +201,19 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
     Erlang)
 
     Some equalities might be represented implicitly in the precondition, see the documentation of
-    {!PulseArithmetic.is_manifest}. *)
+    {!PulseArithmetic.is_manifest}. Several states that are not manifest can also be manifest
+    together, see {!PulseArithmetic.is_manifest_disjunction}. *)
+
+val partition_conditions_by_manifest :
+  is_allocated:(Var.t -> bool) -> t -> Atom.t list * Atom.t list
+(** the conditions that are compatible with the formula being manifest according to [is_manifest],
+    and the ones that are not *)
+
+val disjunction_is_valid : assuming:Atom.t list list -> Atom.t list list -> bool
+(** [disjunction_is_valid ~assuming clauses] holds when one of the conjunctions of atoms in
+    [assuming] implies the disjunction of the conjunctions of atoms in [clauses]. This is
+    incomplete: atoms are related to each other only when one is the negation of the other, and the
+    search gives up after deriving 64 clauses. *)
 
 val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)
