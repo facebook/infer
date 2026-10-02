@@ -56,5 +56,7 @@ type subst
 val pp_subst : F.formatter -> subst -> unit [@@warning "-unused-value-declaration"]
 
 val make_subst : FormalMap.t -> HilExp.t list -> subst
+(** [make_subst formals actuals] maps the position of each actual to its address in terms of the
+    caller's [formals] *)
 
 val apply_subst : subst -> t -> t option
