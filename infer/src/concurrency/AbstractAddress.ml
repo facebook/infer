@@ -109,8 +109,14 @@ let pp_with_base pp_base fmt (base, accesses) =
   pp_rev_accesses fmt (List.rev accesses)
 
 
-(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparison
- * as we cannot add that ignore there due to issues with Siof
+let global_key pvar =
+  ( Pvar.get_name pvar
+  , Pvar.get_template_args pvar
+  , if Pvar.is_static_global pvar then Pvar.get_translation_unit pvar else None )
+
+
+(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparison, except for static
+ * variables, as we cannot add that ignore there due to issues with Siof
  * similar hack to D51588007 *)
 module SVar = struct
   include Var
@@ -118,9 +124,8 @@ module SVar = struct
   let compare x y =
     match (x, y) with
     | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
-        [%compare: Mangled.t * Typ.template_spec_info]
-          (Pvar.get_name x, Pvar.get_template_args x)
-          (Pvar.get_name y, Pvar.get_template_args y)
+        [%compare: Mangled.t * Typ.template_spec_info * SourceFile.t option] (global_key x)
+          (global_key y)
     | ProgramVar x, _ when Pvar.is_global x ->
         -1
     | _, ProgramVar x when Pvar.is_global x ->
@@ -132,9 +137,8 @@ module SVar = struct
   let equal x y =
     match (x, y) with
     | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
-        [%equal: Mangled.t * Typ.template_spec_info]
-          (Pvar.get_name x, Pvar.get_template_args x)
-          (Pvar.get_name y, Pvar.get_template_args y)
+        [%equal: Mangled.t * Typ.template_spec_info * SourceFile.t option] (global_key x)
+          (global_key y)
     | ProgramVar x, _ when Pvar.is_global x ->
         false
     | _, ProgramVar x when Pvar.is_global x ->
@@ -219,6 +223,34 @@ let equal_across_threads tenv t1 t2 =
 
 
 let is_class_object = function Class _ -> true | _ -> false
+
+let may_denote_distinct_objects = function
+  | Global {path= _, accesses} | Parameter {path= _, accesses} ->
+      List.exists accesses ~f:(function MemoryAccess.ArrayAccess _ -> true | _ -> false)
+  | Opaque _ ->
+      true
+  | Class _ ->
+      false
+
+
+let get_last_field_or_global = function
+  | Global {path= (var, _), accesses}
+  | Parameter {path= (var, _), accesses}
+  | Opaque {path= (var, _), accesses} -> (
+      let last_field =
+        List.fold accesses ~init:None ~f:(fun last (access : access) ->
+            match access with FieldAccess field -> Some field | _ -> last )
+      in
+      match (last_field, (var : Var.t)) with
+      | Some field, _ ->
+          Some (First field)
+      | None, ProgramVar pvar when Pvar.is_global pvar ->
+          Some (Second pvar)
+      | None, _ ->
+          None )
+  | Class _ ->
+      None
+
 
 let rec make formal_map (hilexp : HilExp.t) =
   let make_from_acc_exp acc_exp =

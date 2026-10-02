@@ -53,6 +53,16 @@ val is_class_object : t -> bool
 (** is the address a Java class object such as in [synchronized(MyClass.class){}] or
     [static synchronized void foo()] *)
 
+val may_denote_distinct_objects : t -> bool
+(** may two objects have this address? Array indices are not part of addresses, and opaque addresses
+    of distinct objects are equal if their types and accesses are. *)
+
+val global_key : Pvar.t -> Mangled.t * Typ.template_spec_info * SourceFile.t option
+(** identifies a global across translation units: static globals are distinct in each one *)
+
+val get_last_field_or_global : t -> (Fieldname.t, Pvar.t) Either.t option
+(** the last field accessed by the address, or else its root if that is a global *)
+
 (** A substitution from formal position indices to address options. [None] is used to for actuals
     that cannot be resolved to an address (eg addresses of locals or arithmetic expressions). *)
 type subst

@@ -131,12 +131,20 @@ module Lock = struct
     apply_subst_to_list_inner l |> fst
 
 
-  let is_recursive tenv lock =
+  let is_recursive tenv ~procname lock =
     (* We default to recursive if the type can't be found or looks malformed.
        This reduces self-deadlock FPs. *)
-    match get_typ tenv lock with
-    | Some {Typ.desc= Tptr ({desc= Tstruct name}, _) | Tstruct name} ->
+    let rec strip_pointers (typ : Typ.t) =
+      match typ.desc with Tptr (typ, _) -> strip_pointers typ | _ -> typ
+    in
+    (* two acquisitions may take distinct locks, eg elements of an array with lock striping *)
+    may_denote_distinct_objects lock
+    ||
+    (* eg the lock [&g] on a global [std::mutex g] has type [std::mutex&*] *)
+    match get_typ tenv lock |> Option.map ~f:strip_pointers with
+    | Some {Typ.desc= Tstruct name} ->
         ConcurrencyModels.is_recursive_lock_type name
+        || RecursiveMutexInit.is_recursive tenv ~caller:procname name lock
     | Some typ ->
         (* weird type passed as a lock, return default *)
         L.debug Analysis Verbose "Asked if non-struct type %a is a recursive lock type.@\n"
@@ -393,8 +401,8 @@ module Event = struct
           Some (LockAcquire {lock_acquire with locks}) )
 
 
-  let has_recursive_lock tenv event =
-    get_acquired_locks event |> List.exists ~f:(Lock.is_recursive tenv)
+  let has_recursive_lock tenv ~procname event =
+    get_acquired_locks event |> List.exists ~f:(Lock.is_recursive tenv ~procname)
 
 
   let is_blocking_call = function
@@ -749,15 +757,15 @@ module CriticalPair = struct
         Some (map ~f:(fun _elem -> elem') pair)
 
 
-  (** if given [Some tenv], transform a pair so as to remove reentrant locks that are already in
-      [held_locks] *)
+  (** if given [Some (tenv, procname)], where [procname] is the procedure analysed, transform a pair
+      so as to remove reentrant locks that are already in [held_locks] *)
   let filter_out_reentrant_relocks tenv_opt held_locks pair =
     match (tenv_opt, pair.elem.event) with
-    | Some tenv, LockAcquire {locks; thread} -> (
+    | Some (tenv, procname), LockAcquire {locks; thread} -> (
         let filtered_locks =
           IList.filter_changed locks ~f:(fun lock ->
               (not (Acquisitions.lock_is_held lock held_locks))
-              || not (Event.has_recursive_lock tenv pair.elem.event) )
+              || not (Event.has_recursive_lock tenv ~procname pair.elem.event) )
         in
         match filtered_locks with
         | [] ->
@@ -782,7 +790,7 @@ module CriticalPair = struct
 
   let is_blocking_call pair = CriticalPairElement.is_blocking_call pair.elem
 
-  let integrate_summary_opt ~subst ~tenv ~ignore_blocking_calls lock_state call_site
+  let integrate_summary_opt ~subst ~tenv ~procname ~ignore_blocking_calls lock_state call_site
       (caller_thread : ThreadDomain.t) (callee_pair : t) =
     if ignore_blocking_calls && is_blocking_call callee_pair then None
     else
@@ -793,7 +801,11 @@ module CriticalPair = struct
                 LockState.release lock acc )
           in
           let existing_acquisitions = LockState.get_acquisitions lock_state in
-          filter_out_reentrant_relocks (Some tenv) existing_acquisitions callee_pair
+          (* the substitution can make a lock held in the callee equal to the acquired one *)
+          filter_out_reentrant_relocks
+            (Some (tenv, procname))
+            (Acquisitions.union existing_acquisitions callee_pair.elem.acquisitions)
+            callee_pair
           |> Option.bind ~f:(apply_caller_thread caller_thread)
           |> Option.map ~f:(fun callee_pair ->
               let f (elem : CriticalPairElement.t) =
@@ -890,12 +902,12 @@ end
 module NullLocsCriticalPairs = struct
   include AbstractDomain.FiniteSet (NullLocsCriticalPair)
 
-  let with_callsite astate ~tenv ~subst ~ignore_blocking_calls lock_state null_locs call_site thread
-      =
+  let with_callsite astate ~tenv ~procname ~subst ~ignore_blocking_calls lock_state null_locs
+      call_site thread =
     CriticalPairs.fold
       (fun pair acc ->
-        CriticalPair.integrate_summary_opt ~subst ~tenv ~ignore_blocking_calls lock_state call_site
-          thread pair
+        CriticalPair.integrate_summary_opt ~subst ~tenv ~procname ~ignore_blocking_calls lock_state
+          call_site thread pair
         |> Option.value_map ~default:acc ~f:(fun pair -> add {null_locs; pair} acc) )
       astate empty
 
@@ -1072,8 +1084,9 @@ let interproc_acquire ~tenv ~procname ~callsite ~subst ~release_held_locks summa
               Event.make_interprocedural_acquire callsite [lock] astate.thread
                 (Acquisition.make_loc_trace acquisition)
             in
-            add_critical_pair ~tenv_opt:(Some tenv) astate.lock_state astate.null_locs event ~loc
-              acc ) )
+            add_critical_pair
+              ~tenv_opt:(Some (tenv, procname))
+              astate.lock_state astate.null_locs event ~loc acc ) )
       new_acquisitions astate.critical_pairs
   in
   let summary_lock_state =
@@ -1090,7 +1103,9 @@ let acquire ~tenv ({lock_state; critical_pairs; null_locs} as astate) ~procname 
   { astate with
     critical_pairs=
       (let event = Event.make_acquire locks astate.thread in
-       add_critical_pair ~tenv_opt:(Some tenv) lock_state null_locs event ~loc critical_pairs )
+       add_critical_pair
+         ~tenv_opt:(Some (tenv, procname))
+         lock_state null_locs event ~loc critical_pairs )
   ; lock_state=
       List.fold locks ~init:lock_state ~f:(fun acc lock ->
           LockState.acquire ~procname ~loc lock acc ) }
@@ -1248,8 +1263,9 @@ let set_non_null formals acc_exp astate =
 let integrate_summary ?(release_held_locks = false) ~tenv ~procname ~lhs ~subst formals callsite
     (astate : t) (summary : summary) =
   let critical_pairs' =
-    NullLocsCriticalPairs.with_callsite summary.critical_pairs ~tenv ~subst astate.lock_state
-      astate.null_locs callsite astate.thread ~ignore_blocking_calls:astate.ignore_blocking_calls
+    NullLocsCriticalPairs.with_callsite summary.critical_pairs ~tenv ~procname ~subst
+      astate.lock_state astate.null_locs callsite astate.thread
+      ~ignore_blocking_calls:astate.ignore_blocking_calls
   in
   (* apply summary held locks *)
   let astate =
