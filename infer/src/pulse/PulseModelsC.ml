@@ -586,6 +586,7 @@ let matchers : matcher list =
   ; +BuiltinDecl.(match_builtin __call_c_function_ptr) $ capt_arg $++$--> call_c_function_ptr
   ; -"access" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"android_fdsan_close_with_tag" <>$ capt_arg $+ any_arg $--> close
   ; -"asctime" <>$ capt_arg_payload
     $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
   ; ( -"__assert_fail" <>$ capt_arg
@@ -685,7 +686,10 @@ let matchers : matcher list =
   ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
   ; -"memrchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
   ; -"memset" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memset
-  ; -"open" <>$ any_arg $+ any_arg $+ any_arg $--> open_
+  ; -"open" <>$ any_arg $+ any_arg $+? any_arg $--> open_
+  ; -"open64" <>$ any_arg $+ any_arg $+? any_arg $--> open_
+  ; -"openat" <>$ any_arg $+ any_arg $+ any_arg $+? any_arg $--> open_
+  ; -"openat64" <>$ any_arg $+ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"opendir" <>$ capt_arg_payload $--> opendir
   ; (-"pause" $$--> start_model @@ fun () -> assign_ret @= int (-1))
   ; (-"printf" &--> start_model @@ fun () -> assign_ret @= fresh ())
