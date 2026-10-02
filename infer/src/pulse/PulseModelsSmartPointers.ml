@@ -17,25 +17,25 @@ let value = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_poi
 
 let value_access = Access.FieldAccess value
 
-let to_internal_value path mode location value astate =
-  PulseOperations.eval_access path mode location value value_access astate
+let to_internal_value ?(access = value_access) path mode location value astate =
+  PulseOperations.eval_access path mode location value access astate
 
 
-let to_internal_value_deref path mode location value astate =
-  let* astate, pointer = to_internal_value path Read location value astate in
+let to_internal_value_deref ?access path mode location value astate =
+  let* astate, pointer = to_internal_value ?access path Read location value astate in
   PulseOperations.eval_access path mode location pointer Dereference astate
 
 
-let write_value path location this ~value ~desc astate =
-  let* astate, pointer = to_internal_value path Read location this astate in
+let write_value ?access path location this ~value ~desc astate =
+  let* astate, pointer = to_internal_value ?access path Read location this astate in
   let value_hist = (fst value, Hist.add_call path location desc (snd value)) in
   let+ astate = PulseOperations.write_deref path location ~ref:pointer ~obj:value_hist astate in
   (astate, (pointer, value_hist))
 
 
-let assign_value_nullptr path location this ~desc astate =
+let assign_value_nullptr ?access path location this ~desc astate =
   let=* astate, (pointer, value) =
-    write_value path location this
+    write_value ?access path location this
       ~value:(AbstractValue.mk_fresh (), ValueHistory.epoch)
       ~desc astate
   in
@@ -105,12 +105,12 @@ module SharedPtr = struct
 
   let count_access = Access.FieldAccess count
 
-  let to_internal_count path mode location value astate =
-    PulseOperations.eval_access path mode location value count_access astate
+  let to_internal_count ?(access = count_access) path mode location value astate =
+    PulseOperations.eval_access path mode location value access astate
 
 
-  let to_internal_count_deref path mode location value astate =
-    let* astate, pointer = to_internal_count path Read location value astate in
+  let to_internal_count_deref ?access path mode location value astate =
+    let* astate, pointer = to_internal_count ?access path Read location value astate in
     PulseOperations.eval_access path mode location pointer Dereference astate
 
 
@@ -121,8 +121,8 @@ module SharedPtr = struct
     PulseOperations.invalidate_access path location CppDelete value_addr_hist Dereference astate
 
 
-  let write_count path location this ~value ~desc astate =
-    let* astate, pointer = to_internal_count path Read location this astate in
+  let write_count ?access path location this ~value ~desc astate =
+    let* astate, pointer = to_internal_count ?access path Read location this astate in
     let value_hist = (fst value, Hist.add_call path location desc (snd value)) in
     let+ astate = PulseOperations.write_deref path location ~ref:pointer ~obj:value_hist astate in
     (astate, (pointer, value_hist))
@@ -147,6 +147,12 @@ module SharedPtr = struct
     let+* astate, value = fresh_value_from_constant path location ~constant ~desc astate in
     let+ astate, _ = write_count path location this ~value ~desc astate in
     astate
+
+
+  (* weak pointers sharing the count see that the object has expired *)
+  let expire_count path location this ~desc astate =
+    let=* astate, pointer = to_internal_count_deref path Read location this astate in
+    assign_constant path location ~ref:pointer ~constant:IntLit.zero ~desc astate
 
 
   let decrease_count path location this ~desc astate =
@@ -210,7 +216,7 @@ module SharedPtr = struct
       >>|= delete_internal_count path location this ~desc
       >>|| ExecutionDomain.continue
     in
-    (* ref_count is one: deallocate the backing_pointer and the ref_count *)
+    (* ref_count is one: deallocate the backing_pointer and set the ref_count to zero *)
     let ref_count_one, non_disj =
       match find_element_type tenv typ with
       | Some elem_typ ->
@@ -229,7 +235,7 @@ module SharedPtr = struct
           match exec_state with
           | ContinueProgram astate ->
               let<**> astate = PulseArithmetic.prune_eq_one (fst count) astate in
-              let<+> astate = delete_internal_count path location this ~desc astate in
+              let<++> astate = expire_count path location this ~desc astate in
               astate
           | _ ->
               [Ok exec_state] )
@@ -367,9 +373,22 @@ module SharedPtr = struct
     else copy_constructor arg other ~desc:(desc ^ " (copy)") model_data
 
 
-  let use_count this ~desc : model_no_non_disj =
+  let swap this other ~desc : model_no_non_disj =
+   fun {path; location} astate ->
+    let<*> astate, this_value = to_internal_value_deref path Read location this astate in
+    let<*> astate, other_value = to_internal_value_deref path Read location other astate in
+    let<*> astate, this_count = to_internal_count_deref path Read location this astate in
+    let<*> astate, other_count = to_internal_count_deref path Read location other astate in
+    let<*> astate, _ = write_value path location this ~value:other_value ~desc astate in
+    let<*> astate, _ = write_value path location other ~value:this_value ~desc astate in
+    let<*> astate, _ = write_count path location this ~value:other_count ~desc astate in
+    let<+> astate, _ = write_count path location other ~value:this_count ~desc astate in
+    astate
+
+
+  let use_count ~access this ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
-    let<*> astate, pointer = to_internal_count_deref path Read location this astate in
+    let<*> astate, pointer = to_internal_count_deref ~access path Read location this astate in
     let<+> astate, (value_addr, value_hist) =
       PulseOperations.eval_access path Read location pointer Dereference astate
     in
@@ -468,6 +487,159 @@ module SharedPtr = struct
 
 
   let pointer_cast src tgt ~desc = copy_move_constructor tgt src ~desc
+end
+
+(* A [std::weak_ptr] points to the object and to the reference count of the [std::shared_ptr]s it
+   was created from, but never changes the count. It has its own fields so that changes to the object
+   or to the count are not seen as modifications of the [weak_ptr] by the checks for unnecessary
+   copies and const-refable parameters (see [PulseNonDisjunctiveOperations]). *)
+module WeakPtr = struct
+  let pointer_field = Access.FieldAccess PulseOperations.ModeledField.weak_ptr_pointer
+
+  let count_field = Access.FieldAccess PulseOperations.ModeledField.weak_ptr_count
+
+  let is_weak_ptr _context s = String.equal s "weak_ptr" || String.equal s "__weak_ptr"
+
+  let read path location this astate =
+    let* astate, value =
+      to_internal_value_deref ~access:pointer_field path Read location this astate
+    in
+    let+ astate, count =
+      SharedPtr.to_internal_count_deref ~access:count_field path Read location this astate
+    in
+    (astate, value, count)
+
+
+  let write path location this ~value ~count ~desc astate =
+    let* astate, _ = write_value ~access:pointer_field path location this ~value ~desc astate in
+    let+ astate, _ =
+      SharedPtr.write_count ~access:count_field path location this ~value:count ~desc astate
+    in
+    astate
+
+
+  let default_constructor this ~desc : model_no_non_disj =
+   fun {path; location} astate ->
+    let<**> astate = assign_value_nullptr ~access:pointer_field path location this ~desc astate in
+    let<**> astate, count =
+      SharedPtr.fresh_value_from_constant path location ~constant:IntLit.zero ~desc astate
+    in
+    let<+> astate, _ =
+      SharedPtr.write_count ~access:count_field path location this ~value:count ~desc astate
+    in
+    astate
+
+
+  (* Moving is modelled as copying: emptying the source would make moving a copy, e.g. when
+     returning it, look like a modification of that copy. *)
+  let copy this other ~desc : model_no_non_disj =
+   fun {path; location} astate ->
+    let<*> astate, value, count = read path location other astate in
+    let<+> astate = write path location this ~value ~count ~desc astate in
+    astate
+
+
+  let from_shared this shared ~desc : model_no_non_disj =
+   fun {path; location} astate ->
+    let<*> astate, value = to_internal_value_deref path Read location shared astate in
+    let<*> astate, count = SharedPtr.to_internal_count_deref path Read location shared astate in
+    let astate_not_nullptr =
+      let** astate = PulseArithmetic.prune_positive (fst value) astate in
+      let=* astate, (count_value, _) =
+        PulseOperations.eval_access path Read location count Dereference astate
+      in
+      (* a non-null [shared_ptr] owns its object *)
+      let+* astate = PulseArithmetic.and_positive count_value astate in
+      write path location this ~value ~count ~desc astate
+    in
+    let astate_nullptr =
+      let** astate = PulseArithmetic.prune_eq_zero (fst value) astate in
+      let+* astate, count =
+        SharedPtr.fresh_value_from_constant path location ~constant:IntLit.zero ~desc astate
+      in
+      write path location this ~value ~count ~desc astate
+    in
+    SatUnsat.to_list (astate_not_nullptr >>|| ExecutionDomain.continue)
+    @ SatUnsat.to_list (astate_nullptr >>|| ExecutionDomain.continue)
+
+
+  let swap this other ~desc : model_no_non_disj =
+   fun {path; location} astate ->
+    let<*> astate, this_value, this_count = read path location this astate in
+    let<*> astate, other_value, other_count = read path location other astate in
+    let<*> astate = write path location this ~value:other_value ~count:other_count ~desc astate in
+    let<+> astate = write path location other ~value:this_value ~count:this_count ~desc astate in
+    astate
+
+
+  (* split on whether the object observed by [this] has expired (an empty weak pointer has a count
+     of zero) or is still owned, in which case [this] is not null *)
+  let case_split path location this astate ~expired ~alive =
+    let<*> astate, value, count = read path location this astate in
+    let<*> astate, ((count_value, _) as count_value_hist) =
+      PulseOperations.eval_access path Read location count Dereference astate
+    in
+    let expired_states =
+      let<**> astate =
+        PulseArithmetic.prune_binop ~negated:false Le (AbstractValueOperand count_value)
+          (ConstOperand (Cint IntLit.zero)) astate
+      in
+      expired astate
+    in
+    let alive_states =
+      let<**> astate =
+        let** astate = PulseArithmetic.prune_positive count_value astate in
+        PulseArithmetic.and_positive (fst value) astate
+      in
+      alive ~value ~count:(count, count_value_hist) astate
+    in
+    expired_states @ alive_states
+
+
+  let share_ownership path location ~result ~desc ~value ~count:(count, (count_value, count_hist))
+      astate =
+    let<*> astate, _ = write_value path location result ~value ~desc astate in
+    let<*> astate, _ = SharedPtr.write_count path location result ~value:count ~desc astate in
+    let<**> astate, incremented_count =
+      PulseArithmetic.eval_binop (AbstractValue.mk_fresh ()) (PlusA None)
+        (AbstractValueOperand count_value) (ConstOperand (Cint IntLit.one)) astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref path location ~ref:count ~obj:(incremented_count, count_hist)
+        astate
+    in
+    astate
+
+
+  let lock FuncArg.{arg_payload= this; typ} result ~desc : model_no_non_disj =
+   fun ({path; location; callee_procname} as model_data) astate ->
+    (* the result is usually a temporary, which the decompiler cannot name: without this, messages
+       name whichever model field was last read with the same value, e.g. a count of zero *)
+    let astate =
+      Decompiler.add_call_source (fst result) (Call callee_procname) [(this, typ)] astate
+    in
+    case_split path location this astate
+      ~expired:(SharedPtr.default_constructor result ~desc model_data)
+      ~alive:(share_ownership path location ~result ~desc)
+
+
+  let expired this ~desc : model_no_non_disj =
+   fun {path; location; ret= ret_id, _} astate ->
+    let return_int i astate =
+      let astate, ret_value = PulseArithmetic.absval_of_int astate (IntLit.of_int i) in
+      PulseOperations.write_id ret_id (ret_value, Hist.single_call path location desc) astate
+      |> Basic.ok_continue
+    in
+    case_split path location this astate ~expired:(return_int 1) ~alive:(fun ~value:_ ~count:_ ->
+        return_int 0 )
+
+
+  (* [std::shared_ptr(const std::weak_ptr&)] throws [std::bad_weak_ptr] instead of returning a null
+     pointer *)
+  let to_shared this weak ~desc : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    case_split path location weak astate ~expired:(Basic.early_exit model_data)
+      ~alive:(share_ownership path location ~result:this ~desc)
 end
 
 module UniquePtr = struct
@@ -633,6 +805,14 @@ let matchers : matcher list =
   ; -"std" &:: "shared_ptr" &:: "operator=" $ capt_arg
     $+ capt_arg_payload_of_typ (-"std" &:: "shared_ptr")
     $--> SharedPtr.copy_move_assignment ~desc:"std::shared_ptr::operator=(std::shared_ptr<T>)"
+  ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg_payload
+    $+ capt_arg_payload_of_typ (-"std" &::+ WeakPtr.is_weak_ptr)
+    $--> WeakPtr.to_shared ~desc:"std::shared_ptr::shared_ptr(std::weak_ptr<T>)"
+    |> with_non_disj
+  ; -"std" &:: "shared_ptr" &:: "shared_ptr" $ capt_arg_payload
+    $+ capt_arg_payload_of_typ (-"std" &::+ WeakPtr.is_weak_ptr)
+    $--> WeakPtr.to_shared ~desc:"std::shared_ptr::shared_ptr(std::weak_ptr<T>)"
+    |> with_non_disj
   ; -"std" &:: "__shared_ptr" &:: "__shared_ptr" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> SharedPtr.assign_pointer ~desc:"std::shared_ptr::shared_ptr(T*)"
     |> with_non_disj
@@ -644,7 +824,7 @@ let matchers : matcher list =
   ; -"std" &:: "shared_ptr" &:: "~shared_ptr" $ capt_arg
     $--> SharedPtr.destructor ~desc:"std::shared_ptr::~shared_ptr()"
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "use_count" $ capt_arg_payload
-    $--> SharedPtr.use_count ~desc:"std::shared_ptr::use_count()"
+    $--> SharedPtr.use_count ~access:SharedPtr.count_access ~desc:"std::shared_ptr::use_count()"
     |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "reset" $ capt_arg $+ capt_arg_payload
     $--> SharedPtr.reset ~desc:"std::shared_ptr::reset(T*)"
@@ -663,7 +843,7 @@ let matchers : matcher list =
     $--> dereference ~desc:"std::shared_ptr::operator->()"
     |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "swap" $ capt_arg_payload $+ capt_arg_payload
-    $--> swap ~desc:"std::shared_ptr::swap(std::shared_ptr<T>)"
+    $--> SharedPtr.swap ~desc:"std::shared_ptr::swap(std::shared_ptr<T>)"
     |> with_non_disj
   ; -"std" &::+ SharedPtr.is_shared_ptr &:: "operator_bool" <>$ capt_arg_payload
     $--> operator_bool ~desc:"std::shared_ptr::operator_bool()"
@@ -681,4 +861,31 @@ let matchers : matcher list =
   ; -"std" &:: "reinterpret_pointer_cast" $ capt_arg_payload $+ capt_arg
     $--> SharedPtr.pointer_cast ~desc:"std::static_pointer_cast"
     |> with_non_disj ]
+  @
+  (* matchers for weak_ptr and for its libstdc++ base class *)
+  List.concat_map ["weak_ptr"; "__weak_ptr"] ~f:(fun weak_ptr ->
+      let shared_ptr_arg = capt_arg_payload_of_typ (-"std" &::+ SharedPtr.is_shared_ptr) in
+      let weak_ptr_arg = capt_arg_payload_of_typ (-"std" &::+ WeakPtr.is_weak_ptr) in
+      [ -"std" &:: weak_ptr &:: weak_ptr $ capt_arg_payload
+        $--> WeakPtr.default_constructor ~desc:"std::weak_ptr::weak_ptr()"
+      ; -"std" &:: weak_ptr &:: weak_ptr $ capt_arg_payload $+ shared_ptr_arg
+        $--> WeakPtr.from_shared ~desc:"std::weak_ptr::weak_ptr(std::shared_ptr<T>)"
+      ; -"std" &:: weak_ptr &:: weak_ptr $ capt_arg_payload $+ weak_ptr_arg
+        $--> WeakPtr.copy ~desc:"std::weak_ptr::weak_ptr(std::weak_ptr<T>)"
+      ; -"std" &:: weak_ptr &:: "operator=" $ capt_arg_payload $+ shared_ptr_arg
+        $--> WeakPtr.from_shared ~desc:"std::weak_ptr::operator=(std::shared_ptr<T>)"
+      ; -"std" &:: weak_ptr &:: "operator=" $ capt_arg_payload $+ weak_ptr_arg
+        $--> WeakPtr.copy ~desc:"std::weak_ptr::operator=(std::weak_ptr<T>)"
+      ; -"std" &:: weak_ptr &:: "~" ^ weak_ptr &--> Basic.skip
+      ; -"std" &:: weak_ptr &:: "reset" $ capt_arg_payload
+        $--> WeakPtr.default_constructor ~desc:"std::weak_ptr::reset()"
+      ; -"std" &:: weak_ptr &:: "swap" $ capt_arg_payload $+ capt_arg_payload
+        $--> WeakPtr.swap ~desc:"std::weak_ptr::swap(std::weak_ptr<T>)"
+      ; -"std" &:: weak_ptr &:: "use_count" $ capt_arg_payload
+        $--> SharedPtr.use_count ~access:WeakPtr.count_field ~desc:"std::weak_ptr::use_count()"
+      ; -"std" &:: weak_ptr &:: "expired" $ capt_arg_payload
+        $--> WeakPtr.expired ~desc:"std::weak_ptr::expired()"
+      ; -"std" &:: weak_ptr &:: "lock" $ capt_arg $+ capt_arg_payload
+        $--> WeakPtr.lock ~desc:"std::weak_ptr::lock()" ]
+      |> List.map ~f:with_non_disj )
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)

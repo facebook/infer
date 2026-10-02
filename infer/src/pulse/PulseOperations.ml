@@ -146,6 +146,11 @@ module ModeledField = struct
      and don't return a token; the receiver itself retains the block). *)
   let objc_attached_block =
     Fieldname.make ~is_weak:false swift_attached_handler_class "__infer_attached_block"
+
+
+  let weak_ptr_pointer = Fieldname.make pulse_model_type "__infer_weak_backing_pointer"
+
+  let weak_ptr_count = Fieldname.make pulse_model_type "__infer_weak_backing_count"
 end
 
 let fold_reachable_from ~f args astate =
