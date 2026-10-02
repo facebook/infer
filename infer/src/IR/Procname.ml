@@ -355,8 +355,6 @@ module ObjC_Cpp = struct
     is_destructor pname && String.is_prefix ~prefix:Config.clang_inner_destructor_prefix method_name
 
 
-  let is_cpp_lambda {method_name} = String.is_substring ~substring:"operator()" method_name
-
   let is_cpp_method {kind} =
     match kind with
     | CPPMethod _ ->
@@ -893,9 +891,11 @@ let is_objc_block = function Block _ -> true | _ -> false
 
 let is_swift = function Swift _ -> true | _ -> false
 
-(** Return whether the procname is a cpp lambda procname. *)
-let is_cpp_lambda t =
-  match t with ObjC_Cpp cpp_pname when ObjC_Cpp.is_cpp_lambda cpp_pname -> true | _ -> false
+let is_cpp_call_operator = function
+  | ObjC_Cpp {method_name} ->
+      String.is_prefix ~prefix:"operator()" method_name
+  | _ ->
+      false
 
 
 let is_cpp_method t =
@@ -1040,6 +1040,8 @@ let is_lambda = function
   | _ ->
       false
 
+
+let is_cpp_lambda t = is_cpp_call_operator t && is_lambda t
 
 let is_block = function Block _ -> true | _ -> false
 
