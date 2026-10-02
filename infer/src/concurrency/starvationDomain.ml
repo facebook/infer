@@ -424,7 +424,7 @@ module Acquisitions = struct
   let lock_is_held lock acquisitions = mem (Acquisition.make_dummy lock) acquisitions
 
   let lock_is_held_in_other_thread tenv lock acquisitions =
-    exists (fun acq -> Lock.equal_across_threads tenv lock acq.elem.lock) acquisitions
+    exists (fun acq -> Lock.may_alias_across_threads tenv lock acq.elem.lock) acquisitions
 
 
   let no_locks_common_across_threads tenv acqs1 acqs2 =

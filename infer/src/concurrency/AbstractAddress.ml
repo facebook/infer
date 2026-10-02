@@ -26,9 +26,26 @@ let get_access_typ tenv prev_typ (access : access) =
 
 type access_list = access list [@@deriving compare, equal]
 
-let get_typ tenv ((_, base_typ), accesses) =
+let get_path_typ tenv (base_typ, accesses) =
   let f acc access = match acc with Some typ -> get_access_typ tenv typ access | None -> None in
   List.fold accesses ~init:(Some base_typ) ~f
+
+
+(* classes of the objects whose fields [accesses] access, starting from a value of type [typ] *)
+let rec classes_of_objects tenv typ (accesses : access_list) =
+  match accesses with
+  | [] ->
+      []
+  | access :: rest -> (
+      let classes =
+        get_access_typ tenv typ access
+        |> Option.value_map ~default:[] ~f:(fun typ -> classes_of_objects tenv typ rest)
+      in
+      match (typ.Typ.desc, access) with
+      | Tstruct name, FieldAccess _ ->
+          name :: classes
+      | _ ->
+          classes )
 
 
 let normalise_access_list (accesses : access_list) =
@@ -170,8 +187,8 @@ type t =
 let get_typ tenv = function
   | Class _ ->
       Some StdTyp.Java.pointer_to_java_lang_class
-  | Global {path} | Parameter {path} ->
-      get_typ tenv path
+  | Global {path= (_, typ), accesses} | Parameter {path= (_, typ), accesses} ->
+      get_path_typ tenv (typ, accesses)
 
 
 let append ~on_to:(base, accesses) (_, accesses') =
@@ -213,6 +230,42 @@ let equal_across_threads tenv t1 t2 =
   | _, _ ->
       (* globals and class objects must be identical across threads *)
       equal t1 t2
+
+
+let root_object (typ, (accesses : access_list)) =
+  match (typ.Typ.desc, accesses) with
+  | Tptr ({desc= Tstruct name}, _), Dereference :: (FieldAccess _ :: _ as rest) ->
+      Some (name, rest)
+  | _ ->
+      None
+
+
+(* does the path reach an object of class [name] and then perform exactly [accesses] on it? The
+   object must be the first of its class on the path: the next ones are usually linked to it, like
+   the nodes of a list or a tree, and matching them too would report a deadlock between methods
+   that lock such nodes in the same order *)
+let reaches_object tenv (typ, (path_accesses : access_list)) (name, accesses) =
+  let prefix_length = List.length path_accesses - List.length accesses in
+  prefix_length > 0
+  &&
+  let prefix, suffix = List.split_n path_accesses prefix_length in
+  equal_access_list suffix accesses
+  && (not (List.mem (classes_of_objects tenv typ prefix) name ~equal:Typ.Name.equal))
+  && Option.bind (get_path_typ tenv (typ, prefix)) ~f:Typ.name
+     |> Option.exists ~f:(Typ.Name.equal name)
+
+
+let may_alias_across_threads tenv t1 t2 =
+  equal_across_threads tenv t1 t2
+  ||
+  match (t1, t2) with
+  | Parameter {path= (_, typ1), accesses1}, Parameter {path= (_, typ2), accesses2} ->
+      let path1 = inner_class_normalise tenv (typ1, accesses1) in
+      let path2 = inner_class_normalise tenv (typ2, accesses2) in
+      Option.exists (root_object path2) ~f:(reaches_object tenv path1)
+      || Option.exists (root_object path1) ~f:(reaches_object tenv path2)
+  | _, _ ->
+      false
 
 
 let is_class_object = function Class _ -> true | _ -> false
@@ -275,6 +328,17 @@ let root_class = function
         Some typename
     | _ ->
         None )
+
+
+let get_path_classes tenv t =
+  let classes =
+    match t with
+    | Parameter {path= (_, typ), accesses} ->
+        classes_of_objects tenv typ accesses
+    | Global _ | Class _ ->
+        []
+  in
+  Option.to_list (root_class t) @ classes
 
 
 let describe fmt t =

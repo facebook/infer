@@ -1,0 +1,1 @@
+codetoanalyze/c/starvation-dedup/member_locks.c, lock_b_then_a_bad, 36, DEADLOCK, no_bucket, ERROR, [[Trace 1] `lock_b_then_a_bad`, locks `&(b->mutex)` in `struct MemberB`, locks `&(b->a->mutex)` in `struct MemberB`,[Trace 2] `lock_a_then_b_bad`, locks `&(a->mutex)` in `struct MemberA`, locks `&(a->b->mutex)` in `struct MemberA`]
