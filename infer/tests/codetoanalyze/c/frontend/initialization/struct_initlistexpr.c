@@ -56,3 +56,15 @@ int implicit_expr_set_correctly() {
   imageDrawRect = (rect){.size = 5};
   return 1 / imageDrawRect.origin.x.a;
 }
+
+struct padded {
+  int a;
+  unsigned : 3;
+  int b;
+  long : 0;
+};
+
+int unnamed_bitfield() {
+  struct padded p = {.b = 2};
+  return 1 / p.a;
+}

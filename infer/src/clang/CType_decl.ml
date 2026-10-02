@@ -366,6 +366,11 @@ let rec get_struct_fields tenv ?cxx_record_decl_info decl =
   let class_tname = get_record_typename ~tenv decl in
   let do_one_decl decl =
     match decl with
+    | FieldDecl (_, {ni_qual_name= "" :: _}, _, {fldi_bit_width_expr= Some _}) ->
+        (* An unnamed bit-field such as [int : 0;] only affects the layout: it is not a member and
+           gets no initializer in [InitListExpr]s. The AST exporter names it [__anon_field_<index>]
+           but leaves its qualified name empty. *)
+        []
     | FieldDecl (_, {ni_name}, qt, _) ->
         let typ = qual_type_to_sil_type tenv qt in
         let annotation_items = CAst_utils.sil_annot_of_type qt in
