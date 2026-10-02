@@ -44,20 +44,30 @@ module ReportedSet : sig
   val to_issue_log : t -> IssueLog.t
   (** Recover deduplicated [IssueLog.t] from [t]. *)
 
-  val deduplicate : f:(reported_access -> IssueLog.t -> IssueLog.t) -> reported_access -> t -> t
-  (** Deduplicate [f]. *)
+  val deduplicate :
+    f:(reported_access -> IssueLog.t -> IssueLog.t) -> guardedby:bool -> reported_access -> t -> t
+  (** Deduplicate [f]. Whatever the value of [Config.deduplicate], container accesses of the same
+      kind on the same line of a method are reported once per location. *)
 end = struct
+  module ContainerLine = struct
+    type t = {procname: Procname.t; line: int; is_write: bool; guardedby: bool} [@@deriving compare]
+  end
+
+  module ContainerLineSet = Stdlib.Set.Make (ContainerLine)
+
   type reported_set =
     { sites: CallSite.Set.t
     ; writes: Procname.Set.t
     ; reads: Procname.Set.t
-    ; unannotated_calls: Procname.Set.t }
+    ; unannotated_calls: Procname.Set.t
+    ; container_lines: ContainerLineSet.t }
 
   let empty_reported_set =
     { sites= CallSite.Set.empty
     ; reads= Procname.Set.empty
     ; writes= Procname.Set.empty
-    ; unannotated_calls= Procname.Set.empty }
+    ; unannotated_calls= Procname.Set.empty
+    ; container_lines= ContainerLineSet.empty }
 
 
   type t = reported_set * IssueLog.t
@@ -67,7 +77,25 @@ end = struct
   let to_issue_log = snd
 
   let reset (reported_set, issue_log) =
-    ({reported_set with writes= Procname.Set.empty; reads= Procname.Set.empty}, issue_log)
+    ( { reported_set with
+        writes= Procname.Set.empty
+      ; reads= Procname.Set.empty
+      ; container_lines= ContainerLineSet.empty }
+    , issue_log )
+
+
+  (* calls such as [begin] and [end] on one line differ only by the callee in the message *)
+  let container_line ~guardedby {snapshot; procname} =
+    match snapshot.elem.access with
+    | ContainerRead _ | ContainerWrite _ ->
+        let line = (RacerDDomain.AccessSnapshot.get_loc snapshot).line in
+        Some
+          { ContainerLine.procname
+          ; line
+          ; is_write= RacerDDomain.AccessSnapshot.is_write snapshot
+          ; guardedby }
+    | Read _ | Write _ | InterfaceCall _ ->
+        None
 
 
   let is_duplicate {snapshot; procname} (reported_set, _) =
@@ -100,9 +128,19 @@ end = struct
     (reported_set, issue_log)
 
 
-  let deduplicate ~f reported_access ((reported_set, issue_log) as acc) =
-    if Config.deduplicate && is_duplicate reported_access acc then acc
-    else update reported_access (reported_set, f reported_access issue_log)
+  let deduplicate ~f ~guardedby reported_access ((reported_set, issue_log) as acc) =
+    let container_line = container_line ~guardedby reported_access in
+    if
+      Option.exists container_line ~f:(fun key ->
+          ContainerLineSet.mem key reported_set.container_lines )
+      || (Config.deduplicate && is_duplicate reported_access acc)
+    then acc
+    else
+      let container_lines =
+        Option.fold container_line ~init:reported_set.container_lines ~f:(fun lines key ->
+            ContainerLineSet.add key lines )
+      in
+      update reported_access ({reported_set with container_lines}, f reported_access issue_log)
 end
 
 module PathModuloThis : Stdlib.Map.OrderedType with type t = AccessPath.t = struct
@@ -356,13 +394,14 @@ let report_unannotated_interface_violation reported_pname reported_access issue_
 
 
 let report_thread_safety_violation ~acc ~make_description ~report_kind reported_access =
+  let guardedby = match report_kind with GuardedByViolation -> true | _ -> false in
   ReportedSet.deduplicate
     ~f:(report_thread_safety_violation ~make_description ~report_kind)
-    reported_access acc
+    ~guardedby reported_access acc
 
 
 let report_unannotated_interface_violation ~acc reported_pname reported_access =
-  ReportedSet.deduplicate reported_access acc
+  ReportedSet.deduplicate reported_access acc ~guardedby:false
     ~f:(report_unannotated_interface_violation reported_pname)
 
 
@@ -512,6 +551,53 @@ let report_unsafe_access accesses acc ({procname} as reported_access) =
       acc
 
 
+module ContainerCallLine = struct
+  type t = {procname: Procname.t; line: int; is_write: bool} [@@deriving compare]
+end
+
+module ContainerCallLineMap = Stdlib.Map.Make (ContainerCallLine)
+
+(* Container calls of one kind on one line are reported once (see [ReportedSet.deduplicate]). The
+   order of the accesses comes from sets ordered by procedure names, which depend on the standard
+   library, so visit each such group by column and method name to keep the reported call stable. *)
+let order_container_accesses (accesses : reported_access list) =
+  let key ({snapshot; procname} : reported_access) =
+    match snapshot.elem.access with
+    | ContainerRead {pname} | ContainerWrite {pname} ->
+        let loc = RacerDDomain.AccessSnapshot.get_loc snapshot in
+        Some
+          ( { ContainerCallLine.procname
+            ; line= loc.line
+            ; is_write= RacerDDomain.AccessSnapshot.is_write snapshot }
+          , (loc.col, Procname.get_method pname) )
+    | Read _ | Write _ | InterfaceCall _ ->
+        None
+  in
+  let groups =
+    List.fold accesses ~init:ContainerCallLineMap.empty ~f:(fun groups access ->
+        match key access with
+        | Some (line_key, order) ->
+            ContainerCallLineMap.update line_key
+              (fun group -> Some ((order, access) :: Option.value group ~default:[]))
+              groups
+        | None ->
+            groups )
+    |> ContainerCallLineMap.map (fun group ->
+        List.stable_sort group ~compare:(fun (o1, _) (o2, _) -> [%compare: int * string] o1 o2)
+        |> List.map ~f:snd )
+  in
+  List.folding_map accesses ~init:groups ~f:(fun groups access ->
+      match key access with
+      | Some (line_key, _) -> (
+        match ContainerCallLineMap.find_opt line_key groups with
+        | Some (next :: rest) ->
+            (ContainerCallLineMap.add line_key rest groups, next)
+        | _ ->
+            (groups, access) )
+      | None ->
+          (groups, access) )
+
+
 (** Report accesses that may race with each other.
 
     Principles for race reporting.
@@ -559,6 +645,7 @@ let report_unsafe_accesses ~issue_log classname aggregated_access_map =
     else init
   in
   let report grouped_accesses acc =
+    let grouped_accesses = order_container_accesses grouped_accesses in
     (* reset the reported reads and writes for each memory location *)
     ReportedSet.reset acc
     |> report_guardedby_violations_on_location grouped_accesses
