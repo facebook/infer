@@ -1,0 +1,11 @@
+
+digraph callgraph {
+  N1 [ label = "first_user{12609551896642007162}\nflag=true" ];
+
+  N0 [ label = "widget_get_bad{16317550942659334585}\nflag=true" ];
+  N0 -> N2 ;
+  N0 -> N1 ;
+
+  N2 [ label = "second_user{10340493023872975531}\nflag=true" ];
+
+}

@@ -6,20 +6,26 @@
 TESTS_DIR = ../..
 
 INFER_OPTIONS = --report-custom-error --developer-mode --project-root $(CURDIR)
-SOURCES = $(wildcard src/*.cpp lib/src/*.cpp)
+SOURCES = $(wildcard src/*.c src/*.cpp lib/src/*.cpp)
 HEADERS = $(wildcard include/*.h include/*.ipp src/*.h)
-INDEXES = index.txt index-partial.txt index-suffix.txt index-same-name.txt
-CLEAN_EXTRA = compile_commands.json infer-out-index infer-out-partial infer-out-analyze \
-  infer-out-suffix infer-out-same-name issues.exp.test.index issues.exp.test.partial \
-  issues.exp.test.analyze issues.exp.test.suffix issues.exp.test.same-name
+INDEXES = $(wildcard index*.txt)
+# the runs whose issues are compared with issues.exp, in this order
+RUNS = index partial includers spellings symlink suffix-includers broken analyze suffix same-name
+CLEAN_EXTRA = compile_commands.json compile_commands_broken.json linkinc \
+  $(foreach run,$(RUNS) deleted no-includers,infer-out-$(run)) \
+  $(foreach run,$(RUNS),issues.exp.test.$(run))
 INFERPRINT_OPTIONS = --issues-tests
 
 include $(TESTS_DIR)/infer.make
 
-compile_commands.json: compile_commands.json.in
+compile_commands.json compile_commands_broken.json: %.json: %.json.in
 	$(QUIET)sed -e 's#%pwd%#$(CURDIR)#g' $< > $@ || $(REMOVE) $@
 
-DEPS = compile_commands.json $(INDEXES) $(SOURCES) $(HEADERS) $(CLANG_DEPS)
+linkinc:
+	$(QUIET)ln -s include $@
+
+DEPS = compile_commands.json compile_commands_broken.json linkinc $(INDEXES) $(SOURCES) $(HEADERS) \
+  $(CLANG_DEPS)
 
 infer-out/report.json:
 #	make this target empty - since this test defines issues.exp.test directly
@@ -37,6 +43,49 @@ infer-out-partial/report.json: $(DEPS)
 	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) \
 	    --changed-files-index index-partial.txt --compilation-database compile_commands.json && \
 	  grep -q "Changed headers that define no captured procedure: include/widget.h" $(@D)/logs)
+
+# the source files that include the headers, directly or not, are captured too
+infer-out-includers/report.json: $(DEPS)
+	$(QUIET)$(call silent_on_success,Testing --capture-includers-of-changed-headers,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) --capture-includers-of-changed-headers \
+	    --changed-files-index index.txt --compilation-database compile_commands.json)
+
+# the entries of the index match the headers whatever their spelling
+infer-out-spellings/report.json: $(DEPS)
+	$(QUIET)$(call silent_on_success,Testing headers spelled with ./ .. and //,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) --capture-includers-of-changed-headers \
+	    --changed-files-index index-spellings.txt --compilation-database compile_commands.json)
+
+infer-out-symlink/report.json: $(DEPS)
+	$(QUIET)$(call silent_on_success,Testing a header in a symlinked directory,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) --capture-includers-of-changed-headers \
+	    --changed-files-index index-symlink.txt --compilation-database compile_commands.json)
+
+infer-out-suffix-includers/report.json: $(DEPS)
+	$(QUIET)$(call silent_on_success,Testing includers of headers with --suffix-match-changed-files,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) --capture-includers-of-changed-headers \
+	    --changed-files-index index-suffix.txt --suffix-match-changed-files \
+	    --compilation-database compile_commands.json)
+
+# the includers that cannot be captured are skipped, with a warning
+infer-out-broken/report.json: $(DEPS)
+	$(QUIET)$(call silent_on_success,Testing includers that cannot be captured,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) --capture-includers-of-changed-headers \
+	    --changed-files-index index.txt --compilation-database compile_commands.json \
+	    --compilation-database compile_commands_broken.json && \
+	  grep -q "Could not capture 2 source files that include the changed headers" $(@D)/logs)
+
+infer-out-deleted/report.json: $(DEPS)
+	$(QUIET)$(call silent_on_success,Testing includers of a deleted header,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) --capture-includers-of-changed-headers \
+	    --changed-files-index index-deleted.txt --compilation-database compile_commands.json && \
+	  grep -q "The changed headers do not exist" $(@D)/logs)
+
+infer-out-no-includers/report.json: $(DEPS)
+	$(QUIET)$(call silent_on_success,Testing a header without includers,\
+	  $(INFER_BIN) $(INFER_OPTIONS) -o $(@D) --capture-includers-of-changed-headers \
+	    --changed-files-index index-no-includers.txt --compilation-database compile_commands.json && \
+	  grep -q "No entry of the compilation database includes the changed headers" $(@D)/logs)
 
 infer-out-analyze/report.json: $(DEPS)
 	$(QUIET)$(call silent_on_success,Testing changed headers with an existing capture,\
@@ -57,12 +106,7 @@ infer-out-same-name/report.json: $(DEPS)
 	    --compilation-database compile_commands.json && \
 	  $(INFER_BIN) analyze $(INFER_OPTIONS) -o $(@D) --changed-files-index index-same-name.txt)
 
-issues.exp.test: infer-out-index/report.json infer-out-partial/report.json \
-                 infer-out-analyze/report.json infer-out-suffix/report.json \
-                 infer-out-same-name/report.json
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.index -o infer-out-index
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.partial -o infer-out-partial
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.analyze -o infer-out-analyze
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.suffix -o infer-out-suffix
-	$(QUIET)$(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.same-name -o infer-out-same-name
-	$(QUIET)cat $@.index $@.partial $@.analyze $@.suffix $@.same-name > $@
+issues.exp.test: $(foreach run,$(RUNS) deleted no-includers,infer-out-$(run)/report.json)
+	$(QUIET)$(foreach run,$(RUNS),\
+	  $(INFER_BIN) report -q $(INFERPRINT_OPTIONS) $@.$(run) -o infer-out-$(run) &&) true
+	$(QUIET)cat $(foreach run,$(RUNS),$@.$(run)) > $@

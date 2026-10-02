@@ -24,6 +24,8 @@ end
 
 module ClangWrapper = struct
   let exe ~prog:_ ~args:_ = ()
+
+  let included_files ~prog:_ ~args:_ = die ()
 end
 
 module CTLParserHelper = struct

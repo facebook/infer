@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "templates.h"
+#pragma once
 
-int use_templates() { return template_function_bad<int>(); }
+// no entry of the compilation database includes this header
+int unused_declaration();

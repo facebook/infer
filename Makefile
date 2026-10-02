@@ -47,6 +47,7 @@ BUILD_SYSTEMS_TESTS += \
   utf8_in_procname \
   incremental_analysis_add_procedure \
   incremental_analysis_change_header \
+  incremental_analysis_change_header_compdb \
   incremental_analysis_change_procedure \
   incremental_analysis_change_tenv \
   incremental_analysis_file_level_change \

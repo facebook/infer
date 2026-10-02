@@ -37,6 +37,8 @@ duplicates.txt
 /infer/tests/build_systems/buck_export_changed_functions/diff.mod.test
 /infer/tests/build_systems/clang_compilation_db_escaped/compile_commands.json
 /infer/tests/build_systems/clang_compilation_db_headers/compile_commands.json
+/infer/tests/build_systems/clang_compilation_db_headers/compile_commands_broken.json
+/infer/tests/build_systems/clang_compilation_db_headers/linkinc
 /infer/tests/build_systems/clang_compilation_db_relpath/compile_commands.json
 /infer/tests/build_systems/clang_skip_analysis_in_path/compile_commands.json
 /infer/tests/build_systems/clang_test_determinator/*.test
@@ -59,6 +61,7 @@ duplicates.txt
 /infer/tests/build_systems/fb_differential_*/**/Diff*.java
 /infer/tests/build_systems/fb_differential_*/**/Diff*.m
 /infer/tests/build_systems/incremental_analysis_add_procedure/src
+/infer/tests/build_systems/incremental_analysis_change_header_compdb/compile_commands_*.json
 /infer/tests/build_systems/incremental_analysis_cost_change/src
 /infer/tests/build_systems/incremental_analysis_file_level_change/src
 /infer/tests/build_systems/incremental_analysis_remove_file/src

@@ -1,0 +1,12 @@
+[
+   {
+      "directory" : "%pwd%",
+      "file" : "src/first_user.cpp",
+      "command" : "clang++ %flags% -c src/first_user.cpp"
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "src/second_user.cpp",
+      "command" : "clang++ %flags% -c src/second_user.cpp"
+   }
+]
