@@ -86,6 +86,12 @@
           "sanitizer_kinds": ["URLEncoding"],
           "sink_kinds": ["SSRF"] }
       ]
+    },
+    { "short_description": "XPath Injection",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["XPathQuery"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -364,6 +370,11 @@
       "method_names": ["read"],
       "kinds": ["SSRF"],
       "taint_target": ["ArgumentsMatchingTypes", ["java.net.URL"]]
+    },
+    { "class_names": ["javax.xml.xpath.XPath"],
+      "method_names": ["compile", "evaluate", "evaluateExpression"],
+      "kinds": ["XPathQuery"],
+      "taint_target": ["ArgumentPositions", [0]]
     },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["addBatch", "execute"],
