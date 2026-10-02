@@ -21,6 +21,9 @@ module ArrInfo : sig
 
   val get_size : t -> Itv.t
   (** Return size of array block, i.e., number of cells *)
+
+  val get_stride : t -> Itv.t
+  (** Return size of a cell as bytes *)
 end
 
 include AbstractDomain.MapS with type key = AbsLoc.Allocsite.t and type value = ArrInfo.t
