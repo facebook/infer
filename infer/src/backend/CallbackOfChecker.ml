@@ -67,6 +67,16 @@ let make_is_already_specialized_test payload_field is_already_specialized specia
       false
 
 
+let make_mark_specialization_failed payload_field mark_specialization_failed specialization
+    ({Summary.payloads} as summary) =
+  match Field.get payload_field payloads |> SafeLazy.force_option with
+  | Some payload ->
+      let payload = mark_specialization_failed specialization payload in
+      {summary with payloads= Field.fset payload_field payloads (Some (SafeLazy.from_val payload))}
+  | None ->
+      summary
+
+
 let interprocedural_with_field_dependency ~dep_field payload_field checker
     ({Callbacks.summary} as callbacks) =
   let checker analysis_data =

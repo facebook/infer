@@ -50,8 +50,11 @@ val register_procedure_callback_with_specialization :
   -> Language.t
   -> proc_callback_with_specialization_t
   -> is_already_specialized:(Specialization.t -> Summary.t -> bool)
+  -> mark_specialization_failed:(Specialization.t -> Summary.t -> Summary.t)
   -> unit
-(** Same as [register_procedure_callback] with specialization *)
+(** Same as [register_procedure_callback] with specialization. When the callback times out on a
+    specialization, [mark_specialization_failed] records the failure in the summary given to the
+    callback, so that later requests for that specialization do not analyze the procedure again. *)
 
 val register_file_callback : Checker.t -> Language.t -> file_callback_t -> unit
 (** Register a file callback (see details above). [issues_dir] must be unique for this type of

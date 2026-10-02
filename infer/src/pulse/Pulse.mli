@@ -13,3 +13,7 @@ val checker :
   -> PulseSummary.t option
 
 val is_already_specialized : Specialization.t -> PulseSummary.t -> bool
+
+val mark_specialization_failed : Specialization.t -> PulseSummary.t -> PulseSummary.t
+(** record the main summary as the result of a specialization whose analysis timed out, which is
+    what callers fall back to when a specialized summary is missing *)
