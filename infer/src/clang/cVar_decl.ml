@@ -217,7 +217,9 @@ let add_var_to_locals procdesc var_decl typ pvar =
           || (Typ.is_const typ.Typ.quals && vdi.Clang_ast_t.vdi_is_init_expr_cxx11_constant)
         in
         let is_declared_unused =
-          List.exists decl_info.di_attributes ~f:(function `UnusedAttr _ -> true | _ -> false)
+          (* clang's error recovery drops most uses of an invalid declaration from the AST *)
+          decl_info.di_is_invalid_decl
+          || List.exists decl_info.di_attributes ~f:(function `UnusedAttr _ -> true | _ -> false)
         in
         let is_structured_binding = match var_decl with BindingDecl _ -> true | _ -> false in
         let has_cleanup_attribute =

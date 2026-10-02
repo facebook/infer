@@ -245,12 +245,17 @@ let get_desugared_type type_ptr =
 
 
 let get_decl_from_typ_ptr typ_ptr =
-  let typ_opt = get_desugared_type typ_ptr in
-  let typ = match typ_opt with Some t -> t | None -> assert false in
-  match (typ : Clang_ast_t.c_type) with
-  | RecordType (_, decl_ptr) | ObjCInterfaceType (_, decl_ptr) ->
+  match get_desugared_type typ_ptr with
+  | Some (RecordType (_, decl_ptr) | ObjCInterfaceType (_, decl_ptr)) ->
       get_decl decl_ptr
-  | _ ->
+  | Some _ ->
+      None
+  | None ->
+      (* e.g. [auto x = <initializer with errors>;]: clang does not add the undeduced [auto] type of
+         this invalid declaration to [ASTContext::getTypes()], so it is not exported *)
+      L.(debug Capture Medium)
+        "type %s or its desugared type not found@\n"
+        (Clang_ast_extend.type_ptr_to_string typ_ptr) ;
       None
 
 
