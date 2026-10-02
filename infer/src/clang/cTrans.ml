@@ -2530,18 +2530,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CAst_utils.get_stmt_exn else_body_ptr source_range
     in
     do_branch false else_body res_trans_cond.control.leaf_nodes trans_state_join_succ ;
-    (* translate the initialisation if present *)
-    let res_trans_init =
-      match if_stmt_info.isi_init with
-      | Some init_stmt_ptr ->
-          let init_stmt = CAst_utils.get_stmt_exn init_stmt_ptr source_range in
-          instruction {trans_state with succ_nodes= res_trans_cond_var.control.root_nodes} init_stmt
-      | None ->
-          res_trans_cond_var
+    let root_nodes =
+      init_stmt_trans trans_state source_range if_stmt_info.isi_init
+        res_trans_cond_var.control.root_nodes
     in
-    let root_nodes = res_trans_init.control.root_nodes in
     mk_trans_result (mk_fresh_void_exp_typ ())
       {empty_control with root_nodes; leaf_nodes= [join_node]}
+
+
+  (** translate the optional init-statement of an [if] or [switch] statement so that it runs before
+      [next_nodes]; return the root nodes of the whole sequence *)
+  and init_stmt_trans trans_state source_range init_stmt_ptr_opt next_nodes =
+    match init_stmt_ptr_opt with
+    | None ->
+        next_nodes
+    | Some init_stmt_ptr ->
+        let init_stmt = CAst_utils.get_stmt_exn init_stmt_ptr source_range in
+        let res_trans_init =
+          sub_statement_trans Procdesc.Node.CompoundStmt
+            {trans_state with succ_nodes= next_nodes}
+            init_stmt
+        in
+        res_trans_init.control.root_nodes
 
 
   and caseStmt_trans trans_state stmt_info case_stmt_list =
@@ -2576,7 +2586,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* overview: translate the body of the switch statement, which automatically collects the
        various cases at the same time, then link up the cases together and together with the switch
        condition variable *)
-    (* unsupported: initialization *)
     let condition =
       CAst_utils.get_stmt_exn switch_stmt_info.Clang_ast_t.ssi_cond
         stmt_info.Clang_ast_t.si_source_range
@@ -2694,7 +2703,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       List.fold switch_cases ~init:(trans_state.succ_nodes, true) ~f:link_up_switch_cases
     in
     Procdesc.node_set_succs context.procdesc switch_node ~normal:cases_root_nodes ~exn:[] ;
-    let top_nodes = variable_result.control.root_nodes in
+    let top_nodes =
+      init_stmt_trans trans_state stmt_info.Clang_ast_t.si_source_range
+        switch_stmt_info.Clang_ast_t.ssi_init variable_result.control.root_nodes
+    in
     mk_trans_result (mk_fresh_void_exp_typ ())
       {empty_control with root_nodes= top_nodes; leaf_nodes= []}
 
@@ -2888,9 +2900,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Iteration over collections
 
-      [for (v : C) { body; }] is translated as:
+      [for (init; v : C) { body; }] is translated as:
 
       {[
+        init;
         TypeC __range = C;
         for (__begin = __range.begin(), __end = __range.end();
              __begin != __end;
@@ -2903,7 +2916,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and cxxForRangeStmt_trans trans_state stmt_info stmt_list =
     let open Clang_ast_t in
     match stmt_list with
-    | [ _init
+    | [ init
       ; iterator_decl
       ; begin_stmt
       ; end_stmt
@@ -2921,7 +2934,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let for_loop =
           `ForStmt (stmt_info, [beginend_stmt; null_stmt; exit_cond; increment; loop_body'])
         in
-        instruction trans_state (`CompoundStmt (stmt_info, [iterator_decl; for_loop]))
+        (* the init-statement is a [NullStmt] when absent *)
+        let init = if is_null_stmt init then [] else [init] in
+        instruction trans_state (`CompoundStmt (stmt_info, init @ [iterator_decl; for_loop]))
     | _ ->
         assert false
 
