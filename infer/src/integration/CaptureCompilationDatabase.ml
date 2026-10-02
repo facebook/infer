@@ -84,13 +84,8 @@ let get_compilation_database_files_xcodebuild ~prog ~args =
       L.(die ExternalError) "There was an error executing the build command"
 
 
-let is_skipped source_file =
-  Option.exists
-    ~f:(fun re -> Str.string_match re (SourceFile.to_rel_path source_file) 0)
-    Config.skip_analysis_in_path
-
-
 let capture_files_in_database ~changed_files compilation_database =
+  let is_skipped = Inferconfig.skip_analysis_in_path_matcher in
   let should_capture =
     match changed_files with
     | None ->

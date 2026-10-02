@@ -88,10 +88,7 @@ let do_all_files classpath program =
   let {JClasspath.sources; JClasspath.classes; _} = classpath in
   let tenv = load_tenv () in
   let skip source_file =
-    let is_path_matching path =
-      Option.exists ~f:(fun re -> Str.string_match re path 0) Config.skip_analysis_in_path
-    in
-    is_path_matching (SourceFile.to_rel_path source_file)
+    Inferconfig.skip_analysis_in_path_matcher source_file
     || Inferconfig.capture_block_list_file_matcher source_file
   in
   let translate_source_file basename package_opt source_file =

@@ -25,4 +25,8 @@ val never_return_null_matcher : SourceFile.t -> Procname.t -> bool
 
 val capture_block_list_file_matcher : SourceFile.t -> bool
 
+val skip_analysis_in_path_matcher : SourceFile.t -> bool
+(** whether [--skip-analysis-in-path] matches the path of the source file relative to the project
+    root, or its absolute path if the file is outside the project root *)
+
 val modeled_expensive_matcher : (string -> bool) -> Procname.t -> bool

@@ -1,0 +1,12 @@
+[
+   {
+      "directory" : "%pwd%",
+      "file" : "src/not_skipped.c",
+      "arguments" : ["clang", "-c", "src/not_skipped.c"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "skipped/skipped.c",
+      "arguments" : ["clang", "-c", "skipped/skipped.c"]
+   }
+]

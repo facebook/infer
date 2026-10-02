@@ -288,6 +288,11 @@ let capture_block_list_file_matcher =
   FileOrProcMatcher.load_matchers (patterns_of_json_with_key Config.capture_block_list) |> fst
 
 
+let skip_analysis_in_path_matcher source_file =
+  Option.exists Config.skip_analysis_in_path ~f:(fun re ->
+      Str.string_match re (SourceFile.to_rel_path source_file) 0 )
+
+
 let load_filters () =
   { allow_list= Config.report_path_regex_allow_list
   ; block_list= Config.report_path_regex_block_list
