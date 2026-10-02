@@ -2073,7 +2073,9 @@ let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_dat
       match specialization with
       | None ->
           let+ pre_post_list = analyze None analysis_data in
-          {PulseSummary.main= pre_post_list; specialized= Specialization.Pulse.Map.empty}
+          { PulseSummary.main= pre_post_list
+          ; specialized= Specialization.Pulse.Map.empty
+          ; failed= Specialization.Pulse.Map.empty }
       | Some (current_summary, Specialization.Pulse specialization) ->
           let+ pre_post_list = analyze (Some specialization) analysis_data in
           let specialized =
@@ -2084,9 +2086,16 @@ let checker ?specialization ({InterproceduralAnalysis.proc_desc} as analysis_dat
     with AboutToOOM ->
       (* We trigger GC to avoid skipping the next procedure that will be analyzed. *)
       Gc.major () ;
-      None )
+      (* Keep the summaries computed so far, but do not record the specialization as failed: the
+         heap size depends on what was analyzed before, so a later attempt may succeed. *)
+      Option.map specialization ~f:fst )
   else None
 
 
 let is_already_specialized (Pulse specialization : Specialization.t) (summary : PulseSummary.t) =
   Specialization.Pulse.Map.mem specialization summary.specialized
+  || PulseSummary.is_failed specialization summary
+
+
+let mark_specialization_failed (Pulse specialization : Specialization.t) summary =
+  PulseSummary.add_failed specialization summary

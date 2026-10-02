@@ -17,7 +17,10 @@ type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 type summary = {pre_post_list: pre_post_list; non_disj: NonDisjDomain.Summary.t}
 [@@deriving yojson_of]
 
-type t = {main: summary; specialized: summary Specialization.Pulse.Map.t}
+type t =
+  { main: summary
+  ; specialized: summary Specialization.Pulse.Map.t
+  ; failed: string Specialization.Pulse.Map.t }
 
 let yojson_of_t {main; specialized} =
   `Assoc
@@ -48,7 +51,7 @@ let pp_proc_name_sexp print_kind fmt specialized_proc_name =
     (SpecializedProcname.sexp_of_t specialized_proc_name)
 
 
-let pp {Pp.kind= print_kind} proc_name fmt {main; specialized} =
+let pp_main_and_specialized {Pp.kind= print_kind} proc_name fmt {main; specialized} =
   if Specialization.Pulse.Map.is_empty specialized then
     pp_summary print_kind ~pp_specialized_name:(fun _fmt -> ()) fmt main
   else
@@ -69,6 +72,15 @@ let pp {Pp.kind= print_kind} proc_name fmt {main; specialized} =
           {SpecializedProcname.proc_name; specialization= Some (Pulse specialization)} )
       specialized ;
     F.close_box ()
+
+
+let pp pp_env proc_name fmt ({failed} as summary) =
+  pp_main_and_specialized pp_env proc_name fmt summary ;
+  Specialization.Pulse.Map.iter
+    (fun specialization run ->
+      F.fprintf fmt "@\nspecialization %a timed out in the run of %s" Specialization.Pulse.pp
+        specialization run )
+    failed
 
 
 let add_disjunctive_pre_post pre_post {pre_post_list; non_disj} =
@@ -395,6 +407,16 @@ let append_objc_actual_self_positive proc_name (proc_attrs : ProcAttributes.t) s
       Sat (Ok astate)
 
 
+let add_failed specialization summary =
+  let run = ResultsDir.RunState.current_run () in
+  {summary with failed= Specialization.Pulse.Map.add specialization run summary.failed}
+
+
+let is_failed specialization {failed} =
+  Specialization.Pulse.Map.find_opt specialization failed
+  |> Option.exists ~f:(String.equal (ResultsDir.RunState.current_run ()))
+
+
 let merge x y =
   let merged_is_same_to_x = ref true in
   let merged_is_same_to_y = ref true in
@@ -412,6 +434,17 @@ let merge x y =
             y )
       x.specialized y.specialized
   in
-  if !merged_is_same_to_x then x
-  else if !merged_is_same_to_y then y
-  else {x with specialized= merged}
+  let merged =
+    if !merged_is_same_to_x then x
+    else if !merged_is_same_to_y then y
+    else {x with specialized= merged}
+  in
+  let current_run = ResultsDir.RunState.current_run () in
+  let failed =
+    Specialization.Pulse.Map.union (fun _ run _ -> Some run) x.failed y.failed
+    |> Specialization.Pulse.Map.filter (fun specialization run ->
+        String.equal run current_run
+        && not (Specialization.Pulse.Map.mem specialization merged.specialized) )
+  in
+  if Specialization.Pulse.Map.equal String.equal failed merged.failed then merged
+  else {merged with failed}

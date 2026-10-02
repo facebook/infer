@@ -885,7 +885,8 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
       in
       match Specialization.Pulse.Map.find_opt specialization specialized_summary.specialized with
       | None ->
-          L.internal_error "ondemand engine did not return the expected specialized summary@\n" ;
+          if not (PulseSummary.is_failed specialization specialized_summary) then
+            L.internal_error "ondemand engine did not return the expected specialized summary@\n" ;
           (* we use the non-specialized summary instead *)
           (specialized_summary.main, is_limit_reached)
       | Some pre_posts ->

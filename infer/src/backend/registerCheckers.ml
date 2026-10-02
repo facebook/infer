@@ -15,19 +15,24 @@ type callback_fun =
   | Procedure of Callbacks.proc_callback_t
   | ProcedureWithSpecialization of
       { procedure_cb: Callbacks.proc_callback_with_specialization_t
-      ; is_already_specialized: Specialization.t -> Summary.t -> bool }
+      ; is_already_specialized: Specialization.t -> Summary.t -> bool
+      ; mark_specialization_failed: Specialization.t -> Summary.t -> Summary.t }
   | File of Callbacks.file_callback_t
 
 let interprocedural payload_field checker =
   Procedure (CallbackOfChecker.interprocedural_with_field payload_field checker)
 
 
-let interprocedural_with_specialization payload_field checker is_already_specialized =
+let interprocedural_with_specialization payload_field checker is_already_specialized
+    mark_specialization_failed =
   ProcedureWithSpecialization
     { procedure_cb=
         CallbackOfChecker.interprocedural_with_field_and_specialization payload_field checker
     ; is_already_specialized=
-        CallbackOfChecker.make_is_already_specialized_test payload_field is_already_specialized }
+        CallbackOfChecker.make_is_already_specialized_test payload_field is_already_specialized
+    ; mark_specialization_failed=
+        CallbackOfChecker.make_mark_specialization_failed payload_field mark_specialization_failed
+    }
 
 
 let interprocedural_with_field_dependency ~dep_field payload_field checker =
@@ -171,7 +176,7 @@ let all_checkers =
     ; callbacks=
         (let pulse =
            interprocedural_with_specialization Payloads.Fields.pulse Pulse.checker
-             Pulse.is_already_specialized
+             Pulse.is_already_specialized Pulse.mark_specialization_failed
          in
          [ (pulse, Clang)
          ; (pulse, Erlang)
@@ -249,9 +254,10 @@ let register checkers =
       match callback with
       | Procedure procedure_cb ->
           Callbacks.register_procedure_callback checker language procedure_cb
-      | ProcedureWithSpecialization {procedure_cb; is_already_specialized} ->
+      | ProcedureWithSpecialization
+          {procedure_cb; is_already_specialized; mark_specialization_failed} ->
           Callbacks.register_procedure_callback_with_specialization checker language procedure_cb
-            ~is_already_specialized
+            ~is_already_specialized ~mark_specialization_failed
       | File callback ->
           Callbacks.register_file_callback checker language callback
     in

@@ -43,6 +43,13 @@ val make_is_already_specialized_test :
   -> Summary.t
   -> bool
 
+val make_mark_specialization_failed :
+     (Payloads.t, 'payload SafeLazy.t option) Field.t
+  -> (Specialization.t -> 'payload -> 'payload)
+  -> Specialization.t
+  -> Summary.t
+  -> Summary.t
+
 val interprocedural_with_field_dependency :
      dep_field:(Payloads.t, 'payload_dep SafeLazy.t option) Field.t
   -> (Payloads.t, 'payload SafeLazy.t option) Field.t
