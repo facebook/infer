@@ -181,6 +181,8 @@ val capture : bool
 
 val capture_block_list : string * Yojson.Safe.t
 
+val capture_includers_of_changed_headers : bool
+
 val capture_llair : string option
 
 val capture_textual : string list

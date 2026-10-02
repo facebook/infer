@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "templates.h"
+#include "widget.h"
 
-int use_templates() { return template_function_bad<int>(); }
+int second_user(int* p) { return widget_get_bad(p); }

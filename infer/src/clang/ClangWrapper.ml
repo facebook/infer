@@ -235,3 +235,63 @@ let exe ~prog ~args =
         \  %s@\n"
         (String.concat ~sep:" " @@ (prog :: args)) ;
     Process.create_process_and_wait ~prog ~args () )
+
+
+(** the prerequisites of the Make rules written by [clang -M] *)
+let parse_dependency_file contents =
+  let words = ref [] in
+  let word = Buffer.create 128 in
+  let end_word () =
+    if Buffer.length word > 0 then (
+      words := Buffer.contents word :: !words ;
+      Buffer.clear word )
+  in
+  let length = String.length contents in
+  let rec loop i =
+    if i < length then
+      let next = if i + 1 < length then Some contents.[i + 1] else None in
+      match (contents.[i], next) with
+      | '\\', Some '\n' ->
+          end_word () ;
+          loop (i + 2)
+      | '\\', Some ((' ' | '#') as c) | '$', Some ('$' as c) ->
+          Buffer.add_char word c ;
+          loop (i + 2)
+      | (' ' | '\t' | '\r' | '\n'), _ ->
+          end_word () ;
+          loop (i + 1)
+      | c, _ ->
+          Buffer.add_char word c ;
+          loop (i + 1)
+  in
+  loop 0 ;
+  end_word () ;
+  (* targets end with ':', including the phony targets of [-MP] *)
+  let is_target word = String.is_suffix word ~suffix:":" in
+  List.rev !words
+  |> List.drop_while ~f:(fun word -> not (is_target word))
+  |> List.filter ~f:(fun word -> not (is_target word))
+
+
+let included_files ~prog ~args =
+  let xx_suffix = if String.is_suffix ~suffix:"++" prog then "++" else "" in
+  let dep_file = IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "clang_deps" ".d" in
+  (* the last [-MF] and [-o] win, so the outputs of the original command are not written *)
+  let cmd =
+    ClangCommand.mk ~is_driver:true ClangQuotes.SingleQuotes
+      ~prog:(CFrontend_config.clang_bin xx_suffix)
+      ~args:
+        ( args
+        @ ["-M"; "-MG"; "-MF"; dep_file; "-o"; "/dev/null"; "-fno-cxx-modules"; "-Qunused-arguments"]
+        )
+    |> ClangCommand.command_to_run
+  in
+  let result =
+    match Utils.with_process_in (cmd ^ " 2>&1") In_channel.input_all with
+    | _, Ok () ->
+        Ok (In_channel.read_all dep_file |> parse_dependency_file)
+    | output, (Error _ as status) ->
+        Error (F.asprintf "%s: %s@\n%s" cmd (IUnix.Exit_or_signal.to_string_hum status) output)
+  in
+  (try Unix.unlink dep_file with Unix.Unix_error _ -> ()) ;
+  result

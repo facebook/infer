@@ -24,6 +24,8 @@ end
 
 module ClangWrapper : sig
   val exe : prog:string -> args:string list -> unit
+
+  val included_files : prog:string -> args:string list -> (string list, string) Result.t
 end
 
 module CTLParserHelper : sig
