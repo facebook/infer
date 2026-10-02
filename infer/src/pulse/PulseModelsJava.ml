@@ -203,6 +203,7 @@ module Resource = struct
   let writer_resource_usage_modeled_do_not_throws =
     StringSet.of_list ["print"; "println"; "printf"; "format"]
 
+
   let use ~exn_class_name : model_no_non_disj =
     let exn = JavaClassName.from_string exn_class_name in
     fun model_data astate ->
