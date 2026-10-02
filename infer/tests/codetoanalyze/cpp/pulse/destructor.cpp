@@ -51,4 +51,13 @@ void destruct_unique_ptr_deletes_pointer_bad() {
   int i = p->f;
 }
 
+void destruct_in_statement_expression_deletes_pointer_bad() {
+  X* p = new X;
+  int i = ({
+    UniquePtr<X> u = UniquePtr<X>(p);
+    0;
+  });
+  i = p->f;
+}
+
 } // namespace destructor

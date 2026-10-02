@@ -2067,10 +2067,29 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
            stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans )
 
 
+  (** [f(&pvar)], the call that clang emits when a variable declared with
+      [__attribute__((cleanup(f)))] goes out of scope *)
+  and cleanup_function_call_trans trans_state stmt_info cleanup_decl_ref pvar typ =
+    let trans_state = {trans_state with var_exp_typ= None} in
+    let sil_loc =
+      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+        stmt_info
+    in
+    let callee_res_trans = function_deref_trans trans_state cleanup_decl_ref in
+    let ret_typ =
+      Option.value_map callee_res_trans.method_signature ~default:StdTyp.void
+        ~f:(fun {CMethodSignature.ret_type= ret_typ, _} -> ret_typ )
+    in
+    let arg = (Exp.Lvar pvar, Typ.mk (Tptr (typ, Pk_pointer))) in
+    create_call_instr trans_state ret_typ (fst callee_res_trans.return) [arg] sil_loc
+      CallFlags.default ~is_inherited_ctor:false
+
+
   and destructor_calls destr_kind trans_state stmt_info vars_to_destroy =
     if List.is_empty vars_to_destroy then None
     else
       let context = trans_state.context in
+      let is_cpp = CGeneral_utils.is_cpp_translation context.translation_unit_context in
       (* The source location of destructor should reflect the end of the statement *)
       let _, sloc2 = stmt_info.Clang_ast_t.si_source_range in
       let stmt_info_loc = {stmt_info with Clang_ast_t.si_source_range= (sloc2, sloc2)} in
@@ -2082,13 +2101,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info' in
       let all_res_trans =
         L.debug Capture Verbose "Destroying pointer %d@\n" stmt_info.Clang_ast_t.si_pointer ;
-        List.filter_map vars_to_destroy ~f:(function {CContext.pvar; typ; qual_type} ->
-            let exp = Exp.Lvar pvar in
-            let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
-            get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
-            |> Option.map ~f:(fun destructor_decl_ref ->
-                cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                  destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false ) )
+        List.concat_map vars_to_destroy ~f:(fun ({CContext.pvar; typ; qual_type}, cleanup) ->
+            let cleanup_call =
+              Option.map cleanup ~f:(fun cleanup_decl_ref ->
+                  cleanup_function_call_trans trans_state_pri stmt_info_loc cleanup_decl_ref pvar
+                    typ )
+            in
+            let destructor_call =
+              if is_cpp then
+                let exp = Exp.Lvar pvar in
+                let this_res_trans_destruct = mk_trans_result (exp, typ) empty_control in
+                get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
+                |> Option.map ~f:(fun destructor_decl_ref ->
+                    cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
+                      destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false )
+              else None
+            in
+            (* like clang, call the cleanup function before the destructor *)
+            Option.to_list cleanup_call @ Option.to_list destructor_call )
       in
       if List.is_empty all_res_trans then None
       else
@@ -2100,30 +2130,40 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
              stmt_info' ~return:(mk_fresh_void_exp_typ ()) all_res_trans )
 
 
+  (** inject the calls to the C++ destructors and to the [__attribute__((cleanup(f)))] functions of
+      the variables going out of scope at [stmt_info] *)
   and inject_destructors destr_kind trans_state stmt_info =
     let context = trans_state.context in
-    if not (CGeneral_utils.is_cpp_translation context.translation_unit_context) then None
-    else
-      match
-        CContext.StmtMap.find_opt stmt_info.Clang_ast_t.si_pointer context.CContext.vars_to_destroy
-      with
-      | None ->
-          L.(debug Capture Verbose) "@\nNo variables going out of scope here.@\n" ;
-          None
-      | Some var_decls_to_destroy ->
-          let procname = Procdesc.get_proc_name context.CContext.procdesc in
-          let vars_to_destroy =
-            List.map var_decls_to_destroy ~f:(function
-              | CContext.VarDecl ((_, _, qual_type, _) as var_decl) ->
+    match
+      CContext.StmtMap.find_opt stmt_info.Clang_ast_t.si_pointer context.CContext.vars_to_destroy
+    with
+    | None ->
+        L.(debug Capture Verbose) "@\nNo variables going out of scope here.@\n" ;
+        None
+    | Some var_decls_to_destroy ->
+        let is_cpp = CGeneral_utils.is_cpp_translation context.translation_unit_context in
+        let procname = Procdesc.get_proc_name context.CContext.procdesc in
+        let vars_to_destroy =
+          List.filter_map var_decls_to_destroy ~f:(function
+            | CContext.VarDecl (({di_attributes}, _, qual_type, _) as var_decl) ->
+                let cleanup =
+                  List.find_map di_attributes ~f:(function
+                    | `CleanupAttr (_, cleanup_decl_ref) ->
+                        Some cleanup_decl_ref
+                    | _ ->
+                        None )
+                in
+                if is_cpp || Option.is_some cleanup then
                   let pvar =
                     CVar_decl.sil_var_of_decl context (Clang_ast_t.VarDecl var_decl) procname
                   in
                   let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                  {CContext.pvar; typ; qual_type; marker= None}
-              | CContext.CXXTemporary cxx_temporary ->
-                  cxx_temporary )
-          in
-          destructor_calls destr_kind trans_state stmt_info vars_to_destroy
+                  Some ({CContext.pvar; typ; qual_type; marker= None}, cleanup)
+                else None
+            | CContext.CXXTemporary cxx_temporary ->
+                Some (cxx_temporary, None) )
+        in
+        destructor_calls destr_kind trans_state stmt_info vars_to_destroy
 
 
   and compoundStmt_trans trans_state stmt_list =
