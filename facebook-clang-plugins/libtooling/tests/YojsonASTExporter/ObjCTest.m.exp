@@ -9283,7 +9283,10 @@
                       }
                     )>
                   ],
-                  "theend"
+                  {
+                    "label" : "theend",
+                    "pointer" : 309
+                  }
                 )>
               ]
             )>,

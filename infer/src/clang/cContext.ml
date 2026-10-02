@@ -32,8 +32,6 @@ type pointer = (* = Clang_ast_t.pointer *) int [@@deriving compare]
 
 type curr_class = ContextClsDeclPtr of pointer | ContextNoCls [@@deriving compare]
 
-type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
-
 type t =
   { translation_unit_context: CFrontend_config.translation_unit_context
   ; tenv: Tenv.t
@@ -43,7 +41,7 @@ type t =
   ; return_param_typ: Typ.t option
   ; outer_context: t option
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Procname.Map.t
-  ; label_map: str_node_map
+  ; label_map: (Clang_ast_t.pointer, Procdesc.Node.t) Hashtbl.t
   ; vars_to_destroy: var_to_destroy list StmtMap.t
   ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Hashtbl.t
   ; temporaries_constructor_markers: (Pvar.t * Typ.t) Pvar.Map.t }
