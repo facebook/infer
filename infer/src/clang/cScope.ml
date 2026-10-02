@@ -55,7 +55,7 @@ let collect_until kind scope =
 
 
 let breaks_control_flow = function
-  | `ReturnStmt _ | `BreakStmt _ | `ContinueStmt _ ->
+  | `ReturnStmt _ | `BreakStmt _ | `ContinueStmt _ | `GotoStmt _ ->
       true
   | _ ->
       false
@@ -252,7 +252,29 @@ module Variables = struct
         None
 
 
-  let rec visit_stmt context stmt ((scope, map) as scope_map) =
+  module VarToDestroySet = Stdlib.Set.Make (struct
+    type t = CContext.var_to_destroy
+
+    let compare (var1 : t) (var2 : t) =
+      match (var1, var2) with
+      | VarDecl ({di_pointer= pointer1}, _, _, _), VarDecl ({di_pointer= pointer2}, _, _, _) ->
+          Int.compare pointer1 pointer2
+      | CXXTemporary {pvar= pvar1}, CXXTemporary {pvar= pvar2} ->
+          Pvar.compare pvar1 pvar2
+      | VarDecl _, CXXTemporary _ ->
+          -1
+      | CXXTemporary _, VarDecl _ ->
+          1
+  end)
+
+  type acc =
+    { map: CContext.var_to_destroy list ClangPointers.Map.t
+    ; gotos: (Clang_ast_t.pointer * string * CContext.var_to_destroy list) list
+          (** [goto] statements with the name of their label and the variables in scope at the
+              [goto] *)
+    ; labels: VarToDestroySet.t IString.Map.t  (** variables in scope at each label *) }
+
+  let rec visit_stmt context stmt ((scope, acc) as scope_acc) =
     L.debug Capture Verbose "%a{%a}@;"
       (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string)
       stmt
@@ -261,16 +283,31 @@ module Variables = struct
     match (stmt : Clang_ast_t.stmt) with
     | `ReturnStmt (stmt_info, stmt_list)
     | `BreakStmt (stmt_info, stmt_list)
-    | `ContinueStmt (stmt_info, stmt_list) (* TODO: GotoStmt *) ->
+    | `ContinueStmt (stmt_info, stmt_list) ->
         (* the returned expression may contain scopes, e.g. GNU statement expressions *)
-        let scope, map = visit_stmt_list context stmt_list scope_map in
+        let scope, acc = visit_stmt_list context stmt_list scope_acc in
         let break_until = match stmt with `ReturnStmt _ -> InitialScope | _ -> Breakable in
         let vars_to_destroy = collect_until break_until scope in
         L.debug Capture Verbose "~[%d:%a]" stmt_info.Clang_ast_t.si_pointer
           (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
           vars_to_destroy ;
-        let map = ClangPointers.Map.add stmt_info.Clang_ast_t.si_pointer vars_to_destroy map in
-        (scope, map)
+        let map = ClangPointers.Map.add stmt_info.Clang_ast_t.si_pointer vars_to_destroy acc.map in
+        (scope, {acc with map})
+    | `GotoStmt (stmt_info, _, {gsi_label}) ->
+        (* the label may not have been visited yet, see [add_gotos_to_map] *)
+        let goto =
+          (stmt_info.Clang_ast_t.si_pointer, gsi_label, collect_until InitialScope scope)
+        in
+        (scope, {acc with gotos= goto :: acc.gotos})
+    | `LabelStmt (_, stmt_list, label) ->
+        let in_scope = collect_until InitialScope scope |> VarToDestroySet.of_list in
+        let labels = IString.Map.add label in_scope acc.labels in
+        visit_stmt_list context stmt_list (scope, {acc with labels})
+    | `LambdaExpr (_, stmt_list, _, _) ->
+        (* the body of the lambda, its last child, is translated as a separate procedure, with its
+           own scopes and labels, but the capture initializers are translated in this procedure *)
+        let capture_inits = List.drop_last stmt_list |> Option.value ~default:[] in
+        visit_stmt_list context capture_inits scope_acc
     | `DeclStmt (_, stmts, decl_list) ->
         let to_destroy =
           List.concat_map decl_list ~f:(function
@@ -289,58 +326,78 @@ module Variables = struct
                 [] )
         in
         (* the initializers may contain scopes, e.g. GNU statement expressions *)
-        let scope, map = visit_stmt_list context stmts scope_map in
+        let scope, acc = visit_stmt_list context stmts scope_acc in
         L.debug Capture Verbose "+%a@," (Pp.seq ~sep:"," CContext.pp_var_to_destroy) to_destroy ;
         (* the reverse order is the one we want to destroy the variables in at the end of the scope
            *)
-        (rev_append to_destroy scope, map)
+        (rev_append to_destroy scope, acc)
     | _ -> (
         let stmt_info, stmt_list = Clang_ast_proj.get_stmt_tuple stmt in
         match get_scopes stmt with
         | None ->
-            visit_stmt_list context stmt_list scope_map
+            visit_stmt_list context stmt_list scope_acc
         | Some {outer_scope; breakable_scope; swallow_destructors} ->
             with_scope ~inject_destructors:(not swallow_destructors) Compound
               stmt_info.Clang_ast_t.si_pointer scope ~f:(fun scope ->
-                let scope_map = visit_stmt_list context outer_scope (scope, map) in
+                let scope_acc = visit_stmt_list context outer_scope (scope, acc) in
                 match breakable_scope with
                 | [] ->
-                    scope_map
+                    scope_acc
                 | _ :: _ as body ->
                     let body_ptr =
                       List.last_exn body |> Clang_ast_proj.get_stmt_tuple
                       |> function {Clang_ast_t.si_pointer}, _ -> si_pointer
                     in
-                    let scope, map = scope_map in
+                    let scope, acc = scope_acc in
                     with_scope Breakable ~inject_destructors:false body_ptr scope ~f:(fun scope ->
-                        visit_stmt_list context body (scope, map) ) ) )
+                        visit_stmt_list context body (scope, acc) ) ) )
 
 
   and with_scope ?(inject_destructors = true) kind pointer scope ~f =
-    let vars_to_destroy, scope, map = in_ kind scope ~f in
-    let map =
+    let vars_to_destroy, scope, acc = in_ kind scope ~f in
+    let acc =
       if inject_destructors then (
         L.debug Capture Verbose "~[%d:%a]" pointer
           (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
           vars_to_destroy ;
-        ClangPointers.Map.add pointer vars_to_destroy map )
+        {acc with map= ClangPointers.Map.add pointer vars_to_destroy acc.map} )
       else (
         L.debug Capture Verbose "~[%d:skip]" pointer ;
-        map )
+        acc )
     in
-    (scope, map)
+    (scope, acc)
 
 
-  and visit_stmt_list context stmt_list scope_map =
-    List.fold stmt_list ~init:scope_map ~f:(fun scope_map stmt ->
+  and visit_stmt_list context stmt_list scope_acc =
+    List.fold stmt_list ~init:scope_acc ~f:(fun scope_acc stmt ->
         L.debug Capture Verbose "@;" ;
-        visit_stmt context stmt scope_map )
+        visit_stmt context stmt scope_acc )
+
+
+  (** A [goto] destroys the variables in scope at the [goto] that are not in scope at its label, in
+      reverse order of declaration. This covers jumping out of scopes as well as jumping back past
+      declarations. *)
+  let add_gotos_to_map {map; gotos; labels} =
+    List.fold gotos ~init:map ~f:(fun map (pointer, label, in_scope_at_goto) ->
+        match IString.Map.find_opt label labels with
+        | None ->
+            map
+        | Some in_scope_at_label ->
+            let vars_to_destroy =
+              List.filter in_scope_at_goto ~f:(fun var ->
+                  not (VarToDestroySet.mem var in_scope_at_label) )
+            in
+            L.debug Capture Verbose "~[%d:goto %s:%a]@\n" pointer label
+              (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
+              vars_to_destroy ;
+            ClangPointers.Map.add pointer vars_to_destroy map )
 
 
   let empty_scope = {current= []; current_kind= InitialScope; outers= []}
 
   let compute_vars_to_destroy_map context body =
-    let scope_map = visit_stmt context body (empty_scope, ClangPointers.Map.empty) |> snd in
+    let acc = {map= ClangPointers.Map.empty; gotos= []; labels= IString.Map.empty} in
+    let map = visit_stmt context body (empty_scope, acc) |> snd |> add_gotos_to_map in
     L.debug Capture Verbose "@\n" ;
-    scope_map
+    map
 end

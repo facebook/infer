@@ -1,0 +1,530 @@
+/* @generated */
+digraph cfg {
+"call<5a8a64fe9b43687f>#goto_scope.f28eba142ee894fa_1" [label="1: Start goto_scope::call<5a8a64fe9b43687f>\nFormals:  f:lambda_goto_scope.cpp:98_6f68066f&\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "call<5a8a64fe9b43687f>#goto_scope.f28eba142ee894fa_1" -> "call<5a8a64fe9b43687f>#goto_scope.f28eba142ee894fa_3" ;
+"call<5a8a64fe9b43687f>#goto_scope.f28eba142ee894fa_2" [label="2: Exit goto_scope::call<5a8a64fe9b43687f> \n  " color=yellow style=filled]
+	
+
+"call<5a8a64fe9b43687f>#goto_scope.f28eba142ee894fa_3" [label="3:  Call _fun_lambda_goto_scope.cpp:98_6f68066f::operator() \n   n$1=*&f:lambda_goto_scope.cpp:98_6f68066f& [line 90, column 3]\n  n$2=_fun_lambda_goto_scope.cpp:98_6f68066f::operator()(n$1:lambda_goto_scope.cpp:98_6f68066f&) [line 90, column 3]\n " shape="box"]
+	
+
+	 "call<5a8a64fe9b43687f>#goto_scope.f28eba142ee894fa_3" -> "call<5a8a64fe9b43687f>#goto_scope.f28eba142ee894fa_2" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_1" [label="1: Start goto_scope::goto_and_extended_temporaries\nFormals:  b:_Bool\nLocals:  x2:goto_scope::X const & 0$?%__sil_tmpSIL_materialize_temp__n$1:goto_scope::X const  x1:goto_scope::X const & 0$?%__sil_tmpSIL_materialize_temp__n$0:goto_scope::X const  \n  " color=yellow style=filled]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_1" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_15" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_2" [label="2: Exit goto_scope::goto_and_extended_temporaries \n  " color=yellow style=filled]
+	
+
+"goto_and_extended_temporaries#got.afa02ad385179b4f_3" [label="3:  Destruction(Scope) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:goto_scope::X const  [line 86, column 1]\n  n$3=_fun_goto_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$0:goto_scope::X const *) injected [line 86, column 1]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_3" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_2" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_4" [label="4:  Return Stmt \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:goto_scope::X const  [line 85, column 3]\n  n$6=_fun_goto_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$0:goto_scope::X const *) injected [line 85, column 3]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_4" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_2" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_5" [label="5: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_5" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_4" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_6" [label="6:  Destruction(Scope) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:goto_scope::X const  [line 83, column 3]\n  n$11=_fun_goto_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$1:goto_scope::X const *) injected [line 83, column 3]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_6" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_5" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_7" [label="7: + \n  " ]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_7" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_6" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_8" [label="8: Prune (true branch, if) \n   n$13=*&b:_Bool [line 80, column 9]\n  PRUNE(n$13, true); [line 80, column 9]\n " shape="invhouse"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_8" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_10" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_9" [label="9: Prune (false branch, if) \n   n$13=*&b:_Bool [line 80, column 9]\n  PRUNE(!n$13, false); [line 80, column 9]\n " shape="invhouse"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_9" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_7" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_10" [label="10:  Destruction(goto) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:goto_scope::X const  [line 81, column 12]\n  n$15=_fun_goto_scope::X::~X(&0$?%__sil_tmpSIL_materialize_temp__n$1:goto_scope::X const *) injected [line 81, column 12]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_10" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_5" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:goto_scope::X const ); [line 79, column 19]\n  n$21=_fun_goto_scope::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$1:goto_scope::X const *) [line 79, column 19]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_11" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_13" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X const &); [line 79, column 5]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_12" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_11" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_13" [label="13:  DeclStmt \n   *&x2:goto_scope::X const &=&0$?%__sil_tmpSIL_materialize_temp__n$1 [line 79, column 5]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_13" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_8" ;
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_13" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_9" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:goto_scope::X const ); [line 77, column 17]\n  n$23=_fun_goto_scope::X::X(&0$?%__sil_tmpSIL_materialize_temp__n$0:goto_scope::X const *) [line 77, column 17]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_14" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_16" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X const &); [line 77, column 3]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_15" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_14" ;
+"goto_and_extended_temporaries#got.afa02ad385179b4f_16" [label="16:  DeclStmt \n   *&x1:goto_scope::X const &=&0$?%__sil_tmpSIL_materialize_temp__n$0 [line 77, column 3]\n " shape="box"]
+	
+
+	 "goto_and_extended_temporaries#got.afa02ad385179b4f_16" -> "goto_and_extended_temporaries#got.afa02ad385179b4f_12" ;
+"goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_1" [label="1: Start goto_scope::goto_at_end_of_scope\nFormals:  b:_Bool\nLocals:  x2:goto_scope::X x1:goto_scope::X \n  " color=yellow style=filled]
+	
+
+	 "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_1" -> "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_7" ;
+"goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_2" [label="2: Exit goto_scope::goto_at_end_of_scope \n  " color=yellow style=filled]
+	
+
+"goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_3" [label="3:  Destruction(Scope) \n   _=*&x2:goto_scope::X [line 74, column 1]\n  n$1=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 74, column 1]\n " shape="box"]
+	
+
+	 "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_3" -> "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_2" ;
+"goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X); [line 73, column 3]\n  n$3=_fun_goto_scope::X::X(&x2:goto_scope::X*) [line 73, column 5]\n " shape="box"]
+	
+
+	 "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_4" -> "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_3" ;
+"goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_5" [label="5: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_5" -> "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_4" ;
+"goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_6" [label="6:  Destruction(goto) \n   _=*&x1:goto_scope::X [line 70, column 10]\n  n$6=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 70, column 10]\n " shape="box"]
+	
+
+	 "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_6" -> "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_5" ;
+"goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 69, column 5]\n  n$9=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 69, column 7]\n " shape="box"]
+	
+
+	 "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_7" -> "goto_at_end_of_scope#goto_scope#1.bc768972cd26e8ac_6" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_1" [label="1: Start goto_scope::goto_backward_past_declaration\nFormals:  b:_Bool\nLocals:  x2:goto_scope::X x1:goto_scope::X \n  " color=yellow style=filled]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_1" -> "goto_backward_past_declaration#go.b60fb6422a03564f_10" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_2" [label="2: Exit goto_scope::goto_backward_past_declaration \n  " color=yellow style=filled]
+	
+
+"goto_backward_past_declaration#go.b60fb6422a03564f_3" [label="3:  Destruction(Scope) \n   _=*&x2:goto_scope::X [line 44, column 1]\n  n$1=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 44, column 1]\n  _=*&x1:goto_scope::X [line 44, column 1]\n  n$3=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 44, column 1]\n " shape="box"]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_3" -> "goto_backward_past_declaration#go.b60fb6422a03564f_2" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_4" [label="4: + \n  " ]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_4" -> "goto_backward_past_declaration#go.b60fb6422a03564f_3" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_5" [label="5: Prune (true branch, if) \n   n$5=*&b:_Bool [line 41, column 7]\n  PRUNE(n$5, true); [line 41, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_5" -> "goto_backward_past_declaration#go.b60fb6422a03564f_8" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_6" [label="6: Prune (false branch, if) \n   n$5=*&b:_Bool [line 41, column 7]\n  PRUNE(!n$5, false); [line 41, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_6" -> "goto_backward_past_declaration#go.b60fb6422a03564f_4" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_7" [label="7: Skip GotoLabel_again \n  " color="gray"]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_7" -> "goto_backward_past_declaration#go.b60fb6422a03564f_9" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_8" [label="8:  Destruction(goto) \n   _=*&x2:goto_scope::X [line 42, column 10]\n  n$7=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 42, column 10]\n " shape="box"]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_8" -> "goto_backward_past_declaration#go.b60fb6422a03564f_7" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X); [line 40, column 3]\n  n$12=_fun_goto_scope::X::X(&x2:goto_scope::X*) [line 40, column 5]\n " shape="box"]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_9" -> "goto_backward_past_declaration#go.b60fb6422a03564f_5" ;
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_9" -> "goto_backward_past_declaration#go.b60fb6422a03564f_6" ;
+"goto_backward_past_declaration#go.b60fb6422a03564f_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 38, column 3]\n  n$14=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 38, column 5]\n " shape="box"]
+	
+
+	 "goto_backward_past_declaration#go.b60fb6422a03564f_10" -> "goto_backward_past_declaration#go.b60fb6422a03564f_7" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_1" [label="1: Start goto_scope::goto_in_lambda_capture\nFormals:  b:_Bool\nLocals:  f:lambda_goto_scope.cpp:110_b8221473 x1:goto_scope::X r:int 0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_goto_scope.cpp:110_b8221473 \n  " color=yellow style=filled]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_1" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_16" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_2" [label="2: Exit goto_scope::goto_in_lambda_capture \n  " color=yellow style=filled]
+	
+
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_3" [label="3:  Compound statement \n   n$1=*&r:int [line 119, column 15]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_3" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_13" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_4" [label="4: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_4" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_3" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_5" [label="5:  Destruction(Scope) \n   _=*&x1:goto_scope::X [line 117, column 15]\n  n$5=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 117, column 15]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_5" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_4" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_6" [label="6: + \n  " ]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_6" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_5" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_7" [label="7: Prune (true branch, if) \n   n$7=*&b:_Bool [line 114, column 21]\n  PRUNE(n$7, true); [line 114, column 21]\n " shape="invhouse"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_7" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_9" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_8" [label="8: Prune (false branch, if) \n   n$7=*&b:_Bool [line 114, column 21]\n  PRUNE(!n$7, false); [line 114, column 21]\n " shape="invhouse"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_8" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_6" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_9" [label="9:  Destruction(goto) \n   _=*&x1:goto_scope::X [line 115, column 24]\n  n$9=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 115, column 24]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_9" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_4" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 113, column 17]\n  n$14=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 113, column 19]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_10" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_7" ;
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_10" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_8" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(r:int); [line 111, column 15]\n  *&r:int=0 [line 111, column 15]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_11" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_10" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 110, column 12]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_12" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_11" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_13" [label="13:  DeclStmt \n   *&i:int=n$1 [line 110, column 12]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_13" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_15" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_goto_scope.cpp:110_b8221473); [line 110, column 12]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_14" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_12" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_15" [label="15:  DeclStmt \n   n$15=*&i:int [line 110, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_goto_scope.cpp:110_b8221473=(_fun_lambda_goto_scope.cpp:110_b8221473::operator(),([by value]n$15 &i:int)) [line 110, column 12]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_15" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_17" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_16" [label="16:  DeclStmt \n   VARIABLE_DECLARED(f:lambda_goto_scope.cpp:110_b8221473); [line 110, column 3]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_16" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_14" ;
+"goto_in_lambda_capture#goto_scope.ee8fb51631da1896_17" [label="17:  DeclStmt \n   n$16=_fun_lambda_goto_scope.cpp:110_b8221473::lambda_goto_scope.cpp:110_56927572(&f:lambda_goto_scope.cpp:110_b8221473*,&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_goto_scope.cpp:110_b8221473&) [line 110, column 12]\n " shape="box"]
+	
+
+	 "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_17" -> "goto_in_lambda_capture#goto_scope.ee8fb51631da1896_2" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_1" [label="1: Start goto_scope::goto_into_nested_scope\nFormals:  b:_Bool\nLocals:  x2:goto_scope::X x1:goto_scope::X \n  " color=yellow style=filled]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_1" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_10" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_2" [label="2: Exit goto_scope::goto_into_nested_scope \n  " color=yellow style=filled]
+	
+
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_3" [label="3:  Destruction(Scope) \n   _=*&x1:goto_scope::X [line 65, column 1]\n  n$1=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 65, column 1]\n " shape="box"]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_3" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_2" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_4" [label="4:  Destruction(Scope) \n   _=*&x2:goto_scope::X [line 64, column 3]\n  n$4=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 64, column 3]\n " shape="box"]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_4" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_3" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X); [line 63, column 5]\n  n$6=_fun_goto_scope::X::X(&x2:goto_scope::X*) [line 63, column 7]\n " shape="box"]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_5" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_4" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_6" [label="6: Skip GotoLabel_in \n  " color="gray"]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_6" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_5" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_7" [label="7: + \n  " ]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_7" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_6" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_8" [label="8: Prune (true branch, if) \n   n$8=*&b:_Bool [line 58, column 7]\n  PRUNE(n$8, true); [line 58, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_8" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_6" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_9" [label="9: Prune (false branch, if) \n   n$8=*&b:_Bool [line 58, column 7]\n  PRUNE(!n$8, false); [line 58, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_9" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_7" ;
+"goto_into_nested_scope#goto_scope.aa292f00dde38361_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 57, column 3]\n  n$12=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 57, column 5]\n " shape="box"]
+	
+
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_10" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_8" ;
+	 "goto_into_nested_scope#goto_scope.aa292f00dde38361_10" -> "goto_into_nested_scope#goto_scope.aa292f00dde38361_9" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_1" [label="1: Start goto_scope::goto_out_of_loop\nFormals:  a:_Bool b:_Bool\nLocals:  x2:goto_scope::X x1:goto_scope::X \n  " color=yellow style=filled]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_1" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_15" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_2" [label="2: Exit goto_scope::goto_out_of_loop \n  " color=yellow style=filled]
+	
+
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_3" [label="3:  Destruction(Scope) \n   _=*&x1:goto_scope::X [line 35, column 1]\n  n$1=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 35, column 1]\n " shape="box"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_3" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_2" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_4" [label="4:  Return Stmt \n   _=*&x1:goto_scope::X [line 34, column 3]\n  n$4=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 34, column 3]\n " shape="box"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_4" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_2" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_5" [label="5: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_5" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_4" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_6" [label="6: + \n  " ]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_6" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_7" ;
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_6" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_8" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_7" [label="7: Prune (true branch, while) \n   n$8=*&a:_Bool [line 28, column 10]\n  PRUNE(n$8, true); [line 28, column 10]\n " shape="invhouse"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_7" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_14" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_8" [label="8: Prune (false branch, while) \n   n$8=*&a:_Bool [line 28, column 10]\n  PRUNE(!n$8, false); [line 28, column 10]\n " shape="invhouse"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_8" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_5" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_9" [label="9:  Destruction(Scope) \n   _=*&x2:goto_scope::X [line 32, column 3]\n  n$10=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 32, column 3]\n " shape="box"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_9" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_6" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_10" [label="10: + \n  " ]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_10" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_9" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_11" [label="11: Prune (true branch, if) \n   n$12=*&b:_Bool [line 30, column 9]\n  PRUNE(n$12, true); [line 30, column 9]\n " shape="invhouse"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_11" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_13" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_12" [label="12: Prune (false branch, if) \n   n$12=*&b:_Bool [line 30, column 9]\n  PRUNE(!n$12, false); [line 30, column 9]\n " shape="invhouse"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_12" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_10" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_13" [label="13:  Destruction(goto) \n   _=*&x2:goto_scope::X [line 31, column 12]\n  n$14=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 31, column 12]\n " shape="box"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_13" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_5" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X); [line 29, column 5]\n  n$19=_fun_goto_scope::X::X(&x2:goto_scope::X*) [line 29, column 7]\n " shape="box"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_14" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_11" ;
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_14" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_12" ;
+"goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 27, column 3]\n  n$21=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 27, column 5]\n " shape="box"]
+	
+
+	 "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_15" -> "goto_out_of_loop#goto_scope#17007.b5d2dcd0386f837b_6" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_1" [label="1: Start goto_scope::goto_out_of_nested_scopes\nFormals:  b:_Bool\nLocals:  x4:goto_scope::X x3:goto_scope::X x2:goto_scope::X x1:goto_scope::X \n  " color=yellow style=filled]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_1" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_13" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_2" [label="2: Exit goto_scope::goto_out_of_nested_scopes \n  " color=yellow style=filled]
+	
+
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_3" [label="3:  Destruction(Scope) \n   _=*&x4:goto_scope::X [line 24, column 1]\n  n$1=_fun_goto_scope::X::~X(&x4:goto_scope::X*) injected [line 24, column 1]\n  _=*&x1:goto_scope::X [line 24, column 1]\n  n$3=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 24, column 1]\n " shape="box"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_3" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_2" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x4:goto_scope::X); [line 23, column 3]\n  n$5=_fun_goto_scope::X::X(&x4:goto_scope::X*) [line 23, column 5]\n " shape="box"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_4" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_3" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_5" [label="5: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_5" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_4" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_6" [label="6:  Destruction(Scope) \n   _=*&x2:goto_scope::X [line 21, column 3]\n  n$8=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 21, column 3]\n " shape="box"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_6" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_5" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_7" [label="7: + \n  " ]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_7" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_6" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_8" [label="8: Prune (true branch, if) \n   n$10=*&b:_Bool [line 17, column 9]\n  PRUNE(n$10, true); [line 17, column 9]\n " shape="invhouse"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_8" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_11" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_9" [label="9: Prune (false branch, if) \n   n$10=*&b:_Bool [line 17, column 9]\n  PRUNE(!n$10, false); [line 17, column 9]\n " shape="invhouse"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_9" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_7" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_10" [label="10:  Destruction(goto) \n   _=*&x3:goto_scope::X [line 19, column 12]\n  n$12=_fun_goto_scope::X::~X(&x3:goto_scope::X*) injected [line 19, column 12]\n  _=*&x2:goto_scope::X [line 19, column 12]\n  n$14=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 19, column 12]\n " shape="box"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_10" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_5" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(x3:goto_scope::X); [line 18, column 7]\n  n$17=_fun_goto_scope::X::X(&x3:goto_scope::X*) [line 18, column 9]\n " shape="box"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_11" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_10" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X); [line 16, column 5]\n  n$20=_fun_goto_scope::X::X(&x2:goto_scope::X*) [line 16, column 7]\n " shape="box"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_12" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_8" ;
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_12" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_9" ;
+"goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 14, column 3]\n  n$21=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 14, column 5]\n " shape="box"]
+	
+
+	 "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_13" -> "goto_out_of_nested_scopes#goto_sc.a1925ccb5fbc84e4_12" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_1" [label="1: Start goto_scope::goto_same_label_in_lambda\nFormals:  b:_Bool\nLocals:  0$?%__sil_tmp__temp_construct_n$13:lambda_goto_scope.cpp:98_6f68066f 0$?%__sil_tmpSIL_materialize_temp__n$12:lambda_goto_scope.cpp:98_6f68066f x2:goto_scope::X x1:goto_scope::X \n  " color=yellow style=filled]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_1" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_12" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_2" [label="2: Exit goto_scope::goto_same_label_in_lambda \n  " color=yellow style=filled]
+	
+
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_3" [label="3:  Destruction(Scope) \n   _=*&x2:goto_scope::X [line 106, column 1]\n  n$1=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 106, column 1]\n  _=*&x1:goto_scope::X [line 106, column 1]\n  n$3=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 106, column 1]\n " shape="box"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_3" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_2" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_4" [label="4: + \n  " ]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_4" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_3" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_5" [label="5: Prune (true branch, if) \n   n$5=*&b:_Bool [line 103, column 7]\n  PRUNE(n$5, true); [line 103, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_5" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_8" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_6" [label="6: Prune (false branch, if) \n   n$5=*&b:_Bool [line 103, column 7]\n  PRUNE(!n$5, false); [line 103, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_6" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_4" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_7" [label="7: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_7" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_11" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_8" [label="8:  Destruction(goto) \n   _=*&x2:goto_scope::X [line 104, column 10]\n  n$7=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 104, column 10]\n " shape="box"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_8" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_7" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$12:lambda_goto_scope.cpp:98_6f68066f); [line 98, column 8]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$12:lambda_goto_scope.cpp:98_6f68066f=(_fun_lambda_goto_scope.cpp:98_6f68066f::operator()) [line 98, column 8]\n " shape="box"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_9" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_10" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_10" [label="10:  Compound statement \n   n$14=_fun_lambda_goto_scope.cpp:98_6f68066f::lambda_goto_scope.cpp:98_93d0ad54(&0$?%__sil_tmp__temp_construct_n$13:lambda_goto_scope.cpp:98_6f68066f*,&0$?%__sil_tmpSIL_materialize_temp__n$12:lambda_goto_scope.cpp:98_6f68066f&) [line 98, column 8]\n  n$15=_fun_goto_scope::call<5a8a64fe9b43687f>(&0$?%__sil_tmp__temp_construct_n$13:lambda_goto_scope.cpp:98_6f68066f) [line 98, column 3]\n " shape="box"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_10" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_5" ;
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_10" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_6" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_11" [label="11:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X); [line 97, column 3]\n  n$16=_fun_goto_scope::X::X(&x2:goto_scope::X*) [line 97, column 5]\n " shape="box"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_11" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_9" ;
+"goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 95, column 3]\n  n$18=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 95, column 5]\n " shape="box"]
+	
+
+	 "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_12" -> "goto_same_label_in_lambda#goto_sc.4274d07543bfb2fe_7" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_1" [label="1: Start goto_scope::goto_within_scope\nFormals:  b:_Bool\nLocals:  x2:goto_scope::X 0$?%__sil_tmpSIL_temp_conditional___n$7:_Bool x1:goto_scope::X \n  " color=yellow style=filled]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_1" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_15" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_2" [label="2: Exit goto_scope::goto_within_scope \n  " color=yellow style=filled]
+	
+
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_3" [label="3:  Destruction(Scope) \n   _=*&x2:goto_scope::X [line 54, column 1]\n  n$1=_fun_goto_scope::X::~X(&x2:goto_scope::X*) injected [line 54, column 1]\n  _=*&x1:goto_scope::X [line 54, column 1]\n  n$3=_fun_goto_scope::X::~X(&x1:goto_scope::X*) injected [line 54, column 1]\n " shape="box"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_3" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_2" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(x2:goto_scope::X); [line 53, column 3]\n  n$5=_fun_goto_scope::X::X(&x2:goto_scope::X*) [line 53, column 5]\n " shape="box"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_4" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_3" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_5" [label="5: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_5" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_4" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_6" [label="6: + \n  " ]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_6" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_11" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_7" [label="7: Prune (true branch, boolean exp) \n   n$8=*&b:_Bool [line 51, column 8]\n  PRUNE(n$8, true); [line 51, column 8]\n " shape="invhouse"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_7" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_9" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_8" [label="8: Prune (false branch, boolean exp) \n   n$8=*&b:_Bool [line 51, column 8]\n  PRUNE(!n$8, false); [line 51, column 8]\n " shape="invhouse"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_8" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_10" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_9" [label="9:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:_Bool=0 [line 51, column 7]\n " shape="box"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_9" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_6" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_10" [label="10:  ConditionalStmt Branch \n   *&0$?%__sil_tmpSIL_temp_conditional___n$7:_Bool=1 [line 51, column 7]\n " shape="box"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_10" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_6" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_11" [label="11:  BinaryOperatorStmt: Assign \n   n$9=*&0$?%__sil_tmpSIL_temp_conditional___n$7:_Bool [line 51, column 7]\n  *&b:_Bool=n$9 [line 51, column 3]\n " shape="box"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_11" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_5" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_12" [label="12: + \n  " ]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_12" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_7" ;
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_12" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_8" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_13" [label="13: Prune (true branch, if) \n   n$10=*&b:_Bool [line 48, column 7]\n  PRUNE(n$10, true); [line 48, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_13" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_5" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_14" [label="14: Prune (false branch, if) \n   n$10=*&b:_Bool [line 48, column 7]\n  PRUNE(!n$10, false); [line 48, column 7]\n " shape="invhouse"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_14" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_12" ;
+"goto_within_scope#goto_scope#1000.74807d44f47e8b48_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(x1:goto_scope::X); [line 47, column 3]\n  n$14=_fun_goto_scope::X::X(&x1:goto_scope::X*) [line 47, column 5]\n " shape="box"]
+	
+
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_15" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_13" ;
+	 "goto_within_scope#goto_scope#1000.74807d44f47e8b48_15" -> "goto_within_scope#goto_scope#1000.74807d44f47e8b48_14" ;
+"X#X#goto_scope#{92337931414816317.da79256a85c5ae4c_1" [label="1: Start goto_scope::X::X\nFormals:  this:goto_scope::X*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "X#X#goto_scope#{92337931414816317.da79256a85c5ae4c_1" -> "X#X#goto_scope#{92337931414816317.da79256a85c5ae4c_2" ;
+"X#X#goto_scope#{92337931414816317.da79256a85c5ae4c_2" [label="2: Exit goto_scope::X::X \n  " color=yellow style=filled]
+	
+
+"__infer_inner_destructor_~X#X#got.41f31fe77b389d7e_1" [label="1: Start goto_scope::X::__infer_inner_destructor_~X\nFormals:  this:goto_scope::X*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~X#X#got.41f31fe77b389d7e_1" -> "__infer_inner_destructor_~X#X#got.41f31fe77b389d7e_2" ;
+"__infer_inner_destructor_~X#X#got.41f31fe77b389d7e_2" [label="2: Exit goto_scope::X::__infer_inner_destructor_~X \n  " color=yellow style=filled]
+	
+
+"~X#X#goto_scope#(6966424127827119.fffcd2bfff996d85_1" [label="1: Start goto_scope::X::~X\nFormals:  this:goto_scope::X*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "~X#X#goto_scope#(6966424127827119.fffcd2bfff996d85_1" -> "~X#X#goto_scope#(6966424127827119.fffcd2bfff996d85_3" ;
+"~X#X#goto_scope#(6966424127827119.fffcd2bfff996d85_2" [label="2: Exit goto_scope::X::~X \n  " color=yellow style=filled]
+	
+
+"~X#X#goto_scope#(6966424127827119.fffcd2bfff996d85_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:goto_scope::X* [line 10, column 9]\n  _=*n$0:goto_scope::X [line 10, column 9]\n  n$2=_fun_goto_scope::X::__infer_inner_destructor_~X(n$0:goto_scope::X*) injected [line 10, column 9]\n " shape="box"]
+	
+
+	 "~X#X#goto_scope#(6966424127827119.fffcd2bfff996d85_3" -> "~X#X#goto_scope#(6966424127827119.fffcd2bfff996d85_2" ;
+"operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_1" [label="1: Start lambda_goto_scope.cpp:110_b8221473::operator()\nFormals:  this:lambda_goto_scope.cpp:110_b8221473 const *\nLocals: \nCaptured:  [by value]&i:int \n  " color=yellow style=filled]
+	
+
+	 "operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_1" -> "operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_3" ;
+"operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_2" [label="2: Exit lambda_goto_scope.cpp:110_b8221473::operator() \n  " color=yellow style=filled]
+	
+
+"operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 120, column 28]\n " shape="box"]
+	
+
+	 "operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_3" -> "operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_4" ;
+"operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 120, column 21]\n " shape="box"]
+	
+
+	 "operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_4" -> "operator()#lambda_goto_scope.cpp:.ef977bd31dcb4a22_2" ;
+"operator()#lambda_goto_scope.cpp:.85adeb68594ead57_1" [label="1: Start lambda_goto_scope.cpp:98_6f68066f::operator()\nFormals:  this:lambda_goto_scope.cpp:98_6f68066f const *\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "operator()#lambda_goto_scope.cpp:.85adeb68594ead57_1" -> "operator()#lambda_goto_scope.cpp:.85adeb68594ead57_4" ;
+"operator()#lambda_goto_scope.cpp:.85adeb68594ead57_2" [label="2: Exit lambda_goto_scope.cpp:98_6f68066f::operator() \n  " color=yellow style=filled]
+	
+
+"operator()#lambda_goto_scope.cpp:.85adeb68594ead57_3" [label="3:  Return Stmt \n  " shape="box"]
+	
+
+	 "operator()#lambda_goto_scope.cpp:.85adeb68594ead57_3" -> "operator()#lambda_goto_scope.cpp:.85adeb68594ead57_2" ;
+"operator()#lambda_goto_scope.cpp:.85adeb68594ead57_4" [label="4: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "operator()#lambda_goto_scope.cpp:.85adeb68594ead57_4" -> "operator()#lambda_goto_scope.cpp:.85adeb68594ead57_3" ;
+}
