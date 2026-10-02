@@ -622,35 +622,21 @@ module Vector = struct
     PulseOperations.write_id ret_id (arr_addr, Hist.add_event event arr_hist) astate
 
 
-  (** make [iter] point to the element at [index] in the backing array of [vector] *)
-  let write_iterator path location event vector iter index astate =
-    let pointer_hist = Hist.add_event event (snd iter) in
-    let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
-    let* astate, (arr_addr, _arr_hist) =
-      GenericArrayBackedCollection.eval path Read location vector astate
-    in
-    let* astate, elem =
-      GenericArrayBackedCollection.eval_element path location (arr_addr, pointer_hist) index astate
-    in
-    PulseOperations.write_deref_field path location ~ref:iter GenericArrayBackedCollection.field
-      ~obj:(arr_addr, pointer_hist) astate
-    >>= PulseOperations.write_field path location ~ref:iter
-          GenericArrayBackedCollection.Iterator.internal_pointer ~obj:pointer_val
-    >>= PulseOperations.write_deref path location ~ref:pointer_val ~obj:elem
-
-
-  let vector_begin vector iter : model_no_non_disj =
+  let vector_begin ~desc vector iter : model_no_non_disj =
    fun {path; location} astate ->
-    let event = Hist.call_event path location "std::vector::begin()" in
+    let event = Hist.call_event path location desc in
     let index_zero = AbstractValue.mk_fresh () in
     let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
-    let<+> astate = write_iterator path location event vector iter index_zero astate in
+    let<+> astate =
+      GenericArrayBackedCollection.Iterator.point_into path location event ~collection:vector ~iter
+        ~index:index_zero astate
+    in
     astate
 
 
-  let vector_end vector iter : model_no_non_disj =
+  let vector_end ~desc vector iter : model_no_non_disj =
    fun {path; location} astate ->
-    let event = Hist.call_event path location "std::vector::end()" in
+    let event = Hist.call_event path location desc in
     let<*> astate, (arr_addr, _) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
@@ -766,7 +752,8 @@ module Vector = struct
     in
     (* the returned iterator points to an unknown position in the vector *)
     let<+> astate =
-      write_iterator path location event vector iter (AbstractValue.mk_fresh ()) astate
+      GenericArrayBackedCollection.Iterator.point_into path location event ~collection:vector ~iter
+        astate
     in
     astate
 end
@@ -1392,8 +1379,16 @@ let simple_matchers =
       $--> Vector.back ~desc:"std::vector::back()"
       |> with_non_disj
     ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> Vector.vector_begin |> with_non_disj
-    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
+      $--> Vector.vector_begin ~desc:"std::vector::begin()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "cbegin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_begin ~desc:"std::vector::cbegin()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_end ~desc:"std::vector::end()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "cend" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_end ~desc:"std::vector::cend()"
       |> with_non_disj
     ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
       $--> Vector.invalidate_references Clear
