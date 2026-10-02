@@ -61,8 +61,8 @@ module Exec = struct
           ~dimension mem
     | Typ.Tstruct typname -> (
       match TypModels.dispatch tenv typname with
-      | Some (CArray {element_typ; length}) ->
-          decl_local_array model_env loc element_typ ~length:(Some length) ~inst_num
+      | Some (CArray {element_typ; length; stride}) ->
+          decl_local_array model_env loc element_typ ~length:(Some length) ?stride ~inst_num
             ~represents_multiple_values ~dimension mem
       | Some CppStdVector | Some JavaCollection | Some JavaInteger | None ->
           (mem, inst_num) )
