@@ -79,4 +79,23 @@ digraph cfg {
 	
 
 	 "point_coords_set_correctly.3abf7d8dcf379339_5" -> "point_coords_set_correctly.3abf7d8dcf379339_3" ;
+"unnamed_bitfield.6c8cf53b14d72506_1" [label="1: Start unnamed_bitfield\nFormals: \nLocals:  p:padded \n  " color=yellow style=filled]
+	
+
+	 "unnamed_bitfield.6c8cf53b14d72506_1" -> "unnamed_bitfield.6c8cf53b14d72506_5" ;
+"unnamed_bitfield.6c8cf53b14d72506_2" [label="2: Exit unnamed_bitfield \n  " color=yellow style=filled]
+	
+
+"unnamed_bitfield.6c8cf53b14d72506_3" [label="3:  Return Stmt \n   n$0=*&p.a:int [line 69, column 14]\n " shape="box"]
+	
+
+	 "unnamed_bitfield.6c8cf53b14d72506_3" -> "unnamed_bitfield.6c8cf53b14d72506_4" ;
+"unnamed_bitfield.6c8cf53b14d72506_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 69, column 3]\n " shape="box"]
+	
+
+	 "unnamed_bitfield.6c8cf53b14d72506_4" -> "unnamed_bitfield.6c8cf53b14d72506_2" ;
+"unnamed_bitfield.6c8cf53b14d72506_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(p:padded); [line 68, column 3]\n  *&p.a:int=0 [line 68, column 28]\n  *&p.b:int=2 [line 68, column 21]\n " shape="box"]
+	
+
+	 "unnamed_bitfield.6c8cf53b14d72506_5" -> "unnamed_bitfield.6c8cf53b14d72506_3" ;
 }
