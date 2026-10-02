@@ -267,10 +267,7 @@ void FP_realloc_zero_size_ok() {
 
 void realloc_fatal_error(void) __attribute__((noreturn));
 
-// Pulse checks for leaks when a path ends in a call to a noreturn function that
-// is not modelled like exit() or abort(), and a failed realloc leaves p
-// allocated
-void FP_realloc_failure_noreturn_ok() {
+void realloc_failure_noreturn_ok() {
   int* p = (int*)malloc(sizeof(int));
   if (p == NULL) {
     return;
