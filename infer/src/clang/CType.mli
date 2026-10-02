@@ -23,4 +23,8 @@ val is_block_type : Clang_ast_t.qual_type -> bool
 
 val is_reference_type : Clang_ast_t.qual_type -> bool
 
+val is_vector_type : Clang_ast_t.qual_type -> bool
+(** clang vector types, e.g. [__attribute__((vector_size(N)))] or
+    [__attribute__((ext_vector_type(N)))] *)
+
 val is_pointer_to_const : Clang_ast_t.qual_type -> bool
