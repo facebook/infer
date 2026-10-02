@@ -367,3 +367,220 @@ int emplace_back_size_bad() {
   }
   return 0;
 }
+
+void push_back_in_callee(std::vector<int>& vec) { vec.push_back(42); }
+
+void push_back_in_nested_callee(std::vector<int>& vec) {
+  push_back_in_callee(vec);
+}
+
+void clear_in_callee(std::vector<int>& vec) { vec.clear(); }
+
+void push_back_if_in_callee(std::vector<int>& vec, bool b) {
+  if (b) {
+    vec.push_back(42);
+  }
+}
+
+void unknown_vector_function(std::vector<int>& vec);
+
+void push_back_then_unknown_call_in_callee(std::vector<int>& vec) {
+  vec.push_back(42);
+  unknown_vector_function(vec);
+}
+
+int size_in_callee(std::vector<int>& vec) { return vec.size(); }
+
+void push_back_in_by_value_callee(std::vector<int> vec) { vec.push_back(42); }
+
+void deref_vector_element_after_push_back_in_callee_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_in_nested_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_in_nested_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_clear_in_callee_bad(std::vector<int>& vec) {
+  int& elt = vec.at(1);
+  clear_in_callee(vec);
+  std::cout << elt << "\n";
+}
+
+void deref_local_vector_element_after_push_back_in_callee_bad() {
+  std::vector<int> vec = {0, 0};
+  int* elt = &vec[1];
+  push_back_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_if_true_in_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_if_in_callee(vec, true);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_then_unknown_call_in_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_then_unknown_call_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_if_false_in_callee_ok(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_if_in_callee(vec, false);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_size_in_callee_ok(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  size_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_other_in_callee_ok(
+    std::vector<int>& vec, std::vector<int>& vec_other) {
+  int* elt = &vec[1];
+  push_back_in_callee(vec_other);
+  std::cout << *elt << "\n";
+}
+
+void get_vector_element_after_push_back_in_callee_ok(std::vector<int>& vec) {
+  push_back_in_callee(vec);
+  int* elt = &vec[1];
+  std::cout << *elt << "\n";
+}
+
+void copy_vector_element_before_push_back_in_callee_ok(std::vector<int>& vec) {
+  int x = vec[1];
+  push_back_in_callee(vec);
+  std::cout << x << "\n";
+}
+
+void deref_vector_element_after_push_back_in_by_value_callee_ok(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_in_by_value_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_on_copy_ok(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  std::vector<int> copy{vec};
+  copy.push_back(42);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_on_moved_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  std::vector<int> moved{std::move(vec)};
+  moved.push_back(42);
+  std::cout << *elt << "\n";
+}
+
+void deref_null_element_of_vector_copy_bad() {
+  std::vector<int*> vec = {nullptr};
+  std::vector<int*> copy{vec};
+  std::cout << *copy[0] << "\n";
+}
+
+void reserve_then_push_back_in_callee_ok(std::vector<int>& vec) {
+  vec.reserve(vec.size() + 1);
+  int* elt = &vec[1];
+  push_back_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_reserve_then_clear_in_callee_bad(
+    std::vector<int>& vec) {
+  vec.reserve(vec.size() + 1);
+  int* elt = &vec[1];
+  clear_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void erase_last_in_callee(std::vector<int>& vec) { vec.erase(vec.end() - 1); }
+
+void erase_last_in_callee_keeps_first_ok(std::vector<int>& vec) {
+  if (vec.size() < 2) {
+    return;
+  }
+  int& first = vec[0];
+  erase_last_in_callee(vec);
+  std::cout << first << "\n";
+}
+
+void resize_to_one_in_callee(std::vector<int>& vec) { vec.resize(1); }
+
+void resize_smaller_in_callee_keeps_first_ok(std::vector<int>& vec) {
+  int& first = vec[0];
+  resize_to_one_in_callee(vec);
+  std::cout << first << "\n";
+}
+
+struct Point {
+  int x;
+  int y;
+};
+
+void push_back_point_in_callee(std::vector<Point>& points) {
+  points.push_back(Point{0, 0});
+}
+
+// only the elements are invalidated, not their fields
+void FN_element_field_ptr_after_grow_bad(std::vector<Point>& points) {
+  int* x = &points[0].x;
+  push_back_point_in_callee(points);
+  std::cout << *x << "\n";
+}
+
+void move_and_push_back_in_callee(std::vector<int>&& vec) {
+  std::vector<int> moved{std::move(vec)};
+  moved.push_back(42);
+}
+
+// the callee only invalidates the internal array of the vector it moved to
+void FN_deref_vector_element_after_move_and_push_back_in_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  move_and_push_back_in_callee(std::move(vec));
+  std::cout << *elt << "\n";
+}
+
+// the capture by value does not call the copy constructor, so the lambda's copy
+// shares the elements of vec
+void FP_deref_vector_element_after_push_back_on_captured_copy_ok(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  auto f = [vec]() mutable { vec.push_back(42); };
+  f();
+  std::cout << *elt << "\n";
+}
+
+struct VectorRegistry {
+  std::vector<int> items;
+
+  int& create(int x) {
+    items.push_back(x);
+    return items[items.size() - 1];
+  }
+
+  int create_twice_bad() {
+    int& a = create(1);
+    int& b = create(2);
+    return a + b;
+  }
+
+  int create_once_ok() {
+    int& a = create(1);
+    return a;
+  }
+};
