@@ -198,7 +198,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     let attribute_map =
       AttributeMapDomain.propagate_assignment lhs_access_exp rhs_exp astate.attribute_map
     in
-    {astate with ownership; attribute_map}
+    let return_alias =
+      ReturnAliasDomain.assign formals ~lhs:lhs_access_exp ~rhs:rhs_exp astate.return_alias
+    in
+    {astate with ownership; attribute_map; return_alias}
 
 
   let do_assume formals assume_exp loc tenv (astate : Domain.t) =
@@ -254,6 +257,30 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         do_assume formals assume_exp loc tenv astate
     | Metadata _ ->
         astate
+
+
+  let call_return_alias {interproc= {tenv; analyze_dependency}} callee_pname actuals =
+    (* the calls for which [exec_instr] applies the callee summary *)
+    let is_summarized_call () =
+      (not (RacerDModels.acquires_ownership callee_pname tenv))
+      && (not (RacerDModels.is_container_write tenv callee_pname))
+      && (not (RacerDModels.is_container_read tenv callee_pname))
+      && ( match ConcurrencyModels.get_lock_effect callee_pname actuals with
+        | NoEffect ->
+            true
+        | _ ->
+            false )
+      && not (RacerDModels.proc_is_ignored_by_racerd callee_pname)
+    in
+    if ReturnAliasDomain.is_supported_procname callee_pname && is_summarized_call () then
+      match analyze_dependency callee_pname with
+      (* an attribute of the returned value, e.g. [LockHeld], is attached to the return identifier
+         and would be lost by resolving it to the alias *)
+      | Ok {Domain.return_alias= Some alias; return_attribute= Nothing} ->
+          ReturnAliasDomain.subst ~callee:callee_pname actuals alias
+      | _ ->
+          None
+    else None
 
 
   let pp_session_name _node fmt = F.pp_print_string fmt "racerd"

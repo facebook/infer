@@ -167,6 +167,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.value_map ~default:astate ~f:(fun attribute ->
           let attributes = Domain.AttributeDomain.add lhs_access_exp attribute astate.attributes in
           {astate with attributes} )
+      |> Domain.assign_return formals ~lhs:lhs_access_exp ~rhs:rhs_exp
     in
     if HilExp.is_null_literal rhs_exp then astate
     else Domain.set_non_null formals lhs_access_exp astate
@@ -269,7 +270,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(fun summary ->
           let subst = Lock.make_subst formals actuals in
           let callsite = CallSite.make callee loc in
-          Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary )
+          Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary
+          |> Domain.bind_return_alias ~callee ~lhs actuals summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
