@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
+#include <pthread.h>
 #include <stdlib.h>
 
 #include <memory>
@@ -52,6 +53,13 @@ void unique_ptr_then_noreturn_ok(bool b) {
   if (b) {
     fatal_error("error");
   }
+}
+
+// with glibc, pthread_exit unwinds the stack of the thread and destroys p, but
+// the path ends at the call
+void FP_unique_ptr_then_pthread_exit_ok() {
+  std::unique_ptr<int> p(new int(42));
+  pthread_exit(nullptr);
 }
 
 struct Logger {
