@@ -81,6 +81,44 @@ int std_assign2_bad() {
   return sum;
 }
 
+int std_reset_bad() {
+  std::optional<int> foo{5};
+  int sum = foo.value();
+  foo.reset();
+  sum += foo.value();
+  return sum;
+}
+
+std::string std_reset_non_trivial_bad(const std::string& x) {
+  std::optional<std::string> foo{x};
+  foo.reset();
+  return *foo;
+}
+
+int std_reset_then_assign_ok() {
+  std::optional<int> foo{5};
+  foo.reset();
+  foo = 7;
+  return foo.value();
+}
+
+int std_reset_check_has_value_ok() {
+  std::optional<int> foo{5};
+  foo.reset();
+  if (foo.has_value()) {
+    return foo.value();
+  }
+  return -1;
+}
+
+void reset_optional(std::optional<int>& foo) { foo.reset(); }
+
+int std_reset_in_callee_bad() {
+  std::optional<int> foo{5};
+  reset_optional(foo);
+  return *foo;
+}
+
 struct State {
   std::vector<int> vec;
 };
@@ -93,6 +131,17 @@ void std_emplace(std::optional<State> state) {
 }
 
 void std_operator_arrow_bad() { std_emplace(std::nullopt); }
+
+struct StateHolder {
+  std::optional<State> state;
+
+  void reset_member_bad(bool force) {
+    if (force) {
+      state.reset();
+    }
+    auto pos = state->vec.begin();
+  }
+};
 
 int std_value_or_check_empty_ok() {
   std::optional<int> foo{std::nullopt};
@@ -191,6 +240,20 @@ int std_null_deref_after_nullopt_bad() {
 int std_copy_shared_ptr_after_nullopt_ok(const std::shared_ptr<int>& sp,
                                          std::optional<int>& foo) {
   foo = std::nullopt;
+  std::shared_ptr<int> copy = sp;
+  return *copy;
+}
+
+int std_null_deref_after_reset_bad() {
+  std::optional<int> foo{5};
+  foo.reset();
+  int* p = nullptr;
+  return *p;
+}
+
+int std_copy_shared_ptr_after_reset_ok(const std::shared_ptr<int>& sp,
+                                       std::optional<int>& foo) {
+  foo.reset();
   std::shared_ptr<int> copy = sp;
   return *copy;
 }
