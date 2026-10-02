@@ -1077,6 +1077,13 @@ let apply_unknown_effects call_state =
         (* havoc only fields that haven't been havoc'd already during the call *)
         not (Option.equal AbstractValue.equal post_value pre_value)
   in
+  let overwrite_contents addr_callee attrs astate =
+    (let* hist = Attributes.get_contents_overwritten attrs in
+     let+ addr_caller, _ = to_caller_value call_state (CanonValue.downcast addr_callee) in
+     AbductiveDomain.overwrite_contents hist addr_caller astate ~havoc_filter:(fun addr_caller ->
+         not (is_modified_by_call addr_caller Dereference) ) )
+    |> Option.value ~default:astate
+  in
   let astate =
     BaseAddressAttributes.fold
       (fun addr_callee attrs astate ->
@@ -1094,7 +1101,8 @@ let apply_unknown_effects call_state =
          in
          L.d_printfln "@]" ;
          astate )
-        |> Option.value ~default:astate )
+        |> Option.value ~default:astate
+        |> overwrite_contents addr_callee attrs )
       (AbductiveDomain.Summary.get_post call_state.callee_summary).attrs call_state.astate
   in
   {call_state with astate}

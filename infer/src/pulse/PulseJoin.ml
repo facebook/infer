@@ -229,6 +229,7 @@ let join_one_sided_attribute (attr : Attribute.t) =
       None
   | Allocated _
   | AwaitedAwaitable
+  | ContentsOverwritten _
   | CopiedInto _
   | CopiedReturn _
   | InReportedRetainCycle
@@ -293,6 +294,8 @@ let join_two_sided_attribute join_state (attr1 : Attribute.t) (attr2 : Attribute
       if Procname.equal proc_name1 proc_name2 then Some attr1 else None
   | ConfigUsage cu1, ConfigUsage cu2 ->
       if Attribute.ConfigUsage.equal cu1 cu2 then Some attr1 else None
+  | ContentsOverwritten hist1, ContentsOverwritten hist2 ->
+      Some (ContentsOverwritten (join_histories hist1 hist2))
   | CopiedInto ci1, CopiedInto ci2 ->
       if Attribute.CopiedInto.equal ci1 ci2 then Some attr1 else None
   | ( CopiedReturn {source= source1; is_const_ref= is_const_ref1; from= from1; copied_location}

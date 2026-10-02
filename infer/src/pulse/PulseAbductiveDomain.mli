@@ -359,6 +359,13 @@ val apply_unknown_effect :
     everything reachable from the address, then havoc all the edges starting from the address
     passing [havoc_filter] (by default everything passes the filter) *)
 
+val overwrite_contents :
+  ?havoc_filter:(AbstractValue.t -> bool) -> ValueHistory.t -> AbstractValue.t -> t -> t
+(** mark the address and the addresses reachable from it through field and array accesses with
+    [ContentsOverwritten] and initialize them, and give fresh values to the cells at these addresses
+    that pass [havoc_filter]; the addresses reachable from the old values of these cells lose their
+    allocation attributes *)
+
 val is_local : Var.t -> t -> bool
 
 val find_post_cell_opt : AbstractValue.t -> t -> BaseDomain.cell option
