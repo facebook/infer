@@ -49,7 +49,7 @@ type t =
   | CppDelete
   | CppDeleteArray
   | EndIterator
-  | FClose
+  | FClose of Procname.t
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function

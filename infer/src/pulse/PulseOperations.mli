@@ -76,6 +76,10 @@ val conservatively_initialize_args : AbstractValue.t list -> t -> t
 val remove_allocation_attr_transitively : AbstractValue.t list -> t -> t
 (** Remove allocation attribute (if any) on all reachable values from the given list. *)
 
+val forget_file_descriptors_passed_by_value : (AbstractValue.t * Typ.t) list -> t -> t
+(** Remove the allocation attribute of the file descriptors among the given non-pointer arguments,
+    for calls that can take ownership of them. *)
+
 val eval :
      PathContext.t
   -> access_mode

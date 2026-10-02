@@ -152,4 +152,10 @@ void flag_lambda_deleter_ok(const char* path) {
   });
 }
 
+void popen_pclose_deleter_ok(const char* command) {
+  if (FILE* p = popen(command, "r")) {
+    std::shared_ptr<FILE> f(p, pclose);
+  }
+}
+
 } // namespace shared_ptr_deleter

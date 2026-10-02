@@ -245,4 +245,12 @@ int delete_deleter_use_after_delete_bad() {
   return *raw;
 }
 
+int popen_pclose_deleter_ok(const char* command) {
+  std::unique_ptr<FILE, decltype(&pclose)> p(popen(command, "r"), pclose);
+  if (!p) {
+    return -1;
+  }
+  return fgetc(p.get());
+}
+
 } // namespace unique_ptr_deleter

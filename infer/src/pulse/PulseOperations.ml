@@ -171,6 +171,15 @@ let remove_allocation_attr_transitively arg_values astate =
   fold_reachable_from ~f:AddressAttributes.remove_allocation_attr arg_values astate
 
 
+let forget_file_descriptors_passed_by_value args astate =
+  List.fold args ~init:astate ~f:(fun astate (value, typ) ->
+      match AddressAttributes.get_allocation_attr value astate with
+      | Some (FileDescriptor _, _) when not (Typ.is_pointer typ) ->
+          AddressAttributes.remove_allocation_attr value astate
+      | _ ->
+          astate )
+
+
 let eval_access_to_value_origin path ?must_be_valid_reason mode location addr_hist access astate =
   let+ astate = check_addr_access path ?must_be_valid_reason mode location addr_hist astate in
   let astate, dest = Memory.eval_edge addr_hist access astate in
