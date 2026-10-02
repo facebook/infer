@@ -254,7 +254,7 @@ let get_decl_from_typ_ptr typ_ptr =
       None
 
 
-let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
+let sil_annot_of_type_aux ~c_function {Clang_ast_t.qt_type_ptr} =
   let mk_annot annot_name_opt =
     match annot_name_opt with
     | Some annot_name ->
@@ -265,6 +265,8 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
   let rec annot_name_of_type_ptr type_ptr =
     match get_type type_ptr with
     | Some (AttributedType (_, {ati_attr_kind= TypeNullableAttrKind})) ->
+        Some Annotations.nullable
+    | Some (AttributedType (_, {ati_attr_kind= TypeNullableResultAttrKind})) when c_function ->
         Some Annotations.nullable
     | Some (AttributedType (_, {ati_attr_kind= TypeNonNullAttrKind})) ->
         Some Annotations.nonnull
@@ -282,10 +284,37 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
        [@property(nullable, ...) T *foo NS_SWIFT_UI_ACTOR;]. *)
     | Some (MacroQualifiedType (_, {qt_type_ptr= inner_ptr})) ->
         annot_name_of_type_ptr inner_ptr
+    | Some
+        ( ElaboratedType (_, {qt_type_ptr= inner_ptr})
+        | TemplateSpecializationType (_, {tsti_aliased_type= Some {qt_type_ptr= inner_ptr}})
+        | TypedefType (_, {tti_child_type= {qt_type_ptr= inner_ptr}})
+        | UsingType (_, {qt_type_ptr= inner_ptr}) )
+      when c_function ->
+        annot_name_of_type_ptr inner_ptr
     | _ ->
         None
   in
   mk_annot (annot_name_of_type_ptr qt_type_ptr)
+
+
+let sil_annot_of_type qual_type = sil_annot_of_type_aux ~c_function:false qual_type
+
+let sil_annot_of_return_type decl qual_type =
+  match Clang_ast_proj.get_function_decl_tuple decl with
+  | None ->
+      sil_annot_of_type qual_type
+  | Some _ ->
+      let annot = sil_annot_of_type_aux ~c_function:true qual_type in
+      let returns_nonnull =
+        List.exists (Clang_ast_proj.get_decl_tuple decl).di_attributes ~f:(function
+          | `ReturnsNonNullAttr _ ->
+              true
+          | _ ->
+              false )
+      in
+      if returns_nonnull && not (Annotations.ia_is_nullable annot || Annotations.ia_is_nonnull annot)
+      then [{Annot.class_name= Annotations.nonnull; parameters= []}]
+      else annot
 
 
 let qual_type_of_decl_ptr decl_ptr =

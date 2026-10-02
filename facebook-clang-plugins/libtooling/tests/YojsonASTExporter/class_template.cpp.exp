@@ -2242,11 +2242,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 159
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 160
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (
@@ -2278,11 +2282,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 163
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 164
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (
@@ -2306,18 +2314,25 @@
         {
           "pointer" : 166,
           "desugared_type" : 35
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 167,
           "desugared_type" : 35
+        },
+        {
         }
       )>,
       <"ElaboratedType" : (
         {
           "pointer" : 70,
           "desugared_type" : 35
+        },
+        {
+          "type_ptr" : 167
         }
       )>,
       <"FunctionProtoType" : (
@@ -2358,12 +2373,17 @@
         {
           "pointer" : 169,
           "desugared_type" : 35
+        },
+        {
         }
       )>,
       <"ElaboratedType" : (
         {
           "pointer" : 170,
           "desugared_type" : 35
+        },
+        {
+          "type_ptr" : 169
         }
       )>,
       <"PointerType" : (
@@ -2392,12 +2412,17 @@
         {
           "pointer" : 172,
           "desugared_type" : 10
+        },
+        {
         }
       )>,
       <"ElaboratedType" : (
         {
           "pointer" : 74,
           "desugared_type" : 10
+        },
+        {
+          "type_ptr" : 172
         }
       )>,
       <"SubstTemplateTypeParmType" : (
@@ -2472,6 +2497,9 @@
         {
           "pointer" : 178,
           "desugared_type" : 10
+        },
+        {
+          "type_ptr" : 10
         }
       )>,
       <"LValueReferenceType" : (
@@ -2496,6 +2524,9 @@
         {
           "pointer" : 60,
           "desugared_type" : 35
+        },
+        {
+          "type_ptr" : 35
         }
       )>,
       <"LValueReferenceType" : (
