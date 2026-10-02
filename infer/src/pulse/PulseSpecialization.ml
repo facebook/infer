@@ -24,6 +24,10 @@ let prune_eq_list_values astate values =
 
 let rec initialize_heap_path heap_path astate =
   match (heap_path : Specialization.HeapPath.t) with
+  | Pvar pvar when Pvar.is_global pvar ->
+      (* unlike formals, globals are not pre-registered in the initial state *)
+      let astate, value_origin = Stack.eval ValueHistory.epoch (Var.of_pvar pvar) astate in
+      (astate, ValueOrigin.addr_hist value_origin)
   | Pvar pvar ->
       let opt_addr =
         Stack.find_opt (Var.of_pvar pvar) astate |> Option.map ~f:ValueOrigin.addr_hist
