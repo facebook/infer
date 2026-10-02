@@ -614,6 +614,16 @@ let is_initializer tenv proc_name =
        tenv proc_name
 
 
+let num_required_capabilities proc_name =
+  if Procname.is_clang proc_name then
+    Attributes.load proc_name
+    |> Option.bind ~f:(fun {ProcAttributes.ret_annots} ->
+        List.find ret_annots ~f:(fun {Annot.class_name} ->
+            String.equal class_name Annotations.requires_capability ) )
+    |> Option.value_map ~default:0 ~f:(fun {Annot.parameters} -> List.length parameters)
+  else 0
+
+
 let get_current_class_and_superclasses_satisfying_attr_check check tenv pname =
   match pname with
   | Procname.Java java_pname ->

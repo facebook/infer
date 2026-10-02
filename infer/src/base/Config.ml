@@ -3112,7 +3112,7 @@ and racerd_always_report_java =
 and racerd_guardedby =
   CLOpt.mk_bool ~long:"racerd-guardedby" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_racerd)]
-    "Check @GuardedBy annotations with RacerD"
+    "Check @GuardedBy annotations (Java) and guarded_by attributes (C++) with RacerD"
 
 
 and racerd_ignore_classes =

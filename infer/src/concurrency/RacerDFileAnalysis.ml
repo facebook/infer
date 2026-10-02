@@ -187,7 +187,7 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
   in
   (not (RacerDDomain.LockDomain.is_locked snapshot.elem.lock))
   && RacerDDomain.AccessSnapshot.is_write snapshot
-  && Procname.is_java procname
+  && (Procname.is_java procname || Procname.is_c_method procname)
   &&
   (* restrict check to access paths of length one *)
   match
@@ -307,13 +307,19 @@ let get_reporting_explanation_java report_kind tenv pname thread =
 
 
 (** Explain why we are reporting this access, in C++ *)
-let get_reporting_explanation_cpp = (IssueType.lock_consistency_violation, "")
+let get_reporting_explanation_cpp = function
+  | GuardedByViolation ->
+      ( IssueType.guardedby_violation
+      , F.asprintf "@\n Reporting because field is annotated %a" MF.pp_monospaced "guarded_by" )
+  | WriteWriteRace _ | ReadWriteRace _ | UnannotatedInterface ->
+      (IssueType.lock_consistency_violation, "")
+
 
 (** Explain why we are reporting this access *)
 let get_reporting_explanation report_kind tenv pname thread =
   if Procname.is_java pname || Procname.is_csharp pname then
     get_reporting_explanation_java report_kind tenv pname thread
-  else get_reporting_explanation_cpp
+  else get_reporting_explanation_cpp report_kind
 
 
 let log_issue current_pname ~issue_log ~loc ~ltr ~access issue_type error_message =
@@ -606,8 +612,13 @@ let should_report_on_proc proc_name =
 let make_results_table summaries =
   let open RacerDDomain in
   let aggregate_post tenv procname acc {threads; accesses} =
+    (* report on the procedure as if its callers held the locks it requires, but leave its summary
+       alone so that callers that do not hold them are reported *)
+    let locks_held_on_entry = RacerDModels.num_required_capabilities procname in
     AccessDomain.fold
-      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
+      (fun snapshot acc ->
+        let snapshot = AccessSnapshot.with_locks_held_on_entry locks_held_on_entry snapshot in
+        ReportMap.add {threads; snapshot; tenv; procname} acc )
       accesses acc
   in
   List.fold summaries ~init:ReportMap.empty ~f:(fun acc (procname, summary) ->

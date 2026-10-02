@@ -106,6 +106,10 @@ module AccessSnapshot : sig
 
   val get_loc : t -> Location.t
 
+  val with_locks_held_on_entry : int -> t -> t
+  (** the access as seen when the procedure it was recorded in starts with the given number of locks
+      held *)
+
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
 end

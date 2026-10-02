@@ -60,6 +60,10 @@ val is_synchronized_container : Procname.t -> HilExp.AccessExpression.t -> Tenv.
 val is_initializer : Tenv.t -> Procname.t -> bool
 (** should the given procedure be treated as a constructor/initializer? *)
 
+val num_required_capabilities : Procname.t -> int
+(** the number of capabilities that a clang function requires its callers to hold
+    ([requires_capability]) *)
+
 val is_synchronized_container_constructor : Tenv.t -> Procname.t -> HilExp.t list -> bool
 
 val is_converter_to_synchronized_container : Tenv.t -> Procname.t -> HilExp.t list -> bool

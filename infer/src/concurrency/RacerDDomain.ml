@@ -440,6 +440,17 @@ module AccessSnapshot = struct
     |> Option.bind ~f:(filter caller_formals)
 
 
+  let with_locks_held_on_entry n snapshot =
+    if n <= 0 then snapshot
+    else
+      let caller_astate = Fn.apply_n_times ~n LockDomain.acquire_lock LockDomain.initial in
+      let lock =
+        LockDomain.integrate_summary ~caller_astate ~callee_astate:snapshot.elem.lock
+        |> LockDomain.for_access
+      in
+      map snapshot ~f:(fun elem -> {elem with lock})
+
+
   let is_unprotected {elem= {thread; lock; ownership_precondition}} =
     (not (ThreadsDomain.is_any_but_self thread))
     && (not (LockDomain.is_locked lock))
