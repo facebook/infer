@@ -575,6 +575,11 @@ let matchers : matcher list =
   ; -"std" &:: "optional" &:: "reset" <>$ capt_arg_payload
     $+...$--> assign_none ValueHistory.epoch ~desc:"std::optional::reset()"
     |> with_non_disj
+  ; (* libc++ declares [reset] in this base class and brings it into [std::optional] with a
+       using-declaration, so calls to [std::optional::reset] resolve to the base-class method *)
+    -"std" &:: "__optional_destruct_base" &:: "reset" <>$ capt_arg_payload
+    $+...$--> assign_none ValueHistory.epoch ~desc:"std::optional::reset()"
+    |> with_non_disj
   ; -"std" &:: "optional" &:: "value" <>$ capt_arg_payload
     $+...$--> value ~desc:"std::optional::value()"
     |> with_non_disj
