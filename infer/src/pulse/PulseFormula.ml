@@ -494,6 +494,19 @@ let and_dynamic_type v t ?source_file formula =
   ({formula with phi}, new_eqns)
 
 
+(** [pre_function g] stands for [g] evaluated in the state at the start of the procedure *)
+let pre_function g = Term.FunctionApplication {f= String "pre"; actuals= [g]}
+
+let get_pre_function (g : Term.t) =
+  match g with FunctionApplication {f= String "pre"; actuals= [g]} -> Some g | _ -> None
+
+
+let is_pre_function g = Option.is_some (get_pre_function g)
+
+let is_pre_function_application (t : Term.t) =
+  match t with FunctionApplication {f} -> is_pre_function f | _ -> false
+
+
 (** translate each variable in [formula_foreign] according to [f] then incorporate each fact into
     [formula0] *)
 let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
@@ -526,11 +539,15 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   in
   let and_term_eqs phi_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_map_fold Formula.term_eqs_fold phi_foreign ~init:acc_phi_new_eqs
-      ~f:(fun (acc_f, phi_new_eqs) (t_foreign, v_foreign) ->
-        let acc_f, t = Term.fold_subst_variables t_foreign ~init:acc_f ~f_subst in
-        let acc_f, v = f_var acc_f v_foreign in
-        let phi_new_eqs = Formula.Normalizer.and_var_term v t phi_new_eqs |> sat_value_exn in
-        (acc_f, phi_new_eqs) )
+      ~f:(fun ((acc_f, phi_new_eqs) as acc) (t_foreign, v_foreign) ->
+        if is_pre_function_application t_foreign then
+          (* see [and_callee_pre_function_applications] *)
+          acc
+        else
+          let acc_f, t = Term.fold_subst_variables t_foreign ~init:acc_f ~f_subst in
+          let acc_f, v = f_var acc_f v_foreign in
+          let phi_new_eqs = Formula.Normalizer.and_var_term v t phi_new_eqs |> sat_value_exn in
+          (acc_f, phi_new_eqs) )
   in
   let and_intervals intervals_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_map_fold Var.Map.fold intervals_foreign ~init:acc_phi_new_eqs
@@ -1174,6 +1191,52 @@ let is_manifest ~is_allocated formula =
 
 let get_var_repr formula v = (Formula.get_repr formula.phi v :> Var.t)
 
+let fold_actuals_variables phi actuals ~init ~f =
+  List.fold actuals ~init ~f:(fun acc (actual : Term.t) ->
+      let acc =
+        match actual with
+        | Var _ | Const _ ->
+            acc
+        | _ ->
+            (* the actual was a variable that got substituted by an equal term, eg [x] by [y-1]
+               after learning [y=x+1] *)
+            Formula.get_term_eq phi actual |> Option.fold ~init:acc ~f
+      in
+      Term.fold_variables actual ~init:acc ~f )
+
+
+let function_application_actuals {phi} =
+  Formula.term_eqs_fold_function_applications
+    (fun (t : Term.t) _ vars ->
+      match t with
+      | FunctionApplication {f; actuals} when not (is_pre_function f) ->
+          fold_actuals_variables phi actuals ~init:vars ~f:(Fn.flip Var.Set.add)
+      | _ ->
+          vars )
+    phi Var.Set.empty
+
+
+let forget_function_applications ({phi} as formula) ~f ~keep_pre =
+  let phi' =
+    Formula.term_eqs_fold_function_applications
+      (fun (t : Term.t) v phi' ->
+        match t with
+        | FunctionApplication {f= g; actuals} when not (is_pre_function g) ->
+            let vars = fold_actuals_variables phi actuals ~init:[] ~f:(fun vars x -> x :: vars) in
+            if List.exists vars ~f then
+              let phi' = Formula.remove_term_eq t v phi' in
+              let t_pre = Term.FunctionApplication {f= pre_function g; actuals} in
+              if Option.is_none (Formula.get_term_eq phi' t_pre) && keep_pre vars then
+                Formula.add_term_eq t_pre v phi' |> fst
+              else phi'
+            else phi'
+        | _ ->
+            phi' )
+      phi phi
+  in
+  if phys_equal phi' phi then formula else {formula with phi= phi'}
+
+
 let as_constant_q formula v =
   Var.Map.find_opt (get_var_repr formula v) formula.phi.linear_eqs
   |> Option.bind ~f:LinArith.get_as_const
@@ -1211,6 +1274,37 @@ let and_callee_formula ~default ~subst formula ~callee:formula_callee =
       formula
   in
   (subst, formula, RevList.append new_eqs' new_eqs)
+
+
+let and_callee_pre_function_applications ~default ~subst formula ~callee:formula_callee =
+  let f_subst subst v =
+    let subst, v' = subst_find_or_new ~default subst v in
+    (subst, Term.VarSubst v')
+  in
+  let+ subst, phi, new_eqs =
+    Formula.term_eqs_fold_function_applications
+      (fun (t_callee : Term.t) v_callee acc ->
+        match t_callee with
+        | FunctionApplication {f; actuals} -> (
+          match get_pre_function f with
+          | Some g ->
+              let* subst, phi, new_eqs = acc in
+              let subst, t =
+                Term.fold_subst_variables
+                  (Term.FunctionApplication {f= g; actuals})
+                  ~init:subst ~f_subst
+              in
+              let subst, v = subst_find_or_new ~default subst v_callee in
+              let+ phi, new_eqs = Formula.Normalizer.and_var_term v t (phi, new_eqs) in
+              (subst, phi, new_eqs)
+          | None ->
+              acc )
+        | _ ->
+            acc )
+      formula_callee.phi
+      (Sat (subst, formula.phi, RevList.empty))
+  in
+  (subst, {formula with phi}, new_eqs)
 
 
 let fold_variables {conditions; phi} ~init ~f =

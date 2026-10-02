@@ -734,11 +734,9 @@ let materialize_pre_for_globals path call_state =
         ~addr_hist_caller path call_state )
 
 
-let conjoin_callee_arith callee_path_condition call_state =
-  L.d_printfln "applying callee path condition: (%a)[%a]" Formula.pp callee_path_condition
-    pp_to_caller_subst call_state.subst ;
+let conjoin_callee_formula and_callee_formula callee_path_condition call_state =
   let subst, path_condition, new_eqs =
-    Formula.and_callee_formula ~default:ValueHistory.epoch
+    and_callee_formula ~default:ValueHistory.epoch
       ~subst:(raw_map_of_to_caller_subst call_state.subst)
       call_state.astate.path_condition ~callee:callee_path_condition
     |> raise_if_unsat
@@ -746,6 +744,60 @@ let conjoin_callee_arith callee_path_condition call_state =
   let astate = AbductiveDomain.set_path_condition path_condition call_state.astate in
   let call_state = {call_state with astate; subst= to_caller_subst_of_raw_map subst} in
   incorporate_new_eqs new_eqs call_state |> raise_if_unsat
+
+
+let conjoin_callee_arith callee_path_condition call_state =
+  L.d_printfln "applying callee path condition: (%a)[%a]" Formula.pp callee_path_condition
+    pp_to_caller_subst call_state.subst ;
+  conjoin_callee_formula Formula.and_callee_formula callee_path_condition call_state
+
+
+let conjoin_callee_pre_function_applications callee_path_condition call_state =
+  conjoin_callee_formula Formula.and_callee_pre_function_applications callee_path_condition
+    call_state
+
+
+(** Forget the caller's results of pure unknown calls that may read memory modified by the callee.
+    This needs to happen after conjoining the results of the calls made by the callee at its start
+    and before conjoining the rest of the callee's path condition, which may record the results of
+    the same calls made by the callee after modifying that memory. *)
+let forget_pure_calls_modified_by_callee call_state =
+  let written =
+    lazy
+      (let is_modified_by_callee addr_callee edges_post =
+         let edges_pre =
+           UnsafeMemory.find_opt addr_callee call_state.callee_pre.heap
+           |> Option.value ~default:BaseMemory.Edges.empty
+         in
+         UnsafeMemory.Edges.exists edges_post ~f:(fun (access, (value_post, _)) ->
+             UnsafeMemory.Edges.find_opt access edges_pre
+             |> Option.for_all ~f:(fun (value_pre, _) ->
+                 not (AbstractValue.equal value_pre value_post) ) )
+       in
+       let written =
+         UnsafeMemory.fold
+           (fun addr_callee edges_post written ->
+             match to_caller_value call_state addr_callee with
+             | Some (addr_caller, _) when is_modified_by_callee addr_callee edges_post ->
+                 AddressSet.add addr_caller written
+             | _ ->
+                 written )
+           call_state.callee_post.heap AddressSet.empty
+       in
+       UnsafeAttributes.fold
+         (fun addr_callee attrs written ->
+           match to_caller_value call_state addr_callee with
+           | Some (addr_caller, _) when Option.is_some (Attributes.get_unknown_effect attrs) ->
+               (* [apply_unknown_effects] havocs everything reachable from [addr_caller] *)
+               AbductiveDomain.reachable_addresses_from (Seq.return addr_caller) call_state.astate
+                 `Post
+               |> AddressSet.union written
+           | _ ->
+               written )
+         call_state.callee_post.attrs written )
+  in
+  let astate = AbductiveDomain.forget_pure_calls_reading ~written call_state.astate in
+  if phys_equal astate call_state.astate then call_state else {call_state with astate}
 
 
 let caller_attrs_of_callee_attrs timestamp caller_history call_state callee_attrs =
@@ -800,15 +852,20 @@ let add_attributes pre_or_post {PathContext.timestamp} callee_attributes call_st
 
 let materialize_pre path ~captured_formals ~captured_actuals ~formals ~actuals call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call pre" ())) ;
+  let callee_path_condition =
+    AbductiveDomain.Summary.get_path_condition call_state.callee_summary
+  in
   let r =
     (* first make as large a mapping as we can between callee values and caller values... *)
     materialize_pre_for_parameters ~formals ~actuals call_state
     >>= materialize_pre_for_captured_vars ~captured_formals ~captured_actuals
     >>= materialize_pre_for_globals path
+    >>= conjoin_callee_pre_function_applications callee_path_condition
+    >>| forget_pure_calls_modified_by_callee
     >>=
     (* ...then relational arithmetic constraints in the callee's attributes will make sense in
            terms of the caller's values *)
-    conjoin_callee_arith (AbductiveDomain.Summary.get_path_condition call_state.callee_summary)
+    conjoin_callee_arith callee_path_condition
     >>= materialize_pre_from_array_indices
     >>| add_attributes `Pre path call_state.callee_pre.attrs
   in
@@ -1088,6 +1145,7 @@ let apply_unknown_effects call_state =
          L.d_printfln "applying unknown effects on %a@\n  @[<2>" AbstractValue.pp addr_caller ;
          let astate =
            AbductiveDomain.apply_unknown_effect havoc_hist addr_caller astate
+             ~forget_pure_calls:false (* see [forget_pure_calls_modified_by_callee] *)
              ~havoc_filter:(fun addr_caller access _ ->
                (* havoc only fields that haven't been havoc'd already during the call *)
                not (is_modified_by_call addr_caller access) )
