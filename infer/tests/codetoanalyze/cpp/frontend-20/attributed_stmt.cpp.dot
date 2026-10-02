@@ -1,0 +1,196 @@
+/* @generated */
+digraph cfg {
+"attributed_return_at_end_of_scope.14439ece0feddf2d_1" [label="1: Start attributed_return_at_end_of_scope\nFormals:  n:int\nLocals:  d:Destructible \n  " color=yellow style=filled]
+	
+
+	 "attributed_return_at_end_of_scope.14439ece0feddf2d_1" -> "attributed_return_at_end_of_scope.14439ece0feddf2d_5" ;
+"attributed_return_at_end_of_scope.14439ece0feddf2d_2" [label="2: Exit attributed_return_at_end_of_scope \n  " color=yellow style=filled]
+	
+
+"attributed_return_at_end_of_scope.14439ece0feddf2d_3" [label="3:  Return Stmt \n   n$0=*&n:int [line 45, column 21]\n " shape="box"]
+	
+
+	 "attributed_return_at_end_of_scope.14439ece0feddf2d_3" -> "attributed_return_at_end_of_scope.14439ece0feddf2d_4" ;
+"attributed_return_at_end_of_scope.14439ece0feddf2d_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 45, column 14]\n  _=*&d:Destructible [line 45, column 21]\n  n$2=_fun_Destructible::~Destructible(&d:Destructible*) injected [line 45, column 21]\n " shape="box"]
+	
+
+	 "attributed_return_at_end_of_scope.14439ece0feddf2d_4" -> "attributed_return_at_end_of_scope.14439ece0feddf2d_2" ;
+"attributed_return_at_end_of_scope.14439ece0feddf2d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(d:Destructible); [line 44, column 3]\n  n$4=_fun_Destructible::Destructible(&d:Destructible*) [line 44, column 16]\n " shape="box"]
+	
+
+	 "attributed_return_at_end_of_scope.14439ece0feddf2d_5" -> "attributed_return_at_end_of_scope.14439ece0feddf2d_3" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_1" [label="1: Start attributed_statements_without_nodes\nFormals:  n:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_1" -> "attributed_statements_without_nod.e7a8053aa387a39c_7" ;
+	 "attributed_statements_without_nod.e7a8053aa387a39c_1" -> "attributed_statements_without_nod.e7a8053aa387a39c_8" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_2" [label="2: Exit attributed_statements_without_nodes \n  " color=yellow style=filled]
+	
+
+"attributed_statements_without_nod.e7a8053aa387a39c_3" [label="3:  Return Stmt \n   n$0=*&n:int [line 54, column 10]\n " shape="box"]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_3" -> "attributed_statements_without_nod.e7a8053aa387a39c_4" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 54, column 3]\n " shape="box"]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_4" -> "attributed_statements_without_nod.e7a8053aa387a39c_2" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_5" [label="5: Skip GotoLabel_out \n  " color="gray"]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_5" -> "attributed_statements_without_nod.e7a8053aa387a39c_3" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_6" [label="6: + \n  " ]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_6" -> "attributed_statements_without_nod.e7a8053aa387a39c_5" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_7" [label="7: Prune (true branch, if) \n   n$3=*&n:int [line 49, column 7]\n  PRUNE(n$3, true); [line 49, column 7]\n " shape="invhouse"]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_7" -> "attributed_statements_without_nod.e7a8053aa387a39c_9" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_8" [label="8: Prune (false branch, if) \n   n$3=*&n:int [line 49, column 7]\n  PRUNE(!n$3, false); [line 49, column 7]\n " shape="invhouse"]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_8" -> "attributed_statements_without_nod.e7a8053aa387a39c_6" ;
+"attributed_statements_without_nod.e7a8053aa387a39c_9" [label="9:  IfStmt Branch \n   _=_fun___infer_skip(&n:int) [line 50, column 5]\n " shape="box"]
+	
+
+	 "attributed_statements_without_nod.e7a8053aa387a39c_9" -> "attributed_statements_without_nod.e7a8053aa387a39c_6" ;
+"likely_case#1085627403312278854.949f4b6916c84330_1" [label="1: Start likely_case\nFormals:  n:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "likely_case#1085627403312278854.949f4b6916c84330_1" -> "likely_case#1085627403312278854.949f4b6916c84330_3" ;
+"likely_case#1085627403312278854.949f4b6916c84330_2" [label="2: Exit likely_case \n  " color=yellow style=filled]
+	
+
+"likely_case#1085627403312278854.949f4b6916c84330_3" [label="3:  SwitchStmt \n   n$0=*&n:int [line 18, column 11]\n " shape="box"]
+	
+
+	 "likely_case#1085627403312278854.949f4b6916c84330_3" -> "likely_case#1085627403312278854.949f4b6916c84330_6" ;
+	 "likely_case#1085627403312278854.949f4b6916c84330_3" -> "likely_case#1085627403312278854.949f4b6916c84330_7" ;
+"likely_case#1085627403312278854.949f4b6916c84330_4" [label="4:  Return Stmt \n   *&return:int=0 [line 22, column 7]\n " shape="box"]
+	
+
+	 "likely_case#1085627403312278854.949f4b6916c84330_4" -> "likely_case#1085627403312278854.949f4b6916c84330_2" ;
+"likely_case#1085627403312278854.949f4b6916c84330_5" [label="5:  Return Stmt \n   *&return:int=1 [line 20, column 7]\n " shape="box"]
+	
+
+	 "likely_case#1085627403312278854.949f4b6916c84330_5" -> "likely_case#1085627403312278854.949f4b6916c84330_2" ;
+"likely_case#1085627403312278854.949f4b6916c84330_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 19, column 16]\n " shape="invhouse"]
+	
+
+	 "likely_case#1085627403312278854.949f4b6916c84330_6" -> "likely_case#1085627403312278854.949f4b6916c84330_5" ;
+"likely_case#1085627403312278854.949f4b6916c84330_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 19, column 16]\n " shape="invhouse"]
+	
+
+	 "likely_case#1085627403312278854.949f4b6916c84330_7" -> "likely_case#1085627403312278854.949f4b6916c84330_4" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_1" [label="1: Start likely_unlikely_branches\nFormals:  n:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_1" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_6" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_2" [label="2: Exit likely_unlikely_branches \n  " color=yellow style=filled]
+	
+
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_3" [label="3:  Return Stmt \n   n$0=*&n:int [line 14, column 10]\n " shape="box"]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_3" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_4" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 14, column 3]\n " shape="box"]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_4" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_2" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_5" [label="5: + \n  " ]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_5" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_3" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_6" [label="6:  BinaryOperatorStmt: GT \n   n$1=*&n:int [line 9, column 7]\n " shape="box"]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_6" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_7" ;
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_6" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_8" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_7" [label="7: Prune (true branch, if) \n   PRUNE((n$1 > 0), true); [line 9, column 7]\n " shape="invhouse"]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_7" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_9" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_8" [label="8: Prune (false branch, if) \n   PRUNE(!(n$1 > 0), false); [line 9, column 7]\n " shape="invhouse"]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_8" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_10" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_9" [label="9:  UnaryOperator \n   n$2=*&n:int [line 10, column 5]\n  *&n:int=(n$2 + 1) [line 10, column 5]\n " shape="box"]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_9" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_5" ;
+"likely_unlikely_branches#10016476.5219a06875e3ddd5_10" [label="10:  UnaryOperator \n   n$3=*&n:int [line 12, column 5]\n  *&n:int=(n$3 - 1) [line 12, column 5]\n " shape="box"]
+	
+
+	 "likely_unlikely_branches#10016476.5219a06875e3ddd5_10" -> "likely_unlikely_branches#10016476.5219a06875e3ddd5_5" ;
+"musttail_return#15566472873412800.55c96d456ba3b0c1_1" [label="1: Start musttail_return\nFormals:  n:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "musttail_return#15566472873412800.55c96d456ba3b0c1_1" -> "musttail_return#15566472873412800.55c96d456ba3b0c1_3" ;
+"musttail_return#15566472873412800.55c96d456ba3b0c1_2" [label="2: Exit musttail_return \n  " color=yellow style=filled]
+	
+
+"musttail_return#15566472873412800.55c96d456ba3b0c1_3" [label="3:  Return Stmt \n   n$0=*&n:int [line 37, column 64]\n  n$1=_fun_callee(n$0:int) [line 37, column 57]\n " shape="box"]
+	
+
+	 "musttail_return#15566472873412800.55c96d456ba3b0c1_3" -> "musttail_return#15566472873412800.55c96d456ba3b0c1_4" ;
+"musttail_return#15566472873412800.55c96d456ba3b0c1_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 37, column 50]\n " shape="box"]
+	
+
+	 "musttail_return#15566472873412800.55c96d456ba3b0c1_4" -> "musttail_return#15566472873412800.55c96d456ba3b0c1_2" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_1" [label="1: Start pragma_unroll_loop\nFormals:  n:int\nLocals:  i:int sum:int \n  " color=yellow style=filled]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_1" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_12" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_2" [label="2: Exit pragma_unroll_loop \n  " color=yellow style=filled]
+	
+
+"pragma_unroll_loop#10276779694591.3d767622775457f7_3" [label="3:  Return Stmt \n   n$0=*&sum:int [line 32, column 10]\n " shape="box"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_3" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_4" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 32, column 3]\n " shape="box"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_4" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_2" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_5" [label="5: + \n  " ]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_5" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_8" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 29, column 8]\n  *&i:int=0 [line 29, column 8]\n " shape="box"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_6" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_5" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_7" [label="7:  UnaryOperator \n   n$1=*&i:int [line 29, column 26]\n  *&i:int=(n$1 + 1) [line 29, column 26]\n " shape="box"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_7" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_5" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_8" [label="8:  BinaryOperatorStmt: LT \n   n$2=*&i:int [line 29, column 19]\n  n$3=*&n:int [line 29, column 23]\n " shape="box"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_8" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_9" ;
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_8" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_10" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_9" [label="9: Prune (true branch, for loop) \n   PRUNE((n$2 < n$3), true); [line 29, column 19]\n " shape="invhouse"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_9" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_11" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!(n$2 < n$3), false); [line 29, column 19]\n " shape="invhouse"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_10" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_3" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_11" [label="11:  BinaryOperatorStmt: AddAssign \n   n$4=*&i:int [line 30, column 12]\n  n$5=*&sum:int [line 30, column 5]\n  *&sum:int=(n$5 + n$4) [line 30, column 5]\n " shape="box"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_11" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_7" ;
+"pragma_unroll_loop#10276779694591.3d767622775457f7_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(sum:int); [line 27, column 3]\n  *&sum:int=0 [line 27, column 3]\n " shape="box"]
+	
+
+	 "pragma_unroll_loop#10276779694591.3d767622775457f7_12" -> "pragma_unroll_loop#10276779694591.3d767622775457f7_6" ;
+"Destructible#Destructible#{974443.05ac0ec4fa09991b_1" [label="1: Start Destructible::Destructible\nFormals:  this:Destructible*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Destructible#Destructible#{974443.05ac0ec4fa09991b_1" -> "Destructible#Destructible#{974443.05ac0ec4fa09991b_2" ;
+"Destructible#Destructible#{974443.05ac0ec4fa09991b_2" [label="2: Exit Destructible::Destructible \n  " color=yellow style=filled]
+	
+
+}
