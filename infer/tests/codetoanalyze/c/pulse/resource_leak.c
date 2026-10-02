@@ -177,3 +177,24 @@ void fdsanClosed_ok() {
     android_fdsan_close_with_tag(fd, 0);
   }
 }
+
+int unknown_query_of_fd(int fd);
+
+int returnUnknownQueryOfFd_bad() {
+  int fd = open("hi.txt", O_RDONLY);
+  if (fd == -1) {
+    return -1;
+  }
+  return unknown_query_of_fd(fd);
+}
+
+int unknown_close_of_fd(int fd);
+
+// FP: Pulse does not know that the unknown function closes [fd]
+int FP_returnUnknownCloseOfFd_ok() {
+  int fd = open("hi.txt", O_RDONLY);
+  if (fd == -1) {
+    return -1;
+  }
+  return unknown_close_of_fd(fd);
+}

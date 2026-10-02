@@ -5,8 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <fcntl.h>
 #include <functional>
 #include <new>
+#include <stdio.h>
+#include <unistd.h>
 
 namespace leaks {
 
@@ -135,6 +138,48 @@ void capture_alloc_unknown_ok() {
 std::function<void(void)> capture_alloc_return_ok() {
   X* x = new X;
   return [=]() { delete x; };
+}
+
+int exchange_fd(int& obj, const int& new_value) {
+  int old_value = obj;
+  obj = new_value;
+  return old_value;
+}
+
+struct FileDescriptor {
+  static constexpr int kInvalid = -1;
+  int fd_;
+  explicit FileDescriptor(int fd) : fd_(fd) {}
+  int release() { return exchange_fd(fd_, kInvalid); }
+  ~FileDescriptor() {
+    if (fd_ != kInvalid) {
+      close(release());
+    }
+  }
+};
+
+int query_fd(int fd);
+
+bool raii_close_after_pure_call_ok(const char* path) {
+  FileDescriptor fd(open(path, O_RDONLY));
+  if (fd.fd_ == -1) {
+    return false;
+  }
+  if (query_fd(fd.fd_) == -1) {
+    return false;
+  }
+  return true;
+}
+
+FILE* fdopen_released_fd_after_pure_call_ok(const char* path) {
+  FileDescriptor fd(open(path, O_RDONLY));
+  if (fd.fd_ == -1) {
+    return nullptr;
+  }
+  if (query_fd(fd.fd_) == -1) {
+    return nullptr;
+  }
+  return fdopen(fd.release(), "r");
 }
 
 } // namespace leaks

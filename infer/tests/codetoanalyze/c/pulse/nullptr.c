@@ -167,6 +167,49 @@ void unknown_is_functional_ok() {
   }
 }
 
+int unknown_of_unknown0() { return unknown(unknown0()); }
+
+void unknown_of_unknown0_is_constant_ok() {
+  int* p = NULL;
+  if (unknown_of_unknown0() != unknown_of_unknown0()) {
+    *p = 42;
+  }
+}
+
+int unknown_of_unknown_of_constant() { return unknown(unknown(10)); }
+
+void unknown_of_unknown_of_constant_is_constant_ok() {
+  int* p = NULL;
+  if (unknown_of_unknown_of_constant() != unknown_of_unknown_of_constant()) {
+    *p = 42;
+  }
+}
+
+int unknown_of_unknown0_minus_one() { return unknown(unknown0() - 1); }
+
+void unknown_of_unknown0_minus_one_is_constant_ok() {
+  int* p = NULL;
+  if (unknown_of_unknown0_minus_one() != unknown_of_unknown0_minus_one()) {
+    *p = 42;
+  }
+}
+
+int unknown_at(int i, const int* a);
+
+int unknown_at_local_difference(int i, int j) {
+  int a[2] = {0, 0};
+  return unknown_at(i, a) - unknown_at(j, a);
+}
+
+// FP: [a] is dead at the end of the callee so its summary forgets that both
+// calls are on [a], hence that they return the same value when [i == j]
+void FP_unknown_at_local_difference_with_same_index_is_zero_ok(int k) {
+  int* p = NULL;
+  if (unknown_at_local_difference(k, k) != 0) {
+    *p = 42;
+  }
+}
+
 void unknown_with_different_values_bad() {
   int* p = NULL;
   if (unknown(32) != unknown(52)) {

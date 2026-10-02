@@ -1283,6 +1283,9 @@ module PulseTransferFunctions = struct
       | Some init_pname when not (Procname.equal (Procdesc.get_proc_name proc_desc) init_pname) ->
           L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
           let call_flags = CallFlags.default in
+          (* the name generator is reset for each procedure: do not overwrite the idents already
+             in use, e.g. another argument of the current call *)
+          Stack.keys astate |> List.filter_map ~f:Var.get_ident |> Ident.update_name_generator ;
           let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
           let no_error_states, non_disj =
             dispatch_call limit analysis_data path ret_id_void (Const (Cfun init_pname)) [] loc
