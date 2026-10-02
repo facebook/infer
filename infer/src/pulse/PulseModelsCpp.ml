@@ -1176,6 +1176,9 @@ let simple_matchers =
       |> with_non_disj
     ; +BuiltinDecl.(match_builtin __infer_skip)
       &++> Basic.unknown_call "__infer_skip" |> with_non_disj
+    ; +BuiltinDecl.(match_builtin __infer_ptr_to_member_call)
+      &++> Basic.unknown_call "__infer_ptr_to_member_call"
+      |> with_non_disj
     ; +BuiltinDecl.(match_builtin __infer_structured_binding)
       <>$ capt_exp $+ capt_arg $--> infer_structured_binding |> with_non_disj
     ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $--> new_

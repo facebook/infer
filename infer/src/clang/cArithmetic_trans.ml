@@ -53,14 +53,9 @@ let binary_operation_instruction source_range boi ((e1, t1) as e1_with_typ) typ
     if change_order then Exp.BinOp (op, e2, e1) else Exp.BinOp (op, e1, e2)
   in
   match boi.Clang_ast_t.boi_kind with
-  (* Note: Pointers to members that are not statically known are not
-     expressible in Sil. The translation of the PtrMem ops treats the field as
-     an integer offset, which is itself semantically ok though too low-level,
-     but the translation of the argument expressions does not compute such
-     offsets and instead passes the member pointer at type 'void'. *)
   | `PtrMemD | `PtrMemI ->
-      CFrontend_errors.unimplemented __POS__ source_range
-        "Pointer-to-member constructs are unsupported. Got '%a'."
+      CFrontend_errors.incorrect_assumption __POS__ source_range
+        "Pointer-to-member operator '%a' should have been translated in CTrans"
         (Pp.of_string ~f:Clang_ast_j.string_of_binary_operator_info)
         boi
   | `Add ->
