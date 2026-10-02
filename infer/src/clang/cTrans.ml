@@ -4597,16 +4597,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
 
   and attributedStmt_trans trans_state stmt_info stmts attrs =
-    match (stmts, attrs) with
-    | [stmt], [attr] -> (
-      match (stmt, attr) with
-      | `NullStmt _, `FallThroughAttr _ ->
-          no_op_trans trans_state.succ_nodes
-      | _ ->
-          CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
-            "attributedStmt [stmt] [attr] with:@\nstmt=%s@\nattr=%s@\n"
-            (Clang_ast_j.string_of_stmt stmt)
-            (Clang_ast_j.string_of_attribute attr) )
+    match stmts with
+    | [stmt] ->
+        (* statement attributes ([[fallthrough]], [[likely]], loop hints from [#pragma unroll],
+           [[clang::musttail]], ...) are hints that do not change the semantics of [stmt], and the
+           condition of [[assume(cond)]] is never evaluated *)
+        instruction trans_state stmt
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "attributedStmt with:@\nstmts=[%a]@\nattrs=[%a]@\n"
