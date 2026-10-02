@@ -13,7 +13,7 @@
 namespace shared_ptr_deleter {
 
 // unlike unique_ptr, shared_ptr also calls its deleter on a null pointer, and
-// fclose(nullptr) is undefined: the tests check the result of fopen first
+// fclose(nullptr) is undefined: the _ok tests check the result of fopen first
 void function_pointer_deleter_ok(const char* path) {
   if (FILE* file = fopen(path, "r")) {
     std::shared_ptr<FILE> f(file, fclose);
@@ -78,12 +78,22 @@ void copied_deleter_ok(const char* path) {
 
 void reset_with_deleter_ok(const char* path) {
   std::shared_ptr<FILE> f;
-  f.reset(fopen(path, "r"), fclose);
+  if (FILE* file = fopen(path, "r")) {
+    f.reset(file, fclose);
+  }
 }
 
 void reset_non_empty_with_deleter_ok(const char* path) {
+  if (FILE* file = fopen(path, "r")) {
+    std::shared_ptr<FILE> f(file, fclose);
+    if (FILE* other = fopen(path, "w")) {
+      f.reset(other, fclose);
+    }
+  }
+}
+
+void unchecked_fopen_deleter_bad(const char* path) {
   std::shared_ptr<FILE> f(fopen(path, "r"), fclose);
-  f.reset(fopen(path, "w"), fclose);
 }
 
 void reset_file(std::shared_ptr<FILE>& f) { f.reset(); }

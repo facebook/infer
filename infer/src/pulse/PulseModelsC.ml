@@ -189,6 +189,13 @@ include struct
     Basic.free (FClose callee_procname) stream
 
 
+  (* Unlike [free(NULL)], closing a NULL stream is undefined and crashes in common C libraries; only
+     glibc and bionic make [closedir(NULL)] fail with [EINVAL], and glibc declares its argument
+     nonnull. The NULL case of [Basic.free] must stay after [check_valid]: when [stream] is a
+     parameter, it is the only precondition that a caller passing NULL matches, and hence how that
+     caller gets reported. *)
+  let close_stream stream = check_valid (FuncArg.arg_payload stream) @@> release_stream stream
+
   (* File descriptors are integers, not pointers: [0] is standard input, negative values are errors
      that calls reject with [EBADF], and constants such as [STDOUT_FILENO] are valid descriptors. *)
   let check_fd_not_closed fd = check_valid ~must_be_valid_reason:FileDescriptorUse fd
@@ -224,21 +231,20 @@ include struct
 
   let fclose stream : model =
     start_model
-    @@ fun () ->
-    release_stream stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
+    @@ fun () -> close_stream stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
 
 
   let pclose stream : model =
     start_model
-    @@ fun () -> release_stream stream @@> assign_ret (* exit status of the command *) @= fresh ()
+    @@ fun () -> close_stream stream @@> assign_ret (* exit status of the command *) @= fresh ()
 
 
   let closedir dirp : model =
     start_model
     @@ fun () ->
-    release_stream dirp
-    (* pretend [closedir] always succeeds, i.e. [dirp] was a valid stream descriptor or [free]
-       above would have caught an error *)
+    close_stream dirp
+    (* pretend [closedir] always succeeds, i.e. [dirp] was a valid stream descriptor or
+       [close_stream] above would have caught an error *)
     @@> (int 0 >>= assign_ret)
 
 
