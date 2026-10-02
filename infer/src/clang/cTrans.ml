@@ -3089,8 +3089,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           field_exps (List.length stmts)
           (Pp.seq ~sep:"," (Pp.of_string ~f:Clang_ast_proj.get_stmt_kind_string))
           stmts ;
-        let control, _ = instructions Procdesc.Node.InitListExp trans_state stmts in
-        [mk_trans_result (var_exp, var_typ) control]
+        initListExpr_side_effects_trans trans_state stmts var_exp var_typ
 
 
   and initListExpr_builtin_trans trans_state stmt_info stmts var_exp var_typ =
@@ -3104,10 +3103,46 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (Typ.pp_full Pp.text) var_typ
 
 
+  (** Translate the initializers for their side effects only, without storing their values *)
+  and initListExpr_side_effects_trans trans_state stmts var_exp var_typ =
+    let control, _ = instructions Procdesc.Node.InitListExp trans_state stmts in
+    [mk_trans_result (var_exp, var_typ) control]
+
+
+  (** Vector types are translated to [void] but their elements are accessed like array elements, see
+      [arraySubscriptExpr_trans]. *)
+  and initListExpr_vector_trans ({context= {tenv}} as trans_state) stmt_info stmts var_exp var_typ =
+    let qual_type_of_stmt stmt =
+      Clang_ast_proj.get_expr_tuple stmt
+      |> Option.map ~f:(fun (_, _, {Clang_ast_t.ei_qual_type}) -> ei_qual_type)
+    in
+    let is_vector stmt = Option.exists (qual_type_of_stmt stmt) ~f:CType.is_vector_type in
+    match stmts with
+    | [stmt] when is_vector stmt ->
+        (* [v = {w}] is the same as [v = w] *)
+        [ init_expr_trans ~is_declare_variable:false trans_state (var_exp, var_typ) stmt_info
+            (Some stmt) ]
+    | _ when List.exists stmts ~f:is_vector ->
+        (* only OpenCL and HLSL vector literals can concatenate vectors, so the positions of the
+           elements are unknown *)
+        initListExpr_side_effects_trans {trans_state with var_exp_typ= None} stmts var_exp var_typ
+    | _ ->
+        (* clang converts each initializer to the element type; the elements without an
+           initializer are zero but are left unknown as the number of elements is not exported *)
+        List.mapi stmts ~f:(fun idx stmt ->
+            let elt_exp = Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int idx))) in
+            let elt_typ =
+              Option.value_map (qual_type_of_stmt stmt) ~default:StdTyp.void
+                ~f:(CType_decl.qual_type_to_sil_type tenv)
+            in
+            init_expr_trans trans_state (elt_exp, elt_typ) stmt_info (Some stmt) )
+
+
   (** InitListExpr can have following meanings:
 
       - initialize all record fields
       - initialize array
+      - initialize vector elements
       - initialize primitive type (int/flaot/pointer/...)
       - perform zero initalization -
         {:http://en.cppreference.com/w/cpp/language/zero_initialization} Decision which case happens
@@ -3149,9 +3184,21 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               var_typ
         | Tint _ | Tfloat _ | Tptr _ ->
             initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
-        | _ ->
-            CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
-              "InitListExp for var %a of type %a" Exp.pp var_exp (Typ.pp Pp.text) var_typ
+        | Tvoid when CType.is_vector_type ei_qual_type ->
+            initListExpr_vector_trans trans_state_pri init_stmt_info stmts var_exp var_typ
+        | _ -> (
+          (* types that are not modeled, e.g. member pointers or complex numbers *)
+          match stmts with
+          | [_] ->
+              initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
+          | _ ->
+              L.debug Capture Medium
+                "InitListExp for var %a of type %a: translating the initializers for their side \
+                 effects only@\n"
+                Exp.pp var_exp (Typ.pp_full Pp.text) var_typ ;
+              initListExpr_side_effects_trans
+                {trans_state_pri with var_exp_typ= None}
+                stmts var_exp var_typ )
       in
       let res_trans =
         PriorityNode.compute_results_to_parent trans_state_pri sil_loc InitListExp stmt_info

@@ -256,4 +256,108 @@ void derived_constructor_forwards_param_ok() {
   ForwardConstructorParams A{&x, NULL};
 }
 
+typedef int int4 __attribute__((vector_size(16)));
+
+void vector_brace_init_bad() {
+  int4 v{1, 2, 3, 4};
+  if (v[2] == 3) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void vector_brace_init_ok() {
+  int4 v{1, 2, 3, 4};
+  if (v[2] != 3) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void vector_functional_cast_init_bad() {
+  auto v = int4{1, 2, 3, 4};
+  if (v[1] == 2) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void vector_functional_cast_init_ok() {
+  auto v = int4{1, 2, 3, 4};
+  if (v[1] != 2) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+struct VectorMember {
+  int4 v;
+  VectorMember() : v{1, 2, 3, 4} {}
+};
+
+void vector_member_init_bad() {
+  VectorMember m;
+  if (m.v[3] == 4) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void vector_member_init_ok() {
+  VectorMember m;
+  if (m.v[3] != 4) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void vector_new_init_bad() {
+  int4* v = new int4{1, 2, 3, 4};
+  int x = (*v)[0];
+  delete v;
+  if (x == 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void vector_new_init_ok() {
+  int4* v = new int4{1, 2, 3, 4};
+  int x = (*v)[0];
+  delete v;
+  if (x != 1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+struct WithField {
+  int f;
+};
+
+void member_pointer_brace_init_bad() {
+  int WithField::* mp{nullptr};
+  if (mp == nullptr) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void member_pointer_brace_init_ok() {
+  int WithField::* mp{nullptr};
+  if (mp != nullptr) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+struct MemberPointerField {
+  int WithField::* mp;
+  MemberPointerField(int WithField::* mp, int* p) : mp{mp} { *p = 42; }
+};
+
+void member_pointer_field_brace_init_bad() {
+  MemberPointerField m(nullptr, nullptr);
+}
+
 } // namespace frontend
