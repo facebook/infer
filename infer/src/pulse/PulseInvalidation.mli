@@ -51,6 +51,8 @@ type t =
   | EndIterator
   | FClose of Procname.t
   | GoneOutOfScope of Pvar.t * Typ.t
+  | HandedOverToStream of Procname.t
+      (** the file descriptor is now owned by a stream, e.g. after [fdopen], which will close it *)
   | OptionalEmpty
   | StdVector of std_vector_function
   | CppMap of map_type * map_function
@@ -71,7 +73,19 @@ type must_be_valid_reason =
   | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
   | NullArgumentWhereNonNullExpected of PulseCallEvent.t * int option
+  | FileDescriptorUse
+      (** the value is used as an open file descriptor: only [FClose] makes it invalid, e.g. [0] is
+          standard input, not a null pointer *)
+  | FileDescriptorRelease
+      (** the value is a file descriptor that gets closed or handed over to a stream: [FClose] and
+          [HandedOverToStream] make it invalid *)
 [@@deriving compare, equal, yojson_of]
+
+val is_file_descriptor_reason : must_be_valid_reason -> bool
+
+val is_relevant_for_reason : must_be_valid_reason option -> t -> bool
+(** whether accessing a value invalidated with the given invalidation is an error when the value
+    must be valid for the given reason *)
 
 val pp_must_be_valid_reason : F.formatter -> must_be_valid_reason option -> unit
 
