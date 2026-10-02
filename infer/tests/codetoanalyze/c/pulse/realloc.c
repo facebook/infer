@@ -177,6 +177,13 @@ void grow_int_buffer_use_original_bad() {
   free(buf);
 }
 
+void grow_int_buffer_param_use_original_bad(int** buf) {
+  int* old = *buf;
+  if (grow_int_buffer(buf, 2) == 0) {
+    *old = 42;
+  }
+}
+
 // loses the original block if the reallocation fails
 int grow_int_buffer_leaky(int** buf, size_t n) {
   *buf = (int*)realloc(*buf, n * sizeof(int));
@@ -193,6 +200,321 @@ void grow_int_buffer_leaky_caller_bad() {
   }
   grow_int_buffer_leaky(&buf, 2);
   free(buf);
+}
+
+// using p after a successful realloc is undefined even when realloc grew the
+// block in place and returned p (clang -O2 assumes that p and q do not alias),
+// but the model assumes that a successful realloc always moves the block, so
+// the branch where q == p is not analyzed
+void FN_realloc_same_block_use_original_bad() {
+  char* p = (char*)malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  if (q == p) {
+    p[0] = 'a';
+  }
+  free(q);
+}
+
+void realloc_same_block_use_result_ok() {
+  char* p = (char*)malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  if (q == p) {
+    q[0] = 'a';
+  }
+  free(q);
+}
+
+void realloc_keep_original_if_not_moved_ok() {
+  char* p = (char*)malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)realloc(p, 64);
+  if (q != NULL && q != p) {
+    p = q;
+  }
+  free(p);
+}
+
+// see FN_realloc_same_block_use_original_bad
+void FN_realloc_param_same_block_use_original_bad(char* p) {
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    return;
+  }
+  if (q == p) {
+    p[0] = 'a';
+  }
+  free(q);
+}
+
+void realloc_param_same_block_use_result_ok(char* p) {
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    return;
+  }
+  if (q == p) {
+    q[0] = 'a';
+  }
+  free(q);
+}
+
+struct buffer {
+  char* base;
+  char* cursor;
+};
+
+// updates the buffer only if the reallocation moved it, so b->cursor still
+// points to the original block, which is undefined to use, when realloc grew
+// the block in place
+int grow_buffer_update_if_moved(struct buffer* b, size_t n) {
+  char* q = (char*)realloc(b->base, n);
+  if (q == NULL) {
+    return -1;
+  }
+  if (q != b->base) {
+    b->base = q;
+    b->cursor = q;
+  }
+  return 0;
+}
+
+// see FN_realloc_same_block_use_original_bad
+void FN_grow_buffer_update_if_moved_twice_bad() {
+  struct buffer b;
+  b.base = (char*)malloc(16);
+  if (b.base == NULL) {
+    return;
+  }
+  b.cursor = b.base;
+  if (grow_buffer_update_if_moved(&b, 32) == 0 &&
+      grow_buffer_update_if_moved(&b, 64) == 0) {
+    *b.cursor = 'a';
+  }
+  free(b.base);
+}
+
+void realloc_moved_use_original_bad() {
+  char* p = (char*)malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  if (q != p) {
+    p[0] = 'a';
+  }
+  free(q);
+}
+
+// the branch where realloc grew the block in place is not analyzed
+void FN_realloc_same_block_double_free_bad() {
+  char* p = (char*)malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  if (q == p) {
+    free(p);
+  }
+  free(q);
+}
+
+// the branch where realloc grew the block in place is not analyzed
+void FN_realloc_same_block_null_dereference_bad() {
+  char* p = (char*)malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  if (q == p) {
+    int* n = NULL;
+    *n = 42;
+  }
+  free(q);
+}
+
+// leaks q when realloc grew the block in place, but that case is not analyzed
+void FN_realloc_same_block_leak_bad() {
+  char* p = (char*)malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)realloc(p, 64);
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  if (q != p) {
+    free(q);
+  }
+}
+
+struct item {
+  char* name;
+  int id;
+};
+
+void realloc_moves_owned_pointers_ok() {
+  struct item* items = (struct item*)malloc(sizeof(struct item));
+  if (items == NULL) {
+    return;
+  }
+  items[0].name = (char*)malloc(8);
+  items[0].id = 1;
+  struct item* tmp = (struct item*)realloc(items, 2 * sizeof(struct item));
+  if (tmp == NULL) {
+    free(items[0].name);
+    free(items);
+    return;
+  }
+  items = tmp;
+  free(items[0].name);
+  free(items);
+}
+
+struct pair {
+  int a;
+  int b;
+};
+
+int realloc_moves_initialized_fields_ok() {
+  struct pair* p = (struct pair*)malloc(sizeof(struct pair));
+  if (p == NULL) {
+    return 0;
+  }
+  p->a = 1;
+  p->b = 2;
+  struct pair* q = (struct pair*)realloc(p, 2 * sizeof(struct pair));
+  if (q == NULL) {
+    free(p);
+    return 0;
+  }
+  int r = q->a + q->b;
+  free(q);
+  return r;
+}
+
+void realloc_moved_field_use_original_bad() {
+  struct pair* p = (struct pair*)malloc(sizeof(struct pair));
+  if (p == NULL) {
+    return;
+  }
+  p->a = 1;
+  struct pair* q = (struct pair*)realloc(p, 2 * sizeof(struct pair));
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  p->a = 2;
+  free(q);
+}
+
+void realloc_moves_value_ok() {
+  int* p = (int*)malloc(sizeof(int));
+  if (p == NULL) {
+    return;
+  }
+  *p = 0;
+  int* q = (int*)realloc(p, 2 * sizeof(int));
+  if (q == NULL) {
+    free(p);
+    return;
+  }
+  if (*q != 0) {
+    int* n = NULL;
+    *n = 42;
+  }
+  free(q);
+}
+
+int realloc_of_null_uninitialized_bad() {
+  struct pair* p = (struct pair*)realloc(NULL, sizeof(struct pair));
+  if (p == NULL) {
+    return 0;
+  }
+  int r = p->a;
+  free(p);
+  return r;
+}
+
+// Pulse initializes the memory reachable from the arguments of a modelled call,
+// so the uninitialized contents of the original block are not tracked
+int FN_realloc_moves_uninitialized_value_bad() {
+  int* p = (int*)malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  int* q = (int*)realloc(p, 2 * sizeof(int));
+  if (q == NULL) {
+    free(p);
+    return 0;
+  }
+  int r = *q;
+  free(q);
+  return r;
+}
+
+// see FN_realloc_moves_uninitialized_value_bad
+int FN_realloc_moves_uninitialized_field_bad() {
+  struct pair* p = (struct pair*)malloc(sizeof(struct pair));
+  if (p == NULL) {
+    return 0;
+  }
+  p->a = 1;
+  struct pair* q = (struct pair*)realloc(p, 2 * sizeof(struct pair));
+  if (q == NULL) {
+    free(p);
+    return 0;
+  }
+  int r = q->b;
+  free(q);
+  return r;
+}
+
+// the new block counts as initialized when the original pointer is not NULL,
+// since Pulse does not track which part of it comes from the original block,
+// so reading the part added by realloc is not reported
+int FN_realloc_grown_part_uninitialized_bad() {
+  int* p = (int*)malloc(2 * sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  p[0] = 1;
+  p[1] = 2;
+  int* q = (int*)realloc(p, 4 * sizeof(int));
+  if (q == NULL) {
+    free(p);
+    return 0;
+  }
+  int r = q[3];
+  free(q);
+  return r;
 }
 
 // custom allocators, see .inferconfig
@@ -220,6 +542,39 @@ void custom_realloc_free_original_bad() {
   my_free(p);
 }
 
+// see FN_realloc_same_block_use_original_bad
+void FN_custom_realloc_same_block_use_original_bad() {
+  char* p = (char*)my_malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)my_realloc(p, 64);
+  if (q == NULL) {
+    my_free(p);
+    return;
+  }
+  if (q == p) {
+    p[0] = 'a';
+  }
+  my_free(q);
+}
+
+void custom_realloc_same_block_use_result_ok() {
+  char* p = (char*)my_malloc(16);
+  if (p == NULL) {
+    return;
+  }
+  char* q = (char*)my_realloc(p, 64);
+  if (q == NULL) {
+    my_free(p);
+    return;
+  }
+  if (q == p) {
+    q[0] = 'a';
+  }
+  my_free(q);
+}
+
 // g_realloc() never returns NULL for a non-zero size
 void* g_malloc(size_t n_bytes);
 void* g_realloc(void* mem, size_t n_bytes);
@@ -236,6 +591,25 @@ void glib_realloc_use_original_bad() {
   char* p = (char*)g_malloc(4);
   char* q = (char*)g_realloc(p, 8);
   *p = 'a';
+  g_free(q);
+}
+
+// see FN_realloc_same_block_use_original_bad
+void FN_glib_realloc_same_block_use_original_bad() {
+  char* p = (char*)g_malloc(4);
+  char* q = (char*)g_realloc(p, 8);
+  if (q == p) {
+    *p = 'a';
+  }
+  g_free(q);
+}
+
+void glib_realloc_same_block_use_result_ok() {
+  char* p = (char*)g_malloc(4);
+  char* q = (char*)g_realloc(p, 8);
+  if (q == p) {
+    *q = 'a';
+  }
   g_free(q);
 }
 
