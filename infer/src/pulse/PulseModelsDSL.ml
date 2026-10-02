@@ -630,6 +630,18 @@ module Syntax = struct
     PulseOperations.remove_allocation_attr_transitively args |> exec_command
 
 
+  let apply_unknown_effect (addr, _) : unit model_monad =
+    let* desc = get_desc in
+    let* event = get_event () in
+    let hist = Hist.single_event event in
+    exec_command (fun astate ->
+        (* all the null pointers of a state share the same abstract value *)
+        if PulseArithmetic.is_known_zero astate addr then astate
+        else
+          AbductiveDomain.apply_unknown_effect hist addr astate
+          |> AddressAttributes.add_one addr (Attribute.UnknownEffect (desc, hist)) )
+
+
   let string str : aval model_monad = read (Const (Cstr str))
 
   let string_concat (v1, hist1) (v2, hist2) : aval model_monad =
@@ -692,6 +704,17 @@ module Syntax = struct
   let store ~ref obj : unit model_monad =
     let* {path; location} = get_data in
     PulseOperations.write_deref path location ~ref ~obj >> sat |> exec_partial_command
+
+
+  let havoc_pointee ptr : unit model_monad =
+    let* () = store ~ref:ptr @= fresh () in
+    let* {path; location} = get_data in
+    let* accesses = get_known_fields ptr in
+    list_iter accesses ~f:(fun access ->
+        if Access.equal access Dereference then ret ()
+        else
+          let* obj = fresh () in
+          AbductiveDomain.Memory.add_edge path ptr access obj location |> exec_command )
 
 
   (* slightly clumsy refactoring here: we unwrap a model to get a nice monadic type in the interface of this module

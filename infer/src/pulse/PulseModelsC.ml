@@ -145,6 +145,11 @@ include struct
 
   let valid_args2 arg1 arg2 : model = start_model @@ fun () -> check_valid arg1 @@> check_valid arg2
 
+  let valid_and_null_or_valid_args arg1 arg2 : model =
+    start_model
+    @@ fun () -> lift_to_monad (valid_arg arg1) @@> lift_to_monad (null_or_valid_arg arg2)
+
+
   let non_det_ret : model = start_model @@ fun () -> assign_ret @= fresh ()
 
   let nonneg_non_det_ret : model = start_model @@ fun () -> assign_ret @= fresh_nonneg ()
@@ -291,6 +296,104 @@ include struct
     check_valid stream @@> check_valid str
     @@> disj [assign_ret @= null; assign_ret (to_aval str)]
     @@> data_dependency str [str; stream]
+
+
+  let eof_or_count_ret () : unit DSL.model_monad =
+    let* res = fresh () in
+    prune_ge_int res IntLit.minus_one @@> assign_ret res
+
+
+  (* the format is not parsed: any pointer argument may receive input *)
+  let write_scanf_outputs inputs (args : ValueOrigin.t FuncArg.t list) : unit DSL.model_monad =
+    list_iter args ~f:(fun {FuncArg.arg_payload= arg; typ} ->
+        if Typ.is_pointer typ then havoc_pointee (to_aval arg) @@> data_dependency arg inputs
+        else ret () )
+
+
+  let has_n_conversion format =
+    let len = String.length format in
+    let rec after_percent i =
+      if i >= len then false
+      else
+        match format.[i] with
+        | 'n' ->
+            true
+        | '*' | '$' | '\'' | '0' .. '9' | 'h' | 'j' | 'l' | 'L' | 'm' | 'q' | 't' | 'z' ->
+            after_percent (i + 1)
+        | _ ->
+            scan (i + 1)
+    and scan i =
+      if i >= len then false
+      else if Char.equal format.[i] '%' then after_percent (i + 1)
+      else scan (i + 1)
+    in
+    scan 0
+
+
+  (* The result counts the assigned conversions, each of which consumes an argument. Nothing is
+     assigned when it is 0 or EOF, except by [%n], which is not counted. *)
+  let scanf_outputs_and_ret format inputs args : unit DSL.model_monad =
+    let ret_between low high =
+      let* res = fresh () in
+      prune_ge_int res (IntLit.of_int low)
+      @@> prune_lt_int res (IntLit.of_int (high + 1))
+      @@> assign_ret res
+    in
+    let num_args = List.length args in
+    let* format_str = as_constant_string (to_aval format) in
+    match format_str with
+    | Some format_str when not (has_n_conversion format_str) ->
+        disj [ret_between (-1) 0; write_scanf_outputs inputs args @@> ret_between 1 num_args]
+    | _ ->
+        write_scanf_outputs inputs args @@> ret_between (-1) num_args
+
+
+  let fscanf input format args : model =
+    start_model
+    @@ fun () ->
+    check_valid input @@> check_valid format @@> scanf_outputs_and_ret format [input] args
+
+
+  let scanf format args : model =
+    start_model @@ fun () -> check_valid format @@> scanf_outputs_and_ret format [] args
+
+
+  (* the outputs are behind the [va_list] argument, which is not modelled *)
+  let vfscanf input format : model =
+    start_model @@ fun () -> check_valid input @@> check_valid format @@> eof_or_count_ret ()
+
+
+  let vscanf format : model = start_model @@ fun () -> check_valid format @@> eof_or_count_ret ()
+
+  (* A NULL [*lineptr] gets a new buffer, which glibc, musl and macOS allocate even when the call
+     fails. A non-NULL one may be reallocated, so it is not tracked anymore. *)
+  let getdelim lineptr n stream : model =
+    let lineptr = to_aval lineptr in
+    start_model
+    @@ fun () ->
+    let* () = check_valid stream in
+    let* old_buf = load lineptr in
+    let new_buf =
+      lift_to_monad_and_get_result
+        (start_model @@ fun () -> Basic.return_alloc_not_null CMalloc None ~initialize:true)
+    in
+    let reallocated_buf =
+      let* () = apply_unknown_effect old_buf in
+      let* buf = fresh () in
+      and_positive buf @@> ret buf
+    in
+    let* buf =
+      disj [prune_eq_zero old_buf @@> new_buf; prune_ne_zero old_buf @@> reallocated_buf]
+    in
+    store ~ref:lineptr buf
+    @@> (store ~ref:(to_aval n) @= fresh_nonneg ())
+    @@> data_dependency (ValueOrigin.unknown buf) [stream]
+    @@> eof_or_count_ret ()
+
+
+  (* the stream may use [buf] until it is closed *)
+  let setbuf stream buf : model =
+    start_model @@ fun () -> check_valid stream @@> apply_unknown_effect (to_aval buf)
 
 
   let memcpy dest src : model =
@@ -692,6 +795,20 @@ let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let open DSL.Syntax in
   let int_ptr_typ = Typ.mk_ptr StdTyp.int in
+  (* user code may define functions named like the getline family with other signatures; [size_t]
+     is [unsigned long] on LP64 targets and [unsigned int] on ILP32 ones *)
+  let getline_family size_t =
+    let char_ptr_ptr = Typ.mk_ptr (Typ.mk_ptr StdTyp.char) in
+    let size_t_ptr = Typ.mk_ptr (Typ.mk (Tint size_t)) in
+    [ -"getdelim"
+      <>$ capt_arg_payload_of_prim_typ char_ptr_ptr
+      $+ capt_arg_payload_of_prim_typ size_t_ptr
+      $+ any_arg_of_prim_typ StdTyp.int $+ capt_arg_payload $--> getdelim
+    ; -"getline"
+      <>$ capt_arg_payload_of_prim_typ char_ptr_ptr
+      $+ capt_arg_payload_of_prim_typ size_t_ptr
+      $+ capt_arg_payload $--> getdelim ]
+  in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
     Option.exists r_opt ~f:(fun r ->
         let s = Procname.to_string proc_name in
@@ -780,6 +897,7 @@ let matchers : matcher list =
   ; -"fdopendir" <>$ capt_arg_payload_of_prim_typ StdTyp.int $--> fdopendir
   ; -"feof" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"ferror" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"fflush" <>$ capt_arg_payload $--> compose1 null_or_valid_arg (ignore_arg non_det_ret)
   ; -"fgetc" <>$ capt_arg_payload
     $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
   ; -"fgetpos" <>$ capt_arg_payload $+ any_arg
@@ -792,9 +910,14 @@ let matchers : matcher list =
   ; -"fputc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"fputs" <>$ capt_arg_payload $+ capt_arg_payload $--> fputs
   ; -"fread" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fread
-  ; -"fsct" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ any_arg
-    $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
+  ; -"fscanf" <>$ capt_arg_payload $+ capt_arg_payload $++$--> fscanf
+  ; -"fsctl" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ any_arg
+    $--> compose2 valid_and_null_or_valid_args (ignore_args2 zero_or_minus_one_ret)
   ; -"fseek" <>$ capt_arg_payload $+ any_arg $+ any_arg
+    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"fseeko" <>$ capt_arg_payload $+ any_arg $+ any_arg
+    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"fseeko64" <>$ capt_arg_payload $+ any_arg $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"fsetpos" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
@@ -803,6 +926,8 @@ let matchers : matcher list =
   ; (-"fstat" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $--> fun fd buf -> use_fd fd [buf])
   ; (-"fsync" <>$ capt_arg_of_prim_typ StdTyp.int $--> fun fd -> use_fd fd [])
   ; -"ftell" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
+  ; -"ftello" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
+  ; -"ftello64" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
   ; ( -"ftruncate" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg
     $--> fun fd length -> use_fd fd [length] )
   ; -"fwrite" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fwrite
@@ -875,6 +1000,7 @@ let matchers : matcher list =
   ; -"rename" <>$ capt_arg_payload $+ capt_arg_payload
     $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
   ; -"rewind" <>$ capt_arg_payload $--> valid_arg
+  ; -"scanf" <>$ capt_arg_payload $++$--> scanf
   ; ( -"send" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
     $--> fun fd buf len flags -> use_fd fd [buf; len; flags] )
   ; ( -"sendmsg" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
@@ -882,8 +1008,11 @@ let matchers : matcher list =
   ; ( -"sendto" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg $+ capt_arg
     $+ capt_arg
     $--> fun fd buf len flags addr addrlen -> use_fd fd [buf; len; flags; addr; addrlen] )
+  ; -"setbuf" <>$ capt_arg_payload $+ capt_arg_payload $--> setbuf
   ; -"setlocale" <>$ any_arg $+ capt_arg_payload
     $--> compose1 null_or_valid_arg (ignore_arg null_or_non_det_ret)
+  ; -"setvbuf" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $+ any_arg
+    $--> compose2 setbuf (ignore_args2 non_det_ret)
   ; -"shmget" <>$ any_arg $+ any_arg $+ any_arg $--> shmget
   ; -"snprintf" <>$ capt_arg_payload $+ any_arg (* size *) $+ capt_arg_payload $+++$--> sprintf
   ; -"socket" <>$ any_arg $+ any_arg $+ any_arg $--> open_
@@ -891,6 +1020,7 @@ let matchers : matcher list =
     $+ capt_arg_payload_of_prim_typ int_ptr_typ
     $--> fd_pair
   ; -"sprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> sprintf
+  ; -"sscanf" <>$ capt_arg_payload $+ capt_arg_payload $++$--> fscanf
   ; -"stat" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
   ; -"statfs" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
   ; -"stpcpy" <>$ capt_arg_payload $+ capt_arg_payload $--> stpcpy
@@ -933,14 +1063,18 @@ let matchers : matcher list =
   ; -"utimes" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"vfprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf
+  ; -"vfscanf" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> vfscanf
   ; -"vprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"vscanf" <>$ capt_arg_payload $+ any_arg $--> vscanf
   ; -"vsnprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"vsprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"vsscanf" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> vfscanf
   ; -"write" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> write_fd
   ; ( -"writev" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
     $--> fun fd iov iovcnt -> use_fd fd [iov; iovcnt] )
   ; -"XGetAtomName" <>$ any_arg $+ any_arg $--> Xlib.xGetAtomName
   ; -"XFree" <>$ capt_arg $--> Xlib.xFree ]
+  @ getline_family IULong @ getline_family IUInt
   @ ( [ +BuiltinDecl.(match_builtin malloc)
         <>$ capt_exp
         $--> malloc ~null_case:(not Config.pulse_unsafe_malloc)
