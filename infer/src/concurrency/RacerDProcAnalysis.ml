@@ -91,6 +91,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.release_lock astate
     | LockedIfTrue _ | GuardLockedIfTrue _ ->
         Domain.lock_if_true ret_access_exp astate
+    | LockedIfZero _ ->
+        Domain.lock_if_zero ret_access_exp astate
     | GuardConstruct {acquire_now= false} ->
         astate
     | NoEffect when RacerDModels.proc_is_ignored_by_racerd callee_pname ->
@@ -166,13 +168,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let do_assume formals assume_exp loc tenv (astate : Domain.t) =
     let open Domain in
-    let apply_choice bool_value (acc : Domain.t) = function
+    let rec apply_choice bool_value (acc : Domain.t) = function
       | Attribute.LockHeld ->
           let locks =
             if bool_value then LockDomain.acquire_lock acc.locks
             else LockDomain.release_lock acc.locks
           in
           {acc with locks}
+      | Attribute.LockHeldIfZero ->
+          apply_choice (not bool_value) acc Attribute.LockHeld
       | Attribute.OnMainThread ->
           let threads =
             if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
@@ -181,15 +185,40 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Attribute.(Functional | Nothing | Synchronized) ->
           acc
     in
+    (* trylocks returning zero on success return negative error codes, so [r < 0] means [r != 0] *)
+    let rec zero_status_as_equality (exp : HilExp.t) : HilExp.t =
+      match exp with
+      | BinaryOperator (Lt, e1, e2) when HilExp.is_int_zero e2 ->
+          BinaryOperator (Ne, e1, e2)
+      | BinaryOperator (Ge, e1, e2) when HilExp.is_int_zero e2 ->
+          BinaryOperator (Eq, e1, e2)
+      | BinaryOperator (Gt, e1, e2) when HilExp.is_int_zero e1 ->
+          BinaryOperator (Ne, e1, e2)
+      | BinaryOperator (Le, e1, e2) when HilExp.is_int_zero e1 ->
+          BinaryOperator (Eq, e1, e2)
+      | UnaryOperator (LNot, e, typ) ->
+          UnaryOperator (LNot, zero_status_as_equality e, typ)
+      | Cast (typ, e) ->
+          Cast (typ, zero_status_as_equality e)
+      | _ ->
+          exp
+    in
     let astate = add_access tenv formals loc ~is_write:false astate assume_exp in
     match HilExp.get_access_exprs assume_exp with
     | [access_expr] ->
+        let attribute = AttributeMapDomain.get access_expr astate.attribute_map in
+        let assume_exp =
+          match attribute with
+          | Attribute.LockHeldIfZero ->
+              zero_status_as_equality assume_exp
+          | _ ->
+              assume_exp
+        in
         HilExp.eval_boolean_exp access_expr assume_exp
         |> Option.value_map ~default:astate ~f:(fun bool_value ->
             (* prune (prune_exp) can only evaluate to true if the choice is [bool_value].
                   add the constraint that the choice must be [bool_value] to the state *)
-            AttributeMapDomain.get access_expr astate.attribute_map
-            |> apply_choice bool_value astate )
+            apply_choice bool_value astate attribute )
     | _ ->
         astate
 
