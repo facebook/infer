@@ -168,7 +168,9 @@ let name_cons :
  fun m name ->
   let {on_templated_name} = m in
   let match_fuzzy_name =
-    let fuzzy_name_regexp = name |> Str.quote |> Printf.sprintf "^%s\\(<.+>\\)?$" |> Str.regexp in
+    (* the frontend appends the template arguments of function template instantiations to their
+       names, e.g. [foo<int>], or [foo<>] when they are all empty parameter packs *)
+    let fuzzy_name_regexp = name |> Str.quote |> Printf.sprintf "^%s\\(<.*>\\)?$" |> Str.regexp in
     fun s -> Str.string_match fuzzy_name_regexp s 0
   in
   let on_qual_name context f qual_name =

@@ -80,6 +80,15 @@ val to_internal_size_deref :
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
+val assign_size :
+     PathContext.t
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> AbstractValue.t * ValueHistory.t
+  -> desc:string
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
+
 val assign_size_constant :
      PathContext.t
   -> Location.t
