@@ -330,7 +330,11 @@ struct
       else if num_iters > max_iter then (
         L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
         DisjunctiveMetadata.incr_interrupted_loops () ;
-        prev )
+        let extra =
+          Option.value_map (AnalysisState.get_node ()) ~default:[] ~f:(fun loop_head ->
+              T.widen_interrupted_loop loop_head ~prev:(fst prev) ~next:(fst next) )
+        in
+        if List.is_empty extra then prev else (extra @ fst prev, snd prev) )
       else
         let into = fst prev in
         let post_disj, _, dropped =
