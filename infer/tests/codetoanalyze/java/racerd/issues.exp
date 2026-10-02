@@ -13,6 +13,7 @@ codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.Annotati
 codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.Annotations.FP_functionalAcrossBoxingLongOk():int, 343, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.mBoxedLong2`]
 codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.Annotations.functionalAndNonfunctionalBad():void, 379, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.mInt`]
 codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.WeirdAnnotation.fooBad():void, 466, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
+codetoanalyze/java/racerd/Annotations.java, codetoanalyze.java.checkers.RequiresCapabilityAnnotation.unprotectedWriteBad():void, 483, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
 codetoanalyze/java/racerd/Arrays.java, Arrays.arrayParameterWriteBad(int[]):void, 26, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `name1.[_]`]
 codetoanalyze/java/racerd/Arrays.java, Arrays.writeWriteRaceBad(java.lang.String):void, 39, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.strArr1.[_]`]
 codetoanalyze/java/racerd/Arrays.java, Arrays.readWriteRaceBad(java.lang.String):java.lang.String, 47, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [<Read trace>,access to `this.strArr1.[_]`,<Write trace>,access to `this.strArr1.[_]`]

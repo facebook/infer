@@ -483,10 +483,13 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
 
   void dumpAttrKind(attr::Kind Kind);
   void dumpAttr(const Attr *A);
+  void dumpCapabilityArg(const Expr *E);
   DECLARE_VISITOR(Attr)
   DECLARE_VISITOR(AnnotateAttr)
   DECLARE_VISITOR(AvailabilityAttr)
   DECLARE_VISITOR(CleanupAttr)
+  DECLARE_VISITOR(GuardedByAttr)
+  DECLARE_VISITOR(RequiresCapabilityAttr)
   DECLARE_VISITOR(SentinelAttr)
   DECLARE_VISITOR(VisibilityAttr)
 
@@ -5403,6 +5406,65 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitCleanupAttr(const CleanupAttr *A) {
   VisitAttr(A);
   dumpDeclRef(*A->getFunctionDecl());
+}
+
+//@atd type capability_arg = {
+//@atd   ~is_negative : bool;
+//@atd   expression : string;
+//@atd } <ocaml field_prefix="ca_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::dumpCapabilityArg(const Expr *E) {
+  // the negative capability `!mu` is written with either the builtin `!` or an
+  // overloaded `operator!`, as in clang's thread safety analysis
+  bool IsNegative = false;
+  if (const auto *OE = dyn_cast_or_null<CXXOperatorCallExpr>(E)) {
+    if (OE->getOperator() == OO_Exclaim && OE->getNumArgs() == 1) {
+      IsNegative = true;
+      E = OE->getArg(0);
+    }
+  } else if (const auto *UO = dyn_cast_or_null<UnaryOperator>(E)) {
+    if (UO->getOpcode() == UO_LNot) {
+      IsNegative = true;
+      E = UO->getSubExpr();
+    }
+  }
+  std::string Expression;
+  if (E) {
+    llvm::raw_string_ostream OS(Expression);
+    PrintingPolicy Policy(Context.getPrintingPolicy());
+    Policy.SuppressImplicitBase = true;
+    E->IgnoreImplicit()->printPretty(OS, nullptr, Policy);
+  }
+  ObjectScope Scope(OF, 1 + IsNegative);
+  OF.emitFlag("is_negative", IsNegative);
+  OF.emitTag("expression");
+  OF.emitString(Expression);
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::GuardedByAttrTupleSize() {
+  return AttrTupleSize() + 1;
+}
+//@atd #define guarded_by_attr_tuple attr_tuple * capability_arg
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitGuardedByAttr(const GuardedByAttr *A) {
+  VisitAttr(A);
+  dumpCapabilityArg(A->getArg());
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::RequiresCapabilityAttrTupleSize() {
+  return AttrTupleSize() + 1;
+}
+//@atd #define requires_capability_attr_tuple attr_tuple * capability_arg list
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitRequiresCapabilityAttr(
+    const RequiresCapabilityAttr *A) {
+  VisitAttr(A);
+  ArrayScope Scope(OF, A->args_size());
+  for (const Expr *E : A->args()) {
+    dumpCapabilityArg(E);
+  }
 }
 
 template <class ATDWriter>

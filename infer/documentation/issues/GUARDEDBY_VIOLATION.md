@@ -13,4 +13,8 @@ class C {
 }
 ```
 
+This check is enabled with `--racerd-guardedby`. In C++, it applies to fields annotated with the
+clang thread safety attribute `guarded_by`, eg `int f __attribute__((guarded_by(mu)));`, in classes
+that use locks.
+
 Action: Protect the offending access by acquiring the lock indicated by the `@GuardedBy(...)`.
