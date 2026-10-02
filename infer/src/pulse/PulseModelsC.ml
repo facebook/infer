@@ -107,8 +107,16 @@ let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
         in
         let astate =
           let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
-          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual} ->
-              AddressAttributes.add_one (ValueOrigin.value actual) unknown_effect acc )
+          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual; typ} ->
+              let actual = ValueOrigin.value actual in
+              let acc =
+                if
+                  Config.pulse_havoc_arguments && Typ.is_pointer typ
+                  && not (Typ.is_ptr_to_const typ)
+                then AbductiveDomain.apply_unknown_effect hist actual acc
+                else acc
+              in
+              AddressAttributes.add_one actual unknown_effect acc )
         in
         (* callbacks commonly take ownership of the descriptors they are given *)
         PulseOperations.forget_file_descriptors_passed_by_value
@@ -218,6 +226,195 @@ include struct
             invalidate path UntraceableAccess location invalidation (ValueOrigin.addr_hist fd) ) ]
 
 
+  (* The cells written one by one all end up in the pre and post of the summaries of the callers,
+     which gets costly for big objects copied through chains of callees. *)
+  let max_cells_written_one_by_one = 64
+
+  let has_few_cells tenv typ =
+    let rec remaining budget (typ : Typ.t) =
+      if budget < 0 then budget
+      else
+        match typ.desc with
+        | Tint _ | Tfloat _ | Tptr _ ->
+            budget - 1
+        | Tstruct name -> (
+          match Tenv.lookup tenv name with
+          | None ->
+              budget
+          | Some {fields} ->
+              List.fold fields ~init:budget ~f:(fun budget ({typ} : Struct.field) ->
+                  remaining budget typ ) )
+        | Tarray _ | Tvoid | Tfun _ | TVar _ ->
+            budget
+    in
+    remaining max_cells_written_one_by_one typ >= 0
+
+
+  (** the object at [dest] gets unknown contents: the cells of the object already in the heap get
+      fresh values, and so do the other cells when they are read later or seen by callers *)
+  let overwrite_contents dest : unit DSL.model_monad =
+    let* hist = add_model_call ValueHistory.epoch in
+    exec_command (AbductiveDomain.overwrite_contents hist (fst dest))
+    @@> store ~ref:dest @= fresh ()
+
+
+  (** the first field of [name] when an object of type [typ] at the start of a [name] is exactly
+      that field, or nested in it as its first field *)
+  let rec first_field_holding tenv name typ =
+    match Tenv.lookup tenv name with
+    | Some {Struct.fields= ({name= field; typ= field_typ} : Struct.field) :: _} -> (
+        if Typ.equal_ignore_quals field_typ typ then Some field
+        else
+          match field_typ.Typ.desc with
+          | Tstruct field_typ_name ->
+              first_field_holding tenv field_typ_name typ |> Option.map ~f:(fun _ -> field)
+          | _ ->
+              None )
+    | _ ->
+        None
+
+
+  let rec has_pointer_cell tenv (typ : Typ.t) =
+    match typ.desc with
+    | Tptr _ ->
+        true
+    | Tstruct name ->
+        Tenv.lookup tenv name
+        |> Option.exists ~f:(fun {Struct.fields} ->
+            List.exists fields ~f:(fun ({typ} : Struct.field) -> has_pointer_cell tenv typ) )
+    | Tint _ | Tfloat _ | Tarray _ | Tvoid | Tfun _ | TVar _ ->
+        false
+
+
+  (** the objects written by [overwrite_cells], as their canonical address and their struct type
+      name, or [None] for a scalar *)
+  module Visited = Stdlib.Set.Make (struct
+    type t = AbstractValue.t * Typ.Name.t option [@@deriving compare]
+  end)
+
+  (** write the values of the pointer cells of the object of type [typ] at [src] (fresh values if
+      [src] is [None]) into the corresponding cells of [dest], and fresh values into its other
+      scalar cells, recursing into struct fields. The cells already at [dest] that are not cells of
+      the objects written so far, in [visited], are left alone when they are outside of the object,
+      eg the fields after a first field of type [typ], and get unknown contents otherwise. Objects
+      are written once: a struct and its first field can be at the same address in the heap when the
+      path condition says so. *)
+  let rec overwrite_cells ~src dest (typ : Typ.t) visited : Visited.t DSL.model_monad =
+    let* {analysis_data= {tenv}} = get_data in
+    let* addr =
+      exec_pure_operation (fun astate ->
+          (AbductiveDomain.CanonValue.canon' astate (fst dest) :> AbstractValue.t) )
+    in
+    let overwrite_cell visited =
+      let* value =
+        match (src, typ.desc) with
+        | Some src, Tptr _ ->
+            access NoAccess src Dereference
+        | _ ->
+            fresh ()
+      in
+      store ~ref:dest value @@> ret visited
+    in
+    let overwrite_field visited {Struct.name= field; typ= field_typ} =
+      let* dest_field = access NoAccess dest (FieldAccess field) in
+      let* src_field =
+        match src with
+        | Some src when has_pointer_cell tenv field_typ ->
+            let* src_field = access NoAccess src (FieldAccess field) in
+            ret (Some src_field)
+        | _ ->
+            ret None
+      in
+      overwrite_cells ~src:src_field dest_field field_typ visited
+    in
+    let is_written visited (access : Access.t) =
+      match access with
+      | FieldAccess field ->
+          Visited.mem (addr, Some (Fieldname.get_class_name field)) visited
+      | Dereference ->
+          Visited.mem (addr, None) visited
+      | ArrayAccess _ ->
+          false
+    in
+    let overwrite_other_cells visited =
+      let* edges =
+        exec_pure_operation (fun astate ->
+            AbductiveDomain.Memory.fold_edges addr astate ~init:[] ~f:(fun edges edge ->
+                edge :: edges ) )
+      in
+      list_fold edges ~init:visited ~f:(fun visited ((access : Access.t), cell) ->
+          if is_written visited access then ret visited
+          else
+            match access with
+            | FieldAccess field -> (
+              match first_field_holding tenv (Fieldname.get_class_name field) typ with
+              | Some first_field when Fieldname.equal field first_field ->
+                  overwrite_cells ~src cell typ visited
+              | Some _ ->
+                  ret visited
+              | None ->
+                  overwrite_contents cell @@> ret visited )
+            | ArrayAccess _ ->
+                overwrite_contents cell @@> ret visited
+            | Dereference ->
+                (store ~ref:dest @= fresh ()) @@> ret visited )
+    in
+    let visit name_opt ~write =
+      if Visited.mem (addr, name_opt) visited then ret visited
+      else write (Visited.add (addr, name_opt) visited) >>= overwrite_other_cells
+    in
+    match typ.desc with
+    | Tint _ | Tfloat _ | Tptr _ ->
+        visit None ~write:overwrite_cell
+    | Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | None ->
+          overwrite_contents dest @@> ret visited
+      | Some {fields} ->
+          let fields =
+            List.filter fields ~f:(fun ({name= field} : Struct.field) ->
+                not (Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field) )
+          in
+          visit (Some name) ~write:(fun visited ->
+              list_fold fields ~init:visited ~f:overwrite_field ) )
+    | Tarray _ | Tvoid | Tfun _ | TVar _ ->
+        overwrite_contents dest @@> ret visited
+
+
+  (** [Some T] when [size] is the size of exactly one [T] *)
+  let single_object_type (size : Exp.t) =
+    match Exp.ignore_cast size with
+    | Sizeof {typ} ->
+        Some typ
+    | BinOp (Mult _, n, m) -> (
+      match (Exp.ignore_cast n, Exp.ignore_cast m) with
+      | (Const (Cint n), Sizeof {typ} | Sizeof {typ}, Const (Cint n)) when IntLit.isone n ->
+          Some typ
+      | _ ->
+          None )
+    | _ ->
+        None
+
+
+  (** the object at [dest] is overwritten, with the contents of the object at [src] if given; when
+      the type of the object is known and it has few cells, they are written one by one *)
+  let overwrite_object ?src dest typ_opt : unit DSL.model_monad =
+    let* {analysis_data= {tenv}} = get_data in
+    let dest = to_aval dest in
+    match typ_opt with
+    | Some typ when has_few_cells tenv typ ->
+        overwrite_cells ~src:(Option.map src ~f:to_aval) dest typ Visited.empty |> ignore
+    | _ ->
+        overwrite_contents dest
+
+
+  let overwrite_pointee {FuncArg.arg_payload= ptr; typ} =
+    let pointee_typ_opt =
+      match typ.Typ.desc with Tptr (pointee_typ, _) -> Some pointee_typ | _ -> None
+    in
+    check_valid ptr @@> overwrite_object ptr pointee_typ_opt
+
+
   let calloc ~x nmemb size =
     start_model
     @@ fun () ->
@@ -286,10 +483,7 @@ include struct
     @@ fun () ->
     let* () =
       disj
-        [ ( prune_ne_zero (to_aval size)
-          @@>
-          let* obj = fresh () in
-          store ~ref:(to_aval buf) obj )
+        [ prune_ne_zero (to_aval size) @@> check_valid buf @@> overwrite_contents (to_aval buf)
         ; prune_eq_zero (to_aval size) @@> prune_eq_zero (to_aval buf) ]
     in
     fresh_nonneg () >>= assign_ret
@@ -298,10 +492,8 @@ include struct
   let fgetpos stream pos =
     start_model
     @@ fun () ->
-    check_valid stream
-    @@>
-    let* obj = fresh () in
-    store ~ref:(to_aval pos) obj @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
+    check_valid stream @@> overwrite_pointee pos
+    @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
 
 
   let getcwd buf _size : model =
@@ -424,30 +616,31 @@ include struct
     start_model @@ fun () -> check_valid stream @@> apply_unknown_effect (to_aval buf)
 
 
-  let memcpy dest src : model =
+  let memcpy dest src size : model =
     start_model
     @@ fun () ->
-    check_valid dest @@> check_valid src @@> data_dependency dest [src]
+    check_valid dest @@> check_valid src
+    @@> overwrite_object ~src dest (single_object_type size)
+    @@> data_dependency dest [src]
     @@> assign_ret (to_aval dest)
 
 
-  let memset s value size : model =
-    start_model
-    @@ fun () ->
+  let fill_object s size value : unit DSL.model_monad =
     check_valid s
-    @@> (let typ = match (size : Exp.t) with Sizeof {typ} -> typ | _ -> Typ.mk Tvoid in
-         let* {path; analysis_data= {tenv}; location} = get_data in
-         DSL.Syntax.exec_command
-           (AbductiveDomain.fold_pointer_targets tenv path
-              (`Malloc (ValueOrigin.addr_hist s))
-              typ location
-              ~f:(fun addr_hist astate ->
-                (* this will always be ok because the address is generated fresh *)
-                PulseOperations.write_deref path location ~ref:addr_hist
-                  ~obj:(ValueOrigin.addr_hist value) astate
-                |> PulseResult.ok_exn ) ) )
-    @@> assign_ret (to_aval s)
+    @@> option_iter (single_object_type size) ~f:(fun typ ->
+        let* {path; analysis_data= {tenv}; location} = get_data in
+        exec_command
+          (AbductiveDomain.fold_pointer_targets tenv path
+             (`Malloc (to_aval s))
+             typ location
+             ~f:(fun cell -> AbductiveDomain.Memory.add_edge path cell Dereference value location) ) )
 
+
+  let memset s value size : model =
+    start_model @@ fun () -> fill_object s size (to_aval value) @@> assign_ret (to_aval s)
+
+
+  let bzero s size : model = start_model @@ fun () -> fill_object s size @= null
 
   let open_ = start_model ret_fd_or_minus_one
 
@@ -563,22 +756,23 @@ include struct
     @@> data_dependency stream [c]
 
 
-  let read_model fd buf count =
-    start_model
-    @@ fun () ->
+  let read_common fd buf count size_exp =
     disj
       [ prune_ne_zero (to_aval count)
-        @@> (store ~ref:(to_aval buf) @= fresh ())
+        @@> check_valid buf
+        @@> overwrite_object buf (single_object_type size_exp)
         @@> data_dependency buf [fd] @@> assign_ret @= fresh_nonneg ()
       ; prune_eq_zero (to_aval count) @@> assign_ret @= int 0 ]
 
 
-  let read_fd fd buf count =
-    start_model @@ fun () -> check_fd_not_closed fd @@> (read_model fd buf count |> lift_to_monad)
+  let read_fd fd buf {FuncArg.arg_payload= count; exp= count_exp} =
+    start_model @@ fun () -> check_fd_not_closed fd @@> read_common fd buf count count_exp
 
 
-  let fread ptr size stream =
-    start_model @@ fun () -> check_valid stream @@> (read_model stream ptr size |> lift_to_monad)
+  let fread ptr size {FuncArg.arg_payload= nmemb; exp= nmemb_exp} stream =
+    start_model
+    @@ fun () ->
+    check_valid stream @@> read_common stream ptr nmemb (Exp.BinOp (Mult None, size, nmemb_exp))
 
 
   let shmget : model = start_model @@ fun () -> ret_alloc_or_minus_one CMalloc
@@ -586,10 +780,7 @@ include struct
   let statfs path buf =
     start_model
     @@ fun () ->
-    check_valid path
-    @@>
-    let* obj = fresh () in
-    store ~ref:(to_aval buf) obj @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
+    check_valid path @@> overwrite_pointee buf @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
 
 
   let stpcpy dst src : model =
@@ -904,6 +1095,8 @@ let matchers : matcher list =
     $--> Atomic.atomic_op_fetch `Pre `Nand
   ; -"__atomic_test_and_set" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_test_and_set
   ; -"__atomic_clear" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_clear
+  ; -"__builtin_memset" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memset
+  ; -"bzero" <>$ capt_arg_payload $+ capt_exp $--> bzero
   ; -"clearerr" <>$ capt_arg_payload $--> valid_arg
   ; -"close" <>$ capt_arg_payload_of_prim_typ StdTyp.int $--> close
   ; -"closedir" <>$ capt_arg $--> closedir
@@ -916,6 +1109,7 @@ let matchers : matcher list =
   ; -"epoll_create" <>$ any_arg $--> open_
   ; -"epoll_create1" <>$ any_arg $--> open_
   ; -"eventfd" <>$ any_arg $+ any_arg $--> open_
+  ; -"explicit_bzero" <>$ capt_arg_payload $+ capt_exp $--> bzero
   ; -"fclose" <>$ capt_arg $--> fclose
   ; ( -"fcntl" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg
     $++$--> fun fd cmd args -> use_fd fd (cmd :: args) )
@@ -927,16 +1121,14 @@ let matchers : matcher list =
   ; -"fflush" <>$ capt_arg_payload $--> compose1 null_or_valid_arg (ignore_arg non_det_ret)
   ; -"fgetc" <>$ capt_arg_payload
     $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
-  ; -"fgetpos" <>$ capt_arg_payload $+ any_arg
-    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
-  ; -"fgetpos" <>$ capt_arg_payload $+ capt_arg_payload $--> fgetpos
+  ; -"fgetpos" <>$ capt_arg_payload $+ capt_arg $--> fgetpos
   ; -"fgets" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $--> fgets
   ; -"fileno" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"fopen" <>$ capt_arg_payload $+ capt_arg_payload $--> fopen
   ; -"fprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf
   ; -"fputc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"fputs" <>$ capt_arg_payload $+ capt_arg_payload $--> fputs
-  ; -"fread" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fread
+  ; -"fread" <>$ capt_arg_payload $+ capt_exp $+ capt_arg $+ capt_arg_payload $--> fread
   ; -"fscanf" <>$ capt_arg_payload $+ capt_arg_payload $++$--> fscanf
   ; -"fsctl" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ any_arg
     $--> compose2 valid_and_null_or_valid_args (ignore_args2 zero_or_minus_one_ret)
@@ -984,9 +1176,9 @@ let matchers : matcher list =
   ; -"memchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
   ; -"memcmp" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
     $--> compose2 valid_args2 (ignore_args2 non_det_ret)
-  ; -"memcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
+  ; -"memcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memcpy
   ; -"memfd_create" <>$ any_arg $+ any_arg $--> open_
-  ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
+  ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memcpy
   ; -"memrchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
   ; -"memset" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memset
   ; -"mkostemp" <>$ any_arg $+ any_arg $--> open_
@@ -1010,7 +1202,7 @@ let matchers : matcher list =
   ; -"puts" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; ( -"pwrite" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
     $--> fun fd buf count offset -> use_fd fd [buf; count; offset] )
-  ; -"read" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> read_fd
+  ; -"read" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg $--> read_fd
   ; -"readdir" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg null_or_non_det_ret)
   ; -"readline" <>$ capt_arg_payload
     $--> compose1 null_or_valid_arg (ignore_arg null_or_non_det_ret)
@@ -1048,8 +1240,8 @@ let matchers : matcher list =
     $--> fd_pair
   ; -"sprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> sprintf
   ; -"sscanf" <>$ capt_arg_payload $+ capt_arg_payload $++$--> fscanf
-  ; -"stat" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
-  ; -"statfs" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
+  ; -"stat" <>$ capt_arg_payload $+ capt_arg $--> statfs
+  ; -"statfs" <>$ capt_arg_payload $+ capt_arg $--> statfs
   ; -"stpcpy" <>$ capt_arg_payload $+ capt_arg_payload $--> stpcpy
   ; -"strcasestr" <>$ capt_arg_payload $+ capt_arg_payload $--> strstr
   ; -"strcat" <>$ capt_arg_payload $+ capt_arg_payload $--> strcpy
