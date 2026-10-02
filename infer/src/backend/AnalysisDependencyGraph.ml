@@ -51,7 +51,8 @@ let build ~changed_files =
       (* Ensure proc_name is part of the graph if it has not been referenced yet *)
       if not (CallGraph.mem_procname graph proc_name) then CallGraph.create_node graph proc_name [] ) ;
   (* Then, flag in [graph] any procedure with a summary depending (transitively) on either (1) a
-     deleted procedure, (2) the tenv of a changed file or (3) the summary of a changed procedure. *)
+     deleted procedure, (2) the tenv of a changed file, (3) the summary of a changed procedure or (4)
+     the summary of a procedure defined in a changed header. *)
   List.iter !deleted_procs ~f:(CallGraph.flag_reachable graph) ;
   SourceFile.Set.iter
     (fun sf ->
@@ -66,6 +67,11 @@ let build ~changed_files =
           | Some attrs ->
               if attrs.changed then CallGraph.flag_reachable graph pname ) )
     changed_files ;
+  (* do not rely on [changed] for procedures defined in headers: each translation unit including the
+     header compares its copy with the stored one, which may come from a translation unit captured
+     earlier in the same capture, and then marks its copy unchanged *)
+  Procedures.get_procs_defined_in_changed_headers changed_files
+  |> Procname.Map.iter (fun pname _ -> CallGraph.flag_reachable graph pname) ;
   graph
 
 

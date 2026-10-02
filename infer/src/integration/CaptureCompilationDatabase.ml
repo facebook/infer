@@ -84,6 +84,26 @@ let get_compilation_database_files_xcodebuild ~prog ~args =
       L.(die ExternalError) "There was an error executing the build command"
 
 
+let check_changed_files_in_database changed_files compilation_database =
+  let not_in_database =
+    SourceFile.Set.filter
+      (fun file -> not (CompilationDatabase.mem file compilation_database))
+      changed_files
+  in
+  if not (SourceFile.Set.is_empty not_in_database) then (
+    L.debug Capture Quiet "Changed files without an entry in the compilation database: %a@\n"
+      (Pp.seq ~sep:", " SourceFile.pp)
+      (SourceFile.Set.elements not_in_database) ;
+    if SourceFile.Set.equal not_in_database changed_files then
+      L.user_warning
+        "None of the files in the changed files index has an entry in the compilation database: \
+         nothing will be captured.%s@."
+        ( if SourceFile.Set.exists SourceFile.is_header changed_files then
+            " Headers are captured through the source files that include them: add these source \
+             files to the changed files index."
+          else "" ) )
+
+
 let capture_files_in_database ~changed_files compilation_database =
   let is_skipped = Inferconfig.skip_analysis_in_path_matcher in
   let should_capture =
@@ -91,6 +111,7 @@ let capture_files_in_database ~changed_files compilation_database =
     | None ->
         fun source_file -> not (is_skipped source_file)
     | Some changed_files_set ->
+        check_changed_files_in_database changed_files_set compilation_database ;
         fun source_file ->
           (not (is_skipped source_file)) && SourceFile.Set.mem source_file changed_files_set
   in
