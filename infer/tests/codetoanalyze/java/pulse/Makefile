@@ -13,6 +13,6 @@ INFER_OPTIONS = \
   --pulse-monitor-transitive-callees --pulse-monitor-transitive-missed-captures \
   --pulse-taint-policy-as-issue-type
 INFERPRINT_OPTIONS = --issues-tests
-SOURCES = $(wildcard *.java taint/*.java)
+SOURCES = $(wildcard *.java taint/*.java taint/stubs/*.java)
 
 include $(TESTS_DIR)/javac.make
