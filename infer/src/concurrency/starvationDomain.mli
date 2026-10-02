@@ -34,7 +34,9 @@ end
     - Equality for comparing two addresses in two distinct threads/traces. Globals and class objects
       are compared in the same way, but locks represented by access paths rooted at parameters need
       only have equal access lists (ie [x.f.g == y.f.g]). This allows demonically aliasing
-      parameters in *distinct* threads. This relation is used in [may_deadlock]. *)
+      parameters in *distinct* threads. [may_deadlock] uses this relation to tell whether two locks
+      are distinct, and [may_alias_across_threads], which also relates a lock reached through fields
+      to the locks of the class of the object reached, to match the locks of two threads. *)
 module Lock : sig
   include module type of AbstractAddress
 
@@ -101,7 +103,7 @@ module Acquisitions : sig
   (** is the given lock in the set *)
 
   val lock_is_held_in_other_thread : Tenv.t -> Lock.t -> t -> bool
-  (** is the given lock held, modulo memory abstraction across threads *)
+  (** may the given lock be held, modulo memory abstraction across threads *)
 end
 
 (** An event and the currently-held locks at the time it occurred. *)

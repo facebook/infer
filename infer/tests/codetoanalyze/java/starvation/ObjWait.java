@@ -69,3 +69,53 @@ class ObjWait {
     }
   }
 }
+
+class ObjWaitHoldsOtherParam {
+  // lockBothWaitOnSecond() keeps holding a while it waits on b
+  @UiThread
+  void lockOnUiThreadBad() {
+    synchronized (this) {
+    }
+  }
+
+  void lockBothWaitOnSecond(ObjWaitHoldsOtherParam a, ObjWaitHoldsOtherParam b)
+      throws InterruptedException {
+    synchronized (a) {
+      synchronized (b) {
+        b.wait();
+      }
+    }
+  }
+}
+
+class ObjWaitHoldsParamWaitsOnThis {
+  // lockParamWaitOnThis() keeps holding other while it waits on this
+  @UiThread
+  void lockOnUiThreadBad() {
+    synchronized (this) {
+    }
+  }
+
+  void lockParamWaitOnThis(ObjWaitHoldsParamWaitsOnThis other) throws InterruptedException {
+    synchronized (other) {
+      synchronized (this) {
+        wait();
+      }
+    }
+  }
+}
+
+class ObjWaitOnOnlyLock {
+  // lockParamWaitOnIt() releases its only lock while it waits
+  @UiThread
+  void lockOnUiThreadOk() {
+    synchronized (this) {
+    }
+  }
+
+  void lockParamWaitOnIt(ObjWaitOnOnlyLock other) throws InterruptedException {
+    synchronized (other) {
+      other.wait();
+    }
+  }
+}
