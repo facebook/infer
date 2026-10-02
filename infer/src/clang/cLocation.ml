@@ -76,9 +76,9 @@ let should_translate_lib translation_unit source_range decl_trans_context ~trans
   || should_translate translation_unit source_range decl_trans_context ~translate_when_used
 
 
-let is_file_block_listed file =
-  Option.exists ~f:(fun re -> Str.string_match re file 0) Config.skip_analysis_in_path
-  || Inferconfig.capture_block_list_file_matcher (SourceFile.create file)
+let is_file_block_listed source_file =
+  Inferconfig.skip_analysis_in_path_matcher source_file
+  || Inferconfig.capture_block_list_file_matcher source_file
 
 
 let location_of_source_range ?(pick_location = `Start) default_source_file source_range =

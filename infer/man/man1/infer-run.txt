@@ -163,7 +163,10 @@ OPTIONS
        --skip-analysis-in-path +regex
            Ignore files whose path matches a given regex (can be specified
            multiple times, but you must make sure each regex is properly
-           bracketed)
+           bracketed). For C, C++, Objective-C and Java source files, the
+           regex must match a prefix of the path of the file relative to the
+           project root, or of its absolute path if the file is outside the
+           project root.
 
        --sqlite-cache-size int
            SQLite cache size in pages (if positive) or kB (if negative),

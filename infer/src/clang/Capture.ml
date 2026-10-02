@@ -166,17 +166,18 @@ let cc1_capture clang_cmd =
     Utils.filename_to_absolute ~root (List.last_exn argv_without_flags)
   in
   L.(debug Capture Quiet) "@\n*** Beginning capture of file %s ***@\n" source_path ;
+  let is_file_block_listed () =
+    (* [source_path] is only a guess and may not exist *)
+    SourceFile.from_abs_path ~warn_on_error:false source_path |> CLocation.is_file_block_listed
+  in
   if
     InferCommand.equal Config.command Compile
-    || (not Config.skip_analysis_in_path_skips_compilation)
-       && CLocation.is_file_block_listed source_path
+    || ((not Config.skip_analysis_in_path_skips_compilation) && is_file_block_listed ())
   then (
     L.(debug Capture Quiet) "@\n Skip the analysis of source file %s@\n@\n" source_path ;
     (* We still need to run clang, but we don't have to attach the plugin. *)
     run_clang clang_cmd Utils.consume_in )
-  else if
-    Config.skip_analysis_in_path_skips_compilation && CLocation.is_file_block_listed source_path
-  then (
+  else if Config.skip_analysis_in_path_skips_compilation && is_file_block_listed () then (
     L.(debug Capture Quiet) "@\n Skip compilation and analysis of source file %s@\n@\n" source_path ;
     () )
   else

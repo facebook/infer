@@ -16,7 +16,7 @@ val should_translate_lib :
   -> translate_when_used:bool
   -> bool
 
-val is_file_block_listed : string -> bool
+val is_file_block_listed : SourceFile.t -> bool
 
 val clang_to_sil_location : SourceFile.t -> Clang_ast_t.source_location -> Location.t
 

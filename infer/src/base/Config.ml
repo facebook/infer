@@ -3439,7 +3439,9 @@ and skip_analysis_in_path =
     ~in_help:InferCommand.[(Capture, manual_generic); (Run, manual_generic)]
     ~meta:"regex"
     "Ignore files whose path matches a given regex (can be specified multiple times, but you must \
-     make sure each regex is properly bracketed)"
+     make sure each regex is properly bracketed). For C, C++, Objective-C and Java source files, \
+     the regex must match a prefix of the path of the file relative to the project root, or of its \
+     absolute path if the file is outside the project root."
 
 
 and skip_analysis_in_path_skips_compilation =
