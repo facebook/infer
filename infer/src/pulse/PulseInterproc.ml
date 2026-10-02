@@ -662,14 +662,21 @@ let materialize_pre_from_array_index {addr_pre_dest; pre_hist; access_callee; ad
     ~addr_hist_caller:addr_hist_dest_caller path call_state
 
 
-let materialize_pre_from_array_indices call_state =
-  let path = LazyHeapPath.unsupported in
-  let+ call_state =
-    PulseResult.list_fold call_state.array_indices_to_visit ~init:call_state
-      ~f:(fun call_state array_index_to_translate ->
-        materialize_pre_from_array_index array_index_to_translate path call_state )
-  in
-  {call_state with array_indices_to_visit= []}
+let rec materialize_pre_from_array_indices call_state =
+  match call_state.array_indices_to_visit with
+  | [] ->
+      Ok call_state
+  | array_indices_to_visit ->
+      let path = LazyHeapPath.unsupported in
+      (* materializing array elements can discover more array accesses to visit, for instance in
+         multi-dimensional arrays *)
+      let* call_state =
+        PulseResult.list_fold array_indices_to_visit
+          ~init:{call_state with array_indices_to_visit= []}
+          ~f:(fun call_state array_index_to_translate ->
+            materialize_pre_from_array_index array_index_to_translate path call_state )
+      in
+      materialize_pre_from_array_indices call_state
 
 
 let callee_deref_non_c_struct addr typ astate =

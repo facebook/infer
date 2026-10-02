@@ -1,5 +1,82 @@
 /* @generated */
 digraph cfg {
+"assign_many_arrays#copy_array_fie.a885ca4b97ebe828_1" [label="1: Start copy_array_field::assign_many_arrays\nFormals:  m1:copy_array_field::ManyArrays& m2:copy_array_field::ManyArrays const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "assign_many_arrays#copy_array_fie.a885ca4b97ebe828_1" -> "assign_many_arrays#copy_array_fie.a885ca4b97ebe828_3" ;
+"assign_many_arrays#copy_array_fie.a885ca4b97ebe828_2" [label="2: Exit copy_array_field::assign_many_arrays \n  " color=yellow style=filled]
+	
+
+"assign_many_arrays#copy_array_fie.a885ca4b97ebe828_3" [label="3:  Call _fun_copy_array_field::ManyArrays::operator= \n   n$1=*&m1:copy_array_field::ManyArrays& [line 66, column 65]\n  n$2=*&m2:copy_array_field::ManyArrays const & [line 66, column 70]\n  n$3=_fun_copy_array_field::ManyArrays::operator=(n$1:copy_array_field::ManyArrays&,n$2:copy_array_field::ManyArrays const &) [line 66, column 65]\n " shape="box"]
+	
+
+	 "assign_many_arrays#copy_array_fie.a885ca4b97ebe828_3" -> "assign_many_arrays#copy_array_fie.a885ca4b97ebe828_2" ;
+"assign_many_small#copy_array_fiel.8d20a8979ce3ed30_1" [label="1: Start copy_array_field::assign_many_small\nFormals:  m1:copy_array_field::ManySmall& m2:copy_array_field::ManySmall const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "assign_many_small#copy_array_fiel.8d20a8979ce3ed30_1" -> "assign_many_small#copy_array_fiel.8d20a8979ce3ed30_3" ;
+"assign_many_small#copy_array_fiel.8d20a8979ce3ed30_2" [label="2: Exit copy_array_field::assign_many_small \n  " color=yellow style=filled]
+	
+
+"assign_many_small#copy_array_fiel.8d20a8979ce3ed30_3" [label="3:  Call _fun_copy_array_field::ManySmall::operator= \n   n$1=*&m1:copy_array_field::ManySmall& [line 55, column 62]\n  n$2=*&m2:copy_array_field::ManySmall const & [line 55, column 67]\n  n$3=_fun_copy_array_field::ManySmall::operator=(n$1:copy_array_field::ManySmall&,n$2:copy_array_field::ManySmall const &) [line 55, column 62]\n " shape="box"]
+	
+
+	 "assign_many_small#copy_array_fiel.8d20a8979ce3ed30_3" -> "assign_many_small#copy_array_fiel.8d20a8979ce3ed30_2" ;
+"assign_small#copy_array_field#118.eb635d96f55b038d_1" [label="1: Start copy_array_field::assign_small\nFormals:  s1:copy_array_field::Small& s2:copy_array_field::Small const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "assign_small#copy_array_field#118.eb635d96f55b038d_1" -> "assign_small#copy_array_field#118.eb635d96f55b038d_3" ;
+"assign_small#copy_array_field#118.eb635d96f55b038d_2" [label="2: Exit copy_array_field::assign_small \n  " color=yellow style=filled]
+	
+
+"assign_small#copy_array_field#118.eb635d96f55b038d_3" [label="3:  Call _fun_copy_array_field::Small::operator= \n   n$1=*&s1:copy_array_field::Small& [line 35, column 49]\n  n$2=*&s2:copy_array_field::Small const & [line 35, column 54]\n  n$3=_fun_copy_array_field::Small::operator=(n$1:copy_array_field::Small&,n$2:copy_array_field::Small const &) [line 35, column 49]\n " shape="box"]
+	
+
+	 "assign_small#copy_array_field#118.eb635d96f55b038d_3" -> "assign_small#copy_array_field#118.eb635d96f55b038d_2" ;
+"copy_many_arrays#copy_array_field.6c106fb8f3507832_1" [label="1: Start copy_array_field::copy_many_arrays\nFormals:  m:copy_array_field::ManyArrays&\nLocals:  m2:copy_array_field::ManyArrays \n  " color=yellow style=filled]
+	
+
+	 "copy_many_arrays#copy_array_field.6c106fb8f3507832_1" -> "copy_many_arrays#copy_array_field.6c106fb8f3507832_3" ;
+"copy_many_arrays#copy_array_field.6c106fb8f3507832_2" [label="2: Exit copy_array_field::copy_many_arrays \n  " color=yellow style=filled]
+	
+
+"copy_many_arrays#copy_array_field.6c106fb8f3507832_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(m2:copy_array_field::ManyArrays); [line 64, column 40]\n  n$0=*&m:copy_array_field::ManyArrays& [line 64, column 56]\n  n$1=_fun_copy_array_field::ManyArrays::ManyArrays(&m2:copy_array_field::ManyArrays*,n$0:copy_array_field::ManyArrays&) [line 64, column 56]\n " shape="box"]
+	
+
+	 "copy_many_arrays#copy_array_field.6c106fb8f3507832_3" -> "copy_many_arrays#copy_array_field.6c106fb8f3507832_2" ;
+"copy_many_small#copy_array_field#.84e6b15868cf42b2_1" [label="1: Start copy_array_field::copy_many_small\nFormals:  m:copy_array_field::ManySmall&\nLocals:  m2:copy_array_field::ManySmall \n  " color=yellow style=filled]
+	
+
+	 "copy_many_small#copy_array_field#.84e6b15868cf42b2_1" -> "copy_many_small#copy_array_field#.84e6b15868cf42b2_3" ;
+"copy_many_small#copy_array_field#.84e6b15868cf42b2_2" [label="2: Exit copy_array_field::copy_many_small \n  " color=yellow style=filled]
+	
+
+"copy_many_small#copy_array_field#.84e6b15868cf42b2_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(m2:copy_array_field::ManySmall); [line 53, column 38]\n  n$0=*&m:copy_array_field::ManySmall& [line 53, column 53]\n  n$1=_fun_copy_array_field::ManySmall::ManySmall(&m2:copy_array_field::ManySmall*,n$0:copy_array_field::ManySmall&) [line 53, column 53]\n " shape="box"]
+	
+
+	 "copy_many_small#copy_array_field#.84e6b15868cf42b2_3" -> "copy_many_small#copy_array_field#.84e6b15868cf42b2_2" ;
+"copy_objects#copy_array_field#652.877457e3489fe004_1" [label="1: Start copy_array_field::copy_objects\nFormals:  w:copy_array_field::WithObjects&\nLocals:  w2:copy_array_field::WithObjects \n  " color=yellow style=filled]
+	
+
+	 "copy_objects#copy_array_field#652.877457e3489fe004_1" -> "copy_objects#copy_array_field#652.877457e3489fe004_3" ;
+"copy_objects#copy_array_field#652.877457e3489fe004_2" [label="2: Exit copy_array_field::copy_objects \n  " color=yellow style=filled]
+	
+
+"copy_objects#copy_array_field#652.877457e3489fe004_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(w2:copy_array_field::WithObjects); [line 47, column 37]\n  n$0=*&w:copy_array_field::WithObjects& [line 47, column 54]\n  n$1=_fun_copy_array_field::WithObjects::WithObjects(&w2:copy_array_field::WithObjects*,n$0:copy_array_field::WithObjects&) [line 47, column 54]\n " shape="box"]
+	
+
+	 "copy_objects#copy_array_field#652.877457e3489fe004_3" -> "copy_objects#copy_array_field#652.877457e3489fe004_2" ;
+"copy_small#copy_array_field#94361.b25b2b61190e8b67_1" [label="1: Start copy_array_field::copy_small\nFormals:  s:copy_array_field::Small&\nLocals:  s2:copy_array_field::Small \n  " color=yellow style=filled]
+	
+
+	 "copy_small#copy_array_field#94361.b25b2b61190e8b67_1" -> "copy_small#copy_array_field#94361.b25b2b61190e8b67_3" ;
+"copy_small#copy_array_field#94361.b25b2b61190e8b67_2" [label="2: Exit copy_array_field::copy_small \n  " color=yellow style=filled]
+	
+
+"copy_small#copy_array_field#94361.b25b2b61190e8b67_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(s2:copy_array_field::Small); [line 33, column 29]\n  n$0=*&s:copy_array_field::Small& [line 33, column 40]\n  n$1=_fun_copy_array_field::Small::Small(&s2:copy_array_field::Small*,n$0:copy_array_field::Small&) [line 33, column 40]\n " shape="box"]
+	
+
+	 "copy_small#copy_array_field#94361.b25b2b61190e8b67_3" -> "copy_small#copy_array_field#94361.b25b2b61190e8b67_2" ;
 "no_npe#copy_array_field#158793909.8ea76552f0803818_1" [label="1: Start copy_array_field::no_npe\nFormals: \nLocals:  x2:copy_array_field::X x1:copy_array_field::X a:int \n  " color=yellow style=filled]
 	
 
@@ -58,6 +135,201 @@ digraph cfg {
 	
 
 	 "npe#copy_array_field#773013229024.946ed5a43ad43585_7" -> "npe#copy_array_field#773013229024.946ed5a43ad43585_6" ;
+"Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_1" [label="1: Start copy_array_field::Elt::Elt\nFormals:  this:copy_array_field::Elt* other:copy_array_field::Elt const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_1" -> "Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_3" ;
+"Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_2" [label="2: Exit copy_array_field::Elt::Elt \n  " color=yellow style=filled]
+	
+
+"Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_3" [label="3:  Constructor Init \n   n$1=*&this:copy_array_field::Elt* [line 40, column 27]\n " shape="box"]
+	
+
+	 "Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_3" -> "Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_4" ;
+"Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_4" [label="4:  Constructor Init \n   n$2=*&other:copy_array_field::Elt const & [line 40, column 29]\n  n$3=*n$2.p:int* [line 40, column 29]\n  *n$1.p:int*=n$3 [line 40, column 27]\n " shape="box"]
+	
+
+	 "Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_4" -> "Elt#Elt#copy_array_field#{1023437.4643316d88ab5a44_2" ;
+"Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_1" [label="1: Start copy_array_field::Elt::Elt\nFormals:  this:copy_array_field::Elt*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_1" -> "Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_3" ;
+"Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_2" [label="2: Exit copy_array_field::Elt::Elt \n  " color=yellow style=filled]
+	
+
+"Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_3" [label="3:  Constructor Init \n   n$1=*&this:copy_array_field::Elt* [line 39, column 11]\n " shape="box"]
+	
+
+	 "Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_3" -> "Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_4" ;
+"Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_4" [label="4:  Constructor Init \n   *n$1.p:int*=null [line 39, column 11]\n " shape="box"]
+	
+
+	 "Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_4" -> "Elt#Elt#copy_array_field#{8179806.cc4aedb891ca5662_2" ;
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_1" [label="1: Start copy_array_field::ManyArrays::operator=\nFormals:  this:copy_array_field::ManyArrays* __param_0:copy_array_field::ManyArrays const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "operator=#ManyArrays#copy_array_f.c76622a05653f428_1" -> "operator=#ManyArrays#copy_array_f.c76622a05653f428_8" ;
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_2" [label="2: Exit copy_array_field::ManyArrays::operator= \n  " color=yellow style=filled]
+	
+
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_3" [label="3:  Return Stmt \n   n$0=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManyArrays#copy_array_f.c76622a05653f428_3" -> "operator=#ManyArrays#copy_array_f.c76622a05653f428_4" ;
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_4" [label="4:  Return Stmt \n   *&return:copy_array_field::ManyArrays&=n$0 [line 57, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManyArrays#copy_array_f.c76622a05653f428_4" -> "operator=#ManyArrays#copy_array_f.c76622a05653f428_2" ;
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_5" [label="5:  Call _fun___builtin_memcpy \n   n$1=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n  n$2=*&__param_0:copy_array_field::ManyArrays const & [line 57, column 8]\n  n$3=_fun___builtin_memcpy(n$1.c:void*,n$2.c:void const *,20:unsigned long) [line 57, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManyArrays#copy_array_f.c76622a05653f428_5" -> "operator=#ManyArrays#copy_array_f.c76622a05653f428_3" ;
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_6" [label="6:  Call _fun___builtin_memcpy \n   n$4=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n  n$5=*&__param_0:copy_array_field::ManyArrays const & [line 57, column 8]\n  n$6=_fun___builtin_memcpy(n$4.b:void*,n$5.b:void const *,20:unsigned long) [line 57, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManyArrays#copy_array_f.c76622a05653f428_6" -> "operator=#ManyArrays#copy_array_f.c76622a05653f428_5" ;
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_7" [label="7:  Call _fun___builtin_memcpy \n   n$7=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n  n$8=*&__param_0:copy_array_field::ManyArrays const & [line 57, column 8]\n  n$9=_fun___builtin_memcpy(n$7.a:void*,n$8.a:void const *,20:unsigned long) [line 57, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManyArrays#copy_array_f.c76622a05653f428_7" -> "operator=#ManyArrays#copy_array_f.c76622a05653f428_6" ;
+"operator=#ManyArrays#copy_array_f.c76622a05653f428_8" [label="8:  Call _fun___builtin_memcpy \n   n$10=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n  n$11=*&__param_0:copy_array_field::ManyArrays const & [line 57, column 8]\n  n$12=_fun___builtin_memcpy(n$10.p:void*,n$11.p:void const *,16:unsigned long) [line 57, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManyArrays#copy_array_f.c76622a05653f428_8" -> "operator=#ManyArrays#copy_array_f.c76622a05653f428_7" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_1" [label="1: Start copy_array_field::ManyArrays::ManyArrays\nFormals:  this:copy_array_field::ManyArrays* __param_0:copy_array_field::ManyArrays const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_1" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_9" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_2" [label="2: Exit copy_array_field::ManyArrays::ManyArrays \n  " color=yellow style=filled]
+	
+
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_3" [label="3:  Constructor Init \n   n$1=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_3" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_4" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_4" [label="4:  Constructor Init \n   *n$1.c:void=n$2 [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_4" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_2" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_5" [label="5:  Constructor Init \n   n$3=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_5" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_6" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_6" [label="6:  Constructor Init \n   *n$3.b:void=n$4 [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_6" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_3" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_7" [label="7:  Constructor Init \n   n$5=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_7" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_8" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_8" [label="8:  Constructor Init \n   *n$5.a:void=n$6 [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_8" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_5" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_9" [label="9:  Constructor Init \n   n$7=*&this:copy_array_field::ManyArrays* [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_9" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_10" ;
+"ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_10" [label="10:  Constructor Init \n   *n$7.p:void=n$8 [line 57, column 8]\n " shape="box"]
+	
+
+	 "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_10" -> "ManyArrays#ManyArrays#copy_array_.4e508da5e8ff1bb0_7" ;
+"operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_1" [label="1: Start copy_array_field::ManySmall::operator=\nFormals:  this:copy_array_field::ManySmall* __param_0:copy_array_field::ManySmall const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_1" -> "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_5" ;
+"operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_2" [label="2: Exit copy_array_field::ManySmall::operator= \n  " color=yellow style=filled]
+	
+
+"operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_3" [label="3:  Return Stmt \n   n$0=*&this:copy_array_field::ManySmall* [line 49, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_3" -> "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_4" ;
+"operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_4" [label="4:  Return Stmt \n   *&return:copy_array_field::ManySmall&=n$0 [line 49, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_4" -> "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_2" ;
+"operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_5" [label="5:  Call _fun___builtin_memcpy \n   n$1=*&this:copy_array_field::ManySmall* [line 49, column 8]\n  n$2=*&__param_0:copy_array_field::ManySmall const & [line 49, column 8]\n  n$3=_fun___builtin_memcpy(n$1.elts:void*,n$2.elts:void const *,96:unsigned long) [line 49, column 8]\n " shape="box"]
+	
+
+	 "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_5" -> "operator=#ManySmall#copy_array_fi.31f91cdcc35fff56_3" ;
+"ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_1" [label="1: Start copy_array_field::ManySmall::ManySmall\nFormals:  this:copy_array_field::ManySmall* __param_0:copy_array_field::ManySmall const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_1" -> "ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_3" ;
+"ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_2" [label="2: Exit copy_array_field::ManySmall::ManySmall \n  " color=yellow style=filled]
+	
+
+"ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_3" [label="3:  Constructor Init \n   n$1=*&this:copy_array_field::ManySmall* [line 49, column 8]\n " shape="box"]
+	
+
+	 "ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_3" -> "ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_4" ;
+"ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_4" [label="4:  Constructor Init \n   *n$1.elts:void=n$2 [line 49, column 8]\n " shape="box"]
+	
+
+	 "ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_4" -> "ManySmall#ManySmall#copy_array_fi.ed78d85de094c630_2" ;
+"operator=#Small#copy_array_field#.b74e2d4f6c4689d8_1" [label="1: Start copy_array_field::Small::operator=\nFormals:  this:copy_array_field::Small* __param_0:copy_array_field::Small const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_1" -> "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_6" ;
+"operator=#Small#copy_array_field#.b74e2d4f6c4689d8_2" [label="2: Exit copy_array_field::Small::operator= \n  " color=yellow style=filled]
+	
+
+"operator=#Small#copy_array_field#.b74e2d4f6c4689d8_3" [label="3:  Return Stmt \n   n$0=*&this:copy_array_field::Small* [line 28, column 8]\n " shape="box"]
+	
+
+	 "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_3" -> "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_4" ;
+"operator=#Small#copy_array_field#.b74e2d4f6c4689d8_4" [label="4:  Return Stmt \n   *&return:copy_array_field::Small&=n$0 [line 28, column 8]\n " shape="box"]
+	
+
+	 "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_4" -> "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_2" ;
+"operator=#Small#copy_array_field#.b74e2d4f6c4689d8_5" [label="5:  Call _fun___builtin_memcpy \n   n$1=*&this:copy_array_field::Small* [line 28, column 8]\n  n$2=*&__param_0:copy_array_field::Small const & [line 28, column 8]\n  n$3=*n$2.m:int[2*4][2*8] [line 28, column 8]\n  *n$1.m:int[2*4][2*8]=n$3 [line 28, column 8]\n  n$4=*n$2.m[0]:int[2*4] [line 28, column 8]\n  *n$1.m[0]:int[2*4]=n$4 [line 28, column 8]\n  n$5=*n$2.m[0][0]:int [line 28, column 8]\n  *n$1.m[0][0]:int=n$5 [line 28, column 8]\n  n$6=*n$2.m[0][1]:int [line 28, column 8]\n  *n$1.m[0][1]:int=n$6 [line 28, column 8]\n  n$7=*n$2.m[1]:int[2*4] [line 28, column 8]\n  *n$1.m[1]:int[2*4]=n$7 [line 28, column 8]\n  n$8=*n$2.m[1][0]:int [line 28, column 8]\n  *n$1.m[1][0]:int=n$8 [line 28, column 8]\n  n$9=*n$2.m[1][1]:int [line 28, column 8]\n  *n$1.m[1][1]:int=n$9 [line 28, column 8]\n " shape="box"]
+	
+
+	 "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_5" -> "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_3" ;
+"operator=#Small#copy_array_field#.b74e2d4f6c4689d8_6" [label="6:  Call _fun___builtin_memcpy \n   n$10=*&this:copy_array_field::Small* [line 28, column 8]\n  n$11=*&__param_0:copy_array_field::Small const & [line 28, column 8]\n  n$12=*n$11.p:int*[2*8] [line 28, column 8]\n  *n$10.p:int*[2*8]=n$12 [line 28, column 8]\n  n$13=*n$11.p[0]:int* [line 28, column 8]\n  *n$10.p[0]:int*=n$13 [line 28, column 8]\n  n$14=*n$11.p[1]:int* [line 28, column 8]\n  *n$10.p[1]:int*=n$14 [line 28, column 8]\n " shape="box"]
+	
+
+	 "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_6" -> "operator=#Small#copy_array_field#.b74e2d4f6c4689d8_5" ;
+"Small#Small#copy_array_field#{966.5e17a5b58991e424_1" [label="1: Start copy_array_field::Small::Small\nFormals:  this:copy_array_field::Small* __param_0:copy_array_field::Small const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Small#Small#copy_array_field#{966.5e17a5b58991e424_1" -> "Small#Small#copy_array_field#{966.5e17a5b58991e424_5" ;
+"Small#Small#copy_array_field#{966.5e17a5b58991e424_2" [label="2: Exit copy_array_field::Small::Small \n  " color=yellow style=filled]
+	
+
+"Small#Small#copy_array_field#{966.5e17a5b58991e424_3" [label="3:  Constructor Init \n   n$1=*&this:copy_array_field::Small* [line 28, column 8]\n " shape="box"]
+	
+
+	 "Small#Small#copy_array_field#{966.5e17a5b58991e424_3" -> "Small#Small#copy_array_field#{966.5e17a5b58991e424_4" ;
+"Small#Small#copy_array_field#{966.5e17a5b58991e424_4" [label="4:  Constructor Init \n   n$2=*&__param_0:copy_array_field::Small const & [line 28, column 8]\n  n$3=*n$2.m[0][0]:int [line 28, column 8]\n  *n$1.m[0][0]:int=n$3 [line 28, column 8]\n  n$4=*n$2.m[0][1]:int [line 28, column 8]\n  *n$1.m[0][1]:int=n$4 [line 28, column 8]\n  n$5=*n$2.m[1][0]:int [line 28, column 8]\n  *n$1.m[1][0]:int=n$5 [line 28, column 8]\n  n$6=*n$2.m[1][1]:int [line 28, column 8]\n  *n$1.m[1][1]:int=n$6 [line 28, column 8]\n " shape="box"]
+	
+
+	 "Small#Small#copy_array_field#{966.5e17a5b58991e424_4" -> "Small#Small#copy_array_field#{966.5e17a5b58991e424_2" ;
+"Small#Small#copy_array_field#{966.5e17a5b58991e424_5" [label="5:  Constructor Init \n   n$7=*&this:copy_array_field::Small* [line 28, column 8]\n " shape="box"]
+	
+
+	 "Small#Small#copy_array_field#{966.5e17a5b58991e424_5" -> "Small#Small#copy_array_field#{966.5e17a5b58991e424_6" ;
+"Small#Small#copy_array_field#{966.5e17a5b58991e424_6" [label="6:  Constructor Init \n   n$8=*&__param_0:copy_array_field::Small const & [line 28, column 8]\n  n$9=*n$8.p[0]:int* [line 28, column 8]\n  *n$7.p[0]:int*=n$9 [line 28, column 8]\n  n$10=*n$8.p[1]:int* [line 28, column 8]\n  *n$7.p[1]:int*=n$10 [line 28, column 8]\n " shape="box"]
+	
+
+	 "Small#Small#copy_array_field#{966.5e17a5b58991e424_6" -> "Small#Small#copy_array_field#{966.5e17a5b58991e424_3" ;
+"WithObjects#WithObjects#copy_arra.2448ce277628e8cd_1" [label="1: Start copy_array_field::WithObjects::WithObjects\nFormals:  this:copy_array_field::WithObjects* __param_0:copy_array_field::WithObjects const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "WithObjects#WithObjects#copy_arra.2448ce277628e8cd_1" -> "WithObjects#WithObjects#copy_arra.2448ce277628e8cd_3" ;
+"WithObjects#WithObjects#copy_arra.2448ce277628e8cd_2" [label="2: Exit copy_array_field::WithObjects::WithObjects \n  " color=yellow style=filled]
+	
+
+"WithObjects#WithObjects#copy_arra.2448ce277628e8cd_3" [label="3:  Constructor Init \n   n$1=*&this:copy_array_field::WithObjects* [line 43, column 8]\n " shape="box"]
+	
+
+	 "WithObjects#WithObjects#copy_arra.2448ce277628e8cd_3" -> "WithObjects#WithObjects#copy_arra.2448ce277628e8cd_4" ;
+"WithObjects#WithObjects#copy_arra.2448ce277628e8cd_4" [label="4:  Constructor Init \n   n$2=*&__param_0:copy_array_field::WithObjects const & [line 43, column 8]\n  n$3=_fun_copy_array_field::Elt::Elt(n$1.elts[0]:copy_array_field::Elt*,n$2.elts[0]:copy_array_field::Elt const &) [line 43, column 8]\n  n$4=_fun_copy_array_field::Elt::Elt(n$1.elts[1]:copy_array_field::Elt*,n$2.elts[1]:copy_array_field::Elt const &) [line 43, column 8]\n " shape="box"]
+	
+
+	 "WithObjects#WithObjects#copy_arra.2448ce277628e8cd_4" -> "WithObjects#WithObjects#copy_arra.2448ce277628e8cd_2" ;
 "X#X#copy_array_field#{15830781249.21901b5566a8885e_1" [label="1: Start copy_array_field::X::X\nFormals:  this:copy_array_field::X*\nLocals:  \n  " color=yellow style=filled]
 	
 

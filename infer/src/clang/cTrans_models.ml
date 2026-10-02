@@ -18,6 +18,10 @@ let is_builtin_expect pname =
   String.equal (Procname.to_string pname) CFrontend_config.builtin_expect
 
 
+let is_builtin_memcpy pname =
+  String.equal (Procname.to_string pname) CFrontend_config.builtin_memcpy
+
+
 let is_builtin_object_size pname =
   String.equal (Procname.to_string pname) CFrontend_config.builtin_object_size
 

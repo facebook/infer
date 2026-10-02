@@ -159,9 +159,7 @@ int array_ref_null_deref_bad() {
   return a->x;
 }
 
-// the copy of the array into the hidden decomposed object does not copy the
-// elements
-int FN_array_value_null_deref_bad() {
+int array_value_null_deref_bad() {
   S* arr[2] = {nullptr, nullptr};
   auto [a, b] = arr;
   return a->x;
