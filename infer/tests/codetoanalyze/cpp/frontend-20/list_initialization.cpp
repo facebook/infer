@@ -33,3 +33,28 @@ struct CurrentClass2 : SuperClass {
 };
 
 CurrentClass2::CurrentClass2() : SuperClass{.super_f1 = 42, .super_f2 = 52} {}
+
+struct SingleField {
+  int* p;
+};
+
+SingleField get_single_field();
+
+// the call initializes x, not x.p
+void init_single_field_from_prvalue() { SingleField x{get_single_field()}; }
+
+// r is bound to x
+void init_single_field_reference(SingleField& x) { SingleField& r{x}; }
+
+void init_single_field(int* p) { SingleField x{p}; }
+
+struct SelfRefField {
+  SelfRefField& r;
+};
+
+// t.r is bound to s, t is not a copy of s
+void init_self_ref_field(SelfRefField& s) { SelfRefField t{.r = s}; }
+
+int return_three();
+
+void init_function_reference() { int (&f)(){return_three}; }

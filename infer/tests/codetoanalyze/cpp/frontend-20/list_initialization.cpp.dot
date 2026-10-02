@@ -22,6 +22,61 @@ digraph cfg {
 	
 
 	 "init_class_in_header#181929391833.02fc198379f1411d_3" -> "init_class_in_header#181929391833.02fc198379f1411d_2" ;
+"init_function_reference#138288165.f0af4846c121dcb2_1" [label="1: Start init_function_reference\nFormals: \nLocals:  f:_fn_(&) \n  " color=yellow style=filled]
+	
+
+	 "init_function_reference#138288165.f0af4846c121dcb2_1" -> "init_function_reference#138288165.f0af4846c121dcb2_3" ;
+"init_function_reference#138288165.f0af4846c121dcb2_2" [label="2: Exit init_function_reference \n  " color=yellow style=filled]
+	
+
+"init_function_reference#138288165.f0af4846c121dcb2_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(f:_fn_(&)); [line 60, column 34]\n  *&f:_fn_(&)=_fun_return_three [line 60, column 34]\n " shape="box"]
+	
+
+	 "init_function_reference#138288165.f0af4846c121dcb2_3" -> "init_function_reference#138288165.f0af4846c121dcb2_2" ;
+"init_self_ref_field#8617931411449.38d8ee8bba51fa05_1" [label="1: Start init_self_ref_field\nFormals:  s:SelfRefField&\nLocals:  t:SelfRefField \n  " color=yellow style=filled]
+	
+
+	 "init_self_ref_field#8617931411449.38d8ee8bba51fa05_1" -> "init_self_ref_field#8617931411449.38d8ee8bba51fa05_3" ;
+"init_self_ref_field#8617931411449.38d8ee8bba51fa05_2" [label="2: Exit init_self_ref_field \n  " color=yellow style=filled]
+	
+
+"init_self_ref_field#8617931411449.38d8ee8bba51fa05_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(t:SelfRefField); [line 56, column 45]\n  n$0=*&s:SelfRefField& [line 56, column 65]\n  *&t.r:SelfRefField&=n$0 [line 56, column 59]\n " shape="box"]
+	
+
+	 "init_self_ref_field#8617931411449.38d8ee8bba51fa05_3" -> "init_self_ref_field#8617931411449.38d8ee8bba51fa05_2" ;
+"init_single_field#622650575600154.59706260b346efbf_1" [label="1: Start init_single_field\nFormals:  p:int*\nLocals:  x:SingleField \n  " color=yellow style=filled]
+	
+
+	 "init_single_field#622650575600154.59706260b346efbf_1" -> "init_single_field#622650575600154.59706260b346efbf_3" ;
+"init_single_field#622650575600154.59706260b346efbf_2" [label="2: Exit init_single_field \n  " color=yellow style=filled]
+	
+
+"init_single_field#622650575600154.59706260b346efbf_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:SingleField); [line 49, column 34]\n  n$0=*&p:int* [line 49, column 48]\n  *&x.p:int*=n$0 [line 49, column 47]\n " shape="box"]
+	
+
+	 "init_single_field#622650575600154.59706260b346efbf_3" -> "init_single_field#622650575600154.59706260b346efbf_2" ;
+"init_single_field_from_prvalue#17.bf3462a174dfe4a6_1" [label="1: Start init_single_field_from_prvalue\nFormals: \nLocals:  x:SingleField \n  " color=yellow style=filled]
+	
+
+	 "init_single_field_from_prvalue#17.bf3462a174dfe4a6_1" -> "init_single_field_from_prvalue#17.bf3462a174dfe4a6_3" ;
+"init_single_field_from_prvalue#17.bf3462a174dfe4a6_2" [label="2: Exit init_single_field_from_prvalue \n  " color=yellow style=filled]
+	
+
+"init_single_field_from_prvalue#17.bf3462a174dfe4a6_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(x:SingleField); [line 44, column 41]\n  n$1=_fun_get_single_field(&x:SingleField*) assign_last [line 44, column 55]\n " shape="box"]
+	
+
+	 "init_single_field_from_prvalue#17.bf3462a174dfe4a6_3" -> "init_single_field_from_prvalue#17.bf3462a174dfe4a6_2" ;
+"init_single_field_reference#66009.decc17677793dea3_1" [label="1: Start init_single_field_reference\nFormals:  x:SingleField&\nLocals:  r:SingleField& \n  " color=yellow style=filled]
+	
+
+	 "init_single_field_reference#66009.decc17677793dea3_1" -> "init_single_field_reference#66009.decc17677793dea3_3" ;
+"init_single_field_reference#66009.decc17677793dea3_2" [label="2: Exit init_single_field_reference \n  " color=yellow style=filled]
+	
+
+"init_single_field_reference#66009.decc17677793dea3_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(r:SingleField&); [line 47, column 52]\n  n$0=*&x:SingleField& [line 47, column 67]\n  *&r:SingleField&=n$0 [line 47, column 52]\n " shape="box"]
+	
+
+	 "init_single_field_reference#66009.decc17677793dea3_3" -> "init_single_field_reference#66009.decc17677793dea3_2" ;
 "init_some#8538535122353085284.3304c4fd95fd5f9e_1" [label="1: Start init_some\nFormals: \nLocals:  x:CurrentClass \n  " color=yellow style=filled]
 	
 

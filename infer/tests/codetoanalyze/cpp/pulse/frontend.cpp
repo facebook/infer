@@ -233,7 +233,7 @@ single_field_struct get_single_field_struct() {
   return b;
 }
 
-void FP_init_single_field_struct_ok() {
+void init_single_field_struct_ok() {
   single_field_struct y{get_single_field_struct()};
   if (y.v != 42) {
     int* p = nullptr;
