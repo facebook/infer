@@ -66,6 +66,12 @@ module Exec : sig
     ModelEnv.model_env -> do_alloc:bool -> PowLoc.t -> string -> Dom.Mem.t -> Dom.Mem.t
 
   val set_c_strlen : tgt:Dom.Val.t -> src:Dom.Val.t -> Dom.Mem.t -> Dom.Mem.t
+
+  val copy_array_contents :
+    Tenv.t -> Typ.t -> strong:bool -> dst:PowLoc.t -> src:PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
+  (** [copy_array_contents tenv elt_typ ~strong ~dst ~src mem] copies the elements of type [elt_typ]
+      of the arrays [src], and their C string length, to the arrays [dst]. With [strong], all the
+      arrays that [dst] represents are overwritten, so a single [dst] array is updated strongly. *)
 end
 
 module Check : sig

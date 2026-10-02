@@ -91,7 +91,7 @@ let check_alloc_size ~can_be_zero size_exp {location; integer_type_widths} mem c
 
 let fgets str_exp num_exp =
   let exec {integer_type_widths} ~ret:(id, _) mem =
-    let str_v = Sem.eval integer_type_widths str_exp mem in
+    let str_v = Sem.eval_arg integer_type_widths str_exp mem in
     let num_v = Sem.eval integer_type_widths num_exp mem in
     let traces = Trace.Set.join (Dom.Val.get_traces str_v) (Dom.Val.get_traces num_v) in
     let update_strlen1 allocsite arrinfo acc =
@@ -103,7 +103,7 @@ let fgets str_exp num_exp =
       Dom.Mem.set_first_idx_of_null (Loc.of_allocsite allocsite) (Dom.Val.of_itv ~traces strlen) acc
     in
     mem
-    |> Dom.Mem.update_mem (Sem.eval_locs str_exp mem) Dom.Val.Itv.zero_255
+    |> Dom.Mem.update_mem (Sem.eval_arg_locs str_exp mem) Dom.Val.Itv.zero_255
     |> ArrayBlk.fold update_strlen1 (Dom.Val.get_array_blk str_v)
     |> Dom.Mem.add_stack (Loc.of_id id) {str_v with itv= Itv.zero}
     |> Dom.Mem.fgets_alias id (Dom.Val.get_all_locs str_v)
@@ -178,8 +178,8 @@ let calloc size_exp stride_exp =
 
 let memcpy dest_exp src_exp size_exp =
   let exec _ ~ret:_ mem =
-    let dest_loc = Sem.eval_locs dest_exp mem in
-    let v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
+    let dest_loc = Sem.eval_arg_locs dest_exp mem in
+    let v = Dom.Mem.find_set (Sem.eval_arg_locs src_exp mem) mem in
     Dom.Mem.update_mem dest_loc v mem
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
@@ -209,23 +209,23 @@ let strlen arr_exp =
 
 let strcpy dest_exp src_exp =
   let exec {integer_type_widths} ~ret:(id, _) mem =
-    let src_loc = Sem.eval_locs src_exp mem in
-    let dest_loc = Sem.eval_locs dest_exp mem in
+    let src_loc = Sem.eval_arg_locs src_exp mem in
+    let dest_loc = Sem.eval_arg_locs dest_exp mem in
     mem
     |> Dom.Mem.update_mem dest_loc (Dom.Mem.find_set src_loc mem)
     |> Dom.Mem.update_mem (PowLoc.of_c_strlen dest_loc) (Dom.Mem.get_c_strlen src_loc mem)
-    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval integer_type_widths dest_exp mem)
+    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval_arg integer_type_widths dest_exp mem)
   and check {integer_type_widths; location} mem cond_set =
     let access_last_char =
-      let idx = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+      let idx = Dom.Mem.get_c_strlen (Sem.eval_arg_locs src_exp mem) mem in
       let latest_prune = Dom.Mem.get_latest_prune mem in
       fun arr cond_set ->
         BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune
           location cond_set
     in
     cond_set
-    |> access_last_char (Sem.eval integer_type_widths dest_exp mem)
-    |> access_last_char (Sem.eval integer_type_widths src_exp mem)
+    |> access_last_char (Sem.eval_arg integer_type_widths dest_exp mem)
+    |> access_last_char (Sem.eval_arg integer_type_widths src_exp mem)
   in
   {exec; check}
 
@@ -233,8 +233,8 @@ let strcpy dest_exp src_exp =
 let strncpy dest_exp src_exp size_exp =
   let {exec= memcpy_exec; check= memcpy_check} = memcpy dest_exp src_exp size_exp in
   let exec model_env ~ret mem =
-    let dest_strlen_loc = PowLoc.of_c_strlen (Sem.eval_locs dest_exp mem) in
-    let strlen = Dom.Mem.find_set (PowLoc.of_c_strlen (Sem.eval_locs src_exp mem)) mem in
+    let dest_strlen_loc = PowLoc.of_c_strlen (Sem.eval_arg_locs dest_exp mem) in
+    let strlen = Dom.Mem.find_set (PowLoc.of_c_strlen (Sem.eval_arg_locs src_exp mem)) mem in
     mem |> memcpy_exec model_env ~ret |> Dom.Mem.update_mem dest_strlen_loc strlen
   in
   {exec; check= memcpy_check}
@@ -242,8 +242,8 @@ let strncpy dest_exp src_exp size_exp =
 
 let strcat dest_exp src_exp =
   let exec {integer_type_widths} ~ret:(id, _) mem =
-    let src_loc = Sem.eval_locs src_exp mem in
-    let dest_loc = Sem.eval_locs dest_exp mem in
+    let src_loc = Sem.eval_arg_locs src_exp mem in
+    let dest_loc = Sem.eval_arg_locs dest_exp mem in
     let new_contents =
       let src_contents = Dom.Mem.find_set src_loc mem in
       let dest_contents = Dom.Mem.find_set dest_loc mem in
@@ -257,7 +257,7 @@ let strcat dest_exp src_exp =
     mem
     |> Dom.Mem.update_mem dest_loc new_contents
     |> Dom.Mem.update_mem (PowLoc.of_c_strlen dest_loc) new_strlen
-    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval integer_type_widths dest_exp mem)
+    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval_arg integer_type_widths dest_exp mem)
   and check {integer_type_widths; location} mem cond_set =
     let access_last_char arr idx cond_set =
       let latest_prune = Dom.Mem.get_latest_prune mem in
@@ -265,19 +265,19 @@ let strcat dest_exp src_exp =
         cond_set
     in
     let src_strlen =
-      let str_loc = Sem.eval_locs src_exp mem in
+      let str_loc = Sem.eval_arg_locs src_exp mem in
       Dom.Mem.get_c_strlen str_loc mem
     in
     let new_strlen =
       let dest_strlen =
-        let dest_loc = Sem.eval_locs dest_exp mem in
+        let dest_loc = Sem.eval_arg_locs dest_exp mem in
         Dom.Mem.get_c_strlen dest_loc mem
       in
       Dom.Val.plus_a dest_strlen src_strlen
     in
     cond_set
-    |> access_last_char (Sem.eval integer_type_widths dest_exp mem) new_strlen
-    |> access_last_char (Sem.eval integer_type_widths src_exp mem) src_strlen
+    |> access_last_char (Sem.eval_arg integer_type_widths dest_exp mem) new_strlen
+    |> access_last_char (Sem.eval_arg integer_type_widths src_exp mem) src_strlen
   in
   {exec; check}
 
@@ -327,7 +327,7 @@ let strndup src_exp length_exp =
   let exec ({pname; caller_pname; node_hash; location; integer_type_widths} as model_env)
       ~ret:((id, _) as ret) mem =
     let v =
-      let src_strlen = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+      let src_strlen = Dom.Mem.get_c_strlen (Sem.eval_arg_locs src_exp mem) mem in
       let length = Sem.eval integer_type_widths length_exp mem in
       let size = Itv.incr (Itv.min_sem (Dom.Val.get_itv src_strlen) (Dom.Val.get_itv length)) in
       let allocsite =
@@ -474,7 +474,7 @@ module StdArray = struct
   let begin_ _size {exp= array_exp} =
     let exec {location; integer_type_widths} ~ret:(id, _) mem =
       let v =
-        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location Itv.zero
+        Sem.eval_arg integer_type_widths array_exp mem |> Dom.Val.set_array_offset location Itv.zero
       in
       Dom.Mem.add_stack (Loc.of_id id) v mem
     in
@@ -485,7 +485,7 @@ module StdArray = struct
     let exec {location; integer_type_widths} ~ret:(id, _) mem =
       let v =
         let offset = Itv.of_int_lit (IntLit.of_int64 size) in
-        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
+        Sem.eval_arg integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
       in
       Dom.Mem.add_stack (Loc.of_id id) v mem
     in
@@ -496,7 +496,7 @@ module StdArray = struct
     let exec {location; integer_type_widths} ~ret:(id, _) mem =
       let v =
         let offset = Itv.of_int_lit (IntLit.of_int64 Int64.(size - one)) in
-        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
+        Sem.eval_arg integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
       in
       Dom.Mem.add_stack (Loc.of_id id) v mem
     in

@@ -288,10 +288,8 @@ void store_global_struct_array_field_Good() {
   }
 }
 
-// array fields of global structs passed to calls get no size
-void FN_pass_global_struct_array_field_Bad() {
-  write_at(global_struct.vals, 4);
-}
+// array fields of global structs passed to calls keep their size
+void pass_global_struct_array_field_Bad() { write_at(global_struct.vals, 4); }
 
 struct item {
   int key;

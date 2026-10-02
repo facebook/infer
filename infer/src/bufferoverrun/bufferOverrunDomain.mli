@@ -501,6 +501,10 @@ module Mem : sig
   (** The declared type of a global variable referenced in the procedure if it is an array, e.g.
       [int a[4]] or [std::array<int, 4>]. *)
 
+  val is_array_field : Typ.t -> Fieldname.t -> t -> bool
+  (** [is_array_field struct_typ fn mem] checks if the field [fn] of [struct_typ] is a C array or a
+      [std::array]. *)
+
   val set_prune_pairs : PrunePairs.t -> t -> t
 
   val set_latest_prune : LatestPrune.t -> t -> t

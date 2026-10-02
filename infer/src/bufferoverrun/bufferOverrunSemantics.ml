@@ -372,6 +372,26 @@ let rec eval_arr : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
       Val.bot
 
 
+let rec is_array_field_exp exp mem =
+  match exp with
+  | Exp.Lfield (_, fn, typ) ->
+      Language.curr_language_is Clang && Mem.is_array_field typ fn mem
+  | Exp.Cast (_, exp) ->
+      is_array_field_exp exp mem
+  | _ ->
+      false
+
+
+let eval_arg ?typ integer_type_widths exp mem =
+  if is_array_field_exp exp mem then eval_arr integer_type_widths exp mem
+  else eval ?typ integer_type_widths exp mem
+
+
+let eval_arg_locs exp mem =
+  let locs = eval_locs exp mem in
+  if is_array_field_exp exp mem then Mem.find_set locs mem |> Val.get_all_locs else locs
+
+
 let rec is_stack_exp : Exp.t -> Mem.t -> bool =
  fun exp mem ->
   match exp with
@@ -548,7 +568,7 @@ let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
           | Closure closure ->
               FuncPtr.Set.of_closure closure |> Val.of_func_ptrs
           | _ ->
-              eval ~typ integer_type_widths a caller_mem )
+              eval_arg ~typ integer_type_widths a caller_mem )
   in
   let params =
     ParamBindings.make callee_formals actuals
@@ -607,7 +627,7 @@ let eval_array_locs_length arr_locs mem =
         conservative_array_length ~traces arr_locs mem
 
 
-let eval_string_len exp mem = Mem.get_c_strlen (eval_locs exp mem) mem
+let eval_string_len exp mem = Mem.get_c_strlen (eval_arg_locs exp mem) mem
 
 module Prune = struct
   type t = {prune_pairs: PrunePairs.t; mem: Mem.t}
