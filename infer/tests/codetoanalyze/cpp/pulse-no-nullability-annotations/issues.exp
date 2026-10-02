@@ -1,0 +1,4 @@
+codetoanalyze/cpp/pulse/nullable_return.cpp, nullable_return::nonnull_method_null_branch_ok, 3, MEMORY_LEAK_CPP, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `new` here,memory becomes unreachable here]
+codetoanalyze/cpp/pulse/nullable_return.cpp, nullable_return::nonnull_attribute_method_null_branch_ok, 3, MEMORY_LEAK_CPP, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `new` here,memory becomes unreachable here]
+codetoanalyze/cpp/pulse/nullable_return.cpp, nullable_return::nonnull_alias_template_return_null_branch_ok, 3, MEMORY_LEAK_CPP, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `new` here,memory becomes unreachable here]
+codetoanalyze/cpp/pulse/nullable_return.cpp, nullable_return::nonnull_alias_method_null_branch_ok, 3, MEMORY_LEAK_CPP, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `new` here,memory becomes unreachable here]
