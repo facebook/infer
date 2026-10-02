@@ -458,6 +458,15 @@ let set_length : Itv.t -> t -> t = fun length a -> map (ArrInfo.set_length lengt
 
 let set_stride : Z.t -> t -> t = fun stride a -> map (ArrInfo.set_stride stride) a
 
+let set_stride_if_known : Z.t -> t -> t =
+ fun stride ->
+  map (function
+    | ArrInfo.C {stride= s} as info when Option.is_some (Itv.get_const s) ->
+        ArrInfo.set_stride stride info
+    | info ->
+        info )
+
+
 let set_offset : Itv.t -> t -> t = fun offset a -> map (ArrInfo.set_offset offset) a
 
 let lift_cmp_itv cmp_itv cmp_loc arr1 arr2 =

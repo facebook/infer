@@ -91,6 +91,9 @@ val set_offset : Itv.t -> t -> t
 
 val set_stride : Z.t -> t -> t
 
+val set_stride_if_known : Z.t -> t -> t
+(** Same as [set_stride], but only for the array blocks whose stride is known *)
+
 val get_symbols : t -> Symb.SymbolSet.t
 (** Return all symbols for integer values in it *)
 
