@@ -305,7 +305,14 @@ let create ?(check_abs_path = true) ?(check_rel_path = false) path =
 let sources_from_files changed_files =
   List.fold changed_files ~init:Set.empty ~f:(fun changed_files_set line ->
       try
-        let source_file = create line in
+        let source_file =
+          let file = create line in
+          (* match the paths of the procedures defined in headers, which are resolved by
+             [from_abs_path], whatever the spelling of the entry *)
+          if is_header file && ISys.file_exists (to_abs_path file) then
+            from_abs_path ~warn_on_error:false (to_abs_path file)
+          else file
+        in
         let changed_files' = Set.add source_file changed_files_set in
         (* Add source corresponding to changed header if it exists *)
         match of_header source_file with

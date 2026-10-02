@@ -50,7 +50,8 @@ OPTIONS
            no procedures (types, declarations, macros) select no other source
            file. With --compilation-database, only the source files selected
            by the list are captured, so the list should also contain source
-           files that include the changed headers.
+           files that include the changed headers, unless
+           --capture-includers-of-changed-headers is passed.
 
        --config-gating
            Activates: config-gating checker: Determines which config flags

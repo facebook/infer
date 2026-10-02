@@ -10,9 +10,9 @@
       "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/unrelated.cpp"]
    },
    {
-      "directory" : "%pwd%",
-      "file" : "src/templates_user.cpp",
-      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/templates_user.cpp"]
+      "directory" : "%pwd%/src",
+      "file" : "templates_user.cpp",
+      "command" : "clang++ -std=c++11 -I../include -c templates_user.cpp"
    },
    {
       "directory" : "%pwd%",

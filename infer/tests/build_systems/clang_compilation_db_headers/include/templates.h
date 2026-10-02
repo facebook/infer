@@ -5,6 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-#include "templates.h"
+#pragma once
 
-int use_templates() { return template_function_bad<int>(); }
+#include "templates.ipp"

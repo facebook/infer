@@ -1,0 +1,12 @@
+[
+   {
+      "directory" : "%pwd%",
+      "file" : "src/generated_user.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/generated_user.cpp"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "src/nested_function.c",
+      "arguments" : ["gcc", "-Iinclude", "-c", "src/nested_function.c"]
+   }
+]
