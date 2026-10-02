@@ -228,6 +228,15 @@ struct
     T.remember_dropped_disjuncts dropped non_disj
 
 
+  (** disjuncts are listed from the newest to the oldest and the oldest are considered first when
+      the number of disjuncts is limited: list the disjuncts from interrupted loops as the newest *)
+  let put_from_interrupted_loops_first disjuncts =
+    if List.exists disjuncts ~f:T.is_from_interrupted_loop then
+      let from_loops, others = List.partition_tf disjuncts ~f:T.is_from_interrupted_loop in
+      from_loops @ others
+    else disjuncts
+
+
   module Domain = struct
     (** a list [[x1; x2; ...; xN]] represents a disjunction [x1 ∨ x2 ∨ ... ∨ xN] *)
     type t = T.DisjDomain.t list * T.NonDisjDomain.t
@@ -330,11 +339,16 @@ struct
       else if num_iters > max_iter then (
         L.d_printfln "Iteration %d is greater than max iter %d, stopping." num_iters max_iter ;
         DisjunctiveMetadata.incr_interrupted_loops () ;
-        prev )
+        let extra =
+          Option.value_map (AnalysisState.get_node ()) ~default:[] ~f:(fun loop_head ->
+              T.widen_interrupted_loop loop_head ~prev:(fst prev) ~next:(fst next) )
+        in
+        if List.is_empty extra then prev else (extra @ fst prev, snd prev) )
       else
         let into = fst prev in
         let post_disj, _, dropped =
-          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into (fst next)
+          join_up_to_with_leq ~limit:disjunct_limit T.DisjDomain.leq ~into
+            (put_from_interrupted_loops_first (fst next))
         in
         let next_non_disj = T.NonDisjDomain.widen ~prev:(snd prev) ~next:(snd next) ~num_iters in
         let res =
@@ -386,10 +400,17 @@ struct
             in
             join_hd res nd res_n (Fqueue.enqueue to_join tl)
     in
-    let to_join =
-      List.map astates ~f:(fun (disjuncts, _) -> List.rev disjuncts) |> Fqueue.of_list
+    let join_lists res nd lists =
+      List.map lists ~f:List.rev |> Fqueue.of_list |> join_hd res nd (List.length res)
     in
-    join_hd disjs_into nd_into (List.length disjs_into) to_join
+    let lists = List.map astates ~f:fst in
+    if List.exists lists ~f:(List.exists ~f:T.is_from_interrupted_loop) then
+      let from_loops, others =
+        List.map lists ~f:(List.partition_tf ~f:T.is_from_interrupted_loop) |> List.unzip
+      in
+      let res, nd = join_lists disjs_into nd_into others in
+      join_lists res nd from_loops
+    else join_lists disjs_into nd_into lists
 
 
   let join_all astates ~into =
@@ -436,7 +457,8 @@ struct
     let global_limit = Option.value_exn (AnalysisState.get_remaining_disjuncts ()) in
     let nb_pre = List.length pre_disjuncts in
     let (disjuncts, non_disj_astates), dropped, _, _ =
-      List.foldi (List.rev pre_disjuncts)
+      List.foldi
+        (List.rev (put_from_interrupted_loops_first pre_disjuncts))
         ~init:(([], []), [], 0, 0)
         ~f:(fun
             i
@@ -466,7 +488,9 @@ struct
                 let limit =
                   if use_balanced_disjunct_strategy () then n_disjuncts + limit else limit
                 in
-                let post_disj', n, new_dropped = Domain.join_up_to ~limit ~into:post disjuncts' in
+                let post_disj', n, new_dropped =
+                  Domain.join_up_to ~limit ~into:post (put_from_interrupted_loops_first disjuncts')
+                in
                 ((post_disj', non_disj' :: non_disj_astates), new_dropped @ dropped, n, limit - n) ) )
     in
     let post_non_disj = T.exec_instr_non_disj pre_non_disj analysis_data node instr in

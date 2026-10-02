@@ -66,6 +66,11 @@ module type DisjReady = sig
 
   val remember_dropped_disjuncts : DisjDomain.t list -> NonDisjDomain.t -> NonDisjDomain.t
 
+  val widen_interrupted_loop :
+    Procdesc.Node.t -> prev:DisjDomain.t list -> next:DisjDomain.t list -> DisjDomain.t list
+
+  val is_from_interrupted_loop : DisjDomain.t -> bool
+
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 
   val pp_disjunct : Pp.print_kind -> Format.formatter -> DisjDomain.t -> unit

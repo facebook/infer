@@ -1667,9 +1667,27 @@ module PulseTransferFunctions = struct
       performing the inner steps of executing the instruction. As long as we only produce disjunct
       lists from these steps things are ok but if we start spilling into the over-approximate state
       (for instance after a summary application) then things get iffy. *)
-  let exec_instr ~limit (astate_path, astate_n) analysis_data cfg_node instr =
+  let exec_instr ~limit ((exec_state, path), astate_n) analysis_data cfg_node (instr : Sil.instr) =
     let astate_n = NonDisjDomain.for_disjunct_exec_instr astate_n in
-    exec_instr_with_bottom_non_disj ~limit (astate_path, astate_n) analysis_data cfg_node instr
+    let in_loop_to_exit =
+      Option.exists path.PathContext.loop_exit_only ~f:(fun loop_head ->
+          PulseLoopHavoc.is_in_loop loop_head cfg_node )
+    in
+    match instr with
+    | Prune (cond, _, _, _) when in_loop_to_exit && not (Exp.is_const cond) ->
+        (* this state over-approximates the remaining iterations of the loop: only use it to reach
+           the exits of the loop, not to execute its body again; constant conditions, like that of
+           [while (1)], do not branch and may lead to exits *)
+        ([], astate_n)
+    | _ ->
+        let path =
+          if Option.is_some path.PathContext.loop_exit_only && not in_loop_to_exit then
+            PathContext.set_loop_exit_only None path
+          else path
+        in
+        exec_instr_with_bottom_non_disj ~limit
+          ((exec_state, path), astate_n)
+          analysis_data cfg_node instr
 
 
   let exec_instr_non_disj non_disj analysis_data cfg_node instr =
@@ -1679,6 +1697,10 @@ module PulseTransferFunctions = struct
 
 
   let remember_dropped_disjuncts = NonDisjDomain.remember_dropped_disjuncts
+
+  let widen_interrupted_loop = PulseLoopHavoc.widen_interrupted_loop
+
+  let is_from_interrupted_loop (exec_state, _) = ExecutionDomain.is_from_interrupted_loop exec_state
 
   let pp_session_name _node fmt = F.fprintf fmt "Pulse%t" pp_space_specialization
 
