@@ -10,6 +10,9 @@ open! IStd
 val is_stack_exp : Exp.t -> BufferOverrunDomain.Mem.t -> bool
 (** Check if an expression is a stack variable such as [n$0] or local variable for C array *)
 
+val must_alias : Exp.t -> Exp.t -> BufferOverrunDomain.Mem.t -> bool
+(** Check if two expressions always have the same value *)
+
 val eval : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
 (** Evalute an expression *)
 

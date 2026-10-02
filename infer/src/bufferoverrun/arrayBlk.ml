@@ -286,6 +286,8 @@ module ArrInfo = struct
 
   let get_size = function C {size} -> size | Java {length} -> length | Top -> Itv.top
 
+  let get_stride = function C {stride} -> stride | Java _ | Top -> Itv.top
+
   let offset_in_units n = function
     | C {offset; stride} ->
         in_units n ~stride offset
