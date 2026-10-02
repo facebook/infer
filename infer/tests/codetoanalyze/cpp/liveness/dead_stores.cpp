@@ -618,6 +618,13 @@ void unused_attribute_tmp_ok() {
 
 void unused_attribute_ok() { int __attribute__((unused)) x = 42; }
 
+void unlock_guard(int** guard);
+
+void cleanup_attribute_ok(int* lock) {
+  // read by unlock_guard(&guard) when guard goes out of scope
+  __attribute__((cleanup(unlock_guard))) int* guard = lock;
+}
+
 struct ChainedCalls {
   ChainedCalls chained(int i);
 };

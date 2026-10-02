@@ -259,9 +259,11 @@ module Variables = struct
       (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
       scope.current ;
     match (stmt : Clang_ast_t.stmt) with
-    | `ReturnStmt (stmt_info, _)
-    | `BreakStmt (stmt_info, _)
-    | `ContinueStmt (stmt_info, _) (* TODO: GotoStmt *) ->
+    | `ReturnStmt (stmt_info, stmt_list)
+    | `BreakStmt (stmt_info, stmt_list)
+    | `ContinueStmt (stmt_info, stmt_list) (* TODO: GotoStmt *) ->
+        (* the returned expression may contain scopes, e.g. GNU statement expressions *)
+        let scope, map = visit_stmt_list context stmt_list scope_map in
         let break_until = match stmt with `ReturnStmt _ -> InitialScope | _ -> Breakable in
         let vars_to_destroy = collect_until break_until scope in
         L.debug Capture Verbose "~[%d:%a]" stmt_info.Clang_ast_t.si_pointer
@@ -286,6 +288,8 @@ module Variables = struct
             | _ ->
                 [] )
         in
+        (* the initializers may contain scopes, e.g. GNU statement expressions *)
+        let scope, map = visit_stmt_list context stmts scope_map in
         L.debug Capture Verbose "+%a@," (Pp.seq ~sep:"," CContext.pp_var_to_destroy) to_destroy ;
         (* the reverse order is the one we want to destroy the variables in at the end of the scope
            *)

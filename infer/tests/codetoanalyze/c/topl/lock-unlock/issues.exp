@@ -1,0 +1,1 @@
+codetoanalyze/c/topl/lock-unlock/cleanup_attribute.c, cleanup_no_unlock_bad, 0, TOPL_ERROR, no_bucket, ERROR, [[0] call to pthread_mutex_lock (codetoanalyze/c/topl/lock-unlock/property.topl:4:3-75)]

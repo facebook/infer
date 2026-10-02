@@ -486,6 +486,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(Attr)
   DECLARE_VISITOR(AnnotateAttr)
   DECLARE_VISITOR(AvailabilityAttr)
+  DECLARE_VISITOR(CleanupAttr)
   DECLARE_VISITOR(SentinelAttr)
   DECLARE_VISITOR(VisibilityAttr)
 
@@ -5368,6 +5369,17 @@ void ASTExporter<ATDWriter>::VisitAvailabilityAttr(const AvailabilityAttr *A) {
     OF.emitTag("introduced");
     dumpVersionTuple(A->getIntroduced());
   }
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::CleanupAttrTupleSize() {
+  return AttrTupleSize() + 1;
+}
+//@atd #define cleanup_attr_tuple attr_tuple * decl_ref
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitCleanupAttr(const CleanupAttr *A) {
+  VisitAttr(A);
+  dumpDeclRef(*A->getFunctionDecl());
 }
 
 template <class ATDWriter>
