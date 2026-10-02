@@ -553,8 +553,9 @@ module Val = struct
   let cast typ v = {v with powloc= PowLoc.cast typ v.powloc}
 
   let of_path tenv ~may_last_field integer_type_widths location typ path =
+    let is_global = SPath.is_global_partial path in
     let traces_of_loc l =
-      let trace = if Loc.is_global l then Trace.Global l else Trace.Parameter l in
+      let trace = if is_global then Trace.Global l else Trace.Parameter l in
       TraceSet.singleton location trace
     in
     let itv_val ~non_int =
@@ -676,11 +677,23 @@ module Val = struct
 
 
   let on_demand : default:t -> ?typ:Typ.t -> OndemandEnv.t -> Loc.t -> t =
-   fun ~default ?typ {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths}
-       l ->
+   fun ~default ?typ
+       { tenv
+       ; typ_of_param_path
+       ; typ_of_global_array
+       ; may_last_field
+       ; entry_location
+       ; integer_type_widths } l ->
     let do_on_demand path typ =
       let may_last_field = may_last_field path in
       of_path tenv ~may_last_field integer_type_widths entry_location typ path
+    in
+    let global_array =
+      match l with
+      | BoField.Prim (Loc.Var (Var.ProgramVar pvar)) ->
+          typ_of_global_array pvar |> Option.map ~f:(fun typ -> (pvar, typ))
+      | _ ->
+          None
     in
     match Loc.get_literal_string l with
     | Some s ->
@@ -690,10 +703,15 @@ module Val = struct
       | Some s ->
           of_itv (Itv.of_int (String.length s))
       | None -> (
-        match l with
-        | Field {fn} when Fieldname.equal fn BufferOverrunField.java_linked_list_index ->
+        match (l, global_array) with
+        | Field {fn}, _ when Fieldname.equal fn BufferOverrunField.java_linked_list_index ->
             L.d_printfln_escaped "Val.on_demand for %a as zero" Loc.pp l ;
             of_itv Itv.zero
+        | _, Some (pvar, typ) ->
+            L.d_printfln_escaped "Val.on_demand for global array %a" Loc.pp l ;
+            (* unlike a trailing struct field, an array variable has exactly its declared size *)
+            of_path tenv ~may_last_field:false integer_type_widths entry_location typ
+              (SPath.of_pvar pvar)
         | _ -> (
           match Loc.get_path l with
           | None ->
@@ -2105,6 +2123,12 @@ module MemReach = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool = fun l m -> MemPure.is_rep_multi_loc l m.mem_pure
 
+  let is_global_array : Pvar.t -> _ t0 -> bool =
+   fun pvar m ->
+    GOption.value_map m.oenv ~default:false ~f:(fun {OndemandEnv.typ_of_global_array} ->
+        Option.is_some (typ_of_global_array pvar) )
+
+
   let find_opt : Loc.t -> _ t0 -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
   let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
@@ -2172,15 +2196,7 @@ module MemReach = struct
       let open IOption.Let_syntax in
       let* pname = Loc.get_global_array_initializer loc in
       let* m = get_summary pname in
-      match loc with
-      | BoField.Field {prefix; fn} when Loc.is_global prefix ->
-          (* This case handles field access of global array:
-             n$0 = *x[n].field *)
-          let+ v = find_opt prefix m in
-          let locs = Val.get_all_locs v |> PowLoc.append_field ~fn in
-          find_set locs m
-      | _ ->
-          find_opt loc m
+      find_opt loc m
     in
     { stack_locs= StackLocs.bot
     ; mem_pure= MemPure.bot
@@ -2606,6 +2622,10 @@ module Mem = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool =
    fun k -> f_lift_default ~default:false (MemReach.is_rep_multi_loc k)
+
+
+  let is_global_array : Pvar.t -> _ t0 -> bool =
+   fun pvar -> f_lift_default ~default:false (MemReach.is_global_array pvar)
 
 
   let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.default (MemReach.find k)
