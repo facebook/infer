@@ -718,12 +718,42 @@ end = struct
 end
 
 module DeadVariables = struct
+  (** The variables equal to ground terms such as [f()], [g(f(), 0)] or [f() - 1], seen through the
+      term and linear equalities of [phi]. Like constants, callers can relate them to other
+      occurrences of the same terms, e.g. when applying the same summary twice. *)
+  let ground_vars phi =
+    let add_term_var t v ground =
+      if Var.Set.mem v ground || Term.has_var_notin ground t then ground else Var.Set.add v ground
+    in
+    let add_linear_var v l ground =
+      let not_ground =
+        Seq.fold_left
+          (fun not_ground x -> if Var.Set.mem x ground then not_ground else x :: not_ground)
+          []
+          (Seq.cons v (LinArith.get_variables l))
+      in
+      match not_ground with [x] -> Var.Set.add x ground | _ -> ground
+    in
+    let rec fixpoint ground =
+      let ground' =
+        Formula.term_eqs_fold add_term_var phi ground
+        |> Var.Map.fold add_linear_var phi.Formula.linear_eqs
+      in
+      if phys_equal ground' ground then ground else fixpoint ground'
+    in
+    fixpoint Var.Set.empty
+
+
   (** Intermediate step of [simplify]: build a directed graph between variables:
 
       - when two variables are in an atom or a linear equation, there are bi-directional edges
         between them,
       - when a restricted variable is a representative of a unrestricted variable, there is an edge
-        from the variable to representative. *)
+        from the variable to representative,
+      - for a term equality [t = v] where [t] is the application of an uninterpreted function and
+        some variables of [t] are not in [ground_vars phi], there are edges from each of these to
+        [v] and to the ground variables of [t], and no other edges: if they are not live otherwise
+        then callers cannot refer to them, nor use the equality. *)
   let build_var_graph phi =
     (* a map where a vertex maps to the set of destination vertices *)
     (* unused but can be useful for debugging *)
@@ -772,7 +802,20 @@ module DeadVariables = struct
     let add_from_terms t1 t2 =
       union_vars_of_term t1 Var.Set.empty |> union_vars_of_term t2 |> add_all
     in
-    Formula.term_eqs_iter (fun t v -> union_vars_of_term t (Var.Set.singleton v) |> add_all) phi ;
+    let ground_vars = ground_vars phi in
+    Formula.term_eqs_iter
+      (fun t v ->
+        match (t : Term.t) with
+        | FunctionApplication _ when Term.has_var_notin ground_vars t ->
+            let v_and_ground_vars =
+              Term.fold_variables t ~init:(Var.Set.singleton v) ~f:(fun vs x ->
+                  if Var.Set.mem x ground_vars then Var.Set.add x vs else vs )
+            in
+            Term.iter_variables t ~f:(fun x ->
+                if not (Var.Set.mem x ground_vars) then add_set x v_and_ground_vars )
+        | _ ->
+            union_vars_of_term t (Var.Set.singleton v) |> add_all )
+      phi ;
     Atom.Set.iter
       (fun atom ->
         let t1, t2 = Atom.get_terms atom in
@@ -818,7 +861,9 @@ module DeadVariables = struct
   let eliminate ~precondition_vocabulary ~keep formula =
     let var_graph = build_var_graph formula.phi in
     (* INVARIANT: [vars_to_keep] contains a var in an atom of the formula (a linear eq or term eq
-       or actual atom) iff it contains all vars in that atom *)
+       or actual atom) iff it contains all vars in that atom, except for term eqs [t = v] where [t]
+       is a function application: [v] and some vars of [t] can be in [vars_to_keep] without the
+       others *)
     let vars_to_keep = get_reachable_from var_graph keep in
     L.d_printfln "Reachable vars: %a" Var.Set.pp_hov vars_to_keep ;
     let simplify_phi phi =
@@ -837,7 +882,17 @@ module DeadVariables = struct
             Var.Set.mem v vars_to_keep )
           phi.Formula.tableau
       in
-      let term_eqs = Formula.term_eqs_filter (fun _ v -> Var.Set.mem v vars_to_keep) phi in
+      let term_eqs =
+        Formula.term_eqs_filter
+          (fun t v ->
+            match (t : Term.t) with
+            | FunctionApplication _ ->
+                Var.Set.mem v vars_to_keep && not (Term.has_var_notin vars_to_keep t)
+            | _ ->
+                (* by INVARIANT it's enough to check membership of [v] *)
+                Var.Set.mem v vars_to_keep )
+          phi
+      in
       (* discard atoms which have variables *not* in [vars_to_keep], which in particular is enough
          to guarantee that *none* of their variables are in [vars_to_keep] thanks to transitive
          closure on the graph above *)
