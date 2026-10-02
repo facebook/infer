@@ -425,6 +425,45 @@ include struct
   let assertion_error _ : model = start_model @@ fun () -> report_assert_error
 
   let unreachable_path _ : model = start_model @@ fun () -> unreachable
+
+  (* The [va_list] records how many arguments were read so far. The [n]th variadic argument is
+     passed by the caller through [PulseOperations.va_args_global n], see
+     [PulseCallOperations.bind_variadic_actuals]. *)
+  let va_list_cursor =
+    Fieldname.make (Typ.CStruct (QualifiedCppName.of_qual_string "__infer_va_list")) "cursor"
+
+
+  let va_start va_list : model =
+    start_model
+    @@ fun () ->
+    let* zero = int 0 in
+    store_field ~ref:(to_aval va_list) va_list_cursor zero
+
+
+  let va_copy dest src : model =
+    start_model
+    @@ fun () ->
+    let* cursor = load_access (to_aval src) (FieldAccess va_list_cursor) in
+    store_field ~ref:(to_aval dest) va_list_cursor cursor
+
+
+  let va_arg va_list : model =
+    start_model
+    @@ fun () ->
+    let va_list = to_aval va_list in
+    let* cursor = load_access va_list (FieldAccess va_list_cursor) in
+    let* n_opt = as_constant_int cursor in
+    match n_opt with
+    | None ->
+        assign_ret @= fresh ()
+    | Some n ->
+        let* next = binop_int (PlusA None) cursor IntLit.one in
+        let* () = store_field ~ref:va_list va_list_cursor next in
+        let* {ret= _, ret_typ} = get_data in
+        if Typ.is_struct ret_typ then assign_ret @= fresh ()
+        else
+          let* arg = eval_var (PulseOperations.va_args_global n) in
+          assign_ret @= load arg
 end
 
 (** Reference: https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
@@ -579,6 +618,10 @@ let matchers : matcher list =
   let taint_ret_from_arg arg = start_model @@ fun () -> data_dependency_to_ret [arg] in
   let map_context_tenv f (x, _) = f x in
   [ +BuiltinDecl.(match_builtin free) <>$ capt_arg $--> free
+  ; +BuiltinDecl.(match_builtin __builtin_va_start) <>$ capt_arg_payload $+...$--> va_start
+  ; +BuiltinDecl.(match_builtin __builtin_va_copy)
+    <>$ capt_arg_payload $+ capt_arg_payload $--> va_copy
+  ; +BuiltinDecl.(match_builtin __builtin_va_arg) <>$ capt_arg_payload $--> va_arg
   ; +match_regexp_opt Config.pulse_model_free_pattern <>$ capt_arg $+...$--> free
   ; -"realloc" <>$ capt_arg $+ capt_exp $--> realloc ~null_case:true
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
