@@ -82,13 +82,48 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         process_call_without_summary tenv ret_access_exp callee_pname actuals astate
 
 
-  let process_lock_effect_or_summary analyze_dependency tenv formals ret_access_exp callee_pname
-      actuals loc (astate : Domain.t) =
+  (* Whether a guard owns a lock is not tracked (e.g. a [std::unique_lock] constructed with
+     [std::defer_lock] or already unlocked owns none), so a guard constructed by this procedure, in a
+     local variable, is assumed to release only a lock acquired by this procedure. A guard reached
+     from a formal, a global or a captured variable, such as a member destroyed by the destructor of
+     its owner, may release a lock held on entry. *)
+  let is_local_guard proc_desc formals guard =
+    match HilExp.get_access_exprs guard with
+    | [access_exp] -> (
+        let ((var, _) as base) = AccessExpression.get_base access_exp in
+        (not (FormalMap.is_formal base formals))
+        &&
+        match var with
+        | ProgramVar pvar ->
+            not (Pvar.is_global pvar || Procdesc.is_captured_pvar proc_desc pvar)
+        | LogicalVar _ ->
+            true )
+    | _ ->
+        true
+
+
+  let process_lock_effect_or_summary analyze_dependency proc_desc tenv formals ret_access_exp
+      callee_pname actuals loc (astate : Domain.t) =
     match ConcurrencyModels.get_lock_effect callee_pname actuals with
-    | Lock _ | GuardLock _ | GuardConstruct {acquire_now= true} ->
+    | Lock locks ->
+        (* [std::lock] acquires all its arguments, which are then released one by one, and a lock
+           function from [--lock-model] may take no argument *)
+        Fn.apply_n_times ~n:(Int.max 1 (List.length locks)) Domain.acquire_lock astate
+    | GuardLock _ | GuardConstruct {acquire_now= true} ->
         Domain.acquire_lock astate
-    | Unlock _ | GuardDestroy _ | GuardUnlock _ ->
-        Domain.release_lock astate
+    | Unlock _ ->
+        Domain.release_lock ~only_acquired:false astate
+    | GuardUnlock guard ->
+        Domain.release_lock ~only_acquired:(is_local_guard proc_desc formals guard) astate
+    | GuardDestroy guard ->
+        (* a guard that is not a local variable is assumed to own a lock when destroyed, unless this
+           procedure has already released a lock held on entry, e.g. by unlocking the guard *)
+        let only_acquired =
+          is_local_guard proc_desc formals guard
+          || RacerDModels.is_scoped_lock_of_several_mutexes_destructor callee_pname
+          || Domain.LockDomain.has_released astate.locks
+        in
+        Domain.release_lock ~only_acquired astate
     | LockedIfTrue _ | GuardLockedIfTrue _ ->
         Domain.lock_if_true ret_access_exp astate
     | GuardConstruct {acquire_now= false} ->
@@ -122,12 +157,12 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
 
   let do_proc_call ret_base callee_pname actuals call_flags loc
-      {interproc= {tenv; analyze_dependency}; formals} (astate : Domain.t) =
+      {interproc= {proc_desc; tenv; analyze_dependency}; formals} (astate : Domain.t) =
     let ret_access_exp = AccessExpression.base ret_base in
     process_for_unannotated_interface_call tenv formals call_flags callee_pname actuals loc astate
     |> process_for_thread_assert_effect ret_access_exp callee_pname
-    |> process_lock_effect_or_summary analyze_dependency tenv formals ret_access_exp callee_pname
-         actuals loc
+    |> process_lock_effect_or_summary analyze_dependency proc_desc tenv formals ret_access_exp
+         callee_pname actuals loc
     |> process_for_functional_values tenv ret_access_exp callee_pname
     |> process_for_onwership_acquisition tenv ret_access_exp callee_pname
     |> process_for_noreturn callee_pname
@@ -170,7 +205,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       | Attribute.LockHeld ->
           let locks =
             if bool_value then LockDomain.acquire_lock acc.locks
-            else LockDomain.release_lock acc.locks
+            else LockDomain.release_acquired_lock acc.locks
           in
           {acc with locks}
       | Attribute.OnMainThread ->
@@ -250,8 +285,8 @@ let analyze ({InterproceduralAnalysis.proc_desc; tenv} as interproc) =
   if RacerDModels.should_analyze_proc tenv proc_name then
     let locks =
       if Procdesc.is_java_synchronized proc_desc || Procdesc.is_csharp_synchronized proc_desc then
-        LockDomain.(acquire_lock bottom)
-      else LockDomain.bottom
+        LockDomain.(acquire_lock initial)
+      else LockDomain.initial
     in
     let threads =
       if runs_on_ui_thread tenv proc_name || RacerDModels.is_thread_confined_method tenv proc_name
