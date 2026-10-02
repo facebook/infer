@@ -56,4 +56,8 @@
   }
 }
 
+- (void)no_early_return_no_zero_manifest_bad {
+  [self no_early_return_no_zero_bad:nil];
+}
+
 @end

@@ -2830,6 +2830,47 @@ module AddressAttributes = struct
     SafeAttributes.is_hack_constinit_called (CanonValue.canon' astate v) astate
 end
 
+let is_read_from_pre_cell astate (v, hist) =
+  (* the result of an unknown call is a fresh value, but its history carries the cell ids of the
+     actuals *)
+  let rec is_unknown_call_result (hist : ValueHistory.t) =
+    match hist with
+    | UnknownCall _ ->
+        true
+    | Sequence (Call {in_call; _}, hist) ->
+        is_unknown_call_result in_call || is_unknown_call_result hist
+    | Sequence (_, hist) | FromCellIds (_, hist) ->
+        is_unknown_call_result hist
+    | BinaryOp (_, hist1, hist2) ->
+        is_unknown_call_result hist1 || is_unknown_call_result hist2
+    | Multiplex hists ->
+        List.exists hists ~f:is_unknown_call_result
+    | Epoch ->
+        false
+  in
+  let v = CanonValue.canon' astate v in
+  match ValueHistory.get_cell_ids hist with
+  | Some cell_ids ->
+      BaseMemory.exists
+        (fun _ edges ->
+          BaseMemory.Edges.exists edges ~f:(fun (_, (dest, dest_hist)) ->
+              Option.exists (ValueHistory.get_cell_id_exn dest_hist) ~f:(fun cell_id ->
+                  ValueHistory.CellId.Set.mem cell_id cell_ids )
+              && CanonValue.equal (CanonValue.canon astate dest) v ) )
+        (astate.pre :> base_domain).heap
+      && not (is_unknown_call_result hist)
+  | None -> (
+    (* the initial values of object parameters have no cell id, see [add_static_types] *)
+    match ValueHistory.get_first_event hist with
+    | Some (ValueHistory.FormalDeclared (pvar, _, _) | Capture {captured_as= pvar; _}) ->
+        SafeStack.find_opt `Pre (Var.of_pvar pvar) astate
+        |> Option.bind ~f:(fun vo ->
+            SafeMemory.find_edge_opt `Pre (ValueOrigin.value vo) Dereference astate )
+        |> Option.exists ~f:(fun (formal_value, _) -> CanonValue.equal formal_value v)
+    | _ ->
+        false )
+
+
 (* [recurse] is here to enforce that we can only ever make one recursive call when calling into this
       function. That's what the code should ensure already as we should only ever need one recursive
       call (namely when we are changing the history of a logical var: we should also update the history
