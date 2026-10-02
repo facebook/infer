@@ -141,3 +141,54 @@ void array_rev_iter_Bad_FN() {
 void malloc_zero_Bad() { int* a = (int*)malloc(sizeof(int) * 0); }
 
 void new_array_zero_Good() { int* a = new int[0]; }
+
+struct std_array_member {
+  std::array<int, 5> a;
+};
+
+void std_array_member_local_Good() {
+  std_array_member x;
+  x.a[4] = 0;
+}
+
+void std_array_member_local_Bad() {
+  std_array_member x;
+  x.a[5] = 0;
+}
+
+void std_array_member_iter_Good() {
+  std_array_member x;
+  for (auto it = x.a.begin(); it < x.a.end(); ++it) {
+    *it = 4;
+  }
+  x.a[x.a[0]] = 0;
+}
+
+void std_array_member_iter_Bad() {
+  std_array_member x;
+  for (auto it = x.a.begin(); it < x.a.end(); ++it) {
+    *it = 5;
+  }
+  x.a[x.a[0]] = 0;
+}
+
+struct std_array_2d_member {
+  std::array<std::array<int, 3>, 2> a;
+};
+
+// Like for local nested std::arrays, the index of the inner std::array is added
+// to the offset in the outer one.
+void FP_std_array_2d_member_local_Good() {
+  std_array_2d_member x;
+  x.a[1][2] = 0;
+}
+
+struct std_array_ref_member {
+  std::array<int, 4>& a;
+};
+
+// As for a std::array passed by reference, the models of std::array methods do
+// not find the array of a std::array reference member.
+void FN_std_array_ref_member_end_Bad(std_array_ref_member& x) {
+  *x.a.end() = 0;
+}

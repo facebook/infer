@@ -497,6 +497,10 @@ module Mem : sig
   val is_stack_loc : AbsLoc.Loc.t -> _ t0 -> bool
   (** Check if an abstract location is a stack variable, e.g., [n$0]. *)
 
+  val is_array_field : Typ.t -> Fieldname.t -> t -> bool
+  (** [is_array_field struct_typ fn mem] checks if the field [fn] of [struct_typ] is a C array or a
+      [std::array]. *)
+
   val set_prune_pairs : PrunePairs.t -> t -> t
 
   val set_latest_prune : LatestPrune.t -> t -> t

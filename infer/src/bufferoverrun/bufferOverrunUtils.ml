@@ -64,8 +64,38 @@ module Exec = struct
       | Some (CArray {element_typ; length}) ->
           decl_local_array model_env loc element_typ ~length:(Some length) ~inst_num
             ~represents_multiple_values ~dimension mem
-      | Some CppStdVector | Some JavaCollection | Some JavaInteger | None ->
+      | None ->
+          decl_local_fields model_env loc typname ~inst_num ~represents_multiple_values ~dimension
+            mem
+      | Some CppStdVector | Some JavaCollection | Some JavaInteger ->
           (mem, inst_num) )
+    | _ ->
+        (mem, inst_num)
+
+
+  (** Declare the arrays nested in the fields of a C/C++ struct value. A trailing array of length 0
+      or 1 or of unknown length is left undeclared because it may be a flexible array member. *)
+  and decl_local_fields ({pname; tenv} as model_env) loc typname ~inst_num
+      ~represents_multiple_values ~dimension mem =
+    match (Procname.get_language pname, Tenv.lookup tenv typname) with
+    | Language.Clang, Some {fields} ->
+        let fields =
+          match List.last fields with
+          | Some {Struct.typ= {desc= Tarray {length= None}}} ->
+              List.drop_last_exn fields
+          | Some {Struct.typ= {desc= Tarray {length= Some length}}}
+            when IntLit.iszero length || IntLit.isone length ->
+              List.drop_last_exn fields
+          | _ ->
+              fields
+        in
+        List.fold fields ~init:(mem, inst_num) ~f:(fun (mem, inst_num) {Struct.name; typ} ->
+            match Loc.append_field loc name with
+            | BufferOverrunField.Field _ as field_loc ->
+                decl_local_loc model_env field_loc typ ~inst_num ~represents_multiple_values
+                  ~dimension:(dimension + 1) mem
+            | _ ->
+                (mem, inst_num) )
     | _ ->
         (mem, inst_num)
 
@@ -256,6 +286,47 @@ module Exec = struct
       else Dom.Mem.unset_first_idx_of_null loc idx acc
     in
     ArrayBlk.fold set_c_strlen1 (Dom.Val.get_array_blk tgt) mem
+
+
+  let rec copy_array_contents tenv elt_typ ~strong ~dst ~src mem =
+    let force_strong_update = strong && PowLoc.is_single_known_loc dst in
+    let mem =
+      if Typ.is_char elt_typ then
+        Dom.Mem.update_mem ~force_strong_update (PowLoc.of_c_strlen dst)
+          (Dom.Mem.get_c_strlen src mem) mem
+      else mem
+    in
+    copy_contents tenv elt_typ ~force_strong_update ~dst ~src mem
+
+
+  (** Copy the values of type [typ] at [src] to [dst]. Arrays nested in them are copied element by
+      element, so that [dst] keeps its own arrays. *)
+  and copy_contents tenv typ ~force_strong_update ~dst ~src mem =
+    let copy_value () =
+      Dom.Mem.update_mem ~force_strong_update dst (Dom.Mem.find_set src mem) mem
+    in
+    let copy_arrays elt_typ =
+      let dst_arrs = Dom.Mem.find_set dst mem |> Dom.Val.get_array_locs in
+      let src_arrs = Dom.Mem.find_set src mem |> Dom.Val.get_array_locs in
+      if PowLoc.is_bot dst_arrs || PowLoc.is_bot src_arrs then copy_value ()
+      else
+        copy_array_contents tenv elt_typ ~strong:force_strong_update ~dst:dst_arrs ~src:src_arrs mem
+    in
+    match typ.Typ.desc with
+    | Tarray {elt} ->
+        copy_arrays elt
+    | Tstruct typname -> (
+      match (TypModels.dispatch tenv typname, Tenv.lookup tenv typname) with
+      | Some (CArray {element_typ}), _ ->
+          copy_arrays element_typ
+      | None, Some {fields} ->
+          List.fold fields ~init:mem ~f:(fun mem {Struct.name= fn; typ} ->
+              copy_contents tenv typ ~force_strong_update ~dst:(PowLoc.append_field dst ~fn)
+                ~src:(PowLoc.append_field src ~fn) mem )
+      | _, _ ->
+          copy_value () )
+    | _ ->
+        copy_value ()
 end
 
 module Check = struct
