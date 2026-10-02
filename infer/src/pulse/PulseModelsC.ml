@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module IRAttributes = Attributes
 open PulseBasicInterface
 open PulseDomainInterface
 open PulseOperationResult.Import
@@ -75,17 +76,18 @@ let custom_realloc pointer size data astate =
     astate
 
 
+let c_function_of_ptr function_ptr astate =
+  match PulseArithmetic.get_dynamic_type (ValueOrigin.value function_ptr) astate with
+  | Some {typ= {desc= Typ.Tstruct (Typ.CFunction csig)}} ->
+      Some (Procname.C csig)
+  | _ ->
+      None
+
+
 let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
  fun {path; analysis_data; location; ret= (ret_id, _) as ret; dispatch_call_eval_args} astate
      non_disj ->
-  let callee_proc_name_opt =
-    match PulseArithmetic.get_dynamic_type (ValueOrigin.value function_ptr) astate with
-    | Some {typ= {desc= Typ.Tstruct (Typ.CFunction csig)}} ->
-        Some (Procname.C csig)
-    | _ ->
-        None
-  in
-  match callee_proc_name_opt with
+  match c_function_of_ptr function_ptr astate with
   | Some callee_proc_name ->
       dispatch_call_eval_args analysis_data path ret (Const (Cfun callee_proc_name)) actuals
         location CallFlags.default astate non_disj (Some callee_proc_name)
@@ -127,6 +129,121 @@ let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
    void / non-deterministic). Most production callers ignore the
    return; a more precise treatment can be added later if needed. *)
 let pthread_once init_func : model = call_c_function_ptr init_func []
+
+(* The latent issues of a thread start routine can become manifest in the callers of the function
+   that creates the thread. Its manifest issues were reported when analyzing it and must not stop
+   the function that creates the thread. *)
+let is_latent_issue (exec : ExecutionDomain.t) =
+  match exec with
+  | ContinueProgram _ | ExceptionRaised _ | Stopped (ExitProgram _ | AbortProgram _) ->
+      false
+  | Stopped (LatentAbortProgram _ | LatentInvalidAccess _ | LatentSpecializedTypeIssue _) ->
+      true
+
+
+(* Report the issues that [start_routine(arg)] would raise in the new thread, then continue from
+   the current state. The thread runs concurrently with the caller so the effects of the routine
+   are not applied: the caller would otherwise see, for instance, the final cleanup of the thread
+   as soon as it is created. *)
+let check_thread_start_routine ~ret_typ {FuncArg.arg_payload= start_routine} arg : model =
+ fun {analysis_data; path; location; dispatch_call_eval_args} astate non_disj ->
+  match c_function_of_ptr start_routine astate with
+  | None ->
+      let astate =
+        AbductiveDomain.add_need_dynamic_type_specialization (ValueOrigin.value start_routine)
+          astate
+      in
+      ([Ok (ContinueProgram astate)], non_disj)
+  | Some routine when Procname.equal routine (Procdesc.get_proc_name analysis_data.proc_desc) ->
+      (* not a recursive call, and the summary of the routine is not known yet anyway *)
+      ([Ok (ContinueProgram astate)], non_disj)
+  | Some routine -> (
+      let actuals_opt =
+        match IRAttributes.load routine with
+        | None | Some {ProcAttributes.formals= [_]} ->
+            Some [arg]
+        | Some {ProcAttributes.formals= []} ->
+            (* declared without a prototype, e.g. [void *routine()] *)
+            Some []
+        | Some _ ->
+            None
+      in
+      match actuals_opt with
+      | None ->
+          ([Ok (ContinueProgram astate)], non_disj)
+      | Some actuals ->
+          let results, _ =
+            dispatch_call_eval_args analysis_data path
+              (Ident.create_none (), ret_typ)
+              (Const (Cfun routine)) actuals location CallFlags.default astate non_disj
+              (Some routine)
+          in
+          let issues, errors =
+            List.fold results ~init:([], [])
+              ~f:(fun (issues, errors) (result : ExecutionDomain.t AccessResult.t) ->
+                match result with
+                | FatalError _ ->
+                    (result :: issues, errors)
+                | (Ok exec | Recoverable (exec, _)) when is_latent_issue exec ->
+                    (result :: issues, errors)
+                | Ok _ ->
+                    (issues, errors)
+                | Recoverable (_, errs) ->
+                    (issues, errs @ errors) )
+          in
+          let continue_ =
+            if List.is_empty errors then Ok (ContinueProgram astate)
+            else Recoverable (ContinueProgram astate, errors)
+          in
+          (continue_ :: List.rev issues, non_disj) )
+
+
+(* [pthread_create(thread, attr, start_routine, arg)] and [thrd_create(thread, start_routine, arg)]:
+   check the start routine on [arg], then let the arguments escape to the new thread as for an
+   unknown call. The return value is non-negative: 0 or an error number for [pthread_create], one
+   of the [thrd_*] codes for [thrd_create]. *)
+let create_thread ~desc ~ret_typ ~start_routine ~arg args : model =
+  let unknown_call =
+    Basic.unknown_call desc (List.map args ~f:(FuncArg.map_payload ~f:ValueOrigin.addr_hist))
+    |> lift_model
+  in
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  lift_to_monad (check_thread_start_routine ~ret_typ start_routine arg)
+  @@> lift_to_monad unknown_call @@> assign_ret @= fresh_nonneg ()
+
+
+let pthread_create thread attr start_routine arg : model =
+  create_thread ~desc:"pthread_create" ~ret_typ:StdTyp.void_star ~start_routine ~arg
+    [thread; attr; start_routine; arg]
+
+
+let thrd_create thread start_routine arg : model =
+  create_thread ~desc:"thrd_create" ~ret_typ:StdTyp.int ~start_routine ~arg
+    [thread; start_routine; arg]
+
+
+(* [pthread_exit(retval)] and [thrd_exit(res)] end the thread only: as with a [return] from the
+   start routine, [retval] escapes to the threads that join it, and unlike with [exit] the memory
+   that only the thread can reach is leaked *)
+let thread_exit ~desc retval : model =
+ fun ({analysis_data; path; location} as model_data) astate non_disj ->
+  let results =
+    let retval = FuncArg.map_payload ~f:ValueOrigin.addr_hist retval in
+    let addr, hist = retval.FuncArg.arg_payload in
+    let<*> astate =
+      PulseOperations.check_address_escape location analysis_data.proc_desc path addr hist astate
+    in
+    Basic.unknown_call desc [retval] model_data astate
+    |> List.filter_map ~f:(fun result ->
+        (let+ exec = result in
+         PulseSummary.force_exit_program ~ignore_leaks:false analysis_data path location exec
+         |> SatUnsat.sat )
+        |> PulseResult.of_some )
+  in
+  (results, non_disj)
+
 
 (** a few models from (g)libc and beyond *)
 include struct
@@ -693,7 +810,8 @@ let matchers : matcher list =
   ; -"opendir" <>$ capt_arg_payload $--> opendir
   ; (-"pause" $$--> start_model @@ fun () -> assign_ret @= int (-1))
   ; (-"printf" &--> start_model @@ fun () -> assign_ret @= fresh ())
-  ; -"pthread_exit" <>$ any_arg $+ any_arg $--> Basic.early_exit
+  ; -"pthread_create" <>$ capt_arg $+ capt_arg $+ capt_arg $+ capt_arg $--> pthread_create
+  ; -"pthread_exit" <>$ capt_arg $--> thread_exit ~desc:"pthread_exit"
   ; -"pthread_once" <>$ any_arg $+ capt_arg $--> pthread_once
   ; -"putc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"puts" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
@@ -744,6 +862,8 @@ let matchers : matcher list =
   ; -"strtol" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strtol
   ; -"strtoul" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strtol
   ; -"strupr" <>$ capt_arg_payload $--> compose1 valid_arg ret_arg
+  ; -"thrd_create" <>$ capt_arg $+ capt_arg $+ capt_arg $--> thrd_create
+  ; -"thrd_exit" <>$ capt_arg $--> thread_exit ~desc:"thrd_exit"
   ; -"time" <>$ capt_arg_payload $--> time
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"unlink" <>$ capt_arg_payload $+ any_arg
