@@ -588,10 +588,14 @@ public class ResourceLeaks {
     try {
       while (true) {
         Socket socket = listener.accept();
+        PrintWriter out = null;
         try {
-          PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+          out = new PrintWriter(socket.getOutputStream(), true);
           out.println("");
         } finally {
+          if (out != null) {
+            out.close();
+          }
           socket.close();
         }
       }

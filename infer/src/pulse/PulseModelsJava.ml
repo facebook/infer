@@ -198,6 +198,11 @@ module Resource = struct
 
   let writer_resource_usage_modeled = StringSet.of_list ["flush"; "write"]
 
+  (* PrintWriter print/println/printf/format do not throw IOException. Without models,
+     Pulse analyzes the JDK bodies and can miss the surrounding resource leak (#2119). *)
+  let writer_resource_usage_modeled_do_not_throws =
+    StringSet.of_list ["print"; "println"; "printf"; "format"]
+
   let use ~exn_class_name : model_no_non_disj =
     let exn = JavaClassName.from_string exn_class_name in
     fun model_data astate ->
@@ -743,6 +748,10 @@ let matchers : matcher list =
     <>$ any_arg
     $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
     |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.Writer")
+    &::+ (fun _ proc_name_str ->
+    StringSet.mem proc_name_str Resource.writer_resource_usage_modeled_do_not_throws )
+    <>$ any_arg $+...$--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Writer")
     &:: "append" <>$ capt_arg_payload $+...$--> Resource.writer_append |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.Closeable")

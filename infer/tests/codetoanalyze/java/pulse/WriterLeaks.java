@@ -181,4 +181,37 @@ public class WriterLeaks {
       if (writer != null) writer.close();
     }
   }
+
+  // Repro for facebook/infer#2119: println/print were not modeled as Writer uses, so Pulse
+  // analyzed the JDK method bodies and missed the leak (write() was already detected).
+
+  public void printWriterNotClosedAfterPrintlnBad() throws IOException {
+    PrintWriter writer = new PrintWriter("file.txt");
+    writer.println("record");
+  }
+
+  public void printWriterNotClosedAfterPrintBad() throws IOException {
+    PrintWriter writer = new PrintWriter("file.txt");
+    writer.print("record");
+  }
+
+  public void printWriterNotClosedAfterPrintfBad() throws IOException {
+    PrintWriter writer = new PrintWriter("file.txt");
+    writer.printf("%s", "record");
+  }
+
+  public void printWriterWrappedFileWriterNotClosedAfterPrintlnBad() throws IOException {
+    PrintWriter writer = new PrintWriter(new FileWriter("file.txt"));
+    writer.println("record");
+  }
+
+  public void printWriterPrintlnClosedOk() throws IOException {
+    PrintWriter writer = null;
+    try {
+      writer = new PrintWriter("file.txt");
+      writer.println("record");
+    } finally {
+      if (writer != null) writer.close();
+    }
+  }
 }
