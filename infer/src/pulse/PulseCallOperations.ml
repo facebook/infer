@@ -610,12 +610,47 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
   (posts, (non_disj, contradiction))
 
 
+(** The clang frontend records the parameters of C functions and C++ methods that must not be null
+    as [Nonnull] or [NonnullParameter] annotations. When the callee has no implementation these
+    annotations are all we know about its requirements. *)
+let check_nonnull_args_of_unknown_callee path call_loc callee_pname ~actuals astate =
+  if
+    Config.pulse_nullability_annotations && Language.curr_language_is Clang
+    && Procname.is_clang callee_pname
+    && not (Procname.is_objc_method callee_pname)
+  then
+    match IRAttributes.load callee_pname with
+    | Some {ProcAttributes.formals; is_clang_variadic; is_defined= false} -> (
+        let actuals =
+          if is_clang_variadic then List.take actuals (List.length formals) else actuals
+        in
+        match List.zip formals actuals with
+        | Ok formals_actuals ->
+            PulseResult.list_foldi formals_actuals ~init:astate
+              ~f:(fun index astate ((_, _, annot), (addr_hist, _)) ->
+                if
+                  Annotations.ia_is_nonnull annot
+                  || Annotations.ia_ends_with annot Annotations.nonnull_parameter
+                then
+                  PulseOperations.check_non_null path call_loc (CallEvent.Call callee_pname)
+                    (index + 1) addr_hist astate
+                else Ok astate )
+        | Unequal_lengths ->
+            Ok astate )
+    | _ ->
+        Ok astate
+  else Ok astate
+
+
 let call_aux_unknown limit ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc
     callee_pname ~ret ~actuals ~formals_opt call_kind call_flags (astate : AbductiveDomain.t)
     non_disj_caller =
   let arg_values = List.map actuals ~f:(fun ((value, _), _) -> value) in
   let ( let<**> ) = bind_sat_result (non_disj_caller, None) in
   let<**> astate_unknown =
+    let=* astate =
+      check_nonnull_args_of_unknown_callee path call_loc callee_pname ~actuals astate
+    in
     PulseOperations.conservatively_initialize_args arg_values astate
     |> unknown_call tenv path call_loc (SkippedKnownCall callee_pname) (Some callee_pname) ~ret
          ~actuals ~formals_opt

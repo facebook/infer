@@ -3198,6 +3198,11 @@
         {
           "pointer" : 39,
           "desugared_type" : 196
+        },
+        {
+          "named_type" : {
+            "type_ptr" : 9
+          }
         }
       ]],
       ["TypedefType" , [
@@ -3216,12 +3221,22 @@
         {
           "pointer" : 43,
           "desugared_type" : 56
+        },
+        {
+          "named_type" : {
+            "type_ptr" : 15
+          }
         }
       ]],
       ["ElaboratedType" , [
         {
           "pointer" : 45,
           "desugared_type" : 192
+        },
+        {
+          "named_type" : {
+            "type_ptr" : 5
+          }
         }
       ]],
       ["ObjCObjectPointerType" , [
@@ -3260,6 +3275,11 @@
         {
           "pointer" : 61,
           "desugared_type" : 84
+        },
+        {
+          "named_type" : {
+            "type_ptr" : 17
+          }
         }
       ]],
       ["ObjCObjectPointerType" , [
@@ -3280,6 +3300,11 @@
         {
           "pointer" : 74,
           "desugared_type" : 194
+        },
+        {
+          "named_type" : {
+            "type_ptr" : 7
+          }
         }
       ]],
       ["IncompleteArrayType" , [
@@ -3466,6 +3491,8 @@
         {
           "pointer" : 217,
           "desugared_type" : 103
+        },
+        {
         }
       ]],
       ["ObjCInterfaceType" , [
@@ -3490,6 +3517,11 @@
         {
           "pointer" : 219,
           "desugared_type" : 103
+        },
+        {
+          "named_type" : {
+            "type_ptr" : 105
+          }
         }
       ]],
       ["PointerType" , [

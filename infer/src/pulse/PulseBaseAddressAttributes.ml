@@ -263,6 +263,8 @@ let is_copied_from_const_ref address attrs =
 
 let get_must_be_valid = get_attribute Attributes.get_must_be_valid
 
+let get_must_be_non_null = get_attribute Attributes.get_must_be_non_null
+
 let is_must_be_awaited address attrs =
   Graph.find_opt address attrs |> Option.exists ~f:Attributes.is_must_be_awaited
 
@@ -461,6 +463,8 @@ module type S = sig
 
   val get_must_be_valid :
     key -> t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
+
+  val get_must_be_non_null : key -> t -> (Timestamp.t * Trace.t * CallEvent.t * int) option
 
   val get_must_not_be_tainted : key -> t -> Attribute.TaintSink.t Attribute.TaintSinkMap.t
 

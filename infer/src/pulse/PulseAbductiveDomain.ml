@@ -759,6 +759,21 @@ module Internal = struct
         astate
 
 
+    let check_non_null path access_trace callee position addr astate =
+      let+ () =
+        match BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs with
+        | Error (ConstantDereference i, _) as error when IntLit.iszero i ->
+            error
+        | Error (ComparedToNullInThisProcedure _, _) as error ->
+            error
+        | Ok () | Error _ ->
+            Ok ()
+      in
+      abduce_one addr
+        (MustBeNonNull (path.PathContext.timestamp, access_trace, callee, position))
+        astate
+
+
     let has_unknown_effect addr astate =
       BaseAddressAttributes.has_unknown_effect addr (astate.post :> base_domain).attrs
 
@@ -2644,6 +2659,10 @@ module AddressAttributes = struct
 
   let check_valid path ?must_be_valid_reason trace v astate =
     SafeAttributes.check_valid path ?must_be_valid_reason trace (CanonValue.canon' astate v) astate
+
+
+  let check_non_null path trace callee position v astate =
+    SafeAttributes.check_non_null path trace callee position (CanonValue.canon' astate v) astate
 
 
   let check_initialized path trace v astate =

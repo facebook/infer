@@ -239,6 +239,7 @@ module Attribute = struct
     | LastLookup of AbstractValue.t
     | MustBeAwaited
     | MustBeInitialized of Timestamp.t * Trace.t
+    | MustBeNonNull of Timestamp.t * Trace.t * CallEvent.t * int
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | MustNotBeTainted of (TaintSink.t TaintSinkMap.t[@yojson.opaque])
     | JavaResourceReleased
@@ -312,6 +313,8 @@ module Attribute = struct
   let must_be_awaited_rank = Variants.mustbeawaited.rank
 
   let must_be_initialized_rank = Variants.mustbeinitialized.rank
+
+  let must_be_non_null_rank = Variants.mustbenonnull.rank
 
   let must_be_valid_rank = Variants.mustbevalid.rank
 
@@ -393,6 +396,11 @@ module Attribute = struct
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
           (timestamp :> int)
+    | MustBeNonNull (timestamp, trace, callee, position) ->
+        F.fprintf f "MustBeNonNull(@[@[%a@],@;%a #%d,@;t=%d@])"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "passed"))
+          trace CallEvent.pp callee position
+          (timestamp :> int)
     | MustBeValid (timestamp, trace, reason) ->
         F.fprintf f "MustBeValid(@[@[%a@],@;@[%a@],@;t=%d@])"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
@@ -444,6 +452,7 @@ module Attribute = struct
   let is_suitable_for_pre = function
     | DictReadConstKeys _
     | MustBeAwaited
+    | MustBeNonNull _
     | MustBeValid _
     | MustBeInitialized _
     | MustNotBeTainted _
@@ -490,6 +499,7 @@ module Attribute = struct
     | Invalid (ComparedToNullInThisProcedure _, _)
     | MustBeAwaited
     | MustBeInitialized _
+    | MustBeNonNull _
     | MustNotBeTainted _
     | MustBeValid _
     | UnreachableAt _
@@ -560,6 +570,7 @@ module Attribute = struct
     | HackConstinitCalled
     | MustBeAwaited
     | MustBeInitialized _
+    | MustBeNonNull _
     | MustBeValid _
     | MustNotBeTainted _
     | PropagateTaintFrom _
@@ -599,6 +610,8 @@ module Attribute = struct
         InReportedRetainCycle
     | Invalid (invalidation, trace) ->
         Invalid (invalidation, add_call_to_trace trace)
+    | MustBeNonNull (_timestamp, trace, callee, position) ->
+        MustBeNonNull (timestamp, add_call_to_trace trace, callee, position)
     | MustBeValid (_timestamp, trace, reason) ->
         MustBeValid (timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
@@ -783,6 +796,7 @@ module Attribute = struct
       | LastLookup _
       | MustBeAwaited
       | MustBeInitialized _
+      | MustBeNonNull _
       | MustBeValid _
       | MustNotBeTainted _
       | SourceOriginOfCopy _
@@ -977,6 +991,12 @@ module Attributes = struct
 
 
   let remove_must_be_valid = remove_by_rank Attribute.must_be_valid_rank
+
+  let get_must_be_non_null =
+    get_by_rank Attribute.must_be_non_null_rank ~dest:(function[@warning "-partial-match"]
+        | Attribute.MustBeNonNull (timestamp, trace, callee, position) ->
+        (timestamp, trace, callee, position) )
+
 
   let get_written_to =
     get_by_rank Attribute.written_to_rank ~dest:(function[@warning "-partial-match"]

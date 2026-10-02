@@ -254,7 +254,7 @@ let get_decl_from_typ_ptr typ_ptr =
       None
 
 
-let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
+let sil_annot_of_type_aux ~c_function {Clang_ast_t.qt_type_ptr} =
   let mk_annot annot_name_opt =
     match annot_name_opt with
     | Some annot_name ->
@@ -265,6 +265,8 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
   let rec annot_name_of_type_ptr type_ptr =
     match get_type type_ptr with
     | Some (AttributedType (_, {ati_attr_kind= TypeNullableAttrKind})) ->
+        Some Annotations.nullable
+    | Some (AttributedType (_, {ati_attr_kind= TypeNullableResultAttrKind})) when c_function ->
         Some Annotations.nullable
     | Some (AttributedType (_, {ati_attr_kind= TypeNonNullAttrKind})) ->
         Some Annotations.nonnull
@@ -282,11 +284,18 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
        [@property(nullable, ...) T *foo NS_SWIFT_UI_ACTOR;]. *)
     | Some (MacroQualifiedType (_, {qt_type_ptr= inner_ptr})) ->
         annot_name_of_type_ptr inner_ptr
+    | Some
+        ( ElaboratedType (_, {eti_named_type= Some {qt_type_ptr= inner_ptr}})
+        | TypedefType (_, {tti_child_type= {qt_type_ptr= inner_ptr}}) )
+      when c_function ->
+        annot_name_of_type_ptr inner_ptr
     | _ ->
         None
   in
   mk_annot (annot_name_of_type_ptr qt_type_ptr)
 
+
+let sil_annot_of_type qual_type = sil_annot_of_type_aux ~c_function:false qual_type
 
 let qual_type_of_decl_ptr decl_ptr =
   { (* This function needs to be in this module - CAst_utils can't depend on
@@ -415,6 +424,35 @@ let get_cxx_virtual_base_classes decl =
       cxx_record_info.xrdi_transitive_vbases
   | _ ->
       []
+
+
+let is_nonnull_param decl ~index param =
+  match (Clang_ast_proj.get_function_decl_tuple decl, param) with
+  | Some _, Clang_ast_t.ParmVarDecl (_, _, qual_type, _) ->
+      (* [DecayedType]: an array parameter such as [int fds[_Nonnull 2]]; [ParenType]: a
+         parenthesized declarator such as [int* _Nonnull (p)] *)
+      let rec strip ({Clang_ast_t.qt_type_ptr} as qual_type) =
+        match get_type qt_type_ptr with
+        | Some (DecayedType (_, inner) | ParenType (_, inner)) ->
+            strip inner
+        | _ ->
+            qual_type
+      in
+      let annot = sil_annot_of_type_aux ~c_function:true (strip qual_type) in
+      let has_nonnull_attribute decl ~f =
+        List.exists (Clang_ast_proj.get_decl_tuple decl).di_attributes ~f:(function
+          | `NonNullAttr (_, {Clang_ast_t.nnai_args}) ->
+              f nnai_args
+          | _ ->
+              false )
+      in
+      Annotations.ia_is_nonnull annot
+      || (not (Annotations.ia_is_nullable annot))
+         && ( has_nonnull_attribute decl ~f:(fun args ->
+                  List.is_empty args || List.mem args index ~equal:Int.equal )
+            || has_nonnull_attribute param ~f:(fun _ -> true) )
+  | _ ->
+      false
 
 
 (* true if a decl has a NS_NOESCAPE attribute *)

@@ -95,7 +95,7 @@ module BuildMethodSignature = struct
       + return parameter (optional) *)
   let get_parameters qual_type_to_sil_type tenv ~block_return_type method_decl =
     let open Clang_ast_t in
-    let par_to_ms_par par =
+    let par_to_ms_par index par =
       match par with
       | ParmVarDecl (_, name_info, qt, var_decl_info) ->
           let method_decl_info = Clang_ast_proj.get_decl_tuple method_decl in
@@ -113,13 +113,21 @@ module BuildMethodSignature = struct
           let is_pointer_to_const = CType.is_pointer_to_const qt in
           let is_reference = CType.is_reference_type qt in
           let is_no_escape_block_arg = CAst_utils.is_no_escape_block_arg par in
-          let annot = CAst_utils.sil_annot_of_type qt in
+          let annot =
+            let annot = CAst_utils.sil_annot_of_type qt in
+            if
+              (not (Annotations.ia_is_nonnull annot))
+              && CType.is_pointer_type qt
+              && CAst_utils.is_nonnull_param method_decl ~index par
+            then {Annot.class_name= Annotations.nonnull_parameter; parameters= []} :: annot
+            else annot
+          in
           CMethodSignature.mk_param_type name typ ~is_pointer_to_const ~is_reference ~annot
             ~is_no_escape_block_arg
       | _ ->
           raise CFrontend_errors.Invalid_declaration
     in
-    let params = List.map ~f:par_to_ms_par (CMethodProperties.get_param_decls method_decl) in
+    let params = List.mapi ~f:par_to_ms_par (CMethodProperties.get_param_decls method_decl) in
     let return_param =
       Option.to_list
         ( get_return_type_and_param_type qual_type_to_sil_type tenv ~block_return_type method_decl

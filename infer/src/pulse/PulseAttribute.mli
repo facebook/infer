@@ -151,6 +151,10 @@ type t =
   | LastLookup of AbstractValue.t
   | MustBeAwaited
   | MustBeInitialized of Timestamp.t * Trace.t
+  | MustBeNonNull of Timestamp.t * Trace.t * CallEvent.t * int
+      (** the value is passed to a parameter of the callee, at the given 1-based position counting
+          the implicit object parameter, that must not be null; unlike [MustBeValid], only null
+          breaks it *)
   | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
   | MustNotBeTainted of TaintSink.t TaintSinkMap.t
   | JavaResourceReleased
@@ -257,6 +261,8 @@ module Attributes : sig
     t -> (Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option) option
 
   val remove_must_be_valid : t -> t
+
+  val get_must_be_non_null : t -> (Timestamp.t * Trace.t * CallEvent.t * int) option
 
   val get_must_not_be_tainted : t -> TaintSink.t TaintSinkMap.t
 

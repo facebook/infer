@@ -3774,6 +3774,8 @@
         {
           "pointer" : 39,
           "desugared_type" : 8
+        },
+        {
         }
       ]],
       ["LValueReferenceType" , [
@@ -3920,6 +3922,8 @@
         {
           "pointer" : 43,
           "desugared_type" : 25
+        },
+        {
         }
       ]],
       ["FunctionProtoType" , [
