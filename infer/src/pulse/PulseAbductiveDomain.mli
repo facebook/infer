@@ -344,6 +344,8 @@ module AddressAttributes : sig
 
   val has_unknown_effect : AbstractValue.t -> t -> bool
 
+  val is_global_initializer_called : AbstractValue.t -> t -> bool
+
   val is_hack_constinit_called : AbstractValue.t -> t -> bool
 end
 
@@ -531,6 +533,9 @@ module Summary : sig
   (** whether the pre heap encodes some assumptions about values: either a value is restricted (>=
       0) or there is sharing in the heap. Both represent implicit assumptions that the program must
       have made. *)
+
+  val reads_global : f:(Pvar.t -> bool) -> summary -> bool
+  (** whether the pre reads the contents of a global variable that satisfies [f] *)
 
   val unsafe_from_join : t -> summary
 

@@ -985,7 +985,19 @@ let report_mutual_recursion_cycle
 
 
 let record_recursive_calls ({InterproceduralAnalysis.proc_desc} as analysis_data) call_state =
-  if Procname.is_hack_xinit (Procdesc.get_proc_name proc_desc) then (
+  let is_global_initializer proc_name =
+    Option.is_some (Procname.get_global_name_of_initializer proc_name)
+  in
+  if
+    is_global_initializer (Procdesc.get_proc_name proc_desc)
+    || is_global_initializer call_state.callee_proc_name
+  then (
+    (* global initializers run at most once per path so cycles through them, eg between globals
+       whose initializers refer to each other, are not infinite recursion *)
+    L.d_printfln "Not recording recursive calls involving global initializers in call to %a"
+      Procname.pp call_state.callee_proc_name ;
+    call_state )
+  else if Procname.is_hack_xinit (Procdesc.get_proc_name proc_desc) then (
     L.d_printfln "Not recording recursive calls for Hack xinit caller function %a" Procname.pp
       (Procdesc.get_proc_name proc_desc) ;
     call_state )
