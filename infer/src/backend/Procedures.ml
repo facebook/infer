@@ -26,6 +26,73 @@ let get_all ~filter () =
   |> run_query_fold adb "reading all procedure names analysisdb" adb_stmt
 
 
+let get_defined_procs_located_in ~in_file =
+  let db = Database.get_database CaptureDatabase in
+  let stmt = Sqlite3.prepare db "SELECT proc_attributes FROM procedures WHERE cfg IS NOT NULL" in
+  SqliteUtils.result_fold_rows db ~log:"reading procedure locations" stmt ~init:[]
+    ~f:(fun procs stmt ->
+      let attrs = Sqlite3.column stmt 0 |> ProcAttributes.SQLite.deserialize in
+      if in_file attrs.ProcAttributes.loc.Location.file then attrs :: procs else procs )
+
+
+let compute_procs_defined_in_changed_headers changed_files =
+  let headers =
+    (* a deleted header defines no procedure, but with [--suffix-match-changed-files] the entries
+       can be partial paths *)
+    SourceFile.Set.filter
+      (fun file ->
+        SourceFile.is_header file
+        && (Config.suffix_match_changed_files || ISys.file_exists (SourceFile.to_abs_path file))
+        && not (SourceFiles.mem file) )
+      changed_files
+  in
+  if SourceFile.Set.is_empty headers then Procname.Map.empty
+  else
+    let header_procs =
+      get_defined_procs_located_in ~in_file:(SourceFile.is_changed ~changed_files:headers)
+    in
+    let files_with_procs =
+      List.fold header_procs ~init:SourceFile.Set.empty ~f:(fun files {ProcAttributes.loc} ->
+          SourceFile.Set.add loc.Location.file files )
+    in
+    let headers_without_procs =
+      SourceFile.Set.filter
+        (fun header ->
+          not
+            (SourceFile.Set.exists
+               (SourceFile.is_changed ~changed_files:(SourceFile.Set.singleton header))
+               files_with_procs ) )
+        headers
+      |> SourceFile.Set.elements
+    in
+    if not (List.is_empty headers_without_procs) then
+      if List.is_empty Config.clang_compilation_dbs then
+        L.debug Analysis Quiet "Changed headers that define no captured procedure: %a@\n"
+          (Pp.seq ~sep:", " SourceFile.pp) headers_without_procs
+      else
+        L.user_warning
+          "Changed headers that define no captured procedure: %a. With --compilation-database, \
+           only the files in the changed files index are captured: to analyze the procedures \
+           defined in a header, add a source file that includes it to the index.@."
+          (Pp.seq ~sep:", " SourceFile.pp) headers_without_procs ;
+    List.fold header_procs ~init:Procname.Map.empty
+      ~f:(fun procs {ProcAttributes.proc_name; translation_unit} ->
+        Procname.Map.add proc_name translation_unit procs )
+
+
+let get_procs_defined_in_changed_headers =
+  let cache = ref None in
+  fun changed_files ->
+    match !cache with
+    | Some (cached_changed_files, procs)
+      when SourceFile.Set.equal cached_changed_files changed_files ->
+        procs
+    | _ ->
+        let procs = compute_procs_defined_in_changed_headers changed_files in
+        cache := Some (changed_files, procs) ;
+        procs
+
+
 let select_proc_names_interactive ~filter =
   let proc_names = get_all ~filter () |> List.rev in
   let proc_names_len = List.length proc_names in

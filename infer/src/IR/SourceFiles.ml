@@ -166,6 +166,19 @@ let is_freshly_captured source =
       |> Option.exists ~f:deserialize_freshly_captured )
 
 
+let mem_statement =
+  Database.register_statement CaptureDatabase "SELECT 1 FROM source_files WHERE source_file = :k"
+
+
+let mem source =
+  Database.with_registered_statement mem_statement ~f:(fun db stmt ->
+      SourceFile.SQLite.serialize source
+      |> Sqlite3.bind stmt 1
+      |> SqliteUtils.check_result_code db ~log:"mem bind source file" ;
+      SqliteUtils.result_single_column_option ~finalize:false ~log:"SourceFiles.mem" db stmt
+      |> Option.is_some )
+
+
 let mark_all_stale () = DBWriter.mark_all_source_files_stale ()
 
 let select_all_source_files_statement =

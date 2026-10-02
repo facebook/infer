@@ -1,0 +1,3 @@
+include/widget.h
+include/decls.h
+include/templates.ipp
