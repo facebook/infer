@@ -24,7 +24,9 @@ type var_data =
         (** __block attribute of Objective-C variables, means that it will be modified inside a
             block *)
   ; is_constexpr: bool
-  ; is_declared_unused: bool  (** variable declared with attribute [unused] *)
+  ; is_declared_unused: bool
+        (** variable declared with attribute [unused], or referenced in a discarded [if constexpr]
+            branch *)
   ; is_structured_binding: bool  (** variable declared by structured binding *)
   ; has_cleanup_attribute: bool
         (** variable declared with attribute [cleanup], only set in clang frontend *)
