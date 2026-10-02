@@ -205,10 +205,12 @@ let rec inner_class_normalise tenv ((typ, (accesses : access_list)) as path) =
 let equal_across_threads tenv t1 t2 =
   match (t1, t2) with
   | Parameter {path= (_, typ1), accesses1}, Parameter {path= (_, typ2), accesses2} ->
-      (* parameter position/names can be ignored across threads, if types and accesses are equal *)
-      let path1 = inner_class_normalise tenv (typ1, accesses1) in
-      let path2 = inner_class_normalise tenv (typ2, accesses2) in
-      [%equal: Typ.t * access_list] path1 path2
+      (* parameter position/names can be ignored across threads, if types and accesses are equal;
+         type qualifiers are ignored too since [this] has type [C const *] in the const methods of
+         [C] and [C *] in its other methods *)
+      let typ1, accesses1 = inner_class_normalise tenv (typ1, accesses1) in
+      let typ2, accesses2 = inner_class_normalise tenv (typ2, accesses2) in
+      Typ.equal_ignore_quals typ1 typ2 && equal_access_list accesses1 accesses2
   | _, _ ->
       (* globals and class objects must be identical across threads *)
       equal t1 t2

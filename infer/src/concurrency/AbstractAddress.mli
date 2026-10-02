@@ -25,8 +25,9 @@ module F = Format
       identical globals and identical class objects compare equal. Parameter-rooted paths compare
       equal if their parameter indices, types and lists of accesses are equal.
     - Equality for comparing two addresses in two distinct threads/traces. Globals and class objects
-      are compared in the same way, but parameter-rooted paths need only have equal access lists (ie
-      [x.f.g == y.f.g]). This allows demonically aliasing parameters in *distinct* threads. *)
+      are compared in the same way, but parameter-rooted paths need only have equal types (modulo
+      type qualifiers) and lists of accesses (ie [x.f.g == y.f.g]). This allows demonically aliasing
+      parameters in *distinct* threads. *)
 
 include PrettyPrintable.PrintableOrderedType
 
