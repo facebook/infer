@@ -43,3 +43,23 @@ void read_templated_const_global_then_crash_bad() {
     *p = 42;
   }
 }
+
+int exchange_int(int& obj, const int& new_value) {
+  int old_value = obj;
+  obj = new_value;
+  return old_value;
+}
+
+struct Handle {
+  static constexpr int kInvalid = -1;
+  int fd_;
+  int release() { return exchange_int(fd_, kInvalid); }
+};
+
+void call_with_const_global_argument_then_crash_bad() {
+  Handle h{42};
+  if (h.release() == 42 && h.fd_ == -1) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}

@@ -128,4 +128,24 @@ public class NullPointerExceptionsMoreTests {
     }
     return j;
   }
+
+  interface Flag {
+    boolean isOn();
+  }
+
+  static native Flag getFlag();
+
+  static boolean isFlagOn() {
+    return getFlag().isOn();
+  }
+
+  void derefAfterSameFlagCheckedTwiceShouldNotCauseNPE() {
+    Object o = null;
+    if (isFlagOn()) {
+      o = new Object();
+    }
+    if (isFlagOn()) {
+      o.toString();
+    }
+  }
 }
