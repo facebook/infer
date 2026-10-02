@@ -108,6 +108,72 @@ let pp_std_string_function f std_string_f =
   F.fprintf f "std::basic_string::%s" (std_string_method_name std_string_f)
 
 
+type std_container =
+  | Deque
+  | List
+  | Map
+  | Multimap
+  | Multiset
+  | Set
+  | UnorderedMap
+  | UnorderedMultimap
+  | UnorderedMultiset
+  | UnorderedSet
+[@@deriving compare, equal, yojson_of]
+
+type std_container_function =
+  | Clear
+  | Emplace
+  | EmplaceBack
+  | EmplaceFront
+  | Erase
+  | Insert
+  | PushBack
+  | PushFront
+[@@deriving compare, equal, yojson_of]
+
+let pp_std_container f = function
+  | Deque ->
+      F.fprintf f "std::deque"
+  | List ->
+      F.fprintf f "std::list"
+  | Map ->
+      F.fprintf f "std::map"
+  | Multimap ->
+      F.fprintf f "std::multimap"
+  | Multiset ->
+      F.fprintf f "std::multiset"
+  | Set ->
+      F.fprintf f "std::set"
+  | UnorderedMap ->
+      F.fprintf f "std::unordered_map"
+  | UnorderedMultimap ->
+      F.fprintf f "std::unordered_multimap"
+  | UnorderedMultiset ->
+      F.fprintf f "std::unordered_multiset"
+  | UnorderedSet ->
+      F.fprintf f "std::unordered_set"
+
+
+let pp_std_container_function f = function
+  | Clear ->
+      F.fprintf f "clear"
+  | Emplace ->
+      F.fprintf f "emplace"
+  | EmplaceBack ->
+      F.fprintf f "emplace_back"
+  | EmplaceFront ->
+      F.fprintf f "emplace_front"
+  | Erase ->
+      F.fprintf f "erase"
+  | Insert ->
+      F.fprintf f "insert"
+  | PushBack ->
+      F.fprintf f "push_back"
+  | PushFront ->
+      F.fprintf f "push_front"
+
+
 type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
 [@@deriving compare, equal, yojson_of]
 
@@ -172,6 +238,7 @@ type t =
   | StdVector of std_vector_function
   | StdString of std_string_function
   | CppMap of map_type * map_function
+  | StdContainer of std_container * std_container_function
 [@@deriving compare, equal, yojson_of, variants]
 
 let is_same_type invalidation1 invalidation2 =
@@ -232,7 +299,7 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.use_after_lifetime ~latent
   | OptionalEmpty ->
       IssueType.optional_empty_access ~latent
-  | StdVector _ | StdString _ ->
+  | StdVector _ | StdString _ | StdContainer _ ->
       IssueType.vector_invalidation ~latent
   | CppMap _ ->
       IssueType.pulse_reference_stability
@@ -271,6 +338,9 @@ let describe f cause =
       F.fprintf f "was potentially invalidated by `%a`" pp_std_string_function std_string_f
   | CppMap (map_t, map_f) ->
       F.fprintf f "was potentially invalidated by `%a::%a`" pp_map_type map_t pp_map_function map_f
+  | StdContainer (container, container_f) ->
+      F.fprintf f "was invalidated by `%a::%a`" pp_std_container container pp_std_container_function
+        container_f
 
 
 let suggest cause =
@@ -305,3 +375,5 @@ let pp f invalidation =
       F.fprintf f "StdString(%a)" describe invalidation
   | CppMap _ ->
       F.fprintf f "CppMap(%a)" describe invalidation
+  | StdContainer _ ->
+      F.fprintf f "StdContainer(%a)" describe invalidation

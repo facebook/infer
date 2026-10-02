@@ -46,6 +46,33 @@ val std_string_method_name : std_string_function -> string
 
 val pp_std_string_function : F.formatter -> std_string_function -> unit
 
+(** [std::deque] and the node-based containers of the C++ standard library *)
+type std_container =
+  | Deque
+  | List
+  | Map
+  | Multimap
+  | Multiset
+  | Set
+  | UnorderedMap
+  | UnorderedMultimap
+  | UnorderedMultiset
+  | UnorderedSet
+[@@deriving compare, equal, yojson_of]
+
+type std_container_function =
+  | Clear
+  | Emplace
+  | EmplaceBack
+  | EmplaceFront
+  | Erase
+  | Insert
+  | PushBack
+  | PushFront
+[@@deriving compare, equal, yojson_of]
+
+val pp_std_container : F.formatter -> std_container -> unit
+
 type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
 [@@deriving compare, equal, yojson_of]
 
@@ -80,6 +107,7 @@ type t =
   | StdVector of std_vector_function
   | StdString of std_string_function
   | CppMap of map_type * map_function
+  | StdContainer of std_container * std_container_function
 [@@deriving compare, equal, yojson_of]
 
 val pp : F.formatter -> t -> unit
