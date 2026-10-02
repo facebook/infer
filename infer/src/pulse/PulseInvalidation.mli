@@ -23,6 +23,29 @@ type std_vector_function =
 
 val pp_std_vector_function : F.formatter -> std_vector_function -> unit
 
+type std_string_function =
+  | Append
+  | Assign
+  | Clear
+  | Erase
+  | Insert
+  | OperatorAssign
+  | OperatorPlusAssign
+  | PopBack
+  | PushBack
+  | Replace
+  | Reserve
+  | Resize
+  | ShrinkToFit
+[@@deriving compare, equal, yojson_of]
+
+val all_std_string_functions : std_string_function list
+
+val std_string_method_name : std_string_function -> string
+(** name of the [std::basic_string] member function, e.g. ["push_back"] *)
+
+val pp_std_string_function : F.formatter -> std_string_function -> unit
+
 type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
 [@@deriving compare, equal, yojson_of]
 
@@ -55,6 +78,7 @@ type t =
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function
+  | StdString of std_string_function
   | CppMap of map_type * map_function
 [@@deriving compare, equal, yojson_of]
 

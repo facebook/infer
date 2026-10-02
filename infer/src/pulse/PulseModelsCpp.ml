@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module IRAttributes = Attributes
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -280,10 +281,8 @@ module BasicString = struct
     constructor_from_constant_dsl this_hist init_hist
 
 
-  let copy_constructor ~desc (this, hist) src_hist : model =
+  let copy_constructor_dsl (this, hist) src_hist : unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
-    start_named_model desc
-    @@ fun () ->
     let* this_hist = add_model_call hist in
     let* src_string = load_access src_hist (FieldAccess ModeledField.internal_string) in
     let* src_length = access Read src_hist (FieldAccess ModeledField.string_length) in
@@ -291,24 +290,32 @@ module BasicString = struct
     @@> write_field ~ref:(this, this_hist) ModeledField.string_length src_length
 
 
-  let constructor_rev ~desc init this : model = copy_constructor ~desc this init
+  let copy_constructor ~desc this_hist src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc @@ fun () -> copy_constructor_dsl this_hist src_hist
 
-  let data this_hist ~desc : model =
+
+  let data ((this, hist) as this_hist) ~desc : model =
     let open PulseModelsDSL.Syntax in
     start_named_model desc
     @@ fun () ->
     let* this_string, this_string_hist =
       access Read this_hist (FieldAccess ModeledField.internal_string)
     in
-    let* hist = add_model_call this_string_hist in
-    assign_ret (this_string, hist)
+    let* ret_hist = add_model_call this_string_hist in
+    exec_command
+      (AbductiveDomain.AddressAttributes.add_one this_string
+         (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
+    @@> assign_ret (this_string, ret_hist)
 
 
   let iterator_common ((this, hist) as this_hist) ((iter, _) as iter_hist) :
       (PulseModelsDSL.aval * PulseModelsDSL.aval) PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
     let* backing_ptr = access Read iter_hist (FieldAccess GenericArrayBackedCollection.field) in
-    let* internal_string = load_access this_hist (FieldAccess ModeledField.internal_string) in
+    let* internal_string =
+      load_access ~deref:false this_hist (FieldAccess ModeledField.internal_string)
+    in
     exec_command
       (AbductiveDomain.AddressAttributes.add_one iter
          (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
@@ -360,6 +367,43 @@ module BasicString = struct
              location CppDelete (string_addr, string_hist) astate ) )
 
 
+  (** Mutating member functions may reallocate the buffer: the buffer returned by [data()] or
+      [c_str()] before the call is invalidated and replaced by a fresh one. Otherwise the call is
+      treated like a call to a function without a summary, so that its effects on the arguments and
+      copies are the same as if the function was not modelled, except that the overloads returning
+      [basic_string&] return the receiver. Taint is propagated as for unknown calls because
+      [PulseTaintOperations] treats these models as unknown. *)
+  let mutator string_f ({FuncArg.arg_payload= this} as this_arg) args : model_no_non_disj =
+   fun {path; callee_procname; analysis_data= {tenv}; location; ret} astate ->
+    let internal_string = PulseOperations.ModeledField.internal_string in
+    let new_buffer =
+      let desc = Format.asprintf "%a()" Invalidation.pp_std_string_function string_f in
+      (AbstractValue.mk_fresh (), Hist.single_call path location desc)
+    in
+    let<*> astate =
+      PulseOperations.invalidate_access path location (StdString string_f) this
+        (FieldAccess internal_string) astate
+      |> PulseOperations.write_field path location ~ref:this internal_string ~obj:new_buffer
+    in
+    let actuals =
+      List.map (this_arg :: args) ~f:(fun {FuncArg.arg_payload; typ} -> (arg_payload, typ))
+    in
+    let attrs_opt = IRAttributes.load callee_procname in
+    let formals_opt = Option.map attrs_opt ~f:ProcAttributes.get_pvar_formals in
+    let returns_this =
+      match Option.map attrs_opt ~f:(fun {ProcAttributes.ret_type} -> ret_type.Typ.desc) with
+      | Some (Tptr ({desc= Tstruct ret_class}, _)) ->
+          Option.exists (Procname.get_class_type_name callee_procname) ~f:(Typ.Name.equal ret_class)
+      | _ ->
+          false
+    in
+    let<++> astate =
+      PulseCallOperations.unknown_call tenv path location (SkippedKnownCall callee_procname)
+        (Some callee_procname) ~ret ~actuals ~formals_opt astate
+    in
+    if returns_this then PulseOperations.write_id (fst ret) this astate else astate
+
+
   let empty this_hist : model =
     let open PulseModelsDSL.Syntax in
     start_named_model "std::basic_string::empty()"
@@ -393,6 +437,78 @@ module BasicString = struct
       Basic.nondet ~desc model_env astate
     in
     SatUnsat.to_list astate_zero_idx @ astate_non_zero_idx
+end
+
+(** A [std::basic_string_view] keeps the string value and length of what it views like [BasicString]
+    does, and in [data_field] the pointer returned by [data()]: the viewed [char*] or the buffer of
+    the viewed [std::basic_string]. Copies of a view share that pointer, so they see the
+    invalidation of the viewed buffer. *)
+module BasicStringView = struct
+  let data_field = Fieldname.make PulseOperations.pulse_model_type "__infer_model_string_view_data"
+
+  let store_data this_hist (data, data_hist) : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* data_hist = add_model_call data_hist in
+    store_field ~ref:this_hist data_field (data, data_hist)
+
+
+  let constructor_from_char_ptr ~desc this_hist ptr_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    BasicString.constructor_from_constant_dsl this_hist ptr_hist @@> store_data this_hist ptr_hist
+
+
+  (** [basic_string_view(const char* s, size_t count)] and the C++20 iterator-pair constructor *)
+  let constructor_from_char_ptr_and_size ~desc ((this, hist) as this_hist) ptr_hist
+      (size_arg : PulseModelsDSL.aval FuncArg.t) : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    store_data this_hist ptr_hist
+    @@>
+    if Typ.is_int size_arg.typ then
+      let* hist = add_model_call hist in
+      write_field ~ref:(this, hist) ModeledField.string_length size_arg.arg_payload
+    else ret ()
+
+
+  let copy_dsl this_hist src_hist : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    BasicString.copy_constructor_dsl this_hist src_hist
+    @@> let* data = load_access src_hist (FieldAccess data_field) in
+        store_data this_hist data
+
+
+  let copy_constructor ~desc this_hist src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc @@ fun () -> copy_dsl this_hist src_hist
+
+
+  let assign ~desc this_hist src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc @@ fun () -> copy_dsl this_hist src_hist @@> assign_ret this_hist
+
+
+  (** [std::basic_string::operator basic_string_view()] *)
+  let of_string ~desc string_hist this_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    BasicString.copy_constructor_dsl this_hist string_hist
+    @@> let* buffer =
+          load_access ~deref:false string_hist (FieldAccess ModeledField.internal_string)
+        in
+        store_data this_hist buffer
+
+
+  let data this_hist ~desc : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    let* data, data_hist = load_access this_hist (FieldAccess data_field) in
+    let* hist = add_model_call data_hist in
+    assign_ret (data, hist)
 end
 
 module Function = struct
@@ -1073,16 +1189,28 @@ let map_matchers =
       $--> BasicString.default_constructor ~desc:"std::basic_string::basic_string()"
     ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload
-      $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
+      $--> BasicStringView.of_string ~desc:"std::basic_string::operator_basic_string_view()"
     ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
       $--> BasicString.data ~desc:"std::basic_string::data()"
+    ; -"std" &:: "basic_string" &:: "c_str" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string::c_str()"
     ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload_of_prim_typ char_ptr_typ
-      $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
-    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload $+ capt_arg_payload
-      $--> BasicString.copy_constructor ~desc:"std::basic_string_view::basic_string_view()"
+      $--> BasicStringView.constructor_from_char_ptr
+             ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $+ capt_arg
+      $--> BasicStringView.constructor_from_char_ptr_and_size
+             ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "basic_string_view")
+      $--> BasicStringView.copy_constructor ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "operator=" <>$ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "basic_string_view")
+      $--> BasicStringView.assign ~desc:"std::basic_string_view::operator=()"
     ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
-      $--> BasicString.data ~desc:"std::basic_string_view::data()"
+      $--> BasicStringView.data ~desc:"std::basic_string_view::data()"
     ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
     ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
@@ -1091,6 +1219,10 @@ let map_matchers =
     ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
     ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
     ]
+    @ List.map Invalidation.all_std_string_functions ~f:(fun string_f ->
+        -"std" &:: "basic_string"
+        &:: Invalidation.std_string_method_name string_f
+        $ capt_arg $++$--> BasicString.mutator string_f |> with_non_disj )
   in
   let folly_matchers =
     List.concat_map

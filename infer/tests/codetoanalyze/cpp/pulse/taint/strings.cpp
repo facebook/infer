@@ -64,6 +64,22 @@ void memmove_bad() {
   __infer_taint_sink(copy);
 }
 
+void strcpy_c_str_of_copy_bad() {
+  char laundered_source[50];
+  auto source = __infer_taint_source();
+  std::string copy(source.begin(), source.end());
+  strcpy(laundered_source, copy.c_str());
+  __infer_taint_sink(laundered_source);
+}
+
+void strcpy_data_of_copy_bad() {
+  char laundered_source[50];
+  auto source = __infer_taint_source();
+  std::string copy(source.begin(), source.end());
+  strcpy(laundered_source, copy.data());
+  __infer_taint_sink(laundered_source);
+}
+
 void memchr_ok() {
   auto source = __infer_taint_source();
   auto laundered_source = (char*)memchr(source.c_str(), 'a', 10);

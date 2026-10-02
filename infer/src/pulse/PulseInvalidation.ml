@@ -43,6 +43,71 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::shrink_to_fit"
 
 
+type std_string_function =
+  | Append
+  | Assign
+  | Clear
+  | Erase
+  | Insert
+  | OperatorAssign
+  | OperatorPlusAssign
+  | PopBack
+  | PushBack
+  | Replace
+  | Reserve
+  | Resize
+  | ShrinkToFit
+[@@deriving compare, equal, yojson_of]
+
+let all_std_string_functions : std_string_function list =
+  [ Append
+  ; Assign
+  ; Clear
+  ; Erase
+  ; Insert
+  ; OperatorAssign
+  ; OperatorPlusAssign
+  ; PopBack
+  ; PushBack
+  ; Replace
+  ; Reserve
+  ; Resize
+  ; ShrinkToFit ]
+
+
+let std_string_method_name = function
+  | Append ->
+      "append"
+  | Assign ->
+      "assign"
+  | Clear ->
+      "clear"
+  | Erase ->
+      "erase"
+  | Insert ->
+      "insert"
+  | OperatorAssign ->
+      "operator="
+  | OperatorPlusAssign ->
+      "operator+="
+  | PopBack ->
+      "pop_back"
+  | PushBack ->
+      "push_back"
+  | Replace ->
+      "replace"
+  | Reserve ->
+      "reserve"
+  | Resize ->
+      "resize"
+  | ShrinkToFit ->
+      "shrink_to_fit"
+
+
+let pp_std_string_function f std_string_f =
+  F.fprintf f "std::basic_string::%s" (std_string_method_name std_string_f)
+
+
 type map_type = FollyF14Value | FollyF14Vector | FollyF14Fast
 [@@deriving compare, equal, yojson_of]
 
@@ -105,6 +170,7 @@ type t =
   | GoneOutOfScope of Pvar.t * Typ.t
   | OptionalEmpty
   | StdVector of std_vector_function
+  | StdString of std_string_function
   | CppMap of map_type * map_function
 [@@deriving compare, equal, yojson_of, variants]
 
@@ -166,7 +232,7 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.use_after_lifetime ~latent
   | OptionalEmpty ->
       IssueType.optional_empty_access ~latent
-  | StdVector _ ->
+  | StdVector _ | StdString _ ->
       IssueType.vector_invalidation ~latent
   | CppMap _ ->
       IssueType.pulse_reference_stability
@@ -201,6 +267,8 @@ let describe f cause =
       F.pp_print_string f "is assigned an empty value"
   | StdVector std_vector_f ->
       F.fprintf f "was potentially invalidated by `%a`" pp_std_vector_function std_vector_f
+  | StdString std_string_f ->
+      F.fprintf f "was potentially invalidated by `%a`" pp_std_string_function std_string_f
   | CppMap (map_t, map_f) ->
       F.fprintf f "was potentially invalidated by `%a::%a`" pp_map_type map_t pp_map_function map_f
 
@@ -233,5 +301,7 @@ let pp f invalidation =
       F.fprintf f "FClose(%a)" describe invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation
+  | StdString _ ->
+      F.fprintf f "StdString(%a)" describe invalidation
   | CppMap _ ->
       F.fprintf f "CppMap(%a)" describe invalidation
