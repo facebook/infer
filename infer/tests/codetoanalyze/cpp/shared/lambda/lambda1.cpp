@@ -143,3 +143,9 @@ int struct_init_capture_by_ref() {
   };
   return f();
 }
+
+int array_capture_by_value() {
+  int a[2] = {0, 1};
+  auto f = [a]() { return a[0] + a[1]; };
+  return f();
+}
