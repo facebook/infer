@@ -197,23 +197,91 @@ let is_java_container_read =
         L.die InternalError "is_java_container_read called with a non-Java procname.@\n"
 
 
-let is_cpp_container_read =
-  let is_container_operator pname_qualifiers =
-    QualifiedCppName.extract_last pname_qualifiers
-    |> Option.exists ~f:(fun (last, _) -> String.equal last "operator[]")
-  in
-  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::find"] in
-  fun pname ->
-    let pname_qualifiers = Procname.get_qualifiers pname in
-    QualifiedCppName.Match.match_qualifiers matcher pname_qualifiers
-    || is_container_operator pname_qualifiers
+(** Standard library classes whose member functions are modelled as accesses to the receiver. *)
+let cpp_containers =
+  [ "std::basic_string"
+  ; "std::deque"
+  ; "std::flat_map"
+  ; "std::flat_multimap"
+  ; "std::flat_multiset"
+  ; "std::flat_set"
+  ; "std::forward_list"
+  ; "std::list"
+  ; "std::map"
+  ; "std::multimap"
+  ; "std::multiset"
+  ; "std::priority_queue"
+  ; "std::queue"
+  ; "std::set"
+  ; "std::stack"
+  ; "std::unordered_map"
+  ; "std::unordered_multimap"
+  ; "std::unordered_multiset"
+  ; "std::unordered_set"
+  ; "std::vector" ]
 
 
-let is_cpp_container_write =
-  let matcher =
-    QualifiedCppName.Match.of_fuzzy_qual_names ["std::map::operator[]"; "std::map::erase"]
+(** Non-const member functions of [cpp_containers] that do not modify the container. The C++
+    standard library guarantees that calling them concurrently with each other or with const member
+    functions is not a data race, as for the non-const [begin], [find] and [at]. Also includes the
+    non-const accessors of [std::forward_list] and of the container adaptors. *)
+let cpp_container_non_mutating_methods =
+  [ "at"
+  ; "back"
+  ; "before_begin"
+  ; "begin"
+  ; "data"
+  ; "end"
+  ; "equal_range"
+  ; "find"
+  ; "front"
+  ; "lower_bound"
+  ; "rbegin"
+  ; "rend"
+  ; "top"
+  ; "upper_bound" ]
+
+
+type cpp_container_access = CppContainerRead | CppContainerWrite [@@deriving equal]
+
+(** Const member functions and [cpp_container_non_mutating_methods] of [cpp_containers] read the
+    container. Their other non-static member functions, except constructors and destructors, may
+    modify it, so calling them concurrently with any other member function is a data race. The
+    subscript operator of maps inserts missing keys, so it is a write. The subscript operator of any
+    other class is assumed to be a read. *)
+let get_cpp_container_access =
+  let container_matcher = QualifiedCppName.Match.of_fuzzy_qual_names cpp_containers in
+  let map_matcher =
+    QualifiedCppName.Match.of_fuzzy_qual_names ["std::flat_map"; "std::map"; "std::unordered_map"]
   in
-  fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
+  let is_subscript_operator method_name = String.equal method_name "operator[]" in
+  fun (pname : Procname.t) ->
+    match pname with
+    | ObjC_Cpp {kind= CPPMethod _; class_name; method_name}
+      when QualifiedCppName.Match.match_qualifiers container_matcher (Typ.Name.qual_name class_name)
+      ->
+        (* drop the template arguments of member templates such as heterogeneous [find] *)
+        let method_name =
+          String.lsplit2 method_name ~on:'<' |> Option.value_map ~f:fst ~default:method_name
+        in
+        if is_subscript_operator method_name then
+          if QualifiedCppName.Match.match_qualifiers map_matcher (Typ.Name.qual_name class_name)
+          then Some CppContainerWrite
+          else Some CppContainerRead
+        else if List.mem ~equal:String.equal cpp_container_non_mutating_methods method_name then
+          Some CppContainerRead
+        else
+          Attributes.load pname
+          |> Option.bind ~f:(fun {ProcAttributes.clang_method_kind; is_cpp_const_member_fun} ->
+              Option.some_if
+                (ClangMethodKind.equal clang_method_kind CPP_INSTANCE)
+                (if is_cpp_const_member_fun then CppContainerRead else CppContainerWrite) )
+    | _ ->
+        Option.some_if (is_subscript_operator (Procname.get_method pname)) CppContainerRead
+
+
+let is_cpp_container_access access pname =
+  Option.exists (get_cpp_container_access pname) ~f:(equal_cpp_container_access access)
 
 
 let is_container_write tenv pn =
@@ -223,7 +291,7 @@ let is_container_write tenv pn =
   | Java _ ->
       is_java_container_write tenv pn
   | ObjC_Cpp _ | C _ ->
-      is_cpp_container_write pn
+      is_cpp_container_access CppContainerWrite pn
   | _ ->
       false
 
@@ -234,11 +302,8 @@ let is_container_read tenv pn =
       is_csharp_container_read tenv pn []
   | Java _ ->
       is_java_container_read tenv pn
-  (* The following order matters: we want to check if pname is a container write
-     before we check if pname is a container read. This is due to a different
-     treatment between std::map::operator[] and all other operator[]. *)
   | ObjC_Cpp _ | C _ | Rust _ ->
-      (not (is_cpp_container_write pn)) && is_cpp_container_read pn
+      is_cpp_container_access CppContainerRead pn
   | Erlang _ | Hack _ | Block _ | Python _ | Swift _ ->
       false
 
