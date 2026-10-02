@@ -286,6 +286,13 @@ module ArrInfo = struct
 
   let get_size = function C {size} -> size | Java {length} -> length | Top -> Itv.top
 
+  let has_const_stride = function
+    | C {stride} ->
+        Option.is_some (Itv.get_const stride)
+    | Java _ | Top ->
+        false
+
+
   let offset_in_units n = function
     | C {offset; stride} ->
         in_units n ~stride offset
@@ -457,6 +464,11 @@ let prune_offset_le_size a = map ArrInfo.prune_offset_le_size a
 let set_length : Itv.t -> t -> t = fun length a -> map (ArrInfo.set_length length) a
 
 let set_stride : Z.t -> t -> t = fun stride a -> map (ArrInfo.set_stride stride) a
+
+let set_stride_if_known : Z.t -> t -> t =
+ fun stride a ->
+  map (fun info -> if ArrInfo.has_const_stride info then ArrInfo.set_stride stride info else info) a
+
 
 let set_offset : Itv.t -> t -> t = fun offset a -> map (ArrInfo.set_offset offset) a
 

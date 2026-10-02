@@ -996,6 +996,13 @@ module Call = struct
     {one_arg_matcher= one_arg_matcher_of_prim_typ typ; capture= capture_arg_exp}
 
 
+  let capt_arg_of_ptr_typ =
+    let match_arg _context arg =
+      match (FuncArg.typ arg).Typ.desc with Tptr (_, Pk_pointer) -> true | _ -> false
+    in
+    {one_arg_matcher= {match_arg}; capture= capture_arg}
+
+
   (* Function args end *)
 
   (** Matches if there is no function arguments left *)

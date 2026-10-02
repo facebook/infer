@@ -972,6 +972,157 @@ module StdBasicString = struct
   let length = StdVector.size
 end
 
+(** Models of [<algorithm>] functions whose iterators are raw pointers *)
+module StdAlgorithm = struct
+  (* A negative count accesses no element. *)
+  let eval_count integer_type_widths count_exp mem =
+    let v = Sem.eval integer_type_widths count_exp mem in
+    Dom.Val.of_itv ~traces:(Dom.Val.get_traces v)
+      (Itv.max_sem ~use_minmax_bound:true (Dom.Val.get_itv v) Itv.zero)
+
+
+  let eval_distance integer_type_widths ~first ~last mem =
+    eval_count integer_type_widths (Exp.BinOp (Binop.MinusPP, last, first)) mem
+
+
+  (* In SIL, both the address [&a[i]] of an element and the row [m[i]] of a two-dimensional array
+     are [Lindex (_, i)], but Inferbo stores the row as the value of [m[i]]. The elements of an
+     array of pointers also have arrays as values, so [Lindex] is an address when the iterator
+     points to pointers. *)
+  let eval_iterator_value integer_type_widths {exp; typ} mem =
+    match (exp, typ.Typ.desc) with
+    | Lindex _, Tptr ({Typ.desc= Tptr _}, _) ->
+        Sem.eval integer_type_widths exp mem
+    | _ ->
+        let arr = Sem.eval_arr integer_type_widths exp mem in
+        if ArrayBlk.is_bot (Dom.Val.get_array_blk arr) then Sem.eval integer_type_widths exp mem
+        else arr
+
+
+  (* Casts rescale arrays only to integer pointers, so arrays of known element size are recounted
+     here in elements of the type that the iterator points to, e.g. for a [float*] view of an array
+     of [double]. *)
+  let eval_iterator integer_type_widths ({typ} as iterator) mem =
+    let v = eval_iterator_value integer_type_widths iterator mem in
+    match typ.Typ.desc with
+    | Tptr (elt, _) ->
+        Option.value_map (StdVector.get_stride integer_type_widths elt) ~default:v ~f:(fun n ->
+            {v with arrayblk= ArrayBlk.set_stride_if_known (Z.of_int n) (Dom.Val.get_array_blk v)} )
+    | _ ->
+        v
+
+
+  (* Arrays whose offset or size is unknown, e.g. after a cast of an array of unknown element size,
+     are not checked. *)
+  let check_range {location; integer_type_widths} iterator ~count mem cond_set =
+    let arr = eval_iterator integer_type_widths iterator mem in
+    let arr =
+      let is_known info =
+        not
+          ( Itv.is_top (ArrayBlk.ArrInfo.get_offset info)
+          || Itv.is_top (ArrayBlk.ArrInfo.get_size info) )
+      in
+      {arr with arrayblk= ArrayBlk.filter (fun _ info -> is_known info) (Dom.Val.get_array_blk arr)}
+    in
+    let latest_prune = Dom.Mem.get_latest_prune mem in
+    BoUtils.Check.array_access ~arr ~idx:count ~is_plus:true ~last_included:true ~latest_prune
+      location cond_set
+
+
+  let has_scalar_elements {typ} =
+    match typ.Typ.desc with Tptr ({Typ.desc= Tint _ | Tfloat _ | Tptr _}, _) -> true | _ -> false
+
+
+  let update_contents integer_type_widths ~count iterator v mem =
+    let locs = Dom.Val.get_all_locs (eval_iterator integer_type_widths iterator mem) in
+    let count = Dom.Val.get_itv count in
+    if Itv.leq ~lhs:count ~rhs:Itv.zero then mem
+    else
+      let mem = BoUtils.Exec.forget_c_strlen locs mem in
+      match v with
+      | None ->
+          mem
+      | Some v when Itv.leq ~lhs:count ~rhs:Itv.pos ->
+          Dom.Mem.update_mem locs v mem
+      | Some v ->
+          (* weak update, as the range may be empty *)
+          Dom.Mem.transform_mem ~f:(Dom.Val.join v) locs mem
+
+
+  let fill_contents integer_type_widths ~count first_arg value_exp mem =
+    let v =
+      if has_scalar_elements first_arg then
+        Some (Dom.Mem.find_set (Sem.eval_locs value_exp mem) mem)
+      else None
+    in
+    update_contents integer_type_widths ~count first_arg v mem
+
+
+  let copy_contents integer_type_widths ~count first_arg out_arg mem =
+    let v =
+      if has_scalar_elements first_arg && has_scalar_elements out_arg then
+        let first_locs = Dom.Val.get_all_locs (eval_iterator integer_type_widths first_arg mem) in
+        Some (Dom.Mem.find_set first_locs mem)
+      else None
+    in
+    update_contents integer_type_widths ~count out_arg v mem
+
+
+  let return_advanced integer_type_widths ~ret_id iterator count mem =
+    let v = Dom.Val.plus_pi (eval_iterator integer_type_widths iterator mem) count in
+    model_by_value v ret_id mem
+
+
+  (** [std::fill(first, last, value)] *)
+  let fill ({exp= first} as first_arg) {exp= last} value_exp =
+    let exec {integer_type_widths} ~ret:_ mem =
+      let count = eval_distance integer_type_widths ~first ~last mem in
+      fill_contents integer_type_widths ~count first_arg value_exp mem
+    and check ({integer_type_widths} as model_env) mem cond_set =
+      let count = eval_distance integer_type_widths ~first ~last mem in
+      check_range model_env first_arg ~count mem cond_set
+    in
+    {exec; check}
+
+
+  (** [std::fill_n(first, count, value)] *)
+  let fill_n first_arg count_exp value_exp =
+    let exec {integer_type_widths} ~ret:(ret_id, _) mem =
+      let count = eval_count integer_type_widths count_exp mem in
+      return_advanced integer_type_widths ~ret_id first_arg count mem
+      |> fill_contents integer_type_widths ~count first_arg value_exp
+    and check ({integer_type_widths} as model_env) mem cond_set =
+      let count = eval_count integer_type_widths count_exp mem in
+      check_range model_env first_arg ~count mem cond_set
+    in
+    {exec; check}
+
+
+  let copy_range ~count_of first_arg out_arg =
+    let exec ({integer_type_widths} as model_env) ~ret:(ret_id, _) mem =
+      let count = count_of model_env mem in
+      return_advanced integer_type_widths ~ret_id out_arg count mem
+      |> copy_contents integer_type_widths ~count first_arg out_arg
+    and check model_env mem cond_set =
+      let count = count_of model_env mem in
+      check_range model_env first_arg ~count mem cond_set
+      |> check_range model_env out_arg ~count mem
+    in
+    {exec; check}
+
+
+  (** [std::copy(first, last, out)] and [std::move(first, last, out)] *)
+  let copy ({exp= first} as first_arg) {exp= last} out_arg =
+    copy_range first_arg out_arg ~count_of:(fun {integer_type_widths} mem ->
+        eval_distance integer_type_widths ~first ~last mem )
+
+
+  (** [std::copy_n(first, count, out)] *)
+  let copy_n first_arg count_exp out_arg =
+    copy_range first_arg out_arg ~count_of:(fun {integer_type_widths} mem ->
+        eval_count integer_type_widths count_exp mem )
+end
+
 (** Java's integers are modeled with an indirection to a memory location that holds the actual
     integer value *)
 module JavaInteger = struct
@@ -2182,6 +2333,15 @@ module Call = struct
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "length" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "basic_string" < capt_typ &+...>:: "size" $ capt_arg $--> StdBasicString.length
       ; -"std" &:: "shared_ptr" &:: "operator->" $ capt_exp $--> id
+      ; -"std" &:: "copy" $ capt_arg_of_ptr_typ $+ capt_arg_of_ptr_typ $+ capt_arg_of_ptr_typ
+        $--> StdAlgorithm.copy
+      ; -"std" &:: "copy_n" $ capt_arg_of_ptr_typ $+ capt_exp $+ capt_arg_of_ptr_typ
+        $--> StdAlgorithm.copy_n
+      ; -"std" &:: "fill" $ capt_arg_of_ptr_typ $+ capt_arg_of_ptr_typ $+ capt_exp
+        $--> StdAlgorithm.fill
+      ; -"std" &:: "fill_n" $ capt_arg_of_ptr_typ $+ capt_exp $+ capt_exp $--> StdAlgorithm.fill_n
+      ; -"std" &:: "move" $ capt_arg_of_ptr_typ $+ capt_arg_of_ptr_typ $+ capt_arg_of_ptr_typ
+        $--> StdAlgorithm.copy
         (*             Models for c++ iterators <begin>           *)
         (* C++11 -- macosx *)
       ; -"std" &::+ std_iterator_libcpp &::+ std_iterator_libcpp $ capt_exp $+ capt_exp
