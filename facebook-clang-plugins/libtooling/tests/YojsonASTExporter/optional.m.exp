@@ -2056,6 +2056,9 @@
         {
           "pointer" : 128,
           "desugared_type" : 118
+        },
+        {
+          "type_ptr" : 7
         }
       )>,
       <"ObjCObjectType" : (

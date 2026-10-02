@@ -22,6 +22,17 @@ val check_addr_access :
   -> t AccessResult.t
 (** Check that the [address] is not known to be invalid *)
 
+val check_non_null :
+     PathContext.t
+  -> Location.t
+  -> CallEvent.t
+  -> int
+  -> AbstractValue.t * ValueHistory.t
+  -> t
+  -> t AccessResult.t
+(** Check that the [address] passed to the parameter at the given 1-based position of the callee is
+    not known to be null *)
+
 module Closures : sig
   val check_captured_addresses :
     PathContext.t -> Location.t -> AbstractValue.t -> t -> t AccessResult.t

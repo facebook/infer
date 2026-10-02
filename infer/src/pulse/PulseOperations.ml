@@ -49,6 +49,25 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
       Ok astate
 
 
+let check_non_null path location callee position (address, history) astate =
+  let access_trace = Trace.Immediate {location; history} in
+  AddressAttributes.check_non_null path access_trace callee position address astate
+  |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
+      ReportableError
+        { diagnostic=
+            Diagnostic.AccessToInvalidAddress
+              { calling_context= []
+              ; invalid_address= Decompiler.find address astate
+              ; invalidation
+              ; invalidation_trace
+              ; access_trace
+              ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
+              ; must_be_valid_reason= Some (NullArgumentWhereNonNullExpected (callee, Some position))
+              }
+        ; astate } )
+  |> AccessResult.of_result path
+
+
 module Closures = struct
   let is_captured_by_ref_access (access : Access.t) =
     match access with

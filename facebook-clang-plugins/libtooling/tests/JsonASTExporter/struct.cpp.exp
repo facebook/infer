@@ -1527,6 +1527,9 @@
         {
           "pointer" : 33,
           "desugared_type" : 18
+        },
+        {
+          "type_ptr" : 18
         }
       ]],
       ["FunctionProtoType" , [
@@ -1683,6 +1686,9 @@
         {
           "pointer" : 36,
           "desugared_type" : 8
+        },
+        {
+          "type_ptr" : 8
         }
       ]],
       ["RecordType" , [

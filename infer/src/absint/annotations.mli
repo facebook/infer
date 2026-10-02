@@ -27,6 +27,10 @@ val null_unspecified : string
 
 val nonnull : string
 
+val nonnull_parameter : string
+(** a parameter of a C function or C++ method that must not be null because of a [nonnull] attribute
+    or of nullability written in a typedef, rather than of a [_Nonnull] type *)
+
 val performance_critical : string
 
 val prop : string

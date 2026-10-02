@@ -89,6 +89,12 @@ val get_cxx_base_classes : Clang_ast_t.decl -> Clang_ast_t.type_ptr list
 
 val get_cxx_virtual_base_classes : Clang_ast_t.decl -> Clang_ast_t.type_ptr list
 
+val is_nonnull_param : Clang_ast_t.decl -> index:int -> Clang_ast_t.decl -> bool
+(** whether the parameter [param] at zero-based position [index] of the C function or C++ method
+    [decl] must not be null: its type is [_Nonnull], also through typedefs, or it is not [_Nullable]
+    and the [nonnull] attribute of [decl] or of [param] covers it; the caller checks that the
+    parameter is a pointer, as clang ignores [nonnull] on other parameters *)
+
 val is_no_escape_block_arg : Clang_ast_t.decl -> bool
 
 val is_cpp_implicit_decl : Clang_ast_t.decl -> bool

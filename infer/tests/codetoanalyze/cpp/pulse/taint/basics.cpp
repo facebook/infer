@@ -136,7 +136,7 @@ void via_field_bad2(Obj* obj) {
 void via_field_ok1() {
   Obj* obj = new Obj();
   obj->field1 = *template_source<std::string>();
-  obj->field1 = nullptr;
+  obj->field1 = std::string();
   template_sink<std::string>(obj->field1);
   delete obj;
 }

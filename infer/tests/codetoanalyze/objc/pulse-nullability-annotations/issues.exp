@@ -1,0 +1,5 @@
+codetoanalyze/objc/pulse/null_deref/nonnull_annotation.m, null_to_c_function_nonnull_param_bad, 2, NULL_ARGUMENT, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/objc/pulse/null_deref/nonnull_annotation.m, null_to_c_function_nonnull_attribute_bad, 2, NULL_ARGUMENT, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/objc/pulse/null_deref/nonnull_annotation.m, nil_to_c_function_nonnull_object_bad, 2, NULL_ARGUMENT, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/objc/pulse/null_deref/nonnull_annotation.m, nil_to_c_function_nonnull_block_bad, 2, NULL_ARGUMENT, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/objc/pulse/null_deref/nonnull_annotation.m, NonnullCaller.nullToCFunctionNonnullParamInMethodBad, 2, NULL_ARGUMENT, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]

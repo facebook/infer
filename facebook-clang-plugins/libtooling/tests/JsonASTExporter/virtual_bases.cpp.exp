@@ -2031,6 +2031,9 @@
         {
           "pointer" : 28,
           "desugared_type" : 8
+        },
+        {
+          "type_ptr" : 8
         }
       ]],
       ["FunctionProtoType" , [
@@ -2075,6 +2078,9 @@
         {
           "pointer" : 61,
           "desugared_type" : 24
+        },
+        {
+          "type_ptr" : 24
         }
       ]],
       ["FunctionProtoType" , [
@@ -2319,6 +2325,9 @@
         {
           "pointer" : 59,
           "desugared_type" : 40
+        },
+        {
+          "type_ptr" : 40
         }
       ]],
       ["FunctionProtoType" , [
@@ -2351,6 +2360,9 @@
         {
           "pointer" : 164,
           "desugared_type" : 54
+        },
+        {
+          "type_ptr" : 54
         }
       ]],
       ["FunctionProtoType" , [

@@ -5975,6 +5975,9 @@
         {
           "pointer" : 206,
           "desugared_type" : 22
+        },
+        {
+          "type_ptr" : 22
         }
       ]],
       ["LValueReferenceType" , [
@@ -6229,6 +6232,9 @@
         {
           "pointer" : 76,
           "desugared_type" : 55
+        },
+        {
+          "type_ptr" : 55
         }
       ]],
       ["LValueReferenceType" , [
@@ -6453,6 +6459,9 @@
         {
           "pointer" : 114,
           "desugared_type" : 95
+        },
+        {
+          "type_ptr" : 95
         }
       ]],
       ["LValueReferenceType" , [

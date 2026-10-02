@@ -3774,6 +3774,9 @@
         {
           "pointer" : 39,
           "desugared_type" : 8
+        },
+        {
+          "type_ptr" : 8
         }
       )>,
       <"LValueReferenceType" : (
@@ -3920,6 +3923,9 @@
         {
           "pointer" : 43,
           "desugared_type" : 25
+        },
+        {
+          "type_ptr" : 25
         }
       )>,
       <"FunctionProtoType" : (
