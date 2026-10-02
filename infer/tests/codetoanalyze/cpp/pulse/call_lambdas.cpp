@@ -170,3 +170,34 @@ int named_closure_call_good_FP() {
   } else
     return 0;
 }
+
+struct CallLambda {
+  template <typename F>
+  int operator()(F lambda) {
+    return lambda(100);
+  }
+};
+
+int call_lambda_through_functor() {
+  int c = 42;
+  return CallLambda{}([c](int a) { return a + c; });
+}
+
+int call_lambda_through_functor_test_bad() {
+  if (call_lambda_through_functor() == 142) {
+    int* p = NULL;
+    return *p;
+  }
+}
+
+int call_lambda_through_functor_test_good() {
+  if (call_lambda_through_functor() == 143) {
+    int* p = NULL;
+    return *p;
+  }
+}
+
+int call_lambda_capturing_null_through_functor_bad() {
+  int* p = NULL;
+  return CallLambda{}([p](int a) { return a + *p; });
+}
