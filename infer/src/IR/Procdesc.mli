@@ -30,6 +30,7 @@ module Node : sig
     | DestrBreakStmt
     | DestrContinueStmt
     | DestrFields
+    | DestrGotoStmt
     | DestrReturnStmt
     | DestrScope
     | DestrTemporariesCleanup

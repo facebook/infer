@@ -135,12 +135,55 @@ void cleanup_reverse_order_ok() {
   __attribute__((cleanup(read_cleanup))) int** y = &x;
 }
 
-void FN_cleanup_goto_out_of_scope_bad(int b) {
+void cleanup_goto_out_of_scope_bad(int b) {
   {
     __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
     if (b) {
       free(x);
-      // the cleanup function is not called when goto leaves the scope
+      goto out;
+    }
+  }
+out:
+  return;
+}
+
+void cleanup_goto_within_scope_ok(int b) {
+  __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
+  if (b) {
+    goto out;
+  }
+  if (x != NULL) {
+    *x = 42;
+  }
+out:
+  return;
+}
+
+void cleanup_goto_backward_ok(int n) {
+again:
+  if (n > 0) {
+    __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
+    n--;
+    goto again;
+  }
+}
+
+void cleanup_goto_backward_past_declaration_bad(int n) {
+again:;
+  __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
+  if (n > 0) {
+    free(x);
+    n--;
+    goto again;
+  }
+}
+
+void cleanup_goto_after_reset_ok(int b) {
+  {
+    __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
+    if (b) {
+      free(x);
+      x = NULL;
       goto out;
     }
   }

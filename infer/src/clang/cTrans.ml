@@ -428,18 +428,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         mk_trans_result nondet empty_control
 
 
-  (* search the label into the hashtbl - create a fake node eventually *)
-  (* connect that node with this stmt *)
-  let gotoStmt_trans trans_state stmt_info label_name =
-    let sil_loc =
-      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
-        stmt_info
-    in
-    let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
-    mk_trans_result (mk_fresh_void_exp_typ ())
-      {empty_control with root_nodes= [root_node']; leaf_nodes= trans_state.succ_nodes}
-
-
   let get_builtin_pname_opt trans_unit_ctx qual_name decl_opt =
     let get_annotate_attr_arg decl =
       let open Clang_ast_t in
@@ -4630,6 +4618,29 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           "Break stmt without continuation: %a"
           (Pp.of_string ~f:Clang_ast_j.string_of_stmt_info)
           stmt_info
+
+
+  (* search the label into the hashtbl - create a fake node eventually *)
+  (* connect that node with this stmt, after destroying the variables that go out of scope *)
+  and gotoStmt_trans trans_state stmt_info label_name =
+    let sil_loc =
+      CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+        stmt_info
+    in
+    let label_node = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
+    let root_nodes =
+      match
+        inject_destructors Procdesc.Node.DestrGotoStmt
+          {trans_state with succ_nodes= [label_node]}
+          stmt_info
+      with
+      | Some {control= {root_nodes= _ :: _ as root_nodes}} ->
+          root_nodes
+      | Some {control= {root_nodes= []}} | None ->
+          [label_node]
+    in
+    mk_trans_result (mk_fresh_void_exp_typ ())
+      {empty_control with root_nodes; leaf_nodes= trans_state.succ_nodes}
 
 
   and continueStmt_trans trans_state stmt_info =

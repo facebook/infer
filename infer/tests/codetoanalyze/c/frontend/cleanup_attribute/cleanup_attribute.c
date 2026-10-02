@@ -42,3 +42,20 @@ int statement_expressions() {
     y;
   });
 }
+
+void gotos(int n) {
+  __attribute__((cleanup(cleanup_int))) int x = 0;
+again:;
+  __attribute__((cleanup(cleanup_int))) int y = 1;
+  {
+    __attribute__((cleanup(cleanup_int))) int z = 2;
+    if (n-- > 1) {
+      goto again;
+    }
+    if (n > 0) {
+      goto out;
+    }
+  }
+out:
+  return;
+}

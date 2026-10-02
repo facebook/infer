@@ -31,6 +31,7 @@ module Node = struct
     | DestrBreakStmt
     | DestrContinueStmt
     | DestrFields
+    | DestrGotoStmt
     | DestrReturnStmt
     | DestrScope
     | DestrTemporariesCleanup
@@ -44,6 +45,8 @@ module Node = struct
         "continue"
     | DestrFields ->
         "fields"
+    | DestrGotoStmt ->
+        "goto"
     | DestrReturnStmt ->
         "return"
     | DestrScope ->
