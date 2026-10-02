@@ -464,6 +464,170 @@ module Function = struct
             astate
 end
 
+module ConditionVariable = struct
+  let is_this_captured_by_ref (access : Access.t) =
+    match access with
+    | FieldAccess fieldname ->
+        Fieldname.is_capture_field_in_closure_by_ref fieldname
+        && String.equal (Fieldname.get_field_name fieldname) (Mangled.to_string Mangled.this)
+    | _ ->
+        false
+
+
+  (** While [wait] has released the lock, other threads can change anything that the predicate can
+      reach. Each field of the predicate's closure (or of the function object) is a cell that holds
+      a captured value: we havoc what the captured values point to but keep the cells, which belong
+      to the predicate. A captured object stays allocated, as the predicate still reads it, unless a
+      captured object points to it, directly or not: that object may own it, and the havoc drops the
+      reference. [this] is captured by reference, as the address of the [this] variable, which
+      cannot be re-bound: we start from the object it points to and keep the variable. *)
+  let havoc_predicate_state ~desc hist pred astate =
+    let closure = Memory.find_edge_opt pred Dereference astate |> Option.map ~f:fst in
+    let kept, roots =
+      List.fold (pred :: Option.to_list closure) ~init:(AbstractValue.Set.empty, [])
+        ~f:(fun acc obj ->
+          Memory.fold_edges obj astate ~init:acc
+            ~f:(fun ((kept, roots) as acc) (access, (cell, _)) ->
+              match (access, Memory.find_edge_opt cell Dereference astate) with
+              | FieldAccess _, Some (this_var, _) when is_this_captured_by_ref access ->
+                  let roots =
+                    Memory.find_edge_opt this_var Dereference astate
+                    |> Option.fold ~init:roots ~f:(fun roots (this, _) -> this :: roots)
+                  in
+                  (AbstractValue.Set.add cell kept |> AbstractValue.Set.add this_var, roots)
+              | FieldAccess _, Some (captured, _) ->
+                  (AbstractValue.Set.add cell kept, captured :: roots)
+              | _ ->
+                  acc ) )
+    in
+    let havoc_filter addr _ _ = not (AbstractValue.Set.mem addr kept) in
+    let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
+    let owned =
+      let successors =
+        List.concat_map roots ~f:(fun root ->
+            Memory.fold_edges root astate ~init:[] ~f:(fun succs (_, (succ, _)) -> succ :: succs) )
+      in
+      AbductiveDomain.reachable_addresses_from (Stdlib.List.to_seq successors) astate `Post
+    in
+    let allocations =
+      List.filter_map roots ~f:(fun root ->
+          if AbstractValue.Set.mem root owned then None
+          else
+            AddressAttributes.get_allocation_attr root astate
+            |> Option.map ~f:(fun (allocator, trace) ->
+                (root, Attribute.Allocated (allocator, trace)) ) )
+    in
+    let astate =
+      List.fold roots ~init:astate ~f:(fun astate root ->
+          AbductiveDomain.apply_unknown_effect ~havoc_filter hist root astate
+          |> AddressAttributes.add_one root unknown_effect )
+    in
+    List.fold allocations ~init:astate ~f:(fun astate (root, allocated) ->
+        AddressAttributes.add_one root allocated astate )
+
+
+  (** [operator()] of the predicate: closures (and [std::function]s holding one) are resolved from
+      their dynamic type, other function objects from their static type *)
+  let resolve_call_operator tenv pred (typ : Typ.t) astate =
+    let open IOption.Let_syntax in
+    let dynamic_type =
+      let* closure, _ = Memory.find_edge_opt pred Dereference astate in
+      PulseArithmetic.get_dynamic_type closure astate
+    in
+    let* class_name =
+      match (dynamic_type, typ.desc) with
+      | Some {typ= {desc= Tstruct name}}, _ | None, (Tstruct name | Tptr ({desc= Tstruct name}, _))
+        ->
+          Some name
+      | _ ->
+          None
+    in
+    let* {Struct.methods} = Tenv.lookup tenv class_name in
+    List.find_map methods ~f:(fun {Struct.name} ->
+        Option.some_if (String.equal (Procname.get_method name) "operator()") name )
+
+
+  (** the results of [pred()], or [None] if we do not know what [pred] does *)
+  let call_predicate {FuncArg.arg_payload= pred; typ}
+      ({analysis_data= {tenv} as analysis_data; path; location; ret} : model_data) astate non_disj =
+    let open IOption.Let_syntax in
+    let* callee = resolve_call_operator tenv (fst pred) typ astate in
+    match
+      PulseCallOperations.call analysis_data path location callee ~ret
+        ~actuals:[(pred, typ)]
+        ~formals_opt:None ResolvedCall CallFlags.default astate non_disj
+    with
+    | (_ :: _ as results), non_disj, _, `KnownCall ->
+        Some (results, non_disj)
+    | _ ->
+        (* the callee is unknown or none of its specs applies *)
+        None
+
+
+  (** split the results of [pred()] into the states where it returned true and those where it
+      returned false; results that do not continue the program are returned as they are *)
+  let split_on_predicate ret_id results =
+    List.fold results ~init:([], [], []) ~f:(fun (holds, fails, stopped) result ->
+        let split astate errors =
+          let astate, (pred_value, _) = PulseOperations.eval_ident ret_id astate in
+          let prune f =
+            f pred_value astate |> SatUnsat.to_list
+            |> List.map ~f:(PulseResult.append_errors errors)
+          in
+          ( prune PulseArithmetic.prune_ne_zero @ holds
+          , prune PulseArithmetic.prune_eq_zero @ fails
+          , stopped )
+        in
+        match (result : ExecutionDomain.t AccessResult.t) with
+        | Ok (ContinueProgram astate) ->
+            split astate []
+        | Recoverable (ContinueProgram astate, errors) ->
+            split astate errors
+        | _ ->
+            (holds, fails, result :: stopped) )
+
+
+  (** [wait(lock, pred)] is [while (!pred()) wait(lock);]. We unroll the loop once: where [pred()]
+      is false, other threads may change what it reads while the lock is released, so we havoc that
+      state and assume that [pred()] holds afterwards. The other overloads return the last value of
+      [pred()] instead, as they can stop waiting (on timeout or stop request) at any point. *)
+  let wait_with_predicate ~desc ~returns_pred_value lock pred : model =
+   fun ({path; location; ret= ret_id, _} as model_data) astate non_disj ->
+    let hist = Hist.single_call path location desc in
+    (* releasing and re-acquiring the lock writes to it, even though its state does not change *)
+    let astate =
+      AddressAttributes.add_one (fst lock)
+        (WrittenTo (path.PathContext.timestamp, Trace.Immediate {location; history= hist}))
+        astate
+    in
+    let continue = List.map ~f:Basic.map_continue in
+    let wake_up astate non_disj =
+      let astate = havoc_predicate_state ~desc hist (fst pred.FuncArg.arg_payload) astate in
+      let unknown_result = Ok (ContinueProgram (PulseOperations.havoc_id ret_id hist astate)) in
+      match call_predicate pred model_data astate non_disj with
+      | None ->
+          ([unknown_result], non_disj)
+      | Some (results, non_disj) ->
+          let holds, fails, stopped = split_on_predicate ret_id results in
+          if List.is_empty holds then
+            (* [pred()] only depends on state that we do not havoc, e.g. globals *)
+            (unknown_result :: stopped, non_disj)
+          else if returns_pred_value then (continue holds @ continue fails @ stopped, non_disj)
+          else (continue holds @ stopped, non_disj)
+    in
+    match call_predicate pred model_data astate non_disj with
+    | None ->
+        wake_up astate non_disj
+    | Some (results, non_disj) ->
+        let holds, fails, stopped = split_on_predicate ret_id results in
+        let woken_up, non_disj =
+          NonDisjDomain.bind (fails, non_disj) ~f:(fun fail non_disj ->
+              bind_sat_result non_disj (Sat fail) (fun astate -> wake_up astate non_disj) )
+        in
+        let gave_up = if returns_pred_value then continue fails else [] in
+        (continue holds @ gave_up @ woken_up @ stopped, non_disj)
+end
+
 module Std = struct
   let make_move_iterator vector : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
@@ -1143,6 +1307,32 @@ let thrift_matchers =
         $--> Thrift.field_ref_arrow ~name:field_ref ] )
 
 
+let condition_variable_matchers =
+  let open ProcnameDispatcher.Call in
+  let wait cv meth ~returns_pred_value =
+    ConditionVariable.wait_with_predicate ~returns_pred_value
+      ~desc:(Printf.sprintf "std::%s::%s()" cv meth)
+  in
+  let any = "condition_variable_any" in
+  let stop_token_matchers =
+    [ -"std" &:: any &:: "wait" $ any_arg $+ capt_arg_payload $+ any_arg $+ capt_arg
+      $--> wait any "wait" ~returns_pred_value:true
+    ; -"std" &:: any &:: "wait_for" $ any_arg $+ capt_arg_payload $+ any_arg $+ any_arg $+ capt_arg
+      $--> wait any "wait_for" ~returns_pred_value:true
+    ; -"std" &:: any &:: "wait_until" $ any_arg $+ capt_arg_payload $+ any_arg $+ any_arg
+      $+ capt_arg
+      $--> wait any "wait_until" ~returns_pred_value:true ]
+  in
+  List.concat_map ["condition_variable"; any] ~f:(fun cv ->
+      [ -"std" &:: cv &:: "wait" $ any_arg $+ capt_arg_payload $+ capt_arg
+        $--> wait cv "wait" ~returns_pred_value:false
+      ; -"std" &:: cv &:: "wait_for" $ any_arg $+ capt_arg_payload $+ any_arg $+ capt_arg
+        $--> wait cv "wait_for" ~returns_pred_value:true
+      ; -"std" &:: cv &:: "wait_until" $ any_arg $+ capt_arg_payload $+ any_arg $+ capt_arg
+        $--> wait cv "wait_until" ~returns_pred_value:true ] )
+  @ stop_token_matchers
+
+
 (* A FATAL [android::base::LogMessage]'s destructor aborts via a function-pointer
    aborter Pulse can't follow, so model the FATAL construction as non-returning to
    prune the failing branch of [CHECK(x)]. [FATAL] is the last [LogSeverity]
@@ -1162,7 +1352,7 @@ let simple_matchers =
         let s = Procname.to_string proc_name in
         Str.string_match r s 0 )
   in
-  map_matchers @ thrift_matchers
+  map_matchers @ thrift_matchers @ condition_variable_matchers
   @ [ -"android" &:: "base" &:: "LogMessage" &:: "LogMessage" $ any_arg $+ any_arg $+ any_arg
       $+ capt_arg_payload $+...$--> log_message_fatal
     ; +BuiltinDecl.(match_builtin __builtin_add_overflow)
