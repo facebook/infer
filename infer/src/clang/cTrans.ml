@@ -783,7 +783,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     let context = trans_state.context in
     let[@warning "-partial-match"] [stmt] = stmt_list in
-    let res_trans = instruction trans_state stmt in
+    let res_trans = sub_statement_trans Procdesc.Node.CompoundStmt trans_state stmt in
     (* create the label root node into the hashtbl *)
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
@@ -2171,6 +2171,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (last_or_mk_fresh_void_exp_typ returns) compound_control
 
 
+  (** Translate a sub-statement whose parent only links its root nodes, e.g. a branch of an [if]:
+      like a statement of a compound statement, the instructions it leaves pending get a node of
+      their own, and when it has no node it continues to [trans_state.succ_nodes]. *)
+  and sub_statement_trans node_name trans_state stmt =
+    let res_trans = exec_with_node_creation node_name ~f:instruction trans_state stmt in
+    if List.is_empty res_trans.control.root_nodes then
+      {res_trans with control= {res_trans.control with root_nodes= trans_state.succ_nodes}}
+    else res_trans
+
+
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
@@ -2467,14 +2477,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let do_branch branch stmt_branch prune_nodes trans_state =
       (* leaf nodes are ignored here as they will be already attached to join_node *)
-      let res_trans_b = instruction trans_state stmt_branch in
       let nodes_branch =
-        match res_trans_b.control.root_nodes with
-        | [] ->
-            [ Procdesc.create_node context.procdesc sil_loc (Stmt_node IfStmtBranch)
-                res_trans_b.control.instrs ]
-        | _ ->
-            res_trans_b.control.root_nodes
+        (sub_statement_trans Procdesc.Node.IfStmtBranch trans_state stmt_branch).control.root_nodes
       in
       let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
@@ -2537,7 +2541,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           assert false
     in
     L.debug Capture Verbose "translating a caseStmt@\n" ;
-    let body_trans_result = exec_with_node_creation CaseStmt ~f:instruction trans_state body in
+    let body_trans_result = sub_statement_trans Procdesc.Node.CaseStmt trans_state body in
     L.debug Capture Verbose "result of translating a caseStmt: %a@\n" pp_control
       body_trans_result.control ;
     SwitchCase.add
@@ -2547,7 +2551,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and defaultStmt_trans trans_state stmt_info default_stmt_list =
     let[@warning "-partial-match"] [body] = default_stmt_list in
-    let body_trans_result = instruction trans_state body in
+    let body_trans_result = sub_statement_trans Procdesc.Node.CaseStmt trans_state body in
     (let open SwitchCase in
      add {condition= Default; stmt_info; root_nodes= body_trans_result.control.root_nodes} ) ;
     body_trans_result
@@ -2813,7 +2817,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_body =
         {trans_state with succ_nodes= body_succ_nodes; continuation= Some body_continuation}
       in
-      exec_with_node_creation LoopBody ~f:instruction trans_state_body (Loops.get_body loop_kind)
+      sub_statement_trans Procdesc.Node.LoopBody trans_state_body (Loops.get_body loop_kind)
     in
     let join_succ_nodes =
       match loop_kind with
