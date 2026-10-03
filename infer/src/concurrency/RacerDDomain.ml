@@ -233,6 +233,11 @@ module LockDomain = struct
 
   let has_released = function NonBottom {Counts.released} -> released > 0 | Bottom -> false
 
+  let releases_more ~before ~after =
+    let released = function NonBottom {Counts.released} -> released | Bottom -> 0 in
+    released after > released before
+
+
   (* [released] only matters when no lock is held, so normalise the state recorded at an access to
      keep the number of distinct accesses low *)
   let for_access astate =
@@ -285,17 +290,21 @@ module ThreadsDomain = struct
 
   let is_any = function AnyThread -> true | _ -> false
 
-  let integrate_summary ~caller_astate ~callee_astate =
-    (* if we know the callee runs on the main thread, assume the caller does too. otherwise, keep
-       the caller's thread context *)
+  let update_for_lock_use = function AnyThreadButSelf -> AnyThreadButSelf | _ -> AnyThread
+
+  let integrate_summary callee_pname ~caller_astate ~callee_astate =
     match callee_astate with
     | AnyThreadButSelf ->
+        (* if we know the callee runs on the main thread, assume the caller does too *)
         callee_astate
+    | AnyThread when not (Procname.is_java callee_pname || Procname.is_csharp callee_pname) ->
+        (* outside Java and C#, the callee typically uses locks, which is evidence of concurrency
+           for the caller too. Not done for Java and C#, where reports of unprotected writes would
+           become too noisy. *)
+        update_for_lock_use caller_astate
     | _ ->
+        (* otherwise, keep the caller's thread context *)
         caller_astate
-
-
-  let update_for_lock_use = function AnyThreadButSelf -> AnyThreadButSelf | _ -> AnyThread
 end
 
 module OwnershipAbstractValue = struct
@@ -417,7 +426,7 @@ module AccessSnapshot = struct
                   {elem with access= Access.map ~f:(fun _ -> new_exp) elem.access} ) ) )
 
 
-  let update_callee_access threads locks actuals_ownership (snapshot : t) =
+  let update_callee_access callee_pname threads locks actuals_ownership (snapshot : t) =
     let update_ownership_precondition actual_index (acc : OwnershipAbstractValue.t) =
       if actual_index >= Array.length actuals_ownership then
         (* vararg methods can result into missing actuals so simply ignore *)
@@ -433,7 +442,8 @@ module AccessSnapshot = struct
           snapshot.elem.ownership_precondition
     in
     let thread =
-      ThreadsDomain.integrate_summary ~callee_astate:snapshot.elem.thread ~caller_astate:threads
+      ThreadsDomain.integrate_summary callee_pname ~callee_astate:snapshot.elem.thread
+        ~caller_astate:threads
     in
     let lock =
       LockDomain.integrate_summary ~caller_astate:locks ~callee_astate:snapshot.elem.lock
@@ -445,7 +455,8 @@ module AccessSnapshot = struct
   let integrate_summary ~caller_formals ~callee_formals callsite threads locks actuals_array
       actuals_ownership snapshot =
     subst_actuals_into_formals callee_formals actuals_array snapshot
-    |> Option.map ~f:(update_callee_access threads locks actuals_ownership)
+    |> Option.map
+         ~f:(update_callee_access (CallSite.pname callsite) threads locks actuals_ownership)
     |> Option.map ~f:(fun snapshot -> with_callsite snapshot callsite)
     |> Option.bind ~f:(filter caller_formals)
 
@@ -520,7 +531,8 @@ module OwnershipDomain = struct
 end
 
 module Attribute = struct
-  type t = Nothing | Functional | OnMainThread | LockHeld | Synchronized [@@deriving equal]
+  type t = Nothing | Functional | OnMainThread | LockHeld | GuardLockHeld | Synchronized
+  [@@deriving equal]
 
   let pp fmt t =
     ( match t with
@@ -532,6 +544,8 @@ module Attribute = struct
           "OnMainThread"
       | LockHeld ->
           "LockHeld"
+      | GuardLockHeld ->
+          "GuardLockHeld"
       | Synchronized ->
           "Synchronized" )
     |> F.pp_print_string fmt
@@ -559,6 +573,23 @@ module AttributeMapDomain = struct
 
   let is_synchronized t access_expression =
     match find_opt access_expression t with Some Synchronized -> true | _ -> false
+
+
+  (* The lock of a [LockHeld] value is not counted as held before the value is tested, so the count
+     stays right whichever lock a release of a counted lock releases: the value only becomes stale
+     when a lock that is not counted is released. The lock of a [GuardLockHeld] value may be counted
+     already, e.g. the lock of a [std::unique_lock] queried with [owns_lock()]. *)
+  let forget_lock_held ~only_guards t =
+    filter
+      (fun _ (attribute : Attribute.t) ->
+        match attribute with
+        | GuardLockHeld ->
+            false
+        | LockHeld ->
+            only_guards
+        | Nothing | Functional | OnMainThread | Synchronized ->
+            true )
+      t
 
 
   let rec attribute_of_expr attribute_map (e : HilExp.t) =
@@ -788,10 +819,16 @@ let integrate_summary formals ~callee_proc_attrs summary ret_access_exp callee_p
       OwnershipDomain.propagate_return ret_access_exp return_ownership actuals astate.ownership
     in
     let attribute_map =
-      AttributeMapDomain.add ret_access_exp return_attribute astate.attribute_map
+      if LockDomain.has_released summary.locks then
+        AttributeMapDomain.forget_lock_held
+          ~only_guards:(not (LockDomain.releases_more ~before:astate.locks ~after:locks))
+          astate.attribute_map
+      else astate.attribute_map
     in
+    let attribute_map = AttributeMapDomain.add ret_access_exp return_attribute attribute_map in
     let threads =
-      ThreadsDomain.integrate_summary ~caller_astate:astate.threads ~callee_astate:threads
+      ThreadsDomain.integrate_summary callee_pname ~caller_astate:astate.threads
+        ~callee_astate:threads
     in
     {astate with locks; never_returns; threads; ownership; attribute_map}
 
@@ -803,14 +840,20 @@ let acquire_lock (astate : t) =
 
 
 let release_lock ~only_acquired (astate : t) =
-  { astate with
-    locks=
-      ( if only_acquired then LockDomain.release_acquired_lock astate.locks
-        else LockDomain.release_lock astate.locks )
-  ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+  let locks =
+    if only_acquired then LockDomain.release_acquired_lock astate.locks
+    else LockDomain.release_lock astate.locks
+  in
+  let attribute_map =
+    AttributeMapDomain.forget_lock_held
+      ~only_guards:(not (LockDomain.releases_more ~before:astate.locks ~after:locks))
+      astate.attribute_map
+  in
+  {astate with locks; threads= ThreadsDomain.update_for_lock_use astate.threads; attribute_map}
 
 
-let lock_if_true ret_access_exp (astate : t) =
+let lock_if_true ~guard ret_access_exp (astate : t) =
+  let attribute = if guard then Attribute.GuardLockHeld else Attribute.LockHeld in
   { astate with
-    attribute_map= AttributeMapDomain.add ret_access_exp Attribute.LockHeld astate.attribute_map
+    attribute_map= AttributeMapDomain.add ret_access_exp attribute astate.attribute_map
   ; threads= ThreadsDomain.update_for_lock_use astate.threads }

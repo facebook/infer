@@ -127,7 +127,8 @@ module Attribute : sig
     | Nothing
     | Functional  (** holds a value returned from a callee marked [@Functional] *)
     | OnMainThread  (** boolean is true if the current procedure is running on the main thread *)
-    | LockHeld  (** boolean is true if a lock is currently held *)
+    | LockHeld  (** boolean is true if a lock, not counted as held until then, is currently held *)
+    | GuardLockHeld  (** boolean is true if the lock of a guard is currently held *)
     | Synchronized  (** the object is a synchronized data structure *)
 end
 
@@ -214,6 +215,6 @@ val release_lock : only_acquired:bool -> t -> t
 (** with [~only_acquired:true], only release a lock acquired since entry (see
     [LockDomain.release_acquired_lock]) *)
 
-val lock_if_true : HilExp.access_expression -> t -> t
+val lock_if_true : guard:bool -> HilExp.access_expression -> t -> t
 
 val branch_never_returns : unit -> t
