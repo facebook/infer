@@ -327,6 +327,26 @@ public class NullPointerExceptions {
     boolean b = getBool() != null && getBool();
   }
 
+  interface Flag {
+    boolean isOn();
+  }
+
+  static native Flag getFlag();
+
+  static boolean isFlagOn() {
+    return getFlag().isOn();
+  }
+
+  void derefAfterSameFlagCheckedTwiceShouldNotCauseNPE() {
+    Object o = null;
+    if (isFlagOn()) {
+      o = new Object();
+    }
+    if (isFlagOn()) {
+      o.toString();
+    }
+  }
+
   static void derefNonThisGetterAfterCheckShouldNotCauseNPE() {
     NullPointerExceptions c = new NullPointerExceptions();
     if (c.getObj() != null) {
