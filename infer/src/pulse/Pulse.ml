@@ -1264,43 +1264,168 @@ module PulseTransferFunctions = struct
               ~branch_location:loc ~location:loc trace acc ) )
 
 
-  let set_global_astates limit path ({InterproceduralAnalysis.proc_desc} as analysis_data) exp typ
-      loc astate non_disj =
+  let max_inlined_global_constant_cells = 64
+
+  (** whether values of type [typ] are made of at most [max_inlined_global_constant_cells] scalars
+      and pointers *)
+  let is_small_enough_to_inline tenv typ =
+    (* the number of cells left in [budget] after counting those of [typ], if any *)
+    let rec remaining_cells budget (typ : Typ.t) =
+      let open IOption.Let_syntax in
+      match typ.desc with
+      | Tint _ | Tfloat _ | Tptr _ | Tfun _ ->
+          Option.some_if (budget > 0) (budget - 1)
+      | Tstruct name -> (
+        match Tenv.lookup tenv name with
+        | None ->
+            None
+        | Some {fields} ->
+            List.fold_until fields ~init:budget ~finish:Option.some
+              ~f:(fun budget ({typ} : Struct.field) ->
+                match remaining_cells budget typ with
+                | Some budget ->
+                    Continue budget
+                | None ->
+                    Stop None ) )
+      | Tarray {elt; length= Some length} ->
+          let* length = IntLit.to_int length in
+          if length <= 0 then Some budget
+          else
+            let* remaining = remaining_cells budget elt in
+            let elt_cells = budget - remaining in
+            if Int.equal elt_cells 0 then Some budget
+            else Option.some_if (length <= budget / elt_cells) (budget - (length * elt_cells))
+      | Tarray {length= None} | Tvoid | TVar _ ->
+          None
+    in
+    Option.is_some (remaining_cells max_inlined_global_constant_cells typ)
+
+
+  let set_global_astates ?(access = `Use) limit path
+      ({InterproceduralAnalysis.proc_desc; tenv; analyze_dependency} as analysis_data) exp typ loc
+      astate non_disj =
+    (* volatile and weak constants may have values other than the one given by their initializer *)
     let is_global_constant pvar =
-      Pvar.(is_global pvar && (is_const pvar || is_compile_constant pvar))
+      Pvar.(
+        is_global pvar
+        && (is_const pvar || is_compile_constant pvar)
+        && (not (is_volatile pvar))
+        && not (is_weak pvar) )
     in
     let is_global_func_pointer pvar =
       Pvar.is_global pvar && Typ.is_pointer_to_function typ
       && Config.pulse_inline_global_init_func_pointer
     in
-    match (exp : Exp.t) with
-    | Lvar pvar when is_global_constant pvar || is_global_func_pointer pvar -> (
-      (* Inline initializers of global constants or globals function pointers when they are being used.
-         This addresses nullptr false positives by pruning infeasable paths global_var != global_constant_value,
-         where global_constant_value is the value of global_var *)
-      (* TODO: Initial global constants only once *)
+    (* Inline the initializer of a global constant when it is read, when one of its fields is
+       accessed, or when its address is taken, and of a global function pointer when it is used,
+       once per path. This addresses nullptr false positives by pruning infeasible paths
+       global_var != global_constant_value, where global_constant_value is the value of global_var,
+       and resolves calls through function pointers stored in global constants. Array elements are
+       not followed to avoid copying whole constant tables into the state when accessing one
+       element, and for the same reason storing the address of a constant array does not inline its
+       initializer. Storing the address of a constant in a global initializer does not inline its
+       initializer either, otherwise the initializers of constants that point to each other would
+       each inline all the constants reachable from them. *)
+    let rec get_global_constant ~typ (exp : Exp.t) =
+      match exp with
+      | Lvar pvar when is_global_constant pvar ->
+          Some (pvar, typ)
+      | Lfield ({exp}, _, struct_typ) ->
+          get_global_constant ~typ:(Some struct_typ) exp
+      | Cast (_, exp) ->
+          get_global_constant ~typ:None exp
+      | _ ->
+          None
+    in
+    let proc_name = Procdesc.get_proc_name proc_desc in
+    let is_skipped_stored_address pvar =
+      match access with
+      | `AddressStored ->
+          Pvar.is_constant_array pvar
+          || Option.is_some (Procname.get_global_name_of_initializer proc_name)
+      | `Use | `Written ->
+          false
+    in
+    (* the cells written by an initializer are copied into the summaries of all the callers: only
+       inline small constants when their fields are accessed, when they are written to, or when
+       their address is stored *)
+    let is_too_big_to_inline global_typ =
+      let is_accessed_as_a_whole =
+        match (access, exp) with `Use, Exp.Lvar _ -> true | _ -> false
+      in
+      (not is_accessed_as_a_whole)
+      && not (Option.exists global_typ ~f:(is_small_enough_to_inline tenv))
+    in
+    let global_opt =
+      match (exp : Exp.t) with
+      | Lvar pvar when is_global_func_pointer pvar ->
+          Some pvar
+      | _ ->
+          let typ =
+            match (access, typ.Typ.desc) with
+            | `AddressStored, Tptr (pointee, _) ->
+                Some pointee
+            | `AddressStored, _ ->
+                None
+            | (`Use | `Written), _ ->
+                Some typ
+          in
+          get_global_constant ~typ exp
+          |> Option.filter ~f:(fun (pvar, global_typ) ->
+              (not (is_skipped_stored_address pvar)) && not (is_too_big_to_inline global_typ) )
+          |> Option.map ~f:fst
+    in
+    (* an initializer that reads non-constant globals may compute another value here than at
+       start-up *)
+    let initializer_reads_non_constant_globals pvar init_pname =
+      is_global_constant pvar
+      &&
+      match analyze_dependency init_pname with
+      | Ok {PulseSummary.main= {pre_post_list}} ->
+          List.exists pre_post_list ~f:(function
+            | ContinueProgram summary ->
+                AbductiveDomain.Summary.reads_global summary ~f:(fun global ->
+                    Pvar.is_global global
+                    && (not (Pvar.equal global pvar))
+                    && not (is_global_constant global) )
+            | _ ->
+                false )
+      | Error _ ->
+          false
+    in
+    match global_opt with
+    | Some pvar -> (
       match Pvar.get_initializer_pname pvar with
-      | Some init_pname when not (Procname.equal (Procdesc.get_proc_name proc_desc) init_pname) ->
-          L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
-          let call_flags = CallFlags.default in
-          let ret_id_void = (Ident.create_fresh Ident.knormal, StdTyp.void) in
-          let no_error_states, non_disj =
-            dispatch_call limit analysis_data path ret_id_void (Const (Cfun init_pname)) [] loc
-              call_flags astate non_disj
-          in
-          let no_error_states =
-            List.filter_map no_error_states ~f:(function
-              | Ok (ContinueProgram astate) ->
-                  Some astate
-              | _ ->
-                  (* ignore errors in global initializers *)
-                  None )
-          in
-          let astates = if List.is_empty no_error_states then [astate] else no_error_states in
-          (astates, non_disj)
+      | Some init_pname when not (Procname.equal proc_name init_pname) ->
+          let astate, (global_addr, _) = PulseOperations.eval_var path loc pvar astate in
+          if
+            AddressAttributes.is_global_initializer_called global_addr astate
+            (* unknown code may have written to the constant after casting its constness away *)
+            && not (AddressAttributes.has_unknown_effect global_addr astate)
+            || initializer_reads_non_constant_globals pvar init_pname
+          then ([astate], non_disj)
+          else (
+            L.d_printfln_escaped "Found initializer for %a" (Pvar.pp Pp.text) pvar ;
+            let call_flags = CallFlags.default in
+            (* a primed identifier cannot clash with the identifiers of the current procedure *)
+            let ret_id = Ident.create_fresh Ident.kprimed in
+            let no_error_states, non_disj =
+              dispatch_call limit analysis_data path (ret_id, StdTyp.void) (Const (Cfun init_pname))
+                [] loc call_flags astate non_disj
+            in
+            let no_error_states =
+              List.filter_map no_error_states ~f:(function
+                | Ok (ContinueProgram astate) ->
+                    Some (Stack.remove_vars [Var.of_id ret_id] astate)
+                | _ ->
+                    (* ignore errors in global initializers *)
+                    None )
+            in
+            let astates = if List.is_empty no_error_states then [astate] else no_error_states in
+            (astates, non_disj) )
       | _ ->
           ([astate], non_disj) )
-    | _ ->
+    | None ->
         ([astate], non_disj)
 
 
@@ -1416,7 +1541,15 @@ module PulseTransferFunctions = struct
             |> Sequence.fold ~init:astate_n ~f:(fun astate_n pvar ->
                 NonDisjDomain.set_store loc timestamp pvar astate_n )
           in
-          let result =
+          let astates, astate_n =
+            (* globals written to are initialized first too, otherwise a later access would undo the
+               write by running the initializer *)
+            set_global_astates ~access:`AddressStored limit path analysis_data rhs_exp typ loc
+              astate astate_n
+            |> NonDisjDomain.bind
+                 ~f:(set_global_astates ~access:`Written limit path analysis_data lhs_exp typ loc)
+          in
+          let exec_store astate =
             let** astate, rhs_value_origin =
               PulseOperations.eval_to_value_origin path NoAccess loc rhs_exp astate
             in
@@ -1470,7 +1603,9 @@ module PulseTransferFunctions = struct
                 Ok astate
           in
           let astate_n = NonDisjDomain.set_captured_variables rhs_exp astate_n in
-          let results = SatUnsat.to_list result in
+          let results =
+            List.concat_map astates ~f:(fun astate -> exec_store astate |> SatUnsat.to_list)
+          in
           let astates = PulseReport.report_results analysis_data path loc results in
           (List.take astates limit, path, astate_n)
       | Call (ret, call_exp, actuals, loc, call_flags) ->
@@ -1553,6 +1688,15 @@ module PulseTransferFunctions = struct
           let set_uninitialized = (not is_cpp_structured_binding) && not (Typ.is_folly_coro typ) in
           ( [ PulseOperations.realloc_pvar tenv path ~set_uninitialized pvar typ loc astate
               |> ExecutionDomain.continue ]
+          , path
+          , astate_n )
+      | Metadata (VariableLifetimeBegins {pvar; loc})
+        when Option.exists (Pvar.get_initializer_pname pvar)
+               ~f:(Procname.equal (Procdesc.get_proc_name proc_desc)) ->
+          (* we are analyzing the initializer of the global [pvar]: the attribute ends up in its
+             summary so that callers do not inline it again, see [set_global_astates] *)
+          let astate, (addr, _) = PulseOperations.eval_var path loc pvar astate in
+          ( [ContinueProgram (AddressAttributes.add_one addr GlobalInitializerCalled astate)]
           , path
           , astate_n )
       | Metadata (LoopEntry {header_id}) ->

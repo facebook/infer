@@ -40,6 +40,10 @@ let mk_sil_global_var tenv {CFrontend_config.source_file} ?(mk_name = fun _ x ->
     && var_decl_info.Clang_ast_t.vdi_is_static
   in
   let is_const = qt.Clang_ast_t.qt_is_const in
+  let is_volatile = qt.Clang_ast_t.qt_is_volatile in
+  let is_weak =
+    List.exists decl_info.Clang_ast_t.di_attributes ~f:(function `WeakAttr _ -> true | _ -> false)
+  in
   let desugared_type = CAst_utils.get_desugared_type qt.Clang_ast_t.qt_type_ptr in
   let is_constant_array =
     Option.exists desugared_type ~f:(function
@@ -57,7 +61,8 @@ let mk_sil_global_var tenv {CFrontend_config.source_file} ?(mk_name = fun _ x ->
   in
   Pvar.mk_global ~is_constexpr ~is_ice ~is_pod
     ~is_static_local:var_decl_info.Clang_ast_t.vdi_is_static_local ~is_static_global
-    ~is_constant_array ~is_const ?translation_unit ~template_args (mk_name name_string simple_name)
+    ~is_constant_array ~is_const ~is_volatile ~is_weak ?translation_unit ~template_args
+    (mk_name name_string simple_name)
 
 
 let mk_temp_sil_var procdesc ~name =
