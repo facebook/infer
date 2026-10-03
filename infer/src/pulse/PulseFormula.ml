@@ -534,8 +534,9 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
   in
   let and_intervals intervals_foreign acc_phi_new_eqs =
     IContainer.fold_of_pervasives_map_fold Var.Map.fold intervals_foreign ~init:acc_phi_new_eqs
-      ~f:(fun (acc_f, phi_new_eqs) (v_foreign, interval_foreign) ->
+      ~f:(fun (acc_f, ((phi, _) as phi_new_eqs)) (v_foreign, interval_foreign) ->
         let acc_f, v = f_var acc_f v_foreign in
+        let v = (Formula.get_repr phi v :> Var.t) in
         let phi_new_eqs =
           Intervals.and_callee_interval v interval_foreign phi_new_eqs |> sat_value_exn
         in
@@ -572,8 +573,9 @@ let and_fold_subst_variables formula0 ~up_to_f:formula_foreign ~init ~f:f_var =
     with Contradiction unsat_info -> Unsat unsat_info
   in
   let open SatUnsat.Import in
-  let+ acc, (phi, new_eqs) = and_ formula_foreign.phi init formula0.phi in
-  (acc, {formula0 with phi}, new_eqs)
+  let* acc, (phi, new_eqs) = and_ formula_foreign.phi init formula0.phi in
+  let+ formula = Intervals.incorporate_new_eqs new_eqs {formula0 with phi} in
+  (acc, formula, new_eqs)
 
 
 let and_conditions_fold_subst_variables phi0 ~up_to_f:phi_foreign ~init ~f:f_var =

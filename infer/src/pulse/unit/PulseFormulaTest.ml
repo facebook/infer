@@ -270,6 +270,28 @@ let test_implies_conditions phi1 phi2 =
       F.printf "Contradiction %s" (reason ())
 
 
+(** apply each of [callees] in turn to [caller] as at call sites where the callee's [y] and [w] are
+    the caller's [x] and [z], then add [after]; each callee formula is first simplified like the
+    summary of a function with parameters [y] and [w] *)
+let test_and_callees ?(caller = fun phi -> Sat phi) ?(after = fun phi -> Sat phi) callees =
+  AnalysisGlobalState.restore global_state ;
+  let y_w = AbstractValue.Set.of_list [y_var; w_var] in
+  let subst = Var.Map.add y_var (x_var, ()) @@ Var.Map.singleton w_var (z_var, ()) in
+  let phi =
+    SatUnsat.list_fold callees
+      ~init:(caller ttrue |> assert_sat)
+      ~f:(fun phi callee ->
+        let callee =
+          callee ttrue
+          >>= PulseFormula.simplify ~precondition_vocabulary:y_w ~keep:y_w
+          >>| fst3 |> assert_sat
+        in
+        and_callee_formula ~default:() ~subst phi ~callee >>| snd3 )
+    >>= after
+  in
+  F.printf "@[%a@]" (SatUnsat.pp (pp_with_pp_var pp_var)) phi
+
+
 (* These instanceof tests now normalize at construction time *)
 let%test_module "normalization" =
   ( module struct
@@ -638,6 +660,50 @@ let%test_module "intervals" =
              && term_eqs: 0=a3∧2=a1∧7=a4
              && intervals: a3=0 ∧ a1=2
         |}]
+  end )
+
+
+let%test_module "callee formulas" =
+  ( module struct
+    let%expect_test "callee interval goes to the caller's representative" =
+      test_and_callees ~caller:(x >= i 0) [y <> i 0 && y <> i 1] ;
+      [%expect
+        {| conditions: (empty) phi: var_eqs: a1=x && intervals: a1≥2 && atoms: {a1 ≠ 0}∧{a1 ≠ 1} |}]
+
+
+    let%expect_test "callee interval goes to the caller's representative then contradiction" =
+      test_and_callees ~caller:(x >= i 0) [y <> i 0 && y <> i 1] ~after:(x < i 2) ;
+      [%expect {| UNSAT: intersection ∈[0,1]*≥2 |}]
+
+
+    let%expect_test "caller interval follows new equalities" =
+      test_and_callees ~caller:(x >= i 0 && x <> i 0 && x <> i 1) [y >= i 0] ;
+      [%expect
+        {| conditions: (empty) phi: var_eqs: a3=a1=x && intervals: a3≥2 && atoms: {a3 ≠ 0}∧{a3 ≠ 1} |}]
+
+
+    let%expect_test "caller interval follows new equalities then contradiction" =
+      test_and_callees ~caller:(x >= i 0 && x <> i 0 && x <> i 1) [y >= i 0] ~after:(x < i 2) ;
+      [%expect {| UNSAT: intersection ∈[0,1]*≥2 |}]
+
+
+    let%expect_test "restricted variable in linear_eqs" =
+      test_and_callees ~caller:(z = i 0) [y >= i 3; y >= w] ;
+      [%expect
+        {|
+        conditions: (empty)
+        phi: var_eqs: a4=x && linear_eqs: a2 = a4-3 ∧ z = 0 && term_eqs: 0=z∧[a4-3]=a2 && intervals: z=0
+        |}]
+
+
+    let%expect_test "restricted variable becomes equal to a negative constant" =
+      test_and_callees ~caller:(z = i 0) [y >= i 3; y >= w] ~after:(x =. i 1) ;
+      [%expect {| UNSAT: restricted a2 = -2 < 0 |}]
+
+
+    let%expect_test "negative interval on a restricted variable" =
+      test_and_callees ~caller:(z < i (-2)) [y >= i 0; y <= i 1] ~after:(x < z) ;
+      [%expect {| UNSAT: restricted a3 in ≤-4 |}]
   end )
 
 
