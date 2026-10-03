@@ -18,6 +18,8 @@ let filter_compilation_data database ~f =
   SourceFile.Map.filter (fun s _ -> f s) database |> SourceFile.Map.bindings
 
 
+let mem = SourceFile.Map.mem
+
 let parse_command_and_arguments =
   let regexp = Str.regexp "[^\\][ ]" in
   fun command_and_arguments ->

@@ -68,41 +68,66 @@ let analyze_target :
     result
 
 
-let source_file_should_be_analyzed ?(no_file_means_all = true) ~changed_files source_file =
-  (* whether [fname] is one of the [changed_files] *)
-  let is_changed_file =
-    if Config.suffix_match_changed_files then
-      let path_ends_with file =
-        String.is_suffix ~suffix:(SourceFile.to_rel_path file) (SourceFile.to_rel_path source_file)
-      in
-      Option.map changed_files ~f:(SourceFile.Set.exists path_ends_with)
-    else Option.map changed_files ~f:(SourceFile.Set.mem source_file)
-  in
+let source_file_should_be_analyzed ?(no_file_means_all = true) ~changed_files
+    ~translation_units_of_changed_headers source_file =
   let check_modified () =
     let modified = SourceFiles.is_freshly_captured source_file in
     if modified then L.debug Analysis Medium "Modified: %a@\n" SourceFile.pp source_file ;
     modified
   in
-  match is_changed_file with
-  | Some b ->
-      b
+  match changed_files with
+  | Some changed_files ->
+      SourceFile.is_changed ~changed_files source_file
+      || SourceFile.Set.mem source_file translation_units_of_changed_headers
   | None when Config.reactive_mode ->
       check_modified ()
   | None ->
       no_file_means_all
 
 
+(** Headers are not translation units: the procedures defined in a changed header are analyzed as
+    part of a translation unit that captured them. Returns the translation units to analyze, in
+    addition to those selected by [changed_files], so that all these procedures are analyzed. *)
+let get_translation_units_of_changed_headers changed_files =
+  let header_procs = Procedures.get_procs_defined_in_changed_headers changed_files in
+  if Procname.Map.is_empty header_procs then SourceFile.Set.empty
+  else
+    let header_procs_not_in_changed_files =
+      SourceFiles.get_all
+        ~filter:(fun source_file ->
+          (Lazy.force Filtering.source_files_filter) source_file
+          && SourceFile.is_changed ~changed_files source_file )
+        ()
+      |> List.fold ~init:header_procs ~f:(fun header_procs source_file ->
+          List.fold (SourceFiles.proc_names_of_source source_file) ~init:header_procs
+            ~f:(fun header_procs proc_name -> Procname.Map.remove proc_name header_procs ) )
+    in
+    let translation_units =
+      Procname.Map.fold
+        (fun _ translation_unit translation_units ->
+          SourceFile.Set.add translation_unit translation_units )
+        header_procs_not_in_changed_files SourceFile.Set.empty
+    in
+    L.debug Analysis Quiet
+      "Translation units analyzed for procedures defined in changed headers: %a@\n"
+      (Pp.seq ~sep:", " SourceFile.pp)
+      (SourceFile.Set.elements translation_units) ;
+    translation_units
+
+
 let register_active_checkers () =
   RegisterCheckers.get_active_checkers () |> RegisterCheckers.register
 
 
-let get_source_files_to_analyze ~no_file_means_all ~changed_files =
+let get_source_files_to_analyze ~no_file_means_all ~changed_files
+    ~translation_units_of_changed_headers =
   let n_all_source_files = ref 0 in
   let n_source_files_to_analyze = ref 0 in
   let filter sourcefile =
     let result =
       (Lazy.force Filtering.source_files_filter) sourcefile
-      && source_file_should_be_analyzed ~no_file_means_all ~changed_files sourcefile
+      && source_file_should_be_analyzed ~no_file_means_all ~changed_files
+           ~translation_units_of_changed_headers sourcefile
     in
     incr n_all_source_files ;
     if result then incr n_source_files_to_analyze ;
@@ -268,8 +293,16 @@ let main ~changed_files =
       IssueLog.invalidate_all ~procedures ;
       L.progress "Done@." )
     else if not Config.incremental_analysis then DBWriter.delete_all_specs () ;
+  let translation_units_of_changed_headers =
+    Option.value_map changed_files ~default:SourceFile.Set.empty
+      ~f:get_translation_units_of_changed_headers
+  in
   let no_file_means_all = Option.is_none Config.procs_to_analyze_index in
-  let source_files = lazy (get_source_files_to_analyze ~no_file_means_all ~changed_files) in
+  let source_files =
+    lazy
+      (get_source_files_to_analyze ~no_file_means_all ~changed_files
+         ~translation_units_of_changed_headers )
+  in
   (* empty all caches to minimize the process heap to have less work to do when forking *)
   clear_caches () ;
   let initial_spec_count =
@@ -292,7 +325,8 @@ let main ~changed_files =
     (ExecutionDuration.wall_time analysis_duration) ;
   if Config.reactive_capture then
     ReactiveCapture.store_missed_captures
-      ~source_files_filter:(source_file_should_be_analyzed ~changed_files)
+      ~source_files_filter:
+        (source_file_should_be_analyzed ~changed_files ~translation_units_of_changed_headers)
       () ;
   ExecutionDuration.log ~prefix:"backend_stats.scheduler_process_analysis_time" Analysis
     analysis_duration ;
