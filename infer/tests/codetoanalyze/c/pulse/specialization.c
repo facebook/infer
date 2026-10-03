@@ -131,3 +131,30 @@ void call_test_unalias_good(int* x) {
     *p = 42;
   };
 }
+
+int* global_p;
+int* global_q;
+
+int test_global_alias() {
+  *global_q = 2;
+  *global_p = 1;
+  return (*global_p == *global_q);
+}
+
+void call_test_global_alias_bad(int* x) {
+  global_p = x;
+  global_q = x;
+  if (test_global_alias()) {
+    int* p = NULL;
+    *p = 42;
+  };
+}
+
+void call_test_global_alias_good(int* x) {
+  global_p = x;
+  global_q = x;
+  if (!test_global_alias()) {
+    int* p = NULL;
+    *p = 42;
+  };
+}

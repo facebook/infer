@@ -205,6 +205,10 @@ let eval_ident id astate =
   (astate, ValueOrigin.addr_hist vo)
 
 
+let va_args_global n =
+  Pvar.mk_global (Mangled.from_string (F.sprintf "__infer_va_args_global_%d" n))
+
+
 let write_access path location addr_trace_ref access addr_trace_obj astate =
   check_addr_access path Write location addr_trace_ref astate
   >>| Memory.add_edge path addr_trace_ref access addr_trace_obj location

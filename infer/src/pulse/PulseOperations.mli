@@ -95,6 +95,10 @@ val eval_var : PathContext.t -> Location.t -> Pvar.t -> t -> t * (AbstractValue.
 
 val eval_ident : Ident.t -> t -> t * (AbstractValue.t * ValueHistory.t)
 
+val va_args_global : int -> Pvar.t
+(** [va_args_global n] is the global through which the [n]th variadic argument of a call to a C
+    variadic function is passed to the callee's [va_arg] *)
+
 val prune :
      Procdesc.t
   -> PathContext.t

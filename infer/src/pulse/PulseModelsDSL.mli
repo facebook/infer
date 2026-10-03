@@ -177,6 +177,9 @@ module Syntax : sig
   val load : aval -> aval model_monad
   (** read the Dereference access from the value *)
 
+  val eval_var : Pvar.t -> aval model_monad
+  (** the address of the program variable *)
+
   val and_dynamic_type_is : aval -> Typ.t -> unit model_monad
 
   val get_dynamic_type :
