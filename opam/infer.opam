@@ -13,7 +13,7 @@ depends: [
   "atdgen" {>="2.15.0"}
   "base64" {>="3.0.0"}
   "bheap"
-  "cmdliner" {>="1.0.0"}
+  "cmdliner" {>="2.0.0"}
   "core" {>= "v0.17.1" & < "v0.18"}
   "conf-autoconf" {build}
   "conf-sqlite3" {build}
