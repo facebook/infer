@@ -121,8 +121,8 @@ public class Locks {
     }
   }
 
-  // we could catch this by invalidating the choice predicates whenever we update the lock domain
-  public void FN_tryLockStaleBad() {
+  // [result] is stale after the unlock
+  public void tryLockStaleBad() {
     boolean result = mReentrantLock.tryLock();
     mReentrantLock.unlock();
     if (result) {
@@ -369,5 +369,25 @@ public class Locks {
   public synchronized void FP_releaseLockOfCallerInCalleeOk() {
     releaseLock();
     mField4 = null;
+  }
+
+  public void tryLockThenSynchronizedBlockOk() {
+    boolean result = mReentrantLock.tryLock();
+    synchronized (this) {
+    }
+    if (result) {
+      f = 42;
+      mReentrantLock.unlock();
+    }
+  }
+
+  public void tryLockThenOtherUnlockOk() {
+    mLock.lock();
+    boolean result = mReentrantLock.tryLock();
+    mLock.unlock();
+    if (result) {
+      f = 42;
+      mReentrantLock.unlock();
+    }
   }
 }

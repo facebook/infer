@@ -70,6 +70,7 @@ codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.afterWri
 codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.tryLockNoCheckBad():void, 92, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
 codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.tryLockWrongBranchBad():void, 98, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
 codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.negatedReentrantLockTryLockBad():void, 112, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
+codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.tryLockStaleBad():void, 129, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
 codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.nested1Bad():void, 195, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
 codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.nested2Bad():void, 201, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
 codetoanalyze/java/racerd/Locks.java, codetoanalyze.java.checkers.Locks.nested3Bad():void, 211, THREAD_SAFETY_VIOLATION, no_bucket, WARNING, [access to `this.f`]
