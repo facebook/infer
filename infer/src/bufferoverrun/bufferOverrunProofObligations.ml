@@ -376,9 +376,13 @@ module ArrayAccessCondition = struct
       (ItvPure.subst c.offset eval_sym, ItvPure.subst c.idx eval_sym, ItvPure.subst c.size eval_sym)
     with
     | NonBottom offset, NonBottom idx, NonBottom size ->
+        (* The condition is unresolved while its byte symbols are replaced with byte symbols of the
+           caller, or with infinite bounds because the caller does not know the size of its
+           elements either. *)
         let void_ptr =
-          c.void_ptr || ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb idx
+          ItvPure.has_void_ptr_symb offset || ItvPure.has_void_ptr_symb idx
           || ItvPure.has_void_ptr_symb size
+          || (c.void_ptr && has_infty {c with offset; idx; size})
         in
         Some {c with offset; idx; size; void_ptr}
     | _ ->
@@ -740,8 +744,8 @@ module ConditionWithTrace = struct
 
 
   let set_u5 {cond; trace} issue_type =
-    (* It suppresses issues of array accesses by void pointers.  This is not ideal but Inferbo
-       cannot analyze them precisely at the moment. *)
+    (* It suppresses issues of array accesses by void pointers until a caller resolves their offset
+       and size in bytes. *)
     if Condition.is_array_access_of_void_ptr cond then IssueType.buffer_overrun_l5
     else if
       ( IssueType.equal issue_type IssueType.buffer_overrun_l3

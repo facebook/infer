@@ -368,6 +368,22 @@ module Bound = struct
           false )
 
 
+  let change_byte_unit ~from ~to_ = function
+    | Linear (n, se) when Z.(equal n zero) -> (
+      match SymLinear.get_one_symbol_opt se with
+      | Some s -> (
+        match Symb.Symbol.path s with
+        | Symb.SymbolPath.(Offset {byte_unit} | Length {byte_unit})
+          when Option.equal Z.equal byte_unit from ->
+            Some (of_sym (SymLinear.singleton_one (Symb.Symbol.set_byte_unit to_ s)))
+        | _ ->
+            None )
+      | None ->
+          None )
+    | _ ->
+        None
+
+
   let rec is_symbolic : t -> bool = function
     | MInf | PInf ->
         false
@@ -825,6 +841,13 @@ module Bound = struct
         overapprox_max
 
 
+  let approx_min = function
+    | Symb.BoundEnd.LowerBound ->
+        underapprox_min
+    | Symb.BoundEnd.UpperBound ->
+        overapprox_min
+
+
   module Thresholds : sig
     type bound = t
 
@@ -1125,7 +1148,11 @@ module Bound = struct
               overapproximate_bound bound_position (Symb.Symbol.is_unsigned s)
           | NonBottom x ->
               let x = mult_const subst_pos coeff x in
-              if Symb.Symbol.is_unsigned s then NonBottom (approx_max subst_pos x zero)
+              if Symb.Symbol.is_unsigned s then
+                (* [s] is non-negative, so [coeff * s] is too if [coeff] is positive, and it is
+                   non-positive otherwise *)
+                let approx = if NonZeroInt.is_positive coeff then approx_max else approx_min in
+                NonBottom (approx subst_pos x zero)
               else NonBottom x
       in
       match x with
