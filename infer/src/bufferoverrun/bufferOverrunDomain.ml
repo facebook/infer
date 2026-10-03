@@ -2105,6 +2105,22 @@ module MemReach = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool = fun l m -> MemPure.is_rep_multi_loc l m.mem_pure
 
+  let is_array_field : Typ.t -> Fieldname.t -> t -> bool =
+   fun struct_typ fn m ->
+    let {OndemandEnv.tenv} = GOption.value m.oenv in
+    match Struct.fld_typ_opt ~lookup:(Tenv.lookup tenv) fn struct_typ with
+    | Some {desc= Tarray _} ->
+        true
+    | Some {desc= Tstruct typename} -> (
+      match BufferOverrunTypModels.dispatch tenv typename with
+      | Some (CArray _) ->
+          true
+      | Some (CppStdVector | JavaCollection | JavaInteger) | None ->
+          false )
+    | _ ->
+        false
+
+
   let find_opt : Loc.t -> _ t0 -> Val.t option = fun l m -> MemPure.find_opt l m.mem_pure
 
   let find_stack : Loc.t -> _ t0 -> Val.t = fun l m -> Option.value (find_opt l m) ~default:Val.bot
@@ -2606,6 +2622,10 @@ module Mem = struct
 
   let is_rep_multi_loc : Loc.t -> _ t0 -> bool =
    fun k -> f_lift_default ~default:false (MemReach.is_rep_multi_loc k)
+
+
+  let is_array_field : Typ.t -> Fieldname.t -> t -> bool =
+   fun struct_typ fn -> f_lift_default ~default:false (MemReach.is_array_field struct_typ fn)
 
 
   let find : Loc.t -> _ t0 -> Val.t = fun k -> f_lift_default ~default:Val.default (MemReach.find k)

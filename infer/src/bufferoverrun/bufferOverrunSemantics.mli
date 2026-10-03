@@ -22,6 +22,12 @@ val eval_arr : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOv
     [eval_arr x] returns array blocks the [x] is pointing to, on the other hand, [eval x] returns
     the abstract location of [x]. *)
 
+val eval_arg : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+(** Evaluate a call argument: an array field decays to the array stored in it. *)
+
+val eval_arg_locs : Exp.t -> BufferOverrunDomain.Mem.t -> AbsLoc.PowLoc.t
+(** Like [eval_locs], but an array field decays to the locations of the array stored in it. *)
+
 val eval_lindex :
   IntegerWidths.t -> Exp.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
 (** Evaluate array location with index, i.e.,

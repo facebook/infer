@@ -289,6 +289,40 @@ module TransferFunctions = struct
           None
 
 
+  (** The arrays stored in the C array object [exp] of type [typ] when it is a field or an element
+      of another array, e.g. [s.a] or [a[i]] for [char a[2][8]]. *)
+  let array_object_locs integer_type_widths exp typ mem =
+    let is_array_object =
+      Language.curr_language_is Clang
+      &&
+      match (exp, typ.Typ.desc) with
+      | Exp.Lfield (_, fn, struct_typ), _ ->
+          Dom.Mem.is_array_field struct_typ fn mem
+      | Exp.Lindex _, Tarray _ ->
+          true
+      | _ ->
+          false
+    in
+    if is_array_object then Sem.eval_arr integer_type_widths exp mem |> Dom.Val.get_all_locs
+    else PowLoc.bot
+
+
+  (** A store of a C array value, e.g. for a struct copy [y = x], copies the elements of the source
+      arrays into the arrays already stored at the destination instead of making the destination
+      point to the source arrays. *)
+  let copy_array_opt integer_type_widths tenv exp1 typ exp2 mem =
+    match typ.Typ.desc with
+    | Tarray {elt} ->
+        let dst = array_object_locs integer_type_widths exp1 typ mem in
+        let src = Sem.eval integer_type_widths exp2 mem |> Dom.Val.get_array_locs in
+        if PowLoc.is_bot dst || PowLoc.is_bot src then None
+        else
+          let strong = can_strong_update (Sem.eval_locs exp1 mem) in
+          Some (BoUtils.Exec.copy_array_contents tenv elt ~strong ~dst ~src mem)
+    | _ ->
+        None
+
+
   let modeled_range_of_exp location exp mem =
     match exp with
     | Exp.Lindex (arr_exp, _) ->
@@ -421,37 +455,44 @@ module TransferFunctions = struct
           in
           Dom.Mem.update_mem tgt_locs (Dom.Val.of_pow_loc ~traces:Trace.Set.bottom tgt_deref) mem
           |> Models.JavaString.constructor_from_char_ptr model_env tgt_deref src
-      | Store {e1= exp1; e2= Const (Const.Cstr s); loc= location} ->
-          let locs = Sem.eval_locs exp1 mem in
+      | Store {e1= exp1; typ; e2= Const (Const.Cstr s); loc= location} ->
           let model_env =
             let pname = Procdesc.get_proc_name proc_desc in
             let node_hash = CFG.Node.hash node in
             BoUtils.ModelEnv.mk_model_env pname ~node_hash location tenv integer_type_widths
               get_summary
           in
-          let do_alloc = not (Sem.is_stack_exp exp1 mem) in
+          let locs, do_alloc =
+            let arr_locs = array_object_locs integer_type_widths exp1 typ mem in
+            if PowLoc.is_bot arr_locs then (Sem.eval_locs exp1 mem, not (Sem.is_stack_exp exp1 mem))
+            else (arr_locs, false)
+          in
           BoUtils.Exec.decl_string model_env ~do_alloc locs s mem
-      | Store {e1= exp1; typ; e2= exp2; loc= location} ->
-          let locs = Sem.eval_locs exp1 mem in
-          let v =
-            Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
-          in
-          let mem = Dom.Mem.update_mem locs v mem in
-          let mem = java_store_linked_list_next locs v mem in
-          let mem =
-            if Language.curr_language_is Clang && Typ.is_char typ then
-              BoUtils.Exec.set_c_strlen ~tgt:(Sem.eval integer_type_widths exp1 mem) ~src:v mem
-            else mem
-          in
-          let mem =
-            match PowLoc.is_singleton_or_more locs with
-            | IContainer.Singleton loc_v ->
-                Dom.Mem.store_simple_alias loc_v exp2 mem
-            | _ ->
-                mem
-          in
-          let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
-          mem
+      | Store {e1= exp1; typ; e2= exp2; loc= location} -> (
+        match copy_array_opt integer_type_widths tenv exp1 typ exp2 mem with
+        | Some mem' ->
+            mem'
+        | None ->
+            let locs = Sem.eval_locs exp1 mem in
+            let v =
+              Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
+            in
+            let mem = Dom.Mem.update_mem locs v mem in
+            let mem = java_store_linked_list_next locs v mem in
+            let mem =
+              if Language.curr_language_is Clang && Typ.is_char typ then
+                BoUtils.Exec.set_c_strlen ~tgt:(Sem.eval integer_type_widths exp1 mem) ~src:v mem
+              else mem
+            in
+            let mem =
+              match PowLoc.is_singleton_or_more locs with
+              | IContainer.Singleton loc_v ->
+                  Dom.Mem.store_simple_alias loc_v exp2 mem
+              | _ ->
+                  mem
+            in
+            let mem = Dom.Mem.update_latest_prune ~updated_locs:locs exp1 exp2 mem in
+            mem )
       | Prune (exp, location, _, _) ->
           Sem.Prune.prune location integer_type_widths exp mem
       | Call ((id, _), (Const (Cfun callee_pname) | Closure {name= callee_pname}), _, _, _)
