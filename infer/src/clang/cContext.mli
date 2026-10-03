@@ -54,7 +54,10 @@ type t =
             conditionals (e.g. to hold the object created by [X()] in [b?foo(X()):goo()]), we
             associate "markers" to each one of them, set to true if and only if the temporary has
             been created. This is the map associating each such C++ temporary with its marker
-            variable. *) }
+            variable. *)
+  ; vars_in_discarded_branches: Mangled.Set.t ref
+        (** local variables referenced in the discarded, untranslated branch of an [if constexpr] *)
+  }
 
 val get_curr_class : t -> curr_class
 
