@@ -285,6 +285,20 @@ let is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_with
         Procname.is_cpp_lambda pname && is_optional_empty
 
 
+let is_suppressed_diagnostic tenv proc_desc (diagnostic : Diagnostic.t) =
+  is_suppressed tenv proc_desc
+    ~is_nullptr_dereference:(match diagnostic with AccessToInvalidAddress _ -> true | _ -> false)
+    ~is_constant_deref_without_invalidation:
+      (is_constant_deref_without_invalidation_diagnostic diagnostic)
+    ~is_optional_empty:(is_optional_empty diagnostic)
+
+
+(** latent issues found during the analysis of the current procedure; see
+    [promote_and_report_latent_issues] *)
+let delayed_latent_issues =
+  AnalysisGlobalState.make_dls ~init:(fun () : (LatentIssue.t * bool) list -> [])
+
+
 let summary_of_error_post proc_desc location mk_error astate =
   match AbductiveDomain.Summary.of_post (Procdesc.get_attributes proc_desc) location astate with
   | Sat (Ok summary)
@@ -350,17 +364,7 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
   | PotentialInvalidSpecializedCall {specialized_type; trace} ->
       Some (Stopped (LatentSpecializedTypeIssue {astate= summary; specialized_type; trace}))
   | ReportableError {diagnostic} -> (
-      let is_nullptr_dereference =
-        match diagnostic with AccessToInvalidAddress _ -> true | _ -> false
-      in
-      let is_constant_deref_without_invalidation =
-        is_constant_deref_without_invalidation_diagnostic diagnostic
-      in
-      let is_optional_empty = is_optional_empty diagnostic in
-      let is_suppressed =
-        is_suppressed tenv proc_desc ~is_nullptr_dereference ~is_constant_deref_without_invalidation
-          ~is_optional_empty
-      in
+      let is_suppressed = is_suppressed_diagnostic tenv proc_desc diagnostic in
       match LatentIssue.should_report summary diagnostic with
       | `ReportNow ->
           if is_suppressed then L.d_printfln "ReportNow suppressed error" ;
@@ -374,11 +378,110 @@ let report_summary_error ({InterproceduralAnalysis.tenv; proc_desc} as analysis_
       | `DelayReport latent_issue ->
           if is_suppressed then L.d_printfln "DelayReport suppressed error" ;
           if Config.pulse_report_latent_issues then
-            report_latent_issue analysis_data ~is_suppressed latent_issue ;
+            Utils.with_dls delayed_latent_issues ~f:(fun latent_issues ->
+                (latent_issue, is_suppressed) :: latent_issues ) ;
           Some (Stopped (LatentAbortProgram {astate= summary; latent_issue})) )
   | WithSummary _ ->
       (* impossible thanks to prior application of [summary_error_of_error] *)
       assert false
+
+
+(* not the message, which can differ between states, for instance when the invalid value is also the
+   value of a variable in one of them. The locations of the calls leading to the issue are part of
+   the key so that states that fail at different places inside the same call are not grouped. *)
+module IssueKey = struct
+  type t = string * Location.t list [@@deriving compare]
+
+  let of_latent_issue latent_issue =
+    let diagnostic = LatentIssue.to_diagnostic latent_issue in
+    let rec trace_locations (trace : Trace.t) =
+      match trace with
+      | Immediate {location} ->
+          [location]
+      | ViaCall {location; in_call} ->
+          location :: trace_locations in_call
+    in
+    let locations =
+      match (latent_issue : LatentIssue.t) with
+      | AccessToInvalidAddress {access_trace} ->
+          trace_locations access_trace
+      | ErlangError _ ->
+          [Diagnostic.get_location diagnostic]
+    in
+    ((Diagnostic.get_issue_type ~latent:false diagnostic).IssueType.unique_id, locations)
+end
+
+module IssueKeyMap = Stdlib.Map.Make (IssueKey)
+
+let promote_and_report_latent_issues ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
+    (pre_post_list : AbductiveDomain.Summary.t ExecutionDomain.base_t list) =
+  let latent_states_by_issue =
+    (* tests in the current procedure make Erlang issues latent too (see
+       [PulseFormula.is_manifest]), keep that stricter behaviour *)
+    if Language.curr_language_is Erlang then IssueKeyMap.empty
+    else
+      List.fold pre_post_list ~init:IssueKeyMap.empty ~f:(fun latent_states exec_state ->
+          match (exec_state : _ ExecutionDomain.base_t) with
+          | Stopped (LatentAbortProgram {astate; latent_issue}) ->
+              IssueKeyMap.update
+                (IssueKey.of_latent_issue latent_issue)
+                (fun states -> Some ((astate, latent_issue) :: Option.value states ~default:[]))
+                latent_states
+          | _ ->
+              latent_states )
+  in
+  (* in a state where a global variable is equal to the invalid value, for instance 0, the issue can
+     be blamed on that variable *)
+  let blames_global_variable (diagnostic : Diagnostic.t) =
+    match diagnostic with
+    | AccessToInvalidAddress {invalid_address= SourceExpr ((PVar pvar, _), _)} ->
+        Pvar.is_global pvar
+    | _ ->
+        false
+  in
+  let manifest_issues =
+    IssueKeyMap.filter_map
+      (fun _ states ->
+        (* suppressed issues stay latent so that callers, where they may not be suppressed, still
+           get to report them *)
+        let diagnostics =
+          List.rev_map states ~f:(fun (_, latent_issue) -> LatentIssue.to_diagnostic latent_issue)
+          |> List.filter ~f:(fun diagnostic ->
+              not (is_suppressed_diagnostic tenv proc_desc diagnostic) )
+        in
+        if
+          List.length states > 1
+          && (not (List.is_empty diagnostics))
+          && PulseArithmetic.is_manifest_disjunction (List.map states ~f:fst)
+        then
+          Option.first_some
+            (List.find diagnostics ~f:(fun diagnostic -> not (blames_global_variable diagnostic)))
+            (List.hd diagnostics)
+        else None )
+      latent_states_by_issue
+  in
+  let trace_to_issue =
+    Trace.Immediate {location= Procdesc.get_loc proc_desc; history= ValueHistory.epoch}
+  in
+  IssueKeyMap.iter
+    (fun _ diagnostic ->
+      L.d_printfln ~color:Red "latent issue is manifest in the disjunction of its states" ;
+      report analysis_data ~latent:false ~is_suppressed:false diagnostic ;
+      report_if_entry_point analysis_data trace_to_issue diagnostic )
+    manifest_issues ;
+  List.rev (DLS.get delayed_latent_issues)
+  |> List.iter ~f:(fun (latent_issue, is_suppressed) ->
+      if not (IssueKeyMap.mem (IssueKey.of_latent_issue latent_issue) manifest_issues) then
+        report_latent_issue analysis_data ~is_suppressed latent_issue ) ;
+  DLS.set delayed_latent_issues [] ;
+  List.map pre_post_list ~f:(fun (exec_state : _ ExecutionDomain.base_t) ->
+      match exec_state with
+      | Stopped (LatentAbortProgram {astate; latent_issue})
+        when IssueKeyMap.mem (IssueKey.of_latent_issue latent_issue) manifest_issues ->
+          let diagnostic = LatentIssue.to_diagnostic latent_issue in
+          ExecutionDomain.Stopped (AbortProgram {astate; diagnostic; trace_to_issue})
+      | _ ->
+          exec_state )
 
 
 let report_error ({InterproceduralAnalysis.proc_desc} as analysis_data) path location access_error =

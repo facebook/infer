@@ -1148,28 +1148,126 @@ include Implication
 
 let is_known_non_pointer formula v = Formula.is_non_pointer formula.phi v
 
+let is_manifest_condition ~is_allocated atom depth =
+  let is_ground = not @@ Term.has_var_notin Var.Set.empty @@ Atom.to_term atom in
+  is_ground
+  || ((not (Language.curr_language_is Erlang)) && Int.equal depth 0)
+  ||
+  match Atom.get_as_var_neq_zero atom with
+  | Some x ->
+      (* ignore [x≠0] when [x] is known to be allocated: pointers being allocated doesn't make an
+         issue latent and we still need to remember that [x≠0] was tested by the program
+         explicitly *)
+      is_allocated x
+  | None -> (
+    match Atom.get_as_disequal_vars atom with
+    | Some (x, y) ->
+        (* ignore [x≠y] when [x] and [y] are both known to be allocated since it already implies
+           they are different (the heap uses separation logic implicitly) *)
+        is_allocated x && is_allocated y
+    | None ->
+        false )
+
+
 let is_manifest ~is_allocated formula =
-  Atom.Map.for_all
-    (fun atom depth ->
-      let is_ground = not @@ Term.has_var_notin Var.Set.empty @@ Atom.to_term atom in
-      is_ground
-      || ((not (Language.curr_language_is Erlang)) && Int.equal depth 0)
-      ||
-      match Atom.get_as_var_neq_zero atom with
-      | Some x ->
-          (* ignore [x≠0] when [x] is known to be allocated: pointers being allocated doesn't make
-             an issue latent and we still need to remember that [x≠0] was tested by the program
-             explicitly *)
-          is_allocated x
-      | None -> (
-        match Atom.get_as_disequal_vars atom with
-        | Some (x, y) ->
-            (* ignore [x≠y] when [x] and [y] are both known to be allocated since it already
-               implies they are different (the heap uses separation logic implicitly) *)
-            is_allocated x && is_allocated y
-        | None ->
-            false ) )
-    formula.conditions
+  Atom.Map.for_all (is_manifest_condition ~is_allocated) formula.conditions
+
+
+let partition_conditions_by_manifest ~is_allocated formula =
+  Atom.Map.fold
+    (fun atom depth (manifest, latent) ->
+      if is_manifest_condition ~is_allocated atom depth then (atom :: manifest, latent)
+      else (manifest, atom :: latent) )
+    formula.conditions ([], [])
+
+
+let atoms_are_complementary atom1 atom2 =
+  Int.equal 0 (Atom.compare (Atom.nnot atom1) atom2)
+  ||
+  let vars atom = Atom.fold_variables atom ~init:Var.Set.empty ~f:(Fn.flip Var.Set.add) in
+  Var.Set.equal (vars atom1) (vars atom2)
+  &&
+  let is_unsat atoms =
+    match prune_atoms ~depth:0 atoms (ttrue, RevList.empty) with Unsat _ -> true | Sat _ -> false
+  in
+  is_unsat [atom1; atom2] && is_unsat [Atom.nnot atom1; Atom.nnot atom2]
+
+
+let disjunction_is_valid ~assuming clauses =
+  (* Iterated consensus: from [X∧a] and [Y∧¬a] derive [X∧Y], which implies the disjunction of these
+     two clauses. Starting from [clauses] and the negation of each atom in an assumption, deriving
+     the empty clause shows that the assumption implies the disjunction of [clauses]. Clauses are
+     sets of indices of atoms in [atoms]. *)
+  let module IntSet = IInt.Set in
+  let max_derived_clauses = 64 in
+  let clauses = List.map clauses ~f:(List.map ~f:Atom.simplify_linear) in
+  let assumptions = List.map assuming ~f:(List.map ~f:Atom.simplify_linear) in
+  let negated_assumptions =
+    List.map assuming ~f:(List.map ~f:(fun atom -> Atom.simplify_linear (Atom.nnot atom)))
+  in
+  let atoms =
+    List.concat (clauses @ assumptions @ negated_assumptions)
+    |> List.dedup_and_sort ~compare:Atom.compare
+    |> Array.of_list
+  in
+  let index atom =
+    Array.binary_search atoms ~compare:Atom.compare `First_equal_to atom |> Option.value_exn
+  in
+  let complements = Array.map atoms ~f:(fun _ -> IntSet.empty) in
+  Array.iteri atoms ~f:(fun i atom ->
+      for j = i + 1 to Array.length atoms - 1 do
+        if atoms_are_complementary atom atoms.(j) then (
+          complements.(i) <- IntSet.add j complements.(i) ;
+          complements.(j) <- IntSet.add i complements.(j) )
+      done ) ;
+  let is_contradictory clause =
+    IntSet.exists (fun i -> not (IntSet.disjoint complements.(i) clause)) clause
+  in
+  let is_subsumed clauses clause =
+    List.exists clauses ~f:(fun clause' -> IntSet.subset clause' clause)
+  in
+  let find_new_consensus clauses =
+    List.find_map clauses ~f:(fun clause1 ->
+        IntSet.elements clause1
+        |> List.find_map ~f:(fun i ->
+            List.find_map clauses ~f:(fun clause2 ->
+                IntSet.inter complements.(i) clause2
+                |> IntSet.elements
+                |> List.find_map ~f:(fun j ->
+                    let consensus =
+                      IntSet.union (IntSet.remove i clause1) (IntSet.remove j clause2)
+                    in
+                    Option.some_if
+                      ((not (is_contradictory consensus)) && not (is_subsumed clauses consensus))
+                      consensus ) ) ) )
+  in
+  let rec saturate ~fuel clauses =
+    List.exists clauses ~f:IntSet.is_empty
+    || fuel > 0
+       &&
+       match find_new_consensus clauses with
+       | None ->
+           false
+       | Some consensus ->
+           consensus :: List.filter clauses ~f:(fun clause -> not (IntSet.subset consensus clause))
+           |> saturate ~fuel:(fuel - 1)
+  in
+  let to_clause atoms = List.map atoms ~f:index |> IntSet.of_list in
+  let clauses =
+    List.map clauses ~f:to_clause |> List.filter ~f:(fun clause -> not (is_contradictory clause))
+  in
+  List.exists (List.zip_exn assumptions negated_assumptions)
+    ~f:(fun (assumption, negated_assumption) ->
+      let assumption = to_clause assumption in
+      (* under the assumption, drop the clauses that contradict it and the atoms that it implies *)
+      let clauses =
+        List.filter_map clauses ~f:(fun clause ->
+            if IntSet.exists (fun i -> not (IntSet.disjoint complements.(i) assumption)) clause then
+              None
+            else Some (IntSet.diff clause assumption) )
+      in
+      List.map negated_assumption ~f:(fun atom -> IntSet.singleton (index atom)) @ clauses
+      |> saturate ~fuel:max_derived_clauses )
 
 
 let get_var_repr formula v = (Formula.get_repr formula.phi v :> Var.t)
@@ -1185,6 +1283,33 @@ let as_constant_string formula v =
       Some s
   | _ ->
       None
+
+
+let get_constant_condition_depth formula v =
+  let is_linear (t : Term.t) =
+    match t with Const _ | String _ | Var _ | Linear _ -> true | _ -> false
+  in
+  Atom.Map.fold
+    (fun atom depth depth_opt ->
+      match (atom : Atom.t) with
+      | Equal (t1, t2)
+        when is_linear t1 && is_linear t2
+             && Var.Set.equal
+                  (Atom.fold_variables atom ~init:Var.Set.empty ~f:(Fn.flip Var.Set.add))
+                  (Var.Set.singleton v) ->
+          Some (Option.value_map depth_opt ~default:depth ~f:(Int.min depth))
+      | _ ->
+          depth_opt )
+    formula.conditions None
+
+
+let raise_depth_of_conditions_on v ~depth formula =
+  let mentions_v atom = Atom.fold_variables atom ~init:false ~f:(fun b v' -> b || Var.equal v v') in
+  { formula with
+    conditions=
+      Atom.Map.mapi
+        (fun atom depth' -> if mentions_v atom then Int.max depth depth' else depth')
+        formula.conditions }
 
 
 (** for use in applying callee path conditions: we need to translate callee variables to make sense
