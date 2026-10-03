@@ -11,6 +11,9 @@ open! IStd
 type t =
   { tenv: Tenv.t  (** type environment *)
   ; typ_of_param_path: Symb.SymbolPath.partial -> Typ.t option  (** type of parameter *)
+  ; typ_of_global_array: Pvar.t -> Typ.t option
+        (** declared type of a global variable referenced in the procedure, if it is an array or a
+            modeled C array such as [std::array] *)
   ; may_last_field: Symb.SymbolPath.partial -> bool
         (** if the path is a last field of a class in C++ *)
   ; entry_location: Location.t  (** location of entry node *)

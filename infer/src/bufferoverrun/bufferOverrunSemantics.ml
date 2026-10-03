@@ -288,7 +288,8 @@ let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
       Mem.find_stack (Var.of_id id |> Loc.of_var) mem |> Val.get_all_locs
   | Lvar pvar ->
       let loc = Loc.of_pvar pvar in
-      if Mem.is_stack_loc loc mem then Mem.find loc mem |> Val.get_all_locs
+      if Mem.is_stack_loc loc mem || Mem.is_global_array pvar mem then
+        Mem.find loc mem |> Val.get_all_locs
       else PowLoc.singleton loc
   | BinOp ((Binop.MinusPI | Binop.PlusPI), e, _) | Cast (_, e) ->
       eval_locs e mem
