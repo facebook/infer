@@ -1026,6 +1026,14 @@ ifneq ($(EMACS),no)
 OPAM_DEV_DEPS += tuareg
 endif
 
+# the installed packages among those pinned by the opam lock files, as NAME.VERSION: requesting
+# them along with $(OPAM_DEV_DEPS) makes opam fail instead of up- or downgrading a locked
+# dependency of infer to suit a developer tool
+OPAM_INSTALLED_LOCKED_DEPS = \
+  $$($(OPAM) list --installed --short --columns=package --color=never \
+       $$(grep -h -e {= $(ROOT_DIR)/opam/infer.opam.locked $(ROOT_DIR)/opam/ocamlformat.opam.locked \
+          | cut -d\" -f2))
+
 .PHONY: devsetup
 devsetup:
 	$(QUIET)[ $(OPAM) != "no" ] || (echo 'No `opam` found, aborting setup.' >&2; exit 1)
@@ -1034,9 +1042,10 @@ devsetup:
 	  $(OPAM) install --deps-only --locked --yes $(ROOT_DIR)/opam/ocamlformat.opam.locked)
 	$(QUIET)$(call silent_on_success,installing ocamlformat,\
 	  OPAMSWITCH=$(OPAMSWITCH); \
-	  $(OPAM) install ocamlformat.$$($(OPAM) show -f version $(ROOT_DIR)/opam/ocamlformat.opam.locked) --yes)
+	  $(OPAM) install ocamlformat.$$($(OPAM) show --color=never -f version $(ROOT_DIR)/opam/ocamlformat.opam.locked) --yes)
 	$(QUIET)$(call silent_on_success,installing $(OPAM_DEV_DEPS),\
-	  OPAMSWITCH=$(OPAMSWITCH); $(OPAM) install --yes --no-depexts user-setup $(OPAM_DEV_DEPS))
+	  OPAMSWITCH=$(OPAMSWITCH); \
+	  $(OPAM) install --yes --no-depexts $(OPAM_DEV_DEPS) $(OPAM_INSTALLED_LOCKED_DEPS))
 	$(QUIET)if [ "$(PLATFORM)" = "Darwin" ] && [ x"$(GNU_SED)" = x"no" ]; then \
 	  echo '$(TERM_INFO)*** Installing GNU sed$(TERM_RESET)' >&2; \
 	  brew install gnu-sed; \
