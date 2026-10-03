@@ -298,19 +298,7 @@ let pp_subst fmt subst =
   PrettyPrintable.pp_collection fmt ~pp_item:(Pp.option pp) (Array.to_list subst)
 
 
-let make_subst formal_map actuals =
-  let actuals = Array.of_list actuals in
-  let len =
-    (* deal with var args functions *)
-    Int.max (FormalMap.cardinal formal_map) (Array.length actuals)
-  in
-  let subst = Array.create ~len None in
-  FormalMap.iter
-    (fun _base idx ->
-      if idx < Array.length actuals then subst.(idx) <- make formal_map actuals.(idx) )
-    formal_map ;
-  subst
-
+let make_subst formal_map actuals = Array.of_list_map actuals ~f:(make formal_map)
 
 let apply_subst (subst : subst) t =
   match t with
