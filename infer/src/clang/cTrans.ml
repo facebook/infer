@@ -148,6 +148,45 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         typ
 
 
+  (** If the braces of an [InitListExpr] have no meaning (clang's [InitListExpr::isTransparent]),
+      return its only element. This is the case for a glvalue list, e.g. [T& r{x}], and for a record
+      list whose element is a prvalue of the same type, e.g. [T x{f()}] with [f()] returning [T]:
+      since C++17, [f()] initializes [x] itself, not its first field. A glvalue element of the same
+      type does not qualify: in [struct T { T& r; }; T x{.r = y};] it initializes the field. Clang
+      also calls a non-record list with an element of the same type transparent, e.g. [int x{y}] or
+      [char s[4]{"abc"}]; these are left to [initListExpr_trans_aux]. *)
+  let get_transparent_init_list_elem tenv list_expr_info stmts =
+    let is_glvalue {Clang_ast_t.ei_value_kind} =
+      match ei_value_kind with `LValue | `XValue -> true | `RValue -> false
+    in
+    let record_name {Clang_ast_t.ei_qual_type} =
+      match (CType_decl.qual_type_to_sil_type tenv ei_qual_type).desc with
+      | Tstruct name ->
+          Some name
+      | _ ->
+          None
+    in
+    let is_same_record_prvalue elem_expr_info =
+      (not (is_glvalue elem_expr_info))
+      &&
+      match (record_name list_expr_info, record_name elem_expr_info) with
+      | Some list_name, Some elem_name ->
+          Typ.Name.equal list_name elem_name
+      | _ ->
+          false
+    in
+    match stmts with
+    | [stmt] -> (
+      match Clang_ast_proj.get_expr_tuple stmt with
+      | Some (_, _, elem_expr_info)
+        when is_glvalue list_expr_info || is_same_record_prvalue elem_expr_info ->
+          Some stmt
+      | _ ->
+          None )
+    | _ ->
+        None
+
+
   (** Execute translation and then possibly adjust the type of the result of translation: In C++,
       when expression returns reference to type T, it will be lvalue to T, not T&, but infer needs
       it to be T& *)
@@ -3074,8 +3113,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | [], stmts when Int.equal (List.length field_exps) (List.length stmts) ->
         List.map2_exn field_exps stmts ~f:init_field
     | [], [stmt] ->
-        (* This handles the case when a single element with a reference type is given.  In that
-           case, it loads/store the argument. *)
+        (* This happens for instance with unions, where one element initializes one of several
+           fields. *)
         [init_expr_trans trans_state (var_exp, var_typ) stmt_info (Some stmt)]
     | _, _ ->
         (* This happens with some braced-init-list for instance; translate each sub-statement so
@@ -3104,6 +3143,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (Typ.pp_full Pp.text) var_typ
 
 
+  and initListExpr_trans ({context= {tenv}} as trans_state) stmt_info expr_info stmts array_filler =
+    match get_transparent_init_list_elem tenv expr_info stmts with
+    | Some stmt ->
+        instruction trans_state stmt
+    | None ->
+        initListExpr_trans_aux trans_state stmt_info expr_info stmts array_filler
+
+
   (** InitListExpr can have following meanings:
 
       - initialize all record fields
@@ -3112,7 +3159,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       - perform zero initalization -
         {:http://en.cppreference.com/w/cpp/language/zero_initialization} Decision which case happens
         is based on the type of the InitListExpr *)
-  and initListExpr_trans ({context= {tenv}} as trans_state) stmt_info
+  and initListExpr_trans_aux ({context= {tenv}} as trans_state) stmt_info
       ({Clang_ast_t.ei_qual_type} as expr_info) stmts array_filler =
     let var_exp, var_typ =
       match trans_state.var_exp_typ with
