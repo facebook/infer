@@ -415,10 +415,8 @@ let should_analyze_proc =
            ; "std::vector" ] )
     in
     function
-    | Procname.ObjC_Cpp cpp_pname as pname ->
-        Procname.ObjC_Cpp.is_destructor cpp_pname
-        || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
-             (Procname.get_qualifiers pname)
+    | Procname.ObjC_Cpp _ as pname ->
+        QualifiedCppName.Match.match_qualifiers (Lazy.force matcher) (Procname.get_qualifiers pname)
     | Procname.Java java_pname ->
         Procname.Java.is_autogen_method java_pname
         || Typ.Name.Java.is_external (Procname.Java.get_class_type_name java_pname)
@@ -429,6 +427,18 @@ let should_analyze_proc =
     (not (should_skip pn))
     && (not (FbThreadSafety.is_logging_method pn))
     && not (is_assumed_thread_safe tenv pn)
+
+
+let is_scoped_lock_of_several_mutexes_destructor =
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::scoped_lock::~scoped_lock"] in
+  fun pname ->
+    QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
+    &&
+    match Procname.get_class_type_name pname with
+    | Some (Typ.CppClass {template_spec_info= Template {args= [_]}}) ->
+        false
+    | _ ->
+        true
 
 
 let get_current_class_and_threadsafe_superclasses tenv pname =

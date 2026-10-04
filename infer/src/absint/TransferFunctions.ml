@@ -28,6 +28,9 @@ end
 
 module type HIL = sig
   include S with type instr := HilInstr.t
+
+  val call_return_alias :
+    analysis_data -> Procname.t -> HilExp.t list -> HilExp.AccessExpression.t option
 end
 
 module type MakeHIL = functor (C : ProcCfg.S) -> sig

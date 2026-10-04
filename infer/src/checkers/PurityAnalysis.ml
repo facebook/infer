@@ -173,6 +173,8 @@ module TransferFunctions = struct
         astate
 
 
+  let call_return_alias _ _ _ = None
+
   let pp_session_name _node fmt = F.pp_print_string fmt "purity checker"
 end
 

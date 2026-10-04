@@ -29,15 +29,28 @@ module Access : sig
   val get_access_exp : t -> AccessExpression.t
 end
 
-(** Overapproximation of number of times the lock has been acquired *)
+(** Overapproximation of the effect on the locks held on entry: how many of them have been released,
+    and how many locks acquired since are still held *)
 module LockDomain : sig
-  include AbstractDomain.WithBottom
+  include AbstractDomain.S
+
+  val initial : t
+  (** no lock acquired or released *)
 
   val acquire_lock : t -> t
   (** record acquisition of a lock *)
 
   val release_lock : t -> t
-  (** record release of a lock *)
+  (** record release of a lock, which is one held on entry if none has been acquired since *)
+
+  val release_acquired_lock : t -> t
+  (** record release of a lock acquired since entry, if any *)
+
+  val is_locked : t -> bool
+  (** whether a lock acquired since entry is held *)
+
+  val has_released : t -> bool
+  (** whether a lock held on entry has been released *)
 end
 
 (** Abstraction of threads that may run in parallel with the current thread. NoThread <
@@ -80,7 +93,7 @@ module AccessSnapshot : sig
     type t =
       { access: Access.t
       ; thread: ThreadsDomain.t
-      ; lock: bool
+      ; lock: LockDomain.t
       ; ownership_precondition: OwnershipAbstractValue.t }
   end
 
@@ -114,7 +127,8 @@ module Attribute : sig
     | Nothing
     | Functional  (** holds a value returned from a callee marked [@Functional] *)
     | OnMainThread  (** boolean is true if the current procedure is running on the main thread *)
-    | LockHeld  (** boolean is true if a lock is currently held *)
+    | LockHeld  (** boolean is true if a lock, not counted as held until then, is currently held *)
+    | GuardLockHeld  (** boolean is true if the lock of a guard is currently held *)
     | Synchronized  (** the object is a synchronized data structure *)
 end
 
@@ -136,14 +150,15 @@ module NeverReturns : AbstractDomain.S
 
 type t =
   { threads: ThreadsDomain.t  (** current thread: main, background, or unknown *)
-  ; locks: LockDomain.t  (** boolean that is true if a lock must currently be held *)
+  ; locks: LockDomain.t  (** effect on the locks held *)
   ; never_returns: NeverReturns.t
         (** boolean which is true if a [noreturn] call is always reached *)
   ; accesses: AccessDomain.t
         (** read and writes accesses performed without ownership permissions *)
   ; ownership: OwnershipDomain.t  (** map of access paths to ownership predicates *)
   ; attribute_map: AttributeMapDomain.t
-        (** map of access paths to attributes such as owned, functional, ... *) }
+        (** map of access paths to attributes such as owned, functional, ... *)
+  ; return_alias: ReturnAliasDomain.t  (** what the procedure returns, if it is an access path *) }
 
 include AbstractDomain.S with type t := t
 
@@ -161,6 +176,8 @@ type summary =
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t
+  ; return_alias: AccessExpression.t option
+        (** access expression over the formals or globals whose value is returned *)
   ; attributes: AttributeMapDomain.t }
 
 val empty_summary : summary
@@ -197,8 +214,10 @@ val integrate_summary :
 
 val acquire_lock : t -> t
 
-val release_lock : t -> t
+val release_lock : only_acquired:bool -> t -> t
+(** with [~only_acquired:true], only release a lock acquired since entry (see
+    [LockDomain.release_acquired_lock]) *)
 
-val lock_if_true : HilExp.access_expression -> t -> t
+val lock_if_true : guard:bool -> HilExp.access_expression -> t -> t
 
 val branch_never_returns : unit -> t
