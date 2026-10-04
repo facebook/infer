@@ -218,8 +218,9 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
     | CppDelete
     | CppDeleteArray
     | EndIterator
-    | FClose
+    | FClose _
     | GoneOutOfScope _
+    | HandedOverToStream _
     | OptionalEmpty
     | StdVector _
     | CppMap _ ->

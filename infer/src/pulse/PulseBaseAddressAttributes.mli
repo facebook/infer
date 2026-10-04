@@ -146,6 +146,8 @@ module type S = sig
 
   val has_unknown_effect : key -> t -> bool
 
+  val has_contents_overwritten : key -> t -> bool
+
   val is_hack_constinit_called : key -> t -> bool
 end
 

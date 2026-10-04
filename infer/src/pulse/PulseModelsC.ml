@@ -107,8 +107,16 @@ let call_c_function_ptr {FuncArg.arg_payload= function_ptr} actuals : model =
         in
         let astate =
           let unknown_effect = Attribute.UnknownEffect (Model desc, hist) in
-          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual} ->
-              AddressAttributes.add_one (ValueOrigin.value actual) unknown_effect acc )
+          List.fold actuals ~init:astate ~f:(fun acc FuncArg.{arg_payload= actual; typ} ->
+              let actual = ValueOrigin.value actual in
+              let acc =
+                if
+                  Config.pulse_havoc_arguments && Typ.is_pointer typ
+                  && not (Typ.is_ptr_to_const typ)
+                then AbductiveDomain.apply_unknown_effect hist actual acc
+                else acc
+              in
+              AddressAttributes.add_one actual unknown_effect acc )
         in
         astate
       in
@@ -145,6 +153,11 @@ include struct
 
   let valid_args2 arg1 arg2 : model = start_model @@ fun () -> check_valid arg1 @@> check_valid arg2
 
+  let valid_and_null_or_valid_args arg1 arg2 : model =
+    start_model
+    @@ fun () -> lift_to_monad (valid_arg arg1) @@> lift_to_monad (null_or_valid_arg arg2)
+
+
   let non_det_ret : model = start_model @@ fun () -> assign_ret @= fresh ()
 
   let nonneg_non_det_ret : model = start_model @@ fun () -> assign_ret @= fresh_nonneg ()
@@ -175,27 +188,326 @@ include struct
     disj [assign_ret @= int (-1); Basic.return_alloc_not_null allocator None ~initialize:true]
 
 
+  let file_descriptor_allocator : Attribute.allocator DSL.model_monad =
+    let* {callee_procname} = get_data in
+    ret (Attribute.FileDescriptor callee_procname)
+
+
+  let ret_fd_or_minus_one () = file_descriptor_allocator >>= ret_alloc_or_minus_one
+
+  let ret_stream_or_null () = file_descriptor_allocator >>= ret_alloc_or_null
+
+  let release_stream stream =
+    let* {callee_procname} = get_data in
+    Basic.free (FClose callee_procname) stream
+
+
+  (* Unlike [free(NULL)], closing a NULL stream is undefined and crashes in common C libraries; only
+     glibc and bionic make [closedir(NULL)] fail with [EINVAL], and glibc declares its argument
+     nonnull. The NULL case of [Basic.free] must stay after [check_valid]: when [stream] is a
+     parameter, it is the only precondition that a caller passing NULL matches, and hence how that
+     caller gets reported. *)
+  let close_stream stream = check_valid (FuncArg.arg_payload stream) @@> release_stream stream
+
+  (* File descriptors are integers, not pointers: [0] is standard input, negative values are errors
+     that calls reject with [EBADF], and constants such as [STDOUT_FILENO] are valid descriptors. *)
+  let check_fd_not_closed fd = check_valid ~must_be_valid_reason:FileDescriptorUse fd
+
+  let check_fd_not_released fd = check_valid ~must_be_valid_reason:FileDescriptorRelease fd
+
+  (* negative values are not descriptors, and [0] is left valid as it is also the null pointer *)
+  let release_fd invalidation fd =
+    let fd_val = to_aval fd in
+    disj
+      [ prune_eq_zero fd_val
+      ; ( prune_positive fd_val
+        @@> let* {path; location} = get_data in
+            invalidate path UntraceableAccess location invalidation (ValueOrigin.addr_hist fd) ) ]
+
+
+  (** write [mk_value ()] into each scalar and pointer cell of an object of type [typ] at [addr],
+      recursing into struct fields but skipping arrays *)
+  let write_object_cells addr typ ~mk_value : unit DSL.model_monad =
+    let* {path; analysis_data= {tenv}; location} = get_data in
+    exec_command
+      (AbductiveDomain.fold_pointer_targets tenv path (`Malloc addr) typ location
+         ~f:(fun cell astate ->
+           AbductiveDomain.Memory.add_edge path cell Dereference (mk_value ()) location astate ) )
+
+
+  (* The cells written one by one all end up in the pre and post of the summaries of the callers,
+     which gets costly for big objects copied through chains of callees. *)
+  let max_cells_written_one_by_one = 64
+
+  let has_few_cells tenv typ =
+    let rec remaining budget (typ : Typ.t) =
+      if budget < 0 then budget
+      else
+        match typ.desc with
+        | Tint _ | Tfloat _ | Tptr _ ->
+            budget - 1
+        | Tstruct name -> (
+          match Tenv.lookup tenv name with
+          | None ->
+              budget
+          | Some {fields} ->
+              List.fold fields ~init:budget ~f:(fun budget ({typ} : Struct.field) ->
+                  remaining budget typ ) )
+        | Tarray _ | Tvoid | Tfun _ | TVar _ ->
+            budget
+    in
+    remaining max_cells_written_one_by_one typ >= 0
+
+
+  (** write zero into each scalar and pointer cell of a new object of type [typ] at [addr],
+      recursing into struct fields but skipping arrays, unions and struct fields at offset 0: Pulse
+      does not relate the cells written through another member of a union, or through a pointer to
+      the object cast to the type of its first field, to the ones of the object *)
+  let rec zero_cells addr (typ : Typ.t) : unit DSL.model_monad =
+    let* {analysis_data= {tenv}} = get_data in
+    match typ.desc with
+    | Tint _ | Tfloat _ | Tptr _ ->
+        store ~ref:addr @= null
+    | Tstruct name when Typ.Name.is_union name ->
+        ret ()
+    | Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | None ->
+          ret ()
+      | Some {fields} ->
+          let fields =
+            match fields with
+            | ({typ= {Typ.desc= Tstruct _}} : Struct.field) :: fields_after_first ->
+                fields_after_first
+            | _ ->
+                fields
+          in
+          list_iter fields ~f:(fun {Struct.name= field; typ= field_typ} ->
+              if Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field then
+                ret ()
+              else
+                let* field_addr = access NoAccess addr (FieldAccess field) in
+                zero_cells field_addr field_typ ) )
+    | Tarray _ | Tvoid | Tfun _ | TVar _ ->
+        ret ()
+
+
+  (** the object at [dest] gets unknown contents: the cells of the object already in the heap get
+      fresh values, and so do the other cells when they are read later or seen by callers *)
+  let overwrite_contents dest : unit DSL.model_monad =
+    let* hist = add_model_call ValueHistory.epoch in
+    exec_command (AbductiveDomain.overwrite_contents hist (fst dest))
+    @@> store ~ref:dest @= fresh ()
+
+
+  (** the first field of [name] when an object of type [typ] at the start of a [name] is exactly
+      that field, or nested in it as its first field *)
+  let rec first_field_holding tenv name typ =
+    match Tenv.lookup tenv name with
+    | Some {Struct.fields= ({name= field; typ= field_typ} : Struct.field) :: _} -> (
+        if Typ.equal_ignore_quals field_typ typ then Some field
+        else
+          match field_typ.Typ.desc with
+          | Tstruct field_typ_name ->
+              first_field_holding tenv field_typ_name typ |> Option.map ~f:(fun _ -> field)
+          | _ ->
+              None )
+    | _ ->
+        None
+
+
+  let rec has_pointer_cell tenv (typ : Typ.t) =
+    match typ.desc with
+    | Tptr _ ->
+        true
+    | Tstruct name ->
+        Tenv.lookup tenv name
+        |> Option.exists ~f:(fun {Struct.fields} ->
+            List.exists fields ~f:(fun ({typ} : Struct.field) -> has_pointer_cell tenv typ) )
+    | Tint _ | Tfloat _ | Tarray _ | Tvoid | Tfun _ | TVar _ ->
+        false
+
+
+  (** the objects written by [overwrite_cells], as their canonical address and their struct type
+      name, or [None] for a scalar *)
+  module Visited = Stdlib.Set.Make (struct
+    type t = AbstractValue.t * Typ.Name.t option [@@deriving compare]
+  end)
+
+  (** write the values of the pointer cells of the object of type [typ] at [src] (fresh values if
+      [src] is [None]) into the corresponding cells of [dest], and fresh values into its other
+      scalar cells, recursing into struct fields. The cells already at [dest] that are not cells of
+      the objects written so far, in [visited], are left alone when they are outside of the object,
+      eg the fields after a first field of type [typ], and get unknown contents otherwise. Objects
+      are written once: a struct and its first field can be at the same address in the heap when the
+      path condition says so. *)
+  let rec overwrite_cells ~src dest (typ : Typ.t) visited : Visited.t DSL.model_monad =
+    let* {analysis_data= {tenv}} = get_data in
+    let* addr =
+      exec_pure_operation (fun astate ->
+          (AbductiveDomain.CanonValue.canon' astate (fst dest) :> AbstractValue.t) )
+    in
+    let overwrite_cell visited =
+      let* value =
+        match (src, typ.desc) with
+        | Some src, Tptr _ ->
+            access NoAccess src Dereference
+        | _ ->
+            fresh ()
+      in
+      store ~ref:dest value @@> ret visited
+    in
+    let overwrite_field visited {Struct.name= field; typ= field_typ} =
+      let* dest_field = access NoAccess dest (FieldAccess field) in
+      let* src_field =
+        match src with
+        | Some src when has_pointer_cell tenv field_typ ->
+            let* src_field = access NoAccess src (FieldAccess field) in
+            ret (Some src_field)
+        | _ ->
+            ret None
+      in
+      overwrite_cells ~src:src_field dest_field field_typ visited
+    in
+    let is_written visited (access : Access.t) =
+      match access with
+      | FieldAccess field ->
+          Visited.mem (addr, Some (Fieldname.get_class_name field)) visited
+      | Dereference ->
+          Visited.mem (addr, None) visited
+      | ArrayAccess _ ->
+          false
+    in
+    let overwrite_other_cells visited =
+      let* edges =
+        exec_pure_operation (fun astate ->
+            AbductiveDomain.Memory.fold_edges addr astate ~init:[] ~f:(fun edges edge ->
+                edge :: edges ) )
+      in
+      list_fold edges ~init:visited ~f:(fun visited ((access : Access.t), cell) ->
+          if is_written visited access then ret visited
+          else
+            match access with
+            | FieldAccess field -> (
+              match first_field_holding tenv (Fieldname.get_class_name field) typ with
+              | Some first_field when Fieldname.equal field first_field ->
+                  overwrite_cells ~src cell typ visited
+              | Some _ ->
+                  ret visited
+              | None ->
+                  overwrite_contents cell @@> ret visited )
+            | ArrayAccess _ ->
+                overwrite_contents cell @@> ret visited
+            | Dereference ->
+                (store ~ref:dest @= fresh ()) @@> ret visited )
+    in
+    let visit name_opt ~write =
+      if Visited.mem (addr, name_opt) visited then ret visited
+      else write (Visited.add (addr, name_opt) visited) >>= overwrite_other_cells
+    in
+    match typ.desc with
+    | Tint _ | Tfloat _ | Tptr _ ->
+        visit None ~write:overwrite_cell
+    | Tstruct name -> (
+      match Tenv.lookup tenv name with
+      | None ->
+          overwrite_contents dest @@> ret visited
+      | Some {fields} ->
+          let fields =
+            List.filter fields ~f:(fun ({name= field} : Struct.field) ->
+                not (Fieldname.is_internal field || Fieldname.is_capture_field_in_closure field) )
+          in
+          visit (Some name) ~write:(fun visited ->
+              list_fold fields ~init:visited ~f:overwrite_field ) )
+    | Tarray _ | Tvoid | Tfun _ | TVar _ ->
+        overwrite_contents dest @@> ret visited
+
+
+  (** [Some T] when [size] is the size of exactly one [T] *)
+  let single_object_type (size : Exp.t) =
+    match Exp.ignore_cast size with
+    | Sizeof {typ} ->
+        Some typ
+    | BinOp (Mult _, n, m) -> (
+      match (Exp.ignore_cast n, Exp.ignore_cast m) with
+      | (Const (Cint n), Sizeof {typ} | Sizeof {typ}, Const (Cint n)) when IntLit.isone n ->
+          Some typ
+      | _ ->
+          None )
+    | _ ->
+        None
+
+
+  (** the object at [dest] is overwritten, with the contents of the object at [src] if given; when
+      the type of the object is known and it has few cells, they are written one by one *)
+  let overwrite_object ?src dest typ_opt : unit DSL.model_monad =
+    let* {analysis_data= {tenv}} = get_data in
+    let dest = to_aval dest in
+    match typ_opt with
+    | Some typ when has_few_cells tenv typ ->
+        let* (_ : Visited.t) =
+          overwrite_cells ~src:(Option.map src ~f:to_aval) dest typ Visited.empty
+        in
+        ret ()
+    | _ ->
+        overwrite_contents dest
+
+
+  let overwrite_pointee {FuncArg.arg_payload= ptr; typ} =
+    let pointee_typ_opt =
+      match typ.Typ.desc with Tptr (pointee_typ, _) -> Some pointee_typ | _ -> None
+    in
+    check_valid ptr @@> overwrite_object ptr pointee_typ_opt
+
+
   let calloc ~x nmemb size =
     start_model
     @@ fun () ->
     let total_size_exp = Exp.BinOp (Mult None, nmemb, size) in
-    alloc_common_dsl ~null_case:(not x) ~initialize:true CMalloc (Some total_size_exp)
+    let alloc =
+      let* block =
+        lift_to_monad_and_get_result
+          ( start_model
+          @@ fun () -> Basic.return_alloc_not_null CMalloc ~initialize:true (Some total_size_exp) )
+      in
+      (* Pulse relates neither [p[0]] to [*p] nor [p[i].f] to [p->f], so zeros written in an array
+         would survive writes through indices: only zero the cells of a single object, as [memset]
+         does. *)
+      let* {analysis_data= {tenv}} = get_data in
+      option_iter
+        (single_object_type total_size_exp |> Option.filter ~f:(has_few_cells tenv))
+        ~f:(zero_cells block)
+      @@> assign_ret block
+    in
+    if x then alloc else disj [alloc; return_null_dsl]
 
 
-  let close fd = start_model @@ fun () -> Basic.free FClose fd
+  let close fd : model =
+    start_model
+    @@ fun () ->
+    check_fd_not_released fd
+    @@> disj
+          [ prune_lt_int (to_aval fd) IntLit.zero @@> assign_ret @= int (-1)
+          ; (let* {callee_procname} = get_data in
+             release_fd (FClose callee_procname) fd ) ]
+
 
   let fclose stream : model =
     start_model
-    @@ fun () ->
-    Basic.free FClose stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
+    @@ fun () -> close_stream stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
+
+
+  let pclose stream : model =
+    start_model
+    @@ fun () -> close_stream stream @@> assign_ret (* exit status of the command *) @= fresh ()
 
 
   let closedir dirp : model =
     start_model
     @@ fun () ->
-    Basic.free FClose dirp
-    (* pretend [closedir] always succeeds, i.e. [dirp] was a valid stream descriptor or [free]
-       above would have caught an error *)
+    close_stream dirp
+    (* pretend [closedir] always succeeds, i.e. [dirp] was a valid stream descriptor or
+       [close_stream] above would have caught an error *)
     @@> (int 0 >>= assign_ret)
 
 
@@ -204,10 +516,7 @@ include struct
     @@ fun () ->
     let* () =
       disj
-        [ ( prune_ne_zero (to_aval size)
-          @@>
-          let* obj = fresh () in
-          store ~ref:(to_aval buf) obj )
+        [ prune_ne_zero (to_aval size) @@> check_valid buf @@> overwrite_object buf None
         ; prune_eq_zero (to_aval size) @@> prune_eq_zero (to_aval buf) ]
     in
     fresh_nonneg () >>= assign_ret
@@ -216,10 +525,8 @@ include struct
   let fgetpos stream pos =
     start_model
     @@ fun () ->
-    check_valid stream
-    @@>
-    let* obj = fresh () in
-    store ~ref:(to_aval pos) obj @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
+    check_valid stream @@> overwrite_pointee pos
+    @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
 
 
   let getcwd buf _size : model =
@@ -244,38 +551,188 @@ include struct
     @@> data_dependency str [str; stream]
 
 
-  let memcpy dest src : model =
+  let eof_or_count_ret () : unit DSL.model_monad =
+    let* res = fresh () in
+    prune_ge_int res IntLit.minus_one @@> assign_ret res
+
+
+  (* the format is not parsed: any pointer argument may receive input *)
+  let write_scanf_outputs inputs (args : ValueOrigin.t FuncArg.t list) : unit DSL.model_monad =
+    list_iter args ~f:(fun {FuncArg.arg_payload= arg; typ} ->
+        if Typ.is_pointer typ then havoc_pointee (to_aval arg) @@> data_dependency arg inputs
+        else ret () )
+
+
+  let has_n_conversion format =
+    let len = String.length format in
+    let rec after_percent i =
+      if i >= len then false
+      else
+        match format.[i] with
+        | 'n' ->
+            true
+        | '*' | '$' | '\'' | '0' .. '9' | 'h' | 'j' | 'l' | 'L' | 'm' | 'q' | 't' | 'z' ->
+            after_percent (i + 1)
+        | _ ->
+            scan (i + 1)
+    and scan i =
+      if i >= len then false
+      else if Char.equal format.[i] '%' then after_percent (i + 1)
+      else scan (i + 1)
+    in
+    scan 0
+
+
+  (* The result counts the assigned conversions, each of which consumes an argument. Nothing is
+     assigned when it is 0 or EOF, except by [%n], which is not counted. *)
+  let scanf_outputs_and_ret format inputs args : unit DSL.model_monad =
+    let ret_between low high =
+      let* res = fresh () in
+      prune_ge_int res (IntLit.of_int low)
+      @@> prune_lt_int res (IntLit.of_int (high + 1))
+      @@> assign_ret res
+    in
+    let num_args = List.length args in
+    let* format_str = as_constant_string (to_aval format) in
+    match format_str with
+    | Some format_str when not (has_n_conversion format_str) ->
+        disj [ret_between (-1) 0; write_scanf_outputs inputs args @@> ret_between 1 num_args]
+    | _ ->
+        write_scanf_outputs inputs args @@> ret_between (-1) num_args
+
+
+  let fscanf input format args : model =
     start_model
     @@ fun () ->
-    check_valid dest @@> check_valid src @@> data_dependency dest [src]
+    check_valid input @@> check_valid format @@> scanf_outputs_and_ret format [input] args
+
+
+  let scanf format args : model =
+    start_model @@ fun () -> check_valid format @@> scanf_outputs_and_ret format [] args
+
+
+  (* the outputs are behind the [va_list] argument, which is not modelled *)
+  let vfscanf input format : model =
+    start_model @@ fun () -> check_valid input @@> check_valid format @@> eof_or_count_ret ()
+
+
+  let vscanf format : model = start_model @@ fun () -> check_valid format @@> eof_or_count_ret ()
+
+  (* A NULL [*lineptr] gets a new buffer, which glibc, musl and macOS allocate even when the call
+     fails. A non-NULL one may be reallocated, so it is not tracked anymore. *)
+  let getdelim lineptr n stream : model =
+    let lineptr = to_aval lineptr in
+    start_model
+    @@ fun () ->
+    let* () = check_valid stream in
+    let* old_buf = load lineptr in
+    let new_buf =
+      lift_to_monad_and_get_result
+        (start_model @@ fun () -> Basic.return_alloc_not_null CMalloc None ~initialize:true)
+    in
+    let reallocated_buf =
+      let* () = apply_unknown_effect old_buf in
+      let* buf = fresh () in
+      and_positive buf @@> ret buf
+    in
+    let* buf =
+      disj [prune_eq_zero old_buf @@> new_buf; prune_ne_zero old_buf @@> reallocated_buf]
+    in
+    store ~ref:lineptr buf
+    @@> (store ~ref:(to_aval n) @= fresh_nonneg ())
+    @@> data_dependency (ValueOrigin.unknown buf) [stream]
+    @@> eof_or_count_ret ()
+
+
+  (* the stream may use [buf] until it is closed *)
+  let setbuf stream buf : model =
+    start_model @@ fun () -> check_valid stream @@> apply_unknown_effect (to_aval buf)
+
+
+  let memcpy dest src size : model =
+    start_model
+    @@ fun () ->
+    check_valid dest @@> check_valid src
+    @@> overwrite_object ~src dest (single_object_type size)
+    @@> data_dependency dest [src]
     @@> assign_ret (to_aval dest)
 
 
+  let fill_object s size value : unit DSL.model_monad =
+    check_valid s
+    @@> option_iter (single_object_type size) ~f:(fun typ ->
+        write_object_cells (to_aval s) typ ~mk_value:(fun () -> value) )
+
+
   let memset s value size : model =
+    start_model @@ fun () -> fill_object s size (to_aval value) @@> assign_ret (to_aval s)
+
+
+  let bzero s size : model = start_model @@ fun () -> fill_object s size @= null
+
+  let open_ = start_model ret_fd_or_minus_one
+
+  let dup fd : model = start_model @@ fun () -> check_fd_not_closed fd @@> ret_fd_or_minus_one ()
+
+  let unknown_call args =
+    PulseModelsImport.Basic.skipped_known_call (ValueOrigin.addr_hist_args args)
+    |> lift_model |> lift_to_monad
+
+
+  (* treat the arguments like those of an unknown call so that [addr] and [addrlen], which receive
+     the address of the peer, get havocked *)
+  let accept sockfd args : model =
     start_model
     @@ fun () ->
-    check_valid s
-    @@> (let typ = match (size : Exp.t) with Sizeof {typ} -> typ | _ -> Typ.mk Tvoid in
-         let* {path; analysis_data= {tenv}; location} = get_data in
-         DSL.Syntax.exec_command
-           (AbductiveDomain.fold_pointer_targets tenv path
-              (`Malloc (ValueOrigin.addr_hist s))
-              typ location
-              ~f:(fun addr_hist astate ->
-                (* this will always be ok because the address is generated fresh *)
-                PulseOperations.write_deref path location ~ref:addr_hist
-                  ~obj:(ValueOrigin.addr_hist value) astate
-                |> PulseResult.ok_exn ) ) )
-    @@> assign_ret (to_aval s)
+    check_fd_not_closed (FuncArg.arg_payload sockfd)
+    @@> unknown_call (sockfd :: args)
+    @@> ret_fd_or_minus_one ()
 
 
-  let open_ = start_model @@ fun () -> ret_alloc_or_minus_one FileDescriptor
+  (* apart from the check of [fd], the call is treated as unknown, e.g. to havoc the buffers that it
+     writes to *)
+  let use_fd fd args : model =
+    start_model
+    @@ fun () -> check_fd_not_closed (FuncArg.arg_payload fd) @@> unknown_call (fd :: args)
+
+
+  (* for [pipe], [pipe2] and [socketpair] *)
+  let fd_pair fds : model =
+    start_model
+    @@ fun () ->
+    (* descriptors stored through the result of pointer arithmetic such as [fds + 2 * i], or through
+       a pointer returned by an unknown function such as [std::array::data()], would be unreachable
+       for Pulse, i.e. leaked, right away *)
+    let* returned_from_unknown =
+      AddressAttributes.get_valid_returned_from_unknown (ValueOrigin.value fds)
+      |> exec_pure_operation
+    in
+    let track_fds =
+      match (fds : ValueOrigin.t) with
+      | Unknown _ ->
+          false
+      | InMemory _ | OnStack _ ->
+          Option.is_none returned_from_unknown
+    in
+    let new_fd_at index =
+      let* index = int index in
+      let* cell = access NoAccess (to_aval fds) (ArrayAccess (StdTyp.int, fst index)) in
+      let* fd = fresh () in
+      let* () =
+        if track_fds then
+          let* allocator = file_descriptor_allocator in
+          allocation allocator fd
+        else ret ()
+      in
+      and_positive fd @@> store ~ref:cell fd
+    in
+    disj [assign_ret @= int (-1); new_fd_at 0 @@> new_fd_at 1 @@> assign_ret @= int 0]
+
 
   let fopen path mode : model =
     start_model
     @@ fun () ->
-    check_valid path @@> check_valid mode @@> ret_alloc_or_null FileDescriptor
-    @@> data_dependency_to_ret [path]
+    check_valid path @@> check_valid mode @@> ret_stream_or_null () @@> data_dependency_to_ret [path]
 
 
   let fprintf stream format args =
@@ -301,14 +758,24 @@ include struct
     (* pretend [fputs] always succeeds *) @= fresh_nonneg ()
 
 
-  let fdopen fd mode : model =
-    start_model
-    @@ fun () -> check_valid mode @@> Basic.free FClose fd @@> ret_alloc_or_null FileDescriptor
+  (* the new stream owns [fd], which stays open, but a failure leaves [fd] to the caller *)
+  let stream_of_fd fd =
+    check_fd_not_released fd
+    @@> disj
+          [ assign_ret @= null
+          ; ( (let* {callee_procname} = get_data in
+               release_fd (HandedOverToStream callee_procname) fd )
+            @@> let* allocator = file_descriptor_allocator in
+                Basic.return_alloc_not_null allocator None ~initialize:true ) ]
 
 
-  let opendir path : model =
-    start_model @@ fun () -> check_valid path @@> ret_alloc_or_null FileDescriptor
+  let fdopen fd mode : model = start_model @@ fun () -> check_valid mode @@> stream_of_fd fd
 
+  let fdopendir fd : model = start_model @@ fun () -> stream_of_fd fd
+
+  let opendir path : model = start_model @@ fun () -> check_valid path @@> ret_stream_or_null ()
+
+  let tmpfile : model = start_model ret_stream_or_null
 
   let putc c stream : model =
     start_model
@@ -318,18 +785,23 @@ include struct
     @@> data_dependency stream [c]
 
 
-  let read_model fd buf count =
-    start_model
-    @@ fun () ->
+  let read_common fd buf count size_exp =
     disj
       [ prune_ne_zero (to_aval count)
-        @@> (store ~ref:(to_aval buf) @= fresh ())
+        @@> check_valid buf
+        @@> overwrite_object buf (single_object_type size_exp)
         @@> data_dependency buf [fd] @@> assign_ret @= fresh_nonneg ()
       ; prune_eq_zero (to_aval count) @@> assign_ret @= int 0 ]
 
 
-  let fread ptr size stream =
-    start_model @@ fun () -> check_valid stream @@> (read_model stream ptr size |> lift_to_monad)
+  let read_fd fd buf {FuncArg.arg_payload= count; exp= count_exp} =
+    start_model @@ fun () -> check_fd_not_closed fd @@> read_common fd buf count count_exp
+
+
+  let fread ptr size {FuncArg.arg_payload= nmemb; exp= nmemb_exp} stream =
+    start_model
+    @@ fun () ->
+    check_valid stream @@> read_common stream ptr nmemb (Exp.BinOp (Mult None, size, nmemb_exp))
 
 
   let shmget : model = start_model @@ fun () -> ret_alloc_or_minus_one CMalloc
@@ -337,10 +809,7 @@ include struct
   let statfs path buf =
     start_model
     @@ fun () ->
-    check_valid path
-    @@>
-    let* obj = fresh () in
-    store ~ref:(to_aval buf) obj @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
+    check_valid path @@> overwrite_pointee buf @@> disj [assign_ret @= int 0; assign_ret @= int (-1)]
 
 
   let stpcpy dst src : model =
@@ -409,7 +878,7 @@ include struct
     assign_ret t
 
 
-  let write fd buf count =
+  let write_model fd buf count =
     start_model
     @@ fun () ->
     disj
@@ -418,8 +887,12 @@ include struct
       ; prune_eq_zero (to_aval count) @@> assign_ret @= int 0 ]
 
 
+  let write_fd fd buf count =
+    start_model @@ fun () -> check_fd_not_closed fd @@> (write_model fd buf count |> lift_to_monad)
+
+
   let fwrite ptr size stream =
-    start_model @@ fun () -> check_valid stream @@> (write stream ptr size |> lift_to_monad)
+    start_model @@ fun () -> check_valid stream @@> (write_model stream ptr size |> lift_to_monad)
 
 
   let assertion_error _ : model = start_model @@ fun () -> report_assert_error
@@ -568,6 +1041,21 @@ end
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let open DSL.Syntax in
+  let int_ptr_typ = Typ.mk_ptr StdTyp.int in
+  (* user code may define functions named like the getline family with other signatures; [size_t]
+     is [unsigned long] on LP64 targets and [unsigned int] on ILP32 ones *)
+  let getline_family size_t =
+    let char_ptr_ptr = Typ.mk_ptr (Typ.mk_ptr StdTyp.char) in
+    let size_t_ptr = Typ.mk_ptr (Typ.mk (Tint size_t)) in
+    [ -"getdelim"
+      <>$ capt_arg_payload_of_prim_typ char_ptr_ptr
+      $+ capt_arg_payload_of_prim_typ size_t_ptr
+      $+ any_arg_of_prim_typ StdTyp.int $+ capt_arg_payload $--> getdelim
+    ; -"getline"
+      <>$ capt_arg_payload_of_prim_typ char_ptr_ptr
+      $+ capt_arg_payload_of_prim_typ size_t_ptr
+      $+ capt_arg_payload $--> getdelim ]
+  in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
     Option.exists r_opt ~f:(fun r ->
         let s = Procname.to_string proc_name in
@@ -584,9 +1072,15 @@ let matchers : matcher list =
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
     <>$ capt_arg $+ capt_exp $+...$--> custom_realloc ~null_case:true
   ; +BuiltinDecl.(match_builtin __call_c_function_ptr) $ capt_arg $++$--> call_c_function_ptr
+  ; ( -"accept" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
+    $--> fun sockfd addr addrlen -> accept sockfd [addr; addrlen] )
+  ; ( -"accept4" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
+    $--> fun sockfd addr addrlen flags -> accept sockfd [addr; addrlen; flags] )
   ; -"access" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
-  ; -"android_fdsan_close_with_tag" <>$ capt_arg $+ any_arg $--> close
+  ; -"android_fdsan_close_with_tag"
+    <>$ capt_arg_payload_of_prim_typ StdTyp.int
+    $+ any_arg $--> close
   ; -"asctime" <>$ capt_arg_payload
     $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
   ; ( -"__assert_fail" <>$ capt_arg
@@ -630,37 +1124,60 @@ let matchers : matcher list =
     $--> Atomic.atomic_op_fetch `Pre `Nand
   ; -"__atomic_test_and_set" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_test_and_set
   ; -"__atomic_clear" <>$ capt_arg_payload $+ any_arg $--> Atomic.atomic_clear
+  ; -"__builtin_memset" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memset
+  ; -"bzero" <>$ capt_arg_payload $+ capt_exp $--> bzero
   ; -"clearerr" <>$ capt_arg_payload $--> valid_arg
-  ; -"close" <>$ capt_arg $--> close
+  ; -"close" <>$ capt_arg_payload_of_prim_typ StdTyp.int $--> close
   ; -"closedir" <>$ capt_arg $--> closedir
   ; -"confstr" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> confstr
+  ; -"creat" <>$ any_arg $+ any_arg $--> open_
+  ; -"creat64" <>$ any_arg $+ any_arg $--> open_
   ; -"ctime" <>$ capt_arg_payload
     $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
+  ; -"dup" <>$ capt_arg_payload_of_prim_typ StdTyp.int $--> dup
+  ; -"epoll_create" <>$ any_arg $--> open_
+  ; -"epoll_create1" <>$ any_arg $--> open_
+  ; -"eventfd" <>$ any_arg $+ any_arg $--> open_
+  ; -"explicit_bzero" <>$ capt_arg_payload $+ capt_exp $--> bzero
   ; -"fclose" <>$ capt_arg $--> fclose
-  ; -"fdopen" <>$ capt_arg $+ capt_arg_payload $--> fdopen
+  ; ( -"fcntl" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg
+    $++$--> fun fd cmd args -> use_fd fd (cmd :: args) )
+  ; (-"fdatasync" <>$ capt_arg_of_prim_typ StdTyp.int $--> fun fd -> use_fd fd [])
+  ; -"fdopen" <>$ capt_arg_payload_of_prim_typ StdTyp.int $+ capt_arg_payload $--> fdopen
+  ; -"fdopendir" <>$ capt_arg_payload_of_prim_typ StdTyp.int $--> fdopendir
   ; -"feof" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"ferror" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"fflush" <>$ capt_arg_payload $--> compose1 null_or_valid_arg (ignore_arg non_det_ret)
   ; -"fgetc" <>$ capt_arg_payload
     $--> (valid_arg |> rev_compose1 (ignore_arg non_det_ret) |> rev_compose1 taint_ret_from_arg)
-  ; -"fgetpos" <>$ capt_arg_payload $+ any_arg
-    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
-  ; -"fgetpos" <>$ capt_arg_payload $+ capt_arg_payload $--> fgetpos
+  ; -"fgetpos" <>$ capt_arg_payload $+ capt_arg $--> fgetpos
   ; -"fgets" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $--> fgets
   ; -"fileno" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"fopen" <>$ capt_arg_payload $+ capt_arg_payload $--> fopen
   ; -"fprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf
   ; -"fputc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"fputs" <>$ capt_arg_payload $+ capt_arg_payload $--> fputs
-  ; -"fread" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fread
-  ; -"fsct" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ any_arg
-    $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
+  ; -"fread" <>$ capt_arg_payload $+ capt_exp $+ capt_arg $+ capt_arg_payload $--> fread
+  ; -"fscanf" <>$ capt_arg_payload $+ capt_arg_payload $++$--> fscanf
+  ; -"fsctl" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ any_arg
+    $--> compose2 valid_and_null_or_valid_args (ignore_args2 zero_or_minus_one_ret)
   ; -"fseek" <>$ capt_arg_payload $+ any_arg $+ any_arg
+    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"fseeko" <>$ capt_arg_payload $+ any_arg $+ any_arg
+    $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
+  ; -"fseeko64" <>$ capt_arg_payload $+ any_arg $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"fsetpos" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"fsetpos" <>$ capt_arg_payload $+ capt_arg_payload
     $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
+  ; (-"fstat" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $--> fun fd buf -> use_fd fd [buf])
+  ; (-"fsync" <>$ capt_arg_of_prim_typ StdTyp.int $--> fun fd -> use_fd fd [])
   ; -"ftell" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
+  ; -"ftello" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
+  ; -"ftello64" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_or_minus_one_ret)
+  ; ( -"ftruncate" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg
+    $--> fun fd length -> use_fd fd [length] )
   ; -"fwrite" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> fwrite
   ; -"g_free" <>$ capt_arg $--> free
   ; -"g_malloc" <>$ capt_arg $--> Glib.g_malloc
@@ -676,43 +1193,84 @@ let matchers : matcher list =
   ; -"gets" <>$ capt_arg_payload $--> gets
   ; -"gmtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
   ; -"gtk_type_check_object_cast" <>$ capt_arg_payload $+ any_arg $--> assume_not_null
-  ; -"gzdopen" <>$ capt_arg $+ capt_arg_payload $--> fdopen
+  ; -"gzdopen" <>$ capt_arg_payload_of_prim_typ StdTyp.int $+ capt_arg_payload $--> fdopen
+  ; -"inotify_init" $$--> open_
+  ; -"inotify_init1" <>$ any_arg $--> open_
+  ; ( -"ioctl" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg
+    $++$--> fun fd request args -> use_fd fd (request :: args) )
   ; -"localtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
   ; -"longjmp" <>$ any_arg $+ any_arg $--> Basic.early_exit
+  ; ( -"lseek" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
+    $--> fun fd offset whence -> use_fd fd [offset; whence] )
   ; -"memchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
   ; -"memcmp" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
     $--> compose2 valid_args2 (ignore_args2 non_det_ret)
-  ; -"memcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
-  ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
+  ; -"memcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memcpy
+  ; -"memfd_create" <>$ any_arg $+ any_arg $--> open_
+  ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memcpy
   ; -"memrchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
   ; -"memset" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memset
+  ; -"mkostemp" <>$ any_arg $+ any_arg $--> open_
+  ; -"mkstemp" <>$ any_arg $--> open_
   ; -"open" <>$ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"open64" <>$ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"openat" <>$ any_arg $+ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"openat64" <>$ any_arg $+ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"opendir" <>$ capt_arg_payload $--> opendir
   ; (-"pause" $$--> start_model @@ fun () -> assign_ret @= int (-1))
+  ; -"pclose" <>$ capt_arg $--> pclose
+  ; -"pipe" <>$ capt_arg_payload_of_prim_typ int_ptr_typ $--> fd_pair
+  ; -"pipe2" <>$ capt_arg_payload_of_prim_typ int_ptr_typ $+ any_arg $--> fd_pair
+  ; -"popen" <>$ capt_arg_payload $+ capt_arg_payload $--> fopen
+  ; ( -"pread" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
+    $--> fun fd buf count offset -> use_fd fd [buf; count; offset] )
   ; (-"printf" &--> start_model @@ fun () -> assign_ret @= fresh ())
   ; -"pthread_exit" <>$ any_arg $+ any_arg $--> Basic.early_exit
   ; -"pthread_once" <>$ any_arg $+ capt_arg $--> pthread_once
   ; -"putc" <>$ capt_arg_payload $+ capt_arg_payload $--> putc
   ; -"puts" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
-  ; -"read" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> read_model
+  ; ( -"pwrite" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
+    $--> fun fd buf count offset -> use_fd fd [buf; count; offset] )
+  ; -"read" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg $--> read_fd
   ; -"readdir" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg null_or_non_det_ret)
   ; -"readline" <>$ capt_arg_payload
     $--> compose1 null_or_valid_arg (ignore_arg null_or_non_det_ret)
+  ; ( -"readv" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
+    $--> fun fd iov iovcnt -> use_fd fd [iov; iovcnt] )
+  ; ( -"recv" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
+    $--> fun fd buf len flags -> use_fd fd [buf; len; flags] )
+  ; ( -"recvfrom" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
+    $+ capt_arg $+ capt_arg
+    $--> fun fd buf len flags addr addrlen -> use_fd fd [buf; len; flags; addr; addrlen] )
+  ; ( -"recvmsg" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
+    $--> fun fd msg flags -> use_fd fd [msg; flags] )
   ; -"remove" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"rename" <>$ capt_arg_payload $+ capt_arg_payload
     $--> compose2 valid_args2 (ignore_args2 zero_or_minus_one_ret)
   ; -"rewind" <>$ capt_arg_payload $--> valid_arg
+  ; -"scanf" <>$ capt_arg_payload $++$--> scanf
+  ; ( -"send" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
+    $--> fun fd buf len flags -> use_fd fd [buf; len; flags] )
+  ; ( -"sendmsg" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
+    $--> fun fd msg flags -> use_fd fd [msg; flags] )
+  ; ( -"sendto" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg $+ capt_arg
+    $+ capt_arg
+    $--> fun fd buf len flags addr addrlen -> use_fd fd [buf; len; flags; addr; addrlen] )
+  ; -"setbuf" <>$ capt_arg_payload $+ capt_arg_payload $--> setbuf
   ; -"setlocale" <>$ any_arg $+ capt_arg_payload
     $--> compose1 null_or_valid_arg (ignore_arg null_or_non_det_ret)
+  ; -"setvbuf" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $+ any_arg
+    $--> compose2 setbuf (ignore_args2 non_det_ret)
   ; -"shmget" <>$ any_arg $+ any_arg $+ any_arg $--> shmget
   ; -"snprintf" <>$ capt_arg_payload $+ any_arg (* size *) $+ capt_arg_payload $+++$--> sprintf
   ; -"socket" <>$ any_arg $+ any_arg $+ any_arg $--> open_
+  ; -"socketpair" <>$ any_arg $+ any_arg $+ any_arg
+    $+ capt_arg_payload_of_prim_typ int_ptr_typ
+    $--> fd_pair
   ; -"sprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> sprintf
-  ; -"stat" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
-  ; -"statfs" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
+  ; -"sscanf" <>$ capt_arg_payload $+ capt_arg_payload $++$--> fscanf
+  ; -"stat" <>$ capt_arg_payload $+ capt_arg $--> statfs
+  ; -"statfs" <>$ capt_arg_payload $+ capt_arg $--> statfs
   ; -"stpcpy" <>$ capt_arg_payload $+ capt_arg_payload $--> stpcpy
   ; -"strcasestr" <>$ capt_arg_payload $+ capt_arg_payload $--> strstr
   ; -"strcat" <>$ capt_arg_payload $+ capt_arg_payload $--> strcpy
@@ -745,18 +1303,26 @@ let matchers : matcher list =
   ; -"strtoul" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strtol
   ; -"strupr" <>$ capt_arg_payload $--> compose1 valid_arg ret_arg
   ; -"time" <>$ capt_arg_payload $--> time
+  ; -"timerfd_create" <>$ any_arg $+ any_arg $--> open_
+  ; -"tmpfile" $$--> tmpfile
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"unlink" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"utimes" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"vfprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> fprintf
+  ; -"vfscanf" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> vfscanf
   ; -"vprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
+  ; -"vscanf" <>$ capt_arg_payload $+ any_arg $--> vscanf
   ; -"vsnprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"vsprintf" <>$ capt_arg_payload $+...$--> compose1 valid_arg (ignore_arg non_det_ret)
-  ; -"write" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> write
+  ; -"vsscanf" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> vfscanf
+  ; -"write" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_arg_payload $--> write_fd
+  ; ( -"writev" <>$ capt_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
+    $--> fun fd iov iovcnt -> use_fd fd [iov; iovcnt] )
   ; -"XGetAtomName" <>$ any_arg $+ any_arg $--> Xlib.xGetAtomName
   ; -"XFree" <>$ capt_arg $--> Xlib.xFree ]
+  @ getline_family IULong @ getline_family IUInt
   @ ( [ +BuiltinDecl.(match_builtin malloc)
         <>$ capt_exp
         $--> malloc ~null_case:(not Config.pulse_unsafe_malloc)
