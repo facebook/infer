@@ -175,6 +175,20 @@ include struct
     disj [assign_ret @= int (-1); Basic.return_alloc_not_null allocator None ~initialize:true]
 
 
+  let file_descriptor_allocator : Attribute.allocator DSL.model_monad =
+    let* {callee_procname} = get_data in
+    ret (Attribute.FileDescriptor callee_procname)
+
+
+  let ret_fd_or_minus_one () = file_descriptor_allocator >>= ret_alloc_or_minus_one
+
+  let ret_stream_or_null () = file_descriptor_allocator >>= ret_alloc_or_null
+
+  let close_file_descriptor fd_or_stream =
+    let* {callee_procname} = get_data in
+    Basic.free (FClose callee_procname) fd_or_stream
+
+
   let calloc ~x nmemb size =
     start_model
     @@ fun () ->
@@ -182,18 +196,24 @@ include struct
     alloc_common_dsl ~null_case:(not x) ~initialize:true CMalloc (Some total_size_exp)
 
 
-  let close fd = start_model @@ fun () -> Basic.free FClose fd
+  let close fd = start_model @@ fun () -> close_file_descriptor fd
 
   let fclose stream : model =
     start_model
     @@ fun () ->
-    Basic.free FClose stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
+    close_file_descriptor stream @@> disj [assign_ret @= int (-1 (* EOF *)); assign_ret @= int 0]
+
+
+  let pclose stream : model =
+    start_model
+    @@ fun () ->
+    close_file_descriptor stream @@> assign_ret (* exit status of the command *) @= fresh ()
 
 
   let closedir dirp : model =
     start_model
     @@ fun () ->
-    Basic.free FClose dirp
+    close_file_descriptor dirp
     (* pretend [closedir] always succeeds, i.e. [dirp] was a valid stream descriptor or [free]
        above would have caught an error *)
     @@> (int 0 >>= assign_ret)
@@ -269,13 +289,58 @@ include struct
     @@> assign_ret (to_aval s)
 
 
-  let open_ = start_model @@ fun () -> ret_alloc_or_minus_one FileDescriptor
+  let open_ = start_model ret_fd_or_minus_one
+
+  (* treat the arguments like those of an unknown call so that [addr] and [addrlen], which receive
+     the address of the peer, get havocked *)
+  let accept args : model =
+    let args = ValueOrigin.addr_hist_args args in
+    start_model
+    @@ fun () ->
+    let* {callee_procname} = get_data in
+    let write_peer_address =
+      PulseModelsImport.Basic.unknown_call (Procname.to_string callee_procname) args
+    in
+    lift_to_monad (lift_model write_peer_address) @@> ret_fd_or_minus_one ()
+
+
+  (* for [pipe], [pipe2] and [socketpair] *)
+  let fd_pair fds : model =
+    start_model
+    @@ fun () ->
+    (* descriptors stored through the result of pointer arithmetic such as [fds + 2 * i], or through
+       a pointer returned by an unknown function such as [std::array::data()], would be unreachable
+       for Pulse, i.e. leaked, right away *)
+    let* returned_from_unknown =
+      AddressAttributes.get_valid_returned_from_unknown (ValueOrigin.value fds)
+      |> exec_pure_operation
+    in
+    let track_fds =
+      match (fds : ValueOrigin.t) with
+      | Unknown _ ->
+          false
+      | InMemory _ | OnStack _ ->
+          Option.is_none returned_from_unknown
+    in
+    let new_fd_at index =
+      let* index = int index in
+      let* cell = access NoAccess (to_aval fds) (ArrayAccess (StdTyp.int, fst index)) in
+      let* fd = fresh () in
+      let* () =
+        if track_fds then
+          let* allocator = file_descriptor_allocator in
+          allocation allocator fd
+        else ret ()
+      in
+      and_positive fd @@> store ~ref:cell fd
+    in
+    disj [assign_ret @= int (-1); new_fd_at 0 @@> new_fd_at 1 @@> assign_ret @= int 0]
+
 
   let fopen path mode : model =
     start_model
     @@ fun () ->
-    check_valid path @@> check_valid mode @@> ret_alloc_or_null FileDescriptor
-    @@> data_dependency_to_ret [path]
+    check_valid path @@> check_valid mode @@> ret_stream_or_null () @@> data_dependency_to_ret [path]
 
 
   let fprintf stream format args =
@@ -301,14 +366,22 @@ include struct
     (* pretend [fputs] always succeeds *) @= fresh_nonneg ()
 
 
-  let fdopen fd mode : model =
-    start_model
-    @@ fun () -> check_valid mode @@> Basic.free FClose fd @@> ret_alloc_or_null FileDescriptor
+  (* the new stream owns [fd] but a failure leaves [fd] open *)
+  let stream_of_fd fd =
+    disj
+      [ assign_ret @= null
+      ; ( close_file_descriptor fd
+        @@> let* allocator = file_descriptor_allocator in
+            Basic.return_alloc_not_null allocator None ~initialize:true ) ]
 
 
-  let opendir path : model =
-    start_model @@ fun () -> check_valid path @@> ret_alloc_or_null FileDescriptor
+  let fdopen fd mode : model = start_model @@ fun () -> check_valid mode @@> stream_of_fd fd
 
+  let fdopendir fd : model = start_model @@ fun () -> stream_of_fd fd
+
+  let opendir path : model = start_model @@ fun () -> check_valid path @@> ret_stream_or_null ()
+
+  let tmpfile : model = start_model ret_stream_or_null
 
   let putc c stream : model =
     start_model
@@ -568,6 +641,7 @@ end
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   let open DSL.Syntax in
+  let int_ptr_typ = Typ.mk_ptr StdTyp.int in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
     Option.exists r_opt ~f:(fun r ->
         let s = Procname.to_string proc_name in
@@ -584,6 +658,10 @@ let matchers : matcher list =
   ; +match_regexp_opt Config.pulse_model_realloc_pattern
     <>$ capt_arg $+ capt_exp $+...$--> custom_realloc ~null_case:true
   ; +BuiltinDecl.(match_builtin __call_c_function_ptr) $ capt_arg $++$--> call_c_function_ptr
+  ; ( -"accept" <>$ any_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg
+    $--> fun addr addrlen -> accept [addr; addrlen] )
+  ; ( -"accept4" <>$ any_arg_of_prim_typ StdTyp.int $+ capt_arg $+ capt_arg $+ capt_arg
+    $--> fun addr addrlen flags -> accept [addr; addrlen; flags] )
   ; -"access" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)
   ; -"android_fdsan_close_with_tag" <>$ capt_arg $+ any_arg $--> close
@@ -634,10 +712,17 @@ let matchers : matcher list =
   ; -"close" <>$ capt_arg $--> close
   ; -"closedir" <>$ capt_arg $--> closedir
   ; -"confstr" <>$ any_arg $+ capt_arg_payload $+ capt_arg_payload $--> confstr
+  ; -"creat" <>$ any_arg $+ any_arg $--> open_
+  ; -"creat64" <>$ any_arg $+ any_arg $--> open_
   ; -"ctime" <>$ capt_arg_payload
     $--> compose1 (ignore_arg @@ start_model @@ null_or_nonneg_non_det_ret) taint_ret_from_arg
+  ; -"dup" <>$ any_arg_of_prim_typ StdTyp.int $--> open_
+  ; -"epoll_create" <>$ any_arg $--> open_
+  ; -"epoll_create1" <>$ any_arg $--> open_
+  ; -"eventfd" <>$ any_arg $+ any_arg $--> open_
   ; -"fclose" <>$ capt_arg $--> fclose
   ; -"fdopen" <>$ capt_arg $+ capt_arg_payload $--> fdopen
+  ; -"fdopendir" <>$ capt_arg $--> fdopendir
   ; -"feof" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"ferror" <>$ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"fgetc" <>$ capt_arg_payload
@@ -677,21 +762,30 @@ let matchers : matcher list =
   ; -"gmtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
   ; -"gtk_type_check_object_cast" <>$ capt_arg_payload $+ any_arg $--> assume_not_null
   ; -"gzdopen" <>$ capt_arg $+ capt_arg_payload $--> fdopen
+  ; -"inotify_init" $$--> open_
+  ; -"inotify_init1" <>$ any_arg $--> open_
   ; -"localtime" <>$ any_arg $--> start_model @@ null_or_nonneg_non_det_ret
   ; -"longjmp" <>$ any_arg $+ any_arg $--> Basic.early_exit
   ; -"memchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
   ; -"memcmp" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg
     $--> compose2 valid_args2 (ignore_args2 non_det_ret)
   ; -"memcpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
+  ; -"memfd_create" <>$ any_arg $+ any_arg $--> open_
   ; -"memmove" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> memcpy
   ; -"memrchr" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strchr
   ; -"memset" <>$ capt_arg_payload $+ capt_arg_payload $+ capt_exp $--> memset
+  ; -"mkostemp" <>$ any_arg $+ any_arg $--> open_
+  ; -"mkstemp" <>$ any_arg $--> open_
   ; -"open" <>$ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"open64" <>$ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"openat" <>$ any_arg $+ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"openat64" <>$ any_arg $+ any_arg $+ any_arg $+? any_arg $--> open_
   ; -"opendir" <>$ capt_arg_payload $--> opendir
   ; (-"pause" $$--> start_model @@ fun () -> assign_ret @= int (-1))
+  ; -"pclose" <>$ capt_arg $--> pclose
+  ; -"pipe" <>$ capt_arg_payload_of_prim_typ int_ptr_typ $--> fd_pair
+  ; -"pipe2" <>$ capt_arg_payload_of_prim_typ int_ptr_typ $+ any_arg $--> fd_pair
+  ; -"popen" <>$ capt_arg_payload $+ capt_arg_payload $--> fopen
   ; (-"printf" &--> start_model @@ fun () -> assign_ret @= fresh ())
   ; -"pthread_exit" <>$ any_arg $+ any_arg $--> Basic.early_exit
   ; -"pthread_once" <>$ any_arg $+ capt_arg $--> pthread_once
@@ -710,6 +804,9 @@ let matchers : matcher list =
   ; -"shmget" <>$ any_arg $+ any_arg $+ any_arg $--> shmget
   ; -"snprintf" <>$ capt_arg_payload $+ any_arg (* size *) $+ capt_arg_payload $+++$--> sprintf
   ; -"socket" <>$ any_arg $+ any_arg $+ any_arg $--> open_
+  ; -"socketpair" <>$ any_arg $+ any_arg $+ any_arg
+    $+ capt_arg_payload_of_prim_typ int_ptr_typ
+    $--> fd_pair
   ; -"sprintf" <>$ capt_arg_payload $+ capt_arg_payload $+++$--> sprintf
   ; -"stat" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
   ; -"statfs" <>$ capt_arg_payload $+ capt_arg_payload $--> statfs
@@ -745,6 +842,8 @@ let matchers : matcher list =
   ; -"strtoul" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strtol
   ; -"strupr" <>$ capt_arg_payload $--> compose1 valid_arg ret_arg
   ; -"time" <>$ capt_arg_payload $--> time
+  ; -"timerfd_create" <>$ any_arg $+ any_arg $--> open_
+  ; -"tmpfile" $$--> tmpfile
   ; -"ungetc" <>$ any_arg $+ capt_arg_payload $--> compose1 valid_arg (ignore_arg non_det_ret)
   ; -"unlink" <>$ capt_arg_payload $+ any_arg
     $--> compose1 valid_arg (ignore_arg zero_or_minus_one_ret)

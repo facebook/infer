@@ -597,6 +597,17 @@ let is_matching_edges ~get_repr ~edges_curr ~edges_orig =
               true ) )
 
 
+(* A [std::weak_ptr] owns neither the object it observes nor the reference count it shares with the
+   [std::shared_ptr]s owning that object, so only its own fields are relevant. *)
+let is_weak_ptr_field (access : _ Access.access) =
+  match access with
+  | FieldAccess field ->
+      Fieldname.equal field PulseOperations.ModeledField.weak_ptr_pointer
+      || Fieldname.equal field PulseOperations.ModeledField.weak_ptr_count
+  | ArrayAccess _ | Dereference ->
+      false
+
+
 (* [UnsafeMemory] is legit here as we are going to normalize all the values we need *)
 let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~copy_heap
     ~(copy_timestamp : Timestamp.t) ~source_addr_opt =
@@ -609,7 +620,7 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
     match addr_to_explore with
     | [] ->
         false
-    | addr :: addr_to_explore -> (
+    | (addr, explore_successors) :: addr_to_explore -> (
         if AbstractValue.Set.mem addr visited then aux ~addr_to_explore ~visited
         else
           let visited = AbstractValue.Set.add addr visited in
@@ -628,8 +639,11 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
                     ~edges_orig:(UnsafeMemory.find_opt addr copy_heap) ) )
               ||
               let addr_to_explore =
-                UnsafeMemory.Edges.fold edges_curr ~init:addr_to_explore
-                  ~f:(fun acc (_, (addr, _)) -> addr :: acc )
+                if explore_successors then
+                  UnsafeMemory.Edges.fold edges_curr ~init:addr_to_explore
+                    ~f:(fun acc (access, (addr, _)) ->
+                      (addr, not (is_weak_ptr_field access)) :: acc )
+                else addr_to_explore
               in
               aux ~addr_to_explore ~visited )
   in
@@ -642,7 +656,9 @@ let is_modified_since_detected addr ~is_param ~get_repr ~current_heap astate ~co
     addr :: return
   in
   let addr_to_explore = Option.value addr_to_explore_opt ~default:[addr] in
-  aux ~addr_to_explore ~visited:AbstractValue.Set.empty
+  aux
+    ~addr_to_explore:(List.map addr_to_explore ~f:(fun addr -> (addr, true)))
+    ~visited:AbstractValue.Set.empty
 
 
 let is_modified origin ~source_addr_opt address astate copy_heap copy_timestamp =
