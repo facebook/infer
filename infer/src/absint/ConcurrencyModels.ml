@@ -12,6 +12,7 @@ type lock_effect =
   | Lock of HilExp.t list
   | Unlock of HilExp.t list
   | LockedIfTrue of HilExp.t list
+  | LockedIfZero of HilExp.t list
   | GuardConstruct of {guard: HilExp.t; lock: HilExp.t; acquire_now: bool}
   | GuardLock of HilExp.t
   | GuardLockedIfTrue of HilExp.t
@@ -31,6 +32,8 @@ let make_lock = make_lock_action "acquire" (fun a -> Lock a)
 let make_unlock = make_lock_action "release" (fun a -> Unlock a)
 
 let make_trylock = make_lock_action "conditionally acquire" (fun a -> LockedIfTrue a)
+
+let make_zero_trylock = make_lock_action "conditionally acquire" (fun a -> LockedIfZero a)
 
 let make_guard_construct procname = function
   | [_guard] ->
@@ -107,6 +110,7 @@ end = struct
     { classname: string [@default ""]
     ; lock: string list [@default []]
     ; trylock: string list [@default []]
+    ; trylock_zero: string list [@default []]  (** trylocks that return zero on success *)
     ; unlock: string list [@default []]
     ; recursive: bool [@default true] }
   [@@deriving of_yojson]
@@ -115,9 +119,16 @@ end = struct
 
   let lock_models =
     let def =
-      {classname= ""; lock= ["lock"]; trylock= ["try_lock"]; unlock= ["unlock"]; recursive= false}
+      { classname= ""
+      ; lock= ["lock"]
+      ; trylock= ["try_lock"]
+      ; trylock_zero= []
+      ; unlock= ["unlock"]
+      ; recursive= false }
     in
-    let c_rec = {classname= ""; lock= []; trylock= []; unlock= []; recursive= true} in
+    let c_rec =
+      {classname= ""; lock= []; trylock= []; trylock_zero= []; unlock= []; recursive= true}
+    in
     let shd =
       { def with
         lock= "lock_shared" :: def.lock
@@ -132,6 +143,7 @@ end = struct
     in
     let config_locks = lock_model_cfg_of_yojson Config.lock_model in
     [ {c_rec with lock= ["pthread_mutex_lock"]; unlock= ["pthread_mutex_unlock"]}
+    ; {def with classname= "android::Mutex"; trylock= []; trylock_zero= ["timedLock"; "tryLock"]}
     ; { def with
         classname= "apache::thrift::concurrency::Monitor"
       ; trylock= "timedlock" :: def.trylock }
@@ -170,7 +182,7 @@ end = struct
     fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
 
 
-  let is_lock, is_unlock, is_trylock, is_std_lock =
+  let is_lock, is_unlock, is_trylock, is_zero_trylock, is_std_lock =
     (* TODO std::try_lock *)
     let mk_model_matcher ~f =
       let lock_methods =
@@ -182,6 +194,7 @@ end = struct
     ( mk_model_matcher ~f:(fun mdl -> mdl.lock)
     , mk_model_matcher ~f:(fun mdl -> mdl.unlock)
     , mk_model_matcher ~f:(fun mdl -> mdl.trylock)
+    , mk_model_matcher ~f:(fun mdl -> mdl.trylock_zero)
     , mk_matcher ["std::lock"] )
 
 
@@ -191,6 +204,8 @@ end = struct
   let guards =
     (* TODO std::scoped_lock *)
     [ (* no lock/unlock *)
+      "android::Mutex::Autolock"
+    ; (* no lock/unlock *)
       "apache::thrift::concurrency::Guard"
     ; (* no lock/unlock *)
       "apache::thrift::concurrency::RWGuard"
@@ -270,6 +285,7 @@ end = struct
     else if is_lock pname then make_lock pname fst_arg
     else if is_unlock pname then make_unlock pname fst_arg
     else if is_trylock pname then make_trylock pname fst_arg
+    else if is_zero_trylock pname then make_zero_trylock pname fst_arg
     else if is_guard_constructor pname then make_guard_construct pname actuals
     else if is_guard_lock pname then make_guard_lock pname actuals
     else if is_guard_unlock pname then make_guard_unlock pname actuals

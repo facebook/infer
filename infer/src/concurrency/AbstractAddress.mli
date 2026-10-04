@@ -37,6 +37,11 @@ val equal : t -> t -> bool
 
 val equal_across_threads : Tenv.t -> t -> t -> bool
 
+val normalise_across_threads : Tenv.t -> t -> t
+(** a coarse key for the address such that [equal_across_threads tenv t1 t2] implies
+    [equal (normalise_across_threads tenv t1) (normalise_across_threads tenv t2)]; the converse does
+    not hold, so users of the key must still check [equal_across_threads] *)
+
 val root_class : t -> Typ.name option
 (** Class of the root variable of the expression representing the address *)
 
@@ -56,5 +61,7 @@ type subst
 val pp_subst : F.formatter -> subst -> unit [@@warning "-unused-value-declaration"]
 
 val make_subst : FormalMap.t -> HilExp.t list -> subst
+(** [make_subst formals actuals] maps the position of each actual to its address in terms of the
+    caller's [formals] *)
 
 val apply_subst : subst -> t -> t option

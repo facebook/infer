@@ -51,6 +51,19 @@ module AccessExpressionOrConst : sig
   type t = AE of HilExp.AccessExpression.t | Const of Const.t [@@deriving equal]
 end
 
+(** Pointers stored into fields by a C++ constructor, eg [this->mutex_ = mutex] in a scoped guard,
+    so that a lock taken through the field can be expressed in terms of the stored value. *)
+module FieldAliases : sig
+  include AbstractDomain.WithTop
+
+  val get : HilExp.AccessExpression.t -> t -> HilExp.AccessExpression.t option
+  (** the value stored in the given field, if known *)
+
+  val assign : HilExp.AccessExpression.t -> HilExp.AccessExpression.t option -> t -> t
+  (** [assign lhs rhs_opt] forgets the aliases invalidated by a store to [lhs], then records that
+      [lhs] holds [rhs], if given and not itself invalidated by the store *)
+end
+
 module VarDomain : sig
   include AbstractDomain.WithTop
 
@@ -91,7 +104,15 @@ module Acquisition : sig
   type t = private {elem: AcquisitionElem.t; loc: Location.t; trace: CallSite.t list}
 end
 
-module LockState : AbstractDomain.WithTop
+module LockState : sig
+  include AbstractDomain.WithTop
+
+  val get_single_held_lock : t -> Lock.t option
+  (** the lock held, if exactly one lock is held once and no lock is released *)
+
+  val get_single_unlocked_lock : t -> Lock.t option
+  (** the lock released, if exactly one lock is released once and no lock is held *)
+end
 
 (** A set of lock acquisitions with source locations and procnames. *)
 module Acquisitions : sig
@@ -200,6 +221,7 @@ type t =
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t
   ; var_state: VarDomain.t
+  ; field_aliases: FieldAliases.t
   ; null_locs: NullLocs.t
   ; lazily_initalized: LazilyInitialized.t }
 
@@ -242,6 +264,9 @@ val add_guard :
 val lock_guard : procname:Procname.t -> loc:Location.t -> Tenv.t -> t -> HilExp.t -> t
 (** Acquire the lock the guard was constructed with. *)
 
+val is_guard : t -> HilExp.t -> bool
+(** Whether a guard was constructed on the expression and not destroyed yet. *)
+
 val remove_guard : t -> HilExp.t -> t
 (** Destroy the guard and release its lock. *)
 
@@ -265,7 +290,8 @@ val empty_summary : summary
 val pp_summary : F.formatter -> summary -> unit
 
 val integrate_summary :
-     tenv:Tenv.t
+     ?release_held_locks:bool
+  -> tenv:Tenv.t
   -> procname:Procname.t
   -> lhs:HilExp.AccessExpression.t
   -> subst:Lock.subst
@@ -275,7 +301,8 @@ val integrate_summary :
   -> summary
   -> t
 (** apply a callee summary to the current abstract state; [lhs] is the expression assigned the
-    returned value, if any *)
+    returned value, if any; with [release_held_locks], the locks that the callee leaves held are
+    released right after being acquired *)
 
 val summary_of_astate : Procdesc.t -> t -> summary
 

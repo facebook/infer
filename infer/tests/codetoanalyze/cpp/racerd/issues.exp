@@ -1,3 +1,5 @@
+codetoanalyze/cpp/racerd/android_mutex.cpp, android_mutex::Counter::get_count_bad, 38, LOCK_CONSISTENCY_VIOLATION, no_bucket, WARNING, [<Read trace>,access to `this->count_`,<Write trace>,access to `this->count_`]
+codetoanalyze/cpp/racerd/android_mutex.cpp, android_mutex::Counter::failed_try_increment_bad, 62, LOCK_CONSISTENCY_VIOLATION, no_bucket, WARNING, [<Read trace>,access to `this->count_`,<Write trace>,access to `this->count_`]
 codetoanalyze/cpp/racerd/atomic_libcxx.cpp, atomic_libcxx::Counter::get_plain_bad, 72, LOCK_CONSISTENCY_VIOLATION, no_bucket, WARNING, [<Read trace>,access to `this->plain_`,<Write trace>,access to `this->plain_`]
 codetoanalyze/cpp/racerd/atomic_libstdcxx.cpp, atomic_libstdcxx::Counter::get_plain_bad, 50, LOCK_CONSISTENCY_VIOLATION, no_bucket, WARNING, [<Read trace>,access to `this->plain_`,<Write trace>,access to `this->plain_`]
 codetoanalyze/cpp/racerd/basics.cpp, basics::Basic::get_suspiciously_read_bad, 40, LOCK_CONSISTENCY_VIOLATION, no_bucket, WARNING, [<Read trace>,access to `this->suspiciously_read`,<Write trace>,access to `this->suspiciously_read`]

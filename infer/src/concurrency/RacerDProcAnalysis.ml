@@ -91,6 +91,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Domain.release_lock astate
     | LockedIfTrue _ | GuardLockedIfTrue _ ->
         Domain.lock_if_true ret_access_exp astate
+    | LockedIfZero _ ->
+        Domain.lock_if_zero ret_access_exp astate
     | GuardConstruct {acquire_now= false} ->
         astate
     | NoEffect when RacerDModels.proc_is_ignored_by_racerd callee_pname ->
@@ -166,13 +168,15 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
 
   let do_assume formals assume_exp loc tenv (astate : Domain.t) =
     let open Domain in
-    let apply_choice bool_value (acc : Domain.t) = function
+    let rec apply_choice bool_value (acc : Domain.t) = function
       | Attribute.LockHeld ->
           let locks =
             if bool_value then LockDomain.acquire_lock acc.locks
             else LockDomain.release_lock acc.locks
           in
           {acc with locks}
+      | Attribute.LockHeldIfZero ->
+          apply_choice (not bool_value) acc Attribute.LockHeld
       | Attribute.OnMainThread ->
           let threads =
             if bool_value then ThreadsDomain.AnyThreadButSelf else ThreadsDomain.AnyThread
