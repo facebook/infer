@@ -288,6 +288,38 @@ let sil_annot_of_type {Clang_ast_t.qt_type_ptr} =
   mk_annot (annot_name_of_type_ptr qt_type_ptr)
 
 
+let mk_capability_annot class_name expressions =
+  let parameters =
+    List.map expressions ~f:(fun expression -> {Annot.name= None; value= Annot.Str expression})
+  in
+  {Annot.class_name; parameters}
+
+
+let sil_annot_of_function_attributes attributes =
+  let required_capabilities =
+    List.concat_map attributes ~f:(function
+      | `RequiresCapabilityAttr (_, capabilities) ->
+          List.filter_map capabilities ~f:(fun {Clang_ast_t.ca_is_negative; ca_expression} ->
+              Option.some_if (not ca_is_negative)
+                (String.chop_prefix_if_exists ca_expression ~prefix:"this->") )
+      | _ ->
+          [] )
+    (* a redeclaration has both its own attributes and those inherited from earlier declarations,
+       which may spell the same capability with or without [this->] *)
+    |> List.dedup_and_sort ~compare:String.compare
+  in
+  if List.is_empty required_capabilities then Annot.Item.empty
+  else [mk_capability_annot Annotations.requires_capability required_capabilities]
+
+
+let sil_annot_of_field_attributes attributes =
+  List.filter_map attributes ~f:(function
+    | `GuardedByAttr (_, {Clang_ast_t.ca_expression}) ->
+        Some (mk_capability_annot Annotations.guarded_by [ca_expression])
+    | _ ->
+        None )
+
+
 let qual_type_of_decl_ptr decl_ptr =
   { (* This function needs to be in this module - CAst_utils can't depend on
        Ast_expressions *)

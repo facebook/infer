@@ -415,10 +415,8 @@ let should_analyze_proc =
            ; "std::vector" ] )
     in
     function
-    | Procname.ObjC_Cpp cpp_pname as pname ->
-        Procname.ObjC_Cpp.is_destructor cpp_pname
-        || QualifiedCppName.Match.match_qualifiers (Lazy.force matcher)
-             (Procname.get_qualifiers pname)
+    | Procname.ObjC_Cpp _ as pname ->
+        QualifiedCppName.Match.match_qualifiers (Lazy.force matcher) (Procname.get_qualifiers pname)
     | Procname.Java java_pname ->
         Procname.Java.is_autogen_method java_pname
         || Typ.Name.Java.is_external (Procname.Java.get_class_type_name java_pname)
@@ -429,6 +427,18 @@ let should_analyze_proc =
     (not (should_skip pn))
     && (not (FbThreadSafety.is_logging_method pn))
     && not (is_assumed_thread_safe tenv pn)
+
+
+let is_scoped_lock_of_several_mutexes_destructor =
+  let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::scoped_lock::~scoped_lock"] in
+  fun pname ->
+    QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
+    &&
+    match Procname.get_class_type_name pname with
+    | Some (Typ.CppClass {template_spec_info= Template {args= [_]}}) ->
+        false
+    | _ ->
+        true
 
 
 let get_current_class_and_threadsafe_superclasses tenv pname =
@@ -602,6 +612,19 @@ let is_initializer tenv proc_name =
   || PatternMatch.override_exists
        (fun pname -> Annotations.pname_has_return_annot pname Annotations.ia_is_initializer)
        tenv proc_name
+
+
+let num_required_capabilities proc_name =
+  if Procname.is_clang proc_name then
+    Attributes.load proc_name
+    |> Option.value_map ~default:0 ~f:(fun {ProcAttributes.ret_annots} ->
+        List.sum
+          (module Int)
+          ret_annots
+          ~f:(fun {Annot.class_name; parameters} ->
+            if String.equal class_name Annotations.requires_capability then List.length parameters
+            else 0 ) )
+  else 0
 
 
 let get_current_class_and_superclasses_satisfying_attr_check check tenv pname =

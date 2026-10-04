@@ -77,6 +77,8 @@ let suppress_lint = "SuppressLint"
 
 let recently_nonnull = "RecentlyNonNull"
 
+let requires_capability = "RequiresCapability"
+
 let thread_confined = "ThreadConfined"
 
 let thread_safe = "ThreadSafe"

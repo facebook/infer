@@ -371,9 +371,11 @@ let rec get_struct_fields tenv ?cxx_record_decl_info decl =
            gets no initializer in [InitListExpr]s. The AST exporter names it [__anon_field_<index>]
            but leaves its qualified name empty. *)
         []
-    | FieldDecl (_, {ni_name}, qt, _) ->
+    | FieldDecl ({di_attributes}, {ni_name}, qt, _) ->
         let typ = qual_type_to_sil_type tenv qt in
-        let annotation_items = CAst_utils.sil_annot_of_type qt in
+        let annotation_items =
+          CAst_utils.sil_annot_of_type qt @ CAst_utils.sil_annot_of_field_attributes di_attributes
+        in
         let name = Fieldname.make class_tname ni_name in
         [Struct.mk_field name typ ~annot:annotation_items]
     | _ ->
