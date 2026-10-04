@@ -1,0 +1,30 @@
+/* @generated */
+digraph cfg {
+"block_scope_enum.efe44049d2024a0d_1" [label="1: Start block_scope_enum\nFormals: \nLocals:  j:int e:int i:int \n  " color=yellow style=filled]
+	
+
+	 "block_scope_enum.efe44049d2024a0d_1" -> "block_scope_enum.efe44049d2024a0d_7" ;
+"block_scope_enum.efe44049d2024a0d_2" [label="2: Exit block_scope_enum \n  " color=yellow style=filled]
+	
+
+"block_scope_enum.efe44049d2024a0d_3" [label="3:  Return Stmt \n   n$0=*&j:int [line 13, column 10]\n " shape="box"]
+	
+
+	 "block_scope_enum.efe44049d2024a0d_3" -> "block_scope_enum.efe44049d2024a0d_4" ;
+"block_scope_enum.efe44049d2024a0d_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 13, column 3]\n " shape="box"]
+	
+
+	 "block_scope_enum.efe44049d2024a0d_4" -> "block_scope_enum.efe44049d2024a0d_2" ;
+"block_scope_enum.efe44049d2024a0d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(j:int); [line 12, column 3]\n  n$1=*&i:int [line 12, column 25]\n  n$2=*&e:int [line 12, column 29]\n  *&j:int=((unsigned int)n$1 + (unsigned int)n$2) [line 12, column 3]\n " shape="box"]
+	
+
+	 "block_scope_enum.efe44049d2024a0d_5" -> "block_scope_enum.efe44049d2024a0d_3" ;
+"block_scope_enum.efe44049d2024a0d_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(e:int); [line 11, column 3]\n  *&e:int=(6 + 1) [line 11, column 3]\n " shape="box"]
+	
+
+	 "block_scope_enum.efe44049d2024a0d_6" -> "block_scope_enum.efe44049d2024a0d_5" ;
+"block_scope_enum.efe44049d2024a0d_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 10, column 3]\n  *&i:int=((0 + 5) + 6) [line 10, column 3]\n " shape="box"]
+	
+
+	 "block_scope_enum.efe44049d2024a0d_7" -> "block_scope_enum.efe44049d2024a0d_6" ;
+}

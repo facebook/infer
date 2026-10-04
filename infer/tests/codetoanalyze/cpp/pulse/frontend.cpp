@@ -256,4 +256,29 @@ void derived_constructor_forwards_param_ok() {
   ForwardConstructorParams A{&x, NULL};
 }
 
+void block_scope_enum_class_ok() {
+  enum class Mode { kA, kB = 3 };
+  Mode m = Mode::kB;
+  if (m != Mode::kB || static_cast<int>(m) != 3) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+void block_scope_enum_class_bad() {
+  enum class Mode { kA, kB = 3 };
+  Mode m = Mode::kB;
+  if (m == Mode::kB) {
+    int* p = nullptr;
+    *p = 42;
+  }
+}
+
+// "most vexing parse": x is a block-scope function declaration
+void block_scope_function_declaration_bad() {
+  X x();
+  int* p = nullptr;
+  *p = 42;
+}
+
 } // namespace frontend

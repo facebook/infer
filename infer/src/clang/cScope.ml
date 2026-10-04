@@ -9,7 +9,8 @@ open! IStd
 module L = Logging
 
 type scope_kind =
-  | Breakable  (** loop or switch statement within which it's ok to [break;] *)
+  | Loop  (** loop statement within which it's ok to [break;] and [continue;] *)
+  | Switch  (** switch statement within which it's ok to [break;] *)
   | Compound  (** inside a CompoundStmt *)
   | InitialScope  (** should be only one of these at the bottom of the stack *)
 [@@deriving compare, equal]
@@ -17,8 +18,10 @@ type scope_kind =
 let string_of_kind = function
   | Compound ->
       "Compound"
-  | Breakable ->
-      "Breakable"
+  | Loop ->
+      "Loop"
+  | Switch ->
+      "Switch"
   | InitialScope ->
       "InitialScope"
 
@@ -42,16 +45,16 @@ let in_ kind scope ~f =
 
 let rev_append xs scope = {scope with current= List.rev_append xs scope.current}
 
-let collect_until kind scope =
-  let rec aux kind rev_vars_to_destroy = function
+let collect_until kinds scope =
+  let rec aux rev_vars_to_destroy = function
     | [] ->
         assert false
-    | (in_scope, kind') :: outers ->
+    | (in_scope, kind) :: outers ->
         let rev_vars_to_destroy = List.rev_append in_scope rev_vars_to_destroy in
-        if equal_scope_kind kind' kind then List.rev rev_vars_to_destroy
-        else aux kind rev_vars_to_destroy outers
+        if List.mem kinds kind ~equal:equal_scope_kind then List.rev rev_vars_to_destroy
+        else aux rev_vars_to_destroy outers
   in
-  aux kind [] ((scope.current, scope.current_kind) :: scope.outers)
+  aux [] ((scope.current, scope.current_kind) :: scope.outers)
 
 
 let breaks_control_flow = function
@@ -187,8 +190,8 @@ module Variables = struct
   type scope =
     { outer_scope: Clang_ast_t.stmt list  (** statements that are under the new scope *)
     ; breakable_scope: Clang_ast_t.stmt list
-          (** the body of a loop or switch statement that defines the scope that [BreakStmt] and
-              [ContinueStmt] will exit *)
+          (** the body of a loop or switch statement that defines the scope that [BreakStmt] will
+              exit, and [ContinueStmt] too for a loop *)
     ; swallow_destructors: bool
           (** That scope does not generate destructor calls (eg because it ends in an instruction
               that will already do so like [ReturnStmt]). We still want to generate a scope to catch
@@ -211,7 +214,7 @@ module Variables = struct
           ; swallow_destructors= is_compound_stmt_ending_in_control_flow_break stmt }
     | `CXXForRangeStmt
         ( _
-        , [ _init (* TODO: ignored here because ignored in [CTrans] *)
+        , [ init
           ; iterator_decl
           ; begin_stmt
           ; end_stmt
@@ -220,7 +223,7 @@ module Variables = struct
           ; assign_current_index
           ; loop_body ] ) ->
         Some
-          { outer_scope= [iterator_decl; begin_stmt; end_stmt; exit_cond; increment]
+          { outer_scope= [init; iterator_decl; begin_stmt; end_stmt; exit_cond; increment]
           ; breakable_scope= [assign_current_index; loop_body]
           ; swallow_destructors= false }
     | `ObjCForCollectionStmt (_, [item; items; body]) ->
@@ -235,17 +238,15 @@ module Variables = struct
     | `WhileStmt (_, [decls; condition; body]) ->
         Some {outer_scope= [decls; condition]; breakable_scope= [body]; swallow_destructors= false}
     | `SwitchStmt (stmt_info, _stmt_list, switch_stmt_info) ->
-        let condition =
-          CAst_utils.get_stmt_exn switch_stmt_info.Clang_ast_t.ssi_cond
-            stmt_info.Clang_ast_t.si_source_range
+        let get_stmt stmt_ptr =
+          CAst_utils.get_stmt_exn stmt_ptr stmt_info.Clang_ast_t.si_source_range
         in
-        let body =
-          CAst_utils.get_stmt_exn switch_stmt_info.Clang_ast_t.ssi_body
-            stmt_info.Clang_ast_t.si_source_range
-        in
+        let init = Option.map switch_stmt_info.Clang_ast_t.ssi_init ~f:get_stmt in
+        let condition = get_stmt switch_stmt_info.Clang_ast_t.ssi_cond in
+        let body = get_stmt switch_stmt_info.Clang_ast_t.ssi_body in
         let cond_var = switch_stmt_info.Clang_ast_t.ssi_cond_var in
         Some
-          { outer_scope= condition :: Option.to_list cond_var
+          { outer_scope= Option.to_list init @ (condition :: Option.to_list cond_var)
           ; breakable_scope= [body]
           ; swallow_destructors= false }
     | _ ->
@@ -264,7 +265,16 @@ module Variables = struct
     | `ContinueStmt (stmt_info, stmt_list) (* TODO: GotoStmt *) ->
         (* the returned expression may contain scopes, e.g. GNU statement expressions *)
         let scope, map = visit_stmt_list context stmt_list scope_map in
-        let break_until = match stmt with `ReturnStmt _ -> InitialScope | _ -> Breakable in
+        let break_until =
+          match stmt with
+          | `ReturnStmt _ ->
+              [InitialScope]
+          | `BreakStmt _ ->
+              [Loop; Switch]
+          | _ ->
+              (* [continue;] exits any switch statement up to the innermost loop *)
+              [Loop]
+        in
         let vars_to_destroy = collect_until break_until scope in
         L.debug Capture Verbose "~[%d:%a]" stmt_info.Clang_ast_t.si_pointer
           (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
@@ -312,7 +322,8 @@ module Variables = struct
                       |> function {Clang_ast_t.si_pointer}, _ -> si_pointer
                     in
                     let scope, map = scope_map in
-                    with_scope Breakable ~inject_destructors:false body_ptr scope ~f:(fun scope ->
+                    let kind = match stmt with `SwitchStmt _ -> Switch | _ -> Loop in
+                    with_scope kind ~inject_destructors:false body_ptr scope ~f:(fun scope ->
                         visit_stmt_list context body (scope, map) ) ) )
 
 

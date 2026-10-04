@@ -110,4 +110,19 @@ void test_while3(bool a, bool b) {
   X x3;
 }
 
+void test_switch(bool a, int k) {
+  X x1;
+  while (a) {
+    X x2;
+    switch (k) {
+      case 0: {
+        X x3;
+        continue;
+      }
+      default:
+        break;
+    }
+  }
+}
+
 } // namespace continue_scope

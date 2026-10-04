@@ -41,3 +41,15 @@ void differentiate_array_info_Bad() {
   }
   p[5] = 0;
 }
+
+void block_scope_enum_array_size_Good() {
+  enum { kLen = 4 };
+  char buf[kLen];
+  buf[kLen - 1] = 0;
+}
+
+void block_scope_enum_array_size_Bad() {
+  enum { kLen = 4 };
+  char buf[kLen];
+  buf[kLen] = 0;
+}

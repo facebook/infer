@@ -86,15 +86,15 @@ module Nodes = struct
 end
 
 module GotoLabel = struct
-  let find_goto_label context label sil_loc =
-    try Hashtbl.find context.CContext.label_map label
+  let find_goto_label context label_pointer label_name sil_loc =
+    try Hashtbl.find context.CContext.label_map label_pointer
     with Stdlib.Not_found ->
-      let node_name = Format.sprintf "GotoLabel_%s" label in
+      let node_name = Format.sprintf "GotoLabel_%s" label_name in
       let new_node =
         Procdesc.create_node context.CContext.procdesc sil_loc (Procdesc.Node.Skip_node node_name)
           []
       in
-      Hashtbl.add context.CContext.label_map label new_node ;
+      Hashtbl.add context.CContext.label_map label_pointer new_node ;
       new_node
 end
 
