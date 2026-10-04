@@ -78,6 +78,10 @@ val __erlang_str_equal : Procname.t
 
 val __infer_initializer_list : Procname.t
 
+val __infer_ptr_to_member_call : Procname.t
+(** a call through a pointer to member function, not modelled; unlike [__infer_skip], it is not
+    considered pure *)
+
 val __infer_skip_function : Procname.t
 
 val __infer_skip_gcc_asm_stmt : Procname.t

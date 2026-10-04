@@ -148,6 +148,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         typ
 
 
+  (** the object and the pointer to member of [obj.*pm] or [ptr->*pm], possibly in parentheses *)
+  let rec ptr_to_member_operands : Clang_ast_t.stmt -> (Clang_ast_t.stmt * Clang_ast_t.stmt) option
+      = function
+    | `ParenExpr (_, [stmt], _) ->
+        ptr_to_member_operands stmt
+    | `BinaryOperator (_, [obj; member_ptr], _, {Clang_ast_t.boi_kind= `PtrMemD | `PtrMemI}) ->
+        Some (obj, member_ptr)
+    | _ ->
+        None
+
+
   (** Execute translation and then possibly adjust the type of the result of translation: In C++,
       when expression returns reference to type T, it will be lvalue to T, not T&, but infer needs
       it to be T& *)
@@ -783,7 +794,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     let context = trans_state.context in
     let[@warning "-partial-match"] [stmt] = stmt_list in
-    let res_trans = instruction trans_state stmt in
+    let res_trans = sub_statement_trans Procdesc.Node.CompoundStmt trans_state stmt in
     (* create the label root node into the hashtbl *)
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
@@ -958,12 +969,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       ->
         var_deref_trans trans_state stmt_info decl_ref
     | (`Field | `ObjCIvar), MemberOrIvar pre_trans_result ->
-        (* a field outside of constructor initialization is probably a pointer to member, which we
-           do not support *)
         field_deref_trans trans_state ~is_implicit_self stmt_info pre_trans_result decl_ref
           ~is_constructor_init ~is_member_of_const
     | (`CXXMethod | `CXXConversion | `CXXConstructor | `CXXDestructor), _ ->
         method_deref_trans trans_state ~context decl_ref stmt_info decl_kind
+    | (`Field | `IndirectField), DeclRefExpr ->
+        (* the operand of [&C::field]: as for [&C::method], the value of the pointer to member is
+           not modelled *)
+        mk_trans_result (mk_fresh_void_exp_typ ()) empty_control
     | _ ->
         CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
           "Decl ref expression %a with pointer %d still needs to be translated"
@@ -1094,6 +1107,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         [res_trans_e1.control; res_trans_e2.control; {empty_control with instrs}]
         |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
         |> mk_trans_result res_trans_e1.return
+    | [obj; member_ptr], _, (`PtrMemD | `PtrMemI) ->
+        (* access to a data member; calls through pointers to member functions are translated in
+           [cxxMemberCallExpr_trans] *)
+        ptr_to_member_trans trans_state_pri stmt_info ~obj ~member_ptr `Access res_typ node_name
+    | [lhs; rhs], _, `Assign when Option.is_some (ptr_to_member_operands lhs) ->
+        let obj, member_ptr = Option.value_exn (ptr_to_member_operands lhs) in
+        ptr_to_member_trans trans_state_pri stmt_info ~obj ~member_ptr (`Assign rhs) res_typ
+          node_name
     | [s1; s2], _, `Comma ->
         let ({control= {instrs}} as res_trans) =
           CTrans_utils.PriorityNode.force_sequential sil_loc node_name trans_state stmt_info
@@ -1722,6 +1743,88 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           ~return:res_trans_call.return all_res_trans
 
 
+  (** Pointers to members are not modelled. For [obj.*pm], [ptr->*pm] and calls [(obj.*pm)(args)],
+      the object, passed by reference, and the pointer to member are passed to an unknown function,
+      which may thus modify the object.
+
+      - For a data member, the unknown function returns an unknown offset and the member is the
+        lvalue [obj[offset]], so that values stored in it remain reachable from the object. For an
+        assignment [obj.*pm = rhs], the value of [rhs] is passed to the unknown function too: the
+        member it is stored in is unknown, so a resource stored there could otherwise be reported as
+        leaked when the object releases its members by name.
+      - For a call through a pointer to member function, the unknown function is
+        [__infer_ptr_to_member_call], which, unlike [__infer_skip], is not considered pure. The
+        arguments of the call are passed to it too, and it returns the result of the call. As for
+        regular method calls, the object is dereferenced first. *)
+  and ptr_to_member_trans trans_state_pri stmt_info ~obj ~member_ptr use ret_typ node_name =
+    let context = trans_state_pri.context in
+    let sil_loc =
+      CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
+    in
+    let trans_state_param = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+    let instruction' = exec_with_glvalue_as_reference instruction trans_state_param in
+    let res_trans_rhs =
+      match use with
+      | `Assign rhs ->
+          [exec_with_block_priority_exception instruction trans_state_param rhs stmt_info]
+      | `Access | `Call _ ->
+          []
+    in
+    let res_trans_obj = instruction' obj in
+    let res_trans_member_ptr = instruction trans_state_param member_ptr in
+    let res_trans_args =
+      match use with `Call args -> List.map args ~f:instruction' | `Access | `Assign _ -> []
+    in
+    let obj_exp, obj_typ = res_trans_obj.return in
+    let sil_fun =
+      let callee =
+        match use with
+        | `Access | `Assign _ ->
+            BuiltinDecl.__infer_skip
+        | `Call _ ->
+            BuiltinDecl.__infer_ptr_to_member_call
+      in
+      Exp.Const (Const.Cfun callee)
+    in
+    let actuals =
+      collect_returns ((res_trans_obj :: res_trans_member_ptr :: res_trans_args) @ res_trans_rhs)
+    in
+    let deref_obj_instrs, res_trans_call =
+      match use with
+      | `Access | `Assign _ ->
+          let offset = Ident.create_fresh Ident.knormal in
+          let member_exp = Exp.Lindex (obj_exp, Exp.Var offset) in
+          let call_instr =
+            Sil.Call ((offset, StdTyp.int), sil_fun, actuals, sil_loc, CallFlags.default)
+          in
+          let store_instrs =
+            List.map res_trans_rhs ~f:(fun {return= rhs_exp, _} ->
+                Sil.Store {e1= member_exp; typ= ret_typ; e2= rhs_exp; loc= sil_loc} )
+          in
+          ( []
+          , mk_trans_result (member_exp, ret_typ)
+              {empty_control with instrs= call_instr :: store_instrs} )
+      | `Call _ ->
+          let deref_obj_instrs =
+            match obj_typ.Typ.desc with
+            | Tptr (typ, _) ->
+                [Sil.Load {id= Ident.create_none (); e= obj_exp; typ; loc= sil_loc}]
+            | _ ->
+                []
+          in
+          ( deref_obj_instrs
+          , create_call_instr trans_state_pri ret_typ sil_fun actuals sil_loc CallFlags.default
+              ~is_inherited_ctor:false )
+    in
+    (* the right operand of an assignment is sequenced before the left one *)
+    List.map
+      (res_trans_rhs @ (res_trans_obj :: res_trans_member_ptr :: res_trans_args))
+      ~f:(fun {control} -> control)
+    @ [{empty_control with instrs= deref_obj_instrs}; res_trans_call.control]
+    |> PriorityNode.compute_controls_to_parent trans_state_pri sil_loc node_name stmt_info
+    |> mk_trans_result res_trans_call.return
+
+
   and cxxMemberCallExpr_trans trans_state si stmt_list expr_info =
     let context = trans_state.context in
     (* Structure is the following: *)
@@ -1733,13 +1836,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let trans_state_pri = PriorityNode.try_claim_priority_node trans_state si in
     (* claim priority if no ancestors has claimed priority before *)
-    let trans_state_callee = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
-    let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
-    let is_cpp_call_virtual = result_trans_callee.is_cpp_call_virtual in
     let fn_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
     let function_type = add_reference_if_glvalue fn_type_no_ref expr_info in
-    cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si function_type
-      ~is_injected_destructor:false ~is_cpp_call_virtual None ~is_inherited_ctor:false
+    match ptr_to_member_operands fun_exp_stmt with
+    | Some (obj, member_ptr) ->
+        let node_name =
+          Procdesc.Node.Call
+            (Exp.to_string (Exp.Const (Const.Cfun BuiltinDecl.__infer_ptr_to_member_call)))
+        in
+        ptr_to_member_trans trans_state_pri si ~obj ~member_ptr (`Call params_stmt) function_type
+          node_name
+    | None ->
+        let trans_state_callee = {trans_state_pri with succ_nodes= []; var_exp_typ= None} in
+        let result_trans_callee = instruction trans_state_callee fun_exp_stmt in
+        let is_cpp_call_virtual = result_trans_callee.is_cpp_call_virtual in
+        cxx_method_construct_call_trans trans_state_pri result_trans_callee params_stmt si
+          function_type ~is_injected_destructor:false ~is_cpp_call_virtual None
+          ~is_inherited_ctor:false
 
 
   and cxxConstructExpr_trans
@@ -2171,6 +2284,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (last_or_mk_fresh_void_exp_typ returns) compound_control
 
 
+  (** Translate a sub-statement whose parent only links its root nodes, e.g. a branch of an [if]:
+      like a statement of a compound statement, the instructions it leaves pending get a node of
+      their own, and when it has no node it continues to [trans_state.succ_nodes]. *)
+  and sub_statement_trans node_name trans_state stmt =
+    let res_trans = exec_with_node_creation node_name ~f:instruction trans_state stmt in
+    if List.is_empty res_trans.control.root_nodes then
+      {res_trans with control= {res_trans.control with root_nodes= trans_state.succ_nodes}}
+    else res_trans
+
+
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
@@ -2467,14 +2590,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let do_branch branch stmt_branch prune_nodes trans_state =
       (* leaf nodes are ignored here as they will be already attached to join_node *)
-      let res_trans_b = instruction trans_state stmt_branch in
       let nodes_branch =
-        match res_trans_b.control.root_nodes with
-        | [] ->
-            [ Procdesc.create_node context.procdesc sil_loc (Stmt_node IfStmtBranch)
-                res_trans_b.control.instrs ]
-        | _ ->
-            res_trans_b.control.root_nodes
+        (sub_statement_trans Procdesc.Node.IfStmtBranch trans_state stmt_branch).control.root_nodes
       in
       let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
@@ -2537,7 +2654,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           assert false
     in
     L.debug Capture Verbose "translating a caseStmt@\n" ;
-    let body_trans_result = exec_with_node_creation CaseStmt ~f:instruction trans_state body in
+    let body_trans_result = sub_statement_trans Procdesc.Node.CaseStmt trans_state body in
     L.debug Capture Verbose "result of translating a caseStmt: %a@\n" pp_control
       body_trans_result.control ;
     SwitchCase.add
@@ -2547,7 +2664,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and defaultStmt_trans trans_state stmt_info default_stmt_list =
     let[@warning "-partial-match"] [body] = default_stmt_list in
-    let body_trans_result = instruction trans_state body in
+    let body_trans_result = sub_statement_trans Procdesc.Node.CaseStmt trans_state body in
     (let open SwitchCase in
      add {condition= Default; stmt_info; root_nodes= body_trans_result.control.root_nodes} ) ;
     body_trans_result
@@ -2813,7 +2930,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_body =
         {trans_state with succ_nodes= body_succ_nodes; continuation= Some body_continuation}
       in
-      exec_with_node_creation LoopBody ~f:instruction trans_state_body (Loops.get_body loop_kind)
+      sub_statement_trans Procdesc.Node.LoopBody trans_state_body (Loops.get_body loop_kind)
     in
     let join_succ_nodes =
       match loop_kind with
