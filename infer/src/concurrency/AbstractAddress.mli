@@ -25,8 +25,9 @@ module F = Format
       identical globals and identical class objects compare equal. Parameter-rooted paths compare
       equal if their parameter indices, types and lists of accesses are equal.
     - Equality for comparing two addresses in two distinct threads/traces. Globals and class objects
-      are compared in the same way, but parameter-rooted paths need only have equal access lists (ie
-      [x.f.g == y.f.g]). This allows demonically aliasing parameters in *distinct* threads. *)
+      are compared in the same way, but parameter-rooted paths need only have equal types (modulo
+      type qualifiers) and lists of accesses (ie [x.f.g == y.f.g]). This allows demonically aliasing
+      parameters in *distinct* threads. *)
 
 include PrettyPrintable.PrintableOrderedType
 
@@ -37,8 +38,17 @@ val equal : t -> t -> bool
 
 val equal_across_threads : Tenv.t -> t -> t -> bool
 
+val may_alias_across_threads : Tenv.t -> t -> t -> bool
+(** [equal_across_threads], or an object reached through the fields of one parameter-rooted path may
+    be the root of the other: [x.f.g.h] may alias [y.h] in distinct threads if [x.f.g] and [y] are
+    objects of the same class and [x.f.g] is the first object of that class on the path *)
+
 val root_class : t -> Typ.name option
 (** Class of the root variable of the expression representing the address *)
+
+val get_path_classes : Tenv.t -> t -> Typ.name list
+(** [root_class] and the classes of the objects whose fields a parameter-rooted path accesses, ie
+    the classes whose methods may access the same object through [this]; may contain duplicates *)
 
 val get_typ : Tenv.t -> t -> Typ.t option
 
