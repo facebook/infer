@@ -905,6 +905,258 @@ module DeadVariables = struct
     Sat ({conditions; phi}, vars_to_keep)
 end
 
+(* Summary-only compaction, deliberately narrower than general quantifier elimination.
+   In particular, preserve finite integer ranges, restricted-variable bounds, and every
+   nonlinear use. Canonical definitions already have disjoint domains and ranges, so one
+   simultaneous substitution suffices and introduces neither pivots nor new equations. *)
+module SummaryProjection = struct
+  module Q = QSafeCapped
+
+  exception Skip
+
+  let linear t = match Term.get_as_linear t with Some l -> l | None -> raise Skip
+
+  let rational l =
+    Q.is_rational (LinArith.get_constant_part l)
+    && LinArith.fold l ~init:true ~f:(fun ok (_, q) -> ok && Q.is_rational q)
+
+
+  let check_linear l = if rational l then l else raise Skip
+
+  let subst_term f t =
+    let t = Term.subst_variables t ~f in
+    let rec check (t : Term.t) =
+      ( match t with
+      | Term.Const q when not (Q.is_rational q) ->
+          raise Skip
+      | Linear l ->
+          ignore (check_linear l)
+      | _ ->
+          () ) ;
+      ignore
+        (Term.fold_map_direct_subterms t ~init:() ~f:(fun () t ->
+             check t ;
+             ((), t) ) )
+    in
+    check t ;
+    t
+
+
+  let subst_atom f atom = Atom.map_terms atom ~f:(subst_term f)
+
+  let cost {phi; conditions} =
+    let atom_cost atom = Atom.fold_variables atom ~init:1 ~f:(fun n _ -> n + 1) in
+    Formula.term_eqs_fold
+      (fun t _ n -> Term.fold_variables t ~init:(n + 2) ~f:(fun n _ -> n + 1))
+      phi 0
+    + Atom.Set.fold (fun a n -> n + atom_cost a) phi.atoms 0
+    + Atom.Map.fold (fun a _ n -> n + atom_cost a) conditions 0
+
+
+  (* Only used on summaries. Callers reconstruct the occurrence maps and tableau. *)
+  let rebuild (phi : Formula.t) ~term_eqs ~atoms =
+    Formula.unsafe_mk ~var_eqs:phi.Formula.var_eqs ~const_eqs:Var.Map.empty
+      ~type_constraints:phi.type_constraints ~linear_eqs:Var.Map.empty ~term_eqs
+      ~tableau:Var.Map.empty ~intervals:phi.intervals ~atoms ~linear_eqs_occurrences:Var.Map.empty
+      ~tableau_occurrences:Var.Map.empty ~term_eqs_occurrences:Var.Map.empty
+      ~atoms_occurrences:Var.Map.empty
+
+
+  let clean_ground ({phi; conditions} as formula) =
+    let clean a =
+      if Atom.fold_variables a ~init:false ~f:(fun _ _ -> true) then [a]
+      else
+        match Atom.eval ~is_neq_zero:(fun _ -> false) a with
+        | Sat atoms ->
+            atoms
+        | Unsat _ ->
+            raise Skip
+    in
+    let atoms =
+      Atom.Set.fold
+        (fun a acc -> List.fold (clean a) ~init:acc ~f:(fun acc a -> Atom.Set.add a acc))
+        phi.atoms Atom.Set.empty
+    in
+    let conditions' =
+      Atom.Map.fold
+        (fun a depth acc ->
+          List.fold (clean a) ~init:acc ~f:(fun acc a -> add_condition (a, depth) acc) )
+        conditions Atom.Map.empty
+    in
+    if Atom.Set.equal atoms phi.atoms && Atom.Map.equal Int.equal conditions conditions' then
+      formula
+    else
+      { phi= rebuild phi ~term_eqs:(Formula.term_eqs_filter (fun _ _ -> true) phi) ~atoms
+      ; conditions= conditions' }
+
+
+  let protected ~keep (phi : Formula.t) =
+    let keep = Var.Map.fold (fun v _ keep -> Var.Set.add v keep) phi.Formula.intervals keep in
+    let keep = Var.Map.fold (fun v _ keep -> Var.Set.add v keep) phi.type_constraints keep in
+    VarUF.fold_congruences phi.var_eqs ~init:keep ~f:(fun keep (v, vs) ->
+        Var.Set.add (v :> Var.t) (Var.Set.union vs keep) )
+
+
+  let substitute_definitions ~keep ~definitions ({phi; conditions} as original) =
+    let blocked = ref (protected ~keep phi) in
+    let block t = blocked := Term.fold_variables t ~init:!blocked ~f:(Fn.flip Var.Set.add) in
+    let check_term (t : Term.t) =
+      match t with
+      | Term.IsInt (t, _) when Option.is_some (Term.get_as_linear t) ->
+          ()
+      | _ when Option.is_some (Term.get_as_linear t) ->
+          ()
+      | _ ->
+          block t
+    in
+    Formula.term_eqs_iter
+      (fun t v ->
+        if Option.is_none (Term.get_as_linear t) then (
+          block t ;
+          blocked := Var.Set.add v !blocked ) )
+      phi ;
+    Atom.Set.iter
+      (fun a ->
+        let x, y = Atom.get_terms a in
+        check_term x ;
+        check_term y )
+      phi.atoms ;
+    Atom.Map.iter
+      (fun a _ ->
+        let x, y = Atom.get_terms a in
+        check_term x ;
+        check_term y )
+      conditions ;
+    let targets = Formula.term_eqs_fold (fun _ v acc -> Var.Set.add v acc) phi Var.Set.empty in
+    let definitions =
+      Var.Map.filter
+        (fun v l ->
+          Var.Set.mem v targets && Var.is_unrestricted v
+          && (not (Var.Set.mem v !blocked))
+          && Seq.length (Seq.take 17 (LinArith.get_variables l)) <= 16
+          && rational l )
+        definitions
+    in
+    let variable_cost v =
+      match Var.Map.find_opt v definitions with
+      | None ->
+          1
+      | Some l ->
+          Int.max 1 (Seq.length (LinArith.get_variables l))
+    in
+    let term_cost t = Term.fold_variables t ~init:1 ~f:(fun n v -> n + variable_cost v) in
+    let atom_cost a =
+      let t, u = Atom.get_terms a in
+      term_cost t + term_cost u
+    in
+    let estimated =
+      Formula.term_eqs_fold
+        (fun t v n -> if Var.Map.mem v definitions then n else n + 1 + term_cost t)
+        phi 0
+      + Atom.Set.fold (fun a n -> n + atom_cost a) phi.atoms 0
+      + Atom.Map.fold (fun a _ n -> n + atom_cost a) conditions 0
+    in
+    if estimated > 2 * cost original then raise Skip ;
+    if Var.Map.is_empty definitions then original
+    else
+      let subst v =
+        match Var.Map.find_opt v definitions with
+        | None ->
+            Term.VarSubst v
+        | Some l ->
+            Term.LinSubst l
+      in
+      let term_eqs =
+        Formula.term_eqs_fold
+          (fun t v acc ->
+            let t = subst_term subst t in
+            match Var.Map.find_opt v definitions with
+            | Some l ->
+                (* No new equations and no reorientation: only remove a binding that became an
+               identity in the existing canonical direction. *)
+                if LinArith.is_zero (check_linear (LinArith.subtract (linear t) l)) then acc
+                else raise Skip
+            | None -> (
+              match Term.VarMap.find_opt t acc with
+              | Some v' when not (Var.equal v v') ->
+                  raise Skip
+              | _ ->
+                  Term.VarMap.add t v acc ) )
+          phi Term.VarMap.empty
+      in
+      let atoms = Atom.Set.map (subst_atom subst) phi.atoms in
+      let conditions =
+        Atom.Map.fold
+          (fun a depth acc -> add_condition (subst_atom subst a, depth) acc)
+          conditions Atom.Map.empty
+      in
+      let result = clean_ground {phi= rebuild phi ~term_eqs ~atoms; conditions} in
+      if cost result <= cost original then result else original
+
+
+  let as_int = function
+    | Atom.Equal (Term.IsInt (t, kind), Term.Const q) when Q.is_one q ->
+        Option.map (Term.get_as_linear t) ~f:(fun l -> (l, kind))
+    | _ ->
+        None
+
+
+  (* Integer translates of one affine expression have the same integrality condition.
+     Their range intersection is represented exactly by the strongest two original atoms. *)
+  let integer_range a =
+    let l, kind = match as_int a with Some x -> x | None -> raise Skip in
+    let c = LinArith.get_constant_part l in
+    if not (rational l && Z.equal (Q.den c) Z.one) then raise Skip ;
+    let widths = match PulseContext.integer_widths () with Some x -> x | None -> raise Skip in
+    let lo, hi = IntegerWidths.range_of_ikind widths kind in
+    let lo = Q.sub (Q.of_bigint lo) c and hi = Q.sub (Q.of_bigint hi) c in
+    if not (Q.is_rational lo && Q.is_rational hi) then raise Skip ;
+    (check_linear (LinArith.subtract l (LinArith.of_q c)), lo, hi)
+
+
+  let reduce_ranges ({phi; conditions} as formula) =
+    let atoms, ranges =
+      Atom.Set.fold
+        (fun a (atoms, ranges) ->
+          match try Some (integer_range a) with Skip -> None with
+          | None ->
+              (Atom.Set.add a atoms, ranges)
+          | Some (l, lo, hi) ->
+              let key = Atom.Equal (Term.Linear l, Term.zero) in
+              let ranges =
+                Atom.Map.update key
+                  (function
+                    | None ->
+                        Some (lo, a, hi, a)
+                    | Some (lo0, a_lo, hi0, a_hi) ->
+                        let lo, a_lo = if Q.gt lo lo0 then (lo, a) else (lo0, a_lo) in
+                        let hi, a_hi = if Q.lt hi hi0 then (hi, a) else (hi0, a_hi) in
+                        Some (lo, a_lo, hi, a_hi) )
+                  ranges
+              in
+              (atoms, ranges) )
+        phi.atoms (Atom.Set.empty, Atom.Map.empty)
+    in
+    let atoms =
+      Atom.Map.fold
+        (fun _ (_, lo, _, hi) atoms -> Atom.Set.add lo (Atom.Set.add hi atoms))
+        ranges atoms
+    in
+    if Atom.Set.equal atoms phi.atoms then formula
+    else
+      {phi= rebuild phi ~term_eqs:(Formula.term_eqs_filter (fun _ _ -> true) phi) ~atoms; conditions}
+
+
+  let eliminate ~keep ~definitions formula =
+    (* A single pass, with a fixed input budget and no increase in counted formula size.
+       Keeping a constraint when the budget is exhausted preserves ranges and divisibility.
+       This bounds compaction work, not summary growth or subsequent caller analysis. *)
+    if cost formula > 4096 then formula
+    else
+      let formula = try substitute_definitions ~keep ~definitions formula with Skip -> formula in
+      reduce_ranges formula
+end
+
 let simplify ~precondition_vocabulary ~keep formula =
   let open SatUnsat.Import in
   L.d_printfln_escaped "@[Simplifying %a@ wrt %a (keep),@ with prunables=%a@]" pp formula
@@ -913,8 +1165,24 @@ let simplify ~precondition_vocabulary ~keep formula =
   let* formula = QuantifierElimination.eliminate_vars ~precondition_vocabulary ~keep formula in
   (* TODO: doing [QuantifierElimination.eliminate_vars; DeadVariables.eliminate] a few times may
      eliminate even more variables *)
-  let+ formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep formula in
-  (formula, live_vars, RevList.empty)
+  let definitions = formula.phi.linear_eqs in
+  let* formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep formula in
+  if
+    Language.curr_language_is Clang
+    && Formula.term_eqs_fold_function_applications
+         (fun t _ found -> found || is_pre_function_application t)
+         formula.phi false
+  then
+    let projected =
+      SummaryProjection.eliminate
+        ~keep:(Var.Set.union keep precondition_vocabulary)
+        ~definitions formula
+    in
+    if phys_equal projected formula then Sat (formula, live_vars, RevList.empty)
+    else
+      let+ formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep projected in
+      (formula, live_vars, RevList.empty)
+  else Sat (formula, live_vars, RevList.empty)
 
 
 module Implication : sig
