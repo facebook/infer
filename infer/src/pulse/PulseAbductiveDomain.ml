@@ -2086,6 +2086,52 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
   (astate, pre_addresses, post_addresses, dead_addresses)
 
 
+let pre_cell_values (pre : PreDomain.t) =
+  RawMemory.fold
+    (fun _addr edges values ->
+      RawMemory.Edges.fold edges ~init:values ~f:(fun values (_access, (value, _history)) ->
+          value :: values ) )
+    (pre :> BaseDomain.t).heap []
+
+
+(* After canonicalization, cells of the pre heap that are equal to the same constant hold the same
+   value. This is not an assumption that the cells are aliases (see
+   [Summary.pre_heap_has_assumptions]) provided that the conditions on that value are as latent as
+   the conditions that made each of the cells equal to the constant. A cell without such a condition
+   of its own, or that held the same value as another cell already, got its value from a callee that
+   assumed that the cells were aliases. *)
+let raise_depth_of_shared_constants astate0 pre path_condition =
+  let phi0 = astate0.path_condition in
+  let cells0 = lazy (pre_cell_values astate0.pre) in
+  let rec depth_of_sorted_cells depth = function
+    | v1 :: (v2 :: _ as values) when AbstractValue.equal v1 v2 ->
+        depth_of_sorted_cells (Int.max depth 1) values
+    | v :: values ->
+        let depth_v = Formula.get_constant_condition_depth phi0 v |> Option.value ~default:1 in
+        depth_of_sorted_cells (Int.max depth depth_v) values
+    | [] ->
+        depth
+  in
+  let cell_counts =
+    List.fold (pre_cell_values pre) ~init:AbstractValue.Map.empty ~f:(fun counts v ->
+        AbstractValue.Map.update v (fun n -> Some (1 + Option.value n ~default:0)) counts )
+  in
+  AbstractValue.Map.fold
+    (fun v count path_condition ->
+      if count < 2 || Option.is_none (Formula.get_constant_condition_depth path_condition v) then
+        path_condition
+      else
+        let repr = Formula.get_var_repr phi0 v in
+        let depth =
+          List.filter (Lazy.force cells0) ~f:(fun v0 ->
+              AbstractValue.equal repr (Formula.get_var_repr phi0 v0) )
+          |> List.sort ~compare:AbstractValue.compare
+          |> depth_of_sorted_cells 0
+        in
+        Formula.raise_depth_of_conditions_on v ~depth path_condition )
+    cell_counts path_condition
+
+
 let filter_for_summary proc_name location astate0 =
   let open SatUnsat.Import in
   L.d_printfln "state *before* calling canonicalize:" ;
@@ -2116,6 +2162,7 @@ let filter_for_summary proc_name location astate0 =
   let+ path_condition, live_via_arithmetic, new_eqs =
     Formula.simplify ~precondition_vocabulary ~keep:live_addresses astate.path_condition
   in
+  let path_condition = raise_depth_of_shared_constants astate0 astate.pre path_condition in
   (* [unsafe_cast_set] is safe because a) all the values are actually canon_values in disguise,
      and b) we have canonicalised all the values in the state already so all we have left are
      canonical values *)
@@ -2373,7 +2420,10 @@ module Summary = struct
         L.d_printfln_escaped "assumption detected: %a is in the pre heap and is restricted (>= 0)"
           AbstractValue.pp addr ;
         raise_notrace AssumptionDetected )
-      else if AbstractValue.Set.mem addr seen then (
+      else if
+        AbstractValue.Set.mem addr seen
+        && Option.is_none (Formula.get_constant_condition_depth astate.path_condition addr)
+      then (
         L.d_printfln_escaped
           "assumption detected: %a is reachable in the pre heap from at least two different paths"
           AbstractValue.pp addr ;

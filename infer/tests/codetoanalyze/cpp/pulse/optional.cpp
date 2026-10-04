@@ -172,6 +172,14 @@ int none_no_check_bad() {
   return foo.value();
 }
 
+int none_negated_check_bad() {
+  folly::Optional<int> foo{folly::none};
+  if (!foo) {
+    return foo.value();
+  }
+  return -1;
+}
+
 int not_none_copy0_ok() {
   folly::Optional<int> foo{5};
   folly::Optional<int> bar{foo};
@@ -246,6 +254,15 @@ int has_value_bad() {
   return 0;
 }
 
+int has_value_compared_to_true_ok() {
+  folly::Optional<int> foo{0};
+  if (foo.has_value() != true) {
+    folly::Optional<int> foo{folly::none};
+    return foo.value();
+  }
+  return 0;
+}
+
 struct State {
   std::vector<int> vec;
 };
@@ -258,6 +275,16 @@ void emplace(folly::Optional<State> state) {
 }
 
 void operator_arrow_bad() { emplace(folly::none); }
+
+int emplace_then_negated_check_ok() {
+  folly::Optional<int> foo{folly::none};
+  foo.emplace(42);
+  if (!foo.has_value()) {
+    int* p = nullptr;
+    return *p;
+  }
+  return foo.value();
+}
 
 void get_pointer_check_none_check_ok() {
   folly::Optional<int> foo{folly::none};
@@ -359,4 +386,46 @@ int smart_pointer(const Node& node) {
     return *(node.getShared().value());
   }
   return -1;
+}
+
+// an empty optional must not be confused with null pointers on the same path
+
+int null_deref_after_none_bad() {
+  folly::Optional<int> foo{folly::none};
+  int* p = nullptr;
+  return *p;
+}
+
+int null_deref_before_none_bad() {
+  int* p = nullptr;
+  folly::Optional<int> foo{folly::none};
+  return *p;
+}
+
+int null_shared_ptr_deref_after_none_bad() {
+  folly::Optional<int> foo{folly::none};
+  std::shared_ptr<int> p;
+  return *p;
+}
+
+int copy_shared_ptr_after_none_ok(const std::shared_ptr<int>& sp) {
+  folly::Optional<int> foo{folly::none};
+  std::shared_ptr<int> copy = sp;
+  return *copy;
+}
+
+int copy_shared_ptr_after_reset_ok(const std::shared_ptr<int>& sp,
+                                   folly::Optional<int>& foo) {
+  foo.reset();
+  std::shared_ptr<int> copy = sp;
+  return *copy;
+}
+
+void fill_optional(folly::Optional<int>& foo);
+
+int value_then_get_pointer_ok() {
+  folly::Optional<int> foo;
+  fill_optional(foo);
+  int x = foo.value();
+  return x + *foo.get_pointer();
 }
