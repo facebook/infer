@@ -222,17 +222,49 @@ module ArrInfo = struct
         Top
 
 
-  (* Set new stride only when the previous stride is a constant interval. *)
+  (* Count [itv] elements of [stride] bytes in units of [n] bytes. A lone offset or length symbol is
+     recounted by changing its unit if it is counted in bytes, if dividing it would be inexact, or if
+     the element size is unknown, so that callers evaluate it from their own strides. Otherwise, it
+     returns [None] if the element size is unknown. *)
+  let count_in_units n ~stride itv =
+    let recount ~from = Itv.change_byte_unit ~from ~to_:n itv in
+    match Itv.get_const stride with
+    | Some s when Z.equal s n ->
+        Some itv
+    | Some s ->
+        let recounted =
+          if Z.(equal (rem s n) zero) then recount ~from:(Some s)
+          else Option.first_some (recount ~from:(Some s)) (recount ~from:None)
+        in
+        Some
+          (IOption.value_default_f recounted ~f:(fun () -> Itv.div_const (Itv.mult_const itv s) n))
+    | None ->
+        recount ~from:None
+
+
+  let in_units n ~stride itv =
+    IOption.value_default_f (count_in_units n ~stride itv) ~f:(fun () ->
+        Itv.div_const (Itv.mult itv stride) n )
+
+
+  (* With an unknown element size, both the offset and size become unknown unless both can be
+     recounted: an unknown size alone would be clamped to [0, +oo] when substituted for an unsigned
+     length symbol, which yields BUFFER_OVERRUN_L3 instead of L5. *)
   let set_stride : Z.t -> t -> t =
    fun new_stride arr ->
     match arr with
     | C {offset; size; stride} ->
-        Option.value_map (Itv.get_const stride) ~default:arr ~f:(fun stride ->
-            assert ((not Z.(equal stride zero)) && not Z.(equal new_stride zero)) ;
-            if Z.equal new_stride stride then arr
-            else
-              let set itv = Itv.div_const (Itv.mult_const itv stride) new_stride in
-              C {offset= set offset; size= set size; stride= Itv.of_big_int new_stride} )
+        if Itv.is_bottom stride || Option.exists (Itv.get_const stride) ~f:(Z.equal new_stride) then
+          arr
+        else (
+          assert ((not (Itv.is_zero stride)) && not Z.(equal new_stride zero)) ;
+          let offset, size =
+            Option.both
+              (count_in_units new_stride ~stride offset)
+              (count_in_units new_stride ~stride size)
+            |> Option.value ~default:(Itv.top, Itv.top)
+          in
+          C {offset; size; stride= Itv.of_big_int new_stride} )
     | Java _ ->
         L.(die InternalError) "Unexpected cast on Java array"
     | Top ->
@@ -254,14 +286,34 @@ module ArrInfo = struct
 
   let get_size = function C {size} -> size | Java {length} -> length | Top -> Itv.top
 
-  let byte_size = function
+  let has_const_stride = function
+    | C {stride} ->
+        Option.is_some (Itv.get_const stride)
+    | Java _ | Top ->
+        false
+
+
+  let offset_in_units n = function
+    | C {offset; stride} ->
+        in_units n ~stride offset
+    | Java _ ->
+        L.(die InternalError) "Unexpected byte-offset operation on Java array"
+    | Top ->
+        Itv.top
+
+
+  let size_in_units n = function
     | C {size; stride} ->
-        Itv.mult size stride
+        in_units n ~stride size
     | Java _ ->
         L.(die InternalError) "Unexpected byte-size operation on Java array"
     | Top ->
         Itv.top
 
+
+  let byte_offset = offset_in_units Z.one
+
+  let byte_size = size_in_units Z.one
 
   let lift_cmp_itv cmp_itv arr1 arr2 =
     match (arr1, arr2) with
@@ -325,6 +377,10 @@ let join_itv : cost_mode:bool -> f:(ArrInfo.t -> Itv.t) -> t -> Itv.t =
 let get_offset ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.get_offset
 
 let get_size ?(cost_mode = false) = join_itv ~cost_mode ~f:ArrInfo.get_size
+
+let get_offset_in_units ?(cost_mode = false) n = join_itv ~cost_mode ~f:(ArrInfo.offset_in_units n)
+
+let get_size_in_units ?(cost_mode = false) n = join_itv ~cost_mode ~f:(ArrInfo.size_in_units n)
 
 let plus_offset : t -> Itv.t -> t = fun arr i -> map (fun a -> ArrInfo.plus_offset a i) arr
 
@@ -408,6 +464,11 @@ let prune_offset_le_size a = map ArrInfo.prune_offset_le_size a
 let set_length : Itv.t -> t -> t = fun length a -> map (ArrInfo.set_length length) a
 
 let set_stride : Z.t -> t -> t = fun stride a -> map (ArrInfo.set_stride stride) a
+
+let set_stride_if_known : Z.t -> t -> t =
+ fun stride a ->
+  map (fun info -> if ArrInfo.has_const_stride info then ArrInfo.set_stride stride info else info) a
+
 
 let set_offset : Itv.t -> t -> t = fun offset a -> map (ArrInfo.set_offset offset) a
 
