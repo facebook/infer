@@ -23,7 +23,8 @@ module ReportMap : sig
 end
 
 val report_on_pair :
-     analyze_ondemand:(Procname.t -> StarvationDomain.summary option)
+     ?thread_entries:Procname.Set.t
+  -> analyze_ondemand:(Procname.t -> StarvationDomain.summary option)
   -> Tenv.t
   -> ProcAttributes.t
   -> StarvationDomain.CriticalPair.t
@@ -31,7 +32,8 @@ val report_on_pair :
   -> ReportMap.t
 
 val report_on_parallel_composition :
-     should_report_starvation:bool
+     ?thread_entries:Procname.Set.t
+  -> should_report_starvation:bool
   -> Tenv.t
   -> ProcAttributes.t
   -> StarvationDomain.CriticalPair.t

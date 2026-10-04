@@ -7,7 +7,7 @@ digraph cfg {
 "div0_class#4984704850372216251.260ce38d809793fc_2" [label="2: Exit div0_class \n  " color=yellow style=filled]
 	
 
-"div0_class#4984704850372216251.260ce38d809793fc_3" [label="3:  Call _fun_A::fun \n   n$1=_fun_A::fun(0:int) [line 15, column 21]\n " shape="box"]
+"div0_class#4984704850372216251.260ce38d809793fc_3" [label="3:  Call _fun_A::fun \n   n$0=_fun_A::fun(0:int) [line 15, column 21]\n " shape="box"]
 	
 
 	 "div0_class#4984704850372216251.260ce38d809793fc_3" -> "div0_class#4984704850372216251.260ce38d809793fc_2" ;

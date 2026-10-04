@@ -121,8 +121,8 @@ public class Locks {
     }
   }
 
-  // we could catch this by invalidating the choice predicates whenever we update the lock domain
-  public void FN_tryLockStaleBad() {
+  // [result] is stale after the unlock
+  public void tryLockStaleBad() {
     boolean result = mReentrantLock.tryLock();
     mReentrantLock.unlock();
     if (result) {
@@ -273,8 +273,8 @@ public class Locks {
     mLock.unlock();
   }
 
-  // ... or here
-  public void FN_releaseLockInCalleeBad() {
+  // the callee releases the lock acquired here
+  public void releaseLockInCalleeBad() {
     mLock.lock();
     releaseLock();
     f = 42;
@@ -360,5 +360,34 @@ public class Locks {
 
   public Object unownedReadBad() {
     return this.mField3;
+  }
+
+  Object mField4;
+
+  // locks have no identity, so the lock that the callee releases is taken to be the monitor rather
+  // than a lock held by the caller
+  public synchronized void FP_releaseLockOfCallerInCalleeOk() {
+    releaseLock();
+    mField4 = null;
+  }
+
+  public void tryLockThenSynchronizedBlockOk() {
+    boolean result = mReentrantLock.tryLock();
+    synchronized (this) {
+    }
+    if (result) {
+      f = 42;
+      mReentrantLock.unlock();
+    }
+  }
+
+  public void tryLockThenOtherUnlockOk() {
+    mLock.lock();
+    boolean result = mReentrantLock.tryLock();
+    mLock.unlock();
+    if (result) {
+      f = 42;
+      mReentrantLock.unlock();
+    }
   }
 }
