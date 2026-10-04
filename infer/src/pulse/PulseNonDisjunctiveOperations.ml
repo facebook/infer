@@ -261,9 +261,23 @@ let is_address_reachable_from_unowned source_addr ~astates_before proc_lvalue_re
     =
   List.exists astates_before ~f:(fun astate_before ->
       let reachable_addresses_from_source =
-        AbductiveDomain.reachable_addresses_from (Seq.return source_addr)
-          ~edge_filter:(function Dereference -> false | _ -> true)
-          astate_before `Post
+        let reachable =
+          AbductiveDomain.reachable_addresses_from (Seq.return source_addr)
+            ~edge_filter:(function Dereference -> false | _ -> true)
+            astate_before `Post
+        in
+        (* the values of array indices are not part of the source object, and constant indices in
+           particular are shared with all the arrays accessed at the same index; this assumes that
+           index values are not also used as heap addresses *)
+        AbstractValue.Set.fold
+          (fun addr reachable ->
+            Memory.fold_edges addr astate_before ~init:reachable ~f:(fun reachable (access, _) ->
+                match (access : Access.t) with
+                | ArrayAccess (_, index) ->
+                    AbstractValue.Set.remove index reachable
+                | FieldAccess _ | Dereference ->
+                    reachable ) )
+          reachable reachable
       in
       Stack.exists
         (fun var this_vo ->

@@ -780,6 +780,53 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         trans_state_param
 
 
+  (** The copy and move assignment operators that clang defines, implicit or defaulted ones, copy
+      array members of trivially copyable type with [__builtin_memcpy(&this->a, &other.a, n)] where
+      [n] is the size of the array as an integer literal. Return the type of the array and the
+      translated addresses of the destination and source arrays of such calls if the array is to be
+      copied element by element. *)
+  let array_member_memcpy_opt {CContext.procdesc; tenv} callee_pname_opt params_stmt
+      result_trans_params =
+    let rec strip_implicit_casts (stmt : Clang_ast_t.stmt) =
+      match stmt with
+      | `ImplicitCastExpr (_, [stmt], _, _, _) ->
+          strip_implicit_casts stmt
+      | _ ->
+          stmt
+    in
+    let address_of_member (stmt : Clang_ast_t.stmt) =
+      match strip_implicit_casts stmt with
+      | `UnaryOperator
+          ( _
+          , [`MemberExpr (_, _, expr_info, {Clang_ast_t.mei_decl_ref= {dr_decl_pointer}})]
+          , _
+          , {Clang_ast_t.uoi_kind= `AddrOf} ) ->
+          Some (dr_decl_pointer, CType_decl.get_type_from_expr_info expr_info tenv)
+      | _ ->
+          None
+    in
+    let strip_cast (exp : Exp.t) = match exp with Cast (_, exp) -> exp | _ -> exp in
+    let proc_name = Procdesc.get_proc_name procdesc in
+    match (callee_pname_opt, params_stmt, result_trans_params) with
+    | ( Some callee_pname
+      , [dst_stmt; src_stmt; _]
+      , [{return= dst_exp, _}; {return= src_exp, _}; {return= Exp.Const (Cint size), _}] )
+      when Procname.is_cpp_assignment_operator proc_name
+           && CTrans_models.is_builtin_memcpy callee_pname -> (
+      match (address_of_member dst_stmt, address_of_member src_stmt) with
+      | ( Some (dst_field, ({desc= Tarray {length= Some length; stride= Some stride}} as array_typ))
+        , Some (src_field, _) )
+        when Int.equal dst_field src_field
+             && IntLit.eq size (IntLit.mul length stride)
+             && Option.is_some
+                  (CStructUtils.unrolled_copy_length tenv ~dest:(strip_cast dst_exp) array_typ) ->
+          Some (array_typ, strip_cast dst_exp, strip_cast src_exp)
+      | _ ->
+          None )
+    | _ ->
+        None
+
+
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     let context = trans_state.context in
     let[@warning "-partial-match"] [stmt] = stmt_list in
@@ -887,14 +934,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let typ =
       match CAst_utils.get_decl decl_ptr with
-      | Some (BindingDecl (_, _, _, {bound_decl_type= Some qt})) -> (
-        (* clang gives us the wrong type for bindings in the AST, with missing references, we have
-           to go back to the BindingDecl that defines the binding to get the correct type *)
-        match CAst_utils.get_desugared_type qt.qt_type_ptr with
-        | Some (LValueReferenceType _) ->
-            Typ.mk (Tptr (typ, Pk_lvalue_reference))
-        | _ ->
-            typ )
+      | Some (BindingDecl (_, _, qual_type, binding_info)) ->
+          CType_decl.structured_binding_var_typ context.tenv qual_type binding_info
       | _ ->
           typ
     in
@@ -955,8 +996,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `Function, _ ->
         function_deref_trans trans_state decl_ref
     | (`Var | `VarTemplateSpecialization | `ImplicitParam | `ParmVar | `Binding | `Decomposition), _
-      ->
-        var_deref_trans trans_state stmt_info decl_ref
+      -> (
+      match CVar_decl.binding_expr_of_decl_ref trans_state.context decl_ref with
+      | Some binding_expr ->
+          instruction {trans_state with var_exp_typ= None} binding_expr
+      | None ->
+          var_deref_trans trans_state stmt_info decl_ref )
     | (`Field | `ObjCIvar), MemberOrIvar pre_trans_result ->
         (* a field outside of constructor initialization is probably a pointer to member, which we
            do not support *)
@@ -1630,14 +1675,23 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         params_stmt
     in
     match
-      Option.bind callee_pname_opt
-        ~f:
-          (CTrans_utils.builtin_trans trans_state_pri si.Clang_ast_t.si_source_range sil_loc
-             (res_trans_callee :: result_trans_params) )
+      ( Option.bind callee_pname_opt
+          ~f:
+            (CTrans_utils.builtin_trans trans_state_pri si.Clang_ast_t.si_source_range sil_loc
+               (res_trans_callee :: result_trans_params) )
+      , array_member_memcpy_opt context callee_pname_opt params_stmt result_trans_params )
     with
-    | Some builtin ->
+    | Some builtin, _ ->
         builtin
-    | None ->
+    | None, Some (array_typ, dst_exp, src_exp) ->
+        let instrs = CStructUtils.array_copy context.tenv sil_loc dst_exp src_exp ~typ:array_typ in
+        let return = (dst_exp, Typ.mk (Tptr (array_typ, Pk_pointer))) in
+        PriorityNode.compute_results_to_parent trans_state_pri sil_loc
+          (Procdesc.Node.Call (Exp.to_string sil_fe))
+          si ~return
+          ( res_trans_callee
+          :: (result_trans_params @ [mk_trans_result return {empty_control with instrs}]) )
+    | None, None ->
         let act_params = collect_returns result_trans_params in
         let ret_type_no_ref = CType_decl.get_type_from_expr_info expr_info context.CContext.tenv in
         let ret_type = add_reference_if_glvalue ret_type_no_ref expr_info in
@@ -2044,13 +2098,32 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 Exp.Lfield ({exp= obj_sil; is_implicit= false}, field_name, this_qual_type)
               in
               let field_typ = CType_decl.qual_type_to_sil_type context.tenv qual_type in
-              let this_res_trans_destruct = mk_trans_result (field_exp, field_typ) empty_control in
-              get_destructor_decl_ref qual_type.Clang_ast_t.qt_type_ptr
-              |> Option.map ~f:(fun destructor_decl_ref ->
-                  cxx_destructor_call_trans trans_state_pri stmt_info_loc this_res_trans_destruct
-                    destructor_decl_ref ~is_injected_destructor:true ~is_inner_destructor:false )
+              (* the elements of the arrays that are copied element by element are destroyed in
+                 reverse order *)
+              let rec destruct exp (typ : Typ.t) (qual_type : Clang_ast_t.qual_type) =
+                match
+                  ( CAst_utils.get_desugared_type qual_type.qt_type_ptr
+                  , typ.desc
+                  , CStructUtils.unrolled_copy_length context.tenv ~dest:exp typ )
+                with
+                | Some (ConstantArrayType (_, {arti_element_type}, _)), Tarray {elt}, Some length ->
+                    List.concat_map
+                      (List.rev (List.init length ~f:Fn.id))
+                      ~f:(fun i ->
+                        destruct (Exp.Lindex (exp, Exp.int (IntLit.of_int i))) elt arti_element_type )
+                | _ ->
+                    get_destructor_decl_ref qual_type.qt_type_ptr
+                    |> Option.map ~f:(fun destructor_decl_ref ->
+                        cxx_destructor_call_trans trans_state_pri stmt_info_loc
+                          (mk_trans_result (exp, typ) empty_control)
+                          destructor_decl_ref ~is_injected_destructor:true
+                          ~is_inner_destructor:false )
+                    |> Option.to_list
+              in
+              Some (destruct field_exp field_typ qual_type)
           | _ ->
               assert false )
+        |> List.concat
       in
       let bases_res_trans =
         inject_base_class_destructor_calls trans_state_pri stmt_info_loc bases obj_sil
@@ -2143,23 +2216,26 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | Some var_decls_to_destroy ->
         let is_cpp = CGeneral_utils.is_cpp_translation context.translation_unit_context in
         let procname = Procdesc.get_proc_name context.CContext.procdesc in
+        let var_to_destroy {Clang_ast_t.di_attributes} qual_type decl =
+          let cleanup =
+            List.find_map di_attributes ~f:(function
+              | `CleanupAttr (_, cleanup_decl_ref) ->
+                  Some cleanup_decl_ref
+              | _ ->
+                  None )
+          in
+          if is_cpp || Option.is_some cleanup then
+            let pvar = CVar_decl.sil_var_of_decl context decl procname in
+            let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+            Some ({CContext.pvar; typ; qual_type; marker= None}, cleanup)
+          else None
+        in
         let vars_to_destroy =
           List.filter_map var_decls_to_destroy ~f:(function
-            | CContext.VarDecl (({di_attributes}, _, qual_type, _) as var_decl) ->
-                let cleanup =
-                  List.find_map di_attributes ~f:(function
-                    | `CleanupAttr (_, cleanup_decl_ref) ->
-                        Some cleanup_decl_ref
-                    | _ ->
-                        None )
-                in
-                if is_cpp || Option.is_some cleanup then
-                  let pvar =
-                    CVar_decl.sil_var_of_decl context (Clang_ast_t.VarDecl var_decl) procname
-                  in
-                  let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
-                  Some ({CContext.pvar; typ; qual_type; marker= None}, cleanup)
-                else None
+            | CContext.VarDecl ((decl_info, _, qual_type, _) as var_decl) ->
+                var_to_destroy decl_info qual_type (Clang_ast_t.VarDecl var_decl)
+            | CContext.DecompositionDecl ((decl_info, _, qual_type, _, _) as decomposition_decl) ->
+                var_to_destroy decl_info qual_type (Clang_ast_t.DecompositionDecl decomposition_decl)
             | CContext.CXXTemporary cxx_temporary ->
                 Some (cxx_temporary, None) )
         in
@@ -3160,6 +3236,61 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       {res_trans with control= {res_trans.control with initd_exps= [var_exp]}}
 
 
+  (** [ArrayInitLoopExpr] initializes an array from another array element by element, for instance
+      an array member in an implicit copy or move constructor, or an array captured by value in a
+      lambda. Its first child is an [OpaqueValueExpr] for the source array and its second child
+      initializes one element, with [ArrayInitIndexExpr] standing for the index of that element.
+      Arrays for which [CStructUtils.unrolled_copy_length] is [None] are not initialized. *)
+  and arrayInitLoopExpr_trans ({context= {tenv}} as trans_state) stmt_info expr_info stmts =
+    let array_typ = CType_decl.get_type_from_expr_info expr_info tenv in
+    let dest = Option.map trans_state.var_exp_typ ~f:fst in
+    match (stmts, array_typ.Typ.desc, CStructUtils.unrolled_copy_length tenv ?dest array_typ) with
+    | ( [`OpaqueValueExpr (_, _, _, {Clang_ast_t.ovei_source_expr= Some source_stmt}); elt_stmt]
+      , Tarray {elt= elt_typ}
+      , Some length ) ->
+        let var_exp, var_typ =
+          match trans_state.var_exp_typ with
+          | Some var_exp_typ ->
+              var_exp_typ
+          | None ->
+              create_var_exp_tmp_var trans_state expr_info ~var_name:"SIL_array_init_loop__"
+                ~clang_pointer:stmt_info.Clang_ast_t.si_pointer
+        in
+        let sil_loc =
+          CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
+            stmt_info
+        in
+        let trans_state_pri = PriorityNode.try_claim_priority_node trans_state stmt_info in
+        (* translate the source in the current state as it can refer to the opaque value and index
+           of an enclosing [ArrayInitLoopExpr] in the case of multi-dimensional arrays *)
+        let source_res_trans =
+          instruction {trans_state_pri with succ_nodes= []; var_exp_typ= None} source_stmt
+        in
+        let init_stmt_info =
+          {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
+        in
+        let init_elt idx =
+          let idx_exp = Exp.Const (Const.Cint (IntLit.of_int idx)) in
+          let trans_state_elt =
+            { trans_state_pri with
+              opaque_exp= Some source_res_trans.return
+            ; array_init_index= Some idx_exp }
+          in
+          init_expr_trans ~is_declare_variable:false trans_state_elt
+            (Exp.Lindex (var_exp, idx_exp), elt_typ)
+            init_stmt_info (Some elt_stmt)
+        in
+        let elts_res_trans = List.map (CGeneral_utils.list_range 0 (length - 1)) ~f:init_elt in
+        let res_trans =
+          PriorityNode.compute_results_to_parent trans_state_pri sil_loc InitListExp stmt_info
+            ~return:(var_exp, var_typ)
+            (source_res_trans :: elts_res_trans)
+        in
+        {res_trans with control= {res_trans.control with initd_exps= [var_exp]}}
+    | _ ->
+        no_op_trans trans_state.succ_nodes
+
+
   and init_dynamic_array trans_state array_exp_typ array_stmt_info dynlength_stmt_pointer =
     let dynlength_stmt = IInt.Hash.find ClangPointers.pointer_stmt_table dynlength_stmt_pointer in
     let dynlength_stmt_info, _ = Clang_ast_proj.get_stmt_tuple dynlength_stmt in
@@ -3318,11 +3449,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let procname = Procdesc.get_proc_name procdesc in
     let do_var_dec var_decl qual_type (vdi : Clang_ast_t.var_decl_info) next_node trans_state =
       let pvar = CVar_decl.sil_var_of_decl context var_decl procname in
-      let typ = CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type in
+      let typ, is_structured_binding, init_expr =
+        match var_decl with
+        | BindingDecl (_, _, _, binding_info) -> (
+            let typ =
+              CType_decl.structured_binding_var_typ context.CContext.tenv qual_type binding_info
+            in
+            match CAst_utils.get_structured_binding qual_type binding_info with
+            | Some (BindingTemporary {init}) ->
+                (typ, false, Some init)
+            | Some BindingAlias ->
+                (typ, true, vdi.vdi_init_expr)
+            | _ ->
+                (typ, false, vdi.vdi_init_expr) )
+        | _ ->
+            ( CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type
+            , false
+            , vdi.vdi_init_expr )
+      in
       CVar_decl.add_var_to_locals procdesc var_decl typ pvar ;
       let trans_state = {trans_state with succ_nodes= next_node} in
       let var_exp_typ = (Exp.Lvar pvar, typ) in
-      let is_structured_binding = match var_decl with BindingDecl _ -> true | _ -> false in
       (* do not translate the initialization of static locals; to accurately represent the semantics
          we need to only run the inilialization once at "program start" (or run it once at some
          point) *)
@@ -3330,7 +3477,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         mk_trans_result var_exp_typ {empty_control with root_nodes= trans_state.succ_nodes}
       else
         init_expr_trans ~is_structured_binding trans_state var_exp_typ ~qual_type stmt_info
-          vdi.vdi_init_expr
+          init_expr
     in
     let aux_var res_trans_tl var_decl qt vdi =
       (* Var are defined when procdesc is created, here we only take care of initialization *)
@@ -4096,7 +4243,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         assert false
 
 
-  and lambdaExpr_trans trans_state stmt_info expr_info {Clang_ast_t.lei_lambda_decl} =
+  and lambdaExpr_trans trans_state stmt_info expr_info stmts {Clang_ast_t.lei_lambda_decl} =
     let open CContext in
     let qual_type = expr_info.Clang_ast_t.ei_qual_type in
     let context = trans_state.context in
@@ -4134,29 +4281,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CFrontend_errors.incorrect_assumption __POS__ stmt_info.Clang_ast_t.si_source_range
             "Capture-init statement without var decl"
     in
-    let translate_normal_capture mode (pvar, typ) (trans_results_acc, captured_vars_acc) =
+    let translate_normal_capture ?var_exp mode (pvar, typ) (trans_results_acc, captured_vars_acc) =
+      let var_exp = Option.value var_exp ~default:(Exp.Lvar pvar) in
       match (mode : CapturedVar.capture_mode) with
       | ByReference -> (
         match typ.Typ.desc with
         | Tptr (_, Typ.Pk_lvalue_reference) ->
-            let trans_result, captured_var =
-              translate_captured_var_assign (Exp.Lvar pvar) pvar typ mode
-            in
+            let trans_result, captured_var = translate_captured_var_assign var_exp pvar typ mode in
             (trans_result :: trans_results_acc, captured_var :: captured_vars_acc)
         | _ when Pvar.is_this pvar ->
             (* Special case for this *)
-            (trans_results_acc, (Exp.Lvar pvar, pvar, typ, mode) :: captured_vars_acc)
+            (trans_results_acc, (var_exp, pvar, typ, mode) :: captured_vars_acc)
         | _ ->
             (* A variable captured by ref (except ref variables) is missing ref in its type *)
             ( trans_results_acc
-            , (Exp.Lvar pvar, pvar, Typ.mk (Tptr (typ, Pk_lvalue_reference)), mode)
-              :: captured_vars_acc ) )
+            , (var_exp, pvar, Typ.mk (Tptr (typ, Pk_lvalue_reference)), mode) :: captured_vars_acc
+            ) )
       | ByValue -> (
           let init, exp, typ_new =
             match typ.Typ.desc with
             (* TODO: Structs are missing copy constructor instructions when passed by value *)
             | Tptr (typ_no_ref, Pk_lvalue_reference) when not (Typ.is_struct typ_no_ref) ->
-                let return = (Exp.Lvar pvar, typ) in
+                let return = (var_exp, typ) in
                 (* We need to dereference ref variable as usual when we read its value *)
                 let init_trans_results =
                   dereference_value_from_result stmt_info.Clang_ast_t.si_source_range loc
@@ -4165,7 +4311,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                 let exp, _ = init_trans_results.return in
                 (Some init_trans_results, exp, typ_no_ref)
             | _ ->
-                (None, Exp.Lvar pvar, typ)
+                (None, var_exp, typ)
           in
           let trans_result, captured_var = translate_captured_var_assign exp pvar typ_new mode in
           let trans_results, captured_vars =
@@ -4177,9 +4323,36 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           | None ->
               (trans_results, captured_vars) )
     in
+    let is_unrolled_array_init (init_expr_info : Clang_ast_t.expr_info) =
+      (* the copy that is captured is never destroyed *)
+      let rec is_trivially_destructible (qual_type : Clang_ast_t.qual_type) =
+        match CAst_utils.get_desugared_type qual_type.qt_type_ptr with
+        | Some (ConstantArrayType (_, {arti_element_type}, _)) ->
+            is_trivially_destructible arti_element_type
+        | _ ->
+            Option.is_none (get_destructor_decl_ref qual_type.qt_type_ptr)
+      in
+      CType_decl.get_type_from_expr_info init_expr_info context.tenv
+      |> CStructUtils.unrolled_copy_length context.tenv
+      |> Option.is_some
+      && is_trivially_destructible init_expr_info.ei_qual_type
+    in
+    let translate_array_capture_by_value pvar array_init (trans_results_acc, captured_vars_acc) =
+      (* the elements of an array are separate from the array itself so capturing the array as a
+         value would not copy them: copy the array into a temporary and capture a reference to it
+         instead *)
+      let init_trans_result = instruction {trans_state with var_exp_typ= None} array_init in
+      let exp, array_typ = init_trans_result.return in
+      let typ = Typ.mk (Tptr (array_typ, Pk_lvalue_reference)) in
+      ( init_trans_result :: trans_results_acc
+      , (exp, pvar, typ, CapturedVar.ByValue) :: captured_vars_acc )
+    in
     let translate_captured
-        {Clang_ast_t.lci_captured_var; lci_init_captured_vardecl; lci_capture_this; lci_capture_kind}
-        ((trans_results_acc, captured_vars_acc) as acc) =
+        ( { Clang_ast_t.lci_captured_var
+          ; lci_init_captured_vardecl
+          ; lci_capture_this
+          ; lci_capture_kind }
+        , capture_init ) ((trans_results_acc, captured_vars_acc) as acc) =
       let mode = CAst_utils.get_captured_mode ~lci_capture_this ~lci_capture_kind in
       match (lci_captured_var, lci_init_captured_vardecl) with
       | Some captured_var_decl_ref, Some init_decl -> (
@@ -4191,10 +4364,27 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             (trans_results_acc, captured_vars_acc) )
       | Some captured_var_decl_ref, None -> (
         (* just capture *)
-        match get_captured_pvar_typ captured_var_decl_ref with
-        | Some pvar_typ ->
-            translate_normal_capture mode pvar_typ acc
-        | None ->
+        match (get_captured_pvar_typ captured_var_decl_ref, mode, capture_init) with
+        | ( Some (pvar, _)
+          , CapturedVar.ByValue
+          , Some (`ArrayInitLoopExpr (_, _, init_expr_info) as array_init) )
+          when is_unrolled_array_init init_expr_info ->
+            translate_array_capture_by_value pvar array_init acc
+        | Some pvar_typ, _, _ -> (
+          match CVar_decl.binding_expr_of_decl_ref context captured_var_decl_ref with
+          | Some binding_expr ->
+              (* capture the field or element that the binding names *)
+              let binding_trans_result =
+                instruction {trans_state with var_exp_typ= None} binding_expr
+              in
+              let var_exp, _ = binding_trans_result.return in
+              let trans_results, captured_vars =
+                translate_normal_capture ~var_exp mode pvar_typ acc
+              in
+              (binding_trans_result :: trans_results, captured_vars)
+          | None ->
+              translate_normal_capture mode pvar_typ acc )
+        | None, _, _ ->
             (trans_results_acc, captured_vars_acc) )
       | None, None ->
           if lci_capture_this then
@@ -4207,8 +4397,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
             "Capture-init with init, but no capture"
     in
     let lei_captures = CMethod_trans.get_captures_from_cpp_lambda lei_lambda_decl in
+    (* the children of a lambda expression are the initializers of its captures followed by its
+       body *)
+    let capture_inits =
+      match List.drop_last stmts with
+      | Some capture_inits when Int.equal (List.length capture_inits) (List.length lei_captures) ->
+          List.map capture_inits ~f:Option.some
+      | _ ->
+          List.map lei_captures ~f:(fun _ -> None)
+    in
     let trans_results, captured_vars =
-      List.fold_right ~f:translate_captured ~init:([], []) lei_captures
+      List.fold_right ~f:translate_captured ~init:([], []) (List.zip_exn lei_captures capture_inits)
     in
     let captured_vars =
       List.map
@@ -5277,9 +5476,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxTypeidExpr_trans trans_state stmt_info stmts expr_info
     | `CXXStdInitializerListExpr (stmt_info, stmts, expr_info) ->
         cxxStdInitializerListExpr_trans trans_state stmt_info stmts expr_info
-    | `LambdaExpr (stmt_info, _, expr_info, lambda_expr_info) ->
+    | `LambdaExpr (stmt_info, stmts, expr_info, lambda_expr_info) ->
         let trans_state' = {trans_state with priority= Free} in
-        lambdaExpr_trans trans_state' stmt_info expr_info lambda_expr_info
+        lambdaExpr_trans trans_state' stmt_info expr_info stmts lambda_expr_info
     | `AttributedStmt (stmt_info, stmts, attrs) ->
         attributedStmt_trans trans_state stmt_info stmts attrs
     | `TypeTraitExpr (_, _, expr_info, type_trait_info) ->
@@ -5290,8 +5489,15 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         undefined_expr trans_state expr_info
     | `VAArgExpr (stmt_info, stmt :: _, ei) ->
         va_arg_trans trans_state stmt_info stmt ei
-    | `ArrayInitIndexExpr _ | `ArrayInitLoopExpr _ ->
-        no_op_trans trans_state.succ_nodes
+    | `ArrayInitLoopExpr (stmt_info, stmts, expr_info) ->
+        arrayInitLoopExpr_trans trans_state stmt_info expr_info stmts
+    | `ArrayInitIndexExpr (_, _, expr_info) -> (
+      match trans_state.array_init_index with
+      | Some index ->
+          let typ = CType_decl.get_type_from_expr_info expr_info trans_state.context.tenv in
+          mk_trans_result (index, typ) empty_control
+      | None ->
+          undefined_expr trans_state expr_info )
     (* vector instructions for OpenCL etc. we basically ignore these for now; just translate the
        sub-expressions *)
     | `ObjCAvailabilityCheckExpr (_, _, expr_info, _) ->

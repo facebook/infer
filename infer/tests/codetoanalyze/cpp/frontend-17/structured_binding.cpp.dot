@@ -1,0 +1,383 @@
+/* @generated */
+digraph cfg {
+"decompose_array_by_ref#structured.1914a99d433051a4_1" [label="1: Start structured_binding::decompose_array_by_ref\nFormals:  a:int[2*4](&)\nLocals:  0$?%__sil_tmp_decomp_n$0:int[2*4](&) \n  " color=yellow style=filled]
+	
+
+	 "decompose_array_by_ref#structured.1914a99d433051a4_1" -> "decompose_array_by_ref#structured.1914a99d433051a4_5" ;
+"decompose_array_by_ref#structured.1914a99d433051a4_2" [label="2: Exit structured_binding::decompose_array_by_ref \n  " color=yellow style=filled]
+	
+
+"decompose_array_by_ref#structured.1914a99d433051a4_3" [label="3:  Return Stmt \n   n$1=*&0$?%__sil_tmp_decomp_n$0:int[2*4](&) [line 31, column 10]\n  n$2=*n$1[0]:int [line 32, column 10]\n  n$3=*&0$?%__sil_tmp_decomp_n$0:int[2*4](&) [line 31, column 13]\n  n$4=*n$3[1]:int [line 32, column 14]\n " shape="box"]
+	
+
+	 "decompose_array_by_ref#structured.1914a99d433051a4_3" -> "decompose_array_by_ref#structured.1914a99d433051a4_4" ;
+"decompose_array_by_ref#structured.1914a99d433051a4_4" [label="4:  Return Stmt \n   *&return:int=(n$2 + n$4) [line 32, column 3]\n " shape="box"]
+	
+
+	 "decompose_array_by_ref#structured.1914a99d433051a4_4" -> "decompose_array_by_ref#structured.1914a99d433051a4_2" ;
+"decompose_array_by_ref#structured.1914a99d433051a4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$0:int[2*4](&)); [line 31, column 3]\n  n$5=*&a:int[2*4](&) [line 31, column 18]\n  *&0$?%__sil_tmp_decomp_n$0:int[2*4](&)=n$5 [line 31, column 3]\n " shape="box"]
+	
+
+	 "decompose_array_by_ref#structured.1914a99d433051a4_5" -> "decompose_array_by_ref#structured.1914a99d433051a4_3" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_1" [label="1: Start structured_binding::decompose_in_range_for\nFormals:  a:structured_binding::Point[2*8](&)\nLocals:  __end1:structured_binding::Point* __begin1:structured_binding::Point* 0$?%__sil_tmp_decomp_n$6:structured_binding::Point const & __range1:structured_binding::Point[2*8](&) r:int \n  " color=yellow style=filled]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_1" -> "decompose_in_range_for#structured.90f32c26f4dc4909_15" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_2" [label="2: Exit structured_binding::decompose_in_range_for \n  " color=yellow style=filled]
+	
+
+"decompose_in_range_for#structured.90f32c26f4dc4909_3" [label="3:  Return Stmt \n   n$0=*&r:int [line 40, column 10]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_3" -> "decompose_in_range_for#structured.90f32c26f4dc4909_4" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 40, column 3]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_4" -> "decompose_in_range_for#structured.90f32c26f4dc4909_2" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_5" [label="5: + \n  " ]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_5" -> "decompose_in_range_for#structured.90f32c26f4dc4909_9" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(__end1:structured_binding::Point*); [line 37, column 27]\n  n$1=*&__range1:structured_binding::Point[2*8](&) [line 37, column 27]\n  *&__end1:structured_binding::Point*=(n$1 + 2) [line 37, column 27]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_6" -> "decompose_in_range_for#structured.90f32c26f4dc4909_5" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(__begin1:structured_binding::Point*); [line 37, column 27]\n  n$2=*&__range1:structured_binding::Point[2*8](&) [line 37, column 27]\n  *&__begin1:structured_binding::Point*=n$2 [line 37, column 27]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_7" -> "decompose_in_range_for#structured.90f32c26f4dc4909_6" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_8" [label="8:  UnaryOperator \n   n$3=*&__begin1:structured_binding::Point* [line 37, column 27]\n  *&__begin1:structured_binding::Point*=(n$3 + 1) [line 37, column 27]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_8" -> "decompose_in_range_for#structured.90f32c26f4dc4909_5" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_9" [label="9:  BinaryOperatorStmt: NE \n   n$4=*&__begin1:structured_binding::Point* [line 37, column 27]\n  n$5=*&__end1:structured_binding::Point* [line 37, column 27]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_9" -> "decompose_in_range_for#structured.90f32c26f4dc4909_10" ;
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_9" -> "decompose_in_range_for#structured.90f32c26f4dc4909_11" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_10" [label="10: Prune (true branch, for loop) \n   PRUNE((n$4 != n$5), true); [line 37, column 27]\n " shape="invhouse"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_10" -> "decompose_in_range_for#structured.90f32c26f4dc4909_13" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_11" [label="11: Prune (false branch, for loop) \n   PRUNE(!(n$4 != n$5), false); [line 37, column 27]\n " shape="invhouse"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_11" -> "decompose_in_range_for#structured.90f32c26f4dc4909_3" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_12" [label="12:  BinaryOperatorStmt: AddAssign \n   n$7=*&0$?%__sil_tmp_decomp_n$6:structured_binding::Point const & [line 37, column 21]\n  n$8=*n$7.x:int [line 38, column 10]\n  n$9=*&0$?%__sil_tmp_decomp_n$6:structured_binding::Point const & [line 37, column 24]\n  n$10=*n$9.y:int [line 38, column 14]\n  n$11=*&r:int [line 38, column 5]\n  *&r:int=(n$11 + (n$8 + n$10)) [line 38, column 5]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_12" -> "decompose_in_range_for#structured.90f32c26f4dc4909_8" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$6:structured_binding::Point const &); [line 37, column 8]\n  n$12=*&__begin1:structured_binding::Point* [line 37, column 27]\n  *&0$?%__sil_tmp_decomp_n$6:structured_binding::Point&=n$12 [line 37, column 8]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_13" -> "decompose_in_range_for#structured.90f32c26f4dc4909_12" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(__range1:structured_binding::Point[2*8](&)); [line 37, column 29]\n  n$14=*&a:structured_binding::Point[2*8](&) [line 37, column 29]\n  *&__range1:structured_binding::Point[2*8](&)=n$14 [line 37, column 29]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_14" -> "decompose_in_range_for#structured.90f32c26f4dc4909_7" ;
+"decompose_in_range_for#structured.90f32c26f4dc4909_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(r:int); [line 36, column 3]\n  *&r:int=0 [line 36, column 3]\n " shape="box"]
+	
+
+	 "decompose_in_range_for#structured.90f32c26f4dc4909_15" -> "decompose_in_range_for#structured.90f32c26f4dc4909_14" ;
+"decompose_struct_by_ref#structure.0d9469c5612408e6_1" [label="1: Start structured_binding::decompose_struct_by_ref\nFormals:  p:structured_binding::Point&\nLocals:  0$?%__sil_tmp_decomp_n$0:structured_binding::Point& \n  " color=yellow style=filled]
+	
+
+	 "decompose_struct_by_ref#structure.0d9469c5612408e6_1" -> "decompose_struct_by_ref#structure.0d9469c5612408e6_6" ;
+"decompose_struct_by_ref#structure.0d9469c5612408e6_2" [label="2: Exit structured_binding::decompose_struct_by_ref \n  " color=yellow style=filled]
+	
+
+"decompose_struct_by_ref#structure.0d9469c5612408e6_3" [label="3:  Return Stmt \n   n$1=*&0$?%__sil_tmp_decomp_n$0:structured_binding::Point& [line 25, column 10]\n  n$2=*n$1.x:int [line 27, column 10]\n  n$3=*&0$?%__sil_tmp_decomp_n$0:structured_binding::Point& [line 25, column 13]\n  n$4=*n$3.y:int [line 27, column 14]\n " shape="box"]
+	
+
+	 "decompose_struct_by_ref#structure.0d9469c5612408e6_3" -> "decompose_struct_by_ref#structure.0d9469c5612408e6_4" ;
+"decompose_struct_by_ref#structure.0d9469c5612408e6_4" [label="4:  Return Stmt \n   *&return:int=(n$2 + n$4) [line 27, column 3]\n " shape="box"]
+	
+
+	 "decompose_struct_by_ref#structure.0d9469c5612408e6_4" -> "decompose_struct_by_ref#structure.0d9469c5612408e6_2" ;
+"decompose_struct_by_ref#structure.0d9469c5612408e6_5" [label="5:  BinaryOperatorStmt: Assign \n   n$5=*&0$?%__sil_tmp_decomp_n$0:structured_binding::Point& [line 25, column 10]\n  *n$5.x:int=42 [line 26, column 3]\n " shape="box"]
+	
+
+	 "decompose_struct_by_ref#structure.0d9469c5612408e6_5" -> "decompose_struct_by_ref#structure.0d9469c5612408e6_3" ;
+"decompose_struct_by_ref#structure.0d9469c5612408e6_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$0:structured_binding::Point&); [line 25, column 3]\n  n$6=*&p:structured_binding::Point& [line 25, column 18]\n  *&0$?%__sil_tmp_decomp_n$0:structured_binding::Point&=n$6 [line 25, column 3]\n " shape="box"]
+	
+
+	 "decompose_struct_by_ref#structure.0d9469c5612408e6_6" -> "decompose_struct_by_ref#structure.0d9469c5612408e6_5" ;
+"decompose_struct_by_value#structu.ab89a649b15191b9_1" [label="1: Start structured_binding::decompose_struct_by_value\nFormals:  p:structured_binding::Point&\nLocals:  0$?%__sil_tmp_decomp_n$0:structured_binding::Point \n  " color=yellow style=filled]
+	
+
+	 "decompose_struct_by_value#structu.ab89a649b15191b9_1" -> "decompose_struct_by_value#structu.ab89a649b15191b9_6" ;
+"decompose_struct_by_value#structu.ab89a649b15191b9_2" [label="2: Exit structured_binding::decompose_struct_by_value \n  " color=yellow style=filled]
+	
+
+"decompose_struct_by_value#structu.ab89a649b15191b9_3" [label="3:  Return Stmt \n   n$1=*&0$?%__sil_tmp_decomp_n$0.x:int [line 21, column 10]\n  n$2=*&0$?%__sil_tmp_decomp_n$0.y:int [line 21, column 14]\n " shape="box"]
+	
+
+	 "decompose_struct_by_value#structu.ab89a649b15191b9_3" -> "decompose_struct_by_value#structu.ab89a649b15191b9_4" ;
+"decompose_struct_by_value#structu.ab89a649b15191b9_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$2) [line 21, column 3]\n " shape="box"]
+	
+
+	 "decompose_struct_by_value#structu.ab89a649b15191b9_4" -> "decompose_struct_by_value#structu.ab89a649b15191b9_2" ;
+"decompose_struct_by_value#structu.ab89a649b15191b9_5" [label="5:  BinaryOperatorStmt: Assign \n   *&0$?%__sil_tmp_decomp_n$0.x:int=42 [line 20, column 3]\n " shape="box"]
+	
+
+	 "decompose_struct_by_value#structu.ab89a649b15191b9_5" -> "decompose_struct_by_value#structu.ab89a649b15191b9_3" ;
+"decompose_struct_by_value#structu.ab89a649b15191b9_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$0:structured_binding::Point); [line 19, column 3]\n  n$3=*&p:structured_binding::Point& [line 19, column 17]\n  n$4=_fun_structured_binding::Point::Point(&0$?%__sil_tmp_decomp_n$0:structured_binding::Point*,n$3:structured_binding::Point&) [line 19, column 17]\n " shape="box"]
+	
+
+	 "decompose_struct_by_value#structu.ab89a649b15191b9_6" -> "decompose_struct_by_value#structu.ab89a649b15191b9_5" ;
+"decompose_vector#structured_bindi.5a0360b3f145170f_1" [label="1: Start structured_binding::decompose_vector\nFormals:  v:void\nLocals:  0$?%__sil_tmp_decomp_n$0:void \n  " color=yellow style=filled]
+	
+
+	 "decompose_vector#structured_bindi.5a0360b3f145170f_1" -> "decompose_vector#structured_bindi.5a0360b3f145170f_5" ;
+"decompose_vector#structured_bindi.5a0360b3f145170f_2" [label="2: Exit structured_binding::decompose_vector \n  " color=yellow style=filled]
+	
+
+"decompose_vector#structured_bindi.5a0360b3f145170f_3" [label="3:  Return Stmt \n   n$1=*&0$?%__sil_tmp_decomp_n$0[0]:int [line 47, column 10]\n  n$2=*&0$?%__sil_tmp_decomp_n$0[1]:int [line 47, column 14]\n " shape="box"]
+	
+
+	 "decompose_vector#structured_bindi.5a0360b3f145170f_3" -> "decompose_vector#structured_bindi.5a0360b3f145170f_4" ;
+"decompose_vector#structured_bindi.5a0360b3f145170f_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$2) [line 47, column 3]\n " shape="box"]
+	
+
+	 "decompose_vector#structured_bindi.5a0360b3f145170f_4" -> "decompose_vector#structured_bindi.5a0360b3f145170f_2" ;
+"decompose_vector#structured_bindi.5a0360b3f145170f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$0:void); [line 46, column 3]\n  n$3=*&v:void [line 46, column 17]\n  *&0$?%__sil_tmp_decomp_n$0:void=n$3 [line 46, column 3]\n " shape="box"]
+	
+
+	 "decompose_vector#structured_bindi.5a0360b3f145170f_5" -> "decompose_vector#structured_bindi.5a0360b3f145170f_3" ;
+"decomposed_object_cleanup#structu.69f6d9f81042a4b5_1" [label="1: Start structured_binding::decomposed_object_cleanup\nFormals:  p:structured_binding::Point&\nLocals:  0$?%__sil_tmp_decomp_n$0:structured_binding::Point \n  " color=yellow style=filled]
+	
+
+	 "decomposed_object_cleanup#structu.69f6d9f81042a4b5_1" -> "decomposed_object_cleanup#structu.69f6d9f81042a4b5_5" ;
+"decomposed_object_cleanup#structu.69f6d9f81042a4b5_2" [label="2: Exit structured_binding::decomposed_object_cleanup \n  " color=yellow style=filled]
+	
+
+"decomposed_object_cleanup#structu.69f6d9f81042a4b5_3" [label="3:  Return Stmt \n   n$1=*&0$?%__sil_tmp_decomp_n$0.x:int [line 69, column 10]\n  n$2=*&0$?%__sil_tmp_decomp_n$0.y:int [line 69, column 14]\n " shape="box"]
+	
+
+	 "decomposed_object_cleanup#structu.69f6d9f81042a4b5_3" -> "decomposed_object_cleanup#structu.69f6d9f81042a4b5_4" ;
+"decomposed_object_cleanup#structu.69f6d9f81042a4b5_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$2) [line 69, column 3]\n  n$3=_fun_structured_binding::cleanup_point(&0$?%__sil_tmp_decomp_n$0:structured_binding::Point*) [line 69, column 14]\n " shape="box"]
+	
+
+	 "decomposed_object_cleanup#structu.69f6d9f81042a4b5_4" -> "decomposed_object_cleanup#structu.69f6d9f81042a4b5_2" ;
+"decomposed_object_cleanup#structu.69f6d9f81042a4b5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$0:structured_binding::Point); [line 68, column 3]\n  n$5=*&p:structured_binding::Point& [line 68, column 57]\n  n$6=_fun_structured_binding::Point::Point(&0$?%__sil_tmp_decomp_n$0:structured_binding::Point*,n$5:structured_binding::Point&) [line 68, column 57]\n " shape="box"]
+	
+
+	 "decomposed_object_cleanup#structu.69f6d9f81042a4b5_5" -> "decomposed_object_cleanup#structu.69f6d9f81042a4b5_3" ;
+"decomposed_object_destroyed#struc.29b72033ddbd7754_1" [label="1: Start structured_binding::decomposed_object_destroyed\nFormals:  p:structured_binding::DestructiblePoint&\nLocals:  0$?%__sil_tmp_decomp_n$0:structured_binding::DestructiblePoint \n  " color=yellow style=filled]
+	
+
+	 "decomposed_object_destroyed#struc.29b72033ddbd7754_1" -> "decomposed_object_destroyed#struc.29b72033ddbd7754_5" ;
+"decomposed_object_destroyed#struc.29b72033ddbd7754_2" [label="2: Exit structured_binding::decomposed_object_destroyed \n  " color=yellow style=filled]
+	
+
+"decomposed_object_destroyed#struc.29b72033ddbd7754_3" [label="3:  Return Stmt \n   n$1=*&0$?%__sil_tmp_decomp_n$0.d.x:int [line 62, column 10]\n  n$2=*&0$?%__sil_tmp_decomp_n$0.y:int [line 62, column 16]\n " shape="box"]
+	
+
+	 "decomposed_object_destroyed#struc.29b72033ddbd7754_3" -> "decomposed_object_destroyed#struc.29b72033ddbd7754_4" ;
+"decomposed_object_destroyed#struc.29b72033ddbd7754_4" [label="4:  Return Stmt \n   *&return:int=(n$1 + n$2) [line 62, column 3]\n  _=*&0$?%__sil_tmp_decomp_n$0:structured_binding::DestructiblePoint [line 62, column 16]\n  n$4=_fun_structured_binding::DestructiblePoint::~DestructiblePoint(&0$?%__sil_tmp_decomp_n$0:structured_binding::DestructiblePoint*) injected [line 62, column 16]\n " shape="box"]
+	
+
+	 "decomposed_object_destroyed#struc.29b72033ddbd7754_4" -> "decomposed_object_destroyed#struc.29b72033ddbd7754_2" ;
+"decomposed_object_destroyed#struc.29b72033ddbd7754_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$0:structured_binding::DestructiblePoint); [line 61, column 3]\n  n$6=*&p:structured_binding::DestructiblePoint& [line 61, column 17]\n  n$7=_fun_structured_binding::DestructiblePoint::DestructiblePoint(&0$?%__sil_tmp_decomp_n$0:structured_binding::DestructiblePoint*,n$6:structured_binding::DestructiblePoint&) [line 61, column 17]\n " shape="box"]
+	
+
+	 "decomposed_object_destroyed#struc.29b72033ddbd7754_5" -> "decomposed_object_destroyed#struc.29b72033ddbd7754_3" ;
+"tuple_like_by_ref#structured_bind.47163012e5fb398e_1" [label="1: Start structured_binding::tuple_like_by_ref\nFormals:  t:structured_binding::ByReference&\nLocals:  i:int& 0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference& \n  " color=yellow style=filled]
+	
+
+	 "tuple_like_by_ref#structured_bind.47163012e5fb398e_1" -> "tuple_like_by_ref#structured_bind.47163012e5fb398e_7" ;
+"tuple_like_by_ref#structured_bind.47163012e5fb398e_2" [label="2: Exit structured_binding::tuple_like_by_ref \n  " color=yellow style=filled]
+	
+
+"tuple_like_by_ref#structured_bind.47163012e5fb398e_3" [label="3:  Return Stmt \n   n$0=*&i:int& [line 119, column 10]\n  n$1=*n$0:int [line 119, column 10]\n " shape="box"]
+	
+
+	 "tuple_like_by_ref#structured_bind.47163012e5fb398e_3" -> "tuple_like_by_ref#structured_bind.47163012e5fb398e_4" ;
+"tuple_like_by_ref#structured_bind.47163012e5fb398e_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 119, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_ref#structured_bind.47163012e5fb398e_4" -> "tuple_like_by_ref#structured_bind.47163012e5fb398e_2" ;
+"tuple_like_by_ref#structured_bind.47163012e5fb398e_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&i:int& [line 118, column 3]\n  *n$3:int=42 [line 118, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_ref#structured_bind.47163012e5fb398e_5" -> "tuple_like_by_ref#structured_bind.47163012e5fb398e_3" ;
+"tuple_like_by_ref#structured_bind.47163012e5fb398e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int&); [line 117, column 3]\n  n$4=*&0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference& [line 117, column 10]\n  _=*n$4:structured_binding::ByReference [line 117, column 10]\n  n$6=_fun_structured_binding::ByReference::get<0UL>(n$4:structured_binding::ByReference&) [line 117, column 10]\n  *&i:int&=n$6 [line 117, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_ref#structured_bind.47163012e5fb398e_6" -> "tuple_like_by_ref#structured_bind.47163012e5fb398e_5" ;
+"tuple_like_by_ref#structured_bind.47163012e5fb398e_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&); [line 117, column 3]\n  n$7=*&t:structured_binding::ByReference& [line 117, column 15]\n  *&0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&=n$7 [line 117, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_ref#structured_bind.47163012e5fb398e_7" -> "tuple_like_by_ref#structured_bind.47163012e5fb398e_6" ;
+"tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_1" [label="1: Start structured_binding::tuple_like_by_rvalue_ref\nFormals:  t:structured_binding::ByReference&\nLocals:  i:int& 0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&& \n  " color=yellow style=filled]
+	
+
+	 "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_1" -> "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_7" ;
+"tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_2" [label="2: Exit structured_binding::tuple_like_by_rvalue_ref \n  " color=yellow style=filled]
+	
+
+"tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_3" [label="3:  Return Stmt \n   n$0=*&i:int& [line 125, column 10]\n  n$1=*n$0:int [line 125, column 10]\n " shape="box"]
+	
+
+	 "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_3" -> "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_4" ;
+"tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 125, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_4" -> "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_2" ;
+"tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_5" [label="5:  BinaryOperatorStmt: Assign \n   n$3=*&i:int& [line 124, column 3]\n  *n$3:int=42 [line 124, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_5" -> "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_3" ;
+"tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int&); [line 123, column 3]\n  n$4=*&0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&& [line 123, column 11]\n  _=*n$4:structured_binding::ByReference [line 123, column 11]\n  n$6=_fun_structured_binding::ByReference::get<0UL>(n$4:structured_binding::ByReference&&) [line 123, column 11]\n  *&i:int&=n$6 [line 123, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_6" -> "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_5" ;
+"tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&&); [line 123, column 3]\n  n$7=*&t:structured_binding::ByReference& [line 123, column 43]\n  *&0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&&=(structured_binding::ByReference&&)n$7 [line 123, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_7" -> "tuple_like_by_rvalue_ref#structur.b4f71d2828ddde3f_6" ;
+"tuple_like_by_value#structured_bi.9502817106c98d6c_1" [label="1: Start structured_binding::tuple_like_by_value\nFormals:  t:structured_binding::ByReference&\nLocals:  i:int 0$?%__sil_tmp_decomp_n$1:structured_binding::ByReference \n  " color=yellow style=filled]
+	
+
+	 "tuple_like_by_value#structured_bi.9502817106c98d6c_1" -> "tuple_like_by_value#structured_bi.9502817106c98d6c_7" ;
+"tuple_like_by_value#structured_bi.9502817106c98d6c_2" [label="2: Exit structured_binding::tuple_like_by_value \n  " color=yellow style=filled]
+	
+
+"tuple_like_by_value#structured_bi.9502817106c98d6c_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 113, column 10]\n " shape="box"]
+	
+
+	 "tuple_like_by_value#structured_bi.9502817106c98d6c_3" -> "tuple_like_by_value#structured_bi.9502817106c98d6c_4" ;
+"tuple_like_by_value#structured_bi.9502817106c98d6c_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 113, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_value#structured_bi.9502817106c98d6c_4" -> "tuple_like_by_value#structured_bi.9502817106c98d6c_2" ;
+"tuple_like_by_value#structured_bi.9502817106c98d6c_5" [label="5:  BinaryOperatorStmt: Assign \n   *&i:int=42 [line 112, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_value#structured_bi.9502817106c98d6c_5" -> "tuple_like_by_value#structured_bi.9502817106c98d6c_3" ;
+"tuple_like_by_value#structured_bi.9502817106c98d6c_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int, cpp_structured_binding); [line 111, column 3]\n  _=*&0$?%__sil_tmp_decomp_n$1:structured_binding::ByReference [line 111, column 9]\n  n$3=_fun_structured_binding::ByReference::get<0UL>(&0$?%__sil_tmp_decomp_n$1:structured_binding::ByReference&) [line 111, column 9]\n  n$4=_fun___infer_structured_binding(&i:int,n$3:int&) [line 111, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_value#structured_bi.9502817106c98d6c_6" -> "tuple_like_by_value#structured_bi.9502817106c98d6c_5" ;
+"tuple_like_by_value#structured_bi.9502817106c98d6c_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$1:structured_binding::ByReference); [line 111, column 3]\n  n$5=*&t:structured_binding::ByReference& [line 111, column 14]\n  n$6=_fun_structured_binding::ByReference::ByReference(&0$?%__sil_tmp_decomp_n$1:structured_binding::ByReference*,n$5:structured_binding::ByReference&) [line 111, column 14]\n " shape="box"]
+	
+
+	 "tuple_like_by_value#structured_bi.9502817106c98d6c_7" -> "tuple_like_by_value#structured_bi.9502817106c98d6c_6" ;
+"tuple_like_by_value_get#structure.282119418da1832b_1" [label="1: Start structured_binding::tuple_like_by_value_get\nFormals:  t:structured_binding::ByValue&\nLocals:  d:structured_binding::Destructible i:int 0$?%__sil_tmp_decomp_n$2:structured_binding::ByValue& \n  " color=yellow style=filled]
+	
+
+	 "tuple_like_by_value_get#structure.282119418da1832b_1" -> "tuple_like_by_value_get#structure.282119418da1832b_7" ;
+"tuple_like_by_value_get#structure.282119418da1832b_2" [label="2: Exit structured_binding::tuple_like_by_value_get \n  " color=yellow style=filled]
+	
+
+"tuple_like_by_value_get#structure.282119418da1832b_3" [label="3:  Return Stmt \n   n$0=*&i:int [line 130, column 10]\n  n$1=*&d.x:int [line 130, column 14]\n " shape="box"]
+	
+
+	 "tuple_like_by_value_get#structure.282119418da1832b_3" -> "tuple_like_by_value_get#structure.282119418da1832b_4" ;
+"tuple_like_by_value_get#structure.282119418da1832b_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$1) [line 130, column 3]\n  _=*&d:structured_binding::Destructible [line 130, column 16]\n  n$4=_fun_structured_binding::Destructible::~Destructible(&d:structured_binding::Destructible*) injected [line 130, column 16]\n " shape="box"]
+	
+
+	 "tuple_like_by_value_get#structure.282119418da1832b_4" -> "tuple_like_by_value_get#structure.282119418da1832b_2" ;
+"tuple_like_by_value_get#structure.282119418da1832b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(d:structured_binding::Destructible); [line 129, column 3]\n  n$7=*&0$?%__sil_tmp_decomp_n$2:structured_binding::ByValue& [line 129, column 13]\n  _=*n$7:structured_binding::ByValue [line 129, column 13]\n  n$10=_fun_structured_binding::ByValue::get<1UL>(n$7:structured_binding::ByValue&,&d:structured_binding::Destructible*) assign_last [line 129, column 13]\n " shape="box"]
+	
+
+	 "tuple_like_by_value_get#structure.282119418da1832b_5" -> "tuple_like_by_value_get#structure.282119418da1832b_3" ;
+"tuple_like_by_value_get#structure.282119418da1832b_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 129, column 3]\n  n$11=*&0$?%__sil_tmp_decomp_n$2:structured_binding::ByValue& [line 129, column 10]\n  _=*n$11:structured_binding::ByValue [line 129, column 10]\n  n$13=_fun_structured_binding::ByValue::get<0UL>(n$11:structured_binding::ByValue&) [line 129, column 10]\n  *&i:int=n$13 [line 129, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_value_get#structure.282119418da1832b_6" -> "tuple_like_by_value_get#structure.282119418da1832b_5" ;
+"tuple_like_by_value_get#structure.282119418da1832b_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$2:structured_binding::ByValue&); [line 129, column 3]\n  n$14=*&t:structured_binding::ByValue& [line 129, column 18]\n  *&0$?%__sil_tmp_decomp_n$2:structured_binding::ByValue&=n$14 [line 129, column 3]\n " shape="box"]
+	
+
+	 "tuple_like_by_value_get#structure.282119418da1832b_7" -> "tuple_like_by_value_get#structure.282119418da1832b_6" ;
+"ByReference#ByReference#structure.3588e52c81cce89f_1" [label="1: Start structured_binding::ByReference::ByReference\nFormals:  this:structured_binding::ByReference* __param_0:structured_binding::ByReference const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "ByReference#ByReference#structure.3588e52c81cce89f_1" -> "ByReference#ByReference#structure.3588e52c81cce89f_2" ;
+"ByReference#ByReference#structure.3588e52c81cce89f_2" [label="2: Exit structured_binding::ByReference::ByReference \n  " color=yellow style=filled]
+	
+
+"Destructible#Destructible#structu.9d338dfd43065ca4_1" [label="1: Start structured_binding::Destructible::Destructible\nFormals:  this:structured_binding::Destructible* __param_0:structured_binding::Destructible const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Destructible#Destructible#structu.9d338dfd43065ca4_1" -> "Destructible#Destructible#structu.9d338dfd43065ca4_3" ;
+"Destructible#Destructible#structu.9d338dfd43065ca4_2" [label="2: Exit structured_binding::Destructible::Destructible \n  " color=yellow style=filled]
+	
+
+"Destructible#Destructible#structu.9d338dfd43065ca4_3" [label="3:  Constructor Init \n   n$1=*&this:structured_binding::Destructible* [line 50, column 8]\n " shape="box"]
+	
+
+	 "Destructible#Destructible#structu.9d338dfd43065ca4_3" -> "Destructible#Destructible#structu.9d338dfd43065ca4_4" ;
+"Destructible#Destructible#structu.9d338dfd43065ca4_4" [label="4:  Constructor Init \n   n$2=*&__param_0:structured_binding::Destructible const & [line 50, column 8]\n  n$3=*n$2.x:int [line 50, column 8]\n  *n$1.x:int=n$3 [line 50, column 8]\n " shape="box"]
+	
+
+	 "Destructible#Destructible#structu.9d338dfd43065ca4_4" -> "Destructible#Destructible#structu.9d338dfd43065ca4_2" ;
+"DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_1" [label="1: Start structured_binding::DestructiblePoint::DestructiblePoint\nFormals:  this:structured_binding::DestructiblePoint* __param_0:structured_binding::DestructiblePoint const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_1" -> "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_5" ;
+"DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_2" [label="2: Exit structured_binding::DestructiblePoint::DestructiblePoint \n  " color=yellow style=filled]
+	
+
+"DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_3" [label="3:  Constructor Init \n   n$1=*&this:structured_binding::DestructiblePoint* [line 55, column 8]\n " shape="box"]
+	
+
+	 "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_3" -> "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_4" ;
+"DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_4" [label="4:  Constructor Init \n   n$2=*&__param_0:structured_binding::DestructiblePoint const & [line 55, column 8]\n  n$3=*n$2.y:int [line 55, column 8]\n  *n$1.y:int=n$3 [line 55, column 8]\n " shape="box"]
+	
+
+	 "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_4" -> "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_2" ;
+"DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_5" [label="5:  Constructor Init \n   n$4=*&this:structured_binding::DestructiblePoint* [line 55, column 8]\n " shape="box"]
+	
+
+	 "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_5" -> "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_6" ;
+"DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_6" [label="6:  Constructor Init \n   n$5=*&__param_0:structured_binding::DestructiblePoint const & [line 55, column 8]\n  n$6=_fun_structured_binding::Destructible::Destructible(n$4.d:structured_binding::Destructible*,n$5.d:structured_binding::Destructible const &) [line 55, column 8]\n " shape="box"]
+	
+
+	 "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_6" -> "DestructiblePoint#DestructiblePoi.5f37ea31c7c1eb6b_3" ;
+"__infer_inner_destructor_~Destruc.419e51c66ab39621_1" [label="1: Start structured_binding::DestructiblePoint::__infer_inner_destructor_~DestructiblePoint\nFormals:  this:structured_binding::DestructiblePoint*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~Destruc.419e51c66ab39621_1" -> "__infer_inner_destructor_~Destruc.419e51c66ab39621_3" ;
+"__infer_inner_destructor_~Destruc.419e51c66ab39621_2" [label="2: Exit structured_binding::DestructiblePoint::__infer_inner_destructor_~DestructiblePoint \n  " color=yellow style=filled]
+	
+
+"__infer_inner_destructor_~Destruc.419e51c66ab39621_3" [label="3:  Destruction(fields) \n   n$0=*&this:structured_binding::DestructiblePoint* [line 55, column 8]\n  _=*n$0.d:structured_binding::Destructible [line 55, column 8]\n  n$2=_fun_structured_binding::Destructible::~Destructible(n$0.d:structured_binding::Destructible*) injected [line 55, column 8]\n " shape="box"]
+	
+
+	 "__infer_inner_destructor_~Destruc.419e51c66ab39621_3" -> "__infer_inner_destructor_~Destruc.419e51c66ab39621_2" ;
+"~DestructiblePoint#DestructiblePo.cedcd82e945843e5_1" [label="1: Start structured_binding::DestructiblePoint::~DestructiblePoint\nFormals:  this:structured_binding::DestructiblePoint*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "~DestructiblePoint#DestructiblePo.cedcd82e945843e5_1" -> "~DestructiblePoint#DestructiblePo.cedcd82e945843e5_3" ;
+"~DestructiblePoint#DestructiblePo.cedcd82e945843e5_2" [label="2: Exit structured_binding::DestructiblePoint::~DestructiblePoint \n  " color=yellow style=filled]
+	
+
+"~DestructiblePoint#DestructiblePo.cedcd82e945843e5_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:structured_binding::DestructiblePoint* [line 55, column 8]\n  _=*n$0:structured_binding::DestructiblePoint [line 55, column 8]\n  n$2=_fun_structured_binding::DestructiblePoint::__infer_inner_destructor_~DestructiblePoint(n$0:structured_binding::DestructiblePoint*) injected [line 55, column 8]\n " shape="box"]
+	
+
+	 "~DestructiblePoint#DestructiblePo.cedcd82e945843e5_3" -> "~DestructiblePoint#DestructiblePo.cedcd82e945843e5_2" ;
+"Point#Point#structured_binding#{1.79adce186b53cc0d_1" [label="1: Start structured_binding::Point::Point\nFormals:  this:structured_binding::Point* __param_0:structured_binding::Point const &\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Point#Point#structured_binding#{1.79adce186b53cc0d_1" -> "Point#Point#structured_binding#{1.79adce186b53cc0d_5" ;
+"Point#Point#structured_binding#{1.79adce186b53cc0d_2" [label="2: Exit structured_binding::Point::Point \n  " color=yellow style=filled]
+	
+
+"Point#Point#structured_binding#{1.79adce186b53cc0d_3" [label="3:  Constructor Init \n   n$1=*&this:structured_binding::Point* [line 13, column 8]\n " shape="box"]
+	
+
+	 "Point#Point#structured_binding#{1.79adce186b53cc0d_3" -> "Point#Point#structured_binding#{1.79adce186b53cc0d_4" ;
+"Point#Point#structured_binding#{1.79adce186b53cc0d_4" [label="4:  Constructor Init \n   n$2=*&__param_0:structured_binding::Point const & [line 13, column 8]\n  n$3=*n$2.y:int [line 13, column 8]\n  *n$1.y:int=n$3 [line 13, column 8]\n " shape="box"]
+	
+
+	 "Point#Point#structured_binding#{1.79adce186b53cc0d_4" -> "Point#Point#structured_binding#{1.79adce186b53cc0d_2" ;
+"Point#Point#structured_binding#{1.79adce186b53cc0d_5" [label="5:  Constructor Init \n   n$4=*&this:structured_binding::Point* [line 13, column 8]\n " shape="box"]
+	
+
+	 "Point#Point#structured_binding#{1.79adce186b53cc0d_5" -> "Point#Point#structured_binding#{1.79adce186b53cc0d_6" ;
+"Point#Point#structured_binding#{1.79adce186b53cc0d_6" [label="6:  Constructor Init \n   n$5=*&__param_0:structured_binding::Point const & [line 13, column 8]\n  n$6=*n$5.x:int [line 13, column 8]\n  *n$4.x:int=n$6 [line 13, column 8]\n " shape="box"]
+	
+
+	 "Point#Point#structured_binding#{1.79adce186b53cc0d_6" -> "Point#Point#structured_binding#{1.79adce186b53cc0d_3" ;
+}

@@ -957,3 +957,47 @@ void captured_by_ref_ok() {
   };
   x.arr[0] = 42;
 }
+
+class UnownedArrayTest {
+  Arr field;
+
+  int copy_assignment_points_to_global_same_index_ok() {
+    auto& ref = global;
+    int x = ref.arr[0] + global.arr[0];
+    field = ref; // we can't suggest moving here
+    return x;
+  }
+
+  int copy_assignment_copy_of_global_same_index_bad() {
+    auto ref = global;
+    int x = ref.arr[0] + global.arr[0];
+    field = ref; // moving is ok here
+    return x;
+  }
+};
+
+// arrays captured by value are copied element by element only if their
+// elements have no destructor
+struct ArrCopyCtor {
+  int arr[2];
+  ArrCopyCtor() {}
+  ArrCopyCtor(const ArrCopyCtor& other) : arr{other.arr[0], other.arr[1]} {}
+};
+
+void capture_array_by_value_ok() {
+  ArrCopyCtor a[2];
+  auto f = [a]() mutable { a[0].arr[0] = 19; };
+}
+
+int capture_array_by_value_source_modified_ok() {
+  ArrCopyCtor a[2];
+  auto f = [a]() { return a[0].arr[0]; };
+  a[0].arr[0] = 42;
+  return f();
+}
+
+// NOTE: Currently we do not support unnecessary capture-by-value in lambda.
+void capture_array_by_value_bad_FN() {
+  ArrCopyCtor a[2];
+  auto f = [a]() { int n = a[0].arr[0]; };
+}

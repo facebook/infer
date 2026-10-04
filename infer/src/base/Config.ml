@@ -1104,7 +1104,11 @@ and clang_compound_literal_init_limit =
   CLOpt.mk_int ~default:5 ~long:"clang-compound-literal-init-limit"
     ~in_help:InferCommand.[(Analyze, manual_clang); (Capture, manual_clang)]
     "Limit after which initialization of compound types (structs and arrays) is not done element \
-     by element but using a builtin function that each analysis has to model."
+     by element but using a builtin function that each analysis has to model. Arrays, for instance \
+     members of a copied struct, are copied element by element only if they have at most this many \
+     elements, counting nested arrays. The element by element copies of a C struct copy, of the \
+     array members of a C++ class, or of any other array copy must also copy at most 16 values \
+     together."
 
 
 and clang_extra_flags =

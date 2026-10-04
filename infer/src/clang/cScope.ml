@@ -285,6 +285,35 @@ module Variables = struct
                   |> List.map ~f:(fun temp -> CContext.CXXTemporary temp)
                 in
                 CContext.VarDecl var_decl :: temporaries_in_extended_scope
+            | Clang_ast_t.DecompositionDecl
+                (({di_pointer}, _, _, {vdi_is_static_local= false}, bindings) as decomposition_decl)
+              ->
+                let temporaries_in_extended_scope =
+                  CXXTemporaries.get_temporaries_bound_to_decl context di_pointer stmts
+                  |> CContext.CXXTemporarySet.elements
+                  |> List.map ~f:(fun temp -> CContext.CXXTemporary temp)
+                in
+                let binding_temporaries =
+                  List.filter_map bindings ~f:(function
+                    | Clang_ast_t.BindingDecl (_, _, binding_qual_type, binding_info) as binding
+                      -> (
+                      match CAst_utils.get_structured_binding binding_qual_type binding_info with
+                      | Some (BindingTemporary {qual_type}) ->
+                          let pvar =
+                            CVar_decl.sil_var_of_decl context binding
+                              (Procdesc.get_proc_name context.CContext.procdesc)
+                          in
+                          let typ =
+                            CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type
+                          in
+                          Some (CContext.CXXTemporary {pvar; typ; qual_type; marker= None})
+                      | _ ->
+                          None )
+                    | _ ->
+                        None )
+                in
+                (CContext.DecompositionDecl decomposition_decl :: temporaries_in_extended_scope)
+                @ binding_temporaries
             | _ ->
                 [] )
         in

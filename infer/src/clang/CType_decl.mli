@@ -71,3 +71,9 @@ val should_add_return_param : Typ.t -> bool
 
 val type_of_captured_var :
   Tenv.t -> is_block_inside_objc_class_method:bool -> Clang_ast_t.decl_ref -> Typ.t option
+
+val structured_binding_var_typ :
+  Tenv.t -> Clang_ast_t.qual_type -> Clang_ast_t.binding_decl_info -> Typ.t
+(** [structured_binding_var_typ tenv qual_type binding_info] is the type of the variable that
+    represents a structured binding of type [qual_type] in the AST, see
+    [CAst_utils.structured_binding] *)
