@@ -114,11 +114,11 @@ let fgets str_exp num_exp =
   {exec; check}
 
 
-let malloc ~can_be_zero size_exp =
+let alloc ~get_info ~can_be_zero size_exp =
   let exec ({pname; caller_pname; node_hash; location; tenv; integer_type_widths} as model_env)
       ~ret:(id, _) mem =
     let size_exp = BiabductionProp.exp_normalize_noabs tenv size_exp in
-    let typ, stride, length0, dyn_length = get_malloc_info size_exp in
+    let typ, stride, length0, dyn_length = get_info size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let path =
@@ -171,6 +171,8 @@ let malloc ~can_be_zero size_exp =
   {exec; check}
 
 
+let malloc ~can_be_zero size_exp = alloc ~get_info:get_malloc_info ~can_be_zero size_exp
+
 let calloc size_exp stride_exp =
   let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, stride_exp) in
   malloc byte_size_exp
@@ -180,7 +182,7 @@ let memcpy dest_exp src_exp size_exp =
   let exec _ ~ret:_ mem =
     let dest_loc = Sem.eval_locs dest_exp mem in
     let v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
-    Dom.Mem.update_mem dest_loc v mem
+    Dom.Mem.update_mem dest_loc v mem |> BoUtils.Exec.forget_c_strlen dest_loc
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
       ~last_included:true mem location cond_set
@@ -191,7 +193,7 @@ let memcpy dest_exp src_exp size_exp =
 
 
 let memset arr_exp size_exp =
-  let exec _ ~ret:_ mem = mem
+  let exec _ ~ret:_ mem = BoUtils.Exec.forget_c_strlen (Sem.eval_locs arr_exp mem) mem
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:arr_exp ~byte_index_exp:size_exp
       ~last_included:true mem location cond_set
@@ -200,9 +202,18 @@ let memset arr_exp size_exp =
 
 
 let strlen arr_exp =
-  let exec _ ~ret:(id, _) mem =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
     let v = Sem.eval_string_len arr_exp mem in
-    Dom.Mem.add_stack (Loc.of_id id) v mem
+    let mem = Dom.Mem.add_stack (Loc.of_id id) v mem in
+    (* [v] counts from the start of the array, so it is the length of [arr_exp] only at offset 0 *)
+    let offset =
+      Sem.eval integer_type_widths arr_exp mem |> Dom.Val.get_array_blk |> ArrayBlk.get_offset
+    in
+    match PowLoc.is_singleton_or_more (Sem.eval_locs arr_exp mem) with
+    | Singleton (BoField.Prim (Loc.Allocsite _) as loc) when Itv.is_zero offset ->
+        Dom.Mem.load_simple_alias id (Loc.of_c_strlen loc) mem
+    | _ ->
+        mem
   in
   {exec; check= no_check}
 
@@ -236,8 +247,38 @@ let strncpy dest_exp src_exp size_exp =
     let dest_strlen_loc = PowLoc.of_c_strlen (Sem.eval_locs dest_exp mem) in
     let strlen = Dom.Mem.find_set (PowLoc.of_c_strlen (Sem.eval_locs src_exp mem)) mem in
     mem |> memcpy_exec model_env ~ret |> Dom.Mem.update_mem dest_strlen_loc strlen
+  and check ({location; integer_type_widths} as model_env) mem cond_set =
+    let src_strlen = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+    let strlen_itv = Dom.Val.get_itv src_strlen in
+    let is_bounded strlen =
+      (* callers do not substitute symbols such as the length of the string in a local array that
+         no string operation wrote *)
+      let ub = Itv.ItvPure.ub strlen in
+      (not (Itv.Bound.is_pinf ub))
+      && not
+           (Symb.SymbolSet.exists
+              (fun s -> Symb.SymbolPath.is_field_of_var (Symb.Symbol.path s))
+              (Itv.Bound.get_symbols ub) )
+    in
+    match strlen_itv with
+    | NonBottom strlen when is_bounded strlen ->
+        (* strncpy stops reading the source at its null character *)
+        let size = Sem.eval integer_type_widths size_exp mem in
+        let read_size =
+          Itv.min_sem ~use_minmax_bound:true (Itv.incr strlen_itv) (Dom.Val.get_itv size)
+        in
+        let traces = Trace.Set.join (Dom.Val.get_traces size) (Dom.Val.get_traces src_strlen) in
+        let latest_prune = Dom.Mem.get_latest_prune mem in
+        BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
+          ~last_included:true mem location cond_set
+        |> BoUtils.Check.array_access_byte
+             ~arr:(Sem.eval_arr integer_type_widths src_exp mem)
+             ~idx:(Dom.Val.of_itv ~traces read_size)
+             ~is_plus:true ~last_included:true ~latest_prune location
+    | _ ->
+        memcpy_check model_env mem cond_set
   in
-  {exec; check= memcpy_check}
+  {exec; check}
 
 
 let strcat dest_exp src_exp =
@@ -280,6 +321,127 @@ let strcat dest_exp src_exp =
     |> access_last_char (Sem.eval integer_type_widths src_exp mem) src_strlen
   in
   {exec; check}
+
+
+let check_dest_size dest_exp size_exp {location; integer_type_widths} mem cond_set =
+  BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
+    ~last_included:true mem location cond_set
+
+
+(** [strncat(dest, src, n)] appends at most [n] characters of [src] and a null character. *)
+let strncat dest_exp src_exp n_exp =
+  let get_new_strlen integer_type_widths mem =
+    let dest_strlen = Dom.Mem.get_c_strlen (Sem.eval_locs dest_exp mem) mem in
+    let src_strlen = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+    let n = Sem.eval integer_type_widths n_exp mem in
+    let appended =
+      if Itv.is_bottom (Dom.Val.get_itv src_strlen) then n
+      else
+        Dom.Val.of_itv
+          ~traces:(Trace.Set.join (Dom.Val.get_traces src_strlen) (Dom.Val.get_traces n))
+          (Itv.min_sem (Dom.Val.get_itv src_strlen) (Dom.Val.get_itv n))
+    in
+    Dom.Val.plus_a dest_strlen appended
+  in
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let src_loc = Sem.eval_locs src_exp mem in
+    let dest_loc = Sem.eval_locs dest_exp mem in
+    let new_contents =
+      Dom.Val.join (Dom.Mem.find_set dest_loc mem) (Dom.Mem.find_set src_loc mem)
+    in
+    mem
+    |> Dom.Mem.update_mem dest_loc new_contents
+    |> Dom.Mem.update_mem (PowLoc.of_c_strlen dest_loc) (get_new_strlen integer_type_widths mem)
+    |> Dom.Mem.add_stack (Loc.of_id id) (Sem.eval integer_type_widths dest_exp mem)
+  and check ({integer_type_widths; location} as model_env) mem cond_set =
+    let is_dest_strlen id =
+      match PowLoc.is_singleton_or_more (PowLoc.of_c_strlen (Sem.eval_locs dest_exp mem)) with
+      | Singleton dest_strlen ->
+          List.exists (Dom.Mem.find_simple_alias id mem) ~f:(fun (loc, i) ->
+              IntLit.iszero i && Loc.equal loc dest_strlen )
+      | Empty | More ->
+          false
+    in
+    match Sequence.find (Exp.free_vars n_exp) ~f:is_dest_strlen with
+    | Some id ->
+        (* As in [strncat(dest, src, sizeof(dest) - strlen(dest) - 1)]: check the at most [n + 1]
+           bytes from [dest + strlen(dest)] so that the two [strlen(dest)] cancel *)
+        check_dest_size
+          (Exp.BinOp (PlusPI, dest_exp, Var id))
+          (Exp.BinOp (PlusA None, n_exp, Exp.one))
+          model_env mem cond_set
+    | None ->
+        let latest_prune = Dom.Mem.get_latest_prune mem in
+        BoUtils.Check.array_access
+          ~arr:(Sem.eval integer_type_widths dest_exp mem)
+          ~idx:(get_new_strlen integer_type_widths mem)
+          ~is_plus:true ~last_included:false ~latest_prune location cond_set
+  in
+  {exec; check}
+
+
+(** Functions such as [snprintf(dest, size, ...)] that write a string of at most [size] bytes,
+    including the null character, to [dest] and return a length. Like their fortified versions, the
+    check requires [size] to fit in [dest] even when fewer bytes are written. *)
+let bounded_write dest_exp size_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let dest_locs = Sem.eval_locs dest_exp mem in
+    let offset =
+      Sem.eval integer_type_widths dest_exp mem |> Dom.Val.get_array_blk |> ArrayBlk.get_offset
+    in
+    let mem = Dom.Mem.add_stack (Loc.of_id id) Dom.Val.Itv.nat mem in
+    (* the length of the string in an array counts from the start of the array *)
+    if Itv.is_zero offset then
+      let size = Sem.eval integer_type_widths size_exp mem in
+      let strlen =
+        Dom.Val.of_itv ~traces:(Dom.Val.get_traces size)
+          (Itv.set_lb_zero (Itv.decr_length (Dom.Val.get_itv size)))
+      in
+      Dom.Mem.update_mem (PowLoc.of_c_strlen dest_locs) strlen mem
+    else BoUtils.Exec.forget_c_strlen dest_locs mem
+  in
+  {exec; check= check_dest_size dest_exp size_exp}
+
+
+(** The result, between [lb] and [n], of a call such as [read] that transfers at most [n] bytes or
+    elements. When [n] is a range, as in a loop that reads into the rest of a buffer, the interval
+    domain cannot relate the result to the offset, and bounding the result by the range would report
+    the offset after such a loop as BUFFER_OVERRUN_L2 instead of L4. So only a single value of [n]
+    bounds it. *)
+let transferred ~lb n =
+  let itv = Dom.Val.get_itv n in
+  let is_single_value =
+    match Symb.BoundEnd.(Itv.get_bound itv LowerBound, Itv.get_bound itv UpperBound) with
+    | NonBottom l, NonBottom u ->
+        Itv.Bound.eq l u && Itv.Bound.le lb u
+    | _ ->
+        false
+  in
+  Dom.Val.of_itv ~traces:(Dom.Val.get_traces n)
+    (Itv.set_lb lb (if is_single_value then itv else Itv.top))
+
+
+(** Functions such as [read(fd, buf, count)] that write at most [count] bytes to [buf] and return
+    the number of bytes written, or -1 on error. *)
+let read_buf buf_exp count_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let count = Sem.eval integer_type_widths count_exp mem in
+    Dom.Mem.add_stack (Loc.of_id id) (transferred ~lb:Itv.Bound.mone count) mem
+    |> BoUtils.Exec.forget_c_strlen (Sem.eval_locs buf_exp mem)
+  in
+  {exec; check= check_dest_size buf_exp count_exp}
+
+
+(** [fread(buf, size, nmemb, stream)] writes at most [size * nmemb] bytes to [buf] and returns the
+    number of elements read. *)
+let fread buf_exp size_exp nmemb_exp =
+  let exec {integer_type_widths} ~ret:(id, _) mem =
+    let nmemb = Sem.eval integer_type_widths nmemb_exp mem in
+    Dom.Mem.add_stack (Loc.of_id id) (transferred ~lb:Itv.Bound.zero nmemb) mem
+    |> BoUtils.Exec.forget_c_strlen (Sem.eval_locs buf_exp mem)
+  in
+  let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, nmemb_exp) in
+  {exec; check= check_dest_size buf_exp byte_size_exp}
 
 
 let realloc src_exp size_exp =
@@ -660,12 +822,25 @@ module StdVector = struct
         Dom.Val.set_array_length location ~length:new_size v )
 
 
+  let get_stride integer_type_widths elt_typ =
+    match elt_typ.Typ.desc with
+    | Tint ikind ->
+        Some (IntegerWidths.width_of_ikind integer_type_widths ikind / 8)
+    | Tfloat FFloat ->
+        Some 4
+    | Tfloat FDouble ->
+        Some 8
+    | _ ->
+        None
+
+
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_size elt_typ {exp= vec_exp; typ= vec_typ} size_exp =
-    let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
+    let {check} = malloc ~can_be_zero:true size_exp in
     let exec ({pname; caller_pname; node_hash; integer_type_widths; location} as model_env)
         ~ret:((id, _) as ret) mem =
-      let mem = malloc_exec model_env ~ret mem in
+      let get_info length = (elt_typ, get_stride integer_type_widths elt_typ, length, None) in
+      let mem = (alloc ~get_info ~can_be_zero:true size_exp).exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
       let deref_of_vec =
         Allocsite.make pname ~caller_pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
@@ -705,7 +880,7 @@ module StdVector = struct
 
   (* The (10) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_initializer_list elt_typ {exp= vec_exp; typ= vec_typ} lst_exp =
-    let exec {pname; caller_pname; node_hash; location} ~ret:_ mem =
+    let exec {pname; caller_pname; node_hash; location; integer_type_widths} ~ret:_ mem =
       let arr_blk =
         let internal_locs =
           Sem.eval_locs lst_exp mem |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
@@ -728,8 +903,9 @@ module StdVector = struct
           ~represents_multiple_values:true
       in
       let v =
-        Dom.Val.of_c_array_alloc arr_as ~stride:None ~offset:Itv.zero
-          ~size:(ArrayBlk.get_size arr_blk) ~traces
+        Dom.Val.of_c_array_alloc arr_as
+          ~stride:(get_stride integer_type_widths elt_typ)
+          ~offset:Itv.zero ~size:(ArrayBlk.get_size arr_blk) ~traces
       in
       let vec_elt_locs = arr_as |> Loc.of_allocsite |> PowLoc.singleton in
       let lst_elem_v = Dom.Mem.find_set (ArrayBlk.get_pow_loc arr_blk) mem in
@@ -1977,19 +2153,30 @@ module Call = struct
       ; -"exit" <>--> bottom
       ; -"fgetc" <>--> by_value Dom.Val.Itv.m1_255
       ; -"fgets" <>$ capt_exp $+ capt_exp $+...$--> fgets
+      ; -"fread" <>$ capt_exp $+ capt_exp $+ capt_exp $+ any_arg $--> fread
       ; -"infer_print" <>$ capt_exp $!--> infer_print
       ; -"malloc" <>$ capt_exp $+...$--> malloc ~can_be_zero:false
       ; -"memcpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memmove" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> memcpy
       ; -"memset" <>$ capt_exp $+ any_arg $+ capt_exp $!--> memset
+      ; -"pread" <>$ any_arg_of_prim_typ int_typ $+ capt_exp $+ capt_exp $+ any_arg $--> read_buf
+      ; -"pread64" <>$ any_arg_of_prim_typ int_typ $+ capt_exp $+ capt_exp $+ any_arg $--> read_buf
+      ; -"read" <>$ any_arg_of_prim_typ int_typ $+ capt_exp $+ capt_exp $--> read_buf
+      ; -"readlink" <>$ any_arg $+ capt_exp $+ capt_exp $--> read_buf
       ; -"realloc" <>$ capt_exp $+ capt_exp $+...$--> realloc
-      ; -"snprintf" <>--> by_value Dom.Val.Itv.nat
+      ; -"recv" <>$ any_arg_of_prim_typ int_typ $+ capt_exp $+ capt_exp $+ any_arg $--> read_buf
+      ; -"recvfrom" <>$ any_arg_of_prim_typ int_typ $+ capt_exp $+ capt_exp $+ any_arg $+ any_arg
+        $+ any_arg $--> read_buf
+      ; -"snprintf" <>$ capt_exp $+ capt_exp $+...$--> bounded_write
       ; -"strcat" <>$ capt_exp $+ capt_exp $+...$--> strcat
       ; -"strcpy" <>$ capt_exp $+ capt_exp $+...$--> strcpy
+      ; -"strlcat" <>$ capt_exp $+ any_arg $+ capt_exp $--> bounded_write
+      ; -"strlcpy" <>$ capt_exp $+ any_arg $+ capt_exp $--> bounded_write
       ; -"strlen" <>$ capt_exp $!--> strlen
+      ; -"strncat" <>$ capt_exp $+ capt_exp $+ capt_exp $--> strncat
       ; -"strncpy" <>$ capt_exp $+ capt_exp $+ capt_exp $+...$--> strncpy
       ; -"strndup" <>$ capt_exp $+ capt_exp $+...$--> strndup
-      ; -"vsnprintf" <>--> by_value Dom.Val.Itv.nat
+      ; -"vsnprintf" <>$ capt_exp $+ capt_exp $+ any_arg $+ any_arg $--> bounded_write
       ; (* ObjC models *)
         +BuiltinDecl.(match_builtin __objc_alloc_no_fail) <>$ capt_exp $+...$--> objc_malloc
       ; -"CFArrayCreate" <>$ any_arg $+ capt_exp $+ capt_exp

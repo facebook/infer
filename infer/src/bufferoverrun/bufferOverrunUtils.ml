@@ -256,6 +256,9 @@ module Exec = struct
       else Dom.Mem.unset_first_idx_of_null loc idx acc
     in
     ArrayBlk.fold set_c_strlen1 (Dom.Val.get_array_blk tgt) mem
+
+
+  let forget_c_strlen locs mem = Dom.Mem.update_mem (PowLoc.of_c_strlen locs) Dom.Val.Itv.nat mem
 end
 
 module Check = struct
@@ -275,8 +278,8 @@ module Check = struct
       Itv.pp size Itv.ItvPure.pp offset Itv.pp idx
 
 
-  let offsetof arr_info =
-    match ArrayBlk.ArrInfo.get_offset arr_info with
+  let offsetof offset =
+    match offset with
     | Bottom ->
         (* Java's collection has no offset. *)
         Itv.ItvPure.zero
@@ -293,7 +296,7 @@ module Check = struct
     let arr_traces = Dom.Val.get_traces arr in
     let array_access1 allocsite arr_info acc =
       let size = ArrayBlk.ArrInfo.get_size arr_info in
-      let offset = offsetof arr_info in
+      let offset = offsetof (ArrayBlk.ArrInfo.get_offset arr_info) in
       log_array_access allocsite size offset idx ;
       check_access ~size ~idx ~offset ~arr_traces ~idx_traces ~last_included ~latest_prune location
         acc
@@ -322,7 +325,7 @@ module Check = struct
     let arr_traces = Dom.Val.get_traces arr in
     let array_access_byte1 allocsite arr_info acc =
       let size = ArrayBlk.ArrInfo.byte_size arr_info in
-      let offset = offsetof arr_info in
+      let offset = offsetof (ArrayBlk.ArrInfo.byte_offset arr_info) in
       log_array_access allocsite size offset idx ;
       check_access ~size ~idx ~offset ~arr_traces ~idx_traces ~last_included ~latest_prune location
         acc
@@ -330,12 +333,114 @@ module Check = struct
     ArrayBlk.fold array_access_byte1 (Dom.Val.get_array_blk arr) cond_set
 
 
+  let is_byte_array_val v =
+    let arr_blk = Dom.Val.get_array_blk v in
+    (not (ArrayBlk.is_bot arr_blk))
+    && ArrayBlk.for_all (fun _ info -> Itv.is_one (ArrayBlk.ArrInfo.get_stride info)) arr_blk
+
+
+  (** In [memset(buf + n, 0, sizeof(buf) - n)] or [snprintf(p, end - p, ...)], the end of the
+      accessed range does not depend on [n] or [p], but the interval domain loses the relation
+      between their two occurrences. [end_of_byte_access] cancels such occurrences syntactically and
+      returns the pointer and the byte index of the end of the range, when what remains is a single
+      byte pointer plus integers. *)
+  let end_of_byte_access integer_type_widths ~array_exp ~byte_index_exp mem =
+    let is_byte_array (e : Exp.t) =
+      (* [eval_arr] evaluates [&a[i]] to the contents of [a], the inner arrays of a
+         multi-dimensional [a] *)
+      match e with
+      | Lindex _ ->
+          is_byte_array_val (Sem.eval integer_type_widths e mem)
+      | _ ->
+          is_byte_array_val (Sem.eval_arr integer_type_widths e mem)
+    in
+    let is_wide ikind =
+      IntegerWidths.width_of_ikind integer_type_widths ikind
+      >= IntegerWidths.width_of_ikind integer_type_widths Typ.size_t
+    in
+    let is_one e = Itv.is_one (Dom.Val.get_itv (Sem.eval integer_type_widths e mem)) in
+    (* Signed terms whose sum is [e] in bytes, modulo the pointer width *)
+    let rec add_terms ~pos (e : Exp.t) acc =
+      match e with
+      | Cast (typ, e1)
+        when (Typ.is_pointer typ && is_byte_array e1)
+             || Option.exists (Typ.get_ikind_opt typ) ~f:is_wide ->
+          add_terms ~pos e1 acc
+      | BinOp (PlusA ikind, e1, e2) when Option.for_all ikind ~f:is_wide ->
+          add_terms ~pos e1 (add_terms ~pos e2 acc)
+      | BinOp (MinusA ikind, e1, e2) when Option.for_all ikind ~f:is_wide ->
+          add_terms ~pos e1 (add_terms ~pos:(not pos) e2 acc)
+      | BinOp (Mult _, e1, e2) when is_one e2 ->
+          add_terms ~pos e1 acc
+      | BinOp (Mult _, e1, e2) when is_one e1 ->
+          add_terms ~pos e2 acc
+      | (BinOp (PlusPI, e1, e2) | Lindex (e1, e2)) when is_byte_array e1 ->
+          add_terms ~pos e1 (add_terms ~pos e2 acc)
+      | BinOp (MinusPI, e1, e2) when is_byte_array e1 ->
+          add_terms ~pos e1 (add_terms ~pos:(not pos) e2 acc)
+      | BinOp (MinusPP, e1, e2) when is_byte_array e1 && is_byte_array e2 ->
+          add_terms ~pos e1 (add_terms ~pos:(not pos) e2 acc)
+      | _ ->
+          (pos, e) :: acc
+    in
+    let same_value e1 e2 = Exp.equal e1 e2 || Sem.must_alias e1 e2 mem in
+    let rec cancel ~cancelled acc = function
+      | [] ->
+          Option.some_if cancelled acc
+      | ((pos, e) as term) :: terms -> (
+          let is_opposite (pos', e') = Bool.(pos <> pos') && same_value e e' in
+          match IList.remove_first terms ~f:is_opposite with
+          | Some terms ->
+              cancel ~cancelled:true acc terms
+          | None ->
+              cancel ~cancelled (term :: acc) terms )
+    in
+    let is_pointer e =
+      let v = Sem.eval integer_type_widths e mem in
+      not (ArrayBlk.is_bot (Dom.Val.get_array_blk v) && PowLoc.is_bot (Dom.Val.get_pow_loc v))
+    in
+    let terms = add_terms ~pos:true array_exp (add_terms ~pos:true byte_index_exp []) in
+    match cancel ~cancelled:false [] terms with
+    | Some terms -> (
+      match List.partition_tf terms ~f:(fun (_, e) -> is_pointer e) with
+      | [(true, end_array_exp)], integers when is_byte_array end_array_exp ->
+          let end_byte_index_exp =
+            List.fold integers ~init:Exp.zero ~f:(fun acc (pos, e) ->
+                Exp.BinOp ((if pos then Binop.PlusA None else Binop.MinusA None), acc, e) )
+          in
+          Some (end_array_exp, end_byte_index_exp)
+      | _ ->
+          None )
+    | None ->
+        None
+
+
   let lindex_byte integer_type_widths ~array_exp ~byte_index_exp ~last_included mem location
       cond_set =
-    let idx = Sem.eval integer_type_widths byte_index_exp mem in
-    let arr = Sem.eval_arr integer_type_widths array_exp mem in
-    let latest_prune = Dom.Mem.get_latest_prune mem in
-    array_access_byte ~arr ~idx ~is_plus:true ~last_included ~latest_prune location cond_set
+    let eval_arr (e : Exp.t) =
+      let arr = Sem.eval_arr integer_type_widths e mem in
+      match e with
+      | Lindex _ when ArrayBlk.is_bot (Dom.Val.get_array_blk arr) ->
+          (* [eval_arr] evaluates [&a[i]] to the cells of [a] *)
+          let v = Sem.eval integer_type_widths e mem in
+          if is_byte_array_val v then v else arr
+      | _ ->
+          arr
+    in
+    let check ~array_exp ~byte_index_exp cond_set =
+      let idx = Sem.eval integer_type_widths byte_index_exp mem in
+      let arr = eval_arr array_exp in
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      array_access_byte ~arr ~idx ~is_plus:true ~last_included ~latest_prune location cond_set
+    in
+    match end_of_byte_access integer_type_widths ~array_exp ~byte_index_exp mem with
+    | Some (end_array_exp, end_byte_index_exp) ->
+        (* the end check does not bound the start of the range *)
+        cond_set
+        |> check ~array_exp ~byte_index_exp:Exp.zero
+        |> check ~array_exp:end_array_exp ~byte_index_exp:end_byte_index_exp
+    | None ->
+        check ~array_exp ~byte_index_exp cond_set
 
 
   let binary_operation integer_type_widths pname bop ~lhs ~rhs ~latest_prune location cond_set =

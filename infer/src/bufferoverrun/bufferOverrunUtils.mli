@@ -66,6 +66,9 @@ module Exec : sig
     ModelEnv.model_env -> do_alloc:bool -> PowLoc.t -> string -> Dom.Mem.t -> Dom.Mem.t
 
   val set_c_strlen : tgt:Dom.Val.t -> src:Dom.Val.t -> Dom.Mem.t -> Dom.Mem.t
+
+  val forget_c_strlen : PowLoc.t -> Dom.Mem.t -> Dom.Mem.t
+  (** Forget the length of the C strings at the given locations, e.g. after a write of raw bytes *)
 end
 
 module Check : sig
@@ -85,6 +88,16 @@ module Check : sig
     -> index_exp:Exp.t
     -> last_included:bool
     -> Dom.Mem.t
+    -> Location.t
+    -> PO.ConditionSet.checked_t
+    -> PO.ConditionSet.checked_t
+
+  val array_access_byte :
+       arr:Dom.Val.t
+    -> idx:Dom.Val.t
+    -> is_plus:bool
+    -> last_included:bool
+    -> latest_prune:Dom.LatestPrune.t
     -> Location.t
     -> PO.ConditionSet.checked_t
     -> PO.ConditionSet.checked_t
