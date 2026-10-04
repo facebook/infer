@@ -22,6 +22,17 @@ val check_addr_access :
   -> t AccessResult.t
 (** Check that the [address] is not known to be invalid *)
 
+val check_non_null :
+     PathContext.t
+  -> Location.t
+  -> CallEvent.t
+  -> int
+  -> AbstractValue.t * ValueHistory.t
+  -> t
+  -> t AccessResult.t
+(** Check that the [address] passed to the parameter at the given 1-based position of the callee is
+    not known to be null *)
+
 module Closures : sig
   val check_captured_addresses :
     PathContext.t -> Location.t -> AbstractValue.t -> t -> t AccessResult.t
@@ -61,6 +72,13 @@ module ModeledField : sig
   val objc_attached_block : Fieldname.t
   (** Strong field a setter-style retain-cycle model attaches to an ObjC receiver to point at a
       block the receiver retains internally (e.g. [-[NSOperationQueue addOperationWithBlock:]]). *)
+
+  val weak_ptr_pointer : Fieldname.t
+  (** Pointer to the object observed by a [std::weak_ptr] *)
+
+  val weak_ptr_count : Fieldname.t
+  (** Pointer to the reference count of the object observed by a [std::weak_ptr], shared with the
+      [std::shared_ptr]s owning the object *)
 end
 
 val conservatively_initialize_args : AbstractValue.t list -> t -> t

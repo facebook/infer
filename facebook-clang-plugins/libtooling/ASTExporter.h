@@ -466,6 +466,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   //  DECLARE_VISITOR(ComplexType)
   DECLARE_VISITOR(DecltypeType)
   //  DECLARE_VISITOR(DependentSizedExtVectorType)
+  DECLARE_VISITOR(ElaboratedType)
   DECLARE_VISITOR(FunctionType)
   //  DECLARE_VISITOR(FunctionNoProtoType)
   DECLARE_VISITOR(FunctionProtoType)
@@ -487,6 +488,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(AnnotateAttr)
   DECLARE_VISITOR(AvailabilityAttr)
   DECLARE_VISITOR(CleanupAttr)
+  DECLARE_VISITOR(NonNullAttr)
   DECLARE_VISITOR(SentinelAttr)
   DECLARE_VISITOR(VisibilityAttr)
 
@@ -5089,6 +5091,17 @@ void ASTExporter<ATDWriter>::VisitDecltypeType(const DecltypeType *T) {
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::ElaboratedTypeTupleSize() {
+  return TypeWithChildInfoTupleSize();
+}
+//@atd #define elaborated_type_tuple type_with_child_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitElaboratedType(const ElaboratedType *T) {
+  VisitType(T);
+  dumpQualType(T->getNamedType());
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::FunctionTypeTupleSize() {
   return TypeTupleSize() + 1;
 }
@@ -5403,6 +5416,30 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitCleanupAttr(const CleanupAttr *A) {
   VisitAttr(A);
   dumpDeclRef(*A->getFunctionDecl());
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::NonNullAttrTupleSize() {
+  return AttrTupleSize() + 1;
+}
+//@atd #define non_null_attr_tuple attr_tuple * non_null_attr_info
+//@atd type non_null_attr_info = {
+//@atd   ~args : int list;
+//@atd } <ocaml field_prefix="nnai_">
+// [args] are zero-based indices of the parameters, not counting an implicit
+// object parameter. No [args] means every pointer parameter.
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitNonNullAttr(const NonNullAttr *A) {
+  VisitAttr(A);
+  bool HasArgs = A->args_size() > 0;
+  ObjectScope Scope(OF, HasArgs);
+  if (HasArgs) {
+    OF.emitTag("args");
+    ArrayScope ArgsScope(OF, A->args_size());
+    for (const ParamIdx &Idx : A->args()) {
+      OF.emitInteger(Idx.getASTIndex());
+    }
+  }
 }
 
 template <class ATDWriter>

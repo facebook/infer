@@ -95,8 +95,9 @@ type t =
   | CppDelete
   | CppDeleteArray
   | EndIterator
-  | FClose
+  | FClose of Procname.t
   | GoneOutOfScope of Pvar.t * Typ.t
+  | HandedOverToStream of Procname.t
   | OptionalEmpty
   | StdVector of std_vector_function
   | CppMap of map_type * map_function
@@ -112,7 +113,49 @@ type must_be_valid_reason =
   | InsertionIntoCollectionValue
   | SelfOfNonPODReturnMethod of Typ.t
   | NullArgumentWhereNonNullExpected of PulseCallEvent.t * int option
+  | FileDescriptorUse
+  | FileDescriptorRelease
 [@@deriving compare, equal, yojson_of]
+
+let is_file_descriptor_reason = function
+  | FileDescriptorUse | FileDescriptorRelease ->
+      true
+  | BlockCall
+  | InsertionIntoCollectionKey
+  | InsertionIntoCollectionValue
+  | SelfOfNonPODReturnMethod _
+  | NullArgumentWhereNonNullExpected _ ->
+      false
+
+
+let is_relevant_for_reason must_be_valid_reason invalidation =
+  match must_be_valid_reason with
+  | Some ((FileDescriptorUse | FileDescriptorRelease) as reason) -> (
+    match invalidation with
+    | FClose _ ->
+        true
+    | HandedOverToStream _ ->
+        equal_must_be_valid_reason reason FileDescriptorRelease
+    | CFree
+    | ComparedToNullInThisProcedure _
+    | ConstantDereference _
+    | CppDelete
+    | CppDeleteArray
+    | EndIterator
+    | GoneOutOfScope _
+    | OptionalEmpty
+    | StdVector _
+    | CppMap _ ->
+        false )
+  | Some
+      ( BlockCall
+      | InsertionIntoCollectionKey
+      | InsertionIntoCollectionValue
+      | SelfOfNonPODReturnMethod _
+      | NullArgumentWhereNonNullExpected _ )
+  | None ->
+      true
+
 
 let pp_must_be_valid_reason f = function
   | None ->
@@ -127,6 +170,10 @@ let pp_must_be_valid_reason f = function
       F.fprintf f "SelfOfNonPODReturnMethod"
   | Some (NullArgumentWhereNonNullExpected _) ->
       F.fprintf f "NonNullExpected"
+  | Some FileDescriptorUse ->
+      F.fprintf f "FileDescriptorUse"
+  | Some FileDescriptorRelease ->
+      F.fprintf f "FileDescriptorRelease"
 
 
 let issue_type_of_cause ~latent invalidation must_be_valid_reason =
@@ -137,7 +184,7 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.compared_to_null_and_dereferenced
   | ConstantDereference i when IntLit.iszero i -> (
     match must_be_valid_reason with
-    | None ->
+    | None | Some (FileDescriptorUse | FileDescriptorRelease) ->
         IssueType.nullptr_dereference ~latent
     | Some BlockCall ->
         IssueType.nil_block_call ~latent
@@ -153,7 +200,7 @@ let issue_type_of_cause ~latent invalidation must_be_valid_reason =
       IssueType.use_after_delete ~latent
   | EndIterator ->
       IssueType.vector_invalidation ~latent
-  | FClose ->
+  | FClose _ | HandedOverToStream _ ->
       (* TODO: this probably deserves its own issue type *)
       IssueType.use_after_free ~latent
   | GoneOutOfScope _ ->
@@ -182,8 +229,8 @@ let describe f cause =
       F.pp_print_string f "was invalidated by `delete[]`"
   | EndIterator ->
       F.pp_print_string f "is pointed to by the `end()` iterator"
-  | FClose ->
-      F.pp_print_string f "was closed with `fclose()`"
+  | FClose proc_name ->
+      F.fprintf f "was invalidated by call to `%a`" Procname.describe proc_name
   | GoneOutOfScope (pvar, typ) ->
       let pp_var f pvar =
         if Pvar.is_cpp_temporary pvar then
@@ -191,6 +238,8 @@ let describe f cause =
         else F.fprintf f "is the address of a stack variable `%a`" Pvar.pp_value pvar
       in
       F.fprintf f "%a whose lifetime has ended" pp_var pvar
+  | HandedOverToStream proc_name ->
+      F.fprintf f "was handed over to the stream returned by `%a`" Procname.describe proc_name
   | OptionalEmpty ->
       F.pp_print_string f "is assigned an empty value"
   | StdVector std_vector_f ->
@@ -223,8 +272,10 @@ let pp f invalidation =
       F.fprintf f "CppDelete(%a)" describe invalidation
   | EndIterator | GoneOutOfScope _ | OptionalEmpty ->
       describe f invalidation
-  | FClose ->
+  | FClose _ ->
       F.fprintf f "FClose(%a)" describe invalidation
+  | HandedOverToStream _ ->
+      F.fprintf f "HandedOverToStream(%a)" describe invalidation
   | StdVector _ ->
       F.fprintf f "StdVector(%a)" describe invalidation
   | CppMap _ ->

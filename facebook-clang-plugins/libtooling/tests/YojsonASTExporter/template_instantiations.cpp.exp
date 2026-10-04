@@ -4107,6 +4107,9 @@
         {
           "pointer" : 270,
           "desugared_type" : 9
+        },
+        {
+          "type_ptr" : 269
         }
       )>,
       <"RecordType" : (
@@ -4125,6 +4128,9 @@
         {
           "pointer" : 26,
           "desugared_type" : 12
+        },
+        {
+          "type_ptr" : 271
         }
       )>,
       <"FunctionProtoType" : (
@@ -4155,6 +4161,9 @@
         {
           "pointer" : 274,
           "desugared_type" : 12
+        },
+        {
+          "type_ptr" : 12
         }
       )>,
       <"LValueReferenceType" : (
@@ -4320,6 +4329,9 @@
         {
           "pointer" : 283,
           "desugared_type" : 251
+        },
+        {
+          "type_ptr" : 29
         }
       )>,
       <"TemplateSpecializationType" : (
@@ -4353,6 +4365,9 @@
         {
           "pointer" : 45,
           "desugared_type" : 32
+        },
+        {
+          "type_ptr" : 287
         }
       )>,
       <"FunctionProtoType" : (
@@ -4371,6 +4386,9 @@
         {
           "pointer" : 289,
           "desugared_type" : 32
+        },
+        {
+          "type_ptr" : 32
         }
       )>,
       <"LValueReferenceType" : (
@@ -4560,6 +4578,9 @@
         {
           "pointer" : 90,
           "desugared_type" : 49
+        },
+        {
+          "type_ptr" : 306
         }
       )>,
       <"FunctionProtoType" : (
@@ -4578,6 +4599,9 @@
         {
           "pointer" : 308,
           "desugared_type" : 49
+        },
+        {
+          "type_ptr" : 49
         }
       )>,
       <"LValueReferenceType" : (
@@ -4722,6 +4746,9 @@
         {
           "pointer" : 93,
           "desugared_type" : 63
+        },
+        {
+          "type_ptr" : 316
         }
       )>,
       <"FunctionProtoType" : (
@@ -4740,6 +4767,9 @@
         {
           "pointer" : 318,
           "desugared_type" : 63
+        },
+        {
+          "type_ptr" : 63
         }
       )>,
       <"LValueReferenceType" : (
@@ -4884,6 +4914,9 @@
         {
           "pointer" : 96,
           "desugared_type" : 77
+        },
+        {
+          "type_ptr" : 326
         }
       )>,
       <"FunctionProtoType" : (
@@ -4902,6 +4935,9 @@
         {
           "pointer" : 328,
           "desugared_type" : 77
+        },
+        {
+          "type_ptr" : 77
         }
       )>,
       <"LValueReferenceType" : (
@@ -5067,6 +5103,9 @@
         {
           "pointer" : 142,
           "desugared_type" : 115
+        },
+        {
+          "type_ptr" : 115
         }
       )>,
       <"LValueReferenceType" : (
@@ -5355,6 +5394,9 @@
         {
           "pointer" : 178,
           "desugared_type" : 100
+        },
+        {
+          "type_ptr" : 363
         }
       )>,
       <"FunctionProtoType" : (
@@ -5373,6 +5415,9 @@
         {
           "pointer" : 365,
           "desugared_type" : 100
+        },
+        {
+          "type_ptr" : 100
         }
       )>,
       <"LValueReferenceType" : (
@@ -5517,6 +5562,9 @@
         {
           "pointer" : 181,
           "desugared_type" : 129
+        },
+        {
+          "type_ptr" : 373
         }
       )>,
       <"FunctionProtoType" : (
@@ -5535,6 +5583,9 @@
         {
           "pointer" : 375,
           "desugared_type" : 129
+        },
+        {
+          "type_ptr" : 129
         }
       )>,
       <"LValueReferenceType" : (
@@ -5679,6 +5730,9 @@
         {
           "pointer" : 184,
           "desugared_type" : 146
+        },
+        {
+          "type_ptr" : 383
         }
       )>,
       <"FunctionProtoType" : (
@@ -5697,6 +5751,9 @@
         {
           "pointer" : 385,
           "desugared_type" : 146
+        },
+        {
+          "type_ptr" : 146
         }
       )>,
       <"LValueReferenceType" : (
@@ -5849,6 +5906,9 @@
         {
           "pointer" : 187,
           "desugared_type" : 165
+        },
+        {
+          "type_ptr" : 394
         }
       )>,
       <"FunctionProtoType" : (
@@ -5867,6 +5927,9 @@
         {
           "pointer" : 396,
           "desugared_type" : 165
+        },
+        {
+          "type_ptr" : 165
         }
       )>,
       <"LValueReferenceType" : (

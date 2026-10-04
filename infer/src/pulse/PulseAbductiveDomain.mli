@@ -222,6 +222,17 @@ module AddressAttributes : sig
     -> t
     -> (t, Invalidation.t * Trace.t) result
 
+  val check_non_null :
+       PathContext.t
+    -> Trace.t
+    -> CallEvent.t
+    -> int
+    -> AbstractValue.t
+    -> t
+    -> (t, Invalidation.t * Trace.t) result
+  (** like [check_valid] but only null values, rather than all invalid ones, are errors; abduces
+      [MustBeNonNull] *)
+
   val check_initialized :
     PathContext.t -> Trace.t -> AbstractValue.t -> t -> (t, Attribute.UninitializedTyp.t) result
 

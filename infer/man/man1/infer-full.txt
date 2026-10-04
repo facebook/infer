@@ -1714,6 +1714,18 @@ OPTIONS
            
            See also infer-analyze(1).
 
+       --pulse-nullability-annotations
+           Activates: Use the nullability annotations of the parameters of C
+           functions and C++ methods that are declared but not defined, and
+           so have no summary, in calls from C, C++ and Objective-C code:
+           passing null to a parameter whose type is annotated _Nonnull,
+           including in #pragma clang assume_nonnull regions, or that the
+           nonnull attribute of the function or of the parameter covers, is
+           reported. Annotations written in typedefs count. Parameters of
+           Objective-C methods and of blocks are not concerned. (Conversely:
+           --no-pulse-nullability-annotations)
+           See also infer-analyze(1).
+
        --no-pulse-nullsafe-report-npe
            Deactivates: Report null dereference issues on files marked
            @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)

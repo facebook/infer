@@ -3520,6 +3520,9 @@
         {
           "pointer" : 47,
           "desugared_type" : 8
+        },
+        {
+          "type_ptr" : 8
         }
       )>,
       <"LValueReferenceType" : (
@@ -3662,6 +3665,9 @@
         {
           "pointer" : 65,
           "desugared_type" : 33
+        },
+        {
+          "type_ptr" : 33
         }
       )>,
       <"LValueReferenceType" : (
@@ -4000,6 +4006,9 @@
         {
           "pointer" : 109,
           "desugared_type" : 56
+        },
+        {
+          "type_ptr" : 56
         }
       )>,
       <"PointerType" : (
