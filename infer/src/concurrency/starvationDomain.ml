@@ -208,6 +208,37 @@ module VarDomain = struct
   let set var acc_exp astate = add var (NonTop acc_exp) astate
 end
 
+module FieldAliases = struct
+  module Value = AbstractDomain.Flat (HilExp.AccessExpression)
+  include AbstractDomain.SafeInvertedMap (HilExp.AccessExpression) (Value)
+
+  let rec has_prefix ~prefix (exp : HilExp.AccessExpression.t) =
+    HilExp.AccessExpression.equal prefix exp
+    ||
+    match exp with
+    | Base _ ->
+        false
+    | FieldOffset (exp, _) | ArrayOffset (exp, _, _) | AddressOf exp | Dereference exp ->
+        has_prefix ~prefix exp
+
+
+  let get exp astate = find_opt exp astate |> Option.bind ~f:Value.get
+
+  let assign lhs rhs_opt astate =
+    let is_overwritten exp = has_prefix ~prefix:lhs exp in
+    let astate =
+      filter
+        (fun exp value ->
+          not (is_overwritten exp || Value.get value |> Option.exists ~f:is_overwritten) )
+        astate
+    in
+    match rhs_opt with
+    | Some rhs when not (is_overwritten rhs) ->
+        add lhs (Value.v rhs) astate
+    | _ ->
+        astate
+end
+
 module Event = struct
   type t =
     | Ipc of {callee: Procname.t; thread: ThreadDomain.t}
@@ -336,21 +367,14 @@ module Event = struct
           Some event
       | Some lock ->
           Some (MonitorWait {lock; thread}) )
-    | LockAcquire {locks; thread; callsite= None; call_context= []} -> (
+    | LockAcquire ({locks} as lock_acquire) -> (
       match Lock.apply_subst_to_list subst locks with
       | [] ->
           None
       | locks' when phys_equal locks locks' ->
           Some event
       | locks ->
-          Some (LockAcquire {locks; thread; callsite= None; call_context= []}) )
-    (* Don't do substitution if inter procedural lock acquire *)
-    | LockAcquire {callsite= _; call_context= _} ->
-        Some event
-
-
-  let has_recursive_lock tenv event =
-    get_acquired_locks event |> List.exists ~f:(Lock.is_recursive tenv)
+          Some (LockAcquire {lock_acquire with locks}) )
 
 
   let is_blocking_call = function
@@ -449,6 +473,12 @@ module LockState : sig
   val release : Lock.t -> t -> t
 
   val get_acquisitions : t -> Acquisitions.t
+
+  val forget_held : t -> t
+
+  val get_single_held_lock : t -> Lock.t option
+
+  val get_single_unlocked_lock : t -> Lock.t option
 end = struct
   (* abstraction limit for lock counts *)
   let max_lock_depth_allowed = 5
@@ -471,6 +501,24 @@ end = struct
   type t = {held: HeldMap.t; unlocked: UnlockedMap.t; acquisitions: Acquisitions.t}
 
   let get_acquisitions {acquisitions} = acquisitions
+
+  let forget_held lock_state = {lock_state with held= HeldMap.top; acquisitions= Acquisitions.empty}
+
+  let get_single_held_lock {held; unlocked} =
+    match HeldMap.bindings held with
+    | [(lock, count)] when UnlockedMap.is_empty unlocked && Int.equal (count :> int) 1 ->
+        Some lock
+    | _ ->
+        None
+
+
+  let get_single_unlocked_lock {held; unlocked} =
+    match UnlockedMap.bindings unlocked with
+    | [(lock, count)] when HeldMap.is_empty held && Int.equal (count :> int) 1 ->
+        Some lock
+    | _ ->
+        None
+
 
   let pp fmt {held; unlocked; acquisitions} =
     F.fprintf fmt "{@[map= %a;@;unlocked= %a;@;acquisitions= %a@]}" HeldMap.pp held UnlockedMap.pp
@@ -570,34 +618,37 @@ end = struct
 
   let integrate_summary ~procname ~callsite ~subst ~other lock_state =
     (* Release all locks that were unlocked by summary *)
-    let subst_lock lock =
-      match Lock.apply_subst subst lock with Some lock' -> lock' | None -> lock
-    in
     let rec unlocked_folder lock other_count lock_state =
       if UnlockCount.is_bottom other_count then lock_state
-      else
-        unlocked_folder lock
-          (UnlockCount.decrement other_count)
-          (release (subst_lock lock) lock_state)
+      else unlocked_folder lock (UnlockCount.decrement other_count) (release lock lock_state)
     in
-    let lock_state = UnlockedMap.fold unlocked_folder other.unlocked lock_state in
+    (* callee locks that cannot be expressed in the caller, eg locks of local objects, are ignored
+       here and below: their paths are relative to the callee's formals *)
+    let lock_state =
+      UnlockedMap.fold
+        (fun lock other_count lock_state ->
+          Lock.apply_subst subst lock
+          |> Option.value_map ~default:lock_state ~f:(fun lock ->
+              unlocked_folder lock other_count lock_state ) )
+        other.unlocked lock_state
+    in
     (* acquire all locks that are held in the summary, adding the callsite to the acquisitions *)
-    let rec held_folder lock other_count lock_state =
+    let rec held_folder (acquisition : Acquisition.t) other_count lock_state =
       if LockCount.is_top other_count then lock_state
       else
-        let acquisition = Acquisitions.find (Acquisition.make_dummy lock) other.acquisitions in
-        let acquisition = Acquisition.with_callsite_at_proc ~procname acquisition callsite in
-        let acquisition =
-          match Acquisition.apply_subst subst acquisition with
-          | None ->
-              acquisition
-          | Some acq ->
-              acq
-        in
-        let lock_state = acquire' acquisition (subst_lock lock) lock_state in
-        held_folder lock (LockCount.decrement other_count) lock_state
+        let lock_state = acquire' acquisition acquisition.elem.lock lock_state in
+        held_folder acquisition (LockCount.decrement other_count) lock_state
     in
-    let lock_state = HeldMap.fold held_folder other.held lock_state in
+    let lock_state =
+      HeldMap.fold
+        (fun lock other_count lock_state ->
+          Acquisitions.find (Acquisition.make_dummy lock) other.acquisitions
+          |> Acquisition.apply_subst subst
+          |> Option.value_map ~default:lock_state ~f:(fun acquisition ->
+              let acquisition = Acquisition.with_callsite_at_proc ~procname acquisition callsite in
+              held_folder acquisition other_count lock_state ) )
+        other.held lock_state
+    in
     lock_state
 end
 
@@ -673,8 +724,7 @@ module CriticalPair = struct
     | Some tenv, LockAcquire {locks; thread} -> (
         let filtered_locks =
           IList.filter_changed locks ~f:(fun lock ->
-              (not (Acquisitions.lock_is_held lock held_locks))
-              || not (Event.has_recursive_lock tenv pair.elem.event) )
+              (not (Acquisitions.lock_is_held lock held_locks)) || not (Lock.is_recursive tenv lock) )
         in
         match filtered_locks with
         | [] ->
@@ -829,14 +879,18 @@ module NullLocsCriticalPairs = struct
       set CriticalPairs.empty
 end
 
-module FlatLock = AbstractDomain.Flat (Lock)
+module FlatLocks = AbstractDomain.Flat (struct
+  type t = Lock.t list [@@deriving equal]
+
+  let pp = Pp.comma_seq Lock.pp
+end)
 
 module GuardToLockMap = struct
-  include AbstractDomain.InvertedMap (HilExp) (FlatLock)
+  include AbstractDomain.InvertedMap (HilExp) (FlatLocks)
 
   let remove_guard astate guard = remove guard astate
 
-  let add_guard astate ~guard ~lock = add guard (FlatLock.v lock) astate
+  let add_guard astate ~guard ~locks = add guard (FlatLocks.v locks) astate
 end
 
 module Attribute = struct
@@ -925,6 +979,7 @@ type t =
   ; thread: ThreadDomain.t
   ; scheduled_work: ScheduledWorkDomain.t
   ; var_state: VarDomain.t
+  ; field_aliases: FieldAliases.t
   ; null_locs: NullLocs.t
   ; lazily_initalized: LazilyInitialized.t }
 [@@deriving abstract_domain]
@@ -938,6 +993,7 @@ let initial =
   ; thread= ThreadDomain.bottom
   ; scheduled_work= ScheduledWorkDomain.bottom
   ; var_state= VarDomain.top
+  ; field_aliases= FieldAliases.top
   ; null_locs= NullLocs.empty
   ; lazily_initalized= LazilyInitialized.empty }
 
@@ -951,13 +1007,14 @@ let pp fmt astate =
      thread= %a;@;\
      scheduled_work= %a;@;\
      var_state= %a;@;\
+     field_aliases= %a;@;\
      null_locs= %a\n\
      lazily_initialized= %a\n\
     \     @]}"
     GuardToLockMap.pp astate.guard_map LockState.pp astate.lock_state NullLocsCriticalPairs.pp
     astate.critical_pairs AttributeDomain.pp astate.attributes ThreadDomain.pp astate.thread
-    ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp astate.var_state NullLocs.pp
-    astate.null_locs LazilyInitialized.pp astate.lazily_initalized
+    ScheduledWorkDomain.pp astate.scheduled_work VarDomain.pp astate.var_state FieldAliases.pp
+    astate.field_aliases NullLocs.pp astate.null_locs LazilyInitialized.pp astate.lazily_initalized
 
 
 let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
@@ -967,22 +1024,25 @@ let add_critical_pair ~tenv_opt lock_state null_locs event ~loc acc =
   |> Option.value_map ~default:acc ~f:(fun pair -> NullLocsCriticalPairs.add {null_locs; pair} acc)
 
 
-let interproc_acquire ~tenv ~procname ~callsite ~subst summary_lock_state astate =
+let interproc_acquire ~tenv ~procname ~callsite ~subst ~release_held_locks summary_lock_state astate
+    =
   let new_acquisitions = LockState.get_acquisitions summary_lock_state in
   let critical_pairs =
     Acquisitions.fold
       (fun acquisition acc ->
-        let loc = CallSite.loc callsite in
-        let event =
-          let lock =
-            Lock.apply_subst subst acquisition.elem.lock
-            |> Option.value ~default:acquisition.elem.lock
-          in
-          Event.make_interprocedural_acquire callsite [lock] astate.thread
-            (Acquisition.make_loc_trace acquisition)
-        in
-        add_critical_pair ~tenv_opt:(Some tenv) astate.lock_state astate.null_locs event ~loc acc )
+        Lock.apply_subst subst acquisition.elem.lock
+        |> Option.value_map ~default:acc ~f:(fun lock ->
+            let loc = CallSite.loc callsite in
+            let event =
+              Event.make_interprocedural_acquire callsite [lock] astate.thread
+                (Acquisition.make_loc_trace acquisition)
+            in
+            add_critical_pair ~tenv_opt:(Some tenv) astate.lock_state astate.null_locs event ~loc
+              acc ) )
       new_acquisitions astate.critical_pairs
+  in
+  let summary_lock_state =
+    if release_held_locks then LockState.forget_held summary_lock_state else summary_lock_state
   in
   let lock_state =
     LockState.integrate_summary ~procname ~callsite ~subst ~other:summary_lock_state
@@ -1064,29 +1124,32 @@ let release ({lock_state} as astate) locks =
     lock_state= List.fold locks ~init:lock_state ~f:(fun acc l -> LockState.release l acc) }
 
 
-let add_guard ~acquire_now ~procname ~loc tenv astate guard lock =
-  let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~lock astate.guard_map} in
-  if acquire_now then acquire ~tenv astate ~procname ~loc [lock] else astate
+let add_guard ~acquire_now ~procname ~loc tenv astate guard locks =
+  let astate = {astate with guard_map= GuardToLockMap.add_guard ~guard ~locks astate.guard_map} in
+  if acquire_now then acquire ~tenv astate ~procname ~loc locks else astate
+
+
+let get_guard_locks astate guard =
+  GuardToLockMap.find_opt guard astate.guard_map
+  |> Option.map ~f:(fun locks_opt -> FlatLocks.get locks_opt |> Option.value ~default:[])
 
 
 let remove_guard astate guard =
-  GuardToLockMap.find_opt guard astate.guard_map
-  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-      let locks = FlatLock.get lock_opt |> Option.to_list in
+  get_guard_locks astate guard
+  |> Option.value_map ~default:astate ~f:(fun locks ->
       let astate = release astate locks in
       {astate with guard_map= GuardToLockMap.remove_guard astate.guard_map guard} )
 
 
+let is_guard astate guard = GuardToLockMap.mem guard astate.guard_map
+
 let unlock_guard astate guard =
-  GuardToLockMap.find_opt guard astate.guard_map
-  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-      FlatLock.get lock_opt |> Option.to_list |> release astate )
+  get_guard_locks astate guard |> Option.value_map ~default:astate ~f:(release astate)
 
 
 let lock_guard ~procname ~loc tenv astate guard =
-  GuardToLockMap.find_opt guard astate.guard_map
-  |> Option.value_map ~default:astate ~f:(fun lock_opt ->
-      FlatLock.get lock_opt |> Option.to_list |> acquire ~tenv astate ~procname ~loc )
+  get_guard_locks astate guard
+  |> Option.value_map ~default:astate ~f:(acquire ~tenv astate ~procname ~loc)
 
 
 let schedule_work loc thread_constraint astate procname =
@@ -1148,14 +1211,16 @@ let set_non_null formals acc_exp astate =
   else astate
 
 
-let integrate_summary ~tenv ~procname ~lhs ~subst formals callsite (astate : t) (summary : summary)
-    =
+let integrate_summary ?(release_held_locks = false) ~tenv ~procname ~lhs ~subst formals callsite
+    (astate : t) (summary : summary) =
   let critical_pairs' =
     NullLocsCriticalPairs.with_callsite summary.critical_pairs ~tenv ~subst astate.lock_state
       astate.null_locs callsite astate.thread ~ignore_blocking_calls:astate.ignore_blocking_calls
   in
   (* apply summary held locks *)
-  let astate = interproc_acquire ~procname ~callsite ~subst ~tenv summary.lock_state astate in
+  let astate =
+    interproc_acquire ~procname ~callsite ~subst ~tenv ~release_held_locks summary.lock_state astate
+  in
   let astate =
     { astate with
       critical_pairs= NullLocsCriticalPairs.join astate.critical_pairs critical_pairs'
@@ -1197,7 +1262,7 @@ let summary_of_astate : Procdesc.t -> t -> summary =
   (* Interprocedural handling of guards is not implemented, so we remove guarded locks from
      summary *)
   let astate_without_guard =
-    GuardToLockMap.fold (fun guard _lock acc -> unlock_guard acc guard) astate.guard_map astate
+    GuardToLockMap.fold (fun guard _locks acc -> unlock_guard acc guard) astate.guard_map astate
   in
   { critical_pairs=
       NullLocsCriticalPairs.to_critical_pairs astate.lock_state astate.lazily_initalized

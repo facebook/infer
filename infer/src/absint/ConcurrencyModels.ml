@@ -12,7 +12,8 @@ type lock_effect =
   | Lock of HilExp.t list
   | Unlock of HilExp.t list
   | LockedIfTrue of HilExp.t list
-  | GuardConstruct of {guard: HilExp.t; lock: HilExp.t; acquire_now: bool}
+  | LockedIfZero of HilExp.t list
+  | GuardConstruct of {guard: HilExp.t; locks: HilExp.t list; acquire_now: bool}
   | GuardLock of HilExp.t
   | GuardLockedIfTrue of HilExp.t
   | GuardUnlock of HilExp.t
@@ -32,14 +33,16 @@ let make_unlock = make_lock_action "release" (fun a -> Unlock a)
 
 let make_trylock = make_lock_action "conditionally acquire" (fun a -> LockedIfTrue a)
 
+let make_zero_trylock = make_lock_action "conditionally acquire" (fun a -> LockedIfZero a)
+
 let make_guard_construct procname = function
   | [_guard] ->
       (* constructor is called without a mutex *)
       NoEffect
   | [guard; lock] ->
-      GuardConstruct {guard; lock; acquire_now= true}
+      GuardConstruct {guard; locks= [lock]; acquire_now= true}
   | [guard; lock; _defer_lock] ->
-      GuardConstruct {guard; lock; acquire_now= false}
+      GuardConstruct {guard; locks= [lock]; acquire_now= false}
   | actuals ->
       L.internal_error "Cannot parse guard constructor call %a(%a)@\n" Procname.pp procname
         (PrettyPrintable.pp_collection ~pp_item:HilExp.pp)
@@ -107,6 +110,7 @@ end = struct
     { classname: string [@default ""]
     ; lock: string list [@default []]
     ; trylock: string list [@default []]
+    ; trylock_zero: string list [@default []]  (** trylocks that return zero on success *)
     ; unlock: string list [@default []]
     ; recursive: bool [@default true] }
   [@@deriving of_yojson]
@@ -115,9 +119,16 @@ end = struct
 
   let lock_models =
     let def =
-      {classname= ""; lock= ["lock"]; trylock= ["try_lock"]; unlock= ["unlock"]; recursive= false}
+      { classname= ""
+      ; lock= ["lock"]
+      ; trylock= ["try_lock"]
+      ; trylock_zero= []
+      ; unlock= ["unlock"]
+      ; recursive= false }
     in
-    let c_rec = {classname= ""; lock= []; trylock= []; unlock= []; recursive= true} in
+    let c_rec =
+      {classname= ""; lock= []; trylock= []; trylock_zero= []; unlock= []; recursive= true}
+    in
     let shd =
       { def with
         lock= "lock_shared" :: def.lock
@@ -132,6 +143,7 @@ end = struct
     in
     let config_locks = lock_model_cfg_of_yojson Config.lock_model in
     [ {c_rec with lock= ["pthread_mutex_lock"]; unlock= ["pthread_mutex_unlock"]}
+    ; {def with classname= "android::Mutex"; trylock= []; trylock_zero= ["timedLock"; "tryLock"]}
     ; { def with
         classname= "apache::thrift::concurrency::Monitor"
       ; trylock= "timedlock" :: def.trylock }
@@ -170,7 +182,7 @@ end = struct
     fun pname -> QualifiedCppName.Match.match_qualifiers matcher (Procname.get_qualifiers pname)
 
 
-  let is_lock, is_unlock, is_trylock, is_std_lock =
+  let is_lock, is_unlock, is_trylock, is_zero_trylock, is_std_lock =
     (* TODO std::try_lock *)
     let mk_model_matcher ~f =
       let lock_methods =
@@ -182,6 +194,7 @@ end = struct
     ( mk_model_matcher ~f:(fun mdl -> mdl.lock)
     , mk_model_matcher ~f:(fun mdl -> mdl.unlock)
     , mk_model_matcher ~f:(fun mdl -> mdl.trylock)
+    , mk_model_matcher ~f:(fun mdl -> mdl.trylock_zero)
     , mk_matcher ["std::lock"] )
 
 
@@ -189,8 +202,9 @@ end = struct
       implement the mutex interface even though only [shared_lock] and [unique_lock] do, for
       simplicity. The comments summarise which methods are implemented. *)
   let guards =
-    (* TODO std::scoped_lock *)
     [ (* no lock/unlock *)
+      "android::Mutex::Autolock"
+    ; (* no lock/unlock *)
       "apache::thrift::concurrency::Guard"
     ; (* no lock/unlock *)
       "apache::thrift::concurrency::RWGuard"
@@ -208,7 +222,8 @@ end = struct
       "folly::SpinLockGuard"
     ; (* no lock/unlock *)
       "std::lock_guard"
-    ; "std::scoped_lock"
+    ; (* no lock/unlock, see [make_scoped_lock_construct] for the constructor *)
+      "std::scoped_lock"
     ; (* everything *)
       "std::shared_lock"
     ; (* everything *)
@@ -264,12 +279,44 @@ end = struct
     , make_trylock ~f:get_guard_trylock )
 
 
+  let is_scoped_lock_constructor = mk_matcher ["std::scoped_lock::scoped_lock"]
+
+  let is_adopt_lock_tag =
+    let matcher = QualifiedCppName.Match.of_fuzzy_qual_names ["std::adopt_lock_t"] in
+    fun (actual : HilExp.t) ->
+      match actual with
+      | AccessExpression access_exp -> (
+        (* the tag is passed by value, as (the address of) a temporary copy of [std::adopt_lock] *)
+        match HilExp.AccessExpression.get_base access_exp with
+        | _, {desc= Tstruct name} | _, {desc= Tptr ({desc= Tstruct name}, _)} ->
+            QualifiedCppName.Match.match_qualifiers matcher (Typ.Name.qual_name name)
+        | _ ->
+            false )
+      | _ ->
+          false
+
+
+  (** Unlike the other guards, [std::scoped_lock] takes any number of mutexes, optionally preceded
+      by [std::adopt_lock] when they are already held. Otherwise it acquires them all at once, with
+      the deadlock-avoidance algorithm of [std::lock]. *)
+  let make_scoped_lock_construct = function
+    | guard :: tag :: (_ :: _ as locks) when is_adopt_lock_tag tag ->
+        GuardConstruct {guard; locks; acquire_now= false}
+    | guard :: (lock :: _ as locks) when not (is_adopt_lock_tag lock) ->
+        GuardConstruct {guard; locks; acquire_now= true}
+    | _ ->
+        (* [std::scoped_lock<>] holds no mutex *)
+        NoEffect
+
+
   let get_lock_effect pname actuals =
     let fst_arg = match actuals with x :: _ -> [x] | _ -> [] in
     if is_std_lock pname then make_lock pname actuals
     else if is_lock pname then make_lock pname fst_arg
     else if is_unlock pname then make_unlock pname fst_arg
     else if is_trylock pname then make_trylock pname fst_arg
+    else if is_zero_trylock pname then make_zero_trylock pname fst_arg
+    else if is_scoped_lock_constructor pname then make_scoped_lock_construct actuals
     else if is_guard_constructor pname then make_guard_construct pname actuals
     else if is_guard_lock pname then make_guard_lock pname actuals
     else if is_guard_unlock pname then make_guard_unlock pname actuals

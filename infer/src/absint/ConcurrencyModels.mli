@@ -12,8 +12,10 @@ type lock_effect =
   | Lock of HilExp.t list  (** simultaneously acquire a list of locks *)
   | Unlock of HilExp.t list  (** simultaneously release a list of locks *)
   | LockedIfTrue of HilExp.t list  (** simultaneously attempt to acquire a list of locks *)
-  | GuardConstruct of {guard: HilExp.t; lock: HilExp.t; acquire_now: bool}
-      (** mutex guard construction - clang only *)
+  | LockedIfZero of HilExp.t list
+      (** simultaneously attempt to acquire a list of locks, returning zero on success *)
+  | GuardConstruct of {guard: HilExp.t; locks: HilExp.t list; acquire_now: bool}
+      (** mutex guard construction, acquiring all [locks] at once if [acquire_now] - clang only *)
   | GuardLock of HilExp.t  (** lock underlying mutex via guard - clang only *)
   | GuardLockedIfTrue of HilExp.t  (** lock underlying mutex if true via guard - clang only *)
   | GuardUnlock of HilExp.t  (** unlock underlying mutex via guard - clang only *)
