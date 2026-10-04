@@ -466,6 +466,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   //  DECLARE_VISITOR(ComplexType)
   DECLARE_VISITOR(DecltypeType)
   //  DECLARE_VISITOR(DependentSizedExtVectorType)
+  DECLARE_VISITOR(ElaboratedType)
   DECLARE_VISITOR(FunctionType)
   //  DECLARE_VISITOR(FunctionNoProtoType)
   DECLARE_VISITOR(FunctionProtoType)
@@ -479,7 +480,9 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(PointerType)
   DECLARE_VISITOR(ReferenceType)
   DECLARE_VISITOR(TagType)
+  DECLARE_VISITOR(TemplateSpecializationType)
   DECLARE_VISITOR(TypedefType)
+  DECLARE_VISITOR(UsingType)
 
   void dumpAttrKind(attr::Kind Kind);
   void dumpAttr(const Attr *A);
@@ -5089,6 +5092,17 @@ void ASTExporter<ATDWriter>::VisitDecltypeType(const DecltypeType *T) {
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::ElaboratedTypeTupleSize() {
+  return TypeWithChildInfoTupleSize();
+}
+//@atd #define elaborated_type_tuple type_with_child_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitElaboratedType(const ElaboratedType *T) {
+  VisitType(T);
+  dumpQualType(T->getNamedType());
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::FunctionTypeTupleSize() {
   return TypeTupleSize() + 1;
 }
@@ -5265,6 +5279,26 @@ void ASTExporter<ATDWriter>::VisitTagType(const TagType *T) {
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::TemplateSpecializationTypeTupleSize() {
+  return TypeTupleSize() + 1;
+}
+//@atd #define template_specialization_type_tuple type_tuple * template_specialization_type_info
+//@atd type template_specialization_type_info = {
+//@atd   ?aliased_type : qual_type option;
+//@atd } <ocaml field_prefix="tsti_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitTemplateSpecializationType(
+    const TemplateSpecializationType *T) {
+  VisitType(T);
+  bool IsTypeAlias = T->isTypeAlias();
+  ObjectScope Scope(OF, IsTypeAlias);
+  if (IsTypeAlias) {
+    OF.emitTag("aliased_type");
+    dumpQualType(T->getAliasedType());
+  }
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::TypedefTypeTupleSize() {
   return TypeTupleSize() + 1;
 }
@@ -5281,6 +5315,17 @@ void ASTExporter<ATDWriter>::VisitTypedefType(const TypedefType *T) {
   dumpQualType(T->desugar());
   OF.emitTag("decl_ptr");
   dumpPointer(T->getDecl());
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::UsingTypeTupleSize() {
+  return TypeWithChildInfoTupleSize();
+}
+//@atd #define using_type_tuple type_with_child_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitUsingType(const UsingType *T) {
+  VisitType(T);
+  dumpQualType(T->desugar());
 }
 
 //===----------------------------------------------------------------------===//

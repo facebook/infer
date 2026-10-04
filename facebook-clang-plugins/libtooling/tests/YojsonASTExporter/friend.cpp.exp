@@ -1060,11 +1060,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 109
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 110
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (
@@ -1080,11 +1084,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 113
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 114
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (
@@ -1111,17 +1119,24 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 118
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 119
+        },
+        {
         }
       )>,
       <"ElaboratedType" : (
         {
           "pointer" : 120,
           "desugared_type" : 119
+        },
+        {
+          "type_ptr" : 119
         }
       )>,
       <"TemplateTypeParmType" : (
@@ -1137,11 +1152,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 123
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 124
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (
@@ -1159,12 +1178,17 @@
         {
           "pointer" : 126,
           "desugared_type" : 13
+        },
+        {
         }
       )>,
       <"ElaboratedType" : (
         {
           "pointer" : 32,
           "desugared_type" : 13
+        },
+        {
+          "type_ptr" : 126
         }
       )>,
       <"SubstTemplateTypeParmType" : (
@@ -1199,12 +1223,17 @@
         {
           "pointer" : 129,
           "desugared_type" : 9
+        },
+        {
         }
       )>,
       <"ElaboratedType" : (
         {
           "pointer" : 16,
           "desugared_type" : 9
+        },
+        {
+          "type_ptr" : 129
         }
       )>,
       <"TemplateTypeParmType" : (
@@ -1240,6 +1269,9 @@
         {
           "pointer" : 133,
           "desugared_type" : 13
+        },
+        {
+          "type_ptr" : 13
         }
       )>,
       <"LValueReferenceType" : (

@@ -622,11 +622,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 84
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 85
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (
@@ -706,6 +710,8 @@
         {
           "pointer" : 94,
           "desugared_type" : 86
+        },
+        {
         }
       )>,
       <"ObjCObjectType" : (

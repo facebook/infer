@@ -60,6 +60,7 @@ DIRECT_TESTS += \
   c_bufferoverrun \
   c_performance \
   c_pulse \
+  c_pulse-no-nullability-annotations \
   c_pulse-over-only \
   c_pulse-over-under \
   c_purity \
@@ -80,6 +81,7 @@ DIRECT_TESTS += \
   cpp_pulse-11 \
   cpp_pulse-17 \
   cpp_pulse-20 \
+  cpp_pulse-no-nullability-annotations \
   cpp_racerd \
   cpp_sil \
   cpp_siof \
@@ -148,6 +150,7 @@ DIRECT_TESTS += \
   objc_performance \
   objc_pulse \
   objc_pulse-data-lineage \
+  objc_pulse-nullability-annotations \
   objc_self-in-block \
   objc_static-constructor-stall \
   objcpp_frontend \

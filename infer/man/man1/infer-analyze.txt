@@ -969,6 +969,22 @@ PULSE CHECKER OPTIONS
             - `behavior` is a JSON `Behavior` (see above)
            
 
+       --pulse-nullability-annotations
+           Activates: Use the nullability annotations of the return types of
+           C functions and C++ methods that are declared but not defined, and
+           so have no summary, in calls from C, C++ and Objective-C code: a
+           call may return null when the returned pointer is annotated
+           _Nullable or _Nullable_result, and returns a non-null pointer when
+           it is annotated _Nonnull, including in #pragma clang
+           assume_nonnull regions, or when the function has the
+           returns_nonnull attribute. Annotations written in typedefs and C++
+           type aliases, including alias templates, count. Calls to
+           Objective-C methods and calls of blocks are not concerned. Also
+           models strsep, which returns null only when its string is null,
+           and the Objective-C runtime functions that copy a list, such as
+           class_copyPropertyList, which return null only after setting the
+           count to 0. (Conversely: --no-pulse-nullability-annotations)
+
        --no-pulse-nullsafe-report-npe
            Deactivates: Report null dereference issues on files marked
            @Nullsafe. (Conversely: --pulse-nullsafe-report-npe)

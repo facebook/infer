@@ -929,11 +929,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 98
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 99
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (
@@ -949,11 +953,15 @@
       <"TemplateSpecializationType" : (
         {
           "pointer" : 101
+        },
+        {
         }
       )>,
       <"TemplateSpecializationType" : (
         {
           "pointer" : 102
+        },
+        {
         }
       )>,
       <"InjectedClassNameType" : (

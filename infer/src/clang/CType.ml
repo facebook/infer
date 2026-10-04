@@ -43,11 +43,15 @@ let rec return_type_of_function_qual_type (qual_type : Clang_ast_t.qual_type) =
       function_type_info.Clang_ast_t.fti_return_type
   | Some (BlockPointerType (_, in_qual)) ->
       return_type_of_function_qual_type in_qual
-  | Some _ ->
-      L.(debug Capture Verbose)
-        "Warning: Type pointer %s is not a function type."
-        (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr) ;
-      {qual_type with qt_type_ptr= Clang_ast_extend.ErrorType}
+  | Some c_type -> (
+    match (Clang_ast_proj.get_type_tuple c_type).ti_desugared_type with
+    | Some desugared_type_ptr ->
+        return_type_of_function_qual_type {qual_type with qt_type_ptr= desugared_type_ptr}
+    | None ->
+        L.(debug Capture Verbose)
+          "Warning: Type pointer %s is not a function type."
+          (Clang_ast_extend.type_ptr_to_string qual_type.qt_type_ptr) ;
+        {qual_type with qt_type_ptr= Clang_ast_extend.ErrorType} )
   | None ->
       L.(debug Capture Verbose)
         "Warning: Type pointer %s not found."
