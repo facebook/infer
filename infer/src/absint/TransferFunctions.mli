@@ -77,6 +77,15 @@ module type DisjReady = sig
 
   val remember_dropped_disjuncts : DisjDomain.t list -> NonDisjDomain.t -> NonDisjDomain.t
 
+  val widen_interrupted_loop :
+    Procdesc.Node.t -> prev:DisjDomain.t list -> next:DisjDomain.t list -> DisjDomain.t list
+  (** Called at the given loop head when the widening threshold stops the exploration of the loop:
+      [prev] are the disjuncts kept at the loop head, and the disjuncts of [next] that are not in
+      [prev] are about to be dropped. The disjuncts returned are added to the loop head, for
+      instance to over-approximate the states reached after more iterations so that the code after
+      the loop remains reachable. To ensure termination, the result must become empty when [prev]
+      and [next] stop changing. *)
+
   val pp_session_name : CFG.Node.t -> Format.formatter -> unit
 
   val pp_disjunct : Pp.print_kind -> Format.formatter -> DisjDomain.t -> unit

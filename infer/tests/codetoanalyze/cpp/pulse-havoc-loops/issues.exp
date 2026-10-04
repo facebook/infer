@@ -1,0 +1,2 @@
+codetoanalyze/cpp/pulse-havoc-loops/loops.cpp, havoc_loops::npe_after_push_back_loop_bad, 6, NULLPTR_DEREFERENCE, no_bucket, ERROR, [is assigned to the null pointer,assigned,invalid access occurs here]
+codetoanalyze/cpp/pulse-havoc-loops/loops.cpp, havoc_loops::npe_after_loop_calling_const_method_bad, 5, NULLPTR_DEREFERENCE, no_bucket, ERROR, [in call to `havoc_loops::Holder::Holder`,is assigned to the null pointer,assigned,return from call to `havoc_loops::Holder::Holder`,invalid access occurs here]
