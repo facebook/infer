@@ -1027,6 +1027,9 @@ module SummaryProjection = struct
         check_term x ;
         check_term y )
       conditions ;
+    Atom.Map.iter
+      (fun a _ -> blocked := Atom.fold_variables a ~init:!blocked ~f:(Fn.flip Var.Set.add))
+      conditions ;
     let targets = Formula.term_eqs_fold (fun _ v acc -> Var.Set.add v acc) phi Var.Set.empty in
     let definitions =
       Var.Map.filter
@@ -1180,8 +1183,8 @@ let simplify ~precondition_vocabulary ~keep formula =
     in
     if phys_equal projected formula then Sat (formula, live_vars, RevList.empty)
     else
-      let+ formula, live_vars = DeadVariables.eliminate ~precondition_vocabulary ~keep projected in
-      (formula, live_vars, RevList.empty)
+      let+ formula, live_vars' = DeadVariables.eliminate ~precondition_vocabulary ~keep projected in
+      (formula, Var.Set.union live_vars live_vars', RevList.empty)
   else Sat (formula, live_vars, RevList.empty)
 
 
