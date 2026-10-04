@@ -15,6 +15,12 @@ val sil_var_of_decl : CContext.t -> Clang_ast_t.decl -> Procname.t -> Pvar.t
 val sil_var_of_decl_ref :
   CContext.t -> Clang_ast_t.source_range -> Clang_ast_t.decl_ref -> Procname.t -> Pvar.t
 
+val binding_expr_of_decl_ref : CContext.t -> Clang_ast_t.decl_ref -> Clang_ast_t.stmt option
+(** If [decl_ref] refers to a structured binding that decomposes an array, a vector, a complex
+    number or a struct, return the expression that the binding names: an element or a field of the
+    decomposed object. Return [None] when the current lambda captures the binding, as the binding is
+    then the captured variable. *)
+
 val add_var_to_locals : Procdesc.t -> Clang_ast_t.decl -> Typ.t -> Pvar.t -> unit
 
 val sil_var_of_captured_var :
