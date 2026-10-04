@@ -222,7 +222,9 @@ let is_constant_deref_without_invalidation (invalidation : Invalidation.t) acces
     | GoneOutOfScope _
     | OptionalEmpty
     | StdVector _
-    | CppMap _ ->
+    | StdString _
+    | CppMap _
+    | StdContainer _ ->
         false
   in
   if res then

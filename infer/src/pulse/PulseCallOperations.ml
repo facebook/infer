@@ -69,6 +69,9 @@ let matches_iter =
     [ "std::__detail::_Node_iterator"
     ; "std::__wrap_iter"
     ; "std::_Rb_tree_iterator"
+    ; "std::back_insert_iterator"
+    ; "std::front_insert_iterator"
+    ; "std::insert_iterator"
     ; "__gnu_cxx::__normal_iterator" ]
 
 

@@ -6,6 +6,7 @@
  *)
 
 open! IStd
+module IRAttributes = Attributes
 module L = Logging
 open PulseBasicInterface
 open PulseDomainInterface
@@ -280,10 +281,8 @@ module BasicString = struct
     constructor_from_constant_dsl this_hist init_hist
 
 
-  let copy_constructor ~desc (this, hist) src_hist : model =
+  let copy_constructor_dsl (this, hist) src_hist : unit PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
-    start_named_model desc
-    @@ fun () ->
     let* this_hist = add_model_call hist in
     let* src_string = load_access src_hist (FieldAccess ModeledField.internal_string) in
     let* src_length = access Read src_hist (FieldAccess ModeledField.string_length) in
@@ -291,24 +290,32 @@ module BasicString = struct
     @@> write_field ~ref:(this, this_hist) ModeledField.string_length src_length
 
 
-  let constructor_rev ~desc init this : model = copy_constructor ~desc this init
+  let copy_constructor ~desc this_hist src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc @@ fun () -> copy_constructor_dsl this_hist src_hist
 
-  let data this_hist ~desc : model =
+
+  let data ((this, hist) as this_hist) ~desc : model =
     let open PulseModelsDSL.Syntax in
     start_named_model desc
     @@ fun () ->
     let* this_string, this_string_hist =
       access Read this_hist (FieldAccess ModeledField.internal_string)
     in
-    let* hist = add_model_call this_string_hist in
-    assign_ret (this_string, hist)
+    let* ret_hist = add_model_call this_string_hist in
+    exec_command
+      (AbductiveDomain.AddressAttributes.add_one this_string
+         (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
+    @@> assign_ret (this_string, ret_hist)
 
 
   let iterator_common ((this, hist) as this_hist) ((iter, _) as iter_hist) :
       (PulseModelsDSL.aval * PulseModelsDSL.aval) PulseModelsDSL.model_monad =
     let open PulseModelsDSL.Syntax in
     let* backing_ptr = access Read iter_hist (FieldAccess GenericArrayBackedCollection.field) in
-    let* internal_string = load_access this_hist (FieldAccess ModeledField.internal_string) in
+    let* internal_string =
+      load_access ~deref:false this_hist (FieldAccess ModeledField.internal_string)
+    in
     exec_command
       (AbductiveDomain.AddressAttributes.add_one iter
          (PropagateTaintFrom (InternalModel, [{v= this; history= hist}])) )
@@ -360,6 +367,43 @@ module BasicString = struct
              location CppDelete (string_addr, string_hist) astate ) )
 
 
+  (** Mutating member functions may reallocate the buffer: the buffer returned by [data()] or
+      [c_str()] before the call is invalidated and replaced by a fresh one. Otherwise the call is
+      treated like a call to a function without a summary, so that its effects on the arguments and
+      copies are the same as if the function was not modelled, except that the overloads returning
+      [basic_string&] return the receiver. Taint is propagated as for unknown calls because
+      [PulseTaintOperations] treats these models as unknown. *)
+  let mutator string_f ({FuncArg.arg_payload= this} as this_arg) args : model_no_non_disj =
+   fun {path; callee_procname; analysis_data= {tenv}; location; ret} astate ->
+    let internal_string = PulseOperations.ModeledField.internal_string in
+    let new_buffer =
+      let desc = Format.asprintf "%a()" Invalidation.pp_std_string_function string_f in
+      (AbstractValue.mk_fresh (), Hist.single_call path location desc)
+    in
+    let<*> astate =
+      PulseOperations.invalidate_access path location (StdString string_f) this
+        (FieldAccess internal_string) astate
+      |> PulseOperations.write_field path location ~ref:this internal_string ~obj:new_buffer
+    in
+    let actuals =
+      List.map (this_arg :: args) ~f:(fun {FuncArg.arg_payload; typ} -> (arg_payload, typ))
+    in
+    let attrs_opt = IRAttributes.load callee_procname in
+    let formals_opt = Option.map attrs_opt ~f:ProcAttributes.get_pvar_formals in
+    let returns_this =
+      match Option.map attrs_opt ~f:(fun {ProcAttributes.ret_type} -> ret_type.Typ.desc) with
+      | Some (Tptr ({desc= Tstruct ret_class}, _)) ->
+          Option.exists (Procname.get_class_type_name callee_procname) ~f:(Typ.Name.equal ret_class)
+      | _ ->
+          false
+    in
+    let<++> astate =
+      PulseCallOperations.unknown_call tenv path location (SkippedKnownCall callee_procname)
+        (Some callee_procname) ~ret ~actuals ~formals_opt astate
+    in
+    if returns_this then PulseOperations.write_id (fst ret) this astate else astate
+
+
   let empty this_hist : model =
     let open PulseModelsDSL.Syntax in
     start_named_model "std::basic_string::empty()"
@@ -393,6 +437,78 @@ module BasicString = struct
       Basic.nondet ~desc model_env astate
     in
     SatUnsat.to_list astate_zero_idx @ astate_non_zero_idx
+end
+
+(** A [std::basic_string_view] keeps the string value and length of what it views like [BasicString]
+    does, and in [data_field] the pointer returned by [data()]: the viewed [char*] or the buffer of
+    the viewed [std::basic_string]. Copies of a view share that pointer, so they see the
+    invalidation of the viewed buffer. *)
+module BasicStringView = struct
+  let data_field = Fieldname.make PulseOperations.pulse_model_type "__infer_model_string_view_data"
+
+  let store_data this_hist (data, data_hist) : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    let* data_hist = add_model_call data_hist in
+    store_field ~ref:this_hist data_field (data, data_hist)
+
+
+  let constructor_from_char_ptr ~desc this_hist ptr_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    BasicString.constructor_from_constant_dsl this_hist ptr_hist @@> store_data this_hist ptr_hist
+
+
+  (** [basic_string_view(const char* s, size_t count)] and the C++20 iterator-pair constructor *)
+  let constructor_from_char_ptr_and_size ~desc ((this, hist) as this_hist) ptr_hist
+      (size_arg : PulseModelsDSL.aval FuncArg.t) : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    store_data this_hist ptr_hist
+    @@>
+    if Typ.is_int size_arg.typ then
+      let* hist = add_model_call hist in
+      write_field ~ref:(this, hist) ModeledField.string_length size_arg.arg_payload
+    else ret ()
+
+
+  let copy_dsl this_hist src_hist : unit PulseModelsDSL.model_monad =
+    let open PulseModelsDSL.Syntax in
+    BasicString.copy_constructor_dsl this_hist src_hist
+    @@> let* data = load_access src_hist (FieldAccess data_field) in
+        store_data this_hist data
+
+
+  let copy_constructor ~desc this_hist src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc @@ fun () -> copy_dsl this_hist src_hist
+
+
+  let assign ~desc this_hist src_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc @@ fun () -> copy_dsl this_hist src_hist @@> assign_ret this_hist
+
+
+  (** [std::basic_string::operator basic_string_view()] *)
+  let of_string ~desc string_hist this_hist : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    BasicString.copy_constructor_dsl this_hist string_hist
+    @@> let* buffer =
+          load_access ~deref:false string_hist (FieldAccess ModeledField.internal_string)
+        in
+        store_data this_hist buffer
+
+
+  let data this_hist ~desc : model =
+    let open PulseModelsDSL.Syntax in
+    start_named_model desc
+    @@ fun () ->
+    let* data, data_hist = load_access this_hist (FieldAccess data_field) in
+    let* hist = add_model_call data_hist in
+    assign_ret (data, hist)
 end
 
 module Function = struct
@@ -538,6 +654,40 @@ module Vector = struct
     astate
 
 
+  let havoc_size path location vector ~desc astate =
+    GenericArrayBackedCollection.assign_size path location vector
+      (AbstractValue.mk_fresh (), ValueHistory.epoch)
+      ~desc astate
+
+
+  (* for operations that change the size by an amount we do not track *)
+  let invalidate_references_unknown_size vector_f vector : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    let desc = Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f in
+    let<*> astate = havoc_size path location vector ~desc astate in
+    invalidate_references vector_f vector model_data astate
+
+
+  (* for operations that add one element *)
+  let invalidate_references_one_more vector_f vector : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    let desc = Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f in
+    let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
+    invalidate_references vector_f vector model_data astate
+
+
+  let assign_count vector FuncArg.{arg_payload= count; typ} : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    (* [assign(first, last)] has the same arity *)
+    if Typ.is_int typ then
+      let<*> astate =
+        GenericArrayBackedCollection.assign_size path location vector count
+          ~desc:"std::vector::assign()" astate
+      in
+      invalidate_references Assign vector model_data astate
+    else invalidate_references_unknown_size Assign vector model_data astate
+
+
   let invalidate_references_with_ret vector_f vector : model_no_non_disj =
    fun ({ret= ret_id, _} as model_data) astate ->
     PulseOperations.write_id ret_id vector astate
@@ -553,33 +703,56 @@ module Vector = struct
     PulseOperations.write_id (fst ret) (addr, Hist.add_event event hist) astate
 
 
-  let vector_begin vector iter : model_no_non_disj =
-   fun {path; location} astate ->
-    let event = Hist.call_event path location "std::vector::begin()" in
-    let pointer_hist = Hist.add_event event (snd iter) in
-    let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
-    let index_zero = AbstractValue.mk_fresh () in
-    let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
-    let<*> astate, (arr_addr, _arr_hist) =
+  let last_index path location vector astate =
+    let=* astate, (size, _) =
+      GenericArrayBackedCollection.to_internal_size_deref path Read location vector astate
+    in
+    PulseArithmetic.eval_binop (AbstractValue.mk_fresh ()) (MinusA None) (AbstractValueOperand size)
+      (ConstOperand (Cint IntLit.one)) astate
+
+
+  (* the return type is checked because [std::vector<bool>] can return its elements by value *)
+  let front ~desc vector : model_no_non_disj =
+   fun ({ret= _, ret_typ} as model_data) astate ->
+    if Typ.is_pointer ret_typ then
+      let index_zero = AbstractValue.mk_fresh () in
+      let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
+      at ~desc vector (index_zero, ValueHistory.epoch) model_data astate
+    else Basic.nondet ~desc model_data astate
+
+
+  let back ~desc vector : model_no_non_disj =
+   fun ({path; location; ret= _, ret_typ} as model_data) astate ->
+    if Typ.is_pointer ret_typ then
+      let<**> astate, last = last_index path location vector astate in
+      at ~desc vector (last, ValueHistory.epoch) model_data astate
+    else Basic.nondet ~desc model_data astate
+
+
+  let data ~desc vector : model_no_non_disj =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let<+> astate, (arr_addr, arr_hist) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
-    let<*> astate, elem_at_zero =
-      GenericArrayBackedCollection.eval_element path location (arr_addr, pointer_hist) index_zero
-        astate
-    in
+    PulseOperations.write_id ret_id (arr_addr, Hist.add_event event arr_hist) astate
+
+
+  let vector_begin ~desc vector iter : model_no_non_disj =
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
+    let index_zero = AbstractValue.mk_fresh () in
+    let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
     let<+> astate =
-      PulseOperations.write_deref_field path location ~ref:iter GenericArrayBackedCollection.field
-        ~obj:(arr_addr, pointer_hist) astate
-      >>= PulseOperations.write_field path location ~ref:iter
-            GenericArrayBackedCollection.Iterator.internal_pointer ~obj:pointer_val
-      >>= PulseOperations.write_deref path location ~ref:pointer_val ~obj:elem_at_zero
+      GenericArrayBackedCollection.Iterator.point_into path location event ~collection:vector ~iter
+        ~index:index_zero astate
     in
     astate
 
 
-  let vector_end vector iter : model_no_non_disj =
+  let vector_end ~desc vector iter : model_no_non_disj =
    fun {path; location} astate ->
-    let event = Hist.call_event path location "std::vector::end()" in
+    let event = Hist.call_event path location desc in
     let<*> astate, (arr_addr, _) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
@@ -615,23 +788,26 @@ module Vector = struct
     astate
 
 
+  let reallocate_unless_reserved path location vector vector_f ~desc astate =
+    if AddressAttributes.is_std_vector_reserved (fst vector) astate then
+      (* assume that growing the vector is ok after one called [reserve] on the same vector (a
+         perfect analysis would also make sure we don't exceed the reserved size) *)
+      Ok astate
+    else
+      match vector_f with
+      | None ->
+          Ok astate
+      | Some vector_f ->
+          (* simulate a re-allocation of the underlying array every time the vector grows *)
+          reallocate_internal_array path
+            (Hist.single_call path location desc)
+            vector vector_f location astate
+
+
   let push_back_common vector ~vector_f ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
-    let<+> astate =
-      let hist = Hist.single_call path location desc in
-      if AddressAttributes.is_std_vector_reserved (fst vector) astate then
-        (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
-           (a perfect analysis would also make sure we don't exceed the reserved size) *)
-        Ok astate
-      else
-        match vector_f with
-        | None ->
-            Ok astate
-        | Some vector_f ->
-            (* simulate a re-allocation of the underlying array every time an element is added *)
-            reallocate_internal_array path hist vector vector_f location astate
-    in
+    let<+> astate = reallocate_unless_reserved path location vector vector_f ~desc astate in
     PulseOperations.write_id ret_id
       (fst vector, Hist.add_call path location desc (snd vector))
       astate
@@ -640,6 +816,62 @@ module Vector = struct
   let push_back_cpp vector ~vector_f ~desc = push_back_common vector ~vector_f:(Some vector_f) ~desc
 
   let push_back vector ~desc = push_back_common vector ~vector_f:None ~desc
+
+  let emplace_back vector ~desc : model_no_non_disj =
+   fun {path; location; ret= ret_id, _} astate ->
+    let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
+    let<*> astate =
+      reallocate_unless_reserved path location vector (Some EmplaceBack) ~desc astate
+    in
+    (* since C++17 the new element is returned by reference *)
+    let<**> astate, last = last_index path location vector astate in
+    let<+> astate, (elem, _) =
+      GenericArrayBackedCollection.element path location vector last astate
+    in
+    PulseOperations.write_id ret_id (elem, Hist.single_call path location desc) astate
+
+
+  let resize vector size : model_no_non_disj =
+   fun {path; location} astate ->
+    let desc = "std::vector::resize()" in
+    let<*> astate, (old_size, _) =
+      GenericArrayBackedCollection.to_internal_size_deref path Read location vector astate
+    in
+    (* shrinking never reallocates; when the vector may grow, assume that it reallocates without
+       splitting the state, as for [push_back] *)
+    let may_grow =
+      PulseArithmetic.prune_binop ~negated:true Le
+        (AbstractValueOperand (fst size))
+        (AbstractValueOperand old_size) astate
+      |> SatUnsat.sat |> Option.is_some
+    in
+    let<*> astate =
+      if may_grow then reallocate_unless_reserved path location vector (Some Resize) ~desc astate
+      else Ok astate
+    in
+    let<+> astate =
+      GenericArrayBackedCollection.assign_size path location vector size ~desc astate
+    in
+    astate
+
+
+  let erase ~range vector iter : model_no_non_disj =
+   fun {path; location} astate ->
+    let desc = "std::vector::erase()" in
+    let event = Hist.call_event path location desc in
+    let<**> astate =
+      if range then SatUnsat.Sat (havoc_size path location vector ~desc astate)
+      else GenericArrayBackedCollection.decrease_size path location vector ~desc astate
+    in
+    let<*> astate =
+      reallocate_internal_array path (Hist.single_event event) vector Erase location astate
+    in
+    (* the returned iterator points to an unknown position in the vector *)
+    let<+> astate =
+      GenericArrayBackedCollection.Iterator.point_into path location event ~collection:vector ~iter
+        astate
+    in
+    astate
 end
 
 module GenericMapCollection = struct
@@ -957,16 +1189,28 @@ let map_matchers =
       $--> BasicString.default_constructor ~desc:"std::basic_string::basic_string()"
     ; -"std" &:: "basic_string" &:: "operator_basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload
-      $--> BasicString.constructor_rev ~desc:"std::basic_string::operator_basic_string_view()"
+      $--> BasicStringView.of_string ~desc:"std::basic_string::operator_basic_string_view()"
     ; -"std" &:: "basic_string" &:: "data" <>$ capt_arg_payload
       $--> BasicString.data ~desc:"std::basic_string::data()"
+    ; -"std" &:: "basic_string" &:: "c_str" <>$ capt_arg_payload
+      $--> BasicString.data ~desc:"std::basic_string::c_str()"
     ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
       $+ capt_arg_payload_of_prim_typ char_ptr_typ
-      $--> BasicString.constructor_from_constant ~desc:"std::basic_string_view::basic_string_view()"
-    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload $+ capt_arg_payload
-      $--> BasicString.copy_constructor ~desc:"std::basic_string_view::basic_string_view()"
+      $--> BasicStringView.constructor_from_char_ptr
+             ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload_of_prim_typ char_ptr_typ
+      $+ capt_arg
+      $--> BasicStringView.constructor_from_char_ptr_and_size
+             ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "basic_string_view" $ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "basic_string_view")
+      $--> BasicStringView.copy_constructor ~desc:"std::basic_string_view::basic_string_view()"
+    ; -"std" &:: "basic_string_view" &:: "operator=" <>$ capt_arg_payload
+      $+ capt_arg_payload_of_typ (-"std" &:: "basic_string_view")
+      $--> BasicStringView.assign ~desc:"std::basic_string_view::operator=()"
     ; -"std" &:: "basic_string_view" &:: "data" <>$ capt_arg_payload
-      $--> BasicString.data ~desc:"std::basic_string_view::data()"
+      $--> BasicStringView.data ~desc:"std::basic_string_view::data()"
     ; -"std" &:: "basic_string" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
       $--> BasicString.begin_ ~desc:"std::basic_string::begin()"
     ; -"std" &:: "basic_string" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
@@ -975,6 +1219,10 @@ let map_matchers =
     ; -"std" &:: "basic_string" &:: "length" <>$ capt_arg_payload $--> BasicString.length
     ; -"std" &:: "basic_string" &:: "~basic_string" <>$ capt_arg_payload $--> BasicString.destructor
     ]
+    @ List.map Invalidation.all_std_string_functions ~f:(fun string_f ->
+        -"std" &:: "basic_string"
+        &:: Invalidation.std_string_method_name string_f
+        $ capt_arg $++$--> BasicString.mutator string_f |> with_non_disj )
   in
   let folly_matchers =
     List.concat_map
@@ -1251,27 +1499,60 @@ let simple_matchers =
       $+ capt_arg_payload_of_typ (-"std" &:: "vector")
       $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
       |> with_non_disj
-    ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
-      $+...$--> Vector.invalidate_references Assign
+    ; -"std" &:: "vector" &:: "assign" $ capt_arg_payload $+ capt_arg $+ any_arg
+      $--> Vector.assign_count |> with_non_disj
+    ; -"std" &:: "vector" &:: "assign" $ capt_arg_payload
+      $+...$--> Vector.invalidate_references_unknown_size Assign
       |> with_non_disj
     ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
       $--> Vector.at ~desc:"std::vector::at()"
       |> with_non_disj
+    ; -"std" &:: "vector" &:: "back" <>$ capt_arg_payload
+      $--> Vector.back ~desc:"std::vector::back()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> Vector.vector_begin |> with_non_disj
-    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
+      $--> Vector.vector_begin ~desc:"std::vector::begin()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "cbegin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_begin ~desc:"std::vector::cbegin()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_end ~desc:"std::vector::end()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "cend" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_end ~desc:"std::vector::cend()"
       |> with_non_disj
     ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
       $--> Vector.invalidate_references Clear
       |> with_non_disj
+    ; -"std" &:: "vector" &:: "data" <>$ capt_arg_payload
+      $--> Vector.data ~desc:"std::vector::data()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
-      $+...$--> Vector.invalidate_references Emplace
+      $+...$--> Vector.invalidate_references_one_more Emplace
       |> with_non_disj
     ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
-      $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
+      $+...$--> Vector.emplace_back ~desc:"std::vector::emplace_back()"
       |> with_non_disj
-    ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
-      $+...$--> Vector.invalidate_references Insert
+    ; (* the returned iterator is passed as the last argument *)
+      -"std" &:: "vector" &:: "erase" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload
+      $--> Vector.erase ~range:false |> with_non_disj
+    ; -"std" &:: "vector" &:: "erase" <>$ capt_arg_payload $+ any_arg $+ any_arg $+ capt_arg_payload
+      $--> Vector.erase ~range:true |> with_non_disj
+    ; -"std" &:: "vector" &:: "front" <>$ capt_arg_payload
+      $--> Vector.front ~desc:"std::vector::front()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "insert" $ capt_arg_payload $+ any_arg
+      $+ any_arg_of_typ (-"std" &:: "initializer_list")
+      $+ any_arg
+      $--> Vector.invalidate_references_unknown_size Insert
+      |> with_non_disj
+    ; (* [insert(pos, value)], the returned iterator is passed as the last argument *)
+      -"std" &:: "vector" &:: "insert" $ capt_arg_payload $+ any_arg $+ any_arg $+ any_arg
+      $--> Vector.invalidate_references_one_more Insert
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "insert" $ capt_arg_payload
+      $+...$--> Vector.invalidate_references_unknown_size Insert
       |> with_non_disj
     ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
       $+...$--> Vector.invalidate_references_with_ret Assign
@@ -1293,6 +1574,8 @@ let simple_matchers =
       |> with_non_disj
     ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Vector.reserve
       |> with_non_disj
+    ; -"std" &:: "vector" &:: "resize" <>$ capt_arg_payload $+ capt_arg_payload
+      $+...$--> Vector.resize |> with_non_disj
     ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
       $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
       |> with_non_disj

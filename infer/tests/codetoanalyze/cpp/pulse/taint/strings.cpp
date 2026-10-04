@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <algorithm>
 #include <stdio.h>
 #include <string>
 
@@ -63,6 +64,22 @@ void memmove_bad() {
   __infer_taint_sink(copy);
 }
 
+void strcpy_c_str_of_copy_bad() {
+  char laundered_source[50];
+  auto source = __infer_taint_source();
+  std::string copy(source.begin(), source.end());
+  strcpy(laundered_source, copy.c_str());
+  __infer_taint_sink(laundered_source);
+}
+
+void strcpy_data_of_copy_bad() {
+  char laundered_source[50];
+  auto source = __infer_taint_source();
+  std::string copy(source.begin(), source.end());
+  strcpy(laundered_source, copy.data());
+  __infer_taint_sink(laundered_source);
+}
+
 void memchr_ok() {
   auto source = __infer_taint_source();
   auto laundered_source = (char*)memchr(source.c_str(), 'a', 10);
@@ -84,6 +101,20 @@ void constructor2_bad() {
 void constructor3_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = std::string(source.begin(), source.begin() + 5);
+  __infer_taint_sink(laundered_source);
+}
+
+void constructor4_bad() {
+  auto source = __infer_taint_source();
+  auto laundered_source = std::string(source.begin() + 1, source.end() - 1);
+  __infer_taint_sink(laundered_source);
+}
+
+void constructor5_bad() {
+  auto source = __infer_taint_source();
+  auto start = std::find(source.begin(), source.end(), ':');
+  auto laundered_source =
+      std::string(start, std::find(start, source.end(), ';'));
   __infer_taint_sink(laundered_source);
 }
 
