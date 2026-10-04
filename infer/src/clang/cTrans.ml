@@ -675,8 +675,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
            at all is equivalent anyway. Note that returning [Some _] here would cause "unknown
            calls" at the call site.
 
-           Note: For some reason empty implicit trivial constructors *do* get a body in the AST so
-           do not suffer from this issue. *)
+           Note: Implicit trivial constructors *do* get an empty body in the AST, except default
+           constructors used only for value-initialization (see [cxxConstructExpr_trans]). *)
         None
     | Some (CXXDestructorDecl _) ->
         Some decl_ref
@@ -783,7 +783,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
     let context = trans_state.context in
     let[@warning "-partial-match"] [stmt] = stmt_list in
-    let res_trans = instruction trans_state stmt in
+    let res_trans = sub_statement_trans Procdesc.Node.CompoundStmt trans_state stmt in
     (* create the label root node into the hashtbl *)
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
@@ -1768,6 +1768,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let ({method_name} as res_trans_callee) =
       decl_ref_trans ~context:(MemberOrIvar this_res_trans) trans_state si decl_ref
     in
+    let is_trivial_constructor =
+      (* value-initialization does not run a trivial default constructor, and clang does not define
+         it when nothing else uses it: calling it would be an unknown call *)
+      xcei_requires_zero_initialization
+      &&
+      match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+      | Some (CXXConstructorDecl (_, _, _, {fdi_body= None; fdi_decl_ptr_with_body= None}, _)) ->
+          true
+      | _ ->
+          false
+    in
     let field_init_instrs =
       if xcei_requires_zero_initialization then
         let ( let* ) x f = Option.value_map x ~default:[] ~f in
@@ -1775,23 +1786,38 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let* tname = Procname.get_class_type_name constructor in
         let* {Struct.fields} = Tenv.lookup tenv tname in
         let loc = CLocation.location_of_stmt_info source_file si in
-        List.filter_map fields ~f:(fun {Struct.name; typ} ->
-            (* Note: This supports primitive types only for now. *)
-            Option.map (Exp.zero_of_type typ) ~f:(fun zero_exp ->
-                let field_exp = Exp.Lfield ({exp= var_exp; is_implicit= false}, name, this_type) in
-                Sil.Store {e1= field_exp; typ; e2= zero_exp; loc} ) )
+        List.concat_map fields ~f:(fun {Struct.name; typ} ->
+            let field_exp = Exp.Lfield ({exp= var_exp; is_implicit= false}, name, this_type) in
+            match Exp.zero_of_type typ with
+            | Some zero_exp ->
+                [Sil.Store {e1= field_exp; typ; e2= zero_exp; loc}]
+            | None when is_trivial_constructor ->
+                (implicitValueInitExpr_trans
+                   {trans_state with var_exp_typ= Some (field_exp, typ)}
+                   si )
+                  .control
+                  .instrs
+            | None ->
+                (* Note: This supports primitive types only for now. *)
+                [] )
       else []
     in
-    let res_trans_callee =
-      let instrs = field_init_instrs @ res_trans_callee.control.instrs in
-      {res_trans_callee with control= {res_trans_callee.control with instrs}}
-    in
-    let res_trans =
-      cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si StdTyp.void
-        ~is_injected_destructor:false ~is_cpp_call_virtual:false (Some tmp_res_trans)
-        ~is_inherited_ctor
-    in
-    {res_trans with return= tmp_res_trans.return}
+    if is_trivial_constructor then
+      let sil_loc = CLocation.location_of_stmt_info source_file si in
+      mk_trans_result tmp_res_trans.return
+        {empty_control with instrs= field_init_instrs; initd_exps= [var_exp]}
+      |> PriorityNode.compute_result_to_parent trans_state_pri sil_loc InitListExp si
+    else
+      let res_trans_callee =
+        let instrs = field_init_instrs @ res_trans_callee.control.instrs in
+        {res_trans_callee with control= {res_trans_callee.control with instrs}}
+      in
+      let res_trans =
+        cxx_method_construct_call_trans trans_state_pri res_trans_callee params_stmt si StdTyp.void
+          ~is_injected_destructor:false ~is_cpp_call_virtual:false (Some tmp_res_trans)
+          ~is_inherited_ctor
+      in
+      {res_trans with return= tmp_res_trans.return}
 
 
   and cxx_destructor_call_trans trans_state si this_res_trans destructor_decl_ref
@@ -2171,6 +2197,16 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (last_or_mk_fresh_void_exp_typ returns) compound_control
 
 
+  (** Translate a sub-statement whose parent only links its root nodes, e.g. a branch of an [if]:
+      like a statement of a compound statement, the instructions it leaves pending get a node of
+      their own, and when it has no node it continues to [trans_state.succ_nodes]. *)
+  and sub_statement_trans node_name trans_state stmt =
+    let res_trans = exec_with_node_creation node_name ~f:instruction trans_state stmt in
+    if List.is_empty res_trans.control.root_nodes then
+      {res_trans with control= {res_trans.control with root_nodes= trans_state.succ_nodes}}
+    else res_trans
+
+
   and conditionalOperator_trans trans_state stmt_info stmt_list expr_info =
     let context = trans_state.context in
     let succ_nodes = trans_state.succ_nodes in
@@ -2467,14 +2503,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     in
     let do_branch branch stmt_branch prune_nodes trans_state =
       (* leaf nodes are ignored here as they will be already attached to join_node *)
-      let res_trans_b = instruction trans_state stmt_branch in
       let nodes_branch =
-        match res_trans_b.control.root_nodes with
-        | [] ->
-            [ Procdesc.create_node context.procdesc sil_loc (Stmt_node IfStmtBranch)
-                res_trans_b.control.instrs ]
-        | _ ->
-            res_trans_b.control.root_nodes
+        (sub_statement_trans Procdesc.Node.IfStmtBranch trans_state stmt_branch).control.root_nodes
       in
       let prune_nodes_t, prune_nodes_f = List.partition_tf ~f:is_true_prune_node prune_nodes in
       let prune_nodes' = if branch then prune_nodes_t else prune_nodes_f in
@@ -2537,7 +2567,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           assert false
     in
     L.debug Capture Verbose "translating a caseStmt@\n" ;
-    let body_trans_result = exec_with_node_creation CaseStmt ~f:instruction trans_state body in
+    let body_trans_result = sub_statement_trans Procdesc.Node.CaseStmt trans_state body in
     L.debug Capture Verbose "result of translating a caseStmt: %a@\n" pp_control
       body_trans_result.control ;
     SwitchCase.add
@@ -2547,7 +2577,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and defaultStmt_trans trans_state stmt_info default_stmt_list =
     let[@warning "-partial-match"] [body] = default_stmt_list in
-    let body_trans_result = instruction trans_state body in
+    let body_trans_result = sub_statement_trans Procdesc.Node.CaseStmt trans_state body in
     (let open SwitchCase in
      add {condition= Default; stmt_info; root_nodes= body_trans_result.control.root_nodes} ) ;
     body_trans_result
@@ -2813,7 +2843,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let trans_state_body =
         {trans_state with succ_nodes= body_succ_nodes; continuation= Some body_continuation}
       in
-      exec_with_node_creation LoopBody ~f:instruction trans_state_body (Loops.get_body loop_kind)
+      sub_statement_trans Procdesc.Node.LoopBody trans_state_body (Loops.get_body loop_kind)
     in
     let join_succ_nodes =
       match loop_kind with
@@ -3104,7 +3134,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (Typ.pp_full Pp.text) var_typ
 
 
-  (** InitListExpr can have following meanings:
+  (** InitListExpr (or C++20 CXXParenListInitExpr, whose children clang lays out the same way) can
+      have following meanings:
 
       - initialize all record fields
       - initialize array
@@ -4286,7 +4317,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         CAst_utils.get_stmt_opt cxx_new_expr_info.Clang_ast_t.xnei_initializer_expr source_range
       in
       match stmt_opt with
-      | Some (`InitListExpr _) ->
+      | Some (`InitListExpr _ | `CXXParenListInitExpr _) ->
           init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt
       | _ when is_dyn_array && Typ.is_pointer_to_cpp_class typ ->
           (* NOTE: this is heuristic to initialize C++ objects when the size of dynamic
@@ -5252,7 +5283,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxBindTemporaryExpr_trans trans_state stmt_info stmt_list expr_info
     | `CompoundLiteralExpr (stmt_info, stmt_list, expr_info) ->
         compoundLiteralExpr_trans trans_state stmt_list stmt_info expr_info
-    | `InitListExpr (stmt_info, stmts, expr_info, {ilei_array_filler}) ->
+    | `InitListExpr (stmt_info, stmts, expr_info, {ilei_array_filler})
+    | `CXXParenListInitExpr (stmt_info, stmts, expr_info, {ilei_array_filler}) ->
         initListExpr_trans trans_state stmt_info expr_info stmts ilei_array_filler
     | `CXXDynamicCastExpr (stmt_info, stmts, _, _, qual_type, _) ->
         cxxDynamicCastExpr_trans trans_state stmt_info stmts qual_type
@@ -5338,7 +5370,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `CUDAKernelCallExpr _
     | `CXXAddrspaceCastExpr _
     | `CXXFoldExpr _
-    | `CXXParenListInitExpr _
     | `CXXUnresolvedConstructExpr _
     | `CXXUuidofExpr _
     | `DependentCoawaitExpr _

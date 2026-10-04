@@ -1,0 +1,3477 @@
+<"TranslationUnitDecl" : (
+  {
+    "pointer" : 1,
+    "source_range" : (
+      {
+      },
+      {
+      }
+    )
+  },
+  [
+    <"TypedefDecl" : (
+      {
+        "pointer" : 2,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__int128_t",
+        "qual_name" : [
+          "__int128_t"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 3,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__uint128_t",
+        "qual_name" : [
+          "__uint128_t"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 4,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__NSConstantString",
+        "qual_name" : [
+          "__NSConstantString"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 5,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__builtin_ms_va_list",
+        "qual_name" : [
+          "__builtin_ms_va_list"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 6,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "__builtin_va_list",
+        "qual_name" : [
+          "__builtin_va_list"
+        ]
+      },
+      0,
+      {
+      }
+    )>,
+    <"CXXRecordDecl" : (
+      {
+        "pointer" : 7,
+        "parent_pointer" : 1,
+        "source_range" : (
+          {
+            "file" : "tests/paren_list_init_cxx20.cpp",
+            "line" : 7,
+            "column" : 1
+          },
+          {
+            "line" : 10,
+            "column" : 1
+          }
+        ),
+        "is_this_declaration_referenced" : true
+      },
+      {
+        "name" : "pod",
+        "qual_name" : [
+          "pod"
+        ]
+      },
+      8,
+      [
+        <"CXXRecordDecl" : (
+          {
+            "pointer" : 9,
+            "parent_pointer" : 7,
+            "source_range" : (
+              {
+                "line" : 7,
+                "column" : 1
+              },
+              {
+                "column" : 8
+              }
+            ),
+            "is_implicit" : true,
+            "access" : <"Public">
+          },
+          {
+            "name" : "pod",
+            "qual_name" : [
+              "pod",
+              "pod"
+            ]
+          },
+          8,
+          [
+          ],
+          {
+          },
+          <"TTK_Struct">,
+          {
+            "definition_ptr" : 0
+          },
+          {
+          }
+        )>,
+        <"FieldDecl" : (
+          {
+            "pointer" : 10,
+            "parent_pointer" : 7,
+            "source_range" : (
+              {
+                "line" : 8,
+                "column" : 3
+              },
+              {
+                "column" : 7
+              }
+            ),
+            "access" : <"Public">
+          },
+          {
+            "name" : "a",
+            "qual_name" : [
+              "a",
+              "pod"
+            ]
+          },
+          {
+            "type_ptr" : 11
+          },
+          {
+          }
+        )>,
+        <"FieldDecl" : (
+          {
+            "pointer" : 12,
+            "parent_pointer" : 7,
+            "source_range" : (
+              {
+                "line" : 9,
+                "column" : 3
+              },
+              {
+                "column" : 7
+              }
+            ),
+            "access" : <"Public">
+          },
+          {
+            "name" : "b",
+            "qual_name" : [
+              "b",
+              "pod"
+            ]
+          },
+          {
+            "type_ptr" : 11
+          },
+          {
+          }
+        )>,
+        <"CXXConstructorDecl" : (
+          {
+            "pointer" : 13,
+            "parent_pointer" : 7,
+            "source_range" : (
+              {
+                "line" : 7,
+                "column" : 8
+              },
+              {
+              }
+            ),
+            "is_implicit" : true,
+            "is_this_declaration_referenced" : true,
+            "access" : <"Public">
+          },
+          {
+            "name" : "pod",
+            "qual_name" : [
+              "pod",
+              "pod"
+            ]
+          },
+          {
+            "type_ptr" : 14
+          },
+          {
+            "mangled_name" : "7740115901201927888",
+            "is_cpp" : true,
+            "is_inline" : true,
+            "is_constexpr" : true
+          },
+          {
+          }
+        )>,
+        <"CXXConstructorDecl" : (
+          {
+            "pointer" : 15,
+            "parent_pointer" : 7,
+            "source_range" : (
+              {
+              },
+              {
+              }
+            ),
+            "is_implicit" : true,
+            "access" : <"Public">
+          },
+          {
+            "name" : "pod",
+            "qual_name" : [
+              "pod",
+              "pod"
+            ]
+          },
+          {
+            "type_ptr" : 16
+          },
+          {
+            "mangled_name" : "12480848167264656407",
+            "is_cpp" : true,
+            "is_inline" : true,
+            "is_constexpr" : true,
+            "parameters" : [
+              <"ParmVarDecl" : (
+                {
+                  "pointer" : 17,
+                  "parent_pointer" : 15,
+                  "source_range" : (
+                    {
+                    },
+                    {
+                    }
+                  )
+                },
+                {
+                  "name" : "",
+                  "qual_name" : [
+                    ""
+                  ]
+                },
+                {
+                  "type_ptr" : 18
+                },
+                {
+                  "parm_index_in_function" : 0
+                }
+              )>
+            ]
+          },
+          {
+            "is_copy_constructor" : true
+          }
+        )>,
+        <"CXXConstructorDecl" : (
+          {
+            "pointer" : 19,
+            "parent_pointer" : 7,
+            "source_range" : (
+              {
+              },
+              {
+              }
+            ),
+            "is_implicit" : true,
+            "access" : <"Public">
+          },
+          {
+            "name" : "pod",
+            "qual_name" : [
+              "pod",
+              "pod"
+            ]
+          },
+          {
+            "type_ptr" : 20
+          },
+          {
+            "mangled_name" : "6070336924810484949",
+            "is_cpp" : true,
+            "is_inline" : true,
+            "is_constexpr" : true,
+            "parameters" : [
+              <"ParmVarDecl" : (
+                {
+                  "pointer" : 21,
+                  "parent_pointer" : 19,
+                  "source_range" : (
+                    {
+                    },
+                    {
+                    }
+                  )
+                },
+                {
+                  "name" : "",
+                  "qual_name" : [
+                    ""
+                  ]
+                },
+                {
+                  "type_ptr" : 22
+                },
+                {
+                  "parm_index_in_function" : 0
+                }
+              )>
+            ]
+          },
+          {
+            "is_move_constructor" : true
+          }
+        )>,
+        <"CXXDestructorDecl" : (
+          {
+            "pointer" : 23,
+            "parent_pointer" : 7,
+            "source_range" : (
+              {
+              },
+              {
+              }
+            ),
+            "is_implicit" : true,
+            "is_this_declaration_referenced" : true,
+            "access" : <"Public">
+          },
+          {
+            "name" : "~pod",
+            "qual_name" : [
+              "~pod",
+              "pod"
+            ]
+          },
+          {
+            "type_ptr" : 14
+          },
+          {
+            "mangled_name" : "5472746887547415783",
+            "is_cpp" : true,
+            "is_inline" : true,
+            "is_constexpr" : true
+          },
+          {
+          }
+        )>
+      ],
+      {
+      },
+      <"TTK_Struct">,
+      {
+        "definition_ptr" : 7,
+        "is_complete_definition" : true
+      },
+      {
+        "is_pod" : true,
+        "is_trivially_copyable" : true,
+        "destructor" : {
+          "kind" : <"CXXDestructor">,
+          "decl_pointer" : 23,
+          "name" : {
+            "name" : "~pod",
+            "qual_name" : [
+              "~pod",
+              "pod"
+            ]
+          },
+          "qual_type" : {
+            "type_ptr" : 14
+          }
+        }
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 24,
+        "source_range" : (
+          {
+            "line" : 12,
+            "column" : 1
+          },
+          {
+            "line" : 16,
+            "column" : 1
+          }
+        )
+      },
+      {
+        "name" : "test",
+        "qual_name" : [
+          "test"
+        ]
+      },
+      {
+        "type_ptr" : 25
+      },
+      {
+        "mangled_name" : "18241244337164948030",
+        "is_cpp" : true,
+        "decl_ptr_with_body" : 24,
+        "body" : <"CompoundStmt" : (
+          {
+            "pointer" : 26,
+            "source_range" : (
+              {
+                "line" : 12,
+                "column" : 13
+              },
+              {
+                "line" : 16,
+                "column" : 1
+              }
+            )
+          },
+          [
+            <"DeclStmt" : (
+              {
+                "pointer" : 27,
+                "source_range" : (
+                  {
+                    "line" : 13,
+                    "column" : 3
+                  },
+                  {
+                    "column" : 11
+                  }
+                )
+              },
+              [
+                <"CXXParenListInitExpr" : (
+                  {
+                    "pointer" : 28,
+                    "source_range" : (
+                      {
+                        "column" : 8
+                      },
+                      {
+                        "column" : 10
+                      }
+                    )
+                  },
+                  [
+                    <"IntegerLiteral" : (
+                      {
+                        "pointer" : 29,
+                        "source_range" : (
+                          {
+                            "column" : 9
+                          },
+                          {
+                          }
+                        )
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 11
+                        }
+                      },
+                      {
+                        "is_signed" : true,
+                        "bitwidth" : 32,
+                        "value" : "1"
+                      }
+                    )>,
+                    <"ImplicitValueInitExpr" : (
+                      {
+                        "pointer" : 30,
+                        "source_range" : (
+                          {
+                          },
+                          {
+                          }
+                        )
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 11
+                        }
+                      }
+                    )>
+                  ],
+                  {
+                    "qual_type" : {
+                      "type_ptr" : 31
+                    }
+                  },
+                  {
+                  }
+                )>
+              ],
+              [
+                <"VarDecl" : (
+                  {
+                    "pointer" : 32,
+                    "source_range" : (
+                      {
+                        "column" : 3
+                      },
+                      {
+                        "column" : 10
+                      }
+                    )
+                  },
+                  {
+                    "name" : "p",
+                    "qual_name" : [
+                      "p"
+                    ]
+                  },
+                  {
+                    "type_ptr" : 31
+                  },
+                  {
+                    "init_expr" : <"CXXParenListInitExpr" : (
+                      {
+                        "pointer" : 28,
+                        "source_range" : (
+                          {
+                            "column" : 8
+                          },
+                          {
+                            "column" : 10
+                          }
+                        )
+                      },
+                      [
+                        <"IntegerLiteral" : (
+                          {
+                            "pointer" : 29,
+                            "source_range" : (
+                              {
+                                "column" : 9
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 11
+                            }
+                          },
+                          {
+                            "is_signed" : true,
+                            "bitwidth" : 32,
+                            "value" : "1"
+                          }
+                        )>,
+                        <"ImplicitValueInitExpr" : (
+                          {
+                            "pointer" : 30,
+                            "source_range" : (
+                              {
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 11
+                            }
+                          }
+                        )>
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 31
+                        }
+                      },
+                      {
+                      }
+                    )>
+                  }
+                )>
+              ]
+            )>,
+            <"DeclStmt" : (
+              {
+                "pointer" : 33,
+                "source_range" : (
+                  {
+                    "line" : 14,
+                    "column" : 3
+                  },
+                  {
+                    "column" : 19
+                  }
+                )
+              },
+              [
+                <"CXXParenListInitExpr" : (
+                  {
+                    "pointer" : 34,
+                    "source_range" : (
+                      {
+                        "column" : 13
+                      },
+                      {
+                        "column" : 18
+                      }
+                    )
+                  },
+                  [
+                    <"IntegerLiteral" : (
+                      {
+                        "pointer" : 35,
+                        "source_range" : (
+                          {
+                            "column" : 14
+                          },
+                          {
+                          }
+                        )
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 11
+                        }
+                      },
+                      {
+                        "is_signed" : true,
+                        "bitwidth" : 32,
+                        "value" : "1"
+                      }
+                    )>,
+                    <"IntegerLiteral" : (
+                      {
+                        "pointer" : 36,
+                        "source_range" : (
+                          {
+                            "column" : 17
+                          },
+                          {
+                          }
+                        )
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 11
+                        }
+                      },
+                      {
+                        "is_signed" : true,
+                        "bitwidth" : 32,
+                        "value" : "2"
+                      }
+                    )>
+                  ],
+                  {
+                    "qual_type" : {
+                      "type_ptr" : 37
+                    }
+                  },
+                  {
+                    "array_filler" : <"ImplicitValueInitExpr" : (
+                      {
+                        "pointer" : 38,
+                        "source_range" : (
+                          {
+                          },
+                          {
+                          }
+                        )
+                      },
+                      [
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 11
+                        }
+                      }
+                    )>
+                  }
+                )>
+              ],
+              [
+                <"VarDecl" : (
+                  {
+                    "pointer" : 39,
+                    "source_range" : (
+                      {
+                        "column" : 3
+                      },
+                      {
+                        "column" : 18
+                      }
+                    )
+                  },
+                  {
+                    "name" : "i_a",
+                    "qual_name" : [
+                      "i_a"
+                    ]
+                  },
+                  {
+                    "type_ptr" : 37
+                  },
+                  {
+                    "init_expr" : <"CXXParenListInitExpr" : (
+                      {
+                        "pointer" : 34,
+                        "source_range" : (
+                          {
+                            "column" : 13
+                          },
+                          {
+                            "column" : 18
+                          }
+                        )
+                      },
+                      [
+                        <"IntegerLiteral" : (
+                          {
+                            "pointer" : 35,
+                            "source_range" : (
+                              {
+                                "column" : 14
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 11
+                            }
+                          },
+                          {
+                            "is_signed" : true,
+                            "bitwidth" : 32,
+                            "value" : "1"
+                          }
+                        )>,
+                        <"IntegerLiteral" : (
+                          {
+                            "pointer" : 36,
+                            "source_range" : (
+                              {
+                                "column" : 17
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 11
+                            }
+                          },
+                          {
+                            "is_signed" : true,
+                            "bitwidth" : 32,
+                            "value" : "2"
+                          }
+                        )>
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 37
+                        }
+                      },
+                      {
+                        "array_filler" : <"ImplicitValueInitExpr" : (
+                          {
+                            "pointer" : 38,
+                            "source_range" : (
+                              {
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 11
+                            }
+                          }
+                        )>
+                      }
+                    )>
+                  }
+                )>
+              ]
+            )>,
+            <"DeclStmt" : (
+              {
+                "pointer" : 40,
+                "source_range" : (
+                  {
+                    "line" : 15,
+                    "column" : 3
+                  },
+                  {
+                    "column" : 36
+                  }
+                )
+              },
+              [
+                <"CXXNewExpr" : (
+                  {
+                    "pointer" : 41,
+                    "source_range" : (
+                      {
+                        "column" : 15
+                      },
+                      {
+                        "column" : 35
+                      }
+                    )
+                  },
+                  [
+                    <"ImplicitCastExpr" : (
+                      {
+                        "pointer" : 42,
+                        "source_range" : (
+                          {
+                            "column" : 23
+                          },
+                          {
+                          }
+                        )
+                      },
+                      [
+                        <"IntegerLiteral" : (
+                          {
+                            "pointer" : 43,
+                            "source_range" : (
+                              {
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 11
+                            }
+                          },
+                          {
+                            "is_signed" : true,
+                            "bitwidth" : 32,
+                            "value" : "2"
+                          }
+                        )>
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 44
+                        }
+                      },
+                      {
+                        "cast_kind" : <"IntegralCast">,
+                        "base_path" : [
+                        ]
+                      },
+                      false
+                    )>,
+                    <"CXXParenListInitExpr" : (
+                      {
+                        "pointer" : 45,
+                        "source_range" : (
+                          {
+                            "column" : 25
+                          },
+                          {
+                            "column" : 35
+                          }
+                        )
+                      },
+                      [
+                        <"CXXFunctionalCastExpr" : (
+                          {
+                            "pointer" : 46,
+                            "source_range" : (
+                              {
+                                "column" : 26
+                              },
+                              {
+                                "column" : 34
+                              }
+                            )
+                          },
+                          [
+                            <"CXXParenListInitExpr" : (
+                              {
+                                "pointer" : 47,
+                                "source_range" : (
+                                  {
+                                    "column" : 29
+                                  },
+                                  {
+                                    "column" : 34
+                                  }
+                                )
+                              },
+                              [
+                                <"IntegerLiteral" : (
+                                  {
+                                    "pointer" : 48,
+                                    "source_range" : (
+                                      {
+                                        "column" : 30
+                                      },
+                                      {
+                                      }
+                                    )
+                                  },
+                                  [
+                                  ],
+                                  {
+                                    "qual_type" : {
+                                      "type_ptr" : 11
+                                    }
+                                  },
+                                  {
+                                    "is_signed" : true,
+                                    "bitwidth" : 32,
+                                    "value" : "1"
+                                  }
+                                )>,
+                                <"IntegerLiteral" : (
+                                  {
+                                    "pointer" : 49,
+                                    "source_range" : (
+                                      {
+                                        "column" : 33
+                                      },
+                                      {
+                                      }
+                                    )
+                                  },
+                                  [
+                                  ],
+                                  {
+                                    "qual_type" : {
+                                      "type_ptr" : 11
+                                    }
+                                  },
+                                  {
+                                    "is_signed" : true,
+                                    "bitwidth" : 32,
+                                    "value" : "2"
+                                  }
+                                )>
+                              ],
+                              {
+                                "qual_type" : {
+                                  "type_ptr" : 31
+                                }
+                              },
+                              {
+                              }
+                            )>
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 31
+                            }
+                          },
+                          {
+                            "cast_kind" : <"NoOp">,
+                            "base_path" : [
+                            ]
+                          },
+                          {
+                            "type_ptr" : 31
+                          }
+                        )>
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 50
+                        }
+                      },
+                      {
+                        "array_filler" : <"CXXConstructExpr" : (
+                          {
+                            "pointer" : 51,
+                            "source_range" : (
+                              {
+                                "column" : 19
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 31
+                            }
+                          },
+                          {
+                            "decl_ref" : {
+                              "kind" : <"CXXConstructor">,
+                              "decl_pointer" : 13,
+                              "name" : {
+                                "name" : "pod",
+                                "qual_name" : [
+                                  "pod",
+                                  "pod"
+                                ]
+                              },
+                              "qual_type" : {
+                                "type_ptr" : 14
+                              }
+                            },
+                            "requires_zero_initialization" : true
+                          }
+                        )>
+                      }
+                    )>
+                  ],
+                  {
+                    "qual_type" : {
+                      "type_ptr" : 52
+                    }
+                  },
+                  {
+                    "is_array" : true,
+                    "array_size_expr" : 42,
+                    "initializer_expr" : 45
+                  }
+                )>
+              ],
+              [
+                <"VarDecl" : (
+                  {
+                    "pointer" : 53,
+                    "source_range" : (
+                      {
+                        "column" : 3
+                      },
+                      {
+                        "column" : 35
+                      }
+                    )
+                  },
+                  {
+                    "name" : "p_a",
+                    "qual_name" : [
+                      "p_a"
+                    ]
+                  },
+                  {
+                    "type_ptr" : 54
+                  },
+                  {
+                    "init_expr" : <"CXXNewExpr" : (
+                      {
+                        "pointer" : 41,
+                        "source_range" : (
+                          {
+                            "column" : 15
+                          },
+                          {
+                            "column" : 35
+                          }
+                        )
+                      },
+                      [
+                        <"ImplicitCastExpr" : (
+                          {
+                            "pointer" : 42,
+                            "source_range" : (
+                              {
+                                "column" : 23
+                              },
+                              {
+                              }
+                            )
+                          },
+                          [
+                            <"IntegerLiteral" : (
+                              {
+                                "pointer" : 43,
+                                "source_range" : (
+                                  {
+                                  },
+                                  {
+                                  }
+                                )
+                              },
+                              [
+                              ],
+                              {
+                                "qual_type" : {
+                                  "type_ptr" : 11
+                                }
+                              },
+                              {
+                                "is_signed" : true,
+                                "bitwidth" : 32,
+                                "value" : "2"
+                              }
+                            )>
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 44
+                            }
+                          },
+                          {
+                            "cast_kind" : <"IntegralCast">,
+                            "base_path" : [
+                            ]
+                          },
+                          false
+                        )>,
+                        <"CXXParenListInitExpr" : (
+                          {
+                            "pointer" : 45,
+                            "source_range" : (
+                              {
+                                "column" : 25
+                              },
+                              {
+                                "column" : 35
+                              }
+                            )
+                          },
+                          [
+                            <"CXXFunctionalCastExpr" : (
+                              {
+                                "pointer" : 46,
+                                "source_range" : (
+                                  {
+                                    "column" : 26
+                                  },
+                                  {
+                                    "column" : 34
+                                  }
+                                )
+                              },
+                              [
+                                <"CXXParenListInitExpr" : (
+                                  {
+                                    "pointer" : 47,
+                                    "source_range" : (
+                                      {
+                                        "column" : 29
+                                      },
+                                      {
+                                        "column" : 34
+                                      }
+                                    )
+                                  },
+                                  [
+                                    <"IntegerLiteral" : (
+                                      {
+                                        "pointer" : 48,
+                                        "source_range" : (
+                                          {
+                                            "column" : 30
+                                          },
+                                          {
+                                          }
+                                        )
+                                      },
+                                      [
+                                      ],
+                                      {
+                                        "qual_type" : {
+                                          "type_ptr" : 11
+                                        }
+                                      },
+                                      {
+                                        "is_signed" : true,
+                                        "bitwidth" : 32,
+                                        "value" : "1"
+                                      }
+                                    )>,
+                                    <"IntegerLiteral" : (
+                                      {
+                                        "pointer" : 49,
+                                        "source_range" : (
+                                          {
+                                            "column" : 33
+                                          },
+                                          {
+                                          }
+                                        )
+                                      },
+                                      [
+                                      ],
+                                      {
+                                        "qual_type" : {
+                                          "type_ptr" : 11
+                                        }
+                                      },
+                                      {
+                                        "is_signed" : true,
+                                        "bitwidth" : 32,
+                                        "value" : "2"
+                                      }
+                                    )>
+                                  ],
+                                  {
+                                    "qual_type" : {
+                                      "type_ptr" : 31
+                                    }
+                                  },
+                                  {
+                                  }
+                                )>
+                              ],
+                              {
+                                "qual_type" : {
+                                  "type_ptr" : 31
+                                }
+                              },
+                              {
+                                "cast_kind" : <"NoOp">,
+                                "base_path" : [
+                                ]
+                              },
+                              {
+                                "type_ptr" : 31
+                              }
+                            )>
+                          ],
+                          {
+                            "qual_type" : {
+                              "type_ptr" : 50
+                            }
+                          },
+                          {
+                            "array_filler" : <"CXXConstructExpr" : (
+                              {
+                                "pointer" : 51,
+                                "source_range" : (
+                                  {
+                                    "column" : 19
+                                  },
+                                  {
+                                  }
+                                )
+                              },
+                              [
+                              ],
+                              {
+                                "qual_type" : {
+                                  "type_ptr" : 31
+                                }
+                              },
+                              {
+                                "decl_ref" : {
+                                  "kind" : <"CXXConstructor">,
+                                  "decl_pointer" : 13,
+                                  "name" : {
+                                    "name" : "pod",
+                                    "qual_name" : [
+                                      "pod",
+                                      "pod"
+                                    ]
+                                  },
+                                  "qual_type" : {
+                                    "type_ptr" : 14
+                                  }
+                                },
+                                "requires_zero_initialization" : true
+                              }
+                            )>
+                          }
+                        )>
+                      ],
+                      {
+                        "qual_type" : {
+                          "type_ptr" : 52
+                        }
+                      },
+                      {
+                        "is_array" : true,
+                        "array_size_expr" : 42,
+                        "initializer_expr" : 45
+                      }
+                    )>
+                  }
+                )>
+              ]
+            )>
+          ]
+        )>
+      }
+    )>,
+    <"NamespaceDecl" : (
+      {
+        "pointer" : 55,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "std",
+        "qual_name" : [
+          "std"
+        ]
+      },
+      [
+      ],
+      {
+      },
+      {
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 56,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 57,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>,
+          <"ReturnsNonNullAttr" : (
+            {
+              "pointer" : 58,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>,
+          <"AllocSizeAttr" : (
+            {
+              "pointer" : 59,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>
+        ]
+      },
+      {
+        "name" : "operator new",
+        "qual_name" : [
+          "operator new"
+        ]
+      },
+      {
+        "type_ptr" : 60
+      },
+      {
+        "mangled_name" : "5103882463850428890",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 61,
+              "parent_pointer" : 56,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 62,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 63,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>,
+          <"ReturnsNonNullAttr" : (
+            {
+              "pointer" : 64,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>,
+          <"AllocSizeAttr" : (
+            {
+              "pointer" : 65,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>,
+          <"AllocAlignAttr" : (
+            {
+              "pointer" : 66,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>
+        ]
+      },
+      {
+        "name" : "operator new",
+        "qual_name" : [
+          "operator new"
+        ]
+      },
+      {
+        "type_ptr" : 67
+      },
+      {
+        "mangled_name" : "3667568458289497323",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 68,
+              "parent_pointer" : 62,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 69,
+              "parent_pointer" : 62,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 70
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 71,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "is_used" : true,
+        "is_this_declaration_referenced" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 72,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>,
+          <"ReturnsNonNullAttr" : (
+            {
+              "pointer" : 73,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>,
+          <"AllocSizeAttr" : (
+            {
+              "pointer" : 74,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>
+        ]
+      },
+      {
+        "name" : "operator new[]",
+        "qual_name" : [
+          "operator new[]"
+        ]
+      },
+      {
+        "type_ptr" : 60
+      },
+      {
+        "mangled_name" : "5124988689061404296",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 75,
+              "parent_pointer" : 71,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 76,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 77,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>,
+          <"ReturnsNonNullAttr" : (
+            {
+              "pointer" : 78,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>,
+          <"AllocSizeAttr" : (
+            {
+              "pointer" : 79,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>,
+          <"AllocAlignAttr" : (
+            {
+              "pointer" : 80,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            }
+          )>
+        ]
+      },
+      {
+        "name" : "operator new[]",
+        "qual_name" : [
+          "operator new[]"
+        ]
+      },
+      {
+        "type_ptr" : 67
+      },
+      {
+        "mangled_name" : "10861470627780061949",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 81,
+              "parent_pointer" : 76,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 82,
+              "parent_pointer" : 76,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 70
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 83,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 84,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete",
+        "qual_name" : [
+          "operator delete"
+        ]
+      },
+      {
+        "type_ptr" : 85
+      },
+      {
+        "mangled_name" : "9332647001762808742",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 86,
+              "parent_pointer" : 83,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 88,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 89,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete",
+        "qual_name" : [
+          "operator delete"
+        ]
+      },
+      {
+        "type_ptr" : 90
+      },
+      {
+        "mangled_name" : "10373215869808142615",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 91,
+              "parent_pointer" : 88,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 92,
+              "parent_pointer" : 88,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 70
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 93,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 94,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete",
+        "qual_name" : [
+          "operator delete"
+        ]
+      },
+      {
+        "type_ptr" : 95
+      },
+      {
+        "mangled_name" : "4859567291822092785",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 96,
+              "parent_pointer" : 93,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 97,
+              "parent_pointer" : 93,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 98,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 99,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete",
+        "qual_name" : [
+          "operator delete"
+        ]
+      },
+      {
+        "type_ptr" : 100
+      },
+      {
+        "mangled_name" : "11660194811897861914",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 101,
+              "parent_pointer" : 98,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 102,
+              "parent_pointer" : 98,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 103,
+              "parent_pointer" : 98,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 70
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 104,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 105,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete[]",
+        "qual_name" : [
+          "operator delete[]"
+        ]
+      },
+      {
+        "type_ptr" : 85
+      },
+      {
+        "mangled_name" : "12453587667872411061",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 106,
+              "parent_pointer" : 104,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 107,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 108,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete[]",
+        "qual_name" : [
+          "operator delete[]"
+        ]
+      },
+      {
+        "type_ptr" : 90
+      },
+      {
+        "mangled_name" : "6581589893168416366",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 109,
+              "parent_pointer" : 107,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 110,
+              "parent_pointer" : 107,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 70
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 111,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "is_used" : true,
+        "is_this_declaration_referenced" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 112,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete[]",
+        "qual_name" : [
+          "operator delete[]"
+        ]
+      },
+      {
+        "type_ptr" : 95
+      },
+      {
+        "mangled_name" : "7257393423842453000",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 113,
+              "parent_pointer" : 111,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 114,
+              "parent_pointer" : 111,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"FunctionDecl" : (
+      {
+        "pointer" : 115,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true,
+        "attributes" : [
+          <"VisibilityAttr" : (
+            {
+              "pointer" : 116,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              )
+            },
+            <"DefaultVisibility">
+          )>
+        ]
+      },
+      {
+        "name" : "operator delete[]",
+        "qual_name" : [
+          "operator delete[]"
+        ]
+      },
+      {
+        "type_ptr" : 100
+      },
+      {
+        "mangled_name" : "4805225283553715581",
+        "is_cpp" : true,
+        "parameters" : [
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 117,
+              "parent_pointer" : 115,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 87
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 118,
+              "parent_pointer" : 115,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>,
+          <"ParmVarDecl" : (
+            {
+              "pointer" : 119,
+              "parent_pointer" : 115,
+              "source_range" : (
+                {
+                },
+                {
+                }
+              ),
+              "is_implicit" : true
+            },
+            {
+              "name" : "",
+              "qual_name" : [
+                ""
+              ]
+            },
+            {
+              "type_ptr" : 70
+            },
+            {
+              "parm_index_in_function" : 0
+            }
+          )>
+        ]
+      }
+    )>,
+    <"TypedefDecl" : (
+      {
+        "pointer" : 120,
+        "source_range" : (
+          {
+          },
+          {
+          }
+        ),
+        "is_implicit" : true
+      },
+      {
+        "name" : "instancetype",
+        "qual_name" : [
+          "instancetype"
+        ]
+      },
+      121,
+      {
+      }
+    )>
+  ],
+  {
+  },
+  {
+    "input_path" : "tests/paren_list_init_cxx20.cpp",
+    "input_kind" : <"IK_CXX">,
+    "integer_type_widths" : {
+      "char_type" : 8,
+      "short_type" : 16,
+      "int_type" : 32,
+      "long_type" : 64,
+      "longlong_type" : 64
+    },
+    "types" : [
+      <"BuiltinType" : (
+        {
+          "pointer" : 122
+        },
+        <"Void">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 123
+        },
+        <"Bool">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 124
+        },
+        <"Char_S">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 125
+        },
+        <"SChar">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 126
+        },
+        <"Short">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 11
+        },
+        <"Int">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 127
+        },
+        <"Long">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 128
+        },
+        <"LongLong">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 129
+        },
+        <"UChar">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 130
+        },
+        <"UShort">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 131
+        },
+        <"UInt">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 44
+        },
+        <"ULong">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 132
+        },
+        <"ULongLong">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 133
+        },
+        <"Float">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 134
+        },
+        <"Double">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 135
+        },
+        <"LongDouble">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 136
+        },
+        <"Float128">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 137
+        },
+        <"Ibm128">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 138
+        },
+        <"Float16">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 139
+        },
+        <"ShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 140
+        },
+        <"Accum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 141
+        },
+        <"LongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 142
+        },
+        <"UShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 143
+        },
+        <"UAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 144
+        },
+        <"ULongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 145
+        },
+        <"ShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 146
+        },
+        <"Fract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 147
+        },
+        <"LongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 148
+        },
+        <"UShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 149
+        },
+        <"UFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 150
+        },
+        <"ULongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 151
+        },
+        <"SatShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 152
+        },
+        <"SatAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 153
+        },
+        <"SatLongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 154
+        },
+        <"SatUShortAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 155
+        },
+        <"SatUAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 156
+        },
+        <"SatULongAccum">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 157
+        },
+        <"SatShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 158
+        },
+        <"SatFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 159
+        },
+        <"SatLongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 160
+        },
+        <"SatUShortFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 161
+        },
+        <"SatUFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 162
+        },
+        <"SatULongFract">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 163
+        },
+        <"Int128">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 164
+        },
+        <"UInt128">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 165
+        },
+        <"WChar_S">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 166
+        },
+        <"Char8">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 167
+        },
+        <"Char16">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 168
+        },
+        <"Char32">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 169
+        },
+        <"Dependent">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 170
+        },
+        <"Overload">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 171
+        },
+        <"BoundMember">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 172
+        },
+        <"UnresolvedTemplate">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 173
+        },
+        <"PseudoObject">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 174
+        },
+        <"UnknownAny">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 175
+        },
+        <"ARCUnbridgedCast">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 176
+        },
+        <"BuiltinFn">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 177
+        },
+        <"ObjCId">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 178
+        },
+        <"ObjCClass">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 179
+        },
+        <"ObjCSel">
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 87
+        },
+        {
+          "type_ptr" : 122
+        }
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 180
+        },
+        <"NullPtr">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 181
+        },
+        <"Half">
+      )>,
+      <"BuiltinType" : (
+        {
+          "pointer" : 182
+        },
+        <"BFloat16">
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 183
+        },
+        {
+          "type_ptr" : 124
+        }
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 184
+        },
+        185
+      )>,
+      <"ConstantArrayType" : (
+        {
+          "pointer" : 186
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 184
+          },
+          "stride" : 24
+        },
+        1
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 187
+        },
+        188
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 189
+        },
+        {
+          "type_ptr" : 11,
+          "is_const" : true
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 190
+        },
+        {
+          "type_ptr" : 124,
+          "is_const" : true
+        }
+      )>,
+      <"RecordType" : (
+        {
+          "pointer" : 8
+        },
+        7
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 25
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+        }
+      )>,
+      <"ElaboratedType" : (
+        {
+          "pointer" : 31,
+          "desugared_type" : 8
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 191
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+        }
+      )>,
+      <"LValueReferenceType" : (
+        {
+          "pointer" : 192
+        },
+        {
+          "type_ptr" : 8,
+          "is_const" : true
+        }
+      )>,
+      <"LValueReferenceType" : (
+        {
+          "pointer" : 18
+        },
+        {
+          "type_ptr" : 31,
+          "is_const" : true
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 193
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 192
+            }
+          ]
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 16
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 18
+            }
+          ]
+        }
+      )>,
+      <"RValueReferenceType" : (
+        {
+          "pointer" : 194
+        },
+        {
+          "type_ptr" : 8
+        }
+      )>,
+      <"RValueReferenceType" : (
+        {
+          "pointer" : 22
+        },
+        {
+          "type_ptr" : 31
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 195
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 194
+            }
+          ]
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 20
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 22
+            }
+          ]
+        }
+      )>,
+      <"ConstantArrayType" : (
+        {
+          "pointer" : 37
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 11
+          },
+          "stride" : 4
+        },
+        3
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 196
+        },
+        {
+          "type_ptr" : 197
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 198
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 14
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 199
+        },
+        {
+          "type_ptr" : 8
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 52
+        },
+        {
+          "type_ptr" : 31
+        }
+      )>,
+      <"EnumType" : (
+        {
+          "pointer" : 70
+        },
+        200
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 60
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 87
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 44
+            }
+          ]
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 67
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 87
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 44
+            },
+            {
+              "type_ptr" : 70
+            }
+          ]
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 85
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 87
+            }
+          ]
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 90
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 87
+            },
+            {
+              "type_ptr" : 70
+            }
+          ]
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 95
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 87
+            },
+            {
+              "type_ptr" : 44
+            }
+          ]
+        }
+      )>,
+      <"FunctionProtoType" : (
+        {
+          "pointer" : 100
+        },
+        {
+          "return_type" : {
+            "type_ptr" : 122
+          }
+        },
+        {
+          "params_type" : [
+            {
+              "type_ptr" : 87
+            },
+            {
+              "type_ptr" : 44
+            },
+            {
+              "type_ptr" : 70
+            }
+          ]
+        }
+      )>,
+      <"ConstantArrayType" : (
+        {
+          "pointer" : 201
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 8
+          },
+          "stride" : 8
+        },
+        2
+      )>,
+      <"ConstantArrayType" : (
+        {
+          "pointer" : 50
+        },
+        {
+          "element_type" : {
+            "type_ptr" : 31
+          },
+          "stride" : 8
+        },
+        2
+      )>,
+      <"LValueReferenceType" : (
+        {
+          "pointer" : 202
+        },
+        {
+          "type_ptr" : 8
+        }
+      )>,
+      <"TemplateTypeParmType" : (
+        {
+          "pointer" : 203
+        }
+      )>,
+      <"TemplateTypeParmType" : (
+        {
+          "pointer" : 204
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 205,
+          "desugared_type" : 204
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 206
+        },
+        {
+          "type_ptr" : 203
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 207
+        },
+        {
+          "type_ptr" : 205
+        }
+      )>,
+      <"AutoType" : (
+        {
+          "pointer" : 208,
+          "desugared_type" : 8
+        }
+      )>,
+      <"PointerType" : (
+        {
+          "pointer" : 54
+        },
+        {
+          "type_ptr" : 208
+        }
+      )>,
+      <"ObjCObjectType" : (
+        {
+          "pointer" : 209
+        },
+        {
+          "base_type" : 177
+        }
+      )>,
+      <"ObjCObjectPointerType" : (
+        {
+          "pointer" : 210
+        },
+        {
+          "type_ptr" : 209
+        }
+      )>,
+      <"TypedefType" : (
+        {
+          "pointer" : 211,
+          "desugared_type" : 210
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 210
+          },
+          "decl_ptr" : 212
+        }
+      )>,
+      <"TypedefType" : (
+        {
+          "pointer" : 121,
+          "desugared_type" : 210
+        },
+        {
+          "child_type" : {
+            "type_ptr" : 211
+          },
+          "decl_ptr" : 120
+        }
+      )>,
+      <"NoneType" : (
+        {
+          "pointer" : 0
+        }
+      )>
+    ]
+  }
+)>
