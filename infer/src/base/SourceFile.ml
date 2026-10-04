@@ -254,10 +254,21 @@ let is_under_project_root = function
       false
 
 
+let header_exts = ["h"; "hh"; "hpp"; "hxx"]
+
+let is_header source_file =
+  match Filename.split_extension (to_string source_file) with
+  | _, Some ext ->
+      List.mem ~equal:String.equal
+        ("h++" :: "inc" :: "inl" :: "ipp" :: "tcc" :: "tpp" :: header_exts)
+        (String.lowercase ext)
+  | _, None ->
+      false
+
+
 let of_header ?(warn_on_error = true) header_file =
   let abs_path = to_abs_path header_file in
   let source_exts = ["c"; "cc"; "cpp"; "cxx"; "m"; "mm"] in
-  let header_exts = ["h"; "hh"; "hpp"; "hxx"] in
   match Filename.split_extension abs_path with
   | file_no_ext, Some ext when List.mem ~equal:String.equal header_exts ext ->
       List.find_map source_exts ~f:(fun ext ->
@@ -294,7 +305,14 @@ let create ?(check_abs_path = true) ?(check_rel_path = false) path =
 let sources_from_files changed_files =
   List.fold changed_files ~init:Set.empty ~f:(fun changed_files_set line ->
       try
-        let source_file = create line in
+        let source_file =
+          let file = create line in
+          (* match the paths of the procedures defined in headers, which are resolved by
+             [from_abs_path], whatever the spelling of the entry *)
+          if is_header file && ISys.file_exists (to_abs_path file) then
+            from_abs_path ~warn_on_error:false (to_abs_path file)
+          else file
+        in
         let changed_files' = Set.add source_file changed_files_set in
         (* Add source corresponding to changed header if it exists *)
         match of_header source_file with
@@ -341,6 +359,13 @@ let read_config_files_to_analyze =
            files_to_analyze_opt )
   in
   fun () -> Lazy.force result
+
+
+let is_changed ~changed_files source_file =
+  if Config.suffix_match_changed_files then
+    let path = to_rel_path source_file in
+    Set.exists (fun file -> String.is_suffix ~suffix:(to_rel_path file) path) changed_files
+  else Set.mem source_file changed_files
 
 
 let is_matching patterns source_file =

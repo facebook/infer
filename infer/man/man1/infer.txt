@@ -310,6 +310,17 @@ OPTIONS
            captured, hence not analyzed either. Clang, Java, and Hack only.
            See also infer-capture(1) and infer-run(1).
 
+       --capture-includers-of-changed-headers
+           Activates: With --compilation-database and --changed-files-index,
+           also capture the source files of the compilation database that
+           include, directly or not, a header listed in the index, so that
+           the procedures defined in the header can be analyzed. To find
+           them, the preprocessor is run on every other entry of the
+           compilation database, and all the files found are captured;
+           failures to capture them only cause a warning. (Conversely:
+           --no-capture-includers-of-changed-headers)
+           See also infer-capture(1).
+
        --no-censor-report +issue_type_regex
            For debugging/experimentation only: Specify issues not to be
            censored by --censor-report.
@@ -343,7 +354,17 @@ OPTIONS
        --changed-files-index file
            Specify the file containing the list of source files from which
            reactive analysis should start. Source files should be specified
-           relative to project root or be absolute
+           relative to project root or be absolute. For a header file in the
+           list, the source file with the same name in the same directory is
+           analyzed too, if it exists, and, for each procedure defined in the
+           header, so is a captured source file that contains it, unless the
+           list already selects one. These source files are analyzed in full
+           and all their issues are reported. Changes to headers that define
+           no procedures (types, declarations, macros) select no other source
+           file. With --compilation-database, only the source files selected
+           by the list are captured, so the list should also contain source
+           files that include the changed headers, unless
+           --capture-includers-of-changed-headers is passed.
            See also infer-analyze(1).
 
        --clang-biniou-file file

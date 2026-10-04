@@ -999,6 +999,16 @@ and capture_block_list =
        analyzed either. Clang, Java, and Hack only." )
 
 
+and capture_includers_of_changed_headers =
+  CLOpt.mk_bool ~long:"capture-includers-of-changed-headers"
+    ~in_help:InferCommand.[(Capture, manual_clang)]
+    "With $(b,--compilation-database) and $(b,--changed-files-index), also capture the source \
+     files of the compilation database that include, directly or not, a header listed in the \
+     index, so that the procedures defined in the header can be analyzed. To find them, the \
+     preprocessor is run on every other entry of the compilation database, and all the files found \
+     are captured; failures to capture them only cause a warning."
+
+
 and capture_llair =
   CLOpt.mk_path_opt ~long:"capture-llair" ~meta:"path"
     "Generate a SIL program from a Llair program obtained from running sledge, for example with \
@@ -1064,7 +1074,15 @@ and changed_files_index =
     ~in_help:InferCommand.[(Analyze, manual_generic)]
     ~meta:"file"
     "Specify the file containing the list of source files from which reactive analysis should \
-     start. Source files should be specified relative to project root or be absolute"
+     start. Source files should be specified relative to project root or be absolute. For a header \
+     file in the list, the source file with the same name in the same directory is analyzed too, \
+     if it exists, and, for each procedure defined in the header, so is a captured source file \
+     that contains it, unless the list already selects one. These source files are analyzed in \
+     full and all their issues are reported. Changes to headers that define no procedures (types, \
+     declarations, macros) select no other source file. With $(b,--compilation-database), only the \
+     source files selected by the list are captured, so the list should also contain source files \
+     that include the changed headers, unless $(b,--capture-includers-of-changed-headers) is \
+     passed."
 
 
 and check_version =
@@ -4143,6 +4161,8 @@ and buck_targets_block_list = RevList.to_list !buck_targets_block_list
 and capture = !capture
 
 and capture_block_list = match capture_block_list with k, r -> (k, !r)
+
+and capture_includers_of_changed_headers = !capture_includers_of_changed_headers
 
 and capture_llair = !capture_llair
 
