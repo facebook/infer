@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <dirent.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -353,6 +354,126 @@ void fopen_check_fsetpos_ok() {
     fclose(f);
   }
 }
+
+void no_fopen_check_fclose_bad() {
+  FILE* f;
+
+  f = fopen("this_file_doesnt_exist", "r");
+  fclose(f);
+}
+
+void fopen_check_fclose_ok() {
+  FILE* f;
+
+  f = fopen("this_file_doesnt_exist", "r");
+  if (f) {
+    fclose(f);
+  }
+}
+
+void fclose_null_bad() { fclose(NULL); }
+
+int fclose_on_cleanup_path_bad(char* buf, int size) {
+  int ret = -1;
+  FILE* f = fopen("this_file_doesnt_exist", "r");
+  if (f == NULL) {
+    goto out;
+  }
+  if (fgets(buf, size, f) == NULL) {
+    goto out;
+  }
+  ret = 0;
+out:
+  fclose(f);
+  return ret;
+}
+
+void fclose_twice_bad() {
+  FILE* f;
+
+  f = fopen("this_file_doesnt_exist", "r");
+  if (f) {
+    fclose(f);
+    fclose(f);
+  }
+}
+
+void fclose_wrapper(FILE* f) { fclose(f); }
+
+void call_fclose_wrapper_null_bad() { fclose_wrapper(NULL); }
+
+void no_fopen_check_fclose_wrapper_bad() {
+  FILE* f;
+
+  f = fopen("this_file_doesnt_exist", "r");
+  fclose_wrapper(f);
+}
+
+void fopen_check_fclose_wrapper_ok() {
+  FILE* f;
+
+  f = fopen("this_file_doesnt_exist", "r");
+  if (f) {
+    fclose_wrapper(f);
+  }
+}
+
+void no_popen_check_pclose_bad() {
+  FILE* f;
+
+  f = popen("ls", "r");
+  pclose(f);
+}
+
+void popen_check_pclose_ok() {
+  FILE* f;
+
+  f = popen("ls", "r");
+  if (f) {
+    pclose(f);
+  }
+}
+
+void pclose_null_bad() { pclose(NULL); }
+
+int fclose_param_compared_to_null_bad(FILE* f) {
+  int ret = 0;
+  if (f == NULL) {
+    ret = -1;
+  }
+  fclose(f);
+  return ret;
+}
+
+void no_tmpfile_check_fclose_bad() {
+  FILE* f = tmpfile();
+  fclose(f);
+}
+
+void no_fdopen_check_fclose_bad(int fd) {
+  FILE* f = fdopen(fd, "r");
+  fclose(f);
+}
+
+void error(int status, int errnum, const char* format, ...);
+
+// error() exits when its status is not zero, but Pulse does not model it
+void FP_fopen_check_error_fclose_ok(const char* path) {
+  FILE* f = fopen(path, "r");
+  if (f == NULL) {
+    error(EXIT_FAILURE, 0, "cannot open %s", path);
+  }
+  fclose(f);
+}
+
+void no_opendir_check_closedir_bad() {
+  DIR* d;
+
+  d = opendir("this_dir_doesnt_exist");
+  closedir(d);
+}
+
+void closedir_null_bad() { closedir(NULL); }
 
 char* string_source();
 void sink_string(char* s);
