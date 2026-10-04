@@ -109,18 +109,23 @@ let pp_with_base pp_base fmt (base, accesses) =
   pp_rev_accesses fmt (List.rev accesses)
 
 
-(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparison
- * as we cannot add that ignore there due to issues with Siof
+(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparison, except for static
+ * variables, as we cannot add that ignore there due to issues with Siof
  * similar hack to D51588007 *)
 module SVar = struct
   include Var
 
+  let global_key pvar =
+    ( Pvar.get_name pvar
+    , Pvar.get_template_args pvar
+    , if Pvar.is_static_global pvar then Pvar.get_translation_unit pvar else None )
+
+
   let compare x y =
     match (x, y) with
     | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
-        [%compare: Mangled.t * Typ.template_spec_info]
-          (Pvar.get_name x, Pvar.get_template_args x)
-          (Pvar.get_name y, Pvar.get_template_args y)
+        [%compare: Mangled.t * Typ.template_spec_info * SourceFile.t option] (global_key x)
+          (global_key y)
     | ProgramVar x, _ when Pvar.is_global x ->
         -1
     | _, ProgramVar x when Pvar.is_global x ->
@@ -132,9 +137,8 @@ module SVar = struct
   let equal x y =
     match (x, y) with
     | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
-        [%equal: Mangled.t * Typ.template_spec_info]
-          (Pvar.get_name x, Pvar.get_template_args x)
-          (Pvar.get_name y, Pvar.get_template_args y)
+        [%equal: Mangled.t * Typ.template_spec_info * SourceFile.t option] (global_key x)
+          (global_key y)
     | ProgramVar x, _ when Pvar.is_global x ->
         false
     | _, ProgramVar x when Pvar.is_global x ->
@@ -215,6 +219,13 @@ let equal_across_threads tenv t1 t2 =
 
 
 let is_class_object = function Class _ -> true | _ -> false
+
+let has_array_access = function
+  | Global {path= _, accesses} | Parameter {path= _, accesses} ->
+      List.exists accesses ~f:(function MemoryAccess.ArrayAccess _ -> true | _ -> false)
+  | Class _ ->
+      false
+
 
 let rec make formal_map (hilexp : HilExp.t) =
   let make_from_acc_exp acc_exp =
@@ -298,19 +309,7 @@ let pp_subst fmt subst =
   PrettyPrintable.pp_collection fmt ~pp_item:(Pp.option pp) (Array.to_list subst)
 
 
-let make_subst formal_map actuals =
-  let actuals = Array.of_list actuals in
-  let len =
-    (* deal with var args functions *)
-    Int.max (FormalMap.cardinal formal_map) (Array.length actuals)
-  in
-  let subst = Array.create ~len None in
-  FormalMap.iter
-    (fun _base idx ->
-      if idx < Array.length actuals then subst.(idx) <- make formal_map actuals.(idx) )
-    formal_map ;
-  subst
-
+let make_subst formal_map actuals = Array.of_list_map actuals ~f:(make formal_map)
 
 let apply_subst (subst : subst) t =
   match t with

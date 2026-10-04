@@ -1,5 +1,8 @@
 {
   "force-delete-results-dir": true,
+  "lock-model": [
+    {"classname": "std::timed_mutex", "trylock": ["try_lock_for", "try_lock_until"]}
+  ],
   "starvation-skip-analysis" : [ 
     { "classname": "skipped::Skip", "methods": ["skipped_ok"] },
     { "classname": "skipped::SkipTemplate", "methods": ["skipped_ok"] } 

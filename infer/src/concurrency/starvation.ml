@@ -172,7 +172,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else Domain.set_non_null formals lhs_access_exp astate
 
 
-  let do_call {interproc= {proc_desc; tenv; analyze_dependency}; formals} lhs callee actuals loc
+  let do_call ?(ignore_lock_state = false) ?release_held_locks
+      {interproc= {proc_desc; tenv; analyze_dependency}; formals} lhs callee actuals loc
       (astate : Domain.t) =
     let open Domain in
     let procname = Procdesc.get_proc_name proc_desc in
@@ -205,7 +206,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Some (make_ret_attr (Looper ForUIThread))
       else None
     in
-    let get_callee_summary () = analyze_dependency callee |> AnalysisResult.to_option in
+    let get_callee_summary () =
+      analyze_dependency callee |> AnalysisResult.to_option
+      |> Option.map ~f:(fun (summary : summary) ->
+          if ignore_lock_state then {summary with lock_state= LockState.top} else summary )
+    in
     let treat_handler_constructor () =
       if StarvationModels.is_handler_constructor tenv callee actuals then
         match actuals_acc_exps with
@@ -269,7 +274,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(fun summary ->
           let subst = Lock.make_subst formals actuals in
           let callsite = CallSite.make callee loc in
-          Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary )
+          Domain.integrate_summary ?release_held_locks ~tenv ~procname ~lhs ~subst formals callsite
+            astate summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
@@ -280,6 +286,103 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     |> Option.value ~default:astate
 
 
+  let is_local_object formals (exp : HilExp.t) =
+    match exp with
+    | AccessExpression (AddressOf (Base ((ProgramVar pvar, _) as base))) ->
+        not (Pvar.is_global pvar || FormalMap.is_formal base formals)
+    | _ ->
+        false
+
+
+  let is_rooted_at_formal_or_global formals acc_exp =
+    let ((var, _) as base) = HilExp.AccessExpression.get_base acc_exp in
+    Var.is_global var || FormalMap.is_formal base formals
+
+
+  (** Like [do_call], but treats classes that are not modelled as scoped guards based on their
+      summaries. A call that initialises a local object, ie a constructor called on it or a call
+      returning it by value, and leaves exactly one lock held, which the caller can express,
+      constructs a guard of that lock, which the destructor of the object releases. A returned
+      object is a guard only if its destructor releases exactly one lock. Other locks left held when
+      constructing an object that is not rooted at a formal or a global are released at once, as
+      their release through the object cannot be expressed. A method called on a guard that releases
+      (or acquires) exactly one lock that the caller cannot express, ie a lock reached through the
+      guard object, unlocks (or locks) the guard. *)
+  let do_call_with_inferred_guards
+      ({interproc= {proc_desc; tenv; analyze_dependency}; formals} as analysis_data)
+      ~assign_last_arg lhs callee actuals loc (astate : Domain.t) =
+    let procname = Procdesc.get_proc_name proc_desc in
+    let get_lock_state pname =
+      analyze_dependency pname |> AnalysisResult.to_option
+      |> Option.map ~f:(fun (summary : Domain.summary) -> summary.lock_state)
+    in
+    let get_callee_lock_state () = get_lock_state callee in
+    let lock_in_caller lock = Domain.Lock.(apply_subst (make_subst formals actuals) lock) in
+    let destructor_releases_one_lock (obj : HilExp.t) =
+      match obj with
+      | AccessExpression
+          (AddressOf (Base (_, {Typ.desc= Tstruct name | Tptr ({desc= Tstruct name}, _)}))) ->
+          Tenv.lookup tenv name
+          |> Option.bind ~f:(fun ({methods} : Struct.t) ->
+              List.find_map methods ~f:(fun meth ->
+                  let pname = Struct.name_of_tenv_method meth in
+                  Option.some_if (Procname.is_destructor pname) pname ) )
+          |> Option.bind ~f:get_lock_state
+          |> Option.exists ~f:(fun lock_state ->
+              Option.is_some (Domain.LockState.get_single_unlocked_lock lock_state) )
+      | _ ->
+          false
+    in
+    let is_constructor =
+      match callee with Procname.ObjC_Cpp {kind= CPPConstructor _} -> true | _ -> false
+    in
+    let initialised_object =
+      if is_constructor then List.hd actuals
+      else if assign_last_arg then
+        List.last actuals |> Option.filter ~f:destructor_releases_one_lock
+      else None
+    in
+    match (callee, actuals) with
+    | Procname.ObjC_Cpp {kind= CPPDestructor _}, guard :: _ when Domain.is_guard astate guard ->
+        let astate = do_call ~ignore_lock_state:true analysis_data lhs callee actuals loc astate in
+        Domain.remove_guard astate guard
+    | Procname.ObjC_Cpp {kind= CPPMethod _}, guard :: _ when Domain.is_guard astate guard ->
+        let astate = do_call analysis_data lhs callee actuals loc astate in
+        let lock_state = get_callee_lock_state () in
+        let has_single_guard_lock get_single_lock =
+          Option.bind lock_state ~f:get_single_lock
+          |> Option.exists ~f:(fun lock -> Option.is_none (lock_in_caller lock))
+        in
+        if has_single_guard_lock Domain.LockState.get_single_unlocked_lock then
+          Domain.unlock_guard astate guard
+        else if has_single_guard_lock Domain.LockState.get_single_held_lock then
+          Domain.lock_guard ~procname ~loc tenv astate guard
+        else astate
+    | _ -> (
+      match initialised_object with
+      | Some obj
+        when not (get_access_expr obj |> Option.exists ~f:(is_rooted_at_formal_or_global formals))
+        -> (
+          let guard_lock =
+            if is_local_object formals obj then
+              get_callee_lock_state ()
+              |> Option.bind ~f:Domain.LockState.get_single_held_lock
+              |> Option.bind ~f:lock_in_caller
+            else None
+          in
+          match guard_lock with
+          | Some lock ->
+              let astate =
+                do_call ~ignore_lock_state:true analysis_data lhs callee actuals loc astate
+              in
+              Domain.add_guard ~acquire_now:true ~procname ~loc tenv astate obj lock
+          | None ->
+              do_call ~release_held_locks:is_constructor analysis_data lhs callee actuals loc astate
+          )
+      | _ ->
+          do_call analysis_data lhs callee actuals loc astate )
+
+
   let do_metadata (metadata : Sil.instr_metadata) astate =
     match metadata with ExitScope (vars, _) -> Domain.remove_dead_vars astate vars | _ -> astate
 
@@ -287,7 +390,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let do_load tenv formals ~lhs rhs_exp rhs_typ (astate : Domain.t) =
     let lhs_var = fst lhs in
     let add_deref = match (lhs_var : Var.t) with LogicalVar _ -> true | ProgramVar _ -> false in
-    let rhs_hil_exp = hilexp_of_sil ~add_deref astate rhs_exp rhs_typ in
+    let rhs_hil_exp =
+      match hilexp_of_sil ~add_deref astate rhs_exp rhs_typ with
+      | AccessExpression acc_exp as hil_exp ->
+          Domain.FieldAliases.get acc_exp astate.field_aliases
+          |> Option.value_map ~default:hil_exp ~f:(fun alias -> HilExp.AccessExpression alias)
+      | hil_exp ->
+          hil_exp
+    in
     let astate =
       get_access_expr_or_const rhs_hil_exp
       |> Option.value_map ~default:astate ~f:(fun acc_exp ->
@@ -295,6 +405,33 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let lhs_hil_acc_exp = HilExp.AccessExpression.base lhs in
     do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate
+
+
+  let do_field_store formals typ lhs_acc_exp rhs_exp (astate : Domain.t) =
+    let stored_pointer =
+      match (lhs_acc_exp : HilExp.AccessExpression.t) with
+      | FieldOffset _ when Typ.is_pointer typ && is_rooted_at_formal_or_global formals lhs_acc_exp
+        ->
+          get_access_expr rhs_exp |> Option.filter ~f:(is_rooted_at_formal_or_global formals)
+      | _ ->
+          None
+    in
+    { astate with
+      field_aliases= Domain.FieldAliases.assign lhs_acc_exp stored_pointer astate.field_aliases }
+
+
+  (** the callee may store into the memory reachable from its actuals, eg [this->mutex_] through
+      [this] *)
+  let forget_field_aliases_reachable_from actuals (astate : Domain.t) =
+    let field_aliases =
+      List.fold actuals ~init:astate.field_aliases ~f:(fun field_aliases actual ->
+          get_access_expr actual
+          |> Option.bind ~f:(fun acc_exp ->
+              HilExp.AccessExpression.add_access acc_exp MemoryAccess.Dereference )
+          |> Option.value_map ~default:field_aliases ~f:(fun pointee ->
+              Domain.FieldAliases.assign pointee None field_aliases ) )
+    in
+    {astate with field_aliases}
 
 
   let do_cast tenv formals id base_typ actuals astate =
@@ -369,6 +506,13 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         hilexp_of_sil ~add_deref:true astate e1 (Typ.mk_ptr typ)
         |> get_access_expr
         |> Option.value_map ~default:astate ~f:(fun lhs_hil_acc_exp ->
+            let astate =
+              match procname with
+              | Procname.ObjC_Cpp {kind= CPPConstructor _} ->
+                  do_field_store formals typ lhs_hil_acc_exp rhs_hil_exp astate
+              | _ ->
+                  astate
+            in
             do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate )
     | Call (_, Const (Cfun callee), actuals, _, _)
       when should_skip_analysis tenv callee (hilexp_of_sils ~add_deref:false astate actuals) ->
@@ -379,9 +523,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call ((id, typ), Const (Cfun callee), fn_ptr :: fn_args, loc, _)
       when Procname.equal callee BuiltinDecl.__call_c_function_ptr ->
         do_function_pointer_call analysis_data loc id typ fn_ptr fn_args astate
-    | Call ((id, typ), Const (Cfun callee), sil_actuals, loc, _) -> (
+    | Call ((id, typ), Const (Cfun callee), sil_actuals, loc, {CallFlags.cf_assign_last_arg}) -> (
         let ret_base = (Var.of_id id, typ) in
         let actuals = hilexp_of_sils ~add_deref:false astate sil_actuals in
+        let astate = forget_field_aliases_reachable_from actuals astate in
         match get_lock_effect callee actuals with
         | Lock locks ->
             do_lock locks loc astate
@@ -400,7 +545,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Domain.unlock_guard astate guard
         | GuardDestroy guard ->
             Domain.remove_guard astate guard
-        | LockedIfTrue _ | GuardLockedIfTrue _ ->
+        | LockedIfTrue _ | LockedIfZero _ | GuardLockedIfTrue _ ->
             astate
         | NoEffect when is_synchronized_library_call tenv callee ->
             (* model a synchronized call without visible internal behaviour *)
@@ -422,7 +567,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | NoEffect ->
             (* in C++/Obj C we only care about deadlocks, not starvation errors *)
             let ret_exp = HilExp.AccessExpression.base ret_base in
-            do_call analysis_data ret_exp callee actuals loc astate )
+            do_call_with_inferred_guards analysis_data ~assign_last_arg:cf_assign_last_arg ret_exp
+              callee actuals loc astate )
     | Call ((id, _), _, _, _, _) ->
         (* call havocs LHS *)
         Domain.remove_dead_vars astate [Var.of_id id]
