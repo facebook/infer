@@ -13,9 +13,21 @@ open PulseDomainInterface
 open PulseOperationResult.Import
 open PulseModelsImport
 
+(* An optional is modelled with two fields:
+   - [__infer_has_value] is 1 when the optional is engaged and 0 when it is empty;
+   - [__infer_backing_value] points to the contained object when the optional is engaged, and to a
+     marker value invalidated with [OptionalEmpty] when it is empty.
+
+   The marker must never be equal to a constant: values equal to the same constant are merged
+   together with their attributes, so the invalidation would also apply to every null pointer on the
+   path. *)
 let internal_value = Fieldname.make PulseOperations.pulse_model_type "__infer_backing_value"
 
 let internal_value_access = Access.FieldAccess internal_value
+
+let has_value_field = Fieldname.make PulseOperations.pulse_model_type "__infer_has_value"
+
+let has_value_access = Access.FieldAccess has_value_field
 
 let to_internal_value path mode location optional astate =
   PulseOperations.eval_access path mode location optional internal_value_access astate
@@ -26,6 +38,94 @@ let to_internal_value_deref path mode location optional astate =
   PulseOperations.eval_access path mode location pointer Dereference astate
 
 
+let to_has_value_deref path mode location optional astate =
+  let* astate, field =
+    PulseOperations.eval_access path Read location optional has_value_access astate
+  in
+  PulseOperations.eval_access path mode location field Dereference astate
+
+
+(* The two fields are always read together: an unknown call only havocs the edges that already
+   exist, so a field read for the first time after an unknown call would still be taken from the
+   precondition while the other one has been havoced. *)
+let read_fields path location ~value_mode ~flag_mode optional astate =
+  let* astate, value = to_internal_value_deref path value_mode location optional astate in
+  let+ astate, flag = to_has_value_deref path flag_mode location optional astate in
+  (astate, value, flag)
+
+
+let write_has_value path location this ~engaged ~hist astate =
+  let* astate, field =
+    PulseOperations.eval_access path Read location this has_value_access astate
+  in
+  let astate, flag =
+    PulseArithmetic.absval_of_int astate (if engaged then IntLit.one else IntLit.zero)
+  in
+  PulseOperations.write_deref path location ~ref:field ~obj:(flag, hist) astate
+
+
+(* Do not record [flag > 0] as a test made by the program: in callers, it would make every later
+   issue latent, as [is_manifest] only ignores such tests on allocated values. *)
+let prune_engaged ~flag ~pointer astate =
+  PulseArithmetic.and_positive flag astate >>== PulseArithmetic.prune_positive pointer
+
+
+let is_known_engaged flag astate =
+  match PulseArithmetic.prune_eq_zero flag astate with Unsat _ -> true | Sat _ -> false
+
+
+let must_be_valid_in_pre value astate =
+  AddressAttributes.find_opt `Pre value astate |> Option.bind ~f:Attributes.get_must_be_valid
+
+
+let is_accessed value astate =
+  let has_edge pre_or_post = Memory.exists_edge ~pre_or_post value astate ~f:(fun _ -> true) in
+  has_edge `Post || has_edge `Pre
+
+
+let is_empty_marker value astate =
+  AddressAttributes.find_opt `Post value astate
+  |> Option.bind ~f:Attributes.get_invalid
+  |> Option.exists ~f:(fun (invalidation, _) -> Invalidation.equal invalidation OptionalEmpty)
+
+
+(* The contained value is only accessed when the optional is engaged, so a path where it has been
+   accessed but the optional is empty is infeasible, unless the optional comes from the precondition
+   and is empty in the caller. Stop with a latent issue on the access then, as Pulse does for pointers
+   that are compared to null after being dereferenced. *)
+let empty_after_access value astate =
+  match must_be_valid_in_pre value astate with
+  | Some (_, trace, reason) ->
+      Sat
+        (AccessResult.of_abductive_result
+           (Error (`PotentialInvalidAccess (astate, value, (trace, reason)))) )
+  | None ->
+      Unsat
+        { reason= (fun () -> "the contained value of an empty optional was accessed")
+        ; source= __POS__ }
+
+
+let prune_empty ~flag ~value astate =
+  let** astate = PulseArithmetic.prune_eq_zero flag astate in
+  if is_accessed value astate then empty_after_access value astate else Sat (Ok astate)
+
+
+(* Record in the post that an optional whose value has been accessed is engaged. Constraining the
+   flag of the precondition instead would make the summary inapplicable to callers that pass an
+   empty optional, where the access is reported. Bypass [WrittenTo], as this is not a write by the
+   program and must not count as a modification of a copy or of a parameter; marking the cell
+   initialized is enough for callers to take the flag from the post. *)
+let set_engaged_in_post path location optional ~hist astate =
+  let+ astate, (field, _) =
+    PulseOperations.eval_access path Read location optional has_value_access astate
+  in
+  let astate, one = PulseArithmetic.absval_of_int astate IntLit.one in
+  AbductiveDomain.set_post_edges field
+    (UnsafeMemory.Edges.add Dereference (one, hist) UnsafeMemory.Edges.empty)
+    astate
+  |> AddressAttributes.initialize field
+
+
 let write_value path location this ~value ~desc astate =
   let* astate, value_field = to_internal_value path Read location this astate in
   let value_hist = (fst value, Hist.add_call path location desc (snd value)) in
@@ -33,25 +133,39 @@ let write_value path location this ~value ~desc astate =
   (astate, (value_field, value_hist))
 
 
-let assign_value_fresh path location this history ~desc astate =
-  write_value path location this ~value:(AbstractValue.mk_fresh (), history) ~desc astate
+let write_engaged_value path location this ~value ~desc astate =
+  let* astate, ((_, (_, hist)) as res) = write_value path location this ~value ~desc astate in
+  let+ astate = write_has_value path location this ~engaged:true ~hist astate in
+  (astate, res)
 
 
-let assign_none history this ~desc : model_no_non_disj =
+let write_empty path location this ~marker ~desc astate =
+  let* astate, ((_, (_, hist)) as res) =
+    write_value path location this ~value:marker ~desc astate
+  in
+  let+ astate = write_has_value path location this ~engaged:false ~hist astate in
+  (astate, res)
+
+
+let assign_none ?marker history this ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let this = ValueOrigin.addr_hist this in
-  let<*> astate, (pointer, value) = assign_value_fresh path location this history ~desc astate in
-  let<++> astate = PulseArithmetic.and_eq_int (fst value) IntLit.zero astate in
+  let marker = Option.value_or_thunk marker ~default:AbstractValue.mk_fresh in
+  let<+> astate, (pointer, value) =
+    write_empty path location this ~marker:(marker, history) ~desc astate
+  in
   PulseOperations.invalidate path
     (MemoryAccess {pointer; access= Dereference; hist_obj_default= snd value})
     location OptionalEmpty value astate
 
 
-let assign_non_empty_value history FuncArg.{arg_payload= this} ~desc : model_no_non_disj =
+let assign_non_empty_value history this ~desc : model_no_non_disj =
  fun {path; location} astate ->
   (* This model marks the optional object to be non-empty *)
   let<*> astate, (_, value) =
-    assign_value_fresh path location (ValueOrigin.addr_hist this) history ~desc astate
+    write_engaged_value path location (ValueOrigin.addr_hist this)
+      ~value:(AbstractValue.mk_fresh (), history)
+      ~desc astate
   in
   let<++> astate = PulseArithmetic.and_positive (fst value) astate in
   astate
@@ -66,7 +180,7 @@ let get_template_arg typ =
       None
 
 
-let assign_precise_value (FuncArg.{typ; arg_payload= this_payload} as this)
+let assign_precise_value FuncArg.{typ; arg_payload= this_payload}
     (FuncArg.{arg_payload= other_payload} as other) ~desc : model =
  (* This model marks the optional object to be non-empty by storing value. *)
  fun ({callee_procname; path; location} as model_data) astate non_disj ->
@@ -77,7 +191,7 @@ let assign_precise_value (FuncArg.{typ; arg_payload= this_payload} as this)
       (* assign the value pointer to the field of the shared_ptr *)
       let<**> astate, value_address = Basic.alloc_value_address ~desc typ model_data astate in
       let<*> astate, _ =
-        write_value path location
+        write_engaged_value path location
           (ValueOrigin.addr_hist this_payload)
           ~value:value_address ~desc astate
       in
@@ -97,7 +211,9 @@ let assign_precise_value (FuncArg.{typ; arg_payload= this_payload} as this)
         Basic.deep_copy path location ~value:(ValueOrigin.addr_hist other_payload) ~desc astate
       in
       let<*> astate, _ =
-        write_value path location (ValueOrigin.addr_hist this_payload) ~value:address ~desc astate
+        write_engaged_value path location
+          (ValueOrigin.addr_hist this_payload)
+          ~value:address ~desc astate
       in
       (Basic.ok_continue astate, non_disj)
   | _, _ ->
@@ -105,7 +221,7 @@ let assign_precise_value (FuncArg.{typ; arg_payload= this_payload} as this)
          it just marks the object non-empty *)
       ( assign_non_empty_value
           (snd @@ ValueOrigin.addr_hist other_payload)
-          this
+          this_payload
           ~desc:(desc ^ " (cannot find template argument and/or formal parameters)")
           model_data astate
       , non_disj )
@@ -115,7 +231,7 @@ let assign_value args ~desc : model =
   match args with
   | [this; value] ->
       assign_precise_value this value ~desc:(desc ^ " (precise value)")
-  | this :: _ ->
+  | {FuncArg.arg_payload= this} :: _ ->
       assign_non_empty_value ValueHistory.epoch this ~desc:(desc ^ " (non-empty value)")
       |> lift_model
   | _ ->
@@ -128,17 +244,29 @@ let copy_assignment (FuncArg.{arg_payload= this_payload} as this)
  fun ({path; location} as model_data) astate non_disj ->
   let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
   let ( let<**> ) x f = bind_sat_result non_disj x f in
-  let<*> astate, ((other_addr, other_hist) as other) =
-    to_internal_value_deref path Read location (ValueOrigin.addr_hist other_payload) astate
+  let other_payload = ValueOrigin.addr_hist other_payload in
+  let<*> astate, ((other_addr, other_hist) as other), (other_flag, _) =
+    read_fields path location ~value_mode:Read ~flag_mode:Read other_payload astate
   in
   match get_template_arg typ with
   | Some typ ->
       let assign_none, non_disj =
-        let<**> astate = PulseArithmetic.prune_eq_zero other_addr astate in
-        (assign_none other_hist this_payload ~desc model_data astate, non_disj)
+        let<**> astate = prune_empty ~flag:other_flag ~value:other_addr astate in
+        (* share the value of [other] so that accesses to the copy, often a temporary, are reported
+           in terms of [other]; only invalidate it when it is already the marker of an empty
+           optional, as it may be the contained value of an engaged optional in callers *)
+        if is_empty_marker other_addr astate then
+          (assign_none ~marker:other_addr other_hist this_payload ~desc model_data astate, non_disj)
+        else
+          let<*> astate, _ =
+            write_empty path location
+              (ValueOrigin.addr_hist this_payload)
+              ~marker:other ~desc astate
+          in
+          (Basic.ok_continue astate, non_disj)
       in
       let assign_value, non_disj =
-        let<**> astate = PulseArithmetic.prune_positive other_addr astate in
+        let<**> astate = prune_engaged ~flag:other_flag ~pointer:other_addr astate in
         assign_precise_value this
           {exp= Var (Ident.create_none ()); typ; arg_payload= ValueOrigin.unknown other}
           ~desc model_data astate non_disj
@@ -149,42 +277,66 @@ let copy_assignment (FuncArg.{arg_payload= this_payload} as this)
 
 
 let emplace optional ~desc : model_no_non_disj =
- (* TODO: destroy current object and call move constructor *)
- fun {path; location} astate ->
-  let optional = ValueOrigin.addr_hist optional in
-  let<+> astate, _ = assign_value_fresh path location optional ValueHistory.epoch ~desc astate in
-  astate
+  (* TODO: destroy current object and call move constructor *)
+  assign_non_empty_value ValueHistory.epoch optional ~desc
 
 
 let value optional ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let optional = ValueOrigin.addr_hist optional in
-  let<*> astate, ((value_addr, value_hist) as value) =
-    to_internal_value_deref path Write location optional astate
+  let<*> astate, ((value_addr, value_hist) as value), (flag, _) =
+    read_fields path location ~value_mode:Write ~flag_mode:NoAccess optional astate
   in
   (* Check dereference to show an error at the callsite of `value()` *)
   let<*> astate, _ = PulseOperations.eval_access path Write location value Dereference astate in
-  PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
-  |> Basic.ok_continue
+  let astate =
+    PulseOperations.write_id ret_id (value_addr, Hist.add_call path location desc value_hist) astate
+  in
+  if PulseArithmetic.is_known_zero astate flag then
+    let<**> astate = empty_after_access value_addr astate in
+    Basic.ok_continue astate
+  else if is_known_engaged flag astate then Basic.ok_continue astate
+  else if Option.is_some (must_be_valid_in_pre value_addr astate) then
+    let<+> astate = set_engaged_in_post path location optional ~hist:value_hist astate in
+    astate
+  else
+    let<++> astate = PulseArithmetic.prune_positive flag astate in
+    astate
 
 
 let has_value this ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let this = ValueOrigin.addr_hist this in
-  let<+> astate, (value_addr, _) = to_internal_value_deref path Write location this astate in
-  PulseOperations.write_id ret_id (value_addr, Hist.single_call path location desc) astate
+  let<*> astate, (value_addr, _), (flag, _) =
+    read_fields path location ~value_mode:NoAccess ~flag_mode:Write this astate
+  in
+  let hist = Hist.single_call path location desc in
+  let empty =
+    PulseOperations.write_id ret_id (flag, hist) astate
+    |> prune_empty ~flag ~value:value_addr
+    >>|| ExecutionDomain.continue
+  in
+  let engaged =
+    (* a constant makes the program's own test of the result trivial, see [prune_engaged] *)
+    let astate, one = PulseArithmetic.absval_of_int astate IntLit.one in
+    PulseOperations.write_id ret_id (one, hist) astate
+    |> PulseArithmetic.and_positive flag >>|| ExecutionDomain.continue
+  in
+  SatUnsat.to_list empty @ SatUnsat.to_list engaged
 
 
 let get_pointer optional ~desc : model_no_non_disj =
  fun {path; location; ret= ret_id, _} astate ->
   let optional = ValueOrigin.addr_hist optional in
-  let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
+  let<*> astate, value_addr, (flag, _) =
+    read_fields path location ~value_mode:Read ~flag_mode:Read optional astate
+  in
   let value_update_hist =
     (fst value_addr, Hist.add_call path location desc ~more:"non-empty case" (snd value_addr))
   in
   let astate_value_addr =
     PulseOperations.write_id ret_id value_update_hist astate
-    |> PulseArithmetic.prune_positive (fst value_addr)
+    |> prune_engaged ~flag ~pointer:(fst value_addr)
     >>|| ExecutionDomain.continue
   in
   let nullptr =
@@ -192,7 +344,7 @@ let get_pointer optional ~desc : model_no_non_disj =
   in
   let astate_null =
     PulseOperations.write_id ret_id nullptr astate
-    |> PulseArithmetic.prune_eq_zero (fst value_addr)
+    |> prune_empty ~flag ~value:(fst value_addr)
     >>== PulseArithmetic.and_eq_int (fst nullptr) IntLit.zero
     >>|| PulseOperations.invalidate path
            (StackAddress (Var.of_id ret_id, snd nullptr))
@@ -206,10 +358,12 @@ let value_or_common ~assign_ret optional default ~desc : model_no_non_disj =
  fun {path; location} astate ->
   let optional = ValueOrigin.addr_hist optional in
   let default = ValueOrigin.addr_hist default in
-  let<*> astate, value_addr = to_internal_value_deref path Read location optional astate in
+  let<*> astate, value_addr, (flag, _) =
+    read_fields path location ~value_mode:Read ~flag_mode:Read optional astate
+  in
   let astate_non_empty =
     let** astate_non_empty, value =
-      PulseArithmetic.prune_positive (fst value_addr) astate
+      prune_engaged ~flag ~pointer:(fst value_addr) astate
       >>|= PulseOperations.eval_access path Read location value_addr Dereference
     in
     let value_update_hist =
@@ -224,7 +378,7 @@ let value_or_common ~assign_ret optional default ~desc : model_no_non_disj =
     let default_value_hist =
       (default_val, Hist.add_call path location desc ~more:"empty case" default_hist)
     in
-    PulseArithmetic.prune_eq_zero (fst value_addr) astate
+    prune_empty ~flag ~value:(fst value_addr) astate
     >>== assign_ret default_value_hist >>|| Basic.continue
   in
   SatUnsat.to_list astate_non_empty @ SatUnsat.to_list astate_default
@@ -258,19 +412,26 @@ let destruct FuncArg.{arg_payload= this; typ} ~desc : model =
   let this = ValueOrigin.addr_hist this in
   match get_template_arg typ with
   | Some typ ->
-      (* note: We do dereference the value address with [NoAccess], to avoid a null dereference
-         issue reported when [None] is given as an optional value. *)
       let ( let<*> ) x f = bind_sat_result non_disj (Sat x) f in
-      let<*> astate, (value_addr, value_hist) =
-        to_internal_value_deref path NoAccess location this astate
+      let ( let<**> ) x f = bind_sat_result non_disj x f in
+      let<*> astate, (value_addr, value_hist), (flag, _) =
+        read_fields path location ~value_mode:NoAccess ~flag_mode:NoAccess this astate
       in
-      let value_hist = Hist.add_call path location desc value_hist in
-      let deleted_arg =
-        { FuncArg.arg_payload= ValueOrigin.Unknown (value_addr, value_hist)
-        ; exp= Var (Ident.create_fresh Ident.kprimed)
-        ; typ= {desc= Tptr (typ, Pk_pointer); quals= Typ.mk_type_quals ()} }
+      let empty, non_disj =
+        let<**> astate = prune_empty ~flag ~value:value_addr astate in
+        (Basic.ok_continue astate, non_disj)
       in
-      Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
+      let engaged, non_disj =
+        let<**> astate = prune_engaged ~flag ~pointer:value_addr astate in
+        let value_hist = Hist.add_call path location desc value_hist in
+        let deleted_arg =
+          { FuncArg.arg_payload= ValueOrigin.Unknown (value_addr, value_hist)
+          ; exp= Var (Ident.create_fresh Ident.kprimed)
+          ; typ= {desc= Tptr (typ, Pk_pointer); quals= Typ.mk_type_quals ()} }
+        in
+        Basic.free_or_delete `Delete CppDelete deleted_arg model_data astate non_disj
+      in
+      (empty @ engaged, non_disj)
   | None ->
       (Basic.ok_continue astate, non_disj)
 
@@ -412,6 +573,11 @@ let matchers : matcher list =
     $+...$--> has_value ~desc:"std::optional::operator_bool()"
     |> with_non_disj
   ; -"std" &:: "optional" &:: "reset" <>$ capt_arg_payload
+    $+...$--> assign_none ValueHistory.epoch ~desc:"std::optional::reset()"
+    |> with_non_disj
+  ; (* libc++ declares [reset] in this base class and brings it into [std::optional] with a
+       using-declaration, so calls to [std::optional::reset] resolve to the base-class method *)
+    -"std" &:: "__optional_destruct_base" &:: "reset" <>$ capt_arg_payload
     $+...$--> assign_none ValueHistory.epoch ~desc:"std::optional::reset()"
     |> with_non_disj
   ; -"std" &:: "optional" &:: "value" <>$ capt_arg_payload

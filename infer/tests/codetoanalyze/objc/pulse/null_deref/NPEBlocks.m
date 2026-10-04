@@ -90,7 +90,7 @@ int dispatch_sync_specialized_ok(dispatch_queue_t queue) {
   return *ptr;
 }
 
-int dispatch_sync_specialized_latent(dispatch_queue_t queue) {
+int dispatch_sync_specialized_bad(dispatch_queue_t queue) {
   __block int x = 0;
   __block int* ptr = NULL;
   dispatch_sync_specializable(queue, ^{

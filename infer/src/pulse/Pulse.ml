@@ -2062,6 +2062,12 @@ let analyze specialization ({InterproceduralAnalysis.tenv; proc_desc} as analysi
           (DisjunctiveAnalyzer.extract_post (Procdesc.Node.get_id exit_node) invariant_map)
       in
       let exit_esink_summaries = PulseSummary.join summaries_for_exit summaries_at_exn_sink in
+      let exit_esink_summaries =
+        { exit_esink_summaries with
+          pre_post_list=
+            PulseReport.promote_and_report_latent_issues analysis_data
+              exit_esink_summaries.PulseSummary.pre_post_list }
+      in
       report_on_and_return_summaries exit_esink_summaries )
 
 

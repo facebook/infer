@@ -24,6 +24,16 @@ val report_summary_error :
 (** [None] means that the execution can continue but we could not compute the continuation state
     (because this only takes a [AccessResult.error], which doesn't have the ok state) *)
 
+val promote_and_report_latent_issues :
+     _ InterproceduralAnalysis.t
+  -> AbductiveDomain.Summary.t ExecutionDomain.base_t list
+  -> AbductiveDomain.Summary.t ExecutionDomain.base_t list
+(** To call on the final pre/post pairs of the procedure. Latent issues found by
+    [report_summary_error] are only reported here. An issue type at a given location, reached
+    through the same calls, that is latent in several pre/post pairs whose disjunction is manifest
+    (see {!PulseArithmetic.is_manifest_disjunction}) is reported as a manifest issue instead, and
+    these pre/post pairs become [AbortProgram], unless the issue is suppressed in all of them. *)
+
 val report_result :
      _ InterproceduralAnalysis.t
   -> PathContext.t

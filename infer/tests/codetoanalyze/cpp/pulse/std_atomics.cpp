@@ -166,4 +166,49 @@ void compare_exchange_strong_possible_npe2_bad() {
     *p = 42;
   }
 }
+
+std::atomic<bool> global_enabled;
+
+struct TraceState {
+  bool in_trace;
+};
+
+thread_local TraceState* trace_state;
+
+void log_event();
+
+// shaped like an inlined tracing macro: branches on global and thread-local
+// state that has nothing to do with the caller
+void trace_event() {
+  if (global_enabled.load(std::memory_order_relaxed)) {
+    if (trace_state && !trace_state->in_trace) {
+      log_event();
+    }
+  }
+}
+
+void null_deref_after_trace_event_bad() {
+  trace_event();
+  int* p = nullptr;
+  *p = 42;
+}
+
+void store_42(int* p) { *p = 42; }
+
+void null_deref_in_callee_after_trace_event_bad() {
+  trace_event();
+  store_42(nullptr);
+}
+
+int* null_if_enabled(int* x) {
+  if (global_enabled.load()) {
+    return nullptr;
+  }
+  return x;
+}
+
+void null_deref_if_enabled_latent(int* x) {
+  int* p = null_if_enabled(x);
+  *p = 42;
+}
 } // namespace atomic_test

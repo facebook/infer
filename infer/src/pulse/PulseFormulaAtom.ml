@@ -394,6 +394,10 @@ let fold_subst_variables ~init ~f_subst ?f_post a =
 
 let subst_variables l ~f = fold_subst_variables l ~init:() ~f_subst:(fun () v -> ((), f v)) |> snd
 
+let map_variables atom ~f = subst_variables atom ~f:(fun v -> Term.VarSubst (f v))
+
+let nonnegative v = LessEqual (Term.zero, Term.Var v)
+
 let has_var_notin vars atom =
   let t1, t2 = get_terms atom in
   Term.has_var_notin vars t1 || Term.has_var_notin vars t2

@@ -121,11 +121,129 @@ let prune_eq_one v astate =
 
 let is_known_zero astate v = Formula.is_known_zero astate.AbductiveDomain.path_condition v
 
+let is_allocated summary v =
+  AbductiveDomain.Summary.is_heap_allocated summary v
+  || AbductiveDomain.Summary.get_must_be_valid v summary |> Option.is_some
+
+
 let is_manifest summary =
-  Formula.is_manifest (AbductiveDomain.Summary.get_path_condition summary) ~is_allocated:(fun v ->
-      AbductiveDomain.Summary.is_heap_allocated summary v
-      || AbductiveDomain.Summary.get_must_be_valid v summary |> Option.is_some )
+  Formula.is_manifest
+    (AbductiveDomain.Summary.get_path_condition summary)
+    ~is_allocated:(is_allocated summary)
   && not (AbductiveDomain.Summary.pre_heap_has_assumptions summary)
+
+
+module PreAccessPath = struct
+  type t = Var.t * Access.t list [@@deriving compare]
+end
+
+module PreAccessPathMap = Stdlib.Map.Make (PreAccessPath)
+
+(** the access paths from the variables of the precondition to each value of the precondition *)
+let pre_access_paths (summary : AbductiveDomain.Summary.t) =
+  let add root_var paths v rev_accesses =
+    (* values reached with no accesses are the addresses of the variables themselves, or array
+       indices that the traversal restarts from *)
+    if List.is_empty rev_accesses then paths
+    else
+      AbstractValue.Map.update v
+        (fun paths_opt -> Some ((root_var, rev_accesses) :: Option.value paths_opt ~default:[]))
+        paths
+  in
+  AbductiveDomain.fold_all
+    (summary :> AbductiveDomain.t)
+    `Pre ~init:AbstractValue.Map.empty ~finish:Fn.id
+    ~f:(fun root_var paths v rev_accesses ->
+      Continue_or_stop.Continue (add root_var paths v rev_accesses) )
+    ~f_revisit:add
+
+
+let is_manifest_disjunction summaries =
+  let summaries = List.map summaries ~f:(fun summary -> (summary, pre_access_paths summary)) in
+  (* give up if a precondition assumes that two access paths are aliases (cells equal to the same
+     constant are not, see [Summary.pre_heap_has_assumptions]) or if several values have the same
+     access path, which can happen below array indices since the traversal of the precondition
+     restarts from them *)
+  let has_unique_paths (summary, paths) =
+    let phi = AbductiveDomain.Summary.get_path_condition summary in
+    AbstractValue.Map.for_all
+      (fun v paths ->
+        List.length paths <= 1 || Option.is_some (Formula.get_constant_condition_depth phi v) )
+      paths
+    && not
+         ( AbstractValue.Map.fold (fun _ paths all_paths -> paths @ all_paths) paths []
+         |> List.contains_dup ~compare:PreAccessPath.compare )
+  in
+  List.for_all summaries ~f:has_unique_paths
+  &&
+  (* name the values of the preconditions after their access paths so that the conditions of
+     different summaries can be related *)
+  let canonical_vars =
+    List.fold summaries ~init:PreAccessPathMap.empty ~f:(fun canonical_vars (_, paths) ->
+        AbstractValue.Map.fold
+          (fun _ paths canonical_vars ->
+            List.fold paths ~init:canonical_vars ~f:(fun canonical_vars path ->
+                if PreAccessPathMap.mem path canonical_vars then canonical_vars
+                else PreAccessPathMap.add path (AbstractValue.mk_fresh ()) canonical_vars ) )
+          paths canonical_vars )
+  in
+  (* the conditions of [summary] that are compatible with it being manifest, and all of its
+     conditions together with the assumptions encoded by restricted values (see [is_manifest]) *)
+  let conditions (summary, paths) =
+    let phi = AbductiveDomain.Summary.get_path_condition summary in
+    let names v =
+      match AbstractValue.Map.find_opt (Formula.get_var_repr phi v) paths with
+      | None ->
+          [v]
+      | Some paths ->
+          List.map paths ~f:(fun path -> PreAccessPathMap.find path canonical_vars)
+    in
+    (* a value with several access paths is a constant, so a condition on that value stands for the
+       same condition on each of these access paths *)
+    let instantiate atom =
+      let vars =
+        Formula.Atom.fold_variables atom ~init:AbstractValue.Set.empty
+          ~f:(Fn.flip AbstractValue.Set.add)
+      in
+      AbstractValue.Set.fold
+        (fun v substs ->
+          List.concat_map (names v) ~f:(fun name ->
+              List.map substs ~f:(AbstractValue.Map.add v name) ) )
+        vars [AbstractValue.Map.empty]
+      |> List.map ~f:(fun subst ->
+          Formula.Atom.map_variables atom ~f:(fun v ->
+              AbstractValue.Map.find_opt v subst |> Option.value ~default:v ) )
+    in
+    let manifest, latent =
+      Formula.partition_conditions_by_manifest ~is_allocated:(is_allocated summary) phi
+    in
+    let pre_values =
+      AbstractValue.Map.fold
+        (fun v _ vs -> AbstractValue.Set.add v vs)
+        paths AbstractValue.Set.empty
+    in
+    let nonnegative vs =
+      AbstractValue.Set.filter AbstractValue.is_restricted vs
+      |> AbstractValue.Set.elements
+      |> List.map ~f:Formula.Atom.nonnegative
+    in
+    (* restricted values of the precondition are assumptions (see [pre_heap_has_assumptions]),
+       other restricted variables are nonnegative by construction *)
+    let assumed = nonnegative pre_values in
+    let internal =
+      List.fold (manifest @ latent) ~init:AbstractValue.Set.empty ~f:(fun vs atom ->
+          Formula.Atom.fold_variables atom ~init:vs ~f:(Fn.flip AbstractValue.Set.add) )
+      |> Fn.flip AbstractValue.Set.diff pre_values
+      |> nonnegative
+    in
+    let manifest = List.concat_map (manifest @ internal) ~f:instantiate in
+    (manifest, manifest @ List.concat_map (latent @ assumed) ~f:instantiate)
+  in
+  let conditions = List.map summaries ~f:conditions in
+  Formula.disjunction_is_valid
+    ~assuming:
+      (List.map conditions ~f:fst |> List.dedup_and_sort ~compare:[%compare: Formula.Atom.t list])
+    (List.map conditions ~f:snd)
 
 
 let and_is_int v ikind astate =
