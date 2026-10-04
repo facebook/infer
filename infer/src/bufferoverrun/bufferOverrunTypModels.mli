@@ -8,7 +8,11 @@
 open! IStd
 
 type typ_model =
-  | CArray of {element_typ: Typ.t; deref_kind: Symb.SymbolPath.deref_kind; length: IntLit.t}
+  | CArray of
+      { element_typ: Typ.t
+      ; deref_kind: Symb.SymbolPath.deref_kind
+      ; length: IntLit.t
+      ; stride: int option  (** byte size of an element, if known *) }
   | CppStdVector
   | JavaCollection
   | JavaInteger

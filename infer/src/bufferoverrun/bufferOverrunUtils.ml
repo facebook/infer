@@ -61,8 +61,8 @@ module Exec = struct
           ~dimension mem
     | Typ.Tstruct typname -> (
       match TypModels.dispatch tenv typname with
-      | Some (CArray {element_typ; length}) ->
-          decl_local_array model_env loc element_typ ~length:(Some length) ~inst_num
+      | Some (CArray {element_typ; length; stride}) ->
+          decl_local_array model_env loc element_typ ~length:(Some length) ?stride ~inst_num
             ~represents_multiple_values ~dimension mem
       | Some CppStdVector | Some JavaCollection | Some JavaInteger | None ->
           (mem, inst_num) )
@@ -256,6 +256,9 @@ module Exec = struct
       else Dom.Mem.unset_first_idx_of_null loc idx acc
     in
     ArrayBlk.fold set_c_strlen1 (Dom.Val.get_array_blk tgt) mem
+
+
+  let forget_c_strlen locs mem = Dom.Mem.update_mem (PowLoc.of_c_strlen locs) Dom.Val.Itv.nat mem
 end
 
 module Check = struct
@@ -275,8 +278,8 @@ module Check = struct
       Itv.pp size Itv.ItvPure.pp offset Itv.pp idx
 
 
-  let offsetof arr_info =
-    match ArrayBlk.ArrInfo.get_offset arr_info with
+  let offsetof offset =
+    match offset with
     | Bottom ->
         (* Java's collection has no offset. *)
         Itv.ItvPure.zero
@@ -293,7 +296,7 @@ module Check = struct
     let arr_traces = Dom.Val.get_traces arr in
     let array_access1 allocsite arr_info acc =
       let size = ArrayBlk.ArrInfo.get_size arr_info in
-      let offset = offsetof arr_info in
+      let offset = offsetof (ArrayBlk.ArrInfo.get_offset arr_info) in
       log_array_access allocsite size offset idx ;
       check_access ~size ~idx ~offset ~arr_traces ~idx_traces ~last_included ~latest_prune location
         acc
@@ -322,7 +325,7 @@ module Check = struct
     let arr_traces = Dom.Val.get_traces arr in
     let array_access_byte1 allocsite arr_info acc =
       let size = ArrayBlk.ArrInfo.byte_size arr_info in
-      let offset = offsetof arr_info in
+      let offset = offsetof (ArrayBlk.ArrInfo.byte_offset arr_info) in
       log_array_access allocsite size offset idx ;
       check_access ~size ~idx ~offset ~arr_traces ~idx_traces ~last_included ~latest_prune location
         acc

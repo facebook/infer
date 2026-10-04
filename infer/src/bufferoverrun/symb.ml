@@ -59,16 +59,16 @@ module SymbolPath = struct
 
   type t =
     | Normal of partial
-    | Offset of {p: partial; is_void: bool}
-    | Length of {p: partial; is_void: bool}
+    | Offset of {p: partial; byte_unit: Z.t option}
+    | Length of {p: partial; byte_unit: Z.t option}
     | Modeled of partial
   [@@deriving compare, equal]
 
   let normal p = Normal p
 
-  let offset p ~is_void = Offset {p; is_void}
+  let offset p ~is_void = Offset {p; byte_unit= Option.some_if is_void Z.one}
 
-  let length p ~is_void = Length {p; is_void}
+  let length p ~is_void = Length {p; byte_unit= Option.some_if is_void Z.one}
 
   let modeled p = Modeled p
 
@@ -126,23 +126,30 @@ module SymbolPath = struct
 
   let pp_partial = pp_partial_paren ~paren:false
 
-  let pp_is_void fmt is_void = if is_void then F.fprintf fmt "(v)"
+  let pp_byte_unit fmt = function
+    | None ->
+        ()
+    | Some n when Z.equal n Z.one ->
+        F.pp_print_string fmt "(v)"
+    | Some n ->
+        F.fprintf fmt "(v/%a)" Z.pp_print n
+
 
   let pp fmt = function
     | Modeled p ->
         F.fprintf fmt "%a.modeled" pp_partial p
     | Normal p ->
         pp_partial fmt p
-    | Offset {p; is_void} ->
-        F.fprintf fmt "%a.offset%a" pp_partial p pp_is_void is_void
-    | Length {p= Field {fn; prefix= p}; is_void}
+    | Offset {p; byte_unit} ->
+        F.fprintf fmt "%a.offset%a" pp_partial p pp_byte_unit byte_unit
+    | Length {p= Field {fn; prefix= p}; byte_unit}
       when BufferOverrunField.is_java_collection_internal_array fn ->
-        F.fprintf fmt "%a.length%a" pp_partial p pp_is_void is_void
-    | Length {p= StarField {last_field= fn; prefix= p}; is_void}
+        F.fprintf fmt "%a.length%a" pp_partial p pp_byte_unit byte_unit
+    | Length {p= StarField {last_field= fn; prefix= p}; byte_unit}
       when BufferOverrunField.is_java_collection_internal_array fn ->
-        F.fprintf fmt "%a.length%a" (pp_star ~paren:false) p pp_is_void is_void
-    | Length {p; is_void} ->
-        F.fprintf fmt "%a.length%a" pp_partial p pp_is_void is_void
+        F.fprintf fmt "%a.length%a" (pp_star ~paren:false) p pp_byte_unit byte_unit
+    | Length {p; byte_unit} ->
+        F.fprintf fmt "%a.length%a" pp_partial p pp_byte_unit byte_unit
 
 
   let pp_mark ~markup = if markup then MarkupFormatter.wrap_monospaced pp else pp
@@ -207,10 +214,19 @@ module SymbolPath = struct
 
 
   let is_void_ptr_path = function
-    | Offset {is_void} | Length {is_void} ->
-        is_void
+    | Offset {byte_unit} | Length {byte_unit} ->
+        Option.is_some byte_unit
     | Normal _ | Modeled _ ->
         false
+
+
+  let set_byte_unit n = function
+    | Offset {p} ->
+        Offset {p; byte_unit= Some n}
+    | Length {p} ->
+        Length {p; byte_unit= Some n}
+    | (Normal _ | Modeled _) as path ->
+        path
 
 
   let is_cpp_vector_elem = function
@@ -226,6 +242,22 @@ module SymbolPath = struct
     | BoField.(Prim (Deref (_, x)) | Field {prefix= x} | StarField {prefix= x}) ->
         is_global_partial x
     | BoField.Prim (Callsite _) ->
+        false
+
+
+  let rec is_var_or_field_of_var = function
+    | BoField.Prim (Pvar _) ->
+        true
+    | BoField.Prim (Deref _ | Callsite _) ->
+        false
+    | BoField.(Field {prefix= x} | StarField {prefix= x}) ->
+        is_var_or_field_of_var x
+
+
+  let is_field_of_var = function
+    | Normal BoField.(Field {prefix= x} | StarField {prefix= x}) ->
+        is_var_or_field_of_var x
+    | Normal (BoField.Prim _) | Offset _ | Length _ | Modeled _ ->
         false
 
 
@@ -311,6 +343,13 @@ module Symbol = struct
 
   (* This should be called on non-pulse bound as of now. *)
   let path = function OneValue {path} | BoundEnd {path} -> path
+
+  let set_byte_unit n = function
+    | OneValue s ->
+        OneValue {s with path= SymbolPath.set_byte_unit n s.path}
+    | BoundEnd s ->
+        BoundEnd {s with path= SymbolPath.set_byte_unit n s.path}
+
 
   let is_length = function OneValue {path} | BoundEnd {path} -> SymbolPath.is_length path
 

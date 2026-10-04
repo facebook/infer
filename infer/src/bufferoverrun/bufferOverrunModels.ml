@@ -34,20 +34,6 @@ let no_model =
   {exec; check= no_check}
 
 
-let at ?(size = Int64.zero) array_exp index_exp =
-  (* TODO? use size *)
-  let exec {integer_type_widths} ~ret:(id, _) mem =
-    L.d_printfln_escaped "Using model std::array<_, %Ld>::at" size ;
-    Dom.Mem.add_stack (Loc.of_id id)
-      (Sem.eval_lindex integer_type_widths array_exp index_exp mem)
-      mem
-  and check {location; integer_type_widths} mem cond_set =
-    BoUtils.Check.lindex integer_type_widths ~array_exp ~index_exp ~last_included:false mem location
-      cond_set
-  in
-  {exec; check}
-
-
 let eval_binop ~f e1 e2 =
   let exec {integer_type_widths} ~ret:(id, _) mem =
     let i1 = Sem.eval integer_type_widths e1 mem |> Dom.Val.get_itv in
@@ -114,11 +100,11 @@ let fgets str_exp num_exp =
   {exec; check}
 
 
-let malloc ~can_be_zero size_exp =
+let alloc ~get_info ~can_be_zero size_exp =
   let exec ({pname; caller_pname; node_hash; location; tenv; integer_type_widths} as model_env)
       ~ret:(id, _) mem =
     let size_exp = BiabductionProp.exp_normalize_noabs tenv size_exp in
-    let typ, stride, length0, dyn_length = get_malloc_info size_exp in
+    let typ, stride, length0, dyn_length = get_info tenv size_exp in
     let length = Sem.eval integer_type_widths length0 mem in
     let traces = Trace.(Set.add_elem location ArrayDeclaration) (Dom.Val.get_traces length) in
     let path =
@@ -171,6 +157,24 @@ let malloc ~can_be_zero size_exp =
   {exec; check}
 
 
+let malloc ~can_be_zero size_exp =
+  let get_info tenv size_exp =
+    let ((typ, _, length, dyn_length) as info) = get_malloc_info size_exp in
+    match (typ.Typ.desc, length) with
+    | Tstruct (CppClass _ as typname), Const (Cint one) when IntLit.isone one -> (
+      (* A single [std::array] object is represented by the array of its elements, as for local
+         variables. *)
+      match BufferOverrunTypModels.dispatch tenv typname with
+      | Some (CArray {element_typ; length; stride}) ->
+          (element_typ, stride, Exp.int length, dyn_length)
+      | _ ->
+          info )
+    | _ ->
+        info
+  in
+  alloc ~get_info ~can_be_zero size_exp
+
+
 let calloc size_exp stride_exp =
   let byte_size_exp = Exp.BinOp (Binop.Mult (Some Typ.size_t), size_exp, stride_exp) in
   malloc byte_size_exp
@@ -180,7 +184,7 @@ let memcpy dest_exp src_exp size_exp =
   let exec _ ~ret:_ mem =
     let dest_loc = Sem.eval_locs dest_exp mem in
     let v = Dom.Mem.find_set (Sem.eval_locs src_exp mem) mem in
-    Dom.Mem.update_mem dest_loc v mem
+    Dom.Mem.update_mem dest_loc v mem |> BoUtils.Exec.forget_c_strlen dest_loc
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
       ~last_included:true mem location cond_set
@@ -191,7 +195,7 @@ let memcpy dest_exp src_exp size_exp =
 
 
 let memset arr_exp size_exp =
-  let exec _ ~ret:_ mem = mem
+  let exec _ ~ret:_ mem = BoUtils.Exec.forget_c_strlen (Sem.eval_locs arr_exp mem) mem
   and check {location; integer_type_widths} mem cond_set =
     BoUtils.Check.lindex_byte integer_type_widths ~array_exp:arr_exp ~byte_index_exp:size_exp
       ~last_included:true mem location cond_set
@@ -236,8 +240,38 @@ let strncpy dest_exp src_exp size_exp =
     let dest_strlen_loc = PowLoc.of_c_strlen (Sem.eval_locs dest_exp mem) in
     let strlen = Dom.Mem.find_set (PowLoc.of_c_strlen (Sem.eval_locs src_exp mem)) mem in
     mem |> memcpy_exec model_env ~ret |> Dom.Mem.update_mem dest_strlen_loc strlen
+  and check ({location; integer_type_widths} as model_env) mem cond_set =
+    let src_strlen = Dom.Mem.get_c_strlen (Sem.eval_locs src_exp mem) mem in
+    let strlen_itv = Dom.Val.get_itv src_strlen in
+    let is_bounded strlen =
+      (* callers do not substitute symbols such as the length of the string in a local array that
+         no string operation wrote *)
+      let ub = Itv.ItvPure.ub strlen in
+      (not (Itv.Bound.is_pinf ub))
+      && not
+           (Symb.SymbolSet.exists
+              (fun s -> Symb.SymbolPath.is_field_of_var (Symb.Symbol.path s))
+              (Itv.Bound.get_symbols ub) )
+    in
+    match strlen_itv with
+    | NonBottom strlen when is_bounded strlen ->
+        (* strncpy stops reading the source at its null character *)
+        let size = Sem.eval integer_type_widths size_exp mem in
+        let read_size =
+          Itv.min_sem ~use_minmax_bound:true (Itv.incr strlen_itv) (Dom.Val.get_itv size)
+        in
+        let traces = Trace.Set.join (Dom.Val.get_traces size) (Dom.Val.get_traces src_strlen) in
+        let latest_prune = Dom.Mem.get_latest_prune mem in
+        BoUtils.Check.lindex_byte integer_type_widths ~array_exp:dest_exp ~byte_index_exp:size_exp
+          ~last_included:true mem location cond_set
+        |> BoUtils.Check.array_access_byte
+             ~arr:(Sem.eval_arr integer_type_widths src_exp mem)
+             ~idx:(Dom.Val.of_itv ~traces read_size)
+             ~is_plus:true ~last_included:true ~latest_prune location
+    | _ ->
+        memcpy_check model_env mem cond_set
   in
-  {exec; check= memcpy_check}
+  {exec; check}
 
 
 let strcat dest_exp src_exp =
@@ -469,38 +503,48 @@ module StdArray = struct
     {exec; check= no_check}
 
 
-  let at size {exp= array_exp} {exp= index_exp} = at ~size array_exp index_exp
+  (* The value of a [std::array] is the array of its elements, but a pointer to a [std::array] may
+     point into an array of [std::array]s, which counts its offset and length in [std::array]s. *)
+  let eval_array {tenv; integer_type_widths} {exp; typ} mem =
+    let v = Sem.eval_arr integer_type_widths exp mem in
+    match typ.Typ.desc with
+    | Tptr ({desc= Tstruct typename}, _) -> (
+      match BufferOverrunTypModels.dispatch tenv typename with
+      | Some (CArray {stride= Some stride}) ->
+          Dom.Val.set_array_stride (Z.of_int stride) v
+      | _ ->
+          v )
+    | _ ->
+        v
 
-  let begin_ _size {exp= array_exp} =
-    let exec {location; integer_type_widths} ~ret:(id, _) mem =
-      let v =
-        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location Itv.zero
-      in
+
+  let at _size array {exp= index_exp} =
+    let exec ({integer_type_widths} as model_env) ~ret:(id, _) mem =
+      let idx = Sem.eval integer_type_widths index_exp mem in
+      Dom.Mem.add_stack (Loc.of_id id) (Dom.Val.plus_pi (eval_array model_env array mem) idx) mem
+    and check ({location; integer_type_widths} as model_env) mem cond_set =
+      let arr = eval_array model_env array mem in
+      let idx = Sem.eval integer_type_widths index_exp mem in
+      let latest_prune = Dom.Mem.get_latest_prune mem in
+      BoUtils.Check.array_access ~arr ~idx ~is_plus:true ~last_included:false ~latest_prune location
+        cond_set
+    in
+    {exec; check}
+
+
+  let plus_offset offset array =
+    let exec ({location} as model_env) ~ret:(id, _) mem =
+      let v = eval_array model_env array mem |> Dom.Val.plus_array_offset location offset in
       Dom.Mem.add_stack (Loc.of_id id) v mem
     in
     {exec; check= no_check}
 
 
-  let end_ size {exp= array_exp} =
-    let exec {location; integer_type_widths} ~ret:(id, _) mem =
-      let v =
-        let offset = Itv.of_int_lit (IntLit.of_int64 size) in
-        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
-      in
-      Dom.Mem.add_stack (Loc.of_id id) v mem
-    in
-    {exec; check= no_check}
+  let begin_ _size = plus_offset Itv.zero
 
+  let end_ size = plus_offset (Itv.of_int_lit (IntLit.of_int64 size))
 
-  let back size {exp= array_exp} =
-    let exec {location; integer_type_widths} ~ret:(id, _) mem =
-      let v =
-        let offset = Itv.of_int_lit (IntLit.of_int64 Int64.(size - one)) in
-        Sem.eval integer_type_widths array_exp mem |> Dom.Val.set_array_offset location offset
-      in
-      Dom.Mem.add_stack (Loc.of_id id) v mem
-    in
-    {exec; check= no_check}
+  let back size = plus_offset (Itv.of_int_lit (IntLit.of_int64 Int64.(size - one)))
 end
 
 module Iterator = struct
@@ -660,12 +704,25 @@ module StdVector = struct
         Dom.Val.set_array_length location ~length:new_size v )
 
 
+  let get_stride integer_type_widths elt_typ =
+    match elt_typ.Typ.desc with
+    | Tint ikind ->
+        Some (IntegerWidths.width_of_ikind integer_type_widths ikind / 8)
+    | Tfloat FFloat ->
+        Some 4
+    | Tfloat FDouble ->
+        Some 8
+    | _ ->
+        None
+
+
   (* The (3) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_size elt_typ {exp= vec_exp; typ= vec_typ} size_exp =
-    let {exec= malloc_exec; check} = malloc ~can_be_zero:true size_exp in
+    let {check} = malloc ~can_be_zero:true size_exp in
     let exec ({pname; caller_pname; node_hash; integer_type_widths; location} as model_env)
         ~ret:((id, _) as ret) mem =
-      let mem = malloc_exec model_env ~ret mem in
+      let get_info _ length = (elt_typ, get_stride integer_type_widths elt_typ, length, None) in
+      let mem = (alloc ~get_info ~can_be_zero:true size_exp).exec model_env ~ret mem in
       let vec_locs = Sem.eval_locs vec_exp mem in
       let deref_of_vec =
         Allocsite.make pname ~caller_pname ~node_hash ~inst_num:1 ~dimension:1 ~path:None
@@ -705,7 +762,7 @@ module StdVector = struct
 
   (* The (10) constructor in https://en.cppreference.com/w/cpp/container/vector/vector *)
   let constructor_initializer_list elt_typ {exp= vec_exp; typ= vec_typ} lst_exp =
-    let exec {pname; caller_pname; node_hash; location} ~ret:_ mem =
+    let exec {pname; caller_pname; node_hash; location; integer_type_widths} ~ret:_ mem =
       let arr_blk =
         let internal_locs =
           Sem.eval_locs lst_exp mem |> PowLoc.append_field ~fn:BoField.cpp_collection_internal_array
@@ -728,8 +785,9 @@ module StdVector = struct
           ~represents_multiple_values:true
       in
       let v =
-        Dom.Val.of_c_array_alloc arr_as ~stride:None ~offset:Itv.zero
-          ~size:(ArrayBlk.get_size arr_blk) ~traces
+        Dom.Val.of_c_array_alloc arr_as
+          ~stride:(get_stride integer_type_widths elt_typ)
+          ~offset:Itv.zero ~size:(ArrayBlk.get_size arr_blk) ~traces
       in
       let vec_elt_locs = arr_as |> Loc.of_allocsite |> PowLoc.singleton in
       let lst_elem_v = Dom.Mem.find_set (ArrayBlk.get_pow_loc arr_blk) mem in
@@ -2117,6 +2175,7 @@ module Call = struct
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "begin" $ capt_arg $!--> StdArray.begin_
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "cbegin" $ capt_arg $!--> StdArray.begin_
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "cend" $ capt_arg $!--> StdArray.end_
+      ; -"std" &:: "array" < any_typ &+ capt_int >:: "data" $ capt_arg $!--> StdArray.begin_
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "end" $ capt_arg $!--> StdArray.end_
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "front" $ capt_arg $!--> StdArray.begin_
       ; -"std" &:: "array" < any_typ &+ capt_int >:: "operator[]" $ capt_arg $+ capt_arg

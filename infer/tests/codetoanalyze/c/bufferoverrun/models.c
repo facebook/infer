@@ -6,6 +6,8 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
 void exit_bo_good_unreachable_bad() {
   int arr[1];
@@ -250,6 +252,117 @@ void strncpy_good5_FP() {
   char src[5] = "test";
   char dst[5];
   strncpy(dst, src, 10);
+}
+
+void strncpy_unterminated_Bad() {
+  char src[40];
+  memset(src, 'a', sizeof(src));
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void strncpy_read_Bad(int fd) {
+  char src[40];
+  read(fd, src, sizeof(src));
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void strncpy_zeroed_read_Bad(int fd) {
+  char src[40] = {0};
+  read(fd, src, sizeof(src));
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void strncpy_literal_memset_Bad() {
+  char src[40] = "abc";
+  memset(src, 'a', sizeof(src));
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void read_and_copy(int fd, char* src, char* dst) {
+  read(fd, src, 8);
+  strncpy(dst, src, 16);
+}
+
+void call_read_and_copy_Bad(int fd) {
+  char src[8] = {0};
+  char dst[16];
+  read_and_copy(fd, src, dst);
+}
+
+void strncpy_readv_Bad(int fd) {
+  char src[40] = {0};
+  struct iovec iov = {src, sizeof(src)};
+  readv(fd, &iov, 1);
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+size_t unknown_convert(char** in, char** out);
+
+void strncpy_out_ptr_Bad(char* in) {
+  char src[40] = "";
+  char* out = src;
+  unknown_convert(&in, &out);
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+struct chars_holder {
+  char* p;
+};
+
+void unknown_fill_holder(struct chars_holder* h);
+
+void strncpy_holder_Bad() {
+  char src[40] = "";
+  struct chars_holder h = {src};
+  unknown_fill_holder(&h);
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void unknown_fill_ints(int* p);
+
+void strncpy_int_ptr_Bad() {
+  char src[40] = "";
+  unknown_fill_ints((int*)src);
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+// Only stores of characters update the length of the string in an array.
+void FN_strncpy_int_stores_Bad() {
+  char src[40] = {0};
+  int* p = (int*)src;
+  for (int i = 0; i < 10; i++) {
+    p[i] = 0x61616161;
+  }
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void strncpy_literal_Good() {
+  char src[40] = "abc";
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void strncpy_literal_puts_Good() {
+  char src[40] = "abc";
+  puts(src);
+  char dst[100];
+  strncpy(dst, src, 44);
+}
+
+void strncpy_strcpy_Good() {
+  char src[40];
+  strcpy(src, "abc");
+  char dst[100];
+  strncpy(dst, src, 44);
 }
 
 void memcpy_contents_Good() {
