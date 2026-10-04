@@ -164,6 +164,11 @@ module Syntax : sig
 
   val remove_allocation_attr_transitively : aval list -> unit model_monad
 
+  val apply_unknown_effect : aval -> unit model_monad
+  (** [apply_unknown_effect v] havocs the memory reachable from [v] and forgets its allocation
+      state, as an unknown call does for its arguments, and records the effect so that it also
+      applies to the callers of the current procedure; does nothing if [v] is known to be NULL *)
+
   val int : ?hist:ValueHistory.t -> int -> aval model_monad
 
   val string : string -> aval model_monad
@@ -213,6 +218,11 @@ module Syntax : sig
   val store_field : ?deref:bool -> ref:aval -> Fieldname.t -> aval -> unit model_monad
 
   val store : ref:aval -> aval -> unit model_monad
+
+  val havoc_pointee : aval -> unit model_monad
+  (** [havoc_pointee ptr] checks that [ptr] can be written to, then writes fresh values to [*ptr]
+      and to the other accesses out of [ptr] already present in the abstract state (e.g. array
+      elements read before), without changing the allocation state of [ptr] *)
 
   val get_known_fields : aval -> Access.t list model_monad
   (** Return the fields we know about. There may be more, so use with caution *)
