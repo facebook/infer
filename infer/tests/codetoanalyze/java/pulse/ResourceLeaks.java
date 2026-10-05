@@ -187,7 +187,7 @@ public class ResourceLeaks {
     }
   }
 
-  public static void FN_twoResourcesServerSocketBad() throws IOException {
+  public static void twoResourcesServerSocketBad() throws IOException {
     ServerSocket a = null;
     ServerSocket b = null;
     try {
@@ -595,6 +595,28 @@ public class ResourceLeaks {
   }
 
   // ServerSocket tests
+
+  // Repro for facebook/infer#2105: ServerSocket constructors were not modeled as allocating
+  // resources.
+  public void serverSocketNotClosedBad() throws IOException {
+    new ServerSocket(0);
+  }
+
+  public void serverSocketNotClosedAfterAcceptBad() throws IOException {
+    ServerSocket listener = new ServerSocket(0);
+    Socket socket = listener.accept();
+    socket.close();
+  }
+
+  public void serverSocketClosedAfterAcceptOk() throws IOException {
+    ServerSocket listener = new ServerSocket(0);
+    try {
+      Socket socket = listener.accept();
+      socket.close();
+    } finally {
+      listener.close();
+    }
+  }
 
   public void FN_serverSocketNotClosedBad() throws IOException {
     ServerSocket listener = new ServerSocket(9090);
