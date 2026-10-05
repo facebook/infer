@@ -212,16 +212,17 @@ module PulseTransferFunctions = struct
       | _ ->
           ResolvedCall
     in
-    let eval_args_and_call callee_pname call_exp astate non_disj =
+    let eval_args_and_call ?tb_arg_exps callee_pname call_exp astate non_disj =
       let formals_opt = get_pvar_formals callee_pname in
       let call_kind = call_kind_of call_exp in
       PulseCallOperations.call ~disjunct_limit analysis_data path call_loc ?unresolved_reason
-        callee_pname ~ret ~actuals ~formals_opt call_kind call_flags astate non_disj
+        ?tb_arg_exps callee_pname ~ret ~actuals ~formals_opt call_kind call_flags astate non_disj
     in
     match callee_pname with
     | Some callee_pname when not Config.pulse_intraprocedural_only ->
+        let tb_arg_exps = List.map func_args ~f:(fun {FuncArg.exp} -> exp) in
         let res, non_disj, _, is_known_call =
-          eval_args_and_call callee_pname call_exp astate non_disj
+          eval_args_and_call ~tb_arg_exps callee_pname call_exp astate non_disj
         in
         (res, non_disj, is_known_call)
     | _ ->

@@ -1,3 +1,5 @@
+aliased_args_ub.rs, aliased_args_ub::use_both, 3, TREE_BORROWS_UB, no_bucket, ERROR, []
+call_invalidates_sibling_ub.rs, call_invalidates_sibling_ub::main, 12, TREE_BORROWS_UB, no_bucket, ERROR, []
 shared_write_ub.rs, shared_write_ub::f, 5, TREE_BORROWS_UB, no_bucket, ERROR, []
 struct_field_ub.rs, struct_field_ub::main, 12, TREE_BORROWS_UB, no_bucket, ERROR, []
 struct_whole_vs_field_ub.rs, struct_whole_vs_field_ub::main, 13, TREE_BORROWS_UB, no_bucket, ERROR, []

@@ -1,0 +1,83 @@
+# Final ULLBC before serialization:
+
+fn UNIT_METADATA()
+{
+    let _0: (); // return
+
+    bb0: {
+        _0 = ();
+        return;
+    }
+}
+
+const UNIT_METADATA: () = @Fun0()
+
+// Full name: aliased_args_ub::use_both
+fn use_both<'_0, '_1>(_1: &'_0 mut i32, _2: &'_1 mut i32)
+{
+    let _0: (); // return
+    let a_1: &'1 mut i32; // arg #1
+    let b_2: &'2 mut i32; // arg #2
+
+    bb0: {
+        _0 = ();
+        (*a_1) = const 1 : i32;
+        _ = (*b_2);
+        _0 = ();
+        return;
+    }
+}
+
+// Full name: aliased_args_ub::main
+fn main()
+{
+    let _0: (); // return
+    let x_1: i32; // local
+    let p_2: *mut i32; // local
+    let _3: &'1 mut i32; // anonymous local
+    let _4: (); // anonymous local
+    let _5: &'2 mut i32; // anonymous local
+    let _6: &'3 mut i32; // anonymous local
+    let _7: &'4 mut i32; // anonymous local
+    let _8: &'5 mut i32; // anonymous local
+
+    bb0: {
+        _0 = ();
+        storage_live(x_1);
+        x_1 = const 0 : i32;
+        storage_live(p_2);
+        storage_live(_3);
+        _3 = &mut x_1;
+        p_2 = &raw mut (*_3);
+        storage_dead(_3);
+        storage_live(_4);
+        storage_live(_5);
+        storage_live(_6);
+        _6 = &mut (*p_2);
+        _5 = &two-phase-mut (*_6);
+        storage_live(_7);
+        storage_live(_8);
+        _8 = &mut (*p_2);
+        _7 = &two-phase-mut (*_8);
+        _4 = use_both<'8, '9>(move _5, move _7) -> bb2 (unwind: bb1);
+    }
+
+    bb1: {
+        unwind_continue;
+    }
+
+    bb2: {
+        storage_dead(_7);
+        storage_dead(_5);
+        storage_dead(_8);
+        storage_dead(_6);
+        storage_dead(_4);
+        _0 = ();
+        storage_dead(p_2);
+        storage_dead(x_1);
+        return;
+    }
+}
+
+
+

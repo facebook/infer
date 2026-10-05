@@ -15,6 +15,7 @@ val call :
   -> PathContext.t
   -> Location.t
   -> ?unresolved_reason:Tenv.unresolved_reason
+  -> ?tb_arg_exps:Exp.t list
   -> Procname.t
   -> ret:Ident.t * Typ.t
   -> actuals:((AbstractValue.t * ValueHistory.t) * Typ.t) list
