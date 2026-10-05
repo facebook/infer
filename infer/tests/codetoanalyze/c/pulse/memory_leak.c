@@ -275,3 +275,89 @@ void alloc_then_free_at_index_ok(int i) {
   allocate_in_array(array, i);
   free_in_array(array, i);
 }
+
+// unknown and cannot write through [p], so Pulse treats its calls as pure
+int read_through_const_pointer(const int* p);
+
+int pure_call_on_leaked_pointer_bad() {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  return read_through_const_pointer(p);
+}
+
+int pure_call_on_freed_pointer_ok() {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  int r = read_through_const_pointer(p);
+  free(p);
+  return r;
+}
+
+int pure_call_on_leaked_pointer_plus_one_bad() {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  return read_through_const_pointer(p) + 1;
+}
+
+int pure_call_on_offset_of_leaked_pointer_bad() {
+  int* p = malloc(2 * sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  return read_through_const_pointer(p + 1);
+}
+
+int read_through_const_pointer_at(int i, const int* p);
+
+int pure_call_with_live_argument_on_leaked_pointer_bad(int i) {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  return read_through_const_pointer_at(i, p);
+}
+
+int nested_pure_calls_on_leaked_pointer_bad() {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  return read_through_const_pointer_at(read_through_const_pointer(p), p);
+}
+
+int two_pure_calls_on_leaked_pointer_bad() {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  return read_through_const_pointer(p) + read_through_const_pointer_at(0, p);
+}
+
+int pure_size(void);
+
+int pure_call_with_pure_argument_on_leaked_pointer_bad(int* out) {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return 0;
+  }
+  int n = pure_size();
+  *out = n;
+  return read_through_const_pointer_at(n, p);
+}
+
+const int* find_through_const_pointer(const int* p);
+
+// FP: Pulse does not know that the result of the unknown call can be [p]
+const int* FP_pure_call_returning_its_argument_ok() {
+  int* p = malloc(sizeof(int));
+  if (p == NULL) {
+    return NULL;
+  }
+  return find_through_const_pointer(p);
+}
