@@ -680,7 +680,8 @@ let matchers : matcher list =
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.FileNotFoundException"
     |> with_non_disj
-  ; +map_context_tenv (PatternMatch.Java.implements "java.net.Socket")
+  ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of ["java.net.ServerSocket"; "java.net.Socket"])
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"
     |> with_non_disj
@@ -688,6 +689,8 @@ let matchers : matcher list =
     &:: "getOutputStream" <>$ any_arg $--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.net.Socket")
     &:: "getInputStream" <>$ any_arg $--> Basic.skip |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.net.ServerSocket")
+    &:: "accept" <>$ any_arg $--> Basic.skip |> with_non_disj
   ; +map_context_tenv
        (PatternMatch.Java.implements_one_of
           [ "java.io.ObjectInputStream"
