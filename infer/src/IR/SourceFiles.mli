@@ -30,6 +30,9 @@ val is_empty : unit -> bool
 val is_freshly_captured : SourceFile.t -> bool
 (** whether the source file was captured in the last capture phase *)
 
+val mem : SourceFile.t -> bool
+(** whether the source file has been captured *)
+
 val mark_all_stale : unit -> unit
 (** mark all source files as stale; do be called at the start of a new capture phase *)
 

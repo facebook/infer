@@ -1,0 +1,37 @@
+[
+   {
+      "directory" : "%pwd%",
+      "file" : "src/user.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/user.cpp"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "src/unrelated.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/unrelated.cpp"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "src/templates_user.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/templates_user.cpp"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "src/templates_other_user.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/templates_other_user.cpp"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "src/gadget.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/gadget.cpp"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "src/gadget_client.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-Iinclude", "-c", "src/gadget_client.cpp"]
+   },
+   {
+      "directory" : "%pwd%",
+      "file" : "lib/src/user.cpp",
+      "arguments" : ["clang++", "-std=c++11", "-c", "lib/src/user.cpp"]
+   }
+]
