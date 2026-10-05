@@ -184,6 +184,23 @@ module Resource = struct
     allocate_aux ~exn_class_name this_arg (Some delegation)
 
 
+  (* Static factories such as [java.nio.file.Files.newInputStream] return a fresh resource
+     without going through a modeled constructor, so the returned object was never tracked
+     (#2110). Allocate the return value as a resource of type [class_name] directly. *)
+  let allocate_returned ~exn_class_name class_name : model_no_non_disj =
+   fun ({callee_procname} as model_data) astate ->
+    let allocator = Attribute.JavaResource (JavaClassName.from_string class_name) in
+    let desc = Procname.to_simplified_string ~withclass:true callee_procname in
+    let alloc_state =
+      let<++> astate =
+        Basic.alloc_not_null ~desc allocator None ~initialize:true model_data astate
+      in
+      astate
+    in
+    alloc_state
+    @ call_may_throw_exception (JavaClassName.from_string exn_class_name) model_data astate
+
+
   let inputstream_resource_usage_modeled_throws_IOException =
     StringSet.of_list ["available"; "read"; "reset"; "skip"]
 
@@ -723,6 +740,22 @@ let matchers : matcher list =
           ; "javax.crypto.CipherOutputStream" ] )
     &:: "<init>" <>$ capt_arg_payload $+ capt_arg_payload
     $+...$--> Resource.allocate_with_delegation ()
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.nio.file.Files")
+    &:: "newInputStream"
+    <>--> Resource.allocate_returned ~exn_class_name:"java.io.IOException" "java.io.InputStream"
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.nio.file.Files")
+    &:: "newOutputStream"
+    <>--> Resource.allocate_returned ~exn_class_name:"java.io.IOException" "java.io.OutputStream"
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.nio.file.Files")
+    &:: "newBufferedReader"
+    <>--> Resource.allocate_returned ~exn_class_name:"java.io.IOException" "java.io.BufferedReader"
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.nio.file.Files")
+    &:: "newBufferedWriter"
+    <>--> Resource.allocate_returned ~exn_class_name:"java.io.IOException" "java.io.BufferedWriter"
     |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.OutputStream")
     &::+ non_static_method "write" <>$ any_arg
