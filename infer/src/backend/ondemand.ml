@@ -528,7 +528,13 @@ let rec analyze_callee_can_raise_recursion (analysis_req : AnalysisRequest.t) ~s
                             (Procdesc.get_attributes callee_pdesc).translation_unit Procname.pp
                             callee_pname ;
                           None ) )
-                    ~finally:(fun () -> AnalysisGlobalState.restore previous_global_state) )
+                    ~finally:(fun () ->
+                      AnalysisGlobalState.restore previous_global_state ;
+                      (* the cache is otherwise only cleared between tasks, so the summaries
+                         loaded by nested analyses would pile up; the caller is about to use the
+                         callee's summary *)
+                      if Option.is_some caller_summary && not Config.multicore then
+                        Summary.OnDisk.clear_cache ~keep:callee_pname () ) )
         in
         match is_summary_already_computed analysis_req callee_pname specialization with
         | `SummaryReady summary ->
