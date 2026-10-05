@@ -327,8 +327,11 @@ val is_objc_block : t -> bool
 
 val is_swift : t -> bool
 
+val is_cpp_call_operator : t -> bool
+(** Return whether the procname is the [operator()] of any C++ class, lambdas included. *)
+
 val is_cpp_lambda : t -> bool
-(** Return whether the procname is a cpp lambda procname. *)
+(** Return whether the procname is the [operator()] of a C++ lambda's closure class. *)
 
 val is_cpp_method : t -> bool
 (** Return whether the procname is a cpp method. *)

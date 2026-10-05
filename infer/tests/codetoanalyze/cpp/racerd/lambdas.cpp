@@ -36,3 +36,77 @@ class Lambdas {
   int g;
   std::mutex mutex_;
 };
+
+// unlike the call operator of a lambda, the call operator of other classes is
+// reported on like any other public method
+class Functor_bad {
+ public:
+  int operator()() { return h; }
+
+  void set_under_lock(int value) {
+    mutex_.lock();
+    h = value;
+    mutex_.unlock();
+  }
+
+ private:
+  int h;
+  std::mutex mutex_;
+};
+
+// a class is not a lambda just because its name starts with lambda_
+class lambda_functor_bad {
+ public:
+  int operator()() { return h; }
+
+  void set_under_lock(int value) {
+    mutex_.lock();
+    h = value;
+    mutex_.unlock();
+  }
+
+ private:
+  int h;
+  std::mutex mutex_;
+};
+
+class TemplateCallOperator_bad {
+ public:
+  template <typename T>
+  T operator()(T x) {
+    return x + h;
+  }
+
+  void set_under_lock(int value) {
+    mutex_.lock();
+    h = value;
+    mutex_.unlock();
+  }
+
+ private:
+  int h;
+  std::mutex mutex_;
+};
+
+int call_template_call_operator(TemplateCallOperator_bad& f) { return f(1); }
+
+template <typename T>
+class FunctorTemplate_bad {
+ public:
+  T operator()() { return h; }
+
+  void set_under_lock(T value) {
+    mutex_.lock();
+    h = value;
+    mutex_.unlock();
+  }
+
+ private:
+  T h;
+  std::mutex mutex_;
+};
+
+int call_functor_template(FunctorTemplate_bad<int>& f) {
+  f.set_under_lock(1);
+  return f();
+}

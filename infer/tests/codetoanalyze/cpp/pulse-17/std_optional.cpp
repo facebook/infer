@@ -179,3 +179,55 @@ std::string call_get_value_pure_twice_ok() {
   }
   return "";
 }
+
+namespace call_operator {
+// empty optional accesses are suppressed in lambdas...
+int empty_optional_access_in_lambda_ok(int y) {
+  auto f = [](int x) {
+    std::optional<int> o;
+    if (x > 0) {
+      return x;
+    }
+    return *o;
+  };
+  return f(y);
+}
+
+int empty_optional_access_in_generic_lambda_ok(int y) {
+  auto f = [](auto x) {
+    std::optional<int> o;
+    if (x > 0) {
+      return x;
+    }
+    return *o;
+  };
+  return f(y);
+}
+
+// ... but not in the call operator of other classes
+struct EmptyOptionalAccess_bad {
+  int operator()(int x) const {
+    std::optional<int> o;
+    if (x > 0) {
+      return x;
+    }
+    return *o;
+  }
+};
+
+int empty_optional_access_in_functor_in_lambda_bad(int y) {
+  auto f = [](int x) {
+    struct EmptyOptionalAccess {
+      int operator()(int x) const {
+        std::optional<int> o;
+        if (x > 0) {
+          return x;
+        }
+        return *o;
+      }
+    };
+    return EmptyOptionalAccess{}(x);
+  };
+  return f(y);
+}
+} // namespace call_operator

@@ -410,7 +410,7 @@ module Function = struct
         match Tenv.lookup analysis_data.tenv name with
         | Some tstruct ->
             List.find
-              ~f:(fun (m : Struct.tenv_method) -> Procname.is_cpp_lambda m.name)
+              ~f:(fun (m : Struct.tenv_method) -> Procname.is_cpp_call_operator m.name)
               tstruct.Struct.methods
         | None ->
             None )
