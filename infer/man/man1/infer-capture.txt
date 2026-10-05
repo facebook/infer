@@ -282,6 +282,16 @@ BUCK OPTIONS
            --buck-clang.
 
 CLANG OPTIONS
+       --capture-includers-of-changed-headers
+           Activates: With --compilation-database and --changed-files-index,
+           also capture the source files of the compilation database that
+           include, directly or not, a header listed in the index, so that
+           the procedures defined in the header can be analyzed. To find
+           them, the preprocessor is run on every other entry of the
+           compilation database, and all the files found are captured;
+           failures to capture them only cause a warning. (Conversely:
+           --no-capture-includers-of-changed-headers)
+
        --clang-biniou-file file
            Specify a file containing the AST of the program, in biniou
            format. Please note you still need to provide a compilation
