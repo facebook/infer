@@ -139,6 +139,30 @@ module Iterator = struct
     (astate, pointer, index)
 
 
+  let check_not_end location ?index pointer astate =
+    if
+      AddressAttributes.is_end_of_collection (fst pointer) astate
+      || Option.exists index ~f:(fun (index, _) ->
+          AddressAttributes.is_end_of_collection index astate )
+    then
+      let invalidation_trace = Trace.Immediate {location; history= ValueHistory.epoch} in
+      let access_trace = Trace.Immediate {location; history= snd pointer} in
+      FatalError
+        ( ReportableError
+            { diagnostic=
+                Diagnostic.AccessToInvalidAddress
+                  { calling_context= []
+                  ; invalid_address= Decompiler.find (fst pointer) astate
+                  ; invalidation= EndIterator
+                  ; invalidation_trace
+                  ; access_trace
+                  ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
+                  ; must_be_valid_reason= None }
+            ; astate }
+        , [] )
+    else Ok astate
+
+
   let to_elem_pointed_by_iterator path mode ?(step = None) location iterator astate =
     let* astate, pointer = to_internal_pointer path Read location iterator astate in
     let* astate, index =
@@ -146,28 +170,8 @@ module Iterator = struct
     in
     (* Check if not end iterator *)
     let is_minus_minus = match step with Some `MinusMinus -> true | _ -> false in
-    let is_end =
-      AddressAttributes.is_end_of_collection (fst pointer) astate
-      || AddressAttributes.is_end_of_collection (fst index) astate
-    in
     let* astate =
-      if is_end && not is_minus_minus then
-        let invalidation_trace = Trace.Immediate {location; history= ValueHistory.epoch} in
-        let access_trace = Trace.Immediate {location; history= snd pointer} in
-        FatalError
-          ( ReportableError
-              { diagnostic=
-                  Diagnostic.AccessToInvalidAddress
-                    { calling_context= []
-                    ; invalid_address= Decompiler.find (fst pointer) astate
-                    ; invalidation= EndIterator
-                    ; invalidation_trace
-                    ; access_trace
-                    ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
-                    ; must_be_valid_reason= None }
-              ; astate }
-          , [] )
-      else Ok astate
+      if is_minus_minus then Ok astate else check_not_end location ~index pointer astate
     in
     (* We do not want to create internal array if iterator pointer has an invalid value *)
     let* astate = PulseOperations.check_addr_access path Read location index astate in
@@ -341,15 +345,9 @@ module Iterator = struct
         propagate_taint ~src:first ~dst:ret astate
 
 
-  let operator_compare comparison ~desc iter_lhs iter_rhs : model_no_non_disj =
+  let compare_values comparison ~desc value_lhs value_rhs : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let event = Hist.call_event path location desc in
-    let<*> astate, _, (index_lhs, _) =
-      to_internal_pointer_deref path Read location iter_lhs astate
-    in
-    let<*> astate, _, (index_rhs, _) =
-      to_internal_pointer_deref path Read location iter_rhs astate
-    in
     let ret_val = AbstractValue.mk_fresh () in
     let astate = PulseOperations.write_id ret_id (ret_val, Hist.single_event event) astate in
     let ret_val_equal, ret_val_notequal =
@@ -361,17 +359,28 @@ module Iterator = struct
     in
     let astate_equal =
       PulseArithmetic.and_eq_int ret_val ret_val_equal astate
-      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand index_lhs)
-             (AbstractValueOperand index_rhs)
+      >>== PulseArithmetic.prune_binop ~negated:false Eq (AbstractValueOperand value_lhs)
+             (AbstractValueOperand value_rhs)
       >>|| ExecutionDomain.continue
     in
     let astate_notequal =
       PulseArithmetic.and_eq_int ret_val ret_val_notequal astate
-      >>== PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand index_lhs)
-             (AbstractValueOperand index_rhs)
+      >>== PulseArithmetic.prune_binop ~negated:false Ne (AbstractValueOperand value_lhs)
+             (AbstractValueOperand value_rhs)
       >>|| ExecutionDomain.continue
     in
     SatUnsat.to_list astate_equal @ SatUnsat.to_list astate_notequal
+
+
+  let operator_compare comparison ~desc iter_lhs iter_rhs : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    let<*> astate, _, (index_lhs, _) =
+      to_internal_pointer_deref path Read location iter_lhs astate
+    in
+    let<*> astate, _, (index_rhs, _) =
+      to_internal_pointer_deref path Read location iter_rhs astate
+    in
+    compare_values comparison ~desc index_lhs index_rhs model_data astate
 
 
   let operator_star ~desc iter : model_no_non_disj =

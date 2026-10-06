@@ -72,6 +72,19 @@ int sum_in_loop_bad(std::vector<int> vec) {
   return total;
 }
 
+int sum_set_in_loop_bad(std::set<int> set) {
+  int total = 0;
+  for (int x : set) {
+    total += x;
+  }
+  return total;
+}
+
+int erase_first_ok(std::set<int> set) {
+  set.erase(set.begin());
+  return set.size();
+}
+
 // anonymous parameters usually exist to satisfy the signature for virtual
 // functions. If we recommend const ref, the signature would not match and
 // making the base function const-refable might not be possible since it might

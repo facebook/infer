@@ -41,7 +41,8 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
           | OptionalEmpty
           | StdVector _
           | StdString _
-          | CppMap _ ->
+          | CppMap _
+          | StdContainer _ ->
               astate
         in
         ReportableError
