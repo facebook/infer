@@ -380,3 +380,24 @@ void test_capture_alias_good(void) {
   }
   x = *ptr;
 }
+
+void call_test_after_dereference_bad() { test_after_dereference_bad(nullptr); }
+
+struct NodeWithNext {
+  NodeWithNext* next;
+  int data;
+
+  int next_data_compared_to_null_bad() {
+    if (next == nullptr) {
+      log_null();
+    }
+    return next->data;
+  }
+
+  static void log_null();
+};
+
+int call_next_data_compared_to_null_with_null_bad() {
+  NodeWithNext n{nullptr, 0};
+  return n.next_data_compared_to_null_bad();
+}
