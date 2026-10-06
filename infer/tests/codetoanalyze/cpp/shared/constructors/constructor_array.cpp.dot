@@ -1,9 +1,9 @@
 /* @generated */
 digraph cfg {
-"array_of_person#79456727014956109.0fecf6778237d47d_1" [label="1: Start array_of_person\nFormals: \nLocals:  arr:Person[10*4] 0$?%__sil_tmpSIL_materialize_temp__n$1:Person 0$?%__sil_tmpSIL_materialize_temp__n$2:Person 0$?%__sil_tmpSIL_materialize_temp__n$3:Person \n  " color=yellow style=filled]
+"array_of_person#79456727014956109.0fecf6778237d47d_1" [label="1: Start array_of_person\nFormals: \nLocals:  arr:Person[10*4] \n  " color=yellow style=filled]
 	
 
-	 "array_of_person#79456727014956109.0fecf6778237d47d_1" -> "array_of_person#79456727014956109.0fecf6778237d47d_8" ;
+	 "array_of_person#79456727014956109.0fecf6778237d47d_1" -> "array_of_person#79456727014956109.0fecf6778237d47d_5" ;
 "array_of_person#79456727014956109.0fecf6778237d47d_2" [label="2: Exit array_of_person \n  " color=yellow style=filled]
 	
 
@@ -15,26 +15,10 @@ digraph cfg {
 	
 
 	 "array_of_person#79456727014956109.0fecf6778237d47d_4" -> "array_of_person#79456727014956109.0fecf6778237d47d_2" ;
-"array_of_person#79456727014956109.0fecf6778237d47d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:Person); [line 16, column 21]\n  n$4=_fun_Person::Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:Person*) [line 16, column 21]\n " shape="box"]
+"array_of_person#79456727014956109.0fecf6778237d47d_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(arr:Person[10*4]); [line 16, column 3]\n  n$4=_fun_Person::Person(&arr[0]:Person*) [line 16, column 21]\n  n$5=_fun_Person::Person(&arr[1]:Person*) [line 16, column 31]\n  n$6=_fun_Person::Person(&arr[2]:Person*) [line 16, column 41]\n " shape="box"]
 	
 
-	 "array_of_person#79456727014956109.0fecf6778237d47d_5" -> "array_of_person#79456727014956109.0fecf6778237d47d_6" ;
-"array_of_person#79456727014956109.0fecf6778237d47d_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:Person); [line 16, column 31]\n  n$6=_fun_Person::Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 16, column 31]\n " shape="box"]
-	
-
-	 "array_of_person#79456727014956109.0fecf6778237d47d_6" -> "array_of_person#79456727014956109.0fecf6778237d47d_7" ;
-"array_of_person#79456727014956109.0fecf6778237d47d_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$3:Person); [line 16, column 41]\n  n$8=_fun_Person::Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:Person*) [line 16, column 41]\n " shape="box"]
-	
-
-	 "array_of_person#79456727014956109.0fecf6778237d47d_7" -> "array_of_person#79456727014956109.0fecf6778237d47d_9" ;
-"array_of_person#79456727014956109.0fecf6778237d47d_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(arr:Person[10*4]); [line 16, column 3]\n " shape="box"]
-	
-
-	 "array_of_person#79456727014956109.0fecf6778237d47d_8" -> "array_of_person#79456727014956109.0fecf6778237d47d_5" ;
-"array_of_person#79456727014956109.0fecf6778237d47d_9" [label="9:  DeclStmt \n   n$5=_fun_Person::Person(&arr[0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:Person&) [line 16, column 21]\n  n$7=_fun_Person::Person(&arr[1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 16, column 31]\n  n$9=_fun_Person::Person(&arr[2]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:Person&) [line 16, column 41]\n " shape="box"]
-	
-
-	 "array_of_person#79456727014956109.0fecf6778237d47d_9" -> "array_of_person#79456727014956109.0fecf6778237d47d_3" ;
+	 "array_of_person#79456727014956109.0fecf6778237d47d_5" -> "array_of_person#79456727014956109.0fecf6778237d47d_3" ;
 "initialization_c_style#1649558950.0d90448020e72c05_1" [label="1: Start initialization_c_style\nFormals: \nLocals:  z2:Z z:Z[2*8] \n  " color=yellow style=filled]
 	
 
@@ -69,10 +53,10 @@ digraph cfg {
 	
 
 	 "initialization_mixed_styles_not_h.422782850043f1b4_5" -> "initialization_mixed_styles_not_h.422782850043f1b4_4" ;
-"matrix_of_person#2881910427017022.27f7f148c4911c13_1" [label="1: Start matrix_of_person\nFormals: \nLocals:  arr:Person[2*4][2*8] 0$?%__sil_tmpSIL_materialize_temp__n$1:Person 0$?%__sil_tmpSIL_materialize_temp__n$2:Person 0$?%__sil_tmpSIL_materialize_temp__n$3:Person 0$?%__sil_tmpSIL_materialize_temp__n$4:Person \n  " color=yellow style=filled]
+"matrix_of_person#2881910427017022.27f7f148c4911c13_1" [label="1: Start matrix_of_person\nFormals: \nLocals:  arr:Person[2*4][2*8] \n  " color=yellow style=filled]
 	
 
-	 "matrix_of_person#2881910427017022.27f7f148c4911c13_1" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_9" ;
+	 "matrix_of_person#2881910427017022.27f7f148c4911c13_1" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_5" ;
 "matrix_of_person#2881910427017022.27f7f148c4911c13_2" [label="2: Exit matrix_of_person \n  " color=yellow style=filled]
 	
 
@@ -84,30 +68,10 @@ digraph cfg {
 	
 
 	 "matrix_of_person#2881910427017022.27f7f148c4911c13_4" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_2" ;
-"matrix_of_person#2881910427017022.27f7f148c4911c13_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:Person); [line 21, column 23]\n  n$5=_fun_Person::Person(&0$?%__sil_tmpSIL_materialize_temp__n$1:Person*) [line 21, column 23]\n " shape="box"]
+"matrix_of_person#2881910427017022.27f7f148c4911c13_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(arr:Person[2*4][2*8]); [line 21, column 3]\n  n$5=_fun_Person::Person(&arr[0][0]:Person*) [line 21, column 23]\n  n$6=_fun_Person::Person(&arr[0][1]:Person*) [line 21, column 33]\n  n$7=_fun_Person::Person(&arr[1][0]:Person*) [line 21, column 43]\n  n$8=_fun_Person::Person(&arr[1][1]:Person*) [line 21, column 53]\n " shape="box"]
 	
 
-	 "matrix_of_person#2881910427017022.27f7f148c4911c13_5" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_6" ;
-"matrix_of_person#2881910427017022.27f7f148c4911c13_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:Person); [line 21, column 33]\n  n$7=_fun_Person::Person(&0$?%__sil_tmpSIL_materialize_temp__n$2:Person*) [line 21, column 33]\n " shape="box"]
-	
-
-	 "matrix_of_person#2881910427017022.27f7f148c4911c13_6" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_7" ;
-"matrix_of_person#2881910427017022.27f7f148c4911c13_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$3:Person); [line 21, column 43]\n  n$9=_fun_Person::Person(&0$?%__sil_tmpSIL_materialize_temp__n$3:Person*) [line 21, column 43]\n " shape="box"]
-	
-
-	 "matrix_of_person#2881910427017022.27f7f148c4911c13_7" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_8" ;
-"matrix_of_person#2881910427017022.27f7f148c4911c13_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$4:Person); [line 21, column 53]\n  n$11=_fun_Person::Person(&0$?%__sil_tmpSIL_materialize_temp__n$4:Person*) [line 21, column 53]\n " shape="box"]
-	
-
-	 "matrix_of_person#2881910427017022.27f7f148c4911c13_8" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_10" ;
-"matrix_of_person#2881910427017022.27f7f148c4911c13_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(arr:Person[2*4][2*8]); [line 21, column 3]\n " shape="box"]
-	
-
-	 "matrix_of_person#2881910427017022.27f7f148c4911c13_9" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_5" ;
-"matrix_of_person#2881910427017022.27f7f148c4911c13_10" [label="10:  DeclStmt \n   n$6=_fun_Person::Person(&arr[0][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$1:Person&) [line 21, column 23]\n  n$8=_fun_Person::Person(&arr[0][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$2:Person&) [line 21, column 33]\n  n$10=_fun_Person::Person(&arr[1][0]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$3:Person&) [line 21, column 43]\n  n$12=_fun_Person::Person(&arr[1][1]:Person*,&0$?%__sil_tmpSIL_materialize_temp__n$4:Person&) [line 21, column 53]\n " shape="box"]
-	
-
-	 "matrix_of_person#2881910427017022.27f7f148c4911c13_10" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_3" ;
+	 "matrix_of_person#2881910427017022.27f7f148c4911c13_5" -> "matrix_of_person#2881910427017022.27f7f148c4911c13_3" ;
 "Person#Person#{114236246425374644.7f461a5435715e0c_1" [label="1: Start Person::Person\nFormals:  this:Person*\nLocals:  \n  " color=yellow style=filled]
 	
 

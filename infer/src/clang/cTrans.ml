@@ -79,6 +79,31 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         false
 
 
+  (** Before C++17, initializing an object from a prvalue of the same class type creates a temporary
+      and an elidable copy or move construction of the object from it, which compilers elide (and
+      which C++17 removes from the AST). Return the prvalue so that it initializes the object
+      directly, as in C++17. *)
+  let get_elided_temporary tenv {Clang_ast_t.xcei_is_elidable} expr_info stmt_list =
+    let rec strip_noop_casts = function
+      | `ImplicitCastExpr (_, [stmt], _, {Clang_ast_t.cei_cast_kind= `NoOp}, _) ->
+          strip_noop_casts stmt
+      | stmt ->
+          stmt
+    in
+    match stmt_list with
+    | arg :: _ when xcei_is_elidable -> (
+      match strip_noop_casts arg with
+      | `MaterializeTemporaryExpr (_, [temporary], temporary_expr_info, _) ->
+          let class_name ei = Typ.name (CType_decl.get_type_from_expr_info ei tenv) in
+          Option.some_if
+            (Option.equal Typ.Name.equal (class_name expr_info) (class_name temporary_expr_info))
+            temporary
+      | _ ->
+          None )
+    | _ ->
+        None
+
+
   let objc_exp_of_type_block fun_exp_stmt =
     match fun_exp_stmt with
     | `ImplicitCastExpr (_, _, ei, _, _) | `PseudoObjectExpr (_, _, ei) ->
@@ -5081,7 +5106,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         cxxMemberCallExpr_trans trans_state stmt_info stmt_list ei
     | `CXXOperatorCallExpr (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
-    | `CXXConstructExpr (stmt_info, stmt_list, expr_info, cxx_constr_info)
+    | `CXXConstructExpr (stmt_info, stmt_list, expr_info, cxx_constr_info) -> (
+      match get_elided_temporary trans_state.context.tenv cxx_constr_info expr_info stmt_list with
+      | Some temporary ->
+          instruction trans_state temporary
+      | None ->
+          cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info cxx_constr_info
+            ~is_inherited_ctor:false )
     | `CXXTemporaryObjectExpr (stmt_info, stmt_list, expr_info, cxx_constr_info) ->
         cxxConstructExpr_trans trans_state stmt_info stmt_list expr_info cxx_constr_info
           ~is_inherited_ctor:false

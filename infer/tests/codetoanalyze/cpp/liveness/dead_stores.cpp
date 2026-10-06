@@ -658,11 +658,13 @@ struct BlockListedStruct {
 
 void unused_block_listed_constructed_bad() { auto x = BlockListedStruct(); }
 
-void unused_block_listed_clone_bad(BlockListedStruct* something) {
+// FN: [x] is initialized through the call's return parameter, not by a store
+void FN_unused_block_listed_clone_bad(BlockListedStruct* something) {
   auto x = something->clone();
 }
 
-void unused_block_listed_unique_ptr_bad(BlockListedStruct* something) {
+// FN: same as FN_unused_block_listed_clone_bad
+void FN_unused_block_listed_unique_ptr_bad(BlockListedStruct* something) {
   auto x = std::make_unique<BlockListedStruct>(*something);
 }
 

@@ -1,6 +1,6 @@
 /* @generated */
 digraph cfg {
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_1" [label="1: Start FN_deref_null_after_catch_bad\nFormals:  i:int*\nLocals:  0$?%__sil_tmp__temp_construct_n$4:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  \n  " color=yellow style=filled]
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_1" [label="1: Start FN_deref_null_after_catch_bad\nFormals:  i:int*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error \n  " color=yellow style=filled]
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_1" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_9" ;
@@ -20,15 +20,15 @@ digraph cfg {
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_3" ;
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_11" [color="red" ];
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const ); [line 48, column 11]\n  n$5=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *,\"error\":char const *) [line 48, column 11]\n " shape="box"]
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error); [line 48, column 11]\n  n$4=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error*,\"error\":char const *) [line 48, column 11]\n " shape="box"]
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" [label="7:  Destruction(temporaries cleanup) \n   n$6=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const &) [line 48, column 11]\n  n$7=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error) [line 48, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  [line 48, column 37]\n  n$9=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *) injected virtual [line 48, column 37]\n " shape="box"]
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" [label="7:  Destruction(temporaries cleanup) \n   n$5=_fun___infer_objc_cpp_throw(&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error) [line 48, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error [line 48, column 37]\n  n$7=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error*) injected virtual [line 48, column 37]\n " shape="box"]
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_7" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_5" ;
-"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" [label="8:  BinaryOperatorStmt: Assign \n   n$10=*&i:int* [line 47, column 6]\n  *n$10:int=2 [line 47, column 5]\n " shape="box"]
+"FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" [label="8:  BinaryOperatorStmt: Assign \n   n$8=*&i:int* [line 47, column 6]\n  *n$8:int=2 [line 47, column 5]\n " shape="box"]
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_8" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_6" ;
@@ -44,7 +44,7 @@ digraph cfg {
 	
 
 	 "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_11" -> "FN_deref_null_after_catch_bad#462.43441e3badf1bb57_10" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_1" [label="1: Start FN_deref_null_in_catch_bad\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$2:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  i:int* \n  " color=yellow style=filled]
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_1" [label="1: Start FN_deref_null_in_catch_bad\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error i:int* \n  " color=yellow style=filled]
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_1" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_11" ;
@@ -60,11 +60,11 @@ digraph cfg {
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_3" ;
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_10" [color="red" ];
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const ); [line 38, column 11]\n  n$3=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *,\"error\":char const *) [line 38, column 11]\n " shape="box"]
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error); [line 38, column 11]\n  n$2=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error*,\"error\":char const *) [line 38, column 11]\n " shape="box"]
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" [label="6:  Destruction(temporaries cleanup) \n   n$4=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const &) [line 38, column 11]\n  n$5=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error) [line 38, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 38, column 37]\n  n$7=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 38, column 37]\n " shape="box"]
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" [label="6:  Destruction(temporaries cleanup) \n   n$3=_fun___infer_objc_cpp_throw(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error) [line 38, column 5]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error [line 38, column 37]\n  n$5=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error*) injected virtual [line 38, column 37]\n " shape="box"]
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_6" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_4" ;
@@ -72,11 +72,11 @@ digraph cfg {
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_5" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" [label="8:  Return Stmt \n   n$9=*&i:int* [line 40, column 13]\n  n$10=*n$9:int [line 40, column 12]\n " shape="box"]
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" [label="8:  Return Stmt \n   n$7=*&i:int* [line 40, column 13]\n  n$8=*n$7:int [line 40, column 12]\n " shape="box"]
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_8" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" ;
-"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" [label="9:  Return Stmt \n   *&return:int=n$10 [line 40, column 5]\n " shape="box"]
+"FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" [label="9:  Return Stmt \n   *&return:int=n$8 [line 40, column 5]\n " shape="box"]
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_9" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_2" ;
@@ -88,7 +88,7 @@ digraph cfg {
 	
 
 	 "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_11" -> "FN_deref_null_in_catch_bad#929789.c83eec7c9ab8ce2e_7" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_1" [label="1: Start FN_multiple_catches_bad\nFormals:  b:_Bool\nLocals:  0$?%__sil_tmp__temp_construct_n$3:std::length_error 0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const  0$?%__sil_tmp__temp_construct_n$11:std::range_error 0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const  j:int* i:int* \n  " color=yellow style=filled]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_1" [label="1: Start FN_multiple_catches_bad\nFormals:  b:_Bool\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$2:std::length_error 0$?%__sil_tmpSIL_materialize_temp__n$8:std::range_error j:int* i:int* \n  " color=yellow style=filled]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_1" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_19" ;
@@ -116,19 +116,19 @@ digraph cfg {
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_7" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_10" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const ); [line 60, column 13]\n  n$4=_fun_std::length_error::length_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const *,\"error\":char const *) [line 60, column 13]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:std::length_error); [line 60, column 13]\n  n$3=_fun_std::length_error::length_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::length_error*,\"error\":char const *) [line 60, column 13]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_8" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_9" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_9" [label="9:  Destruction(temporaries cleanup) \n   n$5=_fun_std::length_error::length_error(&0$?%__sil_tmp__temp_construct_n$3:std::length_error*,&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const &) [line 60, column 13]\n  n$6=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$3:std::length_error) [line 60, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const  [line 60, column 38]\n  n$8=_fun_std::length_error::~length_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::length_error const *) injected virtual [line 60, column 38]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_9" [label="9:  Destruction(temporaries cleanup) \n   n$4=_fun___infer_objc_cpp_throw(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::length_error) [line 60, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::length_error [line 60, column 38]\n  n$6=_fun_std::length_error::~length_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::length_error*) injected virtual [line 60, column 38]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_9" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_5" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const ); [line 62, column 13]\n  n$12=_fun_std::range_error::range_error(&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const *,\"error\":char const *) [line 62, column 13]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$8:std::range_error); [line 62, column 13]\n  n$9=_fun_std::range_error::range_error(&0$?%__sil_tmpSIL_materialize_temp__n$8:std::range_error*,\"error\":char const *) [line 62, column 13]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_10" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_11" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_11" [label="11:  Destruction(temporaries cleanup) \n   n$13=_fun_std::range_error::range_error(&0$?%__sil_tmp__temp_construct_n$11:std::range_error*,&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const &) [line 62, column 13]\n  n$14=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$11:std::range_error) [line 62, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const  [line 62, column 37]\n  n$16=_fun_std::range_error::~range_error(&0$?%__sil_tmpSIL_materialize_temp__n$9:std::range_error const *) injected virtual [line 62, column 37]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_11" [label="11:  Destruction(temporaries cleanup) \n   n$10=_fun___infer_objc_cpp_throw(&0$?%__sil_tmpSIL_materialize_temp__n$8:std::range_error) [line 62, column 7]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$8:std::range_error [line 62, column 37]\n  n$12=_fun_std::range_error::~range_error(&0$?%__sil_tmpSIL_materialize_temp__n$8:std::range_error*) injected virtual [line 62, column 37]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_11" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_5" ;
@@ -137,19 +137,19 @@ digraph cfg {
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_12" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_6" ;
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_12" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_7" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_13" [label="13:  Return Stmt \n   n$19=*&i:int* [line 65, column 13]\n  n$20=*n$19:int [line 65, column 12]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_13" [label="13:  Return Stmt \n   n$15=*&i:int* [line 65, column 13]\n  n$16=*n$15:int [line 65, column 12]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_13" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_14" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_14" [label="14:  Return Stmt \n   *&return:int=n$20 [line 65, column 5]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_14" [label="14:  Return Stmt \n   *&return:int=n$16 [line 65, column 5]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_14" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_2" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_15" [label="15:  Return Stmt \n   n$21=*&j:int* [line 67, column 13]\n  n$22=*n$21:int [line 67, column 12]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_15" [label="15:  Return Stmt \n   n$17=*&j:int* [line 67, column 13]\n  n$18=*n$17:int [line 67, column 12]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_15" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_16" ;
-"FN_multiple_catches_bad#459518252.680a793e449c2d74_16" [label="16:  Return Stmt \n   *&return:int=n$22 [line 67, column 5]\n " shape="box"]
+"FN_multiple_catches_bad#459518252.680a793e449c2d74_16" [label="16:  Return Stmt \n   *&return:int=n$18 [line 67, column 5]\n " shape="box"]
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_16" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_2" ;
@@ -166,18 +166,18 @@ digraph cfg {
 	
 
 	 "FN_multiple_catches_bad#459518252.680a793e449c2d74_19" -> "FN_multiple_catches_bad#459518252.680a793e449c2d74_18" ;
-"basic_throw_ok#105291888909807828.c9e1b8dd080b2621_1" [label="1: Start basic_throw_ok\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$2:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  \n  " color=yellow style=filled]
+"basic_throw_ok#105291888909807828.c9e1b8dd080b2621_1" [label="1: Start basic_throw_ok\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error \n  " color=yellow style=filled]
 	
 
 	 "basic_throw_ok#105291888909807828.c9e1b8dd080b2621_1" -> "basic_throw_ok#105291888909807828.c9e1b8dd080b2621_3" ;
 "basic_throw_ok#105291888909807828.c9e1b8dd080b2621_2" [label="2: Exit basic_throw_ok \n  " color=yellow style=filled]
 	
 
-"basic_throw_ok#105291888909807828.c9e1b8dd080b2621_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const ); [line 27, column 31]\n  n$3=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *,\"throwing!\":char const *) [line 27, column 31]\n " shape="box"]
+"basic_throw_ok#105291888909807828.c9e1b8dd080b2621_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error); [line 27, column 31]\n  n$2=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error*,\"throwing!\":char const *) [line 27, column 31]\n " shape="box"]
 	
 
 	 "basic_throw_ok#105291888909807828.c9e1b8dd080b2621_3" -> "basic_throw_ok#105291888909807828.c9e1b8dd080b2621_4" ;
-"basic_throw_ok#105291888909807828.c9e1b8dd080b2621_4" [label="4:  Destruction(temporaries cleanup) \n   n$4=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const &) [line 27, column 31]\n  n$5=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$2:std::runtime_error) [line 27, column 25]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const  [line 27, column 61]\n  n$7=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$0:std::runtime_error const *) injected virtual [line 27, column 61]\n " shape="box"]
+"basic_throw_ok#105291888909807828.c9e1b8dd080b2621_4" [label="4:  Destruction(temporaries cleanup) \n   n$3=_fun___infer_objc_cpp_throw(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error) [line 27, column 25]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error [line 27, column 61]\n  n$5=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$1:std::runtime_error*) injected virtual [line 27, column 61]\n " shape="box"]
 	
 
 	 "basic_throw_ok#105291888909807828.c9e1b8dd080b2621_4" -> "basic_throw_ok#105291888909807828.c9e1b8dd080b2621_2" ;
@@ -192,7 +192,7 @@ digraph cfg {
 	
 
 	 "call_deref_with_null#461196642599.6346543307e9a799_3" -> "call_deref_with_null#461196642599.6346543307e9a799_2" ;
-"dead_deref_null_after_throw_ok#12.42d41c040f3a321b_1" [label="1: Start dead_deref_null_after_throw_ok\nFormals: \nLocals:  0$?%__sil_tmp__temp_construct_n$4:std::runtime_error 0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  i:int* \n  " color=yellow style=filled]
+"dead_deref_null_after_throw_ok#12.42d41c040f3a321b_1" [label="1: Start dead_deref_null_after_throw_ok\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error i:int* \n  " color=yellow style=filled]
 	
 
 	 "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_1" -> "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_7" ;
@@ -207,11 +207,11 @@ digraph cfg {
 	
 
 	 "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_4" -> "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_2" ;
-"dead_deref_null_after_throw_ok#12.42d41c040f3a321b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const ); [line 31, column 9]\n  n$5=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *,\"throwing!\":char const *) [line 31, column 9]\n " shape="box"]
+"dead_deref_null_after_throw_ok#12.42d41c040f3a321b_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error); [line 31, column 9]\n  n$4=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error*,\"throwing!\":char const *) [line 31, column 9]\n " shape="box"]
 	
 
 	 "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_5" -> "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_6" ;
-"dead_deref_null_after_throw_ok#12.42d41c040f3a321b_6" [label="6:  Destruction(temporaries cleanup) \n   n$6=_fun_std::runtime_error::runtime_error(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error*,&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const &) [line 31, column 9]\n  n$7=_fun___infer_objc_cpp_throw(&0$?%__sil_tmp__temp_construct_n$4:std::runtime_error) [line 31, column 3]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const  [line 31, column 39]\n  n$9=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$2:std::runtime_error const *) injected virtual [line 31, column 39]\n " shape="box"]
+"dead_deref_null_after_throw_ok#12.42d41c040f3a321b_6" [label="6:  Destruction(temporaries cleanup) \n   n$5=_fun___infer_objc_cpp_throw(&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error) [line 31, column 3]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error [line 31, column 39]\n  n$7=_fun_std::runtime_error::~runtime_error(&0$?%__sil_tmpSIL_materialize_temp__n$3:std::runtime_error*) injected virtual [line 31, column 39]\n " shape="box"]
 	
 
 	 "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_6" -> "dead_deref_null_after_throw_ok#12.42d41c040f3a321b_3" ;

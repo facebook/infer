@@ -957,3 +957,53 @@ void captured_by_ref_ok() {
   };
   x.arr[0] = 42;
 }
+
+const std::string get_const_string();
+std::string get_string();
+const std::string& get_const_string_ref();
+
+// before C++17, the copy (or move) from the returned temporary is elided
+int copy_from_const_return_value_ok() {
+  std::string s = get_const_string();
+  return s.size();
+}
+
+int copy_from_return_value_ok() {
+  std::string s = get_string();
+  return s.size();
+}
+
+int copy_from_const_ref_return_bad() {
+  std::string s = get_const_string_ref();
+  return s.size();
+}
+
+int copy_from_const_local_bad() {
+  const std::string local = get_const_string();
+  std::string s = local;
+  return s.size();
+}
+
+int copy_from_const_ref_to_temporary_bad() {
+  const std::string& ref = get_const_string();
+  std::string s = ref;
+  return s.size();
+}
+
+struct CopyOnly {
+  CopyOnly();
+  CopyOnly(const CopyOnly&);
+  int arr[100];
+};
+
+CopyOnly get_copy_only();
+
+int copy_only_from_return_value_ok() {
+  CopyOnly c = get_copy_only();
+  return c.arr[0];
+}
+
+int copy_only_from_temporary_ok() {
+  CopyOnly c = CopyOnly();
+  return c.arr[0];
+}

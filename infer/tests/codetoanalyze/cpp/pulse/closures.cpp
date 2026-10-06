@@ -31,13 +31,10 @@ int implicit_ref_capture_destroy_invoke_bad() {
   return f();
 }
 
-// FN in C++14
 int reassign_lambda_capture_destroy_invoke_bad() {
   std::function<int()> f;
   {
     auto s = S();
-    // this is a copy constructor in C++14, which pulse misses,
-    // but it's a straight assignment in C++17, which pulse understands
     auto tmp = [&] { return s.f; };
     f = tmp;
   }

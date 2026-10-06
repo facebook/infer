@@ -27,10 +27,10 @@ digraph cfg {
 	
 
 	 "get#return_struct#152069431635814.ccfaa809d6b1c936_7" -> "get#return_struct#152069431635814.ccfaa809d6b1c936_6" ;
-"get_div0#return_struct#3543093399.0c3db3a444952aef_1" [label="1: Start return_struct::get_div0\nFormals: \nLocals:  x:return_struct::X 0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const  \n  " color=yellow style=filled]
+"get_div0#return_struct#3543093399.0c3db3a444952aef_1" [label="1: Start return_struct::get_div0\nFormals: \nLocals:  x:return_struct::X \n  " color=yellow style=filled]
 	
 
-	 "get_div0#return_struct#3543093399.0c3db3a444952aef_1" -> "get_div0#return_struct#3543093399.0c3db3a444952aef_6" ;
+	 "get_div0#return_struct#3543093399.0c3db3a444952aef_1" -> "get_div0#return_struct#3543093399.0c3db3a444952aef_5" ;
 "get_div0#return_struct#3543093399.0c3db3a444952aef_2" [label="2: Exit return_struct::get_div0 \n  " color=yellow style=filled]
 	
 
@@ -42,22 +42,14 @@ digraph cfg {
 	
 
 	 "get_div0#return_struct#3543093399.0c3db3a444952aef_4" -> "get_div0#return_struct#3543093399.0c3db3a444952aef_2" ;
-"get_div0#return_struct#3543093399.0c3db3a444952aef_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const ); [line 26, column 9]\n  n$3=_fun_return_struct::get(0:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X*) assign_last [line 26, column 9]\n " shape="box"]
+"get_div0#return_struct#3543093399.0c3db3a444952aef_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:return_struct::X); [line 26, column 3]\n  n$3=_fun_return_struct::get(0:int,&x:return_struct::X*) assign_last [line 26, column 9]\n " shape="box"]
 	
 
-	 "get_div0#return_struct#3543093399.0c3db3a444952aef_5" -> "get_div0#return_struct#3543093399.0c3db3a444952aef_7" ;
-"get_div0#return_struct#3543093399.0c3db3a444952aef_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:return_struct::X); [line 26, column 3]\n " shape="box"]
+	 "get_div0#return_struct#3543093399.0c3db3a444952aef_5" -> "get_div0#return_struct#3543093399.0c3db3a444952aef_3" ;
+"get_div1#return_struct#4287655186.dabfacf04a7d838f_1" [label="1: Start return_struct::get_div1\nFormals: \nLocals:  x:return_struct::X \n  " color=yellow style=filled]
 	
 
-	 "get_div0#return_struct#3543093399.0c3db3a444952aef_6" -> "get_div0#return_struct#3543093399.0c3db3a444952aef_5" ;
-"get_div0#return_struct#3543093399.0c3db3a444952aef_7" [label="7:  DeclStmt \n   n$4=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const &) [line 26, column 9]\n " shape="box"]
-	
-
-	 "get_div0#return_struct#3543093399.0c3db3a444952aef_7" -> "get_div0#return_struct#3543093399.0c3db3a444952aef_3" ;
-"get_div1#return_struct#4287655186.dabfacf04a7d838f_1" [label="1: Start return_struct::get_div1\nFormals: \nLocals:  x:return_struct::X 0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const  \n  " color=yellow style=filled]
-	
-
-	 "get_div1#return_struct#4287655186.dabfacf04a7d838f_1" -> "get_div1#return_struct#4287655186.dabfacf04a7d838f_6" ;
+	 "get_div1#return_struct#4287655186.dabfacf04a7d838f_1" -> "get_div1#return_struct#4287655186.dabfacf04a7d838f_5" ;
 "get_div1#return_struct#4287655186.dabfacf04a7d838f_2" [label="2: Exit return_struct::get_div1 \n  " color=yellow style=filled]
 	
 
@@ -69,18 +61,10 @@ digraph cfg {
 	
 
 	 "get_div1#return_struct#4287655186.dabfacf04a7d838f_4" -> "get_div1#return_struct#4287655186.dabfacf04a7d838f_2" ;
-"get_div1#return_struct#4287655186.dabfacf04a7d838f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const ); [line 38, column 9]\n  n$3=_fun_return_struct::get(1:int,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X*) assign_last [line 38, column 9]\n " shape="box"]
+"get_div1#return_struct#4287655186.dabfacf04a7d838f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:return_struct::X); [line 38, column 3]\n  n$3=_fun_return_struct::get(1:int,&x:return_struct::X*) assign_last [line 38, column 9]\n " shape="box"]
 	
 
-	 "get_div1#return_struct#4287655186.dabfacf04a7d838f_5" -> "get_div1#return_struct#4287655186.dabfacf04a7d838f_7" ;
-"get_div1#return_struct#4287655186.dabfacf04a7d838f_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(x:return_struct::X); [line 38, column 3]\n " shape="box"]
-	
-
-	 "get_div1#return_struct#4287655186.dabfacf04a7d838f_6" -> "get_div1#return_struct#4287655186.dabfacf04a7d838f_5" ;
-"get_div1#return_struct#4287655186.dabfacf04a7d838f_7" [label="7:  DeclStmt \n   n$4=_fun_return_struct::X::X(&x:return_struct::X*,&0$?%__sil_tmpSIL_materialize_temp__n$1:return_struct::X const &) [line 38, column 9]\n " shape="box"]
-	
-
-	 "get_div1#return_struct#4287655186.dabfacf04a7d838f_7" -> "get_div1#return_struct#4287655186.dabfacf04a7d838f_3" ;
+	 "get_div1#return_struct#4287655186.dabfacf04a7d838f_5" -> "get_div1#return_struct#4287655186.dabfacf04a7d838f_3" ;
 "get_field_div0#return_struct#5765.23dc82d8c29aaec2_1" [label="1: Start return_struct::get_field_div0\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:return_struct::X 0$?%__sil_tmpSIL_materialize_temp__n$4:return_struct::X \n  " color=yellow style=filled]
 	
 
