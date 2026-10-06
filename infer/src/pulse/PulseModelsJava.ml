@@ -201,6 +201,24 @@ module Resource = struct
     @ call_may_throw_exception (JavaClassName.from_string exn_class_name) model_data astate
 
 
+  (* Common java.sql.Connection calls that do not close the connection. Left unknown, any of them
+     makes Pulse stop tracking the connection (#2111). *)
+  let jdbc_connection_usage_modeled =
+    StringSet.of_list
+      [ "commit"
+      ; "createStatement"
+      ; "getAutoCommit"
+      ; "getMetaData"
+      ; "isClosed"
+      ; "isValid"
+      ; "prepareCall"
+      ; "prepareStatement"
+      ; "rollback"
+      ; "setAutoCommit"
+      ; "setReadOnly"
+      ; "setTransactionIsolation" ]
+
+
   let inputstream_resource_usage_modeled_throws_IOException =
     StringSet.of_list ["available"; "read"; "reset"; "skip"]
 
@@ -219,24 +237,6 @@ module Resource = struct
      Pulse analyzes the JDK bodies and can miss the surrounding resource leak (#2119). *)
   let writer_resource_usage_modeled_do_not_throws =
     StringSet.of_list ["print"; "println"; "printf"; "format"]
-
-
-  (* Common java.sql.Connection calls that do not close the connection. Left unknown, any of them
-     makes Pulse stop tracking the connection (#2111). *)
-  let jdbc_connection_usage_modeled =
-    StringSet.of_list
-      [ "commit"
-      ; "createStatement"
-      ; "getAutoCommit"
-      ; "getMetaData"
-      ; "isClosed"
-      ; "isValid"
-      ; "prepareCall"
-      ; "prepareStatement"
-      ; "rollback"
-      ; "setAutoCommit"
-      ; "setReadOnly"
-      ; "setTransactionIsolation" ]
 
 
   let use ~exn_class_name : model_no_non_disj =
