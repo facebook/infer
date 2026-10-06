@@ -757,7 +757,18 @@ let pulse_models_to_treat_as_unknown_for_taint =
   ; ProcedureNameRegex
       { name_regex= Str.regexp "std::basic_string<.*>::basic_string"
       ; exclude_in= None
-      ; exclude_names= None } ]
+      ; exclude_names= None }
+  ; (* the mutators of [std::basic_string] are only modelled to invalidate the string's buffer *)
+    (let mutators =
+       List.map Invalidation.all_std_string_functions ~f:(fun string_f ->
+           Invalidation.std_string_method_name string_f |> Str.quote )
+       |> String.concat ~sep:"\\|"
+     in
+     ProcedureNameRegex
+       { name_regex=
+           Str.regexp (Printf.sprintf "^std::basic_string<.*>::\\(%s\\)\\(<.*>\\)?$" mutators)
+       ; exclude_in= None
+       ; exclude_names= None } ) ]
   |> List.map ~f:dummy_matcher_of_procedure_matcher
 
 

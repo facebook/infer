@@ -40,6 +40,7 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
           | GoneOutOfScope _
           | OptionalEmpty
           | StdVector _
+          | StdString _
           | CppMap _ ->
               astate
         in
