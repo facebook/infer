@@ -329,7 +329,8 @@ module Loc = struct
 
   let rec get_global_array_initializer =
     let initializer_of_pvar pvar =
-      if Pvar.is_constant_array pvar then Pvar.get_initializer_pname pvar else None
+      if Pvar.is_constant_array pvar && Pvar.is_const pvar then Pvar.get_initializer_pname pvar
+      else None
     in
     function
     | BoField.Prim (Var (Var.ProgramVar pvar)) ->

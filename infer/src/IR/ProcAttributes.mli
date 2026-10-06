@@ -86,6 +86,9 @@ type t =
   ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
   ; translation_unit: SourceFile.t  (** source file where the procedure was captured *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
+  ; mutable globals: (Pvar.t * Typ.t) list
+        (** global variables of array or struct type, including static locals, referenced in the
+            procedure, with their declared types; only recorded by the clang frontend *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
