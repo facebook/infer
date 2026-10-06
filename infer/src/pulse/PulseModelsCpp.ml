@@ -623,8 +623,13 @@ module Vector = struct
     astate
 
 
+  let is_move_constructor callee_procname =
+    List.nth (IRAttributes.load_formal_types callee_procname) 1
+    |> Option.exists ~f:Typ.is_rvalue_reference
+
+
   let init_copy_constructor this init_vector ~desc : model_no_non_disj =
-   fun {path; location} astate ->
+   fun {path; location; callee_procname} astate ->
     let<*> astate, init_list =
       PulseOperations.eval_deref_access path Read location init_vector
         (FieldAccess GenericArrayBackedCollection.field) astate
@@ -636,7 +641,17 @@ module Vector = struct
       PulseOperations.write_deref_field path location ~ref:this
         GenericArrayBackedCollection.size_field ~obj:other_size astate
     in
-    let<+> astate = shallow_copy_init_list path location this init_list ~desc astate in
+    (* a move keeps the internal array so references to its elements stay valid; a copy also
+       copies the elements, otherwise invalidating those of one vector would invalidate the other's *)
+    let depth_max = if is_move_constructor callee_procname then 0 else 1 in
+    let<*> astate, (copy, _) =
+      PulseOperations.deep_copy ~depth_max path location init_list astate
+    in
+    let<+> astate =
+      PulseOperations.write_deref_field path location ~ref:this GenericArrayBackedCollection.field
+        ~obj:(copy, Hist.add_call path location desc (snd init_list))
+        astate
+    in
     astate
 
 
