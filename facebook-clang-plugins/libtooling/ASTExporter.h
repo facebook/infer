@@ -413,6 +413,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(TypeTraitExpr)
   DECLARE_VISITOR(GenericSelectionExpr)
   DECLARE_VISITOR(CXXNoexceptExpr)
+  DECLARE_VISITOR(CXXParenListInitExpr)
 
   // ObjC
   DECLARE_VISITOR(ObjCAtCatchStmt)
@@ -4259,6 +4260,25 @@ void ASTExporter<ATDWriter>::VisitCXXNoexceptExpr(const CXXNoexceptExpr *Node) {
   bool value = Node->getValue();
   ObjectScope Scope(OF, 0 + value);
   OF.emitFlag("value", value);
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::CXXParenListInitExprTupleSize() {
+  return ExprTupleSize() + 1;
+}
+//@atd #define cxx_paren_list_init_expr_tuple expr_tuple * init_list_expr_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitCXXParenListInitExpr(
+    const CXXParenListInitExpr *Node) {
+  VisitExpr(Node);
+
+  const Expr *Filler = Node->getArrayFiller();
+  ObjectScope Scope(OF, 0 + (bool)Filler);
+
+  if (Filler) {
+    OF.emitTag("array_filler");
+    dumpStmt(Filler);
+  }
 }
 
 ////===----------------------------------------------------------------------===//

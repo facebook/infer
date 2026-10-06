@@ -91,11 +91,11 @@ digraph cfg {
 
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_3" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_7" ;
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_3" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_8" ;
-"nothrow_temporary_in_initializer#.49ef7108247d555b_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const ); [line 44, column 36]\n  n$5=_fun_Resource::Resource(&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const *) [line 44, column 36]\n  *&0$?%__sil_tmp_temp_marker_n$1:_Bool=1 [line 44, column 36]\n " shape="box"]
+"nothrow_temporary_in_initializer#.49ef7108247d555b_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const ); [line 44, column 36]\n  *&0$?%__sil_tmp_temp_marker_n$1:_Bool=1 [line 44, column 36]\n " shape="box"]
 	
 
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_4" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_5" ;
-"nothrow_temporary_in_initializer#.49ef7108247d555b_5" [label="5:  CXXNewExpr \n   n$6=_fun_Holder::Holder(n$4:Holder*,&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const &) [line 44, column 29]\n " shape="box"]
+"nothrow_temporary_in_initializer#.49ef7108247d555b_5" [label="5:  CXXNewExpr \n   n$5=_fun_Holder::Holder(n$4:Holder*,&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const &) [line 44, column 29]\n " shape="box"]
 	
 
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_5" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_6" ;
@@ -120,15 +120,15 @@ digraph cfg {
 	
 
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_10" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_14" ;
-"nothrow_temporary_in_initializer#.49ef7108247d555b_11" [label="11:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const  [line 44, column 46]\n  n$8=_fun_Resource::~Resource(&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const *) injected [line 44, column 46]\n " shape="box"]
+"nothrow_temporary_in_initializer#.49ef7108247d555b_11" [label="11:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const  [line 44, column 46]\n  n$7=_fun_Resource::~Resource(&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const *) injected [line 44, column 46]\n " shape="box"]
 	
 
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_11" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_10" ;
-"nothrow_temporary_in_initializer#.49ef7108247d555b_12" [label="12: Prune (true branch, boolean exp) \n   n$9=*&0$?%__sil_tmp_temp_marker_n$1:_Bool [line 44, column 46]\n  PRUNE(n$9, true); [line 44, column 46]\n " shape="invhouse"]
+"nothrow_temporary_in_initializer#.49ef7108247d555b_12" [label="12: Prune (true branch, boolean exp) \n   n$8=*&0$?%__sil_tmp_temp_marker_n$1:_Bool [line 44, column 46]\n  PRUNE(n$8, true); [line 44, column 46]\n " shape="invhouse"]
 	
 
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_12" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_11" ;
-"nothrow_temporary_in_initializer#.49ef7108247d555b_13" [label="13: Prune (false branch, boolean exp) \n   n$9=*&0$?%__sil_tmp_temp_marker_n$1:_Bool [line 44, column 46]\n  PRUNE(!n$9, false); [line 44, column 46]\n " shape="invhouse"]
+"nothrow_temporary_in_initializer#.49ef7108247d555b_13" [label="13: Prune (false branch, boolean exp) \n   n$8=*&0$?%__sil_tmp_temp_marker_n$1:_Bool [line 44, column 46]\n  PRUNE(!n$8, false); [line 44, column 46]\n " shape="invhouse"]
 	
 
 	 "nothrow_temporary_in_initializer#.49ef7108247d555b_13" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_10" ;
