@@ -76,6 +76,14 @@ let is_reference_type {Clang_ast_t.qt_type_ptr} =
       false
 
 
+let is_vector_type {Clang_ast_t.qt_type_ptr} =
+  match CAst_utils.get_desugared_type qt_type_ptr with
+  | Some (Clang_ast_t.VectorType _ | Clang_ast_t.ExtVectorType _) ->
+      true
+  | _ ->
+      false
+
+
 let is_pointer_to_const {Clang_ast_t.qt_type_ptr} =
   match CAst_utils.get_type qt_type_ptr with
   | Some (PointerType (_, {Clang_ast_t.qt_is_const}))

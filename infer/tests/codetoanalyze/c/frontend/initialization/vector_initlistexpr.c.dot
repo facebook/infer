@@ -1,0 +1,227 @@
+/* @generated */
+digraph cfg {
+"bitint_init.c3ebf213e122e0f4_1" [label="1: Start bitint_init\nFormals: \nLocals:  x:void \n  " color=yellow style=filled]
+	
+
+	 "bitint_init.c3ebf213e122e0f4_1" -> "bitint_init.c3ebf213e122e0f4_5" ;
+"bitint_init.c3ebf213e122e0f4_2" [label="2: Exit bitint_init \n  " color=yellow style=filled]
+	
+
+"bitint_init.c3ebf213e122e0f4_3" [label="3:  Return Stmt \n   n$0=*&x:void [line 74, column 10]\n " shape="box"]
+	
+
+	 "bitint_init.c3ebf213e122e0f4_3" -> "bitint_init.c3ebf213e122e0f4_4" ;
+"bitint_init.c3ebf213e122e0f4_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 74, column 3]\n " shape="box"]
+	
+
+	 "bitint_init.c3ebf213e122e0f4_4" -> "bitint_init.c3ebf213e122e0f4_2" ;
+"bitint_init.c3ebf213e122e0f4_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(x:void); [line 73, column 3]\n  *&x:void=5 [line 73, column 19]\n " shape="box"]
+	
+
+	 "bitint_init.c3ebf213e122e0f4_5" -> "bitint_init.c3ebf213e122e0f4_3" ;
+"complex_init.a952a144c98d0997_1" [label="1: Start complex_init\nFormals: \nLocals:  z:void \n  " color=yellow style=filled]
+	
+
+	 "complex_init.a952a144c98d0997_1" -> "complex_init.a952a144c98d0997_5" ;
+"complex_init.a952a144c98d0997_2" [label="2: Exit complex_init \n  " color=yellow style=filled]
+	
+
+"complex_init.a952a144c98d0997_3" [label="3:  Return Stmt \n   n$0=*&z:double [line 64, column 10]\n " shape="box"]
+	
+
+	 "complex_init.a952a144c98d0997_3" -> "complex_init.a952a144c98d0997_4" ;
+"complex_init.a952a144c98d0997_4" [label="4:  Return Stmt \n   *&return:double=n$0 [line 64, column 3]\n " shape="box"]
+	
+
+	 "complex_init.a952a144c98d0997_4" -> "complex_init.a952a144c98d0997_2" ;
+"complex_init.a952a144c98d0997_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(z:void); [line 63, column 3]\n " shape="box"]
+	
+
+	 "complex_init.a952a144c98d0997_5" -> "complex_init.a952a144c98d0997_3" ;
+"complex_init_single.ca668b171c0be739_1" [label="1: Start complex_init_single\nFormals: \nLocals:  z:void \n  " color=yellow style=filled]
+	
+
+	 "complex_init_single.ca668b171c0be739_1" -> "complex_init_single.ca668b171c0be739_5" ;
+"complex_init_single.ca668b171c0be739_2" [label="2: Exit complex_init_single \n  " color=yellow style=filled]
+	
+
+"complex_init_single.ca668b171c0be739_3" [label="3:  Return Stmt \n   n$0=*&z:double [line 69, column 10]\n " shape="box"]
+	
+
+	 "complex_init_single.ca668b171c0be739_3" -> "complex_init_single.ca668b171c0be739_4" ;
+"complex_init_single.ca668b171c0be739_4" [label="4:  Return Stmt \n   *&return:double=n$0 [line 69, column 3]\n " shape="box"]
+	
+
+	 "complex_init_single.ca668b171c0be739_4" -> "complex_init_single.ca668b171c0be739_2" ;
+"complex_init_single.ca668b171c0be739_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(z:void); [line 68, column 3]\n  *&z:void=1. [line 68, column 23]\n " shape="box"]
+	
+
+	 "complex_init_single.ca668b171c0be739_5" -> "complex_init_single.ca668b171c0be739_3" ;
+"ext_vector_init.56107494dba7ce70_1" [label="1: Start ext_vector_init\nFormals:  x:float\nLocals:  v:void \n  " color=yellow style=filled]
+	
+
+	 "ext_vector_init.56107494dba7ce70_1" -> "ext_vector_init.56107494dba7ce70_5" ;
+"ext_vector_init.56107494dba7ce70_2" [label="2: Exit ext_vector_init \n  " color=yellow style=filled]
+	
+
+"ext_vector_init.56107494dba7ce70_3" [label="3:  Return Stmt \n   n$0=*&v[0]:float [line 42, column 10]\n " shape="box"]
+	
+
+	 "ext_vector_init.56107494dba7ce70_3" -> "ext_vector_init.56107494dba7ce70_4" ;
+"ext_vector_init.56107494dba7ce70_4" [label="4:  Return Stmt \n   *&return:float=n$0 [line 42, column 3]\n " shape="box"]
+	
+
+	 "ext_vector_init.56107494dba7ce70_4" -> "ext_vector_init.56107494dba7ce70_2" ;
+"ext_vector_init.56107494dba7ce70_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:void); [line 41, column 3]\n  n$1=*&x:float [line 41, column 15]\n  *&v[0]:float=n$1 [line 41, column 14]\n  *&v[1]:float=2 [line 41, column 14]\n  *&v[2]:float=3. [line 41, column 14]\n  *&v[3]:float=4 [line 41, column 14]\n " shape="box"]
+	
+
+	 "ext_vector_init.56107494dba7ce70_5" -> "ext_vector_init.56107494dba7ce70_3" ;
+"vector_array_init.9bdd2fe98914c0dc_1" [label="1: Start vector_array_init\nFormals: \nLocals:  s:vec_array \n  " color=yellow style=filled]
+	
+
+	 "vector_array_init.9bdd2fe98914c0dc_1" -> "vector_array_init.9bdd2fe98914c0dc_5" ;
+"vector_array_init.9bdd2fe98914c0dc_2" [label="2: Exit vector_array_init \n  " color=yellow style=filled]
+	
+
+"vector_array_init.9bdd2fe98914c0dc_3" [label="3:  Return Stmt \n   n$0=*&s.val[1][0]:int [line 54, column 10]\n " shape="box"]
+	
+
+	 "vector_array_init.9bdd2fe98914c0dc_3" -> "vector_array_init.9bdd2fe98914c0dc_4" ;
+"vector_array_init.9bdd2fe98914c0dc_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 54, column 3]\n " shape="box"]
+	
+
+	 "vector_array_init.9bdd2fe98914c0dc_4" -> "vector_array_init.9bdd2fe98914c0dc_2" ;
+"vector_array_init.9bdd2fe98914c0dc_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:vec_array); [line 53, column 3]\n  *&s.val[0][0]:int=1 [line 53, column 26]\n  *&s.val[0][1]:int=2 [line 53, column 26]\n  *&s.val[0][2]:int=3 [line 53, column 26]\n  *&s.val[0][3]:int=4 [line 53, column 26]\n  *&s.val[1][0]:int=5 [line 53, column 40]\n  *&s.val[1][1]:int=6 [line 53, column 40]\n  *&s.val[1][2]:int=7 [line 53, column 40]\n  *&s.val[1][3]:int=8 [line 53, column 40]\n " shape="box"]
+	
+
+	 "vector_array_init.9bdd2fe98914c0dc_5" -> "vector_array_init.9bdd2fe98914c0dc_3" ;
+"vector_compound_literal.57555812319a543c_1" [label="1: Start vector_compound_literal\nFormals: \nLocals:  0$?%__sil_tmpSIL_compound_literal__n$0:void \n  " color=yellow style=filled]
+	
+
+	 "vector_compound_literal.57555812319a543c_1" -> "vector_compound_literal.57555812319a543c_3" ;
+"vector_compound_literal.57555812319a543c_2" [label="2: Exit vector_compound_literal \n  " color=yellow style=filled]
+	
+
+"vector_compound_literal.57555812319a543c_3" [label="3:  Return Stmt \n   *&0$?%__sil_tmpSIL_compound_literal__n$0[0]:int=1 [line 45, column 47]\n  *&0$?%__sil_tmpSIL_compound_literal__n$0[1]:int=2 [line 45, column 47]\n  *&0$?%__sil_tmpSIL_compound_literal__n$0[2]:int=3 [line 45, column 47]\n  *&0$?%__sil_tmpSIL_compound_literal__n$0[3]:int=4 [line 45, column 47]\n  n$1=*&0$?%__sil_tmpSIL_compound_literal__n$0[1]:int [line 45, column 40]\n " shape="box"]
+	
+
+	 "vector_compound_literal.57555812319a543c_3" -> "vector_compound_literal.57555812319a543c_4" ;
+"vector_compound_literal.57555812319a543c_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 45, column 33]\n " shape="box"]
+	
+
+	 "vector_compound_literal.57555812319a543c_4" -> "vector_compound_literal.57555812319a543c_2" ;
+"vector_copy_init.837a105d3dd3df69_1" [label="1: Start vector_copy_init\nFormals:  w:void\nLocals:  v:void \n  " color=yellow style=filled]
+	
+
+	 "vector_copy_init.837a105d3dd3df69_1" -> "vector_copy_init.837a105d3dd3df69_5" ;
+"vector_copy_init.837a105d3dd3df69_2" [label="2: Exit vector_copy_init \n  " color=yellow style=filled]
+	
+
+"vector_copy_init.837a105d3dd3df69_3" [label="3:  Return Stmt \n   n$0=*&v[0]:int [line 37, column 10]\n " shape="box"]
+	
+
+	 "vector_copy_init.837a105d3dd3df69_3" -> "vector_copy_init.837a105d3dd3df69_4" ;
+"vector_copy_init.837a105d3dd3df69_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 37, column 3]\n " shape="box"]
+	
+
+	 "vector_copy_init.837a105d3dd3df69_4" -> "vector_copy_init.837a105d3dd3df69_2" ;
+"vector_copy_init.837a105d3dd3df69_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:void); [line 36, column 3]\n  n$1=*&w:void [line 36, column 13]\n  *&v:void=n$1 [line 36, column 12]\n " shape="box"]
+	
+
+	 "vector_copy_init.837a105d3dd3df69_5" -> "vector_copy_init.837a105d3dd3df69_3" ;
+"vector_empty_init.2369c179e42d51ad_1" [label="1: Start vector_empty_init\nFormals: \nLocals:  v:void \n  " color=yellow style=filled]
+	
+
+	 "vector_empty_init.2369c179e42d51ad_1" -> "vector_empty_init.2369c179e42d51ad_5" ;
+"vector_empty_init.2369c179e42d51ad_2" [label="2: Exit vector_empty_init \n  " color=yellow style=filled]
+	
+
+"vector_empty_init.2369c179e42d51ad_3" [label="3:  Return Stmt \n   n$0=*&v[0]:int [line 32, column 10]\n " shape="box"]
+	
+
+	 "vector_empty_init.2369c179e42d51ad_3" -> "vector_empty_init.2369c179e42d51ad_4" ;
+"vector_empty_init.2369c179e42d51ad_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 32, column 3]\n " shape="box"]
+	
+
+	 "vector_empty_init.2369c179e42d51ad_4" -> "vector_empty_init.2369c179e42d51ad_2" ;
+"vector_empty_init.2369c179e42d51ad_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:void); [line 31, column 3]\n  *&v:void=0 [line 31, column 3]\n " shape="box"]
+	
+
+	 "vector_empty_init.2369c179e42d51ad_5" -> "vector_empty_init.2369c179e42d51ad_3" ;
+"vector_in_struct_init.98c75e2781f4effd_1" [label="1: Start vector_in_struct_init\nFormals: \nLocals:  s:vec_and_int \n  " color=yellow style=filled]
+	
+
+	 "vector_in_struct_init.98c75e2781f4effd_1" -> "vector_in_struct_init.98c75e2781f4effd_5" ;
+"vector_in_struct_init.98c75e2781f4effd_2" [label="2: Exit vector_in_struct_init \n  " color=yellow style=filled]
+	
+
+"vector_in_struct_init.98c75e2781f4effd_3" [label="3:  Return Stmt \n   n$0=*&s.v[0]:int [line 49, column 10]\n " shape="box"]
+	
+
+	 "vector_in_struct_init.98c75e2781f4effd_3" -> "vector_in_struct_init.98c75e2781f4effd_4" ;
+"vector_in_struct_init.98c75e2781f4effd_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 49, column 3]\n " shape="box"]
+	
+
+	 "vector_in_struct_init.98c75e2781f4effd_4" -> "vector_in_struct_init.98c75e2781f4effd_2" ;
+"vector_in_struct_init.98c75e2781f4effd_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(s:vec_and_int); [line 48, column 3]\n  *&s.v[0]:int=1 [line 48, column 27]\n  *&s.v[1]:int=2 [line 48, column 27]\n  *&s.v[2]:int=3 [line 48, column 27]\n  *&s.v[3]:int=4 [line 48, column 27]\n  *&s.n:int=5 [line 48, column 26]\n " shape="box"]
+	
+
+	 "vector_in_struct_init.98c75e2781f4effd_5" -> "vector_in_struct_init.98c75e2781f4effd_3" ;
+"vector_init.66beae83e7151a0e_1" [label="1: Start vector_init\nFormals: \nLocals:  v:void \n  " color=yellow style=filled]
+	
+
+	 "vector_init.66beae83e7151a0e_1" -> "vector_init.66beae83e7151a0e_5" ;
+"vector_init.66beae83e7151a0e_2" [label="2: Exit vector_init \n  " color=yellow style=filled]
+	
+
+"vector_init.66beae83e7151a0e_3" [label="3:  Return Stmt \n   n$0=*&v[0]:int [line 22, column 10]\n " shape="box"]
+	
+
+	 "vector_init.66beae83e7151a0e_3" -> "vector_init.66beae83e7151a0e_4" ;
+"vector_init.66beae83e7151a0e_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 22, column 3]\n " shape="box"]
+	
+
+	 "vector_init.66beae83e7151a0e_4" -> "vector_init.66beae83e7151a0e_2" ;
+"vector_init.66beae83e7151a0e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:void); [line 21, column 3]\n  *&v[0]:int=1 [line 21, column 12]\n  *&v[1]:int=2 [line 21, column 12]\n  *&v[2]:int=3 [line 21, column 12]\n  *&v[3]:int=4 [line 21, column 12]\n " shape="box"]
+	
+
+	 "vector_init.66beae83e7151a0e_5" -> "vector_init.66beae83e7151a0e_3" ;
+"vector_init_side_effect.b51ea6c5a2ab7849_1" [label="1: Start vector_init_side_effect\nFormals:  p:int*\nLocals:  v:void \n  " color=yellow style=filled]
+	
+
+	 "vector_init_side_effect.b51ea6c5a2ab7849_1" -> "vector_init_side_effect.b51ea6c5a2ab7849_5" ;
+"vector_init_side_effect.b51ea6c5a2ab7849_2" [label="2: Exit vector_init_side_effect \n  " color=yellow style=filled]
+	
+
+"vector_init_side_effect.b51ea6c5a2ab7849_3" [label="3:  Return Stmt \n   n$0=*&v[0]:int [line 59, column 10]\n " shape="box"]
+	
+
+	 "vector_init_side_effect.b51ea6c5a2ab7849_3" -> "vector_init_side_effect.b51ea6c5a2ab7849_4" ;
+"vector_init_side_effect.b51ea6c5a2ab7849_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 59, column 3]\n " shape="box"]
+	
+
+	 "vector_init_side_effect.b51ea6c5a2ab7849_4" -> "vector_init_side_effect.b51ea6c5a2ab7849_2" ;
+"vector_init_side_effect.b51ea6c5a2ab7849_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:void); [line 58, column 3]\n  n$1=*&p:int* [line 58, column 15]\n  n$2=*n$1:int [line 58, column 13]\n  *n$1:int=(n$2 + 1) [line 58, column 13]\n  *&v[0]:int=n$2 [line 58, column 12]\n  *&v[1]:int=2 [line 58, column 12]\n  *&v[2]:int=3 [line 58, column 12]\n  *&v[3]:int=4 [line 58, column 12]\n " shape="box"]
+	
+
+	 "vector_init_side_effect.b51ea6c5a2ab7849_5" -> "vector_init_side_effect.b51ea6c5a2ab7849_3" ;
+"vector_partial_init.8d75fb75201173de_1" [label="1: Start vector_partial_init\nFormals: \nLocals:  v:void \n  " color=yellow style=filled]
+	
+
+	 "vector_partial_init.8d75fb75201173de_1" -> "vector_partial_init.8d75fb75201173de_5" ;
+"vector_partial_init.8d75fb75201173de_2" [label="2: Exit vector_partial_init \n  " color=yellow style=filled]
+	
+
+"vector_partial_init.8d75fb75201173de_3" [label="3:  Return Stmt \n   n$0=*&v[0]:int [line 27, column 10]\n " shape="box"]
+	
+
+	 "vector_partial_init.8d75fb75201173de_3" -> "vector_partial_init.8d75fb75201173de_4" ;
+"vector_partial_init.8d75fb75201173de_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 27, column 3]\n " shape="box"]
+	
+
+	 "vector_partial_init.8d75fb75201173de_4" -> "vector_partial_init.8d75fb75201173de_2" ;
+"vector_partial_init.8d75fb75201173de_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(v:void); [line 26, column 3]\n  *&v[0]:int=1 [line 26, column 12]\n " shape="box"]
+	
+
+	 "vector_partial_init.8d75fb75201173de_5" -> "vector_partial_init.8d75fb75201173de_3" ;
+}

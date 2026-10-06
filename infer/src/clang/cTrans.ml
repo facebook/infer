@@ -3096,10 +3096,26 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           (Typ.pp_full Pp.text) var_typ
 
 
+  (** Vector types are translated to [void] but their elements are accessed like array elements, see
+      [arraySubscriptExpr_trans]. Clang converts each initializer to the element type; the elements
+      without an initializer are zero but are left unknown as the number of elements is not
+      exported. *)
+  and initListExpr_vector_trans ({context= {tenv}} as trans_state) stmt_info stmts var_exp =
+    List.mapi stmts ~f:(fun idx stmt ->
+        let elt_exp = Exp.Lindex (var_exp, Exp.Const (Const.Cint (IntLit.of_int idx))) in
+        let elt_typ =
+          Clang_ast_proj.get_expr_tuple stmt
+          |> Option.value_map ~default:StdTyp.void ~f:(fun (_, _, expr_info) ->
+              CType_decl.get_type_from_expr_info expr_info tenv )
+        in
+        init_expr_trans trans_state (elt_exp, elt_typ) stmt_info (Some stmt) )
+
+
   (** InitListExpr can have following meanings:
 
       - initialize all record fields
       - initialize array
+      - initialize vector elements
       - initialize primitive type (int/flaot/pointer/...)
       - perform zero initalization -
         {:http://en.cppreference.com/w/cpp/language/zero_initialization} Decision which case happens
@@ -3129,6 +3145,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       let init_stmt_info =
         {stmt_info with Clang_ast_t.si_pointer= CAst_utils.get_fresh_pointer ()}
       in
+      let is_vector stmt =
+        Clang_ast_proj.get_expr_tuple stmt
+        |> Option.exists ~f:(fun (_, _, {Clang_ast_t.ei_qual_type}) ->
+            CType.is_vector_type ei_qual_type )
+      in
       let all_res_trans =
         let init_expr_typ = CType_decl.qual_type_to_sil_type tenv ei_qual_type in
         match init_expr_typ.Typ.desc with
@@ -3141,9 +3162,24 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
               var_typ
         | Tint _ | Tfloat _ | Tptr _ ->
             initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
-        | _ ->
-            CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
-              "InitListExp for var %a of type %a" Exp.pp var_exp (Typ.pp Pp.text) var_typ
+        | Tvoid when CType.is_vector_type ei_qual_type && not (List.exists stmts ~f:is_vector) ->
+            trans_state.context.has_unmodeled_init_list := true ;
+            initListExpr_vector_trans trans_state_pri init_stmt_info stmts var_exp
+        | _ -> (
+            trans_state.context.has_unmodeled_init_list := true ;
+            (* types that are not modeled, e.g. member pointers or complex numbers, and vectors
+               initialized from vectors: [v = {w}] is [v = w], and only OpenCL and HLSL can
+               concatenate vectors, whose elements then have unknown positions *)
+            match stmts with
+            | [_] ->
+                initListExpr_builtin_trans trans_state_pri init_stmt_info stmts var_exp var_typ
+            | _ ->
+                let control, _ =
+                  instructions Procdesc.Node.InitListExp
+                    {trans_state_pri with var_exp_typ= None}
+                    stmts
+                in
+                [mk_trans_result (var_exp, var_typ) control] )
       in
       let res_trans =
         PriorityNode.compute_results_to_parent trans_state_pri sil_loc InitListExp stmt_info
@@ -5605,6 +5641,22 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     fst res_trans_stmt.return
 
 
+  let has_reachable_dead_end ~exit_node root_nodes =
+    let rec visit seen = function
+      | [] ->
+          false
+      | node :: todo when Procdesc.NodeSet.mem node seen ->
+          visit seen todo
+      | node :: todo -> (
+        match Procdesc.Node.get_succs node with
+        | [] ->
+            (not (Procdesc.Node.equal node exit_node)) || visit seen todo
+        | succs ->
+            visit (Procdesc.NodeSet.add node seen) (List.rev_append succs todo) )
+    in
+    visit Procdesc.NodeSet.empty root_nodes
+
+
   let instructions_trans context body extra_instrs exit_node ~is_destructor_wrapper =
     let default_trans_state = CTrans_utils.default_trans_state context in
     let trans_state = {default_trans_state with succ_nodes= [exit_node]} in
@@ -5639,5 +5691,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let instrs = extra_instrs @ [CFrontend_config.ClangStmt (DefineBody, body)] in
     let instrs_trans = List.map ~f:get_custom_stmt_trans instrs in
     let res_control, _ = exec_trans_instrs trans_state' instrs_trans in
+    if
+      !(context.CContext.has_unmodeled_init_list)
+      && has_reachable_dead_end ~exit_node res_control.root_nodes
+    then
+      (* frontend bugs can leave a node without successors, which ends every path through it, so
+         callers see a procedure that never returns; drop the procedure as for an unsupported
+         construct, which makes calls to it unknown *)
+      CFrontend_errors.unimplemented __POS__ stmt_info.Clang_ast_t.si_source_range
+        "InitListExpr of an unmodeled type in a procedure with a node without successors" ;
     res_control.root_nodes
 end
