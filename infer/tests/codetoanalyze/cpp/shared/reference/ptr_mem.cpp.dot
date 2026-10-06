@@ -1,5 +1,65 @@
 /* @generated */
 digraph cfg {
+"assign_parenthesized_ptr_to_membe.5196b1c4b072670c_1" [label="1: Start assign_parenthesized_ptr_to_member\nFormals:  i:item& pm:void\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "assign_parenthesized_ptr_to_membe.5196b1c4b072670c_1" -> "assign_parenthesized_ptr_to_membe.5196b1c4b072670c_3" ;
+"assign_parenthesized_ptr_to_membe.5196b1c4b072670c_2" [label="2: Exit assign_parenthesized_ptr_to_member \n  " color=yellow style=filled]
+	
+
+"assign_parenthesized_ptr_to_membe.5196b1c4b072670c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$0=*&i:item& [line 39, column 4]\n  n$1=*&pm:void [line 39, column 7]\n  n$2=_fun___infer_skip(n$0:item&,n$1:void,0:int) [line 39, column 3]\n  *n$0[n$2]:int=0 [line 39, column 3]\n " shape="box"]
+	
+
+	 "assign_parenthesized_ptr_to_membe.5196b1c4b072670c_3" -> "assign_parenthesized_ptr_to_membe.5196b1c4b072670c_2" ;
+"call_ptr_to_member_function#14853.065b2e40ff0c8cc0_1" [label="1: Start call_ptr_to_member_function\nFormals:  h:Handler* f:void\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "call_ptr_to_member_function#14853.065b2e40ff0c8cc0_1" -> "call_ptr_to_member_function#14853.065b2e40ff0c8cc0_3" ;
+"call_ptr_to_member_function#14853.065b2e40ff0c8cc0_2" [label="2: Exit call_ptr_to_member_function \n  " color=yellow style=filled]
+	
+
+"call_ptr_to_member_function#14853.065b2e40ff0c8cc0_3" [label="3:  Return Stmt \n   n$0=*&h:Handler* [line 47, column 11]\n  n$1=*&f:void [line 47, column 15]\n  _=*n$0:Handler [line 47, column 10]\n  n$3=_fun___infer_ptr_to_member_call(n$0:Handler*,n$1:void,42:int) [line 47, column 10]\n " shape="box"]
+	
+
+	 "call_ptr_to_member_function#14853.065b2e40ff0c8cc0_3" -> "call_ptr_to_member_function#14853.065b2e40ff0c8cc0_4" ;
+"call_ptr_to_member_function#14853.065b2e40ff0c8cc0_4" [label="4:  Return Stmt \n   *&return:int=n$3 [line 47, column 3]\n " shape="box"]
+	
+
+	 "call_ptr_to_member_function#14853.065b2e40ff0c8cc0_4" -> "call_ptr_to_member_function#14853.065b2e40ff0c8cc0_2" ;
+"call_ptr_to_member_function_retur.1a506d530c4b7c42_1" [label="1: Start call_ptr_to_member_function_returning_struct\nFormals:  h:Handler& f:void __return_param:item*\nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$1:item \n  " color=yellow style=filled]
+	
+
+	 "call_ptr_to_member_function_retur.1a506d530c4b7c42_1" -> "call_ptr_to_member_function_retur.1a506d530c4b7c42_4" ;
+"call_ptr_to_member_function_retur.1a506d530c4b7c42_2" [label="2: Exit call_ptr_to_member_function_returning_struct \n  " color=yellow style=filled]
+	
+
+"call_ptr_to_member_function_retur.1a506d530c4b7c42_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:item); [line 52, column 10]\n  n$2=*&h:Handler& [line 52, column 11]\n  n$3=*&f:void [line 52, column 14]\n  _=*n$2:Handler [line 52, column 10]\n  n$6=_fun___infer_ptr_to_member_call(n$2:Handler&,n$3:void,&0$?%__sil_tmpSIL_materialize_temp__n$1:item*) assign_last [line 52, column 10]\n " shape="box"]
+	
+
+	 "call_ptr_to_member_function_retur.1a506d530c4b7c42_3" -> "call_ptr_to_member_function_retur.1a506d530c4b7c42_5" ;
+"call_ptr_to_member_function_retur.1a506d530c4b7c42_4" [label="4:  Return Stmt \n   n$0=*&__return_param:item* [line 52, column 3]\n " shape="box"]
+	
+
+	 "call_ptr_to_member_function_retur.1a506d530c4b7c42_4" -> "call_ptr_to_member_function_retur.1a506d530c4b7c42_3" ;
+"call_ptr_to_member_function_retur.1a506d530c4b7c42_5" [label="5:  Return Stmt \n   n$7=_fun_item::item(n$0:item*,&0$?%__sil_tmpSIL_materialize_temp__n$1:item&) [line 52, column 10]\n " shape="box"]
+	
+
+	 "call_ptr_to_member_function_retur.1a506d530c4b7c42_5" -> "call_ptr_to_member_function_retur.1a506d530c4b7c42_6" ;
+"call_ptr_to_member_function_retur.1a506d530c4b7c42_6" [label="6:  Return Stmt \n  " shape="box"]
+	
+
+	 "call_ptr_to_member_function_retur.1a506d530c4b7c42_6" -> "call_ptr_to_member_function_retur.1a506d530c4b7c42_2" ;
+"construct_with_ptr_to_member#1088.e4fb1c03d1bc9e39_1" [label="1: Start construct_with_ptr_to_member\nFormals: \nLocals:  l:List<item> \n  " color=yellow style=filled]
+	
+
+	 "construct_with_ptr_to_member#1088.e4fb1c03d1bc9e39_1" -> "construct_with_ptr_to_member#1088.e4fb1c03d1bc9e39_3" ;
+"construct_with_ptr_to_member#1088.e4fb1c03d1bc9e39_2" [label="2: Exit construct_with_ptr_to_member \n  " color=yellow style=filled]
+	
+
+"construct_with_ptr_to_member#1088.e4fb1c03d1bc9e39_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(l:List<item>); [line 30, column 39]\n  n$1=_fun_List<item>::List(&l:List<item>*,n$0:void) [line 30, column 50]\n " shape="box"]
+	
+
+	 "construct_with_ptr_to_member#1088.e4fb1c03d1bc9e39_3" -> "construct_with_ptr_to_member#1088.e4fb1c03d1bc9e39_2" ;
 "noskip#6149941428299352091.c0e56085ae3c9567_1" [label="1: Start noskip\nFormals:  l:List<item>&\nLocals:  i:item \n  " color=yellow style=filled]
 	
 
@@ -19,6 +79,62 @@ digraph cfg {
 	
 
 	 "noskip#6149941428299352091.c0e56085ae3c9567_5" -> "noskip#6149941428299352091.c0e56085ae3c9567_4" ;
+"ptr_to_anonymous_union_member#960.20e149b901189537_1" [label="1: Start ptr_to_anonymous_union_member\nFormals: \nLocals:  pm:void \n  " color=yellow style=filled]
+	
+
+	 "ptr_to_anonymous_union_member#960.20e149b901189537_1" -> "ptr_to_anonymous_union_member#960.20e149b901189537_3" ;
+"ptr_to_anonymous_union_member#960.20e149b901189537_2" [label="2: Exit ptr_to_anonymous_union_member \n  " color=yellow style=filled]
+	
+
+"ptr_to_anonymous_union_member#960.20e149b901189537_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(pm:void); [line 62, column 40]\n  *&pm:void=n$0 [line 62, column 40]\n " shape="box"]
+	
+
+	 "ptr_to_anonymous_union_member#960.20e149b901189537_3" -> "ptr_to_anonymous_union_member#960.20e149b901189537_2" ;
+"read_ptr_to_member#95621099416760.a98853485eb76ca3_1" [label="1: Start read_ptr_to_member\nFormals:  i:item* pm:void\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "read_ptr_to_member#95621099416760.a98853485eb76ca3_1" -> "read_ptr_to_member#95621099416760.a98853485eb76ca3_3" ;
+"read_ptr_to_member#95621099416760.a98853485eb76ca3_2" [label="2: Exit read_ptr_to_member \n  " color=yellow style=filled]
+	
+
+"read_ptr_to_member#95621099416760.a98853485eb76ca3_3" [label="3:  Return Stmt \n   n$0=*&i:item* [line 42, column 57]\n  n$1=*&pm:void [line 42, column 61]\n  n$2=*n$0[n$1]:int [line 42, column 57]\n " shape="box"]
+	
+
+	 "read_ptr_to_member#95621099416760.a98853485eb76ca3_3" -> "read_ptr_to_member#95621099416760.a98853485eb76ca3_4" ;
+"read_ptr_to_member#95621099416760.a98853485eb76ca3_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 42, column 50]\n " shape="box"]
+	
+
+	 "read_ptr_to_member#95621099416760.a98853485eb76ca3_4" -> "read_ptr_to_member#95621099416760.a98853485eb76ca3_2" ;
+"add_byref#List<item>#(43535642582.163c5ed0bcef8861_1" [label="1: Start List<item>::add_byref\nFormals:  this:List<item>* e:item&\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "add_byref#List<item>#(43535642582.163c5ed0bcef8861_1" -> "add_byref#List<item>#(43535642582.163c5ed0bcef8861_4" ;
+"add_byref#List<item>#(43535642582.163c5ed0bcef8861_2" [label="2: Exit List<item>::add_byref \n  " color=yellow style=filled]
+	
+
+"add_byref#List<item>#(43535642582.163c5ed0bcef8861_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&e:item& [line 23, column 13]\n  n$0=*&this:List<item>* [line 23, column 5]\n  *n$0.head:item*=n$1 [line 23, column 5]\n " shape="box"]
+	
+
+	 "add_byref#List<item>#(43535642582.163c5ed0bcef8861_3" -> "add_byref#List<item>#(43535642582.163c5ed0bcef8861_2" ;
+"add_byref#List<item>#(43535642582.163c5ed0bcef8861_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:List<item>* [line 22, column 19]\n  n$3=*n$2.head:item* [line 22, column 19]\n  n$4=*&e:item& [line 22, column 5]\n  n$5=*&this:List<item>* [line 22, column 8]\n  n$6=*n$5.next_ptr:void [line 22, column 8]\n  n$7=_fun___infer_skip(n$4:item&,n$6:void,n$3:item*) [line 22, column 5]\n  *n$4[n$7]:item*=n$3 [line 22, column 5]\n " shape="box"]
+	
+
+	 "add_byref#List<item>#(43535642582.163c5ed0bcef8861_4" -> "add_byref#List<item>#(43535642582.163c5ed0bcef8861_3" ;
+"add#List<item>(class item)#(88864.b8962c6c63e3e1d0_1" [label="1: Start List<item>::add\nFormals:  this:List<item>* e:item*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "add#List<item>(class item)#(88864.b8962c6c63e3e1d0_1" -> "add#List<item>(class item)#(88864.b8962c6c63e3e1d0_4" ;
+"add#List<item>(class item)#(88864.b8962c6c63e3e1d0_2" [label="2: Exit List<item>::add \n  " color=yellow style=filled]
+	
+
+"add#List<item>(class item)#(88864.b8962c6c63e3e1d0_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&e:item* [line 18, column 12]\n  n$0=*&this:List<item>* [line 18, column 5]\n  *n$0.head:item*=n$1 [line 18, column 5]\n " shape="box"]
+	
+
+	 "add#List<item>(class item)#(88864.b8962c6c63e3e1d0_3" -> "add#List<item>(class item)#(88864.b8962c6c63e3e1d0_2" ;
+"add#List<item>(class item)#(88864.b8962c6c63e3e1d0_4" [label="4:  BinaryOperatorStmt: Assign \n   n$2=*&this:List<item>* [line 17, column 20]\n  n$3=*n$2.head:item* [line 17, column 20]\n  n$4=*&e:item* [line 17, column 5]\n  n$5=*&this:List<item>* [line 17, column 9]\n  n$6=*n$5.next_ptr:void [line 17, column 9]\n  n$7=_fun___infer_skip(n$4:item*,n$6:void,n$3:item*) [line 17, column 5]\n  *n$4[n$7]:item*=n$3 [line 17, column 5]\n " shape="box"]
+	
+
+	 "add#List<item>(class item)#(88864.b8962c6c63e3e1d0_4" -> "add#List<item>(class item)#(88864.b8962c6c63e3e1d0_3" ;
 "List#List<item>#{6798131711108694.197bd5352aecbe66_1" [label="1: Start List<item>::List\nFormals:  this:List<item>* next_ptr:void\nLocals:  \n  " color=yellow style=filled]
 	
 
@@ -42,6 +158,29 @@ digraph cfg {
 	
 
 	 "List#List<item>#{6798131711108694.197bd5352aecbe66_6" -> "List#List<item>#{6798131711108694.197bd5352aecbe66_3" ;
+"item#item#{465217882920541010}.1e3dccc13183426a_1" [label="1: Start item::item\nFormals:  this:item* __param_0:item&&\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "item#item#{465217882920541010}.1e3dccc13183426a_1" -> "item#item#{465217882920541010}.1e3dccc13183426a_5" ;
+"item#item#{465217882920541010}.1e3dccc13183426a_2" [label="2: Exit item::item \n  " color=yellow style=filled]
+	
+
+"item#item#{465217882920541010}.1e3dccc13183426a_3" [label="3:  Constructor Init \n   n$1=*&this:item* [line 7, column 8]\n " shape="box"]
+	
+
+	 "item#item#{465217882920541010}.1e3dccc13183426a_3" -> "item#item#{465217882920541010}.1e3dccc13183426a_4" ;
+"item#item#{465217882920541010}.1e3dccc13183426a_4" [label="4:  Constructor Init \n   n$2=*&__param_0:item&& [line 7, column 8]\n  n$3=*(item&&)n$2.next:item* [line 7, column 8]\n  *n$1.next:item*=n$3 [line 7, column 8]\n " shape="box"]
+	
+
+	 "item#item#{465217882920541010}.1e3dccc13183426a_4" -> "item#item#{465217882920541010}.1e3dccc13183426a_2" ;
+"item#item#{465217882920541010}.1e3dccc13183426a_5" [label="5:  Constructor Init \n   n$4=*&this:item* [line 7, column 8]\n " shape="box"]
+	
+
+	 "item#item#{465217882920541010}.1e3dccc13183426a_5" -> "item#item#{465217882920541010}.1e3dccc13183426a_6" ;
+"item#item#{465217882920541010}.1e3dccc13183426a_6" [label="6:  Constructor Init \n   n$5=*&__param_0:item&& [line 7, column 8]\n  n$6=*(item&&)n$5.data:int [line 7, column 8]\n  *n$4.data:int=n$6 [line 7, column 8]\n " shape="box"]
+	
+
+	 "item#item#{465217882920541010}.1e3dccc13183426a_6" -> "item#item#{465217882920541010}.1e3dccc13183426a_3" ;
 "item#item#{6834087089356173483}.7c337cfe8794ab58_1" [label="1: Start item::item\nFormals:  this:item*\nLocals:  \n  " color=yellow style=filled]
 	
 
