@@ -393,6 +393,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(BlockExpr)
   DECLARE_VISITOR(OpaqueValueExpr)
   DECLARE_VISITOR(OffsetOfExpr)
+  DECLARE_VISITOR(ConstantExpr)
 
   // C++
   DECLARE_VISITOR(CXXNamedCastExpr)
@@ -3018,6 +3019,7 @@ int ASTExporter<ATDWriter>::IfStmtTupleSize() {
 //@atd   cond : pointer;
 //@atd   then : pointer;
 //@atd   ?else : (pointer * source_location) option;
+//@atd   ~is_constexpr : bool;
 //@atd } <ocaml field_prefix="isi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitIfStmt(const IfStmt *Node) {
@@ -3025,7 +3027,9 @@ void ASTExporter<ATDWriter>::VisitIfStmt(const IfStmt *Node) {
   const Stmt *Init = Node->getInit();
   const DeclStmt *CondVar = Node->getConditionVariableDeclStmt();
   bool hasElseStorage = Node->hasElseStorage();
-  ObjectScope Scope(OF, 2 + (bool)Init + (bool)CondVar + hasElseStorage);
+  bool IsConstexpr = Node->isConstexpr();
+  ObjectScope Scope(
+      OF, 2 + (bool)Init + (bool)CondVar + hasElseStorage + IsConstexpr);
   if (Init) {
     OF.emitTag("init");
     dumpPointer(Init);
@@ -3044,6 +3048,7 @@ void ASTExporter<ATDWriter>::VisitIfStmt(const IfStmt *Node) {
     dumpPointer(Node->getElse());
     dumpSourceLocation(Node->getElseLoc());
   }
+  OF.emitFlag("is_constexpr", IsConstexpr);
 }
 
 template <class ATDWriter>
@@ -3660,6 +3665,28 @@ void ASTExporter<ATDWriter>::VisitOffsetOfExpr(const OffsetOfExpr *OOE) {
   if (isLiteral) {
     OF.emitTag("literal");
     llvm::APSInt IV = result.Val.getInt();
+    this->emitAPInt(IV.isSigned(), IV);
+  }
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::ConstantExprTupleSize() {
+  return ExprTupleSize() + 1;
+}
+//@atd #define constant_expr_tuple expr_tuple * constant_expr_info
+//@atd type constant_expr_info = {
+//@atd   ?literal : integer_literal_info option;
+//@atd } <ocaml field_prefix="ce_">
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitConstantExpr(const ConstantExpr *Node) {
+  VisitExpr(Node);
+
+  bool isLiteral = Node->getResultAPValueKind() == APValue::Int;
+  ObjectScope Scope(OF, 0 + isLiteral);
+
+  if (isLiteral) {
+    OF.emitTag("literal");
+    llvm::APSInt IV = Node->getResultAsAPSInt();
     this->emitAPInt(IV.isSigned(), IV);
   }
 }

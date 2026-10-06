@@ -57,7 +57,10 @@ type t =
             associate "markers" to each one of them, set to true if and only if the temporary has
             been created. This is the map associating each such C++ temporary with its marker
             variable. *)
-  ; globals: GlobalSet.t  (** the global variables recorded in [procdesc] by [add_global] *) }
+  ; globals: GlobalSet.t  (** the global variables recorded in [procdesc] by [add_global] *)
+  ; vars_in_discarded_branches: Mangled.Set.t ref
+        (** local variables referenced in the discarded, untranslated branch of an [if constexpr] *)
+  }
 
 val get_curr_class : t -> curr_class
 
