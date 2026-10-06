@@ -284,3 +284,105 @@ int iterator_assign_end_then_prev_loop_ok(std::vector<int>& vec) {
   }
   return sum;
 }
+
+void iterator_end_minus_one_read_ok(std::vector<int>& vec) {
+  if (vec.empty()) {
+    return;
+  }
+  std::cout << *(vec.end() - 1) << '\n';
+}
+
+void iterator_end_minus_assign_read_ok(std::vector<int>& vec) {
+  if (vec.empty()) {
+    return;
+  }
+  auto iter = vec.end();
+  iter -= 1;
+  std::cout << *iter << '\n';
+}
+
+void iterator_plus_after_push_back_bad(std::vector<int>& vec) {
+  auto iter = vec.begin() + 1;
+  vec.push_back(4);
+  std::cout << *iter << '\n';
+}
+
+void iterator_plus_assign_after_push_back_bad(std::vector<int>& vec) {
+  auto iter = vec.begin();
+  iter += 1;
+  vec.push_back(4);
+  std::cout << *iter << '\n';
+}
+
+int iterator_plus_base_ok(std::vector<int>::iterator iter) {
+  if ((iter + 2).base() != iter.base() + 2) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int iterator_cbegin_loop_ok(const std::vector<int>& vec) {
+  int sum = 0;
+  for (auto iter = vec.cbegin(); iter != vec.cend(); ++iter) {
+    sum += *iter;
+  }
+  return sum;
+}
+
+void iterator_cend_read_bad() {
+  std::vector<int> vec = {1, 2};
+  auto iter = vec.cend();
+  std::cout << *iter << '\n';
+}
+
+void iterator_end_plus_zero_read_bad(std::vector<int>& vec) {
+  std::cout << *(vec.end() + 0) << '\n';
+}
+
+void iterator_end_minus_then_plus_read_bad(std::vector<int>& vec) {
+  auto iter = vec.end() - 1;
+  std::cout << *(iter + 1) << '\n';
+}
+
+int iterator_plus_minus_assign_round_trip_ok(std::vector<int>& vec) {
+  auto iter = vec.begin();
+  iter += 2;
+  iter -= 2;
+  if (iter != vec.begin()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int iterator_plus_same_offset_ok(std::vector<int>& vec) {
+  if (vec.begin() + 1 != vec.begin() + 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int iterator_arrow_after_push_back_bad(std::vector<IteratorElem>& vec) {
+  auto iter = vec.begin();
+  vec.push_back(IteratorElem{1});
+  return iter->x;
+}
+
+int iterator_end_arrow_bad(std::vector<IteratorElem>& vec) {
+  return vec.end()->x;
+}
+
+struct IteratorNode {
+  bool defined;
+};
+
+IteratorNode* iterator_arrow_loop_until_defined_ok(
+    std::vector<std::pair<IteratorNode*, IteratorNode*>>& vec) {
+  auto iter = vec.begin();
+  while (iter != vec.end() && !iter->first->defined) {
+    ++iter;
+  }
+  return iter == vec.end() ? nullptr : iter->second;
+}

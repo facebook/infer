@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <algorithm>
 #include <stdio.h>
 #include <string>
 
@@ -84,6 +85,20 @@ void constructor2_bad() {
 void constructor3_bad() {
   auto source = __infer_taint_source();
   auto laundered_source = std::string(source.begin(), source.begin() + 5);
+  __infer_taint_sink(laundered_source);
+}
+
+void constructor4_bad() {
+  auto source = __infer_taint_source();
+  auto laundered_source = std::string(source.begin() + 1, source.end() - 1);
+  __infer_taint_sink(laundered_source);
+}
+
+void constructor5_bad() {
+  auto source = __infer_taint_source();
+  auto start = std::find(source.begin(), source.end(), ':');
+  auto laundered_source =
+      std::string(start, std::find(start, source.end(), ';'));
   __infer_taint_sink(laundered_source);
 }
 

@@ -117,4 +117,16 @@ module Iterator : sig
     -> ref:AbstractValue.t * ValueHistory.t
     -> AbductiveDomain.t
     -> AbductiveDomain.t AccessResult.t
+
+  val point_into :
+       PathContext.t
+    -> Location.t
+    -> ValueHistory.event
+    -> collection:AbstractValue.t * ValueHistory.t
+    -> iter:AbstractValue.t * ValueHistory.t
+    -> ?index:AbstractValue.t
+    -> AbductiveDomain.t
+    -> AbductiveDomain.t AccessResult.t
+  (** make [iter] point to the element at [index], or at an unknown position if not given, in the
+      backing array of [collection], which is either a collection or an iterator into it *)
 end
