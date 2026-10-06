@@ -1,0 +1,422 @@
+/* @generated */
+digraph cfg {
+"if_init_typedef#init_statements#1.34086405c0092b4d_1" [label="1: Start init_statements::if_init_typedef\nFormals:  k:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_1" -> "if_init_typedef#init_statements#1.34086405c0092b4d_5" ;
+"if_init_typedef#init_statements#1.34086405c0092b4d_2" [label="2: Exit init_statements::if_init_typedef \n  " color=yellow style=filled]
+	
+
+"if_init_typedef#init_statements#1.34086405c0092b4d_3" [label="3:  Return Stmt \n   *&return:int=0 [line 79, column 3]\n " shape="box"]
+	
+
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_3" -> "if_init_typedef#init_statements#1.34086405c0092b4d_2" ;
+"if_init_typedef#init_statements#1.34086405c0092b4d_4" [label="4: + \n  " ]
+	
+
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_4" -> "if_init_typedef#init_statements#1.34086405c0092b4d_3" ;
+"if_init_typedef#init_statements#1.34086405c0092b4d_5" [label="5:  BinaryOperatorStmt: EQ \n   n$0=*&k:int [line 76, column 22]\n " shape="box"]
+	
+
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_5" -> "if_init_typedef#init_statements#1.34086405c0092b4d_6" ;
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_5" -> "if_init_typedef#init_statements#1.34086405c0092b4d_7" ;
+"if_init_typedef#init_statements#1.34086405c0092b4d_6" [label="6: Prune (true branch, if) \n   PRUNE((n$0 == 0), true); [line 76, column 22]\n " shape="invhouse"]
+	
+
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_6" -> "if_init_typedef#init_statements#1.34086405c0092b4d_8" ;
+"if_init_typedef#init_statements#1.34086405c0092b4d_7" [label="7: Prune (false branch, if) \n   PRUNE(!(n$0 == 0), false); [line 76, column 22]\n " shape="invhouse"]
+	
+
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_7" -> "if_init_typedef#init_statements#1.34086405c0092b4d_4" ;
+"if_init_typedef#init_statements#1.34086405c0092b4d_8" [label="8:  Return Stmt \n   *&return:int=1 [line 77, column 5]\n " shape="box"]
+	
+
+	 "if_init_typedef#init_statements#1.34086405c0092b4d_8" -> "if_init_typedef#init_statements#1.34086405c0092b4d_2" ;
+"range_for_init#init_statements#86.608faf3970e60845_1" [label="1: Start init_statements::range_for_init\nFormals:  k:int\nLocals:  __end1:int* __begin1:int* v:int __range1:int[3*4](&) base:int sum:int arr:int[3*4] \n  " color=yellow style=filled]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_1" -> "range_for_init#init_statements#86.608faf3970e60845_17" ;
+"range_for_init#init_statements#86.608faf3970e60845_2" [label="2: Exit init_statements::range_for_init \n  " color=yellow style=filled]
+	
+
+"range_for_init#init_statements#86.608faf3970e60845_3" [label="3:  Return Stmt \n   n$0=*&sum:int [line 20, column 10]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_3" -> "range_for_init#init_statements#86.608faf3970e60845_4" ;
+"range_for_init#init_statements#86.608faf3970e60845_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 20, column 3]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_4" -> "range_for_init#init_statements#86.608faf3970e60845_2" ;
+"range_for_init#init_statements#86.608faf3970e60845_5" [label="5: + \n  " ]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_5" -> "range_for_init#init_statements#86.608faf3970e60845_9" ;
+"range_for_init#init_statements#86.608faf3970e60845_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(__end1:int*); [line 17, column 28]\n  n$1=*&__range1:int[3*4](&) [line 17, column 28]\n  *&__end1:int*=(n$1 + 3) [line 17, column 28]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_6" -> "range_for_init#init_statements#86.608faf3970e60845_5" ;
+"range_for_init#init_statements#86.608faf3970e60845_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(__begin1:int*); [line 17, column 28]\n  n$2=*&__range1:int[3*4](&) [line 17, column 28]\n  *&__begin1:int*=n$2 [line 17, column 28]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_7" -> "range_for_init#init_statements#86.608faf3970e60845_6" ;
+"range_for_init#init_statements#86.608faf3970e60845_8" [label="8:  UnaryOperator \n   n$3=*&__begin1:int* [line 17, column 28]\n  *&__begin1:int*=(n$3 + 1) [line 17, column 28]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_8" -> "range_for_init#init_statements#86.608faf3970e60845_5" ;
+"range_for_init#init_statements#86.608faf3970e60845_9" [label="9:  BinaryOperatorStmt: NE \n   n$4=*&__begin1:int* [line 17, column 28]\n  n$5=*&__end1:int* [line 17, column 28]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_9" -> "range_for_init#init_statements#86.608faf3970e60845_10" ;
+	 "range_for_init#init_statements#86.608faf3970e60845_9" -> "range_for_init#init_statements#86.608faf3970e60845_11" ;
+"range_for_init#init_statements#86.608faf3970e60845_10" [label="10: Prune (true branch, for loop) \n   PRUNE((n$4 != n$5), true); [line 17, column 28]\n " shape="invhouse"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_10" -> "range_for_init#init_statements#86.608faf3970e60845_13" ;
+"range_for_init#init_statements#86.608faf3970e60845_11" [label="11: Prune (false branch, for loop) \n   PRUNE(!(n$4 != n$5), false); [line 17, column 28]\n " shape="invhouse"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_11" -> "range_for_init#init_statements#86.608faf3970e60845_3" ;
+"range_for_init#init_statements#86.608faf3970e60845_12" [label="12:  BinaryOperatorStmt: AddAssign \n   n$6=*&base:int [line 18, column 12]\n  n$7=*&v:int [line 18, column 19]\n  n$8=*&sum:int [line 18, column 5]\n  *&sum:int=(n$8 + (n$6 + n$7)) [line 18, column 5]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_12" -> "range_for_init#init_statements#86.608faf3970e60845_8" ;
+"range_for_init#init_statements#86.608faf3970e60845_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 17, column 22]\n  n$9=*&__begin1:int* [line 17, column 28]\n  n$10=*n$9:int [line 17, column 28]\n  *&v:int=n$10 [line 17, column 22]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_13" -> "range_for_init#init_statements#86.608faf3970e60845_12" ;
+"range_for_init#init_statements#86.608faf3970e60845_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(__range1:int[3*4](&)); [line 17, column 30]\n  *&__range1:int[3*4](&)=&arr [line 17, column 30]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_14" -> "range_for_init#init_statements#86.608faf3970e60845_7" ;
+"range_for_init#init_statements#86.608faf3970e60845_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(base:int); [line 17, column 8]\n  n$12=*&k:int [line 17, column 19]\n  *&base:int=n$12 [line 17, column 8]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_15" -> "range_for_init#init_statements#86.608faf3970e60845_14" ;
+"range_for_init#init_statements#86.608faf3970e60845_16" [label="16:  DeclStmt \n   VARIABLE_DECLARED(sum:int); [line 16, column 3]\n  *&sum:int=0 [line 16, column 3]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_16" -> "range_for_init#init_statements#86.608faf3970e60845_15" ;
+"range_for_init#init_statements#86.608faf3970e60845_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(arr:int[3*4]); [line 15, column 3]\n  *&arr[0]:int=1 [line 15, column 16]\n  *&arr[1]:int=2 [line 15, column 16]\n  *&arr[2]:int=3 [line 15, column 16]\n " shape="box"]
+	
+
+	 "range_for_init#init_statements#86.608faf3970e60845_17" -> "range_for_init#init_statements#86.608faf3970e60845_16" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_1" [label="1: Start init_statements::range_for_init_destructor\nFormals:  b:_Bool\nLocals:  __end1:int* __begin1:int* v:int __range1:int[3*4](&) x:init_statements::X sum:int arr:int[3*4] \n  " color=yellow style=filled]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_1" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_21" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_2" [label="2: Exit init_statements::range_for_init_destructor \n  " color=yellow style=filled]
+	
+
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_3" [label="3:  Return Stmt \n   n$0=*&sum:int [line 40, column 10]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_3" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_4" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 40, column 3]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_4" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_2" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_5" [label="5:  Destruction(Scope) \n   _=*&x:init_statements::X [line 39, column 3]\n  n$2=_fun_init_statements::X::~X(&x:init_statements::X*) injected [line 39, column 3]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_5" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_3" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_6" [label="6: + \n  " ]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_6" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_10" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(__end1:int*); [line 34, column 19]\n  n$4=*&__range1:int[3*4](&) [line 34, column 19]\n  *&__end1:int*=(n$4 + 3) [line 34, column 19]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_7" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_6" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(__begin1:int*); [line 34, column 19]\n  n$5=*&__range1:int[3*4](&) [line 34, column 19]\n  *&__begin1:int*=n$5 [line 34, column 19]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_8" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_7" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_9" [label="9:  UnaryOperator \n   n$6=*&__begin1:int* [line 34, column 19]\n  *&__begin1:int*=(n$6 + 1) [line 34, column 19]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_9" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_6" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_10" [label="10:  BinaryOperatorStmt: NE \n   n$7=*&__begin1:int* [line 34, column 19]\n  n$8=*&__end1:int* [line 34, column 19]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_10" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_11" ;
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_10" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_12" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_11" [label="11: Prune (true branch, for loop) \n   PRUNE((n$7 != n$8), true); [line 34, column 19]\n " shape="invhouse"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_11" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_17" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_12" [label="12: Prune (false branch, for loop) \n   PRUNE(!(n$7 != n$8), false); [line 34, column 19]\n " shape="invhouse"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_12" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_5" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_13" [label="13:  BinaryOperatorStmt: AddAssign \n   n$9=*&v:int [line 38, column 12]\n  n$10=*&sum:int [line 38, column 5]\n  *&sum:int=(n$10 + n$9) [line 38, column 5]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_13" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_9" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_14" [label="14: + \n  " ]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_14" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_13" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_15" [label="15: Prune (true branch, if) \n   n$11=*&b:_Bool [line 35, column 9]\n  PRUNE(n$11, true); [line 35, column 9]\n " shape="invhouse"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_15" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_5" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_16" [label="16: Prune (false branch, if) \n   n$11=*&b:_Bool [line 35, column 9]\n  PRUNE(!n$11, false); [line 35, column 9]\n " shape="invhouse"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_16" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_14" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 34, column 13]\n  n$15=*&__begin1:int* [line 34, column 19]\n  n$16=*n$15:int [line 34, column 19]\n  *&v:int=n$16 [line 34, column 13]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_17" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_15" ;
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_17" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_16" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(__range1:int[3*4](&)); [line 34, column 21]\n  *&__range1:int[3*4](&)=&arr [line 34, column 21]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_18" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_8" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_19" [label="19:  DeclStmt \n   VARIABLE_DECLARED(x:init_statements::X); [line 34, column 8]\n  n$18=_fun_init_statements::X::X(&x:init_statements::X*) [line 34, column 10]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_19" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_18" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_20" [label="20:  DeclStmt \n   VARIABLE_DECLARED(sum:int); [line 33, column 3]\n  *&sum:int=0 [line 33, column 3]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_20" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_19" ;
+"range_for_init_destructor#init_st.0d5c206d6afd1edb_21" [label="21:  DeclStmt \n   VARIABLE_DECLARED(arr:int[3*4]); [line 32, column 3]\n  *&arr[0]:int=1 [line 32, column 16]\n  *&arr[1]:int=2 [line 32, column 16]\n  *&arr[2]:int=3 [line 32, column 16]\n " shape="box"]
+	
+
+	 "range_for_init_destructor#init_st.0d5c206d6afd1edb_21" -> "range_for_init_destructor#init_st.0d5c206d6afd1edb_20" ;
+"range_for_over_init_variable#init.d78eba228210453e_1" [label="1: Start init_statements::range_for_over_init_variable\nFormals: \nLocals:  __end1:int* __begin1:int* v:int __range1:int[2*4](&) arr:int[2*4] sum:int \n  " color=yellow style=filled]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_1" -> "range_for_over_init_variable#init.d78eba228210453e_16" ;
+"range_for_over_init_variable#init.d78eba228210453e_2" [label="2: Exit init_statements::range_for_over_init_variable \n  " color=yellow style=filled]
+	
+
+"range_for_over_init_variable#init.d78eba228210453e_3" [label="3:  Return Stmt \n   n$0=*&sum:int [line 28, column 10]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_3" -> "range_for_over_init_variable#init.d78eba228210453e_4" ;
+"range_for_over_init_variable#init.d78eba228210453e_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 28, column 3]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_4" -> "range_for_over_init_variable#init.d78eba228210453e_2" ;
+"range_for_over_init_variable#init.d78eba228210453e_5" [label="5: + \n  " ]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_5" -> "range_for_over_init_variable#init.d78eba228210453e_9" ;
+"range_for_over_init_variable#init.d78eba228210453e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(__end1:int*); [line 25, column 35]\n  n$1=*&__range1:int[2*4](&) [line 25, column 35]\n  *&__end1:int*=(n$1 + 2) [line 25, column 35]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_6" -> "range_for_over_init_variable#init.d78eba228210453e_5" ;
+"range_for_over_init_variable#init.d78eba228210453e_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(__begin1:int*); [line 25, column 35]\n  n$2=*&__range1:int[2*4](&) [line 25, column 35]\n  *&__begin1:int*=n$2 [line 25, column 35]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_7" -> "range_for_over_init_variable#init.d78eba228210453e_6" ;
+"range_for_over_init_variable#init.d78eba228210453e_8" [label="8:  UnaryOperator \n   n$3=*&__begin1:int* [line 25, column 35]\n  *&__begin1:int*=(n$3 + 1) [line 25, column 35]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_8" -> "range_for_over_init_variable#init.d78eba228210453e_5" ;
+"range_for_over_init_variable#init.d78eba228210453e_9" [label="9:  BinaryOperatorStmt: NE \n   n$4=*&__begin1:int* [line 25, column 35]\n  n$5=*&__end1:int* [line 25, column 35]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_9" -> "range_for_over_init_variable#init.d78eba228210453e_10" ;
+	 "range_for_over_init_variable#init.d78eba228210453e_9" -> "range_for_over_init_variable#init.d78eba228210453e_11" ;
+"range_for_over_init_variable#init.d78eba228210453e_10" [label="10: Prune (true branch, for loop) \n   PRUNE((n$4 != n$5), true); [line 25, column 35]\n " shape="invhouse"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_10" -> "range_for_over_init_variable#init.d78eba228210453e_13" ;
+"range_for_over_init_variable#init.d78eba228210453e_11" [label="11: Prune (false branch, for loop) \n   PRUNE(!(n$4 != n$5), false); [line 25, column 35]\n " shape="invhouse"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_11" -> "range_for_over_init_variable#init.d78eba228210453e_3" ;
+"range_for_over_init_variable#init.d78eba228210453e_12" [label="12:  BinaryOperatorStmt: AddAssign \n   n$6=*&v:int [line 26, column 12]\n  n$7=*&sum:int [line 26, column 5]\n  *&sum:int=(n$7 + n$6) [line 26, column 5]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_12" -> "range_for_over_init_variable#init.d78eba228210453e_8" ;
+"range_for_over_init_variable#init.d78eba228210453e_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(v:int); [line 25, column 29]\n  n$8=*&__begin1:int* [line 25, column 35]\n  n$9=*n$8:int [line 25, column 35]\n  *&v:int=n$9 [line 25, column 29]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_13" -> "range_for_over_init_variable#init.d78eba228210453e_12" ;
+"range_for_over_init_variable#init.d78eba228210453e_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(__range1:int[2*4](&)); [line 25, column 37]\n  *&__range1:int[2*4](&)=&arr [line 25, column 37]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_14" -> "range_for_over_init_variable#init.d78eba228210453e_7" ;
+"range_for_over_init_variable#init.d78eba228210453e_15" [label="15:  DeclStmt \n   VARIABLE_DECLARED(arr:int[2*4]); [line 25, column 8]\n  *&arr[0]:int=1 [line 25, column 21]\n  *&arr[1]:int=2 [line 25, column 21]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_15" -> "range_for_over_init_variable#init.d78eba228210453e_14" ;
+"range_for_over_init_variable#init.d78eba228210453e_16" [label="16:  DeclStmt \n   VARIABLE_DECLARED(sum:int); [line 24, column 3]\n  *&sum:int=0 [line 24, column 3]\n " shape="box"]
+	
+
+	 "range_for_over_init_variable#init.d78eba228210453e_16" -> "range_for_over_init_variable#init.d78eba228210453e_15" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_1" [label="1: Start init_statements::switch_init_destructor\nFormals:  k:int\nLocals:  x:init_statements::X \n  " color=yellow style=filled]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_1" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_9" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_2" [label="2: Exit init_statements::switch_init_destructor \n  " color=yellow style=filled]
+	
+
+"switch_init_destructor#init_state.8e1e3a6a274fec65_3" [label="3:  Return Stmt \n   *&return:int=1 [line 50, column 3]\n " shape="box"]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_3" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_2" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_4" [label="4:  Destruction(Scope) \n   _=*&x:init_statements::X [line 49, column 3]\n  n$1=_fun_init_statements::X::~X(&x:init_statements::X*) injected [line 49, column 3]\n " shape="box"]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_4" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_3" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_5" [label="5:  SwitchStmt \n   n$3=*&k:int [line 44, column 16]\n " shape="box"]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_5" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_7" ;
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_5" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_8" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_6" [label="6:  Return Stmt \n   *&return:int=0 [line 46, column 7]\n  _=*&x:init_statements::X [line 46, column 14]\n  n$6=_fun_init_statements::X::~X(&x:init_statements::X*) injected [line 46, column 14]\n " shape="box"]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_6" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_2" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_7" [label="7: Prune (true branch, switch) \n   PRUNE((n$3 == 0), true); [line 45, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_7" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_6" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_8" [label="8: Prune (false branch, switch) \n   PRUNE(!(n$3 == 0), false); [line 45, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_8" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_4" ;
+"switch_init_destructor#init_state.8e1e3a6a274fec65_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:init_statements::X); [line 44, column 11]\n  n$8=_fun_init_statements::X::X(&x:init_statements::X*) [line 44, column 13]\n " shape="box"]
+	
+
+	 "switch_init_destructor#init_state.8e1e3a6a274fec65_9" -> "switch_init_destructor#init_state.8e1e3a6a274fec65_5" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_1" [label="1: Start init_statements::switch_init_destructor_on_continue\nFormals:  n:int k:int\nLocals:  i:int x:init_statements::X sum:int \n  " color=yellow style=filled]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_1" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_18" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_2" [label="2: Exit init_statements::switch_init_destructor_on_continue \n  " color=yellow style=filled]
+	
+
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_3" [label="3:  Return Stmt \n   n$0=*&sum:int [line 63, column 10]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_3" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_4" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 63, column 3]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_4" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_2" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_5" [label="5: + \n  " ]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_5" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_8" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(i:int); [line 55, column 8]\n  *&i:int=0 [line 55, column 8]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_6" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_5" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_7" [label="7:  UnaryOperator \n   n$1=*&i:int [line 55, column 26]\n  *&i:int=(n$1 + 1) [line 55, column 26]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_7" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_5" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_8" [label="8:  BinaryOperatorStmt: LT \n   n$2=*&i:int [line 55, column 19]\n  n$3=*&n:int [line 55, column 23]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_8" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_9" ;
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_8" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_10" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_9" [label="9: Prune (true branch, for loop) \n   PRUNE((n$2 < n$3), true); [line 55, column 19]\n " shape="invhouse"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_9" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_17" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_10" [label="10: Prune (false branch, for loop) \n   PRUNE(!(n$2 < n$3), false); [line 55, column 19]\n " shape="invhouse"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_10" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_3" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_11" [label="11:  Destruction(Scope) \n   _=*&x:init_statements::X [line 61, column 5]\n  n$5=_fun_init_statements::X::~X(&x:init_statements::X*) injected [line 61, column 5]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_11" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_7" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_12" [label="12:  SwitchStmt \n   n$7=*&k:int [line 56, column 18]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_12" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_15" ;
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_12" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_16" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_13" [label="13:  BinaryOperatorStmt: AddAssign \n   n$8=*&i:int [line 60, column 16]\n  n$9=*&sum:int [line 60, column 9]\n  *&sum:int=(n$9 + n$8) [line 60, column 9]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_13" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_11" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_14" [label="14:  Destruction(continue) \n   _=*&x:init_statements::X [line 58, column 9]\n  n$11=_fun_init_statements::X::~X(&x:init_statements::X*) injected [line 58, column 9]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_14" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_7" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_15" [label="15: Prune (true branch, switch) \n   PRUNE((n$7 == 0), true); [line 57, column 7]\n " shape="invhouse"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_15" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_14" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_16" [label="16: Prune (false branch, switch) \n   PRUNE(!(n$7 == 0), false); [line 57, column 7]\n " shape="invhouse"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_16" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_13" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_17" [label="17:  DeclStmt \n   VARIABLE_DECLARED(x:init_statements::X); [line 56, column 13]\n  n$13=_fun_init_statements::X::X(&x:init_statements::X*) [line 56, column 15]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_17" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_12" ;
+"switch_init_destructor_on_continu.20a9ca06cd03cc07_18" [label="18:  DeclStmt \n   VARIABLE_DECLARED(sum:int); [line 54, column 3]\n  *&sum:int=0 [line 54, column 3]\n " shape="box"]
+	
+
+	 "switch_init_destructor_on_continu.20a9ca06cd03cc07_18" -> "switch_init_destructor_on_continu.20a9ca06cd03cc07_6" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_1" [label="1: Start init_statements::switch_init_discarded_load\nFormals:  p:int* k:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_1" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_8" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_2" [label="2: Exit init_statements::switch_init_discarded_load \n  " color=yellow style=filled]
+	
+
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_3" [label="3:  SwitchStmt \n   n$0=*&k:int [line 67, column 21]\n " shape="box"]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_3" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_6" ;
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_3" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_7" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_4" [label="4:  Return Stmt \n   *&return:int=1 [line 71, column 7]\n " shape="box"]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_4" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_2" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_5" [label="5:  Return Stmt \n   *&return:int=0 [line 69, column 7]\n " shape="box"]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_5" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_2" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$0 == 0), true); [line 68, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_6" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_5" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$0 == 0), false); [line 68, column 5]\n " shape="invhouse"]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_7" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_4" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_8" [label="8:  UnaryOperator \n   n$1=*&p:int* [line 67, column 18]\n " shape="box"]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_8" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_9" ;
+"switch_init_discarded_load#init_s.a0b4282010f3cce5_9" [label="9:  Compound statement \n   _=_fun___infer_skip(n$1:int) [line 67, column 11]\n " shape="box"]
+	
+
+	 "switch_init_discarded_load#init_s.a0b4282010f3cce5_9" -> "switch_init_discarded_load#init_s.a0b4282010f3cce5_3" ;
+"X#X#init_statements#{689463209782.18d3d5f44d261ea4_1" [label="1: Start init_statements::X::X\nFormals:  this:init_statements::X*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "X#X#init_statements#{689463209782.18d3d5f44d261ea4_1" -> "X#X#init_statements#{689463209782.18d3d5f44d261ea4_2" ;
+"X#X#init_statements#{689463209782.18d3d5f44d261ea4_2" [label="2: Exit init_statements::X::X \n  " color=yellow style=filled]
+	
+
+"__infer_inner_destructor_~X#X#ini.ec7e9b9719365248_1" [label="1: Start init_statements::X::__infer_inner_destructor_~X\nFormals:  this:init_statements::X*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~X#X#ini.ec7e9b9719365248_1" -> "__infer_inner_destructor_~X#X#ini.ec7e9b9719365248_2" ;
+"__infer_inner_destructor_~X#X#ini.ec7e9b9719365248_2" [label="2: Exit init_statements::X::__infer_inner_destructor_~X \n  " color=yellow style=filled]
+	
+
+"~X#X#init_statements#(30426380000.1c0fcf1477c22801_1" [label="1: Start init_statements::X::~X\nFormals:  this:init_statements::X*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "~X#X#init_statements#(30426380000.1c0fcf1477c22801_1" -> "~X#X#init_statements#(30426380000.1c0fcf1477c22801_3" ;
+"~X#X#init_statements#(30426380000.1c0fcf1477c22801_2" [label="2: Exit init_statements::X::~X \n  " color=yellow style=filled]
+	
+
+"~X#X#init_statements#(30426380000.1c0fcf1477c22801_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:init_statements::X* [line 11, column 9]\n  _=*n$0:init_statements::X [line 11, column 9]\n  n$2=_fun_init_statements::X::__infer_inner_destructor_~X(n$0:init_statements::X*) injected [line 11, column 9]\n " shape="box"]
+	
+
+	 "~X#X#init_statements#(30426380000.1c0fcf1477c22801_3" -> "~X#X#init_statements#(30426380000.1c0fcf1477c22801_2" ;
+}
