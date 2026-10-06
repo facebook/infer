@@ -221,6 +221,21 @@ module Resource = struct
     StringSet.of_list ["print"; "println"; "printf"; "format"]
 
 
+  (* Read-only ZipFile/JarFile accessors. They do not close the archive, and leaving them unknown
+     makes Pulse drop the resource as soon as one of them is called (#2106). *)
+  let zipfile_usage_modeled =
+    StringSet.of_list
+      [ "entries"
+      ; "getComment"
+      ; "getEntry"
+      ; "getInputStream"
+      ; "getJarEntry"
+      ; "getManifest"
+      ; "getName"
+      ; "size"
+      ; "stream" ]
+
+
   let use ~exn_class_name : model_no_non_disj =
     let exn = JavaClassName.from_string exn_class_name in
     fun model_data astate ->
@@ -702,6 +717,13 @@ let matchers : matcher list =
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"
     |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.ZipFile")
+    &:: "<init>" <>$ capt_arg_payload
+    $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.ZipFile")
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.zipfile_usage_modeled)
+    <>$ any_arg $+...$--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.net.Socket")
     &:: "getOutputStream" <>$ any_arg $--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.net.Socket")
