@@ -221,6 +221,24 @@ module Resource = struct
     StringSet.of_list ["print"; "println"; "printf"; "format"]
 
 
+  (* Common java.sql.Connection calls that do not close the connection. Left unknown, any of them
+     makes Pulse stop tracking the connection (#2111). *)
+  let jdbc_connection_usage_modeled =
+    StringSet.of_list
+      [ "commit"
+      ; "createStatement"
+      ; "getAutoCommit"
+      ; "getMetaData"
+      ; "isClosed"
+      ; "isValid"
+      ; "prepareCall"
+      ; "prepareStatement"
+      ; "rollback"
+      ; "setAutoCommit"
+      ; "setReadOnly"
+      ; "setTransactionIsolation" ]
+
+
   let use ~exn_class_name : model_no_non_disj =
     let exn = JavaClassName.from_string exn_class_name in
     fun model_data astate ->
@@ -759,6 +777,17 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.Java.implements "java.nio.file.Files")
     &:: "newBufferedWriter"
     <>--> Resource.allocate_returned ~exn_class_name:"java.io.IOException" "java.io.BufferedWriter"
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.sql.DriverManager")
+    &:: "getConnection"
+    <>--> Resource.allocate_returned ~exn_class_name:"java.sql.SQLException" "java.sql.Connection"
+    |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.sql.Connection")
+    &:: "close" <>$ capt_arg_payload $--> Resource.release |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.sql.Connection")
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.jdbc_connection_usage_modeled)
+    <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.sql.SQLException"
     |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.io.OutputStream")
     &::+ non_static_method "write" <>$ any_arg
