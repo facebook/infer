@@ -40,6 +40,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,7 @@ import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.Inflater;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -291,7 +293,7 @@ public class ResourceLeaks {
 
   // ZipFile tests      (Jarfile Tests also test Zipfiles)
 
-  public static void FN_zipFileLeakExceptionalBranchBad() throws IOException {
+  public static void zipFileLeakExceptionalBranchBad() throws IOException {
     ZipFile j = null;
     try {
       j = new ZipFile("");
@@ -312,7 +314,50 @@ public class ResourceLeaks {
     }
   }
 
+  // Repro for facebook/infer#2106: ZipFile/JarFile constructors were not modeled as allocating
+  // resources.
+  public void zipFileNotClosedBad() throws IOException {
+    new ZipFile("archive.zip");
+  }
+
+  public int zipFileNotClosedAfterEntriesBad() throws IOException {
+    ZipFile zipFile = new ZipFile("archive.zip");
+    int count = 0;
+    Enumeration<? extends ZipEntry> entries = zipFile.entries();
+    while (entries.hasMoreElements()) {
+      entries.nextElement();
+      count++;
+    }
+    return count;
+  }
+
+  public int zipFileReadEntryClosedOk() throws IOException {
+    try (ZipFile zipFile = new ZipFile("archive.zip")) {
+      ZipEntry entry = zipFile.getEntry("a.txt");
+      if (entry == null) {
+        return -1;
+      }
+      InputStream in = zipFile.getInputStream(entry);
+      return in.read();
+    }
+  }
+
+  public ZipFile zipFileReturnedOk() throws IOException {
+    return new ZipFile("archive.zip");
+  }
+
   // JarFile tests
+
+  public void jarFileNotClosedAfterGetManifestBad() throws IOException {
+    JarFile jarFile = new JarFile("archive.jar");
+    jarFile.getManifest();
+  }
+
+  public void jarFileClosedAfterGetManifestOk() throws IOException {
+    try (JarFile jarFile = new JarFile("archive.jar")) {
+      jarFile.getManifest();
+    }
+  }
 
   public boolean jarFileClosedOk() {
     JarFile jarFile = null;
@@ -330,7 +375,7 @@ public class ResourceLeaks {
     return false;
   }
 
-  public boolean FN_jarFileNotClosedBad() {
+  public boolean jarFileNotClosedBad() {
     JarFile jarFile = null;
     try {
       jarFile = new JarFile("");
