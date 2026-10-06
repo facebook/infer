@@ -325,6 +325,7 @@ codetoanalyze/c/bufferoverrun/trivial.c, trivial_Bad, 2, BUFFER_OVERRUN_L1, no_b
 codetoanalyze/c/bufferoverrun/trivial.c, malloc_zero_Bad, 2, INFERBO_ALLOC_IS_ZERO, no_bucket, ERROR, [Allocation: Length: 0]
 codetoanalyze/c/bufferoverrun/trivial.c, differentiate_array_info_Bad, 8, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Assignment,Array access: Offset: 10 (⇐ 5 + 5) Size: 10]
 codetoanalyze/c/bufferoverrun/trivial.c, differentiate_array_info_Bad, 8, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Assignment,Array access: Offset: 5 Size: 5]
+codetoanalyze/c/bufferoverrun/trivial.c, block_scope_enum_array_size_Bad, 3, BUFFER_OVERRUN_L1, no_bucket, ERROR, [<Length trace>,Array declaration,Array access: Offset: 4 Size: 4]
 codetoanalyze/c/bufferoverrun/unreachable.c, condition_always_true_bad, 1, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/unreachable.c, condition_always_false_bad, 1, CONDITION_ALWAYS_FALSE, no_bucket, WARNING, [Here]
 codetoanalyze/c/bufferoverrun/unreachable.c, condition_always_true_with_else_bad, 1, CONDITION_ALWAYS_TRUE, no_bucket, WARNING, [Here]

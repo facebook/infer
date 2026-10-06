@@ -824,7 +824,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         trans_state_param
 
 
-  let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
+  let rec labelStmt_trans trans_state stmt_info stmt_list label_pointer label_name =
     let context = trans_state.context in
     let[@warning "-partial-match"] [stmt] = stmt_list in
     let res_trans = sub_statement_trans Procdesc.Node.CompoundStmt trans_state stmt in
@@ -832,10 +832,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
-    let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
+    let root_node' =
+      GotoLabel.find_goto_label trans_state.context label_pointer label_name sil_loc
+    in
     Procdesc.node_set_succs context.procdesc root_node' ~normal:res_trans.control.root_nodes ~exn:[] ;
-    mk_trans_result (mk_fresh_void_exp_typ ())
-      {empty_control with root_nodes= [root_node']; leaf_nodes= trans_state.succ_nodes}
+    (* in [({ l: e; })] the parent of the statement expression uses the value of [e] and connects
+       the leaves to its own nodes, so the label node is a leaf when [e] creates no node *)
+    let leaf_nodes =
+      if List.is_empty res_trans.control.root_nodes then [root_node']
+      else res_trans.control.leaf_nodes
+    in
+    {res_trans with control= {res_trans.control with root_nodes= [root_node']; leaf_nodes}}
 
 
   (** Create instructions to initialize record with zeroes. It needs to traverse whole type
@@ -1048,7 +1055,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let zero = Exp.Const (Const.Cint IntLit.zero) in
     try
       let prev_enum_constant_opt, sil_exp_opt =
-        CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
+        try CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
+        with Not_found_s _ | Stdlib.Not_found ->
+          (* in C, the constants of a block-scope enum have type [int], so translating their type
+             does not add the enum to the map *)
+          CEnum_decl.add_enum_of_constant enum_constant_pointer ;
+          CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
       in
       match sil_exp_opt with
       | Some exp ->
@@ -3490,9 +3502,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXRecordDecl _ :: _
     | BindingDecl _ :: _
     | DecompositionDecl _ :: _
-    | RecordDecl _ :: _ ->
+    | RecordDecl _ :: _
+    | EnumDecl _ :: _
+    | FunctionDecl _ :: _ ->
+        (* record, enum and function declarations can be followed by variable declarations, eg
+           [enum E { A } e = A;] or [int f(void), x = 3;] *)
         collect_all_decl trans_state decl_list succ_nodes stmt_info
-    | (NamespaceAliasDecl _ | TypedefDecl _ | TypeAliasDecl _ | UsingDecl _ | UsingDirectiveDecl _)
+    | ( LabelDecl _
+      | NamespaceAliasDecl _
+      | StaticAssertDecl _
+      | TypedefDecl _
+      | TypeAliasDecl _
+      | UsingDecl _
+      | UsingDirectiveDecl _
+      | UsingEnumDecl _ )
       :: _ ->
         mk_trans_result (mk_fresh_void_exp_typ ()) empty_control
     | decl :: _ ->
@@ -4726,12 +4749,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (* search the label into the hashtbl - create a fake node eventually *)
   (* connect that node with this stmt, after destroying the variables that go out of scope *)
-  and gotoStmt_trans trans_state stmt_info label_name =
+  and gotoStmt_trans trans_state stmt_info label_pointer label_name =
     let sil_loc =
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
         stmt_info
     in
-    let label_node = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
+    let label_node =
+      GotoLabel.find_goto_label trans_state.context label_pointer label_name sil_loc
+    in
     let root_nodes =
       match
         inject_destructors Procdesc.Node.DestrGotoStmt
@@ -5177,10 +5202,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and instruction_translate trans_state (instr : Clang_ast_t.stmt) =
     match instr with
-    | `GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label= label_name; _}) ->
-        gotoStmt_trans trans_state stmt_info label_name
-    | `LabelStmt (stmt_info, stmt_list, label_name) ->
-        labelStmt_trans trans_state stmt_info stmt_list label_name
+    | `GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label; gsi_pointer}) ->
+        gotoStmt_trans trans_state stmt_info gsi_pointer gsi_label
+    | `LabelStmt (stmt_info, stmt_list, {Clang_ast_t.lsi_label; lsi_pointer}) ->
+        labelStmt_trans trans_state stmt_info stmt_list lsi_pointer lsi_label
     | `ArraySubscriptExpr (_, stmt_list, expr_info) ->
         arraySubscriptExpr_trans trans_state expr_info stmt_list
     | `BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->

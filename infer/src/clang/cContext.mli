@@ -32,8 +32,6 @@ val pp_var_to_destroy : Format.formatter -> var_to_destroy -> unit
 
 type curr_class = ContextClsDeclPtr of int | ContextNoCls [@@deriving compare]
 
-type str_node_map = (string, Procdesc.Node.t) Stdlib.Hashtbl.t
-
 module GlobalSet : HashSet.S with type elt = Pvar.t * Typ.t
 
 type t =
@@ -46,7 +44,9 @@ type t =
   ; outer_context: t option
         (** in case of objc blocks, the context of the method containing the block *)
   ; mutable blocks_static_vars: (Pvar.t * Typ.t) list Procname.Map.t
-  ; label_map: str_node_map
+  ; label_map: (Clang_ast_t.pointer, Procdesc.Node.t) Stdlib.Hashtbl.t
+        (** label nodes, indexed by the pointer of the [LabelDecl] of the label rather than by its
+            name, since GNU local labels ([__label__]) can give distinct labels the same name *)
   ; vars_to_destroy: var_to_destroy list StmtMap.t
         (** mapping from a statement to a list of variables, that go out of scope after the end of
             the statement *)

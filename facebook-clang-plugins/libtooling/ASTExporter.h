@@ -3103,11 +3103,19 @@ template <class ATDWriter>
 int ASTExporter<ATDWriter>::LabelStmtTupleSize() {
   return StmtTupleSize() + 1;
 }
-//@atd #define label_stmt_tuple stmt_tuple * string
+//@atd #define label_stmt_tuple stmt_tuple * label_stmt_info
+//@atd type label_stmt_info = {
+//@atd   label : string;
+//@atd   pointer : pointer
+//@atd } <ocaml field_prefix="lsi_">
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitLabelStmt(const LabelStmt *Node) {
   VisitStmt(Node);
+  ObjectScope Scope(OF, 2);
+  OF.emitTag("label");
   OF.emitString(Node->getName());
+  OF.emitTag("pointer");
+  dumpPointer(Node->getDecl());
 }
 
 template <class ATDWriter>
