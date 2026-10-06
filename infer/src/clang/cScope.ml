@@ -128,6 +128,16 @@ module CXXTemporaries = struct
         visit_stmt ~bound_to_decl context cond ~marker temporaries
         |> visit_stmt ~bound_to_decl context then_ ~marker:(Some Sil.Ik_bexp)
         |> visit_stmt ~bound_to_decl context else_ ~marker:(Some Sil.Ik_bexp)
+    | `CXXNewExpr
+        (_, stmt_list, _, {xnei_should_null_check= true; xnei_initializer_expr= Some init_pointer})
+      ->
+        (* the initializer is not evaluated when the allocation function returns null *)
+        List.fold stmt_list ~init:temporaries ~f:(fun temporaries stmt ->
+            let marker =
+              let {Clang_ast_t.si_pointer}, _ = Clang_ast_proj.get_stmt_tuple stmt in
+              if Int.equal si_pointer init_pointer then Some Sil.Ik_bexp else marker
+            in
+            visit_stmt ~bound_to_decl context stmt ~marker temporaries )
     | `BinaryOperator (_, [lhs; rhs], _, {boi_kind= `LAnd | `LOr}) ->
         (* similarly to above, due to possible short-circuiting we are not sure that the RHS of [a
            && b] and [a || b] will be executed *)

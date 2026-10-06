@@ -1,0 +1,1 @@
+codetoanalyze/cpp/pulse-unsafe-malloc/unsafe_malloc.cpp, nothrow_new_leak_bad, 2, MEMORY_LEAK_CPP, no_bucket, ERROR, [allocation part of the trace starts here,allocated by `new` here,memory becomes unreachable here]

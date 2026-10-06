@@ -6,6 +6,11 @@
  *)
 
 open! IStd
+open PulseBasicInterface
 open PulseModelsImport
+
+val alloc_common :
+  null_case:bool -> initialize:bool -> desc:string -> Attribute.allocator -> Exp.t option -> model
+(** allocation that may also return null when [null_case] is true *)
 
 val matchers : matcher list
