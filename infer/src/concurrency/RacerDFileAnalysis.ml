@@ -112,7 +112,8 @@ module PathModuloThis : Stdlib.Map.OrderedType with type t = AccessPath.t = stru
 
   let compare_var_ = Var.compare_modulo_this
 
-  let compare = [%compare: (var_ * Typ.t) * AccessPath.access list]
+  (* like [AccessPath.compare], ignore the base type: [this] is [C const *] in const methods *)
+  let compare = [%compare: (var_ * (Typ.t[@ignore])) * AccessPath.access list]
 end
 
 (** Map containing reported accesses, which groups them in lists, by abstract location. The
