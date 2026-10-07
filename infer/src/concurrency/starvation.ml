@@ -735,11 +735,13 @@ let should_report attrs =
   should_report' procname
 
 
+let get_class_methods tenv clazz =
+  Tenv.lookup tenv clazz
+  |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
+  |> List.map ~f:Struct.name_of_tenv_method
+
+
 let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
-  let methods =
-    Tenv.lookup tenv clazz
-    |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
-  in
   let f acc mthd =
     Attributes.load mthd
     |> Option.value_map ~default:acc ~f:(fun other_attrs ->
@@ -749,17 +751,40 @@ let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
           |> Option.fold ~init:acc ~f
         else acc )
   in
-  let methods = List.map methods ~f:Struct.name_of_tenv_method in
-  List.fold methods ~init ~f
+  List.fold (get_class_methods tenv clazz) ~init ~f
+
+
+let get_held_classes tenv (pair : Domain.CriticalPair.t) =
+  Domain.Acquisitions.fold
+    (fun (acquisition : Domain.Acquisition.t) acc ->
+      Domain.Lock.get_path_classes tenv acquisition.elem.lock @ acc )
+    pair.elem.acquisitions []
+
+
+(* does [report_on_pair] on [other_pair] find its deadlock with [pair] of [pname]? It looks for the
+   pairs of [pname] only if a lock it acquires or holds has the class of [pname] on its path *)
+let is_found_by_other_side tenv pname pair (other_pair : Domain.CriticalPair.t) =
+  let open Domain in
+  Config.starvation_whole_program
+  ||
+  let held_classes = get_held_classes tenv other_pair in
+  Event.get_acquired_locks other_pair.elem.event
+  |> List.exists ~f:(fun other_lock ->
+      Lock.get_path_classes tenv other_lock @ held_classes
+      |> List.exists ~f:(fun clazz ->
+          List.mem (get_class_methods tenv clazz) pname ~equal:Procname.equal )
+      && CriticalPair.may_deadlock tenv ~lhs:other_pair ~lhs_lock:other_lock ~rhs:pair
+         |> Option.is_some )
 
 
 let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access attrs) Private
 
 (* Note about how many times we report a deadlock: normally twice, at each trace starting point.
-   Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
-   this will fail when (a) the lock is of class type (ie as used in static sync methods), because
-   then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
-   inner class but this is no longer obvious in the path, because of nested-class path normalisation.
+   Due to the fact we look for deadlocks in the summaries of the classes on the paths of the locks
+   of a critical pair, this will fail when (a) the lock is of class type (ie as used in static sync
+   methods), because then the root is an identifier of type java.lang.Class and (b) when the paths
+   of the locks of one pair do not go through the class of the other method, eg when that method
+   only takes locks through fields of other objects.
    The net effect of the above issues is that we will only see these locks in conflicting pairs
    once, as opposed to twice with all other deadlock pairs. *)
 
@@ -794,8 +819,12 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
           ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
       | MonitorWait {lock= monitor_lock}
         when should_report_starvation
-             && Acquisitions.lock_is_held_in_other_thread tenv lock acquisitions
-             && not (Lock.equal lock monitor_lock) ->
+             (* waiting releases only the monitor, so [lock] must be one of the other locks held *)
+             && Acquisitions.exists
+                  (fun (acq : Acquisition.t) ->
+                    Lock.may_alias_across_threads tenv lock acq.elem.lock
+                    && not (Lock.equal acq.elem.lock monitor_lock) )
+                  acquisitions ->
           let error_message =
             Format.asprintf
               "%a runs on UI thread and%a, which may be held by another thread which %a. This may \
@@ -806,7 +835,9 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
           ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
       | LockAcquire _ -> (
         match CriticalPair.may_deadlock tenv ~lhs:pair ~lhs_lock:lock ~rhs:other_pair with
-        | Some other_lock when should_report_deadlock_on_current_proc pair other_pair ->
+        | Some other_lock
+          when should_report_deadlock_on_current_proc pair other_pair
+               || not (is_found_by_other_side tenv pname pair other_pair) ->
             let error_message =
               Format.asprintf
                 "%a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse orders." pname_pp
@@ -937,13 +968,15 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
       | None when Config.starvation_whole_program ->
           report_map
       | None ->
+          let held_classes = get_held_classes tenv pair in
           List.fold locks ~init:report_map ~f:(fun acc lock ->
-              Lock.root_class lock
-              |> Option.value_map ~default:acc ~f:(fun other_class ->
-                  (* get the class of the root variable of the lock in the lock acquisition
-                        and retrieve all the summaries of the methods of that class;
-                        then, report on the parallel composition of the current pair and any pair in these
-                        summaries that can indeed run in parallel *)
+              (* get the classes of the objects on the paths of the lock in the lock acquisition and
+                 of the locks held, and retrieve all the summaries of the methods of these classes;
+                 then, report on the parallel composition of the current pair and any pair in these
+                 summaries that can indeed run in parallel *)
+              Lock.get_path_classes tenv lock @ held_classes
+              |> List.dedup_and_sort ~compare:Typ.Name.compare
+              |> List.fold ~init:acc ~f:(fun acc other_class ->
                   fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
                     ~f:(fun acc (other_pname, summary) ->
                       Domain.fold_critical_pairs_of_summary
