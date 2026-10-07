@@ -2,13 +2,13 @@
   "pulse-taint-policies": [
     { "short_description": "Untrusted Android Intent creation",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["CreateIntent"] }
       ]
     },
     { "short_description": "Path Traversal",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["CreateFile"] }
       ]
     },
@@ -20,25 +20,25 @@
     },
     { "short_description": "Untrusted deserialization risk",
       "taint_flows": [
-        { "source_kinds": ["Endpoint"],
+        { "source_kinds": ["User-controlled Input"],
           "sink_kinds": ["Deserialization"] }
       ]
     },
     { "short_description": "Cross-site scripting",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["HTML"] }
       ]
     },
     { "short_description": "JavaScript injection",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["JavaScript"] }
       ]
     },
     { "short_description": "SQL Injection",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["SQLInjection", "SQLRead", "SQLWrite"] }
       ]
     },
@@ -62,7 +62,7 @@
     },
     { "short_description": "OS Command Injection",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["ShellExec"] }
       ]
     },
@@ -75,21 +75,21 @@
     },
     { "short_description": "Class Loading Injection risk",
       "taint_flows": [
-        { "source_kinds": ["Endpoint"],
+        { "source_kinds": ["User-controlled Input"],
           "sanitizer_kinds": ["StringConcatenation"],
           "sink_kinds": ["ClassLoading"] }
       ]
     },
     { "short_description": "Server-Side Request Forgery",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "UserControlledString", "UserControlledURI"],
           "sanitizer_kinds": ["URLEncoding"],
           "sink_kinds": ["SSRF"] }
       ]
     },
     { "short_description": "XPath Injection",
       "taint_flows": [
-        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+        { "source_kinds": ["User-controlled Input", "Intent", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["XPathQuery"] }
       ]
     }
@@ -185,71 +185,71 @@
       "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String", "android.webkit.WebResourceRequest"]]
     },
     { "overrides_of_class_with_annotation": "ThriftService",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": ["ArgumentPositions", [0]] },
     { "method_with_annotation": "javax.ws.rs.DELETE",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "javax.ws.rs.GET",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "javax.ws.rs.HEAD",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "javax.ws.rs.OPTIONS",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "javax.ws.rs.PATCH",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "javax.ws.rs.POST",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "javax.ws.rs.PUT",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "jakarta.ws.rs.DELETE",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "jakarta.ws.rs.GET",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "jakarta.ws.rs.HEAD",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "jakarta.ws.rs.OPTIONS",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "jakarta.ws.rs.PATCH",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "jakarta.ws.rs.POST",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "jakarta.ws.rs.PUT",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "org.springframework.web.bind.annotation.DeleteMapping",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "org.springframework.web.bind.annotation.GetMapping",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "org.springframework.web.bind.annotation.PatchMapping",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "org.springframework.web.bind.annotation.PostMapping",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "org.springframework.web.bind.annotation.PutMapping",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "method_with_annotation": "org.springframework.web.bind.annotation.RequestMapping",
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": "AllArguments" },
     { "class_names": ["javax.servlet.http.HttpServlet", "jakarta.servlet.http.HttpServlet"],
       "method_names": ["doDelete", "doGet", "doHead", "doOptions", "doPost", "doPut", "doTrace", "service"],
-      "kinds": ["Endpoint"],
+      "kinds": ["User-controlled Input"],
       "taint_target": ["ArgumentsMatchingTypes", ["javax.servlet.ServletRequest", "jakarta.servlet.ServletRequest"]] }
   ],
   "pulse-taint-sinks": [
