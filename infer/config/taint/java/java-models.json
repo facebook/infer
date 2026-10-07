@@ -39,7 +39,7 @@
     { "short_description": "SQL Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sink_kinds": ["SQLInjection", "SQLRead", "SQLWrite"] }
+          "sink_kinds": ["SQLInjection"] }
       ]
     },
     { "short_description": "Insecure Intent handling",
@@ -377,18 +377,8 @@
       "taint_target": ["ArgumentPositions", [0]]
     },
     { "class_names": ["java.sql.Statement"],
-      "method_names": ["addBatch", "execute"],
+      "method_names": ["addBatch", "execute", "executeQuery", "executeUpdate", "executeLargeUpdate"],
       "kinds": ["SQLInjection"],
-      "taint_target": ["ArgumentPositions", [0]]
-    },
-    { "class_names": ["java.sql.Statement"],
-      "method_names": ["executeQuery"],
-      "kinds": ["SQLRead"],
-      "taint_target": ["ArgumentPositions", [0]]
-    },
-    { "class_names": ["java.sql.Statement"],
-      "method_names": ["executeUpdate", "executeLargeUpdate"],
-      "kinds": ["SQLWrite"],
       "taint_target": ["ArgumentPositions", [0]]
     },
     { "class_names": ["java.sql.Connection"],
