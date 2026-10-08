@@ -24,7 +24,7 @@
           "sink_kinds": ["Deserialization"] }
       ]
     },
-    { "short_description": "Cross-site scripting",
+    { "short_description": "Cross-site Scripting",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["HTML"] }
