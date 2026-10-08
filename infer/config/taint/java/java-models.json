@@ -12,15 +12,9 @@
           "sink_kinds": ["FileOperation"] }
       ]
     },
-    { "short_description": "Untrusted deserialization",
+    { "short_description": "Deserialization of Untrusted Data",
       "taint_flows": [
-        { "source_kinds": ["Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sink_kinds": ["Deserialization"] }
-      ]
-    },
-    { "short_description": "Untrusted deserialization risk",
-      "taint_flows": [
-        { "source_kinds": ["Endpoint"],
+        { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["Deserialization"] }
       ]
     },
