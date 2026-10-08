@@ -30,7 +30,7 @@
           "sink_kinds": ["HTML"] }
       ]
     },
-    { "short_description": "JavaScript injection",
+    { "short_description": "Code Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["JavaScript"] }
