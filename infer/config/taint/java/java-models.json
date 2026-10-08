@@ -66,16 +66,9 @@
           "sink_kinds": ["ShellExec"] }
       ]
     },
-    { "short_description": "Class Loading Injection",
+    { "short_description": "Unsafe Reflection",
       "taint_flows": [
-        { "source_kinds": ["Intent", "UserControlledString", "UserControlledURI"],
-          "sanitizer_kinds": ["StringConcatenation"],
-          "sink_kinds": ["ClassLoading"] }
-      ]
-    },
-    { "short_description": "Class Loading Injection risk",
-      "taint_flows": [
-        { "source_kinds": ["Endpoint"],
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
           "sanitizer_kinds": ["StringConcatenation"],
           "sink_kinds": ["ClassLoading"] }
       ]
