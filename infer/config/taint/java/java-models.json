@@ -9,7 +9,7 @@
     { "short_description": "Path Traversal",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sink_kinds": ["CreateFile"] }
+          "sink_kinds": ["FileOperation"] }
       ]
     },
     { "short_description": "Untrusted deserialization",
@@ -320,15 +320,34 @@
     },
     { "class_names": ["java.io.File"],
       "method_names": ["<init>"],
-      "kinds": ["CreateFile"]
+      "kinds": ["FileOperation"]
     },
     { "class_names": ["java.nio.file.FileSystem"],
       "method_names": ["getPath"],
-      "kinds": ["CreateFile"]
+      "kinds": ["FileOperation"]
     },
     { "class_names": ["java.nio.file.Paths"],
       "method_names": ["get"],
-      "kinds": ["CreateFile"]
+      "kinds": ["FileOperation"]
+    },
+    { "class_names": ["java.nio.file.Path"],
+      "method_names": ["of"],
+      "kinds": ["FileOperation"]
+    },
+    { "class_names": ["java.nio.file.Path"],
+      "method_names": ["resolve", "resolveSibling"],
+      "kinds": ["FileOperation"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["java.io.FileInputStream", "java.io.FileOutputStream", "java.io.FileReader", "java.io.FileWriter"],
+      "method_names": ["<init>"],
+      "kinds": ["FileOperation"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String"]]
+    },
+    { "class_names": ["java.io.RandomAccessFile"],
+      "method_names": ["<init>"],
+      "kinds": ["FileOperation"],
+      "taint_target": ["ArgumentPositions", [0]]
     },
     { "class_names": ["java.io.ObjectInputStream"],
       "method_names": ["<init>"],
