@@ -545,6 +545,8 @@ let get_loc pdesc = pdesc.attributes.loc
 (** Return name and type of local variables *)
 let get_locals pdesc = pdesc.attributes.locals
 
+let get_globals pdesc = pdesc.attributes.globals
+
 let is_local pdesc pvar =
   let mangled = Pvar.get_name pvar in
   List.exists (get_locals pdesc) ~f:(fun {ProcAttributes.name} -> Mangled.equal name mangled)
@@ -662,6 +664,8 @@ let set_start_node pdesc node = pdesc.start_node <- node
 
 (** Append the locals to the list of local variables *)
 let append_locals pdesc new_locals = pdesc.attributes.locals <- pdesc.attributes.locals @ new_locals
+
+let add_global pdesc pvar typ = pdesc.attributes.globals <- (pvar, typ) :: pdesc.attributes.globals
 
 let remove_node_from_list to_remove nodes =
   List.filter nodes ~f:(fun node -> not (Node.equal node to_remove))
@@ -1059,6 +1063,7 @@ let mark_if_unchanged ~old_pdesc ~new_pdesc =
     Bool.equal old_attrs.is_defined new_attrs.is_defined
     && Typ.equal old_attrs.ret_type new_attrs.ret_type
     && formals_eq old_attrs.formals new_attrs.formals
+    && [%equal: (Pvar.t * Typ.t) list] old_attrs.globals new_attrs.globals
     && nodes_eq (get_nodes old_pdesc) (get_nodes new_pdesc)
   in
   let changed =

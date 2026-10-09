@@ -72,3 +72,13 @@ void multidim_arr6_Bad_FN() {
   *p = 5;
   b[a[0][0]] = 1;
 }
+
+void multidim_string_init_Good() {
+  char a[2][8] = {"ab", "cd"};
+  a[1][7] = 0;
+}
+
+void multidim_string_init_Bad() {
+  char a[2][8] = {"ab", "cd"};
+  a[1][8] = 0;
+}

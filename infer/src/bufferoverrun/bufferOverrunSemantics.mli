@@ -10,8 +10,9 @@ open! IStd
 val is_stack_exp : Exp.t -> BufferOverrunDomain.Mem.t -> bool
 (** Check if an expression is a stack variable such as [n$0] or local variable for C array *)
 
-val eval : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
-(** Evalute an expression *)
+val eval :
+  ?typ:Typ.t -> IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+(** Evalute an expression, of type [typ] if known *)
 
 val eval_locs : Exp.t -> BufferOverrunDomain.Mem.t -> AbsLoc.PowLoc.t
 (** [eval_locs exp mem] is like [eval exp mem |> Val.get_all_locs] but takes some shortcuts to avoid
@@ -21,6 +22,13 @@ val eval_arr : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOv
 (** Return the array value of the input expression. For example, when [x] is a program variable,
     [eval_arr x] returns array blocks the [x] is pointing to, on the other hand, [eval x] returns
     the abstract location of [x]. *)
+
+val eval_arg :
+  ?typ:Typ.t -> IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+(** Evaluate a call argument: an array field decays to the array stored in it. *)
+
+val eval_arg_locs : Exp.t -> BufferOverrunDomain.Mem.t -> AbsLoc.PowLoc.t
+(** Like [eval_locs], but an array field decays to the locations of the array stored in it. *)
 
 val eval_lindex :
   IntegerWidths.t -> Exp.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
