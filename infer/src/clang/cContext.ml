@@ -34,6 +34,12 @@ type curr_class = ContextClsDeclPtr of pointer | ContextNoCls [@@deriving compar
 
 type str_node_map = (string, Procdesc.Node.t) Hashtbl.t
 
+module GlobalSet = HashSet.Make (struct
+  type t = Pvar.t * Typ.t [@@deriving equal]
+
+  let hash (pvar, _) = Pvar.hash pvar
+end)
+
 type t =
   { translation_unit_context: CFrontend_config.translation_unit_context
   ; tenv: Tenv.t
@@ -46,7 +52,9 @@ type t =
   ; label_map: str_node_map
   ; vars_to_destroy: var_to_destroy list StmtMap.t
   ; temporary_names: (Clang_ast_t.pointer, Pvar.t * Typ.t) Hashtbl.t
-  ; temporaries_constructor_markers: (Pvar.t * Typ.t) Pvar.Map.t }
+  ; temporaries_constructor_markers: (Pvar.t * Typ.t) Pvar.Map.t
+  ; globals: GlobalSet.t
+  ; vars_in_discarded_branches: Mangled.Set.t ref }
 
 let create_context translation_unit_context tenv cfg procdesc immediate_curr_class return_param_typ
     outer_context =
@@ -61,7 +69,9 @@ let create_context translation_unit_context tenv cfg procdesc immediate_curr_cla
   ; label_map= Hashtbl.create 32
   ; vars_to_destroy= StmtMap.empty
   ; temporary_names= Hashtbl.create 0
-  ; temporaries_constructor_markers= Pvar.Map.empty }
+  ; temporaries_constructor_markers= Pvar.Map.empty
+  ; globals= GlobalSet.create 0
+  ; vars_in_discarded_branches= ref Mangled.Set.empty }
 
 
 let rec is_objc_method context =
@@ -147,6 +157,12 @@ let add_block_static_var context block_name static_var_typ =
         outer_context.blocks_static_vars <- blocks_static_vars
   | _ ->
       ()
+
+
+let add_global context pvar typ =
+  if not (GlobalSet.mem context.globals (pvar, typ)) then (
+    GlobalSet.add (pvar, typ) context.globals ;
+    Procdesc.add_global context.procdesc pvar typ )
 
 
 let rec get_outer_procname context =
