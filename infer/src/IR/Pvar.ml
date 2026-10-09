@@ -293,6 +293,10 @@ let get_translation_unit pvar =
       L.(die InternalError) "Expected a global variable"
 
 
+let is_static_global pvar =
+  match pvar.pv_kind with Global_var {is_static_global} -> is_static_global | _ -> false
+
+
 let is_compile_constant pvar =
   match pvar.pv_kind with Global_var {is_constexpr} -> is_constexpr | _ -> false
 
