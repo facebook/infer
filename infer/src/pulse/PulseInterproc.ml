@@ -1090,6 +1090,13 @@ let apply_unknown_effects call_state =
         (* havoc only fields that haven't been havoc'd already during the call *)
         not (Option.equal AbstractValue.equal post_value pre_value)
   in
+  let overwrite_contents addr_callee attrs astate =
+    (let* hist = Attributes.get_contents_overwritten attrs in
+     let+ addr_caller, _ = to_caller_value call_state (CanonValue.downcast addr_callee) in
+     AbductiveDomain.overwrite_contents hist addr_caller astate ~havoc_filter:(fun addr_caller ->
+         not (is_modified_by_call addr_caller Dereference) ) )
+    |> Option.value ~default:astate
+  in
   let astate =
     BaseAddressAttributes.fold
       (fun addr_callee attrs astate ->
@@ -1107,7 +1114,8 @@ let apply_unknown_effects call_state =
          in
          L.d_printfln "@]" ;
          astate )
-        |> Option.value ~default:astate )
+        |> Option.value ~default:astate
+        |> overwrite_contents addr_callee attrs )
       (AbductiveDomain.Summary.get_post call_state.callee_summary).attrs call_state.astate
   in
   {call_state with astate}
@@ -1230,7 +1238,13 @@ let check_all_valid path call_state =
                  ; astate } ) )
       | `MustBeValid (_timestamp, callee_access_trace, must_be_valid_reason) ->
           let access_trace = mk_access_trace callee_access_trace in
-          AddressAttributes.check_valid path access_trace addr_caller astate
+          (* a file descriptor passed by the caller, e.g. the constant [STDIN_FILENO], must not be
+             checked as a pointer, neither here nor in the callers of the caller *)
+          let caller_must_be_valid_reason =
+            Option.filter must_be_valid_reason ~f:Invalidation.is_file_descriptor_reason
+          in
+          AddressAttributes.check_valid path ?must_be_valid_reason:caller_must_be_valid_reason
+            access_trace addr_caller astate
           |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
               L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
               AccessResult.ReportableError
