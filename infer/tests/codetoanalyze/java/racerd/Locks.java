@@ -273,8 +273,8 @@ public class Locks {
     mLock.unlock();
   }
 
-  // ... or here
-  public void FN_releaseLockInCalleeBad() {
+  // the callee releases the lock acquired here
+  public void releaseLockInCalleeBad() {
     mLock.lock();
     releaseLock();
     f = 42;
@@ -360,5 +360,14 @@ public class Locks {
 
   public Object unownedReadBad() {
     return this.mField3;
+  }
+
+  Object mField4;
+
+  // locks have no identity, so the lock that the callee releases is taken to be the monitor rather
+  // than a lock held by the caller
+  public synchronized void FP_releaseLockOfCallerInCalleeOk() {
+    releaseLock();
+    mField4 = null;
   }
 }

@@ -28,7 +28,8 @@ type reported_access =
   { threads: RacerDDomain.ThreadsDomain.t
   ; snapshot: RacerDDomain.AccessSnapshot.t
   ; tenv: Tenv.t
-  ; procname: Procname.t }
+  ; procname: Procname.t
+  ; is_thread_entry: bool }
 
 module ReportedSet : sig
   (** Type for deduplicating and storing reports. *)
@@ -223,7 +224,7 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
         | _ ->
             false )
   in
-  (not snapshot.elem.lock)
+  (not (RacerDDomain.LockDomain.is_locked snapshot.elem.lock))
   && RacerDDomain.AccessSnapshot.is_write snapshot
   && Procname.is_java procname
   &&
@@ -405,15 +406,18 @@ let report_unannotated_interface_violation ~acc reported_pname reported_access =
     ~f:(report_unannotated_interface_violation reported_pname)
 
 
-let make_read_write_race_description ~read_is_sync (conflict : reported_access) pname
-    final_sink_site initial_sink_site final_sink =
+let make_read_write_race_description ?(is_thread_entry = false) ~read_is_sync
+    (conflict : reported_access) pname final_sink_site initial_sink_site final_sink =
+  let pp_method fmt pname =
+    if is_thread_entry then F.fprintf fmt "Method %a, started as a thread," describe_pname pname
+    else F.fprintf fmt "Non-private method %a" describe_pname pname
+  in
   let pp_conflict fmt {procname} =
     F.pp_print_string fmt (Procname.to_simplified_string ~withclass:true procname)
   in
   Format.asprintf
-    "Read/Write race. Non-private method %a%s reads%s from %a, which races with the%s write in \
-     method %a."
-    describe_pname pname
+    "Read/Write race. %a%s reads%s from %a, which races with the%s write in method %a." pp_method
+    pname
     (if CallSite.equal final_sink_site initial_sink_site then "" else " indirectly")
     (if read_is_sync then " with synchronization" else " without synchronization")
     pp_access final_sink
@@ -480,7 +484,8 @@ let report_on_unprotected_read_java_csharp accesses acc (reported_access : repor
 let report_on_protected_read_java_csharp accesses acc (reported_access : reported_access) =
   let open RacerDDomain in
   let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
-    if snapshot1.elem.lock && snapshot2.elem.lock then false
+    if LockDomain.is_locked snapshot1.elem.lock && LockDomain.is_locked snapshot2.elem.lock then
+      false
     else ThreadsDomain.can_conflict snapshot1.elem.thread snapshot2.elem.thread
   in
   let is_conflict {snapshot= other_snapshot; threads= other_threads} =
@@ -532,7 +537,10 @@ let report_unsafe_access_objc_cpp accesses acc ({snapshot} as reported_access) =
       in
       List.find ~f:is_conflict accesses
       |> Option.value_map ~default:acc ~f:(fun conflict ->
-          let make_description = make_read_write_race_description ~read_is_sync:false conflict in
+          let make_description =
+            make_read_write_race_description ~read_is_sync:false
+              ~is_thread_entry:reported_access.is_thread_entry conflict
+          in
           let report_kind = ReadWriteRace conflict.snapshot in
           report_thread_safety_violation ~acc ~make_description ~report_kind reported_access )
   | Read _ | ContainerRead _ ->
@@ -689,17 +697,18 @@ let should_report_on_proc proc_name =
    may touch that memory loc. the abstraction of a location is an access
    path like x.f.g whose concretization is the set of memory cells
    that x.f.g may point to during execution *)
-let make_results_table summaries =
+let make_results_table ~thread_entries summaries =
   let open RacerDDomain in
-  let aggregate_post tenv procname acc {threads; accesses} =
+  let aggregate_post tenv procname ~is_thread_entry acc {threads; accesses} =
     AccessDomain.fold
-      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname} acc)
+      (fun snapshot acc -> ReportMap.add {threads; snapshot; tenv; procname; is_thread_entry} acc)
       accesses acc
   in
   List.fold summaries ~init:ReportMap.empty ~f:(fun acc (procname, summary) ->
-      if should_report_on_proc procname then
+      let is_thread_entry = Procname.Map.mem procname thread_entries in
+      if is_thread_entry || should_report_on_proc procname then
         let tenv = Exe_env.get_proc_tenv procname in
-        aggregate_post tenv procname acc summary
+        aggregate_post tenv procname ~is_thread_entry acc summary
       else acc )
 
 
@@ -733,20 +742,58 @@ let should_report_on_class (classname : Typ.Name.t) class_summaries =
       false
 
 
+(** map each procedure started as a new thread to one of the procedures starting it *)
+let get_thread_entries summaries =
+  List.fold summaries ~init:Procname.Map.empty
+    ~f:(fun acc (procname, {RacerDDomain.thread_entries}) ->
+      RacerDDomain.ThreadEntries.fold
+        (fun entry acc -> Procname.Map.add entry procname acc)
+        thread_entries acc )
+
+
+let captures_this_by_copy procname =
+  Attributes.load procname
+  |> Option.exists ~f:(fun {ProcAttributes.captured} ->
+      List.exists captured ~f:(fun {CapturedVar.pvar; capture_mode} ->
+          Pvar.is_this pvar && CapturedVar.equal_capture_mode capture_mode CapturedVar.ByValue ) )
+
+
 (** aggregate all of the procedures in the file env by their declaring class. this lets us analyze
-    each class individually *)
+    each class individually. Procedures started as new threads in the file may run in parallel with
+    any other procedure. A lambda started as a thread accesses the fields of the class starting it
+    through the captured [this], so it is aggregated with the procedures of that class, unless it
+    captures a copy of the object ([*this]). *)
 let aggregate_by_class {InterproceduralAnalysis.procedures; analyze_file_dependency} =
-  List.fold procedures ~init:Typ.Name.Map.empty ~f:(fun acc procname ->
-      Procname.get_class_type_name procname
-      |> Option.bind ~f:(fun classname ->
-          analyze_file_dependency procname |> AnalysisResult.to_option
-          |> Option.map ~f:(fun summary ->
-              Typ.Name.Map.update classname
-                (fun summaries_opt ->
-                  Some ((procname, summary) :: Option.value ~default:[] summaries_opt) )
-                acc ) )
-      |> Option.value ~default:acc )
-  |> Typ.Name.Map.filter should_report_on_class
+  let summaries =
+    List.filter_map procedures ~f:(fun procname ->
+        analyze_file_dependency procname |> AnalysisResult.to_option
+        |> Option.map ~f:(fun summary -> (procname, summary)) )
+  in
+  let thread_entries = get_thread_entries summaries in
+  let get_class procname =
+    let starter_class =
+      if Procname.is_lambda procname && not (captures_this_by_copy procname) then
+        Procname.Map.find_opt procname thread_entries |> Option.bind ~f:Procname.get_class_type_name
+      else None
+    in
+    IOption.if_none_evalopt starter_class ~f:(fun () -> Procname.get_class_type_name procname)
+  in
+  let class_map =
+    List.fold summaries ~init:Typ.Name.Map.empty
+      ~f:(fun acc (procname, (summary : RacerDDomain.summary)) ->
+        get_class procname
+        |> Option.value_map ~default:acc ~f:(fun classname ->
+            let summary =
+              if Procname.Map.mem procname thread_entries then
+                {summary with threads= RacerDDomain.ThreadsDomain.AnyThread}
+              else summary
+            in
+            Typ.Name.Map.update classname
+              (fun summaries_opt ->
+                Some ((procname, summary) :: Option.value ~default:[] summaries_opt) )
+              acc ) )
+  in
+  (thread_entries, Typ.Name.Map.filter should_report_on_class class_map)
 
 
 let get_synchronized_container_fields_of analyze tenv classname =
@@ -822,10 +869,10 @@ let analyze ({InterproceduralAnalysis.analyze_file_dependency} as file_t) =
     | _ ->
         Fn.id
   in
-  let class_map = aggregate_by_class file_t in
+  let thread_entries, class_map = aggregate_by_class file_t in
   Typ.Name.Map.fold
     (fun classname methods issue_log ->
-      make_results_table methods
+      make_results_table ~thread_entries methods
       |> synchronized_container_filter classname
       |> report_unsafe_accesses ~issue_log classname )
     class_map IssueLog.empty
