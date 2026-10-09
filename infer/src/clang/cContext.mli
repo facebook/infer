@@ -26,6 +26,13 @@ type var_to_destroy =
       * Clang_ast_t.named_decl_info
       * Clang_ast_t.qual_type
       * Clang_ast_t.var_decl_info )
+  | DecompositionDecl of
+      ( Clang_ast_t.decl_info
+      * Clang_ast_t.named_decl_info
+      * Clang_ast_t.qual_type
+      * Clang_ast_t.var_decl_info
+      * Clang_ast_t.decl list )
+      (** the variable holding the decomposed object of a structured binding declaration *)
   | CXXTemporary of cxx_temporary
 
 val pp_var_to_destroy : Format.formatter -> var_to_destroy -> unit

@@ -28,4 +28,12 @@ void minus3_Good() {
   const unsigned long i1 = 446744073709551614u;
   const auto d3 = i2 - i1;
 }
+
+// small arrays captured by value are captured as references to a copy, whose
+// size is unknown in the lambda
+char lambda_capture_array_by_value_Bad_FN() {
+  char a[4] = {0};
+  auto f = [a]() { return a[4]; };
+  return f();
+}
 } // namespace CppIsTricky

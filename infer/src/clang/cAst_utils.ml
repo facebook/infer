@@ -480,3 +480,54 @@ let get_captured_mode ~lci_capture_this ~lci_capture_kind =
         false
   in
   if is_by_ref then CapturedVar.ByReference else CapturedVar.ByValue
+
+
+type structured_binding =
+  | BindingExpr of Clang_ast_t.stmt
+  | BindingTemporary of {init: Clang_ast_t.stmt; qual_type: Clang_ast_t.qual_type}
+  | BindingReference
+  | BindingAlias
+
+let rec get_materialized_temporary_init (init : Clang_ast_t.stmt) =
+  match init with
+  | `ExprWithCleanups (stmt_info, [stmt], expr_info, cleanups_info) ->
+      get_materialized_temporary_init stmt
+      |> Option.map ~f:(fun (stmt, qual_type) ->
+          let expr_info = {expr_info with Clang_ast_t.ei_value_kind= `RValue} in
+          (`ExprWithCleanups (stmt_info, [stmt], expr_info, cleanups_info), qual_type) )
+  | `ImplicitCastExpr
+      (_, [stmt], _, {cei_cast_kind= `DerivedToBase | `UncheckedDerivedToBase | `NoOp}, _) ->
+      get_materialized_temporary_init stmt
+  | `MaterializeTemporaryExpr (_, [stmt], {ei_qual_type}, _) ->
+      Some (stmt, ei_qual_type)
+  | _ ->
+      None
+
+
+let get_structured_binding {Clang_ast_t.qt_type_ptr= binding_type_ptr}
+    {Clang_ast_t.binding_var; decomposed_decl; binding_expr} =
+  let is_reference_type type_ptr =
+    match get_desugared_type type_ptr with
+    | Some (LValueReferenceType _ | RValueReferenceType _) ->
+        true
+    | _ ->
+        false
+  in
+  match binding_var with
+  | None ->
+      Option.map binding_expr ~f:(fun expr -> BindingExpr expr)
+  | Some {vdi_init_expr} -> (
+    match Option.bind vdi_init_expr ~f:get_materialized_temporary_init with
+    | Some (init, qual_type) ->
+        Some (BindingTemporary {init; qual_type})
+    | None ->
+        let is_decomposed_reference =
+          match Option.bind decomposed_decl ~f:get_decl with
+          | Some (DecompositionDecl (_, _, {qt_type_ptr}, {vdi_init_expr}, _)) ->
+              is_reference_type qt_type_ptr
+              && Option.bind vdi_init_expr ~f:get_materialized_temporary_init |> Option.is_none
+          | _ ->
+              false
+        in
+        if is_reference_type binding_type_ptr || is_decomposed_reference then Some BindingReference
+        else Some BindingAlias )

@@ -19,11 +19,19 @@ type var_to_destroy =
       * Clang_ast_t.named_decl_info
       * Clang_ast_t.qual_type
       * Clang_ast_t.var_decl_info )
+  | DecompositionDecl of
+      ( Clang_ast_t.decl_info
+      * Clang_ast_t.named_decl_info
+      * Clang_ast_t.qual_type
+      * Clang_ast_t.var_decl_info
+      * Clang_ast_t.decl list )
   | CXXTemporary of cxx_temporary
 
 let pp_var_to_destroy fmt = function
   | VarDecl (_, {ni_name}, _, _) ->
       F.pp_print_string fmt ni_name
+  | DecompositionDecl _ ->
+      F.pp_print_string fmt "<decomposition>"
   | CXXTemporary {pvar} ->
       Pvar.pp Pp.text fmt pvar
 

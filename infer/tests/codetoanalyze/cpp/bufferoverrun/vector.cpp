@@ -283,3 +283,50 @@ void iterate_rvalue_ref(std::vector<int>&& v) {
     }
   };
 }
+
+void copy_if_many(int** children, int n) {
+  if (n > 1) {
+    int** copy = new int*[n];
+    for (int i = 0; i < n; i++) {
+      copy[i] = children[i];
+    }
+    delete[] copy;
+  }
+}
+
+struct ArrayOfVectors {
+  std::vector<int*> v[2];
+};
+
+void fill_from_array_of_vectors(ArrayOfVectors* a, int level) {
+  const int space = level == 0 ? a->v[0].size() + 1 : 2;
+  int** list = new int*[space];
+  int num = 0;
+  for (int which = 0; which < 2; which++) {
+    if (!a->v[which].empty()) {
+      if (level + which == 0) {
+        for (std::size_t i = 0; i < a->v[which].size(); i++) {
+          list[num++] = a->v[which][i];
+        }
+      } else {
+        list[num++] = nullptr;
+      }
+    }
+  }
+  assert(num <= space);
+  copy_if_many(list, num);
+  delete[] list;
+}
+
+// the sizes of the elements of an array of vectors are joined, and the
+// relation between num and space is lost
+void array_of_vectors_Good_FP(int level, int* p, int* q) {
+  ArrayOfVectors* a = new ArrayOfVectors();
+  if (q != nullptr) {
+    a->v[0].push_back(q);
+  }
+  if (a->v[0].empty()) {
+    a->v[0].push_back(p);
+  }
+  fill_from_array_of_vectors(a, level);
+}
