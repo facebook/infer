@@ -146,6 +146,11 @@ module ModeledField = struct
      and don't return a token; the receiver itself retains the block). *)
   let objc_attached_block =
     Fieldname.make ~is_weak:false swift_attached_handler_class "__infer_attached_block"
+
+
+  let weak_ptr_pointer = Fieldname.make pulse_model_type "__infer_weak_backing_pointer"
+
+  let weak_ptr_count = Fieldname.make pulse_model_type "__infer_weak_backing_count"
 end
 
 let fold_reachable_from ~f args astate =
@@ -164,6 +169,15 @@ let remove_allocation_attr_transitively arg_values astate =
     (Pp.seq ~sep:"; " AbstractValue.pp)
     arg_values ;
   fold_reachable_from ~f:AddressAttributes.remove_allocation_attr arg_values astate
+
+
+let forget_file_descriptors_passed_by_value args astate =
+  List.fold args ~init:astate ~f:(fun astate (value, typ) ->
+      match AddressAttributes.get_allocation_attr value astate with
+      | Some (FileDescriptor _, _) when not (Typ.is_pointer typ) ->
+          AddressAttributes.remove_allocation_attr value astate
+      | _ ->
+          astate )
 
 
 let eval_access_to_value_origin path ?must_be_valid_reason mode location addr_hist access astate =

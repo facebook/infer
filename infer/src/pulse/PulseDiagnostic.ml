@@ -167,8 +167,8 @@ let describe_allocation fmt = function
       F.pp_print_string fmt "async call"
   | HackBuilderResource class_name ->
       F.fprintf fmt "constructor `%a()`" HackClassName.pp class_name
-  | Memory FileDescriptor ->
-      F.pp_print_string fmt "`fopen()`"
+  | Memory (FileDescriptor proc_name) ->
+      F.fprintf fmt "`%a`" Procname.describe proc_name
   | Memory allocator ->
       F.fprintf fmt "`%a`" Attribute.pp_allocator allocator
 
@@ -180,14 +180,14 @@ let resource_type_s = function
       "awaitable"
   | HackBuilderResource _ ->
       "builder object"
-  | Memory FileDescriptor ->
+  | Memory (FileDescriptor _) ->
       "file descriptor"
   | Memory _ ->
       "memory"
 
 
 let resource_closed_s = function
-  | CSharpClass _ | JavaClass _ | Memory FileDescriptor ->
+  | CSharpClass _ | JavaClass _ | Memory (FileDescriptor _) ->
       "closed"
   | Awaitable ->
       "awaited"
@@ -1073,7 +1073,7 @@ let invalidation_titles (invalidation : Invalidation.t) =
   | CppDelete
   | CppDeleteArray
   | EndIterator
-  | FClose
+  | FClose _
   | GoneOutOfScope _
   | OptionalEmpty
   | StdVector _
@@ -1323,7 +1323,7 @@ let get_issue_type ~latent issue_type =
         IssueType.pulse_memory_leak_c
     | CppNew | CppNewArray ->
         IssueType.pulse_memory_leak_cpp
-    | FileDescriptor ->
+    | FileDescriptor _ ->
         IssueType.pulse_resource_leak
     | JavaResource _ | CSharpResource _ | HackBuilderResource _ | Awaitable | ObjCAlloc | SwiftAlloc
       ->
