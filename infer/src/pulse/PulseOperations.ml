@@ -19,6 +19,31 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
   let* astate =
     AddressAttributes.check_valid path ?must_be_valid_reason access_trace address astate
     |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
+        let astate =
+          match (invalidation : Invalidation.t) with
+          | (ComparedToNullInThisProcedure _ | ConstantDereference _)
+            when AbductiveDomain.is_read_from_pre_cell astate (address, history) ->
+              (* these only say that the address is null or another constant: for a pointer read
+                 from the pre-condition, this is an assumption on the caller's value, so record that
+                 it must be valid as [check_valid] does on successful accesses. All the null values
+                 of a path share one canonical address, hence the check on the pointer's history. *)
+              AddressAttributes.abduce_one address
+                (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
+                astate
+          | ComparedToNullInThisProcedure _
+          | ConstantDereference _
+          | CFree
+          | CppDelete
+          | CppDeleteArray
+          | EndIterator
+          | FClose
+          | GoneOutOfScope _
+          | OptionalEmpty
+          | StdVector _
+          | StdString _
+          | CppMap _ ->
+              astate
+        in
         ReportableError
           { diagnostic=
               Diagnostic.AccessToInvalidAddress
