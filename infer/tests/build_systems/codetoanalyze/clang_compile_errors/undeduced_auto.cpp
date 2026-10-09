@@ -80,6 +80,15 @@ int other_destructors_still_called_bad() {
   return *q;
 }
 
+// the hidden variable that holds the decomposed object keeps an undeduced type
+void decomposition_scope_exit_bad() {
+  S* p = nullptr;
+  {
+    auto [lo, hi] = get(UNDECLARED);
+  }
+  p->x = 1;
+}
+
 int function_scope_exit_ok() {
   S s{0};
   S* p = &s;
