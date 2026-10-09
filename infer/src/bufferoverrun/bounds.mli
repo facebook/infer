@@ -114,6 +114,10 @@ module Bound : sig
 
   val has_void_ptr_symb : t -> bool
 
+  val change_byte_unit : from:Z.t option -> to_:Z.t -> t -> t option
+  (** If the bound is exactly an offset or length symbol whose [byte_unit] is [from], return the
+      symbol counting the same quantity in units of [to_] bytes *)
+
   val are_similar : t -> t -> bool
 
   val subst_lb : t -> eval_sym -> t AbstractDomain.Types.bottom_lifted
