@@ -530,6 +530,13 @@ module Val = struct
     ; traces= Trace.(Set.add_elem location Through) v.traces }
 
 
+  let plus_array_offset : Location.t -> Itv.t -> t -> t =
+   fun location offset v ->
+    { v with
+      arrayblk= ArrayBlk.plus_offset v.arrayblk offset
+    ; traces= Trace.(Set.add_elem location Through) v.traces }
+
+
   let set_array_stride : Z.t -> t -> t =
    fun new_stride v ->
     PhysEqual.optim1 v ~res:{v with arrayblk= ArrayBlk.set_stride new_stride v.arrayblk}
@@ -563,11 +570,11 @@ module Val = struct
       let unsigned = Typ.is_unsigned_int typ in
       of_itv ~traces (Itv.of_normal_path ~unsigned ~non_int path)
     in
-    let ptr_to_c_array_alloc deref_path size =
+    let ptr_to_c_array_alloc deref_path ~stride size =
       let allocsite = Allocsite.make_symbol deref_path in
       let offset = Itv.zero in
       let traces = traces_of_loc (Loc.of_path deref_path) in
-      of_c_array_alloc allocsite ~stride:None ~offset ~size ~traces
+      of_c_array_alloc allocsite ~stride ~offset ~size ~traces
     in
     let ptr_to_normal_c_array elt =
       let deref_kind = SPath.Deref_CPointer in
@@ -576,18 +583,36 @@ module Val = struct
       let traces = traces_of_loc l in
       let arrayblk =
         let allocsite = Allocsite.make_symbol deref_path in
-        let stride =
+        let is_void = Typ.is_pointer_to_void typ in
+        let stride, byte_unit =
           match elt with
           | Some {Typ.desc= Tint ikind} ->
-              Itv.of_int (IntegerWidths.width_of_ikind integer_type_widths ikind)
+              (Itv.of_int (IntegerWidths.width_of_ikind integer_type_widths ikind / 8), None)
+          | _ when is_void ->
+              (Itv.one, None)
+          | Some {Typ.desc= Tstruct (CppClass _ as typename)} -> (
+            (* A pointer to a [std::array] may point into an array of [std::array]s, so its offset
+               and length count [std::array]s, which callers evaluate from their own byte offsets
+               and sizes. The models of the [std::array] methods recount them in elements. *)
+            match BufferOverrunTypModels.dispatch_std_array tenv typename with
+            | Some (CArray {length; stride= Some stride}) when not (IntLit.iszero length) ->
+                let size = Z.(IntLit.to_big_int length * of_int stride) in
+                (Itv.of_big_int size, Some size)
+            | _ ->
+                (Itv.nat, None) )
           | _ ->
-              Itv.nat
+              (* casts to pointers to integers recount the offset and length in bytes *)
+              (Itv.nat, None)
         in
-        let is_void = Typ.is_pointer_to_void typ in
+        let count_in_byte_unit itv =
+          Option.value_map byte_unit ~default:itv ~f:(fun to_ ->
+              Itv.change_byte_unit ~from:None ~to_ itv |> Option.value ~default:itv )
+        in
         let offset =
-          if SPath.is_cpp_vector_elem path then Itv.zero else Itv.of_offset_path ~is_void path
+          if SPath.is_cpp_vector_elem path then Itv.zero
+          else Itv.of_offset_path ~is_void path |> count_in_byte_unit
         in
-        let size = Itv.of_length_path ~is_void path in
+        let size = Itv.of_length_path ~is_void path |> count_in_byte_unit in
         ArrayBlk.make_c allocsite ~stride ~offset ~size
       in
       {bot with arrayblk; traces}
@@ -631,10 +656,10 @@ module Val = struct
           else ptr_to_normal_c_array (Some elt)
       | Tstruct typename -> (
         match BufferOverrunTypModels.dispatch tenv typename with
-        | Some (CArray {deref_kind; length}) ->
+        | Some (CArray {deref_kind; length; stride}) ->
             let deref_path = SPath.deref ~deref_kind path in
             let size = Itv.of_int_lit length in
-            ptr_to_c_array_alloc deref_path size
+            ptr_to_c_array_alloc deref_path ~stride size
         | Some CppStdVector ->
             let l = Loc.of_path (SPath.deref ~deref_kind:Deref_CPointer path) in
             let traces = traces_of_loc l in

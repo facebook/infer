@@ -135,6 +135,8 @@ module Val : sig
 
   val set_array_offset : Location.t -> Itv.t -> t -> t
 
+  val plus_array_offset : Location.t -> Itv.t -> t -> t
+
   val set_array_stride : Z.t -> t -> t
 
   val set_itv_updated_by_addition : t -> t
