@@ -11,6 +11,20 @@ module MF = MarkupFormatter
 
 type access = HilExp.t option MemoryAccess.t [@@deriving compare, equal]
 
+let get_pointee_typ (typ : Typ.t) =
+  match typ.desc with
+  | Tptr (typ, _) ->
+      Some typ
+  | Tstruct name when Typ.is_unique_pointer typ || Typ.is_shared_pointer typ -> (
+    match Typ.Name.get_template_spec_info name with
+    | Some (Typ.Template {args= TType typ :: _}) ->
+        Some typ
+    | _ ->
+        None )
+  | _ ->
+      None
+
+
 let get_access_typ tenv prev_typ (access : access) =
   let lookup tn = Tenv.lookup tenv tn in
   match access with
@@ -20,8 +34,8 @@ let get_access_typ tenv prev_typ (access : access) =
       Some typ
   | TakeAddress ->
       Some (Typ.mk (Tptr (prev_typ, Pk_pointer)))
-  | Dereference -> (
-    match prev_typ with {Typ.desc= Tptr (typ, _)} -> Some typ | _ -> None )
+  | Dereference ->
+      get_pointee_typ prev_typ
 
 
 type access_list = access list [@@deriving compare, equal]

@@ -40,6 +40,9 @@ val equal_across_threads : Tenv.t -> t -> t -> bool
 val root_class : t -> Typ.name option
 (** Class of the root variable of the expression representing the address *)
 
+val get_pointee_typ : Typ.t -> Typ.t option
+(** the type pointed to by a pointer or by a [std::unique_ptr] or [std::shared_ptr] *)
+
 val get_typ : Tenv.t -> t -> Typ.t option
 
 val make : FormalMap.t -> HilExp.t -> t option
