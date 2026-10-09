@@ -31,11 +31,15 @@ val empty : summary
 val join : summary -> summary -> summary
 
 val force_exit_program :
-     t InterproceduralAnalysis.t
+     ignore_leaks:bool
+  -> t InterproceduralAnalysis.t
   -> PathContext.t
   -> Location.t
   -> ExecutionDomain.t
   -> _ ExecutionDomain.base_t SatUnsat.t
+(** Summarize the state at a call to a function that does not return as [ExitProgram]. Leaks are
+    reported unless [ignore_leaks], which callers set when the call terminates the whole program, as
+    [exit()] or [abort()] do, and not when it only ends the calling thread. *)
 
 val pp : Pp.env -> Procname.t -> Format.formatter -> t -> unit
 
