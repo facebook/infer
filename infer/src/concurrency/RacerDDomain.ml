@@ -449,7 +449,8 @@ module OwnershipDomain = struct
 end
 
 module Attribute = struct
-  type t = Nothing | Functional | OnMainThread | LockHeld | Synchronized [@@deriving equal]
+  type t = Nothing | Functional | OnMainThread | LockHeld | LockHeldIfZero | Synchronized
+  [@@deriving equal]
 
   let pp fmt t =
     ( match t with
@@ -461,6 +462,8 @@ module Attribute = struct
           "OnMainThread"
       | LockHeld ->
           "LockHeld"
+      | LockHeldIfZero ->
+          "LockHeldIfZero"
       | Synchronized ->
           "Synchronized" )
     |> F.pp_print_string fmt
@@ -733,7 +736,12 @@ let release_lock (astate : t) =
   ; threads= ThreadsDomain.update_for_lock_use astate.threads }
 
 
-let lock_if_true ret_access_exp (astate : t) =
+let add_lock_attribute attribute ret_access_exp (astate : t) =
   { astate with
-    attribute_map= AttributeMapDomain.add ret_access_exp Attribute.LockHeld astate.attribute_map
+    attribute_map= AttributeMapDomain.add ret_access_exp attribute astate.attribute_map
   ; threads= ThreadsDomain.update_for_lock_use astate.threads }
+
+
+let lock_if_true = add_lock_attribute Attribute.LockHeld
+
+let lock_if_zero = add_lock_attribute Attribute.LockHeldIfZero
