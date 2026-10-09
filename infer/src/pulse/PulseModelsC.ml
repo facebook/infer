@@ -375,6 +375,24 @@ include struct
     @@ fun () -> check_valid str @@> check_valid accept @@> null_or_nonneg_non_det_ret ()
 
 
+  (* [strsep] returns NULL only when [*stringp] is NULL. Otherwise it returns [*stringp] and moves
+     [*stringp] past the next delimiter, or to NULL after the last token. An unknown [*stringp] is
+     not split on: pruning it to NULL would make dereferencing the result a manifest issue. *)
+  let strsep stringp delim : model =
+    start_model
+    @@ fun () ->
+    check_valid delim
+    @@>
+    let* str = load (to_aval stringp) in
+    let* str_value = as_constant_int str in
+    match str_value with
+    | Some 0 ->
+        assign_ret @= null
+    | _ ->
+        disj [store ~ref:(to_aval stringp) @= null; store ~ref:(to_aval stringp) @= fresh ()]
+        @@> assign_ret str
+
+
   let strstr haystack needle : model =
     start_model
     @@ fun () -> check_valid haystack @@> check_valid needle @@> null_or_nonneg_non_det_ret ()
@@ -736,6 +754,8 @@ let matchers : matcher list =
   ; -"strncpy" <>$ capt_arg_payload $+ capt_arg_payload $+ any_arg $--> strcpy
   ; -"strpbrk" <>$ capt_arg_payload $+ capt_arg_payload $--> strpbrk
   ; -"strrchr" <>$ capt_arg_payload $+ capt_arg_payload $--> strchr
+  ; +(fun _ name -> Config.pulse_nullability_annotations && String.equal name "strsep")
+    <>$ capt_arg_payload $+ capt_arg_payload $--> strsep
   ; -"strspn" <>$ capt_arg_payload $+ capt_arg_payload
     $--> compose2 valid_args2 (ignore_args2 non_det_ret)
   ; -"strstr" <>$ capt_arg_payload $+ capt_arg_payload $--> strstr

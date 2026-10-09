@@ -640,6 +640,46 @@ let call_aux disjunct_limit ({InterproceduralAnalysis.tenv} as analysis_data) pa
   (posts, (non_disj, contradiction))
 
 
+(** the posts of an unknown call to a declared-only C function or C++ method according to the
+    nullability of its returned pointer; the null case is invalidated like the null values of models
+    so that dereferencing it is reported *)
+let apply_return_nullability_annotation path call_loc callee_pname ~ret astate =
+  let unknown_post = [Ok (ContinueProgram astate)] in
+  if
+    Config.pulse_nullability_annotations && Language.curr_language_is Clang
+    && (Procname.is_c callee_pname || Procname.is_cpp_method callee_pname)
+  then
+    match (IRAttributes.load callee_pname, PulseOperations.read_id (fst ret) astate) with
+    | Some {ProcAttributes.is_defined= false; ret_type; ret_annots}, Some (ret_val, _)
+      when Typ.is_pointer ret_type ->
+        if Annotations.ia_is_nullable ret_annots then
+          let hist =
+            ValueHistory.singleton
+              (Call
+                 { f=
+                     Model
+                       (F.asprintf "%a (null case of _Nullable return)" Procname.pp callee_pname)
+                 ; location= call_loc
+                 ; in_call= ValueHistory.epoch
+                 ; timestamp= path.PathContext.timestamp } )
+          in
+          let null =
+            let astate = PulseOperations.write_id (fst ret) (ret_val, hist) astate in
+            let<++> astate = PulseArithmetic.and_eq_int ret_val IntLit.zero astate in
+            PulseOperations.invalidate path
+              (StackAddress (Var.of_id (fst ret), hist))
+              call_loc (ConstantDereference IntLit.zero) (ret_val, hist) astate
+          in
+          unknown_post @ null
+        else if Annotations.ia_is_nonnull ret_annots then
+          let<++> astate = PulseArithmetic.and_positive ret_val astate in
+          astate
+        else unknown_post
+    | _ ->
+        unknown_post
+  else unknown_post
+
+
 let call_aux_unknown limit ({InterproceduralAnalysis.tenv} as analysis_data) path call_loc
     callee_pname ~ret ~actuals ~formals_opt call_kind call_flags (astate : AbductiveDomain.t)
     non_disj_caller =
@@ -702,7 +742,9 @@ let call_aux_unknown limit ({InterproceduralAnalysis.tenv} as analysis_data) pat
     |> Option.value_map
          ~default:([Ok (ContinueProgram astate_unknown)], (non_disj_caller, None))
          ~f:(unknown_objc_nil_messaging astate_unknown callee_pname)
-  else ([Ok (ContinueProgram astate_unknown)], (non_disj_caller, None))
+  else
+    ( apply_return_nullability_annotation path call_loc callee_pname ~ret astate_unknown
+    , (non_disj_caller, None) )
 
 
 let add_need_dynamic_type_specialization needs execution_states =

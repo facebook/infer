@@ -213,7 +213,7 @@ and type_desc_of_c_type ?attr_info ?from_block translate_decl tenv c_type : Typ.
       (qual_type_to_sil_type ?from_block translate_decl tenv qual_type).Typ.desc
   | RecordType (_, pointer) | EnumType (_, pointer) ->
       decl_ptr_to_type_desc translate_decl tenv pointer
-  | ElaboratedType type_info -> (
+  | ElaboratedType (type_info, _) -> (
     match type_info.Clang_ast_t.ti_desugared_type with
     (* TODO desugar to qualtype *)
     | Some type_ptr ->

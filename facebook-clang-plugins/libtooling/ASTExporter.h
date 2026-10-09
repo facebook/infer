@@ -466,6 +466,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   //  DECLARE_VISITOR(ComplexType)
   DECLARE_VISITOR(DecltypeType)
   //  DECLARE_VISITOR(DependentSizedExtVectorType)
+  DECLARE_VISITOR(ElaboratedType)
   DECLARE_VISITOR(FunctionType)
   //  DECLARE_VISITOR(FunctionNoProtoType)
   DECLARE_VISITOR(FunctionProtoType)
@@ -480,6 +481,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(ReferenceType)
   DECLARE_VISITOR(TagType)
   DECLARE_VISITOR(TypedefType)
+  DECLARE_VISITOR(UsingType)
 
   void dumpAttrKind(attr::Kind Kind);
   void dumpAttr(const Attr *A);
@@ -4837,6 +4839,7 @@ int ASTExporter<ATDWriter>::TypeWithChildInfoTupleSize() {
 //@atd type type_info = {
 //@atd   pointer : pointer;
 //@atd   ?desugared_type : type_ptr option;
+//@atd   ?aliased_type : qual_type option;
 //@atd } <ocaml field_prefix="ti_">
 //@atd #define type_with_child_info type_info * qual_type
 //@atd #define qual_type_with_child_info type_info * qual_type
@@ -4845,7 +4848,12 @@ void ASTExporter<ATDWriter>::VisitType(const Type *T) {
   // NOTE: T can (and will) be null here!!
 
   bool HasDesugaredType = T && T->getUnqualifiedDesugaredType() != T;
-  ObjectScope Scope(OF, 1 + HasDesugaredType);
+  // The aliased type keeps sugar such as nullability that the desugared type
+  // drops; it is exported for alias template specializations only, as the
+  // other specializations are numerous and do not need it.
+  const auto *TST = dyn_cast_or_null<TemplateSpecializationType>(T);
+  bool IsTypeAlias = TST && TST->isTypeAlias();
+  ObjectScope Scope(OF, 1 + HasDesugaredType + IsTypeAlias);
 
   OF.emitTag("pointer");
   dumpPointer(T);
@@ -4853,6 +4861,11 @@ void ASTExporter<ATDWriter>::VisitType(const Type *T) {
   if (HasDesugaredType) {
     OF.emitTag("desugared_type");
     dumpPointerToType(T->getUnqualifiedDesugaredType());
+  }
+
+  if (IsTypeAlias) {
+    OF.emitTag("aliased_type");
+    dumpQualType(TST->getAliasedType());
   }
 }
 
@@ -5089,6 +5102,31 @@ void ASTExporter<ATDWriter>::VisitDecltypeType(const DecltypeType *T) {
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::ElaboratedTypeTupleSize() {
+  return TypeTupleSize() + 1;
+}
+//@atd #define elaborated_type_tuple type_tuple * elaborated_type_info
+//@atd type elaborated_type_info = {
+//@atd   ?named_type : qual_type option;
+//@atd } <ocaml field_prefix="eti_">
+// The named type keeps sugar such as nullability that the desugared type
+// drops; it is exported for aliases only, as other named types are numerous
+// and do not need it.
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitElaboratedType(const ElaboratedType *T) {
+  VisitType(T);
+  QualType NamedType = T->getNamedType();
+  const Type *NT = NamedType.getTypePtr();
+  const auto *TST = dyn_cast<TemplateSpecializationType>(NT);
+  bool IsAlias = isa<TypedefType, UsingType>(NT) || (TST && TST->isTypeAlias());
+  ObjectScope Scope(OF, IsAlias);
+  if (IsAlias) {
+    OF.emitTag("named_type");
+    dumpQualType(NamedType);
+  }
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::FunctionTypeTupleSize() {
   return TypeTupleSize() + 1;
 }
@@ -5281,6 +5319,17 @@ void ASTExporter<ATDWriter>::VisitTypedefType(const TypedefType *T) {
   dumpQualType(T->desugar());
   OF.emitTag("decl_ptr");
   dumpPointer(T->getDecl());
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::UsingTypeTupleSize() {
+  return TypeWithChildInfoTupleSize();
+}
+//@atd #define using_type_tuple type_with_child_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitUsingType(const UsingType *T) {
+  VisitType(T);
+  dumpQualType(T->desugar());
 }
 
 //===----------------------------------------------------------------------===//

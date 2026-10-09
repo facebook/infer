@@ -1259,6 +1259,8 @@
         {
           "pointer" : 29,
           "desugared_type" : 8
+        },
+        {
         }
       )>,
       <"FunctionProtoType" : (

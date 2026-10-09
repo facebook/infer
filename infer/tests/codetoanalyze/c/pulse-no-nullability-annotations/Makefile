@@ -5,21 +5,16 @@
 
 TESTS_DIR = ../../..
 
+# The nullability annotation tests of c/pulse without --pulse-nullability-annotations
+
 CLANG_OPTIONS = -c
 INFER_OPTIONS = \
   --pulse-only --debug-exceptions --project-root $(TESTS_DIR) \
   --pulse-report-issues-for-tests --no-pulse-force-continue \
-  --pulse-eternal \
-  --pulse-nullability-annotations --pulse-skip-procedures nullable_return_skipped \
-  --pulse-report-issues-reachable-from entry_point \
-  --pulse-taint-config .infertaintconfig \
-  --pulse-transitive-access-config transitive-access.conf \
   --jobs 1 \
 
 INFERPRINT_OPTIONS = --issues-tests
 
-SOURCES = $(wildcard *.c */*.c)
+SOURCES = ../pulse/nullable_return.c ../pulse/strsep.c
 
 include $(TESTS_DIR)/clang.make
-
-infer-out$(TEST_SUFFIX)/report.json: .inferconfig

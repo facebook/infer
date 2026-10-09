@@ -2720,6 +2720,21 @@ and ( pulse_monitor_transitive_callees
   , pulse_transitive_access_verbose )
 
 
+and pulse_nullability_annotations =
+  CLOpt.mk_bool ~long:"pulse-nullability-annotations" ~default:false
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "Use the nullability annotations of the return types of C functions and C++ methods that are \
+     declared but not defined, and so have no summary, in calls from C, C++ and Objective-C code: \
+     a call may return null when the returned pointer is annotated $(b,_Nullable) or \
+     $(b,_Nullable_result), and returns a non-null pointer when it is annotated $(b,_Nonnull), \
+     including in $(b,#pragma clang assume_nonnull) regions, or when the function has the \
+     $(b,returns_nonnull) attribute. Annotations written in typedefs and C++ type aliases, \
+     including alias templates, count. Calls to Objective-C methods and calls of blocks are not \
+     concerned. Also models $(b,strsep), which returns null only when its string is null, and the \
+     Objective-C runtime functions that copy a list, such as $(b,class_copyPropertyList), which \
+     return null only after setting the count to 0."
+
+
 and pulse_nullsafe_report_npe =
   CLOpt.mk_bool ~long:"pulse-nullsafe-report-npe" ~default:true
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4765,6 +4780,8 @@ and pulse_models_for_erlang = RevList.to_list !pulse_models_for_erlang
 and pulse_monitor_transitive_callees = !pulse_monitor_transitive_callees
 
 and pulse_monitor_transitive_missed_captures = !pulse_monitor_transitive_missed_captures
+
+and pulse_nullability_annotations = !pulse_nullability_annotations
 
 and pulse_nullsafe_report_npe = !pulse_nullsafe_report_npe
 
