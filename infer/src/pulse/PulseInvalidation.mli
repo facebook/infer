@@ -13,9 +13,11 @@ type std_vector_function =
   | Clear
   | Emplace
   | EmplaceBack
+  | Erase
   | Insert
   | PushBack
   | Reserve
+  | Resize
   | ShrinkToFit
 [@@deriving compare, equal, yojson_of]
 
