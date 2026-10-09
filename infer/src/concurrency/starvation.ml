@@ -172,7 +172,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     else Domain.set_non_null formals lhs_access_exp astate
 
 
-  let do_call {interproc= {proc_desc; tenv; analyze_dependency}; formals} lhs callee actuals loc
+  let do_call ?(ignore_lock_state = false) ?release_held_locks
+      {interproc= {proc_desc; tenv; analyze_dependency}; formals} lhs callee actuals loc
       (astate : Domain.t) =
     let open Domain in
     let procname = Procdesc.get_proc_name proc_desc in
@@ -205,7 +206,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         Some (make_ret_attr (Looper ForUIThread))
       else None
     in
-    let get_callee_summary () = analyze_dependency callee |> AnalysisResult.to_option in
+    let get_callee_summary () =
+      analyze_dependency callee |> AnalysisResult.to_option
+      |> Option.map ~f:(fun (summary : summary) ->
+          if ignore_lock_state then {summary with lock_state= LockState.top} else summary )
+    in
     let treat_handler_constructor () =
       if StarvationModels.is_handler_constructor tenv callee actuals then
         match actuals_acc_exps with
@@ -269,7 +274,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
       |> Option.map ~f:(fun summary ->
           let subst = Lock.make_subst formals actuals in
           let callsite = CallSite.make callee loc in
-          Domain.integrate_summary ~tenv ~procname ~lhs ~subst formals callsite astate summary )
+          Domain.integrate_summary ?release_held_locks ~tenv ~procname ~lhs ~subst formals callsite
+            astate summary )
     in
     IList.eval_until_first_some
       [ treat_handler_constructor
@@ -280,6 +286,99 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     |> Option.value ~default:astate
 
 
+  let is_cpp_constructor = function
+    | Procname.ObjC_Cpp {kind= CPPConstructor _} ->
+        true
+    | _ ->
+        false
+
+
+  let is_rooted_at_formal_or_global formals acc_exp =
+    let ((var, _) as base) = HilExp.AccessExpression.get_base acc_exp in
+    Var.is_global var || FormalMap.is_formal base formals
+
+
+  (** Like [do_call], but infers scoped guards from summaries. A constructor called on a local
+      object, or a call returning one by value, that leaves exactly one lock held which the caller
+      can express makes the object a guard of that lock if its destructor releases exactly one lock.
+      Other locks left held by constructing an object not rooted at a formal or a global are
+      released at once, as their release through the object cannot be expressed. A method called on
+      a guard that releases (or acquires) exactly one lock the caller cannot express, ie one reached
+      through the guard, unlocks (or locks) the guard. *)
+  let do_call_with_inferred_guards
+      ({interproc= {proc_desc; tenv; analyze_dependency}; formals} as analysis_data)
+      ~assign_last_arg lhs callee actuals loc (astate : Domain.t) =
+    let procname = Procdesc.get_proc_name proc_desc in
+    let get_lock_state pname =
+      analyze_dependency pname |> AnalysisResult.to_option
+      |> Option.map ~f:(fun (summary : Domain.summary) -> summary.lock_state)
+    in
+    let lock_in_caller lock = Domain.Lock.(apply_subst (make_subst formals actuals) lock) in
+    let destructor_releases_one_lock (obj : HilExp.t) =
+      match obj with
+      | AccessExpression
+          (AddressOf (Base (_, {Typ.desc= Tstruct name | Tptr ({desc= Tstruct name}, _)}))) ->
+          Tenv.lookup tenv name
+          |> Option.bind ~f:(fun ({methods} : Struct.t) ->
+              List.find_map methods ~f:(fun meth ->
+                  let pname = Struct.name_of_tenv_method meth in
+                  Option.some_if (Procname.is_destructor pname) pname ) )
+          |> Option.bind ~f:get_lock_state
+          |> Option.exists ~f:(fun lock_state ->
+              Option.is_some (Domain.LockState.get_single_unlocked_lock lock_state) )
+      | _ ->
+          false
+    in
+    let is_constructor = is_cpp_constructor callee in
+    let initialised_object =
+      if is_constructor then List.hd actuals
+      else if assign_last_arg then List.last actuals
+      else None
+    in
+    match (callee, actuals) with
+    | Procname.ObjC_Cpp {kind= CPPDestructor _}, guard :: _ when Domain.is_guard astate guard ->
+        let astate = do_call ~ignore_lock_state:true analysis_data lhs callee actuals loc astate in
+        Domain.remove_guard astate guard
+    | Procname.ObjC_Cpp {kind= CPPMethod _}, guard :: _ when Domain.is_guard astate guard ->
+        let astate = do_call analysis_data lhs callee actuals loc astate in
+        let lock_state = get_lock_state callee in
+        let has_single_guard_lock get_single_lock =
+          Option.bind lock_state ~f:get_single_lock
+          |> Option.exists ~f:(fun lock -> Option.is_none (lock_in_caller lock))
+        in
+        if has_single_guard_lock Domain.LockState.get_single_unlocked_lock then
+          Domain.unlock_guard astate guard
+        else if has_single_guard_lock Domain.LockState.get_single_held_lock then
+          Domain.lock_guard ~procname ~loc tenv astate guard
+        else astate
+    | _ -> (
+      match initialised_object with
+      | Some obj
+        when not (get_access_expr obj |> Option.exists ~f:(is_rooted_at_formal_or_global formals))
+        -> (
+          let guard_lock =
+            match (obj : HilExp.t) with
+            | AccessExpression (AddressOf (Base (ProgramVar _, _))) ->
+                get_lock_state callee
+                |> Option.bind ~f:Domain.LockState.get_single_held_lock
+                |> Option.bind ~f:lock_in_caller
+                |> Option.filter ~f:(fun _ -> destructor_releases_one_lock obj)
+            | _ ->
+                None
+          in
+          match guard_lock with
+          | Some lock ->
+              let astate =
+                do_call ~ignore_lock_state:true analysis_data lhs callee actuals loc astate
+              in
+              Domain.add_guard ~acquire_now:true ~procname ~loc tenv astate obj lock
+          | None ->
+              do_call ~release_held_locks:is_constructor analysis_data lhs callee actuals loc astate
+          )
+      | _ ->
+          do_call analysis_data lhs callee actuals loc astate )
+
+
   let do_metadata (metadata : Sil.instr_metadata) astate =
     match metadata with ExitScope (vars, _) -> Domain.remove_dead_vars astate vars | _ -> astate
 
@@ -287,7 +386,14 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
   let do_load tenv formals ~lhs rhs_exp rhs_typ (astate : Domain.t) =
     let lhs_var = fst lhs in
     let add_deref = match (lhs_var : Var.t) with LogicalVar _ -> true | ProgramVar _ -> false in
-    let rhs_hil_exp = hilexp_of_sil ~add_deref astate rhs_exp rhs_typ in
+    let rhs_hil_exp =
+      match hilexp_of_sil ~add_deref astate rhs_exp rhs_typ with
+      | AccessExpression acc_exp as hil_exp ->
+          Domain.FieldAliases.get acc_exp astate.field_aliases
+          |> Option.value_map ~default:hil_exp ~f:(fun alias -> HilExp.AccessExpression alias)
+      | hil_exp ->
+          hil_exp
+    in
     let astate =
       get_access_expr_or_const rhs_hil_exp
       |> Option.value_map ~default:astate ~f:(fun acc_exp ->
@@ -295,6 +401,46 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     in
     let lhs_hil_acc_exp = HilExp.AccessExpression.base lhs in
     do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate
+
+
+  let do_field_store formals typ lhs_acc_exp rhs_exp (astate : Domain.t) =
+    let stored_pointer =
+      match (lhs_acc_exp : HilExp.AccessExpression.t) with
+      | FieldOffset _ when Typ.is_pointer typ && is_rooted_at_formal_or_global formals lhs_acc_exp
+        ->
+          get_access_expr rhs_exp |> Option.filter ~f:(is_rooted_at_formal_or_global formals)
+      | _ ->
+          None
+    in
+    { astate with
+      field_aliases= Domain.FieldAliases.assign lhs_acc_exp stored_pointer astate.field_aliases }
+
+
+  (** the callee may store into the memory reachable from its actuals, eg [this->mutex_] through
+      [this] or through another pointer to the same object *)
+  let forget_field_aliases_reachable_from tenv actuals (astate : Domain.t) =
+    let forget_fields_of_pointee field_aliases actual =
+      match
+        get_access_expr actual
+        |> Option.bind ~f:(fun exp -> HilExp.AccessExpression.get_typ exp tenv)
+      with
+      | Some {Typ.desc= Tptr ({desc= Tstruct name}, _)} ->
+          Domain.FieldAliases.forget_fields field_aliases ~f:(fun field ->
+              Tenv.mem_supers tenv name ~f:(fun super _ ->
+                  Typ.Name.equal super (Fieldname.get_class_name field) ) )
+      | _ ->
+          field_aliases
+    in
+    let field_aliases =
+      List.fold actuals ~init:astate.field_aliases ~f:(fun field_aliases actual ->
+          let field_aliases = forget_fields_of_pointee field_aliases actual in
+          get_access_expr actual
+          |> Option.bind ~f:(fun acc_exp ->
+              HilExp.AccessExpression.add_access acc_exp MemoryAccess.Dereference )
+          |> Option.value_map ~default:field_aliases ~f:(fun pointee ->
+              Domain.FieldAliases.assign pointee None field_aliases ) )
+    in
+    {astate with field_aliases}
 
 
   let do_cast tenv formals id base_typ actuals astate =
@@ -369,6 +515,11 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         hilexp_of_sil ~add_deref:true astate e1 (Typ.mk_ptr typ)
         |> get_access_expr
         |> Option.value_map ~default:astate ~f:(fun lhs_hil_acc_exp ->
+            let astate =
+              if is_cpp_constructor procname then
+                do_field_store formals typ lhs_hil_acc_exp rhs_hil_exp astate
+              else astate
+            in
             do_assignment tenv formals lhs_hil_acc_exp rhs_hil_exp astate )
     | Call (_, Const (Cfun callee), actuals, _, _)
       when should_skip_analysis tenv callee (hilexp_of_sils ~add_deref:false astate actuals) ->
@@ -379,9 +530,10 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
     | Call ((id, typ), Const (Cfun callee), fn_ptr :: fn_args, loc, _)
       when Procname.equal callee BuiltinDecl.__call_c_function_ptr ->
         do_function_pointer_call analysis_data loc id typ fn_ptr fn_args astate
-    | Call ((id, typ), Const (Cfun callee), sil_actuals, loc, _) -> (
+    | Call ((id, typ), Const (Cfun callee), sil_actuals, loc, {CallFlags.cf_assign_last_arg}) -> (
         let ret_base = (Var.of_id id, typ) in
         let actuals = hilexp_of_sils ~add_deref:false astate sil_actuals in
+        let astate = forget_field_aliases_reachable_from tenv actuals astate in
         match get_lock_effect callee actuals with
         | Lock locks ->
             do_lock locks loc astate
@@ -400,7 +552,7 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
             Domain.unlock_guard astate guard
         | GuardDestroy guard ->
             Domain.remove_guard astate guard
-        | LockedIfTrue _ | GuardLockedIfTrue _ ->
+        | LockedIfTrue _ | LockedIfZero _ | GuardLockedIfTrue _ ->
             astate
         | NoEffect when is_synchronized_library_call tenv callee ->
             (* model a synchronized call without visible internal behaviour *)
@@ -422,7 +574,8 @@ module TransferFunctions (CFG : ProcCfg.S) = struct
         | NoEffect ->
             (* in C++/Obj C we only care about deadlocks, not starvation errors *)
             let ret_exp = HilExp.AccessExpression.base ret_base in
-            do_call analysis_data ret_exp callee actuals loc astate )
+            do_call_with_inferred_guards analysis_data ~assign_last_arg:cf_assign_last_arg ret_exp
+              callee actuals loc astate )
     | Call ((id, _), _, _, _, _) ->
         (* call havocs LHS *)
         Domain.remove_dead_vars astate [Var.of_id id]
@@ -695,7 +848,7 @@ end = struct
       source_map
 end
 
-let should_report_deadlock_on_current_proc current_elem endpoint_elem =
+let should_report_deadlock_on_current_proc ~found_by_other_side current_elem endpoint_elem =
   let open Domain in
   (not Config.deduplicate)
   ||
@@ -710,10 +863,15 @@ let should_report_deadlock_on_current_proc current_elem endpoint_elem =
       (* first elem is a class object (see [lock_of_class]), so always report because the
          reverse ordering on the events will not occur since we don't search the class for static locks *)
       List.exists ~f:Lock.is_class_object endpoint_locks
+      || (not (found_by_other_side ()))
       ||
       match List.compare Lock.compare_wrt_reporting endpoint_locks current_locks with
       | 0 ->
-          Location.compare current_elem.CriticalPair.loc endpoint_elem.CriticalPair.loc < 0
+          (* the events of two calls to the same procedure have the same location *)
+          [%compare: Location.t * Lock.t list]
+            (current_elem.CriticalPair.loc, current_locks)
+            (endpoint_elem.CriticalPair.loc, endpoint_locks)
+          < 0
       | c ->
           c < 0 )
 
@@ -735,25 +893,81 @@ let should_report attrs =
   should_report' procname
 
 
-let fold_reportable_summaries analyze_ondemand tenv clazz ~init ~f =
-  let methods =
-    Tenv.lookup tenv clazz
-    |> Option.value_map ~default:[] ~f:(fun tstruct -> tstruct.Struct.methods)
-  in
-  let f acc mthd =
-    Attributes.load mthd
-    |> Option.value_map ~default:acc ~f:(fun other_attrs ->
-        if should_report other_attrs then
-          analyze_ondemand mthd
-          |> Option.map ~f:(fun payload -> (mthd, payload))
-          |> Option.fold ~init:acc ~f
-        else acc )
-  in
-  let methods = List.map methods ~f:Struct.name_of_tenv_method in
-  List.fold methods ~init ~f
+let get_class_methods tenv clazz =
+  Tenv.lookup tenv clazz
+  |> Option.value_map ~default:[] ~f:(fun tstruct ->
+      List.map tstruct.Struct.methods ~f:Struct.name_of_tenv_method )
 
 
 let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access attrs) Private
+
+(* initializers of globals normally run before any thread is started *)
+let is_global_initializer pname = Option.is_some (Procname.get_global_name_of_initializer pname)
+
+(** the summary of [pname] if it can be the other side of a report *)
+let get_reportable_summary analyze_ondemand pname =
+  Attributes.load pname
+  |> Option.bind ~f:(fun attrs ->
+      if should_report attrs && not (is_private attrs || is_global_initializer pname) then
+        analyze_ondemand pname
+      else None )
+
+
+(** the reportable procedures of the file under analysis, with their critical pairs indexed by the
+    locks they hold, so that the pairs holding a lock equal across threads to a given lock are among
+    those indexed by it *)
+module FilePeers : sig
+  type t
+
+  val empty : t
+
+  val make : Domain.summary Procname.Map.t -> t
+
+  val mem : Procname.t -> t -> bool
+
+  val fold_pairs_holding :
+       Tenv.t
+    -> Domain.Lock.t
+    -> t
+    -> init:'a
+    -> f:(Procname.t -> Domain.CriticalPair.t -> 'a -> 'a)
+    -> 'a
+end = struct
+  module LockMap = PrettyPrintable.MakePPMap (Domain.Lock)
+
+  type t =
+    { summaries: Domain.summary Procname.Map.t
+    ; pairs_by_held_lock: (Procname.t * Domain.CriticalPair.t) list LockMap.t }
+
+  let empty = {summaries= Procname.Map.empty; pairs_by_held_lock= LockMap.empty}
+
+  let make summaries =
+    let open Domain in
+    let add_pair pname tenv (pair : CriticalPair.t) pairs_by_held_lock =
+      Acquisitions.elements pair.elem.acquisitions
+      |> List.map ~f:(fun (acquisition : Acquisition.t) ->
+          Lock.normalise_across_threads tenv acquisition.elem.lock )
+      |> List.dedup_and_sort ~compare:Lock.compare
+      |> List.fold ~init:pairs_by_held_lock ~f:(fun acc lock ->
+          LockMap.update lock
+            (fun pairs -> Some ((pname, pair) :: Option.value pairs ~default:[]))
+            acc )
+    in
+    let add_summary pname summary acc =
+      fold_critical_pairs_of_summary (add_pair pname (Exe_env.get_proc_tenv pname)) summary acc
+    in
+    { summaries
+    ; pairs_by_held_lock=
+        Procname.Map.fold add_summary summaries LockMap.empty |> LockMap.map List.rev }
+
+
+  let mem pname {summaries} = Procname.Map.mem pname summaries
+
+  let fold_pairs_holding tenv lock {pairs_by_held_lock} ~init ~f =
+    LockMap.find_opt (Domain.Lock.normalise_across_threads tenv lock) pairs_by_held_lock
+    |> Option.value ~default:[]
+    |> List.fold ~init ~f:(fun acc (pname, pair) -> f pname pair acc)
+end
 
 (* Note about how many times we report a deadlock: normally twice, at each trace starting point.
    Due to the fact we look for deadlocks in the summaries of the class at the root of a path,
@@ -761,12 +975,27 @@ let is_private attrs = ProcAttributes.equal_access (ProcAttributes.get_access at
    then the root is an identifier of type java.lang.Class and (b) when the lock belongs to an
    inner class but this is no longer obvious in the path, because of nested-class path normalisation.
    The net effect of the above issues is that we will only see these locks in conflicting pairs
-   once, as opposed to twice with all other deadlock pairs. *)
+   once, as opposed to twice with all other deadlock pairs. For C/C++/ObjC, we also look in the
+   summaries of the procedures of the current file, so a deadlock with a procedure of another file
+   may also be seen only once. *)
+
+(** whether reporting on [other_pname] also finds its deadlock with the current procedure [pname] on
+    [other_lock], so that only one of them needs to report it. For C/C++/ObjC, it only searches the
+    procedures of the file of [other_pname] ([file_peers] if [other_pname] is one of them) and the
+    methods of the class at the root of the lock. *)
+let is_found_by_other_side tenv ~file_peers pname other_pname other_lock =
+  Config.starvation_whole_program
+  || (not (Procname.is_clang pname))
+  || FilePeers.mem other_pname file_peers
+  || Domain.Lock.root_class other_lock
+     |> Option.exists ~f:(fun clazz ->
+         List.mem (get_class_methods tenv clazz) pname ~equal:Procname.equal )
+
 
 (** report warnings possible on the parallel composition of two threads/critical pairs
     [should_report_starvation] means [pair] is on the UI thread and not on a constructor *)
-let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lock other_pname
-    other_pair report_map =
+let report_on_parallel_composition_with_file_peers ~file_peers ~should_report_starvation tenv pattrs
+    pair lock other_pname other_pair report_map =
   if is_private pattrs || Attributes.load other_pname |> Option.exists ~f:is_private then report_map
   else
     let open Domain in
@@ -806,7 +1035,11 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
           ReportMap.add_starvation tenv pattrs loc ltr error_message report_map
       | LockAcquire _ -> (
         match CriticalPair.may_deadlock tenv ~lhs:pair ~lhs_lock:lock ~rhs:other_pair with
-        | Some other_lock when should_report_deadlock_on_current_proc pair other_pair ->
+        | Some other_lock
+          when should_report_deadlock_on_current_proc
+                 ~found_by_other_side:(fun () ->
+                   is_found_by_other_side tenv ~file_peers pname other_pname other_lock )
+                 pair other_pair ->
             let error_message =
               Format.asprintf
                 "%a (Trace 1) and %a (Trace 2) acquire locks %a and %a in reverse orders." pname_pp
@@ -821,7 +1054,12 @@ let report_on_parallel_composition ~should_report_starvation tenv pattrs pair lo
     else report_map
 
 
-let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) report_map =
+let report_on_parallel_composition =
+  report_on_parallel_composition_with_file_peers ~file_peers:FilePeers.empty
+
+
+let report_on_pair_with_file_peers ~analyze_ondemand ~file_peers tenv pattrs
+    (pair : Domain.CriticalPair.t) report_map =
   let open Domain in
   let pname = ProcAttributes.get_proc_name pattrs in
   let event = pair.elem.event in
@@ -936,33 +1174,55 @@ let report_on_pair ~analyze_ondemand tenv pattrs (pair : Domain.CriticalPair.t) 
           ReportMap.add_deadlock tenv pattrs loc ltr error_message report_map
       | None when Config.starvation_whole_program ->
           report_map
+      | None when Acquisitions.is_empty pair.elem.acquisitions && not should_report_starvation ->
+          (* a deadlock needs the other thread to take a lock held in [pair] *)
+          report_map
+      | None when is_global_initializer pname ->
+          report_map
       | None ->
           List.fold locks ~init:report_map ~f:(fun acc lock ->
+              let report_on_other_pair =
+                report_on_parallel_composition_with_file_peers ~file_peers ~should_report_starvation
+                  tenv pattrs pair lock
+              in
+              let acc =
+                FilePeers.fold_pairs_holding tenv lock file_peers ~init:acc ~f:report_on_other_pair
+              in
               Lock.root_class lock
-              |> Option.value_map ~default:acc ~f:(fun other_class ->
-                  (* get the class of the root variable of the lock in the lock acquisition
-                        and retrieve all the summaries of the methods of that class;
-                        then, report on the parallel composition of the current pair and any pair in these
-                        summaries that can indeed run in parallel *)
-                  fold_reportable_summaries analyze_ondemand tenv other_class ~init:acc
-                    ~f:(fun acc (other_pname, summary) ->
-                      Domain.fold_critical_pairs_of_summary
-                        (report_on_parallel_composition ~should_report_starvation tenv pattrs pair
-                           lock other_pname )
-                        summary acc ) ) ) )
+              |> Option.value_map ~default:[] ~f:(get_class_methods tenv)
+              |> List.fold ~init:acc ~f:(fun acc other_pname ->
+                  if FilePeers.mem other_pname file_peers then acc
+                  else
+                    get_reportable_summary analyze_ondemand other_pname
+                    |> Option.fold ~init:acc ~f:(fun acc summary ->
+                        Domain.fold_critical_pairs_of_summary
+                          (report_on_other_pair other_pname)
+                          summary acc ) ) ) )
   | _ ->
       report_map
 
 
+let report_on_pair = report_on_pair_with_file_peers ~file_peers:FilePeers.empty
+
 let reporting {InterproceduralAnalysis.procedures; analyze_file_dependency} =
   if Config.starvation_whole_program then IssueLog.empty
   else
+    let analyze_ondemand proc_name =
+      analyze_file_dependency proc_name |> AnalysisResult.to_option
+    in
+    let file_peers =
+      (* in C/C++/ObjC, locks are often globals or fields of structs without methods, and are taken
+         in functions that are not methods of the class at the root of the lock *)
+      List.fold procedures ~init:Procname.Map.empty ~f:(fun acc pname ->
+          if Procname.is_clang pname then
+            get_reportable_summary analyze_ondemand pname
+            |> Option.value_map ~default:acc ~f:(fun summary -> Procname.Map.add pname summary acc)
+          else acc )
+      |> FilePeers.make
+    in
     let report_on_proc tenv pattrs report_map payload =
       Domain.fold_critical_pairs_of_summary
-        (report_on_pair
-           ~analyze_ondemand:(fun proc_name ->
-             analyze_file_dependency proc_name |> AnalysisResult.to_option )
-           tenv pattrs )
+        (report_on_pair_with_file_peers ~analyze_ondemand ~file_peers tenv pattrs)
         payload report_map
     in
     let report_procedure report_map procname =
