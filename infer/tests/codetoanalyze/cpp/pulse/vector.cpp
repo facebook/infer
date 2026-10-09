@@ -320,12 +320,167 @@ void emplace_back_bad(std::vector<int>& vec) {
   std::cout << *elt << "\n";
 }
 
+void emplace_no_args_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.emplace(vec.begin());
+  std::cout << *elt << "\n";
+}
+
+void emplace_back_no_args_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.emplace_back();
+  std::cout << *elt << "\n";
+}
+
+void reserve_then_emplace_back_no_args_ok(std::vector<int>& vec) {
+  vec.reserve(vec.size() + 1);
+  int* elt = &vec[1];
+  vec.emplace_back();
+  std::cout << *elt << "\n";
+}
+
+void erase_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.erase(vec.begin());
+  std::cout << *elt << "\n";
+}
+
+void erase_range_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.erase(vec.begin(), vec.end());
+  std::cout << *elt << "\n";
+}
+
+void resize_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.resize(vec.size() * 2);
+  std::cout << *elt << "\n";
+}
+
+void reserve_then_resize_ok(std::vector<int>& vec) {
+  vec.reserve(vec.size() * 2);
+  int* elt = &vec[1];
+  vec.resize(vec.size() * 2, 7);
+  std::cout << *elt << "\n";
+}
+
+// erase invalidates the elements before the erased position too
+void FP_erase_last_ok(std::vector<int>& vec) {
+  int* elt = &vec[0];
+  vec.erase(vec.end() - 1);
+  std::cout << *elt << "\n";
+}
+
+// erase invalidates the elements before the erased range too
+void FP_erase_tail_keep_front_ok(std::vector<int>& vec) {
+  int& elt = vec.front();
+  vec.erase(vec.begin() + 1, vec.end());
+  std::cout << elt << "\n";
+}
+
+// erase invalidates every element even when the range is empty
+void FP_erase_empty_range_ok(std::vector<int>& vec) {
+  int* elt = &vec[0];
+  vec.erase(vec.end(), vec.end());
+  std::cout << *elt << "\n";
+}
+
+// the size is unknown, so resize(1) may grow the vector although it has an
+// element
+void FP_shrinking_resize_ok(std::vector<int>& vec) {
+  int* elt = &vec[0];
+  vec.resize(1);
+  std::cout << *elt << "\n";
+}
+
+// the size given to the constructor is not tracked
+void FP_shrinking_resize_after_size_constructor_ok() {
+  std::vector<int> vec(10);
+  int* elts = vec.data();
+  vec.resize(5);
+  std::cout << elts[0] << "\n";
+}
+
+void shrinking_resize_ok() {
+  std::vector<int> vec;
+  vec.resize(10);
+  int* elts = vec.data();
+  vec.resize(5);
+  std::cout << elts[0] << "\n";
+}
+
+void resize_same_size_ok(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  vec.resize(vec.size());
+  std::cout << *elt << "\n";
+}
+
+void assign_range_bad(std::vector<int>& vec, std::vector<int>& vec_other) {
+  int* elt = &vec[1];
+  vec.assign(vec_other.begin(), vec_other.end());
+  std::cout << *elt << "\n";
+}
+
+void insert_range_bad(std::vector<int>& vec, std::vector<int>& vec_other) {
+  int* elt = &vec[1];
+  vec.insert(vec.begin(), vec_other.begin(), vec_other.end());
+  std::cout << *elt << "\n";
+}
+
+void deref_front_after_push_back_bad(std::vector<int>& vec) {
+  int& elt = vec.front();
+  vec.push_back(42);
+  std::cout << elt << "\n";
+}
+
+void deref_back_after_clear_bad(std::vector<int>& vec) {
+  int& elt = vec.back();
+  vec.clear();
+  std::cout << elt << "\n";
+}
+
+void deref_data_after_push_back_bad(std::vector<int>& vec) {
+  int* elts = vec.data();
+  vec.push_back(42);
+  std::cout << elts[1] << "\n";
+}
+
+// the invalidation is not tracked through pointer arithmetic
+void FN_deref_data_offset_after_push_back_bad(std::vector<int>& vec) {
+  int* elts = vec.data();
+  vec.push_back(42);
+  std::cout << *(elts + 1) << "\n";
+}
+
+void reserve_then_front_push_back_ok(std::vector<int>& vec) {
+  vec.reserve(vec.size() + 1);
+  int& elt = vec.front();
+  vec.push_back(42);
+  std::cout << elt << "\n";
+}
+
+void push_back_front_ok(std::vector<int>& vec) { vec.push_back(vec.front()); }
+
+void deref_data_after_resize_ok(std::vector<int>& vec) {
+  vec.resize(10);
+  int* elts = vec.data();
+  std::cout << elts[1] << "\n";
+}
+
 void f(int&);
 
 void push_back_value_ok(std::vector<int>& vec) {
   int x = vec[0];
   vec.push_back(7);
   f(x);
+}
+
+void copy_front_back_then_push_back_ok(std::vector<int>& vec) {
+  int x = vec.front();
+  int y = vec.back();
+  vec.push_back(42);
+  f(x);
+  f(y);
 }
 
 struct VectorA {
@@ -367,3 +522,350 @@ int emplace_back_size_bad() {
   }
   return 0;
 }
+
+int resize_size_ok() {
+  std::vector<int> v;
+  v.resize(3);
+  if (v.size() != 3) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int resize_size_bad() {
+  std::vector<int> v;
+  v.resize(3, 42);
+  if (v.size() == 3) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int emplace_size_ok() {
+  std::vector<int> v;
+  v.emplace(v.begin(), 42);
+  if (v.size() != 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int insert_size_ok() {
+  std::vector<int> v;
+  v.insert(v.begin(), 42);
+  if (v.size() != 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int insert_size_bad() {
+  std::vector<int> v;
+  v.insert(v.begin(), 42);
+  if (v.size() == 1) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int assign_count_size_ok() {
+  std::vector<int> v;
+  v.assign(3, 42);
+  if (v.size() != 3) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int assign_count_size_bad() {
+  std::vector<int> v;
+  v.assign(3, 42);
+  if (v.size() == 3) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int erase_size_ok() {
+  std::vector<int> v;
+  v.push_back(42);
+  v.erase(v.begin());
+  if (!v.empty()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int erase_size_bad() {
+  std::vector<int> v;
+  v.push_back(42);
+  v.erase(v.begin());
+  if (v.empty()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+int insert_range_size_bad(std::vector<int>& vec_other) {
+  std::vector<int> v;
+  v.insert(v.end(), vec_other.begin(), vec_other.end());
+  if (!v.empty()) {
+    int* q = nullptr;
+    return *q;
+  }
+  return 0;
+}
+
+void push_back_in_callee(std::vector<int>& vec) { vec.push_back(42); }
+
+void push_back_in_nested_callee(std::vector<int>& vec) {
+  push_back_in_callee(vec);
+}
+
+void clear_in_callee(std::vector<int>& vec) { vec.clear(); }
+
+void push_back_if_in_callee(std::vector<int>& vec, bool b) {
+  if (b) {
+    vec.push_back(42);
+  }
+}
+
+void unknown_vector_function(std::vector<int>& vec);
+
+void push_back_then_unknown_call_in_callee(std::vector<int>& vec) {
+  vec.push_back(42);
+  unknown_vector_function(vec);
+}
+
+int size_in_callee(std::vector<int>& vec) { return vec.size(); }
+
+void push_back_in_by_value_callee(std::vector<int> vec) { vec.push_back(42); }
+
+void deref_vector_element_after_push_back_in_callee_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_in_nested_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_in_nested_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_clear_in_callee_bad(std::vector<int>& vec) {
+  int& elt = vec.at(1);
+  clear_in_callee(vec);
+  std::cout << elt << "\n";
+}
+
+void deref_local_vector_element_after_push_back_in_callee_bad() {
+  std::vector<int> vec = {0, 0};
+  int* elt = &vec[1];
+  push_back_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_if_true_in_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_if_in_callee(vec, true);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_then_unknown_call_in_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_then_unknown_call_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_if_false_in_callee_ok(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_if_in_callee(vec, false);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_size_in_callee_ok(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  size_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_other_in_callee_ok(
+    std::vector<int>& vec, std::vector<int>& vec_other) {
+  int* elt = &vec[1];
+  push_back_in_callee(vec_other);
+  std::cout << *elt << "\n";
+}
+
+void get_vector_element_after_push_back_in_callee_ok(std::vector<int>& vec) {
+  push_back_in_callee(vec);
+  int* elt = &vec[1];
+  std::cout << *elt << "\n";
+}
+
+void copy_vector_element_before_push_back_in_callee_ok(std::vector<int>& vec) {
+  int x = vec[1];
+  push_back_in_callee(vec);
+  std::cout << x << "\n";
+}
+
+void deref_vector_element_after_push_back_in_by_value_callee_ok(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  push_back_in_by_value_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_on_copy_ok(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  std::vector<int> copy{vec};
+  copy.push_back(42);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_push_back_on_moved_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  std::vector<int> moved{std::move(vec)};
+  moved.push_back(42);
+  std::cout << *elt << "\n";
+}
+
+void deref_null_element_of_vector_copy_bad() {
+  std::vector<int*> vec = {nullptr};
+  std::vector<int*> copy{vec};
+  std::cout << *copy[0] << "\n";
+}
+
+void reserve_then_push_back_in_callee_ok(std::vector<int>& vec) {
+  vec.reserve(vec.size() + 1);
+  int* elt = &vec[1];
+  push_back_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void deref_vector_element_after_reserve_then_clear_in_callee_bad(
+    std::vector<int>& vec) {
+  vec.reserve(vec.size() + 1);
+  int* elt = &vec[1];
+  clear_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void erase_last_in_callee(std::vector<int>& vec) { vec.erase(vec.end() - 1); }
+
+// erase invalidates the elements before the erased position too
+void FP_erase_last_in_callee_keeps_first_ok(std::vector<int>& vec) {
+  if (vec.size() < 2) {
+    return;
+  }
+  int& first = vec[0];
+  erase_last_in_callee(vec);
+  std::cout << first << "\n";
+}
+
+void resize_to_one_in_callee(std::vector<int>& vec) { vec.resize(1); }
+
+// the size is unknown, so resize(1) may grow the vector
+void FP_resize_smaller_in_callee_keeps_first_ok(std::vector<int>& vec) {
+  int& first = vec[0];
+  resize_to_one_in_callee(vec);
+  std::cout << first << "\n";
+}
+
+void erase_first_in_callee(std::vector<int>& vec) { vec.erase(vec.begin()); }
+
+void deref_vector_element_after_erase_first_in_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  erase_first_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void double_size_in_callee(std::vector<int>& vec) {
+  vec.resize(vec.size() * 2);
+}
+
+void deref_vector_element_after_resize_in_callee_bad(std::vector<int>& vec) {
+  int* elt = &vec[1];
+  double_size_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+void reserve_then_resize_in_callee_ok(std::vector<int>& vec) {
+  vec.reserve(vec.size() * 2);
+  int* elt = &vec[1];
+  double_size_in_callee(vec);
+  std::cout << *elt << "\n";
+}
+
+struct Point {
+  int x;
+  int y;
+};
+
+void push_back_point_in_callee(std::vector<Point>& points) {
+  points.push_back(Point{0, 0});
+}
+
+// only the elements are invalidated, not their fields
+void FN_element_field_ptr_after_grow_bad(std::vector<Point>& points) {
+  int* x = &points[0].x;
+  push_back_point_in_callee(points);
+  std::cout << *x << "\n";
+}
+
+void move_and_push_back_in_callee(std::vector<int>&& vec) {
+  std::vector<int> moved{std::move(vec)};
+  moved.push_back(42);
+}
+
+// the callee only invalidates the internal array of the vector it moved to
+void FN_deref_vector_element_after_move_and_push_back_in_callee_bad(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  move_and_push_back_in_callee(std::move(vec));
+  std::cout << *elt << "\n";
+}
+
+// the capture by value does not call the copy constructor, so the lambda's copy
+// shares the elements of vec
+void FP_deref_vector_element_after_push_back_on_captured_copy_ok(
+    std::vector<int>& vec) {
+  int* elt = &vec[1];
+  auto f = [vec]() mutable { vec.push_back(42); };
+  f();
+  std::cout << *elt << "\n";
+}
+
+struct VectorRegistry {
+  std::vector<int> items;
+
+  int& create(int x) {
+    items.push_back(x);
+    return items[items.size() - 1];
+  }
+
+  int create_twice_bad() {
+    int& a = create(1);
+    int& b = create(2);
+    return a + b;
+  }
+
+  int create_once_ok() {
+    int& a = create(1);
+    return a;
+  }
+};

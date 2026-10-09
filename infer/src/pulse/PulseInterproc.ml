@@ -1156,12 +1156,76 @@ let read_return_value {PathContext.timestamp} call_state =
         ) )
 
 
+let is_std_vector_reserved_in_caller call_state array_callee =
+  let heap = call_state.callee_pre.BaseDomain.heap in
+  let points_to_array addr =
+    UnsafeMemory.find_edge_opt addr Dereference heap
+    |> Option.exists ~f:(fun (pointee, _) -> AbstractValue.equal pointee array_callee)
+  in
+  UnsafeMemory.exists
+    (fun vector_callee edges ->
+      UnsafeMemory.Edges.exists edges ~f:(fun (_, (field, _)) -> points_to_array field)
+      && Option.exists (to_caller_value call_state vector_callee) ~f:(fun (vector_caller, _) ->
+          AddressAttributes.is_std_vector_reserved vector_caller call_state.astate ) )
+    heap
+
+
+let invalidates_all_elements call_state array_callee (vector_f : Invalidation.std_vector_function) =
+  match vector_f with
+  | PushBack | EmplaceBack | Resize ->
+      (* like the models of these functions, assume that [reserve] made enough space *)
+      not (is_std_vector_reserved_in_caller call_state array_callee)
+  | Assign | Clear | Emplace | Erase | Insert | Reserve | ShrinkToFit ->
+      true
+
+
+(* The callee only invalidates the elements of a reallocated [std::vector] array that it accessed
+   (see [PulseOperations.invalidate_array_elements]), so extend the invalidation to the elements
+   known to the caller. Collect them before [apply_unknown_effects] havocs the array, and invalidate
+   them after [add_attributes] to keep the callee's own invalidation of the elements it accessed. *)
+let elements_of_reallocated_arrays call_state =
+  UnsafeAttributes.fold
+    (fun addr_callee callee_attrs elems ->
+      match Attributes.get_invalid callee_attrs with
+      | Some (StdVector vector_f, _) when invalidates_all_elements call_state addr_callee vector_f
+        ->
+          Option.value_map (to_caller_value call_state addr_callee) ~default:elems
+            ~f:(fun (addr_caller, _) ->
+              Memory.fold_edges addr_caller call_state.astate ~init:elems
+                ~f:(fun elems (access, (elem, _)) ->
+                  match (access : Access.t) with
+                  | ArrayAccess _ ->
+                      (addr_caller, elem) :: elems
+                  | _ ->
+                      elems ) )
+      | _ ->
+          elems )
+    call_state.callee_post.BaseDomain.attrs []
+
+
+let invalidate_elements_of_reallocated_arrays elems call_state =
+  let astate =
+    List.fold elems ~init:call_state.astate ~f:(fun astate (addr_caller, elem) ->
+        match
+          AddressAttributes.find_opt `Post addr_caller astate
+          |> Option.bind ~f:Attributes.get_invalid
+        with
+        | Some ((StdVector _ as cause), trace) ->
+            AddressAttributes.add_one elem (Attribute.Invalid (cause, trace)) astate
+        | _ ->
+            astate )
+  in
+  {call_state with astate}
+
+
 let apply_post analysis_data path call_state =
   PerfEvent.(log (fun logger -> log_begin_event logger ~name:"pulse call post" ())) ;
+  let elems = elements_of_reallocated_arrays call_state in
   let r =
     call_state |> apply_unknown_effects |> apply_post_from_callee_pre path
     >>= apply_post_from_callee_post path
     >>| add_attributes `Post path (AbductiveDomain.Summary.get_post call_state.callee_summary).attrs
+    >>| invalidate_elements_of_reallocated_arrays elems
     >>| record_recursive_calls analysis_data
     >>| record_skipped_calls
     >>| record_transitive_info analysis_data
