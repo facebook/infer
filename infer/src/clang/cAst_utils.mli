@@ -81,6 +81,15 @@ val get_info_from_decl_ref :
 
 val sil_annot_of_type : Clang_ast_t.qual_type -> Annot.Item.t
 
+val sil_annot_of_function_attributes : Clang_ast_t.attribute list -> Annot.Item.t
+(** [Annotations.requires_capability] with the distinct capabilities as parameters if the function
+    must be called with some capability held, ie it has a [requires_capability] attribute with an
+    argument that is not a negative capability [!mu] *)
+
+val sil_annot_of_field_attributes : Clang_ast_t.attribute list -> Annot.Item.t
+(** [Annotations.guarded_by] with the capability as parameter if the field has a [guarded_by]
+    attribute *)
+
 val type_of_decl : Clang_ast_t.decl -> Clang_ast_t.type_ptr option
 
 val get_record_fields : Clang_ast_t.decl -> Clang_ast_t.decl list

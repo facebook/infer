@@ -9,7 +9,7 @@ open! IStd
 module F = Format
 
 module Types = struct
-  type 'astate bottom_lifted = Bottom | NonBottom of 'astate
+  type 'astate bottom_lifted = Bottom | NonBottom of 'astate [@@deriving compare]
 
   type 'astate top_lifted = Top | NonTop of 'astate [@@deriving equal]
 

@@ -11,7 +11,7 @@ module F = Format
 (** {1 Abstract domains and domain combinators} *)
 
 module Types : sig
-  type 'astate bottom_lifted = Bottom | NonBottom of 'astate
+  type 'astate bottom_lifted = Bottom | NonBottom of 'astate [@@deriving compare]
 
   type 'astate top_lifted = Top | NonTop of 'astate [@@deriving equal]
 

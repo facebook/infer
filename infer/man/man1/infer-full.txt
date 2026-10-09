@@ -2034,8 +2034,8 @@ OPTIONS
            See also infer-analyze(1).
 
        --racerd-guardedby
-           Activates: Check @GuardedBy annotations with RacerD (Conversely:
-           --no-racerd-guardedby)
+           Activates: Check @GuardedBy annotations (Java) and guarded_by
+           attributes (C++) with RacerD (Conversely: --no-racerd-guardedby)
            See also infer-analyze(1).
 
        --racerd-ignore-classes +string
