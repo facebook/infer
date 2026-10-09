@@ -75,6 +75,9 @@ type t = private
   ; loop_header_info: PulseLoopHeaderInfo.t
   ; loop_invariant_under_inference: loop_invariant_under_inference option
   ; unknown_values: bool  (** did we generate at least one unknown abstract value on this path? *)
+  ; from_interrupted_loop: bool
+        (** metadata: does the state derive from one that over-approximates the iterations of a loop
+            that the widening threshold stopped (see {!PulseLoopHavoc}), possibly in a callee? *)
   ; skipped_calls: SkippedCalls.t  (** metadata: procedure calls for which no summary was found *)
   }
 
@@ -106,6 +109,7 @@ val mk_join_state :
   -> PulseMutualRecursion.Set.t
   -> PulseLoopHeaderInfo.t
   -> unknown_values:bool
+  -> from_interrupted_loop:bool
   -> SkippedCalls.t
   -> t
 
@@ -401,6 +405,8 @@ val add_missed_captures : Typ.Name.Set.t -> t -> t
 
 val declare_unknown_values : t -> t
 
+val set_from_interrupted_loop : t -> t
+
 val set_path_condition : Formula.t -> t -> t
 
 val init_loop_header_info : Procdesc.Node.id -> t -> t
@@ -514,6 +520,8 @@ module Summary : sig
   val get_recursive_calls : summary -> PulseMutualRecursion.Set.t
 
   val contains_unknown_values : summary -> bool
+
+  val is_from_interrupted_loop : summary -> bool
 
   val get_skipped_calls : summary -> SkippedCalls.t
 

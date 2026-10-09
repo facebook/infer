@@ -61,6 +61,7 @@ DIRECT_TESTS += \
   c_bufferoverrun \
   c_performance \
   c_pulse \
+  c_pulse-havoc-loops \
   c_pulse-over-only \
   c_pulse-over-under \
   c_purity \
@@ -81,6 +82,7 @@ DIRECT_TESTS += \
   cpp_pulse-11 \
   cpp_pulse-17 \
   cpp_pulse-20 \
+  cpp_pulse-havoc-loops \
   cpp_racerd \
   cpp_sil \
   cpp_siof \

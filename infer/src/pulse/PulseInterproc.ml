@@ -1058,6 +1058,12 @@ let record_skipped_calls call_state =
   {call_state with astate}
 
 
+let record_from_interrupted_loop call_state =
+  if AbductiveDomain.Summary.is_from_interrupted_loop call_state.callee_summary then
+    {call_state with astate= AbductiveDomain.set_from_interrupted_loop call_state.astate}
+  else call_state
+
+
 let record_transitive_info {InterproceduralAnalysis.tenv} call_state =
   if PulseTransitiveAccessChecker.should_skip_call tenv call_state.callee_proc_name then call_state
   else
@@ -1163,7 +1169,7 @@ let apply_post analysis_data path call_state =
     >>= apply_post_from_callee_post path
     >>| add_attributes `Post path (AbductiveDomain.Summary.get_post call_state.callee_summary).attrs
     >>| record_recursive_calls analysis_data
-    >>| record_skipped_calls
+    >>| record_skipped_calls >>| record_from_interrupted_loop
     >>| record_transitive_info analysis_data
     >>| read_return_value path
   in

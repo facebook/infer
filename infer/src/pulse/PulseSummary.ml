@@ -217,6 +217,14 @@ let force_exit_program analysis_data path post =
 
 let of_posts ({InterproceduralAnalysis.proc_desc} as analysis_data) specialization location posts
     non_disj =
+  let posts =
+    (* callers apply the pre/posts in this order until they reach their limit of disjuncts *)
+    let from_loops, others =
+      List.partition_tf posts ~f:(fun (exec_state, _) ->
+          ExecutionDomain.is_from_interrupted_loop exec_state )
+    in
+    others @ from_loops
+  in
   let pre_post_list =
     List.filter_mapi posts ~f:(fun i (exec_state, path) ->
         L.d_printfln "Creating spec out of state #%d:@\n%a" i

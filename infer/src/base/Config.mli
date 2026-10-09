@@ -617,6 +617,8 @@ val pulse_experimental_track_all_unknown_calls : bool
 
 val pulse_havoc_arguments : bool
 
+val pulse_havoc_interrupted_loops : bool
+
 val pulse_inline_global_init_func_pointer : bool
 
 val pulse_intraprocedural_only : bool
