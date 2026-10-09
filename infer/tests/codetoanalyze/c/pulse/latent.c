@@ -108,3 +108,45 @@ void FN_crash_after_six_nodes_bad(struct node* q) {
   q->next->next->next->next->next->next = q;
   traverse_and_crash_if_equal_to_root(q);
 }
+
+// the two parameters are equal on the path to the issue only because they are
+// both 0, which is not an aliasing assumption
+void two_params_equal_to_zero_bad(int a, int b) {
+  if (a == 0 && b == 0) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+int global_flag;
+
+int* null_if_equal_to_global_flag(int a, int* x) {
+  if (a == global_flag) {
+    return NULL;
+  }
+  return x;
+}
+
+// latent: the global is 0 like the parameter only because the callee assumes
+// that they are equal
+void null_deref_if_global_flag_equal_to_zero_latent(int a, int* x) {
+  if (a == 0) {
+    int* p = null_if_equal_to_global_flag(a, x);
+    *p = 42;
+  }
+}
+
+int* null_if_equal(int a, int b, int* x) {
+  if (a == b) {
+    return NULL;
+  }
+  return x;
+}
+
+// latent: same with two parameters
+void null_deref_if_params_equal_to_zero_latent(int a, int b, int* x) {
+  int* p = null_if_equal(a, b, x);
+  if (a == 0) {
+    *p = 42;
+  }
+}
