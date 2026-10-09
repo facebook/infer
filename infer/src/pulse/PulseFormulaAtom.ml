@@ -214,6 +214,11 @@ let eval_const_linear_atom atom l q =
       Some False
   | Equal _, `Minimized, q' (* l >= q' *) when Q.(q < q') ->
       Some False
+  (* l ≠ q *)
+  | NotEqual _, `Maximized, q' (* l <= q' *) when Q.(q > q') ->
+      Some True
+  | NotEqual _, `Minimized, q' (* l >= q' *) when Q.(q < q') ->
+      Some True
   (* Is l <= q? *)
   | LessEqual _, `Maximized, q' (* l <= q' *) when Q.(q' <= q) ->
       Some True
