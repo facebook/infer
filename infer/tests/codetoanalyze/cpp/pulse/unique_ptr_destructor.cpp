@@ -114,4 +114,20 @@ int destructor5_bad() {
   return 0;
 }
 
+void array_destructor_ok() { std::unique_ptr<int[]> x(new int[5]); }
+
+int move_assignment_bad() {
+  auto p = new int(5);
+  std::unique_ptr<int> x(p);
+  x = std::unique_ptr<int>(new int(6));
+  // p was deleted when x was assigned
+  return *p;
+}
+
+void move_assignment_ok() {
+  std::unique_ptr<int> x(new int(5));
+  std::unique_ptr<int> y(new int(6));
+  x = std::move(y);
+}
+
 } // namespace destructor_unique_ptr
