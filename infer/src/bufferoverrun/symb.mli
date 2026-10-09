@@ -29,8 +29,13 @@ module SymbolPath : sig
 
   type t = private
     | Normal of partial
-    | Offset of {p: partial; is_void: bool}
-    | Length of {p: partial; is_void: bool}
+    | Offset of {p: partial; byte_unit: Z.t option}
+        (** Offset and length of the array that [p] points to. They count elements of the type
+            pointed to by [p] when [byte_unit] is [None]. When it is [Some n], printed [(v/n)]
+            ([(v)] if [n] is 1), they count units of [n] bytes: a caller evaluates them as the byte
+            offset or size of its own array divided by [n]. This is used when the element size is
+            unknown, e.g. for [void*], and after casts that cannot rescale the former exactly. *)
+    | Length of {p: partial; byte_unit: Z.t option}
     | Modeled of partial
   [@@deriving equal]
 
@@ -75,10 +80,17 @@ module SymbolPath : sig
   val exists_str_partial : f:(string -> bool) -> partial -> bool
 
   val is_void_ptr_path : t -> bool
+  (** Whether it is an offset or length counted in units of bytes rather than in elements *)
+
+  val set_byte_unit : Z.t -> t -> t
 
   val is_cpp_vector_elem : partial -> bool
 
   val is_global_partial : partial -> bool
+
+  val is_field_of_var : t -> bool
+  (** Whether it is a field of a variable, e.g. the length of the C string in a local array, rather
+      than of an object reached through a pointer. Callers cannot substitute such a symbol. *)
 
   val is_length : t -> bool
 end
@@ -105,6 +117,8 @@ module Symbol : sig
   val paths_equal : t -> t -> bool
 
   val path : t -> SymbolPath.t
+
+  val set_byte_unit : Z.t -> t -> t
 
   val check_bound_end : t -> BoundEnd.t -> unit
 

@@ -13,6 +13,9 @@ module ArrInfo : sig
   val byte_size : t -> Itv.t
   (** Return size of array block as bytes *)
 
+  val byte_offset : t -> Itv.t
+  (** Return current offset of array block as bytes *)
+
   val get_offset : t -> Itv.t
   (** Return current offset of array block *)
 
@@ -98,3 +101,9 @@ val get_offset : ?cost_mode:bool -> t -> Itv.t
 val get_size : ?cost_mode:bool -> t -> Itv.t
 (** Return size of the array block. If [cost_mode] is [true], it returns a conservative (bigger than
     correct one), but not correct size results. *)
+
+val get_offset_in_units : ?cost_mode:bool -> Z.t -> t -> Itv.t
+(** Same as [get_offset], but counted in units of the given number of bytes *)
+
+val get_size_in_units : ?cost_mode:bool -> Z.t -> t -> Itv.t
+(** Same as [get_size], but counted in units of the given number of bytes *)
