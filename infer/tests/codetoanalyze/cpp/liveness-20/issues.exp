@@ -1,0 +1,2 @@
+codetoanalyze/cpp/liveness-20/if_constexpr.cpp, if_constexpr::not_read_in_discarded_branch_bad, 2, DEAD_STORE, no_bucket, ERROR, [Write of unused value (type `int`)]
+codetoanalyze/cpp/liveness-20/if_constexpr.cpp, if_constexpr::FP_read_in_discarded_branch_of_instantiation_ok<false>, 1, DEAD_STORE, no_bucket, ERROR, [Write of unused value (type `int`)]

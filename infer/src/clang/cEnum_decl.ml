@@ -54,3 +54,8 @@ let enum_decl decl =
       sil_desc
   | _ ->
       assert false
+
+
+let add_enum_of_constant enum_constant_pointer =
+  IInt.Hash.find_opt ClangPointers.enum_constant_to_enum_table enum_constant_pointer
+  |> Option.iter ~f:(fun decl -> ignore (enum_decl decl))

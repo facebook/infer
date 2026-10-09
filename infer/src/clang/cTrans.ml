@@ -443,6 +443,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= succ_nodes}
 
 
+  (** add the names of the local variables that [stmt] references to [vars] *)
+  let rec add_referenced_local_vars context vars stmt =
+    let vars =
+      match (stmt : Clang_ast_t.stmt) with
+      | `DeclRefExpr
+          (_, _, _, {Clang_ast_t.drti_decl_ref= Some {Clang_ast_t.dr_kind= `Var; dr_decl_pointer}})
+        -> (
+        match CAst_utils.get_decl dr_decl_pointer with
+        | Some (Clang_ast_t.VarDecl (_, _, _, {Clang_ast_t.vdi_is_global= false}) as var_decl) ->
+            let procname = Procdesc.get_proc_name context.CContext.procdesc in
+            Mangled.Set.add
+              (Pvar.get_name (CVar_decl.sil_var_of_decl context var_decl procname))
+              vars
+        | _ ->
+            vars )
+      | _ ->
+          vars
+    in
+    let _, children = Clang_ast_proj.get_stmt_tuple stmt in
+    List.fold children ~init:vars ~f:(add_referenced_local_vars context)
+
+
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -802,7 +824,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         trans_state_param
 
 
-  let rec labelStmt_trans trans_state stmt_info stmt_list label_name =
+  let rec labelStmt_trans trans_state stmt_info stmt_list label_pointer label_name =
     let context = trans_state.context in
     let[@warning "-partial-match"] [stmt] = stmt_list in
     let res_trans = sub_statement_trans Procdesc.Node.CompoundStmt trans_state stmt in
@@ -810,10 +832,17 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let sil_loc =
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
-    let root_node' = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
+    let root_node' =
+      GotoLabel.find_goto_label trans_state.context label_pointer label_name sil_loc
+    in
     Procdesc.node_set_succs context.procdesc root_node' ~normal:res_trans.control.root_nodes ~exn:[] ;
-    mk_trans_result (mk_fresh_void_exp_typ ())
-      {empty_control with root_nodes= [root_node']; leaf_nodes= trans_state.succ_nodes}
+    (* in [({ l: e; })] the parent of the statement expression uses the value of [e] and connects
+       the leaves to its own nodes, so the label node is a leaf when [e] creates no node *)
+    let leaf_nodes =
+      if List.is_empty res_trans.control.root_nodes then [root_node']
+      else res_trans.control.leaf_nodes
+    in
+    {res_trans with control= {res_trans.control with root_nodes= [root_node']; leaf_nodes}}
 
 
   (** Create instructions to initialize record with zeroes. It needs to traverse whole type
@@ -928,6 +957,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CVar_decl.sil_var_of_decl_ref context stmt_info.Clang_ast_t.si_source_range decl_ref procname
     in
     CContext.add_block_static_var context procname (pvar, typ) ;
+    ( match typ.Typ.desc with
+    | (Tarray _ | Tstruct _) when Pvar.is_global pvar ->
+        CContext.add_global context pvar typ
+    | _ ->
+        () ) ;
     let var_exp = Exp.Lvar pvar in
     (* Captured variables without initialization do not have the correct types
        inside of lambda bodies. The same issue happens for variables captured by reference
@@ -1021,7 +1055,12 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let zero = Exp.Const (Const.Cint IntLit.zero) in
     try
       let prev_enum_constant_opt, sil_exp_opt =
-        CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
+        try CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
+        with Not_found_s _ | Stdlib.Not_found ->
+          (* in C, the constants of a block-scope enum have type [int], so translating their type
+             does not add the enum to the map *)
+          CEnum_decl.add_enum_of_constant enum_constant_pointer ;
+          CAst_utils.get_enum_constant_exp_exn enum_constant_pointer
       in
       match sil_exp_opt with
       | Some exp ->
@@ -2491,6 +2530,41 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         res_trans_cond
 
 
+  (** Only the branch selected at compile time is translated: pruning on the constant instead would
+      not hide the discarded branch from the checkers that are not path-sensitive. *)
+  and constexprIfStmt_trans trans_state stmt_info (if_stmt_info : Clang_ast_t.if_stmt_info) =
+    let source_range = stmt_info.Clang_ast_t.si_source_range in
+    let cond_value =
+      match CAst_utils.get_stmt_exn if_stmt_info.isi_cond source_range with
+      | `ConstantExpr (_, _, _, {Clang_ast_t.ce_literal= Some {ili_value}}) -> (
+        try Some (IntLit.of_string ili_value) with Failure _ -> None )
+      | _ ->
+          None
+    in
+    match cond_value with
+    | Some cond_value ->
+        let context = trans_state.context in
+        let get_stmt stmt_ptr = CAst_utils.get_stmt_exn stmt_ptr source_range in
+        let else_branch = Option.map if_stmt_info.isi_else ~f:fst in
+        let taken_branch, discarded_branch =
+          if IntLit.iszero cond_value then (else_branch, Some if_stmt_info.isi_then)
+          else (Some if_stmt_info.isi_then, else_branch)
+        in
+        Option.iter discarded_branch ~f:(fun stmt_ptr ->
+            let vars = context.CContext.vars_in_discarded_branches in
+            vars := add_referenced_local_vars context !vars (get_stmt stmt_ptr) ) ;
+        let stmts =
+          List.filter_opt
+            [ Option.map if_stmt_info.isi_init ~f:get_stmt
+            ; if_stmt_info.isi_cond_var
+            ; Option.map taken_branch ~f:get_stmt ]
+        in
+        let control, _ = instructions Procdesc.Node.IfStmtBranch trans_state stmts in
+        mk_trans_result (mk_fresh_void_exp_typ ()) control
+    | None ->
+        ifStmt_trans trans_state stmt_info if_stmt_info
+
+
   and ifStmt_trans trans_state stmt_info (if_stmt_info : Clang_ast_t.if_stmt_info) =
     let context = trans_state.context in
     let source_range = stmt_info.Clang_ast_t.si_source_range in
@@ -2537,18 +2611,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
           CAst_utils.get_stmt_exn else_body_ptr source_range
     in
     do_branch false else_body res_trans_cond.control.leaf_nodes trans_state_join_succ ;
-    (* translate the initialisation if present *)
-    let res_trans_init =
-      match if_stmt_info.isi_init with
-      | Some init_stmt_ptr ->
-          let init_stmt = CAst_utils.get_stmt_exn init_stmt_ptr source_range in
-          instruction {trans_state with succ_nodes= res_trans_cond_var.control.root_nodes} init_stmt
-      | None ->
-          res_trans_cond_var
+    let root_nodes =
+      init_stmt_trans trans_state source_range if_stmt_info.isi_init
+        res_trans_cond_var.control.root_nodes
     in
-    let root_nodes = res_trans_init.control.root_nodes in
     mk_trans_result (mk_fresh_void_exp_typ ())
       {empty_control with root_nodes; leaf_nodes= [join_node]}
+
+
+  (** translate the optional init-statement of an [if] or [switch] statement so that it runs before
+      [next_nodes]; return the root nodes of the whole sequence *)
+  and init_stmt_trans trans_state source_range init_stmt_ptr_opt next_nodes =
+    match init_stmt_ptr_opt with
+    | None ->
+        next_nodes
+    | Some init_stmt_ptr ->
+        let init_stmt = CAst_utils.get_stmt_exn init_stmt_ptr source_range in
+        let res_trans_init =
+          sub_statement_trans Procdesc.Node.CompoundStmt
+            {trans_state with succ_nodes= next_nodes}
+            init_stmt
+        in
+        res_trans_init.control.root_nodes
 
 
   and caseStmt_trans trans_state stmt_info case_stmt_list =
@@ -2583,7 +2667,6 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     (* overview: translate the body of the switch statement, which automatically collects the
        various cases at the same time, then link up the cases together and together with the switch
        condition variable *)
-    (* unsupported: initialization *)
     let condition =
       CAst_utils.get_stmt_exn switch_stmt_info.Clang_ast_t.ssi_cond
         stmt_info.Clang_ast_t.si_source_range
@@ -2701,7 +2784,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       List.fold switch_cases ~init:(trans_state.succ_nodes, true) ~f:link_up_switch_cases
     in
     Procdesc.node_set_succs context.procdesc switch_node ~normal:cases_root_nodes ~exn:[] ;
-    let top_nodes = variable_result.control.root_nodes in
+    let top_nodes =
+      init_stmt_trans trans_state stmt_info.Clang_ast_t.si_source_range
+        switch_stmt_info.Clang_ast_t.ssi_init variable_result.control.root_nodes
+    in
     mk_trans_result (mk_fresh_void_exp_typ ())
       {empty_control with root_nodes= top_nodes; leaf_nodes= []}
 
@@ -2895,9 +2981,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (** Iteration over collections
 
-      [for (v : C) { body; }] is translated as:
+      [for (init; v : C) { body; }] is translated as:
 
       {[
+        init;
         TypeC __range = C;
         for (__begin = __range.begin(), __end = __range.end();
              __begin != __end;
@@ -2910,7 +2997,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
   and cxxForRangeStmt_trans trans_state stmt_info stmt_list =
     let open Clang_ast_t in
     match stmt_list with
-    | [ _init
+    | [ init
       ; iterator_decl
       ; begin_stmt
       ; end_stmt
@@ -2928,7 +3015,9 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         let for_loop =
           `ForStmt (stmt_info, [beginend_stmt; null_stmt; exit_cond; increment; loop_body'])
         in
-        instruction trans_state (`CompoundStmt (stmt_info, [iterator_decl; for_loop]))
+        (* the init-statement is a [NullStmt] when absent *)
+        let init = if is_null_stmt init then [] else [init] in
+        instruction trans_state (`CompoundStmt (stmt_info, init @ [iterator_decl; for_loop]))
     | _ ->
         assert false
 
@@ -3428,9 +3517,20 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | CXXRecordDecl _ :: _
     | BindingDecl _ :: _
     | DecompositionDecl _ :: _
-    | RecordDecl _ :: _ ->
+    | RecordDecl _ :: _
+    | EnumDecl _ :: _
+    | FunctionDecl _ :: _ ->
+        (* record, enum and function declarations can be followed by variable declarations, eg
+           [enum E { A } e = A;] or [int f(void), x = 3;] *)
         collect_all_decl trans_state decl_list succ_nodes stmt_info
-    | (NamespaceAliasDecl _ | TypedefDecl _ | TypeAliasDecl _ | UsingDecl _ | UsingDirectiveDecl _)
+    | ( LabelDecl _
+      | NamespaceAliasDecl _
+      | StaticAssertDecl _
+      | TypedefDecl _
+      | TypeAliasDecl _
+      | UsingDecl _
+      | UsingDirectiveDecl _
+      | UsingEnumDecl _ )
       :: _ ->
         mk_trans_result (mk_fresh_void_exp_typ ()) empty_control
     | decl :: _ ->
@@ -4664,12 +4764,14 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   (* search the label into the hashtbl - create a fake node eventually *)
   (* connect that node with this stmt, after destroying the variables that go out of scope *)
-  and gotoStmt_trans trans_state stmt_info label_name =
+  and gotoStmt_trans trans_state stmt_info label_pointer label_name =
     let sil_loc =
       CLocation.location_of_stmt_info trans_state.context.translation_unit_context.source_file
         stmt_info
     in
-    let label_node = GotoLabel.find_goto_label trans_state.context label_name sil_loc in
+    let label_node =
+      GotoLabel.find_goto_label trans_state.context label_pointer label_name sil_loc
+    in
     let root_nodes =
       match
         inject_destructors Procdesc.Node.DestrGotoStmt
@@ -5115,10 +5217,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
 
   and instruction_translate trans_state (instr : Clang_ast_t.stmt) =
     match instr with
-    | `GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label= label_name; _}) ->
-        gotoStmt_trans trans_state stmt_info label_name
-    | `LabelStmt (stmt_info, stmt_list, label_name) ->
-        labelStmt_trans trans_state stmt_info stmt_list label_name
+    | `GotoStmt (stmt_info, _, {Clang_ast_t.gsi_label; gsi_pointer}) ->
+        gotoStmt_trans trans_state stmt_info gsi_pointer gsi_label
+    | `LabelStmt (stmt_info, stmt_list, {Clang_ast_t.lsi_label; lsi_pointer}) ->
+        labelStmt_trans trans_state stmt_info stmt_list lsi_pointer lsi_label
     | `ArraySubscriptExpr (_, stmt_list, expr_info) ->
         arraySubscriptExpr_trans trans_state expr_info stmt_list
     | `BinaryOperator (stmt_info, stmt_list, expr_info, binop_info) ->
@@ -5127,7 +5229,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         atomicExpr_trans trans_state atomic_info stmt_info expr_info stmt_list
     | `CallExpr (stmt_info, stmt_list, ei) | `UserDefinedLiteral (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
-    | `ConstantExpr (_, stmt_list, _) -> (
+    | `ConstantExpr (_, _, expr_info, {Clang_ast_t.ce_literal= Some integer_literal_info}) ->
+        (* the sub-expression is only evaluated at compile time *)
+        integerLiteral_trans trans_state expr_info integer_literal_info
+    | `ConstantExpr (_, stmt_list, _, _) -> (
       match stmt_list with
       | [stmt] ->
           instruction_translate trans_state stmt
@@ -5154,6 +5259,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `ConditionalOperator (stmt_info, stmt_list, expr_info) ->
         (* Ternary operator "cond ? exp1 : exp2" *)
         conditionalOperator_trans trans_state stmt_info stmt_list expr_info
+    | `IfStmt (stmt_info, _, ({Clang_ast_t.isi_is_constexpr= true} as if_stmt_info)) ->
+        constexprIfStmt_trans trans_state stmt_info if_stmt_info
     | `IfStmt (stmt_info, _, if_stmt_info) ->
         ifStmt_trans trans_state stmt_info if_stmt_info
     | `SwitchStmt (stmt_info, _, switch_stmt_info) ->
@@ -5681,5 +5788,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let instrs = extra_instrs @ [CFrontend_config.ClangStmt (DefineBody, body)] in
     let instrs_trans = List.map ~f:get_custom_stmt_trans instrs in
     let res_control, _ = exec_trans_instrs trans_state' instrs_trans in
+    (* liveness must not report stores that only a discarded branch reads *)
+    let attributes = Procdesc.get_attributes context.CContext.procdesc in
+    let vars_in_discarded_branches = !(context.CContext.vars_in_discarded_branches) in
+    attributes.locals <-
+      List.map attributes.locals ~f:(fun (local : ProcAttributes.var_data) ->
+          if Mangled.Set.mem local.name vars_in_discarded_branches then
+            {local with is_declared_unused= true}
+          else local ) ;
     res_control.root_nodes
 end

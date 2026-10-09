@@ -434,7 +434,8 @@ module TransferFunctions = struct
       | Store {e1= exp1; typ; e2= exp2; loc= location} ->
           let locs = Sem.eval_locs exp1 mem in
           let v =
-            Sem.eval integer_type_widths exp2 mem |> Dom.Val.add_assign_trace_elem location locs
+            Sem.eval ~typ integer_type_widths exp2 mem
+            |> Dom.Val.add_assign_trace_elem location locs
           in
           let mem = Dom.Mem.update_mem locs v mem in
           let mem = java_store_linked_list_next locs v mem in
