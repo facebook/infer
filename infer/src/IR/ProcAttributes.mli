@@ -25,7 +25,8 @@ type var_data =
             block *)
   ; is_constexpr: bool
   ; is_declared_unused: bool
-        (** variable declared with attribute [unused], or with an invalid declaration *)
+        (** variable declared with attribute [unused], or with an invalid declaration, or referenced
+            in a discarded [if constexpr] branch *)
   ; is_structured_binding: bool  (** variable declared by structured binding *)
   ; has_cleanup_attribute: bool
         (** variable declared with attribute [cleanup], only set in clang frontend *)
@@ -86,6 +87,9 @@ type t =
   ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
   ; translation_unit: SourceFile.t  (** source file where the procedure was captured *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
+  ; mutable globals: (Pvar.t * Typ.t) list
+        (** global variables of array or struct type, including static locals, referenced in the
+            procedure, with their declared types; only recorded by the clang frontend *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)

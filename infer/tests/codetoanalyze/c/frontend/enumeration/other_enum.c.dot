@@ -7,7 +7,7 @@ digraph cfg {
 "other_enum_main.572f04969b0ade49_2" [label="2: Exit other_enum_main \n  " color=yellow style=filled]
 	
 
-"other_enum_main.572f04969b0ade49_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 17, column 3]\n  *&foo_g:int=(2 + 10) [line 17, column 3]\n " shape="box"]
+"other_enum_main.572f04969b0ade49_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 17, column 3]\n  *&foo_g:int=12 [line 17, column 3]\n " shape="box"]
 	
 
 	 "other_enum_main.572f04969b0ade49_3" -> "other_enum_main.572f04969b0ade49_2" ;
@@ -79,7 +79,7 @@ digraph cfg {
 	
 
 	 "other_enum_test.100f3583adf02590_11" -> "other_enum_test.100f3583adf02590_5" ;
-"other_enum_test.100f3583adf02590_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 21, column 3]\n  *&foo_g:int=(2 + 10) [line 21, column 3]\n " shape="box"]
+"other_enum_test.100f3583adf02590_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(foo_g:int); [line 21, column 3]\n  *&foo_g:int=12 [line 21, column 3]\n " shape="box"]
 	
 
 	 "other_enum_test.100f3583adf02590_12" -> "other_enum_test.100f3583adf02590_11" ;

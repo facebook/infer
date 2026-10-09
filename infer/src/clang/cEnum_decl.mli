@@ -12,3 +12,6 @@ open! IStd
 (** translating the code and adding it to a fake procdesc *)
 
 val enum_decl : Clang_ast_t.decl -> Typ.desc
+
+val add_enum_of_constant : Clang_ast_t.pointer -> unit
+(** add the constants of the enum that declares the given enum constant to the map, if needed *)

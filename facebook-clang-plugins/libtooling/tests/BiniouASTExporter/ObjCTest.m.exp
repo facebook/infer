@@ -6817,7 +6817,7 @@
                                     ],
                                     { #30e4876a: { #c1127ea9: 108 } })>
                               ],
-                              "theend")>
+                              { #efaf0df4: "theend", #d121c0bd: 309 })>
                         ])>,
                   #d2e9b40c: "-[MyClass foo:]"
                 })>,
