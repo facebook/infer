@@ -1960,8 +1960,9 @@ OPTIONS
            See also infer-analyze(1).
 
        --pulse-unsafe-malloc
-           Activates: Assume that malloc(3) never returns null. (Conversely:
-           --no-pulse-unsafe-malloc)
+           Activates: Assume that malloc(3) and non-throwing C++
+           new-expressions such as new (std::nothrow) T never return null.
+           (Conversely: --no-pulse-unsafe-malloc)
            See also infer-analyze(1).
 
        --pulse-widen-threshold int
