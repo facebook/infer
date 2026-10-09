@@ -49,6 +49,25 @@ let check_addr_access path ?must_be_valid_reason access_mode location (address, 
       Ok astate
 
 
+let check_non_null path location callee position (address, history) astate =
+  let access_trace = Trace.Immediate {location; history} in
+  AddressAttributes.check_non_null path access_trace callee position address astate
+  |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
+      ReportableError
+        { diagnostic=
+            Diagnostic.AccessToInvalidAddress
+              { calling_context= []
+              ; invalid_address= Decompiler.find address astate
+              ; invalidation
+              ; invalidation_trace
+              ; access_trace
+              ; may_depend_on_an_unknown_value= astate.AbductiveDomain.unknown_values
+              ; must_be_valid_reason= Some (NullArgumentWhereNonNullExpected (callee, Some position))
+              }
+        ; astate } )
+  |> AccessResult.of_result path
+
+
 module Closures = struct
   let is_captured_by_ref_access (access : Access.t) =
     match access with
@@ -146,6 +165,11 @@ module ModeledField = struct
      and don't return a token; the receiver itself retains the block). *)
   let objc_attached_block =
     Fieldname.make ~is_weak:false swift_attached_handler_class "__infer_attached_block"
+
+
+  let weak_ptr_pointer = Fieldname.make pulse_model_type "__infer_weak_backing_pointer"
+
+  let weak_ptr_count = Fieldname.make pulse_model_type "__infer_weak_backing_count"
 end
 
 let fold_reachable_from ~f args astate =
@@ -164,6 +188,15 @@ let remove_allocation_attr_transitively arg_values astate =
     (Pp.seq ~sep:"; " AbstractValue.pp)
     arg_values ;
   fold_reachable_from ~f:AddressAttributes.remove_allocation_attr arg_values astate
+
+
+let forget_file_descriptors_passed_by_value args astate =
+  List.fold args ~init:astate ~f:(fun astate (value, typ) ->
+      match AddressAttributes.get_allocation_attr value astate with
+      | Some (FileDescriptor _, _) when not (Typ.is_pointer typ) ->
+          AddressAttributes.remove_allocation_attr value astate
+      | _ ->
+          astate )
 
 
 let eval_access_to_value_origin path ?must_be_valid_reason mode location addr_hist access astate =

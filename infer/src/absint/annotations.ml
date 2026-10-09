@@ -37,6 +37,8 @@ let lockless = "Lockless"
 
 let nonnull = "Nonnull"
 
+let nonnull_parameter = "NonnullParameter"
+
 let no_allocation = "NoAllocation"
 
 let nullable = "Nullable"

@@ -466,6 +466,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   //  DECLARE_VISITOR(ComplexType)
   DECLARE_VISITOR(DecltypeType)
   //  DECLARE_VISITOR(DependentSizedExtVectorType)
+  DECLARE_VISITOR(ElaboratedType)
   DECLARE_VISITOR(FunctionType)
   //  DECLARE_VISITOR(FunctionNoProtoType)
   DECLARE_VISITOR(FunctionProtoType)
@@ -487,6 +488,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(AnnotateAttr)
   DECLARE_VISITOR(AvailabilityAttr)
   DECLARE_VISITOR(CleanupAttr)
+  DECLARE_VISITOR(NonNullAttr)
   DECLARE_VISITOR(SentinelAttr)
   DECLARE_VISITOR(VisibilityAttr)
 
@@ -5089,6 +5091,31 @@ void ASTExporter<ATDWriter>::VisitDecltypeType(const DecltypeType *T) {
 }
 
 template <class ATDWriter>
+int ASTExporter<ATDWriter>::ElaboratedTypeTupleSize() {
+  return TypeTupleSize() + 1;
+}
+//@atd #define elaborated_type_tuple type_tuple * elaborated_type_info
+//@atd type elaborated_type_info = {
+//@atd   ?named_type : qual_type option;
+//@atd } <ocaml field_prefix="eti_">
+// The named type keeps sugar such as nullability that the desugared type
+// drops; it is exported for aliases only, as other named types are numerous
+// and do not need it.
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitElaboratedType(const ElaboratedType *T) {
+  VisitType(T);
+  QualType NamedType = T->getNamedType();
+  const Type *NT = NamedType.getTypePtr();
+  const auto *TST = dyn_cast<TemplateSpecializationType>(NT);
+  bool IsAlias = isa<TypedefType, UsingType>(NT) || (TST && TST->isTypeAlias());
+  ObjectScope Scope(OF, IsAlias);
+  if (IsAlias) {
+    OF.emitTag("named_type");
+    dumpQualType(NamedType);
+  }
+}
+
+template <class ATDWriter>
 int ASTExporter<ATDWriter>::FunctionTypeTupleSize() {
   return TypeTupleSize() + 1;
 }
@@ -5403,6 +5430,30 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitCleanupAttr(const CleanupAttr *A) {
   VisitAttr(A);
   dumpDeclRef(*A->getFunctionDecl());
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::NonNullAttrTupleSize() {
+  return AttrTupleSize() + 1;
+}
+//@atd #define non_null_attr_tuple attr_tuple * non_null_attr_info
+//@atd type non_null_attr_info = {
+//@atd   ~args : int list;
+//@atd } <ocaml field_prefix="nnai_">
+// [args] are zero-based indices of the parameters, not counting an implicit
+// object parameter. No [args] means every pointer parameter.
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitNonNullAttr(const NonNullAttr *A) {
+  VisitAttr(A);
+  bool HasArgs = A->args_size() > 0;
+  ObjectScope Scope(OF, HasArgs);
+  if (HasArgs) {
+    OF.emitTag("args");
+    ArrayScope ArgsScope(OF, A->args_size());
+    for (const ParamIdx &Idx : A->args()) {
+      OF.emitInteger(Idx.getASTIndex());
+    }
+  }
 }
 
 template <class ATDWriter>

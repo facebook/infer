@@ -213,6 +213,19 @@ module Basic = struct
     unknown_call_without_formals ~force_pure skip_reason actuals
 
 
+  let skipped_known_call args : model_no_non_disj =
+   fun {path; callee_procname; analysis_data= {tenv}; location; ret} astate ->
+    let actuals = List.map args ~f:(fun {FuncArg.arg_payload= actual; typ} -> (actual, typ)) in
+    let formals_opt =
+      IRAttributes.load callee_procname |> Option.map ~f:ProcAttributes.get_pvar_formals
+    in
+    let<++> astate =
+      PulseCallOperations.unknown_call tenv path location (SkippedKnownCall callee_procname)
+        (Some callee_procname) ~ret ~actuals ~formals_opt astate
+    in
+    astate
+
+
   let id_first_arg_from_list ~desc args : model_no_non_disj =
    fun {path; callee_procname; location; ret= ret_id, _} astate ->
     match args with

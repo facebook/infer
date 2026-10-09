@@ -1192,6 +1192,13 @@ let check_all_valid path call_state =
           | Some must_be_valid_data ->
               (addr_hist_caller, `MustBeValid must_be_valid_data) :: to_check
         in
+        let to_check =
+          match UnsafeAttributes.get_must_be_non_null addr_pre pre.BaseDomain.attrs with
+          | None ->
+              to_check
+          | Some must_be_non_null_data ->
+              (addr_hist_caller, `MustBeNonNull must_be_non_null_data) :: to_check
+        in
         match UnsafeAttributes.get_must_be_initialized addr_pre pre.BaseDomain.attrs with
         | None ->
             to_check
@@ -1200,7 +1207,9 @@ let check_all_valid path call_state =
       call_state.subst []
   in
   let timestamp_of_check = function
-    | `MustBeValid (timestamp, _, _) | `MustBeInitialized (timestamp, _) ->
+    | `MustBeValid (timestamp, _, _)
+    | `MustBeNonNull (timestamp, _, _, _)
+    | `MustBeInitialized (timestamp, _) ->
         timestamp
     | `MustBeAwaited ->
         Timestamp.t0
@@ -1230,7 +1239,13 @@ let check_all_valid path call_state =
                  ; astate } ) )
       | `MustBeValid (_timestamp, callee_access_trace, must_be_valid_reason) ->
           let access_trace = mk_access_trace callee_access_trace in
-          AddressAttributes.check_valid path access_trace addr_caller astate
+          (* a file descriptor passed by the caller, e.g. the constant [STDIN_FILENO], must not be
+             checked as a pointer, neither here nor in the callers of the caller *)
+          let caller_must_be_valid_reason =
+            Option.filter must_be_valid_reason ~f:Invalidation.is_file_descriptor_reason
+          in
+          AddressAttributes.check_valid path ?must_be_valid_reason:caller_must_be_valid_reason
+            access_trace addr_caller astate
           |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
               L.d_printfln ~color:Red "ERROR: caller's %a invalid!" AbstractValue.pp addr_caller ;
               AccessResult.ReportableError
@@ -1244,6 +1259,24 @@ let check_all_valid path call_state =
                       ; may_depend_on_an_unknown_value=
                           call_state.astate.AbductiveDomain.unknown_values
                       ; must_be_valid_reason }
+                ; astate } )
+      | `MustBeNonNull (_timestamp, callee_access_trace, callee, position) ->
+          let access_trace = mk_access_trace callee_access_trace in
+          AddressAttributes.check_non_null path access_trace callee position addr_caller astate
+          |> Result.map_error ~f:(fun (invalidation, invalidation_trace) ->
+              L.d_printfln ~color:Red "ERROR: caller's %a is null!" AbstractValue.pp addr_caller ;
+              AccessResult.ReportableError
+                { diagnostic=
+                    AccessToInvalidAddress
+                      { calling_context= []
+                      ; invalid_address= Decompiler.find addr_caller astate
+                      ; invalidation
+                      ; invalidation_trace
+                      ; access_trace
+                      ; may_depend_on_an_unknown_value=
+                          call_state.astate.AbductiveDomain.unknown_values
+                      ; must_be_valid_reason=
+                          Some (NullArgumentWhereNonNullExpected (callee, Some position)) }
                 ; astate } )
       | `MustBeInitialized (_timestamp, callee_access_trace) ->
           let access_trace = mk_access_trace callee_access_trace in
