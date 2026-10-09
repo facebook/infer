@@ -62,6 +62,7 @@ DIRECT_TESTS += \
   c_performance \
   c_pulse \
   c_pulse-over-only \
+  c_pulse-over-only-balanced \
   c_pulse-over-under \
   c_purity \
   c_export-textual \
