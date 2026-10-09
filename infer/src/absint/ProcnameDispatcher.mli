@@ -258,6 +258,17 @@ module Call : sig
   val any_arg_of_prim_typ : Typ.t -> ('context, unit, _, 'f, 'f, 'arg_payload) one_arg
   (** Eats one arg of the given primitive type *)
 
+  val capt_arg_of_prim_typ :
+       Typ.t
+    -> ( 'context
+       , 'arg_payload FuncArg.t
+       , 'wrapped_arg
+       , 'wrapped_arg -> 'f
+       , 'f
+       , 'arg_payload )
+       one_arg
+  (** Captures one arg of the given primitive type *)
+
   val capt_arg_payload_of_prim_typ :
     Typ.t -> ('context, 'arg_payload, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
   (** Captures the payload of one arg of the given primitive type *)
