@@ -538,6 +538,38 @@ module Vector = struct
     astate
 
 
+  let havoc_size path location vector ~desc astate =
+    GenericArrayBackedCollection.assign_size path location vector
+      (AbstractValue.mk_fresh (), ValueHistory.epoch)
+      ~desc astate
+
+
+  let invalidate_references_unknown_size vector_f vector : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    let desc = Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f in
+    let<*> astate = havoc_size path location vector ~desc astate in
+    invalidate_references vector_f vector model_data astate
+
+
+  let invalidate_references_one_more vector_f vector : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    let desc = Format.asprintf "%a()" Invalidation.pp_std_vector_function vector_f in
+    let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
+    invalidate_references vector_f vector model_data astate
+
+
+  let assign_count vector FuncArg.{arg_payload= count; typ} : model_no_non_disj =
+   fun ({path; location} as model_data) astate ->
+    (* [assign(first, last)] has the same arity *)
+    if Typ.is_int typ then
+      let<*> astate =
+        GenericArrayBackedCollection.assign_size path location vector count
+          ~desc:"std::vector::assign()" astate
+      in
+      invalidate_references Assign vector model_data astate
+    else invalidate_references_unknown_size Assign vector model_data astate
+
+
   let invalidate_references_with_ret vector_f vector : model_no_non_disj =
    fun ({ret= ret_id, _} as model_data) astate ->
     PulseOperations.write_id ret_id vector astate
@@ -553,33 +585,56 @@ module Vector = struct
     PulseOperations.write_id (fst ret) (addr, Hist.add_event event hist) astate
 
 
-  let vector_begin vector iter : model_no_non_disj =
-   fun {path; location} astate ->
-    let event = Hist.call_event path location "std::vector::begin()" in
-    let pointer_hist = Hist.add_event event (snd iter) in
-    let pointer_val = (AbstractValue.mk_fresh (), pointer_hist) in
-    let index_zero = AbstractValue.mk_fresh () in
-    let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
-    let<*> astate, (arr_addr, _arr_hist) =
+  let last_index path location vector astate =
+    let=* astate, (size, _) =
+      GenericArrayBackedCollection.to_internal_size_deref path Read location vector astate
+    in
+    PulseArithmetic.eval_binop (AbstractValue.mk_fresh ()) (MinusA None) (AbstractValueOperand size)
+      (ConstOperand (Cint IntLit.one)) astate
+
+
+  (* the return type is checked because [std::vector<bool>] can return its elements by value *)
+  let front ~desc vector : model_no_non_disj =
+   fun ({ret= _, ret_typ} as model_data) astate ->
+    if Typ.is_pointer ret_typ then
+      let index_zero = AbstractValue.mk_fresh () in
+      let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
+      at ~desc vector (index_zero, ValueHistory.epoch) model_data astate
+    else Basic.nondet ~desc model_data astate
+
+
+  let back ~desc vector : model_no_non_disj =
+   fun ({path; location; ret= _, ret_typ} as model_data) astate ->
+    if Typ.is_pointer ret_typ then
+      let<**> astate, last = last_index path location vector astate in
+      at ~desc vector (last, ValueHistory.epoch) model_data astate
+    else Basic.nondet ~desc model_data astate
+
+
+  let data ~desc vector : model_no_non_disj =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let<+> astate, (arr_addr, arr_hist) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
-    let<*> astate, elem_at_zero =
-      GenericArrayBackedCollection.eval_element path location (arr_addr, pointer_hist) index_zero
-        astate
-    in
+    PulseOperations.write_id ret_id (arr_addr, Hist.add_event event arr_hist) astate
+
+
+  let vector_begin ~desc vector iter : model_no_non_disj =
+   fun {path; location} astate ->
+    let event = Hist.call_event path location desc in
+    let index_zero = AbstractValue.mk_fresh () in
+    let<**> astate = PulseArithmetic.and_eq_int index_zero IntLit.zero astate in
     let<+> astate =
-      PulseOperations.write_deref_field path location ~ref:iter GenericArrayBackedCollection.field
-        ~obj:(arr_addr, pointer_hist) astate
-      >>= PulseOperations.write_field path location ~ref:iter
-            GenericArrayBackedCollection.Iterator.internal_pointer ~obj:pointer_val
-      >>= PulseOperations.write_deref path location ~ref:pointer_val ~obj:elem_at_zero
+      GenericArrayBackedCollection.Iterator.point_into path location event ~collection:vector ~iter
+        ~index:index_zero astate
     in
     astate
 
 
-  let vector_end vector iter : model_no_non_disj =
+  let vector_end ~desc vector iter : model_no_non_disj =
    fun {path; location} astate ->
-    let event = Hist.call_event path location "std::vector::end()" in
+    let event = Hist.call_event path location desc in
     let<*> astate, (arr_addr, _) =
       GenericArrayBackedCollection.eval path Read location vector astate
     in
@@ -615,23 +670,26 @@ module Vector = struct
     astate
 
 
+  let reallocate_unless_reserved path location vector vector_f ~desc astate =
+    if AddressAttributes.is_std_vector_reserved (fst vector) astate then
+      (* assume that growing the vector is ok after one called [reserve] on the same vector (a
+         perfect analysis would also make sure we don't exceed the reserved size) *)
+      Ok astate
+    else
+      match vector_f with
+      | None ->
+          Ok astate
+      | Some vector_f ->
+          (* simulate a re-allocation of the underlying array every time the vector grows *)
+          reallocate_internal_array path
+            (Hist.single_call path location desc)
+            vector vector_f location astate
+
+
   let push_back_common vector ~vector_f ~desc : model_no_non_disj =
    fun {path; location; ret= ret_id, _} astate ->
     let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
-    let<+> astate =
-      let hist = Hist.single_call path location desc in
-      if AddressAttributes.is_std_vector_reserved (fst vector) astate then
-        (* assume that any call to [push_back] is ok after one called [reserve] on the same vector
-           (a perfect analysis would also make sure we don't exceed the reserved size) *)
-        Ok astate
-      else
-        match vector_f with
-        | None ->
-            Ok astate
-        | Some vector_f ->
-            (* simulate a re-allocation of the underlying array every time an element is added *)
-            reallocate_internal_array path hist vector vector_f location astate
-    in
+    let<+> astate = reallocate_unless_reserved path location vector vector_f ~desc astate in
     PulseOperations.write_id ret_id
       (fst vector, Hist.add_call path location desc (snd vector))
       astate
@@ -640,6 +698,62 @@ module Vector = struct
   let push_back_cpp vector ~vector_f ~desc = push_back_common vector ~vector_f:(Some vector_f) ~desc
 
   let push_back vector ~desc = push_back_common vector ~vector_f:None ~desc
+
+  let emplace_back vector ~desc : model_no_non_disj =
+   fun {path; location; ret= ret_id, _} astate ->
+    let<**> astate = GenericArrayBackedCollection.increase_size path location vector ~desc astate in
+    let<*> astate =
+      reallocate_unless_reserved path location vector (Some EmplaceBack) ~desc astate
+    in
+    (* since C++17 the new element is returned by reference *)
+    let<**> astate, last = last_index path location vector astate in
+    let<+> astate, (elem, _) =
+      GenericArrayBackedCollection.element path location vector last astate
+    in
+    PulseOperations.write_id ret_id (elem, Hist.single_call path location desc) astate
+
+
+  let resize vector size : model_no_non_disj =
+   fun {path; location} astate ->
+    let desc = "std::vector::resize()" in
+    let<*> astate, (old_size, _) =
+      GenericArrayBackedCollection.to_internal_size_deref path Read location vector astate
+    in
+    (* shrinking never reallocates; when the vector may grow, assume that it reallocates without
+       splitting the state, as for [push_back] *)
+    let may_grow =
+      PulseArithmetic.prune_binop ~negated:true Le
+        (AbstractValueOperand (fst size))
+        (AbstractValueOperand old_size) astate
+      |> SatUnsat.sat |> Option.is_some
+    in
+    let<*> astate =
+      if may_grow then reallocate_unless_reserved path location vector (Some Resize) ~desc astate
+      else Ok astate
+    in
+    let<+> astate =
+      GenericArrayBackedCollection.assign_size path location vector size ~desc astate
+    in
+    astate
+
+
+  let erase ~range vector iter : model_no_non_disj =
+   fun {path; location} astate ->
+    let desc = "std::vector::erase()" in
+    let event = Hist.call_event path location desc in
+    let<**> astate =
+      if range then SatUnsat.Sat (havoc_size path location vector ~desc astate)
+      else GenericArrayBackedCollection.decrease_size path location vector ~desc astate
+    in
+    let<*> astate =
+      reallocate_internal_array path (Hist.single_event event) vector Erase location astate
+    in
+    (* the returned iterator points to an unknown position in the vector *)
+    let<+> astate =
+      GenericArrayBackedCollection.Iterator.point_into path location event ~collection:vector ~iter
+        astate
+    in
+    astate
 end
 
 module GenericMapCollection = struct
@@ -1251,27 +1365,60 @@ let simple_matchers =
       $+ capt_arg_payload_of_typ (-"std" &:: "vector")
       $+...$--> Vector.init_copy_constructor ~desc:"std::vector::vector()"
       |> with_non_disj
-    ; -"std" &:: "vector" &:: "assign" <>$ capt_arg_payload
-      $+...$--> Vector.invalidate_references Assign
+    ; -"std" &:: "vector" &:: "assign" $ capt_arg_payload $+ capt_arg $+ any_arg
+      $--> Vector.assign_count |> with_non_disj
+    ; -"std" &:: "vector" &:: "assign" $ capt_arg_payload
+      $+...$--> Vector.invalidate_references_unknown_size Assign
       |> with_non_disj
     ; -"std" &:: "vector" &:: "at" <>$ capt_arg_payload $+ capt_arg_payload
       $--> Vector.at ~desc:"std::vector::at()"
       |> with_non_disj
+    ; -"std" &:: "vector" &:: "back" <>$ capt_arg_payload
+      $--> Vector.back ~desc:"std::vector::back()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "begin" <>$ capt_arg_payload $+ capt_arg_payload
-      $--> Vector.vector_begin |> with_non_disj
-    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload $--> Vector.vector_end
+      $--> Vector.vector_begin ~desc:"std::vector::begin()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "cbegin" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_begin ~desc:"std::vector::cbegin()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "end" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_end ~desc:"std::vector::end()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "cend" <>$ capt_arg_payload $+ capt_arg_payload
+      $--> Vector.vector_end ~desc:"std::vector::cend()"
       |> with_non_disj
     ; -"std" &:: "vector" &:: "clear" <>$ capt_arg_payload
       $--> Vector.invalidate_references Clear
       |> with_non_disj
+    ; -"std" &:: "vector" &:: "data" <>$ capt_arg_payload
+      $--> Vector.data ~desc:"std::vector::data()"
+      |> with_non_disj
     ; -"std" &:: "vector" &:: "emplace" $ capt_arg_payload
-      $+...$--> Vector.invalidate_references Emplace
+      $+...$--> Vector.invalidate_references_one_more Emplace
       |> with_non_disj
     ; -"std" &:: "vector" &:: "emplace_back" $ capt_arg_payload
-      $+...$--> Vector.push_back_cpp ~vector_f:EmplaceBack ~desc:"std::vector::emplace_back()"
+      $+...$--> Vector.emplace_back ~desc:"std::vector::emplace_back()"
       |> with_non_disj
-    ; -"std" &:: "vector" &:: "insert" <>$ capt_arg_payload
-      $+...$--> Vector.invalidate_references Insert
+    ; (* the returned iterator is passed as the last argument *)
+      -"std" &:: "vector" &:: "erase" <>$ capt_arg_payload $+ any_arg $+ capt_arg_payload
+      $--> Vector.erase ~range:false |> with_non_disj
+    ; -"std" &:: "vector" &:: "erase" <>$ capt_arg_payload $+ any_arg $+ any_arg $+ capt_arg_payload
+      $--> Vector.erase ~range:true |> with_non_disj
+    ; -"std" &:: "vector" &:: "front" <>$ capt_arg_payload
+      $--> Vector.front ~desc:"std::vector::front()"
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "insert" $ capt_arg_payload $+ any_arg
+      $+ any_arg_of_typ (-"std" &:: "initializer_list")
+      $+ any_arg
+      $--> Vector.invalidate_references_unknown_size Insert
+      |> with_non_disj
+    ; (* [insert(pos, value)], the returned iterator is passed as the last argument *)
+      -"std" &:: "vector" &:: "insert" $ capt_arg_payload $+ any_arg $+ any_arg $+ any_arg
+      $--> Vector.invalidate_references_one_more Insert
+      |> with_non_disj
+    ; -"std" &:: "vector" &:: "insert" $ capt_arg_payload
+      $+...$--> Vector.invalidate_references_unknown_size Insert
       |> with_non_disj
     ; -"std" &:: "vector" &:: "operator=" <>$ capt_arg_payload
       $+...$--> Vector.invalidate_references_with_ret Assign
@@ -1293,6 +1440,8 @@ let simple_matchers =
       |> with_non_disj
     ; -"std" &:: "vector" &:: "reserve" <>$ capt_arg_payload $+...$--> Vector.reserve
       |> with_non_disj
+    ; -"std" &:: "vector" &:: "resize" <>$ capt_arg_payload $+ capt_arg_payload
+      $+...$--> Vector.resize |> with_non_disj
     ; -"std" &:: "vector" &:: "size" $ capt_arg_payload
       $--> GenericArrayBackedCollection.size ~desc:"std::vector::size()"
       |> with_non_disj
