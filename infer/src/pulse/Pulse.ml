@@ -274,6 +274,13 @@ module PulseTransferFunctions = struct
         Sat (Ok exec_state)
 
 
+  (** [pthread_exit] and [thrd_exit] end only the calling thread: unlike at [exit()], memory
+      reachable only from its stack is leaked *)
+  let is_thread_exit pname =
+    Procname.is_c pname
+    && List.mem ["pthread_exit"; "thrd_exit"] (Procname.get_method pname) ~equal:String.equal
+
+
   let topl_small_step tenv loc procname arguments (return, return_type) exec_state_res =
     let arguments =
       List.map arguments ~f:(fun {FuncArg.arg_payload; typ} ->
@@ -1002,9 +1009,10 @@ module PulseTransferFunctions = struct
           exec_states_res
     in
     ( ( if Option.exists callee_pname ~f:IRAttributes.is_no_return then
+          let ignore_leaks = not (Option.exists callee_pname ~f:is_thread_exit) in
           List.filter_map exec_states_res ~f:(fun exec_state_res ->
               (let+ exec_state = exec_state_res in
-               PulseSummary.force_exit_program analysis_data path call_loc exec_state
+               PulseSummary.force_exit_program ~ignore_leaks analysis_data path call_loc exec_state
                |> SatUnsat.sat )
               |> PulseResult.of_some )
         else exec_states_res )
