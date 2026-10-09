@@ -351,13 +351,24 @@ val should_havoc_if_unknown : unit -> [> `ShouldHavoc | `ShouldOnlyHavocResource
 
 val apply_unknown_effect :
      ?havoc_filter:(AbstractValue.t -> PulseAccess.t -> AbstractValue.t * ValueHistory.t -> bool)
+  -> ?forget_pure_calls:bool
   -> ValueHistory.t
   -> AbstractValue.t
   -> t
   -> t
 (** do as much as possible to assume "the best" happened at that location: deallocate and initialize
     everything reachable from the address, then havoc all the edges starting from the address
-    passing [havoc_filter] (by default everything passes the filter) *)
+    passing [havoc_filter] (by default everything passes the filter); unless [forget_pure_calls] is
+    [false], also forget the results of pure unknown calls that may read the memory reachable from
+    the address (see {!forget_pure_calls_reading}) *)
+
+val forget_pure_calls_reading : written:AbstractValue.Set.t lazy_t -> t -> t
+(** forget the results [ret = f(actuals)] of unknown calls deemed pure by
+    [PulseCallOperations.unknown_call] when [f] may read the memory at one of the [written]
+    addresses, typically because that memory has just been modified; [written] is only computed if
+    there are such results to begin with (and only for C-family languages). Results obtained in the
+    state at the start of the procedure are kept as [ret = f@pre(actuals)] so that callers can
+    relate them to their own calls to [f]. *)
 
 val is_local : Var.t -> t -> bool
 

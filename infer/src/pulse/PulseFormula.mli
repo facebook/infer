@@ -197,12 +197,32 @@ val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
 val get_var_repr : t -> Var.t -> Var.t
 (** get the canonical representative for the variable according to the equality relation *)
 
+val function_application_actuals : t -> Var.Set.t
+(** the variables that the actuals of some function application [g(x1, ..., xN)] in the formula
+    depend on *)
+
+val forget_function_applications : t -> f:(Var.t -> bool) -> keep_pre:(Var.t list -> bool) -> t
+(** forget the equalities [v = g(x1, ..., xN)] where [f] holds for a variable of some [xi]; if
+    [keep_pre] holds for the variables of the [xi], meaning that [g(x1, ..., xN)] was evaluated in
+    the state at the start of the procedure, record [v = g@pre(x1, ..., xN)] instead *)
+
 val and_callee_formula :
      default:'metadata
   -> subst:(Var.t * 'metadata) Var.Map.t
   -> t
   -> callee:t
   -> ((Var.t * 'metadata) Var.Map.t * t * new_eqs) SatUnsat.t
+(** the equalities [v = g@pre(x1, ..., xN)] of the callee are left out, see
+    {!and_callee_pre_function_applications} *)
+
+val and_callee_pre_function_applications :
+     default:'metadata
+  -> subst:(Var.t * 'metadata) Var.Map.t
+  -> t
+  -> callee:t
+  -> ((Var.t * 'metadata) Var.Map.t * t * new_eqs) SatUnsat.t
+(** conjoin [v = g(x1, ..., xN)] for each equality [v = g@pre(x1, ..., xN)] of the callee: the start
+    of the callee is the current state of the caller *)
 
 val implies_conditions_up_to :
      subst:Var.t Var.Map.t
