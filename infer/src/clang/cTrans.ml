@@ -928,6 +928,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CVar_decl.sil_var_of_decl_ref context stmt_info.Clang_ast_t.si_source_range decl_ref procname
     in
     CContext.add_block_static_var context procname (pvar, typ) ;
+    ( match typ.Typ.desc with
+    | (Tarray _ | Tstruct _) when Pvar.is_global pvar ->
+        CContext.add_global context pvar typ
+    | _ ->
+        () ) ;
     let var_exp = Exp.Lvar pvar in
     (* Captured variables without initialization do not have the correct types
        inside of lambda bodies. The same issue happens for variables captured by reference

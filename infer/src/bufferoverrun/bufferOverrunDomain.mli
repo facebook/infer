@@ -497,6 +497,10 @@ module Mem : sig
   val is_stack_loc : AbsLoc.Loc.t -> _ t0 -> bool
   (** Check if an abstract location is a stack variable, e.g., [n$0]. *)
 
+  val typ_of_global_array : Pvar.t -> _ t0 -> Typ.t option
+  (** The declared type of a global variable referenced in the procedure if it is an array, e.g.
+      [int a[4]] or [std::array<int, 4>]. *)
+
   val set_prune_pairs : PrunePairs.t -> t -> t
 
   val set_latest_prune : LatestPrune.t -> t -> t
