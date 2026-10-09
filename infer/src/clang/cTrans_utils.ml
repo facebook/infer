@@ -406,8 +406,8 @@ module Loops = struct
 end
 
 (** This function handles ObjC new/alloc and C++ new calls *)
-let create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ?placement_args_exps sil_loc
-    function_type =
+let create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ?placement_args_exps
+    ?(return_null_checked = false) sil_loc function_type =
   let function_type, function_type_np =
     match function_type.Typ.desc with
     | Tptr (styp, Typ.Pk_pointer)
@@ -447,7 +447,12 @@ let create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ?placement_
   in
   let ret_id_typ = (ret_id, function_type) in
   let stmt_call =
-    Sil.Call (ret_id_typ, Exp.Const (Const.Cfun alloc_builtin), args, sil_loc, CallFlags.default)
+    Sil.Call
+      ( ret_id_typ
+      , Exp.Const (Const.Cfun alloc_builtin)
+      , args
+      , sil_loc
+      , {CallFlags.default with cf_return_null_checked= return_null_checked} )
   in
   (function_type, [stmt_call], Exp.Var ret_id)
 
@@ -507,7 +512,8 @@ let new_or_alloc_trans trans_state loc stmt_info function_type class_name_opt se
   else Logging.die InternalError "Expected selector new or alloc but got, %s" selector
 
 
-let cpp_new_trans integer_type_widths sil_loc function_type size_exp placement_args_exps =
+let cpp_new_trans integer_type_widths ~return_null_checked sil_loc function_type size_exp
+    placement_args_exps =
   let alloc_builtin =
     match placement_args_exps with
     | [] -> (
@@ -517,8 +523,8 @@ let cpp_new_trans integer_type_widths sil_loc function_type size_exp placement_a
         BuiltinDecl.__placement_new
   in
   let function_type, stmt_call, exp =
-    create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ~placement_args_exps sil_loc
-      function_type
+    create_alloc_instrs integer_type_widths ~alloc_builtin ?size_exp ~placement_args_exps
+      ~return_null_checked sil_loc function_type
   in
   mk_trans_result (exp, function_type) {empty_control with instrs= stmt_call}
 

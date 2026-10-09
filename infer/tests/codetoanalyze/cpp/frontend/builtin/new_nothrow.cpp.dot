@@ -1,0 +1,192 @@
+/* @generated */
+digraph cfg {
+"nothrow_array_no_init#37501051584.ed6b79fb4f085d85_1" [label="1: Start nothrow_array_no_init\nFormals:  n:unsigned int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "nothrow_array_no_init#37501051584.ed6b79fb4f085d85_1" -> "nothrow_array_no_init#37501051584.ed6b79fb4f085d85_3" ;
+"nothrow_array_no_init#37501051584.ed6b79fb4f085d85_2" [label="2: Exit nothrow_array_no_init \n  " color=yellow style=filled]
+	
+
+"nothrow_array_no_init#37501051584.ed6b79fb4f085d85_3" [label="3:  CXXNewExpr \n   n$0=*&n:unsigned int [line 29, column 72]\n  n$1=_fun___placement_new((sizeof(t=int;nbytes=4;nullable=false) * n$0):unsigned long,&#GB<>$std::nothrow:std::nothrow_t const ) return_null_checked [line 29, column 49]\n " shape="box"]
+	
+
+	 "nothrow_array_no_init#37501051584.ed6b79fb4f085d85_3" -> "nothrow_array_no_init#37501051584.ed6b79fb4f085d85_4" ;
+"nothrow_array_no_init#37501051584.ed6b79fb4f085d85_4" [label="4:  Return Stmt \n   *&return:int*=n$1 [line 29, column 42]\n " shape="box"]
+	
+
+	 "nothrow_array_no_init#37501051584.ed6b79fb4f085d85_4" -> "nothrow_array_no_init#37501051584.ed6b79fb4f085d85_2" ;
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_1" [label="1: Start nothrow_ctor\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_1" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_3" ;
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_2" [label="2: Exit nothrow_ctor \n  " color=yellow style=filled]
+	
+
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_3" [label="3:  CXXNewExpr \n   n$0=_fun___placement_new(sizeof(t=Obj;nullable=false):unsigned long,&#GB<>$std::nothrow:std::nothrow_t const ) return_null_checked [line 27, column 30]\n " shape="box"]
+	
+
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_3" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_6" ;
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_3" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_7" ;
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_4" [label="4:  CXXNewExpr \n   n$1=_fun_Obj::Obj(n$0:Obj*,2:int) [line 27, column 49]\n " shape="box"]
+	
+
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_4" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_5" ;
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_5" [label="5: + \n  " ]
+	
+
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_5" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_8" ;
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE(n$0, true); [line 27, column 30]\n " shape="invhouse"]
+	
+
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_6" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_4" ;
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 27, column 30]\n " shape="invhouse"]
+	
+
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_7" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_5" ;
+"nothrow_ctor#7134467991520183631.8630fa1232b54af7_8" [label="8:  Return Stmt \n   *&return:Obj*=n$0 [line 27, column 23]\n " shape="box"]
+	
+
+	 "nothrow_ctor#7134467991520183631.8630fa1232b54af7_8" -> "nothrow_ctor#7134467991520183631.8630fa1232b54af7_2" ;
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_1" [label="1: Start nothrow_scalar\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_1" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_3" ;
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_2" [label="2: Exit nothrow_scalar \n  " color=yellow style=filled]
+	
+
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_3" [label="3:  CXXNewExpr \n   n$0=_fun___placement_new(sizeof(t=int;nbytes=4;nullable=false):unsigned long,&#GB<>$std::nothrow:std::nothrow_t const ) return_null_checked [line 25, column 32]\n " shape="box"]
+	
+
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_3" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_6" ;
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_3" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_7" ;
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_4" [label="4:  CXXNewExpr \n   *n$0:int=1 [line 25, column 32]\n " shape="box"]
+	
+
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_4" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_5" ;
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_5" [label="5: + \n  " ]
+	
+
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_5" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_8" ;
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_6" [label="6: Prune (true branch, boolean exp) \n   PRUNE(n$0, true); [line 25, column 32]\n " shape="invhouse"]
+	
+
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_6" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_4" ;
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_7" [label="7: Prune (false branch, boolean exp) \n   PRUNE(!n$0, false); [line 25, column 32]\n " shape="invhouse"]
+	
+
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_7" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_5" ;
+"nothrow_scalar#104359202620265497.2dfd081520923f0a_8" [label="8:  Return Stmt \n   *&return:int*=n$0 [line 25, column 25]\n " shape="box"]
+	
+
+	 "nothrow_scalar#104359202620265497.2dfd081520923f0a_8" -> "nothrow_scalar#104359202620265497.2dfd081520923f0a_2" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_1" [label="1: Start nothrow_temporary_in_initializer\nFormals: \nLocals:  0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const  0$?%__sil_tmp_temp_marker_n$1:_Bool \n  " color=yellow style=filled]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_1" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_9" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_2" [label="2: Exit nothrow_temporary_in_initializer \n  " color=yellow style=filled]
+	
+
+"nothrow_temporary_in_initializer#.49ef7108247d555b_3" [label="3:  CXXNewExpr \n   n$4=_fun___placement_new(sizeof(t=Holder;nullable=false):unsigned long,&#GB<>$std::nothrow:std::nothrow_t const ) return_null_checked [line 44, column 10]\n " shape="box"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_3" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_7" ;
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_3" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_8" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_4" [label="4:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const ); [line 44, column 36]\n  *&0$?%__sil_tmp_temp_marker_n$1:_Bool=1 [line 44, column 36]\n " shape="box"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_4" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_5" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_5" [label="5:  CXXNewExpr \n   n$5=_fun_Holder::Holder(n$4:Holder*,&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const &) [line 44, column 29]\n " shape="box"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_5" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_6" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_6" [label="6: + \n  " ]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_6" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_12" ;
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_6" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_13" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_7" [label="7: Prune (true branch, boolean exp) \n   PRUNE(n$4, true); [line 44, column 10]\n " shape="invhouse"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_7" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_4" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_8" [label="8: Prune (false branch, boolean exp) \n   PRUNE(!n$4, false); [line 44, column 10]\n " shape="invhouse"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_8" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_6" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_9" [label="9:  ExprWithCleanups \n   VARIABLE_DECLARED(0$?%__sil_tmp_temp_marker_n$1:_Bool); [line 44, column 10]\n  *&0$?%__sil_tmp_temp_marker_n$1:_Bool=0 [line 44, column 10]\n " shape="box"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_9" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_3" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_10" [label="10: + \n  " ]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_10" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_14" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_11" [label="11:  Destruction(temporaries cleanup) \n   _=*&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const  [line 44, column 46]\n  n$7=_fun_Resource::~Resource(&0$?%__sil_tmpSIL_materialize_temp__n$0:Resource const *) injected [line 44, column 46]\n " shape="box"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_11" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_10" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_12" [label="12: Prune (true branch, boolean exp) \n   n$8=*&0$?%__sil_tmp_temp_marker_n$1:_Bool [line 44, column 46]\n  PRUNE(n$8, true); [line 44, column 46]\n " shape="invhouse"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_12" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_11" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_13" [label="13: Prune (false branch, boolean exp) \n   n$8=*&0$?%__sil_tmp_temp_marker_n$1:_Bool [line 44, column 46]\n  PRUNE(!n$8, false); [line 44, column 46]\n " shape="invhouse"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_13" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_10" ;
+"nothrow_temporary_in_initializer#.49ef7108247d555b_14" [label="14:  Return Stmt \n   *&return:Holder*=n$4 [line 44, column 3]\n " shape="box"]
+	
+
+	 "nothrow_temporary_in_initializer#.49ef7108247d555b_14" -> "nothrow_temporary_in_initializer#.49ef7108247d555b_2" ;
+"reserved_placement#14572862079641.510e2730bdd255cd_1" [label="1: Start reserved_placement\nFormals:  buf:void*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "reserved_placement#14572862079641.510e2730bdd255cd_1" -> "reserved_placement#14572862079641.510e2730bdd255cd_3" ;
+"reserved_placement#14572862079641.510e2730bdd255cd_2" [label="2: Exit reserved_placement \n  " color=yellow style=filled]
+	
+
+"reserved_placement#14572862079641.510e2730bdd255cd_3" [label="3:  CXXNewExpr \n   n$0=*&buf:void* [line 33, column 50]\n  n$1=_fun___placement_new(sizeof(t=Obj;nullable=false):unsigned long,n$0:void*) [line 33, column 45]\n " shape="box"]
+	
+
+	 "reserved_placement#14572862079641.510e2730bdd255cd_3" -> "reserved_placement#14572862079641.510e2730bdd255cd_4" ;
+"reserved_placement#14572862079641.510e2730bdd255cd_4" [label="4:  CXXNewExpr \n   n$2=_fun_Obj::Obj(n$1:Obj*,4:int) [line 33, column 55]\n " shape="box"]
+	
+
+	 "reserved_placement#14572862079641.510e2730bdd255cd_4" -> "reserved_placement#14572862079641.510e2730bdd255cd_5" ;
+"reserved_placement#14572862079641.510e2730bdd255cd_5" [label="5:  Return Stmt \n   *&return:Obj*=n$1 [line 33, column 38]\n " shape="box"]
+	
+
+	 "reserved_placement#14572862079641.510e2730bdd255cd_5" -> "reserved_placement#14572862079641.510e2730bdd255cd_2" ;
+"throwing_ctor#1938191045769025495.c853cec50088bc11_1" [label="1: Start throwing_ctor\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "throwing_ctor#1938191045769025495.c853cec50088bc11_1" -> "throwing_ctor#1938191045769025495.c853cec50088bc11_3" ;
+"throwing_ctor#1938191045769025495.c853cec50088bc11_2" [label="2: Exit throwing_ctor \n  " color=yellow style=filled]
+	
+
+"throwing_ctor#1938191045769025495.c853cec50088bc11_3" [label="3:  CXXNewExpr \n   n$0=_fun___new(sizeof(t=Obj;nullable=false):unsigned long) [line 31, column 31]\n " shape="box"]
+	
+
+	 "throwing_ctor#1938191045769025495.c853cec50088bc11_3" -> "throwing_ctor#1938191045769025495.c853cec50088bc11_4" ;
+"throwing_ctor#1938191045769025495.c853cec50088bc11_4" [label="4:  CXXNewExpr \n   n$1=_fun_Obj::Obj(n$0:Obj*,3:int) [line 31, column 35]\n " shape="box"]
+	
+
+	 "throwing_ctor#1938191045769025495.c853cec50088bc11_4" -> "throwing_ctor#1938191045769025495.c853cec50088bc11_5" ;
+"throwing_ctor#1938191045769025495.c853cec50088bc11_5" [label="5:  Return Stmt \n   *&return:Obj*=n$0 [line 31, column 24]\n " shape="box"]
+	
+
+	 "throwing_ctor#1938191045769025495.c853cec50088bc11_5" -> "throwing_ctor#1938191045769025495.c853cec50088bc11_2" ;
+"Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_1" [label="1: Start Obj::Obj\nFormals:  this:Obj* v:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_1" -> "Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_3" ;
+"Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_2" [label="2: Exit Obj::Obj \n  " color=yellow style=filled]
+	
+
+"Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_3" [label="3:  Constructor Init \n   n$1=*&this:Obj* [line 22, column 16]\n " shape="box"]
+	
+
+	 "Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_3" -> "Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_4" ;
+"Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_4" [label="4:  Constructor Init \n   n$2=*&v:int [line 22, column 18]\n  *n$1.x:int=n$2 [line 22, column 16]\n " shape="box"]
+	
+
+	 "Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_4" -> "Obj#Obj#{14333046026455618475}.3696d9e1aa29f419_2" ;
+}

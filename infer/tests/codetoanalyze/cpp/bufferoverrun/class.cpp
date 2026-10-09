@@ -131,6 +131,22 @@ void placement_new_overload4_Good() {
   x->a[0] = 0;
 }
 
+inline void* operator new(std::size_t, DummyClass, DummyClass, void* p) {
+  return p;
+}
+
+void placement_new_overload5_Good() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (DummyClass{}, DummyClass{}, mem) my_class2();
+  x->a[0] = 0;
+}
+
+void placement_new_overload5_Bad() {
+  char* mem = (char*)malloc(sizeof(my_class2));
+  my_class2* x = new (DummyClass{}, DummyClass{}, mem) my_class2();
+  x->a[10] = 0;
+}
+
 struct Allocator {
   void* allocate(std::size_t size) { return malloc(size); }
 };
@@ -139,10 +155,23 @@ void* operator new(std::size_t size, Allocator& allocator) {
   return allocator.allocate(size);
 }
 
-void user_defined_new_Bad_FN() {
+// the size of the object is unknown since the allocation function is not
+// analyzed
+void user_defined_new_Bad() {
   Allocator allocator;
-  my_class2* x = new (allocator) my_class2();
+  my_class2* x = new (allocator) my_class2;
   x->a[10] = 0;
+}
+
+void* operator new(std::size_t size, const char* file, int line, int tag) {
+  return malloc(size);
+}
+
+// the overrun is only found if the new-expression does not stop the analysis
+void user_defined_new_three_args_Bad() {
+  my_class2* x = new ("file", 10, 3) my_class2();
+  int a[5];
+  a[10] = 0;
 }
 
 class my_class4 {
