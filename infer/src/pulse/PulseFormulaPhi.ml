@@ -787,6 +787,13 @@ end = struct
 
 
   let add_interval_ v intv intervals =
+    let* intv =
+      (* restricted variables are ≥0, which the interval domain does not know about otherwise *)
+      if Var.is_restricted v then
+        let reason () = F.asprintf "restricted %a in %a" Var.pp v CItv.pp intv in
+        CItv.intersection intv CItv.nonnegative |> SatUnsat.of_option {reason; source= __POS__}
+      else Sat intv
+    in
     let+ possibly_better_intv =
       match Var.Map.find_opt v intervals with
       | None ->
@@ -1282,8 +1289,16 @@ end = struct
 
   and add_linear_eq_and_solve_new_eq_opt ~fuel new_eqs v l phi =
     Debug.p "add_linear_eq_and_solve_new_eq_opt %a->%a@\n" Var.pp v (LinArith.pp Var.pp) l ;
-    let phi, new_eq_opt = add_linear_eq v l phi in
-    discharge_new_eq_opt ~fuel new_eqs v new_eq_opt phi
+    match LinArith.classify_minimized_maximized l with
+    | (`Maximized | `Constant) when Var.is_restricted v && Q.(LinArith.get_constant_part l < zero)
+      ->
+        (* [v ≥ 0] but [l < 0]; equalities between restricted variables obtained by substitution in
+           [linear_eqs] do not go through [solve_tableau_restricted_eq], which would detect this *)
+        let reason () = F.asprintf "restricted %a = %a < 0" Var.pp v (LinArith.pp Var.pp) l in
+        Unsat {reason; source= __POS__}
+    | _ ->
+        let phi, new_eq_opt = add_linear_eq v l phi in
+        discharge_new_eq_opt ~fuel new_eqs v new_eq_opt phi
 
 
   (** TODO: at the moment this doesn't try to discover and return new equalities implied by the
