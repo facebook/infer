@@ -401,6 +401,13 @@ module Syntax = struct
 
   let load x = access Read x Dereference
 
+  let eval_var pvar : aval model_monad =
+    let* {path; location} = get_data in
+    exec_operation (fun astate ->
+        let astate, addr_hist = PulseOperations.eval_var path location pvar astate in
+        (addr_hist, astate) )
+
+
   let _field x f = access Read x (FieldAccess f)
 
   let add_dict_contain_const_keys (addr, _) : unit model_monad =

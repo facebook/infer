@@ -30,6 +30,8 @@ module LazyHeapPath : sig
 
   val from_pvar : Pvar.t -> t
 
+  val from_global : Pvar.t -> t
+
   val unsupported : t
 
   val push : Access.t -> t -> t
@@ -48,6 +50,9 @@ end = struct
 
 
   let from_pvar pvar = Supported {stack= [Access.Dereference]; pvar}
+
+  (* unlike formals, globals are visited from their address rather than from their value *)
+  let from_global pvar = Supported {stack= []; pvar}
 
   let unsupported = Unsupported
 
@@ -741,7 +746,7 @@ let materialize_pre_for_parameters ~formals ~actuals call_state =
 let materialize_pre_for_globals path call_state =
   fold_globals_of_callee_stack path call_state.call_location call_state.callee_pre.BaseDomain.stack
     call_state ~f:(fun pvar ~addr_hist_callee:(addr_pre, pre_hist) ~addr_hist_caller call_state ->
-      let path = LazyHeapPath.from_pvar pvar in
+      let path = LazyHeapPath.from_global pvar in
       materialize_pre_from_address ~addr_pre
         (ValueHistory.get_cell_id_exn pre_hist)
         ~addr_hist_caller path call_state )
