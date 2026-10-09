@@ -63,6 +63,33 @@ module ProcessLocks = struct
     List.iter proc_filenames ~f:(fun proc_filename -> Unix.unlink (lock_of_filename proc_filename))
 
 
+  let is_locked_by pid filename =
+    match read_lock_value filename with
+    | Some owner_pid ->
+        Int.equal owner_pid (Pid.to_int pid)
+    | None | (exception (Sys_error _ | Unix.Unix_error _ | End_of_file)) ->
+        false
+
+
+  (* the locks of [pid] are only released by [pid] itself, or by the scheduler once [pid] is idle,
+     so they cannot go away between the check and the unlinking *)
+  let unlock_if_locked_by pid filename = if is_locked_by pid filename then Unix.unlink filename
+
+  let unlock_all_owned pid proc_filenames =
+    List.iter proc_filenames ~f:(fun proc_filename ->
+        unlock_if_locked_by pid (lock_of_filename proc_filename) )
+
+
+  let is_locked_by_us pname = is_locked_by (WorkerPoolState.get_pid ()) (lock_of_procname pname)
+
+  let unlock_all_locked_by_us ~except =
+    let pid = WorkerPoolState.get_pid () in
+    Stdlib.Sys.readdir locks_dir
+    |> Array.iter ~f:(fun proc_filename ->
+        if not (List.mem except proc_filename ~equal:String.equal) then
+          unlock_if_locked_by pid (lock_of_filename proc_filename) )
+
+
   let lock_all pid proc_filenames =
     let lock_result =
       List.fold_result proc_filenames ~init:[] ~f:(fun locks proc_filename ->
@@ -91,18 +118,22 @@ module DomainLocks = struct
 
   let setup () = LockMap.clear lock_map
 
-  let unsafe_unlock_proc_uid proc_uid =
-    if LockMap.mem lock_map proc_uid then LockMap.remove lock_map proc_uid
-    else L.die InternalError "Tried to unlock not-locked proc_uid: %s@\n" proc_uid
+  let unsafe_unlock_key key =
+    if LockMap.mem lock_map key then LockMap.remove lock_map key
+    else L.die InternalError "Tried to unlock not-locked key: %s@\n" key
 
+
+  (* the scheduler reserves procedures for jobs using the keys that the workers send it, which are
+     [Procname.to_filename]s *)
+  let key_of_procname = Procname.to_filename
 
   let unlock pname =
-    let proc_uid = Procname.to_unique_id pname in
-    IMutex.critical_section mutex ~f:(fun () -> unsafe_unlock_proc_uid proc_uid)
+    let key = key_of_procname pname in
+    IMutex.critical_section mutex ~f:(fun () -> unsafe_unlock_key key)
 
 
   let unlock_all proc_filenames =
-    IMutex.critical_section mutex ~f:(fun () -> List.iter proc_filenames ~f:unsafe_unlock_proc_uid)
+    IMutex.critical_section mutex ~f:(fun () -> List.iter proc_filenames ~f:unsafe_unlock_key)
 
 
   let unsafe_try_lock_key domain_id key =
@@ -118,8 +149,37 @@ module DomainLocks = struct
 
   let try_lock pname =
     let our_id = WorkerPoolState.get_in_child () |> Option.value_exn in
-    let proc_uid = Procname.to_unique_id pname in
-    IMutex.critical_section mutex ~f:(fun () -> unsafe_try_lock_key our_id proc_uid)
+    let key = key_of_procname pname in
+    IMutex.critical_section mutex ~f:(fun () -> unsafe_try_lock_key our_id key)
+
+
+  let unsafe_is_locked_by domain_id key =
+    LockMap.find_opt lock_map key |> Option.exists ~f:(Int.equal domain_id)
+
+
+  let unlock_all_owned domain_id keys =
+    IMutex.critical_section mutex ~f:(fun () ->
+        List.iter keys ~f:(fun key ->
+            if unsafe_is_locked_by domain_id key then LockMap.remove lock_map key ) )
+
+
+  let is_locked_by_us pname =
+    (* outside of the workers, eg in a whole-program analysis after the jobs, nothing is ours: the
+       main domain only locks procedures on behalf of the workers *)
+    WorkerPoolState.get_in_child ()
+    |> Option.exists ~f:(fun our_id ->
+        let key = key_of_procname pname in
+        IMutex.critical_section mutex ~f:(fun () -> unsafe_is_locked_by our_id key) )
+
+
+  let unlock_all_locked_by_us ~except =
+    let our_id = WorkerPoolState.get_in_child () |> Option.value_exn in
+    IMutex.critical_section mutex ~f:(fun () ->
+        LockMap.filter_map_inplace
+          (fun key locker_id ->
+            if Int.equal our_id locker_id && not (List.mem except key ~equal:String.equal) then None
+            else Some locker_id )
+          lock_map )
 
 
   let lock_all domain_id keys =
@@ -173,3 +233,22 @@ let lock_all worker_id proc_filenames =
 let unlock_all proc_filenames =
   if Config.multicore then DomainLocks.unlock_all proc_filenames
   else ProcessLocks.unlock_all proc_filenames
+
+
+let unlock_all_owned worker_id proc_filenames =
+  match ((worker_id : WorkerPoolState.worker_id), Config.multicore) with
+  | Pid pid, false ->
+      ProcessLocks.unlock_all_owned pid proc_filenames
+  | Domain domain_id, true ->
+      DomainLocks.unlock_all_owned domain_id proc_filenames
+  | _, _ ->
+      Die.die InternalError "Tried to use incorrect worker type for current analysis mode.@\n"
+
+
+let is_locked_by_us pname =
+  if Config.multicore then DomainLocks.is_locked_by_us pname else ProcessLocks.is_locked_by_us pname
+
+
+let unlock_all_locked_by_us ~except =
+  if Config.multicore then DomainLocks.unlock_all_locked_by_us ~except
+  else ProcessLocks.unlock_all_locked_by_us ~except

@@ -53,6 +53,7 @@ let analyze_target :
   in
   fun target ->
     let start = ExecutionDuration.counter () in
+    RestartScheduler.forget_reservations () ;
     let result =
       match target with
       | Procname {proc_name; specialization} ->
