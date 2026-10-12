@@ -237,7 +237,16 @@
     { "class_names": ["javax.servlet.http.HttpServlet", "jakarta.servlet.http.HttpServlet"],
       "method_names": ["doDelete", "doGet", "doHead", "doOptions", "doPost", "doPut", "doTrace", "service"],
       "kinds": ["Endpoint"],
-      "taint_target": ["ArgumentsMatchingTypes", ["javax.servlet.ServletRequest", "jakarta.servlet.ServletRequest"]] }
+      "taint_target": ["ArgumentsMatchingTypes", ["javax.servlet.ServletRequest", "jakarta.servlet.ServletRequest"]] },
+    { "overrides_of_class_with_annotation": "javax.ejb.Remote",
+      "kinds": ["Endpoint"],
+      "taint_target": "AllArguments" },
+    { "overrides_of_class_with_annotation": "jakarta.ejb.Remote",
+      "kinds": ["Endpoint"],
+      "taint_target": "AllArguments" },
+    { "class_names": ["java.net.Socket"],
+      "method_names": ["getInputStream"],
+      "kinds": ["Endpoint"] }
   ],
   "pulse-taint-sinks": [
     { "class_names": ["android.app.Activity"],
