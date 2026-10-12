@@ -79,6 +79,12 @@
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["XPathQuery"] }
       ]
+    },
+    { "short_description": "LDAP Injection",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sink_kinds": ["LDAPQuery"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -381,6 +387,11 @@
       "method_names": ["compile", "evaluate", "evaluateExpression"],
       "kinds": ["XPathQuery"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["javax.naming.directory.DirContext", "javax.naming.directory.InitialDirContext", "javax.naming.event.EventDirContext", "javax.naming.ldap.InitialLdapContext", "javax.naming.ldap.LdapContext"],
+      "method_names": ["search"],
+      "kinds": ["LDAPQuery"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String", "javax.naming.Name"]]
     },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["addBatch", "execute", "executeQuery", "executeUpdate", "executeLargeUpdate"],
