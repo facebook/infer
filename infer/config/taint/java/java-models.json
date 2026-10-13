@@ -85,6 +85,13 @@
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
           "sink_kinds": ["LDAPQuery"] }
       ]
+    },
+    { "short_description": "Trust Boundary Violation",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Validation"],
+          "sink_kinds": ["SessionAttribute"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -401,6 +408,10 @@
       "method_names": ["search"],
       "kinds": ["LDAPQuery"],
       "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String", "javax.naming.Name"]]
+    },
+    { "class_names": ["javax.servlet.http.HttpSession", "jakarta.servlet.http.HttpSession"],
+      "method_names": ["putValue", "setAttribute"],
+      "kinds": ["SessionAttribute"]
     },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["addBatch", "execute", "executeQuery", "executeUpdate", "executeLargeUpdate"],

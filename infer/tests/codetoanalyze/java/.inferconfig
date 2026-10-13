@@ -155,6 +155,11 @@
   "pulse-taint-sanitizers": [
     { "procedure": "inferUniversalSanitizer" },
     { "procedure": "codetoanalyze.java.pulse.ExternalSpecs.sanitizer" },
-    { "method_with_annotation": "codetoanalyze.java.pulse.SanitizerMarker" }
+    { "method_with_annotation": "codetoanalyze.java.pulse.SanitizerMarker" },
+    { "class_names": ["codetoanalyze.java.pulse.UserStore"],
+      "method_names": ["checkPassword"],
+      "kinds": ["Validation"],
+      "taint_target": ["ArgumentPositions", [0]]
+    }
   ]
 }
