@@ -1,0 +1,354 @@
+{
+  "pulse-taint-sources": [
+    {
+      "method_with_annotation": "HttpGetAttribute",
+      "kinds": ["User-controlled Input"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "method_with_annotation": "HttpPutAttribute",
+      "kinds": ["User-controlled Input"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "method_with_annotation": "HttpPostAttribute",
+      "kinds": ["User-controlled Input"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "method_with_annotation": "HttpDeleteAttribute",
+      "kinds": ["User-controlled Input"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "method_with_annotation": "HttpPost",
+      "kinds": ["User-controlled Input"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "method_with_annotation": "HttpGet",
+      "kinds": ["User-controlled Input"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "method_with_annotation": "HttpDelete",
+      "kinds": ["User-controlled Input"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "class_names": ["System.Web.UI.Page"],
+      "method_names": ["get_Request"],
+      "kinds": ["User-controlled Input"]
+    },
+    {
+      "class_names": [
+        "System.Web.UI.WebControls.TextBox",
+        "System.Windows.Forms.TextBox"
+      ],
+      "method_names": ["get_Text"],
+      "kinds": ["User-controlled Input"]
+    }
+  ],
+  "pulse-taint-sinks": [
+    {
+      "class_names": ["System.Data.Common.DbCommand"],
+      "method_names": ["set_CommandText"],
+      "kinds": ["SQLInjection"]
+    },
+    {
+      "class_names": [
+        "System.Data.SqlClient.SqlCommand",
+        "System.Data.SqlClient.SqlDataAdapter",
+        "System.Data.SqlClient.SqlConnection",
+        "Microsoft.Data.SqlClient.SqlCommand",
+        "Microsoft.Data.SqlClient.SqlDataAdapter",
+        "Microsoft.Data.SqlClient.SqlConnection"
+      ],
+      "method_names": [".ctor"],
+      "kinds": ["SQLInjection"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "class_names": [
+        "System.Data.SqlClient.SqlParameter"
+      ],
+      "method_names": [".ctor"],
+      "kinds": ["SQLInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": [
+        "System.Runtime.Serialization.Formatters.Binary.BinaryFormatter",
+        "System.Runtime.Deserialization.Formatters.Soap.SoapFormatter",
+        "System.Web.UI.ObjectStateFormatter",
+        "System.Runtime.Serialization.NetDataContractSerializer",
+        "System.Web.UI.LosFormatter",
+        "YamlDotNet.Serialization.Deserializer"
+      ],
+      "method_names": ["Deserialize"],
+      "kinds": ["Deserialization"]
+    },
+    {
+      "class_names": [
+        "System.Runtime.Serialization.Formatters.Binary.BinaryFormatter"
+      ],
+      "method_names": ["UnsafeDeserialize", "UnsafeDeserializeMethodResponse"],
+      "kinds": ["Deserialization"]
+    },
+    {
+      "class_names": ["System.Runtime.Serialization.NetDataContractSerializer"],
+      "method_names": ["ReadObject"],
+      "kinds": ["Deserialization"]
+    },
+    {
+      "class_names": [
+        "System.Windows.Markup.XamlReader",
+        "System.Workflow.ComponentModel.Activity"
+      ],
+      "method_names": ["Load", "LoadAsync", "Parse"],
+      "kinds": ["Deserialization"]
+    },
+    {
+      "class_names": ["System.Data.DataSet", "System.Data.DataTable"],
+      "method_names": ["ReadXmlSchema", "ReadXml"],
+      "kinds": ["Deserialization"]
+    },
+    {
+      "class_names": ["System.Net.Http.HttpClient"],
+      "method_names": [
+        "GetAsync", "GetStringAsync", "GetByteArrayAsync", "GetStreamAsync",
+        "PostAsync", "PutAsync", "PatchAsync", "DeleteAsync", "SendAsync"
+      ],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Net.WebClient"],
+      "method_names": [
+        "DownloadString", "DownloadStringAsync", "DownloadStringTaskAsync",
+        "DownloadData", "DownloadDataAsync", "DownloadDataTaskAsync",
+        "DownloadFile", "DownloadFileAsync", "DownloadFileTaskAsync",
+        "UploadFile", "UploadFileAsync", "UploadFileTaskAsync",
+        "UploadString", "UploadStringAsync", "UploadStringTaskAsync",
+        "UploadData", "UploadDataAsync", "UploadDataTaskAsync",
+        "UploadValues", "UploadValuesAsync", "UploadValuesTaskAsync"
+      ],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Net.WebRequest"],
+      "method_names": ["Create", "CreateHttp", "CreateDefault"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Net.Http.HttpRequestMessage"],
+      "method_names": [".ctor"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    {
+      "class_names": ["System.Uri"],
+      "method_names": [".ctor"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.UriBuilder"],
+      "method_names": [".ctor"],
+      "kinds": ["SSRF"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "class_names": ["Microsoft.AspNetCore.Mvc.RedirectResult"],
+      "method_names": [".ctor"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["Microsoft.AspNetCore.Mvc.ControllerBase"],
+      "method_names": ["Redirect"],
+      "kinds": ["SSRF"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "class_names": ["Microsoft.EntityFrameworkCore.DbSet"],
+      "method_names": ["Add", "AddRange", "Remove", "RemoveRange"],
+      "kinds": ["SSRF"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "class_names": ["System.IO.File"],
+      "method_names": [
+        "ReadAllText", "ReadAllTextAsync",
+        "ReadAllBytes", "ReadAllBytesAsync",
+        "ReadAllLines", "ReadAllLinesAsync",
+        "ReadLines", "ReadLinesAsync",
+        "WriteAllText", "WriteAllTextAsync",
+        "WriteAllBytes", "WriteAllBytesAsync",
+        "WriteAllLines", "WriteAllLinesAsync",
+        "AppendAllText", "AppendAllTextAsync",
+        "AppendAllLines", "AppendAllLinesAsync",
+        "Open", "OpenRead", "OpenWrite", "OpenText",
+        "Create", "CreateText",
+        "Delete", "Exists", "Move", "Copy"
+      ],
+      "kinds": ["Path Traversal"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": [
+        "System.IO.FileInfo",
+        "System.IO.DirectoryInfo",
+        "System.IO.StreamReader",
+        "System.IO.StreamWriter",
+        "System.IO.FileStream"
+      ],
+      "method_names": [".ctor"],
+      "kinds": ["Path Traversal"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.IO.Directory"],
+      "method_names": [
+        "GetFiles", "GetDirectories", "GetFileSystemEntries",
+        "EnumerateFiles", "EnumerateDirectories", "EnumerateFileSystemEntries",
+        "CreateDirectory", "Delete", "Exists", "Move"
+      ],
+      "kinds": ["Path Traversal"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Diagnostics.Process"],
+      "method_names": ["Start"],
+      "kinds": ["Command Injection"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "class_names": ["System.Diagnostics.ProcessStartInfo"],
+      "method_names": [".ctor", "set_FileName", "set_Arguments"],
+      "kinds": ["Command Injection"],
+      "taint_target": "AllArguments"
+    },
+    {
+      "class_names": ["System.Xml.XmlDocument"],
+      "method_names": ["Load", "LoadXml"],
+      "kinds": ["XXE"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Xml.XmlTextReader"],
+      "method_names": [".ctor"],
+      "kinds": ["XXE"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Xml.XmlReader"],
+      "method_names": ["Create"],
+      "kinds": ["XXE"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Xml.XPath.XPathDocument"],
+      "method_names": [".ctor"],
+      "kinds": ["XXE"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Xml.Linq.XDocument"],
+      "method_names": ["Load", "Parse"],
+      "kinds": ["XXE"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["System.Xml.Linq.XElement"],
+      "method_names": ["Load", "Parse"],
+      "kinds": ["XXE"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["Microsoft.AspNetCore.Http.HttpResponseWritingExtensions"],
+      "method_names": ["WriteAsync"],
+      "kinds": ["XSS"],
+      "taint_target": ["ArgumentPositions", [1]]
+    },
+    {
+      "class_names": ["System.Web.HttpResponse"],
+      "method_names": ["Write", "BinaryWrite", "TransmitFile"],
+      "kinds": ["XSS"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    {
+      "class_names": ["Microsoft.AspNetCore.Mvc.ContentResult"],
+      "method_names": ["set_Content"],
+      "kinds": ["XSS"],
+      "taint_target": ["ArgumentPositions", [0]]
+    }
+  ],
+  "pulse-taint-policies": [
+    {
+      "short_description": "SQL Injection",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["SQLInjection"]
+        }
+      ]
+    },
+    {
+      "short_description": "Deserialization of Untrusted Data",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["Deserialization"]
+        }
+      ]
+    },
+    {
+      "short_description": "Server-Side Request Forgery",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["SSRF"]
+        }
+      ]
+    },
+    {
+      "short_description": "Path Traversal",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["Path Traversal"]
+        }
+      ]
+    },
+    {
+      "short_description": "OS Command Injection",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["Command Injection"]
+        }
+      ]
+    },
+    {
+      "short_description": "XML External Entity Injection",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["XXE"]
+        }
+      ]
+    },
+    {
+      "short_description": "Cross-site Scripting",
+      "taint_flows": [
+        {
+          "source_kinds": ["User-controlled Input"],
+          "sink_kinds": ["XSS"]
+        }
+      ]
+    }
+  ]
+}
