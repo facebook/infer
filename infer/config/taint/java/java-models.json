@@ -31,8 +31,8 @@
     { "short_description": "Code Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sanitizer_kinds": ["Sanitizer"],
-          "sink_kinds": ["JavaScript"] }
+          "sanitizer_kinds": ["JavaScriptEscaping", "Sanitizer"],
+          "sink_kinds": ["ScriptInjection"] }
       ]
     },
     { "short_description": "SQL Injection",
@@ -337,7 +337,27 @@
     },
     { "class_names": ["android.webkit.WebView"],
       "method_names": ["evaluateJavascript", "loadData", "loadDataWithBaseURL", "loadUrl", "postUrl", "postWebMessage"],
-      "kinds": ["JavaScript"]
+      "kinds": ["ScriptInjection"]
+    },
+    { "class_names": ["javax.script.ScriptEngine"],
+      "method_names": ["eval"],
+      "kinds": ["ScriptInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["javax.script.Compilable"],
+      "method_names": ["compile"],
+      "kinds": ["ScriptInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.mozilla.javascript.Context"],
+      "method_names": ["compileReader", "compileString"],
+      "kinds": ["ScriptInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.mozilla.javascript.Context"],
+      "method_names": ["compileFunction", "evaluateReader", "evaluateString"],
+      "kinds": ["ScriptInjection"],
+      "taint_target": ["ArgumentPositions", [1]]
     },
     { "class_names": ["java.io.File"],
       "method_names": ["<init>"],
@@ -456,6 +476,10 @@
     { "class_names": ["org.apache.commons.io.FilenameUtils"],
       "method_names": ["getName"],
       "kinds": ["FileName"]
+    },
+    { "class_names": ["org.apache.commons.text.StringEscapeUtils", "org.apache.commons.lang3.StringEscapeUtils"],
+      "method_names": ["escapeEcmaScript"],
+      "kinds": ["JavaScriptEscaping"]
     }
   ]
 }
