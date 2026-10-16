@@ -745,7 +745,14 @@ module Internal = struct
 
 
     let check_valid path ?must_be_valid_reason access_trace addr astate =
-      let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
+      let+ () =
+        match BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs with
+        | Error (invalidation, _)
+          when not (Invalidation.is_relevant_for_reason must_be_valid_reason invalidation) ->
+            Ok ()
+        | result ->
+            result
+      in
       (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
       abduce_one addr
         (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
