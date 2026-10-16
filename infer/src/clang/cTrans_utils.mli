@@ -154,7 +154,15 @@ val new_or_alloc_trans :
   -> trans_result
 
 val cpp_new_trans :
-  IntegerWidths.t -> Location.t -> Typ.t -> Exp.t option -> (Exp.t * Typ.t) list -> trans_result
+     IntegerWidths.t
+  -> return_null_checked:bool
+  -> Location.t
+  -> Typ.t
+  -> Exp.t option
+  -> (Exp.t * Typ.t) list
+  -> trans_result
+(** [return_null_checked] is set when the new-expression only initializes the object if the result
+    of the allocation function is not null *)
 
 (** Module for creating cfg nodes and other utility functions related to them. *)
 module Nodes : sig

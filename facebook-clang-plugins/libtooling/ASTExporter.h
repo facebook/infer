@@ -413,6 +413,7 @@ class ASTExporter : public ConstDeclVisitor<ASTExporter<ATDWriter>>,
   DECLARE_VISITOR(TypeTraitExpr)
   DECLARE_VISITOR(GenericSelectionExpr)
   DECLARE_VISITOR(CXXNoexceptExpr)
+  DECLARE_VISITOR(CXXParenListInitExpr)
 
   // ObjC
   DECLARE_VISITOR(ObjCAtCatchStmt)
@@ -4106,6 +4107,7 @@ int ASTExporter<ATDWriter>::CXXNewExprTupleSize() {
 }
 //@atd #define cxx_new_expr_tuple expr_tuple * cxx_new_expr_info
 //@atd type cxx_new_expr_info = {
+//@atd   ~should_null_check : bool;
 //@atd   ~is_array : bool;
 //@atd   ?array_size_expr : pointer option;
 //@atd   ?initializer_expr : pointer option;
@@ -4115,16 +4117,19 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitCXXNewExpr(const CXXNewExpr *Node) {
   VisitExpr(Node);
 
+  // the allocation function is unknown in dependent contexts
+  bool ShouldNullCheck =
+      Node->getOperatorNew() && Node->shouldNullCheckAllocation();
   bool IsArray = Node->isArray();
   bool HasArraySize = Node->getArraySize().has_value();
   bool HasInitializer = Node->hasInitializer();
   unsigned PlacementArgs = Node->getNumPlacementArgs();
   bool HasPlacementArgs = PlacementArgs > 0;
-  ObjectScope Scope(
-      OF, 0 + IsArray + HasArraySize + HasInitializer + HasPlacementArgs);
+  ObjectScope Scope(OF,
+                    0 + ShouldNullCheck + IsArray + HasArraySize +
+                        HasInitializer + HasPlacementArgs);
 
-  //  ?should_null_check : bool;
-  // OF.emitFlag("should_null_check", Node->shouldNullCheckAllocation());
+  OF.emitFlag("should_null_check", ShouldNullCheck);
   OF.emitFlag("is_array", IsArray);
   if (HasArraySize) {
     OF.emitTag("array_size_expr");
@@ -4255,6 +4260,25 @@ void ASTExporter<ATDWriter>::VisitCXXNoexceptExpr(const CXXNoexceptExpr *Node) {
   bool value = Node->getValue();
   ObjectScope Scope(OF, 0 + value);
   OF.emitFlag("value", value);
+}
+
+template <class ATDWriter>
+int ASTExporter<ATDWriter>::CXXParenListInitExprTupleSize() {
+  return ExprTupleSize() + 1;
+}
+//@atd #define cxx_paren_list_init_expr_tuple expr_tuple * init_list_expr_info
+template <class ATDWriter>
+void ASTExporter<ATDWriter>::VisitCXXParenListInitExpr(
+    const CXXParenListInitExpr *Node) {
+  VisitExpr(Node);
+
+  const Expr *Filler = Node->getArrayFiller();
+  ObjectScope Scope(OF, 0 + (bool)Filler);
+
+  if (Filler) {
+    OF.emitTag("array_filler");
+    dumpStmt(Filler);
+  }
 }
 
 ////===----------------------------------------------------------------------===//

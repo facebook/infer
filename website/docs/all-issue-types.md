@@ -1788,6 +1788,15 @@ int null_pointer_interproc() {
 }
 ```
 
+### Null dereference after an allocation in C and C++
+
+Infer considers that `malloc` and C++ non-throwing new-expressions such as
+`new (std::nothrow) T` may return null. If the result is checked with a
+function that never returns but is not declared `noreturn`, for instance an
+assertion helper, Infer may still report a dereference after the check: pass
+`--pulse-model-abort <function>` to model the helper as aborting. Pass
+`--pulse-unsafe-malloc` to assume that these allocations never return null.
+
 ### Null dereference in Objective-C
 
 In Objective-C, null dereferences are less common than in Java, but they still
@@ -1888,6 +1897,15 @@ int null_pointer_interproc() {
   return get_age(joe);
 }
 ```
+
+### Null dereference after an allocation in C and C++
+
+Infer considers that `malloc` and C++ non-throwing new-expressions such as
+`new (std::nothrow) T` may return null. If the result is checked with a
+function that never returns but is not declared `noreturn`, for instance an
+assertion helper, Infer may still report a dereference after the check: pass
+`--pulse-model-abort <function>` to model the helper as aborting. Pass
+`--pulse-unsafe-malloc` to assume that these allocations never return null.
 
 ### Null dereference in Objective-C
 

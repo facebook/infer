@@ -70,6 +70,9 @@ test: build/FacebookClangPlugin.dylib
 	       fi;                                                                      \
 	       EXTRA_FLAGS="-ObjC -fblocks $(IOSFLAGS)";                                \
 	       ;;                                                                       \
+	     *_cxx20.cpp )                                                              \
+	       EXTRA_FLAGS="--std=c++20 -target x86_64-unknown-linux";                  \
+	       ;;                                                                       \
 	     *.cpp )                                                                    \
 	       EXTRA_FLAGS="--std=c++14 -target x86_64-unknown-linux";                  \
 	       ;;                                                                       \
@@ -97,6 +100,7 @@ clean:
 # -- AST samples for specific end-to-end tests --
 
 REGULAR_SOURCES=$(wildcard tests/*.m) $(wildcard tests/*.c) $(wildcard tests/*.cpp) $(wildcard tests/*.mm)
+TEST_CXX_STD=$(if $(filter %_cxx20,$*),--std=c++20,--std=c++14)
 AST_SAMPLE_FILES=ASTExporter.cpp $(REGULAR_SOURCES:tests/%=%)
 all_ast_samples: $(AST_SAMPLE_FILES:%=build/ast_samples/%.json.gz) $(AST_SAMPLE_FILES:%=build/ast_samples/%.yjson.gz)
 
@@ -109,7 +113,7 @@ build/ast_samples/%.cpp.yjson: %.cpp build/FacebookClangPlugin.dylib
 
 build/ast_samples/%.cpp.yjson: tests/%.cpp build/FacebookClangPlugin.dylib
 	@mkdir -p build/ast_samples
-	$(CLANG_FRONTEND) --std=c++14 $(YJ_DUMPER_ARGS) $@ -c $<
+	$(CLANG_FRONTEND) $(TEST_CXX_STD) $(YJ_DUMPER_ARGS) $@ -c $<
 
 build/ast_samples/%.c.yjson: tests/%.c build/FacebookClangPlugin.dylib
 	@mkdir -p build/ast_samples
@@ -132,7 +136,7 @@ build/ast_samples/%.cpp.json: %.cpp build/FacebookClangPlugin.dylib
 
 build/ast_samples/%.cpp.json: tests/%.cpp build/FacebookClangPlugin.dylib
 	@mkdir -p build/ast_samples
-	$(CLANG_FRONTEND) --std=c++14 $(J_DUMPER_ARGS) $@ -c $<
+	$(CLANG_FRONTEND) $(TEST_CXX_STD) $(J_DUMPER_ARGS) $@ -c $<
 
 build/ast_samples/%.c.json: tests/%.c build/FacebookClangPlugin.dylib
 	@mkdir -p build/ast_samples
