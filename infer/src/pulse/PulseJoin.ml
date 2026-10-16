@@ -247,6 +247,7 @@ let join_one_sided_attribute (attr : Attribute.t) =
   | Invalid _
   | MustBeAwaited
   | MustBeInitialized _
+  | MustBeNonNull _
   | MustBeValid _
   | MustNotBeTainted _
   | PropagateTaintFrom _
@@ -316,6 +317,8 @@ let join_two_sided_attribute join_state (attr1 : Attribute.t) (attr2 : Attribute
       mk_from_joined_values v1 v2 ~f:(fun v -> LastLookup v)
   | MustBeInitialized _, MustBeInitialized _ ->
       (* doesn't really matter which branch is doing the reading for now *) Some attr1
+  | MustBeNonNull _, MustBeNonNull _ ->
+      (* arbitrary, doesn't matter much which side *) Some attr1
   | MustBeValid _, MustBeValid _ ->
       (* TODO: join must_be_valid_reason *) Some attr1
   | MustNotBeTainted sinks1, MustNotBeTainted sinks2 ->

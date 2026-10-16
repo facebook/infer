@@ -677,6 +677,8 @@ val pulse_monitor_transitive_callees : bool
 
 val pulse_monitor_transitive_missed_captures : bool
 
+val pulse_nullability_annotations : bool
+
 val pulse_nullsafe_report_npe : bool
 
 val pulse_nullsafe_report_npe_as_separate_issue_type : bool

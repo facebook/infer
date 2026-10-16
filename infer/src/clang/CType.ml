@@ -66,6 +66,14 @@ let is_block_type {Clang_ast_t.qt_type_ptr} =
       false
 
 
+let is_pointer_type {Clang_ast_t.qt_type_ptr} =
+  match CAst_utils.get_desugared_type qt_type_ptr with
+  | Some (PointerType _ | ObjCObjectPointerType _ | BlockPointerType _) ->
+      true
+  | _ ->
+      false
+
+
 let is_reference_type {Clang_ast_t.qt_type_ptr} =
   match CAst_utils.get_desugared_type qt_type_ptr with
   | Some (Clang_ast_t.LValueReferenceType _) ->

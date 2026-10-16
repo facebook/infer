@@ -1636,6 +1636,8 @@
         {
           "pointer" : 49,
           "desugared_type" : 8
+        },
+        {
         }
       ]],
       ["LValueReferenceType" , [
@@ -1756,6 +1758,8 @@
         {
           "pointer" : 57,
           "desugared_type" : 29
+        },
+        {
         }
       ]],
       ["LValueReferenceType" , [

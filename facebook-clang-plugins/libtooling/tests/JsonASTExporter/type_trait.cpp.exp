@@ -1337,6 +1337,8 @@
         {
           "pointer" : 117,
           "desugared_type" : 8
+        },
+        {
         }
       ]],
       ["LValueReferenceType" , [

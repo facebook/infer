@@ -32,7 +32,7 @@ module Attribute = struct
     | SwiftAlloc
     | HackBuilderResource of HackClassName.t
     | Awaitable (* used for Hack and Python *)
-    | FileDescriptor
+    | FileDescriptor of Procname.t
   [@@deriving compare, equal, yojson_of]
 
   let pp_allocator fmt = function
@@ -58,7 +58,7 @@ module Attribute = struct
         F.fprintf fmt "hack builder %a" HackClassName.pp class_name
     | Awaitable ->
         F.fprintf fmt "awaitable"
-    | FileDescriptor ->
+    | FileDescriptor _ ->
         F.pp_print_string fmt "file descriptor"
 
 
@@ -239,6 +239,7 @@ module Attribute = struct
     | LastLookup of AbstractValue.t
     | MustBeAwaited
     | MustBeInitialized of Timestamp.t * Trace.t
+    | MustBeNonNull of Timestamp.t * Trace.t * CallEvent.t * int
     | MustBeValid of Timestamp.t * Trace.t * Invalidation.must_be_valid_reason option
     | MustNotBeTainted of (TaintSink.t TaintSinkMap.t[@yojson.opaque])
     | JavaResourceReleased
@@ -312,6 +313,8 @@ module Attribute = struct
   let must_be_awaited_rank = Variants.mustbeawaited.rank
 
   let must_be_initialized_rank = Variants.mustbeinitialized.rank
+
+  let must_be_non_null_rank = Variants.mustbenonnull.rank
 
   let must_be_valid_rank = Variants.mustbevalid.rank
 
@@ -393,6 +396,11 @@ module Attribute = struct
           (Trace.pp ~pp_immediate:(pp_string_if_debug "read"))
           trace
           (timestamp :> int)
+    | MustBeNonNull (timestamp, trace, callee, position) ->
+        F.fprintf f "MustBeNonNull(@[@[%a@],@;%a #%d,@;t=%d@])"
+          (Trace.pp ~pp_immediate:(pp_string_if_debug "passed"))
+          trace CallEvent.pp callee position
+          (timestamp :> int)
     | MustBeValid (timestamp, trace, reason) ->
         F.fprintf f "MustBeValid(@[@[%a@],@;@[%a@],@;t=%d@])"
           (Trace.pp ~pp_immediate:(pp_string_if_debug "access"))
@@ -444,6 +452,7 @@ module Attribute = struct
   let is_suitable_for_pre = function
     | DictReadConstKeys _
     | MustBeAwaited
+    | MustBeNonNull _
     | MustBeValid _
     | MustBeInitialized _
     | MustNotBeTainted _
@@ -490,6 +499,7 @@ module Attribute = struct
     | Invalid (ComparedToNullInThisProcedure _, _)
     | MustBeAwaited
     | MustBeInitialized _
+    | MustBeNonNull _
     | MustNotBeTainted _
     | MustBeValid _
     | UnreachableAt _
@@ -560,6 +570,7 @@ module Attribute = struct
     | HackConstinitCalled
     | MustBeAwaited
     | MustBeInitialized _
+    | MustBeNonNull _
     | MustBeValid _
     | MustNotBeTainted _
     | PropagateTaintFrom _
@@ -599,6 +610,8 @@ module Attribute = struct
         InReportedRetainCycle
     | Invalid (invalidation, trace) ->
         Invalid (invalidation, add_call_to_trace trace)
+    | MustBeNonNull (_timestamp, trace, callee, position) ->
+        MustBeNonNull (timestamp, add_call_to_trace trace, callee, position)
     | MustBeValid (_timestamp, trace, reason) ->
         MustBeValid (timestamp, add_call_to_trace trace, reason)
     | MustBeInitialized (_timestamp, trace) ->
@@ -680,7 +693,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _
     | SwiftAlloc, _
-    | FileDescriptor, Some (FClose, _) ->
+    | FileDescriptor _, Some ((FClose _ | HandedOverToStream _), _) ->
         true
     | JavaResource _, _ | CSharpResource _, _ | HackBuilderResource _, _ | Awaitable, _ ->
         is_released
@@ -701,7 +714,7 @@ module Attribute = struct
     | ObjCAlloc
     | JavaResource _
     | CSharpResource _
-    | FileDescriptor
+    | FileDescriptor _
     | SwiftAlloc ->
         false
 
@@ -720,7 +733,7 @@ module Attribute = struct
     | ObjCAlloc
     | JavaResource _
     | CSharpResource _
-    | FileDescriptor
+    | FileDescriptor _
     | SwiftAlloc ->
         false
 
@@ -783,6 +796,7 @@ module Attribute = struct
       | LastLookup _
       | MustBeAwaited
       | MustBeInitialized _
+      | MustBeNonNull _
       | MustBeValid _
       | MustNotBeTainted _
       | SourceOriginOfCopy _
@@ -877,6 +891,14 @@ module Attributes = struct
             update (MustNotBeTainted (TaintSinkMap.union aux new_sinks sinks)) attrs
       | Invalid (OptionalEmpty, _) | WrittenTo _ ->
           update value attrs
+      | MustBeValid (_, _, Some Invalidation.FileDescriptorRelease)
+        when Option.exists (find_rank attrs must_be_valid_rank) ~f:(function
+               | MustBeValid (_, _, Some Invalidation.FileDescriptorUse) ->
+                   true
+               | _ ->
+                   false ) ->
+          (* releasing the descriptor is invalid in more cases than using it, e.g. after [fdopen] *)
+          update value attrs
       | _ ->
           add attrs value
 
@@ -969,6 +991,12 @@ module Attributes = struct
 
 
   let remove_must_be_valid = remove_by_rank Attribute.must_be_valid_rank
+
+  let get_must_be_non_null =
+    get_by_rank Attribute.must_be_non_null_rank ~dest:(function[@warning "-partial-match"]
+        | Attribute.MustBeNonNull (timestamp, trace, callee, position) ->
+        (timestamp, trace, callee, position) )
+
 
   let get_written_to =
     get_by_rank Attribute.written_to_rank ~dest:(function[@warning "-partial-match"]

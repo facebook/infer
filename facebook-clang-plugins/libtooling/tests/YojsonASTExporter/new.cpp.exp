@@ -6407,6 +6407,8 @@
         {
           "pointer" : 30,
           "desugared_type" : 8
+        },
+        {
         }
       )>,
       <"PointerType" : (
@@ -6891,6 +6893,8 @@
         {
           "pointer" : 88,
           "desugared_type" : 25
+        },
+        {
         }
       )>,
       <"PointerType" : (
