@@ -36,6 +36,14 @@ class Validators {
     return value;
   }
 
+  // without a document type declaration, a document cannot declare entities
+  static String requireNoDoctype(String xml) {
+    if (xml.contains("<!DOCTYPE")) {
+      throw new IllegalArgumentException("document type declarations are not allowed");
+    }
+    return xml;
+  }
+
   static URI requireAllowedHost(URI uri) {
     if (!ALLOWED_HOSTS.contains(uri.getHost())) {
       throw new SecurityException("host not allowed: " + uri.getHost());
