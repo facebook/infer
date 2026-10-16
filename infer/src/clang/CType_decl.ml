@@ -128,6 +128,28 @@ module BuildMethodSignature = struct
     params @ return_param
 
 
+  let structured_binding_var_typ qual_type_to_sil_type tenv qual_type binding_info =
+    let typ = qual_type_to_sil_type tenv qual_type in
+    (* the fields of a struct can be references, and so can the elements of a tuple-like type, eg
+       for [std::tuple<int&>], in which case the binding names the referenced object *)
+    let strip_reference typ =
+      match typ.Typ.desc with
+      | Tptr (typ, (Pk_lvalue_reference | Pk_rvalue_reference)) ->
+          typ
+      | _ ->
+          typ
+    in
+    match CAst_utils.get_structured_binding qual_type binding_info with
+    | Some (BindingTemporary {qual_type}) ->
+        qual_type_to_sil_type tenv qual_type
+    | Some BindingReference ->
+        Typ.mk (Tptr (strip_reference typ, Pk_lvalue_reference))
+    | Some (BindingAlias | BindingExpr _) ->
+        strip_reference typ
+    | None ->
+        typ
+
+
   let type_of_captured_var qual_type_to_sil_type tenv ~is_block_inside_objc_class_method decl_ref =
     match decl_ref with
     | {Clang_ast_t.dr_name= Some {Clang_ast_t.ni_name}} ->
@@ -138,7 +160,13 @@ module BuildMethodSignature = struct
            For that reason, we shouldn't add them as captured variables of blocks, since they
            don't appear anywhere else in the translation. *)
         if is_block_inside_objc_class_method && String.equal ni_name CFrontend_config.self then None
-        else Some (Option.value_exn decl_ref.Clang_ast_t.dr_qual_type |> qual_type_to_sil_type tenv)
+        else
+          Some
+            ( match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+            | Some (BindingDecl (_, _, qual_type, binding_info)) ->
+                structured_binding_var_typ qual_type_to_sil_type tenv qual_type binding_info
+            | _ ->
+                Option.value_exn decl_ref.Clang_ast_t.dr_qual_type |> qual_type_to_sil_type tenv )
     | _ ->
         assert false
 
@@ -746,6 +774,10 @@ let method_signature_of_decl = BuildMethodSignature.method_signature_of_decl qua
 let should_add_return_param = BuildMethodSignature.should_add_return_param
 
 let type_of_captured_var = BuildMethodSignature.type_of_captured_var qual_type_to_sil_type
+
+let structured_binding_var_typ =
+  BuildMethodSignature.structured_binding_var_typ qual_type_to_sil_type
+
 
 module CProcname = struct
   let from_decl = procname_from_decl

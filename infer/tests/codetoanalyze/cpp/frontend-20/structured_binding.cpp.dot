@@ -1,0 +1,87 @@
+/* @generated */
+digraph cfg {
+"capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_1" [label="1: Start structured_binding::capture_aggregate_bindings\nFormals:  p:structured_binding::Point&\nLocals:  f:lambda_structured_binding.cpp:39_efd119fc 0$?%__sil_tmp_decomp_n$2:structured_binding::Point& \n  " color=yellow style=filled]
+	
+
+	 "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_1" -> "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_6" ;
+"capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_2" [label="2: Exit structured_binding::capture_aggregate_bindings \n  " color=yellow style=filled]
+	
+
+"capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_structured_binding.cpp:39_efd119fc::operator()(&f:lambda_structured_binding.cpp:39_efd119fc&) [line 40, column 10]\n " shape="box"]
+	
+
+	 "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_3" -> "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_4" ;
+"capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 40, column 3]\n " shape="box"]
+	
+
+	 "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_4" -> "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_2" ;
+"capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(f:lambda_structured_binding.cpp:39_efd119fc); [line 39, column 3]\n  n$4=*&0$?%__sil_tmp_decomp_n$2:structured_binding::Point& [line 38, column 10]\n  n$5=*n$4.x:int [line 39, column 12]\n  n$3=*&0$?%__sil_tmp_decomp_n$2:structured_binding::Point& [line 38, column 13]\n  *&f:lambda_structured_binding.cpp:39_efd119fc=(_fun_lambda_structured_binding.cpp:39_efd119fc::operator(),([by value]n$5 &x:int),([by ref]n$3.y &y:int&)) [line 39, column 3]\n " shape="box"]
+	
+
+	 "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_5" -> "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_3" ;
+"capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$2:structured_binding::Point&); [line 38, column 3]\n  n$6=*&p:structured_binding::Point& [line 38, column 18]\n  *&0$?%__sil_tmp_decomp_n$2:structured_binding::Point&=n$6 [line 38, column 3]\n " shape="box"]
+	
+
+	 "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_6" -> "capture_aggregate_bindings#struct.cbc78b3f3bbe8dc1_5" ;
+"capture_tuple_like_bindings#struc.84560551ceac56cf_1" [label="1: Start structured_binding::capture_tuple_like_bindings\nFormals:  t:structured_binding::ByReference&\nLocals:  f:lambda_structured_binding.cpp:45_2079b688 y:int& x:int& 0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference& \n  " color=yellow style=filled]
+	
+
+	 "capture_tuple_like_bindings#struc.84560551ceac56cf_1" -> "capture_tuple_like_bindings#struc.84560551ceac56cf_8" ;
+"capture_tuple_like_bindings#struc.84560551ceac56cf_2" [label="2: Exit structured_binding::capture_tuple_like_bindings \n  " color=yellow style=filled]
+	
+
+"capture_tuple_like_bindings#struc.84560551ceac56cf_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_structured_binding.cpp:45_2079b688::operator()(&f:lambda_structured_binding.cpp:45_2079b688&) [line 46, column 10]\n " shape="box"]
+	
+
+	 "capture_tuple_like_bindings#struc.84560551ceac56cf_3" -> "capture_tuple_like_bindings#struc.84560551ceac56cf_4" ;
+"capture_tuple_like_bindings#struc.84560551ceac56cf_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 46, column 3]\n " shape="box"]
+	
+
+	 "capture_tuple_like_bindings#struc.84560551ceac56cf_4" -> "capture_tuple_like_bindings#struc.84560551ceac56cf_2" ;
+"capture_tuple_like_bindings#struc.84560551ceac56cf_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(f:lambda_structured_binding.cpp:45_2079b688); [line 45, column 3]\n  n$4=*&x:int& [line 45, column 12]\n  n$5=*n$4:int [line 45, column 12]\n  n$3=*&y:int& [line 45, column 12]\n  *&f:lambda_structured_binding.cpp:45_2079b688=(_fun_lambda_structured_binding.cpp:45_2079b688::operator(),([by value]n$5 &x:int),([by ref]n$3 &y:int&)) [line 45, column 3]\n " shape="box"]
+	
+
+	 "capture_tuple_like_bindings#struc.84560551ceac56cf_5" -> "capture_tuple_like_bindings#struc.84560551ceac56cf_3" ;
+"capture_tuple_like_bindings#struc.84560551ceac56cf_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(y:int&); [line 44, column 3]\n  n$6=*&0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference& [line 44, column 13]\n  _=*n$6:structured_binding::ByReference [line 44, column 13]\n  n$8=_fun_structured_binding::ByReference::get<1UL>(n$6:structured_binding::ByReference&) [line 44, column 13]\n  *&y:int&=n$8 [line 44, column 3]\n " shape="box"]
+	
+
+	 "capture_tuple_like_bindings#struc.84560551ceac56cf_6" -> "capture_tuple_like_bindings#struc.84560551ceac56cf_5" ;
+"capture_tuple_like_bindings#struc.84560551ceac56cf_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(x:int&); [line 44, column 3]\n  n$9=*&0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference& [line 44, column 10]\n  _=*n$9:structured_binding::ByReference [line 44, column 10]\n  n$11=_fun_structured_binding::ByReference::get<0UL>(n$9:structured_binding::ByReference&) [line 44, column 10]\n  *&x:int&=n$11 [line 44, column 3]\n " shape="box"]
+	
+
+	 "capture_tuple_like_bindings#struc.84560551ceac56cf_7" -> "capture_tuple_like_bindings#struc.84560551ceac56cf_6" ;
+"capture_tuple_like_bindings#struc.84560551ceac56cf_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&); [line 44, column 3]\n  n$12=*&t:structured_binding::ByReference& [line 44, column 18]\n  *&0$?%__sil_tmp_decomp_n$2:structured_binding::ByReference&=n$12 [line 44, column 3]\n " shape="box"]
+	
+
+	 "capture_tuple_like_bindings#struc.84560551ceac56cf_8" -> "capture_tuple_like_bindings#struc.84560551ceac56cf_7" ;
+"operator()#lambda_structured_bind.7bac15dfa8584b45_1" [label="1: Start lambda_structured_binding.cpp:39_efd119fc::operator()\nFormals:  this:lambda_structured_binding.cpp:39_efd119fc const *\nLocals: \nCaptured:  [by value]&x:int [by ref]&y:int& \n  " color=yellow style=filled]
+	
+
+	 "operator()#lambda_structured_bind.7bac15dfa8584b45_1" -> "operator()#lambda_structured_bind.7bac15dfa8584b45_3" ;
+"operator()#lambda_structured_bind.7bac15dfa8584b45_2" [label="2: Exit lambda_structured_binding.cpp:39_efd119fc::operator() \n  " color=yellow style=filled]
+	
+
+"operator()#lambda_structured_bind.7bac15dfa8584b45_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 39, column 31]\n  n$1=*&y:int& [line 39, column 35]\n  n$2=*n$1:int [line 39, column 35]\n " shape="box"]
+	
+
+	 "operator()#lambda_structured_bind.7bac15dfa8584b45_3" -> "operator()#lambda_structured_bind.7bac15dfa8584b45_4" ;
+"operator()#lambda_structured_bind.7bac15dfa8584b45_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$2) [line 39, column 24]\n " shape="box"]
+	
+
+	 "operator()#lambda_structured_bind.7bac15dfa8584b45_4" -> "operator()#lambda_structured_bind.7bac15dfa8584b45_2" ;
+"operator()#lambda_structured_bind.f92313b65915a299_1" [label="1: Start lambda_structured_binding.cpp:45_2079b688::operator()\nFormals:  this:lambda_structured_binding.cpp:45_2079b688 const *\nLocals: \nCaptured:  [by value]&x:int [by ref]&y:int& \n  " color=yellow style=filled]
+	
+
+	 "operator()#lambda_structured_bind.f92313b65915a299_1" -> "operator()#lambda_structured_bind.f92313b65915a299_3" ;
+"operator()#lambda_structured_bind.f92313b65915a299_2" [label="2: Exit lambda_structured_binding.cpp:45_2079b688::operator() \n  " color=yellow style=filled]
+	
+
+"operator()#lambda_structured_bind.f92313b65915a299_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 45, column 31]\n  n$1=*&y:int& [line 45, column 35]\n  n$2=*n$1:int [line 45, column 35]\n " shape="box"]
+	
+
+	 "operator()#lambda_structured_bind.f92313b65915a299_3" -> "operator()#lambda_structured_bind.f92313b65915a299_4" ;
+"operator()#lambda_structured_bind.f92313b65915a299_4" [label="4:  Return Stmt \n   *&return:int=(n$0 + n$2) [line 45, column 24]\n " shape="box"]
+	
+
+	 "operator()#lambda_structured_bind.f92313b65915a299_4" -> "operator()#lambda_structured_bind.f92313b65915a299_2" ;
+}

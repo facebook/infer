@@ -257,13 +257,16 @@ module Variables = struct
 
     let compare (var1 : t) (var2 : t) =
       match (var1, var2) with
-      | VarDecl ({di_pointer= pointer1}, _, _, _), VarDecl ({di_pointer= pointer2}, _, _, _) ->
+      | ( ( VarDecl ({di_pointer= pointer1}, _, _, _)
+          | DecompositionDecl ({di_pointer= pointer1}, _, _, _, _) )
+        , ( VarDecl ({di_pointer= pointer2}, _, _, _)
+          | DecompositionDecl ({di_pointer= pointer2}, _, _, _, _) ) ) ->
           Int.compare pointer1 pointer2
       | CXXTemporary {pvar= pvar1}, CXXTemporary {pvar= pvar2} ->
           Pvar.compare pvar1 pvar2
-      | VarDecl _, CXXTemporary _ ->
+      | (VarDecl _ | DecompositionDecl _), CXXTemporary _ ->
           -1
-      | CXXTemporary _, VarDecl _ ->
+      | CXXTemporary _, (VarDecl _ | DecompositionDecl _) ->
           1
   end)
 
@@ -309,19 +312,44 @@ module Variables = struct
         let capture_inits = List.drop_last stmt_list |> Option.value ~default:[] in
         visit_stmt_list context capture_inits scope_acc
     | `DeclStmt (_, stmts, decl_list) ->
+        (* C++ temporaries bound to a const reference see their lifetimes extended to that of the
+           reference; collect these cases here so they get destroyed at the same time that (in
+           reality just before) the lvalues they are bound to get destroyed *)
+        let temporaries_in_extended_scope di_pointer =
+          CXXTemporaries.get_temporaries_bound_to_decl context di_pointer stmts
+          |> CContext.CXXTemporarySet.elements
+          |> List.map ~f:(fun temp -> CContext.CXXTemporary temp)
+        in
         let to_destroy =
           List.concat_map decl_list ~f:(function
             | Clang_ast_t.VarDecl (({di_pointer}, _, _, {vdi_is_static_local= false}) as var_decl)
               ->
-                (* C++ temporaries bound to a const reference see their lifetimes extended to that
-                   of the reference; collect these cases here so they get destroyed at the same time
-                   that (in reality just before) the lvalues they are bound to get destroyed *)
-                let temporaries_in_extended_scope =
-                  CXXTemporaries.get_temporaries_bound_to_decl context di_pointer stmts
-                  |> CContext.CXXTemporarySet.elements
-                  |> List.map ~f:(fun temp -> CContext.CXXTemporary temp)
+                CContext.VarDecl var_decl :: temporaries_in_extended_scope di_pointer
+            | Clang_ast_t.DecompositionDecl
+                (({di_pointer}, _, _, {vdi_is_static_local= false}, bindings) as decomposition_decl)
+              ->
+                let binding_temporaries =
+                  List.filter_map bindings ~f:(function
+                    | Clang_ast_t.BindingDecl (_, _, binding_qual_type, binding_info) as binding
+                      -> (
+                      match CAst_utils.get_structured_binding binding_qual_type binding_info with
+                      | Some (BindingTemporary {qual_type}) ->
+                          let pvar =
+                            CVar_decl.sil_var_of_decl context binding
+                              (Procdesc.get_proc_name context.CContext.procdesc)
+                          in
+                          let typ =
+                            CType_decl.qual_type_to_sil_type context.CContext.tenv qual_type
+                          in
+                          Some (CContext.CXXTemporary {pvar; typ; qual_type; marker= None})
+                      | _ ->
+                          None )
+                    | _ ->
+                        None )
                 in
-                CContext.VarDecl var_decl :: temporaries_in_extended_scope
+                CContext.DecompositionDecl decomposition_decl
+                :: temporaries_in_extended_scope di_pointer
+                @ binding_temporaries
             | _ ->
                 [] )
         in

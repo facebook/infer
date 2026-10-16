@@ -20,7 +20,9 @@ type captured_info = {loc: Location.t; is_formal: Procname.t option}
 type context_info = {is_checked_for_null: bool; is_internal_pointer_of: Typ.t option}
 [@@deriving compare, equal, sexp, hash, normalize]
 
-(** captured_from and context_info only set for captured variables in Objective-C blocks *)
+(** captured_from and context_info only set for captured variables in Objective-C blocks. The clang
+    frontend translates small arrays captured [ByValue] by C++ lambdas as references to a copy of
+    the array: [typ] is then a reference to the array type. *)
 type t =
   { pvar: Pvar.t
   ; typ: Typ.t

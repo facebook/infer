@@ -101,4 +101,24 @@ class Basic {
 
   int get_private_suspiciously_read_ok() { return suspiciously_read; }
 };
+
+struct WithArray {
+  int arr[2];
+};
+
+class CopiedArray {
+ public:
+  void set_element_ok(int new_value) {
+    mutex_.lock();
+    with_array_.arr[0] = new_value;
+    mutex_.unlock();
+  }
+
+  // the copy reads the elements of the array without the lock
+  WithArray copy_bad() { return with_array_; }
+
+ private:
+  WithArray with_array_;
+  std::mutex mutex_;
+};
 } // namespace basics

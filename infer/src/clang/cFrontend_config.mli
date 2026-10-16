@@ -45,6 +45,8 @@ val biniou_buffer_size : int
 
 val builtin_expect : string
 
+val builtin_memcpy : string
+
 val builtin_memset_chk : string
 
 val builtin_object_size : string

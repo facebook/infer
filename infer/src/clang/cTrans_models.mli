@@ -11,6 +11,8 @@ val is_modelled_static_function : string -> bool
 
 val is_builtin_expect : Procname.t -> bool
 
+val is_builtin_memcpy : Procname.t -> bool
+
 val is_builtin_object_size : Procname.t -> bool
 
 val is_std_addressof : Procname.t -> bool

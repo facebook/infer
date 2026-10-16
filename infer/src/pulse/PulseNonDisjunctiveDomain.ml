@@ -407,7 +407,7 @@ module IntraDomElt = struct
     in
     let is_captured copy_into =
       match (copy_into : Attribute.CopiedInto.t) with
-      | IntoVar {copied_var= ProgramVar pvar} ->
+      | IntoVar {copied_var= ProgramVar pvar} | IntoIntermediate {copied_var= ProgramVar pvar} ->
           Captured.mem pvar captured
       | _ ->
           false
@@ -415,7 +415,9 @@ module IntraDomElt = struct
     CopyMap.fold
       (fun CopyVar.{copied_into} (copy_spec : CopySpec.t) acc ->
         match (copied_into, copy_spec) with
-        | _, Copied _ when CopiedSet.mem copied_into modified || is_captured copied_into ->
+        | _, _ when is_captured copied_into ->
+            acc
+        | _, Copied _ when CopiedSet.mem copied_into modified ->
             acc
         | ( (IntoField _ | IntoIntermediate _)
           , ( Copied
@@ -499,8 +501,18 @@ module IntraDomElt = struct
     match exp with
     | Exp.Closure {captured_vars} ->
         List.fold captured_vars ~init:astate_n
-          ~f:(fun astate_n (_, {CapturedVar.pvar; capture_mode}) ->
-            {astate_n with captured= Captured.add pvar capture_mode astate_n.captured} )
+          ~f:(fun astate_n (captured_exp, {CapturedVar.pvar; capture_mode}) ->
+            let captured = Captured.add pvar capture_mode astate_n.captured in
+            let captured =
+              match (captured_exp : Exp.t) with
+              | Lvar tmp when Pvar.is_frontend_tmp tmp ->
+                  (* the clang frontend copies arrays captured by value into a temporary and
+                     captures its address *)
+                  Captured.add tmp capture_mode captured
+              | _ ->
+                  captured
+            in
+            {astate_n with captured} )
     | _ ->
         astate_n
 

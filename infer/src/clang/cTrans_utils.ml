@@ -145,6 +145,7 @@ type trans_state =
   ; priority: priority_node
   ; var_exp_typ: (Exp.t * Typ.t) option
   ; opaque_exp: (Exp.t * Typ.t) option
+  ; array_init_index: Exp.t option
   ; is_objc_getter_setter_call: bool
   ; is_fst_arg_objc_instance_method_call: bool
   ; block_as_arg_attributes: ProcAttributes.block_as_arg_attributes option
@@ -158,6 +159,7 @@ let pp_trans_state fmt
      ; priority
      ; var_exp_typ
      ; opaque_exp
+     ; array_init_index
      ; is_objc_getter_setter_call
      ; is_fst_arg_objc_instance_method_call
      ; block_as_arg_attributes }
@@ -168,6 +170,7 @@ let pp_trans_state fmt
      priority=%a;@;\
      var_exp_typ=%a;@;\
      opaque_exp=%a;@;\
+     array_init_index=%a;@;\
      is_objc_getter_setter_call=%b;@;\
      is_fst_arg_objc_instance_method_call=%b;@;\
      passed_as_noescape_block_to=%a@]}"
@@ -176,7 +179,8 @@ let pp_trans_state fmt
     (Pp.option (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp_full Pp.text_break)))
     var_exp_typ
     (Pp.option (Pp.pair ~fst:Exp.pp ~snd:(Typ.pp_full Pp.text_break)))
-    opaque_exp is_objc_getter_setter_call is_fst_arg_objc_instance_method_call
+    opaque_exp (Pp.option Exp.pp) array_init_index is_objc_getter_setter_call
+    is_fst_arg_objc_instance_method_call
     (Pp.option ProcAttributes.pp_block_as_arg_attributes)
     block_as_arg_attributes
 
@@ -188,6 +192,7 @@ let default_trans_state context =
   ; priority= Free
   ; var_exp_typ= None
   ; opaque_exp= None
+  ; array_init_index= None
   ; is_objc_getter_setter_call= false
   ; is_fst_arg_objc_instance_method_call= false
   ; block_as_arg_attributes= None }

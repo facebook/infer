@@ -111,3 +111,22 @@ void trace_correctly_through_wrappers_bad() {
   // the wrapper explicitly here to help understand the bug report
   free_wrapper(x, 0);
 }
+
+struct Matrix {
+  int* cells[2][2];
+};
+
+int* get_cell_1_0(struct Matrix* m) { return m->cells[1][0]; }
+
+void read_two_dim_array_in_callee_bad() {
+  struct Matrix m;
+  m.cells[1][0] = NULL;
+  *get_cell_1_0(&m) = 42;
+}
+
+void read_two_dim_array_in_callee_ok() {
+  int x = 0;
+  struct Matrix m;
+  m.cells[1][0] = &x;
+  *get_cell_1_0(&m) = 42;
+}

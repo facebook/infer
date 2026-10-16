@@ -46,6 +46,8 @@ let biniou_buffer_size =
 
 let builtin_expect = "__builtin_expect"
 
+let builtin_memcpy = "__builtin_memcpy"
+
 let builtin_memset_chk = "__builtin___memset_chk"
 
 let builtin_object_size = "__builtin_object_size"

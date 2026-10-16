@@ -38,6 +38,9 @@ type trans_state =
         (** the expression (usually of the form [Exp.Lvar pvar]) that the enclosing expression or
             statement is trying to initialize, if any *)
   ; opaque_exp: (Exp.t * Typ.t) option  (** needed for translating [OpaqueValueExpr] nodes *)
+  ; array_init_index: Exp.t option
+        (** index of the element being initialized by the innermost enclosing [ArrayInitLoopExpr],
+            needed for translating [ArrayInitIndexExpr] nodes *)
   ; is_objc_getter_setter_call: bool
   ; is_fst_arg_objc_instance_method_call: bool
   ; block_as_arg_attributes: ProcAttributes.block_as_arg_attributes option }

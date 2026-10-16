@@ -101,3 +101,28 @@ val get_captured_mode :
   -> CapturedVar.capture_mode
 
 val create_objc_block_name : Clang_ast_t.decl_info -> Clang_ast_t.block_decl_info -> string * string
+
+(** How a structured binding is translated. Not modelled: the initialization of the decomposed
+    object of a global or static local decomposition, and C++26 binding packs, whose bindings the
+    clang plugin does not export. *)
+type structured_binding =
+  | BindingExpr of Clang_ast_t.stmt
+      (** decomposition of an array, a vector, a complex number or a struct: the binding is a name
+          for this expression, an element or a field of the decomposed object *)
+  | BindingTemporary of {init: Clang_ast_t.stmt; qual_type: Clang_ast_t.qual_type}
+      (** tuple-like binding to the result of a [get<i>()] that returns by value: the binding is the
+          lifetime-extended temporary holding that result, of type [qual_type], and is initialized
+          like a variable with [init] *)
+  | BindingReference
+      (** tuple-like binding when [std::tuple_element<i, E>::type] is a reference, eg for
+          [std::tuple<int&>], or when the decomposed object is a reference not bound to a temporary,
+          eg [auto& [x, y] = p;]: the binding is a reference to the result of [get<i>()] *)
+  | BindingAlias
+      (** other tuple-like bindings, when the decomposed object is a copy or a temporary bound to a
+          reference: the binding is an alias for the result of [get<i>()], an object that usually
+          belongs to the decomposed object *)
+
+val get_structured_binding :
+  Clang_ast_t.qual_type -> Clang_ast_t.binding_decl_info -> structured_binding option
+(** [get_structured_binding qual_type binding_info] for a binding of type [qual_type]; [None] when
+    the AST does not say what the binding refers to *)

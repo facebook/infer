@@ -76,6 +76,15 @@ let mk_temp_sil_var_for_qual_type context ~name ~clang_pointer qual_type =
       pvar_typ
 
 
+let mk_local_var_mangled_with_line decl_info name_string procname =
+  let start_location = fst decl_info.Clang_ast_t.di_source_range in
+  let line_opt = start_location.Clang_ast_t.sl_line in
+  let line_str = match line_opt with Some line -> string_of_int line | None -> "" in
+  let mangled = Utils.string_crc_hex32 line_str in
+  let mangled_name = Mangled.mangled name_string mangled in
+  Pvar.mk mangled_name procname
+
+
 let mk_sil_var ~is_decomposition context named_decl_info decl_info_qual_type_opt procname
     outer_procname =
   let trans_unit_ctx = context.CContext.translation_unit_context in
@@ -104,13 +113,7 @@ let mk_sil_var ~is_decomposition context named_decl_info decl_info_qual_type_opt
           mk_sil_global_var tenv trans_unit_ctx ?mk_name decl_info named_decl_info var_decl_info
             template_args_opt qt
         else if not should_be_mangled then Pvar.mk simple_name procname
-        else
-          let start_location = fst decl_info.Clang_ast_t.di_source_range in
-          let line_opt = start_location.Clang_ast_t.sl_line in
-          let line_str = match line_opt with Some line -> string_of_int line | None -> "" in
-          let mangled = Utils.string_crc_hex32 line_str in
-          let mangled_name = Mangled.mangled name_string mangled in
-          Pvar.mk mangled_name procname
+        else mk_local_var_mangled_with_line decl_info name_string procname
   | None ->
       let name_string =
         CAst_utils.get_qualified_name named_decl_info |> QualifiedCppName.to_qual_string
@@ -122,8 +125,13 @@ let sil_var_of_decl context var_decl procname =
   let outer_procname = CContext.get_outer_procname context in
   let open Clang_ast_t in
   match var_decl with
-  | BindingDecl (_, name_info, _, {binding_var= None}) ->
-      mk_sil_var ~is_decomposition:false context name_info None procname outer_procname
+  | BindingDecl (decl_info, name_info, _, {binding_var= None}) ->
+      (* the mangling tells apart a binding that a lambda captures from a binding of the same name
+         declared in the lambda *)
+      let name_string =
+        CAst_utils.get_qualified_name name_info |> QualifiedCppName.to_qual_string
+      in
+      mk_local_var_mangled_with_line decl_info name_string procname
   | _ ->
       let should_be_mangled =
         match var_decl with
@@ -161,6 +169,24 @@ let sil_var_of_decl context var_decl procname =
       mk_sil_var ~is_decomposition context name_info
         (Some (decl_info, qual_type, var_decl_info, should_be_mangled, template_args))
         procname outer_procname
+
+
+let binding_expr_of_decl_ref context decl_ref =
+  match CAst_utils.get_decl decl_ref.Clang_ast_t.dr_decl_pointer with
+  | Some (Clang_ast_t.BindingDecl (_, _, qual_type, binding_info) as decl) -> (
+    match CAst_utils.get_structured_binding qual_type binding_info with
+    | Some (BindingExpr binding_expr) ->
+        let procdesc = context.CContext.procdesc in
+        let pvar = sil_var_of_decl context decl (Procdesc.get_proc_name procdesc) in
+        let is_captured =
+          List.exists (Procdesc.get_captured procdesc) ~f:(fun {CapturedVar.pvar= captured} ->
+              Mangled.equal (Pvar.get_name captured) (Pvar.get_name pvar) )
+        in
+        Option.some_if (not is_captured) binding_expr
+    | _ ->
+        None )
+  | _ ->
+      None
 
 
 let sil_var_of_decl_ref context source_range decl_ref procname =

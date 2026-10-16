@@ -121,3 +121,24 @@ void struct_copy_decl_by_function_Bad() {
   struct s x = get_struct();
   a[x.b] = 0;
 }
+
+struct with_array {
+  char buf[4];
+};
+
+void array_field_copy_Bad(struct with_array* p) {
+  struct with_array c = *p;
+  c.buf[4] = 0;
+}
+
+void array_field_assign_Bad(struct with_array* p) {
+  struct with_array c;
+  c = *p;
+  c.buf[4] = 0;
+}
+
+void array_field_local_copy_Bad() {
+  struct with_array a = {{0}};
+  struct with_array c = a;
+  c.buf[4] = 0;
+}

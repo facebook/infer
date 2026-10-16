@@ -1,0 +1,36 @@
+/* @generated */
+digraph cfg {
+"assign.4de8aa8803f1d41c_1" [label="1: Start assign\nFormals:  p:WithArrays* q:WithArrays*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "assign.4de8aa8803f1d41c_1" -> "assign.4de8aa8803f1d41c_3" ;
+"assign.4de8aa8803f1d41c_2" [label="2: Exit assign \n  " color=yellow style=filled]
+	
+
+"assign.4de8aa8803f1d41c_3" [label="3:  BinaryOperatorStmt: Assign \n   n$1=*&p:WithArrays* [line 30, column 60]\n  n$0=*&q:WithArrays* [line 30, column 65]\n  n$2=*n$0.small:int[2*4] [line 30, column 59]\n  *n$1.small:int[2*4]=n$2 [line 30, column 59]\n  n$3=*n$0.small[0]:int [line 30, column 59]\n  *n$1.small[0]:int=n$3 [line 30, column 59]\n  n$4=*n$0.small[1]:int [line 30, column 59]\n  *n$1.small[1]:int=n$4 [line 30, column 59]\n  n$5=*n$0.points:Point[2*8] [line 30, column 59]\n  *n$1.points:Point[2*8]=n$5 [line 30, column 59]\n  n$6=*n$0.points[0].x:int [line 30, column 59]\n  *n$1.points[0].x:int=n$6 [line 30, column 59]\n  n$7=*n$0.points[0].y:int [line 30, column 59]\n  *n$1.points[0].y:int=n$7 [line 30, column 59]\n  n$8=*n$0.points[1].x:int [line 30, column 59]\n  *n$1.points[1].x:int=n$8 [line 30, column 59]\n  n$9=*n$0.points[1].y:int [line 30, column 59]\n  *n$1.points[1].y:int=n$9 [line 30, column 59]\n  n$10=*n$0.matrix:int[2*4][2*8] [line 30, column 59]\n  *n$1.matrix:int[2*4][2*8]=n$10 [line 30, column 59]\n  n$11=*n$0.matrix[0]:int[2*4] [line 30, column 59]\n  *n$1.matrix[0]:int[2*4]=n$11 [line 30, column 59]\n  n$12=*n$0.matrix[0][0]:int [line 30, column 59]\n  *n$1.matrix[0][0]:int=n$12 [line 30, column 59]\n  n$13=*n$0.matrix[0][1]:int [line 30, column 59]\n  *n$1.matrix[0][1]:int=n$13 [line 30, column 59]\n  n$14=*n$0.matrix[1]:int[2*4] [line 30, column 59]\n  *n$1.matrix[1]:int[2*4]=n$14 [line 30, column 59]\n  n$15=*n$0.matrix[1][0]:int [line 30, column 59]\n  *n$1.matrix[1][0]:int=n$15 [line 30, column 59]\n  n$16=*n$0.matrix[1][1]:int [line 30, column 59]\n  *n$1.matrix[1][1]:int=n$16 [line 30, column 59]\n  n$17=*n$0.large:int[10*4] [line 30, column 59]\n  *n$1.large:int[10*4]=n$17 [line 30, column 59]\n  n$18=*n$0.empty:int[0*4][10*0] [line 30, column 59]\n  *n$1.empty:int[0*4][10*0]=n$18 [line 30, column 59]\n " shape="box"]
+	
+
+	 "assign.4de8aa8803f1d41c_3" -> "assign.4de8aa8803f1d41c_2" ;
+"copy_init.f37e684f2f0b8514_1" [label="1: Start copy_init\nFormals:  p:WithArrays*\nLocals:  s:WithArrays \n  " color=yellow style=filled]
+	
+
+	 "copy_init.f37e684f2f0b8514_1" -> "copy_init.f37e684f2f0b8514_3" ;
+"copy_init.f37e684f2f0b8514_2" [label="2: Exit copy_init \n  " color=yellow style=filled]
+	
+
+"copy_init.f37e684f2f0b8514_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(s:WithArrays); [line 28, column 40]\n  n$0=*&p:WithArrays* [line 28, column 63]\n  n$1=*n$0.small:int[2*4] [line 28, column 40]\n  *&s.small:int[2*4]=n$1 [line 28, column 40]\n  n$2=*n$0.small[0]:int [line 28, column 40]\n  *&s.small[0]:int=n$2 [line 28, column 40]\n  n$3=*n$0.small[1]:int [line 28, column 40]\n  *&s.small[1]:int=n$3 [line 28, column 40]\n  n$4=*n$0.points:Point[2*8] [line 28, column 40]\n  *&s.points:Point[2*8]=n$4 [line 28, column 40]\n  n$5=*n$0.points[0].x:int [line 28, column 40]\n  *&s.points[0].x:int=n$5 [line 28, column 40]\n  n$6=*n$0.points[0].y:int [line 28, column 40]\n  *&s.points[0].y:int=n$6 [line 28, column 40]\n  n$7=*n$0.points[1].x:int [line 28, column 40]\n  *&s.points[1].x:int=n$7 [line 28, column 40]\n  n$8=*n$0.points[1].y:int [line 28, column 40]\n  *&s.points[1].y:int=n$8 [line 28, column 40]\n  n$9=*n$0.matrix:int[2*4][2*8] [line 28, column 40]\n  *&s.matrix:int[2*4][2*8]=n$9 [line 28, column 40]\n  n$10=*n$0.matrix[0]:int[2*4] [line 28, column 40]\n  *&s.matrix[0]:int[2*4]=n$10 [line 28, column 40]\n  n$11=*n$0.matrix[0][0]:int [line 28, column 40]\n  *&s.matrix[0][0]:int=n$11 [line 28, column 40]\n  n$12=*n$0.matrix[0][1]:int [line 28, column 40]\n  *&s.matrix[0][1]:int=n$12 [line 28, column 40]\n  n$13=*n$0.matrix[1]:int[2*4] [line 28, column 40]\n  *&s.matrix[1]:int[2*4]=n$13 [line 28, column 40]\n  n$14=*n$0.matrix[1][0]:int [line 28, column 40]\n  *&s.matrix[1][0]:int=n$14 [line 28, column 40]\n  n$15=*n$0.matrix[1][1]:int [line 28, column 40]\n  *&s.matrix[1][1]:int=n$15 [line 28, column 40]\n  n$16=*n$0.large:int[10*4] [line 28, column 40]\n  *&s.large:int[10*4]=n$16 [line 28, column 40]\n  n$17=*n$0.empty:int[0*4][10*0] [line 28, column 40]\n  *&s.empty:int[0*4][10*0]=n$17 [line 28, column 40]\n " shape="box"]
+	
+
+	 "copy_init.f37e684f2f0b8514_3" -> "copy_init.f37e684f2f0b8514_2" ;
+"copy_many_array_elements.1b9927ba51a6ee29_1" [label="1: Start copy_many_array_elements\nFormals:  p:ManyArrayElements*\nLocals:  s:ManyArrayElements \n  " color=yellow style=filled]
+	
+
+	 "copy_many_array_elements.1b9927ba51a6ee29_1" -> "copy_many_array_elements.1b9927ba51a6ee29_3" ;
+"copy_many_array_elements.1b9927ba51a6ee29_2" [label="2: Exit copy_many_array_elements \n  " color=yellow style=filled]
+	
+
+"copy_many_array_elements.1b9927ba51a6ee29_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(s:ManyArrayElements); [line 33, column 3]\n  n$0=*&p:ManyArrayElements* [line 33, column 33]\n  n$1=*n$0.points:Point[5*8] [line 33, column 3]\n  *&s.points:Point[5*8]=n$1 [line 33, column 3]\n  n$2=*n$0.matrix:int[2*4][2*8] [line 33, column 3]\n  *&s.matrix:int[2*4][2*8]=n$2 [line 33, column 3]\n  n$3=*n$0.small:int[2*4] [line 33, column 3]\n  *&s.small:int[2*4]=n$3 [line 33, column 3]\n  n$4=*n$0.k:int [line 33, column 3]\n  *&s.k:int=n$4 [line 33, column 3]\n " shape="box"]
+	
+
+	 "copy_many_array_elements.1b9927ba51a6ee29_3" -> "copy_many_array_elements.1b9927ba51a6ee29_2" ;
+}
