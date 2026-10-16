@@ -37,6 +37,9 @@ val for_ui_thread : string [@@warning "-unused-value-declaration"]
 
 val guarded_by : string
 
+val requires_capability : string
+(** annotation of a clang function with a [requires_capability] attribute *)
+
 val suppress_lint : string
 
 val thread_safe : string

@@ -1193,8 +1193,8 @@ RACERD CHECKER OPTIONS
            --no-racerd-always-report-java)
 
        --racerd-guardedby
-           Activates: Check @GuardedBy annotations with RacerD (Conversely:
-           --no-racerd-guardedby)
+           Activates: Check @GuardedBy annotations (Java) and guarded_by
+           attributes (C++) with RacerD (Conversely: --no-racerd-guardedby)
 
        --racerd-ignore-classes +string
            Any method in a class specified here will be ignored by RacerD.

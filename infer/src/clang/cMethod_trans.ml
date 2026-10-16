@@ -260,7 +260,8 @@ let create_attributes_helper ?loc_instantiated ?(set_objc_accessor_attr = false)
   ; clang_method_kind
   ; objc_accessor= objc_property_accessor
   ; ret_type
-  ; ret_annots }
+  ; ret_annots=
+      ret_annots @ CAst_utils.sil_annot_of_function_attributes ms.CMethodSignature.attributes }
 
 
 let create_attributes ?loc_instantiated ?(set_objc_accessor_attr = false) trans_unit_ctx tenv ms

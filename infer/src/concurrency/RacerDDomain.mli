@@ -29,15 +29,28 @@ module Access : sig
   val get_access_exp : t -> AccessExpression.t
 end
 
-(** Overapproximation of number of times the lock has been acquired *)
+(** Overapproximation of the effect on the locks held on entry: how many of them have been released,
+    and how many locks acquired since are still held *)
 module LockDomain : sig
-  include AbstractDomain.WithBottom
+  include AbstractDomain.S
+
+  val initial : t
+  (** no lock acquired or released *)
 
   val acquire_lock : t -> t
   (** record acquisition of a lock *)
 
   val release_lock : t -> t
-  (** record release of a lock *)
+  (** record release of a lock, which is one held on entry if none has been acquired since *)
+
+  val release_acquired_lock : t -> t
+  (** record release of a lock acquired since entry, if any *)
+
+  val is_locked : t -> bool
+  (** whether a lock acquired since entry is held *)
+
+  val has_released : t -> bool
+  (** whether a lock held on entry has been released *)
 end
 
 (** Abstraction of threads that may run in parallel with the current thread. NoThread <
@@ -80,7 +93,7 @@ module AccessSnapshot : sig
     type t =
       { access: Access.t
       ; thread: ThreadsDomain.t
-      ; lock: bool
+      ; lock: LockDomain.t
       ; ownership_precondition: OwnershipAbstractValue.t }
   end
 
@@ -92,6 +105,10 @@ module AccessSnapshot : sig
   val is_container_write : t -> bool
 
   val get_loc : t -> Location.t
+
+  val with_locks_held_on_entry : int -> t -> t
+  (** the access as seen when the procedure it was recorded in starts with the given number of locks
+      held *)
 
   val is_unprotected : t -> bool
   (** return true if not protected by lock, thread, or ownership *)
@@ -136,7 +153,7 @@ module NeverReturns : AbstractDomain.S
 
 type t =
   { threads: ThreadsDomain.t  (** current thread: main, background, or unknown *)
-  ; locks: LockDomain.t  (** boolean that is true if a lock must currently be held *)
+  ; locks: LockDomain.t  (** effect on the locks held *)
   ; never_returns: NeverReturns.t
         (** boolean which is true if a [noreturn] call is always reached *)
   ; accesses: AccessDomain.t
@@ -197,7 +214,9 @@ val integrate_summary :
 
 val acquire_lock : t -> t
 
-val release_lock : t -> t
+val release_lock : only_acquired:bool -> t -> t
+(** with [~only_acquired:true], only release a lock acquired since entry (see
+    [LockDomain.release_acquired_lock]) *)
 
 val lock_if_true : HilExp.access_expression -> t -> t
 

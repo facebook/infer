@@ -466,3 +466,20 @@ class WeirdAnnotation {
     f = 0;
   }
 }
+
+// eg a permission, not a lock
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.CLASS)
+@interface RequiresCapability {
+  String value();
+}
+
+@ThreadSafe
+class RequiresCapabilityAnnotation {
+  int f;
+
+  @RequiresCapability("CAMERA")
+  void unprotectedWriteBad() {
+    f = 1;
+  }
+}
