@@ -34,6 +34,10 @@ val should_analyze_proc : Tenv.t -> Procname.t -> bool
     the procedures in all of these cases in order to find more bugs. this is just a temporary
     measure to avoid obvious false positives *)
 
+val is_scoped_lock_of_several_mutexes_destructor : Procname.t -> bool
+(** is the procedure the destructor of a [std::scoped_lock] of several mutexes, whose constructor is
+    not modelled as acquiring them? *)
+
 val get_current_class_and_threadsafe_superclasses :
   Tenv.t -> Procname.t -> (Typ.name * Typ.name list) option
 
