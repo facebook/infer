@@ -30,7 +30,7 @@ type allocator =
   | SwiftAlloc
   | HackBuilderResource of HackClassName.t
   | Awaitable (* used for Hack and Python *)
-  | FileDescriptor
+  | FileDescriptor of Procname.t
 [@@deriving compare, equal, yojson_of]
 
 val pp_allocator : F.formatter -> allocator -> unit
