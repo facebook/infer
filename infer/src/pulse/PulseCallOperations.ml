@@ -49,6 +49,29 @@ let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
   else actuals
 
 
+(** In order to apply summary specialisation, we call blocks or function pointers with the closure
+    as the first argument, but when we want to call the actual code of the block or function, we
+    need to remove the closure argument again. The extra actuals of variadic functions are dropped
+    too. *)
+let actuals_for_formals call_flags callee_pname ~formals ~actuals =
+  let actuals =
+    if call_flags.CallFlags.cf_is_objc_block then match actuals with _ :: rest -> rest | [] -> []
+    else actuals
+  in
+  trim_actuals_if_var_arg (Some callee_pname) ~formals ~actuals
+
+
+(** C functions are identified by their name only, so a call can resolve to a definition whose
+    formals do not match the actuals, e.g. a definition from another program analyzed together with
+    the caller, or one called through an unprototyped declaration or a function pointer cast. None
+    of the pre/posts of such a definition can be applied. *)
+let is_arity_mismatch_with_c_definition call_flags callee_pname ~actuals =
+  Procname.is_c callee_pname
+  && Option.exists (IRAttributes.load callee_pname) ~f:(fun {ProcAttributes.formals} ->
+      let actuals = actuals_for_formals call_flags callee_pname ~formals ~actuals in
+      not (Int.equal (List.length formals) (List.length actuals)) )
+
+
 let is_const_version pname_method (other_method : Struct.tenv_method) =
   String.equal pname_method (Procname.get_method other_method.name)
   && Option.exists (IRAttributes.load other_method.name) ~f:(fun attr ->
@@ -330,17 +353,10 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
         AbductiveDomain.Summary.remove_all_must_not_be_tainted ~kinds callee_summary
       else callee_summary
     in
-    (* In order to apply summary specialisation, we call blocks or function pointers with the closure as the first argument,
-       but when we want to call the actual code of the block or function, we need to remove the closure argument again. *)
-    let actuals =
-      if call_flags.CallFlags.cf_is_objc_block then
-        match actuals with _ :: rest -> rest | [] -> []
-      else actuals
-    in
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary analysis_data path ~callee_proc_name call_loc ~callee_summary
         ~captured_formals ~captured_actuals ~formals
-        ~actuals:(trim_actuals_if_var_arg (Some callee_proc_name) ~actuals ~formals)
+        ~actuals:(actuals_for_formals call_flags callee_proc_name ~formals ~actuals)
         astate
     in
     let sat_unsat =
@@ -1072,6 +1088,16 @@ let call ?disjunct_limit ({InterproceduralAnalysis.analyze_dependency} as analys
   in
   let non_disj_caller = record_direct_call non_disj_caller in
   match analyze_dependency callee_pname with
+  | Ok _ when is_arity_mismatch_with_c_definition call_flags callee_pname ~actuals ->
+      L.d_printfln_escaped ~color:Orange
+        "The formals of %a cannot be matched with the %d actuals, treating the call as unknown"
+        Procname.pp callee_pname (List.length actuals) ;
+      Stats.incr_pulse_unknown_calls_arity_mismatch () ;
+      let res, (non_disj, contradiction) =
+        call_aux_unknown disjunct_limit analysis_data path call_loc callee_pname ~ret ~actuals
+          ~formals_opt:None call_kind call_flags astate non_disj_caller
+      in
+      (res, non_disj, contradiction, `UnknownCall)
   | Ok summary ->
       let is_pulse_specialization_limit_reached =
         Specialization.Pulse.is_pulse_specialization_limit_reached summary.PulseSummary.specialized

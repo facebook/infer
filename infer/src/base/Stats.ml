@@ -244,6 +244,7 @@ type t =
   ; pulse_interrupted_loops: IntCounter.t Atomic.t
   ; pulse_unknown_calls: IntCounter.t Atomic.t
   ; pulse_unknown_calls_on_hack_resource: IntCounter.t Atomic.t
+  ; pulse_unknown_calls_arity_mismatch: IntCounter.t Atomic.t
   ; pulse_swift_alloc_unknown_type: IntCounter.t Atomic.t
   ; pulse_summaries_contradictions: IntCounter.t Atomic.t
   ; pulse_summaries_unsat_for_caller: IntCounter.t Atomic.t
@@ -319,6 +320,7 @@ let pp fmt stats =
     ~pulse_captured_vars_length_contradictions:(pp_int_field fmt)
     ~pulse_disjuncts_dropped:(pp_int_field fmt) ~pulse_interrupted_loops:(pp_int_field fmt)
     ~pulse_unknown_calls:(pp_int_field fmt) ~pulse_unknown_calls_on_hack_resource:(pp_int_field fmt)
+    ~pulse_unknown_calls_arity_mismatch:(pp_int_field fmt)
     ~pulse_swift_alloc_unknown_type:(pp_int_field fmt)
     ~pulse_summaries_contradictions:(pp_int_field fmt)
     ~pulse_summaries_count:(pp_pulse_summaries_count fmt)
@@ -347,6 +349,7 @@ let log_to_file
     ; pulse_interrupted_loops
     ; pulse_unknown_calls
     ; pulse_unknown_calls_on_hack_resource
+    ; pulse_unknown_calls_arity_mismatch
     ; pulse_summaries_contradictions
     ; pulse_summaries_unsat_for_caller
     ; pulse_summaries_unsat_for_caller_percent
@@ -372,6 +375,8 @@ let log_to_file
   F.fprintf fmt "pulse_unknown_calls: %d@\n" (Atomic.get pulse_unknown_calls) ;
   F.fprintf fmt "pulse_unknown_calls_on_hack_resource: %d@\n"
     (Atomic.get pulse_unknown_calls_on_hack_resource) ;
+  F.fprintf fmt "pulse_unknown_calls_arity_mismatch: %d@\n"
+    (Atomic.get pulse_unknown_calls_arity_mismatch) ;
   F.fprintf fmt "pulse_summaries_contradictions: %d@\n" (Atomic.get pulse_summaries_contradictions) ;
   F.fprintf fmt "pulse_summaries_unsat_for_caller: %d@\n"
     (Atomic.get pulse_summaries_unsat_for_caller) ;
@@ -496,6 +501,8 @@ let add_pulse_interrupted_loops n = add Fields.pulse_interrupted_loops n
 let incr_pulse_unknown_calls () = incr Fields.pulse_unknown_calls
 
 let incr_pulse_unknown_calls_on_hack_resource () = incr Fields.pulse_unknown_calls_on_hack_resource
+
+let incr_pulse_unknown_calls_arity_mismatch () = incr Fields.pulse_unknown_calls_arity_mismatch
 
 let incr_pulse_swift_alloc_unknown_type () = incr Fields.pulse_swift_alloc_unknown_type
 
