@@ -781,4 +781,19 @@ public class NullPointerExceptions {
     }
     b.x = 0;
   }
+
+  int derefAfterComparisonToNullBad(A a) {
+    if (a == null) {
+      unknownFunc();
+    }
+    return a.x;
+  }
+
+  int callDerefAfterComparisonToNullWithNullBad() {
+    return derefAfterComparisonToNullBad(null);
+  }
+
+  int callDerefAfterComparisonToNullOk() {
+    return derefAfterComparisonToNullBad(new A());
+  }
 }
