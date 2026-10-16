@@ -3,93 +3,105 @@
     { "short_description": "Untrusted Android Intent creation",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["CreateIntent"] }
       ]
     },
     { "short_description": "Path Traversal",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["FileName", "Sanitizer"],
           "sink_kinds": ["FileOperation"] }
       ]
     },
     { "short_description": "Deserialization of Untrusted Data",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["Deserialization"] }
       ]
     },
     { "short_description": "Cross-site Scripting",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["HTML"] }
       ]
     },
     { "short_description": "Code Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["JavaScript"] }
       ]
     },
     { "short_description": "SQL Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["SQLInjection"] }
       ]
     },
     { "short_description": "Insecure Intent handling",
       "taint_flows": [
         { "source_kinds": ["IntentForInsecureIntentHandling"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["StartComponentForInsecureIntentHandling"] }
       ]
     },
     { "short_description": "Create Intent from URI",
       "taint_flows": [
         { "source_kinds": ["IntentFromURI", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["StartComponent"] }
       ]
     },
     { "short_description": "Logging private data",
       "taint_flows": [
         { "source_kinds": ["PrivateData"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["Logging"] }
       ]
     },
     { "short_description": "OS Command Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["ShellExec"] }
       ]
     },
     { "short_description": "Unsafe Reflection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
-          "sanitizer_kinds": ["StringConcatenation"],
+          "sanitizer_kinds": ["StringConcatenation", "Sanitizer"],
           "sink_kinds": ["ClassLoading"] }
       ]
     },
     { "short_description": "Server-Side Request Forgery",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
-          "sanitizer_kinds": ["URLEncoding"],
+          "sanitizer_kinds": ["URLEncoding", "Sanitizer"],
           "sink_kinds": ["SSRF"] }
       ]
     },
     { "short_description": "XPath Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["XPathQuery"] }
       ]
     },
     { "short_description": "LDAP Injection",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["LDAPQuery"] }
       ]
     },
     { "short_description": "Trust Boundary Violation",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
-          "sanitizer_kinds": ["Validation"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["SessionAttribute"] }
       ]
     }
@@ -436,6 +448,14 @@
     { "class_names": ["java.net.URLEncoder"],
       "method_names": ["encode"],
       "kinds": ["URLEncoding"]
+    },
+    { "class_names": ["java.util.UUID"],
+      "method_names": ["fromString"],
+      "kinds": ["Sanitizer"]
+    },
+    { "class_names": ["org.apache.commons.io.FilenameUtils"],
+      "method_names": ["getName"],
+      "kinds": ["FileName"]
     }
   ]
 }

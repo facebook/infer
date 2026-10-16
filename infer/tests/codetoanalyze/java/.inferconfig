@@ -158,8 +158,12 @@
     { "method_with_annotation": "codetoanalyze.java.pulse.SanitizerMarker" },
     { "class_names": ["codetoanalyze.java.pulse.UserStore"],
       "method_names": ["checkPassword"],
-      "kinds": ["Validation"],
+      "kinds": ["Sanitizer"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["codetoanalyze.java.pulse.Validators"],
+      "method_names": ["requireAllowedHost", "requireAlphanumeric", "requireFileName"],
+      "kinds": ["Sanitizer"]
     }
   ]
 }

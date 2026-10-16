@@ -83,8 +83,8 @@ interface UserStore {
 
 // The user name is only stored once the password has been checked against the user store.
 // Infer cannot know what `checkPassword` checks: the taint config of these tests declares it as a
-// sanitizer of kind `Validation`, which the "Trust Boundary Violation" policy accepts, as a project
-// would do for its own validation methods.
+// sanitizer of kind `Sanitizer`, which all the policies accept, as a project would do for its own
+// validation methods.
 class LoginServletOk extends HttpServlet {
 
   UserStore users;
