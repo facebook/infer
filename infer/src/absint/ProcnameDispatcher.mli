@@ -266,6 +266,11 @@ module Call : sig
     Typ.t -> ('context, Exp.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
   (** Captures one arg expression of the given primitive type *)
 
+  val capt_arg_of_ptr_typ :
+    ('context, 'arg_payload FuncArg.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
+  (** Captures one arg of pointer type, excluding references. In C++, this distinguishes a raw
+      pointer from an object of class type passed by value, e.g. an iterator. *)
+
   val capt_var : ('context, Ident.t, 'wrapped_arg, 'wrapped_arg -> 'f, 'f, 'arg_payload) one_arg
   (** Captures one arg Var *)
 

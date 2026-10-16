@@ -79,6 +79,11 @@ module TransferFunctions = struct
       let copy loc acc =
         Option.value_map (Dom.Mem.find_opt loc callee_exit_mem) ~default:acc ~f:(fun v ->
             let locs = PowLoc.subst_loc loc eval_locpath in
+            let locs =
+              (* the string length of the unknown location is that location, whose value must stay
+                 unknown *)
+              if Loc.is_c_strlen loc then PowLoc.remove_unknown locs else locs
+            in
             let v = Dom.Val.subst v eval_sym_trace location in
             (* Always do strong updates if the following two conditions hold
                1) Context-sensitive allocsites are assumed: a single allocsite in a caller
@@ -318,6 +323,48 @@ module TransferFunctions = struct
         Dom.Mem.add_unknown ret ~location mem
 
 
+  (* An unknown callee may write any bytes, with or without a null, through its pointer arguments
+     and the pointers reachable from them (e.g. an iovec or a [char**] out-parameter), but not
+     directly through a const pointee. Objective-C objects are skipped: the cost models use the C
+     string length of an [NSAttributedString] as its length. *)
+  let forget_c_strlen_of_args ?(formals = []) args mem =
+    let is_objc_object typ =
+      match typ.Typ.desc with Tptr (elt, _) -> Typ.is_objc_class elt | _ -> false
+    in
+    let rec collect formals args ((writable, const) as acc) =
+      match (formals, args) with
+      | _, [] ->
+          acc
+      | formal :: formals, (exp, _) :: args | ([] as formals), (exp, formal) :: args ->
+          let acc =
+            if is_objc_object formal then acc
+            else
+              let locs = Sem.eval_locs exp mem |> PowLoc.to_set in
+              if Typ.is_ptr_to_const formal then (writable, LocSet.union locs const)
+              else (LocSet.union locs writable, const)
+          in
+          collect formals args acc
+    in
+    if Language.curr_language_is Clang then
+      let writable, const = collect formals args (LocSet.empty, LocSet.empty) in
+      let roots = LocSet.union writable const in
+      if LocSet.is_empty roots then mem
+      else
+        let not_written = LocSet.diff const writable in
+        let add_allocsite loc acc =
+          match loc with
+          | BufferOverrunField.Prim (Loc.Allocsite _) when not (LocSet.mem loc not_written) ->
+              PowLoc.add loc acc
+          | _ ->
+              acc
+        in
+        let locs =
+          LocSet.fold add_allocsite (Dom.Mem.get_reachable_locs_from [] roots mem) PowLoc.bot
+        in
+        BoUtils.Exec.forget_c_strlen locs mem
+    else mem
+
+
   let call
       {interproc= {proc_desc= pdesc; tenv}; get_summary; get_formals; oenv= {integer_type_widths}}
       node location ((id, _) as ret) callee_pname args captured_vars mem =
@@ -339,7 +386,7 @@ module TransferFunctions = struct
         | Some callee_exit_mem, Some callee_formals ->
             instantiate_mem ~is_args_ref integer_type_widths id callee_formals callee_pname args
               captured_vars mem callee_exit_mem location
-        | _, _ ->
+        | _, callee_formals ->
             L.d_printfln_escaped "/!\\ Unknown call to %a" Procname.pp_without_templates
               callee_pname ;
             if Config.cost_log_unknown_calls then
@@ -347,12 +394,14 @@ module TransferFunctions = struct
                 ~message:
                   (F.asprintf "[Inferbo] Unmodeled Function: %a" Procname.pp_without_templates
                      callee_pname ) ;
-            Dom.Mem.add_unknown_from ret ~callee_pname ~location mem )
+            let formals = Option.value_map callee_formals ~default:[] ~f:(List.map ~f:snd) in
+            Dom.Mem.add_unknown_from ret ~callee_pname ~location mem
+            |> forget_c_strlen_of_args ~formals args )
 
 
-  let unknown_call location ((id, _) as ret) mem =
+  let unknown_call location ((id, _) as ret) args mem =
     let mem = Dom.Mem.add_stack_loc (Loc.of_id id) mem in
-    Dom.Mem.add_unknown ret ~location mem
+    Dom.Mem.add_unknown ret ~location mem |> forget_c_strlen_of_args args
 
 
   let exec_instr :
@@ -471,10 +520,10 @@ module TransferFunctions = struct
               call analysis_data node location ret callee_pname args captured_vars mem
           | More ->
               L.d_printfln_escaped "/!\\ Call to multiple functions %a" Exp.pp fun_exp ;
-              unknown_call location ret mem
+              unknown_call location ret args mem
           | Empty | Singleton (Path _) ->
               L.d_printfln_escaped "/!\\ Call to non-const function %a" Exp.pp fun_exp ;
-              unknown_call location ret mem )
+              unknown_call location ret args mem )
       | Metadata (VariableLifetimeBegins {pvar; typ; loc}) when Pvar.is_global pvar ->
           let model_env =
             let pname = Procdesc.get_proc_name proc_desc in
