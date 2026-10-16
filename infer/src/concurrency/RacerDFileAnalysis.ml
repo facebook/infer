@@ -223,7 +223,7 @@ let should_report_guardedby_violation classname ({snapshot; tenv; procname} : re
         | _ ->
             false )
   in
-  (not snapshot.elem.lock)
+  (not (RacerDDomain.LockDomain.is_locked snapshot.elem.lock))
   && RacerDDomain.AccessSnapshot.is_write snapshot
   && Procname.is_java procname
   &&
@@ -480,7 +480,8 @@ let report_on_unprotected_read_java_csharp accesses acc (reported_access : repor
 let report_on_protected_read_java_csharp accesses acc (reported_access : reported_access) =
   let open RacerDDomain in
   let can_conflict (snapshot1 : AccessSnapshot.t) (snapshot2 : AccessSnapshot.t) =
-    if snapshot1.elem.lock && snapshot2.elem.lock then false
+    if LockDomain.is_locked snapshot1.elem.lock && LockDomain.is_locked snapshot2.elem.lock then
+      false
     else ThreadsDomain.can_conflict snapshot1.elem.thread snapshot2.elem.thread
   in
   let is_conflict {snapshot= other_snapshot; threads= other_threads} =

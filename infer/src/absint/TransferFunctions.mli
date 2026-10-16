@@ -41,6 +41,13 @@ end
 
 module type HIL = sig
   include S with type instr := HilInstr.t
+
+  val call_return_alias :
+    analysis_data -> Procname.t -> HilExp.t list -> HilExp.AccessExpression.t option
+  (** [call_return_alias analysis_data callee actuals] is [Some exp] if a call to [callee] with
+      [actuals] returns the value of [exp], an access expression over the caller's variables. The
+      HIL translation then resolves the identifier assigned the return value of the call to [exp],
+      as it does for identifiers assigned by loads. *)
 end
 
 (** When the set of disjuncts gets bigger than [n] then just stop adding new states to it, drop any

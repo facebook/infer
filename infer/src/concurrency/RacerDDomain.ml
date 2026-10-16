@@ -155,18 +155,78 @@ module CallPrinter = struct
 end
 
 module LockDomain = struct
-  include AbstractDomain.CountDomain (struct
-    (** arbitrary threshold for max locks we expect to be held simultaneously *)
-    let max = 5
-  end)
+  open AbstractDomain.Types
 
-  let acquire_lock = increment
+  (** The effect on the number [n] of locks held on entry, as the function
+      [n -> max(0, n - released) + held]: [released] of the locks held on entry have been released,
+      and [held] locks acquired since are still held. Unlike a count of the locks held, this
+      composes across calls, so that a callee that releases a lock it has not acquired, such as the
+      destructor of a RAII guard, releases a lock of its caller. *)
+  module Counts = struct
+    type t = {released: int; held: int} [@@deriving compare]
 
-  let release_lock = decrement
+    (* a lock is considered held if it may be held *)
+    let leq ~lhs ~rhs = lhs.released >= rhs.released && lhs.held <= rhs.held
 
-  let integrate_summary ~caller_astate ~callee_astate = add caller_astate callee_astate
+    let join lhs rhs = {released= Int.min lhs.released rhs.released; held= Int.max lhs.held rhs.held}
 
-  let is_locked t = not (is_bottom t)
+    let widen ~prev ~next ~num_iters:_ = join prev next
+
+    let pp fmt {released; held} =
+      if Int.equal released 0 then F.pp_print_int fmt held
+      else F.fprintf fmt "%d (releases %d)" held released
+  end
+
+  (* [Bottom] after a call that never returns *)
+  include AbstractDomain.BottomLifted (Counts)
+
+  let compare = compare_bottom_lifted Counts.compare
+
+  (** arbitrary threshold for max locks we expect to be held simultaneously *)
+  let max = 5
+
+  let cap n = Int.min max n
+
+  let initial = NonBottom {Counts.released= 0; held= 0}
+
+  let acquire_lock = map ~f:(fun (counts : Counts.t) -> {counts with held= cap (counts.held + 1)})
+
+  let release_lock =
+    map ~f:(fun {Counts.released; held} ->
+        if held > 0 then {Counts.released; held= held - 1}
+        else {Counts.released= cap (released + 1); held} )
+
+
+  let release_acquired_lock =
+    map ~f:(fun (counts : Counts.t) ->
+        if counts.held > 0 then {counts with held= counts.held - 1} else counts )
+
+
+  let integrate_summary ~caller_astate ~callee_astate =
+    match (caller_astate, callee_astate) with
+    | NonBottom (caller : Counts.t), NonBottom (callee : Counts.t) ->
+        if caller.held >= callee.released then
+          NonBottom
+            { Counts.released= caller.released
+            ; held= cap (caller.held - callee.released + callee.held) }
+        else
+          NonBottom
+            { Counts.released= cap (caller.released + callee.released - caller.held)
+            ; held= callee.held }
+    | _ ->
+        (* a callee that never returns without its summary saying so, e.g. a destructor, has no
+           effect *)
+        caller_astate
+
+
+  let is_locked = function NonBottom {Counts.held} -> held > 0 | Bottom -> false
+
+  let has_released = function NonBottom {Counts.released} -> released > 0 | Bottom -> false
+
+  (* [released] only matters when no lock is held, so normalise the state recorded at an access to
+     keep the number of distinct accesses low *)
+  let for_access astate =
+    if is_locked astate then NonBottom {Counts.released= 0; held= 1} else astate
 end
 
 module ThreadsDomain = struct
@@ -279,13 +339,13 @@ module AccessSnapshot = struct
     type t =
       { access: Access.t
       ; thread: ThreadsDomain.t
-      ; lock: bool
+      ; lock: LockDomain.t
       ; ownership_precondition: OwnershipAbstractValue.t }
     [@@deriving compare]
 
     let pp fmt {access; thread; lock; ownership_precondition} =
-      F.fprintf fmt "Access: %a Thread: %a Lock: %b Pre: %a" Access.pp access ThreadsDomain.pp
-        thread lock OwnershipAbstractValue.pp ownership_precondition
+      F.fprintf fmt "Access: %a Thread: %a Lock: %a Pre: %a" Access.pp access ThreadsDomain.pp
+        thread LockDomain.pp lock OwnershipAbstractValue.pp ownership_precondition
 
 
     let describe fmt {access} = Access.describe fmt access
@@ -306,24 +366,22 @@ module AccessSnapshot = struct
 
 
   let make_if_not_owned formals access lock thread ownership_precondition loc =
+    let lock = LockDomain.for_access lock in
     make {access; lock; thread; ownership_precondition} loc |> filter formals
 
 
   let make_unannotated_call_access formals exp pname lock ownership loc =
-    let lock = LockDomain.is_locked lock in
     let access = Access.make_unannotated_call_access exp pname in
     make_if_not_owned formals access lock ownership loc
 
 
   let make_access formals acc_exp ~is_write loc lock thread ownership_precondition =
-    let lock = LockDomain.is_locked lock in
     let access = Access.make_field_access acc_exp ~is_write in
     make_if_not_owned formals access lock thread ownership_precondition loc
 
 
   let make_container_access formals acc_exp ~is_write callee loc lock thread ownership_precondition
       =
-    let lock = LockDomain.is_locked lock in
     let access = Access.make_container_access acc_exp callee ~is_write in
     make_if_not_owned formals access lock thread ownership_precondition loc
 
@@ -367,7 +425,10 @@ module AccessSnapshot = struct
     let thread =
       ThreadsDomain.integrate_summary ~callee_astate:snapshot.elem.thread ~caller_astate:threads
     in
-    let lock = snapshot.elem.lock || LockDomain.is_locked locks in
+    let lock =
+      LockDomain.integrate_summary ~caller_astate:locks ~callee_astate:snapshot.elem.lock
+      |> LockDomain.for_access
+    in
     map snapshot ~f:(fun elem -> {elem with lock; thread; ownership_precondition})
 
 
@@ -381,7 +442,7 @@ module AccessSnapshot = struct
 
   let is_unprotected {elem= {thread; lock; ownership_precondition}} =
     (not (ThreadsDomain.is_any_but_self thread))
-    && (not lock)
+    && (not (LockDomain.is_locked lock))
     && not (OwnershipAbstractValue.is_owned ownership_precondition)
 end
 
@@ -521,17 +582,19 @@ type t =
   ; never_returns: NeverReturns.t
   ; accesses: AccessDomain.t
   ; ownership: OwnershipDomain.t
-  ; attribute_map: AttributeMapDomain.t }
+  ; attribute_map: AttributeMapDomain.t
+  ; return_alias: ReturnAliasDomain.t }
 [@@deriving abstract_domain]
 
 let initial =
   let threads = ThreadsDomain.bottom in
-  let locks = LockDomain.bottom in
+  let locks = LockDomain.initial in
   let never_returns = false in
   let accesses = AccessDomain.empty in
   let ownership = OwnershipDomain.empty in
   let attribute_map = AttributeMapDomain.empty in
-  {threads; locks; never_returns; accesses; ownership; attribute_map}
+  let return_alias = ReturnAliasDomain.bottom in
+  {threads; locks; never_returns; accesses; ownership; attribute_map; return_alias}
 
 
 type summary =
@@ -541,37 +604,52 @@ type summary =
   ; accesses: AccessDomain.t
   ; return_ownership: OwnershipAbstractValue.t
   ; return_attribute: Attribute.t
+  ; return_alias: AccessExpression.t option
   ; attributes: AttributeMapDomain.t }
 
 let empty_summary =
   { threads= ThreadsDomain.bottom
-  ; locks= LockDomain.bottom
+  ; locks= LockDomain.initial
   ; never_returns= false
   ; accesses= AccessDomain.bottom
   ; return_ownership= OwnershipAbstractValue.unowned
   ; return_attribute= Attribute.top
+  ; return_alias= None
   ; attributes= AttributeMapDomain.top }
 
 
 let pp_summary fmt
-    {threads; locks; never_returns; accesses; return_ownership; return_attribute; attributes} =
+    { threads
+    ; locks
+    ; never_returns
+    ; accesses
+    ; return_ownership
+    ; return_attribute
+    ; return_alias
+    ; attributes } =
   F.fprintf fmt
     "@\n\
      Threads: %a, Locks: %a, NeverReturns: %a @\n\
      Accesses %a @\n\
      Ownership: %a @\n\
      Return Attribute: %a @\n\
+     Return Alias: %a @\n\
      Attributes: %a @\n"
     ThreadsDomain.pp threads LockDomain.pp locks NeverReturns.pp never_returns AccessDomain.pp
     accesses OwnershipAbstractValue.pp return_ownership Attribute.pp return_attribute
-    AttributeMapDomain.pp attributes
+    (Pp.option AccessExpression.pp) return_alias AttributeMapDomain.pp attributes
 
 
-let pp fmt {threads; locks; never_returns; accesses; ownership; attribute_map} =
+let pp fmt {threads; locks; never_returns; accesses; ownership; attribute_map; return_alias} =
   F.fprintf fmt
-    "Threads: %a, Locks: %a, NeverReturns: %a @\nAccesses %a @\nOwnership: %a @\nAttributes: %a @\n"
+    "Threads: %a, Locks: %a, NeverReturns: %a @\n\
+     Accesses %a @\n\
+     Ownership: %a @\n\
+     Attributes: %a @\n\
+     Return Alias: %a @\n"
     ThreadsDomain.pp threads LockDomain.pp locks NeverReturns.pp never_returns AccessDomain.pp
-    accesses OwnershipDomain.pp ownership AttributeMapDomain.pp attribute_map
+    accesses OwnershipDomain.pp ownership AttributeMapDomain.pp attribute_map ReturnAliasDomain.pp
+    return_alias
 
 
 let add_unannotated_call_access formals pname actuals loc (astate : t) =
@@ -585,7 +663,7 @@ let add_unannotated_call_access formals pname actuals loc (astate : t) =
 
 
 let astate_to_summary proc_desc formals
-    {threads; locks; never_returns; accesses; ownership; attribute_map} =
+    {threads; locks; never_returns; accesses; ownership; attribute_map; return_alias} =
   let proc_name = Procdesc.get_proc_name proc_desc in
   let return_var_exp =
     AccessExpression.base
@@ -608,7 +686,46 @@ let astate_to_summary proc_desc formals
         attribute_map
     else AttributeMapDomain.top
   in
-  {threads; locks; never_returns; accesses; return_ownership; return_attribute; attributes}
+  let return_alias =
+    (* the paths read to compute the value of [exp], or its address if [address] *)
+    let rec read_paths ~address (exp : AccessExpression.t) =
+      match exp with
+      | Base _ ->
+          []
+      | FieldOffset (prefix, _) | ArrayOffset (prefix, _, _) ->
+          let paths = read_paths ~address:true prefix in
+          if address then paths else exp :: paths
+      | Dereference prefix ->
+          read_paths ~address:false prefix
+      | AddressOf prefix ->
+          read_paths ~address:true prefix
+    in
+    (* a caller resolving the returned value to the alias reads these paths again, holding only the
+       caller's locks *)
+    let is_read_under_lock alias =
+      let paths = read_paths ~address:false alias in
+      AccessDomain.exists
+        (fun ({elem= {access; lock}} : AccessSnapshot.t) ->
+          LockDomain.is_locked lock
+          && List.mem paths (Access.get_access_exp access) ~equal:AccessExpression.equal )
+        accesses
+    in
+    ReturnAliasDomain.to_summary proc_desc return_alias
+    |> Option.filter ~f:(fun alias -> not (is_read_under_lock alias))
+  in
+  if Procname.is_destructor proc_name then
+    (* destructors seldom run concurrently with other methods, so only keep the effect on locks, e.g.
+       a RAII guard releasing its lock *)
+    {empty_summary with locks}
+  else
+    { threads
+    ; locks
+    ; never_returns
+    ; accesses
+    ; return_ownership
+    ; return_attribute
+    ; return_alias
+    ; attributes }
 
 
 let add_access tenv formals loc ~is_write (astate : t) exp =
@@ -694,7 +811,8 @@ let branch_never_returns () =
   ; ownership= OwnershipDomain.empty
   ; attribute_map=
       (* this is incorrect, as there is no identity element for an inverted set *)
-      AttributeMapDomain.empty }
+      AttributeMapDomain.empty
+  ; return_alias= ReturnAliasDomain.bottom }
 
 
 let integrate_summary formals ~callee_proc_attrs summary ret_access_exp callee_pname actuals loc
@@ -727,9 +845,11 @@ let acquire_lock (astate : t) =
   ; threads= ThreadsDomain.update_for_lock_use astate.threads }
 
 
-let release_lock (astate : t) =
+let release_lock ~only_acquired (astate : t) =
   { astate with
-    locks= LockDomain.release_lock astate.locks
+    locks=
+      ( if only_acquired then LockDomain.release_acquired_lock astate.locks
+        else LockDomain.release_lock astate.locks )
   ; threads= ThreadsDomain.update_for_lock_use astate.threads }
 
 

@@ -84,13 +84,26 @@ module Make (TransferFunctions : TransferFunctions.HIL) (HilConfig : HilConfig) 
         (Some instr, bindings)
 
 
+  let bind_call_return analysis_data (hil_instr : HilInstr.t) bindings =
+    match hil_instr with
+    | Call ((ret_var, _), Direct callee_pname, actuals, _, _) ->
+        TransferFunctions.call_return_alias analysis_data callee_pname actuals
+        |> Option.value_map ~default:bindings ~f:(fun access_expr ->
+            Bindings.add ret_var access_expr bindings )
+    | _ ->
+        bindings
+
+
   let exec_instr ((actual_state, bindings) as astate) analysis_data node idx instr =
     let actual_state', bindings' =
       match hil_instr_of_sil bindings instr with
       | None, bindings ->
           (actual_state, bindings)
       | Some hil_instr, bindings ->
-          exec_instr_actual analysis_data bindings node idx hil_instr actual_state
+          let actual_state, bindings =
+            exec_instr_actual analysis_data bindings node idx hil_instr actual_state
+          in
+          (actual_state, bind_call_return analysis_data hil_instr bindings)
     in
     if phys_equal bindings bindings' && phys_equal actual_state actual_state' then astate
     else (actual_state', bindings')

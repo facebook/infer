@@ -201,7 +201,8 @@ type t =
   ; scheduled_work: ScheduledWorkDomain.t
   ; var_state: VarDomain.t
   ; null_locs: NullLocs.t
-  ; lazily_initalized: LazilyInitialized.t }
+  ; lazily_initalized: LazilyInitialized.t
+  ; return_alias: ReturnAliasDomain.t }
 
 include AbstractDomain.S with type t := t
 
@@ -258,7 +259,9 @@ type summary =
   ; scheduled_work: ScheduledWorkDomain.t
   ; lock_state: LockState.t
   ; attributes: AttributeDomain.t  (** final-state attributes that affect instance variables only *)
-  ; return_attribute: Attribute.t }
+  ; return_attribute: Attribute.t
+  ; return_alias: HilExp.AccessExpression.t option
+        (** access expression over the formals or globals whose value is returned *) }
 
 val empty_summary : summary
 
@@ -276,6 +279,14 @@ val integrate_summary :
   -> t
 (** apply a callee summary to the current abstract state; [lhs] is the expression assigned the
     returned value, if any *)
+
+val bind_return_alias :
+  callee:Procname.t -> lhs:HilExp.AccessExpression.t -> HilExp.t list -> summary -> t -> t
+(** if the summary of [callee] says that it returns the value of an access expression over its
+    formals or globals, resolve the variable of [lhs] to that expression over the actuals *)
+
+val assign_return : FormalMap.t -> lhs:HilExp.AccessExpression.t -> rhs:HilExp.t -> t -> t
+(** record what the procedure returns if [lhs] is the return variable *)
 
 val summary_of_astate : Procdesc.t -> t -> summary
 
