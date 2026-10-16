@@ -30,7 +30,7 @@ type allocator =
   | SwiftAlloc
   | HackBuilderResource of HackClassName.t
   | Awaitable (* used for Hack and Python *)
-  | FileDescriptor
+  | FileDescriptor of Procname.t
 [@@deriving compare, equal, yojson_of]
 
 val pp_allocator : F.formatter -> allocator -> unit
@@ -134,6 +134,11 @@ type t =
   | AlwaysReachable
   | Closure of Procname.t
   | ConfigUsage of ConfigUsage.t
+  | ContentsOverwritten of ValueHistory.t
+      (** the cells reachable from the address through field and array accesses have been given
+          unknown values, eg by [memcpy] or [read] with a size that does not give the type of the
+          object: cells not yet in the heap are not abduced from the precondition, and callers give
+          fresh values to their own view of these cells *)
   | CopiedInto of CopiedInto.t  (** records the copied var/field for each source address *)
   | CopiedReturn of
       {source: AbstractValue.t; is_const_ref: bool; from: CopyOrigin.t; copied_location: Location.t}
@@ -210,6 +215,8 @@ module Attributes : sig
   val remove_allocation : t -> t
 
   val get_unknown_effect : t -> (CallEvent.t * ValueHistory.t) option
+
+  val get_contents_overwritten : t -> ValueHistory.t option
 
   val remove_dict_contain_const_keys : t -> t
 

@@ -32,7 +32,7 @@ module Attribute = struct
     | SwiftAlloc
     | HackBuilderResource of HackClassName.t
     | Awaitable (* used for Hack and Python *)
-    | FileDescriptor
+    | FileDescriptor of Procname.t
   [@@deriving compare, equal, yojson_of]
 
   let pp_allocator fmt = function
@@ -58,7 +58,7 @@ module Attribute = struct
         F.fprintf fmt "hack builder %a" HackClassName.pp class_name
     | Awaitable ->
         F.fprintf fmt "awaitable"
-    | FileDescriptor ->
+    | FileDescriptor _ ->
         F.pp_print_string fmt "file descriptor"
 
 
@@ -222,6 +222,7 @@ module Attribute = struct
     | AlwaysReachable
     | Closure of Procname.t
     | ConfigUsage of (ConfigUsage.t[@yojson.opaque])
+    | ContentsOverwritten of ValueHistory.t
     | CopiedInto of CopiedInto.t
     | CopiedReturn of
         { source: AbstractValue.t
@@ -278,6 +279,8 @@ module Attribute = struct
   let closure_rank = Variants.closure.rank
 
   let config_usage_rank = Variants.configusage.rank
+
+  let contents_overwritten_rank = Variants.contentsoverwritten.rank
 
   let copied_into_rank = Variants.copiedinto.rank
 
@@ -360,6 +363,8 @@ module Attribute = struct
         Procname.pp f pname
     | ConfigUsage config ->
         F.fprintf f "ConfigUsage (%a)" ConfigUsage.pp config
+    | ContentsOverwritten hist ->
+        F.fprintf f "ContentsOverwritten(@[%a@])" ValueHistory.pp hist
     | CopiedInto copied_into ->
         CopiedInto.pp f copied_into
     | CopiedReturn {source; is_const_ref; from; copied_location} ->
@@ -456,6 +461,7 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | ConfigUsage _
+    | ContentsOverwritten _
     | CopiedInto _
     | CopiedReturn _
     | DictContainConstKeys
@@ -501,6 +507,7 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | ConfigUsage _
+    | ContentsOverwritten _
     | CopiedInto _
     | CopiedReturn _
     | DictContainConstKeys
@@ -545,6 +552,7 @@ module Attribute = struct
     | AlwaysReachable
     | Closure _
     | ConfigUsage _
+    | ContentsOverwritten _
     | CopiedReturn _
     | DictContainConstKeys
     | DictReadConstKeys _
@@ -588,6 +596,8 @@ module Attribute = struct
         Allocated (proc_name, add_call_to_trace trace)
     | ConfigUsage (StringParam {v; config_type}) ->
         ConfigUsage (StringParam {v= subst v; config_type})
+    | ContentsOverwritten hist ->
+        ContentsOverwritten (add_call_to_history hist)
     | CopiedReturn {source; is_const_ref; from; copied_location} ->
         CopiedReturn {source= subst source; is_const_ref; from; copied_location}
     | DictReadConstKeys const_keys ->
@@ -680,7 +690,7 @@ module Attribute = struct
     | CppNewArray, Some (CppDeleteArray, _)
     | ObjCAlloc, _
     | SwiftAlloc, _
-    | FileDescriptor, Some (FClose, _) ->
+    | FileDescriptor _, Some ((FClose _ | HandedOverToStream _), _) ->
         true
     | JavaResource _, _ | CSharpResource _, _ | HackBuilderResource _, _ | Awaitable, _ ->
         is_released
@@ -701,7 +711,7 @@ module Attribute = struct
     | ObjCAlloc
     | JavaResource _
     | CSharpResource _
-    | FileDescriptor
+    | FileDescriptor _
     | SwiftAlloc ->
         false
 
@@ -720,7 +730,7 @@ module Attribute = struct
     | ObjCAlloc
     | JavaResource _
     | CSharpResource _
-    | FileDescriptor
+    | FileDescriptor _
     | SwiftAlloc ->
         false
 
@@ -768,6 +778,7 @@ module Attribute = struct
       | AlwaysReachable
       | Closure _
       | ConfigUsage (ConfigName _)
+      | ContentsOverwritten _
       | CopiedInto _
       | CSharpResourceReleased
       | DictContainConstKeys
@@ -876,6 +887,14 @@ module Attributes = struct
             in
             update (MustNotBeTainted (TaintSinkMap.union aux new_sinks sinks)) attrs
       | Invalid (OptionalEmpty, _) | WrittenTo _ ->
+          update value attrs
+      | MustBeValid (_, _, Some Invalidation.FileDescriptorRelease)
+        when Option.exists (find_rank attrs must_be_valid_rank) ~f:(function
+               | MustBeValid (_, _, Some Invalidation.FileDescriptorUse) ->
+                   true
+               | _ ->
+                   false ) ->
+          (* releasing the descriptor is invalid in more cases than using it, e.g. after [fdopen] *)
           update value attrs
       | _ ->
           add attrs value
@@ -1029,6 +1048,7 @@ module Attributes = struct
     || mem_by_rank Attribute.initialized_rank attrs
     || mem_by_rank Attribute.invalid_rank attrs
     || mem_by_rank Attribute.unknown_effect_rank attrs
+    || mem_by_rank Attribute.contents_overwritten_rank attrs
     || mem_by_rank Attribute.java_resource_released_rank attrs
     || mem_by_rank Attribute.awaited_awaitable_rank attrs
     || mem_by_rank Attribute.hack_builder_rank attrs
@@ -1058,6 +1078,11 @@ module Attributes = struct
   let get_unknown_effect =
     get_by_rank Attribute.unknown_effect_rank ~dest:(function[@warning "-partial-match"]
         | UnknownEffect (call, hist) -> (call, hist) )
+
+
+  let get_contents_overwritten =
+    get_by_rank Attribute.contents_overwritten_rank ~dest:(function[@warning "-partial-match"]
+        | ContentsOverwritten hist -> hist )
 
 
   let remove_dict_contain_const_keys = remove_by_rank Attribute.dict_contain_const_keys_rank

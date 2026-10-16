@@ -745,7 +745,14 @@ module Internal = struct
 
 
     let check_valid path ?must_be_valid_reason access_trace addr astate =
-      let+ () = BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs in
+      let+ () =
+        match BaseAddressAttributes.check_valid addr (astate.post :> base_domain).attrs with
+        | Error (invalidation, _)
+          when not (Invalidation.is_relevant_for_reason must_be_valid_reason invalidation) ->
+            Ok ()
+        | result ->
+            result
+      in
       (* if [address] is in [pre] and it should be valid then that fact goes in the precondition *)
       abduce_one addr
         (MustBeValid (path.PathContext.timestamp, access_trace, must_be_valid_reason))
@@ -799,7 +806,13 @@ module Internal = struct
         | None ->
             let addr_dst = CanonValue.mk_fresh () in
             let pre_heap, post_hist =
-              if BaseMemory.mem addr_src (astate.pre :> base_domain).heap then
+              if
+                BaseMemory.mem addr_src (astate.pre :> base_domain).heap
+                (* the contents of an overwritten object are unrelated to the ones in the pre *)
+                && not
+                     (BaseAddressAttributes.has_contents_overwritten addr_src
+                        (astate.post :> base_domain).attrs )
+              then
                 let cell_id = ValueHistory.CellId.next () in
                 (* HACK: do not record the history of values in the pre as they are unused, except
                    for their cell id to be able to track where the pre values end up in the post
@@ -2176,6 +2189,46 @@ let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
     |> snd
   in
   {astate with post= PostDomain.update ~attrs ~heap astate.post}
+
+
+let overwrite_contents ?(havoc_filter = fun _ -> true) hist x astate =
+  let rec visit ((visited, old_values, astate) as acc) addr =
+    if CanonValue.Set.mem addr visited then acc
+    else
+      let astate =
+        SafeAttributes.map_post_attrs astate ~f:(fun attrs ->
+            BaseAddressAttributes.add_one addr (ContentsOverwritten hist) attrs
+            |> BaseAddressAttributes.initialize addr )
+      in
+      SafeMemory.fold_edges `Post addr astate
+        ~init:(CanonValue.Set.add addr visited, old_values, astate)
+        ~f:(fun ((visited, old_values, astate) as acc) (access, (dest, _)) ->
+          match (access : BaseMemory.Access.t) with
+          | Dereference ->
+              if havoc_filter (downcast addr) then
+                ( visited
+                , CanonValue.Set.add dest old_values
+                , SafeMemory.map_post_heap astate
+                    ~f:(BaseMemory.add_edge addr access (AbstractValue.mk_fresh (), hist)) )
+              else acc
+          | FieldAccess _ | ArrayAccess _ ->
+              visit acc dest )
+  in
+  let _, old_values, astate =
+    visit (CanonValue.Set.empty, CanonValue.Set.empty, astate) (CanonValue.canon' astate x)
+  in
+  (* the cells may be outside of the bytes actually written, eg after a header: like after unknown
+     calls, the memory that their old values own is not reported as leaked *)
+  let post = (astate.post :> BaseDomain.t) in
+  let attrs =
+    GraphVisit.fold_from_addresses
+      (CanonValue.Set.to_seq old_values)
+      astate `Post ~init:post.attrs ~already_visited:CanonValue.Set.empty
+      ~f:(fun attrs addr _ -> Continue (BaseAddressAttributes.remove_allocation_attr addr attrs))
+      ~finish:Fn.id
+    |> snd
+  in
+  {astate with post= PostDomain.update ~attrs astate.post}
 
 
 let add_need_dynamic_type_specialization receiver_addr astate =

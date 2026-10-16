@@ -260,6 +260,17 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
     List.fold actuals ~init:astate ~f:(fun astate actual_typ ->
         havoc_actual_if_ptr actual_typ None astate )
   in
+  let forget_file_descriptors_owned_by_result astate =
+    (* an object returned by the callee may own the descriptors passed to it, as with
+       [BIO_new_socket(fd, BIO_CLOSE)], unlike raw memory such as the result of [mmap] *)
+    match (snd ret).Typ.desc with
+    | Tptr ({desc= Tstruct _}, Pk_pointer) ->
+        PulseOperations.forget_file_descriptors_passed_by_value
+          (List.map actuals ~f:(fun ((value, _), typ) -> (value, typ)))
+          astate
+    | _ ->
+        astate
+  in
   L.d_printfln ~color:Orange "skipping unknown procedure %a" (Pp.option Procname.pp)
     callee_pname_opt ;
   ( match (actuals, formals_opt) with
@@ -281,7 +292,7 @@ let unknown_call tenv ({PathContext.timestamp} as path) call_loc (reason : CallE
             havoc_actuals_without_typ_info astate
         | Ok result ->
             result ) )
-  |> add_skipped_proc
+  |> forget_file_descriptors_owned_by_result |> add_skipped_proc
 
 
 let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
