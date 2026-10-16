@@ -81,6 +81,12 @@ val get_info_from_decl_ref :
 
 val sil_annot_of_type : Clang_ast_t.qual_type -> Annot.Item.t
 
+val sil_annot_of_return_type : Clang_ast_t.decl -> Clang_ast_t.qual_type -> Annot.Item.t
+(** [sil_annot_of_type] of the return type of a declaration; for C functions and C++ methods, it
+    also finds nullability written in typedefs and type aliases, [_Nullable_result] counts as
+    [_Nullable], and the [returns_nonnull] attribute counts as [_Nonnull] when the type is neither
+    [_Nullable] nor [_Nonnull] *)
+
 val type_of_decl : Clang_ast_t.decl -> Clang_ast_t.type_ptr option
 
 val get_record_fields : Clang_ast_t.decl -> Clang_ast_t.decl list

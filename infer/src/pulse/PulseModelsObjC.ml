@@ -382,8 +382,26 @@ let nsobject_copy receiver : model_no_non_disj =
   astate
 
 
+(* The runtime functions that copy a list into a new array, such as [class_copyPropertyList], are
+   declared to return a nullable pointer but return NULL only after setting [*outCount] to 0, so
+   callers usually loop up to [*outCount] without checking the array. [outCount] can be NULL. *)
+let copy_list_with_count out_count : model =
+  let open DSL.Syntax in
+  start_model
+  @@ fun () ->
+  let set_out_count count =
+    disj [prune_eq_zero out_count; prune_ne_zero out_count @@> store ~ref:out_count count]
+  in
+  disj
+    [ (int 0 >>= set_out_count) @@> assign_ret @= null
+    ; (fresh_nonneg () >>= set_out_count) @@> assign_ret @= fresh () ]
+
+
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
+  let with_nullability_annotations name _ proc_name =
+    Config.pulse_nullability_annotations && String.equal proc_name name
+  in
   let match_regexp_opt r_opt (_tenv, proc_name) _ =
     Option.exists r_opt ~f:(fun r ->
         let s = Procname.to_string proc_name in
@@ -399,6 +417,32 @@ let matchers : matcher list =
   ( [ -"dispatch_sync" <>$ any_arg $+ capt_arg $++$--> call_objc_block
     ; -"dispatch_async" <>$ any_arg $+ capt_arg $++$--> call_objc_block
     ; -"dispatch_once" <>$ any_arg $+ capt_arg $++$--> call_objc_block
+    ; +with_nullability_annotations "class_copyIvarList"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "class_copyMethodList"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "class_copyPropertyList"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "class_copyProtocolList"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "objc_copyClassList"
+      <>$ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "objc_copyClassNamesForImage"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "objc_copyClassNamesForImageHeader"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "objc_copyProtocolList"
+      <>$ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "property_copyAttributeList"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "protocol_copyMethodDescriptionList"
+      <>$ any_arg $+ any_arg $+ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "protocol_copyPropertyList"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
+    ; +with_nullability_annotations "protocol_copyPropertyList2"
+      <>$ any_arg $+ capt_arg_payload $+ any_arg $+ any_arg $--> copy_list_with_count
+    ; +with_nullability_annotations "protocol_copyProtocolList"
+      <>$ any_arg $+ capt_arg_payload $--> copy_list_with_count
     ; +map_context_tenv (PatternMatch.ObjectiveC.implements "UITraitCollection")
       &:: "performAsCurrentTraitCollection:" $ capt_arg $++$--> call_objc_block
     ; +BuiltinDecl.(match_builtin __call_objc_block) $ capt_arg $++$--> call_objc_block

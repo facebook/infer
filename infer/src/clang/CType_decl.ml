@@ -170,7 +170,7 @@ module BuildMethodSignature = struct
         , true
         , is_ret_typ_pod )
     | None ->
-        let return_typ_annot = CAst_utils.sil_annot_of_type return_qual_type in
+        let return_typ_annot = CAst_utils.sil_annot_of_return_type method_decl return_qual_type in
         (return_typ, None, return_typ_annot, false, is_ret_typ_pod)
 
 

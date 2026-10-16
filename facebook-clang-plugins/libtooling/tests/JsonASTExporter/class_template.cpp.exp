@@ -2318,6 +2318,8 @@
         {
           "pointer" : 70,
           "desugared_type" : 35
+        },
+        {
         }
       ]],
       ["FunctionProtoType" , [
@@ -2364,6 +2366,8 @@
         {
           "pointer" : 170,
           "desugared_type" : 35
+        },
+        {
         }
       ]],
       ["PointerType" , [
@@ -2398,6 +2402,8 @@
         {
           "pointer" : 74,
           "desugared_type" : 10
+        },
+        {
         }
       ]],
       ["SubstTemplateTypeParmType" , [
@@ -2472,6 +2478,8 @@
         {
           "pointer" : 178,
           "desugared_type" : 10
+        },
+        {
         }
       ]],
       ["LValueReferenceType" , [
@@ -2496,6 +2504,8 @@
         {
           "pointer" : 60,
           "desugared_type" : 35
+        },
+        {
         }
       ]],
       ["LValueReferenceType" , [
