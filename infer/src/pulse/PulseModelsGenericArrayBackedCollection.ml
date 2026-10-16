@@ -35,6 +35,13 @@ let assign_size_constant path location this ~constant ~desc astate =
   PulseArithmetic.and_eq_int (fst value) constant astate
 
 
+let assign_size path location this (size, size_hist) ~desc astate =
+  let* astate, size_pointer = to_internal_size path Read location this astate in
+  PulseOperations.write_deref path location ~ref:size_pointer
+    ~obj:(size, Hist.add_call path location desc size_hist)
+    astate
+
+
 let access = Access.FieldAccess field
 
 let eval path mode location collection astate =
@@ -139,8 +146,12 @@ module Iterator = struct
     in
     (* Check if not end iterator *)
     let is_minus_minus = match step with Some `MinusMinus -> true | _ -> false in
+    let is_end =
+      AddressAttributes.is_end_of_collection (fst pointer) astate
+      || AddressAttributes.is_end_of_collection (fst index) astate
+    in
     let* astate =
-      if AddressAttributes.is_end_of_collection (fst pointer) astate && not is_minus_minus then
+      if is_end && not is_minus_minus then
         let invalidation_trace = Trace.Immediate {location; history= ValueHistory.epoch} in
         let access_trace = Trace.Immediate {location; history= snd pointer} in
         FatalError
@@ -161,7 +172,7 @@ module Iterator = struct
     (* We do not want to create internal array if iterator pointer has an invalid value *)
     let* astate = PulseOperations.check_addr_access path Read location index astate in
     let+ astate, elem = element path location iterator (fst index) astate in
-    (astate, pointer, elem)
+    (astate, pointer, index, elem)
 
 
   let construct path location event ~init ~ref astate =
@@ -182,6 +193,152 @@ module Iterator = struct
     let event = Hist.call_event path location desc in
     let<+> astate = construct path location event ~init ~ref:this astate in
     astate
+
+
+  let write_position path location ~iter ~arr ~position pointer_hist astate =
+    let pointer = (AbstractValue.mk_fresh (), pointer_hist) in
+    PulseOperations.write_deref_field path location ~ref:iter field ~obj:(arr, pointer_hist) astate
+    >>= PulseOperations.write_field path location ~ref:iter internal_pointer ~obj:pointer
+    >>= PulseOperations.write_deref path location ~ref:pointer ~obj:position
+
+
+  let point_into path location event ~collection ~iter ?index astate =
+    let pointer_hist = Hist.add_event event (snd iter) in
+    let* astate, (arr_addr, _arr_hist) = eval path Read location collection astate in
+    let* astate, position =
+      match index with
+      | Some index ->
+          eval_element path location (arr_addr, pointer_hist) index astate
+      | None ->
+          (* as in [operator_step], an array element at a fresh index would be added to the
+             pre-condition of every caller when the collection is a parameter *)
+          Ok (astate, (AbstractValue.mk_fresh (), pointer_hist))
+    in
+    write_position path location ~iter ~arr:arr_addr ~position pointer_hist astate
+
+
+  (* string iterators carry the taint of their string, see [BasicString.iterator_common] in
+     [PulseModelsCpp] *)
+  let propagate_taint ~src ~dst astate =
+    if AbstractValue.equal (fst src) (fst dst) then astate
+    else
+      AddressAttributes.add_one (fst dst)
+        (PropagateTaintFrom (InternalModel, [{v= fst src; history= snd src}]))
+        astate
+
+
+  (** copy the fields of the library's iterator class from [src] to [dst], shifted by [offset] if
+      given, for models that replace its functions, e.g. for [base()] *)
+  let write_own_fields tenv path location event iterator_class ?offset ~src ~dst astate =
+    let fields =
+      Option.bind iterator_class ~f:(Tenv.lookup tenv)
+      |> Option.value_map ~default:[] ~f:(fun {Struct.fields} -> fields)
+    in
+    PulseOperationResult.list_fold fields ~init:astate ~f:(fun astate {Struct.name= field; typ} ->
+        match typ.Typ.desc with
+        | Tstruct _ ->
+            (* not needed for the iterator classes modelled here, which wrap a pointer *)
+            SatUnsat.Sat (Ok astate)
+        | _ ->
+            let=* astate, (value, hist) =
+              PulseOperations.eval_deref_access path Read location src (FieldAccess field) astate
+            in
+            let+* astate, value =
+              match offset with
+              | None ->
+                  SatUnsat.Sat (Ok (astate, value))
+              | Some (binop, n) ->
+                  PulseArithmetic.eval_binop (AbstractValue.mk_fresh ()) binop
+                    (AbstractValueOperand value) n astate
+            in
+            PulseOperations.write_deref_field path location ~ref:dst field
+              ~obj:(value, Hist.add_event event hist)
+              astate )
+
+
+  let assign ~desc this other : model_no_non_disj =
+   fun {analysis_data= {tenv}; path; location; callee_procname; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location desc in
+    let<*> astate = construct path location event ~init:other ~ref:this astate in
+    let<++> astate =
+      write_own_fields tenv path location event
+        (Procname.get_class_type_name callee_procname)
+        ~src:other ~dst:this astate
+    in
+    PulseOperations.write_id ret_id this astate
+
+
+  let class_of_arg {FuncArg.typ} =
+    match typ.Typ.desc with Tptr (typ, _) -> Typ.name typ | _ -> Typ.name typ
+
+
+  (** make [dst] point [n] elements after ([PlusPI]) or before ([MinusPI]) [src] *)
+  let apply_offset {analysis_data= {tenv}; path; location} ~desc binop
+      (FuncArg.{arg_payload= src} as src_arg) n ~dst astate =
+    let event = Hist.call_event path location desc in
+    let=* astate, pointer, (index, _) = to_internal_pointer_deref path Read location src astate in
+    (* as in [operator_step], so that a position computed back to the one of [end()], e.g. by
+       [v.end() - 1 + 1], is still detected *)
+    let astate =
+      if AddressAttributes.is_end_of_collection (fst pointer) astate then
+        AddressAttributes.mark_as_end_of_collection index astate
+      else astate
+    in
+    let** astate, position =
+      PulseArithmetic.eval_binop (AbstractValue.mk_fresh ()) binop (AbstractValueOperand index) n
+        astate
+    in
+    let=* astate, (arr_addr, _) = eval path Read location src astate in
+    let pointer_hist = Hist.add_event event (snd dst) in
+    let=* astate =
+      write_position path location ~iter:dst ~arr:arr_addr ~position:(position, pointer_hist)
+        pointer_hist astate
+    in
+    let astate = propagate_taint ~src ~dst astate in
+    write_own_fields tenv path location event (class_of_arg src_arg) ~offset:(binop, n) ~src ~dst
+      astate
+
+
+  (** [operator+=] and [operator-=] *)
+  let operator_offset_assign binop ~desc (FuncArg.{arg_payload= this} as this_arg) n :
+      model_no_non_disj =
+   fun ({ret= ret_id, _} as model_data) astate ->
+    let<++> astate =
+      apply_offset model_data ~desc binop this_arg (AbstractValueOperand (fst n)) ~dst:this astate
+    in
+    PulseOperations.write_id ret_id this astate
+
+
+  let offset ~desc binop iter n ~dst : model_no_non_disj =
+   fun model_data astate ->
+    let<++> astate = apply_offset model_data ~desc binop iter n ~dst astate in
+    astate
+
+
+  (** [operator+], [operator-], [std::next] and [std::prev] *)
+  let operator_offset binop ~desc iter (n, _) ret =
+    offset ~desc binop iter (AbstractValueOperand n) ~dst:ret
+
+
+  (** libc++'s overload for [std::prev(it)] *)
+  let prev_one ~desc iter ret = offset ~desc MinusPI iter (ConstOperand (Cint IntLit.one)) ~dst:ret
+
+  let advance ~desc (FuncArg.{arg_payload= iter} as iter_arg) (n, _) =
+    offset ~desc PlusPI iter_arg (AbstractValueOperand n) ~dst:iter
+
+
+  (* no "not found" case for search functions since callers often know that the element is there,
+     as in the model of [folly::F14FastMap::find] *)
+  let position_in_range ~desc first args : model_no_non_disj =
+   fun {path; location} astate ->
+    (* the returned iterator is passed as the last argument *)
+    match List.last args with
+    | None ->
+        [Ok (ContinueProgram astate)]
+    | Some ret ->
+        let event = Hist.call_event path location desc in
+        let<+> astate = point_into path location event ~collection:first ~iter:ret astate in
+        propagate_taint ~src:first ~dst:ret astate
 
 
   let operator_compare comparison ~desc iter_lhs iter_rhs : model_no_non_disj =
@@ -220,7 +377,7 @@ module Iterator = struct
   let operator_star ~desc iter : model_no_non_disj =
    fun {path; location; ret} astate ->
     let event = Hist.call_event path location desc in
-    let<+> astate, pointer, (elem, _) =
+    let<+> astate, pointer, _, (elem, _) =
       to_elem_pointed_by_iterator path Read location iter astate
     in
     PulseOperations.write_id (fst ret) (elem, Hist.add_event event (snd pointer)) astate
@@ -229,24 +386,99 @@ module Iterator = struct
   let operator_step step ~desc iter : model_no_non_disj =
    fun {path; location} astate ->
     let event = Hist.call_event path location desc in
-    let index_new = AbstractValue.mk_fresh () in
-    let<*> astate, pointer, _ =
+    let<*> astate, pointer, (index, _), _ =
       to_elem_pointed_by_iterator path Read ~step:(Some step) location iter astate
     in
+    (* positions are related by the steps, so marking the position of [end()] detects stepping
+       back to it, as in [--it; ++it] *)
+    let astate =
+      if AddressAttributes.is_end_of_collection (fst pointer) astate then
+        AddressAttributes.mark_as_end_of_collection index astate
+      else astate
+    in
+    let binop =
+      match step with `PlusPlus -> Binop.PlusA None | `MinusMinus -> Binop.MinusA None
+    in
+    let<**> astate, index_new =
+      PulseArithmetic.eval_binop (AbstractValue.mk_fresh ()) binop (AbstractValueOperand index)
+        (ConstOperand (Cint IntLit.one)) astate
+    in
+    (* the internal pointer is shared with the copies of the iterator, and with the other [end()]
+       iterators of the collection, so we replace it instead of writing through it *)
+    let pointer_new = (AbstractValue.mk_fresh (), snd pointer) in
     let<+> astate =
-      PulseOperations.write_deref path location ~ref:pointer
-        ~obj:(index_new, Hist.add_event event (snd pointer))
-        astate
+      PulseOperations.write_field path location ~ref:iter internal_pointer ~obj:pointer_new astate
+      >>= PulseOperations.write_deref path location ~ref:pointer_new
+            ~obj:(index_new, Hist.add_event event (snd pointer))
     in
     astate
 end
+
+(* functions of [<algorithm>] that return an iterator into the range starting at their first
+   argument; the ones that reorder the range, e.g. [std::remove_if], are left as unknown calls, which
+   havoc the range *)
+let algorithm_matchers =
+  let open ProcnameDispatcher.Call in
+  let position_in_range name =
+    -"std" &:: name
+    $ capt_arg_payload_of_typ_exists [-"std" &:: "__wrap_iter"; -"__gnu_cxx" &:: "__normal_iterator"]
+    $+++$--> Iterator.position_in_range ~desc:(Printf.sprintf "std::%s()" name)
+  in
+  List.map ~f:position_in_range
+    [ "adjacent_find"
+    ; "find"
+    ; "find_end"
+    ; "find_first_of"
+    ; "find_if"
+    ; "find_if_not"
+    ; "is_heap_until"
+    ; "is_sorted_until"
+    ; "lower_bound"
+    ; "max_element"
+    ; "min_element"
+    ; "partition_point"
+    ; "search"
+    ; "search_n"
+    ; "upper_bound" ]
+
+
+let arithmetic_matchers namespace class_name =
+  let open ProcnameDispatcher.Call in
+  [ -namespace &:: class_name &:: "operator+" <>$ capt_arg $+ capt_arg_payload $+ capt_arg_payload
+    $--> Iterator.operator_offset PlusPI ~desc:"iterator operator+"
+  ; -namespace &:: class_name &:: "operator-" <>$ capt_arg $+ capt_arg_payload $+ capt_arg_payload
+    $--> Iterator.operator_offset MinusPI ~desc:"iterator operator-"
+  ; -namespace &:: class_name &:: "operator+=" <>$ capt_arg $+ capt_arg_payload
+    $--> Iterator.operator_offset_assign PlusPI ~desc:"iterator operator+="
+  ; -namespace &:: class_name &:: "operator-=" <>$ capt_arg $+ capt_arg_payload
+    $--> Iterator.operator_offset_assign MinusPI ~desc:"iterator operator-=" ]
+
+
+let iterator_function_matchers =
+  let open ProcnameDispatcher.Call in
+  let iterator () =
+    capt_arg_of_typ_exists [-"std" &:: "__wrap_iter"; -"__gnu_cxx" &:: "__normal_iterator"]
+  in
+  [ -"std" &:: "advance" $ iterator () $+ capt_arg_payload
+    $--> Iterator.advance ~desc:"std::advance()"
+  ; -"std" &:: "next" $ iterator () $+ capt_arg_payload $+ capt_arg_payload
+    $--> Iterator.operator_offset PlusPI ~desc:"std::next()"
+  ; -"std" &:: "prev" $ iterator () $+ capt_arg_payload $+ capt_arg_payload
+    $--> Iterator.operator_offset MinusPI ~desc:"std::prev()"
+  ; -"std" &:: "prev" $ iterator () $+ capt_arg_payload $--> Iterator.prev_one ~desc:"std::prev()"
+  ]
+
 
 let matchers : matcher list =
   let open ProcnameDispatcher.Call in
   [ -"std" &:: "__wrap_iter" &:: "__wrap_iter" $ capt_arg_payload $+ capt_arg_payload
     $+...$--> Iterator.constructor ~desc:"iterator constructor"
+  ; -"std" &:: "__wrap_iter" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
+    $--> Iterator.assign ~desc:"iterator operator="
   ; -"std" &:: "__wrap_iter" &:: "operator*" <>$ capt_arg_payload
     $--> Iterator.operator_star ~desc:"iterator operator*"
+  ; -"std" &:: "__wrap_iter" &:: "operator->" <>$ capt_arg_payload
+    $--> Iterator.operator_star ~desc:"iterator operator->"
   ; -"std" &:: "__wrap_iter" &:: "operator++" <>$ capt_arg_payload
     $--> Iterator.operator_step `PlusPlus ~desc:"iterator operator++"
   ; -"std" &:: "__wrap_iter" &:: "operator--" <>$ capt_arg_payload
@@ -262,8 +494,12 @@ let matchers : matcher list =
   ; -"__gnu_cxx" &:: "__normal_iterator" &:: "__normal_iterator" $ capt_arg_payload
     $+ capt_arg_payload
     $+...$--> Iterator.constructor ~desc:"iterator constructor"
+  ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator=" $ capt_arg_payload $+ capt_arg_payload
+    $--> Iterator.assign ~desc:"iterator operator="
   ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator*" <>$ capt_arg_payload
     $--> Iterator.operator_star ~desc:"iterator operator*"
+  ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator->" <>$ capt_arg_payload
+    $--> Iterator.operator_star ~desc:"iterator operator->"
   ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator++" <>$ capt_arg_payload
     $--> Iterator.operator_step `PlusPlus ~desc:"iterator operator++"
   ; -"__gnu_cxx" &:: "__normal_iterator" &:: "operator--" <>$ capt_arg_payload
@@ -276,5 +512,8 @@ let matchers : matcher list =
     $ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
     $+ capt_arg_payload_of_typ (-"__gnu_cxx" &:: "__normal_iterator")
     $--> Iterator.operator_compare `NotEqual ~desc:"iterator operator!=" ]
+  @ arithmetic_matchers "std" "__wrap_iter"
+  @ arithmetic_matchers "__gnu_cxx" "__normal_iterator"
+  @ iterator_function_matchers @ algorithm_matchers
   |> List.map ~f:(ProcnameDispatcher.Call.contramap_arg_payload ~f:ValueOrigin.addr_hist)
   |> List.map ~f:(ProcnameDispatcher.Call.map_matcher ~f:lift_model)

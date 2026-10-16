@@ -198,6 +198,9 @@ module Memory : sig
       [x|->z * y |->z'], with [z'] a fresh abstract value. This is used for abstraction. *)
 end
 
+val is_read_from_pre_cell : t -> AbstractValue.t * ValueHistory.t -> bool
+(** whether the history of the value names a cell of the pre-condition that holds this value *)
+
 (** Safe version of {!PulseBaseAddressAttributes} *)
 module AddressAttributes : sig
   val abduce_one : AbstractValue.t -> Attribute.t -> t -> t
