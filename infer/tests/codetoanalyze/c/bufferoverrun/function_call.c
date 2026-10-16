@@ -121,7 +121,7 @@ struct S2 {
 
 void call_access_index_1_on_S2_Good(struct S2* s) { access_index_1(s->arr); }
 
-void FN_call_access_index_4_on_S2_Bad(struct S2* s) { access_index_4(s->arr); }
+void call_access_index_4_on_S2_Bad(struct S2* s) { access_index_4(s->arr); }
 
 struct S3 {
   int* ptr;

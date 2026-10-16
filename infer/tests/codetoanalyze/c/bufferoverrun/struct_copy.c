@@ -121,3 +121,87 @@ void struct_copy_decl_by_function_Bad() {
   struct s x = get_struct();
   a[x.b] = 0;
 }
+
+struct arr {
+  int a[4];
+};
+
+void array_field_copy_Ok() {
+  int a[4];
+  struct arr x, y;
+  x.a[0] = 1;
+  y = x;
+  y.a[0] = 10;
+  a[x.a[0]] = 0;
+}
+
+void array_field_copy_Bad() {
+  int a[4];
+  struct arr x, y;
+  x.a[0] = 4;
+  y = x;
+  a[y.a[0]] = 0;
+}
+
+void array_field_copy_decl_Ok() {
+  int a[4];
+  struct arr x;
+  x.a[0] = 1;
+  struct arr y = x;
+  y.a[0] = 10;
+  a[x.a[0]] = 0;
+}
+
+void array_field_copy_to_pointer_Ok(struct arr* y) {
+  int a[4];
+  struct arr x;
+  x.a[0] = 1;
+  *y = x;
+  y->a[0] = 10;
+  a[x.a[0]] = 0;
+}
+
+struct arr get_arr(int v) {
+  struct arr x;
+  x.a[0] = v;
+  return x;
+}
+
+void array_field_copy_from_function_call_Ok() {
+  int a[4];
+  struct arr x = get_arr(1);
+  struct arr y = get_arr(10);
+  a[x.a[0]] = 0;
+}
+
+void array_field_copy_from_function_call_Bad() {
+  int a[4];
+  struct arr x = get_arr(4);
+  a[x.a[0]] = 0;
+}
+
+struct arr2 {
+  int a[2][4];
+};
+
+void array_2d_field_copy_Ok() {
+  int a[4];
+  struct arr2 x, y;
+  x.a[1][0] = 1;
+  y = x;
+  y.a[1][0] = 10;
+  a[x.a[1][0]] = 0;
+}
+
+struct arrs {
+  struct arr s[2];
+};
+
+void array_of_structs_field_copy_Ok() {
+  int a[4];
+  struct arrs x, y;
+  x.s[1].a[0] = 1;
+  y = x;
+  y.s[1].a[0] = 10;
+  a[x.s[1].a[0]] = 0;
+}

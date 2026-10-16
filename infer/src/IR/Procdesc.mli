@@ -218,6 +218,10 @@ type t
 val append_locals : t -> ProcAttributes.var_data list -> unit
 (** append a list of new local variables to the existing list of local variables *)
 
+val add_global : t -> Pvar.t -> Typ.t -> unit
+(** record that the procedure references the global variable, with its declared type; the caller
+    records each pair once *)
+
 val create_node : t -> Location.t -> Node.nodekind -> Sil.instr list -> Node.t
 (** Create a new cfg node with the given location, kind, list of instructions, and add it to the
     procdesc. *)
@@ -270,6 +274,11 @@ val get_loc : t -> Location.t
 
 val get_locals : t -> ProcAttributes.var_data list
 (** Return name and type and attributes of local variables *)
+
+val get_globals : t -> (Pvar.t * Typ.t) list
+(** Return the global variables of array or struct type referenced in the procedure, with their
+    declared types. Same-named static locals of different scopes are the same variable, which can
+    then appear with several types. *)
 
 val is_local : t -> Pvar.t -> bool
 (** [is_local pdesc pvar] is [true] iff [pvar] is a local variable of [pdesc]. This function

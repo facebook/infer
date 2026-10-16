@@ -336,3 +336,78 @@ class my_class6 {
     arr[*x] = 0;
   }
 };
+
+void array_member_local_Good() {
+  my_class2 x;
+  x.a[4] = 0;
+}
+
+void array_member_local_Bad() {
+  my_class2 x;
+  x.a[10] = 0;
+}
+
+void array_member_local_nested_Bad() {
+  my_class3 x;
+  x.b.a[10] = 0;
+}
+
+class my_class7 : public my_class2 {
+ public:
+  int c;
+};
+
+void array_member_local_inherited_Bad() {
+  my_class7 x;
+  x.a[5] = 0;
+}
+
+class my_class8 {
+ public:
+  my_class8() {
+    for (int i = 0; i < 5; i++) {
+      a[i] = 0;
+    }
+  }
+  int a[5];
+};
+
+void array_member_local_constructor_Good() {
+  my_class8 x;
+  x.a[4] = 0;
+}
+
+void array_member_local_constructor_Bad() {
+  my_class8 x;
+  x.a[5] = 0;
+}
+
+class my_class9 {
+ public:
+  char name[16] = "";
+};
+
+void array_member_string_init_Good() {
+  my_class9 x;
+  x.name[15] = 0;
+}
+
+void array_member_string_init_Bad() {
+  my_class9 x;
+  x.name[16] = 0;
+}
+
+class my_class10 {
+ public:
+  const char* data() const { return size < sizeof(small) ? small : large; }
+  char* large;
+  size_t size;
+  char small[24];
+};
+
+char array_member_or_pointer_Good(const my_class10& x) {
+  if (x.size > 30) {
+    return x.data()[30];
+  }
+  return 0;
+}
