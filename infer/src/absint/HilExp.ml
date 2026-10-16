@@ -575,6 +575,8 @@ and eval_boolean_exp var = function
       eval_boolean_binop Bool.equal var e1 e2
   | BinaryOperator (Binop.Ne, e1, e2) ->
       eval_boolean_binop Bool.( <> ) var e1 e2
+  | Cast (_, e) ->
+      eval_boolean_exp var e
   | _ ->
       (* non-boolean expression; can't evaluate it *)
       None
