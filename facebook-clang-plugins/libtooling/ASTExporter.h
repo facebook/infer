@@ -4106,6 +4106,7 @@ int ASTExporter<ATDWriter>::CXXNewExprTupleSize() {
 }
 //@atd #define cxx_new_expr_tuple expr_tuple * cxx_new_expr_info
 //@atd type cxx_new_expr_info = {
+//@atd   ~should_null_check : bool;
 //@atd   ~is_array : bool;
 //@atd   ?array_size_expr : pointer option;
 //@atd   ?initializer_expr : pointer option;
@@ -4115,16 +4116,19 @@ template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitCXXNewExpr(const CXXNewExpr *Node) {
   VisitExpr(Node);
 
+  // the allocation function is unknown in dependent contexts
+  bool ShouldNullCheck =
+      Node->getOperatorNew() && Node->shouldNullCheckAllocation();
   bool IsArray = Node->isArray();
   bool HasArraySize = Node->getArraySize().has_value();
   bool HasInitializer = Node->hasInitializer();
   unsigned PlacementArgs = Node->getNumPlacementArgs();
   bool HasPlacementArgs = PlacementArgs > 0;
-  ObjectScope Scope(
-      OF, 0 + IsArray + HasArraySize + HasInitializer + HasPlacementArgs);
+  ObjectScope Scope(OF,
+                    0 + ShouldNullCheck + IsArray + HasArraySize +
+                        HasInitializer + HasPlacementArgs);
 
-  //  ?should_null_check : bool;
-  // OF.emitFlag("should_null_check", Node->shouldNullCheckAllocation());
+  OF.emitFlag("should_null_check", ShouldNullCheck);
   OF.emitFlag("is_array", IsArray);
   if (HasArraySize) {
     OF.emitTag("array_size_expr");

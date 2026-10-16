@@ -296,31 +296,26 @@ let realloc src_exp size_exp =
   {exec; check}
 
 
-let placement_new size_exp {exp= src_exp1; typ= t1} src_arg2_opt =
-  match (t1.Typ.desc, src_arg2_opt) with
-  | Tint _, None | Tint _, Some {typ= {Typ.desc= Tint _}} ->
-      malloc ~can_be_zero:true (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, src_exp1))
-  | Tstruct (CppClass {name}), None
+(** The frontend does not call the [operator new] that the new-expression selects, so its semantics
+    are guessed from the types of the placement arguments [args]. *)
+let placement_new size_exp (args : _ FuncArg.t list) =
+  match args with
+  | [{exp= extra_size; typ= {Typ.desc= Tint _}}]
+  | [{exp= extra_size; typ= {Typ.desc= Tint _}}; {typ= {Typ.desc= Tint _}}] ->
+      malloc ~can_be_zero:true (Exp.BinOp (Binop.PlusA (Some Typ.size_t), size_exp, extra_size))
+  | [{typ= {Typ.desc= Tstruct (CppClass {name})}}]
     when [%equal: string list] (QualifiedCppName.to_list name) ["std"; "nothrow_t"] ->
       malloc ~can_be_zero:true size_exp
-  | _, _ ->
-      let exec {integer_type_widths} ~ret:(id, _) mem =
-        let src_exp =
-          if Typ.is_pointer_to_void t1 then src_exp1
-          else
-            match src_arg2_opt with
-            | Some {exp= src_exp2; typ= t2} when Typ.is_pointer_to_void t2 ->
-                src_exp2
-            | _ ->
-                (* TODO: Raise an exception when given unexpected arguments.  Before that, we need
-                   to fix the frontend to parse user defined `new` correctly. *)
-                L.d_error "Unexpected types of arguments for __placement_new" ;
-                src_exp1
+  | _ -> (
+    match List.filter args ~f:(fun {typ} -> Typ.is_pointer_to_void typ) with
+    | [{exp= storage_exp}] ->
+        let exec {integer_type_widths} ~ret:(id, _) mem =
+          let v = Sem.eval integer_type_widths storage_exp mem in
+          Dom.Mem.add_stack (Loc.of_id id) v mem
         in
-        let v = Sem.eval integer_type_widths src_exp mem in
-        Dom.Mem.add_stack (Loc.of_id id) v mem
-      in
-      {exec; check= no_check}
+        {exec; check= no_check}
+    | _ ->
+        no_model )
 
 
 let strndup src_exp length_exp =
@@ -1967,8 +1962,7 @@ module Call = struct
         $+...$--> Collection.new_collection
       ; +BuiltinDecl.(match_builtin __new) <>$ capt_exp $+...$--> malloc ~can_be_zero:true
       ; +BuiltinDecl.(match_builtin __new_array) <>$ capt_exp $+...$--> malloc ~can_be_zero:true
-      ; +BuiltinDecl.(match_builtin __placement_new)
-        <>$ capt_exp $+ capt_arg $+? capt_arg $!--> placement_new
+      ; +BuiltinDecl.(match_builtin __placement_new) <>$ capt_exp $++$--> placement_new
       ; +BuiltinDecl.(match_builtin __set_array_length)
         <>$ capt_arg $+ capt_exp $!--> set_array_length
       ; +BuiltinDecl.(match_builtin __infer_initializer_list)

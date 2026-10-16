@@ -4268,6 +4268,7 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CLocation.location_of_stmt_info context.translation_unit_context.source_file stmt_info
     in
     let is_dyn_array = cxx_new_expr_info.Clang_ast_t.xnei_is_array in
+    let should_null_check = cxx_new_expr_info.Clang_ast_t.xnei_should_null_check in
     let source_range = stmt_info.Clang_ast_t.si_source_range in
     let mk_call_new_result trans_state stmt_info =
       let size_exp_opt, control_size =
@@ -4293,8 +4294,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         instructions Procdesc.Node.CXXNewExpr trans_state_placement placement_args
       in
       let res_trans_new =
-        cpp_new_trans context.translation_unit_context.integer_type_widths sil_loc typ size_exp_opt
-          res_trans_placement_exps
+        cpp_new_trans context.translation_unit_context.integer_type_widths
+          ~return_null_checked:should_null_check sil_loc typ size_exp_opt res_trans_placement_exps
       in
       let controls =
         Option.to_list control_size @ [res_trans_placement_control; res_trans_new.control]
@@ -4340,6 +4341,41 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
                ~return:var_exp_typ init_stmt_info
       | _ ->
           init_expr_trans trans_state_init var_exp_typ init_stmt_info stmt_opt
+    in
+    (* [if (result) { init(result) }]: the condition is the pointer itself rather than a comparison
+       with [null] so that Pulse does not record a comparison to null for it. *)
+    let mk_null_checked_init_result (((var_exp, _), _) as acc) trans_state init_stmt_info =
+      let init_trans_state =
+        PriorityNode.force_claim_priority_node {trans_state with succ_nodes= []} init_stmt_info
+      in
+      let init_result =
+        mk_init_result acc init_trans_state init_stmt_info
+        |> PriorityNode.compute_result_to_parent init_trans_state sil_loc CXXNewExpr init_stmt_info
+      in
+      if List.is_empty init_result.control.root_nodes then init_result
+      else
+        let procdesc = context.procdesc in
+        let join_node = Procdesc.create_node procdesc sil_loc Join_node [] in
+        Procdesc.node_set_succs procdesc join_node ~normal:trans_state.succ_nodes ~exn:[] ;
+        List.iter init_result.control.leaf_nodes ~f:(fun leaf ->
+            Procdesc.node_set_succs procdesc leaf ~normal:[join_node] ~exn:[] ) ;
+        let prune_non_null =
+          create_prune_node procdesc ~branch:true ~negate_cond:false var_exp [] sil_loc Sil.Ik_bexp
+        in
+        Procdesc.node_set_succs procdesc prune_non_null ~normal:init_result.control.root_nodes
+          ~exn:[] ;
+        let prune_null =
+          create_prune_node procdesc ~branch:false ~negate_cond:true var_exp [] sil_loc Sil.Ik_bexp
+        in
+        Procdesc.node_set_succs procdesc prune_null ~normal:[join_node] ~exn:[] ;
+        mk_trans_result init_result.return
+          { empty_control with
+            root_nodes= [prune_non_null; prune_null]
+          ; leaf_nodes= [join_node]
+          ; cxx_temporary_markers_set= init_result.control.cxx_temporary_markers_set }
+    in
+    let mk_init_result =
+      if should_null_check then mk_null_checked_init_result else mk_init_result
     in
     PriorityNode.force_sequential_with_acc sil_loc CXXNewExpr trans_state stmt_info
       ~mk_first:mk_call_new_result ~mk_second:mk_init_result ~mk_return:(fun ~fst ~snd:_ ->
