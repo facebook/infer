@@ -493,3 +493,6 @@ let requires_integer_reasoning = function
   | Between (PlusInfinity, (MinusInfinity | Int _)) | Between (Int _, MinusInfinity) ->
       (* these values cannot be created thanks to [Unsafe] *)
       assert false
+
+
+let nonnegative = between (Int IntLit.zero) PlusInfinity

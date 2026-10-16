@@ -13,6 +13,9 @@ type t [@@deriving compare, equal, yojson_of]
 
 val equal_to : IntLit.t -> t
 
+val nonnegative : t
+(** [[0,+∞]] *)
+
 val is_equal_to_zero : t -> bool
 
 val is_not_equal_to_zero : t -> bool
