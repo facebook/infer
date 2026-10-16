@@ -39,14 +39,47 @@ let add_returned_from_unknown callee_pname_opt ret_val actuals astate =
   else astate
 
 
+let is_clang_variadic proc_name_opt =
+  Option.bind ~f:IRAttributes.load proc_name_opt
+  |> Option.exists ~f:(fun {ProcAttributes.is_clang_variadic} -> is_clang_variadic)
+
+
 (** if the procedure has a variadic number of arguments, its known [formals] will be less than the
-    [actuals] we get but currently there is no support for handling the remaining arguments (the
-    ones in [...]) so we just drop them *)
+    [actuals] we get; the remaining arguments (the ones in [...]) are dropped here and passed
+    separately by [bind_variadic_actuals] when a summary is applied *)
 let trim_actuals_if_var_arg proc_name_opt ~formals ~actuals =
-  let proc_attrs = Option.bind ~f:IRAttributes.load proc_name_opt in
-  if Option.exists proc_attrs ~f:(fun {ProcAttributes.is_clang_variadic} -> is_clang_variadic) then
-    List.take actuals (List.length formals)
-  else actuals
+  if is_clang_variadic proc_name_opt then List.take actuals (List.length formals) else actuals
+
+
+(** Bind the [n]th variadic actual of a call to a C variadic function to the global
+    [PulseOperations.va_args_global n] read by the callee's [va_arg] (see [PulseModelsC]), so that
+    applying the callee's summary connects its [va_arg] results to the actuals. The globals are
+    bound in the post only and the returned previous bindings are restored by
+    [unbind_variadic_actuals] after the call. Struct arguments are not supported. *)
+let bind_variadic_actuals path location proc_name_opt ~formals ~actuals astate =
+  if is_clang_variadic proc_name_opt then
+    List.drop actuals (List.length formals)
+    |> List.foldi ~init:(astate, []) ~f:(fun n (astate, previous) (actual, typ) ->
+        if Typ.is_struct typ then (astate, previous)
+        else
+          let var = Var.of_pvar (PulseOperations.va_args_global n) in
+          let previous = (var, Stack.find_opt var astate) :: previous in
+          let addr_hist = (AbstractValue.mk_fresh (), ValueHistory.epoch) in
+          let astate =
+            Stack.add var (ValueOrigin.OnStack {var; addr_hist}) astate
+            |> Memory.add_edge path addr_hist Dereference actual location
+          in
+          (astate, previous) )
+  else (astate, [])
+
+
+let unbind_variadic_actuals previous astate =
+  List.fold previous ~init:astate ~f:(fun astate (var, value_origin_opt) ->
+      match value_origin_opt with
+      | Some value_origin ->
+          Stack.add var value_origin astate
+      | None ->
+          Stack.remove_vars [var] astate )
 
 
 let is_const_version pname_method (other_method : Struct.tenv_method) =
@@ -337,6 +370,9 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
         match actuals with _ :: rest -> rest | [] -> []
       else actuals
     in
+    let astate, variadic_globals =
+      bind_variadic_actuals path call_loc (Some callee_proc_name) ~formals ~actuals astate
+    in
     let sat_unsat, contradiction =
       PulseInterproc.apply_summary analysis_data path ~callee_proc_name call_loc ~callee_summary
         ~captured_formals ~captured_actuals ~formals
@@ -345,6 +381,7 @@ let apply_callee ({InterproceduralAnalysis.tenv; proc_desc} as analysis_data)
     in
     let sat_unsat =
       let** post, return_val_opt, subst, hist_map = sat_unsat in
+      let post = unbind_variadic_actuals variadic_globals post in
       let post =
         match return_val_opt with
         | Some return_val_hist ->
