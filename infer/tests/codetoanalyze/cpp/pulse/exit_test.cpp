@@ -6,6 +6,8 @@
  */
 #include <stdlib.h>
 
+#include <memory>
+
 // we get two disjuncts one for each branch
 void exit_positive(int a[10], int b) {
   if (b < 1) {
@@ -27,3 +29,60 @@ void store_exit(int* x, bool b) {
 }
 
 void store_exit_null_bad() { store_exit(NULL, true); }
+
+[[noreturn]] void fatal_error(const char* msg);
+
+void new_then_noreturn_ok(bool b) {
+  int* p = new int;
+  if (b) {
+    fatal_error("error");
+  }
+  delete p;
+}
+
+void new_leak_on_return_path_bad(bool b) {
+  int* p = new int;
+  if (b) {
+    fatal_error("error");
+  }
+}
+
+void unique_ptr_then_noreturn_ok(bool b) {
+  std::unique_ptr<int> p(new int(42));
+  if (b) {
+    fatal_error("error");
+  }
+}
+
+struct Logger {
+  [[noreturn]] void fatal(const char* msg);
+  [[noreturn]] virtual void fatal_virtual(const char* msg);
+};
+
+void new_then_noreturn_method_ok(Logger& logger, bool b) {
+  int* p = new int;
+  if (b) {
+    logger.fatal("error");
+  }
+  delete p;
+}
+
+void new_then_noreturn_virtual_method_ok(Logger* logger, bool b) {
+  int* p = new int;
+  if (b) {
+    logger->fatal_virtual("error");
+  }
+  delete p;
+}
+
+[[noreturn]] void throw_error();
+
+// the call is treated as the end of the program, but it can throw an exception
+// that is caught here, outside the scope of p
+void FN_new_then_noreturn_throw_caught_bad() {
+  try {
+    int* p = new int;
+    throw_error();
+  } catch (...) {
+  }
+}
