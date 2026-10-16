@@ -162,7 +162,14 @@ module OnDisk = struct
 
   let clear_cache, remove_from_cache, add_to_cache, find_in_cache, set_lru_limit =
     let cache = Cache.create ~name:"summaries" in
-    let clear_cache () = Cache.clear cache in
+    let clear_cache ?keep () =
+      let kept =
+        Option.bind keep ~f:(fun pname ->
+            Cache.lookup cache pname |> Option.map ~f:(fun summaries -> (pname, summaries)) )
+      in
+      Cache.clear cache ;
+      Option.iter kept ~f:(fun (pname, summaries) -> Cache.add cache pname summaries)
+    in
     let remove_from_cache pname = Cache.remove cache pname in
     let add proc_name analysis_req summary =
       Cache.update cache proc_name ~f:(fun map_opt ->

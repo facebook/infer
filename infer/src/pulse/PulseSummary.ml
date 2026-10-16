@@ -83,7 +83,7 @@ let join summary1 summary2 =
   {pre_post_list; non_disj}
 
 
-let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis_data)
+let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis_data) ~ignore_leaks
     ~continue_program ~exception_raised specialization path location
     (exec_astate : ExecutionDomain.t) : _ ExecutionDomain.base_t SatUnsat.t =
   let summarize (astate : AbductiveDomain.t)
@@ -92,6 +92,9 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
     let open SatUnsat.Import in
     let+ summary_result =
       AbductiveDomain.Summary.of_post (Procdesc.get_attributes proc_desc) location astate
+    in
+    let summary_result =
+      if ignore_leaks then AccessResult.ignore_leaks summary_result else summary_result
     in
     match (summary_result : _ result) with
     | Ok summary ->
@@ -209,8 +212,8 @@ let exec_summary_of_post_common ({InterproceduralAnalysis.proc_desc} as analysis
              ) ) )
 
 
-let force_exit_program analysis_data path post =
-  exec_summary_of_post_common analysis_data None path post
+let force_exit_program ~ignore_leaks analysis_data path post =
+  exec_summary_of_post_common analysis_data None path post ~ignore_leaks
     ~continue_program:(fun astate -> Stopped (ExitProgram astate))
     ~exception_raised:(fun astate -> Stopped (ExitProgram astate))
 
@@ -223,6 +226,7 @@ let of_posts ({InterproceduralAnalysis.proc_desc} as analysis_data) specializati
           (ExecutionDomain.pp_with_kind HTML None)
           exec_state ;
         exec_summary_of_post_common analysis_data specialization path location exec_state
+          ~ignore_leaks:false
           ~continue_program:(fun astate -> ContinueProgram astate)
           ~exception_raised:(fun astate -> ExceptionRaised astate)
         |> SatUnsat.sat )

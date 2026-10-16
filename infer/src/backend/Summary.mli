@@ -53,8 +53,8 @@ module SummaryMetadata : sig
 end
 
 module OnDisk : sig
-  val clear_cache : unit -> unit
-  (** Remove all the elements from the cache of summaries *)
+  val clear_cache : ?keep:Procname.t -> unit -> unit
+  (** Remove all the elements from the cache of summaries, except the summary of [keep] if given *)
 
   val set_lru_limit : lru_limit:int option -> unit
 
