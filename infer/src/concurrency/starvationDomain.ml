@@ -361,8 +361,9 @@ module Event = struct
         true
 end
 
-(** A lock acquisition with source location and procname in which it occurs. The location & procname
-    are *ignored* for comparisons, and are only for reporting. *)
+(** A lock acquisition with source location and procname in which it occurs. If the lock was
+    acquired by a callee that returned with it held, these are the call site and the caller. The
+    location & procname are *ignored* for comparisons, and are only for reporting. *)
 module AcquisitionElem = struct
   type t = {lock: Lock.t; loc: Location.t [@ignore]; procname: Procname.t [@ignore]}
   [@@deriving compare]
@@ -375,8 +376,6 @@ module AcquisitionElem = struct
   let describe fmt {lock} = Lock.pp_locks fmt lock
 
   let make ~procname ~loc lock = {lock; loc; procname}
-
-  let compare_loc {loc= loc1} {loc= loc2} = Location.compare loc1 loc2
 
   let make_dummy lock = {lock; loc= Location.dummy; procname= Procname.from_string_c_fun ""}
 
@@ -408,12 +407,16 @@ module Acquisition = struct
         Some (map ~f:(fun _elem -> elem') interproc_acquisition)
 
 
-  let compare_loc a1 a2 = AcquisitionElem.compare_loc a1.elem a2.elem
+  (** the location in [elem.procname], then the locations further down the call chain *)
+  let get_locs ({loc; trace} : t) = List.map trace ~f:CallSite.loc @ [loc]
+
+  let compare_loc a1 a2 = [%compare: Location.t list] (get_locs a1) (get_locs a2)
 
   let make_trace_step = make_loc_trace
 
   let with_callsite_at_proc ~procname acq callsite =
-    with_callsite acq callsite |> map ~f:(fun elem -> {elem with procname})
+    with_callsite acq callsite
+    |> map ~f:(fun (elem : AcquisitionElem.t) -> {elem with procname; loc= CallSite.loc callsite})
 end
 
 (** Set of acquisitions; due to order over acquisitions, each lock appears at most once. *)
@@ -714,14 +717,17 @@ module CriticalPair = struct
       |> Option.map ~f:(fun callee_pair -> with_callsite callee_pair call_site)
 
 
-  let get_earliest_lock_or_call_loc ~procname ({elem= {acquisitions}} as t) =
-    let initial_loc = get_loc t in
+  let get_earliest_lock_or_call_locs ~procname ({elem= {acquisitions}} as t) =
     Acquisitions.fold
-      (fun {elem= {procname= acq_procname; loc= acq_loc}} acc ->
-        if Procname.equal procname acq_procname && Int.is_negative (Location.compare acq_loc acc)
-        then acq_loc
+      (fun (acq : Acquisition.t) acc ->
+        let acq_locs = Acquisition.get_locs acq in
+        if
+          Procname.equal procname acq.elem.procname
+          && Int.is_negative ([%compare: Location.t list] acq_locs acc)
+        then acq_locs
         else acc )
-      acquisitions initial_loc
+      acquisitions
+      [get_loc t]
 
 
   let make_trace ?(header = "") ?(include_acquisitions = true) top_pname

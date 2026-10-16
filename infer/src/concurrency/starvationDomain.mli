@@ -122,8 +122,9 @@ module CriticalPair : sig
   val get_loc : t -> Location.t
   (** outermost callsite location *)
 
-  val get_earliest_lock_or_call_loc : procname:Procname.t -> t -> Location.t
-  (** outermost callsite location OR lock acquisition *)
+  val get_earliest_lock_or_call_locs : procname:Procname.t -> t -> Location.t list
+  (** outermost callsite location OR lock acquisition, followed by the locations down the call chain
+      if the lock was acquired by a callee *)
 
   val may_deadlock : Tenv.t -> lhs:t -> lhs_lock:Lock.t -> rhs:t -> Lock.t option
   (** if two pairs can run in parallel and satisfy the conditions for deadlock, when [lhs_lock] of
